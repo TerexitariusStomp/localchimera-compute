@@ -1,6 +1,6 @@
 # xorg
 
-_An organization is a program that writes itself._
+_Express and Experiment with Organization._
 
 ---
 
