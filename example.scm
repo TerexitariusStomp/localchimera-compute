@@ -1,4 +1,4 @@
-(use-modules (metaorg play)
+(use-modules (xorg play)
              (srfi srfi-1)
              (ice-9 hash-table))
 

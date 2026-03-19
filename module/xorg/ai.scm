@@ -1,5 +1,5 @@
-(define-module (metaorg ai)
-  #:use-module (metaorg play)
+(define-module (xorg ai)
+  #:use-module (xorg play)
   #:use-module (web client)
   #:use-module (web response)
   #:use-module (rnrs bytevectors)
@@ -58,7 +58,7 @@
                          (list-tail h (- (length h) 10))
                          h))))
     (string-append
-     "You are an AI assistant integrated into meta-org, an experimental "
+     "You are an AI assistant integrated into xorg, an experimental "
      "organizational system built as a Scheme-based REPL.\n\n"
      "Current expressor (identity): " (symbol->string exp-name) "\n\n"
      "Current bindings:\n"
@@ -90,7 +90,7 @@
                        #:headers
                        `((content-type . (application/json))
                          (authorization . (bearer ,(string->symbol api-key)))
-                         (user-agent . "meta-org/0.1"))
+                         (user-agent . "xorg/0.1"))
                        #:streaming? #f
                        #:decode-body? #f))
         (lambda (response body-bv)

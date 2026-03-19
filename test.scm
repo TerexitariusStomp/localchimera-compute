@@ -1,8 +1,8 @@
-;;; test.scm — tests for (metaorg play)
+;;; test.scm — tests for (xorg play)
 ;;; Run with:  guile -L . test.scm
 
 (add-to-load-path "module")
-(use-modules (metaorg play))
+(use-modules (xorg play))
 
 ;;; ── Harness ─────────────────────────────────────────────────────────────────
 
@@ -338,7 +338,7 @@
 
 (display "\n── 16. org isolation ──\n")
 
-(use-modules (metaorg org))
+(use-modules (xorg org))
 
 (let ((org-a (make-org "alpha"))
       (org-b (make-org "beta")))

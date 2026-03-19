@@ -1,8 +1,8 @@
-;;; org.scm — Org management and inner REPL for meta-org
+;;; org.scm — Org management and inner REPL for xorg
 ;;; Provides org record type, base bindings, and the two-tier REPL inner loop.
 
-(define-module (metaorg org)
-  #:use-module (metaorg play)
+(define-module (xorg org)
+  #:use-module (xorg play)
   #:use-module (ice-9 match)
   #:use-module (ice-9 pretty-print)
   #:use-module (srfi srfi-1)

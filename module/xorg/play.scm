@@ -1,4 +1,4 @@
-(library (metaorg play)
+(library (xorg play)
   (export make-expressor
           expressor?
           expressor-name
@@ -116,7 +116,7 @@
 ;;; Caller tracking — global variable instead of make-parameter (Hoot-compatible)
 (define *current-caller* #f)
 
-;;; AI integration globals — set by (metaorg ai) at load time
+;;; AI integration globals — set by (xorg ai) at load time
 (define *ai-handler* #f)
 (define *ai-eval-handler* #f)
 
@@ -457,13 +457,13 @@
     ;; AI: call the registered handler, return a string
     (('ai prompt-expr)
      (let ((handler *ai-handler*))
-       (unless handler (error "AI not available. Load (metaorg ai) module."))
+       (unless handler (error "AI not available. Load (xorg ai) module."))
        (handler (evaluate prompt-expr env) env)))
 
     ;; AI-eval: call the registered handler, evaluate the returned expression
     (('ai-eval prompt-expr)
      (let ((handler *ai-eval-handler*))
-       (unless handler (error "AI not available. Load (metaorg ai) module."))
+       (unless handler (error "AI not available. Load (xorg ai) module."))
        (let ((expr (handler (evaluate prompt-expr env) env)))
          (evaluate expr env))))
 

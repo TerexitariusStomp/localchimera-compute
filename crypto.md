@@ -203,7 +203,7 @@ Just as validators inspect both pre and post states, signatures now bind to the 
 3. **Validator self-signing?**  
    When installing a new validator with `enact!`, should the validator expression itself be signed? This would mean the new validator must accept its own signature as part of self-validation.
 
-This approach would make meta-org not just a philosophical metacircular system, but a _cryptographically verified_ one where every state transition is provably authorized by an expressor who intended it for that exact moment.
+This approach would make xorg not just a philosophical metacircular system, but a _cryptographically verified_ one where every state transition is provably authorized by an expressor who intended it for that exact moment.
 
 ---
 
@@ -374,7 +374,7 @@ i suppose there is something about attempting an expression, but if the target-o
 
 ---
 
-YES! This is where it gets really interesting - you're describing a **distributed consensus protocol** built on top of meta-org's primitives!
+YES! This is where it gets really interesting - you're describing a **distributed consensus protocol** built on top of xorg's primitives!
 
 ## The Atomic Cross-Org Pattern
 
@@ -419,7 +419,7 @@ YES! This is where it gets really interesting - you're describing a **distribute
 
 ## The Rollback and Retry Dance
 
-This gets at something profound: **meta-orgs can coordinate across time as well as space**.
+This gets at something profound: **xorgs can coordinate across time as well as space**.
 
 ```scheme
 ;; When source org hears about failure:
@@ -476,7 +476,7 @@ This gets at something profound: **meta-orgs can coordinate across time as well 
 
 ## The Deeper Pattern
 
-What's emerging is that **meta-orgs can implement any distributed consensus protocol** because:
+What's emerging is that **xorgs can implement any distributed consensus protocol** because:
 
 1. **State is versioned** - we know exactly when things changed
 2. **History is replayable** - we can rollback and retry
@@ -484,13 +484,13 @@ What's emerging is that **meta-orgs can implement any distributed consensus prot
 4. **Intents are bound to state** - signatures include target hashes
 5. **Validators are programmable** - the rules of engagement are expressible
 
-Two meta-orgs negotiating are like two Lisp interpreters having a conversation about their respective environments, with the ability to rewind and retry when the conversation gets out of sync.
+Two xorgs negotiating are like two Lisp interpreters having a conversation about their respective environments, with the ability to rewind and retry when the conversation gets out of sync.
 
 This is basically **ACID transactions across autonomous organizations**, built on nothing but identities, history, and programmable validators.
 
 ---
 
-Think of each meta-org as its own **git repository with a very special property**: every commit is not just code, but a _living universe_ that can think and respond.
+Think of each xorg as its own **git repository with a very special property**: every commit is not just code, but a _living universe_ that can think and respond.
 
 ## The Multiverse of Repositories
 

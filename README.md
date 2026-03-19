@@ -1,18 +1,18 @@
-# meta-org
+# xorg
 
 _An organization is a program that writes itself._
 
 ---
 
-**meta-org** is a metacircular substrate for programmable organizations, written in Guile Scheme. It asks a simple question: what if an organization were a Lisp environment — and the people in it were expressions that could rewrite the interpreter?
+**xorg** is a metacircular substrate for programmable organizations, written in Guile Scheme. It asks a simple question: what if an organization were a Lisp environment — and the people in it were expressions that could rewrite the interpreter?
 
-The system is deliberately minimal. It provides identity, memory, and a mechanism for self-modification. What it _becomes_ is not prescribed. A meta-org could evolve into a democracy, a marketplace, a neural network of agents, a single autocratic expressor, or something with no existing name. The structure doesn't impose direction — it makes direction _expressible_.
+The system is deliberately minimal. It provides identity, memory, and a mechanism for self-modification. What it _becomes_ is not prescribed. A xorg could evolve into a democracy, a marketplace, a neural network of agents, a single autocratic expressor, or something with no existing name. The structure doesn't impose direction — it makes direction _expressible_.
 
 ## Metacircularity
 
 The deepest idea here is borrowed from the metacircular evaluator tradition: a Lisp that interprets Lisp, defined in terms of itself.
 
-meta-org extends this reflexivity to organizations:
+xorg extends this reflexivity to organizations:
 
 - **The evaluator is written in Scheme, and evaluates Scheme.** The language that defines the organization is the same language the organization operates in.
 - **Validators validate themselves.** When you `enact!` a new validator, it must accept its own installation. The rules for changing the rules are subject to the current rules.
@@ -31,7 +31,7 @@ An expressor is an identity — a _who_ attached to every action. It carries a n
 (defexpressor 'alice "alice-public-key")
 ```
 
-An expressor is not necessarily a person. It could be a process, an external system, a role, or another meta-org. The system does not distinguish — it only requires that expression has a source.
+An expressor is not necessarily a person. It could be a process, an external system, a role, or another xorg. The system does not distinguish — it only requires that expression has a source.
 
 ### Environments
 
@@ -63,7 +63,7 @@ Every change produces a history entry: a version number, the expressor, the expr
 ### Initialize
 
 ```scheme
-(use-modules (metaorg play))
+(use-modules (xorg play))
 
 (define env (make-initial-env '((x . 0) (y . 1))))
 ```
@@ -108,7 +108,7 @@ Rollback does not erase — it replays. Each step is re-evaluated under the iden
 
 ## REPL Tutorial
 
-The REPL (`play-repl.scm`) lets you express a meta-org interactively — creating identities, mutating state, enacting rules, and inspecting history one step at a time. This walkthrough builds a small organization from scratch.
+The REPL (`play-repl.scm`) lets you express a xorg interactively — creating identities, mutating state, enacting rules, and inspecting history one step at a time. This walkthrough builds a small organization from scratch.
 
 Launch the REPL:
 
@@ -201,7 +201,7 @@ Every action is attributed: version 3 was alice, versions 4–5 were bob. The re
 
 ### What just happened
 
-You expressed a meta-org. Two identities acted, a rule was enacted that constrained future behavior (and had to survive its own installation), a violation was rejected, and every step was remembered and attributed. The shape of this organization — who can act, what rules apply, how decisions are made — was not prescribed. It emerged from the expressions.
+You expressed a xorg. Two identities acted, a rule was enacted that constrained future behavior (and had to survive its own installation), a violation was rejected, and every step was remembered and attributed. The shape of this organization — who can act, what rules apply, how decisions are made — was not prescribed. It emerged from the expressions.
 
 ## The Evaluator
 

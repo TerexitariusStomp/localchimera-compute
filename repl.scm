@@ -4,7 +4,7 @@
              ((hoot error-handling) #:select (format-exception))
              (ice-9 match)
              (repl-environment)
-             (metaorg play)
+             (xorg play)
              (srfi srfi-11))
 
 (define-foreign document-body
@@ -405,7 +405,7 @@
          (recent (let ((h (reverse history)))
                    (if (> (length h) 10) (list-tail h (- (length h) 10)) h))))
     (string-append
-      "You are an AI inside meta-org, a Scheme-based system for programmable organizations.\n\n"
+      "You are an AI inside xorg, a Scheme-based system for programmable organizations.\n\n"
       "Current expressor: " (symbol->string exp-name) "\n\n"
       "Bindings:\n" (%join-lines (map format-binding bindings))
       "\n\nRecent history:\n" (%join-lines (map format-history-entry recent))
@@ -449,6 +449,9 @@
 (define *mode* 'outer)
 (define *current-org-name* #f)
 (define *env* (make-initial-env base-bindings))
+
+(define *sidebar-collapsed* #f)
+(define *sidebar-selected-org* #f)   ;; string or #f
 
 (define (org-save!)
   (when *current-org-name*
@@ -595,12 +598,32 @@
               (unless (string=? out-str "")
                 (log-append! `(span (@ (class "output-text")) ,out-str))))
             (if (env? result)
-                (set! *env* result)
+                (begin (set! *env* result) (org-save!))
                 (let ((result-port (open-output-string)))
                   (write result result-port)
                   (log-append! `(span (@ (class "result-text"))
                                       ,(string-append "=> " (get-output-string result-port) "\n"))))))))
       #:unwind? #t)))
+
+(define (do-enter! name)
+  (let ((org (org-lookup name)))
+    (when org
+      (org-save!)
+      (set! *mode* 'inner)
+      (set! *current-org-name* name)
+      (set! *env* (cdr org))
+      (set! *sidebar-selected-org* name)
+      (log-append! `(span (@ (class "info-text"))
+                          ,(string-append "Entering org '" name "'.\n"))))))
+
+(define (do-exit!)
+  (when (eq? *mode* 'inner)
+    (org-save!)
+    (set! *mode* 'outer)
+    (let ((name *current-org-name*))
+      (set! *current-org-name* #f)
+      (log-append! `(span (@ (class "info-text"))
+                          ,(string-append "Left org '" name "'.\n"))))))
 
 (define (handle-command exp)
   (match exp
@@ -610,31 +633,20 @@
                              ,(string-append "Org already exists: " name "\n")))
          (begin
            (set! *orgs* (cons (cons name (make-initial-env base-bindings)) *orgs*))
+           (set! *sidebar-selected-org* name)
            (log-append! `(span (@ (class "result-text"))
                                ,(string-append "Created org: " name "\n")))))
      #t)
     (('enter! (? string? name))
      (let ((org (org-lookup name)))
        (if org
-           (begin
-             (org-save!)
-             (set! *mode* 'inner)
-             (set! *current-org-name* name)
-             (set! *env* (cdr org))
-             (log-append! `(span (@ (class "info-text"))
-                                 ,(string-append "Entering org '" name "'. Type (exit!) to return.\n"))))
+           (do-enter! name)
            (log-append! `(span (@ (class "error-text"))
                                ,(string-append "Unknown org: " name "\n")))))
      #t)
     ('(exit!)
      (if (eq? *mode* 'inner)
-         (begin
-           (org-save!)
-           (set! *mode* 'outer)
-           (let ((name *current-org-name*))
-             (set! *current-org-name* #f)
-             (log-append! `(span (@ (class "info-text"))
-                                 ,(string-append "Left org '" name "'.\n")))))
+         (do-exit!)
          (log-append! `(span (@ (class "error-text")) "Not inside an org.\n")))
      #t)
     ('(list-orgs)
@@ -754,6 +766,145 @@
       (set! *paren-depth* depth)
       (refresh!))))
 
+;;; ── Sidebar event handlers ───────────────────────────────────────────────
+
+(define (toggle-sidebar! event)
+  (set! *sidebar-collapsed* (not *sidebar-collapsed*))
+  (refresh!))
+
+(define (sidebar-select-org! name event)
+  (set! *sidebar-selected-org* name)
+  (refresh!))
+
+(define (sidebar-enter-org! name event)
+  (if (and *current-org-name* (string=? name *current-org-name*))
+      (begin (do-exit!) (refresh!) (scroll-to-bottom!))
+      (begin (do-enter! name) (refresh!) (scroll-to-bottom!))))
+
+;;; ── Inspector helpers ───────────────────────────────────────────────────
+
+(define (unique-expressors history)
+  (let loop ((entries history) (seen '()) (result '()))
+    (if (null? entries)
+        (reverse result)
+        (let* ((exp (history-expressor (car entries)))
+               (name (expressor-name exp)))
+          (if (memq name seen)
+              (loop (cdr entries) seen result)
+              (loop (cdr entries) (cons name seen) (cons exp result)))))))
+
+(define (format-value val name)
+  (cond
+    ((procedure? val) (string-append "<proc " (symbol->string name) ">"))
+    ((expressor? val) (string-append "<expressor "
+                        (symbol->string (or (expressor-name val) '?)) ">"))
+    (else (call-with-output-string (lambda (p) (%write val p))))))
+
+;;; ── Inspector section renderers ─────────────────────────────────────────
+
+(define (render-bindings-section bindings)
+  `(div (@ (class "section"))
+        (div (@ (class "section-header")) "bindings")
+        ,@(if (null? bindings)
+              (list `(div (@ (class "inspector-row")) "  (empty)"))
+              (map (lambda (pair)
+                     `(div (@ (class "inspector-row"))
+                           (span (@ (class "name"))
+                                 ,(symbol->string (car pair)))
+                           " "
+                           (span (@ (class "value"))
+                                 ,(format-value (cdr pair) (car pair)))))
+                   bindings))))
+
+(define (render-history-section history)
+  `(div (@ (class "section"))
+        (div (@ (class "section-header")) "history")
+        ,@(if (null? history)
+              (list `(div (@ (class "inspector-row")) "  (none)"))
+              (map (lambda (entry)
+                     `(div (@ (class "inspector-row"))
+                           (span (@ (class "version"))
+                                 ,(string-append "v"
+                                    (number->string (history-version entry))))
+                           " "
+                           (span (@ (class "expressor-id"))
+                                 ,(symbol->string
+                                    (or (expressor-name
+                                          (history-expressor entry)) '?)))
+                           " "
+                           (span (@ (class "value"))
+                                 ,(call-with-output-string
+                                    (lambda (p)
+                                      (%write (history-expr entry) p))))))
+                   history))))
+
+(define (render-expressors-section expressors)
+  `(div (@ (class "section"))
+        (div (@ (class "section-header")) "expressors")
+        ,@(if (null? expressors)
+              (list `(div (@ (class "inspector-row")) "  (none)"))
+              (map (lambda (exp)
+                     `(div (@ (class "inspector-row"))
+                           (span (@ (class "name"))
+                                 ,(symbol->string
+                                    (or (expressor-name exp) '?)))))
+                   expressors))))
+
+;;; ── Sidebar rendering ──────────────────────────────────────────────────
+
+(define (render-org-item org-pair)
+  (let* ((name (car org-pair))
+         (selected? (and *sidebar-selected-org*
+                         (string=? name *sidebar-selected-org*)))
+         (active? (and *current-org-name*
+                       (string=? name *current-org-name*))))
+    `(div (@ (class ,(string-append "org-item"
+                        (if selected? " selected" "")
+                        (if active? " active" "")))
+             (click ,(lambda (e) (sidebar-select-org! name e))))
+          (span (@ (class "org-name"))
+                ,(string-append (if active? "> " "  ") name)))))
+
+(define (render-org-list)
+  `(div (@ (class "org-list"))
+        ,@(if (null? *orgs*)
+              (list `(div (@ (class "sidebar-empty"))
+                          "No orgs yet.\nUse (make-org \"name\") to create one."))
+              (map render-org-item *orgs*))))
+
+(define (render-org-detail name)
+  (let* ((org (org-lookup name))
+         (env (if org (cdr org)
+                  (if (and *current-org-name* (string=? name *current-org-name*))
+                      *env* #f))))
+    (if (not env) ""
+        (let* ((active? (and *current-org-name* (string=? name *current-org-name*)))
+               (bindings (env-bindings env))
+               (history (env-history env))
+               (expressors (unique-expressors history)))
+          `(div (@ (class "org-detail"))
+                (div (@ (class "detail-header"))
+                     (span (@ (class "org-name")) ,name)
+                     (span (@ (class "org-action")
+                               (click ,(lambda (e) (sidebar-enter-org! name e))))
+                           ,(if active? "exit" "enter")))
+                ,(render-bindings-section bindings)
+                ,(render-history-section history)
+                ,(render-expressors-section expressors))))))
+
+(define (render-sidebar)
+  (if *sidebar-collapsed*
+      ""
+      `(div (@ (class "sidebar"))
+            (div (@ (class "sidebar-header"))
+                 (span (@ (class "sidebar-toggle") (click ,toggle-sidebar!))
+                       "\u00ab")
+                 (span (@ (class "sidebar-title")) " orgs"))
+            ,(render-org-list)
+            ,@(if *sidebar-selected-org*
+                  (list (render-org-detail *sidebar-selected-org*))
+                  '()))))
+
 ;;; ── Render ────────────────────────────────────────────────────────────────
 
 (define (paren-indicator)
@@ -764,20 +915,25 @@
    (else
     (string-append (number->string (- *paren-depth*)) " extra )"))))
 
+(define (render-repl)
+  `(div (@ (id "repl") (class "repl repl-text"))
+        (div (@ (class "log")) ,@*log*)
+        (div (@ (class "prompt"))
+             ,(current-prompt)
+             (textarea (@ (id "expression") (class "repl-text")
+                          (rows "1") (keydown ,maybe-eval)
+                          (keyup ,on-keyup) (input ,auto-resize)))
+             (span (@ (class "paren-indicator")) ,(paren-indicator)))))
+
 (define (render)
-  `(div (@ (class "container"))
-        (div (@ (id "repl")
-                (class "repl repl-text"))
-             (div (@ (class "log")) ,@*log*)
-             (div (@ (class "prompt"))
-                  ,(current-prompt)
-                  (textarea (@ (id "expression")
-                               (class "repl-text")
-                               (rows "1")
-                               (keydown ,maybe-eval)
-                               (keyup ,on-keyup)
-                               (input ,auto-resize)))
-                  (span (@ (class "paren-indicator"))
-                        ,(paren-indicator))))))
+  `(div (@ (class "ide"))
+        ,(render-sidebar)
+        (div (@ (class "main"))
+             ,@(if *sidebar-collapsed*
+                   (list `(span (@ (class "expand-tab")
+                                   (click ,toggle-sidebar!))
+                                "\u00bb"))
+                   '())
+             ,(render-repl))))
 
 (refresh!)
