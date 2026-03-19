@@ -494,7 +494,7 @@
 (define *log*
   (list `(span (@ (class "info-text"))
                ,(string-append
-                 "Welcome to meta-org!\n"
+                 "Welcome to xorg!\n"
                  "\n"
                  "An organization is a program that writes itself.\n"
                  "This is a metacircular substrate for programmable\n"
@@ -561,7 +561,7 @@
 
 (define (current-prompt)
   (if (eq? *mode* 'outer)
-      "meta-org> "
+      "xorg> "
       (string-append "play["
         (symbol->string
           (or (with-vat *vat* ($ *org* 'expressor-name ($ *org* 'current-expressor))) '?))
@@ -728,7 +728,7 @@
           (loop))
          ;; Check for org management commands first
          ((handle-command exp) (loop))
-         ;; In inner mode, use the meta-org evaluator
+         ;; In inner mode, use the xorg evaluator
          ((eq? *mode* 'inner)
           (eval-play! exp)
           (loop))
