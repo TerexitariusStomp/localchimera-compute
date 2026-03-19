@@ -1,0 +1,183 @@
+Andreas Enge
+
+Goblins for number theory, part 1
+Starting with Goblins
+Motivation
+Most of my code in algorithmic number theory is written in C and runs in a parallelised version using MPI on a cluster. The C language is mandatory for efficiency reasons; MPI is mostly a convenience. Indeed number theoretic code is often embarrassingly parallel. For instance my ECPP implementation for primality proving essentially consists of a number of for loops running one after the other. A server process distributes evaluations of the function inside the loop to the available clients, which take a few seconds or even minutes to report back their respective results. These are then handled by the server before entering the next loop. In a cluster environment with a shared file system, this could even be realised by starting a number of clients over SSH, starting a server, and then using numbered files to exchange function arguments and results, or touch on files to send “signals” between the server and the clients. Computation time is the bottleneck, communication is minimal, so even doing this over NFS is perfectly feasible (and I have written and deployed such code in the past). MPI then provides a convenience layer that makes the process look more professional, and also integrates more smoothly with the batch submission approach of computation clusters.
+
+The very loosely coupled nature of number theoretic computations should make it possible to distribute them beyond a cluster. Why not even do a primality proof with several participants working together over the Internet? I have looked at BOINC previously; but the system seems to be intended for completely uncoupled problems, essentially exploration of a large search space. The work is cut up into a number of independent tasks that are sent out to the participants; if they do not report back in a few days, the same task is sent out again, and over several months all tasks are treated. While number theoretic computations may also take a few months, they do require at least some synchronisation, and the server needs to hear back from the clients every few minutes so as not to be blocked. (Each for loop is embarrassingly parallel, but several loops must be run sequentially.) Also the “administrative” overhead of things to be done for BOINC outside the program itself looks rather daunting: setting up a database, for instance. So I have been looking for a programming environment that is somewhere between MPI and BOINC, making loosely coupled computations possible; it should be able to run over the Internet and not only on a cluster connected by SSH; and it should result in code that is relatively easy to write, and for which just as with MPI the parallel version does not look very different from the sequential one. (In my C code, I usually end up having everything in one file, with the parallel and the sequential versions being handled by alternating blocks selected by #ifdef.)
+
+Goblins is a distributed programming environment by the Spritely Institute that seems to fit the bill. It is meant for distributed programming, and locally running code can seamlessly be run over networks using various mechanisms such as Tor or simply TCP and TLS. On the other hand, not only does it use puzzling vocabulary, but also puzzling concepts, such as object “capabilities”, actor “model” and “vats”. For someone coming from imperative programming and good old C, with a penchant for assembly, looking at Goblins can feel like reading Heidegger. Fortunately Goblins comes with an excellent tutorial, which clarifies the seemingly exotic concepts by a hands-on approach with concrete examples. These put the emphasis, however, on the distribution and communication layer; tangible results are essentially obtained as side effects of printing values on screen. While I think it is an excellent idea to teach programming without mathematics to lower the barrier for people who do not like mathematics, I had the opposite problem: As a mathematician wanting to do computations, it was not immediately clear to me how to have the server send computational tasks to the clients and recover the results. Goblins is a library (or collection of “modules”) for Guile (or Racket), two Scheme dialects; from what I understand, it is unlikely that a C implementation will be available any time soon.
+
+So the way in which I see Goblins being useful to distributed number theory computations is as follows:
+
+Use Guile and Goblins to express the high-level control flow of the program, and additionally Goblins to express its parallelised and distributed aspects.
+Use functions from a C library to do the heavy lifting, for instance functions from CM to do the computationally intensive tasks related to primality proving, which can be called from Guile using the Foreign Function Interface or FFI. In a number theoretic context, function arguments and values are often arbitrarily long integers coming from the GMP library. Given that Guile itself is written in C and relies on GMP for its implementation of integers, one can be hopeful that this should not pose too many problems.
+The prototypical example
+As a running example, I would like to treat the computation of the euclidean length of a vector; starting simple and enhancing the example step by step in the following tutorial, which I am making up while I am trying to solve the problem for myself.
+
+Let us begin with a fixed vector of small, fixed size, which would look like the following in C:
+
+int square (int x) {
+   return x*x;
+}
+
+int v [] = {3, 4};
+double len;
+
+len = 0.0;
+for (int i = 0; i < sizeof (v) / sizeof (int); i++)
+   len += square (v [i]);
+len = sqrt (len);
+Granted, this it not number theory, but it fits the situation described in the motivational section above: There is a for loop going through the vector calling independently for each entry the square function, which stands for a function that would be expensive to compute, should be distributed to the clients and loaded from a C library; the additions and the square root, the + and sqrt functions, stand for cheap post-treatment done at the server level.
+
+The following Guile code captures this sequential computation with the map and fold idiom in appreciable compactness:
+
+(use-modules (srfi srfi-1))
+(define (square x) (* x x))
+(define v '(3 4))
+(sqrt (fold + 0 (map square v)))
+Open a Guile REPL using the guile command. Then copy-paste this code into the REPL; or save it as a file euclid.scm and type (load "euclid.scm") in the REPL; enjoy the Pythagorean result!
+
+Before continuing, please go first through Chapters 1 to 4 of the Goblins documentation and tutorial.
+
+The next step is to “locally distribute” the computation, that is, to create two clients and a server for the different steps of the computation; for the time being, these will all live in the same local Guile REPL. What is called a “process” in MPI corresponds to a “vat” in Goblins; so we create vat0 for the server and vat1 and vat2 for the clients:
+
+(use-modules (goblins))
+(define vat0 (spawn-vat))
+(define vat1 (spawn-vat))
+(define vat2 (spawn-vat))
+Functions in an MPI instrumented parallel program correspond to “actors” living in a vat; we first define a type of actor computing squares:
+
+(define (^square bcom)
+  (lambda (x)
+    (* x x)))
+To distinguish it from the square function above, we prepend a ^ to its name; it takes a formal parameter called bcom that we need not worry about.
+
+Then we populate the client vats with a square actor each and keep references to the different actors under different global names:
+
+(define client1
+  (with-vat vat1 (spawn ^square)))
+(define client2
+  (with-vat vat2 (spawn ^square)))
+Now we can create a function in the server vat which computes the length of a 2-dimensional vector by calls to the client actors using <-. For this to work, we will need to wait for the clients to finish their computations (or, in Goblins parlance, for their “promises” to be “fulfilled”); this is done using on for each call to a client actor. The “Goblins standard library”, described in Chapter 6 of the documentation, comes in handy here; in particular we can use a joiner to wait for several actors at the same time.
+
+(use-modules (srfi srfi-1)
+             (goblins actor-lib joiners))
+(define (^len bcom)
+  (lambda (v)
+    (on (all-of (<- client1 (first v))(<- client2 (second v)))
+        (lambda (res)
+          (let ((l (sqrt (fold + 0 res))))
+            (format #t "~a\n" l))))))
+(define len (with-vat vat0 (spawn ^len)))
+The len actor can now be called as follows, which will print the euclidean length of a vector on screen; from within the vat where the actor resides, we may use $ instead of <-, which behaves like a normal function call:
+
+(with-vat vat0 ($ len '(3 4)))
+Putting this all together for convenient copy-pasting, here is the complete code:
+
+(use-modules (srfi srfi-1)
+             (goblins)
+             (goblins actor-lib joiners))
+
+(define vat0 (spawn-vat))
+(define vat1 (spawn-vat))
+(define vat2 (spawn-vat))
+
+(define (^square bcom)
+  (lambda (x)
+    (* x x)))
+
+(define client1
+  (with-vat vat1 (spawn ^square)))
+(define client2
+  (with-vat vat2 (spawn ^square)))
+
+(define (^len bcom)
+  (lambda (v)
+    (on (all-of (<- client1 (first v))(<- client2 (second v)))
+        (lambda (res)
+          (let ((l (sqrt (fold + 0 res))))
+            (format #t "~a\n" l))))))
+
+(define len (with-vat vat0 (spawn ^len)))
+
+(with-vat vat0 ($ len '(3 4)))
+Promises, promises!
+The previous code prints the length of the vector on screen using the format function; one might wish to instead create a function that returns the value, to assign it to a variable for future treatment, for instance, or to enter the Guile equivalent of the next for loop. This turns out to be surprisingly difficult, or, to be more precise, impossible. The reason is that on handles the promise by calling the function in its body with the return value of the promise, but does not itself return the result of this evaluation, as I would have expected. (Promises in Guile itself, created with delay, behave in this expected way when using force.) It is possible to obtain a return value for on, but this will again be a promise and not a “real” value — once a promise, always a promise!
+
+So instead of passing around values, one quickly ends up passing around promises; this requires to get used to, and entails an additional layer of wrapping everything into on and a function instead of just evaluating the body of the function. As far as I understand, to obtain any tangible result, one eventually needs to print it on screen or into a file. The following example illustrates how to use the #:promise? #t keyword parameter with on to ensure that it returns a promise, and how to lug this promise around to continue computations with its encapsulated value, while never leaving the realm of promises until eventually printing a result. It moves the computation of the square root out of the ^len actor.
+
+(use-modules (srfi srfi-1)
+             (goblins)
+             (goblins actor-lib joiners))
+
+(define vat0 (spawn-vat))
+(define vat1 (spawn-vat))
+(define vat2 (spawn-vat))
+
+(define (^square bcom)
+  (lambda (x)
+    (* x x)))
+
+(define client1
+  (with-vat vat1 (spawn ^square)))
+(define client2
+  (with-vat vat2 (spawn ^square)))
+
+(define (^norm bcom)
+  (lambda (v)
+    (on (all-of (<- client1 (first v))(<- client2 (second v)))
+        (lambda (res)
+          (fold + 0 res))
+        #:promise? #t)))
+
+(define norm (with-vat vat0 (spawn ^norm)))
+
+(with-vat vat0
+  (define n ($ norm '(3 4)))
+  (define l (on n (lambda (x) (sqrt x)) #:promise? #t))
+  (on l (lambda (x) (format #t "~a\n" x))))
+So here, n and l are promises, and fulfillment occurs only in the last on that prints a result.
+
+Now that we have understood how things work, it is useful to introduce the let*-on syntactic sugar, which lets us end up with the following code:
+
+(use-modules (srfi srfi-1)
+             (goblins)
+             (goblins actor-lib joiners)
+             (goblins actor-lib let-on))
+
+(define vat0 (spawn-vat))
+(define vat1 (spawn-vat))
+(define vat2 (spawn-vat))
+
+(define (^square bcom)
+  (lambda (x)
+    (* x x)))
+
+(define client1
+  (with-vat vat1 (spawn ^square)))
+(define client2
+  (with-vat vat2 (spawn ^square)))
+
+(define (^norm bcom)
+  (lambda (v)
+    (on (all-of (<- client1 (first v))(<- client2 (second v)))
+        (lambda (res)
+          (fold + 0 res))
+        #:promise? #t)))
+
+(define norm (with-vat vat0 (spawn ^norm)))
+
+(with-vat vat0
+  (let*-on ((n ($ norm '(3 4)))
+            (l (sqrt n)))
+    (format #t "~a\n" l)))
+This looks exactly like normal let* syntax in Guile! So in the end, we arrive at a program which looks as if it handled normal values, with all promises swept under the rug.
+
+Acknowledgements
+I thank Jessica Tallon and David Thompson for their kind help with understanding the concept of promises covered in the previous section.
+
+This first part has dealt with basic programming concepts in Goblins. In the end, all our code still runs in a single script, so we have taken a twisted path to write essentially serial code, but in doing so, we have laid the groundwork for true parallelisation with Goblins.
+
+Last modifications on 2024-09-04 by Andreas Enge

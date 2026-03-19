@@ -1,0 +1,1049 @@
+@uref{https://github.com/ocapn/ocapn, OCapN} stands for ``Object
+Capability Network'' and is a suite of protocols for communication
+between distributed, networked objects.  In other words, it's how
+Goblins actors can talk to actors running on another computer.
+
+OCapN uses the @uref{http://erights.org/elib/distrib/captp/index.html,
+Capability Transport Protocol (CapTP)} as the core protocol for
+enabling distributed programming in a mutually suspicious network.  It
+originated in the @uref{http://www.erights.org/, E programming
+language} but has since appeared in @uref{https://capnproto.org/,
+Cap'N Proto}, @uref{http://waterken.sourceforge.net/, Waterken},
+@uref{https://agoric.com/, Agoric}'s
+@uref{https://github.com/Agoric/agoric-sdk/tree/master/packages/SwingSet,
+SwingSet}, and now Goblins.
+
+@strong{CAUTION}: CapTP support is still in its early days.  Please do
+not rely on the protocol being stable at this time.
+
+@menu
+* CapTP The Capability Transport Protocol::
+* Launching a Tor daemon for Goblins::
+* Example Greeters over CapTP via Tor::
+* Example Simple chat via TCP-TLS::
+* Using the CapTP API::
+* Netlayers::
+* Handling Disconnects::
+@end menu
+
+@node CapTP The Capability Transport Protocol
+@section CapTP: The Capability Transport Protocol
+
+OCapN's CapTP has an abstract ``netlayer'' interface, allowing
+communication over many different protocols ranging from Tor Onion
+Services to IBC to I2P to libp2p to perhaps carrier pigeons with
+backpacks full of encrypted MicroSD cards.  Currently, Goblins only
+supports the Tor Onion Services netlayer.
+
+Benefits of CapTP:
+
+@itemize
+@item
+Invocation of remote objects resembles the same as with local objects.
+You can use @code{<-} and @code{on} which means that most programs
+that were originally designed for local-only computing
+naturally scale out to a networked environment.
+@item
+All this is done while mostly hiding the abstraction of the networked
+protocol from the user.
+@item
+Object capability security is upheld.  A remote peer cannot make
+use of any capability that has not been handed to it.
+@item
+Live object references between CapTP endpoints are incredibly cheap,
+merely represented as integers on each side.  This keeps message sizes
+small and efficient.
+@item
+CapTP provides (acyclic) distributed garbage collection.  Remote
+peers can indicate when they no longer need an object and the
+peer locally containing that reference can reclaim it if
+appropriate.
+@item
+Promise pipelining means that messages can be sent to the resolution
+of a promise before that resolution actually occurs.  Over the network
+this is represented as a pipeline of messages.  This can reduce round
+trips significantly, which is a big win.
+
+To re-quote Mark S@. Miller:
+
+@quotation
+Machines grow faster and memories grow larger.  But the speed of light
+is constant and New York is not getting any closer to Tokyo.
+@end quotation
+@item
+CapTP is written independently of network transport abstractions.  It
+can be run over local Unix domain sockets, an OpenSSL connection, Tor
+Onion Services, or something custom.  CapTP operates under the
+assumption of secure pairwise channels; the layer which provides the
+pairwise channels is called ``MachineTP'' and can be written in a
+variety of ways.  A simple MachineTP abstraction is provided, but
+presently still requires some manual wiring.  In the future, even
+simpler abstractions will be provided which cover most user needs.
+@end itemize
+
+All of these combine into an efficient and powerful protocol that,
+most powerfully of all, the author of Goblins programs need not
+think too much about.  This circumvents the usual years and years of
+careful message structure coordination and standardization for many
+kinds of distributed programs, which can simply be written as normal
+Goblins programs rather than bespoke protocols.
+
+Limitations of CapTP:
+
+@itemize
+@item
+Goblins' CapTP provides @emph{acyclic} distributed garbage collection.
+Cycles between servers are not automatically recognized.  Full
+@uref{http://erights.org/history/original-e/dgc/, cycle-collecting
+distributed garbage collection} has been written, but requires special
+cooperation from the garbage collector that is not available in
+Guile (or in most languages).
+@item
+Goblins' CapTP does not do anything about memory usage or resource
+management on its own.  (Features for this will come as Spritely
+sub-projects in the future.)
+@item
+While CapTP in theory routes capabilities to specific remote objects,
+since the network is mutually suspicious one can't assume that the
+remote end isn't conspiring some way to hand those capabilities to
+other unexpected objects.  The right way to think about this
+from an object capability perspective is that a remote misbehaving
+peer is equivalent to a misbehaving object with the surface area of
+the entire peer.
+@item
+@strong{TEMPORARY}: The API is heavily in flux.
+@end itemize
+
+@node Launching a Tor daemon for Goblins
+@section Launching a Tor daemon for Goblins
+
+In order for Goblins' Onion Service netlayer to work, it needs to talk
+to a Tor daemon.  Goblins can set up and manage the Onion Services
+itself once it connects to the Tor daemon.  So far it seems like
+running a single Goblins Tor process ``as your user'' and letting
+various Goblins processes connect to it is the easiest option.
+
+Here's an example configuration file template (replace @code{<user>}
+with your actual username):
+
+@example
+DataDirectory /home/<user>/.cache/goblins/tor/data/
+SocksPort unix:/home/<user>/.cache/goblins/tor/tor-socks-sock RelaxDirModeCheck
+ControlSocket unix:/home/<user>/.cache/goblins/tor/tor-control-sock RelaxDirModeCheck
+Log notice file /home/<user>/.cache/goblins/tor/tor-log.txt
+@end example
+
+Write this configuration to @file{~/.config/goblins/tor-config.txt}.
+
+Create the necessary cache directory:
+
+@example
+mkdir -p ~/.cache/goblins/tor/data
+@end example
+
+Now launch the Tor daemon:
+
+@example
+tor -f ~/.config/goblins/tor-config.txt
+@end example
+
+@node Example Greeters over CapTP via Tor
+@section Example Greeters over CapTP via Tor
+
+Before diving into API details, let's take a look at a couple of small
+example programs to demonstrate that this stuff works.
+
+Here's our client script named @file{captp-alice.scm}:
+
+@lisp
+(use-modules (fibers conditions)
+             (fibers operations)
+             (goblins)
+             (goblins ocapn ids)
+             (goblins ocapn captp)
+             (goblins ocapn netlayer onion)
+             (ice-9 match))
+
+;; Create a CapTP router using Tor Onion Services.
+(define peer-vat (spawn-vat))
+(define onion-netlayer
+  (with-vat peer-vat
+    (spawn ^onion-netlayer)))
+(define mycapn
+  (with-vat peer-vat
+    (spawn-mycapn onion-netlayer)))
+
+;; Convert the command-line argument into a sturdyref for Bob.
+(define bob-uri
+  (match (command-line)
+    ((_ uri) uri)))
+(define bob-sref (string->ocapn-id bob-uri))
+
+;; Create a vat for Alice and enliven Bob.
+(define a-vat (spawn-vat))
+(define bob-vow
+  (with-vat a-vat
+    (<- mycapn 'enliven bob-sref)))
+
+;; Send a message to Bob and print the response.
+(define done? (make-condition))
+(with-vat a-vat
+  (on (<- bob-vow "Alice")
+      (lambda (response)
+        (format #t "Alice heard back: ~a" response)
+        (signal-condition! done?))))
+
+;; Wait until Alice has received a response before exiting.
+(perform-operation (wait-operation done?))
+@end lisp
+
+Traditionally, Alice talks to Bob.  So, now we need Bob.  Save the
+following server script as @file{captp-bob.scm}:
+
+@lisp
+(use-modules (fibers conditions)
+             (fibers operations)
+             (goblins)
+             (goblins ocapn ids)
+             (goblins ocapn captp)
+             (goblins ocapn netlayer onion))
+
+;; Bob is going to be a greeter that says hello to other people.
+(define (^greeter _bcom our-name)
+  (lambda (your-name)
+    (format #f "Hello ~a, my name is ~a!" your-name our-name)))
+
+;; Create Bob in their own vat.
+(define b-vat (spawn-vat))
+(define bob (with-vat b-vat (spawn ^greeter "Bob")))
+
+;; Create a CapTP router using Tor Onion Services.
+(define peer-vat (spawn-vat))
+(define onion-netlayer
+  (with-vat peer-vat
+    (spawn ^onion-netlayer)))
+(define mycapn
+  (with-vat peer-vat
+    (spawn-mycapn onion-netlayer)))
+
+;; Create a sturdyref for Bob and print it.
+(with-vat peer-vat
+  (on (<- mycapn 'register bob 'onion)
+      (lambda (bob-sref)
+        (format #t "Bob's sturdyref: ~a"
+                (ocapn-id->string bob-sref)))))
+
+;; Hold the process open indefinitely.
+(perform-operation (wait-operation (make-condition)))
+@end lisp
+
+Okay, time to try it out!  Open up two terminals, and in the first one
+run:
+
+@example
+guile captp-bob.scm
+@end example
+
+This will print out a captp ``sturdyref'' URI to the terminal.  Copy
+it and paste it in the second terminal as the argument to @code{guile
+captp-alice.scm}:
+
+@example
+guile captp-alice.scm <STURDYREF-GOES-HERE>
+@end example
+
+Tor Onion Services can take a while to establish, but eventually you
+should see:
+
+@example
+Alice heard back: Hello Alice, my name is Bob!
+@end example
+
+If you see the same output then your connection succeeded!  Yay! The
+sturdyref is a reference to the object that can be shared out of band.
+Once a connection has been established, references to objects both
+local and remote can be shared. The next section will share a very
+simple chatroom showing references being shared.
+
+@node Example Simple chat via TCP-TLS
+@section Example Simple chat via TCP-TLS
+
+In this example we'll have an extremely simple chat setup where many
+users can join and send messages among one another. This will show
+bootstrapping with a sturdyref, like the previous example, but also
+show sharing references over CapTP just like we're used to locally.
+
+We don't need to concern ourselves with if the other side already has
+a connection to another machine/peer, sending any reference we have
+from any CapTP session is handled automatically by Goblins.
+
+The example is split up into two parts, the first is the chatroom and
+the second is implementing the users which join the chatroom. The
+chatroom is below, to be saved in @file{simple-chat-chatroom.scm}:
+
+@lisp
+
+(use-modules (goblins)
+             (goblins ocapn ids)
+             (goblins ocapn captp)
+             (goblins ocapn netlayer tcp-tls)
+             (goblins actor-lib methods)
+             (fibers)
+             (fibers conditions))
+
+(define vat (spawn-vat))
+(define tcp-tls-netlayer
+  (with-vat vat
+    (spawn ^tcp-tls-netlayer "localhost")))
+(define mycapn
+  (with-vat vat
+    (spawn-mycapn tcp-tls-netlayer)))
+
+(define-actor (^chatroom bcom #:optional [users '()])
+  (methods
+   [(join user)
+    (bcom (^chatroom bcom (cons user users)))]
+   [(send from message)
+    (for-each
+     (lambda (user)
+       (<-np user 'new-message from message))
+     users)]))
+
+(define chatroom
+  (with-vat vat
+    (spawn ^chatroom)))
+
+(with-vat vat
+  (on (<- mycapn 'register chatroom 'tcp-tls)
+      (lambda (chatroom-sref)
+        (format #t "Chatroom: ~a\n" (ocapn-id->string chatroom-sref)))))
+
+;; This will wait forever.
+(define done? (make-condition))
+(wait done?)
+@end lisp
+
+When you run this, it'll display a sturdyref which you can then
+provide to the users, saved in @file{simple-chat-user.scm}:
+
+@lisp
+(use-modules (goblins)
+             (goblins ocapn ids)
+             (goblins ocapn captp)
+             (goblins ocapn netlayer tcp-tls)
+             (goblins actor-lib methods)
+             (goblins actor-lib timers)
+             (fibers)
+             (fibers conditions)
+             (ice-9 match)
+             (ice-9 textual-ports))
+
+(define ocapn-vat (spawn-vat))
+(define tcp-tls-netlayer
+  (with-vat ocapn-vat
+    (spawn ^tcp-tls-netlayer "localhost")))
+(define mycapn
+  (with-vat ocapn-vat
+    (spawn-mycapn tcp-tls-netlayer)))
+
+(define vat (spawn-vat))
+(define (^user bcom self-proposed-name)
+  (methods
+   [(get-name) self-proposed-name]
+   [(new-message from new-message)
+    (on (<- from 'get-name)
+        (lambda (their-name)
+          ;; Print new messages we get
+          (pk 'from their-name 'message new-message)))]))
+
+(define-values (chatroom-sref our-name)
+  (match (command-line)
+    [(_prog-name chatroom-sturdyref name)
+     (values (string->ocapn-id chatroom-sturdyref) name)]
+    [something-else
+     (error "Usage: <chatroom-sturdyref> <my-username>")]))
+
+(define user
+  (with-vat vat
+    (spawn ^user our-name)))
+
+(define chatroom-vow
+  (with-vat vat
+    (<- mycapn 'enliven chatroom-sref)))
+
+(define greetings '("hello" "hi!" "ohai there" "salutations"))
+(with-vat vat
+  (<-np chatroom-vow 'join user)
+
+  ;; Not too important, just gives random numbers
+  (set! *random-state* (random-state-from-platform))
+
+  ;; After waiting random number of seconds, send a greeting.
+  (on (timeout (random 10))
+      (lambda _
+        ;; Select a greeting at random
+        (define greeting
+          (list-ref greetings (random (length greetings))))
+        (<-np chatroom-vow 'send user greeting))))
+
+
+;; This will wait forever.
+(define done? (make-condition))
+(wait done?)
+@end lisp
+
+This can be run supplying the sturdyref from the chatroom and a name
+for the user, you can even connect several users by running this
+several times and see each user's greeting come in. This is done by
+each time a new message comes in, the chatroom sends each connected
+user a message with the author (living on another machine or peer) and
+the message sent. Each user then messages the remote user the user who
+sent the message for its name and displays that.
+
+You can see in the example we don't need to worry about what
+connections each peer has, Goblins and OCapN handle all of that for
+you. We just needed to initially bootstrap the connection, then
+references to other objects, including those from other sessions can
+be passed around in messages.
+
+This chat system has no authentication or security, it's just meant to
+be a demonstration of passing references around over CapTP, including
+using Third Party Handoffs for sending references from other OCapN
+sessions.
+
+@node Using the CapTP API
+@section Using the CapTP API
+
+Goblins relies on a @code{^mycapn} coordination object to communicate
+over OCapN.  The @code{(goblins ocapn captp)} module provides a
+procedure to spawn one:
+
+@deffn {Procedure} spawn-mycapn netlayers @dots{}
+
+Spawn and return a @code{^mycapn} object.  @var{netlayers}, if provided,
+are netlayer objects; @pxref{Netlayers}.  The @code{^mycapn} object has
+three public methods:
+
+@itemize
+@item
+@code{install-netlayer netlayer}: Add @var{netlayer} to this
+@code{^mycapn} object's set of netlayers.  Return a promise that will
+fulfill when the netlayer is ready.
+
+@item
+@code{register obj netlayer-name}: Create and return a sturdyref to the
+object @var{obj} using the netlayer named by @var{netlayer-name}.
+
+@item
+@code{enliven studyref-vow}: Return a promise to the object represented
+by @var{sturdyref-vow}, a promise to a sturdyref.
+
+@end itemize
+
+@end deffn
+
+@defvr {Persistence Environment} captp-env
+@end defvr
+
+The @code{(goblins ocapn ids)} module provides procedures for working
+with sturdyrefs and other @emph{ocapn-ids}.  For example, to share a
+remote reference to an object, first use the @code{register} method of a
+@code{^mycapn} object, then transform the resulting sturdyref into a
+string for out-of-band transmission using @code{ocapn-id->string}:
+
+@deffn {Procedure} ocapn-id->string ocapn-id
+
+Return a string representing the sturdyref or peer ID @var{ocapn-id}.
+
+@end deffn
+
+This procedure has a corollary for transforming the string
+representation of a sturdyref back into an object, such as for
+consumption by the @code{enliven} method of a @code{^mycapn} object:
+
+@deffn {Procedure} string->ocapn-id string-uri
+
+Return a sturdyref or peer ID corresponding to the string
+@var{string-uri}.
+
+@end deffn
+
+Together with netlayers, these three procedures allow for the
+construction and use of objects which can be accessed from remote
+machines.  If we are operating in the context of a vat and
+@code{netlayer} refers to a configured Tor netlayer (@pxref{Tor Onion
+Services}), we could share a greeter actor like this:
+
+@lisp
+> (define (^greeter _bcom name)
+    (lambda (friend)
+      (format #f "Hello, ~a; I'm ~a!" friend name)))
+> (define mycapn (spawn-mycapn netlayer))
+> (define alice (spawn ^greeter "Alice"))
+> (define alice-ocapn-id ($ mycapn 'register alice 'onion))
+> (ocapn-id->string alice-ocapn-id)
+=> "ocapn://jv4arqqwntmxs3rljkx3ao5bucci37rxxb575vypovntyve76mmyf4ad.onion/s/nGxw4_p6s91IF-R5r6MMYsZzoByODX46MV7AWTApX5s"
+@end lisp
+
+The first string of letters and numbers after ``ocapn://'' is part of
+the Tor address.  The last one, though, is a @emph{swiss-num} generated
+during object registration to uniquely identify that object.
+@xref{Nonce Registry}.  Because a swiss-num is a capability and part of
+a sturdyref, all one must do to enliven Alice on a remote machine with a
+similarly-configured @code{^mycapn} is provide that sturdyref:
+
+@lisp
+> (define alice ($ mycapn 'enliven (string->ocapn-id "ocapn://...")))
+> (on (<- alice "Bob") display)
+=> Hello, Bob; I'm Alice!
+@end lisp
+
+@node Netlayers
+@section Netlayers
+
+While OCapN's CapTP provides the glue of object-to-object remote
+invocation machinery, OCapN's netlayers are an abstraction over message
+transmission protocols which give OCapN the flexibility to use a
+number of underlying networking substrates.
+
+@node Tor Onion Services
+@subsection Tor Onion Services
+
+Assuming a Tor daemon is running, a Goblins Onion netlayer can be
+created by spawning the @code{^onion-netlayer} object from the
+@code{(goblins ocapn netlayer onion)} module:
+
+@lisp
+> (define onion-netlayer
+    (spawn ^onion-netlayer))
+@end lisp
+
+That netlayer can then be used to spawn an OCapN router actor:
+
+@lisp
+> (define mycapn (spawn-mycapn onion-netlayer))
+@end lisp
+
+Each the @code{^onion-netlayer} is spawned it generates a new
+@code{private-key} and @code{service-id}.  If you wish for these to
+persist, they need to be stored (securely, as anyone with them has
+the capability to host at them). This can be done by using Goblins'
+persistence system, an example of this is:
+
+@lisp
+> (define-values (ocapn-vat onion-netlayer onion-mycapn)
+    (spawn-persistent-vat
+     (make-persistence-env #:extends (list onion-netlayer-env captp-env))
+     (lambda ()
+       (define netlayer
+         (spawn ^onion-netlayer))
+       (values netlayer
+               (spawn-mycapn netlayer)))
+     (make-syrup-store "ocapn.syrup")))
+@end lisp
+
+@node TCP + TLS
+@subsection TCP + TLS
+
+The TCP + TLS netlayer is available as a simpler option than Tor or
+other peer-to-peer networks.  Direct connections are made over
+standard TCP sockets and all traffic is encrypted with self-signed TLS
+keys.  A new netlayer instance can be spawned with the
+@code{^tcp-tls-netlayer} object from the @code{(goblins ocapn
+netlayer tcp-tls)} module.  The TCP + TLS netlayer is often used in
+conjunction with, and as a foundation for, the @ref{Prelay} netlayer.
+
+@lisp
+> (define netlayer (spawn ^tcp-tls-netlayer "example.com"))
+> (define mycapn (spawn-mycapn netlayer))
+@end lisp
+
+Users of this netlayer can either bring their own X.509 key and
+certificate by importing them from the file system, or let Goblins
+automatically generate them.  The @code{^tcp-tls-netlayer} is
+persistence aware meaning that it can be persisted and restored using
+Goblins' persistence system. Here's an example of this:
+
+
+@lisp
+(define-values (ocapn-vat tcp-tls-netlayer tcp-tls-mycapn)
+  (spawn-persistent-vat
+   (persistence-env-compose captp-env tcp-tls-netlayer-env)
+   (lambda ()
+     (define netlayer
+       (spawn ^tcp-tls-netlayer "example.com"))
+     (values netlayer
+             (spawn-mycapn netlayer)))
+   (make-syrup-store "ocapn.syrup")))
+@end lisp
+
+The @emph{current major limitation} of this netlayer is the lack of
+both ``store and forward'' and NAT hole punching support.  Most
+machines that are not dedicated servers are not accessible from the
+public Internet due to the presence of a NAT gateway between the local
+network and the Internet.  For this reason the most common way to use
+the TCP + TLS netlayer is as an underlying foundation for the
+@ref{Prelay} netlayer.
+
+Without using the @ref{Prelay} netlayer, the only way to reach peers
+behind NAT gateways is if those peers have setup the necessary port
+forwarding configuration on their local network's firewall and have
+configured the netlayer to use their public IP as the host name.  If
+your application would benefit from a more peer-to-peer netlayer,
+consider using the @ref{Tor Onion Services} netlayer instead, which
+is more peer-to-peer at the cost of high latency.
+
+Sturdyrefs for this netlayer use a SHA-256D hash of the TLS
+certificate as the peer identifier.  The address and port where the
+peer can be found on the network are encoded as hints.
+
+Also, note that the current version of this netlayer is robust against
+man-in-the-middle attacks in the sense that an attacker cannot
+manipulate or decode communication occurring over the TLS encrypted
+stream.  However, no attempt has been made to prevent network
+monitoring attacks where an attacker provides a sturdyref with hints
+pointing at an intermediary server where the attacker can observe
+@emph{when} and @emph{how much} traffic is occurring, even though they
+cannot interpret the contents.  In addition, the attacker could choose
+to sever the connection when it is convenient for them.  This is
+generally the case already on nation-state level attacks against TLS,
+but is more readily available as a possible avenue of attack here.  In
+the future, hints might be signed in order to prevent this.
+
+@deffn {Constructor} ^tcp-tls-netlayer host [#:port] [#:max-connections 32] @
+                                       [#:key] [#:cert]
+
+Construct an TCP-TLS netlayer actor.  @var{host} specifies the
+hostname that appears in the OCapN sturdyrefs that use this netlayer.
+
+If @var{port} is specified, the netlayer will listen for incoming
+connections on that port or throw an error if the port is already in
+use.  If @var{port} is not specified, an open port will be chosen
+automatically.
+
+@var{max-connections} specifies the number of peers that may be
+connected to the netlayer at any given time.
+
+@var{key} and @var{cert} specify the X.509 private key and certificate
+to use for encrypting connections.  If one or both are unspecified,
+they will be automatically generated provided that the version of
+Guile-GnuTLS is new enough to do so.
+@end deffn
+
+@deffn {Procedure} generate-tls-private-key
+
+Return a freshly generated X.509 private key.
+
+@end deffn
+
+@deffn {Procedure} generate-tls-certificate key
+
+Return a freshly generated X.509 certificate for @var{key}.
+
+@end deffn
+
+@defvr {Persistence Environment} tcp-tls-netlayer-env
+@end defvr
+
+@node Unix domain socket
+@subsection Unix domain socket
+
+The Unix domain socket netlayer is designed to be a fast and secure
+netlayer for communication between several processes on the same
+machine. It relies on one or more Unix domain socket introduction
+servers which provide introductions between the processes, but do not
+themselves relay the traffic.
+
+The netlayer works as follows: when a netlayer wants to open a new
+connection to a peer, it creates an anonymous Unix domain socket pair
+for that session. Since anonymous Unix domain sockets can be sent
+across other Unix domain sockets. The netlayer works by passing one
+side of the anonymous Unix domain socket it made to the introduction
+server, which will then pass it along to the recipient. This allows
+two Unix domain socket peers to communicate directly without relay or
+needing any access to the file system. The introduction server could
+go offline and existing sessions would remain unaffected.
+
+@deffn {Constructor} ^unix-domain-socket-netlayer
+
+Spawn a new Unix domain socket netlayer.
+
+Once spawned the netlayer needs at least one introduction server to be
+provided. This can be done using the @code{add-server} method on the
+netlayer, which takes one argument, a socket which is already
+connected to a Unix domain socket introduction server. The method
+returns a promise which will be fulfilled if the netlayer disconnects
+from the introduction server provided in the @code{add-server} call.
+
+Multiple introduction servers can be used by calling @code{add-server}
+several times.
+
+@lisp
+;; Setup the socket to the intro server.
+(define intro-server-sock
+  (make-unix-domain-socket))
+
+(define address (make-socket-address AF_UNIX "/tmp/the-intro-server.sock"))
+(connect intro-server-sock-sock address)
+
+;; Spawn the netlayer
+(define ocapn-vat (spawn-vat #:name "OCapN"))
+(define mycapn
+  (with-vat ocapn-vat
+    (define netlayer (spawn ^unix-domain-socket-netlayer))
+    ($ netlayer 'add-server intro-server-sock)
+    (spawn-mycapn netlayer)))
+@end lisp
+
+@end deffn
+
+@defvr {Persistence Environment} unix-domain-socket-netlayer-env
+@end defvr
+
+@node libp2p
+@subsection libp2p
+
+The libp2p netlayer communicates over the @url{https://libp2p.io,libp2p}
+networking stack, which is designed to provide secure peer-to-peer
+connections over a variety of networking protocols.
+Goblins relies upon an external server, the
+@url{https://codeberg.org/spritely/go-libp2p-daemon,Go libp2p daemon},
+to access the libp2p network.  Refer to the
+@url{https://codeberg.org/spritely/go-libp2p-daemon,daemon's documentation}
+for setup instructions.
+
+@deffn {Constructor} ^libp2p-netlayer [private-key] [our-location] @
+                                      [#:control-path] [#:path]
+
+Spawning this constructor will produce a new instance of the libp2p
+netlayer.
+
+The @var{private-key} of type string and @var{our-location} of type
+OCapN peer can be used to specify an existing private key and location
+to be used by the netlayer. If these are not specified, they are
+generated by the netlayer. The netlayer is persistence aware so these
+do not normally need to be specified manually.
+
+@var{control-path}, when specified, is the path to the unix socket where
+the libp2p daemon is running. If not specified it will default to
+@file{/tmp/libp2p-control.sock}
+
+@var{path} is the path to a directory where Goblins can create new
+sockets. These sockets are used for new connections for Goblins and the
+libp2p daemon to communicate over. It defaults to
+@file{/tmp/goblins-libp2p}
+
+@end deffn
+
+@deffn {Procedure} ocapn-peer->libp2p-multiaddr peer
+
+When provided an OCapN peer locator, it will convert this to a multiaddr string
+used by libp2p.
+
+@end deffn
+
+@deffn {Procedure} libp2p-multiaddress->ocapn-peer multiaddrs
+
+When given a string of multiaddrs, it will convert it into an OCapN peer
+locator.
+
+@end deffn
+
+@defvr {Persistence Environment} libp2p-netlayer-env
+@end defvr
+
+@node WebSocket
+@subsection WebSocket
+
+The @code{(goblins ocapn netlayer websocket)} module provides a
+netlayer that is built on top of, as the name would suggest, the
+@url{https://datatracker.ietf.org/doc/html/rfc6455,WebSocket
+protocol}.  Since WebSockets are available in web browsers via the
+@code{WebSocket} JavaScript API, and the Guile VM via the
+guile-websocket library, this netlayer is notable in that it can be
+used in Goblins programs compiled using either Hoot or Guile.
+
+This netlayer has a notable source of centralization: TLS certificate
+authorities.  Web browsers rely upon certificate authorities to verify
+server connections made in a secure context.  Furthermore, a web
+browser client cannot host a WebSocket server; peer-to-peer
+connections are not possible.  This is all to say that we cannot
+opt-out of this security model and that the WebSocket netlayer alone
+cannot provide the full OCapN experience.  Thus the WebSocket netlayer
+should be thought of as a ``bootstrap'' netlayer; one which is used to
+escape the client-server model and reach a peer-to-peer network.  Use
+this netlayer together with the @ref{Prelay} netlayer to achieve this
+goal.
+
+@deffn {Constructor} ^websocket-netlayer [#:host "127.0.0.1"] @
+                                         [#:port 0] @
+                                         [#:url] @
+                                         [#:max-peers 32] @
+                                         [#:verify-certificates? #t] @
+                                         [#:encrypted? #t] @
+                                         [#:tls-private-key] @
+                                         [#:tls-certificate] @
+                                         [#:designator-key] @
+
+Spawning this constructor will produce a new instance of the WebSocket
+netlayer.  The server component of the netlayer is bound to @var{host}
+and @var{port}.  If @var{port} is not specified, an available port is
+chosen automatically.
+
+The @var{url} argument allows for specifying a custom URL for use as a
+hint when generating OCapN sturdyrefs.  By default, the URL looks like
+@code{ws(s)://$host:$port}. Custom URLs are often necessary, such as
+in the case of a relay that uses @url{https://nginx.org/,nginx} as the
+publicly accessible web server with a reverse proxy to the netlayer
+bound on the loopback device.  @var{url} is also necessary when the
+server is bound to a @var{host} address of @code{0.0.0.0} to produce a
+usable address for the sturdyref hint.
+
+The @var{max-peers} argument determines how many peers can be
+simultaneously connected to the netlayer; 32 by default.
+
+The @var{encrypted?} flag determines if TLS encryption is used for
+inbound connections (i.e. @code{wss://}).  Encryption is enabled by
+default and a warning is emitted when it is disabled.
+
+The @var{verify-certificates?} flag determines if the TLS certificates
+of outbound peers should be verified upon connection.  Certification
+verification is enabled by default and a warning is emitted when it is
+disabled.
+
+The @var{tls-private-key} and @var{tls-certificate} arguments specify
+the X.509 private key and certificate to use for encrypting inbound
+connections with TLS.  If one or both are unspecified, they will be
+automatically generated (provided that the version of Guile-GnuTLS in
+use is new enough to do so.)  To import PEM encoded private keys and
+certificates from the file system, use @code{load-tls-private-key} and
+@code{load-tls-certificate}, respectively.  While self-signed
+certificates can be used, it is recommended to use certificates signed
+by a certificate authority such as @url{https://letsencrypt.org/,Let's
+Encrypt} as web browsers will reject certificates that cannot be
+verified.
+
+The @var{designator-key} is the private key used to authenticate the
+designator used within the peer location, as created by the
+@code{generate-key-pair} procedure in @code{(goblins utils crypto)}.
+This key controls the identity of the netlayer.  By default, no
+pre-existing key is provided and a fresh key will generated
+automatically.
+
+When compiling with Hoot, all arguments other than
+@var{verify-certificates?} are ignored because it is not possible to
+host a WebSocket server from a web browser client.
+@var{verify-certificates?} @emph{must} be @code{#t} as web browsers
+enforce strict TLS certificate verification when in a secure context.
+Unencrypted (@code{ws://}) WebSocket connections are only allowed in
+specific insecure contexts such as when using a local development
+server.
+@end deffn
+
+@defvr {Persistence Environment} websocket-netlayer-env
+@end defvr
+
+@node Prelay
+@subsection Prelay (Unencrypted, v0)
+
+The purpose of the prelay netlayer is to permit connections between two
+parties which cannot feasibly directly connect.  For instance, some
+users may be able to feasibly connect unidirectionally via the
+@ref{TCP + TLS} netlayer to a ``public'' peer, but may not be
+themselves reachable over a consistent IP address.  For this reason,
+the Prelay netlayer exists.
+
+The surprising thing about the Prelay netlayer is that it is a netlayer
+which runs *over another netlayer* by passing messages through an
+intermediate object, which itself speaks to other intermediate objects
+routing to other likely isolated users, bridging those users with the
+illusion of being direct peers.  (The users need not use relays on the
+same peer; ``federation'' is achieved automatically through the
+underlying OCapN netlayer's connectivity properties.)
+
+The primary limitation of the prelay netlayer at present is that
+messages are delivered in cleartext through the chosen relay,
+unauthenticated, which means the relay has the power to both snoop on
+and modify messages.  A fully end-to-end-encrypted Relay netlayer is on
+schedule to replace the present unencrypted, unauthenticated design.
+At present the prelay netlayer has characteristics similar to IRC,
+vanilla ActivityPub, and many multiplayer game systems which also tend
+to rely on trusting a provider, but we would like to (and will!) do
+better in the future.
+
+Some simpler APIs for the prelay netlayer are coming, particularly a
+convenient daemon for managing prelay peers for users.
+
+In the meanwhile, there are two essential APIs.  The first is run on
+relay peers, which act as the routers:
+
+@deffn {Procedure} spawn-prelay-pair enliven
+
+Spawn a pair of prelay objects: the @var{endpoint} (public) and
+@var{controller} (private).  The endpoint permits other peers to send
+messages, and the controller permits sending messages to other peers.
+
+@var{enliven} is a object which when provided the @code{'enliven} method and a
+sturdyref, returns a promise to the object.  This is likely created by using
+the @xref{Facet} library with the MyCapN object.
+
+Returns two values to its continuation, the @var{endpoint} and
+@var{controller} respectively.
+
+@end deffn
+
+In order for the @var{endpoint} to be useful as a public identity, a
+sturdyref must be made for it and then converted with the following
+procedure:
+
+@deffn {Procedure} prelay-sturdyref->prelay-peer prelay-endpoint-sref
+
+This transforms @var{prelay-endpoint-sref} into an OCapN prelay peer
+identifier and returns that object and identifies this peer on the
+network.  (This is done by transforming and serializing relevant
+information about the sturdyref into a data structure that is then
+packed into the @code{ocapn-peer-designator} object, but this detail
+is not particularly important for most users.)
+
+@end deffn
+
+This transformation can be reversed with the following procedure:
+
+@deffn {Procedure} prelay-peer->prelay-sturdyref prelay-peer
+
+Do the reverse of @var{prelay-sturdyref->prelay-peer}, which is to say,
+transform the peer back into a sturdyref which represents the endpoint
+which handles routing messages for this peer.
+
+Whew, that's a lot!  The above procedures are essential for setting up
+prelay-as-relay-host infrastructure, but setting up a prelay-using
+netlayer is much simpler:
+
+@end deffn
+
+@deffn {Constructor} ^prelay-netlayer bcom enliven prelay-endpoint-sref prelay-controller-sref
+
+Constructs the prelay netlayer which lives on the client.
+
+Takes three arguments.  Two of these arguments are sturdyrefs to objects which
+likely live on the prelay server and their refrs were created by the
+@code{spawn-prelay-pair} procedure defined above.
+
+The three arguments are:
+
+@itemize
+@item
+@var{enliven} is an object which, when sent an @code{'enliven} message with a
+sturdyref, returns a promise to a remote object.  This is likely created by
+using the @xref{Facet} library with the MyCapN object.
+@item
+@var{prelay-endpoint-sref} is a sturdyref to the public endpoint which
+identifies the peer on the OCapN network.
+@item
+@var{prelay-controller-sref} is a sturdyref to the private controller object.
+This is used by the prelay netlayer to initiate new connections and register
+itself with the prelay server.
+@end itemize
+
+@end deffn
+
+@defvr {Persistence Environment} prelay-env
+@end defvr
+
+@node Prelay Utils
+@subsection Prelay Utils
+
+The @ref{Prelay} netlayer is built around there being a Prelay server which
+accepts connections, allowing the controlling user to open new connections
+and facilitates passing messages back and forth for established
+connections. This Prelay server must be setup somewhere accessible on
+the network it operates.
+
+Goblins comes with a set of Prelay utils which are designed to offer one
+way to setup the server with multiple accounts. There are many ways this
+could be done, however other Prelay server designs are left to the
+reader to build. The Prelay utils are available in the
+@code{(goblins ocapn netlayer prelay-utils)} module, and an example of how
+to use them to run a daemon can be found in @code{examples/prelay-server.scm},
+as shipped with Spritely Goblins.
+
+@code{(goblins ocapn netlayer prelay-utils)} provides the following functions:
+
+@deffn {Constructor} ^prelay-admin bcom enliven register
+
+This constructs an admin actor to manage prelay accounts. This is to be
+used on the ``server'' side.
+
+It takes two arguments: @var{enliven} which is a facet object that when
+provided the symbol @code{'enliven} followed by a OCapN sturdyref
+returns a vow of the enlivened sturdyref. It also takes @var{register}
+which when provided an object will make that object available at a given
+sturdyref and return that to the caller. Both of these are likely facets
+of the Mycapn object.
+
+The admin object itself has two methods, those are:
+
+@itemize
+@item
+@code{add-account} which takes a name of an account and returns a
+sturdyref. This sturdyref is designed to be given to the user who is
+controlling the relay account. The user can then enliven said
+sturdyref and send a message to the enlivened object to get the prelay
+endpoint and prelay controller objects.
+
+@item
+@code{get-accounts} which provides a list of all account names
+registered with this prelay admin.
+@end itemize
+
+@end deffn
+
+@deffn {Procedure} fetch-and-spawn-prelay-netlayer account-setup-sref [#:netlayer] [#:mycapn]
+
+This takes a account setup sturdyref retrieved from the
+@code{add-account} method on the Prelay admin and returns a
+promise resolving to a freshly spawned Prelay netlayer.
+This is to be used on the ``client'' side.
+
+By default when using the relay over @ref{Tor Onion Services} netlayer
+or @ref{TCP + TLS} netlayer it will setup a new netlayer to use to speak
+with the relay over. If a different netlayer is to be used, or any of
+the default options need changing, the netlayer should be setup beforehand
+and passed in through the @var{#:netlayer} argument.
+
+By default it will create a new mycapn, however if one already exists
+for the netlayer specified in @var{#:netlayer}, then you can pass that
+in with the @var{#:mycapn} argument.
+
+@end deffn
+
+@defvr {Persistence Environment} prelay-utils-env
+@end defvr
+
+@node Handling Disconnects
+@section Handling Disconnects
+
+For remote references, it can be useful to know when the connection to
+be the remote peer has broken (intentionally or otherwise).  In
+Goblins, this is known as a @emph{sever} event.
+Severance can be detected using @code{on-sever} which is provided by
+the @code{(goblins)} module.
+
+@deffn {Procedure} on-sever remote-refr handler
+
+Register @var{handler} to be called when connection to
+@var{remote-refr} is severed.
+
+The @var{remote-refr} should be a reference to an object on a remote
+peer, if the connection between the remote peer that the object is
+located on, the @var{handler} is informed. The @var{handler} is either
+a procedure or Goblins object. @var{handler} is called with two
+arguments: the severance type (a symbol) and the reason (a string).
+
+@code{on-sever} returns to the caller a Goblins object which when
+invoked cancels the interest in severance.
+
+NOTE: If severance has already occurred when calling @code{on-sever},
+the @code{handler} will be informed immediately.
+
+@end deffn

@@ -1,0 +1,559 @@
+Andreas Enge
+
+Goblins for number theory, part 3
+Ending and persisting
+In previous posts we have seen how to solve our toy problem of computing the euclidian length of a vector in a distributed fashion using Goblins, with a client script that runs in several copies, carries out most of the work and reports back to a server script, which collects the partial results into a solution to the problem. The clients could in principle live on distant machines and communicate over the Tor network. For testing in a local setting, however, letting them run on the same machine as the server and communicating over TCP turns out to be more efficient. So far, our architecture is rather inflexible: We assume that the server knows the number of participating clients beforehand, and that all tasks take more or less the same time so that distributing them evenly to the clients is an optimal scheduling strategy. The logical next step is to overcome these limitations. My initial solution for a more general framework, however, turned out to be very inefficient. Jessica Tallon and David Thompson of the Spritely Institute (many thanks to them!) kindly had a look at it and came up with a much better solution; but our discussions also helped me understand Goblins better and inspired ideas on how to improve the current client and server scripts. So before going for more generality in the next post, let us do a pirouette with the current framework and also explore some interesting side tracks that did not make it into the previous post.
+
+Spring cleaning
+Before doing anything substantial, let us clean up a few things in the current code. The main actor in the server script is currently defined through the type ^register as follows:
+
+(define clients (with-vat vat (spawn ^cell '())))
+(define (^register bcom)
+  (lambda (id)
+    ($ clients (cons (<- mycapn 'enliven id)
+                     ($ clients)))
+    (print-id "Registered" id)))
+(define register (with-vat vat (spawn ^register)))
+It captures the clients variable in the closure defined by lambda, which works, but requires the variables to be defined in this order. A more elegant solution is to pass clients as an argument. At the same time, we take the opportunity to rename the verb register to the noun registry.
+
+(define (^registry bcom clients)
+  (lambda (id)
+    ($ clients (cons (<- mycapn 'enliven id)
+                     ($ clients)))
+    (print-id "Registered" id)))
+(define clients (with-vat vat (spawn ^cell '())))
+(define registry (with-vat vat (spawn ^registry clients)))
+Let us also get rid of some “overgoblinification”; indeed the actor of type ^len in the server can be replaced by a simple function, or (since the Goblins promises force us to work with side effects anyway) by sequential code. We end up with the following server script server.scm:
+
+(use-modules (srfi srfi-1)
+             (goblins)
+             (goblins actor-lib cell)
+             (goblins actor-lib joiners)
+             (goblins actor-lib methods)
+             (goblins ocapn ids)
+             (goblins ocapn captp)
+             (goblins ocapn netlayer tcp-tls))
+
+(define vat (spawn-vat))
+(define net (spawn-vat))
+
+(define (print-id prefix id)
+  (with-vat net
+    (on id
+      (lambda (sref)
+        (format #t "~a ~a\n"
+                   prefix (ocapn-id->string sref))))))
+
+(define capn
+   (with-vat net (spawn-mycapn (spawn ^tcp-tls-netlayer "localhost"))))
+
+(define (^registry bcom clients)
+  (lambda (id)
+    ($ clients (cons (<- capn 'enliven id)
+                     ($ clients)))
+    (print-id "Registered" id)))
+
+(define clients (with-vat vat (spawn ^cell '())))
+(define registry (with-vat vat (spawn ^registry clients)))
+(let ((id (with-vat net ($ capn 'register registry 'tcp-tls))))
+  (print-id "Server ID" id))
+
+(while (not (eq? (length (with-vat vat ($ clients))) 2))
+       (sleep 1))
+
+(define v '(1 2 3 4 5))
+(with-vat vat
+  (while (< (length ($ clients)) (length v))
+     (let ((c ($ clients)))
+       ($ clients (append c c)))))
+(with-vat vat
+  (on (all-of* (map <- ($ clients) v))
+      (lambda (res)
+        (format #t "~a\n" (sqrt (fold + 0 res))))))
+
+(sleep 3600)
+and the following client script client.scm:
+
+(use-modules (srfi srfi-1)
+             (goblins)
+             (goblins ocapn ids)
+             (goblins ocapn captp)
+             (goblins ocapn netlayer tcp-tls))
+
+(define vat (spawn-vat))
+(define net (spawn-vat))
+
+(define (^square bcom)
+  (lambda (x)
+    (* x x)))
+(define client
+  (with-vat vat (spawn ^square)))
+
+(define (print-id prefix id)
+  (with-vat net
+    (on id
+      (lambda (sref)
+        (format #t "~a ~a\n"
+                   prefix (ocapn-id->string sref))))))
+
+(define capn
+  (with-vat net (spawn-mycapn (spawn ^tcp-tls-netlayer "localhost"))))
+(define id
+  (with-vat net ($ capn 'register client 'tcp-tls)))
+(print-id "Client ID" id)
+
+(define server
+  (with-vat vat
+    (<- capn 'enliven (string->ocapn-id (second (command-line))))))
+
+(with-vat vat
+  (on id
+    (lambda (id)
+      (<- server id))))
+
+(sleep 3600)
+Now run again
+
+guile server.scm
+in one terminal and two copies of the client script as
+
+guile client.scm 'ocapn://…'
+in two other terminals, where the ocapn URI has been replaced by the one printed by the server, to compute the same result as before.
+
+Passing actors around
+After going through the CapTP tutorial, I was under the impression that the only way to create a handle on an actor on a different machine was by obtaining its sturdyref ID and “enlivening” this ID locally. Currently the server script prints its ID, which the client script obtains as an argument when invoked from the command line. This enables the client to enliven the server and to send its ID to the server when registering by a <- call; then the server enlivens the client. It turns out, however, that it is also possible to directly send actors instead of their IDs through <-. Printing and copy-pasting IDs is still necessary for bootstrapping, but once a spanning tree is generated in this manner between all participating scripts, it is possible to obtain a complete communication graph by just sending actors along these bootstrapped network edges.
+
+We would still like the client to somehow present itself to the server with a name, so that the server can print who connects to it and thus make debugging easier. If we drop the ocapn ID, then the client can use a pet name, a string that we pass as an additional argument on the command line. The server needs only minimal modifications:
+
+(use-modules (srfi srfi-1)
+             (goblins)
+             (goblins actor-lib cell)
+             (goblins actor-lib joiners)
+             (goblins actor-lib methods)
+             (goblins ocapn ids)
+             (goblins ocapn captp)
+             (goblins ocapn netlayer tcp-tls))
+
+(define vat (spawn-vat))
+(define net (spawn-vat))
+
+(define (print-id prefix id)
+  (with-vat net
+    (on id
+      (lambda (sref)
+        (format #t "~a ~a\n"
+                   prefix (ocapn-id->string sref))))))
+
+(define capn
+   (with-vat net (spawn-mycapn (spawn ^tcp-tls-netlayer "localhost"))))
+
+(define (^registry bcom clients)
+  (lambda (client name)
+    ($ clients (cons client ($ clients)))
+    (format #t "Registered ~a\n" name)))
+
+(define clients (with-vat vat (spawn ^cell '())))
+(define registry (with-vat vat (spawn ^registry clients)))
+(let ((id (with-vat net ($ capn 'register registry 'tcp-tls))))
+  (print-id "Server ID" id))
+
+(while (not (eq? (length (with-vat vat ($ clients))) 2))
+       (sleep 1))
+
+(define v '(1 2 3 4 5))
+(with-vat vat
+  (while (< (length ($ clients)) (length v))
+     (let ((c ($ clients)))
+       ($ clients (append c c)))))
+(with-vat vat
+  (on (all-of* (map <- ($ clients) v))
+      (lambda (res)
+        (format #t "~a\n" (sqrt (fold + 0 res))))))
+
+(sleep 3600)
+Notice the additional argument name for the ^registry actor, which is used for announcing arriving clients instead of their ocapn ID. (In this implementation we forget the name of a client immediately; it would make sense to somehow keep it, either by remembering it directly in ^square or by having the server memorise it in its client list.) Instead of enlivening an ID and adding the resulting actor to the clients list, the server adds the client actor directly. The client modifications are also straightforward and simplify the script considerably:
+
+(use-modules (srfi srfi-1)
+             (goblins)
+             (goblins ocapn ids)
+             (goblins ocapn captp)
+             (goblins ocapn netlayer tcp-tls))
+
+(define vat (spawn-vat))
+(define net (spawn-vat))
+
+(define (^square bcom)
+  (lambda (x)
+    (* x x)))
+(define client
+  (with-vat vat (spawn ^square)))
+
+(define capn
+  (with-vat net (spawn-mycapn (spawn ^tcp-tls-netlayer "localhost"))))
+(with-vat net ($ capn 'register client 'tcp-tls))
+
+(define name (second (command-line)))
+
+(define server
+  (with-vat vat
+    (<- capn 'enliven (string->ocapn-id (third (command-line))))))
+
+(with-vat vat
+  (<- server client name))
+
+(sleep 3600)
+Now start the server as usual, and two clients as
+
+guile client.scm Alice 'ocapn://…'
+guile client.scm Bob 'ocapn://…'
+to see the familiar result.
+
+Being methodical
+As it will be useful later on, let us replace the workhorse in the client, the ^square actor with only one possible action (squaring a number that is sent to it) by an implementation with potentially more actions. To do so, we use methods from Goblin actor libs, which dispatch actions using an additional symbol. So
+
+(define (^square bcom)
+  (lambda (x)
+    (* x x)))
+(define client
+  (with-vat vat (spawn ^square)))
+becomes
+
+(use-module (goblins actor-lib methods)
+…
+(define (^worker bcom)
+  (methods
+    ((square x)
+     (* x x))))
+(define client
+  (with-vat vat (spawn ^worker)))
+Inside the server, we now need to change calls of the form
+
+(<- client x)
+by adding an additional symbol to
+
+(<- client 'square x)
+This is made more complicated since they appear inside map:
+
+(map <- ($ clients) v)
+The solution is to change the <- function, which now takes three arguments (a client, a symbol and a number) into a function with only two arguments by fixing the middle argument to 'square. This can be done using SRFI-26 cut; it takes the function name and for each argument of the function either a fixed value, or the placeholder <> indicating that this argument should be kept as such. In our case, this gives
+
+(map (cut <- <> 'square <>) ($ clients) v))
+So altogether, here is our current server:
+
+(use-modules (srfi srfi-1)
+             (srfi srfi-26)
+             (goblins)
+             (goblins actor-lib cell)
+             (goblins actor-lib joiners)
+             (goblins actor-lib methods)
+             (goblins ocapn ids)
+             (goblins ocapn captp)
+             (goblins ocapn netlayer tcp-tls))
+
+(define vat (spawn-vat))
+(define net (spawn-vat))
+
+(define (print-id prefix id)
+  (with-vat net
+    (on id
+      (lambda (sref)
+        (format #t "~a ~a\n"
+                   prefix (ocapn-id->string sref))))))
+
+(define capn
+   (with-vat net (spawn-mycapn (spawn ^tcp-tls-netlayer "localhost"))))
+
+(define (^registry bcom clients)
+  (lambda (client name)
+    ($ clients (cons client ($ clients)))
+    (format #t "Registered ~a\n" name)))
+
+(define clients (with-vat vat (spawn ^cell '())))
+(define registry (with-vat vat (spawn ^registry clients)))
+(let ((id (with-vat net ($ capn 'register registry 'tcp-tls))))
+  (print-id "Server ID" id))
+
+(while (not (eq? (length (with-vat vat ($ clients))) 2))
+       (sleep 1))
+
+(define v '(1 2 3 4 5))
+(with-vat vat
+  (while (< (length ($ clients)) (length v))
+     (let ((c ($ clients)))
+       ($ clients (append c c)))))
+(with-vat vat
+  (on (all-of* (map (cut <- <> 'square <>) ($ clients) v))
+      (lambda (res)
+        (format #t "~a\n" (sqrt (fold + 0 res))))))
+
+(sleep 3600)
+and here our current client:
+
+(use-modules (srfi srfi-1)
+             (goblins)
+             (goblins actor-lib methods)
+             (goblins ocapn ids)
+             (goblins ocapn captp)
+             (goblins ocapn netlayer tcp-tls))
+
+(define vat (spawn-vat))
+(define net (spawn-vat))
+
+(define (^worker bcom)
+  (methods
+    ((square x)
+     (* x x))))
+(define client
+  (with-vat vat (spawn ^worker)))
+
+(define capn
+  (with-vat net (spawn-mycapn (spawn ^tcp-tls-netlayer "localhost"))))
+(with-vat net ($ capn 'register client 'tcp-tls))
+
+(define name (second (command-line)))
+
+(define server
+  (with-vat vat
+    (<- capn 'enliven (string->ocapn-id (third (command-line))))))
+
+(with-vat vat
+  (<- server client name))
+
+(sleep 3600)
+Everything has an end, but Goblins
+It is mildly annoying that the scripts run forever (well, for one hour…) and need to be stopped with <ctrl-c>. But it is somewhat difficult to decide when to stop: In both our scripts, the control flow reaches the end of the programs, while Goblins are still working in the background through promises. It is possible to use conditions from Guile Fibers, as inspired by the chat example in the Goblins documentation. Since Fibers are a basic ingredient of Goblins in Guile, they do not need to be installed separately. We can modify the client as follows:
+
+(use-module (fibers conditions)
+…
+(define end (make-condition))
+…
+(define (^worker bcom)
+  (methods
+    ((square x)
+     (* x x))
+    ((finish)
+     (signal-condition! end))))
+…
+(wait end)
+First we import the (fibers conditions) module. Then we create the “condition” end. We use signal-condition! to signal, well, that the condition has been fulfilled. And we replace sleeping by waiting for the condition. The signalling is encapsulated in a new method 'finish of the ^worker actor, which can be called from the server as
+
+(map (cut <- <> 'finish) ($ clients))
+after the result of the computations has been printed. This results in the following client script:
+
+(use-modules (srfi srfi-1)
+             (fibers conditions)
+             (goblins)
+             (goblins actor-lib methods)
+             (goblins ocapn ids)
+             (goblins ocapn captp)
+             (goblins ocapn netlayer tcp-tls))
+
+(define vat (spawn-vat))
+(define net (spawn-vat))
+(define end (make-condition))
+
+(define (^worker bcom)
+  (methods
+    ((square x)
+     (* x x))
+    ((finish)
+     (signal-condition! end))))
+(define client
+  (with-vat vat (spawn ^worker)))
+
+(define capn
+  (with-vat net (spawn-mycapn (spawn ^tcp-tls-netlayer "localhost"))))
+(with-vat net ($ capn 'register client 'tcp-tls))
+
+(define name (second (command-line)))
+
+(define server
+  (with-vat vat
+    (<- capn 'enliven (string->ocapn-id (third (command-line))))))
+
+(with-vat vat
+  (<- server client name))
+
+(wait end)
+With the server script modified suitably as explained above, the clients now end correctly, but the server crashes after printing the result of the computations. A hasty decision we took earlier comes back to haunt us now: Since there are more tasks than clients, we have filled the clients list with duplicates of the client actors so as to send multiple 'square messages to the same actor; but now we send multiple 'finish messages to clients that have stopped running after the first such message, resulting in a scary error on the server side that boils down to &non-continuable. To reach this correct conclusion more gracefully, we take another hasty decision and deduplicate the clients list when calling finish:
+
+(map (cut <- <> 'finish) (delete-duplicates ($ clients)))
+An an excuse for our laziness in not looking for a more elegant solution, we remark that anyway this part will be reworked later to obtain a more flexible client queue.
+
+I have not found a similar approach to also have the server end gracefully. If one places signal-condition! in the code right after sending the 'finish messages to the clients, then the clients do not end, since it turns out that the server finishes so fast that the messages are not actually sent. If one tries to wait for the promise coming out of the 'finish calls, then this also fails, since the finished clients cannot send back a function value any more. So I keep the sleep in the end and make it just a bit shorter. The current server.scm then looks like this:
+
+(use-modules (srfi srfi-1)
+             (srfi srfi-26)
+             (goblins)
+             (goblins actor-lib cell)
+             (goblins actor-lib joiners)
+             (goblins actor-lib methods)
+             (goblins ocapn ids)
+             (goblins ocapn captp)
+             (goblins ocapn netlayer tcp-tls))
+
+(define vat (spawn-vat))
+(define net (spawn-vat))
+
+(define (print-id prefix id)
+  (with-vat net
+    (on id
+      (lambda (sref)
+        (format #t "~a ~a\n"
+                   prefix (ocapn-id->string sref))))))
+
+(define capn
+   (with-vat net (spawn-mycapn (spawn ^tcp-tls-netlayer "localhost"))))
+
+(define (^registry bcom clients)
+  (lambda (client name)
+    ($ clients (cons client ($ clients)))
+    (format #t "Registered ~a\n" name)))
+
+(define clients (with-vat vat (spawn ^cell '())))
+(define registry (with-vat vat (spawn ^registry clients)))
+(let ((id (with-vat net ($ capn 'register registry 'tcp-tls))))
+  (print-id "Server ID" id))
+
+(while (not (eq? (length (with-vat vat ($ clients))) 2))
+       (sleep 1))
+
+(define v '(1 2 3 4 5))
+(with-vat vat
+  (while (< (length ($ clients)) (length v))
+     (let ((c ($ clients)))
+       ($ clients (append c c)))))
+(with-vat vat
+  (on (all-of* (map (cut <- <> 'square <>) ($ clients) v))
+      (lambda (res)
+        (format #t "~a\n" (sqrt (fold + 0 res)))
+        (map (cut <- <> 'finish) (delete-duplicates ($ clients))))))
+
+(sleep 10)
+Résistez ! euh, persistez !
+Another annoyance in the current code is that the ocapn ID of the server changes every time it is started, so that there is a lot of copy-pasting for starting the clients. This turns from a minor annoyance into a problem when different clients are supposed to be started independently all over the Internet, and the ocapn ID is the de facto credential to enable connections. Then a restart of the server script for any reason, be it a power outage or an update, requires to communicate the new ID to all participants. From the name of it, it sounds as if persistence could come to the rescue. We only need to persist the server. In a first step, we add a bit of boilerplate, taken from the documentation of persistent vats; this seems to be required when several vats with cross-references to each other are to be persisted, but cannot do any harm in general.
+
+(use-module (goblins vat)
+…
+(define persistence-vat (spawn-vat))
+(define persistence-registry
+  (with-vat persistence-vat
+    (spawn ^persistence-registry)))
+Then we follow the example on persistence in the documentation of the TCP netlayer (after correcting a small error in the documentation for version 0.15, which has been updated in the meantime) and replace
+
+(define net (spawn-vat))
+(define capn
+   (with-vat net (spawn-mycapn (spawn ^tcp-tls-netlayer "localhost"))))
+by
+
+(use-module (goblins persistence-store syrup)
+…
+(define-values (net capn)
+  (spawn-persistent-vat
+    (make-persistence-env #:extends (list captp-env tcp-tls-netlayer-env))
+    (lambda ()
+      (spawn-mycapn (spawn ^tcp-tls-netlayer "localhost")))
+    (make-syrup-store "ocapn.syrup")
+    #:persistence-registry persistence-registry))
+The spawn-persistent-vat returns a number of values; the first one is a new vat, the other ones are created by the lambda expression and correspond to actors in the vat which are to be persisted (more precisely, they form the roots of the corresponding graph). A persistence environment is passed as the first argument; it “knows” how to store the different types of actors. In this case, we store to a file named ocapn.syrup, where syrup is the Goblins internal file format.
+
+It is instructive to run the server and to inspect the ocapn ID it prints. The general format seems to be ocapn://….tcp-tls/s/…?host=localhost&port=… where the first ellipsis consists of 52 lower case letters and digits (a 256 bit hash encoded in base 32?), the second ellipsis consists of 43 lower and upper case letters, digits and symbols (a 256 bit hash encoded in base 64?), and the third ellipsis is a random port. Previously, all three would change when invoking the script. Now the sequence in the place of the first ellipsis as well as the port remain fixed.
+
+So we need to persist more, in particular the actor that is registered in the network layer. So we replace
+
+(define (^registry bcom clients) …)
+(define vat (spawn-vat))
+(define clients (with-vat vat (spawn ^cell '())))
+(define registry (with-vat vat (spawn ^registry clients)))
+by
+(define-actor (^registry bcom clients) …)
+(define-values (vat clients registry)
+  (spawn-persistent-vat
+    (make-persistence-env
+      (list (list '((registry) ^registry) ^registry))
+      #:extends cell-env)
+    (lambda ()
+      (let ((clients (spawn ^cell '())))
+        (values
+          clients
+          (spawn ^registry clients))))
+    (make-syrup-store "registry.syrup")
+    #:persistence-registry persistence-registry))
+Notice the use of define-actor instead of define, which appears to be necessary to achieve persistence. Besides the cell actor known to Goblins from the actor-lib, we also need to declare our self-defined actor of type ^registry in the persistence environment; this is obtained by the rather indigest boiler plate line creating nested lists. We use a second file, registry.syrup, to store this actor.
+
+However, this fails miserably, as the server crashes with an error message containing keywords such as vat-churn and vat-maybe-persist-changed-objs!. What happens exactly seems to depend on timing. In this case there is a 176 byte file registry.syrup containing a few strings and binary data. I suppose it stores the empty client list and the corresponding registry. After clients register, there is a “churn” (which I understand as the vat taking a break after a turn is over), and the persistence system tries to update the file. However, the client list now contains an actor coming from the client script, that is, coming over the network from potentially a different machine. Since this is not under the control of the local script, it cannot be stored.
+
+There is apparently a very simple workaround. The spawn-persistent-vat function admits on optional parameter #:persist-on; if this is changed from the default 'churn to something else, then the vat changes are not stored at each churn. In effect, the vat is only stored once in the beginning, and keeps an empty client list forever. This is actually exactly what we need, an empty client list at each restart of the server. So we end up with the following server.scm:
+
+(use-modules (srfi srfi-1)
+             (srfi srfi-26)
+             (goblins)
+             (goblins actor-lib cell)
+             (goblins actor-lib joiners)
+             (goblins actor-lib methods)
+             (goblins ocapn ids)
+             (goblins ocapn captp)
+             (goblins ocapn netlayer tcp-tls)
+             (goblins persistence-store syrup)
+             (goblins vat))
+
+(define persistence-vat (spawn-vat))
+(define persistence-registry
+  (with-vat persistence-vat
+    (spawn ^persistence-registry)))
+
+(define-values (net capn)
+  (spawn-persistent-vat
+    (make-persistence-env #:extends (list captp-env tcp-tls-netlayer-env))
+    (lambda ()
+      (spawn-mycapn (spawn ^tcp-tls-netlayer "localhost")))
+    (make-syrup-store "ocapn.syrup")
+    #:persistence-registry persistence-registry))
+
+(define (print-id prefix id)
+  (with-vat net
+    (on id
+      (lambda (sref)
+        (format #t "~a ~a\n"
+                   prefix (ocapn-id->string sref))))))
+
+(define-actor (^registry bcom clients)
+  (lambda (client name)
+    ($ clients (cons client ($ clients)))
+    (format #t "Registered ~a\n" name)))
+
+(define-values (vat clients registry)
+  (spawn-persistent-vat
+    (make-persistence-env
+      (list (list '((registry) ^registry) ^registry))
+      #:extends cell-env)
+    (lambda ()
+      (let ((clients (spawn ^cell '())))
+        (values
+          clients
+          (spawn ^registry clients))))
+    (make-syrup-store "registry.syrup")
+    #:persist-on #f
+    #:persistence-registry persistence-registry))
+
+(let ((id (with-vat net ($ capn 'register registry 'tcp-tls))))
+  (print-id "Server ID" id))
+
+(while (not (eq? (length (with-vat vat ($ clients))) 2))
+       (sleep 1))
+
+(define v '(1 2 3 4 5))
+(with-vat vat
+  (while (< (length ($ clients)) (length v))
+     (let ((c ($ clients)))
+       ($ clients (append c c)))))
+(with-vat vat
+  (on (all-of* (map (cut <- <> 'square <>) ($ clients) v))
+      (lambda (res)
+        (format #t "~a\n" (sqrt (fold + 0 res)))
+        (map (cut <- <> 'finish) (delete-duplicates ($ clients))))))
+
+(sleep 10)
+It may be prudent now to remove all .syrup files from previous failed attempts. Running a server and two client scripts computes the desired result as before. But now one notices that upon restarting the server script, it prints the exact same ocapn ID as before. So the clients can also be restarted with the exact same commands, and no more copy-pasting is needed.
+
+Last modifications on 2025-03-07 by Andreas Enge

@@ -1,0 +1,1120 @@
+\input texinfo    @c -*- texinfo -*-
+@c %**start of header
+@setfilename goblins.info
+@settitle Spritely Goblins
+@documentencoding UTF-8
+@documentlanguage en
+@syncodeindex pg cp
+@syncodeindex cp fn
+@c %**end of header
+
+@dircategory The Algorithmic Language Scheme
+@direntry
+* Goblins: (goblins).   Distributed programming environment and Spritely's core (Guile edition).
+@end direntry
+
+@finalout
+@titlepage
+@title Spritely Goblins
+@author Christine Lemmer-Webber (@email{christine@@spritely.institute})
+@author The Spritely Institute
+@end titlepage
+
+@contents
+
+@ifnottex
+@node Top
+@top Spritely Goblins
+
+This is the manual for @uref{https://spritely.institute/goblins/,
+Spritely Goblins}, a distributed object programming environment.
+Spritely Goblins is maintained by
+@uref{https://spritely.institute/, Spritely Networked Communities Institute} and is built to
+be the core layer for building broader decentralized networking technologies.
+
+Both this manual and Guile Goblins itself are released under Apache
+v2.  See @ref{License} for more information.
+@end ifnottex
+
+@menu
+* What is Goblins?::              What Goblins gives you
+* Getting started::               Installing, running, developing
+* High level view::               Conceptual overview
+* Tutorial::                      Learn to use Goblins
+* API::                           Goblins' fundamental API 
+* actor-lib::                     A standard library of sorts
+* OCapN::                         The Object Capabilities Network
+* Persistence::                   Storing and restoring object graphs
+* Debugging tools::               Figure out what's going wrong
+* Thanks::                        Contributors to this manual
+* License::                       Copying, distributing, using this text
+* Index::
+@end menu
+
+@node What is Goblins?
+@chapter What is Goblins?
+
+@uref{https://spritely.institute/goblins/, Goblins} is a distributed object programming environment.
+Features:
+
+@itemize
+@item
+@strong{Quasi-functional object system:} users hold on to references
+of objects/actors, but objects/actors are just procedures.  Rather
+than directly mutating, objects/actors can specify that they should
+``become'' a new version of themselves when they handle the next
+invocation.
+
+@item
+@strong{Fully distributed, networked, secure p2p communication:} via
+OCapN, the Object Capability Network (which features CapTP, the
+Capability Transport Protocol), you can communicate with other objects
+over a network connection.  Distributed object interactions are safe
+because of ocap security guarantees.
+
+@item
+@strong{Transactional updates:} changes happen within a transaction.
+If an unhandled exception occurs, Goblins can ``roll back'' history
+as if the message never happened, avoiding confused state changes
+throughout the system.
+
+@item
+@strong{Time travel:} you can snapshot old revisions of the system and
+interact with them.
+
+@item
+@strong{Asynchronous programming with sophisticated promise chaining:}
+asynchronous message passing with promises is supported.  Promises
+work such that there's no need to wait for promises to resolve before
+interacting@dots{} you can communicate with the future that doesn't
+even yet exist!  Sent a message to that remote car factory asking for
+a new car?  Why wait for the car to be delivered@dots{} you can send
+it a drive message at the same time, and both messages can be
+delivered across the network in a single hop.
+
+@item
+@strong{Communicating event loops:} objects across multiple event
+loops (aka ``vats'') can communicate, whether in the same OS process
+or across the network.
+
+@item
+@strong{Synchronous and asynchronous behavior, integrated but
+distinguished:} both synchronous and asynchronous programming is
+supported, but only objects in the same ``vat'' (event loop) can
+perform synchronous immediate calls.  All objects can perform
+asynchronous calls against each other.
+
+@item
+@strong{A library, not a language:} Goblins is itself a library that
+can be utilized across a wide variety of Guile programs.
+
+@item
+@strong{Object capability security:} Goblins itself is built for
+object capability (OCap) security, which is to say that you can only
+operate on the references you have access to.  Goblins embraces and
+builds upon this foundation.  (However, full OCap security will
+require utilizing the sandboxing features of Guile; demonstrations of
+this coming soon.)
+@end itemize
+
+
+Goblins' design is inspired by the @uref{http://www.erights.org/, E
+programming language} and by the observation that
+@uref{http://mumble.net/~jar/pubs/secureos/secureos.html, lambda is
+already the ultimate security mechanism} (ie, normal argument-passing
+in programs, if taken seriously/purely, is already all the security
+system needed).
+
+Spritely Networked Communities Institute was created to advance decentralized
+networking infrastructure, particularly as it pertains to social networks.
+Goblins is the heart of the system, on which other layers are built.
+At the time of writing, two key versions of Goblins are supported, the
+@uref{https://docs.racket-lang.org/goblins/index.html, Racket version
+of Goblins}, and the @uref{https://www.gnu.org/software/guile/, Guile}
+version.  This manual is for the Guile edition of Spritely Goblins.
+
+@node Getting started
+@chapter Getting started
+
+@menu
+* Installing Goblins::
+* Setup for hacking on Goblins::
+* TEMPORARY Live hacking ``fix''::
+@end menu
+
+@node Installing Goblins
+@section Installing Goblins
+
+You'll need to install @code{guile-goblins}.  Either use
+@uref{https://guix.gnu.org/, Guix} or use your standard GNU/Linux
+distro's package for @code{guile-goblins} (if it exists), or even
+better yet run Guix as your standard distro.
+
+Otherwise see the @file{HACKING} and @file{README} files with git
+checkouts / release tarballs to install.
+
+@node Setup for hacking on Goblins
+@section Setup for hacking on Goblins
+
+You're going to want/need:
+
+@itemize
+@item
+@uref{https://www.gnu.org/software/emacs/, GNU Emacs}
+@item
+@uref{https://www.nongnu.org/geiser/, Geiser}, for hacking on Guile
+@end itemize
+
+Then, at minimum, you'll want to put in your .emacs:
+
+@lisp
+(show-paren-mode 1)  ; Match parentheses
+@end lisp
+
+However you probably also want some combination of:
+
+@itemize
+@item
+@uref{https://github.com/Fuco1/smartparens, smartparens} (or @uref{https://www.emacswiki.org/emacs/ParEdit, paredit}, which is much more strict@dots{} use
+smartparens if uncertain)
+@item
+@uref{https://github.com/Fanael/rainbow-delimiters, rainbow-delimiters}
+@item
+@uref{https://www.emacswiki.org/emacs/HighlightParentheses, highlight-parentheses}
+@end itemize
+
+Now you'll have a nice hacking setup!  Be sure to read the Geiser
+manual.
+
+@node TEMPORARY Live hacking ``fix''
+@section TEMPORARY: Live hacking ``fix''
+
+The traditional way to hack Guile is to use Geiser, both evaluating
+from some @code{foo.scm} file/buffer with more ``permanent'' code via,
+for example, the @code{C-x C-e} / @code{C-x C-b} / @code{C-x C-k}
+commands to evaluate an expression, evaluate a whole buffer, or
+compile a buffer's content; and switching back and forth between that
+and the (usually called @code{*Geiser Guile REPL*})
+experimental-hacking-and-debugging REPL@.
+
+This works with Goblins, but Geiser does some things to temporarily
+redirect output/error ports when doing the file/buffer oriented
+evaluation. Unfortunately, this results in Goblins vats potentially
+breaking due to spawning a separate thread which inherits these
+temporarily redirected ports, which are then closed when the
+evaluation succeeds.  There is a long-term plan to deal with this, but
+in the meanwhile, whenever you start a Guile / Geiser hacking session,
+first execute:
+
+@lisp
+> (use-modules (goblins))
+@end lisp
+
+@dots{} from the @code{*Geiser Guile REPL*}.  Otherwise vats may
+mysteriously ``hang''.  This annoyance will be fixed soon!
+
+@node High level view
+@chapter A high level view of Goblins
+
+As a starting point, here's a sketch of a network of Goblins objects
+wired to communicate with each other:
+
+@example
+.----------------------------------.         .----------------------.
+|              Peer 1              |         |         Peer 2       |
+|              =======             |         |         ======       |
+|                                  |         |                      |
+| .--------------.  .---------.   .-.       .-.                     |
+| |    Vat A     |  |  Vat B  |   |  \______|  \_   .------------.  |
+| |  .---.       |  |   .-.   | .-|  /      |  / |  |    Vat C   |  |
+| | (Alice)----------->(Bob)----' '-'       '-'  |  |  .---.     |  |
+| |  '---'       |  |   '-'   |    |         |   '--->(Carol)    |  |
+| |      \       |  '----^----'    |         |      |  '---'     |  |
+| |       V      |       |         |         |      |            |  |
+| |      .----.  |       |        .-.       .-.     |  .------.  |  |
+| |     (Alfred) |       '-------/  |______/  |____---( Carlos ) |  |
+| |      '----'  |               \  |      \  |     |  '------'  |  |
+| |              |                '-'       '-'     '------------'  |
+| '--------------'                 |         |                      |
+|                                  |         |                      |
+'----------------------------------'         '----------------------'
+@end example
+
+In the above diagram, you see:
+
+@itemize
+@item
+Two peers (@code{Peer 1} and @code{Peer 2}, running
+separately from each other, but connected to each other over the
+network via OCapN and CapTP@.
+
+@item
+@code{Vat A} and @code{Vat B} are event loops which live on
+@code{Peer 1}, and @code{Vat C} is an event loop which lives on
+@code{Peer 2}.
+
+@item
+The individual objects (represented by circles) live in @emph{vats},
+aka event loops which contain objects.  @code{Alice} and @code{Alfred}
+live in @code{Vat A}, @code{Bob} lives in @code{Vat B}, and
+@code{Carol} and @code{Carlos} live in @code{Vat C}.  (While these
+objects have human-like names, they're just Goblins objects.)
+
+@item
+The arrows between the objects represent references these objects have
+to each other.  @code{Alice} has references to both @code{Alfred} and
+@code{Bob}.  @code{Bob} has a reference to @code{Carol}.
+@code{Carlos} has a reference to @code{Bob}.
+
+@item
+Two objects which are in the same vat are considered @emph{near} each
+other, and thus can invoke each other synchronously.  Any objects not
+in the same vat are considered @emph{far} from each other.  Any
+objects can invoke each other by asynchronous message passing,
+assuming they have a reference to each other.
+
+@item
+Not pictured: each vat has an @emph{actormap}, an underlying
+transactional heap used for object communication.  This is what
+permits transactionality and time travel.  (Actormaps can also be used
+independently of vats for certain categories of applications.)
+@end itemize
+
+Another way to think about this is via the following abstraction
+nesting dolls:
+
+@lisp
+(peer (vat (actormap @{refr: object-behavior@})))
+@end lisp
+
+@itemize
+@item
+@strong{Peers}, which are CapTP capable endpoints on a network, these are
+operating system processes, which contain@dots{}
+@item
+@strong{Vats}, which are communicating event loops, which contain@dots{}
+@item
+@strong{Actormaps}, transactional heaps, which contain@dots{}
+@item
+a mapping of @strong{References} to @strong{Object Behavior}.
+@end itemize
+
+@menu
+* The ``vat model'' of computation::
+* Cooperative multitasking within vats::
+@end menu
+
+@node The ``vat model'' of computation
+@section The ``vat model'' of computation
+
+As said, Goblins follows what is called the @emph{vat model} of
+computation.  A @emph{vat} is an event loop that manages a set of
+objects which are @emph{near} to each other (and similarly, objects
+outside of a vat are @emph{far} from each other).
+
+An event loop is simply a loop which wait on a queue of events, in
+the vat's case a queue of messages sent to objects within the vat.
+The event loop will process each message within the queue one by one
+dispatching the message to the vat.
+
+Objects which are @emph{near} can perform synchronous call-return
+invocations in a manner familiar to most sequential programming
+languages used by most programmers today.  Aside from being a somewhat
+more convenient way to program, sequential invocation is desirable
+because of cheap @emph{transactionality}, which will be expanded upon
+more later.  Goblins uses the @code{$} operator to perform synchronous
+operations.
+
+Both @emph{near} and @emph{far} objects are able to invoke each other
+asynchronously using asynchronous message passing (in the same style
+as the @emph{classic actor model}).  It does not generally matter
+whether or not a @emph{far} object is running within the same OS
+process or machine or one somewhere else on the network for most
+programming tasks; asynchronous message passing works the same either
+way.  Goblins uses the @code{<-} operator to perform asynchronous
+operations.
+
+For both programmer convenience and for networked efficiency, Goblins
+supports @emph{promise pipelining}: messages can be sent to promises
+which have not yet resolved, and will be forwarded to the target once
+the promise resolves.  The sender of the message is handed back a
+promise to which it can supply callbacks, listening for the promise to
+be fulfilled with a value or broken (usually in case of an unexpected
+error).
+
+As usual in the vat model of computation, individual message sends to
+a vat (event loop) are queued and then handled one @emph{turn} at a
+time, akin to the way board game players take turns around a table
+(which is indeed the basis for the term @emph{turn}).
+
+The message, addressing a specific object, is passed to the recipient
+object's current behavior.  This object may then invoke other
+@emph{near} objects (residing within the same vat), which may
+themselves invoke other near objects in a synchronous and sequential
+call-return style familiar to most users of most contemporary
+programming languages.  Any of these invoked objects may also change
+their state/behavior (behavior changes appear purely functional in
+Goblins; invocations of other actors do not), spawn new objects,
+invoke ordinary expressions from the host language, or send
+asynchronous messages to other objects (which are only sent if the
+@emph{turn} completes successfully).
+
+While the @emph{vat model} of computation is not new (it originates in
+the @uref{http://erights.org/, E} programming language and can trace
+some of its ideas back to E's predecessor
+@uref{http://erights.org/history/joule/, Joule}; and has since
+reappeared in systems such as @uref{https://agoric.com/, Agoric's}
+@uref{https://github.com/Agoric/agoric-sdk/tree/master/packages/SwingSet,
+SwingSet} kernel), Goblins brings some novel contributions to the
+table in terms of transactionality and time-travel debugging,
+enhancing an already powerful distributed programming paradigm.
+
+@node Cooperative multitasking within vats
+@section Cooperative multitasking within vats
+
+An individual vat is not parallel, i.e. only one object within a vat
+can be working at any given time, however vats can work with one
+another cooperatively to multitask.  This is done by asynchronously
+messages to objects on other vats, possibly waiting for their reply
+and then continuing work.
+
+In this way it's important to not block a vat (e.g. by calling sleep
+or reading/writing to a port, etc.) as that will block the event loop
+and prevent the vat doing work.  Instead we should be using Goblins'
+promise system in places where we'd block.
+
+Lets take the following example which has two actors @code{^sleeper},
+which sleeps for 10 seconds then returns @code{'awake}, and
+@code{^hello} which just returns the symbol @code{'hello}. Both actors
+are spawned within the same vat, we then use another vat to invoke
+both of them at the same time asynchronously:
+
+@lisp
+(use-modules (goblins)
+             (fibers)
+             (fibers conditions))
+
+(define-actor (^sleeper _bcom)
+  (lambda ()
+    (sleep 10)
+    'awake))
+
+(define-actor (^hello _bcom)
+  (lambda ()
+    'hello))
+
+(define a-vat (spawn-vat))
+(define sleeper
+  (with-vat a-vat
+    (spawn ^sleeper)))
+(define hello
+  (with-vat a-vat
+    (spawn ^hello)))
+
+(define b-vat (spawn-vat))
+(with-vat b-vat
+  (on (<- sleeper)
+      (lambda (response)
+        (pk 'sleeper-said response)))
+  (on (<- hello)
+      (lambda (response)
+        (pk 'hello-said response))))
+
+;; Prevent the program from exiting immediately
+(wait (make-condition))
+@end lisp
+
+When we run this, the first thing we might notice is nothing happens
+for 10 seconds, then this is printed:
+@example
+;;; (sleeper-said awake)
+
+;;; (hello-said hello)
+@end example
+
+During those initial 10 seconds, the entire @code{a-vat} is blocked
+because of the @code{(sleep 10)} call, this stops other objects like
+our @code{^hello} object from doing anything.  Instead, we should rely
+on promises.  The following code fixes the blocking issue:
+
+@lisp
+(use-modules (goblins)
+             (goblins vat)
+             (fibers))
+
+(define-actor (^sleeper _bcom)
+  (lambda ()
+    (define sleep-vow
+      (spawn-fibrous-vow (lambda () (sleep 10) #t)))
+    (on sleep-vow
+        (lambda _
+          'awake)
+        #:promise? #t)))
+
+(define-actor (^hello _bcom)
+  (lambda ()
+    'hello))
+
+(define a-vat (spawn-vat))
+(define sleeper
+  (with-vat a-vat
+    (spawn ^sleeper)))
+(define hello
+  (with-vat a-vat
+    (spawn ^hello)))
+
+(define b-vat (spawn-vat))
+(with-vat b-vat
+  (on (<- sleeper)
+      (lambda (response)
+        (pk 'sleeper-said response)))
+  (on (<- hello)
+      (lambda (response)
+        (pk 'hello-said response))))
+@end lisp
+
+This time we get:
+@example
+;;; (hello-said hello)
+
+;;; (sleeper-said awake)
+@end example
+
+The initial response from @code{^hello} occurs immediately when we run
+the code, then 10 seconds later we see @code{^sleeper}'s response.
+This is because the vat is not blocked, we're instead using
+@code{spawn-fibrous-vow}.  Vats are built on top of the
+@url{https://github.com/wingo/fibers,Fibers} concurrency library.
+This procedure calls a thunk (a procedure of zero arguments) in a new
+fiber. By spawning a new fiber, the vat's event loop fiber is not
+suspended when @code{sleep} is called. @code{spawn-fibrous-vow}
+returns a promise that will eventually resolve with the value returned
+by the thunk.
+
+This sleep example could be made even easier by using Goblins' built
+in @code{timeout} procedure provided by @ref{Timers} module.  Other
+tasks likely to block (e.g. reading or writing from ports or working
+with other blocking resources) could be written with @ref{IO} module,
+which wraps the resource in a Goblins actor that ensures the vat is
+never blocked.
+
+@node Tutorial
+@chapter Tutorial
+
+@menu
+* A simple greeter::
+* State as updating behavior::
+* Methods aren't essential, but they are useful: Methods aren't essential but they are useful.
+* Objects which contain objects::
+* Asynchronous message passing::
+* Transactions make errors survivable::
+* Promise pipelining::
+@end menu
+
+@node A simple greeter
+@section A simple greeter
+
+First, import Goblins:
+
+@lisp
+> (use-modules (goblins))
+@end lisp
+
+(@strong{NOTE}: See @ref{TEMPORARY Live hacking ``fix''} if you haven't.)
+
+Goblins actors live in special event loops called @emph{vats}.  Make a
+vat to play around with and ``enter'' it at the REPL:
+
+@lisp
+scheme> (define a-vat (spawn-vat))
+scheme> ,enter-vat a-vat
+goblins[1]>
+@end lisp
+
+Now implement a friend who will greet you:
+
+@lisp
+(define (^greeter bcom our-name)   ; constructor (outer procedure)
+  (lambda (your-name)              ; behavior    (inner procedure)
+    (format #f "Hello ~a, my name is ~a!"
+            your-name our-name)))
+@end lisp
+
+Give it a try by instantiating an instance of @code{^greeter}
+using @code{spawn} and assign her to the variable @code{alice}:
+
+@lisp
+> (define alice
+    (spawn ^greeter "Alice"))
+@end lisp
+
+The first argument to @code{spawn} is the constructor used to
+make the Goblins object, in this case @code{^greeter}.  The remaining
+arguments will be passed to the constructor, along with an implicit
+argument which can be used to change object behavior called
+@code{bcom} (pronounced ``become'').  Thus @code{"Alice"} maps to
+@code{our-name}.
+
+You can invoke @code{alice} by using @code{$} for a synchronous
+call-return operation:
+
+@lisp
+goblins[1]> (define alice
+              (spawn ^greeter "Alice"))
+goblins[1]> ($ alice "Alfred")
+; => "Hello Alfred, my name is Alice!"
+@end lisp
+
+The first argument to @code{$} is the object to be invoked, and the
+remaining arguments are passed to the ``behavior'' of the object.
+Thus @code{your-name} in @code{^greeter}'s behavior procedure is bound
+to @code{"Alfred"}.  The behavior procedure thus proceeds with
+formatting and returning the greeting string.
+
+You can exit the subrepl for @code{a-vat} with @code{,q} (the same way
+as if Guile put us in a subrepl to debug an error):
+
+@lisp
+goblins[1]> ,q
+scheme>
+@end lisp
+
+As you have probably inferred, Goblins-specific operations such as
+@code{$} and @code{spawn} happen within a context (typically a
+@emph{vat}, though there is an even lower-level structure called an
+@emph{actormap} which we will see more about later).  However, the
+subrepl entered by @code{,enter-vat} is a convenience for hacking.  You
+can run also run code within @code{a-vat} like so:
+
+@lisp
+scheme> (call-with-vat a-vat (lambda () ($ alice "Arthur")))
+; => "Hello Arthur, my name is Alice!"
+@end lisp
+
+Very few operations in Goblins spend time operating on vats directly;
+typically commands like the above only happen when bootstrapping the
+initial set of actors within a vat or when hacking, after which the
+actors within the vats do their own thing.
+
+@node State as updating behavior
+@section State as updating behavior
+
+Re-enter @code{a-vat}'s subrepl if you haven't:
+
+@lisp
+scheme> ,enter-vat a-vat
+goblins[1]>
+@end lisp
+
+Here is a simple cell which stores a value.  This cell will have two
+methods: @code{'get} retrieves the current value, and @code{'set}
+replaces the current value with a new value.
+
+@lisp
+(define* (^cell bcom #:optional [val #f])
+  (case-lambda
+    (()         ; get
+     val)
+    ((new-val)  ; set
+     (bcom (^cell bcom new-val)))))
+@end lisp
+
+@code{case-lambda} allows for dispatching depending on the number of
+arguments, so this code says that if no arguments are provided,
+the cell shares the current value; and if one argument is provided,
+the cell updates itself to become a cell storing the new value.
+
+Cells hold values. So do treasure chests. Make a treasure chest
+flavored cell.  Taking things out and putting them back in is
+easy:
+
+@lisp
+goblins[1]> (define chest (spawn ^cell "sword"))
+goblins[1]> ($ chest)
+; => "sword"
+goblins[1]> ($ chest "gold")
+goblins[1]> ($ chest)
+; => "gold"
+@end lisp
+
+Now you can see what @code{bcom} is: a capability specific to this
+object instance which allows it to change its behavior!  (For this
+reason, @code{bcom} is pronounced ``become''!)
+
+@code{bcom} also has an optional second argument which is used when we
+wish to return a value. Let's take that cell actor from before. If we
+want to return the new value after setting it, we can do that by
+specifying the optional second argument to @code{bcom}:
+
+
+@lisp
+(define* (^cell bcom #:optional [val #f])
+  (case-lambda
+    (()         ; get
+     val)
+    ((new-val)  ; set
+     (bcom (^cell bcom new-val)
+           new-val)))) ; Return new-val as the response
+@end lisp
+
+Let's do the same invocation as before. This time, when we put a value
+in the cell, we also see it returned:
+
+@lisp
+goblins[1]> (define chest (spawn ^cell "sword"))
+goblins[1]> ($ chest)
+; => "sword"
+goblins[1]> ($ chest "gold")
+; => "gold"
+@end lisp
+
+@node Methods aren't essential but they are useful
+@section Methods aren't essential, but they are useful
+
+The most common way to select different sub-behaviors isn't by the
+number of arguments.  It's much more common to have ``methods'' that
+are selected by name.  You can use the @code{methods} macro to do just
+that:
+
+@lisp
+(use-modules (goblins)
+             (goblins actor-lib methods))
+
+(define* (^mcell bcom #:optional [val #f])
+  (methods
+   ((get)
+    val)
+   ((set new-val)
+    (bcom (^mcell bcom new-val)))))
+@end lisp
+
+The use of @code{^mcell} is similar, but now you pass in a first
+argument as a symbol selecting the method, and the rest of the
+arguments are passed to the object:
+
+@lisp
+goblins[1]> (define jar
+              (spawn ^mcell "cookies"))
+goblins[1]> ($ jar 'get)
+; => "cookies"
+goblins[1]> ($ jar 'set "crumbs")
+goblins[1]> ($ jar 'get)
+; => "crumbs"
+@end lisp
+
+Methods aren't particularly magical@dots{} the @code{methods} macro
+just returns a procedure which is convenient to use for procedure
+dispatch:
+
+@lisp
+> (define foo-or-bar
+    (methods
+     ((foo)
+      'called-foo)
+     ((bar arg)
+      (list 'called-bar-with arg))))
+> (foo-or-bar 'foo)
+; => called-foo
+> (foo-or-bar 'bar "meep")
+; => (called-bar-with "meep")
+@end lisp
+
+So really, @code{methods} just makes a particularly useful kind of
+behavior procedure for you, one which takes a first argument for the
+method name, grabs the rest of the arguments, and then applies them to
+the relevant method.
+
+@node Objects which contain objects
+@section Objects which contain objects
+
+Objects can also contain and define other object references, including
+in their outer constructor procedure.
+
+Here is the definition of a ``counting greeter'' called
+@code{^cgreeter}:
+
+@lisp
+(define (^cgreeter _bcom our-name)
+  (define times-called
+    (spawn ^mcell 0))
+  (methods
+   ((get-times-called)
+    ($ times-called 'get))
+   ((greet your-name)
+    ;; increase the number of times called
+    ($ times-called 'set
+       (+ 1 ($ times-called 'get)))
+    (format #f "[~a] Hello ~a, my name is ~a!"
+            ($ times-called 'get)
+            your-name our-name))))
+@end lisp
+
+As you can see near the top, @code{times-called} is instantiated as an
+@code{^mcell} like the one we defined earlier.  The current value of
+this cell is returned by @code{get-times-called} and is updated every
+time the @code{greet} method is called:
+
+@lisp
+goblins[1]> (define julius
+              (spawn ^cgreeter "Julius"))
+goblins[1]> ($ julius 'get-times-called)
+; => 0
+goblins[1]> ($ julius 'greet "Gaius")
+; => "[1] Hello Gaius, my name is Julius!"
+goblins[1]> ($ julius 'greet "Brutus")
+; => "[2] Hello Brutus, my name is Julius!"
+goblins[1]> ($ julius 'get-times-called)
+; => 2
+@end lisp
+
+@node Asynchronous message passing
+@section Asynchronous message passing
+
+You have seen that the behavior of objects may be invoked
+synchronously with @code{$}.  However, this only works if two objects
+are both defined on the same peer and the same event loop (vat) within that
+peer.
+
+Now, recall your friend @code{alice} who you defined on vat A@.  The
+following works just fine if you're still executing within
+@code{a-vat}'s subrepl context:
+
+@lisp
+goblins[1]> ($ alice "Alfred")
+=> "Hello Alfred, my name is Alice!"
+@end lisp
+
+Exit the @code{a-vat} subrepl and make @code{b-vat} and
+enter that:
+
+@lisp
+goblins[1]> ,q
+scheme> (define b-vat
+          (spawn-vat))
+scheme> ,enter-vat b-vat
+goblins[1]>
+@end lisp
+
+Since Alice works on A, you cannot synchronously invoke her with
+@code{$} on vat B:
+
+@lisp
+goblins[1]> ($ alice "Bob")
+;; === Caught error: ===
+;;  message: #<<message> to: #<local-object> resolve-me: #f args: ()>
+;;  exception: ... "Not in the same vat:" #<local-object ^greeter>) ...
+@end lisp
+
+This is where @code{<-} comes in.  In contrast to @code{$}, @code{<-}
+can be used against objects which live anywhere, even on peers on remote
+machines across a network.  However, unlike invocation with @code{$}, you
+do not get back an immediate result; you get a promise:
+
+@lisp
+goblins[1]> (<- alice "Bob")
+; => #<local-promise>
+@end lisp
+
+This promise must be listened to.  The procedure to listen to promises
+in Goblins is called @code{on}:
+
+@lisp
+goblins[1]> (on (<- alice "Bob")
+                (lambda (got-back)
+                  (format #t "Heard back: ~a\n"
+                          got-back)))
+; Prints out, at some point in the future:
+;   "Heard back: [3] Hello Bob, my name is Alice!"
+@end lisp
+
+Not all communication goes as planned, especially in a distributed
+system.  Consider an object which breaks in the middle of execution,
+such as an instance of @code{^broken} here:
+
+@lisp
+(define (^broken _bcom)
+  (lambda ()
+    (error "Yikes, I broke!")))
+@end lisp
+
+@code{on} also supports the keyword arguments of @code{#:catch} and
+@code{#:finally}, which both accept a procedure defining handling
+errors in the former case, and code which will run regardless of
+successful resolution or failure in the latter case:
+
+@lisp
+goblins[1]> (define broken-ben
+              (spawn ^broken))
+goblins[1]> (on (<- broken-ben)
+                (lambda (what-did-ben-say)
+                  (format #t "Ben says: ~a\n" what-did-ben-say))
+                #:catch
+                (lambda (err)
+                  (format #t "Got an error: ~a\n" err))
+                #:finally
+                (lambda ()
+                  (display "Whew, it's over!\n")))
+@end lisp
+
+@node Transactions make errors survivable
+@section Transactions make errors survivable
+
+Mistakes happen, and when they do, the damage should be minimal.
+But with many moving parts, accomplishing this can be difficult.
+
+However, Goblins makes life easier.  To see how, intentionally insert
+a couple of print debugging lines (with @code{pk}, which is pronounced
+and means ``peek'') and then an error:
+
+@lisp
+(define (^borked-cgreeter _bcom our-name)
+  (define times-called
+    (spawn ^mcell 0))
+  (methods
+    ((get-times-called)
+     ($ times-called 'get))
+    ((greet your-name)
+     (pk 'before-incr ($ times-called 'get))
+     ;; increase the number of times called
+     ($ times-called 'set
+        (+ 1 ($ times-called 'get)))
+     (pk 'after-incr ($ times-called 'get))
+     (error "Yikes")
+     (format #f "[~a] Hello ~a, my name is ~a!"
+             ($ times-called 'get)
+             your-name our-name))))
+@end lisp
+
+Now spawn this friend and invoke it:
+
+@lisp
+goblins[1]> (define horatio
+              (spawn ^borked-cgreeter "Horatio"))
+goblins[1]> ($ horatio 'get-times-called)
+; => 0
+goblins[1]> ($ horatio 'greet "Hamlet")
+; pk debug: (before-incr 0)
+; pk debug: (after-incr 1)
+; ice-9/boot-9.scm:1685:16: In procedure raise-exception:
+;   Yikes
+; Entering a new prompt.  Type `,bt' for a backtrace or `,q' to continue.
+@end lisp
+
+Whoops!  Looks like something went wrong!  You can see from the
+@code{pk} debugging that the @code{times-called} cell should be
+incremented to 1.  And yet@dots{}
+
+@lisp
+goblins[1]> ($ horatio 'get-times-called)
+; => 0
+@end lisp
+
+Transactionality is covered in greater detail later, but the core idea
+here is that synchronous operations run with @code{$} are all done
+together as one transaction.  If an unhandled error occurs, any state
+changes resulting from synchronous operations within that transaction
+will simply not be committed.  This is useful because it means most
+otherwise-difficult cleanup steps are handled automatically.
+
+@node Promise pipelining
+@section Promise pipelining
+
+@quotation
+``Machines grow faster and memories grow larger.  But the speed of
+light is constant and New York is not getting any closer to Tokyo.''
+
+--- Mark S@. Miller,
+    @uref{http://www.erights.org/talks/thesis/, Robust Composition: Towards a Unified Approach to Access Control and Concurrency Control}
+
+@end quotation
+
+@cindex promise pipelining
+@dfn{Promise pipelining} provides two different features at once:
+
+@itemize
+@item
+A convenient developer interface for describing a series of
+asynchronous actions, allowing for invoking the objects which promises
+will point to before they are even resolved (sometimes before the
+objects even exist!)
+@item
+A network abstraction that eliminates many round trips
+@end itemize
+
+Consider the following car factory, which makes cars carrying the
+company name of the factory:
+
+@lisp
+;; Create a "car factory", which makes cars branded with
+;; company-name.
+(define (^car-factory bcom company-name)
+  ;; The constructor for cars we will create.
+  (define (^car bcom model color)
+    (methods                      ; methods for the ^car
+     ((drive)                    ; drive the car
+      (format #f "*Vroom vroom!*  You drive your ~a ~a ~a!"
+              color company-name model))))
+  ;; methods for the ^car-factory instance
+  (methods                        ; methods for the ^car-factory
+   ((make-car model color)       ; create a car
+    (spawn ^car model color))))
+@end lisp
+
+Here is an instance of this car factory, called @code{fork-motors} and
+spawned in @code{a-vat}:
+
+@lisp
+scheme> ,enter-vat a-vat
+goblins[1]> (define fork-motors
+              (spawn ^car-factory "Fork"))
+@end lisp
+
+Since asynchronous message passing with @code{<-} works across
+peers, it does not matter whether interactions with
+@code{fork-motors} are local or via objects communicating over the
+network.  This example treat @code{fork-motors} as living on peer A,
+and so the following interactions will happen with invocations
+originating from peer B@.
+
+Now send a message to @code{fork-motors} invoking the
+@code{'make-car} method, receiving back a promise for the car which
+will be made, which will be name @code{car-vow} (@code{-vow} being the
+conventional suffix given for promises in Goblins):
+
+@lisp
+goblins[1]> ,q
+scheme> ,enter-vat b-vat
+;; Interaction on peer B, communicating with fork-motors on A
+goblins[1]> (define car-vow
+              (<- fork-motors 'make-car "Explorist" "blue"))
+@end lisp
+
+So you have a @emph{promise} to a future car reference, but not the
+reference itself.  You would like to drive the car as soon as it rolls
+off the lot of the factory, which of course involves sending a message
+to the car.
+
+Without promise pipelining, making use of the tools already shown (and
+following the pattern most other distributed programming systems use),
+you would end up with something like:
+
+@lisp
+;; Interaction on peer B, communicating with A
+goblins[1]> (on car-vow                    ; B->A: first resolve the car-vow
+                (lambda (our-car)          ; A->B: car-vow resolved as our-car
+                  (on (<- our-car 'drive)  ; B->A: now we can message our-car
+                      (lambda (val)        ; A->B: result of that message
+                        (format #f "Heard: ~a\n" val)))))
+@end lisp
+
+With promise pipelining, you can simply message the promise of the car
+directly.  The first benefit can be observed from code compactness, in
+that you do not need to do an @code{on} of @code{car-vow} to later
+message @code{our-car}; you can simply message @code{car-vow} directly:
+
+@lisp
+;; Interaction on peer B, communicating with A
+goblins[1]> (on (<- car-vow 'drive)       ; B->A: send message to future car
+                (lambda (val)             ; A->B: result of that message
+                  (format #t "Heard: ~a\n" val)))
+@end lisp
+
+While clearly a considerable programming convenience, the other
+advantage of promise pipelining is a reduction of round-trips, whether
+between event-loop @emph{vats} or across peers on the network.
+
+This can be understood by looking at the comments to the right of the
+two above code interactions.  The message flow in the first case looks
+like:
+
+@example
+B => A => B => A => B
+@end example
+
+The message flow in the second case looks like:
+
+@example
+B => A => B
+@end example
+
+
+In other words, peer B can say to peer A: ``Make me a car, and
+as soon as that car is ready, I want to drive it!''
+
+With this in mind, the promise behind Mark Miller's quote at the
+beginning of this section is clear.@footnote{Like so many examples in
+this document, the designs of promise pipelining and the explanation
+of its value come from the E programming language, the many
+contributors to its design, and Mark S@. Miller's extraordinary work
+documenting that work and its history.  If you find this section
+interesting, see both the
+@uref{http://www.erights.org/elib/distrib/pipeline.html, Promise
+Pipelining} page from @uref{http://erights.org, erights.org} and
+sections 2.5 and 16.2 of
+@uref{http://www.erights.org/talks/thesis/markm-thesis.pdf, Mark
+Miller's dissertation}.}  If two objects are on opposite ends of the
+planet, round trips are unavoidably expensive.  Promise pipelining
+both allows programmers to make plans and allows Goblins to optimize
+carrying out those steps as bulk operations over the network.
+
+@node API
+@chapter API
+
+@include api-reference.texi
+
+@node actor-lib
+@chapter actor-lib: A standard library of sorts
+
+@include actor-lib-reference.texi
+
+@node OCapN
+@chapter OCapN: The Object Capabilities Network
+
+@include ocapn.texi
+
+@node Persistence
+@chapter Persistence
+
+@include persistence.texi
+
+@node Debugging tools
+@chapter Debugging tools
+
+@include debugger.texi
+
+@node Thanks
+@chapter Thanks
+
+The bulk of the original structure and content of this manual came
+from Christine Lemmer-Webber.  Juliana Sims reworked a substantial
+portion of the manual and heroically documented the entire API and
+actor-lib sections.  David Thompson contributed the debugging tools
+section and its lovely tutorial.  Additional text and corrections by
+Jessica Tallon, Vivianne Langdon, Alan Zimmerman, and Geoffrey
+J. Teale.
+
+Many of the ideas are borrowed from
+@uref{http://www.erights.org/talks/thesis/markm-thesis.pdf, Mark
+Miller's dissertation}, which is an excellent, if nerdy, read.
+
+Jessica Tallon, Jonathan A@. Rees, Randy Farmer, David Thompson,
+and Juliana Sims provided review and feedback.
+
+@node License
+@chapter License
+
+@emph{(C) 2019-2024 Christine Lemmer-Webber, David Thompson, Jessica
+Tallon, Juliana Sims, the Spritely Institute, and other contributors.
+See @file{AUTHORS} for details.}
+
+@emph{Both Spritely Goblins and this manual are released under the
+terms of the following license:}
+
+@include apache-2.0.texi
+
+@node Index
+@unnumbered Index
+
+@printindex fn
+
+@bye

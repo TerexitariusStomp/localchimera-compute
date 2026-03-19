@@ -1,0 +1,507 @@
+Goblins for number theory, part 2
+Parallel Goblins
+After seeing how to use the programming concepts of Goblins for a toy problem the structure of which resembles algorithms encountered in number theory, let us turn our attention to parallelising, or rather distributing the code. We keep the running example of computing the length of a vector, by giving out the tasks of squaring to the clients, and leaving the task of adding up the squares and taking the final square root to the server.
+
+Networking
+Communication in Goblins is abstracted over what is called the “Object Capabilities Network”, or “OCapN”. This somewhat frightening term simply means that a function in one script may call functions in another script running elsewhere in the network.
+
+Goblins suggests to use Tor as the underlying network. Indeed after setting up a Tor daemon as described in the Goblins documentation on my laptop, the provided example of a chat client Alice talking to a chat server Bob works directly out of the box. This should also make it relatively easy to run distributed projects over the Internet, which would fit the idea of using Goblins for popular science projects.
+
+On the other hand, institutional computing clusters tend to limit network access, sometimes even blocking outgoing HTTP requests to servers outside a whitelist. So it is unlikely that the Tor approach will work in this setting. Also it appears that Tor needs to have access to the Internet for bootstrapping: The chat script does not run purely locally after turning off Internet access. It may be possible to set up Tor in a specific way to cover such local use cases, but so far my knowledge of Tor is limited to what is described in the Goblins documentation. The documentation points to the possibility of using TCP. This requires that the participating nodes know each other's IP address or hostname, which sounds restrictive, but since I am currently using MPI over TCP, OpenMPI seems to somehow be able to determine these addresses, so it should also be a feasible option with Goblins. But for the time being let us assume that we are working with a machine that has access to the Tor network after setting up the Tor daemon as taught by the Goblins documentation; we will come back to the TCP setting below.
+
+From chatting to computing
+When saying that OCapN enables a function to call functions running somewhere else in the Tor network, one should more precisely use the term “actor” instead of “function”; and as seen before, these do not return values, but promises that resolve to the desired values. But it is conceptually helpful to think of calls to outsourced functions. So in our very simple model inspired by algorithmic number theory, we will have a client script that runs in a number of identical copies, and a server script that calls functions defined in the clients. This is in fact much easier to programme than with MPI, where the exchange of function arguments and results requires explicit MPISend and matching MPIReceive statements in the server and the client, and where furthermore complex data types need to be serialised by hand since the communication functions work only with basic, scalar types. Finally it is necessary to carefully and explicitly craft the control flows of the different programs exchanging data so that indeed the data sending statements exactly match the data receiving statements; otherwise there will be a deadlock. In the Goblins framework, this is all implicit. As an end result a distributed code does not look very different from the corresponding serial code.
+
+But we still need to make a few things explicit: First of all, the different running scripts need to connect to the network. And the functions to be called remotely need to obtain a unique identifier and advertise it, and the caller needs to know this identifier to make the call. Luckily in our setting, most of the corresponding code can be considered as copy-pastable boilerplate.
+
+Indeed the chat example can be transposed to our running example of vector lengths almost immediately.
+
+Let us start with the client, to be put into a file client.scm (compared with the chat example, the client and server roles are reversed):
+
+(use-modules (srfi srfi-1)
+             (goblins)
+             (goblins ocapn ids)
+             (goblins ocapn captp)
+             (goblins ocapn netlayer onion))
+
+(define vat (spawn-vat))
+(define net (spawn-vat))
+
+;; Define the client functionality.
+(define (^square bcom)
+  (lambda (x)
+    (* x x)))
+(define client
+  (with-vat vat (spawn ^square)))
+
+;; Helper function for printing IDs.
+(define (print-id prefix id)
+  (with-vat net
+    (on id
+      (lambda (sref)
+        (format #t "~a ~a\n"
+                   prefix (ocapn-id->string sref))))))
+
+;; Create a communicator.
+(define mycapn
+  (with-vat net (spawn-mycapn (spawn ^onion-netlayer))))
+;; Create an ID for the client and print it.
+(define id
+  (with-vat net ($ mycapn 'register client 'onion)))
+(print-id "Client ID" id)
+
+;; Wait for requests.
+(sleep 3600)
+The chat example uses two vats to separate the networking part and the actual functionality. This does not seem to be strictly necessary (the examples also work when everything is put into the same vat); but if I understand correctly, each vat corresponds to a separate, concurrent event loop, so having several vats might help to prevent deadlocks and possibly speed things up by separating communication and computation, so I follow the example and declare two vats from the start, net for everything network related and vat for everything else. The client actor in the main vat is defined as before through the function computing a square.
+
+A network connection mycapn is defined, the client actor is registered with it and its network ID id is obtained through some magic incantations. Before version 0.15.0 of Goblins, id used to be a value, but now it is a promise. So before printing it as a string by applying the ocapn-id->string function, one needs to wait for the resolution of the promise; this is moved into the helper function print-id. This string value will be used to communicate the ID manually to the server later on.
+
+Finally, we just wait for requests to compute squares (the chat example has a more sophisticated approach to waiting using Guile fibers, but sleep is enough for illustration purposes).
+
+The corresponding server follows, to be put into a file server.scm:
+
+(use-modules (srfi srfi-1)
+             (goblins)
+             (goblins actor-lib joiners)
+             (goblins actor-lib let-on)
+             (goblins ocapn ids)
+             (goblins ocapn captp)
+             (goblins ocapn netlayer onion))
+
+(define vat (spawn-vat))
+(define net (spawn-vat))
+
+(define mycapn
+   (with-vat net (spawn-mycapn (spawn ^onion-netlayer))))
+
+;; Enliven the clients.
+(define client1
+  (with-vat vat
+    (<- mycapn 'enliven (string->ocapn-id (second (command-line))))))
+(define client2
+  (with-vat vat
+    (<- mycapn 'enliven (string->ocapn-id (third (command-line))))))
+
+(define (^len bcom)
+  (lambda (v)
+    (on (all-of (<- client1 (first v))(<- client2 (second v)))
+        (lambda (res)
+          (sqrt (fold + 0 res)))
+        #:promise? #t)))
+
+(define len (with-vat vat (spawn ^len)))
+
+(with-vat vat
+  (let-on ((l ($ len '(3 4))))
+    (format #t "~a\n" l)))
+
+;; Wait for the result to be computed, otherwise nothing will be printed.
+(sleep 3600)
+The server also starts by connecting to the network, and then it registers (or “enlivens” in Goblins parlance) two clients by magic incantations. The IDs of the clients are supposed to be passed as string arguments through the commandline, which are retrieved by (second (command-line)) and (third (command-line)), respectively (as with argv in C, the first argument is the name of the program or Guile script itself, and unlike in C, counting starts with 1, not 0). So we obtain local variables client1 and client2. The remainder of the code is the same as in the serial example, except that we again combine the norm and square root computations into one function len. Finally we add a bit of waiting: This is necessary to wait for the resolution of the promises, since let-on does apparently not do so; otherwise the server script will terminate before the result of the computation is printed.
+
+To run the example, do not forget to start the Tor daemon with the command
+
+tor -f $HOME/.config/goblins/tor-config.txt
+Then open three terminals, and in two of them launch a client with the command
+
+guile client.scm
+and copy the two URIs of the form ocapn://… In the third terminal, start the server with the command
+
+guile server.scm ocapn://… ocapn://…
+where the ocapn://… command line arguments are pasted from the client output. After a few seconds the server will print the result of the computation, and all three programs can be stopped using the <ctrl>-<c> key combination.
+
+If nothing happens, chances are there is a problem with the Tor network; the file $HOME/.cache/goblins/tor/tor-log.txt may contain hints. In particular, the network needs to be 100% bootstrapped.
+
+TCP instead of onions, after all
+Even if used only locally, the need to access the Internet makes the Tor protocol relatively slow; connections can fail, and this makes debugging somewhat painful – it is not easy to distinguish a deadlock in the program code from a poorly working network. The Goblins documentation does not provide a working example for using TCP, but moving from Tor to TCP is relatively straightforward: Replace all occurrences of the substring onion in the scripts above (also in the name ^onion-netlayer and the symbol 'onion) by tcp-tls, then add the parameter "localhost" to the invocation of (spawn ^tcp-tls-netlayer). To simplify copying and pasting, here is the resulting code for client.scm:
+
+(use-modules (srfi srfi-1)
+             (goblins)
+             (goblins ocapn ids)
+             (goblins ocapn captp)
+             (goblins ocapn netlayer tcp-tls))
+
+(define vat (spawn-vat))
+(define net (spawn-vat))
+
+;; Define the client functionality.
+(define (^square bcom)
+  (lambda (x)
+    (* x x)))
+(define client
+  (with-vat vat (spawn ^square)))
+
+;; Helper function for printing IDs.
+(define (print-id prefix id)
+  (with-vat net
+    (on id
+      (lambda (sref)
+        (format #t "~a ~a\n"
+                   prefix (ocapn-id->string sref))))))
+
+;; Create a communicator.
+(define mycapn
+  (with-vat net (spawn-mycapn (spawn ^tcp-tls-netlayer "localhost"))))
+;; Create an ID for the client and print it.
+(define id
+  (with-vat net ($ mycapn 'register client 'tcp-tls)))
+(print-id "Client ID" id)
+
+;; Wait for requests.
+(sleep 3600)
+And server.scm becomes the following code:
+
+(use-modules (srfi srfi-1)
+             (goblins)
+             (goblins actor-lib joiners)
+             (goblins actor-lib let-on)
+             (goblins ocapn ids)
+             (goblins ocapn captp)
+             (goblins ocapn netlayer tcp-tls))
+
+(define vat (spawn-vat))
+(define net (spawn-vat))
+
+(define mycapn
+   (with-vat net (spawn-mycapn (spawn ^tcp-tls-netlayer "localhost"))))
+
+;; Enliven the clients.
+(define client1
+  (with-vat vat
+    (<- mycapn 'enliven (string->ocapn-id (second (command-line))))))
+(define client2
+  (with-vat vat
+    (<- mycapn 'enliven (string->ocapn-id (third (command-line))))))
+
+(define (^len bcom)
+  (lambda (v)
+    (on (all-of (<- client1 (first v))(<- client2 (second v)))
+        (lambda (res)
+          (sqrt (fold + 0 res)))
+        #:promise? #t)))
+
+(define len (with-vat vat (spawn ^len)))
+
+(with-vat vat
+  (let-on ((l ($ len '(3 4))))
+    (format #t "~a\n" l)))
+
+;; Wait for the result to be computed, otherwise nothing will be printed.
+(sleep 3600)
+When starting the client, notice that the ID changes from a URI of the form ocapn://….onion/… to one of the form ocapn://….tcp-tls/…?host=localhost&port=…, where the port is chosen at random; the two clients and the server will each get their own port. (If desired, a given port can be chosen by adding a parameter such as #:port 12345 after "localhost" in the invocation of (spawn ^tcp-tls-netlayer).) Due to the special character & in the URI, it is necessary to enclose it in a pair of apostrophes ' on the command line, so one needs to start the server with the command
+
+guile server.scm 'ocapn://…' 'ocapn://…'
+That the parameter 'onion or 'tcp-tls is required in function calls such as ($ mycapn 'register client 'tcp-tls) is a surprising design choice in Goblins: When spawning the mycapn variable, a netlayer is passed as a parameter, so in theory the variable should be able to memorise the kind of network setting it is attached to.
+
+Notice that with TCP, the result of the computation is printed immediately, whereas it takes a few seconds with Tor. So to ease debugging, we will from now on keep the TCP setting; going back to Tor is straightforward.
+
+Registering clients
+The approach in which the server needs to know all client IDs beforehand becomes unwieldy in a context where we expect hundreds or even thousands of computation cores. It would be preferable to use a two-stage process: The server publishes its ID, and the clients use it to connect to the server and to register their IDs. Then in a second step the server can send computing tasks to the clients. We will gradually transform the example code to end up with such a solution.
+
+First of all, let us replace the fixed number (in our case, 2) of client variables by a more dynamic structure, a list of clients; for this, it is enough to modify the server as follows:
+
+(define clients
+  (with-vat vat
+    (map (lambda (uri)
+           (<- mycapn 'enliven (string->ocapn-id uri)))
+         (list-tail (command-line) 1))))
+
+(define (^len bcom)
+  (lambda (v)
+    (on (all-of* (map <- clients v))
+        (lambda (res)
+          (sqrt (fold + 0 res)))
+        #:promise? #t)))
+So here the client variable becomes a list instantiated using the (in principle variable number of) IDs passed on the command line. The variant all-of* of the joiner is used to treat lists of promises. Notice that <- can be used as any other function in a map statement: (map <- clients v) matches the two clients with the two entries of the vector and returns a list of promises resolving to the squares (for the time being we still assume that the length of the client list matches the length of the vector).
+
+While we are at it, we may as well hold the list in a cell actor, as a way of introducing state by the backdoor: The cell may hold values that are exchanged throughout the program execution.
+
+(use-modules (goblins actor-lib cell))
+…
+(define clients (with-vat vat (spawn ^cell '())))
+(with-vat vat
+  ($ clients (map (lambda (uri)
+                    (<- mycapn 'enliven (string->ocapn-id uri)))
+                  (list-tail (command-line) 1))))
+
+(define (^len bcom)
+  (lambda (v)
+    (on (all-of* (map <- ($ clients) v))
+        (lambda (res)
+          (sqrt (fold + 0 res)))
+        #:promise? #t)))
+So instead of creating a list, we spawn a cell containing an empty list; then we put a different value into the cell by applying the $ function to it with the desired new value as additional argument. Later we extract the list by applying the $ function without additional argument to the cell (since we are in the same vat, we may use $ instead of <- and need not worry about promise resolution).
+
+We are now prepared to implement the registration of clients in the server. For this, we create a new type of agent which takes a URI identifying a client and which adds it to the list of clients in the cell. To see that something actually happens, we then print the added URI:
+
+(define (^register bcom)
+  (lambda (uri)
+    ($ clients (cons (<- mycapn 'enliven (string->ocapn-id uri))
+                     ($ clients)))
+    (format #t "Registered ~a\n" uri)))
+We create an instance of this agent type, add it to the network and print its ID (using the same print-id function):
+
+(define register (with-vat vat (spawn ^register)))
+(let ((id (with-vat net ($ mycapn 'register register 'tcp-tls))))
+  (print-id "Server ID" id))
+Finally we can use this new register function instead of the ad-hoc creation to add the clients from the command line to the list:
+
+(with-vat vat
+  (map (lambda (uri)
+         ($ register uri))
+       (list-tail (command-line) 1)))
+Altogether we arrive at the following code, which can replace the server.scm script while keeping the current clients:
+
+(use-modules (srfi srfi-1)
+             (goblins)
+             (goblins actor-lib cell)
+             (goblins actor-lib joiners)
+             (goblins actor-lib let-on)
+             (goblins ocapn ids)
+             (goblins ocapn captp)
+             (goblins ocapn netlayer tcp-tls))
+
+(define vat (spawn-vat))
+(define net (spawn-vat))
+
+(define (print-id prefix id)
+  (with-vat net
+    (on id
+      (lambda (sref)
+        (format #t "~a ~a\n"
+                   prefix (ocapn-id->string sref))))))
+
+(define mycapn
+   (with-vat net (spawn-mycapn (spawn ^tcp-tls-netlayer "localhost"))))
+
+;; Register clients.
+(define clients (with-vat vat (spawn ^cell '())))
+
+(define (^register bcom)
+  (lambda (uri)
+    ($ clients (cons (<- mycapn 'enliven (string->ocapn-id uri))
+                     ($ clients)))
+    (format #t "Registered ~a\n" uri)))
+
+(define register (with-vat vat (spawn ^register)))
+(let ((id (with-vat net ($ mycapn 'register register 'tcp-tls))))
+  (print-id "Server ID" id))
+
+(with-vat vat
+  (map (lambda (uri)
+         ($ register uri))
+       (list-tail (command-line) 1)))
+
+;; Use clients.
+(define (^len bcom)
+  (lambda (v)
+    (on (all-of* (map <- ($ clients) v))
+        (lambda (res)
+          (sqrt (fold + 0 res)))
+        #:promise? #t)))
+
+(define len (with-vat vat (spawn ^len)))
+
+(with-vat vat
+  (let-on ((l ($ len '(3 4))))
+    (format #t "~a\n" l)))
+
+(sleep 3600)
+Now it is time to swap the roles! We first start the server without command line arguments (as it is written, it then just has an initial empty client list):
+
+guile server.scm
+Two clients are now started using the URI printed by the server as a command line argument:
+
+guile client.scm 'ocapn://…'
+guile client.scm 'ocapn://…'
+For this to work, we need to add to the client script the necessary (and straightforward) code to enliven the server and to remotely register the client with the server. We end up with the following script client.scm:
+
+(use-modules (srfi srfi-1)
+             (goblins)
+             (goblins ocapn ids)
+             (goblins ocapn captp)
+             (goblins ocapn netlayer tcp-tls))
+
+(define vat (spawn-vat))
+(define net (spawn-vat))
+
+(define (^square bcom)
+  (lambda (x)
+    (* x x)))
+(define client
+  (with-vat vat (spawn ^square)))
+
+(define (print-id prefix id)
+  (with-vat net
+    (on id
+      (lambda (sref)
+        (format #t "~a ~a\n"
+                   prefix (ocapn-id->string sref))))))
+
+(define mycapn
+  (with-vat net (spawn-mycapn (spawn ^tcp-tls-netlayer "localhost"))))
+(define id
+  (with-vat net ($ mycapn 'register client 'tcp-tls)))
+(print-id "Client ID" id)
+
+;; Enliven server.
+(define server
+  (with-vat vat
+    (<- mycapn 'enliven (string->ocapn-id (second (command-line))))))
+
+;; Register with server.
+(with-vat vat
+  (on id
+    (lambda (id)
+      (<- server id))))
+
+(sleep 3600)
+Notice that we have slightly modified registration with the server: Since the client communicates directly with the server, there is no need to go through a string representation of the ID, which we may use directly as an argument to the function call. This assumes that in the server, registration has been modified as follows:
+
+(define (^register bcom)
+  (lambda (id)
+    ($ clients (cons (<- mycapn 'enliven id)
+                     ($ clients)))
+    (print-id "Registered" id)))
+Running the server and two copies of the client, one should now see the client IDs printed in their respective terminals, and messages in the server terminal that these clients have been registered. However, the desired length 5 is not printed. In fact, the len actor is called at the end of the server script before the clients have had a chance to register through the network (actually even before the clients are started), so the expression ($ clients) yields an empty list. Now the map function from SRFI 1 also truncates v to the empty list, all-of* resolves to the empty list, and fold returns the starting value 0, which is actually printed before the two client IDs.
+
+This can be solved by having the server wait until the desired number of clients has registered, by adding the following code:
+
+(define v '(3 4))
+(while (not (eq? (length (with-vat vat ($ clients))) (length v)))
+       (sleep 1))
+As a warning, the equivalently looking lines
+
+(define v '(3 4))
+(with-vat vat
+  (while (not (eq? (length ($ clients)) (length v)))
+         (sleep 1)))
+result in a deadlock in which none of the clients get a chance to register. It looks as if operations inside with-vat block the vat so that it does not handle incoming remote function calls.
+
+After also removing the code that registers clients specified on the command line, the server script currently looks like this:
+
+(use-modules (srfi srfi-1)
+             (goblins)
+             (goblins actor-lib cell)
+             (goblins actor-lib joiners)
+             (goblins actor-lib let-on)
+             (goblins ocapn ids)
+             (goblins ocapn captp)
+             (goblins ocapn netlayer tcp-tls))
+
+(define vat (spawn-vat))
+(define net (spawn-vat))
+
+(define (print-id prefix id)
+  (with-vat net
+    (on id
+      (lambda (sref)
+        (format #t "~a ~a\n"
+                   prefix (ocapn-id->string sref))))))
+
+(define mycapn
+   (with-vat net (spawn-mycapn (spawn ^tcp-tls-netlayer "localhost"))))
+
+;; Register clients.
+(define clients (with-vat vat (spawn ^cell '())))
+
+(define (^register bcom)
+  (lambda (id)
+    ($ clients (cons (<- mycapn 'enliven id)
+                     ($ clients)))
+    (print-id "Registered" id)))
+
+(define register (with-vat vat (spawn ^register)))
+(let ((id (with-vat net ($ mycapn 'register register 'tcp-tls))))
+  (print-id "Server ID" id))
+
+;; Use clients.
+(define (^len bcom)
+  (lambda (v)
+    (on (all-of* (map <- ($ clients) v))
+        (lambda (res)
+          (sqrt (fold + 0 res)))
+        #:promise? #t)))
+
+(define len (with-vat vat (spawn ^len)))
+
+;; Wait until enough clients have registered.
+(define v '(3 4))
+(while (not (eq? (length (with-vat vat ($ clients))) (length v)))
+       (sleep 1))
+
+(with-vat vat
+  (let-on ((l ($ len '(3 4))))
+    (format #t "~a\n" l)))
+
+(sleep 3600)
+Notice that the same code can be run for vectors with different numbers of entries; it just requires that (at least) as many clients connect as there are tasks to handle. As a small caveat, the code is correct as we did not implement an unregister procedure for the clients, so their number is monotonically increasing – otherwise it would be possible that between the arrival of the second client and the call to the len function, one of the clients has disappeared again and the clients list contains only one entry, say. Then the SRFI-1 map function we are using, which accepts lists of different lengths by truncating them all to the smallest occurring length, would only consider the first entry of v, and the incorrect length 3 would be computed.
+
+In a more realistic setting, there are more computing tasks than clients. When these take all more or less the same time, they may be evenly split between the available clients. For instance, the following server code waits for two clients to connect and then computes the length of vectors of arbitrary dimension:
+
+(use-modules (srfi srfi-1)
+             (goblins)
+             (goblins actor-lib cell)
+             (goblins actor-lib joiners)
+             (goblins actor-lib let-on)
+             (goblins ocapn ids)
+             (goblins ocapn captp)
+             (goblins ocapn netlayer tcp-tls))
+
+(define vat (spawn-vat))
+(define net (spawn-vat))
+
+(define (print-id prefix id)
+  (with-vat net
+    (on id
+      (lambda (sref)
+        (format #t "~a ~a\n"
+                   prefix (ocapn-id->string sref))))))
+
+(define mycapn
+   (with-vat net (spawn-mycapn (spawn ^tcp-tls-netlayer "localhost"))))
+
+;; Register clients.
+(define clients (with-vat vat (spawn ^cell '())))
+
+(define (^register bcom)
+  (lambda (id)
+    ($ clients (cons (<- mycapn 'enliven id)
+                     ($ clients)))
+    (print-id "Registered" id)))
+
+(define register (with-vat vat (spawn ^register)))
+(let ((id (with-vat net ($ mycapn 'register register 'tcp-tls))))
+  (print-id "Server ID" id))
+
+;; Use clients.
+(define (^len bcom)
+  (lambda (v)
+    (on (all-of* (map <- ($ clients) v))
+        (lambda (res)
+          (sqrt (fold + 0 res)))
+        #:promise? #t)))
+
+(define len (with-vat vat (spawn ^len)))
+
+(while (not (eq? (length (with-vat vat ($ clients))) 2))
+       (sleep 1))
+
+(define v '(1 2 3 4 5))
+(with-vat vat
+  (while (< (length ($ clients)) (length v))
+     (let ((c ($ clients)))
+       ($ clients (append c c)))))
+
+(with-vat vat
+  (let-on ((l ($ len v)))
+    (format #t "~a\n" l)))
+
+(sleep 3600)
+The code somewhat crudely “doubles” the client list until there are at least as many occurrences of clients (with multiplicities) as tasks; then map does the right thing.
+
+This simple situation occurs surprisingly often in number theory. For instance in ECPP, one needs to compute many modular square roots for the same modulus; trial factor many batches of numbers of the same size; do many primality tests for numbers of the same size. However, the more general case of tasks taking more or less long also occurs (in ECPP, for instance, when computing roots of class polynomials of vastly differing degrees). The relative task durations are also not necessarily easy to estimate. In a more distributed setting, one can also imagine that even homogeneous tasks are more or less quickly solved with more or less powerful participating machines. Scheduling tasks by hand is thus not realistic in general. Instead, one would need a more dynamic approach, in which the server maintains a list of tasks and a list of clients; whenever a client is idle it should be sent a new task.
+
+Given the length of this second part, this is a question I plan to pursue in another instalment.
+
+This blog post, originally published on 2024-09-04, was updated on 2025-02-25 to cover changes between Goblins 0.13.0 and 0.15.0 and to incorporate minor improvements.
