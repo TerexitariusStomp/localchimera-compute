@@ -1,0 +1,490 @@
+;;; module/xorg/gplay.scm — Goblins-based org actor system
+;;; Compatible with both Guile and Hoot/WASM
+
+(define-module (xorg gplay)
+  #:use-module (goblins)
+  #:use-module (goblins actor-lib methods)
+  #:use-module (ice-9 match)
+  #:export (^org
+            evaluate
+            make-initial-org
+            make-persistent-org
+            gplay-env
+            default-validator
+            next-version
+            make-id
+            *current-caller*
+            set-ai-handler!
+            set-ai-eval-handler!))
+
+;;; ── Helpers ─────────────────────────────────────────────────────────────────
+
+(define *id-counter* 0)
+
+(define (make-id name)
+  (set! *id-counter* (+ *id-counter* 1))
+  (string->symbol
+   (string-append (symbol->string name) "-" (number->string *id-counter*))))
+
+(define (extend-env base names vals)
+  (if (null? names)
+      base
+      (cons (cons (car names) (car vals))
+            (extend-env base (cdr names) (cdr vals)))))
+
+(define (bind-params params vals base)
+  (cond
+   ((null? params) base)
+   ((symbol? params) (cons (cons params vals) base))
+   ((pair? params)
+    (cons (cons (car params) (car vals))
+          (bind-params (cdr params) (cdr vals) base)))))
+
+(define (filter-serializable-bindings bindings)
+  "Remove procedure-valued bindings (not serializable by Goblins persistence)."
+  (let loop ((rest bindings) (acc '()))
+    (if (null? rest)
+        (reverse acc)
+        (let ((pair (car rest)))
+          (if (procedure? (cdr pair))
+              (loop (cdr rest) acc)
+              (loop (cdr rest) (cons pair acc)))))))
+
+;;; ── Version management ──────────────────────────────────────────────────────
+
+(define *version-counter* 0)
+
+(define (next-version)
+  (set! *version-counter* (+ *version-counter* 1))
+  *version-counter*)
+
+;;; ── Defaults ────────────────────────────────────────────────────────────────
+
+(define (default-validator expressor name value pre post)
+  #t)
+
+;;; ── Caller tracking (global var, Guile + Hoot compatible) ──────────────────
+
+(define *current-caller* #f)
+
+;;; ── AI integration globals ──────────────────────────────────────────────────
+
+(define *ai-handler* #f)
+(define *ai-eval-handler* #f)
+
+(define (set-ai-handler! fn) (set! *ai-handler* fn))
+(define (set-ai-eval-handler! fn) (set! *ai-eval-handler* fn))
+
+;;; ── Persistence base-bindings injection ─────────────────────────────────────
+
+(define *restore-base-bindings* (make-parameter '()))
+
+;;; ── ^org actor ──────────────────────────────────────────────────────────────
+
+(define-actor (^org bcom bindings validator-expr validator-proc
+                    history expressor-store current-expressor base-bindings)
+  #:version 1
+  #:portrait
+  (lambda ()
+    (list (filter-serializable-bindings bindings)
+          validator-expr history expressor-store current-expressor))
+  #:restore
+  (lambda (version data-bindings vexpr history estore cur-exp)
+    (let ((base (*restore-base-bindings*)))
+      (spawn ^org
+             (append data-bindings base)
+             vexpr
+             (eval vexpr (interaction-environment))
+             history estore cur-exp
+             base)))
+
+  (define (lookup name)
+    (cond ((assq name bindings) => cdr)
+          (else (error "Variable unbound:" name))))
+
+  (define (expressor-ref id)
+    (cond ((assq id expressor-store) => cdr)
+          (else #f)))
+
+  (methods
+   [(lookup name) (lookup name)]
+   [(bindings) bindings]
+   [(history) history]
+   [(current-expressor) current-expressor]
+   [(validator-expr) validator-expr]
+   [(validator-proc) validator-proc]
+   [(expressor-store) expressor-store]
+   [(base-bindings) base-bindings]
+   [(expressor? id) (and (expressor-ref id) #t)]
+   [(expressor-name id)
+    (let ((d (expressor-ref id)))
+      (and d (assq-ref d 'name)))]
+   [(expressor-key id)
+    (let ((d (expressor-ref id)))
+      (and d (assq-ref d 'public-key)))]
+
+   [(modify! name value new-history-entry)
+    (bcom (^org bcom
+                (cons (cons name value) bindings)
+                validator-expr validator-proc
+                (cons new-history-entry history)
+                expressor-store current-expressor base-bindings))]
+
+   [(enact! new-validator-expr new-validator-proc new-history-entry)
+    (bcom (^org bcom bindings
+                new-validator-expr new-validator-proc
+                (cons new-history-entry history)
+                expressor-store current-expressor base-bindings))]
+
+   [(register-expressor! id data new-history-entry)
+    (bcom (^org bcom
+                (cons (cons (assq-ref data 'name) id) bindings)
+                validator-expr validator-proc
+                (cons new-history-entry history)
+                (cons (cons id data) expressor-store)
+                current-expressor base-bindings))]
+
+   [(with-expressor exp)
+    (bcom (^org bcom bindings validator-expr validator-proc
+                history expressor-store exp base-bindings))]
+
+   [(reset-for-rollback!)
+    (bcom (^org bcom base-bindings
+                '(lambda (e n v pre post) #t)
+                default-validator
+                history expressor-store current-expressor base-bindings))]))
+
+;;; ── Factory ─────────────────────────────────────────────────────────────────
+
+(define (make-initial-org base-bindings)
+  "Spawn a fresh ^org actor. Must be called within a vat."
+  (let* ((genesis-id (make-id 'genesis))
+         (genesis-data `((id . ,genesis-id)
+                         (name . genesis)
+                         (public-key . "genesis-key")))
+         (initial-history (list (list 0 genesis-id '(quote initial) 0)))
+         (initial-store (list (cons genesis-id genesis-data))))
+    (spawn ^org
+           base-bindings
+           '(lambda (e n v pre post) #t)
+           default-validator
+           initial-history
+           initial-store
+           genesis-id
+           base-bindings)))
+
+;;; ── Persistence environment ─────────────────────────────────────────────────
+
+(define gplay-env
+  (make-persistence-env
+   `((((xorg gplay) ^org) ,^org))))
+
+(define (make-persistent-org name base-bindings store)
+  "Create a persistent org vat. Returns (values vat org)."
+  (parameterize ((*restore-base-bindings* base-bindings))
+    (spawn-persistent-vat
+     gplay-env
+     (lambda () (make-initial-org base-bindings))
+     store
+     #:name name
+     #:version 1)))
+
+;;; ── Evaluator ───────────────────────────────────────────────────────────────
+
+(define (evaluate expr org local-bindings current-expressor)
+  (match expr
+    ;; Literals
+    ((or #t #f (? number?) (? string?)) expr)
+    (('quote quoted-expr) quoted-expr)
+
+    ;; Symbol lookup: local-bindings first, then org
+    ((? symbol? name)
+     (cond ((assq name local-bindings) => cdr)
+           (else ($ org 'lookup name))))
+
+    ;; if — three-branch
+    (('if test consequent alternate)
+     (if (evaluate test org local-bindings current-expressor)
+         (evaluate consequent org local-bindings current-expressor)
+         (evaluate alternate org local-bindings current-expressor)))
+
+    ;; if — two-branch
+    (('if test consequent)
+     (if (evaluate test org local-bindings current-expressor)
+         (evaluate consequent org local-bindings current-expressor)
+         (if #f #f)))
+
+    ;; begin — evaluate in sequence, no env threading needed
+    (('begin)
+     (if #f #f))
+    (('begin body body* ...)
+     (let loop ((exprs (cons body body*)))
+       (if (null? (cdr exprs))
+           (evaluate (car exprs) org local-bindings current-expressor)
+           (begin (evaluate (car exprs) org local-bindings current-expressor)
+                  (loop (cdr exprs))))))
+
+    ;; named let — loop construct
+    (('let (? symbol? name) ((vars vals) ...) body body* ...)
+     (let* ((eval-inits (map (lambda (v) (evaluate v org local-bindings current-expressor)) vals))
+            (full-body (if (null? body*) body `(begin ,body ,@body*))))
+       (letrec ((loop-fn
+                 (lambda args
+                   (let ((loop-bindings
+                          (extend-env
+                           (cons (cons name loop-fn) local-bindings)
+                           vars args)))
+                     (evaluate full-body org loop-bindings current-expressor)))))
+         (apply loop-fn eval-inits))))
+
+    ;; let — parallel bindings
+    (('let ((names vals) ...) body body* ...)
+     (let ((eval-vals (map (lambda (v) (evaluate v org local-bindings current-expressor)) vals)))
+       (let ((let-bindings (extend-env local-bindings names eval-vals)))
+         (if (null? body*)
+             (evaluate body org let-bindings current-expressor)
+             (evaluate `(begin ,body ,@body*) org let-bindings current-expressor)))))
+
+    ;; let* — sequential bindings
+    (('let* () body body* ...)
+     (if (null? body*)
+         (evaluate body org local-bindings current-expressor)
+         (evaluate `(begin ,body ,@body*) org local-bindings current-expressor)))
+    (('let* ((name val) rest ...) body body* ...)
+     (let ((eval-val (evaluate val org local-bindings current-expressor)))
+       (evaluate `(let* ,rest ,body ,@body*)
+                 org
+                 (cons (cons name eval-val) local-bindings)
+                 current-expressor)))
+
+    ;; letrec — mutually recursive bindings via vector boxes
+    (('letrec ((names vals) ...) body body* ...)
+     (let* ((boxes (map (lambda (_) (make-vector 1 #f)) names))
+            (wrappers (map (lambda (box)
+                             (lambda args (apply (vector-ref box 0) args)))
+                           boxes))
+            (letrec-bindings (append (map cons names wrappers) local-bindings))
+            (eval-vals (map (lambda (v) (evaluate v org letrec-bindings current-expressor)) vals))
+            (full-body (if (null? body*) body `(begin ,body ,@body*))))
+       (for-each (lambda (box val) (vector-set! box 0 val)) boxes eval-vals)
+       (evaluate full-body org letrec-bindings current-expressor)))
+
+    ;; define — function shorthand
+    (('define ((? symbol? name) . params) body body* ...)
+     (evaluate `(define ,name (lambda ,params ,@(if (null? body*) (list body) (cons body body*))))
+               org local-bindings current-expressor))
+
+    ;; define — value binding (governed)
+    (('define (? symbol? name) value-expr)
+     (let* ((value (evaluate value-expr org local-bindings current-expressor))
+            (pre-bindings ($ org 'bindings))
+            (post-bindings (cons (cons name value) pre-bindings))
+            (validator ($ org 'validator-proc))
+            (version (next-version))
+            (entry (list version current-expressor `(define ,name ,value-expr)
+                         (car (car ($ org 'history))))))
+       (if (validator current-expressor name value pre-bindings post-bindings)
+           (begin ($ org 'modify! name value entry)
+                  (if #f #f))
+           (error "Validation failed:" current-expressor name value))))
+
+    ;; cond
+    (('cond)
+     (if #f #f))
+    (('cond (test body ...) rest ...)
+     (cond
+      ((eq? test 'else)
+       (if (null? body)
+           (if #f #f)
+           (evaluate `(begin ,@body) org local-bindings current-expressor)))
+      (else
+       (let ((val (evaluate test org local-bindings current-expressor)))
+         (cond
+          ((not val) (evaluate `(cond ,@rest) org local-bindings current-expressor))
+          ((null? body) val)
+          (else (evaluate `(begin ,@body) org local-bindings current-expressor)))))))
+
+    ;; case
+    (('case key-expr clauses ...)
+     (let ((key (evaluate key-expr org local-bindings current-expressor)))
+       (let case-loop ((cls clauses))
+         (match cls
+           (() (if #f #f))
+           ((('else body body* ...) . _)
+            (evaluate `(begin ,body ,@body*) org local-bindings current-expressor))
+           ((((datums ...) body body* ...) . rest)
+            (if (let datum-loop ((ds datums))
+                  (cond ((null? ds) #f)
+                        ((eqv? key (car ds)) #t)
+                        (else (datum-loop (cdr ds)))))
+                (evaluate `(begin ,body ,@body*) org local-bindings current-expressor)
+                (case-loop rest)))))))
+
+    ;; and
+    (('and) #t)
+    (('and expr) (evaluate expr org local-bindings current-expressor))
+    (('and expr rest ...)
+     (let ((val (evaluate expr org local-bindings current-expressor)))
+       (if val (evaluate `(and ,@rest) org local-bindings current-expressor)
+           #f)))
+
+    ;; or
+    (('or) #f)
+    (('or expr) (evaluate expr org local-bindings current-expressor))
+    (('or expr rest ...)
+     (let ((val (evaluate expr org local-bindings current-expressor)))
+       (if val val (evaluate `(or ,@rest) org local-bindings current-expressor))))
+
+    ;; when / unless
+    (('when test body body* ...)
+     (if (evaluate test org local-bindings current-expressor)
+         (evaluate `(begin ,body ,@body*) org local-bindings current-expressor)
+         (if #f #f)))
+    (('unless test body body* ...)
+     (if (not (evaluate test org local-bindings current-expressor))
+         (evaluate `(begin ,body ,@body*) org local-bindings current-expressor)
+         (if #f #f)))
+
+    ;; do — desugar to named let
+    (('do ((vars inits steps ...) ...) (test exit-body ...) cmd ...)
+     (let ((step-exprs (map (lambda (v s) (if (null? s) v (car s))) vars steps)))
+       (evaluate `(let loop ,(map list vars inits)
+                    (if ,test
+                        (begin ,@(if (null? exit-body) '((if #f #f)) exit-body))
+                        (begin ,@(if (null? cmd) '() cmd) (loop ,@step-exprs))))
+                 org local-bindings current-expressor)))
+
+    ;; lambda — captures local-bindings; org is shared (live lookup)
+    (('lambda params body body* ...)
+     (let ((closure-bindings local-bindings)
+           (full-body (if (null? body*) body `(begin ,body ,@body*))))
+       (lambda vals
+         (let ((caller (or *current-caller* current-expressor)))
+           (evaluate full-body org
+                     (bind-params params vals closure-bindings)
+                     caller)))))
+
+    ;; defexpressor — create expressor identity
+    (('defexpressor name-expr key-expr)
+     (let* ((eval-name (evaluate name-expr org local-bindings current-expressor))
+            (eval-key (evaluate key-expr org local-bindings current-expressor))
+            (id (make-id eval-name))
+            (data `((id . ,id) (name . ,eval-name) (public-key . ,eval-key)))
+            (pre-bindings ($ org 'bindings))
+            (post-bindings (cons (cons eval-name id) pre-bindings))
+            (validator ($ org 'validator-proc))
+            (version (next-version))
+            (entry (list version current-expressor
+                         `(defexpressor ,name-expr ,key-expr)
+                         (car (car ($ org 'history))))))
+       (if (validator current-expressor eval-name id pre-bindings post-bindings)
+           (begin ($ org 'register-expressor! id data entry)
+                  (if #f #f))
+           (error "Validation failed:" current-expressor eval-name))))
+
+    ;; as — switch expressor for body
+    (('as expressor-id-expr body-expr)
+     (let ((target (evaluate expressor-id-expr org local-bindings current-expressor)))
+       (unless ($ org 'expressor? target)
+         (error "Not an expressor:" target))
+       (evaluate body-expr org local-bindings target)))
+
+    ;; modify! — validated binding mutation
+    (('modify! name-expr value-expr)
+     (let* ((name (evaluate name-expr org local-bindings current-expressor))
+            (value (evaluate value-expr org local-bindings current-expressor))
+            (pre-bindings ($ org 'bindings))
+            (post-bindings (cons (cons name value) pre-bindings))
+            (validator ($ org 'validator-proc))
+            (version (next-version))
+            (entry (list version current-expressor
+                         `(modify! ,name-expr ,value-expr)
+                         (car (car ($ org 'history))))))
+       (if (validator current-expressor name value pre-bindings post-bindings)
+           (begin ($ org 'modify! name value entry)
+                  (if #f #f))
+           (error "Validation failed:" current-expressor name value))))
+
+    ;; enact! — install new validator
+    (('enact! validator-expr)
+     (let* ((new-proc (evaluate validator-expr org local-bindings current-expressor))
+            (version (next-version))
+            (entry (list version current-expressor
+                         `(enact! ,validator-expr)
+                         (car (car ($ org 'history))))))
+       (if (new-proc current-expressor 'validator new-proc
+                     ($ org 'bindings) ($ org 'bindings))
+           (begin ($ org 'enact! validator-expr new-proc entry)
+                  (if #f #f))
+           (error "Validator rejected by itself:" current-expressor new-proc))))
+
+    ;; rollback!
+    (('rollback! version-expr)
+     (let* ((target (evaluate version-expr org local-bindings current-expressor))
+            (history ($ org 'history))
+            (validator ($ org 'validator-proc)))
+       (unless (validator current-expressor 'rollback target
+                          ($ org 'bindings) ($ org 'bindings))
+         (error "Rollback rejected:" target))
+       ($ org 'reset-for-rollback!)
+       (for-each
+        (lambda (entry)
+          (let ((ver (car entry))
+                (exp (cadr entry))
+                (expr (caddr entry)))
+            (when (and (> ver 0) (<= ver target))
+              (evaluate expr org '() exp))))
+        (reverse history))
+       (if #f #f)))
+
+    ;; show-history
+    (('show-history)
+     (for-each (lambda (entry)
+                 (display "Version ")
+                 (display (car entry))
+                 (display " [")
+                 (display ($ org 'expressor-name (cadr entry)))
+                 (display "] : ")
+                 (display (caddr entry))
+                 (display " (parent: ")
+                 (display (cadddr entry))
+                 (display ")")
+                 (newline))
+               (reverse ($ org 'history)))
+     (if #f #f))
+
+    ;; show-expressors
+    (('show-expressors)
+     (for-each (lambda (pair)
+                 (let ((data (cdr pair)))
+                   (display (assq-ref data 'name))
+                   (display " (")
+                   (display (car pair))
+                   (display ")\n")))
+               ($ org 'expressor-store))
+     (if #f #f))
+
+    ;; ai
+    (('ai prompt-expr)
+     (let ((handler *ai-handler*))
+       (unless handler (error "AI not available. Load (xorg ai) module."))
+       (handler (evaluate prompt-expr org local-bindings current-expressor) org)))
+
+    ;; ai-eval
+    (('ai-eval prompt-expr)
+     (let ((handler *ai-eval-handler*))
+       (unless handler (error "AI not available. Load (xorg ai) module."))
+       (let ((result-expr
+              (handler (evaluate prompt-expr org local-bindings current-expressor) org)))
+         (evaluate result-expr org local-bindings current-expressor))))
+
+    ;; Application — caller tracking via save/restore (Hoot compatible)
+    ((proc-expr arg-exprs ...)
+     (let ((proc (evaluate proc-expr org local-bindings current-expressor))
+           (args (map (lambda (a) (evaluate a org local-bindings current-expressor))
+                      arg-exprs)))
+       (let ((saved *current-caller*))
+         (set! *current-caller* current-expressor)
+         (let ((result (apply proc args)))
+           (set! *current-caller* saved)
+           result))))))

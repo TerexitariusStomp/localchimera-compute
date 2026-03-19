@@ -3,8 +3,7 @@
 ;;;        or: guile xorg-repl.scm   (for the full two-tier REPL)
 
 (add-to-load-path "module")
-(use-modules (xorg play)
-             (xorg org)
+(use-modules (xorg org)
              (xorg ai))
 
 (define my-org

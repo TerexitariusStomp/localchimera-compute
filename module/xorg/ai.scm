@@ -1,9 +1,9 @@
 (define-module (xorg ai)
-  #:use-module (xorg play)
+  #:use-module (goblins)
+  #:use-module (xorg gplay)
   #:use-module (web client)
   #:use-module (web response)
   #:use-module (rnrs bytevectors)
-  #:use-module (ice-9 match)
   #:use-module (ice-9 rdelim)
   #:use-module (json)
   #:export (current-ai-api-key
@@ -26,7 +26,7 @@
 
 ;;; ── Context formatter ──────────────────────────────────────────────────────
 
-(define (format-binding pair)
+(define (format-binding pair ref)
   "Format a single (name . value) binding for the system prompt."
   (let ((name (car pair))
         (val  (cdr pair)))
@@ -34,24 +34,24 @@
      "  " (symbol->string name) " = "
      (cond
       ((procedure? val) (string-append "<procedure " (symbol->string name) ">"))
-      ((expressor? val) (string-append "<expressor "
-                                       (symbol->string (or (expressor-name val) '?))
-                                       ">"))
+      (($ ref 'expressor? val)
+       (string-append "<expressor "
+                      (symbol->string (or ($ ref 'expressor-name val) '?))
+                      ">"))
       (else (call-with-output-string (lambda (p) (write val p))))))))
 
-(define (format-history-entry entry)
+(define (format-history-entry entry ref)
   "Format a single history entry for the system prompt."
   (string-append
-   "  v" (number->string (history-version entry))
-   " [" (symbol->string (or (expressor-name (history-expressor entry)) '?))
-   "]: " (call-with-output-string (lambda (p) (write (history-expr entry) p)))))
+   "  v" (number->string (car entry))
+   " [" (symbol->string (or ($ ref 'expressor-name (cadr entry)) '?))
+   "]: " (call-with-output-string (lambda (p) (write (caddr entry) p)))))
 
-(define (format-env-context env)
-  "Build a system prompt string describing the current environment state."
-  (let* ((bindings (env-bindings env))
-         (history  (env-history env))
-         (exp-id   (env-expressor env))
-         (exp-name (or (expressor-name exp-id) '?))
+(define (format-org-context ref)
+  "Build a system prompt string describing the current org actor state."
+  (let* ((bindings ($ ref 'bindings))
+         (history  ($ ref 'history))
+         (exp-name (or ($ ref 'expressor-name ($ ref 'current-expressor)) '?))
          ;; Take last 10 history entries (most recent)
          (recent   (let ((h (reverse history)))
                      (if (> (length h) 10)
@@ -62,9 +62,9 @@
      "organizational system built as a Scheme-based REPL.\n\n"
      "Current expressor (identity): " (symbol->string exp-name) "\n\n"
      "Current bindings:\n"
-     (string-join (map format-binding bindings) "\n")
+     (string-join (map (lambda (b) (format-binding b ref)) bindings) "\n")
      "\n\nRecent history:\n"
-     (string-join (map format-history-entry recent) "\n")
+     (string-join (map (lambda (e) (format-history-entry e ref)) recent) "\n")
      "\n\nAvailable special forms: (modify! 'name value), (enact! validator-expr), "
      "(rollback! version), (defexpressor name key), (as expressor-id expr), "
      "(show-history), (show-expressors), (lambda (args ...) body), "
@@ -105,9 +105,9 @@
 
 ;;; ── Query functions ────────────────────────────────────────────────────────
 
-(define (ai-query prompt env)
-  "Send PROMPT to OpenRouter with environment context. Returns a string."
-  (let ((system-prompt (format-env-context env)))
+(define (ai-query prompt ref)
+  "Send PROMPT to OpenRouter with org context. Returns a string."
+  (let ((system-prompt (format-org-context ref)))
     (openrouter-chat system-prompt prompt)))
 
 (define (strip-code-fences str)
@@ -128,12 +128,12 @@
                       stripped)))
     (string-trim-both stripped)))
 
-(define (ai-query-and-eval prompt env)
+(define (ai-query-and-eval prompt ref)
   "Send PROMPT to OpenRouter, instructing the AI to return a single S-expression.
 Strips markdown fences, parses with read, and returns the parsed expression."
   (let* ((system-prompt
           (string-append
-           (format-env-context env)
+           (format-org-context ref)
            "\n\nIMPORTANT: You must respond with ONLY a single valid Scheme "
            "S-expression, nothing else. No explanation, no markdown, no prose. "
            "Just the raw expression. For example: (modify! 'greeting \"hello\")"))
@@ -142,7 +142,7 @@ Strips markdown fences, parses with read, and returns the parsed expression."
     (call-with-input-string cleaned read)))
 
 ;;; ── Handler registration ───────────────────────────────────────────────────
-;;; Set the play.scm parameters so (ai ...) and (ai-eval ...) work in evaluate.
+;;; Set the gplay.scm handlers so (ai ...) and (ai-eval ...) work in evaluate.
 
 (set-ai-handler! ai-query)
 (set-ai-eval-handler! ai-query-and-eval)

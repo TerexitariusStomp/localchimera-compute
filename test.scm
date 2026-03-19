@@ -338,28 +338,19 @@
 
 (display "\n── 16. org isolation ──\n")
 
-(use-modules (xorg org))
-
-(let ((org-a (make-org "alpha"))
-      (org-b (make-org "beta")))
-  ;; Modify org-a's env directly via evaluate
-  (let ((env-a (evaluate '(modify! 'x 100) (org-env org-a))))
-    (update-org-env! org-a env-a))
-  ;; Modify org-b's env differently
-  (let ((env-b (evaluate '(modify! 'x 200) (org-env org-b))))
-    (update-org-env! org-b env-b))
+(let ((env-a (evaluate '(modify! 'x 100) base-env))
+      (env-b (evaluate '(modify! 'x 200) base-env)))
   ;; They should be independent
   (check "org-a has x=100"
-         (evaluate 'x (org-env org-a)) 100)
+         (evaluate 'x env-a) 100)
   (check "org-b has x=200"
-         (evaluate 'x (org-env org-b)) 200)
-  ;; org-a doesn't have org-b's bindings leak
-  (let ((env-b2 (evaluate '(modify! 'only-in-b 42) (org-env org-b))))
-    (update-org-env! org-b env-b2))
-  (check "only-in-b exists in org-b"
-         (evaluate 'only-in-b (org-env org-b)) 42)
-  (check-error "only-in-b does not exist in org-a"
-    (evaluate 'only-in-b (org-env org-a))))
+         (evaluate 'x env-b) 200)
+  ;; env-a doesn't have env-b's bindings leak
+  (let ((env-b2 (evaluate '(modify! 'only-in-b 42) env-b)))
+    (check "only-in-b exists in org-b"
+           (evaluate 'only-in-b env-b2) 42)
+    (check-error "only-in-b does not exist in org-a"
+      (evaluate 'only-in-b env-a))))
 
 ;;; ── 17. Named let ──────────────────────────────────────────────────────────
 

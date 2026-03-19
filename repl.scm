@@ -4,7 +4,8 @@
              ((hoot error-handling) #:select (format-exception))
              (ice-9 match)
              (repl-environment)
-             (xorg play)
+             (goblins)
+             (xorg gplay)
              (srfi srfi-11))
 
 (define-foreign document-body
@@ -355,8 +356,7 @@
      (string->symbol . ,string->symbol) (symbol->string . ,symbol->string)
      (string->number . ,string->number) (number->string . ,number->string))
    `((display . ,display) (newline . ,newline) (write . ,%write)
-     (void . ,(lambda () (if #f #f)))
-     (env-history . ,env-history) (env-bindings . ,env-bindings))
+     (void . ,(lambda () (if #f #f))))
    `((set-api-key! . ,web-set-api-key!)
      (set-ai-model! . ,web-set-ai-model!))))
 
@@ -394,36 +394,37 @@
 
 ;;; ── AI context formatter ────────────────────────────────────────────────
 
-(define (format-binding pair)
+(define (format-binding pair ref)
   (let ((name (car pair)) (val (cdr pair)))
     (string-append "  " (symbol->string name) " = "
       (cond
         ((procedure? val) (string-append "<procedure " (symbol->string name) ">"))
-        ((expressor? val) (string-append "<expressor " (symbol->string (or (expressor-name val) '?)) ">"))
+        (($ ref 'expressor? val)
+         (string-append "<expressor " (symbol->string (or ($ ref 'expressor-name val) '?)) ">"))
         (else (call-with-output-string (lambda (p) (%write val p))))))))
 
-(define (format-history-entry entry)
+(define (format-history-entry entry ref)
   (string-append
-    "  v" (number->string (history-version entry))
-    " [" (symbol->string (or (expressor-name (history-expressor entry)) '?))
-    "]: " (call-with-output-string (lambda (p) (%write (history-expr entry) p)))))
+    "  v" (number->string (car entry))
+    " [" (symbol->string (or ($ ref 'expressor-name (cadr entry)) '?))
+    "]: " (call-with-output-string (lambda (p) (%write (caddr entry) p)))))
 
 (define (%join-lines lst)
   (if (null? lst) ""
       (let lp ((rest (cdr lst)) (acc (car lst)))
         (if (null? rest) acc (lp (cdr rest) (string-append acc "\n" (car rest)))))))
 
-(define (format-env-context env)
-  (let* ((bindings (env-bindings env))
-         (history (env-history env))
-         (exp-name (or (expressor-name (env-expressor env)) '?))
+(define (format-org-context ref)
+  (let* ((bindings ($ ref 'bindings))
+         (history ($ ref 'history))
+         (exp-name (or ($ ref 'expressor-name ($ ref 'current-expressor)) '?))
          (recent (let ((h (reverse history)))
                    (if (> (length h) 10) (list-tail h (- (length h) 10)) h))))
     (string-append
       "You are an AI inside xorg, a Scheme-based system for programmable organizations.\n\n"
       "Current expressor: " (symbol->string exp-name) "\n\n"
-      "Bindings:\n" (%join-lines (map format-binding bindings))
-      "\n\nRecent history:\n" (%join-lines (map format-history-entry recent))
+      "Bindings:\n" (%join-lines (map (lambda (b) (format-binding b ref)) bindings))
+      "\n\nRecent history:\n" (%join-lines (map (lambda (e) (format-history-entry e ref)) recent))
       "\n\nSpecial forms: (modify! 'name value), (enact! validator), "
       "(rollback! version), (defexpressor name key), (as id expr), "
       "(show-history), (show-expressors), (lambda (args) body), "
@@ -440,13 +441,13 @@
          (s (if (%ends-with? s "```") (substring s 0 (- (string-length s) 3)) s)))
     (%trim s)))
 
-(define (web-ai-query prompt env)
+(define (web-ai-query prompt org)
   (unless *ai-api-key* (error "No API key. Use (set-api-key! \"sk-or-...\")"))
-  (ai-chat (format-env-context env) prompt *ai-api-key* *ai-model*))
+  (ai-chat (format-org-context org) prompt *ai-api-key* *ai-model*))
 
-(define (web-ai-query-and-eval prompt env)
+(define (web-ai-query-and-eval prompt org)
   (unless *ai-api-key* (error "No API key. Use (set-api-key! \"sk-or-...\")"))
-  (let* ((ctx (string-append (format-env-context env)
+  (let* ((ctx (string-append (format-org-context org)
                "\n\nIMPORTANT: Respond with ONLY a single valid Scheme "
                "S-expression. No explanation, no markdown. "
                "Example: (modify! 'greeting \"hello\")"))
@@ -463,20 +464,22 @@
 (define *orgs* '())
 (define *mode* 'outer)
 (define *current-org-name* #f)
-(define *env* (make-initial-env base-bindings))
+(define *vat* #f)
+(define *org* #f)
 
 (define *sidebar-collapsed* #f)
 (define *sidebar-selected-org* #f)   ;; string or #f
 (define *expressor-filter* #f)       ;; symbol or #f — filter history by expressor name
 
 (define (org-entry-name e) (car e))
-(define (org-entry-env e) (cadr e))
-(define (org-entry-log e) (cddr e))
+(define (org-entry-vat e) (cadr e))
+(define (org-entry-ref e) (caddr e))
+(define (org-entry-log e) (cdddr e))
 
 (define (org-save!)
   (when *current-org-name*
     (set! *orgs*
-      (cons (cons *current-org-name* (cons *env* *log*))
+      (cons (cons *current-org-name* (cons *vat* (cons *org* *log*)))
             (let loop ((lst *orgs*))
               (cond ((null? lst) '())
                     ((string=? (caar lst) *current-org-name*) (loop (cdr lst)))
@@ -550,6 +553,8 @@
                  "\n"))))
 
 (define *outer-log* *log*)
+(define *outer-vat* #f)
+(define *outer-org* #f)
 
 (define (log-append! . lines)
   (set! *log* (append *log* lines)))
@@ -557,7 +562,10 @@
 (define (current-prompt)
   (if (eq? *mode* 'outer)
       "meta-org> "
-      (string-append "play[" (symbol->string (or (expressor-name (env-expressor *env*)) '?)) "]> ")))
+      (string-append "play["
+        (symbol->string
+          (or (with-vat *vat* ($ *org* 'expressor-name ($ *org* 'current-expressor))) '?))
+        "]> ")))
 
 ;;; ── History ring ──────────────────────────────────────────────────────────
 
@@ -615,26 +623,30 @@
                               ,(get-output-string err-port)))))
       (lambda ()
         (parameterize ((current-output-port output))
-          (let ((result (evaluate exp *env*)))
-            (let ((out-str (get-output-string output)))
-              (unless (string=? out-str "")
-                (log-append! `(span (@ (class "output-text")) ,out-str))))
-            (if (env? result)
-                (begin (set! *env* result) (org-save!))
+          (with-vat *vat*
+            (let ((result (evaluate exp *org* '() ($ *org* 'current-expressor))))
+              (let ((out-str (get-output-string output)))
+                (unless (string=? out-str "")
+                  (log-append! `(span (@ (class "output-text")) ,out-str))))
+              (unless (eq? result (if #f #f))
                 (let ((result-port (open-output-string)))
                   (write result result-port)
                   (log-append! `(span (@ (class "result-text"))
-                                      ,(string-append "=> " (get-output-string result-port) "\n"))))))))
+                                      ,(string-append "=> " (get-output-string result-port) "\n")))))))))
       #:unwind? #t)))
 
 (define (do-enter! name)
   (let ((org (org-lookup name)))
     (when org
       (org-save!)
-      (when (eq? *mode* 'outer) (set! *outer-log* *log*))
+      (when (eq? *mode* 'outer)
+        (set! *outer-log* *log*)
+        (set! *outer-vat* *vat*)
+        (set! *outer-org* *org*))
       (set! *mode* 'inner)
       (set! *current-org-name* name)
-      (set! *env* (org-entry-env org))
+      (set! *vat* (org-entry-vat org))
+      (set! *org* (org-entry-ref org))
       (set! *log* (org-entry-log org))
       (set! *sidebar-selected-org* name)
       (log-append! `(span (@ (class "info-text"))
@@ -644,6 +656,8 @@
   (when (eq? *mode* 'inner)
     (org-save!)
     (set! *mode* 'outer)
+    (set! *vat* *outer-vat*)
+    (set! *org* *outer-org*)
     (set! *log* *outer-log*)
     (let ((name *current-org-name*))
       (set! *current-org-name* #f)
@@ -656,8 +670,9 @@
      (if (org-lookup name)
          (log-append! `(span (@ (class "error-text"))
                              ,(string-append "Org already exists: " name "\n")))
-         (begin
-           (set! *orgs* (cons (cons name (cons (make-initial-env base-bindings) '())) *orgs*))
+         (let* ((vat (spawn-vat))
+                (ref (with-vat vat (make-initial-org base-bindings))))
+           (set! *orgs* (cons (cons name (cons vat (cons ref '()))) *orgs*))
            (set! *sidebar-selected-org* name)
            (log-append! `(span (@ (class "result-text"))
                                ,(string-append "Created org: " name "\n")))))
@@ -822,21 +837,22 @@
 
 ;;; ── Inspector helpers ───────────────────────────────────────────────────
 
-(define (unique-expressors history)
+(define (unique-expressors history ref)
   (let loop ((entries history) (seen '()) (result '()))
     (if (null? entries)
         (reverse result)
-        (let* ((exp (history-expressor (car entries)))
-               (name (expressor-name exp)))
+        (let* ((exp-id (cadr (car entries)))
+               (name ($ ref 'expressor-name exp-id)))
           (if (memq name seen)
               (loop (cdr entries) seen result)
-              (loop (cdr entries) (cons name seen) (cons exp result)))))))
+              (loop (cdr entries) (cons name seen) (cons exp-id result)))))))
 
-(define (format-value val name)
+(define (format-value val name ref)
   (cond
     ((procedure? val) (string-append "<proc " (symbol->string name) ">"))
-    ((expressor? val) (string-append "<expressor "
-                        (symbol->string (or (expressor-name val) '?)) ">"))
+    (($ ref 'expressor? val)
+     (string-append "<expressor "
+                    (symbol->string (or ($ ref 'expressor-name val) '?)) ">"))
     (else (call-with-output-string (lambda (p) (%write val p))))))
 
 (define (insert-into-repl! text)
@@ -846,7 +862,7 @@
 
 ;;; ── Inspector section renderers ─────────────────────────────────────────
 
-(define (render-bindings-section bindings)
+(define (render-bindings-section bindings ref)
   `(div (@ (class "section"))
         (div (@ (class "section-header")) "bindings")
         ,@(if (null? bindings)
@@ -858,13 +874,13 @@
                                  ,(symbol->string (car pair)))
                            " "
                            (span (@ (class "value"))
-                                 ,(format-value (cdr pair) (car pair)))))
+                                 ,(format-value (cdr pair) (car pair) ref))))
                    bindings))))
 
-(define (render-history-section history)
+(define (render-history-section history ref)
   (let ((filtered (if *expressor-filter*
                       (%filter (lambda (entry)
-                                 (eq? (expressor-name (history-expressor entry))
+                                 (eq? ($ ref 'expressor-name (cadr entry))
                                       *expressor-filter*))
                                history)
                       history)))
@@ -886,28 +902,27 @@
                                       (click ,(lambda (e)
                                                 (insert-into-repl!
                                                   (string-append "(rollback! "
-                                                    (number->string (history-version entry)) ")")))))
+                                                    (number->string (car entry)) ")")))))
                                    ,(string-append "v"
-                                      (number->string (history-version entry))))
+                                      (number->string (car entry))))
                              " "
                              (span (@ (class "expressor-id"))
                                    ,(symbol->string
-                                      (or (expressor-name
-                                            (history-expressor entry)) '?)))
+                                      (or ($ ref 'expressor-name (cadr entry)) '?)))
                              " "
                              (span (@ (class "value"))
                                    ,(call-with-output-string
                                       (lambda (p)
-                                        (%write (history-expr entry) p))))))
+                                        (%write (caddr entry) p))))))
                      filtered)))))
 
-(define (render-expressors-section expressors)
+(define (render-expressors-section expressors ref)
   `(div (@ (class "section"))
         (div (@ (class "section-header")) "expressors")
         ,@(if (null? expressors)
               (list `(div (@ (class "inspector-row")) "  (none)"))
-              (map (lambda (exp)
-                     (let ((name (or (expressor-name exp) '?)))
+              (map (lambda (exp-id)
+                     (let ((name (or ($ ref 'expressor-name exp-id) '?)))
                        `(div (@ (class ,(string-append "inspector-row"
                                            (if (and *expressor-filter*
                                                     (eq? name *expressor-filter*))
@@ -922,16 +937,15 @@
                                    ,(symbol->string name)))))
                    expressors))))
 
-(define (render-validator-section env)
-  (let* ((history (env-history env))
-         (enact-entry (let loop ((entries history))
+(define (render-validator-section history)
+  (let* ((enact-entry (let loop ((entries history))
                         (cond ((null? entries) #f)
-                              ((and (pair? (history-expr (car entries)))
-                                    (eq? 'enact! (car (history-expr (car entries)))))
+                              ((and (pair? (caddr (car entries)))
+                                    (eq? 'enact! (car (caddr (car entries)))))
                                (car entries))
                               (else (loop (cdr entries))))))
          (display-text (if enact-entry
-                          (call-with-output-string (lambda (p) (%write (history-expr enact-entry) p)))
+                          (call-with-output-string (lambda (p) (%write (caddr enact-entry) p)))
                           "<default>")))
     `(div (@ (class "section"))
           (div (@ (class "section-header")) "validator")
@@ -961,36 +975,38 @@
               (map render-org-item *orgs*))))
 
 (define (render-org-detail name)
-  (let* ((org (org-lookup name))
-         (env (if org (org-entry-env org)
-                  (if (and *current-org-name* (string=? name *current-org-name*))
-                      *env* #f))))
-    (if (not env) ""
-        (let* ((active? (and *current-org-name* (string=? name *current-org-name*)))
-               (bindings (env-bindings env))
-               (history (env-history env))
-               (expressors (unique-expressors history)))
-          `(div (@ (class "org-detail"))
-                (div (@ (class "detail-header"))
-                     (span (@ (class "org-name")) ,name)
-                     (span (@ (class "org-action")
-                               (click ,(lambda (e) (sidebar-enter-org! name e))))
-                           ,(if active? "exit" "enter"))
-                     (span (@ (class "org-action org-delete")
-                               (click ,(lambda (e)
-                                         (when (and *current-org-name* (string=? name *current-org-name*))
-                                           (do-exit!))
-                                         (set! *orgs* (let loop ((lst *orgs*))
-                                           (cond ((null? lst) '())
-                                                 ((string=? (caar lst) name) (loop (cdr lst)))
-                                                 (else (cons (car lst) (loop (cdr lst)))))))
-                                         (set! *sidebar-selected-org* #f)
-                                         (refresh!))))
-                           "delete"))
-                ,(render-bindings-section bindings)
-                ,(render-validator-section env)
-                ,(render-history-section history)
-                ,(render-expressors-section expressors))))))
+  (let* ((org (or (org-lookup name)
+                  (and *current-org-name* (string=? name *current-org-name*)
+                       (cons name (cons *vat* (cons *org* '()))))))
+         (vat (and org (org-entry-vat org)))
+         (ref (and org (org-entry-ref org))))
+    (if (not ref) ""
+        (with-vat vat
+          (let* ((active? (and *current-org-name* (string=? name *current-org-name*)))
+                 (bindings ($ ref 'bindings))
+                 (history ($ ref 'history))
+                 (expressors (unique-expressors history ref)))
+            `(div (@ (class "org-detail"))
+                  (div (@ (class "detail-header"))
+                       (span (@ (class "org-name")) ,name)
+                       (span (@ (class "org-action")
+                                 (click ,(lambda (e) (sidebar-enter-org! name e))))
+                             ,(if active? "exit" "enter"))
+                       (span (@ (class "org-action org-delete")
+                                 (click ,(lambda (e)
+                                           (when (and *current-org-name* (string=? name *current-org-name*))
+                                             (do-exit!))
+                                           (set! *orgs* (let loop ((lst *orgs*))
+                                             (cond ((null? lst) '())
+                                                   ((string=? (caar lst) name) (loop (cdr lst)))
+                                                   (else (cons (car lst) (loop (cdr lst)))))))
+                                           (set! *sidebar-selected-org* #f)
+                                           (refresh!))))
+                             "delete"))
+                  ,(render-bindings-section bindings ref)
+                  ,(render-validator-section history)
+                  ,(render-history-section history ref)
+                  ,(render-expressors-section expressors ref)))))))
 
 (define (render-sidebar)
   (if *sidebar-collapsed*

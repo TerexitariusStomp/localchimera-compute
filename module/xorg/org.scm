@@ -1,8 +1,9 @@
-;;; org.scm — Org management and inner REPL for xorg
+;;; org.scm — Org management and inner REPL for xorg (Goblins actor-based)
 ;;; Provides org record type, base bindings, and the two-tier REPL inner loop.
 
 (define-module (xorg org)
-  #:use-module (xorg play)
+  #:use-module (goblins)
+  #:use-module (xorg gplay)
   #:use-module (ice-9 match)
   #:use-module (ice-9 pretty-print)
   #:use-module (srfi srfi-1)
@@ -10,8 +11,8 @@
   #:export (make-org
             org?
             org-name
-            org-env
-            update-org-env!
+            org-vat
+            org-ref
             org-bindings
             org-history
             enter!
@@ -21,10 +22,11 @@
 ;;; ── Org record type ────────────────────────────────────────────────────────
 
 (define-record-type <org>
-  (%make-org name env)
+  (%make-org name vat ref)
   org?
   (name org-name)
-  (env org-env set-org-env!))
+  (vat  org-vat)
+  (ref  org-ref))
 
 ;;; ── Org registry ───────────────────────────────────────────────────────────
 
@@ -125,28 +127,24 @@
     (write          . ,write)
     (format         . ,format)
     ;; Convenience
-    (void           . ,(lambda () (if #f #f)))
-    ;; Environment introspection
-    (env-history    . ,env-history)
-    (env-bindings   . ,env-bindings)))
+    (void           . ,(lambda () (if #f #f)))))
 
 ;;; ── Org creation ───────────────────────────────────────────────────────────
 
 (define* (make-org name #:optional (bindings default-base-bindings))
-  (let ((org (%make-org name (make-initial-env bindings))))
-    (register-org! org)
-    org))
+  (let* ((vat (spawn-vat))
+         (ref (with-vat vat (make-initial-org bindings))))
+    (let ((org (%make-org name vat ref)))
+      (register-org! org)
+      org)))
 
 ;;; ── Org accessors ──────────────────────────────────────────────────────────
 
-(define (update-org-env! org env)
-  (set-org-env! org env))
-
 (define (org-bindings org)
-  (env-bindings (org-env org)))
+  (with-vat (org-vat org) ($ (org-ref org) 'bindings)))
 
 (define (org-history org)
-  (env-history (org-env org)))
+  (with-vat (org-vat org) ($ (org-ref org) 'history)))
 
 ;;; ── Last-result tracking ───────────────────────────────────────────────────
 
@@ -161,11 +159,11 @@
 
 ;;; ── Inner REPL helpers ─────────────────────────────────────────────────────
 
-(define (current-identity env)
-  (or (expressor-name (env-expressor env)) '?))
+(define (current-identity ref)
+  (or ($ ref 'expressor-name ($ ref 'current-expressor)) '?))
 
-(define (inner-prompt env)
-  (string-append "play[" (symbol->string (current-identity env)) "]> "))
+(define (inner-prompt ref)
+  (string-append "play[" (symbol->string (current-identity ref)) "]> "))
 
 (define (comma-command? raw)
   "If RAW is a comma-command (read as unquote), return the command symbol."
@@ -173,22 +171,22 @@
     (('unquote (? symbol? cmd)) cmd)
     (_ #f)))
 
-(define (handle-comma-command cmd env)
+(define (handle-comma-command cmd ref)
   "Handle ,command in the inner REPL. CMD is a symbol. Returns #t if handled."
   (case cmd
     ((env)
-     (pretty-print (env-bindings env))
+     (pretty-print ($ ref 'bindings))
      #t)
     ((history)
      (for-each (lambda (entry)
                  (format #t "  v~a [~a]: ~s\n"
-                         (history-version entry)
-                         (or (expressor-name (history-expressor entry)) '?)
-                         (history-expr entry)))
-               (reverse (env-history env)))
+                         (car entry)
+                         (or ($ ref 'expressor-name (cadr entry)) '?)
+                         (caddr entry)))
+               (reverse ($ ref 'history)))
      #t)
     ((expressors)
-     (evaluate '(show-expressors) env)
+     (evaluate '(show-expressors) ref '() ($ ref 'current-expressor))
      #t)
     ((help)
      (display "  ,env         -- show current bindings\n")
@@ -209,51 +207,48 @@
 
 (define (enter! org)
   "Drop into the inner REPL for ORG. Returns when the user types (exit!) or Ctrl-D."
-  (let ((name (org-name org)))
+  (let ((name (org-name org))
+        (vat (org-vat org))
+        (ref (org-ref org)))
     (format #t "Entering org '~a'. Type (exit!) to return.\n\n" name)
-    (let loop ((env (org-env org)))
-      (catch #t
-        (lambda ()
-          (display (inner-prompt env))
-          (force-output)
-          (let ((raw (read)))
-            (cond
-             ;; EOF (Ctrl-D)
-             ((eof-object? raw)
-              (newline)
-              (set-org-env! org env)
-              (format #t "Leaving org '~a'.\n" name))
+    (with-vat vat
+      (let loop ()
+        (catch #t
+          (lambda ()
+            (display (inner-prompt ref))
+            (force-output)
+            (let ((raw (read)))
+              (cond
+               ;; EOF (Ctrl-D)
+               ((eof-object? raw)
+                (newline)
+                (format #t "Leaving org '~a'.\n" name))
 
-             ;; (exit!) — return to outer REPL
-             ((equal? raw '(exit!))
-              (set-org-env! org env)
-              (format #t "Leaving org '~a'.\n" name))
+               ;; (exit!) — return to outer REPL
+               ((equal? raw '(exit!))
+                (format #t "Leaving org '~a'.\n" name))
 
-             ;; (quit) — also exit
-             ((equal? raw '(quit))
-              (set-org-env! org env)
-              (format #t "Leaving org '~a'.\n" name))
+               ;; (quit) — also exit
+               ((equal? raw '(quit))
+                (format #t "Leaving org '~a'.\n" name))
 
-             ;; Comma-commands (,env, ,history, etc.)
-             ((comma-command? raw)
-              => (lambda (cmd)
-                   (if (handle-comma-command cmd env)
-                       (loop env)
-                       (begin
-                         (format #t "Unknown command: ,~a\n" cmd)
-                         (loop env)))))
+               ;; Comma-commands (,env, ,history, etc.)
+               ((comma-command? raw)
+                => (lambda (cmd)
+                     (if (handle-comma-command cmd ref)
+                         (loop)
+                         (begin
+                           (format #t "Unknown command: ,~a\n" cmd)
+                           (loop)))))
 
-             ;; Normal expression evaluation
-             (else
-              (let ((result (evaluate raw env)))
-                (cond
-                 ((env? result)
-                  (loop result))
-                 (else
-                  (shift-results! result)
-                  (display "=> ")
-                  (pretty-print result)
-                  (loop env))))))))
-        (lambda (key . args)
-          (format-error key args)
-          (loop env))))))
+               ;; Normal expression evaluation
+               (else
+                (let ((result (evaluate raw ref '() ($ ref 'current-expressor))))
+                  (unless (eq? result (if #f #f))
+                    (shift-results! result)
+                    (display "=> ")
+                    (pretty-print result))
+                  (loop))))))
+          (lambda (key . args)
+            (format-error key args)
+            (loop)))))))
