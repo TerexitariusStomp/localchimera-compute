@@ -27,7 +27,8 @@ window.addEventListener("load", async () => {
           remove(elem) { elem.remove(); },
           replaceWith(oldElem, newElem) { oldElem.replaceWith(newElem); },
           addEventListener(elem, name, f) { elem.addEventListener(name, f); },
-          removeEventListener(elem, name, f) { elem.removeEventListener(name, f); }
+          removeEventListener(elem, name, f) { elem.removeEventListener(name, f); },
+          setStyle(elem, prop, value) { elem.style[prop] = value; }
         },
         treeWalker: {
           currentNode(walker) { return walker.currentNode; },
@@ -35,10 +36,32 @@ window.addEventListener("load", async () => {
           nextNode(walker) { return walker.nextNode(); },
           firstChild(walker) { return walker.firstChild(); },
           nextSibling(walker) { return walker.nextSibling(); }
+        },
+        ai: {
+          chat(systemPrompt, userPrompt, apiKey, model) {
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", "https://openrouter.ai/api/v1/chat/completions", false);
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.setRequestHeader("Authorization", "Bearer " + apiKey);
+            xhr.send(JSON.stringify({
+              model: model,
+              messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: userPrompt }
+              ]
+            }));
+            if (xhr.status !== 200)
+              throw new Error("AI request failed (" + xhr.status + "): " + xhr.responseText);
+            const choices = JSON.parse(xhr.responseText).choices;
+            if (!choices || !choices.length)
+              throw new Error("AI returned no choices");
+            return choices[0].message.content;
+          }
         }
       }
     });
   } catch(e) {
+    console.error("WASM load error:", e);
     if(e instanceof WebAssembly.CompileError) {
       document.getElementById("wasm-error").hidden = false;
     }

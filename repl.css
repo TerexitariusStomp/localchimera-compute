@@ -1,3 +1,8 @@
+body {
+    margin: 0;
+    background-color: #110e13;
+}
+
 @media (min-width: 1000px) {
     .container {
         margin-left: 4rem;
@@ -50,8 +55,24 @@ h1 {
     padding: 0;
     color: #e0ceed;
     background-color: #110e13;
+    resize: none;
+    overflow: hidden;
+    min-height: 1.5em;
 }
 
 .repl .prompt textarea:focus {
     outline:none;
+}
+
+.prompt-text { color: #8b7b96; }
+.input-text  { color: #e0ceed; }
+.result-text { color: #a8e6cf; }
+.error-text  { color: #ff6b6b; }
+.output-text { color: #e0ceed; }
+.info-text   { color: #b8a8c8; }
+
+.paren-indicator {
+    color: #8b7b96;
+    padding-left: 0.5em;
+    font-size: 0.9em;
 }

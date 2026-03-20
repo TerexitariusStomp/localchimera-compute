@@ -4,4 +4,4 @@
              (gnu packages guile)
              (gnu packages guile-xyz))
 
-(packages->manifest (list guile-next guile-hoot gnu-make))
+(packages->manifest (list guile-next guile-hoot gnu-make guile-json-4))

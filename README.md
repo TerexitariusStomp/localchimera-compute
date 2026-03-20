@@ -37,6 +37,8 @@ An expressor is not necessarily a person. It could be a process, an external sys
 
 An environment is an immutable snapshot:
 
+|
+
 | Component     | Role                                              |
 | ------------- | ------------------------------------------------- |
 | **Bindings**  | The current namespace — what the org _knows_      |
@@ -104,6 +106,103 @@ Every change produces a history entry: a version number, the expressor, the expr
 
 Rollback does not erase — it replays. Each step is re-evaluated under the identity that originally performed it, so attribution survives time travel.
 
+## REPL Tutorial
+
+The REPL (`play-repl.scm`) lets you express a meta-org interactively — creating identities, mutating state, enacting rules, and inspecting history one step at a time. This walkthrough builds a small organization from scratch.
+
+Launch the REPL:
+
+```
+rlwrap guile -L . play-repl.scm
+```
+
+```
+play.scm REPL  —  Ctrl-D or (quit) to exit
+
+play[genesis]>
+```
+
+The prompt shows `play[genesis]>` — the current identity is `genesis`, the bootstrapping expressor created when the environment initializes.
+
+**Two things to know about REPL output:**
+
+- When an expression mutates state (returns a new environment), the REPL silently updates and shows nothing — the prompt may change identity.
+- When it returns a value, the REPL prints `=> value`.
+
+### Create identities
+
+```
+play[genesis]> (defexpressor 'alice "alice-key")
+play[genesis]> (defexpressor 'bob "bob-key")
+```
+
+No output — both calls returned environments. Two identities now exist in the org.
+
+### Act as an identity
+
+```
+play[genesis]> (as alice (modify! 'proposal "fund the commons"))
+play[alice]>
+```
+
+Alice proposed. The prompt changed to `play[alice]>` — the returned environment carries alice's identity. Every subsequent action will be attributed to alice until another `as` switches identity.
+
+```
+play[alice]> proposal
+=> "fund the commons"
+```
+
+You can look up any binding by name.
+
+### Another identity responds
+
+```
+play[alice]> (as bob (modify! 'seconded #t))
+play[bob]>
+```
+
+Bob seconded the proposal. The prompt now shows `play[bob]>`.
+
+### Enact a rule
+
+```
+play[bob]> (enact! (lambda (expressor name value old-env new-env)
+                     (not (equal? value #f))))
+play[bob]>
+```
+
+A validator is now in place: no one can store `#f`. The validator had to accept its own installation — if it had rejected itself, `enact!` would have failed.
+
+### See a rule rejection
+
+```
+play[bob]> (as alice (modify! 'bad-idea #f))
+error: misc-error
+  Validation failed: ...
+play[bob]>
+```
+
+Alice tried to store `#f`, the validator rejected it, and the environment was unchanged. The prompt stays `play[bob]>`.
+
+### Inspect the history
+
+```
+play[bob]> (show-history)
+Version 0 [#f] : (quote initial) (parent: 0)
+Version 1 [genesis] : (defexpressor (quote alice) alice-key) (parent: 0)
+Version 2 [genesis] : (defexpressor (quote bob) bob-key) (parent: 1)
+Version 3 [alice] : (modify! (quote proposal) fund the commons) (parent: 2)
+Version 4 [bob] : (modify! (quote seconded) #t) (parent: 3)
+Version 5 [bob] : (enact! (lambda (expressor name value old-env new-env) (not (equal? value #f)))) (parent: 4)
+play[bob]>
+```
+
+Every action is attributed: version 3 was alice, versions 4–5 were bob. The rejected `modify!` left no trace — it never happened. The history is the organization's memory; because each entry stores the original expression, the entire org can be replayed from scratch.
+
+### What just happened
+
+You expressed a meta-org. Two identities acted, a rule was enacted that constrained future behavior (and had to survive its own installation), a violation was rejected, and every step was remembered and attributed. The shape of this organization — who can act, what rules apply, how decisions are made — was not prescribed. It emerged from the expressions.
+
 ## The Evaluator
 
 `evaluate` is a small Lisp interpreter. It understands:
@@ -123,7 +222,7 @@ Rollback does not erase — it replays. Each step is re-evaluated under the iden
 | `(show-expressors)`          | Print all known identities               |
 | `(f args ...)`               | Function application                     |
 
-Lambdas close over the expressor that created them. A function acts with the identity of its author, not its caller — authorship persists through application.
+Lambdas capture the environment at creation time (bindings, validator, history), but adopt the identity of their caller at invocation time.
 
 ![alt text](image.png)
 

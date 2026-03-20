@@ -1,7 +1,7 @@
 ;;; test.scm — tests for (metaorg play)
 ;;; Run with:  guile -L . test.scm
 
-(add-to-load-path ".")
+(add-to-load-path "module")
 (use-modules (metaorg play))
 
 ;;; ── Harness ─────────────────────────────────────────────────────────────────
@@ -33,8 +33,16 @@
                       (-          . ,-)
                       (*          . ,*)
                       (>          . ,>)
+                      (<          . ,<)
+                      (=          . ,=)
                       (equal?     . ,equal?)
+                      (eqv?       . ,eqv?)
                       (not        . ,not)
+                      (null?      . ,null?)
+                      (cons       . ,cons)
+                      (car        . ,car)
+                      (cdr        . ,cdr)
+                      (list       . ,list)
                       (length     . ,length)
                       (env-history  . ,env-history)
                       (env-bindings . ,env-bindings))))
@@ -129,11 +137,14 @@
          (equal? (env-bindings pre-seen) (env-bindings post-seen)) #f))
 
 ;;; ── 5. as: identity switching ───────────────────────────────────────────────
-;;; Note: (defexpressor 'name key) has a known binding bug — it stores the key
-;;; as the list (quote name) rather than the symbol name, so the env-lookup by
-;;; symbol fails.  We inject expressors directly via env-modify to test 'as'.
 
 (display "\n── 5. as / identity switching ──\n")
+
+;; defexpressor + as round-trip: verify the binding key is the symbol, not (quote name)
+(let* ((env1 (evaluate '(defexpressor 'carol "carol-key") base-env))
+       (env2 (evaluate '(as carol (modify! 'greeting "hi")) env1)))
+  (check "defexpressor + as round-trip works"
+         (evaluate 'greeting env2) "hi"))
 
 (let* ((alice (make-expressor 'alice "key-a"))
        (env1  (inject-binding base-env 'alice alice))
@@ -201,6 +212,290 @@
          (evaluate 'target env2) 42)
   (check "lambda called by bob attributes modify! to bob, not alice"
          (expressor-name (history-expressor entry)) 'bob))
+
+;;; ── 8. New evaluator forms ──────────────────────────────────────────────────
+
+(display "\n── 8. begin ──\n")
+
+(check "begin returns last value"
+       (evaluate '(begin 1 2 3) base-env) 3)
+
+(check "begin with single expression"
+       (evaluate '(begin 42) base-env) 42)
+
+;; begin threads env changes through
+(let ((env1 (evaluate '(begin (modify! 'a 10) (modify! 'b 20)) base-env)))
+  (check "begin threads env: a is set" (evaluate 'a env1) 10)
+  (check "begin threads env: b is set" (evaluate 'b env1) 20))
+
+;; begin with env changes followed by value expression
+(check "begin env+value: returns last value"
+       (evaluate '(begin (modify! 'a 10) (+ a 5)) base-env) 15)
+
+(display "\n── 9. let ──\n")
+
+(check "let basic binding"
+       (evaluate '(let ((x 10)) x) base-env) 10)
+
+(check "let multiple bindings"
+       (evaluate '(let ((x 10) (y 20)) (+ x y)) base-env) 30)
+
+(check "let body uses outer env"
+       (let ((env1 (evaluate '(modify! 'outer 100) base-env)))
+         (evaluate '(let ((x 5)) (+ x outer)) env1))
+       105)
+
+(check "let bindings are parallel (not sequential)"
+       (let ((env1 (evaluate '(modify! 'x 1) base-env)))
+         (evaluate '(let ((x 10) (y x)) y) env1))
+       1)  ;; y sees the outer x=1, not the let x=10
+
+(check "let with multi-body (implicit begin)"
+       (evaluate '(let ((x 1) (y 2)) (+ x 0) (+ x y)) base-env) 3)
+
+(display "\n── 10. let* ──\n")
+
+(check "let* basic"
+       (evaluate '(let* ((x 10)) x) base-env) 10)
+
+(check "let* sequential bindings"
+       (evaluate '(let* ((x 10) (y (+ x 5))) y) base-env) 15)
+
+(check "let* three bindings"
+       (evaluate '(let* ((a 1) (b (+ a 1)) (c (+ a b))) c) base-env) 3)
+
+(check "let* with multi-body"
+       (evaluate '(let* ((x 10)) (+ x 0) (+ x 5)) base-env) 15)
+
+(display "\n── 11. define ──\n")
+
+;; define as governed binding
+(let ((env1 (evaluate '(define x 42) base-env)))
+  (check "define stores value" (evaluate 'x env1) 42)
+  (check "define records in history"
+         (let ((entry (car (env-history env1))))
+           (equal? (history-expr entry) '(define x 42)))
+         #t))
+
+;; define function shorthand
+(let ((env1 (evaluate '(define (square x) (* x x)) base-env)))
+  (check "define function shorthand"
+         (evaluate '(square 5) env1) 25))
+
+;; define inside begin threads env
+(let ((env1 (evaluate '(begin (define a 10) (define b 20)) base-env)))
+  (check "define in begin: a" (evaluate 'a env1) 10)
+  (check "define in begin: b" (evaluate 'b env1) 20))
+
+(display "\n── 12. cond ──\n")
+
+(check "cond basic true"
+       (evaluate '(cond (#t 42)) base-env) 42)
+
+(check "cond first false, second true"
+       (evaluate '(cond (#f 1) (#t 2)) base-env) 2)
+
+(check "cond with else"
+       (evaluate '(cond (#f 1) (else 99)) base-env) 99)
+
+(check "cond with computed test"
+       (evaluate '(cond ((> 3 2) "yes") (else "no")) base-env) "yes")
+
+(check "cond no-body clause returns test value"
+       (evaluate '(cond (42)) base-env) 42)
+
+(check "cond multi-expr body"
+       (evaluate '(cond (#t 1 2 3)) base-env) 3)
+
+(display "\n── 13. and / or ──\n")
+
+(check "and no args" (evaluate '(and) base-env) #t)
+(check "and single true" (evaluate '(and 42) base-env) 42)
+(check "and single false" (evaluate '(and #f) base-env) #f)
+(check "and returns last true" (evaluate '(and 1 2 3) base-env) 3)
+(check "and short-circuits on false" (evaluate '(and 1 #f 3) base-env) #f)
+
+(check "or no args" (evaluate '(or) base-env) #f)
+(check "or single true" (evaluate '(or 42) base-env) 42)
+(check "or single false" (evaluate '(or #f) base-env) #f)
+(check "or returns first true" (evaluate '(or #f #f 3) base-env) 3)
+(check "or short-circuits on true" (evaluate '(or 1 2 3) base-env) 1)
+
+(display "\n── 14. two-branch if ──\n")
+
+(check "two-branch if true"
+       (evaluate '(if #t 42) base-env) 42)
+
+(check "two-branch if false returns unspecified"
+       (evaluate '(if #f 42) base-env) (if #f #f))
+
+(display "\n── 15. lambda multi-body ──\n")
+
+(let ((fn (evaluate '(lambda (x) (+ x 0) (+ x 1)) base-env)))
+  (check "lambda with two body expressions" (fn 10) 11))
+
+;;; ── 16. Org isolation ──────────────────────────────────────────────────────
+
+(display "\n── 16. org isolation ──\n")
+
+(use-modules (metaorg org))
+
+(let ((org-a (make-org "alpha"))
+      (org-b (make-org "beta")))
+  ;; Modify org-a's env directly via evaluate
+  (let ((env-a (evaluate '(modify! 'x 100) (org-env org-a))))
+    (update-org-env! org-a env-a))
+  ;; Modify org-b's env differently
+  (let ((env-b (evaluate '(modify! 'x 200) (org-env org-b))))
+    (update-org-env! org-b env-b))
+  ;; They should be independent
+  (check "org-a has x=100"
+         (evaluate 'x (org-env org-a)) 100)
+  (check "org-b has x=200"
+         (evaluate 'x (org-env org-b)) 200)
+  ;; org-a doesn't have org-b's bindings leak
+  (let ((env-b2 (evaluate '(modify! 'only-in-b 42) (org-env org-b))))
+    (update-org-env! org-b env-b2))
+  (check "only-in-b exists in org-b"
+         (evaluate 'only-in-b (org-env org-b)) 42)
+  (check-error "only-in-b does not exist in org-a"
+    (evaluate 'only-in-b (org-env org-a))))
+
+;;; ── 17. Named let ──────────────────────────────────────────────────────────
+
+(display "\n── 17. named let ──\n")
+
+(check "named let: basic loop (sum 0..5)"
+       (evaluate '(let loop ((i 0) (acc 0))
+                    (if (> i 5) acc (loop (+ i 1) (+ acc i))))
+                 base-env)
+       15)
+
+(check "named let: countdown accumulator"
+       (evaluate '(let loop ((n 5) (acc (list)))
+                    (if (= n 0) acc (loop (- n 1) (cons n acc))))
+                 base-env)
+       '(1 2 3 4 5))
+
+(check "named let: accesses outer bindings"
+       (let ((env1 (evaluate '(modify! 'base 100) base-env)))
+         (evaluate '(let loop ((i 0))
+                      (if (= i 3) base (loop (+ i 1))))
+                   env1))
+       100)
+
+;;; ── 18. letrec ─────────────────────────────────────────────────────────────
+
+(display "\n── 18. letrec ──\n")
+
+(check "letrec: factorial"
+       (evaluate '(letrec ((fact (lambda (n) (if (= n 0) 1 (* n (fact (- n 1)))))))
+                    (fact 5))
+                 base-env)
+       120)
+
+(check "letrec: mutual recursion (even?/odd?)"
+       (evaluate '(letrec ((my-even? (lambda (n) (if (= n 0) #t (my-odd? (- n 1)))))
+                           (my-odd?  (lambda (n) (if (= n 0) #f (my-even? (- n 1))))))
+                    (list (my-even? 4) (my-odd? 3) (my-even? 3)))
+                 base-env)
+       '(#t #t #f))
+
+;;; ── 19. Variadic lambda ────────────────────────────────────────────────────
+
+(display "\n── 19. variadic lambda ──\n")
+
+(check "variadic lambda: (lambda args ...) collects all"
+       (let ((fn (evaluate '(lambda args args) base-env)))
+         (fn 1 2 3))
+       '(1 2 3))
+
+(check "variadic lambda: (lambda (a . rest) ...) splits"
+       (let ((fn (evaluate '(lambda (a . rest) rest) base-env)))
+         (fn 1 2 3))
+       '(2 3))
+
+(check "variadic lambda: (lambda (a . rest) ...) first arg"
+       (let ((fn (evaluate '(lambda (a . rest) a) base-env)))
+         (fn 1 2 3))
+       1)
+
+(check "define shorthand with rest params"
+       (let ((env1 (evaluate '(define (my-list . args) args) base-env)))
+         (evaluate '(my-list 1 2 3) env1))
+       '(1 2 3))
+
+;;; ── 20. when / unless ──────────────────────────────────────────────────────
+
+(display "\n── 20. when / unless ──\n")
+
+(check "when: true branch executes"
+       (evaluate '(when #t 42) base-env)
+       42)
+
+(check "when: false branch returns unspecified"
+       (evaluate '(when #f 42) base-env)
+       (if #f #f))
+
+(check "when: multi-body"
+       (evaluate '(when #t 1 2 3) base-env)
+       3)
+
+(check "unless: false branch executes"
+       (evaluate '(unless #f 42) base-env)
+       42)
+
+(check "unless: true branch returns unspecified"
+       (evaluate '(unless #t 42) base-env)
+       (if #f #f))
+
+;;; ── 21. case ───────────────────────────────────────────────────────────────
+
+(display "\n── 21. case ──\n")
+
+(check "case: matching datum"
+       (evaluate '(case (+ 1 1)
+                    ((1) "one")
+                    ((2) "two")
+                    ((3) "three"))
+                 base-env)
+       "two")
+
+(check "case: else clause"
+       (evaluate '(case 99
+                    ((1) "one")
+                    (else "other"))
+                 base-env)
+       "other")
+
+(check "case: no match returns unspecified"
+       (evaluate '(case 99 ((1) "one") ((2) "two")) base-env)
+       (if #f #f))
+
+(check "case: multiple datums per clause"
+       (evaluate '(case 3
+                    ((1 2) "low")
+                    ((3 4) "mid")
+                    (else "high"))
+                 base-env)
+       "mid")
+
+;;; ── 22. do ─────────────────────────────────────────────────────────────────
+
+(display "\n── 22. do ──\n")
+
+(check "do: counting loop"
+       (evaluate '(do ((i 0 (+ i 1)))
+                      ((= i 5) i))
+                 base-env)
+       5)
+
+(check "do: accumulation loop"
+       (evaluate '(do ((i 0 (+ i 1))
+                       (acc 0 (+ acc i)))
+                      ((= i 5) acc))
+                 base-env)
+       10)
 
 ;;; ── Summary ─────────────────────────────────────────────────────────────────
 

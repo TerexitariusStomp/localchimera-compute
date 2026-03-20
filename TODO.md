@@ -2,6 +2,14 @@ Version counter as state - The global _version-counter_ breaks the pure function
 
 Make Authenticate just part of validate? / the environment
 
+---
+
+send expressions to other players, or to a game-topic.
+
+dht topic
+
+make a topic an expressor.
+
 --
 
 This system achieves monotonic meta-reasoning by making every state change—including changes to the rules of change themselves—an immutable, append-only fact in a global history, creating a permanent audit trail that grows monotonically even as the actual system state fluctuates non-monotonically. The metacircular architecture ensures this meta-level integrity is self-sustaining: because the system's own operations (modification, validation, identity creation) are recorded with the same historical fidelity, you can always reason monotonically about how and why the system arrived at its current state, who authorized each transition, and how the validation rules evolved—providing a fixed point of truth about the system's evolution that remains reliable no matter how dramatically the system's behavior changes.
@@ -115,3 +123,5 @@ This is exactly what the code achieves: **a permanent, immutable record of how a
 Asynchronous Reliable Extensible Sleek RPC Server for Guile. First of all it's a library providing a lot of tools for evaluating and exploring the code, from simple reflection API to interruptible asyncronous evaluation. In addition to that it provides an async RPC server implementation based on nREPL protocol and can be used for programmable interactions with a running guile processes, for implementing REPLs, IDEs, test runners or other tools. It also can be potentially used as a backend or library for LSP server.
 
 https://git.sr.ht/~abcdw/guile-ares-rs
+
+---

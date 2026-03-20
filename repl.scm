@@ -4,6 +4,7 @@
              ((hoot error-handling) #:select (format-exception))
              (ice-9 match)
              (repl-environment)
+             (metaorg play)
              (srfi srfi-11))
 
 (define-foreign document-body
@@ -75,6 +76,9 @@
 (define-foreign remove-event-listener!
   "element" "removeEventListener"
   (ref null extern) (ref string) (ref null extern) -> none)
+(define-foreign set-style!
+  "element" "setStyle"
+  (ref null extern) (ref string) (ref string) -> none)
 
 (define-foreign current-node
   "treeWalker" "currentNode"
@@ -91,6 +95,10 @@
 (define-foreign next-sibling!
   "treeWalker" "nextSibling"
   (ref null extern) -> (ref null extern))
+
+(define-foreign ai-chat
+  "ai" "chat"
+  (ref string) (ref string) (ref string) (ref string) -> (ref string))
 
 (define procedure->external/cached
   (let ((cache (make-weak-key-hashtable)))
@@ -286,50 +294,282 @@
     (virtual-dom-render (document-body) *current-vdom* new-vdom)
     (set! *current-vdom* new-vdom)))
 
+;; Wrap macros as procedures for base-bindings (required by Hoot)
+(define %+ +) (define %- -) (define %* *) (define %/ /)
+(define %> >) (define %< <) (define %= =) (define %>= >=) (define %<= <=)
+(define %abs abs) (define %max max) (define %min min)
+(define %modulo modulo) (define %remainder remainder) (define %expt expt)
+(define %zero? zero?) (define %positive? positive?) (define %negative? negative?)
+(define %even? even?) (define %odd? odd?)
+(define %eqv? eqv?) (define %char? char?)
+(define %write write)
+(define %string=? string=?) (define %string<? string<?) (define %string>? string>?)
+(define %string-ref string-ref)
+(define %sqrt sqrt) (define %floor floor) (define %ceiling ceiling) (define %round round)
+(define %cadr cadr) (define %caddr caddr) (define %cddr cddr) (define %caar caar) (define %cdar cdar)
+(define (%filter pred lst)
+  (cond ((null? lst) '())
+        ((pred (car lst)) (cons (car lst) (%filter pred (cdr lst))))
+        (else (%filter pred (cdr lst)))))
+(define (%fold proc init lst)
+  (if (null? lst) init
+      (%fold proc (proc (car lst) init) (cdr lst))))
+
+;; Split into small chunks to avoid Hoot quasiquote size limits
+(define base-bindings
+  (append
+   `((+ . ,%+) (- . ,%-)  (* . ,%*) (/ . ,%/)
+     (> . ,%>) (< . ,%<)  (= . ,%=) (>= . ,%>=) (<= . ,%<=)
+     (abs . ,%abs) (max . ,%max) (min . ,%min)
+     (modulo . ,%modulo) (remainder . ,%remainder) (expt . ,%expt))
+   `((sqrt . ,%sqrt) (floor . ,%floor) (ceiling . ,%ceiling) (round . ,%round)
+     (not . ,not) (equal? . ,equal?) (eq? . ,eq?) (eqv? . ,%eqv?)
+     (cons . ,cons) (car . ,car) (cdr . ,cdr)
+     (cadr . ,%cadr) (caddr . ,%caddr) (cddr . ,%cddr) (caar . ,%caar) (cdar . ,%cdar))
+   `((list . ,list) (append . ,append) (reverse . ,reverse) (length . ,length)
+     (map . ,map) (for-each . ,for-each) (filter . ,%filter) (fold . ,%fold)
+     (assoc . ,assoc) (member . ,member) (apply . ,apply))
+   `((null? . ,null?) (pair? . ,pair?) (list? . ,list?)
+     (number? . ,number?) (string? . ,string?) (symbol? . ,symbol?)
+     (procedure? . ,procedure?) (boolean? . ,boolean?) (char? . ,%char?)
+     (zero? . ,%zero?) (positive? . ,%positive?) (negative? . ,%negative?)
+     (even? . ,%even?) (odd? . ,%odd?))
+   `((string-append . ,string-append) (string-length . ,string-length)
+     (substring . ,substring) (string-ref . ,%string-ref)
+     (string=? . ,%string=?) (string<? . ,%string<?) (string>? . ,%string>?)
+     (string->symbol . ,string->symbol) (symbol->string . ,symbol->string)
+     (string->number . ,string->number) (number->string . ,number->string))
+   `((display . ,display) (newline . ,newline) (write . ,%write)
+     (void . ,(lambda () (if #f #f)))
+     (env-history . ,env-history) (env-bindings . ,env-bindings))
+   `((set-api-key! . ,web-set-api-key!)
+     (set-ai-model! . ,web-set-ai-model!))))
+
+;;; ── AI state ─────────────────────────────────────────────────────────────
+
+(define *ai-api-key* #f)
+(define *ai-model* "openai/gpt-4o-mini")
+
+(define (web-set-api-key! key)
+  (set! *ai-api-key* key))
+
+(define (web-set-ai-model! model)
+  (set! *ai-model* model))
+
+;;; ── String utilities (Hoot lacks string-prefix?/suffix?/trim-both) ──────
+
+(define (%starts-with? str prefix)
+  (and (>= (string-length str) (string-length prefix))
+       (string=? (substring str 0 (string-length prefix)) prefix)))
+
+(define (%ends-with? str suffix)
+  (let ((slen (string-length str)) (xlen (string-length suffix)))
+    (and (>= slen xlen)
+         (string=? (substring str (- slen xlen) slen) suffix))))
+
+(define (%trim str)
+  (let* ((len (string-length str))
+         (start (let lp ((i 0))
+                  (if (and (< i len) (memv (string-ref str i) '(#\space #\newline #\tab #\return)))
+                      (lp (+ i 1)) i)))
+         (end (let lp ((i (- len 1)))
+                (if (and (>= i start) (memv (string-ref str i) '(#\space #\newline #\tab #\return)))
+                    (lp (- i 1)) (+ i 1)))))
+    (substring str start end)))
+
+;;; ── AI context formatter ────────────────────────────────────────────────
+
+(define (format-binding pair)
+  (let ((name (car pair)) (val (cdr pair)))
+    (string-append "  " (symbol->string name) " = "
+      (cond
+        ((procedure? val) (string-append "<procedure " (symbol->string name) ">"))
+        ((expressor? val) (string-append "<expressor " (symbol->string (or (expressor-name val) '?)) ">"))
+        (else (call-with-output-string (lambda (p) (%write val p))))))))
+
+(define (format-history-entry entry)
+  (string-append
+    "  v" (number->string (history-version entry))
+    " [" (symbol->string (or (expressor-name (history-expressor entry)) '?))
+    "]: " (call-with-output-string (lambda (p) (%write (history-expr entry) p)))))
+
+(define (%join-lines lst)
+  (if (null? lst) ""
+      (let lp ((rest (cdr lst)) (acc (car lst)))
+        (if (null? rest) acc (lp (cdr rest) (string-append acc "\n" (car rest)))))))
+
+(define (format-env-context env)
+  (let* ((bindings (env-bindings env))
+         (history (env-history env))
+         (exp-name (or (expressor-name (env-expressor env)) '?))
+         (recent (let ((h (reverse history)))
+                   (if (> (length h) 10) (list-tail h (- (length h) 10)) h))))
+    (string-append
+      "You are an AI inside meta-org, a Scheme-based system for programmable organizations.\n\n"
+      "Current expressor: " (symbol->string exp-name) "\n\n"
+      "Bindings:\n" (%join-lines (map format-binding bindings))
+      "\n\nRecent history:\n" (%join-lines (map format-history-entry recent))
+      "\n\nSpecial forms: (modify! 'name value), (enact! validator), "
+      "(rollback! version), (defexpressor name key), (as id expr), "
+      "(show-history), (show-expressors), (lambda (args) body), "
+      "(if test then else), (quote expr).\n")))
+
+;;; ── AI handlers ─────────────────────────────────────────────────────────
+
+(define (strip-code-fences str)
+  (let* ((s (%trim str))
+         (s (cond ((%starts-with? s "```scheme") (substring s 9 (string-length s)))
+                  ((%starts-with? s "```scm")    (substring s 6 (string-length s)))
+                  ((%starts-with? s "```")       (substring s 3 (string-length s)))
+                  (else s)))
+         (s (if (%ends-with? s "```") (substring s 0 (- (string-length s) 3)) s)))
+    (%trim s)))
+
+(define (web-ai-query prompt env)
+  (unless *ai-api-key* (error "No API key. Use (set-api-key! \"sk-or-...\")"))
+  (ai-chat (format-env-context env) prompt *ai-api-key* *ai-model*))
+
+(define (web-ai-query-and-eval prompt env)
+  (unless *ai-api-key* (error "No API key. Use (set-api-key! \"sk-or-...\")"))
+  (let* ((ctx (string-append (format-env-context env)
+               "\n\nIMPORTANT: Respond with ONLY a single valid Scheme "
+               "S-expression. No explanation, no markdown. "
+               "Example: (modify! 'greeting \"hello\")"))
+         (response (ai-chat ctx prompt *ai-api-key* *ai-model*)))
+    (read (open-input-string (strip-code-fences response)))))
+
+(set-ai-handler! web-ai-query)
+(set-ai-eval-handler! web-ai-query-and-eval)
+
+;;; ── Org management ────────────────────────────────────────────────────────
+
+(define hoot-env (repl-environment))
+
+(define *orgs* '())
+(define *mode* 'outer)
+(define *current-org-name* #f)
+(define *env* (make-initial-env base-bindings))
+
+(define (org-save!)
+  (when *current-org-name*
+    (set! *orgs*
+      (cons (cons *current-org-name* *env*)
+            (let loop ((lst *orgs*))
+              (cond ((null? lst) '())
+                    ((string=? (caar lst) *current-org-name*) (loop (cdr lst)))
+                    (else (cons (car lst) (loop (cdr lst))))))))))
+
+(define (org-lookup name)
+  (let loop ((lst *orgs*))
+    (cond ((null? lst) #f)
+          ((string=? (caar lst) name) (car lst))
+          (else (loop (cdr lst))))))
+
 (define *log*
-  '("Welcome to the Hoot REPL!
-
-This is a Scheme REPL that has been compiled to WebAssembly
-and is running directly in your web browser!  The user interface
-is also written in Scheme, and uses the Hoot FFI to render to
-the DOM.
-
-Some things to try evaluating:
-
-42
-(+ 1 2 3)
-(- 2/3 1/4)
-(cos 0.0)
-'(foo bar baz)
-(string-append \"Hello, \" \"world!\")
-(make-vector 8 \"🦉\")
-(map 1+ '(1 2 3))
-(values 'foo 'bar 'baz)
-(define (factorial x) (if (= x 1) 1 (* x (factorial (1- x)))))
-(factorial 5)
-
-Have fun! 🦉
-
-"))
+  (list `(span (@ (class "info-text"))
+               ,(string-append
+                 "Welcome to meta-org!\n"
+                 "\n"
+                 "An organization is a program that writes itself.\n"
+                 "This is a metacircular substrate for programmable\n"
+                 "organizations — identity, memory, and self-modification.\n"
+                 "\n"
+                 "── Getting Started ──────────────────────────────\n"
+                 "\n"
+                 "  (make-org \"alpha\")   create an org\n"
+                 "  (enter! \"alpha\")     enter it\n"
+                 "  (exit!)              leave current org\n"
+                 "  (list-orgs)          show all orgs\n"
+                 "\n"
+                 "── Inside an Org ───────────────────────────────\n"
+                 "\n"
+                 "Every action has an identity, every change is\n"
+                 "remembered, and the rules for changing the rules\n"
+                 "are subject to the rules.\n"
+                 "\n"
+                 "Create identities:\n"
+                 "  (defexpressor 'alice \"alice-key\")\n"
+                 "  (defexpressor 'bob \"bob-key\")\n"
+                 "\n"
+                 "Act as an identity:\n"
+                 "  (as alice (modify! 'proposal \"fund the commons\"))\n"
+                 "  (as bob (modify! 'seconded #t))\n"
+                 "\n"
+                 "Enact a rule (must accept itself to take effect):\n"
+                 "  (enact! (lambda (expressor name value old new)\n"
+                 "            (not (equal? value #f))))\n"
+                 "\n"
+                 "Inspect:\n"
+                 "  (show-history)       versioned ledger\n"
+                 "  (show-expressors)    all known identities\n"
+                 "  proposal             look up any binding\n"
+                 "\n"
+                 "Rollback (replays with original identities):\n"
+                 "  (rollback! 2)\n"
+                 "\n"
+                 "── Language Forms ──────────────────────────────\n"
+                 "\n"
+                 "define, lambda, let, let* (named let), letrec,\n"
+                 "begin, if, cond, case, and, or, when, unless, do,\n"
+                 "quote. Lambdas capture bindings but adopt their\n"
+                 "caller's identity — logic and authority are separate.\n"
+                 "\n"
+                 "── AI Agent ────────────────────────────────────\n"
+                 "\n"
+                 "An AI can participate as a governed expressor.\n"
+                 "It sees your bindings, history, and identity.\n"
+                 "Its actions pass through validators like any other.\n"
+                 "\n"
+                 "  (set-api-key! \"sk-or-...\")   set OpenRouter key\n"
+                 "  (set-ai-model! \"...\")        change model\n"
+                 "  (ai \"what should we do?\")    ask, get text back\n"
+                 "  (ai-eval \"set x to 42\")      AI writes code, it runs\n"
+                 "\n"))))
 
 (define (log-append! . lines)
   (set! *log* (append *log* lines)))
 
-(define *unspecified* (if #f #f))
-(define (unspecified? x)
-  (eq? x *unspecified*))
+(define (current-prompt)
+  (if (eq? *mode* 'outer)
+      "meta-org> "
+      (string-append "play[" (symbol->string (or (expressor-name (env-expressor *env*)) '?)) "]> ")))
 
-(define prompt "> ")
+;;; ── History ring ──────────────────────────────────────────────────────────
 
-(define (call-with-error-handling thunk)
-  (with-exception-handler (lambda (exn)
-                            (format-exception exn (current-output-port)))
-    thunk
-    #:unwind? #t))
+(define *history* '())
+(define *history-index* -1)
 
-(define env (repl-environment))
+(define (history-push! str)
+  (set! *history* (cons str *history*))
+  (set! *history-index* -1))
 
-(define *prev-input* #f)
+(define (history-ref index)
+  (if (or (< index 0) (>= index (length *history*)))
+      #f
+      (let loop ((lst *history*) (i 0))
+        (if (= i index) (car lst) (loop (cdr lst) (+ i 1))))))
+
+;;; ── Paren balance ─────────────────────────────────────────────────────────
+
+(define *paren-depth* 0)
+
+(define (compute-paren-depth str)
+  (let loop ((i 0) (depth 0) (in-string? #f))
+    (if (>= i (string-length str))
+        depth
+        (let ((ch (string-ref str i)))
+          (cond
+           (in-string?
+            (cond
+             ((char=? ch #\") (loop (+ i 1) depth #f))
+             ((char=? ch #\\) (loop (+ i 2) depth #t))
+             (else (loop (+ i 1) depth #t))))
+           ((char=? ch #\") (loop (+ i 1) depth #t))
+           ((char=? ch #\() (loop (+ i 1) (+ depth 1) #f))
+           ((char=? ch #\)) (loop (+ i 1) (- depth 1) #f))
+           (else (loop (+ i 1) depth #f)))))))
+
+;;; ── Evaluation ────────────────────────────────────────────────────────────
 
 (define %invalid (cons 'invalid 'expression))
 (define (read* port)
@@ -337,69 +577,192 @@ Have fun! 🦉
     (lambda () (read port))
     #:unwind? #t))
 
+(define (eval-play! exp)
+  (let ((output (open-output-string)))
+    (with-exception-handler
+      (lambda (exn)
+        (let ((out-str (get-output-string output)))
+          (unless (string=? out-str "")
+            (log-append! `(span (@ (class "output-text")) ,out-str))))
+        (let ((err-port (open-output-string)))
+          (format-exception exn err-port)
+          (log-append! `(span (@ (class "error-text"))
+                              ,(get-output-string err-port)))))
+      (lambda ()
+        (parameterize ((current-output-port output))
+          (let ((result (evaluate exp *env*)))
+            (let ((out-str (get-output-string output)))
+              (unless (string=? out-str "")
+                (log-append! `(span (@ (class "output-text")) ,out-str))))
+            (if (env? result)
+                (set! *env* result)
+                (let ((result-port (open-output-string)))
+                  (write result result-port)
+                  (log-append! `(span (@ (class "result-text"))
+                                      ,(string-append "=> " (get-output-string result-port) "\n"))))))))
+      #:unwind? #t)))
+
+(define (handle-command exp)
+  (match exp
+    (('make-org (? string? name))
+     (if (org-lookup name)
+         (log-append! `(span (@ (class "error-text"))
+                             ,(string-append "Org already exists: " name "\n")))
+         (begin
+           (set! *orgs* (cons (cons name (make-initial-env base-bindings)) *orgs*))
+           (log-append! `(span (@ (class "result-text"))
+                               ,(string-append "Created org: " name "\n")))))
+     #t)
+    (('enter! (? string? name))
+     (let ((org (org-lookup name)))
+       (if org
+           (begin
+             (org-save!)
+             (set! *mode* 'inner)
+             (set! *current-org-name* name)
+             (set! *env* (cdr org))
+             (log-append! `(span (@ (class "info-text"))
+                                 ,(string-append "Entering org '" name "'. Type (exit!) to return.\n"))))
+           (log-append! `(span (@ (class "error-text"))
+                               ,(string-append "Unknown org: " name "\n")))))
+     #t)
+    ('(exit!)
+     (if (eq? *mode* 'inner)
+         (begin
+           (org-save!)
+           (set! *mode* 'outer)
+           (let ((name *current-org-name*))
+             (set! *current-org-name* #f)
+             (log-append! `(span (@ (class "info-text"))
+                                 ,(string-append "Left org '" name "'.\n")))))
+         (log-append! `(span (@ (class "error-text")) "Not inside an org.\n")))
+     #t)
+    ('(list-orgs)
+     (if (null? *orgs*)
+         (log-append! `(span (@ (class "output-text")) "No orgs created yet.\n"))
+         (log-append! `(span (@ (class "output-text"))
+                             ,(string-append "Orgs:\n"
+                                (let loop ((lst *orgs*) (acc ""))
+                                  (if (null? lst) acc
+                                      (loop (cdr lst)
+                                            (string-append acc "  " (caar lst) "\n"))))))))
+     #t)
+    (_ #f)))
+
 (define (eval! str)
-  ;; Parse user input.
-  (let ((exp (read* (open-input-string str)))
-        ;; Open output port.
-        (output (open-output-string)))
-    ;; Redirect all output to our output port.
-    (parameterize ((current-output-port output))
-      ;; Echo the prompt and user code.
-      (display prompt)
-      (display str)
-      (cond
-       ((eq? exp %invalid)
-        (display "invalid Scheme expression\n"))
-          ;; Invoke the interpreter.
-       (else
-        (set! *prev-input* str)
-        (call-with-values (lambda ()
-                            (call-with-error-handling
-                             (lambda ()
-                               (eval exp env))))
-          ;; Display each returned value on its own line.
-          (lambda vals
-            (if (null? vals)
-                (display "\n")
-                (for-each (lambda (val)
-                            (unless (unspecified? val)
-                              (display "=> ")
-                              (write val))
-                            (newline))
-                          vals)))))))
-    ;; Append output to log.
-    (log-append! (get-output-string output))))
+  (log-append! `(span (@ (class "prompt-text")) ,(current-prompt))
+               `(span (@ (class "input-text")) ,(string-append str "\n")))
+  (history-push! str)
+  (let ((port (open-input-string str)))
+    (let loop ()
+      (let ((exp (read* port)))
+        (cond
+         ((eof-object? exp) (if #f #f))
+         ((eq? exp %invalid)
+          (log-append! `(span (@ (class "error-text")) "invalid expression\n"))
+          (loop))
+         ;; Check for org management commands first
+         ((handle-command exp) (loop))
+         ;; In inner mode, use the meta-org evaluator
+         ((eq? *mode* 'inner)
+          (eval-play! exp)
+          (loop))
+         ;; In outer mode, use Hoot's R7RS eval
+         (else
+          (let ((output (open-output-string)))
+            (with-exception-handler
+              (lambda (exn)
+                (let ((err-port (open-output-string)))
+                  (format-exception exn err-port)
+                  (log-append! `(span (@ (class "error-text"))
+                                      ,(get-output-string err-port)))))
+              (lambda ()
+                (parameterize ((current-output-port output))
+                  (call-with-values
+                    (lambda () (eval exp hoot-env))
+                    (lambda vals
+                      (let ((out-str (get-output-string output)))
+                        (unless (string=? out-str "")
+                          (log-append! `(span (@ (class "output-text")) ,out-str))))
+                      (for-each
+                        (lambda (val)
+                          (let ((p (open-output-string)))
+                            (write val p)
+                            (log-append! `(span (@ (class "result-text"))
+                                                ,(string-append "=> " (get-output-string p) "\n")))))
+                        vals)))))
+              #:unwind? #t))
+          (loop)))))))
+
+;;; ── Auto-resize ───────────────────────────────────────────────────────────
+
+(define (auto-resize event)
+  (let ((input (get-element-by-id "expression")))
+    (set-style! input "height" "auto")
+    (set-style! input "height"
+                (string-append (number->string (scroll-height input)) "px"))))
+
+;;; ── Scroll helper ─────────────────────────────────────────────────────────
 
 (define (scroll-to-bottom!)
   (let ((repl (get-element-by-id "repl")))
     (set-scroll-top! repl (scroll-height repl))))
 
+;;; ── Event handling ────────────────────────────────────────────────────────
+
 (define (maybe-eval event)
-  ;; Get the event's key.
   (let ((key (keyboard-event-key event)))
-    ;; Evaluate user code when Enter is pressed, but not when
-    ;; Shift is being held so the user can edit across multiple
-    ;; lines.
     (cond
      ((and (string=? key "Enter")
            (not (keyboard-event-shift? event)))
-      ;; Get the text within the expression textarea.
+      (prevent-default! event)
       (let* ((input (get-element-by-id "expression"))
              (exp (element-value input)))
-        ;; If the textarea is empty, do nothing.
         (unless (string=? exp "")
-          ;; Clear the textarea.
           (set-element-value! input "")
-          ;; Evaluate and append output to log.
+          (set-style! input "height" "auto")
           (eval! exp)
-          ;; Update UI.
           (refresh!)
-          ;; Scroll the log to show the next output.
           (scroll-to-bottom!))))
      ((string=? key "ArrowUp")
-      (match *prev-input*
-        (#f (values))
-        (str (set-element-value! (get-element-by-id "expression") str)))))))
+      (prevent-default! event)
+      (when (< (+ *history-index* 1) (length *history*))
+        (set! *history-index* (+ *history-index* 1))
+        (let ((entry (history-ref *history-index*)))
+          (when entry
+            (set-element-value! (get-element-by-id "expression") entry)
+            (auto-resize event)))))
+     ((string=? key "ArrowDown")
+      (prevent-default! event)
+      (cond
+       ((> *history-index* 0)
+        (set! *history-index* (- *history-index* 1))
+        (let ((entry (history-ref *history-index*)))
+          (when entry
+            (set-element-value! (get-element-by-id "expression") entry)
+            (auto-resize event))))
+       ((= *history-index* 0)
+        (set! *history-index* -1)
+        (set-element-value! (get-element-by-id "expression") "")
+        (set-style! (get-element-by-id "expression") "height" "auto")))))))
+
+(define (on-keyup event)
+  (let* ((input (get-element-by-id "expression"))
+         (str (element-value input))
+         (depth (compute-paren-depth str)))
+    (unless (= depth *paren-depth*)
+      (set! *paren-depth* depth)
+      (refresh!))))
+
+;;; ── Render ────────────────────────────────────────────────────────────────
+
+(define (paren-indicator)
+  (cond
+   ((= *paren-depth* 0) "")
+   ((> *paren-depth* 0)
+    (string-append "(" (number->string *paren-depth*) " open)"))
+   (else
+    (string-append (number->string (- *paren-depth*)) " extra )"))))
 
 (define (render)
   `(div (@ (class "container"))
@@ -407,10 +770,14 @@ Have fun! 🦉
                 (class "repl repl-text"))
              (div (@ (class "log")) ,@*log*)
              (div (@ (class "prompt"))
-                  ,prompt
+                  ,(current-prompt)
                   (textarea (@ (id "expression")
                                (class "repl-text")
-                               (rows "5")
-                               (keyup ,maybe-eval)))))))
+                               (rows "1")
+                               (keydown ,maybe-eval)
+                               (keyup ,on-keyup)
+                               (input ,auto-resize)))
+                  (span (@ (class "paren-indicator"))
+                        ,(paren-indicator))))))
 
 (refresh!)
