@@ -12,7 +12,9 @@ window.addEventListener("load", async () => {
         event: {
           preventDefault(event) { event.preventDefault(); },
           keyboardKey(event) { return event.key; },
-          keyboardShiftKey(event) { return event.shiftKey; }
+          keyboardShiftKey(event) { return event.shiftKey; },
+          keyboardCtrlKey(event) { return event.ctrlKey; },
+          keyboardMetaKey(event) { return event.metaKey; }
         },
         element: {
           value(elem) { return elem.value; },
@@ -28,7 +30,8 @@ window.addEventListener("load", async () => {
           replaceWith(oldElem, newElem) { oldElem.replaceWith(newElem); },
           addEventListener(elem, name, f) { elem.addEventListener(name, f); },
           removeEventListener(elem, name, f) { elem.removeEventListener(name, f); },
-          setStyle(elem, prop, value) { elem.style[prop] = value; }
+          setStyle(elem, prop, value) { elem.style[prop] = value; },
+          focus(elem) { elem.focus(); }
         },
         treeWalker: {
           currentNode(walker) { return walker.currentNode; },

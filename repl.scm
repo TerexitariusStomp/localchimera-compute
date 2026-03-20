@@ -34,6 +34,18 @@
   (ref null extern) -> i32)
 (define (keyboard-event-shift? elem)
   (= (%keyboard-event-shift? elem) 1))
+(define-foreign %keyboard-event-ctrl?
+  "event" "keyboardCtrlKey"
+  (ref null extern) -> i32)
+(define (keyboard-event-ctrl? e)
+  (= (%keyboard-event-ctrl? e) 1))
+(define-foreign %keyboard-event-meta?
+  "event" "keyboardMetaKey"
+  (ref null extern) -> i32)
+(define (keyboard-event-meta? e)
+  (= (%keyboard-event-meta? e) 1))
+(define (ctrl-or-cmd? event)
+  (or (keyboard-event-ctrl? event) (keyboard-event-meta? event)))
 
 (define-foreign element-value
   "element" "value"
@@ -79,6 +91,9 @@
 (define-foreign set-style!
   "element" "setStyle"
   (ref null extern) (ref string) (ref string) -> none)
+(define-foreign focus-element!
+  "element" "focus"
+  (ref null extern) -> none)
 
 (define-foreign current-node
   "treeWalker" "currentNode"
@@ -452,11 +467,16 @@
 
 (define *sidebar-collapsed* #f)
 (define *sidebar-selected-org* #f)   ;; string or #f
+(define *expressor-filter* #f)       ;; symbol or #f — filter history by expressor name
+
+(define (org-entry-name e) (car e))
+(define (org-entry-env e) (cadr e))
+(define (org-entry-log e) (cddr e))
 
 (define (org-save!)
   (when *current-org-name*
     (set! *orgs*
-      (cons (cons *current-org-name* *env*)
+      (cons (cons *current-org-name* (cons *env* *log*))
             (let loop ((lst *orgs*))
               (cond ((null? lst) '())
                     ((string=? (caar lst) *current-org-name*) (loop (cdr lst)))
@@ -528,6 +548,8 @@
                  "  (ai \"what should we do?\")    ask, get text back\n"
                  "  (ai-eval \"set x to 42\")      AI writes code, it runs\n"
                  "\n"))))
+
+(define *outer-log* *log*)
 
 (define (log-append! . lines)
   (set! *log* (append *log* lines)))
@@ -609,9 +631,11 @@
   (let ((org (org-lookup name)))
     (when org
       (org-save!)
+      (when (eq? *mode* 'outer) (set! *outer-log* *log*))
       (set! *mode* 'inner)
       (set! *current-org-name* name)
-      (set! *env* (cdr org))
+      (set! *env* (org-entry-env org))
+      (set! *log* (org-entry-log org))
       (set! *sidebar-selected-org* name)
       (log-append! `(span (@ (class "info-text"))
                           ,(string-append "Entering org '" name "'.\n"))))))
@@ -620,6 +644,7 @@
   (when (eq? *mode* 'inner)
     (org-save!)
     (set! *mode* 'outer)
+    (set! *log* *outer-log*)
     (let ((name *current-org-name*))
       (set! *current-org-name* #f)
       (log-append! `(span (@ (class "info-text"))
@@ -632,7 +657,7 @@
          (log-append! `(span (@ (class "error-text"))
                              ,(string-append "Org already exists: " name "\n")))
          (begin
-           (set! *orgs* (cons (cons name (make-initial-env base-bindings)) *orgs*))
+           (set! *orgs* (cons (cons name (cons (make-initial-env base-bindings) '())) *orgs*))
            (set! *sidebar-selected-org* name)
            (log-append! `(span (@ (class "result-text"))
                                ,(string-append "Created org: " name "\n")))))
@@ -658,6 +683,19 @@
                                   (if (null? lst) acc
                                       (loop (cdr lst)
                                             (string-append acc "  " (caar lst) "\n"))))))))
+     #t)
+    (('delete-org (? string? name))
+     (if (org-lookup name)
+         (begin
+           (when (and *current-org-name* (string=? name *current-org-name*)) (do-exit!))
+           (set! *orgs* (let loop ((lst *orgs*))
+             (cond ((null? lst) '())
+                   ((string=? (caar lst) name) (loop (cdr lst)))
+                   (else (cons (car lst) (loop (cdr lst)))))))
+           (when (and *sidebar-selected-org* (string=? name *sidebar-selected-org*))
+             (set! *sidebar-selected-org* #f))
+           (log-append! `(span (@ (class "result-text")) ,(string-append "Deleted org: " name "\n"))))
+         (log-append! `(span (@ (class "error-text")) ,(string-append "Unknown org: " name "\n"))))
      #t)
     (_ #f)))
 
@@ -774,6 +812,7 @@
 
 (define (sidebar-select-org! name event)
   (set! *sidebar-selected-org* name)
+  (set! *expressor-filter* #f)
   (refresh!))
 
 (define (sidebar-enter-org! name event)
@@ -800,6 +839,11 @@
                         (symbol->string (or (expressor-name val) '?)) ">"))
     (else (call-with-output-string (lambda (p) (%write val p))))))
 
+(define (insert-into-repl! text)
+  (let ((input (get-element-by-id "expression")))
+    (set-element-value! input text)
+    (focus-element! input)))
+
 ;;; ── Inspector section renderers ─────────────────────────────────────────
 
 (define (render-bindings-section bindings)
@@ -809,7 +853,8 @@
               (list `(div (@ (class "inspector-row")) "  (empty)"))
               (map (lambda (pair)
                      `(div (@ (class "inspector-row"))
-                           (span (@ (class "name"))
+                           (span (@ (class "name clickable")
+                                    (click ,(lambda (e) (insert-into-repl! (symbol->string (car pair))))))
                                  ,(symbol->string (car pair)))
                            " "
                            (span (@ (class "value"))
@@ -817,26 +862,44 @@
                    bindings))))
 
 (define (render-history-section history)
-  `(div (@ (class "section"))
-        (div (@ (class "section-header")) "history")
-        ,@(if (null? history)
-              (list `(div (@ (class "inspector-row")) "  (none)"))
-              (map (lambda (entry)
-                     `(div (@ (class "inspector-row"))
-                           (span (@ (class "version"))
-                                 ,(string-append "v"
-                                    (number->string (history-version entry))))
-                           " "
-                           (span (@ (class "expressor-id"))
-                                 ,(symbol->string
-                                    (or (expressor-name
-                                          (history-expressor entry)) '?)))
-                           " "
-                           (span (@ (class "value"))
-                                 ,(call-with-output-string
-                                    (lambda (p)
-                                      (%write (history-expr entry) p))))))
-                   history))))
+  (let ((filtered (if *expressor-filter*
+                      (%filter (lambda (entry)
+                                 (eq? (expressor-name (history-expressor entry))
+                                      *expressor-filter*))
+                               history)
+                      history)))
+    `(div (@ (class "section"))
+          (div (@ (class "section-header"))
+               "history"
+               ,@(if *expressor-filter*
+                     (list `(span (@ (class "filter-badge")
+                                     (click ,(lambda (e)
+                                               (set! *expressor-filter* #f)
+                                               (refresh!))))
+                                  ,(string-append " [" (symbol->string *expressor-filter*) " \u00d7]")))
+                     '()))
+          ,@(if (null? filtered)
+                (list `(div (@ (class "inspector-row")) "  (none)"))
+                (map (lambda (entry)
+                       `(div (@ (class "inspector-row"))
+                             (span (@ (class "version clickable")
+                                      (click ,(lambda (e)
+                                                (insert-into-repl!
+                                                  (string-append "(rollback! "
+                                                    (number->string (history-version entry)) ")")))))
+                                   ,(string-append "v"
+                                      (number->string (history-version entry))))
+                             " "
+                             (span (@ (class "expressor-id"))
+                                   ,(symbol->string
+                                      (or (expressor-name
+                                            (history-expressor entry)) '?)))
+                             " "
+                             (span (@ (class "value"))
+                                   ,(call-with-output-string
+                                      (lambda (p)
+                                        (%write (history-expr entry) p))))))
+                     filtered)))))
 
 (define (render-expressors-section expressors)
   `(div (@ (class "section"))
@@ -844,11 +907,36 @@
         ,@(if (null? expressors)
               (list `(div (@ (class "inspector-row")) "  (none)"))
               (map (lambda (exp)
-                     `(div (@ (class "inspector-row"))
-                           (span (@ (class "name"))
-                                 ,(symbol->string
-                                    (or (expressor-name exp) '?)))))
+                     (let ((name (or (expressor-name exp) '?)))
+                       `(div (@ (class ,(string-append "inspector-row"
+                                           (if (and *expressor-filter*
+                                                    (eq? name *expressor-filter*))
+                                               " active-filter" ""))))
+                             (span (@ (class "name clickable")
+                                      (click ,(lambda (e)
+                                                (if (and *expressor-filter*
+                                                         (eq? name *expressor-filter*))
+                                                    (set! *expressor-filter* #f)
+                                                    (set! *expressor-filter* name))
+                                                (refresh!))))
+                                   ,(symbol->string name)))))
                    expressors))))
+
+(define (render-validator-section env)
+  (let* ((history (env-history env))
+         (enact-entry (let loop ((entries history))
+                        (cond ((null? entries) #f)
+                              ((and (pair? (history-expr (car entries)))
+                                    (eq? 'enact! (car (history-expr (car entries)))))
+                               (car entries))
+                              (else (loop (cdr entries))))))
+         (display-text (if enact-entry
+                          (call-with-output-string (lambda (p) (%write (history-expr enact-entry) p)))
+                          "<default>")))
+    `(div (@ (class "section"))
+          (div (@ (class "section-header")) "validator")
+          (div (@ (class "inspector-row"))
+               (span (@ (class "value")) ,display-text)))))
 
 ;;; ── Sidebar rendering ──────────────────────────────────────────────────
 
@@ -874,7 +962,7 @@
 
 (define (render-org-detail name)
   (let* ((org (org-lookup name))
-         (env (if org (cdr org)
+         (env (if org (org-entry-env org)
                   (if (and *current-org-name* (string=? name *current-org-name*))
                       *env* #f))))
     (if (not env) ""
@@ -887,8 +975,20 @@
                      (span (@ (class "org-name")) ,name)
                      (span (@ (class "org-action")
                                (click ,(lambda (e) (sidebar-enter-org! name e))))
-                           ,(if active? "exit" "enter")))
+                           ,(if active? "exit" "enter"))
+                     (span (@ (class "org-action org-delete")
+                               (click ,(lambda (e)
+                                         (when (and *current-org-name* (string=? name *current-org-name*))
+                                           (do-exit!))
+                                         (set! *orgs* (let loop ((lst *orgs*))
+                                           (cond ((null? lst) '())
+                                                 ((string=? (caar lst) name) (loop (cdr lst)))
+                                                 (else (cons (car lst) (loop (cdr lst)))))))
+                                         (set! *sidebar-selected-org* #f)
+                                         (refresh!))))
+                           "delete"))
                 ,(render-bindings-section bindings)
+                ,(render-validator-section env)
                 ,(render-history-section history)
                 ,(render-expressors-section expressors))))))
 
@@ -925,6 +1025,24 @@
                           (keyup ,on-keyup) (input ,auto-resize)))
              (span (@ (class "paren-indicator")) ,(paren-indicator)))))
 
+(define (render-tab-bar)
+  `(div (@ (class "tab-bar"))
+        (div (@ (class ,(string-append "tab" (if (eq? *mode* 'outer) " tab-active" "")))
+                (click ,(lambda (e)
+                          (when (eq? *mode* 'inner) (do-exit!) (refresh!) (scroll-to-bottom!)))))
+             "outer")
+        ,@(map (lambda (org-entry)
+                 (let* ((name (org-entry-name org-entry))
+                        (active? (and (eq? *mode* 'inner) *current-org-name*
+                                      (string=? name *current-org-name*))))
+                   `(div (@ (class ,(string-append "tab" (if active? " tab-active" "")))
+                            (click ,(lambda (e)
+                                      (if active?
+                                          (begin (do-exit!) (refresh!) (scroll-to-bottom!))
+                                          (begin (do-enter! name) (refresh!) (scroll-to-bottom!))))))
+                         ,name)))
+               *orgs*)))
+
 (define (render)
   `(div (@ (class "ide"))
         ,(render-sidebar)
@@ -934,6 +1052,21 @@
                                    (click ,toggle-sidebar!))
                                 "\u00bb"))
                    '())
+             ,(render-tab-bar)
              ,(render-repl))))
 
+(define (global-keydown event)
+  (let ((key (keyboard-event-key event)))
+    (cond
+     ((and (string=? key "e") (ctrl-or-cmd? event))
+      (prevent-default! event) (toggle-sidebar! event))
+     ((and (string=? key "l") (ctrl-or-cmd? event))
+      (prevent-default! event) (set! *log* '())
+      (when (eq? *mode* 'outer) (set! *outer-log* '()))
+      (when (eq? *mode* 'inner) (org-save!))
+      (refresh!) (scroll-to-bottom!))
+     ((and (string=? key "k") (ctrl-or-cmd? event))
+      (prevent-default! event) (focus-element! (get-element-by-id "expression"))))))
+
 (refresh!)
+(add-event-listener!/wrap (document-body) "keydown" global-keydown)

@@ -53,7 +53,8 @@ h1 {
     white-space: pre;
     padding: 1rem;
     border-radius: 4px;
-    height: 100vh;
+    flex: 1;
+    min-height: 0;
     overflow: auto;
 }
 
@@ -202,6 +203,40 @@ h1 {
     cursor: pointer;
 }
 .detail-header .org-action:hover { color: #e0ceed; }
+
+/* Delete button */
+.org-delete { color: #ff6b6b; margin-left: 0.5rem; }
+.org-delete:hover { color: #ff4444; }
+
+/* Clickable inspector items */
+.clickable { cursor: pointer; }
+.clickable:hover { text-decoration: underline; }
+
+/* Expressor filter */
+.active-filter { background-color: #1e1828; }
+.filter-badge { color: #ff6b6b; font-size: 9pt; cursor: pointer; margin-left: 0.5rem; }
+.filter-badge:hover { color: #ff4444; }
+
+/* Tab bar */
+.tab-bar {
+    display: flex;
+    border-bottom: 1px solid #2a2230;
+    background-color: #0d0b0f;
+    flex-shrink: 0;
+    overflow-x: auto;
+    font-family: monospace;
+    font-size: 10pt;
+}
+.tab {
+    padding: 0.4rem 0.75rem;
+    color: #8b7b96;
+    cursor: pointer;
+    white-space: nowrap;
+    border-right: 1px solid #1a1520;
+    user-select: none;
+}
+.tab:hover { background-color: #1a1520; color: #e0ceed; }
+.tab-active { color: #a8e6cf; background-color: #110e13; border-bottom: 2px solid #a8e6cf; }
 
 /* Responsive */
 @media (max-width: 768px) {
