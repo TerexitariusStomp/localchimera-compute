@@ -4,24 +4,30 @@ _Express and Experiment with Organization._
 
 ---
 
-**xorg** is a metacircular substrate for programmable organizations, written in Guile Scheme. It asks a simple question: what if an organization were a Lisp environment — and the people in it were expressions that could rewrite the interpreter? Because the representation is homoiconic — rules, history, and state are all S-expressions — the org can inspect, replay, and rewrite itself using the same language it runs in.
+**xorg** is a homoiconic, metacircular, self-reflective, and self-transforming substrate for programmable organizations, written in Guile Scheme.
 
-This makes `enact!` — the primitive that installs a new validator — an act of metaprogramming. You are writing a Scheme function that changes how future Scheme expressions are evaluated. The validator has access to the full environment before and after every change; it is an arbitrary program, not a configuration toggle. In `example.scm`, constitutional conventions, reputation-based governance, and liquid democracy all emerge from different validators applied to the same substrate. You are not configuring an organization — you are programming the interpreter that _is_ the organization.
+It asks a simple question: what if an organization were a Lisp environment — and the people in it were expressions that could rewrite the interpreter?
+
+The answer inherits everything that makes Lisp powerful. The system is **homoiconic**: the organization's rules, state, and history are all S-expressions — the same representation the evaluator consumes. There is no gap between the org and its description. A validator is not a config file — it is a live Scheme expression sitting in the same expression-space as the data it governs. History entries are not opaque log rows — they are the original S-expressions that produced each state transition, ready to be re-evaluated. This is what makes the org **self-reflective**: it can `show-history` to inspect its own evolution, then `rollback!` to replay it, using the same language it was built in.
+
+Because the evaluator is **metacircular** — a Scheme interpreter written in Scheme — the org is **extensible** and **self-transforming** from within. `enact!` installs a new validator: an arbitrary Scheme function that changes how all future expressions are evaluated. The validator has access to the full environment before and after every change. It must accept its own installation to take effect. You are not configuring an organization — you are metaprogramming the interpreter that _is_ the organization, and the interpreter must consent. In `example.scm`, constitutional conventions, reputation-based governance, and liquid democracy all emerge from different validators applied to the same substrate.
+
+Every expression an expressor evaluates moves the org through **expression-space** — the space of all reachable organizational states. `modify!` traverses it. `enact!` reshapes which regions are reachable. `rollback!` backtracks. The org's evolution is a path through this space, and because every step is recorded as a homoiconic S-expression, the entire path is replayable, inspectable, and forkable.
 
 The system is deliberately minimal. It provides identity, memory, and a mechanism for self-modification. What it _becomes_ is not prescribed. A xorg could evolve into a democracy, a marketplace, a neural network of agents, a single autocratic expressor, or something with no existing name. The structure doesn't impose direction — it makes direction _expressible_.
 
 ## Metacircularity
 
-The deepest idea here is borrowed from the metacircular evaluator tradition: a Lisp that interprets Lisp, defined in terms of itself.
+In the Lisp tradition, a metacircular evaluator is an interpreter for a language written in that same language. xorg extends this to organizations: the org is an interpreter, and its expressors write programs that the org evaluates — including programs that rewrite the interpreter itself.
 
-xorg extends this reflexivity to organizations:
+The metacircular closure is complete:
 
-- **The evaluator is written in Scheme, and evaluates Scheme.** The language that defines the organization is the same language the organization operates in.
-- **Validators validate themselves.** When you `enact!` a new validator, it must accept its own installation. The rules for changing the rules are subject to the current rules.
-- **Expressors can create expressors.** Identities within the system can bring new identities into being.
-- **History records the expressions that produced it.** The system's past is stored as evaluable S-expressions — the organization's past is a program that can rebuild itself.
+- **The evaluator evaluates itself.** The language that defines the organization is the language the organization operates in. Homoiconicity ensures there is no translation layer — what you write is what the org stores, inspects, and replays.
+- **Validators validate themselves.** `enact!` must pass the current validator to install a new one. The rules for changing the rules are subject to the current rules.
+- **Expressors create expressors.** Identities within the system bring new identities into being — the org grows itself.
+- **History is its own source code.** Each entry is the S-expression that produced it. `rollback!` re-evaluates them. The org's past is not a log — it is a program.
 
-This means there is no privileged outside. The system is defined from within, modified from within, and understood from within. Like a metacircular evaluator, the boundary between the thing and its description dissolves. In programming language terms, `enact!` is metaprogramming the interpreter at runtime — and the interpreter must consent.
+There is no privileged outside. The system is defined from within, modified from within, reflected on from within, and transformed from within. The boundary between the thing and its description dissolves.
 
 ## Core Concepts
 
