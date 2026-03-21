@@ -4,7 +4,10 @@
 (define-module (xorg gplay)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
+  #:use-module (goblins actor-lib sealers)
+  #:use-module (goblins actor-lib ward)
   #:use-module (ice-9 match)
+  #:use-module (ice-9 receive)
   #:export (^org
             evaluate
             make-initial-org
@@ -15,7 +18,15 @@
             make-id
             *current-caller*
             set-ai-handler!
-            set-ai-eval-handler!))
+            set-ai-eval-handler!
+            ^expressor-identity
+            ^expressor-controller
+            ^org-inbox
+            create-expressor-pair
+            make-org-with-inbox
+            approve-membership
+            *inbox*
+            *inbox-incanter*))
 
 ;;; ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -67,6 +78,11 @@
 
 (define *current-caller* #f)
 
+;;; ── Inbox parameters ────────────────────────────────────────────────────────
+
+(define *inbox* (make-parameter #f))
+(define *inbox-incanter* (make-parameter #f))
+
 ;;; ── AI integration globals ──────────────────────────────────────────────────
 
 (define *ai-handler* #f)
@@ -78,6 +94,15 @@
 ;;; ── Persistence base-bindings injection ─────────────────────────────────────
 
 (define *restore-base-bindings* (make-parameter '()))
+
+;;; ── Identity/controller actors ──────────────────────────────────────────────
+
+(define (^expressor-identity bcom name unsealer sealed?)
+  "Public face of an expressor. Freely shareable."
+  (methods
+   [(name) name]
+   [(unsealer) unsealer]
+   [(sealed?) sealed?]))
 
 ;;; ── ^org actor ──────────────────────────────────────────────────────────────
 
@@ -122,6 +147,12 @@
    [(expressor-key id)
     (let ((d (expressor-ref id)))
       (and d (assq-ref d 'public-key)))]
+   [(expressor-unsealer id)
+    (let ((d (expressor-ref id)))
+      (and d (assq-ref d 'unsealer)))]
+   [(expressor-sealed? id)
+    (let ((d (expressor-ref id)))
+      (and d (assq-ref d 'sealed?)))]
 
    [(modify! name value new-history-entry)
     (bcom (^org bcom
@@ -364,23 +395,26 @@
                      (bind-params params vals closure-bindings)
                      caller)))))
 
-    ;; defexpressor — create expressor identity
+    ;; defexpressor — create expressor identity with sealer triplet
     (('defexpressor name-expr key-expr)
      (let* ((eval-name (evaluate name-expr org local-bindings current-expressor))
             (eval-key (evaluate key-expr org local-bindings current-expressor))
-            (id (make-id eval-name))
-            (data `((id . ,id) (name . ,eval-name) (public-key . ,eval-key)))
-            (pre-bindings ($ org 'bindings))
-            (post-bindings (cons (cons eval-name id) pre-bindings))
-            (validator ($ org 'validator-proc))
-            (version (next-version))
-            (entry (list version current-expressor
-                         `(defexpressor ,name-expr ,key-expr)
-                         (car (car ($ org 'history))))))
-       (if (validator current-expressor eval-name id pre-bindings post-bindings)
-           (begin ($ org 'register-expressor! id data entry)
-                  (if #f #f))
-           (error "Validation failed:" current-expressor eval-name))))
+            (id (make-id eval-name)))
+       (receive (sealer unsealer sealed?)
+         (spawn-sealer-triplet)
+         (let* ((data `((id . ,id) (name . ,eval-name) (public-key . ,eval-key)
+                        (unsealer . ,unsealer) (sealed? . ,sealed?)))
+                (pre-bindings ($ org 'bindings))
+                (post-bindings (cons (cons eval-name id) pre-bindings))
+                (validator ($ org 'validator-proc))
+                (version (next-version))
+                (entry (list version current-expressor
+                             `(defexpressor ,name-expr ,key-expr)
+                             (car (car ($ org 'history))))))
+           (if (validator current-expressor eval-name id pre-bindings post-bindings)
+               (begin ($ org 'register-expressor! id data entry)
+                      sealer)
+               (error "Validation failed:" current-expressor eval-name))))))
 
     ;; as — switch expressor for body
     (('as expressor-id-expr body-expr)
@@ -478,6 +512,23 @@
               (handler (evaluate prompt-expr org local-bindings current-expressor) org)))
          (evaluate result-expr org local-bindings current-expressor))))
 
+    ;; process-message — process an inbox message and evaluate its expression
+    (('process-message msg-id-expr)
+     (unless (*inbox*)
+       (error "No inbox bound. Use *inbox* and *inbox-incanter* parameters."))
+     (let* ((msg-id (evaluate msg-id-expr org local-bindings current-expressor))
+            (expr ($ (*inbox-incanter*) (*inbox*) 'process msg-id)))
+       (evaluate expr org local-bindings current-expressor)))
+
+    ;; retract-message — retract a pending inbox message
+    (('retract-message msg-id-expr sender-expr)
+     (unless (*inbox*)
+       (error "No inbox bound. Use *inbox* and *inbox-incanter* parameters."))
+     (let* ((msg-id (evaluate msg-id-expr org local-bindings current-expressor))
+            (sender (evaluate sender-expr org local-bindings current-expressor)))
+       ($ (*inbox-incanter*) (*inbox*) 'retract msg-id sender)
+       (if #f #f)))
+
     ;; Application — caller tracking via save/restore (Hoot compatible)
     ((proc-expr arg-exprs ...)
      (let ((proc (evaluate proc-expr org local-bindings current-expressor))
@@ -488,3 +539,114 @@
          (let ((result (apply proc args)))
            (set! *current-caller* saved)
            result))))))
+
+;;; ── Expressor controller ───────────────────────────────────────────────────
+
+(define (^expressor-controller bcom org-ref expressor-id sealer)
+  "Private controller for an expressor. Held only by the authorized party."
+  (methods
+   [(evaluate expr)
+    (evaluate expr org-ref '() expressor-id)]
+   [(evaluate-with-locals expr locals)
+    (evaluate expr org-ref locals expressor-id)]
+   [(seal content) ($ sealer content)]
+   [(expressor-id) expressor-id]))
+
+;;; ── Warded inbox actor ─────────────────────────────────────────────────────
+
+(define (^org-inbox bcom org-ref entries next-id inbox-warden inbox-incanter)
+  (define (find-entry msg-id)
+    (let loop ((es entries))
+      (cond ((null? es) (error "Message not found:" msg-id))
+            ((= (assq-ref (car es) 'id) msg-id) (car es))
+            (else (loop (cdr es))))))
+
+  (define (update-status msg-id new-status)
+    (map (lambda (e)
+           (if (= (assq-ref e 'id) msg-id)
+               (map (lambda (pair)
+                      (if (eq? (car pair) 'status)
+                          (cons 'status new-status)
+                          pair))
+                    e)
+               e))
+         entries))
+
+  (define controller-methods
+    (methods
+     [(process msg-id)
+      (let ((entry (find-entry msg-id)))
+        (bcom (^org-inbox bcom org-ref
+                          (update-status msg-id 'processed)
+                          next-id inbox-warden inbox-incanter)
+              (assq-ref entry 'expr)))]
+     [(retract msg-id sender-ref)
+      (let ((entry (find-entry msg-id)))
+        (unless (equal? (assq-ref entry 'sender) sender-ref)
+          (error "Not your message"))
+        (bcom (^org-inbox bcom org-ref
+                          (update-status msg-id 'retracted)
+                          next-id inbox-warden inbox-incanter)))]))
+
+  (define public-methods
+    (methods
+     [(submit expr sender-identity)
+      (bcom (^org-inbox bcom org-ref
+                        (cons `((id . ,next-id) (sender . ,sender-identity)
+                                (expr . ,expr) (status . pending))
+                              entries)
+                        (+ next-id 1) inbox-warden inbox-incanter)
+            next-id)]
+     [(pending)
+      (let loop ((es entries) (acc '()))
+        (cond ((null? es) (reverse acc))
+              ((eq? (assq-ref (car es) 'status) 'pending)
+               (loop (cdr es) (cons (car es) acc)))
+              (else (loop (cdr es) acc))))]
+     [(all-entries) entries]))
+
+  (ward inbox-warden controller-methods
+        #:extends public-methods))
+
+;;; ── Expressor pair factory ─────────────────────────────────────────────────
+
+(define (create-expressor-pair org name public-key)
+  "Create an identity/controller pair for an expressor. Must be called within a vat.
+Returns (identity . controller)."
+  (receive (sealer unsealer sealed?)
+    (spawn-sealer-triplet)
+    (let* ((id (make-id name))
+           (identity (spawn ^expressor-identity name unsealer sealed?))
+           (controller (spawn ^expressor-controller org id sealer))
+           (data `((id . ,id) (name . ,name) (public-key . ,public-key)
+                   (unsealer . ,unsealer) (sealed? . ,sealed?)
+                   (identity . ,identity)))
+           (version (next-version))
+           (entry (list version ($ org 'current-expressor)
+                        `(defexpressor ',name ,public-key)
+                        (car (car ($ org 'history))))))
+      ($ org 'register-expressor! id data entry)
+      (cons identity controller))))
+
+;;; ── Org-with-inbox factory ─────────────────────────────────────────────────
+
+(define (make-org-with-inbox base-bindings)
+  "Spawn org + inbox pair. Returns (org . inbox . incanter) triple."
+  (let ((org (make-initial-org base-bindings)))
+    (receive (warden incanter)
+      (spawn-warding-pair)
+      (let ((inbox (spawn ^org-inbox org '() 0 warden incanter)))
+        (cons org (cons inbox incanter))))))
+
+;;; ── Membership handshake ───────────────────────────────────────────────────
+
+(define (approve-membership inbox incanter msg-id org name public-key
+                            applicant-identity)
+  "Approve a membership request. Returns a sealed controller only the applicant
+can unseal."
+  ($ incanter inbox 'process msg-id)
+  (let* ((pair (create-expressor-pair org name public-key))
+         (controller (cdr pair))
+         (sub-sealer ($ applicant-identity 'subscription-sealer))
+         (sealed-controller ($ sub-sealer controller)))
+    sealed-controller))

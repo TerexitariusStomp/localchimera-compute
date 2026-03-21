@@ -4,7 +4,9 @@ _Express and Experiment with Organization._
 
 ---
 
-**xorg** is a metacircular substrate for programmable organizations, written in Guile Scheme. It asks a simple question: what if an organization were a Lisp environment — and the people in it were expressions that could rewrite the interpreter?
+**xorg** is a metacircular substrate for programmable organizations, written in Guile Scheme. It asks a simple question: what if an organization were a Lisp environment — and the people in it were expressions that could rewrite the interpreter? Because the representation is homoiconic — rules, history, and state are all S-expressions — the org can inspect, replay, and rewrite itself using the same language it runs in.
+
+This makes `enact!` — the primitive that installs a new validator — an act of metaprogramming. You are writing a Scheme function that changes how future Scheme expressions are evaluated. The validator has access to the full environment before and after every change; it is an arbitrary program, not a configuration toggle. In `example.scm`, constitutional conventions, reputation-based governance, and liquid democracy all emerge from different validators applied to the same substrate. You are not configuring an organization — you are programming the interpreter that _is_ the organization.
 
 The system is deliberately minimal. It provides identity, memory, and a mechanism for self-modification. What it _becomes_ is not prescribed. A xorg could evolve into a democracy, a marketplace, a neural network of agents, a single autocratic expressor, or something with no existing name. The structure doesn't impose direction — it makes direction _expressible_.
 
@@ -17,9 +19,9 @@ xorg extends this reflexivity to organizations:
 - **The evaluator is written in Scheme, and evaluates Scheme.** The language that defines the organization is the same language the organization operates in.
 - **Validators validate themselves.** When you `enact!` a new validator, it must accept its own installation. The rules for changing the rules are subject to the current rules.
 - **Expressors can create expressors.** Identities within the system can bring new identities into being.
-- **History records the expressions that produced it.** The system's past is stored as evaluable code — the organization can replay, inspect, and reason about its own evolution.
+- **History records the expressions that produced it.** The system's past is stored as evaluable S-expressions — the organization's past is a program that can rebuild itself.
 
-This means there is no privileged outside. The system is defined from within, modified from within, and understood from within. Like a metacircular evaluator, the boundary between the thing and its description dissolves.
+This means there is no privileged outside. The system is defined from within, modified from within, and understood from within. Like a metacircular evaluator, the boundary between the thing and its description dissolves. In programming language terms, `enact!` is metaprogramming the interpreter at runtime — and the interpreter must consent.
 
 ## Core Concepts
 
@@ -57,6 +59,23 @@ The default validator accepts everything. You replace it with `enact!`. The meta
 ### History
 
 Every change produces a history entry: a version number, the expressor, the expression evaluated, and a pointer to its parent. The ledger is append-only. Because entries store the original expressions as data, the organization's past is not merely recorded — it is **replayable**.
+
+## Play and Meta-Play
+
+**Play** is acting within the org — binding values, switching identities, enacting rules. **Meta-play** is stepping outside to inspect, replay, and reason about the act of expression itself. Both use the same language. There is no separate admin interface or audit system — meta-play is Scheme over Scheme.
+
+```scheme
+;; Play: alice acts within the org
+(as alice (modify! 'budget 50000))
+
+;; Meta-play: inspect how the org arrived here
+(show-history)
+
+;; Meta-play: rewind and explore a different path
+(rollback! 3)
+```
+
+The history is append-only and monotonic at the meta-level. "Alice enacted validator V at version 7" persists as a fact even after rollback to version 3. Object-level state fluctuates — bindings change, validators are replaced, decisions reverse. But the meta-level record of _who did what and when_ only grows. You can always reason reliably about how the system evolved, even as the system itself transforms.
 
 ## Usage
 
@@ -105,6 +124,12 @@ Every change produces a history entry: a version number, the expressor, the expr
 ```
 
 Rollback does not erase — it replays. Each step is re-evaluated under the identity that originally performed it, so attribution survives time travel.
+
+### Time Travel as Search
+
+The append-only history combined with `rollback!` means the org's evolution is a search tree, not a linear timeline. Every validator you `enact!` narrows the space of possible futures. Every `rollback!` reopens it.
+
+Git branches fork this search at the code level — different validators, different governance models, applied to the same substrate. `rollback!` forks it at the state level — same code, different point in the org's history to branch from. Combined, organizational design becomes something you can branch, diff, merge, and replay — the same workflow programmers use for code, applied to the structure of collective action itself.
 
 ## REPL Tutorial
 
@@ -202,6 +227,8 @@ Every action is attributed: version 3 was alice, versions 4–5 were bob. The re
 ### What just happened
 
 You expressed a xorg. Two identities acted, a rule was enacted that constrained future behavior (and had to survive its own installation), a violation was rejected, and every step was remembered and attributed. The shape of this organization — who can act, what rules apply, how decisions are made — was not prescribed. It emerged from the expressions.
+
+Most of this session was **play** — expressors acting, rules being enacted. `(show-history)` was **meta-play** — stepping outside to see the full attributed record. And because the entire evolution is stored as replayable S-expressions, you could `rollback!` to any point and explore a different path — treating organizational design as a search problem.
 
 ## The Evaluator
 

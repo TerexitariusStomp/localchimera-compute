@@ -4,6 +4,8 @@
 (add-to-load-path "module")
 (use-modules (xorg gplay)
              (goblins)
+             (goblins actor-lib methods)
+             (goblins actor-lib sealers)
              (goblins persistence-store memory)
              (ice-9 receive))
 
@@ -660,6 +662,164 @@
     (ev '(modify! 'y 42) org)
     (check "subsequent mutation succeeds"
            (ev 'y org) 42)))
+
+;;; ── 28. Sealer triplets ──────────────────────────────────────────────────────
+
+(display "\n── 28. sealer triplets ──\n")
+
+(with-vat test-vat
+  (let ((org (make-initial-org test-base-bindings)))
+    ;; defexpressor returns sealer
+    (let ((sealer (ev '(defexpressor 'alice "key-a") org)))
+      (check "defexpressor returns a sealer" (not (not sealer)) #t)
+      ;; unsealer and sealed? in expressor-store
+      (let* ((id (ev 'alice org))
+             (unsealer ($ org 'expressor-unsealer id))
+             (sealed? ($ org 'expressor-sealed? id)))
+        (check "expressor-unsealer returns an unsealer" (not (not unsealer)) #t)
+        (check "expressor-sealed? returns a predicate" (not (not sealed?)) #t)
+        ;; seal + unseal round-trip
+        (let* ((sealed ($ sealer "secret"))
+               (unsealed ($ unsealer sealed)))
+          (check "seal + unseal round-trip" unsealed "secret")
+          (check "sealed? recognizes sealed value" ($ sealed? sealed) #t)
+          (check "sealed? rejects plain value" ($ sealed? "not sealed") #f))))))
+
+;;; ── 29. Identity/controller pair ────────────────────────────────────────────
+
+(display "\n── 29. identity/controller pair ──\n")
+
+(with-vat test-vat
+  (let* ((org (make-initial-org test-base-bindings))
+         (pair (create-expressor-pair org 'bob "bob-key"))
+         (identity (car pair))
+         (controller (cdr pair)))
+    ;; Identity methods
+    (check "identity name" ($ identity 'name) 'bob)
+    (check "identity has unsealer" (not (not ($ identity 'unsealer))) #t)
+    (check "identity has sealed?" (not (not ($ identity 'sealed?))) #t)
+    ;; Controller evaluates in org
+    ($ controller 'evaluate '(define x 42))
+    (check "controller evaluate modifies org" ($ org 'lookup 'x) 42)
+    ;; Controller evaluate-with-locals
+    (check "controller evaluate-with-locals"
+           ($ controller 'evaluate-with-locals '(+ x local-y) '((local-y . 8)))
+           50)
+    ;; Controller seal + identity unseal
+    (let* ((sealed ($ controller 'seal "test-content"))
+           (unsealer ($ identity 'unsealer))
+           (unsealed ($ unsealer sealed)))
+      (check "controller seal + identity unseal" unsealed "test-content"))
+    ;; Controller expressor-id
+    (check "controller has expressor-id"
+           ($ org 'expressor? ($ controller 'expressor-id)) #t)))
+
+;;; ── 30. Warded inbox ────────────────────────────────────────────────────────
+
+(display "\n── 30. warded inbox ──\n")
+
+(with-vat test-vat
+  (let* ((triple (make-org-with-inbox test-base-bindings))
+         (org (car triple))
+         (inbox (cadr triple))
+         (incanter (cddr triple)))
+    ;; Public: submit
+    (let ((msg-id ($ inbox 'submit '(define x 42) 'alice-ref)))
+      (check "submit returns msg-id" msg-id 0)
+      ;; Public: pending
+      (check "pending shows submitted message" (length ($ inbox 'pending)) 1)
+      ;; Public: all-entries
+      (check "all-entries shows submitted message" (length ($ inbox 'all-entries)) 1)
+      ;; Controller: process (via incanter)
+      (let ((expr ($ incanter inbox 'process msg-id)))
+        (check "process returns the expr" expr '(define x 42)))
+      ;; After processing, pending is empty
+      (check "pending is empty after process" (length ($ inbox 'pending)) 0)
+      ;; all-entries still has the entry (now processed)
+      (check "all-entries retains processed entry" (length ($ inbox 'all-entries)) 1))
+    ;; Submit another for retract test
+    (let ((msg-id2 ($ inbox 'submit '(define y 99) 'bob-ref)))
+      ;; Retract by correct sender
+      ($ incanter inbox 'retract msg-id2 'bob-ref)
+      (check "retract removes from pending" (length ($ inbox 'pending)) 0)
+      ;; Retract by wrong sender errors
+      (let ((msg-id3 ($ inbox 'submit '(define z 1) 'carol-ref)))
+        (check-error "retract by wrong sender errors"
+          ($ incanter inbox 'retract msg-id3 'wrong-ref))))
+    ;; Direct call to controller method without incanter errors
+    (let ((msg-id4 ($ inbox 'submit '(define w 0) 'test-ref)))
+      (check-error "direct process without incanter errors"
+        ($ inbox 'process msg-id4)))))
+
+;;; ── 31. process-message form ────────────────────────────────────────────────
+
+(display "\n── 31. process-message form ──\n")
+
+(with-vat test-vat
+  (let* ((triple (make-org-with-inbox test-base-bindings))
+         (org (car triple))
+         (inbox (cadr triple))
+         (incanter (cddr triple)))
+    ;; Submit a define expression to inbox
+    (let ((msg-id ($ inbox 'submit '(define x 42) 'remote-sender)))
+      ;; Evaluate process-message in the org
+      (parameterize ((*inbox* inbox)
+                     (*inbox-incanter* incanter))
+        (ev `(process-message ,msg-id) org))
+      ;; Verify org state changed
+      (check "process-message: x defined in org" (ev 'x org) 42)
+      ;; Message is now processed
+      (check "process-message: pending empty" (length ($ inbox 'pending)) 0))
+    ;; process-message without inbox errors
+    (check-error "process-message without inbox errors"
+      (ev '(process-message 0) org))
+    ;; retract-message form
+    (let ((msg-id2 ($ inbox 'submit '(define y 99) 'sender-ref)))
+      (parameterize ((*inbox* inbox)
+                     (*inbox-incanter* incanter))
+        (ev `(retract-message ,msg-id2 'sender-ref) org))
+      (check "retract-message: pending empty" (length ($ inbox 'pending)) 0))))
+
+;;; ── 32. Sealed membership handshake ─────────────────────────────────────────
+
+(display "\n── 32. sealed membership handshake ──\n")
+
+(with-vat test-vat
+  (let* ((triple (make-org-with-inbox test-base-bindings))
+         (org (car triple))
+         (inbox (cadr triple))
+         (incanter (cddr triple)))
+    ;; Create remote identity with subscription-sealer
+    (receive (sub-sealer sub-unsealer sub-sealed?)
+      (spawn-sealer-triplet)
+      (let* ((remote-identity
+              (spawn (lambda (bcom)
+                       (methods
+                        [(name) 'remote-alice]
+                        [(subscription-sealer) sub-sealer]))))
+             ;; Submit membership request
+             (msg-id ($ inbox 'submit '(request-membership) remote-identity))
+             ;; Approve membership
+             (sealed-controller
+              (approve-membership inbox incanter msg-id org
+                                  'remote-alice "remote-key" remote-identity))
+             ;; Unseal with remote's subscription-unsealer
+             (controller ($ sub-unsealer sealed-controller)))
+        ;; Evaluate through controller
+        ($ controller 'evaluate '(define remote-val 999))
+        (check "handshake: controller evaluates in org"
+               (ev 'remote-val org) 999)
+        ;; Verify expressor was created
+        (let ((eid ($ controller 'expressor-id)))
+          (check "handshake: expressor registered"
+                 ($ org 'expressor? eid) #t)
+          (check "handshake: expressor name"
+                 ($ org 'expressor-name eid) 'remote-alice))
+        ;; Wrong unsealer can't unseal
+        (receive (other-sealer other-unsealer other-sealed?)
+          (spawn-sealer-triplet)
+          (check-error "handshake: wrong unsealer can't unseal"
+            ($ other-unsealer sealed-controller)))))))
 
 ;;; ── Summary ─────────────────────────────────────────────────────────────────
 
