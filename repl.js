@@ -60,6 +60,51 @@ window.addEventListener("load", async () => {
               throw new Error("AI returned no choices");
             return choices[0].message.content;
           }
+        },
+        uint8Array: {
+          new(size) { return new Uint8Array(size); },
+          fromArrayBuffer(buf) { return new Uint8Array(buf); },
+          ref(arr, idx) { return arr[idx]; },
+          set(arr, idx, val) { arr[idx] = val; },
+          length(arr) { return arr.length; }
+        },
+        crypto: {
+          randomValues(size) {
+            const arr = new Uint8Array(size);
+            crypto.getRandomValues(arr);
+            return arr;
+          },
+          async digest(algo, data) {
+            const buf = await crypto.subtle.digest(algo, data);
+            return new Uint8Array(buf);
+          },
+          async generateEd25519KeyPair() {
+            return await crypto.subtle.generateKey(
+              { name: "Ed25519" }, true, ["sign", "verify"]
+            );
+          },
+          keyPairPublicKey(pair) { return pair.publicKey; },
+          keyPairPrivateKey(pair) { return pair.privateKey; },
+          async exportKey(key) {
+            const buf = await crypto.subtle.exportKey("raw", key);
+            return new Uint8Array(buf);
+          },
+          async verifyEd25519(sig, data, key) {
+            return await crypto.subtle.verify(
+              { name: "Ed25519" }, key, sig, data
+            );
+          },
+          async importPublicKey(data) {
+            return await crypto.subtle.importKey(
+              "raw", data, { name: "Ed25519" }, true, ["verify"]
+            );
+          },
+          async signEd25519(data, key) {
+            const buf = await crypto.subtle.sign(
+              { name: "Ed25519" }, key, data
+            );
+            return new Uint8Array(buf);
+          }
         }
       }
     });

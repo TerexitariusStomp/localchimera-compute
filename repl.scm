@@ -1,9 +1,7 @@
-(use-modules (hoot eval)
-             (hoot ffi)
+(use-modules (hoot ffi)
              (hoot hashtables)
              ((hoot error-handling) #:select (format-exception))
              (ice-9 match)
-             (repl-environment)
              (goblins)
              (xorg gplay)
              (srfi srfi-11))
@@ -459,7 +457,6 @@
 
 ;;; ── Org management ────────────────────────────────────────────────────────
 
-(define hoot-env (repl-environment))
 
 (define *orgs* '())
 (define *mode* 'outer)
@@ -732,31 +729,12 @@
          ((eq? *mode* 'inner)
           (eval-play! exp)
           (loop))
-         ;; In outer mode, use Hoot's R7RS eval
+         ;; In outer mode, prompt user to enter an org
          (else
-          (let ((output (open-output-string)))
-            (with-exception-handler
-              (lambda (exn)
-                (let ((err-port (open-output-string)))
-                  (format-exception exn err-port)
-                  (log-append! `(span (@ (class "error-text"))
-                                      ,(get-output-string err-port)))))
-              (lambda ()
-                (parameterize ((current-output-port output))
-                  (call-with-values
-                    (lambda () (eval exp hoot-env))
-                    (lambda vals
-                      (let ((out-str (get-output-string output)))
-                        (unless (string=? out-str "")
-                          (log-append! `(span (@ (class "output-text")) ,out-str))))
-                      (for-each
-                        (lambda (val)
-                          (let ((p (open-output-string)))
-                            (write val p)
-                            (log-append! `(span (@ (class "result-text"))
-                                                ,(string-append "=> " (get-output-string p) "\n")))))
-                        vals)))))
-              #:unwind? #t))
+          (log-append! `(span (@ (class "info-text"))
+                              ,(string-append "Enter an org to evaluate expressions.\n"
+                                              "  (make-org \"name\")  create an org\n"
+                                              "  (enter! \"name\")    enter it\n")))
           (loop)))))))
 
 ;;; ── Auto-resize ───────────────────────────────────────────────────────────

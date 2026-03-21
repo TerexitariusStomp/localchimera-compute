@@ -28,6 +28,18 @@
             *inbox*
             *inbox-incanter*))
 
+;;; Hoot/WASM compatibility: eval and interaction-environment are not
+;;; automatically available in Hoot's module system.
+(cond-expand
+  (hoot
+   (define (%restore-eval expr env)
+     (error "eval not available in WASM persistence restore"))
+   (define (%restore-interaction-env)
+     (error "interaction-environment not available in WASM")))
+  (else
+   (define %restore-eval eval)
+   (define (%restore-interaction-env) (interaction-environment))))
+
 ;;; ── Helpers ─────────────────────────────────────────────────────────────────
 
 (define *id-counter* 0)
@@ -119,7 +131,7 @@
       (spawn ^org
              (append data-bindings base)
              vexpr
-             (eval vexpr (interaction-environment))
+             (%restore-eval vexpr (%restore-interaction-env))
              history estore cur-exp
              base)))
 
