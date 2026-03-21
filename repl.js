@@ -105,6 +105,14 @@ window.addEventListener("load", async () => {
             );
             return new Uint8Array(buf);
           }
+        },
+        codeViewer: {
+          updateCode(code) {
+            const viewer = document.getElementById("code-viewer-content");
+            if (viewer) {
+              viewer.textContent = code;
+            }
+          }
         }
       }
     });

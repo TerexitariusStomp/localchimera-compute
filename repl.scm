@@ -11,6 +11,7 @@
              (goblins ocapn captp)
              (goblins ocapn netlayer fake)
              (xorg gplay)
+             (xorg autocomplete)
              (srfi srfi-11))
 
 (define-foreign document-body
@@ -120,6 +121,10 @@
 (define-foreign ai-chat
   "ai" "chat"
   (ref string) (ref string) (ref string) (ref string) -> (ref string))
+
+(define-foreign update-code-viewer
+  "codeViewer" "updateCode"
+  (ref string) -> none)
 
 (define procedure->external/cached
   (let ((cache (make-hashtable)))
@@ -606,6 +611,10 @@
 
 (define *paren-depth* 0)
 
+;;; ── Autocomplete state ─────────────────────────────────────────────────────
+
+(define *current-suggestion* "")
+
 (define (compute-paren-depth str)
   (let loop ((i 0) (depth 0) (in-string? #f))
     (if (>= i (string-length str))
@@ -654,7 +663,9 @@
                       (display result result-port)
                       (write result result-port))
                   (log-append! `(span (@ (class "result-text"))
-                                      ,(string-append "=> " (get-output-string result-port) "\n")))))))))
+                                      ,(string-append "=> " (get-output-string result-port) "\n")))))
+              ;; Update code viewer after evaluation
+              (update-code-viewer!)))))
       #:unwind? #t)))
 
 (define (eval-peer! exp)
@@ -695,7 +706,9 @@
       (set! *log* (org-entry-log org))
       (set! *sidebar-selected-org* name)
       (log-append! `(span (@ (class "info-text"))
-                          ,(string-append "Entering org '" name "'.\n"))))))
+                          ,(string-append "Entering org '" name "'.\n")))
+      ;; Update code viewer when entering org
+      (update-code-viewer!))))
 
 (define (do-exit!)
   (when (eq? *mode* 'inner)
@@ -707,7 +720,9 @@
     (let ((name *current-org-name*))
       (set! *current-org-name* #f)
       (log-append! `(span (@ (class "info-text"))
-                          ,(string-append "Left org '" name "'.\n"))))))
+                          ,(string-append "Left org '" name "'.\n")))
+      ;; Clear code viewer when exiting org
+      (update-code-viewer ""))))
 
 (define (handle-command exp)
   (match exp
@@ -932,9 +947,16 @@
         (unless (string=? exp "")
           (set-element-value! input "")
           (set-style! input "height" "auto")
+          (set! *current-suggestion* "")
           (eval! exp)
           (refresh!)
           (scroll-to-bottom!))))
+     ((and (string=? key "Tab") (not (string=? *current-suggestion* "")))
+      (prevent-default! event)
+      (let ((input (get-element-by-id "expression")))
+        (set-element-value! input (string-append (element-value input) *current-suggestion*))
+        (set! *current-suggestion* "")
+        (refresh!)))
      ((string=? key "ArrowUp")
       (prevent-default! event)
       (when (< (+ *history-index* 1) (length *history*))
@@ -961,9 +983,16 @@
   (let* ((input (get-element-by-id "expression"))
          (str (element-value input))
          (depth (compute-paren-depth str)))
+    ;; Update paren depth
     (unless (= depth *paren-depth*)
-      (set! *paren-depth* depth)
-      (refresh!))))
+      (set! *paren-depth* depth))
+    ;; Update autocomplete suggestion
+    (when (and *org* (eq? *mode* 'inner))
+      (with-vat *vat*
+        (let ((completions (get-completions str (string-length str) *org*)))
+          (set! *current-suggestion*
+                (if (null? completions) "" (car completions))))))
+    (refresh!)))
 
 ;;; ── Sidebar event handlers ───────────────────────────────────────────────
 
@@ -1181,6 +1210,10 @@
              (textarea (@ (id "expression") (class "repl-text")
                           (rows "1") (keydown ,maybe-eval)
                           (keyup ,on-keyup) (input ,auto-resize)))
+             ,@(if (string=? *current-suggestion* "")
+                   '()
+                   (list `(span (@ (class "ghost-text-suggestion"))
+                                ,*current-suggestion*)))
              (span (@ (class "paren-indicator")) ,(paren-indicator)))))
 
 (define (render-tab-bar)
