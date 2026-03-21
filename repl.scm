@@ -115,11 +115,11 @@
   (ref string) (ref string) (ref string) (ref string) -> (ref string))
 
 (define procedure->external/cached
-  (let ((cache (make-weak-key-hashtable)))
+  (let ((cache (make-hashtable)))
     (lambda (proc)
-      (or (weak-key-hashtable-ref cache proc)
+      (or (hashtable-ref cache proc)
           (let ((f (procedure->external proc)))
-            (weak-key-hashtable-set! cache proc f)
+            (hashtable-set! cache proc f)
             f)))))
 
 (define (add-event-listener!/wrap elem name proc)
@@ -627,14 +627,16 @@
                   (log-append! `(span (@ (class "output-text")) ,out-str))))
               (unless (eq? result (if #f #f))
                 (let ((result-port (open-output-string)))
-                  (write result result-port)
+                  (if (string? result)
+                      (display result result-port)
+                      (write result result-port))
                   (log-append! `(span (@ (class "result-text"))
                                       ,(string-append "=> " (get-output-string result-port) "\n")))))))))
       #:unwind? #t)))
 
 (define (do-enter! name)
   (let ((org (org-lookup name)))
-    (when org
+    (when (and org (not (and *current-org-name* (string=? name *current-org-name*))))
       (org-save!)
       (when (eq? *mode* 'outer)
         (set! *outer-log* *log*)
