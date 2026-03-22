@@ -124,6 +124,10 @@
   "urlParams" "get"
   (ref string) -> (ref string))
 
+(define-foreign relay-send-later
+  "relay" "sendLater"
+  (ref extern) (ref string) -> none)
+
 (define procedure->external/cached
   (let ((cache (make-hashtable)))
     (lambda (proc)
@@ -572,9 +576,9 @@
                  "\n"
                  "  (join-org \"alpha\")                 request to join\n"
                  "  (approve-member 0 \"alice\")         approve member\n"
-                 "  (act-in \"alpha\" (modify! 'x 1))   act in another org\n"
+                 "  (act-in \"alpha\" (modify! 'x 1))   act in local org\n"
+                 "  (act-in alice-key (modify! 'x 1))  act in remote org\n"
                  "  (public-key)                       show this org's key\n"
-                 "  (remote (modify! 'x 1))            send to server\n"
                  "\n"
                  "── Language Forms ──────────────────────────────\n"
                  "\n"
@@ -769,13 +773,7 @@
       (set! *sidebar-selected-org* name)
       (log-append! `(span (@ (class "info-text"))
                           ,(string-append "Entering org '" name "'.\n")))
-      ;; Auto-register with relay using this org's public key
-      (when (and *ws* *connected?*)
-        (let ((pk (with-vat *vat* ($ *org* 'public-key))))
-          (ws-send *ws* (call-with-output-string
-                          (lambda (p) (write `(register ,pk) p))))
-          (log-append! `(span (@ (class "info-text"))
-                              "Registered on relay.\n"))))
+      (register-all-keys!)
       ;; Update code viewer when entering org
       (update-code-viewer!))))
 
@@ -818,7 +816,7 @@
                                 (if (> (string-length s) 50)
                                     (string-append (substring s 0 50) "...")
                                     s)))))
-           (set! *orgs* (cons (list name vat ref inbox incanter kp '()) *orgs*))
+           (set! *orgs* (cons (list name vat ref inbox incanter pk '()) *orgs*))
            (set! *sidebar-selected-org* name)
            (log-append! `(span (@ (class "result-text"))
                                ,(string-append "Created org: " name "\n  key: " pk-display "\n")))))
@@ -971,7 +969,7 @@
                     (msg (call-with-output-string
                            (lambda (p)
                              (write `(to ,pk-str (from ,my-pk-str ,body-expr)) p)))))
-               (ws-send *ws* msg)
+               (relay-send-later *ws* msg)
                (log-append! `(span (@ (class "info-text"))
                                    ,(string-append "Sent: " expr-str "\n")))))
             ;; Target is a public key but no relay
@@ -1396,11 +1394,26 @@
 (add-event-listener!/wrap (document-body) "keydown" global-keydown)
 
 ;;; ── WebSocket relay connection ──────────────────────────────────────────
-;;; If ?relay=ws://host:port&name=myname is in the URL, connect to relay.
-;;; Messages are S-expressions routed by name.
+;;; One connection per client. Registers all orgs' pubkeys.
 
 (define *ws* #f)            ;; WebSocket connection
 (define *connected?* #f)    ;; #t after connected
+
+(define (register-all-keys!)
+  "Send all local orgs' public keys to the relay."
+  (when (and *ws* *connected?*)
+    (log-append! `(span (@ (class "info-text")) "Preparing keys...\n"))
+    (let ((keys (map (lambda (e) (list-ref e 5)) *orgs*)))
+      (log-append! `(span (@ (class "info-text"))
+                          ,(string-append "Keys: " (number->string (length keys)) "\n")))
+      (unless (null? keys)
+        (let ((msg (call-with-output-string
+                     (lambda (p) (write `(register-keys ,keys) p)))))
+          (log-append! `(span (@ (class "info-text"))
+                              ,(string-append "Msg len: " (number->string (string-length msg)) "\n")))
+          (ws-send *ws* msg)
+          (log-append! `(span (@ (class "info-text"))
+                              "Sent!\n")))))))
 
 (define-foreign ws-open
   "webSocket" "new"
@@ -1438,7 +1451,7 @@
       (procedure->external
        (lambda (data)
          (log-append! `(span (@ (class "output-text"))
-                             ,(string-append "relay: " (if (string? data) data "?") "\n")))
+                             "relay: message received\n"))
          (refresh!))))
 
     (ws-on-close! ws

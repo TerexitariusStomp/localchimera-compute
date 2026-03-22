@@ -130,6 +130,12 @@ window.addEventListener("load", async () => {
           get(name) {
             return new URLSearchParams(window.location.search).get(name) || "";
           }
+        },
+        relay: {
+          sendLater(ws, msg) {
+            // Send asynchronously, outside any Scheme call stack
+            setTimeout(() => { try { ws.send(msg); } catch(e) { console.error("relay send:", e); } }, 0);
+          }
         }
       }
     });
