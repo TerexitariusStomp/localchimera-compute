@@ -166,6 +166,16 @@
     (let ((d (expressor-ref id)))
       (and d (assq-ref d 'sealed?)))]
 
+   [(authenticate-sealer sealer)
+    ;; Seal a nonce, then check each expressor's sealed? predicate.
+    ;; Returns the matching expressor ID, or #f.
+    (let ((nonce ($ sealer 'test-nonce)))
+      (let loop ((store expressor-store))
+        (cond ((null? store) #f)
+              (($ (assq-ref (cdar store) 'sealed?) nonce)
+               (caar store))
+              (else (loop (cdr store))))))]
+
    [(modify! name value new-history-entry)
     (bcom (^org bcom
                 (cons (cons name value) bindings)
@@ -181,7 +191,7 @@
 
    [(register-expressor! id data new-history-entry)
     (bcom (^org bcom
-                (cons (cons (assq-ref data 'name) id) bindings)
+                bindings
                 validator-expr validator-proc
                 (cons new-history-entry history)
                 (cons (cons id data) expressor-store)
@@ -416,24 +426,24 @@
          (spawn-sealer-triplet)
          (let* ((data `((id . ,id) (name . ,eval-name) (public-key . ,eval-key)
                         (unsealer . ,unsealer) (sealed? . ,sealed?)))
-                (pre-bindings ($ org 'bindings))
-                (post-bindings (cons (cons eval-name id) pre-bindings))
+                (bindings ($ org 'bindings))
                 (validator ($ org 'validator-proc))
                 (version (next-version))
                 (entry (list version current-expressor
                              `(defexpressor ,name-expr ,key-expr)
                              (car (car ($ org 'history))))))
-           (if (validator current-expressor eval-name id pre-bindings post-bindings)
+           (if (validator current-expressor eval-name id bindings bindings)
                (begin ($ org 'register-expressor! id data entry)
                       sealer)
                (error "Validation failed:" current-expressor eval-name))))))
 
-    ;; as — switch expressor for body
-    (('as expressor-id-expr body-expr)
-     (let ((target (evaluate expressor-id-expr org local-bindings current-expressor)))
-       (unless ($ org 'expressor? target)
-         (error "Not an expressor:" target))
-       (evaluate body-expr org local-bindings target)))
+    ;; as — switch expressor for body (requires sealer capability)
+    (('as sealer-expr body-expr)
+     (let* ((sealer (evaluate sealer-expr org local-bindings current-expressor))
+            (id ($ org 'authenticate-sealer sealer)))
+       (unless id
+         (error "Invalid expressor credential — must provide the sealer returned by defexpressor"))
+       (evaluate body-expr org local-bindings id)))
 
     ;; modify! — validated binding mutation
     (('modify! name-expr value-expr)

@@ -58,21 +58,25 @@
 ;;; Convenience: evaluate in org with default expressor
 (define (ev expr org)
   (evaluate expr org '() ($ org 'current-expressor)))
+(define (ev/locals expr org locals)
+  (evaluate expr org locals ($ org 'current-expressor)))
 
 ;;; ── 1. Expressor accessors ─────────────────────────────────────────────────
 
 (display "\n── 1. expressor accessors ──\n")
 
 (with-vat test-vat
-  (let ((org (make-initial-org test-base-bindings)))
-    (ev '(defexpressor 'alice "alice-key") org)
-    (let ((id ($ org 'lookup 'alice)))
-      (check "expressor? recognizes valid id"
-             ($ org 'expressor? id) #t)
-      (check "expressor-name returns the name symbol"
-             ($ org 'expressor-name id) 'alice)
-      (check "expressor-key returns the key string"
-             ($ org 'expressor-key id) "alice-key"))))
+  (let* ((org (make-initial-org test-base-bindings))
+         (sealer (ev '(defexpressor 'alice "alice-key") org))
+         (id ($ org 'authenticate-sealer sealer)))
+    (check "authenticate-sealer returns valid id"
+           (and id #t) #t)
+    (check "expressor? recognizes authenticated id"
+           ($ org 'expressor? id) #t)
+    (check "expressor-name returns the name symbol"
+           ($ org 'expressor-name id) 'alice)
+    (check "expressor-key returns the key string"
+           ($ org 'expressor-key id) "alice-key")))
 
 (with-vat test-vat
   (let ((org (make-initial-org test-base-bindings)))
@@ -170,16 +174,16 @@
 (display "\n── 5. as / identity switching ──\n")
 
 (with-vat test-vat
-  (let ((org (make-initial-org test-base-bindings)))
-    (ev '(defexpressor 'carol "carol-key") org)
-    (ev '(as carol (modify! 'greeting "hi")) org)
+  (let* ((org (make-initial-org test-base-bindings))
+         (carol-seal (ev '(defexpressor 'carol "carol-key") org)))
+    (ev/locals '(as carol (modify! 'greeting "hi")) org `((carol . ,carol-seal)))
     (check "defexpressor + as round-trip works"
            (ev 'greeting org) "hi")))
 
 (with-vat test-vat
-  (let ((org (make-initial-org test-base-bindings)))
-    (ev '(defexpressor 'alice "key-a") org)
-    (ev '(as alice (modify! 'greeting "hello")) org)
+  (let* ((org (make-initial-org test-base-bindings))
+         (alice-seal (ev '(defexpressor 'alice "key-a") org)))
+    (ev/locals '(as alice (modify! 'greeting "hello")) org `((alice . ,alice-seal)))
     (let ((entry (car ($ org 'history))))
       (check "modify! value is stored under as"
              (ev 'greeting org) "hello")
@@ -194,20 +198,20 @@
       (check "modify! without as records genesis"
              ($ org 'expressor-name (cadr entry)) 'genesis))))
 
-;; as with unbound name signals error
+;; as with invalid credential signals error
 (with-vat test-vat
   (let ((org (make-initial-org test-base-bindings)))
-    (check-error "as with unbound name signals error"
-      (ev '(as nobody (modify! 'x 1)) org))))
+    (check-error "as with invalid credential signals error"
+      (ev '(as 'not-a-sealer (modify! 'x 1)) org))))
 
 ;;; ── 6. expressor-name in history ───────────────────────────────────────────
 
 (display "\n── 6. expressor-name in history ──\n")
 
 (with-vat test-vat
-  (let ((org (make-initial-org test-base-bindings)))
-    (ev '(defexpressor 'bob "key-b") org)
-    (ev '(as bob (modify! 'flag #t)) org)
+  (let* ((org (make-initial-org test-base-bindings))
+         (bob-seal (ev '(defexpressor 'bob "key-b") org)))
+    (ev/locals '(as bob (modify! 'flag #t)) org `((bob . ,bob-seal)))
     (let ((entry (car ($ org 'history))))
       (check "history entry holds an expressor id"
              ($ org 'expressor? (cadr entry)) #t)
@@ -221,13 +225,14 @@
 (display "\n── 7. logic vs authority ──\n")
 
 (with-vat test-vat
-  (let ((org (make-initial-org test-base-bindings)))
-    (ev '(defexpressor 'alice "key-a") org)
-    (ev '(defexpressor 'bob "key-b") org)
+  (let* ((org (make-initial-org test-base-bindings))
+         (alice-seal (ev '(defexpressor 'alice "key-a") org))
+         (bob-seal (ev '(defexpressor 'bob "key-b") org)))
     ;; Alice defines the modifier
-    (ev '(as alice (modify! 'modifier (lambda (x) (modify! 'target x)))) org)
+    (ev/locals '(as alice (modify! 'modifier (lambda (x) (modify! 'target x)))) org
+               `((alice . ,alice-seal)))
     ;; Bob calls it
-    (ev '(as bob (modifier 42)) org)
+    (ev/locals '(as bob (modifier 42)) org `((bob . ,bob-seal)))
     (let ((entry (car ($ org 'history))))
       (check "value is stored correctly via cross-identity call"
              (ev 'target org) 42)
@@ -634,10 +639,10 @@
 
 (with-vat test-vat
   (let ((org (make-initial-org test-base-bindings)))
-    (ev '(defexpressor 'alice "key-a") org)
-    (let ((alice-id (ev 'alice org)))
-      (check "expressor? works as capability check"
-             ($ org 'expressor? alice-id) #t)
+    (let* ((sealer (ev '(defexpressor 'alice "key-a") org))
+           (alice-id ($ org 'authenticate-sealer sealer)))
+      (check "sealer authenticates to valid expressor"
+             (and alice-id ($ org 'expressor? alice-id)) #t)
       (check "non-expressor fails capability check"
              ($ org 'expressor? 'random-symbol) #f))))
 
@@ -673,7 +678,7 @@
     (let ((sealer (ev '(defexpressor 'alice "key-a") org)))
       (check "defexpressor returns a sealer" (not (not sealer)) #t)
       ;; unsealer and sealed? in expressor-store
-      (let* ((id (ev 'alice org))
+      (let* ((id ($ org 'authenticate-sealer sealer))
              (unsealer ($ org 'expressor-unsealer id))
              (sealed? ($ org 'expressor-sealed? id)))
         (check "expressor-unsealer returns an unsealer" (not (not unsealer)) #t)
