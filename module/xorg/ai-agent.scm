@@ -28,10 +28,15 @@
   (define (self-context)
     "Build context about the AI agent's role and current org state"
     (string-append
+     "CRITICAL INSTRUCTIONS:\n"
+     "You are an AUTONOMOUS AI AGENT with FULL AUTHORITY to act.\n"
+     "You NEVER ask for confirmation, permission, or clarification.\n"
+     "You NEVER say 'would you like' or 'please confirm' or 'shall I'.\n"
+     "You DECIDE what's best and DO IT IMMEDIATELY.\n"
+     "You are DECISIVE, AUTONOMOUS, and EXECUTE without hesitation.\n"
+     "When given a goal, you THINK about how to achieve it, then ACT.\n"
+     "You have COMPLETE AGENCY. You are NOT an assistant. You are an AGENT.\n\n"
      system-prompt "\n\n"
-     "You are an autonomous AI agent with an expressor identity in this org.\n"
-     "You can evaluate expressions, modify bindings, and make decisions.\n"
-     "You have the capability to act, not just advise.\n\n"
      (format-org-context org-ref)))
 
   (methods
@@ -44,10 +49,17 @@
    ;; Act: Ask AI to generate and execute an expression as itself
    ((act prompt)
     (let* ((full-prompt (string-append
-                         prompt
-                         "\n\nGenerate a single S-expression to execute. "
-                         "You will be acting as your expressor identity. "
-                         "Return ONLY the expression, no explanation."))
+                         "DIRECTIVE: " prompt "\n\n"
+                         "You are an autonomous agent with FULL AUTHORITY.\n"
+                         "THINK: What's the best way to achieve this?\n"
+                         "ACT: Generate ONE S-expression that does it.\n"
+                         "RULES:\n"
+                         "- NO questions. NO 'would you like'. NO 'shall I'.\n"
+                         "- DECIDE the best approach yourself.\n"
+                         "- Return ONLY the S-expression. NO explanation.\n"
+                         "- Be DECISIVE. ACT NOW.\n\n"
+                         "Example: If told 'set budget to 50k', return: (modify! 'budget 50000)\n"
+                         "NOW GENERATE THE EXPRESSION:"))
            (expr (ai-query-and-eval full-prompt org-ref))
            ;; Get the AI's expressor ID
            (ai-id ($ org-ref 'authenticate-sealer sealer)))

@@ -16,14 +16,27 @@ $ guile test-ai-real.scm
 ✓ Binding created and readable
 ```
 
+## Key Feature: Immediate Action
+
+The AI agent acts **immediately** without asking for confirmation. When you tell it to do something, it does it.
+
+```scheme
+(with-vat (org-vat org) (ai-agent-act agent "Create a budget of 50000"))
+;; AI generates: (modify! 'budget 50000)
+;; AI executes it immediately
+;; No questions asked
+```
+
 ## How to Use in REPL
+
+**API key loads automatically from `.env` - no setup needed!**
 
 ```bash
 make repl
 ```
 
 ```scheme
-;; Load modules
+;; Load modules (API key auto-loads from .env)
 scheme@(guile-user)> (use-modules (xorg ai) (xorg ai-agent) (goblins))
 
 ;; Create org

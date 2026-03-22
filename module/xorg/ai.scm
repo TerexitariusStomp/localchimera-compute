@@ -10,6 +10,7 @@
             current-ai-model
             set-ai-api-key!
             set-ai-model!
+            load-ai-key-from-env!
             ai-query
             ai-query-and-eval
             format-org-context
@@ -17,6 +18,28 @@
             openrouter-chat))
 
 ;;; ── API key & model management ─────────────────────────────────────────────
+
+;; Auto-load from .env file if it exists
+(define (try-load-env-file)
+  (when (file-exists? ".env")
+    (catch #t
+      (lambda ()
+        (call-with-input-file ".env"
+          (lambda (port)
+            (let loop ()
+              (let ((line (read-line port)))
+                (unless (eof-object? line)
+                  (let ((trimmed (string-trim-both line)))
+                    (unless (or (string-null? trimmed) (string-prefix? "#" trimmed))
+                      (let ((parts (string-split trimmed #\=)))
+                        (when (= (length parts) 2)
+                          (setenv (string-trim-both (car parts))
+                                  (string-trim-both (cadr parts)))))))
+                  (loop)))))))
+      (lambda args #f))))
+
+;; Try to load .env on module initialization
+(try-load-env-file)
 
 (define current-ai-api-key (make-parameter (or (getenv "OPENROUTER_API_KEY") #f)))
 (define current-ai-model   (make-parameter "openai/gpt-4o-mini"))
@@ -26,6 +49,15 @@
 
 (define (set-ai-model! model)
   (current-ai-model model))
+
+(define (load-ai-key-from-env!)
+  "Load API key from OPENROUTER_API_KEY environment variable"
+  (let ((key (getenv "OPENROUTER_API_KEY")))
+    (if key
+        (begin
+          (set-ai-api-key! key)
+          (display "✓ Loaded API key from OPENROUTER_API_KEY\n"))
+        (display "⚠ No OPENROUTER_API_KEY in environment\n"))))
 
 ;;; ── Context formatter ──────────────────────────────────────────────────────
 
