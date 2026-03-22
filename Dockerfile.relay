@@ -1,12 +1,13 @@
 FROM debian:bookworm-slim AS build
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    guile-3.0 guile-3.0-dev \
+    guile-3.0 guile-3.0-dev guile-3.0-libs \
+    guile-gnutls \
     autoconf automake texinfo pkg-config \
     git ca-certificates make \
     && rm -rf /var/lib/apt/lists/*
 
-RUN git clone --depth 1 https://github.com/aconchillo/guile-websocket.git /tmp/guile-websocket \
+RUN git clone --depth 1 https://git.dthompson.us/guile-websocket.git /tmp/guile-websocket \
     && cd /tmp/guile-websocket \
     && autoreconf -fi \
     && ./configure --prefix=/usr \
