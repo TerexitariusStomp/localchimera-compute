@@ -4,6 +4,7 @@
              (ice-9 match)
              (goblins)
              (xorg gplay)
+             (xorg autocomplete)
              (srfi srfi-11))
 
 (define-foreign document-body
@@ -113,6 +114,10 @@
 (define-foreign ai-chat
   "ai" "chat"
   (ref string) (ref string) (ref string) (ref string) -> (ref string))
+
+(define-foreign update-code-viewer
+  "codeViewer" "updateCode"
+  (ref string) -> none)
 
 (define procedure->external/cached
   (let ((cache (make-hashtable)))
@@ -455,6 +460,117 @@
 (set-ai-handler! web-ai-query)
 (set-ai-eval-handler! web-ai-query-and-eval)
 
+;;; ── Autocomplete integration ───────────────────────────────────────────────
+
+(define (web-get-completions input cursor-pos)
+  "Get static completions for JavaScript. Returns list of strings."
+  (if *org*
+      (with-vat *vat* (get-completions input cursor-pos *org*))
+      '()))
+
+(define (web-get-ai-suggestion input cursor-pos)
+  "Get AI suggestion for completion. Returns string or empty string on error."
+  (catch #t
+    (lambda ()
+      (if (and *org* *ai-api-key*)
+          (let* ((context (with-vat *vat*
+                            (get-completion-context input cursor-pos *org*)))
+                 (token (assoc-ref context 'token))
+                 (prompt (string-append
+                          "Complete this Scheme expression at cursor:\n"
+                          input "\n"
+                          "Token at cursor: " token "\n"
+                          "Return ONLY the completion text after the cursor.")))
+            (ai-chat prompt "" *ai-api-key* *ai-model*))
+          ""))
+    (lambda (key . args)
+      "")))
+
+;;; ── Code viewer serialization ────────────────────────────────────────────
+
+(define (serialize-org-code ref)
+  "Serialize the organization's state as readable Scheme code."
+  (call-with-output-string
+    (lambda (port)
+      (display ";;; Organization State\n\n" port)
+
+      ;; Serialize bindings
+      (display ";;; Bindings\n" port)
+      (let ((bindings ($ ref 'bindings)))
+        (if (null? bindings)
+            (display ";; (no bindings)\n" port)
+            (for-each
+              (lambda (pair)
+                (let ((name (car pair))
+                      (val (cdr pair)))
+                  (display "(define " port)
+                  (write name port)
+                  (display " " port)
+                  (cond
+                    ((procedure? val)
+                     (display (string-append "<procedure:" (symbol->string name) ">") port))
+                    (($ ref 'expressor? val)
+                     (display (string-append "<expressor:"
+                               (symbol->string (or ($ ref 'expressor-name val) '?)) ">") port))
+                    (else
+                     (write val port)))
+                  (display ")\n" port)))
+              bindings)))
+
+      ;; Serialize validator
+      (display "\n;;; Validator\n" port)
+      (let* ((history ($ ref 'history))
+             (enact-entry (let loop ((entries history))
+                           (cond ((null? entries) #f)
+                                 ((and (pair? (caddr (car entries)))
+                                       (eq? 'enact! (car (caddr (car entries)))))
+                                  (car entries))
+                                 (else (loop (cdr entries)))))))
+        (if enact-entry
+            (begin
+              (display ";; " port)
+              (write (caddr enact-entry) port)
+              (display "\n" port))
+            (display ";; <default-validator>\n" port)))
+
+      ;; Serialize expressors
+      (display "\n;;; Expressors\n" port)
+      (let* ((history ($ ref 'history))
+             (expressors (unique-expressors history ref)))
+        (if (null? expressors)
+            (display ";; (no expressors)\n" port)
+            (for-each
+              (lambda (exp-id)
+                (let ((name (or ($ ref 'expressor-name exp-id) '?)))
+                  (display (string-append ";; expressor: " (symbol->string name) "\n") port)))
+              expressors)))
+
+      ;; Serialize recent history
+      (display "\n;;; Recent History\n" port)
+      (let* ((history ($ ref 'history))
+             (recent (reverse (if (> (length history) 10)
+                                 (list-tail (reverse history)
+                                           (- (length history) 10))
+                                 history))))
+        (if (null? recent)
+            (display ";; (no history)\n" port)
+            (for-each
+              (lambda (entry)
+                (display (string-append
+                          ";; v" (number->string (car entry))
+                          " [" (symbol->string (or ($ ref 'expressor-name (cadr entry)) '?))
+                          "]: ") port)
+                (write (caddr entry) port)
+                (display "\n" port))
+              recent))))))
+
+(define (update-code-viewer!)
+  "Update the code viewer with the current org's serialized state."
+  (when (and *org* *vat* (eq? *mode* 'inner))
+    (with-vat *vat*
+      (let ((code (serialize-org-code *org*)))
+        (update-code-viewer code)))))
+
 ;;; ── Org management ────────────────────────────────────────────────────────
 
 
@@ -583,6 +699,10 @@
 
 (define *paren-depth* 0)
 
+;;; ── Autocomplete state ─────────────────────────────────────────────────────
+
+(define *current-suggestion* "")
+
 (define (compute-paren-depth str)
   (let loop ((i 0) (depth 0) (in-string? #f))
     (if (>= i (string-length str))
@@ -631,7 +751,9 @@
                       (display result result-port)
                       (write result result-port))
                   (log-append! `(span (@ (class "result-text"))
-                                      ,(string-append "=> " (get-output-string result-port) "\n")))))))))
+                                      ,(string-append "=> " (get-output-string result-port) "\n")))))
+              ;; Update code viewer after evaluation
+              (update-code-viewer!)))))
       #:unwind? #t)))
 
 (define (do-enter! name)
@@ -649,7 +771,9 @@
       (set! *log* (org-entry-log org))
       (set! *sidebar-selected-org* name)
       (log-append! `(span (@ (class "info-text"))
-                          ,(string-append "Entering org '" name "'.\n"))))))
+                          ,(string-append "Entering org '" name "'.\n")))
+      ;; Update code viewer when entering org
+      (update-code-viewer!))))
 
 (define (do-exit!)
   (when (eq? *mode* 'inner)
@@ -661,7 +785,9 @@
     (let ((name *current-org-name*))
       (set! *current-org-name* #f)
       (log-append! `(span (@ (class "info-text"))
-                          ,(string-append "Left org '" name "'.\n"))))))
+                          ,(string-append "Left org '" name "'.\n")))
+      ;; Clear code viewer when exiting org
+      (update-code-viewer ""))))
 
 (define (handle-command exp)
   (match exp
@@ -766,9 +892,16 @@
         (unless (string=? exp "")
           (set-element-value! input "")
           (set-style! input "height" "auto")
+          (set! *current-suggestion* "")
           (eval! exp)
           (refresh!)
           (scroll-to-bottom!))))
+     ((and (string=? key "Tab") (not (string=? *current-suggestion* "")))
+      (prevent-default! event)
+      (let ((input (get-element-by-id "expression")))
+        (set-element-value! input (string-append (element-value input) *current-suggestion*))
+        (set! *current-suggestion* "")
+        (refresh!)))
      ((string=? key "ArrowUp")
       (prevent-default! event)
       (when (< (+ *history-index* 1) (length *history*))
@@ -795,9 +928,16 @@
   (let* ((input (get-element-by-id "expression"))
          (str (element-value input))
          (depth (compute-paren-depth str)))
+    ;; Update paren depth
     (unless (= depth *paren-depth*)
-      (set! *paren-depth* depth)
-      (refresh!))))
+      (set! *paren-depth* depth))
+    ;; Update autocomplete suggestion
+    (when (and *org* (eq? *mode* 'inner))
+      (with-vat *vat*
+        (let ((completions (get-completions str (string-length str) *org*)))
+          (set! *current-suggestion*
+                (if (null? completions) "" (car completions))))))
+    (refresh!)))
 
 ;;; ── Sidebar event handlers ───────────────────────────────────────────────
 
@@ -1019,6 +1159,10 @@
              (textarea (@ (id "expression") (class "repl-text")
                           (rows "1") (keydown ,maybe-eval)
                           (keyup ,on-keyup) (input ,auto-resize)))
+             ,@(if (string=? *current-suggestion* "")
+                   '()
+                   (list `(span (@ (class "ghost-text-suggestion"))
+                                ,*current-suggestion*)))
              (span (@ (class "paren-indicator")) ,(paren-indicator)))))
 
 (define (render-tab-bar)

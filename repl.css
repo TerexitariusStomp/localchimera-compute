@@ -238,7 +238,73 @@ h1 {
 .tab:hover { background-color: #1a1520; color: #e0ceed; }
 .tab-active { color: #a8e6cf; background-color: #110e13; border-bottom: 2px solid #a8e6cf; }
 
+/* Ghost text autocomplete suggestion */
+.ghost-text-suggestion {
+    color: #4a4450;
+    pointer-events: none;
+    font-family: monospace;
+    font-size: 12pt;
+}
+
+/* Code Viewer */
+.code-viewer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 45%;
+    height: 100vh;
+    background-color: #0d0b0f;
+    border-left: 1px solid #2a2230;
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+}
+
+.code-viewer-header {
+    padding: 0.75rem;
+    border-bottom: 1px solid #2a2230;
+    color: #8b7b96;
+    font-size: 10pt;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-family: monospace;
+    flex-shrink: 0;
+}
+
+.code-viewer-content {
+    flex: 1;
+    margin: 0;
+    padding: 1rem;
+    overflow: auto;
+    color: #e0ceed;
+    background-color: #0d0b0f;
+    font-family: monospace;
+    font-size: 11pt;
+    line-height: 1.5;
+    white-space: pre;
+    tab-size: 2;
+}
+
+/* Adjust main layout to accommodate code viewer */
+body:has(.code-viewer) .ide {
+    margin-right: 45%;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .sidebar { width: 0; border-right: none; overflow: hidden; }
+
+    .code-viewer {
+        width: 100%;
+        height: 40vh;
+        top: auto;
+        bottom: 0;
+        border-left: none;
+        border-top: 1px solid #2a2230;
+    }
+
+    body:has(.code-viewer) .ide {
+        margin-right: 0;
+        margin-bottom: 40vh;
+    }
 }
