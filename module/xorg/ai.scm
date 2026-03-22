@@ -43,7 +43,7 @@
 (try-load-env-file)
 
 (define current-ai-api-key (make-parameter (or (getenv "OPENROUTER_API_KEY") #f)))
-(define current-ai-model   (make-parameter "openai/gpt-4o-mini"))
+(define current-ai-model   (make-parameter "google/gemini-3-flash-preview"))
 
 (define (set-ai-api-key! key)
   (current-ai-api-key key))

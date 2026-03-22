@@ -405,7 +405,7 @@
 ;;; ── AI state ─────────────────────────────────────────────────────────────
 
 (define *ai-api-key* #f)
-(define *ai-model* "openai/gpt-4o-mini")
+(define *ai-model* "google/gemini-3-flash-preview")
 
 (define (web-set-api-key! key)
   (set! *ai-api-key* key))
