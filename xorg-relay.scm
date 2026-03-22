@@ -1,87 +1,121 @@
-#!/usr/bin/env -S guile -L module
+#!/usr/bin/env -S guile
 !#
-;;; xorg-relay.scm — Prelay relay server for xorg
-;;; A pure routing relay. No org logic — just connects peers.
-;;; Run with: guile -L module xorg-relay.scm
-;;; Or:       make relay
+;;; xorg-relay.scm — Mailbox relay for xorg
+;;; Routes signed S-expressions by public key.
+;;; Queues messages for offline recipients.
+;;; Run with: guile xorg-relay.scm [port]
 
-(use-modules (goblins)
-             (goblins actor-lib methods)
-             (goblins actor-lib facet)
-             (goblins ocapn captp)
-             (goblins ocapn netlayer websocket)
-             (goblins ocapn netlayer prelay-utils)
-             (goblins ocapn ids)
+(use-modules (web socket server)
+             (web socket frame)
              (ice-9 match)
              (ice-9 format)
-             (fibers))
+             (ice-9 hash-table)
+             (ice-9 threads)
+             (rnrs bytevectors))
 
-(define *relay-vat* #f)
-(define *mycapn* #f)
-(define *admin* #f)
+;; Sessions: pubkey-string → port
+(define *sessions* (make-hash-table))
 
-(define (main)
-  (let ((port (if (> (length (command-line)) 1)
-                  (string->number (cadr (command-line)))
-                  8080)))
+;; Mailboxes: pubkey-string → list of queued messages
+(define *mailboxes* (make-hash-table))
 
-    (display "Starting xorg prelay relay...\n")
+(define (queue-message! target-pk msg)
+  "Queue a message for an offline recipient."
+  (let ((existing (hash-ref *mailboxes* target-pk '())))
+    (hash-set! *mailboxes* target-pk (append existing (list msg)))))
 
-    (set! *relay-vat* (spawn-vat #:name "relay"))
+(define (flush-mailbox! target-pk port)
+  "Deliver all queued messages to a newly connected recipient."
+  (let ((queued (hash-ref *mailboxes* target-pk '())))
+    (for-each (lambda (msg)
+                (write-frame (make-text-frame msg) port)
+                (force-output port))
+              queued)
+    (when (not (null? queued))
+      (format #t "  delivered ~a queued message(s) to ~a\n"
+              (length queued) (truncate-pk target-pk))
+      (force-output))
+    (hash-set! *mailboxes* target-pk '())))
 
-    (with-vat *relay-vat*
-      (let* ((netlayer (spawn ^websocket-netlayer
-                              #:host "0.0.0.0"
-                              #:port port
-                              #:encrypted? #f))
-             (mycapn (spawn-mycapn netlayer))
-             (enliven-facet (spawn ^facet mycapn 'enliven))
-             (register-facet (spawn (lambda (bcom)
-                                      (methods
-                                       [(register obj)
-                                        ($ mycapn 'register obj 'websocket)])))))
-        (set! *mycapn* mycapn)
-        (set! *admin* (spawn ^prelay-admin enliven-facet register-facet))))
+(define (truncate-pk pk-str)
+  "Shorten a public key string for display."
+  (if (> (string-length pk-str) 20)
+      (string-append (substring pk-str 0 20) "...")
+      pk-str))
 
-    (format #t "\n════════════════════════════════════════\n")
-    (format #t "  xorg relay ready on ws://0.0.0.0:~a\n" port)
-    (format #t "  Type 'help for commands.\n")
-    (format #t "════════════════════════════════════════\n\n")
+(define (handle-client port)
+  "Handle a WebSocket client connection."
+  (define my-pk #f)
+  (define (process-message text)
+    (let ((msg (catch #t
+                 (lambda () (call-with-input-string text read))
+                 (lambda args #f))))
+      (when msg
+        (match msg
+          ;; Register by public key
+          (('register pk)
+           (let ((pk-str (call-with-output-string (lambda (p) (write pk p)))))
+             (set! my-pk pk-str)
+             (hash-set! *sessions* pk-str port)
+             (format #t "  + ~a\n" (truncate-pk pk-str))
+             (force-output)
+             ;; Deliver any queued messages
+             (flush-mailbox! pk-str port)))
 
-    ;; Admin REPL
-    (let loop ()
-      (display "relay> ")
-      (force-output)
-      (let ((input (read)))
-        (cond
-         ((eof-object? input) (display "\nShutting down.\n"))
-         ((eq? input 'quit) (display "Shutting down.\n"))
-         ((and (pair? input) (eq? (car input) 'add-account))
-          (let ((name (cadr input)))
-            (with-vat *relay-vat*
-              (on (<- *admin* 'add-account (symbol->string name))
-                  (lambda (setup-sref)
-                    (format #t "\nAccount '~a' created.\nSetup sturdyref:\n  ~a\n\nrelay> "
-                            name (ocapn-id->string setup-sref))
-                    (force-output))))
-            (loop)))
-         ((eq? input 'accounts)
-          (with-vat *relay-vat*
-            (let ((accts ($ *admin* 'get-accounts)))
-              (if (null? accts)
-                  (display "No accounts.\n")
-                  (for-each (lambda (name)
-                              (format #t "  ~a\n" name))
-                            accts))))
-          (loop))
-         ((eq? input 'help)
-          (display "Commands:\n")
-          (display "  (add-account name)   create a relay account\n")
-          (display "  accounts             list accounts\n")
-          (display "  quit                 shut down\n")
-          (loop))
-         (else
-          (display "Unknown command. Type 'help.\n")
-          (loop)))))))
+          ;; Route: (to <target-pk-str> payload)
+          (('to (? string? target-pk) payload)
+           (let ((target-port (hash-ref *sessions* target-pk)))
+             (let ((fwd (call-with-output-string
+                          (lambda (p) (write `(from ,my-pk ,payload) p)))))
+               (if target-port
+                   ;; Online — deliver immediately
+                   (begin
+                     (write-frame (make-text-frame fwd) target-port)
+                     (force-output target-port))
+                   ;; Offline — queue
+                   (begin
+                     (queue-message! target-pk fwd)
+                     (format #t "  queued for ~a\n" (truncate-pk target-pk))
+                     (force-output))))))
 
-(run-fibers main)
+          ;; Unknown
+          (x (format #t "  ? ~a\n" x)
+             (force-output))))))
+
+  ;; Main read loop
+  (catch #t
+    (lambda ()
+      (let loop ()
+        (let ((frame (read-frame port)))
+          (when frame
+            (cond
+             ((text-frame? frame) (process-message (frame-text frame)))
+             ((ping-frame? frame)
+              (write-frame (make-pong-frame (frame-data frame)) port)
+              (force-output port))
+             ((close-frame? frame)
+              (write-frame (make-close-frame #vu8()) port)
+              (set! frame #f)))
+            (when frame (loop))))))
+    (lambda args #f))
+
+  ;; Cleanup
+  (when my-pk
+    (hash-remove! *sessions* my-pk)
+    (format #t "  - ~a\n" (truncate-pk my-pk))
+    (force-output))
+  (catch #t (lambda () (close-port port)) (lambda args #f)))
+
+(define (main args)
+  (let ((port (if (> (length args) 1)
+                  (string->number (cadr args))
+                  9090)))
+    (format #t "\n  xorg relay on ws://localhost:~a\n\n" port)
+    (force-output)
+    (run-websocket-server
+     handle-client
+     #:server-socket (make-server-socket #:host "0.0.0.0" #:port port)
+     #:max-clients 64
+     #:spawn-client (lambda (thunk) (call-with-new-thread thunk)))))
+
+(main (command-line))

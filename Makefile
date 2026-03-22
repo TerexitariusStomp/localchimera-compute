@@ -13,7 +13,7 @@ serve: repl.wasm
 	guile -c '((@ (hoot web-server) serve))'
 
 relay:
-	guile -L module xorg-relay.scm
+	guile xorg-relay.scm
 
 server:
 	guile -L module xorg-server.scm

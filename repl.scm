@@ -3,15 +3,10 @@
              ((hoot error-handling) #:select (format-exception))
              (ice-9 match)
              (ice-9 receive)
-             (fibers channels)
              (goblins)
              (goblins actor-lib methods)
              (goblins actor-lib sealers)
              (goblins actor-lib ward)
-             (goblins ocapn ids)
-             (goblins ocapn captp)
-             (goblins ocapn netlayer fake)
-             (goblins ocapn netlayer websocket)
              (goblins utils crypto)
              (xorg gplay)
              (xorg autocomplete)
@@ -470,20 +465,6 @@
 (set-ai-handler! web-ai-query)
 (set-ai-eval-handler! web-ai-query-and-eval)
 
-;;; ── OCapN network ────────────────────────────────────────────────────────
-
-(define ocapn-vat (spawn-vat #:name "OCapN"))
-
-(define fake-network
-  (with-vat ocapn-vat
-    (spawn ^fake-network)))
-
-;; Network state
-(define *mycapn* #f)        ;; MyCapN node (set after connect)
-(define *net-vat* #f)       ;; Vat where mycapn lives
-(define *connected?* #f)    ;; #t after successfully connecting
-(define *remote-inbox* #f)  ;; Remote org's inbox (set after auto-connect)
-
 ;;; ── Org management ────────────────────────────────────────────────────────
 ;;; Every org entry: (name vat ref inbox incanter key-pair controllers . log)
 ;;; controllers: alist of (org-name . controller)
@@ -589,14 +570,11 @@
                  "\n"
                  "── Cross-Org ──────────────────────────────────\n"
                  "\n"
-                 "Local (same browser):\n"
                  "  (join-org \"alpha\")                 request to join\n"
                  "  (approve-member 0 \"alice\")         approve member\n"
                  "  (act-in \"alpha\" (modify! 'x 1))   act in another org\n"
                  "  (public-key)                       show this org's key\n"
-                 "\n"
-                 "Remote (connect to server):\n"
-                 "  (connect \"ocapn://ws:...\")         join server org\n"
+                 "  (remote (modify! 'x 1))            send to server\n"
                  "\n"
                  "── Language Forms ──────────────────────────────\n"
                  "\n"
@@ -791,6 +769,13 @@
       (set! *sidebar-selected-org* name)
       (log-append! `(span (@ (class "info-text"))
                           ,(string-append "Entering org '" name "'.\n")))
+      ;; Auto-register with relay using this org's public key
+      (when (and *ws* *connected?*)
+        (let ((pk (with-vat *vat* ($ *org* 'public-key))))
+          (ws-send *ws* (call-with-output-string
+                          (lambda (p) (write `(register ,pk) p))))
+          (log-append! `(span (@ (class "info-text"))
+                              "Registered on relay.\n"))))
       ;; Update code viewer when entering org
       (update-code-viewer!))))
 
@@ -956,118 +941,73 @@
                                      ,(string-append "Approved '" name "'.\n")))))))
      #t)
 
-    ;; act-in — evaluate in another org through a controller
-    (('act-in (? string? target-name) body-expr)
+    ;; act-in — evaluate in another org (local or remote)
+    ;; Target can be a string (local org name) or a symbol (looked up → pubkey)
+    (('act-in target-expr body-expr)
      (if (not *current-org-name*)
          (log-append! `(span (@ (class "error-text"))
                              "Must be inside an org to act-in another.\n"))
          (let* ((current (org-lookup *current-org-name*))
-                (controllers (org-entry-controllers current))
-                (entry (assoc target-name controllers)))
-           (if (not entry)
-               (log-append! `(span (@ (class "error-text"))
-                                   ,(string-append "No controller for: " target-name
-                                                   ". Join and get approved first.\n")))
-               (let ((controller (cdr entry))
-                     (target (org-lookup target-name)))
-                 (with-exception-handler
-                   (lambda (exn)
-                     (let ((err-port (open-output-string)))
-                       (format-exception exn err-port)
-                       (log-append! `(span (@ (class "error-text"))
-                                           ,(get-output-string err-port)))))
-                   (lambda ()
-                     (with-vat (org-entry-vat target)
-                       (let ((result ($ controller 'evaluate body-expr)))
-                         (unless (eq? result (if #f #f))
-                           (let ((result-port (open-output-string)))
-                             (if (string? result)
-                                 (display result result-port)
-                                 (write result result-port))
-                             (log-append! `(span (@ (class "result-text"))
-                                                 ,(string-append "=> " (get-output-string result-port) "\n"))))))))
-                   #:unwind? #t)))))
-     #t)
-
-    ;; connect — connect to a server-hosted org via websocket sturdyref
-    ;; Does everything: creates websocket, enlivens sturdyref, submits membership
-    (('connect (? string? sref-str))
-     (if (not *current-org-name*)
-         (log-append! `(span (@ (class "error-text"))
-                             "Must be inside an org to connect.\n"))
-         (let ((sref (string->ocapn-id sref-str))
-               (my-pk (with-vat *vat* ($ *org* 'public-key)))
-               (my-name *current-org-name*)
-               (net-vat (spawn-vat #:name "network")))
-           (set! *net-vat* net-vat)
-           (with-vat net-vat
-             (let* ((netlayer (spawn ^websocket-netlayer))
-                    (mycapn (spawn-mycapn netlayer)))
-               (set! *mycapn* mycapn)
-               (on (<- mycapn 'enliven sref)
-                   (lambda (remote-inbox)
-                     (receive (sub-sealer sub-unsealer sub-sealed?)
-                       (spawn-sealer-triplet)
-                       (let ((my-identity
-                              (spawn (lambda (bcom)
-                                (methods
-                                 [(name) (string->symbol my-name)]
-                                 [(subscription-sealer) sub-sealer]
-                                 [(subscription-unsealer) sub-unsealer]
-                                 [(public-key) my-pk])))))
-                         (on (<- remote-inbox 'submit
-                                  `(request-membership ,my-name)
-                                  my-identity)
-                             (lambda (msg-id)
-                               (set! *pending-joins*
-                                 (cons (list my-name "remote"
-                                            sub-unsealer msg-id my-identity)
-                                       *pending-joins*))
-                               (set! *connected?* #t)
-                               (log-append! `(span (@ (class "result-text"))
-                                                   ,(string-append "Connected! Membership request submitted (msg-id: "
-                                                                   (number->string msg-id) ").\n"
-                                                                   "Ask server admin to (approve " (number->string msg-id) " \"" my-name "\").\n")))
-                               (refresh!)))))))))
-           (log-append! `(span (@ (class "info-text"))
-                               "Connecting to server...\n"))))
-     #t)
-
-    ;; join-server — submit membership to the auto-connected remote org
-    ('(join-server)
-     (cond
-      ((not *current-org-name*)
-       (log-append! `(span (@ (class "error-text"))
-                           "Must be inside an org.\n")))
-      ((not *remote-inbox*)
-       (log-append! `(span (@ (class "error-text"))
-                           "Not connected to a server. Add ?sref=... to the URL.\n")))
-      (else
-       (let ((my-pk (with-vat *vat* ($ *org* 'public-key)))
-             (my-name *current-org-name*))
-         (with-vat *net-vat*
-           (receive (sub-sealer sub-unsealer sub-sealed?)
-             (spawn-sealer-triplet)
-             (let ((my-identity
-                    (spawn (lambda (bcom)
-                      (methods
-                       [(name) (string->symbol my-name)]
-                       [(subscription-sealer) sub-sealer]
-                       [(subscription-unsealer) sub-unsealer]
-                       [(public-key) my-pk])))))
-               (on (<- *remote-inbox* 'submit
-                        `(request-membership ,my-name)
-                        my-identity)
-                   (lambda (msg-id)
-                     (set! *pending-joins*
-                       (cons (list my-name "server"
-                                  sub-unsealer msg-id my-identity)
-                             *pending-joins*))
-                     (log-append! `(span (@ (class "result-text"))
-                                         ,(string-append "Membership request submitted (msg-id: "
-                                                         (number->string msg-id) ").\n"
-                                                         "Ask server admin: (approve " (number->string msg-id) " \"" my-name "\")\n")))
-                     (refresh!)))))))))
+                ;; Resolve target: if it's a string, use directly.
+                ;; If it's a symbol, evaluate it in the org to get a value.
+                (target-val (cond
+                             ((string? target-expr) target-expr)
+                             ((symbol? target-expr)
+                              (with-vat *vat*
+                                (evaluate target-expr *org* '()
+                                          ($ *org* 'current-expressor))))
+                             (else target-expr)))
+                ;; Check if it's a public key (list starting with 'public-key)
+                (is-pubkey? (and (pair? target-val)
+                                (eq? (car target-val) 'public-key))))
+           (cond
+            ;; Target is a public key → send over relay
+            ((and is-pubkey? *ws*)
+             (let* ((expr-str (call-with-output-string (lambda (p) (write body-expr p))))
+                    (pk-str (call-with-output-string (lambda (p) (write target-val p))))
+                    (my-pk-str (call-with-output-string
+                                (lambda (p)
+                                  (write (with-vat *vat* ($ *org* 'public-key)) p))))
+                    (msg (call-with-output-string
+                           (lambda (p)
+                             (write `(to ,pk-str (from ,my-pk-str ,body-expr)) p)))))
+               (ws-send *ws* msg)
+               (log-append! `(span (@ (class "info-text"))
+                                   ,(string-append "Sent: " expr-str "\n")))))
+            ;; Target is a public key but no relay
+            ((and is-pubkey? (not *ws*))
+             (log-append! `(span (@ (class "error-text"))
+                                 "Not connected to relay. Add ?relay=ws://... to URL.\n")))
+            ;; Target is a string — try local controller
+            ((string? target-val)
+             (let* ((controllers (org-entry-controllers current))
+                    (entry (assoc target-val controllers)))
+               (if entry
+                   (let ((controller (cdr entry))
+                         (target (org-lookup target-val)))
+                     (with-exception-handler
+                       (lambda (exn)
+                         (let ((err-port (open-output-string)))
+                           (format-exception exn err-port)
+                           (log-append! `(span (@ (class "error-text"))
+                                               ,(get-output-string err-port)))))
+                       (lambda ()
+                         (with-vat (org-entry-vat target)
+                           (let ((result ($ controller 'evaluate body-expr)))
+                             (unless (eq? result (if #f #f))
+                               (let ((result-port (open-output-string)))
+                                 (if (string? result)
+                                     (display result result-port)
+                                     (write result result-port))
+                                 (log-append! `(span (@ (class "result-text"))
+                                                     ,(string-append "=> " (get-output-string result-port) "\n"))))))))
+                       #:unwind? #t))
+                   (log-append! `(span (@ (class "error-text"))
+                                       ,(string-append "No controller for: " target-val "\n"))))))
+            ;; Unknown target type
+            (else
+             (log-append! `(span (@ (class "error-text"))
+                                 "act-in target must be an org name or a public key.\n"))))))
      #t)
 
     (_ #f)))
@@ -1455,23 +1395,60 @@
 (refresh!)
 (add-event-listener!/wrap (document-body) "keydown" global-keydown)
 
-;;; ── Auto-connect to server if sturdyref is in URL ─────────────────────────
-(let ((sref-str (url-param-get "sref")))
-  (when (and (string? sref-str) (> (string-length sref-str) 0))
+;;; ── WebSocket relay connection ──────────────────────────────────────────
+;;; If ?relay=ws://host:port&name=myname is in the URL, connect to relay.
+;;; Messages are S-expressions routed by name.
+
+(define *ws* #f)            ;; WebSocket connection
+(define *connected?* #f)    ;; #t after connected
+
+(define-foreign ws-open
+  "webSocket" "new"
+  (ref string) -> (ref extern))
+(define-foreign ws-send
+  "webSocket" "send"
+  (ref extern) (ref string) -> none)
+(define-foreign ws-on-open!
+  "webSocket" "setOnOpen"
+  (ref extern) (ref extern) -> none)
+(define-foreign ws-on-message!
+  "webSocket" "setOnMessage"
+  (ref extern) (ref extern) -> none)
+(define-foreign ws-on-close!
+  "webSocket" "setOnClose"
+  (ref extern) (ref extern) -> none)
+
+(define *relay-url* (url-param-get "relay"))
+
+;; Auto-connect to relay if URL has ?relay=ws://...
+;; Registration happens later when user enters an org (in do-enter!)
+(when (and (string? *relay-url*) (> (string-length *relay-url*) 0))
+  (let ((ws (ws-open *relay-url*)))
+    (set! *ws* ws)
+
+    (ws-on-open! ws
+      (procedure->external
+       (lambda ()
+         (set! *connected?* #t)
+         (log-append! `(span (@ (class "result-text"))
+                             "Connected to relay. Create an org and enter it.\n"))
+         (refresh!))))
+
+    (ws-on-message! ws
+      (procedure->external
+       (lambda (data)
+         (log-append! `(span (@ (class "output-text"))
+                             ,(string-append "relay: " (if (string? data) data "?") "\n")))
+         (refresh!))))
+
+    (ws-on-close! ws
+      (procedure->external
+       (lambda ()
+         (set! *connected?* #f)
+         (log-append! `(span (@ (class "error-text"))
+                             "Disconnected from relay.\n"))
+         (refresh!))))
+
     (log-append! `(span (@ (class "info-text"))
-                        ,(string-append "Auto-connecting to server...\n")))
-    (let ((net-vat (spawn-vat #:name "network")))
-      (set! *net-vat* net-vat)
-      (with-vat net-vat
-        (let* ((netlayer (spawn ^websocket-netlayer))
-               (mycapn (spawn-mycapn netlayer))
-               (sref (string->ocapn-id sref-str)))
-          (set! *mycapn* mycapn)
-          (on (<- mycapn 'enliven sref)
-              (lambda (remote-inbox)
-                (set! *connected?* #t)
-                ;; Store the remote inbox globally for join-org to use
-                (set! *remote-inbox* remote-inbox)
-                (log-append! `(span (@ (class "result-text"))
-                                    "Connected to server org!\nUse (join-org) to request membership.\n"))
-                (refresh!))))))))
+                        ,(string-append "Connecting to relay...\n")))
+    (refresh!)))

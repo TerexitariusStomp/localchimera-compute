@@ -1,35 +1,37 @@
 #!/usr/bin/env -S guile -L module
 !#
-;;; xorg-server.scm — Host an org on a websocket netlayer
-;;; Run with: guile -L module xorg-server.scm
-;;; Or:       make server
+;;; xorg-server.scm — Simple WebSocket server for xorg
+;;; Wire protocol: signed S-expressions
+;;; Run with: guile -L module xorg-server.scm [port]
 
 (use-modules (goblins)
              (goblins actor-lib methods)
              (goblins actor-lib sealers)
              (goblins actor-lib ward)
-             (goblins ocapn captp)
-             (goblins ocapn netlayer websocket)
-             (goblins ocapn ids)
              ((xorg gplay) #:hide (generate-key-pair key-pair->public-key))
              (goblins utils crypto)
              (ice-9 receive)
              (ice-9 match)
-             (fibers))
+             (ice-9 format)
+             (ice-9 rdelim)
+             (web server)
+             (web request)
+             (web response)
+             (web uri)
+             (rnrs bytevectors)
+             (fibers)
+             (fibers channels))
 
-;;; ── Base bindings (same as the browser REPL) ──────────────────────────────
+;;; ── Base bindings ──────────────────────────────────────────────────────────
 
 (define server-base-bindings
   `((+ . ,+) (- . ,-) (* . ,*) (/ . ,/)
     (> . ,>) (< . ,<) (= . ,=) (>= . ,>=) (<= . ,<=)
-    (abs . ,abs) (max . ,max) (min . ,min)
-    (modulo . ,modulo) (remainder . ,remainder) (expt . ,expt)
-    (sqrt . ,sqrt) (floor . ,floor) (ceiling . ,ceiling) (round . ,round)
-    (not . ,not) (equal? . ,equal?) (eq? . ,eq?) (eqv? . ,eqv?)
+    (not . ,not) (equal? . ,equal?) (eq? . ,eq?)
     (cons . ,cons) (car . ,car) (cdr . ,cdr)
     (list . ,list) (append . ,append) (reverse . ,reverse) (length . ,length)
     (map . ,map) (for-each . ,for-each)
-    (null? . ,null?) (pair? . ,pair?) (list? . ,list?)
+    (null? . ,null?) (pair? . ,pair?)
     (number? . ,number?) (string? . ,string?) (symbol? . ,symbol?)
     (procedure? . ,procedure?) (boolean? . ,boolean?)
     (string-append . ,string-append) (string-length . ,string-length)
@@ -38,11 +40,12 @@
 
 ;;; ── Server state ──────────────────────────────────────────────────────────
 
+(define *org-vat* #f)
 (define *org* #f)
 (define *inbox* #f)
 (define *incanter* #f)
-(define *mycapn* #f)
-(define *org-vat* #f)
+(define *clients* '())     ;; alist: name → (pubkey controller)
+(define *pending* '())     ;; alist: name → pubkey (waiting for approval)
 
 ;;; ── Main ──────────────────────────────────────────────────────────────────
 
@@ -51,100 +54,88 @@
                   (string->number (cadr (command-line)))
                   8080)))
 
-    (display "Starting xorg server...\n")
-
-    (set! *org-vat* (spawn-vat #:name "org-host"))
-
+    ;; Create the org
     (let* ((kp (generate-key-pair))
            (pk (key-pair->public-key kp)))
+      (set! *org-vat* (spawn-vat #:name "org-host"))
       (with-vat *org-vat*
-        (let* ((netlayer (spawn ^websocket-netlayer
-                                #:host "0.0.0.0"
-                                #:port port
-                                #:url (format #f "ws://localhost:~a" port)
-                                #:encrypted? #f))
-               (mycapn (spawn-mycapn netlayer))
-               (org (make-initial-org server-base-bindings #:public-key pk)))
-        (set! *mycapn* mycapn)
-        (receive (warden incanter)
-          (spawn-warding-pair)
-          (let ((inbox (spawn ^org-inbox org '() 0 warden incanter)))
-            (set! *org* org)
-            (set! *inbox* inbox)
-            (set! *incanter* incanter)
-            ;; Register the inbox with OCapN
-            (on (<- mycapn 'register inbox 'websocket)
-                (lambda (sref)
-                  (display "\n════════════════════════════════════════\n")
-                  (display "  xorg server ready!\n")
-                  (format #t "  Listening on ws://0.0.0.0:~a\n" port)
-                  (display "  Sturdyref:\n  ")
-                  (display (ocapn-id->string sref))
-                  (display "\n════════════════════════════════════════\n\n")
-                  (display "Waiting for connections...\n"))))))))
+        (let ((org (make-initial-org server-base-bindings #:public-key pk)))
+          (receive (warden incanter)
+            (spawn-warding-pair)
+            (let ((inbox (spawn ^org-inbox org '() 0 warden incanter)))
+              (set! *org* org)
+              (set! *inbox* inbox)
+              (set! *incanter* incanter))))))
 
+    (format #t "\n════════════════════════════════════════\n")
+    (format #t "  xorg server ready on port ~a\n" port)
+    (format #t "  Connect browser: ?server=ws://localhost:~a\n" port)
+    (format #t "  Type 'help for commands.\n")
+    (format #t "════════════════════════════════════════\n\n")
 
-    ;; Start a simple admin REPL for approving members
+    ;; TODO: Add actual WebSocket server here
+    ;; For now, just the admin REPL
     (let loop ()
       (display "server> ")
+      (force-output)
       (let ((input (read)))
-        (match input
-          ('quit (display "Shutting down.\n"))
-          (('approve msg-id name)
-           (let ((pending (with-vat *org-vat* ($ *inbox* 'pending))))
-             (if (null? pending)
-                 (display "No pending requests.\n")
-                 (begin
-                   (display (format #f "Approving ~a (msg-id: ~a)...\n" name msg-id))
-                   (with-vat *org-vat*
-                     (let* ((entry (let find ((es pending))
-                                    (cond ((null? es) #f)
-                                          ((= (assq-ref (car es) 'id) msg-id) (car es))
-                                          (else (find (cdr es))))))
-                            (applicant-identity (and entry (assq-ref entry 'sender)))
-                            (applicant-pk (and applicant-identity
-                                               ($ applicant-identity 'public-key))))
-                       (if (not entry)
-                           (display "Message not found.\n")
-                           (let ((sealed-ctrl
-                                  (approve-membership *inbox* *incanter* msg-id *org*
-                                                      (string->symbol name)
-                                                      (or applicant-pk "unknown")
-                                                      applicant-identity)))
-                             (display (format #f "Approved ~a. Sealed controller delivered.\n" name)))))))))
-          ('pending
-           (let ((p (with-vat *org-vat* ($ *inbox* 'pending))))
-             (if (null? p)
-                 (display "No pending requests.\n")
-                 (for-each (lambda (e)
-                             (format #t "  msg-id: ~a  sender: ~a  expr: ~a\n"
-                                     (assq-ref e 'id)
-                                     (assq-ref e 'sender)
-                                     (assq-ref e 'expr)))
-                           p))))
-          ('bindings
-           (with-vat *org-vat*
-             (for-each (lambda (b)
-                         (format #t "  ~a = ~a\n" (car b) (cdr b)))
-                       ($ *org* 'bindings))))
-          ('history
-           (with-vat *org-vat*
-             (for-each (lambda (e)
-                         (format #t "  v~a [~a] : ~a\n"
-                                 (car e)
-                                 ($ *org* 'expressor-name (cadr e))
-                                 (caddr e)))
-                       (reverse ($ *org* 'history)))))
-          ('help
-           (display "Commands:\n")
-           (display "  (approve MSG-ID \"name\")  approve membership\n")
-           (display "  pending                   show pending requests\n")
-           (display "  bindings                  show org bindings\n")
-           (display "  history                   show org history\n")
-           (display "  quit                      shut down\n"))
-          (other
-           (display "Unknown command. Type 'help for commands.\n")))
-        (unless (eq? input 'quit)
-          (loop)))))))
+        (cond
+         ((eof-object? input) (display "\nShutting down.\n"))
+         ((eq? input 'quit) (display "Shutting down.\n"))
+         ((and (pair? input) (eq? (car input) 'approve))
+          (let* ((name (symbol->string (cadr input)))
+                 (pending-entry (assoc name *pending*)))
+            (if (not pending-entry)
+                (format #t "No pending join for '~a'.\n" name)
+                (let ((applicant-pk (cdr pending-entry)))
+                  (with-vat *org-vat*
+                    (let* ((pair (create-expressor-pair *org* (string->symbol name) applicant-pk))
+                           (controller (cdr pair)))
+                      (set! *clients*
+                        (cons (cons name (list applicant-pk controller)) *clients*))
+                      (set! *pending*
+                        (let rm ((lst *pending*))
+                          (cond ((null? lst) '())
+                                ((string=? (caar lst) name) (rm (cdr lst)))
+                                (else (cons (car lst) (rm (cdr lst)))))))))
+                  (format #t "Approved '~a'.\n" name)))))
+         ((eq? input 'pending)
+          (if (null? *pending*)
+              (display "No pending requests.\n")
+              (for-each (lambda (p)
+                          (format #t "  ~a\n" (car p)))
+                        *pending*)))
+         ((eq? input 'clients)
+          (if (null? *clients*)
+              (display "No connected clients.\n")
+              (for-each (lambda (c)
+                          (format #t "  ~a\n" (car c)))
+                        *clients*)))
+         ((eq? input 'bindings)
+          (with-vat *org-vat*
+            (for-each (lambda (b)
+                        (unless (procedure? (cdr b))
+                          (format #t "  ~a = ~a\n" (car b) (cdr b))))
+                      ($ *org* 'bindings))))
+         ((eq? input 'history)
+          (with-vat *org-vat*
+            (for-each (lambda (e)
+                        (format #t "  v~a [~a] : ~a\n"
+                                (car e)
+                                ($ *org* 'expressor-name (cadr e))
+                                (caddr e)))
+                      (reverse ($ *org* 'history)))))
+         ((eq? input 'help)
+          (display "Commands:\n")
+          (display "  (approve name)   approve a pending join\n")
+          (display "  pending          show pending requests\n")
+          (display "  clients          show approved clients\n")
+          (display "  bindings         show org bindings\n")
+          (display "  history          show org history\n")
+          (display "  quit             shut down\n"))
+         (else
+          (display "Unknown command. Type 'help.\n")))
+        (unless (or (eof-object? input) (eq? input 'quit))
+          (loop))))))
 
 (run-fibers main)
