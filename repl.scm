@@ -1103,7 +1103,7 @@
     (unless (= depth *paren-depth*)
       (set! *paren-depth* depth))
     ;; Update autocomplete suggestion
-    (when (and *org* (eq? *mode* 'inner))
+    (when (and *org* (eq? *mode* 'inner) (> (string-length str) 0))
       (with-vat *vat*
         (let* ((cursor (string-length str))
                (token (extract-token str cursor))
@@ -1402,18 +1402,10 @@
 (define (register-all-keys!)
   "Send all local orgs' public keys to the relay."
   (when (and *ws* *connected?*)
-    (log-append! `(span (@ (class "info-text")) "Preparing keys...\n"))
     (let ((keys (map (lambda (e) (list-ref e 5)) *orgs*)))
-      (log-append! `(span (@ (class "info-text"))
-                          ,(string-append "Keys: " (number->string (length keys)) "\n")))
       (unless (null? keys)
-        (let ((msg (call-with-output-string
-                     (lambda (p) (write `(register-keys ,keys) p)))))
-          (log-append! `(span (@ (class "info-text"))
-                              ,(string-append "Msg len: " (number->string (string-length msg)) "\n")))
-          (ws-send *ws* msg)
-          (log-append! `(span (@ (class "info-text"))
-                              "Sent!\n")))))))
+        (ws-send *ws* (call-with-output-string
+                        (lambda (p) (write `(register-keys ,keys) p))))))))
 
 (define-foreign ws-open
   "webSocket" "new"

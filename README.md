@@ -4,21 +4,21 @@ _Express and Experiment with Organization._
 
 ---
 
-**xorg** is a homoiconic, metacircular, self-reflective, and self-transforming substrate for programmable organizations, built on [Spritely Goblins](https://spritely.institute) and [Guile Scheme](https://www.gnu.org/software/guile/).
+**xorg** is a way of thinking about organization — expressing it, experimenting with it, and transforming it. It is not any particular organizational form. It is the practice of making organization _expressible_.
 
-It asks a simple question: what if an organization were a Lisp environment — and the people in it were expressions that could rewrite the interpreter?
+This repository explores xorg in the domain of computable interpreters: an org expressed as a Lisp environment, built on [Spritely Goblins](https://spritely.institute) and [Guile Scheme](https://www.gnu.org/software/guile/). Here, the question becomes: what if an organization were an interpreter — and the people in it were expressions that could rewrite it?
 
-The answer inherits everything that makes Lisp powerful. The system is **homoiconic**: the organization's rules, state, and history are all S-expressions — the same representation the evaluator consumes. There is no gap between the org and its description. A validator is not a config file — it is a live Scheme expression sitting in the same expression-space as the data it governs. History entries are not opaque log rows — they are the original S-expressions that produced each state transition, ready to be re-evaluated. This is what makes the org **self-reflective**: it can `show-history` to inspect its own evolution, then `rollback!` to replay it, using the same language it was built in.
+In this expression of xorg, the answer inherits everything that makes Lisp powerful. The system is **homoiconic**: the organization's rules, state, and history are all S-expressions — the same representation the evaluator consumes. There is no gap between the org and its description. A validator is not a config file — it is a live Scheme expression sitting in the same expression-space as the data it governs. History entries are not opaque log rows — they are the original S-expressions that produced each state transition, ready to be re-evaluated. This is what makes the org **self-reflective**: it can `show-history` to inspect its own evolution, then `rollback!` to restore a prior state, using the same language it was built in.
 
 Because the evaluator is **metacircular** — a Scheme interpreter written in Scheme — the org is **extensible** and **self-transforming** from within. `enact!` installs a new validator: an arbitrary Scheme function that changes how all future expressions are evaluated. The validator has access to the full environment before and after every change. It must accept its own installation to take effect. You are not configuring an organization — you are metaprogramming the interpreter that _is_ the organization, and the interpreter must consent.
 
 Every expression an expressor evaluates moves the org through **expression-space** — the space of all reachable organizational states. `modify!` traverses it. `enact!` reshapes which regions are reachable. `rollback!` backtracks. The org's evolution is a path through this space, and because every step is recorded as a homoiconic S-expression, the entire path is replayable, inspectable, and forkable.
 
-The system is deliberately minimal. It provides identity, memory, and a mechanism for self-modification. What it _becomes_ is not prescribed. A xorg could evolve into a democracy, a marketplace, a neural network of agents, a single autocratic expressor, or something with no existing name. The structure doesn't impose direction — it makes direction _expressible_.
+The system is deliberately minimal. It provides identity, memory, and a mechanism for self-modification. What it _becomes_ is not prescribed. An org could evolve into a democracy, a marketplace, a neural network of agents, a single autocratic expressor, or something with no existing name. The structure doesn't impose direction — it makes direction _expressible_.
 
 ## Architecture
 
-xorg is built on [Spritely Goblins](https://spritely.institute), an object-capability actor system. Each org is a Goblins actor living in a vat (event loop). This gives xorg:
+This implementation is built on [Spritely Goblins](https://spritely.institute), an object-capability actor system. Each org is a Goblins actor living in a vat (event loop). This gives it:
 
 - **Capability-based security** — identity is proved by holding a cryptographic sealer, not by claiming a name
 - **Persistence** — orgs can be saved to disk and restored via Goblins' `define-actor` persistence
@@ -76,7 +76,7 @@ Every change produces a history entry: a version number, the expressor, the expr
 (rollback! 3)
 ```
 
-Rollback does not erase — it replays. The org resets to its base state, then re-evaluates all history entries from version 1 up to the target version. Each step is re-evaluated under the identity that originally performed it, so attribution survives time travel.
+Rollback does not erase — it restores. Each history entry carries a snapshot of the org's full state (bindings, validator expression, validator procedure) at the moment it was created. `rollback!` finds the target version's snapshot and becomes that state directly. History is preserved — only the org's live state rewinds.
 
 ## Metacircularity
 
@@ -87,7 +87,7 @@ The metacircular closure is complete:
 - **The evaluator evaluates itself.** The language that defines the organization is the language the organization operates in.
 - **Validators validate themselves.** `enact!` must pass the current validator to install a new one. The rules for changing the rules are subject to the current rules.
 - **Expressors create expressors.** Identities within the system bring new identities into being — the org grows itself.
-- **History is its own source code.** Each entry is the S-expression that produced it. `rollback!` re-evaluates them. The org's past is not a log — it is a program.
+- **History is its own source code.** Each entry is the S-expression that produced it, paired with a snapshot of the state it produced. The org's past is not a log — it is a program.
 
 ## Play and Meta-Play
 
@@ -124,9 +124,14 @@ The metacircular closure is complete:
 | `(as sealer expr)`              | Evaluate under a different identity (requires sealer) |
 | `(modify! name value)`          | Validated binding mutation                         |
 | `(enact! validator-expr)`       | Replace the validator (must self-accept)           |
-| `(rollback! version)`           | Replay to a prior state                            |
+| `(rollback! version)`           | Restore snapshot at a prior version                |
 | `(show-history)`                | Return the versioned history as a string           |
 | `(show-expressors)`             | Return all known identities as a string            |
+| `(public-key)`                  | Return this org's Ed25519 public key               |
+| `(process-message msg-id)`      | Process a pending inbox message                    |
+| `(retract-message msg-id sender)` | Retract a pending inbox message                  |
+| `(ai prompt)`                   | Send prompt to AI, return response                 |
+| `(ai-eval prompt)`              | Send prompt to AI, evaluate response as code       |
 | `(cond clauses ...)`            | Multi-branch conditional                           |
 | `(and exprs ...)`, `(or ...)`   | Short-circuit boolean                              |
 | `(when test body ...)`          | Conditional execution                              |
@@ -173,27 +178,31 @@ Each org can have a warded inbox (`^org-inbox`):
 ### Browser REPL Commands
 
 ```scheme
-;; Host an org on the network
-(host-org "alpha")
+;; Create two orgs
+(make-org "alpha")
+(make-org "beta")
 
-;; A peer requests to join
-(join-org "alice" "alpha")
+;; From inside beta, request to join alpha
+(enter! "beta")
+(join-org "alpha")
 
-;; Host approves the membership request
+;; Switch to alpha and approve
+(exit!)
 (enter! "alpha")
-(approve-member 0 "alice" "alice-key")
+(approve-member 0 "beta")
 
-;; Switch to alice's peer context
-(switch-peer "alice")
+;; Now beta can act in alpha through its controller
+(exit!)
+(enter! "beta")
+(act-in "alpha" (define greeting "hello from beta"))
+```
 
-;; Alice evaluates expressions through her controller
-(modify! 'proposal "fund the commons")
+For remote orgs across machines, connect to a relay and use public keys:
 
-;; Leave peer context
-(exit-peer)
-
-;; See connected peers
-(list-peers)
+```scheme
+;; Connect browser to relay: http://localhost:8088?relay=ws://localhost:9090
+;; Then act-in using a public key instead of a name
+(act-in target-public-key (modify! 'status "online"))
 ```
 
 ## How to Run
@@ -222,10 +231,19 @@ make repl         # full two-tier REPL with Goblins actors
 make quick-repl   # single-org functional REPL
 ```
 
+### Relay and server
+
+```bash
+make relay        # WebSocket relay on ws://localhost:9090 — routes messages by public key, queues for offline peers
+make server       # native org server with admin REPL (approve members, inspect bindings/history)
+```
+
+To connect the browser REPL to a relay, add `?relay=ws://localhost:9090` to the URL. The REPL auto-connects and registers all local org public keys.
+
 ### Run tests
 
 ```bash
-make test-gplay   # 138 tests covering the evaluator, identity, rollback, persistence, inbox
+make test-gplay   # tests covering the evaluator, identity, rollback, persistence, inbox
 ```
 
 ## REPL Tutorial (Browser)
@@ -263,7 +281,7 @@ play[genesis]> proposal
 error: Variable unbound: proposal
 ```
 
-The sidebar shows bindings, validator, history, and expressors in real time.
+The sidebar shows bindings, validator, history, and expressors in real time. The REPL supports tab-completion for special forms, Scheme keywords, and org bindings.
 
 ## What This Is Not
 

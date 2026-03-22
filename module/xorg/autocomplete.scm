@@ -43,6 +43,7 @@
 (define (extract-token input cursor-pos)
   "Extract the token being typed at CURSOR-POS."
   (let ((len (string-length input)))
+    (if (= len 0) ""
     (let ((start (let loop ((i (max 0 (- cursor-pos 1))))
                    (if (or (< i 0)
                            (memv (string-ref input i)
@@ -57,7 +58,7 @@
                      (loop (+ i 1))))))
       (if (< start end)
           (substring input start end)
-          ""))))
+          "")))))  ;; extra paren closes the (if (= len 0) ...)
 
 ;;; ── Completion matching ────────────────────────────────────────────────────
 
