@@ -1,13 +1,18 @@
 FROM debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    guile-3.0 guile-gnutls git ca-certificates \
+    guile-3.0 git ca-certificates \
     && git clone --depth 1 https://git.dthompson.us/guile-websocket.git /tmp/guile-websocket \
     && mkdir -p /usr/share/guile/site/3.0/web/socket \
-    && cp /tmp/guile-websocket/web/socket/*.scm /usr/share/guile/site/3.0/web/socket/ \
+    && cp /tmp/guile-websocket/web/socket/frame.scm /usr/share/guile/site/3.0/web/socket/ \
+    && cp /tmp/guile-websocket/web/socket/sha-1.scm /usr/share/guile/site/3.0/web/socket/ \
     && rm -rf /tmp/guile-websocket \
     && apt-get purge -y git ca-certificates && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
+
+# Patched server.scm and utils.scm — no gnutls dependency (TLS via reverse proxy)
+COPY deploy/web/socket/server.scm /usr/share/guile/site/3.0/web/socket/server.scm
+COPY deploy/web/socket/utils.scm  /usr/share/guile/site/3.0/web/socket/utils.scm
 
 WORKDIR /app
 COPY xorg-relay.scm .
