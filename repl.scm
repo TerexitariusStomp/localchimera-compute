@@ -125,6 +125,10 @@
   "ai" "chat"
   (ref string) (ref string) (ref string) (ref string) -> (ref string))
 
+(define-foreign url-param-get
+  "urlParams" "get"
+  (ref string) -> (ref string))
+
 (define procedure->external/cached
   (let ((cache (make-hashtable)))
     (lambda (proc)
@@ -477,7 +481,8 @@
 ;; Network state
 (define *mycapn* #f)        ;; MyCapN node (set after connect)
 (define *net-vat* #f)       ;; Vat where mycapn lives
-(define *connected?* #f)    ;; #t after successfully connecting to relay
+(define *connected?* #f)    ;; #t after successfully connecting
+(define *remote-inbox* #f)  ;; Remote org's inbox (set after auto-connect)
 
 ;;; ── Org management ────────────────────────────────────────────────────────
 ;;; Every org entry: (name vat ref inbox incanter key-pair controllers . log)
@@ -1028,6 +1033,43 @@
                                "Connecting to server...\n"))))
      #t)
 
+    ;; join-server — submit membership to the auto-connected remote org
+    ('(join-server)
+     (cond
+      ((not *current-org-name*)
+       (log-append! `(span (@ (class "error-text"))
+                           "Must be inside an org.\n")))
+      ((not *remote-inbox*)
+       (log-append! `(span (@ (class "error-text"))
+                           "Not connected to a server. Add ?sref=... to the URL.\n")))
+      (else
+       (let ((my-pk (with-vat *vat* ($ *org* 'public-key)))
+             (my-name *current-org-name*))
+         (with-vat *net-vat*
+           (receive (sub-sealer sub-unsealer sub-sealed?)
+             (spawn-sealer-triplet)
+             (let ((my-identity
+                    (spawn (lambda (bcom)
+                      (methods
+                       [(name) (string->symbol my-name)]
+                       [(subscription-sealer) sub-sealer]
+                       [(subscription-unsealer) sub-unsealer]
+                       [(public-key) my-pk])))))
+               (on (<- *remote-inbox* 'submit
+                        `(request-membership ,my-name)
+                        my-identity)
+                   (lambda (msg-id)
+                     (set! *pending-joins*
+                       (cons (list my-name "server"
+                                  sub-unsealer msg-id my-identity)
+                             *pending-joins*))
+                     (log-append! `(span (@ (class "result-text"))
+                                         ,(string-append "Membership request submitted (msg-id: "
+                                                         (number->string msg-id) ").\n"
+                                                         "Ask server admin: (approve " (number->string msg-id) " \"" my-name "\")\n")))
+                     (refresh!)))))))))
+     #t)
+
     (_ #f)))
 
 (define (eval! str)
@@ -1412,3 +1454,24 @@
 
 (refresh!)
 (add-event-listener!/wrap (document-body) "keydown" global-keydown)
+
+;;; ── Auto-connect to server if sturdyref is in URL ─────────────────────────
+(let ((sref-str (url-param-get "sref")))
+  (when (and (string? sref-str) (> (string-length sref-str) 0))
+    (log-append! `(span (@ (class "info-text"))
+                        ,(string-append "Auto-connecting to server...\n")))
+    (let ((net-vat (spawn-vat #:name "network")))
+      (set! *net-vat* net-vat)
+      (with-vat net-vat
+        (let* ((netlayer (spawn ^websocket-netlayer))
+               (mycapn (spawn-mycapn netlayer))
+               (sref (string->ocapn-id sref-str)))
+          (set! *mycapn* mycapn)
+          (on (<- mycapn 'enliven sref)
+              (lambda (remote-inbox)
+                (set! *connected?* #t)
+                ;; Store the remote inbox globally for join-org to use
+                (set! *remote-inbox* remote-inbox)
+                (log-append! `(span (@ (class "result-text"))
+                                    "Connected to server org!\nUse (join-org) to request membership.\n"))
+                (refresh!))))))))

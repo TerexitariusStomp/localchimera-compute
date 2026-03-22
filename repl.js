@@ -125,6 +125,11 @@ window.addEventListener("load", async () => {
             });
           },
           setOnClose(ws, cb) { ws.addEventListener('close', () => cb()); }
+        },
+        urlParams: {
+          get(name) {
+            return new URLSearchParams(window.location.search).get(name) || "";
+          }
         }
       }
     });
