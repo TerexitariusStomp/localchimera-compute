@@ -622,12 +622,7 @@ The public key is accessible via the org's (public-key) method."
        (let ((result-expr
               (handler (evaluate prompt-expr org local-bindings current-expressor)
                        org current-expressor)))
-         (catch #t
-           (lambda ()
-             (evaluate result-expr org local-bindings current-expressor))
-           (lambda (key . args)
-             (error "ai-eval: generated expression failed —"
-                    result-expr key args))))))
+         (evaluate result-expr org local-bindings current-expressor))))
 
     ;; process-message — process an inbox message and evaluate its expression
     (('process-message msg-id-expr)
