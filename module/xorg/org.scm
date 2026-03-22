@@ -17,7 +17,8 @@
             org-history
             enter!
             list-orgs
-            default-base-bindings))
+            default-base-bindings
+            make-org-ai-agent))
 
 ;;; ── Org record type ────────────────────────────────────────────────────────
 
@@ -252,3 +253,30 @@
           (lambda (key . args)
             (format-error key args)
             (loop)))))))
+
+;;; ── AI Agent Helper ────────────────────────────────────────────────────────
+
+(define (make-org-ai-agent org name key system-prompt)
+  "Convenience function to create an AI agent for an org from the outer REPL.
+
+  Parameters:
+    org - The org record (from make-org)
+    name - Symbol name for the AI expressor
+    key - Public key string
+    system-prompt - Instructions for the AI
+
+  Returns:
+    (values ai-agent-ref expressor-sealer)
+
+  Usage:
+    (define my-org (make-org \"test\"))
+    (define-values (agent sealer)
+      (make-org-ai-agent my-org 'ai-governor \"key\" \"You govern wisely.\"))"
+  ;; Lazy load ai-agent module
+  (let ((ai-agent-module (resolve-module '(xorg ai-agent))))
+    (let ((make-ai-agent (module-ref ai-agent-module 'make-ai-agent)))
+      (make-ai-agent (org-vat org)
+                     (org-ref org)
+                     name
+                     key
+                     system-prompt))))

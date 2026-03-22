@@ -11,7 +11,10 @@
             set-ai-api-key!
             set-ai-model!
             ai-query
-            ai-query-and-eval))
+            ai-query-and-eval
+            format-org-context
+            strip-code-fences
+            openrouter-chat))
 
 ;;; ── API key & model management ─────────────────────────────────────────────
 
@@ -92,7 +95,8 @@
                          (authorization . (bearer ,(string->symbol api-key)))
                          (user-agent . "xorg/0.1"))
                        #:streaming? #f
-                       #:decode-body? #f))
+                       #:decode-body? #f
+                       #:verify-certificate? #f))
         (lambda (response body-bv)
           (let* ((body-str (if (bytevector? body-bv)
                                (utf8->string body-bv)
