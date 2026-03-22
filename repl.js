@@ -106,13 +106,25 @@ window.addEventListener("load", async () => {
             return new Uint8Array(buf);
           }
         },
-        codeViewer: {
-          updateCode(code) {
-            const viewer = document.getElementById("code-viewer-content");
-            if (viewer) {
-              viewer.textContent = code;
-            }
-          }
+        webSocket: {
+          new(url) { return new WebSocket(url); },
+          close(ws) { ws.close(); },
+          send(ws, data) { ws.send(data); },
+          setOnOpen(ws, cb) { ws.addEventListener('open', () => cb()); },
+          setOnError(ws, cb) { ws.addEventListener('error', () => cb()); },
+          setOnMessage(ws, cb) {
+            ws.addEventListener('message', (e) => {
+              if (e.data instanceof Blob) {
+                e.data.arrayBuffer().then(buf => cb(new Uint8Array(buf)));
+              } else if (e.data instanceof ArrayBuffer) {
+                cb(new Uint8Array(e.data));
+              } else {
+                const enc = new TextEncoder();
+                cb(enc.encode(e.data));
+              }
+            });
+          },
+          setOnClose(ws, cb) { ws.addEventListener('close', () => cb()); }
         }
       }
     });

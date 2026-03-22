@@ -12,6 +12,12 @@ repl.wasm: repl.scm module/xorg/gplay.scm
 serve: repl.wasm
 	guile -c '((@ (hoot web-server) serve))'
 
+relay:
+	guile -L module xorg-relay.scm
+
+server:
+	guile -L module xorg-server.scm
+
 test-gplay:
 	guile -L module test-gplay.scm
 

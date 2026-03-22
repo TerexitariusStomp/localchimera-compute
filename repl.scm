@@ -7,9 +7,12 @@
              (goblins)
              (goblins actor-lib methods)
              (goblins actor-lib sealers)
+             (goblins actor-lib ward)
              (goblins ocapn ids)
              (goblins ocapn captp)
              (goblins ocapn netlayer fake)
+             (goblins ocapn netlayer websocket)
+             (goblins utils crypto)
              (xorg gplay)
              (xorg autocomplete)
              (srfi srfi-11))
@@ -121,10 +124,6 @@
 (define-foreign ai-chat
   "ai" "chat"
   (ref string) (ref string) (ref string) (ref string) -> (ref string))
-
-(define-foreign update-code-viewer
-  "codeViewer" "updateCode"
-  (ref string) -> none)
 
 (define procedure->external/cached
   (let ((cache (make-hashtable)))
@@ -476,14 +475,16 @@
     (spawn ^fake-network)))
 
 ;; Network state
-(define *hosted-orgs* '())   ;; alist: name → (org-vat org inbox incanter mycapn sref)
-(define *peers* '())         ;; alist: name → (peer-vat controller)
-(define *pending-joins* '()) ;; alist: name → (sub-unsealer msg-id remote-inbox peer-vat)
-(define *active-peer* #f)    ;; string or #f
+(define *mycapn* #f)        ;; MyCapN node (set after connect)
+(define *net-vat* #f)       ;; Vat where mycapn lives
+(define *connected?* #f)    ;; #t after successfully connecting to relay
 
 ;;; ── Org management ────────────────────────────────────────────────────────
+;;; Every org entry: (name vat ref inbox incanter key-pair controllers . log)
+;;; controllers: alist of (org-name . controller)
 
 (define *orgs* '())
+(define *pending-joins* '()) ;; alist: (joiner-name target-name sub-unsealer msg-id identity)
 (define *mode* 'outer)
 (define *current-org-name* #f)
 (define *vat* #f)
@@ -493,19 +494,44 @@
 (define *sidebar-selected-org* #f)   ;; string or #f
 (define *expressor-filter* #f)       ;; symbol or #f — filter history by expressor name
 
-(define (org-entry-name e) (car e))
-(define (org-entry-vat e) (cadr e))
-(define (org-entry-ref e) (caddr e))
-(define (org-entry-log e) (cdddr e))
+(define (org-entry-name e) (list-ref e 0))
+(define (org-entry-vat e) (list-ref e 1))
+(define (org-entry-ref e) (list-ref e 2))
+(define (org-entry-inbox e) (list-ref e 3))
+(define (org-entry-incanter e) (list-ref e 4))
+(define (org-entry-key-pair e) (list-ref e 5))
+(define (org-entry-controllers e) (list-ref e 6))
+(define (org-entry-log e) (list-tail e 7))
 
 (define (org-save!)
   (when *current-org-name*
-    (set! *orgs*
-      (cons (cons *current-org-name* (cons *vat* (cons *org* *log*)))
-            (let loop ((lst *orgs*))
-              (cond ((null? lst) '())
-                    ((string=? (caar lst) *current-org-name*) (loop (cdr lst)))
-                    (else (cons (car lst) (loop (cdr lst))))))))))
+    (let ((old (org-lookup *current-org-name*)))
+      (when old
+        (let ((entry (append (list *current-org-name*
+                                   *vat* *org*
+                                   (org-entry-inbox old)
+                                   (org-entry-incanter old)
+                                   (org-entry-key-pair old)
+                                   (org-entry-controllers old))
+                             *log*)))
+          (set! *orgs*
+            (cons entry
+                  (let loop ((lst *orgs*))
+                    (cond ((null? lst) '())
+                          ((string=? (car (car lst)) *current-org-name*) (loop (cdr lst)))
+                          (else (cons (car lst) (loop (cdr lst)))))))))))))
+
+(define (org-set-controllers! name controllers)
+  "Update the controllers alist for an org."
+  (set! *orgs*
+    (map (lambda (e)
+           (if (string=? (car e) name)
+               (append (list (list-ref e 0) (list-ref e 1) (list-ref e 2)
+                             (list-ref e 3) (list-ref e 4) (list-ref e 5)
+                             controllers)
+                       (list-tail e 7))
+               e))
+         *orgs*)))
 
 (define (org-lookup name)
   (let loop ((lst *orgs*))
@@ -556,14 +582,16 @@
                  "Rollback (replays with original identities):\n"
                  "  (rollback! 2)\n"
                  "\n"
-                 "── Multi-Agent (OCapN) ────────────────────────\n"
+                 "── Cross-Org ──────────────────────────────────\n"
                  "\n"
-                 "  (host-org \"alpha\")                 host on network\n"
-                 "  (join-org \"alice\" \"alpha\")          request to join\n"
-                 "  (approve-member 0 \"alice\" \"key\")   approve member\n"
-                 "  (switch-peer \"alice\")              act as peer\n"
-                 "  (exit-peer)                        leave peer mode\n"
-                 "  (list-peers)                       show peers\n"
+                 "Local (same browser):\n"
+                 "  (join-org \"alpha\")                 request to join\n"
+                 "  (approve-member 0 \"alice\")         approve member\n"
+                 "  (act-in \"alpha\" (modify! 'x 1))   act in another org\n"
+                 "  (public-key)                       show this org's key\n"
+                 "\n"
+                 "Remote (connect to server):\n"
+                 "  (connect \"ocapn://ws:...\")         join server org\n"
                  "\n"
                  "── Language Forms ──────────────────────────────\n"
                  "\n"
@@ -581,16 +609,12 @@
   (set! *log* (append *log* lines)))
 
 (define (current-prompt)
-  (cond
-   (*active-peer*
-    (string-append "peer[" *active-peer* "]> "))
-   ((eq? *mode* 'outer)
-    "xorg> ")
-   (else
-    (string-append "play["
-      (symbol->string
-        (or (with-vat *vat* ($ *org* 'expressor-name ($ *org* 'current-expressor))) '?))
-      "]> "))))
+  (if (eq? *mode* 'outer)
+      "xorg> "
+      (string-append *current-org-name* "["
+        (symbol->string
+          (or (with-vat *vat* ($ *org* 'expressor-name ($ *org* 'current-expressor))) '?))
+        "]> ")))
 
 ;;; ── History ring ──────────────────────────────────────────────────────────
 
@@ -631,6 +655,84 @@
            ((char=? ch #\)) (loop (+ i 1) (- depth 1) #f))
            (else (loop (+ i 1) depth #f)))))))
 
+;;; ── Code viewer ──────────────────────────────────────────────────────────
+
+(define *base-binding-names*
+  (map car base-bindings))
+
+(define (base-binding? name)
+  (memq name *base-binding-names*))
+
+(define (serialize-org-code ref)
+  "Serialize the current org state as readable Scheme code."
+  (let* ((bindings ($ ref 'bindings))
+         (user-bindings (%filter (lambda (pair) (not (base-binding? (car pair)))) bindings))
+         (history ($ ref 'history))
+         (vexpr ($ ref 'validator-expr))
+         (expressors (unique-expressors history ref))
+         (recent (let ((h (reverse history)))
+                   (if (> (length h) 10) (list-tail h (- (length h) 10)) h)))
+         (port (open-output-string)))
+    ;; User-defined bindings
+    (unless (null? user-bindings)
+      (display ";;; bindings\n" port)
+      (for-each (lambda (pair)
+                  (display "(modify! '" port)
+                  (display (symbol->string (car pair)) port)
+                  (display " " port)
+                  (let ((val (cdr pair)))
+                    (cond
+                      ((procedure? val)
+                       (display "<procedure>" port))
+                      (($ ref 'expressor? val)
+                       (display (string-append "<expressor:"
+                                 (symbol->string (or ($ ref 'expressor-name val) '?)) ">") port))
+                      (else (write val port))))
+                  (display ")\n" port))
+                user-bindings)
+      (newline port))
+    ;; Validator
+    (unless (equal? vexpr '(lambda (e n v pre post) #t))
+      (display ";;; validator\n" port)
+      (display "(enact! " port)
+      (write vexpr port)
+      (display ")\n\n" port))
+    ;; Expressors
+    (when (> (length expressors) 1)
+      (display ";;; expressors\n" port)
+      (for-each (lambda (exp-id)
+                  (let ((name (or ($ ref 'expressor-name exp-id) '?)))
+                    (display (string-append ";; " (symbol->string name) "\n") port)))
+                expressors)
+      (newline port))
+    ;; History (skip the initial entry)
+    (let ((meaningful (if (and (not (null? recent))
+                               (equal? (caddr (car recent)) '(quote initial)))
+                          (cdr recent)
+                          recent)))
+      (unless (null? meaningful)
+        (display ";;; history\n" port)
+        (for-each (lambda (entry)
+                    (display (string-append ";; v" (number->string (car entry))
+                               " [" (symbol->string (or ($ ref 'expressor-name (cadr entry)) '?))
+                               "] ") port)
+                    (write (caddr entry) port)
+                    (newline port))
+                  meaningful)))
+    (get-output-string port)))
+
+(define *code-viewer-content* "")
+
+(define (update-code-viewer!)
+  "Serialize current org and store for VDOM rendering."
+  (if (and *org* *vat*)
+      (with-exception-handler
+        (lambda (exn) (set! *code-viewer-content* ""))
+        (lambda ()
+          (set! *code-viewer-content* (with-vat *vat* (serialize-org-code *org*))))
+        #:unwind? #t)
+      (set! *code-viewer-content* "")))
+
 ;;; ── Evaluation ────────────────────────────────────────────────────────────
 
 (define %invalid (cons 'invalid 'expression))
@@ -663,33 +765,10 @@
                       (display result result-port)
                       (write result result-port))
                   (log-append! `(span (@ (class "result-text"))
-                                      ,(string-append "=> " (get-output-string result-port) "\n")))))
-              ;; Update code viewer after evaluation
-              (update-code-viewer!)))))
-      #:unwind? #t)))
-
-(define (eval-peer! exp)
-  "Evaluate an expression through a peer's controller."
-  (let* ((peer (assoc *active-peer* *peers*))
-         (peer-vat (list-ref peer 1))
-         (controller (list-ref peer 2)))
-    (with-exception-handler
-      (lambda (exn)
-        (let ((err-port (open-output-string)))
-          (format-exception exn err-port)
-          (log-append! `(span (@ (class "error-text"))
-                              ,(get-output-string err-port)))))
-      (lambda ()
-        (with-vat peer-vat
-          (let ((result ($ controller 'evaluate exp)))
-            (unless (eq? result (if #f #f))
-              (let ((result-port (open-output-string)))
-                (if (string? result)
-                    (display result result-port)
-                    (write result result-port))
-                (log-append! `(span (@ (class "result-text"))
-                                    ,(string-append "=> " (get-output-string result-port) "\n"))))))))
-      #:unwind? #t)))
+                                      ,(string-append "=> " (get-output-string result-port) "\n")))))))))
+      #:unwind? #t)
+    ;; Update code viewer after evaluation (outside with-vat to avoid nesting)
+    (update-code-viewer!)))
 
 (define (do-enter! name)
   (let ((org (org-lookup name)))
@@ -722,7 +801,7 @@
       (log-append! `(span (@ (class "info-text"))
                           ,(string-append "Left org '" name "'.\n")))
       ;; Clear code viewer when exiting org
-      (update-code-viewer ""))))
+      (set! *code-viewer-content* ""))))
 
 (define (handle-command exp)
   (match exp
@@ -730,12 +809,29 @@
      (if (org-lookup name)
          (log-append! `(span (@ (class "error-text"))
                              ,(string-append "Org already exists: " name "\n")))
-         (let* ((vat (spawn-vat))
-                (ref (with-vat vat (make-initial-org base-bindings))))
-           (set! *orgs* (cons (cons name (cons vat (cons ref '()))) *orgs*))
+         (let* ((kp (generate-key-pair))
+                (pk (key-pair->public-key kp))
+                (vat (spawn-vat))
+                (result (with-vat vat
+                          (let* ((org (make-initial-org base-bindings #:public-key pk))
+                                 (triple (receive (warden incanter)
+                                           (spawn-warding-pair)
+                                           (let ((inbox (spawn ^org-inbox org '() 0 warden incanter)))
+                                             (list org inbox incanter)))))
+                            triple)))
+                (ref (list-ref result 0))
+                (inbox (list-ref result 1))
+                (incanter (list-ref result 2))
+                (pk-display (let ((p (open-output-string)))
+                              (write pk p)
+                              (let ((s (get-output-string p)))
+                                (if (> (string-length s) 50)
+                                    (string-append (substring s 0 50) "...")
+                                    s)))))
+           (set! *orgs* (cons (list name vat ref inbox incanter kp '()) *orgs*))
            (set! *sidebar-selected-org* name)
            (log-append! `(span (@ (class "result-text"))
-                               ,(string-append "Created org: " name "\n")))))
+                               ,(string-append "Created org: " name "\n  key: " pk-display "\n")))))
      #t)
     (('enter! (? string? name))
      (let ((org (org-lookup name)))
@@ -772,118 +868,164 @@
            (log-append! `(span (@ (class "result-text")) ,(string-append "Deleted org: " name "\n"))))
          (log-append! `(span (@ (class "error-text")) ,(string-append "Unknown org: " name "\n"))))
      #t)
-    ;; ── Network commands ──
+    ;; ── Cross-org commands ──
 
-    (('host-org (? string? name))
-     (if (assoc name *hosted-orgs*)
+    ;; join-org — from inside an org, request to join another
+    (('join-org (? string? target-name))
+     (if (not *current-org-name*)
          (log-append! `(span (@ (class "error-text"))
-                             ,(string-append "Org already hosted: " name "\n")))
-         (let ((org-vat (spawn-vat #:name name)))
-           (with-vat org-vat
-             (let* ((triple (make-org-with-inbox base-bindings))
-                    (org (car triple))
-                    (inbox (cadr triple))
-                    (incanter (cddr triple)))
-               (set! *hosted-orgs*
-                 (cons (list name org-vat org inbox incanter)
-                       *hosted-orgs*))
-               (set! *orgs* (cons (cons name (cons org-vat (cons org '()))) *orgs*))
-               (set! *sidebar-selected-org* name)))
-           (log-append! `(span (@ (class "result-text"))
-                               ,(string-append "Hosted org '" name "' on network.\n")))))
+                             "Must be inside an org to join another.\n"))
+         (let ((target (org-lookup target-name)))
+           (if (not target)
+               (log-append! `(span (@ (class "error-text"))
+                                   ,(string-append "Unknown org: " target-name "\n")))
+               (let* ((target-vat (org-entry-vat target))
+                      (target-inbox (org-entry-inbox target))
+                      (my-pk (with-vat *vat* ($ *org* 'public-key))))
+                 (with-vat target-vat
+                   (receive (sub-sealer sub-unsealer sub-sealed?)
+                     (spawn-sealer-triplet)
+                     (let* ((my-identity
+                             (spawn (lambda (bcom)
+                               (methods
+                                [(name) (string->symbol *current-org-name*)]
+                                [(subscription-sealer) sub-sealer]
+                                [(subscription-unsealer) sub-unsealer]
+                                [(public-key) my-pk]))))
+                            (msg-id ($ target-inbox 'submit
+                                       `(request-membership ,*current-org-name*)
+                                       my-identity)))
+                       (set! *pending-joins*
+                         (cons (list *current-org-name* target-name
+                                    sub-unsealer msg-id my-identity)
+                               *pending-joins*))
+                       (log-append! `(span (@ (class "result-text"))
+                                           ,(string-append *current-org-name*
+                                                           " requested to join " target-name
+                                                           " (msg-id: "
+                                                           (number->string msg-id) ").\n"))))))))))
      #t)
 
-    (('join-org (? string? peer-name) (? string? org-name))
-     (let ((hosted (assoc org-name *hosted-orgs*)))
-       (if (not hosted)
-           (log-append! `(span (@ (class "error-text"))
-                               ,(string-append "No hosted org: " org-name "\n")))
-           (let* ((org-vat (list-ref hosted 1))
-                  (inbox (list-ref hosted 3)))
-             ;; Create the peer's identity with subscription sealer
-             (with-vat org-vat
-               (receive (sub-sealer sub-unsealer sub-sealed?)
-                 (spawn-sealer-triplet)
-                 (let* ((my-identity
-                         (spawn (lambda (bcom)
-                           (methods
-                            [(name) (string->symbol peer-name)]
-                            [(subscription-sealer) sub-sealer]
-                            [(subscription-unsealer) sub-unsealer]))))
-                        (msg-id ($ inbox 'submit
-                                   `(request-membership ,peer-name) my-identity)))
-                   (set! *pending-joins*
-                     (cons (list peer-name sub-unsealer msg-id
-                                org-vat my-identity)
-                           *pending-joins*))
-                   (log-append! `(span (@ (class "result-text"))
-                                       ,(string-append "Peer '" peer-name
-                                                       "' submitted membership request (msg-id: "
-                                                       (number->string msg-id) ").\n")))))))))
+    ;; approve-member — approve a pending membership request
+    (('approve-member (? number? msg-id) (? string? name))
+     (if (not *current-org-name*)
+         (log-append! `(span (@ (class "error-text"))
+                             "Must be inside an org to approve members.\n"))
+         (let* ((current (org-lookup *current-org-name*))
+                (inbox (org-entry-inbox current))
+                (incanter (org-entry-incanter current))
+                (pending (let loop ((lst *pending-joins*))
+                           (cond ((null? lst) #f)
+                                 ((and (string=? (list-ref (car lst) 1) *current-org-name*)
+                                       (string=? (list-ref (car lst) 0) name))
+                                  (car lst))
+                                 (else (loop (cdr lst)))))))
+           (if (not pending)
+               (log-append! `(span (@ (class "error-text"))
+                                   ,(string-append "No pending join for: " name "\n")))
+               (let* ((sub-unsealer (list-ref pending 2))
+                      (applicant-identity (list-ref pending 4))
+                      (applicant-pk (with-vat (org-entry-vat current)
+                                     ($ applicant-identity 'public-key))))
+                 (with-vat (org-entry-vat current)
+                   (let* ((sealed-controller
+                           (approve-membership inbox incanter msg-id *org*
+                                               (string->symbol name)
+                                               applicant-pk
+                                               applicant-identity))
+                          (controller ($ sub-unsealer sealed-controller)))
+                     ;; Store controller on the joiner's org
+                     (let ((joiner (org-lookup name)))
+                       (when joiner
+                         (org-set-controllers! name
+                           (cons (cons *current-org-name* controller)
+                                 (org-entry-controllers joiner)))))))
+                 (set! *pending-joins*
+                   (let loop ((lst *pending-joins*))
+                     (cond ((null? lst) '())
+                           ((and (string=? (list-ref (car lst) 0) name)
+                                 (string=? (list-ref (car lst) 1) *current-org-name*))
+                            (loop (cdr lst)))
+                           (else (cons (car lst) (loop (cdr lst)))))))
+                 (log-append! `(span (@ (class "result-text"))
+                                     ,(string-append "Approved '" name "'.\n")))))))
      #t)
 
-    (('approve-member (? number? msg-id) (? string? name) (? string? key))
-     (let ((hosted-org (and *current-org-name*
-                            (assoc *current-org-name* *hosted-orgs*))))
-       (if (not hosted-org)
-           (log-append! `(span (@ (class "error-text"))
-                               "Must be inside a hosted org to approve members.\n"))
-           (let ((org (list-ref hosted-org 2))
-                 (inbox (list-ref hosted-org 3))
-                 (incanter (list-ref hosted-org 4))
-                 (pending (assoc name *pending-joins*)))
-             (if (not pending)
-                 (log-append! `(span (@ (class "error-text"))
-                                     ,(string-append "No pending join for: " name "\n")))
-                 (let ((sub-unsealer (list-ref pending 1))
-                       (applicant-identity (list-ref pending 4))
-                       (peer-vat (list-ref pending 3)))
-                   (with-vat peer-vat
-                     (let ((sealed-controller
-                            (approve-membership inbox incanter msg-id org
-                                                (string->symbol name) key
-                                                applicant-identity)))
-                       (let ((controller ($ sub-unsealer sealed-controller)))
-                         (set! *peers*
-                           (cons (list name peer-vat controller) *peers*))
-                         (set! *pending-joins*
-                           (let loop ((lst *pending-joins*))
-                             (cond ((null? lst) '())
-                                   ((string=? (caar lst) name) (loop (cdr lst)))
-                                   (else (cons (car lst) (loop (cdr lst))))))))))
-                   (log-append! `(span (@ (class "result-text"))
-                                       ,(string-append "Approved '" name "'. Controller delivered.\n"))))))))
+    ;; act-in — evaluate in another org through a controller
+    (('act-in (? string? target-name) body-expr)
+     (if (not *current-org-name*)
+         (log-append! `(span (@ (class "error-text"))
+                             "Must be inside an org to act-in another.\n"))
+         (let* ((current (org-lookup *current-org-name*))
+                (controllers (org-entry-controllers current))
+                (entry (assoc target-name controllers)))
+           (if (not entry)
+               (log-append! `(span (@ (class "error-text"))
+                                   ,(string-append "No controller for: " target-name
+                                                   ". Join and get approved first.\n")))
+               (let ((controller (cdr entry))
+                     (target (org-lookup target-name)))
+                 (with-exception-handler
+                   (lambda (exn)
+                     (let ((err-port (open-output-string)))
+                       (format-exception exn err-port)
+                       (log-append! `(span (@ (class "error-text"))
+                                           ,(get-output-string err-port)))))
+                   (lambda ()
+                     (with-vat (org-entry-vat target)
+                       (let ((result ($ controller 'evaluate body-expr)))
+                         (unless (eq? result (if #f #f))
+                           (let ((result-port (open-output-string)))
+                             (if (string? result)
+                                 (display result result-port)
+                                 (write result result-port))
+                             (log-append! `(span (@ (class "result-text"))
+                                                 ,(string-append "=> " (get-output-string result-port) "\n"))))))))
+                   #:unwind? #t)))))
      #t)
 
-    (('switch-peer (? string? name))
-     (let ((peer (assoc name *peers*)))
-       (if (not peer)
-           (log-append! `(span (@ (class "error-text"))
-                               ,(string-append "Unknown peer: " name "\n")))
-           (begin
-             (set! *active-peer* name)
-             (log-append! `(span (@ (class "info-text"))
-                                 ,(string-append "Switched to peer '" name "'.\n"))))))
-     #t)
-
-    ('(exit-peer)
-     (if *active-peer*
-         (begin
+    ;; connect — connect to a server-hosted org via websocket sturdyref
+    ;; Does everything: creates websocket, enlivens sturdyref, submits membership
+    (('connect (? string? sref-str))
+     (if (not *current-org-name*)
+         (log-append! `(span (@ (class "error-text"))
+                             "Must be inside an org to connect.\n"))
+         (let ((sref (string->ocapn-id sref-str))
+               (my-pk (with-vat *vat* ($ *org* 'public-key)))
+               (my-name *current-org-name*)
+               (net-vat (spawn-vat #:name "network")))
+           (set! *net-vat* net-vat)
+           (with-vat net-vat
+             (let* ((netlayer (spawn ^websocket-netlayer))
+                    (mycapn (spawn-mycapn netlayer)))
+               (set! *mycapn* mycapn)
+               (on (<- mycapn 'enliven sref)
+                   (lambda (remote-inbox)
+                     (receive (sub-sealer sub-unsealer sub-sealed?)
+                       (spawn-sealer-triplet)
+                       (let ((my-identity
+                              (spawn (lambda (bcom)
+                                (methods
+                                 [(name) (string->symbol my-name)]
+                                 [(subscription-sealer) sub-sealer]
+                                 [(subscription-unsealer) sub-unsealer]
+                                 [(public-key) my-pk])))))
+                         (on (<- remote-inbox 'submit
+                                  `(request-membership ,my-name)
+                                  my-identity)
+                             (lambda (msg-id)
+                               (set! *pending-joins*
+                                 (cons (list my-name "remote"
+                                            sub-unsealer msg-id my-identity)
+                                       *pending-joins*))
+                               (set! *connected?* #t)
+                               (log-append! `(span (@ (class "result-text"))
+                                                   ,(string-append "Connected! Membership request submitted (msg-id: "
+                                                                   (number->string msg-id) ").\n"
+                                                                   "Ask server admin to (approve " (number->string msg-id) " \"" my-name "\").\n")))
+                               (refresh!)))))))))
            (log-append! `(span (@ (class "info-text"))
-                               ,(string-append "Left peer '" *active-peer* "'.\n")))
-           (set! *active-peer* #f))
-         (log-append! `(span (@ (class "error-text")) "Not in a peer context.\n")))
-     #t)
-
-    ('(list-peers)
-     (if (null? *peers*)
-         (log-append! `(span (@ (class "output-text")) "No peers connected.\n"))
-         (log-append! `(span (@ (class "output-text"))
-                             ,(string-append "Peers:\n"
-                                (let loop ((lst *peers*) (acc ""))
-                                  (if (null? lst) acc
-                                      (loop (cdr lst)
-                                            (string-append acc "  " (caar lst) "\n"))))))))
+                               "Connecting to server...\n"))))
      #t)
 
     (_ #f)))
@@ -902,10 +1044,6 @@
           (loop))
          ;; Check for org management commands first
          ((handle-command exp) (loop))
-         ;; In peer mode, evaluate through the controller
-         (*active-peer*
-          (eval-peer! exp)
-          (loop))
          ;; In inner mode, use the xorg evaluator
          ((eq? *mode* 'inner)
           (eval-play! exp)
@@ -913,11 +1051,9 @@
          ;; In outer mode, prompt user to enter an org
          (else
           (log-append! `(span (@ (class "info-text"))
-                              ,(string-append "Enter an org or peer to evaluate expressions.\n"
-                                              "  (make-org \"name\")       create a local org\n"
-                                              "  (enter! \"name\")         enter it\n"
-                                              "  (host-org \"name\")       host on network\n"
-                                              "  (switch-peer \"name\")    act as a peer\n")))
+                              ,(string-append "Enter an org to evaluate expressions.\n"
+                                              "  (make-org \"name\")    create an org\n"
+                                              "  (enter! \"name\")      enter it\n")))
           (loop)))))))
 
 ;;; ── Auto-resize ───────────────────────────────────────────────────────────
@@ -989,9 +1125,15 @@
     ;; Update autocomplete suggestion
     (when (and *org* (eq? *mode* 'inner))
       (with-vat *vat*
-        (let ((completions (get-completions str (string-length str) *org*)))
+        (let* ((cursor (string-length str))
+               (token (extract-token str cursor))
+               (completions (get-completions str cursor *org*)))
           (set! *current-suggestion*
-                (if (null? completions) "" (car completions))))))
+                (if (null? completions)
+                    ""
+                    (substring (car completions)
+                               (string-length token)
+                               (string-length (car completions))))))))
     (refresh!)))
 
 ;;; ── Sidebar event handlers ───────────────────────────────────────────────
@@ -1234,6 +1376,14 @@
                          ,name)))
                *orgs*)))
 
+(define (render-code-viewer)
+  (if (string=? *code-viewer-content* "")
+      `(div)
+      `(div (@ (id "code-viewer") (class "code-viewer"))
+            (div (@ (class "code-viewer-header")) "organization code")
+            (pre (@ (id "code-viewer-content") (class "code-viewer-content"))
+                 ,*code-viewer-content*))))
+
 (define (render)
   `(div (@ (class "ide"))
         ,(render-sidebar)
@@ -1244,7 +1394,8 @@
                                 "\u00bb"))
                    '())
              ,(render-tab-bar)
-             ,(render-repl))))
+             ,(render-repl))
+        ,(render-code-viewer)))
 
 (define (global-keydown event)
   (let ((key (keyboard-event-key event)))

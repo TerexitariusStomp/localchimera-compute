@@ -2,6 +2,7 @@
 
 (define-module (xorg autocomplete)
   #:use-module (ice-9 match)
+  #:use-module (goblins)
   #:export (get-completions
             extract-token
             get-completion-context))

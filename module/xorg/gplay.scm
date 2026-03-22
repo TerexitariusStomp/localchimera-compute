@@ -6,6 +6,7 @@
   #:use-module (goblins actor-lib methods)
   #:use-module (goblins actor-lib sealers)
   #:use-module (goblins actor-lib ward)
+  #:use-module ((goblins utils crypto) #:select (generate-key-pair key-pair->public-key))
   #:use-module (ice-9 match)
   #:use-module (ice-9 receive)
   #:export (^org
@@ -27,7 +28,9 @@
             approve-membership
             *inbox*
             *inbox-incanter*
-            ancestor-chain))
+            ancestor-chain
+            generate-key-pair
+            key-pair->public-key))
 
 ;;; Hoot/WASM compatibility: eval and interaction-environment are not
 ;;; automatically available in Hoot's module system.
@@ -126,8 +129,8 @@ so that only this identity's holder can unseal them."
 
 (define-actor (^org bcom bindings validator-expr validator-proc
                     history expressor-store current-expressor base-bindings
-                    head-version)
-  #:version 2
+                    head-version org-public-key)
+  #:version 3
   #:portrait
   (lambda ()
     (list (filter-serializable-bindings bindings)
@@ -141,11 +144,13 @@ so that only this identity's holder can unseal them."
                      entry))
                history)
           expressor-store current-expressor
-          head-version))
+          head-version org-public-key))
   #:restore
   (lambda (version data-bindings vexpr history estore cur-exp . rest)
     (let* ((base (*restore-base-bindings*))
            (hv (if (null? rest) (car (car history)) (car rest)))
+           (pk (if (and (not (null? rest)) (not (null? (cdr rest))))
+                   (cadr rest) '(none)))
            (restored-history
             (map (lambda (entry)
                    (if (and (>= (length entry) 5)
@@ -164,7 +169,7 @@ so that only this identity's holder can unseal them."
              vexpr
              (%restore-eval vexpr (%restore-interaction-env))
              restored-history estore cur-exp
-             base hv)))
+             base hv pk)))
 
   (define (lookup name)
     (cond ((assq name bindings) => cdr)
@@ -184,6 +189,7 @@ so that only this identity's holder can unseal them."
    [(expressor-store) expressor-store]
    [(base-bindings) base-bindings]
    [(head-version) head-version]
+   [(public-key) org-public-key]
    [(expressor? id) (and (expressor-ref id) #t)]
    [(expressor-name id)
     (let ((d (expressor-ref id)))
@@ -215,7 +221,7 @@ so that only this identity's holder can unseal them."
                   new-bindings validator-expr validator-proc
                   (cons (append new-history-entry (list snapshot)) history)
                   expressor-store current-expressor base-bindings
-                  (car new-history-entry))))]
+                  (car new-history-entry) org-public-key)))]
 
    [(enact! new-validator-expr new-validator-proc new-history-entry)
     (let ((snapshot (list bindings new-validator-expr new-validator-proc)))
@@ -223,7 +229,7 @@ so that only this identity's holder can unseal them."
                   new-validator-expr new-validator-proc
                   (cons (append new-history-entry (list snapshot)) history)
                   expressor-store current-expressor base-bindings
-                  (car new-history-entry))))]
+                  (car new-history-entry) org-public-key)))]
 
    [(register-expressor! id data new-history-entry)
     (let ((snapshot (list bindings validator-expr validator-proc)))
@@ -232,12 +238,12 @@ so that only this identity's holder can unseal them."
                   (cons (append new-history-entry (list snapshot)) history)
                   (cons (cons id data) expressor-store)
                   current-expressor base-bindings
-                  (car new-history-entry))))]
+                  (car new-history-entry) org-public-key)))]
 
    [(with-expressor exp)
     (bcom (^org bcom bindings validator-expr validator-proc
                 history expressor-store exp base-bindings
-                head-version))]
+                head-version org-public-key))]
 
    [(rollback! target-version)
     (let loop ((h history))
@@ -248,17 +254,19 @@ so that only this identity's holder can unseal them."
           (bcom (^org bcom
                       (car snapshot) (cadr snapshot) (caddr snapshot)
                       history expressor-store current-expressor base-bindings
-                      target-version))))
+                      target-version org-public-key))))
        (else (loop (cdr h)))))]))
 
 ;;; ── Factory ─────────────────────────────────────────────────────────────────
 
-(define (make-initial-org base-bindings)
-  "Spawn a fresh ^org actor. Must be called within a vat."
-  (let* ((genesis-id (make-id 'genesis))
+(define* (make-initial-org base-bindings #:key (public-key #f))
+  "Spawn a fresh ^org actor with a public key. Must be called within a vat.
+The public key is accessible via the org's (public-key) method."
+  (let* ((pk (or public-key '(none)))
+         (genesis-id (make-id 'genesis))
          (genesis-data `((id . ,genesis-id)
                          (name . genesis)
-                         (public-key . "genesis-key")))
+                         (public-key . ,pk)))
          (initial-history (list (list 0 genesis-id '(quote initial) 0
                                       (list base-bindings
                                             '(lambda (e n v pre post) #t)
@@ -272,7 +280,8 @@ so that only this identity's holder can unseal them."
            initial-store
            genesis-id
            base-bindings
-           0)))
+           0
+           pk)))
 
 ;;; ── Persistence environment ─────────────────────────────────────────────────
 
@@ -288,7 +297,7 @@ so that only this identity's holder can unseal them."
      (lambda () (make-initial-org base-bindings))
      store
      #:name name
-     #:version 1)))
+     #:version 3)))
 
 ;;; ── Rollback helpers ────────────────────────────────────────────────────────
 
@@ -576,6 +585,10 @@ so that only this identity's holder can unseal them."
                      (newline out)))
                  ($ org 'expressor-store))
        (get-output-string out)))
+
+    ;; public-key — return this org's Ed25519 public key
+    (('public-key)
+     ($ org 'public-key))
 
     ;; ai
     (('ai prompt-expr)
