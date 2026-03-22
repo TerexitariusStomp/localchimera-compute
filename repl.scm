@@ -2,7 +2,14 @@
              (hoot hashtables)
              ((hoot error-handling) #:select (format-exception))
              (ice-9 match)
+             (ice-9 receive)
+             (fibers channels)
              (goblins)
+             (goblins actor-lib methods)
+             (goblins actor-lib sealers)
+             (goblins ocapn ids)
+             (goblins ocapn captp)
+             (goblins ocapn netlayer fake)
              (xorg gplay)
              (srfi srfi-11))
 
@@ -455,8 +462,21 @@
 (set-ai-handler! web-ai-query)
 (set-ai-eval-handler! web-ai-query-and-eval)
 
-;;; ── Org management ────────────────────────────────────────────────────────
+;;; ── OCapN network ────────────────────────────────────────────────────────
 
+(define ocapn-vat (spawn-vat #:name "OCapN"))
+
+(define fake-network
+  (with-vat ocapn-vat
+    (spawn ^fake-network)))
+
+;; Network state
+(define *hosted-orgs* '())   ;; alist: name → (org-vat org inbox incanter mycapn sref)
+(define *peers* '())         ;; alist: name → (peer-vat controller)
+(define *pending-joins* '()) ;; alist: name → (sub-unsealer msg-id remote-inbox peer-vat)
+(define *active-peer* #f)    ;; string or #f
+
+;;; ── Org management ────────────────────────────────────────────────────────
 
 (define *orgs* '())
 (define *mode* 'outer)
@@ -496,10 +516,11 @@
                  "An organization is a program that writes itself.\n"
                  "This is a metacircular substrate for programmable\n"
                  "organizations — identity, memory, and self-modification.\n"
+                 "Built on Spritely Goblins with capability-based security.\n"
                  "\n"
                  "── Getting Started ──────────────────────────────\n"
                  "\n"
-                 "  (make-org \"alpha\")   create an org\n"
+                 "  (make-org \"alpha\")   create a local org\n"
                  "  (enter! \"alpha\")     enter it\n"
                  "  (exit!)              leave current org\n"
                  "  (list-orgs)          show all orgs\n"
@@ -510,11 +531,11 @@
                  "remembered, and the rules for changing the rules\n"
                  "are subject to the rules.\n"
                  "\n"
-                 "Create identities:\n"
-                 "  (defexpressor 'alice \"alice-key\")\n"
-                 "  (defexpressor 'bob \"bob-key\")\n"
+                 "Create identities (returns a private sealer):\n"
+                 "  (define alice (defexpressor 'alice \"alice-key\"))\n"
+                 "  (define bob (defexpressor 'bob \"bob-key\"))\n"
                  "\n"
-                 "Act as an identity:\n"
+                 "Act as an identity (requires the sealer):\n"
                  "  (as alice (modify! 'proposal \"fund the commons\"))\n"
                  "  (as bob (modify! 'seconded #t))\n"
                  "\n"
@@ -530,23 +551,21 @@
                  "Rollback (replays with original identities):\n"
                  "  (rollback! 2)\n"
                  "\n"
+                 "── Multi-Agent (OCapN) ────────────────────────\n"
+                 "\n"
+                 "  (host-org \"alpha\")                 host on network\n"
+                 "  (join-org \"alice\" \"alpha\")          request to join\n"
+                 "  (approve-member 0 \"alice\" \"key\")   approve member\n"
+                 "  (switch-peer \"alice\")              act as peer\n"
+                 "  (exit-peer)                        leave peer mode\n"
+                 "  (list-peers)                       show peers\n"
+                 "\n"
                  "── Language Forms ──────────────────────────────\n"
                  "\n"
-                 "define, lambda, let, let* (named let), letrec,\n"
+                 "define, lambda, let, let*, letrec, named let,\n"
                  "begin, if, cond, case, and, or, when, unless, do,\n"
                  "quote. Lambdas capture bindings but adopt their\n"
                  "caller's identity — logic and authority are separate.\n"
-                 "\n"
-                 "── AI Agent ────────────────────────────────────\n"
-                 "\n"
-                 "An AI can participate as a governed expressor.\n"
-                 "It sees your bindings, history, and identity.\n"
-                 "Its actions pass through validators like any other.\n"
-                 "\n"
-                 "  (set-api-key! \"sk-or-...\")   set OpenRouter key\n"
-                 "  (set-ai-model! \"...\")        change model\n"
-                 "  (ai \"what should we do?\")    ask, get text back\n"
-                 "  (ai-eval \"set x to 42\")      AI writes code, it runs\n"
                  "\n"))))
 
 (define *outer-log* *log*)
@@ -557,12 +576,16 @@
   (set! *log* (append *log* lines)))
 
 (define (current-prompt)
-  (if (eq? *mode* 'outer)
-      "xorg> "
-      (string-append "play["
-        (symbol->string
-          (or (with-vat *vat* ($ *org* 'expressor-name ($ *org* 'current-expressor))) '?))
-        "]> ")))
+  (cond
+   (*active-peer*
+    (string-append "peer[" *active-peer* "]> "))
+   ((eq? *mode* 'outer)
+    "xorg> ")
+   (else
+    (string-append "play["
+      (symbol->string
+        (or (with-vat *vat* ($ *org* 'expressor-name ($ *org* 'current-expressor))) '?))
+      "]> "))))
 
 ;;; ── History ring ──────────────────────────────────────────────────────────
 
@@ -632,6 +655,29 @@
                       (write result result-port))
                   (log-append! `(span (@ (class "result-text"))
                                       ,(string-append "=> " (get-output-string result-port) "\n")))))))))
+      #:unwind? #t)))
+
+(define (eval-peer! exp)
+  "Evaluate an expression through a peer's controller."
+  (let* ((peer (assoc *active-peer* *peers*))
+         (peer-vat (list-ref peer 1))
+         (controller (list-ref peer 2)))
+    (with-exception-handler
+      (lambda (exn)
+        (let ((err-port (open-output-string)))
+          (format-exception exn err-port)
+          (log-append! `(span (@ (class "error-text"))
+                              ,(get-output-string err-port)))))
+      (lambda ()
+        (with-vat peer-vat
+          (let ((result ($ controller 'evaluate exp)))
+            (unless (eq? result (if #f #f))
+              (let ((result-port (open-output-string)))
+                (if (string? result)
+                    (display result result-port)
+                    (write result result-port))
+                (log-append! `(span (@ (class "result-text"))
+                                    ,(string-append "=> " (get-output-string result-port) "\n"))))))))
       #:unwind? #t)))
 
 (define (do-enter! name)
@@ -711,6 +757,120 @@
            (log-append! `(span (@ (class "result-text")) ,(string-append "Deleted org: " name "\n"))))
          (log-append! `(span (@ (class "error-text")) ,(string-append "Unknown org: " name "\n"))))
      #t)
+    ;; ── Network commands ──
+
+    (('host-org (? string? name))
+     (if (assoc name *hosted-orgs*)
+         (log-append! `(span (@ (class "error-text"))
+                             ,(string-append "Org already hosted: " name "\n")))
+         (let ((org-vat (spawn-vat #:name name)))
+           (with-vat org-vat
+             (let* ((triple (make-org-with-inbox base-bindings))
+                    (org (car triple))
+                    (inbox (cadr triple))
+                    (incanter (cddr triple)))
+               (set! *hosted-orgs*
+                 (cons (list name org-vat org inbox incanter)
+                       *hosted-orgs*))
+               (set! *orgs* (cons (cons name (cons org-vat (cons org '()))) *orgs*))
+               (set! *sidebar-selected-org* name)))
+           (log-append! `(span (@ (class "result-text"))
+                               ,(string-append "Hosted org '" name "' on network.\n")))))
+     #t)
+
+    (('join-org (? string? peer-name) (? string? org-name))
+     (let ((hosted (assoc org-name *hosted-orgs*)))
+       (if (not hosted)
+           (log-append! `(span (@ (class "error-text"))
+                               ,(string-append "No hosted org: " org-name "\n")))
+           (let* ((org-vat (list-ref hosted 1))
+                  (inbox (list-ref hosted 3)))
+             ;; Create the peer's identity with subscription sealer
+             (with-vat org-vat
+               (receive (sub-sealer sub-unsealer sub-sealed?)
+                 (spawn-sealer-triplet)
+                 (let* ((my-identity
+                         (spawn (lambda (bcom)
+                           (methods
+                            [(name) (string->symbol peer-name)]
+                            [(subscription-sealer) sub-sealer]
+                            [(subscription-unsealer) sub-unsealer]))))
+                        (msg-id ($ inbox 'submit
+                                   `(request-membership ,peer-name) my-identity)))
+                   (set! *pending-joins*
+                     (cons (list peer-name sub-unsealer msg-id
+                                org-vat my-identity)
+                           *pending-joins*))
+                   (log-append! `(span (@ (class "result-text"))
+                                       ,(string-append "Peer '" peer-name
+                                                       "' submitted membership request (msg-id: "
+                                                       (number->string msg-id) ").\n")))))))))
+     #t)
+
+    (('approve-member (? number? msg-id) (? string? name) (? string? key))
+     (let ((hosted-org (and *current-org-name*
+                            (assoc *current-org-name* *hosted-orgs*))))
+       (if (not hosted-org)
+           (log-append! `(span (@ (class "error-text"))
+                               "Must be inside a hosted org to approve members.\n"))
+           (let ((org (list-ref hosted-org 2))
+                 (inbox (list-ref hosted-org 3))
+                 (incanter (list-ref hosted-org 4))
+                 (pending (assoc name *pending-joins*)))
+             (if (not pending)
+                 (log-append! `(span (@ (class "error-text"))
+                                     ,(string-append "No pending join for: " name "\n")))
+                 (let ((sub-unsealer (list-ref pending 1))
+                       (applicant-identity (list-ref pending 4))
+                       (peer-vat (list-ref pending 3)))
+                   (with-vat peer-vat
+                     (let ((sealed-controller
+                            (approve-membership inbox incanter msg-id org
+                                                (string->symbol name) key
+                                                applicant-identity)))
+                       (let ((controller ($ sub-unsealer sealed-controller)))
+                         (set! *peers*
+                           (cons (list name peer-vat controller) *peers*))
+                         (set! *pending-joins*
+                           (let loop ((lst *pending-joins*))
+                             (cond ((null? lst) '())
+                                   ((string=? (caar lst) name) (loop (cdr lst)))
+                                   (else (cons (car lst) (loop (cdr lst))))))))))
+                   (log-append! `(span (@ (class "result-text"))
+                                       ,(string-append "Approved '" name "'. Controller delivered.\n"))))))))
+     #t)
+
+    (('switch-peer (? string? name))
+     (let ((peer (assoc name *peers*)))
+       (if (not peer)
+           (log-append! `(span (@ (class "error-text"))
+                               ,(string-append "Unknown peer: " name "\n")))
+           (begin
+             (set! *active-peer* name)
+             (log-append! `(span (@ (class "info-text"))
+                                 ,(string-append "Switched to peer '" name "'.\n"))))))
+     #t)
+
+    ('(exit-peer)
+     (if *active-peer*
+         (begin
+           (log-append! `(span (@ (class "info-text"))
+                               ,(string-append "Left peer '" *active-peer* "'.\n")))
+           (set! *active-peer* #f))
+         (log-append! `(span (@ (class "error-text")) "Not in a peer context.\n")))
+     #t)
+
+    ('(list-peers)
+     (if (null? *peers*)
+         (log-append! `(span (@ (class "output-text")) "No peers connected.\n"))
+         (log-append! `(span (@ (class "output-text"))
+                             ,(string-append "Peers:\n"
+                                (let loop ((lst *peers*) (acc ""))
+                                  (if (null? lst) acc
+                                      (loop (cdr lst)
+                                            (string-append acc "  " (caar lst) "\n"))))))))
+     #t)
+
     (_ #f)))
 
 (define (eval! str)
@@ -727,6 +887,10 @@
           (loop))
          ;; Check for org management commands first
          ((handle-command exp) (loop))
+         ;; In peer mode, evaluate through the controller
+         (*active-peer*
+          (eval-peer! exp)
+          (loop))
          ;; In inner mode, use the xorg evaluator
          ((eq? *mode* 'inner)
           (eval-play! exp)
@@ -734,9 +898,11 @@
          ;; In outer mode, prompt user to enter an org
          (else
           (log-append! `(span (@ (class "info-text"))
-                              ,(string-append "Enter an org to evaluate expressions.\n"
-                                              "  (make-org \"name\")  create an org\n"
-                                              "  (enter! \"name\")    enter it\n")))
+                              ,(string-append "Enter an org or peer to evaluate expressions.\n"
+                                              "  (make-org \"name\")       create a local org\n"
+                                              "  (enter! \"name\")         enter it\n"
+                                              "  (host-org \"name\")       host on network\n"
+                                              "  (switch-peer \"name\")    act as a peer\n")))
           (loop)))))))
 
 ;;; ── Auto-resize ───────────────────────────────────────────────────────────
@@ -857,13 +1023,14 @@
                                  ,(format-value (cdr pair) (car pair) ref))))
                    bindings))))
 
-(define (render-history-section history ref)
-  (let ((filtered (if *expressor-filter*
-                      (%filter (lambda (entry)
-                                 (eq? ($ ref 'expressor-name (cadr entry))
-                                      *expressor-filter*))
-                               history)
-                      history)))
+(define (render-history-section history head-version ref)
+  (let* ((branch (ancestor-chain history head-version))
+         (filtered (if *expressor-filter*
+                       (%filter (lambda (entry)
+                                  (eq? ($ ref 'expressor-name (cadr entry))
+                                       *expressor-filter*))
+                                branch)
+                       branch)))
     `(div (@ (class "section"))
           (div (@ (class "section-header"))
                "history"
@@ -917,16 +1084,11 @@
                                    ,(symbol->string name)))))
                    expressors))))
 
-(define (render-validator-section history)
-  (let* ((enact-entry (let loop ((entries history))
-                        (cond ((null? entries) #f)
-                              ((and (pair? (caddr (car entries)))
-                                    (eq? 'enact! (car (caddr (car entries)))))
-                               (car entries))
-                              (else (loop (cdr entries))))))
-         (display-text (if enact-entry
-                          (call-with-output-string (lambda (p) (%write (caddr enact-entry) p)))
-                          "<default>")))
+(define (render-validator-section ref)
+  (let* ((vexpr ($ ref 'validator-expr))
+         (display-text (if (equal? vexpr '(lambda (e n v pre post) #t))
+                           "<default>"
+                           (call-with-output-string (lambda (p) (%write vexpr p))))))
     `(div (@ (class "section"))
           (div (@ (class "section-header")) "validator")
           (div (@ (class "inspector-row"))
@@ -984,8 +1146,8 @@
                                            (refresh!))))
                              "delete"))
                   ,(render-bindings-section bindings ref)
-                  ,(render-validator-section history)
-                  ,(render-history-section history ref)
+                  ,(render-validator-section ref)
+                  ,(render-history-section history ($ ref 'head-version) ref)
                   ,(render-expressors-section expressors ref)))))))
 
 (define (render-sidebar)

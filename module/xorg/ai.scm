@@ -52,11 +52,11 @@
   (let* ((bindings ($ ref 'bindings))
          (history  ($ ref 'history))
          (exp-name (or ($ ref 'expressor-name ($ ref 'current-expressor)) '?))
-         ;; Take last 10 history entries (most recent)
-         (recent   (let ((h (reverse history)))
-                     (if (> (length h) 10)
-                         (list-tail h (- (length h) 10))
-                         h))))
+         ;; Current branch history, last 10 entries
+         (branch   (ancestor-chain history ($ ref 'head-version)))
+         (recent   (if (> (length branch) 10)
+                       (list-tail branch (- (length branch) 10))
+                       branch)))
     (string-append
      "You are an AI assistant integrated into xorg, an experimental "
      "organizational system built as a Scheme-based REPL.\n\n"

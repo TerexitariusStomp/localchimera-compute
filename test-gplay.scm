@@ -158,7 +158,7 @@
                         #t))
            (version (next-version))
            (entry (list version ($ org 'current-expressor)
-                        '(test) (car (car ($ org 'history))))))
+                        '(test) ($ org 'head-version))))
       ($ org 'enact! '(lambda (e n v pre post) #t) capturing entry))
     ;; Now modify
     (ev '(modify! 'x 42) org)
@@ -570,7 +570,7 @@
 (with-vat test-vat
   (let ((org (make-initial-org test-base-bindings)))
     (ev '(define x 10) org)
-    (let ((v1 (car (car ($ org 'history)))))  ;; version after x=10
+    (let ((v1 ($ org 'head-version)))  ;; version after x=10
       (ev '(define y 20) org)
       (check "pre-rollback: y exists" (ev 'y org) 20)
       (ev `(rollback! ,v1) org)
@@ -578,7 +578,7 @@
       (check-error "post-rollback: y no longer bound"
         (ev 'y org)))))
 
-;; Rollback preserves history
+;; Rollback does not alter history
 (with-vat test-vat
   (let ((org (make-initial-org test-base-bindings)))
     (ev '(define a 1) org)
@@ -586,8 +586,8 @@
     (let ((hist-len-before (length ($ org 'history)))
           (v1 (car (cadr ($ org 'history)))))  ;; version of 'a' define
       (ev `(rollback! ,v1) org)
-      (check "rollback preserves history length"
-             (>= (length ($ org 'history)) hist-len-before) #t))))
+      (check "rollback does not alter history"
+             (length ($ org 'history)) hist-len-before))))
 
 ;; Rollback with validator rejection
 (with-vat test-vat
@@ -598,7 +598,7 @@
               (not (eq? n 'rollback))))
            (version (next-version))
            (entry (list version ($ org 'current-expressor)
-                        '(test) (car (car ($ org 'history))))))
+                        '(test) ($ org 'head-version))))
       ($ org 'enact! '(lambda (e n v pre post) #t) reject-rollback entry))
     (ev '(define x 10) org)
     (check-error "rollback rejected by validator"
@@ -717,7 +717,19 @@
       (check "controller seal + identity unseal" unsealed "test-content"))
     ;; Controller expressor-id
     (check "controller has expressor-id"
-           ($ org 'expressor? ($ controller 'expressor-id)) #t)))
+           ($ org 'expressor? ($ controller 'expressor-id)) #t)
+    ;; Subscription sealer on identity
+    (check "identity has subscription-sealer"
+           (not (not ($ identity 'subscription-sealer))) #t)
+    (check "identity has subscription-unsealer"
+           (not (not ($ identity 'subscription-unsealer))) #t)
+    ;; Subscription seal/unseal round-trip
+    (let* ((sub-sealer ($ identity 'subscription-sealer))
+           (sub-unsealer ($ identity 'subscription-unsealer))
+           (sealed ($ sub-sealer "secret-controller"))
+           (unsealed ($ sub-unsealer sealed)))
+      (check "subscription seal + unseal round-trip"
+             unsealed "secret-controller"))))
 
 ;;; ── 30. Warded inbox ────────────────────────────────────────────────────────
 

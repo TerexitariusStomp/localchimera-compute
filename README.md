@@ -4,30 +4,26 @@ _Express and Experiment with Organization._
 
 ---
 
-**xorg** is a homoiconic, metacircular, self-reflective, and self-transforming substrate for programmable organizations, written in Guile Scheme.
+**xorg** is a homoiconic, metacircular, self-reflective, and self-transforming substrate for programmable organizations, built on [Spritely Goblins](https://spritely.institute) and [Guile Scheme](https://www.gnu.org/software/guile/).
 
 It asks a simple question: what if an organization were a Lisp environment — and the people in it were expressions that could rewrite the interpreter?
 
 The answer inherits everything that makes Lisp powerful. The system is **homoiconic**: the organization's rules, state, and history are all S-expressions — the same representation the evaluator consumes. There is no gap between the org and its description. A validator is not a config file — it is a live Scheme expression sitting in the same expression-space as the data it governs. History entries are not opaque log rows — they are the original S-expressions that produced each state transition, ready to be re-evaluated. This is what makes the org **self-reflective**: it can `show-history` to inspect its own evolution, then `rollback!` to replay it, using the same language it was built in.
 
-Because the evaluator is **metacircular** — a Scheme interpreter written in Scheme — the org is **extensible** and **self-transforming** from within. `enact!` installs a new validator: an arbitrary Scheme function that changes how all future expressions are evaluated. The validator has access to the full environment before and after every change. It must accept its own installation to take effect. You are not configuring an organization — you are metaprogramming the interpreter that _is_ the organization, and the interpreter must consent. In `example.scm`, constitutional conventions, reputation-based governance, and liquid democracy all emerge from different validators applied to the same substrate.
+Because the evaluator is **metacircular** — a Scheme interpreter written in Scheme — the org is **extensible** and **self-transforming** from within. `enact!` installs a new validator: an arbitrary Scheme function that changes how all future expressions are evaluated. The validator has access to the full environment before and after every change. It must accept its own installation to take effect. You are not configuring an organization — you are metaprogramming the interpreter that _is_ the organization, and the interpreter must consent.
 
 Every expression an expressor evaluates moves the org through **expression-space** — the space of all reachable organizational states. `modify!` traverses it. `enact!` reshapes which regions are reachable. `rollback!` backtracks. The org's evolution is a path through this space, and because every step is recorded as a homoiconic S-expression, the entire path is replayable, inspectable, and forkable.
 
 The system is deliberately minimal. It provides identity, memory, and a mechanism for self-modification. What it _becomes_ is not prescribed. A xorg could evolve into a democracy, a marketplace, a neural network of agents, a single autocratic expressor, or something with no existing name. The structure doesn't impose direction — it makes direction _expressible_.
 
-## Metacircularity
+## Architecture
 
-In the Lisp tradition, a metacircular evaluator is an interpreter for a language written in that same language. xorg extends this to organizations: the org is an interpreter, and its expressors write programs that the org evaluates — including programs that rewrite the interpreter itself.
+xorg is built on [Spritely Goblins](https://spritely.institute), an object-capability actor system. Each org is a Goblins actor living in a vat (event loop). This gives xorg:
 
-The metacircular closure is complete:
-
-- **The evaluator evaluates itself.** The language that defines the organization is the language the organization operates in. Homoiconicity ensures there is no translation layer — what you write is what the org stores, inspects, and replays.
-- **Validators validate themselves.** `enact!` must pass the current validator to install a new one. The rules for changing the rules are subject to the current rules.
-- **Expressors create expressors.** Identities within the system bring new identities into being — the org grows itself.
-- **History is its own source code.** Each entry is the S-expression that produced it. `rollback!` re-evaluates them. The org's past is not a log — it is a program.
-
-There is no privileged outside. The system is defined from within, modified from within, reflected on from within, and transformed from within. The boundary between the thing and its description dissolves.
+- **Capability-based security** — identity is proved by holding a cryptographic sealer, not by claiming a name
+- **Persistence** — orgs can be saved to disk and restored via Goblins' `define-actor` persistence
+- **Networking** — orgs can communicate across machines via OCapN (Object Capability Network)
+- **Browser support** — the full system compiles to WebAssembly via [Guile Hoot](https://spritely.institute/hoot/)
 
 ## Core Concepts
 
@@ -36,16 +32,24 @@ There is no privileged outside. The system is defined from within, modified from
 An expressor is an identity — a _who_ attached to every action. It carries a name, a public key, and a unique symbol. There is no anonymous mutation; every change to the environment names the expressor that caused it.
 
 ```scheme
-(defexpressor 'alice "alice-public-key")
+(define alice (defexpressor 'alice "alice-public-key"))
 ```
+
+`defexpressor` returns a **sealer** — a cryptographic capability object. This sealer is your proof of identity. Holding it is what lets you act as alice. It is never stored in the org's shared state — only the holder possesses it.
 
 An expressor is not necessarily a person. It could be a process, an external system, a role, or another xorg. The system does not distinguish — it only requires that expression has a source.
 
+### Acting as an Expressor
+
+```scheme
+(as alice (modify! 'proposal "fund the commons"))
+```
+
+The `as` form requires the sealer returned by `defexpressor`. It verifies the sealer against the org's expressor store by sealing a nonce and checking which expressor's `sealed?` predicate recognizes it. Without the sealer, you cannot act as that expressor — the capability IS the authorization.
+
 ### Environments
 
-An environment is an immutable snapshot:
-
-|
+An org is an immutable snapshot managed as a Goblins actor:
 
 | Component     | Role                                              |
 | ------------- | ------------------------------------------------- |
@@ -54,17 +58,36 @@ An environment is an immutable snapshot:
 | **History**   | A versioned ledger — what it _remembers_          |
 | **Expressor** | The identity currently acting — who _speaks_      |
 
-Each operation returns a new environment. The previous state is not destroyed — it becomes history.
+Each operation produces a new actor state via Goblins' `bcom` (become). The previous state is not destroyed — it becomes history.
 
 ### Validators
 
-A validator is an ordinary function: `(expressor name value old-env new-env) -> bool`. It validates both past (old-env) and post-validation (new-env) states, allowing it to inspect the full timeline before and after the change. It returns true or false.
+A validator is an ordinary function: `(expressor name value old-bindings new-bindings) -> bool`. It receives the acting expressor, the binding name, the new value, and the bindings before and after the change. It returns true or false.
 
 The default validator accepts everything. You replace it with `enact!`. The metacircular constraint: **a new validator must accept itself** before it takes effect. This means the mechanism for changing the rules is always subject to the current rules — but _what_ those rules are is entirely open.
 
 ### History
 
 Every change produces a history entry: a version number, the expressor, the expression evaluated, and a pointer to its parent. The ledger is append-only. Because entries store the original expressions as data, the organization's past is not merely recorded — it is **replayable**.
+
+### Rollback
+
+```scheme
+(rollback! 3)
+```
+
+Rollback does not erase — it replays. The org resets to its base state, then re-evaluates all history entries from version 1 up to the target version. Each step is re-evaluated under the identity that originally performed it, so attribution survives time travel.
+
+## Metacircularity
+
+In the Lisp tradition, a metacircular evaluator is an interpreter for a language written in that same language. xorg extends this to organizations: the org is an interpreter, and its expressors write programs that the org evaluates — including programs that rewrite the interpreter itself.
+
+The metacircular closure is complete:
+
+- **The evaluator evaluates itself.** The language that defines the organization is the language the organization operates in.
+- **Validators validate themselves.** `enact!` must pass the current validator to install a new one. The rules for changing the rules are subject to the current rules.
+- **Expressors create expressors.** Identities within the system bring new identities into being — the org grows itself.
+- **History is its own source code.** Each entry is the S-expression that produced it. `rollback!` re-evaluates them. The org's past is not a log — it is a program.
 
 ## Play and Meta-Play
 
@@ -81,185 +104,168 @@ Every change produces a history entry: a version number, the expressor, the expr
 (rollback! 3)
 ```
 
-The history is append-only and monotonic at the meta-level. "Alice enacted validator V at version 7" persists as a fact even after rollback to version 3. Object-level state fluctuates — bindings change, validators are replaced, decisions reverse. But the meta-level record of _who did what and when_ only grows. You can always reason reliably about how the system evolved, even as the system itself transforms.
-
-## Usage
-
-### Initialize
-
-```scheme
-(use-modules (xorg play))
-
-(define env (make-initial-env '((x . 0) (y . 1))))
-```
-
-### Modify
-
-```scheme
-;; Bind a value — attributed, validated, versioned
-(evaluate '(modify! 'x 42) env)
-```
-
-### Act as another expressor
-
-```scheme
-(evaluate '(as alice (modify! 'x 99)) env)
-```
-
-### Change the rules
-
-```scheme
-;; Install a validator — it must accept itself to take effect
-(evaluate '(enact! (lambda (expressor name value old-env new-env)
-                     (number? value)))
-          env)
-```
-
-### Inspect
-
-```scheme
-(evaluate '(show-history) env)
-(evaluate '(show-expressors) env)
-```
-
-### Rollback
-
-```scheme
-;; Revert to version 2 — replays history with original expressors
-(evaluate '(rollback! 2) env)
-```
-
-Rollback does not erase — it replays. Each step is re-evaluated under the identity that originally performed it, so attribution survives time travel.
-
-### Time Travel as Search
-
-The append-only history combined with `rollback!` means the org's evolution is a search tree, not a linear timeline. Every validator you `enact!` narrows the space of possible futures. Every `rollback!` reopens it.
-
-Git branches fork this search at the code level — different validators, different governance models, applied to the same substrate. `rollback!` forks it at the state level — same code, different point in the org's history to branch from. Combined, organizational design becomes something you can branch, diff, merge, and replay — the same workflow programmers use for code, applied to the structure of collective action itself.
-
-## REPL Tutorial
-
-The REPL (`play-repl.scm`) lets you express a xorg interactively — creating identities, mutating state, enacting rules, and inspecting history one step at a time. This walkthrough builds a small organization from scratch.
-
-Launch the REPL:
-
-```
-rlwrap guile -L . play-repl.scm
-```
-
-```
-play.scm REPL  —  Ctrl-D or (quit) to exit
-
-play[genesis]>
-```
-
-The prompt shows `play[genesis]>` — the current identity is `genesis`, the bootstrapping expressor created when the environment initializes.
-
-**Two things to know about REPL output:**
-
-- When an expression mutates state (returns a new environment), the REPL silently updates and shows nothing — the prompt may change identity.
-- When it returns a value, the REPL prints `=> value`.
-
-### Create identities
-
-```
-play[genesis]> (defexpressor 'alice "alice-key")
-play[genesis]> (defexpressor 'bob "bob-key")
-```
-
-No output — both calls returned environments. Two identities now exist in the org.
-
-### Act as an identity
-
-```
-play[genesis]> (as alice (modify! 'proposal "fund the commons"))
-play[alice]>
-```
-
-Alice proposed. The prompt changed to `play[alice]>` — the returned environment carries alice's identity. Every subsequent action will be attributed to alice until another `as` switches identity.
-
-```
-play[alice]> proposal
-=> "fund the commons"
-```
-
-You can look up any binding by name.
-
-### Another identity responds
-
-```
-play[alice]> (as bob (modify! 'seconded #t))
-play[bob]>
-```
-
-Bob seconded the proposal. The prompt now shows `play[bob]>`.
-
-### Enact a rule
-
-```
-play[bob]> (enact! (lambda (expressor name value old-env new-env)
-                     (not (equal? value #f))))
-play[bob]>
-```
-
-A validator is now in place: no one can store `#f`. The validator had to accept its own installation — if it had rejected itself, `enact!` would have failed.
-
-### See a rule rejection
-
-```
-play[bob]> (as alice (modify! 'bad-idea #f))
-error: misc-error
-  Validation failed: ...
-play[bob]>
-```
-
-Alice tried to store `#f`, the validator rejected it, and the environment was unchanged. The prompt stays `play[bob]>`.
-
-### Inspect the history
-
-```
-play[bob]> (show-history)
-Version 0 [#f] : (quote initial) (parent: 0)
-Version 1 [genesis] : (defexpressor (quote alice) alice-key) (parent: 0)
-Version 2 [genesis] : (defexpressor (quote bob) bob-key) (parent: 1)
-Version 3 [alice] : (modify! (quote proposal) fund the commons) (parent: 2)
-Version 4 [bob] : (modify! (quote seconded) #t) (parent: 3)
-Version 5 [bob] : (enact! (lambda (expressor name value old-env new-env) (not (equal? value #f)))) (parent: 4)
-play[bob]>
-```
-
-Every action is attributed: version 3 was alice, versions 4–5 were bob. The rejected `modify!` left no trace — it never happened. The history is the organization's memory; because each entry stores the original expression, the entire org can be replayed from scratch.
-
-### What just happened
-
-You expressed a xorg. Two identities acted, a rule was enacted that constrained future behavior (and had to survive its own installation), a violation was rejected, and every step was remembered and attributed. The shape of this organization — who can act, what rules apply, how decisions are made — was not prescribed. It emerged from the expressions.
-
-Most of this session was **play** — expressors acting, rules being enacted. `(show-history)` was **meta-play** — stepping outside to see the full attributed record. And because the entire evolution is stored as replayable S-expressions, you could `rollback!` to any point and explore a different path — treating organizational design as a search problem.
-
 ## The Evaluator
 
 `evaluate` is a small Lisp interpreter. It understands:
 
-| Form                         | Effect                                   |
-| ---------------------------- | ---------------------------------------- |
-| `#t`, `#f`, numbers, strings | Self-evaluating literals                 |
-| `(quote x)`                  | Returns `x` unevaluated                  |
-| `(if test then else)`        | Conditional                              |
-| `(lambda (args ...) body)`   | Closure — captures the current expressor |
-| `(defexpressor name key)`    | Bring a new identity into being          |
-| `(as expressor expr)`        | Evaluate under a different identity      |
-| `(modify! name value)`       | Bind a value in the environment          |
-| `(enact! validator-expr)`    | Replace the validator                    |
-| `(rollback! version)`        | Replay to a prior state                  |
-| `(show-history)`             | Print the versioned history              |
-| `(show-expressors)`          | Print all known identities               |
-| `(f args ...)`               | Function application                     |
+| Form                            | Effect                                             |
+| ------------------------------- | -------------------------------------------------- |
+| `#t`, `#f`, numbers, strings    | Self-evaluating literals                           |
+| `(quote x)`                     | Returns `x` unevaluated                            |
+| `(if test then else)`           | Conditional (two or three branches)                |
+| `(begin body ...)`              | Sequence — returns last value                      |
+| `(let ((v e) ...) body)`        | Parallel bindings                                  |
+| `(let* ((v e) ...) body)`       | Sequential bindings                                |
+| `(let name ((v e) ...) body)`   | Named let — loop construct                         |
+| `(letrec ((v e) ...) body)`     | Recursive bindings                                 |
+| `(lambda (args ...) body)`      | Closure — captures the current expressor           |
+| `(define name value)`           | Bind a value in the org                            |
+| `(defexpressor name key)`       | Bring a new identity into being, returns sealer    |
+| `(as sealer expr)`              | Evaluate under a different identity (requires sealer) |
+| `(modify! name value)`          | Validated binding mutation                         |
+| `(enact! validator-expr)`       | Replace the validator (must self-accept)           |
+| `(rollback! version)`           | Replay to a prior state                            |
+| `(show-history)`                | Return the versioned history as a string           |
+| `(show-expressors)`             | Return all known identities as a string            |
+| `(cond clauses ...)`            | Multi-branch conditional                           |
+| `(and exprs ...)`, `(or ...)`   | Short-circuit boolean                              |
+| `(when test body ...)`          | Conditional execution                              |
+| `(unless test body ...)`        | Inverse conditional execution                      |
+| `(case key clauses ...)`        | Datum-based dispatch                               |
+| `(do ((v i s) ...) (test) cmd)` | Iteration                                          |
+| `(f args ...)`                  | Function application                               |
 
 Lambdas capture the environment at creation time (bindings, validator, history), but adopt the identity of their caller at invocation time.
 
-![alt text](image.png)
+## Multi-Agent Networking
 
-## What this is not
+xorg supports multi-agent interaction via Goblins' OCapN (Object Capability Network) protocol. Two or more peers can connect to the same org, each with their own authenticated expressor identity.
+
+### Identity Model
+
+Following the [goblin-chat](https://spritely.institute/news/goblins-in-the-browser.html) pattern from Spritely:
+
+- **Identity** (`^expressor-identity`) — the public face, freely shareable. Carries name, unsealer, sealed? predicate, and a subscription-sealer for the membership handshake.
+- **Controller** (`^expressor-controller`) — the private handle. Only the authorized party holds this. Can evaluate expressions as that expressor and seal messages.
+- **Sealer** — returned by `defexpressor`, never stored in shared state. Proves you control that identity.
+
+### Membership Handshake
+
+When a peer wants to join an org:
+
+1. **Peer** creates a local identity with a subscription sealer triplet
+2. **Peer** submits a membership request to the org's inbox
+3. **Host** approves the request via `approve-membership`
+4. **Host** creates an expressor pair and seals the controller with the peer's subscription-sealer
+5. **Peer** unseals the controller with their subscription-unsealer
+6. **Peer** can now evaluate expressions in the org through their controller
+
+The sealer/unsealer pattern ensures only the intended recipient can access the controller — no server needs to verify credentials.
+
+### Inbox System
+
+Each org can have a warded inbox (`^org-inbox`):
+
+- **Public methods**: `submit` (anyone can send a message), `pending`, `all-entries`
+- **Protected methods**: `process`, `retract` (only the incanter-holder can use these)
+- Messages carry the sender's identity for attribution
+
+### Browser REPL Commands
+
+```scheme
+;; Host an org on the network
+(host-org "alpha")
+
+;; A peer requests to join
+(join-org "alice" "alpha")
+
+;; Host approves the membership request
+(enter! "alpha")
+(approve-member 0 "alice" "alice-key")
+
+;; Switch to alice's peer context
+(switch-peer "alice")
+
+;; Alice evaluates expressions through her controller
+(modify! 'proposal "fund the commons")
+
+;; Leave peer context
+(exit-peer)
+
+;; See connected peers
+(list-peers)
+```
+
+## How to Run
+
+### Requirements
+
+GNU Guile (built from main branch), Guile Hoot 0.7.0+, Guile Goblins 0.17.0+, and a recent browser (Chrome 119+ or Firefox 121+).
+
+### Setup with Guix
+
+```bash
+guix shell -m manifest.scm
+```
+
+### Build and serve the browser REPL
+
+```bash
+make          # compiles repl.scm to WebAssembly
+make serve    # starts web server at http://localhost:8088
+```
+
+### Native Guile REPL
+
+```bash
+make repl         # full two-tier REPL with Goblins actors
+make quick-repl   # single-org functional REPL
+```
+
+### Run tests
+
+```bash
+make test-gplay   # 138 tests covering the evaluator, identity, rollback, persistence, inbox
+```
+
+## REPL Tutorial (Browser)
+
+Visit `http://localhost:8088` after `make serve`.
+
+```
+xorg> (make-org "alpha")
+Created org: alpha
+
+xorg> (enter! "alpha")
+Entering org 'alpha'.
+
+play[genesis]> (define greeting "hello world")
+play[genesis]> greeting
+=> "hello world"
+
+play[genesis]> (define alice (defexpressor 'alice "alice-key"))
+=> #<local-object sealer>
+
+play[genesis]> (as alice (modify! 'proposal "fund the commons"))
+
+play[genesis]> (show-history)
+=> Version 0 [genesis] : (quote initial) (parent: 0)
+   Version 1 [genesis] : (define greeting hello world) (parent: 0)
+   Version 2 [genesis] : (defexpressor (quote alice) alice-key) (parent: 1)
+   Version 3 [alice] : (modify! (quote proposal) fund the commons) (parent: 2)
+
+play[genesis]> (rollback! 1)
+
+play[genesis]> greeting
+=> "hello world"
+
+play[genesis]> proposal
+error: Variable unbound: proposal
+```
+
+The sidebar shows bindings, validator, history, and expressors in real time.
+
+## What This Is Not
 
 This is not a governance framework. It does not encode voting, consensus, hierarchy, or any particular organizational form. It is the layer _beneath_ those — a substrate in which any such form could be expressed, enacted, and later replaced by something else entirely.
 
@@ -267,18 +273,4 @@ The only invariants are: every action has an identity, every change is remembere
 
 What emerges from that is up to the expressors.
 
-## How to run the demo
-
-This is a bleeding edge demo that requires a lot of very fresh software. GNU Guile built from the main branch, Guile Hoot 0.5.0 or later, and a recent browser such as Chrome 119+ or Firefox 121+.
-
-You need to get the browser on your own, but for getting a working Guile and Hoot we have provided a Guix manifest file that can be used to setup the environment. Once Guix is installed, just run:
-
-guix shell -m manifest.scm
-
-Once your environment is up, the examples can be built like so:
-make
-
-Then launch a simple web server:
-
-make serve
-Once the web server is up, visit http://localhost:8088 and click on a link to the demo you'd like to check out.
+![alt text](image.png)

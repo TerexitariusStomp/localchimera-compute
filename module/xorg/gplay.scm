@@ -26,7 +26,8 @@
             make-org-with-inbox
             approve-membership
             *inbox*
-            *inbox-incanter*))
+            *inbox-incanter*
+            ancestor-chain))
 
 ;;; Hoot/WASM compatibility: eval and interaction-environment are not
 ;;; automatically available in Hoot's module system.
@@ -109,31 +110,61 @@
 
 ;;; ── Identity/controller actors ──────────────────────────────────────────────
 
-(define (^expressor-identity bcom name unsealer sealed?)
-  "Public face of an expressor. Freely shareable."
+(define (^expressor-identity bcom name unsealer sealed?
+                              subscription-sealer subscription-unsealer)
+  "Public face of an expressor. Freely shareable.
+The subscription-sealer allows the host to seal capabilities (e.g. a controller)
+so that only this identity's holder can unseal them."
   (methods
    [(name) name]
    [(unsealer) unsealer]
-   [(sealed?) sealed?]))
+   [(sealed?) sealed?]
+   [(subscription-sealer) subscription-sealer]
+   [(subscription-unsealer) subscription-unsealer]))
 
 ;;; ── ^org actor ──────────────────────────────────────────────────────────────
 
 (define-actor (^org bcom bindings validator-expr validator-proc
-                    history expressor-store current-expressor base-bindings)
-  #:version 1
+                    history expressor-store current-expressor base-bindings
+                    head-version)
+  #:version 2
   #:portrait
   (lambda ()
     (list (filter-serializable-bindings bindings)
-          validator-expr history expressor-store current-expressor))
+          validator-expr
+          (map (lambda (entry)
+                 (if (>= (length entry) 5)
+                     (let ((snap (list-ref entry 4)))
+                       (list (car entry) (cadr entry) (caddr entry) (cadddr entry)
+                             (list (filter-serializable-bindings (car snap))
+                                   (cadr snap))))
+                     entry))
+               history)
+          expressor-store current-expressor
+          head-version))
   #:restore
-  (lambda (version data-bindings vexpr history estore cur-exp)
-    (let ((base (*restore-base-bindings*)))
+  (lambda (version data-bindings vexpr history estore cur-exp . rest)
+    (let* ((base (*restore-base-bindings*))
+           (hv (if (null? rest) (car (car history)) (car rest)))
+           (restored-history
+            (map (lambda (entry)
+                   (if (and (>= (length entry) 5)
+                            (= (length (list-ref entry 4)) 2))
+                       (let* ((snap (list-ref entry 4))
+                              (snap-vexpr (cadr snap))
+                              (snap-vproc (%restore-eval snap-vexpr
+                                                         (%restore-interaction-env))))
+                         (list (car entry) (cadr entry) (caddr entry) (cadddr entry)
+                               (list (append (car snap) base)
+                                     snap-vexpr snap-vproc)))
+                       entry))
+                 history)))
       (spawn ^org
              (append data-bindings base)
              vexpr
              (%restore-eval vexpr (%restore-interaction-env))
-             history estore cur-exp
-             base)))
+             restored-history estore cur-exp
+             base hv)))
 
   (define (lookup name)
     (cond ((assq name bindings) => cdr)
@@ -152,6 +183,7 @@
    [(validator-proc) validator-proc]
    [(expressor-store) expressor-store]
    [(base-bindings) base-bindings]
+   [(head-version) head-version]
    [(expressor? id) (and (expressor-ref id) #t)]
    [(expressor-name id)
     (let ((d (expressor-ref id)))
@@ -177,35 +209,47 @@
               (else (loop (cdr store))))))]
 
    [(modify! name value new-history-entry)
-    (bcom (^org bcom
-                (cons (cons name value) bindings)
-                validator-expr validator-proc
-                (cons new-history-entry history)
-                expressor-store current-expressor base-bindings))]
+    (let* ((new-bindings (cons (cons name value) bindings))
+           (snapshot (list new-bindings validator-expr validator-proc)))
+      (bcom (^org bcom
+                  new-bindings validator-expr validator-proc
+                  (cons (append new-history-entry (list snapshot)) history)
+                  expressor-store current-expressor base-bindings
+                  (car new-history-entry))))]
 
    [(enact! new-validator-expr new-validator-proc new-history-entry)
-    (bcom (^org bcom bindings
-                new-validator-expr new-validator-proc
-                (cons new-history-entry history)
-                expressor-store current-expressor base-bindings))]
+    (let ((snapshot (list bindings new-validator-expr new-validator-proc)))
+      (bcom (^org bcom bindings
+                  new-validator-expr new-validator-proc
+                  (cons (append new-history-entry (list snapshot)) history)
+                  expressor-store current-expressor base-bindings
+                  (car new-history-entry))))]
 
    [(register-expressor! id data new-history-entry)
-    (bcom (^org bcom
-                bindings
-                validator-expr validator-proc
-                (cons new-history-entry history)
-                (cons (cons id data) expressor-store)
-                current-expressor base-bindings))]
+    (let ((snapshot (list bindings validator-expr validator-proc)))
+      (bcom (^org bcom
+                  bindings validator-expr validator-proc
+                  (cons (append new-history-entry (list snapshot)) history)
+                  (cons (cons id data) expressor-store)
+                  current-expressor base-bindings
+                  (car new-history-entry))))]
 
    [(with-expressor exp)
     (bcom (^org bcom bindings validator-expr validator-proc
-                history expressor-store exp base-bindings))]
+                history expressor-store exp base-bindings
+                head-version))]
 
-   [(reset-for-rollback!)
-    (bcom (^org bcom base-bindings
-                '(lambda (e n v pre post) #t)
-                default-validator
-                history expressor-store current-expressor base-bindings))]))
+   [(rollback! target-version)
+    (let loop ((h history))
+      (cond
+       ((null? h) (error "Version not found:" target-version))
+       ((= (car (car h)) target-version)
+        (let ((snapshot (list-ref (car h) 4)))
+          (bcom (^org bcom
+                      (car snapshot) (cadr snapshot) (caddr snapshot)
+                      history expressor-store current-expressor base-bindings
+                      target-version))))
+       (else (loop (cdr h)))))]))
 
 ;;; ── Factory ─────────────────────────────────────────────────────────────────
 
@@ -215,7 +259,10 @@
          (genesis-data `((id . ,genesis-id)
                          (name . genesis)
                          (public-key . "genesis-key")))
-         (initial-history (list (list 0 genesis-id '(quote initial) 0)))
+         (initial-history (list (list 0 genesis-id '(quote initial) 0
+                                      (list base-bindings
+                                            '(lambda (e n v pre post) #t)
+                                            default-validator))))
          (initial-store (list (cons genesis-id genesis-data))))
     (spawn ^org
            base-bindings
@@ -224,7 +271,8 @@
            initial-history
            initial-store
            genesis-id
-           base-bindings)))
+           base-bindings
+           0)))
 
 ;;; ── Persistence environment ─────────────────────────────────────────────────
 
@@ -241,6 +289,21 @@
      store
      #:name name
      #:version 1)))
+
+;;; ── Rollback helpers ────────────────────────────────────────────────────────
+
+(define (ancestor-chain history target)
+  "Walk parent pointers from target to version 0, return in chronological order."
+  (define (find-entry ver)
+    (let loop ((h history))
+      (cond ((null? h) (error "Version not found:" ver))
+            ((= (car (car h)) ver) (car h))
+            (else (loop (cdr h))))))
+  (let loop ((ver target) (chain '()))
+    (let ((entry (find-entry ver)))
+      (if (<= ver 0)
+          (cons entry chain)
+          (loop (cadddr entry) (cons entry chain))))))
 
 ;;; ── Evaluator ───────────────────────────────────────────────────────────────
 
@@ -335,7 +398,7 @@
             (validator ($ org 'validator-proc))
             (version (next-version))
             (entry (list version current-expressor `(define ,name ,value-expr)
-                         (car (car ($ org 'history))))))
+                         ($ org 'head-version))))
        (if (validator current-expressor name value pre-bindings post-bindings)
            (begin ($ org 'modify! name value entry)
                   (if #f #f))
@@ -431,7 +494,7 @@
                 (version (next-version))
                 (entry (list version current-expressor
                              `(defexpressor ,name-expr ,key-expr)
-                             (car (car ($ org 'history))))))
+                             ($ org 'head-version))))
            (if (validator current-expressor eval-name id bindings bindings)
                (begin ($ org 'register-expressor! id data entry)
                       sealer)
@@ -455,7 +518,7 @@
             (version (next-version))
             (entry (list version current-expressor
                          `(modify! ,name-expr ,value-expr)
-                         (car (car ($ org 'history))))))
+                         ($ org 'head-version))))
        (if (validator current-expressor name value pre-bindings post-bindings)
            (begin ($ org 'modify! name value entry)
                   (if #f #f))
@@ -467,33 +530,24 @@
             (version (next-version))
             (entry (list version current-expressor
                          `(enact! ,validator-expr)
-                         (car (car ($ org 'history))))))
+                         ($ org 'head-version))))
        (if (new-proc current-expressor 'validator new-proc
                      ($ org 'bindings) ($ org 'bindings))
            (begin ($ org 'enact! validator-expr new-proc entry)
                   (if #f #f))
            (error "Validator rejected by itself:" current-expressor new-proc))))
 
-    ;; rollback!
+    ;; rollback! — restore snapshot at target version
     (('rollback! version-expr)
      (let* ((target (evaluate version-expr org local-bindings current-expressor))
-            (history ($ org 'history))
             (validator ($ org 'validator-proc)))
        (unless (validator current-expressor 'rollback target
                           ($ org 'bindings) ($ org 'bindings))
          (error "Rollback rejected:" target))
-       ($ org 'reset-for-rollback!)
-       (for-each
-        (lambda (entry)
-          (let ((ver (car entry))
-                (exp (cadr entry))
-                (expr (caddr entry)))
-            (when (and (> ver 0) (<= ver target))
-              (evaluate expr org '() exp))))
-        (reverse history))
+       ($ org 'rollback! target)
        (if #f #f)))
 
-    ;; show-history — return string so WASM REPL can display it
+    ;; show-history — return string showing current branch
     (('show-history)
      (let ((out (open-output-string)))
        (for-each (lambda (entry)
@@ -507,7 +561,7 @@
                    (display (cadddr entry) out)
                    (display ")" out)
                    (newline out))
-                 (reverse ($ org 'history)))
+                 (ancestor-chain ($ org 'history) ($ org 'head-version)))
        (get-output-string out)))
 
     ;; show-expressors — return string so WASM REPL can display it
@@ -637,21 +691,25 @@
 
 (define (create-expressor-pair org name public-key)
   "Create an identity/controller pair for an expressor. Must be called within a vat.
-Returns (identity . controller)."
+Returns (identity . controller). The identity carries a subscription-sealer for
+the sealed membership handshake."
   (receive (sealer unsealer sealed?)
     (spawn-sealer-triplet)
-    (let* ((id (make-id name))
-           (identity (spawn ^expressor-identity name unsealer sealed?))
-           (controller (spawn ^expressor-controller org id sealer))
-           (data `((id . ,id) (name . ,name) (public-key . ,public-key)
-                   (unsealer . ,unsealer) (sealed? . ,sealed?)
-                   (identity . ,identity)))
+    (receive (sub-sealer sub-unsealer sub-sealed?)
+      (spawn-sealer-triplet)
+      (let* ((id (make-id name))
+             (identity (spawn ^expressor-identity name unsealer sealed?
+                              sub-sealer sub-unsealer))
+             (controller (spawn ^expressor-controller org id sealer))
+             (data `((id . ,id) (name . ,name) (public-key . ,public-key)
+                     (unsealer . ,unsealer) (sealed? . ,sealed?)
+                     (identity . ,identity)))
            (version (next-version))
            (entry (list version ($ org 'current-expressor)
                         `(defexpressor ',name ,public-key)
-                        (car (car ($ org 'history))))))
+                        ($ org 'head-version))))
       ($ org 'register-expressor! id data entry)
-      (cons identity controller))))
+      (cons identity controller)))))
 
 ;;; ── Org-with-inbox factory ─────────────────────────────────────────────────
 
