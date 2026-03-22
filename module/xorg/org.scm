@@ -254,29 +254,37 @@
             (format-error key args)
             (loop)))))))
 
-;;; ── AI Agent Helper ────────────────────────────────────────────────────────
+;;; ── AI Expressor ─────────────────────────────────────────────────────────
 
-(define (make-org-ai-agent org name key system-prompt)
-  "Convenience function to create an AI agent for an org from the outer REPL.
+(define* (make-org-ai-agent org name key system-prompt #:key (model #f))
+  "Create an AI expressor with config bindings in the org.
+Returns the sealer — use with (as sealer ...) to act as this agent.
 
-  Parameters:
-    org - The org record (from make-org)
-    name - Symbol name for the AI expressor
-    key - Public key string
-    system-prompt - Instructions for the AI
-
-  Returns:
-    (values ai-agent-ref expressor-sealer)
+The system prompt and model are stored as org bindings (name:prompt,
+name:model) that (ai ...) and (ai-eval ...) automatically pick up.
+These bindings are visible, subject to the validator, and modifiable
+by any authorized expressor.
 
   Usage:
     (define my-org (make-org \"test\"))
-    (define-values (agent sealer)
-      (make-org-ai-agent my-org 'ai-governor \"key\" \"You govern wisely.\"))"
-  ;; Lazy load ai-agent module
-  (let ((ai-agent-module (resolve-module '(xorg ai-agent))))
-    (let ((make-ai-agent (module-ref ai-agent-module 'make-ai-agent)))
-      (make-ai-agent (org-vat org)
-                     (org-ref org)
-                     name
-                     key
-                     system-prompt))))
+    (define ai-sealer
+      (make-org-ai-agent my-org 'ai-gov \"key\" \"You govern wisely.\"))
+    ;; Then inside the org:
+    (as ai-sealer (ai-eval \"Create a proposal\"))
+    ;; Inspect or change the AI:
+    ai-gov:prompt                                   ;=> \"You govern wisely.\"
+    (modify! 'ai-gov:prompt \"Be cautious.\")"
+  (with-vat (org-vat org)
+    (let* ((ref (org-ref org))
+           (genesis-id ($ ref 'current-expressor))
+           (sealer (evaluate `(defexpressor ',name ,key)
+                             ref '() genesis-id))
+           (ai-id ($ ref 'authenticate-sealer sealer))
+           (prompt-sym (string->symbol
+                        (string-append (symbol->string name) ":prompt")))
+           (model-sym  (string->symbol
+                        (string-append (symbol->string name) ":model"))))
+      (evaluate `(modify! ',prompt-sym ,system-prompt) ref '() ai-id)
+      (when model
+        (evaluate `(modify! ',model-sym ,model) ref '() ai-id))
+      sealer)))

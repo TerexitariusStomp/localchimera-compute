@@ -565,7 +565,7 @@ The public key is accessible via the org's (public-key) method."
                    (display " [" out)
                    (display ($ org 'expressor-name (cadr entry)) out)
                    (display "] : " out)
-                   (display (caddr entry) out)
+                   (write (caddr entry) out)
                    (display " (parent: " out)
                    (display (cadddr entry) out)
                    (display ")" out)
@@ -574,14 +574,32 @@ The public key is accessible via the org's (public-key) method."
        (get-output-string out)))
 
     ;; show-expressors — return string so WASM REPL can display it
+    ;; Indicates AI-powered expressors by checking for name:prompt bindings
     (('show-expressors)
-     (let ((out (open-output-string)))
+     (let ((out (open-output-string))
+           (org-bindings ($ org 'bindings)))
        (for-each (lambda (pair)
-                   (let ((data (cdr pair)))
-                     (display (assq-ref data 'name) out)
+                   (let* ((data (cdr pair))
+                          (name (assq-ref data 'name))
+                          (prompt-key (and name (string->symbol
+                                                 (string-append
+                                                  (symbol->string name) ":prompt"))))
+                          (prompt-entry (and prompt-key
+                                             (assq prompt-key org-bindings))))
+                     (display name out)
                      (display " (" out)
                      (display (car pair) out)
                      (display ")" out)
+                     (when prompt-entry
+                       (let* ((prompt (cdr prompt-entry))
+                              (truncated (if (and (string? prompt)
+                                                  (> (string-length prompt) 40))
+                                             (string-append
+                                              (substring prompt 0 40) "...")
+                                             prompt)))
+                         (display " [ai: " out)
+                         (write truncated out)
+                         (display "]" out)))
                      (newline out)))
                  ($ org 'expressor-store))
        (get-output-string out)))
@@ -594,15 +612,22 @@ The public key is accessible via the org's (public-key) method."
     (('ai prompt-expr)
      (let ((handler *ai-handler*))
        (unless handler (error "AI not available. Load (xorg ai) module."))
-       (handler (evaluate prompt-expr org local-bindings current-expressor) org)))
+       (handler (evaluate prompt-expr org local-bindings current-expressor)
+                org current-expressor)))
 
     ;; ai-eval
     (('ai-eval prompt-expr)
      (let ((handler *ai-eval-handler*))
        (unless handler (error "AI not available. Load (xorg ai) module."))
        (let ((result-expr
-              (handler (evaluate prompt-expr org local-bindings current-expressor) org)))
-         (evaluate result-expr org local-bindings current-expressor))))
+              (handler (evaluate prompt-expr org local-bindings current-expressor)
+                       org current-expressor)))
+         (catch #t
+           (lambda ()
+             (evaluate result-expr org local-bindings current-expressor))
+           (lambda (key . args)
+             (error "ai-eval: generated expression failed —"
+                    result-expr key args))))))
 
     ;; process-message — process an inbox message and evaluate its expression
     (('process-message msg-id-expr)

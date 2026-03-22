@@ -1,12 +1,11 @@
 #!/usr/bin/env guile
 !#
 
-;;; demo-ai-simple.scm — Simple working demo of AI agent
+;;; demo-ai-simple.scm — Simple working demo of AI expressor
 
 (add-to-load-path "module")
 
 (use-modules (xorg ai)
-             (xorg ai-agent)
              (xorg org)
              (xorg gplay)
              (goblins)
@@ -30,23 +29,23 @@
 (set-ai-api-key! (getenv "OPENROUTER_API_KEY"))
 
 (display "\n═══════════════════════════════════════════════════════════\n")
-(display "           AI Agent Demo - Simple Usage\n")
+(display "           AI Expressor Demo - Simple Usage\n")
 (display "═══════════════════════════════════════════════════════════\n\n")
 
 (display "Step 1: Create org\n")
 (define my-org (make-org "ai-demo"))
 (display "  ✓ Created org: ai-demo\n\n")
 
-(display "Step 2: Create AI agent using convenience function\n")
-(define-values (agent sealer)
+(display "Step 2: Create AI expressor\n")
+(define ai-sealer
   (make-org-ai-agent my-org
                      'ai-assistant
                      "ai-pub-key"
                      "You are a helpful AI assistant for this org."))
-(display "  ✓ Created AI agent: ai-assistant\n\n")
+(display "  ✓ Created AI expressor: ai-assistant\n\n")
 
 (display "Step 3: View org history\n")
-(display "  Note: AI agent is now an expressor!\n")
+(display "  Note: Config bindings are visible in history!\n")
 (with-vat (org-vat my-org)
   (let ((history ($ (org-ref my-org) 'history)))
     (for-each
@@ -58,14 +57,14 @@
      (reverse history))))
 
 (display "\n═══════════════════════════════════════════════════════════\n\n")
-(display "✓ AI agent successfully created!\n\n")
-(display "To use it interactively, start the REPL:\n\n")
+(display "✓ AI expressor created!\n\n")
+(display "To use it interactively:\n\n")
 (display "  make repl\n")
-(display "  scheme@(guile-user)> (use-modules (xorg ai) (xorg ai-agent))\n")
+(display "  scheme@(guile-user)> (use-modules (xorg ai) (xorg org))\n")
 (display "  scheme@(guile-user)> (define my-org (make-org \"test\"))\n")
-(display "  scheme@(guile-user)> (define-values (agent seal)\n")
+(display "  scheme@(guile-user)> (define ai-seal\n")
 (display "                         (make-org-ai-agent my-org 'ai \"key\" \"Help users.\"))\n")
-(display "  scheme@(guile-user)> (with-vat (org-vat my-org)\n")
-(display "                         (ai-agent-query agent \"Hello!\"))\n\n")
-(display "Note: AI agent 'ai-assistant' is now an expressor in the org.\n")
-(display "      It can act, decide, validate, and auto-govern!\n\n")
+(display "  scheme@(guile-user)> (enter! my-org)\n")
+(display "  play[genesis]> (as ai-seal (ai \"Hello!\"))\n")
+(display "  play[genesis]> (as ai-seal (ai-eval \"Create a greeting\"))\n")
+(display "  play[genesis]> (modify! 'ai:prompt \"Be very concise.\")  ;; matches expressor name 'ai\n\n")

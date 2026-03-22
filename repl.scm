@@ -426,21 +426,27 @@
       (let lp ((rest (cdr lst)) (acc (car lst)))
         (if (null? rest) acc (lp (cdr rest) (string-append acc "\n" (car rest)))))))
 
-(define (format-org-context ref)
+(define (format-org-state ref)
+  "Org state without preamble — used for per-expressor prompt override."
   (let* ((bindings ($ ref 'bindings))
          (history ($ ref 'history))
          (exp-name (or ($ ref 'expressor-name ($ ref 'current-expressor)) '?))
          (recent (let ((h (reverse history)))
                    (if (> (length h) 10) (list-tail h (- (length h) 10)) h))))
     (string-append
-      "You are an AI inside xorg, a Scheme-based system for programmable organizations.\n\n"
-      "Current expressor: " (symbol->string exp-name) "\n\n"
+      "Current expressor (identity): " (symbol->string exp-name) "\n\n"
       "Bindings:\n" (%join-lines (map (lambda (b) (format-binding b ref)) bindings))
       "\n\nRecent history:\n" (%join-lines (map (lambda (e) (format-history-entry e ref)) recent))
-      "\n\nSpecial forms: (modify! 'name value), (enact! validator), "
-      "(rollback! version), (defexpressor name key), (as id expr), "
-      "(show-history), (show-expressors), (lambda (args) body), "
+      "\n\nAvailable special forms: (modify! 'name value), (enact! validator-expr), "
+      "(rollback! version), (defexpressor name key), (as expressor-id expr), "
+      "(ai prompt), (ai-eval prompt), "
+      "(show-history), (show-expressors), (lambda (args ...) body), "
       "(if test then else), (quote expr).\n")))
+
+(define (format-org-context ref)
+  (string-append
+    "You are an AI inside xorg, a Scheme-based system for programmable organizations.\n\n"
+    (format-org-state ref)))
 
 ;;; ── AI handlers ─────────────────────────────────────────────────────────
 
@@ -453,17 +459,42 @@
          (s (if (%ends-with? s "```") (substring s 0 (- (string-length s) 3)) s)))
     (%trim s)))
 
-(define (web-ai-query prompt org)
-  (unless *ai-api-key* (error "No API key. Use (set-api-key! \"sk-or-...\")"))
-  (ai-chat (format-org-context org) prompt *ai-api-key* *ai-model*))
+(define (expressor-config org expressor-id key-suffix)
+  "Look up a per-expressor config binding (e.g. ai-gov:prompt). Returns #f if not found."
+  (let ((exp-name ($ org 'expressor-name expressor-id)))
+    (and exp-name
+         (let* ((config-key (string->symbol
+                              (string-append (symbol->string exp-name)
+                                             ":" (symbol->string key-suffix))))
+                (entry (assq config-key ($ org 'bindings))))
+           (and entry (cdr entry))))))
 
-(define (web-ai-query-and-eval prompt org)
+(define (web-ai-query prompt org expressor-id)
   (unless *ai-api-key* (error "No API key. Use (set-api-key! \"sk-or-...\")"))
-  (let* ((ctx (string-append (format-org-context org)
+  (let* ((custom-prompt (expressor-config org expressor-id 'prompt))
+         (custom-model  (expressor-config org expressor-id 'model))
+         (system-prompt (if custom-prompt
+                            (string-append custom-prompt "\n\n" (format-org-state org))
+                            (format-org-context org))))
+    (ai-chat system-prompt prompt *ai-api-key* (or custom-model *ai-model*))))
+
+(define (web-ai-query-and-eval prompt org expressor-id)
+  (unless *ai-api-key* (error "No API key. Use (set-api-key! \"sk-or-...\")"))
+  (let* ((custom-prompt (expressor-config org expressor-id 'prompt))
+         (custom-model  (expressor-config org expressor-id 'model))
+         (ctx (string-append
+               (if custom-prompt
+                   (string-append custom-prompt "\n\n" (format-org-state org))
+                   (format-org-context org))
                "\n\nIMPORTANT: Respond with ONLY a single valid Scheme "
-               "S-expression. No explanation, no markdown. "
-               "Example: (modify! 'greeting \"hello\")"))
-         (response (ai-chat ctx prompt *ai-api-key* *ai-model*)))
+               "S-expression, nothing else. No explanation, no markdown, no prose. "
+               "Just the raw expression.\n\n"
+               "Use (modify! 'name value) to create or update bindings. "
+               "Use string literals for text values (\"hello\"), not quoted symbols. "
+               "Example: (modify! 'greeting \"hello world\")\n"
+               "Example: (modify! 'budget 50000)\n"
+               "For multiple changes: (begin (modify! 'a 1) (modify! 'b 2))"))
+         (response (ai-chat ctx prompt *ai-api-key* (or custom-model *ai-model*))))
     (read (open-input-string (strip-code-fences response)))))
 
 (set-ai-handler! web-ai-query)
@@ -561,7 +592,7 @@
                  "  (as bob (modify! 'seconded #t))\n"
                  "\n"
                  "Enact a rule (must accept itself to take effect):\n"
-                 "  (enact! (lambda (expressor name value old new)\n"
+                 "  (enact! (lambda (expressor name value pre post)\n"
                  "            (not (equal? value #f))))\n"
                  "\n"
                  "Inspect:\n"
@@ -569,16 +600,33 @@
                  "  (show-expressors)    all known identities\n"
                  "  proposal             look up any binding\n"
                  "\n"
-                 "Rollback (replays with original identities):\n"
+                 "Rollback:\n"
                  "  (rollback! 2)\n"
+                 "\n"
+                 "── AI ─────────────────────────────────────────\n"
+                 "\n"
+                 "  (ai \"what is the budget?\")         ask AI\n"
+                 "  (ai-eval \"create a greeting\")      AI generates + executes code\n"
+                 "\n"
+                 "AI expressors — config lives as org bindings:\n"
+                 "  (define ai (defexpressor 'ai \"ai-key\"))\n"
+                 "  (as ai (modify! 'ai:prompt \"You govern wisely.\"))\n"
+                 "  (as ai (ai-eval \"propose a budget\"))  ; uses ai:prompt\n"
+                 "  (modify! 'ai:prompt \"Be cautious.\")   ; change AI behavior\n"
+                 "  (modify! 'ai:model \"openai/gpt-4o\")   ; change AI model\n"
                  "\n"
                  "── Cross-Org ──────────────────────────────────\n"
                  "\n"
-                 "  (join-org \"alpha\")                 request to join\n"
-                 "  (approve-member 0 \"alice\")         approve member\n"
-                 "  (act-in \"alpha\" (modify! 'x 1))   act in local org\n"
-                 "  (act-in alice-key (modify! 'x 1))  act in remote org\n"
-                 "  (public-key)                       show this org's key\n"
+                 "Store another org's public key, then reference\n"
+                 "it by name (unquoted) — no string needed:\n"
+                 "  (define alpha (public-key))         your own key\n"
+                 "  (define beta-key '(public-key ...)) another org's key\n"
+                 "\n"
+                 "  (join-org \"alpha\")                   request to join local\n"
+                 "  (approve-member 0 \"alice\")           approve member\n"
+                 "  (act-in \"alpha\" (modify! 'x 1))     act in local org\n"
+                 "  (act-in beta-key (modify! 'x 1))    act in remote org\n"
+                 "  (public-key)                        show this org's key\n"
                  "\n"
                  "── Language Forms ──────────────────────────────\n"
                  "\n"

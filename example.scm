@@ -16,7 +16,7 @@
       (defexpressor 'jay "crypto-key-3")
       
       ;; Constitution: Only Federalist Papers authors can enact laws
-      (enact! (lambda (expressor name value new-bindings old-env)
+      (enact! (lambda (expressor name value pre-bindings post-bindings)
                 (let ((authors '(madison hamilton jay)))
                   (member (expressor-name expressor) authors))))
       
@@ -66,10 +66,10 @@
       (as mallory (modify! 'reputation (hash-set! (reputation) mallory 10)))
       
       ;; Constitution: Changes need quorum of high-reputation expressors
-      (enact! (lambda (expressor name value new-bindings old-env)
-                (let* ((reps (env-lookup old-env 'reputation))
+      (enact! (lambda (expressor name value pre-bindings post-bindings)
+                (let* ((reps (cdr (assq 'reputation pre-bindings)))
                        (my-rep (hash-ref reps expressor 0))
-                       (total-rep (fold (lambda (k v sum) (+ sum v)) 
+                       (total-rep (fold (lambda (k v sum) (+ sum v))
                                        0 reps))
                        (quorum-needed (* 0.51 total-rep)))
                   ;; Need >51% of total reputation to approve
@@ -122,8 +122,8 @@
                          (hash-set! (delegations) voter3 voter3)))  ; Self
       
       ;; Validator computes voting power through delegation chain
-      (enact! (lambda (expressor name value new-bindings old-env)
-                (let* ((delegs (env-lookup old-env 'delegations))
+      (enact! (lambda (expressor name value pre-bindings post-bindings)
+                (let* ((delegs (cdr (assq 'delegations pre-bindings)))
                        (voting-power
                         (fold (lambda (k v power)
                                (if (eq? (hash-ref delegs k) expressor)

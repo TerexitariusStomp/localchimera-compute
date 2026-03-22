@@ -14,6 +14,7 @@
             ai-query
             ai-query-and-eval
             format-org-context
+            format-org-state
             strip-code-fences
             openrouter-chat))
 
@@ -82,8 +83,9 @@
    " [" (symbol->string (or ($ ref 'expressor-name (cadr entry)) '?))
    "]: " (call-with-output-string (lambda (p) (write (caddr entry) p)))))
 
-(define (format-org-context ref)
-  "Build a system prompt string describing the current org actor state."
+(define (format-org-state ref)
+  "Build a string describing the current org state: expressor, bindings, history, forms.
+Does NOT include a preamble — callers prepend their own identity/role instructions."
   (let* ((bindings ($ ref 'bindings))
          (history  ($ ref 'history))
          (exp-name (or ($ ref 'expressor-name ($ ref 'current-expressor)) '?))
@@ -93,8 +95,6 @@
                        (list-tail branch (- (length branch) 10))
                        branch)))
     (string-append
-     "You are an AI assistant integrated into xorg, an experimental "
-     "organizational system built as a Scheme-based REPL.\n\n"
      "Current expressor (identity): " (symbol->string exp-name) "\n\n"
      "Current bindings:\n"
      (string-join (map (lambda (b) (format-binding b ref)) bindings) "\n")
@@ -102,8 +102,34 @@
      (string-join (map (lambda (e) (format-history-entry e ref)) recent) "\n")
      "\n\nAvailable special forms: (modify! 'name value), (enact! validator-expr), "
      "(rollback! version), (defexpressor name key), (as expressor-id expr), "
+     "(ai prompt), (ai-eval prompt), "
      "(show-history), (show-expressors), (lambda (args ...) body), "
      "(if test then else), (quote expr).\n")))
+
+(define (format-org-context ref)
+  "Build a system prompt string describing the current org actor state."
+  (string-append
+   "You are an AI assistant integrated into xorg, an experimental "
+   "organizational system built as a Scheme-based REPL.\n\n"
+   (format-org-state ref)))
+
+;;; ── Per-expressor config lookup ──────────────────────────────────────────
+
+(define (expressor-config-key ref expressor-id key-suffix)
+  "Build a namespaced config symbol: expressor-name:key-suffix.
+Returns #f if expressor has no name."
+  (let ((name ($ ref 'expressor-name expressor-id)))
+    (and name
+         (string->symbol
+          (string-append (symbol->string name) ":" (symbol->string key-suffix))))))
+
+(define (lookup-expressor-config ref expressor-id key-suffix)
+  "Look up a per-expressor config binding. Returns #f if not found."
+  (let ((config-key (expressor-config-key ref expressor-id key-suffix)))
+    (and config-key
+         (catch #t
+           (lambda () ($ ref 'lookup config-key))
+           (lambda _ #f)))))
 
 ;;; ── HTTP client ────────────────────────────────────────────────────────────
 
@@ -140,11 +166,24 @@
             (assoc-ref (assoc-ref (vector-ref choices 0) "message") "content")))))))
 
 ;;; ── Query functions ────────────────────────────────────────────────────────
+;;;
+;;; Context-aware: when the current expressor has a name:prompt binding,
+;;; it's used as the system prompt preamble. When it has a name:model
+;;; binding, it overrides the AI model. Otherwise, the generic "AI assistant"
+;;; context and default model are used.
 
-(define (ai-query prompt ref)
-  "Send PROMPT to OpenRouter with org context. Returns a string."
-  (let ((system-prompt (format-org-context ref)))
-    (openrouter-chat system-prompt prompt)))
+(define (ai-query prompt ref expressor-id)
+  "Send PROMPT to OpenRouter with org context. Returns a string.
+If the current expressor has a name:prompt binding, uses it as the system prompt."
+  (let* ((custom-prompt (lookup-expressor-config ref expressor-id 'prompt))
+         (custom-model  (lookup-expressor-config ref expressor-id 'model))
+         (system-prompt (if custom-prompt
+                            (string-append custom-prompt "\n\n" (format-org-state ref))
+                            (format-org-context ref))))
+    (if custom-model
+        (parameterize ((current-ai-model custom-model))
+          (openrouter-chat system-prompt prompt))
+        (openrouter-chat system-prompt prompt))))
 
 (define (strip-code-fences str)
   "Remove markdown code fences (```scheme ... ``` or ``` ... ```) from STR."
@@ -164,16 +203,29 @@
                       stripped)))
     (string-trim-both stripped)))
 
-(define (ai-query-and-eval prompt ref)
+(define (ai-query-and-eval prompt ref expressor-id)
   "Send PROMPT to OpenRouter, instructing the AI to return a single S-expression.
-Strips markdown fences, parses with read, and returns the parsed expression."
-  (let* ((system-prompt
+Strips markdown fences, parses with read, and returns the parsed expression.
+If the current expressor has a name:prompt binding, uses it as the system prompt."
+  (let* ((custom-prompt (lookup-expressor-config ref expressor-id 'prompt))
+         (custom-model  (lookup-expressor-config ref expressor-id 'model))
+         (system-prompt
           (string-append
-           (format-org-context ref)
+           (if custom-prompt
+               (string-append custom-prompt "\n\n" (format-org-state ref))
+               (format-org-context ref))
            "\n\nIMPORTANT: You must respond with ONLY a single valid Scheme "
            "S-expression, nothing else. No explanation, no markdown, no prose. "
-           "Just the raw expression. For example: (modify! 'greeting \"hello\")"))
-         (response (openrouter-chat system-prompt prompt))
+           "Just the raw expression.\n\n"
+           "Use (modify! 'name value) to create or update bindings. "
+           "Use string literals for text values (\"hello\"), not quoted symbols. "
+           "Example: (modify! 'greeting \"hello world\")\n"
+           "Example: (modify! 'budget 50000)\n"
+           "For multiple changes: (begin (modify! 'a 1) (modify! 'b 2))"))
+         (response (if custom-model
+                       (parameterize ((current-ai-model custom-model))
+                         (openrouter-chat system-prompt prompt))
+                       (openrouter-chat system-prompt prompt)))
          (cleaned  (strip-code-fences response)))
     (call-with-input-string cleaned read)))
 

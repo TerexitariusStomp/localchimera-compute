@@ -62,7 +62,7 @@ Each operation produces a new actor state via Goblins' `bcom` (become). The prev
 
 ### Validators
 
-A validator is an ordinary function: `(expressor name value old-bindings new-bindings) -> bool`. It receives the acting expressor, the binding name, the new value, and the bindings before and after the change. It returns true or false.
+A validator is an ordinary function: `(expressor name value pre-bindings post-bindings) -> bool`. It receives the acting expressor, the binding name, the new value, and the bindings before and after the change. It returns true or false.
 
 The default validator accepts everything. You replace it with `enact!`. The metacircular constraint: **a new validator must accept itself** before it takes effect. This means the mechanism for changing the rules is always subject to the current rules — but _what_ those rules are is entirely open.
 
@@ -268,9 +268,9 @@ play[genesis]> (as alice (modify! 'proposal "fund the commons"))
 
 play[genesis]> (show-history)
 => Version 0 [genesis] : (quote initial) (parent: 0)
-   Version 1 [genesis] : (define greeting hello world) (parent: 0)
-   Version 2 [genesis] : (defexpressor (quote alice) alice-key) (parent: 1)
-   Version 3 [alice] : (modify! (quote proposal) fund the commons) (parent: 2)
+   Version 1 [genesis] : (define greeting "hello world") (parent: 0)
+   Version 2 [genesis] : (defexpressor (quote alice) "alice-key") (parent: 1)
+   Version 3 [alice] : (modify! (quote proposal) "fund the commons") (parent: 2)
 
 play[genesis]> (rollback! 1)
 

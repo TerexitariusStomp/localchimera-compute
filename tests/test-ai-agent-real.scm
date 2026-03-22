@@ -1,16 +1,17 @@
 #!/usr/bin/env guile
 !#
 
-;;; test-ai-agent-real.scm — Real test of AI agent functionality
+;;; test-ai-agent-real.scm — Test AI expressor functionality
 ;;;
-;;; This creates an AI agent and has it actually act within an org
+;;; An AI agent is just an expressor with config bindings.
+;;; This creates one and verifies it can act within an org.
 
 (define %project-root (string-append (dirname (current-filename)) "/.."))
 (add-to-load-path (string-append %project-root "/module"))
 
 (use-modules (xorg ai)
-             (xorg ai-agent)
              (xorg org)
+             (xorg gplay)
              (goblins)
              (ice-9 rdelim))
 
@@ -31,7 +32,7 @@
               (loop))))))))
 
 (display "\n╔═══════════════════════════════════════════════════════════════╗\n")
-(display "║          AI Agent Test - Organizations as Intelligence        ║\n")
+(display "║        AI Expressor Test - Organizations as Intelligence      ║\n")
 (display "╚═══════════════════════════════════════════════════════════════╝\n\n")
 
 (load-env (string-append %project-root "/.env"))
@@ -41,23 +42,29 @@
 (define my-org (make-org "ai-governed"))
 (display "   ✓ Org created: ai-governed\n\n")
 
-(display "2. Creating AI agent with expressor identity...\n")
-(define-values (ai-agent ai-sealer)
-  (with-vat (org-vat my-org)
-    (make-ai-agent
-     (org-vat my-org)
-     (org-ref my-org)
-     'ai-governor
-     "ai-pub-key"
-     "You are an AI governor for this organization. You make wise decisions.")))
+(display "2. Creating AI expressor with config bindings...\n")
+(define ai-sealer
+  (make-ai-agent
+   (org-vat my-org)
+   (org-ref my-org)
+   'ai-governor
+   "ai-pub-key"
+   "You are an AI governor for this organization. You make wise decisions."))
 
-(display "   ✓ AI agent created with identity 'ai-governor'\n\n")
+(display "   ✓ AI expressor 'ai-governor' created\n")
+(with-vat (org-vat my-org)
+  (display "   ✓ ai-governor:prompt = ")
+  (display ($ (org-ref my-org) 'lookup 'ai-governor:prompt))
+  (newline)
+  (newline))
 
-(display "3. Testing AI agent query (read-only)...\n")
+(display "3. Testing AI query via (as sealer (ai ...))...\n")
 (catch #t
   (lambda ()
     (with-vat (org-vat my-org)
-      (let ((response (ai-agent-query ai-agent "What bindings exist in this org?")))
+      (let ((response (evaluate `(as ,ai-sealer (ai "What bindings exist in this org?"))
+                                (org-ref my-org) '()
+                                ($ (org-ref my-org) 'current-expressor))))
         (display "   AI Response: ")
         (display response)
         (newline)
@@ -70,13 +77,16 @@
     (newline)
     (newline)))
 
-(display "4. Testing AI agent action (write)...\n")
+(display "4. Testing AI action via (as sealer (ai-eval ...))...\n")
 (display "   Asking AI to create a welcome message...\n")
 (catch #t
   (lambda ()
     (with-vat (org-vat my-org)
-      (ai-agent-act ai-agent "Create a binding called 'welcome' with a friendly greeting")
-      (display "   ✓ AI agent executed action\n\n")))
+      (evaluate `(as ,ai-sealer
+                     (ai-eval "Create a binding called 'welcome' with a friendly greeting"))
+                (org-ref my-org) '()
+                ($ (org-ref my-org) 'current-expressor))
+      (display "   ✓ AI executed action\n\n")))
   (lambda (key . args)
     (display "   ✗ Error: ")
     (display key)
@@ -98,17 +108,15 @@
                  version
                  (or ($ (org-ref my-org) 'expressor-name exp-id) '?)
                  expr)))
-     (reverse (if (> (length history) 5)
-                  (list-tail history (- (length history) 5))
+     (reverse (if (> (length history) 7)
+                  (list-tail history (- (length history) 7))
                   history)))))
 
 (display "\n════════════════════════════════════════════════════════════════\n\n")
-(display "✅ AI Agent test complete!\n\n")
-(display "Key points demonstrated:\n")
-(display "  • AI agent has its own expressor identity ('ai-governor')\n")
-(display "  • AI agent can query org state\n")
-(display "  • AI agent can execute expressions autonomously\n")
-(display "  • AI agent's actions appear in history under its name\n")
-(display "  • Organization = Human expressors + AI expressors\n\n")
-(display "This is not AI-assisted governance.\n")
-(display "This is governance AS hybrid intelligence.\n\n")
+(display "Key points:\n")
+(display "  - AI is just an expressor with config bindings\n")
+(display "  - Config (ai-governor:prompt) is visible in the org\n")
+(display "  - (as sealer (ai ...)) queries as the AI identity\n")
+(display "  - (as sealer (ai-eval ...)) generates and executes code\n")
+(display "  - History shows both config setup and AI actions\n")
+(display "  - Any expressor can (modify! 'ai-governor:prompt ...) to change the AI\n\n")
