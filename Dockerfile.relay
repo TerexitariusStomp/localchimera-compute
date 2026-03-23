@@ -1,0 +1,29 @@
+FROM debian:bookworm-slim AS build
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    guile-3.0 guile-3.0-dev \
+    autoconf automake texinfo pkg-config \
+    git ca-certificates make \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN git clone --depth 1 https://github.com/aconchillo/guile-websocket.git /tmp/guile-websocket \
+    && cd /tmp/guile-websocket \
+    && autoreconf -fi \
+    && ./configure --prefix=/usr \
+    && make && make install
+
+FROM debian:bookworm-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    guile-3.0 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=build /usr/share/guile/site/3.0/web/socket /usr/share/guile/site/3.0/web/socket
+
+WORKDIR /app
+COPY xorg-relay.scm .
+
+ENV PORT=9090
+EXPOSE 9090
+
+CMD guile xorg-relay.scm "$PORT"

@@ -1,6 +1,7 @@
 window.addEventListener("load", async () => {
   try {
-    await Scheme.load_main("repl.wasm", {
+    const wasmBytes = await fetch("repl.wasm").then(r => r.arrayBuffer());
+    await Scheme.load_main(wasmBytes, {
       user_imports: {
         document: {
           body() { return document.body; },
