@@ -144,8 +144,12 @@ class Port extends HeapObject { toString() { return "#<port>"; } }
 class Struct extends HeapObject { toString() { return "#<struct>"; } }
 
 function instantiate_streaming(path, imports) {
-    if (typeof fetch !== 'undefined' && typeof window !== 'undefined')
-        return WebAssembly.instantiateStreaming(fetch(path), imports);
+    if (typeof fetch !== 'undefined' && typeof window !== 'undefined') {
+        const resp = fetch(path);
+        return WebAssembly.instantiateStreaming(resp, imports).catch(() =>
+            resp.then(r => r.arrayBuffer()).then(buf => WebAssembly.instantiate(buf, imports))
+        );
+    }
     let bytes;
     if (typeof read !== 'undefined') {
         bytes = read(path, 'binary');
