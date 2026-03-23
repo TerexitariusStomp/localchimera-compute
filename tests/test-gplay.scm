@@ -612,13 +612,13 @@
 
 (let ((store (make-memory-store)))
   ;; Create and mutate
-  (receive (vat org)
+  (receive (vat org inbox incanter refs)
     (make-persistent-org "test-persist" test-base-bindings store)
     (with-vat vat
       (ev '(modify! 'x 42) org)
       (ev '(modify! 'y 99) org)))
   ;; Restore from same store
-  (receive (vat2 org2)
+  (receive (vat2 org2 inbox2 incanter2 refs2)
     (make-persistent-org "test-persist" test-base-bindings store)
     (with-vat vat2
       (check "post-restore: x=42"

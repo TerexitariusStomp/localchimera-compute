@@ -23,6 +23,7 @@
             ^expressor-identity
             ^expressor-controller
             ^org-inbox
+            ^ref-store
             create-expressor-pair
             make-org-with-inbox
             approve-membership
@@ -34,12 +35,27 @@
 
 ;;; Hoot/WASM compatibility: eval and interaction-environment are not
 ;;; automatically available in Hoot's module system.
+;;; In WASM, we use the metacircular `evaluate` to restore validator
+;;; expressions (always lambda forms) instead of Scheme's eval.
 (cond-expand
   (hoot
-   (define (%restore-eval expr env)
-     (error "eval not available in WASM persistence restore"))
-   (define (%restore-interaction-env)
-     (error "interaction-environment not available in WASM")))
+   ;; Minimal org stub for restoring validator lambdas via `evaluate`.
+   ;; Only needs to handle `lookup` (base-bindings) since validators
+   ;; only reference their params + base operations like +, =, etc.
+   (define (^restore-stub bcom bindings)
+     (methods
+      [(lookup name)
+       (cond ((assq name bindings) => cdr)
+             (else (error "Variable unbound during restore:" name)))]
+      [(bindings) bindings]
+      [(current-expressor) 'restore-genesis]
+      [(head-version) 0]
+      [(validator-proc) default-validator]))
+
+   (define (%restore-eval vexpr _env)
+     (let ((base (*restore-base-bindings*)))
+       (evaluate vexpr (spawn ^restore-stub base) base 'restore-genesis)))
+   (define (%restore-interaction-env) #f))
   (else
    (define %restore-eval eval)
    (define (%restore-interaction-env) (interaction-environment))))
@@ -113,11 +129,9 @@
 
 ;;; ── Identity/controller actors ──────────────────────────────────────────────
 
-(define (^expressor-identity bcom name unsealer sealed?
-                              subscription-sealer subscription-unsealer)
-  "Public face of an expressor. Freely shareable.
-The subscription-sealer allows the host to seal capabilities (e.g. a controller)
-so that only this identity's holder can unseal them."
+(define-actor (^expressor-identity bcom name unsealer sealed?
+                                    subscription-sealer subscription-unsealer)
+  #:frozen
   (methods
    [(name) name]
    [(unsealer) unsealer]
@@ -282,22 +296,6 @@ The public key is accessible via the org's (public-key) method."
            base-bindings
            0
            pk)))
-
-;;; ── Persistence environment ─────────────────────────────────────────────────
-
-(define gplay-env
-  (make-persistence-env
-   `((((xorg gplay) ^org) ,^org))))
-
-(define (make-persistent-org name base-bindings store)
-  "Create a persistent org vat. Returns (values vat org)."
-  (parameterize ((*restore-base-bindings* base-bindings))
-    (spawn-persistent-vat
-     gplay-env
-     (lambda () (make-initial-org base-bindings))
-     store
-     #:name name
-     #:version 3)))
 
 ;;; ── Rollback helpers ────────────────────────────────────────────────────────
 
@@ -654,8 +652,8 @@ The public key is accessible via the org's (public-key) method."
 
 ;;; ── Expressor controller ───────────────────────────────────────────────────
 
-(define (^expressor-controller bcom org-ref expressor-id sealer)
-  "Private controller for an expressor. Held only by the authorized party."
+(define-actor (^expressor-controller bcom org-ref expressor-id sealer)
+  #:frozen
   (methods
    [(evaluate expr)
     (evaluate expr org-ref '() expressor-id)]
@@ -666,7 +664,13 @@ The public key is accessible via the org's (public-key) method."
 
 ;;; ── Warded inbox actor ─────────────────────────────────────────────────────
 
-(define (^org-inbox bcom org-ref entries next-id inbox-warden inbox-incanter)
+(define-actor (^org-inbox bcom org-ref entries next-id inbox-warden inbox-incanter)
+  ;; Explicit portrait: the mutable state is entries + next-id.
+  ;; org-ref, inbox-warden, inbox-incanter are actor refs restored by Goblins
+  ;; via gplay-env (which extends ward-env for warden/incanter persistence).
+  #:portrait
+  (lambda () (list org-ref entries next-id inbox-warden inbox-incanter))
+
   (define (find-entry msg-id)
     (let loop ((es entries))
       (cond ((null? es) (error "Message not found:" msg-id))
@@ -720,6 +724,16 @@ The public key is accessible via the org's (public-key) method."
   (ward inbox-warden controller-methods
         #:extends public-methods))
 
+;;; ── Cross-vat reference store ─────────────────────────────────────────────
+
+(define-actor (^ref-store bcom refs)
+  "Mutable key-value store for cross-vat references (e.g. controllers).
+Stored inside the persistent vat so far references are serialized
+by Goblins and resolved via the persistence-registry."
+  (methods
+   [(get) refs]
+   [(set! new-refs) (bcom (^ref-store bcom new-refs))]))
+
 ;;; ── Expressor pair factory ─────────────────────────────────────────────────
 
 (define (create-expressor-pair org name public-key)
@@ -766,3 +780,34 @@ can unseal."
          (sub-sealer ($ applicant-identity 'subscription-sealer))
          (sealed-controller ($ sub-sealer controller)))
     sealed-controller))
+
+;;; ── Persistence environment ─────────────────────────────────────────────────
+;;; Defined after all actors so forward references are resolved.
+
+(define gplay-env
+  (make-persistence-env
+   `((((xorg gplay) ^org) ,^org)
+     (((xorg gplay) ^org-inbox) ,^org-inbox)
+     (((xorg gplay) ^expressor-identity) ,^expressor-identity)
+     (((xorg gplay) ^expressor-controller) ,^expressor-controller)
+     (((xorg gplay) ^ref-store) ,^ref-store))
+   #:extends (list ward-env sealers-env)))
+
+(define* (make-persistent-org name base-bindings store
+                              #:key (public-key #f) (persistence-registry #f))
+  "Create a persistent org vat with inbox and ref-store.
+Returns (values vat org inbox incanter refs).
+On first call, creates fresh actors. On subsequent calls, restores from store."
+  (parameterize ((*restore-base-bindings* base-bindings))
+    (spawn-persistent-vat
+     gplay-env
+     (lambda ()
+       (let ((org (make-initial-org base-bindings #:public-key public-key)))
+         (receive (warden incanter) (spawn-warding-pair)
+           (let ((inbox (spawn ^org-inbox org '() 0 warden incanter))
+                 (refs (spawn ^ref-store '())))
+             (values org inbox incanter refs)))))
+     store
+     #:name name
+     #:version 4
+     #:persistence-registry persistence-registry)))

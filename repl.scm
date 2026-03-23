@@ -8,9 +8,11 @@
              (goblins actor-lib sealers)
              (goblins actor-lib ward)
              (goblins utils crypto)
+             (goblins persistence-store local-storage)
              (xorg gplay)
              (xorg autocomplete)
              (srfi srfi-11))
+
 
 (define-foreign document-body
   "document" "body"
@@ -127,6 +129,34 @@
 (define-foreign relay-send-later
   "relay" "sendLater"
   (ref extern) (ref string) -> none)
+
+;;; ── localStorage FFI (for org index persistence) ─────────────────────────
+(define-foreign ls-get-item
+  "localStorage" "getItem"
+  (ref string) -> (ref null string))
+(define-foreign ls-set-item
+  "localStorage" "setItem"
+  (ref string) (ref string) -> none)
+(define-foreign ls-remove-item
+  "localStorage" "removeItem"
+  (ref string) -> none)
+
+;;; ── Key pair persistence FFI ──────────────────────────────────────────────
+;;; saveKeyPair: fire-and-forget (async export in JS background)
+;;; getPreloadedKeyPair: synchronous (keys pre-loaded by JS before WASM starts)
+(define-foreign save-key-pair
+  "crypto" "saveKeyPair"
+  (ref string) (ref extern) -> none)
+(define-foreign get-preloaded-key-pair
+  "crypto" "getPreloadedKeyPair"
+  (ref string) -> (ref null extern))
+(define-foreign %has-preloaded-key-pair
+  "crypto" "hasPreloadedKeyPair"
+  (ref string) -> i32)
+(define (has-preloaded-key-pair? name) (= (%has-preloaded-key-pair name) 1))
+(define-foreign delete-key-pair
+  "crypto" "deleteKeyPair"
+  (ref string) -> none)
 
 (define procedure->external/cached
   (let ((cache (make-hashtable)))
@@ -500,9 +530,15 @@
 (set-ai-handler! web-ai-query)
 (set-ai-eval-handler! web-ai-query-and-eval)
 
+;;; ── Persistence registry ──────────────────────────────────────────────────
+;;; Shared registry for cross-vat reference resolution (e.g. controllers).
+(define *registry-vat* (spawn-vat))
+(define *persistence-registry*
+  (with-vat *registry-vat* (spawn ^persistence-registry)))
+
 ;;; ── Org management ────────────────────────────────────────────────────────
-;;; Every org entry: (name vat ref inbox incanter key-pair controllers . log)
-;;; controllers: alist of (org-name . controller)
+;;; Every org entry: (name vat ref inbox incanter key-pair refs . log)
+;;; refs: ^ref-store actor holding alist of (org-name . controller)
 
 (define *orgs* '())
 (define *pending-joins* '()) ;; alist: (joiner-name target-name sub-unsealer msg-id identity)
@@ -521,7 +557,9 @@
 (define (org-entry-inbox e) (list-ref e 3))
 (define (org-entry-incanter e) (list-ref e 4))
 (define (org-entry-key-pair e) (list-ref e 5))
-(define (org-entry-controllers e) (list-ref e 6))
+(define (org-entry-refs e) (list-ref e 6))
+(define (org-entry-controllers e)
+  (with-vat (org-entry-vat e) ($ (org-entry-refs e) 'get)))
 (define (org-entry-log e) (list-tail e 7))
 
 (define (org-save!)
@@ -533,7 +571,7 @@
                                    (org-entry-inbox old)
                                    (org-entry-incanter old)
                                    (org-entry-key-pair old)
-                                   (org-entry-controllers old))
+                                   (org-entry-refs old))
                              *log*)))
           (set! *orgs*
             (cons entry
@@ -543,22 +581,42 @@
                           (else (cons (car lst) (loop (cdr lst)))))))))))))
 
 (define (org-set-controllers! name controllers)
-  "Update the controllers alist for an org."
-  (set! *orgs*
-    (map (lambda (e)
-           (if (string=? (car e) name)
-               (append (list (list-ref e 0) (list-ref e 1) (list-ref e 2)
-                             (list-ref e 3) (list-ref e 4) (list-ref e 5)
-                             controllers)
-                       (list-tail e 7))
-               e))
-         *orgs*)))
+  "Update the controllers alist via the ^ref-store actor."
+  (let ((entry (org-lookup name)))
+    (when entry
+      (with-vat (org-entry-vat entry)
+        ($ (org-entry-refs entry) 'set! controllers)))))
 
 (define (org-lookup name)
   (let loop ((lst *orgs*))
     (cond ((null? lst) #f)
           ((string=? (caar lst) name) (car lst))
           (else (loop (cdr lst))))))
+
+;;; ── Org index persistence ────────────────────────────────────────────────
+;;; Stores org names + serialized key material in localStorage["xorg-index"].
+;;; Per-org Goblins state is stored by make-local-storage-store in separate keys.
+
+(define (save-org-index!)
+  "Persist the list of org names to localStorage as comma-separated string."
+  (ls-set-item "xorg-index"
+    (let loop ((names (map org-entry-name *orgs*)) (acc ""))
+      (if (null? names) acc
+          (loop (cdr names)
+                (if (string=? acc "") (car names)
+                    (string-append acc "," (car names))))))))
+
+(define (load-org-index)
+  "Load org names from localStorage. Returns list of strings or '()."
+  (let ((raw (ls-get-item "xorg-index")))
+    (if (or (not raw) (string=? raw "")) '()
+        ;; Split comma-separated string into list
+        (let loop ((s raw) (acc '()))
+          (let ((comma (string-index s #\,)))
+            (if comma
+                (loop (substring s (+ comma 1))
+                      (cons (substring s 0 comma) acc))
+                (reverse (cons s acc))))))))
 
 (define *log*
   (list `(span (@ (class "info-text"))
@@ -851,27 +909,23 @@
                              ,(string-append "Org already exists: " name "\n")))
          (let* ((kp (generate-key-pair))
                 (pk (key-pair->public-key kp))
-                (vat (spawn-vat))
-                (result (with-vat vat
-                          (let* ((org (make-initial-org base-bindings #:public-key pk))
-                                 (triple (receive (warden incanter)
-                                           (spawn-warding-pair)
-                                           (let ((inbox (spawn ^org-inbox org '() 0 warden incanter)))
-                                             (list org inbox incanter)))))
-                            triple)))
-                (ref (list-ref result 0))
-                (inbox (list-ref result 1))
-                (incanter (list-ref result 2))
-                (pk-display (let ((p (open-output-string)))
-                              (write pk p)
-                              (let ((s (get-output-string p)))
-                                (if (> (string-length s) 50)
-                                    (string-append (substring s 0 50) "...")
-                                    s)))))
-           (set! *orgs* (cons (list name vat ref inbox incanter pk '()) *orgs*))
-           (set! *sidebar-selected-org* name)
-           (log-append! `(span (@ (class "result-text"))
-                               ,(string-append "Created org: " name "\n  key: " pk-display "\n")))))
+                (store (make-local-storage-store (string-append "xorg-" name))))
+           (receive (vat org inbox incanter refs)
+             (make-persistent-org name base-bindings store
+                                  #:public-key pk
+                                  #:persistence-registry *persistence-registry*)
+             (let ((pk-display (let ((p (open-output-string)))
+                                 (write pk p)
+                                 (let ((s (get-output-string p)))
+                                   (if (> (string-length s) 50)
+                                       (string-append (substring s 0 50) "...")
+                                       s)))))
+               (set! *orgs* (cons (list name vat org inbox incanter kp refs) *orgs*))
+               (set! *sidebar-selected-org* name)
+               (save-key-pair name kp)
+               (save-org-index!)
+               (log-append! `(span (@ (class "result-text"))
+                                   ,(string-append "Created org: " name "\n  key: " pk-display "\n")))))))
      #t)
     (('enter! (? string? name))
      (let ((org (org-lookup name)))
@@ -905,6 +959,10 @@
                    (else (cons (car lst) (loop (cdr lst)))))))
            (when (and *sidebar-selected-org* (string=? name *sidebar-selected-org*))
              (set! *sidebar-selected-org* #f))
+           ;; Clean up localStorage
+           (ls-remove-item (string-append "xorg-" name))
+           (delete-key-pair name)
+           (save-org-index!)
            (log-append! `(span (@ (class "result-text")) ,(string-append "Deleted org: " name "\n"))))
          (log-append! `(span (@ (class "error-text")) ,(string-append "Unknown org: " name "\n"))))
      #t)
@@ -1442,6 +1500,27 @@
      ((and (string=? key "k") (ctrl-or-cmd? event))
       (prevent-default! event) (focus-element! (get-element-by-id "expression"))))))
 
+;;; ── Restore persisted orgs from localStorage ──────────────────────────────
+(let ((index (load-org-index)))
+  (for-each
+   (lambda (name)
+     (when (string? name)
+       (let* ((kp (if (has-preloaded-key-pair? name)
+                      (get-preloaded-key-pair name)
+                      (generate-key-pair)))
+              (store (make-local-storage-store (string-append "xorg-" name))))
+         (receive (vat org inbox incanter refs)
+           (make-persistent-org name base-bindings store
+                                #:persistence-registry *persistence-registry*)
+           (set! *orgs* (cons (list name vat org inbox incanter kp refs) *orgs*))))))
+   index)
+  (unless (null? *orgs*)
+    (set! *log* (cons `(span (@ (class "result-text"))
+                             ,(string-append "Restored "
+                                             (number->string (length *orgs*))
+                                             " org(s) from browser storage.\n"))
+                      *log*))))
+
 (refresh!)
 (add-event-listener!/wrap (document-body) "keydown" global-keydown)
 
@@ -1454,7 +1533,7 @@
 (define (register-all-keys!)
   "Send all local orgs' public keys to the relay."
   (when (and *ws* *connected?*)
-    (let ((keys (map (lambda (e) (list-ref e 5)) *orgs*)))
+    (let ((keys (map (lambda (e) (key-pair->public-key (org-entry-key-pair e))) *orgs*)))
       (unless (null? keys)
         (ws-send *ws* (call-with-output-string
                         (lambda (p) (write `(register-keys ,keys) p))))))))

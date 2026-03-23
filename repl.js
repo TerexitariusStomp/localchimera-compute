@@ -1,5 +1,27 @@
 window.addEventListener("load", async () => {
   try {
+    // Pre-load key pairs from localStorage BEFORE WASM starts.
+    // crypto.subtle.importKey is async, but we can await here in JS.
+    // This makes keys available synchronously to Scheme via getPreloadedKeyPair.
+    const preloadedKeyPairs = {};
+    try {
+      const orgNames = (localStorage.getItem("xorg-index") || "")
+        .split(",").filter(Boolean);
+      const fromHex = hex =>
+        new Uint8Array(hex.match(/.{2}/g).map(b => parseInt(b, 16)));
+      for (const name of orgNames) {
+        const stored = localStorage.getItem("xorg-kp-" + name);
+        if (stored) {
+          const [pubHex, privHex] = stored.split(":");
+          const publicKey = await crypto.subtle.importKey(
+            "raw", fromHex(pubHex), { name: "Ed25519" }, true, ["verify"]);
+          const privateKey = await crypto.subtle.importKey(
+            "pkcs8", fromHex(privHex), { name: "Ed25519" }, true, ["sign"]);
+          preloadedKeyPairs[name] = { publicKey, privateKey };
+        }
+      }
+    } catch(e) { console.error("Key preload error:", e); }
+
     await Scheme.load_main("repl.wasm", {
       user_imports: {
         document: {
@@ -104,6 +126,28 @@ window.addEventListener("load", async () => {
               { name: "Ed25519" }, key, data
             );
             return new Uint8Array(buf);
+          },
+          // Key pair persistence — save is fire-and-forget, load is pre-loaded
+          saveKeyPair(name, keyPair) {
+            const toHex = buf => [...new Uint8Array(buf)]
+              .map(b => b.toString(16).padStart(2, '0')).join('');
+            Promise.all([
+              crypto.subtle.exportKey("raw", keyPair.publicKey),
+              crypto.subtle.exportKey("pkcs8", keyPair.privateKey)
+            ]).then(([pubBuf, privBuf]) => {
+              localStorage.setItem("xorg-kp-" + name,
+                toHex(pubBuf) + ":" + toHex(privBuf));
+            }).catch(e => console.error("saveKeyPair error:", e));
+          },
+          getPreloadedKeyPair(name) {
+            return preloadedKeyPairs[name] || null;
+          },
+          hasPreloadedKeyPair(name) {
+            return name in preloadedKeyPairs ? 1 : 0;
+          },
+          deleteKeyPair(name) {
+            localStorage.removeItem("xorg-kp-" + name);
+            delete preloadedKeyPairs[name];
           }
         },
         webSocket: {
@@ -136,6 +180,11 @@ window.addEventListener("load", async () => {
             // Send asynchronously, outside any Scheme call stack
             setTimeout(() => { try { ws.send(msg); } catch(e) { console.error("relay send:", e); } }, 0);
           }
+        },
+        localStorage: {
+          getItem(key) { return localStorage.getItem(key); },
+          setItem(key, value) { localStorage.setItem(key, value); },
+          removeItem(key) { localStorage.removeItem(key); }
         }
       }
     });
