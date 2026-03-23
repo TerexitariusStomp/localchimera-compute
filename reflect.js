@@ -145,7 +145,7 @@ class Struct extends HeapObject { toString() { return "#<struct>"; } }
 
 function instantiate_streaming(path, imports) {
     if (typeof fetch !== 'undefined' && typeof window !== 'undefined')
-        return fetch(path).then(r => r.arrayBuffer()).then(buf => WebAssembly.instantiate(buf, imports));
+        return WebAssembly.instantiateStreaming(fetch(path), imports);
     let bytes;
     if (typeof read !== 'undefined') {
         bytes = read(path, 'binary');

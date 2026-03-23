@@ -1423,9 +1423,13 @@
   "webSocket" "setOnClose"
   (ref extern) (ref extern) -> none)
 
-(define *relay-url* (url-param-get "relay"))
+(define *relay-url*
+  (let ((param (url-param-get "relay")))
+    (if (and (string? param) (> (string-length param) 0))
+        param
+        "wss://xorg-relay.fly.dev")))
 
-;; Auto-connect to relay if URL has ?relay=ws://...
+;; Auto-connect to relay (default: xorg-relay.fly.dev, override with ?relay=ws://...)
 ;; Registration happens later when user enters an org (in do-enter!)
 (when (and (string? *relay-url*) (> (string-length *relay-url*) 0))
   (let ((ws (ws-open *relay-url*)))
