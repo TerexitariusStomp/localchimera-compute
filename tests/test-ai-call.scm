@@ -3,7 +3,8 @@
 
 ;;; test-ai-call.scm — Actually call the AI API to verify it works
 
-(add-to-load-path "module")
+(define %project-root (string-append (dirname (current-filename)) "/.."))
+(add-to-load-path (string-append %project-root "/module"))
 
 (use-modules (xorg ai)
              (xorg org)
@@ -28,7 +29,7 @@
 
 (display "\n=== Testing AI API Call ===\n\n")
 
-(load-env-file ".env")
+(load-env-file (string-append %project-root "/.env"))
 (set-ai-api-key! (getenv "OPENROUTER_API_KEY"))
 
 (display "Creating org with Goblins vat...\n")

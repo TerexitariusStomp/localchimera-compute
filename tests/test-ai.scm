@@ -3,7 +3,8 @@
 
 ;;; test-ai.scm — Quick test of AI integration in xorg
 
-(add-to-load-path "module")
+(define %project-root (string-append (dirname (current-filename)) "/.."))
+(add-to-load-path (string-append %project-root "/module"))
 
 (use-modules (xorg ai)
              (xorg gplay)

@@ -3,7 +3,8 @@
 
 ;;; test-ai-working.scm — Working AI test with proper org handling and .env loading
 
-(add-to-load-path "module")
+(define %project-root (string-append (dirname (current-filename)) "/.."))
+(add-to-load-path (string-append %project-root "/module"))
 
 (use-modules (xorg ai)
              (xorg org)
@@ -33,7 +34,7 @@
 
 ;;; Load .env
 (display "Loading .env file...\n")
-(load-env-file ".env")
+(load-env-file (string-append %project-root "/.env"))
 
 ;;; Check API key
 (let ((key (or (getenv "OPENROUTER_API_KEY") #f)))

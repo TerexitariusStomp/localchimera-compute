@@ -5,7 +5,8 @@
 ;;;
 ;;; This creates an AI agent and has it actually act within an org
 
-(add-to-load-path "module")
+(define %project-root (string-append (dirname (current-filename)) "/.."))
+(add-to-load-path (string-append %project-root "/module"))
 
 (use-modules (xorg ai)
              (xorg ai-agent)
@@ -33,7 +34,7 @@
 (display "║          AI Agent Test - Organizations as Intelligence        ║\n")
 (display "╚═══════════════════════════════════════════════════════════════╝\n\n")
 
-(load-env ".env")
+(load-env (string-append %project-root "/.env"))
 (set-ai-api-key! (getenv "OPENROUTER_API_KEY"))
 
 (display "1. Creating organization...\n")

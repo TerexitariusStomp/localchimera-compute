@@ -1,7 +1,9 @@
 ;;; test-gplay.scm — tests for (xorg gplay)
-;;; Run with:  guile -L module test-gplay.scm
+;;; Run with:  guile -L module tests/test-gplay.scm
 
-(add-to-load-path "module")
+(define %project-root (string-append (dirname (current-filename)) "/.."))
+(add-to-load-path (string-append %project-root "/module"))
+
 (use-modules (xorg gplay)
              (goblins)
              (goblins actor-lib methods)

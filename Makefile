@@ -18,8 +18,13 @@ relay:
 server:
 	guile -L module xorg-server.scm
 
+test: test-gplay test-play
+
+test-play:
+	guile -L module tests/test.scm
+
 test-gplay:
-	guile -L module test-gplay.scm
+	guile -L module tests/test-gplay.scm
 
 clean:
 	rm repl.wasm

@@ -1,12 +1,15 @@
 #!/usr/bin/env guile
 !#
 
-(add-to-load-path "module")
+(define %project-root (string-append (dirname (current-filename)) "/.."))
+(add-to-load-path (string-append %project-root "/module"))
+
 (use-modules (xorg ai) (xorg ai-agent) (xorg org) (goblins) (ice-9 rdelim))
 
 ;; Load .env
-(when (file-exists? ".env")
-  (call-with-input-file ".env"
+(define %env-file (string-append %project-root "/.env"))
+(when (file-exists? %env-file)
+  (call-with-input-file %env-file
     (lambda (port)
       (let loop ()
         (let ((line (read-line port)))

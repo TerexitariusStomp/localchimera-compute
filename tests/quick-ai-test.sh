@@ -23,6 +23,9 @@ echo ""
 echo "Press Ctrl-D when done to exit"
 echo ""
 
+# Run from project root
+cd "$(dirname "$0")/.."
+
 # Create a test script that will be piped into the REPL
 cat <<'EOF' | guile xorg-repl.scm
 (use-modules (xorg ai))

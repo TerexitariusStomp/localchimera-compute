@@ -3,7 +3,8 @@
 
 ;;; test-ai-simple.scm — Simple test to verify AI module loads
 
-(add-to-load-path "module")
+(define %project-root (string-append (dirname (current-filename)) "/.."))
+(add-to-load-path (string-append %project-root "/module"))
 
 (use-modules (xorg ai))
 
