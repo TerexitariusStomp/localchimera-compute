@@ -23,9 +23,13 @@
 ;;; Wraps output to a specific port. Hoot-compatible: methods only,
 ;;; no direct port operations at actor level.
 
-(define (^output-port bcom port)
-  "Output capability — writes only to the specific port it was given.
-   Hoot-compatible: methods only, no direct port operations at actor level."
+(define-actor (^output-port bcom port)
+  #:version 1
+  #:portrait
+  (lambda () (list 'stdout))
+  #:restore
+  (lambda (version _marker)
+    (spawn ^output-port (current-output-port)))
   (methods
    [(display val)           (display val port)           (if #f #f)]
    [(write val)             (write val port)             (if #f #f)]

@@ -12,6 +12,7 @@
                                                   captp-public-key->crypto-public-key))
   #:use-module (rnrs bytevectors)
   #:use-module (xorg endorsement)
+  #:use-module ((xorg capabilities) #:select (^output-port))
   #:use-module (ice-9 match)
   #:use-module (ice-9 receive)
   #:export (^org
@@ -37,7 +38,8 @@
             *inbox-incanter*
             ancestor-chain
             entry->signing-bytes
-            verify-history-entry)
+            verify-history-entry
+            *restore-base-bindings*)
   #:re-export (generate-key-pair
                key-pair->public-key))
 
@@ -109,6 +111,21 @@
           (if (procedure? (cdr pair))
               (loop (cdr rest) acc)
               (loop (cdr rest) (cons pair acc)))))))
+
+(define (filter-serializable-expressor-store store)
+  "Strip keypairs from expressor-store for persistence.
+   Keypairs are opaque crypto objects that can't be serialized.
+   Only the public-key (an S-expression) survives persistence."
+  (map (lambda (entry)
+         (cons (car entry)
+               (map (lambda (pair)
+                      (if (and (eq? (car pair) 'keypair)
+                               (cdr pair)
+                               (not (eq? (cdr pair) #f)))
+                          (cons 'keypair #f)
+                          pair))
+                    (cdr entry))))
+       store))
 
 (define (call-validator vproc expressor name value pre post)
   "Call a validator — handles both plain procedures and actor refs."
@@ -194,7 +211,7 @@
                              sig))
                      entry))
                history)
-          expressor-store current-expressor
+          (filter-serializable-expressor-store expressor-store) current-expressor
           head-version org-public-key
           print-log
           output-cap
@@ -750,6 +767,20 @@ output-cap: ^output-port actor ref for IO delegation (or #f for none)."
                        org current-expressor)))
          (evaluate result-expr org local-bindings current-expressor))))
 
+    ;; ai-eval-as — evaluate AI result under a different expressor's authority
+    (('ai-eval-as sealer-expr prompt-expr)
+     (let* ((sealer (evaluate sealer-expr org local-bindings current-expressor))
+            (ai-id  ($ org 'authenticate-sealer sealer))
+            (prompt (evaluate prompt-expr org local-bindings current-expressor))
+            (handler *ai-eval-handler*))
+       (unless ai-id
+         (error "ai-eval-as: invalid sealer"))
+       (unless handler
+         (error "No AI eval handler installed"))
+       (let ((result-expr (handler prompt org ai-id)))
+         ;; Run the AI's expression AS the AI expressor
+         (evaluate result-expr org local-bindings ai-id))))
+
     ;; process-message — process an inbox message and evaluate its expression
     (('process-message msg-id-expr)
      (unless (*inbox*)
@@ -954,7 +985,8 @@ can unseal."
      (((xorg gplay) ^expressor-controller) ,^expressor-controller)
      (((xorg gplay) ^ref-store) ,^ref-store)
      (((xorg endorsement) ^name-predicate) ,^name-predicate)
-     (((xorg endorsement) ^faceted-validator) ,^faceted-validator))
+     (((xorg endorsement) ^faceted-validator) ,^faceted-validator)
+     (((xorg capabilities) ^output-port) ,^output-port))
    #:extends (list ward-env sealers-env)))
 
 (define* (make-persistent-org name base-bindings store
