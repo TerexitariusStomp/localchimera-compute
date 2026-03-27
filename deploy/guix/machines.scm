@@ -33,7 +33,7 @@
   (environment hetzner-environment-type)
   (configuration
    (hetzner-configuration
-    (server-type "cpx11")    ;; 2 vCPU, 2GB RAM, 40GB disk — cheapest x86
+    (server-type "cax11")    ;; 2 vCPU ARM64, 4GB RAM, 40GB disk — cheapest available in nbg1
     (location "nbg1")        ;; Nuremberg
     (ssh-key %ssh-key)
     (labels '(("managed-by" . "guix")))))))
