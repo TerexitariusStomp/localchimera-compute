@@ -136,7 +136,6 @@
     ;; Endorsement / capability governance
     (make-endorsement-authority . ,make-endorsement-authority)
     (endorse                    . ,endorse)
-    (endorsed?                  . ,endorsed?)
     (endorsed-with?             . ,endorsed-with?)
     (endorsed-value             . ,endorsed-value)
     (make-facet                 . ,make-facet)
@@ -151,18 +150,12 @@
 
 (define (make-org name vat output-cap validator base-bindings)
   "Create an org. Must be called within (with-vat vat ...) context.
-   name:          string identifier
-   vat:           the Goblins vat (all actors — output-cap, org, sealers — live here)
-   output-cap:    an ^output-port capability already spawned in this vat
-   validator:     the validator procedure (use default-validator for open orgs)
-   base-bindings: initial bindings alist"
-  (let* ((io-bindings
-          `((display . ,(lambda (val) ($ output-cap 'display val)))
-            (write   . ,(lambda (val) ($ output-cap 'write val)))
-            (newline . ,(lambda ()    ($ output-cap 'newline)))
-            (format  . ,(lambda (fmt . args) (apply $ output-cap 'format fmt args)))))
-         (full-bindings (append io-bindings base-bindings))
-         (ref (make-initial-org full-bindings #:validator validator)))
+   output-cap: ^output-port actor ref — stored directly in ^org, not in bindings.
+   IO primitives (display, write, newline, format) are delegated to output-cap
+   at lookup time, not baked into bindings as closures."
+  (let ((ref (make-initial-org base-bindings
+                               #:validator validator
+                               #:output-cap output-cap)))
     (let ((org (%make-org name vat ref)))
       (register-org! org)
       org)))
@@ -188,7 +181,10 @@
    - member-seal: governs 'member-* names — expressors, roles, admissions
 
    Ungoverned names: freely modifiable by anyone.
-   Governed names: require endorsed value (endorse value seal-proc).
+   Governed names: require endorsed value (endorse value seal-actor).
+
+   All sealers and validators are Goblins actor refs — fully serializable
+   by Goblins persistence. No closure wrappers.
 
    Example:
      (define-values (org gov infra member) (make-governed-org \"my-org\"))
@@ -198,20 +194,19 @@
   (let ((vat (spawn-vat)))
     (with-vat vat
       (receive (seal-gov _unseal-gov sealed-gov?)
-        (make-endorsement-authority 'governance)
+        (make-endorsement-authority)
         (receive (seal-infra _unseal-infra sealed-infra?)
-          (make-endorsement-authority 'infrastructure)
+          (make-endorsement-authority)
           (receive (seal-member _unseal-member sealed-member?)
-            (make-endorsement-authority 'membership)
-            (let* ((validator
-                    (make-faceted-validator
-                     (list
-                      (make-facet (name-set-predicate '(validator rollback))
-                                  sealed-gov?)
-                      (make-facet (name-prefix-predicate "infra-")
-                                  sealed-infra?)
-                      (make-facet (name-prefix-predicate "member-")
-                                  sealed-member?))))
+            (make-endorsement-authority)
+            (let* ((gov-pred    (name-set-predicate '(validator rollback)))
+                   (infra-pred  (name-prefix-predicate "infra-"))
+                   (member-pred (name-prefix-predicate "member-"))
+                   (gov-facet    (make-facet gov-pred    sealed-gov?))
+                   (infra-facet  (make-facet infra-pred  sealed-infra?))
+                   (member-facet (make-facet member-pred sealed-member?))
+                   (validator    (spawn ^faceted-validator
+                                        (list gov-facet infra-facet member-facet)))
                    (out (spawn ^output-port (current-output-port)))
                    (org (make-org name vat out validator default-base-bindings)))
               (values org seal-gov seal-infra seal-member))))))))

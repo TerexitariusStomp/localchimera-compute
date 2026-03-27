@@ -20,6 +20,7 @@
             make-persistent-org
             gplay-env
             default-validator
+            call-validator
             next-version
             make-id
             *current-caller*
@@ -109,6 +110,12 @@
               (loop (cdr rest) acc)
               (loop (cdr rest) (cons pair acc)))))))
 
+(define (call-validator vproc expressor name value pre post)
+  "Call a validator — handles both plain procedures and actor refs."
+  (if (procedure? vproc)
+      (vproc expressor name value pre post)
+      ($ vproc expressor name value pre post)))
+
 ;;; ── History entry signing ──────────────────────────────────────────────────
 
 (define (entry->signing-bytes version expressor-id expression parent-version)
@@ -168,8 +175,9 @@
 
 (define-actor (^org bcom bindings validator-expr validator-proc
                     history expressor-store current-expressor base-bindings
-                    head-version org-public-key print-log)
-  #:version 4
+                    head-version org-public-key print-log
+                    output-cap)
+  #:version 5
   #:portrait
   (lambda ()
     (list (filter-serializable-bindings bindings)
@@ -179,14 +187,18 @@
                      (let ((snap (list-ref entry 4))
                            (sig (if (>= (length entry) 6) (list-ref entry 5) #f)))
                        (list (car entry) (cadr entry) (caddr entry) (cadddr entry)
-                             (list (filter-serializable-bindings (car snap))
-                                   (cadr snap))
+                             (let ((vp (if (>= (length snap) 3) (caddr snap) #f)))
+                               (list (filter-serializable-bindings (car snap))
+                                     (cadr snap)
+                                     (if (or (not vp) (procedure? vp)) #f vp)))
                              sig))
                      entry))
                history)
           expressor-store current-expressor
           head-version org-public-key
-          print-log))
+          print-log
+          output-cap
+          (if (procedure? validator-proc) #f validator-proc)))
   #:restore
   (lambda (version data-bindings vexpr history estore cur-exp . rest)
     (let* ((base (*restore-base-bindings*))
@@ -195,16 +207,22 @@
                    (cadr rest) '(none)))
            (pl (if (and (not (null? rest)) (>= (length rest) 3))
                    (caddr rest) '()))
+           (oc (if (>= (length rest) 4) (list-ref rest 3) #f))
+           (vactor (if (>= (length rest) 5) (list-ref rest 4) #f))
+           (restored-vproc (or vactor
+                               (%restore-eval vexpr (%restore-interaction-env))))
            (restored-history
             (map (lambda (entry)
                    (if (and (>= (length entry) 5)
                             (let ((s (list-ref entry 4)))
-                              (and (list? s) (= (length s) 2))))
+                              (and (list? s) (>= (length s) 2))))
                        (let* ((snap (list-ref entry 4))
                               (sig (if (>= (length entry) 6) (list-ref entry 5) #f))
                               (snap-vexpr (cadr snap))
-                              (snap-vproc (%restore-eval snap-vexpr
-                                                         (%restore-interaction-env))))
+                              (snap-vactor (if (>= (length snap) 3) (caddr snap) #f))
+                              (snap-vproc (or snap-vactor
+                                              (%restore-eval snap-vexpr
+                                                             (%restore-interaction-env)))))
                          (list (car entry) (cadr entry) (caddr entry) (cadddr entry)
                                (list (append (car snap) base)
                                      snap-vexpr snap-vproc)
@@ -214,12 +232,21 @@
       (spawn ^org
              (append data-bindings base)
              vexpr
-             (%restore-eval vexpr (%restore-interaction-env))
+             restored-vproc
              restored-history estore cur-exp
-             base hv pk pl)))
+             base hv pk pl
+             oc)))
 
   (define (lookup name)
     (cond ((assq name bindings) => cdr)
+          ((and output-cap (eq? name 'display))
+           (lambda (v) ($ output-cap 'display v)))
+          ((and output-cap (eq? name 'write))
+           (lambda (v) ($ output-cap 'write v)))
+          ((and output-cap (eq? name 'newline))
+           (lambda () ($ output-cap 'newline)))
+          ((and output-cap (eq? name 'format))
+           (lambda (fmt . args) (apply $ output-cap 'format fmt args)))
           (else (error "Variable unbound:" name))))
 
   (define (expressor-ref id)
@@ -282,7 +309,8 @@
                   new-bindings validator-expr validator-proc
                   (cons (append new-history-entry (list snapshot sig)) history)
                   expressor-store current-expressor base-bindings
-                  (car new-history-entry) org-public-key print-log)))]
+                  (car new-history-entry) org-public-key print-log
+                  output-cap)))]
 
    [(enact! new-validator-expr new-validator-proc new-history-entry)
     (let* ((snapshot (list bindings new-validator-expr new-validator-proc))
@@ -291,7 +319,8 @@
                   new-validator-expr new-validator-proc
                   (cons (append new-history-entry (list snapshot sig)) history)
                   expressor-store current-expressor base-bindings
-                  (car new-history-entry) org-public-key print-log)))]
+                  (car new-history-entry) org-public-key print-log
+                  output-cap)))]
 
    [(register-expressor! id data new-history-entry)
     (let* ((snapshot (list bindings validator-expr validator-proc))
@@ -301,12 +330,14 @@
                   (cons (append new-history-entry (list snapshot sig)) history)
                   (cons (cons id data) expressor-store)
                   current-expressor base-bindings
-                  (car new-history-entry) org-public-key print-log)))]
+                  (car new-history-entry) org-public-key print-log
+                  output-cap)))]
 
    [(with-expressor exp)
     (bcom (^org bcom bindings validator-expr validator-proc
                 history expressor-store exp base-bindings
-                head-version org-public-key print-log))]
+                head-version org-public-key print-log
+                output-cap))]
 
    [(rollback! target-version)
     (let loop ((h history))
@@ -317,7 +348,8 @@
           (bcom (^org bcom
                       (car snapshot) (cadr snapshot) (caddr snapshot)
                       history expressor-store current-expressor base-bindings
-                      target-version org-public-key print-log))))
+                      target-version org-public-key print-log
+                      output-cap))))
        (else (loop (cdr h)))))]
 
    [(log-expression! head-ver expressor expr result-str)
@@ -331,15 +363,17 @@
                           (loop (cdr lst) (- n 1) (cons (car lst) acc))))))
       (bcom (^org bcom bindings validator-expr validator-proc
                   history expressor-store current-expressor base-bindings
-                  head-version org-public-key trimmed)))]))
+                  head-version org-public-key trimmed
+                  output-cap)))]))
 
 ;;; ── Factory ─────────────────────────────────────────────────────────────────
 
 (define* (make-initial-org base-bindings #:key (public-key #f)
-                           (validator default-validator))
+                           (validator default-validator) (output-cap #f))
   "Spawn a fresh ^org actor with a public key and optional custom validator.
 Must be called within a vat.
-The public key is accessible via the org's (public-key) method."
+The public key is accessible via the org's (public-key) method.
+output-cap: ^output-port actor ref for IO delegation (or #f for none)."
   (let* ((pk (or public-key '(none)))
          (genesis-id (make-id 'genesis))
          (genesis-data `((id . ,genesis-id)
@@ -364,7 +398,8 @@ The public key is accessible via the org's (public-key) method."
            base-bindings
            0
            pk
-           '())))
+           '()
+           output-cap)))
 
 ;;; ── Rollback helpers ────────────────────────────────────────────────────────
 
@@ -475,7 +510,7 @@ The public key is accessible via the org's (public-key) method."
             (version (next-version))
             (entry (list version current-expressor `(define ,name ,value-expr)
                          ($ org 'head-version))))
-       (if (validator current-expressor name value pre-bindings post-bindings)
+       (if (call-validator validator current-expressor name value pre-bindings post-bindings)
            (begin ($ org 'modify! name value entry)
                   (if #f #f))
            (error "Validation failed:" current-expressor name value))))
@@ -579,7 +614,7 @@ The public key is accessible via the org's (public-key) method."
                 (entry (list version current-expressor
                              `(defexpressor ,name-expr ,key-expr)
                              ($ org 'head-version))))
-           (if (validator current-expressor eval-name id bindings bindings)
+           (if (call-validator validator current-expressor eval-name id bindings bindings)
                (begin ($ org 'register-expressor! id data entry)
                       sealer)
                (error "Validation failed:" current-expressor eval-name))))))
@@ -603,7 +638,7 @@ The public key is accessible via the org's (public-key) method."
             (entry (list version current-expressor
                          `(modify! ,name-expr ,value-expr)
                          ($ org 'head-version))))
-       (if (validator current-expressor name value pre-bindings post-bindings)
+       (if (call-validator validator current-expressor name value pre-bindings post-bindings)
            (begin ($ org 'modify! name value entry)
                   (if #f #f))
            (error "Validation failed:" current-expressor name value))))
@@ -622,12 +657,12 @@ The public key is accessible via the org's (public-key) method."
             ;; With default-validator this always passes (backward compatible).
             ;; With faceted validator governing 'validator, endorsement is required.
             (check-value (or endorsement new-proc)))
-       (unless (validator current-expressor 'validator check-value
-                          ($ org 'bindings) ($ org 'bindings))
+       (unless (call-validator validator current-expressor 'validator check-value
+                               ($ org 'bindings) ($ org 'bindings))
          (error "Current validator rejected enact!" current-expressor))
        ;; Metacircular: new validator must accept its own installation
-       (unless (new-proc current-expressor 'validator new-proc
-                         ($ org 'bindings) ($ org 'bindings))
+       (unless (call-validator new-proc current-expressor 'validator new-proc
+                               ($ org 'bindings) ($ org 'bindings))
          (error "Validator rejected by itself:" current-expressor new-proc))
        ($ org 'enact! validator-expr new-proc entry)
        (if #f #f)))
@@ -641,8 +676,8 @@ The public key is accessible via the org's (public-key) method."
             ;; Pass endorsement (if any) or target as value to validator.
             ;; Backward compatible: without endorsement, same as before.
             (check-value (or endorsement target)))
-       (unless (validator current-expressor 'rollback check-value
-                          ($ org 'bindings) ($ org 'bindings))
+       (unless (call-validator validator current-expressor 'rollback check-value
+                               ($ org 'bindings) ($ org 'bindings))
          (error "Rollback rejected:" target))
        ($ org 'rollback! target)
        (if #f #f)))
@@ -917,7 +952,9 @@ can unseal."
      (((xorg gplay) ^org-inbox) ,^org-inbox)
      (((xorg gplay) ^expressor-identity) ,^expressor-identity)
      (((xorg gplay) ^expressor-controller) ,^expressor-controller)
-     (((xorg gplay) ^ref-store) ,^ref-store))
+     (((xorg gplay) ^ref-store) ,^ref-store)
+     (((xorg endorsement) ^name-predicate) ,^name-predicate)
+     (((xorg endorsement) ^faceted-validator) ,^faceted-validator))
    #:extends (list ward-env sealers-env)))
 
 (define* (make-persistent-org name base-bindings store
