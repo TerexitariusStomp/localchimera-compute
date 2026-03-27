@@ -11,7 +11,7 @@
 ;;;
 ;;; On subsequent deploys, it reconfigures the running system.
 
-(add-to-load-path (dirname (current-filename)))
+;; Load path set via -L flag: guix deploy -L deploy/guix ...
 
 (use-modules (gnu machine)
              (gnu machine hetzner)
@@ -33,7 +33,7 @@
   (environment hetzner-environment-type)
   (configuration
    (hetzner-configuration
-    (server-type "cx22")     ;; 2 vCPU, 4GB RAM, 40GB disk
+    (server-type "cpx11")    ;; 2 vCPU, 2GB RAM, 40GB disk — cheapest x86
     (location "nbg1")        ;; Nuremberg
     (ssh-key %ssh-key)
     (labels '(("managed-by" . "guix")))))))
