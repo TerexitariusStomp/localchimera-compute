@@ -17,7 +17,6 @@
              (gnu machine hetzner)
              (base-system))
 
-;; TODO: set your SSH key path
 (define %ssh-key "~/.ssh/id_ed25519")
 
 (list

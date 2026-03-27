@@ -32,7 +32,7 @@
 
 ;; TODO: replace with your actual SSH public key
 (define %admin-ssh-public-key
-  "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA... user@host")
+  "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICTLO20IW4Ej9qhXYGnfy0yc8RlvMLEkR+MG39nyK5mq nozomi-laptop")
 
 ;; Minimal Emacs config for Geiser + Goblins hacking.
 ;; Deployed to /home/deploy/.emacs.d/init.el via activation service.

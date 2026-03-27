@@ -6,10 +6,9 @@
 (list
  (channel
   (name 'guix)
-  (url "https://git.savannah.gnu.org/git/guix.git")
+  (url "https://codeberg.org/guix/guix")
   (branch "master")
-  ;; TODO: fill in with output of: guix describe --format=channels
-  (commit "REPLACE_WITH_CURRENT_GUIX_COMMIT")
+  (commit "3ec53494a0f9c49e6cbc6864eedb102820915075")
   (introduction
    (make-channel-introduction
     "9edb3f66fd807b096b48283debdcddccfea34bad"
