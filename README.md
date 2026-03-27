@@ -68,7 +68,17 @@ The default validator accepts everything. You replace it with `enact!`. The meta
 
 ### History
 
-Every change produces a history entry: a version number, the expressor, the expression evaluated, and a pointer to its parent. The ledger is append-only. Because entries store the original expressions as data, the organization's past is not merely recorded — it is **replayable**.
+Not every expression leaves a trace. `(+ 1 2)` is evaluated and its result displayed, but the org forgets it immediately. Only expressions that **change state** — `define`, `modify!`, `enact!`, `defexpressor`, `rollback!` — produce history entries. History is the org's mutation log, not its print log.
+
+Each entry is an attributed position in expression-space:
+
+```
+(version  expressor-id  expression  parent-version  snapshot)
+```
+
+**Who** (the expressor), **what** (the expression), and **where** (the parent version — the head of the org at the time of evaluation). The snapshot captures the org's full state (bindings, validator) after the transition, enabling rollback without replay.
+
+Because each entry points to its parent, history forms a **tree**, not a chain. Rollback creates branches — the org can diverge from any prior state, and the abandoned branch remains in history. `show-history` walks the ancestor chain from the current head back to version 0, showing only the active branch.
 
 ### Rollback
 
@@ -87,7 +97,7 @@ The metacircular closure is complete:
 - **The evaluator evaluates itself.** The language that defines the organization is the language the organization operates in.
 - **Validators validate themselves.** `enact!` must pass the current validator to install a new one. The rules for changing the rules are subject to the current rules.
 - **Expressors create expressors.** Identities within the system bring new identities into being — the org grows itself.
-- **History is its own source code.** Each entry is the S-expression that produced it, paired with a snapshot of the state it produced. The org's past is not a log — it is a program.
+- **History is its own source code.** Each entry carries the expression that produced it, the expressor who authored it, and the position in expression-space where it was evaluated. The org's past is not a log — it is a tree of attributed transitions.
 
 ## Play and Meta-Play
 
@@ -106,7 +116,9 @@ The metacircular closure is complete:
 
 ## The Evaluator
 
-`evaluate` is a small Lisp interpreter. It understands:
+The org operates as a REPL — read, evaluate, print, loop. The browser reads input, the evaluator evaluates it, and results are displayed. But not all expressions are equal: pure computations like `(+ 1 2)` are evaluated and forgotten, while mutating forms (`define`, `modify!`, `enact!`, `defexpressor`) produce history entries. The evaluator is the org's interpreter — history is its mutation log, not its print log.
+
+`evaluate` understands:
 
 | Form                            | Effect                                             |
 | ------------------------------- | -------------------------------------------------- |

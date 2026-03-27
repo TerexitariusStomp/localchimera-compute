@@ -1,64 +1,30 @@
+;;; module/xorg/ai.scm — AI integration for xorg via capabilities
+;;;
+;;; Provides ^ai-capability: a Goblins actor wrapping AI query access.
+;;; The org holds this capability; expressors use it through org bindings.
+;;;
+;;; openrouter-chat now takes an http-client capability as first argument
+;;; instead of reading global mutable state.
+;;;
+;;; Pure utility functions (format-org-context, format-org-state,
+;;; strip-code-fences) remain unchanged — they format strings, no IO.
+;;;
+;;; Backward compatibility: on module load, set-ai-handler! is called
+;;; with closures that delegate to the capability when one is installed
+;;; via install-ai-capability!, or error if none is set.
+
 (define-module (xorg ai)
   #:use-module (goblins)
+  #:use-module (goblins actor-lib methods)
   #:use-module (xorg gplay)
-  #:use-module (web client)
-  #:use-module (web response)
-  #:use-module (rnrs bytevectors)
-  #:use-module (ice-9 rdelim)
   #:use-module (json)
-  #:export (current-ai-api-key
-            current-ai-model
-            set-ai-api-key!
-            set-ai-model!
-            load-ai-key-from-env!
-            ai-query
-            ai-query-and-eval
+  #:export (^ai-capability
+            make-ai-capability
             format-org-context
             format-org-state
             strip-code-fences
-            openrouter-chat))
-
-;;; ── API key & model management ─────────────────────────────────────────────
-
-;; Auto-load from .env file if it exists
-(define (try-load-env-file)
-  (when (file-exists? ".env")
-    (catch #t
-      (lambda ()
-        (call-with-input-file ".env"
-          (lambda (port)
-            (let loop ()
-              (let ((line (read-line port)))
-                (unless (eof-object? line)
-                  (let ((trimmed (string-trim-both line)))
-                    (unless (or (string-null? trimmed) (string-prefix? "#" trimmed))
-                      (let ((parts (string-split trimmed #\=)))
-                        (when (= (length parts) 2)
-                          (setenv (string-trim-both (car parts))
-                                  (string-trim-both (cadr parts)))))))
-                  (loop)))))))
-      (lambda args #f))))
-
-;; Try to load .env on module initialization
-(try-load-env-file)
-
-(define current-ai-api-key (make-parameter (or (getenv "OPENROUTER_API_KEY") #f)))
-(define current-ai-model   (make-parameter "google/gemini-3-flash-preview"))
-
-(define (set-ai-api-key! key)
-  (current-ai-api-key key))
-
-(define (set-ai-model! model)
-  (current-ai-model model))
-
-(define (load-ai-key-from-env!)
-  "Load API key from OPENROUTER_API_KEY environment variable"
-  (let ((key (getenv "OPENROUTER_API_KEY")))
-    (if key
-        (begin
-          (set-ai-api-key! key)
-          (display "✓ Loaded API key from OPENROUTER_API_KEY\n"))
-        (display "⚠ No OPENROUTER_API_KEY in environment\n"))))
+            openrouter-chat
+            install-ai-capability!))
 
 ;;; ── Context formatter ──────────────────────────────────────────────────────
 
@@ -131,59 +97,29 @@ Returns #f if expressor has no name."
            (lambda () ($ ref 'lookup config-key))
            (lambda _ #f)))))
 
-;;; ── HTTP client ────────────────────────────────────────────────────────────
+;;; ── HTTP client (capability-based) ─────────────────────────────────────────
 
-(define (openrouter-chat system-prompt user-prompt)
-  "POST a chat completion request to OpenRouter. Returns the assistant message content."
-  (let ((api-key (current-ai-api-key)))
-    (unless api-key
-      (error "No API key set. Use (set-api-key! \"sk-or-...\") or export OPENROUTER_API_KEY."))
-    (let* ((body (scm->json-string
-                  `((model . ,(current-ai-model))
-                    (messages . #(((role . "system")
-                                   (content . ,system-prompt))
-                                  ((role . "user")
-                                   (content . ,user-prompt))))))))
-      (call-with-values
-          (lambda ()
-            (http-post "https://openrouter.ai/api/v1/chat/completions"
-                       #:body (string->utf8 body)
-                       #:headers
-                       `((content-type . (application/json))
-                         (authorization . (bearer ,(string->symbol api-key)))
-                         (user-agent . "xorg/0.1"))
-                       #:streaming? #f
-                       #:decode-body? #f
-                       #:verify-certificate? #f))
-        (lambda (response body-bv)
-          (let* ((body-str (if (bytevector? body-bv)
-                               (utf8->string body-bv)
-                               body-bv))
-                 (json     (json-string->scm body-str))
-                 (choices  (assoc-ref json "choices")))
-            (unless (and choices (> (vector-length choices) 0))
-              (error "OpenRouter returned no choices:" body-str))
-            (assoc-ref (assoc-ref (vector-ref choices 0) "message") "content")))))))
+(define (openrouter-chat http-client model system-prompt user-prompt)
+  "POST a chat completion request to OpenRouter via an http-client capability.
+   http-client: an ^http-client capability actor reference
+   model: string like \"google/gemini-flash-2.0\"
+   system-prompt: string
+   user-prompt: string
+   Returns the assistant message content string."
+  (let* ((body (scm->json-string
+                `((model . ,model)
+                  (messages . #(((role . "system")
+                                 (content . ,system-prompt))
+                                ((role . "user")
+                                 (content . ,user-prompt)))))))
+         (response-str ($ http-client 'post "/chat/completions" body))
+         (json     (json-string->scm response-str))
+         (choices  (assoc-ref json "choices")))
+    (unless (and choices (> (vector-length choices) 0))
+      (error "OpenRouter returned no choices:" response-str))
+    (assoc-ref (assoc-ref (vector-ref choices 0) "message") "content")))
 
-;;; ── Query functions ────────────────────────────────────────────────────────
-;;;
-;;; Context-aware: when the current expressor has a name:prompt binding,
-;;; it's used as the system prompt preamble. When it has a name:model
-;;; binding, it overrides the AI model. Otherwise, the generic "AI assistant"
-;;; context and default model are used.
-
-(define (ai-query prompt ref expressor-id)
-  "Send PROMPT to OpenRouter with org context. Returns a string.
-If the current expressor has a name:prompt binding, uses it as the system prompt."
-  (let* ((custom-prompt (lookup-expressor-config ref expressor-id 'prompt))
-         (custom-model  (lookup-expressor-config ref expressor-id 'model))
-         (system-prompt (if custom-prompt
-                            (string-append custom-prompt "\n\n" (format-org-state ref))
-                            (format-org-context ref))))
-    (if custom-model
-        (parameterize ((current-ai-model custom-model))
-          (openrouter-chat system-prompt prompt))
-        (openrouter-chat system-prompt prompt))))
+;;; ── strip-code-fences ──────────────────────────────────────────────────────
 
 (define (strip-code-fences str)
   "Remove markdown code fences (```scheme ... ``` or ``` ... ```) from STR."
@@ -203,10 +139,58 @@ If the current expressor has a name:prompt binding, uses it as the system prompt
                       stripped)))
     (string-trim-both stripped)))
 
-(define (ai-query-and-eval prompt ref expressor-id)
-  "Send PROMPT to OpenRouter, instructing the AI to return a single S-expression.
-Strips markdown fences, parses with read, and returns the parsed expression.
-If the current expressor has a name:prompt binding, uses it as the system prompt."
+;;; ── ^ai-capability ─────────────────────────────────────────────────────────
+
+(define (^ai-capability bcom http-client default-model)
+  "A capability actor for AI queries. The org holds this; expressors use it.
+   http-client: an ^http-client capability actor
+   default-model: string like \"google/gemini-flash-2.0\""
+  (methods
+   [(query system-prompt user-prompt)
+    (openrouter-chat http-client default-model system-prompt user-prompt)]
+   [(query-with-model model system-prompt user-prompt)
+    (openrouter-chat http-client model system-prompt user-prompt)]
+   [(model) default-model]))
+
+(define (make-ai-capability vat http-client default-model)
+  "Convenience: spawn an ^ai-capability in VAT."
+  (with-vat vat (spawn ^ai-capability http-client default-model)))
+
+;;; ── Capability-backed query functions ──────────────────────────────────────
+;;;
+;;; These closures are installed as the gplay.scm AI handlers via
+;;; set-ai-handler! / set-ai-eval-handler!. They delegate to the
+;;; currently installed ^ai-capability.
+
+(define *current-ai-capability* #f)
+
+(define (install-ai-capability! ai-cap)
+  "Install an ^ai-capability actor as the backing for (ai ...) and (ai-eval ...)
+   in gplay.scm. Call this after spawning the capability."
+  (set! *current-ai-capability* ai-cap)
+  ;; Wire into gplay.scm's handler globals
+  (set-ai-handler! ai-query-via-capability)
+  (set-ai-eval-handler! ai-query-and-eval-via-capability))
+
+(define (ai-query-via-capability prompt ref expressor-id)
+  "Send PROMPT to AI with org context, using the installed ^ai-capability."
+  (unless *current-ai-capability*
+    (error "No AI capability installed. Use install-ai-capability! first."))
+  (let* ((custom-prompt (lookup-expressor-config ref expressor-id 'prompt))
+         (custom-model  (lookup-expressor-config ref expressor-id 'model))
+         (system-prompt (if custom-prompt
+                            (string-append custom-prompt "\n\n" (format-org-state ref))
+                            (format-org-context ref))))
+    (if custom-model
+        ($ *current-ai-capability* 'query-with-model
+           custom-model system-prompt prompt)
+        ($ *current-ai-capability* 'query system-prompt prompt))))
+
+(define (ai-query-and-eval-via-capability prompt ref expressor-id)
+  "Send PROMPT to AI, instructing it to return a single S-expression.
+   Strips markdown fences, parses with read, returns the parsed expression."
+  (unless *current-ai-capability*
+    (error "No AI capability installed. Use install-ai-capability! first."))
   (let* ((custom-prompt (lookup-expressor-config ref expressor-id 'prompt))
          (custom-model  (lookup-expressor-config ref expressor-id 'model))
          (system-prompt
@@ -223,14 +207,15 @@ If the current expressor has a name:prompt binding, uses it as the system prompt
            "Example: (modify! 'budget 50000)\n"
            "For multiple changes: (begin (modify! 'a 1) (modify! 'b 2))"))
          (response (if custom-model
-                       (parameterize ((current-ai-model custom-model))
-                         (openrouter-chat system-prompt prompt))
-                       (openrouter-chat system-prompt prompt)))
+                       ($ *current-ai-capability* 'query-with-model
+                          custom-model system-prompt prompt)
+                       ($ *current-ai-capability* 'query system-prompt prompt)))
          (cleaned  (strip-code-fences response)))
     (call-with-input-string cleaned read)))
 
 ;;; ── Handler registration ───────────────────────────────────────────────────
-;;; Set the gplay.scm handlers so (ai ...) and (ai-eval ...) work in evaluate.
+;;; Install capability-backed handlers. These will error with a clear message
+;;; if (ai ...) is used before install-ai-capability! is called.
 
-(set-ai-handler! ai-query)
-(set-ai-eval-handler! ai-query-and-eval)
+(set-ai-handler! ai-query-via-capability)
+(set-ai-eval-handler! ai-query-and-eval-via-capability)

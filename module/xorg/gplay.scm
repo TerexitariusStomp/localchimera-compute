@@ -143,8 +143,8 @@
 
 (define-actor (^org bcom bindings validator-expr validator-proc
                     history expressor-store current-expressor base-bindings
-                    head-version org-public-key)
-  #:version 3
+                    head-version org-public-key print-log)
+  #:version 4
   #:portrait
   (lambda ()
     (list (filter-serializable-bindings bindings)
@@ -158,13 +158,16 @@
                      entry))
                history)
           expressor-store current-expressor
-          head-version org-public-key))
+          head-version org-public-key
+          print-log))
   #:restore
   (lambda (version data-bindings vexpr history estore cur-exp . rest)
     (let* ((base (*restore-base-bindings*))
            (hv (if (null? rest) (car (car history)) (car rest)))
            (pk (if (and (not (null? rest)) (not (null? (cdr rest))))
                    (cadr rest) '(none)))
+           (pl (if (and (not (null? rest)) (>= (length rest) 3))
+                   (caddr rest) '()))
            (restored-history
             (map (lambda (entry)
                    (if (and (>= (length entry) 5)
@@ -183,7 +186,7 @@
              vexpr
              (%restore-eval vexpr (%restore-interaction-env))
              restored-history estore cur-exp
-             base hv pk)))
+             base hv pk pl)))
 
   (define (lookup name)
     (cond ((assq name bindings) => cdr)
@@ -204,6 +207,7 @@
    [(base-bindings) base-bindings]
    [(head-version) head-version]
    [(public-key) org-public-key]
+   [(print-log) print-log]
    [(expressor? id) (and (expressor-ref id) #t)]
    [(expressor-name id)
     (let ((d (expressor-ref id)))
@@ -235,7 +239,7 @@
                   new-bindings validator-expr validator-proc
                   (cons (append new-history-entry (list snapshot)) history)
                   expressor-store current-expressor base-bindings
-                  (car new-history-entry) org-public-key)))]
+                  (car new-history-entry) org-public-key print-log)))]
 
    [(enact! new-validator-expr new-validator-proc new-history-entry)
     (let ((snapshot (list bindings new-validator-expr new-validator-proc)))
@@ -243,7 +247,7 @@
                   new-validator-expr new-validator-proc
                   (cons (append new-history-entry (list snapshot)) history)
                   expressor-store current-expressor base-bindings
-                  (car new-history-entry) org-public-key)))]
+                  (car new-history-entry) org-public-key print-log)))]
 
    [(register-expressor! id data new-history-entry)
     (let ((snapshot (list bindings validator-expr validator-proc)))
@@ -252,12 +256,12 @@
                   (cons (append new-history-entry (list snapshot)) history)
                   (cons (cons id data) expressor-store)
                   current-expressor base-bindings
-                  (car new-history-entry) org-public-key)))]
+                  (car new-history-entry) org-public-key print-log)))]
 
    [(with-expressor exp)
     (bcom (^org bcom bindings validator-expr validator-proc
                 history expressor-store exp base-bindings
-                head-version org-public-key))]
+                head-version org-public-key print-log))]
 
    [(rollback! target-version)
     (let loop ((h history))
@@ -268,8 +272,21 @@
           (bcom (^org bcom
                       (car snapshot) (cadr snapshot) (caddr snapshot)
                       history expressor-store current-expressor base-bindings
-                      target-version org-public-key))))
-       (else (loop (cdr h)))))]))
+                      target-version org-public-key print-log))))
+       (else (loop (cdr h)))))]
+
+   [(log-expression! head-ver expressor expr result-str)
+    (let* ((entry (list head-ver expressor expr result-str))
+           (new-log (cons entry print-log))
+           (limit (cond ((assq '*log-limit* bindings) => cdr)
+                        (else 100)))
+           (trimmed (let loop ((lst new-log) (n limit) (acc '()))
+                      (if (or (null? lst) (<= n 0))
+                          (reverse acc)
+                          (loop (cdr lst) (- n 1) (cons (car lst) acc))))))
+      (bcom (^org bcom bindings validator-expr validator-proc
+                  history expressor-store current-expressor base-bindings
+                  head-version org-public-key trimmed)))]))
 
 ;;; ── Factory ─────────────────────────────────────────────────────────────────
 
@@ -295,7 +312,8 @@ The public key is accessible via the org's (public-key) method."
            genesis-id
            base-bindings
            0
-           pk)))
+           pk
+           '())))
 
 ;;; ── Rollback helpers ────────────────────────────────────────────────────────
 
@@ -656,9 +674,21 @@ The public key is accessible via the org's (public-key) method."
   #:frozen
   (methods
    [(evaluate expr)
-    (evaluate expr org-ref '() expressor-id)]
+    (let ((result (evaluate expr org-ref '() expressor-id)))
+      (let ((result-str (if (eq? result (if #f #f)) ""
+                            (call-with-output-string
+                              (lambda (p) (write result p))))))
+        ($ org-ref 'log-expression!
+           ($ org-ref 'head-version) expressor-id expr result-str))
+      result)]
    [(evaluate-with-locals expr locals)
-    (evaluate expr org-ref locals expressor-id)]
+    (let ((result (evaluate expr org-ref locals expressor-id)))
+      (let ((result-str (if (eq? result (if #f #f)) ""
+                            (call-with-output-string
+                              (lambda (p) (write result p))))))
+        ($ org-ref 'log-expression!
+           ($ org-ref 'head-version) expressor-id expr result-str))
+      result)]
    [(seal content) ($ sealer content)]
    [(expressor-id) expressor-id]))
 

@@ -847,8 +847,15 @@
             (log-append! `(span (@ (class "output-text")) ,out-str))))
         (let ((err-port (open-output-string)))
           (format-exception exn err-port)
-          (log-append! `(span (@ (class "error-text"))
-                              ,(get-output-string err-port)))))
+          (let ((err-str (get-output-string err-port)))
+            (log-append! `(span (@ (class "error-text")) ,err-str))
+            ;; Log the error to the org's print log
+            (with-vat *vat*
+              ($ *org* 'log-expression!
+                 ($ *org* 'head-version)
+                 ($ *org* 'current-expressor)
+                 exp
+                 (string-append "error: " err-str))))))
       (lambda ()
         (parameterize ((current-output-port output))
           (with-vat *vat*
@@ -856,13 +863,21 @@
               (let ((out-str (get-output-string output)))
                 (unless (string=? out-str "")
                   (log-append! `(span (@ (class "output-text")) ,out-str))))
-              (unless (eq? result (if #f #f))
-                (let ((result-port (open-output-string)))
-                  (if (string? result)
-                      (display result result-port)
-                      (write result result-port))
+              (let ((result-str
+                     (if (eq? result (if #f #f))
+                         ""
+                         (let ((p (open-output-string)))
+                           (if (string? result) (display result p) (write result p))
+                           (get-output-string p)))))
+                (unless (string=? result-str "")
                   (log-append! `(span (@ (class "result-text"))
-                                      ,(string-append "=> " (get-output-string result-port) "\n")))))))))
+                                      ,(string-append "=> " result-str "\n"))))
+                ;; Log to the org's print log
+                ($ *org* 'log-expression!
+                   ($ *org* 'head-version)
+                   ($ *org* 'current-expressor)
+                   exp
+                   result-str))))))
       #:unwind? #t)
     ;; Update code viewer after evaluation (outside with-vat to avoid nesting)
     (update-code-viewer!)))
