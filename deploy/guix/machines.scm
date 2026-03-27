@@ -17,7 +17,7 @@
              (gnu machine hetzner)
              (base-system))
 
-(define %ssh-key "~/.ssh/id_ed25519")
+(define %ssh-key "/home/nozomi/.ssh/id_ed25519")
 
 (list
  ;; Generic base server — no application services yet.
