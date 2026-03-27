@@ -291,23 +291,28 @@
 
 ;;; ── Factory ─────────────────────────────────────────────────────────────────
 
-(define* (make-initial-org base-bindings #:key (public-key #f))
-  "Spawn a fresh ^org actor with a public key. Must be called within a vat.
+(define* (make-initial-org base-bindings #:key (public-key #f)
+                           (validator default-validator))
+  "Spawn a fresh ^org actor with a public key and optional custom validator.
+Must be called within a vat.
 The public key is accessible via the org's (public-key) method."
   (let* ((pk (or public-key '(none)))
          (genesis-id (make-id 'genesis))
          (genesis-data `((id . ,genesis-id)
                          (name . genesis)
                          (public-key . ,pk)))
+         (validator-expr (if (eq? validator default-validator)
+                             '(lambda (e n v pre post) #t)
+                             '(custom-validator)))
          (initial-history (list (list 0 genesis-id '(quote initial) 0
                                       (list base-bindings
-                                            '(lambda (e n v pre post) #t)
-                                            default-validator))))
+                                            validator-expr
+                                            validator))))
          (initial-store (list (cons genesis-id genesis-data))))
     (spawn ^org
            base-bindings
-           '(lambda (e n v pre post) #t)
-           default-validator
+           validator-expr
+           validator
            initial-history
            initial-store
            genesis-id

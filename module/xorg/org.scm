@@ -1,15 +1,23 @@
 ;;; org.scm — Org management and inner REPL for xorg (Goblins actor-based)
-;;; Provides org record type, base bindings, and the two-tier REPL inner loop.
+;;;
+;;; Three ways to create an org:
+;;;   make-org          — explicit: you provide output-cap, validator, bindings
+;;;   make-open-org     — open org with stdout and default-validator
+;;;   make-governed-org — canonical cap-governed org with three governance domains
 
 (define-module (xorg org)
   #:use-module (goblins)
   #:use-module (xorg gplay)
   #:use-module (xorg endorsement)
+  #:use-module (xorg capabilities)
   #:use-module (ice-9 match)
   #:use-module (ice-9 pretty-print)
+  #:use-module (ice-9 receive)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-9)
   #:export (make-org
+            make-open-org
+            make-governed-org
             org?
             org-name
             org-vat
@@ -18,8 +26,7 @@
             org-history
             enter!
             list-orgs
-            default-base-bindings
-            make-org-ai-agent))
+            default-base-bindings))
 
 ;;; ── Org record type ────────────────────────────────────────────────────────
 
@@ -123,11 +130,7 @@
     ;; Predicates (extended)
     (eqv?           . ,eqv?)
     (char?          . ,char?)
-    ;; I/O
-    (display        . ,display)
-    (newline        . ,newline)
-    (write          . ,write)
-    (format         . ,format)
+    ;; I/O — wired per-org via ^output-port capability (see make-org)
     ;; Convenience
     (void           . ,(lambda () (if #f #f)))
     ;; Endorsement / capability governance
@@ -144,12 +147,72 @@
 
 ;;; ── Org creation ───────────────────────────────────────────────────────────
 
-(define* (make-org name #:optional (bindings default-base-bindings))
-  (let* ((vat (spawn-vat))
-         (ref (with-vat vat (make-initial-org bindings))))
+(define (make-org name vat output-cap validator base-bindings)
+  "Create an org. Must be called within (with-vat vat ...) context.
+   name:          string identifier
+   vat:           the Goblins vat (all actors — output-cap, org, sealers — live here)
+   output-cap:    an ^output-port capability already spawned in this vat
+   validator:     the validator procedure (use default-validator for open orgs)
+   base-bindings: initial bindings alist"
+  (let* ((io-bindings
+          `((display . ,(lambda (val) ($ output-cap 'display val)))
+            (write   . ,(lambda (val) ($ output-cap 'write val)))
+            (newline . ,(lambda ()    ($ output-cap 'newline)))
+            (format  . ,(lambda (fmt . args) (apply $ output-cap 'format fmt args)))))
+         (full-bindings (append io-bindings base-bindings))
+         (ref (make-initial-org full-bindings #:validator validator)))
     (let ((org (%make-org name vat ref)))
       (register-org! org)
       org)))
+
+(define (make-open-org name)
+  "Create an open org with default validator and stdout output.
+   Everything is freely modifiable. Good for experimentation."
+  (let ((vat (spawn-vat)))
+    (with-vat vat
+      (let ((out (spawn ^output-port (current-output-port))))
+        (make-org name vat out default-validator default-base-bindings)))))
+
+;;; ── Governed org factory ──────────────────────────────────────────────────
+
+(define (make-governed-org name)
+  "Create a capability-governed org.
+
+   Returns (values org gov-seal infra-seal member-seal)
+
+   Three governance domains:
+   - gov-seal:    governs 'validator and 'rollback — constitutional amendments
+   - infra-seal:  governs 'infra-* names — deployment, services, servers
+   - member-seal: governs 'member-* names — expressors, roles, admissions
+
+   Ungoverned names: freely modifiable by anyone.
+   Governed names: require endorsed value (endorse value seal-proc).
+
+   Example:
+     (define-values (org gov infra member) (make-governed-org \"my-org\"))
+     (with-vat (org-vat org)
+       (evaluate '(modify! 'infra-deploy (endorse deploy-cap infra))
+                 (org-ref org) '() genesis-id))"
+  (let ((vat (spawn-vat)))
+    (with-vat vat
+      (receive (seal-gov _unseal-gov sealed-gov?)
+        (make-endorsement-authority 'governance)
+        (receive (seal-infra _unseal-infra sealed-infra?)
+          (make-endorsement-authority 'infrastructure)
+          (receive (seal-member _unseal-member sealed-member?)
+            (make-endorsement-authority 'membership)
+            (let* ((validator
+                    (make-faceted-validator
+                     (list
+                      (make-facet (name-set-predicate '(validator rollback))
+                                  sealed-gov?)
+                      (make-facet (name-prefix-predicate "infra-")
+                                  sealed-infra?)
+                      (make-facet (name-prefix-predicate "member-")
+                                  sealed-member?))))
+                   (out (spawn ^output-port (current-output-port)))
+                   (org (make-org name vat out validator default-base-bindings)))
+              (values org seal-gov seal-infra seal-member))))))))
 
 ;;; ── Org accessors ──────────────────────────────────────────────────────────
 
@@ -185,7 +248,7 @@
     (_ #f)))
 
 (define (handle-comma-command cmd ref)
-  "Handle ,command in the inner REPL. CMD is a symbol. Returns #t if handled."
+  "Handle ,command in the inner REPL."
   (case cmd
     ((env)
      (pretty-print ($ ref 'bindings))
@@ -232,20 +295,16 @@
             (force-output)
             (let ((raw (read)))
               (cond
-               ;; EOF (Ctrl-D)
                ((eof-object? raw)
                 (newline)
                 (format #t "Leaving org '~a'.\n" name))
 
-               ;; (exit!) — return to outer REPL
                ((equal? raw '(exit!))
                 (format #t "Leaving org '~a'.\n" name))
 
-               ;; (quit) — also exit
                ((equal? raw '(quit))
                 (format #t "Leaving org '~a'.\n" name))
 
-               ;; Comma-commands (,env, ,history, etc.)
                ((comma-command? raw)
                 => (lambda (cmd)
                      (if (handle-comma-command cmd ref)
@@ -254,7 +313,6 @@
                            (format #t "Unknown command: ,~a\n" cmd)
                            (loop)))))
 
-               ;; Normal expression evaluation
                (else
                 (let ((result (evaluate raw ref '() ($ ref 'current-expressor))))
                   (unless (eq? result (if #f #f))
@@ -265,38 +323,3 @@
           (lambda (key . args)
             (format-error key args)
             (loop)))))))
-
-;;; ── AI Expressor ─────────────────────────────────────────────────────────
-
-(define* (make-org-ai-agent org name key system-prompt #:key (model #f))
-  "Create an AI expressor with config bindings in the org.
-Returns the sealer — use with (as sealer ...) to act as this agent.
-
-The system prompt and model are stored as org bindings (name:prompt,
-name:model) that (ai ...) and (ai-eval ...) automatically pick up.
-These bindings are visible, subject to the validator, and modifiable
-by any authorized expressor.
-
-  Usage:
-    (define my-org (make-org \"test\"))
-    (define ai-sealer
-      (make-org-ai-agent my-org 'ai-gov \"key\" \"You govern wisely.\"))
-    ;; Then inside the org:
-    (as ai-sealer (ai-eval \"Create a proposal\"))
-    ;; Inspect or change the AI:
-    ai-gov:prompt                                   ;=> \"You govern wisely.\"
-    (modify! 'ai-gov:prompt \"Be cautious.\")"
-  (with-vat (org-vat org)
-    (let* ((ref (org-ref org))
-           (genesis-id ($ ref 'current-expressor))
-           (sealer (evaluate `(defexpressor ',name ,key)
-                             ref '() genesis-id))
-           (ai-id ($ ref 'authenticate-sealer sealer))
-           (prompt-sym (string->symbol
-                        (string-append (symbol->string name) ":prompt")))
-           (model-sym  (string->symbol
-                        (string-append (symbol->string name) ":model"))))
-      (evaluate `(modify! ',prompt-sym ,system-prompt) ref '() ai-id)
-      (when model
-        (evaluate `(modify! ',model-sym ,model) ref '() ai-id))
-      sealer)))

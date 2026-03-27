@@ -1,126 +1,99 @@
-;;; module/xorg/services.scm — Service and deployer capability actors for xorg
+;;; module/xorg/services.scm — Service and deployment capabilities for xorg
 ;;;
-;;; Defines Goblins actor interfaces for controlling Shepherd services
-;;; and running guix deploy. The backing is subprocess calls today;
-;;; when Shepherd×Goblins lands, the interfaces stay the same and only
-;;; the backing swaps.
+;;; Minimal, cap-correct public API:
+;;;   ^service-cap          — full service capability for a named Shepherd service
+;;;   make-service-cap      — convenience constructor
+;;;   attenuate-service-cap — structural restriction to subset of actions
+;;;   ^deploy-cap           — deployment capability pre-bound to one config file
+;;;   make-deploy-cap       — convenience constructor
 ;;;
-;;; All actors use define-actor / methods from (goblins actor-lib methods).
+;;; Possession IS authorization. No ACL lists, no registries.
 
 (define-module (xorg services)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
   #:use-module (ice-9 popen)
   #:use-module (ice-9 rdelim)
-  #:export (^service-capability
-            ^service-registry
-            ^system-deployer
-            make-subprocess-service-control
-            make-subprocess-deployer))
+  #:use-module (rnrs io ports)
+  #:export (^service-cap
+            make-service-cap
+            ^attenuated-service-cap
+            attenuate-service-cap
+            ^deploy-cap
+            make-deploy-cap))
 
-;;; ── ^service-capability ────────────────────────────────────────────────────
-;;;
-;;; Wraps control of a single named service.
-;;;
-;;; TODO Shepherd×Goblins: replace control-proc with a direct Goblins actor
-;;; reference to the Shepherd service actor. The methods stay identical;
-;;; only the backing changes from subprocess to ($ shepherd-service-actor 'start).
+;;; ── ^service-cap ────────────────────────────────────────────────────────────
 
-(define (^service-capability bcom service-name control-proc)
-  "Capability actor wrapping a single service.
-   service-name: string, e.g. \"nginx\"
-   control-proc: (lambda (action service-name) ...) where action is
-                 one of 'start 'stop 'status 'restart"
+(define (^service-cap bcom service-name)
+  "Full capability for a named Shepherd service.
+   TODO Shepherd×Goblins: replace herd subprocess with direct actor reference."
+  (define (herd action)
+    (system* "herd" (symbol->string action) service-name))
+  (define (herd-output action)
+    (let* ((port (open-input-pipe
+                  (string-append "herd " (symbol->string action)
+                                 " " service-name " 2>&1")))
+           (out  (read-string port)))
+      (close-pipe port)
+      out))
   (methods
-   [(start)   (control-proc 'start   service-name)]
-   [(stop)    (control-proc 'stop    service-name)]
-   [(restart) (control-proc 'restart service-name)]
-   [(status)  (control-proc 'status  service-name)]
+   [(start)   (herd 'start)]
+   [(stop)    (herd 'stop)]
+   [(restart) (herd 'restart)]
+   [(status)  (herd-output 'status)]
    [(name)    service-name]))
 
-;;; ── make-subprocess-service-control ────────────────────────────────────────
-;;;
-;;; Returns a control-proc that calls herd via subprocess.
-;;; Safe: can only call herd, nothing else.
+(define (make-service-cap vat service-name)
+  "Spawn a full ^service-cap in VAT for service-name."
+  (with-vat vat (spawn ^service-cap service-name)))
 
-(define (make-subprocess-service-control)
-  "Returns a control-proc suitable for ^service-capability.
-   Calls (system* \"herd\" action service-name) and returns the exit code,
-   or for 'status reads the output."
-  (lambda (action service-name)
-    (let ((action-str (symbol->string action)))
-      (if (eq? action 'status)
-          ;; For status, capture output
-          (let* ((port (open-input-pipe
-                        (string-append "herd " action-str " " service-name
-                                       " 2>&1")))
-                 (output (let loop ((lines '()))
-                           (let ((line (read-line port)))
-                             (if (eof-object? line)
-                                 (string-join (reverse lines) "\n")
-                                 (loop (cons line lines)))))))
-            (close-pipe port)
-            output)
-          ;; For start/stop/restart, just run and return exit code
-          (system* "herd" action-str service-name)))))
+;;; ── ^attenuated-service-cap ─────────────────────────────────────────────────
 
-;;; ── ^service-registry ──────────────────────────────────────────────────────
-;;;
-;;; Holds multiple named service capabilities. The host org uses this to
-;;; manage all services and grant sub-capabilities to tenant orgs.
-;;;
-;;; TODO Shepherd×Goblins: this becomes a thin wrapper over the Shepherd
-;;; service registry actor, auto-populating from the running system.
+(define (^attenuated-service-cap bcom base-cap allowed-set)
+  "Structurally attenuated service cap — only messages in allowed-set work.
+   Attempting any other action is an error."
+  (lambda (msg . args)
+    (if (memv msg allowed-set)
+        (apply $ base-cap msg args)
+        (error "This capability does not include" msg))))
 
-(define (^service-registry bcom services-alist)
-  "Registry of named service capabilities.
-   services-alist: ((name . ^service-capability-ref) ...)"
+(define (attenuate-service-cap vat base-cap . allowed)
+  "Structural attenuation — only allowed actions exist on this capability.
+   Example: (attenuate-service-cap vat nginx-cap 'start 'status)"
+  (with-vat vat (spawn ^attenuated-service-cap base-cap allowed)))
+
+;;; ── file-sha256-str ─────────────────────────────────────────────────────────
+
+(define (file-sha256-str path)
+  "Content fingerprint for path. Uses gcrypt sha256 if available, else mtime:size."
+  (let* ((port (open-input-file path))
+         (data (get-bytevector-all port)))
+    (close-port port)
+    (catch #t
+      (lambda ()
+        (let ((sha256 (@@ (gcrypt hash) sha256))
+              (bv->hex (@@ (gcrypt hash) bytevector->hex-string)))
+          (bv->hex (sha256 data))))
+      (lambda _
+        (let ((st (stat path)))
+          (string-append (number->string (stat:mtime st))
+                         ":" (number->string (stat:size st))))))))
+
+;;; ── ^deploy-cap ─────────────────────────────────────────────────────────────
+
+(define (^deploy-cap bcom config-path fingerprint)
+  "Deployment capability pre-bound to exactly one config file.
+   Possession IS authorization. Content-verified at deploy time.
+   TODO Shepherd×Goblins: replace subprocess with Guix actor reference."
   (methods
-   [(get name)
-    (let ((pair (assoc name services-alist)))
-      (if pair (cdr pair) #f))]
-   [(names)
-    (map car services-alist)]
-   [(add name cap)
-    (bcom (^service-registry bcom
-                             (cons (cons name cap) services-alist)))]))
+   [(deploy)
+    (if (equal? (file-sha256-str config-path) fingerprint)
+        (system* "guix" "deploy" config-path)
+        (error "Config modified since authorization — re-create this capability"
+               config-path))]
+   [(config) config-path]))
 
-;;; ── ^system-deployer ───────────────────────────────────────────────────────
-;;;
-;;; Capability to run guix deploy with pre-authorized configs.
-;;; The org pre-approves config files by identity (path for now, hash later);
-;;; the deployer enforces that only authorized configs can be deployed.
-;;;
-;;; TODO Shepherd×Goblins: replace deploy-proc with a direct Guix actor
-;;; reference. The deployer becomes a Goblins message:
-;;; ($ guix-deploy-actor 'deploy machines-file)
-
-(define (^system-deployer bcom authorized-configs deploy-proc)
-  "Capability to deploy one of a set of authorized OS configs.
-   authorized-configs: list of ((identity . description) ...) pairs
-                       where identity is a file path (TODO: use sha256 hash)
-   deploy-proc: (lambda (machines-file) ...)"
-  (methods
-   [(deploy machines-file)
-    ;; TODO: replace path identity with file-sha256 hash check
-    (let ((entry (assoc machines-file authorized-configs)))
-      (if entry
-          (deploy-proc machines-file)
-          (error "machines-file not in authorized set" machines-file)))]
-   [(authorize identity description)
-    (bcom (^system-deployer bcom
-                            (cons (cons identity description)
-                                  authorized-configs)
-                            deploy-proc))]
-   [(authorized) authorized-configs]))
-
-;;; ── make-subprocess-deployer ───────────────────────────────────────────────
-
-(define (make-subprocess-deployer)
-  "Returns a deploy-proc that calls (system* \"guix\" \"deploy\" machines-file).
-   Suitable for passing to ^system-deployer."
-  (lambda (machines-file)
-    (let ((exit-code (system* "guix" "deploy" machines-file)))
-      (unless (zero? exit-code)
-        (error "guix deploy failed with exit code" exit-code))
-      exit-code)))
+(define (make-deploy-cap vat config-path)
+  "Create a deployment capability for exactly config-path.
+   Hashes the file now; verifies at deploy time."
+  (with-vat vat (spawn ^deploy-cap config-path (file-sha256-str config-path))))

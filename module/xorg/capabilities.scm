@@ -12,8 +12,34 @@
   #:use-module (goblins actor-lib methods)
   #:export (^http-client
             ^config-provider
+            ^output-port
             make-http-client
-            make-config-provider))
+            make-config-provider
+            make-output-port-cap
+            make-stdout-output-cap))
+
+;;; ── ^output-port ──────────────────────────────────────────────────────────
+;;;
+;;; Wraps output to a specific port. Hoot-compatible: methods only,
+;;; no direct port operations at actor level.
+
+(define (^output-port bcom port)
+  "Output capability — writes only to the specific port it was given.
+   Hoot-compatible: methods only, no direct port operations at actor level."
+  (methods
+   [(display val)           (display val port)           (if #f #f)]
+   [(write val)             (write val port)             (if #f #f)]
+   [(newline)               (newline port)               (if #f #f)]
+   [(format fmt . args)     (apply format port fmt args) (if #f #f)]
+   [(port)                  port]))
+
+(define (make-output-port-cap vat port)
+  "Convenience: spawn an ^output-port in VAT for the given port."
+  (with-vat vat (spawn ^output-port port)))
+
+(define (make-stdout-output-cap vat)
+  "Convenience: spawn an ^output-port writing to current-output-port."
+  (make-output-port-cap vat (current-output-port)))
 
 ;;; ── ^config-provider ───────────────────────────────────────────────────────
 ;;;
