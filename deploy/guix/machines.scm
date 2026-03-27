@@ -87,7 +87,12 @@
                              (respawn? #f)
                              (auto-start? #f))))
 
-      %base-services))))
+      ;; Use bordeaux as primary substitute server (ci.guix.gnu.org is unreliable)
+      (modify-services %base-services
+        (guix-service-type config =>
+          (guix-configuration
+           (inherit config)
+           (substitute-urls '("https://bordeaux.guix.gnu.org")))))))))
 
 (list (machine
        (operating-system %guix-x86)
