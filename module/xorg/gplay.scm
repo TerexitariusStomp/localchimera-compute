@@ -7,6 +7,7 @@
   #:use-module (goblins actor-lib sealers)
   #:use-module (goblins actor-lib ward)
   #:use-module ((goblins utils crypto) #:select (generate-key-pair key-pair->public-key))
+  #:use-module (xorg endorsement)
   #:use-module (ice-9 match)
   #:use-module (ice-9 receive)
   #:export (^org
@@ -549,24 +550,40 @@ The public key is accessible via the org's (public-key) method."
                   (if #f #f))
            (error "Validation failed:" current-expressor name value))))
 
-    ;; enact! — install new validator
-    (('enact! validator-expr)
-     (let* ((new-proc (evaluate validator-expr org local-bindings current-expressor))
-            (version (next-version))
-            (entry (list version current-expressor
-                         `(enact! ,validator-expr)
-                         ($ org 'head-version))))
-       (if (new-proc current-expressor 'validator new-proc
-                     ($ org 'bindings) ($ org 'bindings))
-           (begin ($ org 'enact! validator-expr new-proc entry)
-                  (if #f #f))
-           (error "Validator rejected by itself:" current-expressor new-proc))))
+    ;; enact! — install new validator (optional endorsement for capability governance)
+    (('enact! validator-expr . rest)
+     (let* ((endorsement (if (null? rest) #f
+                             (evaluate (car rest) org local-bindings current-expressor)))
+            (new-proc    (evaluate validator-expr org local-bindings current-expressor))
+            (validator   ($ org 'validator-proc))
+            (version     (next-version))
+            (entry       (list version current-expressor
+                               `(enact! ,validator-expr)
+                               ($ org 'head-version)))
+            ;; Current validator sees endorsement (if any) or new-proc as value.
+            ;; With default-validator this always passes (backward compatible).
+            ;; With faceted validator governing 'validator, endorsement is required.
+            (check-value (or endorsement new-proc)))
+       (unless (validator current-expressor 'validator check-value
+                          ($ org 'bindings) ($ org 'bindings))
+         (error "Current validator rejected enact!" current-expressor))
+       ;; Metacircular: new validator must accept its own installation
+       (unless (new-proc current-expressor 'validator new-proc
+                         ($ org 'bindings) ($ org 'bindings))
+         (error "Validator rejected by itself:" current-expressor new-proc))
+       ($ org 'enact! validator-expr new-proc entry)
+       (if #f #f)))
 
-    ;; rollback! — restore snapshot at target version
-    (('rollback! version-expr)
-     (let* ((target (evaluate version-expr org local-bindings current-expressor))
-            (validator ($ org 'validator-proc)))
-       (unless (validator current-expressor 'rollback target
+    ;; rollback! — restore snapshot at target version (optional endorsement)
+    (('rollback! version-expr . rest)
+     (let* ((target      (evaluate version-expr org local-bindings current-expressor))
+            (endorsement (if (null? rest) #f
+                             (evaluate (car rest) org local-bindings current-expressor)))
+            (validator   ($ org 'validator-proc))
+            ;; Pass endorsement (if any) or target as value to validator.
+            ;; Backward compatible: without endorsement, same as before.
+            (check-value (or endorsement target)))
+       (unless (validator current-expressor 'rollback check-value
                           ($ org 'bindings) ($ org 'bindings))
          (error "Rollback rejected:" target))
        ($ org 'rollback! target)

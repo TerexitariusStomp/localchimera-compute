@@ -4,6 +4,7 @@
 (define-module (xorg org)
   #:use-module (goblins)
   #:use-module (xorg gplay)
+  #:use-module (xorg endorsement)
   #:use-module (ice-9 match)
   #:use-module (ice-9 pretty-print)
   #:use-module (srfi srfi-1)
@@ -128,7 +129,18 @@
     (write          . ,write)
     (format         . ,format)
     ;; Convenience
-    (void           . ,(lambda () (if #f #f)))))
+    (void           . ,(lambda () (if #f #f)))
+    ;; Endorsement / capability governance
+    (make-endorsement-authority . ,make-endorsement-authority)
+    (endorse                    . ,endorse)
+    (endorsed?                  . ,endorsed?)
+    (endorsed-with?             . ,endorsed-with?)
+    (endorsed-value             . ,endorsed-value)
+    (make-facet                 . ,make-facet)
+    (make-faceted-validator     . ,make-faceted-validator)
+    (make-attenuated-authority  . ,make-attenuated-authority)
+    (name-prefix-predicate      . ,name-prefix-predicate)
+    (name-set-predicate         . ,name-set-predicate)))
 
 ;;; ── Org creation ───────────────────────────────────────────────────────────
 
