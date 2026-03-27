@@ -6,7 +6,11 @@
   #:use-module (goblins actor-lib methods)
   #:use-module (goblins actor-lib sealers)
   #:use-module (goblins actor-lib ward)
-  #:use-module ((goblins utils crypto) #:select (generate-key-pair key-pair->public-key))
+  #:use-module ((goblins utils crypto) #:select (generate-key-pair key-pair->public-key
+                                                  sign verify
+                                                  captp-signature->crypto-signature
+                                                  captp-public-key->crypto-public-key))
+  #:use-module (rnrs bytevectors)
   #:use-module (xorg endorsement)
   #:use-module (ice-9 match)
   #:use-module (ice-9 receive)
@@ -31,8 +35,10 @@
             *inbox*
             *inbox-incanter*
             ancestor-chain
-            generate-key-pair
-            key-pair->public-key))
+            entry->signing-bytes
+            verify-history-entry)
+  #:re-export (generate-key-pair
+               key-pair->public-key))
 
 ;;; Hoot/WASM compatibility: eval and interaction-environment are not
 ;;; automatically available in Hoot's module system.
@@ -56,10 +62,19 @@
    (define (%restore-eval vexpr _env)
      (let ((base (*restore-base-bindings*)))
        (evaluate vexpr (spawn ^restore-stub base) base 'restore-genesis)))
-   (define (%restore-interaction-env) #f))
+   (define (%restore-interaction-env) #f)
+   ;; Hoot: crypto signing not available — always produce #f
+   (define (%sign-bytes bytes kp) #f)
+   (define (%verify-sig sig bytes pk) #f))
   (else
    (define %restore-eval eval)
-   (define (%restore-interaction-env) (interaction-environment))))
+   (define (%restore-interaction-env) (interaction-environment))
+   ;; Guile: use real crypto signing
+   (define (%sign-bytes bytes kp) (sign bytes kp))
+   (define (%verify-sig sig bytes pk)
+     (verify (captp-signature->crypto-signature sig)
+             bytes
+             (captp-public-key->crypto-public-key pk)))))
 
 ;;; ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -93,6 +108,15 @@
           (if (procedure? (cdr pair))
               (loop (cdr rest) acc)
               (loop (cdr rest) (cons pair acc)))))))
+
+;;; ── History entry signing ──────────────────────────────────────────────────
+
+(define (entry->signing-bytes version expressor-id expression parent-version)
+  "Serialize history entry fields to bytes for signing/verification."
+  (string->utf8
+   (call-with-output-string
+     (lambda (port)
+       (write (list version expressor-id expression parent-version) port)))))
 
 ;;; ── Version management ──────────────────────────────────────────────────────
 
@@ -152,10 +176,12 @@
           validator-expr
           (map (lambda (entry)
                  (if (>= (length entry) 5)
-                     (let ((snap (list-ref entry 4)))
+                     (let ((snap (list-ref entry 4))
+                           (sig (if (>= (length entry) 6) (list-ref entry 5) #f)))
                        (list (car entry) (cadr entry) (caddr entry) (cadddr entry)
                              (list (filter-serializable-bindings (car snap))
-                                   (cadr snap))))
+                                   (cadr snap))
+                             sig))
                      entry))
                history)
           expressor-store current-expressor
@@ -172,14 +198,17 @@
            (restored-history
             (map (lambda (entry)
                    (if (and (>= (length entry) 5)
-                            (= (length (list-ref entry 4)) 2))
+                            (let ((s (list-ref entry 4)))
+                              (and (list? s) (= (length s) 2))))
                        (let* ((snap (list-ref entry 4))
+                              (sig (if (>= (length entry) 6) (list-ref entry 5) #f))
                               (snap-vexpr (cadr snap))
                               (snap-vproc (%restore-eval snap-vexpr
                                                          (%restore-interaction-env))))
                          (list (car entry) (cadr entry) (caddr entry) (cadddr entry)
                                (list (append (car snap) base)
-                                     snap-vexpr snap-vproc)))
+                                     snap-vexpr snap-vproc)
+                               sig))
                        entry))
                  history)))
       (spawn ^org
@@ -196,6 +225,17 @@
   (define (expressor-ref id)
     (cond ((assq id expressor-store) => cdr)
           (else #f)))
+
+  (define (compute-sig entry)
+    "Sign a history entry using the acting expressor's private key."
+    (let* ((exp-id (cadr entry))
+           (exp-data (expressor-ref exp-id))
+           (kp (and exp-data (assq-ref exp-data 'keypair))))
+      (if kp
+          (%sign-bytes (entry->signing-bytes (car entry) exp-id
+                                             (caddr entry) (cadddr entry))
+                       kp)
+          #f)))
 
   (methods
    [(lookup name) (lookup name)]
@@ -222,6 +262,7 @@
    [(expressor-sealed? id)
     (let ((d (expressor-ref id)))
       (and d (assq-ref d 'sealed?)))]
+   [(expressor-data id) (expressor-ref id)]
 
    [(authenticate-sealer sealer)
     ;; Seal a nonce, then check each expressor's sealed? predicate.
@@ -235,26 +276,29 @@
 
    [(modify! name value new-history-entry)
     (let* ((new-bindings (cons (cons name value) bindings))
-           (snapshot (list new-bindings validator-expr validator-proc)))
+           (snapshot (list new-bindings validator-expr validator-proc))
+           (sig (compute-sig new-history-entry)))
       (bcom (^org bcom
                   new-bindings validator-expr validator-proc
-                  (cons (append new-history-entry (list snapshot)) history)
+                  (cons (append new-history-entry (list snapshot sig)) history)
                   expressor-store current-expressor base-bindings
                   (car new-history-entry) org-public-key print-log)))]
 
    [(enact! new-validator-expr new-validator-proc new-history-entry)
-    (let ((snapshot (list bindings new-validator-expr new-validator-proc)))
+    (let* ((snapshot (list bindings new-validator-expr new-validator-proc))
+           (sig (compute-sig new-history-entry)))
       (bcom (^org bcom bindings
                   new-validator-expr new-validator-proc
-                  (cons (append new-history-entry (list snapshot)) history)
+                  (cons (append new-history-entry (list snapshot sig)) history)
                   expressor-store current-expressor base-bindings
                   (car new-history-entry) org-public-key print-log)))]
 
    [(register-expressor! id data new-history-entry)
-    (let ((snapshot (list bindings validator-expr validator-proc)))
+    (let* ((snapshot (list bindings validator-expr validator-proc))
+           (sig (compute-sig new-history-entry)))
       (bcom (^org bcom
                   bindings validator-expr validator-proc
-                  (cons (append new-history-entry (list snapshot)) history)
+                  (cons (append new-history-entry (list snapshot sig)) history)
                   (cons (cons id data) expressor-store)
                   current-expressor base-bindings
                   (car new-history-entry) org-public-key print-log)))]
@@ -307,7 +351,8 @@ The public key is accessible via the org's (public-key) method."
          (initial-history (list (list 0 genesis-id '(quote initial) 0
                                       (list base-bindings
                                             validator-expr
-                                            validator))))
+                                            validator)
+                                      #f)))  ;; sig=#f — genesis has no keypair
          (initial-store (list (cons genesis-id genesis-data))))
     (spawn ^org
            base-bindings
@@ -512,13 +557,21 @@ The public key is accessible via the org's (public-key) method."
                      caller)))))
 
     ;; defexpressor — create expressor identity with sealer triplet
+    ;; key-expr may be a string (display-only) or a keypair from (generate-key-pair)
     (('defexpressor name-expr key-expr)
      (let* ((eval-name (evaluate name-expr org local-bindings current-expressor))
             (eval-key (evaluate key-expr org local-bindings current-expressor))
-            (id (make-id eval-name)))
+            (id (make-id eval-name))
+            ;; Detect keypair: not a string, pair, or #f — must be opaque crypto object
+            (is-keypair (and eval-key
+                             (not (string? eval-key))
+                             (not (pair? eval-key)))))
        (receive (sealer unsealer sealed?)
          (spawn-sealer-triplet)
-         (let* ((data `((id . ,id) (name . ,eval-name) (public-key . ,eval-key)
+         (let* ((extracted-pk (if is-keypair (key-pair->public-key eval-key) #f))
+                (data `((id . ,id) (name . ,eval-name)
+                        (public-key . ,(or extracted-pk eval-key))
+                        (keypair . ,(if is-keypair eval-key #f))
                         (unsealer . ,unsealer) (sealed? . ,sealed?)))
                 (bindings ($ org 'bindings))
                 (validator ($ org 'validator-proc))
@@ -832,6 +885,28 @@ can unseal."
          (sub-sealer ($ applicant-identity 'subscription-sealer))
          (sealed-controller ($ sub-sealer controller)))
     sealed-controller))
+
+;;; ── History entry verification ──────────────────────────────────────────────
+
+(define (verify-history-entry entry public-key-sexp)
+  "Verify the signature on a history entry.
+   entry: (version expressor-id expression parent-version snapshot sig)
+   public-key-sexp: (public-key (ecc ...)) as returned by key-pair->public-key
+   Returns #t if valid, #f if invalid or no signature."
+  (match entry
+    ((version expressor-id expression parent-version snapshot sig)
+     (if (not sig)
+         #f
+         (catch #t
+           (lambda ()
+             (%verify-sig sig
+                          (entry->signing-bytes version expressor-id
+                                                expression parent-version)
+                          public-key-sexp))
+           (lambda _ #f))))
+    ((version expressor-id expression parent-version snapshot)
+     #f)  ;; 5-element entry (no sig field) — unsigned
+    (_ #f)))
 
 ;;; ── Persistence environment ─────────────────────────────────────────────────
 ;;; Defined after all actors so forward references are resolved.

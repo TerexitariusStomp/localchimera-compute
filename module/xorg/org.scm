@@ -143,7 +143,9 @@
     (make-faceted-validator     . ,make-faceted-validator)
     (make-attenuated-authority  . ,make-attenuated-authority)
     (name-prefix-predicate      . ,name-prefix-predicate)
-    (name-set-predicate         . ,name-set-predicate)))
+    (name-set-predicate         . ,name-set-predicate)
+    ;; Crypto — for expressor keypair generation
+    (generate-key-pair          . ,generate-key-pair)))
 
 ;;; ── Org creation ───────────────────────────────────────────────────────────
 
