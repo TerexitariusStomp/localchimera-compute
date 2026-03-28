@@ -92,7 +92,10 @@
         (guix-service-type config =>
           (guix-configuration
            (inherit config)
-           (substitute-urls '("https://bordeaux.guix.gnu.org")))))))))
+           (substitute-urls '("https://bordeaux.guix.gnu.org"))
+           (authorized-keys
+            (cons (local-file "/etc/guix/signing-key.pub")
+                  (guix-configuration-authorized-keys config))))))))))
 
 (list (machine
        (operating-system %guix-x86)
