@@ -1,0 +1,47 @@
+#!/run/current-system/profile/bin/guile
+!#
+;;; repl-eval — evaluate Scheme in the live playnet REPL
+;;; Usage: repl-eval '(+ 1 2)'
+;;;        echo '(define x 42)' | repl-eval
+;;;
+;;; Deployed to /home/playnet/bin/repl-eval by guix deploy activation.
+
+(use-modules (ice-9 rdelim) (ice-9 textual-ports))
+
+(define socket-path "/var/run/playnet/repl.sock")
+
+(define (eval-in-repl expr)
+  (let ((sock (socket PF_UNIX SOCK_STREAM 0)))
+    (connect sock AF_UNIX socket-path)
+    (usleep 500000)
+    (let loop () (when (char-ready? sock) (read-char sock) (loop)))
+    (display expr sock)
+    (newline sock)
+    (force-output sock)
+    (let ((result '()))
+      (let loop ((deadline 50))
+        (usleep 100000)
+        (let inner ()
+          (when (char-ready? sock)
+            (set! result (cons (read-char sock) result))
+            (inner)))
+        (when (and (> deadline 0)
+                   (or (null? result)
+                       (not (string-contains
+                             (list->string (reverse result))
+                             "scheme@"))))
+          (loop (- deadline 1))))
+      (let* ((full (list->string (reverse result)))
+             (prompt-pos (string-contains full "scheme@")))
+        (display (if prompt-pos
+                     (string-trim-both (substring full 0 prompt-pos))
+                     (string-trim-both full)))
+        (newline)))
+    (close sock)))
+
+(let ((args (cdr (command-line))))
+  (if (null? args)
+      (let ((expr (get-string-all (current-input-port))))
+        (unless (string-null? (string-trim expr))
+          (eval-in-repl expr)))
+      (eval-in-repl (string-join args " "))))

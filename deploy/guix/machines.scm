@@ -33,6 +33,10 @@
 (define %admin-ssh-public-key
   "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICTLO20IW4Ej9qhXYGnfy0yc8RlvMLEkR+MG39nyK5mq nozomi-laptop")
 
+;; Helper script for synchronous REPL eval from the command line.
+(define %repl-eval-script
+  (local-file "../scripts/repl-eval"))
+
 ;; Emacs init.el for the playnet user — deployed via activation service.
 (define %emacs-init-el
   (plain-file "init.el"
@@ -236,21 +240,30 @@
                               (copy-file #$%emacs-init-el init-target)
                               (chown init-target (passwd:uid pw) (passwd:gid pw))
                               (chown emacs-dir (passwd:uid pw) (passwd:gid pw)))
-                            ;; Helper scripts directory
-                            (let ((bin-dir "/home/playnet/bin"))
+                            ;; Helper scripts
+                            (let* ((bin-dir "/home/playnet/bin")
+                                   (repl-eval (string-append bin-dir "/repl-eval")))
                               (mkdir-p bin-dir)
+                              (when (file-exists? repl-eval)
+                                (delete-file repl-eval))
+                              (copy-file #$%repl-eval-script repl-eval)
+                              (chmod repl-eval #o755)
+                              (chown repl-eval (passwd:uid pw) (passwd:gid pw))
                               (chown bin-dir (passwd:uid pw) (passwd:gid pw)))
                             ;; Git repo — clone or pull on each deploy
-                            (let ((repo-dir "/home/playnet/xorg-repo"))
+                            (let ((repo-dir "/home/playnet/xorg-repo")
+                                  (git #$(file-append git "/bin/git")))
                               (if (file-exists? (string-append repo-dir "/.git"))
-                                  (system* #$(file-append git "/bin/git")
-                                           "-C" repo-dir "pull" "--ff-only")
+                                  (system* git "-C" repo-dir "pull" "--ff-only")
                                   (begin
-                                    (system* #$(file-append git "/bin/git")
-                                             "clone"
+                                    (system* git "clone" "-b" "minimal-org"
                                              "https://github.com/interplaynetary/xorg.git"
                                              repo-dir)
-                                    (chown repo-dir (passwd:uid pw) (passwd:gid pw))))))))
+                                    ;; Recursively chown since clone creates as root
+                                    (for-each
+                                      (lambda (f)
+                                        (chown f (passwd:uid pw) (passwd:gid pw)))
+                                      (find-files repo-dir #:directories? #t))))))))
 
       ;; Use bordeaux as primary substitute server (ci.guix.gnu.org is unreliable)
       (modify-services %base-services
