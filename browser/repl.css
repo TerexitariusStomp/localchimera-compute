@@ -305,6 +305,21 @@ h1 {
     tab-size: 2;
 }
 
+/* Terminal mount for xterm.js */
+.terminal-mount {
+    flex: 1;
+    padding: 0;
+    overflow: hidden;
+}
+.terminal-mount .xterm {
+    height: 100%;
+}
+.code-viewer-header .cp-btn {
+    margin-left: 0.5rem;
+    font-size: 9pt;
+    padding: 0.1rem 0.4rem;
+}
+
 /* Adjust main layout to accommodate code viewer */
 body:has(.code-viewer) .ide {
     margin-right: 45%;

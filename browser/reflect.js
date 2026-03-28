@@ -1,3 +1,6 @@
+// Guile Hoot reflection layer — generated from Hoot's JS runtime.
+// Hoot version pinned via deploy/guix/channels.scm (commit 21946173).
+// Do not edit by hand; regenerate when updating Hoot.
 // -*- js2-basic-offset: 4 -*-
 class Char {
     constructor(codepoint) {

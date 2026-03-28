@@ -173,6 +173,29 @@
   "crypto" "exportKey"
   (ref extern) -> (ref extern))
 
+;;; Terminal — xterm.js FFI
+(define-foreign term-create
+  "terminal" "create"
+  (ref null extern) -> (ref null extern))
+(define-foreign term-on-data!
+  "terminal" "onData"
+  (ref null extern) (ref extern) -> none)
+(define-foreign term-write!
+  "terminal" "write"
+  (ref null extern) (ref string) -> none)
+(define-foreign term-cols
+  "terminal" "getCols"
+  (ref null extern) -> i32)
+(define-foreign term-rows
+  "terminal" "getRows"
+  (ref null extern) -> i32)
+(define-foreign term-dispose!
+  "terminal" "dispose"
+  (ref null extern) -> none)
+(define-foreign term-fit!
+  "terminal" "fit"
+  (ref null extern) -> none)
+
 ;;; Voice-to-text — Web Speech API
 (define-foreign %speech-supported?
   "speech" "isSupported"
@@ -628,6 +651,8 @@
 (define *listening?* #f)
 (define *expressing?* #f)  ;; #t during voice→NL→Scheme express flow
 (define *syntax-mode* 'lisp)  ;; 'lisp or 'wisp
+(define *terminal-active?* #f)
+(define *terminal-obj* #f)   ;; xterm.js extern ref
 
 ;; Voice-to-text callbacks
 (define (on-speech-result transcript)
@@ -692,6 +717,40 @@
   (update-code-viewer!)
   (refresh!)
   (scroll-to-bottom!))
+
+(define (open-terminal!)
+  "Open an xterm.js terminal connected to the server via relay."
+  (set! *terminal-active?* #t)
+  (set! *code-viewer-content* "")  ;; hide code viewer
+  (refresh!)
+  ;; Mount xterm.js into the rendered container
+  (let ((mount (get-element-by-id "xterm-mount")))
+    (when mount
+      (let ((tobj (term-create mount)))
+        (set! *terminal-obj* tobj)
+        ;; Wire keystrokes → relay
+        (term-on-data! tobj
+          (procedure->external
+            (lambda (data)
+              (when *ws*
+                (ws-send *ws*
+                  (string-append "(term-data "
+                    (call-with-output-string (lambda (p) (write data p)))
+                    ")"))))))
+        ;; Request PTY from relay
+        (when *ws*
+          (ws-send *ws* "(term-open)"))))))
+
+(define (close-terminal!)
+  "Close the terminal session."
+  (when *terminal-obj*
+    (term-dispose! *terminal-obj*)
+    (set! *terminal-obj* #f))
+  (when (and *ws* *terminal-active?*)
+    (ws-send *ws* "(term-close)"))
+  (set! *terminal-active?* #f)
+  (update-code-viewer!)
+  (refresh!))
 
 (define (org-entry-name e) (list-ref e 0))
 (define (org-entry-vat e) (list-ref e 1))
@@ -1773,6 +1832,12 @@
                     (eval-button "public key" "(public-key)" "public-key")
                     (action-button "ssh key" (lambda () (do-export-ssh-key!)) "")
                     (render-join-form)
+                    (action-button "terminal"
+                      (lambda ()
+                        (if *terminal-active?*
+                            (close-terminal!)
+                            (open-terminal!)))
+                      (if *terminal-active?* " cp-btn-danger" ""))
                     (syntax-toggle-button)
                     (voice-button (and *listening?* (not *expressing?*))
                                   "stop" "voice to text")
@@ -1914,14 +1979,24 @@
                *orgs*)))
 
 (define (render-code-viewer)
-  (if (string=? *code-viewer-content* "")
-      `(div)
-      `(div (@ (id "code-viewer") (class "code-viewer"))
-            (div (@ (class "code-viewer-header"))
-                 ,(string-append "organization code ("
-                    (if (eq? *syntax-mode* 'wisp) "wisp" "lisp") ")"))
-            (pre (@ (id "code-viewer-content") (class "code-viewer-content"))
-                 ,*code-viewer-content*))))
+  (cond
+    (*terminal-active?*
+     `(div (@ (id "terminal-container") (class "code-viewer"))
+           (div (@ (class "code-viewer-header"))
+                "terminal"
+                (span (@ (class "cp-btn cp-btn-danger")
+                          (click ,(lambda (e) (close-terminal!))))
+                      "close"))
+           (div (@ (id "xterm-mount") (class "terminal-mount")))))
+    ((string=? *code-viewer-content* "")
+     `(div))
+    (else
+     `(div (@ (id "code-viewer") (class "code-viewer"))
+           (div (@ (class "code-viewer-header"))
+                ,(string-append "organization code ("
+                   (if (eq? *syntax-mode* 'wisp) "wisp" "lisp") ")"))
+           (pre (@ (id "code-viewer-content") (class "code-viewer-content"))
+                ,*code-viewer-content*)))))
 
 (define (render)
   `(div (@ (class "ide"))
@@ -2025,7 +2100,7 @@
   (let ((param (url-param-get "relay")))
     (if (and (string? param) (> (string-length param) 0))
         param
-        "wss://xorg-relay.fly.dev")))
+        "ws://SERVER_IP:9090")))
 
 ;; Auto-connect to relay (default: xorg-relay.fly.dev, override with ?relay=ws://...)
 ;; Registration happens later when user enters an org (in do-enter!)
@@ -2075,6 +2150,35 @@
              ;; Who response
              (('who-list users)
               (set! *online-users* (if (list? users) users '())))
+
+             ;; Terminal: session ready
+             (('term-ready)
+              (log-append! `(span (@ (class "result-text"))
+                                  "Terminal session opened.\n"))
+              (refresh!))
+
+             ;; Terminal: output data from PTY
+             (('term-data (? string? data))
+              (when *terminal-obj*
+                (term-write! *terminal-obj* data)))
+
+             ;; Terminal: session closed by server
+             (('term-closed)
+              (when *terminal-obj*
+                (term-dispose! *terminal-obj*)
+                (set! *terminal-obj* #f))
+              (set! *terminal-active?* #f)
+              (log-append! `(span (@ (class "info-text"))
+                                  "Terminal session closed.\n"))
+              (update-code-viewer!)
+              (refresh!))
+
+             ;; Terminal: error
+             (('term-error (? string? reason))
+              (log-append! `(span (@ (class "error-text"))
+                                  ,(string-append "Terminal error: " reason "\n")))
+              (set! *terminal-active?* #f)
+              (refresh!))
 
              ;; Anything else — log as relay message
              (_

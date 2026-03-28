@@ -144,6 +144,127 @@
                 (hash-set! *mailboxes* target-pk (append q (list fwd)))))
             (log! "  ~a -> queued\n" (substring target-pk 0 (min 30 (string-length target-pk)))))))))
 
+;;; ── Terminal session management ──────────────────────────────────────────
+;;; PTY-over-WebSocket: the relay spawns login shells as provisioned users
+;;; and bridges stdin/stdout over the existing WebSocket connection.
+
+(define *pty-sessions* (make-hash-table))  ;; client-port → (pid input-port output-port username)
+(define *pty-lock* (make-mutex))
+
+(define (load-key-user-map)
+  "Build a hash table mapping SSH public key → username from users.scm."
+  (let ((table (make-hash-table)))
+    (catch #t
+      (lambda ()
+        (let ((users (primitive-load "deploy/guix/users.scm")))
+          (for-each (lambda (entry)
+                      (hash-set! table (cdr entry) (car entry)))
+                    users)
+          (log! "  [term] loaded ~a key→user mappings\n" (length users))))
+      (lambda args
+        (log! "  [term] warning: could not load users.scm: ~a\n" args)))
+    table))
+
+(define *key-user-map* (load-key-user-map))
+
+(define (lookup-username-for-key pk-str)
+  "Find the Unix username associated with a registered public key.
+   The browser's Ed25519 key is different from the SSH key, so we also
+   check the signup-agent membership records."
+  ;; First check: is this key directly in users.scm?
+  (or (hash-ref *key-user-map* pk-str)
+      ;; Fallback: check signup-agent for browser-key → username mapping
+      (catch #t
+        (lambda ()
+          (with-vat *signup-vat*
+            ($ *signup-agent* 'lookup-username pk-str)))
+        (lambda args #f))))
+
+(define (open-pty-session! client-port username)
+  "Spawn a login shell as USERNAME, return (pid input-port output-port)."
+  (let* ((pipe-in  (pipe))  ;; relay writes to cdr, child reads from car
+         (pipe-out (pipe))  ;; child writes to cdr, relay reads from car
+         (pid (primitive-fork)))
+    (if (= pid 0)
+        ;; Child: set up stdin/stdout and exec login shell
+        (begin
+          ;; stdin from pipe-in read end
+          (close-port (cdr pipe-in))
+          (close-port (car pipe-out))
+          (dup2 (fileno (car pipe-in)) 0)
+          (dup2 (fileno (cdr pipe-out)) 1)
+          (dup2 (fileno (cdr pipe-out)) 2)
+          (close-port (car pipe-in))
+          (close-port (cdr pipe-out))
+          ;; Exec login shell as target user via sudo
+          (execl "/usr/bin/env" "env" "sudo" "-u" username "-i"))
+        ;; Parent: close unused ends
+        (begin
+          (close-port (car pipe-in))
+          (close-port (cdr pipe-out))
+          (let ((to-child  (cdr pipe-in))   ;; write here → child stdin
+                (from-child (car pipe-out))) ;; read here ← child stdout
+            ;; Store session
+            (with-mutex *pty-lock*
+              (hash-set! *pty-sessions* client-port
+                         (list pid to-child from-child username)))
+            (log! "  [term] opened shell for ~a (pid ~a)\n" username pid)
+            ;; Start reader thread: reads child output, sends to browser
+            (call-with-new-thread
+             (lambda ()
+               (let ((buf (make-bytevector 4096)))
+                 (let loop ()
+                   (let ((n (catch #t
+                              (lambda ()
+                                (read! from-child buf))
+                              (lambda args 0))))
+                     (when (and n (> n 0))
+                       (let* ((data (utf8->string
+                                      (bytevector-copy buf 0 n)))
+                              (msg (call-with-output-string
+                                     (lambda (p)
+                                       (write `(term-data ,data) p)))))
+                         (catch #t
+                           (lambda ()
+                             (write-frame (make-text-frame msg) client-port)
+                             (force-output client-port))
+                           (lambda args #f))
+                         (loop))))))
+               ;; Child exited or read error
+               (close-pty-session! client-port)
+               (let ((reply (call-with-output-string
+                              (lambda (p) (write '(term-closed) p)))))
+                 (catch #t
+                   (lambda ()
+                     (write-frame (make-text-frame reply) client-port)
+                     (force-output client-port))
+                   (lambda args #f))))))))))
+
+(define (write-to-pty! client-port data)
+  "Write DATA string to the PTY stdin of CLIENT-PORT's session."
+  (let ((session (with-mutex *pty-lock*
+                   (hash-ref *pty-sessions* client-port))))
+    (when session
+      (let ((to-child (cadr session)))
+        (display data to-child)
+        (force-output to-child)))))
+
+(define (close-pty-session! client-port)
+  "Close the PTY session for CLIENT-PORT."
+  (let ((session (with-mutex *pty-lock*
+                   (hash-ref *pty-sessions* client-port))))
+    (when session
+      (let ((pid (car session))
+            (to-child (cadr session))
+            (from-child (caddr session))
+            (username (cadddr session)))
+        (catch #t (lambda () (close-port to-child)) (lambda args #f))
+        (catch #t (lambda () (close-port from-child)) (lambda args #f))
+        (catch #t (lambda () (kill pid SIGTERM)) (lambda args #f))
+        (with-mutex *pty-lock*
+          (hash-remove! *pty-sessions* client-port))
+        (log! "  [term] closed shell for ~a (pid ~a)\n" username pid)))))
+
 (define (handle-client port)
   (define my-keys '())  ;; list of pubkey strings registered by this client
 
@@ -270,6 +391,42 @@
                        (substring result 0 (min 60 (string-length result)))
                        (cadr result)))))
 
+          ;; Terminal: open a PTY session as the authenticated user
+          (('term-open)
+           (if (null? my-keys)
+               (let ((reply (call-with-output-string
+                              (lambda (p) (write '(term-error "not authenticated") p)))))
+                 (write-frame (make-text-frame reply) port)
+                 (force-output port))
+               (let ((username (lookup-username-for-key (car my-keys))))
+                 (if username
+                     (begin
+                       (open-pty-session! port username)
+                       (let ((reply (call-with-output-string
+                                      (lambda (p) (write '(term-ready) p)))))
+                         (write-frame (make-text-frame reply) port)
+                         (force-output port)))
+                     (let ((reply (call-with-output-string
+                                    (lambda (p) (write '(term-error "no account found for this key") p)))))
+                       (write-frame (make-text-frame reply) port)
+                       (force-output port))))))
+
+          ;; Terminal: write to PTY stdin
+          (('term-data (? string? data))
+           (write-to-pty! port data))
+
+          ;; Terminal: resize (future — requires ioctl on real PTY)
+          (('term-resize (? number? cols) (? number? rows))
+           (log! "  [term] resize ~ax~a (not yet implemented)\n" cols rows))
+
+          ;; Terminal: close session
+          (('term-close)
+           (close-pty-session! port)
+           (let ((reply (call-with-output-string
+                          (lambda (p) (write '(term-closed) p)))))
+             (write-frame (make-text-frame reply) port)
+             (force-output port)))
+
           ;; Unknown
           (x (log! "  ? ~a\n" x))))))
 
@@ -307,6 +464,7 @@
     (lambda args #f))
 
   ;; Cleanup
+  (close-pty-session! port)  ;; close terminal if open
   (for-each unregister-key! my-keys)
   (log! "  client disconnected (~a keys)\n" (length my-keys))
   (catch #t (lambda () (close-port port)) (lambda args #f))

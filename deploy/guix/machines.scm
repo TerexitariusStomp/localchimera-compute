@@ -28,9 +28,15 @@
              (gnu services networking)
              (gnu services shepherd)
              (gnu services ssh)
+             (gnu services web)
              (gnu system linux-initrd)
              (gnu)
-             (guix gexp))
+             (guix gexp)
+             (xorg-relay-service))
+
+;; Load the meta-org package from guix.scm (provides bin/meta-org-relay)
+(define %meta-org
+  (load (string-append %this-dir "/../../guix.scm")))
 
 (define %admin-ssh-public-key
   "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICTLO20IW4Ej9qhXYGnfy0yc8RlvMLEkR+MG39nyK5mq nozomi-laptop")
@@ -164,7 +170,12 @@
 
     (sudoers-file
      (plain-file "sudoers"
-       "root ALL=(ALL) ALL\n%wheel ALL=(ALL) ALL\ndeploy ALL=(ALL) NOPASSWD: ALL\n"))
+       (string-append
+        "root ALL=(ALL) ALL\n"
+        "%wheel ALL=(ALL) ALL\n"
+        "deploy ALL=(ALL) NOPASSWD: ALL\n"
+        ;; Allow the relay (xorg user) to spawn login shells as provisioned users
+        "xorg ALL=(ALL) NOPASSWD: /usr/bin/env su - *\n")))
 
     (packages
      (append
@@ -206,6 +217,14 @@
                                   (plain-file (string-append (car entry) "-key")
                                               (cdr entry))))
                           %dynamic-users)))))
+
+      ;; WebSocket relay — runs from immutable Guix store, not a git clone
+      (service xorg-relay-service-type
+               (xorg-relay-configuration
+                (package %meta-org)
+                (port 9090)
+                (environment
+                 `(("OPENROUTER_KEYS" . ,(or (getenv "OPENROUTER_KEYS") ""))))))
 
       ;; Dev REPL — Guile on a Unix socket, runs as playnet user.
       ;; Connect with: M-x geiser-connect-local RET guile RET /var/run/playnet/repl.sock
@@ -289,24 +308,19 @@
                               (chmod repl-eval #o755)
                               (chown repl-eval (passwd:uid pw) (passwd:gid pw))
                               (chown bin-dir (passwd:uid pw) (passwd:gid pw)))
-                            ;; Git repo — clone or pull on each deploy
+                            ;; Symlink to packaged code (immutable, from Guix store)
                             (let ((repo-dir "/home/playnet/xorg-repo")
-                                  (git #$(file-append git "/bin/git")))
-                              (if (file-exists? (string-append repo-dir "/.git"))
-                                  (system* git "-C" repo-dir "pull" "--ff-only")
-                                  (begin
-                                    (system* git "clone" "-b" "minimal-org"
-                                             "https://github.com/interplaynetary/xorg.git"
-                                             repo-dir)
-                                    ;; Recursively chown since clone creates as root
-                                    (for-each
-                                      (lambda (f)
-                                        (chown f (passwd:uid pw) (passwd:gid pw)))
-                                      (find-files repo-dir #:directories? #t))))))))
+                                  (pkg-dir (string-append #$%meta-org "/share/meta-org")))
+                              (when (and (file-exists? repo-dir)
+                                         (not (symbolic-link? repo-dir)))
+                                ;; Existing mutable clone — remove it
+                                (system* "rm" "-rf" repo-dir))
+                              (unless (file-exists? repo-dir)
+                                (symlink pkg-dir repo-dir))))))
 
       ;; Activation: set up dynamic user home directories.
       ;; For each user in users.scm: ensure home exists, correct ownership,
-      ;; and clone/pull the xorg repo (same treatment as playnet).
+      ;; and symlink to packaged code.
       (simple-service 'dynamic-user-setup
                       activation-service-type
                       #~(begin
@@ -316,6 +330,7 @@
                              (let* ((home     (string-append "/home/" username))
                                     (repo-dir (string-append home "/xorg-repo"))
                                     (bin-dir  (string-append home "/bin"))
+                                    (pkg-dir  (string-append #$%meta-org "/share/meta-org"))
                                     (pw       (false-if-exception (getpwnam username))))
                                (when pw
                                  ;; Home dir
@@ -324,18 +339,9 @@
                                  ;; ~/bin
                                  (mkdir-p bin-dir)
                                  (chown bin-dir (passwd:uid pw) (passwd:gid pw))
-                                 ;; xorg repo — clone or pull
-                                 (let ((git #$(file-append git "/bin/git")))
-                                   (if (file-exists? (string-append repo-dir "/.git"))
-                                       (system* git "-C" repo-dir "pull" "--ff-only")
-                                       (begin
-                                         (system* git "clone" "-b" "minimal-org"
-                                                  "https://github.com/interplaynetary/xorg.git"
-                                                  repo-dir)
-                                         (for-each
-                                          (lambda (f)
-                                            (chown f (passwd:uid pw) (passwd:gid pw)))
-                                          (find-files repo-dir #:directories? #t))))))))
+                                 ;; Symlink to packaged code
+                                 (unless (file-exists? repo-dir)
+                                   (symlink pkg-dir repo-dir)))))
                            '#$%dynamic-user-names)))
 
       ;; Use bordeaux as primary substitute server (ci.guix.gnu.org is unreliable)

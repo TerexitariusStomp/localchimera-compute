@@ -228,6 +228,35 @@ window.addEventListener("load", async () => {
           setItem(key, value) { localStorage.setItem(key, value); },
           removeItem(key) { localStorage.removeItem(key); }
         },
+        terminal: {
+          create(container) {
+            if (typeof Terminal === 'undefined') {
+              console.error('[term] xterm.js not loaded');
+              return null;
+            }
+            const term = new Terminal({
+              theme: { background: '#110e13', foreground: '#e0ceed',
+                       cursor: '#a8e6cf', selectionBackground: '#2a2230' },
+              fontFamily: 'monospace', fontSize: 13,
+              cursorBlink: true
+            });
+            const fit = new FitAddon.FitAddon();
+            term.loadAddon(fit);
+            term.open(container);
+            fit.fit();
+            return { term, fit };
+          },
+          onData(termObj, callback) {
+            if (termObj) termObj.term.onData(data => callback(data));
+          },
+          write(termObj, data) {
+            if (termObj) termObj.term.write(data);
+          },
+          getCols(termObj) { return termObj ? termObj.term.cols : 80; },
+          getRows(termObj) { return termObj ? termObj.term.rows : 24; },
+          dispose(termObj) { if (termObj) termObj.term.dispose(); },
+          fit(termObj) { if (termObj) termObj.fit.fit(); }
+        },
         speech: {
           isSupported() { return 1; },
           async startListening(onResult, onEnd) {
