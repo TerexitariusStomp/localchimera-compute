@@ -17,6 +17,7 @@
   #:use-module (srfi srfi-1)
   #:export (^tool-cap
             ^mcp-server
+            mcp-server-methods
             make-tool-cap
             make-mcp-server
             make-xorg-mcp-server))
@@ -66,9 +67,17 @@
 ;;; To restrict, pass an attenuated server with fewer tools.
 ;;;
 ;;; Persistence: tools is an alist of (string . actor-ref) — fully serializable.
+;;;
+;;; Extensible via (extend-methods (mcp-server-methods tools) ...) pattern
+;;; from Mandy/ActivityPub-on-Goblins — build server variants without
+;;; duplicating base behavior.
 
-(define-actor (^mcp-server bcom tools)
-  #:version 1
+(define (mcp-server-methods tools)
+  "Base method table for MCP servers. Reusable via extend-methods:
+
+   (extend-methods (mcp-server-methods tools)
+     ((list-resources) ...)
+     ((read-resource uri) ...))"
   (methods
    [(list-tools)
     (map (lambda (t) ($ (cdr t) 'schema)) tools)]
@@ -82,6 +91,10 @@
       (and t (cdr t)))]
    [(tool-names)
     (map car tools)]))
+
+(define-actor (^mcp-server bcom tools)
+  #:version 1
+  (mcp-server-methods tools))
 
 (define (make-mcp-server vat . tool-pairs)
   "Convenience: (make-mcp-server vat name1 tool1 name2 tool2 ...)

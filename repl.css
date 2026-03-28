@@ -51,21 +51,31 @@ h1 {
     display: flex;
     flex-direction: column;
     white-space: pre;
-    padding: 1rem;
+    padding: 0;
     border-radius: 4px;
     flex: 1;
     min-height: 0;
-    overflow: auto;
+    overflow: hidden;
 }
 
 .repl .log {
     white-space: pre-wrap;
     color: #e0ceed;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 1rem;
+    padding-bottom: 0.5rem;
 }
 
 .repl .prompt {
     white-space: pre;
     display: flex;
+    align-items: flex-start;
+    flex-shrink: 0;
+    padding: 0.6rem 1rem;
+    border-top: 1px solid #2a2230;
+    background-color: #0d0b0f;
 }
 
 .repl .prompt textarea {
@@ -73,7 +83,7 @@ h1 {
     border: 0;
     padding: 0;
     color: #e0ceed;
-    background-color: #110e13;
+    background-color: #0d0b0f;
     resize: none;
     overflow: hidden;
     min-height: 1.5em;
@@ -81,6 +91,18 @@ h1 {
 
 .repl .prompt textarea:focus {
     outline:none;
+}
+
+.repl .prompt .prompt-text {
+    color: #a8e6cf;
+    user-select: none;
+    padding-right: 0.25em;
+    flex-shrink: 0;
+}
+
+.repl .prompt:focus-within {
+    border-top-color: #a8e6cf;
+    box-shadow: 0 -1px 8px rgba(168, 230, 207, 0.08);
 }
 
 .prompt-text { color: #8b7b96; }
@@ -293,6 +315,7 @@ body:has(.code-viewer) .ide {
 /* Responsive */
 @media (max-width: 768px) {
     .sidebar { width: 0; border-right: none; overflow: hidden; }
+    .repl .prompt { padding: 0.5rem 0.75rem; }
 
     .code-viewer {
         width: 100%;

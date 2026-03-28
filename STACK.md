@@ -29,8 +29,8 @@ an AI can participate in that governance as a proper, attributed, capability-gov
 │  Guix System  (OS declaration in Scheme)                            │
 │  packages, services, users, bootloader — all records                │
 ├─────────────────────────────────────────────────────────────────────┤
-│  Hetzner Cloud  (provisioned by guix deploy)                        │
-│  GUIX_HETZNER_API_TOKEN=<token> guix deploy deploy/guix/machines.scm│
+│  Hetzner Cloud  (bootstrapped, then managed by guix deploy)          │
+│  guix deploy deploy/guix/machines.scm                               │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -39,42 +39,64 @@ an AI can participate in that governance as a proper, attributed, capability-gov
 ## Layer 1: Hetzner + Guix System
 
 ### What it is
-GNU Guix System running on Hetzner Cloud VPS, provisioned natively via `guix deploy`.
-No Docker. No manual bootstrap. No Ansible. Just Scheme.
+GNU Guix System running on Hetzner Cloud VPS (cpx22, nbg1, `SERVER_IP`).
+No Docker. No Ansible. Just Scheme.
 
 ### How it works
+**First time:** `bootstrap-hetzner.sh` provisions the server via Hetzner API,
+installs Guix in rescue mode, and boots into Guix System (~15 min).
+
+**Ongoing:** `guix deploy` reconfigures in place via `managed-host-environment-type`.
+
 ```bash
-GUIX_HETZNER_API_TOKEN=<token> guix deploy deploy/guix/machines.scm
+./deploy/guix/bootstrap-hetzner.sh              # first time only
+guix deploy deploy/guix/machines.scm             # reconfigure
+guix deploy --roll-back deploy/guix/machines.scm # rollback
+guix deploy deploy/guix/machines.scm -x -- herd status  # run command
 ```
 
-Guix:
-1. Creates the Hetzner server via API
-2. Boots into rescue mode
-3. Formats disk, installs minimal Guix
-4. Reboots and applies the full OS config
-5. On subsequent runs: reconfigures in place
+### Why not `hetzner-environment-type`?
+The Guix manual's `hetzner-environment-type` automates provisioning but currently
+fails due to: `ftpmirror.gnu.org` being down, newer Hetzner x86 types using UEFI
+(not BIOS as documented), and the GRUB theme needing `librsvg` without a substitute.
+The bootstrap script fixes all of these. See `deploy/guix/DEPLOY-GUIDE.md` for details.
 
 ### Key files
-- `deploy/guix/machines.scm` — `hetzner-environment-type` target
-- `deploy/guix/base-system.scm` — `%base-hetzner-system` inheriting `%hetzner-os-x86`
+- `deploy/guix/bootstrap-hetzner.sh` — one-shot server provisioning
+- `deploy/guix/machines.scm` — `managed-host-environment-type` target
+- `deploy/guix/secrets.scm` — API token via `(setenv ...)` (gitignored)
+- `deploy/guix/deploy.sh` — wrapper: loads secrets, runs `guix deploy`
 - `deploy/guix/xorg-service.scm` — Shepherd service type for xorg processes
 - `deploy/guix/channels.scm` — pinned Guix commit
 - `deploy/guix/dev-manifest.scm` — `guix shell` manifest for local dev
+- `deploy/guix/DEPLOY-GUIDE.md` — full deployment guide with pitfalls
 
 ### The OS declaration
 ```scheme
-(make-hetzner-system
-  #:hostname "xorg-1"
-  #:certbot-email "ops@example.com"
-  #:certbot-domains '("xorg-1.example.com")
-  #:extra-services (list (service xorg-service-type xorg-config)))
-```
-
-### Operations
-```bash
-guix deploy deploy/guix/machines.scm          # deploy
-guix deploy --roll-back deploy/guix/machines.scm  # rollback
-guix deploy deploy/guix/machines.scm -x -- herd status  # run command
+(define %guix-x86
+  (operating-system
+    (host-name "guix-x86")
+    (timezone "Etc/UTC")
+    (bootloader (bootloader-configuration
+                 (bootloader grub-efi-bootloader)   ;; UEFI, not BIOS
+                 (targets (list "/boot/efi"))
+                 (terminal-outputs '(console))
+                 (theme #f)))                        ;; no librsvg
+    (initrd-modules (append (list "virtio_scsi") %base-initrd-modules))
+    (file-systems (cons* (file-system
+                           (mount-point "/")
+                           (device "/dev/sda1") (type "ext4"))
+                         (file-system
+                           (mount-point "/boot/efi")
+                           (device "/dev/sda15") (type "vfat"))
+                         %base-file-systems))
+    (services
+     (cons* (service dhcpcd-service-type)
+            (service openssh-service-type
+                     (openssh-configuration
+                      (openssh openssh-sans-x)
+                      (permit-root-login 'prohibit-password)))
+            %base-services))))
 ```
 
 ---
@@ -231,12 +253,13 @@ C-c C-z → switch to REPL         →   inspect state, test expressions
 - `emacs-geiser` + `emacs-geiser-guile` — REPL integration
 - `emacs-smartparens` — structural editing (slurp, barf, wrap)
 - `emacs-rainbow-delimiters` — colored parens by nesting depth
+- `emacs-claude-code-ide` — Claude Code inside Emacs (see Layer 5C)
 
 ---
 
 ## Layer 5: AI integration
 
-### Two independent layers
+### Three layers
 
 **Layer 5A: xorg-internal AI expressor** (Goblins layer — governance)
 The AI is a proper expressor inside the org with its own sealer and keypair.
@@ -254,8 +277,8 @@ Its expressions are attributed, signed, validated, and in the history.
 ;; → history entry attributed to AI, signed with ai-pk, validated by ^faceted-validator
 ```
 
-**Layer 5B: Emacs/Geiser MCP bridge** (Emacs layer — dev tooling)
-`mcp-server-lib.el` makes Emacs an MCP server. An external LLM (Claude, etc.)
+**Layer 5B: Emacs/Geiser MCP bridge** (custom — org-aware tooling)
+`emacs-mcp.el` makes Emacs an MCP server. An external LLM (Claude, etc.)
 connects via stdio and calls tools that evaluate in the live Geiser/Goblins session.
 
 ```elisp
@@ -278,14 +301,30 @@ Claude Desktop (or any MCP client) connects to this server and can:
 - Propose expressions for human review
 - Read the knowledge base
 
-### The difference
-| | xorg AI expressor | Emacs MCP bridge |
-|---|---|---|
-| Purpose | Governance, production use | Development tooling |
-| Attribution | History entry + signature | Emacs buffer output |
-| Validation | Goes through ^faceted-validator | None |
-| Persistence | Yes — survives restarts | No — session only |
-| Authority | Exactly what it was given | Full Geiser access |
+**Layer 5C: Claude Code IDE** (Emacs layer — full IDE integration)
+`emacs-claude-code-ide` (packaged in Guix) runs Claude Code natively inside
+Emacs with bidirectional MCP communication. Claude gets access to Emacs
+features: LSP, tree-sitter, diagnostics, project navigation, imenu.
+
+```elisp
+;; Installed via Guix: emacs-claude-code-ide
+(use-package claude-code-ide
+  :bind ("C-c a" . claude-code-ide-menu))
+```
+
+Combined with Layer 5B, Claude can both understand your code (via LSP/tree-sitter)
+AND act on the live Goblins vat (via the Geiser MCP bridge). The IDE layer helps
+Claude write correct Scheme; the MCP bridge lets it evaluate in the running org.
+
+### How the layers compose
+| | 5A: AI expressor | 5B: Geiser MCP bridge | 5C: Claude Code IDE |
+|---|---|---|---|
+| Purpose | Governance, production | Org-aware tooling | Code editing, IDE |
+| Attribution | History + signature | Emacs buffer output | Diff view, ediff |
+| Validation | ^faceted-validator | None | Flycheck/Flymake |
+| Persistence | Survives restarts | Session only | Session only |
+| Authority | Exactly what given | Full Geiser access | Full editor access |
+| Talks to | Goblins actors | Live REPL via socket | LSP, tree-sitter, Emacs |
 
 ---
 
@@ -329,7 +368,7 @@ guile -L module tests/test-persistence.scm
 
 | Layer | Status | What's next |
 |---|---|---|
-| Hetzner+Guix deploy | ✓ Done | Fill in TODO placeholders, first real deploy |
+| Hetzner+Guix deploy | ✓ Done | Server live at SERVER_IP |
 | Shepherd service type | ✓ Done | Wait for Shepherd×Goblins |
 | xorg core (`^org` v5) | ✓ Done | — |
 | Cap security (endorsement) | ✓ Done | — |

@@ -387,6 +387,52 @@
       (vat-halt! vat2)))
   (cleanup-test-dir dir))
 
+;;; ── Test 13: extend-methods — build MCP server variants ─────────────────────
+;;; Mandy/ActivityPub pattern: extend base server with new methods
+;;; without duplicating base behavior.
+
+(display "\n── 13. extend-methods — MCP server variants ──\n")
+
+(use-modules (goblins actor-lib methods))
+
+(let ((vat (spawn-vat)))
+  (with-vat vat
+    ;; Create a base tool
+    (let* ((tool (spawn ^tool-cap "echo" "echo tool"
+                        (lambda (args) (assoc-ref args "msg"))
+                        #t))
+           ;; Standard ^mcp-server
+           (base-server (spawn ^mcp-server (list (cons "echo" tool))))
+           ;; Extended server: adds list-resources and server-info methods
+           ;; using extend-methods on the extracted base methods
+           (extended (let ((base (mcp-server-methods (list (cons "echo" tool)))))
+                       (extend-methods base
+                         ((list-resources)
+                          '(("uri" . "xorg://kb/main")
+                            ("name" . "Knowledge Base")))
+                         ((server-info)
+                          '(("name" . "xorg-extended")
+                            ("version" . "0.2.0")))))))
+
+      ;; Base methods still work through extended
+      (check "13a: extended server can list-tools"
+             (length (extended 'list-tools)) 1)
+      (check "13b: extended server can call tool"
+             (extended 'call "echo" '(("msg" . "hello"))) "hello")
+      (check "13c: extended server can get tool-names"
+             (extended 'tool-names) '("echo"))
+
+      ;; New methods work
+      (check "13d: extended server has list-resources"
+             (assoc-ref (extended 'list-resources) "uri") "xorg://kb/main")
+      (check "13e: extended server has server-info"
+             (assoc-ref (extended 'server-info) "name") "xorg-extended")
+
+      ;; Base server does NOT have extended methods
+      (check-error "13f: base server has no list-resources"
+        ($ base-server 'list-resources))))
+  (vat-halt! vat))
+
 ;;; ── Summary ─────────────────────────────────────────────────────────────────
 
 (display "\n══════════════════════════════════════════════════════════════\n")

@@ -1172,8 +1172,8 @@
 ;;; ── Scroll helper ─────────────────────────────────────────────────────────
 
 (define (scroll-to-bottom!)
-  (let ((repl (get-element-by-id "repl")))
-    (set-scroll-top! repl (scroll-height repl))))
+  (let ((log (get-element-by-id "repl-log")))
+    (set-scroll-top! log (scroll-height log))))
 
 ;;; ── Event handling ────────────────────────────────────────────────────────
 
@@ -1451,7 +1451,7 @@
 
 (define (render-repl)
   `(div (@ (id "repl") (class "repl repl-text"))
-        (div (@ (class "log")) ,@*log*)
+        (div (@ (id "repl-log") (class "log")) ,@*log*)
         (div (@ (class "prompt"))
              ,(current-prompt)
              (textarea (@ (id "expression") (class "repl-text")

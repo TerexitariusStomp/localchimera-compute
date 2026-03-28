@@ -1,6 +1,6 @@
 # xorg Master Plan — Complete Elegant Architecture
 
-_Written 2026-03-26. This is the canonical roadmap. All other PLAN-*.md files feed into this._
+_Written 2026-03-26. This is the canonical roadmap. All other PLAN-\*.md files feed into this._
 
 ---
 
@@ -18,6 +18,7 @@ and computational substrate. The org can eventually govern its own infrastructur
 ## Current state (as of 2026-03-26)
 
 ### Done ✓
+
 - `^org` actor — Goblins, Hoot-compatible, version 5
 - `make-open-org` / `make-governed-org` — canonical constructors
 - Capability layer: `^http-client`, `^config-provider`, `^output-port`
@@ -28,12 +29,12 @@ and computational substrate. The org can eventually govern its own infrastructur
 - `output-cap` stored as `^org` field, IO delegated in lookup (not io-bindings closures)
 - Cryptographic signatures on history entries (Ed25519 via Goblins crypto)
 - `verify-history-entry` exported
-- Knowledge layer: `hyperarc.scm`, `kanren.scm`, `knowledge.scm`
 - Guix+Hetzner deployment: `deploy/guix/` with `hetzner-environment-type`
 - `xorg-service-type` — Shepherd service type for xorg processes
 - Tests: 225+ passing across all modules
 
 ### In progress (uncommitted)
+
 - Persistence fixes: `endorsement.scm` + `gplay.scm` + `org.scm` (keen-gulf output)
 - Needs commit and persistence tests
 
@@ -48,6 +49,7 @@ and computational substrate. The org can eventually govern its own infrastructur
 **Status:** Changes made, not committed, not tested with actual persist/restore cycles.
 
 **Actions:**
+
 1. Commit current `endorsement.scm` + `gplay.scm` + `org.scm` changes
 2. Write `tests/test-persistence.scm` — actual Bloblin persist/restore cycle:
    - `make-open-org` survives round-trip (bindings, history)
@@ -59,6 +61,7 @@ and computational substrate. The org can eventually govern its own infrastructur
 4. Verify `filter-serializable-bindings` is doing the right thing — actor refs should pass through (they're not procedures), only plain lambdas should be stripped
 
 **The test:**
+
 ```scheme
 (use-modules (goblins persistence-store bloblin))
 (define store (make-bloblin-store "/tmp/test-org-store"))
@@ -125,6 +128,7 @@ The server can be attenuated: give the AI a version without dangerous tools.
 The org's validator governs who can install/modify the MCP server binding.
 
 This is cleaner than external MCP because:
+
 - The server IS a capability — unforgeable, attenuatable
 - Every tool call is through the Goblins actor system — traceable
 - The org history shows exactly which tools the AI was given access to
@@ -143,6 +147,7 @@ Goblins 0.16.0 has Unix Domain Socket netlayer — machine-local OCapN. Two orgs
 on the same machine can hold direct Goblins actor references to each other via UDS.
 
 **Design:**
+
 ```
 Host org (privileged)
   ├── holds ^service-registry (all machine services)
@@ -162,55 +167,7 @@ IS the capability. All `TODO Shepherd×Goblins` markers in services.scm swap her
 
 ---
 
-### LAYER 5: Quorum governance
-
-**Insight:** Democracy in the cap model = M-of-N sealer composition.
-A quorum sealer only produces valid endorsements when M-of-N individual sealers collaborate.
-
-```scheme
-;; 3-of-5 quorum authority
-(define (make-quorum-authority m n)
-  "Returns a quorum-seal that requires m of n individual seals to activate."
-  ...)
-
-(define-values (quorum-seal q-unsealer q-sealed?)
-  (make-quorum-authority 3 5))
-
-;; Each member holds one share
-;; To endorse a governance change, 3 members must collaborate:
-(define partial-1 ($ member-1-seal quorum-seal))
-(define partial-2 ($ member-2-seal partial-1))
-(define partial-3 ($ member-3-seal partial-2))
-;; partial-3 satisfies q-sealed? only when 3+ members have signed
-```
-
-This is implementable directly on top of the existing sealer mechanism.
-The validator checks `($ q-sealed? value)` — it doesn't know or care about the
-quorum internals. The quorum logic is in the sealer actor itself.
-
-**New file:** `module/xorg/quorum.scm` — `make-quorum-authority`, M-of-N sealer
-
----
-
-### LAYER 6: Knowledge base wired into org
-
-**Current:** `hyperarc.scm`, `kanren.scm`, `knowledge.scm` exist but are not wired into orgs.
-**Fix:** Add KB operations to `default-base-bindings` and make them available inside orgs.
-
-```scheme
-;; Inside org:
-(modify! 'kb (make-kb 'governance governance-metagraph))
-(run 2 (q) (related-by-o (lookup 'kb) 'proposals q resource-node))
-```
-
-The KB is a plain S-expression — serializable, in history, subject to validator.
-Modifying the KB is a governed org action.
-
-**File:** Update `org.scm` `default-base-bindings` to include KB constructors and query functions.
-
----
-
-### LAYER 7: Guix deploy as an org action (full provenance)
+### LAYER 5: Guix deploy as an org action (full provenance)
 
 **Current:** `^deploy-cap` exists. It's not wired into any org.
 **Full version:** A governed org can `(modify! 'infra-deploy (endorse deploy-cap infra-seal))`.
@@ -226,7 +183,7 @@ re-deploy the previous generation).
 
 ---
 
-### LAYER 8: `^output-port` per org → per-expressor (optional)
+### LAYER 6: `^output-port` per org → per-expressor (optional)
 
 Current output-cap is org-level — all expressors share it. A more granular model:
 each expressor has their own output capability, allowing per-expressor routing.
@@ -252,12 +209,7 @@ NOW:
 NEXT (this week):
   └── AI as its own expressor (LAYER 2)
   └── MCP server capability (LAYER 3)
-  └── Wire knowledge layer into base-bindings (LAYER 6)
-
-SOON:
-  └── Multi-org OCapN via Unix sockets (LAYER 4)
-  └── Quorum governance (LAYER 5)
-  └── Guix deploy as org action end-to-end (LAYER 7)
+└── Guix deploy as org action end-to-end
 
 WHEN SHEPHERD×GOBLINS LANDS:
   └── Replace all ^service-capability subprocess backings with direct actor refs
@@ -284,7 +236,7 @@ Throughout all of this, these properties must hold at every commit:
 ## What "done" looks like
 
 ```scheme
-;; Create a governed org backed by Bloblin persistence
+;; Create a governed org backed by globlin persistence
 (define-values (org gov infra member)
   (make-governed-org "my-commune" #:store (make-bloblin-store "./commune.db")))
 
