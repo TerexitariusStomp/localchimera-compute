@@ -1,33 +1,38 @@
-all: repl.wasm
+all: browser/repl.wasm
 
 repl:
-	guile xorg-repl.scm
+	guile -L module server/repl.scm
 
 quick-repl:
-	guile play-repl.scm
+	guile -L module server/play-repl.scm
 
-repl.wasm: repl.scm module/xorg/gplay.scm
-	guild compile-wasm -L module -L lib --bundle -o repl.wasm repl.scm
+browser/repl.wasm: browser/repl.scm module/xorg/gplay.scm
+	guild compile-wasm -L module --bundle -o browser/repl.wasm browser/repl.scm
 
-serve: repl.wasm
+serve: browser/repl.wasm
 	guile -c '((@ (hoot web-server) serve))'
 
 relay:
-	guile xorg-relay.scm
+	guile -L module server/relay.scm
 
 server:
-	guile -L module xorg-server.scm
+	guile -L module server/server.scm
 
-test: test-gplay test-play test-knowledge
-
-test-play:
-	guile -L module tests/test.scm
+test: test-gplay test-knowledge
 
 test-gplay:
-	guile -L module tests/test-gplay.scm
+	guile --no-auto-compile -L module tests/test-gplay.scm
 
 test-knowledge:
-	guile -L module tests/test-knowledge.scm
+	guile --no-auto-compile -L module tests/test-knowledge.scm
+
+test-governed:
+	guile --no-auto-compile -L module tests/test-governed-org.scm
+
+test-signatures:
+	guile --no-auto-compile -L module tests/test-history-signatures.scm
+
+test-all: test-gplay test-knowledge test-governed test-signatures
 
 clean:
-	rm repl.wasm
+	rm -f browser/repl.wasm

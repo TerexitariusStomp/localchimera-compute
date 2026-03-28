@@ -142,8 +142,8 @@ The org operates as a REPL — read, evaluate, print, loop. The browser reads in
 | `(public-key)`                  | Return this org's Ed25519 public key               |
 | `(process-message msg-id)`      | Process a pending inbox message                    |
 | `(retract-message msg-id sender)` | Retract a pending inbox message                  |
-| `(ai prompt)`                   | Send prompt to AI, return response                 |
-| `(ai-eval prompt)`              | Send prompt to AI, evaluate response as code       |
+| `(ai prompt)`                   | Send prompt to AI, return response (requires AI cap) |
+| `(ai-eval prompt)`              | Send prompt to AI, evaluate response as code (requires AI cap) |
 | `(cond clauses ...)`            | Multi-branch conditional                           |
 | `(and exprs ...)`, `(or ...)`   | Short-circuit boolean                              |
 | `(when test body ...)`          | Conditional execution                              |
@@ -221,19 +221,12 @@ For remote orgs across machines, connect to a relay and use public keys:
 
 ### Requirements
 
-GNU Guile (built from main branch), Guile Hoot 0.7.0+, Guile Goblins 0.17.0+, and a recent browser (Chrome 119+ or Firefox 121+).
+GNU Guile 3.0+, Guile Goblins 0.17.0+. For browser: Guile Hoot 0.7.0+ and a recent browser (Chrome 119+ or Firefox 121+).
 
 ### Setup with Guix
 
 ```bash
 guix shell -m manifest.scm
-```
-
-### Build and serve the browser REPL
-
-```bash
-make          # compiles repl.scm to WebAssembly
-make serve    # starts web server at http://localhost:8088
 ```
 
 ### Native Guile REPL
@@ -243,19 +236,36 @@ make repl         # full two-tier REPL with Goblins actors
 make quick-repl   # single-org functional REPL
 ```
 
+### Browser REPL (Hoot/WASM)
+
+```bash
+make          # compiles browser/repl.scm to WebAssembly
+make serve    # starts web server at http://localhost:8088
+```
+
 ### Relay and server
 
 ```bash
-make relay        # WebSocket relay on ws://localhost:9090 — routes messages by public key, queues for offline peers
-make server       # native org server with admin REPL (approve members, inspect bindings/history)
+make relay        # WebSocket relay on ws://localhost:9090
+make server       # native org server with admin REPL
 ```
 
-To connect the browser REPL to a relay, add `?relay=ws://localhost:9090` to the URL. The REPL auto-connects and registers all local org public keys.
+To connect the browser REPL to a relay, add `?relay=ws://localhost:9090` to the URL.
+
+### Deploy to Hetzner Cloud
+
+```bash
+./deploy/guix/bootstrap-hetzner.sh    # first time: provision server
+guix deploy deploy/guix/machines.scm  # reconfigure
+```
+
+See `deploy/guix/DEPLOY-GUIDE.md` for details.
 
 ### Run tests
 
 ```bash
-make test-gplay   # tests covering the evaluator, identity, rollback, persistence, inbox
+make test-all     # all kernel tests
+make test-gplay   # evaluator, identity, rollback, persistence, inbox
 ```
 
 ## REPL Tutorial (Browser)
