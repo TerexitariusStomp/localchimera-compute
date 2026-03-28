@@ -10,7 +10,7 @@ browser/repl.wasm: browser/repl.scm module/xorg/gplay.scm
 	guild compile-wasm -L module -L docs/reference/lib-vendored --bundle -o browser/repl.wasm browser/repl.scm
 
 serve: browser/repl.wasm
-	guile -c '((@ (hoot web-server) serve))'
+	cd browser && guile -c '((@ (hoot web-server) serve))'
 
 relay:
 	guile -L module server/relay.scm
