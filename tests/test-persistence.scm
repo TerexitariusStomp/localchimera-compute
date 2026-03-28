@@ -13,7 +13,6 @@
              (xorg org)
              (xorg gplay)
              (xorg endorsement)
-             (xorg capabilities)
              (ice-9 receive)
              (ice-9 match)
              (srfi srfi-1))

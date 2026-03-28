@@ -7,7 +7,6 @@
 (use-modules (xorg org)
              (xorg gplay)
              (xorg endorsement)
-             (xorg capabilities)
              (goblins)
              (ice-9 receive))
 

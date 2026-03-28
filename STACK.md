@@ -348,19 +348,27 @@ guile -L module tests/test-governed-org.scm
 guile -L module tests/test-persistence.scm
 ```
 
-### Key modules
+### Key modules — the kernel
+
+The governance kernel (Hoot/WASM compatible, no system deps):
+
 | Module | What it does |
 |---|---|
-| `(xorg gplay)` | Core `^org` actor, `evaluate`, `make-initial-org` |
+| `(xorg gplay)` | `^org` actor, evaluator, history, signatures, `^output-port` |
+| `(xorg endorsement)` | `^faceted-validator`, `^name-predicate`, sealers |
 | `(xorg org)` | `make-open-org`, `make-governed-org`, `enter!` |
-| `(xorg endorsement)` | `make-endorsement-authority`, `make-faceted-validator`, `^name-predicate` |
-| `(xorg capabilities)` | `^http-client`, `^config-provider`, `^output-port` |
-| `(xorg services)` | `^service-cap`, `attenuate-service-cap`, `^deploy-cap` |
-| `(xorg ai)` | `^ai-capability`, `install-ai-capability!`, `openrouter-chat` |
-| `(xorg ai-expressor)` | `make-ai-expressor!`, `ai-eval-as` |
-| `(xorg knowledge)` | Relational queries over hyperarc metagraphs |
+
+Knowledge layer (standalone, Hoot-compatible):
+
+| Module | What it does |
+|---|---|
 | `(xorg kanren)` | miniKanren — unification-based logic queries |
 | `(xorg hyperarc)` | Hyperarc/metagraph data structures |
+| `(xorg knowledge)` | Relational queries over hyperarc metagraphs |
+
+Everything else (HTTP clients, AI glue, MCP transport, service wrappers) is
+in `module/xorg/deprecated/`. Capabilities are injected into the org as opaque
+Goblins actor refs — the kernel doesn't know or care what they do.
 
 ---
 

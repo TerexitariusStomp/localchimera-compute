@@ -12,7 +12,6 @@
                                                   captp-public-key->crypto-public-key))
   #:use-module (rnrs bytevectors)
   #:use-module (xorg endorsement)
-  #:use-module ((xorg capabilities) #:select (^output-port))
   #:use-module (ice-9 match)
   #:use-module (ice-9 receive)
   #:export (^org
@@ -39,9 +38,27 @@
             ancestor-chain
             entry->signing-bytes
             verify-history-entry
-            *restore-base-bindings*)
+            *restore-base-bindings*
+            ^output-port)
   #:re-export (generate-key-pair
                key-pair->public-key))
+
+;;; ── ^output-port ──────────────────────────────────────────────────────────
+;;; Wraps output to a port. Inlined here (no system deps) for Hoot compat.
+
+(define-actor (^output-port bcom port)
+  #:version 1
+  #:portrait
+  (lambda () (list 'stdout))
+  #:restore
+  (lambda (version _marker)
+    (spawn ^output-port (current-output-port)))
+  (methods
+   [(display val)           (display val port)           (if #f #f)]
+   [(write val)             (write val port)             (if #f #f)]
+   [(newline)               (newline port)               (if #f #f)]
+   [(format fmt . args)     (apply format port fmt args) (if #f #f)]
+   [(port)                  port]))
 
 ;;; Hoot/WASM compatibility: eval and interaction-environment are not
 ;;; automatically available in Hoot's module system.
@@ -986,7 +1003,7 @@ can unseal."
      (((xorg gplay) ^ref-store) ,^ref-store)
      (((xorg endorsement) ^name-predicate) ,^name-predicate)
      (((xorg endorsement) ^faceted-validator) ,^faceted-validator)
-     (((xorg capabilities) ^output-port) ,^output-port))
+     (((xorg gplay) ^output-port) ,^output-port))
    #:extends (list ward-env sealers-env)))
 
 (define* (make-persistent-org name base-bindings store

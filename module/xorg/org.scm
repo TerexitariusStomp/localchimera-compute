@@ -9,7 +9,6 @@
   #:use-module (goblins)
   #:use-module (xorg gplay)
   #:use-module (xorg endorsement)
-  #:use-module (xorg capabilities)
   #:use-module (ice-9 match)
   #:use-module (ice-9 pretty-print)
   #:use-module (ice-9 receive)

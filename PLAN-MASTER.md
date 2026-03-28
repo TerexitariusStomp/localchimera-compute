@@ -264,3 +264,127 @@ Throughout all of this, these properties must hold at every commit:
 ```
 
 This is the org that governs its own infrastructure.
+
+---
+
+## Revised direction: xorg as a portable governance kernel
+
+_Added 2026-03-28. This supersedes the layer-by-layer build plan above._
+
+### The realization
+
+Most of what LAYERS 2-6 describe is wrapping things that the underlying stack
+already provides. Goblins gives us capabilities, persistence, networking (OCapN),
+and actors. Guix gives us deploy and services. Guile gives us the REPL and
+homoiconicity. xorg's actual contribution is narrow and specific: **governed
+evaluation with attributed history.**
+
+The wrappers we built — `^http-client`, `^service-cap`, `^deploy-cap`,
+`^ai-capability`, `^mcp-server`, the MCP transport, the AI glue — are all
+things that can't run in Hoot/WASM anyway. And they shouldn't be part of xorg.
+They're infrastructure capabilities that get **injected** into an org as opaque
+actor refs via OCapN.
+
+### The kernel (what xorg IS)
+
+Three files, ~850 lines:
+
+- **`gplay.scm`** — `^org` actor: bindings, history, evaluator, signatures,
+  snapshots, rollback, persistence. The org-as-interpreter.
+- **`endorsement.scm`** — `^faceted-validator`, `^name-predicate`,
+  `make-endorsement-authority`. Name-keyed governance via sealers.
+- **`org.scm`** — `make-open-org`, `make-governed-org`, `enter!`.
+  Factory functions and the 3-seal pattern.
+
+Optional, standalone:
+- **`kanren.scm`** + **`hyperarc.scm`** + **`knowledge.scm`** — relational
+  query layer. Pure Scheme, no system deps, Hoot-compatible.
+
+### What the kernel does NOT know about
+
+HTTP. AI. Deployment. Services. MCP. File systems. Unix sockets. Emacs.
+
+The org holds actor refs. It calls methods on them. It records that it did so
+in the history. It doesn't know or care what's on the other end — a local
+Goblins actor, an OCapN ref to a server, or a Hoot stub that calls a browser
+API.
+
+### Why this matters: the org runs anywhere
+
+```
+Browser (Hoot/WASM)              Server (Guix)
+─────────────────────            ────────────────────
+^org actor          ←─ OCapN ─→  capability actors:
+evaluator                         - deploy (guix deploy)
+history + signatures              - services (herd)
+faceted validator                 - AI (HTTP → OpenRouter)
+endorsement/sealers               - storage (filesystem)
+knowledge/kanren
+expressors
+```
+
+Same org code in both environments. The browser org holds OCapN refs to
+server-side capabilities. The server org holds local refs. The governance
+model doesn't change.
+
+### What the old LAYERS become
+
+| Old layer | New status |
+|---|---|
+| LAYER 1: Persistence | Still needed. Write test-persistence.scm. |
+| LAYER 2: AI as expressor | Just `(defexpressor 'ai ai-keypair)`. No module needed. |
+| LAYER 3: MCP as capability | Use `emacs-claude-code-ide` / `mcp-server-lib.el`. Not an xorg concern. |
+| LAYER 4: Multi-org OCapN | Goblins OCapN provides this. Orgs hold refs to each other. No `host.scm` needed. |
+| LAYER 5: Guix deploy as org action | An injected capability ref. `($ (lookup 'deploy) 'run)`. Not an xorg module. |
+| LAYER 6: Per-expressor output | Still valid, low priority. |
+
+### Revised sequencing
+
+```
+NOW:
+  └── Commit persistence fixes
+  └── Write test-persistence.scm
+  └── Mark wrapper modules as deprecated
+  └── Update STACK.md with kernel-vs-infrastructure split
+
+NEXT:
+  └── Hoot compatibility testing (run kernel in WASM)
+  └── OCapN capability injection pattern (server provides caps to browser org)
+  └── Browser demo: org in WASM, governance works, connects to server for I/O
+
+WHEN SHEPHERD×GOBLINS LANDS:
+  └── Shepherd services are direct actor refs — inject into org via OCapN
+  └── No wrapper modules needed at all
+```
+
+### Revised "what done looks like"
+
+```scheme
+;; The kernel — runs in browser OR server, identical code:
+(define-values (org gov infra member)
+  (make-governed-org "my-commune"))
+
+(defexpressor 'alice (generate-key-pair))
+(defexpressor 'ai    (generate-key-pair))
+
+;; Capabilities are injected from outside — the org doesn't know what they are:
+(as infra (modify! 'deploy   (endorse some-deploy-ref   infra)))
+(as infra (modify! 'ai-query (endorse some-ai-ref       infra)))
+(as member (modify! 'member-alice (endorse alice-pk member)))
+
+;; Now anyone holding the right seal can use them:
+(as alice ($ (lookup 'deploy) 'run))        ;; deployed — signed by alice
+(as ai    ($ (lookup 'ai-query) 'ask "...")) ;; AI queried — signed by ai
+
+;; History records everything. Governance enforced everywhere.
+;; The org doesn't know if 'deploy is local, remote, or in WASM.
+;; It just calls methods and records facts.
+```
+
+### The invariants (unchanged)
+
+1. **Possession = authorization.** No ACL patterns.
+2. **All history entries attributed.** Expressor-id + signature.
+3. **Persistence-correct.** No plain lambdas in actor state.
+4. **Hoot-compatible kernel.** No system deps in core 3 files.
+5. **Tests green throughout.**

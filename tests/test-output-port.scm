@@ -6,7 +6,6 @@
 
 (use-modules (xorg gplay)
              (xorg org)
-             (xorg capabilities)
              (goblins))
 
 ;;; ── Harness ─────────────────────────────────────────────────────────────────
