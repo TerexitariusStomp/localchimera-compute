@@ -1,93 +1,76 @@
 # xorg Architecture
 
-_What xorg is, what it isn't, and where the code actually lives._
+*An overview of the xorg system layout, transport layers, and governance patterns.*
 
 ---
 
-## The realization
+## Core Concept
 
-xorg is not a framework. It's a **pattern**: use Goblins correctly,
-following the Heart of Spritely.
+xorg is not a heavy, standalone framework; it is a **pattern** for building organizational systems securely using [Spritely Goblins](https://spritely.institute/goblins/) and the capability architectures described in the [Heart of Spritely](https://spritely.institute/static/papers/spritely-core.html) paper.
 
-On native Guile + Goblins, every piece of "governance" maps 1:1 to
-something that already exists:
+On native Guile with Goblins, every piece of "governance" maps directly to existing primitives:
 
-| Need | Goblins provides | xorg code needed |
-|---|---|---|
-| Mutable state | `bcom` (become) | None |
-| Accountability | `^logger` + proxy (Heart of Spritely §3.3.4) | None — it's a pattern |
-| Attenuation | `^facet` (actor-lib) | None |
-| Revocation | `^cell` flip (Heart of Spritely §3.3.4) | None — it's a pattern |
-| Identity | Actor refs are unforgeable | None |
-| Transactions | Vat turns — automatic rollback on error | None |
-| Persistence | `define-actor` + persistence env | None |
-| Eval | `(eval expr module)` with custom modules | None |
-| REPL | `,enter-vat` in Guile's built-in REPL | None |
-| IO | Capabilities passed in (ports, `^io`) | None |
-| Networking | OCapN — actors across machines | None |
+| Organizational Need | Goblins Primitive | 
+|---|---|
+| Mutable state | `bcom` (become) | 
+| Accountability | `^logger` + proxy (Heart of Spritely §3.3.4) |
+| Attenuation | `^facet` (actor-lib) | 
+| Revocation | `^cell` flip (Heart of Spritely §3.3.4) | 
+| Identity | Actor refs (unforgeable) | 
+| Transactions | Vat turns (automatic rollback on error) | 
+| Persistence | `define-actor` + persistence environments | 
+| Eval | `(eval expr module)` with custom modules | 
+| REPL | `,enter-vat` in Guile's built-in REPL | 
+| IO | Capabilities passed in (ports, `^io`) | 
+| Networking | OCapN — actors across machines | 
 
-**On the server, xorg is Goblins.** There is no separate governance kernel
-to import. You write Goblins actors following the patterns from Heart of
-Spritely. The accountability, attenuation, and revocation patterns are
-recipes — not code you depend on.
+Because xorg relies heavily on these standard Goblins primitives, the server-side environment requires very little custom infrastructure code.
 
 ---
 
 ## Networking: Goblins over Reticulum
 
-Goblins actors are reachable over [Reticulum](https://reticulum.network/)
-mesh networks. A custom OCapN netlayer bridges Goblins' CapTP to
-Reticulum's encrypted Link/Channel system. This means any Goblins actor
-— on the server, in a browser, on a future embedded device — can be
-addressed over:
+Goblins actors are reachable over [Reticulum](https://reticulum.network/) mesh networks. A custom OCapN netlayer bridges Goblins' CapTP (Capability Transport Protocol) to Reticulum's encrypted Link/Channel system. This ensures any Goblins actor — whether on a server, in a browser, or on an embedded device — can securely communicate over:
 
 - **TCP/UDP** — standard internet
-- **LoRa radio** — 1-20km, no internet required
+- **LoRa radio** — 1-20km range without internet
 - **Serial** — direct wire to embedded devices
 - **I2P** — global anonymous networking
-- **Packet radio** — emergency/off-grid
+- **Packet radio** — emergency or off-grid communications
 
-The transport is invisible to the actor. The sturdyref
-`ocapn://...reticulum/s/...` works the same whether the message crosses
-the internet or travels over radio waves. Reticulum handles routing,
-encryption (Curve25519 + ephemeral keys), and transport. OCapN handles
-capability security and object references.
+The transport layer is entirely invisible to the actor. The sturdyref `ocapn://...reticulum/s/...` functions identically regardless of the underlying medium. Reticulum handles routing and encryption (Curve25519 + ephemeral keys), while OCapN manages capability security and object references.
 
-The bridge follows the same pattern as Goblins' libp2p netlayer:
-a Python daemon (`reticulum-bridge.py`) manages Reticulum links,
-connected to the Guile netlayer via Unix domain sockets.
+The bridge architecture follows the same pattern as Goblins' libp2p netlayer: a Python daemon (`reticulum-bridge.py`) manages the Reticulum links, connecting to the Guile netlayer via Unix domain sockets.
 
-See `docs/RETICULUM-NETLAYER.md` for full architecture.
+See `docs/RETICULUM-NETLAYER.md` for full networking details.
 
 ---
 
-## When xorg code IS needed: Hoot/WASM (browser)
+## Client-Side: Hoot and WebAssembly
 
-In the browser via Hoot, several Guile features aren't available:
+Running xorg within a web browser via Guile Hoot requires bridging several native Guile features that aren't available in typical WASM environments natively:
 
-| Missing in Hoot | xorg provides |
+| Native Guile Feature | xorg Hoot Implementation |
 |---|---|
 | `eval` | Metacircular evaluator (~180 lines) |
 | Full module system | `default-base-bindings` — curated primitives |
 | `,enter-vat` | Inner REPL (`enter!`) |
-| Possibly limited actor-lib | Own `^logger`, proxy pair |
 
-This is xorg's actual role: **a Hoot-compatible subset of Goblins
-patterns with a metacircular evaluator for the browser.**
+For the browser, xorg provides **a Hoot-compatible subset of Goblins patterns**, bundled alongside a metacircular evaluator. 
 
-The files:
-- `module/xorg/gplay.scm` — evaluator + Goblins actors (for Hoot)
-- `module/xorg/org.scm` — factories + REPL (for Hoot)
+Key files for the client-side environment:
+- `module/xorg/gplay.scm` — Evaluator and Goblins actors (Hoot-compatible)
 - `module/xorg/kanren.scm` — miniKanren (standalone, Hoot-compatible)
-- `module/xorg/hyperarc.scm` — metagraph data (standalone)
-- `module/xorg/knowledge.scm` — relational queries (standalone)
+- `module/xorg/hyperarc.scm` — Metagraph data structures
+- `module/xorg/knowledge.scm` — Relational queries
+
+By utilizing the evaluator, browser-based REPLs continue to share the exact same architectural semantics as native environments.
 
 ---
 
-## The server: live hacking with Goblins directly
+## Server-Side: Native Guile Environments
 
-On the Hetzner server (or any native Guile environment), you don't
-import xorg. You just use Goblins:
+On a server (or any native Guile environment), xorg leverages Goblins directly without needing the Hoot compatibility layers. Governance architectures are composed naturally from generic Spritely patterns rather than opaque abstractions:
 
 ```scheme
 (use-modules (goblins)
@@ -95,7 +78,7 @@ import xorg. You just use Goblins:
              (goblins actor-lib facet)
              (goblins actor-lib methods))
 
-;; State — just an actor with bcom
+;; State management using standard actors
 (define-actor (^org bcom bindings)
   (methods
    [(lookup name) (assq-ref bindings name)]
@@ -122,13 +105,13 @@ import xorg. You just use Goblins:
       (apply $ object args)))
   (values (spawn ^proxy) revoked?))
 
-;; Wire it up
+;; Wire it up inside a vat
 (define vat (spawn-vat))
 (with-vat vat
   (define org (spawn ^org '()))
   (define log (spawn ^logger))
 
-  ;; Governed refs — the proxy IS the identity
+  ;; Governed refs — the proxy acts as the identity
   (define-values (gov-ref gov-revoked?)
     (spawn-logged-revocable-proxy-pair 'governance org log))
   (define-values (infra-ref infra-revoked?)
@@ -137,85 +120,47 @@ import xorg. You just use Goblins:
   ;; Read-only — ^facet blocks mutation
   (define read-ref (facet org 'lookup 'bindings 'snapshot))
 
-  ;; Use it
+  ;; Interact via proxy
   ($ infra-ref 'modify! 'deploy "my-deploy-cap")
   ($ gov-ref 'modify! 'policy "consensus")
 
-  ;; Check the log
+  ;; Check the logger
   ($ log 'get-log)
   ;; => ((*entry* user governance args (modify! policy "consensus"))
   ;;     (*entry* user infrastructure args (modify! deploy "my-deploy-cap")))
 
-  ;; Revoke infrastructure
+  ;; Revoke infrastructure access with a single flip
   ($ infra-revoked? #t)
   ;; ($ infra-ref 'modify! 'x 1) → ERROR: Access revoked
-
-  ;; Read-only can't mutate
-  ;; ($ read-ref 'modify! 'x 1) → ERROR: method denied
   )
 ```
 
-That's it. No imports from `(xorg ...)`. No governance kernel. Just
-Goblins actors composed following the Heart of Spritely patterns.
+### Live Server Interaction
 
----
-
-## The browser: xorg evaluator
-
-In Hoot/WASM, the same patterns apply but we need the metacircular
-evaluator because `eval` isn't available:
-
-```scheme
-;; Browser — uses xorg's evaluator
-(use-modules (xorg gplay) (xorg org))
-(define-values (vat proxy log) (make-open-org "my-org"))
-(with-vat vat
-  (evaluate '(define x 42) proxy '())
-  (evaluate '(modify! 'policy "consensus") proxy '()))
-```
-
-Same governance. Same patterns. The evaluator is the bridge.
-
----
-
-## Live hacking on the server
-
-The Hetzner server runs Guile + Goblins natively. The live hacking
-setup (Guile REPL server + Emacs/Geiser) gives direct access to the
-Goblins vat:
+The native server setup (Guile REPL server + Emacs/Geiser) provides direct access to the Goblins vat:
 
 ```
-You (or Claude Code)
+Developer
   → SSH / emacsclient
   → Guile REPL on /var/run/playnet/repl.sock
   → Goblins vat with live actors
-  → Create orgs, loggers, proxies
   → Test governance patterns interactively
   → Hot-reload modules
 ```
 
-There is no compilation step, no deploy cycle, no restart. You
-evaluate an S-expression and it's live in the vat. Actors persist
-across calls. The REPL IS the development environment.
-
-This is what Lisp was built for. Goblins makes it capability-secure.
-Heart of Spritely makes it accountable. Guix makes it reproducible.
+Rather than using a rigid deployment cycle, expressions can be evaluated live within the vat, persisting across calls as dictated by standard capability security and Heart of Spritely design patterns.
 
 ---
 
 ## Summary
 
-```
+```text
 Browser (Hoot/WASM)              Server (Native Guile)
 ─────────────────────            ────────────────────
-xorg evaluator                   Guile's eval
-xorg base-bindings               Guile's module system
+xorg evaluator                   Guile's native eval
+xorg base-bindings               Guile's native module system
 xorg REPL                        Guile's REPL + ,enter-vat
-xorg actors                      Same Goblins actors
-                                 (no xorg import needed)
-    ↕                                ↕
-    └──── OCapN ──── same actors, same patterns ────┘
+xorg actors                      Standard Goblins actors
+     ↕                                ↕
+     └──── OCapN ──── same actors, same patterns ────┘
 ```
-
-xorg exists for the browser. On the server, Goblins IS the governance
-kernel.

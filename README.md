@@ -211,9 +211,10 @@ Or push to `main` — GitHub Actions runs `guix deploy` automatically.
 
 See `deploy/guix/DEPLOY-GUIDE.md` for the full guide.
 
-### Learning Goblins
+### Learning Scheme and Goblins
 
-The best starting point is the [Heart of Spritely](https://spritely.institute/static/papers/spritely-core.html) paper — it covers the capability patterns that xorg maps onto directly.
+- **Scheme:** If you're new to the language, [A Scheme Primer](https://spritely.institute/static/papers/scheme-primer.html) is the perfect introduction.
+- **Goblins:** The best starting point is the [Heart of Spritely](https://spritely.institute/static/papers/spritely-core.html) paper — it covers the capability patterns that xorg maps onto directly.
 
 ## What This Is Not
 
