@@ -172,6 +172,18 @@
   "crypto" "exportKey"
   (ref extern) -> (ref extern))
 
+;;; Voice-to-text — Web Speech API
+(define-foreign %speech-supported?
+  "speech" "isSupported"
+  -> i32)
+(define (speech-supported?) (= (%speech-supported?) 1))
+(define-foreign start-listening!
+  "speech" "startListening"
+  (ref extern) (ref extern) -> none)
+(define-foreign stop-listening!
+  "speech" "stopListening"
+  -> none)
+
 (define procedure->external/cached
   (let ((cache (make-hashtable)))
     (lambda (proc)
@@ -573,6 +585,30 @@
 (define *show-signup-form* #f)
 (define *confirm-delete-org* #f)     ;; org name string or #f
 (define *show-join-form* #f)
+(define *listening?* #f)
+
+;; Voice-to-text callbacks
+(define (on-speech-result transcript)
+  (let ((input (get-element-by-id "expression")))
+    (set-element-value! input
+      (string-append (element-value input)
+                     (if (string=? (element-value input) "") "" " ")
+                     transcript))
+    (set! *listening?* #f)
+    (refresh!)))
+
+(define (on-speech-end)
+  (set! *listening?* #f)
+  (refresh!))
+
+(define (toggle-listening!)
+  (if *listening?*
+      (begin (stop-listening!)
+             (set! *listening?* #f))
+      (begin (start-listening!
+               (procedure->external on-speech-result)
+               (procedure->external on-speech-end))
+             (set! *listening?* #t))))
 
 (define (org-entry-name e) (list-ref e 0))
 (define (org-entry-vat e) (list-ref e 1))
@@ -1277,13 +1313,15 @@
   (let ((input (get-element-by-id "expression")))
     (set-style! input "height" "auto")
     (set-style! input "height"
-                (string-append (number->string (scroll-height input)) "px"))))
+                (string-append (number->string (scroll-height input)) "px"))
+    (scroll-to-bottom!)))
 
 ;;; ── Scroll helper ─────────────────────────────────────────────────────────
 
 (define (scroll-to-bottom!)
   (let ((log (get-element-by-id "repl-log")))
-    (set-scroll-top! log (scroll-height log))))
+    (set-scroll-top! log (scroll-height log))
+    (focus-element! (get-element-by-id "expression"))))
 
 ;;; ── Event handling ────────────────────────────────────────────────────────
 
@@ -1597,44 +1635,56 @@
 (define (render-action-bar)
   `(div (@ (class "action-bar"))
         ,@(if (eq? *mode* 'outer)
-              (list `(span (@ (class "cp-btn cp-btn-primary")
-                              (click ,(lambda (e)
-                                        (set! *show-new-org-form* #t)
-                                        (refresh!))))
-                           "+ new org")
-                    (if (and *ws* *connected?*)
-                        `(span (@ (class "cp-btn")
-                                  (click ,(lambda (e)
-                                            (set! *show-signup-form* #t)
-                                            (refresh!))))
-                               "signup")
-                        `(span (@ (class "cp-status")) "relay: disconnected")))
-              (list `(span (@ (class "cp-btn")
-                              (click ,(lambda (e) (do-exit!) (refresh!) (scroll-to-bottom!))))
-                           "exit")
-                    `(span (@ (class "cp-btn")
-                              (click ,(lambda (e)
-                                        (eval! "(show-history)")
-                                        (refresh!) (scroll-to-bottom!))))
-                           "history")
-                    `(span (@ (class "cp-btn")
-                              (click ,(lambda (e)
-                                        (eval! "(show-expressors)")
-                                        (refresh!) (scroll-to-bottom!))))
-                           "expressors")
-                    `(span (@ (class "cp-btn")
-                              (click ,(lambda (e)
-                                        (eval! "(public-key)")
-                                        (refresh!) (scroll-to-bottom!))))
-                           "public key")
-                    `(span (@ (class "cp-btn")
-                              (click ,(lambda (e) (do-export-ssh-key!) (refresh!) (scroll-to-bottom!))))
-                           "ssh key")
-                    (render-join-form)
-                    `(span (@ (class ,(string-append "cp-status"
-                                        (if *connected?* " cp-status-connected"
-                                            " cp-status-disconnected"))))
-                           ,(if *connected?* "relay: connected" "relay: disconnected"))))))
+              (append
+               (list `(span (@ (class "cp-btn cp-btn-primary")
+                                (click ,(lambda (e)
+                                          (set! *show-new-org-form* #t)
+                                          (refresh!))))
+                             "+ new org")
+                     (if (and *ws* *connected?*)
+                         `(span (@ (class "cp-btn")
+                                   (click ,(lambda (e)
+                                             (set! *show-signup-form* #t)
+                                             (refresh!))))
+                                "signup")
+                         `(span (@ (class "cp-status")) "relay: disconnected")))
+               (if (speech-supported?)
+                   (list `(span (@ (class ,(string-append "cp-btn" (if *listening?* " cp-btn-danger" "")))
+                                   (click ,(lambda (e) (toggle-listening!) (refresh!))))
+                                ,(if *listening?* "stop" "mic")))
+                   '()))
+              (append
+               (list `(span (@ (class "cp-btn")
+                                (click ,(lambda (e) (do-exit!) (refresh!) (scroll-to-bottom!))))
+                             "exit")
+                     `(span (@ (class "cp-btn")
+                                (click ,(lambda (e)
+                                          (eval! "(show-history)")
+                                          (refresh!) (scroll-to-bottom!))))
+                             "history")
+                     `(span (@ (class "cp-btn")
+                                (click ,(lambda (e)
+                                          (eval! "(show-expressors)")
+                                          (refresh!) (scroll-to-bottom!))))
+                             "expressors")
+                     `(span (@ (class "cp-btn")
+                                (click ,(lambda (e)
+                                          (eval! "(public-key)")
+                                          (refresh!) (scroll-to-bottom!))))
+                             "public key")
+                     `(span (@ (class "cp-btn")
+                                (click ,(lambda (e) (do-export-ssh-key!) (refresh!) (scroll-to-bottom!))))
+                             "ssh key")
+                     (render-join-form))
+               (if (speech-supported?)
+                   (list `(span (@ (class ,(string-append "cp-btn" (if *listening?* " cp-btn-danger" "")))
+                                   (click ,(lambda (e) (toggle-listening!) (refresh!))))
+                                ,(if *listening?* "stop" "mic")))
+                   '())
+               (list `(span (@ (class ,(string-append "cp-status"
+                                          (if *connected?* " cp-status-connected"
+                                              " cp-status-disconnected"))))
+                             ,(if *connected?* "relay: connected" "relay: disconnected")))))))
 
 ;;; ── Sidebar rendering ──────────────────────────────────────────────────
 
@@ -1734,17 +1784,18 @@
 
 (define (render-repl)
   `(div (@ (id "repl") (class "repl repl-text"))
-        (div (@ (id "repl-log") (class "log")) ,@*log*)
-        (div (@ (class "prompt"))
-             ,(current-prompt)
-             (textarea (@ (id "expression") (class "repl-text")
-                          (rows "1") (keydown ,maybe-eval)
-                          (keyup ,on-keyup) (input ,auto-resize)))
-             ,@(if (string=? *current-suggestion* "")
-                   '()
-                   (list `(span (@ (class "ghost-text-suggestion"))
-                                ,*current-suggestion*)))
-             (span (@ (class "paren-indicator")) ,(paren-indicator)))))
+        (div (@ (id "repl-log") (class "log"))
+             ,@*log*
+             (div (@ (class "prompt"))
+                  ,(current-prompt)
+                  (textarea (@ (id "expression") (class "repl-text")
+                               (rows "1") (keydown ,maybe-eval)
+                               (keyup ,on-keyup) (input ,auto-resize)))
+                  ,@(if (string=? *current-suggestion* "")
+                        '()
+                        (list `(span (@ (class "ghost-text-suggestion"))
+                                     ,*current-suggestion*)))
+                  (span (@ (class "paren-indicator")) ,(paren-indicator))))))
 
 (define (render-tab-bar)
   `(div (@ (class "tab-bar"))

@@ -185,6 +185,32 @@ window.addEventListener("load", async () => {
           getItem(key) { return localStorage.getItem(key); },
           setItem(key, value) { localStorage.setItem(key, value); },
           removeItem(key) { localStorage.removeItem(key); }
+        },
+        speech: {
+          isSupported() {
+            return ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) ? 1 : 0;
+          },
+          startListening(onResult, onEnd) {
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const recognition = new SR();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+            recognition.onresult = (event) => {
+              const transcript = event.results[0][0].transcript;
+              onResult(transcript);
+            };
+            recognition.onend = () => { onEnd(); };
+            recognition.onerror = () => { onEnd(); };
+            recognition.start();
+            window.__xorgRecognition = recognition;
+          },
+          stopListening() {
+            if (window.__xorgRecognition) {
+              window.__xorgRecognition.stop();
+              window.__xorgRecognition = null;
+            }
+          }
         }
       }
     });
