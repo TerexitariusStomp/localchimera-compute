@@ -33,6 +33,34 @@ recipes — not code you depend on.
 
 ---
 
+## Networking: Goblins over Reticulum
+
+Goblins actors are reachable over [Reticulum](https://reticulum.network/)
+mesh networks. A custom OCapN netlayer bridges Goblins' CapTP to
+Reticulum's encrypted Link/Channel system. This means any Goblins actor
+— on the server, in a browser, on a future embedded device — can be
+addressed over:
+
+- **TCP/UDP** — standard internet
+- **LoRa radio** — 1-20km, no internet required
+- **Serial** — direct wire to embedded devices
+- **I2P** — global anonymous networking
+- **Packet radio** — emergency/off-grid
+
+The transport is invisible to the actor. The sturdyref
+`ocapn://...reticulum/s/...` works the same whether the message crosses
+the internet or travels over radio waves. Reticulum handles routing,
+encryption (Curve25519 + ephemeral keys), and transport. OCapN handles
+capability security and object references.
+
+The bridge follows the same pattern as Goblins' libp2p netlayer:
+a Python daemon (`reticulum-bridge.py`) manages Reticulum links,
+connected to the Guile netlayer via Unix domain sockets.
+
+See `docs/RETICULUM-NETLAYER.md` for full architecture.
+
+---
+
 ## When xorg code IS needed: Hoot/WASM (browser)
 
 In the browser via Hoot, several Guile features aren't available:

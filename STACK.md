@@ -31,6 +31,9 @@ an AI can participate in that governance as a proper, attributed, capability-gov
 ├─────────────────────────────────────────────────────────────────────┤
 │  Hetzner Cloud  (bootstrapped, then managed by guix deploy)          │
 │  guix deploy deploy/guix/machines.scm                               │
+├─────────────────────────────────────────────────────────────────────┤
+│  Reticulum  (mesh networking — LoRa, serial, I2P, TCP, UDP)         │
+│  OCapN netlayer: Goblins actors reachable over any Reticulum transport│
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -97,6 +100,72 @@ The bootstrap script fixes all of these. See `deploy/guix/DEPLOY-GUIDE.md` for d
                       (openssh openssh-sans-x)
                       (permit-root-login 'prohibit-password)))
             %base-services))))
+```
+
+---
+
+## Layer 1.5: Reticulum — mesh networking for Goblins
+
+### What it is
+Goblins actors reachable over any network Reticulum supports: TCP, UDP,
+LoRa radio, serial links, I2P, packet radio. A custom OCapN netlayer
+bridges Goblins' CapTP to Reticulum's encrypted Link/Channel system.
+
+The same `(<- remote-ref "Bob")` call works whether the message travels
+over fiber optic or LoRa radio. OCapN abstracts the object references.
+Reticulum abstracts the transport. The actor doesn't know or care.
+
+### What this means
+An org running on the Hetzner server can be called from a LoRa node in
+a field with no internet. A sensor on a serial link can hold a Goblins
+actor ref. A device behind NAT, on I2P, on a mesh network — all
+addressable via the same OCapN sturdyref:
+
+```
+ocapn://33a5995c162b827962ad20748bd2ccbf.reticulum/s/c14LAGX...
+```
+
+| Transport | Range | Use case |
+|---|---|---|
+| TCP/UDP | Global | Standard server-to-server |
+| LoRa radio | 1-20km | Field devices, rural, off-grid |
+| Serial | Direct wire | Embedded systems |
+| I2P | Global | Anonymous, censorship-resistant |
+| Packet radio | 10-100km | Emergency, disaster |
+
+### Architecture
+```
+Goblins actors ←→ OCapN CapTP
+        ↕
+^reticulum-netlayer (Guile, uses ^base-port-netlayer)
+        ↕  Unix domain sockets
+reticulum-bridge.py (Python, byte shuttle)
+        ↕  Reticulum Channel (encrypted, reliable)
+Reticulum Link ←→ any transport
+```
+
+Follows the same pattern as Goblins' libp2p netlayer: external daemon
+bridged via Unix sockets, `^base-port-netlayer` handles the common
+netlayer interface.
+
+### Key files
+- `module/goblins/ocapn/netlayer/reticulum.scm` — Guile netlayer
+- `server/reticulum-bridge.py` — Python bridge daemon
+- `deploy/guix/reticulum-service.scm` — Guix Shepherd services
+- `docs/RETICULUM-NETLAYER.md` — full architecture docs
+
+### Usage
+```scheme
+(use-modules (goblins) (goblins ocapn captp)
+             (goblins ocapn netlayer reticulum))
+(define vat (spawn-vat))
+(with-vat vat
+  (define netlayer (spawn ^reticulum-netlayer))
+  (define mycapn (spawn-mycapn netlayer))
+  ;; Register any actor — now reachable over mesh
+  (define sref ($ mycapn 'register my-actor 'reticulum))
+  ;; Share the sturdyref: ocapn://...reticulum/s/...
+  )
 ```
 
 ---
@@ -350,6 +419,7 @@ Heart of Spritely patterns inline. See [ARCHITECTURE.md](ARCHITECTURE.md).
 | Knowledge layer (miniKanren, hyperarc, queries) | ✓ Done |
 | Hetzner+Guix deploy (SERVER_IP) | ✓ Done |
 | Kernel extraction (deprecated wrappers moved out) | ✓ Done |
+| Reticulum OCapN netlayer (LoRa, serial, I2P, TCP) | ✓ Done |
 
 ### Next
 | What | Notes |

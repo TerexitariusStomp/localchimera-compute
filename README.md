@@ -23,6 +23,9 @@ On native Guile + Goblins, xorg is not a library — it's a **pattern**. Every p
 | Identity | Actor refs are unforgeable |
 | Persistence | `define-actor` + persistence env |
 | Networking | OCapN — actors across machines |
+| Mesh networking | [Reticulum](https://reticulum.network/) — LoRa, serial, I2P, TCP, packet radio |
+
+Goblins actors are reachable over **any transport Reticulum supports**: TCP, LoRa radio, serial links, I2P, packet radio. The same sturdyref works whether the message crosses the internet or travels over radio waves.
 
 On the server, you just use Goblins directly. xorg code is needed only for **Hoot/WASM** (browser), where Guile's `eval` and module system aren't available.
 
@@ -131,7 +134,22 @@ In the browser, Guile's `eval` isn't available. xorg provides a metacircular eva
 
 ## Networking
 
-Orgs communicate via Goblins' OCapN (Object Capability Network). Two orgs on different machines can hold direct actor references to each other. A logged revocable proxy can cross the network boundary — identity and accountability work the same way locally and remotely.
+Goblins actors communicate via OCapN (Object Capability Network) over multiple transports:
+
+- **Tor Onion Services** — anonymous, peer-to-peer
+- **TCP + TLS** — direct encrypted connections
+- **WebSocket** — browser-to-server (Hoot/WASM)
+- **Reticulum** — mesh networking over LoRa, serial, I2P, packet radio, TCP
+
+The Reticulum netlayer means Goblins actors are reachable over **radio, serial wire, anonymous networks, and the open internet** — all through the same OCapN sturdyref. An actor on a LoRa node in a field can hold a capability ref to an actor on a Hetzner server. The call looks the same:
+
+```scheme
+(on (<- remote-greeter "Bob")
+    (lambda (reply) (display reply)))
+;; => "Hello Bob, welcome to the Reticulum mesh!"
+```
+
+The transport is invisible. The capability security is preserved end-to-end. Reticulum handles routing and encryption (Curve25519). OCapN handles object references and garbage collection.
 
 ## How to Run
 
