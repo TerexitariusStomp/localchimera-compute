@@ -172,11 +172,24 @@ GNU Guile 3.0+, Guile Goblins 0.17.0+. For browser: Guile Hoot 0.7.0+ and a rece
 
 ### Setup with Guix
 
+You can consume this repository either directly or as a Guix channel.
+
+**Install directly from source:**
 ```bash
-guix shell -m manifest.scm    # transient shell with all dependencies
-# or
-guix package -m manifest.scm  # install into profile
+guix package -f guix.scm      # install the meta-org desktop REPL into your profile
+guix shell -m manifest.scm    # transient shell with all development dependencies
 ```
+
+**Add as a Guix channel:**
+To make `meta-org` available in your system's package registry, add this to your `~/.config/guix/channels.scm`:
+```scheme
+(cons (channel
+        (name 'meta-org)
+        (url "https://github.com/interplaynetary/meta-org.git")
+        (branch "main"))
+      %default-channels)
+```
+After running `guix pull`, you can install it globally via `guix install meta-org`.
 
 ### Run
 
