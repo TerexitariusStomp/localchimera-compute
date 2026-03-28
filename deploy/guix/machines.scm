@@ -22,6 +22,7 @@
              (gnu packages messaging)
              (gnu packages version-control)
              (gnu packages ssh)
+             (python-rns)
              (gnu services base)
              (gnu services networking)
              (gnu services shepherd)
@@ -149,7 +150,8 @@
             git
             mosquitto
             guile-mqtt
-            guile-json-4)
+            guile-json-4
+            python-rns)
       %base-packages))
 
     (services
