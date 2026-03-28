@@ -3,6 +3,9 @@
 ;;; An org is pure state: bindings + mutation + snapshot + restore.
 ;;; Accountability is separate: ^logger + logged-revocable proxies.
 ;;; Follows the Heart of Spritely pattern (section 3.3.4).
+;;;
+;;; IO is a capability passed in via bindings, not wrapped in an actor.
+;;; There is no global registry. You hold a ref or you don't.
 
 (define-module (xorg gplay)
   #:use-module (goblins)
@@ -12,7 +15,6 @@
   #:use-module (ice-9 match)
   #:export (^org
             ^logger
-            ^output-port
             spawn-logged-revocable-proxy-pair
             evaluate
             filter-serializable-bindings
@@ -38,61 +40,41 @@
 
 (define *restore-base-bindings* (make-parameter '()))
 
-;;; ── ^output-port ──────────────────────────────────────────────────────────
-
-(define-actor (^output-port bcom port)
-  #:version 1
-  #:portrait (lambda () (list 'stdout))
-  #:restore (lambda (version _) (spawn ^output-port (current-output-port)))
-  (methods
-   [(display val)       (display val port)           (if #f #f)]
-   [(write val)         (write val port)             (if #f #f)]
-   [(newline)           (newline port)               (if #f #f)]
-   [(format fmt . args) (apply format port fmt args) (if #f #f)]
-   [(port)              port]))
-
 ;;; ── ^org ──────────────────────────────────────────────────────────────────
 ;;;
-;;; Pure state. Bindings + output-cap. No history, no identity, no logging.
-;;; The org doesn't know who calls it or why. Accountability is handled
-;;; by the proxy layer (^logger + spawn-logged-revocable-proxy-pair).
+;;; Pure state. Just bindings. No history, no identity, no IO wrapping.
+;;; IO capabilities (display, write, etc.) are injected via bindings,
+;;; just like any other capability — following Heart of Spritely's
+;;; principle that capabilities are passed in, not ambient.
 
-(define-actor (^org bcom bindings output-cap)
+(define-actor (^org bcom bindings)
   #:version 1
   #:portrait
-  (lambda ()
-    (list (filter-serializable-bindings bindings) output-cap))
+  (lambda () (list (filter-serializable-bindings bindings)))
   #:restore
-  (lambda (version data-bindings oc)
+  (lambda (version data-bindings)
     (let ((base (*restore-base-bindings*)))
-      (spawn ^org (append data-bindings base) oc)))
-
-  (define (lookup name)
-    (cond ((assq name bindings) => cdr)
-          ((and output-cap (memq name '(display write newline format)))
-           (case name
-             ((display) (lambda (v) ($ output-cap 'display v)))
-             ((write)   (lambda (v) ($ output-cap 'write v)))
-             ((newline)  (lambda () ($ output-cap 'newline)))
-             ((format)   (lambda (fmt . args) (apply $ output-cap 'format fmt args)))))
-          (else (error "Variable unbound:" name))))
+      (spawn ^org (append data-bindings base))))
 
   (methods
-   [(lookup name) (lookup name)]
-   [(bindings)    bindings]
+   [(lookup name)
+    (cond ((assq name bindings) => cdr)
+          (else (error "Variable unbound:" name)))]
+
+   [(bindings) bindings]
 
    [(modify! name value)
     (let ((new-bindings (cons (cons name value)
                               (filter (lambda (p) (not (eq? (car p) name)))
                                       bindings))))
-      (bcom (^org bcom new-bindings output-cap)))]
+      (bcom (^org bcom new-bindings)))]
 
    [(snapshot)
     (filter-serializable-bindings bindings)]
 
    [(restore! snapshot)
     (let ((base (*restore-base-bindings*)))
-      (bcom (^org bcom (append snapshot base) output-cap)))]))
+      (bcom (^org bcom (append snapshot base))))]))
 
 ;;; ── ^logger ───────────────────────────────────────────────────────────────
 ;;;
@@ -105,10 +87,8 @@
   (methods
    ((append-to-log username object args)
     (let* ((current ($ log))
-           (entry (list '*entry*
-                        'user username
-                        'args args
-                        'snapshot ($ object 'snapshot)))
+           (entry `(*entry* user ,username args ,args
+                            snapshot ,($ object 'snapshot)))
            (new-log (cons entry current)))
       ($ log new-log)))
 
@@ -140,7 +120,8 @@
 ;;; ── Evaluator ─────────────────────────────────────────────────────────────
 ;;;
 ;;; evaluate: (expr, org-ref, local-bindings) → value
-;;; org-ref is typically a logged-revocable proxy — logging is transparent.
+;;; org-ref is typically a logged-revocable proxy.
+;;; IO (display, write, etc.) is available if injected via base-bindings.
 
 (define (evaluate expr org local-bindings)
   (match expr
@@ -229,7 +210,6 @@
        (if #f #f)))
 
     ;; rollback! — restores a snapshot from the log
-    ;; Requires the log to be available as a binding
     (('rollback! log-entry-index-expr)
      (let* ((idx (evaluate log-entry-index-expr org local-bindings))
             (log-ref ($ org 'lookup '*log*))
@@ -306,6 +286,5 @@
 
 (define org-env
   (make-persistence-env
-   `((((xorg gplay) ^org) ,^org)
-     (((xorg gplay) ^output-port) ,^output-port))
+   `((((xorg gplay) ^org) ,^org))
    #:extends (list facet-env cell-env)))
