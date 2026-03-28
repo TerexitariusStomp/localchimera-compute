@@ -12,6 +12,7 @@
              (gnu packages bash)
              (gnu packages emacs)
              (gnu packages emacs-xyz)
+             (gnu packages guile)
              (gnu packages guile-xyz)
              (gnu packages version-control)
              (gnu packages ssh)
