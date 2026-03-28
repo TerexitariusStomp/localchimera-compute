@@ -12,7 +12,6 @@
              (gnu packages bash)
              (gnu packages emacs)
              (gnu packages emacs-xyz)
-             (gnu packages guile)
              (gnu packages guile-xyz)
              (gnu packages version-control)
              (gnu packages ssh)
@@ -48,8 +47,7 @@
 
     (packages
      (append
-      (list guile-3.0
-            guile-goblins
+      (list guile-goblins
             emacs-no-x
             emacs-geiser
             emacs-geiser-guile
