@@ -19,6 +19,7 @@
              (gnu packages emacs-xyz)
              (gnu packages guile)
              (gnu packages guile-xyz)
+             (gnu packages messaging)
              (gnu packages version-control)
              (gnu packages ssh)
              (gnu services base)
@@ -141,7 +142,10 @@
             emacs-rainbow-delimiters
             emacs-claude-code-ide
             htop
-            git)
+            git
+            mosquitto
+            guile-mqtt
+            guile-json-4)
       %base-packages))
 
     (services
@@ -191,6 +195,22 @@
                                       #f))
                              (respawn? #f)
                              (auto-start? #f))))
+
+      ;; Mosquitto MQTT broker — localhost only, for VF bridge.
+      ;; Sensors and bridge actors connect locally; no external exposure.
+      (simple-service 'mosquitto
+                      shepherd-root-service-type
+                      (list (shepherd-service
+                             (provision '(mosquitto))
+                             (documentation "MQTT broker for VF event bridge")
+                             (requirement '(networking))
+                             (start #~(make-forkexec-constructor
+                                       (list #$(file-append mosquitto "/sbin/mosquitto")
+                                             "-c" #$(plain-file "mosquitto.conf"
+                                                     "listener 1883 127.0.0.1\nallow_anonymous true\nlog_dest stderr\n"))
+                                       #:log-file "/var/log/mosquitto.log"))
+                             (stop #~(make-kill-destructor))
+                             (respawn? #t))))
 
       ;; Activation: set up playnet user environment.
       ;; Uses mkdir-p because on first deploy, user-homes may not have
