@@ -232,6 +232,33 @@ Click "voice to code" → speak "define a function that squares a number"
 
 No API key needed from the user — transcription and NL→code conversion are funded by donated OpenRouter keys managed through the key-pool, which handles round-robin, rate limiting, and health tracking.
 
+## Economic Planning — Agents as Scopes, Actors as Agents
+
+The planner is a complete [ValueFlows](https://valueflo.ws/) economic planning engine — 20+ algorithm modules, ~14,000 lines — built on Goblins actors. It models supply chains, resource flows, and coordination as governed computation.
+
+The key insight: **a planning scope IS a Goblins vat. An agent IS an actor. A commitment IS a message.**
+
+```
+┌─────────────────────────────────────────────┐
+│  ValueFlows Scope (= Goblins Vat)           │
+│                                             │
+│  Agent actors ←→ Process actors             │
+│       │              │                      │
+│  Commitments    Economic Events             │
+│  (messages)     (state transitions)         │
+│       │              │                      │
+│  Resource flows tracked as bcom             │
+│  Accountability via ^logger                 │
+│  Cross-scope coordination via OCapN         │
+└─────────────────────────────────────────────┘
+```
+
+Each scope is isolated (vat boundary). Scopes coordinate via OCapN — the same protocol that connects browsers to servers to LoRa radios. A planning federation is a hierarchy of scopes folded together, each governed by its own actors.
+
+The planner includes: dependent demand/supply, DDMRP buffer positioning, critical path analysis, netting (location-aware), flow graphs, custody chains, track-and-trace, value equations, OTIF metrics, and federated multi-scope planning.
+
+The key-pool is the first concrete example: donated API keys are agents, the pool is a scope, usage is tracked as economic events (cost, rate limits, health). Community voice transcription is a ValueFlows service funded by communal resource flows.
+
 ## Networking
 
 Goblins actors communicate via OCapN over multiple transports:
