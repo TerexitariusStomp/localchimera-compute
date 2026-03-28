@@ -257,16 +257,63 @@ Until then, use `bootstrap-hetzner.sh` + `managed-host-environment-type`.
 
 ---
 
+## Reticulum (mesh networking)
+
+Goblins actors can be reached over [Reticulum](https://reticulum.network/)
+mesh networks (LoRa, serial, I2P, TCP, packet radio).
+
+### Install (reproducible)
+
+Reticulum is Python. Guix provides the dependencies; `pip` installs `rns`:
+
+```bash
+# Install Guix profile with Python deps (survives reboot)
+guix package -m deploy/guix/reticulum-manifest.scm -p /opt/reticulum
+
+# Install rns on top
+source /opt/reticulum/etc/profile
+pip install --prefix /opt/reticulum-pip rns
+export PATH=/opt/reticulum-pip/bin:$PATH
+```
+
+### Pin for full reproducibility
+
+```bash
+# Save exact Guix state
+guix describe -f channels > deploy/guix/reticulum-channels.scm
+
+# Recreate identically, even years later
+guix time-machine -C deploy/guix/reticulum-channels.scm -- \
+  shell -m deploy/guix/reticulum-manifest.scm
+```
+
+### Run
+
+```bash
+# Start Reticulum daemon
+rnsd -v &
+
+# Start OCapN bridge
+python3 server/reticulum-bridge.py \
+  --control-socket /tmp/ret-bridge.sock \
+  --socket-dir /tmp/ret-sockets &
+```
+
+See `docs/RETICULUM-NETLAYER.md` for full architecture.
+
+---
+
 ## File inventory
 
 ```
 deploy/guix/
-  bootstrap-hetzner.sh   -- one-shot provisioning script
-  machines.scm           -- guix deploy target (managed-host)
-  secrets.scm            -- API token (gitignored)
-  deploy.sh              -- wrapper: loads secrets, runs guix deploy
-  base-system.scm        -- full OS declaration (for future use)
-  xorg-service.scm       -- Shepherd service for xorg actors
-  channels.scm           -- pinned Guix channel
-  DEPLOY-GUIDE.md        -- this file
+  bootstrap-hetzner.sh        -- one-shot provisioning script
+  machines.scm                -- guix deploy target (managed-host)
+  secrets.scm                 -- API token (gitignored)
+  deploy.sh                   -- wrapper: loads secrets, runs guix deploy
+  xorg-service.scm            -- Shepherd service for xorg actors
+  reticulum-service.scm       -- Shepherd services for rnsd + bridge
+  reticulum-manifest.scm      -- Guix manifest for Reticulum Python deps
+  channels.scm                -- pinned Guix channel
+  DEPLOY-GUIDE.md             -- this file
 ```
