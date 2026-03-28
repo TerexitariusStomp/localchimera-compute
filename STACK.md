@@ -374,19 +374,25 @@ Goblins actor refs — the kernel doesn't know or care what they do.
 
 ## Roadmap snapshot
 
-| Layer | Status | What's next |
-|---|---|---|
-| Hetzner+Guix deploy | ✓ Done | Server live at SERVER_IP |
-| Shepherd service type | ✓ Done | Wait for Shepherd×Goblins |
-| xorg core (`^org` v5) | ✓ Done | — |
-| Cap security (endorsement) | ✓ Done | — |
-| History signatures | ✓ Done | — |
-| Persistence (actors) | ✓ Done | Persistence tests |
-| Geiser dev environment | ✓ Done | Wire mcp-server-lib.el |
-| AI as expressor | 🔄 In progress | `sharp-bloom` agent |
-| MCP capability actor | ⬜ Next | `module/xorg/mcp.scm` |
-| Multi-org via OCapN/UDS | ⬜ Next | `module/xorg/host.scm` |
-| Quorum governance | ⬜ Next | `module/xorg/quorum.scm` |
-| Knowledge base in orgs | ⬜ Next | Wire into base-bindings |
-| Guix deploy as org action | ⬜ Next | End-to-end wiring |
-| Shepherd×Goblins | ⏳ Waiting | Spritely release |
+### Done
+| What | Status |
+|---|---|
+| xorg kernel (`^org` v5, endorsement, org factories) | ✓ Done |
+| Capability security (faceted validator, sealers) | ✓ Done |
+| History with Ed25519 signatures | ✓ Done |
+| Knowledge layer (miniKanren, hyperarc, queries) | ✓ Done |
+| Hetzner+Guix deploy (SERVER_IP) | ✓ Done |
+| Kernel extraction (deprecated wrappers moved out) | ✓ Done |
+
+### Next
+| What | Notes |
+|---|---|
+| Persistence tests | Bloblin round-trip: governed org survives persist/restore |
+| Hoot compatibility testing | Run kernel in WASM, verify governance works in browser |
+| OCapN capability injection | Server provides caps to browser org via OCapN refs |
+| Browser demo | Org in WASM + server caps, end-to-end |
+
+### Waiting
+| What | On |
+|---|---|
+| Shepherd as Goblins actors | Spritely release — services become direct actor refs |
