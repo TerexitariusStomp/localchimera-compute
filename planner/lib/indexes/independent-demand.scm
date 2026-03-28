@@ -1,0 +1,47 @@
+;;; independent-demand.scm — Demand index from open intents
+
+(use-modules (srfi srfi-1) (goblins utils hashmap))
+
+(define (build-independent-demand-index intents)
+  "Build demand index from non-finished intents with receiver (requests).
+   Returns alist of indexes."
+  (let ((demands (hashmap)) (by-spec (hashmap)) (by-action (hashmap))
+        (by-scope (hashmap)))
+    (for-each
+      (lambda (i)
+        (when (and (not (intent-finished i))
+                   (intent-receiver i)
+                   (intent-resource-quantity i)
+                   (> (measure-has-numerical-value (intent-resource-quantity i)) 0))
+          (let ((id (intent-id i)))
+            (set! demands (hashmap-set demands id i))
+            (when (intent-resource-conforms-to i)
+              (set! by-spec (hashmap-set by-spec (intent-resource-conforms-to i)
+                              (cons id (hashmap-ref by-spec (intent-resource-conforms-to i) '())))))
+            (set! by-action (hashmap-set by-action (intent-action i)
+                              (cons id (hashmap-ref by-action (intent-action i) '()))))
+            (when (intent-in-scope-of i)
+              (for-each (lambda (scope)
+                          (set! by-scope (hashmap-set by-scope scope
+                                           (cons id (hashmap-ref by-scope scope '())))))
+                        (intent-in-scope-of i))))))
+      intents)
+    `((demands . ,demands) (by-spec . ,by-spec) (by-action . ,by-action)
+      (by-scope . ,by-scope))))
+
+(define (query-demand-by-spec idx id)
+  (filter-map (lambda (i) (hashmap-ref (assq-ref idx 'demands) i #f))
+              (hashmap-ref (assq-ref idx 'by-spec) id '())))
+(define (query-demand-by-action idx a)
+  (filter-map (lambda (i) (hashmap-ref (assq-ref idx 'demands) i #f))
+              (hashmap-ref (assq-ref idx 'by-action) a '())))
+(define (query-demand-by-scope idx scope-id)
+  (filter-map (lambda (i) (hashmap-ref (assq-ref idx 'demands) i #f))
+              (hashmap-ref (assq-ref idx 'by-scope) scope-id '())))
+(define (query-open-demands idx)
+  (hashmap-values (assq-ref idx 'demands)))
+(define (get-total-demand-quantity slots)
+  (fold (lambda (i acc)
+          (+ acc (if (intent-resource-quantity i)
+                     (measure-has-numerical-value (intent-resource-quantity i)) 0)))
+        0 slots))

@@ -1,0 +1,48 @@
+;;; otif.scm — On-Time In-Full delivery metrics
+
+(use-modules (srfi srfi-1))
+
+(define* (compute-otif commitments observer #:key (tolerance 0.05))
+  "Evaluate OTIF for a set of commitments.
+   Returns alist: ((fill-rate . n) (on-time-rate . n) (otif-rate . n)
+                    (avg-days-late . n) (lines . list))."
+  (let* ((lines
+           (filter-map
+             (lambda (c)
+               (let* ((cid (commitment-id c))
+                      (fs ($ observer 'get-fulfillment cid))
+                      (committed-qty (if (commitment-resource-quantity c)
+                                         (measure-has-numerical-value (commitment-resource-quantity c)) 0))
+                      (fulfilled-qty (if (and fs (fulfillment-state-total-fulfilled fs))
+                                         (measure-has-numerical-value (fulfillment-state-total-fulfilled fs)) 0))
+                      (in-full (>= fulfilled-qty (* committed-qty (- 1 tolerance))))
+                      (due (commitment-due c))
+                      ;; Find latest fulfilling event date
+                      (events (if fs ($ observer 'fulfilled-by cid) '()))
+                      (latest-date (fold (lambda (e best)
+                                           (let ((d (or (economic-event-has-point-in-time e)
+                                                        (economic-event-has-end e))))
+                                             (if (and d (or (not best) (string>? d best))) d best)))
+                                         #f events))
+                      (on-time (or (not due) (not latest-date)
+                                   (string<=? (substring latest-date 0 10)
+                                              (substring due 0 10))))
+                      (days-late (if (and due latest-date)
+                                     (max 0 (/ (- (iso-datetime->epoch latest-date)
+                                                   (iso-datetime->epoch due))
+                                                86400))
+                                     0)))
+                 `((commitment-id . ,cid) (in-full . ,in-full) (on-time . ,on-time)
+                   (otif . ,(and in-full on-time)) (days-late . ,days-late)
+                   (committed . ,committed-qty) (fulfilled . ,fulfilled-qty))))
+             commitments))
+         (n (length lines))
+         (fill-count (count (lambda (l) (assq-ref l 'in-full)) lines))
+         (time-count (count (lambda (l) (assq-ref l 'on-time)) lines))
+         (otif-count (count (lambda (l) (assq-ref l 'otif)) lines))
+         (total-late (fold (lambda (l acc) (+ acc (assq-ref l 'days-late))) 0 lines)))
+    `((fill-rate . ,(if (> n 0) (/ fill-count n) 1))
+      (on-time-rate . ,(if (> n 0) (/ time-count n) 1))
+      (otif-rate . ,(if (> n 0) (/ otif-count n) 1))
+      (avg-days-late . ,(if (> n 0) (/ total-late n) 0))
+      (lines . ,lines))))

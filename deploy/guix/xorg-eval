@@ -1,0 +1,42 @@
+#!/bin/bash
+# xorg-eval — evaluate Scheme in the live Goblins vat via Emacs/Geiser
+#
+# Usage:
+#   xorg-eval '(+ 1 2)'
+#   echo '(display "hello")' | xorg-eval
+
+SERVER="/tmp/emacs-xorg/server"
+EC="emacsclient -f $SERVER --eval"
+
+if [ ! -f "$SERVER" ]; then
+    echo "Error: No Emacs server file at $SERVER" >&2
+    exit 1
+fi
+
+if [ $# -gt 0 ]; then
+    EXPR="$*"
+else
+    EXPR=$(cat)
+fi
+
+EXPR_ESCAPED=$(printf '%s' "$EXPR" | sed 's/\\/\\\\/g; s/"/\\"/g')
+
+# Step 1: Send expression (fires async Geiser eval, returns immediately)
+$EC "(progn (ignore-errors (delete-file \"/tmp/geiser-result\")) (xorg-eval \"$EXPR_ESCAPED\"))" > /dev/null 2>&1
+
+# Step 2: Wait, then read result (separate call — event loop runs between calls)
+sleep 2
+RESULT=$($EC '(when (file-exists-p "/tmp/geiser-result") (with-temp-buffer (insert-file-contents "/tmp/geiser-result") (string-trim (buffer-string))))' 2>/dev/null)
+
+if [ "$RESULT" != "nil" ] && [ -n "$RESULT" ]; then
+    echo "$RESULT" | sed 's/^"//; s/"$//; s/\\n/\n/g; s/\\"/"/g' | sed '/scheme@.*>/d'
+else
+    # Retry once with longer wait
+    sleep 3
+    RESULT=$($EC '(when (file-exists-p "/tmp/geiser-result") (with-temp-buffer (insert-file-contents "/tmp/geiser-result") (string-trim (buffer-string))))' 2>/dev/null)
+    if [ "$RESULT" != "nil" ] && [ -n "$RESULT" ]; then
+        echo "$RESULT" | sed 's/^"//; s/"$//; s/\\n/\n/g; s/\\"/"/g' | sed '/scheme@.*>/d'
+    else
+        echo "No result (expression may have no output)" >&2
+    fi
+fi

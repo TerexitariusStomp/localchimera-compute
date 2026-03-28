@@ -81,7 +81,8 @@
                              (requirement '(networking))
                              (start #~(make-forkexec-constructor
                                        (list #$(file-append guile-3.0 "/bin/guile")
-                                             "--listen=/var/run/xorg-dev.sock")
+                                             "-c"
+                                             "(use-modules (system repl server)) (run-server (make-unix-domain-server-socket #:path \"/var/run/xorg-dev.sock\"))")
                                        #:log-file "/var/log/xorg-dev-repl.log"))
                              (stop #~(make-kill-destructor))
                              (respawn? #f)
