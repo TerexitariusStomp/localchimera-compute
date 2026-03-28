@@ -26,6 +26,7 @@
   #:use-module (gnu packages guile-xyz)    ;; for guile-goblins
   #:use-module (gnu packages emacs)        ;; emacs-no-x
   #:use-module (gnu packages emacs-xyz)    ;; geiser, smartparens, rainbow-delimiters
+  #:use-module (xorg-service)              ;; xorg-service-type, xorg-configuration
   #:export (%base-hetzner-system
             make-hetzner-system))
 
@@ -47,10 +48,25 @@
 ;; Geiser default implementation
 (setq geiser-default-implementation 'guile)
 
+;; MELPA — for mcp-server-lib (not yet in Guix)
+(require 'package)
+(add-to-list 'package-archives '(\"melpa\" . \"https://melpa.org/packages/\") t)
+(unless (package-installed-p 'mcp-server-lib)
+  (package-refresh-contents)
+  (package-install 'mcp-server-lib))
+
+;; xorg MCP bridge — Geiser + mcp-server-lib
+(load-file \"~/.emacs.d/emacs-mcp.el\")
+
 ;; IMPORTANT: run (use-modules (goblins)) first in the REPL before
 ;; doing any vat work, to avoid the port-redirection issue described
 ;; in the Goblins README.
-(message \"Remember: (use-modules (goblins)) before spawning vats!\")"))
+(message \"Remember: (use-modules (goblins)) before spawning vats!)\")"))
+
+;; xorg MCP bridge for Emacs — wires Geiser to mcp-server-lib.
+;; Deployed to /home/deploy/.emacs.d/emacs-mcp.el via activation service.
+(define %emacs-mcp-el
+  (local-file "emacs-mcp.el"))
 
 ;; Development REPL service — starts Guile listening on a Unix socket.
 ;; Connect with: M-x geiser-connect-local RET guile RET /var/run/xorg-dev.sock RET
@@ -147,20 +163,37 @@
                        shepherd-root-service-type
                        (list %xorg-dev-repl-service))
 
-       ;; Deploy Emacs config for the deploy user
+       ;; Host org — the privileged org that manages services and tenants.
+       ;; Runs as the xorg user; communicates via Unix socket.
+       (service xorg-service-type
+                (xorg-configuration
+                 (name "host")
+                 (entry-point (local-file "host-org-entry.scm"))
+                 (socket-path "/var/run/xorg-host.sock")
+                 (user "xorg")))
+
+       ;; Deploy Emacs config + MCP bridge for the deploy user
        (simple-service 'deploy-emacs-config
                        activation-service-type
                        #~(begin
                            (let* ((dir "/home/deploy/.emacs.d")
-                                  (target (string-append dir "/init.el")))
+                                  (init-target (string-append dir "/init.el"))
+                                  (mcp-target  (string-append dir "/emacs-mcp.el")))
                              (unless (file-exists? dir)
                                (mkdir dir))
-                             (when (file-exists? target)
-                               (delete-file target))
-                             (copy-file #$%emacs-init-el target)
                              (let ((pw (getpwnam "deploy")))
-                               (chown dir (passwd:uid pw) (passwd:gid pw))
-                               (chown target (passwd:uid pw) (passwd:gid pw)))))))
+                               ;; init.el
+                               (when (file-exists? init-target)
+                                 (delete-file init-target))
+                               (copy-file #$%emacs-init-el init-target)
+                               (chown init-target (passwd:uid pw) (passwd:gid pw))
+                               ;; emacs-mcp.el
+                               (when (file-exists? mcp-target)
+                                 (delete-file mcp-target))
+                               (copy-file #$%emacs-mcp-el mcp-target)
+                               (chown mcp-target (passwd:uid pw) (passwd:gid pw))
+                               ;; directory ownership
+                               (chown dir (passwd:uid pw) (passwd:gid pw)))))))
 
       %base-services))))
 
