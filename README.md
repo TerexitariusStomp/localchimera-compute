@@ -231,4 +231,19 @@ The only invariants are: every action has an identity (the proxy ref), every cha
 
 What emerges from that is up to the expressors.
 
+## Built With
+
+- [Spritely Goblins](https://spritely.institute/goblins/) — distributed object-capability actor system
+- [GNU Guile](https://www.gnu.org/software/guile/) — Scheme implementation
+- [GNU Guix](https://guix.gnu.org/) — declarative system configuration and deployment
+- [Guile Hoot](https://spritely.institute/hoot/) — Scheme-to-WebAssembly compiler
+- [Reticulum](https://reticulum.network/) — mesh networking (LoRa, serial, I2P, TCP, packet radio)
+- [Eclipse Mosquitto](https://mosquitto.org/) — MQTT broker for event bridging
+- [Heart of Spritely](https://spritely.institute/static/papers/spritely-core.html) — the capability patterns this follows
+- [Claude Code](https://claude.ai/claude-code) — AI pair programming (infrastructure, MQTT bridge, planner)
+
+## License
+
+[AGPL-3.0](LICENSE)
+
 ![alt text](image.png)

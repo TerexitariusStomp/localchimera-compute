@@ -3,6 +3,9 @@
 ;;; xorg-relay.scm — Mailbox relay for xorg
 ;;; Routes signed S-expressions by public key.
 ;;; Queues messages for offline recipients.
+;;;
+;;; Also handles (signup username email ssh-pubkey) requests via
+;;; ^signup-agent. Run from project root so primitive-load paths resolve.
 
 (use-modules (web socket server)
              (web socket frame)
@@ -10,7 +13,17 @@
              (ice-9 format)
              (ice-9 hash-table)
              (ice-9 threads)
-             (rnrs bytevectors))
+             (rnrs bytevectors)
+             (goblins)
+             (goblins actor-lib methods)
+             (goblins utils hashmap))
+
+;; Load ^signup-agent definition (must run from project root)
+(primitive-load "server/signup-agent.scm")
+
+;; Spawn a dedicated vat + signup-agent for account registration
+(define *signup-vat*   (spawn-vat #:name "signup"))
+(define *signup-agent* (with-vat *signup-vat* (spawn ^signup-agent (hashmap))))
 
 ;; pubkey-string → port
 (define *sessions* (make-hash-table))
@@ -83,6 +96,24 @@
           (('to target-pk payload)
            (let ((sender-pk (if (null? my-keys) "unknown" (car my-keys))))
              (route-message! sender-pk target-pk payload)))
+
+          ;; Signup request: (signup username email ssh-pubkey)
+          ;; Replies directly to this client: (signup-ok) or (signup-error msg)
+          (('signup (? string? username) (? string? email) (? string? ssh-pubkey))
+           (log! "  signup request from ~a for username=~a\n"
+                 (if (null? my-keys) "unknown" (substring (car my-keys) 0 (min 20 (string-length (car my-keys)))))
+                 username)
+           (let* ((result (with-vat *signup-vat*
+                            ($ *signup-agent* 'register! username email ssh-pubkey)))
+                  (reply  (call-with-output-string
+                            (lambda (p)
+                              (write (if (eq? result 'ok)
+                                         '(signup-ok)
+                                         (list 'signup-error (cadr result)))
+                                     p)))))
+             (write-frame (make-text-frame reply) port)
+             (force-output port)
+             (log! "  signup result: ~a\n" (if (eq? result 'ok) "ok" (cadr result)))))
 
           ;; Unknown
           (x (log! "  ? ~a\n" x))))))

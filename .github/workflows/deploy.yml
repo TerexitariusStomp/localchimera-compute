@@ -1,0 +1,50 @@
+name: Deploy to Hetzner
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 120
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: PromyLOPh/guix-install-action@v1
+        with:
+          pullAfterInstall: false
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          echo "SERVER_IP ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE7y+yzSS5w+oDfeG8pKgpbcB+Xd2W+WxV1/kAn6Fnlk" >> ~/.ssh/known_hosts
+
+      - name: Deploy
+        env:
+          DEPLOY_SSH_IDENTITY: /home/runner/.ssh/deploy_key
+        run: |
+          sudo -E guix time-machine \
+            -C deploy/guix/channels.scm \
+            -- deploy \
+            -L deploy/guix \
+            deploy/guix/machines.scm \
+            --verbosity=2
+        timeout-minutes: 90
+
+      - name: Verify
+        if: success()
+        run: |
+          ssh -i ~/.ssh/deploy_key \
+            -o StrictHostKeyChecking=yes \
+            deploy@SERVER_IP \
+            'herd status'
+
+      - name: Clean up
+        if: always()
+        run: rm -f ~/.ssh/deploy_key

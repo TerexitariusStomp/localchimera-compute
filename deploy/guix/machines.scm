@@ -7,9 +7,10 @@
 ;;; Now managed via managed-host-environment-type per Guix manual §11.17.
 ;;;
 ;;; Users:
-;;;   deploy  — system administration, guix deploy
-;;;   playnet — live hacking: Emacs/Geiser, dev REPL
-;;;   xorg    — system account for production xorg Shepherd services
+;;;   deploy     — system administration, guix deploy
+;;;   playnet    — live hacking: Emacs/Geiser, dev REPL
+;;;   xorg       — system account for production xorg Shepherd services
+;;;   sapient-os — sapient-os agent user
 
 (use-modules (gnu machine)
              (gnu machine ssh)
@@ -33,6 +34,21 @@
 
 (define %admin-ssh-public-key
   "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICTLO20IW4Ej9qhXYGnfy0yc8RlvMLEkR+MG39nyK5mq nozomi-laptop")
+
+(define %ci-ssh-public-key
+  "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN3Bhkk/WiuQY0O7sk8Ek/sVqOfkP7NXy3gJEstXWm+x github-actions-deploy")
+
+;; Dynamic users: list of (username . ssh-pubkey) pairs.
+;; Managed by provision-user.scm — do not edit users.scm by hand.
+(define %this-dir
+  (dirname (or (current-filename)
+               (canonicalize-path "deploy/guix/machines.scm"))))
+
+(define %dynamic-users
+  (primitive-load
+   (string-append %this-dir "/users.scm")))
+
+(define %dynamic-user-names (map car %dynamic-users))
 
 ;; Helper script for synchronous REPL eval from the command line.
 (define %repl-eval-script
@@ -110,27 +126,40 @@
                            (type "vfat"))
                          %base-file-systems))
 
-    ;; deploy:  system administration, guix deploy (wheel + NOPASSWD sudo)
-    ;; playnet: live hacking — Emacs/Geiser, dev REPL
-    ;; xorg:    system account for production xorg Shepherd services
-    (users (cons*
-            (user-account
-             (name "deploy")
-             (group "users")
-             (supplementary-groups '("wheel"))
-             (home-directory "/home/deploy")
-             (shell (file-append bash "/bin/bash")))
-            (user-account
-             (name "playnet")
-             (group "users")
-             (home-directory "/home/playnet")
-             (shell (file-append bash "/bin/bash")))
-            (user-account
-             (name "xorg")
-             (group "users")
-             (system? #t)
-             (home-directory "/var/lib/xorg")
-             (shell (file-append bash "/bin/bash")))
+    ;; Static accounts:
+    ;;   deploy     — system administration, guix deploy (wheel + NOPASSWD sudo)
+    ;;   playnet    — live hacking: Emacs/Geiser, dev REPL
+    ;;   xorg       — system account for production xorg Shepherd services
+    ;; Dynamic accounts (from users.scm, managed by provision-user.scm):
+    ;;   sapient-os — sapient-os agent user (own key)
+    ;;   …          — any future provisioned users
+    (users (append
+            (list
+             (user-account
+              (name "deploy")
+              (group "users")
+              (supplementary-groups '("wheel"))
+              (home-directory "/home/deploy")
+              (shell (file-append bash "/bin/bash")))
+             (user-account
+              (name "playnet")
+              (group "users")
+              (home-directory "/home/playnet")
+              (shell (file-append bash "/bin/bash")))
+             (user-account
+              (name "xorg")
+              (group "users")
+              (system? #t)
+              (home-directory "/var/lib/xorg")
+              (shell (file-append bash "/bin/bash"))))
+            ;; All users from users.scm (sapient-os + any provisioned accounts)
+            (map (lambda (entry)
+                   (user-account
+                    (name (car entry))
+                    (group "users")
+                    (home-directory (string-append "/home/" (car entry)))
+                    (shell (file-append bash "/bin/bash"))))
+                 %dynamic-users)
             %base-user-accounts))
 
     (sudoers-file
@@ -166,9 +195,16 @@
                 (permit-root-login 'prohibit-password)
                 (password-authentication? #f)
                 (authorized-keys
-                 `(("root"    ,(plain-file "root-key"    %admin-ssh-public-key))
-                   ("deploy"  ,(plain-file "deploy-key"  %admin-ssh-public-key))
-                   ("playnet" ,(plain-file "playnet-key" %admin-ssh-public-key))))))
+                 `(("root"   ,(plain-file "root-key"   %admin-ssh-public-key))
+                   ("deploy" ,(plain-file "deploy-key" %admin-ssh-public-key))
+                   ("deploy" ,(plain-file "ci-deploy-key" %ci-ssh-public-key))
+                   ("playnet",(plain-file "playnet-key" %admin-ssh-public-key))
+                   ;; Dynamic users — each gets their own registered public key
+                   ,@(map (lambda (entry)
+                            (list (car entry)
+                                  (plain-file (string-append (car entry) "-key")
+                                              (cdr entry))))
+                          %dynamic-users)))))
 
       ;; Dev REPL — Guile on a Unix socket, runs as playnet user.
       ;; Connect with: M-x geiser-connect-local RET guile RET /var/run/playnet/repl.sock
@@ -267,6 +303,40 @@
                                         (chown f (passwd:uid pw) (passwd:gid pw)))
                                       (find-files repo-dir #:directories? #t))))))))
 
+      ;; Activation: set up dynamic user home directories.
+      ;; For each user in users.scm: ensure home exists, correct ownership,
+      ;; and clone/pull the xorg repo (same treatment as playnet).
+      (simple-service 'dynamic-user-setup
+                      activation-service-type
+                      #~(begin
+                          (use-modules (guix build utils))
+                          (for-each
+                           (lambda (username)
+                             (let* ((home     (string-append "/home/" username))
+                                    (repo-dir (string-append home "/xorg-repo"))
+                                    (bin-dir  (string-append home "/bin"))
+                                    (pw       (false-if-exception (getpwnam username))))
+                               (when pw
+                                 ;; Home dir
+                                 (mkdir-p home)
+                                 (chown home (passwd:uid pw) (passwd:gid pw))
+                                 ;; ~/bin
+                                 (mkdir-p bin-dir)
+                                 (chown bin-dir (passwd:uid pw) (passwd:gid pw))
+                                 ;; xorg repo — clone or pull
+                                 (let ((git #$(file-append git "/bin/git")))
+                                   (if (file-exists? (string-append repo-dir "/.git"))
+                                       (system* git "-C" repo-dir "pull" "--ff-only")
+                                       (begin
+                                         (system* git "clone" "-b" "minimal-org"
+                                                  "https://github.com/interplaynetary/xorg.git"
+                                                  repo-dir)
+                                         (for-each
+                                          (lambda (f)
+                                            (chown f (passwd:uid pw) (passwd:gid pw)))
+                                          (find-files repo-dir #:directories? #t))))))))
+                           '#$%dynamic-user-names)))
+
       ;; Use bordeaux as primary substitute server (ci.guix.gnu.org is unreliable)
       (modify-services %base-services
         (guix-service-type config =>
@@ -283,5 +353,6 @@
        (configuration (machine-ssh-configuration
                        (host-name "SERVER_IP")
                        (system "x86_64-linux")
-                       (identity "/home/nozomi/.ssh/id_ed25519")
+                       (identity (or (getenv "DEPLOY_SSH_IDENTITY")
+                          "/home/nozomi/.ssh/id_ed25519"))
                        (host-key "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE7y+yzSS5w+oDfeG8pKgpbcB+Xd2W+WxV1/kAn6Fnlk")))))

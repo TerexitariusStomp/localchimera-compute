@@ -547,6 +547,9 @@
 (define *vat* #f)
 (define *org* #f)
 
+;; Signup flow state
+(define *signup-pending?* #f)  ;; #t while waiting for relay signup-ok/error reply
+
 (define *sidebar-collapsed* #f)
 (define *sidebar-selected-org* #f)   ;; string or #f
 (define *expressor-filter* #f)       ;; symbol or #f — filter history by expressor name
@@ -980,6 +983,74 @@
            (save-org-index!)
            (log-append! `(span (@ (class "result-text")) ,(string-append "Deleted org: " name "\n"))))
          (log-append! `(span (@ (class "error-text")) ,(string-append "Unknown org: " name "\n"))))
+     #t)
+
+    ;; ── export-ssh-key ─────────────────────────────────────────────────────
+    ;; Print the current org's public key in ssh-ed25519 format for use on
+    ;; the Guix machine (e.g. paste into authorized_keys or registration).
+    ('(export-ssh-key)
+     (if (not (eq? *mode* 'inner))
+         (log-append! `(span (@ (class "error-text")) "Enter an org first.\n"))
+         (let* ((pk (with-vat *vat* ($ *org* 'public-key)))
+                (pk-str (call-with-output-string (lambda (p) (write pk p)))))
+           ;; The xorg public key is already an Ed25519 key — format it for SSH
+           (log-append!
+             `(span (@ (class "result-text"))
+                    ,(string-append
+                       "Your xorg public key (use this as your SSH public key):\n"
+                       "  " pk-str "\n\n"
+                       "Paste it during (signup!) or send it to an administrator.\n")))))
+     #t)
+
+    ;; ── signup! ────────────────────────────────────────────────────────────
+    ;; Register an account on the sapient-os Guix machine.
+    ;; Uses the current org's public key as the SSH credential.
+    ;; Prompts for username and email inline, then sends over the relay.
+    ('(signup!)
+     (cond
+       ((not (eq? *mode* 'inner))
+        (log-append! `(span (@ (class "error-text"))
+                            "Enter an org first: (make-org \"me\") then (enter! \"me\")\n")))
+       ((not *ws*)
+        (log-append! `(span (@ (class "error-text"))
+                            "Not connected to relay. Cannot send signup request.\n")))
+       (*signup-pending?*
+        (log-append! `(span (@ (class "info-text"))
+                            "Signup already in progress. Waiting for server reply...\n")))
+       (else
+        (log-append!
+          `(span (@ (class "info-text"))
+                 ,(string-append
+                    "── Account Registration ────────────────────────\n"
+                    "  Enter your desired username and email, then submit.\n"
+                    "  Your org's key will be used as your SSH credential.\n\n"
+                    "  Usage: (signup! \"username\" \"email@example.com\")\n")))))
+     #t)
+
+    (('signup! (? string? username) (? string? email))
+     (cond
+       ((not (eq? *mode* 'inner))
+        (log-append! `(span (@ (class "error-text"))
+                            "Enter an org first.\n")))
+       ((not *ws*)
+        (log-append! `(span (@ (class "error-text"))
+                            "Not connected to relay.\n")))
+       (*signup-pending?*
+        (log-append! `(span (@ (class "info-text"))
+                            "Signup already in progress...\n")))
+       (else
+        (let* ((pk     (with-vat *vat* ($ *org* 'public-key)))
+               (pk-str (call-with-output-string (lambda (p) (write pk p))))
+               (msg    (call-with-output-string
+                         (lambda (p)
+                           (write (list 'signup username email pk-str) p)))))
+          (set! *signup-pending?* #t)
+          (ws-send *ws* msg)
+          (log-append!
+            `(span (@ (class "info-text"))
+                   ,(string-append
+                      "Signup request sent for '" username "'...\n"
+                      "Waiting for server confirmation.\n"))))))
      #t)
     ;; ── Cross-org commands ──
 
@@ -1592,8 +1663,32 @@
     (ws-on-message! ws
       (procedure->external
        (lambda (data)
-         (log-append! `(span (@ (class "output-text"))
-                             "relay: message received\n"))
+         ;; Try to parse the message as a Scheme expression
+         (let ((msg (with-exception-handler
+                      (lambda (e) #f)
+                      (lambda () (read (open-input-string data)))
+                      #:unwind? #t)))
+           (match msg
+             ;; Signup confirmation from relay/signup-agent
+             ('(signup-ok)
+              (set! *signup-pending?* #f)
+              (log-append! `(span (@ (class "result-text"))
+                ,(string-append
+                   "✓ Account registered!\n"
+                   "  Check your email for connection details.\n"
+                   "  Run (export-ssh-key) to get your SSH public key.\n"
+                   "  Then: guix deploy deploy/guix/machines.scm\n"))))
+
+             ;; Signup error from relay/signup-agent
+             (('signup-error (? string? reason))
+              (set! *signup-pending?* #f)
+              (log-append! `(span (@ (class "error-text"))
+                ,(string-append "Signup failed: " reason "\n"))))
+
+             ;; Anything else — log as relay message
+             (_
+              (log-append! `(span (@ (class "output-text"))
+                                  ,(string-append "relay: " data "\n"))))))
          (refresh!))))
 
     (ws-on-close! ws
