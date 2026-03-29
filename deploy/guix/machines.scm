@@ -196,6 +196,7 @@
                 (password-authentication? #f)
                 (authorized-keys
                  `(("root"   ,(plain-file "root-key"   %admin-ssh-public-key))
+                   ("root"   ,(plain-file "ci-root-key" %ci-ssh-public-key))
                    ("deploy" ,(plain-file "deploy-key" %admin-ssh-public-key))
                    ("deploy" ,(plain-file "ci-deploy-key" %ci-ssh-public-key))
                    ("playnet",(plain-file "playnet-key" %admin-ssh-public-key))
