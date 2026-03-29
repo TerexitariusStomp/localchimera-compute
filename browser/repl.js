@@ -187,28 +187,76 @@ window.addEventListener("load", async () => {
           removeItem(key) { localStorage.removeItem(key); }
         },
         speech: {
-          isSupported() {
-            return ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) ? 1 : 0;
-          },
-          startListening(onResult, onEnd) {
-            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-            const recognition = new SR();
-            recognition.continuous = false;
-            recognition.interimResults = false;
-            recognition.lang = 'en-US';
-            recognition.onresult = (event) => {
-              const transcript = event.results[0][0].transcript;
-              onResult(transcript);
-            };
-            recognition.onend = () => { onEnd(); };
-            recognition.onerror = () => { onEnd(); };
-            recognition.start();
-            window.__xorgRecognition = recognition;
+          isSupported() { return 1; },
+          async startListening(onResult, onEnd) {
+            try {
+              // Lazy-load Whisper pipeline on first use
+              if (!window.__whisperPipeline) {
+                console.log('[whisper] Loading model...');
+                const { pipeline } = await import(
+                  'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3'
+                );
+                window.__whisperPipeline = await pipeline(
+                  'automatic-speech-recognition',
+                  'Xenova/whisper-tiny.en',
+                  { dtype: 'q8' }
+                );
+                console.log('[whisper] Model ready.');
+              }
+
+              // Record audio from microphone at 16kHz mono
+              const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+              const audioContext = new AudioContext({ sampleRate: 16000 });
+              const source = audioContext.createMediaStreamSource(stream);
+              const processor = audioContext.createScriptProcessor(4096, 1, 1);
+
+              const chunks = [];
+              let recording = true;
+
+              processor.onaudioprocess = (e) => {
+                if (recording) {
+                  chunks.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+                }
+              };
+
+              source.connect(processor);
+              processor.connect(audioContext.destination);
+
+              window.__xorgRecording = {
+                stream, audioContext, processor, source, chunks,
+                stop: async () => {
+                  recording = false;
+                  processor.disconnect();
+                  source.disconnect();
+                  stream.getTracks().forEach(t => t.stop());
+                  audioContext.close();
+
+                  // Concatenate chunks
+                  const totalLen = chunks.reduce((acc, c) => acc + c.length, 0);
+                  const audio = new Float32Array(totalLen);
+                  let offset = 0;
+                  for (const chunk of chunks) {
+                    audio.set(chunk, offset);
+                    offset += chunk.length;
+                  }
+
+                  // Transcribe locally via Whisper WASM
+                  console.log('[whisper] Transcribing', audio.length, 'samples...');
+                  const result = await window.__whisperPipeline(audio);
+                  console.log('[whisper] Result:', result.text);
+                  onResult(result.text.trim());
+                  onEnd();
+                }
+              };
+            } catch (e) {
+              console.error('[whisper] Error:', e);
+              onEnd();
+            }
           },
           stopListening() {
-            if (window.__xorgRecognition) {
-              window.__xorgRecognition.stop();
-              window.__xorgRecognition = null;
+            if (window.__xorgRecording) {
+              window.__xorgRecording.stop();
+              window.__xorgRecording = null;
             }
           }
         }
