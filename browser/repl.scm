@@ -699,6 +699,16 @@
                  "  (act-in beta-key (modify! 'x 1))    act in remote org\n"
                  "  (public-key)                        show this org's key\n"
                  "\n"
+                 "── Signup & SSH ───────────────────────────────\n"
+                 "\n"
+                 "Register an account on the xorg server:\n"
+                 "  (signup! \"user\" \"email@example.com\") request account\n"
+                 "  (export-ssh-key)                    show your SSH key\n"
+                 "\n"
+                 "After signup, you can: ssh user@SERVER_IP\n"
+                 "The server is a Guix System machine — pushing to\n"
+                 "main auto-deploys the ENTIRE operating system.\n"
+                 "\n"
                  "── Language Forms ──────────────────────────────\n"
                  "\n"
                  "define, lambda, let, let*, letrec, named let,\n"
@@ -1589,8 +1599,23 @@
                               (click ,(lambda (e) (do-exit!) (refresh!) (scroll-to-bottom!))))
                            "exit")
                     `(span (@ (class "cp-btn")
+                              (click ,(lambda (e)
+                                        (eval! "(show-history)")
+                                        (refresh!) (scroll-to-bottom!))))
+                           "history")
+                    `(span (@ (class "cp-btn")
+                              (click ,(lambda (e)
+                                        (eval! "(show-expressors)")
+                                        (refresh!) (scroll-to-bottom!))))
+                           "expressors")
+                    `(span (@ (class "cp-btn")
+                              (click ,(lambda (e)
+                                        (eval! "(public-key)")
+                                        (refresh!) (scroll-to-bottom!))))
+                           "public key")
+                    `(span (@ (class "cp-btn")
                               (click ,(lambda (e) (do-export-ssh-key!) (refresh!) (scroll-to-bottom!))))
-                           "export key")
+                           "ssh key")
                     (render-join-form)
                     `(span (@ (class ,(string-append "cp-status"
                                         (if *connected?* " cp-status-connected"
