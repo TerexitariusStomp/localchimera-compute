@@ -259,3 +259,132 @@ In xorg, if the system's self-knowledge is the same data structure the system op
 - The loop is intrinsic — the system doesn't need an external process to update its self-model. The self-model IS the system.
 
 This is what homoiconicity actually means. Not "code is data" as a party trick. But: the system and its self-description are the same substance, subject to the same laws, governed by the same mechanisms. The gap between the map and the territory closes to zero.
+
+---
+
+## Bidirectional transpilation: markdown ↔ S-expressions
+
+### The insight
+
+miniKanren is bidirectional by nature. A relation that maps S-expressions to markdown can run backwards — given markdown, recover the S-expressions. You don't write a parser and a printer. You write one relation that does both.
+
+```scheme
+;; One relation, two directions:
+(run* (md)   (markdown-o my-sexp md))       ;; S-expression → markdown
+(run* (sexp) (markdown-o sexp "# Title"))   ;; markdown → S-expression
+```
+
+This is not a trick. It is the natural consequence of relational programming. Unification does not distinguish "input" from "output" — it finds consistent bindings in any direction.
+
+### What this means for the project
+
+**1. Skills become queryable.**
+
+Right now, skills are markdown consumed by Claude Code but opaque to the system. With bidirectional transpilation:
+
+- Read a markdown skill → `markdown-o` extracts S-expression knowledge facts → load into `system-kb`
+- Modify the knowledge base → `markdown-o` generates updated markdown → the skill file is rewritten
+- The system can answer: "what does the `/deploy` skill say about SSH keys?" — by querying the extracted facts, not by parsing text
+
+**2. Documentation IS the knowledge base.**
+
+`SELF-IMPROVING-LOOP.md` and `system-kb.scm` would not be separate artifacts. The markdown is a _view_ of the S-expressions. Edit either one; the other updates via the relation.
+
+```scheme
+;; These produce the same knowledge base:
+(run* (kb)  (skill->kb-o "deploy.md" kb))    ;; extract facts from markdown
+(run* (md)  (skill->kb-o md *system-kb*))     ;; generate markdown from facts
+```
+
+**3. The self-improving loop extends to prose.**
+
+The system can reason about its own documentation the same way it reasons about its own code — because they are the same substance viewed through different relations.
+
+A miniKanren query over the system KB can find an inconsistency (e.g., "the deploy skill says EFI boot but the knowledge base says BIOS"). The fix is a `bcom` on the knowledge base. The relation regenerates the markdown. The documentation corrects itself.
+
+**4. Human-readable AND machine-queryable.**
+
+Markdown is the human projection. S-expressions are the machine projection. miniKanren unification is the bridge. Neither is "source" — they are two views of the same relational program.
+
+### The `markdown-o` relation
+
+`markdown-o` maps between a markdown AST (as tagged S-expressions) and markdown strings:
+
+| Markdown | S-expression |
+|----------|-------------|
+| `# Title` | `(heading 1 "Title")` |
+| `## Section` | `(heading 2 "Section")` |
+| `- item` | `(bullet "item")` |
+| `- **bold** text` | `(bullet (bold "bold") " text")` |
+| `` `code` `` | `(code "code")` |
+| Code block | `(code-block "scheme" "(+ 1 2)")` |
+| `\| a \| b \|` | `(table ((a b) ...))` |
+| Paragraph | `(paragraph "text")` |
+| `[text](url)` | `(link "text" "url")` |
+
+A markdown document is a list of these elements:
+
+```scheme
+(define my-doc
+  (list (heading 1 "Deploy")
+        (paragraph "Push to main triggers guix deploy.")
+        (heading 2 "Key files")
+        (table '(("File" "Purpose")
+                 ("machines.scm" "OS declaration")
+                 ("deploy.sh" "Wrapper script")))))
+
+;; Render to markdown string:
+(run* (md) (markdown-o my-doc md))
+
+;; Parse markdown string back to S-expressions:
+(run* (doc) (markdown-o doc markdown-string))
+```
+
+### `skill-kb-o`: skills as knowledge
+
+Building on `markdown-o`, `skill-kb-o` maps between a skill's markdown structure and hyperarc facts:
+
+```scheme
+(define (skill-kb-o skill-name md-doc kb-facts)
+  "Bidirectional relation between a skill's markdown and knowledge base facts."
+  (fresh (sections)
+    (markdown-o md-doc sections)
+    ;; Heading "Key files" + table → file-of hyperarcs
+    ;; Heading "Dependencies" + bullets → depends-on hyperarcs
+    ;; Heading "Provides" + bullets → provides hyperarcs
+    ;; The structure of the markdown IS the structure of the knowledge
+    (sections->facts-o skill-name sections kb-facts)))
+```
+
+### The unified architecture
+
+```
+┌──────────────────────────────────────────────────────────┐
+│                                                          │
+│   Markdown skills ←──── markdown-o ────→ S-expression AST│
+│         ↕                                       ↕        │
+│   Human reads/writes              skill-kb-o extracts    │
+│                                           ↕              │
+│                                    system-kb (hyperarcs) │
+│                                           ↕              │
+│                              miniKanren queries          │
+│                              (depends-on-o, etc.)        │
+│                                           ↕              │
+│                              Self-improving loop         │
+│                              (observe → reason →         │
+│                               propose → govern → apply)  │
+│                                                          │
+└──────────────────────────────────────────────────────────┘
+
+Edit the markdown → facts update → queries reflect the change.
+Edit the facts → markdown regenerates → documentation updates.
+All in one vat turn. All governed.
+```
+
+### Why this works in the browser
+
+`kanren.scm` is already Hoot/WASM compatible. `markdown-o` would be pure miniKanren — no IO, no mutation, just unification over strings and tagged lists. It compiles to WASM and runs in the browser REPL.
+
+A user edits markdown in the REPL. The relation extracts facts. The knowledge base updates. miniKanren queries reflect the change. All in one vat turn. All governed by Goblins actors — logged, revocable, attributed.
+
+The browser becomes a self-reflective environment where documentation, code, and knowledge are three projections of the same relational program.
