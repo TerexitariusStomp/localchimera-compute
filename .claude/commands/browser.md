@@ -1,5 +1,5 @@
 ---
-description: Browser REPL — repl.scm compiled to WASM, FFI bindings, virtual DOM, signup flow
+description: Browser REPL — SXML virtual DOM, wisp/lisp toggle, FFI bindings, org management, signup flow
 ---
 
 You are editing the browser interface. `browser/repl.scm` compiles via Guile Hoot to `browser/repl.wasm` and runs in the browser as a complete Scheme REPL with org management, WebSocket relay communication, and self-service signup.
@@ -8,12 +8,13 @@ You are editing the browser interface. `browser/repl.scm` compiles via Guile Hoo
 
 | File | Purpose |
 |------|---------|
-| `browser/repl.scm` (~1878 lines) | Main source: FFI, virtual DOM, REPL loop, org management, signup, relay |
+| `browser/repl.scm` (~2060 lines) | Main source: FFI, SXML virtual DOM, REPL loop, org management, signup, relay |
 | `browser/repl.js` | JS host: `Scheme.load_main` imports, key preloading, WebSocket setup |
 | `browser/reflect.js` | Hoot JS reflection layer (do not edit unless updating Hoot) |
-| `browser/repl.css` | REPL styling |
+| `browser/repl.css` | REPL styling (flex layout, dark theme) |
 | `browser/index.html` | Minimal shell loading the above |
 | `module/xorg/autocomplete.scm` | Tab completion (Hoot-compatible) |
+| `module/xorg/wisp.scm` | Wisp/S-expression transpiler (SRFI-119 indentation syntax) |
 
 ## Build
 
@@ -34,6 +35,94 @@ Edit browser/*.scm → make browser/repl.wasm → git push main → GitHub Pages
 ```
 
 Live at: `https://interplaynetary.github.io/xorg/`
+
+## SXML — the UI is S-expressions
+
+The entire UI is built from SXML (S-expression HTML). Every DOM element is a list:
+
+```scheme
+"hello"                              ;; → text node
+(div "hello")                        ;; → <div>hello</div>
+(div (@ (class "red")) "hello")      ;; → <div class="red">hello</div>
+(span (@ (click ,handler)) "go")     ;; → clickable span with Scheme lambda
+(input (@ (id "x") (type "text")))   ;; → text input
+```
+
+Event handlers are Scheme procedures attached as attributes:
+```scheme
+(click ,(lambda (e) ...))            ;; click handler
+(keydown ,(lambda (e) ...))          ;; key handler
+(input ,(lambda (e) ...))            ;; input change handler
+```
+
+Conditional children use `,@` with `if`:
+```scheme
+,@(if show? (list `(span "visible")) '())
+```
+
+Dynamic lists use `,@` with `map`:
+```scheme
+,@(map (lambda (item) `(li ,item)) items)
+```
+
+Custom interactive elements can be appended to the REPL log:
+```scheme
+(log-append! `(div (input (@ (id "my-input")))
+                   (span (@ (click ,(lambda (e)
+                                      (let ((val (element-value (get-element-by-id "my-input"))))
+                                        (eval! val) (refresh!)))))
+                         "submit")))
+```
+
+### VDOM architecture
+
+- `sxml->dom` converts any SXML tree to real DOM elements
+- `virtual-dom-render` diffs old and new SXML trees by **position** (not key)
+- `(refresh!)` re-renders the full VDOM from current state
+- **Critical constraint**: variable-length lists (like log entries) must NOT be followed by fixed siblings in the same parent — separate them into sibling containers
+
+### DOM structure
+
+```
+div.repl (flex column)
+├── div#repl-log.log (flex: 1, scrollable — contains only log spans)
+└── div.prompt (flex-shrink: 0, fixed at bottom — always visible)
+    ├── prompt text
+    ├── textarea#expression
+    ├── ghost-text (conditional autocomplete)
+    └── paren-indicator
+```
+
+The log and prompt are **siblings**, not nested. This ensures the VDOM differ never confuses growing log entries with the prompt elements.
+
+## UI helpers
+
+**Toggle forms** — `render-toggle-form` handles collapsible input forms (used by new-org, signup, join-org):
+```scheme
+(render-toggle-form *show?* set-show! "label" "submit"
+  '(("input-id" "placeholder"))
+  (lambda (vals) (do-action! (car vals))))
+```
+
+**Action buttons** — `action-button` wraps the click→action→refresh→scroll pattern:
+```scheme
+(action-button "label" (lambda () (do-something!)) "")         ;; plain
+(action-button "label" (lambda () (do-something!)) " cp-btn-primary")  ;; highlighted
+```
+
+**Eval buttons** — `eval-button` for syntax-mode-aware command buttons:
+```scheme
+(eval-button "history" "(show-history)" "show-history")  ;; lisp/wisp commands
+```
+
+## Wisp syntax toggle
+
+`module/xorg/wisp.scm` provides bidirectional wisp/S-expression transpilation:
+- `wisp->sexp-string` — indentation-based input → parenthetical S-expressions
+- `sexp->wisp-string` — parenthetical code → stripped outer parens for display
+- `*syntax-mode*` state variable (`'lisp` or `'wisp`) persisted in localStorage
+- Toggle button appears in both outer and inner mode action bars
+- In wisp mode: `modify! 'x 5` instead of `(modify! 'x 5)`
 
 ## FFI bindings
 
@@ -64,7 +153,13 @@ The JS host side (`repl.js`) registers matching imports under the module/functio
 3. Rebuild with `make browser/repl.wasm`
 
 **Add a REPL command:**
-Add a match clause in the command processing section of `repl.scm` (search for existing commands like `signup!`, `export-ssh-key`).
+Add a match clause in `handle-command` in `repl.scm` (search for existing commands like `signup!`, `export-ssh-key`).
+
+**Add an action bar button:**
+Use the `action-button` or `eval-button` helpers in `render-action-bar`.
+
+**Add a toggle form:**
+Use `render-toggle-form` — see `render-new-org-button` for the pattern.
 
 **The signup flow:**
 `(signup! "user" "email")` → WebSocket → relay → `^signup-agent` → `provision-user.scm` → `users.scm` → requires `guix deploy` to activate the account.

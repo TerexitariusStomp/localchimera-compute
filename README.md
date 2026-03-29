@@ -6,7 +6,7 @@ _A self-evolving commons computer written entirely in Guile Scheme._
 
 ---
 
-**xorg** is a computer environment where pushing to `main` can redeploy the entire operating system. Everything from the browser interface to the kernel configuration is a Scheme expression. Object capability security comes from the lambda calculus itself — if you hold the reference, you have the authority; if you don't, you don't. The system runs in the browser (Hoot/WASM), on the desktop (native Guile), and on the server (Guix System), connected by mesh networking that works over LoRa radio, serial wire, I2P, TCP, or packet radio.
+**xorg** is a computer environment where pushing to `main` can redeploy the entire operating system. Everything from the browser interface to the kernel configuration is a Scheme expression. Object capability security comes from the lambda calculus itself (as described in [*A Security Kernel Based on the Lambda-Calculus*](https://mumble.net/~jar/pubs/secureos/secureos.html)) — if you hold the reference, you have the authority; if you don't, you don't. The system runs in the browser (Hoot/WASM), on the desktop (native Guile), and on the server (Guix System), connected by mesh networking that works over LoRa radio, serial wire, I2P, TCP, or packet radio.
 
 There is no gap between the system and its description. The organization's rules, state, and history are all S-expressions — the same representation the evaluator consumes. This is what makes the system self-reflective: it can inspect its own evolution, rollback to a prior state, and rewrite its own governance, using the same language it was built in.
 
@@ -340,6 +340,7 @@ See `deploy/guix/DEPLOY-GUIDE.md` for the full guide.
 - [Reticulum](https://reticulum.network/) — mesh networking (LoRa, serial, I2P, TCP, packet radio)
 - [Eclipse Mosquitto](https://mosquitto.org/) — MQTT broker for event bridging
 - [Heart of Spritely](https://spritely.institute/static/papers/spritely-core.html) — the capability patterns this follows
+- [A Security Kernel Based on the Lambda-Calculus](https://mumble.net/~jar/pubs/secureos/secureos.html) — the foundational theory of capability security in Scheme
 - [Claude Code](https://claude.ai/claude-code) — AI pair programming
 
 ## License
