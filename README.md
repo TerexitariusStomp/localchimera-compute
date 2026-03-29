@@ -318,22 +318,22 @@ You can consume this repository either directly or as a Guix channel.
 **Install directly from source:**
 
 ```bash
-guix package -f guix.scm      # install the meta-org desktop REPL into your profile
+guix package -f guix.scm      # install the xorg desktop REPL into your profile
 guix shell -m manifest.scm    # transient shell with all development dependencies
 ```
 
 **Add as a Guix channel:**
-To make `meta-org` available in your system's package registry, add this to your `~/.config/guix/channels.scm`:
+To make `xorg` available in your system's package registry, add this to your `~/.config/guix/channels.scm`:
 
 ```scheme
 (cons (channel
-        (name 'meta-org)
-        (url "https://github.com/interplaynetary/meta-org.git")
+        (name 'xorg)
+        (url "https://github.com/interplaynetary/xorg.git")
         (branch "main"))
       %default-channels)
 ```
 
-After running `guix pull`, you can install it globally via `guix install meta-org`.
+After running `guix pull`, you can install it globally via `guix install xorg`.
 
 ### Run
 

@@ -24,6 +24,7 @@
              (gnu packages version-control)
              (gnu packages ssh)
              (python-rns)
+             (reticulum-service)
              (gnu services base)
              (gnu services networking)
              (gnu services shepherd)
@@ -38,8 +39,8 @@
   (dirname (or (current-filename)
                (canonicalize-path "deploy/guix/machines.scm"))))
 
-;; Load the meta-org package from guix.scm (provides bin/meta-org-relay)
-(define %meta-org
+;; Load the xorg package from guix.scm (provides bin/meta-org-relay)
+(define %xorg-package
   (load (string-append %this-dir "/../../guix.scm")))
 
 (define %admin-ssh-public-key
@@ -222,7 +223,7 @@
       ;; WebSocket relay — runs from immutable Guix store, not a git clone
       (service xorg-relay-service-type
                (xorg-relay-configuration
-                (package %meta-org)
+                (package %xorg-package)
                 (port 9090)
                 (environment
                  `(("OPENROUTER_KEYS" . ,(or (getenv "OPENROUTER_KEYS") ""))))))
@@ -275,6 +276,11 @@
                              (stop #~(make-kill-destructor))
                              (respawn? #t))))
 
+      ;; Reticulum mesh networking — rnsd daemon + OCapN bridge.
+      ;; Enables Goblins actors over LoRa, serial, TCP, I2P, packet radio.
+      (service rnsd-service-type)
+      (service reticulum-bridge-service-type)
+
       ;; Activation: set up playnet user environment.
       ;; Uses mkdir-p because on first deploy, user-homes may not have
       ;; created the home directory yet when activation runs.
@@ -311,7 +317,7 @@
                               (chown bin-dir (passwd:uid pw) (passwd:gid pw)))
                             ;; Symlink to packaged code (immutable, from Guix store)
                             (let ((repo-dir "/home/playnet/xorg-repo")
-                                  (pkg-dir (string-append #$%meta-org "/share/meta-org")))
+                                  (pkg-dir (string-append #$%xorg-package "/share/xorg")))
                               (when (and (file-exists? repo-dir)
                                          (not (symbolic-link? repo-dir)))
                                 ;; Existing mutable clone — remove it
@@ -331,7 +337,7 @@
                              (let* ((home     (string-append "/home/" username))
                                     (repo-dir (string-append home "/xorg-repo"))
                                     (bin-dir  (string-append home "/bin"))
-                                    (pkg-dir  (string-append #$%meta-org "/share/meta-org"))
+                                    (pkg-dir  (string-append #$%xorg-package "/share/xorg"))
                                     (pw       (false-if-exception (getpwnam username))))
                                (when pw
                                  ;; Home dir

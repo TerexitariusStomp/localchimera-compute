@@ -1,12 +1,12 @@
 ;;; deploy/guix/xorg-relay-service.scm — Shepherd service for the xorg relay
 ;;;
-;;; Runs the WebSocket relay from the meta-org Guix package (immutable store).
+;;; Runs the WebSocket relay from the xorg Guix package (immutable store).
 ;;; Handles message routing, signup, transcription, and terminal sessions.
 ;;;
 ;;; Usage in machines.scm:
 ;;;   (service xorg-relay-service-type
 ;;;            (xorg-relay-configuration
-;;;             (package meta-org)
+;;;             (package xorg)
 ;;;             (port 9090)))
 
 (define-module (xorg-relay-service)
@@ -27,7 +27,7 @@
 (define-record-type* <xorg-relay-configuration>
   xorg-relay-configuration make-xorg-relay-configuration
   xorg-relay-configuration?
-  ;; The meta-org Guix package (provides bin/meta-org-relay)
+  ;; The xorg Guix package (provides bin/xorg-relay)
   (package xorg-relay-configuration-package)
   ;; WebSocket listen port
   (port    xorg-relay-configuration-port    (default 9090))
@@ -50,10 +50,10 @@
       (requirement '(networking user-processes))
       (start
        #~(make-forkexec-constructor
-          (list (string-append #$package "/bin/meta-org-relay")
+          (list (string-append #$package "/bin/xorg-relay")
                 #$(number->string port))
           #:user #$user
-          #:directory (string-append #$package "/share/meta-org")
+          #:directory (string-append #$package "/share/xorg")
           #:environment-variables
           (append
            (list (string-append "HOME=/var/lib/" #$user))

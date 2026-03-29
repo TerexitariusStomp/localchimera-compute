@@ -371,7 +371,7 @@ Claude write correct Scheme; the MCP bridge lets it evaluate in the running org.
 guix shell -m deploy/guix/dev-manifest.scm
 
 # Or: if you have guile-goblins installed:
-cd ~/Programs/meta-org
+cd ~/Programs/xorg
 ./live-guile.sh   # if it exists, or: guile --listen=/tmp/xorg-dev.sock
 ```
 
