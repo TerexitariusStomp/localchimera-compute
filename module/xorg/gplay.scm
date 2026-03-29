@@ -6,11 +6,7 @@
   #:use-module (goblins actor-lib methods)
   #:use-module (goblins actor-lib sealers)
   #:use-module (goblins actor-lib ward)
-  #:use-module ((goblins utils crypto) #:select (generate-key-pair key-pair->public-key
-                                                  sign verify
-                                                  captp-signature->crypto-signature
-                                                  captp-public-key->crypto-public-key))
-  #:use-module (rnrs bytevectors)
+  #:use-module ((goblins utils crypto) #:select (generate-key-pair key-pair->public-key))
   #:use-module (xorg endorsement)
   #:use-module (ice-9 match)
   #:use-module (ice-9 receive)
@@ -89,12 +85,18 @@
   (else
    (define %restore-eval eval)
    (define (%restore-interaction-env) (interaction-environment))
-   ;; Guile: use real crypto signing
-   (define (%sign-bytes bytes kp) (sign bytes kp))
-   (define (%verify-sig sig bytes pk)
-     (verify (captp-signature->crypto-signature sig)
-             bytes
-             (captp-public-key->crypto-public-key pk)))))
+   ;; Guile: use real crypto signing (convert string to bytevector)
+   (define %string->utf8 (@@ (rnrs bytevectors) string->utf8))
+   (define %sign (@@ (goblins utils crypto) sign))
+   (define %verify (@@ (goblins utils crypto) verify))
+   (define %sig->crypto (@@ (goblins utils crypto) captp-signature->crypto-signature))
+   (define %pk->crypto (@@ (goblins utils crypto) captp-public-key->crypto-public-key))
+   (define (%sign-bytes str kp)
+     (%sign (%string->utf8 str) kp))
+   (define (%verify-sig sig str pk)
+     (%verify (%sig->crypto sig)
+              (%string->utf8 str)
+              (%pk->crypto pk)))))
 
 ;;; ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -153,11 +155,11 @@
 ;;; ── History entry signing ──────────────────────────────────────────────────
 
 (define (entry->signing-bytes version expressor-id expression parent-version)
-  "Serialize history entry fields to bytes for signing/verification."
-  (string->utf8
-   (call-with-output-string
-     (lambda (port)
-       (write (list version expressor-id expression parent-version) port)))))
+  "Serialize history entry fields to a canonical string for signing/verification.
+   Returns a string (not bytevector) for Hoot/WASM compatibility."
+  (call-with-output-string
+    (lambda (port)
+      (write (list version expressor-id expression parent-version) port))))
 
 ;;; ── Version management ──────────────────────────────────────────────────────
 

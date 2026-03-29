@@ -7,7 +7,8 @@
              (goblins actor-lib methods)
              (goblins actor-lib sealers)
              (goblins actor-lib ward)
-             (goblins utils crypto)
+             ;; (goblins utils crypto) removed — imports (rnrs bytevectors) which
+             ;; Hoot can't compile. Key generation uses JS FFI directly instead.
              (goblins persistence-store local-storage)
              (xorg gplay)
              (xorg autocomplete)
@@ -157,6 +158,19 @@
 (define-foreign delete-key-pair
   "crypto" "deleteKeyPair"
   (ref string) -> none)
+;;; Crypto key generation — replaces (goblins utils crypto) which can't compile in Hoot
+(define-foreign generate-key-pair
+  "crypto" "generateEd25519KeyPair"
+  -> (ref extern))
+(define-foreign key-pair->public-key
+  "crypto" "keyPairPublicKey"
+  (ref extern) -> (ref extern))
+(define-foreign key-pair->private-key
+  "crypto" "keyPairPrivateKey"
+  (ref extern) -> (ref extern))
+(define-foreign export-key-raw
+  "crypto" "exportKey"
+  (ref extern) -> (ref extern))
 
 (define procedure->external/cached
   (let ((cache (make-hashtable)))
