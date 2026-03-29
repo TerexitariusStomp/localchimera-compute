@@ -1,4 +1,7 @@
-;;; agents.scm — Agent capacity index
+;;; agents.scm — Agent capacity index (scheduling utility, not used in planning hot path)
+;;;
+;;; The planning pipeline derives capacity from EconomicResources (unitOfEffort).
+;;; This index is available for the scheduling/assignment phase.
 
 (use-modules (srfi srfi-1) (goblins utils hashmap))
 

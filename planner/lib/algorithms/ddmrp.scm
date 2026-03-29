@@ -13,10 +13,39 @@
 
 (define *epsilon* 1e-9)
 (define *seconds-per-day* 86400)
+(define *non-consuming-actions* '(use work cite deliver-service))
 
 ;; Actions whose onhandEffect is 'decrement (consuming actions)
 (define *consuming-actions*
   '(consume combine pickup accept))
+
+
+;; =========================================================================
+;; Location-aware helpers
+;; =========================================================================
+
+(define (sum-onhand-at-location observer spec-id at-location location-store)
+  "Sum onhandQuantity for spec, filtered to resources at location or descendants.
+   When at-location is #f, sums across all locations."
+  (let ((resources ($ observer 'conforming-resources spec-id)))
+    (fold (lambda (r acc)
+            (let ((loc (economic-resource-current-location r)))
+              (if (or (not at-location)
+                      (not loc)
+                      (equal? loc at-location)
+                      (and location-store
+                           ($ location-store 'is-descendant-or-equal loc at-location)))
+                  (+ acc (measure-qty (economic-resource-onhand-quantity r)))
+                  acc)))
+          0 resources)))
+
+(define (location-matches-ddmrp candidate ancestor location-store)
+  "True if candidate location is at or contained within ancestor.
+   When either is #f, returns #t (no constraint)."
+  (or (not ancestor) (not candidate)
+      (equal? candidate ancestor)
+      (and location-store
+           ($ location-store 'is-descendant-or-equal candidate ancestor))))
 
 
 ;; =========================================================================
@@ -127,6 +156,29 @@
                       (+ acc (rp-duration-days rp) input-lt)))
                   0 chain)))))))
 
+(define* (leg-lead-time recipe-id recipe-store
+                        #:key (upstream-stage #f) (downstream-stage #f))
+  "Compute DLT for one decoupled routing leg (between two stage markers).
+   Returns days for the sub-DAG between upstream and downstream stages."
+  (let* ((chain ($ recipe-store 'get-process-chain recipe-id))
+         ;; Find start/end indices in chain
+         (start-idx (if upstream-stage
+                        (list-index (lambda (rp)
+                                      (equal? (recipe-process-process-conforms-to rp) upstream-stage))
+                                    chain)
+                        0))
+         (end-idx (if downstream-stage
+                      (list-index (lambda (rp)
+                                    (equal? (recipe-process-process-conforms-to rp) downstream-stage))
+                                  chain)
+                      (- (length chain) 1))))
+    (if (or (not start-idx) (not end-idx) (> start-idx end-idx)) 0
+        ;; Sum durations for the sub-chain
+        (let loop ((i start-idx) (total 0))
+          (if (> i end-idx) total
+              (loop (+ i 1)
+                    (+ total (rp-duration-days (list-ref chain i)))))))))
+
 
 ;; =========================================================================
 ;; Demand Qualification (OST filtering)
@@ -186,25 +238,22 @@
 ;; NFP — Net Flow Position
 ;; =========================================================================
 
-(define (compute-nfp spec-id buffer-zone profile plan-store observer
-                      . rest)
+(define* (compute-nfp spec-id buffer-zone profile plan-store observer
+                       #:key (today-seconds (current-time))
+                             (location-store #f))
   "Compute NFP = onhand + onorder - qualifiedDemand.
    Returns alist: ((nfp . number) (onhand . number) (onorder . number)
                     (qualified-demand . number) (zone . symbol) (priority . number))."
-  (let* ((today-seconds (if (pair? rest) (car rest) (current-time)))
-         ;; Onhand: sum of onhandQuantity for conforming resources
-         (resources ($ observer 'conforming-resources spec-id))
-         (onhand (fold (lambda (r acc)
-                         (+ acc (if (economic-resource-onhand-quantity r)
-                                    (measure-has-numerical-value
-                                      (economic-resource-onhand-quantity r))
-                                    0)))
-                       0 resources))
-         ;; Onorder: sum of open supply commitments (outputOf set, not finished)
+  (let* (;; Onhand: sum filtered to buffer zone's location scope
+         (onhand (sum-onhand-at-location observer spec-id
+                   (buffer-zone-at-location buffer-zone) location-store))
+         ;; Onorder: sum of open supply commitments (outputOf set, not finished,
+         ;;          excluding non-consuming actions like use/work/cite/deliverService)
          (all-commitments ($ plan-store 'commitments-for-spec spec-id))
          (onorder (fold (lambda (c acc)
                           (if (and (commitment-output-of c)
                                    (not (commitment-finished c))
+                                   (not (memq (commitment-action c) *non-consuming-actions*))
                                    (commitment-resource-quantity c))
                               (+ acc (measure-has-numerical-value
                                        (commitment-resource-quantity c)))
@@ -273,8 +322,9 @@
 ;; Buffer Recalibration
 ;; =========================================================================
 
-(define (recalibrate-buffer-zone existing new-adu new-dlt-days profile
-                                 adjustments as-of-seconds)
+(define* (recalibrate-buffer-zone existing new-adu new-dlt-days profile
+                                  adjustments as-of-seconds
+                                  #:key (location-store #f))
   "Recalibrate a BufferZone with fresh ADU and DLT.
    Returns a new <buffer-zone> record."
   (let* ((classification (buffer-zone-buffer-classification existing)))
@@ -284,7 +334,8 @@
         (let* (;; Aggregate adjustment factors
                (agg (aggregate-adjustment-factors adjustments as-of-seconds
                       (buffer-zone-spec-id existing)
-                      (buffer-zone-at-location existing)))
+                      #:at-location (buffer-zone-at-location existing)
+                      #:location-store location-store))
                (opts `((demand-adj-factor . ,(or (assq-ref agg 'demand) 1.0))
                        (lead-time-adj-factor . ,(or (assq-ref agg 'lead-time) 1.0))
                        (red-zone-adj-factor . ,(or (assq-ref agg 'red) 1.0))
@@ -347,18 +398,19 @@
 ;; Adjustment Factor Aggregation
 ;; =========================================================================
 
-(define (aggregate-adjustment-factors adjustments as-of-seconds spec-id
-                                      . rest)
+(define* (aggregate-adjustment-factors adjustments as-of-seconds spec-id
+                                       #:key (at-location #f) (location-store #f))
   "Aggregate active DemandAdjustmentFactors by type.
    Returns alist: ((demand . factor) (lead-time . factor)
                     (red . factor) (yellow . factor) (green . factor))."
-  (let* ((at-location (and (pair? rest) (car rest)))
-         (active (filter
+  (let* ((active (filter
                    (lambda (daf)
                      (and (equal? (demand-adjustment-factor-spec-id daf) spec-id)
-                          (or (not at-location)
-                              (not (demand-adjustment-factor-at-location daf))
-                              (equal? (demand-adjustment-factor-at-location daf) at-location))
+                          (or (not (demand-adjustment-factor-at-location daf))
+                              (location-matches-ddmrp
+                                at-location
+                                (demand-adjustment-factor-at-location daf)
+                                location-store))
                           (or (not (demand-adjustment-factor-is-active daf))
                               (demand-adjustment-factor-is-active daf))
                           (let ((from (iso-datetime->epoch
@@ -562,26 +614,26 @@
             (< (or (assq-ref a 'nfp-pct) 0)
                (or (assq-ref b 'nfp-pct) 0)))))))
 
-(define (project-on-hand spec-id buffer-zone today-seconds plan-store observer)
+(define* (project-on-hand spec-id buffer-zone today-seconds plan-store observer
+                          #:key (location-store #f))
   "Day-by-day on-hand projection over DLT window.
    Returns list of alists: ((date . str) (demand . n) (receipts . n)
                              (projected-on-hand . n) (zone . symbol))."
   (let* ((dlt-days (max 1 (inexact->exact (ceiling (buffer-zone-dlt-days buffer-zone)))))
-         ;; Current on-hand
-         (resources ($ observer 'conforming-resources spec-id))
-         (initial-oh (fold (lambda (r acc)
-                             (+ acc (measure-qty (economic-resource-onhand-quantity r))))
-                           0 resources))
+         ;; Current on-hand (filtered to buffer zone's location scope)
+         (initial-oh (sum-onhand-at-location observer spec-id
+                       (buffer-zone-at-location buffer-zone) location-store))
          ;; Bucket supply and demand by day
          (supply-by-day (make-hash-table))
          (demand-by-day (make-hash-table))
          (commitments ($ plan-store 'commitments-for-spec spec-id))
          (intents ($ plan-store 'intents-for-spec spec-id)))
-    ;; Bucket commitments
+    ;; Bucket commitments (skip non-consuming actions: use/work/cite/deliverService)
     (for-each
       (lambda (c)
         (when (and (not (commitment-finished c)) (commitment-due c)
-                   (commitment-resource-quantity c))
+                   (commitment-resource-quantity c)
+                   (not (memq (commitment-action c) *non-consuming-actions*)))
           (let ((day (substring (commitment-due c) 0 10))
                 (qty (measure-has-numerical-value (commitment-resource-quantity c))))
             (if (commitment-output-of c)
@@ -658,39 +710,46 @@
             (let* ((adu-result (compute-adu events (buffer-zone-spec-id zone)
                                  window-days as-of-seconds))
                    (adu (assq-ref adu-result 'adu))
-                   ;; Derive DLT
-                   (dlt (let ((computed (compute-decoupled-lead-time
-                                          (buffer-zone-spec-id zone)
-                                          buffered-specs recipe-store)))
-                          (if (> computed 0) computed (buffer-zone-dlt-days zone))))
+                   ;; Derive DLT (leg-level if replenishmentRecipeId, else decoupled)
+                   (dlt (let ((replen-rid (buffer-zone-replenishment-recipe-id zone)))
+                          (if replen-rid
+                              ;; Leg-level DLT: duration of specific replenishment leg
+                              (let ((leg-lt (leg-lead-time replen-rid recipe-store)))
+                                (if (> leg-lt 0) leg-lt (buffer-zone-dlt-days zone)))
+                              ;; Decoupled DLT: segment at buffer boundaries
+                              (let ((computed (compute-decoupled-lead-time
+                                                (buffer-zone-spec-id zone)
+                                                buffered-specs recipe-store)))
+                                (if (> computed 0) computed (buffer-zone-dlt-days zone))))))
                    ;; Recalibrate
                    (updated (recalibrate-buffer-zone zone adu dlt profile
                               adjustments as-of-seconds)))
               ($ buffer-zone-store 'replace-zone updated)))))
       all-zones)))
 
-(define (build-buffer-health-report buffer-zone-store buffer-profiles
-                                     plan-store observer . rest)
+(define* (build-buffer-health-report buffer-zone-store buffer-profiles
+                                      plan-store observer
+                                      #:key (as-of (current-time))
+                                            (location-store #f))
   "Aggregate buffer health snapshot across all zones.
    Returns alist: ((as-of . seconds) (buffers . list) (summary . alist))."
-  (let* ((as-of (if (pair? rest) (car rest) (current-time)))
-         (all-zones ($ buffer-zone-store 'all-zones))
+  (let* ((all-zones ($ buffer-zone-store 'all-zones))
          (red-count 0) (yellow-count 0) (green-count 0) (excess-count 0)
          (buffers
            (map (lambda (bz)
                   (let* ((profile (and buffer-profiles
                                       (hashmap-ref buffer-profiles
                                         (buffer-zone-profile-id bz) #f)))
-                         (resources ($ observer 'conforming-resources
-                                      (buffer-zone-spec-id bz)))
-                         (onhand (fold (lambda (r acc)
-                                         (+ acc (measure-qty
-                                                  (economic-resource-onhand-quantity r))))
-                                       0 resources))
+                         (onhand (sum-onhand-at-location observer
+                                   (buffer-zone-spec-id bz)
+                                   (buffer-zone-at-location bz)
+                                   location-store))
                          (zone (if profile
                                    (let ((nfp (compute-nfp
                                                 (buffer-zone-spec-id bz) bz profile
-                                                plan-store observer as-of)))
+                                                plan-store observer
+                                                #:today-seconds as-of
+                                                #:location-store location-store)))
                                      (assq-ref nfp 'zone))
                                    (assq-ref (buffer-status onhand bz) 'zone)))
                          (tp-breached (and (buffer-zone-tipping-point bz)
@@ -711,3 +770,473 @@
       (buffers . ,buffers)
       (summary . ((red . ,red-count) (yellow . ,yellow-count)
                   (green . ,green-count) (excess . ,excess-count))))))
+
+
+;; ═════════════════════════════════════════════════════════════════════════
+;; DDMRP ANALYTICS EXTENSION — Tier 1: Core analytics
+;; ═════════════════════════════════════════════════════════════════════════
+
+(define (compute-adu-differential short-window-adu long-window-adu)
+  "Percentage change: (short - long) / long * 100. Positive = growth."
+  (if (= long-window-adu 0) 0
+      (* (/ (- short-window-adu long-window-adu) long-window-adu) 100)))
+
+(define* (detect-adu-alerts bz past-adu forward-adu adu
+                            #:key (spike-threshold 30) (void-threshold -30))
+  "Detect ADU anomalies. Returns list of alert alists."
+  (let* ((diff (compute-adu-differential forward-adu past-adu))
+         (alerts '()))
+    (when (> diff spike-threshold)
+      (set! alerts (cons `((type . demand-spike) (differential . ,diff)
+                           (spec-id . ,(buffer-zone-spec-id bz))) alerts)))
+    (when (< diff void-threshold)
+      (set! alerts (cons `((type . demand-void) (differential . ,diff)
+                           (spec-id . ,(buffer-zone-spec-id bz))) alerts)))
+    alerts))
+
+(define* (adu-drift-alert current-adu historical-adu #:key (drift-threshold 0.15))
+  "Slow systematic ADU drift detection. Returns alist or #f."
+  (if (= historical-adu 0) #f
+      (let* ((drift (/ (abs (- current-adu historical-adu)) historical-adu))
+             (severity (cond ((> drift 0.5) 'high) ((> drift 0.3) 'medium)
+                             ((> drift drift-threshold) 'low) (else #f))))
+        (and severity `((is-drifting . #t) (drift . ,drift) (severity . ,severity))))))
+
+(define (ltm-alert-zone-full commitment dlt-days today-epoch)
+  "5-zone LTM: early | green | yellow | red | late."
+  (let* ((due (commitment-due commitment))
+         (due-epoch (if due (iso-datetime->epoch due) #f)))
+    (if (not due-epoch) #f
+        (let* ((days-until (/ (- due-epoch today-epoch) *seconds-per-day*))
+               (dlt dlt-days))
+          (cond
+            ((< days-until 0) 'late)
+            ((< days-until (* dlt 1/3)) 'red)
+            ((< days-until (* dlt 2/3)) 'yellow)
+            ((< days-until dlt) 'green)
+            (else 'early))))))
+
+(define* (on-hand-alert onhand bz #:key (alert-fraction 0.5))
+  "Fire when on-hand penetrates TOR fraction. Returns alist or #f."
+  (let ((tor (buffer-zone-tor bz))
+        (threshold (* (buffer-zone-tor bz) alert-fraction)))
+    (cond
+      ((<= onhand 0)
+       `((level . critical) (onhand . ,onhand) (tor . ,tor)
+         (spec-id . ,(buffer-zone-spec-id bz))))
+      ((<= onhand threshold)
+       `((level . warning) (onhand . ,onhand) (tor . ,tor)
+         (spec-id . ,(buffer-zone-spec-id bz))))
+      (else #f))))
+
+(define* (material-sync-shortfall spec-ids plan-store observer today-epoch
+                                  #:key (horizon-days 30))
+  "Identify non-decoupled component supply shortfalls."
+  (filter-map
+    (lambda (spec)
+      (let* ((resources ($ observer 'conforming-resources spec))
+             (onhand (fold (lambda (r a) (+ a (measure-qty (economic-resource-onhand-quantity r))))
+                           0 resources))
+             ;; Simplified: count demand from open intents
+             (demand-intents ($ plan-store 'intents-for-spec spec))
+             (total-demand (fold (lambda (i a)
+                                   (+ a (if (and (intent-resource-quantity i) (not (intent-finished i)))
+                                            (measure-has-numerical-value (intent-resource-quantity i)) 0)))
+                                 0 demand-intents))
+             (shortfall (max 0 (- total-demand onhand))))
+        (and (> shortfall *epsilon*)
+             `((spec-id . ,spec) (onhand . ,onhand) (demand . ,total-demand)
+               (shortfall . ,shortfall)))))
+    spec-ids))
+
+(define (compute-time-buffer onhand bz adu)
+  "Translate on-hand into calendar days of cover."
+  (let* ((days (if (> adu 0) (/ onhand adu) +inf.0))
+         (status (buffer-status onhand bz))
+         (zone (assq-ref status 'zone)))
+    `((days . ,days) (zone . ,zone) (onhand . ,onhand) (adu . ,adu))))
+
+(define (project-buffer-zones buffer-zones plan-store observer today-epoch
+                              horizon-days)
+  "Project NFP trajectory for all buffers over forward horizon."
+  (map (lambda (bz)
+         (let ((projections (project-on-hand (buffer-zone-spec-id bz) bz
+                              today-epoch plan-store observer)))
+           `((spec-id . ,(buffer-zone-spec-id bz))
+             (projections . ,projections))))
+       buffer-zones))
+
+(define (compute-execution-priority slots buffer-zones nfp-results)
+  "Rank work orders by DDMRP execution priority (NFP% = NFP/TOG).
+   slots: list of alists with spec-id. nfp-results: alist of (spec-id . nfp).
+   Returns sorted list."
+  (let* ((scored
+           (filter-map
+             (lambda (slot)
+               (let* ((spec (assq-ref slot 'spec-id))
+                      (bz (find (lambda (b) (equal? (buffer-zone-spec-id b) spec))
+                                buffer-zones))
+                      (nfp (assoc-ref nfp-results spec))
+                      (tog (and bz (buffer-zone-tog bz)))
+                      (pct (if (and nfp tog (> tog 0)) (/ nfp tog) 1)))
+                 `((slot . ,slot) (nfp-pct . ,pct)
+                   (zone . ,(cond ((< pct 1/3) 'red) ((< pct 2/3) 'yellow)
+                                  (else 'green))))))
+             slots)))
+    (sort scored (lambda (a b) (< (assq-ref a 'nfp-pct) (assq-ref b 'nfp-pct))))))
+
+(define* (order-activity-summary plan-store observer zone-store
+                                  #:key (location-store #f))
+  "Unified execution dashboard: open supply commitments with buffer status."
+  (let ((commits ($ plan-store 'all-commitments)))
+    (filter-map
+      (lambda (c)
+        (and (not (commitment-finished c))
+             (commitment-resource-conforms-to c)
+             (let* ((spec (commitment-resource-conforms-to c))
+                    (bz (and zone-store
+                             ($ zone-store 'find-zone spec
+                                (commitment-at-location c) location-store)))
+                    (onhand (sum-onhand-at-location observer spec
+                              (and bz (buffer-zone-at-location bz))
+                              location-store))
+                    (status (and bz (buffer-status onhand bz))))
+               `((commitment-id . ,(commitment-id c))
+                 (spec-id . ,spec)
+                 (action . ,(commitment-action c))
+                 (due . ,(commitment-due c))
+                 (qty . ,(and (commitment-resource-quantity c)
+                              (measure-has-numerical-value (commitment-resource-quantity c))))
+                 (buffer-zone . ,(and status (assq-ref status 'zone)))
+                 (nfp-pct . ,(and status (assq-ref status 'nfp-pct)))))))
+      commits)))
+
+(define (compute-min-max-buffer profile adu dlt-days)
+  "Min/max bounds from buffer zone levels."
+  (let ((zones (compute-buffer-zone-levels profile adu dlt-days)))
+    `(,@zones
+      (min . ,(assq-ref zones 'tor))
+      (max . ,(assq-ref zones 'tog)))))
+
+(define (average-on-hand-target bz)
+  "Expected average inventory: TOR + (TOG - TOY) / 2."
+  (+ (buffer-zone-tor bz)
+     (/ (- (buffer-zone-tog bz) (buffer-zone-toy bz)) 2)))
+
+(define (time-buffer-state fulfillment-state)
+  "Classify: yet-to-be-received | in-process | completed."
+  (cond ((not fulfillment-state) 'yet-to-be-received)
+        ((fulfillment-state-done? fulfillment-state) 'completed)
+        (else 'in-process)))
+
+
+;; ═════════════════════════════════════════════════════════════════════════
+;; Tier 2: Zone / flow analytics
+;; ═════════════════════════════════════════════════════════════════════════
+
+(define (zone-distribution buffers nfp-results)
+  "Aggregate all buffers into zone counts."
+  (let ((red 0) (yellow 0) (green 0) (excess 0))
+    (for-each
+      (lambda (bz)
+        (let* ((spec (buffer-zone-spec-id bz))
+               (nfp (or (assoc-ref nfp-results spec) 0))
+               (status (buffer-status nfp bz))
+               (zone (assq-ref status 'zone)))
+          (case zone
+            ((red) (set! red (+ red 1)))
+            ((yellow) (set! yellow (+ yellow 1)))
+            ((green) (set! green (+ green 1)))
+            ((excess) (set! excess (+ excess 1))))))
+      buffers)
+    `((red . ,red) (yellow . ,yellow) (green . ,green) (excess . ,excess))))
+
+(define (time-in-zone history zone)
+  "Fraction of entries in history where zone matches. Range [0,1]."
+  (if (null? history) 0
+      (let ((matching (count (lambda (h) (eq? (assq-ref h 'zone) zone)) history)))
+        (/ matching (length history)))))
+
+(define (zone-transitions history)
+  "Identify zone boundary crossings. Returns list of (date from to) alists."
+  (if (or (null? history) (null? (cdr history))) '()
+      (let loop ((prev (car history)) (rest (cdr history)) (result '()))
+        (if (null? rest) (reverse result)
+            (let ((curr (car rest))
+                  (prev-zone (assq-ref prev 'zone))
+                  (curr-zone (assq-ref (car rest) 'zone)))
+              (loop curr (cdr rest)
+                    (if (not (eq? prev-zone curr-zone))
+                        (cons `((date . ,(assq-ref curr 'date))
+                                (from . ,prev-zone) (to . ,curr-zone))
+                              result)
+                        result)))))))
+
+(define (classify-analytics-zone nfp-pct)
+  "Fine-grained 7-zone classification for analytics."
+  (cond ((< nfp-pct 0)    'dark-red-critical)
+        ((< nfp-pct 0.15) 'dark-red)
+        ((< nfp-pct 0.33) 'red)
+        ((< nfp-pct 0.67) 'yellow)
+        ((< nfp-pct 0.85) 'green)
+        ((< nfp-pct 1.0)  'light-green)
+        (else              'excess)))
+
+(define (flow-index adu tog)
+  "Buffer turnover ratio: ADU / TOG. Higher = faster cycling."
+  (if (> tog 0) (/ adu tog) 0))
+
+(define (classify-flow-speed fi)
+  "fast (> 0.5) | normal | slow (< 0.1)."
+  (cond ((> fi 0.5) 'fast) ((< fi 0.1) 'slow) (else 'normal)))
+
+(define (capacity-in-time tog-qty batch-size process-duration-days)
+  "TOG → work center days consumed per replenishment.
+   Formula: (TOG / batch) * duration."
+  (if (> batch-size 0)
+      (* (/ tog-qty batch-size) process-duration-days)
+      0))
+
+(define* (capacity-buffer-status load total-capacity
+                                 #:key (green-threshold 0.8) (yellow-threshold 0.95))
+  "Work center load classification (INVERSE of stock buffers).
+   green = low load, red = high load."
+  (let ((utilization (if (> total-capacity 0) (/ load total-capacity) 0)))
+    (cond
+      ((> utilization 1.0) `((zone . excess) (utilization . ,utilization)))
+      ((> utilization yellow-threshold) `((zone . red) (utilization . ,utilization)))
+      ((> utilization green-threshold) `((zone . yellow) (utilization . ,utilization)))
+      (else `((zone . green) (utilization . ,utilization))))))
+
+
+;; ═════════════════════════════════════════════════════════════════════════
+;; Tier 3: Profile & calibration utilities
+;; ═════════════════════════════════════════════════════════════════════════
+
+(define *ltf-ranges*
+  '((short . (0.5 . 1.5)) (medium . (1.0 . 3.0)) (long . (2.0 . 7.0))))
+(define *vf-ranges*
+  '((low . (0.05 . 0.25)) (medium . (0.25 . 0.75)) (high . (0.75 . 1.0))))
+(define *standard-ltf* '((short . 1.0) (medium . 2.0) (long . 4.0)))
+(define *standard-vf* '((low . 0.15) (medium . 0.5) (high . 0.85)))
+
+(define (validate-buffer-profile profile)
+  "Validate profile. Returns list of error strings (empty = valid)."
+  (let ((errors '())
+        (ltf (buffer-profile-lead-time-factor profile))
+        (vf (buffer-profile-variability-factor profile)))
+    ;; Check LTF range
+    (when (and ltf (or (< ltf 0.1) (> ltf 10.0)))
+      (set! errors (cons "LTF out of range [0.1, 10.0]" errors)))
+    ;; Check VF range
+    (when (and vf (or (< vf 0.0) (> vf 1.0)))
+      (set! errors (cons "VF out of range [0.0, 1.0]" errors)))
+    ;; Check order-spike-threshold
+    (when (and (buffer-profile-order-spike-threshold profile)
+               (< (buffer-profile-order-spike-threshold profile) 0))
+      (set! errors (cons "Order spike threshold must be >= 0" errors)))
+    errors))
+
+(define* (build-profile-code ltf-class vf-class #:optional (ost-mult 1.0))
+  "Compact text code: e.g., 'S-L-1.5'."
+  (string-append
+    (case ltf-class ((short) "S") ((medium) "M") ((long) "L") (else "?"))
+    "-"
+    (case vf-class ((low) "L") ((medium) "M") ((high) "H") (else "?"))
+    (if (= ost-mult 1.0) ""
+        (string-append "-" (number->string ost-mult)))))
+
+(define (parse-profile-code code)
+  "Parse 'S-L-1.5' into alist. Returns alist or #f."
+  (let ((parts (string-split code #\-)))
+    (and (>= (length parts) 2)
+         (let ((ltf (case (string-ref (car parts) 0)
+                      ((#\S) 'short) ((#\M) 'medium) ((#\L) 'long) (else #f)))
+               (vf (case (string-ref (cadr parts) 0)
+                     ((#\L) 'low) ((#\M) 'medium) ((#\H) 'high) (else #f)))
+               (ost (if (>= (length parts) 3) (string->number (caddr parts)) 1.0)))
+           (and ltf vf `((ltf . ,ltf) (vf . ,vf) (ost-multiplier . ,ost)))))))
+
+(define* (standard-profile ltf-class vf-class #:optional (ost-mult 1.0))
+  "Factory: create BufferProfile from shorthand selectors."
+  (let ((ltf-val (or (assq-ref *standard-ltf* ltf-class) 2.0))
+        (vf-val (or (assq-ref *standard-vf* vf-class) 0.5)))
+    (make-buffer-profile
+      (generate-id "bp-") #f ltf-val vf-val ost-mult #f 50)))
+
+(define (cascade-component-daf component-base-adu parent-contributions)
+  "Effective DAF for shared component. Ch 8 §8.2.1.
+   parent-contributions: list of (adjusted-adu . usage-qty) pairs.
+   Returns effective DAF multiplier."
+  (if (= component-base-adu 0) 1
+      (/ (fold (lambda (p acc) (+ acc (* (car p) (cdr p)))) 0 parent-contributions)
+         component-base-adu)))
+
+(define (adjust-vf-for-capacity nominal-vf utilization-pct)
+  "Dynamically adjust VF based on work center utilization.
+   Higher utilization → higher VF (less cushion)."
+  (cond
+    ((> utilization-pct 0.95) (min 1.0 (* nominal-vf 1.5)))
+    ((> utilization-pct 0.85) (* nominal-vf 1.2))
+    ((< utilization-pct 0.5) (max 0.05 (* nominal-vf 0.8)))
+    (else nominal-vf)))
+
+(define (score-positioning-analysis pa)
+  "Score a decoupling-point analysis. Higher = stronger candidate.
+   pa: alist with demand-risk, supply-risk, flow-throughput."
+  (let ((dr (or (assq-ref pa 'demand-risk) 0))
+        (sr (or (assq-ref pa 'supply-risk) 0))
+        (ft (or (assq-ref pa 'flow-throughput) 0)))
+    (+ (* dr 0.4) (* sr 0.35) (* ft 0.25))))
+
+(define (buffer-eligibility spec-id recipe-store)
+  "Check if item is eligible for DDMRP buffering.
+   Returns alist: ((eligible . bool) (reason . string))."
+  (let ((recipes ($ recipe-store 'recipes-for-output spec-id)))
+    (cond
+      ((null? recipes)
+       `((eligible . #f) (reason . "No recipes produce this spec")))
+      ((> (length recipes) 3)
+       `((eligible . #t) (reason . "Multiple sourcing — high variability candidate")))
+      (else
+       `((eligible . #t) (reason . "Standard buffer candidate"))))))
+
+(define (check-item-type-consistency spec-id item-type recipe-store)
+  "Validate item type consistency with recipe role."
+  (let* ((as-input ($ recipe-store 'recipes-consuming spec-id))
+         (as-output ($ recipe-store 'recipes-for-output spec-id))
+         (is-raw (and (null? as-output) (pair? as-input)))
+         (is-finished (and (pair? as-output) (null? as-input)))
+         (is-intermediate (and (pair? as-output) (pair? as-input))))
+    (case item-type
+      ((raw-material) is-raw)
+      ((finished-good) is-finished)
+      ((subassembly intermediate) is-intermediate)
+      (else #t))))
+
+(define (recommend-buffer-type spec-id recipe-store adjustments)
+  "Recommend buffer classification: OPT | MRO | CCR | HEDGE | SAFETY.
+   adjustments: list of DAF alists."
+  (let* ((recipes ($ recipe-store 'recipes-for-output spec-id))
+         (has-variability (any (lambda (a) (and (assq-ref a 'factor)
+                                                 (> (assq-ref a 'factor) 1.2)))
+                               adjustments)))
+    (cond
+      ((null? recipes) 'MRO)      ;; no recipe = maintenance/repair/operations
+      (has-variability 'HEDGE)     ;; high variability = hedge buffer
+      ((> (length recipes) 2) 'OPT) ;; multiple sources = optimized
+      (else 'SAFETY))))             ;; default
+
+
+;; ═════════════════════════════════════════════════════════════════════════
+;; Tier 4: Compliance / history / orchestration
+;; ═════════════════════════════════════════════════════════════════════════
+
+(define (buffer-health-history bz observer snapshots)
+  "Historical buffer state from snapshot store.
+   Returns list of (date zone onhand nfp-pct) alists."
+  (filter-map
+    (lambda (snap)
+      (let* ((spec (buffer-zone-spec-id bz))
+             (snap-spec (assq-ref snap 'spec-id)))
+        (and (equal? snap-spec spec)
+             (let* ((onhand (or (assq-ref snap 'onhand) 0))
+                    (status (buffer-status onhand bz)))
+               `((date . ,(assq-ref snap 'date))
+                 (zone . ,(assq-ref status 'zone))
+                 (onhand . ,onhand)
+                 (nfp-pct . ,(assq-ref status 'nfp-pct)))))))
+    snapshots))
+
+(define (signal-compliance-history signals plan-store from-date to-date)
+  "Time-series compliance grid. Returns list of (date spec-id status) alists."
+  (filter-map
+    (lambda (sig)
+      (let* ((sid (assq-ref sig 'signal-id))
+             (spec (assq-ref sig 'spec-id))
+             (due (assq-ref sig 'due))
+             (in-range (and due (string>=? due from-date) (string<=? due to-date))))
+        (and in-range
+             (let* ((status (assq-ref sig 'status)))
+               `((date . ,due) (spec-id . ,spec) (status . ,status))))))
+    signals))
+
+(define (compute-material-sync-alerts specs plan-store observer today-epoch
+                                       . rest)
+  "Structured material sync alert records."
+  (let ((horizon (if (pair? rest) (car rest) 30)))
+    (map (lambda (entry)
+           `(,@entry (severity . ,(if (> (assq-ref entry 'shortfall)
+                                          (* 0.5 (assq-ref entry 'demand)))
+                                       'critical 'warning))))
+         (material-sync-shortfall specs plan-store observer today-epoch
+           #:horizon-days horizon))))
+
+(define (compute-lead-time-alerts commitments dlt-map today-epoch)
+  "LTM alerts for all open supply commitments."
+  (filter-map
+    (lambda (c)
+      (and (not (commitment-finished c))
+           (commitment-resource-conforms-to c)
+           (let* ((spec (commitment-resource-conforms-to c))
+                  (dlt (or (assoc-ref dlt-map spec) 7))
+                  (zone (ltm-alert-zone-full c dlt today-epoch)))
+             (and zone (memq zone '(red yellow late))
+                  `((commitment-id . ,(commitment-id c))
+                    (spec-id . ,spec)
+                    (zone . ,zone)
+                    (due . ,(commitment-due c)))))))
+    commitments))
+
+(define (compute-signal-integrity signals plan-store observer)
+  "Structured signal compliance records."
+  (signal-integrity-report signals plan-store observer))
+
+(define* (compute-otif-ddmrp commitments observer #:key (tolerance 0.05))
+  "DDMRP-specific OTIF (delegates to generic otif with tolerance)."
+  ;; Uses the otif.scm compute-otif function
+  (compute-otif commitments observer #:tolerance tolerance))
+
+(define (run-recalibration-cycle buffer-zone-store profile-map events
+                                 adjustments recipe-store today-epoch
+                                 . rest)
+  "Orchestrate buffer recalibration with error handling.
+   Returns alist: ((updated . count) (failures . list))."
+  (let ((window-days (if (pair? rest) (car rest) 90))
+        (updated 0)
+        (failures '()))
+    ;; Delegate to orchestrate-buffer-recalibration
+    (let ((result (orchestrate-buffer-recalibration
+                    buffer-zone-store events recipe-store profile-map
+                    adjustments today-epoch window-days)))
+      `((updated . ,(length (or (assq-ref result 'recalibrated) '())))
+        (failures . ,(or (assq-ref result 'failures) '()))))))
+
+(define (analyze-recipe-topology recipe-id recipe-store)
+  "Recipe DAG structural analysis.
+   Returns alist with depth, breadth, convergence, bottleneck info."
+  (let* ((chain ($ recipe-store 'get-process-chain recipe-id))
+         (n (length chain))
+         (max-inputs 0)
+         (max-outputs 0)
+         (convergent-count 0)
+         (divergent-count 0))
+    (for-each
+      (lambda (rp)
+        (let* ((pid (recipe-process-id rp))
+               (flows ($ recipe-store 'flows-for-process pid))
+               (ni (length (car flows)))
+               (no (length (cdr flows))))
+          (when (> ni max-inputs) (set! max-inputs ni))
+          (when (> no max-outputs) (set! max-outputs no))
+          (when (> ni 1) (set! convergent-count (+ convergent-count 1)))
+          (when (> no 1) (set! divergent-count (+ divergent-count 1)))))
+      chain)
+    `((recipe-id . ,recipe-id)
+      (depth . ,n)
+      (max-fan-in . ,max-inputs)
+      (max-fan-out . ,max-outputs)
+      (convergent-processes . ,convergent-count)
+      (divergent-processes . ,divergent-count)
+      (is-linear . ,(and (= convergent-count 0) (= divergent-count 0)))
+      (complexity . ,(+ n (* convergent-count 2) (* divergent-count 2))))))

@@ -252,21 +252,262 @@
 ;; ═════════════════════════════════════════════════════════════════════════
 
 (define (apply-direction-effects ctx event def resource-id direction)
-  "Apply VF effects to a resource. Returns updated fold-ctx."
+  "Apply VF effects to a resource. Auto-creates if createResource allows.
+   Returns updated fold-ctx."
   (if (not resource-id) ctx
-      (let ((resource (hashmap-ref (os-resources (ctx-state ctx)) resource-id #f)))
+      (let* ((st (ctx-state ctx))
+             (existing (hashmap-ref (os-resources st) resource-id #f))
+             ;; Auto-create resource if it doesn't exist and action allows it
+             (create-flag (action-definition-create-resource def))
+             (should-create (and (not existing)
+                                 (or (and (eq? direction 'from) (eq? create-flag 'optional))
+                                     (and (eq? direction 'to) (memq create-flag '(optional-to optional))))))
+             (resource (or existing
+                          (and should-create
+                               (make-economic-resource
+                                 resource-id #f #f #f #f
+                                 (or (economic-event-resource-conforms-to event) "")
+                                 (economic-event-resource-classified-as event)
+                                 (make-measure 0 "each") (make-measure 0 "each")
+                                 (or (economic-event-at-location event)
+                                     (economic-event-to-location event))
+                                 #f
+                                 (economic-event-receiver event)  ;; accountable
+                                 #f #f #f #f #f #f #f #f)))))
         (if (not resource) ctx
-            (let ((updated (apply-resource-effects resource event def direction)))
-              (make-fold-ctx
-                (os-set-resources (ctx-state ctx)
-                  (hashmap-set (os-resources (ctx-state ctx)) resource-id updated))
-                (cons updated (ctx-affected ctx))))))))
+            (let* ((updated (apply-resource-effects resource event def direction))
+                   ;; Maintain spec index for new resources
+                   (new-ibs (if (and should-create (economic-resource-conforms-to updated))
+                                (let* ((spec (economic-resource-conforms-to updated))
+                                       (existing-ids (hashmap-ref (os-idx-by-spec st) spec '())))
+                                  (hashmap-set (os-idx-by-spec st) spec
+                                    (cons resource-id existing-ids)))
+                                (os-idx-by-spec st)))
+                   (new-st (os-rebuild st
+                             #:resources (hashmap-set (os-resources st) resource-id updated)
+                             #:ibs new-ibs)))
+              (make-fold-ctx new-st (cons updated (ctx-affected ctx))))))))
+
+;; ── Resource field setters (functional — return new record) ─────────
+
+(define (economic-resource-set-lot r lot)
+  (make-economic-resource
+    (economic-resource-id r) (economic-resource-name r) (economic-resource-note r)
+    (economic-resource-image r) (economic-resource-tracking-identifier r)
+    (economic-resource-conforms-to r) (economic-resource-classified-as r)
+    (economic-resource-accounting-quantity r) (economic-resource-onhand-quantity r)
+    (economic-resource-current-location r) (economic-resource-current-virtual-location r)
+    (economic-resource-primary-accountable r) (economic-resource-custodian-scope r)
+    (economic-resource-stage r) (economic-resource-state r)
+    (economic-resource-contained-in r) (economic-resource-unit-of-effort r)
+    lot (economic-resource-previous-event r) (economic-resource-availability-window r)))
+
+(define (economic-resource-set-location r loc)
+  (make-economic-resource
+    (economic-resource-id r) (economic-resource-name r) (economic-resource-note r)
+    (economic-resource-image r) (economic-resource-tracking-identifier r)
+    (economic-resource-conforms-to r) (economic-resource-classified-as r)
+    (economic-resource-accounting-quantity r) (economic-resource-onhand-quantity r)
+    loc (economic-resource-current-virtual-location r)
+    (economic-resource-primary-accountable r) (economic-resource-custodian-scope r)
+    (economic-resource-stage r) (economic-resource-state r)
+    (economic-resource-contained-in r) (economic-resource-unit-of-effort r)
+    (economic-resource-lot r) (economic-resource-previous-event r)
+    (economic-resource-availability-window r)))
+
+(define (economic-resource-set-custodian-scope r scope)
+  (make-economic-resource
+    (economic-resource-id r) (economic-resource-name r) (economic-resource-note r)
+    (economic-resource-image r) (economic-resource-tracking-identifier r)
+    (economic-resource-conforms-to r) (economic-resource-classified-as r)
+    (economic-resource-accounting-quantity r) (economic-resource-onhand-quantity r)
+    (economic-resource-current-location r) (economic-resource-current-virtual-location r)
+    (economic-resource-primary-accountable r) scope
+    (economic-resource-stage r) (economic-resource-state r)
+    (economic-resource-contained-in r) (economic-resource-unit-of-effort r)
+    (economic-resource-lot r) (economic-resource-previous-event r)
+    (economic-resource-availability-window r)))
+
+;; ── Split-custody predicate ──────────────────────────────────────────
+
+(define (split-custody? event)
+  "Detect split-custody: pickup/dropoff with two resources and different agents."
+  (and (memq (economic-event-action event) '(pickup dropoff))
+       (economic-event-to-resource-inventoried-as event)
+       (economic-event-provider event)
+       (economic-event-receiver event)
+       (not (equal? (economic-event-provider event)
+                    (economic-event-receiver event)))))
+
+(define (override-action-def def overrides)
+  "Create a copy of action-def with specific effect fields overridden.
+   overrides: alist of (field . value)."
+  (make-action-definition
+    (action-definition-label def)
+    (or (assq-ref overrides 'accounting-effect) (action-definition-accounting-effect def))
+    (or (assq-ref overrides 'onhand-effect) (action-definition-onhand-effect def))
+    (or (assq-ref overrides 'location-effect) (action-definition-location-effect def))
+    (or (assq-ref overrides 'contained-effect) (action-definition-contained-effect def))
+    (or (assq-ref overrides 'accountable-effect) (action-definition-accountable-effect def))
+    (or (assq-ref overrides 'stage-effect) (action-definition-stage-effect def))
+    (or (assq-ref overrides 'state-effect) (action-definition-state-effect def))
+    (or (assq-ref overrides 'create-resource) (action-definition-create-resource def))
+    (or (assq-ref overrides 'implies-transfer) (action-definition-implies-transfer def))))
+
+;; ── Batch creation on produce ───────────────────────────────────────
+
+(define (create-batch-for-produce ctx event resource-id)
+  "Create a BatchLotRecord when produce auto-creates a resource."
+  (let* ((st (ctx-state ctx))
+         (batch-id (generate-id "batch-"))
+         (ts (or (economic-event-has-point-in-time event) "unknown"))
+         (code (string-append "batch-" ts "-" (substring batch-id 0 (min 6 (string-length batch-id)))))
+         (batch (make-batch-lot-record batch-id code #f))
+         ;; Store batch
+         (new-batches (hashmap-set (os-batches st) batch-id batch))
+         ;; Link resource → batch
+         (existing-batch-ids (hashmap-ref (os-resource-batches st) resource-id '()))
+         (new-rb (hashmap-set (os-resource-batches st) resource-id
+                   (cons batch-id existing-batch-ids)))
+         ;; Update resource's lot field
+         (resource (hashmap-ref (os-resources st) resource-id #f))
+         (new-resources
+           (if resource
+               (hashmap-set (os-resources st) resource-id
+                 (economic-resource-set-lot resource batch))
+               (os-resources st)))
+         (new-st (os-rebuild st
+                   #:resources new-resources
+                   #:batches new-batches
+                   #:rb new-rb)))
+    (make-fold-ctx new-st (ctx-affected ctx))))
+
+;; ── Container location capture for separate ─────────────────────────
+
+(define (capture-container-location st event)
+  "Pre-capture: get container's currentLocation before separate detaches."
+  (if (not (eq? (economic-event-action event) 'separate)) #f
+      (let ((rid (economic-event-resource-inventoried-as event)))
+        (and rid
+             (let ((resource (hashmap-ref (os-resources st) rid #f)))
+               (and resource (economic-resource-contained-in resource)
+                    (let ((container (hashmap-ref (os-resources st)
+                                      (economic-resource-contained-in resource) #f)))
+                      (and container (economic-resource-current-location container)))))))))
+
+(define (apply-container-location ctx event container-location)
+  "Post-apply: inherit container location after separate."
+  (if (not (and (eq? (economic-event-action event) 'separate) container-location)) ctx
+      (let* ((rid (economic-event-resource-inventoried-as event))
+             (st (ctx-state ctx))
+             (resource (and rid (hashmap-ref (os-resources st) rid #f))))
+        (if (not resource) ctx
+            (let* ((explicit-loc (economic-event-to-location event))
+                   (new-loc (or explicit-loc container-location))
+                   (updated (economic-resource-set-location resource new-loc))
+                   (new-st (os-set-resources st
+                             (hashmap-set (os-resources st) rid updated))))
+              (make-fold-ctx new-st (ctx-affected ctx)))))))
+
+;; ── previousEvent breadcrumb: link resource → event chain ────────────
+
+(define (phase-breadcrumb-chain ctx event)
+  "Set resource.previousEvent = event.id for each affected resource.
+   This builds the chain that trace-resource walks backward."
+  (let ((from-id (economic-event-resource-inventoried-as event))
+        (to-id (economic-event-to-resource-inventoried-as event))
+        (eid (economic-event-id event)))
+    (let* ((st (ctx-state ctx))
+           ;; Update from-resource
+           (st (if from-id
+                   (let ((r (hashmap-ref (os-resources st) from-id #f)))
+                     (if r (os-set-resources st
+                             (hashmap-set (os-resources st) from-id
+                               (make-economic-resource
+                                 (economic-resource-id r) (economic-resource-name r)
+                                 (economic-resource-note r) (economic-resource-image r)
+                                 (economic-resource-tracking-identifier r)
+                                 (economic-resource-conforms-to r) (economic-resource-classified-as r)
+                                 (economic-resource-accounting-quantity r) (economic-resource-onhand-quantity r)
+                                 (economic-resource-current-location r) (economic-resource-current-virtual-location r)
+                                 (economic-resource-primary-accountable r) (economic-resource-custodian-scope r)
+                                 (economic-resource-stage r) (economic-resource-state r)
+                                 (economic-resource-contained-in r) (economic-resource-unit-of-effort r)
+                                 (economic-resource-lot r) eid  ;; ← previousEvent = this event
+                                 (economic-resource-availability-window r))))
+                         st))
+                   st))
+           ;; Update to-resource
+           (st (if (and to-id (not (equal? to-id from-id)))
+                   (let ((r (hashmap-ref (os-resources st) to-id #f)))
+                     (if r (os-set-resources st
+                             (hashmap-set (os-resources st) to-id
+                               (make-economic-resource
+                                 (economic-resource-id r) (economic-resource-name r)
+                                 (economic-resource-note r) (economic-resource-image r)
+                                 (economic-resource-tracking-identifier r)
+                                 (economic-resource-conforms-to r) (economic-resource-classified-as r)
+                                 (economic-resource-accounting-quantity r) (economic-resource-onhand-quantity r)
+                                 (economic-resource-current-location r) (economic-resource-current-virtual-location r)
+                                 (economic-resource-primary-accountable r) (economic-resource-custodian-scope r)
+                                 (economic-resource-stage r) (economic-resource-state r)
+                                 (economic-resource-contained-in r) (economic-resource-unit-of-effort r)
+                                 (economic-resource-lot r) eid
+                                 (economic-resource-availability-window r))))
+                         st))
+                   st)))
+      (make-fold-ctx st (ctx-affected ctx)))))
+
+;; ── Phase 3 main: apply effects with split-custody + container ──────
 
 (define (phase-apply-effects ctx event def)
-  (let* ((ctx (apply-direction-effects ctx event def
-                (economic-event-resource-inventoried-as event) 'from))
-         (ctx (apply-direction-effects ctx event def
-                (economic-event-to-resource-inventoried-as event) 'to)))
+  (let* ((is-split (split-custody? event))
+         ;; Pre-capture container location for separate
+         (container-loc (capture-container-location (ctx-state ctx) event))
+         ;; Compute overrides for split-custody
+         (from-def (if is-split
+                       (case (economic-event-action event)
+                         ((pickup) (override-action-def def
+                                     '((location-effect . no-effect))))
+                         ((dropoff) (override-action-def def
+                                      '((onhand-effect . decrement-increment))))
+                         (else def))
+                       def))
+         (to-def (if is-split
+                     (override-action-def def
+                       `((onhand-effect . decrement-increment)
+                         (location-effect . update-to)
+                         (create-resource . optional)))  ;; force auto-create for to-resource
+                     def))
+         ;; Check if from-resource exists before apply (to detect auto-creation)
+         (from-id (economic-event-resource-inventoried-as event))
+         (from-existed (and from-id
+                            (hashmap-ref (os-resources (ctx-state ctx)) from-id #f)))
+         ;; Apply from direction
+         (ctx (apply-direction-effects ctx event from-def from-id 'from))
+         ;; Batch creation on produce (only when resource was just auto-created)
+         (ctx (if (and (eq? (economic-event-action event) 'produce)
+                       from-id (not from-existed)
+                       (hashmap-ref (os-resources (ctx-state ctx)) from-id #f))
+                  (create-batch-for-produce ctx event from-id)
+                  ctx))
+         ;; Apply to direction
+         (ctx (apply-direction-effects ctx event to-def
+                (economic-event-to-resource-inventoried-as event) 'to))
+         ;; Post-apply: container location inheritance for separate
+         (ctx (apply-container-location ctx event container-loc))
+         ;; Split-custody: clear custodianScope on from-resource
+         (ctx (if is-split
+                  (let* ((from-id (economic-event-resource-inventoried-as event))
+                         (st (ctx-state ctx))
+                         (resource (and from-id (hashmap-ref (os-resources st) from-id #f))))
+                    (if resource
+                        (let* ((updated (economic-resource-set-custodian-scope resource #f))
+                               (new-st (os-set-resources st
+                                         (hashmap-set (os-resources st) from-id updated))))
+                          (make-fold-ctx new-st (ctx-affected ctx)))
+                        ctx))
+                  ctx)))
     ctx))
 
 
@@ -394,11 +635,15 @@
   "The fold kernel: (state, event) -> (values state affected-resources).
 
    Pipeline:
+     0. validate mutual exclusivity constraints
      1. append event to log
      2. index into lookup maps
      3. apply VF resource effects (from + to)
      4. apply implied transfer
      5. track fulfillment / satisfaction / settlement"
+  ;; VF rule: event cannot both fulfill a Commitment AND satisfy an Intent
+  (when (and (economic-event-fulfills event) (economic-event-satisfies event))
+    (error "Event cannot both fulfill and satisfy"))
   (let* ((def (get-action-def (economic-event-action event)))
          ;; Phases 1-2: bare state
          (st  (phase-append-event st event))
@@ -406,10 +651,36 @@
          ;; Phases 3-4: fold-ctx (state + affected accumulator)
          (ctx (make-fold-ctx st '()))
          (ctx (phase-apply-effects    ctx event def))
+         (ctx (phase-breadcrumb-chain ctx event))
          (ctx (phase-implied-transfer ctx event def))
          ;; Phase 5: back to bare state
          (st  (phase-track (ctx-state ctx) event)))
     (values st (reverse (ctx-affected ctx)))))
+
+
+;; ═════════════════════════════════════════════════════════════════════════
+;; Process completion detection (standalone — called after record-event)
+;; ═════════════════════════════════════════════════════════════════════════
+
+(define (check-process-completion st event process-registry)
+  "Check if a process is complete after an event is recorded.
+   A process is complete when every output commitment linked to it
+   has been fully fulfilled. Called when event has outputOf set.
+   process-registry: actor ref with 'mark-finished method."
+  (let ((process-id (economic-event-output-of event)))
+    (when (and process-id process-registry)
+      ;; Find all fulfillment states whose fulfilling events are outputs of this process
+      (let* ((all-fs (hashmap-values (os-fulfillments st)))
+             (output-fs
+               (filter (lambda (fs)
+                         (any (lambda (eid)
+                                (let ((e (hashmap-ref (os-events-by-id st) eid #f)))
+                                  (and e (equal? (economic-event-output-of e) process-id))))
+                              (fulfillment-state-fulfilling-events fs)))
+                       all-fs)))
+        (when (and (pair? output-fs)
+                   (every fulfillment-state-done? output-fs))
+          ($ process-registry 'mark-finished process-id))))))
 
 
 ;; ═════════════════════════════════════════════════════════════════════════
@@ -691,6 +962,45 @@
                             (> (measure-qty (economic-resource-onhand-quantity r)) 0))))
        (os-resources st)))
 
+    ;; --- Enriched inventory (InventoryEntry format) ---
+
+    ((enriched-inventory . rest)
+     ;; Returns list of alists with spec, accountingQty, onhandQty, unit,
+     ;; location, accountable, batches for each non-empty resource.
+     (let ((include-empty (and (pair? rest) (car rest))))
+       (filter-map
+         (lambda (r)
+           (let ((acct (measure-qty (economic-resource-accounting-quantity r)))
+                 (oh (measure-qty (economic-resource-onhand-quantity r))))
+             (and (or include-empty (> acct 0) (> oh 0))
+                  `((resource-id . ,(economic-resource-id r))
+                    (spec-id . ,(economic-resource-conforms-to r))
+                    (accounting-qty . ,acct)
+                    (onhand-qty . ,oh)
+                    (unit . ,(if (economic-resource-accounting-quantity r)
+                                 (measure-has-unit (economic-resource-accounting-quantity r))
+                                 "each"))
+                    (location . ,(economic-resource-current-location r))
+                    (accountable . ,(economic-resource-primary-accountable r))
+                    (batches . ,(filter-map
+                                  (lambda (bid) (hashmap-ref (os-batches st) bid #f))
+                                  (hashmap-ref (os-resource-batches st)
+                                    (economic-resource-id r) '())))))))
+         (hashmap-values (os-resources st)))))
+
+    ;; --- Additional query methods ---
+
+    ((events-for-agreement agreement-id)
+     (filter (lambda (e) (equal? (economic-event-realization-of e) agreement-id))
+             (os-events st)))
+
+    ((all-claims)
+     (os-claim-states st))
+
+    ((claims-triggered-by event-id)
+     (filter (lambda (e) (equal? (economic-event-triggered-by e) event-id))
+             (os-events st)))
+
     ;; --- Inverse event queries ---
 
     ((fulfilled-by commitment-id)
@@ -779,6 +1089,14 @@
     ;; --- Exchange recording ---
 
     ((record-exchange agreement events-list)
+     ;; Validate: need at least 2 events with different provider/receiver
+     (when (< (length events-list) 2)
+       (error "Exchange requires at least 2 events"))
+     (let ((provs (delete-duplicates (filter-map economic-event-provider events-list)))
+           (recvs (delete-duplicates (filter-map economic-event-receiver events-list))))
+       (when (and (= (length provs) 1) (= (length recvs) 1)
+                  (equal? (car provs) (car recvs)))
+         (error "Exchange requires different agents")))
      ;; Register agreement, tag events with realizationOf, record each
      (let* ((aid (if (pair? agreement) (assq-ref agreement 'id)
                      (agreement-id agreement)))

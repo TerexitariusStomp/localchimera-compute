@@ -19,18 +19,17 @@
 
 (define (buffer-status-monitor event ctx)
   "Emit buffer-status alerts when resource updates affect buffered specs.
-   ctx: alist with observer, plan-store, buffer-zone-store keys."
+   ctx: alist with observer, plan-store, buffer-zone-store, location-store keys."
   (let* ((obs (assq-ref ctx 'observer))
          (bzs (assq-ref ctx 'buffer-zone-store))
-         (spec-id (economic-event-resource-conforms-to event)))
+         (ls  (assq-ref ctx 'location-store))
+         (spec-id (economic-event-resource-conforms-to event))
+         (event-loc (economic-event-at-location event)))
     (if (not spec-id) '()
-        (let ((zone ($ bzs 'find-zone spec-id)))
+        (let ((zone ($ bzs 'find-zone spec-id event-loc ls)))
           (if (not zone) '()
-              (let* ((resources ($ obs 'conforming-resources spec-id))
-                     (onhand (fold (lambda (r acc)
-                                     (+ acc (measure-qty
-                                              (economic-resource-onhand-quantity r))))
-                                   0 resources))
+              (let* ((onhand (sum-onhand-at-location obs spec-id
+                               (buffer-zone-at-location zone) ls))
                      (status (buffer-status onhand zone))
                      (z (assq-ref status 'zone)))
                 (if (memq z '(green excess)) '()
@@ -56,9 +55,11 @@
   (let ((prev-adu-by-spec (make-hash-table)))
     (lambda (event ctx)
       (let ((spec-id (economic-event-resource-conforms-to event))
-            (bzs (assq-ref ctx 'buffer-zone-store)))
+            (bzs (assq-ref ctx 'buffer-zone-store))
+            (ls  (assq-ref ctx 'location-store)))
         (if (not spec-id) '()
-            (let ((zone (and bzs ($ bzs 'find-zone spec-id))))
+            (let ((zone (and bzs ($ bzs 'find-zone spec-id
+                                    (economic-event-at-location event) ls))))
               (if (not zone) '()
                   (let* ((current-adu (buffer-zone-adu zone))
                          (prev (hash-ref prev-adu-by-spec spec-id #f))

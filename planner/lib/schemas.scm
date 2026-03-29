@@ -179,7 +179,7 @@
 ;;; SpatialThing — a location in space.
 ;;; Fields: id (string), name? (string), note? (string),
 ;;;         lat? (number), long? (number), alt? (number),
-;;;         mappable-address? (string).
+;;;         mappable-address? (string), contained-in? (string — parent SpatialThing ID).
 (define <spatial-thing>
   (make-record-type 'SpatialThing
     '((immutable id)
@@ -188,7 +188,8 @@
       (immutable lat)
       (immutable long)
       (immutable alt)
-      (immutable mappable-address))))
+      (immutable mappable-address)
+      (immutable contained-in))))
 
 (define make-spatial-thing                  (record-constructor <spatial-thing>))
 (define spatial-thing?                      (record-predicate   <spatial-thing>))
@@ -199,6 +200,7 @@
 (define spatial-thing-long                  (record-accessor    <spatial-thing> 'long))
 (define spatial-thing-alt                   (record-accessor    <spatial-thing> 'alt))
 (define spatial-thing-mappable-address      (record-accessor    <spatial-thing> 'mappable-address))
+(define spatial-thing-contained-in          (record-accessor    <spatial-thing> 'contained-in))
 
 
 ;;; BatchLotRecord — tracking for serialized/lot-controlled resources.

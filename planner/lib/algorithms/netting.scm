@@ -69,7 +69,7 @@
 (define* (netter-net-demand ns plan-store observer spec-id qty
                             #:key (at-location #f) (contained-in #f)
                                   (stage #f) (state #f) (needed-by #f)
-                                  (plan-id #f))
+                                  (plan-id #f) (location-store #f))
   "Net demand against inventory + scheduled outputs. Pure state operation.
    Returns (values new-ns remaining allocated-pairs)."
   (let ((remaining qty)
@@ -88,7 +88,10 @@
                                        (equal? (economic-resource-contained-in r) contained-in)
                                        (not (economic-resource-contained-in r))))
                      (pass-loc (or (not at-location)
-                                   (equal? (economic-resource-current-location r) at-location)))
+                                   (equal? (economic-resource-current-location r) at-location)
+                                   (and location-store
+                                        ($ location-store 'is-descendant-or-equal
+                                           (economic-resource-current-location r) at-location))))
                      (pass-stage (or (not stage) (equal? (economic-resource-stage r) stage)))
                      (pass-state (or (not state) (equal? (economic-resource-state r) state))))
                 (when (and (> acct-qty 0) pass-contain pass-loc pass-stage pass-state)
@@ -116,7 +119,10 @@
                      (pass-time (or (not needed-by) (not (intent-due i))
                                     (<= (iso-datetime->epoch (intent-due i)) needed-by)))
                      (pass-loc (or (not at-location)
-                                   (equal? (intent-at-location i) at-location))))
+                                   (equal? (intent-at-location i) at-location)
+                                   (and location-store (intent-at-location i)
+                                        ($ location-store 'is-descendant-or-equal
+                                           (intent-at-location i) at-location)))))
                 (when (and (> iqty 0) pass-time pass-loc)
                   (let ((take (min iqty remaining)))
                     (set! current-ns
@@ -140,7 +146,10 @@
                      (pass-time (or (not needed-by) (not (commitment-due c))
                                     (<= (iso-datetime->epoch (commitment-due c)) needed-by)))
                      (pass-loc (or (not at-location)
-                                   (equal? (commitment-at-location c) at-location))))
+                                   (equal? (commitment-at-location c) at-location)
+                                   (and location-store (commitment-at-location c)
+                                        ($ location-store 'is-descendant-or-equal
+                                           (commitment-at-location c) at-location)))))
                 (when (and (> cqty 0) pass-time pass-loc)
                   (let ((take (min cqty remaining)))
                     (set! current-ns
@@ -158,7 +167,8 @@
 ;; ═════════════════════════════════════════════════════════════════════════
 
 (define* (netter-net-supply ns plan-store spec-id qty
-                            #:key (available-from #f) (at-location #f))
+                            #:key (available-from #f) (at-location #f)
+                                  (location-store #f))
   "Deduct pre-claimed consuming flows from supply quantity.
    Returns (values new-ns remaining)."
   (let ((remaining qty)
@@ -176,7 +186,10 @@
                    (pass-time (or (not available-from) (not (intent-due i))
                                   (>= (iso-datetime->epoch (intent-due i)) available-from)))
                    (pass-loc (or (not at-location)
-                                 (equal? (intent-at-location i) at-location))))
+                                 (equal? (intent-at-location i) at-location)
+                                 (and location-store (intent-at-location i)
+                                      ($ location-store 'is-descendant-or-equal
+                                         (intent-at-location i) at-location)))))
               (when (and (> iqty 0) pass-time pass-loc)
                 (let ((take (min iqty remaining)))
                   (set! current-ns (ns-allocate current-ns (intent-id i)))

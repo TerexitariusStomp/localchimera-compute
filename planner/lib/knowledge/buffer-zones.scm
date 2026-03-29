@@ -143,15 +143,30 @@
                (filter (lambda (z) (buffer-zone-at-location z)) matching))))
 
     ((find-zone spec-id . rest)
-     ;; Find the best-matching zone for a spec + optional location.
-     ;; Priority: exact (spec+location) > global (spec, no location) > #f.
-     (let ((at-location (if (pair? rest) (car rest) #f))
-           (all-vals (hashmap-values zones)))
-       (or (and at-location
+     ;; Find the best-matching zone for a spec + optional location + optional location-store.
+     ;; Priority: exact (spec+location) > ancestor chain > global (spec, no location) > #f.
+     (let* ((at-location    (if (pair? rest) (car rest) #f))
+            (location-store (if (and (pair? rest) (pair? (cdr rest))) (cadr rest) #f))
+            (all-vals (hashmap-values zones)))
+       (or ;; 1. Exact match: spec + location
+           (and at-location
                 (find (lambda (z)
                         (and (equal? (buffer-zone-spec-id z) spec-id)
                              (equal? (buffer-zone-at-location z) at-location)))
                       all-vals))
+           ;; 2. Walk up containment chain for nearest ancestor with a buffer
+           (and at-location location-store
+                (let ((chain ($ location-store 'resolve-chain at-location)))
+                  ;; Skip self (index 0, already tried); check parents
+                  (let ancestor-loop ((rest-chain (if (pair? chain) (cdr chain) '())))
+                    (if (null? rest-chain) #f
+                        (let ((ancestor-id (spatial-thing-id (car rest-chain))))
+                          (or (find (lambda (z)
+                                     (and (equal? (buffer-zone-spec-id z) spec-id)
+                                          (equal? (buffer-zone-at-location z) ancestor-id)))
+                                   all-vals)
+                              (ancestor-loop (cdr rest-chain))))))))
+           ;; 3. Global fallback: spec, no location
            (find (lambda (z)
                    (and (equal? (buffer-zone-spec-id z) spec-id)
                         (not (buffer-zone-at-location z))))

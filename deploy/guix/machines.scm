@@ -239,7 +239,18 @@
                             ;; Helper scripts directory
                             (let ((bin-dir "/home/playnet/bin"))
                               (mkdir-p bin-dir)
-                              (chown bin-dir (passwd:uid pw) (passwd:gid pw))))))
+                              (chown bin-dir (passwd:uid pw) (passwd:gid pw)))
+                            ;; Git repo — clone or pull on each deploy
+                            (let ((repo-dir "/home/playnet/xorg-repo"))
+                              (if (file-exists? (string-append repo-dir "/.git"))
+                                  (system* #$(file-append git "/bin/git")
+                                           "-C" repo-dir "pull" "--ff-only")
+                                  (begin
+                                    (system* #$(file-append git "/bin/git")
+                                             "clone"
+                                             "https://github.com/interplaynetary/xorg.git"
+                                             repo-dir)
+                                    (chown repo-dir (passwd:uid pw) (passwd:gid pw))))))))
 
       ;; Use bordeaux as primary substitute server (ci.guix.gnu.org is unreliable)
       (modify-services %base-services

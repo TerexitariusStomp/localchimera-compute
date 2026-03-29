@@ -4,14 +4,17 @@
 
 (define (build-independent-supply-index resources intents)
   "Build supply index from on-hand inventory + scheduled output intents.
+   Capacity resources (unit-of-effort set) are excluded — they represent
+   agent time budgets, not material inventory.
    Returns alist of indexes."
   (let ((supply (hashmap)) (by-spec (hashmap)) (by-scope (hashmap))
         (counter 0))
-    ;; Inventory slots from resources
+    ;; Inventory slots from resources (skip capacity resources)
     (for-each
       (lambda (r)
         (let ((qty (measure-qty (economic-resource-onhand-quantity r))))
-          (when (> qty 0)
+          (when (and (> qty 0)
+                     (not (economic-resource-unit-of-effort r)))
             (let ((id (string-append "inv:" (economic-resource-id r))))
               (set! supply (hashmap-set supply id
                 `((id . ,id) (slot-type . inventory)

@@ -108,9 +108,9 @@
     (check "people" (= 2 (length ($ as 'people))))
 
     ;; Locations
-    ($ st 'add-location (make-spatial-thing "loc-farm" "Farm" #f 45.5 -73.5 #f #f))
-    ($ st 'add-location (make-spatial-thing "loc-mill" "Mill" #f 45.51 -73.49 #f #f))
-    ($ st 'add-location (make-spatial-thing "loc-bakery" "Bakery" #f 45.52 -73.48 #f #f))
+    ($ st 'add-location (make-spatial-thing "loc-farm" "Farm" #f 45.5 -73.5 #f #f #f))
+    ($ st 'add-location (make-spatial-thing "loc-mill" "Mill" #f 45.51 -73.49 #f #f #f))
+    ($ st 'add-location (make-spatial-thing "loc-bakery" "Bakery" #f 45.52 -73.48 #f #f #f))
     (check "locations" (= 3 (length ($ st 'all-locations))))))
 
 

@@ -410,6 +410,13 @@
      (let ((ids (hashmap-ref (pss-commitments-by-spec st) spec-id '())))
        (filter-map (lambda (id) (hashmap-ref (pss-commitments st) id #f)) ids)))
 
+    ((add-non-process-commitment action spec-id qty unit provider receiver due plan-id)
+     ;; Standalone commitment without inputOf/outputOf
+     (let ((c (make-commitment (generate-id "c-") action #f #f #f #f spec-id #f
+                               (make-measure qty unit) #f provider receiver
+                               #f #f #f due #f #f #f #f #f #f #f #f plan-id #f #f)))
+       ($ self-ref 'add-commitment c)))
+
     ;; --- Promote intent to commitment ---
 
     ((promote-to-commitment iid counterparty)
@@ -423,6 +430,17 @@
                         (assq-ref counterparty 'receiver))))
          (unless (and prov recv)
            (error "Cannot promote: need both provider and receiver"))
+         ;; Validate minimumQuantity and availableQuantity (ATP mechanism)
+         (let ((commit-qty (if (intent-resource-quantity the-intent)
+                               (measure-has-numerical-value (intent-resource-quantity the-intent)) 0))
+               (min-qty (if (intent-minimum-quantity the-intent)
+                            (measure-has-numerical-value (intent-minimum-quantity the-intent)) 0))
+               (avail-qty (if (intent-available-quantity the-intent)
+                              (measure-has-numerical-value (intent-available-quantity the-intent)) +inf.0)))
+           (when (< commit-qty min-qty)
+             (error (format #f "Committed qty ~a < minimum ~a" commit-qty min-qty)))
+           (when (> commit-qty avail-qty)
+             (error (format #f "Committed qty ~a > available ~a" commit-qty avail-qty))))
          ;; Build commitment from intent fields
          (let* ((cid (generate-id "commit-"))
                 (commitment (make-commitment
@@ -447,10 +465,20 @@
                               (intent-planned-within the-intent)
                               #f  ;; finished
                               (intent-availability-window the-intent)))
-                ;; Mark intent finished (if not recurring)
-                (finished? (and (not (intent-availability-window the-intent)) #t))
+                ;; Decrement availableQuantity (ATP mechanism)
+                (commit-qty (if (intent-resource-quantity the-intent)
+                                (measure-has-numerical-value (intent-resource-quantity the-intent)) 0))
+                (old-avail (if (intent-available-quantity the-intent)
+                               (measure-has-numerical-value (intent-available-quantity the-intent)) #f))
+                (new-avail-qty (and old-avail (max 0 (- old-avail commit-qty))))
+                (new-avail-measure (and new-avail-qty (intent-resource-quantity the-intent)
+                                        (make-measure new-avail-qty
+                                          (measure-has-unit (intent-resource-quantity the-intent)))))
+                ;; Mark intent finished (if not recurring and no more available)
+                (finished? (and (not (intent-availability-window the-intent))
+                                (or (not new-avail-qty) (<= new-avail-qty 0))))
                 (updated-intent
-                  (if finished?
+                  (if (or finished? new-avail-measure)
                       (make-intent
                         (intent-id the-intent) (intent-action the-intent)
                         (intent-name the-intent) (intent-note the-intent)
@@ -461,7 +489,7 @@
                         (intent-resource-classified-as the-intent)
                         (intent-resource-quantity the-intent)
                         (intent-effort-quantity the-intent)
-                        (intent-available-quantity the-intent)
+                        (or new-avail-measure (intent-available-quantity the-intent))
                         (intent-minimum-quantity the-intent)
                         (intent-provider the-intent) (intent-receiver the-intent)
                         (intent-has-beginning the-intent) (intent-has-end the-intent)
@@ -469,7 +497,7 @@
                         (intent-at-location the-intent) (intent-stage the-intent)
                         (intent-state the-intent) (intent-planned-within the-intent)
                         (intent-satisfies the-intent) (intent-in-scope-of the-intent)
-                        #t  ;; finished = true
+                        finished?
                         (intent-availability-window the-intent))
                       the-intent))
                 (new-intents (hashmap-set (pss-intents st) iid updated-intent))
@@ -524,6 +552,83 @@
              id)))
 
     ((get-agreement id) (hashmap-ref (pss-agreements st) id #f))
+    ((all-agreements) (hashmap-values (pss-agreements st)))
+
+    ;; --- Agreement bundles ---
+
+    ((add-agreement-bundle bundle)
+     (let ((id (or (assq-ref bundle 'id) (generate-id "ab-"))))
+       (bcom (^plan-store bcom
+               (make-plan-store-state
+                 (pss-plans st) (pss-commitments st) (pss-intents st) (pss-claims st)
+                 (pss-agreements st) (hashmap-set (pss-agreement-bundles st) id bundle)
+                 (pss-proposals st) (pss-proposal-lists st)
+                 (pss-scenarios st) (pss-scenario-definitions st) (pss-meta st)
+                 (pss-tag-index st) (pss-intents-by-spec st) (pss-commitments-by-spec st)
+                 (pss-intents-by-plan st) (pss-commitments-by-plan st)
+                 (pss-commitments-by-process st))))))
+    ((get-agreement-bundle id) (hashmap-ref (pss-agreement-bundles st) id #f))
+    ((all-agreement-bundles) (hashmap-values (pss-agreement-bundles st)))
+
+    ;; --- Scenarios ---
+
+    ((add-scenario scenario)
+     (let ((id (or (assq-ref scenario 'id) (generate-id "scen-"))))
+       (bcom (^plan-store bcom
+               (make-plan-store-state
+                 (pss-plans st) (pss-commitments st) (pss-intents st) (pss-claims st)
+                 (pss-agreements st) (pss-agreement-bundles st)
+                 (pss-proposals st) (pss-proposal-lists st)
+                 (hashmap-set (pss-scenarios st) id scenario) (pss-scenario-definitions st)
+                 (pss-meta st) (pss-tag-index st) (pss-intents-by-spec st)
+                 (pss-commitments-by-spec st) (pss-intents-by-plan st)
+                 (pss-commitments-by-plan st) (pss-commitments-by-process st))))))
+    ((get-scenario id) (hashmap-ref (pss-scenarios st) id #f))
+    ((all-scenarios) (hashmap-values (pss-scenarios st)))
+
+    ((add-scenario-definition sdef)
+     (let ((id (or (assq-ref sdef 'id) (generate-id "sdef-"))))
+       (bcom (^plan-store bcom
+               (make-plan-store-state
+                 (pss-plans st) (pss-commitments st) (pss-intents st) (pss-claims st)
+                 (pss-agreements st) (pss-agreement-bundles st)
+                 (pss-proposals st) (pss-proposal-lists st)
+                 (pss-scenarios st) (hashmap-set (pss-scenario-definitions st) id sdef)
+                 (pss-meta st) (pss-tag-index st) (pss-intents-by-spec st)
+                 (pss-commitments-by-spec st) (pss-intents-by-plan st)
+                 (pss-commitments-by-plan st) (pss-commitments-by-process st))))))
+    ((get-scenario-definition id) (hashmap-ref (pss-scenario-definitions st) id #f))
+    ((all-scenario-definitions) (hashmap-values (pss-scenario-definitions st)))
+
+    ;; --- Proposals ---
+
+    ((add-proposal proposal)
+     (let ((id (proposal-id proposal)))
+       (bcom (^plan-store bcom
+               (make-plan-store-state
+                 (pss-plans st) (pss-commitments st) (pss-intents st) (pss-claims st)
+                 (pss-agreements st) (pss-agreement-bundles st)
+                 (hashmap-set (pss-proposals st) id proposal) (pss-proposal-lists st)
+                 (pss-scenarios st) (pss-scenario-definitions st) (pss-meta st)
+                 (pss-tag-index st) (pss-intents-by-spec st) (pss-commitments-by-spec st)
+                 (pss-intents-by-plan st) (pss-commitments-by-plan st)
+                 (pss-commitments-by-process st))))))
+    ((get-proposal id) (hashmap-ref (pss-proposals st) id #f))
+    ((all-proposals) (hashmap-values (pss-proposals st)))
+
+    ((add-proposal-list plist)
+     (let ((id (or (assq-ref plist 'id) (generate-id "pl-"))))
+       (bcom (^plan-store bcom
+               (make-plan-store-state
+                 (pss-plans st) (pss-commitments st) (pss-intents st) (pss-claims st)
+                 (pss-agreements st) (pss-agreement-bundles st)
+                 (pss-proposals st) (hashmap-set (pss-proposal-lists st) id plist)
+                 (pss-scenarios st) (pss-scenario-definitions st) (pss-meta st)
+                 (pss-tag-index st) (pss-intents-by-spec st) (pss-commitments-by-spec st)
+                 (pss-intents-by-plan st) (pss-commitments-by-plan st)
+                 (pss-commitments-by-process st))))))
+    ((get-proposal-list id) (hashmap-ref (pss-proposal-lists st) id #f))
+    ((all-proposal-lists) (hashmap-values (pss-proposal-lists st)))
 
     ;; --- Signal metadata ---
 
@@ -578,14 +683,27 @@
          (filter-map (lambda (iid) (hashmap-ref (pss-intents st) iid #f))
                      (hashmap-ref (pss-tag-index st) tag '())))))
 
-    ((approve-replenishment iid provider receiver)
-     ;; Promote replenishment Intent -> Commitment
-     (let ((intent (hashmap-ref (pss-intents st) iid #f)))
+    ((approve-replenishment iid provider receiver . rest)
+     ;; Promote replenishment Intent -> Commitment with validation
+     (let* ((opts (if (pair? rest) (car rest) '()))
+            (intent (hashmap-ref (pss-intents st) iid #f)))
        (unless intent (error (format #f "Replenishment ~a not found" iid)))
-       (let* ((cid (generate-id "commit-"))
+       ;; Validate: must not be finished
+       (when (intent-finished intent)
+         (error (format #f "Replenishment ~a already finished" iid)))
+       ;; Validate: must have replenishment tag
+       (unless (and (intent-resource-classified-as intent)
+                    (any (lambda (t) (string-prefix? "tag:plan:replenishment" t))
+                         (intent-resource-classified-as intent)))
+         (error (format #f "Intent ~a is not a replenishment signal" iid)))
+       (let* ((action-override (assq-ref opts 'action))
+              (output-of (assq-ref opts 'output-of))
+              (planned-within-override (assq-ref opts 'planned-within))
+              (cid (generate-id "commit-"))
               (commitment (make-commitment
-                            cid (intent-action intent) #f
-                            (intent-input-of intent) (intent-output-of intent)
+                            cid (or action-override (intent-action intent)) #f
+                            (intent-input-of intent)
+                            (or output-of (intent-output-of intent))
                             #f (intent-resource-conforms-to intent)
                             (intent-resource-classified-as intent)
                             (intent-resource-quantity intent)
@@ -594,7 +712,8 @@
                             #f #f #f (intent-due intent) #f
                             (intent-at-location intent) #f
                             #f #f iid #f #f
-                            (intent-planned-within intent) #f #f))
+                            (or planned-within-override (intent-planned-within intent))
+                            #f #f))
               ;; Mark intent finished
               (finished-intent (make-intent
                                  iid (intent-action intent) (intent-name intent)
@@ -737,7 +856,22 @@
                             idx)))
                     (pss-intents-by-plan st) (or intent-ids '())))
             (new-meta
-              (fold (lambda (iid hm) (hashmap-remove hm iid)) (pss-meta st) (or intent-ids '()))))
+              (fold (lambda (iid hm) (hashmap-remove hm iid)) (pss-meta st) (or intent-ids '())))
+            ;; Clean commitments-by-process index
+            (new-cbpr
+              (fold (lambda (cid idx)
+                      (let ((c (hashmap-ref (pss-commitments st) cid #f)))
+                        (let* ((a0 idx)
+                               (a1 (if (and c (commitment-input-of c))
+                                       (hashmap-set a0 (commitment-input-of c)
+                                         (delete cid (hashmap-ref a0 (commitment-input-of c) '())))
+                                       a0))
+                               (a2 (if (and c (commitment-output-of c))
+                                       (hashmap-set a1 (commitment-output-of c)
+                                         (delete cid (hashmap-ref a1 (commitment-output-of c) '())))
+                                       a1)))
+                          a2)))
+                    (pss-commitments-by-process st) (or commit-ids '()))))
        (bcom (^plan-store bcom
                (make-plan-store-state
                  (pss-plans st) new-commitments new-intents (pss-claims st)
@@ -745,7 +879,7 @@
                  (pss-proposals st) (pss-proposal-lists st)
                  (pss-scenarios st) (pss-scenario-definitions st) new-meta
                  new-tag-idx new-ibs new-cbs new-ibp new-cbpl
-                 (pss-commitments-by-process st))))))
+                 new-cbpr)))))
 
     ((remove-records-for-plan plan-id)
      ;; Surgical removal: find all intents/commitments for this plan.
@@ -877,7 +1011,284 @@
                  (pss-proposals st) (pss-proposal-lists st)
                  (pss-scenarios st) (pss-scenario-definitions st) (pss-meta st)
                  merged-tag-idx merged-ibs merged-cbs
-                 merged-ibp merged-cbpl merged-cbpr)))))))
+                 merged-ibp merged-cbpl merged-cbpr)))))
+
+    ;; --- Recipe instantiation (full implementation) ---
+
+    ((instantiate-recipe recipe-id recipe-store quantity due-date agents
+                         . rest)
+     ;; Expand recipe template into plan with processes, flows, and agreements.
+     ;; Supports scaleFactor, back/forward scheduling, inventory allocation.
+     (let* ((scheduling (if (pair? rest) (car rest) 'back))
+            (observer (if (and (pair? rest) (pair? (cdr rest))) (cadr rest) #f))
+            (recipe ($ recipe-store 'get-recipe recipe-id))
+            (chain ($ recipe-store 'get-process-chain recipe-id))
+            ;; Compute scale factor from primary output
+            (primary-spec (and recipe (recipe-primary-output recipe)))
+            (last-proc (and (pair? chain) (last chain)))
+            (last-outs (and last-proc
+                            (cdr ($ recipe-store 'flows-for-process
+                                     (recipe-process-id last-proc)))))
+            (primary-flow (and last-outs primary-spec
+                               (find (lambda (f)
+                                       (equal? (recipe-flow-resource-conforms-to f) primary-spec))
+                                     last-outs)))
+            (primary-out-qty (if (and primary-flow (recipe-flow-resource-quantity primary-flow))
+                                 (measure-has-numerical-value (recipe-flow-resource-quantity primary-flow))
+                                 1))
+            (scale-factor (/ quantity primary-out-qty))
+            ;; Create plan
+            (pid (generate-id "plan-"))
+            (_ ($ self-ref 'add-plan
+                  (make-plan pid
+                    (format #f "Plan: ~a × ~a" (and recipe (recipe-name recipe)) quantity)
+                    #f #f #f #f (and due-date (number->string due-date)) #f)))
+            ;; Schedule processes
+            (ordered-chain (if (eq? scheduling 'back) (reverse chain) chain))
+            (initial-cursor (if (eq? scheduling 'back) due-date
+                                (or (and (pair? rest) (pair? (cdr rest)) (pair? (cddr rest))
+                                         (caddr rest))
+                                    (current-time))))
+            ;; Process creation: walk chain, create Process + flows
+            (processes '())
+            (commitments '())
+            (intents '())
+            (allocated '()))
+       (let proc-loop ((procs ordered-chain) (cursor initial-cursor))
+         (when (pair? procs)
+           (let* ((rp (car procs))
+                  (dur-s (inexact->exact (round (/ (rp-duration-ms rp) 1000))))
+                  (proc-begin (if (eq? scheduling 'back) (- cursor dur-s) cursor))
+                  (proc-end (if (eq? scheduling 'back) cursor (+ cursor dur-s)))
+                  (proc-id (generate-id "proc-"))
+                  (proc (make-process proc-id (recipe-process-name rp) #f
+                          (recipe-process-process-conforms-to rp)
+                          #f pid #f #f
+                          (number->string proc-begin) (number->string proc-end) #f))
+                  (flows-pair ($ recipe-store 'flows-for-process (recipe-process-id rp)))
+                  (flow-inputs (car flows-pair))
+                  (flow-outputs (cdr flows-pair)))
+             (set! processes (cons proc processes))
+             ;; Input flows: check durable actions, inventory allocation
+             (for-each
+               (lambda (f)
+                 (let* ((action (recipe-flow-action f))
+                        (def (get-action-def action))
+                        (is-durable (and def (eq? (action-definition-accounting-effect def) 'no-effect)))
+                        (spec (recipe-flow-resource-conforms-to f))
+                        (rq (recipe-flow-resource-quantity f))
+                        (needed (if rq (* (measure-has-numerical-value rq) scale-factor) 0))
+                        (unit (if rq (measure-has-unit rq) "each")))
+                   ;; Durable inputs: skip demand if resource exists
+                   (if (and is-durable spec observer)
+                       (let ((resources (filter
+                                          (lambda (r) (> (measure-qty (economic-resource-accounting-quantity r)) 0))
+                                          ($ observer 'conforming-resources spec))))
+                         (unless (pair? resources)
+                           ;; Resource doesn't exist — create intent
+                           (let ((rec (create-flow-record f proc-id 'input scale-factor
+                                        (number->string proc-begin) pid agents plan-store #f)))
+                             (if (commitment? rec)
+                                 (set! commitments (cons rec commitments))
+                                 (set! intents (cons rec intents))))))
+                       ;; Non-durable: check inventory + create flow
+                       (begin
+                         ;; Inventory allocation (if observer available)
+                         (when (and observer spec (> needed 0))
+                           (let ((resources (filter
+                                              (lambda (r) (> (measure-qty (economic-resource-accounting-quantity r)) 0))
+                                              ($ observer 'conforming-resources spec))))
+                             (let alloc-loop ((rs resources) (remaining needed))
+                               (when (and (pair? rs) (> remaining 0))
+                                 (let* ((r (car rs))
+                                        (avail (measure-qty (economic-resource-accounting-quantity r)))
+                                        (take (min avail remaining)))
+                                   (set! allocated (cons `(,(economic-resource-id r) ,spec ,take) allocated))
+                                   (alloc-loop (cdr rs) (- remaining take)))))))
+                         ;; Create flow record
+                         (let ((rec (create-flow-record f proc-id 'input scale-factor
+                                      (number->string proc-begin) pid agents plan-store #f)))
+                           (if (commitment? rec)
+                               (set! commitments (cons rec commitments))
+                               (set! intents (cons rec intents))))))))
+               flow-inputs)
+             ;; Output flows
+             (for-each
+               (lambda (f)
+                 (let ((rec (create-flow-record f proc-id 'output scale-factor
+                              (number->string proc-end) pid agents plan-store #f)))
+                   (if (commitment? rec)
+                       (set! commitments (cons rec commitments))
+                       (set! intents (cons rec intents)))))
+               flow-outputs)
+             ;; Advance cursor
+             (proc-loop (cdr procs)
+                        (if (eq? scheduling 'back) proc-begin proc-end)))))
+       ;; RecipeExchange → Agreement conversion
+       (let ((agreements '())
+             (rex-ids (and recipe (recipe-recipe-exchanges recipe))))
+         (when (and rex-ids (pair? rex-ids))
+           (for-each
+             (lambda (rex-id)
+               (let* ((rex ($ recipe-store 'get-recipe-exchange rex-id))
+                      (rex-flows ($ recipe-store 'flows-for-exchange rex-id))
+                      (flow-list (if (list? rex-flows) rex-flows
+                                     (hashmap-values rex-flows)))
+                      (bilateral? (= (length flow-list) 2))
+                      (primary-cids '())
+                      (reciprocal-cids '()))
+                 ;; Create commitment for each exchange flow
+                 (let flow-loop ((fs flow-list) (idx 0))
+                   (when (pair? fs)
+                     (let* ((f (car fs))
+                            (cid (generate-id "exc-"))
+                            (is-primary (or (and (recipe-flow-resource-classified-as f)
+                                                 (member "isPrimary" (recipe-flow-resource-classified-as f)))
+                                            (and bilateral? (= idx 0))))
+                            (commitment (make-commitment
+                                          cid (recipe-flow-action f) #f
+                                          #f #f #f
+                                          (recipe-flow-resource-conforms-to f)
+                                          (recipe-flow-resource-classified-as f)
+                                          (if (recipe-flow-resource-quantity f)
+                                              (make-measure (* (measure-has-numerical-value
+                                                                 (recipe-flow-resource-quantity f))
+                                                               scale-factor)
+                                                            (measure-has-unit
+                                                              (recipe-flow-resource-quantity f)))
+                                              #f)
+                                          #f
+                                          (and agents (assq-ref agents 'provider))
+                                          (and agents (assq-ref agents 'receiver))
+                                          #f #f #f #f #f #f #f #f #f #f #f #f pid #f #f)))
+                       (set! commitments (cons commitment commitments))
+                       (if is-primary
+                           (set! primary-cids (cons cid primary-cids))
+                           (set! reciprocal-cids (cons cid reciprocal-cids))))
+                     (flow-loop (cdr fs) (+ idx 1))))
+                 ;; Create Agreement
+                 (let ((agr-id (generate-id "agr-")))
+                   (set! agreements
+                     (cons (make-agreement agr-id
+                             (and rex (recipe-exchange-name rex)) #f
+                             (number->string (current-time))
+                             (if (pair? primary-cids) (reverse primary-cids) #f)
+                             (if (pair? reciprocal-cids) (reverse reciprocal-cids) #f))
+                           agreements)))))
+             rex-ids))
+         ;; Return result
+         `((plan-id . ,pid)
+           (processes . ,(reverse processes))
+           (commitments . ,(reverse commitments))
+           (intents . ,(reverse intents))
+           (agreements . ,(reverse agreements))
+           (allocated . ,(reverse allocated))))))
+
+    ;; --- Proposal publishing ---
+
+    ((publish-offer intent-id . rest)
+     ;; Package intent as public offer. Optional reciprocal-intent-id.
+     (let* ((intent (hashmap-ref (pss-intents st) intent-id #f))
+            (reciprocal-id (and (pair? rest) (car rest))))
+       (if (not intent) #f
+           (let* ((prop-id (generate-id "prop-"))
+                  (proposal (make-proposal prop-id #f #f #f #f #f #f
+                              'offer #f #f (list intent-id)
+                              (if reciprocal-id (list reciprocal-id) #f) #f)))
+             (bcom (^plan-store bcom
+                     (make-plan-store-state
+                       (pss-plans st) (pss-commitments st) (pss-intents st) (pss-claims st)
+                       (pss-agreements st) (pss-agreement-bundles st)
+                       (hashmap-set (pss-proposals st) prop-id proposal)
+                       (pss-proposal-lists st)
+                       (pss-scenarios st) (pss-scenario-definitions st) (pss-meta st)
+                       (pss-tag-index st) (pss-intents-by-spec st) (pss-commitments-by-spec st)
+                       (pss-intents-by-plan st) (pss-commitments-by-plan st)
+                       (pss-commitments-by-process st)))
+                   prop-id)))))
+
+    ((publish-request intent-id . rest)
+     (let* ((intent (hashmap-ref (pss-intents st) intent-id #f))
+            (reciprocal-id (and (pair? rest) (car rest))))
+       (if (not intent) #f
+           (let* ((prop-id (generate-id "prop-"))
+                  (proposal (make-proposal prop-id #f #f #f #f #f #f
+                              'request #f #f
+                              (if reciprocal-id (list reciprocal-id) #f)
+                              (list intent-id) #f)))
+             (bcom (^plan-store bcom
+                     (make-plan-store-state
+                       (pss-plans st) (pss-commitments st) (pss-intents st) (pss-claims st)
+                       (pss-agreements st) (pss-agreement-bundles st)
+                       (hashmap-set (pss-proposals st) prop-id proposal)
+                       (pss-proposal-lists st)
+                       (pss-scenarios st) (pss-scenario-definitions st) (pss-meta st)
+                       (pss-tag-index st) (pss-intents-by-spec st) (pss-commitments-by-spec st)
+                       (pss-intents-by-plan st) (pss-commitments-by-plan st)
+                       (pss-commitments-by-process st)))
+                   prop-id)))))
+
+    ((accept-proposal proposal-id counterparty . rest)
+     ;; Accept proposal: validate temporal/agent constraints, create Agreement,
+     ;; promote intents to commitments with scaling, set clauseOf.
+     (let* ((opts (if (pair? rest) (car rest) '()))
+            (proposal (hashmap-ref (pss-proposals st) proposal-id #f)))
+       (if (not proposal) (error "Proposal not found")
+           (begin
+             ;; Temporal validation
+             (let ((now (number->string (current-time))))
+               (when (and (proposal-has-end proposal)
+                          (string>? now (proposal-has-end proposal)))
+                 (error "Proposal expired"))
+               (when (and (proposal-has-beginning proposal)
+                          (string<? now (proposal-has-beginning proposal)))
+                 (error "Proposal not yet open")))
+             ;; proposedTo enforcement
+             (when (and (proposal-proposed-to proposal)
+                        (pair? (proposal-proposed-to proposal)))
+               (let ((accepting (assq-ref opts 'accepting-agent-id)))
+                 (unless (and accepting (member accepting (proposal-proposed-to proposal)))
+                   (error "Not authorized to accept this proposal"))))
+             ;; Unit-based scaling
+             (let* ((unit-scale (if (and (proposal-unit-based proposal)
+                                         (assq-ref opts 'unit-quantity))
+                                    (assq-ref opts 'unit-quantity) 1))
+                    (due-override (assq-ref opts 'due))
+                    ;; Promote primary intents (publishes)
+                    (primary-ids '())
+                    (reciprocal-ids '())
+                    (all-commitments '()))
+               ;; Primary intents
+               (for-each
+                 (lambda (iid)
+                   (let ((cid ($ self-ref 'promote-to-commitment iid counterparty)))
+                     (set! primary-ids (cons cid primary-ids))
+                     ;; Scale if needed
+                     (when (not (= unit-scale 1))
+                       ;; Note: scaling would require modifying the commitment's qty
+                       ;; which needs a separate update. For now, intent qty is used as-is.
+                       #f)
+                     (set! all-commitments (cons cid all-commitments))))
+                 (or (proposal-publishes proposal) '()))
+               ;; Reciprocal intents (flip counterparty)
+               (let ((flipped `((provider . ,(assq-ref counterparty 'receiver))
+                                (receiver . ,(assq-ref counterparty 'provider)))))
+                 (for-each
+                   (lambda (iid)
+                     (let ((cid ($ self-ref 'promote-to-commitment iid flipped)))
+                       (set! reciprocal-ids (cons cid reciprocal-ids))
+                       (set! all-commitments (cons cid all-commitments))))
+                   (or (proposal-reciprocal proposal) '())))
+               ;; Create Agreement
+               (let ((agr-id (generate-id "agr-")))
+                 ($ self-ref 'add-agreement
+                    (make-agreement agr-id (proposal-name proposal) #f
+                      (number->string (current-time))
+                      (if (pair? primary-ids) (reverse primary-ids) #f)
+                      (if (pair? reciprocal-ids) (reverse reciprocal-ids) #f)))
+                 ;; Return
+                 `((agreement-id . ,agr-id)
+                   (commitments . ,(reverse all-commitments)))))))))))
 
 
 ;; =========================================================================

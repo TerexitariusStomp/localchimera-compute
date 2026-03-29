@@ -14,10 +14,13 @@
 (load "lib/knowledge/spatial-things.scm")
 (load "lib/knowledge/recipes.scm")
 (load "lib/knowledge/buffer-snapshots.scm")
+(load "lib/knowledge/federation-recipes.scm")
 (load "lib/agents.scm")
 (load "lib/execution/alerts.scm")
 (load "lib/observation/observer.scm")
 (load "lib/observation/account.scm")
+(load "lib/observation/transition.scm")
+(load "lib/observation/demand-policy.scm")
 (load "lib/planning/planning.scm")
 (load "lib/scope-root.scm")
 
@@ -73,6 +76,12 @@
 (load "lib/utils/buffer-type.scm")
 (load "lib/utils/recurrence.scm")
 
+;; Unified query facade
+(load "lib/query.scm")
+
 ;; Layer 4: Federation
 (load "lib/planning/store-registry.scm")
 (load "lib/planning/plan-federation.scm")
+
+;; MQTT Bridge — loaded separately via lib/bridge/load-bridge.scm
+;; (requires mosquitto and json packages, not part of core planner)

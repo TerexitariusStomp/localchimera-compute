@@ -127,6 +127,13 @@ observer state + affected-resources accumulator through phases 3-4. The actor's
     (values st (reverse (ctx-affected ctx)))))
 ```
 
+**Capacity/capability model:**
+- `seed-capacity-resource` — ONE capacity resource per agent (total available hours),
+  identified by `unit-of-effort` field. No tags. Skills are separate resources.
+- `capacity-resource-for-agent` — returns the single capacity resource for an agent
+- VF action semantics handle the rest: `work.onhandEffect = noEffect`,
+  `work.accountableEffect = noEffect`. No inalienability guards needed.
+
 ### `^plan-store` — planning layer
 
 Holds all planning artifacts: intents, commitments, plans, agreements, claims,
@@ -134,7 +141,9 @@ proposals, scenarios. Maintains secondary indexes (tag-index, intents-by-spec,
 commitments-by-spec) for O(k) lookups.
 
 Key operation: `promote-to-commitment` — elevates an Intent (unilateral) to a
-Commitment (bilateral) when offer meets request.
+Commitment (bilateral) when offer meets request. Optional `observer-ref`
+enables the **capacity ATP gate**: prevents overcommitment of agent capacity
+by checking `unit-of-effort` resources against already-committed work hours.
 
 ### `^account-store` — commune labor-credit system
 
