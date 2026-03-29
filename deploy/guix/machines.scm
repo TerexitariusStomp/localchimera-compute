@@ -33,7 +33,7 @@
              (gnu system linux-initrd)
              (gnu)
              (guix gexp)
-             (xorg-relay-service))
+             (xorg-gateway-service))
 
 (define %this-dir
   (dirname (or (current-filename)
@@ -182,6 +182,7 @@
     (packages
      (append
       (list guile-goblins
+            guile-fibers
             emacs-no-x
             emacs-geiser
             emacs-geiser-guile
@@ -220,13 +221,14 @@
                                               (cdr entry))))
                           %dynamic-users)))))
 
-      ;; WebSocket relay — runs from immutable Guix store, not a git clone
-      (service xorg-relay-service-type
-               (xorg-relay-configuration
+      ;; OCapN gateway — capability-secure communication over WebSocket + Reticulum
+      (service xorg-gateway-service-type
+               (xorg-gateway-configuration
                 (package %xorg-package)
                 (port 9090)
                 (environment
-                 `(("OPENROUTER_KEYS" . ,(or (getenv "OPENROUTER_KEYS") ""))))))
+                 `(("API_KEYS" . ,(or (getenv "API_KEYS")
+                                      (getenv "OPENROUTER_KEYS") ""))))))
 
       ;; Dev REPL — Guile on a Unix socket, runs as playnet user.
       ;; Connect with: M-x geiser-connect-local RET guile RET /var/run/playnet/repl.sock

@@ -15,11 +15,18 @@
   #:use-module (gnu services)
   #:use-module (gnu services shepherd)
   #:use-module (gnu packages python)
+  #:use-module (python-rns)
   #:use-module (guix gexp)
+  #:use-module (guix packages)
   #:use-module (guix records)
+  #:use-module (guix utils)
   #:export (rnsd-service-type
             reticulum-bridge-configuration
             reticulum-bridge-service-type))
+
+;; Python version string for constructing site-packages paths.
+(define %python-version
+  (version-major+minor (package-version python-3)))
 
 ;;; ── rnsd (Reticulum daemon) ───────────────────────────────────────────────
 
@@ -30,9 +37,7 @@
     (documentation "Reticulum network daemon")
     (requirement '(networking))
     (start #~(make-forkexec-constructor
-              ;; TODO: replace with (file-append python-reticulum "/bin/rnsd")
-              ;; once python-reticulum is packaged for Guix
-              (list "rnsd" "--verbose")
+              (list #$(file-append python-rns "/bin/rnsd") "--verbose")
               #:log-file "/var/log/rnsd.log"))
     (stop #~(make-kill-destructor))
     (respawn? #t))))
@@ -54,7 +59,7 @@
   (control-socket reticulum-bridge-configuration-control-socket
                   (default "/var/run/reticulum-bridge.sock"))
   (socket-dir     reticulum-bridge-configuration-socket-dir
-                  (default "/tmp/goblins-reticulum"))
+                  (default "/var/lib/reticulum-bridge"))
   (bridge-script  reticulum-bridge-configuration-bridge-script
                   (default (local-file "../../server/reticulum-bridge.py"))))
 
@@ -72,15 +77,27 @@
                       #$bridge-script
                       "--control-socket" #$control-socket
                       "--socket-dir" #$socket-dir)
+                #:environment-variables
+                (list (string-append "GUIX_PYTHONPATH="
+                        "/run/current-system/profile/lib/python"
+                        #$%python-version "/site-packages")
+                      "HOME=/var/lib/reticulum-bridge")
                 #:log-file "/var/log/reticulum-bridge.log"))
       (stop #~(make-kill-destructor))
       (respawn? #t)))))
+
+(define (reticulum-bridge-activation config)
+  #~(begin
+      (use-modules (guix build utils))
+      (mkdir-p #$(reticulum-bridge-configuration-socket-dir config))))
 
 (define reticulum-bridge-service-type
   (service-type
    (name 'reticulum-bridge)
    (extensions
     (list (service-extension shepherd-root-service-type
-                             reticulum-bridge-shepherd-service)))
+                             reticulum-bridge-shepherd-service)
+          (service-extension activation-service-type
+                             reticulum-bridge-activation)))
    (default-value (reticulum-bridge-configuration))
    (description "Bridge between Goblins OCapN and Reticulum network.")))

@@ -8,6 +8,8 @@
   #:use-module (goblins actor-lib ward)
   #:use-module ((goblins utils crypto) #:select (generate-key-pair key-pair->public-key))
   #:use-module (xorg endorsement)
+  #:use-module (xorg kanren)
+  #:use-module ((srfi srfi-1) #:select (fold-right))
   #:use-module (ice-9 match)
   #:use-module (ice-9 receive)
   #:export (^org
@@ -120,6 +122,9 @@
    ((pair? params)
     (cons (cons (car params) (car vals))
           (bind-params (cdr params) (cdr vals) base)))))
+
+(define (alist-delete-eq key alist)
+  (filter (lambda (pair) (not (eq? key (car pair)))) alist))
 
 (define (filter-serializable-bindings bindings)
   "Remove procedure-valued bindings (not serializable by Goblins persistence)."
@@ -338,7 +343,8 @@
               (else (loop (cdr store))))))]
 
    [(modify! name value new-history-entry)
-    (let* ((new-bindings (cons (cons name value) bindings))
+    (let* ((new-bindings (cons (cons name value)
+                              (alist-delete-eq name bindings)))
            (snapshot (list new-bindings validator-expr validator-proc))
            (sig (compute-sig new-history-entry)))
       (bcom (^org bcom
@@ -616,6 +622,50 @@ output-cap: ^output-port actor ref for IO delegation (or #f for none)."
                         (begin ,@(if (null? exit-body) '((if #f #f)) exit-body))
                         (begin ,@(if (null? cmd) '() cmd) (loop ,@step-exprs))))
                  org local-bindings current-expressor)))
+
+    ;; ── miniKanren special forms ────────────────────────────────────────
+    ;; fresh — introduce logic variables and conjoin goals
+    ;; Returns a goal (lambda over state). Logic vars are created at
+    ;; search time; goals are evaluated with vars in scope.
+    (('fresh (vars ...) goals ...)
+     (let ((n-vars (length vars)))
+       (lambda (s/c)
+         (let* ((c (cdr s/c))
+                (new-vars (let loop ((i 0) (acc '()))
+                            (if (= i n-vars) (reverse acc)
+                                (loop (+ i 1) (cons (var (+ c i)) acc)))))
+                (new-bindings (append (map cons vars new-vars) local-bindings))
+                (new-s/c (cons (car s/c) (+ c n-vars)))
+                (eval-goals (map (lambda (g)
+                                   (evaluate g org new-bindings current-expressor))
+                                 goals))
+                (combined (fold-right conj succeed eval-goals)))
+           (combined new-s/c)))))
+
+    ;; conde — disjunction of goal conjunctions
+    ;; (conde (g0 g1) (g2 g3)) → disj of conj chains
+    (('conde clauses ...)
+     (let ((eval-clauses
+            (map (lambda (clause)
+                   (let ((goals (map (lambda (g)
+                                       (evaluate g org local-bindings current-expressor))
+                                     clause)))
+                     (fold-right conj succeed goals)))
+                 clauses)))
+       (fold-right disj fail eval-clauses)))
+
+    ;; run* — drive search, reify results
+    (('run* ((? symbol? q)) goals ...)
+     (let* ((goal (evaluate `(fresh (,q) ,@goals) org local-bindings current-expressor))
+            (results (take #f (goal empty-state))))
+       (map reify-1st results)))
+
+    ;; run — bounded search
+    (('run n-expr ((? symbol? q)) goals ...)
+     (let* ((n (evaluate n-expr org local-bindings current-expressor))
+            (goal (evaluate `(fresh (,q) ,@goals) org local-bindings current-expressor))
+            (results (take n (goal empty-state))))
+       (map reify-1st results)))
 
     ;; lambda — captures local-bindings; org is shared (live lookup)
     (('lambda params body body* ...)

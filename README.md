@@ -6,7 +6,7 @@ _A self-evolving commons computer written entirely in Guile Scheme._
 
 ---
 
-**xorg** is a computer environment where pushing to `main` can redeploy the entire operating system. Everything from the browser interface to the kernel configuration is a Scheme expression. Object capability security comes from the lambda calculus itself (as described in [*A Security Kernel Based on the Lambda-Calculus*](https://mumble.net/~jar/pubs/secureos/secureos.html)) — if you hold the reference, you have the authority; if you don't, you don't. The system runs in the browser (Hoot/WASM), on the desktop (native Guile), and on the server (Guix System), connected by mesh networking that works over LoRa radio, serial wire, I2P, TCP, or packet radio.
+**xorg** is a computer environment where pushing to `main` can redeploy the entire operating system. Everything from the browser interface to the kernel configuration is a Scheme expression. Object capability security comes from the lambda calculus itself (as described in [_A Security Kernel Based on the Lambda-Calculus_](https://mumble.net/~jar/pubs/secureos/secureos.html)) — if you hold the reference, you have the authority; if you don't, you don't. The system runs in the browser (Hoot/WASM), on the desktop (native Guile), and on the server (Guix System), connected by mesh networking that works over LoRa radio, serial wire, I2P, TCP, or packet radio.
 
 There is no gap between the system and its description. The organization's rules, state, and history are all S-expressions — the same representation the evaluator consumes. This is what makes the system self-reflective: it can inspect its own evolution, rollback to a prior state, and rewrite its own governance, using the same language it was built in.
 
@@ -37,12 +37,13 @@ Create an org. Write Scheme. Register an account. Get SSH access to a Guix Syste
 ```
 Browser (Hoot/WASM)          Server (Guix System)
 ├─ Metacircular evaluator    ├─ Native Guile + Goblins
-├─ Virtual DOM REPL          ├─ WebSocket relay + signup
+├─ Virtual DOM REPL          ├─ OCapN gateway + signup
 ├─ Ed25519 key management    ├─ Shepherd services
-└─ Compiles to repl.wasm     ├─ MQTT event bridge
-                             ├─ Reticulum mesh networking
-  ←── OCapN (capability      └─ guix deploy = OS reconfiguration
-       network) ──→
+├─ WebRTC P2P netlayer       ├─ MQTT event bridge
+└─ Compiles to repl.wasm     ├─ Reticulum mesh networking
+                             └─ guix deploy = OS reconfiguration
+  ←── OCapN (capability transport) ──→
+       WebSocket (bootstrap) │ WebRTC (P2P) │ Reticulum (mesh)
 ```
 
 Every layer is Guile Scheme. Every connection is capability-secured.
@@ -100,7 +101,7 @@ planner/
   lib/vf-relations.scm — relational query layer over VF records
 
 key-pool/
-  key-pool.scm        — capability-secure API key management
+  key-pool.scm        — capability-secure API key management (any HTTP API via provider profiles)
   vf-bridge.scm       — ValueFlows bridge (keys as economic resources)
 
 deploy/guix/
@@ -151,6 +152,161 @@ Following the [Heart of Spritely](https://spritely.institute/static/papers/sprit
 ;; read: read-only facet
 ;; log: the accountability record
 ```
+
+## The lambda calculus, all the way down
+
+Capability security from closures. State from `bcom`. Accountability from logging. Economic reasoning from relations. Each layer is the lambda calculus applied to a different domain:
+
+| Domain         | Lambda calculus provides                                                                                                                    |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Security       | Closures are unforgeable references — [A Security Kernel Based on the Lambda-Calculus](https://mumble.net/~jar/pubs/secureos/secureos.html) |
+| State          | `bcom` — a function becomes a new function (Goblins actors)                                                                                 |
+| Accountability | `^logger` — wrapping a function to record every call                                                                                        |
+| Attenuation    | `^facet` — partial application restricts the interface                                                                                      |
+| Revocation     | `^cell` — a conditional that can be flipped                                                                                                 |
+| Reasoning      | miniKanren — search as lazy evaluation of goal functions                                                                                    |
+| Economics      | VF relations — bidirectional queries with proof-traced inference                                                                            |
+
+Because they're all the same substrate, they compose without adapters. A relational query over economic data runs inside a governed actor, over a capability-secured network, on a declaratively defined operating system — and every layer is Scheme.
+
+## Economic Planning — Agents as Scopes, Actors as Agents
+
+The planner is a complete [ValueFlows](https://valueflo.ws/) economic planning engine — 20+ algorithm modules, ~14,000 lines — built on Goblins actors. It models supply chains, resource flows, and coordination as governed computation.
+
+The key insight: **a planning scope IS a Goblins vat. An agent IS an actor. A commitment IS a message.**
+
+```
+┌─────────────────────────────────────────────┐
+│  ValueFlows Scope (= Goblins Vat)           │
+│                                             │
+│  Agent actors ←→ Process actors             │
+│       │              │                      │
+│  Commitments    Economic Events             │
+│  (messages)     (state transitions)         │
+│       │              │                      │
+│  Resource flows tracked as bcom             │
+│  Accountability via ^logger                 │
+│  Cross-scope coordination via OCapN         │
+└─────────────────────────────────────────────┘
+```
+
+Each scope is isolated (vat boundary). Scopes coordinate via OCapN — the same protocol that connects browsers to servers to LoRa radios. A planning federation is a hierarchy of scopes folded together, each governed by its own actors.
+
+The planner includes: dependent demand/supply, DDMRP buffer positioning, critical path analysis, netting (location-aware), flow graphs, custody chains, track-and-trace, value equations, OTIF metrics, and federated multi-scope planning.
+
+### Social planning over API keys
+
+The key-pool is the first concrete example. The pool works with any HTTP API that uses key-based auth — a provider profile defines the base URL, auth headers, error classification, cost extraction, and optional credit checking. It ships with profiles for OpenRouter and OpenAI, plus a generic constructor for arbitrary APIs. Custom profiles are plain alists with lambdas — no subclassing, no framework.
+
+The VF bridge (`key-pool/vf-bridge.scm`) maps pool operations to ValueFlows records:
+
+| Pool concept | ValueFlows record | What it enables |
+| ------------ | ----------------- | --------------- |
+| Donor | Agent | Track who contributed what, compute contribution claims |
+| API key | EconomicResource | State (available/degraded/exhausted), provenance, capacity |
+| API call | EconomicEvent (action: `use`) | Cost tracking, usage attribution, audit trail |
+| Pool | Process | Container of economic activity the planner can reason about |
+
+Every API call becomes an immutable economic fact. This isn't monitoring — it turns infrastructure into something the planner can *plan over*:
+
+- **Demand/supply**: "We need 100 USD of transcription capacity this month" unfolds via dependent-demand into "which keys can provide it? Do we have enough?"
+- **Buffer management (DDMRP)**: Average daily usage computed from the event stream predicts when capacity will exhaust. Buffer zones signal "donate keys now" before the pool runs dry — the same algorithm that prevents stockouts in supply chains.
+- **Contribution visibility**: Each donor's events are queryable via the relational layer. Donors see the economic value of their contribution, not just that they provided a key.
+- **Capacity forecasting**: The netter reserves capacity without mutation. Combined with usage forecasts, the planner answers "when will we run out?" and emits replenishment signals.
+- **Federation**: Multiple key pools (separate scopes/vats) can coordinate via OCapN lateral matching — surplus capacity in one scope flows to deficit in another.
+
+### Socializing computation and memory
+
+The key pool is the proof of concept, but the pattern is general: any computational resource wrapped in a Goblins actor becomes poolable, plannable, and accountable through the same machinery. API keys were first. The same architecture extends to:
+
+- **GPU time** — a donated GPU is an actor, usage is an EconomicEvent with cost, the planner does DDMRP over capacity
+- **Storage** — a donated disk is an EconomicResource, reads/writes are events, buffer zones signal "we need more space"
+- **Bandwidth** — a Reticulum mesh node offering relay capacity is an actor with a provider profile
+- **CPU cycles** — volunteer compute on any machine that speaks OCapN
+
+Three layers make this work:
+
+1. **Capability security** means you can safely share compute without trusting contributors. You hand someone a capability to *use* the resource, not to *control* it. Attenuation restricts the interface, revocation pulls it back, logging records everything.
+
+2. **ValueFlows accounting** means every unit of donated compute enters the same economic vocabulary. Alice donates GPU time, Bob donates API keys, Carol donates storage — the planner sees all of it as economic resource flows, does demand/supply across them, and tracks contribution.
+
+3. **OCapN federation** means this isn't one server. Each commons runs its own scope. Surplus compute in one scope is visible to demand signals from another. The Reticulum mesh means even a LoRa node with a sensor contributes to the same economy.
+
+The critical property is the feedback loop. In a traditional system, when API keys run low, someone notices, pings a channel, someone else manually adds a key — human coordination overhead at every step. With DDMRP buffer zones computed over the event stream, the system itself produces a demand signal: "capacity enters red zone in 2 days." That signal is a ValueFlows intent, visible to any agent in the federation. A donor doesn't need to be asked — they can see the signal and respond with a resource.
+
+Because OCapN federates across scopes, signals aren't trapped in one server. A commons with surplus API keys can see that another commons is running low. Lateral matching connects surplus to deficit without central coordination.
+
+The planner doesn't *command* donors. It makes the flows visible. Coordination emerges from visibility — the same way a biological system upregulates enzyme production when substrate runs low. That's what socializing infrastructure means: not "everyone shares everything," but the economic structure itself creates the conditions for self-organization.
+
+## Networking
+
+Goblins actors communicate via OCapN over multiple transports:
+
+- **WebSocket** — browser-to-server (Hoot/WASM)
+- **WebRTC** — browser-to-browser, direct peer-to-peer with DTLS encryption
+- **TCP + TLS** — direct encrypted connections
+- **Tor Onion Services** — anonymous, peer-to-peer
+- **Reticulum** — mesh networking over LoRa, serial, I2P, packet radio, TCP
+
+```scheme
+(on (<- remote-greeter "Bob")
+    (lambda (reply) (display reply)))
+;; => "Hello Bob, welcome to the Reticulum mesh!"
+```
+
+The transport is invisible. Capability security is preserved end-to-end.
+
+### Peer discovery and WebRTC
+
+Peers don't discover each other directly — all peers connect to a single **gateway server** which tracks presence and introduces them. This is intentional: the gateway is the trust root in a capability-security model.
+
+```
+Browser A ──WebSocket──┐                    ┌── Browser B
+                       ├── Gateway ─────────┤
+LoRa node ──Reticulum──┘   (^lobby,         └── Browser C
+                             ^presence,
+                             signaling)
+                                 │
+                        After signaling:
+                     Browser A ←─WebRTC─→ Browser B
+                                (direct P2P)
+```
+
+1. The gateway publishes a **sturdyref** — a capability URI encoding its identity
+2. Browsers enliven the sturdyref over WebSocket to get a live `^lobby` reference
+3. Peers call `announce` with a display name and inbox actor
+4. The gateway's `^presence` actor broadcasts who's online and introduces peers
+5. Once introduced, browsers upgrade to **WebRTC DataChannels** for direct P2P messaging
+
+The gateway relays only signaling (SDP offers/answers, ICE candidates). Application data flows directly between browsers, encrypted by DTLS. The `^webrtc-netlayer` is a proper OCapN netlayer — `spawn-mycapn` routes CapTP messages over DataChannels automatically, using the same Syrup framing as WebSocket.
+
+Glare resolution ensures exactly one connection between any two peers: the lexicographically greater display name is always the offerer.
+
+See [docs/PEER-DISCOVERY.md](docs/PEER-DISCOVERY.md) for the full protocol and [docs/RETICULUM-NETLAYER.md](docs/RETICULUM-NETLAYER.md) for the mesh architecture.
+
+### IoT and sensors with capability security
+
+Any device that speaks Reticulum — a LoRa sensor, a serial-connected microcontroller, an I2P node — can host Goblins actors. The actor IS the sensor's API. Possession of the actor reference IS authorization to read the sensor. No API keys, no tokens, no ACLs.
+
+```scheme
+;; A soil moisture sensor on a LoRa node is a Goblins actor
+(on (<- soil-sensor 'read)
+    (lambda (moisture) (display moisture)))
+;; => 42.3
+
+;; Attenuate: give Alice read-only access, revocable
+(define alice-sensor (facet soil-sensor 'read))
+;; Alice can read but not configure. Revoke anytime via ^cell flip.
+```
+
+MQTT bridges the gap for existing IoT infrastructure: Mosquitto handles the physical protocol boundary (topic ACLs, device auth), Goblins handles the logical capability boundary (attenuation, logging, revocation). Each MQTT topic becomes an actor. Each message becomes a vat turn. `bcom` folds over event streams give replayable audit trails for free.
+
+```
+Physical sensor → Mosquitto (MQTT) → bridge actor → topic observer → scoped observer
+                  protocol normalization    capability attenuation chain
+```
+
+Sensor data flows through the same ValueFlows accounting as API keys — each reading is an EconomicEvent, each sensor is an EconomicResource, the data is a resource flow governed by the same actors that govern everything else.
 
 ## Relational Reasoning
 
@@ -230,105 +386,6 @@ Skills, documentation, and knowledge bases are views of the same relational prog
 
 The same `event-o` relation that answers "what events affect this resource?" also answers "what resources does this event affect?" — just bind different variables. No separate indexes, no separate functions. One relation, every direction.
 
-## The lambda calculus, all the way down
-
-Capability security from closures. State from `bcom`. Accountability from logging. Economic reasoning from relations. Each layer is the lambda calculus applied to a different domain:
-
-| Domain | Lambda calculus provides |
-|--------|------------------------|
-| Security | Closures are unforgeable references — [A Security Kernel Based on the Lambda-Calculus](https://mumble.net/~jar/pubs/secureos/secureos.html) |
-| State | `bcom` — a function becomes a new function (Goblins actors) |
-| Accountability | `^logger` — wrapping a function to record every call |
-| Attenuation | `^facet` — partial application restricts the interface |
-| Revocation | `^cell` — a conditional that can be flipped |
-| Reasoning | miniKanren — search as lazy evaluation of goal functions |
-| Economics | VF relations — bidirectional queries with proof-traced inference |
-
-Because they're all the same substrate, they compose without adapters. A relational query over economic data runs inside a governed actor, over a capability-secured network, on a declaratively defined operating system — and every layer is Scheme.
-
-## Voice Interface
-
-The browser REPL has two voice modes, powered by community-donated API keys:
-
-- **Voice to text** — records speech, transcribes via local Whisper WASM (40MB, cached) or relay transcription (Gemini Flash via key-pool). Transcript lands in the input.
-- **Voice to code** — records speech, transcribes, then converts natural language to a Scheme S-expression via Gemini Flash. The expression lands in the input for review before evaluation.
-
-```
-Click "voice to code" → speak "define a function that squares a number"
-→ input shows: (define (square x) (* x x))
-→ review, edit if needed, press Enter
-```
-
-No API key needed from the user — transcription and NL→code conversion are funded by donated OpenRouter keys managed through the key-pool, which handles round-robin, rate limiting, and health tracking.
-
-## Economic Planning — Agents as Scopes, Actors as Agents
-
-The planner is a complete [ValueFlows](https://valueflo.ws/) economic planning engine — 20+ algorithm modules, ~14,000 lines — built on Goblins actors. It models supply chains, resource flows, and coordination as governed computation.
-
-The key insight: **a planning scope IS a Goblins vat. An agent IS an actor. A commitment IS a message.**
-
-```
-┌─────────────────────────────────────────────┐
-│  ValueFlows Scope (= Goblins Vat)           │
-│                                             │
-│  Agent actors ←→ Process actors             │
-│       │              │                      │
-│  Commitments    Economic Events             │
-│  (messages)     (state transitions)         │
-│       │              │                      │
-│  Resource flows tracked as bcom             │
-│  Accountability via ^logger                 │
-│  Cross-scope coordination via OCapN         │
-└─────────────────────────────────────────────┘
-```
-
-Each scope is isolated (vat boundary). Scopes coordinate via OCapN — the same protocol that connects browsers to servers to LoRa radios. A planning federation is a hierarchy of scopes folded together, each governed by its own actors.
-
-The planner includes: dependent demand/supply, DDMRP buffer positioning, critical path analysis, netting (location-aware), flow graphs, custody chains, track-and-trace, value equations, OTIF metrics, and federated multi-scope planning.
-
-The key-pool is the first concrete example: donated API keys are agents, the pool is a scope, usage is tracked as economic events (cost, rate limits, health). Community voice transcription is a ValueFlows service funded by communal resource flows.
-
-## Networking
-
-Goblins actors communicate via OCapN over multiple transports:
-
-- **WebSocket** — browser-to-server (Hoot/WASM)
-- **TCP + TLS** — direct encrypted connections
-- **Tor Onion Services** — anonymous, peer-to-peer
-- **Reticulum** — mesh networking over LoRa, serial, I2P, packet radio, TCP
-
-```scheme
-(on (<- remote-greeter "Bob")
-    (lambda (reply) (display reply)))
-;; => "Hello Bob, welcome to the Reticulum mesh!"
-```
-
-The transport is invisible. Capability security is preserved end-to-end.
-
-### IoT and sensors with capability security
-
-Any device that speaks Reticulum — a LoRa sensor, a serial-connected microcontroller, an I2P node — can host Goblins actors. The actor IS the sensor's API. Possession of the actor reference IS authorization to read the sensor. No API keys, no tokens, no ACLs.
-
-```scheme
-;; A soil moisture sensor on a LoRa node is a Goblins actor
-(on (<- soil-sensor 'read)
-    (lambda (moisture) (display moisture)))
-;; => 42.3
-
-;; Attenuate: give Alice read-only access, revocable
-(define alice-sensor (facet soil-sensor 'read))
-;; Alice can read but not configure. Revoke anytime via ^cell flip.
-```
-
-MQTT bridges the gap for existing IoT infrastructure: Mosquitto handles the physical protocol boundary (topic ACLs, device auth), Goblins handles the logical capability boundary (attenuation, logging, revocation). Each MQTT topic becomes an actor. Each message becomes a vat turn. `bcom` folds over event streams give replayable audit trails for free.
-
-```
-Physical sensor → Mosquitto (MQTT) → bridge actor → topic observer → scoped observer
-                  protocol normalization    capability attenuation chain
-```
-
-Sensor data flows through the same ValueFlows accounting as API keys — each reading is an EconomicEvent, each sensor is an EconomicResource, the data is a resource flow governed by the same actors that govern everything else.
-
 ## How to Run
 
 ### Requirements
@@ -342,6 +399,7 @@ You can consume this repository either directly or as a Guix channel.
 **Install directly from source:**
 
 ```bash
+Sensor data flows through the same ValueFlows accounting as API keys — each reading is an EconomicEvent, each sensor is an EconomicResource, the data is a resource flow governed by the same actors that govern everything else.
 guix package -f guix.scm      # install the xorg desktop REPL into your profile
 guix shell -m manifest.scm    # transient shell with all development dependencies
 ```

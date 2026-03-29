@@ -39,7 +39,7 @@
                            " \\\n  -L " base "/module"
                            " \\\n  " base "/server/repl.scm \"$@\"\n"))))
                      (chmod wrapper #o555))
-                   ;; Relay wrapper
+                   ;; Relay wrapper (legacy, kept during transition)
                    (let ((wrapper (string-append bin "/xorg-relay")))
                      (with-output-to-file wrapper
                        (lambda ()
@@ -51,8 +51,22 @@
                            " \\\n  -L " base "/key-pool"
                            " \\\n  -L " base "/deploy"
                            " \\\n  " base "/server/relay.scm \"$@\"\n"))))
+                     (chmod wrapper #o555))
+                   ;; OCapN gateway wrapper
+                   (let ((wrapper (string-append bin "/xorg-gateway")))
+                     (with-output-to-file wrapper
+                       (lambda ()
+                         (display
+                          (string-append
+                           "#!/bin/sh\ncd " base "\n"
+                           "exec " guile-bin
+                           " \\\n  -L " base "/module"
+                           " \\\n  -L " base "/key-pool"
+                           " \\\n  -L " base "/deploy"
+                           " \\\n  " base "/server/gateway.scm \"$@\"\n"))))
                      (chmod wrapper #o555))))))))
-  (inputs (list guile-next guile-hoot gnu-make guile-json-4 guile-goblins))
+  (inputs (list guile-next guile-hoot gnu-make guile-json-4 guile-goblins
+                guile-fibers))
   (home-page "https://github.com/interplaynetary/xorg")
   (synopsis "xorg desktop REPL")
   (description "A bundled release of the xorg terminal REPL.")

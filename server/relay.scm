@@ -36,11 +36,13 @@
 
 (define *pool-vat* (spawn-vat #:name "key-pool"))
 (define *key-pool*
-  (let ((keys-env (or (getenv "OPENROUTER_KEYS") "")))
+  (let ((keys-env (or (getenv "API_KEYS")
+                      (getenv "OPENROUTER_KEYS")
+                      "")))
     (if (string=? keys-env "")
         (begin
           (format (current-error-port)
-                  "  [key-pool] No OPENROUTER_KEYS set — transcription disabled\n")
+                  "  [key-pool] No API_KEYS set — transcription disabled\n")
           #f)
         (with-vat *pool-vat*
           (let ((pool (make-key-pool *pool-vat* keys-env)))

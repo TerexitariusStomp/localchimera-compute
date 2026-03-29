@@ -57,14 +57,16 @@
   (set! *event-counter* (+ *event-counter* 1))
   (string-append "ev-keypool-" (number->string *event-counter*)))
 
-(define (vf-api-key-spec)
-  "ResourceSpecification for OpenRouter API keys."
+(define* (vf-api-key-spec #:optional (provider-name "openrouter"))
+  "ResourceSpecification for API keys from PROVIDER-NAME."
   (make-resource-specification
-   "rs-openrouter-key"        ;; id
-   "OpenRouter API Key"       ;; name
+   (string-append "rs-" provider-name "-key") ;; id
+   (string-append (string-upcase (substring provider-name 0 1))
+                  (substring provider-name 1)
+                  " API Key")                 ;; name
    "Donated API key for community transcription and voice-to-code" ;; note
    #f                         ;; image
-   '("openrouter" "api-key")  ;; resource-classified-as
+   (list provider-name "api-key") ;; resource-classified-as
    "each"                     ;; default-unit-of-resource
    "USD"                      ;; default-unit-of-effort
    #f                         ;; substitutable
@@ -108,7 +110,7 @@
    #f                         ;; previous-event
    #f))                       ;; availability-window
 
-(define (vf-usage-event resource-id provider-id cost process-id)
+(define (vf-usage-event resource-id provider-id cost process-id spec-id)
   "EconomicEvent for one API call (action: 'use)."
   (make-economic-event
    (next-event-id)            ;; id
@@ -117,7 +119,7 @@
    #f                         ;; output-of
    resource-id                ;; resource-inventoried-as
    #f                         ;; to-resource-inventoried-as
-   "rs-openrouter-key"        ;; resource-conforms-to
+   spec-id                    ;; resource-conforms-to
    #f                         ;; resource-classified-as
    provider-id                ;; provider (donor)
    "community"                ;; receiver
@@ -169,13 +171,15 @@
 
 ;;; ── ^vf-key-pool actor ────────────────────────────────────────────────────
 
-(define (^vf-key-pool bcom inner-pool process spec agents resources events)
+(define (^vf-key-pool bcom inner-pool process spec agents resources events
+                      cost-extractor)
   ;; inner-pool: the wrapped ^key-pool ref
   ;; process: VF Process record
   ;; spec: VF ResourceSpecification record
   ;; agents: alist of (key-id . Agent)
   ;; resources: alist of (key-id . EconomicResource)
   ;; events: list of EconomicEvent records (newest first)
+  ;; cost-extractor: (lambda (json) cost-or-#f) from provider profile
 
   (methods
 
@@ -186,9 +190,8 @@
       ;; Extract cost from response if available
       (let* ((cost (catch #t
                      (lambda ()
-                       (let* ((json (json-string->scm response-str))
-                              (usage (assoc-ref json "usage")))
-                         (or (and usage (assoc-ref usage "total_cost")) 0)))
+                       (let* ((json (json-string->scm response-str)))
+                         (or (cost-extractor json) 0)))
                      (lambda args 0)))
              ;; Find which key was used (first healthy resource)
              (used-resource-id
@@ -205,9 +208,11 @@
                     (agent-id (cdr agent-entry))
                     "unknown")))
              (ev (vf-usage-event used-resource-id provider-id cost
-                                 (process-id process))))
+                                 (process-id process)
+                                 (resource-specification-id spec))))
         (bcom (^vf-key-pool bcom inner-pool process spec
-                            agents resources (cons ev events)))
+                            agents resources (cons ev events)
+                            cost-extractor))
         response-str))]
 
    ;; ── VF queries ──
@@ -241,14 +246,19 @@
 
 ;;; ── Constructor ───────────────────────────────────────────────────────────
 
-(define (make-vf-key-pool vat key-csv donor-alist)
+(define* (make-vf-key-pool vat key-csv donor-alist
+                           #:key (provider (openrouter-provider)))
   "Create a VF-wrapped key-pool.
    KEY-CSV: comma-separated API key strings.
-   DONOR-ALIST: list of (donor-id donor-name) pairs, one per key."
+   DONOR-ALIST: list of (donor-id donor-name) pairs, one per key.
+   PROVIDER: a provider profile alist (default: OpenRouter)."
   (with-vat vat
-    (let* ((inner-pool (make-key-pool vat key-csv))
-           (spec (vf-api-key-spec))
+    (let* ((provider-name (assoc-ref provider 'name))
+           (inner-pool (make-key-pool vat key-csv #:provider provider))
+           (spec (vf-api-key-spec provider-name))
+           (spec-id (resource-specification-id spec))
            (process (vf-pool-process))
+           (cost-fn (assoc-ref provider 'cost-extractor))
            (keys (filter (lambda (s) (not (string=? s "")))
                          (string-split key-csv #\,)))
            (pairs (map (lambda (key donor-info)
@@ -258,7 +268,7 @@
                                           (substring key 0 (min 8 (string-length key)))))
                                 (agent (vf-donor-agent donor-id donor-name))
                                 (resource (vf-key-resource key-id donor-id
-                                            "rs-openrouter-key" "available")))
+                                            spec-id "available")))
                            (list key-id agent resource)))
                        keys
                        (if (>= (length donor-alist) (length keys))
@@ -272,4 +282,5 @@
                                               (length donor-alist)))))))
            (agents (map (lambda (p) (cons (car p) (cadr p))) pairs))
            (resources (map (lambda (p) (cons (car p) (caddr p))) pairs)))
-      (spawn ^vf-key-pool inner-pool process spec agents resources '()))))
+      (spawn ^vf-key-pool inner-pool process spec agents resources '()
+             cost-fn))))

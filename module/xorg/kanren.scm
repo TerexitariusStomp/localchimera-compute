@@ -14,6 +14,7 @@
             call/fresh fresh conde
             disj conj
             run run*
+            take reify-1st
             appendo membero))
 
 ;;; ── Logic variables ────────────────────────────────────────────────────────

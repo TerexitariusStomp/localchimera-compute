@@ -1,6 +1,10 @@
-;;; key-pool/key-pool.scm — Goblins actor for OpenRouter API key pooling
+;;; key-pool/key-pool.scm — Goblins actor for capability-secure API key pooling
 ;;;
 ;;; Self-contained module. No dependency on planner or xorg.
+;;; Works with any HTTP API that uses key-based auth — provider profiles
+;;; define the base URL, auth headers, error classification, cost
+;;; extraction, and optional credit checking.  Ships with profiles for
+;;; OpenRouter, OpenAI, and a generic constructor for arbitrary APIs.
 ;;;
 ;;; Architecture:
 ;;;   ^api-key  — seals one raw key string + private HTTP client.
@@ -13,6 +17,20 @@
 ;;;   (define pool (make-key-pool vat "sk-aaa,sk-bbb,sk-ccc"))
 ;;;   (with-vat vat ($ pool 'request "/chat/completions" body-json))
 ;;;   (with-vat vat ($ pool 'pool-status))
+;;;
+;;; Built-in providers:
+;;;   (make-key-pool vat keys #:provider (openrouter-provider))          ;; default
+;;;   (make-key-pool vat keys #:provider (openai-provider))
+;;;   (make-key-pool vat keys #:provider (generic-provider "http://localhost:11434/v1"))
+;;;
+;;; Custom provider (any HTTP API):
+;;;   (make-key-pool vat keys
+;;;     #:provider `((name . "stripe")
+;;;                  (base-url . "https://api.stripe.com/v1")
+;;;                  (auth-header-fn . ,bearer-auth-header)
+;;;                  (credit-check . #f)
+;;;                  (cost-extractor . ,(lambda (json) #f))
+;;;                  (error-classifier . ,default-error-classifier)))
 
 (define-module (key-pool)
   #:use-module (goblins)
@@ -29,7 +47,14 @@
             ^key-pool
             make-key-pool
             pool-health
-            start-key-pool-monitor))
+            start-key-pool-monitor
+            ;; Provider profiles
+            openrouter-provider
+            openai-provider
+            generic-provider
+            ;; Building blocks for custom providers
+            bearer-auth-header
+            default-error-classifier))
 
 ;;; ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -48,6 +73,70 @@
 (define (string-downcase-contains? haystack needle)
   "Case-insensitive substring search."
   (string-contains (string-downcase haystack) needle))
+
+;;; ── Provider profiles ──────────────────────────────────────────────────────
+;;;
+;;; A provider profile is an alist with these keys:
+;;;   base-url         — string, e.g. "https://openrouter.ai/api/v1"
+;;;   auth-header-fn   — (lambda (key-string) headers-alist)
+;;;   credit-check     — #f or alist: ((endpoint . path) (parser . (lambda (json) number|#f)))
+;;;   cost-extractor   — (lambda (response-json) cost-number-or-#f)
+;;;   error-classifier — (lambda (http-code error-json error-message) health-symbol)
+;;;   name             — string, for logging and VF bridge
+
+(define (bearer-auth-header key-string)
+  `((authorization bearer ,key-string)))
+
+(define (default-error-classifier code _err-json msg)
+  "Classify errors by HTTP status code. 429 → rate-limited, else degraded."
+  (cond
+   ((eqv? code 429) 'rate-limited)
+   (else 'degraded)))
+
+(define (openrouter-provider)
+  "Provider profile for OpenRouter (https://openrouter.ai)."
+  `((name             . "openrouter")
+    (base-url         . "https://openrouter.ai/api/v1")
+    (auth-header-fn   . ,bearer-auth-header)
+    (credit-check     . ((endpoint . "/auth/key")
+                         (parser   . ,(lambda (json)
+                                        (let ((data (assoc-ref json "data")))
+                                          (and data (assoc-ref data "limit_remaining")))))))
+    (cost-extractor   . ,(lambda (json)
+                           (let ((usage (assoc-ref json "usage")))
+                             (and usage (assoc-ref usage "total_cost")))))
+    (error-classifier . ,(lambda (code _err-json msg)
+                           (cond
+                            ((and msg (string? msg)
+                                  (string-downcase-contains? msg "insufficient credits"))
+                             'depleted)
+                            ((eqv? code 429) 'rate-limited)
+                            (else 'degraded))))))
+
+(define (openai-provider)
+  "Provider profile for OpenAI (https://api.openai.com)."
+  `((name             . "openai")
+    (base-url         . "https://api.openai.com/v1")
+    (auth-header-fn   . ,bearer-auth-header)
+    (credit-check     . #f)
+    (cost-extractor   . ,(lambda (json)
+                           (let ((usage (assoc-ref json "usage")))
+                             (and usage (assoc-ref usage "total_tokens")))))
+    (error-classifier . ,default-error-classifier)))
+
+(define (generic-provider base-url)
+  "Provider profile for any HTTP API at BASE-URL.
+   Uses Bearer auth, no credit checking, tries total_cost then total_tokens
+   for cost extraction, and classifies 429 as rate-limited."
+  `((name             . "generic")
+    (base-url         . ,base-url)
+    (auth-header-fn   . ,bearer-auth-header)
+    (credit-check     . #f)
+    (cost-extractor   . ,(lambda (json)
+                           (let ((usage (assoc-ref json "usage")))
+                             (and usage (or (assoc-ref usage "total_cost")
+                                            (assoc-ref usage "total_tokens"))))))
+    (error-classifier . ,default-error-classifier)))
 
 ;;; ── <key-state> record ─────────────────────────────────────────────────────
 
@@ -120,11 +209,11 @@
 ;;; No method exposes them. Callers interact only through
 ;;; typed messages that never return the secret.
 
-(define (^api-key bcom key-string state)
+(define (^api-key bcom key-string state provider)
   ;; Create the HTTP client inline — it lives in the same vat,
   ;; captured by this closure, never returned to callers.
-  (define http-base-url "https://openrouter.ai/api/v1")
-  (define http-headers `((authorization bearer ,key-string)))
+  (define http-base-url (assoc-ref provider 'base-url))
+  (define http-headers ((assoc-ref provider 'auth-header-fn) key-string))
 
   (define (http-post-raw path body-string)
     (let ((url (string-append http-base-url path)))
@@ -183,39 +272,39 @@
    ;; ── Credit check ──
 
    [(check-credits)
-    (catch #t
-      (lambda ()
-        (call-with-values
-            (lambda () (http-get-raw "/auth/key"))
-          (lambda (response body-str)
-            (let* ((json (json-string->scm body-str))
-                   (data (assoc-ref json "data"))
-                   (credits (and data (assoc-ref data "limit_remaining"))))
-              (when credits
-                (bcom (^api-key bcom key-string
-                                (key-state-with-credits state credits))))
-              credits))))
-      (lambda (key . args)
-        #f))]
+    (let ((cc (assoc-ref provider 'credit-check)))
+      (if (not cc)
+          #f  ;; provider has no credit-check endpoint
+          (catch #t
+            (lambda ()
+              (call-with-values
+                  (lambda () (http-get-raw (assoc-ref cc 'endpoint)))
+                (lambda (response body-str)
+                  (let* ((json (json-string->scm body-str))
+                         (credits ((assoc-ref cc 'parser) json)))
+                    (when credits
+                      (bcom (^api-key bcom key-string
+                                      (key-state-with-credits state credits)
+                                      provider)))
+                    credits))))
+            (lambda (key . args)
+              #f))))]
 
    ;; ── Health reporting (called by pool after request) ──
 
    [(report-success cost)
     (let ((now (current-epoch-seconds)))
       (bcom (^api-key bcom key-string
-                      (key-state-record-success state cost now))))]
+                      (key-state-record-success state cost now)
+                      provider)))]
 
    [(report-failure error-status error-message)
     (let* ((now (current-epoch-seconds))
-           (new-health
-            (cond
-             ((and error-message
-                   (string? error-message)
-                   (string-downcase-contains? error-message "insufficient credits"))
-              'depleted)
-             (else error-status))))
+           (classifier (assoc-ref provider 'error-classifier))
+           (new-health (classifier error-status #f error-message)))
       (bcom (^api-key bcom key-string
-                      (key-state-record-failure state new-health now))))]
+                      (key-state-record-failure state new-health now)
+                      provider)))]
 
    ;; ── Auto-recovery (called by monitor) ──
 
@@ -226,16 +315,18 @@
        ;; Degraded → healthy after 5 minutes
        ((and (eq? h 'degraded) (>= age 300))
         (bcom (^api-key bcom key-string
-                        (key-state-with-health state 'healthy))))
+                        (key-state-with-health state 'healthy)
+                        provider)))
        ;; Rate-limited → healthy after 15 minutes
        ((and (eq? h 'rate-limited) (>= age 900))
         (bcom (^api-key bcom key-string
-                        (key-state-with-health state 'healthy))))
+                        (key-state-with-health state 'healthy)
+                        provider)))
        (else (values))))]))
 
 ;;; ── ^key-pool — round-robin coordinator ────────────────────────────────────
 
-(define (^key-pool bcom keys current-index)
+(define (^key-pool bcom keys current-index provider)
   ;; keys: vector of ^api-key actor references
   ;; current-index: integer (round-robin position)
 
@@ -273,25 +364,18 @@
                      (let* ((json (json-string->scm response-str))
                             (err  (assoc-ref json "error")))
                        (if err
-                           (let ((msg (or (and (pair? err)
-                                               (assoc-ref err "message"))
-                                          (if (string? err) err "")))
-                                 (code (and (pair? err)
-                                            (assoc-ref err "code"))))
-                             (cond
-                              ((and code (equal? code 429))
-                               ($ key-ref 'report-failure 'rate-limited msg))
-                              ((and (string? msg)
-                                    (string-downcase-contains?
-                                     msg "insufficient credits"))
-                               ($ key-ref 'report-failure 'depleted msg))
-                              (else
-                               ($ key-ref 'report-failure 'degraded msg)))
+                           (let* ((msg (or (and (pair? err)
+                                                (assoc-ref err "message"))
+                                           (if (string? err) err "")))
+                                  (code (and (pair? err)
+                                             (assoc-ref err "code")))
+                                  (classifier (assoc-ref provider 'error-classifier))
+                                  (health (classifier code err msg)))
+                             ($ key-ref 'report-failure health msg)
                              (error "key-pool: upstream error" msg))
                            ;; Success — extract cost if present
-                           (let* ((usage (assoc-ref json "usage"))
-                                  (cost  (and usage
-                                              (assoc-ref usage "total_cost"))))
+                           (let* ((cost-fn (assoc-ref provider 'cost-extractor))
+                                  (cost (cost-fn json)))
                              ($ key-ref 'report-success cost)
                              response-str))))
                    (lambda (key . args)
@@ -299,7 +383,7 @@
                      ($ key-ref 'report-success #f)
                      response-str))))
             ;; Advance round-robin and return the result
-            (bcom (^key-pool bcom keys new-idx)
+            (bcom (^key-pool bcom keys new-idx provider)
                   result)))))]
 
    ;; ── Key management ──
@@ -310,7 +394,7 @@
                            (cadr donor-args) #f))
            (id (key-string->id key-string))
            (st (fresh-key-state id donor-id donor-name))
-           (key-ref (spawn ^api-key key-string st))
+           (key-ref (spawn ^api-key key-string st provider))
            (new-keys (let ((v (make-vector (+ key-count 1))))
                        (let copy ((i 0))
                          (when (< i key-count)
@@ -318,7 +402,7 @@
                            (copy (+ i 1))))
                        (vector-set! v key-count key-ref)
                        v)))
-      (bcom (^key-pool bcom new-keys current-index)
+      (bcom (^key-pool bcom new-keys current-index provider)
             id))]
 
    [(remove-key target-id)
@@ -328,7 +412,7 @@
            (new-count (vector-length new-keys))
            (new-idx   (if (and (> new-count 0) (>= current-index new-count))
                           0 current-index)))
-      (bcom (^key-pool bcom new-keys new-idx)
+      (bcom (^key-pool bcom new-keys new-idx provider)
             (not (= new-count key-count))))]
 
    ;; ── Health monitor hooks ──
@@ -420,9 +504,12 @@
 
 ;;; ── make-key-pool — convenience constructor ────────────────────────────────
 
-(define* (make-key-pool vat keys-string #:key (donors '()))
+(define* (make-key-pool vat keys-string
+                        #:key (donors '())
+                              (provider (openrouter-provider)))
   "Spawn a ^key-pool in VAT from a comma-separated string of API keys.
    Optional DONORS: alist of ((key-string . ((donor-id . \"x\") (donor-name . \"y\"))) ...)
+   Optional PROVIDER: a provider profile alist (default: OpenRouter).
    Returns the pool actor reference."
   (let* ((key-strings (filter (lambda (s) (> (string-length s) 0))
                               (map string-trim-both
@@ -435,10 +522,10 @@
                           (dn  (assoc-ref donor-alist "donor-name"))
                           (id  (key-string->id ks))
                           (st  (fresh-key-state id did dn)))
-                     (spawn ^api-key ks st)))
+                     (spawn ^api-key ks st provider)))
                  key-strings))))
     (with-vat vat
-      (spawn ^key-pool (list->vector key-actors) 0))))
+      (spawn ^key-pool (list->vector key-actors) 0 provider))))
 
 ;;; ── start-key-pool-monitor — background fiber ─────────────────────────────
 

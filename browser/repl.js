@@ -151,77 +151,77 @@ window.addEventListener("load", async () => {
           }
         },
         webSocket: {
+          // OCapN-compatible WebSocket FFI — binary frames (Syrup/CapTP)
           new(url) { return new WebSocket(url); },
           close(ws) { ws.close(); },
-          send(ws, data) { ws.send(data); },
+          send(ws, data) { ws.send(data); },  // data is Uint8Array from Hoot
           setOnOpen(ws, cb) { ws.addEventListener('open', () => cb()); },
           setOnError(ws, cb) { ws.addEventListener('error', () => cb()); },
           setOnMessage(ws, cb) {
-            window.__xorgWs = ws;  // expose for speech transcription
+            ws.binaryType = 'arraybuffer';
             ws.addEventListener('message', (e) => {
-              // Intercept presence updates before Scheme handler
-              if (typeof e.data === 'string' && e.data.startsWith('(presence ')) {
-                try { window.__onlineUsers = e.data; } catch(err) {}
-              }
-              // Intercept express-ok/error responses
-              if (typeof e.data === 'string' && window.__pendingExpress) {
-                if (e.data.startsWith('(express-ok ')) {
-                  const expr = e.data.slice(13, -2);  // extract from (express-ok "...")
-                  const { resolve } = window.__pendingExpress;
-                  window.__pendingExpress = null;
-                  console.log('[express] Result:', expr);
-                  resolve(expr);
-                  return;
-                }
-                if (e.data.startsWith('(express-error ')) {
-                  console.error('[express] Error:', e.data);
-                  const { resolve } = window.__pendingExpress;
-                  window.__pendingExpress = null;
-                  resolve(null);
-                  return;
-                }
-              }
-              // Intercept transcribe responses before Scheme handler
-              if (typeof e.data === 'string' && window.__pendingTranscribe) {
-                if (e.data.startsWith('(transcribe-ok ')) {
-                  const text = e.data.slice(16, -2);  // extract string from (transcribe-ok "...")
-                  const { onResult, onEnd } = window.__pendingTranscribe;
-                  window.__pendingTranscribe = null;
-                  console.log('[speech] Relay transcript:', text);
-                  onResult(text);
-                  onEnd();
-                  return;
-                }
-                if (e.data.startsWith('(transcribe-error ')) {
-                  console.error('[speech] Relay error:', e.data);
-                  const { onEnd } = window.__pendingTranscribe;
-                  window.__pendingTranscribe = null;
-                  onEnd();
-                  return;
-                }
-              }
-              if (e.data instanceof Blob) {
-                e.data.arrayBuffer().then(buf => cb(new Uint8Array(buf)));
-              } else if (e.data instanceof ArrayBuffer) {
-                cb(new Uint8Array(e.data));
+              if (e.data instanceof ArrayBuffer) {
+                cb(e.data);
+              } else if (e.data instanceof Blob) {
+                e.data.arrayBuffer().then(buf => cb(buf));
               } else {
-                const enc = new TextEncoder();
-                cb(enc.encode(e.data));
+                // Text frame — encode to ArrayBuffer for CapTP
+                cb(new TextEncoder().encode(e.data).buffer);
               }
             });
           },
-          setOnClose(ws, cb) { ws.addEventListener('close', () => cb()); }
+          setOnClose(ws, cb) {
+            ws.addEventListener('close', (e) => cb(e.code, e.reason || ""));
+          }
+        },
+        webRTC: {
+          // WebRTC FFI — peer-to-peer DataChannel connections between browsers
+          createPeerConnection(config) {
+            return new RTCPeerConnection(JSON.parse(config));
+          },
+          createDataChannel(pc, label) {
+            return pc.createDataChannel(label, {ordered: true, protocol: 'ocapn'});
+          },
+          createOffer(pc, cb) {
+            pc.createOffer()
+              .then(o => pc.setLocalDescription(o).then(() => cb(JSON.stringify(o))));
+          },
+          createAnswer(pc, cb) {
+            pc.createAnswer()
+              .then(a => pc.setLocalDescription(a).then(() => cb(JSON.stringify(a))));
+          },
+          setRemoteDescription(pc, sdp) {
+            pc.setRemoteDescription(JSON.parse(sdp));
+          },
+          addIceCandidate(pc, candidate) {
+            pc.addIceCandidate(JSON.parse(candidate));
+          },
+          onIceCandidate(pc, cb) {
+            pc.onicecandidate = e => { if (e.candidate) cb(JSON.stringify(e.candidate)); };
+          },
+          onDataChannel(pc, cb) {
+            pc.ondatachannel = e => cb(e.channel);
+          },
+          onOpen(dc, cb) { dc.onopen = () => cb(); },
+          onMessage(dc, cb) {
+            dc.binaryType = 'arraybuffer';
+            dc.onmessage = e => cb(e.data);
+          },
+          onClose(dc, cb) { dc.onclose = () => cb(); },
+          send(dc, data) { dc.send(data); },
+          close(dc) { dc.close(); },
+          closePc(pc) { pc.close(); }
         },
         urlParams: {
           get(name) {
             return new URLSearchParams(window.location.search).get(name) || "";
           }
         },
-        relay: {
-          sendLater(ws, msg) {
-            // Send asynchronously, outside any Scheme call stack
-            setTimeout(() => { try { ws.send(msg); } catch(e) { console.error("relay send:", e); } }, 0);
-          }
+        ocapn: {
+          // OCapN bridge: Scheme registers callbacks here for JS-initiated actions.
+          // Speech/transcription flow: JS records audio → calls transcribeCallback → Scheme OCapN → result
+          setTranscribeCallback(cb) { window.__xorgTranscribe = cb; },
+          setExpressCallback(cb) { window.__xorgExpress = cb; }
         },
         localStorage: {
           getItem(key) { return localStorage.getItem(key); },
@@ -270,36 +270,37 @@ window.addEventListener("load", async () => {
                 stream.getTracks().forEach(t => t.stop());
                 const blob = new Blob(chunks, { type: 'audio/webm' });
 
-                // Try relay transcription first (donated key-pool), fall back to local Whisper
-                const ws = window.__xorgWs;
-                if (ws && ws.readyState === WebSocket.OPEN) {
-                  console.log('[speech] Sending to relay for transcription...');
+                // Try OCapN transcription (via Scheme callback), fall back to local Whisper
+                const transcribeFn = window.__xorgTranscribe;
+                if (transcribeFn) {
+                  console.log('[speech] Sending to OCapN gateway for transcription...');
                   const buf = await blob.arrayBuffer();
                   const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
 
                   if (window.__speechExpressMode) {
                     // Express mode: transcribe, then convert NL → Scheme
-                    window.__pendingTranscribe = {
-                      onResult: (transcript) => {
-                        console.log('[express] Transcript:', transcript);
-                        // Now convert NL to Scheme via relay
-                        window.__pendingExpress = {
-                          resolve: (expr) => {
-                            onResult(expr || transcript);
-                            onEnd();
-                          }
-                        };
-                        ws.send('(express "' + transcript.replace(/"/g, '\\"') + '")');
-                      },
-                      onEnd: () => {} // onEnd called after express completes
-                    };
+                    transcribeFn(b64, (transcript) => {
+                      console.log('[express] Transcript:', transcript);
+                      const expressFn = window.__xorgExpress;
+                      if (expressFn) {
+                        expressFn(transcript, (expr) => {
+                          onResult(expr || transcript);
+                          onEnd();
+                        });
+                      } else {
+                        onResult(transcript);
+                        onEnd();
+                      }
+                    });
                   } else {
-                    window.__pendingTranscribe = { onResult, onEnd };
+                    transcribeFn(b64, (result) => {
+                      onResult(result);
+                      onEnd();
+                    });
                   }
-                  ws.send('(transcribe "' + b64 + '")');
                 } else {
                   // Fallback: local Whisper WASM
-                  console.log('[speech] No relay — falling back to local Whisper...');
+                  console.log('[speech] No OCapN gateway — falling back to local Whisper...');
                   try {
                     if (!window.__whisperPipeline) {
                       const { pipeline } = await import(
@@ -309,7 +310,6 @@ window.addEventListener("load", async () => {
                         'automatic-speech-recognition', 'Xenova/whisper-tiny.en', { dtype: 'q8' }
                       );
                     }
-                    // Decode webm to float32 PCM at 16kHz
                     const audioCtx = new AudioContext({ sampleRate: 16000 });
                     const decoded = await audioCtx.decodeAudioData(await blob.arrayBuffer());
                     const pcm = decoded.getChannelData(0);
@@ -339,14 +339,11 @@ window.addEventListener("load", async () => {
           setExpressMode(mode) {
             window.__speechExpressMode = (mode === 1);
           },
-          // Send natural language to relay, get back S-expression
+          // Express natural language → Scheme via OCapN callback
           expressNL(text, onResult) {
-            const ws = window.__xorgWs;
-            if (ws && ws.readyState === WebSocket.OPEN) {
-              window.__pendingExpress = {
-                resolve: (expr) => { onResult(expr || ""); }
-              };
-              ws.send('(express "' + text.replace(/"/g, '\\"') + '")');
+            const expressFn = window.__xorgExpress;
+            if (expressFn) {
+              expressFn(text, (expr) => { onResult(expr || ""); });
             } else {
               onResult("");
             }

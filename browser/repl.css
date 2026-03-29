@@ -320,6 +320,15 @@ h1 {
     padding: 0.1rem 0.4rem;
 }
 
+/* Governed UI widgets — rendered from org's ui-widgets binding */
+.ui-widgets:not(:empty) {
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid #1a1520;
+    color: #e0ceed;
+    font-family: monospace;
+    font-size: 11pt;
+}
+
 /* Adjust main layout to accommodate code viewer */
 body:has(.code-viewer) .ide {
     margin-right: 45%;

@@ -21,7 +21,9 @@
     "and" "or" "not"
     "define" "set!"
     "begin" "do"
-    "quote" "quasiquote"))
+    "quote" "quasiquote"
+    "run*" "run" "fresh" "conde"
+    "==" "succeed" "fail" "appendo" "membero"))
 
 ;;; ── String utilities (Hoot-compatible) ─────────────────────────────────────
 

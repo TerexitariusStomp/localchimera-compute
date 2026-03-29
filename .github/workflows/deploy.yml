@@ -6,7 +6,6 @@ on:
     paths:
       - 'deploy/**'
       - 'server/**'
-      - 'module/**'
       - 'key-pool/**'
       - 'planner/**'
       - '.github/workflows/deploy.yml'
@@ -54,7 +53,7 @@ jobs:
           ssh -i ~/.ssh/deploy_key \
             -o StrictHostKeyChecking=yes \
             deploy@SERVER_IP \
-            'herd status'
+            'sudo herd status'
 
       - name: Clean up
         if: always()

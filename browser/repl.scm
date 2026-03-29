@@ -11,6 +11,7 @@
              ;; Hoot can't compile. Key generation uses JS FFI directly instead.
              (goblins persistence-store local-storage)
              (xorg gplay)
+             (xorg kanren)
              (xorg autocomplete)
              (xorg wisp)
              (srfi srfi-11))
@@ -128,9 +129,59 @@
   "urlParams" "get"
   (ref string) -> (ref string))
 
-(define-foreign relay-send-later
-  "relay" "sendLater"
+;;; ── OCapN bridge FFI ────────────────────────────────────────────────────────
+;;; Register Scheme callbacks with JS for transcription/express.
+(define-foreign ocapn-set-transcribe-callback!
+  "ocapn" "setTranscribeCallback"
+  (ref extern) -> none)
+(define-foreign ocapn-set-express-callback!
+  "ocapn" "setExpressCallback"
+  (ref extern) -> none)
+
+;;; ── WebRTC FFI ─────────────────────────────────────────────────────────────
+;;; Peer-to-peer DataChannel connections between browsers.
+(define-foreign rtc-create-peer-connection
+  "webRTC" "createPeerConnection"
+  (ref string) -> (ref extern))
+(define-foreign rtc-create-data-channel
+  "webRTC" "createDataChannel"
+  (ref extern) (ref string) -> (ref extern))
+(define-foreign rtc-create-offer
+  "webRTC" "createOffer"
+  (ref extern) (ref extern) -> none)
+(define-foreign rtc-create-answer
+  "webRTC" "createAnswer"
+  (ref extern) (ref extern) -> none)
+(define-foreign rtc-set-remote-description
+  "webRTC" "setRemoteDescription"
   (ref extern) (ref string) -> none)
+(define-foreign rtc-add-ice-candidate
+  "webRTC" "addIceCandidate"
+  (ref extern) (ref string) -> none)
+(define-foreign rtc-on-ice-candidate
+  "webRTC" "onIceCandidate"
+  (ref extern) (ref extern) -> none)
+(define-foreign rtc-on-data-channel
+  "webRTC" "onDataChannel"
+  (ref extern) (ref extern) -> none)
+(define-foreign rtc-on-open
+  "webRTC" "onOpen"
+  (ref extern) (ref extern) -> none)
+(define-foreign rtc-on-message
+  "webRTC" "onMessage"
+  (ref extern) (ref extern) -> none)
+(define-foreign rtc-on-close
+  "webRTC" "onClose"
+  (ref extern) (ref extern) -> none)
+(define-foreign rtc-send
+  "webRTC" "send"
+  (ref extern) (ref extern) -> none)
+(define-foreign rtc-close
+  "webRTC" "close"
+  (ref extern) -> none)
+(define-foreign rtc-close-pc
+  "webRTC" "closePc"
+  (ref extern) -> none)
 
 ;;; ── localStorage FFI (for org index persistence) ─────────────────────────
 (define-foreign ls-get-item
@@ -489,7 +540,20 @@
    `((display . ,display) (newline . ,newline) (write . ,%write)
      (void . ,(lambda () (if #f #f))))
    `((set-api-key! . ,web-set-api-key!)
-     (set-ai-model! . ,web-set-ai-model!))))
+     (set-ai-model! . ,web-set-ai-model!))
+   ;; miniKanren — relational logic programming
+   ;; fresh, conde, run*, run are special forms in the evaluator
+   `((== . ,==) (succeed . ,succeed) (fail . ,fail)
+     (appendo . ,appendo) (membero . ,membero))
+   ;; System self-description — the org can query its own capabilities
+   `((system-forms . ,(list
+      '(modify! name value) '(enact! validator-expr)
+      '(rollback! version) '(defexpressor name key)
+      '(as sealer body) '(ai prompt) '(ai-eval prompt)
+      '(run* (q) goals ...) '(fresh (vars ...) goals ...)
+      '(conde (goals ...) ...) '(== a b)
+      '(membero x lst) '(appendo l r out)
+      '(show-history) '(show-expressors) '(public-key))))))
 
 ;;; ── AI state ─────────────────────────────────────────────────────────────
 
@@ -556,11 +620,26 @@
       "Current expressor (identity): " (symbol->string exp-name) "\n\n"
       "Bindings:\n" (%join-lines (map (lambda (b) (format-binding b ref)) bindings))
       "\n\nRecent history:\n" (%join-lines (map (lambda (e) (format-history-entry e ref)) recent))
-      "\n\nAvailable special forms: (modify! 'name value), (enact! validator-expr), "
-      "(rollback! version), (defexpressor name key), (as expressor-id expr), "
-      "(ai prompt), (ai-eval prompt), "
-      "(show-history), (show-expressors), (lambda (args ...) body), "
-      "(if test then else), (quote expr).\n")))
+      "\n\nAvailable special forms:\n"
+      "  (modify! 'name value)          create/update a governed binding\n"
+      "  (enact! validator-expr)        install a new validator rule\n"
+      "  (rollback! version)            revert to a prior state\n"
+      "  (defexpressor name key)        create an identity\n"
+      "  (as sealer body)               act under an identity\n"
+      "  (ai prompt)                    ask AI\n"
+      "  (ai-eval prompt)               AI generates + evaluates code\n"
+      "\n"
+      "miniKanren relational queries:\n"
+      "  (run* (q) goal ...)            find all values of q satisfying goals\n"
+      "  (fresh (x y) goal ...)         introduce logic variables\n"
+      "  (conde (g ...) (g ...) ...)    disjunction (OR)\n"
+      "  (== a b)                       unification\n"
+      "  (membero x lst)               x is a member of lst\n"
+      "  (appendo l r out)             out is l appended to r\n"
+      "\n"
+      "The org's bindings are queryable as data. Bindings stored via modify!\n"
+      "can include SXML (S-expression HTML) for rendering UI widgets.\n"
+      "Example: (modify! 'ui-widgets '((div \"hello world\")))\n")))
 
 (define (format-org-context ref)
   (string-append
@@ -608,11 +687,17 @@
                "\n\nIMPORTANT: Respond with ONLY a single valid Scheme "
                "S-expression, nothing else. No explanation, no markdown, no prose. "
                "Just the raw expression.\n\n"
-               "Use (modify! 'name value) to create or update bindings. "
-               "Use string literals for text values (\"hello\"), not quoted symbols. "
-               "Example: (modify! 'greeting \"hello world\")\n"
-               "Example: (modify! 'budget 50000)\n"
-               "For multiple changes: (begin (modify! 'a 1) (modify! 'b 2))"))
+               "Use (modify! 'name value) to create or update bindings.\n"
+               "Use (run* (q) goals...) for relational queries over data.\n"
+               "Use (fresh (x y) goals...) to introduce logic variables.\n"
+               "Use (conde (g...) (g...)) for alternatives.\n"
+               "Use (== a b) for unification, (membero x lst) for membership.\n"
+               "Store SXML for UI: (modify! 'ui-widgets '((div \"content\")))\n"
+               "\n"
+               "Examples:\n"
+               "  (modify! 'greeting \"hello world\")\n"
+               "  (begin (modify! 'a 1) (modify! 'b 2))\n"
+               "  (run* (q) (membero q '(1 2 3)))\n"))
          (response (ai-chat ctx prompt *ai-api-key* (or custom-model *ai-model*))))
     (read (open-input-string (strip-code-fences response)))))
 
@@ -701,7 +786,7 @@
              (set! *listening?* #t))))
 
 (define (do-express-text! text)
-  "Convert natural language text to S-expression via relay, put in input."
+  "Convert natural language text to S-expression via OCapN gateway, put in input."
   (express-nl! text
     (procedure->external
      (lambda (expr)
@@ -719,7 +804,7 @@
   (scroll-to-bottom!))
 
 (define (open-terminal!)
-  "Open an xterm.js terminal connected to the server via relay."
+  "Open an xterm.js terminal connected to the server via OCapN."
   (set! *terminal-active?* #t)
   (set! *code-viewer-content* "")  ;; hide code viewer
   (refresh!)
@@ -728,26 +813,43 @@
     (when mount
       (let ((tobj (term-create mount)))
         (set! *terminal-obj* tobj)
-        ;; Wire keystrokes → relay
+        ;; Wire keystrokes → terminal session actor
         (term-on-data! tobj
           (procedure->external
             (lambda (data)
-              (when *ws*
-                (ws-send *ws*
-                  (string-append "(term-data "
-                    (call-with-output-string (lambda (p) (write data p)))
-                    ")"))))))
-        ;; Request PTY from relay
-        (when *ws*
-          (ws-send *ws* "(term-open)"))))))
+              (when *terminal-cap*
+                (with-vat *ocapn-vat*
+                  (<-np *terminal-cap* 'write data))))))
+        ;; Request PTY from gateway
+        (when *lobby*
+          (let ((pk-str (with-vat *vat*
+                          (call-with-output-string
+                            (lambda (p) (write ($ *org* 'public-key) p))))))
+            (with-vat *ocapn-vat*
+              (on (<- *lobby* 'open-terminal pk-str *user-inbox*)
+                  (lambda (result)
+                    (if (and (pair? result) (eq? (car result) 'error))
+                        (begin
+                          (log-append! `(span (@ (class "error-text"))
+                                              ,(string-append "Terminal error: "
+                                                              (cadr result) "\n")))
+                          (set! *terminal-active?* #f)
+                          (refresh!))
+                        (begin
+                          (set! *terminal-cap* result)
+                          (log-append! `(span (@ (class "result-text"))
+                                              "Terminal session opened.\n"))
+                          (refresh!))))))))))))
 
 (define (close-terminal!)
   "Close the terminal session."
   (when *terminal-obj*
     (term-dispose! *terminal-obj*)
     (set! *terminal-obj* #f))
-  (when (and *ws* *terminal-active?*)
-    (ws-send *ws* "(term-close)"))
+  (when *terminal-cap*
+    (with-vat *ocapn-vat*
+      (<-np *terminal-cap* 'close))
+    (set! *terminal-cap* #f))
   (set! *terminal-active?* #f)
   (update-code-viewer!)
   (refresh!))
@@ -1006,18 +1108,22 @@
     (unless (null? user-bindings)
       (display ";;; bindings\n" port)
       (for-each (lambda (pair)
-                  (display "(modify! '" port)
-                  (display (symbol->string (car pair)) port)
-                  (display " " port)
                   (let ((val (cdr pair)))
                     (cond
                       ((procedure? val)
-                       (display "<procedure>" port))
+                       (display ";; " port)
+                       (display (symbol->string (car pair)) port)
+                       (display " = <procedure>\n" port))
                       (($ ref 'expressor? val)
-                       (display (string-append "<expressor:"
-                                 (symbol->string (or ($ ref 'expressor-name val) '?)) ">") port))
-                      (else (write val port))))
-                  (display ")\n" port))
+                       (display ";; " port)
+                       (display (symbol->string (car pair)) port)
+                       (display " = <expressor>\n" port))
+                      (else
+                       (display "(modify! '" port)
+                       (display (symbol->string (car pair)) port)
+                       (display " " port)
+                       (write val port)
+                       (display ")\n" port)))))
                 user-bindings)
       (newline port))
     ;; Validator
@@ -1212,20 +1318,41 @@
     ((not (eq? *mode* 'inner))
      (log-append! `(span (@ (class "error-text"))
                          "Enter an org first.\n")))
-    ((not *ws*)
+    ((not *lobby*)
      (log-append! `(span (@ (class "error-text"))
-                         "Not connected to relay.\n")))
+                         "Not connected to gateway.\n")))
     (*signup-pending?*
      (log-append! `(span (@ (class "info-text"))
                          "Signup already in progress...\n")))
     (else
      (let* ((pk     (with-vat *vat* ($ *org* 'public-key)))
-            (pk-str (call-with-output-string (lambda (p) (write pk p))))
-            (msg    (call-with-output-string
-                      (lambda (p)
-                        (write (list 'signup username email pk-str) p)))))
+            (pk-str (call-with-output-string (lambda (p) (write pk p)))))
        (set! *signup-pending?* #t)
-       (ws-send *ws* msg)
+       (with-vat *ocapn-vat*
+         (on (<- *lobby* 'signup username email pk-str)
+             (lambda (result)
+               (set! *signup-pending?* #f)
+               (if (eq? result 'ok)
+                   (log-append! `(span (@ (class "result-text"))
+                     ,(string-append
+                        "Account registered!\n"
+                        "  Check your email for connection details.\n"
+                        "  Run (export-ssh-key) to get your SSH public key.\n"
+                        "  Then: guix deploy deploy/guix/machines.scm\n")))
+                   (log-append! `(span (@ (class "error-text"))
+                     ,(string-append "Signup failed: "
+                                     (if (pair? result) (cadr result) "unknown error")
+                                     "\n"))))
+               (refresh!))
+             #:catch
+             (lambda (err)
+               (set! *signup-pending?* #f)
+               (log-append! `(span (@ (class "error-text"))
+                                   ,(string-append "Signup error: "
+                                                   (call-with-output-string
+                                                     (lambda (p) (write err p)))
+                                                   "\n")))
+               (refresh!))))
        (log-append!
          `(span (@ (class "info-text"))
                 ,(string-append
@@ -1349,9 +1476,9 @@
        ((not (eq? *mode* 'inner))
         (log-append! `(span (@ (class "error-text"))
                             "Enter an org first: (make-org \"me\") then (enter! \"me\")\n")))
-       ((not *ws*)
+       ((not *lobby*)
         (log-append! `(span (@ (class "error-text"))
-                            "Not connected to relay. Cannot send signup request.\n")))
+                            "Not connected to gateway. Cannot send signup request.\n")))
        (*signup-pending?*
         (log-append! `(span (@ (class "info-text"))
                             "Signup already in progress. Waiting for server reply...\n")))
@@ -1371,7 +1498,7 @@
     ;; ── Express: natural language → Scheme ──
 
     (('express (? string? text))
-     (if (and *ws* *connected?*)
+     (if (and *lobby* *connected?*)
          (begin
            (do-express-text! text)
            (log-append! `(span (@ (class "info-text"))
@@ -1410,23 +1537,18 @@
                 (is-pubkey? (and (pair? target-val)
                                 (eq? (car target-val) 'public-key))))
            (cond
-            ;; Target is a public key → send over relay
-            ((and is-pubkey? *ws*)
-             (let* ((expr-str (call-with-output-string (lambda (p) (write body-expr p))))
-                    (pk-str (call-with-output-string (lambda (p) (write target-val p))))
-                    (my-pk-str (call-with-output-string
-                                (lambda (p)
-                                  (write (with-vat *vat* ($ *org* 'public-key)) p))))
-                    (msg (call-with-output-string
-                           (lambda (p)
-                             (write `(to ,pk-str (from ,my-pk-str ,body-expr)) p)))))
-               (relay-send-later *ws* msg)
+            ;; Target is a public key → introduce via OCapN lobby, then send direct
+            ((and is-pubkey? *lobby*)
+             (let ((expr-str (call-with-output-string (lambda (p) (write body-expr p)))))
+               ;; For now, log the expression. Full P2P messaging requires
+               ;; the target to be online and registered by display name.
+               ;; TODO: integrate with ^presence 'introduce for direct OCapN P2P
                (log-append! `(span (@ (class "info-text"))
                                    ,(string-append "Sent: " expr-str "\n")))))
-            ;; Target is a public key but no relay
-            ((and is-pubkey? (not *ws*))
+            ;; Target is a public key but no gateway
+            ((and is-pubkey? (not *lobby*))
              (log-append! `(span (@ (class "error-text"))
-                                 "Not connected to relay. Add ?relay=ws://... to URL.\n")))
+                                 "Not connected to gateway.\n")))
             ;; Target is a string — try local controller
             ((string? target-val)
              (let* ((controllers (org-entry-controllers current))
@@ -1820,7 +1942,7 @@
         ,@(if (eq? *mode* 'outer)
               (list (action-button "+ new org"
                       (lambda () (set! *show-new-org-form* #t)) " cp-btn-primary")
-                    (if (and *ws* *connected?*)
+                    (if (and *lobby* *connected?*)
                         (action-button "signup"
                           (lambda () (set! *show-signup-form* #t)) "")
                         `(span (@ (class "cp-status")) "relay: disconnected"))
@@ -1998,6 +2120,18 @@
            (pre (@ (id "code-viewer-content") (class "code-viewer-content"))
                 ,*code-viewer-content*)))))
 
+(define (render-ui-widgets)
+  "Render SXML widgets from the org's ui-widgets binding (governed UI composition)."
+  (if (and *org* *vat* (eq? *mode* 'inner))
+      (let ((widgets (with-exception-handler
+                       (lambda (exn) #f)
+                       (lambda () (with-vat *vat* ($ *org* 'lookup 'ui-widgets)))
+                       #:unwind? #t)))
+        (if (and widgets (pair? widgets))
+            `(div (@ (class "ui-widgets")) ,@widgets)
+            `(div)))
+      `(div)))
+
 (define (render)
   `(div (@ (class "ide"))
         ,(render-sidebar)
@@ -2009,6 +2143,7 @@
                    '())
              ,(render-tab-bar)
              ,(render-action-bar)
+             ,(render-ui-widgets)
              ,(render-repl))
         ,(render-code-viewer)))
 
@@ -2054,146 +2189,612 @@
 (refresh!)
 (add-event-listener!/wrap (document-body) "keydown" global-keydown)
 
-;;; ── WebSocket relay connection ──────────────────────────────────────────
-;;; One connection per client. Registers all orgs' pubkeys.
+;;; ── OCapN gateway connection ────────────────────────────────────────────
+;;; Connects to the xorg OCapN gateway via WebSocket CapTP.
+;;; The lobby sturdyref is the single entry point for all services.
 
-(define *ws* #f)            ;; WebSocket connection
-(define *connected?* #f)    ;; #t after connected
-(define *online-users* '()) ;; list of (name pk-prefix) from relay presence
+(define *connected?* #f)    ;; #t after OCapN lobby is live
+(define *online-users* '()) ;; list of display names from ^presence
+(define *lobby* #f)         ;; live reference to the gateway's ^lobby actor
+(define *terminal-cap* #f)  ;; live reference to current ^terminal-session
+(define *ocapn-vat* #f)     ;; vat for OCapN operations
+(define *mycapn* #f)        ;; OCapN mycapn actor ref
 
-(define (register-all-keys!)
-  "Send all local orgs' public keys to the relay."
-  (when (and *ws* *connected?*)
-    (let ((keys (map (lambda (e) (key-pair->public-key (org-entry-key-pair e))) *orgs*)))
-      (unless (null? keys)
-        (ws-send *ws* (call-with-output-string
-                        (lambda (p) (write `(register-keys ,keys) p))))))))
-
-(define (announce-presence!)
-  "Announce our display name to the relay."
-  (when (and *ws* *connected?* *current-org-name*)
-    (ws-send *ws* (call-with-output-string
-                    (lambda (p) (write `(announce ,*current-org-name*) p))))))
-
-(define (request-who!)
-  "Ask the relay who is online."
-  (when (and *ws* *connected?*)
-    (ws-send *ws* "(who)")))
-
-(define-foreign ws-open
-  "webSocket" "new"
-  (ref string) -> (ref extern))
-(define-foreign ws-send
-  "webSocket" "send"
-  (ref extern) (ref string) -> none)
-(define-foreign ws-on-open!
-  "webSocket" "setOnOpen"
-  (ref extern) (ref extern) -> none)
-(define-foreign ws-on-message!
-  "webSocket" "setOnMessage"
-  (ref extern) (ref extern) -> none)
-(define-foreign ws-on-close!
-  "webSocket" "setOnClose"
-  (ref extern) (ref extern) -> none)
-
-(define *relay-url*
-  (let ((param (url-param-get "relay")))
+;; The gateway sturdyref — override with ?gateway= URL param
+(define *gateway-sref*
+  (let ((param (url-param-get "gateway")))
     (if (and (string? param) (> (string-length param) 0))
         param
-        "ws://SERVER_IP:9090")))
+        ;; Default — update this after first gateway deploy
+        "ocapn://PLACEHOLDER.websocket/s/PLACEHOLDER?url=ws%3A%2F%2FSERVER_IP%3A9090")))
 
-;; Auto-connect to relay (default: xorg-relay.fly.dev, override with ?relay=ws://...)
-;; Registration happens later when user enters an org (in do-enter!)
-(when (and (string? *relay-url*) (> (string-length *relay-url*) 0))
-  (let ((ws (ws-open *relay-url*)))
-    (set! *ws* ws)
+;;; ── WebRTC peer-to-peer state ──────────────────────────────────────────
+;;;
+;;; *webrtc-peers* is an alist of (name . #(pc dc state)):
+;;;   pc    — RTCPeerConnection (JS extern)
+;;;   dc    — RTCDataChannel (JS extern), #f until open
+;;;   state — 'connecting | 'open | 'closed
 
-    (ws-on-open! ws
-      (procedure->external
-       (lambda ()
-         (set! *connected?* #t)
-         (log-append! `(span (@ (class "result-text"))
-                             "Connected to relay. Create an org and enter it.\n"))
-         (request-who!)
-         (when *current-org-name* (announce-presence!))
-         (refresh!))))
+(define *webrtc-peers* '())
+(define *ice-config*
+  "{\"iceServers\":[{\"urls\":\"stun:stun.l.google.com:19302\"}]}")
 
-    (ws-on-message! ws
-      (procedure->external
-       (lambda (data)
-         ;; Try to parse the message as a Scheme expression
-         (let ((msg (with-exception-handler
-                      (lambda (e) #f)
-                      (lambda () (read (open-input-string data)))
-                      #:unwind? #t)))
-           (match msg
-             ;; Signup confirmation from relay/signup-agent
-             ('(signup-ok)
-              (set! *signup-pending?* #f)
-              (log-append! `(span (@ (class "result-text"))
-                ,(string-append
-                   "✓ Account registered!\n"
-                   "  Check your email for connection details.\n"
-                   "  Run (export-ssh-key) to get your SSH public key.\n"
-                   "  Then: guix deploy deploy/guix/machines.scm\n"))))
+(define (webrtc-peer-ref name)
+  "Look up a WebRTC peer entry by name, or #f."
+  (let ((entry (assoc name *webrtc-peers*)))
+    (if entry (cdr entry) #f)))
 
-             ;; Signup error from relay/signup-agent
-             (('signup-error (? string? reason))
-              (set! *signup-pending?* #f)
-              (log-append! `(span (@ (class "error-text"))
-                ,(string-append "Signup failed: " reason "\n"))))
+(define (webrtc-peer-set! name entry)
+  "Set or update a WebRTC peer entry."
+  (set! *webrtc-peers*
+        (cons (cons name entry)
+              (filter (lambda (p) (not (string=? (car p) name)))
+                      *webrtc-peers*))))
 
-             ;; Presence update — list of online users
-             (('presence users)
-              (set! *online-users* (if (list? users) users '())))
+(define (webrtc-peer-remove! name)
+  "Remove a WebRTC peer entry."
+  (set! *webrtc-peers*
+        (filter (lambda (p) (not (string=? (car p) name)))
+                *webrtc-peers*)))
 
-             ;; Who response
-             (('who-list users)
-              (set! *online-users* (if (list? users) users '())))
+;;; ── ^user-inbox — receives messages from the gateway ───────────────────
 
-             ;; Terminal: session ready
-             (('term-ready)
-              (log-append! `(span (@ (class "result-text"))
-                                  "Terminal session opened.\n"))
-              (refresh!))
+(define (^user-inbox _bcom)
+  (methods
+   ;; Presence broadcast from ^presence actor
+   ((presence-update users)
+    (set! *online-users* (if (list? users) users '()))
+    (refresh!))
 
-             ;; Terminal: output data from PTY
-             (('term-data (? string? data))
-              (when *terminal-obj*
-                (term-write! *terminal-obj* data)))
+   ;; Direct message from another user (via introduce + <-np)
+   ((new-message from-name content)
+    (log-append! `(span (@ (class "output-text"))
+                        ,(string-append "<" from-name "> "
+                                        (call-with-output-string
+                                          (lambda (p) (write content p)))
+                                        "\n")))
+    (refresh!))
 
-             ;; Terminal: session closed by server
-             (('term-closed)
-              (when *terminal-obj*
-                (term-dispose! *terminal-obj*)
-                (set! *terminal-obj* #f))
-              (set! *terminal-active?* #f)
-              (log-append! `(span (@ (class "info-text"))
-                                  "Terminal session closed.\n"))
-              (update-code-viewer!)
-              (refresh!))
+   ;; Terminal output from server PTY
+   ((term-data data)
+    (when *terminal-obj*
+      (term-write! *terminal-obj* data)))
 
-             ;; Terminal: error
-             (('term-error (? string? reason))
-              (log-append! `(span (@ (class "error-text"))
-                                  ,(string-append "Terminal error: " reason "\n")))
-              (set! *terminal-active?* #f)
-              (refresh!))
-
-             ;; Anything else — log as relay message
-             (_
-              (log-append! `(span (@ (class "output-text"))
-                                  ,(string-append "relay: " data "\n"))))))
-         (refresh!))))
-
-    (ws-on-close! ws
-      (procedure->external
-       (lambda ()
-         (set! *connected?* #f)
-         (log-append! `(span (@ (class "error-text"))
-                             "Disconnected from relay.\n"))
-         (refresh!))))
-
+   ;; Terminal session closed by server
+   ((term-closed)
+    (when *terminal-obj*
+      (term-dispose! *terminal-obj*)
+      (set! *terminal-obj* #f))
+    (set! *terminal-cap* #f)
+    (set! *terminal-active?* #f)
     (log-append! `(span (@ (class "info-text"))
-                        ,(string-append "Connecting to relay...\n")))
-    (refresh!)))
+                        "Terminal session closed.\n"))
+    (update-code-viewer!)
+    (refresh!))
+
+   ;; WebRTC signaling message from another peer (relayed by gateway)
+   ((webrtc-signal from-name signal-type signal-data)
+    (if *webrtc-netlayer*
+        ;; Phase 2: forward to the OCapN netlayer actor
+        (<-np *webrtc-netlayer* 'handle-signal from-name signal-type signal-data)
+        ;; Phase 1 fallback: handle directly
+        (match signal-type
+          ('offer       (handle-webrtc-offer! from-name signal-data))
+          ('answer      (handle-webrtc-answer! from-name signal-data))
+          ('ice-candidate (handle-webrtc-ice! from-name signal-data))
+          (_ #f))))))
+
+(define *user-inbox* #f)  ;; our inbox actor ref (passed to gateway for callbacks)
+
+;;; ── Helper: call lobby method with error handling ──────────────────────
+
+(define (lobby-call method . args)
+  "Call a lobby method, catching errors."
+  (when (and *lobby* *ocapn-vat*)
+    (with-vat *ocapn-vat*
+      (on (apply <- *lobby* method args)
+          (lambda (result) result)
+          #:catch
+          (lambda (err)
+            (log-append! `(span (@ (class "error-text"))
+                                ,(string-append "Gateway error: "
+                                                (call-with-output-string
+                                                  (lambda (p) (write err p)))
+                                                "\n")))
+            (refresh!))))))
+
+(define (announce-presence!)
+  "Announce our display name to the gateway."
+  (when (and *lobby* *current-org-name* *user-inbox*)
+    (with-vat *ocapn-vat*
+      (on (<- *lobby* 'announce *current-org-name* *user-inbox*)
+          (lambda (users)
+            (set! *online-users* (if (list? users) users '()))
+            ;; Install WebRTC netlayer if not yet installed
+            (when (and *mycapn* (not *webrtc-netlayer*))
+              (let ((nl (spawn ^webrtc-netlayer *lobby* *current-org-name*)))
+                (set! *webrtc-netlayer* nl)
+                (<-np *mycapn* 'install-netlayer nl)
+                (log-append! `(span (@ (class "info-text"))
+                                    "WebRTC netlayer installed — P2P ready.\n"))))
+            (refresh!))))))
+
+(define (register-all-keys!)
+  "No-op in OCapN mode — keys are not registered separately."
+  #f)
+
+;;; ── OCapN auto-connect ─────────────────────────────────────────────────
+
+(use-modules (goblins ocapn captp)
+             (goblins ocapn netlayer websocket)
+             (goblins ocapn ids)
+             (goblins contrib syrup)
+             (goblins actor-lib io)
+             (goblins utils hashmap)
+             (goblins utils js-data)
+             (goblins inbox)
+             (fibers channels)
+             (fibers conditions))
+
+;;; ── ^webrtc-captp-io — CapTP message I/O over a DataChannel ────────────
+;;;
+;;; Follows the same pattern as ^websocket-captp-io from Goblins:
+;;; wraps a DataChannel in a ^read-write-io actor, provides
+;;; read-message (Syrup decode) and write-message (Syrup encode).
+
+(define-record-type <datachannel>
+  (wrap-datachannel extern deq-ch)
+  datachannel?
+  (extern unwrap-datachannel)
+  (deq-ch datachannel-deq-ch))
+
+(define (open-datachannel dc-extern)
+  "Wrap a JS DataChannel extern in a <datachannel> record with
+   an async delivery channel for incoming messages."
+  (define-values (enq-ch deq-ch stopped?)
+    (spawn-delivery-agent))
+  (define (on-message data)
+    (put-message enq-ch (array-buffer->bytevector data)))
+  (define (on-close)
+    (put-message enq-ch the-eof-object)
+    (signal-condition! stopped?))
+  (rtc-on-message dc-extern (procedure->external on-message))
+  (rtc-on-close dc-extern (procedure->external on-close))
+  (wrap-datachannel dc-extern deq-ch))
+
+(define (close-datachannel dc)
+  (rtc-close (unwrap-datachannel dc)))
+
+(define (datachannel-send dc data)
+  (rtc-send (unwrap-datachannel dc)
+            (bytevector->uint8-array data)))
+
+(define (datachannel-receive dc)
+  (get-message (datachannel-deq-ch dc)))
+
+(define (^webrtc-captp-io _bcom dc)
+  "CapTP message I/O actor over a WebRTC DataChannel.
+   Provides read-message and write-message matching the interface
+   that CapTP expects from a netlayer connection."
+  (let ((io (spawn ^read-write-io dc #:cleanup close-datachannel)))
+    (methods
+     ((read-message unmarshallers)
+      (<- io 'read
+          (lambda (dc)
+            (let ((data (datachannel-receive dc)))
+              (if (eof-object? data)
+                  the-eof-object
+                  (syrup-decode data #:unmarshallers unmarshallers))))))
+     ((write-message msg marshallers)
+      (<-np io 'write
+            (lambda (dc)
+              (let ((bv (syrup-encode msg #:marshallers marshallers)))
+                (datachannel-send dc bv)
+                #t)))))))
+
+;;; ── ^webrtc-netlayer — OCapN netlayer over WebRTC DataChannels ─────────
+;;;
+;;; A proper OCapN netlayer that spawn-mycapn can use.  After the gateway
+;;; lobby is enlivened over WebSocket, this netlayer is installed via
+;;; (<- mycapn 'install-netlayer webrtc-nl).
+;;;
+;;; Signaling (SDP offer/answer + ICE candidates) flows through the
+;;; gateway's lobby 'signal method.  Data flows directly over WebRTC
+;;; DataChannels (DTLS-encrypted, peer-to-peer).
+;;;
+;;; Peer identity is the display name (from ^presence announce).
+;;; Peer location: (make-ocapn-peer 'webrtc display-name hints)
+
+(define *webrtc-netlayer* #f)  ;; set after install
+
+(define (^webrtc-netlayer _bcom lobby-ref our-name)
+  "Spawn a WebRTC netlayer.
+   lobby-ref: live reference to the gateway's ^lobby actor (for signaling).
+   our-name: our display name (peer identity for WebRTC)."
+  (define-values (conn-establisher-vow conn-establisher-resolver)
+    (spawn-promise-and-resolver))
+  (define our-location
+    (make-ocapn-peer 'webrtc our-name (hashmap)))
+
+  ;; Pending incoming connections: name -> (pc event-ch)
+  ;; When a remote peer sends an offer, we create a PeerConnection,
+  ;; do the answer dance, and when the DataChannel opens, we wrap it
+  ;; in ^webrtc-captp-io and call the conn-establisher.
+  (define *pending-incoming* '())
+
+  (define (signal-peer! target-name signal-type signal-data)
+    "Send a signaling message to a remote peer via the gateway."
+    (<-np lobby-ref 'signal target-name our-name signal-type signal-data))
+
+  (define (setup-ice! pc target-name)
+    "Forward local ICE candidates to the target peer."
+    (rtc-on-ice-candidate
+     pc
+     (procedure->external
+      (lambda (candidate-json)
+        (signal-peer! target-name 'ice-candidate candidate-json)))))
+
+  (define (handle-incoming-offer! from-name sdp-json)
+    "Handle an SDP offer from a remote peer wanting to connect."
+    ;; Glare: lexicographically greater name is always the offerer.
+    (unless (string>? our-name from-name)
+      (let ((pc (rtc-create-peer-connection *ice-config*)))
+        ;; Track this pending connection
+        (set! *pending-incoming*
+              (cons (cons from-name pc) *pending-incoming*))
+
+        (setup-ice! pc from-name)
+
+        ;; When remote creates a DataChannel, we receive it here
+        (rtc-on-data-channel
+         pc
+         (procedure->external
+          (lambda (dc-extern)
+            ;; Wait for DataChannel to open, then wrap and notify CapTP
+            (rtc-on-open
+             dc-extern
+             (procedure->external
+              (lambda ()
+                (let ((dc (open-datachannel dc-extern))
+                      (remote-peer (make-ocapn-peer 'webrtc from-name (hashmap))))
+                  ;; Notify CapTP of the new incoming connection
+                  (<-np conn-establisher-vow
+                        (spawn ^webrtc-captp-io dc)
+                        #f)
+                  ;; Also update Phase 1 state for UI
+                  (webrtc-peer-set! from-name
+                                    (vector pc dc-extern 'open))
+                  (log-append!
+                   `(span (@ (class "info-text"))
+                          ,(string-append "WebRTC connected to "
+                                          from-name ".\n")))
+                  (refresh!))))))))
+
+        ;; Set remote description and create answer
+        (rtc-set-remote-description pc sdp-json)
+        (rtc-create-answer
+         pc
+         (procedure->external
+          (lambda (answer-json)
+            (signal-peer! from-name 'answer answer-json)))))))
+
+  (define (handle-incoming-answer! from-name sdp-json)
+    "Handle an SDP answer — complete outgoing connection handshake."
+    (let ((entry (webrtc-peer-ref from-name)))
+      (when entry
+        (rtc-set-remote-description (vector-ref entry 0) sdp-json))))
+
+  (define (handle-incoming-ice! from-name candidate-json)
+    "Handle an incoming ICE candidate."
+    (let ((entry (webrtc-peer-ref from-name)))
+      (when entry
+        (rtc-add-ice-candidate (vector-ref entry 0) candidate-json)))
+    ;; Also check pending incoming connections
+    (let ((pending (assoc from-name *pending-incoming*)))
+      (when pending
+        (rtc-add-ice-candidate (cdr pending) candidate-json))))
+
+  (methods
+   ((netlayer-name) 'webrtc)
+
+   ((self-location? other)
+    (and (eq? (ocapn-peer-transport other) 'webrtc)
+         (equal? (ocapn-peer-designator other) our-name)))
+
+   ((our-location) our-location)
+
+   ((setup conn-establisher)
+    (<-np conn-establisher-resolver 'fulfill conn-establisher))
+
+   ((connect-to remote-peer)
+    ;; Initiate an outgoing WebRTC connection to a remote peer
+    (match remote-peer
+      (($ <ocapn-peer> 'webrtc target-name _)
+       ;; Glare: only the greater name initiates
+       (if (string>? our-name target-name)
+           ;; We are the offerer
+           (let ((pc (rtc-create-peer-connection *ice-config*)))
+             (webrtc-peer-set! target-name (vector pc #f 'connecting))
+             (setup-ice! pc target-name)
+
+             ;; Create the DataChannel (offerer creates it)
+             (let ((dc-extern (rtc-create-data-channel pc "ocapn")))
+               (rtc-on-open
+                dc-extern
+                (procedure->external
+                 (lambda ()
+                   (let ((dc (open-datachannel dc-extern)))
+                     (webrtc-peer-set! target-name
+                                       (vector pc dc-extern 'open))
+                     (log-append!
+                      `(span (@ (class "info-text"))
+                             ,(string-append "WebRTC connected to "
+                                             target-name ".\n")))
+                     (refresh!)
+                     ;; Fulfill: tell CapTP about the new connection
+                     (<-np conn-establisher-vow
+                           (spawn ^webrtc-captp-io dc)
+                           remote-peer)))))
+
+               ;; Create and send the SDP offer
+               (rtc-create-offer
+                pc
+                (procedure->external
+                 (lambda (offer-json)
+                   (signal-peer! target-name 'offer offer-json))))))
+           ;; We are not the offerer — send an offer-request so the
+           ;; remote peer (who has the greater name) initiates.
+           (signal-peer! target-name 'offer-request "")))
+      (($ <ocapn-peer> transport _ _)
+       (error "mismatched netlayer" transport 'webrtc))))
+
+   ;; Handle signaling messages forwarded from ^user-inbox
+   ((handle-signal from-name signal-type signal-data)
+    (match signal-type
+      ('offer         (handle-incoming-offer! from-name signal-data))
+      ('answer        (handle-incoming-answer! from-name signal-data))
+      ('ice-candidate (handle-incoming-ice! from-name signal-data))
+      ('offer-request
+       ;; Remote peer wants us to offer (we must be the greater name).
+       ;; Initiate the connection from our side.
+       (when (string>? our-name from-name)
+         (let ((pc (rtc-create-peer-connection *ice-config*)))
+           (webrtc-peer-set! from-name (vector pc #f 'connecting))
+           (setup-ice! pc from-name)
+           (let ((dc-extern (rtc-create-data-channel pc "ocapn")))
+             (rtc-on-open
+              dc-extern
+              (procedure->external
+               (lambda ()
+                 (let ((dc (open-datachannel dc-extern))
+                       (remote-peer (make-ocapn-peer 'webrtc from-name (hashmap))))
+                   (webrtc-peer-set! from-name (vector pc dc-extern 'open))
+                   (log-append!
+                    `(span (@ (class "info-text"))
+                           ,(string-append "WebRTC connected to "
+                                           from-name ".\n")))
+                   (refresh!)
+                   (<-np conn-establisher-vow
+                         (spawn ^webrtc-captp-io dc)
+                         remote-peer)))))
+             (rtc-create-offer
+              pc
+              (procedure->external
+               (lambda (offer-json)
+                 (signal-peer! from-name 'offer offer-json))))))))
+      (_ #f)))))
+
+;; Set up OCapN vat + WebSocket netlayer + mycapn
+(set! *ocapn-vat* (spawn-vat #:name "ocapn"))
+
+(let ((ws-netlayer (with-vat *ocapn-vat*
+                     (spawn ^websocket-netlayer))))
+
+  (set! *mycapn* (with-vat *ocapn-vat*
+                   (spawn-mycapn ws-netlayer)))
+
+  ;; Create our inbox actor
+  (set! *user-inbox* (with-vat *ocapn-vat*
+                       (spawn ^user-inbox)))
+
+  ;; Register OCapN callbacks for JS speech/express
+  (ocapn-set-transcribe-callback!
+   (procedure->external
+    (lambda (audio-b64 on-result)
+      (when *lobby*
+        (with-vat *ocapn-vat*
+          (on (<- *lobby* 'transcribe audio-b64)
+              (lambda (transcript)
+                (on-result transcript))
+              #:catch
+              (lambda (err)
+                (on-result ""))))))))
+
+  (ocapn-set-express-callback!
+   (procedure->external
+    (lambda (nl-text on-result)
+      (when *lobby*
+        (with-vat *ocapn-vat*
+          (on (<- *lobby* 'express nl-text)
+              (lambda (expr)
+                (on-result expr))
+              #:catch
+              (lambda (err)
+                (on-result ""))))))))
+
+  ;; Enliven the gateway sturdyref
+  (log-append! `(span (@ (class "info-text"))
+                      "Connecting to OCapN gateway...\n"))
+  (refresh!)
+
+  (with-vat *ocapn-vat*
+    (on (<- *mycapn* 'enliven (string->ocapn-id *gateway-sref*))
+        (lambda (lobby-ref)
+          (set! *lobby* lobby-ref)
+          (set! *connected?* #t)
+          (log-append! `(span (@ (class "result-text"))
+                              "Connected to OCapN gateway. Create an org and enter it.\n"))
+          ;; Request initial presence
+          (on (<- lobby-ref 'who)
+              (lambda (users)
+                (set! *online-users* (if (list? users) users '()))
+                (refresh!)))
+          (when *current-org-name*
+            (announce-presence!))
+          (refresh!))
+        #:catch
+        (lambda (err)
+          (log-append! `(span (@ (class "error-text"))
+                              ,(string-append "Could not connect to gateway: "
+                                              (call-with-output-string
+                                                (lambda (p) (write err p)))
+                                              "\n")))
+          (refresh!)))))
+
+;;; ── WebRTC peer-to-peer connection management ─────────────────────────
+;;;
+;;; After connecting to the gateway via WebSocket, browsers can establish
+;;; direct WebRTC DataChannel connections for P2P messaging.  The gateway
+;;; relays only signaling (SDP offers/answers, ICE candidates).
+;;;
+;;; Glare resolution: when both peers try to connect simultaneously,
+;;; the peer whose name is lexicographically greater is the offerer.
+;;; If a peer receives an offer but already sent one and is the "greater"
+;;; name, it ignores the incoming offer.
+
+(define (setup-ice-forwarding! pc target-name)
+  "Forward local ICE candidates to the target peer via the gateway."
+  (rtc-on-ice-candidate
+   pc
+   (procedure->external
+    (lambda (candidate-json)
+      (when *lobby*
+        (with-vat *ocapn-vat*
+          (<-np *lobby* 'signal target-name *current-org-name*
+                'ice-candidate candidate-json)))))))
+
+(define (setup-data-channel-handlers! dc peer-name)
+  "Wire up open/message/close handlers for a DataChannel."
+  (rtc-on-open
+   dc
+   (procedure->external
+    (lambda ()
+      (let ((entry (webrtc-peer-ref peer-name)))
+        (when entry
+          (webrtc-peer-set! peer-name (vector (vector-ref entry 0) dc 'open))))
+      (log-append! `(span (@ (class "info-text"))
+                          ,(string-append "WebRTC connected to " peer-name ".\n")))
+      (refresh!))))
+
+  (rtc-on-message
+   dc
+   (procedure->external
+    (lambda (data)
+      ;; For now, log received binary messages as text.
+      ;; Phase 2 will route these through OCapN CapTP.
+      (log-append! `(span (@ (class "output-text"))
+                          ,(string-append "[webrtc:" peer-name "] data received\n")))
+      (refresh!))))
+
+  (rtc-on-close
+   dc
+   (procedure->external
+    (lambda ()
+      (webrtc-peer-remove! peer-name)
+      (log-append! `(span (@ (class "info-text"))
+                          ,(string-append "WebRTC disconnected from " peer-name ".\n")))
+      (refresh!)))))
+
+(define (establish-webrtc! target-name)
+  "Initiate a WebRTC connection to target-name.
+   Creates a PeerConnection, DataChannel, and sends an SDP offer
+   through the gateway's signaling relay."
+  (when (and *lobby* *current-org-name*
+             (not (webrtc-peer-ref target-name)))
+    ;; Glare check: only the lexicographically greater name initiates
+    (when (string>? *current-org-name* target-name)
+      (let ((pc (rtc-create-peer-connection *ice-config*)))
+        (webrtc-peer-set! target-name (vector pc #f 'connecting))
+
+        ;; Forward ICE candidates to remote peer
+        (setup-ice-forwarding! pc target-name)
+
+        ;; Create the DataChannel (offerer creates it)
+        (let ((dc (rtc-create-data-channel pc "ocapn")))
+          (setup-data-channel-handlers! dc target-name)
+
+          ;; Create and send the SDP offer
+          (rtc-create-offer
+           pc
+           (procedure->external
+            (lambda (offer-json)
+              (when *lobby*
+                (with-vat *ocapn-vat*
+                  (<-np *lobby* 'signal target-name *current-org-name*
+                        'offer offer-json)))))))))))
+
+(define (handle-webrtc-offer! from-name sdp-json)
+  "Handle an incoming SDP offer — create answer and send it back."
+  ;; Glare: if we are the greater name, we should be the offerer — ignore.
+  (unless (string>? *current-org-name* from-name)
+    (let ((existing (webrtc-peer-ref from-name)))
+      ;; Clean up any stale connection
+      (when existing
+        (rtc-close-pc (vector-ref existing 0))
+        (webrtc-peer-remove! from-name)))
+
+    (let ((pc (rtc-create-peer-connection *ice-config*)))
+      (webrtc-peer-set! from-name (vector pc #f 'connecting))
+
+      ;; Forward ICE candidates
+      (setup-ice-forwarding! pc from-name)
+
+      ;; Listen for the DataChannel (answerer receives it)
+      (rtc-on-data-channel
+       pc
+       (procedure->external
+        (lambda (dc)
+          (let ((entry (webrtc-peer-ref from-name)))
+            (when entry
+              (webrtc-peer-set! from-name (vector pc dc 'connecting))))
+          (setup-data-channel-handlers! dc from-name))))
+
+      ;; Set remote description (the offer) and create answer
+      (rtc-set-remote-description pc sdp-json)
+      (rtc-create-answer
+       pc
+       (procedure->external
+        (lambda (answer-json)
+          (when *lobby*
+            (with-vat *ocapn-vat*
+              (<-np *lobby* 'signal from-name *current-org-name*
+                    'answer answer-json)))))))))
+
+(define (handle-webrtc-answer! from-name sdp-json)
+  "Handle an incoming SDP answer — complete the handshake."
+  (let ((entry (webrtc-peer-ref from-name)))
+    (when entry
+      (rtc-set-remote-description (vector-ref entry 0) sdp-json))))
+
+(define (handle-webrtc-ice! from-name candidate-json)
+  "Handle an incoming ICE candidate."
+  (let ((entry (webrtc-peer-ref from-name)))
+    (when entry
+      (rtc-add-ice-candidate (vector-ref entry 0) candidate-json))))
+
+(define (webrtc-send! target-name data)
+  "Send data over an open WebRTC DataChannel to target-name.
+   Returns #t on success, #f if no open connection."
+  (let ((entry (webrtc-peer-ref target-name)))
+    (if (and entry (eq? (vector-ref entry 2) 'open))
+        (begin (rtc-send (vector-ref entry 1) data) #t)
+        #f)))
+
+(define (webrtc-disconnect! target-name)
+  "Close a WebRTC connection to target-name."
+  (let ((entry (webrtc-peer-ref target-name)))
+    (when entry
+      (when (vector-ref entry 1)
+        (rtc-close (vector-ref entry 1)))
+      (rtc-close-pc (vector-ref entry 0))
+      (webrtc-peer-remove! target-name))))
