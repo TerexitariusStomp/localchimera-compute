@@ -3,7 +3,18 @@ name: Deploy to Hetzner
 on:
   push:
     branches: [main]
+    paths:
+      - 'deploy/**'
+      - 'server/**'
+      - 'module/**'
+      - 'key-pool/**'
+      - 'planner/**'
+      - '.github/workflows/deploy.yml'
   workflow_dispatch:
+
+concurrency:
+  group: deploy-hetzner
+  cancel-in-progress: false   # don't cancel a running deploy, just queue
 
 jobs:
   deploy:
