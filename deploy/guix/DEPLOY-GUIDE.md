@@ -257,6 +257,50 @@ Until then, use `bootstrap-hetzner.sh` + `managed-host-environment-type`.
 
 ---
 
+## Claude Code CLI
+
+Claude Code is a Node.js CLI. `node` is in the system packages, so after
+deploy it's available system-wide.
+
+### Install (reproducible)
+
+Pin the version so every machine gets the same binary:
+
+```bash
+# One-time: set up a persistent npm prefix (Guix has no writable /usr/lib)
+echo 'export NPM_CONFIG_PREFIX="$HOME/.npm-global"' >> ~/.bashrc
+echo 'export PATH="$HOME/.npm-global/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+
+# Install a pinned version
+npm install -g @anthropic-ai/claude-code@2.1.87
+
+# Verify
+claude --version
+```
+
+Update the version here when upgrading. To check for new releases:
+
+```bash
+npm view @anthropic-ai/claude-code versions --json | tail -5
+```
+
+### Per-user
+
+Works for any user on the server (`deploy`, `playnet`, etc.) and on a local
+Guix workstation (run `guix install node` first if node isn't in your profile).
+
+### Container fallback
+
+If native binary linking fails (rare), use a container shell:
+
+```bash
+guix shell --container --network --share=$HOME node -- bash
+npm install -g @anthropic-ai/claude-code@2.1.87
+```
+
+---
+
 ## Reticulum (mesh networking)
 
 Goblins actors can be reached over [Reticulum](https://reticulum.network/)

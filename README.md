@@ -1,14 +1,58 @@
 # xorg
 
-_Express and Experiment with Organization._
+_A self-evolving commons computer written entirely in Guile Scheme._
 
 ---
 
-**xorg** is a way of thinking about organization — expressing it, experimenting with it, and transforming it. It is not any particular organizational form. It is the practice of making organization _expressible_.
+**xorg** is a computer environment where pushing to `main` can redeploy the entire operating system. Everything from the browser interface to the kernel configuration is a Scheme expression. Object capability security comes from the lambda calculus itself — if you hold the reference, you have the authority; if you don't, you don't. The system runs in the browser (Hoot/WASM), on the desktop (native Guile), and on the server (Guix System), connected by mesh networking that works over LoRa radio, serial wire, I2P, TCP, or packet radio.
 
-This repository explores xorg in the domain of computable interpreters: an org expressed as a Lisp environment, built on [Spritely Goblins](https://spritely.institute) and [Guile Scheme](https://www.gnu.org/software/guile/). Here, the question becomes: what if an organization were an interpreter — and the people in it were expressions that could rewrite it?
+There is no gap between the system and its description. The organization's rules, state, and history are all S-expressions — the same representation the evaluator consumes. This is what makes the system self-reflective: it can inspect its own evolution, rollback to a prior state, and rewrite its own governance, using the same language it was built in.
 
-The system is **homoiconic**: the organization's rules, state, and history are all S-expressions — the same representation the evaluator consumes. There is no gap between the org and its description. History entries are the original S-expressions that produced each state transition. This is what makes the org **self-reflective**: it can inspect its own evolution and rollback to restore a prior state, using the same language it was built in.
+## Try it
+
+Visit the [browser REPL](https://interplaynetary.github.io/xorg/) — no install needed.
+
+```
+xorg> (make-org "my-org")
+Created org: my-org
+
+xorg> (enter! "my-org")
+Entering org.
+
+play> (define greeting "hello world")
+play> greeting
+=> "hello world"
+
+play> (signup! "alice" "alice@example.com")
+Sending signup request...
+Account registered! ssh alice@SERVER_IP
+```
+
+Create an org. Write Scheme. Register an account. Get SSH access to a Guix System machine — all from the browser REPL.
+
+## The stack
+
+```
+Browser (Hoot/WASM)          Server (Guix System)
+├─ Metacircular evaluator    ├─ Native Guile + Goblins
+├─ Virtual DOM REPL          ├─ WebSocket relay + signup
+├─ Ed25519 key management    ├─ Shepherd services
+└─ Compiles to repl.wasm     ├─ MQTT event bridge
+                             ├─ Reticulum mesh networking
+  ←── OCapN (capability      └─ guix deploy = OS reconfiguration
+       network) ──→
+```
+
+Every layer is Guile Scheme. Every connection is capability-secured.
+
+## Properties
+
+- **Declarative OS.** `deploy/guix/machines.scm` defines the entire server — bootloader, kernel, users, packages, services. Push to `main` triggers `guix deploy` via GitHub Actions. The operating system is a Scheme expression that evolves with the codebase.
+- **Object capability security.** [Spritely Goblins](https://spritely.institute/goblins/) actors with unforgeable references. No ACLs, no permission tables. Possession of a reference IS authorization. Attenuation via `^facet`, revocation via `^cell` flip, accountability via `^logger`.
+- **Mesh networking.** [Reticulum](https://reticulum.network/) transport layer — the same OCapN sturdyref works over TCP, LoRa radio (1-20km), serial wire, I2P (anonymous), or packet radio. An actor on a LoRa node in a field can hold a capability ref to an actor on the server.
+- **End-to-end encryption.** Curve25519 for Reticulum transport, Ed25519 for actor identity and SSH credentials. Keys are generated in the browser; the private key never leaves the client.
+- **Homoiconic governance.** Rules, state, and history are S-expressions. The evaluator consumes the same representation it produces. An org can inspect its own evolution and rollback to any prior state.
+- **Self-service signup.** Users register through the browser REPL. The signup flow provisions a Linux account on the Guix machine via the relay → `^signup-agent` → `guix deploy` pipeline.
 
 ## Architecture
 
@@ -25,29 +69,48 @@ On native Guile + Goblins, xorg is not a library — it's a **pattern**. Every p
 | Networking | OCapN — actors across machines |
 | Mesh networking | [Reticulum](https://reticulum.network/) — LoRa, serial, I2P, TCP, packet radio |
 
-Goblins actors are reachable over **any transport Reticulum supports**: TCP, LoRa radio, serial links, I2P, packet radio. The same sturdyref works whether the message crosses the internet or travels over radio waves.
-
-On the server, you just use Goblins directly. xorg code is needed only for **Hoot/WASM** (browser), where Guile's `eval` and module system aren't available.
-
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the full explanation.
 
 ### Code structure
 
 ```
 module/xorg/
-  actors.scm       — ^org, ^logger, proxy pair (works everywhere)
-  evaluator.scm    — metacircular eval (Hoot/WASM only)
-  repl.scm         — factories + inner REPL (Hoot convenience)
-  kanren.scm       — miniKanren (standalone)
-  hyperarc.scm     — metagraphs (standalone)
-  knowledge.scm    — relational queries (standalone)
+  actors.scm         — ^org, ^logger, proxy pair (governance kernel)
+  evaluator.scm      — metacircular eval (Hoot/WASM only)
+  repl.scm           — org factories + inner REPL
+  kanren.scm         — miniKanren logic programming
+  hyperarc.scm       — metagraph data structures
+  knowledge.scm      — relational queries over knowledge bases
+
+browser/
+  repl.scm           — browser REPL (compiles to WASM via Hoot)
+  index.html          — web shell
+  repl.js / repl.css  — JS host + styling
+
+server/
+  relay.scm           — WebSocket message relay
+  signup-agent.scm    — self-service account registration actor
+  reticulum-bridge.py — Reticulum mesh networking bridge
+
+planner/
+  lib/                — ValueFlows economic planning engine (20+ algorithms)
+
+key-pool/
+  key-pool.scm        — capability-secure API key management
+
+deploy/guix/
+  machines.scm        — the operating system declaration
+  xorg-service.scm    — Shepherd service type for org processes
+  users.scm           — dynamically provisioned user accounts
+  provision-user.scm  — enrollment script
+  channels.scm        — pinned Guix commit for reproducibility
 ```
 
 ## Core Concepts
 
 ### State
 
-An org is a Goblins actor with bindings — an alist of `(name . value)` pairs. Mutation happens via `bcom`: the actor becomes a new version of itself with updated bindings. The previous state is not destroyed — Goblins' transactional model preserves it within the turn.
+An org is a Goblins actor with bindings — an alist of `(name . value)` pairs. Mutation happens via `bcom`: the actor becomes a new version of itself with updated bindings.
 
 ```scheme
 (define-actor (^org bcom bindings)
@@ -62,86 +125,36 @@ An org is a Goblins actor with bindings — an alist of `(name . value)` pairs. 
 
 Following the [Heart of Spritely](https://spritely.institute/static/papers/spritely-core.html) (§3.3.4), accountability is **compositional** — it wraps the org, not built into it.
 
-A `^logger` accumulates log entries. A `spawn-logged-revocable-proxy-pair` wraps any object in a proxy that logs every call and can be revoked. The proxy IS the identity.
-
 ```scheme
 (define log (spawn ^logger))
 (define-values (infra-ref infra-revoked?)
   (spawn-logged-revocable-proxy-pair 'infrastructure org log))
 
-;; infra-ref logs every call — accountability is automatic
-($ infra-ref 'modify! 'deploy "my-cap")
-
-;; Check the log
-($ log 'get-log)
-;; => ((*entry* user infrastructure args (modify! deploy "my-cap") snapshot ...))
-
-;; Revoke access — one cell flip
-($ infra-revoked? #t)
-;; infra-ref is now dead
-```
-
-### Attenuation
-
-Goblins' `^facet` creates a read-only view by exposing only certain methods:
-
-```scheme
-(define read-ref (facet org 'lookup 'bindings 'snapshot))
-;; read-ref can read but not modify — structurally enforced
+($ infra-ref 'modify! 'deploy "my-cap")  ;; logged automatically
+($ infra-revoked? #t)                     ;; access revoked — one cell flip
 ```
 
 ### Governed Orgs
 
-`make-governed-org` wires these patterns together:
+`make-governed-org` wires state + accountability + attenuation + revocation together:
 
 ```scheme
 (define-values (vat read log gov gov-r infra infra-r member member-r)
   (make-governed-org "commune"))
-
-;; gov, infra, member: logged revocable proxies (each with their own identity)
-;; gov-r, infra-r, member-r: revocation cells (flip to #t to cut access)
-;; read: ^facet — can only lookup, no mutation
-;; log: ^logger — the accountability record
+;; gov, infra, member: logged revocable proxies
+;; gov-r, infra-r, member-r: revocation cells
+;; read: read-only facet
+;; log: the accountability record
 ```
-
-### Rollback
-
-Rollback restores bindings from a snapshot stored in the log. Each log entry captures the org's state at that point. To rollback: find the entry, extract the snapshot, call `restore!`.
-
-## The Evaluator (Hoot/WASM)
-
-In the browser, Guile's `eval` isn't available. xorg provides a metacircular evaluator — a Scheme interpreter written in Scheme. On native Guile, use `(eval expr module)` instead.
-
-`evaluate` understands:
-
-| Form | Effect |
-|---|---|
-| `#t`, `#f`, numbers, strings | Self-evaluating literals |
-| `(quote x)` | Returns `x` unevaluated |
-| `(if test then else)` | Conditional |
-| `(begin body ...)` | Sequence |
-| `(let ...)`, `(let* ...)`, `(letrec ...)` | Bindings |
-| `(let name (...) body)` | Named let — loop |
-| `(lambda (args) body)` | Closure |
-| `(define name value)` | Bind in the org |
-| `(modify! name value)` | Explicit binding mutation |
-| `(rollback! index)` | Restore snapshot from log |
-| `(cond ...)`, `(case ...)` | Multi-branch |
-| `(and ...)`, `(or ...)` | Short-circuit boolean |
-| `(when ...)`, `(unless ...)` | Conditional execution |
-| `(do ...)` | Iteration |
-| `(f args ...)` | Application |
 
 ## Networking
 
-Goblins actors communicate via OCapN (Object Capability Network) over multiple transports:
+Goblins actors communicate via OCapN over multiple transports:
 
-- **Tor Onion Services** — anonymous, peer-to-peer
-- **TCP + TLS** — direct encrypted connections
 - **WebSocket** — browser-to-server (Hoot/WASM)
+- **TCP + TLS** — direct encrypted connections
+- **Tor Onion Services** — anonymous, peer-to-peer
 - **Reticulum** — mesh networking over LoRa, serial, I2P, packet radio, TCP
-
-The Reticulum netlayer means Goblins actors are reachable over **radio, serial wire, anonymous networks, and the open internet** — all through the same OCapN sturdyref. An actor on a LoRa node in a field can hold a capability ref to an actor on a Hetzner server. The call looks the same:
 
 ```scheme
 (on (<- remote-greeter "Bob")
@@ -149,7 +162,7 @@ The Reticulum netlayer means Goblins actors are reachable over **radio, serial w
 ;; => "Hello Bob, welcome to the Reticulum mesh!"
 ```
 
-The transport is invisible. The capability security is preserved end-to-end. Reticulum handles routing and encryption (Curve25519). OCapN handles object references and garbage collection.
+The transport is invisible. Capability security is preserved end-to-end.
 
 ## How to Run
 
@@ -160,68 +173,34 @@ GNU Guile 3.0+, Guile Goblins 0.17.0+. For browser: Guile Hoot 0.7.0+ and a rece
 ### Setup with Guix
 
 ```bash
-guix shell -m manifest.scm
+guix shell -m manifest.scm    # transient shell with all dependencies
+# or
+guix package -m manifest.scm  # install into profile
 ```
 
-### Native Guile REPL
+### Run
 
 ```bash
-make repl         # full REPL with Goblins actors
+make repl                          # native Guile REPL with Goblins
+make serve                         # browser REPL at http://localhost:8088
+guile -L module server/relay.scm   # WebSocket relay on port 9090
+make test-all                      # all tests
 ```
 
-### Browser REPL (Hoot/WASM)
+### Deploy
 
 ```bash
-make          # compiles browser/repl.scm to WebAssembly
-make serve    # starts web server at http://localhost:8088
+./deploy/guix/bootstrap-hetzner.sh              # first time: provision server
+guix deploy -L deploy/guix deploy/guix/machines.scm  # reconfigure OS
 ```
 
-### Deploy to Hetzner Cloud
+Or push to `main` — GitHub Actions runs `guix deploy` automatically.
 
-```bash
-./deploy/guix/bootstrap-hetzner.sh    # first time: provision server
-guix deploy deploy/guix/machines.scm  # reconfigure
-```
+See `deploy/guix/DEPLOY-GUIDE.md` for the full guide.
 
-See `deploy/guix/DEPLOY-GUIDE.md` for details.
+### Learning Goblins
 
-### Run tests
-
-```bash
-make test-all     # all tests
-```
-
-## REPL Tutorial (Browser)
-
-Visit `http://localhost:8088` after `make serve`.
-
-```
-xorg> (make-org "alpha")
-Created org: alpha
-
-xorg> (enter! "alpha")
-Entering org.
-
-play> (define greeting "hello world")
-play> greeting
-=> "hello world"
-
-play> (define (square x) (* x x))
-play> (square 7)
-=> 49
-
-play> (modify! 'proposal "fund the commons")
-
-play> ,log
-  [genesis] (modify! proposal "fund the commons")
-  [genesis] (modify! greeting "hello world")
-
-play> (rollback! 0)
-play> greeting
-=> "hello world"
-play> proposal
-error: Variable unbound: proposal
-```
+The best starting point is the [Heart of Spritely](https://spritely.institute/static/papers/spritely-core.html) paper — it covers the capability patterns that xorg maps onto directly.
 
 ## What This Is Not
 
@@ -240,10 +219,10 @@ What emerges from that is up to the expressors.
 - [Reticulum](https://reticulum.network/) — mesh networking (LoRa, serial, I2P, TCP, packet radio)
 - [Eclipse Mosquitto](https://mosquitto.org/) — MQTT broker for event bridging
 - [Heart of Spritely](https://spritely.institute/static/papers/spritely-core.html) — the capability patterns this follows
-- [Claude Code](https://claude.ai/claude-code) — AI pair programming (infrastructure, MQTT bridge, planner)
+- [Claude Code](https://claude.ai/claude-code) — AI pair programming
 
 ## License
 
-[AGPL-3.0](LICENSE)
+[AGPL-3.0](LICENSE.md)
 
 ![alt text](image.png)

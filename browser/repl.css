@@ -312,6 +312,128 @@ body:has(.code-viewer) .ide {
     margin-right: 45%;
 }
 
+/* ── Control Panel ───────────────────────────────────────────────────── */
+
+.action-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.75rem;
+    border-bottom: 1px solid #2a2230;
+    background-color: #0d0b0f;
+    font-family: monospace;
+    font-size: 10pt;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
+.cp-btn {
+    padding: 0.2rem 0.6rem;
+    color: #b8a8c8;
+    background-color: #1a1520;
+    border: 1px solid #2a2230;
+    border-radius: 3px;
+    cursor: pointer;
+    user-select: none;
+    font-family: monospace;
+    font-size: 10pt;
+    white-space: nowrap;
+}
+.cp-btn:hover {
+    color: #e0ceed;
+    background-color: #1e1828;
+    border-color: #3a3240;
+}
+
+.cp-btn-primary {
+    color: #a8e6cf;
+    border-color: #2a4a3a;
+}
+.cp-btn-primary:hover {
+    background-color: #1a2a22;
+    border-color: #3a6a4a;
+}
+
+.cp-btn-danger {
+    color: #ff6b6b;
+    border-color: #4a2a2a;
+}
+.cp-btn-danger:hover {
+    background-color: #2a1a1a;
+    border-color: #6a3a3a;
+}
+
+.cp-action {
+    color: #8b7b96;
+    cursor: pointer;
+    padding: 0.25rem 0.75rem;
+    font-family: monospace;
+    font-size: 10pt;
+}
+.cp-action:hover {
+    color: #a8e6cf;
+}
+
+.cp-form {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #1a1520;
+}
+
+.cp-input {
+    width: calc(100% - 1rem);
+    padding: 0.3rem 0.5rem;
+    margin-bottom: 0.4rem;
+    color: #e0ceed;
+    background-color: #110e13;
+    border: 1px solid #2a2230;
+    border-radius: 3px;
+    font-family: monospace;
+    font-size: 10pt;
+    outline: none;
+    box-sizing: border-box;
+}
+.cp-input:focus {
+    border-color: #a8e6cf;
+    box-shadow: 0 0 4px rgba(168, 230, 207, 0.1);
+}
+.cp-input::placeholder {
+    color: #4a4450;
+}
+
+.cp-btn-row {
+    display: flex;
+    gap: 0.4rem;
+    margin-top: 0.3rem;
+}
+
+.cp-status {
+    color: #8b7b96;
+    font-size: 9pt;
+    margin-left: auto;
+    font-family: monospace;
+}
+.cp-status-connected {
+    color: #a8e6cf;
+}
+.cp-status-disconnected {
+    color: #ff6b6b;
+}
+
+.inspector-actions {
+    padding: 0.4rem 0.75rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    border-bottom: 1px solid #1a1520;
+}
+
+.cp-confirm {
+    color: #ff6b6b;
+    font-size: 10pt;
+    font-family: monospace;
+    padding: 0.2rem 0.4rem;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .sidebar { width: 0; border-right: none; overflow: hidden; }

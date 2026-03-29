@@ -261,7 +261,7 @@
                  ((? attr-value?)
                   (remove-attribute! node name-str))
                  ((? procedure?)
-                  (remove-event-listener! node name-str val))))
+                  (remove-event-listener!/wrap node name-str val))))
               (_ #t))))))
      old-attrs))
   (let ((walker (make-tree-walker root)))
@@ -553,6 +553,12 @@
 (define *sidebar-collapsed* #f)
 (define *sidebar-selected-org* #f)   ;; string or #f
 (define *expressor-filter* #f)       ;; symbol or #f — filter history by expressor name
+
+;; Control panel state
+(define *show-new-org-form* #f)
+(define *show-signup-form* #f)
+(define *confirm-delete-org* #f)     ;; org name string or #f
+(define *show-join-form* #f)
 
 (define (org-entry-name e) (list-ref e 0))
 (define (org-entry-vat e) (list-ref e 1))
@@ -919,31 +925,166 @@
       ;; Clear code viewer when exiting org
       (set! *code-viewer-content* ""))))
 
+;;; ── Extracted command procedures (callable from REPL and UI) ─────────────
+
+(define (do-make-org! name)
+  (if (org-lookup name)
+      (log-append! `(span (@ (class "error-text"))
+                          ,(string-append "Org already exists: " name "\n")))
+      (let* ((kp (generate-key-pair))
+             (pk (key-pair->public-key kp))
+             (store (make-local-storage-store (string-append "xorg-" name))))
+        (receive (vat org inbox incanter refs)
+          (make-persistent-org name base-bindings store
+                               #:public-key pk
+                               #:persistence-registry *persistence-registry*)
+          (let ((pk-display (let ((p (open-output-string)))
+                              (write pk p)
+                              (let ((s (get-output-string p)))
+                                (if (> (string-length s) 50)
+                                    (string-append (substring s 0 50) "...")
+                                    s)))))
+            (set! *orgs* (cons (list name vat org inbox incanter kp refs) *orgs*))
+            (set! *sidebar-selected-org* name)
+            (save-key-pair name kp)
+            (save-org-index!)
+            (log-append! `(span (@ (class "result-text"))
+                                ,(string-append "Created org: " name "\n  key: " pk-display "\n"))))))))
+
+(define (do-delete-org! name)
+  (if (org-lookup name)
+      (begin
+        (when (and *current-org-name* (string=? name *current-org-name*)) (do-exit!))
+        (set! *orgs* (let loop ((lst *orgs*))
+          (cond ((null? lst) '())
+                ((string=? (caar lst) name) (loop (cdr lst)))
+                (else (cons (car lst) (loop (cdr lst)))))))
+        (when (and *sidebar-selected-org* (string=? name *sidebar-selected-org*))
+          (set! *sidebar-selected-org* #f))
+        (ls-remove-item (string-append "xorg-" name))
+        (delete-key-pair name)
+        (save-org-index!)
+        (log-append! `(span (@ (class "result-text")) ,(string-append "Deleted org: " name "\n"))))
+      (log-append! `(span (@ (class "error-text")) ,(string-append "Unknown org: " name "\n")))))
+
+(define (do-export-ssh-key!)
+  (if (not (eq? *mode* 'inner))
+      (log-append! `(span (@ (class "error-text")) "Enter an org first.\n"))
+      (let* ((pk (with-vat *vat* ($ *org* 'public-key)))
+             (pk-str (call-with-output-string (lambda (p) (write pk p)))))
+        (log-append!
+          `(span (@ (class "result-text"))
+                 ,(string-append
+                    "Your xorg public key (use this as your SSH public key):\n"
+                    "  " pk-str "\n\n"
+                    "Paste it during (signup!) or send it to an administrator.\n"))))))
+
+(define (do-signup! username email)
+  (cond
+    ((not (eq? *mode* 'inner))
+     (log-append! `(span (@ (class "error-text"))
+                         "Enter an org first.\n")))
+    ((not *ws*)
+     (log-append! `(span (@ (class "error-text"))
+                         "Not connected to relay.\n")))
+    (*signup-pending?*
+     (log-append! `(span (@ (class "info-text"))
+                         "Signup already in progress...\n")))
+    (else
+     (let* ((pk     (with-vat *vat* ($ *org* 'public-key)))
+            (pk-str (call-with-output-string (lambda (p) (write pk p))))
+            (msg    (call-with-output-string
+                      (lambda (p)
+                        (write (list 'signup username email pk-str) p)))))
+       (set! *signup-pending?* #t)
+       (ws-send *ws* msg)
+       (log-append!
+         `(span (@ (class "info-text"))
+                ,(string-append
+                   "Signup request sent for '" username "'...\n"
+                   "Waiting for server confirmation.\n")))))))
+
+(define (do-join-org! target-name)
+  (if (not *current-org-name*)
+      (log-append! `(span (@ (class "error-text"))
+                          "Must be inside an org to join another.\n"))
+      (let ((target (org-lookup target-name)))
+        (if (not target)
+            (log-append! `(span (@ (class "error-text"))
+                                ,(string-append "Unknown org: " target-name "\n")))
+            (let* ((target-vat (org-entry-vat target))
+                   (target-inbox (org-entry-inbox target))
+                   (my-pk (with-vat *vat* ($ *org* 'public-key))))
+              (with-vat target-vat
+                (receive (sub-sealer sub-unsealer sub-sealed?)
+                  (spawn-sealer-triplet)
+                  (let* ((my-identity
+                          (spawn (lambda (bcom)
+                            (methods
+                             [(name) (string->symbol *current-org-name*)]
+                             [(subscription-sealer) sub-sealer]
+                             [(subscription-unsealer) sub-unsealer]
+                             [(public-key) my-pk]))))
+                         (msg-id ($ target-inbox 'submit
+                                    `(request-membership ,*current-org-name*)
+                                    my-identity)))
+                    (set! *pending-joins*
+                      (cons (list *current-org-name* target-name
+                                 sub-unsealer msg-id my-identity)
+                            *pending-joins*))
+                    (log-append! `(span (@ (class "result-text"))
+                                        ,(string-append *current-org-name*
+                                                        " requested to join " target-name
+                                                        " (msg-id: "
+                                                        (number->string msg-id) ").\n")))))))))))
+
+(define (do-approve-member! msg-id name)
+  (if (not *current-org-name*)
+      (log-append! `(span (@ (class "error-text"))
+                          "Must be inside an org to approve members.\n"))
+      (let* ((current (org-lookup *current-org-name*))
+             (inbox (org-entry-inbox current))
+             (incanter (org-entry-incanter current))
+             (pending (let loop ((lst *pending-joins*))
+                        (cond ((null? lst) #f)
+                              ((and (string=? (list-ref (car lst) 1) *current-org-name*)
+                                    (string=? (list-ref (car lst) 0) name))
+                               (car lst))
+                              (else (loop (cdr lst)))))))
+        (if (not pending)
+            (log-append! `(span (@ (class "error-text"))
+                                ,(string-append "No pending join for: " name "\n")))
+            (begin
+              (let* ((sub-unsealer (list-ref pending 2))
+                     (applicant-identity (list-ref pending 4))
+                     (applicant-pk (with-vat (org-entry-vat current)
+                                    ($ applicant-identity 'public-key))))
+                (with-vat (org-entry-vat current)
+                  (let* ((sealed-controller
+                          (approve-membership inbox incanter msg-id *org*
+                                              (string->symbol name)
+                                              applicant-pk
+                                              applicant-identity))
+                         (controller ($ sub-unsealer sealed-controller)))
+                    (let ((joiner (org-lookup name)))
+                      (when joiner
+                        (org-set-controllers! name
+                          (cons (cons *current-org-name* controller)
+                                (org-entry-controllers joiner))))))))
+              (set! *pending-joins*
+                (let loop ((lst *pending-joins*))
+                  (cond ((null? lst) '())
+                        ((and (string=? (list-ref (car lst) 0) name)
+                              (string=? (list-ref (car lst) 1) *current-org-name*))
+                         (loop (cdr lst)))
+                        (else (cons (car lst) (loop (cdr lst)))))))
+              (log-append! `(span (@ (class "result-text"))
+                                  ,(string-append "Approved '" name "'.\n"))))))))
+
 (define (handle-command exp)
   (match exp
     (('make-org (? string? name))
-     (if (org-lookup name)
-         (log-append! `(span (@ (class "error-text"))
-                             ,(string-append "Org already exists: " name "\n")))
-         (let* ((kp (generate-key-pair))
-                (pk (key-pair->public-key kp))
-                (store (make-local-storage-store (string-append "xorg-" name))))
-           (receive (vat org inbox incanter refs)
-             (make-persistent-org name base-bindings store
-                                  #:public-key pk
-                                  #:persistence-registry *persistence-registry*)
-             (let ((pk-display (let ((p (open-output-string)))
-                                 (write pk p)
-                                 (let ((s (get-output-string p)))
-                                   (if (> (string-length s) 50)
-                                       (string-append (substring s 0 50) "...")
-                                       s)))))
-               (set! *orgs* (cons (list name vat org inbox incanter kp refs) *orgs*))
-               (set! *sidebar-selected-org* name)
-               (save-key-pair name kp)
-               (save-org-index!)
-               (log-append! `(span (@ (class "result-text"))
-                                   ,(string-append "Created org: " name "\n  key: " pk-display "\n")))))))
+     (do-make-org! name)
      #t)
     (('enter! (? string? name))
      (let ((org (org-lookup name)))
@@ -968,44 +1109,13 @@
                                             (string-append acc "  " (caar lst) "\n"))))))))
      #t)
     (('delete-org (? string? name))
-     (if (org-lookup name)
-         (begin
-           (when (and *current-org-name* (string=? name *current-org-name*)) (do-exit!))
-           (set! *orgs* (let loop ((lst *orgs*))
-             (cond ((null? lst) '())
-                   ((string=? (caar lst) name) (loop (cdr lst)))
-                   (else (cons (car lst) (loop (cdr lst)))))))
-           (when (and *sidebar-selected-org* (string=? name *sidebar-selected-org*))
-             (set! *sidebar-selected-org* #f))
-           ;; Clean up localStorage
-           (ls-remove-item (string-append "xorg-" name))
-           (delete-key-pair name)
-           (save-org-index!)
-           (log-append! `(span (@ (class "result-text")) ,(string-append "Deleted org: " name "\n"))))
-         (log-append! `(span (@ (class "error-text")) ,(string-append "Unknown org: " name "\n"))))
+     (do-delete-org! name)
      #t)
 
-    ;; ── export-ssh-key ─────────────────────────────────────────────────────
-    ;; Print the current org's public key in ssh-ed25519 format for use on
-    ;; the Guix machine (e.g. paste into authorized_keys or registration).
     ('(export-ssh-key)
-     (if (not (eq? *mode* 'inner))
-         (log-append! `(span (@ (class "error-text")) "Enter an org first.\n"))
-         (let* ((pk (with-vat *vat* ($ *org* 'public-key)))
-                (pk-str (call-with-output-string (lambda (p) (write pk p)))))
-           ;; The xorg public key is already an Ed25519 key — format it for SSH
-           (log-append!
-             `(span (@ (class "result-text"))
-                    ,(string-append
-                       "Your xorg public key (use this as your SSH public key):\n"
-                       "  " pk-str "\n\n"
-                       "Paste it during (signup!) or send it to an administrator.\n")))))
+     (do-export-ssh-key!)
      #t)
 
-    ;; ── signup! ────────────────────────────────────────────────────────────
-    ;; Register an account on the sapient-os Guix machine.
-    ;; Uses the current org's public key as the SSH credential.
-    ;; Prompts for username and email inline, then sends over the relay.
     ('(signup!)
      (cond
        ((not (eq? *mode* 'inner))
@@ -1028,111 +1138,16 @@
      #t)
 
     (('signup! (? string? username) (? string? email))
-     (cond
-       ((not (eq? *mode* 'inner))
-        (log-append! `(span (@ (class "error-text"))
-                            "Enter an org first.\n")))
-       ((not *ws*)
-        (log-append! `(span (@ (class "error-text"))
-                            "Not connected to relay.\n")))
-       (*signup-pending?*
-        (log-append! `(span (@ (class "info-text"))
-                            "Signup already in progress...\n")))
-       (else
-        (let* ((pk     (with-vat *vat* ($ *org* 'public-key)))
-               (pk-str (call-with-output-string (lambda (p) (write pk p))))
-               (msg    (call-with-output-string
-                         (lambda (p)
-                           (write (list 'signup username email pk-str) p)))))
-          (set! *signup-pending?* #t)
-          (ws-send *ws* msg)
-          (log-append!
-            `(span (@ (class "info-text"))
-                   ,(string-append
-                      "Signup request sent for '" username "'...\n"
-                      "Waiting for server confirmation.\n"))))))
+     (do-signup! username email)
      #t)
     ;; ── Cross-org commands ──
 
-    ;; join-org — from inside an org, request to join another
     (('join-org (? string? target-name))
-     (if (not *current-org-name*)
-         (log-append! `(span (@ (class "error-text"))
-                             "Must be inside an org to join another.\n"))
-         (let ((target (org-lookup target-name)))
-           (if (not target)
-               (log-append! `(span (@ (class "error-text"))
-                                   ,(string-append "Unknown org: " target-name "\n")))
-               (let* ((target-vat (org-entry-vat target))
-                      (target-inbox (org-entry-inbox target))
-                      (my-pk (with-vat *vat* ($ *org* 'public-key))))
-                 (with-vat target-vat
-                   (receive (sub-sealer sub-unsealer sub-sealed?)
-                     (spawn-sealer-triplet)
-                     (let* ((my-identity
-                             (spawn (lambda (bcom)
-                               (methods
-                                [(name) (string->symbol *current-org-name*)]
-                                [(subscription-sealer) sub-sealer]
-                                [(subscription-unsealer) sub-unsealer]
-                                [(public-key) my-pk]))))
-                            (msg-id ($ target-inbox 'submit
-                                       `(request-membership ,*current-org-name*)
-                                       my-identity)))
-                       (set! *pending-joins*
-                         (cons (list *current-org-name* target-name
-                                    sub-unsealer msg-id my-identity)
-                               *pending-joins*))
-                       (log-append! `(span (@ (class "result-text"))
-                                           ,(string-append *current-org-name*
-                                                           " requested to join " target-name
-                                                           " (msg-id: "
-                                                           (number->string msg-id) ").\n"))))))))))
+     (do-join-org! target-name)
      #t)
 
-    ;; approve-member — approve a pending membership request
     (('approve-member (? number? msg-id) (? string? name))
-     (if (not *current-org-name*)
-         (log-append! `(span (@ (class "error-text"))
-                             "Must be inside an org to approve members.\n"))
-         (let* ((current (org-lookup *current-org-name*))
-                (inbox (org-entry-inbox current))
-                (incanter (org-entry-incanter current))
-                (pending (let loop ((lst *pending-joins*))
-                           (cond ((null? lst) #f)
-                                 ((and (string=? (list-ref (car lst) 1) *current-org-name*)
-                                       (string=? (list-ref (car lst) 0) name))
-                                  (car lst))
-                                 (else (loop (cdr lst)))))))
-           (if (not pending)
-               (log-append! `(span (@ (class "error-text"))
-                                   ,(string-append "No pending join for: " name "\n")))
-               (let* ((sub-unsealer (list-ref pending 2))
-                      (applicant-identity (list-ref pending 4))
-                      (applicant-pk (with-vat (org-entry-vat current)
-                                     ($ applicant-identity 'public-key))))
-                 (with-vat (org-entry-vat current)
-                   (let* ((sealed-controller
-                           (approve-membership inbox incanter msg-id *org*
-                                               (string->symbol name)
-                                               applicant-pk
-                                               applicant-identity))
-                          (controller ($ sub-unsealer sealed-controller)))
-                     ;; Store controller on the joiner's org
-                     (let ((joiner (org-lookup name)))
-                       (when joiner
-                         (org-set-controllers! name
-                           (cons (cons *current-org-name* controller)
-                                 (org-entry-controllers joiner)))))))
-                 (set! *pending-joins*
-                   (let loop ((lst *pending-joins*))
-                     (cond ((null? lst) '())
-                           ((and (string=? (list-ref (car lst) 0) name)
-                                 (string=? (list-ref (car lst) 1) *current-org-name*))
-                            (loop (cdr lst)))
-                           (else (cons (car lst) (loop (cdr lst)))))))
-                 (log-append! `(span (@ (class "result-text"))
-                                     ,(string-append "Approved '" name "'.\n")))))))
+     (do-approve-member! msg-id name)
      #t)
 
     ;; act-in — evaluate in another org (local or remote)
@@ -1441,6 +1456,147 @@
           (div (@ (class "inspector-row"))
                (span (@ (class "value")) ,display-text)))))
 
+;;; ── Control panel render functions ───────────────────────────────────────
+
+(define (render-new-org-button)
+  (if *show-new-org-form*
+      `(div (@ (class "cp-form"))
+            (input (@ (id "new-org-input") (class "cp-input")
+                      (placeholder "org name")
+                      (keydown ,(lambda (e)
+                                  (let ((key (keyboard-event-key e)))
+                                    (when (string=? key "Enter")
+                                      (prevent-default! e)
+                                      (let ((name (%trim (element-value
+                                                           (get-element-by-id "new-org-input")))))
+                                        (unless (string=? name "")
+                                          (do-make-org! name)
+                                          (set! *show-new-org-form* #f)
+                                          (refresh!) (scroll-to-bottom!)))))))))
+            (div (@ (class "cp-btn-row"))
+                 (span (@ (class "cp-btn cp-btn-primary")
+                           (click ,(lambda (e)
+                                     (let ((name (%trim (element-value
+                                                          (get-element-by-id "new-org-input")))))
+                                       (unless (string=? name "")
+                                         (do-make-org! name)
+                                         (set! *show-new-org-form* #f)
+                                         (refresh!) (scroll-to-bottom!))))))
+                       "create")
+                 (span (@ (class "cp-btn")
+                           (click ,(lambda (e)
+                                     (set! *show-new-org-form* #f)
+                                     (refresh!))))
+                       "cancel")))
+      `(div (@ (class "cp-action")
+               (click ,(lambda (e)
+                         (set! *show-new-org-form* #t)
+                         (refresh!))))
+            "+ new org")))
+
+(define (render-signup-button)
+  (if *show-signup-form*
+      `(div (@ (class "cp-form"))
+            (input (@ (id "signup-username") (class "cp-input")
+                      (placeholder "username")))
+            (input (@ (id "signup-email") (class "cp-input")
+                      (placeholder "email@example.com")
+                      (keydown ,(lambda (e)
+                                  (when (string=? (keyboard-event-key e) "Enter")
+                                    (prevent-default! e)
+                                    (let ((u (%trim (element-value
+                                                      (get-element-by-id "signup-username"))))
+                                          (em (%trim (element-value
+                                                       (get-element-by-id "signup-email")))))
+                                      (unless (or (string=? u "") (string=? em ""))
+                                        (do-signup! u em)
+                                        (set! *show-signup-form* #f)
+                                        (refresh!) (scroll-to-bottom!))))))))
+            (div (@ (class "cp-btn-row"))
+                 (span (@ (class "cp-btn cp-btn-primary")
+                           (click ,(lambda (e)
+                                     (let ((u (%trim (element-value
+                                                       (get-element-by-id "signup-username"))))
+                                           (em (%trim (element-value
+                                                        (get-element-by-id "signup-email")))))
+                                       (unless (or (string=? u "") (string=? em ""))
+                                         (do-signup! u em)
+                                         (set! *show-signup-form* #f)
+                                         (refresh!) (scroll-to-bottom!))))))
+                       "register")
+                 (span (@ (class "cp-btn")
+                           (click ,(lambda (e)
+                                     (set! *show-signup-form* #f)
+                                     (refresh!))))
+                       "cancel")))
+      `(span (@ (class "cp-action")
+                (click ,(lambda (e)
+                          (set! *show-signup-form* #t)
+                          (refresh!))))
+             "signup")))
+
+(define (render-join-form)
+  (if *show-join-form*
+      `(div (@ (class "cp-form"))
+            (input (@ (id "join-target-input") (class "cp-input")
+                      (placeholder "target org name")
+                      (keydown ,(lambda (e)
+                                  (when (string=? (keyboard-event-key e) "Enter")
+                                    (prevent-default! e)
+                                    (let ((target (%trim (element-value
+                                                           (get-element-by-id "join-target-input")))))
+                                      (unless (string=? target "")
+                                        (do-join-org! target)
+                                        (set! *show-join-form* #f)
+                                        (refresh!) (scroll-to-bottom!))))))))
+            (div (@ (class "cp-btn-row"))
+                 (span (@ (class "cp-btn cp-btn-primary")
+                           (click ,(lambda (e)
+                                     (let ((target (%trim (element-value
+                                                            (get-element-by-id "join-target-input")))))
+                                       (unless (string=? target "")
+                                         (do-join-org! target)
+                                         (set! *show-join-form* #f)
+                                         (refresh!) (scroll-to-bottom!))))))
+                       "join")
+                 (span (@ (class "cp-btn")
+                           (click ,(lambda (e)
+                                     (set! *show-join-form* #f)
+                                     (refresh!))))
+                       "cancel")))
+      `(span (@ (class "cp-action")
+                (click ,(lambda (e)
+                          (set! *show-join-form* #t)
+                          (refresh!))))
+             "join org")))
+
+(define (render-action-bar)
+  `(div (@ (class "action-bar"))
+        ,@(if (eq? *mode* 'outer)
+              (list `(span (@ (class "cp-btn cp-btn-primary")
+                              (click ,(lambda (e)
+                                        (set! *show-new-org-form* #t)
+                                        (refresh!))))
+                           "+ new org")
+                    (if (and *ws* *connected?*)
+                        `(span (@ (class "cp-btn")
+                                  (click ,(lambda (e)
+                                            (set! *show-signup-form* #t)
+                                            (refresh!))))
+                               "signup")
+                        `(span (@ (class "cp-status")) "relay: disconnected")))
+              (list `(span (@ (class "cp-btn")
+                              (click ,(lambda (e) (do-exit!) (refresh!) (scroll-to-bottom!))))
+                           "exit")
+                    `(span (@ (class "cp-btn")
+                              (click ,(lambda (e) (do-export-ssh-key!) (refresh!) (scroll-to-bottom!))))
+                           "export key")
+                    (render-join-form)
+                    `(span (@ (class ,(string-append "cp-status"
+                                        (if *connected?* " cp-status-connected"
+                                            " cp-status-disconnected"))))
+                           ,(if *connected?* "relay: connected" "relay: disconnected"))))))
+
 ;;; ── Sidebar rendering ──────────────────────────────────────────────────
 
 (define (render-org-item org-pair)
@@ -1460,8 +1616,34 @@
   `(div (@ (class "org-list"))
         ,@(if (null? *orgs*)
               (list `(div (@ (class "sidebar-empty"))
-                          "No orgs yet.\nUse (make-org \"name\") to create one."))
+                          "No orgs yet.\nClick \"+ new org\" above or use\n(make-org \"name\") in the REPL."))
               (map render-org-item *orgs*))))
+
+(define (render-org-detail-actions name active?)
+  `(div (@ (class "inspector-actions"))
+        (span (@ (class ,(string-append "cp-btn" (if active? "" " cp-btn-primary")))
+                  (click ,(lambda (e) (sidebar-enter-org! name e))))
+              ,(if active? "exit" "enter"))
+        ,@(if (and *confirm-delete-org*
+                   (string=? *confirm-delete-org* name))
+              (list `(span (@ (class "cp-confirm")) "delete?")
+                    `(span (@ (class "cp-btn cp-btn-danger")
+                              (click ,(lambda (e)
+                                        (do-delete-org! name)
+                                        (set! *confirm-delete-org* #f)
+                                        (set! *sidebar-selected-org* #f)
+                                        (refresh!) (scroll-to-bottom!))))
+                           "yes")
+                    `(span (@ (class "cp-btn")
+                              (click ,(lambda (e)
+                                        (set! *confirm-delete-org* #f)
+                                        (refresh!))))
+                           "no"))
+              (list `(span (@ (class "cp-btn cp-btn-danger")
+                              (click ,(lambda (e)
+                                        (set! *confirm-delete-org* name)
+                                        (refresh!))))
+                           "delete")))))
 
 (define (render-org-detail name)
   (let* ((org (or (org-lookup name)
@@ -1477,21 +1659,8 @@
                  (expressors (unique-expressors history ref)))
             `(div (@ (class "org-detail"))
                   (div (@ (class "detail-header"))
-                       (span (@ (class "org-name")) ,name)
-                       (span (@ (class "org-action")
-                                 (click ,(lambda (e) (sidebar-enter-org! name e))))
-                             ,(if active? "exit" "enter"))
-                       (span (@ (class "org-action org-delete")
-                                 (click ,(lambda (e)
-                                           (when (and *current-org-name* (string=? name *current-org-name*))
-                                             (do-exit!))
-                                           (set! *orgs* (let loop ((lst *orgs*))
-                                             (cond ((null? lst) '())
-                                                   ((string=? (caar lst) name) (loop (cdr lst)))
-                                                   (else (cons (car lst) (loop (cdr lst)))))))
-                                           (set! *sidebar-selected-org* #f)
-                                           (refresh!))))
-                             "delete"))
+                       (span (@ (class "org-name")) ,name))
+                  ,(render-org-detail-actions name active?)
                   ,(render-bindings-section bindings ref)
                   ,(render-validator-section ref)
                   ,(render-history-section history ($ ref 'head-version) ref)
@@ -1505,9 +1674,13 @@
                  (span (@ (class "sidebar-toggle") (click ,toggle-sidebar!))
                        "\u00ab")
                  (span (@ (class "sidebar-title")) " orgs"))
+            ,(render-new-org-button)
             ,(render-org-list)
             ,@(if *sidebar-selected-org*
                   (list (render-org-detail *sidebar-selected-org*))
+                  '())
+            ,@(if *show-signup-form*
+                  (list (render-signup-button))
                   '()))))
 
 ;;; ── Render ────────────────────────────────────────────────────────────────
@@ -1570,6 +1743,7 @@
                                 "\u00bb"))
                    '())
              ,(render-tab-bar)
+             ,(render-action-bar)
              ,(render-repl))
         ,(render-code-viewer)))
 

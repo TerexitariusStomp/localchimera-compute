@@ -24,6 +24,7 @@
   #:use-module (gnu packages web)
   #:use-module (gnu packages guile)
   #:use-module (gnu packages guile-xyz)    ;; for guile-goblins
+  #:use-module (gnu packages node)          ;; node (for Claude Code CLI)
   #:use-module (gnu packages emacs)        ;; emacs-no-x
   #:use-module (gnu packages emacs-xyz)    ;; geiser, smartparens, rainbow-delimiters
   #:use-module (xorg-service)              ;; xorg-service-type, xorg-configuration
@@ -133,7 +134,8 @@
        emacs-geiser            ;; Geiser for Guile REPL integration
        emacs-geiser-guile      ;; Guile backend for Geiser
        emacs-smartparens       ;; structural editing
-       emacs-rainbow-delimiters) ;; colored parens
+       emacs-rainbow-delimiters ;; colored parens
+       node)                    ;; Node.js for Claude Code CLI
       %base-packages))
 
     (services
