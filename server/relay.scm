@@ -228,6 +228,48 @@
                        (substring result 0 (min 50 (string-length result)))
                        (cadr result)))))
 
+          ;; Express: convert natural language to a Scheme S-expression
+          ;; Uses donated key-pool → Gemini Flash. Returns the expression
+          ;; as a string for the user to review before evaluating.
+          (('express (? string? nl-text))
+           (log! "  express request: ~a\n" (substring nl-text 0 (min 60 (string-length nl-text))))
+           (let* ((result
+                   (catch #t
+                     (lambda ()
+                       (unless *key-pool*
+                         (error "express not available — no API keys"))
+                       (let* ((body (scm->json-string
+                                     `((model . "google/gemini-2.0-flash-001")
+                                       (messages
+                                        . #(((role . "system")
+                                             (content . "You are inside xorg, a Scheme-based programmable organization. Convert the user's natural language into a single valid Scheme S-expression. Respond with ONLY the raw S-expression, no markdown, no explanation, no code fences. Use (modify! 'name value) for bindings, (define name value) for definitions, (lambda (args) body) for functions."))
+                                            ((role . "user")
+                                             (content . ,nl-text)))))))
+                              (resp (with-vat *pool-vat*
+                                      ($ *key-pool* 'request "/chat/completions" body)))
+                              (json (json-string->scm resp))
+                              (choices (assoc-ref json "choices")))
+                         (if (and choices (> (vector-length choices) 0))
+                             (let ((content (assoc-ref
+                                            (assoc-ref (vector-ref choices 0) "message")
+                                            "content")))
+                               (or content ""))
+                             (error "no choices in response"))))
+                     (lambda (key . args)
+                       (list 'error (format #f "~a: ~a" key args)))))
+                  (reply (call-with-output-string
+                           (lambda (p)
+                             (write (if (string? result)
+                                        (list 'express-ok result)
+                                        (list 'express-error (cadr result)))
+                                    p)))))
+             (write-frame (make-text-frame reply) port)
+             (force-output port)
+             (log! "  express result: ~a\n"
+                   (if (string? result)
+                       (substring result 0 (min 60 (string-length result)))
+                       (cadr result)))))
+
           ;; Unknown
           (x (log! "  ? ~a\n" x))))))
 

@@ -184,6 +184,12 @@
 (define-foreign stop-listening!
   "speech" "stopListening"
   -> none)
+(define-foreign set-express-mode!
+  "speech" "setExpressMode"
+  i32 -> none)
+(define-foreign express-nl!
+  "speech" "expressNL"
+  (ref string) (ref extern) -> none)
 
 (define procedure->external/cached
   (let ((cache (make-hashtable)))
@@ -587,6 +593,7 @@
 (define *confirm-delete-org* #f)     ;; org name string or #f
 (define *show-join-form* #f)
 (define *listening?* #f)
+(define *expressing?* #f)  ;; #t during voice→NL→Scheme express flow
 (define *syntax-mode* 'lisp)  ;; 'lisp or 'wisp
 
 ;; Voice-to-text callbacks
@@ -601,22 +608,57 @@
 
 (define (on-speech-end)
   (set! *listening?* #f)
+  (set! *expressing?* #f)
   (refresh!))
+
+;; Express callbacks — NL→Scheme result goes into input for review
+(define (on-express-result expr)
+  (let ((input (get-element-by-id "expression")))
+    (set-element-value! input expr)
+    (set! *listening?* #f)
+    (set! *expressing?* #f)
+    (refresh!)))
 
 (define (toggle-listening!)
   (if *listening?*
       (begin (stop-listening!)
              (set! *listening?* #f))
-      (begin (start-listening!
+      (begin (set-express-mode! 0)
+             (start-listening!
                (procedure->external on-speech-result)
                (procedure->external on-speech-end))
              (set! *listening?* #t))))
+
+(define (toggle-expressing!)
+  "Voice→NL→Scheme: record speech, transcribe, convert to S-expression."
+  (if *listening?*
+      (begin (stop-listening!)
+             (set! *listening?* #f)
+             (set! *expressing?* #f))
+      (begin (set-express-mode! 1)
+             (set! *expressing?* #t)
+             (start-listening!
+               (procedure->external on-express-result)
+               (procedure->external on-speech-end))
+             (set! *listening?* #t))))
+
+(define (do-express-text! text)
+  "Convert natural language text to S-expression via relay, put in input."
+  (express-nl! text
+    (procedure->external
+     (lambda (expr)
+       (let ((input (get-element-by-id "expression")))
+         (set-element-value! input expr)
+         (log-append! `(span (@ (class "info-text"))
+                              ,(string-append "expressed: " text "\n")))
+         (refresh!))))))
 
 (define (toggle-syntax-mode!)
   (set! *syntax-mode* (if (eq? *syntax-mode* 'lisp) 'wisp 'lisp))
   (ls-set-item "xorg-syntax-mode" (symbol->string *syntax-mode*))
   (update-code-viewer!)
-  (refresh!))
+  (refresh!)
+  (scroll-to-bottom!))
 
 (define (org-entry-name e) (list-ref e 0))
 (define (org-entry-vat e) (list-ref e 1))
@@ -1221,6 +1263,18 @@
     (('signup! (? string? username) (? string? email))
      (do-signup! username email)
      #t)
+    ;; ── Express: natural language → Scheme ──
+
+    (('express (? string? text))
+     (if (and *ws* *connected?*)
+         (begin
+           (do-express-text! text)
+           (log-append! `(span (@ (class "info-text"))
+                                "Converting to Scheme expression...\n")))
+         (log-append! `(span (@ (class "error-text"))
+                              "Not connected to relay. Use (ai-eval \"...\") with your own API key.\n")))
+     #t)
+
     ;; ── Cross-org commands ──
 
     (('join-org (? string? target-name))
@@ -1690,17 +1744,20 @@
                              "exit")
                      `(span (@ (class "cp-btn")
                                 (click ,(lambda (e)
-                                          (eval! "(show-history)")
+                                          (eval! (if (eq? *syntax-mode* 'wisp)
+                                                     "show-history" "(show-history)"))
                                           (refresh!) (scroll-to-bottom!))))
                              "history")
                      `(span (@ (class "cp-btn")
                                 (click ,(lambda (e)
-                                          (eval! "(show-expressors)")
+                                          (eval! (if (eq? *syntax-mode* 'wisp)
+                                                     "show-expressors" "(show-expressors)"))
                                           (refresh!) (scroll-to-bottom!))))
                              "expressors")
                      `(span (@ (class "cp-btn")
                                 (click ,(lambda (e)
-                                          (eval! "(public-key)")
+                                          (eval! (if (eq? *syntax-mode* 'wisp)
+                                                     "public-key" "(public-key)"))
                                           (refresh!) (scroll-to-bottom!))))
                              "public key")
                      `(span (@ (class "cp-btn")
@@ -1710,11 +1767,13 @@
                (list `(span (@ (class ,(string-append "cp-btn" (if (eq? *syntax-mode* 'wisp) " cp-btn-primary" "")))
                                 (click ,(lambda (e) (toggle-syntax-mode!))))
                              ,(if (eq? *syntax-mode* 'wisp) "wisp" "lisp")))
-               (if #t  ;; always show mic — unsupported browsers fail gracefully via onerror
-                   (list `(span (@ (class ,(string-append "cp-btn" (if *listening?* " cp-btn-danger" "")))
-                                   (click ,(lambda (e) (toggle-listening!) (refresh!))))
-                                ,(if *listening?* "stop" "mic")))
-                   '())
+               (list `(span (@ (class ,(string-append "cp-btn" (if (and *listening?* (not *expressing?*)) " cp-btn-danger" "")))
+                                (click ,(lambda (e) (toggle-listening!) (refresh!))))
+                             ,(if (and *listening?* (not *expressing?*)) "stop" "mic"))
+                     `(span (@ (class ,(string-append "cp-btn" (if *expressing?* " cp-btn-danger" "")))
+                                (click ,(lambda (e) (toggle-expressing!) (refresh!))))
+                             ,(cond (*expressing?* "stop")
+                                    (else "express"))))
                (list `(span (@ (class ,(string-append "cp-status"
                                           (if *connected?* " cp-status-connected"
                                               " cp-status-disconnected"))))

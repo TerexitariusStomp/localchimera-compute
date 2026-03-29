@@ -161,12 +161,25 @@ window.addEventListener("load", async () => {
             ws.addEventListener('message', (e) => {
               // Intercept presence updates before Scheme handler
               if (typeof e.data === 'string' && e.data.startsWith('(presence ')) {
-                // Parse user list and store for Scheme to read
-                try {
-                  // Simple extraction: (presence ((name1 pk1) (name2 pk2) ...))
-                  window.__onlineUsers = e.data;
-                } catch(err) {}
-                // Still pass to Scheme so it can update the UI
+                try { window.__onlineUsers = e.data; } catch(err) {}
+              }
+              // Intercept express-ok/error responses
+              if (typeof e.data === 'string' && window.__pendingExpress) {
+                if (e.data.startsWith('(express-ok ')) {
+                  const expr = e.data.slice(13, -2);  // extract from (express-ok "...")
+                  const { resolve } = window.__pendingExpress;
+                  window.__pendingExpress = null;
+                  console.log('[express] Result:', expr);
+                  resolve(expr);
+                  return;
+                }
+                if (e.data.startsWith('(express-error ')) {
+                  console.error('[express] Error:', e.data);
+                  const { resolve } = window.__pendingExpress;
+                  window.__pendingExpress = null;
+                  resolve(null);
+                  return;
+                }
               }
               // Intercept transcribe responses before Scheme handler
               if (typeof e.data === 'string' && window.__pendingTranscribe) {
@@ -235,8 +248,25 @@ window.addEventListener("load", async () => {
                   const buf = await blob.arrayBuffer();
                   const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
 
-                  // Register one-time handler for transcribe response
-                  window.__pendingTranscribe = { onResult, onEnd };
+                  if (window.__speechExpressMode) {
+                    // Express mode: transcribe, then convert NL → Scheme
+                    window.__pendingTranscribe = {
+                      onResult: (transcript) => {
+                        console.log('[express] Transcript:', transcript);
+                        // Now convert NL to Scheme via relay
+                        window.__pendingExpress = {
+                          resolve: (expr) => {
+                            onResult(expr || transcript);
+                            onEnd();
+                          }
+                        };
+                        ws.send('(express "' + transcript.replace(/"/g, '\\"') + '")');
+                      },
+                      onEnd: () => {} // onEnd called after express completes
+                    };
+                  } else {
+                    window.__pendingTranscribe = { onResult, onEnd };
+                  }
                   ws.send('(transcribe "' + b64 + '")');
                 } else {
                   // Fallback: local Whisper WASM
@@ -275,6 +305,21 @@ window.addEventListener("load", async () => {
             if (window.__xorgRecording) {
               window.__xorgRecording.recorder.stop();
               window.__xorgRecording = null;
+            }
+          },
+          setExpressMode(mode) {
+            window.__speechExpressMode = (mode === 1);
+          },
+          // Send natural language to relay, get back S-expression
+          expressNL(text, onResult) {
+            const ws = window.__xorgWs;
+            if (ws && ws.readyState === WebSocket.OPEN) {
+              window.__pendingExpress = {
+                resolve: (expr) => { onResult(expr || ""); }
+              };
+              ws.send('(express "' + text.replace(/"/g, '\\"') + '")');
+            } else {
+              onResult("");
             }
           }
         }
