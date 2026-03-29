@@ -1,5 +1,7 @@
 # xorg
 
+![xorg poster](xorg_poster.png)
+
 _A self-evolving commons computer written entirely in Guile Scheme._
 
 ---
@@ -58,16 +60,16 @@ Every layer is Guile Scheme. Every connection is capability-secured.
 
 On native Guile + Goblins, xorg is not a library — it's a **pattern**. Every piece of governance maps 1:1 to existing Goblins primitives:
 
-| Need | Goblins provides |
-|---|---|
-| Mutable state | `bcom` (become) |
-| Accountability | `^logger` + revocable proxy ([Heart of Spritely](https://spritely.institute/static/papers/spritely-core.html) §3.3.4) |
-| Attenuation | `^facet` (actor-lib) |
-| Revocation | `^cell` flip |
-| Identity | Actor refs are unforgeable |
-| Persistence | `define-actor` + persistence env |
-| Networking | OCapN — actors across machines |
-| Mesh networking | [Reticulum](https://reticulum.network/) — LoRa, serial, I2P, TCP, packet radio |
+| Need            | Goblins provides                                                                                                      |
+| --------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Mutable state   | `bcom` (become)                                                                                                       |
+| Accountability  | `^logger` + revocable proxy ([Heart of Spritely](https://spritely.institute/static/papers/spritely-core.html) §3.3.4) |
+| Attenuation     | `^facet` (actor-lib)                                                                                                  |
+| Revocation      | `^cell` flip                                                                                                          |
+| Identity        | Actor refs are unforgeable                                                                                            |
+| Persistence     | `define-actor` + persistence env                                                                                      |
+| Networking      | OCapN — actors across machines                                                                                        |
+| Mesh networking | [Reticulum](https://reticulum.network/) — LoRa, serial, I2P, TCP, packet radio                                        |
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the full explanation.
 
@@ -175,6 +177,7 @@ GNU Guile 3.0+, Guile Goblins 0.17.0+. For browser: Guile Hoot 0.7.0+ and a rece
 You can consume this repository either directly or as a Guix channel.
 
 **Install directly from source:**
+
 ```bash
 guix package -f guix.scm      # install the meta-org desktop REPL into your profile
 guix shell -m manifest.scm    # transient shell with all development dependencies
@@ -182,6 +185,7 @@ guix shell -m manifest.scm    # transient shell with all development dependencie
 
 **Add as a Guix channel:**
 To make `meta-org` available in your system's package registry, add this to your `~/.config/guix/channels.scm`:
+
 ```scheme
 (cons (channel
         (name 'meta-org)
@@ -189,6 +193,7 @@ To make `meta-org` available in your system's package registry, add this to your
         (branch "main"))
       %default-channels)
 ```
+
 After running `guix pull`, you can install it globally via `guix install meta-org`.
 
 ### Run
@@ -215,14 +220,6 @@ See `deploy/guix/DEPLOY-GUIDE.md` for the full guide.
 
 - **Scheme:** If you're new to the language, [A Scheme Primer](https://spritely.institute/static/papers/scheme-primer.html) is the perfect introduction.
 - **Goblins:** The best starting point is the [Heart of Spritely](https://spritely.institute/static/papers/spritely-core.html) paper — it covers the capability patterns that xorg maps onto directly.
-
-## What This Is Not
-
-This is not a governance framework. It does not encode voting, consensus, hierarchy, or any particular organizational form. It is the layer _beneath_ those — a substrate in which any such form could be expressed and later replaced by something else entirely.
-
-The only invariants are: every action has an identity (the proxy ref), every change is logged (the `^logger`), and access can be revoked (the `^cell` flip).
-
-What emerges from that is up to the expressors.
 
 ## Built With
 

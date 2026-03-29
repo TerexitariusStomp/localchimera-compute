@@ -1,28 +1,28 @@
 # xorg Architecture
 
-*An overview of the xorg system layout, transport layers, and governance patterns.*
+_An overview of the xorg system layout, transport layers, and governance patterns._
 
 ---
 
 ## Core Concept
 
-xorg is not a heavy, standalone framework; it is a **pattern** for building organizational systems securely using [Spritely Goblins](https://spritely.institute/goblins/) and the capability architectures described in the [Heart of Spritely](https://spritely.institute/static/papers/spritely-core.html) paper.
+xorg is a **pattern** for building organizational systems securely using [Spritely Goblins](https://spritely.institute/goblins/) and the capability architectures described in the [Heart of Spritely](https://spritely.institute/static/papers/spritely-core.html) paper.
 
 On native Guile with Goblins, every piece of "governance" maps directly to existing primitives:
 
-| Organizational Need | Goblins Primitive | 
-|---|---|
-| Mutable state | `bcom` (become) | 
-| Accountability | `^logger` + proxy (Heart of Spritely §3.3.4) |
-| Attenuation | `^facet` (actor-lib) | 
-| Revocation | `^cell` flip (Heart of Spritely §3.3.4) | 
-| Identity | Actor refs (unforgeable) | 
-| Transactions | Vat turns (automatic rollback on error) | 
-| Persistence | `define-actor` + persistence environments | 
-| Eval | `(eval expr module)` with custom modules | 
-| REPL | `,enter-vat` in Guile's built-in REPL | 
-| IO | Capabilities passed in (ports, `^io`) | 
-| Networking | OCapN — actors across machines | 
+| Organizational Need | Goblins Primitive                            |
+| ------------------- | -------------------------------------------- |
+| Mutable state       | `bcom` (become)                              |
+| Accountability      | `^logger` + proxy (Heart of Spritely §3.3.4) |
+| Attenuation         | `^facet` (actor-lib)                         |
+| Revocation          | `^cell` flip (Heart of Spritely §3.3.4)      |
+| Identity            | Actor refs (unforgeable)                     |
+| Transactions        | Vat turns (automatic rollback on error)      |
+| Persistence         | `define-actor` + persistence environments    |
+| Eval                | `(eval expr module)` with custom modules     |
+| REPL                | `,enter-vat` in Guile's built-in REPL        |
+| IO                  | Capabilities passed in (ports, `^io`)        |
+| Networking          | OCapN — actors across machines               |
 
 Because xorg relies heavily on these standard Goblins primitives, the server-side environment requires very little custom infrastructure code.
 
@@ -50,15 +50,16 @@ See `docs/RETICULUM-NETLAYER.md` for full networking details.
 
 Running xorg within a web browser via Guile Hoot requires bridging several native Guile features that aren't available in typical WASM environments natively:
 
-| Native Guile Feature | xorg Hoot Implementation |
-|---|---|
-| `eval` | Metacircular evaluator (~180 lines) |
-| Full module system | `default-base-bindings` — curated primitives |
-| `,enter-vat` | Inner REPL (`enter!`) |
+| Native Guile Feature | xorg Hoot Implementation                     |
+| -------------------- | -------------------------------------------- |
+| `eval`               | Metacircular evaluator (~180 lines)          |
+| Full module system   | `default-base-bindings` — curated primitives |
+| `,enter-vat`         | Inner REPL (`enter!`)                        |
 
-For the browser, xorg provides **a Hoot-compatible subset of Goblins patterns**, bundled alongside a metacircular evaluator. 
+For the browser, xorg provides **a Hoot-compatible subset of Goblins patterns**, bundled alongside a metacircular evaluator.
 
 Key files for the client-side environment:
+
 - `module/xorg/gplay.scm` — Evaluator and Goblins actors (Hoot-compatible)
 - `module/xorg/kanren.scm` — miniKanren (standalone, Hoot-compatible)
 - `module/xorg/hyperarc.scm` — Metagraph data structures
