@@ -72,10 +72,7 @@ h1 {
     white-space: pre;
     display: flex;
     align-items: flex-start;
-    flex-shrink: 0;
-    padding: 0.6rem 1rem;
-    border-top: 1px solid #2a2230;
-    background-color: #0d0b0f;
+    padding: 0.25rem 0;
 }
 
 .repl .prompt textarea {
@@ -83,7 +80,7 @@ h1 {
     border: 0;
     padding: 0;
     color: #e0ceed;
-    background-color: #0d0b0f;
+    background-color: transparent;
     resize: none;
     overflow: hidden;
     min-height: 1.5em;
@@ -101,8 +98,7 @@ h1 {
 }
 
 .repl .prompt:focus-within {
-    border-top-color: #a8e6cf;
-    box-shadow: 0 -1px 8px rgba(168, 230, 207, 0.08);
+    box-shadow: none;
 }
 
 .prompt-text { color: #8b7b96; }
@@ -437,7 +433,7 @@ body:has(.code-viewer) .ide {
 /* Responsive */
 @media (max-width: 768px) {
     .sidebar { width: 0; border-right: none; overflow: hidden; }
-    .repl .prompt { padding: 0.5rem 0.75rem; }
+    .repl .prompt { padding: 0.25rem 0; }
 
     .code-viewer {
         width: 100%;

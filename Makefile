@@ -9,7 +9,7 @@ quick-repl:
 CHANNELS = deploy/guix/channels.scm
 TIME_MACHINE = guix time-machine -C $(CHANNELS) --
 
-browser/repl.wasm: browser/repl.scm module/xorg/gplay.scm
+browser/repl.wasm: browser/repl.scm module/xorg/gplay.scm module/xorg/wisp.scm
 	$(TIME_MACHINE) shell guile-next guile-hoot guile-goblins -- \
 	  guild compile-wasm -L module -L docs/reference/lib-vendored --bundle -o browser/repl.wasm browser/repl.scm
 
@@ -37,7 +37,10 @@ test-governed:
 test-signatures:
 	guile --no-auto-compile -L module tests/test-history-signatures.scm
 
-test-all: test-gplay test-knowledge test-governed test-signatures
+test-wisp:
+	guile --no-auto-compile -L module tests/test-wisp.scm
+
+test-all: test-gplay test-knowledge test-governed test-signatures test-wisp
 
 clean:
 	rm -f browser/repl.wasm

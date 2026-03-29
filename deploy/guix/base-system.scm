@@ -49,20 +49,19 @@
 ;; Geiser default implementation
 (setq geiser-default-implementation 'guile)
 
-;; MELPA — for mcp-server-lib (not yet in Guix)
-(require 'package)
-(add-to-list 'package-archives '(\"melpa\" . \"https://melpa.org/packages/\") t)
-(unless (package-installed-p 'mcp-server-lib)
-  (package-refresh-contents)
-  (package-install 'mcp-server-lib))
-
-;; xorg MCP bridge — Geiser + mcp-server-lib
+;; mcp-server-lib + xorg MCP bridge — vendored, no MELPA dependency
+(load-file \"~/.emacs.d/mcp-server-lib.el\")
 (load-file \"~/.emacs.d/emacs-mcp.el\")
 
 ;; IMPORTANT: run (use-modules (goblins)) first in the REPL before
 ;; doing any vat work, to avoid the port-redirection issue described
 ;; in the Goblins README.
 (message \"Remember: (use-modules (goblins)) before spawning vats!)\")"))
+
+;; mcp-server-lib — vendored from upstream (v0.2.0), no MELPA dependency.
+;; Deployed to /home/deploy/.emacs.d/mcp-server-lib.el via activation service.
+(define %mcp-server-lib-el
+  (local-file "mcp-server-lib.el"))
 
 ;; xorg MCP bridge for Emacs — wires Geiser to mcp-server-lib.
 ;; Deployed to /home/deploy/.emacs.d/emacs-mcp.el via activation service.
@@ -179,8 +178,9 @@
                        activation-service-type
                        #~(begin
                            (let* ((dir "/home/deploy/.emacs.d")
-                                  (init-target (string-append dir "/init.el"))
-                                  (mcp-target  (string-append dir "/emacs-mcp.el")))
+                                  (init-target    (string-append dir "/init.el"))
+                                  (mcp-lib-target (string-append dir "/mcp-server-lib.el"))
+                                  (mcp-target     (string-append dir "/emacs-mcp.el")))
                              (unless (file-exists? dir)
                                (mkdir dir))
                              (let ((pw (getpwnam "deploy")))
@@ -189,6 +189,11 @@
                                  (delete-file init-target))
                                (copy-file #$%emacs-init-el init-target)
                                (chown init-target (passwd:uid pw) (passwd:gid pw))
+                               ;; mcp-server-lib.el (vendored)
+                               (when (file-exists? mcp-lib-target)
+                                 (delete-file mcp-lib-target))
+                               (copy-file #$%mcp-server-lib-el mcp-lib-target)
+                               (chown mcp-lib-target (passwd:uid pw) (passwd:gid pw))
                                ;; emacs-mcp.el
                                (when (file-exists? mcp-target)
                                  (delete-file mcp-target))
