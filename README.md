@@ -1,5 +1,9 @@
 # playnet
 
+<object data="docs/commons.pdf" type="application/pdf" width="100%" height="800px">
+    <p>Your browser does not support viewing PDFs directly. <a href="docs/commons.pdf">Download the PDF</a> to view the full documentation.</p>
+</object>
+
 ![playnet poster](playnet_poster.png)
 
 _A self-evolving commons computer written entirely in Guile Scheme._

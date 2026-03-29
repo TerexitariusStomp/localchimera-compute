@@ -726,6 +726,75 @@
 
 (define *sidebar-collapsed* #f)
 (define *sidebar-selected-org* #f)   ;; string or #f
+
+(define *sidebar-collapsed* #f)
+(define *sidebar-selected-org* #f)   ;; string or #f
+
+;;; ── Homepage state (Cycles) ─────────────────────────────────────────────
+(define (make-cycle lst)
+  (let ((copy (append lst '())))
+    (set-cdr! (last-pair copy) copy)
+    copy))
+
+(define-syntax-rule (cycle-peek cycle) (car cycle))
+(define-syntax-rule (cycle-step! cycle) (set! cycle (cdr cycle)))
+
+(define *genre-cycle* (make-cycle '("A bottom-up game" "An adventure game" "A strategy game" "A role-playing game" "A puzzle game" "A network simulation" "A journalist investigation game" "A street busking rhythm game" "A shamanic ritual" "A mythical creature management game" "A cybernetic quest" "A post-rational media theory game" "A modular jewelry design game" "A cybersecurity challenge" "A spiritual health simulation" "A tantric bliss journey" "A care network builder" "A playful fashion design game" "A character outfit customization game" "A communal living simulation" "A portal opening game" "A ritual fasting challenge" "An exergame" "A magical potion crafting game" "An ancient artifact discovery game" "A spellbook writing game" "A divine nonchalance experience" "A mythical farm simulation" "A festival planning game" "A communal feast organization game" "A magical realist story game" "A spiritual meditation and dancing game" "A yoga and wellness game" "A post-apocalyptic bunkers survival game" "A tree house construction game" "A volcanic island exploration game" "A castle defense strategy game" "A clarification and obfuscation game" "A warp zone discovery game" "A butterfly-wing-iridescence puzzle game" "A subterranean lake adventure" "A bioluminescent slime farming game" "A secret stairway exploration game" "A magical realist narrative game" "A dark matter and nebula exploration game" "A subterranean city builder" "A train-yard management game" "A flea market treasure hunt game" "A library stacks mystery game" "A mythopoetic storytelling game" "A unicorn and narwhal sanctuary game" "A goblet and doubloon collection game" "A gremlin and pixie mischief game" "A ritualistic sauna experience" "A cauldron and potion brewing game" "A holy grail quest" "A fragrance and incense crafting game" "A fairy tale game" "A hyperstitial loom weaving game" "A mythical loom crafting game" "A spellcasting duel game" "A divine intervention and prophecy game" "A secret doors and hidden passageways game" "A digital efficiency optimization game" "A shared subscriptions management game" "A mythical creatures alliance" "A fiscal intermediary strategy game" "An offworld game" "A modular living space design game" "A pirate game" "A cosmic exploration" "An iridescent materials crafting game" "A microtonal game")))
+(define *action-cycle* (make-cycle '("erase the boundaries of" "dissolve" "build" "unite" "infiltrate" "discover" "explore" "trade with" "mutually stake with" "lead the rebels in" "make peace with" "investigate" "rename" "collect gold from" "collect crystals from" "mine concepts from" "align" "click on" "match" "throw" "toss" "fire pellets at" "control" "touch" "stack" "guess" "memorize" "rotate" "swap" "slide" "avoid" "drag and drop" "tickle" "race" "challenge" "collect" "draw" "unlock" "cook" "break" "solve puzzles involving" "collect" "juggle" "script" "cast" "direct" "invest" "bet" "undersee" "inspire" "motivate" "prioritize" "align" "counter-espionage" "innovate" "design" "evaluate" "test" "envelope" "overwhelm" "teleport" "curate" "instigate" "perturb" "mismanage" "prune" "fertilize" "catalyze" "ritualize" "enact" "decree" "prophecizes" "sabotage" "legislate" "imbue" "invoke" "evoke" "derive" "metabolize" "breed" "feed" "pet" "touch" "summon" "visit" "dream" "conjure" "redeems" "envelop" "extoll" "tweak" "eviscerate" "re-position" "re-locate" "invite" "celebrate" "deals (in)" "trick" "mimic" "reflect" "echoe" "imposterize" "dupe" "anoint" "marry" "reconcile" "reimagine")))
+(define *things-cycle* (make-cycle '("nations" "castles" "cities" "strongholds" "towers" "dungeons" "citadels" "kingdoms" "unknown worlds" "other worlds" "parallel worlds" "other dimensions" "alien worlds" "heaven" "hell" "houses" "apartments" "mythological places" "historical places" "islands" "sanctuaries" "temples" "ruins" "factories" "caves" "gems" "diamonds" "gold nuggets" "bricks" "bubbles" "squares" "triangles" "treasure" "blobs" "kitchen appliances" "nondescript fruits" "animals" "birds" "baby animals" "farm animals" "elementals" "exotic fruits" "sentient plants" "your friends" "shapes" "jewels" "letters" "words" "numbers" "tokens" "coins" "eggs" "hats" "candy" "chocolate" "shoes" "gnomes" "fairies" "elves" "fools" "wizards" "princes" "princesses" "priestesses" "the holy grail" "goblets" "doubloons" "hyperstitial looms" "unicorns" "narwhals" "yetis" "golems" "gremlins" "moss people" "pixies" "blocks" "cubes" "asteroids" "stars" "balls" "spheres" "magnets" "riddles" "vibes" "ancient objects" "wands" "divine nonchalance" "staffs" "spellbooks" "tomes" "maps" "poems" "item-set bonuses" "capes" "sewing kits" "print-ons" "heeleys" "charms and enchantments" "temporary and non-Temporary Tattoos" "stuffed animals" "satchels" "robes" "scepters" "candles" "fragrances" "zests" "qualia" "creams and ointments" "potions" "test tubes" "vials" "cauldrons" "alpha" "goblets" "incense" "tents" "containers" "dwellings" "abodes" "bunkers" "community spaces" "caves" "tree houses" "hypermedia" "sailboats" "playgrounds" "volcanic islands" "castles" "clubs" "venues" "bridges" "secret wardrobes" "farms" "ecovillages" "cottages" "mountains" "springs" "wells" "rivers" "creeks" "liminal spaces" "fountains" "oases" "waterFalls" "glaciers")))
+(define *goals-cycle* (make-cycle '("to \"win\"" "in the name of love" "as an end in itself" "to win points" "to surpass the highscore" "to unlock bonus items" "to issue tokens" "to unlock the next level" "to create thriving community" "to manage resources effectively" "to protect the realm" "to open new portals" "to reconstruct reality" "for economic space agency" "for a post-capitalist present" "to care for one another" "to enter our bliss bodies" "to find the others" "to revel in the beauty of every moment" "to dance organizations into existence" "to explore qualia" "to go where no one has ever gone before" "to defy the odds" "to witness more miracles" "to unite enchantment and majesty" "because reality is our art" "to make divine interventions redundant")))
+
+(define *P-cycle* (make-cycle '("P" "p" "℘" "𝒫" "𝓅" "" "𝖕" "Ρ" "ρ" "Р" "р" "⍴" "Ᵽ" "ᖘ" "ᑸ" "ᑹ" "Ⓟ" "Ꝑ" "ꝑ" "Ꝓ" "ꝓ")))
+(define *L-cycle* (make-cycle '("L" "l" "ℒ" "ℓ" "𝓛" "𝓁" "𝔏" "𝖑" "Լ" "լ" "ʟ" "ɭ" "Ĺ" "Ļ" "Ľ" "Ŀ" "Ł" "ł" "ɫ" "ɬ" "Ꮮ" "Ⅼ" "ⅼ")))
+(define *A-cycle* (make-cycle '("A" "a" "Á" "á" "À" "à" "â" "Ä" "ä" "Å" "å" "Ā" "ā" "Ă" "ă" "Ą" "ą" "Ⱥ" "ⱥ" "∀" "Α" "α" "А" "а" "Ⴀ" "@" "ɑ" "ɒ" "Ⰰ")))
+(define *Y-cycle* (make-cycle '("Y" "y" "Ý" "ý" "Ÿ" "ÿ" "Ŷ" "ŷ" "Ȳ" "ȳ" "Υ" "Ү" "ү" "Ұ" "ұ" "ʏ" "ɏ" "𝓨" "𝒴" "𝓨")))
+(define *N-cycle* (make-cycle '("N" "n" "Ñ" "ñ" "Ň" "ň" "Ń" "ń" "Ņ" "ņ" "Ŋ" "ŋ" "Ƞ" "ɴ" "Ν" "ɲ" "Ɲ" "ɳ" "ℕ" "𝒩" "𝓃" "𝓝" "" "𝕟" "𝖭" "𝐍" "𝐧" "𝑁" "𝑛")))
+(define *E-cycle* (make-cycle '("E" "e" "É" "é" "È" "è" "Ê" "ê" "Ë" "ë" "Ē" "ē" "Ĕ" "ĕ" "Ė" "ė" "Ę" "ę" "Ě" "ě" "Ε" "ε" "Е" "е" "Ё" "ё" "Э" "э" "ℰ" "𝓔" "" "𝔼" "𝕰")))
+(define *T-cycle* (make-cycle '("T" "t" "Ť" "ť" "Ţ" "ţ" "Ṫ" "ṫ" "Ŧ" "ŧ" "Τ" "τ" "Т" "т" "Ŧ" "ʇ" "ʈ" "Ⱦ")))
+
+(define (homepage-step!)
+  (cycle-step! *genre-cycle*) (cycle-step! *action-cycle*)
+  (cycle-step! *things-cycle*) (cycle-step! *goals-cycle*)
+  (cycle-step! *P-cycle*) (cycle-step! *L-cycle*) (cycle-step! *A-cycle*)
+  (cycle-step! *Y-cycle*) (cycle-step! *N-cycle*) (cycle-step! *E-cycle*)
+  (cycle-step! *T-cycle*))
+
+(define (render-homepage)
+  `(div (@ (class "homepage-content"))
+        (div (@ (class "playnet-header"))
+             (p (span (@ (id "P")) ,(cycle-peek *P-cycle*))
+                (span (@ (id "L")) ,(cycle-peek *L-cycle*))
+                (span (@ (id "A")) ,(cycle-peek *A-cycle*))
+                (span (@ (id "Y")) ,(cycle-peek *Y-cycle*))
+                (span (@ (id "N")) ,(cycle-peek *N-cycle*))
+                (span (@ (id "E")) ,(cycle-peek *E-cycle*))
+                (span (@ (id "T")) ,(cycle-peek *T-cycle*))))
+        (div (@ (class "main-content"))
+             (div (@ (id "box"))
+                  (div (span (@ (id "genre")) ,(cycle-peek *genre-cycle*)))
+                  (div "where we")
+                  (div (span (@ (id "action")) ,(cycle-peek *action-cycle*)))
+                  (div (span (@ (id "things")) ,(cycle-peek *things-cycle*)))
+                  (div (span (@ (id "goals")) ,(cycle-peek *goals-cycle*)))))
+        (div (@ (class "button-container"))
+             (div (@ (class "bottom-buttons"))
+                  (a (@ (href "https://interplaynetary.github.io/free-association/") (class "btn github")) "Free-Association Interface")
+                  (a (@ (href "https://github.com/interplaynetary/free-association") (class "btn github")) "Free-Association Proof"))
+             (div (@ (class "bottom-buttons"))
+                  (a (@ (href "https://opencollective.com/playnet") (class "btn discord")) "Donate")
+                  (a (@ (href "https://drive.google.com/drive/folders/13XTRKXTwQggeQ2hBx4eLBZ2Favi4-I9n?usp=sharing") (class "btn playdrive")) "Playdrive")
+                  (a (@ (href "https://calendar.google.com/calendar/u/0?cid=NmJjYThlM2E4OTU2NTc3ZjFkNzg4ZGZhYmNjYzk1MTk0YTI5ZThiMjljZWU5NzM1OGY4NWFhZWY1OGI0ZTFkOEBncm91cC5jYWxlbmRhci5nb29nbGUuY29t") (class "btn calendar")) "Calendar")
+                  (a (@ (href "https://playnet.gitbook.io/docs/") (class "btn docs")) "Docs")))
+        (div (@ (class "playlabs-section"))
+             (h2 "Playlabs")
+             (div (@ (class "playlabs-content"))
+                  (a (@ (href "https://t.me/+jS7u3ZcKLoxmYWU5") (target "_blank") (class "btn telegram-btn"))
+                     (img (@ (src "https://telegram.org/img/t_logo.svg") (class "telegram-icon"))) " Join Telegram Chat")
+                  (a (@ (href "https://chat.whatsapp.com/CkE3rTzYzkqII4wUPqSXIW?mode=ems_copy_c") (target "_blank") (class "btn whatsapp-btn"))
+                     "Join WhatsApp Group")
+                  (div (@ (class "calendar-wrapper"))
+                       (iframe (@ (src "https://lu.ma/embed/calendar/cal-SGaqugFhyesXRZo/events?") (frameborder "0") (class "luma-calendar"))))))))
+
 (define *expressor-filter* #f)       ;; symbol or #f — filter history by expressor name
 
 ;; Control panel state
@@ -922,7 +991,8 @@
                 (reverse (cons s acc))))))))
 
 (define *log*
-  (list `(span (@ (class "result-text"))
+  (list (render-homepage)
+        `(span (@ (class "result-text"))
                ,(string-append
                  "\n"
                  " ██╗  ██╗ ██████╗ ██████╗  ██████╗ \n"
@@ -2188,6 +2258,19 @@
 
 (refresh!)
 (add-event-listener!/wrap (document-body) "keydown" global-keydown)
+
+;;; ── Animation timer ─────────────────────────────────────────────────────
+(let ((timer-callback (procedure->external
+                       (lambda ()
+                         (when (eq? *mode* 'outer)
+                           (homepage-step!)
+                           ;; Update *log* (homepage is first element)
+                           (set! *outer-log*
+                                 (cons (render-homepage) (cdr *outer-log*)))
+                           (set! *log* *outer-log*)
+                           (refresh!))))))
+  (window-set-interval timer-callback 1000))
+
 
 ;;; ── OCapN gateway connection ────────────────────────────────────────────
 ;;; Connects to the playnet OCapN gateway via WebSocket CapTP.

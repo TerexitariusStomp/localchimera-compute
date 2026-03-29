@@ -1,11 +1,14 @@
-body {
-    margin: 0;
-    background-color: #110e13;
-}
-
 .ide {
     display: flex;
-    height: 100vh;
+    height: 80vh;
+    min-height: 500px;
+    max-height: 800px;
+    margin: 2rem auto;
+    width: 95%;
+    max-width: 1400px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     overflow: hidden;
 }
 

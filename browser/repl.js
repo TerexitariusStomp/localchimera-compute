@@ -212,6 +212,12 @@ window.addEventListener("load", async () => {
           close(dc) { dc.close(); },
           closePc(pc) { pc.close(); }
         },
+        window: {
+          setTimeout(cb, delay) { return setTimeout(cb, delay); },
+          setInterval(cb, delay) { return setInterval(cb, delay); },
+          clearTimeout(id) { clearTimeout(id); },
+          clearInterval(id) { clearInterval(id); }
+        },
         urlParams: {
           get(name) {
             return new URLSearchParams(window.location.search).get(name) || "";
