@@ -159,6 +159,15 @@ window.addEventListener("load", async () => {
           setOnMessage(ws, cb) {
             window.__xorgWs = ws;  // expose for speech transcription
             ws.addEventListener('message', (e) => {
+              // Intercept presence updates before Scheme handler
+              if (typeof e.data === 'string' && e.data.startsWith('(presence ')) {
+                // Parse user list and store for Scheme to read
+                try {
+                  // Simple extraction: (presence ((name1 pk1) (name2 pk2) ...))
+                  window.__onlineUsers = e.data;
+                } catch(err) {}
+                // Still pass to Scheme so it can update the UI
+              }
               // Intercept transcribe responses before Scheme handler
               if (typeof e.data === 'string' && window.__pendingTranscribe) {
                 if (e.data.startsWith('(transcribe-ok ')) {

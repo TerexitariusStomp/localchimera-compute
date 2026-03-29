@@ -12,6 +12,7 @@
              (goblins persistence-store local-storage)
              (xorg gplay)
              (xorg autocomplete)
+             (xorg wisp)
              (srfi srfi-11))
 
 
@@ -586,6 +587,7 @@
 (define *confirm-delete-org* #f)     ;; org name string or #f
 (define *show-join-form* #f)
 (define *listening?* #f)
+(define *syntax-mode* 'lisp)  ;; 'lisp or 'wisp
 
 ;; Voice-to-text callbacks
 (define (on-speech-result transcript)
@@ -609,6 +611,12 @@
                (procedure->external on-speech-result)
                (procedure->external on-speech-end))
              (set! *listening?* #t))))
+
+(define (toggle-syntax-mode!)
+  (set! *syntax-mode* (if (eq? *syntax-mode* 'lisp) 'wisp 'lisp))
+  (ls-set-item "xorg-syntax-mode" (symbol->string *syntax-mode*))
+  (update-code-viewer!)
+  (refresh!))
 
 (define (org-entry-name e) (list-ref e 0))
 (define (org-entry-vat e) (list-ref e 1))
@@ -903,7 +911,11 @@
       (with-exception-handler
         (lambda (exn) (set! *code-viewer-content* ""))
         (lambda ()
-          (set! *code-viewer-content* (with-vat *vat* (serialize-org-code *org*))))
+          (let ((sexp-str (with-vat *vat* (serialize-org-code *org*))))
+            (set! *code-viewer-content*
+              (if (eq? *syntax-mode* 'wisp)
+                  (sexp->wisp-string sexp-str)
+                  sexp-str))))
         #:unwind? #t)
       (set! *code-viewer-content* "")))
 
@@ -976,6 +988,7 @@
       (log-append! `(span (@ (class "info-text"))
                           ,(string-append "Entering org '" name "'.\n")))
       (register-all-keys!)
+      (announce-presence!)
       ;; Update code viewer when entering org
       (update-code-viewer!))))
 
@@ -1293,7 +1306,10 @@
   (log-append! `(span (@ (class "prompt-text")) ,(current-prompt))
                `(span (@ (class "input-text")) ,(string-append str "\n")))
   (history-push! str)
-  (let ((port (open-input-string str)))
+  (let* ((effective-str (if (eq? *syntax-mode* 'wisp)
+                            (wisp->sexp-string str)
+                            str))
+         (port (open-input-string effective-str)))
     (let loop ()
       (let ((exp (read* port)))
         (cond
@@ -1354,6 +1370,10 @@
         (set-element-value! input (string-append (element-value input) *current-suggestion*))
         (set! *current-suggestion* "")
         (refresh!)))
+     ((and (string=? key "Tab") (eq? *syntax-mode* 'wisp))
+      (prevent-default! event)
+      (let ((input (get-element-by-id "expression")))
+        (set-element-value! input (string-append (element-value input) "  "))))
      ((string=? key "ArrowUp")
       (prevent-default! event)
       (when (< (+ *history-index* 1) (length *history*))
@@ -1379,8 +1399,8 @@
 (define (on-keyup event)
   (let* ((input (get-element-by-id "expression"))
          (str (element-value input))
-         (depth (compute-paren-depth str)))
-    ;; Update paren depth
+         (depth (if (eq? *syntax-mode* 'wisp) 0 (compute-paren-depth str))))
+    ;; Update paren depth (skip in wisp mode)
     (unless (= depth *paren-depth*)
       (set! *paren-depth* depth))
     ;; Update autocomplete suggestion
@@ -1656,6 +1676,9 @@
                                              (refresh!))))
                                 "signup")
                          `(span (@ (class "cp-status")) "relay: disconnected")))
+               (list `(span (@ (class ,(string-append "cp-btn" (if (eq? *syntax-mode* 'wisp) " cp-btn-primary" "")))
+                                (click ,(lambda (e) (toggle-syntax-mode!))))
+                             ,(if (eq? *syntax-mode* 'wisp) "wisp" "lisp")))
                (if #t  ;; always show mic — unsupported browsers fail gracefully via onerror
                    (list `(span (@ (class ,(string-append "cp-btn" (if *listening?* " cp-btn-danger" "")))
                                    (click ,(lambda (e) (toggle-listening!) (refresh!))))
@@ -1684,6 +1707,9 @@
                                 (click ,(lambda (e) (do-export-ssh-key!) (refresh!) (scroll-to-bottom!))))
                              "ssh key")
                      (render-join-form))
+               (list `(span (@ (class ,(string-append "cp-btn" (if (eq? *syntax-mode* 'wisp) " cp-btn-primary" "")))
+                                (click ,(lambda (e) (toggle-syntax-mode!))))
+                             ,(if (eq? *syntax-mode* 'wisp) "wisp" "lisp")))
                (if #t  ;; always show mic — unsupported browsers fail gracefully via onerror
                    (list `(span (@ (class ,(string-append "cp-btn" (if *listening?* " cp-btn-danger" "")))
                                    (click ,(lambda (e) (toggle-listening!) (refresh!))))
@@ -1692,7 +1718,21 @@
                (list `(span (@ (class ,(string-append "cp-status"
                                           (if *connected?* " cp-status-connected"
                                               " cp-status-disconnected"))))
-                             ,(if *connected?* "relay: connected" "relay: disconnected")))))))
+                             ,(if *connected?*
+                                  (if (null? *online-users*)
+                                      "online"
+                                      (let loop ((users *online-users*) (acc ""))
+                                        (if (null? users)
+                                            (string-append
+                                             (number->string (length *online-users*))
+                                             " online: " acc)
+                                            (let ((name (if (pair? (car users))
+                                                            (car (car users)) "?")))
+                                              (loop (cdr users)
+                                                    (if (string=? acc "")
+                                                        name
+                                                        (string-append acc ", " name)))))))
+                                  "offline")))))))
 
 ;;; ── Sidebar rendering ──────────────────────────────────────────────────
 
@@ -1783,12 +1823,14 @@
 ;;; ── Render ────────────────────────────────────────────────────────────────
 
 (define (paren-indicator)
-  (cond
-   ((= *paren-depth* 0) "")
-   ((> *paren-depth* 0)
-    (string-append "(" (number->string *paren-depth*) " open)"))
-   (else
-    (string-append (number->string (- *paren-depth*)) " extra )"))))
+  (if (eq? *syntax-mode* 'wisp)
+      ""
+      (cond
+       ((= *paren-depth* 0) "")
+       ((> *paren-depth* 0)
+        (string-append "(" (number->string *paren-depth*) " open)"))
+       (else
+        (string-append (number->string (- *paren-depth*)) " extra )")))))
 
 (define (render-repl)
   `(div (@ (id "repl") (class "repl repl-text"))
@@ -1827,7 +1869,9 @@
   (if (string=? *code-viewer-content* "")
       `(div)
       `(div (@ (id "code-viewer") (class "code-viewer"))
-            (div (@ (class "code-viewer-header")) "organization code")
+            (div (@ (class "code-viewer-header"))
+                 ,(string-append "organization code ("
+                    (if (eq? *syntax-mode* 'wisp) "wisp" "lisp") ")"))
             (pre (@ (id "code-viewer-content") (class "code-viewer-content"))
                  ,*code-viewer-content*))))
 
@@ -1858,6 +1902,11 @@
      ((and (string=? key "k") (ctrl-or-cmd? event))
       (prevent-default! event) (focus-element! (get-element-by-id "expression"))))))
 
+;;; ── Restore syntax mode preference ─────────────────────────────────────────
+(let ((saved-mode (ls-get-item "xorg-syntax-mode")))
+  (when (and saved-mode (string=? saved-mode "wisp"))
+    (set! *syntax-mode* 'wisp)))
+
 ;;; ── Restore persisted orgs from localStorage ──────────────────────────────
 (let ((index (load-org-index)))
   (for-each
@@ -1887,6 +1936,7 @@
 
 (define *ws* #f)            ;; WebSocket connection
 (define *connected?* #f)    ;; #t after connected
+(define *online-users* '()) ;; list of (name pk-prefix) from relay presence
 
 (define (register-all-keys!)
   "Send all local orgs' public keys to the relay."
@@ -1895,6 +1945,17 @@
       (unless (null? keys)
         (ws-send *ws* (call-with-output-string
                         (lambda (p) (write `(register-keys ,keys) p))))))))
+
+(define (announce-presence!)
+  "Announce our display name to the relay."
+  (when (and *ws* *connected?* *current-org-name*)
+    (ws-send *ws* (call-with-output-string
+                    (lambda (p) (write `(announce ,*current-org-name*) p))))))
+
+(define (request-who!)
+  "Ask the relay who is online."
+  (when (and *ws* *connected?*)
+    (ws-send *ws* "(who)")))
 
 (define-foreign ws-open
   "webSocket" "new"
@@ -1930,6 +1991,8 @@
          (set! *connected?* #t)
          (log-append! `(span (@ (class "result-text"))
                              "Connected to relay. Create an org and enter it.\n"))
+         (request-who!)
+         (when *current-org-name* (announce-presence!))
          (refresh!))))
 
     (ws-on-message! ws
@@ -1956,6 +2019,14 @@
               (set! *signup-pending?* #f)
               (log-append! `(span (@ (class "error-text"))
                 ,(string-append "Signup failed: " reason "\n"))))
+
+             ;; Presence update — list of online users
+             (('presence users)
+              (set! *online-users* (if (list? users) users '())))
+
+             ;; Who response
+             (('who-list users)
+              (set! *online-users* (if (list? users) users '())))
 
              ;; Anything else — log as relay message
              (_

@@ -77,6 +77,8 @@
 (define *sessions* (make-hash-table))
 ;; pubkey-string → list of queued message strings
 (define *mailboxes* (make-hash-table))
+;; pubkey-string → display name (set via announce)
+(define *presence* (make-hash-table))
 ;; Lock for thread safety
 (define *lock* (make-mutex))
 
@@ -101,7 +103,31 @@
 
 (define (unregister-key! pk-str)
   (with-mutex *lock*
-    (hash-remove! *sessions* pk-str)))
+    (hash-remove! *sessions* pk-str)
+    (hash-remove! *presence* pk-str)))
+
+(define (get-online-users)
+  "Return list of (name . pubkey-prefix) for all connected users with names."
+  (with-mutex *lock*
+    (hash-fold (lambda (pk name acc)
+                 (if (hash-ref *sessions* pk)
+                     (cons (list name (substring pk 0 (min 20 (string-length pk))))
+                           acc)
+                     acc))
+               '() *presence*)))
+
+(define (broadcast! msg-sexp)
+  "Send a message to all connected sessions."
+  (let ((text (call-with-output-string (lambda (p) (write msg-sexp p)))))
+    (with-mutex *lock*
+      (hash-for-each
+       (lambda (pk port)
+         (catch #t
+           (lambda ()
+             (write-frame (make-text-frame text) port)
+             (force-output port))
+           (lambda args #f)))  ;; ignore send errors
+       *sessions*))))
 
 (define (route-message! sender-pk target-pk payload-str)
   (let ((target-port (with-mutex *lock* (hash-ref *sessions* target-pk))))
@@ -139,6 +165,23 @@
              (set! my-keys pk-strs)
              (for-each (lambda (pk-str) (register-key! pk-str port)) pk-strs)
              (log! "  + ~a key(s) registered\n" (length pk-strs))))
+
+          ;; Announce: set display name for this session
+          (('announce (? string? name))
+           (unless (null? my-keys)
+             (with-mutex *lock*
+               (hash-set! *presence* (car my-keys) name))
+             (log! "  announce: ~a\n" name)
+             (broadcast! `(presence ,(get-online-users)))))
+
+          ;; Who: list connected users
+          (('who)
+           (let* ((users (get-online-users))
+                  (reply (call-with-output-string
+                           (lambda (p) (write `(who-list ,users) p)))))
+             (write-frame (make-text-frame reply) port)
+             (force-output port)
+             (log! "  who: ~a users\n" (length users))))
 
           ;; Route: (to <target-pk-str> payload)
           (('to target-pk payload)
@@ -224,7 +267,9 @@
   ;; Cleanup
   (for-each unregister-key! my-keys)
   (log! "  client disconnected (~a keys)\n" (length my-keys))
-  (catch #t (lambda () (close-port port)) (lambda args #f)))
+  (catch #t (lambda () (close-port port)) (lambda args #f))
+  ;; Broadcast updated presence after disconnect
+  (broadcast! `(presence ,(get-online-users))))
 
 (define (main args)
   (let ((port (if (> (length args) 1)
