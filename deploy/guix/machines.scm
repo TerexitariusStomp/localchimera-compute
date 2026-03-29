@@ -34,6 +34,10 @@
              (guix gexp)
              (xorg-relay-service))
 
+(define %this-dir
+  (dirname (or (current-filename)
+               (canonicalize-path "deploy/guix/machines.scm"))))
+
 ;; Load the meta-org package from guix.scm (provides bin/meta-org-relay)
 (define %meta-org
   (load (string-append %this-dir "/../../guix.scm")))
@@ -46,9 +50,6 @@
 
 ;; Dynamic users: list of (username . ssh-pubkey) pairs.
 ;; Managed by provision-user.scm — do not edit users.scm by hand.
-(define %this-dir
-  (dirname (or (current-filename)
-               (canonicalize-path "deploy/guix/machines.scm"))))
 
 (define %dynamic-users
   (primitive-load
