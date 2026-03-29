@@ -305,6 +305,30 @@ Goblins actors communicate via OCapN over multiple transports:
 
 The transport is invisible. Capability security is preserved end-to-end.
 
+### IoT and sensors with capability security
+
+Any device that speaks Reticulum — a LoRa sensor, a serial-connected microcontroller, an I2P node — can host Goblins actors. The actor IS the sensor's API. Possession of the actor reference IS authorization to read the sensor. No API keys, no tokens, no ACLs.
+
+```scheme
+;; A soil moisture sensor on a LoRa node is a Goblins actor
+(on (<- soil-sensor 'read)
+    (lambda (moisture) (display moisture)))
+;; => 42.3
+
+;; Attenuate: give Alice read-only access, revocable
+(define alice-sensor (facet soil-sensor 'read))
+;; Alice can read but not configure. Revoke anytime via ^cell flip.
+```
+
+MQTT bridges the gap for existing IoT infrastructure: Mosquitto handles the physical protocol boundary (topic ACLs, device auth), Goblins handles the logical capability boundary (attenuation, logging, revocation). Each MQTT topic becomes an actor. Each message becomes a vat turn. `bcom` folds over event streams give replayable audit trails for free.
+
+```
+Physical sensor → Mosquitto (MQTT) → bridge actor → topic observer → scoped observer
+                  protocol normalization    capability attenuation chain
+```
+
+Sensor data flows through the same ValueFlows accounting as API keys — each reading is an EconomicEvent, each sensor is an EconomicResource, the data is a resource flow governed by the same actors that govern everything else.
+
 ## How to Run
 
 ### Requirements
