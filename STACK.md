@@ -122,97 +122,63 @@ Spritely is porting Shepherd to Goblins (Sep 2025 — nearly done). When it land
 
 ---
 
-## Layer 3: xorg — the org as interpreter
+## Layer 3: xorg — governed state via Goblins patterns
 
 ### What it is
-A Guile Scheme interpreter where the org IS the evaluator. Rules, state, and history
-are all S-expressions. Metacircular, homoiconic, self-transforming.
+On native Guile, xorg is a **pattern** — Heart of Spritely applied to orgs.
+In the browser (Hoot/WASM), xorg provides a metacircular evaluator.
+See [ARCHITECTURE.md](ARCHITECTURE.md).
 
-### Core architecture
+### Core actors (from `actors.scm`, 96 lines)
 ```
-^org (Goblins actor)
-  ├── bindings: alist of (name . value) — the org's current namespace
-  ├── validator-proc: ^faceted-validator actor — governs what's allowed
-  ├── validator-expr: S-expression — re-evaluated on restore
-  ├── history: list of (version expressor-id expression parent sig snapshot)
-  ├── expressor-store: registered expressors with public keys + sealers
-  ├── output-cap: ^output-port actor — where (display ...) goes
-  └── org-public-key: Ed25519 public key of the org itself
+^org              — pure state: bindings + modify! + snapshot + restore!
+^logger           — accountability log (Heart of Spritely §3.3.4)
+^proxy            — logged revocable proxy (Heart of Spritely §3.3.4)
+^facet            — read-only attenuation (Goblins actor-lib)
+^cell             — revocation flag (Goblins actor-lib)
 ```
 
 ### Creating orgs
 ```scheme
-;; Experimentation — no governance
-(define org (make-open-org "my-org"))
+;; Open org — everyone gets a logged proxy
+(define-values (vat proxy log) (make-open-org "my-org"))
 
-;; Production — capability-governed
-(define-values (org gov-seal infra-seal member-seal)
+;; Governed org — read-only ref + 3 revocable proxies
+(define-values (vat read log gov gov-r infra infra-r member member-r)
   (make-governed-org "my-org"))
 ```
 
-### Expressing inside an org
+### Using an org
 ```scheme
-;; Basic evaluation
-(enter! org)                          ;; enter the REPL
-play[genesis]> (modify! 'x 42)        ;; set a binding (history entry created)
-play[genesis]> (define (square n) (* n n))  ;; define functions
-play[genesis]> (square 7)             ;; => 49
+(with-vat vat
+  ;; Modify via proxy — logged automatically
+  ($ infra 'modify! 'deploy "my-cap")
 
-;; Identity
-play[genesis]> (defexpressor 'alice (generate-key-pair))  ;; returns alice-sealer
-play[genesis]> (as alice-sealer (modify! 'proposal "fund the commons"))
+  ;; Check the log
+  ($ log 'get-log)
+  ;; => ((*entry* user infrastructure args (modify! deploy "my-cap") ...))
 
-;; Metaprogramming — governed
-play[genesis]> (enact! new-validator gov-seal)  ;; constitutional amendment
-play[genesis]> (rollback! 5 gov-seal)           ;; restore version 5
+  ;; Revoke access
+  ($ infra-r #t)
+  ;; infra proxy is now dead
+
+  ;; Read-only ref — ^facet blocks mutation structurally
+  ($ read 'lookup 'deploy)  ;; works
+  ;; ($ read 'modify! ...) → ERROR: method denied
+  )
 ```
 
-### Capability security
-The validator checks **possession**, not identity:
+### Governance = composition
+- **Identity**: the proxy ref IS the identity — unforgeable by Goblins guarantee
+- **Accountability**: `^logger` records who did what — separate from the org
+- **Attenuation**: `^facet` restricts which methods are available
+- **Revocation**: `^cell` flip cuts access instantly
 
-```scheme
-;; Governed names require endorsement
-(modify! 'infra-deploy (endorse deploy-cap infra-seal))
-;;                      ↑ sealing value with infra-seal proves you hold it
-
-;; Ungoverned names: freely modifiable
-(modify! 'proposal "fund the commons")  ;; no endorsement needed
-```
-
-The three governance domains in a governed org:
-- **governance** (`gov-seal`): controls `validator` and `rollback`
-- **infrastructure** (`infra-seal`): controls `infra-*` names (deploy, services)
-- **membership** (`member-seal`): controls `member-*` names (expressors, roles)
-
-### History and signatures
-Every state-changing expression creates a history entry:
-```scheme
-(version expressor-id expression parent-version snapshot signature)
-;;        ↑ who          ↑ what     ↑ links to prior     ↑ Ed25519
-```
-
-Verify any entry:
-```scheme
-(verify-history-entry entry expressor-public-key)  ;; => #t or #f
-```
-
-History is the audit trail. Rollback restores any prior state. The capability
-authorized the change; the signature proves who made it.
+No validators. No signing. No endorsement. Pure Goblins.
 
 ### Persistence
-Orgs persist via Goblins' Bloblin store. The entire actor graph serializes:
-- Bindings (capability actors, plain values)
-- Validator (as actor refs — `^faceted-validator` → `^facet` → sealers)
-- History with signatures
-- Expressor store (public keys, sealer actors)
-- Output capability
-
-```scheme
-(make-governed-org-persistent "my-org"
-  (make-bloblin-store "./my-org.db"))
-```
-
-On restart, everything comes back including governance and capabilities.
+Orgs persist via Goblins' `define-actor` mechanism. The `org-env`
+persistence environment includes `^org`, `^facet`, and `^cell`.
 
 ---
 
@@ -274,7 +240,7 @@ Its expressions are attributed, signed, validated, and in the history.
 
 ;; AI acts under its own authority — not the caller's
 (as-ai-eval ai-seal "write a proposal for funding the commons")
-;; → history entry attributed to AI, signed with ai-pk, validated by ^faceted-validator
+;; → logged via ^logger, attributed to ai proxy, revocable
 ```
 
 **Layer 5B: Emacs/Geiser MCP bridge** (custom — org-aware tooling)
@@ -321,7 +287,7 @@ Claude write correct Scheme; the MCP bridge lets it evaluate in the running org.
 |---|---|---|---|
 | Purpose | Governance, production | Org-aware tooling | Code editing, IDE |
 | Attribution | History + signature | Emacs buffer output | Diff view, ediff |
-| Validation | ^faceted-validator | None | Flycheck/Flymake |
+| Accountability | ^logger + proxy | None | Flycheck/Flymake |
 | Persistence | Survives restarts | Session only | Session only |
 | Authority | Exactly what given | Full Geiser access | Full editor access |
 | Talks to | Goblins actors | Live REPL via socket | LSP, tree-sitter, Emacs |
@@ -342,21 +308,23 @@ cd ~/Programs/meta-org
 
 ### Run tests
 ```bash
-guile -L module tests/test-gplay.scm
-guile -L module tests/test-endorsement.scm
-guile -L module tests/test-governed-org.scm
-guile -L module tests/test-persistence.scm
+make test-all
 ```
 
-### Key modules — the kernel
+### Key modules
 
-The governance kernel (Hoot/WASM compatible, no system deps):
+Goblins actors (work everywhere):
 
 | Module | What it does |
 |---|---|
-| `(xorg gplay)` | `^org` actor, evaluator, history, signatures, `^output-port` |
-| `(xorg endorsement)` | `^faceted-validator`, `^name-predicate`, sealers |
-| `(xorg org)` | `make-open-org`, `make-governed-org`, `enter!` |
+| `(xorg actors)` | `^org`, `^logger`, `spawn-logged-revocable-proxy-pair`, `org-env` |
+
+Hoot/WASM (browser only):
+
+| Module | What it does |
+|---|---|
+| `(xorg evaluator)` | Metacircular `evaluate`, `default-base-bindings`, `make-io-bindings` |
+| `(xorg repl)` | `make-open-org`, `make-governed-org`, `enter!` |
 
 Knowledge layer (standalone, Hoot-compatible):
 
@@ -366,9 +334,8 @@ Knowledge layer (standalone, Hoot-compatible):
 | `(xorg hyperarc)` | Hyperarc/metagraph data structures |
 | `(xorg knowledge)` | Relational queries over hyperarc metagraphs |
 
-Everything else (HTTP clients, AI glue, MCP transport, service wrappers) is
-in `module/xorg/deprecated/`. Capabilities are injected into the org as opaque
-Goblins actor refs — the kernel doesn't know or care what they do.
+On the server, `(xorg actors)` is optional — you can write the same
+Heart of Spritely patterns inline. See [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ---
 
@@ -377,9 +344,9 @@ Goblins actor refs — the kernel doesn't know or care what they do.
 ### Done
 | What | Status |
 |---|---|
-| xorg kernel (`^org` v5, endorsement, org factories) | ✓ Done |
-| Capability security (faceted validator, sealers) | ✓ Done |
-| History with Ed25519 signatures | ✓ Done |
+| xorg actors (^org, ^logger, proxy — Heart of Spritely patterns) | ✓ Done |
+| Governance via composition (^facet, ^cell, proxy) | ✓ Done |
+| Server/browser split (actors.scm, evaluator.scm, repl.scm) | ✓ Done |
 | Knowledge layer (miniKanren, hyperarc, queries) | ✓ Done |
 | Hetzner+Guix deploy (SERVER_IP) | ✓ Done |
 | Kernel extraction (deprecated wrappers moved out) | ✓ Done |
