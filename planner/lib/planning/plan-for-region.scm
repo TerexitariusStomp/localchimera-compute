@@ -24,11 +24,17 @@
 
 (define* (plan-for-region cell-ids horizon
                           recipe-store plan-store observer
-                          #:key (agents #f))
+                          #:key (agents #f)
+                                (buffer-zone-store #f) (buffer-profiles #f)
+                                (buffered-specs '()) (location-store #f))
   "Plan for a set of H3 cells. Normalizes cell IDs, then delegates to
    plan-for-unit with region-specific normalization."
   (plan-for-unit cell-ids horizon
                  recipe-store plan-store observer
                  #:agents agents
                  #:normalize-fn normalize-cells
-                 #:plan-name "Region Plan"))
+                 #:plan-name "Region Plan"
+                 #:buffer-zone-store buffer-zone-store
+                 #:buffer-profiles buffer-profiles
+                 #:buffered-specs buffered-specs
+                 #:location-store location-store))

@@ -82,6 +82,3 @@
 ;; Layer 4: Federation
 (load "lib/planning/store-registry.scm")
 (load "lib/planning/plan-federation.scm")
-
-;; MQTT Bridge — loaded separately via lib/bridge/load-bridge.scm
-;; (requires mosquitto and json packages, not part of core planner)

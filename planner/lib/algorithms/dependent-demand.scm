@@ -381,7 +381,7 @@
            (let-values (((new-ns remaining alloc)
                          (netter-net-demand ns plan-store observer spec-id qty
                            #:at-location task-loc #:needed-by needed-by
-                           #:plan-id plan-id)))
+                           #:plan-id plan-id #:location-store location-store)))
              (set! ns new-ns)
              (for-each (lambda (a) (set! result-allocated (cons a result-allocated))) alloc)
              (when (> remaining *epsilon-dd*)
@@ -408,7 +408,7 @@
            (let-values (((new-ns remaining alloc)
                          (netter-net-demand ns plan-store observer spec-id qty
                            #:at-location task-loc #:needed-by needed-by
-                           #:plan-id plan-id)))
+                           #:plan-id plan-id #:location-store location-store)))
              (set! ns new-ns)
              (for-each (lambda (a) (set! result-allocated (cons a result-allocated))) alloc)
 

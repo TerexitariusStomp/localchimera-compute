@@ -28,11 +28,17 @@
 
 (define* (plan-for-scope scope-ids horizon
                          recipe-store plan-store observer
-                         #:key (agents #f) (parent-of #f))
+                         #:key (agents #f) (parent-of #f)
+                               (buffer-zone-store #f) (buffer-profiles #f)
+                               (buffered-specs '()) (location-store #f))
   "Plan for a set of scopes. Normalizes scope IDs, then delegates to
    plan-for-unit with scope-specific normalization."
   (plan-for-unit scope-ids horizon
                  recipe-store plan-store observer
                  #:agents agents
                  #:normalize-fn (lambda (ids) (normalize-scopes ids parent-of))
-                 #:plan-name "Scope Plan"))
+                 #:plan-name "Scope Plan"
+                 #:buffer-zone-store buffer-zone-store
+                 #:buffer-profiles buffer-profiles
+                 #:buffered-specs buffered-specs
+                 #:location-store location-store))

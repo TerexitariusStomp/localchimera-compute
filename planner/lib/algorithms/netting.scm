@@ -225,12 +225,12 @@
 ;; ═════════════════════════════════════════════════════════════════════════
 
 (define* (netter-reserve ns plan-store observer spec-id qty
-                         #:key (plan-id #f))
+                         #:key (plan-id #f) (location-store #f))
   "Reserve capacity for buffer replenishment. Claims inventory + scheduled
    outputs up to qty. Returns (values new-ns actually-reserved)."
   (let-values (((new-ns remaining _alloc)
                 (netter-net-demand ns plan-store observer spec-id qty
-                  #:plan-id plan-id)))
+                  #:plan-id plan-id #:location-store location-store)))
     (values new-ns (- qty remaining))))
 
 
@@ -239,10 +239,11 @@
 ;; ═════════════════════════════════════════════════════════════════════════
 
 (define* (netter-net-available ns plan-store observer spec-id
-                               #:key (at-location #f))
+                               #:key (at-location #f) (location-store #f))
   "Return available quantity for a spec (inventory + scheduled - floor).
    Does NOT modify netter state."
   ;; Net against a huge quantity to find how much is available
   (let-values (((_ns remaining _alloc)
-                (netter-net-demand ns plan-store observer spec-id 999999999)))
+                (netter-net-demand ns plan-store observer spec-id 999999999
+                  #:at-location at-location #:location-store location-store)))
     (- 999999999 remaining)))

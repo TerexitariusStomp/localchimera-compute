@@ -22,7 +22,8 @@
 
 (define* (dependent-supply plan-id supply-spec-id supply-quantity available-from
                            recipe-store plan-store observer initial-ns
-                           #:key (agents #f) (generate-id-fn #f) (at-location #f))
+                           #:key (agents #f) (generate-id-fn #f) (at-location #f)
+                                 (location-store #f))
   "Absorb available supply through recipes via BFS.
    initial-ns: <netter-state> (immutable — threaded through via set! on binding).
    Returns (values new-ns result-alist)."
@@ -54,7 +55,8 @@
         (when ns
           (let-values (((new-ns rem) (netter-net-supply ns plan-store spec-id qty
                                        #:available-from avail-from
-                                       #:at-location task-location)))
+                                       #:at-location task-location
+                                       #:location-store location-store)))
             (set! ns new-ns)
             (set! remaining rem)))
 
