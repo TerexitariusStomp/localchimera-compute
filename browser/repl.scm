@@ -212,6 +212,39 @@
       (set-element-checked! elem (if val 1 0))
       (set-attribute! elem name val)))
 
+;;; ── SXML Composition Guide ─────────────────────────────────────────────
+;;;
+;;; The entire UI is SXML — S-expression HTML. Every DOM element is a list:
+;;;
+;;;   "hello"                              → text node
+;;;   (div "hello")                        → <div>hello</div>
+;;;   (div (@ (class "red")) "hello")      → <div class="red">hello</div>
+;;;   (span (@ (click ,handler)) "go")     → clickable span
+;;;   (input (@ (id "x") (type "text")))   → text input
+;;;
+;;; Event handlers are Scheme procedures attached as attributes:
+;;;   (click ,(lambda (e) ...))            → click handler
+;;;   (keydown ,(lambda (e) ...))          → key handler
+;;;   (input ,(lambda (e) ...))            → input change handler
+;;;
+;;; Conditional children — use ,@ with if:
+;;;   ,@(if show? (list `(span "visible")) '())
+;;;
+;;; Dynamic lists — use ,@ with map:
+;;;   ,@(map (lambda (item) `(li ,item)) items)
+;;;
+;;; VDOM constraint: the virtual DOM diffs children by position, not key.
+;;; Variable-length lists (like log entries) should NOT be followed by
+;;; fixed elements as siblings within the same parent. Instead, separate
+;;; them into sibling containers (see render-repl for the canonical pattern).
+;;;
+;;; To render custom interactive elements in the REPL log:
+;;;   (log-append! `(div (input (@ (id "my-input")))
+;;;                      (span (@ (click ,(lambda (e)
+;;;                                         (display (element-value
+;;;                                                    (get-element-by-id "my-input"))))))
+;;;                            "submit")))
+
 (define (attr-value? x)
   (or (string? x) (boolean? x)))
 
@@ -823,6 +856,19 @@
                  "begin, if, cond, case, and, or, when, unless, do,\n"
                  "quote. Lambdas capture bindings but adopt their\n"
                  "caller's identity — logic and authority are separate.\n"
+                 "\n"
+                 "── SXML UI ────────────────────────────────────\n"
+                 "\n"
+                 "The interface is built from S-expression HTML.\n"
+                 "Every element — buttons, inputs, the log itself\n"
+                 "— is an SXML tree diffed by a virtual DOM.\n"
+                 "\n"
+                 "  (div (@ (class \"box\")) \"content\")\n"
+                 "  (span (@ (click handler)) \"clickable\")\n"
+                 "  (input (@ (id \"x\") (type \"text\")))\n"
+                 "\n"
+                 "UI composed from S-expressions can be appended\n"
+                 "to the log and rendered as live DOM elements.\n"
                  "\n"))))
 
 (define *outer-log* *log*)
@@ -1391,8 +1437,7 @@
   (let ((input (get-element-by-id "expression")))
     (set-style! input "height" "auto")
     (set-style! input "height"
-                (string-append (number->string (scroll-height input)) "px"))
-    (scroll-to-bottom!)))
+                (string-append (number->string (scroll-height input)) "px"))))
 
 ;;; ── Scroll helper ─────────────────────────────────────────────────────────
 
@@ -1600,197 +1645,142 @@
           (div (@ (class "inspector-row"))
                (span (@ (class "value")) ,display-text)))))
 
-;;; ── Control panel render functions ───────────────────────────────────────
+;;; ── UI helpers ───────────────────────────────────────────────────────────
+
+(define (any-blank? strs)
+  (and (pair? strs)
+       (or (string=? (car strs) "")
+           (any-blank? (cdr strs)))))
+
+(define (read-inputs input-specs)
+  "Read and trim values from a list of (id placeholder) specs."
+  (map (lambda (spec) (%trim (element-value (get-element-by-id (car spec)))))
+       input-specs))
+
+(define (render-toggle-form show? set-show! collapsed-label submit-label inputs on-submit)
+  "Render a collapsible form. INPUTS is a list of (id placeholder) pairs.
+   ON-SUBMIT receives a list of trimmed input values."
+  (if show?
+      (let ((do-submit (lambda ()
+                         (let ((vals (read-inputs inputs)))
+                           (unless (any-blank? vals)
+                             (on-submit vals)
+                             (set-show! #f)
+                             (refresh!) (scroll-to-bottom!))))))
+        `(div (@ (class "cp-form"))
+              ,@(let build ((rest inputs))
+                  (if (null? rest) '()
+                      (let ((id (car (car rest)))
+                            (ph (car (cdr (car rest))))
+                            (last? (null? (cdr rest))))
+                        (cons `(input (@ (id ,id) (class "cp-input")
+                                         (placeholder ,ph)
+                                         ,@(if last?
+                                               `((keydown ,(lambda (e)
+                                                             (when (string=? (keyboard-event-key e) "Enter")
+                                                               (prevent-default! e)
+                                                               (do-submit)))))
+                                               '())))
+                              (build (cdr rest))))))
+              (div (@ (class "cp-btn-row"))
+                   (span (@ (class "cp-btn cp-btn-primary")
+                             (click ,(lambda (e) (do-submit))))
+                         ,submit-label)
+                   (span (@ (class "cp-btn")
+                             (click ,(lambda (e) (set-show! #f) (refresh!))))
+                         "cancel"))))
+      `(span (@ (class "cp-action")
+                (click ,(lambda (e) (set-show! #t) (refresh!))))
+             ,collapsed-label)))
 
 (define (render-new-org-button)
-  (if *show-new-org-form*
-      `(div (@ (class "cp-form"))
-            (input (@ (id "new-org-input") (class "cp-input")
-                      (placeholder "org name")
-                      (keydown ,(lambda (e)
-                                  (let ((key (keyboard-event-key e)))
-                                    (when (string=? key "Enter")
-                                      (prevent-default! e)
-                                      (let ((name (%trim (element-value
-                                                           (get-element-by-id "new-org-input")))))
-                                        (unless (string=? name "")
-                                          (do-make-org! name)
-                                          (set! *show-new-org-form* #f)
-                                          (refresh!) (scroll-to-bottom!)))))))))
-            (div (@ (class "cp-btn-row"))
-                 (span (@ (class "cp-btn cp-btn-primary")
-                           (click ,(lambda (e)
-                                     (let ((name (%trim (element-value
-                                                          (get-element-by-id "new-org-input")))))
-                                       (unless (string=? name "")
-                                         (do-make-org! name)
-                                         (set! *show-new-org-form* #f)
-                                         (refresh!) (scroll-to-bottom!))))))
-                       "create")
-                 (span (@ (class "cp-btn")
-                           (click ,(lambda (e)
-                                     (set! *show-new-org-form* #f)
-                                     (refresh!))))
-                       "cancel")))
-      `(div (@ (class "cp-action")
-               (click ,(lambda (e)
-                         (set! *show-new-org-form* #t)
-                         (refresh!))))
-            "+ new org")))
+  (render-toggle-form *show-new-org-form*
+    (lambda (v) (set! *show-new-org-form* v))
+    "+ new org" "create"
+    '(("new-org-input" "org name"))
+    (lambda (vals) (do-make-org! (car vals)))))
 
 (define (render-signup-button)
-  (if *show-signup-form*
-      `(div (@ (class "cp-form"))
-            (input (@ (id "signup-username") (class "cp-input")
-                      (placeholder "username")))
-            (input (@ (id "signup-email") (class "cp-input")
-                      (placeholder "email@example.com")
-                      (keydown ,(lambda (e)
-                                  (when (string=? (keyboard-event-key e) "Enter")
-                                    (prevent-default! e)
-                                    (let ((u (%trim (element-value
-                                                      (get-element-by-id "signup-username"))))
-                                          (em (%trim (element-value
-                                                       (get-element-by-id "signup-email")))))
-                                      (unless (or (string=? u "") (string=? em ""))
-                                        (do-signup! u em)
-                                        (set! *show-signup-form* #f)
-                                        (refresh!) (scroll-to-bottom!))))))))
-            (div (@ (class "cp-btn-row"))
-                 (span (@ (class "cp-btn cp-btn-primary")
-                           (click ,(lambda (e)
-                                     (let ((u (%trim (element-value
-                                                       (get-element-by-id "signup-username"))))
-                                           (em (%trim (element-value
-                                                        (get-element-by-id "signup-email")))))
-                                       (unless (or (string=? u "") (string=? em ""))
-                                         (do-signup! u em)
-                                         (set! *show-signup-form* #f)
-                                         (refresh!) (scroll-to-bottom!))))))
-                       "register")
-                 (span (@ (class "cp-btn")
-                           (click ,(lambda (e)
-                                     (set! *show-signup-form* #f)
-                                     (refresh!))))
-                       "cancel")))
-      `(span (@ (class "cp-action")
-                (click ,(lambda (e)
-                          (set! *show-signup-form* #t)
-                          (refresh!))))
-             "signup")))
+  (render-toggle-form *show-signup-form*
+    (lambda (v) (set! *show-signup-form* v))
+    "signup" "register"
+    '(("signup-username" "username") ("signup-email" "email@example.com"))
+    (lambda (vals) (do-signup! (car vals) (car (cdr vals))))))
 
 (define (render-join-form)
-  (if *show-join-form*
-      `(div (@ (class "cp-form"))
-            (input (@ (id "join-target-input") (class "cp-input")
-                      (placeholder "target org name")
-                      (keydown ,(lambda (e)
-                                  (when (string=? (keyboard-event-key e) "Enter")
-                                    (prevent-default! e)
-                                    (let ((target (%trim (element-value
-                                                           (get-element-by-id "join-target-input")))))
-                                      (unless (string=? target "")
-                                        (do-join-org! target)
-                                        (set! *show-join-form* #f)
-                                        (refresh!) (scroll-to-bottom!))))))))
-            (div (@ (class "cp-btn-row"))
-                 (span (@ (class "cp-btn cp-btn-primary")
-                           (click ,(lambda (e)
-                                     (let ((target (%trim (element-value
-                                                            (get-element-by-id "join-target-input")))))
-                                       (unless (string=? target "")
-                                         (do-join-org! target)
-                                         (set! *show-join-form* #f)
-                                         (refresh!) (scroll-to-bottom!))))))
-                       "join")
-                 (span (@ (class "cp-btn")
-                           (click ,(lambda (e)
-                                     (set! *show-join-form* #f)
-                                     (refresh!))))
-                       "cancel")))
-      `(span (@ (class "cp-action")
-                (click ,(lambda (e)
-                          (set! *show-join-form* #t)
-                          (refresh!))))
-             "join org")))
+  (render-toggle-form *show-join-form*
+    (lambda (v) (set! *show-join-form* v))
+    "join org" "join"
+    '(("join-target-input" "target org name"))
+    (lambda (vals) (do-join-org! (car vals)))))
+
+;;; ── Action bar helpers ──────────────────────────────────────────────────
+
+(define (action-button label thunk extra-class)
+  "A clickable action bar button. THUNK is called on click, then refresh."
+  `(span (@ (class ,(string-append "cp-btn" extra-class))
+            (click ,(lambda (e) (thunk) (refresh!) (scroll-to-bottom!))))
+         ,label))
+
+(define (eval-button label lisp-cmd wisp-cmd)
+  "Action bar button that evaluates a command (syntax-mode aware)."
+  (action-button label
+    (lambda () (eval! (if (eq? *syntax-mode* 'wisp) wisp-cmd lisp-cmd)))
+    ""))
+
+(define (syntax-toggle-button)
+  (action-button (if (eq? *syntax-mode* 'wisp) "wisp" "lisp")
+    (lambda () (toggle-syntax-mode!))
+    (if (eq? *syntax-mode* 'wisp) " cp-btn-primary" "")))
+
+(define (voice-button listening? label-on label-off)
+  `(span (@ (class ,(string-append "cp-btn" (if listening? " cp-btn-danger" "")))
+            (click ,(lambda (e) (toggle-listening!) (refresh!))))
+         ,(if listening? label-on label-off)))
+
+(define (render-online-status)
+  `(span (@ (class ,(string-append "cp-status"
+                        (if *connected?* " cp-status-connected"
+                            " cp-status-disconnected"))))
+         ,(if *connected?*
+              (if (null? *online-users*)
+                  "online"
+                  (let loop ((users *online-users*) (acc ""))
+                    (if (null? users)
+                        (string-append (number->string (length *online-users*))
+                                       " online: " acc)
+                        (loop (cdr users)
+                              (let ((name (if (pair? (car users))
+                                              (car (car users)) "?")))
+                                (if (string=? acc "") name
+                                    (string-append acc ", " name)))))))
+              "offline")))
 
 (define (render-action-bar)
   `(div (@ (class "action-bar"))
         ,@(if (eq? *mode* 'outer)
-              (append
-               (list `(span (@ (class "cp-btn cp-btn-primary")
-                                (click ,(lambda (e)
-                                          (set! *show-new-org-form* #t)
-                                          (refresh!))))
-                             "+ new org")
-                     (if (and *ws* *connected?*)
-                         `(span (@ (class "cp-btn")
-                                   (click ,(lambda (e)
-                                             (set! *show-signup-form* #t)
-                                             (refresh!))))
-                                "signup")
-                         `(span (@ (class "cp-status")) "relay: disconnected")))
-               (list `(span (@ (class ,(string-append "cp-btn" (if (eq? *syntax-mode* 'wisp) " cp-btn-primary" "")))
-                                (click ,(lambda (e) (toggle-syntax-mode!))))
-                             ,(if (eq? *syntax-mode* 'wisp) "wisp" "lisp")))
-               (if #t  ;; always show mic — unsupported browsers fail gracefully via onerror
-                   (list `(span (@ (class ,(string-append "cp-btn" (if *listening?* " cp-btn-danger" "")))
-                                   (click ,(lambda (e) (toggle-listening!) (refresh!))))
-                                ,(if *listening?* "stop" "voice to text")))
-                   '()))
-              (append
-               (list `(span (@ (class "cp-btn")
-                                (click ,(lambda (e) (do-exit!) (refresh!) (scroll-to-bottom!))))
-                             "exit")
-                     `(span (@ (class "cp-btn")
-                                (click ,(lambda (e)
-                                          (eval! (if (eq? *syntax-mode* 'wisp)
-                                                     "show-history" "(show-history)"))
-                                          (refresh!) (scroll-to-bottom!))))
-                             "history")
-                     `(span (@ (class "cp-btn")
-                                (click ,(lambda (e)
-                                          (eval! (if (eq? *syntax-mode* 'wisp)
-                                                     "show-expressors" "(show-expressors)"))
-                                          (refresh!) (scroll-to-bottom!))))
-                             "expressors")
-                     `(span (@ (class "cp-btn")
-                                (click ,(lambda (e)
-                                          (eval! (if (eq? *syntax-mode* 'wisp)
-                                                     "public-key" "(public-key)"))
-                                          (refresh!) (scroll-to-bottom!))))
-                             "public key")
-                     `(span (@ (class "cp-btn")
-                                (click ,(lambda (e) (do-export-ssh-key!) (refresh!) (scroll-to-bottom!))))
-                             "ssh key")
-                     (render-join-form))
-               (list `(span (@ (class ,(string-append "cp-btn" (if (eq? *syntax-mode* 'wisp) " cp-btn-primary" "")))
-                                (click ,(lambda (e) (toggle-syntax-mode!))))
-                             ,(if (eq? *syntax-mode* 'wisp) "wisp" "lisp")))
-               (list `(span (@ (class ,(string-append "cp-btn" (if (and *listening?* (not *expressing?*)) " cp-btn-danger" "")))
-                                (click ,(lambda (e) (toggle-listening!) (refresh!))))
-                             ,(if (and *listening?* (not *expressing?*)) "stop" "voice to text"))
-                     `(span (@ (class ,(string-append "cp-btn" (if *expressing?* " cp-btn-danger" "")))
-                                (click ,(lambda (e) (toggle-expressing!) (refresh!))))
-                             ,(if *expressing?* "stop" "voice to code")))
-               (list `(span (@ (class ,(string-append "cp-status"
-                                          (if *connected?* " cp-status-connected"
-                                              " cp-status-disconnected"))))
-                             ,(if *connected?*
-                                  (if (null? *online-users*)
-                                      "online"
-                                      (let loop ((users *online-users*) (acc ""))
-                                        (if (null? users)
-                                            (string-append
-                                             (number->string (length *online-users*))
-                                             " online: " acc)
-                                            (let ((name (if (pair? (car users))
-                                                            (car (car users)) "?")))
-                                              (loop (cdr users)
-                                                    (if (string=? acc "")
-                                                        name
-                                                        (string-append acc ", " name)))))))
-                                  "offline")))))))
+              (list (action-button "+ new org"
+                      (lambda () (set! *show-new-org-form* #t)) " cp-btn-primary")
+                    (if (and *ws* *connected?*)
+                        (action-button "signup"
+                          (lambda () (set! *show-signup-form* #t)) "")
+                        `(span (@ (class "cp-status")) "relay: disconnected"))
+                    (syntax-toggle-button)
+                    (voice-button *listening?* "stop" "mic"))
+              (list (action-button "exit" (lambda () (do-exit!)) "")
+                    (eval-button "history" "(show-history)" "show-history")
+                    (eval-button "expressors" "(show-expressors)" "show-expressors")
+                    (eval-button "public key" "(public-key)" "public-key")
+                    (action-button "ssh key" (lambda () (do-export-ssh-key!)) "")
+                    (render-join-form)
+                    (syntax-toggle-button)
+                    (voice-button (and *listening?* (not *expressing?*))
+                                  "stop" "voice to text")
+                    `(span (@ (class ,(string-append "cp-btn"
+                                         (if *expressing?* " cp-btn-danger" "")))
+                              (click ,(lambda (e) (toggle-expressing!) (refresh!))))
+                           ,(if *expressing?* "stop" "voice to code"))
+                    (render-online-status)))))
 
 ;;; ── Sidebar rendering ──────────────────────────────────────────────────
 
@@ -1893,17 +1883,17 @@
 (define (render-repl)
   `(div (@ (id "repl") (class "repl repl-text"))
         (div (@ (id "repl-log") (class "log"))
-             ,@*log*
-             (div (@ (class "prompt"))
-                  ,(current-prompt)
-                  (textarea (@ (id "expression") (class "repl-text")
-                               (rows "1") (keydown ,maybe-eval)
-                               (keyup ,on-keyup) (input ,auto-resize)))
-                  ,@(if (string=? *current-suggestion* "")
-                        '()
-                        (list `(span (@ (class "ghost-text-suggestion"))
-                                     ,*current-suggestion*)))
-                  (span (@ (class "paren-indicator")) ,(paren-indicator))))))
+             ,@*log*)
+        (div (@ (class "prompt"))
+             ,(current-prompt)
+             (textarea (@ (id "expression") (class "repl-text")
+                          (rows "1") (keydown ,maybe-eval)
+                          (keyup ,on-keyup) (input ,auto-resize)))
+             ,@(if (string=? *current-suggestion* "")
+                   '()
+                   (list `(span (@ (class "ghost-text-suggestion"))
+                                ,*current-suggestion*)))
+             (span (@ (class "paren-indicator")) ,(paren-indicator)))))
 
 (define (render-tab-bar)
   `(div (@ (class "tab-bar"))
