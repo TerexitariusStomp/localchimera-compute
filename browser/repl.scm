@@ -1736,7 +1736,7 @@
                (if #t  ;; always show mic — unsupported browsers fail gracefully via onerror
                    (list `(span (@ (class ,(string-append "cp-btn" (if *listening?* " cp-btn-danger" "")))
                                    (click ,(lambda (e) (toggle-listening!) (refresh!))))
-                                ,(if *listening?* "stop" "mic")))
+                                ,(if *listening?* "stop" "voice to text")))
                    '()))
               (append
                (list `(span (@ (class "cp-btn")
@@ -1769,11 +1769,10 @@
                              ,(if (eq? *syntax-mode* 'wisp) "wisp" "lisp")))
                (list `(span (@ (class ,(string-append "cp-btn" (if (and *listening?* (not *expressing?*)) " cp-btn-danger" "")))
                                 (click ,(lambda (e) (toggle-listening!) (refresh!))))
-                             ,(if (and *listening?* (not *expressing?*)) "stop" "mic"))
+                             ,(if (and *listening?* (not *expressing?*)) "stop" "voice to text"))
                      `(span (@ (class ,(string-append "cp-btn" (if *expressing?* " cp-btn-danger" "")))
                                 (click ,(lambda (e) (toggle-expressing!) (refresh!))))
-                             ,(cond (*expressing?* "stop")
-                                    (else "express"))))
+                             ,(if *expressing?* "stop" "voice to code")))
                (list `(span (@ (class ,(string-append "cp-status"
                                           (if *connected?* " cp-status-connected"
                                               " cp-status-disconnected"))))
