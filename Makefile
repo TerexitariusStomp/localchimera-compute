@@ -6,11 +6,16 @@ repl:
 quick-repl:
 	guile -L module server/play-repl.scm
 
+CHANNELS = deploy/guix/channels.scm
+TIME_MACHINE = guix time-machine -C $(CHANNELS) --
+
 browser/repl.wasm: browser/repl.scm module/xorg/gplay.scm
-	guild compile-wasm -L module -L docs/reference/lib-vendored --bundle -o browser/repl.wasm browser/repl.scm
+	$(TIME_MACHINE) shell guile-next guile-hoot guile-goblins -- \
+	  guild compile-wasm -L module -L docs/reference/lib-vendored --bundle -o browser/repl.wasm browser/repl.scm
 
 serve: browser/repl.wasm
-	cd browser && guile -c '((@ (hoot web-server) serve))'
+	$(TIME_MACHINE) shell guile-next guile-hoot -- \
+	  sh -c 'cd browser && guile -c "((@ (hoot web-server) serve))"'
 
 relay:
 	guile -L module server/relay.scm
