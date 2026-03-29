@@ -97,9 +97,11 @@ server/
 
 planner/
   lib/                — ValueFlows economic planning engine (20+ algorithms)
+  lib/vf-relations.scm — relational query layer over VF records
 
 key-pool/
   key-pool.scm        — capability-secure API key management
+  vf-bridge.scm       — ValueFlows bridge (keys as economic resources)
 
 deploy/guix/
   machines.scm        — the operating system declaration
@@ -152,7 +154,9 @@ Following the [Heart of Spritely](https://spritely.institute/static/papers/sprit
 
 ## Relational Reasoning
 
-The system includes a miniKanren logic programming engine and a relational query layer — all running in the browser via Hoot/WASM. Knowledge is plain S-expressions, so miniKanren unifies against it directly. The system reasons about itself, relationally, in itself.
+The system includes a miniKanren relational programming engine and query layers over both the system's own structure and ValueFlows economic records — all running in the browser via Hoot/WASM. Knowledge is plain S-expressions, so miniKanren unifies against it directly. The system reasons about itself, relationally, in itself.
+
+Every relation is bidirectional. "Find events for resource X" and "find resources for event Y" are the same relation with different variables bound. You write it once and get both directions for free. Every relation produces proof traces — the chain of facts traversed to reach the conclusion. This is accountability for inference, the same way `^logger` is accountability for state transitions.
 
 ### miniKanren — logic programming from scratch
 
@@ -201,6 +205,46 @@ Every query returns proof traces — the chain of relations traversed to reach t
 ```
 
 Skills, documentation, and knowledge bases are views of the same relational program. Edit the markdown and the facts update. Edit the facts and the markdown regenerates. See [docs/SELF-IMPROVING-LOOP.md](docs/SELF-IMPROVING-LOOP.md) for the full architecture.
+
+### Relational queries over ValueFlows
+
+`vf-relations.scm` layers miniKanren relations over the planner's ValueFlows records. The 20+ planning algorithms answer known questions fast; relations answer the questions you haven't thought of yet — without writing new code.
+
+```scheme
+;; "Who provided resources to kr-1?"
+(query-who-provided events "kr-1")
+;; => (alice alice bob)
+
+;; "How do resources flow from Alice to Bob?" — with proof trace
+(query-resource-flow events "alice" "bob")
+;; => (((ev-1 use kr-1)) ((ev-2 use kr-1)))
+
+;; "What goes in and out of this process?"
+(query-process-io events "proc-pool")
+;; => ((inputs kr-1) (outputs ...))
+
+;; "What spec does this resource conform to?"
+(run* (name) (resource-spec-o resources specs "kr-1" name))
+;; => (API Key)
+```
+
+The same `event-o` relation that answers "what events affect this resource?" also answers "what resources does this event affect?" — just bind different variables. No separate indexes, no separate functions. One relation, every direction.
+
+## The lambda calculus, all the way down
+
+Capability security from closures. State from `bcom`. Accountability from logging. Economic reasoning from relations. Each layer is the lambda calculus applied to a different domain:
+
+| Domain | Lambda calculus provides |
+|--------|------------------------|
+| Security | Closures are unforgeable references — [A Security Kernel Based on the Lambda-Calculus](https://mumble.net/~jar/pubs/secureos/secureos.html) |
+| State | `bcom` — a function becomes a new function (Goblins actors) |
+| Accountability | `^logger` — wrapping a function to record every call |
+| Attenuation | `^facet` — partial application restricts the interface |
+| Revocation | `^cell` — a conditional that can be flipped |
+| Reasoning | miniKanren — search as lazy evaluation of goal functions |
+| Economics | VF relations — bidirectional queries with proof-traced inference |
+
+Because they're all the same substrate, they compose without adapters. A relational query over economic data runs inside a governed actor, over a capability-secured network, on a declaratively defined operating system — and every layer is Scheme.
 
 ## Voice Interface
 
