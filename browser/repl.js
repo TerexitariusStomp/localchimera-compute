@@ -157,7 +157,27 @@ window.addEventListener("load", async () => {
           setOnOpen(ws, cb) { ws.addEventListener('open', () => cb()); },
           setOnError(ws, cb) { ws.addEventListener('error', () => cb()); },
           setOnMessage(ws, cb) {
+            window.__xorgWs = ws;  // expose for speech transcription
             ws.addEventListener('message', (e) => {
+              // Intercept transcribe responses before Scheme handler
+              if (typeof e.data === 'string' && window.__pendingTranscribe) {
+                if (e.data.startsWith('(transcribe-ok ')) {
+                  const text = e.data.slice(16, -2);  // extract string from (transcribe-ok "...")
+                  const { onResult, onEnd } = window.__pendingTranscribe;
+                  window.__pendingTranscribe = null;
+                  console.log('[speech] Relay transcript:', text);
+                  onResult(text);
+                  onEnd();
+                  return;
+                }
+                if (e.data.startsWith('(transcribe-error ')) {
+                  console.error('[speech] Relay error:', e.data);
+                  const { onEnd } = window.__pendingTranscribe;
+                  window.__pendingTranscribe = null;
+                  onEnd();
+                  return;
+                }
+              }
               if (e.data instanceof Blob) {
                 e.data.arrayBuffer().then(buf => cb(new Uint8Array(buf)));
               } else if (e.data instanceof ArrayBuffer) {
@@ -190,72 +210,61 @@ window.addEventListener("load", async () => {
           isSupported() { return 1; },
           async startListening(onResult, onEnd) {
             try {
-              // Lazy-load Whisper pipeline on first use
-              if (!window.__whisperPipeline) {
-                console.log('[whisper] Loading model...');
-                const { pipeline } = await import(
-                  'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3'
-                );
-                window.__whisperPipeline = await pipeline(
-                  'automatic-speech-recognition',
-                  'Xenova/whisper-tiny.en',
-                  { dtype: 'q8' }
-                );
-                console.log('[whisper] Model ready.');
-              }
-
-              // Record audio from microphone at 16kHz mono
               const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-              const audioContext = new AudioContext({ sampleRate: 16000 });
-              const source = audioContext.createMediaStreamSource(stream);
-              const processor = audioContext.createScriptProcessor(4096, 1, 1);
-
+              const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
               const chunks = [];
-              let recording = true;
 
-              processor.onaudioprocess = (e) => {
-                if (recording) {
-                  chunks.push(new Float32Array(e.inputBuffer.getChannelData(0)));
-                }
-              };
+              recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+              recorder.onstop = async () => {
+                stream.getTracks().forEach(t => t.stop());
+                const blob = new Blob(chunks, { type: 'audio/webm' });
 
-              source.connect(processor);
-              processor.connect(audioContext.destination);
+                // Try relay transcription first (donated key-pool), fall back to local Whisper
+                const ws = window.__xorgWs;
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                  console.log('[speech] Sending to relay for transcription...');
+                  const buf = await blob.arrayBuffer();
+                  const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
 
-              window.__xorgRecording = {
-                stream, audioContext, processor, source, chunks,
-                stop: async () => {
-                  recording = false;
-                  processor.disconnect();
-                  source.disconnect();
-                  stream.getTracks().forEach(t => t.stop());
-                  audioContext.close();
-
-                  // Concatenate chunks
-                  const totalLen = chunks.reduce((acc, c) => acc + c.length, 0);
-                  const audio = new Float32Array(totalLen);
-                  let offset = 0;
-                  for (const chunk of chunks) {
-                    audio.set(chunk, offset);
-                    offset += chunk.length;
+                  // Register one-time handler for transcribe response
+                  window.__pendingTranscribe = { onResult, onEnd };
+                  ws.send('(transcribe "' + b64 + '")');
+                } else {
+                  // Fallback: local Whisper WASM
+                  console.log('[speech] No relay — falling back to local Whisper...');
+                  try {
+                    if (!window.__whisperPipeline) {
+                      const { pipeline } = await import(
+                        'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3'
+                      );
+                      window.__whisperPipeline = await pipeline(
+                        'automatic-speech-recognition', 'Xenova/whisper-tiny.en', { dtype: 'q8' }
+                      );
+                    }
+                    // Decode webm to float32 PCM at 16kHz
+                    const audioCtx = new AudioContext({ sampleRate: 16000 });
+                    const decoded = await audioCtx.decodeAudioData(await blob.arrayBuffer());
+                    const pcm = decoded.getChannelData(0);
+                    audioCtx.close();
+                    const result = await window.__whisperPipeline(pcm);
+                    onResult(result.text.trim());
+                  } catch (e) {
+                    console.error('[speech] Local Whisper error:', e);
                   }
-
-                  // Transcribe locally via Whisper WASM
-                  console.log('[whisper] Transcribing', audio.length, 'samples...');
-                  const result = await window.__whisperPipeline(audio);
-                  console.log('[whisper] Result:', result.text);
-                  onResult(result.text.trim());
                   onEnd();
                 }
               };
+
+              recorder.start();
+              window.__xorgRecording = { recorder, stream };
             } catch (e) {
-              console.error('[whisper] Error:', e);
+              console.error('[speech] Mic error:', e);
               onEnd();
             }
           },
           stopListening() {
             if (window.__xorgRecording) {
-              window.__xorgRecording.stop();
+              window.__xorgRecording.recorder.stop();
               window.__xorgRecording = null;
             }
           }

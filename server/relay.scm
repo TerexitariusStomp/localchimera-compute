@@ -25,6 +25,54 @@
 (define *signup-vat*   (spawn-vat #:name "signup"))
 (define *signup-agent* (with-vat *signup-vat* (spawn ^signup-agent (hashmap))))
 
+;;; ── Key-pool transcription ─────────────────────────────────────────────────
+;;; Donated OpenRouter keys fund community transcription via Gemini Flash.
+;;; The key-pool handles round-robin, rate limiting, and health tracking.
+;;; Each donor is an agent; each pool is a scope; usage is tracked as cost.
+
+(add-to-load-path "key-pool")
+(use-modules (key-pool)
+             (json))
+
+(define *pool-vat* (spawn-vat #:name "key-pool"))
+(define *key-pool*
+  (let ((keys-env (or (getenv "OPENROUTER_KEYS") "")))
+    (if (string=? keys-env "")
+        (begin
+          (format (current-error-port)
+                  "  [key-pool] No OPENROUTER_KEYS set — transcription disabled\n")
+          #f)
+        (with-vat *pool-vat*
+          (let ((pool (make-key-pool *pool-vat* keys-env)))
+            (format (current-error-port)
+                    "  [key-pool] Loaded — community transcription enabled\n")
+            pool)))))
+
+(define (transcribe-audio! base64-audio)
+  "Send base64 audio to Gemini Flash via key-pool for transcription.
+   Returns the transcript string or raises an error."
+  (unless *key-pool*
+    (error "transcription not available — no API keys configured"))
+  (let* ((body (scm->json-string
+                `((model . "google/gemini-2.0-flash-001")
+                  (messages . #(((role . "user")
+                                 (content . #(((type . "text")
+                                               (text . "Transcribe this audio exactly, word for word. Return only the transcript text, nothing else."))
+                                              ((type . "image_url")
+                                               (image_url . ((url . ,(string-append
+                                                                      "data:audio/webm;base64,"
+                                                                      base64-audio))))))))))))))
+         (response-str (with-vat *pool-vat*
+                         ($ *key-pool* 'request "/chat/completions" body)))
+         (json (json-string->scm response-str))
+         (choices (assoc-ref json "choices")))
+    (if (and choices (> (vector-length choices) 0))
+        (let* ((choice (vector-ref choices 0))
+               (message (assoc-ref choice "message"))
+               (content (assoc-ref message "content")))
+          (or content ""))
+        (error "transcription returned no choices"))))
+
 ;; pubkey-string → port
 (define *sessions* (make-hash-table))
 ;; pubkey-string → list of queued message strings
@@ -114,6 +162,28 @@
              (write-frame (make-text-frame reply) port)
              (force-output port)
              (log! "  signup result: ~a\n" (if (eq? result 'ok) "ok" (cadr result)))))
+
+          ;; Transcribe request: (transcribe base64-audio-string)
+          ;; Uses donated OpenRouter keys via key-pool → Gemini Flash.
+          ;; Replies: (transcribe-ok "transcript") or (transcribe-error "reason")
+          (('transcribe (? string? audio-b64))
+           (log! "  transcribe request (~a bytes b64)\n" (string-length audio-b64))
+           (let* ((result (catch #t
+                            (lambda () (transcribe-audio! audio-b64))
+                            (lambda (key . args)
+                              (list 'error (format #f "~a: ~a" key args)))))
+                  (reply  (call-with-output-string
+                            (lambda (p)
+                              (write (if (string? result)
+                                         (list 'transcribe-ok result)
+                                         (list 'transcribe-error (cadr result)))
+                                     p)))))
+             (write-frame (make-text-frame reply) port)
+             (force-output port)
+             (log! "  transcribe result: ~a\n"
+                   (if (string? result)
+                       (substring result 0 (min 50 (string-length result)))
+                       (cadr result)))))
 
           ;; Unknown
           (x (log! "  ? ~a\n" x))))))
