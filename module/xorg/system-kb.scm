@@ -13,17 +13,14 @@
   #:use-module (xorg knowledge)
   #:use-module (srfi srfi-1)
   #:export (*system-kb*
-            ;; Query relations
-            depends-on-o
-            layer-o
-            file-of-o
-            provides-o
-            trigger-chain-o
-            ;; Convenience (pure Scheme)
-            query-depends
-            query-layers
-            query-what-changes
-            query-files-for))
+            ;; Generic
+            fact-o
+            ;; Named relations
+            depends-on-o file-of-o provides-o
+            layer-o trigger-chain-o
+            ;; Pure Scheme
+            query-depends query-layers query-files-for
+            query-provides query-what-changes))
 
 ;;; ── Fact constructors ─────────────────────────────────────────────────────
 ;;; Declarative helpers that produce hyperarcs from plain symbols/strings.
@@ -138,68 +135,39 @@
          (cons 'files %files)
          (cons 'provides %provides))))
 
-;;; ── Query relations ───────────────────────────────────────────────────────
-;;; Convenience relations that query across metagraphs.
+;;; ── Generic directed-fact relation ────────────────────────────────────────
+;;; All three metagraphs share the same convention: head=from, tail=to.
+;;; This one relation queries any of them.
 
-(define (depends-on-o from-layer to-layer)
-  "Direct dependency: from-layer depends on to-layer."
-  (fresh (arc n1 n2 id1 id2 m1 m2 mg)
-    (kb-o *system-kb* 'dependencies mg)
+(define (fact-o domain from to)
+  "FROM relates to TO in DOMAIN (dependencies, files, or provides)."
+  (fresh (mg arc n1 n2 id1 id2 m1 m2)
+    (kb-o *system-kb* domain mg)
     (arcs-of-o mg arc)
     (directed-arc-o arc n1 n2)
-    (node-o n1 id1 from-layer m1)
-    (node-o n2 id2 to-layer m2)))
+    (node-o n1 id1 from m1)
+    (node-o n2 id2 to m2)))
+
+;;; ── Named query relations ───────────────────────────────────────────────
+;;; Thin wrappers over fact-o for readability.
+
+(define (depends-on-o from to)  (fact-o 'dependencies from to))
+(define (file-of-o layer path)  (fact-o 'files layer path))
+(define (provides-o layer cap)  (fact-o 'provides layer cap))
 
 (define (layer-o name)
-  "Is name a known layer in the dependency graph?"
-  (fresh (arc n id meta mg nodes)
-    (kb-o *system-kb* 'dependencies mg)
-    (arcs-of-o mg arc)
-    (arc-nodes-o arc n)
-    (node-o n id name meta)))
-
-(define (file-of-o layer-name file-path)
-  "Relate a layer to one of its source files."
-  (fresh (arc n1 n2 id1 id2 m1 m2 mg)
-    (kb-o *system-kb* 'files mg)
-    (arcs-of-o mg arc)
-    (directed-arc-o arc n1 n2)
-    (node-o n1 id1 layer-name m1)
-    (node-o n2 id2 file-path m2)))
-
-(define (provides-o layer-name capability)
-  "What capabilities does a layer provide?"
-  (fresh (arc head rest-node mg hid hmeta nodes)
-    (kb-o *system-kb* 'provides mg)
-    (arcs-of-o mg arc)
-    (hyperarc-o arc hid hmeta nodes)
-    (fresh (n1 n2 id1 id2 m1 m2 rest)
-      (== nodes (cons n1 rest))
-      (node-o n1 id1 layer-name m1)
-      (membero n2 rest)
-      (node-o n2 id2 capability m2))))
+  "Is NAME a known layer?"
+  (fresh (other) (depends-on-o name other)))
 
 (define (trigger-chain-o start end proof)
-  "Transitive chain from start to end in the dependency graph."
+  "Transitive chain from START to END through dependencies."
   (transitive-o *system-kb* 'dependencies start end proof))
 
-;;; ── Pure Scheme convenience queries ───────────────────────────────────────
-;;; For use outside miniKanren (e.g., REPL display helpers).
+;;; ── Pure Scheme queries ─────────────────────────────────────────────────
 
-(define (query-depends layer)
-  "What does LAYER directly depend on?"
-  (run* (q) (depends-on-o layer q)))
-
-(define (query-layers)
-  "All known layers."
-  (delete-duplicates (run 50 (q) (layer-o q))))
-
+(define (query-depends layer)      (run* (q) (depends-on-o layer q)))
+(define (query-layers)             (delete-duplicates (run 50 (q) (layer-o q))))
+(define (query-files-for layer)    (run* (q) (file-of-o layer q)))
+(define (query-provides layer)     (run* (q) (provides-o layer q)))
 (define (query-what-changes trigger)
-  "What can TRIGGER ultimately affect? Returns proof-traced chains."
-  (run 20 (q)
-    (fresh (proof)
-      (trigger-chain-o trigger q proof))))
-
-(define (query-files-for layer)
-  "Source files belonging to LAYER."
-  (run* (q) (file-of-o layer q)))
+  (run 20 (q) (fresh (proof) (trigger-chain-o trigger q proof))))
