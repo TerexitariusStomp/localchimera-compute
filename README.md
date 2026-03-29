@@ -81,9 +81,8 @@ module/xorg/
   evaluator.scm      — metacircular eval (Hoot/WASM only)
   repl.scm           — org factories + inner REPL
   kanren.scm         — miniKanren logic programming (219 lines)
-  hyperarc.scm       — metagraph data structures
   knowledge.scm      — relational queries with proof traces
-  system-kb.scm      — the system's self-knowledge as hyperarc facts
+  system-kb.scm      — the system's self-knowledge as relational facts
   markdown.scm       — bidirectional markdown ↔ S-expression transpilation
 
 browser/
@@ -153,7 +152,7 @@ Following the [Heart of Spritely](https://spritely.institute/static/papers/sprit
 
 ## Relational Reasoning
 
-The system includes a miniKanren logic programming engine, a hyperarc metagraph data model, and a relational query layer — all running in the browser via Hoot/WASM. This means the system can reason about itself, relationally, in itself.
+The system includes a miniKanren logic programming engine and a relational query layer — all running in the browser via Hoot/WASM. Knowledge is plain S-expressions, so miniKanren unifies against it directly. The system reasons about itself, relationally, in itself.
 
 ### miniKanren — logic programming from scratch
 
@@ -165,27 +164,13 @@ The system includes a miniKanren logic programming engine, a hyperarc metagraph 
 
 219 lines. Interleaving search, occurs check, reification. Hoot-compatible — runs in the browser.
 
-### Hyperarc knowledge bases
-
-Knowledge is represented as tagged S-expression alists — nodes, hyperarcs (ordered sets of nodes), metagraphs (sets of hyperarcs), and knowledge bases (named metagraphs). Plain lists, no records — so miniKanren can unify against the structure directly.
-
-```scheme
-(define kb
-  (make-kb
-   (list (cons 'dependencies
-               (make-metagraph 'deps '()
-                 (list (make-hyperarc 'dep-1 '()
-                         (list (make-node 'browser 'browser '())
-                               (make-node 'eval 'evaluator '())))))))))
-```
-
 ### The system reasons about itself
 
-`system-kb.scm` expresses xorg's own structure as hyperarc facts:
+`system-kb.scm` expresses xorg's own structure as relational facts queryable via miniKanren:
 
 ```scheme
 (query-depends 'browser)
-;; => (evaluator actors kanren hyperarc knowledge)
+;; => (evaluator actors kanren knowledge)
 
 (query-what-changes 'push-to-main)
 ;; => (github-actions guix-deploy guix kernel bootloader services users)
@@ -195,7 +180,7 @@ Knowledge is represented as tagged S-expression alists — nodes, hyperarcs (ord
 ;; => ((push-to-main github-actions guix-deploy guix kernel))
 ```
 
-Every query returns proof traces — the chain of hyperarcs traversed to reach the conclusion. This is accountability for inference.
+Every query returns proof traces — the chain of relations traversed to reach the conclusion. This is accountability for inference.
 
 ### Bidirectional markdown ↔ S-expressions
 
