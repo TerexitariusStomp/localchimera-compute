@@ -192,7 +192,7 @@ guix deploy --roll-back deploy/guix/machines.scm
 guix deploy deploy/guix/machines.scm -x -- herd status
 
 # SSH in directly
-ssh -i ~/.ssh/id_ed25519 root@SERVER_IP
+ssh -i ~/.ssh/id_ed25519 deploy@SERVER_IP
 ```
 
 ---

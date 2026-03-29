@@ -173,21 +173,22 @@
                              (respawn? #f)
                              (auto-start? #f))))
 
-      ;; Activation: set up deploy user environment
+      ;; Activation: set up deploy user environment.
+      ;; Uses mkdir-p because on first deploy, user-homes may not have
+      ;; created /home/deploy yet when activation runs.
       (simple-service 'deploy-setup
                       activation-service-type
                       #~(begin
+                          (use-modules (guix build utils))
                           ;; Socket directory for REPL (deploy-writable, on tmpfs)
                           (let ((run-dir "/var/run/xorg"))
-                            (unless (file-exists? run-dir)
-                              (mkdir run-dir))
+                            (mkdir-p run-dir)
                             (let ((pw (getpwnam "deploy")))
                               (chown run-dir (passwd:uid pw) (passwd:gid pw))))
                           ;; Emacs config
                           (let* ((emacs-dir "/home/deploy/.emacs.d")
                                  (init-target (string-append emacs-dir "/init.el")))
-                            (unless (file-exists? emacs-dir)
-                              (mkdir emacs-dir))
+                            (mkdir-p emacs-dir)
                             (when (file-exists? init-target)
                               (delete-file init-target))
                             (copy-file #$%emacs-init-el init-target)
@@ -196,8 +197,7 @@
                               (chown emacs-dir (passwd:uid pw) (passwd:gid pw))))
                           ;; Helper scripts directory
                           (let ((bin-dir "/home/deploy/bin"))
-                            (unless (file-exists? bin-dir)
-                              (mkdir bin-dir))
+                            (mkdir-p bin-dir)
                             (let ((pw (getpwnam "deploy")))
                               (chown bin-dir (passwd:uid pw) (passwd:gid pw))))))
 
