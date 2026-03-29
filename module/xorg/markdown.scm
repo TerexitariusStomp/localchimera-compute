@@ -3,7 +3,7 @@
 ;;; Hoot/WASM compatible.
 ;;;
 ;;; Usage:
-;;;   (use-modules (xorg markdown) (xorg kanren))
+;;;   (use-modules (playnet markdown) (playnet kanren))
 ;;;
 ;;;   ;; Render S-expression → markdown string
 ;;;   (run* (md) (markdown-o '((heading 1 "Title") (paragraph "Hello.")) md))
@@ -16,8 +16,8 @@
 ;;; elements. The pure Scheme functions sexp->markdown and markdown->sexp
 ;;; handle the full rendering/parsing for practical use.
 
-(define-module (xorg markdown)
-  #:use-module (xorg kanren)
+(define-module (playnet markdown)
+  #:use-module (playnet kanren)
   #:use-module (srfi srfi-1)
   #:export (;; S-expression AST constructors
             heading paragraph bullet code-inline code-block

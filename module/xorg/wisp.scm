@@ -3,7 +3,7 @@
 ;;; Wisp (SRFI-119) is an indentation-based surface syntax for Scheme.
 ;;; This module provides conversion between wisp and parenthetical notation.
 
-(define-module (xorg wisp)
+(define-module (playnet wisp)
   #:export (wisp->sexp-string
             sexp->wisp-string))
 

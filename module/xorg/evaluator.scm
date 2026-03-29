@@ -1,4 +1,4 @@
-;;; module/xorg/evaluator.scm — Metacircular evaluator for Hoot/WASM
+;;; module/playnet/evaluator.scm — Metacircular evaluator for Hoot/WASM
 ;;;
 ;;; Needed because Hoot doesn't have Guile's `eval` or module system.
 ;;; On native Guile, you can use `(eval expr module)` directly instead.
@@ -6,7 +6,7 @@
 ;;; The evaluator handles standard Scheme forms (if, let, lambda, etc.)
 ;;; plus org-specific forms: modify!, rollback!.
 
-(define-module (xorg evaluator)
+(define-module (playnet evaluator)
   #:use-module (goblins)
   #:use-module (ice-9 match)
   #:use-module (srfi srfi-1)

@@ -24,7 +24,7 @@ export function TowerOpening({ onContinue }: TowerOpeningProps) {
           className="mb-12"
         >
           <div className="text-8xl font-black mb-6 bg-gradient-to-r from-electric-blue-500 via-vibrant-purple-500 to-warm-orange-500 bg-clip-text text-transparent leading-tight">
-            xorg
+            playnet
           </div>
           <div className="text-2xl text-gray-300 font-light tracking-wide mb-8">
             Express and Experiment with Organization

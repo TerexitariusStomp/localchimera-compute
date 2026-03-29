@@ -6,7 +6,7 @@
 (define %project-root (string-append (dirname (current-filename)) "/.."))
 (add-to-load-path (string-append %project-root "/module"))
 
-(use-modules (xorg ai))
+(use-modules (playnet ai))
 
 (display "\n=== AI Module Test ===\n\n")
 
@@ -31,7 +31,7 @@
 (display "  1. Start REPL: make repl\n")
 (display "  2. Create org: (make-org \"test\")\n")
 (display "  3. Enter org: (enter! \"test\")\n")
-(display "  4. Load AI: (use-modules (xorg ai))\n")
+(display "  4. Load AI: (use-modules (playnet ai))\n")
 (display "  5. Set API key: (set-ai-api-key! \"your-key\")\n")
 (display "  6. Query AI: (ai \"Hello, who are you?\")\n")
 (display "  7. Eval AI response: (ai-eval \"create a greeting binding with hello world\")\n\n")

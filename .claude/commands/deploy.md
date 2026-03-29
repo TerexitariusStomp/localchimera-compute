@@ -18,42 +18,45 @@ Rollback: `guix deploy -L deploy/guix --roll-back deploy/guix/machines.scm`
 
 ## Key files
 
-| File | What it controls |
-|------|-----------------|
-| `deploy/guix/machines.scm` | The OS declaration: users, packages, services, bootloader, filesystems, SSH keys, activation scripts |
-| `deploy/guix/xorg-service.scm` | `xorg-service-type` Shepherd service for org actor processes |
-| `deploy/guix/users.scm` | Dynamic user accounts (managed by `provision-user.scm`, not hand-edited) |
-| `deploy/guix/provision-user.scm` | Enrollment script: validates inputs, appends to users.scm, sends welcome email |
-| `deploy/guix/channels.scm` | Pinned Guix commit for reproducibility |
-| `deploy/guix/deploy.sh` | Local wrapper: loads secrets, runs `guix deploy -L deploy/guix` |
-| `deploy/guix/python-rns.scm` | Guix package definition for Reticulum (python-rns) |
-| `deploy/guix/reticulum-service.scm` | Shepherd services for rnsd and reticulum-bridge |
-| `deploy/guix/bootstrap-hetzner.sh` | One-shot server provisioning from Hetzner rescue mode |
-| `deploy/guix/DEPLOY-GUIDE.md` | Full guide with pitfalls |
-| `.github/workflows/deploy.yml` | CI pipeline: push to main triggers guix deploy |
+| File                                | What it controls                                                                                     |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `deploy/guix/machines.scm`          | The OS declaration: users, packages, services, bootloader, filesystems, SSH keys, activation scripts |
+| `deploy/guix/playnet-service.scm`   | `playnet-service-type` Shepherd service for org actor processes                                      |
+| `deploy/guix/users.scm`             | Dynamic user accounts (managed by `provision-user.scm`, not hand-edited)                             |
+| `deploy/guix/provision-user.scm`    | Enrollment script: validates inputs, appends to users.scm, sends welcome email                       |
+| `deploy/guix/channels.scm`          | Pinned Guix commit for reproducibility                                                               |
+| `deploy/guix/deploy.sh`             | Local wrapper: loads secrets, runs `guix deploy -L deploy/guix`                                      |
+| `deploy/guix/python-rns.scm`        | Guix package definition for Reticulum (python-rns)                                                   |
+| `deploy/guix/reticulum-service.scm` | Shepherd services for rnsd and reticulum-bridge                                                      |
+| `deploy/guix/bootstrap-hetzner.sh`  | One-shot server provisioning from Hetzner rescue mode                                                |
+| `deploy/guix/DEPLOY-GUIDE.md`       | Full guide with pitfalls                                                                             |
+| `.github/workflows/deploy.yml`      | CI pipeline: push to main triggers guix deploy                                                       |
 
 ## Server details
 
 - **Host:** SERVER_IP (Hetzner cpx22, nbg1)
 - **Boot:** EFI (`grub-efi-bootloader`, targets `/boot/efi`)
-- **Users:** deploy (sudo), playnet (live hacking), xorg (system), + dynamic users from users.scm
+- **Users:** deploy (sudo), playnet (live hacking), playnet (system), + dynamic users from users.scm
 - **Substitutes:** Bordeaux primary (`bordeaux.guix.gnu.org`)
 - **GRUB theme:** disabled (`(theme #f)`) — librsvg has no substitute
 
 ## Common editing patterns
 
 **Add a user:**
+
 1. Run `provision-user.scm --user NAME --key "ssh-ed25519 ..." --email user@example.com`
 2. Or use the browser signup flow: `(signup! "name" "email")`
 3. Then `guix deploy` (or push to main) to activate
 
 **Add a system package:**
+
 ```scheme
 ;; In machines.scm, append to the (packages ...) list:
 (packages (append (list guile-goblins my-new-package ...) %base-packages))
 ```
 
 **Add a Shepherd service:**
+
 ```scheme
 ;; In machines.scm, add to (services (cons* ...)):
 (simple-service 'my-service
@@ -65,6 +68,7 @@ Rollback: `guix deploy -L deploy/guix --roll-back deploy/guix/machines.scm`
 ```
 
 **Add an SSH authorized key:**
+
 ```scheme
 ;; In the openssh-configuration authorized-keys:
 ("username" ,(plain-file "key-name" "ssh-ed25519 AAAA..."))
@@ -78,7 +82,7 @@ Rollback: `guix deploy -L deploy/guix --roll-back deploy/guix/machines.scm`
 - **Do NOT use `hetzner-environment-type`** from the Guix manual. It fails on current Hetzner. Use `managed-host-environment-type` with `bootstrap-hetzner.sh` for initial provisioning.
 - **`users.scm` path resolution.** Uses `(current-filename)` with canonicalize-path fallback. Always run `guix deploy` from the project root.
 - **CI deploy takes 30-90 minutes.** `guix time-machine` bootstraps a full Guix from the pinned channel commit.
-- **Activation scripts run on every deploy.** They git-pull `/home/playnet/xorg-repo/` and `/home/<dynamic-user>/xorg-repo/` — local changes in those directories will be overwritten.
+- **Activation scripts run on every deploy.** They git-pull `/home/playnet/playnet-repo/` and `/home/<dynamic-user>/playnet-repo/` — local changes in those directories will be overwritten.
 
 ## Testing
 

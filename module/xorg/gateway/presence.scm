@@ -1,11 +1,11 @@
-;;; module/xorg/gateway/presence.scm — Presence tracking via OCapN
+;;; module/playnet/gateway/presence.scm — Presence tracking via OCapN
 ;;;
 ;;; Replaces the relay's *sessions* + *presence* hash tables with a
 ;;; Goblins actor.  Connected users announce themselves with a display
 ;;; name and an inbox actor ref.  The presence actor broadcasts updates
 ;;; and introduces peers for direct P2P messaging.
 
-(define-module (xorg gateway presence)
+(define-module (playnet gateway presence)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
   #:use-module (goblins utils hashmap)

@@ -4,7 +4,7 @@
 (define %project-root (string-append (dirname (current-filename)) "/.."))
 (add-to-load-path (string-append %project-root "/module"))
 
-(use-modules (xorg ai) (xorg org) (xorg gplay) (goblins) (ice-9 rdelim))
+(use-modules (playnet ai) (playnet org) (playnet gplay) (goblins) (ice-9 rdelim))
 
 ;; Load .env
 (define %env-file (string-append %project-root "/.env"))

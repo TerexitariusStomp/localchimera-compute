@@ -1,4 +1,4 @@
-# xorg as a Service
+# playnet as a Service
 
 _Computable organizations, hosted. AI as a first-class organizational citizen._
 
@@ -23,7 +23,7 @@ _computable_. You cannot inspect them, replay them, fork them, or reason about t
 formally. They exist as informal consensus in the minds of their members, and when that
 consensus breaks, there is no ground truth to fall back on.
 
-xorg makes organizations computable.
+playnet makes organizations computable.
 
 ---
 
@@ -131,11 +131,11 @@ _Note: Full cross-org composition via OCapN is on the roadmap. The infrastructur
 
 A governed org has three domains, each protected by a cryptographic sealer:
 
-| Domain | Sealer | Governs | Examples |
-|---|---|---|---|
-| **Governance** | `gov-seal` | `validator`, `rollback` | Constitutional amendments, rule changes |
-| **Infrastructure** | `infra-seal` | `infra-*` names | Deployments, services, servers |
-| **Membership** | `member-seal` | `member-*` names | Expressors, roles, admissions |
+| Domain             | Sealer        | Governs                 | Examples                                |
+| ------------------ | ------------- | ----------------------- | --------------------------------------- |
+| **Governance**     | `gov-seal`    | `validator`, `rollback` | Constitutional amendments, rule changes |
+| **Infrastructure** | `infra-seal`  | `infra-*` names         | Deployments, services, servers          |
+| **Membership**     | `member-seal` | `member-*` names        | Expressors, roles, admissions           |
 
 Ungoverned names (anything not matching the three domain patterns) are freely modifiable
 by any expressor. This is deliberate — experimentation should be frictionless, and
@@ -201,6 +201,7 @@ separate admin interface.
 ### Use Cases
 
 #### Cooperatives and Communes
+
 Democratic governance with real accountability. Every vote is a signed expression. Every
 budget change is attributed. Every rule change requires the governance seal. Members can
 inspect the full history — not meeting minutes, but the actual expressions that produced
@@ -221,24 +222,28 @@ each state transition.
 ```
 
 #### DAOs That Are Actually Governable
-Smart contracts are write-once, opaque, and expensive to modify. An xorg is a live
+
+Smart contracts are write-once, opaque, and expensive to modify. An playnet is a live
 interpreter — rules can be debated, tested, enacted, and rolled back. Governance is
 Scheme, not Solidity. The audit trail is richer than a blockchain (full state snapshots,
 not just transaction receipts). And you can fork the org to experiment without risking
 real assets.
 
 #### Federated Communities
+
 Multiple orgs on the same machine communicate via OCapN over Unix domain sockets. A host
 org can spawn tenant orgs as Shepherd services, passing attenuated capabilities — one
 tenant gets read-only access to the knowledge base, another gets deployment rights for
 their own infrastructure slice.
 
 #### Research Organizations
+
 Track hypotheses, decisions, and funding allocations as attributed expressions. The
 knowledge base (hyperarc metagraphs + miniKanren queries) provides relational queries
 over structured knowledge. Every fact is signed and versioned.
 
 #### Open Source Foundations
+
 Governance decisions, maintainer elections, fund disbursements — all computable. The org's
 constitution is a validator function. Amending it requires the governance seal and
 self-acceptance by the current rules.
@@ -273,11 +278,11 @@ Scheme. It's Scheme all the way down.
       #:certbot-email "ops@my-coop.org"
       #:certbot-domains '("coop-1.my-coop.org")
       #:extra-services
-      (list (service xorg-service-type
-              (xorg-configuration
+      (list (service playnet-service-type
+              (playnet-configuration
                 (name "host")
-                (entry-point "/etc/xorg/host-entry.scm")
-                (socket-path "/run/xorg/host.sock"))))))
+                (entry-point "/etc/playnet/host-entry.scm")
+                (socket-path "/run/playnet/host.sock"))))))
   (environment hetzner-environment-type)
   (configuration
     (hetzner-configuration
@@ -289,10 +294,10 @@ Scheme. It's Scheme all the way down.
 Each org runs as a Shepherd service — isolated, logged, restartable:
 
 ```bash
-herd start xorg-host      # start the org
-herd stop xorg-host       # stop it
+herd start playnet-host      # start the org
+herd stop playnet-host       # stop it
 herd status               # see all services
-herd log xorg-host        # view logs
+herd log playnet-host        # view logs
 ```
 
 SSH into the machine to live-hack via Geiser (Emacs REPL integration). Connect to
@@ -352,7 +357,7 @@ embedded in Scheme.
 (run* (endpoint trace)
   (transitive-o kb "dependencies" "guile" endpoint trace))
 ;; => (("goblins" ("guile" "goblins"))
-;;     ("xorg" ("guile" "goblins" "xorg")))
+;;     ("playnet" ("guile" "goblins" "playnet")))
 ```
 
 This is not a vector database. It's a logic programming engine over structured,
@@ -375,12 +380,12 @@ governed by the validator) is on the roadmap._
 │  Emacs + Geiser  (live REPL to running Goblins vat)         │
 │  structural editing, evaluate-in-org, live inspection       │
 ├─────────────────────────────────────────────────────────────┤
-│  xorg  (Guile Scheme + Spritely Goblins)                    │
+│  playnet  (Guile Scheme + Spritely Goblins)                    │
 │  the org IS the evaluator — rules, state, history           │
 │  capability-secure, signed, persistent, composable          │
 ├─────────────────────────────────────────────────────────────┤
 │  Shepherd  (Guix init/service manager)                      │
-│  each xorg process is a Shepherd service                    │
+│  each playnet process is a Shepherd service                    │
 ├─────────────────────────────────────────────────────────────┤
 │  Guix System  (OS declaration in Scheme)                    │
 │  packages, services, users, bootloader — all records        │
@@ -407,7 +412,7 @@ function call with no attribution, no history, no accountability.
 
 What if the AI weren't _using_ the system, but _in_ it?
 
-In xorg, an AI expressor is an organizational citizen. It has its own cryptographic keypair,
+In playnet, an AI expressor is an organizational citizen. It has its own cryptographic keypair,
 its own sealer, its own history of signed actions. It is subject to the same validator as
 every human expressor. Its capabilities are exactly what it was given — no more, no less.
 And every action it takes is recorded, attributed, and reversible.
@@ -461,6 +466,7 @@ by the same validator.
 ```
 
 The proposal is:
+
 - Attributed to `claude-agent` in history
 - Signed with the AI's Ed25519 keypair
 - Subject to whatever validator is in effect
@@ -475,7 +481,7 @@ or care whether the expressor is human or AI. It checks endorsement, not identit
 
 ### 2. Infrastructure Management with Attribution
 
-xorg can govern its own infrastructure. A `^deploy-cap` is a Goblins actor pre-bound to a
+playnet can govern its own infrastructure. A `^deploy-cap` is a Goblins actor pre-bound to a
 specific deployment configuration, content-hashed at creation time, verified at deploy time.
 When the AI is granted infrastructure capabilities, every action carries full provenance.
 
@@ -494,6 +500,7 @@ When the AI is granted infrastructure capabilities, every action carries full pr
 ```
 
 When the AI deploys, the history entry records:
+
 - **Who** authorized it (the AI's expressor ID)
 - **What** was deployed (the expression, plus the content-hash of the config)
 - **When** it happened (the version number in the history chain)
@@ -588,13 +595,13 @@ all in the same auditable log, all governed by the same validator.
 
 ### 4. MCP as a Capability Actor
 
-The Model Context Protocol (MCP) gives AI models access to tools. In xorg, tools are
+The Model Context Protocol (MCP) gives AI models access to tools. In playnet, tools are
 capability actors — unforgeable, attenuatable, traceable through the Goblins actor system.
 
 ```scheme
 ;; Build an MCP server with specific tools
 (define mcp
-  (make-xorg-mcp-server (org-vat org) org
+  (make-playnet-mcp-server (org-vat org) org
     #:allow-bindings? #t    ;; read current bindings
     #:allow-history?  #t    ;; read history
     #:allow-eval?     #f    ;; no arbitrary code execution
@@ -616,15 +623,16 @@ tools. The org's history shows exactly which tools the AI was given access to.
 ```scheme
 ;; List available tools
 ($ mcp 'list-tools)
-;; => (((name . "xorg-bindings") (description . "List all current bindings...") (read-only . #t))
-;;     ((name . "xorg-history") (description . "Show recent org history...") (read-only . #t))
-;;     ((name . "xorg-modify") (description . "Set a binding in the org...") (read-only . #f)))
+;; => (((name . "playnet-bindings") (description . "List all current bindings...") (read-only . #t))
+;;     ((name . "playnet-history") (description . "Show recent org history...") (read-only . #t))
+;;     ((name . "playnet-modify") (description . "Set a binding in the org...") (read-only . #f)))
 
 ;; Call a tool
-($ mcp 'call "xorg-history" '(("count" . 5)))
+($ mcp 'call "playnet-history" '(("count" . 5)))
 ```
 
 This is cleaner than external MCP because:
+
 - The server IS a capability — unforgeable, attenuatable
 - Every tool call goes through the Goblins actor system — traceable
 - The org history records which tools the AI was given
@@ -657,6 +665,7 @@ system — structured hyperarc metagraphs queryable via miniKanren.
 ```
 
 These facts are:
+
 - **Signed** with the AI's keypair
 - **Versioned** in the org's history
 - **Governed** by the validator (if stored under a governed name prefix)
@@ -700,6 +709,7 @@ can't read the knowledge base. Their actions are independently signed and indepe
 verifiable. The history shows exactly which AI did what.
 
 This enables patterns like:
+
 - **Separation of concerns**: one AI analyzes, another executes
 - **Review chains**: the executor's actions can be conditioned on the analyst's findings
 - **Audit clarity**: when something goes wrong, the history shows the full chain of
@@ -738,14 +748,14 @@ You don't need to trust the AI. You can verify it.
 
 Every action the AI takes is:
 
-| Property | Mechanism |
-|---|---|
-| **Attributed** | Expressor ID in history entry |
-| **Signed** | Ed25519 signature, verifiable with public key |
-| **Bounded** | Capabilities govern what actions are possible |
-| **Validated** | Same `^faceted-validator` as human expressors |
-| **Reversible** | `rollback!` restores any prior state |
-| **Inspectable** | `(show-history)` from inside the org |
+| Property        | Mechanism                                     |
+| --------------- | --------------------------------------------- |
+| **Attributed**  | Expressor ID in history entry                 |
+| **Signed**      | Ed25519 signature, verifiable with public key |
+| **Bounded**     | Capabilities govern what actions are possible |
+| **Validated**   | Same `^faceted-validator` as human expressors |
+| **Reversible**  | `rollback!` restores any prior state          |
+| **Inspectable** | `(show-history)` from inside the org          |
 
 The capability model means the AI cannot escalate its own privileges. It cannot access
 governance seals it wasn't given. It cannot modify infrastructure names without the
@@ -769,18 +779,18 @@ The seal is an unforgeable actor reference. You either have it or you don't.
 
 ### The Comparison
 
-| | Traditional AI Integration | xorg AI Expressor |
-|---|---|---|
-| **Identity** | Prompt injected into session | Own Ed25519 keypair and sealer |
-| **Actions** | Ephemeral API calls | Signed, auditable, permanent history entries |
-| **Memory** | None between sessions | Full history access + persistent state |
-| **Self-modification** | Cannot modify its own constraints | Can propose validator changes (subject to governance) |
-| **Infrastructure** | Separate from infra, calls external APIs | Direct `^deploy-cap` and `^service-cap` actors |
-| **Accountability** | Logs somewhere, maybe | Full attribution + cryptographic verification + rollback |
-| **Capability scope** | Whatever the API key allows | Exactly the actor refs it was given — no more |
-| **Coordination** | Ad hoc, no shared state | Multiple expressors in the same org, same history |
-| **Persistence** | Stateless by default | Survives restarts — keypair, capabilities, history |
-| **Governance** | None — or bolted-on RBAC | Same `^faceted-validator` as humans, same rules |
+|                       | Traditional AI Integration               | playnet AI Expressor                                     |
+| --------------------- | ---------------------------------------- | -------------------------------------------------------- |
+| **Identity**          | Prompt injected into session             | Own Ed25519 keypair and sealer                           |
+| **Actions**           | Ephemeral API calls                      | Signed, auditable, permanent history entries             |
+| **Memory**            | None between sessions                    | Full history access + persistent state                   |
+| **Self-modification** | Cannot modify its own constraints        | Can propose validator changes (subject to governance)    |
+| **Infrastructure**    | Separate from infra, calls external APIs | Direct `^deploy-cap` and `^service-cap` actors           |
+| **Accountability**    | Logs somewhere, maybe                    | Full attribution + cryptographic verification + rollback |
+| **Capability scope**  | Whatever the API key allows              | Exactly the actor refs it was given — no more            |
+| **Coordination**      | Ad hoc, no shared state                  | Multiple expressors in the same org, same history        |
+| **Persistence**       | Stateless by default                     | Survives restarts — keypair, capabilities, history       |
+| **Governance**        | None — or bolted-on RBAC                 | Same `^faceted-validator` as humans, same rules          |
 
 ---
 
@@ -796,24 +806,24 @@ the vision described above:
 - Capability security via endorsement (`endorse`, `endorsed-with?`, `^faceted-validator`)
 - Cryptographic signatures on history entries (Ed25519, `verify-history-entry`)
 - AI as its own expressor (`make-ai-expressor!`, own keypair and sealer)
-- MCP capability actor (`^mcp-server`, `^tool-cap`, `make-xorg-mcp-server`)
+- MCP capability actor (`^mcp-server`, `^tool-cap`, `make-playnet-mcp-server`)
 - Guix+Hetzner deployment (`guix deploy` with `hetzner-environment-type`)
-- Shepherd service type for xorg processes (`xorg-service-type`)
+- Shepherd service type for playnet processes (`playnet-service-type`)
 - Persistence via Goblins Bloblin store
 - Knowledge layer (hyperarc metagraphs + miniKanren queries)
 - 225+ passing tests
 
 #### On the Roadmap
 
-| Missing Piece | What It Enables | Status |
-|---|---|---|
-| **Quorum governance (M-of-N sealer)** | Requiring multiple endorsements for sensitive actions — e.g., 2-of-3 board members must approve budget changes | Designed, not yet implemented |
-| **Knowledge base in org bindings** | `(assert! fact)` and `(query pattern)` as built-in org forms, governed by the validator | Modules exist, wiring into base-bindings is next |
-| **OCapN multi-org composition** | Orgs holding direct actor references to other orgs across Unix sockets or network | Goblins OCapN exists, org-level wiring is next |
-| **Host org tenant model** | Privileged org spawning and managing tenant orgs with attenuated capabilities | Designed (`module/xorg/host.scm`), not yet implemented |
-| **Guix deploy as org action (end-to-end)** | `^deploy-cap` wired into a governed org with full provenance chain | `^deploy-cap` exists, end-to-end wiring is next |
-| **Shepherd-as-Goblins** | Service management via direct actor references instead of subprocess calls to `herd` | Waiting on Spritely (expected 2025) |
-| **Per-expressor output routing** | Each expressor's output goes to its own channel (terminal, log, audit stream) | Lower priority — org-level output sufficient for now |
+| Missing Piece                              | What It Enables                                                                                                | Status                                                    |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| **Quorum governance (M-of-N sealer)**      | Requiring multiple endorsements for sensitive actions — e.g., 2-of-3 board members must approve budget changes | Designed, not yet implemented                             |
+| **Knowledge base in org bindings**         | `(assert! fact)` and `(query pattern)` as built-in org forms, governed by the validator                        | Modules exist, wiring into base-bindings is next          |
+| **OCapN multi-org composition**            | Orgs holding direct actor references to other orgs across Unix sockets or network                              | Goblins OCapN exists, org-level wiring is next            |
+| **Host org tenant model**                  | Privileged org spawning and managing tenant orgs with attenuated capabilities                                  | Designed (`module/playnet/host.scm`), not yet implemented |
+| **Guix deploy as org action (end-to-end)** | `^deploy-cap` wired into a governed org with full provenance chain                                             | `^deploy-cap` exists, end-to-end wiring is next           |
+| **Shepherd-as-Goblins**                    | Service management via direct actor references instead of subprocess calls to `herd`                           | Waiting on Spritely (expected 2025)                       |
+| **Per-expressor output routing**           | Each expressor's output goes to its own channel (terminal, log, audit stream)                                  | Lower priority — org-level output sufficient for now      |
 
 None of these are research problems. They are engineering work on a foundation that
 already exists and is tested. The core invariants — possession-based authorization,
@@ -824,7 +834,7 @@ place and passing tests today.
 
 ### The Synthesis
 
-xorg as a service is not an org-chart tool, not a project management app, not a voting
+playnet as a service is not an org-chart tool, not a project management app, not a voting
 platform. It is the substrate beneath all of those — a computable interpreter in which
 any organizational form can be expressed, enacted, inspected, and transformed.
 
@@ -856,7 +866,7 @@ the turtles are Scheme expressions, and they're all signed.
   (make-ai-expressor! org
     #:name 'claude
     #:extra-bindings
-    `((mcp . ,(make-xorg-mcp-server (org-vat org) org
+    `((mcp . ,(make-playnet-mcp-server (org-vat org) org
                 #:allow-history? #t
                 #:allow-bindings? #t
                 #:allow-modify? #t)))))

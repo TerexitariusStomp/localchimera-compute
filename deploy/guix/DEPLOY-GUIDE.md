@@ -355,7 +355,7 @@ deploy/guix/
   machines.scm                -- guix deploy target (managed-host)
   secrets.scm                 -- API token (gitignored)
   deploy.sh                   -- wrapper: loads secrets, runs guix deploy
-  xorg-service.scm            -- Shepherd service for xorg actors
+  playnet-service.scm            -- Shepherd service for playnet actors
   reticulum-service.scm       -- Shepherd services for rnsd + bridge
   reticulum-manifest.scm      -- Guix manifest for Reticulum Python deps
   channels.scm                -- pinned Guix channel

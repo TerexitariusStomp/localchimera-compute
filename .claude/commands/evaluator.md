@@ -6,29 +6,29 @@ You are editing the metacircular evaluator. Hoot cannot compile Guile's `eval`, 
 
 ## Key file
 
-`module/xorg/evaluator.scm` (~236 lines)
+`module/playnet/evaluator.scm` (~236 lines)
 
 Core function: `(evaluate expr org local-bindings)` where `org` is typically a logged-revocable proxy.
 
 ## Supported forms
 
-| Form | Effect |
-|------|--------|
-| `#t`, `#f`, numbers, strings | Self-evaluating literals |
-| `(quote x)` | Returns `x` unevaluated |
-| `(if test then else)` | Conditional |
-| `(begin body ...)` | Sequence |
-| `(let ...)`, `(let* ...)`, `(letrec ...)` | Bindings |
-| `(let name (...) body)` | Named let — loop |
-| `(lambda (args) body)` | Closure |
-| `(define name value)` | Bind in the org via `($ org 'modify! ...)` |
-| `(modify! name value)` | Explicit binding mutation |
-| `(rollback! index)` | Restore snapshot from log |
-| `(cond ...)`, `(case ...)` | Multi-branch |
-| `(and ...)`, `(or ...)` | Short-circuit boolean |
-| `(when ...)`, `(unless ...)` | Conditional execution |
-| `(do ...)` | Iteration |
-| `(f args ...)` | Application |
+| Form                                      | Effect                                     |
+| ----------------------------------------- | ------------------------------------------ |
+| `#t`, `#f`, numbers, strings              | Self-evaluating literals                   |
+| `(quote x)`                               | Returns `x` unevaluated                    |
+| `(if test then else)`                     | Conditional                                |
+| `(begin body ...)`                        | Sequence                                   |
+| `(let ...)`, `(let* ...)`, `(letrec ...)` | Bindings                                   |
+| `(let name (...) body)`                   | Named let — loop                           |
+| `(lambda (args) body)`                    | Closure                                    |
+| `(define name value)`                     | Bind in the org via `($ org 'modify! ...)` |
+| `(modify! name value)`                    | Explicit binding mutation                  |
+| `(rollback! index)`                       | Restore snapshot from log                  |
+| `(cond ...)`, `(case ...)`                | Multi-branch                               |
+| `(and ...)`, `(or ...)`                   | Short-circuit boolean                      |
+| `(when ...)`, `(unless ...)`              | Conditional execution                      |
+| `(do ...)`                                | Iteration                                  |
+| `(f args ...)`                            | Application                                |
 
 ## Key components
 

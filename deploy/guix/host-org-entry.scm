@@ -2,7 +2,7 @@
 ;;;
 ;;; Starts a persistent host org with service capabilities.
 ;;; Called by: guile host-org-entry.scm
-;;; Logs to: /var/log/xorg-host.log (via Shepherd)
+;;; Logs to: /var/log/playnet-host.log (via Shepherd)
 ;;;
 ;;; On first boot: creates a fresh host org with governance.
 ;;; On subsequent boots: restores from persistent store.
@@ -14,13 +14,13 @@
 ;;;   (host-grant-deploy! host "deploy/guix/machines.scm" infra-seal)
 
 (use-modules (goblins)
-             (xorg gplay)
-             (xorg host)
-             (xorg services))
+             (playnet gplay)
+             (playnet host)
+             (playnet services))
 
 ;; TODO: wire Bloblin persistence when make-governed-org-persistent exists
 ;; (use-modules (goblins persistence-store bloblin))
-;; (define store (make-bloblin-store "/var/lib/xorg/host-org.db"))
+;; (define store (make-bloblin-store "/var/lib/playnet/host-org.db"))
 
 ;; Create the host org (non-persistent for now)
 (define-values (host gov-seal infra-seal member-seal)

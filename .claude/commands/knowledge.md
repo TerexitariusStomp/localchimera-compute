@@ -6,11 +6,11 @@ You are editing the knowledge layer — three standalone, Hoot-compatible module
 
 ## Key files
 
-| File | Purpose |
-|------|---------|
-| `module/xorg/kanren.scm` (~219 lines) | miniKanren from scratch: microKanren + Zzz + reification + occurs check |
-| `module/xorg/hyperarc.scm` (~143 lines) | Hyperarc/metagraph data structures: nodes, hyperarcs, metagraphs, knowledge bases |
-| `module/xorg/knowledge.scm` (~157 lines) | Relational query layer over hyperarc KBs using miniKanren |
+| File                                        | Purpose                                                                           |
+| ------------------------------------------- | --------------------------------------------------------------------------------- |
+| `module/playnet/kanren.scm` (~219 lines)    | miniKanren from scratch: microKanren + Zzz + reification + occurs check           |
+| `module/playnet/hyperarc.scm` (~143 lines)  | Hyperarc/metagraph data structures: nodes, hyperarcs, metagraphs, knowledge bases |
+| `module/playnet/knowledge.scm` (~157 lines) | Relational query layer over hyperarc KBs using miniKanren                         |
 
 ## miniKanren exports (kanren.scm)
 
@@ -50,6 +50,7 @@ Built on kanren.scm, queries over hyperarc KBs:
 ## Common editing patterns
 
 **Add a miniKanren relation:** Define in `knowledge.scm` using `fresh`, `==`, `conde`:
+
 ```scheme
 (define (my-relation-o kb x y)
   (fresh (arc)

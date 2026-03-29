@@ -114,7 +114,7 @@ export function IntegratedExperience() {
           >
             <div className="text-center max-w-4xl px-8">
               <div className="text-8xl font-black mb-8 bg-gradient-to-r from-electric-blue-500 via-vibrant-purple-500 to-warm-orange-500 bg-clip-text text-transparent leading-tight">
-                xorg
+                playnet
               </div>
               <div className="text-3xl text-gray-200 mb-6 font-light">
                 Symbolic Governance in a Persistent REPL

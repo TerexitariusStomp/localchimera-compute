@@ -1,24 +1,24 @@
-# xorg
+# playnet
 
-![xorg poster](xorg_poster.png)
+![playnet poster](playnet_poster.png)
 
 _A self-evolving commons computer written entirely in Guile Scheme._
 
 ---
 
-**xorg** is a computer environment where pushing to `main` can redeploy the entire operating system. Everything from the browser interface to the kernel configuration is a Scheme expression. Object capability security comes from the lambda calculus itself (as described in [_A Security Kernel Based on the Lambda-Calculus_](https://mumble.net/~jar/pubs/secureos/secureos.html)) — if you hold the reference, you have the authority; if you don't, you don't. The system runs in the browser (Hoot/WASM), on the desktop (native Guile), and on the server (Guix System), connected by mesh networking that works over LoRa radio, serial wire, I2P, TCP, or packet radio.
+**playnet** is a computer environment where pushing to `main` can redeploy the entire operating system. Everything from the browser interface to the kernel configuration is a Scheme expression. Object capability security comes from the lambda calculus itself (as described in [_A Security Kernel Based on the Lambda-Calculus_](https://mumble.net/~jar/pubs/secureos/secureos.html)) — if you hold the reference, you have the authority; if you don't, you don't. The system runs in the browser (Hoot/WASM), on the desktop (native Guile), and on the server (Guix System), connected by mesh networking that works over LoRa radio, serial wire, I2P, TCP, or packet radio.
 
 There is no gap between the system and its description. The organization's rules, state, and history are all S-expressions — the same representation the evaluator consumes. This is what makes the system self-reflective: it can inspect its own evolution, rollback to a prior state, and rewrite its own governance, using the same language it was built in.
 
 ## Try it
 
-Visit the [browser REPL](https://interplaynetary.github.io/xorg/) — no install needed.
+Visit the [browser REPL](https://interplaynetary.github.io/playnet/) — no install needed.
 
 ```
-xorg> (make-org "my-org")
+playnet> (make-org "my-org")
 Created org: my-org
 
-xorg> (enter! "my-org")
+playnet> (enter! "my-org")
 Entering org.
 
 play> (define greeting "hello world")
@@ -59,7 +59,7 @@ Every layer is Guile Scheme. Every connection is capability-secured.
 
 ## Architecture
 
-On native Guile + Goblins, xorg is not a library — it's a **pattern**. Every piece of governance maps 1:1 to existing Goblins primitives:
+On native Guile + Goblins, playnet is not a library — it's a **pattern**. Every piece of governance maps 1:1 to existing Goblins primitives:
 
 | Need            | Goblins provides                                                                                                      |
 | --------------- | --------------------------------------------------------------------------------------------------------------------- |
@@ -77,7 +77,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for the full explanation.
 ### Code structure
 
 ```
-module/xorg/
+module/playnet/
   actors.scm         — ^org, ^logger, proxy pair (governance kernel)
   evaluator.scm      — metacircular eval (Hoot/WASM only)
   repl.scm           — org factories + inner REPL
@@ -106,7 +106,7 @@ key-pool/
 
 deploy/guix/
   machines.scm        — the operating system declaration
-  xorg-service.scm    — Shepherd service type for org processes
+  playnet-service.scm    — Shepherd service type for org processes
   users.scm           — dynamically provisioned user accounts
   provision-user.scm  — enrollment script
   channels.scm        — pinned Guix commit for reproducibility
@@ -200,14 +200,14 @@ The key-pool is the first concrete example. The pool works with any HTTP API tha
 
 The VF bridge (`key-pool/vf-bridge.scm`) maps pool operations to ValueFlows records:
 
-| Pool concept | ValueFlows record | What it enables |
-| ------------ | ----------------- | --------------- |
-| Donor | Agent | Track who contributed what, compute contribution claims |
-| API key | EconomicResource | State (available/degraded/exhausted), provenance, capacity |
-| API call | EconomicEvent (action: `use`) | Cost tracking, usage attribution, audit trail |
-| Pool | Process | Container of economic activity the planner can reason about |
+| Pool concept | ValueFlows record             | What it enables                                             |
+| ------------ | ----------------------------- | ----------------------------------------------------------- |
+| Donor        | Agent                         | Track who contributed what, compute contribution claims     |
+| API key      | EconomicResource              | State (available/degraded/exhausted), provenance, capacity  |
+| API call     | EconomicEvent (action: `use`) | Cost tracking, usage attribution, audit trail               |
+| Pool         | Process                       | Container of economic activity the planner can reason about |
 
-Every API call becomes an immutable economic fact. This isn't monitoring — it turns infrastructure into something the planner can *plan over*:
+Every API call becomes an immutable economic fact. This isn't monitoring — it turns infrastructure into something the planner can _plan over_:
 
 - **Demand/supply**: "We need 100 USD of transcription capacity this month" unfolds via dependent-demand into "which keys can provide it? Do we have enough?"
 - **Buffer management (DDMRP)**: Average daily usage computed from the event stream predicts when capacity will exhaust. Buffer zones signal "donate keys now" before the pool runs dry — the same algorithm that prevents stockouts in supply chains.
@@ -226,7 +226,7 @@ The key pool is the proof of concept, but the pattern is general: any computatio
 
 Three layers make this work:
 
-1. **Capability security** means you can safely share compute without trusting contributors. You hand someone a capability to *use* the resource, not to *control* it. Attenuation restricts the interface, revocation pulls it back, logging records everything.
+1. **Capability security** means you can safely share compute without trusting contributors. You hand someone a capability to _use_ the resource, not to _control_ it. Attenuation restricts the interface, revocation pulls it back, logging records everything.
 
 2. **ValueFlows accounting** means every unit of donated compute enters the same economic vocabulary. Alice donates GPU time, Bob donates API keys, Carol donates storage — the planner sees all of it as economic resource flows, does demand/supply across them, and tracks contribution.
 
@@ -236,7 +236,7 @@ The critical property is the feedback loop. In a traditional system, when API ke
 
 Because OCapN federates across scopes, signals aren't trapped in one server. A commons with surplus API keys can see that another commons is running low. Lateral matching connects surplus to deficit without central coordination.
 
-The planner doesn't *command* donors. It makes the flows visible. Coordination emerges from visibility — the same way a biological system upregulates enzyme production when substrate runs low. That's what socializing infrastructure means: not "everyone shares everything," but the economic structure itself creates the conditions for self-organization.
+The planner doesn't _command_ donors. It makes the flows visible. Coordination emerges from visibility — the same way a biological system upregulates enzyme production when substrate runs low. That's what socializing infrastructure means: not "everyone shares everything," but the economic structure itself creates the conditions for self-organization.
 
 ## Networking
 
@@ -326,7 +326,7 @@ Every relation is bidirectional. "Find events for resource X" and "find resource
 
 ### The system reasons about itself
 
-`system-kb.scm` expresses xorg's own structure as relational facts queryable via miniKanren:
+`system-kb.scm` expresses playnet's own structure as relational facts queryable via miniKanren:
 
 ```scheme
 (query-depends 'browser)
@@ -400,22 +400,22 @@ You can consume this repository either directly or as a Guix channel.
 
 ```bash
 Sensor data flows through the same ValueFlows accounting as API keys — each reading is an EconomicEvent, each sensor is an EconomicResource, the data is a resource flow governed by the same actors that govern everything else.
-guix package -f guix.scm      # install the xorg desktop REPL into your profile
+guix package -f guix.scm      # install the playnet desktop REPL into your profile
 guix shell -m manifest.scm    # transient shell with all development dependencies
 ```
 
 **Add as a Guix channel:**
-To make `xorg` available in your system's package registry, add this to your `~/.config/guix/channels.scm`:
+To make `playnet` available in your system's package registry, add this to your `~/.config/guix/channels.scm`:
 
 ```scheme
 (cons (channel
-        (name 'xorg)
-        (url "https://github.com/interplaynetary/xorg.git")
+        (name 'playnet)
+        (url "https://github.com/interplaynetary/playnet.git")
         (branch "main"))
       %default-channels)
 ```
 
-After running `guix pull`, you can install it globally via `guix install xorg`.
+After running `guix pull`, you can install it globally via `guix install playnet`.
 
 ### Run
 
@@ -440,7 +440,7 @@ See `deploy/guix/DEPLOY-GUIDE.md` for the full guide.
 ### Learning Scheme and Goblins
 
 - **Scheme:** If you're new to the language, [A Scheme Primer](https://spritely.institute/static/papers/scheme-primer.html) is the perfect introduction.
-- **Goblins:** The best starting point is the [Heart of Spritely](https://spritely.institute/static/papers/spritely-core.html) paper — it covers the capability patterns that xorg maps onto directly.
+- **Goblins:** The best starting point is the [Heart of Spritely](https://spritely.institute/static/papers/spritely-core.html) paper — it covers the capability patterns that playnet maps onto directly.
 
 ## Built With
 

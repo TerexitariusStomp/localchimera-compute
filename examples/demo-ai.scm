@@ -7,14 +7,14 @@
 
 (add-to-load-path "module")
 
-(use-modules (xorg ai)
+(use-modules (playnet ai)
              (ice-9 readline))
 
 (activate-readline)
 
 (define banner "
 ╔════════════════════════════════════════════════════════════════╗
-║                   xorg AI Integration Demo                     ║
+║                   playnet AI Integration Demo                     ║
 ╚════════════════════════════════════════════════════════════════╝
 
 This demo shows the AI module is working and ready to use.
@@ -48,7 +48,7 @@ This demo shows the AI module is working and ready to use.
 (display "\n")
 (display "To use AI in an org:\n\n")
 (display "  1. Start REPL: make repl\n")
-(display "  2. Load module: (use-modules (xorg ai))\n")
+(display "  2. Load module: (use-modules (playnet ai))\n")
 (display "  3. Create org: (make-org \"test\")\n")
 (display "  4. Enter org: (enter! \"test\")\n")
 (display "  5. Query AI: (ai \"What is 2 + 2?\")\n")

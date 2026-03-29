@@ -27,7 +27,7 @@
   #:use-module (gnu packages node)          ;; node (for Claude Code CLI)
   #:use-module (gnu packages emacs)        ;; emacs-no-x
   #:use-module (gnu packages emacs-xyz)    ;; geiser, smartparens, rainbow-delimiters
-  #:use-module (xorg-service)              ;; xorg-service-type, xorg-configuration
+  #:use-module (playnet-service)              ;; playnet-service-type, playnet-configuration
   #:export (%base-hetzner-system
             make-hetzner-system))
 
@@ -49,7 +49,7 @@
 ;; Geiser default implementation
 (setq geiser-default-implementation 'guile)
 
-;; mcp-server-lib + xorg MCP bridge — vendored, no MELPA dependency
+;; mcp-server-lib + playnet MCP bridge — vendored, no MELPA dependency
 (load-file \"~/.emacs.d/mcp-server-lib.el\")
 (load-file \"~/.emacs.d/emacs-mcp.el\")
 
@@ -63,23 +63,23 @@
 (define %mcp-server-lib-el
   (local-file "mcp-server-lib.el"))
 
-;; xorg MCP bridge for Emacs — wires Geiser to mcp-server-lib.
+;; playnet MCP bridge for Emacs — wires Geiser to mcp-server-lib.
 ;; Deployed to /home/deploy/.emacs.d/emacs-mcp.el via activation service.
 (define %emacs-mcp-el
   (local-file "emacs-mcp.el"))
 
 ;; Development REPL service — starts Guile listening on a Unix socket.
-;; Connect with: M-x geiser-connect-local RET guile RET /var/run/xorg-dev.sock RET
-;; Manual start only (security): herd start xorg-dev-repl
-(define %xorg-dev-repl-service
+;; Connect with: M-x geiser-connect-local RET guile RET /var/run/playnet-dev.sock RET
+;; Manual start only (security): herd start playnet-dev-repl
+(define %playnet-dev-repl-service
   (shepherd-service
-   (provision '(xorg-dev-repl))
-   (documentation "Guile REPL for live xorg hacking via Geiser")
+   (provision '(playnet-dev-repl))
+   (documentation "Guile REPL for live playnet hacking via Geiser")
    (requirement '(networking))
    (start #~(make-forkexec-constructor
              (list #$(file-append guile-3.0 "/bin/guile")
-                   "--listen=/var/run/xorg-dev.sock")
-             #:log-file "/var/log/xorg-dev-repl.log"))
+                   "--listen=/var/run/playnet-dev.sock")
+             #:log-file "/var/log/playnet-dev-repl.log"))
    (stop #~(make-kill-destructor))
    (respawn? #f)
    (auto-start? #f)))
@@ -103,13 +103,13 @@
              (supplementary-groups '("wheel"))
              (home-directory "/home/deploy")
              (shell (file-append bash "/bin/bash")))
-            ;; Unprivileged user for xorg org processes.
-            ;; Each xorg Shepherd service runs as this user.
+            ;; Unprivileged user for playnet org processes.
+            ;; Each playnet Shepherd service runs as this user.
             (user-account
-             (name "xorg")
+             (name "playnet")
              (group "users")
              (system? #t)
-             (home-directory "/var/lib/xorg")
+             (home-directory "/var/lib/playnet")
              (shell (file-append bash "/bin/bash")))
             %base-user-accounts))
 
@@ -159,19 +159,19 @@
        ;; NTP
        (service ntp-service-type)
 
-       ;; Dev REPL — manual start only (herd start xorg-dev-repl)
-       (simple-service 'xorg-dev-repl
+       ;; Dev REPL — manual start only (herd start playnet-dev-repl)
+       (simple-service 'playnet-dev-repl
                        shepherd-root-service-type
-                       (list %xorg-dev-repl-service))
+                       (list %playnet-dev-repl-service))
 
        ;; Host org — the privileged org that manages services and tenants.
-       ;; Runs as the xorg user; communicates via Unix socket.
-       (service xorg-service-type
-                (xorg-configuration
+       ;; Runs as the playnet user; communicates via Unix socket.
+       (service playnet-service-type
+                (playnet-configuration
                  (name "host")
                  (entry-point (local-file "host-org-entry.scm"))
-                 (socket-path "/var/run/xorg-host.sock")
-                 (user "xorg")))
+                 (socket-path "/var/run/playnet-host.sock")
+                 (user "playnet")))
 
        ;; Deploy Emacs config + MCP bridge for the deploy user
        (simple-service 'deploy-emacs-config

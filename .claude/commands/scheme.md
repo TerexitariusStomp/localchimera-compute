@@ -2,19 +2,19 @@
 description: Guile Scheme — the language everything is written in, SRFI usage, module system, idioms
 ---
 
-Every layer of xorg is Guile Scheme — from the browser evaluator to the operating system declaration. This skill covers Guile-specific idioms, the module system, SRFIs used in the codebase, and patterns that differ from other Scheme implementations.
+Every layer of playnet is Guile Scheme — from the browser evaluator to the operating system declaration. This skill covers Guile-specific idioms, the module system, SRFIs used in the codebase, and patterns that differ from other Scheme implementations.
 
 ## Module system
 
 ```scheme
 ;; Defining a module
-(define-module (xorg actors)
+(define-module (playnet actors)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
   #:export (^org ^logger spawn-logged-revocable-proxy-pair))
 
 ;; Using a module
-(use-modules (xorg actors))
+(use-modules (playnet actors))
 
 ;; Load path: -L flag or GUILE_LOAD_PATH environment variable
 ;; This project: guile -L module server/relay.scm
@@ -22,13 +22,13 @@ Every layer of xorg is Guile Scheme — from the browser evaluator to the operat
 
 ## SRFIs used in this codebase
 
-| SRFI | Name | Where used |
-|------|------|------------|
-| SRFI-1 | List library | `fold`, `any`, `filter`, `partition` — everywhere |
-| SRFI-9 | Records | `key-pool.scm`, `planner/lib/schemas.scm` |
-| SRFI-19 | Time | `key-pool.scm` (timestamps) |
-| SRFI-43 | Vectors | `planner/` algorithms |
-| SRFI-64 | Testing | `tests/` |
+| SRFI    | Name         | Where used                                        |
+| ------- | ------------ | ------------------------------------------------- |
+| SRFI-1  | List library | `fold`, `any`, `filter`, `partition` — everywhere |
+| SRFI-9  | Records      | `key-pool.scm`, `planner/lib/schemas.scm`         |
+| SRFI-19 | Time         | `key-pool.scm` (timestamps)                       |
+| SRFI-43 | Vectors      | `planner/` algorithms                             |
+| SRFI-64 | Testing      | `tests/`                                          |
 
 ```scheme
 (use-modules (srfi srfi-1))   ;; fold, any, filter, etc.
@@ -52,7 +52,7 @@ Every layer of xorg is Guile Scheme — from the browser evaluator to the operat
 (format #t "~a items, ~,2f seconds\n" count elapsed)
 ;; ~a = display, ~s = write, ~% = newline, ~,2f = float with 2 decimals
 
-;; Association lists (the primary data structure in xorg)
+;; Association lists (the primary data structure in playnet)
 (define env '((x . 1) (y . 2)))
 (assq-ref env 'x)         ;; => 1  (eq? comparison — symbols)
 (assoc-ref env "key")      ;; => value (equal? comparison — strings)
@@ -78,7 +78,7 @@ Every layer of xorg is Guile Scheme — from the browser evaluator to the operat
 
 ## Hoot compatibility constraints
 
-When writing code that must compile to WASM via Hoot (`browser/repl.scm`, `module/xorg/*.scm`):
+When writing code that must compile to WASM via Hoot (`browser/repl.scm`, `module/playnet/*.scm`):
 
 - No `eval` — use the metacircular evaluator
 - No `syntax-case` or `syntax-rules` macros in Hoot modules

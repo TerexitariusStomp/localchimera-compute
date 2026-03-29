@@ -1,11 +1,11 @@
-;;; test-endorsement.scm — tests for (xorg endorsement) and capability-governed validation
+;;; test-endorsement.scm — tests for (playnet endorsement) and capability-governed validation
 ;;; Run with:  guile -L module tests/test-endorsement.scm
 
 (define %project-root (string-append (dirname (current-filename)) "/.."))
 (add-to-load-path (string-append %project-root "/module"))
 
-(use-modules (xorg gplay)
-             (xorg endorsement)
+(use-modules (playnet gplay)
+             (playnet endorsement)
              (goblins)
              (goblins actor-lib sealers)
              (ice-9 receive))

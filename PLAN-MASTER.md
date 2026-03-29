@@ -1,4 +1,4 @@
-# xorg Master Plan — Complete Elegant Architecture
+# playnet Master Plan — Complete Elegant Architecture
 
 _Written 2026-03-26. This is the canonical roadmap. All other PLAN-\*.md files feed into this._
 
@@ -30,7 +30,7 @@ and computational substrate. The org can eventually govern its own infrastructur
 - Cryptographic signatures on history entries (Ed25519 via Goblins crypto)
 - `verify-history-entry` exported
 - Guix+Hetzner deployment: `deploy/guix/` with `hetzner-environment-type`
-- `xorg-service-type` — Shepherd service type for xorg processes
+- `playnet-service-type` — Shepherd service type for playnet processes
 - Tests: 225+ passing across all modules
 
 ### In progress (uncommitted)
@@ -99,7 +99,7 @@ and computational substrate. The org can eventually govern its own infrastructur
 under the AI expressor's authority, not the caller's. The history entry is attributed
 to the AI expressor with its keypair's signature.
 
-**New file:** `module/xorg/ai-expressor.scm` — `make-ai-expressor`, `install-ai-expressor!`
+**New file:** `module/playnet/ai-expressor.scm` — `make-ai-expressor`, `install-ai-expressor!`
 
 ---
 
@@ -133,7 +133,7 @@ This is cleaner than external MCP because:
 - Every tool call is through the Goblins actor system — traceable
 - The org history shows exactly which tools the AI was given access to
 
-**New file:** `module/xorg/mcp.scm` — `^mcp-server`, `^tool-cap`, `make-mcp-server`
+**New file:** `module/playnet/mcp.scm` — `^mcp-server`, `^tool-cap`, `make-mcp-server`
 
 ---
 
@@ -158,7 +158,7 @@ Host org (privileged)
            tenant-B gets relay-full, deploy-machine-B-only
 ```
 
-**New file:** `module/xorg/host.scm` — host org setup, tenant spawning, capability grants
+**New file:** `module/playnet/host.scm` — host org setup, tenant spawning, capability grants
 **New file:** `deploy/guix/host-org.scm` — Guix service for the host org process
 
 **Shepherd×Goblins migration point:** When Shepherd ports to Goblins, the host org
@@ -267,7 +267,7 @@ This is the org that governs its own infrastructure.
 
 ---
 
-## Revised direction: xorg as a portable governance kernel
+## Revised direction: playnet as a portable governance kernel
 
 _Added 2026-03-28. This supersedes the layer-by-layer build plan above._
 
@@ -276,16 +276,16 @@ _Added 2026-03-28. This supersedes the layer-by-layer build plan above._
 Most of what LAYERS 2-6 describe is wrapping things that the underlying stack
 already provides. Goblins gives us capabilities, persistence, networking (OCapN),
 and actors. Guix gives us deploy and services. Guile gives us the REPL and
-homoiconicity. xorg's actual contribution is narrow and specific: **governed
+homoiconicity. playnet's actual contribution is narrow and specific: **governed
 evaluation with attributed history.**
 
 The wrappers we built — `^http-client`, `^service-cap`, `^deploy-cap`,
 `^ai-capability`, `^mcp-server`, the MCP transport, the AI glue — are all
-things that can't run in Hoot/WASM anyway. And they shouldn't be part of xorg.
+things that can't run in Hoot/WASM anyway. And they shouldn't be part of playnet.
 They're infrastructure capabilities that get **injected** into an org as opaque
 actor refs via OCapN.
 
-### The kernel (what xorg IS)
+### The kernel (what playnet IS)
 
 Three files, ~850 lines:
 
@@ -297,6 +297,7 @@ Three files, ~850 lines:
   Factory functions and the 3-seal pattern.
 
 Optional, standalone:
+
 - **`kanren.scm`** + **`hyperarc.scm`** + **`knowledge.scm`** — relational
   query layer. Pure Scheme, no system deps, Hoot-compatible.
 
@@ -329,14 +330,14 @@ model doesn't change.
 
 ### What the old LAYERS become
 
-| Old layer | New status |
-|---|---|
-| LAYER 1: Persistence | Still needed. Write test-persistence.scm. |
-| LAYER 2: AI as expressor | Just `(defexpressor 'ai ai-keypair)`. No module needed. |
-| LAYER 3: MCP as capability | Use `emacs-claude-code-ide` / `mcp-server-lib.el`. Not an xorg concern. |
-| LAYER 4: Multi-org OCapN | Goblins OCapN provides this. Orgs hold refs to each other. No `host.scm` needed. |
-| LAYER 5: Guix deploy as org action | An injected capability ref. `($ (lookup 'deploy) 'run)`. Not an xorg module. |
-| LAYER 6: Per-expressor output | Still valid, low priority. |
+| Old layer                          | New status                                                                       |
+| ---------------------------------- | -------------------------------------------------------------------------------- |
+| LAYER 1: Persistence               | Still needed. Write test-persistence.scm.                                        |
+| LAYER 2: AI as expressor           | Just `(defexpressor 'ai ai-keypair)`. No module needed.                          |
+| LAYER 3: MCP as capability         | Use `emacs-claude-code-ide` / `mcp-server-lib.el`. Not an playnet concern.       |
+| LAYER 4: Multi-org OCapN           | Goblins OCapN provides this. Orgs hold refs to each other. No `host.scm` needed. |
+| LAYER 5: Guix deploy as org action | An injected capability ref. `($ (lookup 'deploy) 'run)`. Not an playnet module.  |
+| LAYER 6: Per-expressor output      | Still valid, low priority.                                                       |
 
 ### Revised sequencing
 

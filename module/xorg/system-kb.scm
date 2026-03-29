@@ -1,16 +1,16 @@
-;;; system-kb.scm — xorg's knowledge of its own structure
+;;; system-kb.scm — playnet's knowledge of its own structure
 ;;; Relational facts queryable via miniKanren. Hyperarcs underneath.
 ;;; Hoot/WASM compatible.
 ;;;
 ;;; Usage:
-;;;   (use-modules (xorg system-kb) (xorg knowledge) (xorg kanren))
+;;;   (use-modules (playnet system-kb) (playnet knowledge) (playnet kanren))
 ;;;   (run* (q) (depends-on-o 'browser q))
 ;;;   (run* (proof) (trigger-chain-o 'push-to-main 'kernel proof))
 
-(define-module (xorg system-kb)
-  #:use-module (xorg hyperarc)
-  #:use-module (xorg kanren)
-  #:use-module (xorg knowledge)
+(define-module (playnet system-kb)
+  #:use-module (playnet hyperarc)
+  #:use-module (playnet kanren)
+  #:use-module (playnet knowledge)
   #:use-module (srfi srfi-1)
   #:export (*system-kb*
             ;; Generic
@@ -89,16 +89,16 @@
 (define %files
   (make-metagraph 'files '((description . "Which files belong to which layer"))
     (list
-     (file-map 'actors         "module/xorg/actors.scm")
-     (file-map 'evaluator      "module/xorg/evaluator.scm")
-     (file-map 'browser        "module/xorg/repl.scm")
+     (file-map 'actors         "module/playnet/actors.scm")
+     (file-map 'evaluator      "module/playnet/evaluator.scm")
+     (file-map 'browser        "module/playnet/repl.scm")
      (file-map 'browser        "browser/repl.scm")
      (file-map 'browser        "browser/repl.js")
      (file-map 'browser        "browser/index.html")
-     (file-map 'kanren         "module/xorg/kanren.scm")
-     (file-map 'hyperarc       "module/xorg/hyperarc.scm")
-     (file-map 'knowledge      "module/xorg/knowledge.scm")
-     (file-map 'system-kb      "module/xorg/system-kb.scm")
+     (file-map 'kanren         "module/playnet/kanren.scm")
+     (file-map 'hyperarc       "module/playnet/hyperarc.scm")
+     (file-map 'knowledge      "module/playnet/knowledge.scm")
+     (file-map 'system-kb      "module/playnet/system-kb.scm")
      (file-map 'relay          "server/relay.scm")
      (file-map 'signup-agent   "server/signup-agent.scm")
      (file-map 'guix-deploy    "deploy/guix/machines.scm")
@@ -111,7 +111,7 @@
      (file-map 'planner        "planner/lib/schemas.scm")
      (file-map 'key-pool       "key-pool/key-pool.scm")
      (file-map 'reticulum      "server/reticulum-bridge.py")
-     (file-map 'services       "deploy/guix/xorg-service.scm"))))
+     (file-map 'services       "deploy/guix/playnet-service.scm"))))
 
 ;;; ── Provides ──────────────────────────────────────────────────────────────
 ;;; What capabilities each layer provides.

@@ -9,8 +9,8 @@
 
 (add-to-load-path "module")
 
-(use-modules (xorg ai)
-             (xorg org)
+(use-modules (playnet ai)
+             (playnet org)
              (goblins)
              (ice-9 rdelim))
 
@@ -35,7 +35,7 @@
 ║          AI Expressor: The Organization IS Intelligence        ║
 ╚════════════════════════════════════════════════════════════════╝
 
-An AI agent in xorg is just an expressor with config bindings.
+An AI agent in playnet is just an expressor with config bindings.
 Its system prompt lives in the org as a regular binding —
 inspectable, governable, and modifiable by any authorized expressor.
 

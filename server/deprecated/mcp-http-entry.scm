@@ -9,9 +9,9 @@
 ;;; Default port: 8080
 
 (use-modules (goblins)
-             (xorg org)
-             (xorg mcp)
-             (xorg mcp-http)
+             (playnet org)
+             (playnet mcp)
+             (playnet mcp-http)
              (ice-9 receive))
 
 ;;; ── Configuration ─────────────────────────────────────────────────────────
@@ -29,7 +29,7 @@
 ;;; ── Build MCP server ──────────────────────────────────────────────────────
 
 (define mcp-server
-  (make-xorg-mcp-server vat org
+  (make-playnet-mcp-server vat org
                          #:allow-eval? #t
                          #:allow-modify? #t
                          #:allow-history? #t

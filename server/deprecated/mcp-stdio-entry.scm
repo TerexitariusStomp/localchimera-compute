@@ -10,9 +10,9 @@
 ;;;   { "command": "guile", "args": ["-L", "module", "mcp-stdio-entry.scm"] }
 
 (use-modules (goblins)
-             (xorg org)
-             (xorg mcp)
-             (xorg mcp-stdio))
+             (playnet org)
+             (playnet mcp)
+             (playnet mcp-stdio))
 
 ;;; ── Create the org ────────────────────────────────────────────────────────
 
@@ -23,7 +23,7 @@
 ;;; Pass #:allow-eval? #t to enable evaluation.
 
 (define mcp-server
-  (make-xorg-mcp-server (org-vat org) org
+  (make-playnet-mcp-server (org-vat org) org
                          #:allow-eval? #t
                          #:allow-modify? #t
                          #:allow-history? #t

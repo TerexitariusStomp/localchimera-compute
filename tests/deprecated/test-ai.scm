@@ -1,13 +1,13 @@
 #!/usr/bin/env guile
 !#
 
-;;; test-ai.scm — Quick test of AI integration in xorg
+;;; test-ai.scm — Quick test of AI integration in playnet
 
 (define %project-root (string-append (dirname (current-filename)) "/.."))
 (add-to-load-path (string-append %project-root "/module"))
 
-(use-modules (xorg ai)
-             (xorg gplay)
+(use-modules (playnet ai)
+             (playnet gplay)
              (goblins))
 
 ;;; Test 1: Check if API key is set

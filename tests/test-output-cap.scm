@@ -4,8 +4,8 @@
 (define %project-root (string-append (dirname (current-filename)) "/.."))
 (add-to-load-path (string-append %project-root "/module"))
 
-(use-modules (xorg org)
-             (xorg gplay)
+(use-modules (playnet org)
+             (playnet gplay)
              (goblins))
 
 ;;; ── Harness ─────────────────────────────────────────────────────────────────

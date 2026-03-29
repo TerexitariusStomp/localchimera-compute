@@ -1,4 +1,4 @@
-# XAAS-AI-DEEP: How AI Agents Hold and Use Capabilities in xorg
+# XAAS-AI-DEEP: How AI Agents Hold and Use Capabilities in playnet
 
 Technical deep-dive into the AI expressor system, MCP integration, and
 the gap between governed evaluation and external LLM access.
@@ -9,7 +9,7 @@ the gap between governed evaluation and external LLM access.
 
 ### Step by step: `make-ai-expressor!`
 
-The entry point is `make-ai-expressor!` in `module/xorg/ai-expressor.scm:26`.
+The entry point is `make-ai-expressor!` in `module/playnet/ai-expressor.scm:26`.
 Here's what happens when you call it:
 
 ```scheme
@@ -59,11 +59,11 @@ and `gen` (genesis expressor) as the acting identity.
 `spawn-sealer-triplet` is a **Goblins primitive**. It creates three actor
 refs that form a matched set:
 
-| Actor       | What it does                                          |
-|-------------|-------------------------------------------------------|
-| `sealer`    | `($ sealer value)` → produces a sealed (opaque) box   |
-| `unsealer`  | `($ unsealer box)` → extracts the value from the box   |
-| `sealed?`   | `($ sealed? box)` → `#t` iff box was sealed by *this* sealer |
+| Actor      | What it does                                                 |
+| ---------- | ------------------------------------------------------------ |
+| `sealer`   | `($ sealer value)` → produces a sealed (opaque) box          |
+| `unsealer` | `($ unsealer box)` → extracts the value from the box         |
+| `sealed?`  | `($ sealed? box)` → `#t` iff box was sealed by _this_ sealer |
 
 These are Goblins actors — they are **object references, not cryptographic
 keys**. They cannot be forged, guessed, or synthesized. They exist only as
@@ -141,7 +141,7 @@ to produce a box that the matching `sealed?` will recognize.
 There's a subtlety. `extra-bindings` are stored in the **org's shared bindings**
 via `(modify! ...)`. This means they're visible to everyone via `($ org 'bindings)`.
 
-The capability scoping comes from what the *value* is, not where it's stored.
+The capability scoping comes from what the _value_ is, not where it's stored.
 If you store an endorsed value `(endorse "nginx-deployer" infra-seal)` under the
 name `'my-deploy`, anyone can look it up — but only the faceted validator knows
 that this value was endorsed with the infra-seal. The AI can pass it to
@@ -150,6 +150,7 @@ f value)`, not who is calling.
 
 True local scope (bindings only visible to one agent) doesn't exist in the
 current system. The org has one shared binding space. Scoping is achieved by:
+
 - Giving the AI actor refs in its extra-bindings that others don't have
 - The capability model: holding the ref is the authority; others can see the
   name but can't reconstruct the sealed value
@@ -213,8 +214,9 @@ iterates expressor-store, finds the matching `sealed?`, returns `'deploy-ai-N`.
 `current-expressor` = `'deploy-ai-N`.
 
 **5.** `modify!` handler (line 648):
-  - Evaluates `'infra-deploy` → symbol `infra-deploy`
-  - Evaluates `(lookup 'my-deploy)` → ... wait, `lookup` isn't a special form.
+
+- Evaluates `'infra-deploy` → symbol `infra-deploy`
+- Evaluates `(lookup 'my-deploy)` → ... wait, `lookup` isn't a special form.
 
 Actually, the AI would use the binding directly:
 
@@ -229,17 +231,19 @@ or via `($ org 'lookup 'my-deploy)` from outside the evaluator. Inside the
 evaluator, just referencing `my-deploy` as a symbol does the lookup:
 
 **5.** `modify!` handler (line 648):
-  - `name` = `'infra-deploy`
-  - `value` = the endorsed value (the sealed box from `(endorse "nginx-deployer" infra-seal)`)
-  - `pre-bindings` = current org bindings
-  - `post-bindings` = bindings with new entry prepended
-  - Calls `(call-validator validator current-expressor name value pre post)`
+
+- `name` = `'infra-deploy`
+- `value` = the endorsed value (the sealed box from `(endorse "nginx-deployer" infra-seal)`)
+- `pre-bindings` = current org bindings
+- `post-bindings` = bindings with new entry prepended
+- Calls `(call-validator validator current-expressor name value pre post)`
 
 **6.** The validator is a `^faceted-validator` (an actor ref). It:
-  - Finds the infra-facet matches `'infra-deploy` (prefix "infra-")
-  - Calls `(facet-satisfied? infra-facet value)` → `($ sealed-infra? value)`
-  - The value IS an endorsed box from `infra-seal` → `sealed-infra?` returns `#t`
-  - Validation passes
+
+- Finds the infra-facet matches `'infra-deploy` (prefix "infra-")
+- Calls `(facet-satisfied? infra-facet value)` → `($ sealed-infra? value)`
+- The value IS an endorsed box from `infra-seal` → `sealed-infra?` returns `#t`
+- Validation passes
 
 **7.** `($ org 'modify! name value entry)` — the org actor becomes a new state
 with the binding added and the history entry recorded.
@@ -272,6 +276,7 @@ from expressor-store by the AI's expressor-id).
 ```
 
 Key difference from `ai-eval` (line 762):
+
 - `ai-eval` evaluates the AI's output as `current-expressor` (whoever called it)
 - `ai-eval-as` authenticates the seal first, then evaluates as the AI's own identity
 
@@ -302,6 +307,7 @@ Anyone with the AI's public key:
 ```
 
 `verify-history-entry` (gplay.scm:957-975):
+
 1. Extracts `(version expressor-id expression parent-version)` from the entry
 2. Serializes them to bytes via `entry->signing-bytes`
 3. Calls `(%verify-sig sig bytes public-key-sexp)`
@@ -314,9 +320,9 @@ registered expressor. So any participant can verify any history entry.
 
 ## 3. How does the MCP connection work?
 
-### Path A: xorg-internal (Goblins layer)
+### Path A: playnet-internal (Goblins layer)
 
-The MCP server is a Goblins actor built in `module/xorg/mcp.scm`.
+The MCP server is a Goblins actor built in `module/playnet/mcp.scm`.
 
 #### `^tool-cap` — a single tool as a capability actor
 
@@ -356,16 +362,16 @@ If the AI has a `^mcp-server` ref in its bindings (e.g., bound as `'tools`):
 
 ```scheme
 ;; Inside the org evaluator:
-($ (lookup 'tools) 'call "xorg-eval" '(("expression" . "(+ 1 2)")))
+($ (lookup 'tools) 'call "playnet-eval" '(("expression" . "(+ 1 2)")))
 ```
 
 This translates to:
 
 1. `(lookup 'tools)` → resolves to the `^mcp-server` actor ref
-2. `($ server 'call "xorg-eval" args)` → `^mcp-server` looks up `"xorg-eval"` in its tools alist
+2. `($ server 'call "playnet-eval" args)` → `^mcp-server` looks up `"playnet-eval"` in its tools alist
 3. Finds the `^tool-cap` ref, calls `($ tool 'call args)`
 4. `^tool-cap` calls `(handler args)` — the lambda provided at construction
-5. For `"xorg-eval"`, the handler (`mcp.scm:142-147`):
+5. For `"playnet-eval"`, the handler (`mcp.scm:142-147`):
    ```scheme
    (lambda (args)
      (let* ((expr-str (assoc-ref args "expression"))
@@ -375,20 +381,20 @@ This translates to:
                      ($ ref 'current-expressor))))
        (format #f "~s" result)))
    ```
-6. It reads the expression string, parses it, evaluates it via the xorg
+6. It reads the expression string, parses it, evaluates it via the playnet
    `evaluate` function using the current-expressor as identity
 7. Returns the result as a string
 
-#### `make-xorg-mcp-server` — standard tool factory
+#### `make-playnet-mcp-server` — standard tool factory
 
 `mcp.scm:97-164` builds an MCP server with gated tools:
 
 ```scheme
-(make-xorg-mcp-server vat org
-  #:allow-eval? #t       ;; xorg-eval tool (powerful! arbitrary evaluation)
-  #:allow-modify? #t     ;; xorg-modify tool (set bindings)
-  #:allow-history? #t    ;; xorg-history tool (read-only)
-  #:allow-bindings? #t)  ;; xorg-bindings tool (read-only)
+(make-playnet-mcp-server vat org
+  #:allow-eval? #t       ;; playnet-eval tool (powerful! arbitrary evaluation)
+  #:allow-modify? #t     ;; playnet-modify tool (set bindings)
+  #:allow-history? #t    ;; playnet-history tool (read-only)
+  #:allow-bindings? #t)  ;; playnet-bindings tool (read-only)
 ```
 
 Each flag gates one tool. Tools not enabled are simply not in the server's
@@ -415,42 +421,44 @@ Claude Desktop ──MCP protocol──> Emacs (mcp-server-lib.el)
 
 `emacs-mcp.el:38-64` registers four tools:
 
-| Tool ID              | Function              | Description                           |
-|----------------------|-----------------------|---------------------------------------|
-| `xorg-eval`          | `xorg-tool-eval`      | Evaluate arbitrary Scheme in the vat  |
-| `xorg-bindings`      | `xorg-tool-bindings`  | List current bindings                 |
-| `xorg-history`       | `xorg-tool-history`   | Show recent history entries           |
-| `xorg-verify-history`| `xorg-tool-verify-entry`| Verify history entry signature      |
+| Tool ID                  | Function                    | Description                          |
+| ------------------------ | --------------------------- | ------------------------------------ |
+| `playnet-eval`           | `playnet-tool-eval`         | Evaluate arbitrary Scheme in the vat |
+| `playnet-bindings`       | `playnet-tool-bindings`     | List current bindings                |
+| `playnet-history`        | `playnet-tool-history`      | Show recent history entries          |
+| `playnet-verify-history` | `playnet-tool-verify-entry` | Verify history entry signature       |
 
-#### Call chain: Claude calls "xorg-eval"
+#### Call chain: Claude calls "playnet-eval"
 
 1. **Claude Desktop** sends an MCP `tools/call` request with
-   `{ "name": "xorg-eval", "arguments": { "expression": "(+ 1 2)" } }`
+   `{ "name": "playnet-eval", "arguments": { "expression": "(+ 1 2)" } }`
 
 2. **`mcp-server-lib.el`** receives the JSON-RPC request, dispatches to
-   `xorg-tool-eval`.
+   `playnet-tool-eval`.
 
-3. **`xorg-tool-eval`** (`emacs-mcp.el:73-79`):
+3. **`playnet-tool-eval`** (`emacs-mcp.el:73-79`):
+
    ```elisp
-   (defun xorg-tool-eval (expression)
+   (defun playnet-tool-eval (expression)
      (mcp-server-lib-with-error-handling
-       (xorg-mcp-geiser-eval expression)))
+       (playnet-mcp-geiser-eval expression)))
    ```
 
-4. **`xorg-mcp-geiser-eval`** (`emacs-mcp.el:30-36`):
+4. **`playnet-mcp-geiser-eval`** (`emacs-mcp.el:30-36`):
+
    ```elisp
-   (defun xorg-mcp-geiser-eval (expression)
+   (defun playnet-mcp-geiser-eval (expression)
      (let ((result (geiser-eval-string expression)))
        (if result (format "%s" result) "void")))
    ```
 
 5. **`geiser-eval-string`** sends the expression to the connected Guile
-   process over the REPL socket (`/var/run/xorg-dev.sock`).
+   process over the REPL socket (`/var/run/playnet-dev.sock`).
 
 6. **Guile** evaluates the expression in the top-level environment of the
    REPL — full access to all loaded modules, the vat, everything.
 
-7. **Result** flows back: Guile → Geiser → `xorg-mcp-geiser-eval` →
+7. **Result** flows back: Guile → Geiser → `playnet-mcp-geiser-eval` →
    `mcp-server-lib` → JSON-RPC response → Claude Desktop.
 
 #### The security model: none
@@ -465,10 +473,10 @@ evaluated directly in the Guile REPL. There is:
 - Full access to `(system ...)`, file I/O, network, everything
 
 This is intentional — it's dev tooling for a local Geiser session.
-The comment in `emacs-mcp.el` says: "Setup: `herd start xorg-dev-repl`".
+The comment in `emacs-mcp.el` says: "Setup: `herd start playnet-dev-repl`".
 This is a development REPL, not a production API.
 
-The `xorg-tool-bindings` and `xorg-tool-history` tools go through
+The `playnet-tool-bindings` and `playnet-tool-history` tools go through
 slightly different paths — they reference `(car *orgs*)` which is the
 first org in the global registry, and use `org-bindings`/`org-history`
 accessors. But they're still running in the unprotected REPL.
@@ -480,18 +488,20 @@ accessors. But they're still running in the unprotected REPL.
 ### The problem
 
 Path A (Goblins layer) provides:
+
 - Identity (expressor with sealer)
 - Validation (faceted validator)
 - Attribution (history entries signed with the AI's keypair)
 - Scoped authority (extra-bindings determine what the AI can do)
 
 Path B (Emacs bridge) provides:
+
 - Convenience (Claude Desktop can call tools)
 - Full power (arbitrary Scheme evaluation)
 - Zero governance (nothing goes through the org's evaluator properly)
 
-Right now, when Claude calls `xorg-eval` via the Emacs bridge, it evaluates
-the expression as a raw Guile expression, not as an xorg `evaluate` call
+Right now, when Claude calls `playnet-eval` via the Emacs bridge, it evaluates
+the expression as a raw Guile expression, not as an playnet `evaluate` call
 attributed to an AI expressor.
 
 ### What's missing
@@ -502,6 +512,7 @@ To close the gap, the Emacs bridge needs to:
 
 The Geiser session needs the `ai-seal` value to be available. This means
 either:
+
 - Creating the AI expressor at REPL startup and binding the seal to a
   known variable (e.g., `*claude-seal*`)
 - Or having a bootstrap expression that creates it on first connection
@@ -509,13 +520,15 @@ either:
 **2. Route evaluation through `ai-eval-as` instead of raw eval.**
 
 Instead of:
+
 ```elisp
-(xorg-mcp-geiser-eval expression)
+(playnet-mcp-geiser-eval expression)
 ```
 
 The bridge would need:
+
 ```elisp
-(xorg-mcp-geiser-eval
+(playnet-mcp-geiser-eval
  (format "(with-vat (org-vat (car *orgs*))
             (evaluate '(as *claude-seal* %s)
                       (org-ref (car *orgs*))
@@ -541,6 +554,7 @@ Or more cleanly, a wrapper function in the Guile session:
 
 Once evaluation goes through `(as *claude-seal* ...)`, the `modify!` and
 other state-changing forms will automatically:
+
 - Record the AI's expressor-id in the history entry
 - Sign the entry with the AI's keypair
 - Run through the validator
@@ -548,6 +562,7 @@ other state-changing forms will automatically:
 **4. The AI's authority would be exactly its extra-bindings.**
 
 If the AI expressor was created with specific capabilities:
+
 ```scheme
 (make-ai-expressor! org
   #:name 'claude
@@ -570,7 +585,7 @@ The only missing pieces are:
 
 1. **Bootstrap code**: create the AI expressor in the Geiser session and
    store the seal in a known variable
-2. **Modified tool handler**: `xorg-tool-eval` calls `claude-eval` instead
+2. **Modified tool handler**: `playnet-tool-eval` calls `claude-eval` instead
    of raw `geiser-eval-string`
 3. **Extra-bindings setup**: decide what capabilities Claude should have
    and pass them at expressor creation time
@@ -580,7 +595,7 @@ The only missing pieces are:
 ```scheme
 ;;; In the Guile REPL session (run once at startup):
 
-(use-modules (xorg ai-expressor) (xorg org))
+(use-modules (playnet ai-expressor) (playnet org))
 
 ;; Create the AI expressor for Claude
 (define-values (*claude-seal* *claude-pk*)
@@ -600,20 +615,21 @@ The only missing pieces are:
 ```
 
 ```elisp
-;;; In emacs-mcp.el, replace xorg-tool-eval:
+;;; In emacs-mcp.el, replace playnet-tool-eval:
 
-(defun xorg-tool-eval (expression)
+(defun playnet-tool-eval (expression)
   "Evaluate EXPRESSION through the governed AI expressor."
   (mcp-server-lib-with-error-handling
-    (xorg-mcp-geiser-eval
+    (playnet-mcp-geiser-eval
      (format "(claude-eval %S)" expression))))
 ```
 
 After this change:
-- Every `xorg-eval` call from Claude goes through the org's validator
+
+- Every `playnet-eval` call from Claude goes through the org's validator
 - History entries are signed with Claude's keypair and attributed to `'claude-desktop`
 - Claude cannot modify governed names without the appropriate endorsed values
-- The read-only tools (`xorg-bindings`, `xorg-history`) can remain as raw
+- The read-only tools (`playnet-bindings`, `playnet-history`) can remain as raw
   Geiser calls since they don't mutate state
 
 ---
@@ -636,6 +652,7 @@ After this change:
 
 Actor refs in Goblins are unforgeable. There is no `(make-actor-ref-from-id ...)`
 function. You get refs by:
+
 - Being the code that called `spawn` (creation)
 - Receiving it as a message from another actor (delegation)
 - Having it in your closure (lexical capture)
@@ -718,16 +735,16 @@ can give an AI a narrow endorsement authority that only covers specific names.
 
 ### Summary table
 
-| Concept                  | Mechanism                              | Code location              |
-|--------------------------|----------------------------------------|----------------------------|
-| Agent identity           | Sealer from `spawn-sealer-triplet`     | `gplay.scm:622`            |
-| Proof of identity        | `authenticate-sealer` via seal/sealed? | `gplay.scm:311-319`        |
-| Acting as an agent       | `(as seal expr)` form                  | `gplay.scm:640-645`        |
-| AI-specific evaluation   | `(ai-eval-as seal prompt)` form        | `gplay.scm:771-782`        |
-| History attribution      | `current-expressor` in history entry   | `gplay.scm:655`            |
-| History signing          | `compute-sig` with expressor's keypair | `gplay.scm:273-282`        |
-| Capability scoping       | Extra-bindings + endorsed values       | `ai-expressor.scm:61-66`   |
-| Validation               | Faceted validator checks endorsements  | `endorsement.scm:130-134`  |
-| Tool attenuation         | New `^mcp-server` with subset of tools | `mcp.scm:60-84`            |
-| External bridge          | Emacs/Geiser raw eval (ungoverned)     | `emacs-mcp.el:30-36`       |
-| Gap                      | Bridge doesn't use `as`/`ai-eval-as`   | (not yet implemented)       |
+| Concept                | Mechanism                              | Code location             |
+| ---------------------- | -------------------------------------- | ------------------------- |
+| Agent identity         | Sealer from `spawn-sealer-triplet`     | `gplay.scm:622`           |
+| Proof of identity      | `authenticate-sealer` via seal/sealed? | `gplay.scm:311-319`       |
+| Acting as an agent     | `(as seal expr)` form                  | `gplay.scm:640-645`       |
+| AI-specific evaluation | `(ai-eval-as seal prompt)` form        | `gplay.scm:771-782`       |
+| History attribution    | `current-expressor` in history entry   | `gplay.scm:655`           |
+| History signing        | `compute-sig` with expressor's keypair | `gplay.scm:273-282`       |
+| Capability scoping     | Extra-bindings + endorsed values       | `ai-expressor.scm:61-66`  |
+| Validation             | Faceted validator checks endorsements  | `endorsement.scm:130-134` |
+| Tool attenuation       | New `^mcp-server` with subset of tools | `mcp.scm:60-84`           |
+| External bridge        | Emacs/Geiser raw eval (ungoverned)     | `emacs-mcp.el:30-36`      |
+| Gap                    | Bridge doesn't use `as`/`ai-eval-as`   | (not yet implemented)     |

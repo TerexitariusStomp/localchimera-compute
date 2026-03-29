@@ -1,6 +1,6 @@
 #!/usr/bin/env -S guile
 !#
-;;; server/gateway.scm — OCapN gateway for xorg
+;;; server/gateway.scm — OCapN gateway for playnet
 ;;;
 ;;; Replaces relay.scm.  Spawns a Goblins mycapn listening on both
 ;;; WebSocket and Reticulum, registers a ^lobby actor, and prints
@@ -13,7 +13,7 @@
 ;;; Environment:
 ;;;   API_KEYS      — comma-separated API keys (fallback: OPENROUTER_KEYS)
 ;;;   API_PROVIDER  — provider name: openrouter, openai, or generic (default: openrouter)
-;;;   XORG_DATA_DIR — persistent state dir (default /var/lib/xorg)
+;;;   PLAYNET_DATA_DIR — persistent state dir (default /var/lib/playnet)
 
 (use-modules (fibers)
              (fibers conditions)
@@ -28,11 +28,11 @@
              (ice-9 format)
              (ice-9 match)
              (ice-9 textual-ports)
-             (xorg gateway lobby)
-             (xorg gateway presence)
-             (xorg gateway services)
-             (xorg gateway terminal)
-             (xorg gateway mailbox))
+             (playnet gateway lobby)
+             (playnet gateway presence)
+             (playnet gateway services)
+             (playnet gateway terminal)
+             (playnet gateway mailbox))
 
 ;; Load key-pool from its directory
 (add-to-load-path "key-pool")
@@ -44,7 +44,7 @@
 ;;; ── Configuration ──────────────────────────────────────────────────────────
 
 (define %data-dir
-  (or (getenv "XORG_DATA_DIR") "/var/lib/xorg"))
+  (or (getenv "PLAYNET_DATA_DIR") "/var/lib/playnet"))
 
 (define (data-path filename)
   (string-append %data-dir "/" filename))
@@ -184,7 +184,7 @@
              (lambda (sref)
                (let ((uri (ocapn-id->string sref)))
                  (log!
-                         "~%  xorg OCapN gateway on ws://0.0.0.0:~a~%"
+                         "~%  playnet OCapN gateway on ws://0.0.0.0:~a~%"
                          ws-port)
                  (log!
                          "  sturdyref: ~a~%~%" uri)

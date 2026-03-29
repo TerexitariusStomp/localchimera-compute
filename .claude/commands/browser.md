@@ -6,15 +6,15 @@ You are editing the browser interface. `browser/repl.scm` compiles via Guile Hoo
 
 ## Key files
 
-| File | Purpose |
-|------|---------|
-| `browser/repl.scm` (~2060 lines) | Main source: FFI, SXML virtual DOM, REPL loop, org management, signup, relay |
-| `browser/repl.js` | JS host: `Scheme.load_main` imports, key preloading, WebSocket setup |
-| `browser/reflect.js` | Hoot JS reflection layer (do not edit unless updating Hoot) |
-| `browser/repl.css` | REPL styling (flex layout, dark theme) |
-| `browser/index.html` | Minimal shell loading the above |
-| `module/xorg/autocomplete.scm` | Tab completion (Hoot-compatible) |
-| `module/xorg/wisp.scm` | Wisp/S-expression transpiler (SRFI-119 indentation syntax) |
+| File                              | Purpose                                                                      |
+| --------------------------------- | ---------------------------------------------------------------------------- |
+| `browser/repl.scm` (~2060 lines)  | Main source: FFI, SXML virtual DOM, REPL loop, org management, signup, relay |
+| `browser/repl.js`                 | JS host: `Scheme.load_main` imports, key preloading, WebSocket setup         |
+| `browser/reflect.js`              | Hoot JS reflection layer (do not edit unless updating Hoot)                  |
+| `browser/repl.css`                | REPL styling (flex layout, dark theme)                                       |
+| `browser/index.html`              | Minimal shell loading the above                                              |
+| `module/playnet/autocomplete.scm` | Tab completion (Hoot-compatible)                                             |
+| `module/playnet/wisp.scm`         | Wisp/S-expression transpiler (SRFI-119 indentation syntax)                   |
 
 ## Build
 
@@ -24,6 +24,7 @@ make serve               # compile + serve at http://localhost:8088
 ```
 
 Or directly:
+
 ```bash
 guild compile-wasm -L module -L docs/reference/lib-vendored --bundle -o browser/repl.wasm browser/repl.scm
 ```
@@ -34,7 +35,7 @@ guild compile-wasm -L module -L docs/reference/lib-vendored --bundle -o browser/
 Edit browser/*.scm → make browser/repl.wasm → git push main → GitHub Pages deploys browser/
 ```
 
-Live at: `https://interplaynetary.github.io/xorg/`
+Live at: `https://interplaynetary.github.io/playnet/`
 
 ## SXML — the UI is S-expressions
 
@@ -49,6 +50,7 @@ The entire UI is built from SXML (S-expression HTML). Every DOM element is a lis
 ```
 
 Event handlers are Scheme procedures attached as attributes:
+
 ```scheme
 (click ,(lambda (e) ...))            ;; click handler
 (keydown ,(lambda (e) ...))          ;; key handler
@@ -56,16 +58,19 @@ Event handlers are Scheme procedures attached as attributes:
 ```
 
 Conditional children use `,@` with `if`:
+
 ```scheme
 ,@(if show? (list `(span "visible")) '())
 ```
 
 Dynamic lists use `,@` with `map`:
+
 ```scheme
 ,@(map (lambda (item) `(li ,item)) items)
 ```
 
 Custom interactive elements can be appended to the REPL log:
+
 ```scheme
 (log-append! `(div (input (@ (id "my-input")))
                    (span (@ (click ,(lambda (e)
@@ -98,6 +103,7 @@ The log and prompt are **siblings**, not nested. This ensures the VDOM differ ne
 ## UI helpers
 
 **Toggle forms** — `render-toggle-form` handles collapsible input forms (used by new-org, signup, join-org):
+
 ```scheme
 (render-toggle-form *show?* set-show! "label" "submit"
   '(("input-id" "placeholder"))
@@ -105,19 +111,22 @@ The log and prompt are **siblings**, not nested. This ensures the VDOM differ ne
 ```
 
 **Action buttons** — `action-button` wraps the click→action→refresh→scroll pattern:
+
 ```scheme
 (action-button "label" (lambda () (do-something!)) "")         ;; plain
 (action-button "label" (lambda () (do-something!)) " cp-btn-primary")  ;; highlighted
 ```
 
 **Eval buttons** — `eval-button` for syntax-mode-aware command buttons:
+
 ```scheme
 (eval-button "history" "(show-history)" "show-history")  ;; lisp/wisp commands
 ```
 
 ## Wisp syntax toggle
 
-`module/xorg/wisp.scm` provides bidirectional wisp/S-expression transpilation:
+`module/playnet/wisp.scm` provides bidirectional wisp/S-expression transpilation:
+
 - `wisp->sexp-string` — indentation-based input → parenthetical S-expressions
 - `sexp->wisp-string` — parenthetical code → stripped outer parens for display
 - `*syntax-mode*` state variable (`'lisp` or `'wisp`) persisted in localStorage
@@ -134,20 +143,21 @@ FFI bindings are at the top of `repl.scm` (lines ~17-158). Format:
   (ref null extern) -> (ref string))
 ```
 
-| Hoot type | Meaning |
-|-----------|---------|
-| `(ref string)` | Scheme string |
+| Hoot type           | Meaning                                 |
+| ------------------- | --------------------------------------- |
+| `(ref string)`      | Scheme string                           |
 | `(ref null extern)` | Nullable external reference (DOM nodes) |
-| `(ref extern)` | Non-null external reference |
-| `i32` | Integer (booleans via 0/1) |
-| `f64` | Float |
-| `none` | Void return |
+| `(ref extern)`      | Non-null external reference             |
+| `i32`               | Integer (booleans via 0/1)              |
+| `f64`               | Float                                   |
+| `none`              | Void return                             |
 
 The JS host side (`repl.js`) registers matching imports under the module/function namespace.
 
 ## Common editing patterns
 
 **Add a new FFI binding:**
+
 1. Add `define-foreign` at the top of `browser/repl.scm`
 2. Add matching JS function in `browser/repl.js` under the same module namespace
 3. Rebuild with `make browser/repl.wasm`

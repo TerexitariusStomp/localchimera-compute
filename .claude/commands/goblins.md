@@ -2,20 +2,20 @@
 description: Spritely Goblins — distributed object-capability actors, vats, bcom, OCapN, Heart of Spritely patterns
 ---
 
-Goblins IS the runtime. On native Guile, xorg is just Goblins used correctly following the Heart of Spritely. Every governance pattern — state, accountability, attenuation, revocation, identity, persistence — maps 1:1 to a Goblins primitive with zero additional code.
+Goblins IS the runtime. On native Guile, playnet is just Goblins used correctly following the Heart of Spritely. Every governance pattern — state, accountability, attenuation, revocation, identity, persistence — maps 1:1 to a Goblins primitive with zero additional code.
 
 ## Core primitives
 
-| Primitive | What it does | xorg usage |
-|-----------|-------------|------------|
-| `spawn-vat` | Creates an isolated actor container (event loop + transaction boundary) | Each org lives in a vat |
-| `spawn` | Creates an actor within a vat | `(spawn ^org initial-bindings)` |
-| `bcom` | Actor becomes a new version of itself (state update) | `^org` uses bcom for all mutations |
-| `$` | Synchronous local message send | `($ org 'lookup 'x)` |
-| `<-` | Asynchronous remote message send (returns promise) | `(<- remote-actor 'method args)` |
-| `on` | Attach handler to promise | `(on (<- actor 'method) handler)` |
-| `with-vat` | Execute code within a vat's context | `(with-vat vat (spawn ^org '()))` |
-| `define-actor` | Define an actor constructor with persistence support | All xorg actors use this |
+| Primitive      | What it does                                                            | playnet usage                      |
+| -------------- | ----------------------------------------------------------------------- | ---------------------------------- |
+| `spawn-vat`    | Creates an isolated actor container (event loop + transaction boundary) | Each org lives in a vat            |
+| `spawn`        | Creates an actor within a vat                                           | `(spawn ^org initial-bindings)`    |
+| `bcom`         | Actor becomes a new version of itself (state update)                    | `^org` uses bcom for all mutations |
+| `$`            | Synchronous local message send                                          | `($ org 'lookup 'x)`               |
+| `<-`           | Asynchronous remote message send (returns promise)                      | `(<- remote-actor 'method args)`   |
+| `on`           | Attach handler to promise                                               | `(on (<- actor 'method) handler)`  |
+| `with-vat`     | Execute code within a vat's context                                     | `(with-vat vat (spawn ^org '()))`  |
+| `define-actor` | Define an actor constructor with persistence support                    | All playnet actors use this        |
 
 ## Actor-lib patterns (Heart of Spritely)
 
@@ -25,11 +25,11 @@ Goblins IS the runtime. On native Guile, xorg is just Goblins used correctly fol
              (goblins actor-lib methods))
 ```
 
-| Pattern | Import | Usage |
-|---------|--------|-------|
-| `^cell` | `(goblins actor-lib cell)` | Mutable single-value container. Used for revocation (`($ cell #t)`) and logger state |
-| `^facet` / `facet` | `(goblins actor-lib facet)` | Expose only certain methods. `(facet org 'lookup 'snapshot)` = read-only view |
-| `methods` | `(goblins actor-lib methods)` | Dispatch on first argument. `(methods [(lookup name) ...] [(modify! name val) ...])` |
+| Pattern            | Import                        | Usage                                                                                |
+| ------------------ | ----------------------------- | ------------------------------------------------------------------------------------ |
+| `^cell`            | `(goblins actor-lib cell)`    | Mutable single-value container. Used for revocation (`($ cell #t)`) and logger state |
+| `^facet` / `facet` | `(goblins actor-lib facet)`   | Expose only certain methods. `(facet org 'lookup 'snapshot)` = read-only view        |
+| `methods`          | `(goblins actor-lib methods)` | Dispatch on first argument. `(methods [(lookup name) ...] [(modify! name val) ...])` |
 
 ## Persistence (portrait/restore)
 

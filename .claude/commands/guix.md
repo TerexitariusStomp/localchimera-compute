@@ -10,7 +10,7 @@ Guix is the substrate beneath everything. The server OS, the development environ
 - **Package management.** `manifest.scm` and `deploy/guix/dev-manifest.scm` define reproducible development environments.
 - **Reproducibility.** `deploy/guix/channels.scm` pins the exact Guix commit. `guix time-machine -C channels.scm` ensures CI and local builds use the same Guix.
 - **Custom packages.** `deploy/guix/python-rns.scm` defines a Guix package for Reticulum from source.
-- **Service management.** Shepherd (Guix's init system) manages xorg processes via `deploy/guix/xorg-service.scm`.
+- **Service management.** Shepherd (Guix's init system) manages playnet processes via `deploy/guix/playnet-service.scm`.
 
 ## Essential commands
 
@@ -42,18 +42,18 @@ guix size guile-goblins                 # closure size
 
 ## Guix System concepts relevant here
 
-| Concept | What it means |
-|---------|--------------|
-| `operating-system` | Top-level record declaring the entire OS |
-| `service-type` | Extensible service definition (openssh, nginx, shepherd, etc.) |
-| `shepherd-service` | Process managed by Shepherd (Guix's init system) |
-| `simple-service` | Quick way to add a service extension without defining a new type |
-| `activation-service-type` | Code that runs on every system activation (deploy) |
-| `plain-file` / `local-file` | File objects for the store (SSH keys, configs, scripts) |
-| `file-append` | Referencing a binary from a package (`(file-append guile-3.0 "/bin/guile")`) |
-| `#~(...)` / `#$(...)` | G-expressions: code that runs on the target machine, with store references |
-| `modify-services` | Alter existing services (e.g., change substitute URLs) |
-| `(cons* ... %base-services)` | Extend the default service set |
+| Concept                      | What it means                                                                |
+| ---------------------------- | ---------------------------------------------------------------------------- |
+| `operating-system`           | Top-level record declaring the entire OS                                     |
+| `service-type`               | Extensible service definition (openssh, nginx, shepherd, etc.)               |
+| `shepherd-service`           | Process managed by Shepherd (Guix's init system)                             |
+| `simple-service`             | Quick way to add a service extension without defining a new type             |
+| `activation-service-type`    | Code that runs on every system activation (deploy)                           |
+| `plain-file` / `local-file`  | File objects for the store (SSH keys, configs, scripts)                      |
+| `file-append`                | Referencing a binary from a package (`(file-append guile-3.0 "/bin/guile")`) |
+| `#~(...)` / `#$(...)`        | G-expressions: code that runs on the target machine, with store references   |
+| `modify-services`            | Alter existing services (e.g., change substitute URLs)                       |
+| `(cons* ... %base-services)` | Extend the default service set                                               |
 
 ## G-expressions
 

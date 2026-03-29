@@ -160,7 +160,7 @@ export const towerDecisions: TowerDecisionScene[] = [
     id: 6,
     title: "The Tower Evolves",
     description: "After months of decisions, what has Frontier Tower become?",
-    context: "xorg didn't prescribe the outcome. The choices shaped it. This is just one possible path.",
+    context: "playnet didn't prescribe the outcome. The choices shaped it. This is just one possible path.",
     choices: [
       {
         id: 'democracy',

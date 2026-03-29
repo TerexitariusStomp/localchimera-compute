@@ -1,4 +1,4 @@
-;;; module/xorg/mcp-http.scm — MCP JSON-RPC over HTTP transport
+;;; module/playnet/mcp-http.scm — MCP JSON-RPC over HTTP transport
 ;;;
 ;;; Applies the Mandy/ActivityPub-on-Goblins pattern:
 ;;;   HTTP request → handler fiber → with-vat dispatch → ^mcp-server → response
@@ -8,12 +8,12 @@
 ;;;
 ;;; Reference: https://modelcontextprotocol.io/specification/2025-03-26
 
-(define-module (xorg mcp-http)
+(define-module (playnet mcp-http)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
   #:use-module (goblins actor-lib nonce-registry)
-  #:use-module (xorg mcp)
-  #:use-module (xorg mcp-stdio)
+  #:use-module (playnet mcp)
+  #:use-module (playnet mcp-stdio)
   #:use-module (json)
   #:use-module (web server)
   #:use-module (web request)
@@ -194,6 +194,6 @@
   (let ((handler (make-mcp-http-handler mcp-server vat
                                          #:locator locator)))
     (format (current-error-port)
-            "xorg-mcp HTTP server listening on ~a:~a\n" host port)
+            "playnet-mcp HTTP server listening on ~a:~a\n" host port)
     (run-server handler 'http
                 `(#:host ,host #:port ,port))))

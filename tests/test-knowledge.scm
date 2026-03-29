@@ -1,12 +1,12 @@
-;;; test-knowledge.scm — tests for (xorg kanren), (xorg hyperarc), (xorg knowledge)
+;;; test-knowledge.scm — tests for (playnet kanren), (playnet hyperarc), (playnet knowledge)
 ;;; Run with:  guile -L module tests/test-knowledge.scm
 
 (define %project-root (string-append (dirname (current-filename)) "/.."))
 (add-to-load-path (string-append %project-root "/module"))
 
-(use-modules (xorg kanren)
-             (xorg hyperarc)
-             (xorg knowledge)
+(use-modules (playnet kanren)
+             (playnet hyperarc)
+             (playnet knowledge)
              (srfi srfi-1))
 
 ;;; ── Harness ────────────────────────────────────────────────────────────────

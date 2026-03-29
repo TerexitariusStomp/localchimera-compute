@@ -6,8 +6,8 @@
 (define %project-root (string-append (dirname (current-filename)) "/.."))
 (add-to-load-path (string-append %project-root "/module"))
 
-(use-modules (xorg ai)
-             (xorg org)
+(use-modules (playnet ai)
+             (playnet org)
              (ice-9 rdelim)
              (ice-9 textual-ports))
 
@@ -30,7 +30,7 @@
                         (setenv key val))))))
               (loop))))))))
 
-(display "\n=== xorg AI Integration Test ===\n\n")
+(display "\n=== playnet AI Integration Test ===\n\n")
 
 ;;; Load .env
 (display "Loading .env file...\n")
@@ -55,7 +55,7 @@
 (display "Note: The following test requires entering the org REPL interactively.\n")
 (display "To test manually, run:\n\n")
 (display "  make repl\n")
-(display "  scheme@(guile-user)> (use-modules (xorg ai))\n")
+(display "  scheme@(guile-user)> (use-modules (playnet ai))\n")
 (display "  scheme@(guile-user)> (define my-org (make-org \"test\"))\n")
 (display "  scheme@(guile-user)> (enter! my-org)\n")
 (display "  play[genesis]> (ai \"What is 2 + 2?\")\n")

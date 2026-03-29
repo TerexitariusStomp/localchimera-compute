@@ -2,7 +2,7 @@
 
 ## Overview
 
-xorg expressors carry public keys but have no authentication. This spec builds identity and cross-org communication on Goblins' capability primitives — facets, sealers, wards, OCapN — and reserves public key cryptography for where capabilities alone aren't sufficient.
+playnet expressors carry public keys but have no authentication. This spec builds identity and cross-org communication on Goblins' capability primitives — facets, sealers, wards, OCapN — and reserves public key cryptography for where capabilities alone aren't sufficient.
 
 **Design principle: capabilities first, crypto where needed.**
 
@@ -198,7 +198,7 @@ An expressor retracts their own unprocessed messages:
 (as alice (retract-message 42))
 ```
 
-This is the safety mechanism. Instead of the system silently rejecting stale messages, the sender watches the game evolve and decides: *"I no longer want this move."* Retraction is recorded in history.
+This is the safety mechanism. Instead of the system silently rejecting stale messages, the sender watches the game evolve and decides: _"I no longer want this move."_ Retraction is recorded in history.
 
 ### Membership handshake (sealed subscription)
 
@@ -265,7 +265,7 @@ True atomic cross-org transactions are a distributed consensus problem. Goblins 
 
 2. **Saga pattern**: Each org applies changes optimistically and compensates on failure. The compensation logic is an expression in the org, governed by the validator.
 
-3. **Coordinator actor**: A third actor manages the two-phase protocol. Both orgs grant it a controller reference. The coordinator is itself an expressor in both orgs, governed by both validators — fitting naturally into xorg's model.
+3. **Coordinator actor**: A third actor manages the two-phase protocol. Both orgs grant it a controller reference. The coordinator is itself an expressor in both orgs, governed by both validators — fitting naturally into playnet's model.
 
 ## Public Key Crypto (Optional Layer)
 
@@ -293,7 +293,7 @@ Sign against the **validator expression** (stable — changes only on `enact!`):
 `validator-expr-hash` is the hash of the validator's source s-expression, already stored as `validator-expr` in the `^org` actor. This is the right target because:
 
 - It changes only on `enact!`, not on every mutation.
-- It captures the *rules of the game*, not the game state.
+- It captures the _rules of the game_, not the game state.
 - A signed expression is valid as long as the rules haven't changed.
 
 ### Nonce management
@@ -340,22 +340,22 @@ Who can act as the org is governed by the validator — the living constitution.
 
 ## Summary
 
-| Concern | Mechanism | Layer |
-|---------|-----------|-------|
-| **Local identity** | Expressor name + `as` form | Evaluator |
-| **Remote identity** | Identity/controller pair per expressor | Goblins OCap |
-| **Expressor auth** | Sealer triplet (sealer private, unsealer public) | Goblins OCap |
-| **Access control** | Wards on inbox (public vs controller methods) | Goblins OCap |
-| **Transport** | CapTP via OCapN netlayers | Goblins |
-| **Membership** | Sealed handshake (sealed controller exchange) | Goblins OCap |
-| **Non-repudiation (live)** | Sealed history entries | Goblins OCap |
-| **Non-repudiation (offline)** | Public key signatures | Crypto (optional) |
-| **Cross-org messaging** | OCapN sturdyrefs + warded inbox actor | Goblins |
-| **Replay prevention** | Per-expressor monotonic sequence number | Inbox layer |
-| **Processing order** | Governed expression — attributed, validated, recorded | Evaluator |
-| **Retraction** | Sender retracts own messages; recorded in history | Inbox layer |
-| **Cross-org atomicity** | Coordinator actor, saga pattern, or best-effort | Application |
-| **Org identity** | Just an expressor, validator governs access | Evaluator |
+| Concern                       | Mechanism                                             | Layer             |
+| ----------------------------- | ----------------------------------------------------- | ----------------- |
+| **Local identity**            | Expressor name + `as` form                            | Evaluator         |
+| **Remote identity**           | Identity/controller pair per expressor                | Goblins OCap      |
+| **Expressor auth**            | Sealer triplet (sealer private, unsealer public)      | Goblins OCap      |
+| **Access control**            | Wards on inbox (public vs controller methods)         | Goblins OCap      |
+| **Transport**                 | CapTP via OCapN netlayers                             | Goblins           |
+| **Membership**                | Sealed handshake (sealed controller exchange)         | Goblins OCap      |
+| **Non-repudiation (live)**    | Sealed history entries                                | Goblins OCap      |
+| **Non-repudiation (offline)** | Public key signatures                                 | Crypto (optional) |
+| **Cross-org messaging**       | OCapN sturdyrefs + warded inbox actor                 | Goblins           |
+| **Replay prevention**         | Per-expressor monotonic sequence number               | Inbox layer       |
+| **Processing order**          | Governed expression — attributed, validated, recorded | Evaluator         |
+| **Retraction**                | Sender retracts own messages; recorded in history     | Inbox layer       |
+| **Cross-org atomicity**       | Coordinator actor, saga pattern, or best-effort       | Application       |
+| **Org identity**              | Just an expressor, validator governs access           | Evaluator         |
 
 ## Implementation Order
 

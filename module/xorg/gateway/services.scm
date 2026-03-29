@@ -1,10 +1,10 @@
-;;; module/xorg/gateway/services.scm — Transcription and Express actors
+;;; module/playnet/gateway/services.scm — Transcription and Express actors
 ;;;
 ;;; Thin Goblins actor wrappers around the ^key-pool.
 ;;; These encapsulate the OpenRouter API logic from relay.scm so the
 ;;; lobby never exposes the raw key-pool to clients.
 
-(define-module (xorg gateway services)
+(define-module (playnet gateway services)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
   #:use-module (json)
@@ -49,7 +49,7 @@
                   `((model . "google/gemini-2.0-flash-001")
                     (messages
                      . #(((role . "system")
-                          (content . "You are inside xorg, a Scheme-based programmable organization. Convert the user's natural language into a single valid Scheme S-expression. Respond with ONLY the raw S-expression, no markdown, no explanation, no code fences. Use (modify! 'name value) for bindings, (define name value) for definitions, (lambda (args) body) for functions."))
+                          (content . "You are inside playnet, a Scheme-based programmable organization. Convert the user's natural language into a single valid Scheme S-expression. Respond with ONLY the raw S-expression, no markdown, no explanation, no code fences. Use (modify! 'name value) for bindings, (define name value) for definitions, (lambda (args) body) for functions."))
                          ((role . "user")
                           (content . ,nl-text)))))))
            (response-str (with-vat pool-vat

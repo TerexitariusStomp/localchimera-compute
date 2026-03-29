@@ -6,17 +6,17 @@ _A system that reasons about itself, in itself, using itself._
 
 ## The insight
 
-xorg already has every piece needed for a self-reflective, self-improving system. They just haven't been wired together:
+playnet already has every piece needed for a self-reflective, self-improving system. They just haven't been wired together:
 
-| Piece | What it does | Where it lives |
-|-------|-------------|----------------|
-| miniKanren | Relational logic queries | `module/xorg/kanren.scm` |
-| Hyperarcs | Knowledge representation as S-expressions | `module/xorg/hyperarc.scm` |
-| Knowledge queries | Transitive closure with proof traces | `module/xorg/knowledge.scm` |
-| Metacircular evaluator | Evaluates S-expressions | `module/xorg/evaluator.scm` |
-| Goblins actors | Governed state transitions | `module/xorg/actors.scm` |
-| `bcom` | The system becomes its new version | Goblins primitive |
-| Hoot/WASM | All of the above runs in the browser | `browser/repl.scm` |
+| Piece                  | What it does                              | Where it lives                 |
+| ---------------------- | ----------------------------------------- | ------------------------------ |
+| miniKanren             | Relational logic queries                  | `module/playnet/kanren.scm`    |
+| Hyperarcs              | Knowledge representation as S-expressions | `module/playnet/hyperarc.scm`  |
+| Knowledge queries      | Transitive closure with proof traces      | `module/playnet/knowledge.scm` |
+| Metacircular evaluator | Evaluates S-expressions                   | `module/playnet/evaluator.scm` |
+| Goblins actors         | Governed state transitions                | `module/playnet/actors.scm`    |
+| `bcom`                 | The system becomes its new version        | Goblins primitive              |
+| Hoot/WASM              | All of the above runs in the browser      | `browser/repl.scm`             |
 
 Each piece is an S-expression. Each piece can be queried, transformed, and rewritten by the other pieces. The system is homoiconic all the way down — the representation the evaluator consumes is the same representation the knowledge base stores is the same representation miniKanren reasons over.
 
@@ -119,6 +119,7 @@ There is no separate "pattern matching engine" and "query engine." miniKanren's 
 ```
 
 You are simultaneously:
+
 1. Pattern matching over the knowledge base (finding hyperarcs of type 'layer)
 2. Extracting values (binding `q` to the layer name)
 3. Doing so relationally (the query can run "backwards" — given a name, find what type it is)
@@ -243,7 +244,7 @@ Because Goblins actors work over OCapN, and OCapN works over Reticulum, the know
 
 ## First concrete step
 
-Create `module/xorg/system-kb.scm` — a knowledge base representing xorg's own structure as hyperarc facts, queryable via miniKanren in the browser REPL.
+Create `module/playnet/system-kb.scm` — a knowledge base representing playnet's own structure as hyperarc facts, queryable via miniKanren in the browser REPL.
 
 This is the seed. Once the system can reason about itself, the loop begins.
 
@@ -251,7 +252,7 @@ This is the seed. Once the system can reason about itself, the loop begins.
 
 A traditional system has code, documentation, and configuration as separate artifacts maintained by separate processes (developers, writers, operators). They drift apart. The documentation lies. The configuration surprises.
 
-In xorg, if the system's self-knowledge is the same data structure the system operates on, then:
+In playnet, if the system's self-knowledge is the same data structure the system operates on, then:
 
 - The knowledge cannot lie — it IS the state, not a description of the state.
 - Queries are computations — asking "what depends on X?" runs a program, not a search engine.
@@ -310,17 +311,17 @@ Markdown is the human projection. S-expressions are the machine projection. mini
 
 `markdown-o` maps between a markdown AST (as tagged S-expressions) and markdown strings:
 
-| Markdown | S-expression |
-|----------|-------------|
-| `# Title` | `(heading 1 "Title")` |
-| `## Section` | `(heading 2 "Section")` |
-| `- item` | `(bullet "item")` |
-| `- **bold** text` | `(bullet (bold "bold") " text")` |
-| `` `code` `` | `(code "code")` |
-| Code block | `(code-block "scheme" "(+ 1 2)")` |
-| `\| a \| b \|` | `(table ((a b) ...))` |
-| Paragraph | `(paragraph "text")` |
-| `[text](url)` | `(link "text" "url")` |
+| Markdown          | S-expression                      |
+| ----------------- | --------------------------------- |
+| `# Title`         | `(heading 1 "Title")`             |
+| `## Section`      | `(heading 2 "Section")`           |
+| `- item`          | `(bullet "item")`                 |
+| `- **bold** text` | `(bullet (bold "bold") " text")`  |
+| `` `code` ``      | `(code "code")`                   |
+| Code block        | `(code-block "scheme" "(+ 1 2)")` |
+| `\| a \| b \|`    | `(table ((a b) ...))`             |
+| Paragraph         | `(paragraph "text")`              |
+| `[text](url)`     | `(link "text" "url")`             |
 
 A markdown document is a list of these elements:
 

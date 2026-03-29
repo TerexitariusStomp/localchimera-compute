@@ -1,6 +1,6 @@
 ;;; key-pool/key-pool.scm — Goblins actor for capability-secure API key pooling
 ;;;
-;;; Self-contained module. No dependency on planner or xorg.
+;;; Self-contained module. No dependency on planner or playnet.
 ;;; Works with any HTTP API that uses key-based auth — provider profiles
 ;;; define the base URL, auth headers, error classification, cost
 ;;; extraction, and optional credit checking.  Ships with profiles for

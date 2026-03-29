@@ -4,7 +4,7 @@
 (define %project-root (string-append (dirname (current-filename)) "/.."))
 (add-to-load-path (string-append %project-root "/module"))
 
-(use-modules (xorg services)
+(use-modules (playnet services)
              (goblins)
              (goblins actor-lib methods))
 

@@ -6,19 +6,19 @@ You have offline documentation for **Guile Hoot** (Scheme-to-WebAssembly compile
 
 ## Documentation map
 
-| File | Contents |
-|------|----------|
-| `docs/guile-hoot-docs/00-introduction.md` | Project goals, Hoot's role in Scheme-to-WASM |
-| `docs/guile-hoot-docs/01-status.md` | Supported/unsupported R7RS-small features |
-| `docs/guile-hoot-docs/02-installation.md` | Guix-based and manual installation |
-| `docs/guile-hoot-docs/03-tutorial.md` | Basic compilation, local testing, browser deployment |
-| `docs/guile-hoot-docs/04-compiling-to-wasm.md` | High-level and low-level compilation tools |
-| `docs/guile-hoot-docs/05-toolchain-reference.md` | Complete reference: assembler, linker, WAT parser, WASM library, datatypes |
-| `docs/guile-hoot-docs/06-contributing.md` | Issue reporting and contribution process |
-| `docs/guile-hoot-docs/07-license.md` | Apache 2.0 license |
-| `docs/guile-hoot-docs/08-foreign-function-interface.md` | `define-foreign`, type signatures, host integration |
-| `docs/guile-hoot-docs/09-javascript-reflection.md` | JavaScript `Scheme.load_main` API |
-| `docs/guile-hoot-docs/10-guile-reflection.md` | Guile-side reflection API for inspecting Hoot values |
+| File                                                    | Contents                                                                   |
+| ------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `docs/guile-hoot-docs/00-introduction.md`               | Project goals, Hoot's role in Scheme-to-WASM                               |
+| `docs/guile-hoot-docs/01-status.md`                     | Supported/unsupported R7RS-small features                                  |
+| `docs/guile-hoot-docs/02-installation.md`               | Guix-based and manual installation                                         |
+| `docs/guile-hoot-docs/03-tutorial.md`                   | Basic compilation, local testing, browser deployment                       |
+| `docs/guile-hoot-docs/04-compiling-to-wasm.md`          | High-level and low-level compilation tools                                 |
+| `docs/guile-hoot-docs/05-toolchain-reference.md`        | Complete reference: assembler, linker, WAT parser, WASM library, datatypes |
+| `docs/guile-hoot-docs/06-contributing.md`               | Issue reporting and contribution process                                   |
+| `docs/guile-hoot-docs/07-license.md`                    | Apache 2.0 license                                                         |
+| `docs/guile-hoot-docs/08-foreign-function-interface.md` | `define-foreign`, type signatures, host integration                        |
+| `docs/guile-hoot-docs/09-javascript-reflection.md`      | JavaScript `Scheme.load_main` API                                          |
+| `docs/guile-hoot-docs/10-guile-reflection.md`           | Guile-side reflection API for inspecting Hoot values                       |
 
 ## Which doc for which task
 
@@ -39,17 +39,18 @@ You have offline documentation for **Guile Hoot** (Scheme-to-WebAssembly compile
   arg-type1 arg-type2 ... -> return-type)
 ```
 
-| Hoot type | Meaning |
-|-----------|---------|
-| `(ref string)` | Scheme string |
+| Hoot type           | Meaning                                       |
+| ------------------- | --------------------------------------------- |
+| `(ref string)`      | Scheme string                                 |
 | `(ref null extern)` | Nullable external reference (DOM nodes, etc.) |
-| `(ref extern)` | Non-null external reference |
-| `i32` | Integer (also used for booleans via 0/1) |
-| `f64` | Float (used for scrollHeight, etc.) |
-| `none` | Void return |
-| `->` | Separates arguments from return type |
+| `(ref extern)`      | Non-null external reference                   |
+| `i32`               | Integer (also used for booleans via 0/1)      |
+| `f64`               | Float (used for scrollHeight, etc.)           |
+| `none`              | Void return                                   |
+| `->`                | Separates arguments from return type          |
 
 Example from the codebase:
+
 ```scheme
 (define-foreign element-value
   "element" "value"
@@ -65,6 +66,7 @@ guild compile-wasm -L module -L docs/reference/lib-vendored --bundle -o browser/
 ```
 
 Or via Make:
+
 ```bash
 make browser/repl.wasm   # compile
 make serve               # compile + serve locally
@@ -72,7 +74,7 @@ make serve               # compile + serve locally
 
 ## Known Hoot limitations relevant to this project
 
-1. **No `eval`** — Hoot cannot compile Guile's `eval`. The browser uses a metacircular evaluator (`(xorg gplay)` / evaluator.scm) instead.
+1. **No `eval`** — Hoot cannot compile Guile's `eval`. The browser uses a metacircular evaluator (`(playnet gplay)` / evaluator.scm) instead.
 2. **Missing string procedures** — `string-prefix?`, `string-suffix?`, `string-trim-both` are not available. The codebase defines custom replacements: `%starts-with?`, `%ends-with?`, `%trim`.
 3. **Quasiquote size limits** — Large quasiquote expressions hit Hoot's expansion limit. The codebase splits `base-bindings` across multiple `append` calls. Keep individual quasiquote forms reasonably sized.
 4. **No full module system** — `browser/repl.scm` is compiled as a single bundle. Imports work via `use-modules` but everything compiles to one WASM file.
@@ -82,11 +84,13 @@ make serve               # compile + serve locally
 ## Common editing patterns
 
 When adding a new FFI binding:
+
 1. Add the `define-foreign` form in `browser/repl.scm` (near the top, lines 17–158)
 2. Add the corresponding JS function in `browser/reflect.js` under the matching module namespace
 3. Rebuild with `make browser/repl.wasm`
 
 When editing the docs:
+
 - Files are numbered for sequential reading; maintain the numbering convention
 - Cross-reference between docs and actual `browser/repl.scm` patterns for accuracy
 - Check `01-status.md` when documenting feature availability

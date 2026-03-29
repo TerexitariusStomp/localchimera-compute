@@ -1,11 +1,11 @@
 #!/bin/bash
-# xorg-eval — evaluate Scheme in the live Goblins vat via Emacs/Geiser
+# playnet-eval — evaluate Scheme in the live Goblins vat via Emacs/Geiser
 #
 # Usage:
-#   xorg-eval '(+ 1 2)'
-#   echo '(display "hello")' | xorg-eval
+#   playnet-eval '(+ 1 2)'
+#   echo '(display "hello")' | playnet-eval
 
-SERVER="/tmp/emacs-xorg/server"
+SERVER="/tmp/emacs-playnet/server"
 EC="emacsclient -f $SERVER --eval"
 
 if [ ! -f "$SERVER" ]; then
@@ -22,7 +22,7 @@ fi
 EXPR_ESCAPED=$(printf '%s' "$EXPR" | sed 's/\\/\\\\/g; s/"/\\"/g')
 
 # Step 1: Send expression (fires async Geiser eval, returns immediately)
-$EC "(progn (ignore-errors (delete-file \"/tmp/geiser-result\")) (xorg-eval \"$EXPR_ESCAPED\"))" > /dev/null 2>&1
+$EC "(progn (ignore-errors (delete-file \"/tmp/geiser-result\")) (playnet-eval \"$EXPR_ESCAPED\"))" > /dev/null 2>&1
 
 # Step 2: Wait, then read result (separate call — event loop runs between calls)
 sleep 2

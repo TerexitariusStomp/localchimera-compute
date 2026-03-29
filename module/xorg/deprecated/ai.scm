@@ -1,12 +1,12 @@
-;;; module/xorg/ai.scm — AI integration for xorg via capabilities
+;;; module/playnet/ai.scm — AI integration for playnet via capabilities
 ;;;
 ;;; One ^ai-capability per org. AI access is governed by capability
 ;;; possession, not by expressor identity. No per-expressor config lookup.
 
-(define-module (xorg ai)
+(define-module (playnet ai)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
-  #:use-module (xorg gplay)
+  #:use-module (playnet gplay)
   #:use-module (json)
   #:export (^ai-capability
             make-ai-capability
@@ -63,7 +63,7 @@
 (define (format-org-context ref)
   "Build a system prompt string describing the current org actor state."
   (string-append
-   "You are an AI assistant integrated into xorg, an experimental "
+   "You are an AI assistant integrated into playnet, an experimental "
    "organizational system built as a Scheme-based REPL.\n\n"
    (format-org-state ref)))
 

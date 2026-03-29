@@ -10,9 +10,9 @@
              (goblins actor-lib ward)
              (goblins persistence-store bloblin)
              ((goblins utils crypto) #:select (generate-key-pair key-pair->public-key))
-             (xorg org)
-             (xorg gplay)
-             (xorg endorsement)
+             (playnet org)
+             (playnet gplay)
+             (playnet endorsement)
              (ice-9 receive)
              (ice-9 match)
              (srfi srfi-1))
@@ -46,7 +46,7 @@
 
 (define (make-test-dir name)
   (set! test-counter (+ test-counter 1))
-  (let ((dir (string-append "/tmp/xorg-test-persist-"
+  (let ((dir (string-append "/tmp/playnet-test-persist-"
                             name "-"
                             (number->string (getpid)) "-"
                             (number->string test-counter))))

@@ -1,4 +1,4 @@
-;;; module/xorg/mcp.scm — MCP server as a Goblins capability actor
+;;; module/playnet/mcp.scm — MCP server as a Goblins capability actor
 ;;;
 ;;; Tools are capability actors passed at construction time.
 ;;; Possession IS access — no ACL list, no dynamic tool registration.
@@ -7,12 +7,12 @@
 ;;;
 ;;; Both ^tool-cap and ^mcp-server are define-actor for persistence.
 
-(define-module (xorg mcp)
+(define-module (playnet mcp)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
-  #:use-module (xorg org)
-  #:use-module (xorg gplay)
-  #:use-module (xorg capabilities)
+  #:use-module (playnet org)
+  #:use-module (playnet gplay)
+  #:use-module (playnet capabilities)
   #:use-module (ice-9 receive)
   #:use-module (srfi srfi-1)
   #:export (^tool-cap
@@ -20,7 +20,7 @@
             mcp-server-methods
             make-tool-cap
             make-mcp-server
-            make-xorg-mcp-server))
+            make-playnet-mcp-server))
 
 ;;; ── ^tool-cap ────────────────────────────────────────────────────────────────
 ;;; A single MCP tool as a capability actor.
@@ -105,15 +105,15 @@
         (loop (cddr pairs)
               (cons (cons (car pairs) (cadr pairs)) acc)))))
 
-;;; ── Standard xorg tools factory ──────────────────────────────────────────────
+;;; ── Standard playnet tools factory ──────────────────────────────────────────────
 
-(define* (make-xorg-mcp-server vat org
+(define* (make-playnet-mcp-server vat org
                                 #:key
                                 (allow-eval? #f)
                                 (allow-modify? #f)
                                 (allow-history? #t)
                                 (allow-bindings? #t))
-  "Build a standard MCP server for xorg interaction.
+  "Build a standard MCP server for playnet interaction.
    Capabilities are gated by keyword flags — start minimal, add as needed.
 
    allow-eval?     — evaluate arbitrary Scheme in the org (powerful!)
@@ -125,18 +125,18 @@
     (apply make-mcp-server v
            (append
             (if allow-bindings?
-                (list "xorg-bindings"
+                (list "playnet-bindings"
                       (make-tool-cap v
-                        "xorg-bindings"
+                        "playnet-bindings"
                         "List all current bindings in the org"
                         (lambda (_args)
                           (format #f "~s" ($ ref 'bindings)))
                         #:read-only? #t))
                 '())
             (if allow-history?
-                (list "xorg-history"
+                (list "playnet-history"
                       (make-tool-cap v
-                        "xorg-history"
+                        "playnet-history"
                         "Show recent org history entries"
                         (lambda (args)
                           (let* ((n (or (assoc-ref args "count") 10))
@@ -147,9 +147,9 @@
                         #:read-only? #t))
                 '())
             (if allow-eval?
-                (list "xorg-eval"
+                (list "playnet-eval"
                       (make-tool-cap v
-                        "xorg-eval"
+                        "playnet-eval"
                         "Evaluate a Scheme expression in the org. Returns the result."
                         (lambda (args)
                           (let* ((expr-str (assoc-ref args "expression"))
@@ -161,9 +161,9 @@
                         #:read-only? #f))
                 '())
             (if allow-modify?
-                (list "xorg-modify"
+                (list "playnet-modify"
                       (make-tool-cap v
-                        "xorg-modify"
+                        "playnet-modify"
                         "Set a binding in the org: (modify! name value)"
                         (lambda (args)
                           (let ((name (string->symbol (assoc-ref args "name")))

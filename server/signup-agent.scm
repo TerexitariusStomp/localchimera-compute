@@ -1,7 +1,7 @@
 ;;; server/signup-agent.scm — ^signup-agent Goblins actor
 ;;;
 ;;; Handles account registration requests arriving over the relay.
-;;; Each request carries: username, email, and the applicant's xorg
+;;; Each request carries: username, email, and the applicant's playnet
 ;;; public key (which becomes their SSH credential on the Guix machine).
 ;;;
 ;;; Usage (from relay.scm via primitive-load):

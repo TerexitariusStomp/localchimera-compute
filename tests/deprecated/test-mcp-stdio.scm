@@ -6,10 +6,10 @@
 
 (use-modules (goblins)
              (goblins actor-lib methods)
-             (xorg mcp)
-             (xorg mcp-stdio)
-             (xorg org)
-             (xorg gplay)
+             (playnet mcp)
+             (playnet mcp-stdio)
+             (playnet org)
+             (playnet gplay)
              (json)
              (ice-9 rdelim)
              (ice-9 textual-ports)
@@ -46,7 +46,7 @@
 (define vat (org-vat org))
 
 (define mcp-server
-  (make-xorg-mcp-server vat org
+  (make-playnet-mcp-server vat org
                          #:allow-eval? #t
                          #:allow-modify? #t
                          #:allow-history? #t
@@ -75,8 +75,8 @@
     (check "protocol version is 2025-03-26"
            (assoc-ref result "protocolVersion") "2025-03-26")
     (let ((info (assoc-ref result "serverInfo")))
-      (check "server name is xorg-mcp"
-             (assoc-ref info "name") "xorg-mcp"))))
+      (check "server name is playnet-mcp"
+             (assoc-ref info "name") "playnet-mcp"))))
 
 ;;; ── Test 2: Initialized notification returns #f ─────────────────────────────
 
@@ -106,28 +106,28 @@
        (names (map (lambda (t) (assoc-ref t "name")) tools)))
   (check "response has id 3"
          (assoc-ref resp "id") 3)
-  (check "has xorg-bindings tool"
-         (member "xorg-bindings" names) (member "xorg-bindings" names))
-  (check "has xorg-history tool"
-         (member "xorg-history" names) (member "xorg-history" names))
-  (check "has xorg-eval tool"
-         (member "xorg-eval" names) (member "xorg-eval" names))
-  (check "has xorg-modify tool"
-         (member "xorg-modify" names) (member "xorg-modify" names))
+  (check "has playnet-bindings tool"
+         (member "playnet-bindings" names) (member "playnet-bindings" names))
+  (check "has playnet-history tool"
+         (member "playnet-history" names) (member "playnet-history" names))
+  (check "has playnet-eval tool"
+         (member "playnet-eval" names) (member "playnet-eval" names))
+  (check "has playnet-modify tool"
+         (member "playnet-modify" names) (member "playnet-modify" names))
   ;; Check tool has inputSchema
-  (let ((eval-tool (find (lambda (t) (equal? (assoc-ref t "name") "xorg-eval"))
+  (let ((eval-tool (find (lambda (t) (equal? (assoc-ref t "name") "playnet-eval"))
                          tools)))
-    (check "xorg-eval has inputSchema"
+    (check "playnet-eval has inputSchema"
            (pair? (assoc-ref eval-tool "inputSchema")) #t)
-    (check "xorg-eval inputSchema has properties"
+    (check "playnet-eval inputSchema has properties"
            (pair? (assoc-ref (assoc-ref eval-tool "inputSchema") "properties")) #t)))
 
-;;; ── Test 5: tools/call — xorg-eval ─────────────────────────────────────────
+;;; ── Test 5: tools/call — playnet-eval ─────────────────────────────────────────
 
-(display "\n── 5. tools/call — xorg-eval ──\n")
+(display "\n── 5. tools/call — playnet-eval ──\n")
 
 (let* ((resp (dispatch-json "tools/call"
-               `(("name" . "xorg-eval")
+               `(("name" . "playnet-eval")
                  ("arguments" . (("expression" . "(+ 2 3)"))))
                4))
        (result (assoc-ref resp "result"))
@@ -136,13 +136,13 @@
   (check "eval (+ 2 3) returns 5"
          text "5"))
 
-;;; ── Test 6: tools/call — xorg-modify then xorg-bindings ────────────────────
+;;; ── Test 6: tools/call — playnet-modify then playnet-bindings ────────────────────
 
-(display "\n── 6. tools/call — xorg-modify + xorg-bindings ──\n")
+(display "\n── 6. tools/call — playnet-modify + playnet-bindings ──\n")
 
 ;; Modify
 (let ((resp (dispatch-json "tools/call"
-              `(("name" . "xorg-modify")
+              `(("name" . "playnet-modify")
                 ("arguments" . (("name" . "greeting")
                                 ("value" . "\"hello world\""))))
               5)))
@@ -154,7 +154,7 @@
 
 ;; Read bindings
 (let* ((resp (dispatch-json "tools/call"
-               `(("name" . "xorg-bindings")
+               `(("name" . "playnet-bindings")
                  ("arguments" . ()))
                6))
        (result (assoc-ref resp "result"))
@@ -163,12 +163,12 @@
   (check "bindings contain greeting"
          (string-contains text "greeting") (string-contains text "greeting")))
 
-;;; ── Test 7: tools/call — xorg-history ───────────────────────────────────────
+;;; ── Test 7: tools/call — playnet-history ───────────────────────────────────────
 
-(display "\n── 7. tools/call — xorg-history ──\n")
+(display "\n── 7. tools/call — playnet-history ──\n")
 
 (let* ((resp (dispatch-json "tools/call"
-               `(("name" . "xorg-history")
+               `(("name" . "playnet-history")
                  ("arguments" . (("count" . 5))))
                7))
        (result (assoc-ref resp "result"))
@@ -254,11 +254,11 @@
 (display "\n── 12. tool-schema->mcp-json conversion ──\n")
 
 (let ((mcp-json (tool-schema->mcp-json
-                 '((name . "xorg-eval")
+                 '((name . "playnet-eval")
                    (description . "Evaluate Scheme")
                    (read-only . #f)))))
   (check "has name"
-         (assoc-ref mcp-json "name") "xorg-eval")
+         (assoc-ref mcp-json "name") "playnet-eval")
   (check "has description"
          (assoc-ref mcp-json "description") "Evaluate Scheme")
   (check "has inputSchema"

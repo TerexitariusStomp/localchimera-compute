@@ -1,4 +1,4 @@
-;;; deploy/guix/dev-manifest.scm — development environment for xorg hacking
+;;; deploy/guix/dev-manifest.scm — development environment for playnet hacking
 ;;;
 ;;; Usage: guix shell -m deploy/guix/dev-manifest.scm
 ;;;

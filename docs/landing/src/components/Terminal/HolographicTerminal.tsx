@@ -14,7 +14,7 @@ export function HolographicTerminal({
   prefilledCode = '',
   onExecute,
   onComplete,
-  prompt = 'xorg'
+  prompt = 'playnet'
 }: HolographicTerminalProps) {
   const [code, setCode] = useState('');
   const [history, setHistory] = useState<string[]>([]);

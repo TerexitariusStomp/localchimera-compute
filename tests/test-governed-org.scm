@@ -4,9 +4,9 @@
 (define %project-root (string-append (dirname (current-filename)) "/.."))
 (add-to-load-path (string-append %project-root "/module"))
 
-(use-modules (xorg org)
-             (xorg gplay)
-             (xorg endorsement)
+(use-modules (playnet org)
+             (playnet gplay)
+             (playnet endorsement)
              (goblins)
              (ice-9 receive))
 

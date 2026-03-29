@@ -1,15 +1,15 @@
 # Peer Discovery over OCapN
 
-_How browser and mesh peers find each other in the xorg commons._
+_How browser and mesh peers find each other in the playnet commons._
 
 ---
 
 ## Overview
 
-Peers do not discover each other directly.  All peers connect to a
+Peers do not discover each other directly. All peers connect to a
 single **gateway server**, which tracks presence and introduces peers
-for direct messaging.  This is intentional: the gateway is the trust
-root in a capability-security model.  You can only reach what you have
+for direct messaging. This is intentional: the gateway is the trust
+root in a capability-security model. You can only reach what you have
 been explicitly granted a reference to.
 
 ```
@@ -26,16 +26,16 @@ LoRa node ──Reticulum──┘   (^lobby,        └── Browser C
 
 ## Transports
 
-| Peer type   | Transport                  | Netlayer               | Data path           |
-|-------------|----------------------------|------------------------|---------------------|
-| Browser     | WebSocket (port 9090)      | `^websocket-netlayer`  | Via gateway         |
-| Browser P2P | WebRTC DataChannel         | (Phase 2: `^webrtc-netlayer`) | Direct, DTLS-encrypted |
-| Mesh device | Reticulum (LoRa/serial/…)  | `^reticulum-netlayer`  | Via Python bridge   |
+| Peer type   | Transport                 | Netlayer                      | Data path              |
+| ----------- | ------------------------- | ----------------------------- | ---------------------- |
+| Browser     | WebSocket (port 9090)     | `^websocket-netlayer`         | Via gateway            |
+| Browser P2P | WebRTC DataChannel        | (Phase 2: `^webrtc-netlayer`) | Direct, DTLS-encrypted |
+| Mesh device | Reticulum (LoRa/serial/…) | `^reticulum-netlayer`         | Via Python bridge      |
 
-Browser clients bootstrap over **WebSocket**.  After discovering each
+Browser clients bootstrap over **WebSocket**. After discovering each
 other through the gateway's `^presence` actor, browsers can upgrade to
 **WebRTC DataChannel** connections for direct peer-to-peer messaging
-with DTLS encryption.  The gateway relays only signaling (SDP
+with DTLS encryption. The gateway relays only signaling (SDP
 offers/answers, ICE candidates) — application data flows directly
 between peers.
 
@@ -45,7 +45,7 @@ process (see `docs/RETICULUM-NETLAYER.md`).
 ## Bootstrap: the sturdyref
 
 The gateway generates a stable cryptographic identity (designator key)
-persisted at `$XORG_DATA_DIR/designator-key.scm`.  On startup it
+persisted at `$PLAYNET_DATA_DIR/designator-key.scm`. On startup it
 registers a `^lobby` actor with OCapN and publishes the resulting
 **sturdyref** — a capability URI that encodes the gateway's identity
 and a swiss number for the lobby.
@@ -57,7 +57,7 @@ ocapn://<designator>.websocket/s/<swiss-num>?url=ws://<host>:<port>
 ocapn://reticulum:<dest-hash>/s/<swiss-num>
 ```
 
-The sturdyref is written to `$XORG_DATA_DIR/gateway-sref.txt` and
+The sturdyref is written to `$PLAYNET_DATA_DIR/gateway-sref.txt` and
 logged to stderr so it can be distributed out-of-band (web page, QR
 code, URL parameter, etc.).
 
@@ -109,7 +109,7 @@ code, URL parameter, etc.).
 ## WebRTC peer-to-peer upgrade
 
 After connecting to the gateway, browsers can establish direct WebRTC
-DataChannel connections.  The gateway acts as the **signaling server**
+DataChannel connections. The gateway acts as the **signaling server**
 — it relays SDP offers/answers and ICE candidates, but never touches
 application data.
 
@@ -133,7 +133,7 @@ Browser A                    Gateway                    Browser B
 ### Glare resolution
 
 When both peers try to connect simultaneously, the peer whose display
-name is lexicographically greater is always the offerer.  If a peer
+name is lexicographically greater is always the offerer. If a peer
 receives an offer but has already initiated one and is the "greater"
 name, it ignores the incoming offer.
 
@@ -170,7 +170,7 @@ else:
 ```
 
 Once the Reticulum link is established, the bridge proxies OCapN
-messages over an encrypted channel.  See `docs/RETICULUM-NETLAYER.md`
+messages over an encrypted channel. See `docs/RETICULUM-NETLAYER.md`
 for the full architecture.
 
 ## What is intentionally absent
@@ -183,18 +183,18 @@ for the full architecture.
 This follows the object-capability principle of **no ambient
 authority**: a peer must possess a capability (sturdyref) to reach the
 gateway, and the gateway must explicitly grant further capabilities
-(inbox refs) for peers to communicate.  WebRTC upgrades this model by
+(inbox refs) for peers to communicate. WebRTC upgrades this model by
 removing the gateway from the data path once peers have been introduced.
 
 ## Key files
 
-| File | Role |
-|------|------|
-| `server/gateway.scm` | Gateway server — identity, lobby, sturdyref |
-| `module/xorg/gateway/presence.scm` | Presence tracking, peer introduction, signaling relay |
-| `module/xorg/gateway/lobby.scm` | Lobby actor — service dispatch + `signal` / `ice-servers` |
-| `browser/repl.scm` (§ OCapN gateway connection) | Browser-side connect + announce |
-| `browser/repl.scm` (§ WebRTC connection management) | WebRTC offer/answer/ICE handling |
-| `browser/repl.js` (`webRTC` namespace) | WebRTC FFI bindings for Hoot |
-| `module/goblins/ocapn/netlayer/reticulum.scm` | Reticulum netlayer actor |
-| `deploy/guix/xorg-gateway-service.scm` | Shepherd service definition |
+| File                                                | Role                                                      |
+| --------------------------------------------------- | --------------------------------------------------------- |
+| `server/gateway.scm`                                | Gateway server — identity, lobby, sturdyref               |
+| `module/playnet/gateway/presence.scm`               | Presence tracking, peer introduction, signaling relay     |
+| `module/playnet/gateway/lobby.scm`                  | Lobby actor — service dispatch + `signal` / `ice-servers` |
+| `browser/repl.scm` (§ OCapN gateway connection)     | Browser-side connect + announce                           |
+| `browser/repl.scm` (§ WebRTC connection management) | WebRTC offer/answer/ICE handling                          |
+| `browser/repl.js` (`webRTC` namespace)              | WebRTC FFI bindings for Hoot                              |
+| `module/goblins/ocapn/netlayer/reticulum.scm`       | Reticulum netlayer actor                                  |
+| `deploy/guix/playnet-gateway-service.scm`           | Shepherd service definition                               |

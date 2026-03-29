@@ -1,4 +1,4 @@
-;;; module/xorg/mcp-stdio.scm — MCP JSON-RPC over stdio transport
+;;; module/playnet/mcp-stdio.scm — MCP JSON-RPC over stdio transport
 ;;;
 ;;; Thin translation layer: stdin/stdout ↔ ^mcp-server actor.
 ;;; No business logic here — the actors in mcp.scm do all real work.
@@ -6,10 +6,10 @@
 ;;; MCP protocol: JSON-RPC 2.0 over newline-delimited stdio.
 ;;; Reference: https://modelcontextprotocol.io/specification/2025-03-26
 
-(define-module (xorg mcp-stdio)
+(define-module (playnet mcp-stdio)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
-  #:use-module (xorg mcp)
+  #:use-module (playnet mcp)
   #:use-module (json)
   #:use-module (ice-9 rdelim)
   #:use-module (ice-9 match)
@@ -40,7 +40,7 @@
 
 (define (tool-schema->mcp-json schema)
   "Convert a ^tool-cap schema alist to MCP tools/list JSON format.
-   Input:  ((name . \"xorg-eval\") (description . \"...\") (read-only . #f))
+   Input:  ((name . \"playnet-eval\") (description . \"...\") (read-only . #f))
    Output: MCP tool object with inputSchema.
    Note: ^tool-cap schema uses symbol keys."
   (let ((name (assoc-ref schema 'name))
@@ -55,23 +55,23 @@
   "Return the inputSchema properties for a known tool.
    Each tool has its own expected parameters."
   (match tool-name
-    ("xorg-eval"
+    ("playnet-eval"
      `(("expression"
         . (("type" . "string")
            ("description" . "Scheme expression to evaluate in the org")))))
-    ("xorg-modify"
+    ("playnet-modify"
      `(("name"
         . (("type" . "string")
            ("description" . "Binding name to set")))
        ("value"
         . (("type" . "string")
            ("description" . "Value as a Scheme expression string")))))
-    ("xorg-history"
+    ("playnet-history"
      `(("count"
         . (("type" . "integer")
            ("description" . "Number of recent history entries to return (default 10)")))))
-    ("xorg-bindings" `())
-    ("xorg-query-kb"
+    ("playnet-bindings" `())
+    ("playnet-query-kb"
      `(("query"
         . (("type" . "string")
            ("description" . "miniKanren query expression")))))
@@ -97,7 +97,7 @@
            ("capabilities"
             . (("tools" . (("listChanged" . #f)))))
            ("serverInfo"
-            . (("name" . "xorg-mcp")
+            . (("name" . "playnet-mcp")
                ("version" . "0.1.0"))))))
 
       ;; ── Initialized notification (no response)

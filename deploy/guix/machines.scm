@@ -9,7 +9,7 @@
 ;;; Users:
 ;;;   deploy     — system administration, guix deploy
 ;;;   playnet    — live hacking: Emacs/Geiser, dev REPL
-;;;   xorg       — system account for production xorg Shepherd services
+;;;   playnet       — system account for production playnet Shepherd services
 ;;;   sapient-os — sapient-os agent user
 
 (use-modules (gnu machine)
@@ -33,14 +33,14 @@
              (gnu system linux-initrd)
              (gnu)
              (guix gexp)
-             (xorg-gateway-service))
+             (playnet-gateway-service))
 
 (define %this-dir
   (dirname (or (current-filename)
                (canonicalize-path "deploy/guix/machines.scm"))))
 
-;; Load the xorg package from guix.scm (provides bin/meta-org-relay)
-(define %xorg-package
+;; Load the playnet package from guix.scm (provides bin/meta-org-relay)
+(define %playnet-package
   (load (string-append %this-dir "/../../guix.scm")))
 
 (define %admin-ssh-public-key
@@ -65,7 +65,7 @@
 ;; Emacs init.el for the playnet user — deployed via activation service.
 (define %emacs-init-el
   (plain-file "init.el"
-    ";;; xorg Emacs daemon configuration
+    ";;; playnet Emacs daemon configuration
 ;;; Runs headless — Claude Code accesses via emacsclient
 
 (require 'geiser)
@@ -82,7 +82,7 @@
 ;; Geiser config
 (setq geiser-guile-binary \"guile\")
 (setq geiser-active-implementations '(guile))
-(setq geiser-guile-load-path '(\"/home/playnet/xorg-repo/module\"))
+(setq geiser-guile-load-path '(\"/home/playnet/playnet-repo/module\"))
 
 ;; Smartparens globally
 (smartparens-global-mode 1)
@@ -98,10 +98,10 @@
 (setq server-port 9999)
 
 ;; Project root
-(setq xorg-project-root \"/home/playnet/xorg-repo\")
+(setq playnet-project-root \"/home/playnet/playnet-repo\")
 
 ;; Helper: read REPL output after sending
-(defun xorg-repl-output ()
+(defun playnet-repl-output ()
   \"Return recent output from the Geiser REPL buffer.\"
   (when-let ((buf (get-buffer \"*Geiser Guile REPL*\")))
     (with-current-buffer buf
@@ -110,7 +110,7 @@
         (forward-line -20)
         (buffer-substring-no-properties (point) (point-max))))))
 
-(message \"xorg Emacs daemon ready\")"))
+(message \"playnet Emacs daemon ready\")"))
 
 (define %guix-x86
   (operating-system
@@ -137,7 +137,7 @@
     ;; Static accounts:
     ;;   deploy     — system administration, guix deploy (wheel + NOPASSWD sudo)
     ;;   playnet    — live hacking: Emacs/Geiser, dev REPL
-    ;;   xorg       — system account for production xorg Shepherd services
+    ;;   playnet       — system account for production playnet Shepherd services
     ;; Dynamic accounts (from users.scm, managed by provision-user.scm):
     ;;   sapient-os — sapient-os agent user (own key)
     ;;   …          — any future provisioned users
@@ -155,10 +155,10 @@
               (home-directory "/home/playnet")
               (shell (file-append bash "/bin/bash")))
              (user-account
-              (name "xorg")
+              (name "playnet")
               (group "users")
               (system? #t)
-              (home-directory "/var/lib/xorg")
+              (home-directory "/var/lib/playnet")
               (shell (file-append bash "/bin/bash"))))
             ;; All users from users.scm (sapient-os + any provisioned accounts)
             (map (lambda (entry)
@@ -176,8 +176,8 @@
         "root ALL=(ALL) ALL\n"
         "%wheel ALL=(ALL) ALL\n"
         "deploy ALL=(ALL) NOPASSWD: ALL\n"
-        ;; Allow the relay (xorg user) to spawn login shells as provisioned users
-        "xorg ALL=(ALL) NOPASSWD: /usr/bin/env su - *\n")))
+        ;; Allow the relay (playnet user) to spawn login shells as provisioned users
+        "playnet ALL=(ALL) NOPASSWD: /usr/bin/env su - *\n")))
 
     (packages
      (append
@@ -222,9 +222,9 @@
                           %dynamic-users)))))
 
       ;; OCapN gateway — capability-secure communication over WebSocket + Reticulum
-      (service xorg-gateway-service-type
-               (xorg-gateway-configuration
-                (package %xorg-package)
+      (service playnet-gateway-service-type
+               (playnet-gateway-configuration
+                (package %playnet-package)
                 (port 9090)
                 (environment
                  `(("API_KEYS" . ,(or (getenv "API_KEYS")
@@ -241,7 +241,7 @@
                              (requirement '(networking user-processes))
                              (start #~(make-forkexec-constructor
                                        (list #$(file-append guile-3.0 "/bin/guile")
-                                             "-L" "/home/playnet/xorg-repo/module"
+                                             "-L" "/home/playnet/playnet-repo/module"
                                              "-c"
                                              "(use-modules (system repl server)) (run-server (make-unix-domain-server-socket #:path \"/var/run/playnet/repl.sock\"))")
                                        #:user "playnet"
@@ -250,7 +250,7 @@
                                        #:environment-variables
                                        (list (string-append "GUILE_LOAD_PATH="
                                               "/run/current-system/profile/share/guile/site/3.0:"
-                                              "/home/playnet/xorg-repo/module")
+                                              "/home/playnet/playnet-repo/module")
                                              (string-append "GUILE_LOAD_COMPILED_PATH="
                                               "/run/current-system/profile/lib/guile/3.0/site-ccache")
                                              "HOME=/home/playnet")))
@@ -318,8 +318,8 @@
                               (chown repl-eval (passwd:uid pw) (passwd:gid pw))
                               (chown bin-dir (passwd:uid pw) (passwd:gid pw)))
                             ;; Symlink to packaged code (immutable, from Guix store)
-                            (let ((repo-dir "/home/playnet/xorg-repo")
-                                  (pkg-dir (string-append #$%xorg-package "/share/xorg")))
+                            (let ((repo-dir "/home/playnet/playnet-repo")
+                                  (pkg-dir (string-append #$%playnet-package "/share/playnet")))
                               (when (and (file-exists? repo-dir)
                                          (not (symbolic-link? repo-dir)))
                                 ;; Existing mutable clone — remove it
@@ -337,9 +337,9 @@
                           (for-each
                            (lambda (username)
                              (let* ((home     (string-append "/home/" username))
-                                    (repo-dir (string-append home "/xorg-repo"))
+                                    (repo-dir (string-append home "/playnet-repo"))
                                     (bin-dir  (string-append home "/bin"))
-                                    (pkg-dir  (string-append #$%xorg-package "/share/xorg"))
+                                    (pkg-dir  (string-append #$%playnet-package "/share/playnet"))
                                     (pw       (false-if-exception (getpwnam username))))
                                (when pw
                                  ;; Home dir

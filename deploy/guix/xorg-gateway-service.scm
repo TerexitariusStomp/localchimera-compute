@@ -1,80 +1,80 @@
-;;; deploy/guix/xorg-gateway-service.scm — Shepherd service for the OCapN gateway
+;;; deploy/guix/playnet-gateway-service.scm — Shepherd service for the OCapN gateway
 ;;;
-;;; Runs the xorg OCapN gateway from the Guix package (immutable store).
-;;; Replaces xorg-relay-service.scm.  Provides capability-secure access
+;;; Runs the playnet OCapN gateway from the Guix package (immutable store).
+;;; Replaces playnet-relay-service.scm.  Provides capability-secure access
 ;;; to signup, transcription, presence, terminal, and messaging via
 ;;; OCapN CapTP over WebSocket and Reticulum.
 ;;;
 ;;; Usage in machines.scm:
-;;;   (service xorg-gateway-service-type
-;;;            (xorg-gateway-configuration
-;;;             (package xorg)
+;;;   (service playnet-gateway-service-type
+;;;            (playnet-gateway-configuration
+;;;             (package playnet)
 ;;;             (port 9090)))
 
-(define-module (xorg-gateway-service)
+(define-module (playnet-gateway-service)
   #:use-module (gnu services)
   #:use-module (gnu services shepherd)
   #:use-module (guix gexp)
   #:use-module (guix records)
-  #:export (xorg-gateway-configuration
-            xorg-gateway-configuration?
-            xorg-gateway-configuration-package
-            xorg-gateway-configuration-port
-            xorg-gateway-configuration-user
-            xorg-gateway-configuration-data-dir
-            xorg-gateway-configuration-environment
-            xorg-gateway-service-type))
+  #:export (playnet-gateway-configuration
+            playnet-gateway-configuration?
+            playnet-gateway-configuration-package
+            playnet-gateway-configuration-port
+            playnet-gateway-configuration-user
+            playnet-gateway-configuration-data-dir
+            playnet-gateway-configuration-environment
+            playnet-gateway-service-type))
 
 ;;; ── Configuration record ───────────────────────────────────────────────────
 
-(define-record-type* <xorg-gateway-configuration>
-  xorg-gateway-configuration make-xorg-gateway-configuration
-  xorg-gateway-configuration?
-  ;; The xorg Guix package (provides bin/xorg-gateway)
-  (package  xorg-gateway-configuration-package)
+(define-record-type* <playnet-gateway-configuration>
+  playnet-gateway-configuration make-playnet-gateway-configuration
+  playnet-gateway-configuration?
+  ;; The playnet Guix package (provides bin/playnet-gateway)
+  (package  playnet-gateway-configuration-package)
   ;; WebSocket listen port
-  (port     xorg-gateway-configuration-port     (default 9090))
+  (port     playnet-gateway-configuration-port     (default 9090))
   ;; User to run as
-  (user     xorg-gateway-configuration-user     (default "xorg"))
+  (user     playnet-gateway-configuration-user     (default "playnet"))
   ;; Persistent data directory (designator key, sturdyref, etc.)
-  (data-dir xorg-gateway-configuration-data-dir (default "/var/lib/xorg"))
+  (data-dir playnet-gateway-configuration-data-dir (default "/var/lib/playnet"))
   ;; Environment variables (alist of string . string pairs)
-  (environment xorg-gateway-configuration-environment (default '())))
+  (environment playnet-gateway-configuration-environment (default '())))
 
 ;;; ── Shepherd service definition ────────────────────────────────────────────
 
-(define (xorg-gateway-shepherd-service config)
-  (let ((package  (xorg-gateway-configuration-package config))
-        (port     (xorg-gateway-configuration-port config))
-        (user     (xorg-gateway-configuration-user config))
-        (data-dir (xorg-gateway-configuration-data-dir config))
-        (env      (xorg-gateway-configuration-environment config)))
+(define (playnet-gateway-shepherd-service config)
+  (let ((package  (playnet-gateway-configuration-package config))
+        (port     (playnet-gateway-configuration-port config))
+        (user     (playnet-gateway-configuration-user config))
+        (data-dir (playnet-gateway-configuration-data-dir config))
+        (env      (playnet-gateway-configuration-environment config)))
     (list
      (shepherd-service
-      (provision '(xorg-gateway))
-      (documentation "xorg OCapN gateway — capability-secure communication hub")
+      (provision '(playnet-gateway))
+      (documentation "playnet OCapN gateway — capability-secure communication hub")
       (requirement '(networking user-processes reticulum-bridge))
       (start
        #~(make-forkexec-constructor
-          (list (string-append #$package "/bin/xorg-gateway")
+          (list (string-append #$package "/bin/playnet-gateway")
                 "--port" #$(number->string port))
           #:user #$user
-          #:directory (string-append #$package "/share/xorg")
+          #:directory (string-append #$package "/share/playnet")
           #:environment-variables
           (append
            (list (string-append "HOME=" #$data-dir)
-                 (string-append "XORG_DATA_DIR=" #$data-dir))
+                 (string-append "PLAYNET_DATA_DIR=" #$data-dir))
            (list #$@(map (lambda (kv)
                            #~(string-append #$(car kv) "=" #$(cdr kv)))
                          env)))
-          #:log-file "/var/log/xorg-gateway.log"))
+          #:log-file "/var/log/playnet-gateway.log"))
       (stop #~(make-kill-destructor))
       (respawn? #t)))))
 
-(define (xorg-gateway-activation config)
+(define (playnet-gateway-activation config)
   "Create the persistent data directory for the gateway."
-  (let ((data-dir (xorg-gateway-configuration-data-dir config))
-        (user     (xorg-gateway-configuration-user config)))
+  (let ((data-dir (playnet-gateway-configuration-data-dir config))
+        (user     (playnet-gateway-configuration-user config)))
     #~(begin
         (use-modules (guix build utils))
         (let ((pw (getpwnam #$user)))
@@ -83,12 +83,12 @@
 
 ;;; ── Service type ───────────────────────────────────────────────────────────
 
-(define xorg-gateway-service-type
+(define playnet-gateway-service-type
   (service-type
-   (name 'xorg-gateway)
+   (name 'playnet-gateway)
    (extensions
     (list (service-extension shepherd-root-service-type
-                             xorg-gateway-shepherd-service)
+                             playnet-gateway-shepherd-service)
           (service-extension activation-service-type
-                             xorg-gateway-activation)))
-   (description "Run the xorg OCapN gateway as a Shepherd service.")))
+                             playnet-gateway-activation)))
+   (description "Run the playnet OCapN gateway as a Shepherd service.")))

@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Quick AI Integration Test for xorg
+# Quick AI Integration Test for playnet
 # This script tests the AI module in the REPL
 
-echo "=== xorg AI Integration Quick Test ==="
+echo "=== playnet AI Integration Quick Test ==="
 echo ""
 
 # Check if API key is set
@@ -27,8 +27,8 @@ echo ""
 cd "$(dirname "$0")/.."
 
 # Create a test script that will be piped into the REPL
-cat <<'EOF' | guile xorg-repl.scm
-(use-modules (xorg ai))
+cat <<'EOF' | guile playnet-repl.scm
+(use-modules (playnet ai))
 (display "\n=== AI Module Loaded ===\n")
 (format #t "API Key set: ~a\n" (if (current-ai-api-key) "YES" "NO"))
 (format #t "Current model: ~a\n\n" (current-ai-model))

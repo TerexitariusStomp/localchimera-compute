@@ -1,8 +1,8 @@
 ---
-description: GNU Shepherd — service management, herd commands, xorg service definitions
+description: GNU Shepherd — service management, herd commands, playnet service definitions
 ---
 
-Shepherd is Guix System's init and service manager. Every process on the server — SSH, nginx, Mosquitto, the Guile REPL, xorg org instances — is a Shepherd service declared in Scheme.
+Shepherd is Guix System's init and service manager. Every process on the server — SSH, nginx, Mosquitto, the Guile REPL, playnet org instances — is a Shepherd service declared in Scheme.
 
 ## Essential herd commands
 
@@ -23,13 +23,13 @@ guix deploy -L deploy/guix deploy/guix/machines.scm -x -- herd status
 
 ## Current services on the server
 
-| Service | Provision symbol | Auto-start | User |
-|---------|-----------------|------------|------|
-| SSH | `openssh` | yes | root |
-| DHCP | `dhcpcd` | yes | root |
-| MQTT broker | `mosquitto` | yes | root |
-| Guile REPL | `playnet-repl` | no (manual) | playnet |
-| xorg host org | `xorg-host` | yes | xorg |
+| Service          | Provision symbol | Auto-start  | User    |
+| ---------------- | ---------------- | ----------- | ------- |
+| SSH              | `openssh`        | yes         | root    |
+| DHCP             | `dhcpcd`         | yes         | root    |
+| MQTT broker      | `mosquitto`      | yes         | root    |
+| Guile REPL       | `playnet-repl`   | no (manual) | playnet |
+| playnet host org | `playnet-host`   | yes         | playnet |
 
 ## Defining a Shepherd service
 
@@ -46,27 +46,27 @@ In `machines.scm`, add to the `(services (cons* ...))` list:
                        (start #~(make-forkexec-constructor
                                  (list #$(file-append guile-3.0 "/bin/guile")
                                        "-s" "/path/to/script.scm")
-                                 #:user "xorg"
+                                 #:user "playnet"
                                  #:log-file "/var/log/my-service.log"))
                        (stop #~(make-kill-destructor))
                        (respawn? #t)
                        (auto-start? #t))))
 ```
 
-## xorg-service-type
+## playnet-service-type
 
-`deploy/guix/xorg-service.scm` defines a reusable service type for xorg org processes:
+`deploy/guix/playnet-service.scm` defines a reusable service type for playnet org processes:
 
 ```scheme
-(service xorg-service-type
-         (xorg-configuration
+(service playnet-service-type
+         (playnet-configuration
           (name "host")
           (entry-point (local-file "host-org-entry.scm"))
-          (socket-path "/var/run/xorg-host.sock")
-          (user "xorg")))
+          (socket-path "/var/run/playnet-host.sock")
+          (user "playnet")))
 ```
 
-This creates a Shepherd service named `xorg-host` running the entry-point script as the `xorg` user, with optional OCapN Unix socket.
+This creates a Shepherd service named `playnet-host` running the entry-point script as the `playnet` user, with optional OCapN Unix socket.
 
 ## Key patterns
 

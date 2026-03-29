@@ -1,11 +1,11 @@
-;;; module/xorg/gateway/lobby.scm — OCapN gateway entry point
+;;; module/playnet/gateway/lobby.scm — OCapN gateway entry point
 ;;;
 ;;; The lobby is the single actor whose sturdyref is published.
 ;;; Clients enliven it and call methods to access services.
 ;;; The lobby delegates to internal actors — callers never see
 ;;; the underlying ^signup-agent, ^key-pool, etc.
 
-(define-module (xorg gateway lobby)
+(define-module (playnet gateway lobby)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
   #:export (^lobby))

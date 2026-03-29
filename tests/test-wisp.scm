@@ -2,7 +2,7 @@
 
 (add-to-load-path (string-append (dirname (current-filename)) "/../module"))
 
-(use-modules (xorg wisp))
+(use-modules (playnet wisp))
 
 (define pass 0)
 (define fail 0)

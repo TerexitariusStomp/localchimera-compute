@@ -1,14 +1,14 @@
 #!/usr/bin/env -S guile -L module
 !#
-;;; xorg-server.scm — Simple WebSocket server for xorg
+;;; playnet-server.scm — Simple WebSocket server for playnet
 ;;; Wire protocol: signed S-expressions
-;;; Run with: guile -L module xorg-server.scm [port]
+;;; Run with: guile -L module playnet-server.scm [port]
 
 (use-modules (goblins)
              (goblins actor-lib methods)
              (goblins actor-lib sealers)
              (goblins actor-lib ward)
-             ((xorg gplay) #:hide (generate-key-pair key-pair->public-key))
+             ((playnet gplay) #:hide (generate-key-pair key-pair->public-key))
              (goblins utils crypto)
              (ice-9 receive)
              (ice-9 match)
@@ -68,7 +68,7 @@
               (set! *incanter* incanter))))))
 
     (format #t "\n════════════════════════════════════════\n")
-    (format #t "  xorg server ready on port ~a\n" port)
+    (format #t "  playnet server ready on port ~a\n" port)
     (format #t "  Connect browser: ?server=ws://localhost:~a\n" port)
     (format #t "  Type 'help for commands.\n")
     (format #t "════════════════════════════════════════\n\n")

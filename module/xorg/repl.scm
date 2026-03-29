@@ -1,14 +1,14 @@
-;;; module/xorg/repl.scm — Inner REPL and org factories for Hoot/WASM
+;;; module/playnet/repl.scm — Inner REPL and org factories for Hoot/WASM
 ;;;
 ;;; Convenience layer for the browser. On native Guile, use Goblins
 ;;; directly (,enter-vat) or build your own REPL.
 
-(define-module (xorg repl)
+(define-module (playnet repl)
   #:use-module (goblins)
   #:use-module (goblins actor-lib cell)
   #:use-module (goblins actor-lib facet)
-  #:use-module (xorg actors)
-  #:use-module (xorg evaluator)
+  #:use-module (playnet actors)
+  #:use-module (playnet evaluator)
   #:use-module (ice-9 match)
   #:use-module (ice-9 pretty-print)
   #:export (make-open-org

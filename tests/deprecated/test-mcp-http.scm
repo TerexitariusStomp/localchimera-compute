@@ -7,11 +7,11 @@
 (use-modules (goblins)
              (goblins actor-lib methods)
              (goblins actor-lib nonce-registry)
-             (xorg mcp)
-             (xorg mcp-http)
-             (xorg mcp-stdio)
-             (xorg org)
-             (xorg gplay)
+             (playnet mcp)
+             (playnet mcp-http)
+             (playnet mcp-stdio)
+             (playnet org)
+             (playnet gplay)
              (json)
              (web request)
              (web response)
@@ -52,7 +52,7 @@
 (define vat (org-vat org))
 
 (define mcp-server
-  (make-xorg-mcp-server vat org
+  (make-playnet-mcp-server vat org
                          #:allow-eval? #t
                          #:allow-modify? #t
                          #:allow-history? #t
@@ -146,7 +146,7 @@
     (check "protocol version"
            (assoc-ref result "protocolVersion") "2025-03-26")
     (check "server name"
-           (assoc-ref (assoc-ref result "serverInfo") "name") "xorg-mcp")))
+           (assoc-ref (assoc-ref result "serverInfo") "name") "playnet-mcp")))
 
 ;;; ── Test 4: POST /mcp — tools/list ─────────────────────────────────────────
 
@@ -165,8 +165,8 @@
          (names (map (lambda (t) (assoc-ref t "name")) tools)))
     (check "has 4 tools"
            (length tools) 4)
-    (check "has xorg-eval"
-           (member "xorg-eval" names) (member "xorg-eval" names))))
+    (check "has playnet-eval"
+           (member "playnet-eval" names) (member "playnet-eval" names))))
 
 ;;; ── Test 5: POST /mcp — tools/call eval ────────────────────────────────────
 
@@ -177,7 +177,7 @@
     (scm->json-string '(("jsonrpc" . "2.0")
                          ("method" . "tools/call")
                          ("id" . 3)
-                         ("params" . (("name" . "xorg-eval")
+                         ("params" . (("name" . "playnet-eval")
                                       ("arguments" . (("expression" . "(* 6 7)"))))))))
   (check "eval returns 200"
          (response-code response) 200)
@@ -292,7 +292,7 @@
     (scm->json-string '(("jsonrpc" . "2.0")
                          ("method" . "tools/call")
                          ("id" . 12)
-                         ("params" . (("name" . "xorg-modify")
+                         ("params" . (("name" . "playnet-modify")
                                       ("arguments" . (("name" . "http-test")
                                                       ("value" . "42"))))))))
   (check "modify returns 200"
@@ -304,7 +304,7 @@
     (scm->json-string '(("jsonrpc" . "2.0")
                          ("method" . "tools/call")
                          ("id" . 13)
-                         ("params" . (("name" . "xorg-eval")
+                         ("params" . (("name" . "playnet-eval")
                                       ("arguments" . (("expression" . "http-test"))))))))
   (let* ((json (json-string->scm body))
          (result (assoc-ref json "result"))

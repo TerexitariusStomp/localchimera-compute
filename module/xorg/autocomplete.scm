@@ -1,6 +1,6 @@
-;;; autocomplete.scm — Autocomplete for xorg REPL (Hoot/WASM compatible)
+;;; autocomplete.scm — Autocomplete for playnet REPL (Hoot/WASM compatible)
 
-(define-module (xorg autocomplete)
+(define-module (playnet autocomplete)
   #:use-module (ice-9 match)
   #:use-module (goblins)
   #:export (get-completions

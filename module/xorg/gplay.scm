@@ -1,14 +1,14 @@
-;;; module/xorg/gplay.scm — Goblins-based org actor system
+;;; module/playnet/gplay.scm — Goblins-based org actor system
 ;;; Compatible with both Guile and Hoot/WASM
 
-(define-module (xorg gplay)
+(define-module (playnet gplay)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
   #:use-module (goblins actor-lib sealers)
   #:use-module (goblins actor-lib ward)
   #:use-module ((goblins utils crypto) #:select (generate-key-pair key-pair->public-key))
-  #:use-module (xorg endorsement)
-  #:use-module (xorg kanren)
+  #:use-module (playnet endorsement)
+  #:use-module (playnet kanren)
   #:use-module ((srfi srfi-1) #:select (fold-right))
   #:use-module (ice-9 match)
   #:use-module (ice-9 receive)
@@ -823,14 +823,14 @@ output-cap: ^output-port actor ref for IO delegation (or #f for none)."
     ;; ai
     (('ai prompt-expr)
      (let ((handler *ai-handler*))
-       (unless handler (error "AI not available. Load (xorg ai) module."))
+       (unless handler (error "AI not available. Load (playnet ai) module."))
        (handler (evaluate prompt-expr org local-bindings current-expressor)
                 org current-expressor)))
 
     ;; ai-eval
     (('ai-eval prompt-expr)
      (let ((handler *ai-eval-handler*))
-       (unless handler (error "AI not available. Load (xorg ai) module."))
+       (unless handler (error "AI not available. Load (playnet ai) module."))
        (let ((result-expr
               (handler (evaluate prompt-expr org local-bindings current-expressor)
                        org current-expressor)))
@@ -1048,14 +1048,14 @@ can unseal."
 
 (define gplay-env
   (make-persistence-env
-   `((((xorg gplay) ^org) ,^org)
-     (((xorg gplay) ^org-inbox) ,^org-inbox)
-     (((xorg gplay) ^expressor-identity) ,^expressor-identity)
-     (((xorg gplay) ^expressor-controller) ,^expressor-controller)
-     (((xorg gplay) ^ref-store) ,^ref-store)
-     (((xorg endorsement) ^name-predicate) ,^name-predicate)
-     (((xorg endorsement) ^faceted-validator) ,^faceted-validator)
-     (((xorg gplay) ^output-port) ,^output-port))
+   `((((playnet gplay) ^org) ,^org)
+     (((playnet gplay) ^org-inbox) ,^org-inbox)
+     (((playnet gplay) ^expressor-identity) ,^expressor-identity)
+     (((playnet gplay) ^expressor-controller) ,^expressor-controller)
+     (((playnet gplay) ^ref-store) ,^ref-store)
+     (((playnet endorsement) ^name-predicate) ,^name-predicate)
+     (((playnet endorsement) ^faceted-validator) ,^faceted-validator)
+     (((playnet gplay) ^output-port) ,^output-port))
    #:extends (list ward-env sealers-env)))
 
 (define* (make-persistent-org name base-bindings store

@@ -1,10 +1,11 @@
-# xorg Landing Page - Frontier Tower Edition
+# playnet Landing Page - Frontier Tower Edition
 
-An immersive, visually stunning 3D landing page that demonstrates xorg's governance capabilities through the story of Frontier Tower — a vertical village where members collectively govern their community.
+An immersive, visually stunning 3D landing page that demonstrates playnet's governance capabilities through the story of Frontier Tower — a vertical village where members collectively govern their community.
 
 ## ✨ Features
 
 ### Visual Experience
+
 - **Premium 3D Graphics**: HDR environment, bloom effects, chromatic aberration, vignette
 - **Glassmorphism UI**: Modern frosted glass aesthetic with smooth animations
 - **Enhanced Particles**: 2000+ colored particles with additive blending
@@ -12,9 +13,10 @@ An immersive, visually stunning 3D landing page that demonstrates xorg's governa
 - **Post-Processing**: Professional color grading and visual effects
 
 ### Interactive Journey
+
 - **6 Governance Scenarios**: Real decisions from running a co-owned building
 - **Branching Narrative**: Your choices shape how the tower evolves
-- **Live Simulation**: Working xorg engine processes every decision
+- **Live Simulation**: Working playnet engine processes every decision
 - **Visual Feedback**: Watch the 3D scene transform based on governance choices
 
 ### The Frontier Tower Story
@@ -29,6 +31,7 @@ An immersive, visually stunning 3D landing page that demonstrates xorg's governa
 ## 🎨 Design
 
 ### Color Palette
+
 - Deep Space: `#0a0a0f`, `#1a1a2e`
 - Electric Blue: `#00d9ff`, `#0066ff`
 - Vibrant Purple: `#a855f7`, `#7c3aed`
@@ -36,11 +39,13 @@ An immersive, visually stunning 3D landing page that demonstrates xorg's governa
 - Emerald: `#10b981`
 
 ### Typography
+
 - **Headings**: Inter Black (900 weight)
 - **Body**: Inter Regular (400 weight)
 - **Code**: JetBrains Mono
 
 ### 3D Elements
+
 - **Tower Floors**: Rounded boxes with metallic materials, glass panels
 - **Members**: Spherical nodes with clearcoat, inner glow, trailing effects
 - **Decision Beams**: Connecting lines showing governance relationships
@@ -91,7 +96,7 @@ src/
 │       ├── Member.tsx          # Person/organization node
 │       ├── DecisionBeam.tsx    # Connecting lines
 │       └── EnhancedParticles.tsx
-├── simulation/                  # xorg engine (TypeScript)
+├── simulation/                  # playnet engine (TypeScript)
 ├── store/                       # Zustand state
 └── scenes/
     └── frontierTowerDecisions.ts # Story decisions
@@ -113,24 +118,27 @@ After decisions 2, 4, and 6, a REPL slides in from the right. Try:
 ### vs. Original Version
 
 **Visual Quality**
+
 - ❌ Plain materials → ✅ Metallic, glass, clearcoat materials
 - ❌ Basic lighting → ✅ Multi-colored dynamic lighting + HDR
 - ❌ No effects → ✅ Bloom, chromatic aberration, vignette
 - ❌ Simple particles → ✅ 2000 colored particles with additive blending
 
 **UI/UX**
+
 - ❌ Basic cards → ✅ Glassmorphism with gradients and hover effects
 - ❌ Plain text → ✅ Gradient text, badges, animated accents
 - ❌ Generic opening → ✅ Branded Frontier Tower introduction
 
 **Narrative**
-- ❌ Abstract xorg concepts → ✅ Concrete governance scenarios
+
+- ❌ Abstract playnet concepts → ✅ Concrete governance scenarios
 - ❌ Unclear purpose → ✅ Clear: "What if a building could govern itself?"
 - ❌ Technical jargon → ✅ Real-world decisions anyone can understand
 
 ## 🌟 About Frontier Tower
 
-Frontier Tower is a 16-floor vertical village in San Francisco housing founders and builders working on frontier technologies. This landing page imagines how xorg could power its governance — members making collective decisions about budgets, rules, conflicts, and community evolution.
+Frontier Tower is a 16-floor vertical village in San Francisco housing founders and builders working on frontier technologies. This landing page imagines how playnet could power its governance — members making collective decisions about budgets, rules, conflicts, and community evolution.
 
 ## 📝 Customization
 
@@ -142,6 +150,7 @@ Frontier Tower is a 16-floor vertical village in San Francisco housing founders 
 ## 🌐 Browser Support
 
 Requires WebGL 2.0:
+
 - Chrome 119+
 - Firefox 121+
 - Safari 17+
@@ -156,4 +165,4 @@ Requires WebGL 2.0:
 
 ---
 
-Built with ❤️ to showcase xorg's power for programmable organizations
+Built with ❤️ to showcase playnet's power for programmable organizations

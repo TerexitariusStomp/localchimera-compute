@@ -1,4 +1,4 @@
-;;; module/xorg/capabilities.scm — Capability actor constructors for xorg
+;;; module/playnet/capabilities.scm — Capability actor constructors for playnet
 ;;;
 ;;; Defines ocap-safe wrappers for HTTP and configuration access.
 ;;; These actors are the boundary between the org's pure world and
@@ -7,7 +7,7 @@
 ;;; Hoot/WASM compatibility: ^config-provider is fully compatible.
 ;;; ^http-client uses cond-expand to stub out HTTP in WASM contexts.
 
-(define-module (xorg capabilities)
+(define-module (playnet capabilities)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
   #:export (^http-client

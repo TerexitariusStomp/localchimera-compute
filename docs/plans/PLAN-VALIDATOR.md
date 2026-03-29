@@ -27,7 +27,7 @@ model is still ACL.
 
 ## The Target Model
 
-**Capability-governed validation:** sensitive actions require the caller to *present*
+**Capability-governed validation:** sensitive actions require the caller to _present_
 a capability endorsement alongside the value. The validator checks possession, not identity.
 
 ```scheme
@@ -49,7 +49,7 @@ what you were given.
 ### `endorse` — wraps a value with a capability endorsement
 
 ```scheme
-;; (xorg endorsement)
+;; (playnet endorsement)
 (define (endorse value cap)
   "Bundle a value with an endorsement capability.
    The bundle is opaque — only valid-endorsement? can verify it."
@@ -100,7 +100,7 @@ Instead of one monolithic validator function, compose independent facets.
 Each facet governs a class of names and requires a specific endorsement.
 
 ```scheme
-;; (xorg facets)
+;; (playnet facets)
 
 (define (make-facet name-predicate required-sealer?)
   "A facet: governs names matching name-predicate,
@@ -208,7 +208,8 @@ An expressor with a capability can delegate a weaker version:
 The validator signature stays the same: `(expressor name value pre post) → bool`.
 Nothing else in the org needs to know about endorsements.
 
-The *meaning* of `value` changes for protected names:
+The _meaning_ of `value` changes for protected names:
+
 - Before: value is the new binding directly
 - After: value is `(seal required-sealer actual-value)` — the endorsed bundle
 
@@ -226,14 +227,14 @@ This is the key: you can only endorse with caps in your own bindings.
 
 ## New Files
 
-- `module/xorg/endorsement.scm` — `endorse`, `endorsed-value`, `valid-endorsement?`
-- `module/xorg/facets.scm` — `make-facet`, `make-faceted-validator`, `make-attenuated-sealer`
+- `module/playnet/endorsement.scm` — `endorse`, `endorsed-value`, `valid-endorsement?`
+- `module/playnet/facets.scm` — `make-facet`, `make-faceted-validator`, `make-attenuated-sealer`
 
 ## Modified Files
 
-- `module/xorg/gplay.scm` — `evaluate` handles endorsed values transparently;
+- `module/playnet/gplay.scm` — `evaluate` handles endorsed values transparently;
   `enact!` requires endorsement; `endorse` added to base-bindings conditionally
-- `module/xorg/org.scm` — `make-org` optionally takes a validator + sealer set
+- `module/playnet/org.scm` — `make-org` optionally takes a validator + sealer set
 - `README.md` — document the new security model
 
 ---
@@ -245,6 +246,7 @@ Existing orgs with `default-validator` (accepts everything) are unaffected.
 The endorsement system is opt-in: if no facets govern a name, any modification is allowed.
 
 Migration:
+
 1. Implement `endorsement.scm` and `facets.scm` (pure library, no changes to gplay)
 2. Add `endorsed-value` unwrapping to `evaluate` (backward compatible — non-endorsed values pass through)
 3. Add `endorse` to base-bindings as a conditional capability

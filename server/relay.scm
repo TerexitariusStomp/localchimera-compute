@@ -1,6 +1,6 @@
 #!/usr/bin/env -S guile
 !#
-;;; xorg-relay.scm — Mailbox relay for xorg
+;;; playnet-relay.scm — Mailbox relay for playnet
 ;;; Routes signed S-expressions by public key.
 ;;; Queues messages for offline recipients.
 ;;;
@@ -365,7 +365,7 @@
                                      `((model . "google/gemini-2.0-flash-001")
                                        (messages
                                         . #(((role . "system")
-                                             (content . "You are inside xorg, a Scheme-based programmable organization. Convert the user's natural language into a single valid Scheme S-expression. Respond with ONLY the raw S-expression, no markdown, no explanation, no code fences. Use (modify! 'name value) for bindings, (define name value) for definitions, (lambda (args) body) for functions."))
+                                             (content . "You are inside playnet, a Scheme-based programmable organization. Convert the user's natural language into a single valid Scheme S-expression. Respond with ONLY the raw S-expression, no markdown, no explanation, no code fences. Use (modify! 'name value) for bindings, (define name value) for definitions, (lambda (args) body) for functions."))
                                             ((role . "user")
                                              (content . ,nl-text)))))))
                               (resp (with-vat *pool-vat*
@@ -477,7 +477,7 @@
   (let ((port (if (> (length args) 1)
                   (string->number (cadr args))
                   9090)))
-    (log! "\n  xorg relay on ws://localhost:~a\n\n" port)
+    (log! "\n  playnet relay on ws://localhost:~a\n\n" port)
     (run-websocket-server
      handle-client
      #:server-socket (make-server-socket #:host "0.0.0.0" #:port port)

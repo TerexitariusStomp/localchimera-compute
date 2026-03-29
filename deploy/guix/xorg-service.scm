@@ -1,7 +1,7 @@
-;;; deploy/guix/xorg-service.scm — Guix service type for xorg org processes
+;;; deploy/guix/playnet-service.scm — Guix service type for playnet org processes
 ;;;
-;;; Defines xorg-service-type: a Shepherd service that runs a Guile process
-;;; hosting one or more xorg actors.
+;;; Defines playnet-service-type: a Shepherd service that runs a Guile process
+;;; hosting one or more playnet actors.
 ;;;
 ;;; Each org runs as a separate Shepherd service for isolation.
 ;;; Communication between orgs uses OCapN over Unix domain sockets
@@ -10,10 +10,10 @@
 ;;; TODO Shepherd×Goblins: when Shepherd is ported to Goblins, replace the
 ;;; forkexec constructor with a direct Goblins actor spawn within the
 ;;; Shepherd vat. The service will be a Goblins actor addressable over OCapN.
-;;; At that point, ^service-capability in module/xorg/services.scm can
+;;; At that point, ^service-capability in module/playnet/services.scm can
 ;;; reference the Shepherd actor directly instead of calling herd.
 
-(define-module (xorg-service)
+(define-module (playnet-service)
   #:use-module (gnu services)
   #:use-module (gnu services shepherd)
   #:use-module (gnu system accounts)
@@ -22,49 +22,49 @@
   #:use-module (gnu packages guile-xyz)   ;; for guile-goblins
   #:use-module (guix gexp)
   #:use-module (guix records)
-  #:export (xorg-configuration
-            xorg-configuration?
-            xorg-configuration-name
-            xorg-configuration-entry-point
-            xorg-configuration-socket-path
-            xorg-configuration-user
-            xorg-configuration-environment
-            xorg-service-type))
+  #:export (playnet-configuration
+            playnet-configuration?
+            playnet-configuration-name
+            playnet-configuration-entry-point
+            playnet-configuration-socket-path
+            playnet-configuration-user
+            playnet-configuration-environment
+            playnet-service-type))
 
 ;;; ── Configuration record ───────────────────────────────────────────────────
 
-(define-record-type* <xorg-configuration>
-  xorg-configuration make-xorg-configuration
-  xorg-configuration?
+(define-record-type* <playnet-configuration>
+  playnet-configuration make-playnet-configuration
+  playnet-configuration?
   ;; Name of this org instance (used as shepherd service name)
-  (name         xorg-configuration-name)
+  (name         playnet-configuration-name)
   ;; Path to the org entry-point script (a .scm file)
-  (entry-point  xorg-configuration-entry-point)
+  (entry-point  playnet-configuration-entry-point)
   ;; Unix socket path for OCapN communication
-  (socket-path  xorg-configuration-socket-path
+  (socket-path  playnet-configuration-socket-path
                 (default #f))
   ;; User to run as
-  (user         xorg-configuration-user
-                (default "xorg"))
+  (user         playnet-configuration-user
+                (default "playnet"))
   ;; Environment variables to pass (alist of string . string pairs)
-  (environment  xorg-configuration-environment
+  (environment  playnet-configuration-environment
                 (default '())))
 
 ;;; ── Shepherd service definition ────────────────────────────────────────────
 
-(define (xorg-shepherd-service config)
-  "Generate a Shepherd service from an xorg-configuration record."
-  (let* ((name        (xorg-configuration-name config))
-         (entry       (xorg-configuration-entry-point config))
-         (socket      (xorg-configuration-socket-path config))
-         (user        (xorg-configuration-user config))
-         (env         (xorg-configuration-environment config))
-         (service-sym (string->symbol (string-append "xorg-" name))))
+(define (playnet-shepherd-service config)
+  "Generate a Shepherd service from an playnet-configuration record."
+  (let* ((name        (playnet-configuration-name config))
+         (entry       (playnet-configuration-entry-point config))
+         (socket      (playnet-configuration-socket-path config))
+         (user        (playnet-configuration-user config))
+         (env         (playnet-configuration-environment config))
+         (service-sym (string->symbol (string-append "playnet-" name))))
     (list
      (shepherd-service
       (provision (list service-sym))
       (documentation
-       (string-append "xorg org instance: " name))
+       (string-append "playnet org instance: " name))
       (requirement '(networking user-processes))
       (start
        #~(make-forkexec-constructor
@@ -76,20 +76,20 @@
                            #~(string-append #$(car kv) "=" #$(cdr kv)))
                          env))
            #$(if socket
-                 #~(list (string-append "XORG_SOCKET=" #$socket))
+                 #~(list (string-append "PLAYNET_SOCKET=" #$socket))
                  #~'()))
-          #:log-file #$(string-append "/var/log/xorg-" name ".log")))
+          #:log-file #$(string-append "/var/log/playnet-" name ".log")))
       (stop #~(make-kill-destructor))
       (respawn? #t)))))
 
 ;;; ── Accounts ──────────────────────────────────────────────────────────────
 ;;;
-;;; The xorg service creates its own system user/group so it doesn't need
+;;; The playnet service creates its own system user/group so it doesn't need
 ;;; to be defined separately in the operating-system (users ...) field.
 
-(define (xorg-accounts config)
+(define (playnet-accounts config)
   "Create accounts for the user specified in CONFIG."
-  (let ((user (xorg-configuration-user config)))
+  (let ((user (playnet-configuration-user config)))
     (list (user-account
            (name user)
            (group "users")
@@ -101,22 +101,22 @@
 ;;;
 ;;; Usage in a Guix system declaration:
 ;;;
-;;;   (service xorg-service-type
-;;;            (xorg-configuration
+;;;   (service playnet-service-type
+;;;            (playnet-configuration
 ;;;             (name "host")
-;;;             (entry-point "/etc/xorg/host-entry.scm")
-;;;             (socket-path "/run/xorg/host.sock")
+;;;             (entry-point "/etc/playnet/host-entry.scm")
+;;;             (socket-path "/run/playnet/host.sock")
 ;;;             (environment '(("OPENROUTER_API_KEY" . "sk-or-...")))))
 ;;;
 ;;; Multiple instances: use modify-services or append multiple
-;;; (service xorg-service-type ...) entries, each with a unique name.
+;;; (service playnet-service-type ...) entries, each with a unique name.
 
-(define xorg-service-type
+(define playnet-service-type
   (service-type
-   (name 'xorg)
+   (name 'playnet)
    (extensions
     (list (service-extension shepherd-root-service-type
-                             xorg-shepherd-service)
+                             playnet-shepherd-service)
           (service-extension account-service-type
-                             xorg-accounts)))
-   (description "Run an xorg org instance as a Shepherd service.")))
+                             playnet-accounts)))
+   (description "Run an playnet org instance as a Shepherd service.")))

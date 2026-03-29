@@ -10,10 +10,10 @@
              ;; (goblins utils crypto) removed — imports (rnrs bytevectors) which
              ;; Hoot can't compile. Key generation uses JS FFI directly instead.
              (goblins persistence-store local-storage)
-             (xorg gplay)
-             (xorg kanren)
-             (xorg autocomplete)
-             (xorg wisp)
+             (playnet gplay)
+             (playnet kanren)
+             (playnet autocomplete)
+             (playnet wisp)
              (srfi srfi-11))
 
 
@@ -643,7 +643,7 @@
 
 (define (format-org-context ref)
   (string-append
-    "You are an AI inside xorg, a Scheme-based system for programmable organizations.\n\n"
+    "You are an AI inside playnet, a Scheme-based system for programmable organizations.\n\n"
     (format-org-state ref)))
 
 ;;; ── AI handlers ─────────────────────────────────────────────────────────
@@ -798,7 +798,7 @@
 
 (define (toggle-syntax-mode!)
   (set! *syntax-mode* (if (eq? *syntax-mode* 'lisp) 'wisp 'lisp))
-  (ls-set-item "xorg-syntax-mode" (symbol->string *syntax-mode*))
+  (ls-set-item "playnet-syntax-mode" (symbol->string *syntax-mode*))
   (update-code-viewer!)
   (refresh!)
   (scroll-to-bottom!))
@@ -897,12 +897,12 @@
           (else (loop (cdr lst))))))
 
 ;;; ── Org index persistence ────────────────────────────────────────────────
-;;; Stores org names + serialized key material in localStorage["xorg-index"].
+;;; Stores org names + serialized key material in localStorage["playnet-index"].
 ;;; Per-org Goblins state is stored by make-local-storage-store in separate keys.
 
 (define (save-org-index!)
   "Persist the list of org names to localStorage as comma-separated string."
-  (ls-set-item "xorg-index"
+  (ls-set-item "playnet-index"
     (let loop ((names (map org-entry-name *orgs*)) (acc ""))
       (if (null? names) acc
           (loop (cdr names)
@@ -911,7 +911,7 @@
 
 (define (load-org-index)
   "Load org names from localStorage. Returns list of strings or '()."
-  (let ((raw (ls-get-item "xorg-index")))
+  (let ((raw (ls-get-item "playnet-index")))
     (if (or (not raw) (string=? raw "")) '()
         ;; Split comma-separated string into list
         (let loop ((s raw) (acc '()))
@@ -1003,7 +1003,7 @@
                  "\n"
                  "── Signup & SSH ───────────────────────────────\n"
                  "\n"
-                 "Register an account on the xorg server:\n"
+                 "Register an account on the playnet server:\n"
                  "  (signup! \"user\" \"email@example.com\") request account\n"
                  "  (export-ssh-key)                    show your SSH key\n"
                  "\n"
@@ -1041,7 +1041,7 @@
 
 (define (current-prompt)
   (if (eq? *mode* 'outer)
-      "xorg> "
+      "playnet> "
       (string-append *current-org-name* "["
         (symbol->string
           (or (with-vat *vat* ($ *org* 'expressor-name ($ *org* 'current-expressor))) '?))
@@ -1267,7 +1267,7 @@
                           ,(string-append "Org already exists: " name "\n")))
       (let* ((kp (generate-key-pair))
              (pk (key-pair->public-key kp))
-             (store (make-local-storage-store (string-append "xorg-" name))))
+             (store (make-local-storage-store (string-append "playnet-" name))))
         (receive (vat org inbox incanter refs)
           (make-persistent-org name base-bindings store
                                #:public-key pk
@@ -1295,7 +1295,7 @@
                 (else (cons (car lst) (loop (cdr lst)))))))
         (when (and *sidebar-selected-org* (string=? name *sidebar-selected-org*))
           (set! *sidebar-selected-org* #f))
-        (ls-remove-item (string-append "xorg-" name))
+        (ls-remove-item (string-append "playnet-" name))
         (delete-key-pair name)
         (save-org-index!)
         (log-append! `(span (@ (class "result-text")) ,(string-append "Deleted org: " name "\n"))))
@@ -1309,7 +1309,7 @@
         (log-append!
           `(span (@ (class "result-text"))
                  ,(string-append
-                    "Your xorg public key (use this as your SSH public key):\n"
+                    "Your playnet public key (use this as your SSH public key):\n"
                     "  " pk-str "\n\n"
                     "Paste it during (signup!) or send it to an administrator.\n"))))))
 
@@ -1600,7 +1600,7 @@
           (loop))
          ;; Check for org management commands first
          ((handle-command exp) (loop))
-         ;; In inner mode, use the xorg evaluator
+         ;; In inner mode, use the playnet evaluator
          ((eq? *mode* 'inner)
           (eval-play! exp)
           (loop))
@@ -2087,7 +2087,7 @@
         (div (@ (class ,(string-append "tab" (if (eq? *mode* 'outer) " tab-active" "")))
                 (click ,(lambda (e)
                           (when (eq? *mode* 'inner) (do-exit!) (refresh!) (scroll-to-bottom!)))))
-             "xorg")
+             "playnet")
         ,@(map (lambda (org-entry)
                  (let* ((name (org-entry-name org-entry))
                         (active? (and (eq? *mode* 'inner) *current-org-name*
@@ -2161,7 +2161,7 @@
       (prevent-default! event) (focus-element! (get-element-by-id "expression"))))))
 
 ;;; ── Restore syntax mode preference ─────────────────────────────────────────
-(let ((saved-mode (ls-get-item "xorg-syntax-mode")))
+(let ((saved-mode (ls-get-item "playnet-syntax-mode")))
   (when (and saved-mode (string=? saved-mode "wisp"))
     (set! *syntax-mode* 'wisp)))
 
@@ -2173,7 +2173,7 @@
        (let* ((kp (if (has-preloaded-key-pair? name)
                       (get-preloaded-key-pair name)
                       (generate-key-pair)))
-              (store (make-local-storage-store (string-append "xorg-" name))))
+              (store (make-local-storage-store (string-append "playnet-" name))))
          (receive (vat org inbox incanter refs)
            (make-persistent-org name base-bindings store
                                 #:persistence-registry *persistence-registry*)
@@ -2190,7 +2190,7 @@
 (add-event-listener!/wrap (document-body) "keydown" global-keydown)
 
 ;;; ── OCapN gateway connection ────────────────────────────────────────────
-;;; Connects to the xorg OCapN gateway via WebSocket CapTP.
+;;; Connects to the playnet OCapN gateway via WebSocket CapTP.
 ;;; The lobby sturdyref is the single entry point for all services.
 
 (define *connected?* #f)    ;; #t after OCapN lobby is live

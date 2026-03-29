@@ -1,8 +1,8 @@
-;;; hyperarc.scm — Hyperarc/metagraph/knowledge-base data structures for xorg
+;;; hyperarc.scm — Hyperarc/metagraph/knowledge-base data structures for playnet
 ;;; Plain tagged S-expression alists — homoiconic, unifiable, serializable.
 ;;; Hoot/WASM compatible: positional constructors, no keywords, no GOOPS.
 
-(define-module (xorg hyperarc)
+(define-module (playnet hyperarc)
   #:use-module (srfi srfi-1)
   #:export (;; Constructors
             make-node make-hyperarc make-metagraph make-kb

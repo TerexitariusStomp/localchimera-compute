@@ -1,11 +1,11 @@
 ;;; knowledge.scm — Relational query layer over hyperarc knowledge bases
-;;; Uses miniKanren (xorg kanren) for unification-based pattern matching
+;;; Uses miniKanren (playnet kanren) for unification-based pattern matching
 ;;; and proof-traced transitive closure.
 ;;; Hoot/WASM compatible.
 
-(define-module (xorg knowledge)
-  #:use-module (xorg kanren)
-  #:use-module (xorg hyperarc)
+(define-module (playnet knowledge)
+  #:use-module (playnet kanren)
+  #:use-module (playnet hyperarc)
   #:use-module (srfi srfi-1)
   #:export (;; Structural destructuring relations
             node-o hyperarc-o metagraph-o

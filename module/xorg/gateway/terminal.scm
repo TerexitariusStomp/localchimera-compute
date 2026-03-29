@@ -1,4 +1,4 @@
-;;; module/xorg/gateway/terminal.scm — PTY sessions over OCapN
+;;; module/playnet/gateway/terminal.scm — PTY sessions over OCapN
 ;;;
 ;;; Spawns login shells as provisioned Unix users and bridges
 ;;; stdin/stdout through Goblins actor messages.  The client holds
@@ -7,7 +7,7 @@
 ;;;
 ;;; Migrated from relay.scm open-pty-session! / write-to-pty! / close-pty-session!
 
-(define-module (xorg gateway terminal)
+(define-module (playnet gateway terminal)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
   #:use-module (ice-9 format)

@@ -1,12 +1,12 @@
-# xorg Architecture
+# playnet Architecture
 
-_An overview of the xorg system layout, transport layers, and governance patterns._
+_An overview of the playnet system layout, transport layers, and governance patterns._
 
 ---
 
 ## Core Concept
 
-xorg is a **pattern** for building organizational systems securely using [Spritely Goblins](https://spritely.institute/goblins/) and the capability architectures described in the [Heart of Spritely](https://spritely.institute/static/papers/spritely-core.html) paper.
+playnet is a **pattern** for building organizational systems securely using [Spritely Goblins](https://spritely.institute/goblins/) and the capability architectures described in the [Heart of Spritely](https://spritely.institute/static/papers/spritely-core.html) paper.
 
 On native Guile with Goblins, every piece of "governance" maps directly to existing primitives:
 
@@ -24,7 +24,7 @@ On native Guile with Goblins, every piece of "governance" maps directly to exist
 | IO                  | Capabilities passed in (ports, `^io`)        |
 | Networking          | OCapN — actors across machines               |
 
-Because xorg relies heavily on these standard Goblins primitives, the server-side environment requires very little custom infrastructure code.
+Because playnet relies heavily on these standard Goblins primitives, the server-side environment requires very little custom infrastructure code.
 
 ---
 
@@ -48,22 +48,22 @@ See `docs/RETICULUM-NETLAYER.md` for full networking details.
 
 ## Client-Side: Hoot and WebAssembly
 
-Running xorg within a web browser via Guile Hoot requires bridging several native Guile features that aren't available in typical WASM environments natively:
+Running playnet within a web browser via Guile Hoot requires bridging several native Guile features that aren't available in typical WASM environments natively:
 
-| Native Guile Feature | xorg Hoot Implementation                     |
+| Native Guile Feature | playnet Hoot Implementation                  |
 | -------------------- | -------------------------------------------- |
 | `eval`               | Metacircular evaluator (~180 lines)          |
 | Full module system   | `default-base-bindings` — curated primitives |
 | `,enter-vat`         | Inner REPL (`enter!`)                        |
 
-For the browser, xorg provides **a Hoot-compatible subset of Goblins patterns**, bundled alongside a metacircular evaluator.
+For the browser, playnet provides **a Hoot-compatible subset of Goblins patterns**, bundled alongside a metacircular evaluator.
 
 Key files for the client-side environment:
 
-- `module/xorg/gplay.scm` — Evaluator and Goblins actors (Hoot-compatible)
-- `module/xorg/kanren.scm` — miniKanren (standalone, Hoot-compatible)
-- `module/xorg/hyperarc.scm` — Metagraph data structures
-- `module/xorg/knowledge.scm` — Relational queries
+- `module/playnet/gplay.scm` — Evaluator and Goblins actors (Hoot-compatible)
+- `module/playnet/kanren.scm` — miniKanren (standalone, Hoot-compatible)
+- `module/playnet/hyperarc.scm` — Metagraph data structures
+- `module/playnet/knowledge.scm` — Relational queries
 
 By utilizing the evaluator, browser-based REPLs continue to share the exact same architectural semantics as native environments.
 
@@ -71,7 +71,7 @@ By utilizing the evaluator, browser-based REPLs continue to share the exact same
 
 ## Server-Side: Native Guile Environments
 
-On a server (or any native Guile environment), xorg leverages Goblins directly without needing the Hoot compatibility layers. Governance architectures are composed naturally from generic Spritely patterns rather than opaque abstractions:
+On a server (or any native Guile environment), playnet leverages Goblins directly without needing the Hoot compatibility layers. Governance architectures are composed naturally from generic Spritely patterns rather than opaque abstractions:
 
 ```scheme
 (use-modules (goblins)
@@ -158,10 +158,10 @@ Rather than using a rigid deployment cycle, expressions can be evaluated live wi
 ```text
 Browser (Hoot/WASM)              Server (Native Guile)
 ─────────────────────            ────────────────────
-xorg evaluator                   Guile's native eval
-xorg base-bindings               Guile's native module system
-xorg REPL                        Guile's REPL + ,enter-vat
-xorg actors                      Standard Goblins actors
+playnet evaluator                   Guile's native eval
+playnet base-bindings               Guile's native module system
+playnet REPL                        Guile's REPL + ,enter-vat
+playnet actors                      Standard Goblins actors
      ↕                                ↕
      └──── OCapN ──── same actors, same patterns ────┘
 ```

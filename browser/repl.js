@@ -5,12 +5,12 @@ window.addEventListener("load", async () => {
     // This makes keys available synchronously to Scheme via getPreloadedKeyPair.
     const preloadedKeyPairs = {};
     try {
-      const orgNames = (localStorage.getItem("xorg-index") || "")
+      const orgNames = (localStorage.getItem("playnet-index") || "")
         .split(",").filter(Boolean);
       const fromHex = hex =>
         new Uint8Array(hex.match(/.{2}/g).map(b => parseInt(b, 16)));
       for (const name of orgNames) {
-        const stored = localStorage.getItem("xorg-kp-" + name);
+        const stored = localStorage.getItem("playnet-kp-" + name);
         if (stored) {
           const [pubHex, privHex] = stored.split(":");
           const publicKey = await crypto.subtle.importKey(
@@ -135,7 +135,7 @@ window.addEventListener("load", async () => {
               crypto.subtle.exportKey("raw", keyPair.publicKey),
               crypto.subtle.exportKey("pkcs8", keyPair.privateKey)
             ]).then(([pubBuf, privBuf]) => {
-              localStorage.setItem("xorg-kp-" + name,
+              localStorage.setItem("playnet-kp-" + name,
                 toHex(pubBuf) + ":" + toHex(privBuf));
             }).catch(e => console.error("saveKeyPair error:", e));
           },
@@ -146,7 +146,7 @@ window.addEventListener("load", async () => {
             return name in preloadedKeyPairs ? 1 : 0;
           },
           deleteKeyPair(name) {
-            localStorage.removeItem("xorg-kp-" + name);
+            localStorage.removeItem("playnet-kp-" + name);
             delete preloadedKeyPairs[name];
           }
         },
@@ -220,8 +220,8 @@ window.addEventListener("load", async () => {
         ocapn: {
           // OCapN bridge: Scheme registers callbacks here for JS-initiated actions.
           // Speech/transcription flow: JS records audio → calls transcribeCallback → Scheme OCapN → result
-          setTranscribeCallback(cb) { window.__xorgTranscribe = cb; },
-          setExpressCallback(cb) { window.__xorgExpress = cb; }
+          setTranscribeCallback(cb) { window.__playnetTranscribe = cb; },
+          setExpressCallback(cb) { window.__playnetExpress = cb; }
         },
         localStorage: {
           getItem(key) { return localStorage.getItem(key); },
@@ -271,7 +271,7 @@ window.addEventListener("load", async () => {
                 const blob = new Blob(chunks, { type: 'audio/webm' });
 
                 // Try OCapN transcription (via Scheme callback), fall back to local Whisper
-                const transcribeFn = window.__xorgTranscribe;
+                const transcribeFn = window.__playnetTranscribe;
                 if (transcribeFn) {
                   console.log('[speech] Sending to OCapN gateway for transcription...');
                   const buf = await blob.arrayBuffer();
@@ -281,7 +281,7 @@ window.addEventListener("load", async () => {
                     // Express mode: transcribe, then convert NL → Scheme
                     transcribeFn(b64, (transcript) => {
                       console.log('[express] Transcript:', transcript);
-                      const expressFn = window.__xorgExpress;
+                      const expressFn = window.__playnetExpress;
                       if (expressFn) {
                         expressFn(transcript, (expr) => {
                           onResult(expr || transcript);
@@ -324,16 +324,16 @@ window.addEventListener("load", async () => {
               };
 
               recorder.start();
-              window.__xorgRecording = { recorder, stream };
+              window.__playnetRecording = { recorder, stream };
             } catch (e) {
               console.error('[speech] Mic error:', e);
               onEnd();
             }
           },
           stopListening() {
-            if (window.__xorgRecording) {
-              window.__xorgRecording.recorder.stop();
-              window.__xorgRecording = null;
+            if (window.__playnetRecording) {
+              window.__playnetRecording.recorder.stop();
+              window.__playnetRecording = null;
             }
           },
           setExpressMode(mode) {
@@ -341,7 +341,7 @@ window.addEventListener("load", async () => {
           },
           // Express natural language → Scheme via OCapN callback
           expressNL(text, onResult) {
-            const expressFn = window.__xorgExpress;
+            const expressFn = window.__playnetExpress;
             if (expressFn) {
               expressFn(text, (expr) => { onResult(expr || ""); });
             } else {

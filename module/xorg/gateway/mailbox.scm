@@ -1,9 +1,9 @@
-;;; module/xorg/gateway/mailbox.scm — Offline message queuing
+;;; module/playnet/gateway/mailbox.scm — Offline message queuing
 ;;;
 ;;; When a user is offline, messages are stored in their mailbox.
 ;;; On reconnect the client fetches and drains the queue.
 
-(define-module (xorg gateway mailbox)
+(define-module (playnet gateway mailbox)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
   #:use-module (goblins utils hashmap)

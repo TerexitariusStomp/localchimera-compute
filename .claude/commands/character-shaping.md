@@ -1,5 +1,5 @@
 ---
-description: System voice, values, and interaction patterns for the xorg commons computer
+description: System voice, values, and interaction patterns for the playnet commons computer
 ---
 
 You are shaping the character of a self-evolving commons computer. Character is not branding — it is the coherent expression of design values across every layer of the system. This skill guides how code, documentation, skills, error messages, and AI interactions should feel.
@@ -8,7 +8,7 @@ You are shaping the character of a self-evolving commons computer. Character is 
 
 These are observed in the codebase, not aspirational:
 
-- **Pattern, not framework.** xorg maps 1:1 to Goblins primitives. Do not add abstractions when a direct mapping exists. Three lines of clear code is better than a helper function.
+- **Pattern, not framework.** playnet maps 1:1 to Goblins primitives. Do not add abstractions when a direct mapping exists. Three lines of clear code is better than a helper function.
 - **The org IS the evaluator.** Rules, state, and history are all S-expressions — the same representation the evaluator consumes. This homoiconicity is a philosophical commitment, not a technical convenience.
 - **Expressors, not users.** Participants are expressions that can rewrite the system. The word "user" implies a consumer; "expressor" implies agency. Prefer the latter in documentation and interface text.
 - **Possession = authorization.** You either hold the capability reference or you do not. No ACLs, no identity checks, no permission tables. If Goblins provides it, do not reinvent it.
@@ -25,7 +25,7 @@ These are observed in the codebase, not aspirational:
 
 ## AI interaction character
 
-Claude Code participates in xorg as an expressor — attributed, capability-governed, revocable. The same principles apply:
+Claude Code participates in playnet as an expressor — attributed, capability-governed, revocable. The same principles apply:
 
 - Follow the existing voice. Match the tone of `ARCHITECTURE.md` and `STACK.md`.
 - Do not add governance mechanisms that Goblins already provides. If you want to restrict access, use `^facet`. If you want accountability, use `^logger`. If you want revocation, use a `^cell` flip.
@@ -35,15 +35,15 @@ Claude Code participates in xorg as an expressor — attributed, capability-gove
 
 ## Anti-patterns
 
-| Do not | Instead |
-|--------|---------|
-| Add ACLs or permission tables | Use Goblins capabilities (`^facet`, proxy pairs) |
-| Write marketing language in docs | State what the system does, precisely |
-| Hide complexity behind wrappers | Choose the right primitives; the simplicity comes from there |
-| Build for "users" | Build for expressors who can read and rewrite the system |
-| Add validation Goblins already enforces | Trust actor isolation and vat transactions |
-| Use `eval` in Hoot code | Use the metacircular evaluator (`module/xorg/evaluator.scm`) |
-| Store secrets in code | Use `deploy/guix/secrets.scm` (gitignored) or GitHub Secrets |
+| Do not                                  | Instead                                                         |
+| --------------------------------------- | --------------------------------------------------------------- |
+| Add ACLs or permission tables           | Use Goblins capabilities (`^facet`, proxy pairs)                |
+| Write marketing language in docs        | State what the system does, precisely                           |
+| Hide complexity behind wrappers         | Choose the right primitives; the simplicity comes from there    |
+| Build for "users"                       | Build for expressors who can read and rewrite the system        |
+| Add validation Goblins already enforces | Trust actor isolation and vat transactions                      |
+| Use `eval` in Hoot code                 | Use the metacircular evaluator (`module/playnet/evaluator.scm`) |
+| Store secrets in code                   | Use `deploy/guix/secrets.scm` (gitignored) or GitHub Secrets    |
 
 ## Applying character shaping
 

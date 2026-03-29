@@ -1,4 +1,4 @@
-;;; module/xorg/services.scm — Service and deployment capabilities for xorg
+;;; module/playnet/services.scm — Service and deployment capabilities for playnet
 ;;;
 ;;; Minimal, cap-correct public API:
 ;;;   ^service-cap          — full service capability for a named Shepherd service
@@ -9,7 +9,7 @@
 ;;;
 ;;; Possession IS authorization. No ACL lists, no registries.
 
-(define-module (xorg services)
+(define-module (playnet services)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
   #:use-module (ice-9 popen)

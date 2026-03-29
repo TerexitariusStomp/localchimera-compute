@@ -8,11 +8,11 @@
              (goblins actor-lib methods)
              (goblins actor-lib sealers)
              ((goblins utils crypto) #:select (generate-key-pair key-pair->public-key))
-             (xorg mcp)
-             (xorg org)
-             (xorg gplay)
-             (xorg endorsement)
-             (xorg capabilities)
+             (playnet mcp)
+             (playnet org)
+             (playnet gplay)
+             (playnet endorsement)
+             (playnet capabilities)
              (ice-9 receive)
              (srfi srfi-1))
 
@@ -170,23 +170,23 @@
              ($ server 'call "rev" '(("s" . "hello"))) "olleh")))
   (vat-halt! vat))
 
-;;; ── Test 6: make-xorg-mcp-server with various flag combinations ──────────────
+;;; ── Test 6: make-playnet-mcp-server with various flag combinations ──────────────
 
-(display "\n── 6. make-xorg-mcp-server with flag combos ──\n")
+(display "\n── 6. make-playnet-mcp-server with flag combos ──\n")
 
 ;; Default: bindings + history only
 (let ((org (make-open-org "mcp-test-6a")))
   (with-vat (org-vat org)
     (evaluate '(modify! 'x 42) (org-ref org) '() ($ (org-ref org) 'current-expressor)))
-  (let ((server (make-xorg-mcp-server (org-vat org) org)))
+  (let ((server (make-playnet-mcp-server (org-vat org) org)))
     (with-vat (org-vat org)
       (let ((names ($ server 'tool-names)))
         (check "6a: default has bindings and history"
-               (lset= equal? names '("xorg-bindings" "xorg-history")) #t)))))
+               (lset= equal? names '("playnet-bindings" "playnet-history")) #t)))))
 
 ;; All flags on
 (let ((org (make-open-org "mcp-test-6b")))
-  (let ((server (make-xorg-mcp-server (org-vat org) org
+  (let ((server (make-playnet-mcp-server (org-vat org) org
                                        #:allow-eval? #t
                                        #:allow-modify? #t
                                        #:allow-history? #t
@@ -196,11 +196,11 @@
         (check "6b: all flags gives 4 tools"
                (length names) 4)
         (check "6c: eval tool present"
-               (not (not (member "xorg-eval" names))) #t)))))
+               (not (not (member "playnet-eval" names))) #t)))))
 
 ;; No flags
 (let ((org (make-open-org "mcp-test-6c")))
-  (let ((server (make-xorg-mcp-server (org-vat org) org
+  (let ((server (make-playnet-mcp-server (org-vat org) org
                                        #:allow-history? #f
                                        #:allow-bindings? #f)))
     (with-vat (org-vat org)
@@ -214,13 +214,13 @@
 (let ((org (make-open-org "mcp-test-7")))
   (with-vat (org-vat org)
     (evaluate '(modify! 'y 100) (org-ref org) '() ($ (org-ref org) 'current-expressor)))
-  (let ((server (make-xorg-mcp-server (org-vat org) org #:allow-eval? #t)))
+  (let ((server (make-playnet-mcp-server (org-vat org) org #:allow-eval? #t)))
     (with-vat (org-vat org)
       (check "7a: eval reads binding"
-             ($ server 'call "xorg-eval" '(("expression" . "y")))
+             ($ server 'call "playnet-eval" '(("expression" . "y")))
              "100")
       (check "7b: eval computes"
-             ($ server 'call "xorg-eval" '(("expression" . "(+ 1 2 3)")))
+             ($ server 'call "playnet-eval" '(("expression" . "(+ 1 2 3)")))
              "6"))))
 
 ;;; ── Test 8: allow-bindings? returns current bindings ─────────────────────────
@@ -230,9 +230,9 @@
 (let ((org (make-open-org "mcp-test-8")))
   (with-vat (org-vat org)
     (evaluate '(modify! 'color "blue") (org-ref org) '() ($ (org-ref org) 'current-expressor)))
-  (let ((server (make-xorg-mcp-server (org-vat org) org #:allow-bindings? #t)))
+  (let ((server (make-playnet-mcp-server (org-vat org) org #:allow-bindings? #t)))
     (with-vat (org-vat org)
-      (let ((result ($ server 'call "xorg-bindings" '())))
+      (let ((result ($ server 'call "playnet-bindings" '())))
         (check "8a: bindings result contains color"
                (string-contains result "color") (string-contains result "color"))
         (check "8b: bindings result is a string"
@@ -243,9 +243,9 @@
 (display "\n── 9. allow-modify? can set bindings ──\n")
 
 (let ((org (make-open-org "mcp-test-9")))
-  (let ((server (make-xorg-mcp-server (org-vat org) org #:allow-modify? #t)))
+  (let ((server (make-playnet-mcp-server (org-vat org) org #:allow-modify? #t)))
     (with-vat (org-vat org)
-      ($ server 'call "xorg-modify" '(("name" . "mood") ("value" . "\"happy\"")))
+      ($ server 'call "playnet-modify" '(("name" . "mood") ("value" . "\"happy\"")))
       (check "9a: modify sets binding"
              (evaluate 'mood (org-ref org) '() ($ (org-ref org) 'current-expressor))
              "happy"))))
@@ -294,9 +294,9 @@
       (evaluate '(modify! 'a 1) (org-ref org) '() gen)
       (evaluate '(modify! 'b 2) (org-ref org) '() gen)
       (evaluate '(modify! 'c 3) (org-ref org) '() gen)))
-  (let ((server (make-xorg-mcp-server (org-vat org) org #:allow-history? #t)))
+  (let ((server (make-playnet-mcp-server (org-vat org) org #:allow-history? #t)))
     (with-vat (org-vat org)
-      (let ((result ($ server 'call "xorg-history" '(("count" . 2)))))
+      (let ((result ($ server 'call "playnet-history" '(("count" . 2)))))
         (check "11a: history result is string"
                (string? result) #t)
         ;; The result should contain the last 2 entries
@@ -313,7 +313,7 @@
 
 (define (make-test-dir name)
   (set! test-counter (+ test-counter 1))
-  (let ((dir (string-append "/tmp/xorg-test-mcp-"
+  (let ((dir (string-append "/tmp/playnet-test-mcp-"
                             name "-"
                             (number->string (getpid)) "-"
                             (number->string test-counter))))
@@ -332,8 +332,8 @@
       (parameterize ((*restore-base-bindings* default-base-bindings))
         (spawn-persistent-vat
          (make-persistence-env
-          `((((xorg mcp) ^tool-cap) ,^tool-cap)
-            (((xorg mcp) ^mcp-server) ,^mcp-server))
+          `((((playnet mcp) ^tool-cap) ,^tool-cap)
+            (((playnet mcp) ^mcp-server) ,^mcp-server))
           #:extends (list gplay-env))
          (lambda ()
            (let* ((ta (spawn ^tool-cap
@@ -363,8 +363,8 @@
       (parameterize ((*restore-base-bindings* default-base-bindings))
         (spawn-persistent-vat
          (make-persistence-env
-          `((((xorg mcp) ^tool-cap) ,^tool-cap)
-            (((xorg mcp) ^mcp-server) ,^mcp-server))
+          `((((playnet mcp) ^tool-cap) ,^tool-cap)
+            (((playnet mcp) ^mcp-server) ,^mcp-server))
           #:extends (list gplay-env))
          (lambda () (error "should not be called on restore"))
          store
@@ -408,10 +408,10 @@
            (extended (let ((base (mcp-server-methods (list (cons "echo" tool)))))
                        (extend-methods base
                          ((list-resources)
-                          '(("uri" . "xorg://kb/main")
+                          '(("uri" . "playnet://kb/main")
                             ("name" . "Knowledge Base")))
                          ((server-info)
-                          '(("name" . "xorg-extended")
+                          '(("name" . "playnet-extended")
                             ("version" . "0.2.0")))))))
 
       ;; Base methods still work through extended
@@ -424,9 +424,9 @@
 
       ;; New methods work
       (check "13d: extended server has list-resources"
-             (assoc-ref (extended 'list-resources) "uri") "xorg://kb/main")
+             (assoc-ref (extended 'list-resources) "uri") "playnet://kb/main")
       (check "13e: extended server has server-info"
-             (assoc-ref (extended 'server-info) "name") "xorg-extended")
+             (assoc-ref (extended 'server-info) "name") "playnet-extended")
 
       ;; Base server does NOT have extended methods
       (check-error "13f: base server has no list-resources"

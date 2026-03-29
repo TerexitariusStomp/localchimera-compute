@@ -1,4 +1,4 @@
-;;; module/xorg/ai-expressor.scm — AI as its own expressor with scoped authority
+;;; module/playnet/ai-expressor.scm — AI as its own expressor with scoped authority
 ;;;
 ;;; The AI expressor:
 ;;; - has its own sealer (not shared with any human expressor)
@@ -11,12 +11,12 @@
 ;;; (ai-eval-as ai-seal prompt) runs the AI's expression under the AI
 ;;; expressor's authority, not the caller's.
 
-(define-module (xorg ai-expressor)
+(define-module (playnet ai-expressor)
   #:use-module (goblins)
   #:use-module ((goblins utils crypto) #:select (generate-key-pair key-pair->public-key))
-  #:use-module (xorg gplay)
-  #:use-module (xorg org)
-  #:use-module (xorg ai)
+  #:use-module (playnet gplay)
+  #:use-module (playnet org)
+  #:use-module (playnet ai)
   #:export (make-ai-expressor!
             ai-expressor-seal
             ai-expressor-public-key))

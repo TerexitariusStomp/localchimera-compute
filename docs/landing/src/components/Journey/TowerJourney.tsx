@@ -93,7 +93,7 @@ export function TowerJourney() {
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/90">
           <div className="text-center max-w-3xl px-8">
             <h2 className="text-6xl font-black text-white mb-8">
-              That's xorg
+              That's playnet
             </h2>
             <div className="space-y-6 mb-12 text-left">
               <p className="text-xl text-gray-300 leading-relaxed">
@@ -105,7 +105,7 @@ export function TowerJourney() {
                 Every change was <span className="text-white">reversible</span>.
               </p>
               <p className="text-base text-gray-400 leading-relaxed">
-                Frontier Tower is one example. xorg works for any group that needs to adapt:
+                Frontier Tower is one example. playnet works for any group that needs to adapt:
                 co-ops, DAOs, research labs, open source projects, or any organization
                 that wants its structure to be as flexible as its software.
               </p>
@@ -118,7 +118,7 @@ export function TowerJourney() {
                 Try Different Choices
               </button>
               <a
-                href="https://github.com/povilas/xorg"
+                href="https://github.com/povilas/playnet"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-8 py-4 bg-white/10 hover:bg-white/20 text-white text-lg font-bold rounded-full hover:scale-105 transition-all border border-white/20"

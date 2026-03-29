@@ -10,9 +10,9 @@
 ;;;   (primitive-load "planner/lib/schemas.scm")
 ;;;   (primitive-load "planner/lib/vf-relations.scm")
 ;;;
-;;; Requires xorg/kanren.scm on the load path (-L module).
+;;; Requires playnet/kanren.scm on the load path (-L module).
 
-(use-modules (xorg kanren))
+(use-modules (playnet kanren))
 
 ;;; ── Helper: membero over Scheme lists ─────────────────────────────────────
 ;;; Our kanren.scm exports membero, but it works on logic-variable lists.

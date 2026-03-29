@@ -1,4 +1,4 @@
-;;; module/xorg/host.scm — Host org for multi-org topology
+;;; module/playnet/host.scm — Host org for multi-org topology
 ;;;
 ;;; The host org is privileged: it holds service capabilities and grants
 ;;; attenuated sub-capabilities to tenant orgs via OCapN over Unix domain sockets.
@@ -20,14 +20,14 @@
 ;;;
 ;;; Possession IS authorization. No ACL patterns.
 
-(define-module (xorg host)
+(define-module (playnet host)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
   #:use-module (goblins actor-lib sealers)
-  #:use-module (xorg gplay)
-  #:use-module (xorg org)
-  #:use-module (xorg services)
-  #:use-module (xorg endorsement)
+  #:use-module (playnet gplay)
+  #:use-module (playnet org)
+  #:use-module (playnet services)
+  #:use-module (playnet endorsement)
   #:export (make-host-org
             host-grant-service!
             host-grant-deploy!
@@ -151,7 +151,7 @@
 ;; TODO OCapN/UDS: when Goblins Unix socket netlayer is wired:
 ;; (define (host-spawn-tenant! host-org tenant-name caps-alist)
 ;;   "Spawn a tenant org process and pass it attenuated capabilities via OCapN."
-;;   (let ((socket-path (string-append "/var/run/xorg-" tenant-name ".sock")))
+;;   (let ((socket-path (string-append "/var/run/playnet-" tenant-name ".sock")))
 ;;     ;; spawn the Shepherd service
 ;;     ;; pass caps via OCapN Unix socket
 ;;     ...))

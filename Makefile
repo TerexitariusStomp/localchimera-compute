@@ -9,7 +9,7 @@ quick-repl:
 CHANNELS = deploy/guix/channels.scm
 TIME_MACHINE = guix time-machine -C $(CHANNELS) --
 
-browser/repl.wasm: browser/repl.scm module/xorg/gplay.scm module/xorg/wisp.scm
+browser/repl.wasm: browser/repl.scm module/playnet/gplay.scm module/playnet/wisp.scm
 	$(TIME_MACHINE) shell guile-next guile-hoot guile-goblins -- \
 	  guild compile-wasm -L module -L docs/reference/lib-vendored --bundle -o browser/repl.wasm browser/repl.scm
 

@@ -10,6 +10,7 @@ Added a real-time code viewer that displays the organization's current state as 
 ## Architecture
 
 ### Data Flow
+
 ```
 REPL Command → Evaluate → New Environment
               ↓
@@ -44,6 +45,7 @@ Created `serialize-org-code` that converts environment state to readable Scheme:
 - **History**: Displays last 10 history entries with version numbers and expressors
 
 Special handling for:
+
 - Procedures: Display as `<procedure:name>`
 - Expressors: Display as `<expressor:name>`
 - Other values: Use Scheme's `write` for accurate representation
@@ -96,7 +98,7 @@ Elegant, minimal styling:
 
 ### Why Serialize to Scheme Code?
 
-Aligns with xorg's homoiconic philosophy: "code is data." The viewer shows the org's state as executable Scheme expressions, making the organization's structure immediately readable and runnable.
+Aligns with playnet's homoiconic philosophy: "code is data." The viewer shows the org's state as executable Scheme expressions, making the organization's structure immediately readable and runnable.
 
 ### What Gets Serialized?
 
@@ -105,11 +107,12 @@ Aligns with xorg's homoiconic philosophy: "code is data." The viewer shows the o
 - **Expressors**: All identities - who can "speak"
 - **History**: Recent actions - what it "remembers"
 
-This captures the four core components of an xorg environment.
+This captures the four core components of an playnet environment.
 
 ### Auto-Update Strategy
 
 Updates happen synchronously after state-changing operations:
+
 - Evaluation of expressions
 - Entering/exiting organizations
 
@@ -118,6 +121,7 @@ No polling needed since the REPL explicitly controls when state changes occur.
 ### Read-Only Design
 
 The viewer is intentionally read-only (`<pre>` element) because:
+
 1. All mutations should go through the governed REPL
 2. Maintains clear separation between observation and action
 3. Prevents accidental modifications that bypass validators

@@ -5,9 +5,9 @@
 
 (add-to-load-path "module")
 
-(use-modules (xorg ai)
-             (xorg org)
-             (xorg gplay)
+(use-modules (playnet ai)
+             (playnet org)
+             (playnet gplay)
              (goblins)
              (ice-9 rdelim))
 
@@ -60,7 +60,7 @@
 (display "✓ AI expressor created!\n\n")
 (display "To use it interactively:\n\n")
 (display "  make repl\n")
-(display "  scheme@(guile-user)> (use-modules (xorg ai) (xorg org))\n")
+(display "  scheme@(guile-user)> (use-modules (playnet ai) (playnet org))\n")
 (display "  scheme@(guile-user)> (define my-org (make-org \"test\"))\n")
 (display "  scheme@(guile-user)> (define ai-seal\n")
 (display "                         (make-org-ai-agent my-org 'ai \"key\" \"Help users.\"))\n")

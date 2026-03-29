@@ -1,4 +1,4 @@
-;;; module/xorg/actors.scm — Goblins actors for governed state
+;;; module/playnet/actors.scm — Goblins actors for governed state
 ;;;
 ;;; Heart of Spritely patterns, expressed as reusable actors.
 ;;; Works everywhere: native Guile, Hoot/WASM, across OCapN.
@@ -11,7 +11,7 @@
 ;;;   §3.3.4  Revocation and accountability (^logger, proxy pair)
 ;;;   actor-lib: ^facet (attenuation), ^cell (mutable state)
 
-(define-module (xorg actors)
+(define-module (playnet actors)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
   #:use-module (goblins actor-lib cell)
@@ -92,5 +92,5 @@
 
 (define org-env
   (make-persistence-env
-   `((((xorg actors) ^org) ,^org))
+   `((((playnet actors) ^org) ,^org))
    #:extends (list facet-env cell-env)))

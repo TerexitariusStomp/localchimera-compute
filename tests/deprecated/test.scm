@@ -1,10 +1,10 @@
-;;; test.scm — tests for (xorg play)
+;;; test.scm — tests for (playnet play)
 ;;; Run with:  guile -L module tests/test.scm
 
 (define %project-root (string-append (dirname (current-filename)) "/.."))
 (add-to-load-path (string-append %project-root "/module"))
 
-(use-modules (xorg play))
+(use-modules (playnet play))
 
 ;;; ── Harness ─────────────────────────────────────────────────────────────────
 

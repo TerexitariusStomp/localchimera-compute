@@ -83,7 +83,7 @@ export function TowerDecisionOverlay({ scene, onChoice }: TowerDecisionOverlayPr
           transition={{ delay: 1 }}
           className="text-center mt-8 text-sm text-gray-400"
         >
-          Each choice executes actual xorg code that shapes the organization
+          Each choice executes actual playnet code that shapes the organization
         </motion.div>
       </div>
     </motion.div>

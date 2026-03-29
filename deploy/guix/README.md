@@ -5,6 +5,7 @@ Generic Guix System infrastructure deployed via `guix deploy` with native Hetzne
 ## How it works
 
 `guix deploy` handles everything:
+
 - Creates the Hetzner server via API
 - Boots into Hetzner rescue mode
 - Formats disk, installs minimal Guix
@@ -53,7 +54,7 @@ GUIX_HETZNER_API_TOKEN=<your-token> guix deploy deploy/guix/machines.scm -x -- h
 
 ## Adding services
 
-To add an application (e.g. xorg-relay), write a Shepherd service module and use `make-hetzner-system`:
+To add an application (e.g. playnet-relay), write a Shepherd service module and use `make-hetzner-system`:
 
 ```scheme
 ;; In machines.scm:
@@ -77,18 +78,18 @@ guix system describe
 herd status
 
 # View logs
-herd log xorg-relay
+herd log playnet-relay
 tail -f /var/log/messages
 ```
 
 ## Server types
 
-| Type   | vCPU | RAM  | Disk  | EUR/mo |
-|--------|------|------|-------|--------|
-| cx22   | 2    | 4GB  | 40GB  | ~4     |
-| cx32   | 4    | 8GB  | 80GB  | ~8     |
-| cx42   | 8    | 16GB | 160GB | ~16    |
-| cax11  | 2    | 4GB  | 40GB  | ~4 (ARM) |
+| Type  | vCPU | RAM  | Disk  | EUR/mo   |
+| ----- | ---- | ---- | ----- | -------- |
+| cx22  | 2    | 4GB  | 40GB  | ~4       |
+| cx32  | 4    | 8GB  | 80GB  | ~8       |
+| cx42  | 8    | 16GB | 160GB | ~16      |
+| cax11 | 2    | 4GB  | 40GB  | ~4 (ARM) |
 
 ## Locations
 

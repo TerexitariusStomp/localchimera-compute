@@ -1,4 +1,4 @@
-;;; module/xorg/endorsement.scm — Capability-governed endorsement primitives
+;;; module/playnet/endorsement.scm — Capability-governed endorsement primitives
 ;;; Pure library. Hoot-compatible. Uses Goblins sealers.
 ;;;
 ;;; The ACL → Capability shift: instead of checking WHO is calling,
@@ -8,7 +8,7 @@
 ;;; refs (not lambda wrappers). Sealers from spawn-sealer-triplet are
 ;;; already actors — serializable by Goblins persistence.
 
-(define-module (xorg endorsement)
+(define-module (playnet endorsement)
   #:use-module (goblins)
   #:use-module (goblins actor-lib sealers)
   #:use-module (ice-9 receive)

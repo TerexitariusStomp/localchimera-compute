@@ -1,10 +1,10 @@
-;;; kanren.scm — miniKanren implementation for xorg
+;;; kanren.scm — miniKanren implementation for playnet
 ;;; Follows the canonical microKanren (Hemann & Friedman) design:
 ;;;   state = (substitution . counter) — counter threaded through search
 ;;; With wrapper-layer additions: Zzz suspension, reification, occurs check.
 ;;; Hoot/WASM compatible: uses only lambdas, pairs, alists, syntax-rules.
 
-(define-module (xorg kanren)
+(define-module (playnet kanren)
   #:use-module (srfi srfi-1)
   #:export (var var? var=?
             empty-state empty-subst
