@@ -16,6 +16,8 @@
 (define-module (xorg-service)
   #:use-module (gnu services)
   #:use-module (gnu services shepherd)
+  #:use-module (gnu system accounts)
+  #:use-module (gnu packages bash)
   #:use-module (gnu packages guile)
   #:use-module (gnu packages guile-xyz)   ;; for guile-goblins
   #:use-module (guix gexp)
@@ -80,6 +82,21 @@
       (stop #~(make-kill-destructor))
       (respawn? #t)))))
 
+;;; ── Accounts ──────────────────────────────────────────────────────────────
+;;;
+;;; The xorg service creates its own system user/group so it doesn't need
+;;; to be defined separately in the operating-system (users ...) field.
+
+(define (xorg-accounts config)
+  "Create accounts for the user specified in CONFIG."
+  (let ((user (xorg-configuration-user config)))
+    (list (user-account
+           (name user)
+           (group "users")
+           (system? #t)
+           (home-directory (string-append "/var/lib/" user))
+           (shell (file-append bash "/bin/bash"))))))
+
 ;;; ── Service type ───────────────────────────────────────────────────────────
 ;;;
 ;;; Usage in a Guix system declaration:
@@ -99,5 +116,7 @@
    (name 'xorg)
    (extensions
     (list (service-extension shepherd-root-service-type
-                             xorg-shepherd-service)))
+                             xorg-shepherd-service)
+          (service-extension account-service-type
+                             xorg-accounts)))
    (description "Run an xorg org instance as a Shepherd service.")))
