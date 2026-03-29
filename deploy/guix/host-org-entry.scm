@@ -14,7 +14,7 @@
 ;;;   (host-grant-deploy! host "deploy/guix/machines.scm" infra-seal)
 
 (use-modules (goblins)
-             (xorg org)
+             (xorg gplay)
              (xorg host)
              (xorg services))
 

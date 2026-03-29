@@ -7,7 +7,7 @@
 (add-to-load-path "module")
 
 (use-modules (ice-9 readline)
-             (xorg org))
+             (xorg gplay))
 
 (activate-readline)
 

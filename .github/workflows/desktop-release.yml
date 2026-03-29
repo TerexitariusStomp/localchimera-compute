@@ -1,0 +1,50 @@
+name: Desktop Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-desktop-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Guix
+        uses: PromyLOPh/guix-install-action@v1
+        with:
+          pullAfterInstall: false
+
+      - name: Build AppImage using Guix Pack
+        run: |
+          # Build a relocatable AppImage that includes everything needed
+          # to run the terminal REPL without dependencies
+          sudo -E "$(which guix)" time-machine -C deploy/guix/channels.scm -- \
+            pack -f appimage \
+            --save-provenance \
+            --symlink=/bin/meta-org=bin/meta-org-repl \
+            -f guix.scm > appimage_path.txt
+          
+          APPIMAGE_PATH=$(cat appimage_path.txt)
+          echo "Built AppImage at $APPIMAGE_PATH"
+          cp "$APPIMAGE_PATH" meta-org-desktop-release.AppImage
+          chmod +x meta-org-desktop-release.AppImage
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: meta-org-desktop-release.AppImage
+          generate_release_notes: true
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        with:
+          name: meta-org-AppImage
+          path: meta-org-desktop-release.AppImage
