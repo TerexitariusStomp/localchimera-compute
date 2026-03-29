@@ -159,7 +159,7 @@ Goblins vat:
 ```
 You (or Claude Code)
   → SSH / emacsclient
-  → Guile REPL on /var/run/xorg/dev.sock
+  → Guile REPL on /var/run/playnet/repl.sock
   → Goblins vat with live actors
   → Create orgs, loggers, proxies
   → Test governance patterns interactively

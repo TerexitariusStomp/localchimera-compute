@@ -1,30 +1,22 @@
-;;; module/xorg/gplay.scm — Governance kernel
+;;; module/xorg/evaluator.scm — Metacircular evaluator for Hoot/WASM
 ;;;
-;;; An org is pure state: bindings + mutation + snapshot + restore.
-;;; Accountability is separate: ^logger + logged-revocable proxies.
-;;; Follows the Heart of Spritely pattern (section 3.3.4).
+;;; Needed because Hoot doesn't have Guile's `eval` or module system.
+;;; On native Guile, you can use `(eval expr module)` directly instead.
 ;;;
-;;; IO is a capability passed in via bindings, not wrapped in an actor.
-;;; There is no global registry. You hold a ref or you don't.
+;;; The evaluator handles standard Scheme forms (if, let, lambda, etc.)
+;;; plus org-specific forms: modify!, rollback!.
 
-(define-module (xorg gplay)
+(define-module (xorg evaluator)
   #:use-module (goblins)
-  #:use-module (goblins actor-lib methods)
-  #:use-module (goblins actor-lib cell)
-  #:use-module (goblins actor-lib facet)
   #:use-module (ice-9 match)
-  #:export (^org
-            ^logger
-            spawn-logged-revocable-proxy-pair
-            evaluate
-            filter-serializable-bindings
-            *restore-base-bindings*
-            org-env))
+  #:use-module (srfi srfi-1)
+  #:export (evaluate
+            extend-env
+            bind-params
+            default-base-bindings
+            make-io-bindings))
 
 ;;; ── Helpers ────────────────────────────────────────────────────────────────
-
-(define (filter-serializable-bindings bindings)
-  (filter (lambda (pair) (not (procedure? (cdr pair)))) bindings))
 
 (define (extend-env env names vals)
   (append (map cons names vals) env))
@@ -38,90 +30,50 @@
          (error "Too few arguments")
          (bind-params ps (cdr vals) (cons (cons p (car vals)) env))))))
 
-(define *restore-base-bindings* (make-parameter '()))
-
-;;; ── ^org ──────────────────────────────────────────────────────────────────
+;;; ── Default base bindings ─────────────────────────────────────────────────
 ;;;
-;;; Pure state. Just bindings. No history, no identity, no IO wrapping.
-;;; IO capabilities (display, write, etc.) are injected via bindings,
-;;; just like any other capability — following Heart of Spritely's
-;;; principle that capabilities are passed in, not ambient.
+;;; Pure computation — no IO. Needed for Hoot where the module system
+;;; isn't available. On native Guile, use (eval expr module) instead.
 
-(define-actor (^org bcom bindings)
-  #:version 1
-  #:portrait
-  (lambda () (list (filter-serializable-bindings bindings)))
-  #:restore
-  (lambda (version data-bindings)
-    (let ((base (*restore-base-bindings*)))
-      (spawn ^org (append data-bindings base))))
+(define default-base-bindings
+  `((+ . ,+) (- . ,-) (* . ,*) (/ . ,/)
+    (> . ,>) (< . ,<) (= . ,=) (>= . ,>=) (<= . ,<=)
+    (abs . ,abs) (max . ,max) (min . ,min)
+    (modulo . ,modulo) (remainder . ,remainder) (expt . ,expt)
+    (not . ,not) (equal? . ,equal?) (eq? . ,eq?)
+    (cons . ,cons) (car . ,car) (cdr . ,cdr)
+    (list . ,list) (append . ,append) (reverse . ,reverse) (length . ,length)
+    (map . ,map) (filter . ,filter) (for-each . ,for-each) (fold . ,fold)
+    (assoc . ,assoc) (member . ,member) (apply . ,apply)
+    (null? . ,null?) (pair? . ,pair?) (list? . ,list?)
+    (number? . ,number?) (string? . ,string?) (symbol? . ,symbol?)
+    (procedure? . ,procedure?) (boolean? . ,boolean?)
+    (zero? . ,zero?) (positive? . ,positive?) (negative? . ,negative?)
+    (even? . ,even?) (odd? . ,odd?)
+    (string-append . ,string-append) (string-length . ,string-length)
+    (substring . ,substring) (string->symbol . ,string->symbol)
+    (symbol->string . ,symbol->string) (string->number . ,string->number)
+    (number->string . ,number->string)
+    (sqrt . ,sqrt) (floor . ,floor) (ceiling . ,ceiling) (round . ,round)
+    (string=? . ,string=?) (string<? . ,string<?) (string>? . ,string>?)
+    (string-ref . ,string-ref)
+    (cadr . ,cadr) (caddr . ,caddr) (cddr . ,cddr)
+    (caar . ,caar) (cdar . ,cdar) (eqv? . ,eqv?) (char? . ,char?)
+    (void . ,(lambda () (if #f #f)))))
 
-  (methods
-   [(lookup name)
-    (cond ((assq name bindings) => cdr)
-          (else (error "Variable unbound:" name)))]
+;;; ── IO bindings ───────────────────────────────────────────────────────────
 
-   [(bindings) bindings]
+(define* (make-io-bindings #:optional (port (current-output-port)))
+  "IO as a capability — passed in, not ambient."
+  `((display . ,(lambda (v) (display v port) (if #f #f)))
+    (write   . ,(lambda (v) (write v port) (if #f #f)))
+    (newline . ,(lambda () (newline port) (if #f #f)))
+    (format  . ,(lambda (fmt . args) (apply format port fmt args) (if #f #f)))))
 
-   [(modify! name value)
-    (let ((new-bindings (cons (cons name value)
-                              (filter (lambda (p) (not (eq? (car p) name)))
-                                      bindings))))
-      (bcom (^org bcom new-bindings)))]
-
-   [(snapshot)
-    (filter-serializable-bindings bindings)]
-
-   [(restore! snapshot)
-    (let ((base (*restore-base-bindings*)))
-      (bcom (^org bcom (append snapshot base))))]))
-
-;;; ── ^logger ───────────────────────────────────────────────────────────────
-;;;
-;;; From Heart of Spritely, section 3.3.4.
-;;; Accumulates log entries. Separate from the objects it observes.
-
-(define (^logger bcom)
-  (define log (spawn ^cell '()))
-
-  (methods
-   ((append-to-log username object args)
-    (let* ((current ($ log))
-           (entry `(*entry* user ,username args ,args
-                            snapshot ,($ object 'snapshot)))
-           (new-log (cons entry current)))
-      ($ log new-log)))
-
-   ((get-log) ($ log))
-
-   ((get-log-for user)
-    (filter (lambda (entry)
-              (equal? (cadr (memq 'user entry)) user))
-            ($ log)))))
-
-;;; ── spawn-logged-revocable-proxy-pair ─────────────────────────────────────
-;;;
-;;; From Heart of Spritely, section 3.3.4.
-;;; Wraps any object in a proxy that logs every call and can be revoked.
-;;; The proxy IS the identity — "username" is baked in, unforgeable.
-
-(define (spawn-logged-revocable-proxy-pair username object log)
-  (define revoked? (spawn ^cell #f))
-
-  (define (^proxy bcom)
-    (lambda args
-      (when ($ revoked?)
-        (error "Access revoked for" username))
-      ($ log 'append-to-log username object args)
-      (apply $ object args)))
-
-  (values (spawn ^proxy) revoked?))
-
-;;; ── Evaluator ─────────────────────────────────────────────────────────────
+;;; ── Metacircular evaluator ────────────────────────────────────────────────
 ;;;
 ;;; evaluate: (expr, org-ref, local-bindings) → value
 ;;; org-ref is typically a logged-revocable proxy.
-;;; IO (display, write, etc.) is available if injected via base-bindings.
 
 (define (evaluate expr org local-bindings)
   (match expr
@@ -209,7 +161,7 @@
        ($ org 'modify! name value)
        (if #f #f)))
 
-    ;; rollback! — restores a snapshot from the log
+    ;; rollback!
     (('rollback! log-entry-index-expr)
      (let* ((idx (evaluate log-entry-index-expr org local-bindings))
             (log-ref ($ org 'lookup '*log*))
@@ -281,10 +233,3 @@
        (apply proc vals)))
 
     (_ (error "Cannot evaluate:" expr))))
-
-;;; ── Persistence environment ───────────────────────────────────────────────
-
-(define org-env
-  (make-persistence-env
-   `((((xorg gplay) ^org) ,^org))
-   #:extends (list facet-env cell-env)))

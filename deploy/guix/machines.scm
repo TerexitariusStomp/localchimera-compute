@@ -7,8 +7,9 @@
 ;;; Now managed via managed-host-environment-type per Guix manual §11.17.
 ;;;
 ;;; Users:
-;;;   deploy — runs Emacs/Geiser, guix deploy, dev REPL (interactive use)
-;;;   xorg   — runs xorg Shepherd services (host org, etc.)
+;;;   deploy  — system administration, guix deploy
+;;;   playnet — live hacking: Emacs/Geiser, dev REPL
+;;;   xorg    — system account for production xorg Shepherd services
 
 (use-modules (gnu machine)
              (gnu machine ssh)
@@ -31,7 +32,7 @@
 (define %admin-ssh-public-key
   "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICTLO20IW4Ej9qhXYGnfy0yc8RlvMLEkR+MG39nyK5mq nozomi-laptop")
 
-;; Emacs init.el for the deploy user — deployed via activation service.
+;; Emacs init.el for the playnet user — deployed via activation service.
 (define %emacs-init-el
   (plain-file "init.el"
     ";;; xorg Emacs daemon configuration
@@ -51,7 +52,7 @@
 ;; Geiser config
 (setq geiser-guile-binary \"guile\")
 (setq geiser-active-implementations '(guile))
-(setq geiser-guile-load-path '(\"/home/deploy/xorg-repo/module\"))
+(setq geiser-guile-load-path '(\"/home/playnet/xorg-repo/module\"))
 
 ;; Smartparens globally
 (smartparens-global-mode 1)
@@ -67,7 +68,7 @@
 (setq server-port 9999)
 
 ;; Project root
-(setq xorg-project-root \"/home/deploy/xorg-repo\")
+(setq xorg-project-root \"/home/playnet/xorg-repo\")
 
 ;; Helper: read REPL output after sending
 (defun xorg-repl-output ()
@@ -103,14 +104,20 @@
                            (type "vfat"))
                          %base-file-systems))
 
-    ;; deploy: interactive use (Emacs, Geiser, guix deploy)
-    ;; xorg:   system account for xorg Shepherd services
+    ;; deploy:  system administration, guix deploy (wheel + NOPASSWD sudo)
+    ;; playnet: live hacking — Emacs/Geiser, dev REPL
+    ;; xorg:    system account for production xorg Shepherd services
     (users (cons*
             (user-account
              (name "deploy")
              (group "users")
              (supplementary-groups '("wheel"))
              (home-directory "/home/deploy")
+             (shell (file-append bash "/bin/bash")))
+            (user-account
+             (name "playnet")
+             (group "users")
+             (home-directory "/home/playnet")
              (shell (file-append bash "/bin/bash")))
             (user-account
              (name "xorg")
@@ -149,56 +156,69 @@
                 (permit-root-login 'prohibit-password)
                 (password-authentication? #f)
                 (authorized-keys
-                 `(("root"   ,(plain-file "root-key"   %admin-ssh-public-key))
-                   ("deploy" ,(plain-file "deploy-key"  %admin-ssh-public-key))))))
+                 `(("root"    ,(plain-file "root-key"    %admin-ssh-public-key))
+                   ("deploy"  ,(plain-file "deploy-key"  %admin-ssh-public-key))
+                   ("playnet" ,(plain-file "playnet-key" %admin-ssh-public-key))))))
 
-      ;; Dev REPL — Guile on a Unix socket, runs as deploy user.
-      ;; Connect with: M-x geiser-connect-local RET guile RET /var/run/xorg/dev.sock
-      ;; Manual start only: herd start xorg-dev-repl
-      (simple-service 'xorg-dev-repl
+      ;; Dev REPL — Guile on a Unix socket, runs as playnet user.
+      ;; Connect with: M-x geiser-connect-local RET guile RET /var/run/playnet/repl.sock
+      ;; Manual start only: herd start playnet-repl
+      (simple-service 'playnet-repl
                       shepherd-root-service-type
                       (list (shepherd-service
-                             (provision '(xorg-dev-repl))
-                             (documentation "Guile REPL for live xorg hacking via Geiser")
+                             (provision '(playnet-repl))
+                             (documentation "Guile REPL for live hacking via Geiser")
                              (requirement '(networking user-processes))
                              (start #~(make-forkexec-constructor
                                        (list #$(file-append guile-3.0 "/bin/guile")
-                                             "-L" "/home/deploy/xorg-repo/module"
+                                             "-L" "/home/playnet/xorg-repo/module"
                                              "-c"
-                                             "(use-modules (system repl server)) (run-server (make-unix-domain-server-socket #:path \"/var/run/xorg/dev.sock\"))")
-                                       #:user "deploy"
+                                             "(use-modules (system repl server)) (run-server (make-unix-domain-server-socket #:path \"/var/run/playnet/repl.sock\"))")
+                                       #:user "playnet"
                                        #:group "users"
-                                       #:log-file "/var/log/xorg-dev-repl.log"))
-                             (stop #~(make-kill-destructor))
+                                       #:log-file "/var/log/playnet-repl.log"
+                                       #:environment-variables
+                                       (list (string-append "GUILE_LOAD_PATH="
+                                              "/run/current-system/profile/share/guile/site/3.0:"
+                                              "/home/playnet/xorg-repo/module")
+                                             (string-append "GUILE_LOAD_COMPILED_PATH="
+                                              "/run/current-system/profile/lib/guile/3.0/site-ccache")
+                                             "HOME=/home/playnet")))
+                             (stop #~(lambda (pid)
+                                      ((make-kill-destructor) pid)
+                                      (when (file-exists? "/var/run/playnet/repl.sock")
+                                        (delete-file "/var/run/playnet/repl.sock"))
+                                      #f))
                              (respawn? #f)
                              (auto-start? #f))))
 
-      ;; Activation: set up deploy user environment.
+      ;; Activation: set up playnet user environment.
       ;; Uses mkdir-p because on first deploy, user-homes may not have
-      ;; created /home/deploy yet when activation runs.
-      (simple-service 'deploy-setup
+      ;; created the home directory yet when activation runs.
+      (simple-service 'playnet-setup
                       activation-service-type
                       #~(begin
                           (use-modules (guix build utils))
-                          ;; Socket directory for REPL (deploy-writable, on tmpfs)
-                          (let ((run-dir "/var/run/xorg"))
-                            (mkdir-p run-dir)
-                            (let ((pw (getpwnam "deploy")))
-                              (chown run-dir (passwd:uid pw) (passwd:gid pw))))
-                          ;; Emacs config
-                          (let* ((emacs-dir "/home/deploy/.emacs.d")
-                                 (init-target (string-append emacs-dir "/init.el")))
-                            (mkdir-p emacs-dir)
-                            (when (file-exists? init-target)
-                              (delete-file init-target))
-                            (copy-file #$%emacs-init-el init-target)
-                            (let ((pw (getpwnam "deploy")))
+                          (let ((pw (getpwnam "playnet")))
+                            ;; Home directory (mkdir-p may create it before user-homes)
+                            (mkdir-p "/home/playnet")
+                            (chown "/home/playnet" (passwd:uid pw) (passwd:gid pw))
+                            ;; Socket directory for REPL (playnet-writable, on tmpfs)
+                            (let ((run-dir "/var/run/playnet"))
+                              (mkdir-p run-dir)
+                              (chown run-dir (passwd:uid pw) (passwd:gid pw)))
+                            ;; Emacs config
+                            (let* ((emacs-dir "/home/playnet/.emacs.d")
+                                   (init-target (string-append emacs-dir "/init.el")))
+                              (mkdir-p emacs-dir)
+                              (when (file-exists? init-target)
+                                (delete-file init-target))
+                              (copy-file #$%emacs-init-el init-target)
                               (chown init-target (passwd:uid pw) (passwd:gid pw))
-                              (chown emacs-dir (passwd:uid pw) (passwd:gid pw))))
-                          ;; Helper scripts directory
-                          (let ((bin-dir "/home/deploy/bin"))
-                            (mkdir-p bin-dir)
-                            (let ((pw (getpwnam "deploy")))
+                              (chown emacs-dir (passwd:uid pw) (passwd:gid pw)))
+                            ;; Helper scripts directory
+                            (let ((bin-dir "/home/playnet/bin"))
+                              (mkdir-p bin-dir)
                               (chown bin-dir (passwd:uid pw) (passwd:gid pw))))))
 
       ;; Use bordeaux as primary substitute server (ci.guix.gnu.org is unreliable)
