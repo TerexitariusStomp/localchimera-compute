@@ -678,10 +678,18 @@
                 (reverse (cons s acc))))))))
 
 (define *log*
-  (list `(span (@ (class "info-text"))
+  (list `(span (@ (class "result-text"))
                ,(string-append
-                 "Welcome to xorg!\n"
                  "\n"
+                 " ██╗  ██╗ ██████╗ ██████╗  ██████╗ \n"
+                 " ╚██╗██╔╝██╔═══██╗██╔══██╗██╔════╝ \n"
+                 "  ╚███╔╝ ██║   ██║██████╔╝██║  ███╗\n"
+                 "  ██╔██╗ ██║   ██║██╔══██╗██║   ██║\n"
+                 " ██╔╝ ██╗╚██████╔╝██║  ██║╚██████╔╝\n"
+                 " ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝\n"
+                 "\n"))
+        `(span (@ (class "info-text"))
+               ,(string-append
                  "An organization is a program that writes itself.\n"
                  "This is a metacircular substrate for programmable\n"
                  "organizations — identity, memory, and self-modification.\n"
@@ -1648,7 +1656,7 @@
                                              (refresh!))))
                                 "signup")
                          `(span (@ (class "cp-status")) "relay: disconnected")))
-               (if (speech-supported?)
+               (if #t  ;; always show mic — unsupported browsers fail gracefully via onerror
                    (list `(span (@ (class ,(string-append "cp-btn" (if *listening?* " cp-btn-danger" "")))
                                    (click ,(lambda (e) (toggle-listening!) (refresh!))))
                                 ,(if *listening?* "stop" "mic")))
@@ -1676,7 +1684,7 @@
                                 (click ,(lambda (e) (do-export-ssh-key!) (refresh!) (scroll-to-bottom!))))
                              "ssh key")
                      (render-join-form))
-               (if (speech-supported?)
+               (if #t  ;; always show mic — unsupported browsers fail gracefully via onerror
                    (list `(span (@ (class ,(string-append "cp-btn" (if *listening?* " cp-btn-danger" "")))
                                    (click ,(lambda (e) (toggle-listening!) (refresh!))))
                                 ,(if *listening?* "stop" "mic")))
@@ -1802,7 +1810,7 @@
         (div (@ (class ,(string-append "tab" (if (eq? *mode* 'outer) " tab-active" "")))
                 (click ,(lambda (e)
                           (when (eq? *mode* 'inner) (do-exit!) (refresh!) (scroll-to-bottom!)))))
-             "outer")
+             "xorg")
         ,@(map (lambda (org-entry)
                  (let* ((name (org-entry-name org-entry))
                         (active? (and (eq? *mode* 'inner) *current-org-name*
