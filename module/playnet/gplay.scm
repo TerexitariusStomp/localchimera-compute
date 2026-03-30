@@ -126,28 +126,44 @@
 (define (alist-delete-eq key alist)
   (filter (lambda (pair) (not (eq? key (car pair)))) alist))
 
-(define (filter-serializable-bindings bindings)
-  "Remove procedure-valued bindings (not serializable by Goblins persistence)."
+(define* (filter-serializable-bindings bindings #:optional (base '()))
+  "Remove non-serializable bindings (procedures, closures, WASM function refs).
+   Keeps plain data and Goblins actor refs.
+   BASE: the base-bindings alist whose values are known non-serializable
+   (procedures/primitives). Used for Hoot/WASM where procedure? may not
+   recognize all function-like values."
   (let loop ((rest bindings) (acc '()))
     (if (null? rest)
         (reverse acc)
-        (let ((pair (car rest)))
-          (if (procedure? (cdr pair))
+        (let* ((pair (car rest))
+               (val (cdr pair)))
+          (if (or (procedure? val)
+                  ;; Hoot compat: if this key has the same value as in base,
+                  ;; it's a base procedure binding — strip it
+                  (let ((base-pair (and (not (null? base))
+                                       (assq (car pair) base))))
+                    (and base-pair (eq? val (cdr base-pair)))))
               (loop (cdr rest) acc)
               (loop (cdr rest) (cons pair acc)))))))
 
 (define (filter-serializable-expressor-store store)
-  "Strip keypairs from expressor-store for persistence.
-   Keypairs are opaque crypto objects that can't be serialized.
-   Only the public-key (an S-expression) survives persistence."
+  "Strip non-serializable values from expressor-store for persistence.
+   Keypairs are opaque crypto objects. Public keys may be CryptoKey objects
+   in Hoot/WASM (not S-expressions). Only S-expression data survives."
   (map (lambda (entry)
          (cons (car entry)
                (map (lambda (pair)
-                      (if (and (eq? (car pair) 'keypair)
-                               (cdr pair)
-                               (not (eq? (cdr pair) #f)))
-                          (cons 'keypair #f)
-                          pair))
+                      (cond
+                       ;; Strip keypair (always opaque crypto)
+                       ((and (eq? (car pair) 'keypair) (cdr pair))
+                        (cons 'keypair #f))
+                       ;; Strip public-key if it's not an S-expression
+                       ;; (CryptoKey in Hoot/WASM is an extern ref)
+                       ((and (eq? (car pair) 'public-key)
+                             (not (pair? (cdr pair)))
+                             (not (eq? (cdr pair) '(none))))
+                        (cons 'public-key '(none)))
+                       (else pair)))
                     (cdr entry))))
        store))
 
@@ -221,7 +237,7 @@
   #:version 5
   #:portrait
   (lambda ()
-    (list (filter-serializable-bindings bindings)
+    (list (filter-serializable-bindings bindings base-bindings)
           validator-expr
           (map (lambda (entry)
                  (if (>= (length entry) 5)
@@ -229,14 +245,17 @@
                            (sig (if (>= (length entry) 6) (list-ref entry 5) #f)))
                        (list (car entry) (cadr entry) (caddr entry) (cadddr entry)
                              (let ((vp (if (>= (length snap) 3) (caddr snap) #f)))
-                               (list (filter-serializable-bindings (car snap))
+                               (list (filter-serializable-bindings (car snap) base-bindings)
                                      (cadr snap)
                                      (if (or (not vp) (procedure? vp)) #f vp)))
                              sig))
                      entry))
                history)
           (filter-serializable-expressor-store expressor-store) current-expressor
-          head-version org-public-key
+          head-version
+          ;; Strip opaque key objects (CryptoKey in Hoot/WASM).
+          ;; S-expression keys like '(none) or '(public-key ...) serialize fine.
+          (if (pair? org-public-key) org-public-key '(none))
           print-log
           output-cap
           (if (procedure? validator-proc) #f validator-proc)))
@@ -307,6 +326,7 @@
 
   (methods
    [(lookup name) (lookup name)]
+   [(lookup-or-false name) (if (assq name bindings) (cdr (assq name bindings)) #f)]
    [(bindings) bindings]
    [(history) history]
    [(current-expressor) current-expressor]
@@ -425,9 +445,9 @@ output-cap: ^output-port actor ref for IO delegation (or #f for none)."
                              '(lambda (e n v pre post) #t)
                              '(custom-validator)))
          (initial-history (list (list 0 genesis-id '(quote initial) 0
-                                      (list base-bindings
+                                      (list (filter-serializable-bindings base-bindings)
                                             validator-expr
-                                            validator)
+                                            (if (procedure? validator) #f validator))
                                       #f)))  ;; sig=#f — genesis has no keypair
          (initial-store (list (cons genesis-id genesis-data))))
     (spawn ^org

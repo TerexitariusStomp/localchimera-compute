@@ -8,6 +8,8 @@ quick-repl:
 
 CHANNELS = deploy/guix/channels.scm
 TIME_MACHINE = guix time-machine -C $(CHANNELS) --
+# Patched Hoot 0.8.0: adds missing mutable-bytevector? case in backend.scm
+HOOT_FIXED = -L deploy/packages -e '(@ (hoot-fix) guile-hoot/fixed)'
 
 browser/repl.wasm: browser/repl.scm module/playnet/gplay.scm module/playnet/wisp.scm
 	$(TIME_MACHINE) shell guile-next guile-hoot guile-goblins -- \

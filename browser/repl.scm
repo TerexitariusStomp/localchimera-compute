@@ -512,9 +512,25 @@
                                  (sxml->dom new)))))))))))))
 
 (define *current-vdom* #f)
+
+(define (vdom-root-attrs vdom)
+  "Extract the (@ ...) attribute form from a VDOM root, or #f."
+  (and (pair? vdom)
+       (pair? (cdr vdom))
+       (let ((second (cadr vdom)))
+         (and (pair? second) (eq? (car second) '@) second))))
+
 (define (refresh!)
-  (let ((new-vdom (render)))
-    (virtual-dom-render (document-body) *current-vdom* new-vdom)
+  (let* ((new-vdom (render))
+         ;; Force full re-render when root structure changes shape
+         ;; (e.g. outer↔ide mode switch). Positional diff can't
+         ;; reconcile fundamentally different child layouts.
+         (old (if (and *current-vdom*
+                       (not (equal? (vdom-root-attrs *current-vdom*)
+                                    (vdom-root-attrs new-vdom))))
+                  #f
+                  *current-vdom*)))
+    (virtual-dom-render (document-body) old new-vdom)
     (set! *current-vdom* new-vdom)))
 
 ;; Wrap macros as procedures for base-bindings (required by Hoot)
@@ -1003,8 +1019,7 @@
                 (reverse (cons s acc))))))))
 
 (define *log*
-  (list (render-homepage)
-        `(span (@ (class "info-text"))
+  (list `(span (@ (class "info-text"))
                ,(string-append
                  "An organization is a program that writes itself.\n"
                  "This is a metacircular substrate for programmable\n"
@@ -1308,7 +1323,8 @@
       (set! *current-org-name* name)
       (set! *vat* (org-entry-vat org))
       (set! *org* (org-entry-ref org))
-      (set! *log* (org-entry-log org))
+      (set! *log* (let ((l (org-entry-log org)))
+                    (if (null? l) (list) l)))
       (set! *sidebar-selected-org* name)
       (log-append! `(span (@ (class "info-text"))
                           ,(string-append "Entering org '" name "'.\n")))
@@ -1333,33 +1349,47 @@
 
 ;;; ── Extracted command procedures (callable from REPL and UI) ─────────────
 
+(define (make-fallback-org name base-bindings pk)
+  "Create a non-persistent org when Goblins persistence fails in Hoot/WASM."
+  (let ((vat (spawn-vat #:name name)))
+    (with-vat vat
+      (let ((org (make-initial-org base-bindings #:public-key pk)))
+        (receive (warden incanter) (spawn-warding-pair)
+          (let ((inbox (spawn ^org-inbox org '() 0 warden incanter))
+                (refs (spawn ^ref-store '())))
+            (values vat org inbox incanter refs)))))))
+
 (define (do-make-org! name)
   (if (org-lookup name)
-      (log-append! `(span (@ (class "error-text"))
-                          ,(string-append "Org already exists: " name "\n")))
+      (log-append!
+       `(span (@ (class "error-text"))
+              ,(string-append "Org already exists: " name "\n")))
       (let* ((kp (generate-key-pair))
              (pk (key-pair->public-key kp))
-             ;; Non-persistent org — Goblins persistence has portrait serialization
-             ;; issues with procedure-valued base bindings in Hoot/WASM (PLAN-MASTER Layer 1).
-             ;; Once fixed, switch back to make-persistent-org.
-             (vat (spawn-vat #:name name)))
-        (with-vat vat
-          (let ((org (make-initial-org base-bindings #:public-key pk)))
-            (receive (warden incanter) (spawn-warding-pair)
-              (let* ((inbox (spawn ^org-inbox org '() 0 warden incanter))
-                     (refs (spawn ^ref-store '()))
-                     (pk-display (let ((p (open-output-string)))
-                                   (write pk p)
-                                   (let ((s (get-output-string p)))
-                                     (if (> (string-length s) 50)
-                                         (string-append (substring s 0 50) "...")
-                                         s)))))
-                (set! *orgs* (cons (list name vat org inbox incanter kp refs) *orgs*))
-                (set! *sidebar-selected-org* name)
-                (save-key-pair name kp)
-                (save-org-index!)
-                (log-append! `(span (@ (class "result-text"))
-                                    ,(string-append "Created org: " name "\n  key: " pk-display "\n"))))))))))
+             (store (make-local-storage-store
+                     (string-append "playnet-" name))))
+        (receive (vat org inbox incanter refs)
+          (make-persistent-org name base-bindings store
+                               #:public-key pk
+                               #:persistence-registry
+                               *persistence-registry*)
+          (let* ((p (open-output-string))
+                 (_ (write pk p))
+                 (s (get-output-string p))
+                 (pk-display (if (> (string-length s) 50)
+                                 (string-append (substring s 0 50) "...")
+                                 s)))
+            (set! *orgs*
+                  (cons (list name vat org inbox incanter kp refs)
+                        *orgs*))
+            (set! *sidebar-selected-org* name)
+            (save-key-pair name kp)
+            (save-org-index!)
+            (log-append!
+             `(span (@ (class "result-text"))
+                    ,(string-append
+                      "Created org: " name
+                      "\n  key: " pk-display "\n"))))))))
 
 (define (do-delete-org! name)
   (if (org-lookup name)
@@ -1692,16 +1722,19 @@
 
 (define (auto-resize event)
   (let ((input (get-element-by-id "expression")))
-    (set-style! input "height" "auto")
-    (set-style! input "height"
-                (string-append (number->string (scroll-height input)) "px"))))
+    (when input
+      (set-style! input "height" "auto")
+      (set-style! input "height"
+                  (string-append (number->string (scroll-height input)) "px")))))
 
 ;;; ── Scroll helper ─────────────────────────────────────────────────────────
 
 (define (scroll-to-bottom!)
   (let ((log (get-element-by-id "repl-log")))
-    (set-scroll-top! log (scroll-height log))
-    (focus-element! (get-element-by-id "expression"))))
+    (when log
+      (set-scroll-top! log (scroll-height log))
+      (let ((expr (get-element-by-id "expression")))
+        (when expr (focus-element! expr))))))
 
 ;;; ── Event handling ────────────────────────────────────────────────────────
 
@@ -2199,10 +2232,8 @@
 (define (render-ui-widgets)
   "Render SXML widgets from the org's ui-widgets binding (governed UI composition)."
   (if (and *org* *vat* (eq? *mode* 'inner))
-      (let ((widgets (with-exception-handler
-                       (lambda (exn) #f)
-                       (lambda () (with-vat *vat* ($ *org* 'lookup 'ui-widgets)))
-                       #:unwind? #t)))
+      (let ((widgets (with-vat *vat*
+                       ($ *org* 'lookup-or-false 'ui-widgets))))
         (if (and widgets (pair? widgets))
             `(div (@ (class "ui-widgets")) ,@widgets)
             `(div)))
@@ -2214,6 +2245,7 @@
       `(div (@ (class "outer"))
             ,(render-tab-bar)
             ,(render-action-bar)
+            ,(render-homepage)
             ,(render-repl))
       ;; Inner mode: full IDE with sidebar + code viewer
       `(div (@ (class "ide"))
@@ -2269,22 +2301,16 @@
                                              " org(s) from browser storage.\n"))
                       *log*))))
 
-;; Sync outer-log after org restoration may have prepended messages
-(set! *outer-log* *log*)
-
 (refresh!)
 (add-event-listener!/wrap (document-body) "keydown" global-keydown)
 
 ;;; ── Animation timer ─────────────────────────────────────────────────────
-;;; Steps the signshifting cycles and replaces *log* entry 0 with fresh SXML.
-;;; The VDOM diff patches only the changed text nodes — reactive live update.
+;;; Steps the signshifting cycles; render() calls render-homepage which
+;;; reads the current cycle state. VDOM diff patches only changed text nodes.
 (let ((timer-callback (procedure->external
                        (lambda ()
                          (when (eq? *mode* 'outer)
                            (homepage-step!)
-                           (set! *outer-log*
-                                 (cons (render-homepage) (cdr *outer-log*)))
-                           (set! *log* *outer-log*)
                            (refresh!))))))
   (window-set-interval timer-callback 1000))
 
