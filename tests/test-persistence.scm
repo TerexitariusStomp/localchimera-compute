@@ -60,7 +60,9 @@
 
 ;;; ── Base bindings (shared) ──────────────────────────────────────────────────
 
-(define test-base default-base-bindings)
+(define test-base (append `((endorse . ,endorse)
+                            (endorsed-with? . ,endorsed-with?))
+                          default-base-bindings))
 
 (display "\n══ Persistence Round-Trip Tests ═══════════════════════════════\n")
 

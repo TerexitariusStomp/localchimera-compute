@@ -40,7 +40,28 @@ test-signatures:
 test-wisp:
 	guile --no-auto-compile -L module tests/test-wisp.scm
 
-test-all: test-gplay test-knowledge test-governed test-signatures test-wisp
+test-endorsement:
+	guile --no-auto-compile -L module tests/test-endorsement.scm
+
+test-output-cap:
+	guile --no-auto-compile -L module tests/test-output-cap.scm
+
+test-output-port:
+	guile --no-auto-compile -L module tests/test-output-port.scm
+
+test-persistence:
+	guile --no-auto-compile -L module tests/test-persistence.scm
+
+test-planner:
+	cd planner && sh run-tests.sh
+
+test-relational:
+	cd planner && guile --no-auto-compile -q -L ../module -l load-all.scm -l tests/relational-planner.scm
+
+test-browser:
+	sh tests/ux-test.sh
+
+test-all: test-gplay test-knowledge test-governed test-signatures test-wisp test-endorsement test-persistence test-planner test-relational
 
 clean:
 	rm -f browser/repl.wasm

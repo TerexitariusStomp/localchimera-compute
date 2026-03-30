@@ -1,3 +1,8 @@
+.outer {
+    width: 100%;
+    min-height: 100vh;
+}
+
 .ide {
     display: flex;
     height: 80vh;
@@ -46,7 +51,7 @@ h1 {
 .repl-text {
     color: #e0ceed;
     background-color: #110e13;
-    font-size: 12pt;
+    font-size: clamp(10pt, 2.5vw, 12pt);
     font-family: monospace;
 }
 

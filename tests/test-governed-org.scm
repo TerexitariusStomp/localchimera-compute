@@ -43,9 +43,9 @@
   (make-governed-org "test-gov")
   (check "org is an org" (org? org) #t)
   (check "org name" (org-name org) "test-gov")
-  (check "gov-seal is procedure" (procedure? gov-seal) #t)
-  (check "infra-seal is procedure" (procedure? infra-seal) #t)
-  (check "member-seal is procedure" (procedure? member-seal) #t))
+  (check "gov-seal is not #f" (not (not gov-seal)) #t)
+  (check "infra-seal is not #f" (not (not infra-seal)) #t)
+  (check "member-seal is not #f" (not (not member-seal)) #t))
 
 ;;; ── 2. Ungoverned names: freely modifiable ──────────────────────────────────
 

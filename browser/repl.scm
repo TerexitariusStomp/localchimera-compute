@@ -10,6 +10,17 @@
              ;; (goblins utils crypto) removed — imports (rnrs bytevectors) which
              ;; Hoot can't compile. Key generation uses JS FFI directly instead.
              (goblins persistence-store local-storage)
+             (goblins ocapn captp)
+             (goblins ocapn netlayer websocket)
+             (goblins ocapn ids)
+             (goblins contrib syrup)
+             (goblins actor-lib io)
+             (goblins utils hashmap)
+             (goblins utils js-data)
+             (goblins inbox)
+             (fibers channels)
+             (fibers conditions)
+             (srfi srfi-9)
              (playnet gplay)
              (playnet kanren)
              (playnet autocomplete)
@@ -246,6 +257,20 @@
 (define-foreign term-fit!
   "terminal" "fit"
   (ref null extern) -> none)
+
+;;; Window timers — setTimeout / setInterval FFI
+(define-foreign window-set-timeout
+  "window" "setTimeout"
+  (ref extern) i32 -> i32)
+(define-foreign window-set-interval
+  "window" "setInterval"
+  (ref extern) i32 -> i32)
+(define-foreign window-clear-timeout
+  "window" "clearTimeout"
+  i32 -> none)
+(define-foreign window-clear-interval
+  "window" "clearInterval"
+  i32 -> none)
 
 ;;; Voice-to-text — Web Speech API
 (define-foreign %speech-supported?
@@ -727,9 +752,6 @@
 (define *sidebar-collapsed* #f)
 (define *sidebar-selected-org* #f)   ;; string or #f
 
-(define *sidebar-collapsed* #f)
-(define *sidebar-selected-org* #f)   ;; string or #f
-
 ;;; ── Homepage state (Cycles) ─────────────────────────────────────────────
 (define (make-cycle lst)
   (let ((copy (append lst '())))
@@ -778,22 +800,12 @@
                   (div (span (@ (id "goals")) ,(cycle-peek *goals-cycle*)))))
         (div (@ (class "button-container"))
              (div (@ (class "bottom-buttons"))
-                  (a (@ (href "https://interplaynetary.github.io/free-association/") (class "btn github")) "Free-Association Interface")
-                  (a (@ (href "https://github.com/interplaynetary/free-association") (class "btn github")) "Free-Association Proof"))
+                  (a (@ (href "https://github.com/interplaynetary/playnet") (class "btn github")) "Source")
+                  (a (@ (href "https://opencollective.com/playnet") (class "btn discord")) "Donate"))
              (div (@ (class "bottom-buttons"))
-                  (a (@ (href "https://opencollective.com/playnet") (class "btn discord")) "Donate")
                   (a (@ (href "https://drive.google.com/drive/folders/13XTRKXTwQggeQ2hBx4eLBZ2Favi4-I9n?usp=sharing") (class "btn playdrive")) "Playdrive")
                   (a (@ (href "https://calendar.google.com/calendar/u/0?cid=NmJjYThlM2E4OTU2NTc3ZjFkNzg4ZGZhYmNjYzk1MTk0YTI5ZThiMjljZWU5NzM1OGY4NWFhZWY1OGI0ZTFkOEBncm91cC5jYWxlbmRhci5nb29nbGUuY29t") (class "btn calendar")) "Calendar")
-                  (a (@ (href "https://playnet.gitbook.io/docs/") (class "btn docs")) "Docs")))
-        (div (@ (class "playlabs-section"))
-             (h2 "Playlabs")
-             (div (@ (class "playlabs-content"))
-                  (a (@ (href "https://t.me/+jS7u3ZcKLoxmYWU5") (target "_blank") (class "btn telegram-btn"))
-                     (img (@ (src "https://telegram.org/img/t_logo.svg") (class "telegram-icon"))) " Join Telegram Chat")
-                  (a (@ (href "https://chat.whatsapp.com/CkE3rTzYzkqII4wUPqSXIW?mode=ems_copy_c") (target "_blank") (class "btn whatsapp-btn"))
-                     "Join WhatsApp Group")
-                  (div (@ (class "calendar-wrapper"))
-                       (iframe (@ (src "https://lu.ma/embed/calendar/cal-SGaqugFhyesXRZo/events?") (frameborder "0") (class "luma-calendar"))))))))
+                  (a (@ (href "https://playnet.gitbook.io/docs/") (class "btn docs")) "Docs")))))
 
 (define *expressor-filter* #f)       ;; symbol or #f — filter history by expressor name
 
@@ -992,16 +1004,6 @@
 
 (define *log*
   (list (render-homepage)
-        `(span (@ (class "result-text"))
-               ,(string-append
-                 "\n"
-                 " ██╗  ██╗ ██████╗ ██████╗  ██████╗ \n"
-                 " ╚██╗██╔╝██╔═══██╗██╔══██╗██╔════╝ \n"
-                 "  ╚███╔╝ ██║   ██║██████╔╝██║  ███╗\n"
-                 "  ██╔██╗ ██║   ██║██╔══██╗██║   ██║\n"
-                 " ██╔╝ ██╗╚██████╔╝██║  ██║╚██████╔╝\n"
-                 " ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝\n"
-                 "\n"))
         `(span (@ (class "info-text"))
                ,(string-append
                  "An organization is a program that writes itself.\n"
@@ -1337,23 +1339,27 @@
                           ,(string-append "Org already exists: " name "\n")))
       (let* ((kp (generate-key-pair))
              (pk (key-pair->public-key kp))
-             (store (make-local-storage-store (string-append "playnet-" name))))
-        (receive (vat org inbox incanter refs)
-          (make-persistent-org name base-bindings store
-                               #:public-key pk
-                               #:persistence-registry *persistence-registry*)
-          (let ((pk-display (let ((p (open-output-string)))
-                              (write pk p)
-                              (let ((s (get-output-string p)))
-                                (if (> (string-length s) 50)
-                                    (string-append (substring s 0 50) "...")
-                                    s)))))
-            (set! *orgs* (cons (list name vat org inbox incanter kp refs) *orgs*))
-            (set! *sidebar-selected-org* name)
-            (save-key-pair name kp)
-            (save-org-index!)
-            (log-append! `(span (@ (class "result-text"))
-                                ,(string-append "Created org: " name "\n  key: " pk-display "\n"))))))))
+             ;; Non-persistent org — Goblins persistence has portrait serialization
+             ;; issues with procedure-valued base bindings in Hoot/WASM (PLAN-MASTER Layer 1).
+             ;; Once fixed, switch back to make-persistent-org.
+             (vat (spawn-vat #:name name)))
+        (with-vat vat
+          (let ((org (make-initial-org base-bindings #:public-key pk)))
+            (receive (warden incanter) (spawn-warding-pair)
+              (let* ((inbox (spawn ^org-inbox org '() 0 warden incanter))
+                     (refs (spawn ^ref-store '()))
+                     (pk-display (let ((p (open-output-string)))
+                                   (write pk p)
+                                   (let ((s (get-output-string p)))
+                                     (if (> (string-length s) 50)
+                                         (string-append (substring s 0 50) "...")
+                                         s)))))
+                (set! *orgs* (cons (list name vat org inbox incanter kp refs) *orgs*))
+                (set! *sidebar-selected-org* name)
+                (save-key-pair name kp)
+                (save-org-index!)
+                (log-append! `(span (@ (class "result-text"))
+                                    ,(string-append "Created org: " name "\n  key: " pk-display "\n"))))))))))
 
 (define (do-delete-org! name)
   (if (org-lookup name)
@@ -2203,19 +2209,26 @@
       `(div)))
 
 (define (render)
-  `(div (@ (class "ide"))
-        ,(render-sidebar)
-        (div (@ (class "main"))
-             ,@(if *sidebar-collapsed*
-                   (list `(span (@ (class "expand-tab")
-                                   (click ,toggle-sidebar!))
-                                "\u00bb"))
-                   '())
-             ,(render-tab-bar)
-             ,(render-action-bar)
-             ,(render-ui-widgets)
-             ,(render-repl))
-        ,(render-code-viewer)))
+  (if (eq? *mode* 'outer)
+      ;; Outer mode: single column, no IDE chrome
+      `(div (@ (class "outer"))
+            ,(render-tab-bar)
+            ,(render-action-bar)
+            ,(render-repl))
+      ;; Inner mode: full IDE with sidebar + code viewer
+      `(div (@ (class "ide"))
+            ,(render-sidebar)
+            (div (@ (class "main"))
+                 ,@(if *sidebar-collapsed*
+                       (list `(span (@ (class "expand-tab")
+                                       (click ,toggle-sidebar!))
+                                    "\u00bb"))
+                       '())
+                 ,(render-tab-bar)
+                 ,(render-action-bar)
+                 ,(render-ui-widgets)
+                 ,(render-repl))
+            ,(render-code-viewer))))
 
 (define (global-keydown event)
   (let ((key (keyboard-event-key event)))
@@ -2256,15 +2269,19 @@
                                              " org(s) from browser storage.\n"))
                       *log*))))
 
+;; Sync outer-log after org restoration may have prepended messages
+(set! *outer-log* *log*)
+
 (refresh!)
 (add-event-listener!/wrap (document-body) "keydown" global-keydown)
 
 ;;; ── Animation timer ─────────────────────────────────────────────────────
+;;; Steps the signshifting cycles and replaces *log* entry 0 with fresh SXML.
+;;; The VDOM diff patches only the changed text nodes — reactive live update.
 (let ((timer-callback (procedure->external
                        (lambda ()
                          (when (eq? *mode* 'outer)
                            (homepage-step!)
-                           ;; Update *log* (homepage is first element)
                            (set! *outer-log*
                                  (cons (render-homepage) (cdr *outer-log*)))
                            (set! *log* *outer-log*)
@@ -2406,25 +2423,12 @@
   "No-op in OCapN mode — keys are not registered separately."
   #f)
 
-;;; ── OCapN auto-connect ─────────────────────────────────────────────────
-
-(use-modules (goblins ocapn captp)
-             (goblins ocapn netlayer websocket)
-             (goblins ocapn ids)
-             (goblins contrib syrup)
-             (goblins actor-lib io)
-             (goblins utils hashmap)
-             (goblins utils js-data)
-             (goblins inbox)
-             (fibers channels)
-             (fibers conditions))
-
 ;;; ── ^webrtc-captp-io — CapTP message I/O over a DataChannel ────────────
 ;;;
 ;;; Follows the same pattern as ^websocket-captp-io from Goblins:
 ;;; wraps a DataChannel in a ^read-write-io actor, provides
 ;;; read-message (Syrup decode) and write-message (Syrup encode).
-
+;;;
 (define-record-type <datachannel>
   (wrap-datachannel extern deq-ch)
   datachannel?

@@ -6,23 +6,14 @@
 
 * {
   box-sizing: border-box;
-  user-select: none;
-  /* Prevent text selection */
-  -webkit-user-select: none;
-  /* Safari */
-  -moz-user-select: none;
-  /* Firefox */
-  -ms-user-select: none;
-  /* IE10+/Edge */
 }
 
-/* For any inputs or textareas that might need to be selectable */
-input,
-textarea {
-  user-select: text;
-  -webkit-user-select: text;
-  -moz-user-select: text;
-  -ms-user-select: text;
+/* Only disable selection on signshifting interactive elements */
+#P, #L, #A, #Y, #N, #E, #T,
+#genre, #action, #things, #goals,
+.btn {
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 html {
@@ -39,13 +30,7 @@ html::-webkit-scrollbar {
 }
 
 body {
-  background: radial-gradient(circle at center,
-      #0a0a0a 0%,
-      #141414 20%,
-      #1a1a1a 40%,
-      #222222 60%,
-      #2a2a2a 80%,
-      #333333 100%);
+  background: #110e13;
   color: #f4f4f4;
   margin: 0;
   padding: 0 0 70px 0;
@@ -78,31 +63,12 @@ p {
 }
 
 #box {
-  font-size: 3em;
-  letter-spacing: -0.05em;
+  font-size: clamp(1.2em, 4vw, 2em);
   color: #fff;
   text-align: center;
-  margin: 0 auto;
-  max-width: 90%;
-  text-shadow: 0 3px 8px rgba(0, 0, 0, 0.7), 0 2px 3px rgba(0, 0, 0, 0.5);
-  transition: all 0.3s ease;
-  position: relative; top: 0; left: 0;;
-  z-index: 1;
-  caret-color: transparent;
-  padding: 20px 10px;
-  border-radius: 10px;
-  background: rgba(20, 20, 20, 0.3);
-  backdrop-filter: blur(3px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  width: 100%;
-  max-width: 100%;
+  padding: 0 10px;
   word-wrap: break-word;
   overflow-wrap: break-word;
-  min-height: 400px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
 }
 
 #P,
@@ -120,7 +86,7 @@ p {
   cursor: pointer;
   transition: all 0.5s ease;
   display: inline-block;
-  position: relative; top: 0; left: 0;;
+  position: relative;
   color: rgba(255, 255, 255, 0.8);
   user-select: none;
 }
@@ -361,7 +327,7 @@ p {
   display: flex;
   flex-direction: column;
   align-items: center;
-  position: relative; top: 0; left: 0;;
+  position: relative;
 }
 
 .expression-item button {
@@ -396,7 +362,7 @@ p {
 }
 
 .add-button {
-  position: relative; top: 0; left: 0;;
+  position: relative;
   bottom: 10px;
   right: 10px;
   background-color: #007bff;
@@ -413,7 +379,7 @@ p {
 }
 
 .delete-all-button {
-  position: relative; top: 0; left: 0;;
+  position: relative;
   bottom: 10px;
   left: 10px;
   background-color: #dc3545;
@@ -543,7 +509,7 @@ p {
   min-width: 120px;
   margin: 5px 0;
   border: none;
-  position: relative; top: 0; left: 0;;
+  position: relative;
   overflow: hidden;
 }
 
@@ -553,7 +519,7 @@ p {
   top: 0;
   left: -100%;
   width: 100%;
-  min-height: 100vh;
+  height: 100%;
   background: linear-gradient(90deg,
       transparent,
       rgba(255, 255, 255, 0.2),
@@ -594,39 +560,27 @@ p {
   background: linear-gradient(135deg, #00bcd4, #0097a7);
 }
 
-/* Add a container for the main content to ensure consistent spacing */
-.main-content {
-  padding-top: 150px;
-  min-height: 400px;
-  margin-bottom: 2rem;
-  max-width: 100%;
-  box-sizing: border-box;
-  padding-left: 10px;
-  padding-right: 10px;
+.homepage-content {
+  white-space: normal;
 }
 
-/* Add a fixed header for the Playnet title */
+.main-content {
+  padding: 0;
+  margin: 0;
+}
+
+/* Playnet title header */
 .playnet-header {
-  position: relative; top: 0; left: 0;;
-  top: 0;
-  left: 0;
   width: 100%;
-  background: rgba(10, 10, 10, 0.8);
-  padding: 20px 0;
-  z-index: 100;
+  padding: 0;
   text-align: center;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  max-width: 100%;
-  box-sizing: border-box;
-  padding-left: 10px;
-  padding-right: 10px;
 }
 
 .playnet-header p {
-  font-size: 64px;
+  font-size: clamp(48px, 12vw, 80px);
   margin: 0;
+  line-height: 1.2;
+  letter-spacing: 0;
   text-shadow: 0 0 15px rgba(150, 150, 255, 0.5), 0 0 10px rgba(100, 100, 255, 0.3);
 }
 
@@ -649,24 +603,6 @@ p {
     padding-top: 120px;
   }
 
-  .playnet-header p {
-    font-size: 48px;
-  }
-
-  #box {
-    font-size: 2.5em;
-  }
-}
-
-/* Even smaller screens */
-@media (max-width: 480px) {
-  .playnet-header p {
-    font-size: 36px;
-  }
-
-  #box {
-    font-size: 2em;
-  }
 }
 
 /* Ensure the countdown is also not selectable */
@@ -1034,7 +970,7 @@ p {
     0 4px 16px rgba(0, 0, 0, 0.3),
     0 2px 8px rgba(0, 0, 0, 0.2);
   transition: box-shadow 0.2s ease;
-  position: relative; top: 0; left: 0;;
+  position: relative;
   overflow: hidden;
 }
 

@@ -150,6 +150,38 @@ packages are essential and the partition MUST be grown before formatting.
 
 ---
 
+## 7. Hoot 0.8.0 — `mutable-bytevector?` WASM backend regression
+
+**Where:** `hoot/backend.scm`, `node-within` procedure
+
+**Problem:** `guild compile-wasm` crashes when compiling any module that
+transitively references mutable bytevectors (which includes `(goblins)`,
+`(srfi srfi-9)`, `(fibers channels)`, and all OCapN modules):
+
+```
+hoot/backend.scm:2039:8: In procedure node-within:
+Throw to key `match-error' with args
+  `("match" "no matching pattern" #(mutable-bytevector? #f (...)))'.
+```
+
+**Affected versions:**
+- Hoot 0.8.0 (Guix commit `21946173a05869dd40a38012e65b9e35dc47a9fc`)
+
+**Working versions:**
+- Hoot 0.7.0 (Guix commit `3ec53494a0f9c49e6cbc6864eedb102820915075`)
+  compiles Goblins 0.17.0 + OCapN CapTP + WebSocket netlayer + fibers
+
+**Impact:** Cannot compile any Goblins application to WASM. Blocks all
+browser-side OCapN work. The Spritely blog post "Goblins in the browser!"
+(v0.15.0, January 2025) demonstrates this working with Hoot 0.6.0.
+
+**Root cause:** Likely a missing `mutable-bytevector?` case in the WASM
+backend's `node-within` match expression, introduced between 0.7.0 and 0.8.0.
+
+**Workaround:** Pin `channels.scm` to Guix commit `3ec53494...` (Hoot 0.7.0).
+
+---
+
 ## Filing
 
 These should be filed at:

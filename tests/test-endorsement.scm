@@ -58,7 +58,6 @@
     ;; Endorsement API
     (make-endorsement-authority . ,make-endorsement-authority)
     (endorse                    . ,endorse)
-    (endorsed?                  . ,endorsed?)
     (endorsed-with?             . ,endorsed-with?)
     (endorsed-value             . ,endorsed-value)
     (make-facet                 . ,make-facet)
@@ -97,12 +96,12 @@
 
 (with-vat test-vat
   (receive (seal-proc unseal-proc sealed?-proc)
-    (make-endorsement-authority 'test-domain)
-    (let ((endorsed-val (seal-proc 42)))
+    (make-endorsement-authority)
+    (let ((endorsed-val ($ seal-proc 42)))
       (check "seal-proc returns opaque value" (not (equal? endorsed-val 42)) #t)
-      (check "sealed?-proc recognizes endorsed value" (sealed?-proc endorsed-val) #t)
-      (check "unseal-proc extracts value" (unseal-proc endorsed-val) 42)
-      (check "sealed?-proc rejects plain value" (sealed?-proc 42) #f))))
+      (check "sealed?-proc recognizes endorsed value" ($ sealed?-proc endorsed-val) #t)
+      (check "unseal-proc extracts value" ($ unseal-proc endorsed-val) 42)
+      (check "sealed?-proc rejects plain value" ($ sealed?-proc 42) #f))))
 
 ;;; ── 3. endorse / endorsed-with? / endorsed-value ───────────────────────────
 
@@ -110,7 +109,7 @@
 
 (with-vat test-vat
   (receive (seal-proc unseal-proc sealed?-proc)
-    (make-endorsement-authority 'econ)
+    (make-endorsement-authority)
     (let ((bundle (endorse 1000 seal-proc)))
       (check "endorsed-with? recognizes bundle" (endorsed-with? sealed?-proc bundle) #t)
       (check "endorsed-value extracts inner value" (endorsed-value unseal-proc bundle) 1000)
@@ -122,9 +121,9 @@
 
 (with-vat test-vat
   (receive (seal-a unseal-a sealed?-a)
-    (make-endorsement-authority 'authority-a)
+    (make-endorsement-authority)
     (receive (seal-b unseal-b sealed?-b)
-      (make-endorsement-authority 'authority-b)
+      (make-endorsement-authority)
       (let ((bundle-a (endorse 42 seal-a)))
         (check "authority-a recognizes own bundle" (endorsed-with? sealed?-a bundle-a) #t)
         (check "authority-b rejects authority-a bundle"
@@ -136,7 +135,7 @@
 
 (with-vat test-vat
   (receive (seal-proc unseal-proc sealed?-proc)
-    (make-endorsement-authority 'treasury)
+    (make-endorsement-authority)
     (let* ((org (make-initial-org test-base-bindings))
            (facet (make-facet (name-prefix-predicate 'treasury-) sealed?-proc))
            (fv (make-faceted-validator (list facet))))
@@ -158,7 +157,7 @@
 
 (with-vat test-vat
   (receive (seal-proc unseal-proc sealed?-proc)
-    (make-endorsement-authority 'treasury)
+    (make-endorsement-authority)
     (let* ((org (make-initial-org
                   (append `((seal-treasury . ,seal-proc)
                             (endorse . ,endorse))
@@ -174,10 +173,10 @@
       (ev '(modify! 'treasury-balance (endorse 1000 seal-treasury)) org)
       ;; The stored value is the sealed bundle
       (check "endorsed value stored correctly"
-             (sealed?-proc (ev 'treasury-balance org)) #t)
+             ($ sealed?-proc (ev 'treasury-balance org)) #t)
       ;; Unseal to verify the inner value
       (check "endorsed inner value is 1000"
-             (unseal-proc (ev 'treasury-balance org)) 1000))))
+             ($ unseal-proc (ev 'treasury-balance org)) 1000))))
 
 ;;; ── 7. enact! with endorsement installs new validator ──────────────────────
 
@@ -185,7 +184,7 @@
 
 (with-vat test-vat
   (receive (gov-seal gov-unseal gov-sealed?)
-    (make-endorsement-authority 'governance)
+    (make-endorsement-authority)
     (let* ((org (make-initial-org
                   (append `((gov-seal . ,gov-seal)
                             (endorse . ,endorse))
@@ -210,7 +209,7 @@
 
 (with-vat test-vat
   (receive (gov-seal gov-unseal gov-sealed?)
-    (make-endorsement-authority 'governance)
+    (make-endorsement-authority)
     (let* ((org (make-initial-org test-base-bindings))
            (gov-facet (make-facet (name-set-predicate '(validator)) gov-sealed?))
            (fv (make-faceted-validator (list gov-facet))))
@@ -230,7 +229,7 @@
 
 (with-vat test-vat
   (receive (full-seal full-unseal full-sealed?)
-    (make-endorsement-authority 'full-econ)
+    (make-endorsement-authority)
     (receive (sub-seal sub-unseal sub-sealed?)
       (make-attenuated-authority full-sealed? (name-prefix-predicate 'treasury-))
       (let* ((org (make-initial-org
@@ -247,7 +246,7 @@
         ;; Sub-authority can endorse treasury-* names
         (ev '(modify! 'treasury-balance (endorse 5000 sub-seal)) org)
         (check "sub-authority endorsement accepted"
-               (sub-sealed? (ev 'treasury-balance org)) #t)))))
+               ($ sub-sealed? (ev 'treasury-balance org)) #t)))))
 
 ;;; ── 10. Delegation chain ───────────────────────────────────────────────────
 
@@ -255,7 +254,7 @@
 
 (with-vat test-vat
   (receive (alice-seal alice-unseal alice-sealed?)
-    (make-endorsement-authority 'alice-authority)
+    (make-endorsement-authority)
     ;; Alice creates a sub-authority for Bob
     (receive (bob-seal bob-unseal bob-sealed?)
       (make-attenuated-authority alice-sealed? (name-prefix-predicate 'budget-))
@@ -272,11 +271,11 @@
           ($ org 'enact! '(lambda (e n v pre post) #t) fv entry))
         ;; Bob can modify budget-* names
         (ev '(modify! 'budget-q1 (endorse 10000 bob-seal)) org)
-        (check "delegated authority works" (bob-sealed? (ev 'budget-q1 org)) #t)
+        (check "delegated authority works" ($ bob-sealed? (ev 'budget-q1 org)) #t)
         ;; Alice's direct seal doesn't satisfy bob's facet
-        (let ((alice-endorsed (alice-seal 999)))
+        (let ((alice-endorsed ($ alice-seal 999)))
           (check "alice seal doesn't satisfy bob facet"
-                 (bob-sealed? alice-endorsed) #f))))))
+                 ($ bob-sealed? alice-endorsed) #f))))))
 
 ;;; ── 11. Metacircular constraint still holds ────────────────────────────────
 
@@ -295,15 +294,17 @@
 
 (display "\n-- 12. name predicates --\n")
 
-(let ((pred (name-prefix-predicate 'treasury-)))
-  (check "prefix matches treasury-balance" (pred 'treasury-balance) #t)
-  (check "prefix rejects budget-q1" (pred 'budget-q1) #f)
-  (check "prefix matches exact prefix" (pred 'treasury-) #t))
+(with-vat test-vat
+  (let ((pred (name-prefix-predicate 'treasury-)))
+    (check "prefix matches treasury-balance" ($ pred 'treasury-balance) #t)
+    (check "prefix rejects budget-q1" ($ pred 'budget-q1) #f)
+    (check "prefix matches exact prefix" ($ pred 'treasury-) #t)))
 
-(let ((pred (name-set-predicate '(validator rollback))))
-  (check "set matches validator" (pred 'validator) #t)
-  (check "set matches rollback" (pred 'rollback) #t)
-  (check "set rejects treasury" (pred 'treasury) #f))
+(with-vat test-vat
+  (let ((pred (name-set-predicate '(validator rollback))))
+    (check "set matches validator" ($ pred 'validator) #t)
+    (check "set matches rollback" ($ pred 'rollback) #t)
+    (check "set rejects treasury" ($ pred 'treasury) #f)))
 
 ;;; ── 13. Multiple facets ────────────────────────────────────────────────────
 
@@ -311,21 +312,21 @@
 
 (with-vat test-vat
   (receive (econ-seal econ-unseal econ-sealed?)
-    (make-endorsement-authority 'econ)
+    (make-endorsement-authority)
     (receive (infra-seal infra-unseal infra-sealed?)
-      (make-endorsement-authority 'infra)
+      (make-endorsement-authority)
       (let* ((econ-facet (make-facet (name-prefix-predicate 'econ-) econ-sealed?))
              (infra-facet (make-facet (name-prefix-predicate 'infra-) infra-sealed?))
              (fv (make-faceted-validator (list econ-facet infra-facet))))
         ;; Test the validator directly
         (check "econ-endorsed passes econ facet"
-               (fv 'anyone 'econ-budget (econ-seal 100) '() '()) #t)
+               (fv 'anyone 'econ-budget ($ econ-seal 100) '() '()) #t)
         (check "infra-endorsed passes infra facet"
-               (fv 'anyone 'infra-server (infra-seal "prod") '() '()) #t)
+               (fv 'anyone 'infra-server ($ infra-seal "prod") '() '()) #t)
         (check "unendorsed fails econ facet"
                (fv 'anyone 'econ-budget 100 '() '()) #f)
         (check "wrong endorsement fails econ facet"
-               (fv 'anyone 'econ-budget (infra-seal 100) '() '()) #f)
+               (fv 'anyone 'econ-budget ($ infra-seal 100) '() '()) #f)
         (check "ungoverned name passes freely"
                (fv 'anyone 'free-var 42 '() '()) #t)))))
 

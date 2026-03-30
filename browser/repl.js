@@ -129,15 +129,25 @@ window.addEventListener("load", async () => {
           },
           // Key pair persistence — save is fire-and-forget, load is pre-loaded
           saveKeyPair(name, keyPair) {
+            if (!keyPair || typeof keyPair !== 'object') {
+              console.warn("saveKeyPair: invalid keyPair for", name);
+              return;
+            }
+            const pub = keyPair.publicKey;
+            const priv = keyPair.privateKey;
+            if (!pub || !priv) {
+              console.warn("saveKeyPair: missing publicKey/privateKey for", name);
+              return;
+            }
             const toHex = buf => [...new Uint8Array(buf)]
               .map(b => b.toString(16).padStart(2, '0')).join('');
             Promise.all([
-              crypto.subtle.exportKey("raw", keyPair.publicKey),
-              crypto.subtle.exportKey("pkcs8", keyPair.privateKey)
+              crypto.subtle.exportKey("raw", pub),
+              crypto.subtle.exportKey("pkcs8", priv)
             ]).then(([pubBuf, privBuf]) => {
               localStorage.setItem("playnet-kp-" + name,
                 toHex(pubBuf) + ":" + toHex(privBuf));
-            }).catch(e => console.error("saveKeyPair error:", e));
+            }).catch(e => console.warn("saveKeyPair: export failed for", name, e.message));
           },
           getPreloadedKeyPair(name) {
             return preloadedKeyPairs[name] || null;
@@ -156,7 +166,14 @@ window.addEventListener("load", async () => {
           close(ws) { ws.close(); },
           send(ws, data) { ws.send(data); },  // data is Uint8Array from Hoot
           setOnOpen(ws, cb) { ws.addEventListener('open', () => cb()); },
-          setOnError(ws, cb) { ws.addEventListener('error', () => cb()); },
+          setOnError(ws, cb) {
+            ws.addEventListener('error', () => {
+              // Don't call cb() — the WASM bad-cast propagation crashes the runtime.
+              // The Scheme-side enliven #:catch handler won't fire, but that's
+              // preferable to a cascading RuntimeError when the gateway is down.
+              console.warn('OCapN: gateway unreachable');
+            });
+          },
           setOnMessage(ws, cb) {
             ws.binaryType = 'arraybuffer';
             ws.addEventListener('message', (e) => {

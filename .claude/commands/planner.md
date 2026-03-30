@@ -1,61 +1,76 @@
 ---
-description: ValueFlows economic planning engine — algorithms, stores, federation, DDMRP, recipes
+description: ValueFlows economic planning engine — relational planning over lifted facts, allocation via netter goals
 ---
 
-You are editing the ValueFlows economic planning engine — a complete supply-chain planning system built on Goblins actors. 20+ algorithm modules, ~14,000 lines, 105+ test checks. Independent of the playnet governance kernel.
+You are editing the ValueFlows economic planning engine — a relational planner built on miniKanren search over plain fact tuples, with allocation via a netter state monad threaded through the search.
 
 ## Architecture
 
 ```
-Layer 0: schemas.scm (47 VF record types) + store-utils.scm
-Layer 1: scope-root.scm (coordinator), agents.scm, knowledge/, observation/, execution/
-Layer 2: algorithms/ (20+ modules: netting, DDMRP, critical-path, propagation, etc.)
-Layer 3: planning/ (plan store, orchestration, scheduling)
-Layer 4: planning/plan-federation.scm (multi-scope hierarchy fold)
-Bridge:  bridge/mqtt-bridge.scm (event bridge to Mosquitto)
+schemas.scm        — 47 VF record types (source of truth)
+     ↓ lift once at session start
+planning-facts.scm — plain tuples: (recipe ...), (flow ...), (chain ...), (process ...)
+     ↓ queried via in-list-o + unification
+demand-relation.scm — demand-o explores all recipes via conde, recurses on inputs
+plan-relation.scm   — plan-o solves all open demands simultaneously
+netter-goals.scm    — net-demand-o threads allocation state through search
 ```
+
+The planner is relational: facts are plain lists, queries are pattern matching with blanks, and the search explores all valid plans. `project` is used only for arithmetic (scale, scheduling). Everything else is pure unification.
+
+## The six core relations
+
+| Relation | Question it answers |
+|---|---|
+| `(recipe-o facts rid name output)` | What recipe produces this spec? |
+| `(chain-o facts rid pids)` | What's the process chain for this recipe? |
+| `(flow-o facts pid dir spec qty unit action)` | What flows in/out of this process? |
+| `(net-demand-o ctx spec qty remaining allocated)` | How much is left after inventory allocation? |
+| `(demand-o ctx spec qty due plan-term)` | What plan satisfies this demand? |
+| `(plan-o ctx plan)` | What plan satisfies ALL open demands? |
 
 ## Key files
 
-| File                                          | Purpose                                                                            |
-| --------------------------------------------- | ---------------------------------------------------------------------------------- |
-| `planner/lib/schemas.scm`                     | 47 immutable VF record types (EconomicEvent, Process, ResourceSpecification, etc.) |
-| `planner/lib/scope-root.scm`                  | `^scope-root` — coordinator wiring 10 stores into a vat                            |
-| `planner/lib/algorithms/netting.scm`          | Demand/supply netting with location awareness                                      |
-| `planner/lib/algorithms/ddmrp.scm`            | Demand-driven MRP buffer positioning                                               |
-| `planner/lib/algorithms/critical-path.scm`    | Critical path analysis                                                             |
-| `planner/lib/algorithms/propagation.scm`      | Constraint propagation                                                             |
-| `planner/lib/algorithms/flow-graph.scm`       | Network flow analysis                                                              |
-| `planner/lib/algorithms/dependent-demand.scm` | BOM explosion / dependent demand                                                   |
-| `planner/lib/algorithms/dependent-supply.scm` | Supply chain upstream analysis                                                     |
-| `planner/lib/algorithms/signals.scm`          | Signal generation for planning events                                              |
-| `planner/lib/algorithms/sne.scm`              | Synchronized netting engine                                                        |
-| `planner/lib/algorithms/track-trace.scm`      | Custody chain tracking                                                             |
-| `planner/lib/algorithms/value-equations.scm`  | Value flow equations                                                               |
-| `planner/lib/planning/planning.scm`           | Plan store + orchestration                                                         |
-| `planner/lib/planning/plan-federation.scm`    | Multi-scope federation (hierarchy fold)                                            |
-| `planner/lib/planning/schedule-book.scm`      | Schedule management                                                                |
-| `planner/lib/bridge/mqtt-bridge.scm`          | MQTT event bridge to Mosquitto                                                     |
-| `planner/load-all.scm`                        | Module dependency order loader                                                     |
+| File | Purpose |
+|---|---|
+| `module/playnet/kanren-planning.scm` | Extended miniKanren: state = (subst counter . netter), project, in-list-o, plan-ctx |
+| `planner/lib/relational/planning-facts.scm` | Lift VF records → tuples. Fact relations + arithmetic helpers |
+| `planner/lib/relational/netter-goals.scm` | Allocation goals: net-demand-o, net-supply-o, reserve-o |
+| `planner/lib/relational/demand-relation.scm` | Core: demand-o, produce-branch, solve-inputs-o |
+| `planner/lib/relational/plan-relation.scm` | Orchestrator: plan-o, all-demands-o, relational-plan |
+| `planner/lib/relational/load-relational.scm` | Module loader |
+| `planner/lib/schemas.scm` | 47 VF record types (unchanged) |
+| `planner/lib/scope-root.scm` | Coordinator wiring stores into a vat (unchanged) |
+| `planner/lib/planning/plan-federation.scm` | Multi-scope federation fold (unchanged) |
+| `planner/load-all.scm` | Dependency-order loader |
 
 ## Common editing patterns
 
-**Add a record type:** Add to `schemas.scm` — define constructor, accessors, and serialization. Follow existing `define-record-type` patterns.
+**Add a fact type:** Add to the `lift-planning-facts` function in `planning-facts.scm`. Define a new relation (one line: `in-list-o` over the facts list).
 
-**Add an algorithm:** New file in `planner/lib/algorithms/`. Pure functions operating on VF records. Add to `load-all.scm` dependency order.
+**Add a planning relation:** Define in `demand-relation.scm` or a new file. Use `fresh`, `==`, `conde` from `(playnet kanren-planning)`. Access facts via the `ctx-facts` field of the planning context.
 
-**Add a store method:** Modify the relevant store actor in `planner/lib/`. Update `^scope-root` if the new method needs cross-store coordination.
+**Bridge to arithmetic:** Use `project` to walk logic variables to ground values, then do Scheme computation:
+```scheme
+(project (qty scale)
+  (let ((total (* qty scale)))
+    (== result total)))
+```
 
-**Load order is critical.** `load-all.scm` and `run-tests.sh` define the module dependency order. Adding a file in the wrong position causes load failures.
+**Add a store method:** Modify the relevant store actor in `planner/lib/`. The lift function in `planning-facts.scm` will need updating to extract the new data.
 
-## Relationship to playnet
+## Planning context
 
-The planner is independent of the playnet governance kernel. A planning scope IS a Goblins vat. Scopes communicate via OCapN. The planner could be injected into an playnet org as a capability ref — the org governs access, the planner does computation.
+```scheme
+(make-plan-ctx facts plan-store observer location-store plan-id)
+```
+
+`facts` = lifted tuples for relational queries. `plan-store` + `observer` = Goblins actors for netter allocation (imperative). Goals receive a single `ctx` argument instead of 5+ store references.
 
 ## Testing
 
 ```bash
-cd planner && ./run-tests.sh  # 105+ checks
+cd planner && guile --no-auto-compile -q -L ../module -l load-all.scm -l tests/relational-planner.scm
 ```
 
 ## The user's request

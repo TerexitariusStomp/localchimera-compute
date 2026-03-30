@@ -1,159 +1,114 @@
 ;;; system-kb.scm — playnet's knowledge of its own structure
-;;; Relational facts queryable via miniKanren. Hyperarcs underneath.
+;;; Plain facts queried via miniKanren. No hyperarcs — relations all the way.
 ;;; Hoot/WASM compatible.
 ;;;
 ;;; Usage:
 ;;;   (use-modules (playnet system-kb) (playnet knowledge) (playnet kanren))
-;;;   (run* (q) (depends-on-o 'browser q))
+;;;   (run* (q) (depends-on-o q 'goblins))
 ;;;   (run* (proof) (trigger-chain-o 'push-to-main 'kernel proof))
 
 (define-module (playnet system-kb)
-  #:use-module (playnet hyperarc)
   #:use-module (playnet kanren)
   #:use-module (playnet knowledge)
-  #:use-module (srfi srfi-1)
-  #:export (*system-kb*
-            ;; Generic
-            fact-o
-            ;; Named relations
+  #:export (*system-facts*
+            ;; Relations
             depends-on-o file-of-o provides-o
             layer-o trigger-chain-o
             ;; Pure Scheme
             query-depends query-layers query-files-for
             query-provides query-what-changes))
 
-;;; ── Fact constructors ─────────────────────────────────────────────────────
-;;; Declarative helpers that produce hyperarcs from plain symbols/strings.
-;;; The hyperarc structure is implementation detail — callers state facts.
 
-(define (layer-node name)
-  (make-node name name '()))
+;;; ── Facts ─────────────────────────────────────────────────────────────────────
+;;; Plain tagged tuples. One fact per relationship.
 
-(define (file-node path)
-  (make-node (string->symbol path) path '()))
+(define *system-facts*
+  '(;; Dependencies: (depends FROM TO) — FROM depends on TO
+    (depends browser evaluator)
+    (depends browser actors)
+    (depends browser kanren)
+    (depends knowledge kanren)
+    (depends evaluator actors)
+    (depends actors goblins)
+    (depends relay goblins)
+    (depends relay signup-agent)
+    (depends signup-agent goblins)
+    (depends signup-agent provision)
+    (depends provision guix-deploy)
+    (depends planner goblins)
+    (depends key-pool goblins)
+    (depends reticulum goblins)
+    (depends goblins guile)
+    (depends guile guix)
+    (depends guix kernel)
+    (depends guix bootloader)
+    (depends guix services)
+    (depends guix users)
+    (depends push-to-main github-actions)
+    (depends github-actions guix-deploy)
+    (depends guix-deploy guix)
 
-(define (concept-node name)
-  (make-node name name '()))
+    ;; Files: (file LAYER PATH)
+    (file actors "module/playnet/actors.scm")
+    (file evaluator "module/playnet/evaluator.scm")
+    (file browser "module/playnet/repl.scm")
+    (file browser "browser/repl.scm")
+    (file browser "browser/repl.js")
+    (file browser "browser/index.html")
+    (file kanren "module/playnet/kanren.scm")
+    (file knowledge "module/playnet/knowledge.scm")
+    (file system-kb "module/playnet/system-kb.scm")
+    (file relay "server/relay.scm")
+    (file signup-agent "server/signup-agent.scm")
+    (file guix-deploy "deploy/guix/machines.scm")
+    (file guix-deploy "deploy/guix/deploy.sh")
+    (file provision "deploy/guix/users.scm")
+    (file provision "deploy/guix/provision-user.scm")
+    (file guix-deploy "deploy/guix/channels.scm")
+    (file github-actions ".github/workflows/deploy.yml")
+    (file github-actions ".github/workflows/pages.yml")
+    (file planner "planner/lib/schemas.scm")
+    (file planner "planner/lib/relational/planning-facts.scm")
+    (file planner "planner/lib/relational/demand-relation.scm")
+    (file planner "planner/lib/relational/plan-relation.scm")
+    (file key-pool "key-pool/key-pool.scm")
+    (file reticulum "server/reticulum-bridge.py")
+    (file services "deploy/guix/playnet-service.scm")
 
-(define (dep from to)
-  "FROM depends on TO."
-  (make-hyperarc (make-hyperarc-id 'dep) '()
-    (list (layer-node from) (layer-node to))))
+    ;; Provides: (provides LAYER CAPABILITY)
+    (provides actors state)
+    (provides actors accountability)
+    (provides actors revocation)
+    (provides evaluator eval-in-browser)
+    (provides evaluator metacircular-eval)
+    (provides kanren relational-queries)
+    (provides kanren unification)
+    (provides kanren logic-programming)
+    (provides knowledge transitive-closure)
+    (provides knowledge proof-traces)
+    (provides knowledge pattern-matching)
+    (provides goblins capability-security)
+    (provides goblins actors)
+    (provides goblins ocapn)
+    (provides goblins persistence)
+    (provides reticulum mesh-networking)
+    (provides reticulum lora)
+    (provides reticulum transport-agnostic)
+    (provides guix declarative-os)
+    (provides guix reproducibility)
+    (provides guix rollback)))
 
-(define (file-map layer path)
-  "LAYER is implemented by PATH."
-  (make-hyperarc (make-hyperarc-id 'file) '()
-    (list (layer-node layer) (file-node path))))
 
-(define (layer-provides layer . capabilities)
-  "LAYER provides CAPABILITIES."
-  (make-hyperarc (make-hyperarc-id 'prov) '()
-    (cons (layer-node layer) (map concept-node capabilities))))
+;;; ── Relations ─────────────────────────────────────────────────────────────────
 
-;;; ── Dependencies ──────────────────────────────────────────────────────────
-;;; Directed: head depends on tail.
+(define (depends-on-o from to)
+  (in-list-o `(depends ,from ,to) *system-facts*))
 
-(define %dependencies
-  (make-metagraph 'dependencies '((description . "What depends on what"))
-    (list
-     (dep 'browser    'evaluator)
-     (dep 'browser    'actors)
-     (dep 'browser    'kanren)
-     (dep 'browser    'hyperarc)
-     (dep 'browser    'knowledge)
-     (dep 'knowledge  'kanren)
-     (dep 'knowledge  'hyperarc)
-     (dep 'evaluator  'actors)
-     (dep 'actors     'goblins)
-     (dep 'relay      'goblins)
-     (dep 'relay      'signup-agent)
-     (dep 'signup-agent 'goblins)
-     (dep 'signup-agent 'provision)
-     (dep 'provision  'guix-deploy)
-     (dep 'planner    'goblins)
-     (dep 'key-pool   'goblins)
-     (dep 'reticulum  'goblins)
-     (dep 'goblins    'guile)
-     (dep 'guile      'guix)
-     (dep 'guix       'kernel)
-     (dep 'guix       'bootloader)
-     (dep 'guix       'services)
-     (dep 'guix       'users)
-     (dep 'push-to-main 'github-actions)
-     (dep 'github-actions 'guix-deploy)
-     (dep 'guix-deploy 'guix))))
+(define (file-of-o layer path)
+  (in-list-o `(file ,layer ,path) *system-facts*))
 
-;;; ── Files ─────────────────────────────────────────────────────────────────
-;;; Which source files belong to which layer.
-
-(define %files
-  (make-metagraph 'files '((description . "Which files belong to which layer"))
-    (list
-     (file-map 'actors         "module/playnet/actors.scm")
-     (file-map 'evaluator      "module/playnet/evaluator.scm")
-     (file-map 'browser        "module/playnet/repl.scm")
-     (file-map 'browser        "browser/repl.scm")
-     (file-map 'browser        "browser/repl.js")
-     (file-map 'browser        "browser/index.html")
-     (file-map 'kanren         "module/playnet/kanren.scm")
-     (file-map 'hyperarc       "module/playnet/hyperarc.scm")
-     (file-map 'knowledge      "module/playnet/knowledge.scm")
-     (file-map 'system-kb      "module/playnet/system-kb.scm")
-     (file-map 'relay          "server/relay.scm")
-     (file-map 'signup-agent   "server/signup-agent.scm")
-     (file-map 'guix-deploy    "deploy/guix/machines.scm")
-     (file-map 'guix-deploy    "deploy/guix/deploy.sh")
-     (file-map 'provision      "deploy/guix/users.scm")
-     (file-map 'provision      "deploy/guix/provision-user.scm")
-     (file-map 'guix-deploy    "deploy/guix/channels.scm")
-     (file-map 'github-actions ".github/workflows/deploy.yml")
-     (file-map 'github-actions ".github/workflows/pages.yml")
-     (file-map 'planner        "planner/lib/schemas.scm")
-     (file-map 'key-pool       "key-pool/key-pool.scm")
-     (file-map 'reticulum      "server/reticulum-bridge.py")
-     (file-map 'services       "deploy/guix/playnet-service.scm"))))
-
-;;; ── Provides ──────────────────────────────────────────────────────────────
-;;; What capabilities each layer provides.
-
-(define %provides
-  (make-metagraph 'provides '((description . "What each layer provides"))
-    (list
-     (layer-provides 'actors     'state 'accountability 'revocation)
-     (layer-provides 'evaluator  'eval-in-browser 'metacircular-eval)
-     (layer-provides 'kanren     'relational-queries 'unification 'logic-programming)
-     (layer-provides 'knowledge  'transitive-closure 'proof-traces 'pattern-matching)
-     (layer-provides 'goblins    'capability-security 'actors 'ocapn 'persistence)
-     (layer-provides 'reticulum  'mesh-networking 'lora 'transport-agnostic)
-     (layer-provides 'guix       'declarative-os 'reproducibility 'rollback))))
-
-;;; ── The knowledge base ────────────────────────────────────────────────────
-
-(define *system-kb*
-  (make-kb
-   (list (cons 'dependencies %dependencies)
-         (cons 'files %files)
-         (cons 'provides %provides))))
-
-;;; ── Generic directed-fact relation ────────────────────────────────────────
-;;; All three metagraphs share the same convention: head=from, tail=to.
-;;; This one relation queries any of them.
-
-(define (fact-o domain from to)
-  "FROM relates to TO in DOMAIN (dependencies, files, or provides)."
-  (fresh (mg arc n1 n2 id1 id2 m1 m2)
-    (kb-o *system-kb* domain mg)
-    (arcs-of-o mg arc)
-    (directed-arc-o arc n1 n2)
-    (node-o n1 id1 from m1)
-    (node-o n2 id2 to m2)))
-
-;;; ── Named query relations ───────────────────────────────────────────────
-;;; Thin wrappers over fact-o for readability.
-
-(define (depends-on-o from to)  (fact-o 'dependencies from to))
-(define (file-of-o layer path)  (fact-o 'files layer path))
-(define (provides-o layer cap)  (fact-o 'provides layer cap))
+(define (provides-o layer cap)
+  (in-list-o `(provides ,layer ,cap) *system-facts*))
 
 (define (layer-o name)
   "Is NAME a known layer?"
@@ -161,13 +116,14 @@
 
 (define (trigger-chain-o start end proof)
   "Transitive chain from START to END through dependencies."
-  (transitive-o *system-kb* 'dependencies start end proof))
+  (transitive-o depends-on-o start end proof))
 
-;;; ── Pure Scheme queries ─────────────────────────────────────────────────
 
-(define (query-depends layer)      (run* (q) (depends-on-o layer q)))
-(define (query-layers)             (delete-duplicates (run 50 (q) (layer-o q))))
-(define (query-files-for layer)    (run* (q) (file-of-o layer q)))
-(define (query-provides layer)     (run* (q) (provides-o layer q)))
+;;; ── Pure Scheme queries ───────────────────────────────────────────────────────
+
+(define (query-depends layer)     (run* (q) (depends-on-o layer q)))
+(define (query-layers)            (delete-duplicates (run 50 (q) (layer-o q))))
+(define (query-files-for layer)   (run* (q) (file-of-o layer q)))
+(define (query-provides layer)    (run* (q) (provides-o layer q)))
 (define (query-what-changes trigger)
   (run 20 (q) (fresh (proof) (trigger-chain-o trigger q proof))))

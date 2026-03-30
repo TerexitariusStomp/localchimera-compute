@@ -278,6 +278,37 @@
                              (stop #~(make-kill-destructor))
                              (respawn? #t))))
 
+      ;; Dev bridge — MQTT subscriber that launches Claude Code on deficit signals.
+      ;; The VF planner emits development deficit signals; this bridge acts on them.
+      ;; Manual start only: herd start dev-bridge
+      (simple-service 'dev-bridge
+                      shepherd-root-service-type
+                      (list (shepherd-service
+                             (provision '(dev-bridge))
+                             (documentation "MQTT → Claude Code development bridge")
+                             (requirement '(networking mosquitto))
+                             (start #~(make-forkexec-constructor
+                                       (list #$(file-append guile-3.0 "/bin/guile")
+                                             "--no-auto-compile"
+                                             "-L" "/home/playnet/playnet-repo/module"
+                                             "-s" "/home/playnet/playnet-repo/server/dev-bridge.scm")
+                                       #:user "playnet"
+                                       #:group "users"
+                                       #:log-file "/var/log/dev-bridge.log"
+                                       #:environment-variables
+                                       (list (string-append "GUILE_LOAD_PATH="
+                                              "/run/current-system/profile/share/guile/site/3.0:"
+                                              "/home/playnet/playnet-repo/module")
+                                             "HOME=/home/playnet"
+                                             "DEV_CHECKOUT_DIR=/home/playnet/dev-checkout"
+                                             (string-append "PATH="
+                                              "/run/current-system/profile/bin:"
+                                              "/home/playnet/.local/bin:"
+                                              "/run/current-system/profile/sbin"))))
+                             (stop #~(make-kill-destructor))
+                             (respawn? #t)
+                             (auto-start? #f))))
+
       ;; Reticulum mesh networking — rnsd daemon + OCapN bridge.
       ;; Enables Goblins actors over LoRa, serial, TCP, I2P, packet radio.
       (service rnsd-service-type)
@@ -325,7 +356,15 @@
                                 ;; Existing mutable clone — remove it
                                 (system* "rm" "-rf" repo-dir))
                               (unless (file-exists? repo-dir)
-                                (symlink pkg-dir repo-dir))))))
+                                (symlink pkg-dir repo-dir)))
+                            ;; Writable dev checkout for self-improvement agent
+                            ;; (mutable clone, separate from immutable Guix store symlink)
+                            (let ((dev-dir "/home/playnet/dev-checkout"))
+                              (unless (file-exists? dev-dir)
+                                (system* "git" "clone"
+                                         "https://github.com/interplaynetary/xorg.git"
+                                         dev-dir)
+                                (chown dev-dir (passwd:uid pw) (passwd:gid pw)))))))
 
       ;; Activation: set up dynamic user home directories.
       ;; For each user in users.scm: ensure home exists, correct ownership,

@@ -1,12 +1,12 @@
-;;; test-knowledge.scm — tests for (playnet kanren), (playnet hyperarc), (playnet knowledge)
+;;; test-knowledge.scm — tests for (playnet kanren), (playnet knowledge), (playnet system-kb)
 ;;; Run with:  guile -L module tests/test-knowledge.scm
 
 (define %project-root (string-append (dirname (current-filename)) "/.."))
 (add-to-load-path (string-append %project-root "/module"))
 
 (use-modules (playnet kanren)
-             (playnet hyperarc)
              (playnet knowledge)
+             (playnet system-kb)
              (srfi srfi-1))
 
 ;;; ── Harness ────────────────────────────────────────────────────────────────
@@ -23,14 +23,6 @@
              (display "    expected: ") (write expected) (newline)
              (display "    got:      ") (write got)      (newline))))
 
-(define-syntax check-error
-  (syntax-rules ()
-    ((_ label body ...)
-     (check label
-            (catch #t
-              (lambda () body ... #f)
-              (lambda (key . args) #t))
-            #t))))
 
 ;;; ════════════════════════════════════════════════════════════════════════════
 ;;; Section 1: miniKanren core
@@ -53,8 +45,7 @@
        #t)
 
 (check "unify pairs"
-       (let ((s (unify '(a b) '(a b) empty-subst)))
-         s)
+       (unify '(a b) '(a b) empty-subst)
        '())
 
 (check "unify mismatch"
@@ -113,7 +104,6 @@
        (run* (q) (membero q '(x y z)))
        '(x y z))
 
-;; Occurs check: (== x (list x)) should fail, not loop
 (check "occurs check prevents circular substitution"
        (run* (q)
          (fresh (x)
@@ -121,7 +111,6 @@
            (== q 'should-not-reach)))
        '())
 
-;; Reification: unbound vars appear as _.0, _.1, etc.
 (check "reification of unbound variable"
        (run* (q) succeed)
        '(_.0))
@@ -132,7 +121,6 @@
            (== q (list a b))))
        '((_.0 _.1)))
 
-;; Recursive relation with suspension: (fives x) should not diverge
 (define (fives x)
   (conde
    ((== x 5))
@@ -142,218 +130,82 @@
        (run 3 (q) (fives q))
        '(5 5 5))
 
-;; State-threaded counter: nested run calls should not interfere
 (check "nested run calls produce consistent results"
        (run* (q)
          (== q (run* (inner) (== inner 'ok))))
        '((ok)))
 
-;;; ════════════════════════════════════════════════════════════════════════════
-;;; Section 2: Hyperarc data structures
-;;; ════════════════════════════════════════════════════════════════════════════
-
-(display "\n── Hyperarc data structures ──\n")
-
-(let ((n (make-node 'n1 'atom)))
-  (check "make-node creates tagged list"
-         (car n)
-         'node)
-  (check "node? recognizes node"
-         (node? n)
-         #t)
-  (check "node-id"
-         (node-id n)
-         'n1)
-  (check "node-value"
-         (node-value n)
-         'atom)
-  (check "node-meta default"
-         (node-meta n)
-         '()))
-
-(let ((n (make-node 'n2 'atom '((tag . important)))))
-  (check "node-meta with data"
-         (node-meta n)
-         '((tag . important))))
-
-(check "node? rejects non-node"
-       (node? '(foo bar))
-       #f)
-
-(let* ((n1 (make-node 'n1 'heat))
-       (n2 (make-node 'n2 'expansion))
-       (ha (make-hyperarc 'ha1 '((label . "causes")) (list n1 n2))))
-  (check "hyperarc? recognizes hyperarc"
-         (hyperarc? ha)
-         #t)
-  (check "hyperarc-id"
-         (hyperarc-id ha)
-         'ha1)
-  (check "hyperarc-meta"
-         (hyperarc-meta ha)
-         '((label . "causes")))
-  (check "hyperarc-nodes count"
-         (length (hyperarc-nodes ha))
-         2))
-
-(let* ((n1 (make-node 'n1 'heat))
-       (n2 (make-node 'n2 'expansion))
-       (ha (make-hyperarc 'ha1 '() (list n1 n2)))
-       (mg (make-metagraph 'mg1 '((domain . "physics")) (list ha))))
-  (check "metagraph? recognizes metagraph"
-         (metagraph? mg)
-         #t)
-  (check "metagraph-id"
-         (metagraph-id mg)
-         'mg1)
-  (check "metagraph-arcs count"
-         (length (metagraph-arcs mg))
-         1)
-  (check "metagraph-all-nodes"
-         (length (metagraph-all-nodes mg))
-         2)
-  (check "metagraph-node-values"
-         (metagraph-node-values mg)
-         '(heat expansion)))
-
-(let* ((mg1 (make-metagraph 'mg1 '() '()))
-       (mg2 (make-metagraph 'mg2 '() '()))
-       (kb (make-kb `((cause . ,mg1) (tax . ,mg2)))))
-  (check "kb? recognizes kb"
-         (kb? kb)
-         #t)
-  (check "kb-keys"
-         (kb-keys kb)
-         '(cause tax))
-  (check "kb-ref found"
-         (metagraph-id (kb-ref kb 'cause))
-         'mg1)
-  (check "kb-ref not found"
-         (kb-ref kb 'nope)
-         #f))
-
-(let* ((mg (make-metagraph 'mg3 '() '()))
-       (kb (make-kb '()))
-       (kb2 (kb-add kb 'test mg)))
-  (check "kb-add"
-         (kb-keys kb2)
-         '(test)))
-
-(let* ((n1 (make-node 'n1 'a))
-       (n2 (make-node 'n2 'b))
-       (ha (make-hyperarc 'ha1 '() (list n1 n2))))
-  (check "hyperarc-find-node found"
-         (node-value (hyperarc-find-node ha 'n1))
-         'a)
-  (check "hyperarc-find-node not found"
-         (hyperarc-find-node ha 'n99)
-         #f))
 
 ;;; ════════════════════════════════════════════════════════════════════════════
-;;; Section 3: Knowledge base relations
+;;; Section 2: in-list-o
 ;;; ════════════════════════════════════════════════════════════════════════════
 
-(display "\n── Knowledge base relations ──\n")
+(display "\n── in-list-o ──\n")
 
-;; Build a sample knowledge base
-(define sample-kb
-  (make-kb
-   `((causality .
-      ,(make-metagraph 'mg-cause
-        '((domain . "physics"))
-        (list
-         (make-hyperarc 'ha1 '((label . "heat-expansion"))
-           (list (make-node 'n1 'heat)
-                 (make-node 'n2 'expansion)))
-         (make-hyperarc 'ha2 '((label . "expansion-cracking"))
-           (list (make-node 'n3 'expansion)
-                 (make-node 'n4 'cracking))))))
-     (taxonomy .
-      ,(make-metagraph 'mg-tax
-        '((domain . "biology"))
-        (list
-         (make-hyperarc 'ha3 '()
-           (list (make-node 'n5 'cat)
-                 (make-node 'n6 'mammal)))
-         (make-hyperarc 'ha4 '()
-           (list (make-node 'n7 'mammal)
-                 (make-node 'n8 'animal)))))))))
-
-(check "kb-o: enumerate domain names"
-       (sort (run* (q) (kb-o sample-kb q (var 999)))
-             (lambda (a b) (string<? (symbol->string a) (symbol->string b))))
-       '(causality taxonomy))
-
-(check "arcs-of-o: count arcs in causality"
-       (length (run* (q)
-                 (fresh (mg)
-                   (kb-o sample-kb 'causality mg)
-                   (arcs-of-o mg q))))
-       2)
-
-(check "arc-nodes-o: find nodes in ha1"
-       (length (run* (q)
-                 (fresh (mg arc)
-                   (kb-o sample-kb 'causality mg)
-                   (arcs-of-o mg arc)
-                   (fresh (aid ameta anodes)
-                     (hyperarc-o arc aid ameta anodes)
-                     (== aid 'ha1))
-                   (arc-nodes-o arc q))))
-       2)
-
-(check "node-value-matches-o: find all node values in causality"
-       (sort (run* (q)
-               (fresh (node)
-                 (node-value-matches-o sample-kb node q)))
-             (lambda (a b) (string<? (symbol->string a) (symbol->string b))))
-       '(animal cat cracking expansion expansion heat mammal mammal))
-
-(check "node-value-matches-o: find specific value"
-       (run* (q)
-         (fresh (node)
-           (node-value-matches-o sample-kb node 'heat)
-           (== q 'found)))
+(check "in-list-o: find element"
+       (run* (q) (in-list-o 'b '(a b c)) (== q 'found))
        '(found))
 
-(check "related-by-o: heat and expansion in same arc"
-       (length (run* (q)
-                 (fresh (n1 n2 id1 id2 m1 m2)
-                   (related-by-o sample-kb 'causality n1 n2)
-                   (node-o n1 id1 'heat m1)
-                   (node-o n2 id2 'expansion m2)
-                   (== q 'yes))))
-       1)
+(check "in-list-o: generate all"
+       (run* (q) (in-list-o q '(x y z)))
+       '(x y z))
+
+(check "in-list-o: empty list fails"
+       (run* (q) (in-list-o q '()))
+       '())
+
+(check "in-list-o: pattern matching"
+       (run* (q)
+         (fresh (a b)
+           (in-list-o `(pair ,a ,b) '((pair 1 2) (pair 3 4)))
+           (== q (list a b))))
+       '((1 2) (3 4)))
+
+(check "in-list-o: partial ground"
+       (run* (q)
+         (in-list-o `(pair ,q 2) '((pair 1 2) (pair 3 4))))
+       '(1))
+
 
 ;;; ════════════════════════════════════════════════════════════════════════════
-;;; Section 4: Transitive closure & proof traces
+;;; Section 3: Transitive closure
 ;;; ════════════════════════════════════════════════════════════════════════════
 
-(display "\n── Transitive closure & proof traces ──\n")
+(display "\n── Transitive closure ──\n")
 
-(check "transitive-o: base case (same arc)"
+;; Simple edge relation for testing
+(define test-facts
+  '((edge heat expansion)
+    (edge expansion cracking)
+    (edge cat mammal)
+    (edge mammal animal)))
+
+(define (test-edge-o from to)
+  (in-list-o `(edge ,from ,to) test-facts))
+
+(check "transitive-o: base case"
        (run* (trace)
-         (transitive-o sample-kb 'causality 'heat 'expansion trace))
+         (transitive-o test-edge-o 'heat 'expansion trace))
        '((heat expansion)))
 
-(check "transitive-o: one step (heat -> expansion -> cracking)"
+(check "transitive-o: two steps"
        (member '(heat expansion cracking)
                (run* (trace)
-                 (transitive-o sample-kb 'causality 'heat 'cracking trace)))
+                 (transitive-o test-edge-o 'heat 'cracking trace)))
        '((heat expansion cracking)))
 
-(check "transitive-o: taxonomy base (cat -> mammal)"
+(check "transitive-o: taxonomy base"
        (run* (trace)
-         (transitive-o sample-kb 'taxonomy 'cat 'mammal trace))
+         (transitive-o test-edge-o 'cat 'mammal trace))
        '((cat mammal)))
 
-(check "transitive-o: taxonomy chain (cat -> mammal -> animal)"
+(check "transitive-o: taxonomy chain"
        (member '(cat mammal animal)
                (run* (trace)
-                 (transitive-o sample-kb 'taxonomy 'cat 'animal trace)))
+                 (transitive-o test-edge-o 'cat 'animal trace)))
        '((cat mammal animal)))
 
-(check "proof-length: base case"
+(check "proof-length: base"
        (proof-length '(heat expansion))
        1)
 
@@ -365,69 +217,100 @@
        (proof-steps '(cat mammal animal))
        '(cat mammal animal))
 
-(check "transitive-o: no path returns empty"
+(check "transitive-o: no path"
        (run* (trace)
-         (transitive-o sample-kb 'causality 'heat 'animal trace))
+         (transitive-o test-edge-o 'heat 'animal trace))
        '())
 
+
 ;;; ════════════════════════════════════════════════════════════════════════════
-;;; Section 5: Pattern matching via unification
+;;; Section 4: System knowledge base
 ;;; ════════════════════════════════════════════════════════════════════════════
 
-(display "\n── Pattern matching via unification ──\n")
+(display "\n── System KB ──\n")
 
-;; Build a KB with structured node values for pattern matching
-(define pattern-kb
-  (make-kb
-   `((concepts .
-      ,(make-metagraph 'mg-pat '()
-        (list
-         (make-hyperarc 'ha-p1 '()
-           (list (make-node 'p1 '(person . alice) '((role . admin)))
-                 (make-node 'p2 '(person . bob))))
-         (make-hyperarc 'ha-p2 '()
-           (list (make-node 'p3 '(action . login))
-                 (make-node 'p4 '(person . alice))))))))))
+(check "depends-on-o: browser depends on evaluator"
+       (run* (q) (depends-on-o 'browser 'evaluator) (== q 'yes))
+       '(yes))
 
-(check "pattern match: extract all person names"
-       (sort (run* (name)
-               (fresh (node)
-                 (node-value-matches-o pattern-kb node (cons 'person name))))
+(check "depends-on-o: what does browser depend on?"
+       (sort (run* (q) (depends-on-o 'browser q))
              (lambda (a b) (string<? (symbol->string a) (symbol->string b))))
-       '(alice alice bob))
+       '(actors evaluator kanren))
 
-(check "pattern match: find actions"
-       (run* (act)
-         (fresh (node)
-           (node-value-matches-o pattern-kb node (cons 'action act))))
-       '(login))
+(check "depends-on-o: what depends on goblins?"
+       (let ((deps (run* (q) (depends-on-o q 'goblins))))
+         (and (memq 'actors deps) (memq 'planner deps) #t))
+       #t)
 
-(check "node-meta-has-o: find admin nodes"
-       (run* (q)
-         (fresh (node)
-           (node-meta-has-o pattern-kb node 'role 'admin)
-           (fresh (nid nval nmeta)
-             (node-o node nid nval nmeta)
-             (== q nval))))
-       '((person . alice)))
+(check "file-of-o: actors file"
+       (run* (q) (file-of-o 'actors q))
+       '("module/playnet/actors.scm"))
 
-;; Nested metagraph as node value
-(define nested-kb
-  (let ((inner-mg (make-metagraph 'mg-inner '()
-                    (list (make-hyperarc 'ha-inner '()
-                            (list (make-node 'ni1 'deep-value)))))))
-    (make-kb
-     `((outer .
-        ,(make-metagraph 'mg-outer '()
-          (list (make-hyperarc 'ha-outer '()
-                  (list (make-node 'no1 inner-mg))))))))))
+(check "file-of-o: browser has multiple files"
+       (>= (length (run* (q) (file-of-o 'browser q))) 3)
+       #t)
 
-(check "nested metagraph: outer node is a metagraph"
-       (run* (q)
-         (fresh (node nid nmeta mg-val)
-           (node-value-matches-o nested-kb node mg-val)
-           (metagraph-o mg-val q (var 998) (var 997))))
-       '(mg-inner))
+(check "provides-o: actors provides state"
+       (run* (q) (provides-o 'actors 'state) (== q 'yes))
+       '(yes))
+
+(check "provides-o: what does goblins provide?"
+       (sort (run* (q) (provides-o 'goblins q))
+             (lambda (a b) (string<? (symbol->string a) (symbol->string b))))
+       '(actors capability-security ocapn persistence))
+
+(check "layer-o: browser is a layer"
+       (pair? (run 1 (q) (layer-o 'browser) (== q #t)))
+       #t)
+
+(check "trigger-chain-o: push-to-main reaches guix"
+       (let ((results (run 5 (proof)
+                        (trigger-chain-o 'push-to-main 'guix proof))))
+         (and (pair? results)
+              (eq? 'push-to-main (caar results))))
+       #t)
+
+(check "query-depends: pure Scheme"
+       (sort (query-depends 'browser)
+             (lambda (a b) (string<? (symbol->string a) (symbol->string b))))
+       '(actors evaluator kanren))
+
+(check "query-provides: pure Scheme"
+       (sort (query-provides 'kanren)
+             (lambda (a b) (string<? (symbol->string a) (symbol->string b))))
+       '(logic-programming relational-queries unification))
+
+(check "query-what-changes: push-to-main triggers cascade"
+       (let ((changed (query-what-changes 'push-to-main)))
+         (and (memq 'guix-deploy changed) (memq 'guix changed) #t))
+       #t)
+
+
+;;; ════════════════════════════════════════════════════════════════════════════
+;;; Section 5: Bidirectional queries
+;;; ════════════════════════════════════════════════════════════════════════════
+
+(display "\n── Bidirectional queries ──\n")
+
+;; Same relation, different directions
+(check "forward: what does evaluator depend on?"
+       (run* (q) (depends-on-o 'evaluator q))
+       '(actors))
+
+(check "backward: what depends on actors?"
+       (let ((deps (run* (q) (depends-on-o q 'actors))))
+         (and (memq 'browser deps) (memq 'evaluator deps) #t))
+       #t)
+
+(check "forward: what files does planner have?"
+       (>= (length (run* (q) (file-of-o 'planner q))) 1)
+       #t)
+
+(check "backward: what layer owns kanren.scm?"
+       (run* (q) (file-of-o q "module/playnet/kanren.scm"))
+       '(kanren))
+
 
 ;;; ════════════════════════════════════════════════════════════════════════════
 ;;; Summary
