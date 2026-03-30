@@ -48,15 +48,19 @@
             ;; Symbolic constraints
             =/= numbero symbolo absento
             ;; CLP(FD)
-            infd rangeo +fd -fd *fd <fd <=fd distinctfd labelfd))
+            infd rangeo +fd -fd *fd <fd <=fd distinctfd labelfd
+            ;; Extra relations
+            lasto))
 
 
 ;;; ══════════════════════════════════════════════════════════════════════════════
-;;; State: #(S C N D Y Nu T FD)
+;;; State: #(S C N D Y Nu T FD P)
+;;; P = propagator queue: list of (trigger-vars . goal) pairs.
+;;; When == or labelfd grounds a trigger variable, the goal re-fires.
 ;;; ══════════════════════════════════════════════════════════════════════════════
 
-(define (make-cstate S C N D Y Nu T FD)
-  (vector S C N D Y Nu T FD))
+(define (make-cstate S C N D Y Nu T FD P)
+  (vector S C N D Y Nu T FD P))
 
 (define (cstate-S st)  (vector-ref st 0))
 (define (cstate-C st)  (vector-ref st 1))
@@ -66,14 +70,13 @@
 (define (cstate-Nu st) (vector-ref st 5))
 (define (cstate-T st)  (vector-ref st 6))
 (define (cstate-FD st) (vector-ref st 7))
+(define (cstate-P st)  (vector-ref st 8))
 
 (define (cstate-with st . updates)
-  "Functional update: (cstate-with st 'S new-s 'FD new-fd)"
-  (let ((v (make-vector 8)))
-    ;; Copy existing
+  "Functional update: (cstate-with st 'S new-s 'FD new-fd 'P new-p)"
+  (let ((v (make-vector 9)))
     (let copy ((i 0))
-      (when (< i 8) (vector-set! v i (vector-ref st i)) (copy (+ i 1))))
-    ;; Apply updates
+      (when (< i 9) (vector-set! v i (vector-ref st i)) (copy (+ i 1))))
     (let loop ((u updates))
       (if (null? u) v
           (begin
@@ -83,10 +86,14 @@
 (define (slot-index sym)
   (cond ((eq? sym 'S) 0) ((eq? sym 'C) 1) ((eq? sym 'N) 2)
         ((eq? sym 'D) 3) ((eq? sym 'Y) 4) ((eq? sym 'Nu) 5)
-        ((eq? sym 'T) 6) ((eq? sym 'FD) 7)))
+        ((eq? sym 'T) 6) ((eq? sym 'FD) 7) ((eq? sym 'P) 8)))
 
 (define (empty-cstate ns)
-  (make-cstate empty-subst 0 ns '() '() '() '() '()))
+  (make-cstate empty-subst 0 ns '() '() '() '() '() '()))
+
+(define (register-propagator st trigger-vars goal)
+  "Register GOAL to re-fire when any variable in TRIGGER-VARS becomes ground."
+  (cstate-with st 'P (cons (cons trigger-vars goal) (cstate-P st))))
 
 
 ;;; ══════════════════════════════════════════════════════════════════════════════
@@ -227,7 +234,8 @@
 
 (define (== u v)
   (lambda (st)
-    (let ((S0 (unify u v (cstate-S st))))
+    (let ((old-S (cstate-S st))
+          (S0 (unify u v (cstate-S st))))
       (if (not S0) '()
           (let ((result (fd-narrow-after-unify S0 (cstate-FD st))))
             (if (not result) '()
@@ -236,7 +244,30 @@
                   (if (==fail-check S* (cstate-D st) (cstate-Y st)
                                     (cstate-Nu st) (cstate-T st) FD*)
                       '()
-                      (list (cstate-with st 'S S* 'FD FD*))))))))))
+                      ;; Fire propagators for newly-ground variables
+                      (fire-propagators
+                        (cstate-with st 'S S* 'FD FD*)
+                        old-S)))))))))
+
+(define (fire-propagators st old-S)
+  "Fire propagators whose trigger variables became ground since old-S."
+  (let* ((S (cstate-S st))
+         (P (cstate-P st))
+         ;; Split: propagators to fire vs keep
+         (to-fire (filter (lambda (p)
+                            (any (lambda (v)
+                                   (and (var? (walk v old-S))
+                                        (not (var? (walk v S)))))
+                                 (car p)))
+                          P))
+         (to-keep (filter (lambda (p) (not (memq p to-fire))) P))
+         (st* (cstate-with st 'P to-keep)))
+    (if (null? to-fire)
+        (list st*)
+        ;; Chain fired propagator goals via bind
+        (let chain ((goals (map cdr to-fire)) (stream (list st*)))
+          (if (null? goals) stream
+              (chain (cdr goals) (bind stream (car goals))))))))
 
 (define (succeed st) (list st))
 (define (fail st) '())
@@ -352,8 +383,9 @@
                                            (conj (== y (cadr t))
                                                  (== z (caddr t)))) st)
                                     (lambda () (try (cdr triples)))))))))
-               ;; Not enough domain info — defer
-               (list st))))))))
+               ;; Not enough domain info — register propagator to re-fire later
+               (let ((unground (filter var? (list xv yv zv))))
+                 (list (register-propagator st unground (+fd x y z)))))))))))
 
 (define (fd-triples-add xd yd zd)
   (append-map
@@ -408,7 +440,8 @@
                                            (conj (== y (cadr t))
                                                  (== z (caddr t)))) st)
                                     (lambda () (try (cdr triples)))))))))
-               (list st))))))))
+               (let ((unground (filter var? (list xv yv zv))))
+                 (list (register-propagator st unground (*fd x y z)))))))))))
 
 (define (fd-triples-mul xd yd zd)
   (append-map
@@ -441,7 +474,8 @@
                      ((conj (maybe-narrow x xv new-xd)
                             (maybe-narrow y yv new-yd))
                       st)))
-               (list st))))))))
+               (let ((unground (filter var? (list xv yv))))
+                 (list (register-propagator st unground (<fd x y)))))))))))
 
 (define (<=fd x y)
   "x <= y, over finite domains."
@@ -464,7 +498,8 @@
                      ((conj (maybe-narrow x xv new-xd)
                             (maybe-narrow y yv new-yd))
                       st)))
-               (list st))))))))
+               (let ((unground (filter var? (list xv yv))))
+                 (list (register-propagator st unground (<=fd x y)))))))))))
 
 (define (distinctfd . vars)
   "All variables must take different values."
@@ -562,6 +597,15 @@
        ((in-list-o x (cdr lst))))))
 
 
+;;; ── Extra relations ────────────────────────────────────────────────────────────
+
+(define (lasto lst last)
+  "Relate LST to its LAST element."
+  (conde
+    ((fresh (x) (== lst (list x)) (== last x)))
+    ((fresh (h t) (== lst (cons h t)) (lasto t last)))))
+
+
 ;;; ══════════════════════════════════════════════════════════════════════════════
 ;;; Constraint simplification
 ;;; ══════════════════════════════════════════════════════════════════════════════
@@ -580,7 +624,7 @@
                      (cstate-T st)))
          ;; Drop FD entries for ground variables
          (FD* (filter (lambda (p) (var? (walk (car p) S))) (cstate-FD st))))
-    (make-cstate S (cstate-C st) (cstate-N st) D* Y* Nu* T* FD*)))
+    (make-cstate S (cstate-C st) (cstate-N st) D* Y* Nu* T* FD* (cstate-P st))))
 
 
 ;;; ══════════════════════════════════════════════════════════════════════════════

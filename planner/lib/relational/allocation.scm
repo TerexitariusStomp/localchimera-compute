@@ -53,14 +53,13 @@
         (fresh (take new-sum rest-remaining rest-alloc sums-mid)
           ;; CLP(FD) constraints: take ∈ [0, min(inv-qty, qty)]
           (rangeo take 0 (min inv-qty qty))
-          ;; Running sum: new-sum = old-sum + take, new-sum <= inv-qty
+          ;; Constraints (order-independent — propagators re-fire when take is labeled)
           (+fd old-sum take new-sum)
           (<=fd new-sum inv-qty)
+          (-fd qty take rest-remaining)
           ;; Label take (max-first: try taking the most first for efficiency)
           ;; NOTE: change to #:order 'min for different search strategy
           (labelfd take #:order 'max)
-          ;; AFTER labeling: take is ground, so -fd computes directly
-          (-fd qty take rest-remaining)
           ;; Recurse on remaining resources with reduced quantity
           (allocate-from-o rest-remaining (cdr resources) remaining rest-alloc
                             (sums-set sums-in rid new-sum) sums-mid)
