@@ -20,7 +20,8 @@
 
 ;;; ── Lift ──────────────────────────────────────────────────────────────────────
 
-(define* (lift-planning-facts recipe-store #:optional (observer #f))
+(define* (lift-planning-facts recipe-store #:optional (observer #f)
+                              (plan-store #f) (buffer-zone-store #f))
   "Extract all planning facts from store actors as plain tuples.
    If OBSERVER is provided, inventory resources are included."
   (let ((all-recipes ($ recipe-store 'all-recipes)))
@@ -93,6 +94,71 @@
                                 ,(inexact->exact (round qty))
                                 ,(economic-resource-current-location r)))))
             ($ observer 'all-resources))
+          '())
+      ;; Event facts (for ADU, metabolism, OTIF)
+      (if observer
+          (map (lambda (e)
+                 `(event ,(economic-event-id e)
+                         ,(economic-event-action e)
+                         ,(economic-event-resource-conforms-to e)
+                         ,(if (economic-event-resource-quantity e)
+                              (inexact->exact (round (measure-has-numerical-value
+                                (economic-event-resource-quantity e))))
+                              0)
+                         ,(if (economic-event-has-point-in-time e)
+                              (iso-datetime->epoch (economic-event-has-point-in-time e))
+                              #f)))
+               ($ observer 'all-events))
+          '())
+      ;; Intent facts (for demand qualification)
+      (if plan-store
+          (map (lambda (i)
+                 `(intent ,(intent-id i)
+                          ,(intent-action i)
+                          ,(intent-resource-conforms-to i)
+                          ,(if (intent-resource-quantity i)
+                               (inexact->exact (round (measure-has-numerical-value
+                                 (intent-resource-quantity i))))
+                               0)
+                          ,(if (intent-resource-quantity i)
+                               (measure-has-unit (intent-resource-quantity i))
+                               "each")
+                          ,(if (intent-due i) (iso-datetime->epoch (intent-due i)) #f)
+                          ,(if (intent-input-of i) 'input #f)
+                          ,(if (intent-output-of i) 'output #f)
+                          ,(or (intent-resource-classified-as i) '())
+                          ,(intent-finished i)))
+               ($ plan-store 'all-intents))
+          '())
+      ;; Commitment facts (for OTIF, demand qualification)
+      (if plan-store
+          (map (lambda (c)
+                 `(commitment ,(commitment-id c)
+                              ,(commitment-action c)
+                              ,(commitment-resource-conforms-to c)
+                              ,(if (commitment-resource-quantity c)
+                                   (inexact->exact (round (measure-has-numerical-value
+                                     (commitment-resource-quantity c))))
+                                   0)
+                              ,(if (commitment-resource-quantity c)
+                                   (measure-has-unit (commitment-resource-quantity c))
+                                   "each")
+                              ,(if (commitment-due c) (iso-datetime->epoch (commitment-due c)) #f)
+                              ,(commitment-provider c)
+                              ,(commitment-receiver c)
+                              ,(commitment-finished c)))
+               ($ plan-store 'all-commitments))
+          '())
+      ;; Buffer zone facts (for DDMRP)
+      (if buffer-zone-store
+          (map (lambda (bz)
+                 `(buffer-zone ,(buffer-zone-spec-id bz)
+                               ,(buffer-zone-tor bz)
+                               ,(buffer-zone-toy bz)
+                               ,(buffer-zone-tog bz)
+                               ,(buffer-zone-adu bz)
+                               ,(buffer-zone-dlt-days bz)))
+               ($ buffer-zone-store 'all-zones))
           '()))))
 
 
