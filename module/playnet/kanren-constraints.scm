@@ -479,21 +479,24 @@
                   (if (null? result) '()
                       (inner (cdr rest) (car result))))))))))
 
-(define (labelfd x)
-  "Enumerate all values in x's domain. Triggers search."
+(define* (labelfd x #:key (order 'min))
+  "Enumerate all values in x's domain. Triggers search.
+   ORDER: 'min (default, smallest first) or 'max (largest first).
+   NOTE: 'max is useful for allocation (try taking the most first)."
   (lambda (st)
     (let* ((S (cstate-S st))
            (v (walk x S)))
       (cond
         ((not (var? v)) (list st))  ;; already ground
         (else
-         (let ((dom (domain-ref (cstate-FD st) v)))
-           (if (not dom) (list st)  ;; no domain constraint
-               ;; Try each value in domain
-               (let try ((vals dom))
-                 (if (null? vals) '()
-                     (mplus ((== x (car vals)) st)
-                            (lambda () (try (cdr vals)))))))))))))
+         (let* ((dom (domain-ref (cstate-FD st) v))
+                (vals (if (not dom) #f
+                          (if (eq? order 'max) (reverse dom) dom))))
+           (if (not vals) (list st)  ;; no domain constraint
+               (let try ((vs vals))
+                 (if (null? vs) '()
+                     (mplus ((== x (car vs)) st)
+                            (lambda () (try (cdr vs)))))))))))))
 
 
 ;;; ══════════════════════════════════════════════════════════════════════════════

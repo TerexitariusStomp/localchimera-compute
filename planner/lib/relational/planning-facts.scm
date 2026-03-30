@@ -12,7 +12,7 @@
 ;;;
 ;;; Assumes schemas.scm, propagation.scm, and kanren-planning.scm are loaded.
 
-(use-modules (playnet kanren-planning)
+(use-modules (playnet kanren-constraints)
              (srfi srfi-1))
 
 (define *non-consuming-actions* '(use work cite deliver-service))
@@ -119,7 +119,10 @@
   (in-list-o `(inventory ,resource-id ,spec-id ,qty ,location) facts))
 
 
-;;; ── Arithmetic helpers (pure Scheme, used inside project) ─────────────────────
+;;; ── Arithmetic helpers removed — scale via *fd, inputs via flow-o ─────────────
+;;; compute-scale and collect-consuming-inputs were here.
+;;; Now replaced by CLP(FD) *fd for scale and collect-inputs-relational
+;;; in demand-relation.scm.
 
 (define (compute-scale facts rid spec-id demand-qty)
   "Compute scale factor for a recipe to produce DEMAND-QTY of SPEC-ID."

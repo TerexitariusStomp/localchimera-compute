@@ -1,47 +1,73 @@
-;;; allocation.scm — Pure relational allocation
+;;; allocation.scm — Pure relational allocation via CLP(FD) deferred labeling
 ;;;
-;;; Replaces netter-goals.scm. Allocation from inventory facts.
-;;; Uses CLP(FD) for cross-demand constraints, direct computation
-;;; for the common case where quantities are ground.
+;;; Each take amount is a CLP(FD) variable. Constraints are posted,
+;;; propagation narrows domains, labeling resolves when needed.
+;;; Shared running-sum variables prevent double-allocation across demands.
 ;;;
-;;; The key insight: inventory quantities and demand quantities are always
-;;; ground (lifted from concrete data). The allocation is deterministic:
-;;; take = min(available, needed). No enumeration needed.
-;;;
-;;; CLP(FD) enters when demands COMPETE for shared resources — the domain
-;;; narrowing tracks what's left after each allocation.
+;;; NOTE: labeling strategy is currently min-first (default).
+;;; For future optimization, could use max-first or proportional heuristics
+;;; without changing the constraint structure.
 
 (use-modules (playnet kanren-constraints)
              (srfi srfi-1))
 
 
+;;; ── Running-sum alist helpers ─────────────────────────────────────────────────
+
+(define (sums-ref sums rid)
+  "Get the current running-sum variable/value for resource RID."
+  (let ((pair (assoc rid sums)))
+    (if pair (cdr pair) 0)))
+
+(define (sums-set sums rid val)
+  "Set the running-sum for RID."
+  (cons (cons rid val)
+        (filter (lambda (p) (not (equal? (car p) rid))) sums)))
+
+
 ;;; ── allocate-o ────────────────────────────────────────────────────────────────
 
-(define (allocate-o facts spec-id qty remaining allocated)
-  "Allocate QTY of SPEC-ID from inventory facts.
-   REMAINING = unmet quantity. ALLOCATED = list of (resource-id amount) pairs.
-   Greedy: takes as much as possible from each resource in order."
+(define (allocate-o facts spec-id qty remaining allocated sums-in sums-out)
+  "Allocate QTY of SPEC-ID from inventory. Posts CLP(FD) constraints.
+   SUMS-IN/SUMS-OUT: running-sum alist tracking total taken per resource.
+   REMAINING and ALLOCATED are logic variables unified by constraints."
   (let ((resources (filter (lambda (f)
                              (and (eq? (car f) 'inventory)
                                   (equal? (caddr f) spec-id)
                                   (> (cadddr f) 0)))
                            facts)))
-    (allocate-from-o qty resources remaining allocated)))
+    (allocate-from-o qty resources remaining allocated sums-in sums-out)))
 
-(define (allocate-from-o qty resources remaining allocated)
-  "Fold allocation across inventory resources. QTY must be ground (integer)."
+(define (allocate-from-o qty resources remaining allocated sums-in sums-out)
+  "Post allocation constraints across matching resources, then label."
   (if (null? resources)
-      ;; No more resources — whatever's left is remaining
-      (fresh () (== remaining qty) (== allocated '()))
+      ;; No more resources — remaining = full qty, nothing allocated
+      (fresh ()
+        (== remaining qty)
+        (== allocated '())
+        (== sums-out sums-in))
       (let* ((r (car resources))
              (rid (cadr r))
              (inv-qty (cadddr r))
-             (take (min inv-qty qty))
-             (rest-qty (- qty take)))
-        (if (= take 0)
-            ;; Nothing to take from this resource — skip
-            (allocate-from-o qty (cdr resources) remaining allocated)
-            ;; Take what we can, recurse with reduced quantity
-            (fresh (rest-alloc)
-              (allocate-from-o rest-qty (cdr resources) remaining rest-alloc)
-              (== allocated (cons (list rid take) rest-alloc)))))))
+             (old-sum (sums-ref sums-in rid)))
+        (fresh (take new-sum rest-remaining rest-alloc sums-mid)
+          ;; CLP(FD) constraints: take ∈ [0, min(inv-qty, qty)]
+          (rangeo take 0 (min inv-qty qty))
+          ;; Running sum: new-sum = old-sum + take, new-sum <= inv-qty
+          (+fd old-sum take new-sum)
+          (<=fd new-sum inv-qty)
+          ;; Label take (max-first: try taking the most first for efficiency)
+          ;; NOTE: change to #:order 'min for different search strategy
+          (labelfd take #:order 'max)
+          ;; AFTER labeling: take is ground, so -fd computes directly
+          (-fd qty take rest-remaining)
+          ;; Recurse on remaining resources with reduced quantity
+          (allocate-from-o rest-remaining (cdr resources) remaining rest-alloc
+                            (sums-set sums-in rid new-sum) sums-mid)
+          ;; Build allocation list (skip zero takes)
+          (project (take)
+            (if (= take 0)
+                (fresh () (== allocated rest-alloc) (== sums-out sums-mid))
+                (fresh ()
+                  (== allocated (cons (list rid take) rest-alloc))
+                  (== sums-out sums-mid))))))))
