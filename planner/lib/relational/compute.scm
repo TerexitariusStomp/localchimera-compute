@@ -1148,6 +1148,93 @@
              (status . ,(assq-ref sig 'status))))))
     signals))
 
+;;; ── Remaining custody state transitions ────────────────────────────────────────
+
+(define (settle-custody ledger resource-id)
+  "Mark resource as settled (consumed/destroyed)."
+  (let ((entry (assoc-ref ledger resource-id)))
+    (if (not entry) ledger
+        (cons (cons resource-id `((custodian . #f) (status . settled)
+                                   (timestamp . ,(assq-ref entry 'timestamp))))
+              (filter (lambda (e) (not (equal? (car e) resource-id))) ledger)))))
+
+(define (penalty-svc missing-value svc-market-equiv total-claim)
+  "Penalty for missing resource."
+  (min (/ missing-value (max 1 svc-market-equiv)) total-claim))
+
+(define (apply-penalty record penalty-amount)
+  "Add penalty to a custody record."
+  (cons (cons 'pending-penalty (+ (or (assq-ref record 'pending-penalty) 0) penalty-amount))
+        (filter (lambda (p) (not (eq? (car p) 'pending-penalty))) record)))
+
+(define (scope-entrustment-capacity member-limits)
+  "Aggregate individual entrustment limits."
+  (fold + 0 member-limits))
+
+
+;;; ── Flow graph accessors ───────────────────────────────────────────────────────
+
+(define (internal-flow scope-id graph)
+  (or (assoc-ref (assq-ref graph 'internal) scope-id) 0))
+
+(define (external-flow scope-id graph)
+  (or (assoc-ref (assq-ref graph 'external) scope-id) 0))
+
+(define (total-flow scope-id graph)
+  (+ (internal-flow scope-id graph) (external-flow scope-id graph)))
+
+(define (bilateral-flow scope-a scope-b graph)
+  (let ((edges (assq-ref graph 'edges)))
+    (+ (or (assoc-ref edges (string-append scope-a "->" scope-b)) 0)
+       (or (assoc-ref edges (string-append scope-b "->" scope-a)) 0))))
+
+(define (boundary-objective graph)
+  "Weighted objective: sum(coherence × total-flow) / aggregate."
+  (let* ((scopes (assq-ref graph 'scopes))
+         (weighted (fold (lambda (s a) (+ a (* (coherence s graph) (total-flow s graph))))
+                         0 scopes))
+         (aggregate (fold (lambda (s a) (+ a (total-flow s graph))) 0 scopes)))
+    (if (> aggregate 0) (/ weighted aggregate) 1)))
+
+
+;;; ── Missing wrappers ───────────────────────────────────────────────────────────
+
+(define (distribute-multiple-income facts income-ids equation)
+  "Map distribute-income over multiple income events."
+  (map (lambda (id) (distribute-income facts id equation)) income-ids))
+
+(define (time-buffer-state fulfillment-done?)
+  "Classify: yet-to-be-received | in-process | completed."
+  (cond ((not fulfillment-done?) 'yet-to-be-received)
+        (fulfillment-done? 'completed)
+        (else 'in-process)))
+
+(define (compute-material-sync-alerts facts spec-ids today horizon)
+  "Material sync alerts with severity."
+  (map (lambda (entry)
+         (let ((sev (if (> (assq-ref entry 'shortfall)
+                           (* 0.5 (assq-ref entry 'demand)))
+                        'critical 'warning)))
+           `(,@entry (severity . ,sev))))
+       (material-sync-shortfall facts spec-ids today horizon)))
+
+(define (orchestrate-recalibration facts buffer-zones as-of window-days)
+  "Recalibrate all buffer zones from facts. Returns list of updated zone alists."
+  (map (lambda (bz)
+    (let* ((spec (cadr bz)) (adu-val (compute-adu facts spec window-days as-of))
+           (dlt-val (compute-decoupled-lead-time facts '() spec))
+           (adj (aggregate-adjustments facts spec as-of #f))
+           (levels (compute-buffer-levels
+                     adu-val dlt-val 0.5 0.5 0 0
+                     (or (assq-ref adj 'demand) 1)
+                     (or (assq-ref adj 'lead-time) 1)
+                     (or (assq-ref adj 'red) 1)
+                     (or (assq-ref adj 'yellow) 1)
+                     (or (assq-ref adj 'green) 1))))
+      `((spec-id . ,spec) (adu . ,adu-val) (dlt . ,dlt-val) ,@levels)))
+    (filter (lambda (f) (eq? (car f) 'buffer-zone)) facts)))
+
+
 (define (compute-lead-time-alerts facts commitments dlt-map today)
   "LTM alerts for open supply commitments."
   (filter-map (lambda (c)
