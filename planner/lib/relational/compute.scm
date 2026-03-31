@@ -800,3 +800,362 @@
                       base
                       (delete-duplicates outputs)))))))))
 
+
+;;; ══════════════════════════════════════════════════════════════════════════════
+;;; Durable inputs: use (time-slot) and cite (existence gate)
+;;; ══════════════════════════════════════════════════════════════════════════════
+
+(define (handle-use-demand facts spec-id qty needed-by)
+  "Schedule a time-slot for 'use' action. Returns (resource-id . use-plan) or #f."
+  (let ((candidates (filter (lambda (f)
+                              (and (eq? (car f) 'inventory)
+                                   (equal? (caddr f) spec-id)
+                                   (> (cadddr f) 0)))
+                            facts)))
+    (if (null? candidates) #f
+        (let ((r (car candidates)))  ;; first available
+          (cons (cadr r) `(use ,spec-id ,qty ,needed-by))))))
+
+(define (handle-cite-demand facts spec-id)
+  "Check existence for 'cite' action. Returns #t if exists, #f otherwise."
+  (any (lambda (f)
+         (and (eq? (car f) 'inventory) (equal? (caddr f) spec-id) (> (cadddr f) 0)))
+       facts))
+
+
+;;; ══════════════════════════════════════════════════════════════════════════════
+;;; Transport routing
+;;; ══════════════════════════════════════════════════════════════════════════════
+
+(define (find-transport-recipe facts spec-id demand-location)
+  "Find transport recipe + source location. Returns (recipe-id . from-location) or #f."
+  (if (not demand-location) #f
+      (let* ((source-locs
+               (filter-map (lambda (f)
+                 (and (eq? (car f) 'inventory)
+                      (equal? (caddr f) spec-id)
+                      (> (cadddr f) 0)
+                      (list-ref f 3)
+                      (not (equal? (list-ref f 3) demand-location))
+                      (cons (list-ref f 3) (cadddr f))))
+                 facts))
+             (transport-recipes
+               (filter (lambda (f)
+                 (and (eq? (car f) 'recipe)
+                      ;; Simplified: any recipe tagged as transport
+                      ;; (real system would check for pickup+dropoff flow pairs)
+                      (string-contains (or (caddr f) "") "Transport")))
+                 facts)))
+        (if (or (null? source-locs) (null? transport-recipes)) #f
+            (let ((best-loc (caar (sort source-locs (lambda (a b) (> (cdr a) (cdr b))))))
+                  (recipe-id (cadr (car transport-recipes))))
+              (cons recipe-id best-loc))))))
+
+
+;;; ══════════════════════════════════════════════════════════════════════════════
+;;; Supply-side netting
+;;; ══════════════════════════════════════════════════════════════════════════════
+
+(define (net-supply facts spec-id qty)
+  "Deduct pre-claimed consuming flows from supply. Returns remaining supply."
+  (let ((consuming (fold (lambda (f a)
+                           (if (and (eq? (car f) 'intent)
+                                    (equal? (cadddr f) spec-id)
+                                    (eq? (list-ref f 7) 'input)
+                                    (not (list-ref f 10))
+                                    (not (memq (caddr f) *non-consuming*))
+                                    (list-ref f 4))
+                               (+ a (list-ref f 4)) a))
+                         0 facts)))
+    (max 0 (- qty consuming))))
+
+(define (net-available facts spec-id)
+  "Query available quantity without claiming."
+  (let ((oh (compute-onhand facts spec-id #f))
+        (oo (compute-onorder facts spec-id)))
+    (+ oh oo)))
+
+
+;;; ══════════════════════════════════════════════════════════════════════════════
+;;; Remaining DDMRP analytics
+;;; ══════════════════════════════════════════════════════════════════════════════
+
+(define (signal-integrity-report facts signals)
+  "Map signals to approvals + fulfillment state."
+  (map (lambda (sig)
+         (let* ((spec (assq-ref sig 'spec-id))
+                (approved-commit (find (lambda (f)
+                  (and (eq? (car f) 'commitment) (equal? (cadddr f) spec)
+                       (memq (caddr f) '(produce transfer)) (not (list-ref f 8))))
+                  facts)))
+           (if (not approved-commit)
+               `((signal . ,sig) (status . unmatched))
+               `((signal . ,sig)
+                 (commitment-id . ,(cadr approved-commit))
+                 (status . matched)))))
+       signals))
+
+(define (project-buffer-zones facts buffer-zones today)
+  "Project NFP trajectory for all buffers."
+  (map (lambda (bz)
+         (let* ((spec (cadr bz)) (tor (caddr bz)) (toy (cadddr bz))
+                (tog (list-ref bz 4)) (dlt (list-ref bz 6))
+                (oh (compute-onhand facts spec #f)))
+           `((spec-id . ,spec)
+             (projections . ,(compute-on-hand-projection facts spec today dlt oh tor toy tog)))))
+       (filter (lambda (f) (eq? (car f) 'buffer-zone)) facts)))
+
+(define (compute-min-max-buffer adu dlt ltf vf)
+  "Min/max bounds from buffer levels."
+  (let ((levels (compute-buffer-levels adu dlt ltf vf 0 0 1 1 1 1 1)))
+    `(,@levels (min . ,(assq-ref levels 'tor)) (max . ,(assq-ref levels 'tog)))))
+
+(define (average-on-hand-target tor toy tog)
+  "Expected average: TOR + (TOG - TOY) / 2."
+  (+ tor (/ (- tog toy) 2)))
+
+(define (zone-distribution facts nfp-results)
+  "Count buffers per zone."
+  (let ((red 0) (yellow 0) (green 0) (excess 0))
+    (for-each (lambda (bz)
+      (when (eq? (car bz) 'buffer-zone)
+        (let* ((spec (cadr bz)) (tor (caddr bz)) (toy (cadddr bz))
+               (tog (list-ref bz 4))
+               (nfp (or (assoc-ref nfp-results spec) 0))
+               (zone (cond ((<= nfp tor) 'red) ((<= nfp toy) 'yellow)
+                           ((<= nfp tog) 'green) (else 'excess))))
+          (case zone
+            ((red) (set! red (+ red 1)))
+            ((yellow) (set! yellow (+ yellow 1)))
+            ((green) (set! green (+ green 1)))
+            ((excess) (set! excess (+ excess 1)))))))
+      facts)
+    `((red . ,red) (yellow . ,yellow) (green . ,green) (excess . ,excess))))
+
+(define (time-in-zone history zone)
+  "Fraction of entries where zone matches."
+  (if (null? history) 0
+      (/ (count (lambda (h) (eq? (assq-ref h 'zone) zone)) history)
+         (length history))))
+
+(define (zone-transitions history)
+  "Zone boundary crossings."
+  (if (< (length history) 2) '()
+      (let loop ((prev (car history)) (rest (cdr history)) (acc '()))
+        (if (null? rest) (reverse acc)
+            (let ((pz (assq-ref prev 'zone)) (cz (assq-ref (car rest) 'zone)))
+              (loop (car rest) (cdr rest)
+                    (if (eq? pz cz) acc
+                        (cons `((date . ,(assq-ref (car rest) 'date))
+                                (from . ,pz) (to . ,cz)) acc))))))))
+
+(define (classify-analytics-zone nfp-pct)
+  "7-zone fine classification."
+  (cond ((< nfp-pct 0) 'dark-red-critical)
+        ((< nfp-pct 0.15) 'dark-red)
+        ((< nfp-pct 0.33) 'red)
+        ((< nfp-pct 0.67) 'yellow)
+        ((< nfp-pct 0.85) 'green)
+        ((< nfp-pct 1.0) 'light-green)
+        (else 'excess)))
+
+(define (flow-index adu tog)
+  "Buffer turnover: ADU / TOG."
+  (if (> tog 0) (/ adu tog) 0))
+
+(define (classify-flow-speed fi)
+  (cond ((> fi 0.5) 'fast) ((< fi 0.1) 'slow) (else 'normal)))
+
+(define (capacity-in-time tog batch-size process-duration-days)
+  "Work center days per replenishment."
+  (if (> batch-size 0) (* (/ tog batch-size) process-duration-days) 0))
+
+(define (capacity-buffer-status load total-capacity green-threshold yellow-threshold)
+  "Work center load: green=low, red=high (inverse of stock buffers)."
+  (let ((util (if (> total-capacity 0) (/ load total-capacity) 0)))
+    (cond ((> util 1.0) `((zone . excess) (utilization . ,util)))
+          ((> util yellow-threshold) `((zone . red) (utilization . ,util)))
+          ((> util green-threshold) `((zone . yellow) (utilization . ,util)))
+          (else `((zone . green) (utilization . ,util))))))
+
+
+;;; ── Profile utilities ─────────────────────────────────────────────────────────
+
+(define *standard-ltf* '((short . 1.0) (medium . 2.0) (long . 4.0)))
+(define *standard-vf* '((low . 0.15) (medium . 0.5) (high . 0.85)))
+
+(define (validate-buffer-profile ltf vf ost)
+  "Returns list of errors (empty = valid)."
+  (let ((errors '()))
+    (when (and ltf (or (< ltf 0.1) (> ltf 10.0)))
+      (set! errors (cons "LTF out of range [0.1, 10.0]" errors)))
+    (when (and vf (or (< vf 0.0) (> vf 1.0)))
+      (set! errors (cons "VF out of range [0.0, 1.0]" errors)))
+    (when (and ost (< ost 0))
+      (set! errors (cons "OST must be >= 0" errors)))
+    errors))
+
+(define (build-profile-code ltf-class vf-class ost-mult)
+  "Compact code: 'S-L-1.5'."
+  (string-append
+    (case ltf-class ((short) "S") ((medium) "M") ((long) "L") (else "?"))
+    "-"
+    (case vf-class ((low) "L") ((medium) "M") ((high) "H") (else "?"))
+    (if (= ost-mult 1.0) "" (string-append "-" (number->string ost-mult)))))
+
+(define (parse-profile-code code)
+  "Parse 'S-L-1.5' into alist."
+  (let ((parts (string-split code #\-)))
+    (and (>= (length parts) 2)
+         (let ((ltf (case (string-ref (car parts) 0)
+                      ((#\S) 'short) ((#\M) 'medium) ((#\L) 'long) (else #f)))
+               (vf (case (string-ref (cadr parts) 0)
+                     ((#\L) 'low) ((#\M) 'medium) ((#\H) 'high) (else #f)))
+               (ost (if (>= (length parts) 3) (string->number (caddr parts)) 1.0)))
+           (and ltf vf `((ltf . ,ltf) (vf . ,vf) (ost-multiplier . ,ost)))))))
+
+(define (cascade-component-daf base-adu parent-contributions)
+  "Effective DAF for shared component."
+  (if (= base-adu 0) 1
+      (/ (fold (lambda (p a) (+ a (* (car p) (cdr p)))) 0 parent-contributions)
+         base-adu)))
+
+(define (adjust-vf-for-capacity nominal-vf utilization-pct)
+  "Dynamic VF: higher utilization → higher VF."
+  (cond ((> utilization-pct 0.95) (min 1.0 (* nominal-vf 1.5)))
+        ((> utilization-pct 0.85) (* nominal-vf 1.2))
+        ((< utilization-pct 0.5) (max 0.05 (* nominal-vf 0.8)))
+        (else nominal-vf)))
+
+(define (score-positioning-analysis pa)
+  "Score decoupling-point analysis."
+  (let ((dr (or (assq-ref pa 'demand-risk) 0))
+        (sr (or (assq-ref pa 'supply-risk) 0))
+        (ft (or (assq-ref pa 'flow-throughput) 0)))
+    (+ (* dr 0.4) (* sr 0.35) (* ft 0.25))))
+
+(define (buffer-eligibility facts spec-id)
+  "Check buffering eligibility."
+  (let ((recipes (filter (lambda (f) (and (eq? (car f) 'recipe)
+                                           (equal? (cadddr f) spec-id))) facts)))
+    (cond ((null? recipes)
+           `((eligible . #f) (reason . "No recipes produce this spec")))
+          ((> (length recipes) 3)
+           `((eligible . #t) (reason . "Multiple sourcing — high variability candidate")))
+          (else `((eligible . #t) (reason . "Standard buffer candidate"))))))
+
+(define (check-item-type-consistency facts spec-id item-type)
+  "Validate item type vs recipe role."
+  (let ((as-output (filter (lambda (f) (and (eq? (car f) 'recipe)
+                                             (equal? (cadddr f) spec-id))) facts))
+        (as-input (filter (lambda (f)
+          (and (eq? (car f) 'flow) (eq? (caddr f) 'input)
+               (equal? (cadddr f) spec-id))) facts)))
+    (case item-type
+      ((raw-material) (and (null? as-output) (pair? as-input)))
+      ((finished-good) (and (pair? as-output) (null? as-input)))
+      ((subassembly intermediate) (and (pair? as-output) (pair? as-input)))
+      (else #t))))
+
+(define (recommend-buffer-type facts spec-id)
+  "Recommend: OPT | MRO | HEDGE | SAFETY."
+  (let ((recipes (filter (lambda (f) (and (eq? (car f) 'recipe)
+                                           (equal? (cadddr f) spec-id))) facts))
+        (has-var (any (lambda (f)
+          (and (eq? (car f) 'adjustment-factor) (equal? (cadr f) spec-id)
+               (> (cadddr f) 1.2))) facts)))
+    (cond ((null? recipes) 'MRO)
+          (has-var 'HEDGE)
+          ((> (length recipes) 2) 'OPT)
+          (else 'SAFETY))))
+
+(define (analyze-recipe-topology facts recipe-id)
+  "Recipe DAG structural analysis."
+  (let* ((cf (find (lambda (f) (and (eq? (car f) 'chain) (equal? (cadr f) recipe-id))) facts))
+         (pids (if cf (caddr cf) '()))
+         (n (length pids))
+         (max-in 0) (max-out 0) (conv 0) (div 0))
+    (for-each (lambda (pid)
+      (let ((ni (length (filter (lambda (f) (and (eq? (car f) 'flow) (equal? (cadr f) pid)
+                                                  (eq? (caddr f) 'input))) facts)))
+            (no (length (filter (lambda (f) (and (eq? (car f) 'flow) (equal? (cadr f) pid)
+                                                  (eq? (caddr f) 'output))) facts))))
+        (when (> ni max-in) (set! max-in ni))
+        (when (> no max-out) (set! max-out no))
+        (when (> ni 1) (set! conv (+ conv 1)))
+        (when (> no 1) (set! div (+ div 1)))))
+      pids)
+    `((recipe-id . ,recipe-id) (depth . ,n)
+      (max-fan-in . ,max-in) (max-fan-out . ,max-out)
+      (convergent . ,conv) (divergent . ,div)
+      (is-linear . ,(and (= conv 0) (= div 0)))
+      (complexity . ,(+ n (* conv 2) (* div 2))))))
+
+
+;;; ══════════════════════════════════════════════════════════════════════════════
+;;; Custody ledger (state machine over facts)
+;;; ══════════════════════════════════════════════════════════════════════════════
+
+(define (build-custody-ledger facts)
+  "Build custody ledger from transfer-custody events. Returns alist of (resource-id . custodian)."
+  (let ((ledger (make-hash-table)))
+    (for-each (lambda (f)
+      (when (and (eq? (car f) 'event) (eq? (caddr f) 'transfer-custody))
+        ;; Simplified: resource spec → latest receiver
+        (let ((spec (cadddr f)))
+          (hash-set! ledger spec `((custodian . receiver) (timestamp . ,(list-ref f 5)))))))
+      facts)
+    (hash-map->list cons ledger)))
+
+(define (current-custodian ledger resource-id)
+  "Who holds custody?"
+  (let ((entry (assoc-ref ledger resource-id)))
+    (and entry (assq-ref entry 'custodian))))
+
+(define (held-by ledger agent-id)
+  "All resources held by agent."
+  (filter (lambda (e) (equal? (assq-ref (cdr e) 'custodian) agent-id)) ledger))
+
+(define (material-sync-shortfall facts spec-ids today horizon-days)
+  "Identify supply shortfalls for non-decoupled components."
+  (filter-map (lambda (spec)
+    (let* ((oh (compute-onhand facts spec #f))
+           (demand (fold (lambda (f a)
+                     (if (and (eq? (car f) 'intent) (equal? (cadddr f) spec)
+                              (eq? (list-ref f 7) 'input) (not (list-ref f 10))
+                              (list-ref f 4))
+                         (+ a (list-ref f 4)) a))
+                     0 facts))
+           (gap (max 0 (- demand oh))))
+      (and (> gap *epsilon*)
+           `((spec-id . ,spec) (onhand . ,oh) (demand . ,demand) (shortfall . ,gap)))))
+    spec-ids))
+
+(define (buffer-health-history facts spec-id snapshots)
+  "Historical buffer state from snapshots."
+  (filter-map (lambda (s)
+    (and (equal? (assq-ref s 'spec-id) spec-id)
+         (let ((oh (or (assq-ref s 'onhand) 0)))
+           `((date . ,(assq-ref s 'date)) (onhand . ,oh)))))
+    snapshots))
+
+(define (signal-compliance-history signals from-date to-date)
+  "Signal compliance grid."
+  (filter-map (lambda (sig)
+    (let ((due (assq-ref sig 'due)))
+      (and due (>= due from-date) (<= due to-date)
+           `((date . ,due) (spec-id . ,(assq-ref sig 'spec-id))
+             (status . ,(assq-ref sig 'status))))))
+    signals))
+
+(define (compute-lead-time-alerts facts commitments dlt-map today)
+  "LTM alerts for open supply commitments."
+  (filter-map (lambda (c)
+    (and (eq? (car c) 'commitment) (not (list-ref c 8)) (list-ref c 5)
+         (let* ((spec (cadddr c))
+                (dlt (or (assoc-ref dlt-map spec) 7))
+                (zone (ltm-alert (list-ref c 5) dlt today)))
+           (and zone (memq zone '(red yellow))
+                `((commitment-id . ,(cadr c)) (spec-id . ,spec) (zone . ,zone))))))
+    facts))
+
