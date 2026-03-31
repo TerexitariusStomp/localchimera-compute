@@ -4,6 +4,7 @@
 
 (let ((dir (dirname (current-filename))))
   (load (string-append dir "/planning-facts.scm"))
+  (load (string-append dir "/compute.scm"))
   (load (string-append dir "/allocation.scm"))
   (load (string-append dir "/signals.scm"))
   (load (string-append dir "/ddmrp.scm"))
