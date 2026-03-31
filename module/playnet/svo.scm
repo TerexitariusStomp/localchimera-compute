@@ -23,7 +23,7 @@
 ;;;   (edge EID FROM-NID VERB TO-NID)               ;; the proposition IS the edge
 ;;;   (nominalization NID EID VERB NOUN-NID)         ;; Op. B1: verb→noun-node
 ;;;   (passivization PID EID ALIENATING?)            ;; Op. B2: subject obscured
-;;;   (governance GID CREATION-EID GOV-EID)          ;; Op. C: two edges linked
+;;;   (governance GID CREATION-EID GOV-EID)          ;; Op. C: two edges linked (not all alienating!)
 ;;;   (exchange XID PROD-EID1 PROD-EID2 XFER-EID)   ;; commodity exchange network
 ;;;   (free-link FID EID1 EID2)                      ;; recognition/offering
 ;;;   (mode LABEL)                                   ;; economic grammar label
@@ -45,7 +45,11 @@
             alienation-o reified-o
             reciprocal-alienation-o
             private-property-o
-            self-commodification-o fetishism-o
+            self-commodification-o
+            surplus-o fetishism-o
+            ;; Hegel
+            constitutes-o bildung-o
+            reproduces-domination-o
             ;; Free association
             free-association-o
             inversion-step-o full-inversion-o
@@ -109,15 +113,13 @@
 (define (alienation-o facts dim s e gov-eid)
   "The four-fold alienation of Marx, as recursive structure.
    DIM unifies with each dimension that holds for subject S,
-   production edge E, and governance edge GOV-EID."
+   production edge E, and governance edge GOV-EID.
+   Uses private-property-o — not all governance is alienating."
   (conde
-    ;; S─O: base.  Two edges converge on the same object node —
-    ;; one creates it, another governs it.
+    ;; S─O: base.  S's product is private property of another.
     ((== dim 'from-product)
-     (fresh (gid s2 v1 v2 o)
-       (edge-o facts e s v1 o)
-       (edge-o facts gov-eid s2 v2 o)
-       (governance-o facts gid e gov-eid)))
+     (fresh (s2 o)
+       (private-property-o facts s s2 o e gov-eid)))
 
     ;; S─V: the living verb is reified into a noun-node or
     ;; passivized away.  Entails from-product.
@@ -125,13 +127,21 @@
      (alienation-o facts 'from-product s e gov-eid)
      (reified-o facts e))
 
-    ;; S─S: the subject IS the object of the governance edge.
+    ;; S─S direct (slavery): S IS the governed object.
     ;; S appears in the TO position — treated as a thing.
     ((== dim 'from-species-being)
      (fresh (gid s2 v1 v2 o)
-       (edge-o facts e s v1 o)            ;; S is the producing subject
-       (edge-o facts gov-eid s2 v2 s)     ;; and S is governed as object
+       (edge-o facts e s v1 o)
+       (edge-o facts gov-eid s2 v2 s)
        (governance-o facts gid e gov-eid)))
+
+    ;; S─S mediated (wage labor): S's self-commodified capacity
+    ;; is private property of another.  The worker objectifies
+    ;; their own species-being via nominalization.
+    ((== dim 'from-species-being)
+     (fresh (s2 com-eid nom-obj gov2)
+       (self-commodification-o facts s e com-eid nom-obj)
+       (private-property-o facts s s2 nom-obj com-eid gov2)))
 
     ;; S─S1: subjects relate through governed objects, not directly.
     ;; Reciprocal from-product — S governs another subject's product too.
@@ -152,24 +162,21 @@
        (passivization-o facts pid eid #t)))))
 
 (define (reciprocal-alienation-o facts s1 s2 o1 o2 e1 e2 g1-eid g2-eid)
-  "Symmetric four-fold: both S1 and S2 alienated from-product,
-   with cross-governance.  Derived from alienation-o."
-  (fresh (v1 v2 v3 v4)
-    (alienation-o facts 'from-product s1 e1 g1-eid)
-    (alienation-o facts 'from-product s2 e2 g2-eid)
-    ;; Cross-governance: S2 governs S1's object, S1 governs S2's object
-    (edge-o facts e1 s1 v1 o1)
-    (edge-o facts g1-eid s2 v2 o1)
-    (edge-o facts e2 s2 v3 o2)
-    (edge-o facts g2-eid s1 v4 o2)))
+  "Symmetric alienation: S1's product is S2's private property,
+   and S2's product is S1's private property."
+  (private-property-o facts s1 s2 o1 e1 g1-eid)
+  (private-property-o facts s2 s1 o2 e2 g2-eid))
 
-(define (private-property-o facts eid gov-eid obj)
-  "OBJ has taken the form of private property:
-   produced by one subject, governed by another."
-  (fresh (gid s1 s2 v1 v2)
-    (edge-o facts eid s1 v1 obj)
+(define (private-property-o facts s1 s2 obj use-eid gov-eid)
+  "Private property as a social relation between S1 and S2,
+   mediated through OBJ.  S1 produces/uses OBJ, S2 governs it.
+   Not all governance is alienating — only governance that creates
+   exclusion, where the producer's use is conditioned on the
+   governor's terms."
+  (fresh (gid v1 v2)
+    (edge-o facts use-eid s1 v1 obj)
     (edge-o facts gov-eid s2 v2 obj)
-    (governance-o facts gid eid gov-eid)))
+    (governance-o facts gid use-eid gov-eid)))
 
 (define (self-commodification-o facts s prod-eid com-eid nom-obj)
   "S nominalizes their own production verb into NOM-OBJ,
@@ -181,16 +188,65 @@
     (nominalization-o facts nid prod-eid verb nom-obj) ;; verb → commodity
     (edge-o facts com-eid s v2 nom-obj)))              ;; S offers it
 
+(define (surplus-o facts s s2 product prod-eid com-eid)
+  "The structural form of surplus extraction: S's living verb
+   produces PRODUCT governed by S2, AND S's self-commodified
+   capacity is also governed by S2.  The double private-property
+   — over both product and capacity — is the form of exploitation."
+  (fresh (nom-obj gov-prod gov-cap)
+    (self-commodification-o facts s prod-eid com-eid nom-obj)
+    (private-property-o facts s s2 product prod-eid gov-prod)
+    (private-property-o facts s s2 nom-obj com-eid gov-cap)))
+
 (define (fetishism-o facts xid s1 s2 o1 o2)
   "Commodity fetishism: exchange of objects that have taken
    the form of private property.  Objects appear to relate
    to each other, hiding the productive relations."
-  (fresh (e1 e2 g1 g2 xfer-eid v1 v2)
-    (private-property-o facts e1 g1 o1)
-    (private-property-o facts e2 g2 o2)
-    (edge-o facts e1 s1 v1 o1)
-    (edge-o facts e2 s2 v2 o2)
+  (fresh (e1 e2 g1 g2 xfer-eid s1b s2b)
+    (private-property-o facts s1 s1b o1 e1 g1)
+    (private-property-o facts s2 s2b o2 e2 g2)
     (exchange-o facts xid e1 e2 xfer-eid)))
+
+
+;;; ── Hegel ────────────────────────────────────────────────────────────────────
+;;; The producing subject constitutes both social positions, produces
+;;; the infrastructure of their own domination, and through formative
+;;; labor discovers the capacity to overcome the relation.
+;;;
+;;; Three relations, universal across modes:
+;;;   constitutes-o            S produces both positions (self-loop + other)
+;;;   reproduces-domination-o  S produces infrastructure governed by S2 + constitutes
+;;;   bildung-o                self-loop inverts to formative activity
+
+(define (constitutes-o facts s s2 self-eid other-eid gov-eid)
+  "S constitutes both social positions: produces S (self-loop,
+   governed) and produces S2.  The laboring subject produces
+   the entire relation — including their own subordination."
+  (fresh (gid v1 v2)
+    (edge-o facts self-eid s v1 s)
+    (edge-o facts other-eid s v2 s2)
+    (governance-o facts gid self-eid gov-eid)))
+
+(define (bildung-o facts s self-eid bildung-eid kind)
+  "S's governed self-production (self-loop) inverts to formative
+   activity.  The same capacity that reproduces subordination
+   becomes the seed of emancipation."
+  (fresh (iid v1 o)
+    (edge-o facts self-eid s _ s)
+    (edge-o facts bildung-eid s v1 o)
+    (inversion-o facts iid self-eid bildung-eid kind)))
+
+(define (reproduces-domination-o facts s s2 infrastructure)
+  "The governed produce the governance: S produces INFRASTRUCTURE
+   which is private property of S2, and S constitutes both positions
+   under S2's governance.  The circle of domination.
+   Works across modes — slavery (dominion), wage labor (means)."
+  (fresh (infra-eid gov-eid self-eid other-eid gov-self)
+    (private-property-o facts s s2 infrastructure infra-eid gov-eid)
+    (constitutes-o facts s s2 self-eid other-eid gov-self)))
+
+
+;;; ── Free association ─────────────────────────────────────────────────────────
 
 (define (free-association-o facts eid1 eid2 s1 s2)
   "True when S1 and S2 relate through recognition/offering.
@@ -231,44 +287,125 @@
 
 ;;; ── Example fact sets ────────────────────────────────────────────────────────
 
-;;; Slavery — Total alienating governance (Op. C)
-;;; The master owns the slave's capacity to act and its products.
+;;; Slavery — Hegel's lord and bondsman (Phenomenology §178-196)
+;;; The slave's labor produces the social relation itself:
+;;; the slave produces themselves as slave AND the master as master.
+;;; Through that same labor — Bildung — the slave discovers formative
+;;; capacity, which is the seed of the dialectical reversal.
+;;;
+;;; Alienated form:
+;;;
+;;;   slave ──[labors]──▶ product         (production)
+;;;         ──[produces]──▶ dominion      (the governed produce the governance)
+;;;         ──[produces]──▶ master        (constitutes mastery)
+;;;         ──[produces]──▶ slave         (continuation in servitude)
+;;;                            ▲
+;;;   master ──[owns]──────────┘          (direct ownership of the person)
+;;;          ──[owns]──▶ product          (governance of product)
+;;;          ──[owns]──▶ dominion         (governs what slave built)
+;;;          ──[consumes]──▶ product      (non-formative: dependence)
+;;;
+;;; Bildung (the reversal):
+;;;
+;;;   slave ──[shapes]──▶ world           (formative labor)
+;;;   Servitude → formation.  The same productive capacity,
+;;;   redirected from self-enslavement to self-formation.
 
 (define *slavery-facts*
   '(;; Nodes
     (node slave "The Slave" subject)
     (node master "The Master" subject)
     (node product "Product" object)
+    (node dominion "Means of Domination" object) ;; plantation, estate, infrastructure
+    (node world "The Shaped World" object)       ;; Bildung
 
     ;; Mode
     (mode slavery)
     (mode-has slavery governance)
 
+    ;; ── Production ──
     ;; slave ──[labors]──▶ product
     (edge e1 slave labors product)
 
+    ;; ── Governance ──
     ;; master ──[owns]──▶ product   (from-product: converges on same node)
     (edge e2 master owns product)
     (governance g1 e1 e2)
 
     ;; master ──[owns]──▶ slave   (from-species-being: S IS the object)
     (edge e3 master owns slave)
-    (governance g2 e1 e3)))
+    (governance g2 e1 e3)
+
+    ;; master ──[owns]──▶ dominion
+    (edge e-md master owns dominion)
+
+    ;; ── The governed produce the governance ──
+    ;; The slave builds the plantation, the estate, the infrastructure
+    ;; of the master's power.  Not through selling themselves (that's
+    ;; wage labor), but through continued servitude: the slave's labor
+    ;; produces the material basis of domination that sustains their
+    ;; own domination.
+    (edge e-pd slave produces dominion)
+    (governance g-pd e-pd e-md)
+
+    ;; ── Hegel: the slave produces both positions ──────────────
+    ;; The slave's labor produces the social relation itself.
+
+    ;; slave ──[produces]──▶ master   (recognition constitutes mastery)
+    (edge e4 slave produces master)
+
+    ;; slave ──[produces]──▶ slave    (continuation in servitude)
+    ;; Self-loop: not self-commodification but continued servitude.
+    ;; Governed by direct ownership of the person (e3) —
+    ;; which is sustained by the dominion the slave themselves produce.
+    (edge e5 slave produces slave)
+    (governance g3 e5 e3)
+
+    ;; master ──[consumes]──▶ product   (non-formative: deepens dependence)
+    ;; The master doesn't labor — their identity depends on the slave.
+    (edge e6 master consumes product)
+
+    ;; ── Bildung: the dialectical reversal ─────────────────────
+    ;; Through labor on things, the slave shapes the world and
+    ;; discovers formative capacity — the seed of emancipation.
+    ;; The same self-productive power that constitutes servitude (e5)
+    ;; becomes formative self-creation (e-f1).
+
+    ;; slave ──[shapes]──▶ world   (formative labor)
+    (edge e-f1 slave shapes world)
+    (inversion i1 e5 e-f1 servitude-to-formation)))
 
 
-;;; Wage Labor — Self-commodification + Exchange + Governance
-;;; The worker is formally free (no from-species-being), but nominalizes
-;;; their own verb into labor-power — a commodity exchanged for wages.
-;;; The slave IS property; the wage worker PRODUCES a commodity from
-;;; their own living capacity.
+;;; Wage Labor — Self-commodification + Exchange + Private Property
+;;; The worker is formally free (no direct from-species-being), but
+;;; nominalizes their own verb into labor-power — a commodity exchanged
+;;; for wages.  Mediated from-species-being: the self-commodified
+;;; capacity is private property.  The slave IS property; the wage
+;;; worker PRODUCES a commodity from their own living capacity.
+;;;
+;;; First negation (alienated form):
 ;;;
 ;;;   worker ──[labors]──▶ product          (living verb)
 ;;;          ──[sells]───▶ labor-power      (self-commodification)
+;;;          ──[produces]──▶ capitalist     (surplus constitutes capital)
+;;;          ──[produces]──▶ worker         (self-loop: reproduces position)
+;;;          ──[produces]──▶ means          (the governed produce the governance)
 ;;;                            ▲
 ;;;   capitalist ──[buys]──────┘            (governance: private property)
 ;;;              ──[owns]──▶ product        (governance: product too)
+;;;              ──[owns]──▶ means          (monopoly — governs e-pm AND e-hw)
 ;;;
 ;;;   labor-power ──[exchanges-for]──▶ wage
+;;;
+;;; Bildung: worker ──[organizes]──▶ solidarity  (seed of emancipation)
+;;;
+;;; Negation of the negation (emancipated form):
+;;;
+;;;   producer-a ──[creates]──▶ product     (living verb restored)
+;;;   producer-b ──[recognizes]──▶ product  (recognition, not ownership)
+;;;   producer-a ──[offers]──▶ effort       (contribution, not commodity)
+;;;   producer-b ──[recognizes]──▶ effort   (mutual recognition)
+;;;   associates ──[steward]──▶ means       (commons, not monopoly)
 
 (define *wage-labor-facts*
   '(;; Nodes
@@ -277,6 +414,13 @@
     (node product "Product" object)
     (node labor-power "Labor-Power" commodity)  ;; the nominalized verb as commodity
     (node wage "Wage" commodity)
+    (node means "Means of Production" object)
+    ;; Emancipated subjects
+    (node producer-a "Producer A" subject)
+    (node producer-b "Producer B" subject)
+    (node associates "The Association" subject)
+    (node effort "Living Activity" object)     ;; the un-commodified verb
+    (node solidarity "Collective Capacity" object) ;; Bildung
 
     ;; Mode
     (mode wage-labor)
@@ -312,9 +456,87 @@
     (edge e3 capitalist owns product)
     (governance g1 e1 e3)
 
+    ;; capitalist ──[owns]──▶ means   (monopoly: the "doubly free" worker)
+    (edge e-mp capitalist owns means)
+
+    ;; ── The governed produce the governance ──
+    ;; Workers produce the means of production themselves —
+    ;; factories, tools, infrastructure — which become private
+    ;; property and thus the very governance that compels them
+    ;; to sell labor-power.
+    (edge e-pm worker produces means)
+    (governance g-pm e-pm e-mp)
+
     ;; ── Reification ──
     ;; "Workers labor" → "Value is created"
-    (passivization pa1 e1 #t)))
+    (passivization pa1 e1 #t)
+
+    ;; ── Hegel: the worker produces both positions ────────────
+    ;; "The capitalist process of production... produces and
+    ;; reproduces the capital-relation itself; on the one side
+    ;; the capitalist, on the other the wage-labourer."
+    ;; (Capital I, Ch. 23)
+
+    ;; worker ──[produces]──▶ capitalist   (surplus constitutes capital)
+    (edge e-hc worker produces capitalist)
+
+    ;; worker ──[produces]──▶ worker       (self-loop)
+    ;; Not just individual reproduction: the proletariat reproduces
+    ;; the property relations (g-pm: means as private property)
+    ;; that impel them to become workers.  The governed produce
+    ;; the governance.  The self-loop is governed by e-mp —
+    ;; which is itself produced by e-pm — which is itself governed
+    ;; by e-mp.  The circle closes.
+    (edge e-hw worker produces worker)
+    (governance g-hw e-hw e-mp)
+
+    ;; ── Bildung: organizational capacity ──────────────────────
+    ;; Through collective labor, the working class develops the
+    ;; capacity for self-organization — the seed of emancipation.
+    ;; The same self-reproductive power that reproduces servitude
+    ;; becomes collective organizing capacity.
+
+    ;; worker ──[organizes]──▶ solidarity   (formative labor)
+    (edge e-b1 worker organizes solidarity)
+    (inversion i-hw e-hw e-b1 reproduction-to-organization)
+
+    ;; ── Negation of the negation ──────────────────────────────
+    ;; The split in private-property-o (s1 uses, s2 governs) is
+    ;; overcome.  Not a return to individual property but a new
+    ;; form: associated producers collectively produce and
+    ;; collectively govern.
+    ;;
+    ;;   governance → recognition
+    ;;   commodity  → contribution
+    ;;   monopoly   → commons
+    ;;   nominalization dissolved — the verb stays living.
+
+    ;; producer-a ──[creates]──▶ product   (living verb restored)
+    (edge e-f1 producer-a creates product)
+    (inversion i1 e3 e-f1 governance-to-creation)
+
+    ;; producer-b ──[recognizes]──▶ product   (recognition, not ownership)
+    (edge e-f2 producer-b recognizes product)
+    (free-link f1 e-f1 e-f2)
+
+    ;; producer-a ──[offers]──▶ effort   (freely given, not sold)
+    ;; No nominalization — the verb stays living.
+    (edge e-f3 producer-a offers effort)
+    (inversion i2 e-lp e-f3 commodity-to-contribution)
+    (free-link f2 e-f2 e-f3)
+
+    ;; producer-b ──[recognizes]──▶ effort   (mutual recognition)
+    (edge e-f4 producer-b recognizes effort)
+    (free-link f3 e-f3 e-f4)
+
+    ;; associates ──[steward]──▶ means   (commons, not monopoly)
+    (edge e-f5 associates steward means)
+    (inversion i3 e-mp e-f5 monopoly-to-commons)
+    (free-link f4 e-f4 e-f5)
+
+    ;; Bildung → commons: organizational capacity is what enables
+    ;; the associated producers to collectively steward the means.
+    (free-link f-b e-b1 e-f5)))
 
 
 ;;; Theology — Projection + Governance + Free-Association Inversion
@@ -477,16 +699,87 @@
 ;;; (run* (dim) (fresh (e g) (alienation-o *slavery-facts* dim 'slave e g)))
 ;;; => (from-product from-species-being)
 ;;;
+;;; Private property in slavery: "what does the slave produce for the master?"
+;;; (run* (q)
+;;;   (fresh (s1 s2 obj e g)
+;;;     (private-property-o *slavery-facts* s1 s2 obj e g)
+;;;     (== q obj)))
+;;; => (product dominion)   ;; the slave produces both — including the
+;;;                         ;; infrastructure that sustains domination.
+;;;
+;;; ── Unified Hegelian queries (work across all modes) ──
+;;;
+;;; "The governed produce the governance — who, for whom, through what?"
+;;; (run* (q)
+;;;   (fresh (s2 infra)
+;;;     (reproduces-domination-o *slavery-facts* 'slave s2 infra)
+;;;     (== q `(slave produces ,infra for ,s2))))
+;;; => ((slave produces dominion for master))
+;;;
+;;; (run* (q)
+;;;   (fresh (s2 infra)
+;;;     (reproduces-domination-o *wage-labor-facts* 'worker s2 infra)
+;;;     (== q `(worker produces ,infra for ,s2))))
+;;; => ((worker produces means for capitalist))
+;;;
+;;; Same relation, same structure, different content.
+;;;
+;;; Bildung: "what is the seed of emancipation?"
+;;; (run* (q)
+;;;   (fresh (se be kind)
+;;;     (bildung-o *slavery-facts* 'slave se be kind)
+;;;     (== q kind)))
+;;; => (servitude-to-formation)
+;;;
+;;; (run* (q)
+;;;   (fresh (se be kind)
+;;;     (bildung-o *wage-labor-facts* 'worker se be kind)
+;;;     (== q kind)))
+;;; => (reproduction-to-organization)
+;;;
 ;;; (run* (dim) (fresh (e g) (alienation-o *wage-labor-facts* dim 'worker e g)))
-;;; => (from-product from-activity)   ;; no from-species-being — worker is "free"
+;;; => (from-product from-activity from-species-being)
+;;; No from-species-being/direct (worker is "free"), but mediated:
+;;; the worker's self-commodified capacity is private property.
 ;;;
 ;;; Self-commodification: "what does the worker commodify?"
 ;;; (run* (q) (fresh (pe ce) (self-commodification-o *wage-labor-facts* 'worker pe ce q)))
 ;;; => (labor-power)
 ;;;
-;;; Private property: "what takes the form of private property?"
-;;; (run* (q) (fresh (e g) (private-property-o *wage-labor-facts* e g q)))
-;;; => (labor-power product)   ;; both the reified capacity AND the product
+;;; Private property as social relation: "who governs whose product?"
+;;; (run* (q)
+;;;   (fresh (s1 s2 obj e g)
+;;;     (private-property-o *wage-labor-facts* s1 s2 obj e g)
+;;;     (== q `(,s1 produces ,obj governed-by ,s2))))
+;;; => ((worker produces labor-power governed-by capitalist)
+;;;     (worker produces product governed-by capitalist)
+;;;     (worker produces means governed-by capitalist))
+;;; The third result is the deepest: the governed produce the governance.
+;;;
+;;; Surplus extraction: double governance over product AND capacity
+;;; (run* (q)
+;;;   (fresh (s2 product pe ce)
+;;;     (surplus-o *wage-labor-facts* 'worker s2 product pe ce)
+;;;     (== q `(,s2 extracts-surplus from worker))))
+;;; => ((capitalist extracts-surplus from worker))
+;;;
+;;; Hegel: "what does the worker produce?" (parallel to slave)
+;;; (run* (q)
+;;;   (fresh (eid verb to)
+;;;     (edge-o *wage-labor-facts* eid 'worker verb to)
+;;;     (== q `(,verb ,to))))
+;;; => ((labors product) (sells labor-power) (produces means)
+;;;     (produces capitalist) (produces worker) (organizes solidarity))
+;;; The worker produces everything — the product, the means, both
+;;; social positions, and the organizational capacity for emancipation.
+;;;
+;;; The full dialectical arc:
+;;; (run* (q)
+;;;   (fresh (iid a-eid f-eid kind)
+;;;     (inversion-o *wage-labor-facts* iid a-eid f-eid kind)
+;;;     (== q kind)))
+;;; => (governance-to-creation commodity-to-contribution
+;;;     monopoly-to-commons reproduction-to-organization)
 ;;;
 ;;; (run* (dim) (fresh (e g) (alienation-o *theology-facts* dim 'humanity e g)))
 ;;; => (from-product from-species-being)
@@ -517,10 +810,36 @@
 ;;;   (fresh (eid from verb)
 ;;;     (edge-o *wage-labor-facts* eid from verb 'product)
 ;;;     (== q `(,from ,verb))))
-;;; => ((worker labors) (capitalist owns))
+;;; => ((worker labors) (capitalist owns)
+;;;     (producer-a creates) (producer-b recognizes))
+;;; Both the alienated and emancipated forms visible in one query.
 ;;;
 ;;; Slavery vs Wage Labor — the structural transition:
 ;;;   slavery:    master ──[owns]──▶ slave         (subject IS property)
 ;;;   wage-labor: worker ──[sells]──▶ labor-power  (subject PRODUCES a commodity)
-;;; Same alienation-from-product, but the mechanism flips:
-;;; governance over the person → governance over the self-commodified verb.
+;;; Both have from-species-being, but the mechanism differs:
+;;;   slavery:    direct — S in the TO position of a governance edge
+;;;   wage-labor: mediated — S's self-commodified capacity is private property
+;;; Not all governance is alienating.  Free-links = mutual recognition.
+;;; Governance = subordination.  Private property = governance that excludes.
+;;;
+;;; Negation of the negation — "what replaces each alienated edge?"
+;;; (run* (q)
+;;;   (fresh (iid a-eid f-eid kind)
+;;;     (inversion-o *wage-labor-facts* iid a-eid f-eid kind)
+;;;     (== q kind)))
+;;; => (governance-to-creation commodity-to-contribution monopoly-to-commons)
+;;;
+;;; Full inversion — map all alienated edges to their free counterparts:
+;;; (run* (q)
+;;;   (fresh (free-eids)
+;;;     (full-inversion-o *wage-labor-facts* '(e3 e-lp e-mp) free-eids)
+;;;     (== q free-eids)))
+;;; => ((e-f1 e-f3 e-f5))
+;;;
+;;; Free association within the wage-labor facts (the emancipated edges):
+;;; (run* (q)
+;;;   (fresh (eid1 eid2 s1 s2)
+;;;     (free-association-o *wage-labor-facts* eid1 eid2 s1 s2)
+;;;     (== q `(,s1 recognizes ,s2))))
+;;; => ((producer-a recognizes producer-b) ...)

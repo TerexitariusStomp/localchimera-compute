@@ -4,13 +4,14 @@
     <p>Your browser does not support viewing PDFs directly. <a href="docs/commons.pdf">Download the PDF</a> to view the full documentation.</p>
 </object>
 
-![playnet poster](playnet_poster.png)
-
-_A self-evolving commons computer written entirely in Guile Scheme._
+_A self-evolving commons written entirely in Guile Scheme._
 
 ---
 
-**playnet** is a computer environment where pushing to `main` can redeploy the entire operating system. Everything from the browser interface to the kernel configuration is a Scheme expression. Object capability security comes from the lambda calculus itself (as described in [_A Security Kernel Based on the Lambda-Calculus_](https://mumble.net/~jar/pubs/secureos/secureos.html)) — if you hold the reference, you have the authority; if you don't, you don't. The system runs in the browser (Hoot/WASM), on the desktop (native Guile), and on the server (Guix System), connected by mesh networking that works over LoRa radio, serial wire, I2P, TCP, or packet radio.
+**playnet**
+**less work, more play**
+
+This codebase is a computer environment where pushing to `main` can redeploy the entire operating system. Everything from the browser interface to the kernel configuration is a Scheme expression. Object capability security comes from the lambda calculus itself (as described in [_A Security Kernel Based on the Lambda-Calculus_](https://mumble.net/~jar/pubs/secureos/secureos.html)) — if you hold the reference, you have the authority; if you don't, you don't. The system runs in the browser (Hoot/WASM), on the desktop (native Guile), and on the server (Guix System), connected by mesh networking that works over LoRa radio, serial wire, I2P, TCP, or packet radio.
 
 There is no gap between the system and its description. The organization's rules, state, and history are all S-expressions — the same representation the evaluator consumes. This is what makes the system self-reflective: it can inspect its own evolution, rollback to a prior state, and rewrite its own governance, using the same language it was built in.
 
@@ -412,6 +413,7 @@ No separate indexes, no separate functions. One relation, every direction. `proj
 ### Requirements
 
 GNU Guix (for reproducible builds). Everything else is declared:
+
 - Guile 3.0+, Guile Goblins 0.17.0 (pinned via `channels.scm`)
 - Browser: Guile Hoot 0.8.0 (patched — `deploy/packages/hoot-fix.scm`), Chrome 119+ or Firefox 121+
 - Tests: Python 3 (stdlib http.server), Node.js + Playwright (via Guix manifest)
