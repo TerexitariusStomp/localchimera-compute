@@ -190,24 +190,28 @@ Capability security from closures. State from `bcom`. Accountability from loggin
 
 Because they're all the same substrate, they compose without adapters. A relational query over economic data runs inside a governed actor, over a capability-secured network, on a declaratively defined operating system — and every layer is Scheme.
 
-## Economic Planning — Relations, Not Algorithms
+## Economic Planning — Less Work, More Play
 
-The planner is a [ValueFlows](https://valueflo.ws/) economic planning engine built on miniKanren relational search over Goblins actors. Facts are plain S-expression tuples. Queries are pattern matching with blanks. The search explores all valid plans — not just the first greedy one.
+The planner's goal is the political slogan of playnet: **less work, more play**. "More play" means free time — every independent demand satisfied, every buffer protected. "Less work" means the least socially necessary labor time to get there. The planner finds plans that satisfy all demands and buffer constraints while preferring the recipes with lowest embodied labor (SNE — Socially Necessary Effort).
+
+This is a [ValueFlows](https://valueflo.ws/) economic planning engine built on miniKanren relational search. Facts are plain S-expression tuples. Queries are pattern matching with blanks. The search explores all valid plans — cheapest first.
 
 ```scheme
 (recipe-o    facts rid name output)          ;; what can we make?
 (flow-o      facts pid dir spec qty unit act) ;; what goes in and out?
-(net-demand-o ctx spec qty remaining alloc)  ;; what's available?
 (demand-o    ctx spec qty due plan-term)     ;; what's the plan?
 (plan-o      ctx plan)                       ;; solve all demands
-(run-plan    n ns (plan) (plan-o ctx plan))  ;; find n valid plans
+(run-plan    1 ns (plan) (plan-o ctx plan))  ;; find the cheapest valid plan
+(run-plan    n ns (plan) (plan-o ctx plan))  ;; find n alternatives
 ```
 
-Six relations replace 20+ imperative algorithm modules. Each relation works bidirectionally — "what recipe produces bread?" and "what does recipe-bread produce?" are the same `recipe-o` with different blanks filled in. Every plan is traceable: the search tree IS the audit trail.
+Recipe facts are sorted by SNE at session start. The search explores lowest-labor recipes first — `run-plan 1` returns the plan with the least work. `run-plan*` returns all feasible plans via complete interleaving. No plan is discarded; the commune chooses.
 
-The allocation state is immutable. When the search branches to explore a different recipe, each branch gets its own copy automatically. A branch that claims 50kg of flour and then fails doesn't affect other branches — its claims vanish with it. The system's branching IS the backtracking.
+Buffer zones protect inventory: each buffered resource has a conservation floor (TOR — top of red zone). The planner won't drain below TOR unless no buffer-safe plan exists. If it must breach a buffer to satisfy demand, it does — but only as a last resort, explored via a fallback `conde` branch after the buffer-safe branch fails. This replaces the imperative planner's five-pass orchestration (reserve → guard → defer → retry → sacrifice) with one constraint.
 
-Each planning scope is a Goblins vat. Scopes coordinate via OCapN — the same protocol that connects browsers to servers to LoRa radios. A planning federation is a hierarchy of scopes folded together, each governed by its own actors.
+The allocation state is immutable. When the search branches to explore a different recipe, each branch gets its own copy automatically. A branch that claims 50kg of flour and then fails doesn't affect other branches — its claims vanish with it. No backtracking. Complete, productive, fair interleaving search.
+
+Each planning scope is a Goblins vat. Scopes coordinate via OCapN — the same protocol that connects browsers to servers to LoRa radios. Surplus in one scope flows to deficit in another via lateral matching. A planning federation is a hierarchy of scopes folded together, each governed by its own actors.
 
 See [RELATIONS.md](RELATIONS.md) for the full philosophy.
 
