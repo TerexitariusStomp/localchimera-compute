@@ -258,6 +258,11 @@
   "terminal" "fit"
   (ref null extern) -> none)
 
+;;; Time FFI — Date.now() returns milliseconds since epoch
+(define-foreign date-now
+  "time" "now"
+  -> f64)
+
 ;;; Window timers — setTimeout / setInterval FFI
 (define-foreign window-set-timeout
   "window" "setTimeout"
@@ -797,6 +802,47 @@
   (cycle-step! *Y-cycle*) (cycle-step! *N-cycle*) (cycle-step! *E-cycle*)
   (cycle-step! *T-cycle*))
 
+;;; ── Countdown — 3-week cycle, emoji clock ────────────────────────────────
+
+(define *mystical-emojis*
+  #("🔮" "🌙" "⚡️" "🧙‍♂️" "🔥" "🌟" "🌈" "🦄" "🧚‍♀️" "🌕"
+    "🌑" "🪄" "✨" "☄️" "💫" "👽" "👾" "🛸" "🧞‍♂️" "🧞‍♀️"
+    "🧜‍♂️" "🧜‍♀️" "🧝‍♂️" "🧝‍♀️" "🌌" "🌠" "🎇" "🎆" "🧙‍♀️" "🧚‍♂️"
+    "🐉" "🐲" "🧸" "🧿" "🪬" "🕉️" "☯️" "🔆" "🌅" "🌄"
+    "🏞️" "🏰" "🎠" "🎢" "🔱" "⚛️" "💖" "💗" "💓" "💞"
+    "💕" "💟" "❣️" "❤️‍🔥" "❤️‍🩹" "❤️" "🌹" "🌸" "🌺" "🏵️"
+    "💐" "💮" "💍" "👑" "🧡" "💛" "💚" "💙" "💜" "🤍"
+    "🤎" "🖤" "💝" "💘" "💌" "🪽"))
+
+(define *digit-emojis*
+  #("0️⃣" "1️⃣" "2️⃣" "3️⃣" "4️⃣" "5️⃣" "6️⃣" "7️⃣" "8️⃣" "9️⃣"))
+
+(define (mystical-ref n)
+  (vector-ref *mystical-emojis* (modulo n (vector-length *mystical-emojis*))))
+
+(define (render-countdown)
+  "Compute remaining time in the current 3-week cycle and render as emoji."
+  (let* ((reference-ms 1704067200000.0) ;; Jan 1 2024 00:00 UTC
+         (cycle-ms     1814400000.0)     ;; 3 weeks in ms
+         (now-ms       (date-now))
+         (elapsed-ms   (- now-ms reference-ms))
+         (in-cycle-ms  (- elapsed-ms (* (floor (/ elapsed-ms cycle-ms)) cycle-ms)))
+         (remaining-ms (- cycle-ms in-cycle-ms))
+         (secs         (inexact->exact (floor (/ remaining-ms 1000.0))))
+         (days         (quotient secs 86400))
+         (hours        (quotient (modulo secs 86400) 3600))
+         (minutes      (quotient (modulo secs 3600) 60))
+         (seconds      (modulo secs 60))
+         (sec-str      (if (>= seconds 10)
+                           (string-append
+                             (vector-ref *digit-emojis* (quotient seconds 10))
+                             (vector-ref *digit-emojis* (modulo seconds 10)))
+                           (vector-ref *digit-emojis* seconds))))
+    (string-append (mystical-ref days) ":"
+                   (mystical-ref hours) ":"
+                   (mystical-ref minutes) ":"
+                   sec-str)))
+
 (define (render-homepage)
   `(div (@ (class "homepage-content"))
         (div (@ (class "playnet-header"))
@@ -821,7 +867,8 @@
              (div (@ (class "bottom-buttons"))
                   (a (@ (href "https://drive.google.com/drive/folders/13XTRKXTwQggeQ2hBx4eLBZ2Favi4-I9n?usp=sharing") (class "btn playdrive")) "Playdrive")
                   (a (@ (href "https://calendar.google.com/calendar/u/0?cid=NmJjYThlM2E4OTU2NTc3ZjFkNzg4ZGZhYmNjYzk1MTk0YTI5ZThiMjljZWU5NzM1OGY4NWFhZWY1OGI0ZTFkOEBncm91cC5jYWxlbmRhci5nb29nbGUuY29t") (class "btn calendar")) "Calendar")
-                  (a (@ (href "https://playnet.gitbook.io/docs/") (class "btn docs")) "Docs")))))
+                  (a (@ (href "https://playnet.gitbook.io/docs/") (class "btn docs")) "Docs")))
+        (div (@ (id "countdown")) ,(render-countdown))))
 
 (define *expressor-filter* #f)       ;; symbol or #f — filter history by expressor name
 
@@ -1018,106 +1065,26 @@
                       (cons (substring s 0 comma) acc))
                 (reverse (cons s acc))))))))
 
+(define (cmd-line command description)
+  "Render a command line with inline coloring: command in accent, description dim."
+  `(span (span (@ (class "accent-text")) ,command)
+         (span (@ (class "dim-text"))    ,description) "\n"))
+
 (define *log*
-  (list `(span (@ (class "info-text"))
-               ,(string-append
-                 "An organization is a program that writes itself.\n"
-                 "This is a metacircular substrate for programmable\n"
-                 "organizations — identity, memory, and self-modification.\n"
-                 "Built on Spritely Goblins with capability-based security.\n"
-                 "\n"
-                 "── Getting Started ──────────────────────────────\n"
-                 "\n"
-                 "  (make-org \"alpha\")   create a local org\n"
-                 "  (enter! \"alpha\")     enter it\n"
-                 "  (exit!)              leave current org\n"
-                 "  (list-orgs)          show all orgs\n"
-                 "\n"
-                 "── Inside an Org ───────────────────────────────\n"
-                 "\n"
-                 "Every action has an identity, every change is\n"
-                 "remembered, and the rules for changing the rules\n"
-                 "are subject to the rules.\n"
-                 "\n"
-                 "Create identities (returns a private sealer):\n"
-                 "  (define alice (defexpressor 'alice \"alice-key\"))\n"
-                 "  (define bob (defexpressor 'bob \"bob-key\"))\n"
-                 "\n"
-                 "Act as an identity (requires the sealer):\n"
-                 "  (as alice (modify! 'proposal \"fund the commons\"))\n"
-                 "  (as bob (modify! 'seconded #t))\n"
-                 "\n"
-                 "Enact a rule (must accept itself to take effect):\n"
-                 "  (enact! (lambda (expressor name value pre post)\n"
-                 "            (not (equal? value #f))))\n"
-                 "\n"
-                 "Inspect:\n"
-                 "  (show-history)       versioned ledger\n"
-                 "  (show-expressors)    all known identities\n"
-                 "  proposal             look up any binding\n"
-                 "\n"
-                 "Rollback:\n"
-                 "  (rollback! 2)\n"
-                 "\n"
-                 "── AI ─────────────────────────────────────────\n"
-                 "\n"
-                 "First, set your OpenRouter API key:\n"
-                 "  (set-api-key! \"sk-or-...\")\n"
-                 "  (set-ai-model! \"openai/gpt-4o\")   ; optional\n"
-                 "\n"
-                 "Then use AI anywhere inside an org:\n"
-                 "  (ai \"what is the budget?\")         ask AI\n"
-                 "  (ai-eval \"create a greeting\")      AI generates + executes code\n"
-                 "\n"
-                 "AI expressors — config lives as org bindings:\n"
-                 "  (define ai (defexpressor 'ai \"ai-key\"))\n"
-                 "  (as ai (modify! 'ai:prompt \"You govern wisely.\"))\n"
-                 "  (as ai (ai-eval \"propose a budget\"))  ; uses ai:prompt\n"
-                 "  (modify! 'ai:prompt \"Be cautious.\")   ; change AI behavior\n"
-                 "\n"
-                 "── Cross-Org ──────────────────────────────────\n"
-                 "\n"
-                 "Store another org's public key, then reference\n"
-                 "it by name (unquoted) — no string needed:\n"
-                 "  (define alpha (public-key))         your own key\n"
-                 "  (define beta-key '(public-key ...)) another org's key\n"
-                 "\n"
-                 "  (join-org \"alpha\")                   request to join local\n"
-                 "  (approve-member 0 \"alice\")           approve member\n"
-                 "  (act-in \"alpha\" (modify! 'x 1))     act in local org\n"
-                 "  (act-in beta-key (modify! 'x 1))    act in remote org\n"
-                 "  (public-key)                        show this org's key\n"
-                 "\n"
-                 "── Signup & SSH ───────────────────────────────\n"
-                 "\n"
-                 "Register an account on the playnet server:\n"
-                 "  (signup! \"user\" \"email@example.com\") request account\n"
-                 "  (export-ssh-key)                    show your SSH key\n"
-                 "\n"
-                 "After signup, you can: ssh user@SERVER_IP\n"
-                 "The server is a Guix System machine — pushing to\n"
-                 "main auto-deploys the ENTIRE operating system.\n"
-                 "\n"
-                 "── Language Forms ──────────────────────────────\n"
-                 "\n"
-                 "define, lambda, let, let*, letrec, named let,\n"
-                 "begin, if, cond, case, and, or, when, unless, do,\n"
-                 "quote. Lambdas capture bindings but adopt their\n"
-                 "caller's identity — logic and authority are separate.\n"
-                 "\n"
-                 "── SXML UI ────────────────────────────────────\n"
-                 "\n"
-                 "The interface is built from S-expression HTML.\n"
-                 "Every element — buttons, inputs, the log itself\n"
-                 "— is an SXML tree diffed by a virtual DOM.\n"
-                 "\n"
-                 "  (div (@ (class \"box\")) \"content\")\n"
-                 "  (span (@ (click handler)) \"clickable\")\n"
-                 "  (input (@ (id \"x\") (type \"text\")))\n"
-                 "\n"
-                 "UI composed from S-expressions can be appended\n"
-                 "to the log and rendered as live DOM elements.\n"
-                 "\n"))))
+  (list
+    `(span (@ (class "title-text"))   "playnet\n")
+    `(span (@ (class "tagline-text")) "less work, more play\n")
+    `(span (@ (class "tagline-text")) "that's the politics\n\n")
+    `(span (@ (class "info-text"))
+           ,(string-append
+              "A self-evolving commons — identity, memory, and\n"
+              "self-modification as symbolic expressions (s-exprs) all the way down.\n\n"))
+    `(span (@ (class "dim-text"))
+           "────────────────────────────────────────────────\n\n")
+    (cmd-line "  (make-org \"my-org\")" "   create a world")
+    (cmd-line "  (enter! \"my-org\")"   "     step inside")
+    (cmd-line "  (help)"              "               the rest")
+    `(span "\n")))
 
 (define *outer-log* *log*)
 (define *outer-vat* #f)
@@ -1685,6 +1652,71 @@
             (else
              (log-append! `(span (@ (class "error-text"))
                                  "act-in target must be an org name or a public key.\n"))))))
+     #t)
+
+    ('(help)
+     (log-append!
+       `(span (@ (class "dim-text"))
+              "\n────────────────────────────────────────────────\n\n")
+
+       `(span (@ (class "heading-text")) "Getting Started\n\n")
+       (cmd-line "  (make-org \"name\")" "      create a local org")
+       (cmd-line "  (enter! \"name\")"   "        enter it")
+       (cmd-line "  (exit!)"           "               leave current org")
+       (cmd-line "  (list-orgs)"       "           show all orgs")
+       `(span "\n")
+
+       `(span (@ (class "heading-text")) "Inside an Org\n\n")
+       `(span (@ (class "info-text"))
+              ,(string-append
+                 "Every action has an identity, every change is\n"
+                 "remembered, and the rules for changing the rules\n"
+                 "are subject to the rules.\n\n"))
+       (cmd-line "  (defexpressor 'me \"key\")"              "   create identity")
+       (cmd-line "  (as me (modify! 'proposal \"idea\"))"     " act as identity")
+       (cmd-line "  (enact! (lambda (e n v pre post) ...))" " add a rule")
+       (cmd-line "  (show-history)"                         "                ledger")
+       (cmd-line "  (show-expressors)"                      "             identities")
+       (cmd-line "  (rollback! 2)"                          "                 undo")
+       `(span "\n")
+
+       `(span (@ (class "heading-text")) "AI\n\n")
+       (cmd-line "  (set-api-key! \"sk-or-...\")"  "   OpenRouter key")
+       (cmd-line "  (set-ai-model! \"openai/gpt-4o\")" " optional")
+       (cmd-line "  (ai \"what is the budget?\")"   "    ask AI")
+       (cmd-line "  (ai-eval \"create a greeting\")" "  AI writes + runs code")
+       `(span "\n")
+
+       `(span (@ (class "heading-text")) "Cross-Org\n\n")
+       (cmd-line "  (public-key)"                    "              this org's key")
+       (cmd-line "  (join-org \"name\")"               "         request to join")
+       (cmd-line "  (approve-member 0 \"alice\")"      "    approve")
+       (cmd-line "  (act-in \"name\" (modify! 'x 1))" " act remotely")
+       `(span "\n")
+
+       `(span (@ (class "heading-text")) "Signup & SSH\n\n")
+       (cmd-line "  (signup! \"user\" \"email@x.com\")" " request account")
+       (cmd-line "  (export-ssh-key)"               "            show SSH key")
+       `(span (@ (class "info-text"))
+              "  After signup: ssh user@SERVER_IP\n\n")
+
+       `(span (@ (class "heading-text")) "Language Forms\n\n")
+       `(span (@ (class "info-text"))
+              ,(string-append
+                 "define, lambda, let, let*, letrec, named let,\n"
+                 "begin, if, cond, case, and, or, when, unless, do,\n"
+                 "quote. Lambdas capture bindings but adopt their\n"
+                 "caller's identity — logic and authority are separate.\n\n"))
+
+       `(span (@ (class "heading-text")) "SXML UI\n\n")
+       (cmd-line "  (div (@ (class \"box\")) \"content\")"  "")
+       (cmd-line "  (span (@ (click handler)) \"clickable\")" "")
+       (cmd-line "  (input (@ (id \"x\") (type \"text\")))" "")
+       `(span (@ (class "info-text"))
+              ,(string-append
+                 "\n"
+                 "UI composed from S-expressions can be appended\n"
+                 "to the log and rendered as live DOM elements.\n\n")))
      #t)
 
     (_ #f)))

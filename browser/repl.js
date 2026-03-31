@@ -55,6 +55,9 @@ window.addEventListener("load", async () => {
           setStyle(elem, prop, value) { elem.style[prop] = value; },
           focus(elem) { elem.focus(); }
         },
+        time: {
+          now() { return Date.now(); }
+        },
         treeWalker: {
           currentNode(walker) { return walker.currentNode; },
           setCurrentNode(walker, node) { walker.currentNode = node; },

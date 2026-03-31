@@ -208,6 +208,9 @@
                 (openssh openssh-sans-x)
                 (permit-root-login 'prohibit-password)
                 (password-authentication? #f)
+                ;; Keep connections alive during long guix deploy operations
+                ;; (substitute downloads can idle the channel for 15+ minutes)
+                (extra-content "ClientAliveInterval 30\nClientAliveCountMax 10")
                 (authorized-keys
                  `(("root"   ,(plain-file "root-key"   %admin-ssh-public-key))
                    ("root"   ,(plain-file "ci-root-key" %ci-ssh-public-key))

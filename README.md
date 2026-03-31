@@ -11,7 +11,7 @@ _A self-evolving commons written entirely in Guile Scheme._
 **playnet**
 **less work, more play**
 
-This codebase is a computer environment where pushing to `main` can redeploy the entire operating system. Everything from the browser interface to the kernel configuration is a Scheme expression. Object capability security comes from the lambda calculus itself (as described in [_A Security Kernel Based on the Lambda-Calculus_](https://mumble.net/~jar/pubs/secureos/secureos.html)) — if you hold the reference, you have the authority; if you don't, you don't. The system runs in the browser (Hoot/WASM), on the desktop (native Guile), and on the server (Guix System), connected by mesh networking that works over LoRa radio, serial wire, I2P, TCP, or packet radio.
+This codebase is a computer environment where everything from the browser interface to the kernel configuration is a Scheme expression. Object capability security comes from the lambda calculus itself (as described in [_A Security Kernel Based on the Lambda-Calculus_](https://mumble.net/~jar/pubs/secureos/secureos.html)) — if you hold the reference, you have the authority; if you don't, you don't. The system runs in the browser (Hoot/WASM), on the desktop (native Guile), and on the server (Guix System), connected by mesh networking that works over LoRa radio, serial wire, I2P, TCP, or packet radio.
 
 There is no gap between the system and its description. The organization's rules, state, and history are all S-expressions — the same representation the evaluator consumes. This is what makes the system self-reflective: it can inspect its own evolution, rollback to a prior state, and rewrite its own governance, using the same language it was built in.
 
@@ -208,7 +208,7 @@ This is a [ValueFlows](https://valueflo.ws/) economic planning engine built on m
 
 Recipe facts are sorted by SNE at session start. The search explores lowest-labor recipes first — `run-plan 1` returns the plan with the least work. `run-plan*` returns all feasible plans via complete interleaving. No plan is discarded; the commune chooses.
 
-Buffer zones protect inventory: each buffered resource has a conservation floor (TOR — top of red zone). The planner won't drain below TOR unless no buffer-safe plan exists. If it must breach a buffer to satisfy demand, it does — but only as a last resort, explored via a fallback `conde` branch after the buffer-safe branch fails. This replaces the imperative planner's five-pass orchestration (reserve → guard → defer → retry → sacrifice) with one constraint.
+Buffer zones protect inventory: each buffered resource has a conservation floor (TOR — top of red zone). The planner won't drain below TOR unless no buffer-safe plan exists. If it must breach a buffer to satisfy demand, it does — but only as a last resort, explored via a fallback `conde` branch after the buffer-safe branch fails.
 
 The allocation state is immutable. When the search branches to explore a different recipe, each branch gets its own copy automatically. A branch that claims 50kg of flour and then fails doesn't affect other branches — its claims vanish with it. No backtracking. Complete, productive, fair interleaving search.
 
@@ -406,7 +406,7 @@ The planner lifts ValueFlows records to plain fact tuples at session start, then
 ;; => ((produce ...) (purchase ...))
 ```
 
-No separate indexes, no separate functions. One relation, every direction. `project` is used only for arithmetic (scaling, scheduling). Everything else is pure pattern matching.
+One relation, every direction. `project` is used only for arithmetic (scaling, scheduling). Everything else is pure pattern matching.
 
 ## How to Run
 

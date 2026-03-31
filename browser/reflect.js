@@ -685,10 +685,11 @@ class SchemeModule {
         die(tag, data) { throw new SchemeTrapError(tag, data); },
         quit(status) { throw new SchemeQuitError(status); },
 
-        stream_make_chunk(len) { return new Uint8Array(len); },
-        stream_chunk_length(chunk) { return chunk.length; },
-        stream_chunk_ref(chunk, idx) { return chunk[idx]; },
-        stream_chunk_set(chunk, idx, val) { chunk[idx] = val; },
+        make_uint8array(len) { return new Uint8Array(len); },
+        uint8array_length(chunk) { return chunk.length; },
+        uint8array_ref(chunk, idx) { return chunk[idx]; },
+        uint8array_set(chunk, idx, val) { chunk[idx] = val; },
+
         stream_get_reader(stream) { return stream.getReader(); },
         stream_read(reader) { return reader.read(); },
         stream_result_chunk(result) { return result.value; },
@@ -696,6 +697,41 @@ class SchemeModule {
         stream_get_writer(stream) { return stream.getWriter(); },
         stream_write(writer, chunk) { return writer.write(chunk); },
         stream_close_writer(writer) { return writer.close(); },
+
+        make_websocket(url) {
+            const ws = new WebSocket(url);
+            ws.binaryType = "arraybuffer";
+            return ws;
+        },
+        websocket_set_onmessage(ws, f) {
+            ws.onmessage = (e) => {
+                if (typeof e.data === "string") {
+                    f(e.data);
+                } else {
+                    f(new Uint8Array(e.data));
+                }
+            };
+        },
+        websocket_set_onopen(ws, f) { ws.onopen = (e) => f(); },
+        websocket_set_onclose(ws, f) { ws.onclose = (e) => f(); },
+        websocket_send(ws, msg) { ws.send(msg); },
+        websocket_close(ws) { ws.close(); },
+
+        fetch(r) { return fetch(r); },
+
+        make_request(method, url, body) {
+            return new Request(url, {
+                body: body,
+                method: method
+            });
+        },
+        request_test(obj) { return obj instanceof Request; },
+        request_method(r) { return r.method; },
+        request_empty_body() { return null; },
+
+        response_test(obj) { return obj instanceof Response; },
+        response_body(r) { return r.body; },
+        response_code(r) { return r.status; },
     };
 
     static #code_origins = new WeakMap;
@@ -733,7 +769,7 @@ class SchemeModule {
         SchemeModule.#all_modules.add(this);
         this.#instance = instance;
         let open_file_error = (filename) => {
-            throw new Error('No file system access');
+            return null;
         };
         if (typeof printErr === 'function') { // v8/sm dev console
             // On the console, try to use 'write' (v8) or 'putstr' (sm),
@@ -816,19 +852,27 @@ class SchemeModule {
                 },
                 file_exists: fs.existsSync.bind(fs),
                 open_input_file: (filename) => {
-                    let fd = fs.openSync(filename, 'r');
-                    return {
-                        fd,
-                        buf: Buffer.alloc(bufLength),
-                        pos: 0
+                    try {
+                        let fd = fs.openSync(filename, 'r');
+                        return {
+                            fd,
+                            buf: Buffer.alloc(bufLength),
+                            pos: 0
+                        };
+                    } catch(e) {
+                        return null;
                     };
                 },
                 open_output_file: (filename) => {
-                    let fd = fs.openSync(filename, 'w');
-                    return {
-                        fd,
-                        buf: Buffer.alloc(bufLength),
-                        pos: 0
+                    try {
+                        let fd = fs.openSync(filename, 'w');
+                        return {
+                            fd,
+                            buf: Buffer.alloc(bufLength),
+                            pos: 0
+                        };
+                    } catch(e) {
+                        return null;
                     };
                 },
                 close_file: (handle) => {

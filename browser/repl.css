@@ -110,6 +110,11 @@ h1 {
 .error-text  { color: #ff6b6b; }
 .output-text { color: #e0ceed; }
 .info-text   { color: #b8a8c8; }
+.heading-text { color: #c4a7e7; }
+.accent-text  { color: #a8e6cf; }
+.dim-text     { color: #6b5b7b; }
+.title-text   { color: #c4a7e7; font-size: 1.4em; }
+.tagline-text { color: #f6c177; }
 
 .paren-indicator {
     color: #8b7b96;

@@ -562,6 +562,8 @@ p {
 
 .homepage-content {
   white-space: normal;
+  margin-top: 1rem;
+  text-align: center;
 }
 
 .main-content {

@@ -43,6 +43,19 @@ jobs:
             TCPKeepAlive yes
           EOF
 
+      - name: Configure server SSH keepalive
+        run: |
+          # guile-ssh (used by guix deploy) doesn't read ~/.ssh/config,
+          # so keepalive must be set server-side. This ensures sshd keeps
+          # the connection alive during long substitute downloads.
+          ssh -i ~/.ssh/deploy_key \
+            -o StrictHostKeyChecking=yes \
+            -o ServerAliveInterval=30 \
+            deploy@SERVER_IP \
+            'grep -q ClientAliveInterval /etc/ssh/sshd_config 2>/dev/null || \
+             sudo sh -c "echo -e \"\\nClientAliveInterval 30\\nClientAliveCountMax 10\" >> /etc/ssh/sshd_config && \
+             sudo herd restart sshd" && echo "SSH keepalive configured"'
+
       - name: Deploy
         env:
           DEPLOY_SSH_IDENTITY: /home/runner/.ssh/deploy_key
