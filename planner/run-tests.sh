@@ -1,13 +1,34 @@
 #!/bin/sh
 # Run all planner test suites
+# Includes original tests + ported TypeScript tests
 set -e
 
 cd "$(dirname "$0")"
 
-GUILE_AUTO_COMPILE=0
+export GUILE_AUTO_COMPILE=0
 
-# ── Shorthand for the full module load chain ──
-LOAD_BASE="-l lib/schemas.scm -l lib/store-utils.scm \
+FAILED=0
+SUITES=0
+
+run_suite() {
+  local name="$1"
+  local loader="$2"
+  local file="$3"
+
+  SUITES=$((SUITES + 1))
+  echo ""
+  echo "=== $name ==="
+  if eval "guile --no-auto-compile -q $loader -l $file" 2>&1; then
+    true
+  else
+    echo "  *** SUITE FAILED ***"
+    FAILED=$((FAILED + 1))
+  fi
+}
+
+# ── Base module load chains ──────────────────────────────────────────────────
+
+BASE="-l lib/schemas.scm -l lib/store-utils.scm \
   -l lib/process-registry.scm \
   -l lib/knowledge/buffer-zones.scm -l lib/knowledge/capacity-buffers.scm \
   -l lib/knowledge/spatial-things.scm -l lib/knowledge/recipes.scm \
@@ -16,124 +37,86 @@ LOAD_BASE="-l lib/schemas.scm -l lib/store-utils.scm \
   -l lib/observation/account.scm -l lib/planning/planning.scm \
   -l lib/scope-root.scm"
 
-LOAD_ALGORITHMS="$LOAD_BASE \
+ALGO="$BASE \
   -l lib/algorithms/propagation.scm -l lib/algorithms/sne.scm \
   -l lib/algorithms/ddmrp.scm -l lib/algorithms/signals.scm"
 
-LOAD_NETTING="$LOAD_ALGORITHMS \
-  -l lib/algorithms/netting.scm"
-
-LOAD_PLANNING="$LOAD_NETTING \
+FED="$ALGO \
+  -l lib/algorithms/netting.scm \
   -l lib/algorithms/dependent-demand.scm \
   -l lib/algorithms/dependent-supply.scm \
   -l lib/planning/plan-for-unit.scm \
   -l lib/planning/plan-for-scope.scm \
-  -l lib/planning/plan-for-region.scm"
-
-LOAD_FEDERATION="$LOAD_PLANNING \
+  -l lib/planning/plan-for-region.scm \
   -l lib/planning/store-registry.scm \
   -l lib/planning/plan-federation.scm"
 
-# Use load-all.scm for relational planner tests (includes miniKanren)
-LOAD_ALL="-l load-all.scm"
+# load-all.scm includes miniKanren + relational planner
+ALL="-L ../module -l load-all.scm"
 
-TOTAL_PASS=0
-TOTAL_FAIL=0
+# ═══════════════════════════════════════════════════════════════════════════
+# Original test suites
+# ═══════════════════════════════════════════════════════════════════════════
 
-run_test() {
-  local name="$1"
-  local file="$2"
-  local loader="$3"
+run_suite "Scope Integration"        "$BASE" "tests/scope-integration.scm"
+run_suite "Algorithm Foundation"     "$ALGO" "tests/algorithms-foundation.scm"
+run_suite "Federation Planning"      "$FED"  "tests/planning-federation.scm"
+run_suite "Relational Planner"       "$ALL"  "tests/relational-planner.scm"
 
-  echo ""
-  echo "=== $name ==="
-  # Run test, count PASS/ok lines, detect failures
-  if eval "guile --no-auto-compile -q -L ../module $loader -l $file" 2>&1; then
-    echo "  [OK]"
-  else
-    echo "  [FAILED]"
-    TOTAL_FAIL=$((TOTAL_FAIL + 1))
-  fi
-}
+# ═══════════════════════════════════════════════════════════════════════════
+# Ported from TypeScript test suite (47 files → 16 relational test files)
+# ═══════════════════════════════════════════════════════════════════════════
 
-# ── Original test suites ──
+# -- Core planning --
+run_suite "Dependent Demand"         "$ALL" "tests/test-dependent-demand.scm"
+run_suite "Dependent Supply"         "$ALL" "tests/test-dependent-supply.scm"
+run_suite "Netting Advanced"         "$ALL" "tests/test-netting-advanced.scm"
+run_suite "Planning Store"           "$ALL" "tests/test-planning-store.scm"
+run_suite "Planning Constraints"     "$ALL" "tests/test-planning-constraints.scm"
 
-echo "=== Scope Integration ==="
-guile --no-auto-compile -q \
-  $LOAD_BASE \
-  -l tests/scope-integration.scm
+# -- Observer & actions --
+run_suite "Observer Effects"         "$ALL" "tests/test-observer-effects.scm"
+run_suite "VF Patterns"              "$ALL" "tests/test-vf-patterns.scm"
 
-echo ""
-echo "=== Algorithm Foundation ==="
-guile --no-auto-compile -q \
-  $LOAD_ALGORITHMS \
-  -l tests/algorithms-foundation.scm
+# -- Labor & capacity --
+run_suite "Labor Capacity"           "$ALL" "tests/test-labor-capacity.scm"
 
-echo ""
-echo "=== Federation Planning ==="
-guile --no-auto-compile -q \
-  $LOAD_FEDERATION \
-  -l tests/planning-federation.scm
+# -- Signals & DDMRP --
+run_suite "Signal Algebra"           "$ALL" "tests/test-signal-algebra.scm"
+run_suite "DDMRP Advanced"          "$ALL" "tests/test-ddmrp-advanced.scm"
 
-# ── Relational planner tests ──
+# -- Buffers & execution --
+run_suite "Buffer Management"        "$ALL" "tests/test-buffer-management.scm"
+run_suite "Execution Reactive"       "$ALL" "tests/test-execution-reactive.scm"
 
-echo ""
-echo "=== Relational Planner (core) ==="
-guile --no-auto-compile -q -L ../module \
-  $LOAD_ALL \
-  -l tests/relational-planner.scm
+# -- Indexes --
+run_suite "Indexes"                  "$ALL" "tests/test-indexes.scm"
 
-# ── Ported from TypeScript test suite ──
+# -- Spatial & transport --
+run_suite "Spatial Transport"        "$ALL" "tests/test-spatial-transport.scm"
 
-echo ""
-echo "=== Dependent Demand (ported from TS) ==="
-guile --no-auto-compile -q -L ../module \
-  $LOAD_ALL \
-  -l tests/test-dependent-demand.scm
+# -- Critical path --
+run_suite "Critical Path"            "$ALL" "tests/test-critical-path.scm"
 
-echo ""
-echo "=== Netting Advanced (ported from TS) ==="
-guile --no-auto-compile -q -L ../module \
-  $LOAD_ALL \
-  -l tests/test-netting-advanced.scm
+# -- Resource flows & value --
+run_suite "Resource Flows"           "$ALL" "tests/test-resource-flows.scm"
 
-echo ""
-echo "=== Observer Effects (ported from TS) ==="
-guile --no-auto-compile -q -L ../module \
-  $LOAD_ALL \
-  -l tests/test-observer-effects.scm
+# -- Federation & incremental --
+run_suite "Incremental Federation"   "$ALL" "tests/test-incremental-federation.scm"
 
-echo ""
-echo "=== Labor Capacity (ported from TS) ==="
-guile --no-auto-compile -q -L ../module \
-  $LOAD_ALL \
-  -l tests/test-labor-capacity.scm
+# -- Workflows & track-trace --
+run_suite "Workflow Recipe"          "$ALL" "tests/test-workflow-recipe.scm"
 
-echo ""
-echo "=== Signal Algebra (ported from TS) ==="
-guile --no-auto-compile -q -L ../module \
-  $LOAD_ALL \
-  -l tests/test-signal-algebra.scm
-
-echo ""
-echo "=== Planning Constraints (ported from TS) ==="
-guile --no-auto-compile -q -L ../module \
-  $LOAD_ALL \
-  -l tests/test-planning-constraints.scm
-
-echo ""
-echo "=== DDMRP Advanced (ported from TS) ==="
-guile --no-auto-compile -q -L ../module \
-  $LOAD_ALL \
-  -l tests/test-ddmrp-advanced.scm
-
-echo ""
-echo "=== Critical Path (ported from TS) ==="
-guile --no-auto-compile -q -L ../module \
-  $LOAD_ALL \
-  -l tests/test-critical-path.scm
+# ═══════════════════════════════════════════════════════════════════════════
+# Summary
+# ═══════════════════════════════════════════════════════════════════════════
 
 echo ""
 echo "════════════════════════════════════════════"
-echo "  All test suites complete."
+if [ $FAILED -eq 0 ]; then
+  echo "  All $SUITES test suites passed."
+else
+  echo "  $FAILED of $SUITES suites FAILED."
+  exit 1
+fi
 echo "════════════════════════════════════════════"
