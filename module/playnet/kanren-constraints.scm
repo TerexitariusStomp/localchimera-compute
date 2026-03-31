@@ -23,9 +23,10 @@
 ;;; miniKanren-with-symbolic-constraints (Hemann, Byrd, Friedman).
 
 (define-module (playnet kanren-constraints)
-  #:use-module ((playnet kanren) #:select (var var? var=? empty-subst walk walk* unify appendo membero))
+  #:use-module ((playnet kanren) #:select (var var? var=? empty-subst walk walk* unify unify-diff intmap-ref intmap-set unbound? appendo membero))
   #:use-module ((playnet kanren-planning) #:select (make-plan-ctx plan-ctx? ctx-facts ctx-ps ctx-obs ctx-ls ctx-plan-id ctx-indexes))
-  #:use-module ((srfi srfi-1) #:select (any filter append-map fold delete-duplicates iota))
+  #:use-module ((srfi srfi-1) #:select (any filter append-map fold delete-duplicates iota last))
+  #:use-module (srfi srfi-9)
   #:re-export (var var? var=?
                empty-subst
                walk walk*
@@ -97,39 +98,79 @@
 
 
 ;;; ══════════════════════════════════════════════════════════════════════════════
-;;; Finite domain representation
+;;; Finite domain representation — interval-first
 ;;; ══════════════════════════════════════════════════════════════════════════════
 ;;; FD = alist of (var . domain) pairs.
-;;; Domain = sorted list of integers (finite enumeration).
+;;; Domain = <interval> (lo . hi) for contiguous ranges (O(1) operations)
+;;;        | sorted list of integers for non-contiguous domains (after =/= gaps)
+;;; Most planning domains are contiguous (rangeo creates intervals).
+
+(define-record-type <interval>
+  (make-interval lo hi)
+  interval?
+  (lo interval-lo)
+  (hi interval-hi))
 
 (define (domain-ref FD x)
-  "Get the domain for variable x, or #f if unconstrained."
-  (let ((pair (assq x FD)))
-    (and pair (cdr pair))))
+  "O(log n) domain lookup by var counter."
+  (let ((val (intmap-ref FD (cadr x))))
+    (if (unbound? val) #f val)))
 
 (define (domain-set FD x dom)
-  "Set the domain for variable x."
-  (cons (cons x dom)
-        (filter (lambda (p) (not (var=? (car p) x))) FD)))
+  "O(log n) domain store by var counter."
+  (intmap-set FD (cadr x) dom))
+
+(define (domain-size dom)
+  "Number of values in domain. O(1) for intervals."
+  (if (interval? dom)
+      (+ 1 (- (interval-hi dom) (interval-lo dom)))
+      (length dom)))
+
+(define (domain-lo dom)
+  (if (interval? dom) (interval-lo dom) (car dom)))
+
+(define (domain-hi dom)
+  (if (interval? dom) (interval-hi dom) (last dom)))
+
+(define (domain-contains? dom val)
+  "O(1) for intervals, O(n) for lists."
+  (if (interval? dom)
+      (and (integer? val) (>= val (interval-lo dom)) (<= val (interval-hi dom)))
+      (and (memv val dom) #t)))
 
 (define (domain-intersect d1 d2)
-  "Intersection of two sorted domain lists."
+  "Intersect two domains. O(1) for two intervals."
   (cond
-    ((or (null? d1) (null? d2)) '())
-    ((= (car d1) (car d2))
-     (cons (car d1) (domain-intersect (cdr d1) (cdr d2))))
-    ((< (car d1) (car d2))
-     (domain-intersect (cdr d1) d2))
-    (else
-     (domain-intersect d1 (cdr d2)))))
+    ((and (interval? d1) (interval? d2))
+     (let ((lo (max (interval-lo d1) (interval-lo d2)))
+           (hi (min (interval-hi d1) (interval-hi d2))))
+       (if (> lo hi) #f (make-interval lo hi))))
+    ;; Interval + list: filter list by interval bounds
+    ((and (interval? d1) (pair? d2))
+     (let ((result (filter (lambda (v) (domain-contains? d1 v)) d2)))
+       (if (null? result) #f result)))
+    ((and (pair? d1) (interval? d2))
+     (let ((result (filter (lambda (v) (domain-contains? d2 v)) d1)))
+       (if (null? result) #f result)))
+    ;; Two lists: sorted intersection
+    ((and (pair? d1) (pair? d2))
+     (let loop ((a d1) (b d2) (acc '()))
+       (cond
+         ((or (null? a) (null? b)) (let ((r (reverse acc))) (if (null? r) #f r)))
+         ((= (car a) (car b)) (loop (cdr a) (cdr b) (cons (car a) acc)))
+         ((< (car a) (car b)) (loop (cdr a) b acc))
+         (else (loop a (cdr b) acc)))))
+    (else #f)))
 
-(define (domain-remove dom val)
-  "Remove a single value from a domain."
-  (filter (lambda (v) (not (= v val))) dom))
+(define (domain->list dom)
+  "Convert domain to explicit list (for triple enumeration fallback)."
+  (if (interval? dom)
+      (iota (+ 1 (- (interval-hi dom) (interval-lo dom))) (interval-lo dom))
+      dom))
 
 (define (make-range lo hi)
-  "Create a domain from lo to hi (inclusive)."
-  (iota (+ 1 (- hi lo)) lo))
+  "O(1) interval creation."
+  (make-interval lo hi))
 
 
 ;;; ══════════════════════════════════════════════════════════════════════════════
@@ -154,9 +195,6 @@
 (define (term=? u t S)
   (let ((S0 (unify u t S))) (and S0 (eq? S0 S))))
 
-(define (prefix-S S+ S)
-  (if (eq? S+ S) '() (cons (car S+) (prefix-S (cdr S+) S))))
-
 (define (unify* pairs S)
   (if (null? pairs) S
       (let ((S+ (unify (caar pairs) (cdar pairs) S)))
@@ -174,7 +212,7 @@
                (dom (cdr vd)))
            (and (not (var? v))           ;; variable is now ground
                 (or (not (integer? v))   ;; must be integer
-                    (not (memv v dom))))))  ;; must be in domain
+                    (not (domain-contains? dom v))))))  ;; must be in domain
        FD))
 
 (define (fd-narrow-after-unify S FD)
@@ -188,18 +226,18 @@
           (cond
             ;; Variable is now ground — check it's in domain
             ((not (var? v))
-             (if (and (integer? v) (memv v dom))
+             (if (and (integer? v) (domain-contains? dom v))
                  (loop (cdr fd) S new-fd)  ;; satisfied, drop constraint
                  #f))  ;; fail
             ;; Variable unified with another variable — merge domains
             ((and (var? v) (not (var=? v x)))
              (let ((other-dom (domain-ref FD v)))
                (if other-dom
-                   (let ((merged (domain-intersect (sort dom <) (sort other-dom <))))
-                     (if (null? merged) #f
-                         (if (= 1 (length merged))
+                   (let ((merged (domain-intersect dom other-dom)))
+                     (if (not merged) #f
+                         (if (= (domain-size merged) 1)
                              ;; Singleton — bind the variable
-                             (let ((S+ (unify v (car merged) S)))
+                             (let ((S+ (unify v (domain-lo merged) S)))
                                (if S+ (loop (cdr fd) S+ new-fd)
                                    #f))
                              (loop (cdr fd) S (domain-set new-fd v merged)))))
@@ -207,9 +245,9 @@
                    (loop (cdr fd) S (domain-set new-fd v dom)))))
             ;; Variable still free with domain — keep constraint
             (else
-             (if (= 1 (length dom))
+             (if (= (domain-size dom) 1)
                  ;; Singleton — bind
-                 (let ((S+ (unify v (car dom) S)))
+                 (let ((S+ (unify v (domain-lo dom) S)))
                    (if S+ (loop (cdr fd) S+ new-fd) #f))
                  (loop (cdr fd) S (cons (cons v dom) new-fd)))))))))
 
@@ -278,11 +316,11 @@
 (define (=/= u v)
   (lambda (st)
     (let* ((S (cstate-S st))
-           (S0 (unify u v S)))
+           (result (unify-diff u v S)))
       (cond
-        ((not S0) (list st))
-        ((eq? S0 S) '())
-        (else (list (cstate-with st 'D (cons (prefix-S S0 S) (cstate-D st)))))))))
+        ((not result) (list st))          ;; can't unify → constraint satisfied
+        ((null? (cdr result)) '())        ;; already equal → violated
+        (else (list (cstate-with st 'D (cons (cdr result) (cstate-D st)))))))))
 
 (define (numbero u)
   (lambda (st)
@@ -312,42 +350,42 @@
 ;;; CLP(FD) goals
 ;;; ══════════════════════════════════════════════════════════════════════════════
 
-(define (infd x vals)
-  "Constrain x to be one of VALS (a list of integers).
-   If x is already ground, check membership. If x has an existing domain, intersect."
+(define (infd x dom-or-vals)
+  "Constrain x to DOM-OR-VALS (an <interval> or a list of integers).
+   If x is ground, check membership. If x has a domain, intersect."
   (lambda (st)
     (let* ((S (cstate-S st))
            (FD (cstate-FD st))
            (v (walk x S))
-           (sorted-vals (sort (delete-duplicates vals) <)))
-      (cond
-        ;; Ground — just check membership
-        ((not (var? v))
-         (if (and (integer? v) (memv v sorted-vals))
-             (list st) '()))
-        ;; Has existing domain — intersect
-        ((domain-ref FD v)
-         => (lambda (existing)
-              (let ((narrowed (domain-intersect (sort existing <) sorted-vals)))
-                (cond
-                  ((null? narrowed) '())
-                  ((= 1 (length narrowed))
-                   ;; Singleton — bind via ==
-                   ((== v (car narrowed)) st))
-                  (else
-                   (list (cstate-with st 'FD (domain-set FD v narrowed))))))))
-        ;; No existing domain
-        (else
-         (cond
-           ((null? sorted-vals) '())
-           ((= 1 (length sorted-vals))
-            ((== v (car sorted-vals)) st))
-           (else
-            (list (cstate-with st 'FD (domain-set FD v sorted-vals))))))))))
+           (new-dom (if (interval? dom-or-vals) dom-or-vals
+                        (let ((sorted (sort (delete-duplicates dom-or-vals) <)))
+                          (if (null? sorted) #f sorted)))))
+      (if (not new-dom) '()  ;; empty domain
+          (cond
+            ;; Ground — check membership
+            ((not (var? v))
+             (if (domain-contains? new-dom v) (list st) '()))
+            ;; Has existing domain — intersect
+            ((domain-ref FD v)
+             => (lambda (existing)
+                  (let ((narrowed (domain-intersect existing new-dom)))
+                    (cond
+                      ((not narrowed) '())  ;; empty intersection
+                      ((= (domain-size narrowed) 1)
+                       ((== v (domain-lo narrowed)) st))
+                      (else
+                       (list (cstate-with st 'FD (domain-set FD v narrowed))))))))
+            ;; No existing domain
+            (else
+             (cond
+               ((= (domain-size new-dom) 1)
+                ((== v (domain-lo new-dom)) st))
+               (else
+                (list (cstate-with st 'FD (domain-set FD v new-dom)))))))))))
 
 (define (rangeo x lo hi)
-  "Shorthand: constrain x to integers in [lo, hi]."
-  (infd x (make-range lo hi)))
+  "O(1): constrain x to integers in [lo, hi]."
+  (infd x (make-interval lo hi)))
 
 (define (+fd x y z)
   "x + y = z, over finite domains. All three can be partially or fully ground."
@@ -365,47 +403,52 @@
          ((== y (- zv xv)) st))
         ((and (number? yv) (number? zv))
          ((== x (- zv yv)) st))
-        ;; One or zero ground — propagate via domains
+        ;; One or zero ground — propagate via interval arithmetic
         (else
          (let* ((FD (cstate-FD st))
-                (xd (if (number? xv) (list xv) (or (and (var? xv) (domain-ref FD xv)) #f)))
-                (yd (if (number? yv) (list yv) (or (and (var? yv) (domain-ref FD yv)) #f)))
-                (zd (if (number? zv) (list zv) (or (and (var? zv) (domain-ref FD zv)) #f))))
+                (xd (if (number? xv) (make-interval xv xv)
+                        (and (var? xv) (domain-ref FD xv))))
+                (yd (if (number? yv) (make-interval yv yv)
+                        (and (var? yv) (domain-ref FD yv))))
+                (zd (if (number? zv) (make-interval zv zv)
+                        (and (var? zv) (domain-ref FD zv)))))
            (if (and xd yd zd)
-               ;; All have domains — enumerate valid triples via conde
-               (let ((valid (fd-triples-add xd yd zd)))
-                 (if (null? valid) '()
-                     ;; Enumerate: each valid triple is a conde branch
-                     (let try ((triples valid))
-                       (if (null? triples) '()
-                           (let ((t (car triples)))
-                             (mplus ((conj (== x (car t))
-                                           (conj (== y (cadr t))
-                                                 (== z (caddr t)))) st)
-                                    (lambda () (try (cdr triples)))))))))
-               ;; Not enough domain info — register propagator to re-fire later
+               ;; All have domains — interval propagation O(1)
+               (let* ((x-lo (domain-lo xd)) (x-hi (domain-hi xd))
+                      (y-lo (domain-lo yd)) (y-hi (domain-hi yd))
+                      (z-lo (domain-lo zd)) (z-hi (domain-hi zd))
+                      ;; Narrow: z ∈ [x-lo+y-lo, x-hi+y-hi] ∩ zd
+                      (new-z-lo (max z-lo (+ x-lo y-lo)))
+                      (new-z-hi (min z-hi (+ x-hi y-hi)))
+                      ;; Narrow: x ∈ [z-lo-y-hi, z-hi-y-lo] ∩ xd
+                      (new-x-lo (max x-lo (- new-z-lo y-hi)))
+                      (new-x-hi (min x-hi (- new-z-hi y-lo)))
+                      ;; Narrow: y ∈ [z-lo-x-hi, z-hi-x-lo] ∩ yd
+                      (new-y-lo (max y-lo (- new-z-lo new-x-hi)))
+                      (new-y-hi (min y-hi (- new-z-hi new-x-lo))))
+                 (if (or (> new-x-lo new-x-hi) (> new-y-lo new-y-hi) (> new-z-lo new-z-hi))
+                     '()  ;; empty domain → fail
+                     ;; Narrow domains, then re-register propagator if vars remain
+                     ((conj (maybe-narrow-interval x xv new-x-lo new-x-hi)
+                            (conj (maybe-narrow-interval y yv new-y-lo new-y-hi)
+                                  (conj (maybe-narrow-interval z zv new-z-lo new-z-hi)
+                                        (lambda (st2)
+                                          (let ((unground (filter (lambda (v) (var? (walk v (cstate-S st2))))
+                                                                  (list x y z))))
+                                            (if (null? unground) (list st2)
+                                                (list (register-propagator st2 unground (+fd x y z)))))))))
+                      st)))
+               ;; Not enough domain info — register propagator
                (let ((unground (filter var? (list xv yv zv))))
                  (list (register-propagator st unground (+fd x y z)))))))))))
 
-(define (fd-triples-add xd yd zd)
-  (append-map
-    (lambda (xv)
-      (append-map
-        (lambda (yv)
-          (let ((zv (+ xv yv)))
-            (if (memv zv zd) (list (list xv yv zv)) '())))
-        yd))
-    xd))
-
-(define (maybe-narrow x xv new-dom)
-  "Narrow x's domain to new-dom. If x is ground, check. If var, constrain."
+(define (maybe-narrow-interval x xv lo hi)
+  "Narrow x to [lo,hi]. If already ground, check. If singleton, bind."
   (cond
     ((number? xv)
-     (if (memv xv new-dom) succeed fail))
-    ((= 1 (length new-dom))
-     (== x (car new-dom)))
-    (else
-     (infd x new-dom))))
+     (if (and (>= xv lo) (<= xv hi)) succeed fail))
+    ((= lo hi) (== x lo))
+    (else (infd x (make-interval lo hi)))))
 
 (define (-fd x y z)
   "x - y = z. Equivalent to z + y = x."
@@ -427,34 +470,36 @@
          ((== x (quotient zv yv)) st))
         (else
          (let* ((FD (cstate-FD st))
-                (xd (if (number? xv) (list xv) (or (and (var? xv) (domain-ref FD xv)) #f)))
-                (yd (if (number? yv) (list yv) (or (and (var? yv) (domain-ref FD yv)) #f)))
-                (zd (if (number? zv) (list zv) (or (and (var? zv) (domain-ref FD zv)) #f))))
+                (xd (if (number? xv) (make-interval xv xv)
+                        (and (var? xv) (domain-ref FD xv))))
+                (yd (if (number? yv) (make-interval yv yv)
+                        (and (var? yv) (domain-ref FD yv))))
+                (zd (if (number? zv) (make-interval zv zv)
+                        (and (var? zv) (domain-ref FD zv)))))
            (if (and xd yd zd)
-               (let ((valid (fd-triples-mul xd yd zd)))
-                 (if (null? valid) '()
-                     (let try ((triples valid))
-                       (if (null? triples) '()
-                           (let ((t (car triples)))
-                             (mplus ((conj (== x (car t))
-                                           (conj (== y (cadr t))
-                                                 (== z (caddr t)))) st)
-                                    (lambda () (try (cdr triples)))))))))
+               ;; Interval multiplication bounds
+               (let* ((x-lo (domain-lo xd)) (x-hi (domain-hi xd))
+                      (y-lo (domain-lo yd)) (y-hi (domain-hi yd))
+                      (z-lo (domain-lo zd)) (z-hi (domain-hi zd))
+                      (products (list (* x-lo y-lo) (* x-lo y-hi)
+                                      (* x-hi y-lo) (* x-hi y-hi)))
+                      (p-lo (apply min products)) (p-hi (apply max products))
+                      (new-z-lo (max z-lo p-lo))
+                      (new-z-hi (min z-hi p-hi)))
+                 (if (> new-z-lo new-z-hi) '()
+                     ;; Narrow z, then re-register propagator if vars remain
+                     ((conj (maybe-narrow-interval z zv new-z-lo new-z-hi)
+                            (lambda (st2)
+                              (let ((unground (filter (lambda (v) (var? (walk v (cstate-S st2))))
+                                                      (list x y z))))
+                                (if (null? unground) (list st2)
+                                    (list (register-propagator st2 unground (*fd x y z)))))))
+                      st)))
                (let ((unground (filter var? (list xv yv zv))))
                  (list (register-propagator st unground (*fd x y z)))))))))))
 
-(define (fd-triples-mul xd yd zd)
-  (append-map
-    (lambda (x)
-      (append-map
-        (lambda (y)
-          (let ((z (* x y)))
-            (if (memv z zd) (list (list x y z)) '())))
-        yd))
-    xd))
-
 (define (<fd x y)
-  "x < y, over finite domains."
+  "x < y. O(1) with interval domains."
   (lambda (st)
     (let* ((S (cstate-S st))
            (xv (walk x S)) (yv (walk y S)))
@@ -463,22 +508,24 @@
          (if (< xv yv) (list st) '()))
         (else
          (let* ((FD (cstate-FD st))
-                (xd (if (number? xv) (list xv) (or (and (var? xv) (domain-ref FD xv)) #f)))
-                (yd (if (number? yv) (list yv) (or (and (var? yv) (domain-ref FD yv)) #f))))
+                (xd (if (number? xv) (make-interval xv xv)
+                        (and (var? xv) (domain-ref FD xv))))
+                (yd (if (number? yv) (make-interval yv yv)
+                        (and (var? yv) (domain-ref FD yv)))))
            (if (and xd yd)
-               (let* ((max-y (apply max yd))
-                      (min-x (apply min xd))
-                      (new-xd (filter (lambda (v) (< v max-y)) xd))
-                      (new-yd (filter (lambda (v) (> v min-x)) yd)))
-                 (if (or (null? new-xd) (null? new-yd)) '()
-                     ((conj (maybe-narrow x xv new-xd)
-                            (maybe-narrow y yv new-yd))
+               (let* ((new-x-hi (min (domain-hi xd) (- (domain-hi yd) 1)))
+                      (new-y-lo (max (domain-lo yd) (+ (domain-lo xd) 1)))
+                      (new-x-lo (domain-lo xd))
+                      (new-y-hi (domain-hi yd)))
+                 (if (or (> new-x-lo new-x-hi) (> new-y-lo new-y-hi)) '()
+                     ((conj (maybe-narrow-interval x xv new-x-lo new-x-hi)
+                            (maybe-narrow-interval y yv new-y-lo new-y-hi))
                       st)))
                (let ((unground (filter var? (list xv yv))))
                  (list (register-propagator st unground (<fd x y)))))))))))
 
 (define (<=fd x y)
-  "x <= y, over finite domains."
+  "x <= y. O(1) with interval domains."
   (lambda (st)
     (let* ((S (cstate-S st))
            (xv (walk x S)) (yv (walk y S)))
@@ -487,16 +534,18 @@
          (if (<= xv yv) (list st) '()))
         (else
          (let* ((FD (cstate-FD st))
-                (xd (if (number? xv) (list xv) (or (and (var? xv) (domain-ref FD xv)) #f)))
-                (yd (if (number? yv) (list yv) (or (and (var? yv) (domain-ref FD yv)) #f))))
+                (xd (if (number? xv) (make-interval xv xv)
+                        (and (var? xv) (domain-ref FD xv))))
+                (yd (if (number? yv) (make-interval yv yv)
+                        (and (var? yv) (domain-ref FD yv)))))
            (if (and xd yd)
-               (let* ((max-y (apply max yd))
-                      (min-x (apply min xd))
-                      (new-xd (filter (lambda (v) (<= v max-y)) xd))
-                      (new-yd (filter (lambda (v) (>= v min-x)) yd)))
-                 (if (or (null? new-xd) (null? new-yd)) '()
-                     ((conj (maybe-narrow x xv new-xd)
-                            (maybe-narrow y yv new-yd))
+               (let* ((new-x-hi (min (domain-hi xd) (domain-hi yd)))
+                      (new-y-lo (max (domain-lo yd) (domain-lo xd)))
+                      (new-x-lo (domain-lo xd))
+                      (new-y-hi (domain-hi yd)))
+                 (if (or (> new-x-lo new-x-hi) (> new-y-lo new-y-hi)) '()
+                     ((conj (maybe-narrow-interval x xv new-x-lo new-x-hi)
+                            (maybe-narrow-interval y yv new-y-lo new-y-hi))
                       st)))
                (let ((unground (filter var? (list xv yv))))
                  (list (register-propagator st unground (<=fd x y)))))))))))
@@ -526,7 +575,8 @@
         (else
          (let* ((dom (domain-ref (cstate-FD st) v))
                 (vals (if (not dom) #f
-                          (if (eq? order 'max) (reverse dom) dom))))
+                          (let ((lst (domain->list dom)))
+                            (if (eq? order 'max) (reverse lst) lst)))))
            (if (not vals) (list st)  ;; no domain constraint
                (let try ((vs vals))
                  (if (null? vs) '()
@@ -631,11 +681,14 @@
 ;;; Reification
 ;;; ══════════════════════════════════════════════════════════════════════════════
 
+(define (reify-name n)
+  (string->symbol (string-append "_." (number->string n))))
+
 (define (reify-1st st)
   (let* ((st (simplify-constraints st))
          (S (cstate-S st))
          (v (walk* (var 0) S))
-         (R (reify-s v empty-subst))
+         (R (car (reify-s v empty-subst 0)))
          (v (walk* v R))
          (D (walk* (cstate-D st) S))
          (Y (walk* (cstate-Y st) S))
@@ -656,18 +709,21 @@
                 (if (null? T*) '() (list `(absento . ,T*)))
                 (if (null? FD*) '() (list `(fd . ,FD*)))))))
 
-(define (reify-s v subst)
+(define (reify-s v subst n)
+  "Build a reification substitution (intmap). Returns (subst . counter)."
   (let ((v (walk v subst)))
     (cond
      ((var? v)
-      (cons (cons v (string->symbol (string-append "_." (number->string (length subst)))))
-            subst))
-     ((pair? v) (reify-s (cdr v) (reify-s (car v) subst)))
-     (else subst))))
+      (cons (intmap-set subst (cadr v) (reify-name n)) (+ n 1)))
+     ((pair? v)
+      (let* ((r (reify-s (car v) subst n)))
+        (reify-s (cdr v) (car r) (cdr r))))
+     (else (cons subst n)))))
 
 (define (anyvar? term R)
+  "Does any variable in term appear in the reification substitution R?"
   (cond
-    ((var? term) (assq term R))
+    ((var? term) (not (var? (walk term R))))
     ((pair? term) (or (anyvar? (car term) R) (anyvar? (cdr term) R)))
     (else #f)))
 

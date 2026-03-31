@@ -879,7 +879,7 @@
 (define *show-join-form* #f)
 (define *listening?* #f)
 (define *expressing?* #f)  ;; #t during voice→NL→Scheme express flow
-(define *syntax-mode* 'lisp)  ;; 'lisp or 'wisp
+(define *syntax-mode* 'wisp)  ;; 'lisp or 'wisp
 (define *terminal-active?* #f)
 (define *terminal-obj* #f)   ;; xterm.js extern ref
 
@@ -1065,10 +1065,18 @@
                       (cons (substring s 0 comma) acc))
                 (reverse (cons s acc))))))))
 
+(define (display-code str)
+  "Convert S-expression string for display in current syntax mode."
+  (if (eq? *syntax-mode* 'wisp)
+      (sexp->wisp-string str)
+      str))
+
 (define (cmd-line command description)
-  "Render a command line with inline coloring: command in accent, description dim."
-  `(span (span (@ (class "accent-text")) ,command)
-         (span (@ (class "dim-text"))    ,description) "\n"))
+  "Render a command line with inline coloring: command in accent, description dim.
+   Returns a thunk so display-code re-evaluates on each render (wisp/lisp toggle)."
+  (lambda ()
+    `(span (span (@ (class "accent-text")) ,(display-code command))
+           (span (@ (class "dim-text"))    ,description) "\n")))
 
 (define *log*
   (list
@@ -1266,8 +1274,10 @@
                            (if (string? result) (display result p) (write result p))
                            (get-output-string p)))))
                 (unless (string=? result-str "")
-                  (log-append! `(span (@ (class "result-text"))
-                                      ,(string-append "=> " result-str "\n"))))
+                  (let ((rs result-str))
+                    (log-append! (lambda () `(span (@ (class "result-text"))
+                                                    ,(string-append "=> " (display-code rs) "\n"))))))
+
                 ;; Log to the org's print log
                 ($ *org* 'log-expression!
                    ($ *org* 'head-version)
@@ -1643,8 +1653,9 @@
                                  (if (string? result)
                                      (display result result-port)
                                      (write result result-port))
-                                 (log-append! `(span (@ (class "result-text"))
-                                                     ,(string-append "=> " (get-output-string result-port) "\n"))))))))
+                                 (let ((rs (get-output-string result-port)))
+                                   (log-append! (lambda () `(span (@ (class "result-text"))
+                                                                    ,(string-append "=> " (display-code rs) "\n"))))))))))
                        #:unwind? #t))
                    (log-append! `(span (@ (class "error-text"))
                                        ,(string-append "No controller for: " target-val "\n"))))))
@@ -1722,15 +1733,18 @@
     (_ #f)))
 
 (define (eval! str)
-  (log-append! `(span (@ (class "prompt-text")) ,(current-prompt))
-               `(span (@ (class "input-text")) ,(string-append str "\n")))
-  (history-push! str)
-  (let* ((effective-str (if (eq? *syntax-mode* 'wisp)
+  (let* ((prompt (current-prompt))
+         (effective-str (if (eq? *syntax-mode* 'wisp)
                             (wisp->sexp-string str)
                             str))
-         (port (open-input-string effective-str)))
-    (let loop ()
-      (let ((exp (read* port)))
+         (sexp-str effective-str))
+    (log-append! `(span (@ (class "prompt-text")) ,prompt)
+                 (lambda () `(span (@ (class "input-text"))
+                                   ,(string-append (display-code sexp-str) "\n"))))
+    (history-push! str)
+    (let ((port (open-input-string effective-str)))
+      (let loop ()
+        (let ((exp (read* port)))
         (cond
          ((eof-object? exp) (if #f #f))
          ((eq? exp %invalid)
@@ -1748,7 +1762,7 @@
                               ,(string-append "Enter an org to evaluate expressions.\n"
                                               "  (make-org \"name\")    create an org\n"
                                               "  (enter! \"name\")      enter it\n")))
-          (loop)))))))
+          (loop))))))))
 
 ;;; ── Auto-resize ───────────────────────────────────────────────────────────
 
@@ -2211,7 +2225,7 @@
 (define (render-repl)
   `(div (@ (id "repl") (class "repl repl-text"))
         (div (@ (id "repl-log") (class "log"))
-             ,@*log*)
+             ,@(map (lambda (e) (if (procedure? e) (e) e)) *log*))
         (div (@ (class "prompt"))
              ,(current-prompt)
              (textarea (@ (id "expression") (class "repl-text")
@@ -2309,8 +2323,8 @@
 
 ;;; ── Restore syntax mode preference ─────────────────────────────────────────
 (let ((saved-mode (ls-get-item "playnet-syntax-mode")))
-  (when (and saved-mode (string=? saved-mode "wisp"))
-    (set! *syntax-mode* 'wisp)))
+  (when (and saved-mode (string=? saved-mode "lisp"))
+    (set! *syntax-mode* 'lisp)))
 
 ;;; ── Restore persisted orgs from localStorage ──────────────────────────────
 (let ((index (load-org-index)))

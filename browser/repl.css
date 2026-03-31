@@ -59,6 +59,11 @@ h1 {
     overflow: hidden;
 }
 
+/* In outer mode, allow overflow so sticky prompt works against body scroll */
+.outer .repl {
+    overflow: visible;
+}
+
 .repl .log {
     white-space: pre-wrap;
     color: #e0ceed;
@@ -76,6 +81,15 @@ h1 {
     padding: 0.25rem 1rem;
     border-top: 1px solid #1a1520;
     flex-shrink: 0;
+}
+
+/* Sticky prompt: stays at viewport bottom when scrolled away, seamlessly
+   rejoins normal flow once the user scrolls down to the repl's end. */
+.outer .repl .prompt {
+    position: sticky;
+    bottom: 0;
+    background-color: #110e13;
+    z-index: 10;
 }
 
 .repl .prompt textarea {

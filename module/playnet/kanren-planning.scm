@@ -22,7 +22,8 @@
   #:re-export (var var? var=?
                empty-subst
                walk walk*
-               unify
+               unify unify-diff
+               intmap-ref intmap-set
                appendo membero)
   #:export (;; State
             make-planning-state
@@ -173,21 +174,24 @@
 
 ;;; ── Reification ───────────────────────────────────────────────────────────────
 
+(define (reify-name n)
+  (string->symbol (string-append "_." (number->string n))))
+
 (define (reify-1st st)
   (let* ((v (walk* (var 0) (planning-state-subst st)))
-         (r (reify-s v empty-subst)))
+         (r (car (reify-s v empty-subst 0))))
     (walk* v r)))
 
-(define (reify-s v subst)
+(define (reify-s v subst n)
+  "Build a reification substitution (intmap). Returns (subst . counter)."
   (let ((v (walk v subst)))
     (cond
      ((var? v)
-      (let ((name (string->symbol
-                    (string-append "_." (number->string (length subst))))))
-        (cons (cons v name) subst)))
+      (cons (intmap-set subst (cadr v) (reify-name n)) (+ n 1)))
      ((pair? v)
-      (reify-s (cdr v) (reify-s (car v) subst)))
-     (else subst))))
+      (let* ((r (reify-s (car v) subst n)))
+        (reify-s (cdr v) (car r) (cdr r))))
+     (else (cons subst n)))))
 
 
 ;;; ── Run ───────────────────────────────────────────────────────────────────────
