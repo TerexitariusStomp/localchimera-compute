@@ -1,13 +1,16 @@
-;;; federation.scm — Streamed interleaving federation
+;;; federation.scm — Recursive streamed federation
 ;;;
-;;; Each scope produces a lazy stream of plans (via run-plan*).
-;;; The federation merges these streams with mplus — fair interleaving.
-;;; Proportional sacrifice emerges from the interleaving: as one scope's
-;;; stream advances past its greedy plan, it yields resources to others.
+;;; The protocol is the same at every level of the hierarchy:
 ;;;
-;;; The residual (total unmet demand) shrinks with each interleaving step.
-;;; Well-decoupled federations (DDMRP buffers at boundaries) converge fast
-;;; because buffer-safe plans are at the front of each stream.
+;;;   scope-stream : scope → lazy stream of (plan . residual)
+;;;
+;;; A leaf scope's stream is a miniKanren search over local facts.
+;;; A parent scope's stream is an interleaving of its children's streams.
+;;; The root never sees leaf-level facts — only its children's streams.
+;;;
+;;; Each level: pull one plan per child, match laterally, advance the
+;;; child with the largest deficit. Same objective recursively:
+;;; minimize residual, protect buffers, prefer lowest SNE.
 
 (use-modules (playnet kanren-constraints)
              (srfi srfi-1))
@@ -26,100 +29,151 @@
     (scope-parent-o facts scope-b parent)
     (=/= scope-a scope-b)))
 
-(define (build-hierarchy-o facts scope-ids parent-map children-of plan-order)
-  (project (facts scope-ids parent-map)
-    (let ((result (build-hierarchy-impl scope-ids parent-map)))
-      (fresh ()
-        (== children-of (car result))
-        (== plan-order (cdr result))))))
-
-(define (build-hierarchy-impl scope-ids parent-map)
-  (let ((ch (make-hash-table)) (visited (make-hash-table)) (order '()))
+(define (build-hierarchy facts scope-ids parent-map)
+  "Returns alist: scope-id → (children . list)."
+  (let ((ch (make-hash-table)))
     (for-each (lambda (id) (hash-set! ch id '())) scope-ids)
     (for-each (lambda (id)
                 (let ((parent (assoc-ref parent-map id)))
                   (when (and parent (member parent scope-ids))
                     (hash-set! ch parent (cons id (hash-ref ch parent '()))))))
               scope-ids)
-    (let dfs ((ids scope-ids))
-      (for-each (lambda (id)
-                  (unless (hash-ref visited id #f)
-                    (hash-set! visited id #t)
-                    (dfs (hash-ref ch id '()))
-                    (set! order (cons id order))))
-                ids))
-    (cons (hash-map->list cons ch) (reverse order))))
+    (hash-map->list cons ch)))
 
 
 ;;; ══════════════════════════════════════════════════════════════════════════════
-;;; Scope plan streams
+;;; The universal protocol: scope-stream
 ;;; ══════════════════════════════════════════════════════════════════════════════
+;;;
+;;; Every scope — leaf or parent — produces the same thing:
+;;;   a lazy stream of federation-result alists, each containing:
+;;;     (plan . ...)              — what this scope decided
+;;;     (deficits . ...)          — what it still needs
+;;;     (surpluses . ...)         — what it can offer
+;;;     (residual . number)       — total unmet demand
+;;;
+;;; Consumers of the stream don't know or care whether the scope
+;;; is a leaf (miniKanren search) or a parent (interleaved children).
 
-(define (scope-plan-stream scope-id ctx)
-  "Lazy stream of plans for a scope. Cheapest first (SNE-sorted facts).
-   Each plan includes its residuals (purchase terms = deficits)."
-  (let ((ns #f))  ;; no netter — CLP(FD) allocation
-    ((fresh (plan)
-       (plan-o ctx plan #:max-depth 5))
-     (empty-cstate ns))))
-
-(define (stream-take-1 $)
-  "Force one answer from a stream. Returns (answer . rest-stream) or #f."
-  (cond
-    ((null? $) #f)
-    ((procedure? $) (stream-take-1 ($)))  ;; force suspension
-    (else (cons (car $) (cdr $)))))
-
-
-;;; ══════════════════════════════════════════════════════════════════════════════
-;;; Residual computation
-;;; ══════════════════════════════════════════════════════════════════════════════
-
-(define (plan-residual plan)
-  "Total unmet demand in a plan. Sum of all purchase quantities."
-  (if (not (list? plan)) 0
-      (fold (lambda (entry acc)
-              (if (and (pair? entry) (pair? (cadr entry))
-                       (eq? (caadr entry) 'purchase))
-                  (+ acc (caddr (cadr entry)))
-                  acc))
-            0 plan)))
-
-(define (plan-deficits plan scope-id)
-  "Extract deficit signals from a plan."
-  (if (not (list? plan)) '()
-      (filter-map (lambda (entry)
-        (and (pair? entry) (pair? (cadr entry))
-             (eq? (caadr entry) 'purchase)
-             `((scope . ,scope-id)
-               (spec . ,(cadadr entry))
-               (qty . ,(caddr (cadr entry))))))
-        plan)))
-
-(define (plan-surpluses plan scope-id)
-  "Extract surplus from satisfied demands (allocated > needed)."
-  (if (not (list? plan)) '()
-      (filter-map (lambda (entry)
-        (and (pair? entry) (pair? (cadr entry))
-             (eq? (caadr entry) 'satisfied)
-             (let* ((pt (cadr entry))
-                    (alloc (cadddr pt))
-                    (needed (caddr pt))
-                    (total (if (list? alloc)
-                               (fold (lambda (a acc) (+ acc (cadr a))) 0 alloc)
-                               0))
-                    (surplus (- total needed)))
-               (and (> surplus 0)
-                    `((scope . ,scope-id) (spec . ,(cadr pt)) (qty . ,surplus))))))
-        plan)))
+(define (scope-stream facts scope-id ctx-map children-of)
+  "Universal: produce a lazy stream for SCOPE-ID.
+   Leaf scopes search locally. Parent scopes interleave children."
+  (let ((children (or (assoc-ref children-of scope-id) '())))
+    (if (null? children)
+        ;; Leaf: miniKanren search over local facts
+        (leaf-stream scope-id ctx-map)
+        ;; Parent: interleave children's streams
+        (parent-stream facts scope-id children ctx-map children-of))))
 
 
 ;;; ══════════════════════════════════════════════════════════════════════════════
-;;; Lateral matching (same as before — peer enforcement)
+;;; Leaf stream — miniKanren search, lazily
 ;;; ══════════════════════════════════════════════════════════════════════════════
 
-(define (match-deficits-surpluses facts deficits surpluses)
-  "Greedy match with peer enforcement. Returns (matches . unmatched-deficits)."
+(define (leaf-stream scope-id ctx-map)
+  "Lazy plan stream for a leaf scope. Each element is a federation-result."
+  (let* ((ctx (assoc-ref ctx-map scope-id))
+         (raw-stream (if ctx
+                         ((fresh (plan) (plan-o ctx plan #:max-depth 5))
+                          (empty-cstate #f))
+                         '())))
+    ;; Wrap each raw miniKanren state into a federation-result
+    (stream-map-lazy
+      (lambda (state)
+        (let* ((plan (reify-from-state state))
+               (defs (extract-deficits plan scope-id))
+               (surps (extract-surpluses plan scope-id))
+               (resid (fold (lambda (d a) (+ a (assq-ref d 'qty))) 0 defs)))
+          `((scope . ,scope-id) (plan . ,plan)
+            (deficits . ,defs) (surpluses . ,surps)
+            (residual . ,resid))))
+      raw-stream)))
+
+
+;;; ══════════════════════════════════════════════════════════════════════════════
+;;; Parent stream — interleave children, match laterally
+;;; ══════════════════════════════════════════════════════════════════════════════
+
+(define (parent-stream facts scope-id children ctx-map children-of)
+  "Lazy federation stream for a parent scope.
+   Recursively creates child streams, interleaves them."
+  (let* (;; Each child gets its own stream (recursively — children may be parents too)
+         (child-streams
+           (map (lambda (cid)
+                  (cons cid (scope-stream facts cid ctx-map children-of)))
+                children))
+         ;; Pull first result from each child
+         (initial (pull-from-all child-streams)))
+    (if (not initial)
+        '()  ;; no children produced results
+        ;; Generate federation results lazily
+        (federation-search-stream facts scope-id initial *max-steps*))))
+
+(define *max-steps* 50)
+
+(define (federation-search-stream facts scope-id state steps)
+  "Lazy stream of federation results. Each step advances one child."
+  (let* ((result (evaluate-federation facts scope-id state)))
+    (if (or (<= steps 0) (= (assq-ref result 'residual) 0))
+        ;; Terminal: return this result as a single-element stream
+        (list result)
+        ;; Non-terminal: this result, then lazily try advancing
+        (cons result
+              (lambda ()  ;; suspension — only computed when pulled
+                (let ((advanced (advance-worst-child state
+                                  (assq-ref result 'unmatched))))
+                  (if (not advanced)
+                      '()  ;; all children's streams exhausted
+                      (federation-search-stream facts scope-id
+                                                advanced (- steps 1)))))))))
+
+
+;;; ══════════════════════════════════════════════════════════════════════════════
+;;; Federation evaluation — match children's results at this level
+;;; ══════════════════════════════════════════════════════════════════════════════
+
+(define (evaluate-federation facts scope-id state)
+  "Given current child results, compute this level's federation result."
+  (let* (;; Aggregate deficits and surpluses from all children
+         (all-defs (append-map (lambda (s)
+           (or (assq-ref (cadr s) 'deficits) '())) state))
+         (all-surps (append-map (lambda (s)
+           (or (assq-ref (cadr s) 'surpluses) '())) state))
+         ;; Match laterally at this level
+         (match-result (match-at-level facts all-defs all-surps))
+         (matches (car match-result))
+         (unmatched (cdr match-result))
+         (residual (fold (lambda (d a) (+ a (assq-ref d 'qty))) 0 unmatched))
+         ;; This scope's combined plan
+         (child-plans (map (lambda (s) (cons (car s) (assq-ref (cadr s) 'plan)))
+                           state)))
+    `((scope . ,scope-id)
+      (plan . ,child-plans)
+      (deficits . ,unmatched)       ;; what THIS level can't resolve
+      (surpluses . ,(remaining-surpluses all-surps matches))
+      (lateral-matches . ,matches)
+      (residual . ,residual)
+      (unmatched . ,unmatched))))
+
+(define (remaining-surpluses surpluses matches)
+  "Surpluses after matches have consumed some."
+  (fold (lambda (m sups)
+          (map (lambda (s)
+            (if (and (equal? (assq-ref s 'scope) (assq-ref m 'from))
+                     (equal? (assq-ref s 'spec) (assq-ref m 'spec)))
+                (cons (cons 'qty (- (assq-ref s 'qty) (assq-ref m 'qty)))
+                      (filter (lambda (p) (not (eq? (car p) 'qty))) s))
+                s))
+            sups))
+        surpluses matches))
+
+
+;;; ══════════════════════════════════════════════════════════════════════════════
+;;; Lateral matching (peer enforcement via parent facts)
+;;; ══════════════════════════════════════════════════════════════════════════════
+
+(define (match-at-level facts deficits surpluses)
+  "Match deficits with surpluses. Returns (matches . unmatched)."
   (let* ((parent-facts (filter (lambda (f) (eq? (car f) 'scope-parent)) facts))
          (parent-of (lambda (id)
            (let ((p (find (lambda (f) (equal? (cadr f) id)) parent-facts)))
@@ -132,10 +186,7 @@
                  (m (find (lambda (s)
                             (and (equal? (assq-ref s 'spec) dsp)
                                  (not (equal? (assq-ref s 'scope) ds))
-                                 (> (assq-ref s 'qty) 0)
-                                 (let ((dp (parent-of ds))
-                                       (sp (parent-of (assq-ref s 'scope))))
-                                   (and dp sp (equal? dp sp)))))
+                                 (> (assq-ref s 'qty) 0)))
                           sups)))
             (if (not m)
                 (loop (cdr defs) sups matches (cons d unmatched))
@@ -146,68 +197,67 @@
                          (if (eq? s m)
                              (cons (cons 'qty (- sq q))
                                    (filter (lambda (p) (not (eq? (car p) 'qty))) s))
-                             s))
-                         sups)))
-                  (loop (cdr defs) new-sups (cons match matches) unmatched))))))))
+                             s)) sups)))
+                  (loop (cdr defs) new-sups
+                        (cons match matches) unmatched))))))))
 
 
 ;;; ══════════════════════════════════════════════════════════════════════════════
-;;; Streamed federation — the core
+;;; Stream utilities
 ;;; ══════════════════════════════════════════════════════════════════════════════
-;;;
-;;; Each scope produces a lazy plan stream. The federation interleaves them.
-;;; At each step:
-;;;   1. Pull current best plan from each scope's stream
-;;;   2. Collect deficits and surpluses across all scopes
-;;;   3. Match laterally
-;;;   4. If residual = 0: done (all demands satisfied across federation)
-;;;   5. If residual > 0: advance the scope with the largest deficit
-;;;      by one stream step (try its next plan, which yields more resources)
-;;;   6. Repeat
-;;;
-;;; The interleaving IS the proportional sacrifice: each scope's stream
-;;; advances past its greedy plan, yielding resources to peers. The mplus
-;;; swapping ensures fair exploration. Well-buffered scopes have short
-;;; streams (buffer-safe plan is at the front). Under-buffered scopes have
-;;; longer streams. The total residual shrinks at each step.
 
-(define *max-federation-steps* 100)
+(define (stream-map-lazy f stream)
+  "Lazily map F over a miniKanren stream."
+  (cond
+    ((null? stream) '())
+    ((procedure? stream) (lambda () (stream-map-lazy f (stream))))
+    (else (cons (f (car stream))
+                (stream-map-lazy f (cdr stream))))))
 
-(define (federate-streams facts scope-entries)
-  "Streamed federation. SCOPE-ENTRIES: list of (scope-id . ctx).
-   Returns the best federation result found within step budget."
-  (let* (;; Initialize: get first plan from each scope's stream
-         (initial-streams
-           (map (lambda (entry)
-                  (let ((sid (car entry)) (ctx (cdr entry)))
-                    (cons sid (scope-plan-stream sid ctx))))
-                scope-entries))
-         ;; Pull first plan from each stream
-         (initial-state (pull-all-plans initial-streams)))
-    (if (not initial-state) '()  ;; no scopes produced plans
-        (let ((best (search-federation facts initial-state *max-federation-steps*)))
-          best))))
+(define (stream-take-1 $)
+  "Force one answer. Returns (answer . rest) or #f."
+  (cond
+    ((null? $) #f)
+    ((procedure? $) (stream-take-1 ($)))
+    (else (cons (car $) (cdr $)))))
 
-(define (pull-all-plans scope-streams)
-  "Pull one plan from each scope's stream. Returns ((sid plan stream) ...) or #f."
-  (let loop ((streams scope-streams) (acc '()))
-    (if (null? streams)
-        (reverse acc)
-        (let* ((sid (caar streams)) (stream (cdar streams))
-               (result (stream-take-1 stream)))
-          (if (not result)
-              ;; This scope has no plans — include with empty plan
-              (loop (cdr streams)
-                    (cons (list sid '() '()) acc))
-              ;; Reify the plan from the state
-              (let* ((state (car result))
-                     (rest-stream (cdr result))
-                     (plan (reify-plan state)))
-                (loop (cdr streams)
-                      (cons (list sid plan rest-stream) acc))))))))
+(define (pull-from-all child-streams)
+  "Pull one result from each child stream. Returns ((cid result stream) ...) or #f."
+  (let loop ((cs child-streams) (acc '()))
+    (if (null? cs) (reverse acc)
+        (let* ((cid (caar cs)) (stream (cdar cs))
+               (pulled (stream-take-1 stream)))
+          (if (not pulled)
+              (loop (cdr cs) (cons (list cid '() '()) acc))
+              (loop (cdr cs)
+                    (cons (list cid (car pulled) (cdr pulled)) acc)))))))
 
-(define (reify-plan state)
-  "Extract plan value from a miniKanren state (var 0)."
+(define (advance-worst-child state unmatched-deficits)
+  "Advance the child with the largest unmatched deficit by one stream step."
+  (if (null? unmatched-deficits) #f
+      (let* ((worst-scope (assq-ref
+               (car (sort unmatched-deficits
+                      (lambda (a b) (> (assq-ref a 'qty) (assq-ref b 'qty)))))
+               'scope))
+             ;; Find this child in state and advance its stream
+             (entry (find (lambda (s) (equal? (car s) worst-scope)) state)))
+        (if (not entry) #f
+            (let* ((stream (caddr entry))
+                   (next (stream-take-1 stream)))
+              (if (not next) #f
+                  (map (lambda (s)
+                    (if (equal? (car s) worst-scope)
+                        (list worst-scope (car next) (cdr next))
+                        s))
+                    state)))))))
+
+
+;;; ══════════════════════════════════════════════════════════════════════════════
+;;; Helpers
+;;; ══════════════════════════════════════════════════════════════════════════════
+
+(define (reify-from-state state)
+  "Extract plan from miniKanren state."
   (let* ((S (cstate-S state))
          (v (walk* (var 0) S))
          (R (reify-s v '())))
@@ -222,86 +272,45 @@
      ((pair? v) (reify-s (cdr v) (reify-s (car v) subst)))
      (else subst))))
 
-(define (search-federation facts state steps-remaining)
-  "Search for the federation plan with lowest total residual.
-   STATE: list of (scope-id plan stream) triples.
-   Advances the scope with the largest deficit at each step."
-  (let* ((plans (map (lambda (s) (cons (car s) (cadr s))) state))
-         ;; Collect all deficits and surpluses
-         (all-deficits (append-map (lambda (s)
-           (plan-deficits (cadr s) (car s))) state))
-         (all-surpluses (append-map (lambda (s)
-           (plan-surpluses (cadr s) (car s))) state))
-         ;; Match laterally
-         (match-result (match-deficits-surpluses facts all-deficits all-surpluses))
-         (matches (car match-result))
-         (unmatched (cdr match-result))
-         ;; Total residual
-         (residual (fold (lambda (d acc) (+ acc (assq-ref d 'qty))) 0 unmatched)))
-    ;; Build result
-    (let ((result `((scope-plans . ,plans)
-                    (lateral-matches . ,matches)
-                    (unmatched-deficits . ,unmatched)
-                    (total-residual . ,residual))))
-      (cond
-        ;; Perfect: no residual
-        ((= residual 0) result)
-        ;; Budget exhausted: return best found
-        ((<= steps-remaining 0) result)
-        ;; Try advancing the scope with the largest deficit
-        (else
-         (let* ((worst-scope (and (pair? unmatched)
-                                   (assq-ref (car (sort unmatched
-                                     (lambda (a b) (> (assq-ref a 'qty)
-                                                      (assq-ref b 'qty)))))
-                                   'scope)))
-                ;; Advance that scope's stream by one step
-                (advanced (and worst-scope
-                               (advance-scope state worst-scope))))
-           (if (not advanced)
-               result  ;; can't advance — stream exhausted
-               (let ((next-result (search-federation facts advanced
-                                    (- steps-remaining 1))))
-                 ;; Keep the better result
-                 (if (< (assq-ref next-result 'total-residual) residual)
-                     next-result
-                     result)))))))))
+(define (extract-deficits plan scope-id)
+  (if (not (list? plan)) '()
+      (filter-map (lambda (entry)
+        (and (pair? entry) (pair? (cadr entry))
+             (eq? (caadr entry) 'purchase)
+             `((scope . ,scope-id) (spec . ,(cadadr entry))
+               (qty . ,(caddr (cadr entry))))))
+        plan)))
 
-(define (advance-scope state scope-id)
-  "Advance one scope's stream by one step. Returns updated state or #f."
-  (let loop ((entries state) (acc '()))
-    (if (null? entries) #f
-        (let ((entry (car entries)))
-          (if (not (equal? (car entry) scope-id))
-              (loop (cdr entries) (cons entry acc))
-              ;; This is the scope to advance
-              (let* ((stream (caddr entry))
-                     (next (stream-take-1 stream)))
-                (if (not next)
-                    #f  ;; stream exhausted
-                    (let ((new-plan (reify-plan (car next)))
-                          (new-stream (cdr next)))
-                      (append (reverse acc)
-                              (list (list scope-id new-plan new-stream))
-                              (cdr entries))))))))))
+(define (extract-surpluses plan scope-id)
+  (if (not (list? plan)) '()
+      (filter-map (lambda (entry)
+        (and (pair? entry) (pair? (cadr entry))
+             (eq? (caadr entry) 'satisfied)
+             (let* ((pt (cadr entry))
+                    (alloc (cadddr pt))
+                    (needed (caddr pt))
+                    (total (if (list? alloc)
+                               (fold (lambda (a acc) (+ acc (cadr a))) 0 alloc) 0))
+                    (surplus (- total needed)))
+               (and (> surplus 0)
+                    `((scope . ,scope-id) (spec . ,(cadr pt)) (qty . ,surplus))))))
+        plan)))
 
 
 ;;; ══════════════════════════════════════════════════════════════════════════════
 ;;; Entry point
 ;;; ══════════════════════════════════════════════════════════════════════════════
 
-(define (plan-federation-o facts scope-ids parent-map scope-ctxs result)
-  "Streamed federation: each scope produces a lazy plan stream,
-   the federation interleaves them for proportional sacrifice.
-   SCOPE-CTXS: alist of (scope-id . ctx)."
-  (project (facts scope-ids parent-map scope-ctxs)
-    (let* (;; Build hierarchy for ordering
-           (hierarchy (build-hierarchy-impl scope-ids parent-map))
-           (plan-order (cdr hierarchy))
-           ;; Order scope-ctxs by plan-order (children first)
-           (ordered-ctxs (filter-map (lambda (id)
-                                       (assoc id scope-ctxs))
-                                     plan-order))
-           ;; Run streamed federation
-           (fed-result (federate-streams facts ordered-ctxs)))
-      (== result (cons `(plan-order . ,plan-order) fed-result)))))
+(define (plan-federation-o facts scope-ids parent-map ctx-map result)
+  "Recursive streamed federation. Same protocol at every level."
+  (project (facts scope-ids parent-map ctx-map)
+    (let* ((children-of (build-hierarchy facts scope-ids parent-map))
+           ;; Find the root (scope with no parent, or the first scope)
+           (root (or (find (lambda (id) (not (assoc-ref parent-map id))) scope-ids)
+                     (car scope-ids)))
+           ;; Build the recursive stream from the root
+           (root-stream (scope-stream facts root ctx-map children-of))
+           ;; Pull the best result
+           (best (stream-take-1 root-stream)))
+      (== result (if best (car best)
+                     `((scope . ,root) (plan . ()) (residual . 0)))))))
