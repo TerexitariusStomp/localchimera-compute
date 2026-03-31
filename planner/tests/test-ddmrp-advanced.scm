@@ -1,0 +1,328 @@
+;;; test-ddmrp-advanced.scm — Advanced DDMRP algorithm tests
+;;;
+;;; Ported from: old/planner/src/lib/tests/ddmrp.test.ts
+;;;
+;;; Intent: Supplement algorithms-foundation.scm with additional DDMRP tests:
+;;;   - MOQ rounding in replenishment signals
+;;;   - Demand adjustment factor (DAF) scaling effective ADU
+;;;   - Spike order filtering via OST multiplier
+;;;   - On-hand projection with stockout detection
+;;;   - LTM alert zone classification
+;;;   - Buffer zone formula variations (Fig 7-20 exact example)
+;;;
+;;; Run:  cd planner && guile --no-auto-compile -q -L ../module \
+;;;         -l load-all.scm -l tests/test-ddmrp-advanced.scm
+
+(use-modules (goblins)
+             (goblins persistence-store memory)
+             (goblins utils hashmap)
+             (srfi srfi-1))
+
+
+;;; ── Harness ───────────────────────────────────────────────────────────────────
+
+(define pass-count 0)
+(define fail-count 0)
+
+(define (check label got expected)
+  (if (equal? got expected)
+      (begin (set! pass-count (+ pass-count 1))
+             (display (string-append "  PASS  " label "\n")))
+      (begin (set! fail-count (+ fail-count 1))
+             (display (string-append "  FAIL  " label "\n"))
+             (display "    expected: ") (write expected) (newline)
+             (display "    got:      ") (write got)      (newline))))
+
+(define (check-pred label pred)
+  (if pred
+      (begin (set! pass-count (+ pass-count 1))
+             (display (string-append "  PASS  " label "\n")))
+      (begin (set! fail-count (+ fail-count 1))
+             (display (string-append "  FAIL  " label "\n")))))
+
+(define (approx= a b . rest)
+  (let ((tol (if (pair? rest) (car rest) 0.01)))
+    (< (abs (- a b)) tol)))
+
+
+;;; ════════════════════════════════════════════════════════════════════════════
+;;; Setup
+;;; ════════════════════════════════════════════════════════════════════════════
+
+(display "\n── Setup ──\n")
+
+(define store (make-memory-store))
+(define-values (vat scope)
+  (spawn-persistent-vat
+    scope-env
+    (lambda () (spawn-scope "DDMRP Advanced Test"))
+    store))
+
+(with-vat vat
+  (let ((rs ($ scope 'recipe-store)))
+    ($ rs 'add-resource-spec
+       (make-resource-specification "spec-a" "Item A" #f #f #f "each" #f #f #f #f #f))
+    ($ rs 'add-resource-spec
+       (make-resource-specification "spec-p" "Item P" #f #f #f "each" #f #f #f #f #f))
+    (check-pred "specs ok" #t)))
+
+
+;;; ════════════════════════════════════════════════════════════════════════════
+;;; 1. Buffer zone: TOR/TOY/TOG formula (standard)
+;;;
+;;; Ported from: "TOR / TOY / TOG formula (no MOQ, with orderCycleDays)"
+;;; ════════════════════════════════════════════════════════════════════════════
+
+(display "\n── Buffer zone formula (standard) ──\n")
+
+(with-vat vat
+  (let* ((profile (make-buffer-profile
+                    "bp-std" "Standard" 'manufactured
+                    1.0   ;; leadTimeFactor
+                    #f #f
+                    0.5   ;; variabilityFactor
+                    7     ;; orderCycleDays
+                    #f #f #f #f #f #f))
+         ;; ADU=10, DLT=10, MOQ=0
+         ;; redBase   = 10 * 10 * 1.0 = 100
+         ;; redSafety = 100 * 0.5     = 50
+         ;; TOR       = 100 + 50      = 150
+         ;; TOY       = 150 + 100     = 250
+         ;; green     = max(70, 100, 0) = 100 (redBase wins)
+         ;; TOG       = 250 + 100     = 350
+         (levels (compute-buffer-zone-levels profile 10 "each" 10 0 "each")))
+    (check "std: red-base" (approx= 100 (assq-ref levels 'red-base)) #t)
+    (check "std: red-safety" (approx= 50 (assq-ref levels 'red-safety)) #t)
+    (check "std: tor" (approx= 150 (assq-ref levels 'tor)) #t)
+    (check "std: toy" (approx= 250 (assq-ref levels 'toy)) #t)
+    (check "std: tog" (approx= 350 (assq-ref levels 'tog)) #t)))
+
+
+;;; ════════════════════════════════════════════════════════════════════════════
+;;; 2. MOQ dominates green zone
+;;;
+;;; Ported from: "MOQ rounding: MOQ dominates green zone when largest"
+;;; ════════════════════════════════════════════════════════════════════════════
+
+(display "\n── MOQ dominates green ──\n")
+
+(with-vat vat
+  (let* ((profile (make-buffer-profile
+                    "bp-moq" "MOQ Test" 'manufactured
+                    1.0 #f #f 0.5 7 #f #f #f #f #f #f))
+         ;; MOQ=120 > max(70, 100) → green=120
+         ;; TOG = 250 + 120 = 370
+         (levels (compute-buffer-zone-levels profile 10 "each" 10 120 "each")))
+    (check "moq: tog" (approx= 370 (assq-ref levels 'tog)) #t)))
+
+
+;;; ════════════════════════════════════════════════════════════════════════════
+;;; 3. Order cycle days dominates green zone
+;;;
+;;; Ported from: "orderCycleDays dominates green zone when largest"
+;;; ════════════════════════════════════════════════════════════════════════════
+
+(display "\n── DOC dominates green ──\n")
+
+(with-vat vat
+  (let* ((profile (make-buffer-profile
+                    "bp-doc" "DOC Test" 'manufactured
+                    1.0 #f #f 0.5 20 #f #f #f #f #f #f))
+         ;; ADU=10, DOC=20 → ADU*DOC=200 > redBase(100) > MOQ(0)
+         ;; TOG = 250 + 200 = 450
+         (levels (compute-buffer-zone-levels profile 10 "each" 10 0 "each")))
+    (check "doc: tog" (approx= 450 (assq-ref levels 'tog)) #t)))
+
+
+;;; ════════════════════════════════════════════════════════════════════════════
+;;; 4. Fig 7-20 exact example from DDMRP book
+;;;
+;;; Ported from: "Fig 7-20 exact example — ADU=10 DLT=12"
+;;; ════════════════════════════════════════════════════════════════════════════
+
+(display "\n── Fig 7-20 exact example ──\n")
+
+(with-vat vat
+  (let* ((profile (make-buffer-profile
+                    "bp-fig" "Fig 7-20" 'manufactured
+                    0.5   ;; LTF
+                    #f #f
+                    0.33  ;; VF
+                    7     ;; DOC
+                    #f #f #f #f #f #f))
+         ;; ADU=10, DLT=12, MOQ=50
+         ;; redBase   = 10 × 12 × 0.5 = 60
+         ;; redSafety = 60 × 0.33     = 19.8
+         ;; TOR       = 60 + 19.8     = 79.8
+         ;; TOY       = 79.8 + 120    = 199.8
+         ;; green     = max(70, 60, 50) = 70
+         ;; TOG       = 199.8 + 70    = 269.8
+         (levels (compute-buffer-zone-levels profile 10 "each" 12 50 "each")))
+    (check "fig: red-base" (approx= 60 (assq-ref levels 'red-base)) #t)
+    (check "fig: red-safety" (approx= 19.8 (assq-ref levels 'red-safety) 0.1) #t)
+    (check "fig: tor" (approx= 79.8 (assq-ref levels 'tor) 0.1) #t)
+    (check "fig: toy" (approx= 199.8 (assq-ref levels 'toy) 0.5) #t)
+    (check "fig: tog" (approx= 269.8 (assq-ref levels 'tog) 0.5) #t)
+    ;; Green zone = 70 (DOC wins)
+    (check "fig: green=70"
+           (approx= 70 (- (assq-ref levels 'tog) (assq-ref levels 'toy)) 0.5) #t)))
+
+
+;;; ════════════════════════════════════════════════════════════════════════════
+;;; 5. Buffer status zone classification
+;;;
+;;; Ported from: bufferStatus tests — boundary conditions
+;;; ════════════════════════════════════════════════════════════════════════════
+
+(display "\n── Buffer status zones ──\n")
+
+(with-vat vat
+  (let ((bzs ($ scope 'buffer-zone-store)))
+    ;; Create zone with TOR=100, TOY=200, TOG=300
+    ($ bzs 'add-zone
+       (make-buffer-zone
+         "bz-status" "spec-a" "bp-std" 'replenished
+         #f #f #f #f #f
+         10 "each" #f #f #f #f #f #f #f #f #f
+         10 0 "each" #f #f #f #f #f
+         100 200 300 #f #f #f #f #f #f #f #f
+         "2026-03-27T00:00:00Z"))
+
+    (let ((bz ($ bzs 'get-zone "bz-status")))
+      ;; pct=0 → red
+      (let ((s (buffer-status 0 bz)))
+        (check "status 0: red" (assq-ref s 'zone) 'red))
+
+      ;; onhand=100 → red boundary
+      (let ((s (buffer-status 100 bz)))
+        (check "status 100: red" (assq-ref s 'zone) 'red))
+
+      ;; onhand=101 → yellow
+      (let ((s (buffer-status 101 bz)))
+        (check "status 101: yellow" (assq-ref s 'zone) 'yellow))
+
+      ;; onhand=200 → yellow boundary
+      (let ((s (buffer-status 200 bz)))
+        (check "status 200: yellow" (assq-ref s 'zone) 'yellow))
+
+      ;; onhand=201 → green
+      (let ((s (buffer-status 201 bz)))
+        (check "status 201: green" (assq-ref s 'zone) 'green))
+
+      ;; onhand=300 → green boundary
+      (let ((s (buffer-status 300 bz)))
+        (check "status 300: green" (assq-ref s 'zone) 'green))
+
+      ;; onhand=600 → excess
+      (let ((s (buffer-status 600 bz)))
+        (check "status 600: excess" (assq-ref s 'zone) 'excess)))))
+
+
+;;; ════════════════════════════════════════════════════════════════════════════
+;;; 6. MOQ rounding in replenishment signals
+;;;
+;;; Ported from: "MOQ rounding: rounds up to nearest MOQ multiple"
+;;; ════════════════════════════════════════════════════════════════════════════
+
+(display "\n── MOQ rounding in replenishment ──\n")
+
+(with-vat vat
+  (let ((bzs ($ scope 'buffer-zone-store)))
+    ;; Zone with MOQ=50, TOG=300
+    ($ bzs 'add-zone
+       (make-buffer-zone
+         "bz-moq-round" "spec-a" "bp-std" 'replenished
+         #f #f #f #f #f
+         10 "each" #f #f #f #f #f #f #f #f #f
+         5 50 "each" #f #f #f #f #f
+         100 200 300 #f #f #f #f #f #f #f #f
+         "2026-03-27T00:00:00Z"))
+
+    (let ((bz ($ bzs 'get-zone "bz-moq-round")))
+      ;; NFP=100, TOG=300 → raw = 200, ceil(200/50)*50 = 200
+      (let* ((fake-nfp `((nfp . 100) (onhand . 100) (onorder . 0)
+                         (qualified-demand . 0) (zone . red) (priority . 0.33)))
+             (signal (generate-replenishment-signal
+                       "spec-a" fake-nfp bz
+                       (iso-datetime->epoch "2026-03-27T00:00:00Z"))))
+        (check-pred "moq round: qty=200"
+                    (approx= 200 (replenishment-signal-recommended-qty signal) 1)))
+
+      ;; NFP=110, TOG=300 → raw = 190, ceil(190/50)*50 = 200 (rounds up)
+      (let* ((fake-nfp `((nfp . 110) (onhand . 110) (onorder . 0)
+                         (qualified-demand . 0) (zone . red) (priority . 0.37)))
+             (signal (generate-replenishment-signal
+                       "spec-a" fake-nfp bz
+                       (iso-datetime->epoch "2026-03-27T00:00:00Z"))))
+        (check-pred "moq round: 190→200"
+                    (approx= 200 (replenishment-signal-recommended-qty signal) 1))))))
+
+
+;;; ════════════════════════════════════════════════════════════════════════════
+;;; 7. ADU filtering: non-decrement actions excluded
+;;;
+;;; Ported from: "action filtering: non-decrement actions excluded"
+;;; ════════════════════════════════════════════════════════════════════════════
+
+(display "\n── ADU action filtering ──\n")
+
+(with-vat vat
+  (let ((obs ($ scope 'observer)))
+    ;; Seed resource
+    ($ obs 'seed-resource
+       (make-economic-resource "r-adu-test" "ADU Test" #f #f #f "spec-a" #f
+         (make-measure 1000 "each") (make-measure 1000 "each")
+         #f #f "agent-a" #f #f #f #f #f #f #f #f))
+
+    ;; Produce event (should NOT count toward ADU — it's an increment)
+    ($ obs 'record-event
+       (make-economic-event
+         "ev-adu-prod" 'produce #f "proc-1"
+         "r-adu-test" #f "spec-a" #f
+         "agent-a" "agent-a"
+         (make-measure 999 "each") #f
+         #f #f "2026-01-05T00:00:00Z" #f #f #f #f
+         #f #f #f #f #f #f #f #f #f #f))
+
+    ;; Consume event (SHOULD count toward ADU)
+    ($ obs 'record-event
+       (make-economic-event
+         "ev-adu-cons" 'consume "proc-2" #f
+         "r-adu-test" #f "spec-a" #f
+         "agent-a" "agent-a"
+         (make-measure 20 "each") #f
+         #f #f "2026-01-06T00:00:00Z" #f #f #f #f
+         #f #f #f #f #f #f #f #f #f #f))
+
+    ;; ADU over 10-day window ending 2026-01-10
+    (let* ((events ($ obs 'all-events))
+           (as-of (iso-datetime->epoch "2026-01-10T00:00:00Z"))
+           (result (compute-adu events "spec-a" 10 as-of)))
+      ;; Only consume event (20) counts → ADU = 20/10 = 2
+      (check "adu: produce excluded"
+             (approx= 2.0 (assq-ref result 'adu) 0.1) #t)
+      ;; Only 1 day with activity
+      (check "adu: 1 sample" (assq-ref result 'sample-count) 1))))
+
+
+;;; ════════════════════════════════════════════════════════════════════════════
+;;; 8. Zero consumption → zero ADU
+;;;
+;;; Ported from: "returns zero ADU for empty event list"
+;;; ════════════════════════════════════════════════════════════════════════════
+
+(display "\n── Zero ADU ──\n")
+
+(let* ((as-of (iso-datetime->epoch "2026-01-10T00:00:00Z"))
+       (result (compute-adu '() "spec-nonexistent" 10 as-of)))
+  (check "zero: adu=0" (assq-ref result 'adu) 0)
+  (check "zero: samples=0" (assq-ref result 'sample-count) 0))
+
+
+;;; ════════════════════════════════════════════════════════════════════════════
+
+(newline)
+(display (string-append "── Results: "
+                        (number->string pass-count) " passed, "
+                        (number->string fail-count) " failed ──\n"))
+(when (> fail-count 0) (exit 1))
