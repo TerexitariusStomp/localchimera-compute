@@ -93,7 +93,8 @@
 
 (define test-ctx
   (with-vat vat
-    (make-plan-ctx test-facts ($ scope 'plan-store) ($ scope 'observer) #f "test-rp")))
+    (make-plan-ctx test-facts ($ scope 'plan-store) ($ scope 'observer) #f "test-rp"
+                   (build-indexes test-facts))))
 
 ;; Initial sums for allocation tests
 (define test-sums

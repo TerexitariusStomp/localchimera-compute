@@ -43,7 +43,7 @@
             in-list-o
             ;; Planning context
             make-plan-ctx plan-ctx?
-            ctx-facts ctx-ps ctx-obs ctx-ls ctx-plan-id))
+            ctx-facts ctx-ps ctx-obs ctx-ls ctx-plan-id ctx-indexes))
 
 
 ;;; ── State ─────────────────────────────────────────────────────────────────────
@@ -65,13 +65,14 @@
 ;;; plan-store + observer = Goblins actors for imperative netter allocation.
 
 (define-record-type <plan-ctx>
-  (make-plan-ctx facts plan-store observer location-store plan-id)
+  (make-plan-ctx facts plan-store observer location-store plan-id indexes)
   plan-ctx?
   (facts          ctx-facts)
   (plan-store     ctx-ps)
   (observer       ctx-obs)
   (location-store ctx-ls)
-  (plan-id        ctx-plan-id))
+  (plan-id        ctx-plan-id)
+  (indexes        ctx-indexes))
 
 
 ;;; ── Goals ─────────────────────────────────────────────────────────────────────

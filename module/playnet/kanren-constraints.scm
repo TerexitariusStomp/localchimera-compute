@@ -24,7 +24,7 @@
 
 (define-module (playnet kanren-constraints)
   #:use-module ((playnet kanren) #:select (var var? var=? empty-subst walk walk* unify appendo membero))
-  #:use-module ((playnet kanren-planning) #:select (make-plan-ctx plan-ctx? ctx-facts ctx-ps ctx-obs ctx-ls ctx-plan-id))
+  #:use-module ((playnet kanren-planning) #:select (make-plan-ctx plan-ctx? ctx-facts ctx-ps ctx-obs ctx-ls ctx-plan-id ctx-indexes))
   #:use-module ((srfi srfi-1) #:select (any filter append-map fold delete-duplicates iota))
   #:re-export (var var? var=?
                empty-subst
@@ -32,7 +32,7 @@
                unify
                appendo membero
                make-plan-ctx plan-ctx?
-               ctx-facts ctx-ps ctx-obs ctx-ls ctx-plan-id)
+               ctx-facts ctx-ps ctx-obs ctx-ls ctx-plan-id ctx-indexes)
   #:export (;; State
             make-cstate empty-cstate
             cstate-S cstate-C cstate-N cstate-D cstate-Y cstate-Nu cstate-T cstate-FD

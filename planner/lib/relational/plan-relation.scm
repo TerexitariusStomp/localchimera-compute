@@ -99,8 +99,9 @@
 (define* (relational-plan n recipe-store plan-store observer
                           #:key (location-store #f) (plan-id "rp")
                                 (max-depth 10) (demand-order #f))
-  "Lift facts, build ctx, run the planner."
-  (let* ((facts (lift-planning-facts recipe-store observer))
-         (ctx (make-plan-ctx facts plan-store observer location-store plan-id)))
+  "Lift facts, build indexes, run the planner."
+  (let* ((facts (lift-planning-facts recipe-store observer plan-store))
+         (indexes (build-indexes facts))
+         (ctx (make-plan-ctx facts plan-store observer location-store plan-id indexes)))
     (run-plan n #f (plan)
       (plan-o ctx plan #:max-depth max-depth #:demand-order demand-order))))

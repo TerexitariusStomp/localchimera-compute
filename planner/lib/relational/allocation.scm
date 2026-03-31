@@ -37,14 +37,17 @@
 
 ;;; ── allocate-o ────────────────────────────────────────────────────────────────
 
-(define (allocate-o facts spec-id qty remaining allocated sums-in sums-out)
-  "Buffer-aware allocation. Won't drain below conservation floor (TOR)
-   unless no buffer-safe plan exists."
-  (let ((resources (filter (lambda (f)
-                             (and (eq? (car f) 'inventory)
-                                  (equal? (caddr f) spec-id)
-                                  (> (cadddr f) 0)))
-                           facts))
+(define* (allocate-o facts spec-id qty remaining allocated sums-in sums-out
+                      #:key (indexes #f))
+  "Buffer-aware allocation. Uses index for O(I) inventory lookup if available."
+  (let ((resources (if indexes
+                       (filter (lambda (f) (> (cadddr f) 0))
+                               (idx-ref indexes 'inventory-by-spec spec-id))
+                       (filter (lambda (f)
+                                 (and (eq? (car f) 'inventory)
+                                      (equal? (caddr f) spec-id)
+                                      (> (cadddr f) 0)))
+                               facts)))
         (floor (conservation-floor facts spec-id)))
     ;; Try buffer-safe allocation first, then unrestricted as fallback
     (conde

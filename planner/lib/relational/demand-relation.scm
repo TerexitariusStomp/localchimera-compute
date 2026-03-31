@@ -19,7 +19,8 @@
   (if (or (= depth 0) (member spec-id visited))
       fail
       (fresh (remaining allocated sums-mid)
-        (allocate-o (ctx-facts ctx) spec-id qty remaining allocated sums-in sums-mid)
+        (allocate-o (ctx-facts ctx) spec-id qty remaining allocated sums-in sums-mid
+                    #:indexes (ctx-indexes ctx))
         (after-allocation ctx spec-id qty due remaining allocated
                           plan-term sums-mid sums-out
                           depth (cons spec-id visited)))))
@@ -47,15 +48,22 @@
 (define (produce-branch ctx spec-id remaining due plan-term
                         sums-in sums-out depth visited)
   "Find a recipe, compute scale via *fd, collect inputs relationally."
-  (let ((facts (ctx-facts ctx)))
+  (let ((facts (ctx-facts ctx))
+        (indexes (ctx-indexes ctx)))
     (fresh (rid rname pids last-pid out-qty out-unit out-action
             scale total-produced sub-plans)
-      ;; Relational: which recipe? what chain? what's the last process?
-      (recipe-o facts rid rname spec-id)
-      (chain-o facts rid pids)
+      ;; O(R) indexed lookup instead of O(N) full scan
+      (if indexes
+          (recipe-indexed-o indexes spec-id rid rname)
+          (recipe-o facts rid rname spec-id))
+      (if indexes
+          (chain-indexed-o indexes rid pids)
+          (chain-o facts rid pids))
       (lasto pids last-pid)
-      ;; Relational: what's the output flow?
-      (flow-o facts last-pid 'output spec-id out-qty out-unit out-action)
+      ;; O(F) indexed lookup instead of O(N)
+      (if indexes
+          (flow-indexed-o indexes last-pid 'output spec-id out-qty out-unit out-action)
+          (flow-o facts last-pid 'output spec-id out-qty out-unit out-action))
       ;; CLP(FD): scale * out-qty >= remaining
       ;; NOTE: upper bound 100 can be tightened by heuristic
       (rangeo scale 1 100)
