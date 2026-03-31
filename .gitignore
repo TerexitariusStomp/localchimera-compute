@@ -4,4 +4,3 @@ cogno-lisp/
 minikanren/
 tests/screenshots/
 node_modules/
-package-lock.json

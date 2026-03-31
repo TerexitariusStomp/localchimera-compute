@@ -12,11 +12,11 @@ TIME_MACHINE = guix time-machine -C $(CHANNELS) --
 HOOT_FIXED = -L deploy/packages -e '(@ (hoot-fix) guile-hoot/fixed)'
 
 browser/repl.wasm: browser/repl.scm module/playnet/gplay.scm module/playnet/wisp.scm
-	$(TIME_MACHINE) shell guile-next guile-hoot guile-goblins -- \
+	$(TIME_MACHINE) shell guile-next $(HOOT_FIXED) guile-goblins -- \
 	  guild compile-wasm -L module -L docs/reference/lib-vendored --bundle -o browser/repl.wasm browser/repl.scm
 
 serve: browser/repl.wasm
-	$(TIME_MACHINE) shell guile-next guile-hoot -- \
+	$(TIME_MACHINE) shell guile-next $(HOOT_FIXED) -- \
 	  sh -c 'cd browser && guile -c "((@ (hoot web-server) serve))"'
 
 relay:
@@ -27,41 +27,46 @@ server:
 
 test: test-gplay test-knowledge
 
+GUILE_TEST = $(TIME_MACHINE) shell guile-next guile-goblins -- \
+  guile --no-auto-compile
+
 test-gplay:
-	guile --no-auto-compile -L module tests/test-gplay.scm
+	$(GUILE_TEST) -L module tests/test-gplay.scm
 
 test-knowledge:
-	guile --no-auto-compile -L module tests/test-knowledge.scm
+	$(GUILE_TEST) -L module tests/test-knowledge.scm
 
 test-governed:
-	guile --no-auto-compile -L module tests/test-governed-org.scm
+	$(GUILE_TEST) -L module tests/test-governed-org.scm
 
 test-signatures:
-	guile --no-auto-compile -L module tests/test-history-signatures.scm
+	$(GUILE_TEST) -L module tests/test-history-signatures.scm
 
 test-wisp:
-	guile --no-auto-compile -L module tests/test-wisp.scm
+	$(GUILE_TEST) -L module tests/test-wisp.scm
 
 test-endorsement:
-	guile --no-auto-compile -L module tests/test-endorsement.scm
+	$(GUILE_TEST) -L module tests/test-endorsement.scm
 
 test-output-cap:
-	guile --no-auto-compile -L module tests/test-output-cap.scm
+	$(GUILE_TEST) -L module tests/test-output-cap.scm
 
 test-output-port:
-	guile --no-auto-compile -L module tests/test-output-port.scm
+	$(GUILE_TEST) -L module tests/test-output-port.scm
 
 test-persistence:
-	guile --no-auto-compile -L module tests/test-persistence.scm
+	$(GUILE_TEST) -L module tests/test-persistence.scm
 
 test-planner:
-	cd planner && sh run-tests.sh
+	cd planner && $(TIME_MACHINE) shell guile-next guile-goblins -- sh run-tests.sh
 
 test-relational:
-	cd planner && guile --no-auto-compile -q -L ../module -l load-all.scm -l tests/relational-planner.scm
+	cd planner && $(TIME_MACHINE) shell guile-next guile-goblins -- \
+	  guile --no-auto-compile -q -L ../module -l load-all.scm -l tests/relational-planner.scm
 
 test-browser:
-	sh tests/ux-test.sh
+	$(TIME_MACHINE) shell -m deploy/guix/browser-test-manifest.scm -- \
+	  sh tests/ux-test.sh
 
 test-all: test-gplay test-knowledge test-governed test-signatures test-wisp test-endorsement test-persistence test-planner test-relational
 

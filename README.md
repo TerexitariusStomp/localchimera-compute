@@ -82,9 +82,12 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for the full explanation.
 
 ```
 module/playnet/
-  actors.scm         — ^org, ^logger, proxy pair (governance kernel)
-  evaluator.scm      — metacircular eval (Hoot/WASM only)
-  repl.scm           — org factories + inner REPL
+  gplay.scm          — metacircular evaluator + ^org actor (the kernel)
+  org.scm            — org factories: make-open-org, make-governed-org, 3-seal pattern
+  endorsement.scm    — sealer/unsealer/sealed? endorsement authorities
+  actors.scm         — ^org (simple), ^logger, proxy pair (governance primitives)
+  evaluator.scm      — base evaluator + bindings (Hoot/WASM compatible)
+  repl.scm           — org factories + inner REPL (native Guile)
   kanren.scm         — miniKanren logic programming (219 lines)
   knowledge.scm      — relational queries with proof traces
   system-kb.scm      — the system's self-knowledge as relational facts
@@ -92,29 +95,42 @@ module/playnet/
 
 browser/
   repl.scm           — browser REPL (compiles to WASM via Hoot)
-  index.html          — web shell
+  repl.html           — web shell
   repl.js / repl.css  — JS host + styling
 
 server/
   relay.scm           — WebSocket message relay
   signup-agent.scm    — self-service account registration actor
+  dev-bridge.scm      — MQTT→Claude Code self-improvement bridge
   reticulum-bridge.py — Reticulum mesh networking bridge
 
 planner/
   lib/schemas.scm     — 47 ValueFlows record types
-  lib/relational/     — relational planner (miniKanren search over lifted fact tuples)
+  lib/knowledge/dev-recipes.scm — dev tasks as VF economic activity
+  lib/relational/     — relational planner (miniKanren search over lifted facts)
   tests/              — 29 relational planner tests
 
 key-pool/
-  key-pool.scm        — capability-secure API key management (any HTTP API via provider profiles)
+  key-pool.scm        — capability-secure API key management (provider profiles)
   vf-bridge.scm       — ValueFlows bridge (keys as economic resources)
+
+tests/
+  test-gplay.scm      — evaluator + ^org tests (138 checks)
+  test-governed-org.scm — 3-seal governance tests (20 checks)
+  test-endorsement.scm — sealer/unsealer tests (35 checks)
+  test-persistence.scm — Goblins persistence round-trip (25 checks)
+  browser-ux.mjs      — Playwright browser UX tests (15 scenarios)
+  ux-test.sh          — browser test runner (Python server + Playwright)
 
 deploy/guix/
   machines.scm        — the operating system declaration
-  playnet-service.scm    — Shepherd service type for org processes
+  channels.scm        — pinned Guix commit for reproducibility
   users.scm           — dynamically provisioned user accounts
   provision-user.scm  — enrollment script
-  channels.scm        — pinned Guix commit for reproducibility
+  browser-test-manifest.scm — Guix manifest for browser test deps
+
+deploy/packages/
+  hoot-fix.scm        — patched Hoot 0.8.0 (mutable-bytevector? fix)
 ```
 
 ## Core Concepts
@@ -391,7 +407,10 @@ No separate indexes, no separate functions. One relation, every direction. `proj
 
 ### Requirements
 
-GNU Guile 3.0+, Guile Goblins 0.17.0+. For browser: Guile Hoot 0.7.0+ and a recent browser (Chrome 119+ or Firefox 121+).
+GNU Guix (for reproducible builds). Everything else is declared:
+- Guile 3.0+, Guile Goblins 0.17.0 (pinned via `channels.scm`)
+- Browser: Guile Hoot 0.8.0 (patched — `deploy/packages/hoot-fix.scm`), Chrome 119+ or Firefox 121+
+- Tests: Python 3 (stdlib http.server), Node.js + Playwright (via Guix manifest)
 
 ### Setup with Guix
 
@@ -400,7 +419,6 @@ You can consume this repository either directly or as a Guix channel.
 **Install directly from source:**
 
 ```bash
-Sensor data flows through the same ValueFlows accounting as API keys — each reading is an EconomicEvent, each sensor is an EconomicResource, the data is a resource flow governed by the same actors that govern everything else.
 guix package -f guix.scm      # install the playnet desktop REPL into your profile
 guix shell -m manifest.scm    # transient shell with all development dependencies
 ```
@@ -424,8 +442,15 @@ After running `guix pull`, you can install it globally via `guix install playnet
 make repl                          # native Guile REPL with Goblins
 make serve                         # browser REPL at http://localhost:8088
 guile -L module server/relay.scm   # WebSocket relay on port 9090
-make test-all                      # all tests
+make test-all                      # all Scheme tests (via guix time-machine)
+make test-browser                  # automated browser UX tests (Playwright)
 ```
+
+All builds and tests run through `guix time-machine -C deploy/guix/channels.scm` for full reproducibility. The Guix channel is pinned to an exact commit — same Guile, same Goblins, same Hoot on every machine.
+
+**Browser WASM build** uses a patched Hoot 0.8.0 (`deploy/packages/hoot-fix.scm`) that adds the missing `mutable-bytevector?` case to Hoot's WASM backend. This is a one-line fix for an upstream bug — see `deploy/guix/UPSTREAM-ISSUES.md` issue #7.
+
+**Browser tests** use Playwright via a Guix manifest (`deploy/guix/browser-test-manifest.scm`) and Python's built-in `http.server` for serving. No npm install needed.
 
 ### Deploy
 

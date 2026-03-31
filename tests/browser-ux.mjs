@@ -1,7 +1,13 @@
 /// tests/browser-ux.mjs — Playwright-driven UX tests for the browser REPL
 /// Run via: node tests/browser-ux.mjs <base-url>
 
-import { chromium } from 'playwright';
+// Use playwright-core (Guix: node-playwright-core) or playwright (npm)
+let chromium;
+try {
+  ({ chromium } = await import('playwright-core'));
+} catch {
+  ({ chromium } = await import('playwright'));
+}
 import { mkdirSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
