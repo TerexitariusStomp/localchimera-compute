@@ -23,9 +23,9 @@
 ;;; miniKanren-with-symbolic-constraints (Hemann, Byrd, Friedman).
 
 (define-module (playnet kanren-constraints)
-  #:use-module ((playnet kanren) #:select (var var? var=? empty-subst walk walk* unify unify-diff intmap-ref intmap-set unbound? appendo membero))
+  #:use-module ((playnet kanren) #:select (var var? var=? empty-subst walk walk* unify unify-diff intmap-ref intmap-set intmap-fold unbound? appendo membero))
   #:use-module ((playnet kanren-planning) #:select (make-plan-ctx plan-ctx? ctx-facts ctx-ps ctx-obs ctx-ls ctx-plan-id ctx-indexes))
-  #:use-module ((srfi srfi-1) #:select (any filter append-map fold delete-duplicates iota last))
+  #:use-module ((srfi srfi-1) #:select (any filter filter-map append-map fold delete-duplicates iota last))
   #:use-module (srfi srfi-9)
   #:re-export (var var? var=?
                empty-subst
@@ -36,7 +36,7 @@
                ctx-facts ctx-ps ctx-obs ctx-ls ctx-plan-id ctx-indexes)
   #:export (;; State
             make-cstate empty-cstate
-            cstate-S cstate-C cstate-N cstate-D cstate-Y cstate-Nu cstate-T cstate-FD
+            cstate-S cstate-C cstate-N cstate-CS cstate-FD
             ;; Core forms
             == succeed fail
             call/fresh fresh conde
@@ -55,29 +55,32 @@
 
 
 ;;; ══════════════════════════════════════════════════════════════════════════════
-;;; State: #(S C N D Y Nu T FD P)
-;;; P = propagator queue: list of (trigger-vars . goal) pairs.
-;;; When == or labelfd grounds a trigger variable, the goal re-fires.
+;;; State: #(S C N CS FD P)
+;;; CS = per-variable constraint store (intmap: var-counter → constraint-record)
+;;; constraint-record = (T D A) where:
+;;;   T  = type constraint: #f | 'sym | 'num
+;;;   D  = list of disequality constraints (each is a list of (var . val) pairs)
+;;;   A  = list of absento terms
+;;; FD = finite domain store (intmap: var-counter → domain)
+;;; P  = propagator queue (intmap: var-counter → list-of-goals)
 ;;; ══════════════════════════════════════════════════════════════════════════════
 
-(define (make-cstate S C N D Y Nu T FD P)
-  (vector S C N D Y Nu T FD P))
+(define (make-cstate S C N CS FD P)
+  (vector S C N CS FD P))
 
 (define (cstate-S st)  (vector-ref st 0))
 (define (cstate-C st)  (vector-ref st 1))
 (define (cstate-N st)  (vector-ref st 2))
-(define (cstate-D st)  (vector-ref st 3))
-(define (cstate-Y st)  (vector-ref st 4))
-(define (cstate-Nu st) (vector-ref st 5))
-(define (cstate-T st)  (vector-ref st 6))
-(define (cstate-FD st) (vector-ref st 7))
-(define (cstate-P st)  (vector-ref st 8))
+(define (cstate-CS st) (vector-ref st 3))
+(define (cstate-FD st) (vector-ref st 4))
+(define (cstate-P st)  (vector-ref st 5))
+
 
 (define (cstate-with st . updates)
   "Functional update: (cstate-with st 'S new-s 'FD new-fd 'P new-p)"
-  (let ((v (make-vector 9)))
+  (let ((v (make-vector 6)))
     (let copy ((i 0))
-      (when (< i 9) (vector-set! v i (vector-ref st i)) (copy (+ i 1))))
+      (when (< i 6) (vector-set! v i (vector-ref st i)) (copy (+ i 1))))
     (let loop ((u updates))
       (if (null? u) v
           (begin
@@ -86,15 +89,41 @@
 
 (define (slot-index sym)
   (cond ((eq? sym 'S) 0) ((eq? sym 'C) 1) ((eq? sym 'N) 2)
-        ((eq? sym 'D) 3) ((eq? sym 'Y) 4) ((eq? sym 'Nu) 5)
-        ((eq? sym 'T) 6) ((eq? sym 'FD) 7) ((eq? sym 'P) 8)))
+        ((eq? sym 'CS) 3) ((eq? sym 'FD) 4) ((eq? sym 'P) 5)
+        (else (error "bad slot" sym))))
 
 (define (empty-cstate ns)
-  (make-cstate empty-subst 0 ns '() '() '() '() '() '()))
+  (make-cstate empty-subst 0 ns '() '() '()))
+
+;;; Per-variable constraint records
+(define empty-c '(#f () ()))
+(define (c-T c) (car c))
+(define (c-D c) (cadr c))
+(define (c-A c) (caddr c))
+(define (c-with-T c T) (list T (c-D c) (c-A c)))
+(define (c-with-D c D) (list (c-T c) D (c-A c)))
+(define (c-with-A c A) (list (c-T c) (c-D c) A))
+
+(define (lookup-c st x)
+  "Get constraint record for var x. Returns empty-c if none."
+  (let ((val (intmap-ref (cstate-CS st) (cadr x))))
+    (if (unbound? val) empty-c val)))
+
+(define (set-c st x c)
+  "Set constraint record for var x."
+  (cstate-with st 'CS (intmap-set (cstate-CS st) (cadr x) c)))
 
 (define (register-propagator st trigger-vars goal)
-  "Register GOAL to re-fire when any variable in TRIGGER-VARS becomes ground."
-  (cstate-with st 'P (cons (cons trigger-vars goal) (cstate-P st))))
+  "Register GOAL to re-fire when any trigger var becomes ground.
+   P is an intmap: var-counter → list-of-goals."
+  (let loop ((vs trigger-vars) (P (cstate-P st)))
+    (if (null? vs)
+        (cstate-with st 'P P)
+        (let* ((v (car vs))
+               (k (cadr v))
+               (existing (let ((val (intmap-ref P k)))
+                           (if (unbound? val) '() val))))
+          (loop (cdr vs) (intmap-set P k (cons goal existing)))))))
 
 
 ;;; ══════════════════════════════════════════════════════════════════════════════
@@ -174,17 +203,8 @@
 
 
 ;;; ══════════════════════════════════════════════════════════════════════════════
-;;; Symbolic constraint checks (from previous version)
+;;; Symbolic constraint helpers
 ;;; ══════════════════════════════════════════════════════════════════════════════
-
-(define (ground-non-symbol? u S)
-  (let ((u (walk u S))) (and (not (var? u)) (not (symbol? u)))))
-
-(define (ground-non-number? u S)
-  (let ((u (walk u S))) (and (not (var? u)) (not (number? u)))))
-
-(define (same-var? u)
-  (lambda (v) (and (var? u) (var? v) (var=? u v))))
 
 (define (mem-check u t S)
   (let ((t (walk t S)))
@@ -201,28 +221,28 @@
         (and S+ (unify* (cdr pairs) S+)))))
 
 
-;;; ══════════════════════════════════════════════════════════════════════════════
-;;; FD constraint check — called after every ==
-;;; ══════════════════════════════════════════════════════════════════════════════
-
-(define (fd-fail-check S FD)
-  "Check if any FD-constrained variable is now ground but outside its domain."
-  (any (lambda (vd)
-         (let ((v (walk (car vd) S))
-               (dom (cdr vd)))
-           (and (not (var? v))           ;; variable is now ground
-                (or (not (integer? v))   ;; must be integer
-                    (not (domain-contains? dom v))))))  ;; must be in domain
-       FD))
-
-(define (fd-narrow-after-unify S FD)
-  "After unification, narrow domains and return updated (S . FD) or #f on failure."
-  (let loop ((fd FD) (S S) (new-fd '()))
-    (if (null? fd)
-        (cons S new-fd)
-        (let* ((x (caar fd))
-               (dom (cdar fd))
-               (v (walk x S)))
+(define (fd-narrow-after-unify S FD added)
+  "Narrow FD constraints for vars affected by ADDED bindings.
+   O(|added|) instead of O(|FD|)."
+  (let* (;; Collect var counters affected by unification
+         (affected (map (lambda (a)
+                          (let ((x (car a)))
+                            (if (var? x) (cadr x) #f)))
+                        added))
+         ;; Only check FD entries for affected vars
+         (entries (filter-map (lambda (counter)
+                                (and counter
+                                     (let ((dom (intmap-ref FD counter)))
+                                       (if (unbound? dom) #f
+                                           (cons counter dom)))))
+                              affected)))
+    (let loop ((fd entries) (S S) (new-fd FD))
+      (if (null? fd)
+          (cons S new-fd)
+          (let* ((counter (caar fd))
+                 (dom (cdar fd))
+                 (x (var counter))
+                 (v (walk x S)))
           (cond
             ;; Variable is now ground — check it's in domain
             ((not (var? v))
@@ -231,7 +251,7 @@
                  #f))  ;; fail
             ;; Variable unified with another variable — merge domains
             ((and (var? v) (not (var=? v x)))
-             (let ((other-dom (domain-ref FD v)))
+             (let ((other-dom (domain-ref new-fd v)))
                (if other-dom
                    (let ((merged (domain-intersect dom other-dom)))
                      (if (not merged) #f
@@ -249,63 +269,112 @@
                  ;; Singleton — bind
                  (let ((S+ (unify v (domain-lo dom) S)))
                    (if S+ (loop (cdr fd) S+ new-fd) #f))
-                 (loop (cdr fd) S (cons (cons v dom) new-fd)))))))))
-
-
-;;; ══════════════════════════════════════════════════════════════════════════════
-;;; Combined fail check
-;;; ══════════════════════════════════════════════════════════════════════════════
-
-(define (==fail-check S0 D Y Nu T FD)
-  (or (any (lambda (y) (ground-non-symbol? y S0)) Y)
-      (any (lambda (n) (ground-non-number? n S0)) Nu)
-      (let ((walked-Nu (map (lambda (n) (walk n S0)) Nu)))
-        (any (lambda (y) (any (same-var? (walk y S0)) walked-Nu)) Y))
-      (any (lambda (d) (let ((S+ (unify* d S0))) (and S+ (eq? S+ S0)))) D)
-      (any (lambda (t) (mem-check (car t) (cdr t) S0)) T)
-      (fd-fail-check S0 FD)))
+                 (loop (cdr fd) S (domain-set new-fd v dom))))))))))
 
 
 ;;; ══════════════════════════════════════════════════════════════════════════════
 ;;; Core goals
 ;;; ══════════════════════════════════════════════════════════════════════════════
 
+(define (and-foldl proc init lst)
+  "Fold with short-circuit on #f."
+  (if (null? lst) init
+      (let ((res (proc (car lst) init)))
+        (and res (and-foldl proc res (cdr lst))))))
+
+(define (apply-goals goals st)
+  "Apply a list of goals sequentially to state. Returns state or #f on failure.
+   Goals return streams (lists); we extract the first result."
+  (if (null? goals) st
+      (let ((result ((car goals) st)))
+        (if (null? result) #f
+            (apply-goals (cdr goals) (car result))))))
+
+(define (update-constraints binding st)
+  "When var x is bound to term v, propagate x's constraints to v.
+   Returns updated state or #f on failure."
+  (let* ((x (car binding))
+         (v (cdr binding)))
+    (if (not (var? x)) st
+        (let ((c (lookup-c st x)))
+          (if (equal? c empty-c) st
+              ;; Remove constraints from x, then re-apply to v
+              (let ((st (set-c st x empty-c)))
+                (apply-goals
+                  (append
+                    (cond
+                      ((eq? (c-T c) 'sym) (list (symbolo v)))
+                      ((eq? (c-T c) 'num) (list (numbero v)))
+                      (else '()))
+                    (map (lambda (a) (absento a v)) (c-A c))
+                    (map (lambda (d) (=/=* d)) (c-D c)))
+                  st)))))))
+
+(define (=/=* S+)
+  "Re-apply a disequality constraint from its stored bindings."
+  (lambda (st)
+    (let* ((S (cstate-S st))
+           (result (unify-diff (map car S+) (map cdr S+) S)))
+      (cond
+        ((not result) (list st))       ;; can't unify → satisfied
+        ((null? (cdr result)) '())     ;; already equal → violated
+        (else
+         (let* ((added (cdr result))
+                (el (car added))
+                (first-var (car el))
+                (c (lookup-c st first-var))
+                (st (set-c st first-var (c-with-D c (cons added (c-D c))))))
+           (if (var? (cdr el))
+               (let* ((second-var (cdr el))
+                      (c2 (lookup-c st second-var)))
+                 (list (set-c st second-var (c-with-D c2 (cons added (c-D c2))))))
+               (list st))))))))
+
 (define (== u v)
   (lambda (st)
-    (let ((old-S (cstate-S st))
-          (S0 (unify u v (cstate-S st))))
-      (if (not S0) '()
-          (let ((result (fd-narrow-after-unify S0 (cstate-FD st))))
+    (let ((unify-result (unify-diff u v (cstate-S st))))
+      (if (not unify-result) '()
+          (let* ((S0 (car unify-result))
+                 (added (cdr unify-result))
+                 (result (fd-narrow-after-unify S0 (cstate-FD st) added)))
             (if (not result) '()
-                (let ((S* (car result))
-                      (FD* (cdr result)))
-                  (if (==fail-check S* (cstate-D st) (cstate-Y st)
-                                    (cstate-Nu st) (cstate-T st) FD*)
-                      '()
-                      ;; Fire propagators for newly-ground variables
-                      (fire-propagators
-                        (cstate-with st 'S S* 'FD FD*)
-                        old-S)))))))))
+                (let* ((S* (car result))
+                       (FD* (cdr result))
+                       (st* (cstate-with st 'S S* 'FD FD*))
+                       (st* (and-foldl update-constraints st* added)))
+                  (if (not st*) '()
+                      (fire-propagators st* added)))))))))
 
-(define (fire-propagators st old-S)
-  "Fire propagators whose trigger variables became ground since old-S."
+(define (fire-propagators st added)
+  "Fire propagators for variables in ADDED that became ground.
+   O(|added|) lookups instead of scanning all propagators."
   (let* ((S (cstate-S st))
          (P (cstate-P st))
-         ;; Split: propagators to fire vs keep
-         (to-fire (filter (lambda (p)
-                            (any (lambda (v)
-                                   (and (var? (walk v old-S))
-                                        (not (var? (walk v S)))))
-                                 (car p)))
-                          P))
-         (to-keep (filter (lambda (p) (not (memq p to-fire))) P))
-         (st* (cstate-with st 'P to-keep)))
-    (if (null? to-fire)
+         ;; For each added binding, check if var is now ground and collect its goals
+         (result
+          (fold (lambda (binding acc)
+                  (let* ((x (car binding))
+                         (goals-so-far (car acc))
+                         (P-so-far (cdr acc)))
+                    (if (var? x)
+                        (let* ((k (cadr x))
+                               (val (intmap-ref P-so-far k)))
+                          (if (unbound? val)
+                              acc  ;; no propagators for this var
+                              ;; Fire these goals, remove from P
+                              (cons (append val goals-so-far)
+                                    (intmap-set P-so-far k '()))))
+                        acc)))  ;; binding was to non-var (shouldn't happen)
+                (cons '() P)
+                added))
+         (goals (car result))
+         (new-P (cdr result))
+         (st* (cstate-with st 'P new-P)))
+    (if (null? goals)
         (list st*)
-        ;; Chain fired propagator goals via bind
-        (let chain ((goals (map cdr to-fire)) (stream (list st*)))
-          (if (null? goals) stream
-              (chain (cdr goals) (bind stream (car goals))))))))
+        (let chain ((gs goals) (stream (list st*)))
+          (if (null? gs) stream
+              (chain (cdr gs) (bind stream (car gs))))))))
 
 (define (succeed st) (list st))
 (define (fail st) '())
@@ -320,30 +389,65 @@
       (cond
         ((not result) (list st))          ;; can't unify → constraint satisfied
         ((null? (cdr result)) '())        ;; already equal → violated
-        (else (list (cstate-with st 'D (cons (cdr result) (cstate-D st)))))))))
+        (else
+         ;; Attach disequality to variables in the first added binding
+         (let* ((added (cdr result))
+                (el (car added))
+                (first-var (car el))
+                (c (lookup-c st first-var))
+                (st (set-c st first-var (c-with-D c (cons added (c-D c))))))
+           ;; If RHS is also a var, attach there too
+           (if (var? (cdr el))
+               (let* ((second-var (cdr el))
+                      (c2 (lookup-c st second-var)))
+                 (list (set-c st second-var (c-with-D c2 (cons added (c-D c2))))))
+               (list st))))))))
 
 (define (numbero u)
   (lambda (st)
-    (let ((S (cstate-S st)))
+    (let* ((S (cstate-S st))
+           (v (walk u S)))
       (cond
-        ((ground-non-number? u S) '())
-        ((mem-check u (cstate-Y st) S) '())
-        (else (list (cstate-with st 'Nu (cons u (cstate-Nu st)))))))))
+        ((and (not (var? v)) (not (number? v))) '())  ;; ground non-number → fail
+        ((not (var? v)) (list st))                     ;; ground number → ok
+        (else
+         (let ((c (lookup-c st v)))
+           (cond
+             ((eq? (c-T c) 'num) (list st))    ;; already constrained
+             ((eq? (c-T c) 'sym) '())           ;; conflicts with symbolo
+             (else (list (set-c st v (c-with-T c 'num)))))))))))
 
 (define (symbolo u)
   (lambda (st)
-    (let ((S (cstate-S st)))
+    (let* ((S (cstate-S st))
+           (v (walk u S)))
       (cond
-        ((ground-non-symbol? u S) '())
-        ((mem-check u (cstate-Nu st) S) '())
-        (else (list (cstate-with st 'Y (cons u (cstate-Y st)))))))))
+        ((and (not (var? v)) (not (symbol? v))) '())
+        ((not (var? v)) (list st))
+        (else
+         (let ((c (lookup-c st v)))
+           (cond
+             ((eq? (c-T c) 'sym) (list st))
+             ((eq? (c-T c) 'num) '())
+             (else (list (set-c st v (c-with-T c 'sym)))))))))))
 
 (define (absento u v)
   (lambda (st)
-    (let ((S (cstate-S st)))
+    (let* ((S (cstate-S st))
+           (wv (walk v S)))
       (cond
-        ((mem-check u v S) '())
-        (else (list (cstate-with st 'T (cons (cons u v) (cstate-T st)))))))))
+        ((mem-check u wv S) '())
+        ((var? wv)
+         (let* ((c (lookup-c st wv))
+                (A (c-A c)))
+           (if (memv u A) (list st)  ;; already constrained
+               (list (set-c st wv (c-with-A c (cons u A)))))))
+        ((pair? wv)
+         ;; Push absento into structure
+         (let ((st1 ((absento u (car wv)) st)))
+           (if (null? st1) '()
+               ((absento u (cdr wv)) (car st1)))))
+        (else (list st))))))
 
 
 ;;; ══════════════════════════════════════════════════════════════════════════════
@@ -551,37 +655,106 @@
                  (list (register-propagator st unground (<=fd x y)))))))))))
 
 (define (distinctfd . vars)
-  "All variables must take different values."
+  "All variables must take different values. O(k) forward-checking.
+   Removes ground values from unground vars' domains, then registers
+   a propagator to re-check when any var becomes ground."
   (lambda (st)
-    (let loop ((vs vars) (st st))
-      (if (or (null? vs) (null? (cdr vs)))
-          (list st)
-          (let inner ((rest (cdr vs)) (st st))
-            (if (null? rest)
-                (loop (cdr vs) st)
-                (let ((result ((=/= (car vs) (car rest)) st)))
-                  (if (null? result) '()
-                      (inner (cdr rest) (car result))))))))))
+    (let* ((S (cstate-S st))
+           (FD (cstate-FD st))
+           (walked (map (lambda (v) (walk v S)) vars))
+           ;; Separate ground from unground
+           (ground-vals (filter (lambda (w) (not (var? w))) walked))
+           (unground-vars (filter var? walked)))
+      ;; Check: no duplicate ground values
+      (if (not (= (length ground-vals) (length (delete-duplicates ground-vals =))))
+          '()
+          ;; Remove ground values from each unground var's domain
+          (let narrow ((gvs ground-vals) (st st))
+            (if (null? gvs)
+                ;; Register propagator if >1 unground var remains
+                (if (< (length unground-vars) 2)
+                    (list st)
+                    (list (register-propagator st unground-vars
+                                              (apply distinctfd vars))))
+                (let prune ((uvs unground-vars) (st st))
+                  (if (null? uvs)
+                      (narrow (cdr gvs) st)
+                      (let* ((u (car uvs))
+                             (dom (domain-ref (cstate-FD st) u)))
+                        (if (and dom (domain-contains? dom (car gvs)))
+                            ;; Remove ground val from domain
+                            (let ((new-dom (domain-remove dom (car gvs))))
+                              (cond
+                                ((not new-dom) '())  ;; empty domain
+                                ((= (domain-size new-dom) 1)
+                                 (let ((result ((== u (domain-lo new-dom)) st)))
+                                   (if (null? result) '()
+                                       (prune (cdr uvs) (car result)))))
+                                (else
+                                 (prune (cdr uvs)
+                                        (cstate-with st 'FD
+                                          (domain-set (cstate-FD st) u new-dom))))))
+                            (prune (cdr uvs) st)))))))))))
+
+(define (domain-remove dom val)
+  "Remove a value from a domain. Returns new domain or #f if empty."
+  (if (interval? dom)
+      (cond
+        ((and (= val (interval-lo dom)) (= val (interval-hi dom))) #f)
+        ((= val (interval-lo dom)) (make-interval (+ val 1) (interval-hi dom)))
+        ((= val (interval-hi dom)) (make-interval (interval-lo dom) (- val 1)))
+        ;; Interior removal: split to list
+        (else (let ((lst (filter (lambda (v) (not (= v val))) (domain->list dom))))
+                (if (null? lst) #f lst))))
+      (let ((lst (filter (lambda (v) (not (= v val))) dom)))
+        (if (null? lst) #f lst))))
 
 (define* (labelfd x #:key (order 'min))
-  "Enumerate all values in x's domain. Triggers search.
-   ORDER: 'min (default, smallest first) or 'max (largest first).
-   NOTE: 'max is useful for allocation (try taking the most first)."
+  "Enumerate values in x's domain. O(log Q) binary splitting for intervals.
+   ORDER: 'min (default, smallest first) or 'max (largest first)."
   (lambda (st)
     (let* ((S (cstate-S st))
            (v (walk x S)))
       (cond
         ((not (var? v)) (list st))  ;; already ground
         (else
-         (let* ((dom (domain-ref (cstate-FD st) v))
-                (vals (if (not dom) #f
-                          (let ((lst (domain->list dom)))
-                            (if (eq? order 'max) (reverse lst) lst)))))
-           (if (not vals) (list st)  ;; no domain constraint
-               (let try ((vs vals))
-                 (if (null? vs) '()
-                     (mplus ((== x (car vs)) st)
-                            (lambda () (try (cdr vs)))))))))))))
+         (let ((dom (domain-ref (cstate-FD st) v)))
+           (if (not dom) (list st)  ;; no domain constraint
+               (cond
+                 ;; Singleton — bind directly
+                 ((= (domain-size dom) 1)
+                  ((== x (domain-lo dom)) st))
+                 ;; Interval — binary split for large domains, linear for small
+                 ((interval? dom)
+                  (let ((lo (interval-lo dom)) (hi (interval-hi dom)))
+                    (if (<= (domain-size dom) 32)
+                        ;; Small interval: enumerate linearly (preserves order)
+                        (let* ((vals (domain->list dom))
+                               (vals (if (eq? order 'max) (reverse vals) vals)))
+                          (let try ((vs vals))
+                            (if (null? vs) '()
+                                (mplus ((== x (car vs)) st)
+                                       (lambda () (try (cdr vs)))))))
+                        ;; Large interval: binary split, O(log Q)
+                        (let ((mid (quotient (+ lo hi) 2)))
+                          (if (eq? order 'max)
+                              (mplus ((conj (infd x (make-interval (+ mid 1) hi))
+                                            (labelfd x #:order order)) st)
+                                     (lambda ()
+                                       ((conj (infd x (make-interval lo mid))
+                                              (labelfd x #:order order)) st)))
+                              (mplus ((conj (infd x (make-interval lo mid))
+                                            (labelfd x #:order order)) st)
+                                     (lambda ()
+                                       ((conj (infd x (make-interval (+ mid 1) hi))
+                                              (labelfd x #:order order)) st))))))))
+                 ;; List domain — enumerate as before
+                 (else
+                  (let* ((vals (if (eq? order 'max) (reverse dom) dom)))
+                    (let try ((vs vals))
+                      (if (null? vs) '()
+                          (mplus ((== x (car vs)) st)
+                                 (lambda () (try (cdr vs))))))))))))))))
 
 
 ;;; ══════════════════════════════════════════════════════════════════════════════
@@ -662,19 +835,34 @@
 
 (define (simplify-constraints st)
   (let* ((S (cstate-S st))
-         (D* (filter (lambda (d) (let ((S+ (unify* d S))) (and S+ (not (eq? S+ S)))))
-                     (cstate-D st)))
-         (Y* (filter (lambda (y) (let ((v (walk y S))) (or (var? v) (not (symbol? v)))))
-                     (cstate-Y st)))
-         (Nu* (filter (lambda (n) (let ((v (walk n S))) (or (var? v) (not (number? v)))))
-                      (cstate-Nu st)))
-         (T* (filter (lambda (t)
-                       (let ((u (walk* (car t) S)) (v (walk* (cdr t) S)))
-                         (or (var? u) (var? v) (mem-check u v S))))
-                     (cstate-T st)))
+         ;; Simplify per-variable constraint store
+         (CS* (intmap-fold
+                (lambda (counter c acc)
+                  (let* ((v (var counter))
+                         (wv (walk v S))
+                         ;; Keep type only if still a var
+                         (T (and (var? wv) (c-T c)))
+                         ;; Keep disequalities that aren't yet satisfied or violated
+                         (D (filter (lambda (d) (let ((S+ (unify* d S)))
+                                                  (and S+ (not (eq? S+ S)))))
+                                    (c-D c)))
+                         ;; Keep absento if still relevant
+                         (A (filter (lambda (a)
+                                      (let ((wa (walk* a S)))
+                                        (or (var? wa) (var? wv)
+                                            (mem-check wa wv S))))
+                                    (c-A c))))
+                    (if (and (not T) (null? D) (null? A))
+                        acc  ;; no constraints left, drop
+                        (intmap-set acc counter (list (or T #f) D A)))))
+                '() (cstate-CS st)))
          ;; Drop FD entries for ground variables
-         (FD* (filter (lambda (p) (var? (walk (car p) S))) (cstate-FD st))))
-    (make-cstate S (cstate-C st) (cstate-N st) D* Y* Nu* T* FD* (cstate-P st))))
+         (FD* (intmap-fold (lambda (counter dom acc)
+                             (if (var? (walk (var counter) S))
+                                 (intmap-set acc counter dom)
+                                 acc))
+                           '() (cstate-FD st))))
+    (make-cstate S (cstate-C st) (cstate-N st) CS* FD* (cstate-P st))))
 
 
 ;;; ══════════════════════════════════════════════════════════════════════════════
@@ -690,16 +878,40 @@
          (v (walk* (var 0) S))
          (R (car (reify-s v empty-subst 0)))
          (v (walk* v R))
-         (D (walk* (cstate-D st) S))
-         (Y (walk* (cstate-Y st) S))
-         (Nu (walk* (cstate-Nu st) S))
-         (T (walk* (cstate-T st) S))
-         (FD (map (lambda (p) (cons (walk* (car p) S) (cdr p))) (cstate-FD st)))
-         (D* (filter (lambda (d) (anyvar? d R)) D))
-         (Y* (filter (lambda (y) (var? (walk y R))) Y))
-         (Nu* (filter (lambda (n) (var? (walk n R))) Nu))
-         (T* (filter (lambda (t) (anyvar? t R)) T))
-         (FD* (filter (lambda (p) (anyvar? (car p) R)) FD)))
+         ;; Single pass over CS: extract relevant D, Y, Nu, T for vars in R
+         (cs-result
+          (intmap-fold
+            (lambda (k c acc)
+              (if (unbound? (intmap-ref R k)) acc  ;; var not in result
+                  (let ((wk (walk* (var k) S)))
+                    (list
+                      ;; D: keep diseqs relevant to result
+                      (append (filter (lambda (d) (anyvar? (walk* d S) R))
+                                      (c-D c))
+                              (car acc))
+                      ;; Y
+                      (if (eq? (c-T c) 'sym) (cons wk (cadr acc)) (cadr acc))
+                      ;; Nu
+                      (if (eq? (c-T c) 'num) (cons wk (caddr acc)) (caddr acc))
+                      ;; T
+                      (append (filter-map
+                                (lambda (a)
+                                  (let ((t (cons (walk* a S) wk)))
+                                    (and (anyvar? t R) t)))
+                                (c-A c))
+                              (cadddr acc))))))
+            '(() () () ())
+            (cstate-CS st)))
+         (D* (walk* (car cs-result) R))
+         (Y* (walk* (cadr cs-result) R))
+         (Nu* (walk* (caddr cs-result) R))
+         (T* (walk* (cadddr cs-result) R))
+         ;; FD constraints
+         (FD* (intmap-fold
+                (lambda (counter dom acc)
+                  (let ((wk (walk* (var counter) S)))
+                    (if (anyvar? wk R) (cons (cons (walk* wk R) dom) acc) acc)))
+                '() (cstate-FD st))))
     (if (and (null? D*) (null? Y*) (null? Nu*) (null? T*) (null? FD*))
         v
         (append (list v)

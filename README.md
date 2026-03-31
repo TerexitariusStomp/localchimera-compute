@@ -89,7 +89,9 @@ module/playnet/
   actors.scm         — ^org (simple), ^logger, proxy pair (governance primitives)
   evaluator.scm      — base evaluator + bindings (Hoot/WASM compatible)
   repl.scm           — org factories + inner REPL (native Guile)
-  kanren.scm         — miniKanren logic programming (219 lines)
+  kanren.scm         — miniKanren core + persistent intmap trie (310 lines)
+  kanren-constraints.scm — CLP(FD) + symbolic constraints (964 lines)
+  kanren-planning.scm — planning state extension for Goblins integration
   knowledge.scm      — relational queries with proof traces
   system-kb.scm      — the system's self-knowledge as relational facts
   markdown.scm       — bidirectional markdown ↔ S-expression transpilation
@@ -109,7 +111,7 @@ planner/
   lib/schemas.scm     — 47 ValueFlows record types
   lib/knowledge/dev-recipes.scm — dev tasks as VF economic activity
   lib/relational/     — relational planner (miniKanren search over lifted facts)
-  tests/              — 29 relational planner tests
+  tests/              — 31 relational planner tests
 
 key-pool/
   key-pool.scm        — capability-secure API key management (provider profiles)
@@ -120,6 +122,7 @@ tests/
   test-governed-org.scm — 3-seal governance tests (20 checks)
   test-endorsement.scm — sealer/unsealer tests (35 checks)
   test-persistence.scm — Goblins persistence round-trip (25 checks)
+  test-constraints.scm — constraint engine + planning integration (86 checks)
   browser-ux.mjs      — Playwright browser UX tests (15 scenarios)
   ux-test.sh          — browser test runner (Python server + Playwright)
 
@@ -336,15 +339,23 @@ The system includes a miniKanren relational programming engine — running in th
 
 Every relation is bidirectional. "What recipe produces bread?" and "what does recipe-bread produce?" are the same relation with different blanks. You write it once and get every direction for free. Transitive closure produces proof traces — the chain of facts traversed to reach the conclusion. This is accountability for inference, the same way `^logger` is accountability for state transitions.
 
-### miniKanren — logic programming from scratch
+### miniKanren + CLP(FD) — logic programming from scratch
 
 ```scheme
 ;; Find all values of q where appending (1 2) and q gives (1 2 3 4)
 (run* (q) (appendo '(1 2) q '(1 2 3 4)))
 ;; => ((3 4))
+
+;; CLP(FD): what scale of a recipe producing 10 bread/batch satisfies demand for 120?
+(run-plan 1 ns (scale)
+  (rangeo scale 1 20)
+  (*fd scale 10 total)
+  (<=fd 120 total)
+  (labelfd scale))
+;; => (12)
 ```
 
-219 lines. Interleaving search, occurs check, reification. Hoot-compatible — runs in the browser.
+~1300 lines across two modules. Persistent intmap trie substitution (O(log n) walk), per-variable constraint store, constraint propagation on unification, CLP(FD) with interval arithmetic (`+fd`, `-fd`, `*fd`, `<fd`, `<=fd`, `distinctfd`), symbolic constraints (`=/=`, `numbero`, `symbolo`, `absento`), binary-split domain enumeration, interleaving search. Hoot-compatible — runs in the browser.
 
 ### The system reasons about itself
 

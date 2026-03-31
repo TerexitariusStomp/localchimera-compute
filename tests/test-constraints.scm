@@ -477,6 +477,212 @@
 
 
 ;;; ════════════════════════════════════════════════════════════════════════════
+;;; Constraint propagation through ==
+;;; ════════════════════════════════════════════════════════════════════════════
+
+(display "\n── Constraint propagation through == ──\n")
+
+(check "symbolo + == + numbero → fail"
+       (run-plan* ns (q) (fresh (x y) (symbolo x) (== x y) (numbero y)))
+       '())
+
+(check "numbero propagates through == to ground symbol → fail"
+       (run-plan* ns (q) (fresh (x) (numbero x) (== x q) (== q 'hello)))
+       '())
+
+(check "symbolo survives chain x→y→z"
+       (run-plan* ns (q) (fresh (x y z) (symbolo x) (== x y) (== y z) (== z 42)))
+       '())
+
+(check "=/= propagates through =="
+       (run-plan* ns (q) (fresh (x y) (=/= x 5) (== x y) (== y 5)))
+       '())
+
+(check "=/= propagates through chain x→y→z"
+       (run-plan* ns (q) (fresh (x y z) (=/= x 4) (== x y) (== y z) (== z 4)))
+       '())
+
+(check "absento propagates through =="
+       (run-plan* ns (q) (fresh (x y) (absento 'a x) (== x y) (== y '(1 a 3))))
+       '())
+
+(check "absento propagates through chain x→y→z"
+       (run-plan* ns (q) (fresh (x y z) (absento 'b x) (== x y) (== y z) (== z '(b))))
+       '())
+
+(check "type conflict from two directions via =="
+       (run-plan* ns (q) (fresh (x y) (numbero x) (symbolo y) (== x y)))
+       '())
+
+
+;;; ════════════════════════════════════════════════════════════════════════════
+;;; =/= with two vars
+;;; ════════════════════════════════════════════════════════════════════════════
+
+(display "\n── =/= bidirectional ──\n")
+
+(check "=/= two vars, bind both to same → fail"
+       (run-plan* ns (q) (fresh (x y) (=/= x y) (== x 5) (== y 5)))
+       '())
+
+(check "=/= two vars, bind both to different → succeed"
+       (run-plan* ns (q) (fresh (x y) (=/= x y) (== x 5) (== y 6) (== q (list x y))))
+       '((5 6)))
+
+(check "=/= two vars then unify them → fail"
+       (run-plan* ns (q) (fresh (x y) (=/= x y) (== x y)))
+       '())
+
+(check "=/= pair structure, partial binding triggers fail"
+       (run-plan* ns (q) (fresh (x) (=/= (cons x 1) (cons 2 1)) (== x 2)))
+       '())
+
+
+;;; ════════════════════════════════════════════════════════════════════════════
+;;; Absento + pair structure
+;;; ════════════════════════════════════════════════════════════════════════════
+
+(display "\n── Absento propagation ──\n")
+
+(check "absento pushes into cons, then car violates"
+       (run-plan* ns (q) (fresh (x y) (== q (cons x y)) (absento 'a q) (== x 'a)))
+       '())
+
+(check "absento on var, then unify with nested pair containing atom"
+       (run-plan* ns (q) (fresh (x) (absento 'z x) (== x '(1 (2 z) 3))))
+       '())
+
+(check "absento atom not in pair → succeed"
+       (run-plan* ns (q) (fresh (x y) (absento 'a (cons x y)) (== x 'b) (== y 'c) (== q (list x y))))
+       '((b c)))
+
+
+;;; ════════════════════════════════════════════════════════════════════════════
+;;; Combined constraints
+;;; ════════════════════════════════════════════════════════════════════════════
+
+(display "\n── Combined constraints (advanced) ──\n")
+
+(check "multiple =/= then labelfd excludes all"
+       (run-plan* ns (q) (=/= q 1) (=/= q 2) (=/= q 3) (rangeo q 1 4) (labelfd q))
+       '(4))
+
+(check "FD + =/= interaction"
+       (run-plan* ns (q) (rangeo q 1 5) (=/= q 3) (labelfd q))
+       '(1 2 4 5))
+
+(check "FD propagates through =="
+       (run-plan* ns (q) (fresh (x y) (infd x '(1 2 3)) (== x y) (infd y '(2 3 4)) (labelfd y) (== q y)))
+       '(2 3))
+
+(check "distinctfd with ground after =="
+       (run-plan* ns (q) (fresh (x y) (infd x '(1 2 3)) (infd y '(1 2 3))
+                           (distinctfd x y) (== x 1) (labelfd y) (== q y)))
+       '(2 3))
+
+
+;;; ════════════════════════════════════════════════════════════════════════════
+;;; Integration: miniature planning scenario
+;;;
+;;; Models the real planner's pattern: given a demand, allocate from inventory,
+;;; then if insufficient, find a recipe, compute scale via CLP(FD), recurse
+;;; on inputs. This is the engine's raison d'être.
+;;; ════════════════════════════════════════════════════════════════════════════
+
+(display "\n── Planning integration ──\n")
+
+;; Domain: a bakery commune
+;;   inventory: 50kg flour, 200kg wheat
+;;   recipe "mill":  10kg wheat → 8kg flour
+;;   recipe "bake":  5kg flour  → 10 bread
+;;   demand: 20 bread
+
+;; Relational queries over fact lists — the pattern the real planner uses
+(define (inventory-o spec qty)
+  (conde
+    ((== spec 'wheat) (== qty 200))
+    ((== spec 'flour) (== qty 50))
+    ((== spec 'bread) (== qty 0))))
+
+(define (recipe-o name in-spec in-qty out-spec out-qty)
+  (conde
+    ((== name 'mill)  (== in-spec 'wheat) (== in-qty 10)
+     (== out-spec 'flour) (== out-qty 8))
+    ((== name 'bake)  (== in-spec 'flour) (== in-qty 5)
+     (== out-spec 'bread) (== out-qty 10))))
+
+(check "plan: what recipe+scale produces 20 bread?"
+       (run-plan 1 ns (q)
+         (fresh (rname in-spec in-qty out-spec out-qty scale total)
+           (recipe-o rname in-spec in-qty out-spec out-qty)
+           (== out-spec 'bread)
+           (rangeo scale 1 10)
+           (*fd scale out-qty total)
+           (<=fd 20 total)
+           (labelfd scale)
+           (== q (list rname scale))))
+       '((bake 2)))
+
+(check "plan: what inputs does baking at scale 2 need?"
+       (run-plan* ns (q)
+         (fresh (rname in-spec in-qty out-spec out-qty input-needed)
+           (recipe-o rname in-spec in-qty out-spec out-qty)
+           (== rname 'bake)
+           (*fd 2 in-qty input-needed)
+           (== q (list in-spec input-needed))))
+       '((flour 10)))
+
+(check "plan: can we satisfy 10kg flour from inventory?"
+       (run-plan* ns (q)
+         (fresh (avail)
+           (inventory-o 'flour avail)
+           (<=fd 10 avail)
+           (== q avail)))
+       '(50))
+
+;; Full chain: 20 bread → bake@2 → 10kg flour → from inventory
+(check "plan: 20 bread via bake then flour from inventory"
+       (run-plan 1 ns (q)
+         (fresh (rname in-spec in-qty out-spec out-qty
+                 scale total input-needed avail)
+           (recipe-o rname in-spec in-qty out-spec out-qty)
+           (== out-spec 'bread)
+           (rangeo scale 1 10)
+           (*fd scale out-qty total)
+           (<=fd 20 total)
+           (labelfd scale)
+           (*fd scale in-qty input-needed)
+           (inventory-o in-spec avail)
+           (<=fd input-needed avail)
+           (== q (list 'produce out-spec rname scale
+                       (list 'from in-spec input-needed)))))
+       '((produce bread bake 2 (from flour 10))))
+
+;; 2-step chain: 120 bread → bake@12 → 60kg flour, only 50 available
+;; → mill wheat to cover the 10kg gap
+(check "plan: 2-step chain — bread → flour → wheat"
+       (run-plan 1 ns (q)
+         (fresh (scale1 total1 flour-needed
+                 scale2 total2 wheat-needed
+                 flour-avail wheat-avail flour-gap)
+           (rangeo scale1 1 20)
+           (*fd scale1 10 total1)
+           (<=fd 120 total1)
+           (labelfd scale1)
+           (*fd scale1 5 flour-needed)
+           (inventory-o 'flour flour-avail)
+           (-fd flour-needed flour-avail flour-gap)
+           (rangeo scale2 1 20)
+           (*fd scale2 8 total2)
+           (<=fd flour-gap total2)
+           (labelfd scale2)
+           (*fd scale2 10 wheat-needed)
+           (inventory-o 'wheat wheat-avail)
+           (<=fd wheat-needed wheat-avail)
+           (== q (list 'bake scale1 'then 'mill scale2))))
+       '((bake 12 then mill 2)))
+
+;;; ════════════════════════════════════════════════════════════════════════════
 
 (newline)
 (display (string-append "── Results: "

@@ -81,6 +81,24 @@
                        (filter (lambda (p) (not (= (car p) ni))) children)))))
     (else (cons 'L (cons k v)))))
 
+(define (intmap-fold proc init m)
+  "Fold proc over all (key value acc) -> acc in the intmap."
+  (intmap-fold* proc init m 0 0))
+
+(define (intmap-fold* proc acc m shift offset)
+  (cond
+    ((null? m) acc)
+    ((eq? (car m) 'L)
+     (proc (+ (ash (cadr m) shift) offset) (cddr m) acc))
+    ((eq? (car m) 'B)
+     (let loop ((children (cdr m)) (acc acc))
+       (if (null? children) acc
+           (loop (cdr children)
+                 (intmap-fold* proc acc (cdr (car children))
+                               (+ shift 4)
+                               (+ offset (ash (caar children) shift)))))))
+    (else acc)))
+
 
 ;;; ── State: (substitution . counter) ────────────────────────────────────────
 
@@ -102,7 +120,12 @@
   (let ((v (walk term subst)))
     (cond
      ((var? v) v)
-     ((pair? v) (cons (walk* (car v) subst) (walk* (cdr v) subst)))
+     ((pair? v)
+      (let ((a (walk* (car v) subst))
+            (d (walk* (cdr v) subst)))
+        (if (and (eq? a (car v)) (eq? d (cdr v)))
+            v  ;; structural sharing: avoid allocation when unchanged
+            (cons a d))))
      (else v))))
 
 ;;; ── Occurs check ───────────────────────────────────────────────────────────

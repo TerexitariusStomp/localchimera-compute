@@ -24,10 +24,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: PromyLOPh/guix-install-action@v1
-        with:
-          pullAfterInstall: false
-
       - name: Set up SSH
         run: |
           mkdir -p ~/.ssh
@@ -43,29 +39,29 @@ jobs:
             TCPKeepAlive yes
           EOF
 
-      - name: Configure server SSH keepalive
+      - name: Copy project to server
         run: |
-          # guile-ssh (used by guix deploy) doesn't read ~/.ssh/config,
-          # so keepalive must be set server-side. This ensures sshd keeps
-          # the connection alive during long substitute downloads.
+          rsync -avz --delete \
+            --exclude '.git' --exclude 'node_modules' \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes" \
+            ./ deploy@SERVER_IP:/tmp/playnet-deploy/
+
+      - name: Deploy via remote reconfigure
+        run: |
+          # Run guix system reconfigure ON the server to avoid guile-ssh
+          # connection drops. guix deploy uses guile-ssh which has no
+          # keepalive support and dies when sshd restarts during activation.
           ssh -i ~/.ssh/deploy_key \
             -o StrictHostKeyChecking=yes \
-            -o ServerAliveInterval=30 \
+            -o ServerAliveInterval=10 \
+            -o ServerAliveCountMax=60 \
             deploy@SERVER_IP \
-            'grep -q ClientAliveInterval /etc/ssh/sshd_config 2>/dev/null || \
-             sudo sh -c "echo -e \"\\nClientAliveInterval 30\\nClientAliveCountMax 10\" >> /etc/ssh/sshd_config && \
-             sudo herd restart sshd" && echo "SSH keepalive configured"'
-
-      - name: Deploy
-        env:
-          DEPLOY_SSH_IDENTITY: /home/runner/.ssh/deploy_key
-        run: |
-          sudo -E "$(which guix)" time-machine \
-            -C deploy/guix/channels.scm \
-            -- deploy \
-            -L deploy/guix \
-            deploy/guix/machines.scm \
-            --verbosity=2
+            'sudo guix time-machine \
+              -C /tmp/playnet-deploy/deploy/guix/channels.scm \
+              -- system reconfigure \
+              -L /tmp/playnet-deploy/deploy/guix \
+              /tmp/playnet-deploy/deploy/guix/system.scm \
+              --verbosity=2'
         timeout-minutes: 90
 
       - name: Verify
