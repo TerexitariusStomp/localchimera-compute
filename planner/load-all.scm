@@ -82,6 +82,6 @@
 ;; Layer 2: Relational planner (miniKanren + netter)
 (load "lib/relational/load-relational.scm")
 
-;; Layer 4: Federation
+;; Layer 4: Federation (relational version in lib/relational/federation.scm)
 (load "lib/planning/store-registry.scm")
-(load "lib/planning/plan-federation.scm")
+;; (load "lib/planning/plan-federation.scm")  ;; replaced by relational federation

@@ -214,6 +214,65 @@
 
 
 ;;; ════════════════════════════════════════════════════════════════════════════
+;;; 7. Federation — unit tests for protocol components
+;;; ════════════════════════════════════════════════════════════════════════════
+
+(display "\n── Federation ──\n")
+
+;; Test federation components with mock data (no Goblins scopes needed)
+(let* ((fed-facts '((scope-parent "bakery" "commune")
+                    (scope-parent "mill" "commune")))
+       (scope-ids '("bakery" "mill" "commune"))
+       (parent-map '(("bakery" . "commune") ("mill" . "commune"))))
+
+  ;; Test hierarchy construction
+  (let ((hierarchy (build-hierarchy fed-facts scope-ids parent-map)))
+    (check-pred "hierarchy: commune has 2 children"
+                (let ((commune-children (assoc-ref hierarchy "commune")))
+                  (and commune-children (= 2 (length commune-children))))))
+
+  ;; Test hierarchy
+  (check-pred "hierarchy: commune has children"
+              (let ((ch (assoc-ref (build-hierarchy fed-facts scope-ids parent-map) "commune")))
+                (and ch (= 2 (length ch)))))
+
+  ;; Test extract-deficits and extract-surpluses (the federation protocol)
+  (check "extract-deficits: purchase becomes deficit"
+         (extract-deficits '(((d1) (purchase spec-flour 30))) "bakery")
+         '(((scope . "bakery") (spec . spec-flour) (qty . 30))))
+
+  (check "extract-surpluses: satisfied with excess becomes surplus"
+         (length (extract-surpluses '(((d1) (satisfied spec-flour 20 (("r" 30))))) "mill"))
+         1)
+
+  ;; Test federation structure
+  (check-pred "federation: builds hierarchy"
+              (pair? (build-hierarchy fed-facts scope-ids parent-map)))
+
+  ;; Test lateral matching
+  (let* ((defs '(((scope . "bakery") (spec . spec-flour) (qty . 30))))
+         (surps '(((scope . "mill") (spec . spec-flour) (qty . 50))))
+         (result (match-at-level defs surps))
+         (matches (car result))
+         (unmatched (cdr result)))
+    (check-pred "lateral-match: finds match"
+                (and (= 1 (length matches))
+                     (null? unmatched)))
+    (when (pair? matches)
+      (check "lateral-match: from mill to bakery"
+             (assq-ref (car matches) 'from) "mill")
+      (check "lateral-match: qty = 30 (min of deficit)"
+             (assq-ref (car matches) 'qty) 30)))
+
+  ;; Test unmatched deficit propagation
+  (let* ((defs '(((scope . "bakery") (spec . spec-wheat) (qty . 100))))
+         (surps '())
+         (result (match-at-level defs surps)))
+    (check "unmatched: deficit propagates"
+           (length (cdr result)) 1)))
+
+
+;;; ════════════════════════════════════════════════════════════════════════════
 
 (newline)
 (display (string-append "── Results: "
