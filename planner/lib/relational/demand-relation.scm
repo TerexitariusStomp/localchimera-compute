@@ -38,7 +38,7 @@
      (conde
        ((produce-branch ctx spec-id remaining due plan-term sums-in sums-out
                          depth visited))
-       ((== plan-term `(purchase ,spec-id ,remaining))
+       ((== plan-term `(unmet ,spec-id ,remaining))
         (== sums-out sums-in))))))
 
 

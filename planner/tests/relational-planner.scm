@@ -171,25 +171,25 @@
       (check-pred "flour 30: satisfied"
                   (and (pair? results) (eq? 'satisfied (caar results)))))
 
-    ;; 20 bread: must produce or purchase
+    ;; 20 bread: must produce or unmet
     (let ((results (run-plan 1 ns (q)
                      (fresh (sums-out)
                        (demand-o test-ctx "spec-bread" 20 due q test-sums sums-out
                                  #:depth 5)))))
       (check-pred "bread 20: finds solution" (pair? results))
-      (check-pred "bread 20: produces or purchases"
-                  (and (pair? results) (memq (caar results) '(produce purchase)))))
+      (check-pred "bread 20: produces or unmets"
+                  (and (pair? results) (memq (caar results) '(produce unmet)))))
 
-    ;; Both produce and purchase are reachable
+    ;; Both produce and unmet are reachable
     ;; (tested separately — run-plan 2 with CLP(FD) labeling is slow due to
-    ;; interleaving between deep produce search and simple purchase branch)
+    ;; interleaving between deep produce search and simple unmet branch)
     (let ((first (run-plan 1 ns (q)
                    (fresh (sums-out)
                      (demand-o test-ctx "spec-bread" 20 due q test-sums sums-out
                                #:depth 5)))))
       (check-pred "bread: first plan found" (pair? first))
-      (check-pred "bread: is produce or purchase"
-                  (and (pair? first) (memq (caar first) '(produce purchase)))))))
+      (check-pred "bread: is produce or unmet"
+                  (and (pair? first) (memq (caar first) '(produce unmet)))))))
 
 
 ;;; ════════════════════════════════════════════════════════════════════════════
@@ -237,8 +237,8 @@
                 (and ch (= 2 (length ch)))))
 
   ;; Test extract-deficits and extract-surpluses (the federation protocol)
-  (check "extract-deficits: purchase becomes deficit"
-         (extract-deficits '(((d1) (purchase spec-flour 30))) "bakery")
+  (check "extract-deficits: unmet becomes deficit"
+         (extract-deficits '(((d1) (unmet spec-flour 30))) "bakery")
          '(((scope . "bakery") (spec . spec-flour) (qty . 30))))
 
   (check "extract-surpluses: satisfied with excess becomes surplus"

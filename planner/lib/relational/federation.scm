@@ -287,7 +287,7 @@
   (if (not (list? plan)) '()
       (filter-map (lambda (entry)
         (and (pair? entry) (pair? (cadr entry))
-             (eq? (caadr entry) 'purchase)
+             (eq? (caadr entry) 'unmet)
              `((scope . ,scope-id) (spec . ,(cadadr entry))
                (qty . ,(caddr (cadr entry))))))
         plan)))
