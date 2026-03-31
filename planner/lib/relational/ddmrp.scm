@@ -31,12 +31,15 @@
 
 ;;; ── Location hierarchy (relational transitive closure) ────────────────────────
 
-(define (location-descendant-or-equal-o facts loc ancestor)
-  (conde
-    ((== loc ancestor))
-    ((fresh (mid)
-       (location-parent-o facts loc mid)
-       (location-descendant-or-equal-o facts mid ancestor)))))
+(define *max-location-depth* 10)
+
+(define* (location-descendant-or-equal-o facts loc ancestor #:optional (depth *max-location-depth*))
+  (if (= depth 0) fail
+      (conde
+        ((== loc ancestor))
+        ((fresh (mid)
+           (location-parent-o facts loc mid)
+           (location-descendant-or-equal-o facts mid ancestor (- depth 1)))))))
 
 
 ;;; ── Zone classification (genuinely bidirectional via CLP(FD)) ─────────────────
