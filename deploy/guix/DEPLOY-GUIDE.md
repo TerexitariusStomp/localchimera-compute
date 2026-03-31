@@ -347,17 +347,96 @@ See `docs/RETICULUM-NETLAYER.md` for full architecture.
 
 ---
 
+## Self-Improving Loop
+
+After deploy, the server can run an autonomous development loop: the VF planner
+emits deficit signals via MQTT, a bridge service launches Claude Code to implement
+the work, and Claude opens PRs that auto-merge after tests pass.
+
+### One-time setup
+
+```bash
+ssh deploy@SERVER_IP
+bash /home/playnet/playnet-repo/deploy/guix/setup-self-improving-loop.sh
+```
+
+The script installs Claude Code, configures git push access, and verifies the
+MQTT broker. Three manual steps remain after the script:
+
+1. **Add SSH deploy key** — the script prints the public key; add it as a
+   read-write deploy key at github.com/interplaynetary/xorg/settings/keys
+2. **Authenticate gh CLI** — `sudo -u playnet gh auth login`
+3. **Set API key** — `sudo -u playnet sh -c 'mkdir -p ~/.config/claude && echo "ANTHROPIC_API_KEY=sk-ant-..." > ~/.config/claude/.env'`
+
+### Activate the loop
+
+```bash
+# Start the MQTT→Claude bridge (listens for deficit signals)
+sudo herd start dev-bridge
+
+# Seed the planner with development recipes
+sudo herd start playnet-repl
+/home/playnet/bin/repl-eval '(display "planner ready")'
+```
+
+The dev-bridge subscribes to `playnet/signals/deficit/spec-dev-*` on Mosquitto.
+When the planner emits a deficit signal (e.g. "need persistence tests"), the
+bridge launches `claude -p "..."` in `/home/playnet/dev-checkout/`. Claude
+implements on a feature branch, runs `make test-all`, opens a PR, and merges.
+
+### Architecture
+
+```
+VF Planner (Goblins vat) → ^signal-publisher → MQTT (localhost:1883)
+                                                  ↓
+                                           dev-bridge (shepherd)
+                                                  ↓
+                                         claude -p "..." in dev-checkout/
+                                                  ↓
+                                        branch → test → PR → merge
+                                                  ↓
+                                        observer records economic event
+```
+
+### Safety guardrails
+
+- Agent works on `agent/<slug>` branches, never pushes to main directly
+- `make test-all` must pass before merge (431+ tests across 8 suites)
+- Agent NEVER modifies `deploy/`, `.github/`, or `users.scm`
+- DDMRP buffers prevent too many unreviewed PRs from piling up
+- `guix deploy --roll-back` is the escape hatch if bad code reaches production
+
+### Key files
+
+| File | Purpose |
+|------|---------|
+| `server/dev-bridge.scm` | MQTT subscriber → Claude Code launcher |
+| `planner/lib/knowledge/dev-recipes.scm` | Dev tasks as VF economic activity |
+| `deploy/guix/machines.scm` | Shepherd service definition for dev-bridge |
+| `deploy/guix/setup-self-improving-loop.sh` | One-time server setup script |
+
+---
+
 ## File inventory
 
 ```
 deploy/guix/
-  bootstrap-hetzner.sh        -- one-shot provisioning script
-  machines.scm                -- guix deploy target (managed-host)
-  secrets.scm                 -- API token (gitignored)
-  deploy.sh                   -- wrapper: loads secrets, runs guix deploy
-  playnet-service.scm            -- Shepherd service for playnet actors
-  reticulum-service.scm       -- Shepherd services for rnsd + bridge
-  reticulum-manifest.scm      -- Guix manifest for Reticulum Python deps
-  channels.scm                -- pinned Guix channel
-  DEPLOY-GUIDE.md             -- this file
+  bootstrap-hetzner.sh              -- one-shot provisioning script
+  machines.scm                      -- guix deploy target (managed-host)
+  secrets.scm                       -- API token (gitignored)
+  deploy.sh                         -- wrapper: loads secrets, runs guix deploy
+  channels.scm                      -- pinned Guix channel (Hoot 0.8.0 + Goblins 0.17.0)
+  playnet-service.scm               -- Shepherd service for playnet actors
+  playnet-gateway-service.scm       -- Shepherd service for OCapN gateway
+  playnet-relay-service.scm         -- Shepherd service for WebSocket relay
+  reticulum-service.scm             -- Shepherd services for rnsd + bridge
+  reticulum-manifest.scm            -- Guix manifest for Reticulum Python deps
+  python-rns.scm                    -- Guix package: Reticulum networking (declarative)
+  browser-test-manifest.scm         -- Guix manifest for Playwright browser tests
+  setup-self-improving-loop.sh      -- one-time server setup for autonomous dev
+  DEPLOY-GUIDE.md                   -- this file
+  UPSTREAM-ISSUES.md                -- bugs to report upstream (Guix, Hoot)
+
+deploy/packages/
+  hoot-fix.scm                      -- patched Hoot 0.8.0 (mutable-bytevector? fix)
 ```

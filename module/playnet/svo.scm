@@ -43,7 +43,9 @@
             inversion-o
             ;; Four-fold alienation
             alienation-o reified-o
-            reciprocal-alienation-o fetishism-o
+            reciprocal-alienation-o
+            private-property-o
+            self-commodification-o fetishism-o
             ;; Free association
             free-association-o
             inversion-step-o full-inversion-o
@@ -161,12 +163,33 @@
     (edge-o facts e2 s2 v3 o2)
     (edge-o facts g2-eid s1 v4 o2)))
 
+(define (private-property-o facts eid gov-eid obj)
+  "OBJ has taken the form of private property:
+   produced by one subject, governed by another."
+  (fresh (gid s1 s2 v1 v2)
+    (edge-o facts eid s1 v1 obj)
+    (edge-o facts gov-eid s2 v2 obj)
+    (governance-o facts gid eid gov-eid)))
+
+(define (self-commodification-o facts s prod-eid com-eid nom-obj)
+  "S nominalizes their own production verb into NOM-OBJ,
+   which they then put up for exchange as a commodity.
+   The slave IS property; the wage worker PRODUCES a commodity
+   from their own living capacity."
+  (fresh (nid verb v1 o v2)
+    (edge-o facts prod-eid s v1 o)                    ;; S's living verb
+    (nominalization-o facts nid prod-eid verb nom-obj) ;; verb → commodity
+    (edge-o facts com-eid s v2 nom-obj)))              ;; S offers it
+
 (define (fetishism-o facts xid s1 s2 o1 o2)
-  "Commodity fetishism: objects appear to relate to each other,
-   hiding the subjects' productive relations.
-   Requires: reciprocal alienation + an exchange edge."
-  (fresh (e1 e2 g1 g2 xfer-eid)
-    (reciprocal-alienation-o facts s1 s2 o1 o2 e1 e2 g1 g2)
+  "Commodity fetishism: exchange of objects that have taken
+   the form of private property.  Objects appear to relate
+   to each other, hiding the productive relations."
+  (fresh (e1 e2 g1 g2 xfer-eid v1 v2)
+    (private-property-o facts e1 g1 o1)
+    (private-property-o facts e2 g2 o2)
+    (edge-o facts e1 s1 v1 o1)
+    (edge-o facts e2 s2 v2 o2)
     (exchange-o facts xid e1 e2 xfer-eid)))
 
 (define (free-association-o facts eid1 eid2 s1 s2)
@@ -233,35 +256,64 @@
     (governance g2 e1 e3)))
 
 
-;;; Wage Labor — Reification (Op. B) + Alienating Governance (Op. C)
-;;; The worker's verb is nominalized into a noun-node, then sold.
+;;; Wage Labor — Self-commodification + Exchange + Governance
+;;; The worker is formally free (no from-species-being), but nominalizes
+;;; their own verb into labor-power — a commodity exchanged for wages.
+;;; The slave IS property; the wage worker PRODUCES a commodity from
+;;; their own living capacity.
+;;;
+;;;   worker ──[labors]──▶ product          (living verb)
+;;;          ──[sells]───▶ labor-power      (self-commodification)
+;;;                            ▲
+;;;   capitalist ──[buys]──────┘            (governance: private property)
+;;;              ──[owns]──▶ product        (governance: product too)
+;;;
+;;;   labor-power ──[exchanges-for]──▶ wage
 
 (define *wage-labor-facts*
   '(;; Nodes
     (node worker "The Worker" subject)
     (node capitalist "The Capitalist" subject)
     (node product "Product" object)
-    (node labor-power "Labor-Power" object)     ;; the nominalized verb
+    (node labor-power "Labor-Power" commodity)  ;; the nominalized verb as commodity
+    (node wage "Wage" commodity)
 
     ;; Mode
     (mode wage-labor)
     (mode-has wage-labor nominalization)
     (mode-has wage-labor governance)
+    (mode-has wage-labor exchange)
 
-    ;; worker ──[works]──▶ product   (externalization)
-    (edge e1 worker works product)
+    ;; ── Living verb ──
+    ;; worker ──[labors]──▶ product
+    (edge e1 worker labors product)
 
-    ;; Nominalization: "works" → labor-power node
-    (nominalization n1 e1 works labor-power)
+    ;; ── Self-commodification ──
+    ;; Nominalization: "labors" → labor-power (verb becomes commodity)
+    (nominalization n1 e1 labors labor-power)
 
-    ;; worker ──[sells]──▶ labor-power   (sells the reified verb)
-    (edge e2 worker sells labor-power)
+    ;; worker ──[sells]──▶ labor-power   (the capacity, not the labor itself)
+    (edge e-lp worker sells labor-power)
 
-    ;; capitalist ──[owns]──▶ product   (converges on product)
+    ;; ── Exchange: labor-power for wage ──
+    ;; capitalist ──[pays]──▶ wage
+    (edge e-w capitalist pays wage)
+
+    ;; labor-power ──[exchanges-for]──▶ wage
+    (edge e-xfer labor-power exchanges-for wage)
+    (exchange x1 e-lp e-w e-xfer)
+
+    ;; ── Governance ──
+    ;; capitalist ──[buys]──▶ labor-power   (labor-power as private property)
+    (edge e2 capitalist buys labor-power)
+    (governance g-lp e-lp e2)
+
+    ;; capitalist ──[owns]──▶ product   (product as private property)
     (edge e3 capitalist owns product)
     (governance g1 e1 e3)
 
-    ;; Alienating passivization on e1: "Workers create value" → "Value is created"
+    ;; ── Reification ──
+    ;; "Workers labor" → "Value is created"
     (passivization pa1 e1 #t)))
 
 
@@ -426,7 +478,15 @@
 ;;; => (from-product from-species-being)
 ;;;
 ;;; (run* (dim) (fresh (e g) (alienation-o *wage-labor-facts* dim 'worker e g)))
-;;; => (from-product from-activity)
+;;; => (from-product from-activity)   ;; no from-species-being — worker is "free"
+;;;
+;;; Self-commodification: "what does the worker commodify?"
+;;; (run* (q) (fresh (pe ce) (self-commodification-o *wage-labor-facts* 'worker pe ce q)))
+;;; => (labor-power)
+;;;
+;;; Private property: "what takes the form of private property?"
+;;; (run* (q) (fresh (e g) (private-property-o *wage-labor-facts* e g q)))
+;;; => (labor-power product)   ;; both the reified capacity AND the product
 ;;;
 ;;; (run* (dim) (fresh (e g) (alienation-o *theology-facts* dim 'humanity e g)))
 ;;; => (from-product from-species-being)
@@ -450,11 +510,17 @@
 ;;;   (fresh (eid verb to)
 ;;;     (edge-o *wage-labor-facts* eid 'worker verb to)
 ;;;     (== q `(,verb ,to))))
-;;; => ((works product) (sells labor-power))
+;;; => ((labors product) (sells labor-power))
 ;;;
 ;;; "All edges into product — who converges?"
 ;;; (run* (q)
 ;;;   (fresh (eid from verb)
 ;;;     (edge-o *wage-labor-facts* eid from verb 'product)
 ;;;     (== q `(,from ,verb))))
-;;; => ((worker works) (capitalist owns))
+;;; => ((worker labors) (capitalist owns))
+;;;
+;;; Slavery vs Wage Labor — the structural transition:
+;;;   slavery:    master ──[owns]──▶ slave         (subject IS property)
+;;;   wage-labor: worker ──[sells]──▶ labor-power  (subject PRODUCES a commodity)
+;;; Same alienation-from-product, but the mechanism flips:
+;;; governance over the person → governance over the self-commodified verb.

@@ -34,6 +34,14 @@ jobs:
           echo "${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           echo "SERVER_IP ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE7y+yzSS5w+oDfeG8pKgpbcB+Xd2W+WxV1/kAn6Fnlk" >> ~/.ssh/known_hosts
+          # Keep SSH alive during long deploys (substitute downloads can take 15+ min)
+          cat >> ~/.ssh/config << 'EOF'
+          Host SERVER_IP
+            IdentityFile ~/.ssh/deploy_key
+            ServerAliveInterval 30
+            ServerAliveCountMax 10
+            TCPKeepAlive yes
+          EOF
 
       - name: Deploy
         env:
