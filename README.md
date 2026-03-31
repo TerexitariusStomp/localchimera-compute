@@ -101,8 +101,9 @@ server/
   reticulum-bridge.py — Reticulum mesh networking bridge
 
 planner/
-  lib/                — ValueFlows economic planning engine (20+ algorithms)
-  lib/vf-relations.scm — relational query layer over VF records
+  lib/schemas.scm     — 47 ValueFlows record types
+  lib/relational/     — relational planner (miniKanren search over lifted fact tuples)
+  tests/              — 29 relational planner tests
 
 key-pool/
   key-pool.scm        — capability-secure API key management (any HTTP API via provider profiles)
@@ -169,34 +170,30 @@ Capability security from closures. State from `bcom`. Accountability from loggin
 | Attenuation    | `^facet` — partial application restricts the interface                                                                                      |
 | Revocation     | `^cell` — a conditional that can be flipped                                                                                                 |
 | Reasoning      | miniKanren — search as lazy evaluation of goal functions                                                                                    |
-| Economics      | VF relations — bidirectional queries with proof-traced inference                                                                            |
+| Economics      | Facts as tuples, queries as unification — one relation per question, every direction                                                        |
 
 Because they're all the same substrate, they compose without adapters. A relational query over economic data runs inside a governed actor, over a capability-secured network, on a declaratively defined operating system — and every layer is Scheme.
 
-## Economic Planning — Agents as Scopes, Actors as Agents
+## Economic Planning — Relations, Not Algorithms
 
-The planner is a complete [ValueFlows](https://valueflo.ws/) economic planning engine — 20+ algorithm modules, ~14,000 lines — built on Goblins actors. It models supply chains, resource flows, and coordination as governed computation.
+The planner is a [ValueFlows](https://valueflo.ws/) economic planning engine built on miniKanren relational search over Goblins actors. Facts are plain S-expression tuples. Queries are pattern matching with blanks. The search explores all valid plans — not just the first greedy one.
 
-The key insight: **a planning scope IS a Goblins vat. An agent IS an actor. A commitment IS a message.**
-
-```
-┌─────────────────────────────────────────────┐
-│  ValueFlows Scope (= Goblins Vat)           │
-│                                             │
-│  Agent actors ←→ Process actors             │
-│       │              │                      │
-│  Commitments    Economic Events             │
-│  (messages)     (state transitions)         │
-│       │              │                      │
-│  Resource flows tracked as bcom             │
-│  Accountability via ^logger                 │
-│  Cross-scope coordination via OCapN         │
-└─────────────────────────────────────────────┘
+```scheme
+(recipe-o    facts rid name output)          ;; what can we make?
+(flow-o      facts pid dir spec qty unit act) ;; what goes in and out?
+(net-demand-o ctx spec qty remaining alloc)  ;; what's available?
+(demand-o    ctx spec qty due plan-term)     ;; what's the plan?
+(plan-o      ctx plan)                       ;; solve all demands
+(run-plan    n ns (plan) (plan-o ctx plan))  ;; find n valid plans
 ```
 
-Each scope is isolated (vat boundary). Scopes coordinate via OCapN — the same protocol that connects browsers to servers to LoRa radios. A planning federation is a hierarchy of scopes folded together, each governed by its own actors.
+Six relations replace 20+ imperative algorithm modules. Each relation works bidirectionally — "what recipe produces bread?" and "what does recipe-bread produce?" are the same `recipe-o` with different blanks filled in. Every plan is traceable: the search tree IS the audit trail.
 
-The planner includes: dependent demand/supply, DDMRP buffer positioning, critical path analysis, netting (location-aware), flow graphs, custody chains, track-and-trace, value equations, OTIF metrics, and federated multi-scope planning.
+The allocation state is immutable. When the search branches to explore a different recipe, each branch gets its own copy automatically. A branch that claims 50kg of flour and then fails doesn't affect other branches — its claims vanish with it. The system's branching IS the backtracking.
+
+Each planning scope is a Goblins vat. Scopes coordinate via OCapN — the same protocol that connects browsers to servers to LoRa radios. A planning federation is a hierarchy of scopes folded together, each governed by its own actors.
+
+See [RELATIONS.md](RELATIONS.md) for the full philosophy.
 
 ### Social planning over API keys
 
@@ -314,9 +311,9 @@ Sensor data flows through the same ValueFlows accounting as API keys — each re
 
 ## Relational Reasoning
 
-The system includes a miniKanren relational programming engine and query layers over both the system's own structure and ValueFlows economic records — all running in the browser via Hoot/WASM. Knowledge is plain S-expressions, so miniKanren unifies against it directly. The system reasons about itself, relationally, in itself.
+The system includes a miniKanren relational programming engine — running in the browser (Hoot/WASM) and on the server (native Guile). Knowledge is plain S-expression tuples. miniKanren unifies against them directly. No ORM, no query language, no separate pattern matching engine. The system reasons about itself, relationally, in itself.
 
-Every relation is bidirectional. "Find events for resource X" and "find resources for event Y" are the same relation with different variables bound. You write it once and get both directions for free. Every relation produces proof traces — the chain of facts traversed to reach the conclusion. This is accountability for inference, the same way `^logger` is accountability for state transitions.
+Every relation is bidirectional. "What recipe produces bread?" and "what does recipe-bread produce?" are the same relation with different blanks. You write it once and get every direction for free. Transitive closure produces proof traces — the chain of facts traversed to reach the conclusion. This is accountability for inference, the same way `^logger` is accountability for state transitions.
 
 ### miniKanren — logic programming from scratch
 
@@ -368,27 +365,27 @@ Skills, documentation, and knowledge bases are views of the same relational prog
 
 ### Relational queries over ValueFlows
 
-`vf-relations.scm` layers miniKanren relations over the planner's ValueFlows records. The 20+ planning algorithms answer known questions fast; relations answer the questions you haven't thought of yet — without writing new code.
+The planner lifts ValueFlows records to plain fact tuples at session start, then queries them relationally. The same `recipe-o` relation that answers "what recipe produces bread?" also answers "what does recipe-bread produce?" — just fill in different blanks.
 
 ```scheme
-;; "Who provided resources to kr-1?"
-(query-who-provided events "kr-1")
-;; => (alice alice bob)
+;; "What recipe produces bread?"
+(run* (rid name) (recipe-o facts rid name "spec-bread"))
+;; => (("recipe-bread" "Bread Production"))
 
-;; "How do resources flow from Alice to Bob?" — with proof trace
-(query-resource-flow events "alice" "bob")
-;; => (((ev-1 use kr-1)) ((ev-2 use kr-1)))
+;; "What goes into the milling process?"
+(run* (spec qty unit action) (flow-o facts "rp-mill" 'input spec qty unit action))
+;; => (("spec-wheat" 10 "kg" consume))
 
-;; "What goes in and out of this process?"
-(query-process-io events "proc-pool")
-;; => ((inputs kr-1) (outputs ...))
+;; "Is there a feasible plan for 20 bread by tomorrow?"
+(run-plan 1 ns (plan) (demand-o ctx "spec-bread" 20 tomorrow plan))
+;; => ((produce "spec-bread" "recipe-bread" 1 ...))
 
-;; "What spec does this resource conform to?"
-(run* (name) (resource-spec-o resources specs "kr-1" name))
-;; => (API Key)
+;; "Give me ALL feasible plans"
+(run-plan* ns (plan) (demand-o ctx "spec-bread" 20 tomorrow plan))
+;; => ((produce ...) (purchase ...))
 ```
 
-The same `event-o` relation that answers "what events affect this resource?" also answers "what resources does this event affect?" — just bind different variables. No separate indexes, no separate functions. One relation, every direction.
+No separate indexes, no separate functions. One relation, every direction. `project` is used only for arithmetic (scaling, scheduling). Everything else is pure pattern matching.
 
 ## How to Run
 
