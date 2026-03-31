@@ -1,14 +1,14 @@
 ;;; planning-facts.scm — Lift VF records to plain tuples, query as relations
 ;;;
 ;;; The lift runs once at session start: records → tagged tuples.
-;;; Fact relations query tuples via in-list-o + unification. No project
-;;; needed for structural navigation — only for arithmetic.
+;;; Fact relations query tuples via in-list-o + unification.
 ;;;
 ;;; Fact shapes:
-;;;   (recipe RID NAME PRIMARY-OUTPUT)
-;;;   (chain  RID (PID1 PID2 ...))           ;; topo-sorted process chain
-;;;   (process PID NAME DURATION-MS)
-;;;   (flow PID DIRECTION SPEC-ID QTY UNIT ACTION)
+;;;   (recipe    RID NAME PRIMARY-OUTPUT)
+;;;   (chain     RID (PID1 PID2 ...))
+;;;   (process   PID NAME DURATION-MS)
+;;;   (flow      PID DIRECTION SPEC-ID QTY UNIT ACTION)
+;;;   (inventory RESOURCE-ID SPEC-ID QTY LOCATION)
 ;;;
 ;;; Assumes schemas.scm, propagation.scm, and kanren-planning.scm are loaded.
 
@@ -20,8 +20,9 @@
 
 ;;; ── Lift ──────────────────────────────────────────────────────────────────────
 
-(define (lift-planning-facts recipe-store)
-  "Extract all planning facts from a recipe-store actor as plain tuples."
+(define* (lift-planning-facts recipe-store #:optional (observer #f))
+  "Extract all planning facts from store actors as plain tuples.
+   If OBSERVER is provided, inventory resources are included."
   (let ((all-recipes ($ recipe-store 'all-recipes)))
     (append
       ;; Recipe facts
@@ -80,7 +81,19 @@
                                   ,(recipe-flow-action f)))
                          outputs))))
               chain)))
-        all-recipes))))
+        all-recipes)
+      ;; Inventory facts (if observer provided)
+      (if observer
+          (filter-map
+            (lambda (r)
+              (let ((qty (measure-qty (economic-resource-accounting-quantity r))))
+                (and (> qty 0)
+                     `(inventory ,(economic-resource-id r)
+                                ,(economic-resource-conforms-to r)
+                                ,(inexact->exact (round qty))
+                                ,(economic-resource-current-location r)))))
+            ($ observer 'all-resources))
+          '()))))
 
 
 ;;; ── Fact relations ────────────────────────────────────────────────────────────
@@ -100,6 +113,10 @@
 (define (flow-o facts pid direction spec-id qty unit action)
   "Relate a process to one of its flows."
   (in-list-o `(flow ,pid ,direction ,spec-id ,qty ,unit ,action) facts))
+
+(define (inventory-o facts resource-id spec-id qty location)
+  "Relate an inventory resource to its spec, quantity, and location."
+  (in-list-o `(inventory ,resource-id ,spec-id ,qty ,location) facts))
 
 
 ;;; ── Arithmetic helpers (pure Scheme, used inside project) ─────────────────────

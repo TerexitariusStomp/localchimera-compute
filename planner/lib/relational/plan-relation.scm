@@ -1,11 +1,10 @@
 ;;; plan-relation.scm — Relational planning orchestrator
 ;;;
-;;; Lifts VF records to plain tuples at session start, then searches
-;;; relationally. miniKanren's complete search replaces all backtracking.
+;;; Lifts all data (recipes + inventory) to plain tuples at session start,
+;;; then searches fully relationally. No netter, no project for allocation.
 
-(use-modules (playnet kanren-planning)
-             (srfi srfi-1)
-             (goblins utils hashmap))
+(use-modules (playnet kanren-constraints)
+             (srfi srfi-1))
 
 (define *epsilon-plan* 1e-9)
 
@@ -23,7 +22,7 @@
       (let ((rq (intent-resource-quantity i)))
         (and rq (> (measure-has-numerical-value rq) *epsilon-plan*)
              `((spec-id . ,(intent-resource-conforms-to i))
-               (quantity . ,(measure-has-numerical-value rq))
+               (quantity . ,(inexact->exact (round (measure-has-numerical-value rq))))
                (unit . ,(measure-has-unit rq))
                (due . ,(or (intent-due i) #f))
                (at-location . ,(intent-at-location i))))))
@@ -33,7 +32,7 @@
 ;;; ── all-demands-o ─────────────────────────────────────────────────────────────
 
 (define* (all-demands-o ctx demands plans #:key (max-depth 10))
-  "Solve demands simultaneously. Netter state threads through search."
+  "Solve demands simultaneously. CLP(FD) domains track allocations."
   (if (null? demands)
       (== plans '())
       (let* ((d (car demands))
@@ -54,9 +53,9 @@
 (define* (relational-plan n recipe-store plan-store observer
                           #:key (location-store #f) (plan-id "rp")
                                 (max-depth 10))
-  "Run the relational planner. Lifts facts, builds ctx, searches.
+  "Run the relational planner. Lifts all data, searches with CLP(FD).
    N = #f for all plans, N = 1 for first valid plan."
-  (let* ((facts (lift-planning-facts recipe-store))
+  (let* ((facts (lift-planning-facts recipe-store observer))
          (ctx (make-plan-ctx facts plan-store observer location-store plan-id)))
-    (run-plan n (empty-netter-state) (plan)
+    (run-plan n #f (plan)
       (plan-o ctx plan #:max-depth max-depth))))

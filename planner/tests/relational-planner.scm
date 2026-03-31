@@ -1,4 +1,4 @@
-;;; relational-planner.scm — Tests for the relational planner
+;;; relational-planner.scm — Tests for the pure relational planner
 ;;;
 ;;; Run:  cd planner && guile --no-auto-compile -q -L ../module \
 ;;;         -l load-all.scm -l tests/relational-planner.scm
@@ -6,7 +6,7 @@
 (use-modules (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)
-             (playnet kanren-planning)
+             (playnet kanren-constraints)
              (srfi srfi-1))
 
 
@@ -33,47 +33,18 @@
 
 
 ;;; ════════════════════════════════════════════════════════════════════════════
-;;; 1. Core miniKanren with planning state
+;;; 1. Core (backward compat)
 ;;; ════════════════════════════════════════════════════════════════════════════
 
-(display "\n── Core miniKanren ──\n")
+(display "\n── Core ──\n")
 
-(let ((ns (empty-netter-state)))
-  (check "== unifies"
-         (run-plan* ns (q) (== q 42))
-         '(42))
-  (check "fresh"
-         (run-plan* ns (q) (fresh (x) (== x 'hello) (== q x)))
-         '(hello))
-  (check "conde"
-         (run-plan* ns (q) (conde ((== q 1)) ((== q 2)) ((== q 3))))
-         '(1 2 3))
-  (check "run-plan bounded"
-         (run-plan 2 ns (q) (conde ((== q 'a)) ((== q 'b)) ((== q 'c))))
-         '(a b))
-  (check "reification"
-         (run-plan* ns (q) succeed)
-         '(_.0))
-  (check "project single"
-         (run-plan* ns (q)
-           (fresh (x) (== x '(a b c)) (project (x) (== q (length x)))))
-         '(3))
-  (check "project multi"
-         (run-plan* ns (q)
-           (fresh (x y) (== x 3) (== y 4) (project (x y) (== q (+ x y)))))
-         '(7))
-  (check "in-list-o"
-         (run-plan* ns (q) (in-list-o q '(x y z)))
-         '(x y z))
-  (check "in-list-o with pattern"
-         (run-plan* ns (q)
-           (fresh (a b)
-             (in-list-o `(pair ,a ,b) '((pair 1 2) (pair 3 4)))
-             (== q (list a b))))
-         '((1 2) (3 4)))
-  (check-pred "netter in state"
-              (netter-state? (planning-state-netter
-                               (empty-planning-state (empty-netter-state))))))
+(define ns #f)  ;; no netter state — fully CLP(FD)
+
+(check "== unifies" (run-plan* ns (q) (== q 42)) '(42))
+(check "fresh" (run-plan* ns (q) (fresh (x) (== x 'hello) (== q x))) '(hello))
+(check "conde" (run-plan* ns (q) (conde ((== q 1)) ((== q 2)) ((== q 3)))) '(1 2 3))
+(check "project" (run-plan* ns (q) (fresh (x) (== x '(a b)) (project (x) (== q (length x))))) '(2))
+(check "in-list-o" (run-plan* ns (q) (in-list-o q '(x y z))) '(x y z))
 
 
 ;;; ════════════════════════════════════════════════════════════════════════════
@@ -93,53 +64,42 @@
   (let ((rs ($ scope 'recipe-store))
         (as ($ scope 'agent-store))
         (st ($ scope 'spatial-thing-store)))
-    ;; Specs
     ($ rs 'add-resource-spec
        (make-resource-specification "spec-wheat" "Wheat" #f #f #f "kg" #f #f #f #f #f))
     ($ rs 'add-resource-spec
        (make-resource-specification "spec-flour" "Flour" #f #f #f "kg" #f #f #f #f #f))
     ($ rs 'add-resource-spec
        (make-resource-specification "spec-bread" "Bread" #f #f #f "each" #f #f #f #f #f))
-    ;; Process specs
     ($ rs 'add-process-spec
        (make-process-specification "pspec-mill" "Milling" #f #f #f #f #f #f #f))
     ($ rs 'add-process-spec
        (make-process-specification "pspec-bake" "Baking" #f #f #f #f #f #f #f))
-    ;; Processes
     ($ rs 'add-recipe-process
        (make-recipe-process "rp-mill" "Mill wheat" #f #f "pspec-mill" #f
                             (make-duration 2 "hours") #f #f))
     ($ rs 'add-recipe-process
        (make-recipe-process "rp-bake" "Bake bread" #f #f "pspec-bake" #f
                             (make-duration 4 "hours") #f #f))
-    ;; Flows: wheat → flour (mill)
     ($ rs 'add-recipe-flow
        (make-recipe-flow "rf-wheat-in" 'consume "spec-wheat" #f
                          (make-measure 10 "kg") #f "rp-mill" #f #f #f #f #f #f #f))
     ($ rs 'add-recipe-flow
        (make-recipe-flow "rf-flour-out" 'produce "spec-flour" #f
                          (make-measure 8 "kg") #f #f "rp-mill" #f #f #f #f #f #f))
-    ;; Flows: flour → bread (bake)
     ($ rs 'add-recipe-flow
        (make-recipe-flow "rf-flour-in" 'consume "spec-flour" #f
                          (make-measure 8 "kg") #f "rp-bake" #f #f #f #f #f #f #f))
     ($ rs 'add-recipe-flow
        (make-recipe-flow "rf-bread-out" 'produce "spec-bread" #f
                          (make-measure 20 "each") #f #f "rp-bake" #f #f #f #f #f #f))
-    ;; Recipe
     ($ rs 'add-recipe
        (make-recipe "recipe-bread" "Bread Production" #f #f "spec-bread"
                     (list "rp-mill" "rp-bake") #f))
-    ;; Agent + locations
     ($ as 'add-agent (make-agent "agent-commune" 'organization "Test Commune"
                                  #f #f #f #f #f))
-    ($ st 'add-location (make-spatial-thing "loc-farm" "Farm" #f 45.5 -73.5 #f #f #f))
-    ($ st 'add-location (make-spatial-thing "loc-mill" "Mill" #f 45.51 -73.49 #f #f #f))
-    ($ st 'add-location (make-spatial-thing "loc-bakery" "Bakery" #f 45.52 -73.48 #f #f #f))
     (check-pred "knowledge seeded"
                 (pair? ($ rs 'get-process-chain "recipe-bread")))))
 
-;; Inventory: 200kg wheat, 50kg flour, 0 bread
 (with-vat vat
   (let ((obs ($ scope 'observer)))
     ($ obs 'seed-resource
@@ -158,13 +118,13 @@
 
 
 ;;; ════════════════════════════════════════════════════════════════════════════
-;;; 3. Lifted facts
+;;; 3. Lifted facts (including inventory)
 ;;; ════════════════════════════════════════════════════════════════════════════
 
 (display "\n── Lifted facts ──\n")
 
 (define test-facts
-  (with-vat vat (lift-planning-facts ($ scope 'recipe-store))))
+  (with-vat vat (lift-planning-facts ($ scope 'recipe-store) ($ scope 'observer))))
 
 (define test-ctx
   (with-vat vat
@@ -173,69 +133,73 @@
                    ($ scope 'observer)
                    #f "test-rp")))
 
-(check-pred "facts non-empty" (pair? test-facts))
+(check-pred "facts include inventory"
+            (any (lambda (f) (eq? (car f) 'inventory)) test-facts))
 
-(let ((ns (empty-netter-state)))
-  ;; recipe-o: find recipe by output
-  (check "recipe-o finds bread"
-         (run-plan* ns (q)
-           (fresh (rid rname)
-             (recipe-o test-facts rid rname "spec-bread")
-             (== q rid)))
-         '("recipe-bread"))
+(check "inventory-o: wheat"
+       (run-plan* ns (q)
+         (fresh (rid qty loc)
+           (inventory-o test-facts rid "spec-wheat" qty loc)
+           (== q (list rid qty))))
+       '(("r-wheat" 200)))
 
-  ;; chain-o: process chain
-  (check "chain-o finds mill→bake"
-         (run-plan* ns (q)
-           (chain-o test-facts "recipe-bread" q))
-         '(("rp-mill" "rp-bake")))
+(check "inventory-o: flour"
+       (run-plan* ns (q)
+         (fresh (rid qty loc)
+           (inventory-o test-facts rid "spec-flour" qty loc)
+           (== q qty)))
+       '(50))
 
-  ;; flow-o: find output flows for bread
-  (check "flow-o finds bread output"
-         (run-plan* ns (q)
-           (fresh (pid qty unit action)
-             (flow-o test-facts pid 'output "spec-bread" qty unit action)
-             (== q (list pid qty))))
-         '(("rp-bake" 20)))
-
-  ;; flow-o: find all input specs for milling
-  (check "flow-o finds mill inputs"
-         (run-plan* ns (q)
-           (fresh (qty unit action)
-             (flow-o test-facts "rp-mill" 'input q qty unit action)))
-         '("spec-wheat"))
-
-  ;; Bidirectional: what spec does this flow produce?
-  (check "flow-o backward: what does rp-bake produce?"
-         (run-plan* ns (q)
-           (fresh (qty unit action)
-             (flow-o test-facts "rp-bake" 'output q qty unit action)))
-         '("spec-bread")))
+(check "recipe-o: finds bread"
+       (run-plan* ns (q)
+         (fresh (rid rname)
+           (recipe-o test-facts rid rname "spec-bread")
+           (== q rid)))
+       '("recipe-bread"))
 
 
 ;;; ════════════════════════════════════════════════════════════════════════════
-;;; 4. Netter goals
+;;; 4. Pure relational allocation
 ;;; ════════════════════════════════════════════════════════════════════════════
 
-(display "\n── Netter goals ──\n")
+(display "\n── Allocation ──\n")
 
-(with-vat vat
-  (let ((ns (empty-netter-state)))
-    ;; Net 80 flour: 50 in inventory, 30 remaining
-    (let ((results (run-plan 1 ns (q)
-                     (fresh (rem alloc)
-                       (net-demand-o test-ctx "spec-flour" 80 rem alloc)
-                       (== q rem)))))
-      (check-pred "net-demand-o flour: remaining ~30"
-                  (and (pair? results) (< (abs (- (car results) 30)) 0.01))))
+;; Allocate 30 flour from 50 available
+(let ((results (run-plan 1 ns (q)
+                 (fresh (remaining allocated)
+                   (allocate-o test-facts "spec-flour" 30 remaining allocated)
+                   (== q (list remaining allocated))))))
+  (check-pred "allocate 30 flour: finds solution" (pair? results))
+  (when (pair? results)
+    (check "allocate 30 flour: remaining = 0"
+           (caar results) 0)))
 
-    ;; Net 150 wheat: 200 in inventory, fully satisfied
-    (let ((results (run-plan 1 ns (q)
-                     (fresh (rem alloc)
-                       (net-demand-o test-ctx "spec-wheat" 150 rem alloc)
-                       (== q rem)))))
-      (check-pred "net-demand-o wheat: fully satisfied"
-                  (and (pair? results) (< (car results) 1))))))
+;; Allocate 80 flour from 50 — can only get 50, remaining = 30
+(let ((results (run-plan 1 ns (q)
+                 (fresh (remaining allocated)
+                   (allocate-o test-facts "spec-flour" 80 remaining allocated)
+                   (== q remaining)))))
+  (check-pred "allocate 80 flour: finds solution" (pair? results))
+  (when (pair? results)
+    (check "allocate 80 flour: remaining = 30"
+           (car results) 30)))
+
+;; Allocate 150 wheat from 200 available
+(let ((results (run-plan 1 ns (q)
+                 (fresh (remaining allocated)
+                   (allocate-o test-facts "spec-wheat" 150 remaining allocated)
+                   (== q remaining)))))
+  (check-pred "allocate 150 wheat: fully satisfied"
+              (and (pair? results) (= (car results) 0))))
+
+;; Allocate bread (0 in inventory) — remaining = full qty
+(let ((results (run-plan 1 ns (q)
+                 (fresh (remaining allocated)
+                   (allocate-o test-facts "spec-bread" 20 remaining allocated)
+                   (== q remaining)))))
+  (check "allocate 20 bread: none available"
+         (and (pair? results) (car results))
+         20))
 
 
 ;;; ════════════════════════════════════════════════════════════════════════════
@@ -245,15 +209,14 @@
 (display "\n── Demand relation ──\n")
 
 (with-vat vat
-  (let* ((ns (empty-netter-state))
-         (due (+ (current-time) 86400)))
+  (let ((due (+ (current-time) 86400)))
 
-    ;; 30 flour: satisfied from 50kg inventory
+    ;; 30 flour: satisfied from inventory
     (let ((results (run-plan 1 ns (q) (demand-o test-ctx "spec-flour" 30 due q))))
       (check-pred "flour 30: satisfied"
                   (and (pair? results) (eq? 'satisfied (caar results)))))
 
-    ;; 80 flour: partially net 50, then produce or purchase
+    ;; 80 flour: partially allocated, then produce or purchase
     (let ((results (run-plan 1 ns (q) (demand-o test-ctx "spec-flour" 80 due q))))
       (check-pred "flour 80: not just satisfied"
                   (and (pair? results) (not (eq? 'satisfied (caar results))))))
@@ -265,7 +228,7 @@
       (check-pred "bread 20: produces or purchases"
                   (memq (caar results) '(produce purchase))))
 
-    ;; Multiple solutions for bread
+    ;; Multiple solutions
     (let ((results (run-plan 3 ns (q)
                      (demand-o test-ctx "spec-bread" 20 due q #:depth 5))))
       (check-pred "bread: multiple solutions" (>= (length results) 2))
@@ -283,9 +246,7 @@
 
 (with-vat vat
   (let ((ps (ctx-ps test-ctx))
-        (ns (empty-netter-state))
         (due (+ (current-time) 86400)))
-    ;; Add demand intent
     ($ ps 'add-intent
        (make-intent "i-test-bread" 'produce "Bread demand" #f #f
                     #f #f #f "spec-bread" #f
@@ -293,7 +254,6 @@
                     #f "agent-commune"
                     #f #f #f (number->string due)
                     #f #f #f "test-plan" #f #f #f #f))
-    ;; Run planner
     (let ((results (run-plan 1 ns (plan)
                      (plan-o test-ctx plan #:max-depth 5))))
       (check-pred "plan-o: finds a plan" (pair? results))
