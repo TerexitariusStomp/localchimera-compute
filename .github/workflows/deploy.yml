@@ -44,7 +44,7 @@ jobs:
           rsync -avz --delete \
             --exclude '.git' --exclude 'node_modules' \
             -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes" \
-            ./ deploy@SERVER_IP:/tmp/playnet-deploy/
+            ./ deploy@SERVER_IP:/var/tmp/playnet-deploy/
 
       - name: Deploy via remote reconfigure
         run: |
@@ -57,10 +57,10 @@ jobs:
             -o ServerAliveCountMax=60 \
             deploy@SERVER_IP \
             'sudo guix time-machine \
-              -C /tmp/playnet-deploy/deploy/guix/channels.scm \
+              -C /var/tmp/playnet-deploy/deploy/guix/channels.scm \
               -- system reconfigure \
-              -L /tmp/playnet-deploy/deploy/guix \
-              /tmp/playnet-deploy/deploy/guix/system.scm \
+              -L /var/tmp/playnet-deploy/deploy/guix \
+              /var/tmp/playnet-deploy/deploy/guix/system.scm \
               --verbosity=2'
         timeout-minutes: 90
 

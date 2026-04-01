@@ -2565,7 +2565,9 @@
                           ((id . "cb4") (output-of . "bake") (resource-conforms-to . "bread") (action . produce) (qty . 90) (unit . "loaves"))))))
 
 (define *fed-selected* "")
-(define *fed-mode* 'plan)  ;; 'plan or 'observe
+(define *fed-mode* 'plan)     ;; 'plan or 'observe
+(define *fed-flow-ctx* #f)    ;; selected flow context for event recorder
+(define *fed-recorded* '())   ;; list of recorded events
 
 (define (render-federation-view)
   "Render the federation planning page with sample data."
@@ -2587,8 +2589,14 @@
                        (refresh!))
    #:on-mode-change (lambda (new-mode)
                       (set! *fed-mode* new-mode)
+                      (set! *fed-flow-ctx* #f)
                       (refresh!))
+   #:on-card-click (lambda (ctx)
+                     (set! *fed-flow-ctx* ctx)
+                     (refresh!))
    #:mode *fed-mode*
+   #:flow-ctx *fed-flow-ctx*
+   #:recorded-events *fed-recorded*
    #:processes-by-scope *fed-processes*
    #:commitments-by-scope *fed-commitments*
    #:svg-width 1100

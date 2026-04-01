@@ -233,13 +233,13 @@
         ;; recommended = TOG - NFP = 400 - 80 = 320
         (check-pred "signal qty" (approx= 320 (replenishment-signal-recommended-qty signal) 1)))
 
-      ;; Excess zone NFP → minimal signal
+      ;; Excess zone NFP → no signal (NFP > TOY means no replenishment needed)
       (let* ((fake-nfp `((nfp . 500) (onhand . 500) (onorder . 0)
                          (qualified-demand . 0) (zone . excess) (priority . 1.25)))
              (signal (generate-replenishment-signal
                        "spec-wheat" fake-nfp bz
                        (iso-datetime->epoch "2026-03-30T00:00:00Z"))))
-        (check-pred "excess signal generated" (replenishment-signal? signal))))))
+        (check-pred "excess zone: no signal needed" (not signal))))))
 
 
 ;;; ════════════════════════════════════════════════════════════════════════════

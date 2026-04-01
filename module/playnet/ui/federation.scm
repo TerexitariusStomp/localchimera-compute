@@ -709,6 +709,8 @@
                                    (buffer-zones '()) (spec-names '())
                                    (resources '()) (demand-intents '())
                                    (mode 'plan) on-mode-change
+                                   (flow-ctx #f) on-card-click
+                                   (recorded-events '())
                                    (class ""))
   "Right sidebar showing scope signals, deficits, surplus, trades, network, demands, and metrics.
    RESULT: alist with 'deficits, 'surplus, etc.
@@ -796,7 +798,63 @@
                    ,(string-append "NETWORK  " scope-id))
                  ,(scope-network-diagram processes commitments
                                          #:buffer-zones buffer-zones
-                                         #:spec-names spec-names)))
+                                         #:spec-names spec-names
+                                         #:mode mode
+                                         #:on-card-click on-card-click)))
+             '())
+
+       ;; Inline event recorder (appears when a card is clicked in observe mode)
+       ,@(if (and flow-ctx (eq? mode 'observe))
+             (let* ((proc-name (alist-ref flow-ctx 'proc-name ""))
+                    (act (alist-ref flow-ctx 'action 'consume))
+                    (spec-name (alist-ref flow-ctx 'spec-name ""))
+                    (planned-qty (alist-ref flow-ctx 'planned-qty 0))
+                    (unit (alist-ref flow-ctx 'unit ""))
+                    (is-work (alist-ref flow-ctx 'is-work #f))
+                    (fulfilled-qty (fold (lambda (ev sum)
+                                          (+ sum (alist-ref ev 'qty 0)))
+                                        0 recorded-events))
+                    (pct (if (> planned-qty 0) (min 100 (* (/ fulfilled-qty planned-qty) 100)) 0))
+                    (act-color (cond ((eq? act 'work) "#9f7aea")
+                                    ((eq? act 'produce) "#38a169")
+                                    (else "#e53e3e"))))
+               `((div (@ (class "panel-section recorder-section"))
+                   ;; Breadcrumb
+                   (div (@ (class "rec-header"))
+                     (div (@ (class "rec-breadcrumb"))
+                       (span (@ (class "rec-proc")) ,proc-name)
+                       (span (@ (class "rec-sep")) "\u203a")
+                       (span (@ (class "rec-action") (style ,(string-append "color:" act-color)))
+                         ,(symbol->string act))
+                       (span (@ (class "rec-sep")) "\u203a")
+                       (span (@ (class "rec-spec")) ,spec-name)))
+                   ;; Progress bar
+                   ,@(if (> planned-qty 0)
+                         (let ((fill-color (cond ((>= pct 100) "#38a169") ((>= pct 50) "#d69e2e") (else "#e53e3e"))))
+                           `((div (@ (class "rec-progress"))
+                               (div (@ (class "rec-track"))
+                                 (div (@ (class "rec-fill")
+                                         (style ,(string-append "width:" (n->s pct) "%;background:" fill-color)))))
+                               (span (@ (class "rec-pct-label"))
+                                 ,(string-append (n->s fulfilled-qty) " / "
+                                                 (n->s planned-qty) " " unit
+                                                 " (" (n->s (round pct)) "%)")))))
+                         '())
+                   ;; Past events
+                   ,@(if (not (null? recorded-events))
+                         `((div (@ (class "rec-past"))
+                             (div (@ (class "rec-past-header"))
+                               ,(string-append "Past events (" (number->string (length recorded-events)) ")"))
+                             ,@(map (lambda (ev)
+                                      `(div (@ (class "rec-past-row"))
+                                         (span (@ (class "rec-past-qty"))
+                                           ,(string-append (n->s (alist-ref ev 'qty 0)) " " unit))
+                                         ,@(if (alist-ref ev 'note #f)
+                                               `((span (@ (class "rec-past-note"))
+                                                   ,(alist-ref ev 'note)))
+                                               '())))
+                                    recorded-events)))
+                         '()))))
              '())
 
        ;; Demands band
@@ -861,8 +919,8 @@
                                 (events '()) (resources-by-scope '())
                                 (buffers-by-scope '()) (spec-names '())
                                 (processes-by-scope '()) (commitments-by-scope '())
-                                (selected "") on-select on-close-detail on-mode-change
-                                (mode 'plan)
+                                (selected "") on-select on-close-detail on-mode-change on-card-click
+                                (mode 'plan) (flow-ctx #f) (recorded-events '())
                                 (svg-width 1100) (svg-height 720)
                                 (class ""))
   "Compose the full federation planning page.
@@ -902,7 +960,10 @@
                                                     (if r (cdr r) '()))
                                       #:demand-intents (alist-ref sel-result-data 'demand-intents '())
                                       #:mode mode
-                                      #:on-mode-change on-mode-change))
+                                      #:on-mode-change on-mode-change
+                                      #:flow-ctx flow-ctx
+                                      #:on-card-click on-card-click
+                                      #:recorded-events recorded-events))
                '()))
        ;; Bottom inventory band
        ,(inventory-band resources-by-scope spec-names

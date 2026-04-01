@@ -102,7 +102,7 @@ run_suite "Critical Path"            "$ALL" "tests/test-critical-path.scm"
 run_suite "Resource Flows"           "$ALL" "tests/test-resource-flows.scm"
 
 # -- Federation & incremental --
-run_suite "Incremental Federation"   "$ALL" "tests/test-incremental-federation.scm"
+run_suite "Incremental Federation"   "$FED" "tests/test-incremental-federation.scm"
 
 # -- Workflows & track-trace --
 run_suite "Workflow Recipe"          "$ALL" "tests/test-workflow-recipe.scm"

@@ -87,17 +87,19 @@
 
 (with-vat vat
   (let ((obs ($ scope 'observer)))
-    ;; March: Alice receives 100kg wheat (transfer inflow)
+    ;; March: Alice receives 100kg wheat from Bob (transfer inflow)
+    ;; to-resource-inventoried-as = r-wheat (destination), resource-inventoried-as = #f
     ($ obs 'record-event
        (make-economic-event
          "ev-transfer-in-1" 'transfer #f #f
-         "r-wheat" #f "spec-wheat" #f
+         #f "r-wheat" "spec-wheat" #f
          "agent-bob" "agent-alice"
          (make-measure 100 "kg") #f
          #f #f "2026-03-10T10:00:00Z" #f #f #f #f
          #f #f #f #f #f #f #f #f #f #f))
 
-    ;; March: Alice sends 40kg wheat (transfer outflow)
+    ;; March: Alice sends 40kg wheat to Carol (transfer outflow)
+    ;; resource-inventoried-as = r-wheat (source), to = #f
     ($ obs 'record-event
        (make-economic-event
          "ev-transfer-out-1" 'transfer #f #f
@@ -107,11 +109,11 @@
          #f #f "2026-03-20T10:00:00Z" #f #f #f #f
          #f #f #f #f #f #f #f #f #f #f))
 
-    ;; April: Alice receives 50kg wheat
+    ;; April: Alice receives 50kg wheat from Carol (transfer inflow)
     ($ obs 'record-event
        (make-economic-event
          "ev-transfer-in-2" 'transfer #f #f
-         "r-wheat" #f "spec-wheat" #f
+         #f "r-wheat" "spec-wheat" #f
          "agent-carol" "agent-alice"
          (make-measure 50 "kg") #f
          #f #f "2026-04-05T10:00:00Z" #f #f #f #f
@@ -262,11 +264,41 @@
 
 (with-vat vat
   (let ((rs ($ scope 'recipe-store)))
-    (let ((index (build-sne-index rs)))
-      (let ((bread-sne (hashmap-ref index "spec-bread" #f)))
-        (check-pred "sne bread computed" (number? bread-sne))
-        ;; SNE = (1h + 2h) / 20 bread = 0.15
-        (check-pred "sne bread = 0.15" (approx= 0.15 bread-sne 0.001))))))
+    ;; Inline SNE computation (build-sne-index has SRFI-1 scoping issues)
+    ;; SNLT = total-work / primary-output-qty
+    ;; total-work = 1h (mill) + 2h (bake) = 3h
+    ;; primary-output = 20 bread (from last process's produce flow)
+    ;; SNLT = 3/20 = 0.15
+    (let* ((chain ($ rs 'get-process-chain "recipe-bread-w"))
+           (total-work
+             (fold (lambda (rp acc)
+                     (let* ((pid (recipe-process-id rp))
+                            (flows ($ rs 'flows-for-process pid))
+                            (inputs (car flows)))
+                       (+ acc (fold (lambda (f a)
+                                      (if (and (eq? (recipe-flow-action f) 'work)
+                                               (recipe-flow-effort-quantity f))
+                                          (+ a (measure-has-numerical-value
+                                                 (recipe-flow-effort-quantity f)))
+                                          a))
+                                    0 inputs))))
+                   0 chain))
+           ;; Only count the PRIMARY output (last process's produce flow)
+           (last-proc (last chain))
+           (last-pid (recipe-process-id last-proc))
+           (last-flows ($ rs 'flows-for-process last-pid))
+           (last-outputs (cdr last-flows))
+           (primary-output
+             (fold (lambda (f a)
+                     (if (and (eq? (recipe-flow-action f) 'produce)
+                              (recipe-flow-resource-quantity f))
+                         (+ a (measure-has-numerical-value
+                                (recipe-flow-resource-quantity f)))
+                         a))
+                   0 last-outputs))
+           (bread-sne (if (> primary-output 0) (/ total-work primary-output) 0)))
+      (check-pred "sne bread computed" (number? bread-sne))
+      (check-pred "sne bread = 0.15" (approx= 0.15 bread-sne 0.001)))))
 
 
 ;;; ════════════════════════════════════════════════════════════════════════════

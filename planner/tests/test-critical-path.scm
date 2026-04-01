@@ -15,7 +15,7 @@
 (use-modules (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)
-             (playnet kanren-planning)
+             (playnet kanren-constraints)
              (srfi srfi-1))
 
 
@@ -87,7 +87,7 @@
     ($ rs 'add-process-spec
        (make-process-specification "pspec-fast" "Fast Path" #f #f #f #f #f #f #f))
     ($ rs 'add-process-spec
-       (make-process-specification "pspec-end" "End" #f #f #f #f #f #f #f #f))
+       (make-process-specification "pspec-end" "End" #f #f #f #f #f #f #f))
 
     ;; Recipe processes: A(1h) → B(5h)/C(2h) → D(1h)
     ($ rs 'add-recipe-process

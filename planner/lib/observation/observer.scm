@@ -737,7 +737,13 @@
         (economic-resource-custodian-scope r)
         (economic-resource-stage r) (economic-resource-state r)
         (economic-resource-contained-in r) (economic-resource-unit-of-effort r)
-        (economic-resource-lot r) (economic-resource-previous-event r)
+        (let ((lot (economic-resource-lot r)))
+          (if (and lot (batch-lot-record? lot))
+              (list (batch-lot-record-id lot)
+                    (batch-lot-record-batch-lot-code lot)
+                    (batch-lot-record-expiration-date lot))
+              lot))
+        (economic-resource-previous-event r)
         (economic-resource-availability-window r)))
 
 (define (list->economic-resource lst)
@@ -749,7 +755,11 @@
        id name note image tracking conforms-to classified-as
        (dm acct-qty) (dm onhand-qty)
        location virt-loc accountable custodian
-       stage state contained-in uoe lot prev-event avail-window))))
+       stage state contained-in uoe
+       (if (and lot (pair? lot))
+           (apply make-batch-lot-record lot)
+           lot)
+       prev-event avail-window))))
 
 (define (fulfillment-state->list fs)
   (list (fulfillment-state-commitment-id fs)
@@ -800,15 +810,22 @@
         (serialize-hashmap (os-events-by-id st) economic-event->list)
         (os-idx-by-spec st)
         (os-agreements st)        ;; alists — already serializable
-        (os-batches st)           ;; empty for now
-        (os-resource-batches st)));; empty for now
+        (serialize-hashmap (os-batches st)
+          (lambda (b)
+            (list (batch-lot-record-id b)
+                  (batch-lot-record-batch-lot-code b)
+                  (batch-lot-record-expiration-date b))))
+        (os-resource-batches st)));; list of batch-ids — already serializable
 
 (define (deserialize-observer-state data)
   (match data
     ((sevents sresources sfulfillments ssatisfactions sclaim-states
       sibr sibp siba sibact sebi sibs . rest)
      (let ((sagr (if (pair? rest) (car rest) (hashmap)))
-           (sbat (if (and (pair? rest) (pair? (cdr rest))) (cadr rest) (hashmap)))
+           (sbat (if (and (pair? rest) (pair? (cdr rest)))
+                     (deserialize-hashmap (cadr rest)
+                       (lambda (lst) (apply make-batch-lot-record lst)))
+                     (hashmap)))
            (srb  (if (and (pair? rest) (pair? (cdr rest)) (pair? (cddr rest)))
                      (caddr rest) (hashmap))))
        (make-observer-state

@@ -92,11 +92,11 @@
 
     ;; Finished wheat demand (should be excluded from open queries)
     ($ ps 'add-intent
-       (make-intent "i-wheat-finished" 'consume "Finished demand" #f #t
+       (make-intent "i-wheat-finished" 'consume "Finished demand" #f #f
                     "proc-3" #f #f "spec-wheat" #f
                     (make-measure 200 "kg") #f #f #f
                     #f "agent-a" #f #f #f "2026-04-01T00:00:00Z"
-                    #f #f #f "plan-idx" #f #f #f #f))
+                    #f #f #f "plan-idx" #f #f #t #f))
 
     ;; Query open demands by spec
     (let* ((all-intents ($ ps 'all-intents))
@@ -192,15 +192,19 @@
   (let ((ps ($ scope 'plan-store)))
     ;; Add process-bound commitments
     ($ ps 'add-commitment
-       (make-commitment "c-idx-1" 'consume "proc-mill" #f
-                        "spec-wheat" #f
+       (make-commitment "c-idx-1" 'consume #f "proc-mill" #f
+                        #f "spec-wheat" #f
                         (make-measure 100 "kg") #f
-                        "agent-a" "agent-b" #f #f #f #f #f "plan-idx" #f #f #f #f))
+                        "agent-a" "agent-b"
+                        #f #f #f #f #f #f #f #f #f
+                        #f #f #f "plan-idx" #f #f))
     ($ ps 'add-commitment
-       (make-commitment "c-idx-2" 'produce #f "proc-mill"
-                        "spec-flour" #f
+       (make-commitment "c-idx-2" 'produce #f #f "proc-mill"
+                        #f "spec-flour" #f
                         (make-measure 80 "kg") #f
-                        "agent-a" "agent-b" #f #f #f #f #f "plan-idx" #f #f #f #f))
+                        "agent-a" "agent-b"
+                        #f #f #f #f #f #f #f #f #f
+                        #f #f #f "plan-idx" #f #f))
 
     ;; All commitments
     (let ((all-c ($ ps 'all-commitments)))

@@ -15,7 +15,7 @@
 (use-modules (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)
-             (playnet kanren-planning)
+             (playnet kanren-constraints)
              (srfi srfi-1))
 
 

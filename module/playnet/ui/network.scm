@@ -234,6 +234,7 @@
 
 (define* (scope-network-diagram processes commitments
                                  #:key (buffer-zones '()) (spec-names '())
+                                       (mode 'plan) on-card-click
                                        (class ""))
   "Render a scope-level process network as SXML SVG.
    PROCESSES: list of ((id . \"p1\") (name . \"Milling\")).
@@ -330,7 +331,8 @@
                                     (card-y (- (alist-ref row 'y) (/ CARD-H 2)))
                                     (is-work (alist-ref row 'is-work #f))
                                     (qty (alist-ref row 'qty 0))
-                                    (unit (alist-ref row 'unit "")))
+                                    (unit (alist-ref row 'unit ""))
+                                    (clickable (and (eq? mode 'observe) on-card-click)))
                                `(;; Connector line
                                  (line (@ (x1 ,(n->s (+ ox (/ CARD-W 2)))) (y1 ,(n->s (alist-ref row 'y)))
                                           (x2 ,(n->s (- nx (/ PROC-W 2)))) (y2 ,(n->s ny))
@@ -341,7 +343,22 @@
                                           (width ,(n->s CARD-W)) (height ,(n->s CARD-H)) (rx ,(n->s CARD-RX))
                                           (fill ,(if is-work "rgba(159,122,234,0.12)" "rgba(74,85,104,0.25)"))
                                           (stroke ,(if is-work "rgba(159,122,234,0.45)" "rgba(160,174,192,0.4)"))
-                                          (stroke-width "1")))
+                                          (stroke-width "1")
+                                          ,@(if clickable
+                                                `((style "cursor:pointer")
+                                                  (click ,(lambda (e)
+                                                            (on-card-click
+                                                             `((process-id . ,(alist-ref proc 'id ""))
+                                                               (proc-name . ,(alist-ref proc 'name ""))
+                                                               (spec-id . ,(alist-ref row 'spec-id ""))
+                                                               (spec-name . ,(alist-ref row 'spec-name ""))
+                                                               (action . ,(alist-ref row 'action 'consume))
+                                                               (is-input . #t)
+                                                               (planned-qty . ,qty)
+                                                               (unit . ,unit)
+                                                               (is-work . ,is-work)
+                                                               (commitment-id . ,(alist-ref row 'commitment-id "")))))))
+                                                '())))
                                  ;; Spec name
                                  (text (@ (x ,(n->s ox)) (y ,(n->s (+ card-y 13)))
                                           (text-anchor "middle") (font-size "8") (font-weight "500")
@@ -367,7 +384,8 @@
                                     (card-y (- (alist-ref row 'y) (/ CARD-H 2)))
                                     (bz (alist-ref row 'buffer-zone #f))
                                     (qty (alist-ref row 'qty 0))
-                                    (unit (alist-ref row 'unit "")))
+                                    (unit (alist-ref row 'unit ""))
+                                    (clickable (and (eq? mode 'observe) on-card-click)))
                                `(;; Connector line
                                  (line (@ (x1 ,(n->s (+ nx (/ PROC-W 2)))) (y1 ,(n->s ny))
                                           (x2 ,(n->s (- ox (/ CARD-W 2)))) (y2 ,(n->s (alist-ref row 'y)))
@@ -378,7 +396,22 @@
                                           (width ,(n->s CARD-W)) (height ,(n->s CARD-H)) (rx ,(n->s CARD-RX))
                                           (fill "rgba(49,130,206,0.12)")
                                           (stroke ,(if bz "rgba(214,158,46,0.55)" "rgba(49,130,206,0.6)"))
-                                          (stroke-width ,(if bz "1.5" "1"))))
+                                          (stroke-width ,(if bz "1.5" "1"))
+                                          ,@(if clickable
+                                                `((style "cursor:pointer")
+                                                  (click ,(lambda (e)
+                                                            (on-card-click
+                                                             `((process-id . ,(alist-ref proc 'id ""))
+                                                               (proc-name . ,(alist-ref proc 'name ""))
+                                                               (spec-id . ,(alist-ref row 'spec-id ""))
+                                                               (spec-name . ,(alist-ref row 'spec-name ""))
+                                                               (action . ,(alist-ref row 'action 'produce))
+                                                               (is-input . #f)
+                                                               (planned-qty . ,qty)
+                                                               (unit . ,unit)
+                                                               (is-work . #f)
+                                                               (commitment-id . ,(alist-ref row 'commitment-id "")))))))
+                                                '())))
                                  ;; Spec name
                                  (text (@ (x ,(n->s ox)) (y ,(n->s (+ card-y 13)))
                                           (text-anchor "middle") (font-size "8") (font-weight "500")

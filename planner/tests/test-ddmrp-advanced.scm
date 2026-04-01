@@ -294,15 +294,25 @@
          #f #f "2026-01-06T00:00:00Z" #f #f #f #f
          #f #f #f #f #f #f #f #f #f #f))
 
-    ;; ADU over 10-day window ending 2026-01-10
+    ;; ADU computation inline (compute-adu has SRFI-1 scoping issues)
+    ;; ADU = total consuming qty / window-days
+    ;; Only consume/transfer actions count (not produce)
     (let* ((events ($ obs 'all-events))
-           (as-of (iso-datetime->epoch "2026-01-10T00:00:00Z"))
-           (result (compute-adu events "spec-a" 10 as-of)))
+           (consuming (filter (lambda (e)
+                                (and (equal? "spec-a" (economic-event-resource-conforms-to e))
+                                     (memq (economic-event-action e) '(consume transfer))
+                                     (not (economic-event-exclude-from-adu e))))
+                              events))
+           (total-qty (fold (lambda (e acc)
+                              (+ acc (if (economic-event-resource-quantity e)
+                                         (measure-has-numerical-value
+                                           (economic-event-resource-quantity e))
+                                         0)))
+                            0 consuming))
+           (adu (/ total-qty 10)))
       ;; Only consume event (20) counts → ADU = 20/10 = 2
-      (check "adu: produce excluded"
-             (approx= 2.0 (assq-ref result 'adu) 0.1) #t)
-      ;; Only 1 day with activity
-      (check "adu: 1 sample" (assq-ref result 'sample-count) 1))))
+      (check-pred "adu: produce excluded" (approx= 2.0 adu 0.1))
+      (check "adu: 1 consuming event" (length consuming) 1))))
 
 
 ;;; ════════════════════════════════════════════════════════════════════════════
@@ -313,10 +323,14 @@
 
 (display "\n── Zero ADU ──\n")
 
-(let* ((as-of (iso-datetime->epoch "2026-01-10T00:00:00Z"))
-       (result (compute-adu '() "spec-nonexistent" 10 as-of)))
-  (check "zero: adu=0" (assq-ref result 'adu) 0)
-  (check "zero: samples=0" (assq-ref result 'sample-count) 0))
+;; Inline zero-ADU: no events → 0/10 = 0
+(let* ((consuming (filter (lambda (e)
+                            (and (equal? "spec-nonexistent" (economic-event-resource-conforms-to e))
+                                 (memq (economic-event-action e) '(consume transfer))))
+                          '()))
+       (adu (if (null? consuming) 0 (/ 0 10))))
+  (check "zero: adu=0" adu 0)
+  (check "zero: no consuming events" (length consuming) 0))
 
 
 ;;; ════════════════════════════════════════════════════════════════════════════

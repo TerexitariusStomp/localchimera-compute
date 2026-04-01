@@ -14,7 +14,7 @@
 (use-modules (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)
-             (playnet kanren-planning)
+             (playnet kanren-constraints)
              (srfi srfi-1))
 
 ;;; ── Harness ────────────────────────────────────────────────────────────────
@@ -59,11 +59,11 @@
     ($ st 'add-location
        (make-spatial-thing "loc-country" "Country" #f 48.0 2.0 #f #f #f))
     ($ st 'add-location
-       (make-spatial-thing "loc-region" "Region" #f #f #f #f "loc-country" #f))
+       (make-spatial-thing "loc-region" "Region" #f #f #f #f #f "loc-country"))
     ($ st 'add-location
-       (make-spatial-thing "loc-city" "City" #f 48.85 2.35 #f "loc-region" #f))
+       (make-spatial-thing "loc-city" "City" #f 48.85 2.35 #f #f "loc-region"))
     ($ st 'add-location
-       (make-spatial-thing "loc-warehouse" "Warehouse" #f #f #f #f "loc-city" #f))
+       (make-spatial-thing "loc-warehouse" "Warehouse" #f #f #f #f #f "loc-city"))
     ($ st 'add-location
        (make-spatial-thing "loc-farm" "Farm" #f 45.5 -73.5 #f #f #f))
     ($ st 'add-location

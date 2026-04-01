@@ -1,7 +1,8 @@
 ;;; deploy/guix/machines.scm — guix deploy target machines
 ;;;
 ;;; Usage (from project root):
-;;;   guix deploy deploy/guix/machines.scm
+;;;   guix time-machine -C deploy/guix/channels.scm \
+;;;     -- deploy -L deploy/guix deploy/guix/machines.scm
 ;;;
 ;;; The server was bootstrapped with bootstrap-hetzner.sh (EFI/x86_64).
 ;;; Now managed via managed-host-environment-type per Guix manual §11.17.

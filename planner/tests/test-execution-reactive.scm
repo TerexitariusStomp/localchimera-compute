@@ -189,23 +189,24 @@
 
 (with-vat vat
   (let ((als ($ scope 'alert-store)))
-    ;; Record alerts for zone transitions
-    ($ als 'add-alert
-       (make-alert "alert-yellow" "spec-wheat" 'buffer-zone-change
-                   "Buffer entered yellow zone" 'warning
-                   "2026-03-28T08:00:00Z" #f))
-    ($ als 'add-alert
-       (make-alert "alert-red" "spec-wheat" 'buffer-zone-change
-                   "Buffer entered red zone" 'critical
-                   "2026-03-29T08:00:00Z" #f))
+    ;; Alerts are alists with 'kind discriminator
+    ($ als 'push-alert
+       `((kind . buffer-status) (spec-id . "spec-wheat")
+         (zone . yellow) (timestamp . "2026-03-28T08:00:00Z")))
+    ($ als 'push-alert
+       `((kind . buffer-status) (spec-id . "spec-wheat")
+         (zone . red) (timestamp . "2026-03-29T08:00:00Z")))
 
-    (check "2 alerts" (length ($ als 'all-alerts)) 2)
+    (check "2 alerts" ($ als 'alert-count) 2)
 
-    ;; Filter by severity
-    (let ((critical (filter (lambda (a) (eq? 'critical (alert-severity a)))
-                            ($ als 'all-alerts))))
-      (check "1 critical" (length critical) 1)
-      (check "critical spec" (alert-spec-id (car critical)) "spec-wheat"))))
+    ;; Filter by kind
+    (let ((buffer-alerts ($ als 'of-kind 'buffer-status)))
+      (check "2 buffer alerts" (length buffer-alerts) 2))
+
+    ;; Filter by spec
+    (let ((wheat-alerts ($ als 'for-spec "spec-wheat")))
+      (check "2 wheat alerts" (length wheat-alerts) 2)
+      (check "alert spec" (assq-ref (car wheat-alerts) 'spec-id) "spec-wheat"))))
 
 
 ;;; ════════════════════════════════════════════════════════════════════════════
