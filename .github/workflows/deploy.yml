@@ -52,14 +52,15 @@ jobs:
           # Run guix system reconfigure ON the server to avoid guile-ssh
           # connection drops. guix deploy uses guile-ssh which has no
           # keepalive support and dies when sshd restarts during activation.
+          #
+          # Note: guix time-machine uses bwrap isolation and cannot see
+          # /var/tmp — use the server's installed guix directly instead.
           ssh -i ~/.ssh/deploy_key \
             -o StrictHostKeyChecking=yes \
             -o ServerAliveInterval=10 \
             -o ServerAliveCountMax=60 \
             deploy@SERVER_IP \
-            'sudo guix time-machine \
-              -C /var/tmp/playnet-deploy/deploy/guix/channels.scm \
-              -- system reconfigure \
+            'sudo guix system reconfigure \
               -L /var/tmp/playnet-deploy/deploy/guix \
               /var/tmp/playnet-deploy/deploy/guix/system.scm \
               --verbosity=2'
