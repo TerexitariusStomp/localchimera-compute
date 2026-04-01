@@ -64,11 +64,14 @@ test-relational:
 	cd planner && $(TIME_MACHINE) shell guile-next guile-goblins -- \
 	  guile --no-auto-compile -q -L ../module -l load-all.scm -l tests/relational-planner.scm
 
+test-netlayer:
+	$(GUILE_TEST) -L module tests/test-netlayer-substitute.scm
+
 test-browser:
 	$(TIME_MACHINE) shell -m deploy/guix/browser-test-manifest.scm -- \
 	  sh tests/ux-test.sh
 
-test-all: test-gplay test-knowledge test-governed test-signatures test-wisp test-endorsement test-persistence test-planner test-relational
+test-all: test-gplay test-knowledge test-governed test-signatures test-wisp test-endorsement test-persistence test-netlayer test-planner test-relational
 
 clean:
 	rm -f browser/repl.wasm

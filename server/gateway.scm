@@ -2,18 +2,21 @@
 !#
 ;;; server/gateway.scm — OCapN gateway for playnet
 ;;;
-;;; Replaces relay.scm.  Spawns a Goblins mycapn listening on both
-;;; WebSocket and Reticulum, registers a ^lobby actor, and prints
-;;; the sturdyref URI.  Browser and mesh clients enliven this
-;;; sturdyref to get capability-secured access to all services.
+;;; Replaces relay.scm.  Spawns a Goblins mycapn listening on
+;;; WebSocket (always) and Reticulum (optional, when configured).
+;;; Registers a ^lobby actor, and prints the sturdyref URI.
+;;; Browser and mesh clients enliven this sturdyref to get
+;;; capability-secured access to all services.
 ;;;
 ;;; Usage:
-;;;   guile -L module -L key-pool server/gateway.scm [--port PORT]
+;;;   guile -L module -L key-pool server/gateway.scm [--port PORT] [--reticulum]
 ;;;
 ;;; Environment:
 ;;;   API_KEYS      — comma-separated API keys (fallback: OPENROUTER_KEYS)
 ;;;   API_PROVIDER  — provider name: openrouter, openai, or generic (default: openrouter)
 ;;;   PLAYNET_DATA_DIR — persistent state dir (default /var/lib/playnet)
+;;;   RETICULUM_BRIDGE_SOCKET — path to reticulum-bridge control socket
+;;;                             (enables Reticulum netlayer; overrides default path)
 
 (use-modules (fibers)
              (fibers conditions)
@@ -83,20 +86,45 @@
 ;;; ── Parse arguments ────────────────────────────────────────────────────────
 
 (define (parse-args args)
+  "Parse command-line arguments.  Returns (values port reticulum?)."
   (let loop ((args (cdr args))  ;; skip program name
-             (port 9090))
+             (port 9090)
+             (reticulum? #f))
     (match args
-      (() port)
+      (() (values port reticulum?))
       (("--port" p . rest)
-       (loop rest (string->number p)))
+       (loop rest (string->number p) reticulum?))
+      (("--reticulum" . rest)
+       (loop rest port #t))
       ((p . rest)
        (let ((n (string->number p)))
-         (if n (loop rest n) (loop rest port)))))))
+         (if n (loop rest n reticulum?) (loop rest port reticulum?)))))))
 
 ;;; ── Main ───────────────────────────────────────────────────────────────────
 
 (define (main args)
-  (let ((ws-port (parse-args args)))
+  (define-values (ws-port reticulum-flag?) (parse-args args))
+
+  ;; Reticulum is enabled if --reticulum flag was passed OR if
+  ;; RETICULUM_BRIDGE_SOCKET environment variable is set.
+  (define reticulum-enabled?
+    (or reticulum-flag? (getenv "RETICULUM_BRIDGE_SOCKET")))
+
+  (define reticulum-control-path
+    (or (getenv "RETICULUM_BRIDGE_SOCKET")
+        "/var/run/reticulum-bridge.sock"))
+
+  ;; Conditionally load the Reticulum netlayer module at runtime.
+  ;; use-modules is a top-level macro, so we resolve dynamically.
+  (define ^reticulum-netlayer
+    (if reticulum-enabled?
+        (begin
+          (resolve-module '(goblins ocapn netlayer reticulum))
+          (module-ref (resolve-interface '(goblins ocapn netlayer reticulum))
+                      '^reticulum-netlayer))
+        #f))
+
+  (let ()
 
     ;; ── Spawn service vats + actors ─────────────────────────────────────
 
@@ -152,6 +180,20 @@
          (with-vat ocapn-vat
            (spawn-mycapn ws-netlayer)))
 
+       ;; Optionally spawn and install Reticulum netlayer
+       (define ret-netlayer
+         (if reticulum-enabled?
+             (with-vat ocapn-vat
+               (spawn ^reticulum-netlayer
+                      #:control-path reticulum-control-path))
+             #f))
+
+       (when ret-netlayer
+         (with-vat ocapn-vat
+           (<- mycapn 'install-netlayer ret-netlayer))
+         (log! "  [gateway] Reticulum netlayer installed (control: ~a)~%"
+               reticulum-control-path))
+
        ;; Gateway actors
        (define gateway-vat (spawn-vat #:name "gateway"))
 
@@ -197,6 +239,28 @@
                      (log!
                              "  warning: could not write sref file: ~a~%"
                              args)))))))
+
+       ;; Register lobby with Reticulum transport when enabled
+       (when ret-netlayer
+         (with-vat ocapn-vat
+           (on (<- mycapn 'register lobby 'reticulum)
+               (lambda (ret-sref)
+                 (let* ((ret-uri (ocapn-id->string ret-sref))
+                        ;; Extract destination hash from ocapn://<hash>.reticulum/...
+                        ;; string-split on #\/ gives ("ocapn:" "" "<hash>.reticulum" ...)
+                        (dest-hash
+                         (let ((authority (caddr (string-split ret-uri #\/))))
+                           (car (string-split authority #\.)))))
+                   (log! "  reticulum sturdyref: ~a~%" ret-uri)
+                   (log! "  reticulum destination hash: ~a~%~%" dest-hash)
+                   ;; Write reticulum sref alongside websocket one
+                   (catch #t
+                     (lambda ()
+                       (call-with-output-file (data-path "gateway-ret-sref.txt")
+                         (lambda (p) (display ret-uri p) (newline p))))
+                     (lambda args
+                       (log! "  warning: could not write reticulum sref file: ~a~%"
+                             args))))))))
 
        ;; Hold open
        (perform-operation (wait-operation (make-condition)))))))
