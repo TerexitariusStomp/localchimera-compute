@@ -48,11 +48,18 @@
 ;;; ══════════════════════════════════════════════════════════════════════════════
 
 (define (scope-stream facts scope-id ctx-map children-of)
-  "Produce a lazy stream of federation-results for SCOPE-ID."
-  (let ((children (or (assoc-ref children-of scope-id) '())))
-    (if (null? children)
-        (leaf-stream scope-id ctx-map)
-        (parent-stream facts scope-id children ctx-map children-of))))
+  (scope-stream* facts scope-id ctx-map children-of '()))
+
+(define (scope-stream* facts scope-id ctx-map children-of visited)
+  "Produce a lazy stream of federation-results for SCOPE-ID.
+   VISITED guards against cycles in the scope-parent graph."
+  (if (member scope-id visited)
+      '()  ;; cycle detected — stop
+      (let ((children (or (assoc-ref children-of scope-id) '()))
+            (visited* (cons scope-id visited)))
+        (if (null? children)
+            (leaf-stream scope-id ctx-map)
+            (parent-stream facts scope-id children ctx-map children-of visited*)))))
 
 
 ;;; ══════════════════════════════════════════════════════════════════════════════
@@ -84,11 +91,11 @@
 
 (define *max-steps* 50)
 
-(define (parent-stream facts scope-id children ctx-map children-of)
+(define (parent-stream facts scope-id children ctx-map children-of visited)
   "Lazy stream: interleave children's streams + lateral matching."
   (let* ((child-streams
            (map (lambda (cid)
-                  (cons cid (scope-stream facts cid ctx-map children-of)))
+                  (cons cid (scope-stream* facts cid ctx-map children-of visited)))
                 children))
          (initial (pull-from-all child-streams)))
     (if (null? initial)
@@ -152,13 +159,13 @@
       (residual . ,residual))))
 
 (define (subtract-matched surpluses matches)
-  "Reduce surpluses by matched quantities."
+  "Reduce surpluses by matched quantities. Fully consumed surpluses are removed."
   (fold (lambda (m sups)
-    (map (lambda (s)
+    (filter-map (lambda (s)
       (if (and (equal? (assq-ref s 'scope) (assq-ref m 'from))
                (equal? (assq-ref s 'spec) (assq-ref m 'spec)))
           (let ((new-qty (- (assq-ref s 'qty) (assq-ref m 'qty))))
-            (if (<= new-qty 0) s  ;; keep but zeroed
+            (if (<= new-qty 0) #f  ;; fully consumed — remove
                 (cons (cons 'qty new-qty)
                       (filter (lambda (p) (not (eq? (car p) 'qty))) s))))
           s))
@@ -251,6 +258,14 @@
     ((procedure? $) (stream-take-1 ($)))
     (else (cons (car $) (cdr $)))))
 
+(define (stream-take-best $)
+  "Force the entire stream, return the last (most improved) result."
+  (let loop (($ $) (last #f))
+    (cond
+      ((null? $) last)
+      ((procedure? $) (loop ($) last))
+      (else (loop (cdr $) (car $))))))
+
 (define (pull-from-all child-streams)
   "Pull one federation-result from each child's stream.
    Returns list of (child-id result rest-stream) triples."
@@ -321,6 +336,6 @@
            (root-stream (if root
                             (scope-stream facts root ctx-map children-of)
                             '()))
-           (best (stream-take-1 root-stream)))
-      (== result (if best (car best)
+           (best (stream-take-best root-stream)))
+      (== result (if best best
                      `((scope . ,(or root "none")) (plan . ()) (residual . 0)))))))
