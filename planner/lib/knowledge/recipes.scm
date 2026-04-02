@@ -263,14 +263,12 @@
               (new-fbi (if (recipe-flow-recipe-input-of rf)
                            (let ((pid (recipe-flow-recipe-input-of rf)))
                              (hashmap-set idx-flows-by-input pid
-                               (cons id (filter-map (lambda (fid) (hashmap-ref flows fid #f))
-                                        (hashmap-ref idx-flows-by-input pid '())))))
+                               (cons id (hashmap-ref idx-flows-by-input pid '()))))
                            idx-flows-by-input))
               (new-fbo (if (recipe-flow-recipe-output-of rf)
                            (let ((pid (recipe-flow-recipe-output-of rf)))
                              (hashmap-set idx-flows-by-output pid
-                               (cons id (filter-map (lambda (fid) (hashmap-ref flows fid #f))
-                                        (hashmap-ref idx-flows-by-output pid '())))))
+                               (cons id (hashmap-ref idx-flows-by-output pid '()))))
                            idx-flows-by-output)))
          (bcom (^recipe-store bcom recipes groups processes new-flows
                               exchanges resource-specs process-specs

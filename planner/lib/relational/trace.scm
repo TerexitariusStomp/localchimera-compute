@@ -11,13 +11,18 @@
 ;;; ── Edge relations ────────────────────────────────────────────────────────────
 
 (define (produces-o facts spec-id input-spec-id)
-  "SPEC-ID is produced by a recipe that consumes INPUT-SPEC-ID."
-  (fresh (rid rname pid qty unit action pids)
-    (recipe-o facts rid rname spec-id)
+  "SPEC-ID is produced by a process that consumes INPUT-SPEC-ID.
+   Works for both primary outputs and intermediate products."
+  (fresh (rid rname primary-out pid pid2 qty qty2 unit unit2 action action2 pids)
+    ;; Find any recipe and its process chain
+    (recipe-o facts rid rname primary-out)
     (chain-o facts rid pids)
-    (flow-o facts pid 'input input-spec-id qty unit action)
-    (project (pids pid)
-      (if (member pid pids) succeed fail))))
+    ;; Find a process in that chain that outputs spec-id
+    (flow-o facts pid 'output spec-id qty unit action)
+    (project (pids pid) (if (member pid pids) succeed fail))
+    ;; Find a process in that chain that inputs input-spec-id
+    (flow-o facts pid2 'input input-spec-id qty2 unit2 action2)
+    (project (pids pid2) (if (member pid2 pids) succeed fail))))
 
 (define (consumed-by-o facts spec-id output-spec-id)
   "SPEC-ID is consumed to produce OUTPUT-SPEC-ID."

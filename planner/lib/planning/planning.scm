@@ -10,6 +10,7 @@
              (goblins utils hashmap)
              (srfi srfi-1)
              (srfi srfi-9)
+             (srfi srfi-11)
              (ice-9 match))
 
 ;; Assumes schemas.scm and store-utils.scm are loaded.
@@ -195,18 +196,31 @@
 
 (define (list->agreement* lst) (apply make-agreement lst))
 
-;; Simplified serializers for less-used types
+;; Simplified serializers for less-used types.
+;; Scenarios and scenario-definitions are stored as alists (add-scenario takes
+;; alists with assq-ref for id extraction), so the serializer must handle both
+;; alist and record forms gracefully.
 (define (scenario->list s)
-  (list (scenario-id s) (scenario-name s) (scenario-note s)
-        (scenario-defined-as s) (scenario-refinement-of s)
-        (scenario-has-beginning s) (scenario-has-end s) (scenario-in-scope-of s)))
-(define (list->scenario* lst) (apply make-scenario lst))
+  (if (scenario? s)
+      (list (scenario-id s) (scenario-name s) (scenario-note s)
+            (scenario-defined-as s) (scenario-refinement-of s)
+            (scenario-has-beginning s) (scenario-has-end s) (scenario-in-scope-of s))
+      s))  ;; alist: already serializable
+(define (list->scenario* lst)
+  (if (and (pair? lst) (pair? (car lst)) (symbol? (caar lst)))
+      lst  ;; alist: return as-is
+      (apply make-scenario lst)))
 
 (define (scenario-definition->list sd)
-  (list (scenario-definition-id sd) (scenario-definition-name sd)
-        (scenario-definition-note sd) (scenario-definition-has-duration sd)
-        (scenario-definition-in-scope-of sd)))
-(define (list->scenario-definition* lst) (apply make-scenario-definition lst))
+  (if (scenario-definition? sd)
+      (list (scenario-definition-id sd) (scenario-definition-name sd)
+            (scenario-definition-note sd) (scenario-definition-has-duration sd)
+            (scenario-definition-in-scope-of sd))
+      sd))  ;; alist: already serializable
+(define (list->scenario-definition* lst)
+  (if (and (pair? lst) (pair? (car lst)) (symbol? (caar lst)))
+      lst  ;; alist: return as-is
+      (apply make-scenario-definition lst)))
 
 
 ;; =========================================================================
@@ -656,10 +670,33 @@
        ;; But we need to add intent AND set meta atomically.
        ;; Build the new state manually:
        (let* ((iid (or (intent-id intent-fields) (generate-id "sig-")))
-              (new-intents (hashmap-set (pss-intents st) iid intent-fields))
-              (new-tag-idx (index-intent-tags (pss-tag-index st) intent-fields))
-              (new-ibs (index-intent-spec (pss-intents-by-spec st) intent-fields))
-              (new-ibp (let ((pw (intent-planned-within intent-fields)))
+              ;; Rebuild intent with assigned id so indexes are consistent
+              (intent-with-id
+                (if (intent-id intent-fields) intent-fields
+                    (make-intent
+                      iid (intent-action intent-fields)
+                      (intent-name intent-fields) (intent-note intent-fields)
+                      (intent-image intent-fields) (intent-input-of intent-fields)
+                      (intent-output-of intent-fields)
+                      (intent-resource-inventoried-as intent-fields)
+                      (intent-resource-conforms-to intent-fields)
+                      (intent-resource-classified-as intent-fields)
+                      (intent-resource-quantity intent-fields)
+                      (intent-effort-quantity intent-fields)
+                      (intent-available-quantity intent-fields)
+                      (intent-minimum-quantity intent-fields)
+                      (intent-provider intent-fields) (intent-receiver intent-fields)
+                      (intent-has-beginning intent-fields) (intent-has-end intent-fields)
+                      (intent-has-point-in-time intent-fields) (intent-due intent-fields)
+                      (intent-at-location intent-fields) (intent-stage intent-fields)
+                      (intent-state intent-fields) (intent-planned-within intent-fields)
+                      (intent-satisfies intent-fields) (intent-in-scope-of intent-fields)
+                      (intent-finished intent-fields)
+                      (intent-availability-window intent-fields))))
+              (new-intents (hashmap-set (pss-intents st) iid intent-with-id))
+              (new-tag-idx (index-intent-tags (pss-tag-index st) intent-with-id))
+              (new-ibs (index-intent-spec (pss-intents-by-spec st) intent-with-id))
+              (new-ibp (let ((pw (intent-planned-within intent-with-id)))
                          (if pw (append-to-index (pss-intents-by-plan st) pw iid)
                              (pss-intents-by-plan st))))
               (new-meta (hashmap-set (pss-meta st) iid meta)))
@@ -887,8 +924,8 @@
      (let ((iids (hashmap-ref (pss-intents-by-plan st) plan-id '()))
            (cids (hashmap-ref (pss-commitments-by-plan st) plan-id '())))
        ;; Build cleaned state (same logic as remove-records but inline)
-       (let* ((new-intents (fold hashmap-remove (pss-intents st) iids))
-              (new-commitments (fold hashmap-remove (pss-commitments st) cids))
+       (let* ((new-intents (fold (lambda (iid hm) (hashmap-remove hm iid)) (pss-intents st) iids))
+              (new-commitments (fold (lambda (cid hm) (hashmap-remove hm cid)) (pss-commitments st) cids))
               ;; Clean intent indexes
               (new-tag-idx (fold (lambda (iid idx)
                                   (let ((i (hashmap-ref (pss-intents st) iid #f)))
@@ -915,7 +952,7 @@
                                      idx)))
                              (pss-commitments-by-spec st) cids))
               (new-cbpl (hashmap-remove (pss-commitments-by-plan st) plan-id))
-              (new-meta (fold hashmap-remove (pss-meta st) iids)))
+              (new-meta (fold (lambda (iid hm) (hashmap-remove hm iid)) (pss-meta st) iids)))
          (bcom (^plan-store bcom
                  (make-plan-store-state
                    (pss-plans st) new-commitments new-intents (pss-claims st)

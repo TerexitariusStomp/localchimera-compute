@@ -29,10 +29,12 @@ window.addEventListener("load", async () => {
           getElementById: Document.prototype.getElementById.bind(document),
           createTextNode: Document.prototype.createTextNode.bind(document),
           createElement: Document.prototype.createElement.bind(document),
-          createTreeWalker: Document.prototype.createTreeWalker.bind(document)
+          createElementNS(ns, tag) { return document.createElementNS(ns, tag); },
+          createTreeWalker(root, whatToShow) { return document.createTreeWalker(root, whatToShow); }
         },
         event: {
           preventDefault(event) { event.preventDefault(); },
+          stopPropagation(event) { event.stopPropagation(); },
           keyboardKey(event) { return event.key; },
           keyboardShiftKey(event) { return event.shiftKey; },
           keyboardCtrlKey(event) { return event.ctrlKey; },

@@ -108,6 +108,30 @@ run_suite "Incremental Federation"   "$ALL" "tests/test-incremental-federation.s
 run_suite "Workflow Recipe"          "$ALL" "tests/test-workflow-recipe.scm"
 
 # ═══════════════════════════════════════════════════════════════════════════
+# Ported from TypeScript test suite (round 2)
+# ═══════════════════════════════════════════════════════════════════════════
+
+run_suite "Account"                  "$ALL" "tests/test-account.scm"
+run_suite "Value Equations & SNE"    "$ALL" "tests/test-value-equations-sne.scm"
+run_suite "Mode C"                   "$ALL" "tests/test-mode-c.scm"
+run_suite "Container Mediation"      "$ALL" "tests/test-container-mediation.scm"
+run_suite "Recurrence"               "$ALL" "tests/test-recurrence.scm"
+run_suite "Positioning Routing"      "$ALL" "tests/test-positioning-routing.scm"
+run_suite "Schedule Availability"    "$ALL" "tests/test-schedule-availability.scm"
+run_suite "Rollup Cost Variance"     "$ALL" "tests/test-rollup-costvar.scm"
+run_suite "Federation Membership"    "$ALL" "tests/test-federation-membership.scm"
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Ported from TypeScript test suite (round 3)
+# ═══════════════════════════════════════════════════════════════════════════
+
+run_suite "Composition Complexity"   "$ALL" "tests/test-composition-complexity.scm"
+run_suite "Plan for Region"          "$ALL" "tests/test-plan-for-region.scm"
+run_suite "Space-Time Scenario"      "$ALL" "tests/test-space-time-scenario.scm"
+run_suite "Architectural Elegance"   "$ALL" "tests/test-architectural-elegance.scm"
+run_suite "Snapshot Hydration"       "$ALL" "tests/test-snapshot-hydration.scm"
+
+# ═══════════════════════════════════════════════════════════════════════════
 # Summary
 # ═══════════════════════════════════════════════════════════════════════════
 

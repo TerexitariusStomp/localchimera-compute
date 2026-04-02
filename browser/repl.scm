@@ -25,6 +25,12 @@
              (playnet kanren)
              (playnet autocomplete)
              (playnet wisp)
+             (playnet ddmrp)
+             (playnet ui components)
+             (playnet ui dashboard)
+             (playnet ui charts)
+             (playnet ui federation)
+             (playnet ui network)
              (srfi srfi-11))
 
 
@@ -40,12 +46,20 @@
 (define-foreign make-element
   "document" "createElement"
   (ref string) -> (ref null extern))
-(define-foreign make-tree-walker
+(define-foreign make-element-ns
+  "document" "createElementNS"
+  (ref string) (ref string) -> (ref null extern))
+(define-foreign %make-tree-walker
   "document" "createTreeWalker"
-  (ref null extern) -> (ref null extern))
+  (ref null extern) i32 -> (ref null extern))
+(define (make-tree-walker root)
+  (%make-tree-walker root 5))  ;; 5 = SHOW_ELEMENT(1) | SHOW_TEXT(4)
 
 (define-foreign prevent-default!
   "event" "preventDefault"
+  (ref null extern) -> none)
+(define-foreign stop-propagation!
+  "event" "stopPropagation"
   (ref null extern) -> none)
 (define-foreign keyboard-event-key
   "event" "keyboardKey"
@@ -352,16 +366,35 @@
 (define (attr-value? x)
   (or (string? x) (boolean? x)))
 
+(define *svg-ns* "http://www.w3.org/2000/svg")
+(define *svg-tags*
+  '(svg g path circle rect line polyline polygon text defs marker
+    ellipse use clipPath mask pattern image foreignObject
+    linearGradient radialGradient stop tspan textPath))
+
+(define (svg-tag? tag)
+  (memq tag *svg-tags*))
+
+;; Track whether we're inside an SVG subtree for nested element creation.
+(define *in-svg* #f)
+
 (define (sxml->dom exp)
   (match exp
     ((? string? str)
      (make-text-node str))
     (((? symbol? tag) . body)
-     (let ((elem (make-element (symbol->string tag))))
+     (let* ((entering-svg (and (not *in-svg*) (eq? tag 'svg)))
+            (use-ns (or *in-svg* (eq? tag 'svg)))
+            (elem (if use-ns
+                      (make-element-ns *svg-ns* (symbol->string tag))
+                      (make-element (symbol->string tag)))))
        (define (add-children children)
-         (for-each (lambda (child)
-                     (append-child! elem (sxml->dom child)))
-                   children))
+         (let ((prev-svg *in-svg*))
+           (when entering-svg (set! *in-svg* #t))
+           (for-each (lambda (child)
+                       (append-child! elem (sxml->dom child)))
+                     children)
+           (set! *in-svg* prev-svg)))
        (match body
          ((('@ . attrs) . children)
           (for-each (lambda (attr)
@@ -476,7 +509,9 @@
                  ;; The element tag is the same, so modify the
                  ;; inner contents of the element if necessary.
                  ((eq? old-tag new-tag)
-                  (let ((parent (current-node walker)))
+                  (let ((parent (current-node walker))
+                        (prev-svg *in-svg*))
+                    (when (svg-tag? old-tag) (set! *in-svg* #t))
                     (update-attrs parent old-attrs new-attrs)
                     (first-child! walker)
                     (let child-loop ((old old-children)
@@ -509,12 +544,14 @@
                             (loop parent old-child new-child)
                             (next-sibling! walker)
                             (child-loop old-rest new-rest))))))
-                    (set-current-node! walker parent)))
+                    (set-current-node! walker parent)
+                    (set! *in-svg* prev-svg)))
                  ;; New element tag is different than the old
                  ;; one, so replace the entire element subtree.
                  (else
-                  (replace-with! (current-node walker)
-                                 (sxml->dom new)))))))))))))
+                  (let ((new-node (sxml->dom new)))
+                    (replace-with! (current-node walker) new-node)
+                    (set-current-node! walker new-node)))))))))))))
 
 (define *current-vdom* #f)
 
@@ -535,8 +572,9 @@
                                     (vdom-root-attrs new-vdom))))
                   #f
                   *current-vdom*)))
-    (virtual-dom-render (document-body) old new-vdom)
-    (set! *current-vdom* new-vdom)))
+    (set! *in-svg* #f)              ;; reset before each diff
+    (set! *current-vdom* new-vdom)  ;; set BEFORE diff — if diff crashes, next render diffs correctly
+    (virtual-dom-render (document-body) old new-vdom)))
 
 ;; Wrap macros as procedures for base-bindings (required by Hoot)
 (define %+ +) (define %- -) (define %* *) (define %/ /)
@@ -763,6 +801,7 @@
 (define *orgs* '())
 (define *pending-joins* '()) ;; alist: (joiner-name target-name sub-unsealer msg-id identity)
 (define *mode* 'outer)
+(define *view* 'home)  ;; 'home or 'dashboard — sub-view within outer mode
 (define *current-org-name* #f)
 (define *vat* #f)
 (define *org* #f)
@@ -2239,10 +2278,22 @@
 
 (define (render-tab-bar)
   `(div (@ (class "tab-bar"))
-        (div (@ (class ,(string-append "tab" (if (eq? *mode* 'outer) " tab-active" "")))
+        (div (@ (class ,(string-append "tab" (if (and (eq? *mode* 'outer) (eq? *view* 'home)) " tab-active" "")))
                 (click ,(lambda (e)
-                          (when (eq? *mode* 'inner) (do-exit!) (refresh!) (scroll-to-bottom!)))))
+                          (if (eq? *mode* 'inner)
+                              (begin (do-exit!) (set! *view* 'home) (refresh!) (scroll-to-bottom!))
+                              (begin (set! *view* 'home) (refresh!))))))
              "playnet")
+        (div (@ (class ,(string-append "tab" (if (and (eq? *mode* 'outer) (eq? *view* 'dashboard)) " tab-active" "")))
+                (click ,(lambda (e)
+                          (when (eq? *mode* 'inner) (do-exit!))
+                          (set! *view* 'dashboard) (refresh!))))
+             "dashboard")
+        (div (@ (class ,(string-append "tab" (if (and (eq? *mode* 'outer) (eq? *view* 'federation)) " tab-active" "")))
+                (click ,(lambda (e)
+                          (when (eq? *mode* 'inner) (do-exit!))
+                          (set! *view* 'federation) (refresh!))))
+             "federation")
         ,@(map (lambda (org-entry)
                  (let* ((name (org-entry-name org-entry))
                         (active? (and (eq? *mode* 'inner) *current-org-name*
@@ -2285,13 +2336,274 @@
             `(div)))
       `(div)))
 
+;;; ── Dashboard view ──────────────────────────────────────────────────────────
+
+(define *sample-planning-rows*
+  (list
+   `((spec-id . "flour") (spec-name . "Flour") (open-supply . 50)
+     (onhand . 35) (qualified-demand . 20) (nfp . 65)
+     (zone . green) (priority . 0.72) (recommended-qty . #f) (action . none))
+   `((spec-id . "sugar") (spec-name . "Sugar") (open-supply . 10)
+     (onhand . 8) (qualified-demand . 25) (nfp . -7)
+     (zone . red) (priority . -0.12) (recommended-qty . 60) (action . replenish))
+   `((spec-id . "butter") (spec-name . "Butter") (open-supply . 20)
+     (onhand . 18) (qualified-demand . 15) (nfp . 23)
+     (zone . yellow) (priority . 0.38) (recommended-qty . 40) (action . replenish))))
+
+(define *sample-buffer-entries*
+  (list
+   `((buffer-zone . ((tor . 15) (toy . 30) (tog . 50) (dlt-days . 5)))
+     (onhand . 35) (spec-name . "Flour"))
+   `((buffer-zone . ((tor . 10) (toy . 25) (tog . 40) (dlt-days . 3)))
+     (onhand . 8) (spec-name . "Sugar"))
+   `((buffer-zone . ((tor . 12) (toy . 28) (tog . 45) (dlt-days . 4)))
+     (onhand . 42) (spec-name . "Butter"))))
+
+(define *sample-signal-entries*
+  (list
+   `((signal-id . "sig-abc123") (spec-id . "sugar-spec") (recommended-qty . 60)
+     (approved-qty . 55) (fulfilled . 30) (due-date . "2026-04-05")
+     (late . #f) (over-fulfilled . #f) (qty-diff . -5))
+   `((signal-id . "sig-def456") (spec-id . "flour-spec") (recommended-qty . 40)
+     (approved-qty . 40) (fulfilled . 40) (due-date . "2026-03-28")
+     (late . #t) (over-fulfilled . #f) (qty-diff . 0))))
+
+(define *sample-exceptions*
+  (list
+   `((order-id . "ord-98765ab") (date . "2026-03-30") (domain . execution)
+     (duration . 2) (due-date . "2026-04-01"))
+   `((order-id . "ord-12345cd") (date . "2026-03-29") (domain . planning)
+     (duration . #f) (due-date . #f))))
+
+(define *sample-health-entries*
+  (let loop ((i 0) (acc '()))
+    (if (= i 30) (reverse acc)
+        (let* ((pct (+ 30 (* 40 (/ (+ 1 (sin (* i 0.3))) 2))))
+               (zone (cond ((<= pct 33) 'red)
+                           ((<= pct 66) 'yellow)
+                           ((<= pct 100) 'green)
+                           (else 'excess)))
+               (date (string-append "2026-03-" (if (< (+ i 1) 10)
+                                                    (string-append "0" (number->string (+ i 1)))
+                                                    (number->string (+ i 1))))))
+          (loop (+ i 1) (cons `((date . ,date) (pct . ,pct) (zone . ,zone)) acc))))))
+
+(define (render-dashboard)
+  "Render the DDMRP dashboard view with sample data."
+  `(div (@ (class "dashboard-view"))
+     (div (@ (class "dashboard-header"))
+       (span (@ (class "dashboard-title")) "DDOM Dashboard")
+       (span (@ (class "dashboard-subtitle")) "Demand Driven Operating Model"))
+     ,(ddom-dashboard
+       #:planning-rows *sample-planning-rows*
+       #:signal-entries *sample-signal-entries*
+       #:buffer-entries *sample-buffer-entries*
+       #:exception-entries *sample-exceptions*
+       #:today-str "2026-03-31")
+     ,(buffer-health-run-chart
+       *sample-health-entries*
+       '((tor . 15) (toy . 30) (tog . 50))
+       #:title "Buffer Health — Flour (30 days)")))
+
+;;; ── Federation view sample data ──────────────────────────────────────────────
+
+(define *fed-scopes*
+  (list
+   `((id . "universal-commune") (parent . #f))
+   `((id . "agri-federation") (parent . "universal-commune"))
+   `((id . "manufacturing-federation") (parent . "universal-commune"))
+   `((id . "maritime-federation") (parent . "universal-commune"))
+   `((id . "horticulture-federation") (parent . "universal-commune"))
+   `((id . "food-processing-federation") (parent . "universal-commune"))
+   ;; Agri communes
+   `((id . "commune-grain") (parent . "agri-federation"))
+   `((id . "commune-dairy") (parent . "agri-federation"))
+   ;; Manufacturing communes
+   `((id . "commune-forge") (parent . "manufacturing-federation"))
+   `((id . "commune-workshop") (parent . "manufacturing-federation"))
+   ;; Maritime
+   `((id . "commune-fisher") (parent . "maritime-federation"))
+   `((id . "commune-salter") (parent . "maritime-federation"))
+   ;; Horticulture
+   `((id . "commune-olive") (parent . "horticulture-federation"))
+   `((id . "commune-citrus") (parent . "horticulture-federation"))
+   ;; Food processing
+   `((id . "commune-mill") (parent . "food-processing-federation"))
+   `((id . "commune-bakery") (parent . "food-processing-federation"))))
+
+(define *fed-results*
+  `(("commune-grain" (surplus-qty . 670) (deficit-count . 0) (total-orig . 0) (total-short . 0) (has-deficits . #f)
+     (deficits) (surplus ((spec . "wheat") (qty . 670)))
+     (demand-intents ((spec . "bread") (qty . 45) (unit . "loaves"))
+                     ((spec . "salt") (qty . 20) (unit . "kg"))))
+    ("commune-dairy" (surplus-qty . 0) (deficit-count . 2) (total-orig . 100) (total-short . 30) (has-deficits . #t)
+     (deficits ((spec . "wheat") (shortfall . 30) (original . 100) (resolved-at "commune-grain"))
+               ((spec . "feed") (shortfall . 0) (original . 50) (resolved-at "commune-grain")))
+     (surplus)
+     (demand-intents ((spec . "bread") (qty . 30) (unit . "loaves"))
+                     ((spec . "tools") (qty . 5) (unit . "pcs"))))
+    ("commune-forge" (surplus-qty . 50) (deficit-count . 0) (total-orig . 0) (total-short . 0) (has-deficits . #f)
+     (deficits) (surplus ((spec . "tools") (qty . 50))))
+    ("commune-workshop" (surplus-qty . 0) (deficit-count . 1) (total-orig . 40) (total-short . 10) (has-deficits . #t)
+     (deficits ((spec . "tools") (shortfall . 10) (original . 40) (resolved-at "commune-forge")))
+     (surplus))
+    ("commune-fisher" (surplus-qty . 262) (deficit-count . 0) (total-orig . 0) (total-short . 0) (has-deficits . #f)
+     (deficits) (surplus ((spec . "fish") (qty . 262))))
+    ("commune-salter" (surplus-qty . 475) (deficit-count . 0) (total-orig . 0) (total-short . 0) (has-deficits . #f)
+     (deficits) (surplus ((spec . "salt") (qty . 475))))
+    ("commune-olive" (surplus-qty . 0) (deficit-count . 1) (total-orig . 60) (total-short . 15) (has-deficits . #t)
+     (deficits ((spec . "olive-oil") (shortfall . 15) (original . 60) (resolved-at)))
+     (surplus))
+    ("commune-citrus" (surplus-qty . 0) (deficit-count . 0) (total-orig . 30) (total-short . 0) (has-deficits . #f)
+     (deficits) (surplus ((spec . "citrus") (qty . 30))))
+    ("commune-mill" (surplus-qty . 0) (deficit-count . 0) (total-orig . 50) (total-short . 0) (has-deficits . #f)
+     (deficits) (surplus))
+    ("commune-bakery" (surplus-qty . 0) (deficit-count . 1) (total-orig . 80) (total-short . 20) (has-deficits . #t)
+     (deficits ((spec . "flour") (shortfall . 20) (original . 80) (resolved-at "commune-mill")))
+     (surplus))))
+
+(define *fed-trades*
+  (list
+   `((id . "t1") (from . "commune-grain") (to . "commune-dairy") (spec . "wheat") (qty . 200))
+   `((id . "t2") (from . "commune-fisher") (to . "commune-salter") (spec . "fish") (qty . 25))
+   `((id . "t3") (from . "commune-salter") (to . "commune-bakery") (spec . "salt") (qty . 50))
+   `((id . "t4") (from . "commune-olive") (to . "commune-mill") (spec . "olive-oil") (qty . 10))
+   `((id . "t5") (from . "commune-forge") (to . "commune-workshop") (spec . "tools") (qty . 12))
+   `((id . "t6") (from . "commune-citrus") (to . "commune-bakery") (spec . "citrus") (qty . 30))))
+
+(define *fed-events*
+  (list
+   `((round . 0) (kind . scope-planned) (scope-id . "commune-grain"))
+   `((round . 0) (kind . scope-planned) (scope-id . "commune-dairy"))
+   `((round . 0) (kind . scope-planned) (scope-id . "commune-forge"))
+   `((round . 0) (kind . scope-planned) (scope-id . "commune-fisher"))
+   `((round . 0) (kind . scope-planned) (scope-id . "commune-salter"))
+   `((round . 0) (kind . scope-planned) (scope-id . "commune-olive"))
+   `((round . 0) (kind . scope-planned) (scope-id . "commune-citrus"))
+   `((round . 0) (kind . scope-planned) (scope-id . "commune-mill"))
+   `((round . 0) (kind . scope-planned) (scope-id . "commune-bakery"))
+   `((round . 0) (kind . scope-planned) (scope-id . "commune-workshop"))
+   `((round . 0) (kind . deficit-announced) (scope-id . "commune-dairy") (spec-id . "wheat") (qty . 200))
+   `((round . 0) (kind . deficit-announced) (scope-id . "commune-workshop") (spec-id . "tools") (qty . 12))
+   `((round . 0) (kind . deficit-announced) (scope-id . "commune-olive") (spec-id . "olive-oil") (qty . 15))
+   `((round . 0) (kind . deficit-announced) (scope-id . "commune-bakery") (spec-id . "flour") (qty . 20))
+   `((round . 0) (kind . surplus-offered) (scope-id . "commune-grain") (spec-id . "wheat") (qty . 670))
+   `((round . 0) (kind . surplus-offered) (scope-id . "commune-fisher") (spec-id . "fish") (qty . 262))
+   `((round . 0) (kind . surplus-offered) (scope-id . "commune-salter") (spec-id . "salt") (qty . 475))
+   `((round . 1) (kind . lateral-match) (scope-id . "commune-grain") (target-scope-id . "commune-dairy") (spec-id . "wheat") (qty . 200))
+   `((round . 1) (kind . lateral-match) (scope-id . "commune-fisher") (target-scope-id . "commune-salter") (spec-id . "fish") (qty . 25))
+   `((round . 1) (kind . lateral-match) (scope-id . "commune-salter") (target-scope-id . "commune-bakery") (spec-id . "salt") (qty . 50))
+   `((round . 1) (kind . lateral-match) (scope-id . "commune-forge") (target-scope-id . "commune-workshop") (spec-id . "tools") (qty . 12))
+   `((round . 1) (kind . lateral-match) (scope-id . "commune-citrus") (target-scope-id . "commune-bakery") (spec-id . "citrus") (qty . 30))))
+
+(define *fed-resources*
+  (list
+   (cons "commune-grain" (list `((id . "r1") (conforms-to . "wheat") (name . "Wheat Reserve") (onhand . 670) (unit . "kg"))))
+   (cons "commune-dairy" (list `((id . "r2") (conforms-to . "dairy") (name . "Dairy Stock") (onhand . 45) (unit . "L"))))
+   (cons "commune-forge" (list `((id . "r3") (conforms-to . "tools") (name . "Tool Stock") (onhand . 70) (unit . "pcs"))
+                                `((id . "r4") (conforms-to . "ore") (name . "Iron Ore") (onhand . 200) (unit . "kg"))))
+   (cons "commune-fisher" (list `((id . "r5") (conforms-to . "fish") (name . "Fish Stock") (onhand . 262) (unit . "kg"))))
+   (cons "commune-salter" (list `((id . "r6") (conforms-to . "salt") (name . "Salt Reserve") (onhand . 475) (unit . "kg"))))
+   (cons "commune-olive" (list `((id . "r7") (conforms-to . "olive-oil") (name . "Olive Oil") (onhand . 45) (unit . "L"))))
+   (cons "commune-citrus" (list `((id . "r8") (conforms-to . "citrus") (name . "Citrus Fruits") (onhand . 120) (unit . "kg"))))
+   (cons "commune-mill" (list `((id . "r9") (conforms-to . "flour") (name . "Flour Reserve") (onhand . 180) (unit . "kg"))))
+   (cons "commune-bakery" (list `((id . "r10") (conforms-to . "bread") (name . "Bread Stock") (onhand . 90) (unit . "loaves"))))
+   (cons "commune-workshop" (list `((id . "r11") (conforms-to . "goods") (name . "Goods Stock") (onhand . 35) (unit . "pcs"))))))
+
+(define *fed-spec-names*
+  '(("wheat" . "Wheat") ("dairy" . "Dairy") ("tools" . "Tools") ("ore" . "Iron Ore")
+    ("fish" . "Fish") ("salt" . "Salt") ("olive-oil" . "Olive Oil") ("citrus" . "Citrus")
+    ("flour" . "Flour") ("bread" . "Bread") ("goods" . "Goods")))
+
+;; Sample processes and commitments per scope (for network diagrams)
+(define *fed-processes*
+  `(("commune-grain" . (((id . "harvest") (name . "Wheat Harvest"))
+                         ((id . "thresh") (name . "Threshing"))))
+    ("commune-dairy" . (((id . "milk") (name . "Milking"))
+                         ((id . "pasteur") (name . "Pasteurize"))))
+    ("commune-forge" . (((id . "smelt") (name . "Smelting"))
+                         ((id . "forge") (name . "Forging"))))
+    ("commune-fisher" . (((id . "catch") (name . "Fishing"))
+                          ((id . "prep") (name . "Filleting"))))
+    ("commune-mill" . (((id . "grind") (name . "Grinding"))
+                        ((id . "sift") (name . "Sifting"))))
+    ("commune-bakery" . (((id . "mix") (name . "Mixing"))
+                          ((id . "bake") (name . "Baking"))))))
+
+(define *fed-commitments*
+  `(("commune-grain" . (((id . "cg1") (input-of . "harvest") (resource-conforms-to . "seed") (action . consume) (qty . 50) (unit . "kg"))
+                         ((id . "cgw1") (input-of . "harvest") (resource-conforms-to . "labor") (action . work) (effort-qty . 40) (effort-unit . "hr"))
+                         ((id . "cg2") (output-of . "harvest") (resource-conforms-to . "wheat-raw") (action . produce) (qty . 600) (unit . "kg"))
+                         ((id . "cg3") (input-of . "thresh") (resource-conforms-to . "wheat-raw") (action . consume) (qty . 600) (unit . "kg"))
+                         ((id . "cgw2") (input-of . "thresh") (resource-conforms-to . "labor") (action . work) (effort-qty . 16) (effort-unit . "hr"))
+                         ((id . "cg4") (output-of . "thresh") (resource-conforms-to . "wheat") (action . produce) (qty . 500) (unit . "kg"))))
+    ("commune-dairy" . (((id . "cd1") (input-of . "milk") (resource-conforms-to . "feed") (action . consume) (qty . 30) (unit . "kg"))
+                         ((id . "cdw1") (input-of . "milk") (resource-conforms-to . "labor") (action . work) (effort-qty . 20) (effort-unit . "hr"))
+                         ((id . "cd2") (output-of . "milk") (resource-conforms-to . "raw-milk") (action . produce) (qty . 80) (unit . "L"))
+                         ((id . "cd3") (input-of . "pasteur") (resource-conforms-to . "raw-milk") (action . consume) (qty . 80) (unit . "L"))
+                         ((id . "cd4") (output-of . "pasteur") (resource-conforms-to . "dairy") (action . produce) (qty . 75) (unit . "L"))))
+    ("commune-forge" . (((id . "cf1") (input-of . "smelt") (resource-conforms-to . "ore") (action . consume) (qty . 200) (unit . "kg"))
+                         ((id . "cfw1") (input-of . "smelt") (resource-conforms-to . "labor") (action . work) (effort-qty . 30) (effort-unit . "hr"))
+                         ((id . "cf2") (output-of . "smelt") (resource-conforms-to . "ingots") (action . produce) (qty . 100) (unit . "kg"))
+                         ((id . "cf3") (input-of . "forge") (resource-conforms-to . "ingots") (action . consume) (qty . 100) (unit . "kg"))
+                         ((id . "cfw2") (input-of . "forge") (resource-conforms-to . "labor") (action . work) (effort-qty . 25) (effort-unit . "hr"))
+                         ((id . "cf4") (output-of . "forge") (resource-conforms-to . "tools") (action . produce) (qty . 70) (unit . "pcs"))))
+    ("commune-fisher" . (((id . "ch1") (input-of . "catch") (resource-conforms-to . "bait") (action . consume) (qty . 5) (unit . "kg"))
+                          ((id . "chw1") (input-of . "catch") (resource-conforms-to . "labor") (action . work) (effort-qty . 35) (effort-unit . "hr"))
+                          ((id . "ch2") (output-of . "catch") (resource-conforms-to . "raw-fish") (action . produce) (qty . 300) (unit . "kg"))
+                          ((id . "ch3") (input-of . "prep") (resource-conforms-to . "raw-fish") (action . consume) (qty . 300) (unit . "kg"))
+                          ((id . "ch4") (output-of . "prep") (resource-conforms-to . "fish") (action . produce) (qty . 262) (unit . "kg"))))
+    ("commune-mill" . (((id . "cm1") (input-of . "grind") (resource-conforms-to . "wheat") (action . consume) (qty . 200) (unit . "kg"))
+                        ((id . "cm2") (output-of . "grind") (resource-conforms-to . "coarse-flour") (action . produce) (qty . 190) (unit . "kg"))
+                        ((id . "cm3") (input-of . "sift") (resource-conforms-to . "coarse-flour") (action . consume) (qty . 190) (unit . "kg"))
+                        ((id . "cm4") (output-of . "sift") (resource-conforms-to . "flour") (action . produce) (qty . 180) (unit . "kg"))))
+    ("commune-bakery" . (((id . "cb1") (input-of . "mix") (resource-conforms-to . "flour") (action . consume) (qty . 100) (unit . "kg"))
+                          ((id . "cbw1") (input-of . "mix") (resource-conforms-to . "labor") (action . work) (effort-qty . 6) (effort-unit . "hr"))
+                          ((id . "cb2") (output-of . "mix") (resource-conforms-to . "dough") (action . produce) (qty . 95) (unit . "kg"))
+                          ((id . "cb3") (input-of . "bake") (resource-conforms-to . "dough") (action . consume) (qty . 95) (unit . "kg"))
+                          ((id . "cbw2") (input-of . "bake") (resource-conforms-to . "labor") (action . work) (effort-qty . 10) (effort-unit . "hr"))
+                          ((id . "cb4") (output-of . "bake") (resource-conforms-to . "bread") (action . produce) (qty . 90) (unit . "loaves"))))))
+
+(define *fed-selected* "")
+(define *fed-mode* 'plan)  ;; 'plan or 'observe
+
+(define (render-federation-view)
+  "Render the federation planning page with sample data."
+  (federation-page
+   #:scopes *fed-scopes*
+   #:results *fed-results*
+   #:trades *fed-trades*
+   #:events *fed-events*
+   #:resources-by-scope *fed-resources*
+   #:spec-names *fed-spec-names*
+   #:selected *fed-selected*
+   #:on-select (lambda (id e)
+                 (stop-propagation! e)
+                 (set! *fed-selected*
+                       (if (equal? *fed-selected* id) "" id))
+                 (refresh!))
+   #:on-close-detail (lambda (e)
+                       (set! *fed-selected* "")
+                       (refresh!))
+   #:on-mode-change (lambda (new-mode)
+                      (set! *fed-mode* new-mode)
+                      (refresh!))
+   #:mode *fed-mode*
+   #:processes-by-scope *fed-processes*
+   #:commitments-by-scope *fed-commitments*
+   #:svg-width 1100
+   #:svg-height 720))
+
 (define (render)
   (if (eq? *mode* 'outer)
       ;; Outer mode: single column, no IDE chrome
       `(div (@ (class "outer"))
             ,(render-tab-bar)
             ,(render-action-bar)
-            ,(render-homepage)
+            ,(cond
+              ((eq? *view* 'dashboard) (render-dashboard))
+              ((eq? *view* 'federation) (render-federation-view))
+              (else (render-homepage)))
             ,(render-repl))
       ;; Inner mode: full IDE with sidebar + code viewer
       `(div (@ (class "ide"))

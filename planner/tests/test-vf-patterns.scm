@@ -292,6 +292,103 @@
 
 
 ;;; ════════════════════════════════════════════════════════════════════════════
+;;; 7. Bilateral exchange with agreement
+;;;
+;;; Ported from: old/planner/src/lib/tests/exchange.test.ts
+;;; Intent: Verify bilateral exchange events carry realizationOf (agreement),
+;;; and multilateral exchanges (3+ events) all get the agreement ID.
+;;; ════════════════════════════════════════════════════════════════════════════
+
+(display "\n── Exchange with agreement ──\n")
+
+(with-vat vat
+  (let ((obs ($ scope 'observer)))
+    ;; Bilateral exchange: Alice pays 100 USD, Bob delivers 1 widget
+    ;; Both events reference the same agreement via realization-of
+
+    ;; Seed resources for exchange
+    ($ obs 'seed-resource
+       (make-economic-resource "r-usd-alice" "Alice USD" #f #f #f "spec-gold" #f
+         (make-measure 1000 "USD") (make-measure 1000 "USD")
+         #f #f "agent-alice" #f #f #f #f #f #f #f #f))
+    ($ obs 'seed-resource
+       (make-economic-resource "r-widget-bob" "Bob Widgets" #f #f #f "spec-wheat" #f
+         (make-measure 10 "each") (make-measure 10 "each")
+         #f #f "agent-bob" #f #f #f #f #f #f #f #f))
+
+    ;; Payment leg: transfer 100 USD from Alice to Bob
+    ($ obs 'record-event
+       (make-economic-event
+         "ev-pay" 'transfer #f #f
+         "r-usd-alice" #f "spec-gold" #f
+         "agent-alice" "agent-bob"
+         (make-measure 100 "USD") #f
+         #f #f "2026-03-15T10:00:00Z" #f #f #f #f
+         #f #f #f "agreement-1" #f #f #f #f #f #f))
+
+    ;; Delivery leg: transfer 1 widget from Bob to Alice
+    ($ obs 'record-event
+       (make-economic-event
+         "ev-deliver" 'transfer #f #f
+         "r-widget-bob" #f "spec-wheat" #f
+         "agent-bob" "agent-alice"
+         (make-measure 1 "each") #f
+         #f #f "2026-03-15T10:05:00Z" #f #f #f #f
+         #f #f #f "agreement-1" #f #f #f #f #f #f))
+
+    ;; Verify both events have realizationOf = agreement-1
+    (let ((pay ($ obs 'get-event "ev-pay"))
+          (deliver ($ obs 'get-event "ev-deliver")))
+      (check "bilateral: pay has agreement"
+             (economic-event-realization-of pay) "agreement-1")
+      (check "bilateral: deliver has agreement"
+             (economic-event-realization-of deliver) "agreement-1"))
+
+    ;; Verify resource effects
+    (let ((alice-usd ($ obs 'get-resource "r-usd-alice"))
+          (bob-widgets ($ obs 'get-resource "r-widget-bob")))
+      (check "bilateral: alice usd = 900"
+             (measure-has-numerical-value
+               (economic-resource-accounting-quantity alice-usd)) 900)
+      (check "bilateral: bob widgets = 9"
+             (measure-has-numerical-value
+               (economic-resource-accounting-quantity bob-widgets)) 9))
+
+    ;; Multilateral: 3-event exchange all share same agreement
+    ($ obs 'record-event
+       (make-economic-event
+         "ev-multi-1" 'transfer #f #f
+         "r-usd-alice" #f "spec-gold" #f
+         "agent-alice" "agent-bob"
+         (make-measure 50 "USD") #f
+         #f #f "2026-03-16T10:00:00Z" #f #f #f #f
+         #f #f #f "agreement-2" #f #f #f #f #f #f))
+    ($ obs 'record-event
+       (make-economic-event
+         "ev-multi-2" 'transfer #f #f
+         "r-widget-bob" #f "spec-wheat" #f
+         "agent-bob" "agent-alice"
+         (make-measure 1 "each") #f
+         #f #f "2026-03-16T10:05:00Z" #f #f #f #f
+         #f #f #f "agreement-2" #f #f #f #f #f #f))
+    ($ obs 'record-event
+       (make-economic-event
+         "ev-multi-3" 'transfer #f #f
+         "r-usd-alice" #f "spec-gold" #f
+         "agent-alice" "agent-bob"
+         (make-measure 25 "USD") #f
+         #f #f "2026-03-16T10:10:00Z" #f #f #f #f
+         #f #f #f "agreement-2" #f #f #f #f #f #f))
+
+    (let ((e1 ($ obs 'get-event "ev-multi-1"))
+          (e2 ($ obs 'get-event "ev-multi-2"))
+          (e3 ($ obs 'get-event "ev-multi-3")))
+      (check "multi: e1 agreement" (economic-event-realization-of e1) "agreement-2")
+      (check "multi: e2 agreement" (economic-event-realization-of e2) "agreement-2")
+      (check "multi: e3 agreement" (economic-event-realization-of e3) "agreement-2"))))
+
+
+;;; ════════════════════════════════════════════════════════════════════════════
 
 (newline)
 (display (string-append "── Results: "

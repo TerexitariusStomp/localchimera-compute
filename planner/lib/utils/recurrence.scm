@@ -94,6 +94,23 @@
         ((and tr (pair? tr)) #t)
         (else #f)))))
 
+(define (epoch->iso-date epoch)
+  "Convert Unix epoch to YYYY-MM-DD string (Howard Hinnant civil_from_days)."
+  (let* ((z (+ (quotient epoch 86400) 719468))
+         (era (quotient (if (>= z 0) z (- z 146096)) 146097))
+         (doe (- z (* era 146097)))
+         (yoe (quotient (- doe (+ (quotient doe 1460)
+                                  (- (quotient doe 36524))
+                                  (quotient doe 146096)))
+                        365))
+         (y (+ yoe (* era 400)))
+         (doy (- doe (+ (* 365 yoe) (quotient yoe 4) (- (quotient yoe 100)))))
+         (mp (quotient (+ (* 5 doy) 2) 153))
+         (d (+ 1 (- doy (quotient (+ (* 153 mp) 2) 5))))
+         (m (+ mp (if (< mp 10) 3 -9)))
+         (y (if (<= m 2) (+ y 1) y)))
+    (format #f "~4,'0d-~2,'0d-~2,'0d" y m d)))
+
 (define (materialize-occurrence-dates window from to)
   "Enumerate all dates in [from, to] matching the window pattern.
    from, to: YYYY-MM-DD strings."
@@ -101,13 +118,11 @@
         (to-epoch (iso-datetime->epoch (string-append to "T00:00:00Z"))))
     (let loop ((epoch from-epoch) (dates '()))
       (if (> epoch to-epoch) (reverse dates)
-          (let* ((days (quotient epoch 86400))
-                 ;; Simplified: convert epoch to YYYY-MM-DD
-                 ;; This is approximate — proper implementation needs calendar math
-                 (date-str from))  ;; placeholder
-            ;; For now, just check every day
+          (let ((date-str (epoch->iso-date epoch)))
             (loop (+ epoch 86400)
-                  (if (date-matches-window from window) (cons from dates) dates)))))))
+                  (if (date-matches-window date-str window)
+                      (cons date-str dates)
+                      dates)))))))
 
 (define (unfulfilled-occurrences window from to events-by-occurrence)
   "Dates that should have events but don't."

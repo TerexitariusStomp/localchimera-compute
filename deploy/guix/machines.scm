@@ -21,6 +21,7 @@
              (gnu packages guile)
              (gnu packages guile-xyz)
              (gnu packages messaging)
+             (gnu packages rsync)
              (gnu packages version-control)
              (gnu packages ssh)
              (python-rns)
@@ -194,7 +195,8 @@
             mosquitto
             guile-mqtt
             guile-json-4
-            python-rns)
+            python-rns
+            rsync)
       %base-packages))
 
     (services
