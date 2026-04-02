@@ -34,6 +34,7 @@ BASE="-l lib/schemas.scm -l lib/store-utils.scm \
   -l lib/knowledge/spatial-things.scm -l lib/knowledge/recipes.scm \
   -l lib/knowledge/buffer-snapshots.scm -l lib/agents.scm \
   -l lib/execution/alerts.scm -l lib/observation/observer.scm \
+  -l lib/observation/live-resource.scm -l lib/observation/live-registry.scm \
   -l lib/observation/account.scm -l lib/planning/planning.scm \
   -l lib/scope-root.scm"
 
@@ -130,6 +131,14 @@ run_suite "Plan for Region"          "$ALL" "tests/test-plan-for-region.scm"
 run_suite "Space-Time Scenario"      "$ALL" "tests/test-space-time-scenario.scm"
 run_suite "Architectural Elegance"   "$ALL" "tests/test-architectural-elegance.scm"
 run_suite "Snapshot Hydration"       "$ALL" "tests/test-snapshot-hydration.scm"
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Infrastructure: live-resources + capacity-managed execution
+# ═══════════════════════════════════════════════════════════════════════════
+
+run_suite "Live Resource"            "$ALL" "tests/test-live-resource.scm"
+run_suite "Infrastructure Planning"  "$ALL" "tests/test-infrastructure-planning.scm"
+run_suite "Capacity Execute"         "$ALL" "tests/test-capacity-execute.scm"
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Summary

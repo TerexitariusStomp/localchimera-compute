@@ -182,8 +182,9 @@
       (let ((plan-term (car results)))
         (check-pred "bread 40: produce or unmet"
                     (memq (car plan-term) '(produce unmet)))
-        ;; plan-term = (produce spec-id rid scale sub-plans)
-        (when (and (list? plan-term) (>= (length plan-term) 4))
+        ;; plan-term = (produce spec-id rid scale consume-plans use-plans cite-plans)
+        (when (and (list? plan-term) (eq? (car plan-term) 'produce)
+                   (>= (length plan-term) 4))
           (let ((scale (list-ref plan-term 3)))
             (check-pred "bread 40: scale = 2"
                         (approx= 2 scale 0.01))))))
@@ -449,9 +450,10 @@
 
 (let ((ns (empty-netter-state)))
   ;; Verify that *non-consuming-actions* includes the right set
+  ;; 'use' needs allocation (tools/infra have limited capacity)
   (check-pred "work is non-consuming"
               (memq 'work *non-consuming-actions*))
-  (check-pred "use is non-consuming"
+  (check-pred "use is non-consuming (handled separately with time windows)"
               (memq 'use *non-consuming-actions*))
   (check-pred "cite is non-consuming"
               (memq 'cite *non-consuming-actions*))
@@ -506,4 +508,4 @@
 (display (string-append "── Results: "
                         (number->string pass-count) " passed, "
                         (number->string fail-count) " failed ──\n"))
-(when (> fail-count 0) (exit 1))
+(exit (if (> fail-count 0) 1 0))

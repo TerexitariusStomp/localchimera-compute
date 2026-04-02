@@ -86,21 +86,23 @@
                     (cond ((not v) (current-time))
                           ((number? v) v)
                           (else (iso-datetime->epoch v))))))
-        (fresh (plan-term rest-plans sums-mid)
-          (demand-o ctx spec qty due plan-term sums-in sums-mid
-                    #:depth max-depth)
-          (all-demands-o ctx (cdr demands) rest-plans sums-mid sums-out
-                         #:max-depth max-depth)
-          (== plans (cons (list d plan-term) rest-plans))))))
+        (let ((loc (assq-ref d 'at-location)))
+          (fresh (plan-term rest-plans sums-mid)
+            (demand-o ctx spec qty due plan-term sums-in sums-mid
+                      #:depth max-depth #:at-location loc)
+            (all-demands-o ctx (cdr demands) rest-plans sums-mid sums-out
+                           #:max-depth max-depth)
+            (== plans (cons (list d plan-term) rest-plans)))))))
 
 
 ;;; ── relational-plan ───────────────────────────────────────────────────────────
 
 (define* (relational-plan n recipe-store plan-store observer
                           #:key (location-store #f) (plan-id "rp")
-                                (max-depth 10) (demand-order #f))
+                                (max-depth 10) (demand-order #f)
+                                (live-registry #f))
   "Lift facts, build indexes, run the planner."
-  (let* ((facts (lift-planning-facts recipe-store observer plan-store))
+  (let* ((facts (lift-planning-facts recipe-store observer plan-store #f live-registry))
          (indexes (build-indexes facts))
          (ctx (make-plan-ctx facts plan-store observer location-store plan-id indexes)))
     (run-plan n #f (plan)

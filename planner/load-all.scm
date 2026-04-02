@@ -18,6 +18,8 @@
 (load "lib/agents.scm")
 (load "lib/execution/alerts.scm")
 (load "lib/observation/observer.scm")
+(load "lib/observation/live-resource.scm")
+(load "lib/observation/live-registry.scm")
 (load "lib/observation/account.scm")
 (load "lib/observation/transition.scm")
 (load "lib/observation/demand-policy.scm")
@@ -59,6 +61,7 @@
 ;; Execution engine
 (load "lib/execution/monitors.scm")
 (load "lib/execution/scope-execution.scm")
+(load "lib/execution/capacity-execute.scm")
 
 ;; Layer 3: Indexes
 (load "lib/indexes/index-utils.scm")

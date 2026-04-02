@@ -37,7 +37,8 @@
                     account-store-env capacity-buffer-store-env
                     spatial-thing-store-env snapshot-store-env
                     alert-store-env store-registry-env
-                    process-registry-env)))
+                    process-registry-env
+                    live-registry-env live-resource-env)))
 
 (define-values (vat farm mill bakery registry)
   (spawn-persistent-vat

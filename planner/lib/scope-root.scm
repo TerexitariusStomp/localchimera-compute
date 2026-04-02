@@ -23,7 +23,8 @@
                            plan-store-ref buffer-zone-store-ref
                            account-store-ref capacity-buffer-store-ref
                            spatial-thing-store-ref snapshot-store-ref
-                           alert-store-ref process-registry-ref)
+                           alert-store-ref process-registry-ref
+                           live-registry-ref)
   ;; All *-ref arguments are near actor references (same vat).
   ;; Goblins persistence serializes actor references natively.
 
@@ -43,7 +44,8 @@
     ((spatial-thing-store)  spatial-thing-store-ref)
     ((snapshot-store)       snapshot-store-ref)
     ((alert-store)          alert-store-ref)
-    ((process-registry)     process-registry-ref)))
+    ((process-registry)     process-registry-ref)
+    ((live-registry)        live-registry-ref)))
 
 
 ;; =========================================================================
@@ -65,8 +67,9 @@
         (sts (spawn ^spatial-thing-store (hashmap)))
         (sns (spawn ^snapshot-store '()))
         (als (spawn ^alert-store '()))
-        (preg (spawn ^process-registry (hashmap))))
-    (spawn ^scope-root scope-name rs as obs ps bzs acs cbs sts sns als preg)))
+        (preg (spawn ^process-registry (hashmap)))
+        (lr   (spawn ^live-registry (hashmap))))
+    (spawn ^scope-root scope-name rs as obs ps bzs acs cbs sts sns als preg lr)))
 
 
 ;; =========================================================================
@@ -86,4 +89,6 @@
                     spatial-thing-store-env
                     snapshot-store-env
                     alert-store-env
-                    process-registry-env)))
+                    process-registry-env
+                    live-registry-env
+                    live-resource-env)))

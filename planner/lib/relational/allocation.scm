@@ -38,17 +38,25 @@
 ;;; ── allocate-o ────────────────────────────────────────────────────────────────
 
 (define* (allocate-o facts spec-id qty remaining allocated sums-in sums-out
-                      #:key (indexes #f))
-  "Buffer-aware allocation. Uses index for O(I) inventory lookup if available."
-  (let ((resources (if indexes
-                       (filter (lambda (f) (> (cadddr f) 0))
-                               (idx-ref indexes 'inventory-by-spec spec-id))
-                       (filter (lambda (f)
-                                 (and (eq? (car f) 'inventory)
-                                      (equal? (caddr f) spec-id)
-                                      (> (cadddr f) 0)))
-                               facts)))
-        (floor (conservation-floor facts spec-id)))
+                      #:key (indexes #f) (at-location #f) (container-id #f))
+  "Buffer-aware allocation. Filters by location and containment."
+  (let* ((raw (if indexes
+                  (filter (lambda (f) (> (cadddr f) 0))
+                          (idx-ref indexes 'inventory-by-spec spec-id))
+                  (filter (lambda (f)
+                            (and (eq? (car f) 'inventory)
+                                 (equal? (caddr f) spec-id)
+                                 (> (cadddr f) 0)))
+                          facts)))
+         (by-location (if at-location
+                          (filter (lambda (f) (equal? (list-ref f 4) at-location)) raw)
+                          raw))
+         ;; Container: if container-id, only resources inside it;
+         ;; otherwise exclude contained resources (they belong to their container)
+         (resources (if container-id
+                        (filter (lambda (f) (equal? (list-ref f 5) container-id)) by-location)
+                        (filter (lambda (f) (not (list-ref f 5))) by-location)))
+         (floor (conservation-floor facts spec-id)))
     ;; Try buffer-safe allocation first, then unrestricted as fallback
     (conde
       ;; Branch 1: respect conservation floor (buffer-safe)
@@ -58,34 +66,38 @@
       ((allocate-from-o qty resources remaining allocated sums-in sums-out 0)))))
 
 (define (allocate-from-o qty resources remaining allocated sums-in sums-out floor)
-  "Post allocation constraints per resource with conservation floor."
+  "Post allocation constraints per resource with conservation floor.
+   Walks sums-in in the substitution so sums-ref/sums-set get a concrete list."
   (if (null? resources)
       (fresh ()
         (== remaining qty)
         (== allocated '())
         (== sums-out sums-in))
-      (let* ((r (car resources))
-             (rid (cadr r))
-             (inv-qty (cadddr r))
-             (available (max 0 (- inv-qty floor)))  ;; respect conservation floor
-             (old-sum (sums-ref sums-in rid)))
-        (fresh (take new-sum rest-remaining rest-alloc sums-mid)
-          ;; take ∈ [0, min(available, qty)]
-          (rangeo take 0 (min available qty))
-          ;; Running sum: total taken from this resource across all demands
-          (+fd old-sum take new-sum)
-          (<=fd new-sum inv-qty)  ;; hard cap: can't exceed physical inventory
-          ;; remaining = qty - take
-          (-fd qty take rest-remaining)
-          ;; Label (max-first: try taking the most first)
-          (labelfd take #:order 'max)
-          ;; Recurse
-          (allocate-from-o rest-remaining (cdr resources) remaining rest-alloc
-                            (sums-set sums-in rid new-sum) sums-mid floor)
-          ;; Build allocation list
-          (project (take)
-            (if (= take 0)
-                (fresh () (== allocated rest-alloc) (== sums-out sums-mid))
-                (fresh ()
-                  (== allocated (cons (list rid take) rest-alloc))
-                  (== sums-out sums-mid))))))))
+      (lambda (st)
+        (let* ((walked-sums (walk* sums-in (cstate-S st)))
+               (r (car resources))
+               (rid (cadr r))
+               (inv-qty (cadddr r))
+               (available (max 0 (- inv-qty floor)))
+               (old-sum (sums-ref walked-sums rid)))
+          ((fresh (take new-sum rest-remaining rest-alloc sums-mid)
+             ;; take ∈ [0, min(available, qty)]
+             (rangeo take 0 (min available qty))
+             ;; Running sum: total taken from this resource across all demands
+             (+fd old-sum take new-sum)
+             (<=fd new-sum inv-qty)  ;; hard cap: can't exceed physical inventory
+             ;; remaining = qty - take
+             (-fd qty take rest-remaining)
+             ;; Label (max-first: try taking the most first)
+             (labelfd take #:order 'max)
+             ;; Recurse — sums-set returns a concrete list
+             (allocate-from-o rest-remaining (cdr resources) remaining rest-alloc
+                               (sums-set walked-sums rid new-sum) sums-mid floor)
+             ;; Build allocation list
+             (project (take)
+               (if (= take 0)
+                   (fresh () (== allocated rest-alloc) (== sums-out sums-mid))
+                   (fresh ()
+                     (== allocated (cons (list rid take) rest-alloc))
+                     (== sums-out sums-mid)))))
+           st)))))

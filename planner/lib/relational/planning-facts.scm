@@ -11,6 +11,9 @@
 (use-modules (playnet kanren-constraints)
              (srfi srfi-1))
 
+;; Actions excluded from recursive demand explosion. 'use' resources (tools,
+;; compute, ovens) are handled separately with time-windowed allocation via
+;; use-schedule-inputs / solve-use-inputs-o in demand-relation.scm.
 (define *non-consuming-actions* '(use work cite deliver-service))
 
 
@@ -63,7 +66,8 @@
 ;;; ── Lift ──────────────────────────────────────────────────────────────────────
 
 (define* (lift-planning-facts recipe-store #:optional (observer #f)
-                              (plan-store #f) (buffer-zone-store #f))
+                              (plan-store #f) (buffer-zone-store #f)
+                              (live-registry #f))
   "Extract all planning facts. Recipes sorted by SNE (lowest first)."
   (let* ((all-recipes ($ recipe-store 'all-recipes))
          (chain-facts
@@ -78,9 +82,14 @@
              (lambda (r)
                (let ((chain ($ recipe-store 'get-process-chain (recipe-id r))))
                  (map (lambda (rp)
-                        `(process ,(recipe-process-id rp)
-                                  ,(recipe-process-name rp)
-                                  ,(rp-duration-ms rp)))
+                        (let ((mbq (recipe-process-minimum-batch-quantity rp)))
+                          `(process ,(recipe-process-id rp)
+                                    ,(recipe-process-name rp)
+                                    ,(rp-duration-ms rp)
+                                    ,(if mbq
+                                         (inexact->exact
+                                           (ceiling (measure-has-numerical-value mbq)))
+                                         1))))
                       chain)))
              all-recipes))
          (flow-facts
@@ -102,7 +111,8 @@
                                        ,(and (recipe-flow-resource-quantity f)
                                              (measure-has-unit
                                                (recipe-flow-resource-quantity f)))
-                                       ,(recipe-flow-action f)))
+                                       ,(recipe-flow-action f)
+                                       ,(recipe-flow-resolve-from-flow f)))
                               inputs)
                          (map (lambda (f)
                                 `(flow ,pid output
@@ -113,7 +123,8 @@
                                        ,(and (recipe-flow-resource-quantity f)
                                              (measure-has-unit
                                                (recipe-flow-resource-quantity f)))
-                                       ,(recipe-flow-action f)))
+                                       ,(recipe-flow-action f)
+                                       ,(recipe-flow-resolve-from-flow f)))
                               outputs))))
                    chain)))
              all-recipes))
@@ -134,12 +145,17 @@
       (if observer
           (filter-map
             (lambda (r)
-              (let ((qty (measure-qty (economic-resource-accounting-quantity r))))
+              (let* ((rid (economic-resource-id r))
+                     (live (and live-registry ($ live-registry 'get rid)))
+                     (qty (if live
+                              ($ live 'available)
+                              (measure-qty (economic-resource-accounting-quantity r)))))
                 (and (> qty 0)
-                     `(inventory ,(economic-resource-id r)
+                     `(inventory ,rid
                                 ,(economic-resource-conforms-to r)
                                 ,(inexact->exact (round qty))
-                                ,(economic-resource-current-location r)))))
+                                ,(economic-resource-current-location r)
+                                ,(economic-resource-contained-in r)))))
             ($ observer 'all-resources))
           '())
       (if observer
@@ -210,16 +226,23 @@
         (in-list-o `(recipe ,rid ,name ,output) matches))))
 
 (define (chain-indexed-o indexes rid pids)
-  "O(1) — direct lookup by recipe-id."
-  (let ((fact (idx-ref-single indexes 'chains-by-recipe rid)))
-    (if fact (== pids (caddr fact)) fail)))
+  "O(1) — direct lookup by recipe-id. Walks rid in substitution first."
+  (lambda (st)
+    (let* ((walked (walk* rid (cstate-S st)))
+           (fact (idx-ref-single indexes 'chains-by-recipe walked)))
+      (if fact ((== pids (caddr fact)) st) '()))))
 
 (define (flow-indexed-o indexes pid direction spec-id qty unit action)
-  "O(F) per process — indexed by process-id."
-  (let ((matches (idx-ref indexes 'flows-by-process pid)))
-    (if (null? matches)
-        fail
-        (in-list-o `(flow ,pid ,direction ,spec-id ,qty ,unit ,action) matches))))
+  "O(F) per process — indexed by process-id. Walks pid in substitution first."
+  (lambda (st)
+    (let* ((walked (walk* pid (cstate-S st)))
+           (matches (idx-ref indexes 'flows-by-process walked)))
+      (if (null? matches)
+          '()
+          ((fresh (resolve-from)
+             (in-list-o `(flow ,walked ,direction ,spec-id ,qty ,unit ,action ,resolve-from)
+                        matches))
+           st)))))
 
 (define (inventory-indexed-o indexes spec-id resource-id qty location)
   "O(I) per spec — indexed by spec-id."
@@ -242,10 +265,13 @@
   (in-list-o `(chain ,rid ,pids) facts))
 
 (define (process-o facts pid name duration-ms)
-  (in-list-o `(process ,pid ,name ,duration-ms) facts))
+  (fresh (mbq)
+    (in-list-o `(process ,pid ,name ,duration-ms ,mbq) facts)))
 
 (define (flow-o facts pid direction spec-id qty unit action)
-  (in-list-o `(flow ,pid ,direction ,spec-id ,qty ,unit ,action) facts))
+  (fresh (resolve-from)
+    (in-list-o `(flow ,pid ,direction ,spec-id ,qty ,unit ,action ,resolve-from) facts)))
 
 (define (inventory-o facts resource-id spec-id qty location)
-  (in-list-o `(inventory ,resource-id ,spec-id ,qty ,location) facts))
+  (fresh (contained-in)
+    (in-list-o `(inventory ,resource-id ,spec-id ,qty ,location ,contained-in) facts)))

@@ -156,7 +156,7 @@
         (check "cite flow spec" (car cite-flows) "spec-manual")))
 
     ;; back-schedule-inputs should EXCLUDE use and cite flows
-    ;; (renamed from collect-consuming-inputs in the relational paradigm)
+    ;; (use flows are handled separately by use-schedule-inputs with time windows)
     (let* ((ns (empty-netter-state))
            (due (+ (current-time) 86400))
            ;; Get process chain IDs for recipe-widget
@@ -167,7 +167,7 @@
           (begin (display "  SKIP  C1: chain not found\n")
                  (set! pass-count (+ pass-count 2)))
           (let ((inputs (back-schedule-inputs facts pids 1 due)))
-            ;; Only flour should appear (consume), not tool (use)
+            ;; Only flour should appear (consume), not tool (use — handled separately)
             (let ((specs (map car inputs)))
               (check-pred "C1: flour included" (member "spec-flour" specs))
               (check-pred "C1: tool excluded" (not (member "spec-tool" specs)))))))

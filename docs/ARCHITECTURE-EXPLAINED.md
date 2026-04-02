@@ -496,9 +496,25 @@ surpluses against deficits across siblings. The `advance-worst` strategy
 finds the child with the largest unmatched deficit and pulls its next result.
 Search is bounded by `*max-steps*` (50).
 
-**Key property:** Consumers of `scope-stream` don't know or care whether
+**The message interface is self-introspection.** The `federation-result` a
+scope emits is not an external description imposed by its parent — it's the
+scope's own self-assessment, discovered through its own relational search.
+When a leaf runs `plan-o` and produces `(deficits . ((spec-flour 20)))`,
+that is simultaneously:
+
+1. **Self-knowledge:** "I can't satisfy 20 flour from my own inventory/recipes"
+2. **A message to my parent:** "I have a deficit of 20 flour for lateral matching"
+
+The parent doesn't inspect the child's stores or tell it what its deficits are.
+It only sees the `federation-result` the child chose to emit. Then the parent
+composes its children's results via `evaluate-state` and emits *its own*
+`federation-result` — which is now the parent's self-description, legible to
+the grandparent. Self-knowledge and inter-scope communication are the same act
+at every level of the hierarchy.
+
+**Uniform protocol:** Consumers of `scope-stream` don't know or care whether
 they're pulling from a leaf (miniKanren search) or a parent (interleaved
-children + matching). The protocol is uniform at every level.
+children + matching). The protocol is the same at every level.
 
 **Immutable state makes this work:** Facts are plain S-expressions. The
 substitution is a persistent intmap. Constraint stores use functional updates.
@@ -512,7 +528,72 @@ for free — no explicit forking needed.
 
 ---
 
-## 5. File Reference Index
+## 5. Infrastructure as Live-Resource Actors
+
+Economic resources can also be actors. A compute resource, a memory pool, or a
+storage volume IS a Goblins actor in the scope's vat — with live state tracking
+available capacity via `reserve`/`release`.
+
+### The two numbers
+
+The observer and the live-resource actor track different things:
+
+- **Observer:** total capacity (what exists). Changed by `'raise`/`'lower` events.
+- **Live-resource actor:** available capacity (what's free right now). Changed by
+  `reserve`/`release` calls.
+
+The VF `'use` action has `no-effect` on accounting quantities — correct, because
+using a machine doesn't destroy it. The machine still exists with full capacity.
+What changes is its availability, which is operational state, not stock accounting.
+
+### How the planner sees it
+
+When `lift-planning-facts` builds inventory tuples, it checks the scope's
+`^live-registry`. If a resource-id has a live-resource actor, the planner sees
+`available` instead of `accounting-quantity`:
+
+```scheme
+;; planner/lib/relational/planning-facts.scm (inventory lifting)
+(let* ((rid (economic-resource-id r))
+       (live (and live-registry ($ live-registry 'get rid)))
+       (qty (if live
+                ($ live 'available)              ;; live: available capacity
+                (measure-qty (economic-resource-accounting-quantity r)))))
+  ;; → (inventory "cpu-1" "spec:compute" 12 "dc-1")
+```
+
+The relational planner, `allocate-o`, `demand-o`, federation — none of them
+know the difference. They see an inventory tuple with a number. Whether it's
+12 kg of wheat or 12 available cpu-hours is the same to the solver.
+
+### Execution: atomic within a vat turn
+
+Reserve capacity and record the economic event in the same `with-vat` turn.
+Both succeed or both roll back:
+
+```scheme
+(with-vat vat
+  (let ((rsv-id ($ live-resource 'reserve 4)))        ;; bcom: available 16→12
+    ($ observer 'record-event use-compute-event)))     ;; fold logs the event
+  ;; Atomic. If reserve fails → turn aborted, event not recorded.
+```
+
+### Cross-scope distribution
+
+A live-resource actor is just an actor. Within the scope: `$` (synchronous).
+Across scopes: `<-` over OCapN (async). A browser scope's planner sees a
+deficit in compute; federation matches it against the server scope's surplus.
+The actual reservation crosses the vat boundary asynchronously — no extra code.
+
+**Where to find it:**
+- `planner/lib/observation/live-resource.scm` — `^live-resource` actor
+- `planner/lib/observation/live-registry.scm` — `^live-registry` (resource-id → actor ref)
+- `planner/lib/scope-root.scm` — scope-root holds the live-registry
+- `planner/lib/relational/planning-facts.scm` — inventory lifting checks live-registry
+
+---
+
+## 6. File Reference Index
 
 ### Goblins integration / scope architecture
 | File | What it does |
@@ -522,6 +603,8 @@ for free — no explicit forking needed.
 | `planner/lib/planning/planning.scm` | `^plan-store` — intents, commitments, plans |
 | `planner/lib/observation/account.scm` | `^account-store` — commune labor-credits |
 | `planner/lib/knowledge/recipes.scm` | `^recipe-store` — recipes, processes, flows |
+| `planner/lib/observation/live-resource.scm` | `^live-resource` — infrastructure as actor |
+| `planner/lib/observation/live-registry.scm` | `^live-registry` — resource-id → actor ref |
 | `planner/lib/planning/store-registry.scm` | Cross-scope qualified refs |
 | `planner/lib/planning/plan-federation.scm` | Imperative federation (hierarchy fold) |
 

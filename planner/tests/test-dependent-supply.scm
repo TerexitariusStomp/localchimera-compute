@@ -415,6 +415,7 @@
          (ns (empty-netter-state)))
 
     ;; 9a. Verify *non-consuming-actions* classification
+    ;; 'use' is non-consuming (handled separately with time windows)
     (check-pred "use is non-consuming"
                 (memq 'use *non-consuming-actions*))
     (check-pred "work is non-consuming"
@@ -673,9 +674,8 @@
       (check-pred "14b: oven is a use input"
                   (member "spec-oven" specs)))
 
-    ;; 14c. back-schedule-inputs excludes the use flow
-    ;;      Only consuming inputs (flour for bake, wheat for mill) appear
-    ;;      Oven (use) should NOT appear
+    ;; 14c. back-schedule-inputs excludes use flows (handled separately)
+    ;;      use-schedule-inputs handles them with time windows
     (let* ((due (+ (current-time) 86400))
            (inputs (back-schedule-inputs facts '("rp-mill" "rp-bake") 1 due)))
       (check-pred "14c: inputs present" (pair? inputs))
@@ -683,7 +683,7 @@
         (check-pred "14c: oven excluded from consuming inputs (use action)"
                     (not oven-input))))
 
-    ;; 14d. Verify *non-consuming-actions* contains 'use'
+    ;; 14d. Verify 'use' IS in *non-consuming-actions* (handled by use-schedule-inputs)
     (check-pred "14d: use in *non-consuming-actions*"
                 (memq 'use *non-consuming-actions*))
 
