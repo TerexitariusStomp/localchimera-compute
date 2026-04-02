@@ -8,6 +8,7 @@ on:
       - 'server/**'
       - 'key-pool/**'
       - 'planner/**'
+      - 'module/**'
       - '.github/workflows/deploy.yml'
   workflow_dispatch:
 
