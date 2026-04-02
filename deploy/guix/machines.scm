@@ -232,6 +232,7 @@
                (playnet-gateway-configuration
                 (package %playnet-package)
                 (port 9090)
+                (reticulum? #t)
                 (environment
                  `(("API_KEYS" . ,(or (getenv "API_KEYS")
                                       (getenv "OPENROUTER_KEYS") ""))))))

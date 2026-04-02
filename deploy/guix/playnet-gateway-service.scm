@@ -22,6 +22,7 @@
             playnet-gateway-configuration-port
             playnet-gateway-configuration-user
             playnet-gateway-configuration-data-dir
+            playnet-gateway-configuration-reticulum?
             playnet-gateway-configuration-environment
             playnet-gateway-service-type))
 
@@ -38,26 +39,32 @@
   (user     playnet-gateway-configuration-user     (default "playnet"))
   ;; Persistent data directory (designator key, sturdyref, etc.)
   (data-dir playnet-gateway-configuration-data-dir (default "/var/lib/playnet"))
+  ;; Enable Reticulum netlayer (requires reticulum-bridge service)
+  (reticulum? playnet-gateway-configuration-reticulum? (default #f))
   ;; Environment variables (alist of string . string pairs)
   (environment playnet-gateway-configuration-environment (default '())))
 
 ;;; ── Shepherd service definition ────────────────────────────────────────────
 
 (define (playnet-gateway-shepherd-service config)
-  (let ((package  (playnet-gateway-configuration-package config))
-        (port     (playnet-gateway-configuration-port config))
-        (user     (playnet-gateway-configuration-user config))
-        (data-dir (playnet-gateway-configuration-data-dir config))
-        (env      (playnet-gateway-configuration-environment config)))
+  (let ((package     (playnet-gateway-configuration-package config))
+        (port        (playnet-gateway-configuration-port config))
+        (user        (playnet-gateway-configuration-user config))
+        (data-dir    (playnet-gateway-configuration-data-dir config))
+        (reticulum?  (playnet-gateway-configuration-reticulum? config))
+        (env         (playnet-gateway-configuration-environment config)))
     (list
      (shepherd-service
       (provision '(playnet-gateway))
       (documentation "playnet OCapN gateway — capability-secure communication hub")
-      (requirement '(networking user-processes reticulum-bridge))
+      (requirement (if reticulum?
+                       '(networking user-processes reticulum-bridge)
+                       '(networking user-processes)))
       (start
        #~(make-forkexec-constructor
           (list (string-append #$package "/bin/playnet-gateway")
-                "--port" #$(number->string port))
+                "--port" #$(number->string port)
+                #$@(if reticulum? '("--reticulum") '()))
           #:user #$user
           #:directory (string-append #$package "/share/playnet")
           #:environment-variables
