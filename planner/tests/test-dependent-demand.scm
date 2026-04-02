@@ -168,7 +168,7 @@
 
     ;; Demand 20 bread with no inventory → must produce
     (let ((results (run-plan 1 ns (q)
-                     (fresh (sums) (demand-o ctx "spec-bread" 20 due q '() sums #:depth 8)))))
+                     (demand-o ctx "spec-bread" 20 due q #:depth 8))))
       (check-pred "bread demand: finds solution" (pair? results))
       ;; demand-o returns 'produce or 'unmet (not 'purchase — unmet IS the purchase signal)
       (check-pred "bread demand: produce or unmet"
@@ -177,7 +177,7 @@
     ;; Demand 40 bread → scale factor = 2 (recipe makes 20)
     ;; Should recurse: need flour (2× recipe), need wheat (2× recipe)
     (let ((results (run-plan 1 ns (q)
-                     (fresh (sums) (demand-o ctx "spec-bread" 40 due q '() sums #:depth 8)))))
+                     (demand-o ctx "spec-bread" 40 due q #:depth 8))))
       (check-pred "bread 40: finds solution" (pair? results))
       (let ((plan-term (car results)))
         (check-pred "bread 40: produce or unmet"
@@ -192,7 +192,7 @@
     ;; Wheat has no upstream recipe → leaf demands result in purchase
     ;; We can verify by demanding wheat directly with no inventory
     (let ((results (run-plan* ns (q)
-                     (fresh (sums) (demand-o ctx "spec-wheat" 10 due q '() sums #:depth 3)))))
+                     (demand-o ctx "spec-wheat" 10 due q #:depth 3))))
       ;; In the relational paradigm, 'unmet' is the purchase signal
       (check-pred "wheat: has unmet (purchase) option"
                   (and (pair? results)
@@ -234,20 +234,20 @@
 
     ;; 30kg flour demand — 50kg in inventory → fully satisfied
     (let ((results (run-plan 1 ns (q)
-                     (fresh (sums) (demand-o ctx "spec-flour" 30 due q '() sums)))))
+                     (demand-o ctx "spec-flour" 30 due q))))
       ;; allocate-o finds inventory → remaining=0 → satisfied
       (check-pred "flour 30: satisfied or covered"
                   (and (pair? results) (memq (caar results) '(satisfied produce unmet)))))
 
     ;; 80kg flour demand — 50kg inventory, 30 remaining → needs production
     (let ((results (run-plan 1 ns (q)
-                     (fresh (sums) (demand-o ctx "spec-flour" 80 due q '() sums)))))
+                     (demand-o ctx "spec-flour" 80 due q))))
       (check-pred "flour 80: not fully satisfied"
                   (and (pair? results) (not (eq? 'satisfied (caar results))))))
 
     ;; 150kg wheat demand — 200kg in inventory → fully satisfied
     (let ((results (run-plan 1 ns (q)
-                     (fresh (sums) (demand-o ctx "spec-wheat" 150 due q '() sums)))))
+                     (demand-o ctx "spec-wheat" 150 due q))))
       (check-pred "wheat 150: satisfied or covered"
                   (and (pair? results) (memq (caar results) '(satisfied produce unmet)))))))
 
@@ -270,7 +270,7 @@
 
     ;; Bread (0 in inventory) — should find both produce and purchase
     (let ((results (run-plan 3 ns (q)
-                     (fresh (sums) (demand-o ctx "spec-bread" 20 due q '() sums #:depth 5)))))
+                     (demand-o ctx "spec-bread" 20 due q #:depth 5))))
       (check-pred "bread: multiple solutions" (>= (length results) 2))
       (let ((kinds (map car results)))
         (check-pred "bread: has produce option" (memq 'produce kinds))
@@ -297,7 +297,7 @@
     ;; Widget: two recipes — fast (1h SNLT) and slow (2h SNLT)
     ;; Both should appear as solutions
     (let ((results (run-plan* ns (q)
-                     (fresh (sums) (demand-o ctx "spec-widget" 1 due q '() sums #:depth 3)))))
+                     (demand-o ctx "spec-widget" 1 due q #:depth 3))))
       (check-pred "widget: finds solutions" (pair? results))
 
       ;; Extract recipe IDs from produce solutions
@@ -397,14 +397,14 @@
 
     ;; At depth 0, no recursion allowed → only purchase
     (let ((results (run-plan* ns (q)
-                     (fresh (sums) (demand-o ctx "spec-bread" 20 due q '() sums #:depth 0)))))
+                     (demand-o ctx "spec-bread" 20 due q #:depth 0))))
       ;; depth 0 returns fail (no search), so results is empty
       (check-pred "depth 0: no results (depth exhausted)"
                   (null? results)))
 
     ;; At depth 1, can produce bread but sub-demands are purchase-only
     (let ((results (run-plan 1 ns (q)
-                     (fresh (sums) (demand-o ctx "spec-bread" 20 due q '() sums #:depth 1)))))
+                     (demand-o ctx "spec-bread" 20 due q #:depth 1))))
       (check-pred "depth 1: finds a solution" (pair? results)))))
 
 

@@ -248,32 +248,29 @@
 
 (display "\n── Infrastructure allocation ──\n")
 
-(define ns #f)  ;; netter state not used by kanren-constraints
-(define infra-sums
-  (map (lambda (f) (cons (cadr f) 0))
-       (filter (lambda (f) (eq? (car f) 'inventory)) infra-facts)))
+(define ns (quote ()))  ;; netter state not used by kanren-constraints
 
 ;; Allocate 4 cpu-hours from 16 available
 (let ((results (run-plan 1 ns (q)
-                 (fresh (remaining allocated sums-out)
+                 (fresh (remaining allocated)
                    (allocate-o infra-facts "spec:compute" 4 remaining allocated
-                               infra-sums sums-out #:indexes infra-indexes)
+                                 #:indexes infra-indexes)
                    (== q remaining)))))
   (check "allocate 4 compute: remaining = 0" (and (pair? results) (car results)) 0))
 
 ;; Allocate 20 cpu-hours from 16 — remaining = 4
 (let ((results (run-plan 1 ns (q)
-                 (fresh (remaining allocated sums-out)
+                 (fresh (remaining allocated)
                    (allocate-o infra-facts "spec:compute" 20 remaining allocated
-                               infra-sums sums-out #:indexes infra-indexes)
+                                 #:indexes infra-indexes)
                    (== q remaining)))))
   (check "allocate 20 compute: remaining = 4" (and (pair? results) (car results)) 4))
 
 ;; Allocate 30 GB memory from 32 — remaining = 0
 (let ((results (run-plan 1 ns (q)
-                 (fresh (remaining allocated sums-out)
+                 (fresh (remaining allocated)
                    (allocate-o infra-facts "spec:memory" 30 remaining allocated
-                               infra-sums sums-out #:indexes infra-indexes)
+                                 #:indexes infra-indexes)
                    (== q remaining)))))
   (check "allocate 30 memory: remaining = 0" (and (pair? results) (car results)) 0))
 
@@ -293,10 +290,9 @@
 ;; Plan term: (produce spec rid scale consume-plans use-plans)
 ;; Take 5 results: unmet comes before produce due to interleaving
 (let ((results (run-plan 5 ns (q)
-                 (fresh (sums-out)
-                   (demand-o infra-ctx "spec:transcript" 1
-                             (+ (current-time) 86400) q infra-sums sums-out
-                             #:depth 5)))))
+                 (demand-o infra-ctx "spec:transcript" 1
+                           (+ (current-time) 86400) q
+                           #:depth 5))))
   (check-pred "transcript demand: finds solution" (pair? results))
   (let ((plan (find (lambda (r) (and (pair? r) (eq? (car r) 'produce))) results)))
     (check-pred "transcript: produces via recipe" (not (not plan)))
@@ -326,10 +322,9 @@
 
 ;; Demand 1 dataset — bandwidth and storage as use-windows
 (let ((results (run-plan 5 ns (q)
-                 (fresh (sums-out)
-                   (demand-o infra-ctx "spec:dataset" 1
-                             (+ (current-time) 86400) q infra-sums sums-out
-                             #:depth 5)))))
+                 (demand-o infra-ctx "spec:dataset" 1
+                           (+ (current-time) 86400) q
+                           #:depth 5))))
   (check-pred "dataset demand: finds solution" (pair? results))
   (let ((plan (find (lambda (r) (and (pair? r) (eq? (car r) 'produce))) results)))
     (check-pred "dataset: produces via recipe" (not (not plan)))
@@ -369,9 +364,6 @@
 
 ;; Demand 2 transcripts (needs 2 * 4 = 8 cpu-hours, but only 6 available)
 (define reduced-indexes (build-indexes reduced-facts))
-(define reduced-sums
-  (map (lambda (f) (cons (cadr f) 0))
-       (filter (lambda (f) (eq? (car f) 'inventory)) reduced-facts)))
 (define reduced-ctx
   (with-vat vat
     (make-plan-ctx reduced-facts ($ scope 'plan-store) ($ scope 'observer)
@@ -380,19 +372,17 @@
 ;; Scale 1 = 4 cpu-hours (from 6, leaving 2). Scale 2 would need 4 more but
 ;; only 2 remain → second transcript is either unmet or partially met
 (let ((results (run-plan 1 ns (q)
-                 (fresh (sums-out)
-                   (demand-o reduced-ctx "spec:transcript" 1
-                             (+ (current-time) 86400) q reduced-sums sums-out
-                             #:depth 5)))))
+                 (demand-o reduced-ctx "spec:transcript" 1
+                           (+ (current-time) 86400) q
+                           #:depth 5))))
   (check-pred "1 transcript with 6 compute: still satisfiable" (pair? results)))
 
 ;; Demand 4 transcripts — needs 16 cpu-hours, only 6 available → can produce 1
 ;; at scale 1 (4 cpu-hours), remaining compute for 2nd is short
 (let ((results (run-plan 2 ns (q)
-                 (fresh (sums-out)
-                   (demand-o reduced-ctx "spec:transcript" 4
-                             (+ (current-time) 86400) q reduced-sums sums-out
-                             #:depth 5)))))
+                 (demand-o reduced-ctx "spec:transcript" 4
+                           (+ (current-time) 86400) q
+                           #:depth 5))))
   (check-pred "4 transcripts with 6 compute: finds at least one plan"
               (pair? results)))
 

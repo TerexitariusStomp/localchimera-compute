@@ -36,12 +36,15 @@
                ctx-facts ctx-ps ctx-obs ctx-ls ctx-plan-id ctx-indexes)
   #:export (;; State
             make-cstate empty-cstate
-            cstate-S cstate-C cstate-N cstate-CS cstate-FD
+            cstate-S cstate-C cstate-N cstate-CS cstate-FD cstate-P
+            cstate-with
             ;; Core forms
             == succeed fail
             call/fresh fresh conde
             disj conj
             Zzz conj+ disj+
+            ;; Stream
+            bind mplus
             ;; Run
             run-plan run-plan*
             ;; Projection + list
@@ -50,6 +53,9 @@
             =/= numbero symbolo absento
             ;; CLP(FD)
             infd rangeo +fd -fd *fd <fd <=fd distinctfd labelfd
+            ;; CLP(FD) internals (for custom constraints)
+            domain-ref domain-lo domain-hi make-interval
+            register-propagator
             ;; Extra relations
             lasto))
 

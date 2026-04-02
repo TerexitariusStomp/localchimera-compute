@@ -512,16 +512,11 @@
          (indexes (build-indexes facts))
          (ctx (make-plan-ctx facts ps obs #f "test-mode-c-demand" indexes))
          (due (+ (current-time) 86400))
-         ;; Build initial sums from inventory facts (same pattern as plan-o)
-         (initial-sums
-           (map (lambda (f) (cons (cadr f) 0))
-                (filter (lambda (f) (eq? (car f) 'inventory)) facts))))
+         )
 
     ;; 9a. Yarn demand satisfied from inventory (50 kg available)
     (let ((results (run-plan 1 ns (q)
-                     (fresh (sums-out)
-                       (demand-o ctx "spec-yarn" 30 due q
-                                 initial-sums sums-out)))))
+                     (demand-o ctx "spec-yarn" 30 due q))))
       (check-pred "yarn 30: satisfied from inventory"
                   (and (pair? results) (eq? 'satisfied (caar results))))
       (when (and (pair? results) (list? (car results)) (>= (length (car results)) 4))
@@ -532,19 +527,14 @@
 
     ;; 9b. Wool demand satisfied from inventory (100 kg available)
     (let ((results (run-plan 1 ns (q)
-                     (fresh (sums-out)
-                       (demand-o ctx "spec-wool" 80 due q
-                                 initial-sums sums-out)))))
+                     (demand-o ctx "spec-wool" 80 due q))))
       (check-pred "wool 80: satisfied from inventory"
                   (and (pair? results) (eq? 'satisfied (caar results)))))
 
     ;; 9c. Garment demand: no garment inventory → demand-o returns unmet
-    ;;     (produce branch not reachable via indexed lookup — see NOTE)
     (let ((results (run-plan 1 ns (q)
-                     (fresh (sums-out)
-                       (demand-o ctx "spec-garment" 5 due q
-                                 initial-sums sums-out
-                                 #:depth 5)))))
+                     (demand-o ctx "spec-garment" 5 due q
+                               #:depth 5))))
       (check-pred "garment 5: unmet (no inventory, produce via indexed ctx not reachable)"
                   (and (pair? results) (eq? 'unmet (caar results)))))
 

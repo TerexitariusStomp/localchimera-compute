@@ -4,10 +4,8 @@
 ;;; Demand priority is a social decision — the commune provides it
 ;;; via an optional ordering function. The planner doesn't classify.
 ;;;
-;;; Default: no ordering — demands processed as given, search explores all.
-;;; With ordering: highest-priority demands get first pick of inventory.
-;;; The ordering is a heuristic (biases run-plan 1), not a constraint
-;;; (run-plan* finds all plans regardless of order).
+;;; No sums threading — allocation uses global sum constraints in CLP(FD).
+;;; The claim registry lives in the N field of the cstate vector.
 
 (use-modules (playnet kanren-constraints)
              (srfi srfi-1))
@@ -18,19 +16,10 @@
 ;;; ── plan-o ────────────────────────────────────────────────────────────────────
 
 (define* (plan-o ctx plan #:key (max-depth 10) (demand-order #f))
-  "Relate open demands to a complete PLAN.
-   DEMAND-ORDER: optional (a b → bool) comparator for demand priority.
-   If provided, demands are sorted — highest priority gets first pick.
-   If #f, demands are processed in natural order."
+  "Relate open demands to a complete PLAN."
   (let* ((raw (extract-open-demands (ctx-ps ctx)))
-         (demands (if demand-order (sort raw demand-order) raw))
-         (facts (ctx-facts ctx))
-         (initial-sums
-           (map (lambda (f) (cons (cadr f) 0))
-                (filter (lambda (f) (eq? (car f) 'inventory)) facts))))
-    (fresh (sums-final)
-      (all-demands-o ctx demands plan initial-sums sums-final
-                     #:max-depth max-depth))))
+         (demands (if demand-order (sort raw demand-order) raw)))
+    (all-demands-o ctx demands plan #:max-depth max-depth)))
 
 (define (extract-open-demands plan-store)
   (filter-map
@@ -54,8 +43,7 @@
     (< da db)))
 
 (define (by-local-first facts)
-  "Locally-satisfiable demands first, then producible, then external.
-   Returns a comparator closed over FACTS."
+  "Locally-satisfiable demands first, then producible, then external."
   (lambda (a b)
     (let ((ca (demand-class facts (assq-ref a 'spec-id)))
           (cb (demand-class facts (assq-ref b 'spec-id))))
@@ -75,10 +63,10 @@
 
 ;;; ── all-demands-o ─────────────────────────────────────────────────────────────
 
-(define* (all-demands-o ctx demands plans sums-in sums-out #:key (max-depth 10))
-  "Solve demands in given order, threading shared allocation sums."
+(define* (all-demands-o ctx demands plans #:key (max-depth 10))
+  "Solve all demands. Claims accumulate in the N field — no sums threading."
   (if (null? demands)
-      (fresh () (== plans '()) (== sums-out sums-in))
+      (== plans '())
       (let* ((d (car demands))
              (spec (assq-ref d 'spec-id))
              (qty (assq-ref d 'quantity))
@@ -87,10 +75,10 @@
                           ((number? v) v)
                           (else (iso-datetime->epoch v))))))
         (let ((loc (assq-ref d 'at-location)))
-          (fresh (plan-term rest-plans sums-mid)
-            (demand-o ctx spec qty due plan-term sums-in sums-mid
+          (fresh (plan-term rest-plans)
+            (demand-o ctx spec qty due plan-term
                       #:depth max-depth #:at-location loc)
-            (all-demands-o ctx (cdr demands) rest-plans sums-mid sums-out
+            (all-demands-o ctx (cdr demands) rest-plans
                            #:max-depth max-depth)
             (== plans (cons (list d plan-term) rest-plans)))))))
 
@@ -105,5 +93,5 @@
   (let* ((facts (lift-planning-facts recipe-store observer plan-store #f live-registry))
          (indexes (build-indexes facts))
          (ctx (make-plan-ctx facts plan-store observer location-store plan-id indexes)))
-    (run-plan n #f (plan)
+    (run-plan n '() (plan)
       (plan-o ctx plan #:max-depth max-depth #:demand-order demand-order))))

@@ -263,11 +263,11 @@ Delegation is the only thing the citizen actively configures. Expression weight 
 
 The snapshot is built at ballot-open time by reading claim capacities from the scope's account-store and delegation maps for each citizen. Frozen for the ballot's lifetime.
 
-### 4. `^plan-expression` -- Preference over plans
+### 4. `^plan-expression` -- Preference over plans and scope evolutions
 
 **Pattern:** Weighted distribution over alternatives. New actor.
 
-When the planning layer produces multiple feasible plans, citizens express preferences by distributing their expression weight across them.
+When the planning layer produces multiple feasible plans — or scope evolution proposals (merge, split, transfer) — citizens express preferences by distributing their expression weight across them.
 
 ```scheme
 (define-actor (^plan-expression bcom scope-id plan-ids
@@ -426,6 +426,118 @@ A commune issuing a revocable capability so a delegate can act on its behalf in 
 
 ---
 
+## Scope Evolution: Metabolism Proposes, Governance Disposes
+
+Scopes are not permanent administrative boundaries. They emerge from metabolic clustering — resources that flow together belong together — and evolve as metabolic patterns change. The planner proposes scope evolutions; citizens decide.
+
+### Metabolic coherence
+
+A scope's **coherence** = internal resource flow / total resource flow (from `flow-graph.scm`). A scope with coherence 0.9 circulates 90% of its value internally — it is a metabolically meaningful unit. A scope with coherence 0.3 is mostly dependent on external flows — its boundaries may not match the real economy.
+
+**Interdependence** between two scopes = bilateral flow / total external flow of both. High interdependence means two scopes are tightly coupled and may be better off merged.
+
+**Boundary objective** = weighted average coherence across all scopes. A single number evaluating the quality of the entire scope configuration. Higher = better metabolic alignment between governance boundaries and economic reality.
+
+### Scope evolution types
+
+| Evolution | When | What changes |
+|---|---|---|
+| **Merge** | Two scopes have high interdependence | Observers merge, resources join one scope, agents become co-members |
+| **Split** | A scope has low coherence (two disconnected resource clusters) | Observer splits, resources partition into new scopes |
+| **Transfer** | A single resource would improve coherence in another scope | Resource custody moves from one observer to another |
+
+These correspond to existing functions: `merge-candidates(graph, theta-merge)`, `split-candidates(graph, theta-split)` in `flow-graph.scm`.
+
+### Federation planning IS scope evolution
+
+The key insight: scope evolution is not a separate relational search. It is **post-processing of federation planning results**. The federation planner (`federation.scm`) already does the hard relational work — it sees all resources across scopes, matches deficits to surpluses laterally, and produces plans with flow patterns. Scope evolution analyzes those flows and proposes boundary changes.
+
+Trying to make scope boundaries into miniKanren logic variables doesn't work:
+- Wrapping `merge-candidates` in `conde` is ground enumeration dressed as relations — the candidates are pre-computed from the flow graph, not discovered by constraint propagation
+- Running `plan-o` inside an outer scope-search is a nested search, not a constraint — it's generate-and-test with an expensive test
+- Sorting by coherence doesn't compose with miniKanren's interleaving — results come out in search order, not coherence order
+
+Instead, the architecture is a **pipeline** where each stage does what it's good at:
+
+### The pipeline
+
+```
+1. RELATIONAL — Federation planning (plan-o, scope-stream)
+   The existing federation planner searches for feasible plans across all
+   scopes. This is genuine constraint propagation: miniKanren explores
+   allocations, recipes, demand-supply matching. The result includes
+   lateral matches (deficits in one scope satisfied by surpluses in another).
+
+2. GROUND — Flow analysis (build-flow-graph, coherence, boundary-objective)
+   From the federation result's lateral matches and resource flows,
+   build the value-flow graph. Compute coherence per scope and
+   boundary-objective for the current configuration.
+
+3. GROUND — Candidate generation (merge-candidates, split-candidates)
+   Identify scope pairs with high interdependence (merge candidates)
+   and scopes with low coherence (split candidates). Score each
+   candidate by estimated coherence improvement.
+
+4. GROUND — Sort candidates by estimated boundary-objective improvement.
+
+5. GOVERNANCE — Present ranked proposals via ^plan-expression.
+   Citizens distribute claim capacity across candidate evolutions.
+```
+
+The relational part is step 1 — the federation planner doing genuine search. Steps 2-4 are pure ground functions analyzing the results. Step 5 is governance.
+
+### Why inversion works
+
+The federation planner already sees all resources (it aggregates across scopes via `scope-stream`). Its lateral matches reveal the metabolic connections between scopes — which deficits flow to which surpluses, and how much. This IS the data from which scope boundaries should be derived.
+
+Rather than "given scopes, find plans, then rethink scopes," the federation planner effectively does "find the best flows across all resources, then ask whether the current scope boundaries match those flows." Scope boundaries are derived from the plan's flow pattern, not assumed before planning.
+
+### Governance decides
+
+The pipeline produces a ranked list of scope evolution proposals, each with a coherence score and a feasible federation plan. These go to **`^plan-expression`**: citizens distribute their claim capacity across candidate evolutions.
+
+This is the same mechanism used for choosing between competing plans within a scope — `^plan-expression` handles both. The only difference is that scope evolution proposals change the boundaries themselves, not just the activity within them.
+
+A scope evolution implicitly changes resource custody:
+- **Merge** — observers merge, resources and accounts join one scope
+- **Split** — observer partitions into new scopes, resources and accounts follow the clustering
+- **Transfer** — a resource moves from one observer to another
+
+These are economic operations executed after the governance decision.
+
+### Three cycles at different timescales
+
+**The economic cycle** (continuous):
+
+People work, produce, consume, transfer. Events are recorded in scope observers. Account stores credit labor. Claim capacities change. Expression weight shifts.
+
+**The planning cycle** (periodic):
+
+Facts are lifted from each scope's stores (`lift-planning-facts`). The federation planner runs (`scope-stream` → `plan-o` at leaves, lateral matching at parents). Plans produce commitments, which are executed as new economic events. Back to the economic cycle.
+
+**The scope evolution cycle** (threshold-triggered):
+
+After each planning cycle, `boundary-objective` is recomputed from the flow graph. This is cheap — just `build-flow-graph` over observer events, then one number. If any scope's coherence drops below `theta-split`, or any pair's interdependence exceeds `theta-merge`, the evolution cycle triggers:
+
+```
+build-flow-graph from observer events          (ground — flow-graph.scm)
+  → coherence per scope, interdependence per pair
+threshold crossed?
+  no  → done, wait for next planning cycle
+  yes → generate merge/split/transfer candidates
+        sort by estimated boundary-objective improvement
+        present to ^plan-expression
+        citizens distribute claim capacity across proposals
+        winning evolution executed (merge/split/transfer observers)
+        next planning cycle runs with new boundaries
+```
+
+The threshold trigger is self-correcting: the system only proposes boundary changes when metabolic reality has drifted from governance boundaries. No churn when coherence is stable. Immediate response when it isn't.
+
+Scopes are living structures. They emerge from metabolism, evolve by proposal and expression, and dissolve when coherence drops to zero and no citizens remain.
+
+---
+
 ## Liquid Democracy in the Labor-Derived Model
 
 The delegation graph within each scope is a weighted graph. Each citizen's delegation map sums to <= 1.0, with the remainder being direct expression.
@@ -502,6 +614,8 @@ When a commune alleges a federation decision exceeds authority:
 
 If withdrawal occurs, the planning process automatically adjusts -- the withdrawing commune's commitments become unmet demands, its expected receipts are redirected.
 
+Scope evolution proposals (merge, split, transfer) can also be part of dispute resolution. A commune that believes its boundaries don't match metabolic reality can trigger a federation planning cycle. The flow analysis on the results will surface coherence problems and generate candidate reconfigurations, which go to `^plan-expression` for the affected scopes to decide.
+
 The planner is a pure function over merged data -- it produces options, not decisions. Decisions remain with citizens via their expression-weighted voice.
 
 ---
@@ -542,3 +656,5 @@ The planner is a pure function over merged data -- it produces options, not deci
 - **CCF update governance:** CCF is set via scope governance (`set-ccf` behind the governance seal). Should this require a ballot, or can care providers update it directly? What about temporary incapacity (broken leg) vs. permanent (congenital disability) -- different update cadences?
 - **Federation weight and productivity:** A scope's federation weight = sum of claim capacities = total economic activity. This means more economically active scopes have more federation voice. The solidarity mechanism ensures incapacitated members are counted, but scopes with more total labor still weigh more. Is this desirable? The alternative (bounding by citizen count) would reintroduce a centralized counting mechanism.
 - **Cross-scope identity for treemap:** Governance doesn't need cross-scope identity, but the treemap (showing all your scopes) does. This relies on OCapN introduction chains -- the citizen holds references to their accounts in each scope. Is this sufficient, or does federated identity require more structure?
+- **Merge/split thresholds:** What are the right values for theta-merge (interdependence threshold for merge proposals) and theta-split (coherence threshold for split proposals)? Should these be governance parameters set per federation level? Too low = constant churn, too high = stale boundaries.
+- **Scope evolution and expression continuity:** When scopes merge, how do claim capacities combine? When scopes split, how is the account-store partitioned? Does labor history transfer with the agent, or does it stay with the original scope's observer?

@@ -28,7 +28,7 @@
       (begin (set! fail-count (+ fail-count 1))
              (display (string-append "  FAIL  " label "\n")))))
 
-(define ns #f)
+(define ns (quote ()))
 
 ;;; ════════════════════════════════════════════════════════════════════════════
 ;;; 1. Core
@@ -96,10 +96,6 @@
     (make-plan-ctx test-facts ($ scope 'plan-store) ($ scope 'observer) #f "test-rp"
                    (build-indexes test-facts))))
 
-;; Initial sums for allocation tests
-(define test-sums
-  (map (lambda (f) (cons (cadr f) 0))
-       (filter (lambda (f) (eq? (car f) 'inventory)) test-facts)))
 
 (check-pred "facts include inventory"
             (any (lambda (f) (eq? (car f) 'inventory)) test-facts))
@@ -123,9 +119,8 @@
 
 ;; 30 flour from 50
 (let ((results (run-plan 1 ns (q)
-                 (fresh (remaining allocated sums-out)
-                   (allocate-o test-facts "spec-flour" 30 remaining allocated
-                               test-sums sums-out)
+                 (fresh (remaining allocated)
+                   (allocate-o test-facts "spec-flour" 30 remaining allocated)
                    (== q (list remaining allocated))))))
   (check-pred "allocate 30 flour: finds solution" (pair? results))
   (when (pair? results)
@@ -133,25 +128,22 @@
 
 ;; 80 flour from 50 — remaining = 30
 (let ((results (run-plan 1 ns (q)
-                 (fresh (remaining allocated sums-out)
-                   (allocate-o test-facts "spec-flour" 80 remaining allocated
-                               test-sums sums-out)
+                 (fresh (remaining allocated)
+                   (allocate-o test-facts "spec-flour" 80 remaining allocated)
                    (== q remaining)))))
   (check "allocate 80 flour: remaining = 30" (and (pair? results) (car results)) 30))
 
 ;; 150 wheat from 200
 (let ((results (run-plan 1 ns (q)
-                 (fresh (remaining allocated sums-out)
-                   (allocate-o test-facts "spec-wheat" 150 remaining allocated
-                               test-sums sums-out)
+                 (fresh (remaining allocated)
+                   (allocate-o test-facts "spec-wheat" 150 remaining allocated)
                    (== q remaining)))))
   (check "allocate 150 wheat: remaining = 0" (and (pair? results) (car results)) 0))
 
 ;; 20 bread from 0
 (let ((results (run-plan 1 ns (q)
-                 (fresh (remaining allocated sums-out)
-                   (allocate-o test-facts "spec-bread" 20 remaining allocated
-                               test-sums sums-out)
+                 (fresh (remaining allocated)
+                   (allocate-o test-facts "spec-bread" 20 remaining allocated)
                    (== q remaining)))))
   (check "allocate 20 bread: remaining = 20" (and (pair? results) (car results)) 20))
 
@@ -167,27 +159,22 @@
 
     ;; 30 flour: satisfied from inventory
     (let ((results (run-plan 1 ns (q)
-                     (fresh (sums-out)
-                       (demand-o test-ctx "spec-flour" 30 due q test-sums sums-out)))))
+                     (demand-o test-ctx "spec-flour" 30 due q))))
       (check-pred "flour 30: satisfied"
                   (and (pair? results) (eq? 'satisfied (caar results)))))
 
     ;; 20 bread: must produce or unmet
     (let ((results (run-plan 1 ns (q)
-                     (fresh (sums-out)
-                       (demand-o test-ctx "spec-bread" 20 due q test-sums sums-out
-                                 #:depth 5)))))
+                     (demand-o test-ctx "spec-bread" 20 due q
+                               #:depth 5))))
       (check-pred "bread 20: finds solution" (pair? results))
       (check-pred "bread 20: produces or unmets"
                   (and (pair? results) (memq (caar results) '(produce unmet)))))
 
     ;; Both produce and unmet are reachable
-    ;; (tested separately — run-plan 2 with CLP(FD) labeling is slow due to
-    ;; interleaving between deep produce search and simple unmet branch)
     (let ((first (run-plan 1 ns (q)
-                   (fresh (sums-out)
-                     (demand-o test-ctx "spec-bread" 20 due q test-sums sums-out
-                               #:depth 5)))))
+                   (demand-o test-ctx "spec-bread" 20 due q
+                             #:depth 5))))
       (check-pred "bread: first plan found" (pair? first))
       (check-pred "bread: is produce or unmet"
                   (and (pair? first) (memq (caar first) '(produce unmet)))))))

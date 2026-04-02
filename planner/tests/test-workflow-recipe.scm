@@ -250,13 +250,10 @@
 
 (let* ((ns (empty-netter-state))
        (due (+ (current-time) 86400))
-       (sums (map (lambda (f) (cons (cadr f) 0))
-                  (filter (lambda (f) (eq? (car f) 'inventory)) wf-facts)))
        (results (catch #t
                   (lambda () (run-plan 5 ns (q)
-                               (fresh (sout)
-                                 (demand-o wf-ctx "spec-packed-herb" 20 due q
-                                           sums sout #:depth 5))))
+                               (demand-o wf-ctx "spec-packed-herb" 20 due q
+                                         #:depth 5)))
                   (lambda (key . args) '()))))
   (if (null? results)
       (begin (display "  SKIP  herbs: CLP(FD) issue\n")
