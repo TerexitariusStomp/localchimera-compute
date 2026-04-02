@@ -10,10 +10,18 @@
 
 (define *default-depth* 10)
 ;; Actions excluded from recursive demand explosion in back-schedule-inputs.
-;; 'use' → time-windowed allocation (solve-use-inputs-o)
-;; 'cite' → existence gate (solve-cite-inputs-o)
-;; 'work' / 'deliver-service' → labor/service, not resource allocation
-(define *non-consuming* '(use work cite deliver-service))
+;; Each is handled by a specialized solver instead:
+;;
+;; Time-windowed (solve-use-inputs-o) — resource occupied during process:
+;;   use     — tool/equipment, unavailable during process
+;;   accept  — enters repair/modification, paired with modify output
+;;   pickup  — enters transport, paired with dropoff output
+;;   work    — labor with resource-quantity (e.g., "2 welders"), occupies agents
+;;
+;; Existence gate (solve-cite-inputs-o) — resource must exist:
+;;   cite            — referenced for credit, remains available
+;;   deliver-service — service availability (not inventoried)
+(define *non-consuming* '(use accept pickup work cite deliver-service))
 
 
 ;;; ── demand-o ──────────────────────────────────────────────────────────────────
@@ -106,15 +114,35 @@
 
 ;;; ── transport-branch ─────────────────────────────────────────────────────────
 ;;; Sources from a different location when local allocation + production fail.
-;;; miniKanren explores all source locations via inventory-o naturally.
+;;; Fully relational: =/= for location disequality, in-list-o for transport
+;;; recipe exploration via interleaving.
+
+(define (transport-recipe-o facts spec-id transport-rid)
+  "Relate SPEC-ID to a transport recipe (one with pickup + dropoff flows).
+   Explores all matching recipes via in-list-o — interleaving, not picking first."
+  (fresh (rname pickup-pid dropoff-pid pids resolve1 resolve2 fid1 fid2
+          qty1 unit1 qty2 unit2)
+    ;; Find a pickup input flow for spec-id
+    (in-list-o `(flow ,pickup-pid input ,spec-id ,qty1 ,unit1 pickup ,resolve1 ,fid1) facts)
+    ;; Find a dropoff output flow for spec-id
+    (in-list-o `(flow ,dropoff-pid output ,spec-id ,qty2 ,unit2 dropoff ,resolve2 ,fid2) facts)
+    ;; Find a recipe whose chain contains both pids
+    (recipe-o facts transport-rid rname spec-id)
+    (chain-o facts transport-rid pids)
+    (project (pids pickup-pid dropoff-pid)
+      (if (and (member pickup-pid pids) (member dropoff-pid pids))
+          succeed
+          fail))))
 
 (define (transport-branch ctx spec-id remaining due plan-term
                           sums-in sums-out at-location)
-  "Allocate from a different location. Only tried when at-location is set."
+  "Allocate from a different location. Only tried when at-location is set.
+   Uses =/= disequality (relational) instead of project+equal? (imperative)."
   (if (not at-location) fail
       (let ((facts (ctx-facts ctx))
             (indexes (ctx-indexes ctx)))
-        (fresh (rid source-loc source-qty contained-in)
+        (fresh (rid source-loc source-qty contained-in
+                remaining2 allocated sums-mid transport-rid)
           ;; Find inventory at ANY location
           (in-list-o `(inventory ,rid ,spec-id ,source-qty ,source-loc ,contained-in)
                      (if indexes
@@ -123,18 +151,23 @@
                                                    (equal? (caddr f) spec-id)))
                                  facts)))
           (<fd 0 source-qty)
-          ;; Not contained (free resource) and at a different location
+          ;; Relational constraints: not contained, different location
           (== contained-in #f)
-          (project (source-loc)
-            (if (equal? source-loc at-location) fail
-                (fresh (remaining2 allocated sums-mid)
-                  (allocate-o facts spec-id remaining remaining2 allocated
-                              sums-in sums-mid
-                              #:indexes indexes #:at-location source-loc)
-                  (== remaining2 0)
-                  (== plan-term `(transport ,spec-id ,allocated
-                                            ,source-loc ,at-location))
-                  (== sums-out sums-mid))))))))
+          (=/= source-loc at-location)
+          ;; Allocate from source location
+          (allocate-o facts spec-id remaining remaining2 allocated
+                      sums-in sums-mid
+                      #:indexes indexes #:at-location source-loc)
+          (== remaining2 0)
+          ;; Find transport recipe (interleaves across alternatives)
+          (conde
+            ((transport-recipe-o facts spec-id transport-rid)
+             (== plan-term `(transport ,spec-id ,allocated
+                                       ,source-loc ,at-location ,transport-rid)))
+            ;; Fallback: direct allocation without specific recipe
+            ((== plan-term `(transport ,spec-id ,allocated
+                                       ,source-loc ,at-location #f))))
+          (== sums-out sums-mid)))))
 
 
 ;;; ── back-schedule-inputs ──────────────────────────────────────────────────────
@@ -203,34 +236,37 @@
                  (dur-s (inexact->exact (round (/ dur-ms 1000))))
                  (proc-end cursor)
                  (proc-begin (- cursor dur-s))
+                 ;; use, accept, pickup, work — all time-windowed (resource occupied)
+                 ;; work included when it has resource-quantity (e.g., "2 welders")
                  (use-flows
                    (filter (lambda (f)
                              (and (eq? (car f) 'flow)
                                   (equal? (cadr f) pid)
                                   (eq? (caddr f) 'input)
-                                  (eq? (list-ref f 6) 'use)
+                                  (memq (list-ref f 6) '(use accept pickup work))
                                   (not (member (cadddr f) internal-specs))
-                                  (list-ref f 4)))
+                                  (list-ref f 4)))  ;; qty must be truthy
                            facts))
                  (new-uses
                    (map (lambda (f)
                           (list (cadddr f)
                                 (inexact->exact (ceiling (* (list-ref f 4) scale)))
-                                proc-begin proc-end))
+                                proc-begin proc-end
+                                (list-ref f 8)))  ;; flow-id for anchor matching
                         use-flows)))
             (loop (cdr procs) proc-begin (append acc new-uses)))))))
 
 
 ;;; ── cite-schedule-inputs ──────────────────────────────────────────────────────
-;;; Collects 'cite' flows. Terminal — existence gate only.
+;;; Collects cite and deliver-service flows. Terminal — existence gate only.
 
 (define (cite-schedule-inputs facts pids)
-  "Collect 'cite' input spec-ids. No scheduling — just existence check."
+  "Collect 'cite' and 'deliver-service' input spec-ids. Existence check only."
   (filter-map (lambda (f)
                 (and (eq? (car f) 'flow)
                      (member (cadr f) pids)
                      (eq? (caddr f) 'input)
-                     (eq? (list-ref f 6) 'cite)
+                     (memq (list-ref f 6) '(cite deliver-service))
                      (cadddr f)))
               facts))
 
@@ -241,23 +277,19 @@
 ;;; container-id to demand-o (only allocate from resources inside that container).
 
 (define (resolve-container-from-use-plans resolve-from use-plans)
-  "Look up the resource-id allocated by the anchor use-window for RESOLVE-FROM."
+  "Look up ALL resource-ids allocated by the anchor use-window for RESOLVE-FROM.
+   use-window = (use-window spec qty ((rid take) ...) begin end flow-id)
+   Returns a list of resource-ids (for multi-anchor support) or #f."
   (if (not resolve-from) #f
       (let ((uw (find (lambda (up)
-                        ;; use-plan = (use-window spec qty allocated begin end)
-                        ;; Match by checking if the anchor flow-id matches resolve-from
-                        ;; For now: match by spec (resolve-from is a flow-id, but
-                        ;; we don't have flow-ids in use-plans — match by the resource
-                        ;; that was allocated)
-                        #f)  ;; TODO: full flow-id resolution requires flow-ids in facts
+                        ;; Match: the use-window's flow-id = resolve-from
+                        (and (pair? up) (>= (length up) 7)
+                             (equal? (list-ref up 6) resolve-from)))
                       use-plans)))
-        ;; Fallback: use the first use-plan's allocated resource-id
-        ;; (correct when there's only one use anchor in the recipe)
-        (if (and (pair? use-plans) (pair? (car use-plans)))
-            (let ((first-uw (car use-plans)))
-              ;; use-window = (use-window spec qty ((rid take) ...) begin end)
-              (let ((alloc (list-ref first-uw 3)))
-                (if (pair? alloc) (caar alloc) #f)))
+        (if uw
+            ;; Return ALL allocated resource-ids
+            (let ((alloc (list-ref uw 3)))
+              (if (pair? alloc) (map car alloc) #f))
             #f))))
 
 (define (solve-inputs-o ctx inputs sub-plans sums-in sums-out
@@ -269,11 +301,15 @@
              (in-qty (cadr input))
              (needed-by (caddr input))
              (resolve-from (if (> (length input) 3) (list-ref input 3) #f))
-             (container (resolve-container-from-use-plans resolve-from use-plans)))
+             (container-ids (resolve-container-from-use-plans resolve-from use-plans))
+             ;; For multi-anchor: use first matching container-id.
+             ;; miniKanren will backtrack if allocation from that container fails.
+             (container-id (if (and container-ids (pair? container-ids))
+                               (car container-ids) #f)))
         (fresh (sub-plan rest-plans sums-mid)
           (demand-o ctx in-spec in-qty needed-by sub-plan sums-in sums-mid
                     #:depth depth #:visited visited #:at-location at-location
-                    #:container-id container)
+                    #:container-id container-id)
           (solve-inputs-o ctx (cdr inputs) rest-plans sums-mid sums-out
                           depth visited at-location use-plans)
           (== sub-plans (cons (list in-spec sub-plan) rest-plans))))))
@@ -287,14 +323,17 @@
       (fresh () (== use-plans '()) (== sums-out sums-in))
       (let* ((u (car use-inputs))
              (spec (car u)) (qty (cadr u))
-             (begin-t (caddr u)) (end-t (cadddr u)))
+             (begin-t (caddr u)) (end-t (cadddr u))
+             (flow-id (if (> (length u) 4) (list-ref u 4) #f)))
         (fresh (remaining allocated rest-plans sums-mid)
           (allocate-o (ctx-facts ctx) spec qty remaining allocated
                       sums-in sums-mid #:indexes (ctx-indexes ctx))
           ;; Must fully satisfy — can't "produce" a tool/oven/server
           (== remaining 0)
           (solve-use-inputs-o ctx (cdr use-inputs) rest-plans sums-mid sums-out)
-          (== use-plans (cons `(use-window ,spec ,qty ,allocated ,begin-t ,end-t)
+          ;; Include flow-id so dependent flows can find their anchor
+          (== use-plans (cons `(use-window ,spec ,qty ,allocated
+                                           ,begin-t ,end-t ,flow-id)
                               rest-plans))))))
 
 

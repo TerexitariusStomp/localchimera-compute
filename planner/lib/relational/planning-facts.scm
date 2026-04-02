@@ -11,10 +11,11 @@
 (use-modules (playnet kanren-constraints)
              (srfi srfi-1))
 
-;; Actions excluded from recursive demand explosion. 'use' resources (tools,
-;; compute, ovens) are handled separately with time-windowed allocation via
-;; use-schedule-inputs / solve-use-inputs-o in demand-relation.scm.
-(define *non-consuming-actions* '(use work cite deliver-service))
+;; Actions excluded from recursive demand explosion. Handled by specialized
+;; solvers in demand-relation.scm:
+;;   use/accept/pickup/work → time-windowed allocation (solve-use-inputs-o)
+;;   cite/deliver-service → existence gate (solve-cite-inputs-o)
+(define *non-consuming-actions* '(use accept pickup work cite deliver-service))
 
 
 ;;; ── Index builder ─────────────────────────────────────────────────────────────
@@ -112,7 +113,8 @@
                                              (measure-has-unit
                                                (recipe-flow-resource-quantity f)))
                                        ,(recipe-flow-action f)
-                                       ,(recipe-flow-resolve-from-flow f)))
+                                       ,(recipe-flow-resolve-from-flow f)
+                                       ,(recipe-flow-id f)))
                               inputs)
                          (map (lambda (f)
                                 `(flow ,pid output
@@ -124,7 +126,8 @@
                                              (measure-has-unit
                                                (recipe-flow-resource-quantity f)))
                                        ,(recipe-flow-action f)
-                                       ,(recipe-flow-resolve-from-flow f)))
+                                       ,(recipe-flow-resolve-from-flow f)
+                                       ,(recipe-flow-id f)))
                               outputs))))
                    chain)))
              all-recipes))
@@ -239,8 +242,8 @@
            (matches (idx-ref indexes 'flows-by-process walked)))
       (if (null? matches)
           '()
-          ((fresh (resolve-from)
-             (in-list-o `(flow ,walked ,direction ,spec-id ,qty ,unit ,action ,resolve-from)
+          ((fresh (resolve-from flow-id)
+             (in-list-o `(flow ,walked ,direction ,spec-id ,qty ,unit ,action ,resolve-from ,flow-id)
                         matches))
            st)))))
 
@@ -269,8 +272,8 @@
     (in-list-o `(process ,pid ,name ,duration-ms ,mbq) facts)))
 
 (define (flow-o facts pid direction spec-id qty unit action)
-  (fresh (resolve-from)
-    (in-list-o `(flow ,pid ,direction ,spec-id ,qty ,unit ,action ,resolve-from) facts)))
+  (fresh (resolve-from flow-id)
+    (in-list-o `(flow ,pid ,direction ,spec-id ,qty ,unit ,action ,resolve-from ,flow-id) facts)))
 
 (define (inventory-o facts resource-id spec-id qty location)
   (fresh (contained-in)

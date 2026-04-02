@@ -516,38 +516,64 @@
 ;; ═════════════════════════════════════════════════════════════════════════
 
 (define (phase-implied-transfer ctx event def)
-  (let ((from-id (economic-event-resource-inventoried-as event)))
-    (if (and (eq? (action-definition-implies-transfer def) 'all-rights)
-             from-id
-             (economic-event-provider event)
-             (economic-event-receiver event)
-             (not (equal? (economic-event-provider event)
-                          (economic-event-receiver event))))
+  (let ((from-id (economic-event-resource-inventoried-as event))
+        (transfer-type (action-definition-implies-transfer def))
+        (provider (economic-event-provider event))
+        (receiver (economic-event-receiver event)))
+    (if (and transfer-type from-id provider receiver
+             (not (equal? provider receiver)))
         (let ((r (hashmap-ref (os-resources (ctx-state ctx)) from-id #f)))
           (if (not r) ctx
-              (let ((updated (make-economic-resource
-                               (economic-resource-id r) (economic-resource-name r)
-                               (economic-resource-note r) (economic-resource-image r)
-                               (economic-resource-tracking-identifier r)
-                               (economic-resource-conforms-to r)
-                               (economic-resource-classified-as r)
-                               (economic-resource-accounting-quantity r)
-                               (economic-resource-onhand-quantity r)
-                               (economic-resource-current-location r)
-                               (economic-resource-current-virtual-location r)
-                               (economic-event-receiver event)
-                               (economic-resource-custodian-scope r)
-                               (economic-resource-stage r)
-                               (economic-resource-state r)
-                               (economic-resource-contained-in r)
-                               (economic-resource-unit-of-effort r)
-                               (economic-resource-lot r)
-                               (economic-resource-previous-event r)
-                               (economic-resource-availability-window r))))
-                (ctx-update-state ctx
-                  (lambda (st)
-                    (os-set-resources st
-                      (hashmap-set (os-resources st) from-id updated)))))))
+              (let ((updated
+                      (cond
+                        ;; All-rights: transfer primary-accountable to receiver
+                        ((eq? transfer-type 'all-rights)
+                         (make-economic-resource
+                           (economic-resource-id r) (economic-resource-name r)
+                           (economic-resource-note r) (economic-resource-image r)
+                           (economic-resource-tracking-identifier r)
+                           (economic-resource-conforms-to r)
+                           (economic-resource-classified-as r)
+                           (economic-resource-accounting-quantity r)
+                           (economic-resource-onhand-quantity r)
+                           (economic-resource-current-location r)
+                           (economic-resource-current-virtual-location r)
+                           receiver  ;; primary-accountable → receiver
+                           (economic-resource-custodian-scope r)
+                           (economic-resource-stage r)
+                           (economic-resource-state r)
+                           (economic-resource-contained-in r)
+                           (economic-resource-unit-of-effort r)
+                           (economic-resource-lot r)
+                           (economic-resource-previous-event r)
+                           (economic-resource-availability-window r)))
+                        ;; Custody: transfer custodian-scope to receiver
+                        ((eq? transfer-type 'custody)
+                         (make-economic-resource
+                           (economic-resource-id r) (economic-resource-name r)
+                           (economic-resource-note r) (economic-resource-image r)
+                           (economic-resource-tracking-identifier r)
+                           (economic-resource-conforms-to r)
+                           (economic-resource-classified-as r)
+                           (economic-resource-accounting-quantity r)
+                           (economic-resource-onhand-quantity r)
+                           (economic-resource-current-location r)
+                           (economic-resource-current-virtual-location r)
+                           (economic-resource-primary-accountable r)
+                           receiver  ;; custodian-scope → receiver
+                           (economic-resource-stage r)
+                           (economic-resource-state r)
+                           (economic-resource-contained-in r)
+                           (economic-resource-unit-of-effort r)
+                           (economic-resource-lot r)
+                           (economic-resource-previous-event r)
+                           (economic-resource-availability-window r)))
+                        (else r))))
+                (if (eq? updated r) ctx
+                    (ctx-update-state ctx
+                      (lambda (st)
+                        (os-set-resources st
+                          (hashmap-set (os-resources st) from-id updated))))))))
         ctx)))
 
 
@@ -644,6 +670,29 @@
   ;; VF rule: event cannot both fulfill a Commitment AND satisfy an Intent
   (when (and (economic-event-fulfills event) (economic-event-satisfies event))
     (error "Event cannot both fulfill and satisfy"))
+  ;; VF pairs-with constraint: if action pairs with another (e.g., accept↔modify,
+  ;; pickup↔dropoff), enforce that both reference the same resource-id.
+  ;; This is a relational constraint, not a warning — mismatch = error = vat rollback.
+  (let* ((def (get-action-def (economic-event-action event)))
+         (paired-action (action-definition-pairs-with def))
+         (from-id (economic-event-resource-inventoried-as event))
+         (process-id (or (economic-event-input-of event)
+                         (economic-event-output-of event))))
+    (when (and paired-action from-id process-id)
+      ;; Find the paired event in the SAME process
+      (let ((process-events (hashmap-ref (os-idx-by-process st) process-id '())))
+        (let ((paired-ev (find (lambda (eid)
+                                 (let ((ev (hashmap-ref (os-events-by-id st) eid #f)))
+                                   (and ev (eq? (economic-event-action ev) paired-action))))
+                               process-events)))
+          (when paired-ev
+            (let ((paired-resource (economic-event-resource-inventoried-as
+                                    (hashmap-ref (os-events-by-id st) paired-ev #f))))
+              (when (and paired-resource (not (equal? from-id paired-resource)))
+                (error (format #f
+                  "VF pairs-with violation: ~a references ~a but paired ~a in process ~a references ~a"
+                  (economic-event-action event) from-id
+                  paired-action process-id paired-resource)))))))))
   (let* ((def (get-action-def (economic-event-action event)))
          ;; Phases 1-2: bare state
          (st  (phase-append-event st event))

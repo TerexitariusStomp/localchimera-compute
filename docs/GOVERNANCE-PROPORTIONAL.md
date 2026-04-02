@@ -1,8 +1,8 @@
 # Proportional Governance: Labor-Derived Expression Power and Delegation on Goblins
 
-Commune/federation governance expressed as object-capability actors using Heart of Spritely patterns. Expression power is your share of labor in a scope -- tracked by the same observer and account infrastructure that runs the planning layer. The capacity/incapacity equations ensure that every citizen has voice, regardless of ability.
+Commune/federation governance expressed as object-capability actors using Heart of Spritely patterns. Fully decentralized: no central registry, no global identity system. Expression power is your share of labor in a scope -- your claim capacity in each scope's account-store. The capacity/incapacity equations ensure that every citizen has voice, regardless of ability.
 
-Core insight: your governance treemap IS a picture of how you've distributed your labor across scopes. No manual allocation. No conviction voting. No separate political mechanism. Economic participation and political expression are the same data. Your voice in each scope is your claim capacity there -- per-scope, not globally normalized.
+Core insight: your governance treemap IS a picture of how you've distributed your labor across scopes. No manual allocation. No conviction voting. No central registry. No separate political mechanism. Economic participation and political expression are the same data. Your voice in each scope is your claim capacity there -- per-scope, locally computed.
 
 ---
 
@@ -25,7 +25,7 @@ Your expression weight in a scope is your **share of labor** in that scope -- yo
 Each scope has an `^account-store` (already implemented in `account.scm`) that tracks per-agent:
 
 - **`gross-contribution-credited`** -- total labor hours from `work` events recorded in the scope's observer
-- **`contribution-capacity-factor`** (CCF) -- 0 to 1, reflecting the agent's capacity (1 = full capacity, 0 = fully incapacitated)
+- **`contribution-capacity-factor`** (CCF) -- 0 to 1, reflecting the agent's physical/mental capacity to contribute labor (1 = full capacity, 0 = fully incapacitated due to age, disability, illness, infancy, etc.)
 
 The account system computes per agent:
 
@@ -90,16 +90,38 @@ my_expression_weight  = contribution_claim + solidarity_supplement
 
 | Scenario | CCF | Expression source |
 |---|---|---|
-| Full capacity, active worker | 1.0 | Entirely from labor contribution |
-| Half capacity (disability, care obligations) | 0.5 | Half contribution + half solidarity |
-| Fully incapacitated | 0.0 | Entirely from solidarity supplement |
-| Newborn / child | 0.0 | Entirely from solidarity, in the scope providing care |
+| Healthy adult, active worker | 1.0 | Entirely from labor contribution |
+| Partial disability, recovering from illness | 0.5 | Half contribution + half solidarity |
+| Severe disability, advanced age | 0.0 | Entirely from solidarity supplement |
+| Infant / young child | 0.0 | Entirely from solidarity, in the scope providing care |
 
 The "zero labor" edge case resolves cleanly: a fully incapacitated citizen has zero `contribution_claim` but maximum `solidarity_supplement`. Their expression power exists and is grounded in a real relationship -- the community that provides their care. They have voice in the scope that supports them.
 
-### What CCF captures
+### What CCF captures and how it is set
 
-The contribution-capacity-factor is not a judgment on a person's worth. It is a factual assessment of their current capacity to contribute labor, used by the planning layer for resource matching. The governance layer reads the same data. A person with CCF=0 is not "worth less" -- the solidarity mechanism explicitly ensures their expression power is proportional to their incapacity.
+CCF reflects **physical and mental capacity** -- disability, illness, age, infancy. It is not about choice or effort. A healthy person who chooses not to work has CCF=1 (full capacity, zero contribution, therefore zero expression from contribution and zero solidarity supplement). A person who cannot work due to disability has CCF=0 (zero capacity, full solidarity supplement).
+
+CCF is **community knowledge, not bureaucratic assessment**. In a commune, everyone knows the baby is a baby, the elder has dementia, someone broke their leg. The scope's governance updates a member's CCF when life circumstances change -- a `set-ccf` method gated behind the governance seal. The people who provide care are the people who know the need. No central disability registry.
+
+The planning layer reads the same CCF for resource matching (how much labor can this person provide?). The governance layer inherits it for expression weight. One number, two uses.
+
+---
+
+## Sybil Resistance Without a Central Registry
+
+There is no global identity system. Sybil resistance emerges from the structure of per-scope expression and social CCF assessment.
+
+**Within a scope, sybil attacks gain nothing.** If you split your labor across two fake identities, each gets half the claim capacity. Your total expression is unchanged -- the account system distributes by share of labor, not by headcount.
+
+**The attack vector is fake solidarity.** Creating a fake incapacitated identity (CCF=0) to extract a solidarity supplement. This requires a governance decision within the scope to set that identity's CCF -- the commune must recognize someone as disabled, elderly, or an infant. You cannot self-declare incapacity; the community that provides care is the community that verifies need.
+
+**Cross-scope identity is handled by introduction, not registry.** OCapN petnames and introduction chains let scopes know that Alice-in-watershed and Alice-in-techcoop are the same person -- when that matters (e.g., for assembling the treemap). But governance never requires this knowledge: expression is per-scope, and each scope's account-store is self-contained.
+
+| Threat | Defense |
+|---|---|
+| Split labor across fake identities within a scope | Gains nothing -- share of labor is unchanged |
+| Fake incapacitated identity for solidarity | Requires social vouching for CCF -- commune knows its members |
+| Same person in multiple scopes | Not a problem -- expression is per-scope, no global normalization |
 
 ---
 
@@ -116,13 +138,7 @@ A citizen's entire political-economic engagement is visible at a glance: where t
 
 ## Indexes
 
-### Citizen Index
-
-All persons. Managed by the Universal Commune. The fundamental unit of political personality is the human being.
-
-```
-ID -> Citizen
-```
+There is no central citizen registry. Identity is relational: scopes know their members through their account-stores. A citizen exists in the system by having an account in at least one scope and holding their own `^citizen-voice` (sealer).
 
 ### Scope Expression Weight
 
@@ -144,9 +160,9 @@ A commune's weight within a federation = its scope expression weight. This refle
 
 ### 1. `^citizen-voice` -- The endorsement capability
 
-**Pattern:** Sealer endorsement. Preserved exactly.
+**Pattern:** Sealer endorsement. Self-sovereign.
 
-A citizen seals their stance with their authority. The ballot verifies the seal -- "if you don't have it, you can't use it." Identity doesn't matter, endorsement does.
+A citizen holds their own voice. It is spawned when they are introduced to their first scope -- or they spawn it themselves. No central entity creates it. The sealer IS the identity: the ballot verifies the seal, not who called. "If you don't have it, you can't use it."
 
 ```scheme
 (define-actor (^citizen-voice bcom citizen-id my-sealer)
@@ -355,31 +371,15 @@ The commune retains the right to **exclude**: a governance decision can mark a c
 
 **Federation attributes** (unchanged): Federations form along spatio-temporal attributes of metabolic interdependence -- spatial (watersheds, climate zones), temporal (generational cohorts, shift-based), functional (supply chains, infrastructure grids), cultural (language areas, indigenous nations), emergency response (fire seasons, flood plains).
 
-A scope with no children and no parent federation can join the Universal Commune directly. A single person operating as their own scope is a valid leaf -- the recursion bottoms out at individual humans.
+A scope with no children and no parent federation can join the root federation directly. A single person operating as their own scope is a valid leaf -- the recursion bottoms out at individual humans.
 
-### 8. `^universal-commune` -- The inescapable registry
+### 8. The root federation -- Planetary interdependence without a registry
 
-**Pattern:** Encapsulated state, no withdrawal method. Updated for labor-derived model.
+There is no `^universal-commune` actor with a citizen registry. The "universal commune" is simply the **root of the federation tree** -- a `^federation` like any other, whose members are the highest-level federations and standalone scopes, weighted by their total claim capacities.
 
-```scheme
-(define-actor (^universal-commune bcom
-                                  citizen-index        ;; hashmap: id -> citizen-data
-                                  scope-index)         ;; hashmap: scope-id -> scope-ref
-  (methods
-    [(register-citizen id data)
-     ;; Creates citizen entry + ^citizen-voice with sealer.
-     ;; Cannot be removed.
-     ...]
-    [(citizen-scopes citizen-id)
-     ;; Returns list of scope-ids where citizen has nonzero claim capacity.
-     ;; Queries scope account-stores.
-     ...]
-    [(total-citizens) ...]))
-```
+Inescapable interdependence is structural, not registral: every scope federates upward, and the federation tree has a single root. You can't opt out of planetary interdependence -- not because a registry holds your name, but because the metabolic reality of shared atmosphere, shared oceans, shared electromagnetic spectrum creates federation whether or not you register.
 
-There is no `remove-citizen` method. No `withdraw` method. The Universal Commune is the expression of inescapable mutual interdependence. Freedom of association operates within this frame: citizens move their labor across scopes, and expression follows.
-
-The Universal Commune is the **root of the federation tree**. It follows the same pattern as every other federation: its members are the highest-level federations and standalone scopes, weighted by their total claim capacities. Individual citizens do not vote directly at the universal level -- they vote in their scopes, which aggregate into federations, which aggregate upward. Expression power flows through the recursive federation structure all the way to the top. No special rules, no discontinuity.
+Individual citizens do not vote at the root level. They vote in their scopes, which aggregate into federations, which aggregate upward. Expression power flows through the recursive federation structure all the way to the top. No special actors, no special rules, no central authority.
 
 ### 9. `^affected-interest-voice` -- Non-member standing
 
@@ -471,9 +471,9 @@ Each scope = one Goblins vat (following `scope-root.scm`):
 
 - **Each commune** = one vat. Observer, account-store, delegation-maps, ballots, logger are near references. Intra-commune operations are synchronous + transactional.
 - **Each federation** = one vat. Commune-to-federation is cross-vat via `<-` (async). Delegation proxies live in the commune's vat; delegates hold far references via OCapN.
-- **Universal commune** = one vat. Holds the Citizen Index. Far references to all scope vats.
+- **Root federation** = one vat, structurally identical to any other federation.
 
-Expression weight computation happens **within each scope's vat** (account-store is local). No cross-scope aggregation is needed for governance -- each scope is self-contained. The treemap is assembled by querying each scope's account-store for a citizen's claim capacity there.
+No special topology. No central vat holding global state. Expression weight computation happens **within each scope's vat** (account-store is local). The treemap is assembled client-side by querying each scope where the citizen has an account.
 
 ---
 
@@ -508,10 +508,10 @@ The planner is a pure function over merged data -- it produces options, not deci
 
 ## Complete Scenario
 
-1. Universal Commune registers citizen Alice -> spawns `^citizen-voice` with her sealer
-2. Alice begins working in the watershed commune -- `work` events with `effort-quantity` recorded in the watershed observer; account-store credits her `gross-contribution-credited`
+1. Alice is introduced to the watershed commune by an existing member. The commune creates her account in its `^account-store`. Alice holds her own `^citizen-voice` (sealer).
+2. Alice begins working -- `work` events with `effort-quantity` recorded in the watershed observer; account-store credits her `gross-contribution-credited`
 3. As Alice works, her claim capacity in the watershed grows. Her expression treemap shows her weight there.
-4. Alice also does some work for the tech-coop -- her treemap now shows two scopes, weighted by labor contribution in each.
+4. Alice is later introduced to the tech-coop and begins contributing there too. Her treemap now shows two scopes, weighted by labor contribution in each.
 5. Alice delegates within the watershed: `($ delegation-map 'delegate "bob" 0.40)` -- Bob carries 40% of her watershed expression
 6. Watershed commune opens a ballot on "increase bread production" -- snapshots claim capacities (from account-store) and delegation maps
 7. Alice casts her stance: `($ alice-voice 'stance "bread-ballot" 'yes)` -> sealed endorsement; override reclaims her full claim capacity
@@ -529,7 +529,7 @@ The planner is a pure function over merged data -- it produces options, not deci
     ```
     -> logged, mandate-checked, forwarded
 13. Watershed commune recalls Bob: `($ revoked? 'set #t)` -> instant, Bob's proxy is dead
-14. Meanwhile, Alice's grandmother (CCF=0) lives in the watershed commune. She does no labor, but the solidarity supplement gives her expression weight proportional to her incapacity. She can cast stances, delegate, and participate in plan-expression with her solidarity-derived voice.
+14. Alice's grandmother lives in the watershed commune. The commune's governance has set her CCF=0 (advanced dementia). She does no labor, but the solidarity supplement gives her expression weight in the watershed. Her daughter delegates on her behalf for most ballots; on the bread production ballot, her daughter overrides to cast grandmother's full weight directly.
 
 ---
 
@@ -539,5 +539,6 @@ The planner is a pure function over merged data -- it produces options, not deci
 - **Care received as expression:** Does receiving care (as `receiver` in work events) contribute to expression in the caring scope? This would give care recipients additional voice beyond the solidarity supplement. Arguments for: it grounds voice in real relationships. Arguments against: it could be gamed.
 - **Affected interest identification:** How do affected interest groups get identified? The planning network can trace metabolic consequences, but who initiates the tracing?
 - **Delegation persistence:** If Alice stops working in a scope and her claim capacity drops to near-zero, do her delegation settings persist? Or are they automatically cleared?
-- **CCF assessment:** Who sets a citizen's CCF, and how? This is a powerful parameter -- it determines the contribution/solidarity split. Medical assessment? Self-declaration? Peer evaluation? The planning layer needs it for resource matching; the governance layer inherits whatever the planning layer uses.
-- **Federation weight and productivity:** A scope's federation weight = sum of claim capacities = total economic activity. This means more economically active scopes have more federation voice. The solidarity mechanism ensures incapacitated members are counted, but scopes with more total labor still weigh more. Is this desirable? The alternative (bounding by citizen count) would reintroduce a special rule.
+- **CCF update governance:** CCF is set via scope governance (`set-ccf` behind the governance seal). Should this require a ballot, or can care providers update it directly? What about temporary incapacity (broken leg) vs. permanent (congenital disability) -- different update cadences?
+- **Federation weight and productivity:** A scope's federation weight = sum of claim capacities = total economic activity. This means more economically active scopes have more federation voice. The solidarity mechanism ensures incapacitated members are counted, but scopes with more total labor still weigh more. Is this desirable? The alternative (bounding by citizen count) would reintroduce a centralized counting mechanism.
+- **Cross-scope identity for treemap:** Governance doesn't need cross-scope identity, but the treemap (showing all your scopes) does. This relies on OCapN introduction chains -- the citizen holds references to their accounts in each scope. Is this sufficient, or does federated identity require more structure?

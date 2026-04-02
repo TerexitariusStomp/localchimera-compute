@@ -347,7 +347,7 @@
         #f #t))
     (cons 'work
       (make-action-definition
-        'effort-quantity 'input #f 'no-effect
+        'both 'input #f 'no-effect
         'no-effect 'no-effect 'no-effect 'no-effect 'no-effect 'no-effect 'no-effect
         #f #t))
     (cons 'cite
@@ -362,22 +362,22 @@
         #f #t))
     (cons 'pickup
       (make-action-definition
-        'resource-quantity 'input 'dropoff 'no-effect
+        'resource-quantity 'input 'dropoff 'optional-to
         'no-effect 'decrement 'update 'no-effect 'no-effect 'no-effect 'update
         'custody #f))
     (cons 'dropoff
       (make-action-definition
-        'resource-quantity 'output 'pickup 'no-effect
+        'resource-quantity 'output 'pickup 'optional-to
         'no-effect 'increment 'update 'no-effect 'no-effect 'update 'update
         'custody #f))
     (cons 'accept
       (make-action-definition
-        'resource-quantity 'input 'modify 'no-effect
+        'resource-quantity 'input 'modify 'optional-to
         'no-effect 'decrement 'update 'no-effect 'no-effect 'no-effect 'update
         'custody #f))
     (cons 'modify
       (make-action-definition
-        'resource-quantity 'output 'accept 'no-effect
+        'resource-quantity 'output 'accept 'optional-to
         'no-effect 'increment 'update 'no-effect 'no-effect 'update 'update
         'custody #f))
     (cons 'combine
