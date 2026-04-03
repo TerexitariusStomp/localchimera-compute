@@ -1,6 +1,6 @@
 ;;; module/playnet/interface/channel.scm — Generic interface channel
 ;;;
-;;; A ^channel binds a backend + transport adapter + notification sink
+;;; A ^channel binds a backend + transport adapter + output sink
 ;;; into a single coordinated actor. The channel knows nothing about
 ;;; what the backend IS — it could be a VF planning scope, a chat room,
 ;;; a kanban board, or anything that implements the backend protocol.
@@ -13,7 +13,7 @@
 ;;; Backend protocol (3 methods):
 ;;;   (handle user-id command-name args-string) → ('response text) | ('error reason)
 ;;;   (available-commands) → list of command name strings
-;;;   (wire-notifications sink-ref) → void
+;;;   (wire-output sink-ref) → void
 
 (define-module (playnet interface channel)
   #:use-module (goblins)
@@ -31,7 +31,7 @@
 (define (^channel bcom
                   channel-id        ;; string: unique identifier ("tg-12345", "mx-!abc:server")
                   backend           ;; actor ref implementing backend protocol (local or remote)
-                  sink-ref          ;; ^notification-sink actor ref
+                  sink-ref          ;; ^output-sink actor ref
                   transport         ;; ^transport-adapter actor ref, or #f
                   channel-context   ;; opaque transport destination, or #f
                   members)          ;; hashmap: user-id string -> member info alist
@@ -87,9 +87,9 @@
 
     ;; --- Transport binding ---
     ((bind-transport new-transport new-context)
-     ;; Attach transport and wire notification-sink.
+     ;; Attach transport and wire output-sink.
      ($ sink-ref 'bind-transport new-transport new-context)
-     (<-np backend 'wire-notifications sink-ref)
+     (<-np backend 'wire-output sink-ref)
      (bcom (^channel bcom channel-id backend sink-ref
                       new-transport new-context members)))
 

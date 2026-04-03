@@ -49,13 +49,13 @@
      ;; The caller provides the backend; we create the channel shell around it.
      (if (hashmap-ref channels channel-id #f)
          (list 'error "Channel already exists" channel-id)
-         (let* ((sink-ref (spawn ^notification-sink
+         (let* ((sink-ref (spawn ^output-sink
                                   #f #f default-alert-formatter '()))
                 (chan-ref (spawn ^channel
                                  channel-id backend-ref sink-ref
                                  #f #f (hashmap))))
            ;; Wire notifications from the remote backend to our local sink
-           (<-np backend-ref 'wire-notifications sink-ref)
+           (<-np backend-ref 'wire-output sink-ref)
            (bcom (^channel-manager bcom
                    (hashmap-set channels channel-id chan-ref)
                    backend-factory)

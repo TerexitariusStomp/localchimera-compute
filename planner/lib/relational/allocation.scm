@@ -15,19 +15,15 @@
 ;;; ── Claim registry helpers (stored in cstate N field) ────────────────────────
 ;;; N = alist: ((resource-id inv-qty take-var1 take-var2 ...) ...)
 
-(define (ensure-claims-alist N)
-  "Ensure N is a claims alist. If it's something else (e.g., netter-state), return '()."
-  (if (and (list? N) (or (null? N) (pair? (car N)))) N '()))
-
 (define (claims-ref N rid)
   "Look up claim entry for resource RID. Returns (inv-qty . take-vars) or #f."
-  (let* ((claims (ensure-claims-alist N))
-         (entry (assoc rid claims)))
-    (if entry (cdr entry) #f)))
+  (if (not (pair? N)) #f
+      (let ((entry (assoc rid N)))
+        (if entry (cdr entry) #f))))
 
 (define (claims-add N rid inv-qty take-var)
   "Add TAKE-VAR to the claim list for RID. Creates entry if needed."
-  (let* ((claims (ensure-claims-alist N))
+  (let* ((claims (if (pair? N) N '()))
          (existing (assoc rid claims)))
     (if existing
         (cons (cons rid (cons (car (cdr existing))
@@ -49,66 +45,46 @@
 
 ;;; ── sum-leq-for-resource — global constraint (follows distinctfd pattern) ────
 
+(define (narrow-domain-hi st var new-hi)
+  "Narrow VAR's domain upper bound to NEW-HI. Returns st or #f on failure."
+  (let ((dom (domain-ref (cstate-FD st) var)))
+    (if (not dom) st
+        (cond
+          ((< new-hi (domain-lo dom)) #f)
+          ((= new-hi (domain-hi dom)) st)
+          (else (let ((r ((infd var (make-interval (domain-lo dom) new-hi)) st)))
+                  (if (null? r) #f (car r))))))))
+
 (define (sum-leq-for-resource rid)
   "Global constraint: sum of all take vars for RID <= inv-qty.
-   1. Walk all take vars — separate ground/unground
-   2. Check: ground-sum <= inv-qty
-   3. Narrow each unground var: hi <= budget - other-minimums
-   4. Re-register propagator for remaining unground vars"
+   Walks all take vars, checks ground sum, narrows unground domains,
+   re-registers propagator for remaining unground vars."
   (lambda (st)
-    (let* ((S (cstate-S st))
-           (FD (cstate-FD st))
-           (N (cstate-N st))
-           (entry (claims-ref N rid)))
+    (let* ((entry (claims-ref (cstate-N st) rid)))
       (if (not entry) (list st)
           (let* ((inv-qty (car entry))
-                 (take-vars (cdr entry))
-                 ;; Walk each take var
-                 (walked (map (lambda (tv) (walk tv S)) take-vars))
-                 ;; Separate ground from unground
+                 (walked (map (lambda (tv) (walk tv (cstate-S st))) (cdr entry)))
                  (ground-vals (filter number? walked))
                  (unground (filter var? walked))
-                 (ground-sum (apply + ground-vals)))
-            ;; Check: ground sum must not exceed limit
-            (if (> ground-sum inv-qty) '()
-                (let ((budget (- inv-qty ground-sum)))
-                  ;; Get minimums for each unground var
-                  (let* ((unground-mins
-                           (map (lambda (uv)
-                                  (let ((dom (domain-ref FD uv)))
-                                    (if dom (domain-lo dom) 0)))
-                                unground))
-                         (total-mins (apply + unground-mins)))
-                    ;; Check: sum of minimums <= budget
-                    (if (> total-mins budget) '()
-                        ;; Narrow each var: hi <= budget - other-minimums
-                        (let narrow ((uvs unground) (mins unground-mins) (st st))
-                          (if (null? uvs)
-                              ;; Re-register propagator if >1 unground remain
-                              (if (< (length unground) 2)
-                                  (list st)
-                                  (list (register-propagator st unground
-                                          (sum-leq-for-resource rid))))
-                              (let* ((uv (car uvs))
-                                     (my-min (car mins))
-                                     (other-mins (- total-mins my-min))
-                                     (my-max (- budget other-mins))
-                                     (dom (domain-ref (cstate-FD st) uv)))
-                                (if dom
-                                    (let ((new-hi (min (domain-hi dom) my-max)))
-                                      (if (< new-hi (domain-lo dom)) '()
-                                          (if (= new-hi (domain-hi dom))
-                                              ;; No change — continue
-                                              (narrow (cdr uvs) (cdr mins) st)
-                                              ;; Narrow domain
-                                              (let ((result
-                                                      ((infd uv (make-interval
-                                                                  (domain-lo dom) new-hi))
-                                                       st)))
-                                                (if (null? result) '()
-                                                    (narrow (cdr uvs) (cdr mins)
-                                                            (car result)))))))
-                                    (narrow (cdr uvs) (cdr mins) st))))))))))))))
+                 (ground-sum (apply + ground-vals))
+                 (budget (- inv-qty ground-sum)))
+            (if (< budget 0) '()
+                (let* ((mins (map (lambda (uv)
+                                    (let ((d (domain-ref (cstate-FD st) uv)))
+                                      (if d (domain-lo d) 0)))
+                                  unground))
+                       (total-mins (apply + mins)))
+                  (if (> total-mins budget) '()
+                      ;; Narrow each var: hi <= budget - sum(other minimums)
+                      (let narrow ((uvs unground) (ms mins) (st st))
+                        (if (null? uvs)
+                            (if (< (length unground) 2) (list st)
+                                (list (register-propagator st unground
+                                        (sum-leq-for-resource rid))))
+                            (let ((st* (narrow-domain-hi st (car uvs)
+                                         (- budget (- total-mins (car ms))))))
+                              (if (not st*) '()
+                                  (narrow (cdr uvs) (cdr ms) st*)))))))))))))
 
 
 ;;; ── claim-from-o — declare a claim against a resource ────────────────────────

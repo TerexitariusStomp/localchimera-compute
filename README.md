@@ -95,6 +95,16 @@ module/playnet/
   knowledge.scm      — relational queries with proof traces
   system-kb.scm      — the system's self-knowledge as relational facts
   markdown.scm       — bidirectional markdown ↔ S-expression transpilation
+  interface/
+    channel.scm        — generic interface channel (backend-agnostic)
+    channel-manager.scm — channel lifecycle (create, attach remote, destroy)
+    scope-backend.scm  — VF scope as a channel backend
+    command-dispatch.scm — /command routing (inventory, alerts, eval, etc.)
+    notification-sink.scm — ^output-sink + ^tee-alert-store (print side)
+    transport.scm      — transport adapter protocol + parsing helpers
+    adapters/
+      repl.scm         — terminal transport (/ and , commands)
+      telegram.scm     — Telegram bot transport (^key-pool for bot token)
 
 browser/
   repl.scm           — browser REPL (compiles to WASM via Hoot)
@@ -240,6 +250,20 @@ Every API call becomes an immutable economic fact. This isn't monitoring — it 
 - **Capacity forecasting**: The netter reserves capacity without mutation. Combined with usage forecasts, the planner answers "when will we run out?" and emits replenishment signals.
 - **Federation**: Multiple key pools (separate scopes/vats) can coordinate via OCapN lateral matching — surplus capacity in one scope flows to deficit in another.
 
+### Generic interface layer
+
+Scopes are accessible through a generic interface layer where Telegram, Matrix, IRC, a web REPL, or a CLI are all interchangeable transports. A Telegram groupchat becomes a living economic scope — members type `/inventory wheat` to check stock, `/alerts` to see buffer zone warnings, `/eval` to run Scheme expressions against their scope's data.
+
+The architecture separates three concerns:
+
+1. **Backend protocol** — any actor implementing `handle`, `available-commands`, and `wire-output`. A VF planning scope is one backend (`^scope-backend`). A chat room, a kanban board, or any other actor system could be another.
+2. **Channel** (`^channel`) — binds a backend to a transport and output sink. Backend-agnostic. Uses `<-` (async) to talk to the backend, so OCapN makes local/remote transparent — the scope could be running on any machine.
+3. **Transport adapter** — implements 3 methods: `send-message`, `send-formatted`, `parse-command`. Adding a new messaging platform = implementing these 3 methods.
+
+The `^output-sink` is the print side of a channel — analogous to `^output-port` in `gplay.scm` but routed through a transport instead of a local port. A `^tee-alert-store` proxy interposes on the scope's alert pipeline so monitor alerts flow to the output sink automatically, without modifying any existing execution code.
+
+Bot tokens follow the same sealed credential pattern as API keys. A Telegram bot token is an `^api-key` in a `^key-pool` with a `telegram-provider` profile — same round-robin, same health tracking, same VF economic attribution. The planner reasons about transport API costs the same way it reasons about wheat inventory.
+
 ### Socializing computation and memory
 
 The key pool is the proof of concept, but the pattern is general: any computational resource wrapped in a Goblins actor becomes poolable, plannable, and accountable through the same machinery. API keys were first. The same architecture extends to:
@@ -248,6 +272,7 @@ The key pool is the proof of concept, but the pattern is general: any computatio
 - **Storage** — a donated disk is an EconomicResource, reads/writes are events, buffer zones signal "we need more space"
 - **Bandwidth** — a Reticulum mesh node offering relay capacity is an actor with a provider profile
 - **CPU cycles** — volunteer compute on any machine that speaks OCapN
+- **Scope hosting** — a scope is a vat running on some machine; the compute/memory it consumes is an economic resource the planner allocates
 
 Three layers make this work:
 
@@ -262,6 +287,30 @@ The critical property is the feedback loop. In a traditional system, when API ke
 Because OCapN federates across scopes, signals aren't trapped in one server. A commons with surplus API keys can see that another commons is running low. Lateral matching connects surplus to deficit without central coordination.
 
 The planner doesn't _command_ donors. It makes the flows visible. Coordination emerges from visibility — the same way a biological system upregulates enzyme production when substrate runs low. That's what socializing infrastructure means: not "everyone shares everything," but the economic structure itself creates the conditions for self-organization.
+
+### Social planning replaces container orchestration
+
+Kubernetes schedules containers onto nodes by matching resource requests against available capacity. playnet's planner does the same thing — but for any economic resource, not just CPU and memory, and governed by the people who use it, not by a centralized scheduler.
+
+The mapping is direct:
+
+| Kubernetes concept | playnet equivalent |
+| --- | --- |
+| Node (machine with resources) | Scope with `^live-resource` actors for CPU, memory, storage |
+| Pod (unit of deployment) | Scope vat (a planning scope running on some machine) |
+| Resource requests/limits | ValueFlows intents ("I need 4 CPU-hours by Thursday") |
+| Scheduler (bin-packing) | `allocate-o` + `demand-o` (relational search over inventory) |
+| Horizontal autoscaler | DDMRP buffer zones — capacity entering red zone emits a demand signal |
+| Service discovery | OCapN sturdyrefs — a scope is reachable by its capability URI regardless of which machine it runs on |
+| Config management | Guix System — the entire OS is a Scheme expression in `machines.scm` |
+| Rolling updates | `guix deploy` — atomic OS reconfiguration, rollback is `guix system roll-back` |
+| Federation (multi-cluster) | `^store-registry` + lateral matching — surplus compute in one scope flows to deficit in another |
+
+The critical difference is in who decides. Kubernetes has a scheduler that optimizes a global objective function. playnet has a planner that makes resource flows _visible_ — the commune sees the demand signals and chooses. The planner doesn't command; it illuminates.
+
+A scope backend is just an actor ref. Because `^channel` talks to it via `<-` (OCapN async), the scope can live on any machine. Moving a scope from one server to another is migrating its vat — the sturdyref follows, the channel doesn't notice, and the compute/memory consumed by hosting that scope shows up as economic events in the planner. The system plans its own infrastructure the same way it plans wheat and flour.
+
+This isn't hypothetical plumbing. The `^live-resource` actors already track available capacity. The planner's `allocate-o` already sees compute as inventory tuples — `(inventory "cpu-1" "spec:compute" 12 "dc-1")`. Buffer zones already signal when capacity runs low. Federation already matches surplus against deficit across scopes. The pieces are in place; what remains is wiring scope lifecycle to the planner's allocation decisions.
 
 ## Networking
 

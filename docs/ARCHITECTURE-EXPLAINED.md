@@ -593,7 +593,196 @@ The actual reservation crosses the vat boundary asynchronously — no extra code
 
 ---
 
-## 6. File Reference Index
+## 6. Generic Interface Layer
+
+Scopes are accessible through a generic interface layer that decouples **what
+you're interacting with** (the backend) from **how you're interacting** (the
+transport). A Telegram groupchat, a Matrix room, a terminal REPL, or any
+messaging platform can bind to a scope and let users issue commands against
+the observer and receive alert output.
+
+### Backend protocol
+
+The channel actor (`^channel`) is backend-agnostic. It talks to a backend via
+`<-` (async), so the backend can be local or on any remote machine via OCapN.
+A backend implements three methods:
+
+```
+(handle user-id command-name args-string) → ('response text) | ('error reason)
+(available-commands)                      → list of strings
+(wire-output sink-ref)                    → void
+```
+
+A VF planning scope is one backend (`^scope-backend`). A chat room, a kanban
+board, or any other actor system could be another — the channel doesn't care.
+
+### Transport adapters
+
+A transport adapter implements three methods:
+
+```
+(send-message channel-context text)       → void
+(send-formatted channel-context blocks)   → void (optional)
+(parse-command raw-text)                  → (values cmd args) | (values #f #f)
+```
+
+Adding a new messaging platform means implementing these three methods. The
+Telegram adapter uses `^key-pool` with a `telegram-provider` profile for the
+bot token — same sealed credential pattern as API keys, same round-robin,
+same health tracking.
+
+### Architecture
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                     ^channel-manager                          │
+│  (lifecycle: create, attach remote, destroy)                  │
+│  Takes a backend-factory fn; also accepts remote OCapN refs   │
+└────────┬─────────────────────────────────────────────────────┘
+         │ spawns
+         ▼
+┌──────────────────────────────────────────────────────────────┐
+│                    ^channel (generic)                          │
+│                                                               │
+│  backend  ← any actor implementing backend protocol           │
+│  sink     ← ^output-sink (the print side of the channel)      │
+│  transport ← ^transport-adapter (Telegram, REPL, Matrix, ...) │
+│  members  ← hashmap: user-id → capabilities                   │
+│                                                               │
+│  Uses <- (async) to talk to backend — works over OCapN        │
+│  so the backend can be local or on any remote machine.        │
+└────────┬─────────────────────────────────────────────────────┘
+         │ <- (async, works remote)
+         ▼
+┌──────────────────────────────────────────────────────────────┐
+│             Backend Protocol (3 methods)                       │
+│                                                               │
+│  Implementations:                                             │
+│    ^scope-backend  — VF scope + org + command dispatch         │
+│    (future)        — chat, kanban, any actor system            │
+│    any OCapN ref   — remote scope on another machine           │
+└───────────────────────────────────────────────────────────────┘
+```
+
+### Output routing
+
+The `^output-sink` is the print side of a channel — analogous to `^output-port`
+in `gplay.scm` but routed through a transport instead of a local port. When the
+transport is attached, output is delivered immediately. When offline, it queues
+(same pattern as `^mailbox`) and flushes on reconnect.
+
+A `^tee-alert-store` proxy interposes on the scope's alert pipeline. When
+`record-and-monitor` pushes alerts to the alert-store, the tee forwards them
+to the output sink automatically — no changes to existing execution code.
+
+### Scope-per-groupchat lifecycle
+
+1. First message (e.g. `/start`) → `^channel-manager` creates a channel + scope
+2. Mapping `"tg-<chat_id>" → ^channel ref` persists via Goblins snapshot/restore
+3. Across restarts: channel-manager restores, transport adapters `rewire`
+   (same pattern as `^topic-observer`)
+4. Multiple channels can share one scope (different teams, different permissions)
+5. A channel can bind to a remote scope via `attach-channel` with an OCapN ref
+
+**Where to find it:**
+- `module/playnet/interface/channel.scm` — `^channel` (backend-agnostic)
+- `module/playnet/interface/scope-backend.scm` — `^scope-backend` + convenience constructor
+- `module/playnet/interface/command-dispatch.scm` — `^command-dispatch` + standard command table
+- `module/playnet/interface/notification-sink.scm` — `^output-sink` + `^tee-alert-store`
+- `module/playnet/interface/transport.scm` — transport protocol helpers
+- `module/playnet/interface/adapters/telegram.scm` — Telegram adapter + `telegram-provider`
+- `module/playnet/interface/adapters/repl.scm` — terminal adapter
+
+---
+
+## 7. Social Planning Replaces Container Orchestration
+
+Kubernetes schedules containers onto nodes by matching resource requests against
+available capacity. playnet's planner does the same thing — but for any economic
+resource, governed by the people who use it, not by a centralized scheduler.
+
+### The mapping
+
+| Kubernetes | playnet |
+|-----------|---------|
+| Node (machine with resources) | Scope with `^live-resource` actors for CPU, memory, storage |
+| Pod (unit of deployment) | Scope vat (a planning scope running on some machine) |
+| Resource requests/limits | ValueFlows intents ("I need 4 CPU-hours by Thursday") |
+| Scheduler (bin-packing) | `allocate-o` + `demand-o` (relational search over inventory) |
+| Horizontal autoscaler | DDMRP buffer zones — capacity in red zone emits demand signal |
+| Service discovery | OCapN sturdyrefs — reachable by capability URI regardless of machine |
+| Config management | Guix System — entire OS is a Scheme expression (`machines.scm`) |
+| Rolling updates | `guix deploy` — atomic OS reconfiguration, `guix system roll-back` |
+| Multi-cluster federation | `^store-registry` + lateral matching across scopes |
+
+### How it works
+
+A scope is a vat running on some machine. The compute and memory it consumes
+are `^live-resource` actors in an infrastructure scope:
+
+```scheme
+;; Infrastructure scope tracks server capacity
+(define cpu-resource (spawn ^live-resource "cpu-1" "spec:compute" 64 60 "cores" "dc-1" '()))
+(define mem-resource (spawn ^live-resource "mem-1" "spec:memory" 256 200 "GB" "dc-1" '()))
+```
+
+When a new scope vat is created, the planner reserves capacity:
+
+```scheme
+(with-vat infra-vat
+  (let ((rsv ($ cpu-resource 'reserve 4)))          ;; 4 cores for this scope
+    ($ observer 'record-event
+       (make-economic-event "use" "spec:compute" 4 "cores"
+                            #:provider "dc-1"
+                            #:receiver scope-id))))
+```
+
+The planner sees this as inventory — `(inventory "cpu-1" "spec:compute" 60 "dc-1")`.
+When available capacity drops into the DDMRP yellow or red zone, the system
+emits a demand signal: "we need more compute." That signal is a ValueFlows
+intent, visible to any agent in the federation. A node operator sees it and
+donates capacity — or the system provisions new resources automatically.
+
+### Why this is different from Kubernetes
+
+Kubernetes optimizes a **global objective function** — pack pods onto nodes
+to minimize resource waste. The scheduler decides. Humans configure resource
+requests and limits; the system does the rest.
+
+playnet makes resource flows **visible**. The planner doesn't decide where
+scopes run — it shows the commune what capacity exists, what's being used,
+where deficits are forming, and what options are available. The commune
+chooses. Buffer zones provide early warning. Federation shares surplus.
+Governance actors control who can allocate what.
+
+The other difference is scope. Kubernetes manages containers. playnet
+manages anything the planner can see — CPU, memory, storage, API keys,
+GPU time, bandwidth, wheat, flour, labor hours. It's all inventory tuples
+to `allocate-o`. The same `demand-o` relation that plans bread production
+plans compute allocation. The same DDMRP that prevents flour stockouts
+prevents capacity exhaustion.
+
+### Scope mobility
+
+Because `^channel` talks to its backend via `<-` (OCapN async), moving a
+scope from one machine to another is transparent to every interface bound
+to it. The sturdyref follows the scope. The Telegram groupchat, the web
+REPL, the CLI — none of them notice. The compute/memory consumed by hosting
+that scope shows up as economic events in the planner, which can reason
+about placement decisions the same way it reasons about any other allocation.
+
+**Where to find it:**
+- `planner/lib/observation/live-resource.scm` — `^live-resource` actor
+- `planner/lib/observation/live-registry.scm` — `^live-registry` (resource-id → actor ref)
+- `planner/lib/relational/allocation.scm` — `allocate-o` (buffer-aware CLP(FD))
+- `planner/lib/relational/demand-relation.scm` — `demand-o` (demand → plan-term)
+- `planner/lib/relational/planning-facts.scm` — inventory lifting from `^live-resource`
+- `module/playnet/interface/channel.scm` — `^channel` uses `<-` for remote backends
+- `module/playnet/interface/scope-backend.scm` — scope as movable backend
+
+---
+
+## 8. File Reference Index
 
 ### Goblins integration / scope architecture
 | File | What it does |
@@ -607,6 +796,18 @@ The actual reservation crosses the vat boundary asynchronously — no extra code
 | `planner/lib/observation/live-registry.scm` | `^live-registry` — resource-id → actor ref |
 | `planner/lib/planning/store-registry.scm` | Cross-scope qualified refs |
 | `planner/lib/planning/plan-federation.scm` | Imperative federation (hierarchy fold) |
+
+### Interface layer
+| File | What it does |
+|------|-------------|
+| `module/playnet/interface/channel.scm` | `^channel` — backend-agnostic, uses `<-` for remote |
+| `module/playnet/interface/scope-backend.scm` | `^scope-backend` — VF scope as channel backend |
+| `module/playnet/interface/channel-manager.scm` | `^channel-manager` — lifecycle + remote attach |
+| `module/playnet/interface/command-dispatch.scm` | `^command-dispatch` — /command routing |
+| `module/playnet/interface/notification-sink.scm` | `^output-sink` + `^tee-alert-store` |
+| `module/playnet/interface/transport.scm` | Transport adapter protocol |
+| `module/playnet/interface/adapters/telegram.scm` | Telegram adapter + `telegram-provider` |
+| `module/playnet/interface/adapters/repl.scm` | Terminal REPL adapter |
 
 ### Generic relational solver
 | File | What it does |
@@ -649,3 +850,4 @@ The actual reservation crosses the vat boundary asynchronously — no extra code
 | `ARCHITECTURE.md` | System overview, Goblins primitives, Hoot/WASM |
 | `planner/architecture.md` | Layer 0-4 diagram, categorical structure |
 | `docs/goblin-chat.scm` | Async messaging patterns (`<-`, `on`, promises) |
+| `docs/ARCHITECTURE-EXPLAINED.md` | This document — how the system works end-to-end |

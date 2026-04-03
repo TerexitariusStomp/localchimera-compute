@@ -6,7 +6,7 @@
 ;;;   (available-commands) → list of command name strings
 ;;;   (record-event event) → affected resources
 ;;;   (query method . args) → result from observer
-;;;   (wire-notifications sink-ref) → void
+;;;   (wire-output sink-ref) → void
 ;;;
 ;;; The scope-backend closes over its own scope-ref, org-ref, command
 ;;; dispatch, and tee-alert-store. The channel never sees these internals.
@@ -71,7 +71,7 @@
 
     ;; --- Notification wiring ---
 
-    ((wire-notifications sink-ref)
+    ((wire-output sink-ref)
      ;; The tee-alert-store was wired at construction time to forward
      ;; push-alert calls to the sink. Nothing extra needed here —
      ;; the sink is already receiving alerts.
@@ -104,7 +104,7 @@
    tee-alert-store wiring. Call within a vat context.
    Returns (values backend-ref sink-ref) — caller wires sink to transport."
   (let* ((alert-st   ($ scope-ref 'alert-store))
-         (sink-ref   (spawn ^notification-sink
+         (sink-ref   (spawn ^output-sink
                             #f    ;; no channel-context yet
                             #f    ;; no transport yet
                             default-alert-formatter

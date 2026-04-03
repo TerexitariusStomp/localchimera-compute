@@ -388,4 +388,4 @@
 (display (string-append "── Results: "
                         (number->string pass-count) " passed, "
                         (number->string fail-count) " failed ──\n"))
-(exit (if (> fail-count 0) 1 0))
+(primitive-exit (if (> fail-count 0) 1 0))
