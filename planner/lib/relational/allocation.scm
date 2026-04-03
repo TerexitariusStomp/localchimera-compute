@@ -43,7 +43,7 @@
     (if bz (caddr bz) 0)))
 
 
-;;; ── sum-leq-for-resource — global constraint (follows distinctfd pattern) ────
+;;; ── sum-leq-check — immediate feasibility check (no propagators) ─────────────
 
 (define (narrow-domain-hi st var new-hi)
   "Narrow VAR's domain upper bound to NEW-HI. Returns st or #f on failure."
@@ -55,36 +55,32 @@
           (else (let ((r ((infd var (make-interval (domain-lo dom) new-hi)) st)))
                   (if (null? r) #f (car r))))))))
 
-(define (sum-leq-for-resource rid)
-  "Global constraint: sum of all take vars for RID <= inv-qty.
-   Walks all take vars, checks ground sum, narrows unground domains,
-   re-registers propagator for remaining unground vars."
+(define (sum-leq-check rid)
+  "Immediate check: sum of all take vars for RID <= inv-qty.
+   Walks all take vars, checks ground sum, narrows unground domains.
+   No propagator registration — runs once per claim, O(k) per call."
   (lambda (st)
     (let* ((entry (claims-ref (cstate-N st) rid)))
       (if (not entry) (list st)
           (let* ((inv-qty (car entry))
                  (walked (map (lambda (tv) (walk tv (cstate-S st))) (cdr entry)))
-                 (ground-vals (filter number? walked))
+                 (ground-sum (apply + (filter number? walked)))
                  (unground (filter var? walked))
-                 (ground-sum (apply + ground-vals))
                  (budget (- inv-qty ground-sum)))
             (if (< budget 0) '()
-                (let* ((mins (map (lambda (uv)
-                                    (let ((d (domain-ref (cstate-FD st) uv)))
-                                      (if d (domain-lo d) 0)))
-                                  unground))
-                       (total-mins (apply + mins)))
-                  (if (> total-mins budget) '()
-                      ;; Narrow each var: hi <= budget - sum(other minimums)
-                      (let narrow ((uvs unground) (ms mins) (st st))
-                        (if (null? uvs)
-                            (if (< (length unground) 2) (list st)
-                                (list (register-propagator st unground
-                                        (sum-leq-for-resource rid))))
-                            (let ((st* (narrow-domain-hi st (car uvs)
-                                         (- budget (- total-mins (car ms))))))
-                              (if (not st*) '()
-                                  (narrow (cdr uvs) (cdr ms) st*)))))))))))))
+                (if (null? unground) (list st)
+                    (let* ((mins (map (lambda (uv)
+                                        (let ((d (domain-ref (cstate-FD st) uv)))
+                                          (if d (domain-lo d) 0)))
+                                      unground))
+                           (total-mins (apply + mins)))
+                      (if (> total-mins budget) '()
+                          (let narrow ((uvs unground) (ms mins) (st st))
+                            (if (null? uvs) (list st)
+                                (let ((st* (narrow-domain-hi st (car uvs)
+                                             (- budget (- total-mins (car ms))))))
+                                  (if (not st*) '()
+                                      (narrow (cdr uvs) (cdr ms) st*))))))))))))))
 
 
 ;;; ── claim-from-o — declare a claim against a resource ────────────────────────
@@ -102,12 +98,12 @@
             (let* ((new-N (claims-add (cstate-N st) rid inv-qty take-v))
                    (st* (cstate-with st 'N new-N)))
               (bind ((rangeo take 0 available) st*)
-                    (sum-leq-for-resource rid)))
+                    (sum-leq-check rid)))
             ;; Ground: check feasibility, still register for global constraint
             (if (and (integer? take-v) (>= take-v 0) (<= take-v available))
                 (let* ((new-N (claims-add (cstate-N st) rid inv-qty take-v))
                        (st* (cstate-with st 'N new-N)))
-                  ((sum-leq-for-resource rid) st*))
+                  ((sum-leq-check rid) st*))
                 '()))))))
 
 
