@@ -51,7 +51,9 @@
           (by-due-date a b)))))
 
 (define (demand-class facts spec-id)
-  "0 = has inventory, 2 = has recipe, 3 = external."
+  "0 = has inventory, 2 = has recipe, 3 = external.
+   Ground version for sorting. See demand-class-o in strategy.scm
+   for the relational (bidirectional) version."
   (cond
     ((any (lambda (f) (and (eq? (car f) 'inventory)
                            (equal? (caddr f) spec-id)

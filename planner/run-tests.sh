@@ -86,6 +86,9 @@ run_suite "Labor Capacity"           "$ALL" "tests/test-labor-capacity.scm"
 run_suite "Signal Algebra"           "$ALL" "tests/test-signal-algebra.scm"
 run_suite "DDMRP Advanced"          "$ALL" "tests/test-ddmrp-advanced.scm"
 
+# -- Strategy synthesis --
+run_suite "Strategy Synthesis"       "$ALL" "tests/test-strategy.scm"
+
 # -- Buffers & execution --
 run_suite "Buffer Management"        "$ALL" "tests/test-buffer-management.scm"
 run_suite "Execution Reactive"       "$ALL" "tests/test-execution-reactive.scm"
