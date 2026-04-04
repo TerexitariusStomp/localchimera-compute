@@ -230,55 +230,33 @@
 
 
 ;; ═════════════════════════════════════════════════════════════════════════
-;; Backtracking: Sacrifice to resolve metabolic debts
+;; Debts → deficit signals (federation handles cross-scope retraction)
 ;; ═════════════════════════════════════════════════════════════════════════
 
-(define (backtrack ns debts all-records ctx)
-  "Returns (values ns final-records deficits)."
-  (if (null? debts)
-      (values ns all-records '())
-      (let ((rs (assq-ref ctx 'recipe-store)) (ps (assq-ref ctx 'plan-store))
-            (obs (assq-ref ctx 'observer)) (agents (assq-ref ctx 'agents))
-            (plan-id (assq-ref ctx 'plan-id)) (ls (assq-ref ctx 'location-store)))
-        ;; Sort: lowest priority first (highest class order, latest due)
-        (let ((candidates
-                (sort all-records
-                  (lambda (a b)
-                    (let ((ca (or (assq-ref *class-order* (assq-ref a 'class)) 3))
-                          (cb (or (assq-ref *class-order* (assq-ref b 'class)) 3)))
-                      (if (not (= ca cb)) (> ca cb)
-                          (string>? (or (assq-ref (assq-ref a 'slot) 'due) "")
-                                    (or (assq-ref (assq-ref b 'slot) 'due) ""))))))))
-          (let loop ((cands candidates) (ns ns) (debts debts)
-                     (kept all-records) (defs '()))
-            (if (or (null? debts) (null? cands))
-                (values ns kept
-                        (append defs (map (lambda (d)
-                                            `((kind . deficit) (spec-id . ,(assq-ref d 'spec-id))
-                                              (qty . ,(assq-ref d 'shortfall))
-                                              (source . metabolic-debt)))
-                                          debts)))
-                (let* ((cand (car cands))
-                       (ns-ret (netter-retract ns (or (assq-ref (assq-ref cand 'result) 'plan-id) "?")))
-                       ;; Re-explode candidate on retracted state
-                       (slot (assq-ref cand 'slot))
-                       (spec (assq-ref slot 'spec-id))
-                       (qty (assq-ref slot 'remaining-quantity))
-                       (due-ep (iso-datetime->epoch (or (assq-ref slot 'due) "2099-01-01T00:00:00Z"))))
-                  (let-values (((ns3 re-result) (dependent-demand plan-id spec qty due-ep rs ps obs ns-ret
-                                                 #:agents agents #:location-store ls)))
-                    (if (> (length (or (assq-ref re-result 'processes) '())) 0)
-                        ;; Re-explosion succeeded → sacrifice accepted, debts may resolve
-                        (loop (cdr cands) ns3 '()
-                              (cons `((slot . ,slot) (class . ,(assq-ref cand 'class)) (result . ,re-result))
-                                    (delete cand kept))
-                              defs)
-                        ;; Failed → permanent sacrifice
-                        (loop (cdr cands) ns-ret debts
-                              (delete cand kept)
-                              (cons `((kind . deficit) (spec-id . ,spec) (qty . ,qty)
-                                      (source . unmet-demand))
-                                    defs)))))))))))
+(define (debts->deficit-signals debts)
+  "Convert metabolic debts to deficit signals for federation-level retraction."
+  (map (lambda (d)
+         `((kind . deficit) (spec-id . ,(assq-ref d 'spec-id))
+           (qty . ,(assq-ref d 'shortfall))
+           (source . metabolic-debt)))
+       debts))
+
+(define (build-retraction-candidates records scope-id)
+  "Extract satisfied independent demands as retraction candidates.
+   Priority is NOT assigned here — the parent scope assigns it."
+  (filter-map
+    (lambda (rec)
+      (let ((result (assq-ref rec 'result))
+            (slot (assq-ref rec 'slot)))
+        (and result
+             (assq-ref result 'plan-id)
+             (pair? (or (assq-ref result 'processes) '()))
+             `((scope-id . ,scope-id)
+               (plan-id  . ,(assq-ref result 'plan-id))
+               (spec-id  . ,(assq-ref slot 'spec-id))
+               (qty      . ,(assq-ref slot 'remaining-quantity))
+               (slot     . ,slot)))))
+    records))
 
 
 ;; ═════════════════════════════════════════════════════════════════════════
@@ -325,11 +303,13 @@
                         #:key (agents #f) (normalize-fn identity)
                               (plan-name "Plan")
                               (buffer-zone-store #f) (buffer-profiles #f)
-                              (buffered-specs '()) (location-store #f))
+                              (buffered-specs '()) (location-store #f)
+                              (scope-id #f))
   "Complete DDMRP multi-pass planning algorithm."
   (let* ((canonical (normalize-fn ids))
          (plan-id (generate-id "plan-"))
          (_ ($ plan-store 'add-plan (make-plan plan-id plan-name #f #f #f #f #f #f)))
+         (sid (or scope-id plan-id))
          (ctx `((recipe-store . ,recipe-store) (plan-store . ,plan-store)
                 (observer . ,observer) (agents . ,agents) (plan-id . ,plan-id)
                 (buffer-zone-store . ,buffer-zone-store)
@@ -343,7 +323,7 @@
                        (map (lambda (d) `((slot . ,d) (class . ,(classify-demand d supply recipe-store))))
                             demands)))
          (ns0 (empty-netter-state)))
-    ;; The pipeline: Block A → B → C → 1b → Backtrack → Supply → Collect
+        ;; The pipeline: Block A → B → C → 1b → Supply → Collect
     (call-with-values (lambda () (block-a ns0 ctx))
       (lambda (ns1 alerts reservations)
         (call-with-values (lambda () (block-b ns1 classified alerts reservations ctx))
@@ -352,24 +332,25 @@
               (lambda (ns3 debts conservation)
                 (call-with-values (lambda () (pass-1b ns3 deferred ctx))
                   (lambda (ns4 d-recs d-purch)
-                    (let ((all-recs (append p1-recs d-recs))
-                          (all-purch (append p1-purch d-purch)))
-                      (call-with-values (lambda () (backtrack ns4 debts all-recs ctx))
-                        (lambda (ns5 final-recs deficit-sigs)
-                          (call-with-values (lambda () (supply-phase ns5 supply alerts ctx))
-                            (lambda (ns6 surplus-sigs supply-purch)
-                              ;; Collect: emit signals
-                              (for-each
-                                (lambda (sig)
-                                  (let-values (((intent meta) (signal->intent sig plan-id)))
-                                    ($ plan-store 'add-intent intent)
-                                    ($ plan-store 'set-meta (intent-id intent) meta)))
-                                (append deficit-sigs surplus-sigs))
-                              ;; Return
-                              `((plan-id . ,plan-id)
-                                (processes . ,(append-map
-                                                (lambda (r) (or (assq-ref (assq-ref r 'result) 'processes) '()))
-                                                final-recs))
-                                (purchase-intents . ,(append all-purch supply-purch))
-                                (deficit-signals . ,deficit-sigs)
-                                (surplus-signals . ,surplus-sigs)))))))))))))))))
+                    (let* ((all-recs (append p1-recs d-recs))
+                           (all-purch (append p1-purch d-purch))
+                           (deficit-sigs (debts->deficit-signals debts)))
+                      (call-with-values (lambda () (supply-phase ns4 supply alerts ctx))
+                        (lambda (ns5 surplus-sigs supply-purch)
+                          ;; Collect: emit signals
+                          (for-each
+                            (lambda (sig)
+                              (let-values (((intent meta) (signal->intent sig plan-id)))
+                                ($ plan-store 'add-intent intent)
+                                ($ plan-store 'set-meta (intent-id intent) meta)))
+                            (append deficit-sigs surplus-sigs))
+                          ;; Return — expose retraction candidates + netter for federation
+                          `((plan-id . ,plan-id)
+                            (processes . ,(append-map
+                                            (lambda (r) (or (assq-ref (assq-ref r 'result) 'processes) '()))
+                                            all-recs))
+                            (purchase-intents . ,(append all-purch supply-purch))
+                            (deficit-signals . ,deficit-sigs)
+                            (surplus-signals . ,surplus-sigs)
+                            (retraction-candidates . ,(build-retraction-candidates all-recs sid))
+                            (netter-state . ,ns5)))))))))))))))

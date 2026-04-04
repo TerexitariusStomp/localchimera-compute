@@ -1,7 +1,7 @@
 ;;; trace.scm — Relational provenance and destination tracing
 ;;;
 ;;; No dependency on knowledge.scm. Relations ARE the hyperarcs.
-;;; Transitive closure via depth-bounded recursive conde.
+;;; Uses transitive-closure-o from (playnet kanren-constraints).
 
 (use-modules (playnet kanren-constraints))
 
@@ -29,34 +29,19 @@
   (produces-o facts output-spec-id spec-id))
 
 
-;;; ── Provenance (backward trace with proof) ────────────────────────────────────
+;;; ── Provenance & Destination (instances of transitive-closure-o) ─────────────
 
-(define* (provenance-o facts spec-id ancestor trace #:optional (depth *default-trace-depth*))
+(define* (provenance-o facts spec-id ancestor trace
+                       #:optional (depth *default-trace-depth*))
   "What inputs are needed (transitively) for SPEC-ID?"
-  (if (= depth 0) fail
-      (conde
-        ;; Base: direct input
-        ((produces-o facts spec-id ancestor)
-         (== trace (list spec-id ancestor)))
-        ;; Step: through an intermediate
-        ((fresh (mid rest)
-           (produces-o facts spec-id mid)
-           (provenance-o facts mid ancestor rest (- depth 1))
-           (== trace (cons spec-id rest)))))))
+  (transitive-closure-o (lambda (a b) (produces-o facts a b))
+                        spec-id ancestor trace depth))
 
-
-;;; ── Destination (forward trace with proof) ────────────────────────────────────
-
-(define* (destination-o facts spec-id downstream trace #:optional (depth *default-trace-depth*))
+(define* (destination-o facts spec-id downstream trace
+                        #:optional (depth *default-trace-depth*))
   "What can be produced (transitively) from SPEC-ID?"
-  (if (= depth 0) fail
-      (conde
-        ((consumed-by-o facts spec-id downstream)
-         (== trace (list spec-id downstream)))
-        ((fresh (mid rest)
-           (consumed-by-o facts spec-id mid)
-           (destination-o facts mid downstream rest (- depth 1))
-           (== trace (cons spec-id rest)))))))
+  (transitive-closure-o (lambda (a b) (consumed-by-o facts a b))
+                        spec-id downstream trace depth))
 
 
 ;;; ── Custody level (bidirectional zone classification) ──────────────────────────

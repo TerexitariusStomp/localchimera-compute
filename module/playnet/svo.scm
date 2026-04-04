@@ -262,14 +262,12 @@
     (inversion-o facts iid alienated-eid free-eid kind)))
 
 (define (full-inversion-o facts alienated-eids free-eids)
-  "Relate a list of alienated edges to their inversions."
-  (conde
-    ((== alienated-eids '()) (== free-eids '()))
-    ((fresh (a-eid f-eid a-rest f-rest kind)
-       (== alienated-eids (cons a-eid a-rest))
-       (== free-eids (cons f-eid f-rest))
-       (inversion-step-o facts a-eid f-eid kind)
-       (full-inversion-o facts a-rest f-rest)))))
+  "Relate a list of alienated edges to their inversions via map-goal-o."
+  (map-goal-o alienated-eids
+    (lambda (a-eid result)
+      (fresh (kind)
+        (inversion-step-o facts a-eid result kind)))
+    free-eids))
 
 
 ;;; ── Graph traversal ──────────────────────────────────────────────────────────
