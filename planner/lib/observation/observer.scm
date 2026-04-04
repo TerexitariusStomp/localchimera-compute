@@ -1113,11 +1113,13 @@
        (os-resources st)))
 
     ((agents-with-skill spec-id)
-     (delete-duplicates
-       (filter-map (lambda (r)
-                     (and (equal? (economic-resource-conforms-to r) spec-id)
-                          (economic-resource-primary-accountable r)))
-                   (hashmap-values (os-resources st)))))
+     ;; O(k) via idx-by-spec instead of O(R) scan over all resources
+     (let ((rids (hashmap-ref (os-idx-by-spec st) spec-id '())))
+       (delete-duplicates
+         (filter-map (lambda (rid)
+                       (let ((r (hashmap-ref (os-resources st) rid #f)))
+                         (and r (economic-resource-primary-accountable r))))
+                     rids))))
 
     ;; --- Resource queries ---
 

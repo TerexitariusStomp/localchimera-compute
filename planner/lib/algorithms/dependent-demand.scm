@@ -33,7 +33,9 @@
                            recipe-store plan-store observer initial-ns
                            #:key (agents #f) (generate-id-fn #f) (sne-index #f)
                                  (at-location #f) (honor-decoupling-points #f)
-                                 (buffered-specs '()) (location-store #f))
+                                 (buffered-specs '()) (location-store #f)
+                                 (agent-store #f) (scope-agent-id #f)
+                                 (alert-store #f))
   "Explode a demand through the bill of materials via BFS.
    initial-ns: <netter-state> (immutable — threaded through via set! on binding).
    Returns (values new-ns result-alist)."
@@ -51,6 +53,7 @@
   (define result-purchase-intents '())
   (define result-allocated '())
   (define result-boundary-stops '())
+  (define assigned-agents '())  ;; agents already committed to work flows (no double-booking)
   (define queue '())
 
 
@@ -243,7 +246,21 @@
                         (flows-pair ($ recipe-store 'flows-for-process
                                        (recipe-process-id rp)))
                         (inputs (car flows-pair))
-                        (outputs (cdr flows-pair)))
+                        (outputs (cdr flows-pair))
+                        ;; Skill matching: compute per-flow agent map for work flows
+                        (work-flows (filter (lambda (f) (eq? (recipe-flow-action f) 'work)) inputs))
+                        (flow-agent-map
+                          (if (and agent-store (pair? work-flows))
+                              (match-work-flows work-flows observer agent-store
+                                #:scope-id scope-agent-id
+                                #:already-assigned assigned-agents)
+                              '())))
+
+                   ;; Update assigned-agents accumulator with newly matched agents
+                   (for-each (lambda (pair)
+                               (when (cdr pair)
+                                 (set! assigned-agents (cons (cdr pair) assigned-agents))))
+                             flow-agent-map)
 
                    (set! result-processes (cons proc result-processes))
 
@@ -291,9 +308,32 @@
                          (unless has-resolve
                            ;; Create flow record (unless already handled in Phase 0)
                            (unless (hash-ref anchor-resolved (recipe-flow-id f) #f)
-                             (let ((rec (create-flow-record f pid 'input scale
-                                          (number->string proc-begin)
-                                          plan-id agents plan-store task-location)))
+                             ;; For work flows, resolve per-flow agent; one lookup
+                             (let* ((match (and (eq? action 'work)
+                                                (assoc (recipe-flow-id f) flow-agent-map)))
+                                    (matched-agent (and match (cdr match)))
+                                    (flow-agents
+                                      (cond
+                                        (matched-agent
+                                          `((provider . ,matched-agent)
+                                            (receiver . ,(and agents (assq-ref agents 'receiver)))))
+                                        (match  ;; in map but unmatched → intent (no provider)
+                                          `((receiver . ,(and agents (assq-ref agents 'receiver)))))
+                                        (else agents)))
+                                    (rec (create-flow-record f pid 'input scale
+                                           (number->string proc-begin)
+                                           plan-id flow-agents plan-store task-location)))
+                               ;; Alert for unmatched work flows
+                               (when (and alert-store match (not matched-agent))
+                                 ($ alert-store 'push-alert
+                                    `((kind . unmatched-role)
+                                      (spec-id . ,in-spec)
+                                      (process-id . ,pid)
+                                      (plan-id . ,plan-id)
+                                      (message . ,(string-append
+                                                    "No agent with skill "
+                                                    (or in-spec "unknown")
+                                                    " available")))))
                                (if (commitment? rec)
                                    (set! result-commitments (cons rec result-commitments))
                                    (set! result-intents (cons rec result-intents)))))

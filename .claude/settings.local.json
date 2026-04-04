@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep:*)",
+      "Bash(guile:*)",
+      "Bash(echo:*)",
+      "Bash(python3:*)",
+      "Bash(xxd:*)",
+      "Bash(pdftotext \"/Users/andrewdavis/code/playnet/docs/Paradigms of Artificial Intelligence Programming Case Studies in Common Lisp.pdf\" -)",
+      "Bash(pdftotext \"/Users/andrewdavis/code/playnet/docs/Paradigms of Artificial Intelligence Programming Case Studies in Common Lisp.pdf\" /tmp/paip.txt)",
+      "Read(//tmp/**)",
+      "Read(//usr/local/bin/**)",
+      "Read(//opt/homebrew/bin/**)"
+    ]
+  }
+}

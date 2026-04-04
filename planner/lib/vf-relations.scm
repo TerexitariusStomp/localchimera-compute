@@ -258,3 +258,42 @@
   (run* (agent)
     (fresh (eid action provider)
       (event-o events eid action resource-id provider agent))))
+
+
+;;; ═══════════════════════════════════════════════════════════════════════════
+;;; SKILL / ROLE RELATIONS — role-matching for work flows
+;;; ═══════════════════════════════════════════════════════════════════════════
+
+(define (skill-o resources agent-id spec-id)
+  "AGENT-ID holds a resource conforming to SPEC-ID."
+  (fresh (rid state)
+    (resource-o resources rid spec-id agent-id state)))
+
+(define (relationship-o relationships subj obj role-id)
+  "SUBJ has relationship ROLE-ID with OBJ."
+  (fresh (tuple)
+    (choose-and-extract relationships
+      (lambda (r)
+        (list (agent-relationship-subject r)
+              (agent-relationship-object r)
+              (agent-relationship-relationship r)))
+      tuple)
+    (== tuple (list subj obj role-id))))
+
+(define (qualified-worker-o resources relationships agent-id spec-id scope-id)
+  "AGENT-ID has skill SPEC-ID and is a member of SCOPE-ID."
+  (fresh (role-id)
+    (skill-o resources agent-id spec-id)
+    (relationship-o relationships agent-id scope-id role-id)))
+
+(define (query-agents-with-skill resources spec-id)
+  "Which agents hold skill SPEC-ID?"
+  (run* (agent) (skill-o resources agent spec-id)))
+
+(define (query-qualified-workers resources relationships spec-id scope-id)
+  "Which agents hold skill SPEC-ID and are members of SCOPE-ID?"
+  (run* (agent) (qualified-worker-o resources relationships agent spec-id scope-id)))
+
+(define (query-agent-skills resources relationships agent-id scope-id)
+  "What skills does AGENT-ID hold within SCOPE-ID?"
+  (run* (skill) (qualified-worker-o resources relationships agent-id skill scope-id)))

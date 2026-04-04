@@ -319,6 +319,158 @@ To add a new interface (Matrix, IRC, a web dashboard), implement `parse-command`
 
 ---
 
+## Explain metaprogramming
+ The Universe Is A Question You Can Run Backwards                   
+                                                                     
+  Normally when you write a program, you make a one-way machine. You 
+  put facts in the top. Answers fall out the bottom. The machine has 
+  a direction. It only knows how to go forward.
+                                                                     
+  But look at what == actually is:                                   
+   
+  (define (== u v)                                                   
+    (lambda (st)  
+      (let ((s (unify u v (state-subst st))))
+        (if s (list (cons s (state-counter st)))                     
+              '()))))                                                
+                                                                     
+  It's not assignment. It's not comparison. It's a declaration that  
+  two things are the same shape. The engine figures out which
+  direction to flow. u and v can both be unknown. You're not saying  
+  "set u to v." You're saying "u and v are the same thing, universe —
+   please reconcile."
+
+  This is the first miracle: you write the relationship, not the     
+  procedure.
+                                                                     
+  ---             
+  The Grammar Doesn't Parse — It Is Meaning
+                                                                     
+  Look at demand-question-o:
+                                                                     
+  (define (demand-question-o ctx s0 s goal)
+    (fresh (qty spec-id s1)                                          
+      (conde                                                         
+        ((words-o '("how" "do" "we" "make") s0 s1))                  
+        ((word-o "make" s0 s1))                                      
+        ((word-o "produce" s0 s1)))
+      (qty-spec-np-o ctx s1 s qty spec-id)                           
+      (== goal `(demand ,spec-id ,qty))))                            
+                                                                     
+  Ground s0 with words → you get goal. Ground goal with a meaning →  
+  you get s0. The same code parses and generates. The grammar is the 
+  language, not a description of it. You don't have a parser and a   
+  pretty-printer. You have one thing that is both simultaneously,
+  depending on which end you squeeze.
+
+  This is the second miracle: direction is not baked in. You choose  
+  it at query time.
+                                                                     
+  ---             
+  map-goal-o Is Where It Gets Fractal
+                                                                     
+  (define (map-goal-o items item->goal-o results)
+    (if (null? items)                                                
+        (== results '())                                             
+        (fresh (result rest)
+          (item->goal-o (car items) result)                          
+          (map-goal-o (cdr items) item->goal-o rest)                 
+          (== results (cons result rest)))))
+                                                                     
+  Normal map takes a function a → b and gives you [a] → [b].         
+                                                                     
+  map-goal-o takes a relation (a, b) → goal — and the whole thing is 
+  itself a relation between items and results. You can run it
+  forward: given items, find results. You can run it backward: given 
+  results, find what items produced them. You can run it sideways:
+  given partial items and partial results, fill in the gaps.
+
+  The combinator lifts a relation over lists without changing what it
+   is. The meta-level and the object-level are made of the same
+  stuff.                                                             
+                  
+  This is the third miracle: abstraction doesn't cost you            
+  bidirectionality. You keep the magic at every level.
+                                                                     
+  ---             
+  transitive-closure-o Is A Proof That Knows Itself
+                                                                     
+  (define (transitive-closure-o edge-o from to trace . rest)
+    (let ((depth (if (pair? rest) (car rest) 10)))                   
+      (conde                                                         
+        ((edge-o from to)                                            
+         (== trace (list from to)))                                  
+        ((fresh (mid rest-trace)
+           (edge-o from mid)                                         
+           (transitive-closure-o edge-o mid to rest-trace (- depth
+  1))                                                                
+           (== trace (cons from rest-trace)))))))
+                                                                     
+  This is asking: "can you reach to from from?" But trace is unified 
+  with the path that proves it. The answer and the justification are
+  the same object. You don't compute the result and separately       
+  explain it. The explanation is the result.
+
+  Ask the planner "what is needed for bread?" and you get back not   
+  just "wheat" but the chain: bread ← flour ← wheat. The trace is the
+   proof. The proof is the answer. You can't have one without the    
+  other, because they're the same unification.
+
+  ---
+  Constraints Are Deferred Enlightenment
+
+  (=/= x 'locked)
+  (numbero qty)                                                      
+  (rangeo qty 0 1000)
+  (+fd consumed available needed)                                    
+                  
+  You're not computing. You're describing the shape of what's true,  
+  before you know what it is. The constraint store CS and domain
+  store FD in the state vector are like a cloud of partial knowledge 
+  that gradually crystallizes.
+
+  When you write (+fd x y z) and only x and y are known — the system 
+  doesn't fail. It waits. It remembers the constraint. Later, when z
+  shows up from somewhere else in the search, the propagator fires   
+  and narrows everything. Variables talk to each other across time.
+
+  The state isn't a snapshot of what you know. It's a living network 
+  of implications that fires incrementally as the universe fills in.
+                                                                     
+  ---                                                                
+  What It All Enables: The Program Becomes The Model
+                                                                     
+  Put it together.
+                                                                     
+  You write (ask ctx "how do we make 10 bread").                     
+   
+  Under the hood:                                                    
+  - The grammar (a relation) parses the phrase bidirectionally
+  - The lexicon (a relation) resolves words to facts via the live    
+  world-state                                                    
+  - The planner (a relation) searches backward from the goal through 
+  recipes, inventory, transport                                     
+  - The narrator (the same grammar relations, run in reverse)        
+  explains the plan back in words                            
+  - Constraints thread through all of it, narrowing the search       
+  without enumerating                                         
+                                                                     
+  The whole pipeline — language, reasoning, explanation — is one 
+  relational machine. There's no separate parser, planner, and       
+  explainer. There's no translation between layers. It's turtles all
+  the way down, and each turtle is made of the same (lambda (st)     
+  ...).           
+
+  The program doesn't process meaning. It is meaning, declared as    
+  relationships, from which computation emerges in whatever direction
+   you need.                                                         
+                  
+  That's what the combinators enable. Not better code. A different   
+  kind of code — one where the question and the answer are the same
+  object, seen from different angles.    
+
+---
+
 ## How Does This System Create Infinitely Scalable Self-Organizing Infrastructure Through Social Planning?
 
 ### The Core Mechanism: Federation

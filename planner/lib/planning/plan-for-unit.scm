@@ -124,14 +124,29 @@
           (values final-ns alerts reservations)))))
 
 
+;; ── Helper: run dependent-demand with ctx-derived keyword args ─────────
+
+(define (ctx-dependent-demand plan-id spec qty due-ep ns ctx
+                              #:key (at-location #f))
+  "Call dependent-demand with all keyword args extracted from CTX."
+  (dependent-demand plan-id spec qty due-ep
+    (assq-ref ctx 'recipe-store) (assq-ref ctx 'plan-store)
+    (assq-ref ctx 'observer) ns
+    #:agents (assq-ref ctx 'agents)
+    #:at-location at-location
+    #:location-store (assq-ref ctx 'location-store)
+    #:agent-store (assq-ref ctx 'agent-store)
+    #:scope-agent-id (assq-ref ctx 'scope-agent-id)
+    #:alert-store (assq-ref ctx 'alert-store)))
+
+
 ;; ═════════════════════════════════════════════════════════════════════════
 ;; Block B (Pass 1): Primary demands with buffer guard
 ;; ═════════════════════════════════════════════════════════════════════════
 
 (define (block-b ns classified alerts reservations ctx)
   "Returns (values ns records deferred purchases)."
-  (let ((rs (assq-ref ctx 'recipe-store)) (ps (assq-ref ctx 'plan-store))
-        (obs (assq-ref ctx 'observer)) (agents (assq-ref ctx 'agents))
+  (let ((obs (assq-ref ctx 'observer)) (ps (assq-ref ctx 'plan-store))
         (plan-id (assq-ref ctx 'plan-id)) (bf? (assq-ref ctx 'buffer-first?))
         (ls (assq-ref ctx 'location-store)))
     (let loop ((slots classified) (ns ns) (recs '()) (defer '()) (purch '()))
@@ -149,8 +164,9 @@
                                        #:at-location slot-loc #:location-store ls) qty) toy))))
             (if guard?
                 (loop (cdr slots) ns recs (cons e defer) purch)
-                (let-values (((ns2 result) (dependent-demand plan-id spec qty due-ep rs ps obs ns
-                                             #:agents agents #:at-location slot-loc #:location-store ls)))
+                (let-values (((ns2 result)
+                              (ctx-dependent-demand plan-id spec qty due-ep ns ctx
+                                #:at-location slot-loc)))
                   (loop (cdr slots) ns2
                         (cons `((slot . ,slot) (class . ,cls) (result . ,result)) recs)
                         defer
@@ -163,10 +179,7 @@
 
 (define (block-c ns records alerts ctx)
   "Returns (values ns debts conservation)."
-  (let ((rs (assq-ref ctx 'recipe-store)) (ps (assq-ref ctx 'plan-store))
-        (obs (assq-ref ctx 'observer)) (agents (assq-ref ctx 'agents))
-        (plan-id (assq-ref ctx 'plan-id))
-        (ls (assq-ref ctx 'location-store))
+  (let ((plan-id (assq-ref ctx 'plan-id))
         (buffered (or (assq-ref ctx 'buffered-specs) '())))
     (let* ((consumed
              (fold (lambda (rec acc)
@@ -194,8 +207,8 @@
               (if (<= q *epsilon-pu*)
                   (loop (cdr ds) rns debts)
                   (let-values (((rns2 result)
-                                (dependent-demand (string-append plan-id "-r") sp q (current-time)
-                                  rs ps obs rns #:agents agents #:location-store ls)))
+                                (ctx-dependent-demand
+                                  (string-append plan-id "-r") sp q (current-time) rns ctx)))
                     (let ((short (fold (lambda (pi a)
                                          (+ a (if (and (intent-resource-quantity pi)
                                                        (equal? (intent-resource-conforms-to pi) sp))
@@ -213,17 +226,16 @@
 
 (define (pass-1b ns deferred ctx)
   "Returns (values ns records purchases)."
-  (let ((rs (assq-ref ctx 'recipe-store)) (ps (assq-ref ctx 'plan-store))
-        (obs (assq-ref ctx 'observer)) (agents (assq-ref ctx 'agents))
-        (plan-id (assq-ref ctx 'plan-id)) (ls (assq-ref ctx 'location-store)))
+  (let ((plan-id (assq-ref ctx 'plan-id)))
     (let loop ((slots deferred) (ns ns) (recs '()) (purch '()))
       (if (null? slots) (values ns (reverse recs) (reverse purch))
           (let* ((e (car slots)) (slot (assq-ref e 'slot)) (cls (assq-ref e 'class))
                  (spec (assq-ref slot 'spec-id)) (qty (assq-ref slot 'remaining-quantity))
                  (slot-loc (assq-ref slot 'at-location))
                  (due-ep (iso-datetime->epoch (or (assq-ref slot 'due) "2099-01-01T00:00:00Z"))))
-            (let-values (((ns2 result) (dependent-demand plan-id spec qty due-ep rs ps obs ns
-                                         #:agents agents #:at-location slot-loc #:location-store ls)))
+            (let-values (((ns2 result)
+                          (ctx-dependent-demand plan-id spec qty due-ep ns ctx
+                            #:at-location slot-loc)))
               (loop (cdr slots) ns2
                     (cons `((slot . ,slot) (class . ,cls) (result . ,result)) recs)
                     (append (or (assq-ref result 'purchase-intents) '()) purch))))))))
@@ -304,7 +316,9 @@
                               (plan-name "Plan")
                               (buffer-zone-store #f) (buffer-profiles #f)
                               (buffered-specs '()) (location-store #f)
-                              (scope-id #f))
+                              (scope-id #f)
+                              (agent-store #f) (scope-agent-id #f)
+                              (alert-store #f))
   "Complete DDMRP multi-pass planning algorithm."
   (let* ((canonical (normalize-fn ids))
          (plan-id (generate-id "plan-"))
@@ -316,7 +330,10 @@
                 (buffer-profiles . ,buffer-profiles)
                 (buffered-specs . ,buffered-specs)
                 (location-store . ,location-store)
-                (buffer-first? . ,(and buffer-zone-store buffer-profiles #t))))
+                (buffer-first? . ,(and buffer-zone-store buffer-profiles #t))
+                (agent-store . ,agent-store)
+                (scope-agent-id . ,scope-agent-id)
+                (alert-store . ,alert-store)))
          (demands (extract-demands plan-store))
          (supply (extract-supply observer))
          (classified (sort-classified

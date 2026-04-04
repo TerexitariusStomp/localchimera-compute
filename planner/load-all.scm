@@ -32,6 +32,7 @@
 (load "lib/algorithms/ddmrp.scm")
 (load "lib/algorithms/signals.scm")
 (load "lib/algorithms/netting.scm")
+(load "lib/algorithms/skill-matcher.scm")
 (load "lib/algorithms/dependent-demand.scm")
 (load "lib/algorithms/dependent-supply.scm")
 
