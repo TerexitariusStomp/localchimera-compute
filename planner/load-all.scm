@@ -78,6 +78,7 @@
 ;; Utilities
 (load "lib/utils/buffer-type.scm")
 (load "lib/utils/recurrence.scm")
+(load "lib/utils/demand-priority.scm")
 
 ;; Unified query facade
 ;; (load "lib/query.scm")  ;; TODO: fix ($ observer 'enriched-inventory . rest) syntax
@@ -85,6 +86,6 @@
 ;; Layer 2: Relational planner (miniKanren + netter)
 (load "lib/relational/load-relational.scm")
 
-;; Layer 4: Federation (relational version in lib/relational/federation.scm)
+;; Layer 4: Federation
 (load "lib/planning/store-registry.scm")
-;; (load "lib/planning/plan-federation.scm")  ;; replaced by relational federation
+(load "lib/planning/plan-federation.scm")

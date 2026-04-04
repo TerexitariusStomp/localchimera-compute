@@ -8,10 +8,14 @@
 ;;;                        (plan . ...)
 ;;;                        (deficits . ...)
 ;;;                        (surpluses . ...)
+;;;                        (retraction-candidates . ...)
 ;;;                        (residual . number))
 ;;;
 ;;; Leaf: miniKanren search over local facts.
 ;;; Parent: interleave children's streams + lateral matching.
+;;; When lateral matching exhausts surpluses but deficits remain,
+;;; the retraction stream lazily retracts lowest-priority satisfied
+;;; demands across scopes to free capacity for higher-priority needs.
 ;;; Consumers don't know or care which kind they're pulling from.
 
 (use-modules (playnet kanren-constraints)
@@ -47,10 +51,13 @@
 ;;; scope-stream — the universal protocol
 ;;; ══════════════════════════════════════════════════════════════════════════════
 
-(define (scope-stream facts scope-id ctx-map children-of)
-  (scope-stream* facts scope-id ctx-map children-of '()))
+(define* (scope-stream facts scope-id ctx-map children-of
+                       #:key (priority-fn #f))
+  (scope-stream* facts scope-id ctx-map children-of '()
+                 #:priority-fn priority-fn))
 
-(define (scope-stream* facts scope-id ctx-map children-of visited)
+(define* (scope-stream* facts scope-id ctx-map children-of visited
+                        #:key (priority-fn #f))
   "Produce a lazy stream of federation-results for SCOPE-ID.
    VISITED guards against cycles in the scope-parent graph."
   (if (member scope-id visited)
@@ -59,7 +66,8 @@
             (visited* (cons scope-id visited)))
         (if (null? children)
             (leaf-stream scope-id ctx-map)
-            (parent-stream facts scope-id children ctx-map children-of visited*)))))
+            (parent-stream facts scope-id children ctx-map children-of visited*
+                           #:priority-fn priority-fn)))))
 
 
 ;;; ══════════════════════════════════════════════════════════════════════════════
@@ -78,9 +86,11 @@
         (let* ((plan (reify-from-state state))
                (defs (extract-deficits plan scope-id))
                (surps (extract-surpluses plan scope-id))
+               (cands (extract-retraction-candidates plan scope-id))
                (resid (fold (lambda (d a) (+ a (assq-ref d 'qty))) 0 defs)))
           `((scope . ,scope-id) (plan . ,plan)
             (deficits . ,defs) (surpluses . ,surps)
+            (retraction-candidates . ,cands)
             (residual . ,resid))))
       raw)))
 
@@ -91,38 +101,42 @@
 
 (define *max-steps* 50)
 
-(define (parent-stream facts scope-id children ctx-map children-of visited)
-  "Lazy stream: interleave children's streams + lateral matching."
+(define* (parent-stream facts scope-id children ctx-map children-of visited
+                        #:key (priority-fn #f))
+  "Lazy stream: interleave children's streams + lateral matching + retraction."
   (let* ((child-streams
            (map (lambda (cid)
-                  (cons cid (scope-stream* facts cid ctx-map children-of visited)))
+                  (cons cid (scope-stream* facts cid ctx-map children-of visited
+                                           #:priority-fn priority-fn)))
                 children))
          (initial (pull-from-all child-streams)))
     (if (null? initial)
         '()
-        (search-stream facts scope-id initial *max-steps*))))
+        (search-stream facts scope-id initial *max-steps* priority-fn))))
 
-(define (search-stream facts scope-id state steps)
-  "Lazy stream of improving federation-results."
-  (let ((result (evaluate-state facts scope-id state)))
+(define (search-stream facts scope-id state steps priority-fn)
+  "Lazy stream of improving federation-results.
+   When advance-worst exhausts stream positions, chains into retraction."
+  (let ((result (evaluate-state facts scope-id state priority-fn)))
     (if (or (<= steps 0) (= (assq-ref result 'residual) 0))
         (list result)
         (cons result
               (lambda ()
                 (let ((advanced (advance-worst state result)))
-                  (if (not advanced) '()
-                      (search-stream facts scope-id advanced (- steps 1)))))))))
+                  (if advanced
+                      (search-stream facts scope-id advanced (- steps 1) priority-fn)
+                      ;; No more stream positions — try retraction
+                      (retraction-stream facts scope-id state result priority-fn))))))))
 
 
 ;;; ══════════════════════════════════════════════════════════════════════════════
 ;;; Evaluate: match children's results at this level
 ;;; ══════════════════════════════════════════════════════════════════════════════
 
-(define (evaluate-state facts scope-id state)
+(define (evaluate-state facts scope-id state priority-fn)
   "state = list of (child-id federation-result rest-stream).
    Returns a federation-result for this scope."
   (let* (;; Each child's deficits, re-attributed to the CHILD (not the leaf)
-         ;; so that advance-worst can find the right child to advance
          (child-defs
            (append-map (lambda (s)
              (let* ((cid (car s))
@@ -130,7 +144,6 @@
                     (raw-defs (or (and (pair? child-result)
                                        (assq-ref child-result 'deficits))
                                   '())))
-               ;; Re-attribute deficits to this child's ID
                (map (lambda (d) (cons (cons 'child cid) d)) raw-defs)))
              state))
          (child-surps
@@ -140,6 +153,20 @@
                                         (assq-ref child-result 'surpluses))
                                    '())))
                raw-surps))
+             state))
+         ;; Collect retraction candidates from all children, assign priority
+         (child-cands
+           (append-map (lambda (s)
+             (let* ((cid (car s))
+                    (child-result (cadr s))
+                    (raw-cands (or (and (pair? child-result)
+                                        (assq-ref child-result 'retraction-candidates))
+                                   '())))
+               (map (lambda (c)
+                      (if (and priority-fn (not (assq-ref c 'priority)))
+                          (cons `(priority . ,(priority-fn cid (assq-ref c 'spec-id))) c)
+                          c))
+                    raw-cands)))
              state))
          ;; Match laterally
          (match-result (match-at-level child-defs child-surps))
@@ -155,6 +182,7 @@
       (plan . ,child-plans)
       (deficits . ,unmatched)
       (surpluses . ,(subtract-matched child-surps matches))
+      (retraction-candidates . ,child-cands)
       (lateral-matches . ,matches)
       (residual . ,residual))))
 
@@ -165,7 +193,7 @@
       (if (and (equal? (assq-ref s 'scope) (assq-ref m 'from))
                (equal? (assq-ref s 'spec) (assq-ref m 'spec)))
           (let ((new-qty (- (assq-ref s 'qty) (assq-ref m 'qty))))
-            (if (<= new-qty 0) #f  ;; fully consumed — remove
+            (if (<= new-qty 0) #f
                 (cons (cons 'qty new-qty)
                       (filter (lambda (p) (not (eq? (car p) 'qty))) s))))
           s))
@@ -203,13 +231,96 @@
                            s))
                        sups)))
                 (if (>= q dq)
-                    ;; Fully matched — drop deficit
                     (loop (cdr defs) new-sups (cons match matches) unmatched)
-                    ;; Partially matched — reduce deficit, keep looking
                     (let ((remaining-d (cons (cons 'qty (- dq q))
                                              (filter (lambda (p) (not (eq? (car p) 'qty))) d))))
                       (loop (cons remaining-d (cdr defs)) new-sups
                             (cons match matches) unmatched)))))))))
+
+
+;;; ══════════════════════════════════════════════════════════════════════════════
+;;; Retraction stream — lazy cross-scope priority-aware retraction
+;;; ══════════════════════════════════════════════════════════════════════════════
+
+(define (retraction-stream facts scope-id state result priority-fn)
+  "Lazy stream: retract lowest-priority satisfied demands to free capacity.
+   Each step retracts one candidate (lowest priority first), converts its
+   allocated resources to surplus, and re-evaluates lateral matching."
+  (let* ((candidates (or (assq-ref result 'retraction-candidates) '()))
+         (sorted (sort candidates
+                   (lambda (a b)
+                     (> (or (assq-ref a 'priority) 53)
+                        (or (assq-ref b 'priority) 53)))))
+         (deficits (or (assq-ref result 'deficits) '())))
+    (if (or (null? sorted) (null? deficits))
+        (list result)
+        (retract-one-stream facts scope-id state sorted result priority-fn))))
+
+(define (retract-one-stream facts scope-id state candidates prev-result priority-fn)
+  "Each step: retract one candidate, re-evaluate lateral matching."
+  (if (null? candidates)
+      (list prev-result)
+      (let* ((cand (car candidates))
+             (new-state (retract-demand-from-state state cand))
+             (new-result (evaluate-state facts scope-id new-state priority-fn)))
+        (cond
+          ((= (assq-ref new-result 'residual) 0)
+           (list (add-retraction-record new-result cand)))
+          ((< (assq-ref new-result 'residual)
+              (assq-ref prev-result 'residual))
+           (let ((result* (add-retraction-record new-result cand)))
+             (cons result*
+                   (lambda ()
+                     (retract-one-stream facts scope-id new-state
+                       (cdr candidates) result* priority-fn)))))
+          (else
+           (retract-one-stream facts scope-id new-state
+             (cdr candidates) prev-result priority-fn))))))
+
+(define (retract-demand-from-state state candidate)
+  "Federation-level retraction: remove a satisfied demand from its child's
+   result and convert its resources to surplus."
+  (let ((target-scope (assq-ref candidate 'scope-id))
+        (target-spec (assq-ref candidate 'spec-id))
+        (target-qty (assq-ref candidate 'qty)))
+    (map (lambda (entry)
+           (let ((cid (car entry))
+                 (child-result (cadr entry))
+                 (stream (caddr entry)))
+             (if (not (equal? cid target-scope))
+                 entry
+                 (let* ((old-cands (or (and (pair? child-result)
+                                            (assq-ref child-result 'retraction-candidates))
+                                       '()))
+                        (new-cands (filter
+                                     (lambda (c)
+                                       (not (and (equal? (assq-ref c 'spec-id) target-spec)
+                                                 (equal? (assq-ref c 'plan-id)
+                                                         (assq-ref candidate 'plan-id)))))
+                                     old-cands))
+                        (old-surps (or (and (pair? child-result)
+                                            (assq-ref child-result 'surpluses))
+                                       '()))
+                        (new-surps (cons `((scope . ,cid) (spec . ,target-spec)
+                                          (qty . ,target-qty))
+                                        old-surps))
+                        (new-result
+                          (map (lambda (pair)
+                                 (cond
+                                   ((eq? (car pair) 'retraction-candidates)
+                                    (cons 'retraction-candidates new-cands))
+                                   ((eq? (car pair) 'surpluses)
+                                    (cons 'surpluses new-surps))
+                                   (else pair)))
+                               child-result)))
+                   (list cid new-result stream)))))
+         state)))
+
+(define (add-retraction-record result candidate)
+  "Add a retraction to the result's retractions list."
+  (let ((existing (or (assq-ref result 'retractions) '())))
+    (cons (cons 'retractions (cons candidate existing))
+          (filter (lambda (p) (not (eq? (car p) 'retractions))) result))))
 
 
 ;;; ══════════════════════════════════════════════════════════════════════════════
@@ -220,7 +331,6 @@
   "Advance the child whose deficit is largest."
   (let ((unmatched (or (assq-ref result 'deficits) '())))
     (if (null? unmatched) #f
-        ;; Find the child-id to advance (from the 'child tag on deficits)
         (let* ((sorted (sort unmatched
                   (lambda (a b) (> (assq-ref a 'qty) (assq-ref b 'qty)))))
                (worst-child (or (assq-ref (car sorted) 'child)
@@ -322,19 +432,37 @@
                     `((scope . ,scope-id) (spec . ,(cadr pt)) (qty . ,surplus))))))
         plan)))
 
+(define (extract-retraction-candidates plan scope-id)
+  "Extract satisfied demands as retraction candidates from a relational plan."
+  (if (not (list? plan)) '()
+      (filter-map (lambda (entry)
+        (and (pair? entry) (pair? (cadr entry))
+             (eq? (caadr entry) 'satisfied)
+             (let* ((pt (cadr entry))
+                    (spec-id (cadr pt))
+                    (qty (caddr pt)))
+               (and (> qty 0)
+                    `((scope-id . ,scope-id)
+                      (spec-id . ,spec-id)
+                      (qty . ,qty))))))
+        plan)))
+
 
 ;;; ══════════════════════════════════════════════════════════════════════════════
 ;;; Entry point
 ;;; ══════════════════════════════════════════════════════════════════════════════
 
-(define (plan-federation-o facts scope-ids parent-map ctx-map result)
-  "Recursive streamed federation. Same protocol at every level."
+(define* (plan-federation-o facts scope-ids parent-map ctx-map result
+                            #:key (priority-fn #f))
+  "Recursive streamed federation. Same protocol at every level.
+   priority-fn: (scope-id spec-id) → number (lower = more urgent)."
   (project (facts scope-ids parent-map ctx-map)
     (let* ((children-of (build-hierarchy facts scope-ids parent-map))
            (root (or (find (lambda (id) (not (assoc-ref parent-map id))) scope-ids)
                      (and (pair? scope-ids) (car scope-ids))))
            (root-stream (if root
-                            (scope-stream facts root ctx-map children-of)
+                            (scope-stream facts root ctx-map children-of
+                                          #:priority-fn priority-fn)
                             '()))
            (best (stream-take-best root-stream)))
       (== result (if best best

@@ -104,6 +104,7 @@ run_suite "Resource Flows"           "$ALL" "tests/test-resource-flows.scm"
 
 # -- Federation & incremental --
 run_suite "Incremental Federation"   "$FED" "tests/test-incremental-federation.scm"
+run_suite "Cross-Scope Retraction"  "$ALL" "tests/test-cross-scope-retraction.scm"
 
 # -- Workflows & track-trace --
 run_suite "Workflow Recipe"          "$ALL" "tests/test-workflow-recipe.scm"
@@ -131,6 +132,9 @@ run_suite "Plan for Region"          "$ALL" "tests/test-plan-for-region.scm"
 run_suite "Space-Time Scenario"      "$ALL" "tests/test-space-time-scenario.scm"
 run_suite "Architectural Elegance"   "$ALL" "tests/test-architectural-elegance.scm"
 run_suite "Snapshot Hydration"       "$ALL" "tests/test-snapshot-hydration.scm"
+
+# -- Food surplus scenario --
+run_suite "Food Surplus (SF)"       "$FED" "tests/test-food-surplus-scenario.scm"
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Infrastructure: live-resources + capacity-managed execution
