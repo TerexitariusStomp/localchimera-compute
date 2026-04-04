@@ -933,6 +933,14 @@
     (set! *listening?* #f)
     (refresh!)))
 
+;; Voice→ask: record speech, transcribe, wrap in (ask "...") and eval
+(define (on-ask-speech-result transcript)
+  (set! *listening?* #f)
+  (let ((trimmed (%trim transcript)))
+    (unless (string=? trimmed "")
+      (eval! (string-append "(ask \"" trimmed "\")"))))
+  (refresh!))
+
 (define (on-speech-end)
   (set! *listening?* #f)
   (set! *expressing?* #f)
@@ -953,6 +961,17 @@
       (begin (set-express-mode! 0)
              (start-listening!
                (procedure->external on-speech-result)
+               (procedure->external on-speech-end))
+             (set! *listening?* #t))))
+
+(define (toggle-ask-listening!)
+  "Telegram-style: tap to record, tap to stop. Transcript → (ask \"...\")."
+  (if *listening?*
+      (begin (stop-listening!)
+             (set! *listening?* #f))
+      (begin (set-express-mode! 0)
+             (start-listening!
+               (procedure->external on-ask-speech-result)
                (procedure->external on-speech-end))
              (set! *listening?* #t))))
 
@@ -2565,7 +2584,11 @@
                    '()
                    (list `(span (@ (class "ghost-text-suggestion"))
                                 ,*current-suggestion*)))
-             (span (@ (class "paren-indicator")) ,(paren-indicator)))))
+             (span (@ (class "paren-indicator")) ,(paren-indicator))
+             (span (@ (class ,(string-append "mic-btn"
+                                  (if *listening?* " mic-active" "")))
+                      (click ,(lambda (e) (toggle-ask-listening!) (refresh!))))
+                   ,(if *listening?* "⏹" "🎤")))))
 
 (define (render-tab-bar)
   `(div (@ (class "tab-bar"))

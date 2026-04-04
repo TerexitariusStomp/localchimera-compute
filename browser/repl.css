@@ -118,6 +118,26 @@ h1 {
     box-shadow: none;
 }
 
+.mic-btn {
+    flex-shrink: 0;
+    cursor: pointer;
+    padding: 0 0.4rem;
+    font-size: 1rem;
+    line-height: 1.5em;
+    opacity: 0.5;
+    transition: opacity 0.15s;
+    user-select: none;
+}
+.mic-btn:hover { opacity: 0.85; }
+.mic-active {
+    opacity: 1 !important;
+    animation: mic-pulse 1s ease-in-out infinite;
+}
+@keyframes mic-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
 .prompt-text { color: #8b7b96; }
 .input-text  { color: #e0ceed; }
 .result-text { color: #a8e6cf; }
