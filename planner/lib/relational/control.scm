@@ -154,27 +154,26 @@
     (*fd gain error action)))
 
 
-;;; ── Loop trace (depth-bounded) ──────────────────────────────────────────────
-;;; Same pattern as provenance-o in trace.scm.
+;;; ── Loop trace (via map-goal-o) ─────────────────────────────────────────────
+;;; Was a hand-rolled depth-bounded fold — now uses map-goal-o over
+;;; the (truncated) observation list.
 
 (define *max-trace-depth* 50)
 
 (define (loop-trace-o facts loop-id observations trace)
-  "Trace a sequence of observations through a control loop.
+  "Trace observations through a control loop via map-goal-o.
    observations = list of (observation sensor-id timestamp pv) tuples
    trace = list of (timestamp pv error action) entries"
-  (loop-trace-iter facts loop-id observations trace *max-trace-depth*))
-
-(define (loop-trace-iter facts loop-id observations trace depth)
-  (if (or (null? observations) (= depth 0))
-      (== trace '())
-      (fresh (sensor-id ts pv sp unit error action rest)
-        (== (car observations) `(observation ,sensor-id ,ts ,pv))
-        (setpoint-o facts sensor-id sp unit)
-        (error-o sp pv error)
-        (control-law-o facts loop-id error action)
-        (loop-trace-iter facts loop-id (cdr observations) rest (- depth 1))
-        (== trace (cons `(,ts ,pv ,error ,action) rest)))))
+  (let ((bounded (take observations (min (length observations) *max-trace-depth*))))
+    (map-goal-o bounded
+      (lambda (obs result)
+        (fresh (sensor-id ts pv sp unit error action)
+          (== obs `(observation ,sensor-id ,ts ,pv))
+          (setpoint-o facts sensor-id sp unit)
+          (error-o sp pv error)
+          (control-law-o facts loop-id error action)
+          (== result `(,ts ,pv ,error ,action))))
+      trace)))
 
 
 ;;; ── Stability classification ────────────────────────────────────────────────

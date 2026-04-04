@@ -2,7 +2,8 @@
 ;;;
 ;;; Allocation via global sum constraints in CLP(FD). No sums threading.
 ;;; Each allocation declares a claim; the constraint solver ensures feasibility.
-;;; Three input solvers: consume (recursive), use (time-windowed), cite (gate).
+;;; map-goal-o (higher-order relational fold) unifies all list solvers.
+;;; schedule-inputs-fold unifies the two ground scheduling folds.
 
 (use-modules (playnet kanren-constraints)
              (srfi srfi-1))
@@ -21,6 +22,20 @@
 ;;   cite            — referenced for credit, remains available
 ;;   deliver-service — service availability (not inventoried)
 (define *non-consuming* '(use accept pickup work cite deliver-service))
+
+
+;;; ── map-goal-o (higher-order relational fold) ────────────────────────────────
+;;; Recurse over a ground list, apply a goal to each item, collect results.
+;;; item->goal-o: (item result) -> goal that binds result for one item.
+
+(define (map-goal-o items item->goal-o results)
+  "Relational map: apply item->goal-o to each item, collect results."
+  (if (null? items)
+      (== results '())
+      (fresh (result rest)
+        (item->goal-o (car items) result)
+        (map-goal-o (cdr items) item->goal-o rest)
+        (== results (cons result rest)))))
 
 
 ;;; ── demand-o ──────────────────────────────────────────────────────────────────
@@ -60,22 +75,14 @@
 (define (produce-branch ctx spec-id remaining due plan-term
                         depth visited at-location)
   "Find a recipe, compute scale via *fd (respecting MBQ), collect inputs."
-  (let ((facts (ctx-facts ctx))
-        (indexes (ctx-indexes ctx)))
+  (let ((facts (ctx-facts ctx)))
     (fresh (rid rname pids last-pid out-qty out-unit out-action
             scale total-produced)
-      ;; Find recipe
-      (if indexes
-          (recipe-indexed-o indexes spec-id rid rname)
-          (recipe-o facts rid rname spec-id))
-      (if indexes
-          (chain-indexed-o indexes rid pids)
-          (chain-o facts rid pids))
+      ;; Find recipe, chain, output flow — unified dispatch
+      (fact-recipe-o ctx rid rname spec-id)
+      (fact-chain-o ctx rid pids)
       (lasto pids last-pid)
-      ;; Output flow
-      (if indexes
-          (flow-indexed-o indexes last-pid 'output spec-id out-qty out-unit out-action)
-          (flow-o facts last-pid 'output spec-id out-qty out-unit out-action))
+      (fact-flow-o ctx last-pid 'output spec-id out-qty out-unit out-action)
       ;; Scale via CLP(FD) — lower bound from MBQ of last process
       (project (pids last-pid)
         (let* ((proc-fact (find (lambda (f) (and (eq? (car f) 'process)
@@ -100,7 +107,7 @@
                     (fresh ()
                       (solve-inputs-o ctx consuming consume-plans
                                       (- depth 1) visited at-location use-plans)
-                      (solve-cite-inputs-o (ctx-facts ctx) citing cite-plans)
+                      (solve-cite-inputs-o facts citing cite-plans)
                       (== plan-term `(produce ,spec-id ,rid ,scale
                                               ,consume-plans ,use-plans
                                               ,cite-plans)))))))))))))
@@ -149,51 +156,15 @@
                                        ,source-loc ,at-location #f))))))))
 
 
-;;; ── back-schedule-inputs ──────────────────────────────────────────────────────
+;;; ── schedule-inputs-fold (unified ground fold) ──────────────────────────────
+;;; back-schedule-inputs and use-schedule-inputs share 80% structure:
+;;; iterate pids in reverse, compute time cursor, filter flows, map results.
+;;; Extracted into a single fold parameterized by flow predicate and mapper.
 
-(define (back-schedule-inputs facts pids scale due)
-  "Collect consuming input demands. Ground fold — no search."
-  (let* ((internal-specs
-           (filter-map (lambda (f)
-                         (and (eq? (car f) 'flow)
-                              (member (cadr f) pids)
-                              (eq? (caddr f) 'output)
-                              (cadddr f)))
-                       facts)))
-    (let loop ((procs (reverse pids)) (cursor due) (acc '()))
-      (if (null? procs)
-          (reverse acc)
-          (let* ((pid (car procs))
-                 (proc-fact (find (lambda (f)
-                                   (and (eq? (car f) 'process)
-                                        (equal? (cadr f) pid)))
-                                 facts))
-                 (dur-ms (if proc-fact (cadddr proc-fact) 3600000))
-                 (dur-s (inexact->exact (round (/ dur-ms 1000))))
-                 (proc-begin (- cursor dur-s))
-                 (input-flows
-                   (filter (lambda (f)
-                             (and (eq? (car f) 'flow)
-                                  (equal? (cadr f) pid)
-                                  (eq? (caddr f) 'input)
-                                  (not (memq (list-ref f 6) *non-consuming*))
-                                  (not (member (cadddr f) internal-specs))
-                                  (list-ref f 4)))
-                           facts))
-                 (new-inputs
-                   (map (lambda (f)
-                          (list (cadddr f)
-                                (inexact->exact (ceiling (* (list-ref f 4) scale)))
-                                proc-begin
-                                (list-ref f 7)))
-                        input-flows)))
-            (loop (cdr procs) proc-begin (append acc new-inputs)))))))
-
-
-;;; ── use-schedule-inputs ───────────────────────────────────────────────────────
-
-(define (use-schedule-inputs facts pids scale due)
-  "Collect use/accept/pickup/work input flows with time windows."
+(define (schedule-inputs-fold facts pids scale due flow-pred flow-mapper)
+  "Generic ground fold over a process chain for input scheduling.
+   flow-pred: (flow-fact internal-specs) -> #t if this flow should be collected
+   flow-mapper: (flow-fact scale proc-begin proc-end) -> output item"
   (let* ((internal-specs
            (filter-map (lambda (f)
                          (and (eq? (car f) 'flow)
@@ -213,23 +184,46 @@
                  (dur-s (inexact->exact (round (/ dur-ms 1000))))
                  (proc-end cursor)
                  (proc-begin (- cursor dur-s))
-                 (use-flows
+                 (matching-flows
                    (filter (lambda (f)
                              (and (eq? (car f) 'flow)
                                   (equal? (cadr f) pid)
                                   (eq? (caddr f) 'input)
-                                  (memq (list-ref f 6) '(use accept pickup work))
-                                  (not (member (cadddr f) internal-specs))
+                                  (flow-pred f internal-specs)
                                   (list-ref f 4)))
                            facts))
-                 (new-uses
-                   (map (lambda (f)
-                          (list (cadddr f)
-                                (inexact->exact (ceiling (* (list-ref f 4) scale)))
-                                proc-begin proc-end
-                                (list-ref f 8)))
-                        use-flows)))
-            (loop (cdr procs) proc-begin (append acc new-uses)))))))
+                 (new-items
+                   (map (lambda (f) (flow-mapper f scale proc-begin proc-end))
+                        matching-flows)))
+            (loop (cdr procs) proc-begin (append acc new-items)))))))
+
+(define (back-schedule-inputs facts pids scale due)
+  "Collect consuming input demands. Ground fold — no search."
+  (schedule-inputs-fold facts pids scale due
+    ;; flow-pred: consuming inputs not in internal-specs
+    (lambda (f internal-specs)
+      (and (not (memq (list-ref f 6) *non-consuming*))
+           (not (member (cadddr f) internal-specs))))
+    ;; flow-mapper: (spec qty needed-by resolve-from)
+    (lambda (f scale proc-begin proc-end)
+      (list (cadddr f)
+            (inexact->exact (ceiling (* (list-ref f 4) scale)))
+            proc-begin
+            (list-ref f 7)))))
+
+(define (use-schedule-inputs facts pids scale due)
+  "Collect use/accept/pickup/work input flows with time windows."
+  (schedule-inputs-fold facts pids scale due
+    ;; flow-pred: use-type inputs not in internal-specs
+    (lambda (f internal-specs)
+      (and (memq (list-ref f 6) '(use accept pickup work))
+           (not (member (cadddr f) internal-specs))))
+    ;; flow-mapper: (spec qty begin end flow-id)
+    (lambda (f scale proc-begin proc-end)
+      (list (cadddr f)
+            (inexact->exact (ceiling (* (list-ref f 4) scale)))
+            proc-begin proc-end
+            (list-ref f 8)))))
 
 
 ;;; ── cite-schedule-inputs ──────────────────────────────────────────────────────
@@ -245,7 +239,7 @@
               facts))
 
 
-;;; ── solve-inputs-o ────────────────────────────────────────────────────────────
+;;; ── Input solvers (via map-goal-o) ───────────────────────────────────────────
 
 (define (resolve-container-from-use-plans resolve-from use-plans)
   "Look up ALL resource-ids allocated by the anchor use-window for RESOLVE-FROM."
@@ -261,54 +255,44 @@
 
 (define (solve-inputs-o ctx inputs sub-plans
                         depth visited at-location use-plans)
-  "Solve consuming inputs. No sums threading — claims are global constraints."
-  (if (null? inputs)
-      (== sub-plans '())
-      (let* ((input (car inputs))
-             (in-spec (car input))
+  "Solve consuming inputs via map-goal-o."
+  (map-goal-o inputs
+    (lambda (input result)
+      (let* ((in-spec (car input))
              (in-qty (cadr input))
              (needed-by (caddr input))
              (resolve-from (if (> (length input) 3) (list-ref input 3) #f))
              (container-ids (resolve-container-from-use-plans resolve-from use-plans))
              (container-id (if (and container-ids (pair? container-ids))
                                (car container-ids) #f)))
-        (fresh (sub-plan rest-plans)
+        (fresh (sub-plan)
           (demand-o ctx in-spec in-qty needed-by sub-plan
                     #:depth depth #:visited visited #:at-location at-location
                     #:container-id container-id)
-          (solve-inputs-o ctx (cdr inputs) rest-plans
-                          depth visited at-location use-plans)
-          (== sub-plans (cons (list in-spec sub-plan) rest-plans))))))
-
-
-;;; ── solve-use-inputs-o ───────────────────────────────────────────────────────
+          (== result (list in-spec sub-plan)))))
+    sub-plans))
 
 (define (solve-use-inputs-o ctx use-inputs use-plans)
-  "Allocate use-resources. No sums threading — claims are global constraints."
-  (if (null? use-inputs)
-      (== use-plans '())
-      (let* ((u (car use-inputs))
-             (spec (car u)) (qty (cadr u))
+  "Allocate use-resources via map-goal-o."
+  (map-goal-o use-inputs
+    (lambda (u result)
+      (let* ((spec (car u)) (qty (cadr u))
              (begin-t (caddr u)) (end-t (cadddr u))
              (flow-id (if (> (length u) 4) (list-ref u 4) #f)))
-        (fresh (remaining allocated rest-plans)
+        (fresh (remaining allocated)
           (allocate-o (ctx-facts ctx) spec qty remaining allocated
                       #:indexes (ctx-indexes ctx))
           (== remaining 0)
-          (solve-use-inputs-o ctx (cdr use-inputs) rest-plans)
-          (== use-plans (cons `(use-window ,spec ,qty ,allocated
-                                           ,begin-t ,end-t ,flow-id)
-                              rest-plans))))))
-
-
-;;; ── solve-cite-inputs-o ──────────────────────────────────────────────────────
+          (== result `(use-window ,spec ,qty ,allocated
+                                  ,begin-t ,end-t ,flow-id)))))
+    use-plans))
 
 (define (solve-cite-inputs-o facts cited-specs cite-plans)
-  (if (null? cited-specs)
-      (== cite-plans '())
-      (let ((spec (car cited-specs)))
-        (fresh (rid qty loc rest-plans)
-          (inventory-o facts rid spec qty loc)
-          (<fd 0 qty)
-          (solve-cite-inputs-o facts (cdr cited-specs) rest-plans)
-          (== cite-plans (cons `(cited ,spec ,rid) rest-plans))))))
+  "Check existence of cited resources via map-goal-o."
+  (map-goal-o cited-specs
+    (lambda (spec result)
+      (fresh (rid qty loc)
+        (inventory-o facts rid spec qty loc)
+        (<fd 0 qty)
+        (== result `(cited ,spec ,rid))))
+    cite-plans))

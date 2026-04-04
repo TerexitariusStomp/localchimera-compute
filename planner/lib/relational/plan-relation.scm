@@ -64,23 +64,21 @@
 ;;; ── all-demands-o ─────────────────────────────────────────────────────────────
 
 (define* (all-demands-o ctx demands plans #:key (max-depth 10))
-  "Solve all demands. Claims accumulate in the N field — no sums threading."
-  (if (null? demands)
-      (== plans '())
-      (let* ((d (car demands))
-             (spec (assq-ref d 'spec-id))
+  "Solve all demands via map-goal-o. Claims accumulate in the N field."
+  (map-goal-o demands
+    (lambda (d result)
+      (let* ((spec (assq-ref d 'spec-id))
              (qty (assq-ref d 'quantity))
              (due (let ((v (assq-ref d 'due)))
                     (cond ((not v) (current-time))
                           ((number? v) v)
-                          (else (iso-datetime->epoch v))))))
-        (let ((loc (assq-ref d 'at-location)))
-          (fresh (plan-term rest-plans)
-            (demand-o ctx spec qty due plan-term
-                      #:depth max-depth #:at-location loc)
-            (all-demands-o ctx (cdr demands) rest-plans
-                           #:max-depth max-depth)
-            (== plans (cons (list d plan-term) rest-plans)))))))
+                          (else (iso-datetime->epoch v)))))
+             (loc (assq-ref d 'at-location)))
+        (fresh (plan-term)
+          (demand-o ctx spec qty due plan-term
+                    #:depth max-depth #:at-location loc)
+          (== result (list d plan-term)))))
+    plans))
 
 
 ;;; ── relational-plan ───────────────────────────────────────────────────────────

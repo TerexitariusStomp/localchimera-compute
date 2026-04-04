@@ -1,7 +1,8 @@
-;;; signals.scm — Signal↔Intent (relational tag lookup + ground conversion)
+;;; signals.scm — Signal↔Intent (maximally relational)
 ;;;
-;;; signal-tag-o is genuinely relational (bidirectional lookup).
-;;; Conversion uses project on ground signal data (honest).
+;;; signal-tag-o, signal-action-o, signal-category-o: fully relational
+;;;   (bidirectional lookup via conde — no project needed).
+;;; Conversion uses project only for string operations (iid generation).
 
 (use-modules (playnet kanren-constraints))
 
@@ -18,50 +19,78 @@
   "Relational: relate signal kind ↔ tag string. Any direction."
   (in-list-o `(signal-tag ,kind ,tag) *signal-tags*))
 
+(define (signal-action-o kind action)
+  "Relational: relate signal kind ↔ VF action. Any direction.
+   'What action does a deficit signal imply?' AND
+   'What signal kinds map to transfer?'"
+  (conde
+    ((== kind 'deficit) (== action 'transfer))
+    ((== kind 'conservation) (== action 'transfer))
+    ((== kind 'replenishment) (== action 'produce))
+    ((== kind 'surplus) (== action 'transfer))
+    ((== kind 'metabolic-debt) (== action 'transfer))
+    ((== kind 'offer) (== action 'transfer))
+    ((== kind 'request) (== action 'transfer))))
+
+(define (signal-category-o kind input-of output-of)
+  "Relational: relate signal kind ↔ input/output classification.
+   'Is a deficit signal an input or output?' AND
+   'What signal kinds are inputs?'"
+  (conde
+    ((== kind 'deficit) (== input-of 'input) (== output-of #f))
+    ((== kind 'conservation) (== input-of 'input) (== output-of #f))
+    ((== kind 'replenishment) (== input-of #f) (== output-of 'output))
+    ((== kind 'surplus) (== input-of #f) (== output-of 'output))
+    ((== kind 'metabolic-debt) (== input-of #f) (== output-of #f))
+    ((== kind 'offer) (== input-of #f) (== output-of #f))
+    ((== kind 'request) (== input-of #f) (== output-of #f))))
+
 (define (signal-o kind spec-id qty source signal)
   (== signal `((kind . ,kind) (spec-id . ,spec-id) (qty . ,qty) (source . ,source))))
 
 (define (signal->intent-o signal plan-id intent-fact meta-fact)
-  "Convert signal to intent + metadata. Ground computation on signal data."
-  (project (signal plan-id)
-    (let* ((kind (assq-ref signal 'kind))
-           (spec (assq-ref signal 'spec-id))
-           (qty (assq-ref signal 'qty))
-           (src (assq-ref signal 'source))
-           (meta (or (assq-ref signal 'meta) '()))
-           (tags (assq kind (map (lambda (t) (cons (cadr t) (caddr t))) *signal-tags*)))
-           (tag (if tags (cdr tags) (string-append "tag:plan:" (symbol->string kind))))
-           (iid (string-append "sig-" plan-id "-" (symbol->string kind) "-" spec)))
-      (fresh ()
-        (== intent-fact
-            `(intent ,iid
-                     ,(case kind ((deficit conservation) 'transfer)
-                                 ((replenishment) 'produce)
-                                 (else 'transfer))
-                     ,spec ,qty "each"
-                     ,(assq-ref meta 'due)
-                     ,(if (memq kind '(deficit conservation)) 'input #f)
-                     ,(if (memq kind '(surplus replenishment)) 'output #f)
-                     (,tag) #f))
-        (== meta-fact
-            `((signal-kind . ,kind) (source . ,src)
-              (original-shortfall . ,(assq-ref meta 'original-shortfall))
-              (onhand . ,(assq-ref meta 'onhand))
-              (nfp . ,(assq-ref meta 'nfp))
-              (zone . ,(assq-ref meta 'zone))
-              (priority . ,(assq-ref meta 'priority))
-              (tor . ,(assq-ref meta 'tor))
-              (toy . ,(assq-ref meta 'toy))
-              (tog . ,(assq-ref meta 'tog))
-              (buffer-zone-id . ,(assq-ref meta 'buffer-zone-id))
-              (status . open) (resolved-at . #f)))))))
+  "Convert signal to intent + metadata. Relational dispatch for kind->action,
+   project only for string ops (iid, tag lookup, meta extraction)."
+  (fresh (kind spec qty src tag action input-of output-of rest)
+    ;; Relational structure extraction
+    (== signal `((kind . ,kind) (spec-id . ,spec) (qty . ,qty) (source . ,src) . ,rest))
+    ;; Relational dispatch — works backwards too
+    (signal-tag-o kind tag)
+    (signal-action-o kind action)
+    (signal-category-o kind input-of output-of)
+    ;; Ground ops: string concatenation for iid, meta extraction
+    (project (kind spec plan-id signal)
+      (let* ((meta (or (assq-ref signal 'meta) '()))
+             (iid (string-append "sig-" plan-id "-" (symbol->string kind) "-" spec)))
+        (fresh ()
+          (== intent-fact
+              `(intent ,iid ,action ,spec ,qty "each"
+                       ,(assq-ref meta 'due) ,input-of ,output-of (,tag) #f))
+          (== meta-fact
+              `((signal-kind . ,kind) (source . ,src)
+                (original-shortfall . ,(assq-ref meta 'original-shortfall))
+                (onhand . ,(assq-ref meta 'onhand))
+                (nfp . ,(assq-ref meta 'nfp))
+                (zone . ,(assq-ref meta 'zone))
+                (priority . ,(assq-ref meta 'priority))
+                (tor . ,(assq-ref meta 'tor))
+                (toy . ,(assq-ref meta 'toy))
+                (tog . ,(assq-ref meta 'tog))
+                (buffer-zone-id . ,(assq-ref meta 'buffer-zone-id))
+                (status . open) (resolved-at . #f))))))))
 
 (define (intent->signal-o intent-fact meta-fact signal)
-  "Reconstruct signal from intent + metadata."
-  (project (intent-fact meta-fact)
-    (let* ((spec (list-ref intent-fact 3))
-           (qty (list-ref intent-fact 4))
-           (kind (or (assq-ref meta-fact 'signal-kind) 'unknown))
-           (src (or (assq-ref meta-fact 'source) 'intent)))
-      (== signal `((kind . ,kind) (spec-id . ,spec) (qty . ,qty)
-                   (source . ,src) (meta . ,meta-fact))))))
+  "Reconstruct signal from intent + metadata. Relational kind lookup."
+  (fresh (kind src spec qty)
+    ;; Relational: recover kind from metadata
+    (project (meta-fact)
+      (fresh ()
+        (== kind (or (assq-ref meta-fact 'signal-kind) 'unknown))
+        (== src (or (assq-ref meta-fact 'source) 'intent))))
+    ;; Relational: extract from intent tuple
+    (project (intent-fact)
+      (fresh ()
+        (== spec (list-ref intent-fact 3))
+        (== qty (list-ref intent-fact 4))))
+    (== signal `((kind . ,kind) (spec-id . ,spec) (qty . ,qty)
+                 (source . ,src) (meta . ,meta-fact)))))

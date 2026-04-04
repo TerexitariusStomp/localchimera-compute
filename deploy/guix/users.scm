@@ -9,4 +9,6 @@
 (list
   (cons "sapient-os"
         "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEJV+LYZkxdAYfUmHMehHuPGdUk2u32CW4zVpi9k+zmj AGICorp.eth@icloud.com")
+  (cons "karan"
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIClNUonCa4xStMOhaobXEGPcJp7Ij+usvCvKM+15Bv2D k-with-claude@vm")
 )

@@ -240,7 +240,7 @@ direction.
 ## Appendix: Implemented refactorings
 
 These refactorings apply the metaprogramming patterns described above
-to make the codebase more elegant. All 39 test suites pass.
+to make the codebase more elegant. All 41 test suites pass.
 
 ### A. `transitive-closure-o` — higher-order edge traversal
 
@@ -365,6 +365,81 @@ These now work bidirectionally: "what action for deficit?" AND "what
 kinds map to transfer?" — previously impossible because `case` is
 one-way. `project` remains only for genuine string operations (iid
 generation).
+
+### E. `map-goal-o` permeates — `all-demands-o` and `loop-trace-o`
+
+**Files:** `planner/lib/relational/plan-relation.scm`,
+`planner/lib/relational/control.scm`
+**Level:** 2 (higher-order relations)
+
+Once `map-goal-o` exists, every list fold that applies a goal per item
+becomes a candidate. Two more were converted:
+
+**`all-demands-o`** — the top-level planner orchestrator was a
+hand-rolled fold over demands. Now:
+
+```scheme
+(define* (all-demands-o ctx demands plans #:key (max-depth 10))
+  (map-goal-o demands
+    (lambda (d result)
+      (let* ((spec (assq-ref d 'spec-id))
+             (qty (assq-ref d 'quantity))
+             ...)
+        (fresh (plan-term)
+          (demand-o ctx spec qty due plan-term #:depth max-depth ...)
+          (== result (list d plan-term)))))
+    plans))
+```
+
+**`loop-trace-o`** — the control loop tracer was a depth-bounded fold
+over observations. Now uses `map-goal-o` over a truncated list:
+
+```scheme
+(define (loop-trace-o facts loop-id observations trace)
+  (let ((bounded (take observations (min (length observations) *max-trace-depth*))))
+    (map-goal-o bounded
+      (lambda (obs result)
+        (fresh (sensor-id ts pv sp unit error action)
+          (== obs `(observation ,sensor-id ,ts ,pv))
+          (setpoint-o facts sensor-id sp unit)
+          (error-o sp pv error)
+          (control-law-o facts loop-id error action)
+          (== result `(,ts ,pv ,error ,action))))
+      trace)))
+```
+
+The pattern: if you're recursing over a ground list with
+`if (null? items) (== out '()) (fresh ...)`, that's `map-goal-o`.
+
+### F. `schedule-inputs-fold` — unified ground fold
+
+**File:** `planner/lib/relational/demand-relation.scm`
+**Level:** Higher-order Scheme (not relational — these are ground folds)
+
+`back-schedule-inputs` and `use-schedule-inputs` shared 80% structure:
+iterate pids in reverse, look up process duration, compute time
+cursor, filter matching flows, map results. Extracted a single
+`schedule-inputs-fold` parameterized by flow predicate and mapper:
+
+```scheme
+(define (schedule-inputs-fold facts pids scale due flow-pred flow-mapper)
+  (let* ((internal-specs ...))
+    (let loop ((procs (reverse pids)) (cursor due) (acc '()))
+      ...
+      (let* (... (matching-flows (filter (lambda (f) ... (flow-pred f internal-specs) ...) facts))
+             (new-items (map (lambda (f) (flow-mapper f scale proc-begin proc-end)) matching-flows)))
+        (loop (cdr procs) proc-begin (append acc new-items))))))
+
+;; Now each scheduler is a two-line call:
+(define (back-schedule-inputs facts pids scale due)
+  (schedule-inputs-fold facts pids scale due
+    (lambda (f internal-specs)
+      (and (not (memq (list-ref f 6) *non-consuming*))
+           (not (member (cadddr f) internal-specs))))
+    (lambda (f scale proc-begin proc-end)
+      (list (cadddr f) (inexact->exact (ceiling (* (list-ref f 4) scale)))
+            proc-begin (list-ref f 7)))))
+```
 
 ---
 
