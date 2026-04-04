@@ -634,6 +634,7 @@
       '(modify! name value) '(enact! validator-expr)
       '(rollback! version) '(defexpressor name key)
       '(as sealer body) '(ai prompt) '(ai-eval prompt)
+      '(ask "natural language query")
       '(run* (q) goals ...) '(fresh (vars ...) goals ...)
       '(conde (goals ...) ...) '(== a b)
       '(membero x lst) '(appendo l r out)
@@ -1558,6 +1559,288 @@
               (log-append! `(span (@ (class "result-text"))
                                   ,(string-append "Approved '" name "'.\n"))))))))
 
+;;; ── Natural language query engine ──────────────────────────────────────────
+;;; Hoot-compatible NL parser + miniKanren executor + narration.
+;;; Translates domain phrases into planning queries and explains results.
+
+(define (%char-downcase c)
+  (let ((n (char->integer c)))
+    (if (and (>= n 65) (<= n 90))
+        (integer->char (+ n 32))
+        c)))
+
+(define (%string-downcase str)
+  (let* ((len (string-length str))
+         (out (make-string len)))
+    (let loop ((i 0))
+      (if (= i len) out
+          (begin (string-set! out i (%char-downcase (string-ref str i)))
+                 (loop (+ i 1)))))))
+
+(define (%string-split str ch)
+  "Split STR on character CH. Hoot-compatible."
+  (let ((len (string-length str)))
+    (let loop ((i 0) (start 0) (acc '()))
+      (cond
+        ((= i len)
+         (reverse (if (= start i) acc
+                      (cons (substring str start i) acc))))
+        ((char=? (string-ref str i) ch)
+         (loop (+ i 1) (+ i 1)
+               (if (= start i) acc
+                   (cons (substring str start i) acc))))
+        (else (loop (+ i 1) start acc))))))
+
+(define (%tokenize phrase)
+  "Split phrase into lowercase tokens. Numbers become integers."
+  (map (lambda (w)
+         (let ((n (string->number w)))
+           (if n n (%string-downcase w))))
+       (%string-split phrase #\space)))
+
+(define (%words-match? tokens words)
+  "Do TOKENS start with WORDS? Returns remaining tokens or #f."
+  (let loop ((ts tokens) (ws words))
+    (cond
+      ((null? ws) ts)
+      ((null? ts) #f)
+      ((string=? (if (string? (car ts)) (car ts) "") (car ws))
+       (loop (cdr ts) (cdr ws)))
+      (else #f))))
+
+(define (%parse-ask-query tokens facts)
+  "Pattern-match TOKENS against known question frames.
+   Returns (goal-type spec-id qty) or #f. FACTS used for spec resolution."
+  (define (resolve-spec word)
+    "Find a spec-id whose name matches WORD (case-insensitive)."
+    (let loop ((fs facts))
+      (if (null? fs) #f
+          (let ((f (car fs)))
+            (if (and (pair? f) (eq? (car f) 'spec-name)
+                     (string=? (%string-downcase (list-ref f 2))
+                               (if (string? word) word "")))
+                (list-ref f 1)
+                (loop (cdr fs)))))))
+  (define (spec-at tokens)
+    "Resolve the first token as a spec. Returns (spec-id . remaining) or #f."
+    (and (pair? tokens)
+         (let ((sid (resolve-spec (car tokens))))
+           (and sid (cons sid (cdr tokens))))))
+  (define (qty-spec-at tokens)
+    "Parse <qty> <spec> or just <spec>. Returns (spec-id qty . remaining) or #f."
+    (cond
+      ((and (pair? tokens) (number? (car tokens)) (pair? (cdr tokens)))
+       (let ((sid (resolve-spec (cadr tokens))))
+         (and sid (list sid (car tokens)))))
+      ((pair? tokens)
+       (let ((sid (resolve-spec (car tokens))))
+         (and sid (list sid #f))))
+      (else #f)))
+  ;; Try each question frame
+  (or
+    ;; demand: "how do we make <qty> <spec>" | "make <spec>" | "produce <spec>"
+    (let ((rest (or (%words-match? tokens '("how" "do" "we" "make"))
+                    (%words-match? tokens '("how" "to" "make"))
+                    (%words-match? tokens '("make"))
+                    (%words-match? tokens '("plan"))
+                    (%words-match? tokens '("produce")))))
+      (and rest (let ((qs (qty-spec-at rest)))
+                  (and qs `(demand ,(car qs) ,(cadr qs))))))
+    ;; inventory: "how much <spec> do we have" | "inventory of <spec>"
+    (let ((rest (%words-match? tokens '("how" "much"))))
+      (and rest (let ((sa (spec-at rest)))
+                  (and sa (%words-match? (cdr sa) '("do" "we" "have"))
+                       `(inventory ,(car sa) #f)))))
+    (let ((rest (%words-match? tokens '("inventory" "of"))))
+      (and rest (let ((sa (spec-at rest)))
+                  (and sa `(inventory ,(car sa) #f)))))
+    (let ((rest (%words-match? tokens '("stock"))))
+      (and rest (let ((sa (spec-at rest)))
+                  (and sa `(inventory ,(car sa) #f)))))
+    ;; provenance: "what is needed for <spec>" | "what goes into <spec>"
+    (let ((rest (or (%words-match? tokens '("what" "is" "needed" "for"))
+                    (%words-match? tokens '("what" "goes" "into"))
+                    (%words-match? tokens '("inputs" "for")))))
+      (and rest (let ((sa (spec-at rest)))
+                  (and sa `(provenance ,(car sa) #f)))))
+    ;; destination: "what can we make from <spec>" | "what uses <spec>"
+    (let ((rest (or (%words-match? tokens '("what" "can" "we" "make" "from"))
+                    (%words-match? tokens '("what" "can" "we" "make" "with"))
+                    (%words-match? tokens '("what" "uses")))))
+      (and rest (let ((sa (spec-at rest)))
+                  (and sa `(destination ,(car sa) #f)))))
+    ;; recipes: "show recipes for <spec>" | "recipes for <spec>"
+    (let ((rest (or (%words-match? tokens '("show" "recipes" "for"))
+                    (%words-match? tokens '("recipes" "for")))))
+      (and rest (let ((sa (spec-at rest)))
+                  (and sa `(recipes ,(car sa) #f)))))))
+
+(define (%spec-word facts spec-id)
+  "Look up human name for SPEC-ID in facts."
+  (let loop ((fs facts))
+    (if (null? fs) spec-id
+        (let ((f (car fs)))
+          (if (and (pair? f) (eq? (car f) 'spec-name)
+                   (equal? (list-ref f 1) spec-id))
+              (%string-downcase (list-ref f 2))
+              (loop (cdr fs)))))))
+
+(define (do-ask! phrase)
+  "Parse a natural language phrase and execute as a planning query."
+  (with-exception-handler
+    (lambda (exn)
+      (let ((err-port (open-output-string)))
+        (format-exception exn err-port)
+        (log-append! `(span (@ (class "error-text"))
+                            ,(get-output-string err-port)))))
+    (lambda ()
+      (with-vat *vat*
+        (let* ((tokens (%tokenize phrase))
+               ;; Get planning facts from the org's bindings
+               (org-facts (let ((bf (evaluate 'planning-facts *org* '()
+                                      ($ *org* 'current-expressor))))
+                            (if (pair? bf) bf '())))
+               (parsed (%parse-ask-query tokens org-facts)))
+          (if (not parsed)
+              (log-append! `(span (@ (class "error-text"))
+                                  ,(string-append "I don't understand: " phrase "\n"
+                                     "Try: make <item>, what is needed for <item>,\n"
+                                     "     how much <item> do we have, recipes for <item>\n")))
+              (begin
+                (log-append! `(span (@ (class "info-text"))
+                                    ,(string-append "→ " (let ((p (open-output-string)))
+                                                           (write parsed p)
+                                                           (get-output-string p)) "\n")))
+                (match parsed
+                  (('inventory spec-id _)
+                   ;; Run inventory query via miniKanren
+                   (let* ((query-expr `(run* (q)
+                            (fresh (rid qty loc contained-in)
+                              (membero (list 'inventory rid ,spec-id qty loc contained-in)
+                                       (quote ,org-facts))
+                              (== q (list qty loc)))))
+                          (results (evaluate query-expr *org* '()
+                                    ($ *org* 'current-expressor))))
+                     (if (null? results)
+                         (log-append! `(span (@ (class "output-text"))
+                                            "No inventory found.\n"))
+                         (for-each (lambda (r)
+                           (log-append! `(span (@ (class "result-text"))
+                                               ,(string-append
+                                                  "  " (number->string (car r))
+                                                  " at " (cadr r) "\n"))))
+                           results))))
+                  (('recipes spec-id _)
+                   (let* ((query-expr `(run* (q)
+                            (fresh (rid name)
+                              (membero (list 'recipe rid name ,spec-id)
+                                       (quote ,org-facts))
+                              (== q (list rid name)))))
+                          (results (evaluate query-expr *org* '()
+                                    ($ *org* 'current-expressor))))
+                     (if (null? results)
+                         (log-append! `(span (@ (class "output-text"))
+                                            "No recipes found.\n"))
+                         (for-each (lambda (r)
+                           (log-append! `(span (@ (class "result-text"))
+                                               ,(string-append
+                                                  "  " (cadr r) " (" (car r) ")\n"))))
+                           results))))
+                  (('provenance spec-id _)
+                   ;; Find what specs are consumed to produce this spec
+                   (let* ((query-expr `(run* (q)
+                            (fresh (rid rname pid pid2 pids qty qty2 unit unit2
+                                    action action2 rf rf2 fid fid2)
+                              (membero (list 'recipe rid rname ,spec-id)
+                                       (quote ,org-facts))
+                              (membero (list 'chain rid pids)
+                                       (quote ,org-facts))
+                              (membero (list 'flow pid 'input q qty unit action rf fid)
+                                       (quote ,org-facts)))))
+                          (results (evaluate query-expr *org* '()
+                                    ($ *org* 'current-expressor))))
+                     (if (null? results)
+                         (log-append! `(span (@ (class "output-text"))
+                                            "No inputs found.\n"))
+                         (for-each (lambda (spec)
+                           (log-append! `(span (@ (class "result-text"))
+                                               ,(string-append
+                                                  "  needs "
+                                                  (%spec-word org-facts spec) "\n"))))
+                           results))))
+                  (('destination spec-id _)
+                   ;; Find what specs can be produced from this spec
+                   (let* ((query-expr `(run* (q)
+                            (fresh (rid rname out pid pids qty unit action rf fid)
+                              (membero (list 'flow pid 'input ,spec-id qty unit action rf fid)
+                                       (quote ,org-facts))
+                              (membero (list 'chain rid pids)
+                                       (quote ,org-facts))
+                              (membero (list 'recipe rid rname out)
+                                       (quote ,org-facts))
+                              (== q out))))
+                          (results (evaluate query-expr *org* '()
+                                    ($ *org* 'current-expressor))))
+                     (if (null? results)
+                         (log-append! `(span (@ (class "output-text"))
+                                            "No outputs found.\n"))
+                         (for-each (lambda (spec)
+                           (log-append! `(span (@ (class "result-text"))
+                                               ,(string-append
+                                                  "  produces "
+                                                  (%spec-word org-facts spec) "\n"))))
+                           results))))
+                  (('demand spec-id qty)
+                   (let ((q (if (number? qty) qty 1))
+                         (sw (%spec-word org-facts spec-id)))
+                     (log-append! `(span (@ (class "output-text"))
+                                         ,(string-append
+                                            "Planning " (number->string q) " " sw "...\n")))
+                     ;; Check inventory first
+                     (let* ((inv-expr `(run* (q)
+                              (fresh (rid qty loc contained-in)
+                                (membero (list 'inventory rid ,spec-id qty loc contained-in)
+                                         (quote ,org-facts))
+                                (== q (list qty loc)))))
+                            (inv (evaluate inv-expr *org* '()
+                                   ($ *org* 'current-expressor))))
+                       (if (pair? inv)
+                           (let ((total (apply + (map car inv))))
+                             (log-append! `(span (@ (class "result-text"))
+                                                 ,(string-append
+                                                    "  inventory: " (number->string total)
+                                                    " available\n")))
+                             (if (>= total q)
+                                 (log-append! `(span (@ (class "result-text"))
+                                                     ,(string-append
+                                                        "  → satisfied from inventory\n")))
+                                 (begin
+                                   (log-append! `(span (@ (class "output-text"))
+                                                       ,(string-append
+                                                          "  → need " (number->string (- q total))
+                                                          " more, checking recipes...\n")))
+                                   ;; Show recipes that produce this
+                                   (let* ((rec-expr `(run* (q)
+                                            (fresh (rid name)
+                                              (membero (list 'recipe rid name ,spec-id)
+                                                       (quote ,org-facts))
+                                              (== q name))))
+                                          (recipes (evaluate rec-expr *org* '()
+                                                     ($ *org* 'current-expressor))))
+                                     (for-each (lambda (r)
+                                       (log-append! `(span (@ (class "result-text"))
+                                                           ,(string-append
+                                                              "  → can produce via: " r "\n"))))
+                                       recipes)))))
+                           (log-append! `(span (@ (class "output-text"))
+                                               "  no inventory, checking recipes...\n"))))))
+                  (_ (log-append! `(span (@ (class "output-text"))
+                                         ,(string-append "Parsed: "
+                                            (let ((p (open-output-string)))
+                                              (write parsed p)
+                                              (get-output-string p)) "\n"))))))))))
+    #:unwind? #t))
+
 (define (handle-command exp)
   (match exp
     (('make-org (? string? name))
@@ -1767,6 +2050,14 @@
                  "\n"
                  "UI composed from S-expressions can be appended\n"
                  "to the log and rendered as live DOM elements.\n\n")))
+     #t)
+
+    ;; ── Natural language query ────────────────────────────────────────────
+    (('ask (? string? phrase))
+     (if (not (eq? *mode* 'inner))
+         (log-append! `(span (@ (class "error-text"))
+                             "Enter an org first.\n"))
+         (do-ask! phrase))
      #t)
 
     (_ #f)))

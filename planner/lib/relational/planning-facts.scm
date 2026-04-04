@@ -26,7 +26,8 @@
         (chains-by-recipe (make-hash-table))
         (flows-by-process (make-hash-table))
         (inventory-by-spec (make-hash-table))
-        (buffer-by-spec (make-hash-table)))
+        (buffer-by-spec (make-hash-table))
+        (specs-by-word (make-hash-table)))
     (for-each (lambda (f)
       (case (car f)
         ((recipe)
@@ -44,13 +45,22 @@
            (hash-set! inventory-by-spec spec
              (cons f (hash-ref inventory-by-spec spec '())))))
         ((buffer-zone)
-         (hash-set! buffer-by-spec (cadr f) f))))
+         (hash-set! buffer-by-spec (cadr f) f))
+        ((spec-name)
+         (let* ((spec-id (cadr f))
+                (name (caddr f))
+                (words (map string-downcase (string-split name #\space))))
+           (for-each (lambda (w)
+             (hash-set! specs-by-word w
+               (cons spec-id (hash-ref specs-by-word w '()))))
+             words)))))
       facts)
     `((recipes-by-output . ,recipes-by-output)
       (chains-by-recipe . ,chains-by-recipe)
       (flows-by-process . ,flows-by-process)
       (inventory-by-spec . ,inventory-by-spec)
-      (buffer-by-spec . ,buffer-by-spec))))
+      (buffer-by-spec . ,buffer-by-spec)
+      (specs-by-word . ,specs-by-word))))
 
 (define (idx-ref indexes name key)
   "O(1) index lookup. Returns list of matching facts or '()."
@@ -141,9 +151,15 @@
                  (lambda (a b)
                    (let ((sne-a (or (assoc-ref sne-index (cadddr a)) 999999))
                          (sne-b (or (assoc-ref sne-index (cadddr b)) 999999)))
-                     (< sne-a sne-b))))))
+                     (< sne-a sne-b)))))
+         (spec-name-facts
+           (map (lambda (rs)
+                  `(spec-name ,(resource-specification-id rs)
+                              ,(resource-specification-name rs)))
+                ($ recipe-store 'all-resource-specs))))
     (append
       sorted-recipes chain-facts process-facts flow-facts
+      spec-name-facts
       (if observer
           (filter-map
             (lambda (r)

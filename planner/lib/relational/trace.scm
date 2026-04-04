@@ -1,33 +1,11 @@
 ;;; trace.scm — Relational provenance and destination tracing
 ;;;
 ;;; No dependency on knowledge.scm. Relations ARE the hyperarcs.
-;;; Generic transitive-closure-o powers both backward and forward traces.
+;;; Uses transitive-closure-o from (playnet kanren-constraints).
 
 (use-modules (playnet kanren-constraints))
 
 (define *default-trace-depth* 10)
-
-
-;;; ── Transitive closure (higher-order) ────────────────────────────────────────
-;;; Takes an edge relation and returns a depth-bounded transitive closure
-;;; with proof trace. The edge relation is (from to) → goal.
-
-(define* (transitive-closure-o edge-o from to trace
-                               #:optional (depth *default-trace-depth*))
-  "Generic depth-bounded transitive closure with proof trace.
-   edge-o: (a b) → goal   — the one-step relation
-   from, to: endpoints     — can be queried in any direction
-   trace: list of nodes visited (proof)"
-  (if (= depth 0) fail
-      (conde
-        ;; Base: direct edge
-        ((edge-o from to)
-         (== trace (list from to)))
-        ;; Step: through an intermediate
-        ((fresh (mid rest)
-           (edge-o from mid)
-           (transitive-closure-o edge-o mid to rest (- depth 1))
-           (== trace (cons from rest)))))))
 
 
 ;;; ── Edge relations ────────────────────────────────────────────────────────────

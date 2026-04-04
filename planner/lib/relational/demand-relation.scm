@@ -2,7 +2,7 @@
 ;;;
 ;;; Allocation via global sum constraints in CLP(FD). No sums threading.
 ;;; Each allocation declares a claim; the constraint solver ensures feasibility.
-;;; map-goal-o (higher-order relational fold) unifies all list solvers.
+;;; Uses map-goal-o from (playnet kanren-constraints) for all list solvers.
 ;;; schedule-inputs-fold unifies the two ground scheduling folds.
 
 (use-modules (playnet kanren-constraints)
@@ -22,20 +22,6 @@
 ;;   cite            — referenced for credit, remains available
 ;;   deliver-service — service availability (not inventoried)
 (define *non-consuming* '(use accept pickup work cite deliver-service))
-
-
-;;; ── map-goal-o (higher-order relational fold) ────────────────────────────────
-;;; Recurse over a ground list, apply a goal to each item, collect results.
-;;; item->goal-o: (item result) -> goal that binds result for one item.
-
-(define (map-goal-o items item->goal-o results)
-  "Relational map: apply item->goal-o to each item, collect results."
-  (if (null? items)
-      (== results '())
-      (fresh (result rest)
-        (item->goal-o (car items) result)
-        (map-goal-o (cdr items) item->goal-o rest)
-        (== results (cons result rest)))))
 
 
 ;;; ── demand-o ──────────────────────────────────────────────────────────────────

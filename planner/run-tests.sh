@@ -92,6 +92,7 @@ run_suite "Execution Reactive"       "$ALL" "tests/test-execution-reactive.scm"
 
 # -- Indexes --
 run_suite "Indexes"                  "$ALL" "tests/test-indexes.scm"
+run_suite "Query Grammar"           "$ALL" "tests/test-grammar.scm"
 
 # -- Spatial & transport --
 run_suite "Spatial Transport"        "$ALL" "tests/test-spatial-transport.scm"

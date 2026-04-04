@@ -240,7 +240,7 @@ direction.
 ## Appendix: Implemented refactorings
 
 These refactorings apply the metaprogramming patterns described above
-to make the codebase more elegant. All 41 test suites pass.
+to make the codebase more elegant. All 42 test suites pass.
 
 ### A. `transitive-closure-o` — higher-order edge traversal
 
@@ -441,13 +441,52 @@ cursor, filter matching flows, map results. Extracted a single
             proc-begin (list-ref f 7)))))
 ```
 
+### G. The relational standard library
+
+**Files:** `module/playnet/kanren.scm`, `module/playnet/kanren-constraints.scm`
+
+The combinators extracted from the planner are not planning-specific —
+they're general-purpose relational programming infrastructure. They
+now live in the kanren modules alongside `appendo` and `membero`:
+
+| Combinator | Signature | Analogy |
+|---|---|---|
+| `map-goal-o` | `(items f results)` | `map` |
+| `fold-goal-o` | `(items f acc-in acc-out)` | `fold` |
+| `filter-goal-o` | `(items pred results)` | `filter` |
+| `any-goal-o` | `(items pred)` | `any` / `exists` |
+| `find-goal-o` | `(items pred found)` | `find` |
+| `transitive-closure-o` | `(edge from to trace [depth])` | graph closure |
+
+Defined in both `kanren.scm` (base, for knowledge/SVO) and
+`kanren-constraints.scm` (CLP(FD), for the planner), because each
+module's `==` operates on a different state representation.
+
+**Downstream conversions:**
+
+- `knowledge.scm`: `transitive-o` now delegates to
+  `transitive-closure-o` from `kanren.scm` (was a 20-line duplicate)
+- `svo.scm`: `full-inversion-o` now uses `map-goal-o` (was 8 lines
+  of hand-rolled recursion, now 4)
+- `system-kb.scm`: `trigger-chain-o` uses `transitive-o` which
+  chains through to `transitive-closure-o` automatically
+
+**What fold-goal-o can't do:** `allocate-from-o` in allocation.scm
+looks like a fold but relies on CLP(FD) grounding between iterations —
+`labelfd` makes `take` ground, which makes `rest-remaining` ground via
+`-fd`, so the next iteration can call `(min available qty)` on a
+ground value. `fold-goal-o` constructs all step goals with fresh
+variables upfront, so ground Scheme functions inside the step lambda
+would see unbound logic variables. The lesson: when CLP(FD) constraint
+propagation is load-bearing between steps, keep the explicit recursion.
+
 ---
 
 ## References
 
 - William E. Byrd, *miniKanren and Relational Programming* — relational interpreters and program synthesis
 - Daniel P. Friedman, William E. Byrd, Oleg Kiselyov, *The Reasoned Schemer* — foundations of miniKanren
-- `module/playnet/kanren.scm` — base miniKanren implementation (Hemann & Friedman)
-- `module/playnet/kanren-planning.scm` — planning state extensions (cstate)
-- `module/playnet/kanren-constraints.scm` — CLP(FD) + symbolic constraints
+- `module/playnet/kanren.scm` — base miniKanren + relational combinators
+- `module/playnet/kanren-constraints.scm` — CLP(FD) + relational combinators
+- `module/playnet/knowledge.scm` — transitive-o (delegates to kanren)
 - `planner/lib/relational/` — all planning domain relations

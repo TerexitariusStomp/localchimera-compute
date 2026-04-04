@@ -57,7 +57,11 @@
             domain-ref domain-lo domain-hi make-interval
             register-propagator
             ;; Extra relations
-            lasto))
+            lasto
+            ;; Higher-order relational combinators
+            map-goal-o fold-goal-o filter-goal-o
+            any-goal-o find-goal-o
+            transitive-closure-o))
 
 
 ;;; ══════════════════════════════════════════════════════════════════════════════
@@ -833,6 +837,83 @@
   (conde
     ((fresh (x) (== lst (list x)) (== last x)))
     ((fresh (h t) (== lst (cons h t)) (lasto t last)))))
+
+
+;;; ── Higher-order relational combinators ──────────────────────────────────────
+;;; The relational equivalents of map, fold, filter, any, find.
+;;; Each takes a goal-producing function and applies it over a ground list.
+
+(define (map-goal-o items item->goal-o results)
+  "Relational map: apply a goal to each item, collect results.
+   item->goal-o: (item result) -> goal
+   Succeeds when every item has at least one solution."
+  (if (null? items)
+      (== results '())
+      (fresh (result rest)
+        (item->goal-o (car items) result)
+        (map-goal-o (cdr items) item->goal-o rest)
+        (== results (cons result rest)))))
+
+(define (fold-goal-o items step-goal-o acc-in acc-out)
+  "Relational fold: thread an accumulator through a goal per item.
+   step-goal-o: (item acc-in acc-out) -> goal
+   Each step receives the previous accumulator and produces the next."
+  (if (null? items)
+      (== acc-out acc-in)
+      (fresh (acc-mid)
+        (step-goal-o (car items) acc-in acc-mid)
+        (fold-goal-o (cdr items) step-goal-o acc-mid acc-out))))
+
+(define (filter-goal-o items pred-goal-o results)
+  "Relational filter: keep items for which pred-goal-o succeeds.
+   pred-goal-o: (item) -> goal (succeeds or fails)
+   Items where the goal fails are silently dropped."
+  (if (null? items)
+      (== results '())
+      (fresh (rest)
+        (filter-goal-o (cdr items) pred-goal-o rest)
+        (conde
+          ;; pred succeeds — include item
+          ((fresh () (pred-goal-o (car items))
+                     (== results (cons (car items) rest))))
+          ;; pred fails — skip item
+          ((== results rest))))))
+
+(define (any-goal-o items pred-goal-o)
+  "Relational any: succeed if pred-goal-o succeeds for at least one item.
+   pred-goal-o: (item) -> goal"
+  (if (null? items)
+      fail
+      (conde
+        ((pred-goal-o (car items)))
+        ((any-goal-o (cdr items) pred-goal-o)))))
+
+(define (find-goal-o items pred-goal-o found)
+  "Relational find: unify FOUND with the first item where pred-goal-o succeeds.
+   pred-goal-o: (item) -> goal"
+  (if (null? items)
+      fail
+      (conde
+        ((pred-goal-o (car items))
+         (== found (car items)))
+        ((find-goal-o (cdr items) pred-goal-o found)))))
+
+(define (transitive-closure-o edge-o from to trace . rest)
+  "Depth-bounded transitive closure with proof trace.
+   edge-o: (a b) -> goal — the one-step relation
+   trace: list of nodes visited (proof path)
+   Optional depth argument (default 10)."
+  (let ((depth (if (pair? rest) (car rest) 10)))
+    (if (= depth 0) fail
+        (conde
+          ;; Base: direct edge
+          ((edge-o from to)
+           (== trace (list from to)))
+          ;; Step: through an intermediate
+          ((fresh (mid rest-trace)
+             (edge-o from mid)
+             (transitive-closure-o edge-o mid to rest-trace (- depth 1))
+             (== trace (cons from rest-trace))))))))
 
 
 ;;; ══════════════════════════════════════════════════════════════════════════════
