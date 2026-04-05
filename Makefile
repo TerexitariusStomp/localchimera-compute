@@ -1,4 +1,4 @@
-all: browser/repl.wasm
+all: browser/repl.wasm weave/weave.wasm
 
 repl:
 	guile -L module server/repl.scm
@@ -74,22 +74,42 @@ test-browser:
 test-all: test-gplay test-knowledge test-governed test-signatures test-wisp test-endorsement test-persistence test-netlayer test-planner test-relational
 
 # ── Docker (for macOS / non-Guix machines) ───────────────────────────────────
+# Uses Guix inside Docker to provide the exact same toolchain.
+# First run: `make docker-setup` to create the BuildKit builder.
 
 DOCKER_IMAGE ?= playnet-dev
+DOCKER_BUILDER ?= guix-builder
 
-docker-build:
-	docker build -t $(DOCKER_IMAGE) .
+docker-setup:
+	docker buildx create --name $(DOCKER_BUILDER) --driver docker-container \
+	  --buildkitd-flags '--allow-insecure-entitlement security.insecure' 2>/dev/null || true
+
+docker-build: docker-setup
+	docker buildx build --builder $(DOCKER_BUILDER) \
+	  --allow security.insecure --load -t $(DOCKER_IMAGE) .
 
 docker-test-planner:
-	docker run --rm -v "$$PWD":/src -w /src/planner $(DOCKER_IMAGE) sh run-tests.sh
+	docker run --rm --security-opt seccomp=unconfined \
+	  -v "$$PWD":/src -w /src/planner $(DOCKER_IMAGE) sh run-tests.sh
 
 docker-test-all:
-	docker run --rm -v "$$PWD":/src -w /src $(DOCKER_IMAGE) sh -c '\
+	docker run --rm --security-opt seccomp=unconfined \
+	  -v "$$PWD":/src -w /src $(DOCKER_IMAGE) sh -c '\
 	  guile --no-auto-compile -L module tests/test-knowledge.scm && \
 	  cd planner && sh run-tests.sh'
 
 docker-shell:
-	docker run --rm -it -v "$$PWD":/src $(DOCKER_IMAGE) guile --no-auto-compile -L module -L planner
+	docker run --rm -it --security-opt seccomp=unconfined \
+	  -v "$$PWD":/src $(DOCKER_IMAGE) guile --no-auto-compile -L module -L planner
+
+weave/weave.wasm: module/weave/browser.scm \
+                  module/weave/ui/join.scm \
+                  module/weave/ui/room.scm
+	$(TIME_MACHINE) shell guile-next $(HOOT_FIXED) guile-goblins -- \
+	  guild compile-wasm -L module --bundle -o weave/weave.wasm module/weave/browser.scm
+
+weave:
+	guile -L module server/weave.scm
 
 clean:
-	rm -f browser/repl.wasm
+	rm -f browser/repl.wasm weave/weave.wasm

@@ -1,53 +1,79 @@
-# Dockerfile — Guile + Goblins development environment
+# syntax=docker/dockerfile:1-labs
 #
-# Provides the same Guile + Goblins stack declared in guix.scm / manifest.scm,
-# built from source so it works on any machine with Docker (including macOS).
+# Dockerfile — Guix-based development environment
+#
+# Installs GNU Guix from the official binary tarball, then uses the project's
+# pinned channels.scm to provide the exact guile-next + guile-goblins toolchain.
 #
 # Build:  make docker-build
 # Test:   make docker-test-planner
 # REPL:   make docker-shell
 #
-# Pin versions below to match the Guix channels pin (deploy/guix/channels.scm).
-# When you update channels.scm, verify these ARGs still match.
+# Requires BuildKit insecure mode (Guix needs setPersonality syscall):
+#   make docker-setup   # one-time: creates the BuildKit builder
+#
+# Based on https://gitlab.com/debdistutils/guix/debian-with-guix-container
+# (AGPL-3.0+, Simon Josefsson)
 
-FROM debian:trixie-slim
+FROM debian:bookworm-slim
 
-# ── Build tools + Guile 3.0.10 ──────────────────────────────────────────
-RUN apt-get update && apt-get install -y --no-install-recommends \
-      guile-3.0 guile-3.0-dev guile-gcrypt guile-gnutls \
-      autoconf automake libtool texinfo gettext \
-      pkg-config make git ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+SHELL ["/bin/bash", "-c"]
 
-# ── guile-fibers (concurrency, required by Goblins) ─────────────────────
-ARG FIBERS_TAG=v1.3.1
-RUN git clone --depth 1 --branch ${FIBERS_TAG} \
-      https://github.com/wingo/fibers.git /tmp/fibers \
-    && cd /tmp/fibers \
-    && autoreconf -fiv \
-    && ./configure --prefix=/usr \
-    && make -j"$(nproc)" \
-    && make install \
-    && rm -rf /tmp/fibers
+# ── Install Guix from official binary tarball ─────────────────────────
+RUN --security=insecure \
+    set -eux \
+    && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+         wget ca-certificates gnupg xz-utils netbase make git \
+    && M=$(uname -m) \
+    && wget -nv "https://ftp.gnu.org/gnu/guix/guix-binary-1.5.0.$M-linux.tar.xz" \
+    && wget -nv -O guix-install.sh \
+         "https://git.savannah.gnu.org/cgit/guix.git/plain/etc/guix-install.sh?h=v1.5.0" \
+    && chmod +x guix-install.sh \
+    && wget -q "https://sv.gnu.org/people/viewgpg.php?user_id=127547" -O - | gpg --import - \
+    && wget -q "https://sv.gnu.org/people/viewgpg.php?user_id=15145" -O - | gpg --import - \
+    && yes '' | env GUIX_BINARY_FILE_NAME="guix-binary-1.5.0.$M-linux.tar.xz" \
+         ./guix-install.sh \
+    && rm -f guix-install.sh "guix-binary-1.5.0.$M-linux.tar.xz" \
+    && apt-get remove --purge -y wget gnupg xz-utils \
+    && apt-get autoremove --purge -y \
+    && rm -rf /var/cache/apt/* /var/lib/apt/lists/*
 
-# ── guile-goblins (capability-secure actors) ─────────────────────────────
-# Run configure to generate goblins/config.scm, then install source files
-# directly. Full compilation fails on OCapN TLS/WebSocket netlayers (need
-# guile-websocket), but the planner only uses core Goblins modules.
-ARG GOBLINS_TAG=v0.16.1
-RUN git clone --depth 1 --branch ${GOBLINS_TAG} \
-      https://codeberg.org/spritely/goblins.git /tmp/goblins \
-    && cd /tmp/goblins \
-    && autoreconf -fiv \
-    && ./configure --prefix=/usr \
-    && SITE=/usr/share/guile/site/3.0 \
-    && cp -r goblins "$SITE/goblins" \
-    && cp goblins.scm "$SITE/goblins.scm" \
-    && rm -rf /tmp/goblins
+# ── Pull the project's pinned Guix channels ──────────────────────────
+COPY deploy/guix/channels.scm /etc/guix/channels.scm
 
-# ── Verify the core modules load ─────────────────────────────────────────
-RUN guile --no-auto-compile -c '\
-  (use-modules (goblins) (goblins utils hashmap) (goblins persistence-store memory)) \
-  (display "goblins ok\n")'
+RUN --security=insecure \
+    set -eux \
+    && source /root/.config/guix/current/etc/profile \
+    && guix-daemon --build-users-group=guixbuild &>/dev/null & \
+    sleep 2 \
+    && guix pull -C /etc/guix/channels.scm \
+    && kill %1 2>/dev/null \
+    && rm -rf /var/cache/apt/* /var/lib/apt/lists/*
 
+# ── Pre-build the development profile ────────────────────────────────
+# Downloads substitutes for guile-next + guile-goblins so container runs
+# don't need to fetch anything.
+RUN --security=insecure \
+    set -eux \
+    && source /root/.config/guix/current/etc/profile \
+    && guix-daemon --build-users-group=guixbuild &>/dev/null & \
+    sleep 2 \
+    && guix shell guile-next guile-goblins guile-gcrypt -- \
+         guile -c '(use-modules (goblins) (goblins utils hashmap) \
+                                (goblins persistence-store memory)) \
+                   (display "guix profile ok\n")' \
+    && kill %1 2>/dev/null || true
+
+# ── Entrypoint ────────────────────────────────────────────────────────
 WORKDIR /src
+
+RUN printf '#!/bin/bash\n\
+source /root/.config/guix/current/etc/profile\n\
+guix-daemon --build-users-group=guixbuild &>/dev/null &\n\
+sleep 1\n\
+exec guix shell guile-next guile-goblins guile-gcrypt -- "$@"\n' \
+  > /usr/local/bin/guix-env && chmod +x /usr/local/bin/guix-env
+
+ENTRYPOINT ["/usr/local/bin/guix-env"]
+CMD ["guile"]
