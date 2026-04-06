@@ -333,10 +333,12 @@
 
 
 ;;; ════════════════════════════════════════════════════════════════════════════
-;;; 7. Full pipeline — dependent-demand with skill matching
+;;; 7. Full pipeline — work flows → Intents with suggested assignments
 ;;; ════════════════════════════════════════════════════════════════════════════
 
-(display "\n── 7. Full pipeline ──\n")
+(display "\n── 7. Full pipeline (work flows → Intents + work-assignments) ──\n")
+
+(define pipeline-result #f)  ;; saved for test 8
 
 (with-vat vat
   (let* ((ns (empty-netter-state))
@@ -359,37 +361,115 @@
                     #:scope-agent-id "org:meeting"
                     #:alert-store als)))
 
+      (set! pipeline-result result)
+
       ;; Should produce at least one process
       (let ((procs (or (assq-ref result 'processes) '()))
             (comms (or (assq-ref result 'commitments) '()))
-            (ints  (or (assq-ref result 'intents) '())))
+            (ints  (or (assq-ref result 'intents) '()))
+            (assigns (or (assq-ref result 'work-assignments) '())))
 
         (check-pred "pipeline: has process"
                     (pair? procs))
 
-        ;; Should have a mix of commitments (matched) and intents (unmatched)
-        ;; We have 4 work flows + 1 produce = 5 flow records total
-        ;; 3 agents available → 3 work commitments + 1 work intent + output
-        (let ((total-records (+ (length comms) (length ints))))
-          (check-pred "pipeline: produces flow records"
-                      (> total-records 0)))
+        ;; All work flows now produce Intents (never Commitments)
+        (let ((work-commitments (filter (lambda (c) (eq? (commitment-action c) 'work)) comms))
+              (work-intents (filter (lambda (i) (eq? (intent-action i) 'work)) ints)))
+          (check "pipeline: zero work commitments"
+                 (length work-commitments) 0)
+          ;; 4 work flows → 4 work intents
+          (check "pipeline: 4 work intents"
+                 (length work-intents) 4))
 
-        ;; Commitments should have providers set (matched agents)
+        ;; work-assignments carry suggested providers from skill matching
+        ;; 3 in-scope agents matched → 3 assignments
+        (check "pipeline: 3 work-assignments"
+               (length assigns) 3)
+
+        ;; Each work-assignment has required fields
         (for-each
-          (lambda (c)
-            (when (eq? (commitment-action c) 'work)
-              (check-pred (string-append "pipeline: work commitment has provider: "
-                                         (commitment-id c))
-                          (commitment-provider c))))
-          comms)
+          (lambda (wa)
+            (check-pred (string-append "pipeline: assignment has intent-id: "
+                                       (or (assq-ref wa 'intent-id) "?"))
+                        (assq-ref wa 'intent-id))
+            (check-pred (string-append "pipeline: assignment has suggested-provider: "
+                                       (or (assq-ref wa 'suggested-provider) "?"))
+                        (assq-ref wa 'suggested-provider))
+            (check-pred "pipeline: assignment has spec-id"
+                        (assq-ref wa 'spec-id))
+            (check-pred "pipeline: assignment has process-id"
+                        (assq-ref wa 'process-id)))
+          assigns)
 
-        ;; Check alerts for unmatched roles
+        ;; Suggested providers should be in-scope agents
+        (let ((providers (map (lambda (wa) (assq-ref wa 'suggested-provider)) assigns)))
+          (for-each
+            (lambda (p)
+              (check-pred (string-append "pipeline: provider in scope: " p)
+                          (member p '("agent-alice" "agent-bob" "agent-carol"))))
+            providers))
+
+        ;; Check alerts for unmatched roles (1 participation slot unmatched)
         (let ((alerts ($ als 'of-kind 'unmatched-role)))
           (check-pred "pipeline: unmatched role alert emitted"
                       (pair? alerts))
           (when (pair? alerts)
             (check-pred "pipeline: alert has spec-id"
                         (assq-ref (car alerts) 'spec-id))))))))
+
+
+;;; ════════════════════════════════════════════════════════════════════════════
+;;; 8. Promote suggested assignment → Commitment
+;;; ════════════════════════════════════════════════════════════════════════════
+
+(display "\n── 8. Promote suggested assignment ──\n")
+
+(with-vat vat
+  (let* ((ps ($ scope 'plan-store))
+         (assigns (and pipeline-result (assq-ref pipeline-result 'work-assignments)))
+         (ints (and pipeline-result (assq-ref pipeline-result 'intents))))
+
+    (check-pred "promote: have work-assignments from pipeline"
+                (and assigns (pair? assigns)))
+
+    (when (and assigns (pair? assigns))
+      (let* ((wa (car assigns))
+             (iid (assq-ref wa 'intent-id))
+             (suggested (assq-ref wa 'suggested-provider))
+             ;; Find the matching intent record from DD results
+             (the-intent (find (lambda (i) (equal? (intent-id i) iid)) ints)))
+
+        (check-pred "promote: found intent record" the-intent)
+
+        (when the-intent
+          ;; Store the intent in plan-store
+          ($ ps 'add-intent the-intent)
+
+          ;; Store metadata: suggested-provider
+          ($ ps 'set-meta iid `((suggested-provider . ,suggested)))
+
+          ;; Verify metadata round-trips
+          (let ((meta ($ ps 'get-meta iid)))
+            (check-pred "promote: meta stored" (pair? meta))
+            (check "promote: meta has suggested-provider"
+                   (assq-ref meta 'suggested-provider) suggested))
+
+          ;; Promote to commitment using suggested provider
+          (let ((cid ($ ps 'promote-to-commitment iid
+                        `((provider . ,suggested)))))
+            (check-pred "promote: commitment ID returned" cid)
+
+            ;; Verify the commitment
+            (when cid
+              (let ((c ($ ps 'get-commitment cid)))
+                (check-pred "promote: commitment exists" c)
+                (when c
+                  (check "promote: commitment provider matches"
+                         (commitment-provider c) suggested)
+                  (check "promote: commitment receiver matches"
+                         (commitment-receiver c) "org:meeting")
+                  (check "promote: commitment action is work"
+                         (commitment-action c) 'work))))))))))
 
 
 ;;; ── Summary ─────────────────────────────────────────────────────────────────

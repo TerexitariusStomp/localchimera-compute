@@ -10,7 +10,20 @@
       "Bash(pdftotext \"/Users/andrewdavis/code/playnet/docs/Paradigms of Artificial Intelligence Programming Case Studies in Common Lisp.pdf\" /tmp/paip.txt)",
       "Read(//tmp/**)",
       "Read(//usr/local/bin/**)",
-      "Read(//opt/homebrew/bin/**)"
+      "Read(//opt/homebrew/bin/**)",
+      "Bash(ls:*)",
+      "Bash(nix-shell:*)",
+      "Bash(brew list:*)",
+      "Bash(/nix/store/ia66j9bcwynxlql485mvwkhkk1hs1rmx-guile-3.0.11/bin/guile:*)",
+      "WebFetch(domain:spritely.institute)",
+      "WebSearch",
+      "WebFetch(domain:forum.systemcrafters.net)",
+      "WebFetch(domain:guix.gnu.org)",
+      "WebFetch(domain:akkuscm.org)",
+      "WebFetch(domain:files.spritely.institute)",
+      "WebFetch(domain:www.gnu.org)",
+      "WebFetch(domain:weinholt.se)",
+      "WebFetch(domain:trop.in)"
     ]
   }
 }

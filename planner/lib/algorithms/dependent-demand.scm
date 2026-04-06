@@ -53,6 +53,7 @@
   (define result-purchase-intents '())
   (define result-allocated '())
   (define result-boundary-stops '())
+  (define result-work-assignments '())  ;; ((intent-id . X) (suggested-provider . Y) ...)
   (define assigned-agents '())  ;; agents already committed to work flows (no double-booking)
   (define queue '())
 
@@ -313,16 +314,22 @@
                                                 (assoc (recipe-flow-id f) flow-agent-map)))
                                     (matched-agent (and match (cdr match)))
                                     (flow-agents
-                                      (cond
-                                        (matched-agent
-                                          `((provider . ,matched-agent)
-                                            (receiver . ,(and agents (assq-ref agents 'receiver)))))
-                                        (match  ;; in map but unmatched → intent (no provider)
-                                          `((receiver . ,(and agents (assq-ref agents 'receiver)))))
-                                        (else agents)))
+                                      (if match
+                                          ;; Work flow: always Intent (no provider → no Commitment)
+                                          `((receiver . ,(and agents (assq-ref agents 'receiver))))
+                                          ;; Non-work flow: use global agents as before
+                                          agents))
                                     (rec (create-flow-record f pid 'input scale
                                            (number->string proc-begin)
                                            plan-id flow-agents plan-store task-location)))
+                               ;; Collect work assignment (intent-id paired with suggested agent)
+                               (when (and match matched-agent)
+                                 (set! result-work-assignments
+                                   (cons `((intent-id . ,(intent-id rec))
+                                           (suggested-provider . ,matched-agent)
+                                           (spec-id . ,in-spec)
+                                           (process-id . ,pid))
+                                         result-work-assignments)))
                                ;; Alert for unmatched work flows
                                (when (and alert-store match (not matched-agent))
                                  ($ alert-store 'push-alert
@@ -334,9 +341,12 @@
                                                     "No agent with skill "
                                                     (or in-spec "unknown")
                                                     " available")))))
-                               (if (commitment? rec)
-                                   (set! result-commitments (cons rec result-commitments))
-                                   (set! result-intents (cons rec result-intents)))))
+                               ;; Work flows always → Intent; non-work keeps existing dispatch
+                               (if match
+                                   (set! result-intents (cons rec result-intents))
+                                   (if (commitment? rec)
+                                       (set! result-commitments (cons rec result-commitments))
+                                       (set! result-intents (cons rec result-intents))))))
                            ;; Enqueue input demand
                            (when (and in-spec in-qty
                                       (not (eq? action 'work))
@@ -493,4 +503,5 @@
       (intents . ,(reverse result-intents))
       (purchase-intents . ,(reverse result-purchase-intents))
       (allocated . ,(reverse result-allocated))
-      (boundary-stops . ,result-boundary-stops))))
+      (boundary-stops . ,result-boundary-stops)
+      (work-assignments . ,(reverse result-work-assignments)))))
