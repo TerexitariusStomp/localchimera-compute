@@ -126,8 +126,8 @@
 
 ;; ── Helper: run dependent-demand with ctx-derived keyword args ─────────
 
-(define (ctx-dependent-demand plan-id spec qty due-ep ns ctx
-                              #:key (at-location #f))
+(define* (ctx-dependent-demand plan-id spec qty due-ep ns ctx
+                               #:key (at-location #f))
   "Call dependent-demand with all keyword args extracted from CTX."
   (dependent-demand plan-id spec qty due-ep
     (assq-ref ctx 'recipe-store) (assq-ref ctx 'plan-store)

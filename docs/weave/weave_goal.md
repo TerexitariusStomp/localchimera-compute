@@ -1,7 +1,47 @@
-# Consolidated MVP project plan (authoritative)
 
-This section supersedes the older sprint descriptions below. Nothing is removed, but if there is disagreement, treat this as the plan.
+## Overview
 
+You are being asked to plan and architect **Weave**, a programmable video meeting platform. Think of it as Zoom with an intelligent and ubiquitous facilitator — not just a video call tool, but a structured meeting orchestration system that choreographs breakout groups, broadcasts prompts from the host into every room simultaneously, tracks time tightly, transcribes everything from all the breakout rooms, and synthesizes the output into a collective document. It’s programmable since every meeting can be defined as text.
+
+Weave is designed for organizational change work. And all work is organizational change work. Weave will also gradually build a shared mental model of the organization, amassed one conversation at a time, but don’t build that into the initial mvp.
+
+
+Weave is a facilitation programming system: a Playwright-like DSL, planner, and runtime for human meetings. Rather than treating meetings as informal calendar events, treat them as explicit units of labor that consume human capacity and should be specified, invited, run, and evaluated with care.
+
+Core loop:
+
+- Define meeting scripts programmatically
+- Invite (manual first), while tracking each invitation as work
+- Execute live choreography across virtual, IRL, or hybrid environments
+- Generate structured outputs that feed future planning
+Weave should be framed as a language and runtime for human coordination.
+
+---
+
+## ⚠️ IMPORTANT: DO NOT BEGIN CODING
+
+Before writing any code, you must produce three planning documents:
+
+- `@WEAVE_WEAVE_TASKS.md` — All discrete development tasks, organized by sprint (8 sprints, 1 week each), with checkboxes.
+- `@WEAVE_PLANNING.md` — Architecture decisions, technology stack, data models, integration contracts, and open questions.
+- `@WEAVE_CLAUDE.md` — Notes to your future self: conventions, resolved design decisions, pitfalls, and the conceptual model for the most complex systems.
+
+Do not write application code until all three documents are complete.
+
+---
+
+## MVP Philosophy
+
+The goal for the 8-week build is a **working, demoable MVP** that is suitable for sale. The single most important thing Weave must do is **disrupt how meetings normally run** through programmable breakout rooms and host broadcasts. Everything else is layered on top of that. At the same time, Weave must use standard design conventions and affordances wherever possible. Base the UI primarily on Zoom.
+
+Build in this order of priority:
+
+1. The meeting can run: video, breakouts, host controls
+2. The meeting is choreographed: prompts display, timers count down, phases transition
+3. The meeting is intelligent: transcription, synthesis, voice
+4. The meeting designs itself: pre-meeting interview, AI-generated script
+
+---
 ## MVP definition (what success means in 8 weeks)
 
 By end of Sprint 8, a convener can:
@@ -22,92 +62,197 @@ Non-goals for MVP:
 - The meeting script model (roles, phases, prompts, assertions, outputs) is a first-class contract used by execution, transcription tagging, and synthesis.
 - Video is an execution substrate. We build only the video features required to run scripts.
 
-## 8-sprint plan
+Here is a clean markdown compilation of the 8 sprint deliverables, in order, written to support a ground-up rebuild of Weave.[[1]](https://www.notion.so/Weave-334dc35545c4800c97d4c1390c005c26?pvs=21)
 
-### Sprint 1: skeleton runtime (DSL + minimal room)
+# Weave MVP Rebuild Deliverables
 
-Deliverable: a shareable room link that can execute a minimal script.
+## Sprint 1: Project scaffold + video foundation
 
-- Define meeting script primitives: roles, phases, prompts, assertions, outputs.
-- Establish PlayNet-native core entities (enough to represent invitations, attendance, artifacts, capabilities).
-- Implement minimal room runtime: join/leave, A/V, and screensharing (start/stop, host force-stop).
-- Implement baseline permissions model wired to capability primitives.
+**Goal:** Two people can join a room and see and hear each other reliably.[[2]](https://www.notion.so/S1-Week-1-Project-scaffold-video-foundation-5f54d90e44eb4246bb13de00540a0990?pvs=21)
 
-### Sprint 2: breakouts and manual invites as work
+**Primary deliverables**
 
-Deliverable: host can dispatch and recall groups in real time, and invitations are tracked.
+- A monorepo with baseline project conventions, CI, and deployment pipeline.
+- Authentication and an initial room model.
+- A shareable room link with stable join, leave, reconnect, audio, and video behavior.
+- Basic screen sharing inside the room, including host force-stop.[[2]](https://www.notion.so/S1-Week-1-Project-scaffold-video-foundation-5f54d90e44eb4246bb13de00540a0990?pvs=21)[[1]](https://www.notion.so/Weave-334dc35545c4800c97d4c1390c005c26?pvs=21)
 
-- Manual invite workflow (still user-driven scheduling), but create Invitation Events and attendance state changes.
-- Breakout engine: create N rooms, assign, move participants.
-- Host controls: dispatch/recall, room status visibility.
+**What must exist by the end of the sprint**
 
-### Sprint 3: prompt delivery and host broadcast
+- The video substrate is chosen with later breakout and broadcast requirements in mind.
+- Two participants can successfully run a live room end to end.
+- Core permissions and room access behavior are in place.
+- The system is stable enough for breakout routing to be layered on without rework.[[2]](https://www.notion.so/S1-Week-1-Project-scaffold-video-foundation-5f54d90e44eb4246bb13de00540a0990?pvs=21)
 
-Deliverable: prompt plus host voice reaches all breakouts simultaneously.
+## Sprint 2: Breakout rooms
 
-- Prompt cards that render per phase.
-- Host broadcast audio channel into all active rooms.
+**Goal:** The host can send participants into breakout groups and recall them to plenary.[[3]](https://www.notion.so/S2-Week-2-Breakout-rooms-core-disruption-168b4b8205a1428e9a80437d1975a199?pvs=21)
 
-### Sprint 4: script engine and timing choreography (plus body doubling template)
+**Primary deliverables**
 
-Deliverable: a scripted meeting runs end-to-end with timers and host override.
+- Breakout room creation and lifecycle management.
+- Random and manual participant assignment.
+- Host controls to dispatch participants into breakout rooms and recall them with one action.
+- A host-visible room status layer across all breakouts.
+- Manual invitation and attendance changes tracked as work events.[[3]](https://www.notion.so/S2-Week-2-Breakout-rooms-core-disruption-168b4b8205a1428e9a80437d1975a199?pvs=21)[[1]](https://www.notion.so/Weave-334dc35545c4800c97d4c1390c005c26?pvs=21)
 
-- State machine for phases, transitions, pause/advance.
-- Visible timers.
-- First reusable meeting templates.
-- Implement body doubling as a predefined script plus UI skin (intent prompt, focus block, micro check-ins, session log artifact).
+**What must exist by the end of the sprint**
 
-### Sprint 5: transcription tagged to script context
+- Breakouts feel operationally clean, fast, and understandable.
+- The host can manage room movement without confusion.
+- Room identity and routing are stable enough to support later broadcast and prompt delivery.[[3]](https://www.notion.so/S2-Week-2-Breakout-rooms-core-disruption-168b4b8205a1428e9a80437d1975a199?pvs=21)
 
-Deliverable: transcripts are stored by room plus script phase/prompt with anonymization.
+## Sprint 3: Broadcast + prompt display system
 
-- Real-time transcription integration.
-- Join-time attribution/anonymization.
-- Tag transcripts by room, phase, prompt, and role.
+**Goal:** The host can push a prompt card and voice into all breakout rooms simultaneously.[[4]](https://www.notion.so/S3-Week-3-Broadcast-prompt-display-system-0e29f654b4eb44df98c969fd3d7393ae?pvs=21)
 
-### Sprint 6: synthesis artifacts (reports, not visualization layer)
+**Primary deliverables**
 
-Deliverable: a reproducible structured summary artifact keyed by the script contract.
+- A host broadcast audio channel that reaches all active breakout rooms at once.
+- Prompt cards rendered on participant screens during the relevant phase.
+- A coherent facilitation surface where broadcast voice and prompt display work together.[[4]](https://www.notion.so/S3-Week-3-Broadcast-prompt-display-system-0e29f654b4eb44df98c969fd3d7393ae?pvs=21)
 
-- LLM synthesis grouped by phase/prompt.
-- Respect anonymization.
-- Optional templated report derivatives (infographic, maps) as renderings of the same structured output.
+**What must exist by the end of the sprint**
 
-### Sprint 7: voice delivery modes where leverage is real
+- The core meeting loop is real: prompt, breakout, reconvene.
+- The convener can shape all breakout rooms at once from plenary.
+- Prompt state is explicit enough to be attached to the script engine in the next sprint.[[4]](https://www.notion.so/S3-Week-3-Broadcast-prompt-display-system-0e29f654b4eb44df98c969fd3d7393ae?pvs=21)
 
-Deliverable: prompts can be delivered via live host, generic TTS, or consented voice clone.
+## Sprint 4: Meeting script engine + timing choreography
 
-- Consent and recording flow.
-- Fallback strategy and reliability constraints.
+**Goal:** A full choreographed meeting can run from start to finish automatically.[[5]](https://www.notion.so/S4-Week-4-Meeting-script-engine-timing-choreography-5d3d27defb45420fba01d82a79c2350f?pvs=21)
 
-### Sprint 8: script authoring workflow for Weavers and conveners
+**Primary deliverables**
 
-Deliverable: author, test, and refine scripts quickly, then run them.
+- A meeting state machine covering plenary, prompt delivery, breakout, reconvene, debrief, and repeat.
+- A manually authored script format with phase sequence, durations, and prompt text.
+- Visible countdown timers for participants.
+- Host pause and manual advance controls.
+- First reusable script templates.
+- Body doubling implemented as a predefined scripted meeting type with:
+    - intent prompt
+    - timed focus block
+    - cocoon UI mode
+    - optional micro check-ins
+    - optional screen sharing
+    - session log artifact[[5]](https://www.notion.so/S4-Week-4-Meeting-script-engine-timing-choreography-5d3d27defb45420fba01d82a79c2350f?pvs=21)[[1]](https://www.notion.so/Weave-334dc35545c4800c97d4c1390c005c26?pvs=21)
 
-- Script editor or structured builder.
-- Validation and preview.
-- Conveners can generate a first draft script from an interview, then edit.
+**What must exist by the end of the sprint**
 
-## Post-MVP (Phase 2 and beyond)
+- Meetings are now executable programs rather than loose sequences of UI states.
+- Host override works cleanly when real meetings go off-script.
+- Phase identity is explicit enough to drive transcript tagging and later synthesis.[[5]](https://www.notion.so/S4-Week-4-Meeting-script-engine-timing-choreography-5d3d27defb45420fba01d82a79c2350f?pvs=21)
 
-- Capacity-aware allocation and meeting incurrence (MRP demand/supply matching)
-- Visualization layer for the evolving org graph
-- Friendship availability and short friendly calls (if we choose to pursue it)
+## Sprint 5: Real-time transcription + anonymization
 
-# Project Overview
+**Goal:** Every room is transcribed in real time, and participants control attribution.[[6]](https://www.notion.so/S5-Week-5-Real-time-transcription-anonymization-29a478adfacb41969ce64f0b4573e3fa?pvs=21)
 
-Weave is a facilitation programming system: a Playwright-like DSL, planner, and runtime for human meetings. Rather than treating meetings as informal calendar events, treat them as explicit units of labor that consume human capacity and should be specified, invited, run, and evaluated with care.
+**Primary deliverables**
 
-Core loop:
+- Real-time speech-to-text integration.
+- Transcript storage tagged by room, phase, prompt, and speaker context.
+- Join-time named vs anonymous attribution choice for participants.
+- End-to-end anonymization enforcement across storage and downstream consumers.
+- A participant-to-facilitator help channel from breakout rooms.
+- Facilitator response paths via video drop-in, voice, transcribed voice, or text.[[6]](https://www.notion.so/S5-Week-5-Real-time-transcription-anonymization-29a478adfacb41969ce64f0b4573e3fa?pvs=21)[[1]](https://www.notion.so/Weave-334dc35545c4800c97d4c1390c005c26?pvs=21)
 
-- Define meeting scripts programmatically
-- Invite (manual first), while tracking each invitation as work
-- Execute live choreography across virtual, IRL, or hybrid environments
-- Generate structured outputs that feed future planning
+**What must exist by the end of the sprint**
 
-## Strategic reframe: Weave as facilitation DSL + PlayNet-native coordination system
+- Searchable, structured transcripts are available immediately after the meeting.
+- Attribution preferences are preserved faithfully.
+- Transcript data is clean enough to feed synthesis without reconstruction.[[6]](https://www.notion.so/S5-Week-5-Real-time-transcription-anonymization-29a478adfacb41969ce64f0b4573e3fa?pvs=21)
 
-Weave should be framed as a language and runtime for human coordination.
+## Sprint 6: Post-meeting synthesis + collective mental model
+
+**Goal:** The meeting produces a shareable document that captures what the group collectively said and thought.[[7]](https://www.notion.so/S6-Week-6-Post-meeting-synthesis-collective-mental-model-22e84e39507741e4a125a17c6862d145?pvs=21)
+
+**Primary deliverables**
+
+- LLM synthesis over transcripts grouped by phase and prompt.
+- Structured output covering themes, tensions, agreements, open questions, and unresolved differences.
+- A shareable post-meeting summary document.
+- Reproducible derivative artifacts generated from the same synthesis contract:
+    - executive infographic
+    - synthesis map
+    - prompt-to-output storyboard
+    - tension map
+    - decision and commitment map[[7]](https://www.notion.so/S6-Week-6-Post-meeting-synthesis-collective-mental-model-22e84e39507741e4a125a17c6862d145?pvs=21)[[1]](https://www.notion.so/Weave-334dc35545c4800c97d4c1390c005c26?pvs=21)
+
+**What must exist by the end of the sprint**
+
+- Post-meeting output is structured, reproducible, and tied to the script contract.
+- Anonymization survives into all artifacts.
+- The system produces usable organizational intelligence, not just a transcript dump.[[7]](https://www.notion.so/S6-Week-6-Post-meeting-synthesis-collective-mental-model-22e84e39507741e4a125a17c6862d145?pvs=21)
+
+## Sprint 7: TTS voice + voice clone for prompts
+
+**Goal:** Prompts can be delivered by live host speech, generic TTS, or a cloned host voice.[[8]](https://www.notion.so/S7-Week-7-TTS-voice-voice-clone-for-prompts-0c6042fc6ca24578a60f0c88f2ed389f?pvs=21)
+
+**Primary deliverables**
+
+- ElevenLabs integration for prompt voice generation.
+- Three prompt delivery modes:
+    - live host reading
+    - generic TTS
+    - cloned host voice
+- Explicit consent and short recording flow for voice cloning.
+- Pre-generated cloned prompt audio for reliability.
+- Fallback to generic TTS when cloned delivery is weak or unstable.[[8]](https://www.notion.so/S7-Week-7-TTS-voice-voice-clone-for-prompts-0c6042fc6ca24578a60f0c88f2ed389f?pvs=21)[[1]](https://www.notion.so/Weave-334dc35545c4800c97d4c1390c005c26?pvs=21)
+
+**What must exist by the end of the sprint**
+
+- Prompt delivery mode is selectable as meeting configuration.
+- Voice delivery works reliably under real breakout conditions.
+- Consent boundaries around voice assets are preserved.[[8]](https://www.notion.so/S7-Week-7-TTS-voice-voice-clone-for-prompts-0c6042fc6ca24578a60f0c88f2ed389f?pvs=21)
+
+## Sprint 8: Pre-meeting interview + AI meeting designer
+
+**Goal:** A convener can describe what they want to achieve, and Weave produces a draft meeting script.[[9]](https://www.notion.so/S8-Week-8-Pre-meeting-interview-meeting-designer-90dfb6e8872d496b96eda4d502e2d954?pvs=21)
+
+**Primary deliverables**
+
+- A pre-meeting interview flow that captures goals, participants, desired outcomes, and meeting intent.
+- LLM-based script generation that outputs:
+    - phase sequence
+    - timings
+    - prompts
+    - breakout configuration
+- Human review and editing before launch.
+- A structured, operationally simple MVP designer UI.
+- Full compatibility between generated scripts and the runtime, prompt, transcript, and synthesis systems.[[9]](https://www.notion.so/S8-Week-8-Pre-meeting-interview-meeting-designer-90dfb6e8872d496b96eda4d502e2d954?pvs=21)[[1]](https://www.notion.so/Weave-334dc35545c4800c97d4c1390c005c26?pvs=21)
+
+**What must exist by the end of the sprint**
+
+- A convener can move from intention to draft script to live meeting to synthesized artifact.
+- Generated scripts validate against the runtime contract.
+- The 8-week MVP is now a coherent end-to-end loop.[[9]](https://www.notion.so/S8-Week-8-Pre-meeting-interview-meeting-designer-90dfb6e8872d496b96eda4d502e2d954?pvs=21)
+
+## End state after Sprint 8
+
+By the end of the rebuild, Weave should support this full flow:[[1]](https://www.notion.so/Weave-334dc35545c4800c97d4c1390c005c26?pvs=21)
+
+- A convener creates or selects a facilitation script.
+- Invitations are handled manually at MVP stage, but tracked as work.
+- A live meeting runs with breakouts, prompts, timers, and host control.
+- Transcripts are captured with attribution or anonymization.
+- A structured post-meeting artifact is generated and fed back into planning.[[1]](https://www.notion.so/Weave-334dc35545c4800c97d4c1390c005c26?pvs=21)
+
+## Explicitly out of MVP
+
+Keep these out of the core 8-sprint rebuild:[[1]](https://www.notion.so/Weave-334dc35545c4800c97d4c1390c005c26?pvs=21)
+
+- Capacity-aware auto-scheduling and allocation
+- Org-graph visualization layer
+- Social discovery, presence indicators, inbound calling, and notification systems at scale
+- Friendship and short friendly calls, aside from preserving a future-facing Availability concept in the data model[[1]](https://www.notion.so/Weave-334dc35545c4800c97d4c1390c005c26?pvs=21)
+
+If you want, I can turn this next into a more implementation-ready version organized as:
+
+- repo milestones
+- backend deliverables
+- frontend deliverables
+- data model deliverables
+
 
 ### Product thesis
 
@@ -148,195 +293,9 @@ Weave should be framed as a language and runtime for human coordination.
 - Every meeting type should be expressible as a reusable script template with assertions about who must attend, what must happen, and what artifact must be produced.
 - Body doubling, workshops, decision meetings, and retrospectives become standard libraries built on the same runtime.
 
-### Roadmap changes
 
-- Sprint 1: define the DSL, PlayNet-native data model, access-control primitives, and minimal room runtime.
-- Sprint 2: implement manual invites, invitation-as-work event tracking, participant permissions, and breakout host control.
-- Sprint 3: connect scripts to breakout orchestration, prompt delivery, and host control.
-- Sprint 4: add prompt/broadcast choreography, timers, and reusable meeting-type templates.
-- Sprint 5: attach transcription and attribution to script phases, roles, and outputs.
-- Sprint 6: generate structured post-meeting artifacts that feed the planning system.
-- Sprint 7: add voice delivery modes where they increase leverage, not as the core product claim.
-- Sprint 8: build authoring tools so Weavers and conveners can write, test, and refine scripts quickly.
-- Post-MVP: add capacity-aware meeting incurrence and allocation on top of the manual-invite foundation.
 
-## April 1, 2026 App update: Three adjacency ideas (do not compromise MVP)
-
-## 1. Pair programming and AI tool coaching (screensharing)
-
-- Recommendation: incorporate from the beginning as a small, standard capability inside the core video room.
-- Why: screensharing is table stakes for pair work, and it strengthens the existing MVP flows (host teaching, prompt walkthroughs, debugging meeting scripts).
-- Minimal MVP scope: one-click screen share (and stop share) for any participant, with host ability to force-stop a share if needed. No whiteboard, no collaborative code editor, no recording.
-
-## 2. Body doubling: focused co-work containers (intent + cocoon)
-
-- Recommendation: include as an explicit first-class meeting type, implemented as a thin layer on top of the existing scripted meeting engine.
-- Why: it is the smallest expression of Weave’s deeper value: containers in time and space that support difficult work through human co-presence, light structure, and accountability.
-- Minimal MVP scope:
-    - A "Body Double" room template: 2 (optionally 3) participants, camera on by default, simple audio.
-    - An "Intent" prompt at the start: each person writes what they will do in the next block (private to them by default, optionally shared).
-    - A timed focus block (eg 25 or 50 minutes) with a visible timer and a soft "cocoon" UI state (minimal controls, no feed distractions).
-    - Optional micro check-ins: 60 seconds halfway, 2 minutes at the end ("What happened? What is next?").
-    - Optional screenshare (leverages Sprint 1) for co-working and gentle coaching.
-    - Output artifact: a small session log (intent, duration, end check-in) that can be shared.
-- Keep out of MVP: social discovery, presence indicators, inbound calling, notifications at scale.
-
-## 3. Friendship via short friendly calls in spare time (availability setting)
-
-- Inspiration: https://www.science-et-vie.com/corps-et-sante/pour-lutter-contre-la-solitude-il-vaut-mieux-un-message-dun-inconnu-que-de-chatgpt-231293.html
-- Recommendation: keep out of MVP. It’s a different product surface (presence, inbound call routing, notifications, social graph) and will dilute focus.
-- Small seed we can safely add early: define a future "Availability" concept in the data model (off by default) so we don’t paint ourselves into a corner.
-
-## Where this fits in the 8-sprint roadmap
-
-- Add screensharing to Sprint 1 (video foundation) as a core room capability.
-- Add body doubling as a Sprint 4 deliverable once the script engine + timers exist (implemented as a predefined script + UI skin).
-- Keep "availability + short friendly calls" as post-MVP (after Sprint 8), unless we later decide Weave needs an internal "warm-up" mode for teams.
-
-# App Design
-
-Make this into an application prompt that we can feed it into Antigravity. Please remind it to not actually begin coding but to mark down and make an @tasks.md, @planning.md, @claude.md so that it will begin to code this application, there are too many steps and it is too complicated in order to begin right away.
-
-## Weave — Application Prompt for Antigravity (v2)
-
-## Overview
-
-You are being asked to plan and architect **Weave**, a programmable video meeting platform. Think of it as Zoom with an intelligent and ubiquitous facilitator — not just a video call tool, but a structured meeting orchestration system that choreographs breakout groups, broadcasts prompts from the host into every room simultaneously, tracks time tightly, transcribes everything from all the breakout rooms, and synthesizes the output into a collective document. It’s programmable since every meeting can be defined as text.
-
-Weave is designed for organizational change work. And all work is organizational change work. Weave will also gradually build a shared mental model of the organization, amassed one conversation at a time, but don’t build that into the initial mvp.
-
----
-
-## ⚠️ IMPORTANT: DO NOT BEGIN CODING
-
-Before writing any code, you must produce three planning documents:
-
-- `@tasks.md` — All discrete development tasks, organized by sprint (8 sprints, 1 week each), with checkboxes.
-- `@planning.md` — Architecture decisions, technology stack, data models, integration contracts, and open questions.
-- `@claude.md` — Notes to your future self: conventions, resolved design decisions, pitfalls, and the conceptual model for the most complex systems.
-
-Do not write application code until all three documents are complete.
-
----
-
-## MVP Philosophy
-
-The goal for the 8-week build is a **working, demoable MVP** that is suitable for sale. The single most important thing Weave must do is **disrupt how meetings normally run** through programmable breakout rooms and host broadcasts. Everything else is layered on top of that. At the same time, Weave must use standard design conventions and affordances wherever possible. Base the UI primarily on Zoom.
-
-Build in this order of priority:
-
-1. The meeting can run: video, breakouts, host controls
-2. The meeting is choreographed: prompts display, timers count down, phases transition
-3. The meeting is intelligent: transcription, synthesis, voice
-4. The meeting designs itself: pre-meeting interview, AI-generated script
-
----
-
-## 8-Sprint Roadmap
-
-### Sprint 1 — Project scaffold + video foundation
-
-**Goal**: Two people can join a room and see and hear each other.
-
-Set up the monorepo, auth system, and a bare video room using LiveKit or [Daily.co](http://daily.co/). No meeting features yet — just working real-time video with a shareable room link. Establish the project conventions, CI pipeline, and deployment target that all future sprints build on.
-
-Key decisions to make here: video SDK choice (LiveKit for self-hosted control vs [Daily.co](http://daily.co/) for managed simplicity), frontend framework, backend language, database, and hosting. 
-
-Deliverable: a shareable video room link that works reliably.
-
----
-
-### Sprint 2 — Breakout rooms (the core disruption)
-
-**Goal**: The host can send participants into breakout groups and recall them to plenary.
-
-This is the heart of Weave and the first genuinely disruptive feature. Build the breakout engine: create N rooms per meeting, assign participants to rooms programmatically, and move them in and out via host controls. Breakout composition should support random assignment and manual assignment. The host stays in plenary by default and can see the status of all rooms.
-
-This sprint should be treated as the most important sprint in the build. If breakouts work cleanly and feel effortless to operate, the product is real.
-
-Deliverable: host dispatches participants to breakout rooms and recalls them with a single action.
-
----
-
-### Sprint 3 — Broadcast + prompt display system
-
-**Goal**: While participants are in breakouts, the host can push a prompt card and their voice into all rooms simultaneously.
-
-Build two things that work together: (1) a broadcast audio channel where the host's voice reaches all breakout rooms at once, and (2) a prompt card that displays on every participant's screen. The host reads the prompt live from a display on their screen. This sprint completes the core disruptive loop: prompt → breakout → reconvene.
-
-Deliverable: host speaks into all breakout rooms simultaneously with a visible prompt card on every screen.
-
----
-
-### Sprint 4 — Meeting script engine + timing choreography
-
-**Goal**: A full choreographed meeting can run from start to finish automatically.
-
-Build a state machine that drives the meeting through a sequence of phases: plenary → prompt delivery → breakout → reconvene → debrief → repeat. Each phase has a configured duration. Countdown timers are visible to all participants. The host can pause and manually advance phases. The script is authored manually this sprint (no AI generation yet) — a simple JSON or structured config that defines the phase sequence, durations, and prompt text for each phase.
-
-This is the load-bearing system for everything else. Design it to be robust and flexible: meetings go off-script, and the host must always be in control.
-
-Deliverable: a pre-scripted meeting runs end-to-end with timed phases and visible countdowns.
-
----
-
-### Sprint 5 — Real-time transcription + anonymization
-
-**Goal**: Every room is transcribed in real time, and participants control their attribution.
-
-Integrate Deepgram or AssemblyAI for real-time speech-to-text. Transcripts are stored and tagged by room, phase, and prompt context. Before joining, each participant chooses whether to appear named or anonymous in the transcript. This anonymization preference must propagate consistently through all stored data and all downstream synthesis — it is a trust feature, not a nice-to-have.
-
-Also build in the capability for participants to speak or type messages to the facilitator directly from inside the breakout room. Their words are transcribed and sent to the facilitator. The facilitator can then respond by video drop-in, by voice, by transcribed voice, or by text to the people who sent the message. 
-
-Deliverable: a searchable, tagged transcript is available immediately after the meeting ends, with attribution honoring each participant's preference.
-
----
-
-### Sprint 6 — Post-meeting synthesis + collective mental model
-
-**Goal**: The meeting produces a shareable document that captures what the group collectively said and thought.
-
-Run an LLM pass over all tagged transcripts to surface themes, tensions, agreements, and open questions. Group contributions by prompt/phase. Respect anonymization in the output. Generate a shareable document the convener can distribute to the whole group or use as raw material for follow-up work. The canonical use case: a team uses Weave to design a software application, and the synthesized output is a coherent product spec.
-
-Deliverable: an auto-generated meeting summary document, shareable by link.
-
-Additional Deliverable: a first set of post-meeting visual artifacts generated from the same structured synthesis (templates, not bespoke design):
-
-- Executive infographic (one page)
-- Synthesis map (concept graph of themes, tensions, open questions)
-- Prompt-to-output storyboard (phase-by-phase outputs)
-- Tension map (polarity and disagreement representation)
-- Decision and commitment map (decisions, owners, dependencies)
-
-Acceptance criteria: each artifact is generated from a structured data contract keyed by meeting phase and prompt, respects anonymization, and is reproducible on rerun.
-
----
-
-### Sprint 7 — TTS voice + voice cloning for prompt delivery
-
-**Goal**: Prompts can be read by a generic synthesized voice or a cloned version of the host's voice.
-
-Integrate ElevenLabs. Implement three prompt delivery modes: (1) host reads live from the prompt card, (2) a generic TTS voice reads the prompt aloud, (3) a cloned host voice reads the prompt. Voice cloning requires an explicit consent flow and a short voice recording session before the meeting. The cloned voice can speak into breakout rooms even when the host is physically absent from those rooms — this is the key power of the feature.
-
-Risk: voice clone quality and low-latency playback into active breakout rooms are both technically non-trivial. Design a clean fallback to generic TTS if clone delivery fails.
-
-Deliverable: all three voice modes work reliably within a live meeting.
-
----
-
-### Sprint 8 — Pre-meeting interview + AI meeting designer
-
-**Goal**: A convener can describe what they want to achieve, and Weave produces a draft meeting script.
-
-Build a pre-meeting interview flow that asks the convener about their goals, the change they are trying to make, who should be in the room, and what a successful outcome looks like. Use an LLM to translate those answers into a draft meeting script: phase sequence, timing, prompt text for each phase, and breakout group configuration. The convener reviews and edits the draft before launching. This closes the loop on the full Weave experience: from intent to meeting to output.
-
-The interview UI can be a simple structured form for MVP — a fully conversational LLM-driven interview is a post-MVP polish pass.
-
-Deliverable: end-to-end Weave flow works — from pre-meeting interview to live choreographed meeting to synthesized output document.
-
----
-
-## Full Product Description (for planning context)
+# Full Product Description (for planning context)
 
 ### What Weave does
 
@@ -433,7 +392,7 @@ Capacity-aware allocation is a post-MVP expansion. The MVP (Sprints 1-8) proves 
 
 Proposed sequencing:
 
-- **Backlog (immediately):** add the PlayNet-native data model and access model to @[planning.md](http://planning.md) so the core system does not paint us into a corner.
+- **Backlog (immediately):** add the PlayNet-native data model and access model to @[WEAVE_PLANNING.md](http://WEAVE_PLANNING.md) so the core system does not paint us into a corner.
 - **Phase 2 (Sprints 9-12):** implement a minimal allocator that can schedule a meeting from a structured request against availability + working hours.
 - **Phase 3 (Sprints 13-16):** dependent-demand recipes, capability matching, load balancing, and "summon" workflows.
 
@@ -445,23 +404,13 @@ Proposed sequencing:
 - Allocator proposes 1-3 meeting options (people + time) based on constraints.
 - Confirmation step writes calendar events and creates a Weave meeting script stub.
 
-## Antigravity message log (sequential)
-
-Send these messages to Antigravity in order. Mark each checkbox when complete.
-
-- [ ]  Message 0: Reframe Weave as a facilitation programming system, analogous to Playwright for meetings. State that meetings are labor, invitations are work, the MVP starts with manual invites, and the full data model plus access control are built from PlayNet primitives.
-- [ ]  Message 1: Re-read the Weave prompt and confirm you will not start coding. Your first deliverables are `@tasks.md`, `@planning.md`, `@claude.md`.
-- [ ]  Message 2: Add a first-class "Body Doubling" meeting type (focused co-work container) to the plan. Define minimal MVP scope: intent prompt, timed cocoon focus block, optional screenshare, micro check-ins, and a session log artifact.
-- [ ]  Message 3: Update the 8-sprint roadmap placement: screenshare in Sprint 1; body doubling implemented in Sprint 4 as a predefined script + UI skin (on top of the script engine).
-- [ ]  Message 4: In `@planning.md`, add the data model additions for body doubling (SessionIntent, FocusBlock, CheckIn, SessionLog) and note what is explicitly out of scope for MVP (social discovery, presence, inbound calling, notifications).
-
 ## Document Requirements
 
-### `@tasks.md`
+### `@WEAVE_TASKS.md`
 
 Organize all tasks by sprint (Sprint 1 through Sprint 8). Within each sprint, group tasks by area (language/runtime, infrastructure, backend, frontend, integrations). Each task is a checkbox with enough specificity to hand to a developer. Flag dependencies explicitly: if Sprint 3 depends on a specific Sprint 2 API contract, name it.
 
-### `@planning.md`
+### `@WEAVE_PLANNING.md`
 
 Cover:
 
@@ -473,7 +422,7 @@ Cover:
 - Security model: how anonymization is enforced end-to-end, voice clone consent storage, who can access what
 - Risks and mitigations: broadcast latency, clone quality, transcription accuracy in noisy group calls, LLM synthesis of minority views
 
-### `@claude.md`
+### `@WEAVE_CLAUDE.md`
 
 Include:
 
@@ -487,302 +436,3 @@ Include:
 - Sprint 7 fallback plan if voice clone delivery proves unreliable
 - Body doubling conventions: intent capture, cocoon UX rules, check-in prompts, and what constitutes a "successful" session log
 
-https://github.com/LivingCodeNow/weave
-
-#### Create an MVP of Weave
-
-- App
-    
-    <aside>
-    🧑🏼‍💻
-    
-    ## **Phase 1 — foundation & core disruption (weeks 1–4)**
-    
-    </aside>
-    
-    <aside>
-    🧑🏼‍💻
-    
-    Week 1
-    
-    ## **Project scaffold + video foundation**
-    
-    Stand up the monorepo, auth, and a bare video room using LiveKit or Daily.co. Two people can join a room and see/hear each other. No features yet — just the plumbing.
-    
-    LiveKit / Daily SDK
-    
-    Auth
-    
-    Room model
-    
-    Deliverable: shareable video room link that works
-    
-    </aside>
-    
-    <aside>
-    🧑🏼‍💻
-    
-    ## Week 2
-    
-    ## **Breakout rooms — the core disruption**
-    
-    Build the breakout engine: create N rooms, assign participants, move them in/out programmatically. Host controls to send people to breakouts and recall them to plenary. This is the heart of the MVP.
-    
-    Breakout engine
-    
-    Host controls
-    
-    Participant routing
-    
-    Deliverable: host can dispatch + recall groups in real time
-    
-    </aside>
-    
-
-## 📌 Actions & Progress
-
-[Untitled](https://www.notion.so/334dc35545c480948112d287a5df98a2?pvs=21)
-
-## 🔗 Related Resources
-
-[Untitled](https://www.notion.so/334dc35545c480c4bee3c6347a03c993?pvs=21)
-
-## 📝 Notes & Updates
-
-- 
-
-#### Embodied signals to organizational flows (metaphor engine)
-
-#### S1 (Week 1): Project scaffold + video foundation
-
-### Project Overview
-
-Stand up the monorepo, auth, and a bare video room using LiveKit or [Daily.co](http://Daily.co). Two people can join a room and see and hear each other. No meeting features yet, just the plumbing.
-
-### Goals & Objectives
-
-- Validate the video SDK choice and integration path.
-- Establish working authentication.
-- Establish a basic room model that the rest of the product can build on.
-
-### Timeline & Milestones
-
-- End of week deliverable: shareable video room link that works.
-
-### Actions & Progress
-
-[Untitled](https://www.notion.so/334dc35545c481649766ceb7a99b7d5a?pvs=21)
-
-### Related Resources
-
-[Untitled](https://www.notion.so/334dc35545c48141ac9ad747d93e8ce6?pvs=21)
-
-### Notes & Updates
-
-- 
-
-#### S2 (Week 2): Breakout rooms (core disruption)
-
-### Project Overview
-
-Build the breakout engine. Create N rooms, assign participants, and move them in and out programmatically. Host controls to send people to breakouts and recall them to plenary.
-
-### Goals & Objectives
-
-- Implement breakout room creation and management.
-- Implement host controls for dispatch and recall.
-- Implement participant routing between rooms.
-
-### Timeline & Milestones
-
-- End of week deliverable: host can dispatch and recall groups in real time.
-
-### Actions & Progress
-
-[Untitled](https://www.notion.so/334dc35545c48161a05de5e2b17c1c89?pvs=21)
-
-### Related Resources
-
-[Untitled](https://www.notion.so/334dc35545c4810e83f4dc94defb8055?pvs=21)
-
-### Notes & Updates
-
-- 
-
-#### S3 (Week 3): Broadcast + prompt display system
-
-### Project Overview
-
-While participants are in breakouts, the host can broadcast audio and a visible prompt card into all rooms simultaneously. Prompt cards display on screen and host reads live.
-
-### Goals & Objectives
-
-- Broadcast host audio into all breakout rooms.
-- Display prompt cards for all participants.
-- Complete the MVP loop: prompt, breakout, reconvene.
-
-### Timeline & Milestones
-
-- End of week deliverable: host speaks into all breakouts with prompt on screen.
-
-### Actions & Progress
-
-[Untitled](https://www.notion.so/334dc35545c4811ea580ca6b9482b4b1?pvs=21)
-
-### Related Resources
-
-[Untitled](https://www.notion.so/334dc35545c4810cbd28eafcf973a4e8?pvs=21)
-
-### Notes & Updates
-
-- 
-
-#### S4 (Week 4): Meeting script engine + timing choreography
-
-### Project Overview
-
-Build a state machine that drives the meeting through phases: plenary -> prompt -> breakout -> reconvene. Countdown timers visible to all. Host can pause and advance. Script is manually authored this sprint.
-
-### Goals & Objectives
-
-- Implement the script state machine.
-- Implement countdown timers visible to participants.
-- Implement robust phase transitions with host override.
-
-### Timeline & Milestones
-
-- End of week deliverable: a full choreographed meeting runs end-to-end.
-
-### Actions & Progress
-
-[Untitled](https://www.notion.so/334dc35545c481d5a331f6049a9e9b04?pvs=21)
-
-### Related Resources
-
-[Untitled](https://www.notion.so/334dc35545c48111ba93df6e7ca85077?pvs=21)
-
-### Notes & Updates
-
-- 
-
-#### S5 (Week 5): Real-time transcription + anonymization
-
-### Project Overview
-
-Pipe all room audio through Deepgram or AssemblyAI. Store transcripts tagged by room, phase, and speaker. Participant chooses named or anonymous before joining. Anonymization propagates to all stored data.
-
-### Goals & Objectives
-
-- Integrate Deepgram or AssemblyAI for real-time transcription.
-- Implement anonymization at join time.
-- Tag transcripts by room, phase, and speaker.
-
-### Timeline & Milestones
-
-- End of week deliverable: searchable transcript available post-meeting.
-
-### Actions & Progress
-
-[Untitled](https://www.notion.so/334dc35545c481f59760ea0ca4c6192e?pvs=21)
-
-### Related Resources
-
-[Untitled](https://www.notion.so/334dc35545c481cfb2fae7c4deb44d3f?pvs=21)
-
-### Notes & Updates
-
-- 
-
-#### S6 (Week 6): Post-meeting synthesis + collective mental model
-
-### Project Overview
-
-Run an LLM pass over all transcripts to surface themes, tensions, and agreements. Output a shareable document the convener can distribute.
-
-### Goals & Objectives
-
-- Generate a synthesis from transcripts.
-- Produce a shareable output document.
-- Cluster themes in a way that preserves minority views.
-
-### Timeline & Milestones
-
-- End of week deliverable: auto-generated meeting summary document.
-
-### Actions & Progress
-
-[Untitled](https://www.notion.so/334dc35545c4812baa18f031cb8366a1?pvs=21)
-
-### Related Resources
-
-[Untitled](https://www.notion.so/334dc35545c48148b42ec4d623ebc192?pvs=21)
-
-### Notes & Updates
-
-- 
-
-#### S7 (Week 7): TTS voice + voice clone for prompts
-
-### Project Overview
-
-Integrate ElevenLabs. Three modes: host reads live, generic TTS reads, cloned host voice reads. Voice clone requires a consent flow and short recording. Cloned voice can speak into breakouts even when host is absent.
-
-### Goals & Objectives
-
-- Integrate ElevenLabs.
-- Implement consent and recording flow.
-- Implement prompt delivery modes (live, TTS, cloned).
-
-### Timeline & Milestones
-
-- End of week deliverable: all three voice modes working in a meeting.
-
-### Actions & Progress
-
-[Untitled](https://www.notion.so/334dc35545c481899b08d074e2339272?pvs=21)
-
-### Related Resources
-
-[Untitled](https://www.notion.so/334dc35545c481fdae3ce5f8492a2962?pvs=21)
-
-### Notes & Updates
-
-- 
-
-#### S8 (Week 8): Pre-meeting interview + meeting designer
-
-### Project Overview
-
-LLM-driven interview that asks the convener about goals, stakeholders, and desired outcomes. Outputs a draft meeting script (phases, prompts, breakout config, timing). Convener edits before launching.
-
-### Goals & Objectives
-
-- Build the interview UI.
-- Implement script generation from interview outputs.
-- Support convener review and edit before launch.
-
-### Timeline & Milestones
-
-- End of week deliverable: end-to-end Weave flow from idea to meeting to output.
-
-### Actions & Progress
-
-[Untitled](https://www.notion.so/334dc35545c4817f9662dc40d7787ab0?pvs=21)
-
-### Related Resources
-
-[Untitled](https://www.notion.so/334dc35545c481969344ca3326b5156e?pvs=21)
-
-### Notes & Updates
-
-- 
-
-## Sprints
-
-[Untitled](https://www.notion.so/1ab117520047454196049f5bae35f13e?pvs=21)
-
-## Project Resources
-
-[Untitled](https://www.notion.so/334dc35545c4805b9a26c5b33d15f949?pvs=21)
-
-[Backlog: Script culture + competition](https://www.notion.so/Backlog-Script-culture-competition-c1981111dd9f4403adab1b4e22c9746f?pvs=21)
