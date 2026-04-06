@@ -31,6 +31,7 @@
              (playnet ui charts)
              (playnet ui federation)
              (playnet ui network)
+             (playnet ui calendar)
              (srfi srfi-11))
 
 
@@ -218,6 +219,11 @@
 (define-foreign ls-remove-item
   "localStorage" "removeItem"
   (ref string) -> none)
+
+;;; ── File download FFI ────────────────────────────────────────────────────
+(define-foreign download-file
+  "file" "download"
+  (ref string) (ref string) (ref string) -> none)
 
 ;;; ── Key pair persistence FFI ──────────────────────────────────────────────
 ;;; saveKeyPair: fire-and-forget (async export in JS background)
@@ -596,6 +602,10 @@
 (define (%fold proc init lst)
   (if (null? lst) init
       (%fold proc (proc (car lst) init) (cdr lst))))
+(define (%find pred lst)
+  (cond ((null? lst) #f)
+        ((pred (car lst)) (car lst))
+        (else (%find pred (cdr lst)))))
 
 ;; Split into small chunks to avoid Hoot quasiquote size limits
 (define base-bindings
@@ -802,8 +812,20 @@
 (define *orgs* '())
 (define *pending-joins* '()) ;; alist: (joiner-name target-name sub-unsealer msg-id identity)
 (define *mode* 'outer)
-(define *view* 'home)  ;; 'home or 'dashboard — sub-view within outer mode
+(define *view* 'home)  ;; 'home, 'dashboard, 'federation, or 'calendar
 (define *current-org-name* #f)
+
+;;; ── Calendar state ──────────────────────────────────────────────────────────
+(define *cal-week-start* #f)        ;; epoch-ms of Monday 00:00; #f = compute from now
+(define *cal-events* '())           ;; list of event alists
+(define *cal-people* '())           ;; list of person alists
+(define *cal-availability* '())     ;; list of availability slot alists
+(define *cal-editing-event* #f)     ;; event alist being edited, or #f
+(define *cal-editing-avail* #f)     ;; #t when editing availability panel
+(define *cal-next-id* 1)            ;; auto-increment event ID
+(define *cal-selected-event* #f)    ;; event shown in detail panel (right sidebar)
+(define *cal-unscheduled-intents* '()) ;; work intents from planner not yet scheduled
+(define *cal-selected-intent* #f)   ;; intent ID selected for scheduling
 (define *vat* #f)
 (define *org* #f)
 
@@ -2608,6 +2630,16 @@
                           (when (eq? *mode* 'inner) (do-exit!))
                           (set! *view* 'federation) (refresh!))))
              "federation")
+        (div (@ (class ,(string-append "tab" (if (and (eq? *mode* 'outer) (eq? *view* 'calendar)) " tab-active" "")))
+                (click ,(lambda (e)
+                          (when (eq? *mode* 'inner) (do-exit!))
+                          (when (not *cal-week-start*)
+                            (set! *cal-week-start* (week-start-ms (inexact->exact (floor (date-now))))))
+                          (set! *cal-unscheduled-intents* (extract-work-intents))
+                          (set! *view* 'calendar) (refresh!)
+                          (let ((w (get-element-by-id "cal-grid-wrap")))
+                            (when w (set-scroll-top! w 480))))))
+             "calendar")
         ,@(map (lambda (org-entry)
                  (let* ((name (org-entry-name org-entry))
                         (active? (and (eq? *mode* 'inner) *current-org-name*
@@ -2916,6 +2948,569 @@
    #:svg-width 1100
    #:svg-height 720))
 
+;;; ── Calendar persistence ────────────────────────────────────────────────────
+
+(define (serialize-events events)
+  "Serialize events to a localStorage-friendly string.
+   Format: id|title|date|sh|sm|eh|em|person|location|color|source|description|status;..."
+  (let loop ((evts events) (acc ""))
+    (if (null? evts) acc
+        (let ((e (car evts)))
+          (loop (cdr evts)
+                (string-append acc (if (string=? acc "") "" ";")
+                  (alist-ref e 'id "") "|"
+                  (alist-ref e 'title "") "|"
+                  (alist-ref e 'date "") "|"
+                  (number->string (alist-ref e 'start-hour 0)) "|"
+                  (number->string (alist-ref e 'start-min 0)) "|"
+                  (number->string (alist-ref e 'end-hour 0)) "|"
+                  (number->string (alist-ref e 'end-min 0)) "|"
+                  (alist-ref e 'person "") "|"
+                  (alist-ref e 'location "") "|"
+                  (alist-ref e 'color "#63b3ed") "|"
+                  (let ((s (alist-ref e 'source 'event)))
+                    (cond ((eq? s 'commitment) "commitment")
+                          ((eq? s 'intent) "intent")
+                          (else "event"))) "|"
+                  (alist-ref e 'description "") "|"
+                  (let ((st (alist-ref e 'status 'open)))
+                    (cond ((eq? st 'committed) "committed")
+                          ((eq? st 'fulfilled) "fulfilled")
+                          (else "open"))) "|"
+                  (if (alist-ref e 'all-day #f) "1" "0")))))))
+
+(define (split-string s ch)
+  "Split string S on character CH. Returns list of substrings."
+  (let loop ((s s) (acc '()))
+    (let ((idx (string-index s ch)))
+      (if idx
+          (loop (substring s (+ idx 1))
+                (cons (substring s 0 idx) acc))
+          (reverse (cons s acc))))))
+
+(define (safe-string->number s)
+  (or (string->number s) 0))
+
+(define (deserialize-events raw)
+  "Parse serialized events string back to alist list."
+  (if (or (not raw) (string=? raw "")) '()
+      (let ((records (split-string raw #\;)))
+        (filter (lambda (x) x)
+         (map
+          (lambda (rec)
+            (let ((fields (split-string rec #\|)))
+              (if (< (length fields) 11) #f
+                  (let ((n (length fields)))
+                    (list (cons 'id       (list-ref fields 0))
+                          (cons 'title    (list-ref fields 1))
+                          (cons 'date     (list-ref fields 2))
+                          (cons 'start-hour (safe-string->number (list-ref fields 3)))
+                          (cons 'start-min  (safe-string->number (list-ref fields 4)))
+                          (cons 'end-hour   (safe-string->number (list-ref fields 5)))
+                          (cons 'end-min    (safe-string->number (list-ref fields 6)))
+                          (cons 'person   (list-ref fields 7))
+                          (cons 'location (list-ref fields 8))
+                          (cons 'color    (list-ref fields 9))
+                          (cons 'source   (let ((s (list-ref fields 10)))
+                                            (cond ((string=? s "commitment") 'commitment)
+                                                  ((string=? s "intent") 'intent)
+                                                  (else 'event))))
+                          (cons 'description (if (> n 11) (list-ref fields 11) ""))
+                          (cons 'status   (if (> n 12)
+                                              (let ((s (list-ref fields 12)))
+                                                (cond ((string=? s "committed") 'committed)
+                                                      ((string=? s "fulfilled") 'fulfilled)
+                                                      (else 'open)))
+                                              'open))
+                          (cons 'all-day  (if (> n 13)
+                                              (string=? (list-ref fields 13) "1")
+                                              #f)))))))
+          records)))))
+
+(define (serialize-people people)
+  "Serialize people: id|name|color|visible;..."
+  (let loop ((ps people) (acc ""))
+    (if (null? ps) acc
+        (let ((p (car ps)))
+          (loop (cdr ps)
+                (string-append acc (if (string=? acc "") "" ";")
+                  (alist-ref p 'id "") "|"
+                  (alist-ref p 'name "") "|"
+                  (alist-ref p 'color "#63b3ed") "|"
+                  (if (alist-ref p 'visible #t) "1" "0")))))))
+
+(define (deserialize-people raw)
+  (if (or (not raw) (string=? raw "")) '()
+      (let ((records (split-string raw #\;)))
+        (filter (lambda (x) x)
+         (map
+          (lambda (rec)
+            (let ((fields (split-string rec #\|)))
+              (if (< (length fields) 4) #f
+                  (list (cons 'id      (list-ref fields 0))
+                        (cons 'name    (list-ref fields 1))
+                        (cons 'color   (list-ref fields 2))
+                        (cons 'visible (string=? (list-ref fields 3) "1"))))))
+          records)))))
+
+(define (save-calendar!)
+  (ls-set-item "playnet-cal-events" (serialize-events *cal-events*))
+  (ls-set-item "playnet-cal-people" (serialize-people *cal-people*)))
+
+(define (load-calendar!)
+  (let ((raw-e (ls-get-item "playnet-cal-events"))
+        (raw-p (ls-get-item "playnet-cal-people")))
+    (when raw-e (set! *cal-events* (deserialize-events raw-e)))
+    (when raw-p (set! *cal-people* (deserialize-people raw-p)))
+    ;; Set next-id past existing
+    (for-each (lambda (e)
+                (let* ((id-str (alist-ref e 'id ""))
+                       (num (safe-string->number
+                             (if (> (string-length id-str) 4)
+                                 (substring id-str 4)
+                                 "0"))))
+                  (when (>= num *cal-next-id*)
+                    (set! *cal-next-id* (+ num 1)))))
+              *cal-events*)))
+
+(define (cal-ensure-person! person-id)
+  "Add person to *cal-people* if not already present."
+  (when (and (not (string=? person-id ""))
+             (not (%find (lambda (p) (equal? (alist-ref p 'id) person-id)) *cal-people*)))
+    (set! *cal-people*
+          (append *cal-people*
+                  (list (list (cons 'id person-id)
+                              (cons 'name person-id)
+                              (cons 'color (person-color person-id *cal-people*))
+                              (cons 'visible #t)))))))
+
+(define (extract-work-intents)
+  "Extract unscheduled work intents from federation commitment data."
+  (let loop ((scopes *fed-commitments*) (acc '()))
+    (if (null? scopes) (reverse acc)
+        (let* ((scope-entry (car scopes))
+               (scope-name (car scope-entry))
+               (commitments (cdr scope-entry))
+               ;; Find processes for this scope
+               (scope-procs (let ((p (assoc scope-name *fed-processes* equal?)))
+                              (if p (cdr p) '())))
+               (work-intents
+                (filter (lambda (c) (eq? (alist-ref c 'action #f) 'work))
+                        commitments))
+               (intent-alists
+                (map (lambda (c)
+                       (let* ((proc-id (alist-ref c 'input-of ""))
+                              (proc (%find (lambda (p) (equal? (alist-ref p 'id) proc-id))
+                                          scope-procs))
+                              (proc-name (if proc (alist-ref proc 'name proc-id) proc-id)))
+                         (list (cons 'id (alist-ref c 'id ""))
+                               (cons 'process-name proc-name)
+                               (cons 'process-id proc-id)
+                               (cons 'resource-spec (alist-ref c 'resource-conforms-to ""))
+                               (cons 'effort-qty (alist-ref c 'effort-qty 0))
+                               (cons 'effort-unit (alist-ref c 'effort-unit "hr"))
+                               (cons 'scope scope-name))))
+                     work-intents)))
+          (loop (cdr scopes) (append acc intent-alists))))))
+
+(define (cycle-event-status! evt new-status)
+  "Cycle a VF event's status, persist, and show detail panel."
+  (let ((evt-id (alist-ref evt 'id "")))
+    (set! *cal-events*
+          (map (lambda (ev)
+                 (if (equal? (alist-ref ev 'id) evt-id)
+                     (map (lambda (pair)
+                            (if (eq? (car pair) 'status)
+                                (cons 'status new-status)
+                                pair))
+                          ev)
+                     ev))
+               *cal-events*))
+    ;; Also show the detail panel for the updated event
+    (set! *cal-selected-event*
+          (%find (lambda (ev) (equal? (alist-ref ev 'id) evt-id))
+                 *cal-events*))
+    (save-calendar!)
+    (refresh!)))
+
+;;; ── Calendar view ───────────────────────────────────────────────────────────
+
+(define (render-calendar-view)
+  "Render the calendar page, wiring state to the pure calendar module."
+  (let ((ws (or *cal-week-start*
+                (week-start-ms (inexact->exact (floor (date-now)))))))
+    (calendar-page
+     #:week-start-ms ws
+     #:events *cal-events*
+     #:people *cal-people*
+     #:availability *cal-availability*
+     #:editing-event *cal-editing-event*
+     #:editing-availability *cal-editing-avail*
+     #:current-time-ms (inexact->exact (floor (date-now)))
+     #:unscheduled-intents *cal-unscheduled-intents*
+     #:selected-intent-id (and *cal-selected-intent*
+                                (alist-ref *cal-selected-intent* 'id #f))
+     #:on-select-intent (lambda (intent)
+                          (if (and *cal-selected-intent*
+                                   (equal? (alist-ref *cal-selected-intent* 'id)
+                                           (alist-ref intent 'id)))
+                              (set! *cal-selected-intent* #f)
+                              (set! *cal-selected-intent* intent))
+                          (refresh!))
+     #:selected-event *cal-selected-event*
+     #:process-commitments
+       (if (and *cal-selected-event*
+                (alist-ref *cal-selected-event* 'vf-process-id #f))
+           ;; Find other events in the same process
+           (filter (lambda (ev)
+                     (and (not (equal? (alist-ref ev 'id)
+                                       (alist-ref *cal-selected-event* 'id)))
+                          (equal? (alist-ref ev 'vf-process-id #f)
+                                  (alist-ref *cal-selected-event* 'vf-process-id))))
+                   *cal-events*)
+           '())
+     #:process-flows
+       (if (and *cal-selected-event*
+                (alist-ref *cal-selected-event* 'vf-process-id #f))
+           ;; Get all commitments for this process from federation data
+           (let* ((proc-id (alist-ref *cal-selected-event* 'vf-process-id))
+                  (scope (alist-ref *cal-selected-event* 'vf-scope ""))
+                  (scope-cmts (let ((s (assoc scope *fed-commitments* equal?)))
+                                (if s (cdr s) '())))
+                  ;; Filter to this process's commitments
+                  (proc-cmts (filter (lambda (c)
+                                       (or (equal? (alist-ref c 'input-of #f) proc-id)
+                                           (equal? (alist-ref c 'output-of #f) proc-id)))
+                                     scope-cmts)))
+             (map (lambda (c)
+                    (let* ((is-input (alist-ref c 'input-of #f))
+                           (act (alist-ref c 'action 'consume))
+                           (spec (alist-ref c 'resource-conforms-to ""))
+                           (qty (or (alist-ref c 'qty 0)
+                                    (alist-ref c 'effort-qty 0)))
+                           (unit (or (alist-ref c 'unit "")
+                                     (alist-ref c 'effort-unit ""))))
+                      (list (cons 'spec spec)
+                            (cons 'qty qty)
+                            (cons 'unit unit)
+                            (cons 'action act)
+                            (cons 'is-input (if is-input #t #f)))))
+                  proc-cmts))
+           '())
+     #:supply-chain
+       (if (and *cal-selected-event*
+                (alist-ref *cal-selected-event* 'vf-process-id #f))
+           ;; Find upstream (processes that output what this consumes)
+           ;; and downstream (processes that consume what this outputs)
+           (let* ((proc-id (alist-ref *cal-selected-event* 'vf-process-id))
+                  (scope (alist-ref *cal-selected-event* 'vf-scope ""))
+                  (scope-cmts (let ((s (assoc scope *fed-commitments* equal?)))
+                                (if s (cdr s) '())))
+                  (scope-procs (let ((p (assoc scope *fed-processes* equal?)))
+                                 (if p (cdr p) '())))
+                  ;; Inputs to this process (what it consumes)
+                  (inputs (filter (lambda (c)
+                                    (and (equal? (alist-ref c 'input-of #f) proc-id)
+                                         (not (eq? (alist-ref c 'action #f) 'work))))
+                                  scope-cmts))
+                  ;; Outputs from this process
+                  (outputs (filter (lambda (c)
+                                     (equal? (alist-ref c 'output-of #f) proc-id))
+                                   scope-cmts))
+                  ;; Find upstream: processes that produce what we consume
+                  (upstream
+                   (filter (lambda (x) x)
+                    (map (lambda (inp)
+                           (let* ((spec (alist-ref inp 'resource-conforms-to ""))
+                                  ;; Find commitment that outputs this spec
+                                  (producer (%find (lambda (c)
+                                                     (and (alist-ref c 'output-of #f)
+                                                          (equal? (alist-ref c 'resource-conforms-to "") spec)))
+                                                   scope-cmts))
+                                  (up-proc-id (and producer (alist-ref producer 'output-of #f)))
+                                  (up-proc (%find (lambda (p) (equal? (alist-ref p 'id) up-proc-id))
+                                                  scope-procs)))
+                             (if up-proc
+                                 (list (cons 'direction 'up)
+                                       (cons 'process (alist-ref up-proc 'name ""))
+                                       (cons 'spec spec)
+                                       (cons 'scope ""))
+                                 #f)))
+                         inputs)))
+                  ;; Find downstream: processes that consume what we produce
+                  (downstream
+                   (filter (lambda (x) x)
+                    (map (lambda (outp)
+                           (let* ((spec (alist-ref outp 'resource-conforms-to ""))
+                                  ;; Find commitment that inputs this spec in another process
+                                  (consumer (%find (lambda (c)
+                                                     (and (alist-ref c 'input-of #f)
+                                                          (not (equal? (alist-ref c 'input-of #f) proc-id))
+                                                          (equal? (alist-ref c 'resource-conforms-to "") spec)))
+                                                   scope-cmts))
+                                  (down-proc-id (and consumer (alist-ref consumer 'input-of #f)))
+                                  (down-proc (%find (lambda (p) (equal? (alist-ref p 'id) down-proc-id))
+                                                    scope-procs)))
+                             (if down-proc
+                                 (list (cons 'direction 'down)
+                                       (cons 'process (alist-ref down-proc 'name ""))
+                                       (cons 'spec spec)
+                                       (cons 'scope ""))
+                                 #f)))
+                         outputs))))
+             (append upstream downstream))
+           '())
+     #:on-event-click (lambda (evt)
+                        (let ((source (alist-ref evt 'source 'event))
+                              (status (alist-ref evt 'status 'open)))
+                          (cond
+                           ;; VF open → committed
+                           ((and (or (eq? source 'intent) (eq? source 'commitment))
+                                 (eq? status 'open))
+                            (cycle-event-status! evt 'committed))
+                           ;; VF committed → fulfilled
+                           ((and (or (eq? source 'intent) (eq? source 'commitment))
+                                 (eq? status 'committed))
+                            (cycle-event-status! evt 'fulfilled))
+                           ;; VF fulfilled → back to open (loop)
+                           ((and (or (eq? source 'intent) (eq? source 'commitment))
+                                 (eq? status 'fulfilled))
+                            (cycle-event-status! evt 'open))
+                           ;; Non-VF: open detail panel
+                           (else
+                            (set! *cal-selected-event* evt)
+                            (set! *cal-editing-event* #f)
+                            (refresh!)))))
+     #:on-close-detail (lambda (e)
+                         (set! *cal-selected-event* #f)
+                         (refresh!))
+     #:on-edit-from-detail (lambda (e)
+                             (set! *cal-editing-event* *cal-selected-event*)
+                             (set! *cal-selected-event* #f)
+                             (refresh!))
+     #:on-delete-from-detail (lambda (e)
+                               (let ((evt-id (alist-ref *cal-selected-event* 'id "")))
+                                 (set! *cal-events*
+                                       (filter (lambda (ev)
+                                                 (not (equal? (alist-ref ev 'id) evt-id)))
+                                               *cal-events*))
+                                 (set! *cal-selected-event* #f)
+                                 (save-calendar!)
+                                 (refresh!)))
+     #:on-slot-click (lambda (date-str hour)
+                       (set! *cal-selected-event* #f)
+                       (let ((id (string-append "evt-" (number->string *cal-next-id*))))
+                         (if *cal-selected-intent*
+                             ;; Two-click scheduling: intent + time slot → VF event
+                             (let* ((intent *cal-selected-intent*)
+                                    (qty (alist-ref intent 'effort-qty 1))
+                                    (end-h (min 23 (+ hour (max 1 (inexact->exact (ceiling qty)))))))
+                               (set! *cal-editing-event*
+                                     (list (cons 'id id)
+                                           (cons 'title (string-append
+                                                         (alist-ref intent 'process-name "Work")
+                                                         " (" (alist-ref intent 'resource-spec "") ")"))
+                                           (cons 'date date-str)
+                                           (cons 'start-hour hour)
+                                           (cons 'start-min 0)
+                                           (cons 'end-hour end-h)
+                                           (cons 'end-min 0)
+                                           (cons 'person "me")
+                                           (cons 'location "")
+                                           (cons 'description "")
+                                           (cons 'color "#63b3ed")
+                                           (cons 'source 'commitment)
+                                           (cons 'status 'open)
+                                           (cons 'vf-process-id (alist-ref intent 'process-id ""))
+                                           (cons 'vf-action 'work)
+                                           (cons 'vf-resource-spec (alist-ref intent 'resource-spec ""))
+                                           (cons 'vf-effort-qty qty)
+                                           (cons 'vf-effort-unit (alist-ref intent 'effort-unit "hr"))
+                                           (cons 'vf-scope (alist-ref intent 'scope ""))
+                                           (cons 'vf-fulfilled-qty 0)))
+                               (set! *cal-selected-intent* #f)
+                               (refresh!))
+                             ;; Normal: create plain event
+                             (begin
+                               (set! *cal-editing-event*
+                                     (list (cons 'id id)
+                                           (cons 'title "")
+                                           (cons 'date date-str)
+                                           (cons 'start-hour hour)
+                                           (cons 'start-min 0)
+                                           (cons 'end-hour (min 23 (+ hour 1)))
+                                           (cons 'end-min 0)
+                                           (cons 'person "me")
+                                           (cons 'location "")
+                                           (cons 'description "")
+                                           (cons 'color "#63b3ed")
+                                           (cons 'source 'event)
+                                           (cons 'status 'open)))
+                               (refresh!)))))
+     #:on-prev-week (lambda (e)
+                      (set! *cal-week-start* (- ws 604800000))
+                      (refresh!))
+     #:on-next-week (lambda (e)
+                      (set! *cal-week-start* (+ ws 604800000))
+                      (refresh!))
+     #:on-today (lambda (e)
+                  (set! *cal-week-start*
+                        (week-start-ms (inexact->exact (floor (date-now)))))
+                  (refresh!))
+     #:on-toggle-person (lambda (person-id)
+                          (set! *cal-people*
+                                (map (lambda (p)
+                                       (if (equal? (alist-ref p 'id) person-id)
+                                           (let ((vis (alist-ref p 'visible #t)))
+                                             (map (lambda (pair)
+                                                    (if (eq? (car pair) 'visible)
+                                                        (cons 'visible (not vis))
+                                                        pair))
+                                                  p))
+                                           p))
+                                     *cal-people*))
+                          (save-calendar!)
+                          (refresh!))
+     #:on-toggle-avail-editor (lambda (e)
+                                (set! *cal-editing-avail* (not *cal-editing-avail*))
+                                (refresh!))
+     #:on-save-event (lambda (e)
+                       ;; Read values from modal inputs
+                       (let* ((title-el (get-element-by-id "cal-evt-title"))
+                              (person-el (get-element-by-id "cal-evt-person"))
+                              (loc-el (get-element-by-id "cal-evt-location"))
+                              (desc-el (get-element-by-id "cal-evt-desc"))
+                              (sh-el (get-element-by-id "cal-evt-sh"))
+                              (sm-el (get-element-by-id "cal-evt-sm"))
+                              (eh-el (get-element-by-id "cal-evt-eh"))
+                              (em-el (get-element-by-id "cal-evt-em"))
+                              (title (element-value title-el))
+                              (person (element-value person-el))
+                              (loc (element-value loc-el))
+                              (desc (element-value desc-el))
+                              (sh (safe-string->number (element-value sh-el)))
+                              (sm (safe-string->number (element-value sm-el)))
+                              (eh (safe-string->number (element-value eh-el)))
+                              (em (safe-string->number (element-value em-el)))
+                              (evt-id (alist-ref *cal-editing-event* 'id ""))
+                              (evt-date (alist-ref *cal-editing-event* 'date ""))
+                              (evt-source (alist-ref *cal-editing-event* 'source 'event))
+                              (evt-status (alist-ref *cal-editing-event* 'status 'open)))
+                         ;; Ensure person exists in people list
+                         (cal-ensure-person! person)
+                         (let* ((color (person-color person *cal-people*))
+                                (new-evt (list (cons 'id evt-id)
+                                              (cons 'title title)
+                                              (cons 'date evt-date)
+                                              (cons 'start-hour sh)
+                                              (cons 'start-min sm)
+                                              (cons 'end-hour eh)
+                                              (cons 'end-min em)
+                                              (cons 'person person)
+                                              (cons 'location loc)
+                                              (cons 'description desc)
+                                              (cons 'color color)
+                                              (cons 'source evt-source)
+                                              (cons 'status evt-status))))
+                           ;; Remove old version if exists, add new
+                           (set! *cal-events*
+                                 (cons new-evt
+                                       (filter (lambda (ev)
+                                                 (not (equal? (alist-ref ev 'id) evt-id)))
+                                               *cal-events*)))
+                           ;; Advance ID counter if this was new
+                           (when (>= *cal-next-id*
+                                     (safe-string->number
+                                      (if (> (string-length evt-id) 4)
+                                          (substring evt-id 4) "0")))
+                             (set! *cal-next-id* (+ *cal-next-id* 1)))
+                           (set! *cal-editing-event* #f)
+                           (save-calendar!)
+                           (refresh!))))
+     #:on-delete-event (lambda (e)
+                         (let ((evt-id (alist-ref *cal-editing-event* 'id "")))
+                           (set! *cal-events*
+                                 (filter (lambda (ev)
+                                           (not (equal? (alist-ref ev 'id) evt-id)))
+                                         *cal-events*))
+                           (set! *cal-editing-event* #f)
+                           (save-calendar!)
+                           (refresh!)))
+     #:on-cancel-edit (lambda (e)
+                        (set! *cal-editing-event* #f)
+                        (refresh!))
+     #:on-save-availability (lambda (e)
+                              ;; Read availability form values
+                              (set! *cal-availability*
+                                    (let build ((day 0) (acc '()))
+                                      (if (= day 7) (reverse acc)
+                                          (let* ((sh-el (get-element-by-id
+                                                         (string-append "avail-sh-" (number->string day))))
+                                                 (eh-el (get-element-by-id
+                                                         (string-append "avail-eh-" (number->string day))))
+                                                 (sh (if sh-el (safe-string->number (element-value sh-el)) 9))
+                                                 (eh (if eh-el (safe-string->number (element-value eh-el)) 17)))
+                                            (build (+ day 1)
+                                                   (if (< sh eh)
+                                                       (cons (list (cons 'person "me")
+                                                                   (cons 'day day)
+                                                                   (cons 'start-hour sh)
+                                                                   (cons 'start-min 0)
+                                                                   (cons 'end-hour eh)
+                                                                   (cons 'end-min 0))
+                                                             acc)
+                                                       acc))))))
+                              (set! *cal-editing-avail* #f)
+                              (save-calendar!)
+                              (refresh!))
+     #:on-cancel-availability (lambda (e)
+                                (set! *cal-editing-avail* #f)
+                                (refresh!))
+     #:on-record-effort
+       (if (and *cal-selected-event*
+                (alist-ref *cal-selected-event* 'vf-process-id #f))
+           (lambda (e)
+             (let* ((qty-el (get-element-by-id "cal-effort-qty"))
+                    (qty (if qty-el (safe-string->number (element-value qty-el)) 1))
+                    (evt-id (alist-ref *cal-selected-event* 'id ""))
+                    (old-fulfilled (alist-ref *cal-selected-event* 'vf-fulfilled-qty 0))
+                    (new-fulfilled (+ old-fulfilled qty)))
+               ;; Update the event's fulfilled qty
+               (set! *cal-events*
+                     (map (lambda (ev)
+                            (if (equal? (alist-ref ev 'id) evt-id)
+                                (map (lambda (pair)
+                                       (cond ((eq? (car pair) 'vf-fulfilled-qty)
+                                              (cons 'vf-fulfilled-qty new-fulfilled))
+                                             ;; Auto-mark committed if still open
+                                             ((and (eq? (car pair) 'status)
+                                                   (eq? (cdr pair) 'open))
+                                              (cons 'status 'committed))
+                                             (else pair)))
+                                     ev)
+                                ev))
+                          *cal-events*))
+               ;; Update selected event to reflect change
+               (set! *cal-selected-event*
+                     (%find (lambda (ev) (equal? (alist-ref ev 'id) evt-id))
+                            *cal-events*))
+               (save-calendar!)
+               (refresh!)))
+           #f)
+     #:stop-prop (lambda (e) (stop-propagation! e))
+     #:on-export (lambda (e)
+                   ;; Export all events as .ics file
+                   (let* ((ical-header "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//playnet//calendar//EN\r\n")
+                          (ical-footer "END:VCALENDAR\r\n")
+                          (body (let loop ((evts *cal-events*) (acc ""))
+                                  (if (null? evts) acc
+                                      (loop (cdr evts)
+                                            (string-append acc (event->ical (car evts))))))))
+                     (download-file
+                      (string-append ical-header body ical-footer)
+                      "playnet-calendar.ics"
+                      "text/calendar"))))))
+
 (define (render)
   (if (eq? *mode* 'outer)
       ;; Outer mode: single column, no IDE chrome
@@ -2925,6 +3520,7 @@
             ,(cond
               ((eq? *view* 'dashboard) (render-dashboard))
               ((eq? *view* 'federation) (render-federation-view))
+              ((eq? *view* 'calendar) (render-calendar-view))
               (else (render-homepage)))
             ,(render-repl))
       ;; Inner mode: full IDE with sidebar + code viewer
@@ -2980,6 +3576,80 @@
                                              (number->string (length *orgs*))
                                              " org(s) from browser storage.\n"))
                       *log*))))
+
+;;; ── Restore calendar data ──────────────────────────────────────────────────
+(load-calendar!)
+;; Seed sample data if calendar is empty (first load)
+(when (null? *cal-events*)
+  (let* ((now-ms (inexact->exact (floor (date-now))))
+         (ws (week-start-ms now-ms))
+         (mon (date-parts->date-string (epoch-ms->date-parts ws)))
+         (tue (date-parts->date-string (epoch-ms->date-parts (+ ws 86400000))))
+         (wed (date-parts->date-string (epoch-ms->date-parts (+ ws (* 2 86400000)))))
+         (thu (date-parts->date-string (epoch-ms->date-parts (+ ws (* 3 86400000)))))
+         (fri (date-parts->date-string (epoch-ms->date-parts (+ ws (* 4 86400000))))))
+    (set! *cal-events*
+          (list ;; All-day event
+                (list (cons 'id "evt-0") (cons 'title "Sprint Week 14")
+                      (cons 'date mon) (cons 'start-hour 0) (cons 'start-min 0)
+                      (cons 'end-hour 0) (cons 'end-min 0) (cons 'person "alice")
+                      (cons 'location "") (cons 'color "#a8e6cf")
+                      (cons 'source 'event) (cons 'all-day #t)
+                      (cons 'status 'open) (cons 'description ""))
+                (list (cons 'id "evt-1") (cons 'title "Planning sync")
+                      (cons 'date mon) (cons 'start-hour 9) (cons 'start-min 0)
+                      (cons 'end-hour 10) (cons 'end-min 0) (cons 'person "alice")
+                      (cons 'location "Room A") (cons 'color "#63b3ed") (cons 'source 'event))
+                (list (cons 'id "evt-2") (cons 'title "Code review")
+                      (cons 'date mon) (cons 'start-hour 14) (cons 'start-min 0)
+                      (cons 'end-hour 15) (cons 'end-min 30) (cons 'person "bob")
+                      (cons 'location "") (cons 'color "#f6ad55") (cons 'source 'event))
+                (list (cons 'id "evt-3") (cons 'title "Standup")
+                      (cons 'date tue) (cons 'start-hour 9) (cons 'start-min 30)
+                      (cons 'end-hour 10) (cons 'end-min 0) (cons 'person "alice")
+                      (cons 'location "") (cons 'color "#63b3ed") (cons 'source 'event))
+                (list (cons 'id "evt-4") (cons 'title "Design session")
+                      (cons 'date wed) (cons 'start-hour 11) (cons 'start-min 0)
+                      (cons 'end-hour 12) (cons 'end-min 30) (cons 'person "carol")
+                      (cons 'location "Studio") (cons 'color "#b794f4") (cons 'source 'event))
+                ;; VF work commitment: threshing labor
+                (list (cons 'id "evt-5") (cons 'title "Threshing (labor)")
+                      (cons 'date wed) (cons 'start-hour 9) (cons 'start-min 0)
+                      (cons 'end-hour 17) (cons 'end-min 0) (cons 'person "alice")
+                      (cons 'location "") (cons 'color "#63b3ed")
+                      (cons 'source 'commitment) (cons 'status 'open)
+                      (cons 'description "Threshing wheat for commune-grain")
+                      (cons 'vf-process-id "thresh") (cons 'vf-action 'work)
+                      (cons 'vf-resource-spec "labor") (cons 'vf-effort-qty 8)
+                      (cons 'vf-effort-unit "hr") (cons 'vf-scope "commune-grain")
+                      (cons 'vf-fulfilled-qty 4))
+                (list (cons 'id "evt-6") (cons 'title "Threshing (labor)")
+                      (cons 'date thu) (cons 'start-hour 9) (cons 'start-min 0)
+                      (cons 'end-hour 17) (cons 'end-min 0) (cons 'person "bob")
+                      (cons 'location "") (cons 'color "#f6ad55")
+                      (cons 'source 'commitment) (cons 'status 'open)
+                      (cons 'description "Threshing wheat for commune-grain")
+                      (cons 'vf-process-id "thresh") (cons 'vf-action 'work)
+                      (cons 'vf-resource-spec "labor") (cons 'vf-effort-qty 8)
+                      (cons 'vf-effort-unit "hr") (cons 'vf-scope "commune-grain")
+                      (cons 'vf-fulfilled-qty 0))
+                (list (cons 'id "evt-7") (cons 'title "Federation call")
+                      (cons 'date fri) (cons 'start-hour 10) (cons 'start-min 0)
+                      (cons 'end-hour 11) (cons 'end-min 0) (cons 'person "carol")
+                      (cons 'location "Video") (cons 'color "#b794f4") (cons 'source 'event)
+                      (cons 'status 'open) (cons 'description ""))))
+    (set! *cal-people*
+          (list (list (cons 'id "alice") (cons 'name "Alice") (cons 'color "#63b3ed") (cons 'visible #t))
+                (list (cons 'id "bob") (cons 'name "Bob") (cons 'color "#f6ad55") (cons 'visible #t))
+                (list (cons 'id "carol") (cons 'name "Carol") (cons 'color "#b794f4") (cons 'visible #t))))
+    (set! *cal-availability*
+          (list (list (cons 'person "me") (cons 'day 0) (cons 'start-hour 9) (cons 'start-min 0) (cons 'end-hour 17) (cons 'end-min 0))
+                (list (cons 'person "me") (cons 'day 1) (cons 'start-hour 9) (cons 'start-min 0) (cons 'end-hour 17) (cons 'end-min 0))
+                (list (cons 'person "me") (cons 'day 2) (cons 'start-hour 9) (cons 'start-min 0) (cons 'end-hour 17) (cons 'end-min 0))
+                (list (cons 'person "me") (cons 'day 3) (cons 'start-hour 9) (cons 'start-min 0) (cons 'end-hour 17) (cons 'end-min 0))
+                (list (cons 'person "me") (cons 'day 4) (cons 'start-hour 9) (cons 'start-min 0) (cons 'end-hour 17) (cons 'end-min 0))))
+    (set! *cal-next-id* 8)
+    (save-calendar!)))
 
 (refresh!)
 (add-event-listener!/wrap (document-body) "keydown" global-keydown)
