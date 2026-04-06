@@ -103,14 +103,17 @@
 **Goal:** A full choreographed meeting runs start to finish automatically.
 **Depends on:** Sprint 3 prompt delivery, breakout dispatch, broadcast channel
 
-### Backend (Script Engine)
-- [ ] Define `meeting-script` record: `{id, title, phases: [phase...], created-by}`
-- [ ] Define `phase` record: `{id, type: plenary|breakout|debrief, duration-seconds, prompt-text, breakout-config?}`
-- [ ] Define `breakout-config` record: `{room-count, assignment: random|manual, participants-per-room?}`
-- [ ] Script validator: assert all required fields, duration > 0, phase sequence is valid
-- [ ] Script loader: parse from JSON/EDN; return validated `meeting-script`
+### Backend (Wisp DSL + Script Engine)
+- [ ] Create `module/weave/dsl-evaluator.scm`: a restricted `evaluate` over a curated env exposing only `define-phase`, `define-meeting`, `define-program`, `use`, and arithmetic/string ops — no general Scheme I/O or actor spawning; modeled on `(playnet evaluator)`
+- [ ] Implement `define-phase` macro: validates `type`, `minutes`, `rooms` (breakout only), `prompt`; produces `<phase>` record
+- [ ] Implement `define-meeting` macro: validates `title`, `roles`, `phases` (resolving named refs), `outputs`, `assertions`; produces `<meeting-script>` record
+- [ ] Implement `define-program` macro: validates `sessions`, `requires` dependency ordering, `completion-requires`; produces `<meeting-program>` record
+- [ ] Implement `use` form: loads a named library file from `weave/library/` into the evaluator scope
+- [ ] Write `weave/library/facilitation-basics.weave`: common reusable phases (`opening-checkin`, `full-group-reconvene`, `closing-reflection`)
+- [ ] Write `weave/library/body-doubling.weave`: body doubling phase sequence (`focus` + `checkin` loop)
+- [ ] Script validator: run as a separate pass after macro expansion; emit structured errors with line context
 - [ ] `^script-engine` actor: owns current-phase index, timer state; handles `start!`, `pause!`, `advance!`, `reset!`
-- [ ] Timer logic: tick every second; emit `phase-tick` and `phase-complete` events
+- [ ] Timer logic: tick every second via Shepherd heartbeat; emit `phase-tick` and `phase-complete` events
 - [ ] Auto-transitions: on `phase-complete`, call `transition-to-next-phase!` which dispatches breakouts or recalls as appropriate
 - [ ] Host override: `advance!` skips remaining time; `pause!` suspends the timer without changing phase
 
@@ -125,7 +128,7 @@
 - [ ] Countdown timer: large visible countdown for participants; smaller for host
 - [ ] Phase indicator: breadcrumb-style list of phases; current phase highlighted
 - [ ] Host controls panel: Pause / Advance / End meeting buttons
-- [ ] Script editor: simple JSON form to define phases, durations, prompts (enough to create first templates)
+- [ ] Script editor: Wisp text editor (plain `<textarea>`) with live validation feedback; shows structured errors inline; enough to author and save `.weave` files
 - [ ] Body doubling UI: cocoon mode (dim all but timer), intent entry screen, check-in prompt overlay
 - [ ] Template picker: select from predefined scripts on meeting creation
 
@@ -235,10 +238,10 @@
 
 ### Backend
 - [ ] `^interview-session` actor: captures `{goal, participants-description, desired-outcomes, duration-preference, meeting-type-hint}`
-- [ ] Meeting designer prompt: structured Claude API prompt that outputs valid `meeting-script` JSON given interview answers
-- [ ] Script validator re-run on generated output: reject and re-prompt if validation fails (up to 3 retries)
-- [ ] Save draft: generated script stored as `status: draft`; convener edits before activating
-- [ ] Script diff: show changes between generated draft and saved version
+- [ ] Meeting designer prompt: structured Claude API prompt that outputs a valid `.weave` Wisp script given interview answers; include the DSL grammar in the system prompt
+- [ ] Script validator re-run on generated output via DSL evaluator: reject and re-prompt if validation fails (up to 3 retries)
+- [ ] Save draft: generated script stored as `.weave` source with `status: draft`; convener edits the Wisp text before activating
+- [ ] Script diff: show source-level diff between generated draft and saved edits (line-by-line, not field-by-field)
 
 ### Frontend (Guile Hoot/WASM)
 - [ ] Pre-meeting interview flow: 5–7 question wizard; progress indicator; free-text + structured inputs

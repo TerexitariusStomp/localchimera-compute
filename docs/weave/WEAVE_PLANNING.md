@@ -76,207 +76,544 @@ Room-scoped JWTs. The same user can convene one meeting and participate in anoth
 
 ## 2. Meeting DSL Design
 
-### Grammar (JSON/EDN, not a custom language)
+### Philosophy: scripts are PlayNet recipes, authored in Wisp
 
-The meeting script is a data format, not a programming language. Weavers author scripts as JSON (or EDN for Guile-native authoring). The script engine interprets them.
+Meeting scripts are **PlayNet recipes** — they specify what roles are required, what process must run, and what artifact must be produced. They are first-class data in the system of record, not configuration files.
 
-```json
-{
-  "id": "uuid",
-  "title": "Strategic Planning Session",
-  "version": "1.0",
-  "delivery_mode": "generic-tts",
-  "phases": [
-    {
-      "id": "phase-1",
-      "type": "plenary",
-      "label": "Opening",
-      "duration_seconds": 300,
-      "prompt_text": "Welcome. In the next 90 minutes we will...",
-      "audio_url": null
-    },
-    {
-      "id": "phase-2",
-      "type": "breakout",
-      "label": "Diverge",
-      "duration_seconds": 900,
-      "prompt_text": "In your group: what is the single biggest obstacle?",
-      "audio_url": null,
-      "breakout_config": {
-        "room_count": 3,
-        "assignment": "random",
-        "participants_per_room": null
-      }
-    },
-    {
-      "id": "phase-3",
-      "type": "debrief",
-      "label": "Converge",
-      "duration_seconds": 600,
-      "prompt_text": "Each group shares their top obstacle. Facilitator synthesizes.",
-      "audio_url": null
-    }
-  ],
-  "assertions": [
-    {"type": "min-participants", "value": 4},
-    {"type": "required-role", "role": "convener"}
-  ],
-  "output_contract": {
-    "required_artifact": "synthesis-document",
-    "sections": ["themes", "tensions", "open_questions"]
-  }
-}
+Scripts are authored in **Wisp** — a whitespace-significant dialect of Scheme that removes most parentheses. Wisp uses indentation to express structure, making it readable by non-programmers while remaining fully programmable: you can define reusable components, compose them, and build entire curricula from shared building blocks.
+
+The Weave script evaluator runs Wisp source inside a restricted, capability-governed environment. `define-phase`, `define-meeting`, and `define-program` are macros that validate their arguments and produce PlayNet-native records. There is no arbitrary code execution — only the vocabulary the DSL exposes.
+
+---
+
+### Level 1: A single phase (reusable building block)
+
+A phase is a named, timed, typed unit of facilitation. Define it once; use it in any meeting.
+
+```wisp
+define-phase opening-checkin
+  type    plenary
+  minutes 5
+  prompt  "Welcome everyone. One word for how you're arriving today?"
+
+define-phase small-group-diverge
+  type    breakout
+  minutes 20
+  rooms   3
+  prompt  "In your group: what is the single biggest obstacle to our goal?"
+
+define-phase full-group-reconvene
+  type    plenary
+  minutes 10
+  prompt  "Each group shares their obstacle. We listen for patterns."
 ```
+
+Rules for phases:
+- `type` is one of: `plenary`, `breakout`, `debrief`, `focus`, `checkin`
+- `minutes` must be a positive integer
+- `rooms` is only valid on `breakout` phases; defaults to 3 if omitted
+- `prompt` is the human-readable instruction shown on screen and optionally delivered by voice
+
+---
+
+### Level 2: A meeting recipe
+
+A meeting is a named sequence of phases with role requirements and an output contract. It is the PlayNet recipe for one labor session.
+
+```wisp
+define-meeting strategic-alignment
+  title       "Strategic Alignment Session"
+  description "Surface obstacles and commit to actions as a full team."
+  minutes     90
+  roles
+    convener     1
+    participants 4 to 12
+    observer     optional
+  delivery    generic-tts
+
+  phases
+    opening-checkin
+    small-group-diverge
+    full-group-reconvene
+    breakout "Solve" 20 :rooms 3
+      "Design one concrete action your group will take this week."
+    plenary "Commit" 15
+      "Each group proposes their action. Together we select three and assign owners."
+
+  outputs
+    synthesis-document  required
+    commitment-map      required
+    executive-summary   optional
+
+  assertions
+    min-participants 4
+    required-role    convener
+```
+
+Inline phases (like `breakout "Solve" 20`) are syntactic sugar — they expand identically to a `define-phase` block. Named phase refs (like `opening-checkin`) are looked up in the current scope.
+
+---
+
+### Level 3: A program (multi-meeting curriculum)
+
+A program sequences multiple meeting recipes into a coherent arc of labor, spread across time. This is the unit you use for onboarding courses, change management initiatives, or any work that spans multiple sessions.
+
+```wisp
+define-program new-manager-foundations
+  title       "New Manager Foundations"
+  description "A four-session arc for managers in their first 90 days."
+
+  sessions
+    session "Role Clarity"
+      meeting  role-clarity-meeting
+      after    0 days
+
+    session "Team Norms"
+      meeting  team-norms-meeting
+      after    7 days
+      requires "Role Clarity"
+
+    session "1-on-1 Practice"
+      meeting  one-on-one-practice
+      after    21 days
+      requires "Team Norms"
+
+    session "Retrospective"
+      meeting  strategic-alignment
+      after    42 days
+      requires "1-on-1 Practice"
+
+  completion-requires
+    all-sessions-attended
+    artifact new-manager-report
+```
+
+- `after N days` is a scheduling hint, not a hard constraint. Manual scheduling remains the MVP default.
+- `requires` names a preceding session whose outputs must exist before this session can launch.
+- `completion-requires` defines what must be true for the program to be marked complete.
+- Programs can reference any meeting recipe — including ones from the standard library.
+
+---
+
+### Level 4: A standard library (shipped with Weave)
+
+Weavers can `use` shared libraries of phases and meeting recipes, similar to importing modules.
+
+```wisp
+use weave/library/facilitation-basics
+use weave/library/body-doubling
+
+define-meeting sprint-retrospective
+  title   "Sprint Retrospective"
+  minutes 60
+  roles
+    convener     1
+    participants 3 to 8
+
+  phases
+    opening-checkin          ; from facilitation-basics
+    breakout "What worked?" 15 :rooms 2
+      "Name two things from this sprint that worked well."
+    breakout "What didn't?" 15 :rooms 2
+      "Name one thing that got in the way or slowed us down."
+    full-group-reconvene     ; from facilitation-basics
+    plenary "Commit" 10
+      "We select two improvements to carry into next sprint."
+
+  outputs
+    retro-action-items  required
+    synthesis-document  optional
+```
+
+---
+
+### How the DSL compiles
+
+Wisp source is evaluated by the Weave script evaluator — a restricted Guile environment that only exposes the DSL vocabulary (`define-phase`, `define-meeting`, `define-program`, `use`, and a small set of arithmetic and string operations). The macros validate their arguments at read time and produce validated `<meeting-script>` and `<meeting-program>` records. If validation fails, the evaluator returns a structured error before any record is created.
+
+There is no arbitrary execution. The `phases`, `sessions`, `outputs`, and `assertions` forms are declarative. Once evaluated, the resulting records are handed to the script engine and stored in the PlayNet system of record like any other recipe.
+
+**Compiler boundary:**
+```
+.weave file (Wisp source)
+  → Wisp reader → S-expressions
+  → Weave evaluator (restricted env) → validated records
+  → ^script-engine (interpreter) → live meeting execution
+```
+
+---
 
 ### Validation rules
 
-A script is valid when:
-- All phases have `type` ∈ `{plenary, breakout, debrief, body-doubling-focus, body-doubling-checkin}`
-- All phases have `duration_seconds` > 0
-- Breakout phases have a valid `breakout_config`
-- Assertions reference known assertion types
-- At least one phase exists
+A `define-meeting` is valid when:
+- All phases have `type` ∈ `{plenary, breakout, debrief, focus, checkin}`
+- All phases have `minutes` > 0
+- Breakout phases have `rooms` ≥ 2
+- All named phase refs resolve in the current scope
+- All `outputs` reference known artifact types
+- All `assertions` use known assertion keywords
 
-### Compiler/interpreter boundary
+A `define-program` is valid when:
+- All `session` blocks reference a defined meeting
+- `requires` names reference sessions defined earlier in the same program
+- `after N days` values are non-negative integers
 
-There is no compilation step. The JSON is loaded, validated, and handed to `^script-engine`. The script engine is a pure interpreter: it reads the phase sequence, maintains current-phase index, and emits events.
+---
 
-### How PlayNet expressions map to Weave execution primitives
+### How VF concepts map to Weave execution
 
-| PlayNet concept | Weave realization |
+| VF type | Weave realization |
 |---|---|
-| Agent | Participant (convener/participant/observer) |
-| Capability | Role-scoped JWT + `^facet` limiting operations |
-| Economic event | Work event (invitation, attendance, phase completion) |
-| Commitment | Meeting attendance, artifact delivery |
-| Artifact | Transcript, synthesis document, session log |
-| Recipe | Meeting script (what to produce + how) |
-| Process | Script engine run (one execution of a meeting) |
+| `<agent>` type=`person` | Every human in the system — facilitator, participant, observer |
+| `<agent>` type=`organization` | The meeting assembly (short-lived); also the parent org |
+| `<agent-relationship-role>` | "facilitates", "participates-in", "observes" |
+| `<agent-relationship>` | Person ↔ meeting-org binding that carries their role |
+| `<process-specification>` | Meeting type ("Strategic Alignment"); phase type ("Breakout Phase") |
+| `<recipe>` | The `.weave` script — template for producing a meeting's outputs |
+| `<recipe-process>` | Phase template (type, duration, sequence-group) |
+| `<recipe-flow>` | What conceptually flows between phases |
+| `<process>` | A live meeting instance or a phase execution |
+| `<economic-event>` action=`work` | One participant's time contributed to one phase |
+| `<economic-event>` action=`deliver-service` | The facilitation service delivered by the convener |
+| `<economic-event>` action=`produce` | Synthesis document or session log produced at end |
+| `<intent>` action=`work` | An invitation to attend — unilateral, before acceptance |
+| `<commitment>` action=`work` | Accepted attendance commitment — bilateral |
+| `<intent>` action=`work` (output) | An action item decided during the meeting, not yet assigned |
+| `<commitment>` action=`work` (output) | An assigned, agreed action item with a due date |
+| `<proposal>` | A set of commitments arising from the meeting offered for agreement |
+| `<economic-resource>` | Synthesis document, session log — output artifacts |
+| `<resource-specification>` | "SynthesisDocument", "SessionLog", "CommitmentMap" — artifact types |
+| `<recipe-group>` | `define-program` — a curriculum of meeting recipes |
+| `<plan>` | A scheduled run of a program with concrete dates and agents |
 
 ---
 
 ## 3. Data Models
 
-### Meeting
+Weave's data model has two layers:
+
+**VF layer (canonical, in the PlayNet store):** Agents, relationships, processes, events, recipes, intents, commitments, and artifacts. These are `<agent>`, `<process>`, `<economic-event>`, etc. from `planner/lib/schemas.scm`. Weave creates and reads these using the existing `^agent-store`, `^observer`, `^recipe-store`, and `^plan-store` actors.
+
+**Weave operational layer (facilitation mechanics, in Weave actors):** Prompt card content, breakout room routing, transcript segments, timer state, voice delivery mode, and anonymization preference. These reference VF record IDs but are not expressible in pure VF. Stored in Weave-specific Goblins actors.
+
+---
+
+### VF Layer: People and Roles
+
+Every human is an `<agent>` with `type = person`. No custom participant record.
 
 ```scheme
-;; Goblins actor state
-(define-record-type <meeting>
-  (make-meeting id title script status created-by participants phases current-phase-index timer-state)
-  meeting?
-  (id meeting-id)
-  (title meeting-title)
-  (script meeting-script)              ; validated meeting-script record
-  (status meeting-status)              ; created | open | running | paused | ended
-  (created-by meeting-created-by)      ; participant-id of convener
-  (participants meeting-participants)  ; hash-table: participant-id → ^participant ref
-  (phases meeting-phases)              ; vector of phase records (from script)
-  (current-phase-index meeting-current-phase-index)
-  (timer-state meeting-timer-state))   ; running | paused | null
-```
-
-### Phase
-
-```scheme
-(define-record-type <phase>
-  (make-phase id type label duration-seconds prompt-text audio-url breakout-config)
-  phase?
-  (id phase-id)
-  (type phase-type)                    ; plenary | breakout | debrief
-  (label phase-label)
-  (duration-seconds phase-duration-seconds)
-  (prompt-text phase-prompt-text)
-  (audio-url phase-audio-url)          ; null until pre-generated
-  (breakout-config phase-breakout-config)) ; null for non-breakout phases
-```
-
-### Participant
-
-```scheme
-(define-record-type <participant>
-  (make-participant id account-id display-name attribution-mode role meeting-id livekit-identity)
-  participant?
-  (id participant-id)
-  (account-id participant-account-id)          ; real account ref (stored only here)
-  (display-name participant-display-name)      ; "Alice" or "Participant 3"
-  (attribution-mode participant-attribution-mode) ; named | anonymous
-  (role participant-role)                      ; convener | participant | observer
-  (meeting-id participant-meeting-id)
-  (livekit-identity participant-livekit-identity)) ; stable string used in LiveKit tokens
-```
-
-**Anonymization contract:** `account-id` is stored only in `^participant`. Everything downstream (transcript segments, synthesis, artifacts) receives only `display-name`. The mapping `account-id → display-name` is never written outside `^participant`. Convener can look up `account-id` given the meeting context; synthesis pipeline cannot.
-
-### BreakoutRoom
-
-```scheme
-(define-record-type <breakout-room>
-  (make-breakout-room id meeting-id phase-id label livekit-room-name roster status)
-  breakout-room?
-  (id breakout-room-id)
-  (meeting-id breakout-room-meeting-id)
-  (phase-id breakout-room-phase-id)
-  (label breakout-room-label)           ; "Room 1", "Room 2", etc.
-  (livekit-room-name breakout-room-livekit-room-name)
-  (roster breakout-room-roster)         ; list of participant-ids
-  (status breakout-room-status))        ; open | closed
-```
-
-### TranscriptSegment
-
-```scheme
-(define-record-type <transcript-segment>
-  (make-transcript-segment id meeting-id room-id phase-id speaker-display-name text timestamp-ms confidence)
-  transcript-segment?
-  (id segment-id)
-  (meeting-id segment-meeting-id)
-  (room-id segment-room-id)            ; livekit-room-name or "plenary"
-  (phase-id segment-phase-id)
-  (speaker-display-name segment-speaker-display-name) ; "Alice" or "Participant 3" — never real name for anonymous
-  (text segment-text)
-  (timestamp-ms segment-timestamp-ms)
-  (confidence segment-confidence))     ; 0.0–1.0 from Deepgram
-```
-
-### SynthesisDocument
-
-```scheme
-(define-record-type <synthesis-document>
-  (make-synthesis-document id meeting-id created-at phases-output share-token status)
-  synthesis-document?
-  (id synthesis-id)
-  (meeting-id synthesis-meeting-id)
-  (created-at synthesis-created-at)
-  (phases-output synthesis-phases-output) ; list of <synthesis-phase> records
-  (share-token synthesis-share-token)
-  (status synthesis-status))           ; generating | complete | failed
-
-(define-record-type <synthesis-phase>
-  (make-synthesis-phase phase-id prompt-text themes representative-quotes tensions agreements open-questions minority-views)
-  synthesis-phase?
+;; A person in the system — created once, referenced across many meetings
+(make-agent
+  (id "agent-alice-uuid")
+  (type 'person)
+  (name "Alice Okonkwo")
+  (availability-window <her-schedule>)
   ...)
 ```
 
-### BodyDoublingSession
+Roles within a meeting are `<agent-relationship-role>` records, defined once and reused:
 
 ```scheme
-(define-record-type <body-doubling-session>
-  (make-body-doubling-session id meeting-id participant-id intent focus-blocks check-ins start-time end-time cocoon-mode?)
+;; Three meeting roles — defined globally, reused across all meetings
+(make-agent-relationship-role (id "role-facilitates") (label "facilitates") (inverse-label "is-facilitated-by") ...)
+(make-agent-relationship-role (id "role-participates") (label "participates-in") (inverse-label "has-participant") ...)
+(make-agent-relationship-role (id "role-observes") (label "observes") (inverse-label "is-observed-by") ...)
+```
+
+A person's membership in a meeting is an `<agent-relationship>`:
+
+```scheme
+;; Alice facilitates this meeting
+(make-agent-relationship
+  (id "rel-uuid")
+  (subject "agent-alice-uuid")       ; the person
+  (object "agent-meeting-org-uuid")  ; the meeting assembly (see below)
+  (relationship "role-facilitates")
+  (in-scope-of "agent-parent-org-uuid"))
+```
+
+---
+
+### VF Layer: The Meeting Assembly (short-lived Organization)
+
+A meeting needs to be an `<agent>` of `type = organization` — the social container — because `<agent-relationship>` requires both sides to be agents. The meeting assembly is created when the meeting is scheduled and closed after the synthesis is complete.
+
+```scheme
+;; The meeting assembly — a temporary organization
+(make-agent
+  (id "agent-meeting-org-uuid")
+  (type 'organization)
+  (name "Strategic Alignment — 2026-04-10")
+  (note "Temporary assembly for one meeting session")
   ...)
 ```
 
-### SessionIntent / FocusBlock / CheckIn
+This is distinct from the parent organization (the company or team). The meeting-org is `in-scope-of` the parent org.
+
+---
+
+### VF Layer: The Meeting as a Process
+
+The meeting's economic activity is a `<process>`. The meeting assembly is the social container; the process is the transformation.
 
 ```scheme
-(define-record-type <session-intent>
-  (make-session-intent id session-id text created-at) ...)
-
-(define-record-type <focus-block>
-  (make-focus-block id session-id start-time end-time completed?) ...)
-
-(define-record-type <check-in>
-  (make-check-in id session-id prompt-text response-text timestamp) ...)
+;; The meeting process — transforms inputs (time, attention) into outputs (synthesis, commitments)
+(make-process
+  (id "proc-meeting-uuid")
+  (name "Strategic Alignment — 2026-04-10")
+  (based-on "proc-spec-strategic-alignment")  ; ProcessSpecification for this meeting type
+  (in-scope-of (list "agent-meeting-org-uuid" "agent-parent-org-uuid"))
+  (has-beginning "2026-04-10T14:00:00Z")
+  (has-end "2026-04-10T15:30:00Z")
+  (finished #f))
 ```
+
+Meeting type is a `<process-specification>`:
+
+```scheme
+(make-process-specification
+  (id "proc-spec-strategic-alignment")
+  (name "Strategic Alignment Session")
+  ...)
+```
+
+---
+
+### VF Layer: Phases as Processes
+
+Each phase execution is also a `<process>`, linked to the meeting by being `planned-within` the same plan or by sharing the `in-scope-of` agent. Phase type is its own `<process-specification>`:
+
+```scheme
+;; Phase type specs — defined once, reused across all meetings
+(make-process-specification (id "proc-spec-plenary") (name "Plenary Phase") ...)
+(make-process-specification (id "proc-spec-breakout") (name "Breakout Phase") ...)
+(make-process-specification (id "proc-spec-debrief") (name "Debrief Phase") ...)
+
+;; One phase execution
+(make-process
+  (id "proc-phase-2-uuid")
+  (name "Diverge — Breakout")
+  (based-on "proc-spec-breakout")
+  (in-scope-of (list "agent-meeting-org-uuid"))
+  (has-beginning "2026-04-10T14:15:00Z")
+  (has-end "2026-04-10T14:35:00Z")
+  (finished #f))
+```
+
+---
+
+### VF Layer: Participant Time as Economic Events
+
+Each participant's presence in each phase is an `<economic-event>` with action `work`:
+
+```scheme
+;; Alice contributes 20 minutes of attention to the breakout phase
+(make-economic-event
+  (id "event-alice-phase2-uuid")
+  (action 'work)
+  (provider "agent-alice-uuid")          ; Alice gives her time
+  (receiver "agent-meeting-org-uuid")    ; the assembly receives it
+  (effort-quantity (make-measure 20 "minutes"))
+  (input-of "proc-phase-2-uuid")         ; input to the breakout phase process
+  (has-beginning "2026-04-10T14:15:00Z")
+  (has-end "2026-04-10T14:35:00Z")
+  ...)
+```
+
+The convener's facilitation is `deliver-service` rather than `work`, because facilitation is a service delivered to the group:
+
+```scheme
+(make-economic-event
+  (action 'deliver-service)
+  (provider "agent-alice-uuid")
+  (receiver "agent-meeting-org-uuid")
+  (input-of "proc-meeting-uuid")
+  ...)
+```
+
+---
+
+### VF Layer: The Meeting Script as a Recipe
+
+The `.weave` script evaluates to VF knowledge-layer records. A `define-meeting` produces a `<recipe>` plus a set of `<recipe-process>` and `<recipe-flow>` records:
+
+```scheme
+;; The recipe — the template for this meeting type
+(make-recipe
+  (id "recipe-strategic-alignment-uuid")
+  (name "Strategic Alignment Session")
+  (primary-output "res-spec-synthesis-document")   ; ResourceSpecification for SynthesisDocument
+  (recipe-processes (list "rp-opening" "rp-diverge" "rp-reconvene" "rp-solve" "rp-commit")))
+
+;; One recipe-process per phase
+(make-recipe-process
+  (id "rp-diverge")
+  (name "Diverge — Breakout")
+  (process-conforms-to "proc-spec-breakout")
+  (has-duration (make-duration 20 'minutes))
+  (sequence-group 2))  ; ordering within the recipe
+
+;; What flows between phases (the "output" of one phase is the "input" framing of the next)
+(make-recipe-flow
+  (id "rf-diverge-to-reconvene")
+  (action 'cite)                              ; knowledge/context flows, not consumed
+  (resource-conforms-to "res-spec-group-output")
+  (recipe-output-of "rp-diverge")
+  (recipe-input-of "rp-reconvene"))
+```
+
+---
+
+### VF Layer: Invitations as Intents and Commitments
+
+An invitation to attend a meeting is an `<intent>`:
+
+```scheme
+;; Intent: Bob is being asked to contribute 90 minutes to the meeting
+(make-intent
+  (id "intent-invite-bob-uuid")
+  (action 'work)
+  (provider "agent-bob-uuid")            ; Bob would provide the work
+  (receiver "agent-meeting-org-uuid")
+  (effort-quantity (make-measure 90 "minutes"))
+  (input-of "proc-meeting-uuid")
+  (due "2026-04-10T14:00:00Z")
+  (in-scope-of (list "agent-parent-org-uuid")))
+```
+
+When Bob accepts, the intent is promoted to a `<commitment>` (using the existing `promote-to-commitment` in `^plan-store`).
+
+---
+
+### VF Layer: Outputs — Action Items and Synthesis
+
+**Action items** arising in the meeting are `<intent>` records (unilateral, not yet assigned) that become `<commitment>` records when assigned. Both are `output-of` the meeting process:
+
+```scheme
+;; An action item decided during the meeting
+(make-intent
+  (id "intent-action-item-uuid")
+  (action 'work)
+  (name "Prepare updated roadmap slide")
+  (provider "agent-bob-uuid")            ; Bob volunteered
+  (receiver "agent-parent-org-uuid")
+  (output-of "proc-meeting-uuid")        ; emerged from this meeting
+  (due "2026-04-17T09:00:00Z"))
+```
+
+A set of action items can be wrapped in a `<proposal>` for group agreement.
+
+**The synthesis document** is an `<economic-resource>` conforming to a `<resource-specification>`, produced by an `<economic-event>` of action `produce`:
+
+```scheme
+;; The synthesis document resource-specification (defined once)
+(make-resource-specification
+  (id "res-spec-synthesis-document")
+  (name "Meeting Synthesis Document")
+  ...)
+
+;; The synthesis produced at the end of this meeting
+(make-economic-resource
+  (id "res-synthesis-this-meeting-uuid")
+  (conforms-to "res-spec-synthesis-document")
+  (name "Strategic Alignment — 2026-04-10 — Synthesis"))
+
+;; The production event
+(make-economic-event
+  (action 'produce)
+  (provider "agent-alice-uuid")          ; convener/facilitator produced it
+  (receiver "agent-parent-org-uuid")     ; org receives the artifact
+  (resource-inventoried-as "res-synthesis-this-meeting-uuid")
+  (output-of "proc-meeting-uuid"))
+```
+
+---
+
+### VF Layer: Programs as RecipeGroups and Plans
+
+A `define-program` produces:
+- A `<recipe-group>` that references the constituent meeting recipes
+- When a program is scheduled, a `<plan>` is created containing `<commitment>` records for each session
+
+---
+
+### Weave Operational Layer (non-VF, Weave actors only)
+
+These records live in Weave's own Goblins actors, referenced by VF IDs. They are not VF types.
+
+**`<weave-phase-config>`** — facilitation mechanics for a recipe-process:
+```scheme
+(make-weave-phase-config
+  (recipe-process-id "rp-diverge")   ; links to VF RecipeProcess
+  (prompt-text "In your group: what is the single biggest obstacle?")
+  (audio-url #f)                     ; null until pre-generated
+  (delivery-mode 'generic-tts)
+  (breakout-room-count 3)
+  (assignment 'random))
+```
+
+**`<weave-session-state>`** — live execution state for the script engine:
+```scheme
+(make-weave-session-state
+  (process-id "proc-meeting-uuid")   ; links to VF Process
+  (current-phase-index 1)
+  (timer-remaining-seconds 847)
+  (status 'running)                  ; running | paused | ended
+  (livekit-room-name "meeting-abc"))
+```
+
+**`<transcript-segment>`** — Weave-specific, not a VF type:
+```scheme
+(make-transcript-segment
+  (process-id "proc-phase-2-uuid")   ; links to VF Process for the phase
+  (speaker-display-name "Participant 3")  ; resolved display-name only
+  (text "I think the obstacle is...")
+  (timestamp-ms 1744300800000)
+  (confidence 0.94))
+```
+
+**`<weave-attribution>`** — anonymization preference, the only place real identity and display-name coexist:
+```scheme
+(make-weave-attribution
+  (agent-id "agent-bob-uuid")           ; VF Agent ID — the real identity
+  (meeting-org-id "agent-meeting-org-uuid")
+  (display-name "Participant 3")        ; resolved at join time
+  (attribution-mode 'anonymous)
+  (livekit-identity "participant-3-livekit-token-string"))
+```
+
+The `<weave-attribution>` record is the anonymization boundary. Everything that leaves this record carries only `display-name`, never `agent-id`.
+
+---
+
+### Canonical VF mapping table
+
+| Weave concept | VF type | VF action / field |
+|---|---|---|
+| Person | `<agent>` type=`person` | — |
+| Facilitator role | `<agent-relationship-role>` | label="facilitates" |
+| Participant role | `<agent-relationship-role>` | label="participates-in" |
+| Observer role | `<agent-relationship-role>` | label="observes" |
+| Person in meeting | `<agent-relationship>` | subject=person, object=meeting-org |
+| Meeting assembly (social) | `<agent>` type=`organization` | short-lived |
+| Meeting activity | `<process>` | based-on=meeting-type ProcessSpec |
+| Meeting type | `<process-specification>` | name="Strategic Alignment" |
+| Phase execution | `<process>` | based-on=phase-type ProcessSpec |
+| Phase type | `<process-specification>` | name="Breakout Phase" |
+| Meeting script | `<recipe>` | primary-output=SynthesisDoc ResourceSpec |
+| Phase template | `<recipe-process>` | has-duration, sequence-group |
+| Phase knowledge flow | `<recipe-flow>` | action=`cite` |
+| Participant time | `<economic-event>` | action=`work`, input-of=phase-process |
+| Facilitation service | `<economic-event>` | action=`deliver-service` |
+| Invitation | `<intent>` | action=`work`, input-of=meeting-process |
+| Accepted attendance | `<commitment>` | satisfies=invitation-intent |
+| Action item (decided) | `<intent>` | action=`work`, output-of=meeting-process |
+| Action item (assigned) | `<commitment>` | satisfies=action-intent, due=deadline |
+| Action set for agreement | `<proposal>` | publishes list of commitments |
+| Synthesis document | `<economic-resource>` + `<economic-event>` action=`produce` | output-of=meeting-process |
+| Program / curriculum | `<recipe-group>` | groups meeting recipes |
+| Scheduled program | `<plan>` | contains session commitments |
 
 ---
 

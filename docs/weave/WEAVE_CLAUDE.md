@@ -74,28 +74,62 @@ WebSocket messages are alists serialized to JSON:
 
 ## The facilitation DSL mental model
 
+### The three levels of the DSL
+
+The Weave DSL has three composable levels. Each level is a PlayNet recipe:
+
+1. **`define-phase`** — a named, reusable unit of facilitation time (type + duration + prompt). The atom.
+2. **`define-meeting`** — a sequence of phases with role requirements and an output contract. One labor session.
+3. **`define-program`** — a sequence of meetings spread across time, with dependency ordering. A curriculum or initiative.
+
+This mirrors the way Playwright is organized: reusable helpers → test cases → test suites. A Weave program is an executable specification of an organizational change initiative.
+
 ### What a Phase is
 
 A phase is a typed, timed, named stage of a meeting. It has exactly one type:
-- `plenary` — everyone together in the main room; no breakout config
-- `breakout` — participants are in sub-rooms; has a `breakout-config`; host can broadcast in
-- `debrief` — everyone back together to share; structurally identical to plenary but semantically distinct
+- `plenary` — everyone together in the main room
+- `breakout` — participants are in sub-rooms; host can broadcast in; has a `rooms` count
+- `debrief` — everyone back together to share; same as plenary structurally, distinct semantically
+- `focus` — silent work period (used in body doubling)
+- `checkin` — brief structured check-in, usually 2–5 min; no breakout
 
 A phase is **not** a UI state. It is a unit of facilitation labor with a defined duration, a prompt to deliver, and an expected output. The script engine drives the phase; the UI renders it.
 
+Named phases defined with `define-phase` are reusable across meetings. Inline phases (defined inside a `phases` block) are one-off and anonymous. Both produce identical internal records.
+
 ### How meeting incurrence works
 
-A meeting is incurred from a script. The script defines what must happen. The `^meeting` actor holds the live execution state (which phase is current, timer state, who is in what room). The script itself is immutable after validation.
+A meeting is incurred from a `define-meeting` recipe. When evaluated, the recipe produces VF records in the PlayNet store. A concrete meeting instance is created by instantiating those records into live `<process>`, `<agent-relationship>`, and `<intent>` records. The Weave script engine holds the operational execution state (timer, phase index, LiveKit room names) separately in `<weave-session-state>`.
 
-The incurrence model maps to PlayNet primitives:
-- Script = Recipe (how to produce the artifact)
-- Meeting = Process (one execution of the recipe)
-- Invitation = Work event recorded on `^work-logger`
-- Transcript + synthesis = Output artifacts
+The incurrence model maps to VF:
+- `define-phase` = produces a `<recipe-process>` + a `<process-specification>` for the phase type
+- `define-meeting` = produces a `<recipe>` with `<recipe-process>` and `<recipe-flow>` records
+- `define-program` = produces a `<recipe-group>`
+- Meeting assembly = `<agent>` type=`organization` (the social container)
+- Meeting activity = `<process>` based-on the meeting's `<process-specification>`
+- Phase execution = `<process>` based-on the phase's `<process-specification>`
+- Invitation = `<intent>` action=`work`, promoted to `<commitment>` on acceptance
+- Participant time = `<economic-event>` action=`work`, input-of the phase process
+- Synthesis = `<economic-resource>` produced via `<economic-event>` action=`produce`
+- Action items = `<intent>` (unilateral) → `<commitment>` (agreed) → fulfilled by future `<economic-event>`
+
+### Why the meeting is both an organization and a process
+
+The meeting needs to be BOTH:
+- An `<agent>` type=`organization` (the "meeting assembly") — because `<agent-relationship>` requires both sides to be agents. Without this, you cannot record that "Alice facilitates this meeting" as a VF relationship.
+- A `<process>` — because that is where economic events attach (`input-of`, `output-of`). The process is the transformation activity; the organization is the social fact.
+
+These two are distinct VF records with different IDs. The process's `in-scope-of` references the organization agent. They are created together when a meeting is scheduled and both are closed/finalized together.
+
+### The script evaluator is restricted
+
+The DSL evaluator (`module/weave/dsl-evaluator.scm`) is a capability-governed environment. It exposes only: `define-phase`, `define-meeting`, `define-program`, `use`, and arithmetic/string primitives. It does **not** expose general Scheme — no I/O, no actor spawning, no `eval`. This is deliberate: scripts authored by non-programmers or external users must not be able to do arbitrary computation.
+
+The evaluator is the same pattern as PlayNet's metacircular evaluator in `(playnet evaluator)` — a restricted `evaluate` over a curated set of base bindings.
 
 ### Assertions
 
-Script assertions (e.g., `min-participants: 4`) are validated at launch time, not during the meeting. If assertions fail, the meeting cannot start. Add new assertion types in `script-engine.scm` under `validate-assertions`.
+Script assertions (e.g., `min-participants 4`) are validated at launch time, not during the meeting. If assertions fail, the meeting cannot start. Add new assertion types in `script-engine.scm` under `validate-assertions`.
 
 ---
 
