@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weave</title>
+  <link rel="stylesheet" href="/weave.css">
+
+  <!--
+    LiveKit client SDK.
+    For production, pin a specific version and self-host.
+    https://docs.livekit.io/client-sdk-js/
+  -->
+  <script src="https://unpkg.com/livekit-client/dist/livekit-client.umd.min.js"></script>
+</head>
+<body>
+  <!--
+    weave.js loads weave.wasm via Scheme.load_main.
+    The WASM module renders the initial UI into document.body.
+    No content needed here — the SXML virtual DOM takes over on load.
+  -->
+  <noscript>
+    <p>Weave requires JavaScript to run. Please enable JavaScript.</p>
+  </noscript>
+  <script type="module" src="/weave.js"></script>
+</body>
+</html>
