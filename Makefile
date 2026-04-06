@@ -73,5 +73,23 @@ test-browser:
 
 test-all: test-gplay test-knowledge test-governed test-signatures test-wisp test-endorsement test-persistence test-netlayer test-planner test-relational
 
+# ── Docker (for macOS / non-Guix machines) ───────────────────────────────────
+
+DOCKER_IMAGE ?= playnet-dev
+
+docker-build:
+	docker build -t $(DOCKER_IMAGE) .
+
+docker-test-planner:
+	docker run --rm -v "$$PWD":/src -w /src/planner $(DOCKER_IMAGE) sh run-tests.sh
+
+docker-test-all:
+	docker run --rm -v "$$PWD":/src -w /src $(DOCKER_IMAGE) sh -c '\
+	  guile --no-auto-compile -L module tests/test-knowledge.scm && \
+	  cd planner && sh run-tests.sh'
+
+docker-shell:
+	docker run --rm -it -v "$$PWD":/src $(DOCKER_IMAGE) guile --no-auto-compile -L module -L planner
+
 clean:
 	rm -f browser/repl.wasm

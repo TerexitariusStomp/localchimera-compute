@@ -23,7 +23,11 @@
       "WebFetch(domain:files.spritely.institute)",
       "WebFetch(domain:www.gnu.org)",
       "WebFetch(domain:weinholt.se)",
-      "WebFetch(domain:trop.in)"
+      "WebFetch(domain:trop.in)",
+      "WebFetch(domain:gitlab.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:codeberg.org)",
+      "Bash(docker:*)"
     ]
   }
 }

@@ -1,0 +1,6 @@
+.git
+node_modules
+secrets.scm
+.env
+browser/repl.wasm
+tests/screenshots
