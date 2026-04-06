@@ -565,6 +565,657 @@
 
 
 ;; ═════════════════════════════════════════════════════════════════════════
+;; Section A: Spatial hierarchy — map the city
+;; ═════════════════════════════════════════════════════════════════════════
+
+(display "\n=== Section A: Spatial hierarchy ===\n")
+
+(define location-store
+  (with-vat vat (spawn ^spatial-thing-store (hashmap))))
+
+(with-vat vat
+  ($ location-store 'add-location
+     (make-spatial-thing "loc-sf" "San Francisco" #f 37.7749 -122.4194 #f #f #f))
+  ($ location-store 'add-location
+     (make-spatial-thing "loc-bayview" "Bayview (SF Market)" #f 37.7276 -122.3831 #f #f "loc-sf"))
+  ($ location-store 'add-location
+     (make-spatial-thing "loc-sunset" "Sunset (Safeway)" #f 37.7527 -122.4939 #f #f "loc-sf"))
+  ($ location-store 'add-location
+     (make-spatial-thing "loc-soma" "SoMa (Food Runners HQ)" #f 37.7785 -122.3950 #f #f "loc-sf"))
+  ($ location-store 'add-location
+     (make-spatial-thing "loc-tenderloin" "Tenderloin (GLIDE)" #f 37.7836 -122.4138 #f #f "loc-sf"))
+  ($ location-store 'add-location
+     (make-spatial-thing "loc-mission" "Mission (Mission Meals)" #f 37.7599 -122.4148 #f #f "loc-sf"))
+
+  (check "6 locations created" (= 6 (length ($ location-store 'all-locations))))
+
+  (let ((chain ($ location-store 'resolve-chain "loc-bayview")))
+    (check "Bayview chain has 2 nodes" (= 2 (length chain)))
+    (check "Bayview root is SF"
+      (equal? "loc-sf" (spatial-thing-id (cadr chain)))))
+
+  (check "Bayview is descendant of SF"
+    ($ location-store 'is-descendant-or-equal "loc-bayview" "loc-sf"))
+  (check "SF is not descendant of Bayview"
+    (not ($ location-store 'is-descendant-or-equal "loc-sf" "loc-bayview")))
+
+  (let ((coords ($ location-store 'resolve-coordinates "loc-soma")))
+    (check "SoMa has coordinates" (and (pair? coords) (number? (car coords))))))
+
+
+;; ═════════════════════════════════════════════════════════════════════════
+;; Section B: Buffer zones for perishables
+;; ═════════════════════════════════════════════════════════════════════════
+
+(display "\n=== Section B: Buffer zones for perishables ===\n")
+
+(define profile-map
+  (with-vat vat
+    (hashmap-set (hashmap)
+      "bp-perishable"
+      (make-buffer-profile "bp-perishable" "Perishable Produce"
+        'distributed 0.5 0.6 0.4 0.5 1 1 'daily 'short 'medium "PP" #f))))
+
+(with-vat vat
+  (let ((bzs ($ food-runners 'buffer-zone-store)))
+    ;; Sorted produce buffer at Food Runners warehouse
+    ;; ADU=50 kg/day, DLT=1 day, TOR=50, TOY=125, TOG=250
+    ($ bzs 'add-zone
+       (make-buffer-zone
+         "bz-sorted-produce" "spec-sorted-produce" "bp-perishable" 'replenished
+         "loc-soma" #f #f #f #f                       ;; at-location, upstream, recipe, stages
+         50 "kg" #f #f #f #f #f #f #f #f              ;; ADU fields
+         #f 1                                          ;; ost-horizon-days, dlt-days
+         10 "kg" 1                                     ;; moq, moq-unit, order-cycle-days
+         #f #f                                         ;; override-reason, override-note
+         #f #f                                         ;; transport-days, staging-days
+         50 125 250                                    ;; TOR, TOY, TOG
+         20 #f #f                                      ;; tipping-point, red-base, red-safety
+         #f #f #f #f #f                                ;; adj factors, supply-offset, adjustment-ids
+         "2026-04-01T00:00:00Z"))                      ;; last-computed-at
+
+    (check "buffer zone created"
+      (buffer-zone? ($ bzs 'get-zone "bz-sorted-produce")))
+
+    ;; Food Runners has 0 sorted produce onhand → should be red zone
+    (let* ((bz ($ bzs 'get-zone "bz-sorted-produce"))
+           (status (buffer-status 0 bz)))
+      (check "0 onhand = red zone" (eq? 'red (assq-ref status 'zone))))
+
+    ;; 75 onhand → between TOR(50) and TOY(125) → yellow zone
+    (let* ((bz ($ bzs 'get-zone "bz-sorted-produce"))
+           (status (buffer-status 75 bz)))
+      (check "75 onhand = yellow zone" (eq? 'yellow (assq-ref status 'zone))))
+
+    ;; 200 onhand → between TOY(125) and TOG(250) → green zone
+    (let* ((bz ($ bzs 'get-zone "bz-sorted-produce"))
+           (status (buffer-status 200 bz)))
+      (check "200 onhand = green zone" (eq? 'green (assq-ref status 'zone))))
+
+    ;; find-zone with location-store should resolve containment
+    (check "find-zone resolves via location store"
+      (buffer-zone? ($ bzs 'find-zone "spec-sorted-produce" "loc-soma" location-store)))))
+
+
+;; ═════════════════════════════════════════════════════════════════════════
+;; Section C: Demand policy — derive needs from population
+;; ═════════════════════════════════════════════════════════════════════════
+
+(display "\n=== Section C: Demand policy ===\n")
+
+;; GLIDE: 1000 daily visitors × 0.05 kg produce each = 50 kg
+(let ((demands (derive-communal-demand
+                 '(((spec-id . "spec-sorted-produce")
+                    (mode . per-member) (qty-per-member . 0.05) (unit . "kg")))
+                 1000)))
+  (check "GLIDE demand derived" (pair? demands))
+  (check "GLIDE derived qty = 50kg"
+    (approx= 50 (assq-ref (car demands) 'qty)))
+  (check "GLIDE formula mentions members"
+    (string-contains (assq-ref (car demands) 'formula) "members")))
+
+;; Mission Meals: 2000 weekly families × 0.1 kg = 200 kg
+(let ((demands (derive-communal-demand
+                 '(((spec-id . "spec-sorted-produce")
+                    (mode . per-member) (qty-per-member . 0.1) (unit . "kg")))
+                 2000)))
+  (check "Mission Meals derived qty = 200kg"
+    (approx= 200 (assq-ref (car demands) 'qty))))
+
+
+;; ═════════════════════════════════════════════════════════════════════════
+;; Section D: 3-process recipe — pickup → sort → deliver
+;; ═════════════════════════════════════════════════════════════════════════
+
+(display "\n=== Section D: 3-process recipe ===\n")
+
+(with-vat vat
+  (let ((rs ($ food-runners 'recipe-store)))
+    ;; Intermediate spec: collected but not yet sorted
+    ($ rs 'add-resource-spec
+       (make-resource-specification "spec-collected" "Collected Produce"
+         #f #f #f "kg" #f #f #f #f #f))
+
+    ;; Process specs for each step
+    ($ rs 'add-process-spec
+       (make-process-specification "pspec-pickup" "Pickup" #f #f #f #f #f #f #f))
+    ($ rs 'add-process-spec
+       (make-process-specification "pspec-sort" "Sort & Inspect" #f #f #f #f #f #f #f))
+    ($ rs 'add-process-spec
+       (make-process-specification "pspec-deliver" "Deliver" #f #f #f #f #f #f #f))
+
+    ;; --- Step 1: Pickup (0.5h) ---
+    ($ rs 'add-recipe-process
+       (make-recipe-process "rp-cd-pickup" "Pickup from donor" #f #f
+         "pspec-pickup" #f (make-duration 0.5 "hours") #f #f))
+    ($ rs 'add-recipe-flow
+       (make-recipe-flow "rf-cd-produce-in" 'consume "spec-produce" #f
+         (make-measure 100 "kg") #f "rp-cd-pickup" #f #f #f #f #f #f #f))
+    ($ rs 'add-recipe-flow
+       (make-recipe-flow "rf-cd-van-pickup" 'use "spec-reefer-van" #f
+         (make-measure 0.5 "hours") #f "rp-cd-pickup" #f #f #f #f #f #f #f))
+    ($ rs 'add-recipe-flow
+       (make-recipe-flow "rf-cd-labor-pickup" 'work "spec-volunteer-hours" #f
+         (make-measure 0.5 "hours") #f "rp-cd-pickup" #f #f #f #f #f #f #f))
+    ($ rs 'add-recipe-flow
+       (make-recipe-flow "rf-cd-collected-out" 'produce "spec-collected" #f
+         (make-measure 100 "kg") #f #f "rp-cd-pickup" #f #f #f #f #f #f))
+
+    ;; --- Step 2: Sort & inspect (0.75h) ---
+    ($ rs 'add-recipe-process
+       (make-recipe-process "rp-cd-sort" "Sort & inspect" #f #f
+         "pspec-sort" #f (make-duration 0.75 "hours") #f #f))
+    ($ rs 'add-recipe-flow
+       (make-recipe-flow "rf-cd-collected-in" 'consume "spec-collected" #f
+         (make-measure 100 "kg") #f "rp-cd-sort" #f #f #f #f #f #f #f))
+    ($ rs 'add-recipe-flow
+       (make-recipe-flow "rf-cd-labor-sort" 'work "spec-volunteer-hours" #f
+         (make-measure 0.75 "hours") #f "rp-cd-sort" #f #f #f #f #f #f #f))
+    ($ rs 'add-recipe-flow
+       (make-recipe-flow "rf-cd-sorted-out" 'produce "spec-sorted-produce" #f
+         (make-measure 90 "kg") #f #f "rp-cd-sort" #f #f #f #f #f #f))
+
+    ;; --- Step 3: Deliver (0.25h) ---
+    ($ rs 'add-recipe-process
+       (make-recipe-process "rp-cd-deliver" "Deliver to recipient" #f #f
+         "pspec-deliver" #f (make-duration 0.25 "hours") #f #f))
+    ($ rs 'add-recipe-flow
+       (make-recipe-flow "rf-cd-sorted-in" 'consume "spec-sorted-produce" #f
+         (make-measure 90 "kg") #f "rp-cd-deliver" #f #f #f #f #f #f #f))
+    ($ rs 'add-recipe-flow
+       (make-recipe-flow "rf-cd-van-deliver" 'use "spec-reefer-van" #f
+         (make-measure 0.25 "hours") #f "rp-cd-deliver" #f #f #f #f #f #f #f))
+    ($ rs 'add-recipe-flow
+       (make-recipe-flow "rf-cd-labor-deliver" 'work "spec-volunteer-hours" #f
+         (make-measure 0.25 "hours") #f "rp-cd-deliver" #f #f #f #f #f #f #f))
+    ($ rs 'add-recipe-flow
+       (make-recipe-flow "rf-cd-delivered-out" 'produce "spec-sorted-produce" #f
+         (make-measure 90 "kg") #f #f "rp-cd-deliver" #f "pspec-deliver" #f #f #f #f))
+
+    ;; Assemble the 3-step recipe
+    ($ rs 'add-recipe
+       (make-recipe "recipe-collect-deliver" "Full Collection & Delivery Pipeline"
+         #f #f "spec-sorted-produce"
+         (list "rp-cd-pickup" "rp-cd-sort" "rp-cd-deliver") #f))
+
+    ;; Verify topological sort returns all 3 in order
+    (let ((chain ($ rs 'get-process-chain "recipe-collect-deliver")))
+      (check "3-process chain has 3 steps" (= 3 (length chain)))
+      (check "chain starts with pickup"
+        (equal? "rp-cd-pickup" (recipe-process-id (car chain))))
+      (check "chain ends with deliver"
+        (equal? "rp-cd-deliver" (recipe-process-id (caddr chain)))))))
+
+
+;; ═════════════════════════════════════════════════════════════════════════
+;; Section E: Enriched plan-for-unit — buffers + spatial wired in
+;; ═════════════════════════════════════════════════════════════════════════
+
+(display "\n=== Section E: Enriched plan-for-unit ===\n")
+
+(with-vat vat
+  ;; Add a fresh intent for the enriched plan
+  ($ ($ food-runners 'plan-store) 'add-intent
+     (make-intent "i-fr-enriched" 'produce
+       "Enriched collection run" #f #f #f #f #f
+       "spec-sorted-produce" #f
+       (make-measure 100 "kg") #f #f #f
+       #f "agent-food-runners"
+       #f #f #f "2026-04-04T08:00:00Z"
+       "loc-soma" #f #f #f #f #f #f #f))
+
+  (let* ((result (plan-for-unit
+                   '("food-runners") horizon
+                   ($ food-runners 'recipe-store)
+                   ($ food-runners 'plan-store)
+                   ($ food-runners 'observer)
+                   #:location-store location-store
+                   #:buffer-zone-store ($ food-runners 'buffer-zone-store)
+                   #:buffer-profiles profile-map
+                   #:buffered-specs '("spec-sorted-produce")
+                   #:alert-store ($ food-runners 'alert-store)
+                   #:plan-name "Food Runners enriched plan")))
+    (check "enriched plan created" (string? (assq-ref result 'plan-id)))
+
+    ;; Alert store should have buffer-status alert (sorted produce starts at 0 = red)
+    (let ((alerts ($ ($ food-runners 'alert-store) 'all-alerts)))
+      (format #t "  alerts generated: ~a\n" (length alerts)))))
+
+
+;; ═════════════════════════════════════════════════════════════════════════
+;; Section F: Critical path — schedule the 3-step collection run
+;; ═════════════════════════════════════════════════════════════════════════
+
+(display "\n=== Section F: Critical path ===\n")
+
+(define cp-plan-id "plan-cp-food")
+
+(with-vat vat
+  (let ((pr ($ food-runners 'process-registry))
+        (ps ($ food-runners 'plan-store))
+        (rs ($ food-runners 'recipe-store)))
+
+    ;; Create a plan for this critical-path test
+    ($ ps 'add-plan (make-plan cp-plan-id "Critical Path Test" #f #f #f #f #f #f))
+
+    ;; Register 3 processes with timestamps encoding durations
+    ;; Pickup: 06:00-06:30 (0.5h = 1800s = 1800000ms)
+    ($ pr 'register
+       (make-process "proc-cp-pickup" "Pickup" #f "pspec-pickup" #f
+         cp-plan-id #f #f "2026-04-03T06:00:00Z" "2026-04-03T06:30:00Z" #f))
+    ;; Sort: 06:30-07:15 (0.75h = 2700s = 2700000ms)
+    ($ pr 'register
+       (make-process "proc-cp-sort" "Sort" #f "pspec-sort" #f
+         cp-plan-id #f #f "2026-04-03T06:30:00Z" "2026-04-03T07:15:00Z" #f))
+    ;; Deliver: 07:15-07:30 (0.25h = 900s = 900000ms)
+    ($ pr 'register
+       (make-process "proc-cp-deliver" "Deliver" #f "pspec-deliver" #f
+         cp-plan-id #f #f "2026-04-03T07:15:00Z" "2026-04-03T07:30:00Z" #f))
+
+    ;; Commitments that create the dependency edges:
+    ;; pickup produces collected → sort consumes collected
+    ($ ps 'add-commitment
+       (make-commitment "c-cp-pickup-out" 'produce #f #f "proc-cp-pickup"
+         #f "spec-collected" #f
+         (make-measure 100 "kg") #f
+         "agent-food-runners" #f
+         #f #f #f #f #f #f #f #f #f #f #f #f cp-plan-id #f #f))
+    ($ ps 'add-commitment
+       (make-commitment "c-cp-sort-in" 'consume #f "proc-cp-sort" #f
+         #f "spec-collected" #f
+         (make-measure 100 "kg") #f
+         #f "agent-food-runners"
+         #f #f #f #f #f #f #f #f #f #f #f #f cp-plan-id #f #f))
+    ;; sort produces sorted → deliver consumes sorted
+    ($ ps 'add-commitment
+       (make-commitment "c-cp-sort-out" 'produce #f #f "proc-cp-sort"
+         #f "spec-sorted-produce" #f
+         (make-measure 90 "kg") #f
+         "agent-food-runners" #f
+         #f #f #f #f #f #f #f #f #f #f #f #f cp-plan-id #f #f))
+    ($ ps 'add-commitment
+       (make-commitment "c-cp-deliver-in" 'consume #f "proc-cp-deliver" #f
+         #f "spec-sorted-produce" #f
+         (make-measure 90 "kg") #f
+         #f "agent-food-runners"
+         #f #f #f #f #f #f #f #f #f #f #f #f cp-plan-id #f #f))
+
+    ;; Run critical path
+    (let ((cp (critical-path cp-plan-id ps pr rs)))
+      (let ((path (assq-ref cp 'critical-path))
+            (schedule (assq-ref cp 'schedule))
+            (total (assq-ref cp 'total-duration-ms)))
+        (format #t "  critical path: ~a\n" path)
+        (format #t "  total duration: ~ams (~ah)\n" total (/ total 3600000.0))
+
+        (check "critical path has 3 processes" (= 3 (length path)))
+        ;; 1800000 + 2700000 + 900000 = 5400000ms = 1.5h
+        (check "total duration = 1.5h (5400000ms)" (= 5400000 total))
+
+        ;; All floats should be 0 (linear chain, no parallelism)
+        (for-each
+          (lambda (entry)
+            (let ((f (assq-ref entry 'float)))
+              (check (format #f "~a float = 0" (assq-ref entry 'process-id))
+                (< (abs f) 1))))
+          schedule)))))
+
+
+;; ═════════════════════════════════════════════════════════════════════════
+;; Section G: Execution events — run the collection
+;; ═════════════════════════════════════════════════════════════════════════
+
+(display "\n=== Section G: Execution events ===\n")
+
+(with-vat vat
+  (let* ((obs ($ food-runners 'observer))
+         (ps  ($ food-runners 'plan-store))
+         (bzs ($ food-runners 'buffer-zone-store))
+         (sns ($ food-runners 'snapshot-store))
+         (als ($ food-runners 'alert-store))
+         (exec-ctx `((observer . ,obs) (plan-store . ,ps)
+                     (buffer-zone-store . ,bzs) (snapshot-store . ,sns)
+                     (location-store . ,location-store))))
+
+    ;; Clear alerts from prior section
+    ($ als 'clear)
+
+    ;; Seed a "received produce" resource in Food Runners' scope
+    ;; (SF Market's resource lives in sf-market's observer; Food Runners
+    ;; tracks its own received inventory separately)
+    ($ obs 'seed-resource
+       (make-economic-resource "r-received-produce" "Received Produce (SoMa)"
+         #f #f #f "spec-produce" #f
+         (make-measure 250 "kg") (make-measure 250 "kg")
+         "loc-soma" #f "agent-food-runners" #f #f #f #f #f #f #f #f))
+
+    ;; Event 1: Consume raw produce at warehouse (the pickup result)
+    (record-and-monitor obs
+      (make-economic-event
+        "ev-consume-produce" 'consume "proc-cp-pickup" #f
+        "r-received-produce" #f "spec-produce" #f
+        "agent-food-runners" "agent-food-runners"
+        (make-measure 250 "kg") #f
+        #f #f "2026-04-03T06:30:00Z" #f
+        "loc-soma" #f #f
+        #f #f #f #f #f #f #f #f #f #f)
+      exec-ctx als)
+
+    (let ((r ($ obs 'get-resource "r-received-produce")))
+      (check "received produce consumed (0kg remaining)"
+        (= 0 (measure-has-numerical-value (economic-resource-onhand-quantity r)))))
+
+    ;; Event 2: Sort — produce 225kg sorted produce at warehouse
+    ($ obs 'seed-resource
+       (make-economic-resource "r-sorted-soma" "Sorted Produce (SoMa)"
+         #f #f #f "spec-sorted-produce" #f
+         (make-measure 0 "kg") (make-measure 0 "kg")
+         "loc-soma" #f "agent-food-runners" #f #f #f #f #f #f #f #f))
+
+    (record-and-monitor obs
+      (make-economic-event
+        "ev-sort-produce" 'produce #f "proc-cp-sort"
+        "r-sorted-soma" #f "spec-sorted-produce" #f
+        "agent-food-runners" "agent-food-runners"
+        (make-measure 225 "kg") #f
+        #f #f "2026-04-03T07:00:00Z" #f
+        "loc-soma" #f #f
+        #f #f #f #f #f #f #f #f #f #f)
+      exec-ctx als)
+
+    (let ((r ($ obs 'get-resource "r-sorted-soma")))
+      (check "sorted produce = 225kg after sort"
+        (= 225 (measure-has-numerical-value (economic-resource-onhand-quantity r)))))
+
+    ;; Event 3: Deliver 50kg sorted produce to GLIDE (transfer-custody)
+    ($ obs 'seed-resource
+       (make-economic-resource "r-sorted-glide" "Sorted Produce (GLIDE)"
+         #f #f #f "spec-sorted-produce" #f
+         (make-measure 0 "kg") (make-measure 0 "kg")
+         "loc-tenderloin" #f "agent-glide" #f #f #f #f #f #f #f #f))
+
+    (record-and-monitor obs
+      (make-economic-event
+        "ev-deliver-glide" 'transfer-custody #f #f
+        "r-sorted-soma" "r-sorted-glide" "spec-sorted-produce" #f
+        "agent-food-runners" "agent-glide"
+        (make-measure 50 "kg") #f
+        #f #f "2026-04-03T09:00:00Z" #f
+        "loc-soma" "loc-tenderloin" #f
+        #f #f #f #f #f #f #f #f #f #f)
+      exec-ctx als)
+
+    (let ((r ($ obs 'get-resource "r-sorted-glide")))
+      (check "GLIDE received 50kg sorted produce"
+        (= 50 (measure-has-numerical-value (economic-resource-onhand-quantity r)))))
+
+    ;; Event 4: Large delivery drains buffer to yellow zone — triggers alert
+    ;; Deliver 150kg more, leaving 25kg onhand (between TOR=50 ... wait, 25 < TOR=50 → red)
+    (record-and-monitor obs
+      (make-economic-event
+        "ev-deliver-mission" 'transfer-custody #f #f
+        "r-sorted-soma" #f "spec-sorted-produce" #f
+        "agent-food-runners" "agent-mission-meals"
+        (make-measure 150 "kg") #f
+        #f #f "2026-04-03T10:00:00Z" #f
+        "loc-soma" "loc-mission" #f
+        #f #f #f #f #f #f #f #f #f #f)
+      exec-ctx als)
+
+    (let ((r ($ obs 'get-resource "r-sorted-soma")))
+      (check "sorted produce drained to 25kg"
+        (= 25 (measure-has-numerical-value (economic-resource-onhand-quantity r)))))
+
+    ;; Now buffer-status-monitor should fire: 25kg < TOR=50 → red zone
+    (let ((buf-alerts ($ als 'of-kind 'buffer-status)))
+      (format #t "  buffer alerts: ~a\n" (length buf-alerts))
+      (check "buffer-status alert generated" (pair? buf-alerts))
+      (check "alert is for sorted-produce"
+        (equal? "spec-sorted-produce" (assq-ref (car buf-alerts) 'spec-id)))
+      (check "alert zone is red" (eq? 'red (assq-ref (car buf-alerts) 'zone))))
+
+    ;; Check snapshots were recorded (snapshot-sink fires)
+    (let ((snaps ($ sns 'all-snapshots)))
+      (format #t "  snapshots recorded: ~a\n" (length snaps))
+      (check "snapshots recorded by execution sink" (pair? snaps)))))
+
+
+;; ═════════════════════════════════════════════════════════════════════════
+;; Section H: Custody tracking — who holds the produce?
+;; ═════════════════════════════════════════════════════════════════════════
+
+(display "\n=== Section H: Custody tracking ===\n")
+
+;; Custody uses mutable hash tables — run outside vat.
+;; Note: compute.scm redefines current-custodian/held-by with (ledger, id) order
+;; (shadowing custody.scm's (id, ledger) order). We use the compute.scm signatures
+;; since $ALL loads it last.
+(let ((ledger (make-custody-ledger)))
+  ;; Initial custody: SF Market holds produce
+  (let ((ev (make-economic-event
+              "ev-custody-init" 'transfer-custody #f #f
+              #f "r-sfmarket-produce" "spec-produce" #f
+              #f "agent-sf-market"
+              (make-measure 500 "kg") #f
+              #f #f "2026-04-01T00:00:00Z" #f
+              #f "loc-bayview" #f
+              #f #f #f #f #f #f #f #f #f 200)))
+    (apply-transfer-custody ev 200 ledger))
+
+  ;; Transfer: SF Market → Food Runners (pickup)
+  (let ((ev (make-economic-event
+              "ev-custody-pickup" 'transfer-custody #f #f
+              "r-sfmarket-produce" #f "spec-produce" #f
+              "agent-sf-market" "agent-food-runners"
+              (make-measure 250 "kg") #f
+              #f #f "2026-04-03T06:00:00Z" #f
+              "loc-bayview" "loc-soma" #f
+              #f #f #f #f #f #f #f #f #f 100)))
+    (apply-transfer-custody ev 100 ledger))
+
+  ;; Verify custody via the mutable ledger's hash table directly
+  ;; (apply-transfer-custody mutates the hash tables in-place)
+  (let* ((records (ledger-records ledger))
+         (rec (hash-ref records "r-sfmarket-produce" #f)))
+    (check "Food Runners holds produce after pickup"
+      (and rec (equal? "agent-food-runners" (assq-ref rec 'holder)))))
+
+  ;; Transfer: Food Runners → GLIDE (delivery)
+  (let ((ev (make-economic-event
+              "ev-custody-deliver" 'transfer-custody #f #f
+              "r-sorted-glide" #f "spec-sorted-produce" #f
+              "agent-food-runners" "agent-glide"
+              (make-measure 50 "kg") #f
+              #f #f "2026-04-03T09:00:00Z" #f
+              "loc-soma" "loc-tenderloin" #f
+              #f #f #f #f #f #f #f #f #f 30)))
+    (apply-transfer-custody ev 30 ledger))
+
+  (let* ((records (ledger-records ledger))
+         (rec (hash-ref records "r-sorted-glide" #f)))
+    (check "GLIDE holds sorted produce after delivery"
+      (and rec (equal? "agent-glide" (assq-ref rec 'holder)))))
+
+  (let* ((by-agent (ledger-by-agent ledger))
+         (glide-resources (hash-ref by-agent "agent-glide" '())))
+    (check "GLIDE holds resources in custody"
+      (member "r-sorted-glide" glide-resources))))
+
+
+;; ═════════════════════════════════════════════════════════════════════════
+;; Section I: Track & trace — provenance and destination
+;; ═════════════════════════════════════════════════════════════════════════
+
+(display "\n=== Section I: Track & trace ===\n")
+
+(with-vat vat
+  (let ((obs ($ food-runners 'observer)))
+    ;; Trace backward from sorted produce at GLIDE
+    (let ((provenance (trace "r-sorted-glide" obs)))
+      (format #t "  trace depth: ~a nodes\n" (length provenance))
+      (check "trace finds provenance" (pair? provenance)))
+
+    ;; Track forward from received produce (has consume event in this observer)
+    (let ((destinations (track "r-received-produce" obs)))
+      (format #t "  track depth: ~a nodes\n" (length destinations))
+      (check "track finds destinations" (pair? destinations)))))
+
+
+;; ═════════════════════════════════════════════════════════════════════════
+;; Section J: Metabolism — net resource flow balance
+;; ═════════════════════════════════════════════════════════════════════════
+
+(display "\n=== Section J: Metabolism ===\n")
+
+;; Metabolic accounting — compute.scm shadows metabolism.scm's metabolic-balance
+;; with a relational-facts version, so we do the accounting inline.
+(define food-runner-events
+  (with-vat vat ($ ($ food-runners 'observer) 'all-events)))
+
+(let ((total-input 0)
+      (total-output 0)
+      (specs-seen '()))
+  (for-each
+    (lambda (e)
+      (let* ((ts (or (economic-event-has-point-in-time e)
+                     (economic-event-has-beginning e)))
+             (in-range (and ts (string>=? ts "2026-04-03T00:00:00Z")
+                            (string<=? ts "2026-04-05T23:59:59Z")))
+             (action (economic-event-action e))
+             (spec (economic-event-resource-conforms-to e))
+             (qty (if (economic-event-resource-quantity e)
+                      (measure-has-numerical-value (economic-event-resource-quantity e)) 0)))
+        (when in-range
+          (when spec (unless (member spec specs-seen) (set! specs-seen (cons spec specs-seen))))
+          (cond
+            ((memq action '(consume use work accept pickup))
+             (set! total-input (+ total-input qty)))
+            ((memq action '(produce modify deliver-service dropoff))
+             (set! total-output (+ total-output qty)))))))
+    food-runner-events)
+  (format #t "  input: ~a  output: ~a  net: ~a\n" total-input total-output
+          (- total-output total-input))
+  (check "metabolism has input" (> total-input 0))
+  (check "metabolism has output" (> total-output 0))
+  ;; Net should be negative: we consumed 250kg but only produced 225kg (10% shrinkage)
+  (check "net reflects shrinkage" (< (- total-output total-input) 0))
+  (check "multiple specs involved" (> (length specs-seen) 1)))
+
+
+;; ═════════════════════════════════════════════════════════════════════════
+;; Section K: OTIF delivery metrics — did we deliver on time and in full?
+;; ═════════════════════════════════════════════════════════════════════════
+
+(display "\n=== Section K: OTIF delivery metrics ===\n")
+
+(with-vat vat
+  (let ((obs ($ food-runners 'observer))
+        (ps  ($ food-runners 'plan-store)))
+
+    ;; Create commitment: deliver 50kg sorted produce to GLIDE by April 3 10:00
+    ($ ps 'add-commitment
+       (make-commitment "c-deliver-glide" 'transfer-custody #f #f #f
+         "r-sorted-soma" "spec-sorted-produce" #f
+         (make-measure 50 "kg") #f
+         "agent-food-runners" "agent-glide"
+         #f #f #f "2026-04-03T10:00:00Z"
+         #f #f #f #f #f #f #f #f #f #f #f))
+
+    ;; Register the commitment with the observer for fulfillment tracking
+    ($ obs 'register-commitment
+       ($ ps 'get-commitment "c-deliver-glide"))
+
+    ;; Record the fulfilling event (at 09:00, due is 10:00 → on time)
+    ($ obs 'record-event
+       (make-economic-event
+         "ev-fulfill-glide" 'transfer-custody #f #f
+         "r-sorted-soma" "r-sorted-glide" "spec-sorted-produce" #f
+         "agent-food-runners" "agent-glide"
+         (make-measure 50 "kg") #f
+         #f #f "2026-04-03T09:00:00Z" #f
+         "loc-soma" "loc-tenderloin" #f
+         "c-deliver-glide" #f #f #f #f #f #f #f #f #f))
+
+    ;; Check fulfillment state directly (compute-otif is shadowed by compute.scm)
+    (let ((fs ($ obs 'get-fulfillment "c-deliver-glide")))
+      (check "fulfillment state exists" (fulfillment-state? fs))
+      (let ((committed (measure-has-numerical-value (fulfillment-state-total-committed fs)))
+            (fulfilled (measure-has-numerical-value (fulfillment-state-total-fulfilled fs))))
+        (format #t "  committed: ~akg  fulfilled: ~akg\n" committed fulfilled)
+        (check "committed = 50kg" (= 50 committed))
+        (check "fulfilled = 50kg (in-full)" (= 50 fulfilled))
+        (check "fulfillment marked done" (fulfillment-state-finished fs))))
+
+    ;; Verify on-time: event at 09:00 <= due at 10:00
+    (let* ((events ($ obs 'fulfilled-by "c-deliver-glide"))
+           (latest (and (pair? events)
+                        (economic-event-has-point-in-time (car events)))))
+      (check "fulfilling event exists" (pair? events))
+      (check "delivery on time"
+        (string<=? (substring latest 0 10) "2026-04-03")))))
+
+
+;; ═════════════════════════════════════════════════════════════════════════
+;; Section L: Full-cycle persistence — everything survives save/restore
+;; ═════════════════════════════════════════════════════════════════════════
+
+(display "\n=== Section L: Full-cycle persistence ===\n")
+
+(define-values (vat3 sf-market3 safeway3 food-runners3 glide3 mission-meals3 registry3)
+  (spawn-persistent-vat
+    scope-env-full
+    (lambda () (error "Should restore from store!"))
+    store))
+
+(with-vat vat3
+  ;; Core entities survived
+  (check "Food Runners restored (cycle 2)"
+    (equal? "Food Runners SF" ($ food-runners3 'name)))
+
+  ;; Buffer zones survived
+  (let ((bz ($ ($ food-runners3 'buffer-zone-store) 'get-zone "bz-sorted-produce")))
+    (check "buffer zone persisted" (buffer-zone? bz))
+    (check "buffer TOR = 50" (= 50 (buffer-zone-tor bz)))
+    (check "buffer TOG = 250" (= 250 (buffer-zone-tog bz))))
+
+  ;; Snapshots survived
+  (let ((snaps ($ ($ food-runners3 'snapshot-store) 'all-snapshots)))
+    (check "snapshots persisted" (pair? snaps)))
+
+  ;; Events survived in observer
+  (let ((events ($ ($ food-runners3 'observer) 'all-events)))
+    (check "execution events persisted" (pair? events)))
+
+  ;; 3-process recipe survived
+  (let ((chain ($ ($ food-runners3 'recipe-store) 'get-process-chain "recipe-collect-deliver")))
+    (check "3-process recipe persisted" (= 3 (length chain))))
+
+  ;; Processes in registry survived
+  (let ((procs ($ ($ food-runners3 'process-registry) 'for-plan cp-plan-id)))
+    (check "critical-path processes persisted" (= 3 (length procs)))))
+
+
+;; ═════════════════════════════════════════════════════════════════════════
 ;; Summary
 ;; ═════════════════════════════════════════════════════════════════════════
 

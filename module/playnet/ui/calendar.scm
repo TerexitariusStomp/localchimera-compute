@@ -223,8 +223,9 @@
         ((eq? status 'committed) "\u25d0")   ;; ◐
         (else "\u25cb")))                     ;; ○
 
-(define (render-event-block evt col total-cols on-click)
-  "Render a single event as an absolute-positioned colored block."
+(define (render-event-block evt col total-cols on-click on-cycle stop-prop)
+  "Render a single event as an absolute-positioned colored block.
+   on-click: opens detail panel. on-cycle: cycles VF status (on the dot)."
   (let* ((pct-left  (inexact->exact (round (* (/ col total-cols) 100))))
          (pct-width (inexact->exact (round (/ 100 total-cols))))
          (top-px    (event-top evt))
@@ -263,7 +264,11 @@
                       "border-left:3px " border-style " " color ";"))
              (click ,on-click))
           (div (@ (class "cal-event-title"))
-               (span (@ (class "cal-status-dot")) ,(status-dot status))
+               ,@(if (and is-vf on-cycle)
+                     (list `(span (@ (class "cal-status-dot cal-status-btn")
+                                     (click ,(lambda (e) (stop-prop e) (on-cycle evt))))
+                                  ,(status-dot status)))
+                     (list `(span (@ (class "cal-status-dot")) ,(status-dot status))))
                ,title
                ,@(if is-vf
                      (list `(span (@ (class "cal-vf-badge")) "VF"))
@@ -373,8 +378,8 @@
 ;;; ═══════════════════════════════════════════════════════════════════════════════
 
 (define (render-day-column date-str day-events availability people
-                          on-slot-click on-event-click time-line-sxml
-                          is-today)
+                          on-slot-click on-event-click on-cycle-status
+                          time-line-sxml is-today stop-prop)
   "One day column: hour cells (click targets) + availability + events + time line."
   (let ((positioned (compute-event-columns day-events)))
     `(div (@ (class ,(string-append "cal-day-col"
@@ -418,7 +423,8 @@
                          (col (cadr triple))
                          (total (caddr triple)))
                      (render-event-block evt col total
-                                        (lambda (e) (on-event-click evt)))))
+                                        (lambda (e) (on-event-click evt))
+                                        on-cycle-status stop-prop)))
                  positioned))))
 
 
@@ -1059,6 +1065,7 @@
                               (selected-intent-id #f)
                               on-export
                               on-record-effort
+                              on-cycle-status
                               (process-flows '())
                               (supply-chain '()))
   "Compose the full calendar page."
@@ -1131,7 +1138,8 @@
                                                         (string=? ds today-date-str))))
                                     (render-day-column ds day-evts day-avail people
                                                        on-slot-click on-event-click
-                                                       day-time-line is-today)))
+                                                       on-cycle-status
+                                                       day-time-line is-today stop-prop)))
                                 (list 0 1 2 3 4 5 6))))
                ;; Detail panel (right sidebar)
                ,@(if selected-event

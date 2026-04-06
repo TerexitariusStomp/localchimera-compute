@@ -655,6 +655,20 @@
   opacity: 0.8;
 }
 
+.cal-status-btn {
+  cursor: pointer;
+  font-size: 11px;
+  opacity: 1;
+  padding: 1px 3px;
+  border-radius: 3px;
+  transition: background 0.15s;
+}
+
+.cal-status-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.2);
+}
+
 .cal-vf-badge {
   background: rgba(159, 122, 234, 0.5);
   color: #e0ceed;
