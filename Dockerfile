@@ -59,9 +59,9 @@ RUN --security=insecure \
     && source /root/.config/guix/current/etc/profile \
     && guix-daemon --build-users-group=guixbuild &>/dev/null & \
     sleep 2 \
-    && guix shell guile-next guile-goblins guile-gcrypt -- \
+    && guix shell guile-next guile-goblins guile-gcrypt guile-json -- \
          guile -c '(use-modules (goblins) (goblins utils hashmap) \
-                                (goblins persistence-store memory)) \
+                                (goblins persistence-store memory) (json)) \
                    (display "guix profile ok\n")' \
     && kill %1 2>/dev/null || true
 
@@ -72,7 +72,7 @@ RUN printf '#!/bin/bash\n\
 source /root/.config/guix/current/etc/profile\n\
 guix-daemon --build-users-group=guixbuild &>/dev/null &\n\
 sleep 1\n\
-exec guix shell guile-next guile-goblins guile-gcrypt -- "$@"\n' \
+exec guix shell guile-next guile-goblins guile-gcrypt guile-json -- "$@"\n' \
   > /usr/local/bin/guix-env && chmod +x /usr/local/bin/guix-env
 
 ENTRYPOINT ["/usr/local/bin/guix-env"]

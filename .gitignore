@@ -1,4 +1,5 @@
 secrets.scm
+secrets.env
 .env
 cogno-lisp/
 minikanren/

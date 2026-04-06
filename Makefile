@@ -102,6 +102,14 @@ docker-shell:
 	docker run --rm -it --security-opt seccomp=unconfined \
 	  -v "$$PWD":/src $(DOCKER_IMAGE) guile --no-auto-compile -L module -L planner
 
+docker-weave:
+	@echo "Starting Weave → http://localhost:8081"
+	@open http://localhost:8081 2>/dev/null || xdg-open http://localhost:8081 2>/dev/null || true &
+	docker run --rm -it --security-opt seccomp=unconfined \
+	  -v "$$PWD":/src -w /src -p 8081:8081 \
+	  --env-file secrets.env \
+	  $(DOCKER_IMAGE) guile --no-auto-compile -L module server/weave.scm
+
 weave/weave.wasm: module/weave/browser.scm \
                   module/weave/ui/join.scm \
                   module/weave/ui/room.scm
