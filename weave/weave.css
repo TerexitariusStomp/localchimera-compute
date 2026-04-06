@@ -332,3 +332,40 @@ body {
 }
 
 .error-text { color: var(--danger); font-size: 1.1rem; }
+
+/* ── Breakout room ───────────────────────────────────────────────────────── */
+
+:root { --breakout: #7c3aed; --breakout-hover: #9f68f5; }
+
+.breakout-badge {
+  background: var(--breakout);
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  margin-left: 0.75rem;
+  padding: 2px 10px;
+  text-transform: uppercase;
+}
+
+.room-layout--breakout .room-header {
+  border-bottom-color: var(--breakout);
+}
+
+.control-btn--help {
+  background: var(--breakout);
+  border-color: var(--breakout);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  gap: 0.4rem;
+  padding: 0 1rem;
+  width: auto;
+}
+
+.control-btn--help:hover { background: var(--breakout-hover); }
+
+/* Spinner colour variants */
+.spinner--yellow { border-top-color: #f59e0b; }
+.spinner--purple { border-top-color: var(--breakout); }

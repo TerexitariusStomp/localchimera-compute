@@ -229,73 +229,25 @@
     (virtual-dom-render (document-body) old new-vdom)))
 
 ;;; ═══════════════════════════════════════════════════════════════════════════
-;;; Section 4: Application state (Goblins actor)
+;;; Section 4: Application state
 ;;; ═══════════════════════════════════════════════════════════════════════════
 
-(define *app-vat* (spawn-vat #:name "weave-browser"))
+;; Mutable application state (Sprint 2 keeps set! for clarity;
+;; Sprint 3 will thread state through Goblins actor bcom transitions).
 
-;; Application state actor
-(define (^app-state bcom)
-  "Holds all mutable UI state. bcom transitions to next state."
-  (define state
-    `((screen       . join)       ; 'join | 'connecting | 'room | 'error
-      (room-id      . "")
-      (local-id     . "")         ; LiveKit identity
-      (display-name . "")
-      (role         . participant)
-      (participants . ())         ; list of (identity display-name)
-      (audio-muted  . #f)
-      (video-muted  . #f)
-      (error-msg    . "")))
-
-  (methods
-   ((get key) (assq-ref state key))
-   ((get-all) state)
-
-   ((set! key val)
-    (bcom (^app-state bcom)
-          ;; Return new actor with updated state
-          ;; (actor becomes the new state after bcom)
-          ))
-
-   ;; Transitions
-   ((set-connecting! room-id)
-    (bcom (^app-state bcom)))   ; placeholder — see note below
-
-   ((set-room! local-id display-name role)
-    (bcom (^app-state bcom)))
-
-   ((add-participant! identity display-name)
-    (bcom (^app-state bcom)))
-
-   ((remove-participant! identity)
-    (bcom (^app-state bcom)))
-
-   ((toggle-audio!)
-    (bcom (^app-state bcom)))
-
-   ((toggle-video!)
-    (bcom (^app-state bcom)))
-
-   ((set-error! msg)
-    (bcom (^app-state bcom)))))
-
-;; NOTE: Goblins bcom replaces the actor's behavior with a new closure.
-;; The pattern above is correct but state threading needs to be explicit.
-;; The idiomatic approach: store state as a hashmap and use bcom to swap it.
-;; Full implementation below uses a simpler mutable approach for Sprint 1.
-
-;; Sprint 1 uses direct mutable state (set!) for simplicity.
-;; Sprint 2 will migrate to proper Goblins actor state threading.
-(define *screen*       'join)
-(define *room-id*      "")
-(define *local-id*     "")
-(define *display-name* "")
-(define *role*         'participant)
-(define *participants* '())  ; list of (identity . display-name)
-(define *audio-muted*  #f)
-(define *video-muted*  #f)
-(define *error-msg*    "")
+(define *screen*          'join)   ; 'join | 'connecting | 'room | 'breakout-moving | 'error
+(define *room-id*         "")      ; current LiveKit room id
+(define *meeting-id*      "")      ; server-side meeting id (Sprint 2+)
+(define *local-id*        "")      ; LiveKit identity
+(define *display-name*    "")
+(define *role*            'participant)
+(define *participants*    '())     ; list of (identity display-name)
+(define *audio-muted*     #f)
+(define *video-muted*     #f)
+(define *error-msg*       "")
+(define *in-breakout*     #f)      ; #t when participant is in a breakout room
+(define *help-pending*    '())     ; host-side: list of pending help signals
+(define *breakout-overview* '())   ; host-side: breakout room cards
 
 ;;; ═══════════════════════════════════════════════════════════════════════════
 ;;; Section 5: Render function
@@ -317,10 +269,14 @@
     ((connecting)
      (render-connection-overlay 'connecting))
 
+    ((breakout-moving)
+     (render-connection-overlay 'moving))
+
     ((room)
      (render-room
       *participants* *local-id* *role*
       *audio-muted* *video-muted*
+      *in-breakout* *meeting-id*
       ;; Audio mute toggle
       (lambda (e)
         (set! *audio-muted* (not *audio-muted*))
@@ -343,7 +299,15 @@
         (livekit-disconnect)
         (set! *screen* 'join)
         (set! *participants* '())
-        (refresh!))))
+        (set! *in-breakout* #f)
+        (refresh!))
+      ;; Help (participants in breakout) — POST /api/meetings/:id/help
+      (lambda (e)
+        (unless (string-null? *meeting-id*)
+          (%fetch-json
+           (string-append "/api/meetings/" *meeting-id* "/help")
+           (string-append "{\"identity\":\"" *local-id*
+                          "\",\"room_id\":\"" *room-id* "\"}"))))))
 
     ((error)
      `(div (@ (class "error-screen"))
@@ -361,8 +325,20 @@
 
 (define (do-join! display-name role room-id)
   "Fetch a token from the Weave server and connect to LiveKit.
-   This calls back into JS via %fetch-json, which is synchronous from Scheme's
-   perspective (weave.js bridges the Promise to a sync callback)."
+   If this is a new meeting (no existing meeting-id), creates a meeting first.
+   %fetch-json is synchronous from Scheme's perspective (XHR bridge in weave.js)."
+  ;; Ensure a meeting exists for this room — create one if not yet joined.
+  ;; The server returns "meeting_id:<mid>|room_id:<rid>" (pipe-encoded).
+  (when (string-null? *meeting-id*)
+    (let* ((m-resp (%fetch-json "/api/meetings"
+                                (string-append "{\"name\":\"" room-id "\"}"))))
+      (unless (string-null? m-resp)
+        ;; Parse first pipe segment: "meeting_id:<id>"
+        (let* ((parts (string-split m-resp #\|))
+               (first (car parts)))
+          (when (string-prefix? "meeting_id:" first)
+            (set! *meeting-id* (substring first 11)))))))
+
   (let* ((body (string-append
                 "{\"identity\":\"" display-name
                 "\",\"role\":\"" role
@@ -374,23 +350,22 @@
           (set! *error-msg* "Failed to contact server — is Weave running?")
           (set! *screen* 'error)
           (refresh!))
-        (begin
-          ;; Parse "token|livekit_url|identity" (simplified encoding from weave.js)
-          (let* ((parts      (string-split resp-str #\|))
-                 (token      (list-ref parts 0))
-                 (lk-url     (list-ref parts 1))
-                 (identity   (list-ref parts 2)))
-            (set! *local-id* identity)
-            ;; Add ourselves to participants
-            (set! *participants* (list (list identity display-name)))
-            ;; Connect LiveKit — callbacks fire as participants join/leave/tracks appear
-            (%livekit-connect lk-url token #f)
-            ;; Enable camera + mic by default (non-observers)
-            (unless (string=? role "observer")
-              (%livekit-enable-camera)
-              (%livekit-enable-mic))
-            (set! *screen* 'room)
-            (refresh!))))))
+        (let* ((parts    (string-split resp-str #\|))
+               (token    (list-ref parts 0))
+               (lk-url   (list-ref parts 1))
+               (identity (list-ref parts 2)))
+          (set! *local-id* identity)
+          (set! *in-breakout* #f)
+          ;; Add ourselves to participants list
+          (set! *participants* (list (list identity display-name)))
+          ;; Connect LiveKit — callbacks fire as participants join/leave/tracks appear
+          (%livekit-connect lk-url token #f)
+          ;; Enable camera + mic by default (non-observers)
+          (unless (string=? role "observer")
+            (%livekit-enable-camera)
+            (%livekit-enable-mic))
+          (set! *screen* 'room)
+          (refresh!)))))
 
 ;;; ═══════════════════════════════════════════════════════════════════════════
 ;;; Section 7: LiveKit event callbacks (called from weave.js)
@@ -417,10 +392,67 @@
   (if #f #f))
 
 (define (on-disconnected)
-  "Called when the local participant disconnects unexpectedly."
-  (set! *screen* 'error)
-  (set! *error-msg* "Disconnected from room. Please rejoin.")
-  (refresh!))
+  "Called when the local participant disconnects unexpectedly.
+   If we're mid-transfer (*screen* = breakout-moving), the disconnect is expected."
+  (unless (eq? *screen* 'breakout-moving)
+    (set! *screen* 'error)
+    (set! *error-msg* "Disconnected from room. Please rejoin.")
+    (refresh!)))
+
+(define (on-data-received msg)
+  "Called when a LiveKit data channel message arrives.
+   Sprint 2 messages:
+     move:<room-id>  — move to a different room (host dispatch / recall)
+     help:ack        — host acknowledged a help signal"
+  (cond
+   ;; Room transfer message
+   ((string-prefix? "move:" msg)
+    (let ((target-room-id (substring msg 5)))
+      (unless (string=? target-room-id *room-id*)
+        (do-move-to-room! target-room-id))))
+
+   ;; Help acknowledgement
+   ((string=? msg "help:ack")
+    ;; Could show a brief notification; for now just no-op
+    (if #f #f))
+
+   (else (if #f #f))))
+
+(define (do-move-to-room! target-room-id)
+  "Disconnect from the current room and reconnect to TARGET-ROOM-ID.
+   Used for breakout dispatch and recall."
+  (set! *screen* 'breakout-moving)
+  (refresh!)
+  ;; Disconnect from current room (on-disconnected will fire but we guard it)
+  (livekit-disconnect)
+  ;; Fetch a new token for the target room
+  (let* ((body (string-append
+                "{\"identity\":\"" *display-name*
+                "\",\"role\":\"" (symbol->string *role*)
+                "\",\"display_name\":\"" *display-name* "\"}"))
+         (url      (string-append "/api/rooms/" target-room-id "/token"))
+         (resp-str (%fetch-json url body)))
+    (if (string-null? resp-str)
+        (begin
+          (set! *error-msg* "Failed to get token for breakout room.")
+          (set! *screen* 'error)
+          (refresh!))
+        (let* ((parts    (string-split resp-str #\|))
+               (token    (list-ref parts 0))
+               (lk-url   (list-ref parts 1))
+               (identity (list-ref parts 2)))
+          (set! *room-id*   target-room-id)
+          (set! *local-id*  identity)
+          (set! *participants* (list (list identity *display-name*)))
+          ;; Determine if we're now in a breakout or back in main
+          (set! *in-breakout*
+            (not (string-suffix? "-main" (or target-room-id ""))))
+          (%livekit-connect lk-url token #f)
+          (unless (eq? *role* 'observer)
+            (%livekit-enable-camera)
+            (%livekit-enable-mic))
+          (set! *screen* 'room)
+          (refresh!)))))
 
 ;;; ═══════════════════════════════════════════════════════════════════════════
 ;;; Section 8: Entry point
@@ -429,15 +461,21 @@
 ;; Register LiveKit callbacks with the JS host so it can call back into WASM.
 ;; weave.js stores these references in window._weaveCallbacks.
 (define-foreign register-callbacks! "weave" "registerCallbacks"
-  (ref null extern) (ref null extern) (ref null extern) (ref null extern) -> none)
+  (ref null extern) (ref null extern) (ref null extern) (ref null extern)
+  (ref null extern) -> none)
+
+;; Synchronous GET/DELETE helpers for meeting API calls
+(define-foreign %weave-get-json    "weave" "getJSON"    (ref string) -> (ref string))
+(define-foreign %weave-delete-json "weave" "deleteJSON" (ref string) -> (ref string))
 
 ;; Initial render
 (set! *current-vdom* #f)
 (refresh!)
 
-;; Register event callbacks
+;; Register event callbacks (now 5: add on-data-received)
 (register-callbacks!
  on-participant-connected
  on-participant-disconnected
  on-connection-quality-changed
- on-disconnected)
+ on-disconnected
+ on-data-received)

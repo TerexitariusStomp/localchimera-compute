@@ -8,7 +8,8 @@
             render-video-grid
             render-video-tile-placeholder
             render-host-controls
-            render-connection-overlay))
+            render-connection-overlay
+            render-breakout-badge))
 
 ;;; ── Video grid ────────────────────────────────────────────────────────────────
 
@@ -39,19 +40,26 @@
                    (string=? identity local-identity))))
               participants))))
 
+;;; ── Breakout badge ────────────────────────────────────────────────────────────
+
+(define (render-breakout-badge)
+  "Small pill shown in the header when the local participant is in a breakout room."
+  `(span (@ (class "breakout-badge")) "Breakout Room"))
+
 ;;; ── Host controls ─────────────────────────────────────────────────────────────
 
 (define (render-host-controls on-mute-audio on-mute-video on-share-screen
-                               on-leave audio-muted? video-muted?)
-  "Render the bottom control bar (shown to all participants, with host-only
-   controls hidden via CSS class when role ≠ convener)."
+                               on-leave on-help
+                               audio-muted? video-muted? in-breakout?)
+  "Render the bottom control bar.
+   ON-HELP is shown only when IN-BREAKOUT? is #t (participants requesting host attention)."
   `(div (@ (class "controls-bar"))
      (button (@ (class ,(string-append "control-btn"
                                        (if audio-muted? " control-btn--active" "")))
                 (title ,(if audio-muted? "Unmute microphone" "Mute microphone"))
                 (click ,on-mute-audio))
        (span (@ (class "control-icon"))
-         ,(if audio-muted? "🎙️✕" "🎙️")))
+         ,(if audio-muted? "🎙✕" "🎙")))
      (button (@ (class ,(string-append "control-btn"
                                        (if video-muted? " control-btn--active" "")))
                 (title ,(if video-muted? "Start camera" "Stop camera"))
@@ -61,7 +69,15 @@
      (button (@ (class "control-btn")
                 (title "Share screen")
                 (click ,on-share-screen))
-       (span (@ (class "control-icon")) "🖥️"))
+       (span (@ (class "control-icon")) "🖥"))
+     ;; Help button — only visible in breakout rooms
+     ,(if in-breakout?
+          `(button (@ (class "control-btn control-btn--help")
+                      (title "Ask host for help")
+                      (click ,on-help))
+             (span (@ (class "control-icon")) "?")
+             " Help")
+          "")
      (div (@ (class "controls-spacer")))
      (button (@ (class "control-btn control-btn--leave")
                 (title "Leave meeting")
@@ -71,17 +87,22 @@
 ;;; ── Full room layout ──────────────────────────────────────────────────────────
 
 (define (render-room participants local-identity role
-                      audio-muted? video-muted?
-                      on-mute-audio on-mute-video on-share-screen on-leave)
-  "Render the full in-meeting view."
+                      audio-muted? video-muted? in-breakout? meeting-id
+                      on-mute-audio on-mute-video on-share-screen on-leave on-help)
+  "Render the full in-meeting view.
+   IN-BREAKOUT? controls visibility of help button.
+   MEETING-ID is unused at render time but kept for future header display."
   `(div (@ (class ,(string-append "room-layout"
-                                  " room-layout--" (symbol->string role))))
+                                  " room-layout--" (symbol->string role)
+                                  (if in-breakout? " room-layout--breakout" ""))))
      (div (@ (class "room-header"))
        (span (@ (class "room-status-dot")))
-       (span (@ (class "room-status-text")) "Live"))
+       (span (@ (class "room-status-text")) "Live")
+       ,(if in-breakout? (render-breakout-badge) ""))
      ,(render-video-grid participants local-identity)
      ,(render-host-controls on-mute-audio on-mute-video on-share-screen
-                            on-leave audio-muted? video-muted?)))
+                            on-leave on-help
+                            audio-muted? video-muted? in-breakout?)))
 
 ;;; ── Overlays ──────────────────────────────────────────────────────────────────
 
@@ -95,6 +116,10 @@
            `(div
               (div (@ (class "spinner")))
               (p "Connecting...")))
+          ((moving)
+           `(div
+              (div (@ (class "spinner spinner--purple")))
+              (p "Moving to breakout room...")))
           ((reconnecting)
            `(div
               (div (@ (class "spinner spinner--yellow")))

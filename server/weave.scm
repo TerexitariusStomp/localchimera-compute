@@ -26,12 +26,14 @@
              (goblins actor-lib methods)
              (weave auth)
              (weave livekit)
-             (weave room))
+             (weave room)
+             (weave meeting))
 
 ;;; ── Vat + room manager ────────────────────────────────────────────────────────
 
-(define *vat*          (spawn-vat #:name "weave"))
-(define *room-manager* (with-vat *vat* (spawn ^room-manager)))
+(define *vat*            (spawn-vat #:name "weave"))
+(define *room-manager*   (with-vat *vat* (spawn ^room-manager)))
+(define *meeting-manager* (with-vat *vat* (spawn ^meeting-manager *room-manager*)))
 
 ;;; ── Static asset paths ───────────────────────────────────────────────────────
 
@@ -139,6 +141,115 @@
                           (identity    . ,lk-identity)
                           (room_id     . ,room-id)))))))
 
+;;; ── Meeting API handlers ─────────────────────────────────────────────────────
+
+(define (handle-create-meeting body-alist)
+  "POST /api/meetings — create a meeting session with a main LiveKit room."
+  (let* ((name      (or (assoc-ref body-alist "name")
+                        (assoc-ref body-alist 'name)
+                        "Untitled Meeting"))
+         (id+ref    (with-vat *vat*
+                      ($ *meeting-manager* 'create-meeting! name)))
+         (mid       (car id+ref))
+         (m-ref     (cdr id+ref))
+         (info      (with-vat *vat* ($ m-ref 'get-info)))
+         (room-id   (assoc-ref info 'main-room-id)))
+    ;; Return both JSON (for curl) and a pipe-encoded header for WASM client
+    ;; weave.js fetch.postJSON returns "meeting_id:<mid>|room_id:<rid>"
+    (values (build-response
+             #:code 200
+             #:headers `((content-type . (application/json))
+                         (access-control-allow-origin . "*")
+                         (x-weave-encoded
+                          . ,(string-append "meeting_id:" mid
+                                            "|room_id:" room-id))))
+            (string->bytevector
+             (scm->json-string `((meeting_id   . ,mid)
+                                 (main_room_id . ,room-id)
+                                 (name         . ,name)
+                                 (phase        . "lobby")))
+             "UTF-8"))))
+
+(define (handle-get-meeting meeting-id)
+  "GET /api/meetings/:id — return current meeting state."
+  (let ((m-ref (with-vat *vat* ($ *meeting-manager* 'get-meeting meeting-id))))
+    (if (not m-ref)
+        (respond-error 404 (string-append "Meeting not found: " meeting-id))
+        (let ((info (with-vat *vat* ($ m-ref 'get-info))))
+          (respond-json info)))))
+
+(define (handle-dispatch-breakouts meeting-id body-alist)
+  "POST /api/meetings/:id/breakouts — dispatch participants into breakout rooms.
+   Body: { count: N, identities: [\"id1\", \"id2\", ...] }
+   Or:   { assignments: { \"id1\": \"room-id\", ... } } for explicit placement."
+  (let ((m-ref (with-vat *vat* ($ *meeting-manager* 'get-meeting meeting-id))))
+    (if (not m-ref)
+        (respond-error 404 (string-append "Meeting not found: " meeting-id))
+        (let* ((custom  (assoc-ref body-alist "assignments"))
+               (result
+                (if custom
+                    ;; Explicit assignment map
+                    (let ((pairs (map (lambda (kv) (cons (car kv) (cdr kv)))
+                                     (if (list? custom) custom '()))))
+                      (with-vat *vat* ($ m-ref 'dispatch-custom! pairs))
+                      '())
+                    ;; Round-robin assignment
+                    (let* ((count (or (assoc-ref body-alist "count") 2))
+                           (ids   (or (assoc-ref body-alist "identities") '())))
+                      (with-vat *vat*
+                        ($ m-ref 'dispatch-breakouts! ids count))))))
+          (respond-json `((status   . "dispatched")
+                          (breakouts . ,result)))))))
+
+(define (handle-recall-breakouts meeting-id)
+  "DELETE /api/meetings/:id/breakouts — recall all participants to main room."
+  (let ((m-ref (with-vat *vat* ($ *meeting-manager* 'get-meeting meeting-id))))
+    (if (not m-ref)
+        (respond-error 404 (string-append "Meeting not found: " meeting-id))
+        (begin
+          (with-vat *vat* ($ m-ref 'recall!))
+          (respond-json `((status . "recalled")))))))
+
+(define (handle-help-signal meeting-id body-alist)
+  "POST /api/meetings/:id/help — participant in breakout signals they need help."
+  (let ((m-ref (with-vat *vat* ($ *meeting-manager* 'get-meeting meeting-id))))
+    (if (not m-ref)
+        (respond-error 404 (string-append "Meeting not found: " meeting-id))
+        (let* ((identity (or (assoc-ref body-alist "identity") "unknown"))
+               (room-id  (or (assoc-ref body-alist "room_id") "")))
+          (with-vat *vat* ($ m-ref 'signal-help! identity room-id))
+          (respond-json `((status . "received")))))))
+
+(define (handle-get-help-signals meeting-id)
+  "GET /api/meetings/:id/help — host polls for pending help signals (draining)."
+  (let ((m-ref (with-vat *vat* ($ *meeting-manager* 'get-meeting meeting-id))))
+    (if (not m-ref)
+        (respond-error 404 (string-append "Meeting not found: " meeting-id))
+        (let ((signals (with-vat *vat* ($ m-ref 'get-help-signals))))
+          (respond-json `((signals . ,signals)))))))
+
+(define (handle-get-breakout-overview meeting-id)
+  "GET /api/meetings/:id/breakouts — host gets current breakout assignments."
+  (let ((m-ref (with-vat *vat* ($ *meeting-manager* 'get-meeting meeting-id))))
+    (if (not m-ref)
+        (respond-error 404 (string-append "Meeting not found: " meeting-id))
+        (let* ((breakouts   (with-vat *vat* ($ m-ref 'get-breakouts)))
+               (assignments (with-vat *vat* ($ m-ref 'get-all-assignments))))
+          (respond-json
+           `((breakouts . ,(list->vector
+                            (map (lambda (b)
+                                   (let* ((room-id (car b))
+                                          (lk-name (cdr b))
+                                          (members (filter
+                                                    (lambda (id+room)
+                                                      (string=? (cdr id+room) room-id))
+                                                    assignments)))
+                                     `((room_id  . ,room-id)
+                                       (lk_name  . ,lk-name)
+                                       (members  . ,(list->vector
+                                                     (map car members))))))
+                                 breakouts)))))))))
+
 ;;; ── CORS preflight ───────────────────────────────────────────────────────────
 
 (define (handle-options)
@@ -177,9 +288,20 @@
            (format (current-error-port) "create-room error: ~a ~a\n" key args)
            (respond-error 500 (format #f "~a" args)))))
 
-      ;; API: get token — path /api/rooms/<id>/token
+      ;; API: create meeting
+      (('POST "/api/meetings")
+       (catch #t
+         (lambda ()
+           (handle-create-meeting (parse-json-body body)))
+         (lambda (key . args)
+           (format (current-error-port) "create-meeting error: ~a ~a\n" key args)
+           (respond-error 500 (format #f "~a" args)))))
+
+      ;; API: dynamic routes — rooms/:id/token, meetings/:id/breakouts, etc.
       ((method path)
        (cond
+
+        ;; POST /api/rooms/:id/token
         ((and (eq? method 'POST)
               (string-prefix? "/api/rooms/" path)
               (string-suffix? "/token" path))
@@ -192,6 +314,62 @@
              (lambda (key . args)
                (format (current-error-port) "get-token error: ~a ~a\n" key args)
                (respond-error 500 (format #f "~a" args))))))
+
+        ;; GET /api/meetings/:id
+        ((and (eq? method 'GET)
+              (string-prefix? "/api/meetings/" path)
+              (= (length (string-split path #\/)) 4))
+         (let ((mid (list-ref (string-split path #\/) 3)))
+           (handle-get-meeting mid)))
+
+        ;; POST /api/meetings/:id/breakouts — dispatch
+        ((and (eq? method 'POST)
+              (string-prefix? "/api/meetings/" path)
+              (string-suffix? "/breakouts" path))
+         (let* ((parts (string-split path #\/))
+                (mid   (list-ref parts 3)))
+           (catch #t
+             (lambda ()
+               (handle-dispatch-breakouts mid (parse-json-body body)))
+             (lambda (key . args)
+               (format (current-error-port) "dispatch-breakouts error: ~a ~a\n" key args)
+               (respond-error 500 (format #f "~a" args))))))
+
+        ;; GET /api/meetings/:id/breakouts — overview
+        ((and (eq? method 'GET)
+              (string-prefix? "/api/meetings/" path)
+              (string-suffix? "/breakouts" path))
+         (let* ((parts (string-split path #\/))
+                (mid   (list-ref parts 3)))
+           (handle-get-breakout-overview mid)))
+
+        ;; DELETE /api/meetings/:id/breakouts — recall
+        ((and (eq? method 'DELETE)
+              (string-prefix? "/api/meetings/" path)
+              (string-suffix? "/breakouts" path))
+         (let* ((parts (string-split path #\/))
+                (mid   (list-ref parts 3)))
+           (catch #t
+             (lambda () (handle-recall-breakouts mid))
+             (lambda (key . args)
+               (format (current-error-port) "recall-breakouts error: ~a ~a\n" key args)
+               (respond-error 500 (format #f "~a" args))))))
+
+        ;; POST /api/meetings/:id/help — participant signals help
+        ((and (eq? method 'POST)
+              (string-prefix? "/api/meetings/" path)
+              (string-suffix? "/help" path))
+         (let* ((parts (string-split path #\/))
+                (mid   (list-ref parts 3)))
+           (handle-help-signal mid (parse-json-body body))))
+
+        ;; GET /api/meetings/:id/help — host reads signals
+        ((and (eq? method 'GET)
+              (string-prefix? "/api/meetings/" path)
+              (string-suffix? "/help" path))
+         (let* ((parts (string-split path #\/))
+                (mid   (list-ref parts 3)))
+           (handle-get-help-signals mid)))
 
         (else (respond-not-found path)))))))
 
@@ -209,6 +387,8 @@
     (format #t "║  LiveKit host  →  ~a\n" (livekit-host))
     (format #t "╚══════════════════════════════════════╝\n\n")
 
-    (run-server weave-handler 'http `(#:port ,port))))
+    (run-server weave-handler 'http
+                `(#:host ,(or (getenv "WEAVE_HOST") "0.0.0.0")
+                  #:port ,port))))
 
 (main)

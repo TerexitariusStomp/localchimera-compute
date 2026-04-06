@@ -6,3 +6,4 @@ minikanren/
 tests/screenshots/
 node_modules/
 .claude/settings.local.json
+.vscode/settings.json

@@ -9,7 +9,7 @@
 ;;;   Authorization: Bearer <admin-token>
 
 (define-module (weave livekit)
-  #:use-module (weave auth)
+  #:use-module (weave auth)            ; base64url-encode-bv, livekit-api-key/secret
   #:use-module (web client)
   #:use-module (web response)
   #:use-module (web uri)
@@ -21,7 +21,8 @@
             livekit-delete-room
             livekit-list-rooms
             livekit-list-participants
-            livekit-remove-participant))
+            livekit-remove-participant
+            livekit-send-data))
 
 ;;; ── Config ───────────────────────────────────────────────────────────────────
 
@@ -54,7 +55,7 @@
 
 ;;; ── Room management ──────────────────────────────────────────────────────────
 
-(define (livekit-create-room name
+(define* (livekit-create-room name
                               #:key
                               (empty-timeout 300)
                               (max-participants 50))
@@ -85,3 +86,22 @@
   (livekit-post "RemoveParticipant"
                 `((room     . ,room-name)
                   (identity . ,identity))))
+
+(define* (livekit-send-data room-name data-string
+                             #:optional (destination-identities '()))
+  "Send DATA-STRING (UTF-8) to participants in ROOM-NAME.
+   DESTINATION-IDENTITIES is a list of LiveKit identity strings.
+   An empty list broadcasts to everyone in the room.
+   DATA-STRING is base64-encoded by the server before sending."
+  (let* ((data-bv   (string->bytevector data-string "UTF-8"))
+         (b64-data  (base64url-encode-bv data-bv))
+         (body      `((room   . ,room-name)
+                      (data   . ,b64-data)
+                      (kind   . 1))))     ; 1 = RELIABLE
+    ;; Add destination_sids only when targeting specific participants
+    (livekit-post "SendData"
+                  (if (null? destination-identities)
+                      body
+                      (append body
+                              `((destination_identities . ,destination-identities)))))));
+

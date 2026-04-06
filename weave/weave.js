@@ -18,6 +18,7 @@ let _callbacks = {
   onParticipantDisconnected: null,
   onConnectionQualityChanged: null,
   onDisconnected:             null,
+  onDataReceived:             null,   // Sprint 2: room transfer messages
 };
 
 // ── Load and start WASM ───────────────────────────────────────────────────────
@@ -84,7 +85,10 @@ window.addEventListener("load", async () => {
 
       // ── Fetch (bridged to synchronous via XHR) ──────────────────────────────
       // Scheme calls %fetch-json(url, body) → string result.
-      // Returns "token|livekit_url|identity" on success, "" on failure.
+      // For /api/rooms/.../token:  returns "token|livekit_url|identity"
+      // For /api/meetings:         returns "meeting_id:<mid>|room_id:<rid>"
+      //   (reads X-Weave-Encoded response header)
+      // Returns "" on failure.
       fetch: {
         postJSON(url, body) {
           try {
@@ -93,8 +97,11 @@ window.addEventListener("load", async () => {
             xhr.setRequestHeader("Content-Type", "application/json");
             xhr.send(body);
             if (xhr.status !== 200) return "";
+            // If the server set X-Weave-Encoded, return that directly
+            const encoded = xhr.getResponseHeader("X-Weave-Encoded");
+            if (encoded) return encoded;
+            // Otherwise assume token response
             const data = JSON.parse(xhr.responseText);
-            // Encode the three fields Scheme needs, pipe-separated
             return `${data.token}|${data.livekit_url}|${data.identity}`;
           } catch (e) {
             console.error("fetch.postJSON error:", e);
@@ -152,6 +159,14 @@ window.addEventListener("load", async () => {
             track.detach();
           });
 
+          // Sprint 2: room transfer messages from host via LiveKit data channel
+          _room.on(RoomEvent.DataReceived, (payload, _participant) => {
+            const msg = new TextDecoder().decode(payload);
+            if (_callbacks.onDataReceived) {
+              _callbacks.onDataReceived(msg);
+            }
+          });
+
           await _room.connect(url, token);
         },
 
@@ -199,11 +214,38 @@ window.addEventListener("load", async () => {
 
       // ── Weave callbacks (Scheme registers; JS calls back into WASM) ─────────
       weave: {
-        registerCallbacks(onJoined, onLeft, onQuality, onDisconnect) {
+        registerCallbacks(onJoined, onLeft, onQuality, onDisconnect, onData) {
           _callbacks.onParticipantConnected    = onJoined;
           _callbacks.onParticipantDisconnected = onLeft;
           _callbacks.onConnectionQualityChanged = onQuality;
           _callbacks.onDisconnected             = onDisconnect;
+          _callbacks.onDataReceived             = onData;
+        },
+
+        // Synchronous XHR helper for non-token API calls (returns JSON string)
+        getJSON(url) {
+          try {
+            const xhr = new XMLHttpRequest();
+            xhr.open("GET", url, false);
+            xhr.send();
+            return xhr.status === 200 ? xhr.responseText : "";
+          } catch (e) {
+            console.error("weave.getJSON error:", e);
+            return "";
+          }
+        },
+
+        deleteJSON(url) {
+          try {
+            const xhr = new XMLHttpRequest();
+            xhr.open("DELETE", url, false);
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send();
+            return xhr.status === 200 ? xhr.responseText : "";
+          } catch (e) {
+            console.error("weave.deleteJSON error:", e);
+            return "";
+          }
         },
       },
 
