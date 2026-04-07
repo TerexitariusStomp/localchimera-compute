@@ -13,6 +13,7 @@
              (srfi srfi-9)
              (goblins)
              (goblins actor-lib methods)
+             (weave ui ffi)   ; shared DOM bindings; also imported by (weave ui join)
              (weave ui join)
              (weave ui room))
 
@@ -47,8 +48,9 @@
   (console-log (string-append label ": " (if (string? val) val (object->string val)))))
 
 ;; DOM — document
+;; (get-element-by-id is provided by (weave ui ffi) so it can be shared with
+;; (weave ui join) without tripping Hoot's library-group cross-module check.)
 (define-foreign document-body    "document" "body"          -> (ref null extern))
-(define-foreign get-element-by-id "document" "getElementById" (ref string) -> (ref null extern))
 (define-foreign make-text-node   "document" "createTextNode" (ref string) -> (ref null extern))
 (define-foreign make-element     "document" "createElement"  (ref string) -> (ref null extern))
 (define-foreign make-element-ns  "document" "createElementNS" (ref string) (ref string) -> (ref null extern))
@@ -56,13 +58,12 @@
 (define (make-tree-walker root) (%make-tree-walker root 5))
 
 ;; DOM — events
-(define-foreign prevent-default!      "event" "preventDefault"  (ref null extern) -> none)
+;; (prevent-default! is provided by (weave ui ffi).)
 (define-foreign stop-propagation!     "event" "stopPropagation" (ref null extern) -> none)
 (define-foreign keyboard-event-key    "event" "keyboardKey"      (ref null extern) -> (ref string))
 
 ;; DOM — element
-(define-foreign element-value         "element" "value"           (ref null extern) -> (ref string))
-(define-foreign set-element-value!    "element" "setValue"        (ref null extern) (ref string) -> none)
+;; (element-value and set-element-value! are provided by (weave ui ffi).)
 (define-foreign append-child!         "element" "appendChild"     (ref null extern) (ref null extern) -> (ref null extern))
 (define-foreign remove!               "element" "remove"          (ref null extern) -> none)
 (define-foreign replace-with!         "element" "replaceWith"     (ref null extern) (ref null extern) -> none)

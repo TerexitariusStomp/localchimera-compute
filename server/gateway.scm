@@ -32,6 +32,7 @@
              (ice-9 match)
              (ice-9 textual-ports)
              (playnet gateway lobby)
+             (goblins persistence-store memory)
              (playnet gateway presence)
              (playnet gateway services)
              (playnet gateway terminal)
@@ -43,6 +44,13 @@
 
 ;; Load signup-agent definition
 (primitive-load "server/signup-agent.scm")
+
+;; Load the planner (chdir wrapper resolves load-all.scm relative paths),
+;; then the planner-service actor and the demo seed. These three files
+;; are not Guile modules; they primitive-load planner top-level defs.
+(primitive-load "server/planner-loader.scm")
+(primitive-load "server/planner-service.scm")
+(primitive-load "server/seed-meeting-scope.scm")
 
 ;;; ── Configuration ──────────────────────────────────────────────────────────
 
@@ -197,6 +205,26 @@
        ;; Gateway actors
        (define gateway-vat (spawn-vat #:name "gateway"))
 
+       ;; ── Planner vat + scope + seed (Phase 2: memory store) ──────────
+       ;; ^planner-service lives inside planner-vat alongside the stores
+       ;; so its methods have synchronous near-call access. The lobby
+       ;; (in gateway-vat) holds a reference; the OCapN wire is the only
+       ;; cross-vat boundary.
+       (define planner-store (make-memory-store))
+       (define-values (planner-vat meeting-scope)
+         (spawn-persistent-vat
+           scope-env
+           (lambda () (spawn-scope "Meeting Commune"))
+           planner-store))
+
+       (define planner-service
+         (with-vat planner-vat
+           (seed-meeting-scope! meeting-scope)
+           (spawn ^planner-service
+                  (hashmap-set (hashmap) "org:meeting" meeting-scope))))
+
+       (log! "  [gateway] planner: meeting commune seeded~%")
+
        (define presence-actor
          (with-vat gateway-vat (spawn ^presence (hashmap))))
 
@@ -218,7 +246,8 @@
        (define lobby
          (with-vat gateway-vat
            (spawn ^lobby signup-agent transcription-svc express-svc
-                  presence-actor terminal-svc mailbox-mgr)))
+                  presence-actor terminal-svc mailbox-mgr
+                  planner-service)))
 
        ;; Register lobby with OCapN — get sturdyref
        (with-vat ocapn-vat

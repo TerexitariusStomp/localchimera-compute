@@ -1,3 +1,20 @@
+/* ── Playnet palette ─────────────────────────────────────────────────────── */
+/* Kept in sync with module/playnet/ui/calendar.scm                          */
+
+.cal-view {
+  --pn-mint: #a8e6cf;     /* matched / yours / fulfilled         */
+  --pn-amber: #d69e2e;    /* unmatched / volunteer needed        */
+  --pn-purple: #9f7aea;   /* VF accent / process context         */
+  --pn-grey: #8b7b96;     /* muted / hint / neutral              */
+  --pn-blue: #63b3ed;     /* default event                       */
+  --pn-red:  #fc8181;     /* danger / delete                     */
+  --pn-bg-0: #0d0b0f;     /* deepest background                  */
+  --pn-bg-1: #110e13;     /* input background                    */
+  --pn-bg-2: #1b1823;     /* panel background                    */
+  --pn-border: #2a2230;
+  --pn-text:  #e0ceed;
+}
+
 /* ── Calendar View ──────────────────────────────────────────────────────────── */
 
 .cal-view {
@@ -960,14 +977,79 @@
   margin-left: auto;
 }
 
-/* ── Work-Assignment Awareness ────────────────────────────────────────────── */
+/* ── Scope / Plan / Acting-as Bar (top of calendar view) ──────────────── */
 
-/* Matched intent card — green left border */
+.cal-scope-bar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  background: var(--pn-bg-0);
+  border: 1px solid var(--pn-border);
+  border-radius: 4px;
+}
+
+.cal-scope-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cal-scope-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--pn-grey);
+  font-weight: 700;
+}
+
+.cal-scope-select {
+  background: var(--pn-bg-1);
+  border: 1px solid var(--pn-border);
+  border-radius: 3px;
+  color: var(--pn-text);
+  font-family: monospace;
+  font-size: 11px;
+  padding: 3px 6px;
+  cursor: pointer;
+}
+
+.cal-scope-select:hover {
+  border-color: var(--pn-purple);
+}
+
+.cal-scope-select:focus {
+  outline: none;
+  border-color: var(--pn-mint);
+}
+
+/* ── Intents sidebar: section headings + matched/unmatched cards ──────── */
+
+.cal-intents-section {
+  margin-bottom: 12px;
+}
+
+.cal-intents-subtitle {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--pn-grey);
+  margin-bottom: 4px;
+  padding: 2px 0;
+  border-bottom: 1px solid rgba(42, 34, 48, 0.5);
+}
+
+.cal-intents-yours     .cal-intents-subtitle { color: var(--pn-mint);  }
+.cal-intents-unmatched .cal-intents-subtitle { color: var(--pn-amber); }
+.cal-intents-others    .cal-intents-subtitle { color: var(--pn-grey);  }
+.cal-intents-others    .cal-intent-card      { opacity: 0.7;           }
+
 .cal-intent-matched {
   border-left: 3px solid rgba(168, 230, 207, 0.5);
 }
 
-/* Unmatched intent card — amber left border */
 .cal-intent-unmatched-card {
   border-left: 3px solid rgba(214, 158, 46, 0.5);
 }
@@ -978,7 +1060,7 @@
   align-items: center;
   gap: 4px;
   font-size: 9px;
-  color: #a8e6cf;
+  color: var(--pn-mint);
   margin-top: 3px;
 }
 
@@ -989,28 +1071,20 @@
 }
 
 .cal-intent-unmatched {
-  color: #d69e2e;
+  color: var(--pn-amber);
 }
 
-/* Accept/Decline buttons on intent cards */
 .cal-intent-actions {
   display: flex;
   gap: 4px;
   margin-top: 4px;
 }
 
-.cal-intent-accept {
-  font-size: 9px;
-  padding: 2px 6px;
-}
+.cal-intent-accept { font-size: 9px; padding: 2px 6px; }
+.cal-intent-decline { font-size: 9px; padding: 2px 6px; color: var(--pn-grey); }
 
-.cal-intent-decline {
-  font-size: 9px;
-  padding: 2px 6px;
-  color: #8b7b96;
-}
+/* ── Detail panel: assignment section ─────────────────────────────────── */
 
-/* Assignment section in detail panel */
 .cal-assignment-section {
   background: rgba(168, 230, 207, 0.06);
   border-color: rgba(168, 230, 207, 0.2);
@@ -1021,14 +1095,14 @@
   align-items: center;
   gap: 6px;
   font-size: 11px;
-  color: #e0ceed;
+  color: var(--pn-text);
 }
 
 .cal-assignment-name {
-  color: #a8e6cf;
+  color: var(--pn-mint);
   font-weight: 600;
 }
 
 .cal-assignment-unmatched {
-  color: #d69e2e;
+  color: var(--pn-amber);
 }

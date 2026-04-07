@@ -7,3 +7,7 @@ tests/screenshots/
 node_modules/
 .claude/settings.local.json
 .vscode/settings.json
+
+# Hoot 0.8 live-hacking dev bundles (see docs/weave/LIVE_HACKING.md)
+browser/.dev/
+weave/.dev/

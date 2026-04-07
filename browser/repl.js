@@ -256,6 +256,23 @@ window.addEventListener("load", async () => {
             return new URLSearchParams(window.location.search).get(name) || "";
           }
         },
+        location: {
+          getHash() { return window.location.hash || ""; },
+          setHash(h) {
+            // Avoid triggering hashchange when value is already set.
+            if (window.location.hash !== h) {
+              try { history.replaceState(null, "", h || window.location.pathname); }
+              catch (_) { window.location.hash = h; }
+            }
+          }
+        },
+        events: {
+          // Read e.target.value (e.g. for <select> change handlers).
+          targetValue(e) {
+            const t = e && e.target;
+            return (t && typeof t.value === "string") ? t.value : "";
+          }
+        },
         ocapn: {
           // OCapN bridge: Scheme registers callbacks here for JS-initiated actions.
           // Speech/transcription flow: JS records audio → calls transcribeCallback → Scheme OCapN → result

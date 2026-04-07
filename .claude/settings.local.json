@@ -46,7 +46,23 @@
       "Bash(lsof -ti:37146)",
       "Bash(fuser -k 8080/tcp)",
       "Bash(fuser -k 37146/tcp)",
-      "Bash(time make docker-wasm:*)"
+      "Bash(time make docker-wasm:*)",
+      "Bash(make weave/weave.wasm)",
+      "Bash(make browser/repl.wasm)",
+      "Bash(find:*)",
+      "Bash(guix time-machine:*)",
+      "Bash(tar -xzf /gnu/store/n3vhl0qh8kc00h8afy30qv1gn1943pa8-guile-hoot-0.8.0.tar.gz)",
+      "Bash(PLAYNET_DATA_DIR=/tmp/playnet-test timeout 8 guile -L module -L key-pool server/gateway.scm --port 19090)",
+      "Bash(PLAYNET_DATA_DIR=/tmp/playnet-test timeout 6 guile -L module -L key-pool server/gateway.scm --port 19090)",
+      "Bash(make weave/.dev/weave.wasm)",
+      "Bash(make browser/.dev/repl.wasm)",
+      "Bash(timeout 8 make serve-dev)",
+      "Bash(pkill -f 'web-server.*serve')",
+      "Bash(pkill -KILL -f 'hoot web-server')",
+      "Bash(pkill -KILL -f 'cd browser/.dev')",
+      "Bash(pkill -KILL -f 'web-server')",
+      "Bash(pkill -KILL -f 'weave-dev')",
+      "Bash(pkill -KILL -f 'browser/.dev')"
     ]
   }
 }

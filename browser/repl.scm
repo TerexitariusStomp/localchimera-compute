@@ -155,6 +155,18 @@
   "urlParams" "get"
   (ref string) -> (ref string))
 
+(define-foreign get-location-hash
+  "location" "getHash"
+  -> (ref string))
+
+(define-foreign set-location-hash!
+  "location" "setHash"
+  (ref string) -> none)
+
+(define-foreign event-target-value
+  "events" "targetValue"
+  (ref null extern) -> (ref string))
+
 ;;; ── OCapN bridge FFI ────────────────────────────────────────────────────────
 ;;; Register Scheme callbacks with JS for transcription/express.
 (define-foreign ocapn-set-transcribe-callback!
@@ -817,15 +829,30 @@
 
 ;;; ── Calendar state ──────────────────────────────────────────────────────────
 (define *cal-week-start* #f)        ;; epoch-ms of Monday 00:00; #f = compute from now
-(define *cal-events* '())           ;; list of event alists
-(define *cal-people* '())           ;; list of person alists
+(define *cal-user-events* '())      ;; user-created events (slot click → modal); persisted
+(define *cal-derived-events* '())   ;; events derived from sample store on mutations
+(define *cal-people* '())           ;; list of person alists (scope members)
 (define *cal-availability* '())     ;; list of availability slot alists
 (define *cal-editing-event* #f)     ;; event alist being edited, or #f
 (define *cal-editing-avail* #f)     ;; #t when editing availability panel
 (define *cal-next-id* 1)            ;; auto-increment event ID
 (define *cal-selected-event* #f)    ;; event shown in detail panel (right sidebar)
-(define *cal-unscheduled-intents* '()) ;; work intents from planner not yet scheduled
+(define *cal-unscheduled-intents* '()) ;; work intents within the current scope+plan
 (define *cal-selected-intent* #f)   ;; intent ID selected for scheduling
+;; Scope / plan / acting-as state
+(define *cal-scope* #f)             ;; currently selected scope id
+(define *cal-plan* #f)              ;; currently selected plan id (#f = all plans)
+(define *cal-acting-as* #f)         ;; currently selected member id (#f = observer)
+;; Planner-service capability and snapshot cache.
+;; *planner-cap* is the OCapN ref returned by (<- *lobby* 'planner).
+;; *cal-scope-list* is the cached list of scopes the cap exposes.
+;; *cal-snapshot* is the latest server snapshot for the current scope+plan.
+;; *cal-process-context* caches per-process flow lookups for the detail panel.
+(define *planner-cap* #f)
+(define *cal-scope-list* '())     ;; ((id . X) (name . Y)) for the dropdown
+(define *cal-snapshot* #f)
+(define *cal-refresh-inflight?* #f)
+(define *cal-process-context* '())
 (define *vat* #f)
 (define *org* #f)
 
@@ -2635,7 +2662,14 @@
                           (when (eq? *mode* 'inner) (do-exit!))
                           (when (not *cal-week-start*)
                             (set! *cal-week-start* (week-start-ms (inexact->exact (floor (date-now))))))
-                          (set! *cal-unscheduled-intents* (extract-work-intents))
+                          ;; Honour URL hash, then fire an async snapshot
+                          ;; fetch from the planner-service. The first
+                          ;; render shows whatever's already in the
+                          ;; globals; ingest-snapshot! triggers another
+                          ;; render once the reply arrives.
+                          (parse-cal-hash!)
+                          (refresh-cal-from-planner!)
+                          (set-location-hash! (cal-hash))
                           (set! *view* 'calendar) (refresh!)
                           (let ((w (get-element-by-id "cal-grid-wrap")))
                             (when w (set-scroll-top! w 480))))))
@@ -3053,14 +3087,21 @@
                         (cons 'visible (string=? (list-ref fields 3) "1"))))))
           records)))))
 
+(define (all-cal-events)
+  "Merged view: derived (planner) events first, user-created events second.
+   Used by render and any traversal that needs the union."
+  (append *cal-derived-events* *cal-user-events*))
+
 (define (save-calendar!)
-  (ls-set-item "playnet-cal-events" (serialize-events *cal-events*))
+  ;; Only user-created events are persisted; derived events live in the
+  ;; sample store and are reconstructed on demand.
+  (ls-set-item "playnet-cal-events" (serialize-events *cal-user-events*))
   (ls-set-item "playnet-cal-people" (serialize-people *cal-people*)))
 
 (define (load-calendar!)
   (let ((raw-e (ls-get-item "playnet-cal-events"))
         (raw-p (ls-get-item "playnet-cal-people")))
-    (when raw-e (set! *cal-events* (deserialize-events raw-e)))
+    (when raw-e (set! *cal-user-events* (deserialize-events raw-e)))
     (when raw-p (set! *cal-people* (deserialize-people raw-p)))
     ;; Set next-id past existing
     (for-each (lambda (e)
@@ -3071,7 +3112,7 @@
                                  "0"))))
                   (when (>= num *cal-next-id*)
                     (set! *cal-next-id* (+ num 1)))))
-              *cal-events*)))
+              *cal-user-events*)))
 
 (define (cal-ensure-person! person-id)
   "Add person to *cal-people* if not already present."
@@ -3084,64 +3125,294 @@
                               (cons 'color (person-color person-id *cal-people*))
                               (cons 'visible #t)))))))
 
-(define (extract-work-intents)
-  "Extract unscheduled work intents from federation commitment data."
-  (let loop ((scopes *fed-commitments*) (acc '()))
-    (if (null? scopes) (reverse acc)
-        (let* ((scope-entry (car scopes))
-               (scope-name (car scope-entry))
-               (commitments (cdr scope-entry))
-               ;; Find processes for this scope
-               (scope-procs (let ((p (assoc scope-name *fed-processes* equal?)))
-                              (if p (cdr p) '())))
-               (work-intents
-                (filter (lambda (c) (eq? (alist-ref c 'action #f) 'work))
-                        commitments))
-               (intent-alists
-                (map (lambda (c)
-                       (let* ((proc-id (alist-ref c 'input-of ""))
-                              (proc (%find (lambda (p) (equal? (alist-ref p 'id) proc-id))
-                                          scope-procs))
-                              (proc-name (if proc (alist-ref proc 'name proc-id) proc-id)))
-                         (list (cons 'id (alist-ref c 'id ""))
-                               (cons 'process-name proc-name)
-                               (cons 'process-id proc-id)
-                               (cons 'resource-spec (alist-ref c 'resource-conforms-to ""))
-                               (cons 'effort-qty (alist-ref c 'effort-qty 0))
-                               (cons 'effort-unit (alist-ref c 'effort-unit "hr"))
-                               (cons 'scope scope-name))))
-                     work-intents)))
-          (loop (cdr scopes) (append acc intent-alists))))))
+;;; ── Planner client (^planner-service over OCapN) ─────────────────────────
+;;;
+;;; The browser holds a single capability *planner-cap* obtained from
+;;; (<- *lobby* 'planner). All calendar reads + writes go through it.
+;;; The planner-service emits plain alists in the same shape that the
+;;; existing projection layer (vf-record->grid-event) consumes, so the
+;;; render path is unchanged — only the source of the data has moved
+;;; from a local sample store to a real ^scope-root in the gateway.
+
+(define (planner-mutate! method . args)
+  "Common shape for fire-and-refresh mutation calls. Checks the cap is
+   available and a scope is selected, fires the OCapN call, and refreshes
+   the calendar on either success or error so the UI always reflects
+   server truth after a click."
+  (when (and *planner-cap* *cal-scope*)
+    (with-vat *ocapn-vat*
+      (on (apply <- *planner-cap* method *cal-scope* args)
+          (lambda (_) (refresh-cal-from-planner!))
+          #:catch (lambda (err) (refresh-cal-from-planner!))))))
+
+(define (ingest-snapshot! snap)
+  "Write a server snapshot into the existing globals so the existing
+   projection layer (vf-record->grid-event) keeps working unchanged."
+  (when snap
+    (let ((members (or (assq-ref snap 'members) '()))
+          (intents (or (assq-ref snap 'intents) '()))
+          (cmts    (or (assq-ref snap 'commitments) '())))
+      (set! *cal-people* members)
+      (set! *cal-unscheduled-intents* intents)
+      (set! *cal-derived-events*
+            (append (map intent->grid-event intents)
+                    (map commitment->grid-event cmts)))
+      ;; Clamp acting-as if the user is no longer a scope member
+      (when (and *cal-acting-as*
+                 (not (%find (lambda (m) (equal? (alist-ref m 'id) *cal-acting-as*))
+                             members)))
+        (set! *cal-acting-as* #f)))))
+
+(define (planner-fetch-scope-list!)
+  "Populate *cal-scope-list* via the planner cap. If *cal-scope* is unset,
+   default it to the first scope and chain a snapshot refresh."
+  (when *planner-cap*
+    (with-vat *ocapn-vat*
+      (on (<- *planner-cap* 'scope-list)
+          (lambda (scopes)
+            (set! *cal-scope-list* (or scopes '()))
+            (when (and (not *cal-scope*) (pair? *cal-scope-list*))
+              (set! *cal-scope* (alist-ref (car *cal-scope-list*) 'id #f)))
+            (refresh-cal-from-planner!))
+          #:catch (lambda (err) #f)))))
+
+(define (refresh-cal-from-planner!)
+  "Pull a fresh snapshot for the current scope+plan and re-render on
+   reply. Lazily fetches *planner-cap* and *cal-scope-list* the first
+   time through; concurrent refreshes are coalesced via the inflight flag."
+  (cond
+    ((not *planner-cap*)
+     (when *lobby*
+       (with-vat *ocapn-vat*
+         (on (<- *lobby* 'planner)
+             (lambda (cap)
+               (set! *planner-cap* cap)
+               (refresh-cal-from-planner!))
+             #:catch (lambda (err) #f)))))
+    (*cal-refresh-inflight?* #f)
+    ((or (null? *cal-scope-list*) (not *cal-scope*))
+     (planner-fetch-scope-list!))
+    (else
+     (set! *cal-refresh-inflight?* #t)
+     (with-vat *ocapn-vat*
+       (on (<- *planner-cap* 'scope-snapshot *cal-scope* *cal-plan*)
+           (lambda (snap)
+             (set! *cal-refresh-inflight?* #f)
+             (set! *cal-snapshot* snap)
+             (ingest-snapshot! snap)
+             (refresh!))
+           #:catch
+           (lambda (err)
+             (set! *cal-refresh-inflight?* #f)
+             (refresh!)))))))
+
+(define (planner-knows-id? iid)
+  "True if IID matches an intent or commitment in the current snapshot."
+  (and *cal-snapshot*
+       (or (%find (lambda (i) (equal? (alist-ref i 'id) iid))
+                  (or (assq-ref *cal-snapshot* 'intents) '()))
+           (%find (lambda (c) (equal? (alist-ref c 'id) iid))
+                  (or (assq-ref *cal-snapshot* 'commitments) '())))))
+
+(define (planner-fetch-process-context! proc-id)
+  "Pull and cache process-context for PROC-ID. No-op if already cached
+   or if cap is unavailable."
+  (when (and *planner-cap* *cal-scope* proc-id
+             (not (assoc proc-id *cal-process-context*)))
+    (with-vat *ocapn-vat*
+      (on (<- *planner-cap* 'process-context *cal-scope* proc-id)
+          (lambda (ctx)
+            (when ctx
+              (set! *cal-process-context*
+                    (cons (cons proc-id ctx) *cal-process-context*))
+              (refresh!)))
+          #:catch (lambda (err) #f)))))
+
+(define (planner-accept! iid)
+  "Promote an intent to a commitment via the planner. The acting-as
+   user becomes the commitment provider."
+  (when *cal-acting-as*
+    (planner-mutate! 'accept-assignment iid *cal-acting-as*)))
+
+(define (planner-decline! iid)
+  "Clear the suggested-provider for an intent. The intent flips to
+   'unmatched and another agent can volunteer."
+  (planner-mutate! 'decline-assignment iid (or *cal-acting-as* "")))
+
+(define (planner-record-effort! cid qty)
+  "Build a real EconomicEvent server-side and feed it to the observer.
+   The browser sees the result via fulfilled-qty advancing on next snapshot."
+  (when *cal-acting-as*
+    (planner-mutate! 'record-effort cid *cal-acting-as* qty "hours")))
+
+;;; ── Detail panel: process flows + supply chain ────────────────────────────
+;;;
+;;; Pulls from *cal-process-context* (cached planner replies). The legacy
+;;; *fed-commitments* / *fed-processes* fallback is gone — when an event
+;;; has a vf-process-id we always ask the planner.
+
+(define (selected-event-process-flows evt)
+  (cond
+    ((not (and evt (alist-ref evt 'vf-process-id #f))) '())
+    (else
+     (let* ((proc-id (alist-ref evt 'vf-process-id))
+            (cached  (assoc proc-id *cal-process-context*)))
+       (if cached
+           (or (assq-ref (cdr cached) 'inputs) '())
+           '())))))
+
+(define (selected-event-supply-chain evt)
+  ;; Phase 2: server returns empty upstream/downstream until recipe-chain
+  ;; walking is wired in build-process-context. Render handles ().
+  (cond
+    ((not (and evt (alist-ref evt 'vf-process-id #f))) '())
+    (else
+     (let* ((proc-id (alist-ref evt 'vf-process-id))
+            (cached  (assoc proc-id *cal-process-context*)))
+       (if cached
+           (append (or (assq-ref (cdr cached) 'upstream) '())
+                   (or (assq-ref (cdr cached) 'downstream) '()))
+           '())))))
+
+;;; ── Project intents/commitments onto calendar grid ────────────────────────
+
+(define* (vf-record->grid-event rec
+                                #:key (source 'intent)
+                                      (default-color "#8b7b96"))
+  "Convert a planner record (intent or commitment alist) to a calendar
+   event alist consumed by render-event-block.
+   SOURCE drives the dashed/solid styling.
+   Status is derived from fulfilled-qty vs effort-qty:
+     - intent       → open
+     - commitment   → committed (default) or fulfilled (if fulfilled-qty
+                      has caught up to effort-qty)"
+  (let* ((sp     (or (alist-ref rec 'provider #f)
+                     (alist-ref rec 'suggested-provider #f)))
+         (spn    (alist-ref rec 'suggested-provider-name #f))
+         (ms     (alist-ref rec 'match-status 'unassigned))
+         (color  (if sp (person-color sp *cal-people*) default-color))
+         (eff    (alist-ref rec 'effort-qty 0))
+         (fulf   (alist-ref rec 'fulfilled-qty 0))
+         (status (cond
+                   ((eq? source 'intent) 'open)
+                   ((and (eq? source 'commitment) (> eff 0) (>= fulf eff))
+                    'fulfilled)
+                   ((eq? source 'commitment) 'committed)
+                   (else 'open))))
+    (list (cons 'id        (alist-ref rec 'id ""))
+          (cons 'title     (string-append
+                            (alist-ref rec 'process-name "")
+                            ": "
+                            (alist-ref rec 'resource-spec "")))
+          (cons 'date      (alist-ref rec 'date ""))
+          (cons 'start-hour (alist-ref rec 'start-hour 9))
+          (cons 'start-min  (alist-ref rec 'start-min 0))
+          (cons 'end-hour   (alist-ref rec 'end-hour 10))
+          (cons 'end-min    (alist-ref rec 'end-min 0))
+          (cons 'person    (or sp ""))
+          (cons 'location  "")
+          (cons 'color     color)
+          (cons 'source    source)
+          (cons 'status    status)
+          (cons 'description (alist-ref rec 'scope ""))
+          ;; VF metadata for the detail panel
+          (cons 'vf-process-id    (alist-ref rec 'process-id #f))
+          (cons 'vf-action        'work)
+          (cons 'vf-resource-spec (alist-ref rec 'resource-spec #f))
+          (cons 'vf-effort-qty    (alist-ref rec 'effort-qty 0))
+          (cons 'vf-effort-unit   (alist-ref rec 'effort-unit "hr"))
+          (cons 'vf-scope         (alist-ref rec 'scope #f))
+          (cons 'vf-fulfilled-qty (alist-ref rec 'fulfilled-qty 0))
+          ;; Assignment metadata (consumed by render-event-detail-panel)
+          (cons 'suggested-provider sp)
+          (cons 'suggested-provider-name spn)
+          (cons 'match-status ms))))
+
+(define (intent->grid-event intent)
+  (vf-record->grid-event intent #:source 'intent #:default-color "#8b7b96"))
+
+(define (commitment->grid-event cmt)
+  (vf-record->grid-event cmt #:source 'commitment #:default-color "#63b3ed"))
+
+;;; ── URL hash sync for scope/plan ──────────────────────────────────────────
+;;;
+;;; Format: #calendar/<scope-id>/<plan-id>
+;;; Example: #calendar/org:meeting/plan-weekly
+;;; Plan segment is optional.
+
+(define (cal-hash)
+  "Build the URL hash string from current *cal-scope* / *cal-plan*."
+  (cond
+    ((and *cal-scope* *cal-plan*)
+     (string-append "#calendar/" *cal-scope* "/" *cal-plan*))
+    (*cal-scope*
+     (string-append "#calendar/" *cal-scope*))
+    (else "#calendar")))
+
+(define (parse-cal-hash!)
+  "Read the current URL hash and set *cal-scope* / *cal-plan* if present."
+  (let ((h (get-location-hash)))
+    (when (and h (> (string-length h) 1))
+      ;; Strip leading '#'
+      (let* ((bare (substring h 1 (string-length h)))
+             (parts (split-string bare #\/)))
+        (when (and (pair? parts) (string=? (car parts) "calendar"))
+          (let ((rest (cdr parts)))
+            (when (pair? rest)
+              (let ((scope-seg (car rest)))
+                (unless (string=? scope-seg "")
+                  (set! *cal-scope* scope-seg))))
+            (when (and (pair? rest) (pair? (cdr rest)))
+              (let ((plan-seg (cadr rest)))
+                (unless (string=? plan-seg "")
+                  (set! *cal-plan* plan-seg))))))))))
+
+;;; ── Cycle event status (dispatches user vs derived) ─────────────────────
 
 (define (cycle-event-status! evt new-status)
-  "Cycle a VF event's status, persist, and show detail panel."
-  (let ((evt-id (alist-ref evt 'id "")))
-    (set! *cal-events*
-          (map (lambda (ev)
-                 (if (equal? (alist-ref ev 'id) evt-id)
-                     (map (lambda (pair)
-                            (if (eq? (car pair) 'status)
-                                (cons 'status new-status)
-                                pair))
-                          ev)
-                     ev))
-               *cal-events*))
-    ;; Also show the detail panel for the updated event
-    (set! *cal-selected-event*
-          (%find (lambda (ev) (equal? (alist-ref ev 'id) evt-id))
-                 *cal-events*))
-    (save-calendar!)
-    (refresh!)))
+  "Status cycle behaviour, dispatched by event source:
+     - Derived intent (source=intent): no-op (use Accept/Decline instead).
+     - Derived commitment (source=commitment): record the remaining effort
+       as a single EconomicEvent via the planner, which advances the
+       observer's fulfillment-state.
+     - User-created event: update the field on *cal-user-events*, persist."
+  (let* ((iid (alist-ref evt 'id ""))
+         (src (alist-ref evt 'source 'event)))
+    (cond
+      ((eq? src 'intent) #f)
+
+      ((eq? src 'commitment)
+       (let* ((eff  (alist-ref evt 'vf-effort-qty 0))
+              (fulf (alist-ref evt 'vf-fulfilled-qty 0))
+              (rem  (max 0 (- eff fulf))))
+         (when (> rem 0)
+           (planner-record-effort! iid rem))))
+
+      (else
+       (set! *cal-user-events*
+             (map (lambda (ev)
+                    (if (equal? (alist-ref ev 'id) iid)
+                        (alist-set ev 'status new-status)
+                        ev))
+                  *cal-user-events*))
+       (set! *cal-selected-event*
+             (%find (lambda (ev) (equal? (alist-ref ev 'id) iid))
+                    *cal-user-events*))
+       (save-calendar!)
+       (refresh!)))))
 
 ;;; ── Calendar view ───────────────────────────────────────────────────────────
 
 (define (render-calendar-view)
-  "Render the calendar page, wiring state to the pure calendar module."
+  "Render the calendar page, wiring state to the pure calendar module.
+   Reads only — never mutates derived state. Mutations happen in the
+   click/change callbacks (and at calendar-tab open time)."
   (let ((ws (or *cal-week-start*
-                (week-start-ms (inexact->exact (floor (date-now)))))))
+                (week-start-ms (inexact->exact (floor (date-now))))))
+        (events (all-cal-events)))
     (calendar-page
      #:week-start-ms ws
-     #:events *cal-events*
+     #:events events
      #:people *cal-people*
      #:availability *cal-availability*
      #:editing-event *cal-editing-event*
@@ -3167,103 +3438,19 @@
                                        (alist-ref *cal-selected-event* 'id)))
                           (equal? (alist-ref ev 'vf-process-id #f)
                                   (alist-ref *cal-selected-event* 'vf-process-id))))
-                   *cal-events*)
+                   events)
            '())
-     #:process-flows
-       (if (and *cal-selected-event*
-                (alist-ref *cal-selected-event* 'vf-process-id #f))
-           ;; Get all commitments for this process from federation data
-           (let* ((proc-id (alist-ref *cal-selected-event* 'vf-process-id))
-                  (scope (alist-ref *cal-selected-event* 'vf-scope ""))
-                  (scope-cmts (let ((s (assoc scope *fed-commitments* equal?)))
-                                (if s (cdr s) '())))
-                  ;; Filter to this process's commitments
-                  (proc-cmts (filter (lambda (c)
-                                       (or (equal? (alist-ref c 'input-of #f) proc-id)
-                                           (equal? (alist-ref c 'output-of #f) proc-id)))
-                                     scope-cmts)))
-             (map (lambda (c)
-                    (let* ((is-input (alist-ref c 'input-of #f))
-                           (act (alist-ref c 'action 'consume))
-                           (spec (alist-ref c 'resource-conforms-to ""))
-                           (qty (or (alist-ref c 'qty 0)
-                                    (alist-ref c 'effort-qty 0)))
-                           (unit (or (alist-ref c 'unit "")
-                                     (alist-ref c 'effort-unit ""))))
-                      (list (cons 'spec spec)
-                            (cons 'qty qty)
-                            (cons 'unit unit)
-                            (cons 'action act)
-                            (cons 'is-input (if is-input #t #f)))))
-                  proc-cmts))
-           '())
-     #:supply-chain
-       (if (and *cal-selected-event*
-                (alist-ref *cal-selected-event* 'vf-process-id #f))
-           ;; Find upstream (processes that output what this consumes)
-           ;; and downstream (processes that consume what this outputs)
-           (let* ((proc-id (alist-ref *cal-selected-event* 'vf-process-id))
-                  (scope (alist-ref *cal-selected-event* 'vf-scope ""))
-                  (scope-cmts (let ((s (assoc scope *fed-commitments* equal?)))
-                                (if s (cdr s) '())))
-                  (scope-procs (let ((p (assoc scope *fed-processes* equal?)))
-                                 (if p (cdr p) '())))
-                  ;; Inputs to this process (what it consumes)
-                  (inputs (filter (lambda (c)
-                                    (and (equal? (alist-ref c 'input-of #f) proc-id)
-                                         (not (eq? (alist-ref c 'action #f) 'work))))
-                                  scope-cmts))
-                  ;; Outputs from this process
-                  (outputs (filter (lambda (c)
-                                     (equal? (alist-ref c 'output-of #f) proc-id))
-                                   scope-cmts))
-                  ;; Find upstream: processes that produce what we consume
-                  (upstream
-                   (filter (lambda (x) x)
-                    (map (lambda (inp)
-                           (let* ((spec (alist-ref inp 'resource-conforms-to ""))
-                                  ;; Find commitment that outputs this spec
-                                  (producer (%find (lambda (c)
-                                                     (and (alist-ref c 'output-of #f)
-                                                          (equal? (alist-ref c 'resource-conforms-to "") spec)))
-                                                   scope-cmts))
-                                  (up-proc-id (and producer (alist-ref producer 'output-of #f)))
-                                  (up-proc (%find (lambda (p) (equal? (alist-ref p 'id) up-proc-id))
-                                                  scope-procs)))
-                             (if up-proc
-                                 (list (cons 'direction 'up)
-                                       (cons 'process (alist-ref up-proc 'name ""))
-                                       (cons 'spec spec)
-                                       (cons 'scope ""))
-                                 #f)))
-                         inputs)))
-                  ;; Find downstream: processes that consume what we produce
-                  (downstream
-                   (filter (lambda (x) x)
-                    (map (lambda (outp)
-                           (let* ((spec (alist-ref outp 'resource-conforms-to ""))
-                                  ;; Find commitment that inputs this spec in another process
-                                  (consumer (%find (lambda (c)
-                                                     (and (alist-ref c 'input-of #f)
-                                                          (not (equal? (alist-ref c 'input-of #f) proc-id))
-                                                          (equal? (alist-ref c 'resource-conforms-to "") spec)))
-                                                   scope-cmts))
-                                  (down-proc-id (and consumer (alist-ref consumer 'input-of #f)))
-                                  (down-proc (%find (lambda (p) (equal? (alist-ref p 'id) down-proc-id))
-                                                    scope-procs)))
-                             (if down-proc
-                                 (list (cons 'direction 'down)
-                                       (cons 'process (alist-ref down-proc 'name ""))
-                                       (cons 'spec spec)
-                                       (cons 'scope ""))
-                                 #f)))
-                         outputs))))
-             (append upstream downstream))
-           '())
+     #:process-flows (selected-event-process-flows *cal-selected-event*)
+     #:supply-chain  (selected-event-supply-chain  *cal-selected-event*)
      #:on-event-click (lambda (evt)
                         ;; Always open detail panel
                         (set! *cal-selected-event* evt)
                         (set! *cal-editing-event* #f)
+                        ;; Lazily fetch process-context for VF events so the
+                        ;; detail panel can render inputs/outputs.
+                        (let ((proc-id (alist-ref evt 'vf-process-id #f)))
+                          (when proc-id
+                            (planner-fetch-process-context! proc-id)))
                         (refresh!))
      #:on-cycle-status (lambda (evt)
                          ;; Cycle VF status: open → committed → fulfilled → open
@@ -3280,14 +3467,23 @@
                              (set! *cal-selected-event* #f)
                              (refresh!))
      #:on-delete-from-detail (lambda (e)
+                               ;; Only user-created events can be deleted; derived
+                               ;; events are owned by the planner. Check the
+                               ;; current snapshot to dispatch.
                                (let ((evt-id (alist-ref *cal-selected-event* 'id "")))
-                                 (set! *cal-events*
-                                       (filter (lambda (ev)
-                                                 (not (equal? (alist-ref ev 'id) evt-id)))
-                                               *cal-events*))
-                                 (set! *cal-selected-event* #f)
-                                 (save-calendar!)
-                                 (refresh!)))
+                                 (cond
+                                   ((planner-knows-id? evt-id)
+                                    ;; Derived — leave it alone, just close the panel
+                                    (set! *cal-selected-event* #f)
+                                    (refresh!))
+                                   (else
+                                    (set! *cal-user-events*
+                                          (filter (lambda (ev)
+                                                    (not (equal? (alist-ref ev 'id) evt-id)))
+                                                  *cal-user-events*))
+                                    (set! *cal-selected-event* #f)
+                                    (save-calendar!)
+                                    (refresh!)))))
      #:on-slot-click (lambda (date-str hour)
                        (set! *cal-selected-event* #f)
                        (let ((id (string-append "evt-" (number->string *cal-next-id*))))
@@ -3403,12 +3599,12 @@
                                               (cons 'color color)
                                               (cons 'source evt-source)
                                               (cons 'status evt-status))))
-                           ;; Remove old version if exists, add new
-                           (set! *cal-events*
+                           ;; Remove old version if exists, add new (user-events only).
+                           (set! *cal-user-events*
                                  (cons new-evt
                                        (filter (lambda (ev)
                                                  (not (equal? (alist-ref ev 'id) evt-id)))
-                                               *cal-events*)))
+                                               *cal-user-events*)))
                            ;; Advance ID counter if this was new
                            (when (>= *cal-next-id*
                                      (safe-string->number
@@ -3420,10 +3616,10 @@
                            (refresh!))))
      #:on-delete-event (lambda (e)
                          (let ((evt-id (alist-ref *cal-editing-event* 'id "")))
-                           (set! *cal-events*
+                           (set! *cal-user-events*
                                  (filter (lambda (ev)
                                            (not (equal? (alist-ref ev 'id) evt-id)))
-                                         *cal-events*))
+                                         *cal-user-events*))
                            (set! *cal-editing-event* #f)
                            (save-calendar!)
                            (refresh!)))
@@ -3464,43 +3660,87 @@
              (let* ((qty-el (get-element-by-id "cal-effort-qty"))
                     (qty (if qty-el (safe-string->number (element-value qty-el)) 1))
                     (evt-id (alist-ref *cal-selected-event* 'id ""))
-                    (old-fulfilled (alist-ref *cal-selected-event* 'vf-fulfilled-qty 0))
-                    (new-fulfilled (+ old-fulfilled qty)))
-               ;; Update the event's fulfilled qty
-               (set! *cal-events*
-                     (map (lambda (ev)
-                            (if (equal? (alist-ref ev 'id) evt-id)
-                                (map (lambda (pair)
-                                       (cond ((eq? (car pair) 'vf-fulfilled-qty)
-                                              (cons 'vf-fulfilled-qty new-fulfilled))
-                                             ;; Auto-mark committed if still open
-                                             ((and (eq? (car pair) 'status)
-                                                   (eq? (cdr pair) 'open))
-                                              (cons 'status 'committed))
-                                             (else pair)))
-                                     ev)
-                                ev))
-                          *cal-events*))
-               ;; Update selected event to reflect change
-               (set! *cal-selected-event*
-                     (%find (lambda (ev) (equal? (alist-ref ev 'id) evt-id))
-                            *cal-events*))
-               (save-calendar!)
-               (refresh!)))
+                    (src (alist-ref *cal-selected-event* 'source 'event)))
+               (cond
+                 ;; Derived commitment — record a real EconomicEvent via
+                 ;; the planner. observer.record-event will advance the
+                 ;; commitment's fulfillment-state, and the next snapshot
+                 ;; will reflect it.
+                 ((eq? src 'commitment)
+                  (planner-record-effort! evt-id qty))
+                 ;; Derived intent — recording effort doesn't apply
+                 ((eq? src 'intent) #f)
+                 ;; User-created event — local mutation
+                 (else
+                  (let* ((old-fulfilled (alist-ref *cal-selected-event*
+                                                   'vf-fulfilled-qty 0))
+                         (new-fulfilled (+ old-fulfilled qty)))
+                    (set! *cal-user-events*
+                          (map (lambda (ev)
+                                 (if (equal? (alist-ref ev 'id) evt-id)
+                                     (let ((with-fulf (alist-set ev 'vf-fulfilled-qty
+                                                                    new-fulfilled)))
+                                       (if (eq? (alist-ref with-fulf 'status 'open) 'open)
+                                           (alist-set with-fulf 'status 'committed)
+                                           with-fulf))
+                                     ev))
+                               *cal-user-events*))
+                    (set! *cal-selected-event*
+                          (%find (lambda (ev) (equal? (alist-ref ev 'id) evt-id))
+                                 *cal-user-events*))
+                    (save-calendar!)
+                    (refresh!))))))
            #f)
      #:stop-prop (lambda (e) (stop-propagation! e))
      #:on-export (lambda (e)
-                   ;; Export all events as .ics file
+                   ;; Export all events (derived + user) as .ics file
                    (let* ((ical-header "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//playnet//calendar//EN\r\n")
                           (ical-footer "END:VCALENDAR\r\n")
-                          (body (let loop ((evts *cal-events*) (acc ""))
+                          (body (let loop ((evts (all-cal-events)) (acc ""))
                                   (if (null? evts) acc
                                       (loop (cdr evts)
                                             (string-append acc (event->ical (car evts))))))))
                      (download-file
                       (string-append ical-header body ical-footer)
                       "playnet-calendar.ics"
-                      "text/calendar"))))))
+                      "text/calendar")))
+     ;; ── Scope / plan / acting-as ──
+     ;; *cal-scope-list* is populated by planner-fetch-scope-list! the
+     ;; first time the calendar opens. *cal-snapshot* carries the plans
+     ;; for the currently selected scope.
+     #:scopes *cal-scope-list*
+     #:current-scope *cal-scope*
+     #:plans (or (and *cal-snapshot* (assq-ref *cal-snapshot* 'plans)) '())
+     #:current-plan *cal-plan*
+     #:current-acting-as *cal-acting-as*
+     #:on-select-scope
+       (lambda (e)
+         (let ((v (event-target-value e)))
+           (set! *cal-scope* (if (string=? v "") #f v))
+           (set! *cal-plan* #f)       ;; reset plan when scope changes
+           (set! *cal-acting-as* #f)  ;; reset acting-as when scope changes
+           (set-location-hash! (cal-hash))
+           (refresh-cal-from-planner!)))
+     #:on-select-plan
+       (lambda (e)
+         (let ((v (event-target-value e)))
+           (set! *cal-plan* (if (string=? v "") #f v))
+           (set-location-hash! (cal-hash))
+           (refresh-cal-from-planner!)))
+     #:on-select-acting-as
+       (lambda (e)
+         (let ((v (event-target-value e)))
+           (set! *cal-acting-as* (if (string=? v "") #f v))
+           (refresh!)))
+     ;; ── Accept / decline suggested assignment ──
+     #:on-accept-assignment
+       (lambda (arg)
+         (set! *cal-selected-intent* #f)
+         (set! *cal-selected-event* #f)
+         (planner-accept! (alist-ref arg 'id "")))
+     #:on-decline-assignment
+       (lambda (arg)
+         (planner-decline! (alist-ref arg 'id ""))))))
 
 (define (render)
   (if (eq? *mode* 'outer)
@@ -3570,77 +3810,15 @@
 
 ;;; ── Restore calendar data ──────────────────────────────────────────────────
 (load-calendar!)
-;; Seed sample data if calendar is empty (first load)
-(when (null? *cal-events*)
-  (let* ((now-ms (inexact->exact (floor (date-now))))
-         (ws (week-start-ms now-ms))
-         (mon (date-parts->date-string (epoch-ms->date-parts ws)))
-         (tue (date-parts->date-string (epoch-ms->date-parts (+ ws 86400000))))
-         (wed (date-parts->date-string (epoch-ms->date-parts (+ ws (* 2 86400000)))))
-         (thu (date-parts->date-string (epoch-ms->date-parts (+ ws (* 3 86400000)))))
-         (fri (date-parts->date-string (epoch-ms->date-parts (+ ws (* 4 86400000))))))
-    (set! *cal-events*
-          (list ;; All-day event
-                (list (cons 'id "evt-0") (cons 'title "Sprint Week 14")
-                      (cons 'date mon) (cons 'start-hour 0) (cons 'start-min 0)
-                      (cons 'end-hour 0) (cons 'end-min 0) (cons 'person "alice")
-                      (cons 'location "") (cons 'color "#a8e6cf")
-                      (cons 'source 'event) (cons 'all-day #t)
-                      (cons 'status 'open) (cons 'description ""))
-                (list (cons 'id "evt-1") (cons 'title "Planning sync")
-                      (cons 'date mon) (cons 'start-hour 9) (cons 'start-min 0)
-                      (cons 'end-hour 10) (cons 'end-min 0) (cons 'person "alice")
-                      (cons 'location "Room A") (cons 'color "#63b3ed") (cons 'source 'event))
-                (list (cons 'id "evt-2") (cons 'title "Code review")
-                      (cons 'date mon) (cons 'start-hour 14) (cons 'start-min 0)
-                      (cons 'end-hour 15) (cons 'end-min 30) (cons 'person "bob")
-                      (cons 'location "") (cons 'color "#f6ad55") (cons 'source 'event))
-                (list (cons 'id "evt-3") (cons 'title "Standup")
-                      (cons 'date tue) (cons 'start-hour 9) (cons 'start-min 30)
-                      (cons 'end-hour 10) (cons 'end-min 0) (cons 'person "alice")
-                      (cons 'location "") (cons 'color "#63b3ed") (cons 'source 'event))
-                (list (cons 'id "evt-4") (cons 'title "Design session")
-                      (cons 'date wed) (cons 'start-hour 11) (cons 'start-min 0)
-                      (cons 'end-hour 12) (cons 'end-min 30) (cons 'person "carol")
-                      (cons 'location "Studio") (cons 'color "#b794f4") (cons 'source 'event))
-                ;; VF work commitment: threshing labor
-                (list (cons 'id "evt-5") (cons 'title "Threshing (labor)")
-                      (cons 'date wed) (cons 'start-hour 9) (cons 'start-min 0)
-                      (cons 'end-hour 17) (cons 'end-min 0) (cons 'person "alice")
-                      (cons 'location "") (cons 'color "#63b3ed")
-                      (cons 'source 'commitment) (cons 'status 'open)
-                      (cons 'description "Threshing wheat for commune-grain")
-                      (cons 'vf-process-id "thresh") (cons 'vf-action 'work)
-                      (cons 'vf-resource-spec "labor") (cons 'vf-effort-qty 8)
-                      (cons 'vf-effort-unit "hr") (cons 'vf-scope "commune-grain")
-                      (cons 'vf-fulfilled-qty 4))
-                (list (cons 'id "evt-6") (cons 'title "Threshing (labor)")
-                      (cons 'date thu) (cons 'start-hour 9) (cons 'start-min 0)
-                      (cons 'end-hour 17) (cons 'end-min 0) (cons 'person "bob")
-                      (cons 'location "") (cons 'color "#f6ad55")
-                      (cons 'source 'commitment) (cons 'status 'open)
-                      (cons 'description "Threshing wheat for commune-grain")
-                      (cons 'vf-process-id "thresh") (cons 'vf-action 'work)
-                      (cons 'vf-resource-spec "labor") (cons 'vf-effort-qty 8)
-                      (cons 'vf-effort-unit "hr") (cons 'vf-scope "commune-grain")
-                      (cons 'vf-fulfilled-qty 0))
-                (list (cons 'id "evt-7") (cons 'title "Federation call")
-                      (cons 'date fri) (cons 'start-hour 10) (cons 'start-min 0)
-                      (cons 'end-hour 11) (cons 'end-min 0) (cons 'person "carol")
-                      (cons 'location "Video") (cons 'color "#b794f4") (cons 'source 'event)
-                      (cons 'status 'open) (cons 'description ""))))
-    (set! *cal-people*
-          (list (list (cons 'id "alice") (cons 'name "Alice") (cons 'color "#63b3ed") (cons 'visible #t))
-                (list (cons 'id "bob") (cons 'name "Bob") (cons 'color "#f6ad55") (cons 'visible #t))
-                (list (cons 'id "carol") (cons 'name "Carol") (cons 'color "#b794f4") (cons 'visible #t))))
-    (set! *cal-availability*
-          (list (list (cons 'person "me") (cons 'day 0) (cons 'start-hour 9) (cons 'start-min 0) (cons 'end-hour 17) (cons 'end-min 0))
-                (list (cons 'person "me") (cons 'day 1) (cons 'start-hour 9) (cons 'start-min 0) (cons 'end-hour 17) (cons 'end-min 0))
-                (list (cons 'person "me") (cons 'day 2) (cons 'start-hour 9) (cons 'start-min 0) (cons 'end-hour 17) (cons 'end-min 0))
-                (list (cons 'person "me") (cons 'day 3) (cons 'start-hour 9) (cons 'start-min 0) (cons 'end-hour 17) (cons 'end-min 0))
-                (list (cons 'person "me") (cons 'day 4) (cons 'start-hour 9) (cons 'start-min 0) (cons 'end-hour 17) (cons 'end-min 0))))
-    (set! *cal-next-id* 8)
-    (save-calendar!)))
+;; Seed default availability + next-id if first load.
+(when (null? *cal-user-events*)
+  (set! *cal-availability*
+        (list (list (cons 'person "me") (cons 'day 0) (cons 'start-hour 9) (cons 'start-min 0) (cons 'end-hour 17) (cons 'end-min 0))
+              (list (cons 'person "me") (cons 'day 1) (cons 'start-hour 9) (cons 'start-min 0) (cons 'end-hour 17) (cons 'end-min 0))
+              (list (cons 'person "me") (cons 'day 2) (cons 'start-hour 9) (cons 'start-min 0) (cons 'end-hour 17) (cons 'end-min 0))
+              (list (cons 'person "me") (cons 'day 3) (cons 'start-hour 9) (cons 'start-min 0) (cons 'end-hour 17) (cons 'end-min 0))
+              (list (cons 'person "me") (cons 'day 4) (cons 'start-hour 9) (cons 'start-min 0) (cons 'end-hour 17) (cons 'end-min 0))))
+  (set! *cal-next-id* 100))
 
 (refresh!)
 (add-event-listener!/wrap (document-body) "keydown" global-keydown)
@@ -4093,6 +4271,16 @@
               (lambda (users)
                 (set! *online-users* (if (list? users) users '()))
                 (refresh!)))
+          ;; Warm the planner-service capability so the calendar can
+          ;; render real data on first open without an extra round-trip.
+          ;; The fetch-scope-list! call also chains the first snapshot
+          ;; refresh, so by the time the calendar tab is opened the
+          ;; dropdowns and grid are already populated.
+          (on (<- lobby-ref 'planner)
+              (lambda (cap)
+                (set! *planner-cap* cap)
+                (planner-fetch-scope-list!))
+              #:catch (lambda (err) #f))
           (when *current-org-name*
             (announce-presence!))
           (refresh!))

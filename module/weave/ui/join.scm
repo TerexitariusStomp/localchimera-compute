@@ -4,6 +4,7 @@
 ;;; Rendered by the virtual-dom diffing engine in browser.scm.
 
 (define-module (weave ui join)
+  #:use-module (weave ui ffi)
   #:export (render-join-screen
             render-join-error))
 

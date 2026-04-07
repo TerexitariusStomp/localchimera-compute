@@ -185,6 +185,38 @@ Use `render-toggle-form` — see `render-new-org-button` for the pattern.
 
 See `/hoot-docs` skill for full Hoot reference.
 
+## Live hacking the UI (developer REPL)
+
+Hoot 0.8 ships an in-Wasm Scheme REPL: edit a render procedure in your editor,
+re-evaluate it, call `(refresh!)`, and the browser tab redraws without a page
+reload or `make`. Vat state, WebSocket connections and actor identity all
+survive across edits.
+
+Quick recipe:
+
+1. Compile with `-g1` so the runtime module system is embedded:
+   ```bash
+   guild compile-wasm -g1 -L module -L docs/reference/lib-vendored \
+     --bundle -o browser/repl.wasm browser/repl.scm
+   ```
+2. Serve via `(hoot web-server)` (already what `make serve` does) — it doubles
+   as a REPL proxy, forwarding TCP traffic from clients over a WebSocket to
+   the connected tab.
+3. From the entry-point Scheme, start the in-Wasm REPL server:
+   ```scheme
+   (use-modules (hoot web-repl))
+   (run-web-repl "ws://localhost:8088/repl")
+   ```
+4. Connect with `M-x geiser-hoot` (see `/emacs` skill) or `hoot repl`.
+5. Eval a UI module, then `(refresh!)` in the REPL.
+
+Caveats: `-g1` bloats the bundle (don't deploy it), runtime-loaded modules are
+**interpreted not compiled** so hot loops are slower, and new `define-foreign`
+bindings still require a full rebuild because FFI imports are linked at
+compile time.
+
+Full walkthrough including the Weave bundle: `docs/weave/LIVE_HACKING.md`.
+
 ## The user's request
 
 $ARGUMENTS

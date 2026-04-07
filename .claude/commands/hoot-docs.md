@@ -81,6 +81,46 @@ make serve               # compile + serve locally
 5. **No `syntax-case` / `syntax-rules`** — Macro system is limited. Use procedural abstractions instead.
 6. **No mutable strings** — `string-set!` is not available.
 
+## Hoot 0.8 live-coding stack
+
+Hoot 0.8 (we ship a patched build via `deploy/packages/hoot-fix.scm`) adds a
+real Scheme REPL that runs *inside* the WebAssembly runtime, plus a dev server
+that proxies REPL clients into the browser tab. This is **not** the
+`(hoot repl)` debug module described in `04-compiling-to-wasm.md` — that one
+is for inspecting WASM internals. The new modules are:
+
+| Module                       | Role                                                                       |
+| ---------------------------- | -------------------------------------------------------------------------- |
+| `(hoot repl)` (0.8)          | Scheme read-eval-print loop running inside the Wasm runtime                |
+| `(hoot web-server)`          | Dev HTTP server; doubles as REPL proxy over WebSocket. Routable.            |
+| `(hoot web-repl)`            | In-Wasm REPL server — `(run-web-repl "ws://…/repl")`                       |
+| `(web request)` `(web response)` `(web socket)` | Slivers of the Guile `(web …)` API, available in Wasm |
+
+Two new optional Hoot deps power this: **guile-fibers** and **guile-websocket**.
+If they're missing at build time, `(hoot web-server)` is silently not built.
+
+To enable live hacking, compile with `-g1`:
+
+```bash
+guild compile-wasm -g1 -L module --bundle -o browser/repl.wasm browser/repl.scm
+```
+
+`-g1` embeds the runtime module system into the binary. The bundle gets
+significantly larger and compilation slows down — strip the flag for production.
+
+`current-module-loader` is a new parameter; `run-web-repl` sets it to an
+HTTP-based loader that fetches `.scm` source from a special endpoint on the
+dev server. **Modules loaded at runtime are interpreted, not compiled to Wasm.**
+
+Hoot 0.8 also ships a top-level `hoot` CLI:
+
+- `hoot repl` — REPL running under Node, no browser involved
+- `hoot server` — convenience launcher for `(hoot web-server)`
+
+For an end-to-end walkthrough including how to wire this into Weave's dev
+server, see `docs/weave/LIVE_HACKING.md`. The Geiser side is documented in
+`/emacs` (look for `geiser-hoot`).
+
 ## Common editing patterns
 
 When adding a new FFI binding:

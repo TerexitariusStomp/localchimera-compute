@@ -11,7 +11,7 @@
   #:export (^lobby))
 
 (define (^lobby _bcom signup-agent transcription-svc express-svc
-                presence terminal-svc mailbox-mgr)
+                presence terminal-svc mailbox-mgr planner-service)
   (methods
 
    ;; ── Account registration ─────────────────────────────────────────────
@@ -68,4 +68,9 @@
    ;; Get (or create) an offline message queue for identity-key.
    ;; Returns a ^mailbox ref.
    ((get-mailbox identity-key)
-    (<- mailbox-mgr 'get-or-create identity-key))))
+    (<- mailbox-mgr 'get-or-create identity-key))
+
+   ;; ── Planner ──────────────────────────────────────────────────────────
+   ;; Hand the caller a capability to the planner-service. Browsers cache
+   ;; this once and call methods on it directly afterward.
+   ((planner) planner-service)))

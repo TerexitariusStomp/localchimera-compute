@@ -36,6 +36,7 @@
             render-capacity-bar
             render-allday-strip
             render-intents-sidebar
+            render-scope-bar
             event->ical
             ical-line->pair
             parse-ical-events
@@ -54,9 +55,19 @@
 
 (define day-names '#("Mon" "Tue" "Wed" "Thu" "Fri" "Sat" "Sun"))
 
+;;; Playnet palette — kept in sync with browser/calendar.css.
+;;; Using named accessors instead of inline hex strings makes intent
+;;; obvious and the next palette change a single edit.
+(define *palette-mint*    "#a8e6cf")  ;; matched / yours / fulfilled
+(define *palette-amber*   "#d69e2e")  ;; unmatched / volunteer needed
+(define *palette-purple*  "#9f7aea")  ;; VF accent / process context
+(define *palette-grey*    "#8b7b96")  ;; muted / hint / neutral
+(define *palette-blue*    "#63b3ed")  ;; default event
+(define *palette-red*     "#fc8181")  ;; danger / delete
+
 (define *person-colors*
-  '#("#63b3ed" "#f6ad55" "#b794f4" "#4fd1c5" "#f687b3"
-     "#7ee8a2" "#fc8181" "#d6bcfa" "#90cdf4" "#fbd38d"))
+  (vector *palette-blue* "#f6ad55" "#b794f4" "#4fd1c5" "#f687b3"
+          "#7ee8a2" *palette-red* "#d6bcfa" "#90cdf4" "#fbd38d"))
 
 
 ;;; ═══════════════════════════════════════════════════════════════════════════════
@@ -623,7 +634,7 @@
                   (min 100 (inexact->exact (round (* (/ total-committed total-avail) 100))))
                   0))
          (fill-color (cond ((> pct 90) "#e53e3e")
-                           ((> pct 70) "#d69e2e")
+                           ((> pct 70) *palette-amber*)
                            (else "#38a169"))))
     `(div (@ (class "cal-capacity"))
           (div (@ (class "cal-capacity-bar"))
@@ -640,75 +651,156 @@
 
 
 ;;; ═══════════════════════════════════════════════════════════════════════════════
+;;;  RENDER: SCOPE / PLAN / ACTING-AS BAR
+;;; ═══════════════════════════════════════════════════════════════════════════════
+
+(define (render-scope-bar scopes current-scope plans current-plan
+                          members current-acting-as
+                          on-select-scope on-select-plan on-select-acting-as)
+  "Top bar with three dropdowns: Scope, Plan (within scope), Acting as (scope member).
+   SCOPES, PLANS, MEMBERS are lists of alists with 'id and 'name.
+   CURRENT-* are selected IDs or #f.
+   Callbacks receive the new selected ID string."
+  (define (option item current)
+    (let ((id (alist-ref item 'id ""))
+          (name (alist-ref item 'name "")))
+      `(option (@ (value ,id)
+                  ,@(if (equal? id current) '((selected "selected")) '()))
+               ,(if (string=? name "") id name))))
+  (define (dropdown id label items current on-change placeholder)
+    ;; Always emit the placeholder option so users can clear the selection
+    ;; (e.g. switch back to "Observer" mode after picking a person).
+    `(div (@ (class "cal-scope-field"))
+          (span (@ (class "cal-scope-label")) ,label)
+          (select (@ (id ,id)
+                     (class "cal-scope-select")
+                     (change ,on-change))
+                  (option (@ (value "")
+                             ,@(if current '() '((selected "selected"))))
+                          ,placeholder)
+                  ,@(map (lambda (it) (option it current)) items))))
+  `(div (@ (class "cal-scope-bar"))
+        ,(dropdown "cal-scope-select" "Scope" scopes current-scope on-select-scope
+                   "Select a scope\u2026")
+        ,(dropdown "cal-plan-select" "Plan" plans current-plan on-select-plan
+                   "All plans")
+        ,(dropdown "cal-acting-as-select" "Acting as" members current-acting-as
+                   on-select-acting-as "Observer")))
+
+
+;;; ═══════════════════════════════════════════════════════════════════════════════
 ;;;  RENDER: UNSCHEDULED INTENTS SIDEBAR
 ;;; ═══════════════════════════════════════════════════════════════════════════════
 
+(define* (render-intent-card intent
+                             #:key on-select-intent selected-intent-id
+                                   (people '()) on-accept on-decline
+                                   (stop-prop (lambda (e) #f))
+                                   (show-accept? #f))
+  "Render one intent card. SHOW-ACCEPT? enables accept/decline buttons."
+  (let* ((id   (alist-ref intent 'id ""))
+         (proc (alist-ref intent 'process-name ""))
+         (spec (alist-ref intent 'resource-spec ""))
+         (qty  (alist-ref intent 'effort-qty 0))
+         (unit (alist-ref intent 'effort-unit "hr"))
+         (scope (alist-ref intent 'scope ""))
+         (selected (and selected-intent-id
+                        (equal? id selected-intent-id)))
+         (match (alist-ref intent 'match-status 'unassigned))
+         (sp-name (alist-ref intent 'suggested-provider-name #f))
+         (sp-id (alist-ref intent 'suggested-provider #f))
+         (match-class
+          (cond ((eq? match 'matched) " cal-intent-matched")
+                ((eq? match 'unmatched) " cal-intent-unmatched-card")
+                (else ""))))
+    `(div (@ (class ,(string-append "cal-intent-card" match-class
+                                    (if selected " cal-intent-selected" "")))
+             (click ,(lambda (e) (on-select-intent intent))))
+          (div (@ (class "cal-intent-proc")) ,proc)
+          (div (@ (class "cal-intent-detail"))
+               (span ,(string-append (n->s qty) " " unit))
+               (span (@ (class "cal-intent-spec")) ,spec))
+          ,@(if (string=? scope "") '()
+                (list `(div (@ (class "cal-intent-scope")) ,scope)))
+          ;; Suggested provider badge or unmatched warning
+          ,@(cond
+              ((eq? match 'matched)
+               (list `(div (@ (class "cal-intent-suggested"))
+                           (span (@ (class "cal-legend-dot cal-intent-dot")
+                                    (style ,(string-append
+                                             "background-color:"
+                                             (person-color (or sp-id "") people)
+                                             ";")))
+                                 "")
+                           (span ,(string-append
+                                   "Suggested: " (or sp-name "?"))))))
+              ((eq? match 'unmatched)
+               (list `(div (@ (class "cal-intent-suggested cal-intent-unmatched"))
+                           "\u26a0 Needs volunteer")))
+              (else '()))
+          ;; Accept / Decline buttons (only when explicitly enabled)
+          ,@(if (and show-accept? on-accept on-decline)
+                (list `(div (@ (class "cal-intent-actions"))
+                            (span (@ (class "cal-btn cal-btn-primary cal-intent-accept")
+                                     (click ,(lambda (e)
+                                               (stop-prop e)
+                                               (on-accept intent))))
+                                  "\u2713 Accept")
+                            (span (@ (class "cal-btn cal-intent-decline")
+                                     (click ,(lambda (e)
+                                               (stop-prop e)
+                                               (on-decline intent))))
+                                  "\u2717 Decline")))
+                '()))))
+
 (define* (render-intents-sidebar intents on-select-intent selected-intent-id
                                  #:key (people '()) (on-accept #f) (on-decline #f)
-                                       (stop-prop (lambda (e) #f)))
-  "Sidebar listing unscheduled work intents from the org planner.
-   When work-assignments metadata is present, shows suggested provider
-   and accept/decline buttons for the consent flow."
-  `(div (@ (class "cal-intents-sidebar"))
-        (div (@ (class "cal-intents-title")) "Unscheduled Work")
-        ,@(if (null? intents)
-              (list `(div (@ (class "cal-intents-empty")) "No pending intents"))
-              (map (lambda (intent)
-                     (let* ((id   (alist-ref intent 'id ""))
-                            (proc (alist-ref intent 'process-name ""))
-                            (spec (alist-ref intent 'resource-spec ""))
-                            (qty  (alist-ref intent 'effort-qty 0))
-                            (unit (alist-ref intent 'effort-unit "hr"))
-                            (scope (alist-ref intent 'scope ""))
-                            (selected (and selected-intent-id
-                                           (equal? id selected-intent-id)))
-                            (match (alist-ref intent 'match-status 'unassigned))
-                            (sp-name (alist-ref intent 'suggested-provider-name #f))
-                            (sp-id (alist-ref intent 'suggested-provider #f))
-                            (match-class
-                              (cond ((eq? match 'matched) " cal-intent-matched")
-                                    ((eq? match 'unmatched) " cal-intent-unmatched-card")
-                                    (else ""))))
-                       `(div (@ (class ,(string-append "cal-intent-card" match-class
-                                                       (if selected " cal-intent-selected" "")))
-                                (click ,(lambda (e) (on-select-intent intent))))
-                             (div (@ (class "cal-intent-proc")) ,proc)
-                             (div (@ (class "cal-intent-detail"))
-                                  (span ,(string-append (n->s qty) " " unit))
-                                  (span (@ (class "cal-intent-spec")) ,spec))
-                             ,@(if (string=? scope "") '()
-                                   (list `(div (@ (class "cal-intent-scope")) ,scope)))
-                             ;; Suggested provider badge or unmatched warning
-                             ,@(cond
-                                 ((eq? match 'matched)
-                                  (list `(div (@ (class "cal-intent-suggested"))
-                                              (span (@ (class "cal-legend-dot cal-intent-dot")
-                                                       (style ,(string-append
-                                                                "background-color:"
-                                                                (person-color (or sp-id "") people)
-                                                                ";")))
-                                                    "")
-                                              (span ,(string-append
-                                                      "Suggested: " (or sp-name "?"))))))
-                                 ((eq? match 'unmatched)
-                                  (list `(div (@ (class "cal-intent-suggested cal-intent-unmatched"))
-                                              "\u26a0 No match")))
-                                 (else '()))
-                             ;; Accept / Decline buttons for matched intents
-                             ,@(if (and (eq? match 'matched) on-accept on-decline)
-                                   (list `(div (@ (class "cal-intent-actions"))
-                                               (span (@ (class "cal-btn cal-btn-primary cal-intent-accept")
-                                                        (click ,(lambda (e)
-                                                                  (stop-prop e)
-                                                                  (on-accept intent))))
-                                                     "\u2713 Accept")
-                                               (span (@ (class "cal-btn cal-intent-decline")
-                                                        (click ,(lambda (e)
-                                                                  (stop-prop e)
-                                                                  (on-decline intent))))
-                                                     "\u2717 Decline")))
-                                   '()))))
-                   intents))))
+                                       (stop-prop (lambda (e) #f))
+                                       (acting-as #f))
+  "Sidebar listing pending work intents split into three sections:
+     - Awaiting your acceptance: matched to ACTING-AS user
+     - Needs a volunteer: unmatched intents
+     - Others' pending: matched to someone else, or unassigned
+   Each card shows suggested provider. Only the 'awaiting your acceptance'
+   section gets accept/decline buttons."
+  (define (classify intent)
+    (let ((match (alist-ref intent 'match-status 'unassigned))
+          (sp    (alist-ref intent 'suggested-provider #f)))
+      (cond
+        ((and (eq? match 'matched) acting-as (equal? sp acting-as)) 'yours)
+        ((eq? match 'unmatched) 'unmatched)
+        (else 'others))))
+  (let* ((yours     (filter (lambda (i) (eq? (classify i) 'yours)) intents))
+         (unmatched (filter (lambda (i) (eq? (classify i) 'unmatched)) intents))
+         (others    (filter (lambda (i) (eq? (classify i) 'others)) intents))
+         (render-card
+          (lambda (accept?)
+            (lambda (i)
+              (render-intent-card i
+                #:on-select-intent on-select-intent
+                #:selected-intent-id selected-intent-id
+                #:people people
+                #:on-accept on-accept
+                #:on-decline on-decline
+                #:stop-prop stop-prop
+                #:show-accept? accept?))))
+         (section
+          (lambda (title cls items accept?)
+            (if (null? items) '()
+                (list `(div (@ (class ,(string-append "cal-intents-section " cls)))
+                            (div (@ (class "cal-intents-subtitle")) ,title)
+                            ,@(map (render-card accept?) items)))))))
+    `(div (@ (class "cal-intents-sidebar"))
+          (div (@ (class "cal-intents-title")) "Pending Work")
+          ,@(if (null? intents)
+                (list `(div (@ (class "cal-intents-empty")) "No pending intents"))
+                (append
+                  (section "Awaiting your acceptance"
+                           "cal-intents-yours" yours #t)
+                  (section "Needs a volunteer"
+                           "cal-intents-unmatched" unmatched #f)
+                  (section "Others' pending"
+                           "cal-intents-others" others #f))))))
 
 
 ;;; ═══════════════════════════════════════════════════════════════════════════════
@@ -877,17 +969,19 @@
   (number->string (if (= n (floor n)) (inexact->exact (floor n)) n)))
 
 (define (action-color act)
-  (cond ((eq? act 'work) "#9f7aea")
+  (cond ((eq? act 'work) *palette-purple*)
         ((eq? act 'produce) "#38a169")
         ((eq? act 'consume) "#e53e3e")
-        ((eq? act 'use) "#d69e2e")
-        (else "#8b7b96")))
+        ((eq? act 'use) *palette-amber*)
+        (else *palette-grey*)))
 
 (define* (render-event-detail-panel evt on-close on-edit on-delete people
                                     process-commitments on-record-effort
                                     process-flows supply-chain
                                     #:key (on-accept-assignment #f)
-                                          (on-decline-assignment #f))
+                                          (on-decline-assignment #f)
+                                          (acting-as #f)
+                                          (stop-prop (lambda (e) #f)))
   "Right sidebar showing full event detail + VF process context.
    When work-assignment metadata is present, shows assignment section
    with suggested provider and accept/decline actions."
@@ -963,29 +1057,41 @@
                             (else "Open"))))
           ;; Assignment context (work-assignment metadata)
           ,@(if (and is-vf (not (eq? match-st 'unassigned)))
-                `((div (@ (class "cal-detail-section cal-assignment-section"))
-                       (div (@ (class "cal-detail-section-title")) "Assignment")
-                       ,(if (eq? match-st 'matched)
-                            `(div (@ (class "cal-assignment-row"))
-                                  (span (@ (class "cal-legend-dot cal-detail-dot")
-                                           (style ,(string-append
-                                                    "background-color:"
-                                                    (person-color (or sp-id "") people) ";")))
-                                        "")
-                                  (span (@ (class "cal-assignment-name"))
-                                        ,(string-append "Suggested: " (or sp-name sp-id "")))
-                                  ,@(if (and on-accept-assignment (eq? source 'intent))
-                                        `((span (@ (class "cal-btn cal-btn-primary")
-                                                   (style "margin-left:auto;font-size:10px;padding:2px 8px;")
-                                                   (click ,(lambda (e) (on-accept-assignment evt))))
-                                                "Accept")
-                                          (span (@ (class "cal-btn")
-                                                   (style "font-size:10px;padding:2px 8px;")
-                                                   (click ,(lambda (e) (on-decline-assignment evt))))
-                                                "Decline"))
-                                        '()))
-                            `(div (@ (class "cal-assignment-row cal-assignment-unmatched"))
-                                  (span "\u26a0 No agent matched for this role")))))
+                (let ((yours? (and acting-as sp-id (equal? acting-as sp-id))))
+                  `((div (@ (class "cal-detail-section cal-assignment-section"))
+                         (div (@ (class "cal-detail-section-title")) "Assignment")
+                         ,(if (eq? match-st 'matched)
+                              `(div (@ (class "cal-assignment-row"))
+                                    (span (@ (class "cal-legend-dot cal-detail-dot")
+                                             (style ,(string-append
+                                                      "background-color:"
+                                                      (person-color (or sp-id "") people) ";")))
+                                          "")
+                                    (span (@ (class "cal-assignment-name"))
+                                          ,(string-append "Suggested: " (or sp-name sp-id "")))
+                                    ,@(cond
+                                        ((and yours? on-accept-assignment (eq? source 'intent))
+                                         `((span (@ (class "cal-btn cal-btn-primary")
+                                                    (style "margin-left:auto;font-size:10px;padding:2px 8px;")
+                                                    (click ,(lambda (e)
+                                                              (stop-prop e)
+                                                              (on-accept-assignment evt))))
+                                                 "Accept")
+                                           (span (@ (class "cal-btn")
+                                                    (style "font-size:10px;padding:2px 8px;")
+                                                    (click ,(lambda (e)
+                                                              (stop-prop e)
+                                                              (on-decline-assignment evt))))
+                                                 "Decline")))
+                                        ((and (not yours?) (eq? source 'intent))
+                                         `((span (@ (class "cal-assignment-hint")
+                                                    (style "margin-left:auto;font-size:9px;opacity:0.6;"))
+                                                 ,(if acting-as
+                                                      "Only the suggested person can accept"
+                                                      "Pick an 'Acting as' user to accept"))))
+                                        (else '())))
+                              `(div (@ (class "cal-assignment-row cal-assignment-unmatched"))
+                                    (span "\u26a0 No agent matched for this role"))))))
                 '())
           ;; VF Process Context
           ,@(if (and is-vf vf-proc)
@@ -993,9 +1099,9 @@
                                (min 100 (inexact->exact (round (* (/ vf-fulfilled vf-qty) 100))))
                                0))
                        (fill-color (cond ((>= pct 100) "#38a169")
-                                        ((>= pct 50) "#d69e2e")
+                                        ((>= pct 50) *palette-amber*)
                                         (else "#e53e3e")))
-                       (act-color (cond ((eq? vf-act 'work) "#9f7aea")
+                       (act-color (cond ((eq? vf-act 'work) *palette-purple*)
                                        ((eq? vf-act 'produce) "#38a169")
                                        (else "#e53e3e"))))
                   `((div (@ (class "cal-detail-section"))
@@ -1148,7 +1254,14 @@
                               (process-flows '())
                               (supply-chain '())
                               (on-accept-assignment #f)
-                              (on-decline-assignment #f))
+                              (on-decline-assignment #f)
+                              ;; Scope / plan / acting-as
+                              (scopes '())
+                              (current-scope #f)
+                              (plans '())
+                              (current-plan #f)
+                              (current-acting-as #f)
+                              on-select-scope on-select-plan on-select-acting-as)
   "Compose the full calendar page."
   (let* ((ws week-start-ms)
          ;; Filter events to this week
@@ -1181,6 +1294,12 @@
          (time-line-sxml (if time-line (cdr time-line) #f)))
     `(div (@ (class ,(string-append "cal-view"
                                     (if selected-event " cal-view-with-detail" ""))))
+          ;; Scope / plan / acting-as bar (only when scopes list is non-empty)
+          ,@(if (null? scopes) '()
+                (list (render-scope-bar scopes current-scope plans current-plan
+                                        people current-acting-as
+                                        on-select-scope on-select-plan
+                                        on-select-acting-as)))
           ;; Header with navigation
           ,(render-week-header ws on-prev-week on-next-week on-today on-export)
           ;; Person legend + capacity bar
@@ -1199,7 +1318,8 @@
                             #:people people
                             #:on-accept on-accept-assignment
                             #:on-decline on-decline-assignment
-                            #:stop-prop stop-prop)))
+                            #:stop-prop stop-prop
+                            #:acting-as current-acting-as)))
                ;; Grid column: headers + allday + scrollable grid
                (div (@ (class "cal-grid-col"))
                     ;; Day headers (aligned with grid columns)
@@ -1238,7 +1358,9 @@
                             people process-commitments on-record-effort
                             process-flows supply-chain
                             #:on-accept-assignment on-accept-assignment
-                            #:on-decline-assignment on-decline-assignment))
+                            #:on-decline-assignment on-decline-assignment
+                            #:acting-as current-acting-as
+                            #:stop-prop stop-prop))
                      '()))
           ;; Modal overlays
           ,@(if editing-event

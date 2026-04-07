@@ -13,6 +13,15 @@
 ;;;   playnet       — system account for production playnet Shepherd services
 ;;;   sapient-os — sapient-os agent user
 
+;; Add deploy/packages/ to the load path so (use-modules (hoot-fix)) and
+;; friends resolve without forcing the operator to pass `-L deploy/packages`
+;; at the deploy command line.
+(eval-when (expand load eval)
+  (add-to-load-path
+   (string-append (dirname (or (current-filename)
+                               "deploy/guix/machines.scm"))
+                  "/../packages")))
+
 (use-modules (gnu machine)
              (gnu machine ssh)
              (gnu packages admin)
@@ -25,6 +34,7 @@
              (gnu packages rsync)
              (gnu packages version-control)
              (gnu packages ssh)
+             (hoot-fix) ; guile-hoot/fixed — patched 0.8.0 with mutable-bytevector? case
              (python-rns)
              (reticulum-service)
              (gnu services base)
@@ -35,7 +45,8 @@
              (gnu system linux-initrd)
              (gnu)
              (guix gexp)
-             (playnet-gateway-service))
+             (playnet-gateway-service)
+             (weave-dev-service))
 
 (define %this-dir
   (dirname (or (current-filename)
@@ -72,6 +83,7 @@
 
 (require 'geiser)
 (require 'geiser-guile)
+(require 'geiser-hoot)         ; Hoot flavour — M-x geiser-hoot for live wasm REPL
 (require 'geiser-eval)
 (require 'geiser-connection)
 (require 'geiser-doc)
@@ -83,7 +95,7 @@
 
 ;; Geiser config
 (setq geiser-guile-binary \"guile\")
-(setq geiser-active-implementations '(guile))
+(setq geiser-active-implementations '(guile hoot))
 (setq geiser-guile-load-path '(\"/home/playnet/playnet-repo/module\"))
 
 ;; Smartparens globally
@@ -185,9 +197,12 @@
      (append
       (list guile-goblins
             guile-fibers
+            guile-websocket            ; required by (hoot web-server) /repl proxy
+            guile-hoot/fixed           ; patched 0.8.0 — provides `hoot` CLI + libs
             emacs-no-x
             emacs-geiser
             emacs-geiser-guile
+            emacs-geiser-hoot          ; M-x geiser-hoot — Geiser flavour for Hoot
             emacs-smartparens
             emacs-rainbow-delimiters
             emacs-claude-code-ide
@@ -268,6 +283,16 @@
                                       #f))
                              (respawn? #f)
                              (auto-start? #f))))
+
+      ;; Weave dev (live hacking) — manual start.
+      ;; Loopback HTTP on 8082, REPL relay on 37146. Connect with:
+      ;;   ssh -L 8082:127.0.0.1:8082 -L 37146:127.0.0.1:37146 playnet@…
+      ;;   sudo herd start weave-dev
+      ;;   M-x geiser-hoot 127.0.0.1 37146
+      ;; See deploy/guix/weave-dev-service.scm and docs/weave/LIVE_HACKING.md.
+      (service weave-dev-service-type
+               (weave-dev-configuration
+                (package %playnet-package)))
 
       ;; Mosquitto MQTT broker — localhost only, for VF bridge.
       ;; Sensors and bridge actors connect locally; no external exposure.
