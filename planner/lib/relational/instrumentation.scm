@@ -66,36 +66,31 @@
 ;;; ── Plan structure analysis ──────────────────────────────────────────────────
 
 (define (count-plan-terms plan)
-  "Walk a plan tree and count (satisfied N) (unmet N) (produce N)."
-  (let loop ((tree plan) (sat 0) (unm 0) (prod 0) (resid 0))
-    (cond
-      ((not (pair? tree)) (values sat unm prod resid))
-      ;; A plan-term: (satisfied spec qty alloc)
-      ((and (pair? tree) (eq? (car tree) 'satisfied))
-       (values (+ sat 1) unm prod resid))
-      ;; (unmet spec remaining)
-      ((and (pair? tree) (eq? (car tree) 'unmet))
-       (let ((qty (if (and (pair? (cdr tree)) (pair? (cddr tree)))
-                      (caddr tree) 0)))
-         (values sat (+ unm 1) prod (+ resid (if (number? qty) qty 0)))))
-      ;; (produce spec rid scale sub-plans)
-      ((and (pair? tree) (eq? (car tree) 'produce))
-       (let ((subs (if (>= (length tree) 5) (list-ref tree 4) '())))
-         (let-values (((s u p r) (count-plan-terms subs)))
-           (values (+ sat s) (+ unm u) (+ prod 1 p) (+ resid r)))))
-      ;; List of (demand plan-term) pairs from all-demands-o
-      ((and (pair? tree) (pair? (car tree)) (list? (car tree)))
-       (let-values (((s1 u1 p1 r1) (count-plan-terms (car tree))))
-         (let-values (((s2 u2 p2 r2) (count-plan-terms (cdr tree))))
-           (values (+ s1 s2) (+ u1 u2) (+ p1 p2) (+ r1 r2)))))
-      ;; (demand-alist plan-term) — unwrap the plan-term
-      ((and (pair? tree) (pair? (car tree)) (pair? (cadr tree)))
-       (count-plan-terms (cadr tree)))
-      ;; Recurse into pairs
-      (else
-       (let-values (((s1 u1 p1 r1) (count-plan-terms (car tree))))
-         (let-values (((s2 u2 p2 r2) (count-plan-terms (cdr tree))))
-           (values (+ s1 s2) (+ u1 u2) (+ p1 p2) (+ r1 r2))))))))
+  "Walk a plan tree and count (satisfied N) (unmet N) (produce N).
+   Returns (values satisfied unmet produced residual).
+   Uses fold-plan-terms from plan-walk.scm."
+  (let ((acc (fold-plan-terms
+               (lambda (term acc)
+                 (let ((sat (vector-ref acc 0))
+                       (unm (vector-ref acc 1))
+                       (prod (vector-ref acc 2))
+                       (resid (vector-ref acc 3)))
+                   (cond
+                     ((satisfied-term? term)
+                      (vector (+ sat 1) unm prod resid))
+                     ((unmet-term? term)
+                      (let ((q (plan-term-qty term)))
+                        (vector sat (+ unm 1) prod
+                                (+ resid (if (number? q) q 0)))))
+                     ((produce-term? term)
+                      (vector sat unm (+ prod 1) resid))
+                     (else acc))))
+               (vector 0 0 0 0)
+               plan)))
+    (values (vector-ref acc 0)
+            (vector-ref acc 1)
+            (vector-ref acc 2)
+            (vector-ref acc 3))))
 
 
 ;;; ── Timing ───────────────────────────────────────────────────────────────────

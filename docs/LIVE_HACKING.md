@@ -169,6 +169,109 @@ hoot repl --connect    # connects to localhost:37146 by default
 
 Useful for sanity-checking expressions without booting Geiser.
 
+## Auto-reload on save
+
+The manual `C-c C-k` + `(refresh!)` dance from the previous section is
+fine, but we also ship two ways to do it for you whenever a file is
+saved. They're additive — pick whichever fits your editor.
+
+### Option A — Emacs save hook
+
+`deploy/scripts/init.el` (the elisp file deployed to the playnet user
+on the Hetzner VM, also fine to drop into a local `~/.emacs.d/init.el`)
+defines `playnet/live-reload-on-save` and adds it to `after-save-hook`.
+On every save of a Scheme buffer under a configured root (default
+`module/`), it:
+
+1. Tries to use the active Geiser-Hoot REPL — if you're connected via
+   `M-x connect-to-hoot`, it sends `geiser-eval-buffer` and then
+   `(catch #t (lambda () (refresh!)) (lambda _ #f))` to your REPL.
+   This is the fast path: a single round trip, no subprocess.
+2. If no Geiser connection is up, falls back to spawning
+   `tools/live-reload.scm` (the same script the inotify watcher uses).
+   So `C-x C-s` always does *something* useful, even if you're editing
+   without an attached REPL.
+
+The hook is gated on `playnet-live-reload-enabled` (default `t`) and
+`playnet-live-reload-roots` (default `("module/")`). To extend coverage
+to other subtrees, set the variable in your local init:
+
+```elisp
+(setq playnet-live-reload-roots '("module/" "server/"))
+```
+
+### Option B — inotify watcher (any editor)
+
+For Vim, VS Code, Helix, or any other editor — or for editing files via
+SSHFS on the VM — there's `tools/live-watch.sh`, an `inotifywait` loop
+that does the same job from outside the editor. It calls
+`tools/live-reload.scm` on every `close_write` event, which is the
+event every editor I know of fires after an atomic save.
+
+Locally, run it via the `make` target so you don't have to install
+`inotify-tools`:
+
+```bash
+# Terminal 1 — dev server + REPL relay
+make weave-dev    # or `make serve-dev` for the browser/repl bundle
+
+# Terminal 2 — auto-reload
+make live-watch
+```
+
+That command wraps the script in `guix shell inotify-tools coreutils bash`
+and watches `module/` by default. Override with `ARGS=`:
+
+```bash
+make live-watch ARGS="server module/playnet"
+```
+
+On the Hetzner VM the same loop runs as a manual-start shepherd
+service:
+
+```bash
+sudo herd start weave-dev      # (already documented above)
+sudo herd start live-watch     # inotify loop, watches /home/playnet/dev-checkout/module
+…
+sudo herd stop  live-watch
+sudo herd stop  weave-dev
+```
+
+See `deploy/guix/live-watch-service.scm` for the full configuration
+(host, port, watch paths are all overridable in `machines.scm`).
+
+### How `tools/live-reload.scm` works
+
+The script is intentionally generic — it doesn't know about Weave or
+the playnet REPL specifically. Given a saved file path it:
+
+1. **Computes the module name from the path.** A small route table
+   maps repo-relative path prefixes to module-name roots: by default,
+   `module/X/Y.scm` → `(X Y)`. Add a row to `%routes` in
+   `tools/live-reload.scm` to support a new subtree.
+2. **Reads the file body and strips the `(define-module …)` form**,
+   replacing it with whitespace of equal length so error line numbers
+   stay accurate. (The REPL parser would otherwise try to *re-define*
+   the module, which Hoot's library-group machinery rejects for an
+   already-loaded module.)
+3. **Connects to the REPL relay** at `127.0.0.1:37146` (overridable
+   via `PLAYNET_REPL_HOST` / `PLAYNET_REPL_PORT`).
+4. **Sends `,m (the modname)`** so subsequent `(define …)` forms are
+   evaluated in that module's namespace. With `-g2` (`mutable-defs`)
+   they replace the existing bindings, just like the manual
+   `geiser-eval-buffer` flow.
+5. **Sends the file body** as one chunk.
+6. **Switches back to `(guile-user)` and calls `(refresh!)`** wrapped
+   in a `catch` so a missing `refresh!` (the entry point hasn't booted
+   yet, you connected too early) doesn't surface as an error.
+7. **Closes the connection.** Each save is one short-lived REPL
+   session; multiple concurrent live-watchers are fine because the
+   relay multiplexes them.
+
+If the relay greets the connection with `No control WebSocket`, that
+just means no browser tab is attached yet — the script logs a friendly
+warning and exits 0 so the editor save doesn't see an error.
+
 ## Caveats and gotchas
 
 - **Interpreted, not compiled.** Modules loaded at runtime via the HTTP

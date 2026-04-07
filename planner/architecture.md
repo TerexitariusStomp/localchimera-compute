@@ -228,12 +228,46 @@ The federation planner is a **monoidal fold** over the scope hierarchy:
 
 ```scheme
 (plan-federation scope-ids horizon ctx plan-scope-fn
-  #:parent-of parent-of #:registry registry)
+  #:parent-of parent-of #:registry registry
+  #:priority-fn priority-fn   ; legacy retraction-sort
+  #:weight-fn weight-fn)      ; harmony-based (see harmony.scm)
 ```
 
 1. **`build-hierarchy`** — construct children-of + topological sort (post-order DFS)
 2. **`fold-scopes`** — plan each scope bottom-up, children before parents
 3. **`match-laterally`** — greedy score-based surplus↔deficit matching across peers
+4. **`retract-across-scopes`** — priority-aware reallocation when deficits remain
+5. **`aggregate-federation-harmony`** — total weighted harmony across all scopes
+
+#### Federation result protocol
+
+Every level of the federation — both leaves and parents, both
+`plan-federation` (imperative) and `plan-federation-o` (relational) —
+produces the same alist shape. This is the **de facto protocol**
+between levels, and the right way to extend the planner with new
+concerns is to add fields to this alist rather than touching the
+core logic.
+
+```scheme
+((scope . scope-id)               ; identifier
+ (plan . plan-structure)          ; nested list from relational planner
+ (deficits . ...)                 ; unmet demands (scope, spec, qty)
+ (surpluses . ...)                ; excess outputs (scope, spec, qty)
+ (retraction-candidates . ...)    ; satisfied demands that could be retracted
+ (residual . number)              ; total unmet qty
+ (lateral-matches . ...)          ; optional: matches at this level
+ (retractions . ...)              ; optional: retractions performed
+ (harmony . ((total . n)          ; optional: added when weight-fn given
+             (per-spec . ...)     ;   per-spec outcome & weighted harmony
+             (per-scope . ...)))  ;   or per-child breakdown at parents
+ (netter-state . ns))             ; optional: imperative path only
+```
+
+Adding a new optimization concern (e.g., labour-time cost, carbon
+cost, distance-traveled metric) follows the same pattern used by
+harmony: add a field, compute it in `evaluate-state` and
+`aggregate-federation-harmony`, thread the necessary weight/cost
+function through the entry points.
 
 ## Categorical structure
 

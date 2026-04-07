@@ -118,8 +118,8 @@ Hoot 0.8 also ships a top-level `hoot` CLI:
 - `hoot server` — convenience launcher for `(hoot web-server)`
 
 For an end-to-end walkthrough including how to wire this into Weave's dev
-server, see `docs/weave/LIVE_HACKING.md`. The Geiser side is documented in
-`/emacs` (look for `geiser-hoot`).
+server and the auto-reload-on-save flow, see `docs/LIVE_HACKING.md`. The
+Geiser side is documented in `/emacs` (look for `geiser-hoot`).
 
 ## Common editing patterns
 

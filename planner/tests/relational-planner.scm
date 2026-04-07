@@ -227,7 +227,7 @@
   ;; Test extract-deficits and extract-surpluses (the federation protocol)
   (check "extract-deficits: unmet becomes deficit"
          (extract-deficits '(((d1) (unmet spec-flour 30))) "bakery")
-         '(((scope . "bakery") (spec . spec-flour) (qty . 30))))
+         '(((scope-id . "bakery") (spec-id . spec-flour) (qty . 30))))
 
   (check "extract-surpluses: satisfied with excess becomes surplus"
          (length (extract-surpluses '(((d1) (satisfied spec-flour 20 (("r" 30))))) "mill"))
@@ -238,8 +238,8 @@
               (pair? (build-hierarchy fed-facts scope-ids parent-map)))
 
   ;; Test lateral matching
-  (let* ((defs '(((scope . "bakery") (spec . spec-flour) (qty . 30))))
-         (surps '(((scope . "mill") (spec . spec-flour) (qty . 50))))
+  (let* ((defs '(((scope-id . "bakery") (spec-id . spec-flour) (qty . 30))))
+         (surps '(((scope-id . "mill") (spec-id . spec-flour) (qty . 50))))
          (result (match-at-level defs surps))
          (matches (car result))
          (unmatched (cdr result)))
@@ -248,12 +248,12 @@
                      (null? unmatched)))
     (when (pair? matches)
       (check "lateral-match: from mill to bakery"
-             (assq-ref (car matches) 'from) "mill")
+             (assq-ref (car matches) 'from-scope) "mill")
       (check "lateral-match: qty = 30 (min of deficit)"
              (assq-ref (car matches) 'qty) 30)))
 
   ;; Test unmatched deficit propagation
-  (let* ((defs '(((scope . "bakery") (spec . spec-wheat) (qty . 100))))
+  (let* ((defs '(((scope-id . "bakery") (spec-id . spec-wheat) (qty . 100))))
          (surps '())
          (result (match-at-level defs surps)))
     (check "unmatched: deficit propagates"

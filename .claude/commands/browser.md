@@ -215,7 +215,8 @@ Caveats: `-g1` bloats the bundle (don't deploy it), runtime-loaded modules are
 bindings still require a full rebuild because FFI imports are linked at
 compile time.
 
-Full walkthrough including the Weave bundle: `docs/weave/LIVE_HACKING.md`.
+Full walkthrough including the Weave bundle and auto-reload-on-save:
+`docs/LIVE_HACKING.md`.
 
 ## The user's request
 

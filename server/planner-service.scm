@@ -261,11 +261,6 @@
 ;;; ── Snapshot builder (read path) ─────────────────────────────────────
 
 (define (build-snapshot scope-root scope-id plan-id)
-  ;; NOTE: We filter all-commitments by plan-id manually rather than
-  ;; using ($ ps 'commitments-for-plan plan-id) because the planner's
-  ;; promote-to-commitment doesn't update the commitments-by-plan index
-  ;; (planning.scm:436-529) — the index is reused unchanged. Filing a
-  ;; separate planner fix; for now we work around it here.
   (let* ((rs   ($ scope-root 'recipe-store))
          (as   ($ scope-root 'agent-store))
          (obs  ($ scope-root 'observer))
@@ -273,15 +268,11 @@
          (als  ($ scope-root 'alert-store))
          (preg ($ scope-root 'process-registry))
          (intents-raw (if plan-id
-                          (filter (lambda (i)
-                                    (equal? (intent-planned-within i) plan-id))
-                                  ($ ps 'all-intents))
+                          ($ ps 'intents-for-plan plan-id)
                           ($ ps 'all-intents)))
-         (cmts    (if plan-id
-                      (filter (lambda (c)
-                                (equal? (commitment-planned-within c) plan-id))
-                              ($ ps 'all-commitments))
-                      ($ ps 'all-commitments)))
+         (cmts        (if plan-id
+                          ($ ps 'commitments-for-plan plan-id)
+                          ($ ps 'all-commitments)))
          (open-intents (filter (lambda (i) (not (intent-finished i)))
                                intents-raw))
          (members (scope-members scope-root scope-id))
@@ -382,13 +373,49 @@
              (success cid))))))))
 
 (define (do-decline-assignment scope-root iid acting-as)
-  "Clear the suggested-provider metadata. The intent itself stays in
-   place; the matcher can re-assign on the next planner run, or another
-   agent can volunteer."
+  "Decline a suggested assignment. Two-step:
+     1. Clear the existing suggested-provider metadata.
+     2. Re-run match-work-flows for this intent's spec, with ACTING-AS
+        in #:already-assigned, so the matcher proposes a different
+        in-scope agent. If found, stamp the new suggestion. Otherwise
+        the intent stays unmatched and surfaces in 'Needs a volunteer'.
+   Returns (ok . new-provider) if a fresh match was found,
+   (ok . cleared) otherwise."
   (catch-as-failure
     (lambda ()
-      ($ ($ scope-root 'plan-store) 'set-meta iid '())
-      (success 'cleared))))
+      (let* ((ps    ($ scope-root 'plan-store))
+             (obs   ($ scope-root 'observer))
+             (as    ($ scope-root 'agent-store))
+             (it    ($ ps 'get-intent iid)))
+        (cond
+          ((not it) (failure "intent not found"))
+          (else
+           ;; Step 1: clear existing suggestion
+           ($ ps 'set-meta iid '())
+           ;; Step 2: synthesize a single-element work-flow list and
+           ;; re-run the matcher with the declining agent excluded.
+           ;; match-work-flows only reads recipe-flow-id and
+           ;; recipe-flow-resource-conforms-to from each flow.
+           (let* ((spec    (intent-resource-conforms-to it))
+                  (synthetic-flow
+                    (make-recipe-flow iid 'work spec #f
+                                      #f #f #f #f #f #f #f #f #f #f))
+                  (scope-id (let ((scope-list (intent-in-scope-of it)))
+                              (and (pair? scope-list) (car scope-list))))
+                  (result (match-work-flows
+                            (list synthetic-flow) obs as
+                            #:scope-id scope-id
+                            #:already-assigned (if acting-as
+                                                   (list acting-as)
+                                                   '())))
+                  (new-provider (and (pair? result)
+                                     (cdr (car result)))))
+             (cond
+               (new-provider
+                ($ ps 'set-meta iid `((suggested-provider . ,new-provider)))
+                (success new-provider))
+               (else
+                (success 'cleared))))))))))
 
 (define (do-record-effort scope-root cid provider qty unit)
   "Build a 'work <economic-event> and feed it to the observer.

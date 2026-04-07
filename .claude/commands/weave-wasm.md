@@ -36,6 +36,6 @@ These build `-g2` bundles into `browser/.dev/` and `weave/.dev/` respectively
 
 Full setup, including the Makefile concatenation trick that wraps
 `(hoot web-repl)` around the prod entry point, the SSH-tunnel workflow for
-the Hetzner VM, and caveats, is in `docs/weave/LIVE_HACKING.md`.
+the Hetzner VM, and caveats, is in `docs/LIVE_HACKING.md`.
 
 **Don't deploy `-g2` builds** — the REPL bundle is ~56 MB.

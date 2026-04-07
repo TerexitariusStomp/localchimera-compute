@@ -1,34 +1,63 @@
 all: browser/repl.wasm weave/weave.wasm
 
-repl:
-	guile -L module server/repl.scm
-
-quick-repl:
-	guile -L module server/play-repl.scm
-
 CHANNELS = deploy/guix/channels.scm
 TIME_MACHINE = guix time-machine -C $(CHANNELS) --
-# Patched Hoot 0.8.0: adds missing mutable-bytevector? case in backend.scm
+# Patched Hoot 0.8.0: adds missing mutable-bytevector? case in backend.scm.
+# Drop this and `guile-hoot/fixed` once the upstream regression is fixed.
 HOOT_FIXED = -L deploy/packages -e '(@ (hoot-fix) guile-hoot/fixed)'
 
+# ── Reproducible runners ─────────────────────────────────────────────────────
+# Every Make target that runs Guile code goes through one of these wrappers
+# so the same toolchain is used on every machine. Adding a new dep means
+# adding it to one of these variables, never relying on host PATH.
+#
+#   GUILE_RUN     — vanilla server-side Guile + Goblins (REPLs, relay, server)
+#   GUILE_TEST    — same, but for the test/ tree
+#   WEAVE_RUN     — adds guile-json (the prod Weave HTTP server in server/weave.scm)
+#   HOOT_RUN      — adds the patched Hoot 0.8 + fibers + websocket (anything that
+#                   imports `(hoot web-server)` / `(hoot web-repl)`)
+#   WEAVE_DEV_RUN — HOOT_RUN + the prod Weave deps (the live-hacking server)
+#   HOOT_BUILD    — environment for `guild compile-wasm` (no `guile`, just the
+#                   tool the wasm compiler needs)
+GUILE_RUN     = $(TIME_MACHINE) shell guile-next guile-goblins -- \
+                  guile --no-auto-compile
+GUILE_TEST    = $(GUILE_RUN)
+WEAVE_RUN     = $(TIME_MACHINE) shell guile-next guile-goblins guile-json -- \
+                  guile --no-auto-compile
+HOOT_RUN      = $(TIME_MACHINE) shell guile-next $(HOOT_FIXED) \
+                  guile-fibers guile-websocket -- \
+                  guile --no-auto-compile
+WEAVE_DEV_RUN = $(TIME_MACHINE) shell guile-next $(HOOT_FIXED) \
+                  guile-goblins guile-json guile-fibers guile-websocket -- \
+                  guile --no-auto-compile
+HOOT_BUILD    = $(TIME_MACHINE) shell guile-next $(HOOT_FIXED) guile-goblins --
+
+# ── Local dev REPLs ──────────────────────────────────────────────────────────
+
+repl:
+	$(GUILE_RUN) -L module server/repl.scm
+
+quick-repl:
+	$(GUILE_RUN) -L module server/play-repl.scm
+
+# ── Wasm builds ──────────────────────────────────────────────────────────────
+
 browser/repl.wasm: browser/repl.scm module/playnet/gplay.scm module/playnet/wisp.scm
-	$(TIME_MACHINE) shell guile-next $(HOOT_FIXED) guile-goblins -- \
-	  guild compile-wasm -L module -L docs/reference/lib-vendored --bundle -o browser/repl.wasm browser/repl.scm
+	$(HOOT_BUILD) \
+	  guild compile-wasm -L module -L docs/reference/lib-vendored \
+	    --bundle -o browser/repl.wasm browser/repl.scm
 
 serve: browser/repl.wasm
-	$(TIME_MACHINE) shell guile-next $(HOOT_FIXED) -- \
-	  sh -c 'cd browser && guile -c "((@ (hoot web-server) serve))"'
+	$(HOOT_RUN) \
+	  -c '((@ (hoot web-server) serve) #:work-dir "browser")'
 
 relay:
-	guile -L module server/relay.scm
+	$(GUILE_RUN) -L module server/relay.scm
 
 server:
-	guile -L module server/server.scm
+	$(GUILE_RUN) -L module server/server.scm
 
 test: test-gplay test-knowledge
-
-GUILE_TEST = $(TIME_MACHINE) shell guile-next guile-goblins -- \
-  guile --no-auto-compile
 
 test-gplay:
 	$(GUILE_TEST) -L module tests/test-gplay.scm
@@ -125,9 +154,10 @@ docker-weave:
 	  $(DOCKER_IMAGE) guile --no-auto-compile -L module server/weave.scm
 
 weave/weave.wasm: module/weave/browser.scm \
+                  module/weave/ui/ffi.scm \
                   module/weave/ui/join.scm \
                   module/weave/ui/room.scm
-	$(TIME_MACHINE) shell guile-next $(HOOT_FIXED) guile-goblins -- \
+	$(HOOT_BUILD) \
 	  guild compile-wasm -gnames \
 	    -L module -L docs/reference/lib-vendored --bundle \
 	    -o weave/weave.wasm module/weave/browser.scm
@@ -140,12 +170,12 @@ weave/weave.wasm: module/weave/browser.scm \
 # wasm bundle (some primitives need the vendored variants).
 
 weave:
-	guile -L module server/weave.scm
+	$(WEAVE_RUN) -L module server/weave.scm
 
 # ── Live-hacking dev bundles ─────────────────────────────────────────────────
 # Dev bundles embed Hoot 0.8's runtime module system (-g2 = -gnames
 # -gruntime-modules -gmutable-defs) so UI procedures can be redefined at
-# runtime via (hoot web-repl) + Geiser. See docs/weave/LIVE_HACKING.md.
+# runtime via (hoot web-repl) + Geiser. See docs/LIVE_HACKING.md.
 #
 # Dev output lives in browser/.dev/ and weave/.dev/ (both gitignored) so the
 # dev bundle NEVER overwrites the prod browser/repl.wasm that GitHub Pages
@@ -209,7 +239,7 @@ browser/.dev/repl-live.scm: browser/repl.scm browser/repl-dev.scm \
 browser/.dev/repl.wasm: browser/.dev/repl-live.scm \
                        module/playnet/gplay.scm module/playnet/wisp.scm \
                        browser/.dev/.stamp-assets
-	$(TIME_MACHINE) shell guile-next $(HOOT_FIXED) guile-goblins -- \
+	$(HOOT_BUILD) \
 	  guild compile-wasm -g2 -L module -L docs/reference/lib-vendored \
 	    --bundle -o browser/.dev/repl.wasm browser/.dev/repl-live.scm
 
@@ -221,9 +251,10 @@ weave/.dev/weave-live.scm: module/weave/browser.scm \
 	cat module/weave/browser-dev.scm >> $@
 
 weave/.dev/weave.wasm: weave/.dev/weave-live.scm \
+                      module/weave/ui/ffi.scm \
                       module/weave/ui/join.scm module/weave/ui/room.scm \
                       weave/.dev/.stamp-assets
-	$(TIME_MACHINE) shell guile-next $(HOOT_FIXED) guile-goblins -- \
+	$(HOOT_BUILD) \
 	  guild compile-wasm -g2 \
 	    -L module -L docs/reference/lib-vendored --bundle \
 	    -o weave/.dev/weave.wasm weave/.dev/weave-live.scm
@@ -231,13 +262,32 @@ weave/.dev/weave.wasm: weave/.dev/weave-live.scm \
 # `make serve-dev` — rebuild the REPL UI dev bundle and serve it with
 # (hoot web-server), which exposes /repl as the WebSocket proxy for Geiser.
 serve-dev: browser/.dev/repl.wasm
-	$(TIME_MACHINE) shell guile-next $(HOOT_FIXED) -- \
-	  sh -c 'cd browser/.dev && guile -c "((@ (hoot web-server) serve))"'
+	$(HOOT_RUN) \
+	  -c '((@ (hoot web-server) serve) #:work-dir "browser/.dev")'
 
 # `make weave-dev` — rebuild the Weave dev bundle and serve it via
 # server/weave-dev.scm on port 8082 (localhost only).
 weave-dev: weave/.dev/weave.wasm
-	guile -L module server/weave-dev.scm
+	$(WEAVE_DEV_RUN) -L module server/weave-dev.scm
+
+# `make live-watch` — auto-reload on save.
+#
+# Run alongside `make weave-dev` (or `make serve-dev`): edit a Scheme
+# file under module/, this watches for the save and pushes the new
+# definitions into the running browser tab via the REPL relay on
+# 127.0.0.1:37146. No page reload, no rebuild.
+#
+# Defaults to watching ./module. Pass extra paths after `--`:
+#   make live-watch ARGS="server module/playnet"
+#
+# Pulls inotify-tools, bash AND guile-next through guix so the script
+# works from a clean checkout — the bash loop calls tools/live-reload.scm
+# which in turn calls /usr/bin/env guile, so guile must be on PATH inside
+# the shell. The Hetzner VM gets the same packages via the live-watch
+# shepherd service.
+live-watch:
+	$(TIME_MACHINE) shell inotify-tools coreutils bash guile-next -- \
+	  ./tools/live-watch.sh $(ARGS)
 
 clean:
 	rm -f browser/repl.wasm weave/weave.wasm \

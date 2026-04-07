@@ -418,8 +418,31 @@ This reuses the same data structures already rendered by `scope-network-diagram`
 - 3-click lifecycle: ghost (open) → committed (shaded) → fulfilled (solid) → loop
 - iCalendar export (.ics download with VF X-properties)
 
-### Phase 3c: VF deeper (remaining)
-- Effort recording from calendar ("I worked N hours" → updates fulfillment)
+### Phase 3c: VF deeper (done)
+- Effort recording from calendar ("I worked N hours" → real `EconomicEvent` via `^observer 'record-event`, advancing `fulfillment-state`)
+- Scope / plan / acting-as selectors (URL hash sync)
+- Sidebar split: "Awaiting your acceptance" / "Needs a volunteer" / "Others' pending"
+- Ghost intents on the grid at planned times (dashed VF style)
+- Suggested-provider badges from skill-matching metadata
+- Accept → `($ plan-store 'promote-to-commitment …)` → `($ observer 'register-commitment …)`
+- Decline → `($ plan-store 'set-meta iid '())` (clears suggestion)
+
+### Phase 3d: Real planner integration (done)
+- `^planner-service` actor in `server/planner-service.scm`, hosted in its own `planner-vat` inside `server/gateway.scm`
+- Browser holds `*planner-cap*` from `(<- *lobby* 'planner)`; all calendar reads + writes go through it
+- Server-side `seed-meeting-scope!` populates one demo scope (org:meeting) at boot via `dependent-demand`
+- `scope-snapshot` is a single round-trip that joins plan-store records with observer fulfilment-state
+- Memory persistence (re-seeded each boot)
+- Trust-the-client identity (`acting-as` recorded as the EconomicEvent provider verbatim)
+
+### Phase 3e: Remaining (deferred)
+- File-backed persistence (one-line swap from `make-memory-store` to `make-file-store`)
+- Per-user planner caps tied to authenticated identity via signup-agent
+- Push updates via `^user-inbox` so multi-user concurrent edits propagate
+- `process-context` upstream/downstream from recipe topology walking
+- "Volunteer" button on unmatched intents
+- "+ New plan" button calling `instantiate-recipe`
+- Decline → re-run `match-work-flows` with declining agent in `#:already-assigned` to compute a fresh suggestion
 
 ### Phase 4: Calendar Interop
 - iCalendar import (parse .ics files)

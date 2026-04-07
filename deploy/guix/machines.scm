@@ -30,6 +30,7 @@
              (gnu packages emacs-xyz)
              (gnu packages guile)
              (gnu packages guile-xyz)
+             (gnu packages linux)   ; inotify-tools
              (gnu packages messaging)
              (gnu packages rsync)
              (gnu packages version-control)
@@ -46,7 +47,8 @@
              (gnu)
              (guix gexp)
              (playnet-gateway-service)
-             (weave-dev-service))
+             (weave-dev-service)
+             (live-watch-service))
 
 (define %this-dir
   (dirname (or (current-filename)
@@ -76,55 +78,11 @@
   (local-file "../scripts/repl-eval"))
 
 ;; Emacs init.el for the playnet user — deployed via activation service.
+;; Source of truth lives in deploy/scripts/init.el so it can be edited
+;; with proper elisp tooling instead of being embedded as an escaped
+;; string. The activation service copies it into ~playnet/.emacs.d/.
 (define %emacs-init-el
-  (plain-file "init.el"
-    ";;; playnet Emacs daemon configuration
-;;; Runs headless — Claude Code accesses via emacsclient
-
-(require 'geiser)
-(require 'geiser-guile)
-(require 'geiser-hoot)         ; Hoot flavour — M-x geiser-hoot for live wasm REPL
-(require 'geiser-eval)
-(require 'geiser-connection)
-(require 'geiser-doc)
-(require 'geiser-xref)
-(require 'geiser-edit)
-(require 'geiser-completion)
-(require 'smartparens-config)
-(require 'rainbow-delimiters)
-
-;; Geiser config
-(setq geiser-guile-binary \"guile\")
-(setq geiser-active-implementations '(guile hoot))
-(setq geiser-guile-load-path '(\"/home/playnet/playnet-repo/module\"))
-
-;; Smartparens globally
-(smartparens-global-mode 1)
-(show-paren-mode 1)
-
-;; Rainbow delimiters for Scheme
-(add-hook 'scheme-mode-hook #'rainbow-delimiters-mode)
-
-;; TCP server for remote emacsclient access
-(require 'server)
-(setq server-use-tcp t)
-(setq server-host \"127.0.0.1\")
-(setq server-port 9999)
-
-;; Project root
-(setq playnet-project-root \"/home/playnet/playnet-repo\")
-
-;; Helper: read REPL output after sending
-(defun playnet-repl-output ()
-  \"Return recent output from the Geiser REPL buffer.\"
-  (when-let ((buf (get-buffer \"*Geiser Guile REPL*\")))
-    (with-current-buffer buf
-      (save-excursion
-        (goto-char (point-max))
-        (forward-line -20)
-        (buffer-substring-no-properties (point) (point-max))))))
-
-(message \"playnet Emacs daemon ready\")"))
+  (local-file "../scripts/init.el"))
 
 (define %guix-x86
   (operating-system
@@ -199,10 +157,11 @@
             guile-fibers
             guile-websocket            ; required by (hoot web-server) /repl proxy
             guile-hoot/fixed           ; patched 0.8.0 — provides `hoot` CLI + libs
+            inotify-tools              ; live-watch shepherd service depends on inotifywait
             emacs-no-x
             emacs-geiser
             emacs-geiser-guile
-            emacs-geiser-hoot          ; M-x geiser-hoot — Geiser flavour for Hoot
+            emacs-geiser-hoot          ; M-x connect-to-hoot — Hoot Geiser flavour
             emacs-smartparens
             emacs-rainbow-delimiters
             emacs-claude-code-ide
@@ -288,11 +247,19 @@
       ;; Loopback HTTP on 8082, REPL relay on 37146. Connect with:
       ;;   ssh -L 8082:127.0.0.1:8082 -L 37146:127.0.0.1:37146 playnet@…
       ;;   sudo herd start weave-dev
-      ;;   M-x geiser-hoot 127.0.0.1 37146
-      ;; See deploy/guix/weave-dev-service.scm and docs/weave/LIVE_HACKING.md.
+      ;;   M-x connect-to-hoot 127.0.0.1 37146
+      ;; See deploy/guix/weave-dev-service.scm and docs/LIVE_HACKING.md.
       (service weave-dev-service-type
                (weave-dev-configuration
                 (package %playnet-package)))
+
+      ;; Live-watch — inotify loop that pushes saved Scheme files into
+      ;; the running Hoot REPL relay. Manual start; pairs with
+      ;; weave-dev. Watches /home/playnet/dev-checkout/module/.
+      ;;   sudo herd start live-watch
+      ;; See deploy/guix/live-watch-service.scm.
+      (service live-watch-service-type
+               (live-watch-configuration))
 
       ;; Mosquitto MQTT broker — localhost only, for VF bridge.
       ;; Sensors and bridge actors connect locally; no external exposure.

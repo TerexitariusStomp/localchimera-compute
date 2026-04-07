@@ -3134,16 +3134,32 @@
 ;;; render path is unchanged — only the source of the data has moved
 ;;; from a local sample store to a real ^scope-root in the gateway.
 
+(define (planner-log-error! tag detail)
+  "Surface a planner error in the log pane so the user sees it."
+  (log-append! `(span (@ (class "error-text"))
+                      ,(string-append "[planner " tag "] "
+                                      (call-with-output-string
+                                        (lambda (p) (write detail p)))
+                                      "\n"))))
+
 (define (planner-mutate! method . args)
   "Common shape for fire-and-refresh mutation calls. Checks the cap is
    available and a scope is selected, fires the OCapN call, and refreshes
    the calendar on either success or error so the UI always reflects
-   server truth after a click."
+   server truth after a click. Server-side error envelopes (error . msg)
+   are logged to the user."
   (when (and *planner-cap* *cal-scope*)
     (with-vat *ocapn-vat*
       (on (apply <- *planner-cap* method *cal-scope* args)
-          (lambda (_) (refresh-cal-from-planner!))
-          #:catch (lambda (err) (refresh-cal-from-planner!))))))
+          (lambda (result)
+            ;; The planner-service returns (ok . X) or (error . msg).
+            ;; Surface errors so the user knows why nothing happened.
+            (when (and (pair? result) (eq? (car result) 'error))
+              (planner-log-error! (symbol->string method) (cdr result)))
+            (refresh-cal-from-planner!))
+          #:catch (lambda (err)
+                    (planner-log-error! (symbol->string method) err)
+                    (refresh-cal-from-planner!))))))
 
 (define (ingest-snapshot! snap)
   "Write a server snapshot into the existing globals so the existing

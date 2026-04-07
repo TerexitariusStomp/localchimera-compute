@@ -516,7 +516,22 @@
                       the-intent))
                 (new-intents (hashmap-set (pss-intents st) iid updated-intent))
                 (new-commitments (hashmap-set (pss-commitments st) cid commitment))
-                (new-cbs (index-commitment-spec (pss-commitments-by-spec st) commitment)))
+                (new-cbs (index-commitment-spec (pss-commitments-by-spec st) commitment))
+                ;; Maintain commitments-by-plan and commitments-by-process
+                ;; indexes — same shape as add-commitment above. Without
+                ;; these, commitments-for-plan and commitments-for-process
+                ;; never see records created via promote-to-commitment.
+                (new-cbpl (let ((pw (commitment-planned-within commitment)))
+                            (if pw (append-to-index (pss-commitments-by-plan st) pw cid)
+                                (pss-commitments-by-plan st))))
+                (new-cbpr (let* ((st0 (pss-commitments-by-process st))
+                                 (st1 (if (commitment-input-of commitment)
+                                          (append-to-index st0 (commitment-input-of commitment) cid)
+                                          st0))
+                                 (st2 (if (commitment-output-of commitment)
+                                          (append-to-index st1 (commitment-output-of commitment) cid)
+                                          st1)))
+                            st2)))
            (bcom (^plan-store bcom
                    (make-plan-store-state
                      (pss-plans st) new-commitments new-intents (pss-claims st)
@@ -524,8 +539,7 @@
                      (pss-proposals st) (pss-proposal-lists st)
                      (pss-scenarios st) (pss-scenario-definitions st) (pss-meta st)
                      (pss-tag-index st) (pss-intents-by-spec st) new-cbs
-                 (pss-intents-by-plan st) (pss-commitments-by-plan st)
-                 (pss-commitments-by-process st)))
+                     (pss-intents-by-plan st) new-cbpl new-cbpr))
                  cid)))))
 
     ;; --- Claims ---

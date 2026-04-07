@@ -50,6 +50,27 @@
       (if (not (= ca cb)) (< ca cb)
           (by-due-date a b)))))
 
+(define (by-harmony-priority weight-fn)
+  "Highest-weight demands first. Under greedy allocation this means
+   high-priority specs (bread, essentials) get served before
+   low-priority specs (luxuries) when resources are scarce.
+
+   WEIGHT-FN: (spec-id) → number (higher = more important).
+   Returns a comparator suitable for #:demand-order.
+
+   This is the Phase 2 harmony integration point for allocation. A
+   full harmony-guided labeling inside CLP(FD) is a future improvement
+   (it requires tracing intermediate allocations to downstream
+   independent demands during search); demand ordering captures most
+   of the benefit at much lower risk."
+  (lambda (a b)
+    (let ((wa (weight-fn (assq-ref a 'spec-id)))
+          (wb (weight-fn (assq-ref b 'spec-id))))
+      (cond
+        ((> wa wb) #t)
+        ((< wa wb) #f)
+        (else (by-due-date a b))))))
+
 (define (demand-class facts spec-id)
   "0 = has inventory, 2 = has recipe, 3 = external.
    Ground version for sorting. See demand-class-o in strategy.scm

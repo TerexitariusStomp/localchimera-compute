@@ -137,11 +137,28 @@ demands always produces higher total harmony than 80/20.
 Each spec's raw harmony is multiplied by a single **priority weight**:
 
 ```
-weighted_harmony(spec) = priority(spec) * raw_harmony(spec)
+weighted_harmony(spec) = priority_weight(spec) * raw_harmony(spec)
 ```
 
-**Priority weight** is governance-set, per resource spec, exponentially
-scaled. Examples: bread = 1000, clothing = 100, Porsche = 1.
+Priority has two representations:
+
+- **LEVEL** — a small integer (0-10) set by governance. User-facing,
+  intuitive. "Bread is level 9, clothes is level 6, Porsche is level 1."
+- **WEIGHT** — `base^level`, the internal multiplier applied to the
+  harmony math. Users never set weights directly.
+
+The default base is `1000^(1/9) ≈ 2.154`, chosen so that a 9-level
+spread produces ~1000x weight difference. This gives natural tiers:
+every 3 levels is roughly 10x.
+
+```
+Level  0  →  weight    1
+Level  1  →  weight    2.15
+Level  3  →  weight   10
+Level  6  →  weight  100
+Level  9  →  weight 1000
+Level 10  →  weight 2154
+```
 
 Priority is attached to the **resource specification** by governance,
 not to buffers or zones. It is a social decision about how much the
@@ -159,6 +176,48 @@ Harmony applies only to specs with **independent demand** (see "Where
 Harmony Applies" above). Intermediate resources that exist only to
 feed production have no harmony goal — their allocation is derived
 from downstream output harmony.
+
+#### Suggested level scheme
+
+Governance sets the levels, but a reasonable default template:
+
+```
+Level 10 : emergency medicine, safe water, critical staples
+Level  9 : staple food (bread, rice), core nutrition
+Level  8 : heating fuel, basic housing materials
+Level  7 : staple clothing, basic medical supplies
+Level  6 : quality clothes, household essentials
+Level  5 : varied food, furniture
+Level  4 : books, hobby equipment, sports goods
+Level  3 : entertainment goods, decor
+Level  2 : premium versions of common goods
+Level  1 : luxury items (premium cars, jewelry)
+Level  0 : purely discretionary (unweighted baseline)
+```
+
+#### Behavior under scarcity (worked example)
+
+With bread=9, clothes=6, Porsche=1:
+
+- **Bread vs clothes** (~10x ratio): a 10% bread deficit (weighted
+  penalty: 1000 × -0.01 = -10) equals a 32% clothes deficit
+  (weighted penalty: 100 × -0.1 = -10). The system tolerates
+  meaningful clothes shortages to prevent mild bread shortages,
+  without completely crowding clothing out.
+
+- **Clothes vs Porsche** (~47x ratio): a 10% clothes deficit equals
+  roughly a total Porsche deficit. Clothing nearly always outcompetes
+  luxury production, but once clothing is near-satisfied, Porsche
+  production begins.
+
+- **Bread vs Porsche** (~468x ratio): even a 1% bread deficit
+  outweighs a total Porsche deficit. Bread fully dominates under any
+  scarcity.
+
+The crossover point — "everyone gets bread, and there's still some
+cake" — emerges from the curve's flattening near u=0. Once bread is
+near-satisfied, marginal gains from improving it drop below marginal
+gains from starting lower-priority production. No hardcoded cutoffs.
 
 ### Asymmetric Deficit/Surplus Behavior
 

@@ -17,6 +17,18 @@
     (name "guile-hoot-fixed")
     (arguments
      (substitute-keyword-arguments (package-arguments guile-hoot)
+       ;; Disable the upstream test suite. Two reasons:
+       ;;
+       ;;  1. The patch we apply is a one-line backend fix; running
+       ;;     tens of minutes of test suite to re-validate it doesn't
+       ;;     buy us anything we don't already get from trusting
+       ;;     upstream's release process.
+       ;;  2. On at least the current Guix pin (1bfc9513…), `make check`
+       ;;     hangs inside the build sandbox — a Hoot test forks a
+       ;;     subprocess that never returns, leaving every parent make
+       ;;     stuck in `wait()`. Skipping the phase keeps the
+       ;;     derivation reproducible instead of bisecting upstream.
+       ((#:tests? _ #f) #f)
        ((#:phases phases '%standard-phases)
         #~(modify-phases #$phases
             (add-after 'unpack 'fix-mutable-bytevector

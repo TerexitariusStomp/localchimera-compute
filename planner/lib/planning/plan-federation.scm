@@ -177,11 +177,35 @@
 ;; Cross-scope retraction — priority-aware reallocation
 ;; ═════════════════════════════════════════════════════════════════════════
 
-(define (retract-across-scopes by-scope remaining-deficits priority-fn parent-of)
-  "Retract lowest-priority satisfied demands from any scope to free capacity
-   for highest-priority unmet demands. Minimizes priority cost to the whole.
+(define* (retract-across-scopes by-scope remaining-deficits priority-fn parent-of
+                                 #:key (weight-fn #f))
+  "Retract satisfied demands from any scope to free capacity for unmet demands.
+
+   Legacy mode (no weight-fn): Retract lowest priority-number first
+   (legacy priority is retraction-sort semantics, lower = more urgent).
+
+   Harmony mode (weight-fn provided): Retract the candidate whose removal
+   loses the least weighted harmony — equivalently, the lowest-weight
+   candidate — to serve the highest-weight deficit first.
+
    Returns (values updated-by-scope retractions final-deficits)."
-  (let* ((all-candidates
+  (let* ((retraction-loss
+           (lambda (c)
+             (if weight-fn
+                 ;; Harmony loss ≈ weight(spec) * 1 (see harmony.scm)
+                 (let ((spec (assq-ref c 'spec-id)))
+                   (if spec (weight-fn spec) 1))
+                 ;; Legacy: use priority number as loss proxy (lower = more urgent)
+                 (or (assq-ref c 'priority) 53))))
+         (deficit-urgency
+           (lambda (d)
+             (if weight-fn
+                 ;; Higher weight = more urgent to serve → negate for ascending sort
+                 (- (let ((spec (assq-ref d 'spec-id)))
+                      (if spec (weight-fn spec) 1)))
+                 ;; Legacy: lower priority number = more urgent
+                 (priority-fn (assq-ref d 'scope-id) (assq-ref d 'spec-id)))))
+         (all-candidates
            (hashmap-fold
              (lambda (scope-id result acc)
                (let ((cands (or (assq-ref result 'retraction-candidates) '())))
@@ -192,15 +216,18 @@
                         cands))))
              '() by-scope))
          (sorted-cands
-           (sort all-candidates
-             (lambda (a b)
-               (> (or (assq-ref a 'priority) 53)
-                  (or (assq-ref b 'priority) 53)))))
+           (if weight-fn
+               ;; Smallest harmony loss first
+               (sort all-candidates
+                 (lambda (a b) (< (retraction-loss a) (retraction-loss b))))
+               ;; Legacy: highest priority-number first (least urgent → retract first)
+               (sort all-candidates
+                 (lambda (a b)
+                   (> (or (assq-ref a 'priority) 53)
+                      (or (assq-ref b 'priority) 53))))))
          (sorted-defs
            (sort remaining-deficits
-             (lambda (a b)
-               (< (priority-fn (assq-ref a 'scope-id) (assq-ref a 'spec-id))
-                  (priority-fn (assq-ref b 'scope-id) (assq-ref b 'spec-id)))))))
+             (lambda (a b) (< (deficit-urgency a) (deficit-urgency b))))))
     (let loop ((cands sorted-cands) (defs sorted-defs)
                (by-scope by-scope) (retractions '()))
       (if (or (null? defs) (null? cands))
@@ -208,17 +235,30 @@
           (let* ((deficit (car defs))
                  (def-spec (assq-ref deficit 'spec-id))
                  (def-qty (assq-ref deficit 'qty))
-                 (match (find (lambda (c)
-                                (and (equal? (assq-ref c 'spec-id) def-spec)
-                                     (not (equal? (assq-ref c 'scope-id)
-                                                  (assq-ref deficit 'scope-id)))
-                                     (not (equal? (hashmap-ref parent-of
-                                                    (assq-ref c 'scope-id) #f)
-                                                  (assq-ref deficit 'scope-id)))
-                                     (not (equal? (hashmap-ref parent-of
-                                                    (assq-ref deficit 'scope-id) #f)
-                                                  (assq-ref c 'scope-id)))))
-                              cands)))
+                 (def-scope (assq-ref deficit 'scope-id))
+                 (eligible?
+                   (lambda (c)
+                     (and (equal? (assq-ref c 'spec-id) def-spec)
+                          (not (equal? (assq-ref c 'scope-id) def-scope))
+                          (not (equal? (hashmap-ref parent-of
+                                         (assq-ref c 'scope-id) #f)
+                                       def-scope))
+                          (not (equal? (hashmap-ref parent-of def-scope #f)
+                                       (assq-ref c 'scope-id))))))
+                 ;; Harmony mode: pick candidate with smallest EXACT loss
+                 ;; given the actual transfer amount. Legacy mode: first match.
+                 (match
+                   (if weight-fn
+                       (let ((eligibles (filter eligible? cands)))
+                         (if (null? eligibles)
+                             #f
+                             (car (sort eligibles
+                                    (lambda (a b)
+                                      (let ((ta (min (assq-ref a 'qty) def-qty))
+                                            (tb (min (assq-ref b 'qty) def-qty)))
+                                        (< (retraction-loss-exact a ta weight-fn)
+                                           (retraction-loss-exact b tb weight-fn))))))))
+                       (find eligible? cands))))
             (if (not match)
                 (loop cands (cdr defs) by-scope retractions)
                 (let* ((cand-scope (assq-ref match 'scope-id))
@@ -292,27 +332,60 @@
                           recipe-store observer
                           plan-scope-fn
                           #:key (parent-of (hashmap)) (registry #f)
-                                (priority-fn #f))
+                                (priority-fn #f) (weight-fn #f))
   "Plan a federation of scopes hierarchically, then match laterally.
    When priority-fn is provided and deficits remain after lateral matching,
    performs cross-scope retraction to free capacity from lowest-priority
-   demands for highest-priority unmet needs."
+   demands for highest-priority unmet needs.
+
+   WEIGHT-FN: (spec-id) → weight. When provided, the result carries a
+   total-harmony score aggregated across all scopes."
   (let-values (((children-of plan-order)
                 (build-scope-hierarchy scope-ids parent-of)))
     (let* ((by-scope (fold-scopes plan-order children-of plan-scope-fn registry))
            (lateral (match-laterally by-scope parent-of))
-           (remaining-defs (collect-remaining-deficits by-scope lateral)))
+           (remaining-defs (collect-remaining-deficits by-scope lateral))
+           (finalize
+             (lambda (final-by-scope retractions final-defs)
+               (let* ((harmony (and weight-fn
+                                    (aggregate-federation-harmony
+                                      final-by-scope weight-fn))))
+                 `((by-scope . ,final-by-scope)
+                   (plan-order . ,plan-order)
+                   (lateral-matches . ,lateral)
+                   (retractions . ,retractions)
+                   (remaining-deficits . ,final-defs)
+                   ,@(if harmony `((harmony . ,harmony)) '()))))))
       (if (and priority-fn (pair? remaining-defs))
           (let-values (((new-by-scope retractions final-defs)
                         (retract-across-scopes by-scope remaining-defs
-                                               priority-fn parent-of)))
-            `((by-scope . ,new-by-scope)
-              (plan-order . ,plan-order)
-              (lateral-matches . ,lateral)
-              (retractions . ,retractions)
-              (remaining-deficits . ,final-defs)))
-          `((by-scope . ,by-scope)
-            (plan-order . ,plan-order)
-            (lateral-matches . ,lateral)
-            (retractions . ())
-            (remaining-deficits . ,remaining-defs))))))
+                                               priority-fn parent-of
+                                               #:weight-fn weight-fn)))
+            (finalize new-by-scope retractions final-defs))
+          (finalize by-scope '() remaining-defs)))))
+
+
+;; ═════════════════════════════════════════════════════════════════════════
+;; Harmony aggregation over federation results
+;; ═════════════════════════════════════════════════════════════════════════
+
+(define (aggregate-federation-harmony by-scope weight-fn)
+  "Walk the by-scope hashmap and aggregate weighted harmony across all
+   plans. Returns alist with total, per-scope breakdown."
+  (let ((per-scope '())
+        (total 0))
+    (hashmap-fold
+      (lambda (scope-id result _acc)
+        (let* ((plan (or (assq-ref result 'plan) '()))
+               (h (plan-harmony plan #:priority-fn weight-fn))
+               (scope-total (assq-ref h 'total)))
+          (set! per-scope
+            (cons `((scope-id . ,scope-id)
+                    (total . ,scope-total)
+                    (per-spec . ,(assq-ref h 'per-spec)))
+                  per-scope))
+          (set! total (+ total scope-total))
+          #f))
+      #f by-scope)
+    `((total . ,total)
+      (per-scope . ,(reverse per-scope)))))

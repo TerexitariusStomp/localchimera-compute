@@ -14,4 +14,4 @@ The server will be available at http://localhost:8081
 For the **live-hacking** dev variant on port 8082 (separate vat, loopback only,
 runs the `-g2` wasm bundle with the Hoot REPL relay), use `make weave-dev`
 instead. Routes are shared with this prod server via `module/weave/routes.scm`.
-See `docs/weave/LIVE_HACKING.md`.
+See `docs/LIVE_HACKING.md`.

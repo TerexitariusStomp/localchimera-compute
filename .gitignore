@@ -8,6 +8,18 @@ node_modules/
 .claude/settings.local.json
 .vscode/settings.json
 
-# Hoot 0.8 live-hacking dev bundles (see docs/weave/LIVE_HACKING.md)
+# Historical reference — TypeScript/Svelte ancestor of the Scheme planner.
+# Some Scheme files cite paths under here in "Ported from …" comments;
+# the directory itself is never built, deployed, or committed.
+old/
+
+# User-built Hoot wasm bundles (deps + sources are in git, the binary is not)
+# Rebuild with `make browser/repl.wasm` / `make weave/weave.wasm`.
+# The small reflect.wasm / wtf8.wasm runtimes alongside them are vendored
+# Hoot artifacts and stay tracked.
+browser/repl.wasm
+weave/weave.wasm
+
+# Hoot 0.8 live-hacking dev bundles (see docs/LIVE_HACKING.md)
 browser/.dev/
 weave/.dev/

@@ -37,10 +37,10 @@ Geiser connects Emacs to a running Guile process. State persists across evaluati
 
 > **Two REPL flavours:** the procedure below targets the **server-side Guile**
 > running Goblins vats. For live-hacking the **browser UI** (Hoot 0.8 in-Wasm
-> REPL), use `M-x geiser-hoot` from the `geiser-hoot` extension and follow
-> `docs/weave/LIVE_HACKING.md`. They're separate REPLs against separate
-> runtimes — don't mix them up. `geiser-hoot` is not yet packaged in Guix;
-> install from the upstream git repo until it lands in MELPA/Guix.
+> REPL), use `M-x connect-to-hoot` from the `emacs-geiser-hoot` extension
+> (already in the system profile via `deploy/guix/machines.scm`) and follow
+> `docs/LIVE_HACKING.md`. They're separate REPLs against separate runtimes —
+> don't mix them up.
 
 ```bash
 # Evaluate Scheme in the live REPL

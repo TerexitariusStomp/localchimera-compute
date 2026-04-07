@@ -15,6 +15,8 @@
   (load (string-append dir "/sne.scm"))
   (load (string-append dir "/demand-relation.scm"))
   (load (string-append dir "/plan-relation.scm"))
+  (load (string-append dir "/plan-walk.scm"))
   (load (string-append dir "/instrumentation.scm"))
   (load (string-append dir "/strategy.scm"))
+  (load (string-append dir "/harmony.scm"))
   (load (string-append dir "/federation.scm")))
