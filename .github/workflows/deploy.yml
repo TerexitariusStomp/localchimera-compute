@@ -31,7 +31,6 @@ jobs:
           echo "${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           echo "SERVER_IP ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE7y+yzSS5w+oDfeG8pKgpbcB+Xd2W+WxV1/kAn6Fnlk" >> ~/.ssh/known_hosts
-          # Keep SSH alive during long deploys (substitute downloads can take 15+ min)
           cat >> ~/.ssh/config << 'EOF'
           Host SERVER_IP
             IdentityFile ~/.ssh/deploy_key
@@ -45,24 +44,27 @@ jobs:
           rsync -avz --delete \
             --exclude '.git' --exclude 'node_modules' \
             -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes" \
-            ./ deploy@SERVER_IP:/var/tmp/playnet-deploy/
+            ./ deploy@SERVER_IP:/home/deploy/playnet-deploy/
 
       - name: Deploy via remote reconfigure
         run: |
-          # Run guix system reconfigure ON the server to avoid guile-ssh
-          # connection drops. guix deploy uses guile-ssh which has no
-          # keepalive support and dies when sshd restarts during activation.
-          #
-          # Note: guix time-machine uses bwrap isolation and cannot see
-          # /var/tmp — use the server's installed guix directly instead.
+          # guix system reconfigure evaluates the config file inside an
+          # isolated build container that only sees /gnu/store. But -e
+          # evaluates an expression in the guix CLI process itself (before
+          # spawning the build), where the full filesystem is visible.
+          # Load the config via -e instead of passing the file path.
           ssh -i ~/.ssh/deploy_key \
             -o StrictHostKeyChecking=yes \
             -o ServerAliveInterval=10 \
             -o ServerAliveCountMax=60 \
             deploy@SERVER_IP \
             'sudo guix system reconfigure \
-              -L /var/tmp/playnet-deploy/deploy/guix \
-              /var/tmp/playnet-deploy/deploy/guix/system.scm \
+              -L /home/deploy/playnet-deploy/deploy/guix \
+              -e "(begin
+                    (add-to-load-path \"/home/deploy/playnet-deploy/deploy/guix\")
+                    (primitive-load \"/home/deploy/playnet-deploy/deploy/guix/machines.scm\")
+                    %guix-x86)" \
+              --allow-downgrades \
               --verbosity=2'
         timeout-minutes: 90
 
