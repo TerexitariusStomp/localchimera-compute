@@ -245,24 +245,25 @@ evaluation.
 
 Buffers reduce to:
 
-- A **safety stock quantity** — computed from three components
-  (variability protection, lead-time consumption, order-cycle
-  coverage) using the existing zone formulas. The total equals what
-  was previously TOG. See "Continuous buffers" under Design Decisions
-  for details on preserved computations.
+- A **safety stock quantity** — computed from variability protection
+  + lead-time consumption + batch minimum (if applicable). See
+  "Continuous buffers" under Design Decisions for the simplified
+  formula. DOC-based order cycle coverage is dropped as a
+  capitalist supply chain artifact.
+- A **continuous gap signal** — `(safety_stock - inventory) /
+  safety_stock`. Any positive gap generates proportional
+  replenishment demand within the plan.
 - A **decoupling point** in the BOM (DLT computation stops here)
 - A **recalibration schedule** (periodically recompute safety stock
   from fresh ADU and DLT)
 
-They no longer have zone-based alerts or zone-driven planning
-behavior. The formulas for computing buffer size remain — they just
-output a single safety stock quantity rather than three zone
-thresholds used as action triggers.
+They no longer have zones, zone-based alerts, or zone-driven
+planning behavior.
 
 For output-level buffers, the safety stock feeds the harmony goal.
-For intermediate buffers, the safety stock protects the BOM — and
-harmony propagates urgency backward from outputs when intermediate
-stock runs low.
+For intermediate buffers, the gap signal drives proactive internal
+replenishment, and harmony propagates urgency backward from outputs
+when replenishment fails.
 
 ## Architecture
 
@@ -351,6 +352,106 @@ harmony, not an independent optimization.
 This replaces the Cockshott shave-top/fill-bottom with a
 BOM-aware variant: rather than equalizing harmony at one level, the
 signal propagates backward through the recipe graph.
+
+## Advantages of Continuous Planning in a Socialist System
+
+The planned economy context changes the trade-offs around continuous
+vs. discrete signals in ways that favor continuity.
+
+### What continuity gains
+
+**Responsiveness.** Without discrete zones gating replenishment, the
+system responds to any deviation from target immediately and
+proportionally. A 5% dip generates a 5% replenishment signal. In
+zoned systems, that same dip might fall within the green zone and
+generate nothing — until it accumulates past a threshold and
+triggers a large corrective action. Continuous signals avoid the
+sawtooth pattern of "ignore, ignore, ignore, panic."
+
+**No artificial batching pressure.** Zone thresholds create implicit
+batch incentives — wait until you cross a boundary, then order a big
+chunk. In a planned system where production can be scheduled
+flexibly, there is no reason to batch artificially. Steady, even
+production flows that match actual consumption patterns reduce peak
+demand on production capacity and smooth workloads for workers.
+
+**Richer information for the planner.** A zone tells you "red" or
+"yellow" — 1.5 bits of information. A continuous gap tells you "37%
+below target." When two intermediates both need replenishment, the
+planner knows one is 37% depleted and the other is 12% depleted,
+rather than knowing they're both "yellow." This enables finer-grained
+allocation decisions.
+
+**Proportionality under scarcity.** If upstream capacity can't fully
+replenish all buffers simultaneously, continuous gap signals let the
+planner distribute replenishment proportionally — fill each buffer
+toward its target at the same rate. Zones can't express this: two
+"red" buffers look equally urgent even if one is at 5% and the other
+at 25%.
+
+**Coherent system language.** The continuous buffer gap mirrors the
+continuous harmony function at the output level. Same mathematical
+character at both levels — proportional signals, no discrete jumps.
+The whole system speaks one language.
+
+### Why this works in a planned economy but not a market
+
+In a capitalist supply chain, discrete zones exist for good reasons:
+
+- Each replenishment is a **purchase order** with transaction costs
+  (communication, negotiation, shipping overhead). Frequent small
+  orders are expensive. Batching is economically rational.
+- **Information opacity** between firms means you can't coordinate
+  production smoothly — you order what you think you'll need and
+  buffer against uncertainty about your supplier's behavior.
+- **MOQ and pricing incentives** (volume discounts) reward larger,
+  less frequent orders.
+
+In a planned economy, none of these apply:
+
+- Replenishment is a **signal within the plan**, not a purchase order.
+  No transaction costs, no supplier negotiation overhead.
+- **Information transparency** across the planning network means
+  production can be coordinated directly.
+- No volume discounts or pricing distortions. Production costs are
+  computed from labour time and material inputs.
+
+The friction that justified discrete batching disappears. Continuous
+signals become not just possible but preferable.
+
+### Constraints and engineering concerns
+
+**Production granularity.** Some processes can't produce in arbitrary
+quantities (you can't bake 3.7 loaves, a kiln fires in batches).
+But this is a **recipe constraint**, not a buffer constraint. The
+continuous signal says "I need 3.7 loaves worth of replenishment"
+and the recipe says "minimum batch is 50 loaves." The planner
+resolves the tension. The buffer doesn't need to know about it.
+
+**Planning frequency.** Continuous signals assume the planner runs
+frequently enough to act on small deviations. If planning runs
+once a week, a 5% gap signal on Monday might be irrelevant by
+Friday. For playnet, the planner runs within a live system —
+planning frequency is high and this is not a practical concern.
+
+**Oscillation / stability.** A potential concern: continuous signals
+reacting to tiny fluctuations could create oscillation — constantly
+adjusting production up and down in response to noise. Zones provide
+natural hysteresis because you don't react until you cross a
+threshold.
+
+However, the **variability factor (VF) already provides damping.**
+The safety stock target is sized to absorb normal fluctuations —
+that's what the variability protection component is for. Under
+normal variance, inventory fluctuates *within* the safety stock
+range, so `buffer_gap` hovers near zero and generates minimal
+signal. The gap signal only fires meaningfully when inventory drops
+below what the variability math says is safe. The variability factor
+is the damping. No additional hysteresis mechanism is needed.
+
+If in practice the signal proves too noisy for specific specs with
+high-variance demand, a rolling average on the gap signal can smooth
+it — but this should be the exception, not the default.
 
 ## What Changes
 
@@ -476,51 +577,83 @@ independently wants flour). They are orthogonal.
 ### Continuous buffers (no zones)
 
 Buffer zones (red/yellow/green) are removed as decision thresholds.
-The planning system operates on continuous harmony, not discrete
-zones. However, the **zone computations are preserved** because the
-three zones encode distinct physical concepts with different formulas:
+The planning system operates on continuous signals: harmony for
+outputs, buffer gap for intermediates.
+
+#### Safety stock computation
+
+The safety stock formula simplifies for a planned economy. In
+capitalist DDMRP, the three zones encode:
 
 ```
-Red zone   = ADU * DLT * LTF * (1 + VF)    — variability protection
-Yellow zone = Red + ADU * DLT               — lead-time consumption
-Green zone  = Yellow + max(ADU*DOC, red, MOQ) — order cycle coverage
+Red    = ADU * DLT * LTF * (1 + VF)       — variability protection
+Yellow = Red + ADU * DLT                   — lead-time consumption
+Green  = Yellow + max(ADU*DOC, red, MOQ)   — order cycle coverage
 ```
 
-- **Red** accounts for lead time risk amplified by variability (LTF,
-  VF). This is worst-case protection.
-- **Yellow** adds expected consumption during normal replenishment
-  lead time. This is the base planning window.
-- **Green** adds order cycle coverage or minimum order quantities.
-  This captures batch economics.
+The **green zone's order cycle component (DOC) dissolves** in a
+planned system. DOC represents "we place orders every N days" — a
+transaction-cost concern from purchasing economics. In a planned
+economy, replenishment is a signal within the plan, not a purchase
+order. There are no transaction costs, no supplier negotiations, no
+ordering overhead. Planning can run continuously.
 
-These are not arbitrary thresholds — they are physically meaningful
-components computed from different factors. Under harmony, they stop
-being action triggers and become **components of the safety stock
-total**:
+What remains:
 
 ```
-safety_stock = variability_protection   (red computation)
-             + lead_time_consumption    (yellow computation)
-             + order_cycle_coverage     (green computation)
+safety_stock = variability_protection     (ADU * DLT * LTF * VF)
+             + lead_time_consumption      (ADU * DLT)
+             + batch_minimum              (MOQ, only if production
+                                           has genuine batch
+                                           constraints — e.g.,
+                                           kiln firings, minimum
+                                           viable batch sizes)
 ```
 
-The total safety stock (= TOG) feeds into the harmony goal. The
-sub-components are still computed (you need them to get the right
-total), but they no longer drive zone-based planning behavior.
+- **Variability protection** — still real. Crops fail, machines break,
+  weather disrupts transport regardless of economic system.
+- **Lead-time consumption** — still real. Production takes time
+  regardless of who coordinates it.
+- **Batch minimum (MOQ)** — only applies when production has physical
+  batch constraints. Many processes in a planned economy can run at
+  any scale, eliminating this component. Where batch constraints
+  exist (e.g., a bread oven holds 50 loaves minimum), MOQ stays as
+  a production constraint expressed in recipes, not as a buffer
+  parameter.
+
+#### Continuous buffer gap signal
+
+Without order cycle economics, the main justification for discrete
+replenishment gates disappears. The buffer gap signal is genuinely
+continuous:
+
+```
+buffer_gap = (safety_stock - inventory) / safety_stock
+```
+
+Any positive gap generates a proportional replenishment signal in
+the plan. No thresholds, no gates. If production requires batching,
+that's handled by batch-size constraints in recipes, not by the
+buffer artificially gating replenishment into discrete chunks.
+
+This is cleaner than zones for a planned system: the buffer says
+"I need this much" and the planner figures out how and when to
+produce it, respecting production constraints.
+
+#### Dashboard presentation
 
 For human communication, the buffer state can be presented as a
-continuous fill level against the safety stock target, or quantized
-into discrete labels for dashboards:
+continuous fill level or quantized for readability:
 
 ```
-if inventory < variability_protection      → "critical"
-if inventory < variability + lead_time     → "low"
-if inventory < full safety_stock           → "adequate"
-if inventory >= full safety_stock          → "well-stocked"
+if buffer_gap > 0.67  → display "critical"
+if buffer_gap > 0.33  → display "low"
+if buffer_gap > 0     → display "replenishing"
+if buffer_gap <= 0    → display "stocked"
 ```
 
 This is a **UI concern**, not a planning concern. The planning engine
-works on continuous harmony. Dashboards quantize for readability.
+works on continuous signals. Dashboards quantize for humans.
 
 ## Migration Path
 
