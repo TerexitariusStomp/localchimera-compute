@@ -160,19 +160,28 @@ Harmony Applies" above). Intermediate resources that exist only to
 feed production have no harmony goal — their allocation is derived
 from downstream output harmony.
 
-### Asymmetric Deficit/Surplus Weighting
+### Asymmetric Deficit/Surplus Behavior
 
-The deficit and surplus sides of the curve can be weighted differently
-per priority tier:
+The curve shape is universal, but its asymmetry (quadratic penalty for
+deficits, square-root reward for surpluses) combined with priority
+weighting produces differentiated behavior naturally:
 
-- Essentials (high priority): steep deficit penalty, moderate surplus
-  reward. Fight hard to prevent bread shortages, but don't over-produce
-  at the expense of everything else.
-- Luxuries (low priority): gentle deficit penalty, gentle surplus reward.
-  Don't panic about Porsche shortages, but don't ignore them either.
+- **High-priority specs** (bread, priority = 1000): a small deficit
+  generates a large weighted penalty (1000 * -u²). The system fights
+  hard to close it. A surplus generates a modest weighted reward
+  (1000 * √u), but diminishing returns mean over-producing bread
+  quickly becomes less valuable than addressing deficits elsewhere.
+- **Low-priority specs** (Porsche, priority = 1): even a large deficit
+  generates a small weighted penalty (1 * -u²). The system addresses
+  it only when higher-priority specs are reasonably satisfied.
 
-This produces continuous, humane outcomes: "everyone gets bread, and
-there's still some cake" rather than all-or-nothing priority cutoffs.
+No per-spec curve modification is needed. The universal curve + 
+exponential priority weighting produces the desired outcome:
+"everyone gets bread, and there's still some cake" — because once
+bread reaches ~90% fulfillment, the marginal harmony gain from
+improving low-priority specs (deep in their -u² zone) exceeds the
+marginal gain from the last 10% of bread (where the curve flattens
+near u = 0).
 
 ## Relationship: Resource Specs, Buffers, and Harmony
 
@@ -503,8 +512,9 @@ it — but this should be the exception, not the default.
   composite priority computation.
 
 - `planner/lib/schemas.scm` — simplify `<buffer-zone>` record: remove
-  zone-level fields (TOR, TOY, TOG), keep safety-stock, DLT, ADU, MOQ.
-  Or rename to `<buffer>` / `<safety-stock>`.
+  zone-level fields (TOR, TOY, TOG) and MOQ (moves to recipe batch
+  constraints). Keep safety-stock, DLT, ADU. Rename to `<buffer>` /
+  `<safety-stock>`.
 
 ### Removed machinery
 
@@ -563,11 +573,24 @@ Independent demands and buffers are categorically different:
   physical protection mechanism computed from ADU, DLT, and
   variability factors.
 
-They combine additively: `harmony_goal = demand + safety_stock`. But
-collapsing them would lose the ability to distinguish "we need more
-bread because people are hungry" from "we need more bread because our
-safety margin is thin" — different situations requiring different
-responses (increase production vs. reduce supply chain variability).
+They combine additively into the harmony goal:
+`harmony_goal = demand + safety_stock`. The harmony function evaluates
+against this combined target — so a plan meeting all demand but not
+maintaining safety stock still shows a mild deficit.
+
+This is intentional: the planner *should* try to maintain safety
+stock, not just meet bare demand. But the two components are tracked
+separately so they can be decomposed for governance:
+
+- `output vs demand` → "are people being fed?" (fulfillment)
+- `output vs demand + safety_stock` → "is the system resilient?"
+  (harmony goal, includes safety margin)
+
+A plan showing harmony deficit because safety stock is thin but
+demand is fully met is a *different situation* from one where people
+are actually going without — and governance can see both numbers.
+The harmony function optimizes against the combined goal; reporting
+decomposes it.
 
 Not every independent demand needs a buffer (a one-time order for 50
 ceremonial cakes needs no safety stock). Not every buffer has
