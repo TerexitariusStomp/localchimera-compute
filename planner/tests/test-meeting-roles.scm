@@ -293,12 +293,16 @@
 ;;; 6. miniKanren relations
 ;;; ════════════════════════════════════════════════════════════════════════════
 
+;; vf-relations.scm uses (playnet kanren), loaded separately to avoid
+;; symbol conflicts with (playnet kanren-constraints) from load-relational.
+(primitive-load (in-vicinity (dirname (dirname (current-filename))) "lib/vf-relations.scm"))
+
 (display "\n── 6. miniKanren skill/role relations ──\n")
 
 (with-vat vat
   (let* ((obs ($ scope 'observer))
          (resources ($ obs 'all-resources))
-         (rels (hashmap-values ($ agent-store-ref 'all-relationships))))
+         (rels ($ agent-store-ref 'all-relationships)))
 
     ;; skill-o: Alice has facilitation
     (let ((result (query-agents-with-skill resources "spec:facilitation")))

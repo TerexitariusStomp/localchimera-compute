@@ -63,7 +63,10 @@
 .cal-day-headers {
   display: grid;
   grid-template-columns: 48px repeat(7, 1fr);
-  border-bottom: 1px solid #2a2230;
+  border: 1px solid #2a2230;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  background: #0d0b0f;
 }
 
 .cal-time-spacer {
@@ -150,10 +153,11 @@
 /* ── Grid Wrapper (scrollable) ─────────────────────────────────────────────── */
 
 .cal-grid-wrapper {
-  height: calc(100vh - 220px);
+  flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
   border: 1px solid #2a2230;
+  border-top: none;
   border-radius: 0 0 4px 4px;
   background: #0d0b0f;
 }
@@ -559,7 +563,6 @@
   border-right: 1px solid #2a2230;
   padding: 6px;
   overflow-y: auto;
-  max-height: calc(100vh - 220px);
   font-size: 10px;
 }
 
@@ -655,6 +658,20 @@
   opacity: 0.8;
 }
 
+.cal-status-btn {
+  cursor: pointer;
+  font-size: 11px;
+  opacity: 1;
+  padding: 1px 3px;
+  border-radius: 3px;
+  transition: background 0.15s;
+}
+
+.cal-status-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.2);
+}
+
 .cal-vf-badge {
   background: rgba(159, 122, 234, 0.5);
   color: #e0ceed;
@@ -702,11 +719,14 @@
 .cal-body {
   display: flex;
   gap: 0;
+  height: calc(100vh - 170px);
 }
 
-.cal-body > .cal-grid-wrapper {
+.cal-grid-col {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ── Event Detail Panel ────────────────────────────────────────────────────── */
@@ -938,4 +958,77 @@
 .cal-vf-other-qty {
   color: #8b7b96;
   margin-left: auto;
+}
+
+/* ── Work-Assignment Awareness ────────────────────────────────────────────── */
+
+/* Matched intent card — green left border */
+.cal-intent-matched {
+  border-left: 3px solid rgba(168, 230, 207, 0.5);
+}
+
+/* Unmatched intent card — amber left border */
+.cal-intent-unmatched-card {
+  border-left: 3px solid rgba(214, 158, 46, 0.5);
+}
+
+/* Suggested provider badge inside intent card */
+.cal-intent-suggested {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+  color: #a8e6cf;
+  margin-top: 3px;
+}
+
+.cal-intent-dot {
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+}
+
+.cal-intent-unmatched {
+  color: #d69e2e;
+}
+
+/* Accept/Decline buttons on intent cards */
+.cal-intent-actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.cal-intent-accept {
+  font-size: 9px;
+  padding: 2px 6px;
+}
+
+.cal-intent-decline {
+  font-size: 9px;
+  padding: 2px 6px;
+  color: #8b7b96;
+}
+
+/* Assignment section in detail panel */
+.cal-assignment-section {
+  background: rgba(168, 230, 207, 0.06);
+  border-color: rgba(168, 230, 207, 0.2);
+}
+
+.cal-assignment-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #e0ceed;
+}
+
+.cal-assignment-name {
+  color: #a8e6cf;
+  font-weight: 600;
+}
+
+.cal-assignment-unmatched {
+  color: #d69e2e;
 }

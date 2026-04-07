@@ -23,6 +23,7 @@
 
             ;; Rendering
             render-week-header
+            render-day-headers
             render-time-column
             render-day-column
             render-event-block
@@ -223,8 +224,9 @@
         ((eq? status 'committed) "\u25d0")   ;; ◐
         (else "\u25cb")))                     ;; ○
 
-(define (render-event-block evt col total-cols on-click)
-  "Render a single event as an absolute-positioned colored block."
+(define (render-event-block evt col total-cols on-click on-cycle stop-prop)
+  "Render a single event as an absolute-positioned colored block.
+   on-click: opens detail panel. on-cycle: cycles VF status (on the dot)."
   (let* ((pct-left  (inexact->exact (round (* (/ col total-cols) 100))))
          (pct-width (inexact->exact (round (/ 100 total-cols))))
          (top-px    (event-top evt))
@@ -263,7 +265,11 @@
                       "border-left:3px " border-style " " color ";"))
              (click ,on-click))
           (div (@ (class "cal-event-title"))
-               (span (@ (class "cal-status-dot")) ,(status-dot status))
+               ,@(if (and is-vf on-cycle)
+                     (list `(span (@ (class "cal-status-dot cal-status-btn")
+                                     (click ,(lambda (e) (stop-prop e) (on-cycle evt))))
+                                  ,(status-dot status)))
+                     (list `(span (@ (class "cal-status-dot")) ,(status-dot status))))
                ,title
                ,@(if is-vf
                      (list `(span (@ (class "cal-vf-badge")) "VF"))
@@ -320,8 +326,8 @@
 ;;;  RENDER: WEEK HEADER
 ;;; ═══════════════════════════════════════════════════════════════════════════════
 
-(define (render-week-header ws on-prev on-next on-today today-date-str on-export)
-  "Navigation bar + day column headers. Highlights today."
+(define (render-week-header ws on-prev on-next on-today on-export)
+  "Navigation bar only (month label + prev/today/next + export)."
   (let* ((parts (epoch-ms->date-parts ws))
          (y (car parts)) (m (cadr parts)))
     `(div (@ (class "cal-header"))
@@ -334,23 +340,26 @@
                                   "\u21e9 .ics"))
                      '()))
           (span (@ (class "cal-month-label"))
-                ,(string-append (number->string y) "-" (pad2 m)))
-          (div (@ (class "cal-day-headers"))
-               (div (@ (class "cal-time-spacer")) "")
-               ,@(map (lambda (offset)
-                        (let* ((dp (day-offset-date-parts ws offset))
-                               (d  (caddr dp))
-                               (dn (vector-ref day-names offset))
-                               (ds (date-parts->date-string dp))
-                               (is-today (and today-date-str
-                                              (string=? ds today-date-str))))
-                          `(div (@ (class ,(string-append "cal-day-header"
-                                                          (if is-today " cal-day-header-today" ""))))
-                                (span (@ (class "cal-day-name")) ,dn)
-                                (span (@ (class ,(string-append "cal-day-num"
-                                                                 (if is-today " cal-day-num-today" ""))))
-                                      ,(number->string d)))))
-                      (list 0 1 2 3 4 5 6))))))
+                ,(string-append (number->string y) "-" (pad2 m))))))
+
+(define (render-day-headers ws today-date-str)
+  "Day column headers (Mon 6, Tue 7, ...) — rendered inside the grid area for alignment."
+  `(div (@ (class "cal-day-headers"))
+        (div (@ (class "cal-time-spacer")) "")
+        ,@(map (lambda (offset)
+                 (let* ((dp (day-offset-date-parts ws offset))
+                        (d  (caddr dp))
+                        (dn (vector-ref day-names offset))
+                        (ds (date-parts->date-string dp))
+                        (is-today (and today-date-str
+                                       (string=? ds today-date-str))))
+                   `(div (@ (class ,(string-append "cal-day-header"
+                                                   (if is-today " cal-day-header-today" ""))))
+                         (span (@ (class "cal-day-name")) ,dn)
+                         (span (@ (class ,(string-append "cal-day-num"
+                                                          (if is-today " cal-day-num-today" ""))))
+                               ,(number->string d)))))
+               (list 0 1 2 3 4 5 6))))
 
 
 ;;; ═══════════════════════════════════════════════════════════════════════════════
@@ -373,8 +382,8 @@
 ;;; ═══════════════════════════════════════════════════════════════════════════════
 
 (define (render-day-column date-str day-events availability people
-                          on-slot-click on-event-click time-line-sxml
-                          is-today)
+                          on-slot-click on-event-click on-cycle-status
+                          time-line-sxml is-today stop-prop)
   "One day column: hour cells (click targets) + availability + events + time line."
   (let ((positioned (compute-event-columns day-events)))
     `(div (@ (class ,(string-append "cal-day-col"
@@ -418,7 +427,8 @@
                          (col (cadr triple))
                          (total (caddr triple)))
                      (render-event-block evt col total
-                                        (lambda (e) (on-event-click evt)))))
+                                        (lambda (e) (on-event-click evt))
+                                        on-cycle-status stop-prop)))
                  positioned))))
 
 
@@ -633,8 +643,12 @@
 ;;;  RENDER: UNSCHEDULED INTENTS SIDEBAR
 ;;; ═══════════════════════════════════════════════════════════════════════════════
 
-(define (render-intents-sidebar intents on-select-intent selected-intent-id)
-  "Sidebar listing unscheduled work intents from the org planner."
+(define* (render-intents-sidebar intents on-select-intent selected-intent-id
+                                 #:key (people '()) (on-accept #f) (on-decline #f)
+                                       (stop-prop (lambda (e) #f)))
+  "Sidebar listing unscheduled work intents from the org planner.
+   When work-assignments metadata is present, shows suggested provider
+   and accept/decline buttons for the consent flow."
   `(div (@ (class "cal-intents-sidebar"))
         (div (@ (class "cal-intents-title")) "Unscheduled Work")
         ,@(if (null? intents)
@@ -647,8 +661,15 @@
                             (unit (alist-ref intent 'effort-unit "hr"))
                             (scope (alist-ref intent 'scope ""))
                             (selected (and selected-intent-id
-                                           (equal? id selected-intent-id))))
-                       `(div (@ (class ,(string-append "cal-intent-card"
+                                           (equal? id selected-intent-id)))
+                            (match (alist-ref intent 'match-status 'unassigned))
+                            (sp-name (alist-ref intent 'suggested-provider-name #f))
+                            (sp-id (alist-ref intent 'suggested-provider #f))
+                            (match-class
+                              (cond ((eq? match 'matched) " cal-intent-matched")
+                                    ((eq? match 'unmatched) " cal-intent-unmatched-card")
+                                    (else ""))))
+                       `(div (@ (class ,(string-append "cal-intent-card" match-class
                                                        (if selected " cal-intent-selected" "")))
                                 (click ,(lambda (e) (on-select-intent intent))))
                              (div (@ (class "cal-intent-proc")) ,proc)
@@ -656,7 +677,37 @@
                                   (span ,(string-append (n->s qty) " " unit))
                                   (span (@ (class "cal-intent-spec")) ,spec))
                              ,@(if (string=? scope "") '()
-                                   (list `(div (@ (class "cal-intent-scope")) ,scope))))))
+                                   (list `(div (@ (class "cal-intent-scope")) ,scope)))
+                             ;; Suggested provider badge or unmatched warning
+                             ,@(cond
+                                 ((eq? match 'matched)
+                                  (list `(div (@ (class "cal-intent-suggested"))
+                                              (span (@ (class "cal-legend-dot cal-intent-dot")
+                                                       (style ,(string-append
+                                                                "background-color:"
+                                                                (person-color (or sp-id "") people)
+                                                                ";")))
+                                                    "")
+                                              (span ,(string-append
+                                                      "Suggested: " (or sp-name "?"))))))
+                                 ((eq? match 'unmatched)
+                                  (list `(div (@ (class "cal-intent-suggested cal-intent-unmatched"))
+                                              "\u26a0 No match")))
+                                 (else '()))
+                             ;; Accept / Decline buttons for matched intents
+                             ,@(if (and (eq? match 'matched) on-accept on-decline)
+                                   (list `(div (@ (class "cal-intent-actions"))
+                                               (span (@ (class "cal-btn cal-btn-primary cal-intent-accept")
+                                                        (click ,(lambda (e)
+                                                                  (stop-prop e)
+                                                                  (on-accept intent))))
+                                                     "\u2713 Accept")
+                                               (span (@ (class "cal-btn cal-intent-decline")
+                                                        (click ,(lambda (e)
+                                                                  (stop-prop e)
+                                                                  (on-decline intent))))
+                                                     "\u2717 Decline")))
+                                   '()))))
                    intents))))
 
 
@@ -832,10 +883,14 @@
         ((eq? act 'use) "#d69e2e")
         (else "#8b7b96")))
 
-(define (render-event-detail-panel evt on-close on-edit on-delete people
-                                   process-commitments on-record-effort
-                                   process-flows supply-chain)
-  "Right sidebar showing full event detail + VF process context."
+(define* (render-event-detail-panel evt on-close on-edit on-delete people
+                                    process-commitments on-record-effort
+                                    process-flows supply-chain
+                                    #:key (on-accept-assignment #f)
+                                          (on-decline-assignment #f))
+  "Right sidebar showing full event detail + VF process context.
+   When work-assignment metadata is present, shows assignment section
+   with suggested provider and accept/decline actions."
   (let* ((title   (alist-ref evt 'title ""))
          (sh      (alist-ref evt 'start-hour 0))
          (sm      (alist-ref evt 'start-min 0))
@@ -856,6 +911,10 @@
          (vf-unit (alist-ref evt 'vf-effort-unit "hr"))
          (vf-scope (alist-ref evt 'vf-scope #f))
          (vf-fulfilled (alist-ref evt 'vf-fulfilled-qty 0))
+         ;; Assignment metadata
+         (match-st (alist-ref evt 'match-status 'unassigned))
+         (sp-id    (alist-ref evt 'suggested-provider #f))
+         (sp-name  (alist-ref evt 'suggested-provider-name #f))
          ;; Duration in minutes
          (dur-min (- (+ (* eh 60) em) (+ (* sh 60) sm)))
          (dur-h (quotient dur-min 60))
@@ -902,6 +961,32 @@
                      ,(cond ((eq? status 'fulfilled) "Fulfilled")
                             ((eq? status 'committed) "Committed")
                             (else "Open"))))
+          ;; Assignment context (work-assignment metadata)
+          ,@(if (and is-vf (not (eq? match-st 'unassigned)))
+                `((div (@ (class "cal-detail-section cal-assignment-section"))
+                       (div (@ (class "cal-detail-section-title")) "Assignment")
+                       ,(if (eq? match-st 'matched)
+                            `(div (@ (class "cal-assignment-row"))
+                                  (span (@ (class "cal-legend-dot cal-detail-dot")
+                                           (style ,(string-append
+                                                    "background-color:"
+                                                    (person-color (or sp-id "") people) ";")))
+                                        "")
+                                  (span (@ (class "cal-assignment-name"))
+                                        ,(string-append "Suggested: " (or sp-name sp-id "")))
+                                  ,@(if (and on-accept-assignment (eq? source 'intent))
+                                        `((span (@ (class "cal-btn cal-btn-primary")
+                                                   (style "margin-left:auto;font-size:10px;padding:2px 8px;")
+                                                   (click ,(lambda (e) (on-accept-assignment evt))))
+                                                "Accept")
+                                          (span (@ (class "cal-btn")
+                                                   (style "font-size:10px;padding:2px 8px;")
+                                                   (click ,(lambda (e) (on-decline-assignment evt))))
+                                                "Decline"))
+                                        '()))
+                            `(div (@ (class "cal-assignment-row cal-assignment-unmatched"))
+                                  (span "\u26a0 No agent matched for this role")))))
+                '())
           ;; VF Process Context
           ,@(if (and is-vf vf-proc)
                 (let* ((pct (if (and vf-qty (> vf-qty 0))
@@ -1059,8 +1144,11 @@
                               (selected-intent-id #f)
                               on-export
                               on-record-effort
+                              on-cycle-status
                               (process-flows '())
-                              (supply-chain '()))
+                              (supply-chain '())
+                              (on-accept-assignment #f)
+                              (on-decline-assignment #f))
   "Compose the full calendar page."
   (let* ((ws week-start-ms)
          ;; Filter events to this week
@@ -1094,24 +1182,32 @@
     `(div (@ (class ,(string-append "cal-view"
                                     (if selected-event " cal-view-with-detail" ""))))
           ;; Header with navigation
-          ,(render-week-header ws on-prev-week on-next-week on-today today-date-str on-export)
+          ,(render-week-header ws on-prev-week on-next-week on-today on-export)
           ;; Person legend + capacity bar
           ,@(if (null? people) '()
                 (list `(div (@ (class "cal-toolbar"))
                             ,(render-person-legend people on-toggle-person)
                             ,(render-capacity-bar filtered-events availability
                                                   people on-toggle-avail-editor))))
-          ;; All-day events strip
-          ,(render-allday-strip week-dates allday-events on-event-click)
-          ;; Main body: intents sidebar + grid + optional detail panel
+          ;; Main body: intents sidebar + (day headers + allday + grid) + detail panel
           (div (@ (class "cal-body"))
                ;; Unscheduled intents sidebar (when in org mode)
                ,@(if (null? unscheduled-intents) '()
                      (list (render-intents-sidebar
                             unscheduled-intents on-select-intent
-                            selected-intent-id)))
-               ;; Week grid
-               (div (@ (class "cal-grid-wrapper") (id "cal-grid-wrap"))
+                            selected-intent-id
+                            #:people people
+                            #:on-accept on-accept-assignment
+                            #:on-decline on-decline-assignment
+                            #:stop-prop stop-prop)))
+               ;; Grid column: headers + allday + scrollable grid
+               (div (@ (class "cal-grid-col"))
+                    ;; Day headers (aligned with grid columns)
+                    ,(render-day-headers ws today-date-str)
+                    ;; All-day events strip
+                    ,(render-allday-strip week-dates allday-events on-event-click)
+                    ;; Scrollable grid
+                    (div (@ (class "cal-grid-wrapper") (id "cal-grid-wrap"))
                     (div (@ (class "cal-grid"))
                          ;; Time column
                          ,(render-time-column)
@@ -1131,15 +1227,18 @@
                                                         (string=? ds today-date-str))))
                                     (render-day-column ds day-evts day-avail people
                                                        on-slot-click on-event-click
-                                                       day-time-line is-today)))
-                                (list 0 1 2 3 4 5 6))))
+                                                       on-cycle-status
+                                                       day-time-line is-today stop-prop)))
+                                (list 0 1 2 3 4 5 6)))))
                ;; Detail panel (right sidebar)
                ,@(if selected-event
                      (list (render-event-detail-panel
                             selected-event on-close-detail
                             on-edit-from-detail on-delete-from-detail
                             people process-commitments on-record-effort
-                            process-flows supply-chain))
+                            process-flows supply-chain
+                            #:on-accept-assignment on-accept-assignment
+                            #:on-decline-assignment on-decline-assignment))
                      '()))
           ;; Modal overlays
           ,@(if editing-event

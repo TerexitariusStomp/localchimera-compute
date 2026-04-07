@@ -140,7 +140,7 @@ run_suite "Architectural Elegance"   "$ALL" "tests/test-architectural-elegance.s
 run_suite "Snapshot Hydration"       "$ALL" "tests/test-snapshot-hydration.scm"
 
 # -- Food surplus scenario --
-run_suite "Food Surplus (SF)"       "$FED" "tests/test-food-surplus-scenario.scm"
+run_suite "Food Surplus (SF)"       "$ALL" "tests/test-food-surplus-scenario.scm"
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Infrastructure: live-resources + capacity-managed execution

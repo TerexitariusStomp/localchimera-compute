@@ -3261,26 +3261,17 @@
              (append upstream downstream))
            '())
      #:on-event-click (lambda (evt)
-                        (let ((source (alist-ref evt 'source 'event))
-                              (status (alist-ref evt 'status 'open)))
-                          (cond
-                           ;; VF open → committed
-                           ((and (or (eq? source 'intent) (eq? source 'commitment))
-                                 (eq? status 'open))
-                            (cycle-event-status! evt 'committed))
-                           ;; VF committed → fulfilled
-                           ((and (or (eq? source 'intent) (eq? source 'commitment))
-                                 (eq? status 'committed))
-                            (cycle-event-status! evt 'fulfilled))
-                           ;; VF fulfilled → back to open (loop)
-                           ((and (or (eq? source 'intent) (eq? source 'commitment))
-                                 (eq? status 'fulfilled))
-                            (cycle-event-status! evt 'open))
-                           ;; Non-VF: open detail panel
-                           (else
-                            (set! *cal-selected-event* evt)
-                            (set! *cal-editing-event* #f)
-                            (refresh!)))))
+                        ;; Always open detail panel
+                        (set! *cal-selected-event* evt)
+                        (set! *cal-editing-event* #f)
+                        (refresh!))
+     #:on-cycle-status (lambda (evt)
+                         ;; Cycle VF status: open → committed → fulfilled → open
+                         (let ((status (alist-ref evt 'status 'open)))
+                           (cond
+                            ((eq? status 'open)      (cycle-event-status! evt 'committed))
+                            ((eq? status 'committed) (cycle-event-status! evt 'fulfilled))
+                            ((eq? status 'fulfilled) (cycle-event-status! evt 'open)))))
      #:on-close-detail (lambda (e)
                          (set! *cal-selected-event* #f)
                          (refresh!))
