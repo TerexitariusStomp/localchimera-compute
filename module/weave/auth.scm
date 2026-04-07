@@ -67,9 +67,7 @@
 
 (define (hmac-sha256-bv key-bv data-bv)
   "Compute HMAC-SHA256 of DATA-BV using KEY-BV. Returns a bytevector."
-  (let ((m (make-mac 'hmac-sha256 key-bv)))
-    (mac-write! m data-bv)
-    (mac-hash m)))
+  (sign-data key-bv data-bv #:algorithm (mac-algorithm hmac-sha256)))
 
 ;;; ── JWT construction ─────────────────────────────────────────────────────────
 

@@ -22,6 +22,19 @@
   <noscript>
     <p>Weave requires JavaScript to run. Please enable JavaScript.</p>
   </noscript>
+
+  <!-- Shown by weave.js if WASM fails to compile or load -->
+  <div id="wasm-error" hidden style="
+    align-items:center; display:flex; flex-direction:column; gap:1rem;
+    justify-content:center; min-height:100dvh; padding:2rem; text-align:center;
+    font-family:system-ui,sans-serif; background:#1a1a2e; color:#e8e8f0;">
+    <h2 style="color:#e74c3c">Weave failed to load</h2>
+    <p>The WASM module could not be initialised. Check the browser console for details.</p>
+    <p style="font-size:0.85rem;color:#888">
+      Requires a browser with WebAssembly GC support (Chrome 119+, Firefox 120+, Safari 18+).
+    </p>
+  </div>
+
   <script type="module" src="/weave.js"></script>
 </body>
 </html>

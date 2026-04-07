@@ -45,7 +45,8 @@
       "Bash(make clean:*)",
       "Bash(lsof -ti:37146)",
       "Bash(fuser -k 8080/tcp)",
-      "Bash(fuser -k 37146/tcp)"
+      "Bash(fuser -k 37146/tcp)",
+      "Bash(time make docker-wasm:*)"
     ]
   }
 }

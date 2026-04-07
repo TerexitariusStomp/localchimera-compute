@@ -1,0 +1,46 @@
+name: Build WASM
+
+on:
+  push:
+    branches: [main, weave]
+    paths:
+      - 'module/weave/**'
+      - 'module/playnet/**'
+      - 'browser/repl.scm'
+      - 'deploy/guix/channels.scm'
+      - 'deploy/packages/hoot-fix.scm'
+      - '.github/workflows/build-wasm.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: build-wasm-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Guix
+        uses: PromyLOPh/guix-install-action@v1
+        with:
+          pullAfterInstall: false
+
+      - name: Build weave.wasm
+        run: |
+          sudo -E "$(which guix)" time-machine -C deploy/guix/channels.scm -- \
+            shell guile-next \
+              -L deploy/packages -e '(@ (hoot-fix) guile-hoot/fixed)' \
+              guile-goblins -- \
+            guild compile-wasm -L module --bundle \
+              -o weave/weave.wasm module/weave/browser.scm
+
+      - name: Upload weave.wasm
+        uses: actions/upload-artifact@v4
+        with:
+          name: weave-wasm
+          path: weave/weave.wasm
+          retention-days: 30

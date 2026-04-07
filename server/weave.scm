@@ -8,8 +8,7 @@
 ;;; Environment variables:
 ;;;   LIVEKIT_API_KEY    — LiveKit API key
 ;;;   LIVEKIT_API_SECRET — LiveKit API secret
-;;;   LIVEKIT_HOST       — LiveKit server URL (default: http://localhost:7880)
-;;;   LIVEKIT_WS_HOST    — LiveKit WebSocket URL for browser SDK (default: ws://localhost:7880)
+;;;   LIVEKIT_URL        — LiveKit URL (default: ws://localhost:7880)
 ;;;   WEAVE_PORT         — HTTP port (default: 8081)
 
 (use-modules (web server)
@@ -132,7 +131,7 @@
                (token (make-livekit-token
                        (livekit-api-key) (livekit-api-secret)
                        room-id lk-identity role))
-               (ws-host (or (getenv "LIVEKIT_WS_HOST") "ws://localhost:7880")))
+               (ws-host (livekit-url)))
           ;; Record occupant in room actor
           (with-vat *vat*
             ($ room-ref 'join! identity display-n role 'named lk-identity))
@@ -275,6 +274,8 @@
       (('GET "/weave.js")     (respond-file "weave.js"   'application/javascript))
       (('GET "/weave.css")    (respond-file "weave.css"  'text/css))
       (('GET "/weave.wasm")   (respond-file "weave.wasm" 'application/wasm))
+      (('GET "/reflect.js")   (respond-file "reflect.js"  'application/javascript))
+      (('GET "/wtf8.wasm")    (respond-file "wtf8.wasm"   'application/wasm))
 
       ;; CORS preflight
       (('OPTIONS _) (handle-options))

@@ -68,7 +68,76 @@ WebSocket messages are alists serialized to JSON:
 
 - Actor methods: use `(error "message" irritants...)` for impossible states; callers catch with `(with-exception-handler ...)`
 - HTTP handlers: catch known errors (wrong role, meeting not found) and return structured JSON error responses; let unexpected errors propagate to the HTTP server's top-level handler which logs and returns 500
-- FFI calls: JS exceptions surface as Scheme exceptions; wrap in `(guard (exn ...) ...)` wherever a LiveKit or Deepgram call might fail during a live meeting
+- FFI calls — **IMPORTANT:** JS exceptions thrown inside async JS functions **cannot** be caught by Scheme's `with-exception-handler` or `guard`. Hoot's Scheme call stack and the JS/Wasm exception systems are distinct and do not interoperate. Do not wrap `%livekit-connect` etc. in `guard` expecting it to help.
+
+**Two patterns for JS/Scheme error handling:**
+
+1. **Synchronous FFI** (fetch, XHR): JS returns a sentinel string on failure.
+   Convention: `"ERR:HTTP-<status>"`, `"ERR:NET"`, `"ERR:PARSE"`. Scheme checks `(string-prefix? "ERR:" result)`.
+
+2. **Async FFI** (LiveKit connect/enable/share): JS wraps in `try/catch` and calls `_callbacks.onError(source, message)`. Scheme's `on-livekit-error` receives the error and updates UI state. Never trust that an async call succeeded — only the callback confirms it.
+
+---
+
+## Debugging workflow
+
+Hoot/WASM debugging is fundamentally different from JS debugging. There are no source maps from compiled WASM back to `.scm` files. When you see a stack trace in the browser console, it points to `reflect.js` internal machinery, not to your Scheme source. Here is the workflow that works:
+
+### Primary debug environment: the Guile REPL
+
+Develop and test module logic outside the browser first. Hoot includes an embedded WASM VM that runs inside Guile.
+
+```
+guile -L module -L path/to/hoot
+(use-modules (hoot compile) (hoot vm))
+
+; Compile a single expression and run it in the embedded VM:
+(run-in-vm (compile-to-vm '(+ 1 2)))
+
+; To trap a Wasm error and open an inspector:
+(wasm-catch (run-in-vm (compile-to-vm '(my-broken-thing))))
+```
+
+Inside `wasm-catch` you can inspect the WASM stack, examine locals, and step through instructions.
+
+### Browser: use DevTools Wasm panel
+
+The `--emit-names` flag (already in the Makefile) writes a name section into `weave.wasm`. In Chrome/Firefox DevTools:
+- Open Sources → find `weave.wasm` in the file tree
+- Breakpoints, stepping, and stack traces work in the WASM disassembly view
+- Function names will be human-readable (e.g. `render_join_screen`) rather than `func[42]`
+
+Filter the console by `[weave]` — all Scheme-side `console-log` calls and all JS-side Weave logging are prefixed with it.
+
+### Scheme-side logging
+
+```scheme
+(console-log "entering do-join!")
+(console-warn (string-append "unexpected resp: " resp-str))
+(console-error "livekit-connect returned ERR")
+(debug-log "screen" (symbol->string *screen*))   ; label: value
+```
+
+These call directly into `console.log/warn/error` via FFI. Use them freely — the `[weave]` prefix distinguishes them from LiveKit's own verbose logging.
+
+### When a fetch call fails
+
+All synchronous XHR calls return `"ERR:..."` sentinels on failure (never throw). After any `%fetch-json` call, check:
+
+```scheme
+(let ((resp (%fetch-json url body)))
+  (if (string-prefix? "ERR:" resp)
+      (begin
+        (console-error (string-append "fetch failed: " resp))
+        ...)
+      (... parse resp ...)))
+```
+
+The specific error code (`ERR:HTTP-404`, `ERR:NET`) is visible in the browser console even without the Scheme check.
+
+### When an async LiveKit call fails
+
+Errors from async LiveKit operations arrive via `on-livekit-error(source, message)` — not via Scheme exceptions. If LiveKit is behaving unexpectedly, look for `[weave] LiveKit error [...]` lines in the console. The `source` field tells you which JS function threw.
 
 ---
 

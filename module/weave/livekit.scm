@@ -16,7 +16,8 @@
   #:use-module (json)
   #:use-module (rnrs bytevectors)
   #:use-module (ice-9 iconv)
-  #:export (livekit-host
+  #:export (livekit-url
+            livekit-host
             livekit-create-room
             livekit-delete-room
             livekit-list-rooms
@@ -26,10 +27,20 @@
 
 ;;; ── Config ───────────────────────────────────────────────────────────────────
 
+(define (livekit-url)
+  "LiveKit base URL from LIVEKIT_URL env var, e.g. wss://livekit.example.com"
+  (or (getenv "LIVEKIT_URL")
+      "ws://localhost:7880"))
+
 (define (livekit-host)
-  "LiveKit server URL, e.g. https://livekit.example.com"
-  (or (getenv "LIVEKIT_HOST")
-      "http://localhost:7880"))
+  "LiveKit HTTPS API endpoint, derived from LIVEKIT_URL."
+  (let ((url (livekit-url)))
+    (cond
+     ((string-prefix? "wss://" url)
+      (string-append "https://" (substring url 6)))
+     ((string-prefix? "ws://" url)
+      (string-append "http://" (substring url 5)))
+     (else url))))
 
 ;;; ── HTTP helper ──────────────────────────────────────────────────────────────
 
@@ -43,7 +54,7 @@
         (http-post url
                    #:body body
                    #:headers `((content-type   . (application/json))
-                               (authorization  . ,(string-append "Bearer " token)))))
+                               (authorization  . (bearer ,(string->symbol token))))))
       (lambda (response body-bv)
         (let ((status (response-code response))
               (body-str (if (bytevector? body-bv)

@@ -102,9 +102,23 @@ docker-shell:
 	docker run --rm -it --security-opt seccomp=unconfined \
 	  -v "$$PWD":/src $(DOCKER_IMAGE) guile --no-auto-compile -L module -L planner
 
+docker-wasm:
+	docker run --rm --security-opt seccomp=unconfined \
+	  --entrypoint /usr/local/bin/guix-wasm \
+	  -v "$$PWD":/src -w /src $(DOCKER_IMAGE) \
+	  guild compile-wasm -L module --bundle --emit-names \
+	    -o weave/weave.wasm module/weave/browser.scm
+
 docker-weave:
-	@echo "Starting Weave → http://localhost:8081"
-	@open http://localhost:8081 2>/dev/null || xdg-open http://localhost:8081 2>/dev/null || true &
+	@echo "═══ Compiling weave.wasm in background ═══"
+	@docker run --rm --security-opt seccomp=unconfined \
+	  --entrypoint /usr/local/bin/guix-wasm \
+	  -v "$$PWD":/src -w /src $(DOCKER_IMAGE) \
+	  guild compile-wasm -L module --bundle --emit-names \
+	    -o weave/weave.wasm module/weave/browser.scm \
+	  && echo "═══ weave.wasm ready — reload browser ═══" &
+	@echo "═══ Starting Weave → http://localhost:8081 ═══"
+	@sleep 1 && { open http://localhost:8081 2>/dev/null || xdg-open http://localhost:8081 2>/dev/null || true; } &
 	docker run --rm -it --security-opt seccomp=unconfined \
 	  -v "$$PWD":/src -w /src -p 8081:8081 \
 	  --env-file secrets.env \
@@ -114,7 +128,11 @@ weave/weave.wasm: module/weave/browser.scm \
                   module/weave/ui/join.scm \
                   module/weave/ui/room.scm
 	$(TIME_MACHINE) shell guile-next $(HOOT_FIXED) guile-goblins -- \
-	  guild compile-wasm -L module --bundle -o weave/weave.wasm module/weave/browser.scm
+	  guild compile-wasm -L module --bundle --emit-names \
+	    -o weave/weave.wasm module/weave/browser.scm
+# --emit-names embeds a WebAssembly name section so Chrome/Firefox DevTools show
+# readable function names (e.g. "render_join_screen") instead of "func[42]".
+# Keep this flag on all development builds; strip it for production if size matters.
 
 weave:
 	guile -L module server/weave.scm

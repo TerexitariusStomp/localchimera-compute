@@ -17,8 +17,34 @@
              (weave ui room))
 
 ;;; ═══════════════════════════════════════════════════════════════════════════
-;;; Section 1: DOM FFI bindings (from weave.js user_imports)
+;;; Section 1: Console + DOM FFI bindings (from weave.js user_imports)
 ;;; ═══════════════════════════════════════════════════════════════════════════
+;;;
+;;; DEBUGGING NOTE — the JS/Scheme error boundary
+;;; ───────────────────────────────────────────────
+;;; JS exceptions thrown inside async JS functions DO NOT propagate into
+;;; Scheme as Scheme exceptions. Hoot's Scheme call stack and the Wasm/JS
+;;; exception systems are separate. A try/catch or with-exception-handler in
+;;; Scheme will NOT catch an error thrown by, e.g., livekit.connect.
+;;;
+;;; Pattern for handling async JS errors:
+;;;   1. JS wraps async ops in try/catch and calls _callbacks.onError(src, msg)
+;;;   2. Scheme's `on-livekit-error` receives the error and updates UI state
+;;;   3. Use (console-error "msg") from Scheme to write diagnostics to DevTools
+;;;
+;;; For synchronous FFI calls that can fail, JS returns a sentinel string:
+;;;   "ERR:HTTP-<status>" | "ERR:NET" | "ERR:PARSE"
+;;; Scheme checks: (string-prefix? "ERR:" resp-str)
+
+;; ── Console (Scheme → browser DevTools) ──────────────────────────────────────
+(define-foreign console-log   "console" "log"   (ref string) -> none)
+(define-foreign console-warn  "console" "warn"  (ref string) -> none)
+(define-foreign console-error "console" "error" (ref string) -> none)
+
+;; Convenience: log a label + value by converting to string
+;; (debug-log "state" *screen*) → console.log "[weave] state: room"
+(define (debug-log label val)
+  (console-log (string-append label ": " (if (string? val) val (object->string val)))))
 
 ;; DOM — document
 (define-foreign document-body    "document" "body"          -> (ref null extern))
@@ -332,35 +358,44 @@
   (when (string-null? *meeting-id*)
     (let* ((m-resp (%fetch-json "/api/meetings"
                                 (string-append "{\"name\":\"" room-id "\"}"))))
-      (unless (string-null? m-resp)
+      (unless (string-prefix? "ERR:" m-resp)
         ;; Parse first pipe segment: "meeting_id:<id>"
         (let* ((parts (string-split m-resp #\|))
                (first (car parts)))
-          (when (string-prefix? "meeting_id:" first)
-            (set! *meeting-id* (substring first 11)))))))
+          (if (string-prefix? "meeting_id:" first)
+              (set! *meeting-id* (substring first 11))
+              (console-warn (string-append "Unexpected meeting response: " m-resp)))))))
 
   (let* ((body (string-append
                 "{\"identity\":\"" display-name
                 "\",\"role\":\"" role
                 "\",\"display_name\":\"" display-name "\"}"))
-         (url  (string-append "/api/rooms/" room-id "/token"))
+         (url      (string-append "/api/rooms/" room-id "/token"))
          (resp-str (%fetch-json url body)))
-    (if (string-null? resp-str)
+    (if (string-prefix? "ERR:" resp-str)
         (begin
-          (set! *error-msg* "Failed to contact server — is Weave running?")
+          (console-error (string-append "Token fetch failed: " resp-str))
+          (set! *error-msg*
+            (cond
+             ((string-prefix? "ERR:HTTP-404" resp-str) "Room not found — check the room ID.")
+             ((string-prefix? "ERR:HTTP-" resp-str)    (string-append "Server error: " resp-str))
+             ((string=? resp-str "ERR:NET")             "Could not reach server — is Weave running?")
+             (else                                       (string-append "Join failed: " resp-str))))
           (set! *screen* 'error)
           (refresh!))
         (let* ((parts    (string-split resp-str #\|))
                (token    (list-ref parts 0))
                (lk-url   (list-ref parts 1))
                (identity (list-ref parts 2)))
+          (console-log (string-append "Joining room " room-id " as " identity))
           (set! *local-id* identity)
           (set! *in-breakout* #f)
           ;; Add ourselves to participants list
           (set! *participants* (list (list identity display-name)))
-          ;; Connect LiveKit — callbacks fire as participants join/leave/tracks appear
+          ;; Connect LiveKit — on-livekit-error fires if this fails
           (%livekit-connect lk-url token #f)
           ;; Enable camera + mic by default (non-observers)
+          ;; on-livekit-error handles permission denial
           (unless (string=? role "observer")
             (%livekit-enable-camera)
             (%livekit-enable-mic))
@@ -399,6 +434,30 @@
     (set! *error-msg* "Disconnected from room. Please rejoin.")
     (refresh!)))
 
+(define (on-livekit-error source message)
+  "Called by JS when an async LiveKit operation throws.
+   SOURCE is a string like 'livekit.connect'; MESSAGE is the JS error message.
+   JS exceptions cannot be caught by Scheme's with-exception-handler — this
+   callback is the only way Scheme learns about async JS failures."
+  (console-error (string-append "LiveKit error [" source "]: " message))
+  (cond
+   ;; Connect failure → show error screen
+   ((string=? source "livekit.connect")
+    (set! *screen* 'error)
+    (set! *error-msg* (string-append "Could not connect to meeting room: " message))
+    (refresh!))
+   ;; Camera/mic failures → log only (non-fatal; user can retry)
+   ((or (string=? source "livekit.enableCamera")
+        (string=? source "livekit.enableMic"))
+    ;; UI remains in room; user sees their tile is dark/muted
+    (if #f #f))
+   ;; Screen share denial — user cancelled the picker, not an error
+   ((string=? source "livekit.shareScreen")
+    (if #f #f))
+   ;; Catch-all: log and show non-blocking notice
+   (else
+    (console-warn (string-append "Unhandled async error [" source "]: " message)))))
+
 (define (on-data-received msg)
   "Called when a LiveKit data channel message arrives.
    Sprint 2 messages:
@@ -432,9 +491,10 @@
                 "\",\"display_name\":\"" *display-name* "\"}"))
          (url      (string-append "/api/rooms/" target-room-id "/token"))
          (resp-str (%fetch-json url body)))
-    (if (string-null? resp-str)
+    (if (string-prefix? "ERR:" resp-str)
         (begin
-          (set! *error-msg* "Failed to get token for breakout room.")
+          (console-error (string-append "Breakout token fetch failed: " resp-str))
+          (set! *error-msg* (string-append "Could not move to breakout room: " resp-str))
           (set! *screen* 'error)
           (refresh!))
         (let* ((parts    (string-split resp-str #\|))
@@ -459,10 +519,11 @@
 ;;; ═══════════════════════════════════════════════════════════════════════════
 
 ;; Register LiveKit callbacks with the JS host so it can call back into WASM.
-;; weave.js stores these references in window._weaveCallbacks.
+;; weave.js stores these references in _callbacks.
+;; Signature: joined left quality disconnected data error
 (define-foreign register-callbacks! "weave" "registerCallbacks"
   (ref null extern) (ref null extern) (ref null extern) (ref null extern)
-  (ref null extern) -> none)
+  (ref null extern) (ref null extern) -> none)
 
 ;; Synchronous GET/DELETE helpers for meeting API calls
 (define-foreign %weave-get-json    "weave" "getJSON"    (ref string) -> (ref string))
@@ -472,10 +533,11 @@
 (set! *current-vdom* #f)
 (refresh!)
 
-;; Register event callbacks (now 5: add on-data-received)
+;; Register event callbacks (6: joined left quality disconnected data error)
 (register-callbacks!
  on-participant-connected
  on-participant-disconnected
  on-connection-quality-changed
  on-disconnected
- on-data-received)
+ on-data-received
+ on-livekit-error)
