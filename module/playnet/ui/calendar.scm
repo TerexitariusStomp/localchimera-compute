@@ -23,6 +23,7 @@
 
             ;; Rendering
             render-week-header
+            render-day-headers
             render-time-column
             render-day-column
             render-event-block
@@ -325,8 +326,8 @@
 ;;;  RENDER: WEEK HEADER
 ;;; ═══════════════════════════════════════════════════════════════════════════════
 
-(define (render-week-header ws on-prev on-next on-today today-date-str on-export)
-  "Navigation bar + day column headers. Highlights today."
+(define (render-week-header ws on-prev on-next on-today on-export)
+  "Navigation bar only (month label + prev/today/next + export)."
   (let* ((parts (epoch-ms->date-parts ws))
          (y (car parts)) (m (cadr parts)))
     `(div (@ (class "cal-header"))
@@ -339,23 +340,26 @@
                                   "\u21e9 .ics"))
                      '()))
           (span (@ (class "cal-month-label"))
-                ,(string-append (number->string y) "-" (pad2 m)))
-          (div (@ (class "cal-day-headers"))
-               (div (@ (class "cal-time-spacer")) "")
-               ,@(map (lambda (offset)
-                        (let* ((dp (day-offset-date-parts ws offset))
-                               (d  (caddr dp))
-                               (dn (vector-ref day-names offset))
-                               (ds (date-parts->date-string dp))
-                               (is-today (and today-date-str
-                                              (string=? ds today-date-str))))
-                          `(div (@ (class ,(string-append "cal-day-header"
-                                                          (if is-today " cal-day-header-today" ""))))
-                                (span (@ (class "cal-day-name")) ,dn)
-                                (span (@ (class ,(string-append "cal-day-num"
-                                                                 (if is-today " cal-day-num-today" ""))))
-                                      ,(number->string d)))))
-                      (list 0 1 2 3 4 5 6))))))
+                ,(string-append (number->string y) "-" (pad2 m))))))
+
+(define (render-day-headers ws today-date-str)
+  "Day column headers (Mon 6, Tue 7, ...) — rendered inside the grid area for alignment."
+  `(div (@ (class "cal-day-headers"))
+        (div (@ (class "cal-time-spacer")) "")
+        ,@(map (lambda (offset)
+                 (let* ((dp (day-offset-date-parts ws offset))
+                        (d  (caddr dp))
+                        (dn (vector-ref day-names offset))
+                        (ds (date-parts->date-string dp))
+                        (is-today (and today-date-str
+                                       (string=? ds today-date-str))))
+                   `(div (@ (class ,(string-append "cal-day-header"
+                                                   (if is-today " cal-day-header-today" ""))))
+                         (span (@ (class "cal-day-name")) ,dn)
+                         (span (@ (class ,(string-append "cal-day-num"
+                                                          (if is-today " cal-day-num-today" ""))))
+                               ,(number->string d)))))
+               (list 0 1 2 3 4 5 6))))
 
 
 ;;; ═══════════════════════════════════════════════════════════════════════════════
@@ -1101,24 +1105,28 @@
     `(div (@ (class ,(string-append "cal-view"
                                     (if selected-event " cal-view-with-detail" ""))))
           ;; Header with navigation
-          ,(render-week-header ws on-prev-week on-next-week on-today today-date-str on-export)
+          ,(render-week-header ws on-prev-week on-next-week on-today on-export)
           ;; Person legend + capacity bar
           ,@(if (null? people) '()
                 (list `(div (@ (class "cal-toolbar"))
                             ,(render-person-legend people on-toggle-person)
                             ,(render-capacity-bar filtered-events availability
                                                   people on-toggle-avail-editor))))
-          ;; All-day events strip
-          ,(render-allday-strip week-dates allday-events on-event-click)
-          ;; Main body: intents sidebar + grid + optional detail panel
+          ;; Main body: intents sidebar + (day headers + allday + grid) + detail panel
           (div (@ (class "cal-body"))
                ;; Unscheduled intents sidebar (when in org mode)
                ,@(if (null? unscheduled-intents) '()
                      (list (render-intents-sidebar
                             unscheduled-intents on-select-intent
                             selected-intent-id)))
-               ;; Week grid
-               (div (@ (class "cal-grid-wrapper") (id "cal-grid-wrap"))
+               ;; Grid column: headers + allday + scrollable grid
+               (div (@ (class "cal-grid-col"))
+                    ;; Day headers (aligned with grid columns)
+                    ,(render-day-headers ws today-date-str)
+                    ;; All-day events strip
+                    ,(render-allday-strip week-dates allday-events on-event-click)
+                    ;; Scrollable grid
+                    (div (@ (class "cal-grid-wrapper") (id "cal-grid-wrap"))
                     (div (@ (class "cal-grid"))
                          ;; Time column
                          ,(render-time-column)
@@ -1140,7 +1148,7 @@
                                                        on-slot-click on-event-click
                                                        on-cycle-status
                                                        day-time-line is-today stop-prop)))
-                                (list 0 1 2 3 4 5 6))))
+                                (list 0 1 2 3 4 5 6)))))
                ;; Detail panel (right sidebar)
                ,@(if selected-event
                      (list (render-event-detail-panel

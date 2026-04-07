@@ -1146,10 +1146,12 @@
        ($ ps 'get-commitment "c-deliver-glide"))
 
     ;; Record the fulfilling event (at 09:00, due is 10:00 → on time)
+    ;; Use #f for resource-inventoried-as to avoid double-decrementing r-sorted-soma
+    ;; (Section G already moved the actual resource; this just links fulfillment)
     ($ obs 'record-event
        (make-economic-event
          "ev-fulfill-glide" 'transfer-custody #f #f
-         "r-sorted-soma" "r-sorted-glide" "spec-sorted-produce" #f
+         #f "r-sorted-glide" "spec-sorted-produce" #f
          "agent-food-runners" "agent-glide"
          (make-measure 50 "kg") #f
          #f #f "2026-04-03T09:00:00Z" #f
@@ -1213,6 +1215,382 @@
   ;; Processes in registry survived
   (let ((procs ($ ($ food-runners3 'process-registry) 'for-plan cp-plan-id)))
     (check "critical-path processes persisted" (= 3 (length procs)))))
+
+
+;; ═════════════════════════════════════════════════════════════════════════
+;; Section M: Schedule conflicts — volunteer and van booking
+;; ═════════════════════════════════════════════════════════════════════════
+
+(display "\n=== Section M: Schedule conflicts ===\n")
+
+(with-vat vat
+  (let ((ps ($ food-runners 'plan-store)))
+    ;; Add work commitment for volunteer "alice" — pickup+sort run (1.5h)
+    ($ ps 'add-commitment
+       (make-commitment "c-work-alice-run1" 'work #f #f #f
+         #f #f #f
+         #f (make-measure 1.5 "hours")
+         "alice" "agent-food-runners"
+         #f #f #f "2026-04-03T06:00:00Z"
+         #f #f #f #f #f #f #f #f cp-plan-id #f #f))
+
+    ;; Second shift for alice — delivery (0.25h)
+    ($ ps 'add-commitment
+       (make-commitment "c-work-alice-deliver" 'work #f #f #f
+         #f #f #f
+         #f (make-measure 0.25 "hours")
+         "alice" "agent-food-runners"
+         #f #f #f "2026-04-03T07:15:00Z"
+         #f #f #f #f #f #f #f #f cp-plan-id #f #f))
+
+    ;; Van use commitment
+    ($ ps 'add-commitment
+       (make-commitment "c-use-van1-run1" 'use #f #f #f
+         "r-van-1" "spec-reefer-van" #f
+         (make-measure 1.5 "hours") #f
+         "agent-food-runners" #f
+         #f #f #f "2026-04-03T06:00:00Z"
+         #f #f #f #f #f #f #f #f cp-plan-id #f #f))
+
+    ;; Query alice's effort on April 3
+    (let ((hours (committed-effort-on "alice" "2026-04-03" ps)))
+      (format #t "  alice effort on Apr 3: ~ah\n" hours)
+      (check "alice committed 1.75h on Apr 3" (approx= 1.75 hours)))
+
+    ;; Van conflict check — overlapping window (05:00-08:00 contains 06:00)
+    (let ((conflict (has-use-conflict "r-van-1"
+                      (iso-datetime->epoch "2026-04-03T05:00:00Z")
+                      (iso-datetime->epoch "2026-04-03T08:00:00Z")
+                      ps)))
+      (check "van-1 has conflict 05:00-08:00" conflict))
+
+    ;; No conflict in later window
+    (let ((conflict (has-use-conflict "r-van-1"
+                      (iso-datetime->epoch "2026-04-03T10:00:00Z")
+                      (iso-datetime->epoch "2026-04-03T12:00:00Z")
+                      ps)))
+      (check "van-1 free 10:00-12:00" (not conflict)))
+
+    ;; Schedule blocks for alice
+    (let ((blocks (schedule-blocks-for "alice" ps)))
+      (check "alice has 2 schedule blocks" (= 2 (length blocks))))
+
+    ;; Schedule blocks for van-1
+    (let ((blocks (schedule-blocks-for "r-van-1" ps)))
+      (check "van-1 has schedule block" (>= (length blocks) 1)))))
+
+
+;; ═════════════════════════════════════════════════════════════════════════
+;; Section N: Multi-run — second collection from Safeway
+;; ═════════════════════════════════════════════════════════════════════════
+
+(display "\n=== Section N: Multi-run scenario ===\n")
+
+(with-vat vat
+  (let* ((obs ($ food-runners 'observer))
+         (ps  ($ food-runners 'plan-store))
+         (bzs ($ food-runners 'buffer-zone-store))
+         (sns ($ food-runners 'snapshot-store))
+         (als ($ food-runners 'alert-store))
+         (exec-ctx `((observer . ,obs) (plan-store . ,ps)
+                     (buffer-zone-store . ,bzs) (snapshot-store . ,sns)
+                     (location-store . ,location-store))))
+
+    ;; Clear alerts for clean counting
+    ($ als 'clear)
+
+    ;; Seed received produce from Safeway (100kg, second pickup)
+    ($ obs 'seed-resource
+       (make-economic-resource "r-received-produce-2" "Received Produce Run 2"
+         #f #f #f "spec-produce" #f
+         (make-measure 100 "kg") (make-measure 100 "kg")
+         "loc-soma" #f "agent-food-runners" #f #f #f #f #f #f #f #f))
+
+    ;; Event 1: Consume raw produce (pickup from Safeway)
+    (record-and-monitor obs
+      (make-economic-event
+        "ev-consume-run2" 'consume "proc-run2-pickup" #f
+        "r-received-produce-2" #f "spec-produce" #f
+        "agent-food-runners" "agent-food-runners"
+        (make-measure 100 "kg") #f
+        #f #f "2026-04-04T06:30:00Z" #f
+        "loc-soma" #f #f
+        #f #f #f #f #f #f #f #f #f #f)
+      exec-ctx als)
+
+    (check "run2: received produce consumed"
+      (= 0 (measure-has-numerical-value
+              (economic-resource-onhand-quantity
+                ($ obs 'get-resource "r-received-produce-2")))))
+
+    ;; Event 2: Sort — produce 90kg sorted produce (90% yield)
+    ;; r-sorted-soma was at 25kg after Section G deliveries
+    (record-and-monitor obs
+      (make-economic-event
+        "ev-sort-run2" 'produce #f "proc-run2-sort"
+        "r-sorted-soma" #f "spec-sorted-produce" #f
+        "agent-food-runners" "agent-food-runners"
+        (make-measure 90 "kg") #f
+        #f #f "2026-04-04T07:15:00Z" #f
+        "loc-soma" #f #f
+        #f #f #f #f #f #f #f #f #f #f)
+      exec-ctx als)
+
+    (let ((onhand (measure-has-numerical-value
+                    (economic-resource-onhand-quantity
+                      ($ obs 'get-resource "r-sorted-soma")))))
+      (format #t "  sorted produce after run2 sort: ~akg\n" onhand)
+      (check "run2: sorted produce = 115kg (25 + 90)" (= 115 onhand)))
+
+    ;; Buffer status at 115kg: between TOY=125 and TOR=50 → yellow
+    (let* ((bz ($ bzs 'get-zone "bz-sorted-produce"))
+           (status (buffer-status 115 bz)))
+      (check "run2: 115kg = yellow zone" (eq? 'yellow (assq-ref status 'zone))))
+
+    ;; Event 3: Use van #2 for second run
+    (record-and-monitor obs
+      (make-economic-event
+        "ev-use-van2" 'use #f #f
+        "r-van-2" #f "spec-reefer-van" #f
+        "agent-food-runners" "agent-food-runners"
+        (make-measure 1.5 "hours") #f
+        #f #f "2026-04-04T06:00:00Z" #f
+        "loc-soma" #f #f
+        #f #f #f #f #f #f #f #f #f #f)
+      exec-ctx als)
+
+    ;; 'use action is no-effect on onhand (VF spec) — it logs usage, not consumption
+    ;; Verify the event was recorded by checking events-for-resource
+    (let ((van-events ($ obs 'events-for-resource "r-van-2")))
+      (check "van-2 use event recorded" (pair? van-events)))
+
+    ;; Event 4: Volunteer hours consumed
+    (record-and-monitor obs
+      (make-economic-event
+        "ev-work-vol-run2" 'work #f #f
+        "r-volunteers" #f "spec-volunteer-hours" #f
+        "agent-food-runners" "agent-food-runners"
+        (make-measure 1.5 "hours") #f
+        #f #f "2026-04-04T06:00:00Z" #f
+        "loc-soma" #f #f
+        #f #f #f #f #f #f #f #f #f #f)
+      exec-ctx als)
+
+    ;; 'work action is also no-effect on onhand — verify event recorded
+    (let ((vol-events ($ obs 'events-for-resource "r-volunteers")))
+      (check "volunteer work event recorded" (pair? vol-events)))
+
+    ;; Event 5: Deliver 90kg to Mission Meals
+    ($ obs 'seed-resource
+       (make-economic-resource "r-sorted-mission-2" "Sorted Produce (Mission Meals)"
+         #f #f #f "spec-sorted-produce" #f
+         (make-measure 0 "kg") (make-measure 0 "kg")
+         "loc-mission" #f "agent-mission-meals" #f #f #f #f #f #f #f #f))
+
+    (record-and-monitor obs
+      (make-economic-event
+        "ev-deliver-mission-run2" 'transfer-custody #f #f
+        "r-sorted-soma" "r-sorted-mission-2" "spec-sorted-produce" #f
+        "agent-food-runners" "agent-mission-meals"
+        (make-measure 90 "kg") #f
+        #f #f "2026-04-04T08:00:00Z" #f
+        "loc-soma" "loc-mission" #f
+        #f #f #f #f #f #f #f #f #f #f)
+      exec-ctx als)
+
+    (check "Mission Meals received 90kg"
+      (= 90 (measure-has-numerical-value
+               (economic-resource-onhand-quantity
+                 ($ obs 'get-resource "r-sorted-mission-2")))))
+
+    (let ((onhand (measure-has-numerical-value
+                    (economic-resource-onhand-quantity
+                      ($ obs 'get-resource "r-sorted-soma")))))
+      (check "sorted produce drained to 25kg after run2" (= 25 onhand)))
+
+    ;; Buffer-status alert should fire (25kg < TOR=50 = red zone)
+    (let ((red-alerts (filter (lambda (a) (eq? 'red (assq-ref a 'zone)))
+                              ($ als 'of-kind 'buffer-status))))
+      (check "run2: red-zone alert generated" (pair? red-alerts)))))
+
+
+;; ═════════════════════════════════════════════════════════════════════════
+;; Section O: Reactive replanning — alert triggers replenishment
+;; ═════════════════════════════════════════════════════════════════════════
+
+(display "\n=== Section O: Reactive replanning ===\n")
+
+(with-vat vat
+  (let* ((als ($ food-runners 'alert-store))
+         (ps  ($ food-runners 'plan-store))
+         (obs ($ food-runners 'observer))
+         (rs  ($ food-runners 'recipe-store))
+         (bzs ($ food-runners 'buffer-zone-store)))
+
+    ;; Read the red-zone alert
+    (let ((red-alerts (filter (lambda (a) (eq? 'red (assq-ref a 'zone)))
+                              ($ als 'of-kind 'buffer-status))))
+      (check "red-zone alert exists for replanning" (pair? red-alerts))
+
+      ;; Derive replenishment demand: TOY(125) - onhand(25) = 100kg
+      (let* ((alert (car red-alerts))
+             (shortfall (- (assq-ref alert 'toy) (assq-ref alert 'onhand))))
+        (check "shortfall is 100kg" (= 100 shortfall))
+
+        ;; Post a replenishment intent triggered by the alert
+        ($ ps 'add-intent
+           (make-intent "i-fr-replan-1" 'produce
+             "Replenishment triggered by buffer alert" #f #f #f #f #f
+             "spec-sorted-produce" #f
+             (make-measure shortfall "kg") #f #f #f
+             #f "agent-food-runners"
+             #f #f #f "2026-04-05T06:00:00Z"
+             "loc-soma" #f #f #f #f #f #f #f))
+
+        ;; Verify the intent was stored
+        (let ((intent ($ ps 'get-intent "i-fr-replan-1")))
+          (check "replenishment intent created" (intent? intent))
+          (check "intent requests 100kg sorted produce"
+            (= shortfall (measure-has-numerical-value
+                           (intent-resource-quantity intent)))))
+
+        ;; The reactive loop is: monitor → alert → derive shortfall → post intent.
+        ;; In a live system, plan-for-unit would fire next on this intent.
+        ;; Verify the recipe exists to fulfill it.
+        (let ((recipe ($ rs 'recipe-for-output "spec-sorted-produce")))
+          (check "recipe exists to fulfill replenishment" (and recipe #t)))))))
+
+
+;; ═════════════════════════════════════════════════════════════════════════
+;; Section P: Recipient-side buffers — GLIDE manages its own inventory
+;; ═════════════════════════════════════════════════════════════════════════
+
+(display "\n=== Section P: Recipient-side buffers ===\n")
+
+(with-vat vat
+  (let ((bzs ($ glide 'buffer-zone-store))
+        (obs ($ glide 'observer)))
+
+    ;; Buffer zone for GLIDE: TOR=10, TOY=25, TOG=50
+    ($ bzs 'add-zone
+       (make-buffer-zone
+         "bz-glide-sorted" "spec-sorted-produce" "bp-perishable" 'replenished
+         "loc-tenderloin" #f #f #f #f
+         10 "kg" #f #f #f #f #f #f #f #f
+         #f 1
+         5 "kg" 1
+         #f #f
+         #f #f
+         10 25 50
+         5 #f #f
+         #f #f #f #f #f
+         "2026-04-01T00:00:00Z"))
+
+    ;; Seed sorted produce inventory at GLIDE (50kg from Section G delivery)
+    ($ obs 'seed-resource
+       (make-economic-resource "r-glide-sorted" "GLIDE Sorted Produce"
+         #f #f #f "spec-sorted-produce" #f
+         (make-measure 50 "kg") (make-measure 50 "kg")
+         "loc-tenderloin" #f "agent-glide" #f #f #f #f #f #f #f #f))
+
+    ;; 50kg = TOG boundary → green zone
+    (let* ((bz ($ bzs 'get-zone "bz-glide-sorted"))
+           (status (buffer-status 50 bz)))
+      (check "GLIDE 50kg = green zone" (eq? 'green (assq-ref status 'zone))))
+
+    ;; Simulate partial consumption: 35kg used for daily kitchen → 15kg remaining
+    (let* ((bz ($ bzs 'get-zone "bz-glide-sorted"))
+           (status (buffer-status 15 bz)))
+      (check "GLIDE 15kg = yellow zone" (eq? 'yellow (assq-ref status 'zone))))
+
+    ;; 5kg → red zone (below TOR=10)
+    (let* ((bz ($ bzs 'get-zone "bz-glide-sorted"))
+           (status (buffer-status 5 bz)))
+      (check "GLIDE 5kg = red zone" (eq? 'red (assq-ref status 'zone))))
+
+    ;; Tipping point breach: bz has tipping-point=5
+    (let* ((bz ($ bzs 'get-zone "bz-glide-sorted"))
+           (status (buffer-status 3 bz)))
+      (check "GLIDE 3kg breaches tipping point"
+        (assq-ref status 'tipping-point-breached)))
+
+    ;; find-zone works with location store
+    (check "GLIDE find-zone resolves"
+      (buffer-zone? ($ bzs 'find-zone "spec-sorted-produce" "loc-tenderloin" location-store)))
+
+    ;; Cross-scope isolation: Food Runners doesn't see GLIDE's zone
+    (check "Food Runners doesn't have GLIDE's zone"
+      (not ($ ($ food-runners 'buffer-zone-store) 'get-zone "bz-glide-sorted")))))
+
+
+;; ═════════════════════════════════════════════════════════════════════════
+;; Section Q: Multi-donor routing — shortest paths between locations
+;; ═════════════════════════════════════════════════════════════════════════
+
+(display "\n=== Section Q: Multi-donor routing ===\n")
+
+;; Haversine distance (km) between two (lat, lon) pairs
+(define (haversine lat1 lon1 lat2 lon2)
+  (let* ((R 6371)
+         (d->r (lambda (d) (* d (/ 3.141592653589793 180))))
+         (dlat (d->r (- lat2 lat1)))
+         (dlon (d->r (- lon2 lon1)))
+         (a (+ (* (sin (/ dlat 2)) (sin (/ dlat 2)))
+               (* (cos (d->r lat1)) (cos (d->r lat2))
+                  (sin (/ dlon 2)) (sin (/ dlon 2)))))
+         (c (* 2 (atan (sqrt a) (sqrt (- 1 a))))))
+    (* R c)))
+
+;; Extract coordinates inside vat
+(define route-coords
+  (with-vat vat
+    (list (cons "loc-soma"     ($ location-store 'resolve-coordinates "loc-soma"))
+          (cons "loc-bayview"  ($ location-store 'resolve-coordinates "loc-bayview"))
+          (cons "loc-sunset"   ($ location-store 'resolve-coordinates "loc-sunset"))
+          (cons "loc-tenderloin" ($ location-store 'resolve-coordinates "loc-tenderloin"))
+          (cons "loc-mission"  ($ location-store 'resolve-coordinates "loc-mission")))))
+
+;; Dijkstra uses mutable hash tables — must run outside vat
+(let* ((get-lat (lambda (id) (car (assoc-ref route-coords id))))
+       (get-lon (lambda (id) (cdr (assoc-ref route-coords id))))
+       (dist (lambda (a b) (haversine (get-lat a) (get-lon a) (get-lat b) (get-lon b))))
+       ;; Key distances
+       (d-soma-bayview (dist "loc-soma" "loc-bayview"))
+       (d-soma-sunset (dist "loc-soma" "loc-sunset"))
+       (d-bayview-sunset (dist "loc-bayview" "loc-sunset")))
+
+  (format #t "  SoMa → Bayview: ~,1fkm\n" d-soma-bayview)
+  (format #t "  SoMa → Sunset:  ~,1fkm\n" d-soma-sunset)
+  (format #t "  Bayview → Sunset: ~,1fkm\n" d-bayview-sunset)
+
+  ;; Bayview (SF Market) is closer to SoMa (Food Runners HQ) than Sunset (Safeway)
+  (check "Bayview closer to SoMa than Sunset" (< d-soma-bayview d-soma-sunset))
+
+  ;; Build graph and run Dijkstra from SoMa
+  (let* ((nodes '("loc-soma" "loc-bayview" "loc-sunset"))
+         (edges (list (list "loc-soma" "loc-bayview" d-soma-bayview)
+                      (list "loc-bayview" "loc-soma" d-soma-bayview)
+                      (list "loc-soma" "loc-sunset" d-soma-sunset)
+                      (list "loc-sunset" "loc-soma" d-soma-sunset)
+                      (list "loc-bayview" "loc-sunset" d-bayview-sunset)
+                      (list "loc-sunset" "loc-bayview" d-bayview-sunset)))
+         (result (dijkstra nodes edges "loc-soma")))
+
+    ;; Shortest path to Bayview should be direct
+    (let ((path (reconstruct-path "loc-bayview" result)))
+      (check "shortest to Bayview is direct" (= 2 (length path)))
+      (check "path starts at SoMa" (equal? "loc-soma" (car path))))
+
+    ;; Shortest path to Sunset should also be direct (triangle inequality)
+    (let ((path (reconstruct-path "loc-sunset" result)))
+      (check "shortest to Sunset is direct" (= 2 (length path)))))
+
+  ;; Optimal pickup order: SoMa → Bayview → Sunset is shorter than SoMa → Sunset → Bayview
+  (let ((route-a (+ d-soma-bayview d-bayview-sunset))   ;; SoMa → Bayview → Sunset
+        (route-b (+ d-soma-sunset d-bayview-sunset)))    ;; SoMa → Sunset → Bayview
+    (format #t "  Route A (SoMa→Bayview→Sunset): ~,1fkm\n" route-a)
+    (format #t "  Route B (SoMa→Sunset→Bayview): ~,1fkm\n" route-b)
+    (check "Bayview-first route is shorter" (< route-a route-b))))
 
 
 ;; ═════════════════════════════════════════════════════════════════════════

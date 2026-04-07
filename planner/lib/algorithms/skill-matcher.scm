@@ -28,7 +28,7 @@
            (if (and scope-id agent-store)
                (let ((rels ($ agent-store 'relationships-in-scope scope-id)))
                  (delete-duplicates
-                   (map agent-relationship-subject (hashmap-values rels))))
+                   (map agent-relationship-subject rels)))
                #f))
 
          ;; Build (flow . candidates) pairs
