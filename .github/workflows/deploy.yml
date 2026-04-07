@@ -46,6 +46,19 @@ jobs:
             -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes" \
             ./ deploy@SERVER_IP:/home/deploy/playnet-deploy/
 
+      - name: Update Guix on server
+        run: |
+          # The server's guix must be recent enough to have the Guile
+          # bindings that python-rns needs (make-custom-textual-input-port).
+          # Pull using the pinned channels so the server matches our config.
+          ssh -i ~/.ssh/deploy_key \
+            -o StrictHostKeyChecking=yes \
+            -o ServerAliveInterval=10 \
+            -o ServerAliveCountMax=60 \
+            deploy@SERVER_IP \
+            'sudo guix pull -C /home/deploy/playnet-deploy/deploy/guix/channels.scm --verbosity=1'
+        timeout-minutes: 60
+
       - name: Deploy via remote reconfigure
         run: |
           # guix system reconfigure evaluates the config file inside an
@@ -58,7 +71,7 @@ jobs:
             -o ServerAliveInterval=10 \
             -o ServerAliveCountMax=60 \
             deploy@SERVER_IP \
-            'sudo guix system reconfigure \
+            'sudo /root/.config/guix/current/bin/guix system reconfigure \
               -L /home/deploy/playnet-deploy/deploy/guix \
               -e "(begin
                     (add-to-load-path \"/home/deploy/playnet-deploy/deploy/guix\")
