@@ -71,7 +71,7 @@ jobs:
             -o ServerAliveInterval=10 \
             -o ServerAliveCountMax=60 \
             deploy@SERVER_IP \
-            'sudo guix system reconfigure \
+            'sudo /root/.config/guix/current/bin/guix system reconfigure \
               -L /home/deploy/playnet-deploy/deploy/guix \
               -e "(begin
                     (add-to-load-path \"/home/deploy/playnet-deploy/deploy/guix\")
