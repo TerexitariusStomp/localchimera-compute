@@ -27,11 +27,10 @@
              (playnet wisp)
              (playnet ddmrp)
              (playnet ui components)
-             (playnet ui dashboard)
-             (playnet ui charts)
              (playnet ui federation)
              (playnet ui network)
              (playnet ui calendar)
+             (playnet ui inventory)
              (srfi srfi-11))
 
 
@@ -824,7 +823,7 @@
 (define *orgs* '())
 (define *pending-joins* '()) ;; alist: (joiner-name target-name sub-unsealer msg-id identity)
 (define *mode* 'outer)
-(define *view* 'home)  ;; 'home, 'dashboard, 'federation, or 'calendar
+(define *view* 'home)  ;; 'home, 'federation, 'calendar, or 'inventory
 (define *current-org-name* #f)
 
 ;;; ── Calendar state ──────────────────────────────────────────────────────────
@@ -853,6 +852,19 @@
 (define *cal-snapshot* #f)
 (define *cal-refresh-inflight?* #f)
 (define *cal-process-context* '())
+
+;;; ── Inventory tab state ─────────────────────────────────────────────────────
+;;; The inventory tab piggy-backs on *cal-scope* / *cal-plan* / *cal-acting-as*
+;;; so switching between calendar and inventory keeps the same scope context.
+;;; Selection / drill-down state is local to this tab.
+(define *inv-snapshot* #f)            ;; latest inventory-snapshot reply
+(define *inv-detail-cache* '())       ;; alist: rid -> resource-detail reply
+(define *inv-selected-spec* #f)       ;; spec-id string or #f
+(define *inv-selected-resource* #f)   ;; rid string or #f
+(define *inv-breadcrumb* '())         ;; list of rid strings (drill stack, oldest first)
+(define *inv-active-category* #f)     ;; category URI or #f (= All)
+(define *inv-custody-expanded?* #f)   ;; history collapse toggle
+(define *inv-refresh-inflight?* #f)
 (define *vat* #f)
 (define *org* #f)
 
@@ -1210,12 +1222,25 @@
   (set! *log* (append *log* lines)))
 
 (define (current-prompt)
+  ;; Inner-mode prompt looks like "my-org[genesis]> ".
+  ;;
+  ;; The expressor lookup is a synchronous `$` call into the org's vat,
+  ;; so it must be wrapped in `with-vat *vat*`. But render can be triggered
+  ;; from another vat (e.g. ^user-inbox in *ocapn-vat* receives a
+  ;; presence-update and calls refresh!), and `with-vat` across vats is
+  ;; ASYNC — it returns a Goblins promise, not the value. Passing that
+  ;; promise to `symbol->string` used to crash. Guard with a symbol? check;
+  ;; show "?" while the cross-vat call is in flight.
   (if (eq? *mode* 'outer)
       "playnet> "
-      (string-append *current-org-name* "["
-        (symbol->string
-          (or (with-vat *vat* ($ *org* 'expressor-name ($ *org* 'current-expressor))) '?))
-        "]> ")))
+      (let ((result (with-vat *vat*
+                      ($ *org* 'expressor-name ($ *org* 'current-expressor)))))
+        (string-append *current-org-name* "["
+          (cond
+            ((symbol? result) (symbol->string result))
+            ((string? result) result)
+            (else "?"))
+          "]> "))))
 
 ;;; ── History ring ──────────────────────────────────────────────────────────
 
@@ -2647,11 +2672,6 @@
                               (begin (do-exit!) (set! *view* 'home) (refresh!) (scroll-to-bottom!))
                               (begin (set! *view* 'home) (refresh!))))))
              "playnet")
-        (div (@ (class ,(string-append "tab" (if (and (eq? *mode* 'outer) (eq? *view* 'dashboard)) " tab-active" "")))
-                (click ,(lambda (e)
-                          (when (eq? *mode* 'inner) (do-exit!))
-                          (set! *view* 'dashboard) (refresh!))))
-             "dashboard")
         (div (@ (class ,(string-append "tab" (if (and (eq? *mode* 'outer) (eq? *view* 'federation)) " tab-active" "")))
                 (click ,(lambda (e)
                           (when (eq? *mode* 'inner) (do-exit!))
@@ -2674,6 +2694,16 @@
                           (let ((w (get-element-by-id "cal-grid-wrap")))
                             (when w (set-scroll-top! w 480))))))
              "calendar")
+        (div (@ (class ,(string-append "tab" (if (and (eq? *mode* 'outer) (eq? *view* 'inventory)) " tab-active" "")))
+                (click ,(lambda (e)
+                          (when (eq? *mode* 'inner) (do-exit!))
+                          (set! *view* 'inventory)
+                          ;; Inventory shares scope/plan state with the
+                          ;; calendar tab. Make sure the scope list is
+                          ;; populated and fire an inventory snapshot.
+                          (refresh-inv-from-planner!)
+                          (refresh!))))
+             "inventory")
         ,@(map (lambda (org-entry)
                  (let* ((name (org-entry-name org-entry))
                         (active? (and (eq? *mode* 'inner) *current-org-name*
@@ -2715,75 +2745,6 @@
             `(div (@ (class "ui-widgets")) ,@widgets)
             `(div)))
       `(div)))
-
-;;; ── Dashboard view ──────────────────────────────────────────────────────────
-
-(define *sample-planning-rows*
-  (list
-   `((spec-id . "flour") (spec-name . "Flour") (open-supply . 50)
-     (onhand . 35) (qualified-demand . 20) (nfp . 65)
-     (zone . green) (priority . 0.72) (recommended-qty . #f) (action . none))
-   `((spec-id . "sugar") (spec-name . "Sugar") (open-supply . 10)
-     (onhand . 8) (qualified-demand . 25) (nfp . -7)
-     (zone . red) (priority . -0.12) (recommended-qty . 60) (action . replenish))
-   `((spec-id . "butter") (spec-name . "Butter") (open-supply . 20)
-     (onhand . 18) (qualified-demand . 15) (nfp . 23)
-     (zone . yellow) (priority . 0.38) (recommended-qty . 40) (action . replenish))))
-
-(define *sample-buffer-entries*
-  (list
-   `((buffer-zone . ((tor . 15) (toy . 30) (tog . 50) (dlt-days . 5)))
-     (onhand . 35) (spec-name . "Flour"))
-   `((buffer-zone . ((tor . 10) (toy . 25) (tog . 40) (dlt-days . 3)))
-     (onhand . 8) (spec-name . "Sugar"))
-   `((buffer-zone . ((tor . 12) (toy . 28) (tog . 45) (dlt-days . 4)))
-     (onhand . 42) (spec-name . "Butter"))))
-
-(define *sample-signal-entries*
-  (list
-   `((signal-id . "sig-abc123") (spec-id . "sugar-spec") (recommended-qty . 60)
-     (approved-qty . 55) (fulfilled . 30) (due-date . "2026-04-05")
-     (late . #f) (over-fulfilled . #f) (qty-diff . -5))
-   `((signal-id . "sig-def456") (spec-id . "flour-spec") (recommended-qty . 40)
-     (approved-qty . 40) (fulfilled . 40) (due-date . "2026-03-28")
-     (late . #t) (over-fulfilled . #f) (qty-diff . 0))))
-
-(define *sample-exceptions*
-  (list
-   `((order-id . "ord-98765ab") (date . "2026-03-30") (domain . execution)
-     (duration . 2) (due-date . "2026-04-01"))
-   `((order-id . "ord-12345cd") (date . "2026-03-29") (domain . planning)
-     (duration . #f) (due-date . #f))))
-
-(define *sample-health-entries*
-  (let loop ((i 0) (acc '()))
-    (if (= i 30) (reverse acc)
-        (let* ((pct (+ 30 (* 40 (/ (+ 1 (sin (* i 0.3))) 2))))
-               (zone (cond ((<= pct 33) 'red)
-                           ((<= pct 66) 'yellow)
-                           ((<= pct 100) 'green)
-                           (else 'excess)))
-               (date (string-append "2026-03-" (if (< (+ i 1) 10)
-                                                    (string-append "0" (number->string (+ i 1)))
-                                                    (number->string (+ i 1))))))
-          (loop (+ i 1) (cons `((date . ,date) (pct . ,pct) (zone . ,zone)) acc))))))
-
-(define (render-dashboard)
-  "Render the DDMRP dashboard view with sample data."
-  `(div (@ (class "dashboard-view"))
-     (div (@ (class "dashboard-header"))
-       (span (@ (class "dashboard-title")) "DDOM Dashboard")
-       (span (@ (class "dashboard-subtitle")) "Demand Driven Operating Model"))
-     ,(ddom-dashboard
-       #:planning-rows *sample-planning-rows*
-       #:signal-entries *sample-signal-entries*
-       #:buffer-entries *sample-buffer-entries*
-       #:exception-entries *sample-exceptions*
-       #:today-str "2026-03-31")
-     ,(buffer-health-run-chart
-       *sample-health-entries*
-       '((tor . 15) (toy . 30) (tog . 50))
-       #:title "Buffer Health — Flour (30 days)")))
 
 ;;; ── Federation view sample data ──────────────────────────────────────────────
 
@@ -3229,6 +3190,53 @@
                   (or (assq-ref *cal-snapshot* 'intents) '()))
            (%find (lambda (c) (equal? (alist-ref c 'id) iid))
                   (or (assq-ref *cal-snapshot* 'commitments) '())))))
+
+(define (refresh-inv-from-planner!)
+  "Pull a fresh inventory snapshot for the current scope+plan and
+   re-render on reply. Mirrors refresh-cal-from-planner! but writes to
+   *inv-snapshot* and uses the inventory-snapshot OCapN method.
+
+   Side-effect on success: clears *inv-detail-cache* so cards opened
+   from a stale snapshot don't show stale custody data."
+  (cond
+    ((not *planner-cap*)
+     (when *lobby*
+       (with-vat *ocapn-vat*
+         (on (<- *lobby* 'planner)
+             (lambda (cap)
+               (set! *planner-cap* cap)
+               (refresh-inv-from-planner!))
+             #:catch (lambda (err) #f)))))
+    (*inv-refresh-inflight?* #f)
+    ((or (null? *cal-scope-list*) (not *cal-scope*))
+     (planner-fetch-scope-list!))
+    (else
+     (set! *inv-refresh-inflight?* #t)
+     (with-vat *ocapn-vat*
+       (on (<- *planner-cap* 'inventory-snapshot *cal-scope* *cal-plan*)
+           (lambda (snap)
+             (set! *inv-refresh-inflight?* #f)
+             (set! *inv-snapshot* snap)
+             (set! *inv-detail-cache* '())
+             (refresh!))
+           #:catch
+           (lambda (err)
+             (set! *inv-refresh-inflight?* #f)
+             (refresh!)))))))
+
+(define (planner-fetch-resource-detail! rid)
+  "Pull and cache the resource-detail for RID. No-op when cap is
+   unavailable, scope is unset, or the rid is already cached."
+  (when (and *planner-cap* *cal-scope* rid
+             (not (assoc rid *inv-detail-cache*)))
+    (with-vat *ocapn-vat*
+      (on (<- *planner-cap* 'resource-detail *cal-scope* rid)
+          (lambda (detail)
+            (when detail
+              (set! *inv-detail-cache*
+                    (cons (cons rid detail) *inv-detail-cache*))
+              (refresh!)))
+          #:catch (lambda (err) #f)))))
 
 (define (planner-fetch-process-context! proc-id)
   "Pull and cache process-context for PROC-ID. No-op if already cached
@@ -3758,18 +3766,150 @@
        (lambda (arg)
          (planner-decline! (alist-ref arg 'id ""))))))
 
+(define (render-inventory-view)
+  "Render the inventory tab. Reads only — mutations live in the click
+   callbacks below. Inventory shares *cal-scope* / *cal-plan* /
+   *cal-acting-as* with the calendar so switching tabs preserves the
+   scope context the user is currently working in."
+  (let* ((snap *inv-snapshot*)
+         (plans (or (and snap (assq-ref snap 'plans))
+                    (and *cal-snapshot* (assq-ref *cal-snapshot* 'plans))
+                    '()))
+         (members (or (and *cal-snapshot* (assq-ref *cal-snapshot* 'members))
+                      '()))
+         (detail (and *inv-selected-resource*
+                      (let ((p (assoc *inv-selected-resource*
+                                      *inv-detail-cache*)))
+                        (and p (cdr p))))))
+    (inventory-page
+     #:snapshot snap
+     #:scopes *cal-scope-list*
+     #:current-scope *cal-scope*
+     #:plans plans
+     #:current-plan *cal-plan*
+     #:members members
+     #:current-acting-as *cal-acting-as*
+     #:selected-spec-id *inv-selected-spec*
+     #:selected-resource-id *inv-selected-resource*
+     #:detail detail
+     #:breadcrumb *inv-breadcrumb*
+     #:custody-expanded? *inv-custody-expanded?*
+     #:active-category *inv-active-category*
+     #:on-select-scope
+       (lambda (e)
+         (let ((v (event-target-value e)))
+           (set! *cal-scope* (if (string=? v "") #f v))
+           (set! *cal-plan* #f)
+           (set! *cal-acting-as* #f)
+           (set! *inv-selected-spec* #f)
+           (set! *inv-selected-resource* #f)
+           (set! *inv-breadcrumb* '())
+           (set! *inv-detail-cache* '())
+           (set! *inv-active-category* #f)
+           ;; Keep the calendar in sync with the inventory's scope choice.
+           (refresh-cal-from-planner!)
+           (refresh-inv-from-planner!)))
+     #:on-select-plan
+       (lambda (e)
+         (let ((v (event-target-value e)))
+           (set! *cal-plan* (if (string=? v "") #f v))
+           (set! *inv-selected-spec* #f)
+           (set! *inv-selected-resource* #f)
+           (set! *inv-breadcrumb* '())
+           (set! *inv-detail-cache* '())
+           (refresh-inv-from-planner!)))
+     #:on-select-acting-as
+       (lambda (e)
+         (let ((v (event-target-value e)))
+           (set! *cal-acting-as* (if (string=? v "") #f v))
+           (refresh!)))
+     #:on-select-category
+       (lambda (uri)
+         (set! *inv-active-category* uri)
+         ;; Drop a stale spec selection if it's no longer in the filter.
+         (when *inv-selected-spec*
+           (let* ((specs (or (and *inv-snapshot*
+                                  (assq-ref *inv-snapshot* 'specs))
+                             '()))
+                  (sel (%find (lambda (s)
+                                (equal? (assq-ref s 'id) *inv-selected-spec*))
+                              specs))
+                  (cats (and sel (or (assq-ref sel 'categories) '()))))
+             (unless (or (not uri)
+                         (and cats (member uri cats)))
+               (set! *inv-selected-spec* #f)
+               (set! *inv-selected-resource* #f)
+               (set! *inv-breadcrumb* '()))))
+         (refresh!))
+     #:on-select-spec
+       (lambda (sid)
+         (set! *inv-selected-spec* sid)
+         (set! *inv-selected-resource* #f)
+         (set! *inv-breadcrumb* '())
+         (refresh!))
+     #:on-select-resource
+       (lambda (rid)
+         (set! *inv-selected-resource* rid)
+         ;; Drill stack: append, don't reset, so children push deeper.
+         (unless (and (pair? *inv-breadcrumb*)
+                      (equal? (car (reverse *inv-breadcrumb*)) rid))
+           (set! *inv-breadcrumb* (append *inv-breadcrumb* (list rid))))
+         (set! *inv-custody-expanded?* #f)
+         (planner-fetch-resource-detail! rid)
+         (refresh!))
+     #:on-pop-breadcrumb
+       (lambda (rid)
+         (let loop ((rest *inv-breadcrumb*) (acc '()))
+           (cond
+             ((null? rest)
+              (set! *inv-breadcrumb* (reverse acc)))
+             ((equal? (car rest) rid)
+              (set! *inv-breadcrumb* (reverse (cons rid acc)))
+              (set! *inv-selected-resource* rid)
+              (planner-fetch-resource-detail! rid))
+             (else
+              (loop (cdr rest) (cons (car rest) acc)))))
+         (set! *inv-custody-expanded?* #f)
+         (refresh!))
+     #:on-toggle-custody
+       (lambda ()
+         (set! *inv-custody-expanded?* (not *inv-custody-expanded?*))
+         (refresh!))
+     #:on-clear-selection
+       (lambda ()
+         (cond
+           (*inv-selected-resource*
+            ;; Pop one level back, or close detail if at top
+            (set! *inv-breadcrumb*
+                  (if (pair? *inv-breadcrumb*)
+                      (reverse (cdr (reverse *inv-breadcrumb*)))
+                      '()))
+            (set! *inv-selected-resource*
+                  (and (pair? *inv-breadcrumb*)
+                       (car (reverse *inv-breadcrumb*))))
+            (when *inv-selected-resource*
+              (planner-fetch-resource-detail! *inv-selected-resource*)))
+           (else
+            (set! *inv-selected-spec* #f)))
+         (set! *inv-custody-expanded?* #f)
+         (refresh!)))))
+
 (define (render)
   (if (eq? *mode* 'outer)
-      ;; Outer mode: single column, no IDE chrome
+      ;; Outer mode: single column, no IDE chrome.
+      ;; The playnet REPL strip (log + prompt) only renders on the
+      ;; "playnet" tab (*view* = 'home). Dashboard / federation /
+      ;; calendar / inventory get clean full-height views. Org tabs
+      ;; (inner mode below) have their own REPL per org.
       `(div (@ (class "outer"))
             ,(render-tab-bar)
             ,(render-action-bar)
             ,(cond
-              ((eq? *view* 'dashboard) (render-dashboard))
               ((eq? *view* 'federation) (render-federation-view))
               ((eq? *view* 'calendar) (render-calendar-view))
+              ((eq? *view* 'inventory) (render-inventory-view))
               (else (render-homepage)))
-            ,(render-repl))
+            ,@(if (eq? *view* 'home) (list (render-repl)) '()))
       ;; Inner mode: full IDE with sidebar + code viewer
       `(div (@ (class "ide"))
             ,(render-sidebar)

@@ -1,10 +1,35 @@
-;;; federation.scm — Recursive streamed federation (relational/lazy)
+;;; federation.scm — Generic recursive streamed federation substrate
 ;;;
-;;; This is the relational counterpart to plan-federation.scm. Both do
-;;; hierarchical scope planning + lateral matching + cross-scope
-;;; retraction, but they use different substrates and have different
-;;; capability profiles. See docs/federation-comparison.md for a full
-;;; side-by-side.
+;;; This file is the GENERIC SUBSTRATE for hierarchical scope planning.
+;;; It is intentionally agnostic about what kind of planner runs at the
+;;; leaves — different leaf planners (single-pass relational, multi-pass
+;;; DDMRP, custom strategies) plug in via the #:leaf-planner parameter.
+;;;
+;;; Architecture:
+;;;
+;;;   ┌──────────────────────────────────────────────────────┐
+;;;   │ federation.scm (this file) — generic substrate       │
+;;;   │   • protocol: scope → lazy stream of result          │
+;;;   │   • recursion: same shape at every level             │
+;;;   │   • cross-scope: lateral match + retraction          │
+;;;   │   • optimization: harmony (or any objective)         │
+;;;   └────────┬─────────────────────────────────────────────┘
+;;;            │
+;;;            │ #:leaf-planner
+;;;            ▼
+;;;   ┌────────────────────────────┬─────────────────────────┐
+;;;   │ default-relational         │ (future) ddmrp          │
+;;;   │ leaf-planner               │ leaf-planner            │
+;;;   │ (built-in, uses plan-o)    │ (wraps plan-for-unit)   │
+;;;   └────────────────────────────┴─────────────────────────┘
+;;;
+;;; The federation substrate doesn't know or care which leaf planner
+;;; runs at the bottom. It composes whatever the leaves produce, as
+;;; long as those leaves emit federation-result alists conforming to
+;;; the protocol below.
+;;;
+;;; This is the relational/lazy counterpart to plan-federation.scm.
+;;; See docs/federation-comparison.md for a full side-by-side.
 ;;;
 ;;; Protocol — same at every level:
 ;;;
@@ -76,7 +101,82 @@
 ;;; for options.
 
 (use-modules (playnet kanren-constraints)
-             (srfi srfi-1))
+             (srfi srfi-1)
+             (srfi srfi-9))
+
+
+;;; ══════════════════════════════════════════════════════════════════════════════
+;;; Federation config
+;;; ══════════════════════════════════════════════════════════════════════════════
+;;;
+;;; A single record carries all the parameters that flow through the
+;;; federation substrate, instead of threading multiple keyword args
+;;; through every function. New options become new fields, with no
+;;; signature churn across the call graph.
+;;;
+;;; Fields:
+;;;   weight-fn    — (spec-id) → weight (higher = more important)
+;;;                  Always exponential. Constructed from a level-fn at
+;;;                  the API boundary.
+;;;   leaf-planner — (scope-id ctx cfg) → lazy stream of federation-result
+;;;   max-steps    — search step bound for parent-stream interleaving
+;;;
+;;; Priority semantics: there is ONE convention — higher weight means
+;;; more important. Governance sets per-spec LEVELS (small integers,
+;;; 0-10ish); make-weight-fn from harmony.scm exponentiates levels into
+;;; weights at the API boundary. The substrate only ever sees weights.
+;;; The legacy "lower priority number = more urgent" convention from
+;;; plan-federation.scm is gone from this file.
+
+(define-record-type <federation-config>
+  (%make-federation-config weight-fn leaf-planner max-steps)
+  federation-config?
+  (weight-fn    cfg-weight-fn)
+  (leaf-planner cfg-leaf-planner)
+  (max-steps    cfg-max-steps))
+
+(define* (make-federation-config
+          #:key (level-fn #f)
+                (weight-fn #f)
+                (leaf-planner #f)  ;; resolved at use-site to avoid forward ref
+                (max-steps 50))
+  "Build a federation config. All fields default to sensible values.
+
+   LEVEL-FN is the user-facing harmony API: a function (spec-id) →
+   small integer level (0-10ish). It's exponentiated via make-weight-fn
+   to produce the actual multiplier the substrate uses. If both LEVEL-FN
+   and WEIGHT-FN are given, level-fn wins.
+
+   WEIGHT-FN is the advanced API: a function (spec-id) → already-
+   computed weight (higher = more important). Use this if you want to
+   bypass the exponentiation or use a custom scaling.
+
+   leaf-planner defaults to default-relational-leaf-planner (resolved
+   below to avoid a forward reference)."
+  (%make-federation-config (cond
+                             (level-fn (make-weight-fn level-fn))
+                             (else weight-fn))
+                           leaf-planner
+                           max-steps))
+
+(define (cfg-leaf-planner-or-default cfg)
+  "Return cfg's leaf-planner, falling back to the default if unset."
+  (or (cfg-leaf-planner cfg) default-relational-leaf-planner))
+
+
+;;; ══════════════════════════════════════════════════════════════════════════════
+;;; State-entry accessors
+;;; ══════════════════════════════════════════════════════════════════════════════
+;;;
+;;; A state entry is a list (child-id federation-result rest-stream).
+;;; These accessors give it names so the federation code reads as
+;;; structured data instead of car/cadr/caddr.
+
+(define (state-entry-id e)     (car e))
+(define (state-entry-result e) (cadr e))
+(define (state-entry-stream e) (caddr e))
+
+(define (make-state-entry id result stream) (list id result stream))
 
 
 ;;; ══════════════════════════════════════════════════════════════════════════════
@@ -105,90 +205,160 @@
 
 
 ;;; ══════════════════════════════════════════════════════════════════════════════
+;;; Leaf-planner protocol
+;;; ══════════════════════════════════════════════════════════════════════════════
+;;;
+;;; A LEAF PLANNER is a function that produces a federation-result lazy
+;;; stream for a single scope, given that scope's planning context and
+;;; the active federation config.
+;;;
+;;;   leaf-planner :: scope-id × ctx × cfg → lazy-stream of federation-result
+;;;
+;;; The cfg is the same federation-config that flows through the rest
+;;; of the substrate. Leaf planners use it to access weight-fn (for
+;;; harmony evaluation), and any future per-run options that get
+;;; added as cfg fields. They don't need to know about scope-stream,
+;;; parent-stream, or any other substrate internals.
+;;;
+;;; The federation substrate (scope-stream / parent-stream / evaluate-state /
+;;; retraction-stream) does NOT care how the planner produces its results.
+;;; It only requires that each result conform to the federation-result alist
+;;; protocol described at the top of this file.
+;;;
+;;; Built-in leaf planners:
+;;;   default-relational-leaf-planner — wraps plan-o (plan-relation.scm).
+;;;     Single-pass relational BOM explosion via miniKanren + CLP(FD).
+;;;
+;;; Future leaf planners (extension points):
+;;;   ddmrp-leaf-planner — wraps plan-for-unit (multi-pass DDMRP pipeline)
+;;;   custom-leaf-planner — anything that produces federation-results
+;;;
+;;; The federation substrate is generic: it composes leaf planners
+;;; recursively, performs cross-scope lateral matching, runs harmony-aware
+;;; retraction, and aggregates results — all without knowing what kind
+;;; of leaf planner sits at the bottom.
+;;;
+;;; Helper toolkit (for use by leaf-planner authors):
+;;;   extract-deficits, extract-surpluses, extract-retraction-candidates
+;;;     — pull federation signals out of a relational plan structure
+;;;   plan-harmony — compute weighted harmony from a plan
+;;;   stream-map-lazy — wrap a state stream as a result stream
+
+(define (default-relational-leaf-planner scope-id ctx cfg)
+  "The built-in leaf planner: runs plan-o on CTX (a plan-relation context)
+   and produces a lazy stream of federation-results. This is the relational
+   single-pass planner — see plan-relation.scm.
+
+   When CFG carries a weight-fn, harmony is used in two ways:
+
+     1. As a search-ordering signal: by-harmony-priority is passed as
+        plan-o's #:demand-order, so high-weight specs are processed first.
+        Under greedy allocation, this means essentials (high-weight) get
+        served before luxuries (low-weight) under scarcity.
+
+     2. As a post-hoc score: each federation-result carries the
+        plan's total weighted harmony for use by federation-level
+        rebalancing (advance-worst-by-harmony, retraction sort).
+
+   Returns the empty stream if CTX is #f."
+  (let ((weight-fn (cfg-weight-fn cfg)))
+    (if (not ctx)
+        '()
+        (let* ((demand-order (and weight-fn (by-harmony-priority weight-fn)))
+               (raw ((fresh (plan) (plan-o ctx plan
+                                           #:max-depth 5
+                                           #:demand-order demand-order))
+                     (empty-cstate #f))))
+          (stream-map-lazy
+            (lambda (state)
+              (relational-state->federation-result state scope-id weight-fn))
+            raw)))))
+
+(define (relational-state->federation-result state scope-id weight-fn)
+  "Convert a miniKanren cstate from plan-o into a federation-result alist.
+   Helper used by default-relational-leaf-planner; also useful for any
+   leaf-planner that runs a relational search."
+  (let* ((plan (reify-from-state state))
+         (defs (extract-deficits plan scope-id))
+         (surps (extract-surpluses plan scope-id))
+         (cands (extract-retraction-candidates plan scope-id))
+         (resid (fold (lambda (d a) (+ a (assq-ref d 'qty))) 0 defs))
+         (harmony-result (and weight-fn
+                              (plan-harmony plan #:priority-fn weight-fn)))
+         (base `((scope . ,scope-id) (plan . ,plan)
+                 (deficits . ,defs) (surpluses . ,surps)
+                 (retraction-candidates . ,cands)
+                 (residual . ,resid))))
+    (if harmony-result
+        (cons `(harmony . ,harmony-result) base)
+        base)))
+
+
+;;; ══════════════════════════════════════════════════════════════════════════════
 ;;; scope-stream — the universal protocol
 ;;; ══════════════════════════════════════════════════════════════════════════════
 
-(define* (scope-stream facts scope-id ctx-map children-of
-                       #:key (priority-fn #f) (weight-fn #f))
-  (scope-stream* facts scope-id ctx-map children-of '()
-                 #:priority-fn priority-fn #:weight-fn weight-fn))
-
-(define* (scope-stream* facts scope-id ctx-map children-of visited
-                        #:key (priority-fn #f) (weight-fn #f))
+(define* (scope-stream facts scope-id ctx-map children-of cfg
+                       #:optional (visited '()))
   "Produce a lazy stream of federation-results for SCOPE-ID.
-   VISITED guards against cycles in the scope-parent graph.
-   WEIGHT-FN is an optional (spec-id) → weight function; when provided,
-   each result carries a harmony score."
+   CFG is the federation config carrying priority-fn, weight-fn, and
+   leaf-planner. VISITED guards against cycles in the scope-parent graph
+   (defaults to empty for the top-level call)."
   (if (member scope-id visited)
       '()  ;; cycle detected — stop
       (let ((children (or (assoc-ref children-of scope-id) '()))
             (visited* (cons scope-id visited)))
         (if (null? children)
-            (leaf-stream scope-id ctx-map #:weight-fn weight-fn)
-            (parent-stream facts scope-id children ctx-map children-of visited*
-                           #:priority-fn priority-fn
-                           #:weight-fn weight-fn)))))
+            (leaf-stream scope-id ctx-map cfg)
+            (parent-stream facts scope-id children ctx-map children-of
+                           visited* cfg)))))
 
 
 ;;; ══════════════════════════════════════════════════════════════════════════════
-;;; Leaf stream
+;;; Leaf stream — thin dispatcher to a leaf planner
 ;;; ══════════════════════════════════════════════════════════════════════════════
 
-(define* (leaf-stream scope-id ctx-map #:key (weight-fn #f))
-  "Lazy stream of federation-results from a miniKanren search.
-   When WEIGHT-FN is provided, each result carries a harmony score."
-  (let* ((ctx (assoc-ref ctx-map scope-id))
-         (raw (if ctx
-                  ((fresh (plan) (plan-o ctx plan #:max-depth 5))
-                   (empty-cstate #f))
-                  '())))
-    (stream-map-lazy
-      (lambda (state)
-        (let* ((plan (reify-from-state state))
-               (defs (extract-deficits plan scope-id))
-               (surps (extract-surpluses plan scope-id))
-               (cands (extract-retraction-candidates plan scope-id))
-               (resid (fold (lambda (d a) (+ a (assq-ref d 'qty))) 0 defs))
-               (harmony-result (and weight-fn
-                                    (plan-harmony plan #:priority-fn weight-fn)))
-               (base `((scope . ,scope-id) (plan . ,plan)
-                       (deficits . ,defs) (surpluses . ,surps)
-                       (retraction-candidates . ,cands)
-                       (residual . ,resid))))
-          (if harmony-result
-              (cons `(harmony . ,harmony-result) base)
-              base)))
-      raw)))
+(define (leaf-stream scope-id ctx-map cfg)
+  "Lazy stream of federation-results for a leaf scope.
+   Looks up the scope's ctx in CTX-MAP and dispatches to the leaf-planner
+   in CFG. The leaf-planner is responsible for producing federation-result
+   alists.
+
+   This is intentionally a thin dispatcher: federation.scm doesn't know
+   what kind of planner runs at the leaves. Different planners (relational
+   single-pass, imperative DDMRP multi-pass, etc.) plug in via cfg's
+   leaf-planner field, all sharing the same federation-result protocol."
+  ((cfg-leaf-planner-or-default cfg)
+   scope-id
+   (assoc-ref ctx-map scope-id)
+   cfg))
 
 
 ;;; ══════════════════════════════════════════════════════════════════════════════
 ;;; Parent stream
 ;;; ══════════════════════════════════════════════════════════════════════════════
 
-(define *max-steps* 50)
-
-(define* (parent-stream facts scope-id children ctx-map children-of visited
-                        #:key (priority-fn #f) (weight-fn #f))
-  "Lazy stream: interleave children's streams + lateral matching + retraction."
+(define (parent-stream facts scope-id children ctx-map children-of visited cfg)
+  "Lazy stream: interleave children's streams + lateral matching + retraction.
+   CFG is threaded through to descendant scope-streams so the same
+   leaf strategy and options apply everywhere in the subtree."
   (let* ((child-streams
            (map (lambda (cid)
-                  (cons cid (scope-stream* facts cid ctx-map children-of visited
-                                           #:priority-fn priority-fn
-                                           #:weight-fn weight-fn)))
+                  (cons cid (scope-stream facts cid ctx-map children-of cfg visited)))
                 children))
          (initial (pull-from-all child-streams)))
     (if (null? initial)
         '()
-        (search-stream facts scope-id initial *max-steps*
-                       priority-fn weight-fn))))
+        (search-stream facts scope-id initial (cfg-max-steps cfg) cfg))))
 
-(define (search-stream facts scope-id state steps priority-fn weight-fn)
+(define (search-stream facts scope-id state steps cfg)
   "Lazy stream of improving federation-results.
    When advance-worst exhausts stream positions, chains into retraction.
-   When WEIGHT-FN is provided, advance steering uses weighted harmony
+   When CFG has a weight-fn, advance steering uses weighted harmony
    (advance the child with the lowest weighted harmony) instead of raw
    deficit quantity."
-  (let ((result (evaluate-state facts scope-id state priority-fn weight-fn)))
+  (let* ((weight-fn (cfg-weight-fn cfg))
+         (result (evaluate-state facts scope-id state cfg)))
     (if (or (<= steps 0) (= (assq-ref result 'residual) 0))
         (list result)
         (cons result
@@ -197,89 +367,104 @@
                                     (advance-worst-by-harmony state result weight-fn)
                                     (advance-worst state result))))
                   (if advanced
-                      (search-stream facts scope-id advanced (- steps 1)
-                                     priority-fn weight-fn)
+                      (search-stream facts scope-id advanced (- steps 1) cfg)
                       ;; No more stream positions — try retraction
-                      (retraction-stream facts scope-id state result
-                                         priority-fn weight-fn))))))))
+                      (retraction-stream facts scope-id state result cfg))))))))
 
 
 ;;; ══════════════════════════════════════════════════════════════════════════════
 ;;; Evaluate: match children's results at this level
 ;;; ══════════════════════════════════════════════════════════════════════════════
 
-(define* (evaluate-state facts scope-id state priority-fn
-                         #:optional (weight-fn #f))
-  "state = list of (child-id federation-result rest-stream).
-   Returns a federation-result for this scope. When WEIGHT-FN is
-   provided, child harmonies are aggregated into the parent result."
-  (let* (;; Each child's deficits, re-attributed to the CHILD (not the leaf)
-         (child-defs
-           (append-map (lambda (s)
-             (let* ((cid (car s))
-                    (child-result (cadr s))
-                    (raw-defs (or (and (pair? child-result)
-                                       (assq-ref child-result 'deficits))
-                                  '())))
-               (map (lambda (d) (cons (cons 'child cid) d)) raw-defs)))
-             state))
-         (child-surps
-           (append-map (lambda (s)
-             (let* ((child-result (cadr s))
-                    (raw-surps (or (and (pair? child-result)
-                                        (assq-ref child-result 'surpluses))
-                                   '())))
-               raw-surps))
-             state))
-         ;; Collect retraction candidates from all children, assign priority
-         (child-cands
-           (append-map (lambda (s)
-             (let* ((cid (car s))
-                    (child-result (cadr s))
-                    (raw-cands (or (and (pair? child-result)
-                                        (assq-ref child-result 'retraction-candidates))
-                                   '())))
-               (map (lambda (c)
-                      (if (and priority-fn (not (assq-ref c 'priority)))
-                          (cons `(priority . ,(priority-fn cid (assq-ref c 'spec-id))) c)
-                          c))
-                    raw-cands)))
-             state))
-         ;; Match laterally
+(define (evaluate-state facts scope-id state cfg)
+  "state = list of state-entries (child-id federation-result rest-stream).
+   Returns a federation-result for this scope. CFG carries weight-fn
+   for harmony aggregation."
+  (let* ((weight-fn    (cfg-weight-fn cfg))
+         (child-defs   (collect-child-defs state))
+         (child-surps  (collect-child-surps state))
+         (child-cands  (collect-child-cands state))
+         (child-plans  (collect-child-plans state))
+         (child-h      (and weight-fn (collect-child-harmonies state)))
+         ;; Lateral match deficits against surpluses
          (match-result (match-at-level child-defs child-surps))
-         (matches (car match-result))
-         (unmatched (cdr match-result))
-         (residual (fold (lambda (d a) (+ a (assq-ref d 'qty))) 0 unmatched))
-         ;; Combined plan
-         (child-plans (map (lambda (s)
-           (let ((cr (cadr s)))
-             (cons (car s) (if (pair? cr) (assq-ref cr 'plan) '()))))
-           state))
-         ;; Aggregate harmony from children when weight-fn is provided
-         (child-harmonies
-           (if weight-fn
-               (filter-map
-                 (lambda (s)
-                   (let ((cr (cadr s)))
-                     (and (pair? cr) (assq-ref cr 'harmony))))
-                 state)
-               '()))
-         (total-harmony
-           (if weight-fn
-               (fold (lambda (h acc) (+ acc (or (assq-ref h 'total) 0)))
-                     0 child-harmonies)
-               #f)))
+         (matches      (car match-result))
+         (unmatched    (cdr match-result))
+         (residual     (sum-qty unmatched)))
     `((scope . ,scope-id)
       (plan . ,child-plans)
-      ,@(if total-harmony
-            `((harmony . ((total . ,total-harmony)
-                          (per-child . ,child-harmonies))))
+      ,@(if child-h
+            `((harmony . ((total . ,(sum-harmony-totals child-h))
+                          (per-child . ,child-h))))
             '())
       (deficits . ,unmatched)
       (surpluses . ,(subtract-matched child-surps matches))
       (retraction-candidates . ,child-cands)
       (lateral-matches . ,matches)
       (residual . ,residual))))
+
+
+;;; ── evaluate-state helpers ──────────────────────────────────────────────────
+;;; Each helper does one walk of the children's state list and pulls out
+;;; one kind of information. Splitting them keeps each walk obvious and
+;;; lets evaluate-state read like an outline of what it does.
+
+(define (entry-result entry)
+  "Extract the federation-result alist from a state-entry, or #f
+   if the slot is empty/malformed."
+  (let ((r (state-entry-result entry)))
+    (and (pair? r) r)))
+
+(define (collect-child-defs state)
+  "All children's deficits, each tagged with the child-id (so the
+   parent can attribute multi-level deficits back to the right scope)."
+  (append-map
+    (lambda (e)
+      (let ((cid (state-entry-id e)) (r (entry-result e)))
+        (if r
+            (map (lambda (d) (cons (cons 'child cid) d))
+                 (or (assq-ref r 'deficits) '()))
+            '())))
+    state))
+
+(define (collect-child-surps state)
+  "All children's surpluses, untagged."
+  (append-map
+    (lambda (e)
+      (let ((r (entry-result e)))
+        (or (and r (assq-ref r 'surpluses)) '())))
+    state))
+
+(define (collect-child-cands state)
+  "All children's retraction candidates, untouched."
+  (append-map
+    (lambda (e)
+      (let ((r (entry-result e)))
+        (or (and r (assq-ref r 'retraction-candidates)) '())))
+    state))
+
+(define (collect-child-plans state)
+  "Combined plan: alist of (child-id . child-plan)."
+  (map (lambda (e)
+         (let ((r (entry-result e)))
+           (cons (state-entry-id e) (if r (assq-ref r 'plan) '()))))
+       state))
+
+(define (collect-child-harmonies state)
+  "All children's harmony alists (those that have one)."
+  (filter-map
+    (lambda (e)
+      (let ((r (entry-result e)))
+        (and r (assq-ref r 'harmony))))
+    state))
+
+(define (sum-qty deficits)
+  "Sum the 'qty field of a list of deficit/surplus records."
+  (fold (lambda (d acc) (+ acc (or (assq-ref d 'qty) 0))) 0 deficits))
+
+(define (sum-harmony-totals harmonies)
+  "Sum the 'total field of a list of harmony alists."
+  (fold (lambda (h acc) (+ acc (or (assq-ref h 'total) 0))) 0 harmonies))
 
 (define (subtract-matched surpluses matches)
   "Reduce surpluses by matched quantities. Fully consumed surpluses are removed."
@@ -339,38 +524,48 @@
 ;;; Retraction stream — lazy cross-scope priority-aware retraction
 ;;; ══════════════════════════════════════════════════════════════════════════════
 
-(define (retraction-stream facts scope-id state result priority-fn weight-fn)
+(define (retraction-stream facts scope-id state result cfg)
   "Lazy stream: retract satisfied demands to free capacity for deficits.
-   When WEIGHT-FN is provided, candidates are ordered by expected
-   harmony loss given the current deficits — this accounts for the
-   quadratic nature of partial retraction. Otherwise falls back to
-   legacy priority-sort (lowest priority first)."
-  (let* ((candidates (or (assq-ref result 'retraction-candidates) '()))
-         (deficits (or (assq-ref result 'deficits) '()))
-         (sorted
-           (if weight-fn
-               (sort candidates
-                 (lambda (a b)
-                   (< (expected-retraction-loss a deficits weight-fn)
-                      (expected-retraction-loss b deficits weight-fn))))
-               (sort candidates
-                 (lambda (a b)
-                   (> (or (assq-ref a 'priority) 53)
-                      (or (assq-ref b 'priority) 53)))))))
-    (if (or (null? sorted) (null? deficits))
+   Candidates are filtered to those that could actually serve a deficit,
+   then ordered by expected harmony loss (which accounts for the quadratic
+   nature of partial retraction). Requires CFG to carry a weight-fn —
+   without one, no retraction occurs (returns the unchanged result)."
+  (let* ((weight-fn  (cfg-weight-fn cfg))
+         (candidates (or (assq-ref result 'retraction-candidates) '()))
+         (deficits   (or (assq-ref result 'deficits) '()))
+         (sorted     (and weight-fn
+                          (sort-retraction-candidates candidates deficits weight-fn))))
+    (if (or (not sorted) (null? sorted) (null? deficits))
         (list result)
-        (retract-one-stream facts scope-id state sorted result
-                            priority-fn weight-fn))))
+        (retract-one-stream facts scope-id state sorted result cfg))))
+
+(define (sort-retraction-candidates candidates deficits weight-fn)
+  "Order retraction candidates from least-costly to most-costly to retract.
+   Filters to candidates that match some deficit, then sorts by expected
+   harmony loss given the current deficits."
+  (let ((relevant (filter (lambda (c) (relevant-candidate? c deficits))
+                          candidates)))
+    (sort relevant
+      (lambda (a b)
+        (< (expected-retraction-loss a deficits weight-fn)
+           (expected-retraction-loss b deficits weight-fn))))))
 
 (define (deficit-spec d)
   "Extract spec-id from a deficit alist."
   (assq-ref d 'spec-id))
 
+(define (relevant-candidate? cand deficits)
+  "True if at least one deficit could be served by retracting CAND
+   (i.e. some deficit's spec matches the candidate's spec)."
+  (let ((spec (assq-ref cand 'spec-id)))
+    (any (lambda (d) (equal? (deficit-spec d) spec)) deficits)))
+
 (define (expected-retraction-loss cand deficits weight-fn)
-  "Expected weighted-harmony loss from retracting CAND, given the
-   current deficits. Uses retraction-loss-exact with the expected
-   transfer amount (the sum of deficits matching this candidate's
-   spec, clamped to the candidate's qty)."
+  "Expected weighted-harmony loss from retracting CAND given current
+   deficits. Calls retraction-loss-exact with the expected transfer
+   amount (the sum of deficits matching this candidate's spec,
+   clamped to the candidate's qty). Assumes CAND is relevant — if
+   there's no matching deficit, returns 0 (caller should filter)."
   (let* ((spec (assq-ref cand 'spec-id))
          (cand-qty (or (assq-ref cand 'qty) 0))
          (total-matching-deficit
@@ -380,11 +575,7 @@
                        acc))
                  0 deficits))
          (expected-transfer (min cand-qty total-matching-deficit)))
-    (if (<= expected-transfer 0)
-        ;; No matching deficit — this candidate won't be retracted usefully.
-        ;; Rank it as "infinitely bad" so it's never picked first.
-        (+ 1e18 (retraction-loss-upper cand weight-fn))
-        (retraction-loss-exact cand expected-transfer weight-fn))))
+    (retraction-loss-exact cand expected-transfer weight-fn)))
 
 (define (retraction-harmony-loss cand weight-fn)
   "Upper-bound weighted-harmony loss for sort ordering.
@@ -392,44 +583,42 @@
    deficit-aware). Kept for backward compatibility."
   (retraction-loss-upper cand weight-fn))
 
-(define (retract-one-stream facts scope-id state candidates prev-result
-                             priority-fn weight-fn)
+(define (retract-one-stream facts scope-id state candidates prev-result cfg)
   "Each step: retract one candidate, re-evaluate lateral matching.
-   When WEIGHT-FN is given, candidates are re-sorted between steps so
-   that the sort key reflects the post-retraction deficits."
+   When CFG has a weight-fn, candidates are re-sorted between steps
+   so that the sort key reflects the post-retraction deficits."
   (if (null? candidates)
       (list prev-result)
-      (let* ((cand (car candidates))
-             (transfer-qty (expected-transfer-for-cand cand prev-result))
-             (new-state (retract-demand-from-state state cand))
-             (new-result (evaluate-state facts scope-id new-state
-                                         priority-fn weight-fn))
-             (enriched-cand (enrich-retraction-record cand transfer-qty prev-result)))
+      (let* ((cand          (car candidates))
+             (transfer-qty  (expected-transfer-for-cand cand prev-result))
+             (new-state     (retract-demand-from-state state cand))
+             (new-result    (evaluate-state facts scope-id new-state cfg))
+             (enriched      (enrich-retraction-record cand transfer-qty prev-result)))
         (cond
-          ((= (assq-ref new-result 'residual) 0)
-           (list (add-retraction-record new-result enriched-cand)))
-          ((< (assq-ref new-result 'residual)
-              (assq-ref prev-result 'residual))
-           (let* ((result* (add-retraction-record new-result enriched-cand))
-                  (rest-cands (cdr candidates))
-                  ;; Re-sort remaining candidates against updated deficits
-                  (resorted (if weight-fn
-                                (sort rest-cands
-                                  (lambda (a b)
-                                    (< (expected-retraction-loss a
-                                         (or (assq-ref result* 'deficits) '())
-                                         weight-fn)
-                                       (expected-retraction-loss b
-                                         (or (assq-ref result* 'deficits) '())
-                                         weight-fn))))
-                                rest-cands)))
+          ((residual-zero? new-result)
+           (list (add-retraction-record new-result enriched)))
+          ((retraction-improved? new-result prev-result)
+           (let* ((result*  (add-retraction-record new-result enriched))
+                  (resorted (sort-retraction-candidates
+                              (cdr candidates)
+                              (or (assq-ref result* 'deficits) '())
+                              (cfg-weight-fn cfg))))
              (cons result*
                    (lambda ()
                      (retract-one-stream facts scope-id new-state
-                       resorted result* priority-fn weight-fn)))))
+                       resorted result* cfg)))))
           (else
            (retract-one-stream facts scope-id new-state
-             (cdr candidates) prev-result priority-fn weight-fn))))))
+             (cdr candidates) prev-result cfg))))))
+
+(define (residual-zero? result)
+  "True if RESULT has no remaining unmet deficits."
+  (= (assq-ref result 'residual) 0))
+
+(define (retraction-improved? new-result prev-result)
+  "True if NEW-RESULT has strictly less residual than PREV-RESULT."
+  (< (assq-ref new-result 'residual)
+     (assq-ref prev-result 'residual)))
 
 (define (expected-transfer-for-cand cand result)
   "How much of CAND is expected to be transferred in a retraction,
@@ -469,26 +658,21 @@
   "Federation-level retraction: remove a satisfied demand from its child's
    result and convert its resources to surplus."
   (let ((target-scope (assq-ref candidate 'scope-id))
-        (target-spec (assq-ref candidate 'spec-id))
-        (target-qty (assq-ref candidate 'qty)))
+        (target-spec  (assq-ref candidate 'spec-id))
+        (target-qty   (assq-ref candidate 'qty)))
     (map (lambda (entry)
-           (let ((cid (car entry))
-                 (child-result (cadr entry))
-                 (stream (caddr entry)))
+           (let ((cid (state-entry-id entry))
+                 (r   (entry-result entry)))
              (if (not (equal? cid target-scope))
                  entry
-                 (let* ((old-cands (or (and (pair? child-result)
-                                            (assq-ref child-result 'retraction-candidates))
-                                       '()))
+                 (let* ((old-cands (or (and r (assq-ref r 'retraction-candidates)) '()))
                         (new-cands (filter
                                      (lambda (c)
                                        (not (and (equal? (assq-ref c 'spec-id) target-spec)
                                                  (equal? (assq-ref c 'plan-id)
                                                          (assq-ref candidate 'plan-id)))))
                                      old-cands))
-                        (old-surps (or (and (pair? child-result)
-                                            (assq-ref child-result 'surpluses))
-                                       '()))
+                        (old-surps (or (and r (assq-ref r 'surpluses)) '()))
                         (new-surps (cons `((scope . ,cid) (spec . ,target-spec)
                                           (qty . ,target-qty))
                                         old-surps))
@@ -500,8 +684,8 @@
                                    ((eq? (car pair) 'surpluses)
                                     (cons 'surpluses new-surps))
                                    (else pair)))
-                               child-result)))
-                   (list cid new-result stream)))))
+                               r)))
+                   (make-state-entry cid new-result (state-entry-stream entry))))))
          state)))
 
 (define (add-retraction-record result candidate)
@@ -527,21 +711,19 @@
 
 (define (advance-worst-by-harmony state result weight-fn)
   "Advance the child whose weighted harmony is lowest.
-   STATE = list of (child-id federation-result rest-stream).
    Falls back to deficit-based advance if no child has a harmony score."
-  (let* ((scored
-           (filter-map
-             (lambda (entry)
-               (let* ((cid (car entry))
-                      (cr (cadr entry))
-                      (h (and (pair? cr) (assq-ref cr 'harmony)))
-                      (total (and h (assq-ref h 'total))))
-                 (and total (cons cid total))))
-             state)))
+  (let ((scored
+          (filter-map
+            (lambda (entry)
+              (let* ((r     (entry-result entry))
+                     (h     (and r (assq-ref r 'harmony)))
+                     (total (and h (assq-ref h 'total))))
+                (and total (cons (state-entry-id entry) total))))
+            state)))
     (if (null? scored)
         (advance-worst state result)  ;; fallback
-        (let* ((sorted (sort scored (lambda (a b) (< (cdr a) (cdr b)))))
-               (worst-child (car (car sorted))))
+        (let ((worst-child (car (car (sort scored
+                                       (lambda (a b) (< (cdr a) (cdr b))))))))
           (advance-child state worst-child)))))
 
 (define (advance-child state child-id)
@@ -549,114 +731,92 @@
   (let loop ((entries state) (acc '()))
     (if (null? entries) #f
         (let ((entry (car entries)))
-          (if (not (equal? (car entry) child-id))
+          (if (not (equal? (state-entry-id entry) child-id))
               (loop (cdr entries) (cons entry acc))
-              (let* ((stream (caddr entry))
-                     (next (stream-take-1 stream)))
+              (let ((next (stream-take-1 (state-entry-stream entry))))
                 (if (not next) #f
                     (append (reverse acc)
-                            (list (list child-id (car next) (cdr next)))
+                            (list (make-state-entry child-id (car next) (cdr next)))
                             (cdr entries)))))))))
 
 
 ;;; ══════════════════════════════════════════════════════════════════════════════
-;;; Stream utilities
+;;; Stream → state-entry adapter
 ;;; ══════════════════════════════════════════════════════════════════════════════
-
-(define (stream-map-lazy f $)
-  (cond
-    ((null? $) '())
-    ((procedure? $) (lambda () (stream-map-lazy f ($))))
-    (else (cons (f (car $)) (stream-map-lazy f (cdr $))))))
-
-(define (stream-take-1 $)
-  (cond
-    ((null? $) #f)
-    ((procedure? $) (stream-take-1 ($)))
-    (else (cons (car $) (cdr $)))))
-
-(define (stream-take-best $)
-  "Force the entire stream, return the last (most improved) result."
-  (let loop (($ $) (last #f))
-    (cond
-      ((null? $) last)
-      ((procedure? $) (loop ($) last))
-      (else (loop (cdr $) (car $))))))
+;;; The general lazy-stream utilities live in streams.scm. This adapter
+;;; wraps pull-one-each's raw results into federation state-entries.
 
 (define (pull-from-all child-streams)
   "Pull one federation-result from each child's stream.
-   Returns list of (child-id result rest-stream) triples."
-  (let loop ((cs child-streams) (acc '()))
-    (if (null? cs) (reverse acc)
-        (let* ((cid (caar cs)) (stream (cdar cs))
-               (pulled (stream-take-1 stream)))
-          (loop (cdr cs)
-                (cons (if pulled
-                          (list cid (car pulled) (cdr pulled))
-                          (list cid '() '()))
-                      acc))))))
+   CHILD-STREAMS: alist of (child-id . stream).
+   Returns: list of state-entries with empty placeholders for exhausted
+   children."
+  (map (lambda (pair)
+         (let ((cid (car pair)) (pulled (cdr pair)))
+           (if pulled
+               (make-state-entry cid (car pulled) (cdr pulled))
+               (make-state-entry cid '() '()))))
+       (pull-one-each child-streams)))
 
 
 ;;; ══════════════════════════════════════════════════════════════════════════════
-;;; Helpers
+;;; Plan extraction (federation-result fields from a relational plan)
 ;;; ══════════════════════════════════════════════════════════════════════════════
-
-(define (reify-from-state state)
-  (let* ((S (cstate-S state))
-         (v (walk* (var 0) S))
-         (R (reify-s v '())))
-    (walk* v R)))
-
-(define (reify-s v subst)
-  (let ((v (walk v subst)))
-    (cond
-     ((var? v) (cons (cons v (string->symbol
-                    (string-append "_." (number->string (length subst))))) subst))
-     ((pair? v) (reify-s (cdr v) (reify-s (car v) subst)))
-     (else subst))))
+;;;
+;;; (reify-from-state lives in plan-walk.scm — it's a generic miniKanren
+;;; reification helper, not federation-specific.)
+;;;
+;;; The three extract functions walk the top-level demand pairs of a
+;;; relational plan and classify them. They use plan-walk.scm helpers
+;;; (fold-demand-pairs, plan-term predicates, named accessors) so the
+;;; pattern-matching of plan terms isn't reinvented here.
 
 (define (extract-deficits plan scope-id)
   "Extract unmet demands as deficit records.
    Each deficit: ((scope-id . id) (spec-id . s) (qty . q))."
-  (if (not (list? plan)) '()
-      (filter-map (lambda (entry)
-        (and (pair? entry) (pair? (cadr entry))
-             (eq? (caadr entry) 'unmet)
-             `((scope-id . ,scope-id) (spec-id . ,(cadadr entry))
-               (qty . ,(caddr (cadr entry))))))
-        plan)))
+  (reverse
+    (fold-demand-pairs
+      (lambda (_demand term acc)
+        (if (unmet-term? term)
+            (cons `((scope-id . ,scope-id)
+                    (spec-id  . ,(plan-term-spec term))
+                    (qty      . ,(plan-term-qty term)))
+                  acc)
+            acc))
+      '() plan)))
 
 (define (extract-surpluses plan scope-id)
   "Extract over-produced output as surplus records.
+   A surplus exists when allocated > needed for a satisfied term.
    Each surplus: ((scope-id . id) (spec-id . s) (qty . q))."
-  (if (not (list? plan)) '()
-      (filter-map (lambda (entry)
-        (and (pair? entry) (pair? (cadr entry))
-             (eq? (caadr entry) 'satisfied)
-             (let* ((pt (cadr entry))
-                    (alloc (cadddr pt))
-                    (needed (caddr pt))
-                    (total (if (list? alloc)
-                               (fold (lambda (a acc) (+ acc (cadr a))) 0 alloc) 0))
-                    (surplus (- total needed)))
-               (and (> surplus 0)
-                    `((scope-id . ,scope-id) (spec-id . ,(cadr pt)) (qty . ,surplus))))))
-        plan)))
+  (reverse
+    (fold-demand-pairs
+      (lambda (_demand term acc)
+        (if (satisfied-term? term)
+            (let ((surplus (- (allocation-total (plan-term-alloc term))
+                              (plan-term-qty term))))
+              (if (> surplus 0)
+                  (cons `((scope-id . ,scope-id)
+                          (spec-id  . ,(plan-term-spec term))
+                          (qty      . ,surplus))
+                        acc)
+                  acc))
+            acc))
+      '() plan)))
 
 (define (extract-retraction-candidates plan scope-id)
-  "Extract satisfied demands as retraction candidates from a relational plan."
-  (if (not (list? plan)) '()
-      (filter-map (lambda (entry)
-        (and (pair? entry) (pair? (cadr entry))
-             (eq? (caadr entry) 'satisfied)
-             (let* ((pt (cadr entry))
-                    (spec-id (cadr pt))
-                    (qty (caddr pt)))
-               (and (> qty 0)
-                    `((scope-id . ,scope-id)
-                      (spec-id . ,spec-id)
-                      (qty . ,qty))))))
-        plan)))
+  "Extract satisfied demands as retraction candidates from a relational plan.
+   Each candidate: ((scope-id . id) (spec-id . s) (qty . q))."
+  (reverse
+    (fold-demand-pairs
+      (lambda (_demand term acc)
+        (if (and (satisfied-term? term) (> (plan-term-qty term) 0))
+            (cons `((scope-id . ,scope-id)
+                    (spec-id  . ,(plan-term-spec term))
+                    (qty      . ,(plan-term-qty term)))
+                  acc)
+            acc))
+      '() plan)))
 
 
 ;;; ══════════════════════════════════════════════════════════════════════════════
@@ -664,19 +824,40 @@
 ;;; ══════════════════════════════════════════════════════════════════════════════
 
 (define* (plan-federation-o facts scope-ids parent-map ctx-map result
-                            #:key (priority-fn #f) (weight-fn #f))
+                            #:key (level-fn #f) (weight-fn #f)
+                                  (leaf-planner #f) (max-steps 50))
   "Recursive streamed federation. Same protocol at every level.
-   priority-fn: (scope-id spec-id) → number (lower = more urgent).
-   weight-fn: (spec-id) → number (higher = more important). When
-   provided, federation results carry harmony scores."
+
+   HARMONY (one convention only):
+     level-fn:  (spec-id) → small integer level (0-10ish). User-facing
+                logarithmic API. Exponentiated via make-weight-fn at
+                the boundary to produce the actual weight multiplier.
+                THIS IS THE PRIMARY HARMONY API.
+     weight-fn: (spec-id) → already-computed weight (higher = more
+                important). Advanced API; bypasses exponentiation.
+                Use this if you want a custom scaling. If both LEVEL-FN
+                and WEIGHT-FN are given, level-fn wins.
+
+   PLANNING:
+     leaf-planner: (scope-id ctx cfg) → lazy stream of federation-result.
+                   Plug in alternative leaf strategies (e.g.
+                   ddmrp-leaf-planner) without changing the substrate.
+                   Defaults to the built-in single-pass relational planner.
+     max-steps:    Search step bound for parent-stream interleaving.
+
+   These keyword args are bundled into a federation-config and threaded
+   through the substrate as a single value. Adding a new option means
+   adding a field to <federation-config>; no other signatures change."
   (project (facts scope-ids parent-map ctx-map)
-    (let* ((children-of (build-hierarchy facts scope-ids parent-map))
+    (let* ((cfg (make-federation-config #:level-fn     level-fn
+                                        #:weight-fn    weight-fn
+                                        #:leaf-planner leaf-planner
+                                        #:max-steps    max-steps))
+           (children-of (build-hierarchy facts scope-ids parent-map))
            (root (or (find (lambda (id) (not (assoc-ref parent-map id))) scope-ids)
                      (and (pair? scope-ids) (car scope-ids))))
            (root-stream (if root
-                            (scope-stream facts root ctx-map children-of
-                                          #:priority-fn priority-fn
-                                          #:weight-fn weight-fn)
+                            (scope-stream facts root ctx-map children-of cfg)
                             '()))
            (best (stream-take-best root-stream)))
       (== result (if best best

@@ -69,24 +69,39 @@
 ;;
 ;; Add new rows for new live-hackable subtrees.
 
+;; Each row is (path-prefix . spec).
+;;   spec = string  → strip-prefix mode (path-prefix → tail → modname list).
+;;                    The string is the prefix to strip from the path.
+;;   spec = list    → literal module name; used for top-level scripts that
+;;                    don't have a (define-module …) form and live in
+;;                    (guile-user) directly.
+;;
+;; Order matters: first matching prefix wins. Put the most specific path
+;; prefixes first so a generic catch-all doesn't shadow them.
 (define %routes
-  '(("module/" . "module/")))
+  '(("browser/repl.scm" . (guile-user))
+    ("module/" . "module/")))
 
 ;;; ── Path → module name ──────────────────────────────────────────────────────
 
 (define (path->module path)
-  "Convert a repo-relative PATH like \"module/weave/ui/room.scm\" into a
-module-name list like '(weave ui room). Returns #f if no route matches
-or PATH doesn't end in .scm."
+  "Convert a repo-relative PATH into a module-name list. Routes are
+   either a string-prefix-strip rule (module/weave/ui/room.scm → (weave
+   ui room)) or a literal modname for top-level scripts (browser/repl.scm
+   → (guile-user)). Returns #f if no route matches."
   (define (try routes)
     (cond
      ((null? routes) #f)
      ((string-prefix? (caar routes) path)
-      (let* ((root (cdar routes))
-             (tail (substring path (string-length root))))
-        (and (string-suffix? ".scm" tail)
-             (let ((stem (substring tail 0 (- (string-length tail) 4))))
-               (map string->symbol (string-split stem #\/))))))
+      (let ((spec (cdar routes)))
+        (cond
+         ((list? spec) spec)            ; literal modname
+         ((string? spec)                ; strip-prefix → modname
+          (let ((tail (substring path (string-length spec))))
+            (and (string-suffix? ".scm" tail)
+                 (let ((stem (substring tail 0 (- (string-length tail) 4))))
+                   (map string->symbol (string-split stem #\/))))))
+         (else #f))))
      (else (try (cdr routes)))))
   (try %routes))
 

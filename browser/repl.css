@@ -515,3 +515,353 @@ body:has(.code-viewer) .ide {
         margin-bottom: 40vh;
     }
 }
+
+/* ─── Inventory tab ─────────────────────────────────────────────────────── */
+/* Minecraft-style resource library: left category sidebar + spec grid +
+   right detail pane. The grid cells are square, the right pane shows
+   either spec-detail (concrete resources conforming to the clicked spec)
+   or resource-detail (custodian + collapsed history + nested children). */
+
+.inv-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
+.inv-body {
+    display: flex;
+    flex: 1 1 auto;
+    gap: 8px;
+    padding: 8px;
+    min-height: 0;
+}
+
+/* ── Category sidebar ── */
+.inv-cat-sidebar {
+    width: 180px;
+    flex: 0 0 180px;
+    overflow-y: auto;
+    background: #0d0b0f;
+    border: 1px solid #2a2230;
+    padding: 6px 0;
+    font-size: 9pt;
+    font-family: monospace;
+}
+.inv-cat-header {
+    padding: 4px 10px 8px 10px;
+    color: #5a4d65;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 8pt;
+}
+.inv-cat-row {
+    padding: 4px 10px;
+    cursor: pointer;
+    color: #8b7b96;
+    border-left: 2px solid transparent;
+}
+.inv-cat-row:hover {
+    color: #a8e6cf;
+    background: #1a1520;
+}
+.inv-cat-row.active {
+    color: #a8e6cf;
+    border-left-color: #a8e6cf;
+    background: #1a1520;
+}
+
+/* ── Minecraft grid ── */
+.inv-grid-wrap {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    min-width: 0;
+}
+.inv-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 4px;
+    padding: 6px;
+    background: #0d0b0f;
+    border: 2px solid #2a2230;
+}
+.inv-cell {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    background: #1a1520;
+    border: 1px solid #2a2230;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    user-select: none;
+}
+.inv-cell:hover {
+    background: #251c30;
+    border-color: #a8e6cf;
+}
+.inv-cell.selected {
+    border-color: #e8b04e;
+    box-shadow: 0 0 0 1px #e8b04e inset;
+}
+.inv-cell-icon {
+    font-size: 14pt;
+    color: #e0ceed;
+    font-family: monospace;
+    font-weight: bold;
+    text-align: center;
+    pointer-events: none;
+}
+.inv-cell-img {
+    max-width: 100%;
+    max-height: 100%;
+    image-rendering: pixelated;
+}
+.inv-cell-count {
+    position: absolute;
+    bottom: 2px;
+    right: 4px;
+    font-size: 9pt;
+    color: #a8e6cf;
+    font-family: monospace;
+    pointer-events: none;
+    text-shadow: 0 0 2px #000;
+}
+.inv-cell-tooltip {
+    display: none;
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    background: #0d0b0f;
+    border: 1px solid #a8e6cf;
+    padding: 6px 8px;
+    z-index: 10;
+    min-width: 160px;
+    font-size: 9pt;
+    color: #e0ceed;
+    pointer-events: none;
+    white-space: nowrap;
+}
+.inv-cell:hover .inv-cell-tooltip {
+    display: block;
+}
+.tt-name {
+    color: #a8e6cf;
+    font-weight: bold;
+    margin-bottom: 2px;
+}
+.tt-onhand {
+    color: #8b7b96;
+    font-family: monospace;
+}
+.tt-cats {
+    margin-top: 4px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+}
+.tt-cat-chip {
+    font-size: 8pt;
+    color: #5a4d65;
+    background: #1a1520;
+    padding: 1px 4px;
+    border: 1px solid #2a2230;
+}
+
+.inv-empty {
+    padding: 16px;
+    color: #5a4d65;
+    font-size: 9pt;
+    font-family: monospace;
+    text-align: center;
+}
+
+/* ── Right detail pane ── */
+.inv-detail {
+    width: 340px;
+    flex: 0 0 340px;
+    background: #110e13;
+    border: 1px solid #2a2230;
+    padding: 12px;
+    overflow-y: auto;
+    font-size: 9pt;
+    color: #e0ceed;
+    font-family: monospace;
+}
+.inv-detail-hint {
+    color: #5a4d65;
+}
+.inv-detail-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #2a2230;
+}
+.inv-detail-title {
+    color: #a8e6cf;
+    font-weight: bold;
+    font-size: 11pt;
+}
+.inv-detail-close {
+    cursor: pointer;
+    color: #5a4d65;
+    font-size: 14pt;
+    padding: 0 4px;
+    line-height: 1;
+}
+.inv-detail-close:hover {
+    color: #fc5858;
+}
+.inv-detail-cats {
+    margin: 4px 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+}
+.inv-detail-note {
+    margin: 6px 0;
+    padding: 6px 8px;
+    background: #0d0b0f;
+    color: #8b7b96;
+    border-left: 2px solid #2a2230;
+}
+.inv-detail-section {
+    margin: 12px 0 6px 0;
+    color: #5a4d65;
+    text-transform: uppercase;
+    font-size: 8pt;
+    letter-spacing: 0.05em;
+}
+.inv-detail-meta {
+    margin: 6px 0;
+}
+.inv-meta-row {
+    display: flex;
+    gap: 8px;
+    padding: 2px 0;
+}
+.inv-meta-key {
+    color: #5a4d65;
+    width: 80px;
+    flex: 0 0 80px;
+}
+.inv-meta-val {
+    color: #e0ceed;
+    word-break: break-all;
+}
+
+.inv-current-custodian {
+    padding: 8px 10px;
+    background: #0d0b0f;
+    border-left: 3px solid #a8e6cf;
+    margin: 8px 0;
+    color: #a8e6cf;
+    font-weight: bold;
+}
+
+/* ── Custody history (collapsible) ── */
+.inv-custody-block {
+    margin: 8px 0;
+}
+.inv-custody-toggle {
+    cursor: pointer;
+    color: #8b7b96;
+    font-family: monospace;
+    padding: 4px 0;
+    user-select: none;
+}
+.inv-custody-toggle:hover {
+    color: #a8e6cf;
+}
+.inv-custody {
+    border-left: 2px solid #2a2230;
+    margin: 4px 0 8px 8px;
+    padding-left: 12px;
+}
+.inv-custody-step {
+    padding: 4px 0;
+    color: #8b7b96;
+    font-size: 9pt;
+    font-family: monospace;
+}
+.inv-custody-step.current {
+    color: #a8e6cf;
+}
+.inv-custody-agent {
+    color: #e0ceed;
+}
+.inv-custody-action {
+    color: #e8b04e;
+}
+.inv-custody-when {
+    color: #5a4d65;
+}
+
+/* ── Breadcrumb ── */
+.inv-breadcrumb {
+    font-size: 9pt;
+    color: #8b7b96;
+    margin: 4px 0 8px 0;
+    word-break: break-all;
+}
+.inv-breadcrumb .crumb {
+    cursor: pointer;
+    color: #8b7b96;
+}
+.inv-breadcrumb .crumb:hover {
+    color: #a8e6cf;
+}
+.inv-breadcrumb .crumb-current {
+    color: #a8e6cf;
+}
+.inv-breadcrumb .crumb-sep {
+    color: #2a2230;
+    margin: 0 2px;
+}
+
+/* ── Concrete resource cards (used by spec-detail and child grid) ── */
+.inv-children-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 6px;
+    margin-top: 4px;
+}
+.inv-rcard {
+    background: #0d0b0f;
+    border: 1px solid #2a2230;
+    padding: 6px 8px;
+    cursor: pointer;
+    font-size: 9pt;
+    font-family: monospace;
+}
+.inv-rcard:hover {
+    border-color: #a8e6cf;
+}
+.inv-rcard.selected {
+    border-color: #e8b04e;
+}
+.inv-rcard-name {
+    color: #e0ceed;
+    margin-bottom: 2px;
+    word-break: break-word;
+}
+.inv-rcard-qty {
+    color: #a8e6cf;
+    font-size: 8pt;
+}
+.inv-rcard-meta {
+    margin-top: 2px;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    color: #5a4d65;
+    font-size: 8pt;
+}
+.inv-rcard-custodian {
+    color: #8b7b96;
+}
+.inv-rcard-nested {
+    color: #e8b04e;
+}

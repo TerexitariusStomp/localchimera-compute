@@ -8,11 +8,6 @@ node_modules/
 .claude/settings.local.json
 .vscode/settings.json
 
-# Historical reference — TypeScript/Svelte ancestor of the Scheme planner.
-# Some Scheme files cite paths under here in "Ported from …" comments;
-# the directory itself is never built, deployed, or committed.
-old/
-
 # User-built Hoot wasm bundles (deps + sources are in git, the binary is not)
 # Rebuild with `make browser/repl.wasm` / `make weave/weave.wasm`.
 # The small reflect.wasm / wtf8.wasm runtimes alongside them are vendored

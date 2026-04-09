@@ -94,24 +94,27 @@
 ;;; ── Parse arguments ────────────────────────────────────────────────────────
 
 (define (parse-args args)
-  "Parse command-line arguments.  Returns (values port reticulum?)."
+  "Parse command-line arguments.  Returns (values host port reticulum?)."
   (let loop ((args (cdr args))  ;; skip program name
+             (host "0.0.0.0")
              (port 9090)
              (reticulum? #f))
     (match args
-      (() (values port reticulum?))
+      (() (values host port reticulum?))
+      (("--host" h . rest)
+       (loop rest h port reticulum?))
       (("--port" p . rest)
-       (loop rest (string->number p) reticulum?))
+       (loop rest host (string->number p) reticulum?))
       (("--reticulum" . rest)
-       (loop rest port #t))
+       (loop rest host port #t))
       ((p . rest)
        (let ((n (string->number p)))
-         (if n (loop rest n reticulum?) (loop rest port reticulum?)))))))
+         (if n (loop rest host n reticulum?) (loop rest host port reticulum?)))))))
 
 ;;; ── Main ───────────────────────────────────────────────────────────────────
 
 (define (main args)
-  (define-values (ws-port reticulum-flag?) (parse-args args))
+  (define-values (ws-host ws-port reticulum-flag?) (parse-args args))
 
   ;; Reticulum is enabled if --reticulum flag was passed OR if
   ;; RETICULUM_BRIDGE_SOCKET environment variable is set.
@@ -178,7 +181,7 @@
        (define ws-netlayer
          (with-vat ocapn-vat
            (spawn ^websocket-netlayer
-                  #:host "0.0.0.0"
+                  #:host ws-host
                   #:port ws-port
                   #:encrypted? #f
                   #:designator-key designator-key
@@ -255,8 +258,8 @@
              (lambda (sref)
                (let ((uri (ocapn-id->string sref)))
                  (log!
-                         "~%  playnet OCapN gateway on ws://0.0.0.0:~a~%"
-                         ws-port)
+                         "~%  playnet OCapN gateway on ws://~a:~a~%"
+                         ws-host ws-port)
                  (log!
                          "  sturdyref: ~a~%~%" uri)
                  ;; Write to file for browser / other clients

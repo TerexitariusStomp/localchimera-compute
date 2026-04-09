@@ -32,7 +32,7 @@
 ;;;   :?qty   — optional number (absent → #f in goal)
 ;;;   :loc    — one location name
 ;;;   :?loc   — optional "at" + location (absent → #f in goal)
-;;;
+;;;s
 ;;; goal-template: (intent slot ...)
 ;;;   intent  — goal head symbol
 ;;;   :spec :spec2 :qty :loc — substituted with parsed value, or #f if absent

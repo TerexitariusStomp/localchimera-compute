@@ -27,6 +27,63 @@
 ;;;   weighted-harmony-o  — priority-weighted harmony
 ;;;   plan-harmony-o      — total weighted harmony for an entire plan
 ;;;   harmony-diff-o      — relational trade-off trace between two plans
+;;;
+;;; ── HOW "RELATIONAL" IS THIS HARMONY? ──────────────────────────────────────
+;;;
+;;; Harmony lives at three levels of "relational" sophistication. Knowing
+;;; which level applies where helps avoid confusion.
+;;;
+;;; LEVEL A — Composable goal (✓ available)
+;;;   harmony-o, weighted-harmony-o, plan-harmony-o, harmony-diff-o ARE
+;;;   miniKanren goals. They can be composed into queries:
+;;;
+;;;     (run-plan 1 #f (plan h)
+;;;       (plan-o ctx plan)               ; produce a plan
+;;;       (plan-harmony-o plan h ...))    ; bind h to its harmony
+;;;
+;;;   You get back (plan, harmony-score) pairs. The harmony goal acts
+;;;   like any other relation in the query. Internally each is wrapped
+;;;   in `project` because the arithmetic isn't expressible in CLP(FD)
+;;;   (see Level C). That makes them forward-only — the plan must be
+;;;   ground when the goal runs.
+;;;
+;;; LEVEL B — Search-ordering signal (✓ available)
+;;;   At the leaf level, default-relational-leaf-planner passes
+;;;   by-harmony-priority to plan-o as #:demand-order when weight-fn
+;;;   is given. This means demands are processed in priority order;
+;;;   under greedy allocation, high-weight specs (essentials) get
+;;;   served before low-weight specs (luxuries) when resources are
+;;;   scarce.
+;;;
+;;;   At the federation level, advance-worst-by-harmony and the
+;;;   harmony-aware retraction sort steer the lazy stream search
+;;;   toward harmony-improving moves.
+;;;
+;;;   This is steering, not constraining: it changes the order in
+;;;   which the search explores, but doesn't prune branches by an
+;;;   explicit harmony bound.
+;;;
+;;; LEVEL C — In-search constraint (✗ NOT available — architectural limit)
+;;;   Truly bidirectional harmony — "find a plan where total harmony >
+;;;   threshold T" with the constraint pruning the search — would
+;;;   require the harmony arithmetic to live inside CLP(FD). It can't:
+;;;   - The deficit branch uses (-u^2), quadratic but float-valued
+;;;   - The surplus branch uses sqrt, not in CLP(FD) at all
+;;;   - The weighting uses (expt base level) with float base
+;;;
+;;;   To get Level C, you'd need to either:
+;;;     1. Discretize harmony with scaled-integer approximations and
+;;;        a piecewise-linear curve (loses fidelity, gains pruning)
+;;;     2. Switch to CLP(R) or another constraint domain that can
+;;;        handle real arithmetic
+;;;
+;;;   We deliberately use the float-based harmony function for accuracy,
+;;;   accepting that it can only be USED post-search (Level A) and as
+;;;   a STEERING signal (Level B), not as a CONSTRAINT (Level C).
+;;;
+;;; In short:
+;;;   Level A + B = what we have, and it's substantial.
+;;;   Level C     = future work, requires giving up float math.
 
 (use-modules (playnet kanren-constraints)
              (srfi srfi-1))

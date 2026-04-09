@@ -167,18 +167,142 @@ Throw to key `match-error' with args
 **Affected versions:**
 - Hoot 0.8.0 (Guix commit `21946173a05869dd40a38012e65b9e35dc47a9fc`)
 
-**Working versions:**
-- Hoot 0.7.0 (Guix commit `3ec53494a0f9c49e6cbc6864eedb102820915075`)
-  compiles Goblins 0.17.0 + OCapN CapTP + WebSocket netlayer + fibers
+**Root cause:** Missing `mutable-bytevector?` case in the WASM backend's
+`compile-test` match expression. The `$mutable-bytevector` type was added to
+`stdlib.scm` between 0.7.0 and 0.8.0, but the predicate dispatch was never
+updated to match it.
 
-**Impact:** Cannot compile any Goblins application to WASM. Blocks all
-browser-side OCapN work. The Spritely blog post "Goblins in the browser!"
-(v0.15.0, January 2025) demonstrates this working with Hoot 0.6.0.
+**Workaround:** We patch `hoot/backend.scm` via `substitute*` in
+`deploy/packages/hoot-fix.scm`'s `fix-mutable-bytevector` build phase,
+adding the missing match case. This is the workaround that lets us use
+Hoot 0.8 at all (rather than rolling back to 0.7).
 
-**Root cause:** Likely a missing `mutable-bytevector?` case in the WASM
-backend's `node-within` match expression, introduced between 0.7.0 and 0.8.0.
+**Filing:** Should be reported at https://codeberg.org/spritely/guile-hoot.
 
-**Workaround:** Pin `channels.scm` to Guix commit `3ec53494...` (Hoot 0.7.0).
+---
+
+## 8. Hoot 0.8.0 — `(ice-9 exceptions)` re-exports nonexistent `quit-exception?` / `make-quit-exception`
+
+**Where:** `lib/ice-9/exceptions.scm` in the Hoot source tree
+(`guile-hoot-0.8.0/share/guile-hoot/0.8.0/lib/ice-9/exceptions.scm`).
+
+**Problem:** The Hoot stub of `(ice-9 exceptions)` declares
+`make-quit-exception` and `quit-exception?` in its `#:re-export` list,
+but the underlying module `(hoot exceptions)` does not actually define
+either of them. The compile-time path apparently doesn't validate
+re-exports against their source modules — wasm bundles built without
+the runtime module system (`-g0`, the default `make browser/repl.wasm`
+path) compile and run fine because the bindings are simply unused.
+
+The `-g1` and `-g2` paths, which embed the runtime module system to
+support live hacking via `(hoot web-repl)`, **do** validate at
+module-load time. The first time anything `#:use-module`s
+`(ice-9 exceptions)` the loader walks its declared re-exports, hits
+`quit-exception?`, finds no underlying binding, and raises:
+
+```
+Uncaught exception:
+  #<&undefined-variable
+       module: #<module (ice-9 exceptions)>
+       name: quit-exception?>
+  at hoot/errors.scm:95:22
+  from hoot/modules.scm:227 module-import!
+  from hoot/lists.scm:171 for-each
+  from hoot/hackable.scm:79 declare-module!
+  from goblins/core-types.scm:23 (use-modules)
+```
+
+The wasm fails to instantiate (`SchemeTrapError` from
+`reflect.js#init_module`) and the page is blank.
+
+**Affected versions:**
+- Hoot 0.8.0 (Guix commit `21946173a05869dd40a38012e65b9e35dc47a9fc`)
+
+**Trigger:** Any wasm bundle built with `-g1` or `-g2` (i.e. the entire
+live-hacking workflow described in the 0.8.0 release notes) that imports
+`(ice-9 exceptions)` directly or transitively. **Goblins triggers it
+immediately** via `goblins/core-types.scm:23` which is loaded the moment
+any Goblins-using bundle starts to initialize. In practice this blocks
+the Hoot live-REPL workflow for every Goblins app — which is most of
+Spritely's own demo surface area.
+
+**Impact:** The new `hoot repl --connect` / `(hoot web-repl)` /
+`run-web-repl` workflow advertised in the 0.8.0 release notes does
+**not** work for any Goblins-based bundle. It works fine for plain
+Hoot examples (the slides demo etc.) which don't import goblins.
+The MEMORY note that says "live hacking is wired up end-to-end as of
+2026-04-07" is accurate for the *plumbing* (`(hoot web-server)`,
+`(hoot web-repl)`, `geiser-hoot`, our `serve-dev` / `weave-dev` make
+targets, `tools/live-reload.scm`) — it's only the *one piece in the
+middle*, the runtime resolution of `(ice-9 exceptions)`, that's broken.
+
+**Root cause (best guess):** Two adjacent re-export entries in
+`lib/ice-9/exceptions.scm` were added in Hoot 0.8 alongside
+`&quit-exception`. The author noticed that the type variable
+`&quit-exception` doesn't exist in `(hoot exceptions)` and commented
+that line out (line 66 in 0.8.0):
+
+```scheme
+;; &quit-exception
+make-quit-exception
+quit-exception?
+```
+
+But the predicate and constructor on the next two lines were left
+uncommented. They reference bindings that also don't exist in
+`(hoot exceptions)` (or anywhere else in the Hoot source tree —
+`grep -rn quit-exception lib/` only finds `repl-quit-exception?` in
+`hoot/repl.scm`, which is a separately-named type for the REPL
+itself). The fix is a one-line patch: comment out both names.
+
+**Workaround (partial):** We patch both lines via `substitute*` in
+`deploy/packages/hoot-fix.scm`'s `fix-ice-9-exceptions-quit-exception`
+build phase:
+
+```scheme
+(substitute* "lib/ice-9/exceptions.scm"
+  (("               make-quit-exception\n")
+   "               ;; make-quit-exception\n")
+  (("               quit-exception\\?\n")
+   "               ;; quit-exception?\n"))
+```
+
+(Note the `\n` anchors — Guile regex `^`/`$` are string anchors, not
+line anchors, and `substitute*` matches against the whole file as one
+string.) After applying, `(ice-9 exceptions)` no longer claims to
+re-export the missing bindings.
+
+**The patch is necessary but not sufficient.** The first time we hit
+this bug (before the patch), the dev wasm printed a clean Hoot
+backtrace ending at `make-undefined-variable-error` for
+`quit-exception?`. After the patch, the dev wasm **still crashes at
+init** but with no Scheme-level backtrace — just a `SchemeTrapError`
+from `reflect.js#init_module`. The patch successfully removes the
+`quit-exception?` reference, but it exposes some deeper init-time
+crash in the runtime module loader that we can't diagnose from the
+console output alone (no Scheme backtrace, no source location).
+
+Hypotheses (not yet verified):
+1. Removing `quit-exception?` from `(ice-9 exceptions)`'s exports
+   silently breaks something downstream that imports it.
+2. There are additional broken re-exports in the same file (and/or
+   other Hoot ice-9 stubs) that fail the same way.
+3. Hoot's runtime module loader has a separate bug that surfaces
+   only once `(ice-9 exceptions)` loads cleanly.
+
+For now, **prod (`-g0`) wasm works fine** (the only path our calendar
+actually needs), and the rebuild-reload loop (`make browser/repl.wasm`
++ hard reload, ~30s) is the de-facto live-hacking workflow. Real Hoot
+0.8 live-REPL hacking via `(hoot web-repl)` remains broken for
+Goblins-based bundles until either upstream fixes both layers or we
+do a deeper bisect.
+
+**Filing:** Should be reported at
+https://codeberg.org/spritely/guile-hoot. The first half is a
+two-line fix in upstream `lib/ice-9/exceptions.scm`. The second half
+(the silent post-patch crash) needs more investigation before it can
+be filed — it'd help to have a minimal reproducer, which we don't
+yet have.
 
 ---
 
