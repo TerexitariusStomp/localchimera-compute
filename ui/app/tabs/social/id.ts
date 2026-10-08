@@ -1066,6 +1066,8 @@ function renderIdCreated(el: d3.Selection, aid: string, bran: string): void {
     .attr("name", "nickname").attr("autocomplete", "nickname")
     .attr("spellcheck", "false")
     .attr("placeholder", "a name — optional, and changeable any time");
+  form.append("div").attr("class", "opt")
+   .text("please do not use your legal name — this is an early-stage demo; a nickname is fine.");
   // on blur, so the name is in the hint before the recovery file is written
   // (downloadIdentityFile reads it from there) and the chip says it at once
   nameIn.on("change", () => { setMyName((nameIn.property("value") as string).trim(), ""); });
@@ -1692,7 +1694,7 @@ async function renderSettings(el: d3.Selection, h: IdHint | null): Promise<void>
   const err = f.append("div").attr("class", "err");
   const saveRow = f.append("div").attr("class", "idsave");
   saveRow.append("span").attr("class", "opt")
-   .text("optional; it is not used for recovery.");
+   .text("optional, and not used for recovery — please do not use your legal name while this is a demo.");
   saveRow.append("span").attr("class", "vbtn").text("save").on("click", async () => {
     // the email the member record holds stays as it is
     const r = await setMyName((name.property("value") as string).trim(), who.peek()?.email || "");
