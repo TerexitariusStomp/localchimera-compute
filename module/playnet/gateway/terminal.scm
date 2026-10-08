@@ -10,11 +10,13 @@
 (define-module (playnet gateway terminal)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
+  #:use-module (ice-9 binary-ports)
   #:use-module (ice-9 format)
   #:use-module (ice-9 hash-table)
+  #:use-module (ice-9 iconv)
   #:use-module (ice-9 threads)
   #:use-module (rnrs bytevectors)
-  #:export (^terminal-service))
+  #:export (^terminal-service ^terminal-session))
 
 ;;; ── Key-to-username mapping ────────────────────────────────────────────────
 
@@ -30,9 +32,21 @@
       (lambda args #f))
     table))
 
+;;; ── Reader threads ────────────────────────────────────────────────────────
+;;; A thread made inside a Goblins turn inherits that turn's syscaller, so the
+;;; `with-vat` it later ran believed it was still inside the spawn and failed
+;;; against the spawn's merged transaction. A reader runs with the syscaller
+;;; cleared: it is a foreign thread, and each send is a turn of its own.
+(define current-syscaller (@@ (goblins core) current-syscaller))
+
+(define (launch-reader! thunk)
+  "Run THUNK on a new thread that is outside every turn."
+  (call-with-new-thread
+   (lambda () (parameterize ((current-syscaller #f)) (thunk)))))
+
 ;;; ── ^terminal-session ──────────────────────────────────────────────────────
 
-(define (^terminal-session bcom pid to-child from-child username client-inbox)
+(define (^terminal-session bcom pid to-child from-child username client-inbox vat)
   (define closed? #f)
 
   (define (cleanup!)
@@ -44,24 +58,24 @@
       (format (current-error-port)
               "  [term] closed shell for ~a (pid ~a)~%" username pid)))
 
-  ;; Background reader: sends PTY output to client's inbox
-  (call-with-new-thread
+  ;; Background reader: sends PTY output to client's inbox. It runs on a thread
+  ;; of its own, so each send re-enters the session's VAT for its turn.
+  (launch-reader!
    (lambda ()
-     (let ((buf (make-bytevector 4096)))
-       (let loop ()
-         (let ((n (catch #t
-                    (lambda () (read! from-child buf))
-                    (lambda args 0))))
-           (when (and n (> n 0))
-             (let ((data (utf8->string (bytevector-copy buf 0 n))))
-               (catch #t
-                 (lambda () (<-np client-inbox 'term-data data))
-                 (lambda args #f))
-               (loop))))))
+     (let loop ()
+       (let ((bv (catch #t
+                   (lambda () (get-bytevector-some from-child))
+                   (lambda args (format (current-error-port) "[term] read failed: ~s~%" args) the-eof-object))))
+         (when (and (bytevector? bv) (> (bytevector-length bv) 0))
+           (let ((data (bytevector->string bv "UTF-8" 'substitute)))
+             (catch #t
+               (lambda () (with-vat vat (<-np client-inbox 'term-data data)))
+               (lambda args (format (current-error-port) "[term] send failed: ~s~%" args) #f))
+             (loop)))))
      ;; Child exited or read error
      (cleanup!)
      (catch #t
-       (lambda () (<-np client-inbox 'term-closed))
+       (lambda () (with-vat vat (<-np client-inbox 'term-closed)))
        (lambda args #f))))
 
   (methods
@@ -80,7 +94,7 @@
 
 ;;; ── ^terminal-service ──────────────────────────────────────────────────────
 
-(define (^terminal-service _bcom signup-vat signup-agent)
+(define (^terminal-service _bcom signup-vat signup-agent vat)
   ;; signup-vat + signup-agent: for looking up browser-key → username
   (define key-user-map (load-key-user-map))
 
@@ -125,4 +139,4 @@
                             username pid)
                     (spawn ^terminal-session
                            pid to-child from-child
-                           username client-inbox))))))))))
+                           username client-inbox vat))))))))))
