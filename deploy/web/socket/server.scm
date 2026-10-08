@@ -63,17 +63,32 @@
                                (server-socket (make-server-socket))
                                (max-clients 1)
                                (accept-client accept-client)
-                               (spawn-client (lambda (thunk) (thunk))))
+                               (spawn-client (lambda (thunk) (thunk)))
+                               tls-private-key tls-certificate)
+  ;; tls-private-key / tls-certificate are accepted for ABI compatibility
+  ;; with upstream guile-websocket, but ignored — TLS terminates at nginx.
   (define (serve-client client)
-    (let ((request (read-request client)))
-      (if (websocket-upgrade-request? request)
-          (let ((response (make-websocket-upgrade-response request)))
-            (write-response response client)
-            (force-output client)
-            (handle-client client))
-          (let ((response (build-response #:code 400)))
-            (write-response response client)
-            (close-port client)))))
+    ;; Guard the handshake: port scanners, health probes, and clients
+    ;; that hang up mid-headers make read-request raise ("Bad
+    ;; Read-Header-Line header: #<eof>"), which otherwise escapes as a
+    ;; full backtrace in the gateway log on every deploy/probe. Drop
+    ;; the connection quietly; real upgrade requests are unaffected.
+    (define request
+      (catch #t
+        (lambda () (read-request client))
+        (lambda _ #f)))
+    (cond
+     ((not request)
+      (catch #t (lambda () (close-port client)) (lambda _ #f)))
+     ((websocket-upgrade-request? request)
+      (let ((response (make-websocket-upgrade-response request)))
+        (write-response response client)
+        (force-output client)
+        (handle-client client)))
+     (else
+      (let ((response (build-response #:code 400)))
+        (write-response response client)
+        (close-port client)))))
   (listen server-socket max-clients)
   (sigaction SIGPIPE SIG_IGN)
   (let loop ()

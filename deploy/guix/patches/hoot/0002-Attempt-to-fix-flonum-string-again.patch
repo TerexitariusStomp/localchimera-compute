@@ -1,0 +1,42 @@
+From 040d9fdbad016937f3b959671bebfcbea8482b6d Mon Sep 17 00:00:00 2001
+From: David Thompson <dave@spritely.institute>
+Date: Thu, 28 May 2026 13:07:20 -0400
+Subject: [PATCH] Attempt to fix flonum->string again.
+
+I think I understand the code better this time... I hope.
+
+Fixes #890.
+---
+ lib/hoot/write.scm             | 3 +--
+ test/test-number-to-string.scm | 2 +-
+ 2 files changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/lib/hoot/write.scm b/lib/hoot/write.scm
+index 4b97ae2..34ff5d3 100644
+--- a/lib/hoot/write.scm
++++ b/lib/hoot/write.scm
+@@ -116,8 +116,7 @@
+               (+ pos 2)))))
+          (else
+           ;; Need to insert a dot.
+-          (bytevector-copy! buf (+ sign scale 1) buf (+ sign scale)
+-                            (+ pos (- sign scale) 1))
++          (bytevector-copy! buf (+ sign scale 1) buf (+ sign scale) pos)
+           (bytevector-u8-set! buf (+ sign scale) dot-digit)
+           (1+ pos))))
+       (define (finish-scientific pos scale sign)
+diff --git a/test/test-number-to-string.scm b/test/test-number-to-string.scm
+index 3e15d0c..69c1ebf 100644
+--- a/test/test-number-to-string.scm
++++ b/test/test-number-to-string.scm
+@@ -36,6 +36,6 @@
+ (test-number->string 42 10)
+ (test-number->string "2f" 47 16)
+ ;; Regression test for https://codeberg.org/spritely/hoot/issues/890
+-(test-number->string "-10.3" -10.3 10)
++(test-number->string "-123.802394" -123.802394 10)
+ 
+ (test-end* "test-number-to-string")
+-- 
+2.43.0
+

@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Desire and satisfaction, one dial</title>
+<script src="d3.v7.min.js"></script>
+<style>
+  html, body { margin: 0; height: 100%; background: #ffffff; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center;
+         font-family: "Libertinus Serif", Georgia, serif; }
+  svg { max-width: 100vw; max-height: 92vh; }
+  #ctl { font-size: 13px; color: #555; user-select: none; }
+  #ctl label { cursor: pointer; }
+</style>
+</head>
+<body>
+<svg id="dial"></svg>
+<div id="ctl"><label><input type="checkbox" id="live"> live hand (local time)</label></div>
+<script>
+// figure 3 of docs/social-time.typ — "Desire and satisfaction, one dial" —
+// ported construction-for-construction from the cetz source.
+
+const U = 100;              // px per cetz cm
+const PT = U / 28.35;       // px per typographic pt (1 cm = 28.35 pt)
+const R = 2.6;              // the dial
+const rIn = 0.0;            // no centre disc: the bands meet at the centre
+const n = 240;              // angular samples — smooth boundaries
+const TAU = 2 * Math.PI;
+
+const cDeep = "#2c4a6e", cWarm = "#1581a8", cYea = "#e2a512";
+
+// the desire dial with satisfaction inside it: each desire carries BOTH
+// a priority curve (its share of the hour) and a satisfaction curve
+// (how much of that share is met). Full colour from the centre up to
+// the met portion; pale beyond — so the dial shows WHICH needs are
+// satisfied, need by need, hour by hour.
+const desires = [
+  { name: "rest",        col: "#2c4a6e", base: 0.20,
+    bumps: [[3.0, 3.8, 1.8], [14.0, 1.2, 0.25]],
+    qbase: 0.35, qbumps: [[3.0, 4.0, 0.55]] },
+  { name: "nourishment", col: "#e8654f", base: 0.10,
+    bumps: [[7.5, 1.1, 0.8], [13.0, 1.2, 0.9], [19.5, 1.4, 0.9]],
+    qbase: 0.30, qbumps: [[7.5, 1.2, 0.5], [13.0, 1.3, 0.5], [19.5, 1.5, 0.5]] },
+  { name: "movement",    col: "#0e7c7b", base: 0.10,
+    bumps: [[7.2, 1.6, 0.55], [17.5, 1.8, 0.65]],
+    qbase: 0.28, qbumps: [[7.2, 1.6, 0.25], [17.5, 1.8, 0.30]] },
+  { name: "learning",    col: "#e2a512", base: 0.14,
+    bumps: [[10.5, 2.6, 0.75]],
+    qbase: 0.25, qbumps: [[10.5, 2.6, 0.35]] },
+  { name: "connection",  col: "#7a4bb0", base: 0.14,
+    bumps: [[20.8, 2.6, 1.0], [13.0, 1.5, 0.3]],
+    qbase: 0.30, qbumps: [[20.8, 2.6, 0.45], [13.0, 1.5, 0.20]] },
+];
+
+const bumpSum = (base, bumps, t) => {
+  let w = base;
+  for (const [peak, width, amp] of bumps) {
+    let dc = Math.abs(t - peak);
+    dc = Math.min(dc, 24 - dc);
+    w += amp * Math.exp(-(dc / width) * (dc / width));
+  }
+  return w;
+};
+const shares = t => {
+  const ws = desires.map(d => bumpSum(d.base, d.bumps, t));
+  const tot = d3.sum(ws);
+  return ws.map(w => w / tot);
+};
+const qs = t => desires.map(d => Math.min(0.97, bumpSum(d.qbase, d.qbumps, t)));
+
+// cumulative band edges + per-desire met boundaries at each sample
+const cums = d3.range(n + 1).map(i => {
+  const t = 24 * i / n, sh = shares(t), qq = qs(t);
+  let acc = 0;
+  const cum = [0], met = [];
+  sh.forEach((s, k) => { met.push(acc + qq[k] * s); acc += s; cum.push(acc); });
+  return { cum, met };
+});
+
+// AREA-TRUE construction (½r²dθ): a share f maps to the radius whose
+// annulus area is f of the whole — r(f) = √(r-in² + f·(R² − r-in²)).
+const rad = f => Math.sqrt(rIn * rIn + f * (R * R - rIn * rIn));
+
+// cetz frame: hour t → angle a = 90° − t·15°, point (r cos a, r sin a), y up.
+// rendered into SVG by flipping y; rotations flip sign likewise.
+const ang = t => (Math.PI / 2) - t * (TAU / 24);
+const xy = (r, a) => [U * r * Math.cos(a), -U * r * Math.sin(a)];
+const fpt = (f, i) => xy(rad(f), ang(24 * i / n));
+
+const svg = d3.select("#dial")
+  .attr("viewBox", [-3.45 * U, -3.45 * U, 9.85 * U, 6.9 * U])
+  .attr("width", 9.85 * U).attr("height", 6.9 * U);
+const g = svg.append("g");
+
+const poly = pts => "M" + pts.map(p => p[0].toFixed(2) + "," + p[1].toFixed(2)).join("L") + "Z";
+const ring = (fOuter, fInner) =>
+  poly(d3.range(n + 1).map(i => fpt(fOuter(i), i))
+       .concat(d3.range(n, -1, -1).map(i => fpt(fInner(i), i))));
+
+// each desire: full colour up to its met boundary, pale beyond — with a
+// SOFT edge, blended across a small window in share space
+const wq = 0.045, steps = 9;
+desires.forEach((d, k) => {
+  const pale = d3.interpolateRgb(d.col, "#ffffff")(0.62);
+  const lo = i => Math.max(cums[i].cum[k],     cums[i].met[k] - wq);
+  const hi = i => Math.min(cums[i].cum[k + 1], cums[i].met[k] + wq);
+  // met core
+  g.append("path").attr("d", ring(lo, i => cums[i].cum[k])).attr("fill", d.col);
+  // the soft satisfaction edge
+  for (let j = 0; j < steps; j++) {
+    const m = (j + 0.5) / steps;
+    g.append("path")
+      .attr("d", ring(i => lo(i) + (hi(i) - lo(i)) * (j + 1) / steps,
+                      i => lo(i) + (hi(i) - lo(i)) * j / steps))
+      .attr("fill", d3.interpolateRgb(d.col, pale)(m));
+  }
+  // unmet remainder
+  g.append("path").attr("d", ring(i => cums[i].cum[k + 1], hi)).attr("fill", pale);
+});
+// white seams between desires
+for (let k = 1; k < desires.length; k++) {
+  g.append("path")
+    .attr("d", poly(d3.range(n + 1).map(i => fpt(cums[i].cum[k], i))))
+    .attr("fill", "none").attr("stroke", "#fff").attr("stroke-width", 0.9 * PT);
+}
+
+// rim — the τ chrome is set in BLACK, the circle kept pure
+g.append("circle").attr("r", R * U)
+  .attr("fill", "none").attr("stroke", cDeep).attr("stroke-width", 0.7 * PT);
+
+const tick = (h, len, w) => {
+  const a = ang(h), [x0, y0] = xy(R, a), [x1, y1] = xy(R + len, a);
+  g.append("line").attr("x1", x0).attr("y1", y0).attr("x2", x1).attr("y2", y1)
+    .attr("stroke", "#000").attr("stroke-width", w * PT);
+};
+const label = (txt, r, h, fsPt, opts = {}) => {
+  const [x, y] = xy(r, ang(h));
+  const t = g.append("text").attr("x", x).attr("y", y)
+    .attr("text-anchor", "middle").attr("dominant-baseline", "central")
+    .attr("font-size", fsPt * PT).attr("fill", opts.fill || "#000");
+  if (opts.bold) t.attr("font-weight", "bold");
+  if (opts.rotate !== undefined)
+    t.attr("transform", `rotate(${opts.rotate},${x},${y})`);
+  t.text(txt);
+  return t;
+};
+
+// one day = one turn: quarters bold, the special angles fine —
+// τ∕12 (2 h), τ∕8 (3 h), τ∕6 (4 h), and τ∕3, the eight-hour day
+const hourDigitR = R + 0.50; // past the event lanes
+for (const [s, h] of [["0, τ", 0], ["τ∕4", 6], ["τ∕2", 12], ["3τ∕4", 18]]) {
+  tick(h, 0.12, 1.3);
+  label(s, hourDigitR, h, 6.5, { bold: true });
+}
+for (const [s, h] of [["τ∕12", 2], ["τ∕8", 3], ["τ∕6", 4], ["τ∕3", 8]]) {
+  tick(h, 0.08, 0.8);
+  label(s, R + 0.22, h, 4.5);
+}
+
+// the MAIN line of reference is the current time: a solid black hand,
+// plus the radian construction hung off it — the hand IS the radius;
+// laid along the rim it spans ONE RADIAN OF DAY, 24∕τ ≈ 3 h 49 min.
+const radHr = 24 / 6.2832;
+const hand = g.append("g");
+function drawHand(now) {
+  hand.selectAll("*").remove();
+  const na = ang(now);
+  const [hx0, hy0] = xy(0.12, na), [hx1, hy1] = xy(R, na);
+  hand.append("line").attr("x1", hx0).attr("y1", hy0).attr("x2", hx1).attr("y2", hy1)
+    .attr("stroke", "#000").attr("stroke-width", 1.8 * PT).attr("stroke-linecap", "round");
+  hand.append("circle").attr("cx", hx1).attr("cy", hy1).attr("r", 0.06 * U).attr("fill", "#000");
+  // the bent stroke: back along the rim from now, one radian of day
+  const a0 = ang(now), a1 = ang(now - radHr), rr = (R - 0.05) * U;
+  const [ax0, ay0] = xy(R - 0.05, a0), [ax1, ay1] = xy(R - 0.05, a1);
+  hand.append("path")
+    .attr("d", `M${ax0},${ay0}A${rr},${rr} 0 0 0 ${ax1},${ay1}`)
+    .attr("fill", "none").attr("stroke", "#000")
+    .attr("stroke-width", 1.4 * PT).attr("stroke-linecap", "round");
+  const [tx0, ty0] = xy(R - 0.16, a1), [tx1, ty1] = xy(R + 0.02, a1);
+  hand.append("line").attr("x1", tx0).attr("y1", ty0).attr("x2", tx1).attr("y2", ty1)
+    .attr("stroke", "#000").attr("stroke-width", 1.2 * PT);
+  const am = ang(now - radHr / 2);
+  const rotDeg = -(Math.sin(am) < 0 ? am + Math.PI / 2 : am - Math.PI / 2) * 180 / Math.PI;
+  const [lx, ly] = xy(R - 0.30, am);
+  hand.append("text").attr("x", lx).attr("y", ly)
+    .attr("text-anchor", "middle").attr("dominant-baseline", "central")
+    .attr("font-size", 4.8 * PT).attr("font-weight", "bold")
+    .attr("transform", `rotate(${rotDeg},${lx},${ly})`)
+    .text("1 rad");
+}
+drawHand(6.0); // the hand stands at τ∕4 — dawn
+
+// conversions live BESIDE the circle — the face stays pure τ
+{
+  const lines = [
+    "τ = one turn = 24 h",
+    "τ∕4 = 6 h dawn",
+    "τ∕2 = noon",
+    "τ∕12 = 2 h, τ∕8 = 3 h, τ∕6 = 4 h",
+    "τ∕3 = 8 h - the eight-hour day",
+    "1 rad of day = 24∕τ ≈ 3 h 49 m",
+    "the hand: τ∕4",
+  ];
+  const t = g.append("text")
+    .attr("x", (R + 0.85) * U).attr("y", -(R - 0.55) * U)
+    .attr("font-size", 5.5 * PT).attr("fill", "#000");
+  lines.forEach((l, i) =>
+    t.append("tspan").attr("x", (R + 0.85) * U).attr("dy", i ? "1.35em" : "0.9em").text(l));
+}
+
+// band labels: white when the band mid is met, darkened on the pale part
+for (const l of [{ k: 0, hr: 2.5 }, { k: 1, hr: 13.0 }, { k: 2, hr: 17.3 },
+                 { k: 3, hr: 10.5 }, { k: 4, hr: 21.0 }]) {
+  const i = Math.round(l.hr / 24 * n), c = cums[i];
+  const mid = (c.cum[l.k] + c.cum[l.k + 1]) / 2;
+  const isMet = mid < c.met[l.k];
+  label(desires[l.k].name, rad(mid), l.hr, 6, {
+    bold: true,
+    fill: isMet ? "#fff" : d3.color(desires[l.k].col).darker(0.55).formatHex(),
+  });
+}
+
+// events ride the outside of the circumference — blue for labour
+// events, gold for free ones; labels set per-glyph along the arc,
+// flipped on the lower half so they always read upright
+const evs = [
+  { label: "breakfast",     t0: 6.75,  t1: 8.0,   kind: "free", lane: 0 },
+  { label: "harvest shift", t0: 9.5,   t1: 12.0,  kind: "work", lane: 0 },
+  { label: "lunch w/ Ana",  t0: 13.0,  t1: 14.25, kind: "free", lane: 0 },
+  { label: "repair café",   t0: 15.0,  t1: 16.5,  kind: "work", lane: 0 },
+  { label: "school run",    t0: 16.0,  t1: 17.25, kind: "free", lane: 1 },
+  { label: "band practice", t0: 19.25, t1: 21.25, kind: "free", lane: 0 },
+];
+const bw = 0.26;
+for (const ev of evs) {
+  const rr = R + 0.09 + bw / 2 + ev.lane * (bw + 0.09);
+  const col = ev.kind === "work" ? cWarm : cYea;
+  const a0 = ang(ev.t1), a1 = ang(ev.t0); // start..stop, as in the cetz arc
+  const [ex0, ey0] = xy(rr, a0), [ex1, ey1] = xy(rr, a1);
+  g.append("path")
+    .attr("d", `M${ex0},${ey0}A${rr * U},${rr * U} 0 0 0 ${ex1},${ey1}`)
+    .attr("fill", "none").attr("stroke", col)
+    .attr("stroke-width", 7.4 * PT).attr("stroke-linecap", "butt");
+  const chars = [...ev.label], nch = chars.length;
+  const amid = ang((ev.t0 + ev.t1) / 2);
+  const bottom = Math.sin(amid) < 0;
+  const arclen = (ev.t1 - ev.t0) / 24 * TAU * rr;
+  const pitch = Math.min(0.075, arclen * 0.86 / Math.max(nch, 1));
+  const fs = Math.max(2.9, 4.3 * pitch / 0.075);
+  const dth = pitch / rr;
+  chars.forEach((ch, i) => {
+    const off = (i - (nch - 1) / 2) * dth;
+    const th = bottom ? amid + off : amid - off;
+    const rot = -(bottom ? th + Math.PI / 2 : th - Math.PI / 2) * 180 / Math.PI;
+    const [cx, cy] = xy(rr, th);
+    g.append("text").attr("x", cx).attr("y", cy)
+      .attr("text-anchor", "middle").attr("dominant-baseline", "central")
+      .attr("font-size", fs * PT).attr("font-weight", "bold").attr("fill", "#fff")
+      .attr("transform", `rotate(${rot},${cx},${cy})`)
+      .text(ch);
+  });
+}
+
+// optional: the hand as a clock — its rotation IS the passage of time
+let timer = null;
+d3.select("#live").on("change", function () {
+  if (this.checked) {
+    const tickNow = () => {
+      const d = new Date();
+      drawHand(d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600);
+    };
+    tickNow();
+    timer = setInterval(tickNow, 10000);
+  } else {
+    clearInterval(timer); timer = null;
+    drawHand(6.0);
+  }
+});
+</script>
+</body>
+</html>

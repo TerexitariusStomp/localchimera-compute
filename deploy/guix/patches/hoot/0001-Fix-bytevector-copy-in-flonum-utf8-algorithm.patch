@@ -1,0 +1,42 @@
+From 783c7a9b79aeb47a762693ff4885231482c8fd3f Mon Sep 17 00:00:00 2001
+From: David Thompson <dave@spritely.institute>
+Date: Thu, 21 May 2026 17:19:25 -0400
+Subject: [PATCH] Fix bytevector copy in flonum->utf8 algorithm.
+
+When inserting a decimal point we were specifying the number of bytes
+to copy rather than the end index that bytevector-copy! expects.
+
+Fixes #890
+---
+ lib/hoot/write.scm             | 2 +-
+ test/test-number-to-string.scm | 2 ++
+ 2 files changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/lib/hoot/write.scm b/lib/hoot/write.scm
+index 0f993ef..4b97ae2 100644
+--- a/lib/hoot/write.scm
++++ b/lib/hoot/write.scm
+@@ -117,7 +117,7 @@
+          (else
+           ;; Need to insert a dot.
+           (bytevector-copy! buf (+ sign scale 1) buf (+ sign scale)
+-                            (1+ (- pos sign scale)))
++                            (+ pos (- sign scale) 1))
+           (bytevector-u8-set! buf (+ sign scale) dot-digit)
+           (1+ pos))))
+       (define (finish-scientific pos scale sign)
+diff --git a/test/test-number-to-string.scm b/test/test-number-to-string.scm
+index 9324081..3e15d0c 100644
+--- a/test/test-number-to-string.scm
++++ b/test/test-number-to-string.scm
+@@ -35,5 +35,7 @@
+ 
+ (test-number->string 42 10)
+ (test-number->string "2f" 47 16)
++;; Regression test for https://codeberg.org/spritely/hoot/issues/890
++(test-number->string "-10.3" -10.3 10)
+ 
+ (test-end* "test-number-to-string")
+-- 
+2.43.0
+

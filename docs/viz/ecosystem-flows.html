@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The metabolism on Earth — a metabolic clock</title>
+<style>
+  :root{ --deep:#2c4a6e; --gold:#c8a020; --gold-dk:#8a6f12; --warm:#b87333; --yea:#4a8a5a;
+    --C:#6f6f6f; --N:#3a78c2; --P:#d98a3a; --K:#7d57b0; }
+  html,body{margin:0;background:#f7f5f0;color:#1a1a1a;
+    font-family:"Libertinus Serif","Iowan Old Style",Georgia,"Times New Roman",serif;}
+  .wrap{max-width:1060px;margin:0 auto;padding:24px 18px 60px;}
+  h1{font-size:22px;font-weight:700;margin:0 0 2px;}
+  .sub{font-style:italic;color:#555;font-size:13.5px;margin:0 0 10px;}
+  .controls{display:flex;gap:13px;align-items:center;margin:8px 0 2px;font-size:13px;color:#333;flex-wrap:wrap;}
+  .controls button{font:inherit;font-size:12.5px;padding:4px 10px;border:1px solid #cabfa6;background:#f1ead4;border-radius:5px;cursor:pointer;color:#5a4a16;}
+  .controls button:hover{background:#ece2c2;}
+  svg{width:100%;height:auto;display:block;}
+  figcaption{font-size:13.5px;line-height:1.55;color:#222;margin-top:12px;border-top:1px solid #e3ddd0;padding-top:12px;}
+  figcaption b{font-weight:700;}
+  .el-C{color:var(--C)} .el-N{color:var(--N)} .el-P{color:var(--P)} .el-K{color:var(--K)}
+  #tip{position:fixed;pointer-events:none;background:#fff;border:1px solid #cfc7b6;box-shadow:0 2px 8px rgba(0,0,0,.14);
+    border-radius:5px;padding:6px 9px;font-size:12px;color:#222;opacity:0;transition:opacity .08s;z-index:10;max-width:220px;}
+  #tip .tt{font-weight:700;margin-bottom:3px;}
+  #tip .row{display:flex;justify-content:space-between;gap:14px;}
+  #tip .sw{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>The metabolism on Earth</h1>
+  <p class="sub">a metabolic clock on the closed planet &mdash; matter cycles within (arc width = flow); the Sun feeds energy in, the surface radiates heat to space</p>
+  <div class="controls">
+    <button id="toggleRibbon">hide average ribbons</button>
+    <button id="pause">pause</button>
+    <button id="toggleGlobe">real globe</button>
+    <label>speed <input id="speed" type="range" min="0.2" max="2.4" step="0.1" value="1"></label>
+    <span style="color:#999;font-style:italic">drag a node · hover a ribbon or recipe</span>
+  </div>
+  <figure style="margin:0">
+    <svg id="fig" viewBox="0 0 1040 760" role="img" aria-label="metabolic clock on Earth"></svg>
+    <figcaption>
+      <b>A metabolic clock on a closed Earth.</b> The nodes sit on a ring in <i>cycle order</i>; each node's
+      <b>size</b> is its throughput, and every flow is an <b>arc whose width is the amount</b>
+      (<span class="el-C">C</span>&middot;<span class="el-N">N</span>&middot;<span class="el-P">P</span>&middot;<span class="el-K">K</span>,
+      each scaled to its own total) &mdash; arcs that jump far across the cycle dip deeper toward the centre.
+      Each resource is a <b>container</b> that <b>holds</b> tokens; each recipe is a <b>transition</b> sitting at the
+      <i>centroid of the edges it triggers</i>, with dotted lines pointing to them &mdash; when it fires, the line to the
+      edge it just fired lights up. Matter <b>cycles</b> within the sphere and is conserved; the
+      <span style="color:var(--warm)">Sun</span> pours <span style="color:var(--warm)">energy</span> in and the surface
+      radiates <span style="color:#c0392b">heat</span> to space, one way &mdash; conservation and the second law in one
+      picture. The <span style="color:#888">Moon</span> keeps it company.
+    </figcaption>
+  </figure>
+</div>
+<div id="tip"></div>
+
+<script src="d3.v7.min.js"></script>
+<script src="topojson-client.min.js"></script>
+<script src="land-110m.js"></script>
+<script>
+const SVGNS="http://www.w3.org/2000/svg";
+const EL={C:"#6f6f6f",N:"#3a78c2",P:"#d98a3a",K:"#7d57b0"}, WARM="#b87333";
+const DEEP="#2c4a6e",GOLD="#c8a020",GOLDDK="#8a6f12",YEA="#4a8a5a";
+const EC=[520,408], ER=322, RRING=212;       // Earth centre, radius, node-ring radius
+const SUN=[120,152], SUNR=48, MOON=[948,168], MOONR=24;
+
+// ---------- nodes ----------
+const META={
+  producers:{label:"producers", fill:"#dcebe0",stroke:YEA,tx:"#2f6b43"},
+  herbivores:{label:"herbivores",fill:"#dcebe0",stroke:YEA,tx:"#2f6b43"},
+  carnivores:{label:"carnivores",fill:"#dcebe0",stroke:YEA,tx:"#2f6b43"},
+  decomposers:{label:"decomposers",fill:"#dcebe0",stroke:YEA,tx:"#2f6b43"},
+  soil:{label:"soil",fill:"#ecd9bf",stroke:WARM,tx:"#7a4a18"},
+  rock:{label:"rock",fill:"#e3d3bb",stroke:WARM,tx:"#7a4a18"},
+  water:{label:"water",fill:"#dfe7f0",stroke:"#3a78c2",tx:"#2a5a8a"},
+  air:{label:"air",fill:"#dbe6f2",stroke:DEEP,tx:DEEP},
+};
+const order=["producers","herbivores","carnivores","decomposers","soil","rock","water","air"];
+const nodes=order.map(id=>({id,...META[id]}));
+nodes.push({id:"sun",label:"sun",space:true},{id:"moon",label:"moon",space:true});
+nodes.find(n=>n.id==="sun").x=SUN[0]; nodes.find(n=>n.id==="sun").y=SUN[1]; nodes.find(n=>n.id==="sun").r=SUNR;
+nodes.find(n=>n.id==="moon").x=MOON[0]; nodes.find(n=>n.id==="moon").y=MOON[1]; nodes.find(n=>n.id==="moon").r=MOONR;
+const N=Object.fromEntries(nodes.map(n=>[n.id,n]));
+
+// ---------- edges (flows) ----------
+const F=(C,Nn,P,Kk)=>[["C",C],["N",Nn],["P",P],["K",Kk]].filter(d=>d[1]>0).map(d=>({el:d[0],color:EL[d[0]],value:d[1]}));
+const edges=[
+  {s:"air",t:"producers",rx:"photo",f:F(10,0,0,0)},
+  {s:"soil",t:"producers",rx:"uptake",f:F(0,4,1,3)},
+  {s:"air",t:"soil",rx:"fix",f:F(0,1.2,0,0)},
+  {s:"rock",t:"soil",rx:"weather",f:F(0,0,0.8,1.5)},
+  {s:"producers",t:"herbivores",rx:"graze",f:F(5,2,0.5,1.5)},
+  {s:"herbivores",t:"carnivores",rx:"prey",f:F(1.8,0.72,0.18,0.54)},
+  {s:"producers",t:"decomposers",rx:"litter",f:F(4.5,1.8,0.45,1.35)},
+  {s:"herbivores",t:"decomposers",rx:"death",f:F(2.5,1,0.25,0.75)},
+  {s:"carnivores",t:"decomposers",rx:"death",f:F(1.2,0.48,0.12,0.36)},
+  {s:"decomposers",t:"soil",rx:"mineral.",f:F(0,3.6,0.9,2.7)},
+  {s:"decomposers",t:"air",rx:"respire",f:F(6,0,0,0)},
+  {s:"herbivores",t:"air",rx:"respire",f:F(2.5,0,0,0)},
+  {s:"carnivores",t:"air",rx:"respire",f:F(1.2,0,0,0)},
+  {s:"soil",t:"water",rx:"leach",f:F(0,0.5,0.2,0.6)},
+  {s:"soil",t:"air",rx:"denitr.",f:F(0,0.7,0,0)},
+  {s:"sun",t:"producers",rx:"",f:[{el:"E",color:WARM,value:11}],energy:true},
+];
+const matterEdges=edges.filter(e=>!e.energy);
+const energyEdges=edges.filter(e=>e.energy);
+const eflow=e=>d3.sum(e.f,d=>d.value);
+
+// ---------- ring layout: sector ∝ throughput, radius ∝ √throughput ----------
+nodes.forEach(n=>{ if(!n.space) n.T=0; });
+matterEdges.forEach(e=>{ N[e.s].T+=eflow(e); N[e.t].T+=eflow(e); });
+const Tmax=d3.max(order,id=>N[id].T);
+const weights=order.map(id=>N[id].T+5), Wsum=d3.sum(weights);
+let cum=0;
+order.forEach((id,i)=>{
+  const n=N[id];
+  const a=-Math.PI/2 + (cum+weights[i]/2)/Wsum*2*Math.PI;  // clockwise from top
+  cum+=weights[i];
+  n.ang=a; n.x=EC[0]+RRING*Math.cos(a); n.y=EC[1]+RRING*Math.sin(a);
+  n.r=14+28*Math.sqrt(n.T/Tmax);
+});
+
+// ---------- geometry: inward geodesic arcs ----------
+const dist=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]);
+const unit=v=>{const m=Math.hypot(v[0],v[1])||1;return [v[0]/m,v[1]/m];};
+const bez=(t,A,C,B)=>{const u=1-t;return [u*u*A[0]+2*u*t*C[0]+t*t*B[0], u*u*A[1]+2*u*t*C[1]+t*t*B[1]];};
+function geomEdge(e){
+  const s=N[e.s],t=N[e.t], P0=[s.x,s.y],P2=[t.x,t.y];
+  const mid=[(P0[0]+P2[0])/2,(P0[1]+P2[1])/2];
+  let pull;
+  if(s.ang!=null&&t.ang!=null){ let d=Math.abs(s.ang-t.ang); if(d>Math.PI)d=2*Math.PI-d; pull=0.95*Math.sin(d/2); }
+  else pull=0.22;                                   // energy from the Sun: gentle
+  const C=[mid[0]+(EC[0]-mid[0])*pull, mid[1]+(EC[1]-mid[1])*pull];
+  const dA=unit([C[0]-P0[0],C[1]-P0[1]]), dB=unit([C[0]-P2[0],C[1]-P2[1]]);
+  e.A=[P0[0]+dA[0]*s.r, P0[1]+dA[1]*s.r];
+  e.B=[P2[0]+dB[0]*t.r, P2[1]+dB[1]*t.r];
+  e.C=C; e.mid=bez(0.5,e.A,e.C,e.B); e.len=dist(e.A,e.C)+dist(e.C,e.B);
+}
+
+const svg=d3.select("#fig");
+const defs=svg.append("defs");
+const backdrop=svg.append("g");
+const ribbonLayer=svg.append("g");
+const heatLayer=svg.append("g");
+const tokenLayer=svg.append("g");
+const recipeLayer=svg.append("g");
+const nodeLayer=svg.append("g");
+const hud=svg.append("g");
+
+const tipEl=document.getElementById("tip");
+function showTip(ev,html){ tipEl.innerHTML=html; tipEl.style.left=(ev.clientX+14)+"px"; tipEl.style.top=(ev.clientY+12)+"px"; tipEl.style.opacity=1; }
+function hideTip(){ tipEl.style.opacity=0; }
+function mk(tag,a){const e=document.createElementNS(SVGNS,tag);for(const k in a)e.setAttribute(k,a[k]);return e;}
+
+// ---------- backdrop: space, Earth, atmosphere, Sun, Moon ----------
+let globeG;
+(function backdropDraw(){
+  const eg=defs.append("radialGradient").attr("id","earthG").attr("cx","42%").attr("cy","38%").attr("r","72%");
+  eg.append("stop").attr("offset","0%").attr("stop-color","#cfe7df");
+  eg.append("stop").attr("offset","55%").attr("stop-color","#b6d2e6");
+  eg.append("stop").attr("offset","100%").attr("stop-color","#8fb4d3");
+  const sg=defs.append("radialGradient").attr("id","sunG");
+  sg.append("stop").attr("offset","0%").attr("stop-color","#fff6c8");
+  sg.append("stop").attr("offset","55%").attr("stop-color","#f6cf45");
+  sg.append("stop").attr("offset","100%").attr("stop-color","#e89c12");
+  const mg=defs.append("radialGradient").attr("id","moonG").attr("cx","40%").attr("cy","38%");
+  mg.append("stop").attr("offset","0%").attr("stop-color","#ececed");
+  mg.append("stop").attr("offset","100%").attr("stop-color","#b3b6bd");
+  // heat arrowhead
+  const hm=defs.append("marker").attr("id","heatHead").attr("viewBox","0 0 10 10").attr("refX",8).attr("refY",5)
+    .attr("markerWidth",7).attr("markerHeight",7).attr("orient","auto-start-reverse");
+  hm.append("path").attr("d","M0,0 L10,5 L0,10 z").attr("fill","#d24a3a");
+  const og2=defs.append("radialGradient").attr("id","oceanGrad").attr("cx","38%").attr("cy","34%").attr("r","80%");
+  og2.append("stop").attr("offset","0%").attr("stop-color","#cfe2ee");
+  og2.append("stop").attr("offset","78%").attr("stop-color","#9dbdd4");
+  og2.append("stop").attr("offset","100%").attr("stop-color","#7fa3bd");
+  defs.append("clipPath").attr("id","earthClip").append("circle").attr("cx",EC[0]).attr("cy",EC[1]).attr("r",ER);
+  // stars (outside Earth)
+  for(let i=0;i<70;i++){ const x=20+Math.random()*1000, y=14+Math.random()*732;
+    if(dist([x,y],EC)>ER+18 && dist([x,y],SUN)>SUNR+18){
+      backdrop.append("circle").attr("cx",x).attr("cy",y).attr("r",Math.random()*0.9+0.3).attr("fill","#c9c2b4").attr("opacity",Math.random()*0.5+0.2); } }
+  // atmosphere glow + Earth
+  backdrop.append("circle").attr("cx",EC[0]).attr("cy",EC[1]).attr("r",ER+12).attr("fill","none").attr("stroke","#bcdcef").attr("stroke-width",10).attr("opacity",0.35);
+  backdrop.append("circle").attr("id","earthDisk").attr("cx",EC[0]).attr("cy",EC[1]).attr("r",ER).attr("fill","url(#earthG)").attr("stroke","#7ea7c6").attr("stroke-width",1);
+  globeG=backdrop.append("g").attr("clip-path","url(#earthClip)").style("display","none");
+  // node ring guide
+  backdrop.append("circle").attr("cx",EC[0]).attr("cy",EC[1]).attr("r",RRING).attr("fill","none").attr("stroke","#ffffff").attr("stroke-width",1).attr("opacity",0.4);
+  // Sun with rays
+  for(let i=0;i<12;i++){ const a=i/12*2*Math.PI;
+    backdrop.append("line").attr("x1",SUN[0]+Math.cos(a)*(SUNR+4)).attr("y1",SUN[1]+Math.sin(a)*(SUNR+4))
+      .attr("x2",SUN[0]+Math.cos(a)*(SUNR+15)).attr("y2",SUN[1]+Math.sin(a)*(SUNR+15)).attr("stroke","#f0bf3a").attr("stroke-width",2).attr("opacity",0.8); }
+  backdrop.append("circle").attr("cx",SUN[0]).attr("cy",SUN[1]).attr("r",SUNR).attr("fill","url(#sunG)");
+  backdrop.append("text").attr("x",SUN[0]).attr("y",SUN[1]+3).attr("text-anchor","middle").attr("font-size",13).attr("font-weight",700).attr("fill","#9a6a10").text("sun");
+  // Moon
+  backdrop.append("circle").attr("cx",MOON[0]).attr("cy",MOON[1]).attr("r",MOONR).attr("fill","url(#moonG)").attr("stroke","#a7a9b0").attr("stroke-width",0.8);
+  [[ -8,-5,4],[6,3,5],[2,-9,2.4]].forEach(c=>backdrop.append("circle").attr("cx",MOON[0]+c[0]).attr("cy",MOON[1]+c[1]).attr("r",c[2]).attr("fill","#aeb1b8").attr("opacity",0.6));
+  backdrop.append("text").attr("x",MOON[0]).attr("y",MOON[1]+MOONR+12).attr("text-anchor","middle").attr("font-size",11).attr("fill","#8a8d94").text("moon");
+})();
+
+// ---------- real globe (toggle): orthographic Earth like app.html ----------
+let land=null, globeOn=false, rotLng=20, globeAcc=0;
+const rewindGeo=geo=>{ const fix=poly=>poly.forEach(r=>{ if(d3.geoArea({type:"Polygon",coordinates:[r]})>2*Math.PI) r.reverse(); });
+  const g=geo.type==="Feature"?geo.geometry:geo; if(g.type==="Polygon")fix(g.coordinates); else if(g.type==="MultiPolygon")g.coordinates.forEach(fix); return geo; };
+try{ if(window.__land110) land=rewindGeo(topojson.feature(window.__land110, window.__land110.objects.land)); }catch(e){}
+function drawGlobe(){
+  globeG.selectAll("*").remove(); if(!land) return;
+  const proj=d3.geoOrthographic().translate(EC).scale(ER).rotate([rotLng,-12]).precision(1.2);
+  const path=d3.geoPath(proj);
+  globeG.append("path").attr("d",path({type:"Sphere"})).attr("fill","url(#oceanGrad)");
+  globeG.append("path").attr("d",path(d3.geoGraticule10())).attr("fill","none").attr("stroke","#fff").attr("stroke-width",0.5).attr("opacity",0.28);
+  globeG.append("path").attr("d",path(land)).attr("fill","#9fb189").attr("stroke","#83997a").attr("stroke-width",0.6);
+  globeG.append("circle").attr("cx",EC[0]).attr("cy",EC[1]).attr("r",ER).attr("fill","#ffffff").attr("opacity",0.26); // scrim, keeps the metabolism legible
+}
+
+// ---------- average ribbons (faint), proportional, along the arcs ----------
+const RIB=1.7;
+function offPath(A,C,B,perp,off){
+  return `M ${A[0]+perp[0]*off} ${A[1]+perp[1]*off} Q ${C[0]+perp[0]*off} ${C[1]+perp[1]*off} ${B[0]+perp[0]*off} ${B[1]+perp[1]*off}`;
+}
+function drawRibbons(){
+  ribbonLayer.selectAll("*").remove();
+  edges.forEach(e=>{
+    geomEdge(e);
+    const d=unit([e.B[0]-e.A[0],e.B[1]-e.A[1]]), perp=[-d[1],d[0]];
+    const total=eflow(e)*RIB; let cum=-total/2;
+    e.f.forEach(b=>{ const w=b.value*RIB, off=cum+w/2; cum+=w;
+      ribbonLayer.append("path").attr("d",offPath(e.A,e.C,e.B,perp,off)).attr("fill","none")
+        .attr("stroke",b.color).attr("stroke-width",w).attr("stroke-linecap","round").attr("opacity",0.16); });
+  });
+}
+
+// ---------- recipes = transitions at the centroid of the edges they trigger ----------
+const recipeOf={}; matterEdges.forEach(e=>{ (recipeOf[e.rx]=recipeOf[e.rx]||{name:e.rx,edges:[]}).edges.push(e); });
+const recipes=Object.values(recipeOf);
+recipes.forEach(R=>{ R.total=d3.sum(R.edges,eflow); R.acc=Math.random()*0.4; R.interval=1.25/Math.max(0.4,R.total); });
+function recipeTipHTML(R){
+  const rows=R.edges.map(e=>`<div class="row"><span style="color:#666">${N[e.s].label.slice(0,4)}→${N[e.t].label.slice(0,4)}</span><span>${eflow(e).toFixed(1)}</span></div>`).join("");
+  return `<div class="tt">${R.name} <span style="color:#888;font-weight:400">· transition (${R.edges.length} edge${R.edges.length>1?"s":""})</span></div>${rows}`;
+}
+function drawTransitions(){
+  recipeLayer.selectAll("*").remove();
+  recipes.forEach(R=>{
+    const mids=R.edges.map(e=>e.mid);
+    R.pos=[d3.mean(mids,m=>m[0]), d3.mean(mids,m=>m[1])];
+    const g=recipeLayer.append("g").attr("class","tnode").datum(R).style("cursor","help");
+    R.edges.forEach((e,i)=>{ const m=mids[i];
+      e._dot = (dist(m,R.pos)>8) ? g.append("line").attr("x1",R.pos[0]).attr("y1",R.pos[1]).attr("x2",m[0]).attr("y2",m[1])
+        .attr("stroke",GOLD).attr("stroke-width",0.8).attr("stroke-dasharray","2 2.6").attr("opacity",0.4) : null; });
+    const w=R.name.length*4.4+11;
+    R._rect=g.append("rect").attr("x",R.pos[0]-w/2).attr("y",R.pos[1]-8).attr("width",w).attr("height",16).attr("rx",2.5)
+      .attr("fill","#fff").attr("stroke",d3.color(GOLD).darker(0.15)).attr("stroke-width",1);
+    g.append("text").attr("x",R.pos[0]).attr("y",R.pos[1]+3).attr("text-anchor","middle").attr("font-size",7.5).attr("font-weight",700).attr("fill",GOLDDK).text(R.name);
+    g.on("mousemove",ev=>showTip(ev,recipeTipHTML(R))).on("mouseleave",hideTip);
+  });
+}
+
+// ---------- heat radiating to space ----------
+const heatFrom=["producers","carnivores","decomposers"];
+let heatArrows=[];
+function drawHeat(){
+  heatLayer.selectAll("*").remove(); heatArrows=[];
+  heatFrom.forEach(id=>{ const n=N[id]; const dir=unit([n.x-EC[0],n.y-EC[1]]);
+    const A=[n.x+dir[0]*(n.r+5), n.y+dir[1]*(n.r+5)], B=[EC[0]+dir[0]*(ER+58), EC[1]+dir[1]*(ER+58)];
+    heatLayer.append("line").attr("x1",A[0]).attr("y1",A[1]).attr("x2",B[0]).attr("y2",B[1])
+      .attr("stroke","#d24a3a").attr("stroke-width",1.5).attr("stroke-dasharray","5 4").attr("marker-end","url(#heatHead)").attr("opacity",0.85);
+    heatLayer.append("text").attr("x",B[0]+dir[0]*12).attr("y",B[1]+dir[1]*12+3).attr("text-anchor","middle").attr("font-size",10).attr("font-style","italic").attr("fill","#c0392b").text("heat");
+    heatArrows.push({A,B}); });
+}
+
+// ---------- packet glyph + token model ----------
+function bundleGlyph(f){ const g=mk("g",{}); const sq=3.8,gap=0.8,wt=f.length*(sq+gap)-gap;
+  g.appendChild(mk("rect",{x:-wt/2-1.4,y:-sq/2-1.4,width:wt+2.8,height:sq+2.8,rx:1.6,fill:"#fff",stroke:"#cfc8b8","stroke-width":0.5}));
+  f.forEach((d,i)=>g.appendChild(mk("rect",{x:-wt/2+i*(sq+gap),y:-sq/2,width:sq,height:sq,rx:0.6,fill:d.color}))); return g; }
+const domColor=f=>f.reduce((a,b)=>b.value>a.value?b:a).color;
+const newToken=f=>({f:f.map(d=>({el:d.el,color:d.color,value:d.value})),dom:domColor(f)});
+
+// ---------- nodes are places (containers) ----------
+function drawNodes(){
+  const g=nodeLayer.selectAll("g.node").data(nodes.filter(n=>!n.space),d=>d.id).join(enter=>{
+    const gg=enter.append("g").attr("class","node").style("cursor","grab");
+    gg.append("circle").attr("r",d=>d.r).attr("fill",d=>d.fill).attr("stroke",d=>d.stroke).attr("stroke-width",1.8);
+    gg.append("text").attr("text-anchor","middle").attr("dy",d=>-d.r*0.42).attr("font-size",d=>d.r>32?11:9).attr("font-weight",700).attr("fill",d=>d.tx).text(d=>d.label);
+    gg.append("g").attr("class","heldg");
+    gg.call(d3.drag().on("drag",function(ev,d){ d.x=ev.x; d.y=ev.y; d3.select(this).attr("transform",`translate(${d.x},${d.y})`); recompute(); }));
+    gg.on("mousemove",(ev,d)=>showTip(ev,placeTipHTML(d))).on("mouseleave",hideTip)
+      .on("click",(ev,d)=>{ focusId=(focusId===d.id?null:d.id); applyFocus(); ev.stopPropagation(); });
+    return gg;
+  });
+  g.attr("transform",d=>`translate(${d.x},${d.y})`);
+}
+function placeTipHTML(n){
+  const tally={}; n.held.forEach(t=>tally[t.dom]=(tally[t.dom]||0)+1);
+  const name={[EL.C]:"C",[EL.N]:"N",[EL.P]:"P",[EL.K]:"K"};
+  const rows=Object.entries(tally).map(([c,v])=>`<div class="row"><span><span class="sw" style="background:${c}"></span>${name[c]||"·"}</span><span>${v}</span></div>`).join("");
+  return `<div class="tt">${n.label} <span style="color:#888;font-weight:400">holds ${n.held.length} · T=${n.T.toFixed(0)}</span></div>${rows||'<div style="color:#888">empty</div>'}`;
+}
+let focusId=null;
+function applyFocus(){
+  nodeLayer.selectAll("g.node").style("opacity",1); recipeLayer.selectAll("g.tnode").style("opacity",1); ribbonLayer.style("opacity",1);
+  if(focusId==null) return;
+  const adj=new Set([focusId]); edges.forEach(e=>{ if(e.s===focusId)adj.add(e.t); if(e.t===focusId)adj.add(e.s); });
+  nodeLayer.selectAll("g.node").style("opacity",d=>adj.has(d.id)?1:0.2);
+  recipeLayer.selectAll("g.tnode").style("opacity",R=>R.edges.some(e=>e.s===focusId||e.t===focusId)?1:0.12);
+}
+svg.on("click",()=>{ focusId=null; applyFocus(); });
+
+// ---------- Petri sim ----------
+const BOUNDARY=new Set(["air","soil","rock"]), CAP=18, SHOW=10;
+function seedFor(id){ if(id==="air")return F(8,3,0,0); if(id==="soil")return F(0,5,2,4);
+  if(id==="rock")return F(0,0,2,3); if(id==="water")return F(0,1,0,1); return F(6,3,1,2); }
+nodes.filter(n=>!n.space).forEach(n=>{ n.held=[]; const sc=seedFor(n.id); for(let i=0;i<5;i++)n.held.push(newToken(sc)); n._dirty=true; });
+const inflight=[]; let fired=0, cycled=0, exported=0;
+function flashRect(r){ if(!r)return; r.interrupt().attr("fill","#fbeec0").attr("stroke-width",2).transition().duration(420).attr("fill","#fff").attr("stroke-width",1); }
+function flashDot(l){ if(!l)return; l.interrupt().attr("opacity",1).attr("stroke-width",1.7).transition().duration(480).attr("opacity",0.4).attr("stroke-width",0.8); }
+function pulseNode(id){ nodeLayer.selectAll("g.node").filter(d=>d.id===id).select("circle").interrupt().attr("stroke-width",4).transition().duration(340).attr("stroke-width",1.8); }
+function spawnFlow(e){ const s=N[e.s]; let tok;
+  if(s.held&&s.held.length>0){ tok=s.held.pop(); s._dirty=true; } else if(BOUNDARY.has(e.s)){ tok=newToken(e.f); } else return false;
+  const glyph=bundleGlyph(e.f); tokenLayer.node().appendChild(glyph);
+  inflight.push({e,tok,t:0,dur:Math.max(0.6,e.len/120),el:glyph}); return true; }
+function fireRecipe(R){ let r=Math.random()*R.total, idx=0;
+  for(let i=0;i<R.edges.length;i++){ r-=eflow(R.edges[i]); if(r<=0){idx=i;break;} }
+  if(!spawnFlow(R.edges[idx])) return; fired++; flashRect(R._rect); flashDot(R.edges[idx]._dot); }
+function arrive(it){ const t=N[it.e.t]; t.held.push(it.tok); cycled++; if(t.held.length>CAP){t.held.shift();exported++;} t._dirty=true; it.el.remove(); pulseNode(it.e.t); }
+
+energyEdges.forEach(e=>{ e._etoks=[]; for(let i=0;i<8;i++){ const el=bundleGlyph(e.f); tokenLayer.node().appendChild(el); e._etoks.push({el,off:i/8}); } });
+
+function renderHeld(){
+  nodeLayer.selectAll("g.node").each(function(n){ if(!n._dirty)return; n._dirty=false;
+    const hg=d3.select(this).select("g.heldg"); hg.selectAll("*").remove();
+    const k=Math.min(SHOW,n.held.length), perRow=Math.ceil(k/2)||1, dx=6, dy=6, y0=n.r*0.24;
+    for(let i=0;i<k;i++){ const row=i<perRow?0:1, col=i<perRow?i:i-perRow, rowN=row===0?perRow:(k-perRow);
+      hg.append("circle").attr("cx",(col-(rowN-1)/2)*dx).attr("cy",y0+row*dy).attr("r",2.5).attr("fill",n.held[n.held.length-1-i].dom).attr("stroke","#fff").attr("stroke-width",0.5); }
+    if(n.held.length>SHOW) hg.append("text").attr("x",(perRow/2)*dx+5).attr("y",y0+dy*0.5+2.5).attr("font-size",8).attr("font-weight",700).attr("fill","#777").text("+"+(n.held.length-SHOW)); });
+}
+
+function recompute(){ drawRibbons(); drawTransitions(); drawHeat(); }
+drawNodes(); recompute(); renderHeld();
+
+// HUD
+hud.attr("transform","translate(1022,18)");
+hud.append("text").attr("text-anchor","end").attr("font-size",11).attr("font-weight",700).attr("fill","#555").attr("id","h1");
+hud.append("text").attr("text-anchor","end").attr("y",16).attr("font-size",11).attr("fill",YEA).attr("id","h2");
+hud.append("text").attr("text-anchor","end").attr("y",32).attr("font-size",11).attr("font-weight",700).attr("fill","#a04a4a").attr("id","h3");
+function updateHUD(){ d3.select("#h1").text("transitions fired: "+fired); d3.select("#h2").text("bundles cycled: "+cycled); d3.select("#h3").text("exported — the rift: "+exported); }
+updateHUD();
+
+// legend
+(function(){ const lg=svg.append("g").attr("transform","translate(18,18)");
+  [["C",EL.C],["N",EL.N],["P",EL.P],["K",EL.K],["energy",WARM]].forEach((e,i)=>{ const x=i*64;
+    lg.append("rect").attr("x",x).attr("y",0).attr("width",10).attr("height",10).attr("rx",1.5).attr("fill",e[1]);
+    lg.append("text").attr("x",x+15).attr("y",9).attr("font-size",12).attr("fill",d3.color(e[1]).darker(0.4)).text(e[0]); });
+  lg.append("text").attr("x",0).attr("y",26).attr("font-size",11).attr("font-style","italic").attr("fill","#999").text("ring = cycle · size = throughput · width = flow · □ recipe fires → dotted edge"); })();
+
+// ---------- animation ----------
+let playing=true, speedMul=1, last=null, hudAcc=0;
+function frame(ts){ if(last==null)last=ts; const dt=Math.min(0.05,(ts-last)/1000); last=ts;
+  if(playing){
+    hudAcc+=dt; if(hudAcc>0.25){ hudAcc=0; updateHUD(); }
+    if(globeOn){ globeAcc+=dt; if(globeAcc>0.1){ globeAcc=0; rotLng+=0.7; drawGlobe(); } }
+    recipes.forEach(R=>{ R.acc+=dt; const intr=R.interval/speedMul; let g=0; while(R.acc>=intr&&g++<6){ R.acc-=intr; fireRecipe(R); } });
+    for(let i=inflight.length-1;i>=0;i--){ const it=inflight[i]; it.t+=dt*speedMul/it.dur;
+      if(it.t>=1){ arrive(it); inflight.splice(i,1); } else { const p=bez(it.t,it.e.A,it.e.C,it.e.B); it.el.setAttribute("transform",`translate(${p[0].toFixed(1)},${p[1].toFixed(1)})`); } }
+    energyEdges.forEach(e=>{ const fps=(120*speedMul)/Math.max(1,e.len);
+      e._etoks.forEach(tk=>{ tk.off+=dt*fps; if(tk.off>1)tk.off-=1; const p=bez(tk.off,e.A,e.C,e.B); tk.el.setAttribute("transform",`translate(${p[0].toFixed(1)},${p[1].toFixed(1)})`); }); });
+    renderHeld();
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+// controls
+let ribbonsOn=true;
+document.getElementById("toggleRibbon").onclick=function(){ ribbonsOn=!ribbonsOn; ribbonLayer.attr("display",ribbonsOn?null:"none"); this.textContent=ribbonsOn?"hide average ribbons":"show average ribbons"; };
+document.getElementById("pause").onclick=function(){ playing=!playing; this.textContent=playing?"pause":"play"; };
+document.getElementById("toggleGlobe").onclick=function(){ globeOn=!globeOn;
+  globeG.style("display",globeOn?null:"none");
+  d3.select("#earthDisk").style("display",globeOn?"none":null);
+  this.textContent=globeOn?"schematic earth":"real globe";
+  if(globeOn) drawGlobe(); };
+document.getElementById("speed").oninput=function(){ speedMul=+this.value; };
+</script>
+</body>
+</html>

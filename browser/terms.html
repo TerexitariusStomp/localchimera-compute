@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Terms of Use — playnet</title>
+<link rel="stylesheet" href="assets/css/legal.css">
+</head>
+<body>
+<div class="wrap">
+
+<div class="top">
+  <a class="brand" href="app.html">playnet</a>
+  <span class="sep">·</span>
+  <span>terms of use</span>
+  <span class="sep">·</span>
+  <a href="privacy.html">privacy notice</a>
+  <span class="sep">·</span>
+  <a href="accessibility.html">accessibility</a>
+  <span class="spacer"></span>
+  <a href="app.html">← back to the dial</a>
+</div>
+
+<h1>Terms of Use</h1>
+<p class="sub">
+  Version <b data-fact="document-version">1.1.0</b> · effective <b data-fact="legal-version">2026-10-05</b> · applies to the gateway operated by
+  <span class="op unset" data-op="name">[operator not configured — see docs/legal/README.md]</span>
+</p>
+
+<div class="note">
+  <strong>Read this before you create an identity.</strong> Five things here are unlike most
+  services you have used: your passcode is the <em>only</em> key to your identity and cannot be
+  reset (§2); parts of what you create are published to other machines and cannot be recalled
+  (§4); the plan and everything the service tells you about law, food, health, housing or money is
+  information and not advice (§5.5); the people you meet and the things you exchange through it
+  are your own affair (§9.2); and this is unfinished software run by a small collective, not a
+  company with a support desk (§9).
+</div>
+
+<h2>1. What this is, and who you are agreeing with</h2>
+
+<p>
+  <strong>playnet</strong> is an economic planner for a federation of communes. It records what
+  people need, what they can make, and what labour they have contributed, and it computes an
+  allocation — a plan — over that record. It is free software under the
+  <a href="https://www.gnu.org/licenses/agpl-3.0.html">GNU Affero General Public License v3.0</a>
+  with additional terms (see <code>LICENSE.md</code> and
+  <code>LICENSE-ADDITIONAL-TERMS.md</code> in the source tree).
+</p>
+
+<p>
+  <strong>The software's authors are not your counterparty.</strong> Anyone can run a playnet
+  gateway. The one you are signing into is operated by
+  <span class="op unset" data-op="name">[operator not configured]</span>, in
+  <span class="op unset" data-op="jurisdiction">[jurisdiction not configured]</span>, and it is
+  that operator — referred to below as <strong>the operator</strong>, "we" or "us" — who
+  provides you this service and with whom this agreement is made. The people who wrote the
+  software are not party to it and have no relationship with you; §13 lets them rely on the
+  protections in §9.
+</p>
+
+<h3>1.1 Federation</h3>
+<p>
+  Communes federate. A gateway shares credentials, plans and identity records with other
+  gateways run by <em>other</em> operators under their own terms and their own law, which we
+  neither set nor control. When something you create is shared into the federation, it leaves
+  our reach in exactly the way described in §4. A commune may also be an association or other
+  legal body with its own statutes; those bind you separately, through your membership of it.
+</p>
+
+<h3>1.2 The documents, and the software licence</h3>
+<p>
+  Three texts apply to you: these terms; the <a href="privacy.html">privacy notice</a>, which says
+  what happens to your data; and the software licence. <strong>The licence and these terms answer
+  different questions.</strong> The licence says what you may do with the program's source code, and
+  you keep every right it gives you. These terms say how you may use <em>this gateway</em>, a
+  running service operated by someone. Nothing here takes away a right the licence gives you in the
+  software, and the licence gives you no right to use this service beyond these terms. If these
+  terms and the privacy notice differ on how your personal data is handled, the privacy notice
+  governs.
+</p>
+
+<h3>1.3 Names</h3>
+<p>
+  The licence grants no trademark rights. The name "playnet", the project's identifiers and any
+  commune's name remain with whoever holds them. You may run a gateway under another name. A modified
+  version must say so and must not present itself as the canonical protocol
+  (<code>LICENSE-ADDITIONAL-TERMS.md</code> §2).
+</p>
+
+<h2>2. Your identity, and the passcode that is its only key</h2>
+
+<p>
+  Creating an identity mints a <strong>KERI autonomic identifier</strong> (an "AID"), which is
+  what names you everywhere in the system. Your browser generates a random
+  <strong>passcode</strong> and derives your signing keys from it locally. The passcode is
+  <strong>never transmitted to us and never stored on any server</strong>. We hold your public
+  keys; we never hold your private ones.
+</p>
+
+<div class="warn">
+  <strong>There is no password reset, and there is no recovery.</strong> Nobody — not the
+  operator, not the authors — can restore access to an identity whose passcode has been lost,
+  because nobody else ever had it. If you lose the passcode, the identity, the credentials
+  attached to it, and any labour credit recorded against it are unreachable, permanently. Save
+  the recovery file or put the AID and passcode in a password manager when they are shown to
+  you. They are shown <em>once</em>.
+</div>
+
+<p>You are responsible for:</p>
+<ul>
+  <li>keeping the passcode secret and durable — treat it as you would a house key you cannot re-cut;</li>
+  <li>everything done by your identity, since a valid signature from your key is, to every other
+      participant, indistinguishable from you;</li>
+  <li>telling us promptly if you believe your key has been compromised, so we can help you rotate
+      it (KERI supports key rotation; it is the intended response to compromise, and it works only
+      while you still control the current key).</li>
+</ul>
+
+<h2>3. Verification and vouching</h2>
+<p>
+  To keep out spam and vote-stuffing, a member's standing as a unique real person is attested by
+  other verified members. If you vouch for someone, or grant them verification, you are making a
+  signed statement that you have grounds to believe they are a distinct real person. Do not vouch
+  for identities you cannot vouch for. Vouching falsely — to inflate voting weight, to claim
+  goods twice, or to admit someone excluded by governance — is a breach of these terms and is
+  visible in the record.
+</p>
+<p>
+  <strong>"Verified" means that other members said so.</strong> It is a peer's statement about
+  uniqueness. It is not an identity check by the operator, a background check, a certificate of
+  character or competence, or a guarantee about anyone's conduct, and nobody should treat it as one
+  (§9.2).
+</p>
+
+<h2>4. What becomes public, and what cannot be taken back</h2>
+
+<p>
+  This is the section most unlike an ordinary service, and the one worth reading twice.
+</p>
+
+<h3>4.1 Your key history is published</h3>
+<p>
+  Every AID has a <strong>key event log</strong> (KEL): its creation, and every subsequent key
+  rotation, each signed and timestamped. The KEL is served over this gateway's discovery endpoint
+  and is <strong>broadcast to witnesses</strong> — independent machines, run by other people,
+  potentially in other countries — whose whole purpose is to hold copies so that nobody, including
+  us, can quietly rewrite your history. That is the security property you are getting. Its price is
+  that the KEL cannot be deleted, edited or holed once it has propagated. On its own it names a
+  pseudonym, not a person: it contains no name, email or address.
+</p>
+
+<h3>4.2 Credentials are append-only</h3>
+<p>
+  Work recorded, goods claimed, skills held, verification granted, relationships declared and votes
+  cast are written as <strong>signed credentials</strong>, addressed by the hash of their contents
+  and anchored in the issuing scope's KEL. Revoking a credential marks it invalid; it does not
+  remove it. The <em>fact</em> that a credential was issued, and when, is permanent by design —
+  that anchor is what makes the whole record auditable.
+</p>
+
+<div class="warn">
+  <strong>Deletion is not implemented today.</strong> The reference implementation has no automated
+  path to erase a member record, a credential body or a stored key event. Erasure requests are
+  handled by the operator manually, to the extent they can be honoured at all; §5 of the
+  <a href="privacy.html">privacy notice</a> sets out exactly what can and cannot be erased and what
+  we are building to close the gap. Do not put anything into this system on the assumption that you
+  can take it out again.
+</div>
+
+<h3>4.3 What you should not put in</h3>
+<p>
+  Fields such as your display name, email, location and the free text you attach to needs, offers
+  and proposals are shared with other participants and, through federation, with other gateways.
+  Unless you intend them to be durably visible to your federation, do not enter:
+</p>
+<ul>
+  <li>your legal name, home address, or precise home location;</li>
+  <li>phone numbers, government identity numbers, bank or payment details;</li>
+  <li>health information, or anything else about you that you would not say in a general meeting;</li>
+  <li><strong>information about other people</strong> — including their contact details or their
+      whereabouts — without their agreement. If you enter data about someone else, you are
+      responsible for having the right to do so.</li>
+</ul>
+<p>
+  The profile and sharing features let you state things such as conditions, diet, position and
+  home. They are optional, and each is described in the <a href="privacy.html">privacy notice</a>.
+  Enter them only if you accept that the people your settings let see them will.
+</p>
+
+<h2>5. The plan is a computation, not a promise</h2>
+<p>
+  playnet computes an allocation by convex optimization over the federation's recorded needs,
+  capacities and limits. What comes out is a <strong>proposal</strong> — a plan the federation may
+  adopt, amend or reject through its governance. Specifically:
+</p>
+
+<h3>5.1 The plan</h3>
+<ul>
+  <li>an allocation shown to you is <strong>not an entitlement</strong> and creates no legal claim
+      against the operator or any other member;</li>
+  <li>the planner's outputs may be wrong. It is optimization software under active development
+      operating on data other members entered.</li>
+</ul>
+
+<h3>5.2 Labour credit</h3>
+<p>
+  <strong>Labour credit is an internal accounting unit.</strong> It is not money, not a deposit, not
+  e-money, not a security, not a wage and not a claim on anyone's assets. It is not redeemable for
+  cash by us. It has no value outside the federation that recognises it, and a federation may
+  revalue or discontinue it through governance.
+</p>
+
+<h3>5.3 Money, claims and payouts</h3>
+<p>
+  Most of what the service does with value is bookkeeping: a record of an offer, a need or a
+  claim. Recording an offer of money or means in the plan is a statement between members. Unless
+  the product says otherwise, <strong>the operator does not take possession of it</strong>, does not
+  act as an exchange or a bank, and takes no responsibility for what members agree among
+  themselves.
+</p>
+<p>
+  <strong>Where this gateway has payouts enabled</strong>, one feature goes further. A <em>claim</em>
+  is a ledger entry that the federation's plan lets you draw against. A <em>payout</em> turns part
+  of a claim into a transfer of Monero (XMR) to an address you give us, sent from a wallet that
+  the operator controls. You never hold a key to that wallet. Then:
+</p>
+<ul>
+  <li>a claim is an accounting entry. It is not a bank deposit, not e-money, not a security, and
+      earns no interest;</li>
+  <li>payouts are made within the limits of the wallet's policy (spending caps, balance, network
+      fees) and of the federation's rules. We may delay, reduce or refuse a payout where the law
+      requires it, where we suspect fraud or error, where the destination or a party to it is
+      subject to sanctions, or where the wallet cannot cover it;</li>
+  <li>a blockchain transfer <strong>cannot be reversed or recalled</strong>. You are responsible for
+      the address you give; a payout to a wrong address is lost;</li>
+  <li>we neither change XMR into other currency nor hold it for you as a service. Its value can fall
+      to nothing;</li>
+  <li>you are responsible for any tax, reporting or licensing that applies to what you receive or
+      do with it. We give no tax, financial or investment advice.</li>
+</ul>
+<p>
+  A gateway without payouts enabled does none of this, and you will not see the feature. Where a
+  claim path touches any other currency, the transaction is between you and the counterparty
+  concerned.
+</p>
+
+<h3>5.4 No employment, no partnership</h3>
+<p>
+  Recording hours of labour is accounting. Contributing labour to a commune does not by itself make
+  you an employee, worker, contractor, agent, partner or joint venturer of the operator, of the
+  software's authors, or of another member, and nothing in the service is an offer of work or of
+  wages. Any such relationship needs its own written agreement. Your tax and social-security
+  position is yours to settle, and different authorities may treat labour credit differently, so ask
+  an adviser where it matters.
+</p>
+
+<h3>5.5 Information, not advice</h3>
+<p>
+  The <strong>law face</strong> and the legal readings of a place, the stance labels it shows
+  (<em>open, notice, unread, soft, off</em>), compliance checklists, recipes, and everything the
+  service says about food, nutrition, health, safety, housing, transport, chemistry, money, tax or
+  law, and what the planner or an AI feature suggests, are <strong>information</strong>. They can be
+  incomplete, out of date, wrong for your place, or read by nobody: <em>unread</em> means that no
+  steward has read the law there, and says nothing in favour of permission. They are not legal,
+  medical, nutritional, safety, engineering, tax or financial advice, and no adviser–client
+  relationship arises from them.
+</p>
+<p>
+  Before you rely on any of it for something that matters — a permit, handling food for others,
+  building, a tenancy, a medicine, a tax return, a payment — check with a qualified professional and
+  the authority that governs where you are. The service is not an emergency service. In an
+  emergency call your local emergency number.
+</p>
+
+<h3>5.6 Health, nutrition and allergies</h3>
+<p>
+  <strong>The service is a planning aid for a community's food and goods. It is not a medical
+  device and is not intended to diagnose, treat, cure, monitor or prevent any disease or condition,
+  to set a diet or a dose, or to replace a clinician.</strong> The nutrient values it shows are
+  published reference values, used to size and balance a commune's supply; they are averages, they
+  may not fit you, and where you state a condition they are adjusted by tables that are not clinical
+  guidance. For a condition such as kidney disease, malabsorption, diabetes, pregnancy or
+  breastfeeding, or for an infant or a child, take the advice of your own clinician. Do not start,
+  stop or change a medicine, a treatment or a therapeutic diet because of anything the service shows.
+</p>
+<p>
+  <strong>Allergens.</strong> Naming an allergen leaves it out of the menu the plan builds. That is
+  planning and is not allergen safety: the service does not check labels, ingredients, preparation or
+  cross-contact, and nobody who cooks, shares or hands over food through it is verified. If an
+  allergy could harm you, read the label, ask the person who prepared the food, and carry what your
+  clinician advises. Likewise, if you share food with others, you are responsible for telling them
+  what is in it.
+</p>
+<p>
+  Stating health information is optional, and your explicit consent is what lets the plan use it
+  (<a href="privacy.html">privacy notice, §3.2</a>). In an emergency, stop and call your local
+  emergency number.
+</p>
+
+<h2>6. Governance decisions</h2>
+<p>
+  Decisions about this federation — including admission, verification, allocation policy and
+  changes to the rules — are made through the governance process, by its members, not by the
+  software authors and not unilaterally by the operator except where these terms say otherwise. If
+  you disagree with a decision, the route is the governance process. Casting a vote is recorded as
+  a signed credential; see <a href="privacy.html">the privacy notice, §3</a> for how that record is
+  protected and what its limits are. A decision taken through governance has the force the
+  commune's own statutes give it, and no other legal force by virtue of this service.
+</p>
+
+<h2>7. Acceptable use</h2>
+<p>You agree not to use this gateway to:</p>
+<ul>
+  <li>break the law of your jurisdiction or of
+      <span class="op unset" data-op="jurisdiction">[operator jurisdiction not configured]</span>;</li>
+  <li>harass, threaten, defame or endanger anyone, or to publish another person's private
+      information;</li>
+  <li>publish unlawful content, content that infringes someone's rights, or sexual content
+      involving minors, which is reported to the authorities;</li>
+  <li>misrepresent labour performed, goods delivered or goods claimed, or otherwise falsify the
+      record the plan is computed from;</li>
+  <li>create multiple identities to gain additional voting weight or additional claims;</li>
+  <li>use the AI features to deceive anyone, to impersonate a person, to identify a person from a
+      picture or voice, to decide about another person as §9.3 forbids, or for anything the AI
+      provider's policy prohibits;</li>
+  <li>pass AI output on as a record of fact, such as hours worked or goods delivered, without
+      checking it;</li>
+  <li>use payouts or any other feature to evade sanctions, anti-money-laundering, export or tax law,
+      or where a sanction or export law forbids you to use the service;</li>
+  <li>attack the service or its peers — denial of service, exploitation of vulnerabilities,
+      circumvention of access controls, or scraping the discovery endpoints to build a directory of
+      participants.</li>
+</ul>
+<p>
+  Finding a security vulnerability is welcome; exploiting it is not. Report it to
+  <span class="op unset" data-op="contact">[operator contact not configured]</span>, and give us a
+  reasonable time to fix it before you publish it.
+</p>
+
+<h3>7.1 Your content</h3>
+<p>
+  You keep whatever rights you hold in what you contribute. To run the service and the federation,
+  you give the operator, and the gateways and members that receive it through federation, a
+  worldwide, non-exclusive, royalty-free licence to store, copy, process, display and transmit it as
+  these terms and the privacy notice describe, for as long as it remains in the record. Because the
+  record is append-only (§4), that can outlast your membership. You confirm that you have the right
+  to contribute what you contribute and that it breaks no law and no one's rights. Contributions to
+  the program's source are governed by the project's contribution terms
+  (<code>CONTRIBUTING.md</code>), and not by this section.
+</p>
+
+<h3>7.2 Reports and moderation</h3>
+<p>
+  Tell us about unlawful or harmful content or conduct at
+  <span class="op unset" data-op="abuse">[operator contact not configured]</span>. Say where it is
+  (an AID, a credential or a place in the interface), why you consider it unlawful or harmful, and
+  who you are; a good-faith statement that your report is accurate and complete helps us act.
+  In the application, open your account and choose "report a concern": it sends the same
+  report to the operator, anonymously unless you give a way back.
+</p>
+<p>
+  <strong>A child at risk, or sexual content involving a minor,</strong> goes to the same address,
+  with the word "child" in the subject so it is read first. We remove what we can on this gateway,
+  keep what the law requires us to keep, and report it to the competent authorities, which where the
+  operator is subject to it includes the body that law names for reports of this kind. You do not
+  have to prove anything to report it, and you should not collect, copy or forward the material
+  yourself: say where it is and we will act. If a child is in immediate danger, call your local
+  emergency number first.
+</p>
+<p>
+  We read reports and may hide content from this gateway's own views, suspend access, revoke
+  credentials this gateway issued, or stop exchanging records with another gateway. When we do, we
+  tell the person concerned what we did and why, and how to contest it through governance or by
+  writing to us, unless the law or an investigation forbids it. We cannot erase signed records from
+  witnesses or other gateways (§4), and we say so rather than imply otherwise. We act on valid orders
+  of competent authorities and may share what the privacy notice describes in answer to them.
+</p>
+
+<h2>8. Age</h2>
+<p>
+  You must be at least <span data-fact="min-age">16</span>, or the minimum age for consent to information-society services in your
+  country if that is higher, and legally able to enter this agreement. Where a lower age applies in
+  your country, a parent or guardian must agree on your behalf and is responsible for your use.
+  The operator may set a higher minimum age; if so it is stated at
+  <span class="op unset" data-op="contact">[operator contact not configured]</span>.
+</p>
+
+<h2>9. Beta software, provided as-is</h2>
+<p>
+  This is <strong>experimental software under active development</strong>, run for its members, not
+  a commercial product, and offered free of charge.
+</p>
+
+<h3>9.1 No warranty</h3>
+<div class="note">
+  <p class="caps">
+    To the maximum extent permitted by law, the service is provided "as is" and "as available",
+    with no warranty or condition of any kind, express, implied or statutory, including any
+    warranty of merchantability, satisfactory quality, fitness for a particular purpose, accuracy,
+    title and non-infringement.
+  </p>
+</div>
+<p>
+  We do not warrant that the service will be available, correct, uninterrupted or secure, or that
+  data will be preserved. Data may be lost, corrupted or become unreachable. You use the service at
+  your own risk. This does not limit any right you have as a consumer that the law does not allow to
+  be waived.
+</p>
+
+<h3>9.2 People, goods and the physical world</h3>
+<p>
+  The service helps people find one another and plan work and goods. <strong>What happens between
+  people happens outside it.</strong> The operator and the authors are not a party to any exchange,
+  meeting, ride, loan, meal, lodging, job or delivery that members arrange through the service, and
+  they are not an employer, seller, carrier, landlord, insurer, school or guarantor. They do not
+  check members, goods, food, vehicles, premises or skills, and a skill, verification or
+  relationship credential is a member's statement, not our assurance. You are responsible for your
+  own safety and for meeting people with the care you would use anywhere else; for the
+  permits, hygiene, safety, tenancy, tax and licensing rules that apply to what you share or do; and
+  for your insurance. Anyone in a meeting held through the service can record it with their own
+  tools.
+</p>
+
+<h3>9.3 AI features and other services</h3>
+<p>
+  Some features — the voice assistant, drafting from a sentence, reading a photo, transcription — send what you
+  give them (words, audio or pictures) to an AI model or another service the operator selects, and
+  show you what comes back (<a href="privacy.html">privacy notice, §4.3</a>). <strong>When you use
+  one you are dealing with an AI, not a person and not a professional.</strong> The service marks AI
+  output as AI-generated where it shows it.
+</p>
+<ul>
+  <li><strong>It can be wrong.</strong> Output is generated statistically. It can be inaccurate,
+      invented, out of date, biased or unsuitable even when it reads as confident, and the same
+      question may give different or similar answers to different people. A photo read can
+      misidentify a plant, a mushroom, a food, an object or a person.</li>
+  <li><strong>Do not treat it as a source of truth.</strong> It is not advice (§5.5) and is not a
+      substitute for a qualified professional. Check it, with a human where it matters, before you
+      use or share it. Never eat, take, use or rely on anything because an AI said it was safe.</li>
+  <li><strong>Do not use it to decide about other people.</strong> You may not use AI output about a
+      person for a purpose that has a legal or material effect on them — credit, employment,
+      housing, insurance, education, legal, medical or comparable decisions (§7).</li>
+  <li><strong>You are responsible for what you submit and what you do with the output.</strong> Do
+      not submit what you have no right to share, other people's personal data or pictures, or
+      anything sensitive you would not want a provider to process. We give no warranty that output
+      is original or free of others' rights.</li>
+  <li><strong>The provider's terms apply, and we may limit it.</strong> AI features run on models and
+      services the operator does not build, under those providers' terms and usage policies, which
+      can restrict what may be asked. The operator may limit, change, suspend or withdraw an AI
+      feature at any time, and sets rate limits.</li>
+</ul>
+<p>
+  Third-party services, links and networks (including notification channels, web-push providers,
+  the Monero network and other gateways) are run by others under their own terms, and we do not
+  control or warrant them.
+</p>
+
+<h3>9.4 Limits of liability</h3>
+<div class="note">
+  <p class="caps">
+    To the maximum extent permitted by law, the operator, the authors and contributors of the
+    software, the operators of other gateways and the operators of witnesses are not liable to you
+    for any indirect, incidental, special, consequential, exemplary or punitive damage, or for loss
+    of data, labour credit, profit, use or goodwill, or for a lost or compromised passcode, or for
+    what the planner or an AI feature allocated or said, or for what other members or other
+    gateways did with information you shared, or for anything that follows from the permanence
+    described in §4. Our aggregate liability to you for all claims relating to the service is zero,
+    since the service is free.
+  </p>
+</div>
+<p>
+  This section applies only as far as the law allows. <strong>Nothing in these terms excludes or
+  limits</strong> liability for death or personal injury, for fraud or fraudulent misrepresentation,
+  for intent or gross negligence, for any right you have under mandatory data-protection law (for
+  example, a claim for damage under Article 82 GDPR), under product-liability law, or under
+  mandatory consumer law, or for anything else that cannot lawfully be excluded or limited. Where the
+  law holds us liable despite this section — for instance for breach of an essential obligation —
+  our liability is limited, as far as the law allows, to the damage that was foreseeable when the
+  breach occurred and is typical of a free service of this kind.
+</p>
+
+<h3>9.5 Indemnity</h3>
+<p>
+  If you are not a consumer, you agree to hold the operator harmless from claims arising out of your
+  breach of these terms, your unlawful use of the service, or information you entered about other
+  people without the right to do so. If you are a consumer, this applies only as far as the law of
+  your country allows. It does not apply to the extent the claim arises from the operator's own
+  wrongdoing.
+</p>
+
+<h2>10. Ending it</h2>
+<p>
+  <strong>You may stop at any time.</strong> Nothing obliges you to keep participating. On request
+  we will remove your member record and the link between your AID and your name and contact
+  details, as far as our implementation allows — which is the meaningful erasure available here,
+  and is set out honestly in <a href="privacy.html">the privacy notice, §5</a>. We cannot recall
+  your KEL from witnesses or credentials from other gateways.
+</p>
+<p>
+  <strong>We may suspend or end your access</strong> if you materially breach these terms, if your
+  continued access endangers other members or the service, if the law or an authority requires it,
+  or if we discontinue the gateway. Except where an immediate stop is needed, we will tell you why
+  and you may raise it through the governance process. If the gateway shuts down, the software is
+  free — the federation, or you, can run another.
+</p>
+<p>
+  What by its nature must outlast your membership does so: §§4, 5, 7.1, 9, 12 and 13, and the
+  permanence the privacy notice describes.
+</p>
+
+<h2>11. Changes to these terms</h2>
+<p>
+  These terms may change as the software does. Material changes are published here with a new
+  version number and effective date, and you will be asked to accept them again the next time you
+  sign in. A change that is unfavourable to you takes effect no sooner than <span data-fact="change-notice-days">14</span> days after it is
+  published, unless the law or the security of the service requires it sooner. Continuing to use the
+  gateway after a change takes effect means you accept it; if you do not, stop using it and ask us
+  to remove your record.
+</p>
+
+<h2>12. Law and disputes</h2>
+<p>
+  These terms are governed by the law of
+  <span class="op unset" data-op="jurisdiction">[jurisdiction not configured]</span>, without
+  prejudice to any mandatory protection you have under the law of your own country of residence.
+  The courts of that jurisdiction have non-exclusive jurisdiction, except that if you are a
+  consumer you may also bring a claim where you live, and we may bring a claim against you only
+  there, where mandatory law says so.
+</p>
+<p>
+  Please raise disputes with us first, and through the governance process where the subject is a
+  federation decision; we will try in good faith to resolve them before anyone goes to court.
+  Unless the operator states otherwise at its contact, it does not take part in consumer
+  arbitration or other out-of-court dispute resolution.
+</p>
+<p>
+  <strong>Where you live.</strong> If you are a consumer in the European Union, the United Kingdom or
+  another place whose law gives consumers rights that cannot be waived, those rights stand and
+  these terms are to be read within them. Where the law requires a notice or a term to be
+  conspicuous, the capitals in §9 are that. Where the law requires that a version in your language
+  be available or take precedence, ask us for it. Otherwise the English text prevails over any
+  translation.
+</p>
+
+<h2>13. General</h2>
+<ul>
+  <li><strong>Whole agreement.</strong> These terms, the privacy notice and the licence are the whole
+      agreement about the service and replace earlier versions. A commune's statutes remain separate.</li>
+  <li><strong>If part is unenforceable.</strong> The rest stands, and the unenforceable part is
+      replaced by the nearest enforceable one that gives the same result.</li>
+  <li><strong>No waiver.</strong> Not enforcing a term at one time does not give it up for another.</li>
+  <li><strong>Transfer.</strong> You may not assign your rights under these terms. The operator may
+      hand the gateway to another operator, if it tells you first, the new operator takes on these
+      terms and the privacy notice, and you may end your membership.</li>
+  <li><strong>Who may rely on them.</strong> The software's authors and contributors, and the
+      operators of other gateways and witnesses, are not parties to these terms, and are intended to
+      be able to rely on §9 and to enforce it. No one else has a right under them.</li>
+  <li><strong>Events beyond our control.</strong> We are not in breach where something outside our
+      reasonable control stops us — an outage of the network, a host, a provider or a wallet daemon,
+      an order of an authority, or an act of nature.</li>
+  <li><strong>Electronic form.</strong> A signature made with your key is your signature, and
+      notices to you may be given on this gateway or at an address you gave us.</li>
+  <li><strong>Reading these terms.</strong> Headings are for finding your way, and "including" is not
+      a limit.</li>
+</ul>
+
+<h2>14. Contact</h2>
+<p>
+  Operator: <span class="op unset" data-op="name">[not configured]</span><br>
+  Contact: <span class="op unset" data-op="contact">[not configured]</span><br>
+  Postal address: <span class="op unset" data-op="address">[not configured]</span><br>
+  Representative or data-protection contact, where one is designated:
+  <span class="op unset" data-op="representative">[not configured]</span>
+</p>
+<p>
+  This contact is also the point of contact for the authorities of any country, and for members, on
+  anything under these terms. Write to us in English or in the language the operator names here.
+</p>
+
+<h2>15. What you are agreeing to</h2>
+<p>By creating an identity on this gateway, you confirm that you understand:</p>
+<ol>
+  <li>your passcode is the only key to your identity, is held by nobody but you, and
+      <strong>cannot be recovered</strong>;</li>
+  <li>your key event log is published and mirrored to independent witnesses and
+      <strong>cannot be recalled</strong>;</li>
+  <li>credentials — work, claims, verification, votes, relationships — are
+      <strong>append-only</strong>, and automated deletion is not implemented today;</li>
+  <li>allocations are computed proposals under governance, and labour credit is
+      <strong>not money</strong>; a payout, where enabled, is an irreversible transfer from a
+      wallet the operator controls;</li>
+  <li>everything the service says about law, food, health, housing or money is <strong>information
+      and not advice</strong>, and it is not a medical device or allergen protection;</li>
+  <li>people you meet and things you exchange are your own responsibility, and verification is
+      members' statement and not ours;</li>
+  <li>this is beta software provided as-is, with the liability limits of §9;</li>
+  <li>you are responsible for what you put in, especially information about other people;</li>
+  <li>you meet the age requirement in §8.</li>
+</ol>
+
+<footer>
+  playnet — free software under AGPL-3.0 with additional terms.
+  Terms of Use v<span data-fact="document-version">1.1.0</span>, effective <span data-fact="legal-version">2026-10-05</span>.
+  See also the <a href="privacy.html">privacy notice</a>.
+</footer>
+
+</div>
+<script src="lib/legal-operator.js"></script>
+</body>
+</html>

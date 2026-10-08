@@ -1,0 +1,10 @@
+# playnet ISO content identifier — Option-B build with static-IP for the origin host.
+cid:           QmSmT7MqA82We6ZVMzNFWZsvgxdvZUKR3dNqmFYhSNf5Mi
+cid-bare:      bafybeigefx3d7hldt3ducjwpfhpzd4g2tbkbdor24fpw7mhlj4hrklomc4
+url:           https://ipfs.io/ipfs/QmSmT7MqA82We6ZVMzNFWZsvgxdvZUKR3dNqmFYhSNf5Mi/playnet.iso
+commit:        f35f30aa1cb2fd3709deb0402b9451d63a9f9b05
+built_at:      2026-05-13T02:06:12Z
+size:          740790272
+sha256:        746f7f5b3b4ac58f50aa76fe171fec846c5cf04e1c89df0531b08e3ec765bcd7
+host_ip:       REDACTED-IP
+host_gateway:  172.16.0.1

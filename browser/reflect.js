@@ -1,4 +1,381 @@
 // -*- js2-basic-offset: 4 -*-
+
+// DWARFv4 decoder.  Can parse the debug_info per-function information
+// as well as the debug_line source information, also using
+// debug_abbrevs and debug_strtab auxiliary modules.  Some inspiration
+// from MIT-licensed code by JD Michaud,
+// https://github.com/jdmichaud/dwarf-2-sourcemap/blob/master/src/d2sm.ts;
+// some from Guile's DWARF parser.
+function decode_dwarf(module) {
+    class Reader {
+        constructor(buffer, pos=0) {
+            this.buffer = buffer;
+            this.pos = pos;
+            this.decoder = null;
+        }
+
+        get_u8() { return this.buffer[this.pos++]; }
+
+        match_u8(u8) {
+            if (this.buffer[this.pos] != u8)
+                return false;
+            this.pos++;
+            return true;
+        }
+
+        get_s8() {
+            let val = this.get_u8();
+            return val < 0x80 ? val : val - 0x100;
+        }
+
+        get_u16() {
+            let lo = this.get_u8();
+            let hi = this.get_u8();
+            return lo | hi << 8;
+        }
+
+        get_u32() {
+            let lo = this.get_u16();
+            let hi = this.get_u16();
+            return lo | hi << 16;
+        }
+
+        get_uleb() {
+            let value = 0;
+            let shift = 0;
+            while (true) {
+                const byte = this.get_u8();
+                value |= ((byte & 0x7F) << shift);
+                if ((byte & 0x80) === 0)
+                    return value;
+                shift += 7;
+                if (shift > 32) throw new Error('uleb too big')
+            }
+        }
+
+        get_sleb() {
+            let value = 0;
+            let shift = 0;
+            while (true) {
+                const byte = this.get_u8();
+                value |= (byte & 0x7f) << shift;
+                if ((byte & 0x80) === 0) {
+                    if ((byte & 0x40) !== 0)
+                        return value | (~0 << (shift + 7));
+                    return value;
+                }
+                shift += 7;
+                if (shift > 32) throw new Error('sleb too big')
+            }
+        }
+
+        get_string() {
+            if (this.decoder === null)
+                this.decoder = new TextDecoder();
+            let start = this.pos;
+            while (this.buffer[this.pos++] !== 0) {}
+            return this.decoder.decode(
+                this.buffer.subarray(start, this.pos - 1));
+        }
+
+        at_end() { return this.pos === this.buffer.length; }
+
+        slice(offset, len) {
+            let start = this.pos + (offset === undefined ? 0 : offset);
+            let end = len === undefined ? this.buffer.length : start + len;
+            return new Reader(this.buffer.subarray(start, end));
+        }
+        consume_slice(len) {
+            let ret = this.slice(0, len);
+            this.pos += len;
+            return ret;
+        }
+    }
+
+    class Strtab {
+        constructor(buffer) {
+            this.buffer = buffer;
+            this.decoder = new TextDecoder();
+        }
+        get_string_at(pos) {
+            let start = pos;
+            let end = pos;
+            while (this.buffer[pos++] !== 0)
+                end = pos;
+            return this.decoder.decode(this.buffer.subarray(start, end));
+        }
+    }
+
+    // Only need the values for the DW_TAG, DW_ATTR, DW_FORM etc that
+    // Hoot emits.
+    const hoot_dw_tags = {
+        compile_unit: 0x11,
+        subprogram: 0x2e,
+    };
+    const hoot_dw_attrs = {
+        name: 0x03,
+        low_pc: 0x11,
+        high_pc: 0x12,
+        producer: 0x25,
+        language: 0x13,
+        stmt_list: 0x10,
+        introspectable: 0x2da4,
+    }
+    const hoot_dw_forms = {
+        addr: 0x01,
+        data1: 0x0b,
+        data2: 0x05,
+        data4: 0x06,
+        strp: 0x0e,
+        sdata: 0x0d,
+        udata: 0x0f,
+        sec_offset: 0x17,
+        flag_present: 0x19,
+    }
+
+    function invert(map) {
+        let ret = {};
+        for (attr in map)
+            ret[map[attr]] = attr;
+        return ret;
+    }
+    function lookup_name(map, x) {
+        return x in map ? map[x]: x;
+    }
+
+    const hoot_dw_tag_names = invert(hoot_dw_tags);
+    const hoot_dw_attr_names = invert(hoot_dw_attrs);
+
+    function parse_abbrevs(buf) {
+        const abbrevs = {};
+        while (!buf.match_u8(0)) {
+            const code = buf.get_uleb();
+            const tag = lookup_name(hoot_dw_tag_names, buf.get_uleb());
+            const has_children = buf.get_u8() == 1;
+            const attrs = [];
+            while (true) {
+                const attr = lookup_name(hoot_dw_attr_names, buf.get_uleb());
+                const form = buf.get_uleb();
+                if (attr === 0 || form === 0)
+                    break;
+                attrs.push({ attr, form });
+            }
+            abbrevs[code] = { tag, has_children, attrs };
+        }
+        return abbrevs;
+    }
+
+    function parse_dies(buf, abbrevs, strtab) {
+        const dies = [[]];
+        while (!buf.at_end()) {
+            const abbrev_code = buf.get_uleb();
+            if (abbrev_code === 0) {
+                // We end a sibling run, so we pop the current DIE and
+                // start appending to its parent again.
+                dies.pop();
+                continue;
+            }
+            // ... interpret the code according to the tagForm
+            const abbrev = abbrevs[abbrev_code];
+            const attrs = {};
+            for (const { attr, form } of abbrev.attrs) {
+                switch (form) {
+                case hoot_dw_forms.data1:
+                    attrs[attr] = buf.get_u8();
+                    break;
+                case hoot_dw_forms.data2:
+                    attrs[attr] = buf.get_u16();
+                    break;
+                case hoot_dw_forms.sec_offset:
+                case hoot_dw_forms.addr:
+                case hoot_dw_forms.data4:
+                    attrs[attr] = buf.get_u32();
+                    break;
+                case hoot_dw_forms.strp:
+                    attrs[attr] = strtab.get_string_at(buf.get_u32());
+                    break;
+                case hoot_dw_forms.sdata:
+                    attrs[attr] = buf.get_sleb();
+                    break;
+                case hoot_dw_forms.udata:
+                    attrs[attr] = buf.get_uleb();
+                    break;
+                case hoot_dw_forms.flag_present:
+                    attrs[attr] = true;
+                    break;
+                default:
+                    throw new Error(`Unknown AT encoding ${form} for attr ${attr}`);
+                }
+            }
+            if ('high_pc' in attrs && 'low_pc' in attrs &&
+                abbrev.attrs[hoot_dw_attrs.high_pc] != hoot_dw_forms.addr)
+                attrs.high_pc += attrs.low_pc;
+
+            const entry = {
+                tag: abbrev.tag,
+                attrs,
+                children: []
+            };
+
+            dies[dies.length - 1].push(entry);
+            if (abbrev.has_children)
+                dies.push(entry.children);
+        }
+        if (dies.length !== 1) {
+            throw new Error('Inconsistent ordering of DIE');
+        }
+        return dies[0];
+    }
+
+    function parse_sources(lines) {
+        const lines_length = lines.get_u32();
+        const version = lines.get_u16();
+        if (version < 2 || version > 4)
+            throw new Error(`unexpected DWARF version for debug_lines: ${version}`);
+        const prologue_length = lines.get_u32();
+        const program_start = lines.pos + prologue_length;
+        const min_instruction_length = lines.get_u8();
+        const max_instruction_ops = version == 4 ? lines.get_u8() : 1;
+        const default_is_stmt = lines.get_u8() != 0;
+
+        const line_base = lines.get_s8();
+        const line_range = lines.get_u8();
+        const opcode_base = lines.get_u8();
+
+        const standard_opcode_lengths = [];
+        for (let opcode = 1; opcode < opcode_base; opcode++)
+            standard_opcode_lengths[opcode] = lines.get_uleb();
+
+        const include_dirs = []
+        while (!lines.match_u8(0))
+            include_dirs.push(lines.get_string());
+
+        const file_names = [];
+        while (!lines.match_u8(0)) {
+            const name = lines.get_string();
+            const dir = lines.get_uleb();
+            const mtime = lines.get_uleb()
+            const size = lines.get_uleb()
+            file_names.push({ name, dir, mtime, size });
+        }
+
+        if (lines.pos != program_start)
+            throw new Error(`unexpected prologue length: ${prologue_length}!=${lines.pos}`);
+
+        let program = lines.slice();
+        let state = {}
+
+        state.reset = () => {
+            program.pos = 0;
+            state.pc = 0;
+            state.file = 1;
+            state.line = 1;
+            state.col = 0;
+        }
+        // We only implement enough of the DWARF line program VM to decode
+        // the line programs emitted by Hoot.
+        state.advance = () => {
+            while (!program.at_end()) {
+                let op = program.get_u8();
+                switch (op) {
+                case 0: { // extended opcodes
+                    const payload_len = program.get_uleb();
+                    op = program.get_u8();
+                    if (op == 1) // end-sequence
+                        return true;
+                    throw new Error(`unhandled extended opcode: ${op}`);
+                }
+                    // standard opcodes
+                case 2: // advance-pc
+                    state.pc += program.get_uleb() * min_instruction_length;
+                    break;
+                case 3: // advance-line
+                    state.line += program.get_sleb();;
+                    break;
+                case 4: // set-file
+                    state.file = program.get_uleb();
+                    break;
+                case 5: // set-column
+                    state.col = program.get_uleb();
+                    break;
+                case 8: { // const-add-pc
+                    const advance = ((255 - opcode_base) / line_range) | 0;
+                    state.pc += advance * min_instruction_length
+                    break;
+                }
+                default: {
+                    if (op < opcode_base)
+                        throw new Error(`unhandled standard opcode: ${op}`);
+                    const quo = ((op - opcode_base) / line_range) | 0;
+                    const rem = (op - opcode_base) % line_range;
+                    state.pc += quo * min_instruction_length;
+                    state.line += rem + line_base;
+                    return true;
+                }
+                }
+            }
+            return false;
+        }
+
+        state.advance_until = (low_pc, high_pc=low_pc+1) => {
+            while (state.pc < low_pc && state.advance()) {}
+            return low_pc <= state.pc && state.pc < high_pc;
+        }
+
+        state.file_line_col = () => {
+            return [state.file ? file_names[state.file - 1].name : null,
+                    state.line - 1,
+                    state.col - 1];
+        }
+
+        state.reset();
+        return state;
+    };
+
+    function parse_roots(info, abbrevs, strtab) {
+        let roots = [];
+        while (!info.at_end()) {
+            const compilation_unit_length = info.get_u32();
+            const version = info.get_u16();
+            const abbrev_offset = info.get_u32();
+            const addr_size = info.get_u8();
+
+            if (version != 4)
+                throw new Error(`Unexpected DWARF version: ${version}`);
+            if (addr_size != 4)
+                throw new Error(`Unexpected DWARF address size: ${addr_size}`);
+
+            roots = roots.concat(parse_dies(
+                info.consume_slice(compilation_unit_length - 7),
+                parse_abbrevs(abbrevs.slice(abbrev_offset)),
+                strtab));
+        }
+        return roots;
+    }
+
+    function get_section(name) {
+        let sections = WebAssembly.Module.customSections(module, name);
+        if (sections.length === 1)
+            return sections[0];
+        return null;
+    }
+
+    const debug_info = get_section(".debug_info");
+    const debug_abbrev = get_section(".debug_abbrev");
+    const debug_strtab = get_section(".debug_str");
+    const debug_line = get_section(".debug_line");
+
+    if (debug_info === null || debug_abbrev === null || debug_strtab == null)
+        return {};
+
+    const roots = parse_roots(new Reader(new Uint8Array(debug_info)),
+                              new Reader(new Uint8Array(debug_abbrev)),
+                              new Strtab(new Uint8Array(debug_strtab)));
+    const sources = debug_line && parse_sources(new Reader(new Uint8Array(debug_line)));
+
+    return { roots, sources };
+}
+
 class Char {
     constructor(codepoint) {
         this.codepoint = codepoint;
@@ -144,8 +521,16 @@ class Port extends HeapObject { toString() { return "#<port>"; } }
 class Struct extends HeapObject { toString() { return "#<struct>"; } }
 
 function instantiate_streaming(path, imports) {
-    if (typeof fetch !== 'undefined' && typeof window !== 'undefined')
-        return WebAssembly.instantiateStreaming(fetch(path), imports);
+    if (typeof fetch !== 'undefined' && (typeof window !== 'undefined' || typeof self !== 'undefined'))
+        // some servers (and Capacitor local scheme) serve .wasm without
+        // the application/wasm MIME type, which instantiateStreaming
+        // rejects -- fall back to plain instantiate over the bytes
+        return WebAssembly.instantiateStreaming(fetch(path), imports)
+            .catch(async () => {
+                const resp = await fetch(path);
+                if (!resp.ok) throw new Error("fetch " + path + ": " + resp.status);
+                return WebAssembly.instantiate(await resp.arrayBuffer(), imports);
+            });
     let bytes;
     if (typeof read !== 'undefined') {
         bytes = read(path, 'binary');
@@ -467,7 +852,7 @@ function wtf8_to_string(wtf8) {
         codepoints.push(cp);
 
     // Passing too many codepoints can overflow the stack.
-    let maxcp = 100000;
+    let maxcp = 8000;
     if (codepoints.length <= maxcp) {
         return String.fromCodePoint(...codepoints);
     }
@@ -512,6 +897,7 @@ function make_textual_writable_stream(write_chars) {
 }
 
 class SchemeModule {
+    #module;
     #instance;
     #io_handler;
     #debug_handler;
@@ -531,10 +917,14 @@ class SchemeModule {
         // This truncates; see https://tc39.es/ecma262/#sec-tobigint64.
         bignum_get_i64(n) { return n; },
 
-        bignum_add(a, b) { return BigInt(a) + BigInt(b) },
-        bignum_sub(a, b) { return BigInt(a) - BigInt(b) },
-        bignum_mul(a, b) { return BigInt(a) * BigInt(b) },
-        bignum_lsh(a, b) { return BigInt(a) << BigInt(b) },
+        bignum_add(a, b) { return a + b },
+        bignum_add_i32(a, b) { return a + BigInt(b) },
+        bignum_sub(a, b) { return a - b },
+        bignum_sub_i32(a, b) { return a - BigInt(b) },
+        bignum_mul(a, b) { return a * b },
+        bignum_mul_i32(a, b) { return a * BigInt(b) },
+        bignum_lsh(a, b) { return a << BigInt(b) },
+        bignum_lsh_i32_i64(a, b) { return BigInt(a) << BigInt(b) },
         bignum_rsh(a, b) { return BigInt(a) >> BigInt(b) },
         bignum_quo(a, b) { return BigInt(a) / BigInt(b) },
         bignum_rem(a, b) { return BigInt(a) % BigInt(b) },
@@ -563,9 +953,12 @@ class SchemeModule {
             return a;
         },
 
-        bignum_logand(a, b) { return BigInt(a) & BigInt(b); },
-        bignum_logior(a, b) { return BigInt(a) | BigInt(b); },
-        bignum_logxor(a, b) { return BigInt(a) ^ BigInt(b); },
+        bignum_logand(a, b) { return a & b; },
+        bignum_logand_i32(a, b) { return a & BigInt(b); },
+        bignum_logior(a, b) { return a | b; },
+        bignum_logior_i32(a, b) { return a | BigInt(b); },
+        bignum_logxor(a, b) { return a ^ b; },
+        bignum_logxor_i32(a, b) { return a ^ BigInt(b); },
         bignum_logcount(a) {
             let c = 0;
             // Iterate over 32-bit chunks of the BigInt until all bits
@@ -582,12 +975,16 @@ class SchemeModule {
         },
 
         bignum_lt(a, b) { return a < b; },
-        bignum_le(a, b) { return a <= b; },
+        bignum_lt_i32_big(a, b) { return a < b; },
+        bignum_lt_big_i32(a, b) { return a < b; },
+        bignum_lt_f64_big(a, b) { return a < b; },
+        bignum_lt_big_f64(a, b) { return a < b; },
+        bignum_le_big_f64(a, b) { return a <= b; },
+        bignum_le_f64_big(a, b) { return a <= b; },
         bignum_eq(a, b) { return a == b; },
+        bignum_eq_f64(a, b) { return a == b; },
 
         bignum_to_f64(n) { return Number(n); },
-
-        flonum_to_string,
 
         string_upcase: Function.call.bind(String.prototype.toUpperCase),
         string_downcase: Function.call.bind(String.prototype.toLowerCase),
@@ -606,7 +1003,6 @@ class SchemeModule {
         weak_map_set(map, k, v) { return map.set(k, v); },
         weak_map_delete(map, k) { return map.delete(k); },
 
-        fsqrt: Math.sqrt,
         fsin: Math.sin,
         fcos: Math.cos,
         ftan: Math.tan,
@@ -740,7 +1136,14 @@ class SchemeModule {
         if (SchemeModule.#code_origins.has(code))
             return SchemeModule.#code_origins.get(code);
         for (let mod of SchemeModule.#all_modules) {
-            for (let i = 0, x = null; x = mod.instance_code(i); i++) {
+            let funcs = mod.instance_code();
+            if (!funcs)
+                continue;
+
+            for (let i = 0; i < funcs.length; i++) {
+                let x = funcs.get(i);
+                if (x === null)
+                    continue;
                 let origin = [mod, i];
                 if (!SchemeModule.#code_origins.has(x))
                     SchemeModule.#code_origins.set(x, origin);
@@ -765,8 +1168,9 @@ class SchemeModule {
         return [null, 0, 0];
     }
 
-    constructor(instance) {
+    constructor(module, instance) {
         SchemeModule.#all_modules.add(this);
+        this.#module = module;
         this.#instance = instance;
         let open_file_error = (filename) => {
             return null;
@@ -810,7 +1214,7 @@ class SchemeModule {
                 stream_stdout() { throw new Error('stream_stderr not implemented'); },
                 stream_stderr() { throw new Error('stream_stderr not implemented'); },
             };
-        } else if (typeof window !== 'undefined') { // web browser
+        } else if (typeof window !== 'undefined' || typeof self !== 'undefined') { // web browser or worker
             this.#io_handler = {
                 write_stdout: console.log,
                 write_stderr: console.error,
@@ -1006,7 +1410,7 @@ class SchemeModule {
         };
         var mod = null;
         let { module, instance } = await instantiate(imports);
-        mod = new SchemeModule(instance);
+        mod = new SchemeModule(module, instance);
         return mod;
     }
     set_io_handler(h) { this.#io_handler = h; }
@@ -1035,21 +1439,39 @@ class SchemeModule {
             return this.all_exports()[name];
         throw new Error(`unknown export: ${name}`)
     }
-    instance_code(idx) {
+    instance_code() {
         if ('%instance-code' in this.all_exports()) {
-            return this.all_exports()['%instance-code'](idx);
+            return this.all_exports()['%instance-code'];
         }
         return null;
     }
-    instance_code_name(idx) {
-        if ('%instance-code-name' in this.all_exports()) {
-            return this.all_exports()['%instance-code-name'](idx);
+    #instance_debug(idx) {
+        let {roots, sources} = decode_dwarf(this.#module);
+        // There are more general ways to do this, but we know that
+        // Hoot just makes a single compile_unit containing all
+        // subprograms.
+        if (roots && roots.length == 1 && roots[0].tag == 'compile_unit') {
+            let introspectable = 0;
+            for (let entry of roots[0].children) {
+                if (entry.tag == 'subprogram' && entry.attrs.introspectable &&
+                    introspectable++ == idx)
+                    return [entry, sources];
+            }
         }
+        return [];
+    }
+    instance_code_name(idx) {
+        let [entry, sources] = this.#instance_debug(idx);
+        if (entry && 'name' in entry.attrs)
+            return entry.attrs.name;
         return null;
     }
     instance_code_source(idx) {
-        if ('%instance-code-source' in this.all_exports()) {
-            return this.all_exports()['%instance-code-source'](idx);
+        let [entry, sources] = this.#instance_debug(idx);
+        if (entry && sources) {
+            let {low_pc, high_pc} = entry.attrs;
+            if (sources.advance_until(low_pc, high_pc))
+                return sources.file_line_col()
         }
         return [null, 0, 0];
     }

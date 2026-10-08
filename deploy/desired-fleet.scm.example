@@ -1,0 +1,74 @@
+;;; deploy/desired-fleet.scm — declarative fleet spec (this box's own; gitignored)
+;;;
+;;; Copy this file to deploy/desired-fleet.scm and edit to declare the
+;;; VMs you want provisioned. Each entry is a <desired-host> record
+;;; (or the backward-compatible `sporestack-host` wrapper).
+;;;
+;;; The fleet reconciler reads this file on every tick, diffs against
+;;; deploy/hosts.scm (the gitignored materialized state written by the
+;;; reconciler), and provisions anything missing — paid in Monero (or
+;;; BTC for the provider) from the playnet wallet, debited through the
+;;; wallet-policy for budget enforcement.
+;;;
+;;; The `provider` field selects which fleet backend handles the host:
+;;;   "sporestack" — SporeStack VPS reseller (XMR native, no KYC)
+;;;   "vpsbg"      — confidential-VPS provider (AMD SEV-SNP, BTC/Lightning, no KYC)
+;;;
+;;; The backward-compatible `sporestack-host` constructor sets
+;;; provider="sporestack" automatically and stashes the cloud backend
+;;; (e.g. "digitalocean") in provider-params.
+;;;
+;;; This file returns a `(list ...)` of records so machines.scm can
+;;; primitive-load it.
+
+(use-modules (playnet fleet records))
+
+(list
+ ;; ── SporeStack: cheapest dev machine, XMR payment ──────────────
+ (sporestack-host
+  #:name "playnet-dev-1"
+  #:flavor "vps-1vcpu-1gb"
+  #:operating-system "debian-12"
+  #:provider "digitalocean"
+  #:region "nyc1"
+  #:days 30
+  #:billing-cycle "monthly"
+  #:hostname "playnet-dev-1"
+  #:role 'dev
+  #:estimated-monthly-usd 5
+  #:bootstrap-mode 'manual)
+
+ ;; ── Confidential-VPS provider: AMD SEV-SNP confidential VM, BTC payment ────────────
+ ;; Uncomment when VPSBG_API_KEY is set in secrets.scm and BTC
+ ;; payment flow is operational.
+ ;;
+ ;; (desired-host
+ ;;   #:name "playnet-sev-1"
+ ;;   #:provider "vpsbg"
+ ;;   #:flavor "cloud-2vcpu-4gb"
+ ;;   #:operating-system "debian-12"
+ ;;   #:region "sofia"
+ ;;   #:days 30
+ ;;   #:role 'confidential
+ ;;   #:estimated-monthly-usd 15
+ ;;   #:provider-params '(("confidential" . #t)
+ ;;                        ("iso-url" . "https://ftp.gnu.org/gnu/guix/guix-system-install-1.4.0.x86_64-linux.iso")))
+
+ ;; A host that serves a clearnet face asks for the CDN in front of it:
+ ;; once it is recorded, the reconciler has this box's CDN (the provider
+ ;; config's `cdn` entry) make a zone named after the host, pulling from
+ ;; its address — or from "cdn-origin" when the host names one. The zone
+ ;; lands in <data-dir>/cdn-zones.scm.
+ ;;   #:provider-params '(("cdn-front" . #t)
+ ;;                        ("cdn-origin" . "https://web-1.example.org"))
+
+ ;; ── SporeStack: larger witness host (example) ──────────────────
+ ;; (sporestack-host
+ ;;   #:name "playnet-witness-1"
+ ;;   #:flavor "vps-2vcpu-4gb"
+ ;;   #:provider "vultr"
+ ;;   #:region "ams"
+ ;;   #:days 90
+ ;;   #:role 'witness
+ ;;   #:estimated-monthly-usd 12)
+ )

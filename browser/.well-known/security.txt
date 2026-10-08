@@ -1,0 +1,39 @@
+# security.txt (RFC 9116) — where to report a security issue with THIS
+# gateway. Served at /.well-known/security.txt; a security researcher's
+# tooling looks here first, before anything else.
+#
+# This is the unfinished template, served only while no operator security
+# contact is configured. Once PLAYNET_OPERATOR_SECURITY (or _CONTACT) is set,
+# the server generates this file itself, with a fresh Expires — see
+# docs/legal/README.md §2. Until then every field below is commented out: an
+# unfinished template should look unfinished, not like a live, unmonitored
+# inbox.
+#
+# Contact (required, one or more; https: or mailto:, most preferred first).
+# Match it to the contact the terms (§7) and the privacy notice (§1) name —
+# a security report should reach the same place as any other.
+# Contact: mailto:security@example.org
+# Contact: https://example.org/contact
+#
+# Expires (required): no more than a year out, and re-signed/re-dated on
+# that schedule — an old, unmaintained security.txt is worse than none.
+# This one expires:
+Expires: 2027-10-05T00:00:00Z
+#
+# Preferred-Languages (optional; IETF language tags, most preferred first).
+# Preferred-Languages: en
+#
+# Canonical (optional but recommended once a domain is fixed): the URL this
+# very file is served at, so a copy found elsewhere is known to be a forgery.
+# Canonical: https://example.org/.well-known/security.txt
+#
+# Policy (optional): a page describing scope, safe-harbor terms and what is
+# in and out of bounds for testing, if the operator publishes one.
+# Policy: https://example.org/security-policy
+#
+# This file governs vulnerability reports about running THIS gateway — its
+# configuration, its deployment, its data. For a bug or a vulnerability in
+# the playnet software itself, read SECURITY.md in the project's source tree
+# (rad:z27dFkN28LQAsSsG3DVHcfBqYAArQ) instead, or report it there; the
+# project's authors are not this gateway's operator and hold none of its
+# data (privacy notice §1).

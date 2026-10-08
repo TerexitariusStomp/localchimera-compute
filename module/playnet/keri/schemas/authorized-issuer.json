@@ -1,0 +1,104 @@
+{
+  "$id": "EB878_ADbkFPcMJzbbjudJJSthyAykreE49vqx28eUyH",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Playnet Authorized Issuer Credential",
+  "description": "First-Person Project trust-registry blessing (AIC): the root authorizes the holder ecosystem to issue Personhood Credentials. The root does not vouch for people — it authorizes the ecosystems that do, so every PHC provably chains to one root while portable multi-ecosystem personhood is preserved. A genesis commune blesses itself (root == ecosystem).",
+  "type": "object",
+  "credentialType": "PlaynetAuthorizedIssuerCredential",
+  "version": "1.0.0",
+  "properties": {
+    "v": {
+      "type": "string",
+      "description": "ACDC version string"
+    },
+    "d": {
+      "type": "string",
+      "description": "Credential SAID"
+    },
+    "u": {
+      "type": "string",
+      "description": "Optional salt for privacy-preserving presentations"
+    },
+    "i": {
+      "type": "string",
+      "description": "Issuer AID prefix (the trust-registry root)"
+    },
+    "ri": {
+      "type": "string",
+      "description": "Registry identifier (TEL)"
+    },
+    "s": {
+      "type": "string",
+      "description": "Schema SAID"
+    },
+    "a": {
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Attributes-block SAID (compact form)"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "d": {
+              "type": "string",
+              "description": "Attributes-block SAID"
+            },
+            "i": {
+              "type": "string",
+              "description": "Holder AID prefix (the ecosystem being authorized)"
+            },
+            "dt": {
+              "type": "string",
+              "format": "date-time",
+              "description": "ISO-8601 issuance timestamp"
+            },
+            "root-aid": {
+              "type": "string",
+              "description": "AID of the trust-registry root (same as issuer)"
+            },
+            "ecosystem-aid": {
+              "type": "string",
+              "description": "AID of the ecosystem authorized to issue PHCs (same as holder)"
+            },
+            "blessed-at": {
+              "type": "number",
+              "description": "Blessing epoch timestamp"
+            },
+            "active": {
+              "type": "boolean",
+              "description": "Liveness flag; a root can retire an ecosystem's authority"
+            },
+            "expires-at": {
+              "type": [
+                "number",
+                "boolean",
+                "null"
+              ],
+              "description": "Expiry epoch; false/null = perpetual"
+            }
+          },
+          "required": [
+            "d",
+            "i",
+            "dt",
+            "root-aid",
+            "ecosystem-aid",
+            "blessed-at",
+            "active"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  },
+  "required": [
+    "v",
+    "d",
+    "i",
+    "ri",
+    "s",
+    "a"
+  ],
+  "additionalProperties": false
+}

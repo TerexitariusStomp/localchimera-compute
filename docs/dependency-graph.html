@@ -1,0 +1,885 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>playnet — module dependency graph</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="viz/d3.v7.min.js"></script>
+<script src="dependency-graph-data.js"></script>
+<style>
+  :root {
+    --bg: #0b0e14;
+    --panel: #12161f;
+    --panel-border: #262b38;
+    --text: #e6e9f0;
+    --text-dim: #9aa3b5;
+    --accent: #4fd1c5;
+    --link: #3a4256;
+    --link-highlight: #4fd1c5;
+    --aff-highlight: #f472b6;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f5f6f8;
+      --panel: #ffffff;
+      --panel-border: #dde1e8;
+      --text: #1a1d24;
+      --text-dim: #5b6270;
+      --link: #ccd2de;
+      --link-highlight: #0f766e;
+      --aff-highlight: #db2777;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #f5f6f8; --panel: #ffffff; --panel-border: #dde1e8;
+    --text: #1a1d24; --text-dim: #5b6270; --link: #ccd2de; --link-highlight: #0f766e; --aff-highlight: #db2777;
+  }
+  :root[data-theme="dark"] {
+    --bg: #0b0e14; --panel: #12161f; --panel-border: #262b38;
+    --text: #e6e9f0; --text-dim: #9aa3b5; --link: #3a4256; --link-highlight: #4fd1c5; --aff-highlight: #f472b6;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+    overflow: hidden;
+  }
+  #app { position: relative; width: 100vw; height: 100vh; }
+  #svg { width: 100%; height: 100%; display: block; }
+  .link { stroke: var(--link); stroke-opacity: 0.55; fill: none; }
+  .link.dim { stroke-opacity: 0.05; }
+  .link.hi { stroke: var(--link-highlight); stroke-opacity: 0.95; }
+  .link.back { stroke: #e8763a; stroke-dasharray: 3 3; stroke-opacity: 0.6; }
+  .link.back.hi { stroke: #e8763a; stroke-opacity: 1; }
+  .link.req { stroke: var(--link-highlight); stroke-opacity: 0.85; }
+  .link.aff { stroke: var(--aff-highlight); stroke-opacity: 0.85; }
+  .node path.mark { cursor: pointer; }
+  .node.dim { opacity: 0.10; }
+  .node text {
+    font-size: 9.5px; fill: var(--text-dim); pointer-events: none;
+    paint-order: stroke; stroke: var(--bg); stroke-width: 3px;
+  }
+  .node.hi text { fill: var(--text); font-weight: 600; }
+  .layer-line { stroke: var(--panel-border); stroke-dasharray: 2 4; }
+  .layer-label { fill: var(--text-dim); font-size: 11px; }
+
+  .complink { stroke: var(--link); stroke-opacity: 0.6; fill: none; }
+  .compnode circle { stroke: var(--bg); stroke-width: 2px; cursor: pointer; }
+  .compnode:hover circle { stroke: var(--accent); }
+  .compnode .complabel {
+    font-size: 12.5px; font-weight: 700; fill: #fff; pointer-events: none;
+    paint-order: stroke; stroke: rgba(0,0,0,0.55); stroke-width: 3px;
+  }
+  .compnode .compcount { font-size: 10.5px; fill: var(--text-dim); pointer-events: none; }
+  .legend-key { display: flex; gap: 12px; font-size: 10.5px; color: var(--text-dim); margin-top: 4px; }
+  .legend-key span { display: inline-flex; align-items: center; gap: 4px; }
+  .legend-key i { width: 14px; height: 2px; display: inline-block; }
+
+  #bottomleft {
+    position: absolute; bottom: 12px; left: 12px; z-index: 15;
+    display: flex; flex-direction: column; gap: 8px; max-width: 320px;
+  }
+  #typelegend {
+    background: var(--panel); border: 1px solid var(--panel-border); border-radius: 10px;
+    padding: 8px 10px; font-size: 11px;
+  }
+  #typelegend .title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); margin-bottom: 4px; }
+  #typelegend .grid { display: grid; grid-template-columns: 1fr 1fr; column-gap: 10px; }
+  #typelegend .row { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; cursor: pointer; user-select: none; }
+  #typelegend .row.off { opacity: 0.35; }
+  #typelegend svg.shape { flex: none; width: 12px; height: 12px; overflow: visible; }
+  #typelegend .shape .fillmark { fill: var(--text-dim); }
+  #typelegend .shape .strokemark { fill: none; stroke: var(--text-dim); stroke-width: 1.6; }
+
+  #header {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 20;
+    display: flex; align-items: center; gap: 14px;
+    padding: 10px 16px; background: linear-gradient(to bottom, var(--bg) 60%, transparent);
+    pointer-events: none;
+  }
+  #header * { pointer-events: auto; }
+  #header h1 { font-size: 15px; margin: 0; font-weight: 700; letter-spacing: 0.2px; }
+  #header .sub { font-size: 11.5px; color: var(--text-dim); }
+  #search {
+    margin-left: auto; padding: 6px 10px; border-radius: 8px;
+    border: 1px solid var(--panel-border); background: var(--panel); color: var(--text);
+    font-size: 12.5px; width: 220px;
+  }
+
+  #legend {
+    position: absolute; top: 56px; left: 12px; z-index: 15;
+    background: var(--panel); border: 1px solid var(--panel-border); border-radius: 10px;
+    padding: 10px 10px; max-height: calc(100vh - 200px); overflow-y: auto;
+    width: 236px; font-size: 12px;
+  }
+  #legend .hint { color: var(--text-dim); font-size: 10.5px; margin-bottom: 6px; }
+  .legend-row {
+    display: flex; align-items: center; gap: 7px; padding: 3px 4px; border-radius: 6px;
+    cursor: pointer; user-select: none;
+  }
+  .legend-row:hover { background: rgba(128,128,128,0.12); }
+  .legend-row.off { opacity: 0.35; }
+  .swatch { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+  .legend-row .cnt { margin-left: auto; color: var(--text-dim); font-size: 10.5px; }
+
+  #detail {
+    position: absolute; bottom: 12px; right: 12px; z-index: 15;
+    background: var(--panel); border: 1px solid var(--panel-border); border-radius: 10px;
+    padding: 12px 14px; width: 320px; max-height: 45vh; overflow-y: auto;
+    font-size: 12.5px; display: none;
+  }
+  #detail.show { display: block; }
+  #detail h3 { margin: 0 0 4px 0; font-size: 13px; }
+  #detail .path { color: var(--text-dim); font-size: 11px; font-family: ui-monospace, monospace; margin-bottom: 8px; word-break: break-all; }
+  #detail .catline { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+  #detail .desc { color: var(--text-dim); line-height: 1.45; margin-bottom: 8px; }
+  #detail .relhead { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); margin: 8px 0 3px; }
+  #detail ul { margin: 0; padding-left: 16px; }
+  #detail li { margin-bottom: 2px; cursor: pointer; }
+  #detail li:hover { color: var(--accent); }
+  #detail .close { position: absolute; top: 8px; right: 10px; cursor: pointer; color: var(--text-dim); }
+
+  #cycles-panel {
+    position: absolute; top: 92px; right: 12px; z-index: 16;
+    background: var(--panel); border: 1px solid var(--panel-border); border-radius: 10px;
+    padding: 12px 14px; width: 300px; max-height: 40vh; overflow-y: auto;
+    font-size: 12px; display: none;
+  }
+  #cycles-panel.show { display: block; }
+  #cycles-panel .title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); margin-bottom: 6px; }
+  #cycles-panel .close { position: absolute; top: 8px; right: 10px; cursor: pointer; color: var(--text-dim); }
+  #cycles-panel .cyc { padding: 5px 4px; border-radius: 6px; cursor: pointer; line-height: 1.4; color: #e8763a; }
+  #cycles-panel .cyc:hover { background: rgba(232,118,58,0.15); }
+
+  #footer {
+    font-size: 10.5px; color: var(--text-dim);
+    background: var(--panel); border: 1px solid var(--panel-border); border-radius: 8px; padding: 6px 10px;
+  }
+  #modelabel {
+    position: absolute; top: 56px; right: 12px; z-index: 15; display: flex; gap: 6px;
+  }
+  .modebtn {
+    background: var(--panel); border: 1px solid var(--panel-border); color: var(--text-dim);
+    border-radius: 8px; padding: 5px 10px; font-size: 11.5px; cursor: pointer;
+  }
+  .modebtn.active { color: var(--accent); border-color: var(--accent); }
+</style>
+</head>
+<body>
+<div id="app">
+  <svg id="svg"></svg>
+
+  <div id="header">
+    <div>
+      <h1>playnet — module dependency graph</h1>
+      <div class="sub">462 Guile/Scheme modules · 124 browser (app) JS modules · 1844 internal edges, extracted from source</div>
+    </div>
+    <input id="search" type="text" placeholder="Search a module or file…">
+  </div>
+
+  <div id="legend">
+    <div class="hint">Color = component. Shape = kind (store, actor, bridge…) — see bottom-left. Click a component to isolate it. Click a node for its full transitive blast radius: <span style="color:var(--link-highlight)">teal</span> = everything it depends on, <span style="color:var(--aff-highlight)">pink</span> = everything that would need review if it changes. Dashed orange = part of a cycle.</div>
+  </div>
+
+  <div id="modelabel">
+    <div class="modebtn active" data-mode="dag">Layered (DAG)</div>
+    <div class="modebtn" data-mode="components">Components</div>
+    <div class="modebtn" data-mode="cluster">Force · clustered</div>
+    <div class="modebtn cyclesbtn" id="cycles-btn">Cycles</div>
+  </div>
+
+  <div id="cycles-panel">
+    <span class="close" onclick="document.getElementById('cycles-panel').classList.remove('show')">✕</span>
+    <div class="title">Cycles</div>
+    <div id="cycles-body"></div>
+  </div>
+
+  <div id="detail">
+    <span class="close" onclick="document.getElementById('detail').classList.remove('show')">✕</span>
+    <div id="detail-body"></div>
+  </div>
+
+  <div id="bottomleft">
+    <div id="typelegend">
+      <div class="title">Kind (shape)</div>
+      <div class="grid" id="typelegend-grid"></div>
+    </div>
+    <div id="footer">
+      Generated from <code>#:use-module</code> / <code>use-modules</code> forms in <code>module/**/*.scm</code>
+      and ES <code>import</code> statements in <code>browser/app/**/*.js</code>. Node radius ≈ file size (LOC).
+      Columns = dependency depth, left (core utility everything bottoms out on) → right (entry points — nothing internal depends on them).
+      Regenerate with <code>python3 docs/_scripts/build-dependency-graph.py --write</code> when the module tree changes materially.
+    </div>
+  </div>
+</div>
+
+<script>
+const data = GRAPH_DATA;
+const categories = data.categories;
+const nodes = data.nodes.map((n, i) => ({...n, index: i}));
+const links = data.links.map(l => ({...l}));
+
+const nodeById = new Map(nodes.map(n => [n.index, n]));
+const neighbors = new Map(nodes.map(n => [n.index, new Set()]));
+links.forEach(l => {
+  neighbors.get(l.source).add(l.target);
+  neighbors.get(l.target).add(l.source);
+});
+const outDeps = new Map(nodes.map(n => [n.index, []]));
+const inDeps = new Map(nodes.map(n => [n.index, []]));
+links.forEach(l => {
+  outDeps.get(l.source).push(l.target);
+  inDeps.get(l.target).push(l.source);
+});
+
+const catList = Object.keys(categories).filter(c => nodes.some(n => n.category === c));
+const catCount = new Map(catList.map(c => [c, nodes.filter(n => n.category === c).length]));
+// order categories biggest-first: used both for the legend and to group same-color nodes
+// contiguously within each depth column
+const catOrder = [...catList].sort((a, b) => catCount.get(b) - catCount.get(a));
+const catRank = new Map(catOrder.map((c, i) => [c, i]));
+
+// d3's symbol set splits into "fill" shapes (solid closed regions — safe to fill) and
+// "stroke" shapes (open line-art — nearly invisible unless stroked instead of filled).
+// Assign each kind exactly one shape from the matching set so nothing renders blank.
+const KIND_INFO = {
+  module:   { label: 'Module',    desc: 'Generic logic/business-rule code — no more specific role fits.', symbol: d3.symbolCircle,   render: 'fill', size: 1 },
+  actor:    { label: 'Actor',     desc: 'A Goblins actor (define-actor / ^name constructor) — has vat-scoped mutable state via bcom.', symbol: d3.symbolTriangle, render: 'fill', size: 1.3 },
+  store:    { label: 'Store',     desc: 'Persists state to disk or an external store (SAID/KEL/ACDC stores, credential/policy stores).', symbol: d3.symbolDiamond, render: 'fill', size: 1.2 },
+  bridge:   { label: 'Bridge',    desc: 'Translates between two subsystems (e.g. VF↔governance, planner↔notify).', symbol: d3.symbolWye, render: 'fill', size: 1.35 },
+  ui:       { label: 'UI',        desc: 'Renders a view — server-side SXML components or a browser tab/panel.', symbol: d3.symbolSquare, render: 'fill', size: 1 },
+  umbrella: { label: 'Umbrella',  desc: 'Re-exports a whole subdirectory as one module — the "front door" to a subsystem.', symbol: d3.symbolStar, render: 'fill', size: 1.4 },
+  config:   { label: 'Config',    desc: 'Configuration/constants wiring, little logic of its own.', symbol: d3.symbolCross, render: 'fill', size: 1.1 },
+  adapter:  { label: 'Adapter',   desc: 'Transport/protocol adapter — one concrete backend behind a generic interface.', symbol: d3.symbolTriangle2, render: 'stroke', size: 2.2 },
+  schema:   { label: 'Schema',    desc: 'Type/record and schema definitions — mostly data shape, little behavior.', symbol: d3.symbolDiamond2, render: 'stroke', size: 2.2 },
+  data:     { label: 'Data',      desc: 'Static reference data/constants (crop yields, bioregion parameters, …).', symbol: d3.symbolSquare2, render: 'stroke', size: 2 },
+  state:    { label: 'State',     desc: 'Reactive/signal state primitives underlying the browser UI.', symbol: d3.symbolAsterisk, render: 'stroke', size: 2.4 },
+  test:     { label: 'Test infra',desc: 'Shared test/benchmark scaffolding (not the tests themselves — most test files have no own module).', symbol: d3.symbolX, render: 'stroke', size: 2.2 },
+  service:  { label: 'Service',   desc: 'A long-running server-side entry point (gateway/lobby).', symbol: d3.symbolPlus, render: 'stroke', size: 2.2 },
+};
+function kindOf(d) { return KIND_INFO[d.type] || KIND_INFO.module; }
+const symbolGen = d3.symbol();
+function markPathFor(kind, r) {
+  return symbolGen.type(kind.symbol).size(Math.PI * r * r * kind.size)();
+}
+
+const svg = d3.select('#svg');
+
+svg.append('defs').html(`
+  <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="var(--link)"></path>
+  </marker>
+  <marker id="arrow-back" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#e8763a"></path>
+  </marker>
+  <marker id="arrow-hi" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="var(--link-highlight)"></path>
+  </marker>
+  <marker id="arrow-aff" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="var(--aff-highlight)"></path>
+  </marker>
+`);
+
+const g = svg.append('g');
+const layerGuideLayer = g.append('g').attr('class', 'layer-guides');
+const linkLayer = g.append('g').attr('class', 'links');
+const nodeLayer = g.append('g').attr('class', 'nodes');
+
+const zoom = d3.zoom().scaleExtent([0.05, 8]).on('zoom', (ev) => {
+  g.attr('transform', ev.transform);
+});
+svg.call(zoom);
+
+function width() { return window.innerWidth; }
+function height() { return window.innerHeight; }
+
+const radius = n => 3.2 + Math.sqrt(Math.max(n.loc, 5)) * 0.55;
+
+// ---------- layered DAG layout (Sugiyama-lite: longest-path layering + barycenter ordering) ----------
+function computeDagLayout(nodes, links) {
+  const n = nodes.length;
+  const fadjAll = Array.from({ length: n }, () => []);
+  links.forEach(l => fadjAll[l.source].push(l.target));
+
+  // find back edges (cycle-closing) via DFS white/gray/black coloring; a back edge
+  // u->v where v is still on the active recursion stack closes the cycle v..u->v —
+  // reconstruct that path (stack.slice(indexOf(v))) so cycles can be listed for the user.
+  const color = new Uint8Array(n);
+  const isBack = new Set();
+  const cycles = [];
+  const stack = [];
+  function dfsBack(u) {
+    color[u] = 1;
+    stack.push(u);
+    for (const v of fadjAll[u]) {
+      if (color[v] === 1) {
+        isBack.add(u + ',' + v);
+        cycles.push(stack.slice(stack.indexOf(v)));
+      } else if (color[v] === 0) dfsBack(v);
+    }
+    color[u] = 2;
+    stack.pop();
+  }
+  for (let i = 0; i < n; i++) if (color[i] === 0) dfsBack(i);
+
+  const fadj = Array.from({ length: n }, () => []);
+  const radj = Array.from({ length: n }, () => []);
+  links.forEach(l => {
+    if (isBack.has(l.source + ',' + l.target)) return;
+    fadj[l.source].push(l.target);
+    radj[l.target].push(l.source);
+  });
+
+  // longest path from any "nothing depends on me" root, down to leaves
+  const layer = new Int32Array(n).fill(-1);
+  function computeLayer(v) {
+    if (layer[v] !== -1) return layer[v];
+    layer[v] = 0;
+    let m = -1;
+    for (const u of radj[v]) m = Math.max(m, computeLayer(u));
+    layer[v] = m + 1;
+    return layer[v];
+  }
+  for (let i = 0; i < n; i++) computeLayer(i);
+
+  const maxLayer = Math.max(...layer);
+  const layers = Array.from({ length: maxLayer + 1 }, () => []);
+  for (let i = 0; i < n; i++) layers[layer[i]].push(i);
+
+  layers.forEach(arr => arr.sort((a, b) => {
+    const na = nodes[a], nb = nodes[b];
+    if (na.category !== nb.category) return na.category < nb.category ? -1 : 1;
+    return na.id < nb.id ? -1 : 1;
+  }));
+
+  const posInLayer = new Float64Array(n);
+  layers.forEach(arr => arr.forEach((idx, pos) => { posInLayer[idx] = pos; }));
+
+  function reorder(layerArr, refAdj) {
+    const withBary = layerArr.map(idx => {
+      const refs = refAdj[idx];
+      const b = refs.length ? refs.reduce((s, r) => s + posInLayer[r], 0) / refs.length : posInLayer[idx];
+      return [idx, b];
+    });
+    withBary.sort((a, b) => a[1] - b[1]);
+    const newArr = withBary.map(z => z[0]);
+    newArr.forEach((idx, pos) => { posInLayer[idx] = pos; });
+    return newArr;
+  }
+  for (let iter = 0; iter < 8; iter++) {
+    if (iter % 2 === 0) { for (let l = 1; l <= maxLayer; l++) layers[l] = reorder(layers[l], radj); }
+    else { for (let l = maxLayer - 1; l >= 0; l--) layers[l] = reorder(layers[l], fadj); }
+  }
+
+  // final pass: group same-category nodes into contiguous bands within each column,
+  // preserving the barycenter-derived order *within* a category as a tie-break
+  layers.forEach(arr => {
+    arr.sort((a, b) => {
+      const ra = catRank.get(nodes[a].category), rb = catRank.get(nodes[b].category);
+      if (ra !== rb) return ra - rb;
+      return posInLayer[a] - posInLayer[b];
+    });
+    arr.forEach((idx, pos) => { posInLayer[idx] = pos; });
+  });
+
+  return { layer, posInLayer, layers, isBack, maxLayer, cycles };
+}
+
+const dag = computeDagLayout(nodes, links);
+links.forEach(l => { l.isBack = dag.isBack.has(l.source + ',' + l.target); });
+
+// dependency order flows left → right: foundational/core modules (nothing left for them
+// to depend on) sit at the left; things that depend on many others (entry points) sit at
+// the right. col 0 = most foundational = maxLayer of the raw longest-path layering.
+// Within a column, nodes stack top → bottom grouped by category.
+const LAYER_GAP = 210;
+const NODE_GAP = 26;
+function colOf(l) { return dag.maxLayer - l; }
+nodes.forEach(n => {
+  const l = dag.layer[n.index];
+  const colCount = dag.layers[l].length;
+  n.dagX = 80 + colOf(l) * LAYER_GAP;
+  n.dagY = (dag.posInLayer[n.index] - (colCount - 1) / 2) * NODE_GAP;
+});
+
+// cluster anchor positions arranged around a circle, sized by category weight (force mode)
+const clusterAngle = new Map();
+catList.forEach((c, i) => clusterAngle.set(c, (i / catList.length) * 2 * Math.PI));
+function clusterX(cat) {
+  const a = clusterAngle.get(cat);
+  const r = Math.min(width(), height()) * 0.34;
+  return width() / 2 + r * Math.cos(a);
+}
+function clusterY(cat) {
+  const a = clusterAngle.get(cat);
+  const r = Math.min(width(), height()) * 0.34;
+  return height() / 2 + r * Math.sin(a);
+}
+
+let mode = 'dag';
+
+const simulation = d3.forceSimulation(nodes)
+  .force('link', d3.forceLink(links).id(d => d.index).distance(26).strength(0.25))
+  .force('charge', d3.forceManyBody().strength(-70))
+  .force('collide', d3.forceCollide().radius(d => radius(d) + 2))
+  .force('center', d3.forceCenter(width() / 2, height() / 2))
+  .force('x', d3.forceX(d => clusterX(d.category)).strength(0.12))
+  .force('y', d3.forceY(d => clusterY(d.category)).strength(0.12))
+  .on('tick', ticked)
+  .stop();
+
+// layer guide lines + labels for the DAG view (columns, left → right = foundational → entry points)
+layerGuideLayer.selectAll('line')
+  .data(d3.range(dag.maxLayer + 1))
+  .join('line')
+  .attr('class', 'layer-line')
+  .attr('y1', -20000).attr('y2', 20000)
+  .attr('x1', col => 80 + col * LAYER_GAP - 45)
+  .attr('x2', col => 80 + col * LAYER_GAP - 45);
+
+layerGuideLayer.selectAll('text')
+  .data(d3.range(dag.maxLayer + 1))
+  .join('text')
+  .attr('class', 'layer-label')
+  .attr('x', col => 80 + col * LAYER_GAP)
+  .attr('y', col => { const l = dag.maxLayer - col; return -((dag.layers[l].length - 1) / 2) * NODE_GAP - 20; })
+  .attr('text-anchor', 'middle')
+  .text(col => col === 0 ? 'core — depends on nothing further left' : (col === dag.maxLayer ? `entry points (depth ${col})` : `depth ${col}`));
+
+const linkSel = linkLayer.selectAll('path')
+  .data(links)
+  .join('path')
+  .attr('class', d => 'link' + (d.isBack ? ' back' : ''))
+  .attr('marker-end', d => d.isBack ? 'url(#arrow-back)' : 'url(#arrow)');
+
+const nodeSel = nodeLayer.selectAll('g.node')
+  .data(nodes)
+  .join('g')
+  .attr('class', 'node')
+  .call(d3.drag()
+    .on('start', dragstarted)
+    .on('drag', dragged)
+    .on('end', dragended));
+
+nodeSel.append('path')
+  .attr('class', 'mark')
+  .attr('d', d => markPathFor(kindOf(d), radius(d)))
+  .attr('fill', d => {
+    const k = kindOf(d);
+    const color = (categories[d.category] || {}).color || '#888';
+    return k.render === 'stroke' ? 'none' : color;
+  })
+  .attr('stroke', d => {
+    const k = kindOf(d);
+    const color = (categories[d.category] || {}).color || '#888';
+    return k.render === 'stroke' ? color : 'none';
+  })
+  .attr('stroke-width', d => kindOf(d).render === 'stroke' ? 1.8 : 0);
+
+nodeSel.append('text')
+  .attr('dx', d => radius(d) + 3)
+  .attr('dy', '0.32em')
+  .text(d => shortLabel(d));
+
+nodeSel.on('click', (ev, d) => { ev.stopPropagation(); showDetail(d); highlight(d); });
+svg.on('click', () => { clearHighlight(); });
+
+function shortLabel(d) {
+  if (d.kind === 'js') return d.file.replace('browser/app/', '');
+  const parts = d.id.split(' ');
+  return parts[parts.length - 1];
+}
+
+function linkPath(d) {
+  const sx = d.source.x, sy = d.source.y, tx = d.target.x, ty = d.target.y;
+  if (mode === 'dag') {
+    const midX = (sx + tx) / 2;
+    return `M${sx},${sy} C${midX},${sy} ${midX},${ty} ${tx},${ty}`;
+  }
+  return `M${sx},${sy} L${tx},${ty}`;
+}
+
+function ticked() {
+  linkSel.attr('d', linkPath);
+  nodeSel.attr('transform', d => `translate(${d.x},${d.y})`);
+}
+
+function renderDag() {
+  nodes.forEach(n => { n.x = n.dagX; n.y = n.dagY; n.fx = null; n.fy = null; });
+  ticked();
+  layerGuideLayer.style('display', null);
+  fitToScreen();
+}
+
+function fitToScreen(points) {
+  points = points || nodes;
+  const xs = points.map(n => n.x), ys = points.map(n => n.y);
+  const x0 = Math.min(...xs) - 60, x1 = Math.max(...xs) + 60;
+  const y0 = Math.min(...ys) - 60, y1 = Math.max(...ys) + 60;
+  const w = x1 - x0, h = y1 - y0;
+  const scale = Math.max(0.05, Math.min(2, 0.92 / Math.max(w / width(), h / height())));
+  const tx = width() / 2 - scale * (x0 + w / 2);
+  const ty = height() / 2 - scale * (y0 + h / 2);
+  svg.transition().duration(400).call(zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
+}
+
+function dragstarted(ev, d) {
+  if (mode === 'force' && !ev.active) simulation.alphaTarget(0.25).restart();
+  d.fx = d.x; d.fy = d.y;
+}
+function dragged(ev, d) {
+  d.fx = ev.x; d.fy = ev.y;
+  if (mode === 'dag') { d.x = ev.x; d.y = ev.y; ticked(); }
+}
+function dragended(ev, d) {
+  if (mode === 'force') {
+    if (!ev.active) simulation.alphaTarget(0);
+    d.fx = null; d.fy = null;
+  }
+}
+
+// ---------- component-level view: collapse every module into one node per category ----------
+// Answers "how do the pieces of this system come together" without 215 nodes in the way —
+// same left(foundational)→right(entry) DAG convention, just at component granularity.
+const catIndex = new Map(catOrder.map((c, i) => [c, i]));
+const compNodes = catOrder.map((c, i) => ({ id: c, index: i, category: c, memberCount: catCount.get(c) }));
+const compWeight = new Map(); // "catA|catB" -> edge count
+links.forEach(l => {
+  const ca = l.source.category, cb = l.target.category;
+  if (ca === cb) return;
+  const key = ca + '|' + cb;
+  compWeight.set(key, (compWeight.get(key) || 0) + 1);
+});
+const compLinks = [];
+compWeight.forEach((w, key) => {
+  const [ca, cb] = key.split('|');
+  compLinks.push({ source: catIndex.get(ca), target: catIndex.get(cb), weight: w });
+});
+
+const compDag = computeDagLayout(compNodes, compLinks);
+// computeDagLayout needs numeric source/target (used as array indices); resolve to
+// actual node objects only now, for rendering/detail lookups (mirrors what forceLink
+// does for the main graph's links).
+compLinks.forEach(l => { l.source = compNodes[l.source]; l.target = compNodes[l.target]; });
+const COMP_LAYER_GAP = 260;
+const COMP_NODE_GAP = 130;
+compNodes.forEach(cn => {
+  const l = compDag.layer[cn.index];
+  const colCount = compDag.layers[l].length;
+  const col = compDag.maxLayer - l;
+  cn.x = 90 + col * COMP_LAYER_GAP;
+  cn.y = (compDag.posInLayer[cn.index] - (colCount - 1) / 2) * COMP_NODE_GAP;
+});
+const compRadius = cn => 16 + Math.sqrt(cn.memberCount) * 6.5;
+
+const componentLayer = g.append('g').attr('class', 'components').style('display', 'none');
+const componentLinkLayer = componentLayer.append('g');
+const componentNodeLayer = componentLayer.append('g');
+
+function compLinkPath(l) {
+  const sx = l.source.x, sy = l.source.y, tx = l.target.x, ty = l.target.y;
+  const midX = (sx + tx) / 2;
+  return `M${sx},${sy} C${midX},${sy} ${midX},${ty} ${tx},${ty}`;
+}
+const compLinkSel = componentLinkLayer.selectAll('path')
+  .data(compLinks)
+  .join('path')
+  .attr('class', 'complink')
+  .attr('marker-end', 'url(#arrow)')
+  .attr('d', compLinkPath)
+  .attr('stroke-width', l => 1 + Math.log2(l.weight + 1));
+
+const compNodeSel = componentNodeLayer.selectAll('g.compnode')
+  .data(compNodes)
+  .join('g')
+  .attr('class', 'compnode')
+  .attr('transform', cn => `translate(${cn.x},${cn.y})`)
+  .on('click', (ev, cn) => { ev.stopPropagation(); showComponentDetail(cn); });
+
+compNodeSel.append('circle')
+  .attr('r', cn => compRadius(cn))
+  .attr('fill', cn => categories[cn.category].color);
+
+compNodeSel.append('text')
+  .attr('class', 'complabel')
+  .attr('dy', '0.32em')
+  .attr('text-anchor', 'middle')
+  .text(cn => categories[cn.category].label);
+
+compNodeSel.append('text')
+  .attr('class', 'compcount')
+  .attr('dy', cn => compRadius(cn) + 14)
+  .attr('text-anchor', 'middle')
+  .text(cn => `${cn.memberCount} module${cn.memberCount === 1 ? '' : 's'}`);
+
+function showComponentDetail(cn) {
+  const info = categories[cn.category];
+  const dependsOn = compLinks.filter(l => l.source.index === cn.index)
+    .map(l => ({ cat: l.target, w: l.weight })).sort((a, b) => b.w - a.w);
+  const dependedBy = compLinks.filter(l => l.target.index === cn.index)
+    .map(l => ({ cat: l.source, w: l.weight })).sort((a, b) => b.w - a.w);
+  const body = document.getElementById('detail-body');
+  const rowsFor = (list) => list.map(({ cat, w }) => {
+    const ci = categories[cat.category];
+    return `<li data-idx="${cat.index}"><span class="swatch" style="background:${ci.color}"></span>${ci.label} <span style="color:var(--text-dim)">(${w} edge${w === 1 ? '' : 's'})</span></li>`;
+  }).join('');
+  body.innerHTML = `
+    <h3>${info.label}</h3>
+    <div class="path">${cn.memberCount} module${cn.memberCount === 1 ? '' : 's'} in this component</div>
+    <div class="desc">${info.desc}</div>
+    ${dependsOn.length ? `<div class="relhead">Depends on</div><ul>${rowsFor(dependsOn)}</ul>` : ''}
+    ${dependedBy.length ? `<div class="relhead">Depended on by</div><ul>${rowsFor(dependedBy)}</ul>` : ''}
+    <div class="relhead">Focus</div>
+    <ul><li id="isolate-component">Show just these ${cn.memberCount} modules in Layered view →</li></ul>
+  `;
+  body.querySelectorAll('#detail-body ul li[data-idx]').forEach(li => {
+    li.addEventListener('click', () => showComponentDetail(compNodes[+li.dataset.idx]));
+  });
+  const isolateLi = document.getElementById('isolate-component');
+  if (isolateLi) {
+    isolateLi.style.cursor = 'pointer';
+    isolateLi.addEventListener('click', () => {
+      hiddenCats.clear();
+      catOrder.forEach(c => { if (c !== cn.category) hiddenCats.add(c); });
+      document.querySelectorAll('.legend-row').forEach(row => {
+        row.classList.toggle('off', hiddenCats.has(row.dataset.cat));
+      });
+      applyCatFilter();
+      setMode('dag');
+      setTimeout(() => fitToScreen(nodes.filter(n => n.category === cn.category)), 450);
+    });
+  }
+  document.getElementById('detail').classList.add('show');
+}
+
+renderDag();
+
+// BFS over an arbitrary adjacency getter; returns Map(nodeIndex -> hop distance), excludes start.
+function bfsDist(start, adjOf) {
+  const dist = new Map([[start, 0]]);
+  let frontier = [start];
+  let d = 0;
+  while (frontier.length) {
+    d++;
+    const next = [];
+    for (const u of frontier) {
+      for (const v of adjOf(u)) {
+        if (!dist.has(v)) { dist.set(v, d); next.push(v); }
+      }
+    }
+    frontier = next;
+  }
+  dist.delete(start);
+  return dist;
+}
+function requiresOf(idx) { return bfsDist(idx, i => outDeps.get(i) || []); }
+function affectsOf(idx) { return bfsDist(idx, i => inDeps.get(i) || []); }
+function fadeFor(dist) { return Math.max(0.32, 1 - dist * 0.12); }
+
+// Full transitive blast radius: everything this module depends on (req, teal, arrows
+// point away from d) and everything that transitively depends on it (aff, pink, arrows
+// point toward d) — not just direct neighbors. Fades with hop distance.
+function highlight(d) {
+  const req = requiresOf(d.index);
+  const aff = affectsOf(d.index);
+  const inSet = (idx, set) => idx === d.index || set.has(idx);
+
+  nodeSel.classed('hi', n => n.index === d.index);
+  nodeSel.classed('req', n => n.index !== d.index && req.has(n.index));
+  nodeSel.classed('aff', n => n.index !== d.index && aff.has(n.index));
+  nodeSel.classed('dim', n => n.index !== d.index && !req.has(n.index) && !aff.has(n.index));
+  nodeSel.style('opacity', n => {
+    if (n.index === d.index) return 1;
+    if (req.has(n.index)) return fadeFor(req.get(n.index));
+    if (aff.has(n.index)) return fadeFor(aff.get(n.index));
+    return null;
+  });
+
+  linkSel.each(function (l) {
+    const s = l.source.index, t = l.target.index;
+    const isReq = inSet(s, req) && inSet(t, req);
+    const isAff = inSet(s, aff) && inSet(t, aff);
+    const sel = d3.select(this);
+    sel.classed('req', isReq).classed('aff', isAff && !isReq).classed('dim', !isReq && !isAff);
+    sel.style('opacity', isReq ? fadeFor(Math.max(req.get(s) || 0, req.get(t) || 0))
+      : isAff ? fadeFor(Math.max(aff.get(s) || 0, aff.get(t) || 0)) : null);
+    sel.attr('marker-end', isReq ? 'url(#arrow-hi)' : isAff ? 'url(#arrow-aff)' : (l.isBack ? 'url(#arrow-back)' : 'url(#arrow)'));
+  });
+}
+function clearHighlight() {
+  nodeSel.classed('dim', false).classed('hi', false).classed('req', false).classed('aff', false).style('opacity', null);
+  linkSel.classed('dim', false).classed('hi', false).classed('req', false).classed('aff', false).style('opacity', null);
+  linkSel.attr('marker-end', l => l.isBack ? 'url(#arrow-back)' : 'url(#arrow)');
+}
+
+function showDetail(d) {
+  const cat = categories[d.category] || { label: d.category, desc: '', color: '#888' };
+  const kind = kindOf(d);
+  const outs = outDeps.get(d.index).map(i => nodeById.get(i));
+  const ins = inDeps.get(d.index).map(i => nodeById.get(i));
+  const reqCount = requiresOf(d.index).size;
+  const affCount = affectsOf(d.index).size;
+  const body = document.getElementById('detail-body');
+  body.innerHTML = `
+    <h3>${d.id}</h3>
+    <div class="path">${d.file} · ${d.loc} LOC</div>
+    <div class="catline"><span class="swatch" style="background:${cat.color}"></span>${cat.label} · <em>${kind.label}</em></div>
+    <div class="desc">${cat.desc}</div>
+    <div class="desc"><em>${kind.label}:</em> ${kind.desc}</div>
+    <div class="legend-key">
+      <span><i style="background:var(--aff-highlight)"></i>${affCount} module${affCount === 1 ? '' : 's'} would need review if this changes</span>
+    </div>
+    <div class="legend-key">
+      <span><i style="background:var(--link-highlight)"></i>${reqCount} module${reqCount === 1 ? '' : 's'} in its full dependency chain</span>
+    </div>
+    ${outs.length ? `<div class="relhead">Depends on directly (${outs.length})</div><ul>${outs.map(o => `<li data-idx="${o.index}">${o.id}</li>`).join('')}</ul>` : ''}
+    ${ins.length ? `<div class="relhead">Depended on directly by (${ins.length})</div><ul>${ins.map(o => `<li data-idx="${o.index}">${o.id}</li>`).join('')}</ul>` : ''}
+  `;
+  body.querySelectorAll('li').forEach(li => {
+    li.addEventListener('click', () => {
+      const n = nodeById.get(+li.dataset.idx);
+      showDetail(n);
+      highlight(n);
+      focusNode(n);
+    });
+  });
+  document.getElementById('detail').classList.add('show');
+}
+
+function focusNode(d) {
+  const t = d3.zoomIdentity.translate(width() / 2, height() / 2).scale(1.6).translate(-d.x, -d.y);
+  svg.transition().duration(500).call(zoom.transform, t);
+}
+
+// legend
+const legend = document.getElementById('legend');
+const hiddenCats = new Set();
+catList
+  .sort((a, b) => catCount.get(b) - catCount.get(a))
+  .forEach(c => {
+    const info = categories[c];
+    const row = document.createElement('div');
+    row.className = 'legend-row';
+    row.dataset.cat = c;
+    row.innerHTML = `<span class="swatch" style="background:${info.color}"></span>${info.label}<span class="cnt">${catCount.get(c)}</span>`;
+    row.title = info.desc;
+    row.addEventListener('click', () => {
+      if (hiddenCats.has(c)) hiddenCats.delete(c); else hiddenCats.add(c);
+      row.classList.toggle('off', hiddenCats.has(c));
+      applyCatFilter();
+    });
+    legend.appendChild(row);
+  });
+
+const hiddenTypes = new Set();
+function applyCatFilter() {
+  const hidden = d => hiddenCats.has(d.category) || hiddenTypes.has(d.type);
+  nodeSel.style('display', d => hidden(d) ? 'none' : null);
+  linkSel.style('display', l => (hidden(l.source) || hidden(l.target)) ? 'none' : null);
+}
+
+// type (kind/shape) legend
+const typeList = Object.keys(KIND_INFO).filter(t => nodes.some(n => (n.type || 'module') === t));
+const typeCount = new Map(typeList.map(t => [t, nodes.filter(n => (n.type || 'module') === t).length]));
+const typeGrid = document.getElementById('typelegend-grid');
+typeList
+  .sort((a, b) => typeCount.get(b) - typeCount.get(a))
+  .forEach(t => {
+    const info = KIND_INFO[t];
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.title = info.desc;
+    const shapePath = markPathFor(info, 5);
+    const markClass = info.render === 'stroke' ? 'strokemark' : 'fillmark';
+    row.innerHTML = `<svg class="shape" width="12" height="12" viewBox="-9 -9 18 18"><path class="${markClass}" d="${shapePath}"></path></svg><span>${info.label} · ${typeCount.get(t)}</span>`;
+    row.addEventListener('click', () => {
+      if (hiddenTypes.has(t)) hiddenTypes.delete(t); else hiddenTypes.add(t);
+      row.classList.toggle('off', hiddenTypes.has(t));
+      applyCatFilter();
+    });
+    typeGrid.appendChild(row);
+  });
+
+// search
+document.getElementById('search').addEventListener('input', (ev) => {
+  const q = ev.target.value.trim().toLowerCase();
+  if (!q) { clearHighlight(); return; }
+  const matches = nodes.filter(n => n.id.toLowerCase().includes(q) || n.file.toLowerCase().includes(q));
+  const keep = new Set(matches.map(n => n.index));
+  clearHighlight();
+  nodeSel.classed('dim', n => !keep.has(n.index));
+  nodeSel.classed('hi', n => keep.has(n.index));
+  linkSel.classed('dim', true).classed('hi', false);
+  if (matches.length === 1) { showDetail(matches[0]); highlight(matches[0]); }
+});
+
+// mode toggle: dag (layered), components (collapsed), force (clustered)
+function setMode(newMode) {
+  mode = newMode;
+  document.querySelectorAll('.modebtn[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+
+  componentLayer.style('display', mode === 'components' ? null : 'none');
+  nodeLayer.style('display', mode === 'components' ? 'none' : null);
+  linkLayer.style('display', mode === 'components' ? 'none' : null);
+
+  if (mode === 'dag') {
+    simulation.stop();
+    layerGuideLayer.style('display', null);
+    linkSel.attr('marker-end', l => l.isBack ? 'url(#arrow-back)' : 'url(#arrow)');
+    renderDag();
+  } else if (mode === 'components') {
+    simulation.stop();
+    layerGuideLayer.style('display', 'none');
+    fitToScreen(compNodes);
+  } else {
+    layerGuideLayer.style('display', 'none');
+    nodes.forEach(n => { n.x = n.dagX; n.y = n.dagY; n.vx = 0; n.vy = 0; });
+    simulation.alpha(1).restart();
+    fitToScreenLoose();
+  }
+}
+document.querySelectorAll('.modebtn[data-mode]').forEach(btn => {
+  btn.addEventListener('click', () => setMode(btn.dataset.mode));
+});
+
+function fitToScreenLoose() {
+  svg.transition().duration(400).call(zoom.transform, d3.zoomIdentity);
+}
+
+// cycles panel
+const cyclesBody = document.getElementById('cycles-body');
+if (dag.cycles.length) {
+  document.getElementById('cycles-btn').textContent = `Cycles (${dag.cycles.length})`;
+} else {
+  document.getElementById('cycles-btn').textContent = 'Cycles (0)';
+  document.getElementById('cycles-btn').style.opacity = 0.5;
+  document.getElementById('cycles-btn').style.cursor = 'default';
+}
+dag.cycles.forEach(cyc => {
+  const row = document.createElement('div');
+  row.className = 'cyc';
+  row.textContent = cyc.map(i => shortLabel(nodeById.get(i))).join(' → ') + ' ↩';
+  row.title = cyc.map(i => nodeById.get(i).id).join(' → ');
+  row.addEventListener('click', () => {
+    const cycNodes = cyc.map(i => nodeById.get(i));
+    const keep = new Set(cyc);
+    setMode('dag');
+    clearHighlight();
+    nodeSel.classed('dim', n => !keep.has(n.index));
+    nodeSel.classed('hi', n => keep.has(n.index));
+    linkSel.classed('dim', l => !(keep.has(l.source.index) && keep.has(l.target.index)));
+    setTimeout(() => fitToScreen(cycNodes), 450);
+  });
+  cyclesBody.appendChild(row);
+});
+document.getElementById('cycles-btn').addEventListener('click', () => {
+  if (!dag.cycles.length) return;
+  document.getElementById('cycles-panel').classList.toggle('show');
+});
+
+window.addEventListener('resize', () => {
+  if (mode === 'force') simulation.force('center', d3.forceCenter(width() / 2, height() / 2));
+});
+</script>
+</body>
+</html>

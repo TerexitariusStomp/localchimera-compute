@@ -1,0 +1,8 @@
+# TEMPLATE — copy to deploy/radicle-seeds.local.txt and fill in the real seed,
+# which you obtain OUT-OF-BAND (vault / secure channel), NOT from this public repo.
+#
+# One entry per line: <node-id>@<address>:<port>
+# Onion seeds require the local node in Tor Full Proxy Mode (radicle-delegate-setup.sh).
+#
+# Example shape (placeholders — not a real seed):
+# z6MkPLACEHOLDERnodeidPLACEHOLDER@PLACEHOLDERonionaddressPLACEHOLDER.onion:8776

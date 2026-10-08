@@ -1,0 +1,10 @@
+{
+  "name": "playnet-corpus",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Generic textbook corpus -> RAG -> knowledge-extraction pipeline",
+  "dependencies": {
+    "@huggingface/transformers": "^3.7.6"
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "$id": "EJDICSd0QpNmZ9MaK6Kb9Ibj0bI1QJdU2AEMM7gculNF",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Playnet Scope Membership Credential",
+  "description": "A scope's governance group recognizes the holder as a member of the named commune. Issued on first account creation. Distinct from the member ROLE credential (member.json): this one asserts belonging to a specific scope, not a platform role.",
+  "type": "object",
+  "credentialType": "PlaynetScopeMembershipCredential",
+  "version": "1.0.0",
+  "properties": {
+    "v": {
+      "type": "string",
+      "description": "ACDC version string"
+    },
+    "d": {
+      "type": "string",
+      "description": "Credential SAID"
+    },
+    "u": {
+      "type": "string",
+      "description": "Optional salt for privacy-preserving presentations"
+    },
+    "i": {
+      "type": "string",
+      "description": "Issuer AID prefix (the scope's governance group)"
+    },
+    "ri": {
+      "type": "string",
+      "description": "Registry identifier (TEL)"
+    },
+    "s": {
+      "type": "string",
+      "description": "Schema SAID"
+    },
+    "a": {
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Attributes-block SAID (compact form)"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "d": {
+              "type": "string",
+              "description": "Attributes-block SAID"
+            },
+            "i": {
+              "type": "string",
+              "description": "Holder AID prefix (the member)"
+            },
+            "dt": {
+              "type": "string",
+              "format": "date-time",
+              "description": "ISO-8601 issuance timestamp"
+            },
+            "commune": {
+              "type": "string",
+              "description": "Name of the commune the holder belongs to"
+            },
+            "admitted-at": {
+              "type": "number",
+              "description": "Admission epoch timestamp"
+            }
+          },
+          "required": [
+            "d",
+            "i",
+            "dt",
+            "commune",
+            "admitted-at"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  },
+  "required": [
+    "v",
+    "d",
+    "i",
+    "ri",
+    "s",
+    "a"
+  ],
+  "additionalProperties": false
+}

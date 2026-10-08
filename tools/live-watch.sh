@@ -5,10 +5,10 @@
 #   tools/live-watch.sh                # watch ./module
 #   tools/live-watch.sh path1 path2 …  # watch the given dirs/files
 #
-# Pairs with `make weave-dev` or `make serve-dev`. Run the dev server
+# Pairs with `make serve-dev`. Run the dev server
 # in one terminal, this script in another, edit a Scheme file in any
 # editor — the matching procedure is replaced in the running browser
-# tab without reloading the page. See docs/LIVE_HACKING.md.
+# tab without reloading the page. See docs/dev/LIVE_HACKING.md.
 #
 # Environment overrides (forwarded to tools/live-reload.scm):
 #   PLAYNET_REPL_HOST   default 127.0.0.1
@@ -17,7 +17,7 @@
 #   PLAYNET_NO_REFRESH  if non-empty, skip the trailing (refresh!)
 #
 # Requires `inotifywait` (linux-only; from inotify-tools / Guix package
-# `inotify-tools`). The Hetzner VM has it via the live-watch shepherd
+# `inotify-tools`). The bootstrap VPS provider's VM has it via the live-watch shepherd
 # service's package manifest; on dev laptops install it manually.
 
 set -euo pipefail
@@ -80,7 +80,7 @@ inotifywait -m -r -q -e close_write --format '%w%f' "$@" \
             # Skip generated dev sources to avoid an infinite loop if
             # someone edits one of those by mistake.
             case "$rel" in
-                browser/.dev/*|weave/.dev/*) continue ;;
+                browser/.dev/*) continue ;;
             esac
             "$RELOAD" "$rel" || true  # never crash the watch loop
             ;;

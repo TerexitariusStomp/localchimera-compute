@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The ecosystem as one reaction network</title>
+<style>
+  :root{
+    --deep:#2c4a6e; --gold:#c8a020; --gold-dk:#8a6f12; --ink:#1a1a1a; --faint:#888;
+    --C:#6f6f6f; --N:#3a78c2; --P:#d98a3a; --K:#7d57b0; --warm:#b87333; --yea:#4a8a5a;
+    --res-fill:#dfe7f0; --rx-fill:#f3e7bb;
+  }
+  html,body{margin:0;background:#fbfaf7;color:var(--ink);
+    font-family:"Libertinus Serif","Iowan Old Style",Georgia,"Times New Roman",serif;}
+  .wrap{max-width:1020px;margin:0 auto;padding:28px 20px 60px;}
+  h1{font-size:22px;font-weight:700;margin:0 0 2px;}
+  .sub{font-style:italic;color:#555;font-size:14px;margin:0 0 18px;}
+  svg{width:100%;height:auto;display:block;}
+  .node rect, .node circle{cursor:grab;}
+  .node text{pointer-events:none;font-weight:700;}
+  .band{stroke-linecap:butt;}
+  .link.dim{opacity:.12;}
+  .node.dim{opacity:.25;}
+  figcaption{font-size:13.5px;line-height:1.5;color:#222;margin-top:14px;
+    border-top:1px solid #e3ddd0;padding-top:12px;}
+  figcaption b{font-weight:700;}
+  .legend text{font-size:12px;}
+  #tip{position:fixed;pointer-events:none;background:#fff;border:1px solid #cfc7b6;
+    box-shadow:0 2px 8px rgba(0,0,0,.12);border-radius:5px;padding:6px 9px;font-size:12px;
+    color:#222;opacity:0;transition:opacity .08s;z-index:10;max-width:240px;}
+  #tip .ttitle{font-weight:700;margin-bottom:3px;}
+  #tip .row{display:flex;justify-content:space-between;gap:14px;}
+  #tip .sw{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:baseline;}
+  .hint{font-size:12px;color:var(--faint);font-style:italic;margin-top:6px;}
+  .el-C{color:var(--C)} .el-N{color:var(--N)} .el-P{color:var(--P)} .el-K{color:var(--K)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>The ecosystem as one reaction network</h1>
+  <p class="sub">a plan, a balanced reaction, and an ecosystem are one object &mdash; the difference is only which rows the conservation matrix carries</p>
+
+  <figure style="margin:0">
+    <svg id="fig" viewBox="0 0 1000 500" role="img" aria-label="bipartite flux map"></svg>
+    <p class="hint">Drag any node to rearrange &middot; hover a ribbon for its element flows.</p>
+    <figcaption>
+      <b>The ecosystem in the bare metabolite&ndash;reaction grammar.</b>
+      <span style="color:var(--deep)">Resources</span> (&#9711;) and the
+      <span style="color:var(--gold-dk)">recipes / reactions</span> (&#9633;) that transform them,
+      with proportional flux split by element &mdash;
+      <span class="el-C">C</span>, <span class="el-N">N</span>,
+      <span class="el-P">P</span>, <span class="el-K">K</span>.
+      <i>Build</i> (photosynthesis&nbsp;+&nbsp;uptake) draws CO&#8322; and soil nutrients into a producer;
+      grazing carries the bundle up the chain; respiration returns <span class="el-C">carbon</span> to air;
+      death and decomposition return the nutrients to soil. Each ribbon's width is the size of the flow;
+      every band is conserved around its own loop. (Schematic magnitudes.)
+    </figcaption>
+  </figure>
+</div>
+<div id="tip"></div>
+
+<script src="d3.v7.min.js"></script>
+<script>
+const EL = {C:"#6f6f6f", N:"#3a78c2", P:"#d98a3a", K:"#7d57b0"};
+const ELNAME = {C:"carbon", N:"nitrogen", P:"phosphorus", K:"potassium"};
+const DEEP="#2c4a6e", GOLD="#c8a020", GOLDDK="#8a6f12", RESF="#dfe7f0", RXF="#f3e7bb";
+const K_PX = 0.62;            // px of ribbon width per unit of flow
+const R_CIRC = 27, RX_W = 58, RX_H = 36;
+
+// ---- nodes: resources (circle) and reactions (square) ----
+const nodes = [
+  {id:"co2a",  label:"CO₂",     type:"res", x: 85, y:150},
+  {id:"soil",  label:"soil",         type:"res", x: 85, y:385},
+  {id:"build", label:"build",        type:"rx",  x:240, y:255},
+  {id:"prod",  label:"producer",     type:"res", x:385, y:255},
+  {id:"graze", label:"graze",        type:"rx",  x:515, y:255},
+  {id:"herb",  label:"herbiv.",      type:"res", x:645, y:255},
+  {id:"resp",  label:"respire",      type:"rx",  x:792, y:212},
+  {id:"co2r",  label:"CO₂",     type:"res", x:925, y:235},
+  {id:"die",   label:"die",          type:"rx",  x:515, y:405},
+  {id:"detr",  label:"detritus",     type:"res", x:645, y:405},
+  {id:"deco",  label:"decompose",    type:"rx",  x:792, y:405},
+  {id:"soilr", label:"soil",         type:"res", x:925, y:405},
+];
+const N = Object.fromEntries(nodes.map(n=>[n.id,n]));
+
+// ---- links: each carries element flows (resource -> reaction -> resource) ----
+const F = (C,Nn,P,Kk)=>[["C",C],["N",Nn],["P",P],["K",Kk]].filter(d=>d[1]>0)
+  .map(d=>({el:d[0], color:EL[d[0]], value:d[1]}));
+const links = [
+  {s:"co2a", t:"build", f:F(26,0,0,0),  name:"photosynthesis (C in)"},
+  {s:"soil", t:"build", f:F(0,13,7,11), name:"uptake (N·P·K in)"},
+  {s:"build",t:"prod",  f:F(26,13,7,11),name:"build → producer biomass"},
+  {s:"prod", t:"graze", f:F(16,8,4,7),  name:"grazed biomass"},
+  {s:"graze",t:"herb",  f:F(16,8,4,7),  name:"into herbivore"},
+  {s:"herb", t:"resp",  f:F(13,0,0,0),  name:"respiration (C)"},
+  {s:"resp", t:"co2r",  f:F(13,0,0,0),  name:"CO₂ to air"},
+  {s:"prod", t:"die",   f:F(12,6,3,5),  name:"plant litter / death"},
+  {s:"herb", t:"die",   f:F(7,4,2,3),   name:"animal death / waste"},
+  {s:"die",  t:"detr",  f:F(18,9,5,8),  name:"to detritus"},
+  {s:"detr", t:"deco",  f:F(18,9,5,8),  name:"to decomposers"},
+  {s:"deco", t:"soilr", f:F(0,13,7,11), name:"mineralization (N·P·K)"},
+  {s:"deco", t:"co2r",  f:F(11,0,0,0),  name:"decomposer respiration (C)"},
+];
+
+const svg = d3.select("#fig");
+const linkLayer = svg.append("g").attr("class","links");
+const nodeLayer = svg.append("g").attr("class","nodes");
+const tip = d3.select("#tip");
+
+function radius(n){ return n.type==="res" ? R_CIRC : Math.max(RX_W,RX_H)/2 - 2; }
+
+// geometry of one link's stacked ribbon + arrowhead, from current node positions
+function ribbonGeom(L){
+  const s=N[L.s], t=N[L.t];
+  let dx=t.x-s.x, dy=t.y-s.y, len=Math.hypot(dx,dy)||1;
+  const ux=dx/len, uy=dy/len, px=-uy, py=ux;
+  const rs=radius(s), rt=radius(t);
+  const A={x:s.x+ux*rs, y:s.y+uy*rs};
+  const B={x:t.x-ux*rt, y:t.y-uy*rt};
+  const total=d3.sum(L.f, d=>d.value)*K_PX;
+  const hl=Math.min(Math.max(9,total*0.7), len-rs-rt-4);
+  const Bs={x:B.x-ux*hl, y:B.y-uy*hl};
+  // stacked bands
+  let cum=-total/2;
+  const bands=L.f.map(d=>{
+    const w=d.value*K_PX, off=cum+w/2; cum+=w;
+    return {color:d.color, w, el:d.el, value:d.value,
+      x1:A.x+px*off, y1:A.y+py*off, x2:Bs.x+px*off, y2:Bs.y+py*off};
+  });
+  const dom=L.f.reduce((a,b)=>b.value>a.value?b:a).color;
+  const hw=total/2+2;
+  const head=[[Bs.x+px*hw,Bs.y+py*hw],[B.x,B.y],[Bs.x-px*hw,Bs.y-py*hw]];
+  return {bands, head, dom};
+}
+
+function drawLinks(){
+  const g = linkLayer.selectAll("g.link").data(links).join(enter=>{
+    const gg=enter.append("g").attr("class","link");
+    gg.on("mousemove",(ev,L)=>showTip(ev,L)).on("mouseleave",hideTip);
+    return gg;
+  });
+  g.each(function(L){
+    const sel=d3.select(this);
+    const geom=ribbonGeom(L);
+    // bands
+    const b=sel.selectAll("line.band").data(geom.bands);
+    b.join("line").attr("class","band")
+      .attr("x1",d=>d.x1).attr("y1",d=>d.y1).attr("x2",d=>d.x2).attr("y2",d=>d.y2)
+      .attr("stroke",d=>d.color).attr("stroke-width",d=>d.w);
+    // arrowhead
+    const h=sel.selectAll("polygon.head").data([geom.head]);
+    h.join("polygon").attr("class","head")
+      .attr("points",d=>d.map(p=>p.join(",")).join(" "))
+      .attr("fill",d3.color(geom.dom).darker(0.3));
+    L._geom=geom;
+  });
+}
+
+function drawNodes(){
+  const g=nodeLayer.selectAll("g.node").data(nodes).join(enter=>{
+    const gg=enter.append("g").attr("class","node");
+    gg.each(function(n){
+      const s=d3.select(this);
+      if(n.type==="res"){
+        s.append("circle").attr("r",R_CIRC).attr("fill",RESF).attr("stroke",DEEP).attr("stroke-width",1.6);
+        s.append("text").attr("text-anchor","middle").attr("dy","0.34em")
+          .attr("fill",DEEP).attr("font-size",13).text(n.label);
+      } else {
+        s.append("rect").attr("x",-RX_W/2).attr("y",-RX_H/2).attr("width",RX_W).attr("height",RX_H)
+          .attr("rx",3).attr("fill",RXF).attr("stroke",d3.color(GOLD).darker(0.2)).attr("stroke-width",1.6);
+        s.append("text").attr("text-anchor","middle").attr("dy","0.34em")
+          .attr("fill",GOLDDK).attr("font-size",12).text(n.label);
+      }
+    });
+    gg.call(d3.drag()
+      .on("start",function(){d3.select(this).select("circle,rect").attr("cursor","grabbing");})
+      .on("drag",function(ev,n){ n.x=ev.x; n.y=ev.y; d3.select(this).attr("transform",`translate(${n.x},${n.y})`); drawLinks(); })
+      .on("end",function(){d3.select(this).select("circle,rect").attr("cursor","grab");}));
+    gg.on("mouseenter",(ev,n)=>highlight(n)).on("mouseleave",clearHighlight);
+    return gg;
+  });
+  g.attr("transform",n=>`translate(${n.x},${n.y})`);
+}
+
+function highlight(n){
+  linkLayer.selectAll("g.link").classed("dim",L=> L.s!==n.id && L.t!==n.id);
+  nodeLayer.selectAll("g.node").classed("dim",m=>{
+    if(m.id===n.id) return false;
+    return !links.some(L=>(L.s===n.id&&L.t===m.id)||(L.t===n.id&&L.s===m.id));
+  });
+}
+function clearHighlight(){
+  linkLayer.selectAll("g.link").classed("dim",false);
+  nodeLayer.selectAll("g.node").classed("dim",false);
+}
+
+function showTip(ev,L){
+  const rows=L.f.map(d=>`<div class="row"><span><span class="sw" style="background:${d.color}"></span>${ELNAME[d.el]}</span><span>${d.value}</span></div>`).join("");
+  const tot=d3.sum(L.f,d=>d.value);
+  tip.html(`<div class="ttitle">${N[L.s].label} → ${N[L.t].label}</div>`+
+           `<div style="color:#666;margin-bottom:4px">${L.name}</div>${rows}`+
+           `<div class="row" style="border-top:1px solid #eee;margin-top:3px;padding-top:3px"><span>total</span><span>${tot}</span></div>`)
+    .style("left",(ev.clientX+14)+"px").style("top",(ev.clientY+12)+"px").style("opacity",1);
+}
+function hideTip(){ tip.style("opacity",0); }
+
+// ---- legend ----
+function legend(){
+  const lg=svg.append("g").attr("class","legend").attr("transform","translate(16,18)");
+  lg.append("circle").attr("cx",8).attr("cy",6).attr("r",7).attr("fill",RESF).attr("stroke",DEEP).attr("stroke-width",1.4);
+  lg.append("text").attr("x",22).attr("y",10).attr("fill",DEEP).text("resource");
+  lg.append("rect").attr("x",96).attr("y",-1).attr("width",16).attr("height",13).attr("rx",2).attr("fill",RXF).attr("stroke",d3.color(GOLD).darker(0.2)).attr("stroke-width",1.4);
+  lg.append("text").attr("x",118).attr("y",10).attr("fill",GOLDDK).text("recipe / reaction");
+  const els=[["C",EL.C],["N",EL.N],["P",EL.P],["K",EL.K]];
+  els.forEach((e,i)=>{
+    const x=250+i*52;
+    lg.append("line").attr("x1",x).attr("y1",6).attr("x2",x+22).attr("y2",6).attr("stroke",e[1]).attr("stroke-width",6);
+    lg.append("text").attr("x",x+27).attr("y",10).attr("fill",d3.color(e[1]).darker(0.4)).text(e[0]);
+  });
+}
+
+drawLinks();
+drawNodes();
+legend();
+</script>
+</body>
+</html>

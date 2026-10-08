@@ -4,12 +4,13 @@
 ;;; funnels, priority cells, and other DDMRP visualization primitives.
 ;;;
 ;;; All components produce standard SXML consumed by the virtual-dom
-;;; renderer in browser/repl.scm.
+;;; renderer in hoot/repl.scm.
 ;;;
 ;;; Hoot/WASM compatible.
 
 (define-module (playnet ui components)
-  #:use-module (playnet ddmrp)
+  #:use-module (playnet utils alist)
+  #:use-module (playnet ui zone-format)
   #:export (;; Zone system
             zone-class
             zone-svg-color

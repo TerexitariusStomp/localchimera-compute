@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy Notice — playnet</title>
+<link rel="stylesheet" href="assets/css/legal.css">
+</head>
+<body>
+<div class="wrap">
+
+<div class="top">
+  <a class="brand" href="app.html">playnet</a>
+  <span class="sep">·</span>
+  <span>privacy notice</span>
+  <span class="sep">·</span>
+  <a href="terms.html">terms of use</a>
+  <span class="sep">·</span>
+  <a href="accessibility.html">accessibility</a>
+  <span class="spacer"></span>
+  <a href="app.html">← back to the dial</a>
+</div>
+
+<h1>Privacy Notice</h1>
+<p class="sub">
+  Version <b data-fact="document-version">1.1.0</b> · effective <b data-fact="legal-version">2026-10-05</b> · for the gateway operated by
+  <span class="op unset" data-op="name">[operator not configured — see docs/legal/README.md]</span>
+</p>
+
+<div class="note">
+  <strong>This notice is written to be true rather than reassuring.</strong> playnet's record is
+  cryptographically append-only: that is what makes it auditable, and it is also why several
+  things you may expect from a privacy notice — a delete button, a guarantee that a record has
+  gone everywhere it went — do not exist here. §5 states plainly what we can and cannot do, and
+  what is being built to narrow the gap.
+</div>
+
+<h2>1. Who is responsible for your data</h2>
+
+<p>
+  playnet is federated: anyone can run a gateway, and the software's authors run none of them.
+  <strong>The controller of your personal data is the operator of the gateway you use</strong> —
+  here, <span class="op unset" data-op="name">[operator not configured]</span>. The authors of the
+  software are not a controller and hold none of your data.
+</p>
+
+<p>
+  Contact for anything in this notice, including any request under §5:
+  <span class="op unset" data-op="contact">[operator contact not configured]</span>.
+  Postal address, where the operator has one:
+  <span class="op unset" data-op="address">[not configured]</span>.
+  Representative or data-protection officer, where one is designated:
+  <span class="op unset" data-op="representative">[not configured]</span>.
+</p>
+
+<div class="note">
+  <strong>Other gateways are separate controllers.</strong> When credentials are shared across the
+  federation, the receiving gateway determines its own purposes for them and answers for them
+  itself. Where two gateways jointly decide how shared credentials are used, they are likely
+  <em>joint</em> controllers under Article 26 GDPR, and each should tell you the essence of that
+  arrangement. Ask us and we will tell you which gateways we federate with.
+</div>
+
+<h2>2. What data exists, and where</h2>
+
+<h3>2.1 On this gateway</h3>
+<div class="tblwrap">
+<table class="tbl">
+  <tr><th>Data</th><th>Where it comes from</th><th>Notes</th></tr>
+  <tr>
+    <td>Your <strong>AID</strong> and its key event log — creation, key rotations, signatures,
+        registration time</td>
+    <td>Created in your browser when you sign up</td>
+    <td>Published — see §4.1. Contains no name or contact detail.</td>
+  </tr>
+  <tr>
+    <td><strong>Display name</strong> and <strong>email</strong></td>
+    <td>Only if you enter them in settings — both are optional and blank by default</td>
+    <td>Name aids discovery; email enables notifications. Neither is used for account recovery.</td>
+  </tr>
+  <tr>
+    <td>The <strong>index from your AID to your name</strong></td>
+    <td>Derived, so the gateway can look you up</td>
+    <td>This is the single record that turns a pseudonym back into a person. Its removal is the
+        core of any erasure request (§5).</td>
+  </tr>
+  <tr>
+    <td><strong>Notification bindings</strong> — email address, Telegram chat id, Matrix room,
+        Reticulum/LXMF address, browser push subscription</td>
+    <td>Only channels you connect</td>
+    <td>Keyed by your AID, which joins them all together.</td>
+  </tr>
+  <tr>
+    <td><strong>Presence</strong> — your display name against a live session, and the meeting room
+        you are in</td>
+    <td>While you are signed in</td>
+    <td>Broadcast to other connected members.</td>
+  </tr>
+  <tr>
+    <td><strong>Position and home</strong> — where you say you are or live (§2.4)</td>
+    <td>Only if you share it, from your device's location or from a place you pick</td>
+    <td>Held as a named place or a coarse grid cell, not as a track of where you have been.</td>
+  </tr>
+  <tr>
+    <td><strong>Profile attributes</strong> — conditions, diet, abilities and other tags you
+        choose to state</td>
+    <td>Only what you enter</td>
+    <td>May be health data; see §3.2. Used by the planner to match needs.</td>
+  </tr>
+  <tr>
+    <td><strong>Messages</strong> — chat posts, and the needs, offers and proposals you write</td>
+    <td>What you post</td>
+    <td>Visible to the members the space it is posted in lets read it, and to other gateways
+        it is federated to.</td>
+  </tr>
+  <tr>
+    <td><strong>Content sent to AI features</strong> — audio, pictures, text</td>
+    <td>Only when you use such a feature (§4.3)</td>
+    <td>Processed to give you an answer. Speech is recognised on your device first, and the
+        audio goes to the gateway only if that returns nothing.</td>
+  </tr>
+  <tr>
+    <td><strong>Payout records</strong> — your claim, payout requests, the Monero address you give,
+        amounts, status</td>
+    <td>Only where payouts are enabled and you use them</td>
+    <td>Financial data. A transfer on the blockchain is permanent (§5.2).</td>
+  </tr>
+  <tr>
+    <td><strong>Network data</strong> — your IP address and the time of a request</td>
+    <td>Every connection</td>
+    <td>Visible to this gateway and to the operator's hosting and content-delivery providers. It is
+        not visible to them when you reach the gateway through its onion address.</td>
+  </tr>
+  <tr>
+    <td><strong>Server logs</strong></td>
+    <td>Operation of the service</td>
+    <td>Rotated <span data-fact="log-rotation">hourly</span> and compressed by the operating system, on storage that holds nothing once the machine is powered off. Identifying fields in them are redacted to a short, non-identifying tag before they are written.</td>
+  </tr>
+</table>
+</div>
+
+<h3>2.2 Credentials — the substantive record</h3>
+<p>
+  Most of what the system knows about you is held as <strong>signed credentials</strong>, stored by
+  the hash of their contents and anchored in the issuing scope's key event log:
+</p>
+<ul>
+  <li><strong>work events</strong> — hours of labour, per person, per process. This is working-time
+      data;</li>
+  <li><strong>claim events</strong> — what you drew from the commons, how much, and when. Taken
+      together this is a consumption profile;</li>
+  <li><strong>skills</strong> — competences you hold, with a validity window;</li>
+  <li><strong>personhood</strong> — an attestation that your AID is a distinct real person, and who
+      sponsored you. Where an identity check was done, we store a <em>hash</em> of the evidence,
+      never the evidence itself;</li>
+  <li><strong>relationships</strong> — declared trust, colleagues, guardians and delegates: an
+      explicit, signed social graph;</li>
+  <li><strong>stances</strong> — how you voted on a proposal, and any delegation of your voice
+      (§3);</li>
+  <li><strong>contact points</strong> — where you choose to hold a channel as your own credential
+      rather than leaving it in our member record.</li>
+</ul>
+
+<h3>2.3 On your own device</h3>
+<ul>
+  <li>Your <strong>private keys</strong> are generated in your browser as
+      <strong>non-extractable</strong> keys and kept in the browser's own key store. The private
+      half never becomes readable bytes, so it cannot be copied out of the page — not by us, and
+      not by an attacker who gets script into it.</li>
+  <li>Your <strong>passcode is never stored anywhere</strong> and never sent to us. It <em>is</em>
+      the key.</li>
+  <li>A local <strong>sign-in hint</strong> holds your AID and, if you set them, your name and email
+      in plain text in this browser's storage. It sits on your device only. Clearing site data
+      removes it — and, since you will then need your AID and passcode to sign in again, do not
+      clear it before you have saved them.</li>
+  <li>Your <strong>consent</strong> to these documents (the version, the time and your AID) is
+      recorded in your own browser. We do not yet hold a copy; see §6.</li>
+</ul>
+
+<h3>2.4 Location, in particular</h3>
+<p>
+  <strong>You choose what is shared.</strong> The location panel offers live location, "here, now" and
+  "not shared". Choose <em>not shared</em> to stop. A shared fix is filed at the nearest known place
+  within a short distance of you, or else as your own place on a grid of about one kilometre, named
+  for the nearest place we know. One place is kept for you and replaced as you move, so the service
+  keeps where you are and no trail. Your home, if you set it, is kept the same way. Your device may
+  ask your permission before it gives the browser its location; refusing is always possible, and
+  the service works with a place you pick by hand. Who sees your position depends on the scope
+  you share it into, and it reaches other gateways only as far as the federation shares that scope.
+</p>
+
+<h2>3. Special-category data</h2>
+
+<h3>3.1 Political opinions</h3>
+<p>
+  <strong>How you vote is recorded against your identity, in signed form.</strong> Under Article 9
+  GDPR that is special-category data and needs a specific condition to process at all. The
+  condition relied on is Article 9(2)(d): processing by a not-for-profit body with a political or
+  philosophical aim, in the course of its legitimate activities, concerning its own members, with
+  no disclosure outside the body without your consent. Where the operator is not a body of that
+  kind, the condition is instead your explicit consent — Article 9(2)(a) — asked once, separately
+  from the terms, either when you create your identity or the first time you cast a vote.
+</p>
+<p>What that means in practice, and its limits:</p>
+<ul>
+  <li>a stance credential carries a high-entropy blinding value, so the hash that identifies it can
+      no longer be brute-forced back to how you voted — a real leak, now closed;</li>
+  <li>this makes the ballot <em>secret against a bystander holding the identifier</em>. It is not
+      secret against the tallying scope, which must read the stance to count it;</li>
+  <li>ballot snapshots record voting weight and the resolved delegation chain per member. Keeping
+      these inside the tallying scope rather than distributing them across the federation is
+      current work, not a finished property — treat your vote as visible to your own commune.</li>
+</ul>
+<p>
+  <strong>You can withdraw that consent at any time</strong> — settings, "your data and the
+  notices," the toggle for it — as easily as you gave it, per Article 7(3). Withdrawing does not
+  erase a vote already recorded (§5.2 says what cannot be erased); it means you will be asked again
+  before the next one. If you do not want a political opinion recorded against your identity at
+  all, do not vote. Abstaining is the only complete protection we can honestly offer.
+</p>
+
+<h3>3.2 Health, and what else can reveal it</h3>
+<p>
+  You may state conditions, allergies, diet or abilities in your profile so the planner can meet
+  needs that depend on them. <strong>That is health data</strong>, and it is optional. The condition
+  relied on is your explicit consent, Article 9(2)(a), given when you enter it, and you may withdraw
+  it by removing the tag. Other things you enter — a diet, a belief, who you trust, where you
+  are — can reveal sensitive characteristics too, such as religion, health or sexual life. The planner
+  reads profile tags to match needs, and other members of your commune may see them as the space
+  allows. Enter only what you accept being seen by those people, and by anyone a member shares it
+  with. The service is a planning aid and not a medical device; the notices beside these fields in
+  the app, and <a href="terms.html">§5.6 of the terms</a>, say what it cannot do for your health.
+</p>
+
+<h2>4. Who else receives it</h2>
+
+<h3>4.1 Witnesses, and the public discovery endpoint</h3>
+<p>
+  Every key event is broadcast to <strong>witnesses</strong> — independent machines run by other
+  people, in jurisdictions we do not choose or know — which keep copies so that no single party,
+  including us, can rewrite your key history. Your key event log is also served at this gateway's
+  discovery endpoints, <strong>without authentication</strong>: anyone who knows your AID can fetch
+  it. It contains your public keys, rotation history and timestamps; it does not contain your name
+  or email.
+</p>
+<div class="warn">
+  <strong>Once a key event has been broadcast, it cannot be recalled.</strong> Verification of your
+  signatures requires an unbroken sequence of key events, so events cannot be removed even
+  locally without destroying the ability to check anything you signed afterwards. The timing and
+  existence of your identity's events are therefore permanent. Requiring authentication on the
+  discovery endpoint is planned and is anticipated by the KERI specification; it is not in place
+  today.
+</div>
+
+<h3>4.2 Other gateways in the federation</h3>
+<p>
+  Credentials are shared with federated gateways so that work, skills and personhood recognised in
+  one commune are recognised in another. Those gateways are run by other people under their own
+  notices and their own law.
+</p>
+
+<h3>4.3 Third-party services, only if you use them</h3>
+<div class="tblwrap">
+<table class="tbl">
+  <tr><th>Service</th><th>What reaches it</th><th>When</th></tr>
+  <tr><td>Hosting and content-delivery providers</td>
+      <td>Network data and encrypted traffic to this gateway</td>
+      <td>Whenever you reach the gateway over the open internet</td></tr>
+  <tr><td>AI model providers the operator selects</td>
+      <td>The words, audio or pictures you submit, and the instructions the app adds to them</td>
+      <td>Only when you use an AI feature (transcription of speech the device could not recognise,
+          drafting, reading a photo). Ask us which provider, and in which country, the operator uses
+          and what its terms say about keeping and training on content.</td></tr>
+  <tr><td>Hugging Face (model host)</td>
+      <td>Your IP address and the request for the speech-recognition model's files (about <span data-fact="speech-model-mb">80</span> MB)</td>
+      <td>The first time you use on-device speech recognition; the files are then kept in your
+          browser. The speech itself stays on your device.</td></tr>
+  <tr><td>Web-push providers (Google, Mozilla, depending on your browser)</td>
+      <td>Your push subscription endpoint and notification content</td>
+      <td>Only if you enable browser notifications</td></tr>
+  <tr><td>Telegram</td><td>Your chat id and notification content</td>
+      <td>Only if you connect Telegram</td></tr>
+  <tr><td>Matrix homeserver</td><td>Your room id and notification content</td>
+      <td>Only if you connect Matrix</td></tr>
+  <tr><td>Email delivery</td><td>Your address and notification content</td>
+      <td>Only if you give an email address</td></tr>
+  <tr><td>Reticulum / LXMF mesh</td><td>An opaque cryptographic address</td>
+      <td>Only if you use the mesh. Preferred: it carries no identifying address.</td></tr>
+  <tr><td>The Monero network, and the node the operator uses to reach it</td>
+      <td>The transaction: destination address and an encrypted amount</td>
+      <td>Only if you request a payout. Monero hides sender, receiver and amount from the public
+          by design, and a transaction on it is permanent.</td></tr>
+  <tr><td>Map tile providers</td>
+      <td>The area you view, and, if the operator does not proxy tiles, your IP address</td>
+      <td>Whenever you open a map. This gateway proxies and caches tiles itself where its operator
+          has set that up, so the provider sees the gateway and not you.</td></tr>
+</table>
+</div>
+<p>
+  We do not sell your data, do not share it for cross-context advertising, do not use it for
+  advertising, and run no analytics or advertising trackers.
+</p>
+
+<h3>4.4 Other people in a meeting</h3>
+<p>
+  Meetings held through the service connect participants' browsers to one another, so the people
+  in a meeting can see and hear what you send, and can learn the network address your connection
+  comes from. The gateway carries the roster of who is in a room. Anyone can record a meeting with
+  their own tools.
+</p>
+
+<h3>4.5 Legal requests</h3>
+<p>
+  We disclose data where a valid legal order compels it, and we will tell you unless we are
+  prohibited from doing so. We ask that an order be specific and lawful, and push back where we
+  reasonably can. We hold no passcode and no private key, so we cannot produce them, and we cannot
+  recover what is held only as a hash.
+</p>
+
+<h2>5. Your rights — and exactly where they stop</h2>
+
+<p>
+  You have the rights of access, rectification, erasure, restriction, portability and objection,
+  and the right to withdraw consent. Exercise any of them by writing to
+  <span class="op unset" data-op="privacy">[operator contact not configured]</span>. We answer
+  within one month; where a request is complex or numerous we may extend that by two further months
+  and tell you why. We do not charge for requests unless they are manifestly unfounded or excessive.
+</p>
+
+<h3>5.1 What we can do</h3>
+<ul>
+  <li><strong>Access and portability.</strong> We can give you the member record, notification
+      bindings and credentials we hold for your AID, in a structured machine-readable form.</li>
+  <li><strong>Rectification.</strong> You can change your display name and email yourself in
+      settings; a credential cannot be edited, so correcting one means revoking it and issuing a
+      corrected replacement.</li>
+  <li><strong>Erasure of the link between your AID and you.</strong> This is the meaningful erasure
+      available here. Removing the member record and the AID-to-name index leaves behind a
+      pseudonym that nobody can resolve to a person. Combined with dropping your notification
+      bindings, presence entry and push subscription, it removes essentially all the directly
+      identifying data we hold.</li>
+  <li><strong>Objection and restriction</strong> for our own processing on this gateway.</li>
+</ul>
+
+<h3>5.2 What we cannot do</h3>
+<div class="warn">
+  <strong>These are architectural limits, not policy choices, and we will not pretend otherwise.</strong>
+  <ul>
+    <li><strong>Key events cannot be erased.</strong> They are held by independent witnesses and,
+        locally, holes in the sequence would break verification of everything you ever signed.</li>
+    <li><strong>The fact and timing of every credential issuance is permanent</strong>, because it
+        is anchored in a key event log. Removing a credential's contents can never remove the
+        record that something was issued at that moment.</li>
+    <li><strong>Copies at other gateways are beyond our control.</strong> We will pass on your
+        erasure request to gateways we know received your data, but we cannot compel them.</li>
+    <li><strong>A payout cannot be recalled.</strong> A transaction on the Monero blockchain is
+        permanent.</li>
+    <li><strong>Automated deletion is not implemented today.</strong> Every store in the reference
+        implementation is append-only; revoking a credential flips its status and leaves the body
+        on disk. Erasure requests are carried out manually by the operator, within these limits.</li>
+  </ul>
+</div>
+
+<h3>5.3 What is being built</h3>
+<p>
+  Stated so you can judge the gap rather than take a promise on trust:
+</p>
+<ul>
+  <li>a <strong>forget</strong> operation that drops the member record, index, notification
+      bindings, presence and push subscription in one step, and best-effort notifies the gateways
+      that received your data;</li>
+  <li><strong>encryption of credential bodies at rest under a per-person key</strong>, so that
+      destroying that key makes the contents unrecoverable while the signatures, links and anchors
+      stay verifiable — the erasure route the KERI specification itself sanctions ("only copies of
+      the digest or signature of the data need to be kept");</li>
+  <li>blinding values on every credential carrying personal data, so a destroyed body cannot be
+      reconstructed by guessing at its identifier;</li>
+  <li>moving contact points into <strong>credentials you hold</strong> and disclose revocably,
+      rather than records we keep — after which withdrawing your email is something you do, not
+      something you ask us for. The credential layer for this exists; the interface for it does
+      not yet.</li>
+</ul>
+
+<h3>5.4 Complaints</h3>
+<p>
+  If you are in the EU or EEA you may complain to your national data protection authority
+  (<a href="https://edpb.europa.eu/about-edpb/board/members_en">directory</a>); the authority for
+  this operator is
+  <span class="op unset" data-op="supervisory">[not configured]</span>. Elsewhere, to your
+  equivalent regulator. Please raise it with us first if you are willing.
+</p>
+
+<h3>5.5 How we handle a request</h3>
+<p>
+  We check that a request comes from you in a way that asks for no more identifying information than
+  we already hold — for example, a signature made with your key, or a reply over a channel you have
+  connected. We do not ask for identity documents unless nothing else can protect you from someone
+  impersonating you. A request about data tied only to a pseudonym can be met only for the pseudonym
+  you can prove you control.
+</p>
+
+<h3>5.6 Your rights elsewhere</h3>
+<p>
+  The rights above come from the GDPR. The operator applies them to every member, wherever they live.
+  Where the law of your country gives you more, you have it:
+</p>
+<ul>
+  <li><strong>United Kingdom and Switzerland</strong> — the UK GDPR and Data Protection Act 2018, and the
+      Swiss Federal Act on Data Protection, give rights equivalent to those above. Complaints go to the
+      Information Commissioner's Office or the Federal Data Protection and Information Commissioner.</li>
+  <li><strong>California and other US states</strong> — you may ask to know, correct and delete the
+      personal information held about you, and to opt out of its sale or sharing. We do not sell
+      personal information and do not share it for cross-context behavioural advertising, so there is
+      nothing to opt out of; we do not treat you differently for asking. You may use an authorised
+      agent. Health-condition and precise-location tags are what some state laws call sensitive
+      information, and the operator uses them only to provide the features you ask for. Complaints
+      may go to your state attorney general or privacy regulator.</li>
+  <li><strong>Brazil, Canada, Australia and elsewhere</strong> — the LGPD, PIPEDA and provincial laws
+      such as Quebec's, the Privacy Act 1988 and their counterparts give rights of access, correction
+      and deletion, and a route to the national regulator (the ANPD, the Office of the Privacy
+      Commissioner, the OAIC). The operator follows the same procedure for them.</li>
+</ul>
+
+<h2>6. Why we are allowed to process it</h2>
+<div class="tblwrap">
+<table class="tbl">
+  <tr><th>Data</th><th>Purpose</th><th>Legal basis</th></tr>
+  <tr><td>AID, key event log, authentication</td><td>Providing the service at all</td>
+      <td>Contract — Art 6(1)(b)</td></tr>
+  <tr><td>Display name, notification bindings</td><td>Discovery and notifying you</td>
+      <td>Consent — Art 6(1)(a); both are optional and withdrawable</td></tr>
+  <tr><td>Position and home</td><td>Showing you what is near you and letting members who share a
+      place find one another</td>
+      <td>Consent — Art 6(1)(a), which you give by choosing to share and withdraw by choosing
+          <em>not shared</em></td></tr>
+  <tr><td>Profile attributes, where they are health data</td><td>Matching needs that depend on them</td>
+      <td>Explicit consent — Art 6(1)(a) with Art 9(2)(a)</td></tr>
+  <tr><td>Work, claim and skill credentials</td><td>Computing the plan; recording contribution and
+      entitlement within the commune</td><td>Contract — Art 6(1)(b), and the legitimate interest of
+      the association in an auditable record — Art 6(1)(f)</td></tr>
+  <tr><td>Personhood and relationship credentials</td><td>Keeping out spam and vote-stuffing;
+      resolving delegation</td><td>Legitimate interest — Art 6(1)(f)</td></tr>
+  <tr><td>Stances and ballot snapshots</td><td>Counting votes and resolving delegated voice</td>
+      <td>Art 6(1)(a) together with Art 9(2)(d) or 9(2)(a) — see §3.1</td></tr>
+  <tr><td>Messages, presence and meetings</td><td>Letting members communicate through the feature
+      you use</td><td>Contract — Art 6(1)(b)</td></tr>
+  <tr><td>Content sent to AI features</td><td>Giving you the answer you asked for</td>
+      <td>Consent — Art 6(1)(a), given by using the feature</td></tr>
+  <tr><td>Payout records</td><td>Making a payout you request, and keeping the records the law
+      requires of whoever makes one</td>
+      <td>Contract — Art 6(1)(b), and legal obligation — Art 6(1)(c)</td></tr>
+  <tr><td>Network data, server logs, your recorded consent</td><td>Security, debugging and showing
+      that you accepted these documents</td><td>Legitimate interest — Art 6(1)(f)</td></tr>
+</table>
+</div>
+<p>
+  Where we rely on consent you may withdraw it at any time, and where we rely on legitimate
+  interest you may object; in both cases write to the contact in §1. Withdrawing consent does not
+  make earlier processing unlawful. We assess our legitimate interests against yours and will show
+  you the assessment on request. Giving us the data in the first group is necessary to have an
+  identity; the rest is optional.
+</p>
+
+<h2>7. Retention</h2>
+<p>
+  <strong>Stated honestly: no retention period is enforced today</strong> for the member records
+  described in §2.1 and the credentials in §2.2. Credential validity windows — a personhood
+  credential's expiry, a skill's valid-until — govern whether a credential still <em>counts</em>,
+  not whether it is still stored; a lapsed credential remains readable on disk. This is a known
+  defect. Server logs are rotated <span data-fact="log-rotation">hourly</span> with their identifying fields already redacted (§9); what
+  is not yet built is a retention sweep for the member and credential stores themselves, and
+  member data kept only while you participate. Records the law requires us to keep, such as those of a payout, are kept for as
+  long as it requires. Key events and credential anchors are kept for good, for the reasons in §4.1.
+</p>
+
+<h2>8. Automated decisions</h2>
+<p>
+  The planner computes allocations automatically — by convex optimization over recorded needs,
+  capacities, limits and contributed labour — and those allocations affect what you can claim from
+  the commons. We consider this not to be a decision "based solely on automated processing" within
+  Article 22 GDPR, because the output is a <em>proposal</em> that the federation adopts, amends or
+  rejects through its governance, in which you have a voice and a vote. Either way, you can ask a
+  person to look at any allocation that affects you, express your point of view and contest it —
+  through the governance process, or by writing to the contact in §1. AI features draft or read
+  for you and decide nothing about you.
+</p>
+
+<h2>9. Security</h2>
+<ul>
+  <li>Private keys are generated non-extractable and never leave your device; the gateway has no key
+      custody by design.</li>
+  <li>Every event and credential is signed, so tampering is detectable rather than merely
+      forbidden.</li>
+  <li>Traffic is encrypted in transit; the gateway is also reachable as an onion service.</li>
+  <li>Server logs are rotated <span data-fact="log-rotation">hourly</span>, compressed, and held only on volatile storage; identifying
+      fields (an AID, an email address) are reduced to a short, non-identifying tag before a line
+      is written, never the value itself.</li>
+  <li><strong>Known gaps, being fixed:</strong> the discovery endpoint is unauthenticated;
+      credential bodies are stored unencrypted.</li>
+</ul>
+<p>
+  No system is perfectly secure. If a breach is likely to put your rights at risk we will notify
+  the supervisory authority within <span data-fact="breach-notice-hours">72</span> hours of becoming aware of it, and, where the risk is high,
+  you without undue delay.
+</p>
+
+<h2>10. International transfers</h2>
+<p>
+  Witnesses and federated gateways are run by independent people in places we do not choose, and
+  mesh transport routes wherever the mesh routes. Publishing to them is inherent to how the system
+  resists tampering. <strong>No adequacy decision, standard contractual clauses or other safeguard
+  covers these flows</strong>, and the law of those places may give you less protection than yours
+  does. When you create an identity you ask us, knowing that, to publish your key events to witnesses
+  and to share your credentials with federated gateways, and that is the explicit consent on which
+  we rely for these transfers (Article 49(1)(a) GDPR); it is a derogation for a reason, so we
+  limit what is sent to what the protocol needs. If that is unacceptable to you, this system is not
+  suitable for you — we would rather say so than bury it.
+</p>
+<p>
+  Where the operator uses a provider outside your country or the EEA for hosting, AI, notifications or
+  maps, it relies on an adequacy decision, standard contractual clauses or comparable safeguards
+  where they are available, and otherwise on your consent as above. Ask us for the details.
+</p>
+
+<h2>11. Children</h2>
+<p>
+  This service is not intended for children below the age given in
+  <a href="terms.html">§8 of the terms</a>, and the operator does not knowingly collect personal
+  information from a child below that age. If you believe a child has created an identity here,
+  or that a child is at risk or has been sent harmful material, write to
+  <span class="op unset" data-op="abuse">[operator contact not configured]</span> with the word
+  "child" in the subject and we will act on it first: we remove the member record or the material
+  — subject to the limits in §5.2 — and report it to the competent authorities where the law
+  requires us to.
+</p>
+
+<h2>12. Cookies and local storage</h2>
+<p>
+  No advertising, analytics or third-party tracking cookies are used, and the service does not track
+  you across other sites, so it treats a "Do Not Track" or Global Privacy Control signal as honoured.
+  The page keeps data in your browser's own storage — your sign-in hint, your keys, your interface
+  preferences, and a cache of the app so it works offline — all of which stays on your device. This
+  is what the service you asked for needs, which is why it does not ask for a cookie consent. You can
+  clear it in your browser's settings.
+</p>
+
+<h2>13. Changes to this notice</h2>
+<p>
+  Material changes are published here with a new version number and effective date, and you will be
+  asked to acknowledge them the next time you sign in. We will not use data collected under an older
+  version for a new purpose without telling you first and, where the law requires, asking for your
+  consent.
+</p>
+
+<footer>
+  playnet — free software under AGPL-3.0 with additional terms.
+  Privacy Notice v<span data-fact="document-version">1.1.0</span>, effective <span data-fact="legal-version">2026-10-05</span>.
+  See also the <a href="terms.html">terms of use</a>.
+  Engineering detail behind this notice: <code>docs/planning/legal/gdpr-analysis.md</code>.
+</footer>
+
+</div>
+<script src="lib/legal-operator.js"></script>
+</body>
+</html>

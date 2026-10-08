@@ -10,9 +10,10 @@
 
 (define-module (playnet ui federation)
   #:use-module (srfi srfi-1)
-  #:use-module (playnet ddmrp)
+  #:use-module (playnet utils alist)
   #:use-module (playnet ui components)
   #:use-module (playnet ui network)
+  #:use-module ((playnet ui recipes) #:select (*starter-recipes*))
   #:export (;; Graph
             federation-graph-view
 
@@ -43,9 +44,32 @@
 (define pi 3.141592653589793)
 
 (define (n->s n)
-  "Number to string, rounding to 1 decimal for coordinates."
-  (let ((r (/ (round (* n 10)) 10)))
-    (number->string (if (= r (floor r)) (inexact->exact (floor r)) r))))
+  "Number to string, rounding to 1 decimal for coordinates.
+
+   Manual digit emission to avoid Hoot 0.18's number->string
+   regression — see UPSTREAM-ISSUES.md, the rational path of
+   number->string trips bytevector-copy! with `(3 2 100)` (value out
+   of range) deep inside hoot/write.scm:138. Reproducing it took
+   the whole federation page down. We synthesize the same
+   one-decimal-place output by going through integer scaled-by-10
+   and formatting it ourselves."
+  (cond
+   ((or (not (number? n))
+        (and (real? n) (not (rational? n))))  ; NaN / inf
+    "0")
+   (else
+    (let* ((scaled (inexact->exact (round (* n 10))))
+           (neg?   (negative? scaled))
+           (abs10  (abs scaled))
+           (whole  (quotient abs10 10))
+           (tenth  (remainder abs10 10))
+           (sign   (if neg? "-" "")))
+      (if (zero? tenth)
+          (string-append sign (number->string whole))
+          (string-append sign
+                         (number->string whole)
+                         "."
+                         (number->string tenth)))))))
 
 (define (spec-color id)
   "Deterministic HSL color from a string (spec ID -> consistent hue)."
@@ -176,8 +200,8 @@
     (and (>= ll sl) (string=? (substring s (- ll sl)) suffix))))
 
 (define (string-prefix? prefix s)
-  (let ((pl (string-length prefix)))
-    (and (>= (string-length s) pl) (string=? (substring s 0 pl) prefix))))
+  (let ((pl (string-length prefix)) (sl (string-length s)))
+    (and (>= sl pl) (string=? (substring s 0 pl) prefix))))
 
 (define (string-drop-right s n)
   (substring s 0 (- (string-length s) n)))
@@ -563,14 +587,21 @@
                      (loop (cdr evts) acc))
               (loop (cdr evts) (cons (cons r (list e)) acc)))))))
 
-(define (federation-event-log events)
-  "Render the federation event log sidebar.
-   EVENTS: list of event alists with 'round, 'kind (symbol), 'scope-id,
-           optional 'target-scope-id, 'spec-id, 'qty."
-  (let ((grouped (group-by-round events)))
-    `(div (@ (class "event-log"))
-       (div (@ (class "log-label")) "FEDERATION EVENT LOG")
-       (div (@ (class "rounds-wrap"))
+(define* (federation-event-log events #:key (open? #f) on-toggle)
+  "Render the federation event log sidebar. Collapsible: when OPEN? is
+   #f, only a slim toggle bar is shown; ON-TOGGLE (if provided) is
+   wired to the bar's click. EVENTS is a list of event alists."
+  (let* ((grouped (group-by-round events))
+         (total   (length events)))
+    `(div (@ (class ,(string-append "event-log"
+                                    (if open? " event-log-open" " event-log-closed"))))
+       (div (@ (class "log-label")
+               ,@(if on-toggle `((click ,(lambda (e) (on-toggle)))) '()))
+         (span (@ (class "log-chevron")) ,(if open? "▾" "▸"))
+         (span "FEDERATION EVENT LOG")
+         (span (@ (class "log-count")) ,(number->string total)))
+       ,@(if (not open?) '() (list
+       `(div (@ (class "rounds-wrap"))
          ,@(map
             (lambda (group)
               (let* ((round (car group))
@@ -612,7 +643,7 @@
                                          ,(string-append "\u00d7" (n->s qty))))
                                      '()))))
                         evts)))))
-            grouped)))))
+            grouped)))))))
 
 
 ;;; ═══════════════════════════════════════════════════════════════════════════════
@@ -704,6 +735,12 @@
 ;;;  SCOPE DETAIL PANEL
 ;;; ═══════════════════════════════════════════════════════════════════════════════
 
+(define (suggested-recipes)
+  "Return the starter recipe library as alists with the keys we render
+   in the recipes sidebar. Cheap shim: the recipe-store snapshot will
+   eventually replace this, but the alist shape stays the same."
+  *starter-recipes*)
+
 (define* (scope-detail-panel scope-id result trades on-close
                              #:key (processes '()) (commitments '())
                                    (buffer-zones '()) (spec-names '())
@@ -722,10 +759,12 @@
          (has-trades (or (not (null? outgoing)) (not (null? incoming))))
          (has-signals (or (not (null? deficits)) (not (null? surplus-items)) has-trades)))
     `(aside (@ (class ,(string-append "detail-panel " class)))
-       ;; Header
+       ;; \u2500\u2500 Header \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+       ;; Mirrors the planner: NETWORK <scope-id> on the left; PLAN /
+       ;; OBSERVE / RECIPE AI / close \u2715 on the right.
        (div (@ (class "panel-header"))
          (div (@ (class "header-left"))
-           (span (@ (class "scope-label")) "SCOPE")
+           (span (@ (class "scope-label")) "NETWORK")
            (span (@ (class "scope-name")) ,scope-id))
          (div (@ (class "header-right"))
            (div (@ (class "mode-tabs"))
@@ -735,73 +774,61 @@
              (button (@ (class ,(string-append "tab-btn" (if (eq? mode 'observe) " active" "")))
                         ,@(if on-mode-change `((click ,(lambda (e) (on-mode-change 'observe)))) '()))
                "OBSERVE"))
+           (button (@ (class "recipe-ai-btn")
+                      (title "Suggest recipes via AI (coming soon)"))
+             "\u2605 RECIPE AI")
            (button (@ (class "close-btn")
                       ,@(if on-close `((click ,on-close)) '()))
              "\u2715")))
 
-       ;; Signals band
-       (div (@ (class "signals-band"))
-         ;; Deficits
-         ,@(if (not (null? deficits))
-               `((div (@ (class "section-label")) "DEFICITS")
-                 ,@(map (lambda (d)
-                          (deficit-residual-bar
-                           (alist-ref d 'spec "")
-                           (alist-ref d 'shortfall 0)
-                           (alist-ref d 'original 0)
-                           (alist-ref d 'resolved-at '())))
-                        deficits))
-               '())
-
-         ;; Surplus
-         ,@(if (not (null? surplus-items))
-               `((div (@ (class "section-label")) "SURPLUS")
-                 ,@(map (lambda (s)
-                          `(div (@ (class "signal-row"))
-                             (span (@ (class "signal-spec")) ,(alist-ref s 'spec ""))
-                             (span (@ (class "green")) ,(n->s (alist-ref s 'qty 0)))))
-                        surplus-items))
-               '())
-
-         ;; Inter-scope supports
-         ,@(if has-trades
-               `((div (@ (class "section-label")) "INTER-SCOPE SUPPORTS")
-                 ,@(map (lambda (t)
-                          `(div (@ (class "trade-row"))
-                             (span (@ (class "trade-arrow") (style "color:#63b3ed")) "\u2192")
-                             (span (@ (class "trade-peer")) ,(alist-ref t 'to ""))
-                             (span (@ (class "trade-spec")) ,(alist-ref t 'spec ""))
-                             (span (@ (class "trade-qty"))
-                               ,(string-append "\u00d7" (n->s (alist-ref t 'qty 0))))
-                             (span (@ (class "trade-status") (style "color:#63b3ed")) "PROPOSED")))
-                        outgoing)
-                 ,@(map (lambda (t)
-                          `(div (@ (class "trade-row"))
-                             (span (@ (class "trade-arrow") (style "color:#68d391")) "\u2190")
-                             (span (@ (class "trade-peer")) ,(alist-ref t 'from ""))
-                             (span (@ (class "trade-spec")) ,(alist-ref t 'spec ""))
-                             (span (@ (class "trade-qty"))
-                               ,(string-append "\u00d7" (n->s (alist-ref t 'qty 0))))
-                             (span (@ (class "trade-status") (style "color:#63b3ed")) "PROPOSED")))
-                        incoming))
-               '())
-
-         ;; Empty state
-         ,@(if (not has-signals)
-               '((p (@ (class "empty")) "No signals."))
-               '()))
-
-       ;; Network diagram section
-       ,@(if (not (null? processes))
-             `((div (@ (class "panel-section diagram-section"))
-                 (div (@ (class "section-label"))
-                   ,(string-append "NETWORK  " scope-id))
-                 ,(scope-network-diagram processes commitments
-                                         #:buffer-zones buffer-zones
-                                         #:spec-names spec-names
-                                         #:mode mode
-                                         #:on-card-click on-card-click)))
-             '())
+       ;; \u2500\u2500 Top row: network diagram (left) + recipes sidebar (right) \u2500\u2500
+       ;; Surplus / inter-scope supports are visualised on the federation
+       ;; graph itself (badges and dashed edges), so they no longer
+       ;; clutter the scope detail.
+       (div (@ (class "panel-section network-row"))
+         ,@(if (not (null? processes))
+               `((div (@ (class "network-col"))
+                   ,(scope-network-diagram processes commitments
+                                           #:buffer-zones buffer-zones
+                                           #:spec-names spec-names
+                                           #:mode mode
+                                           #:on-card-click on-card-click)))
+               '((div (@ (class "network-col empty-network"))
+                      (p (@ (class "empty")) "No processes."))))
+         (div (@ (class "recipes-col"))
+           (div (@ (class "recipes-head"))
+             (span (@ (class "recipes-label")) "RECIPES")
+             (button (@ (class "recipes-suggest")
+                        (title "Suggest recipes for this scope (coming soon)"))
+                     "+ suggest"))
+           ;; Stub: surface recipes whose primary-output matches the
+           ;; scope's deficits / surplus specs. Real wiring comes when
+           ;; the recipe store is exposed through the planner snapshot.
+           ,@(let* ((focus-specs
+                     (append (map (lambda (d) (alist-ref d 'spec "")) deficits)
+                             (map (lambda (s) (alist-ref s 'spec "")) surplus-items)))
+                    (cards
+                     (filter (lambda (r)
+                               (member (alist-ref r 'primary-output "")
+                                       focus-specs))
+                             (suggested-recipes))))
+               (if (null? cards)
+                   '((div (@ (class "recipes-empty"))
+                          "No matching recipes."))
+                   (map (lambda (r)
+                          (let ((nm   (alist-ref r 'name ""))
+                                (po   (alist-ref r 'primary-output ""))
+                                (note (alist-ref r 'note ""))
+                                (sn   (let ((p (assoc (alist-ref r 'primary-output "")
+                                                      spec-names equal?)))
+                                        (if p (cdr p) (alist-ref r 'primary-output "")))))
+                            `(div (@ (class "recipe-mini-card"))
+                                  (div (@ (class "recipe-mini-name")) ,nm)
+                                  (div (@ (class "recipe-mini-sub"))
+                                       ,(string-upcase* nm))
+                                  (div (@ (class "recipe-mini-tags"))
+                                       (span (@ (class "recipe-tag")) ,sn)))))
+                        cards)))))
 
        ;; Inline event recorder (appears when a card is clicked in observe mode)
        ,@(if (and flow-ctx (eq? mode 'observe))
@@ -816,7 +843,7 @@
                                         0 recorded-events))
                     (pct (if (> planned-qty 0) (min 100 (* (/ fulfilled-qty planned-qty) 100)) 0))
                     (act-color (cond ((eq? act 'work) "#9f7aea")
-                                    ((eq? act 'produce) "#38a169")
+                                    ((eq? act 'produce) "#38a169")   ; verb-meant: a display choice per action
                                     (else "#e53e3e"))))
                `((div (@ (class "panel-section recorder-section"))
                    ;; Breadcrumb
@@ -857,39 +884,81 @@
                          '()))))
              '())
 
-       ;; Demands band
-       ,@(if (not (null? demand-intents))
-             `((div (@ (class "panel-section"))
+       ;; Demands band \u2014 supply column on the left, demand cards on the
+       ;; right, mirroring the planner's layout. Uses dc-* classes from
+       ;; demand.css so the cards inherit the unified card styling.
+       ,@(if (or (not (null? demand-intents)) (not (null? resources)))
+             `((div (@ (class "panel-section demands-band"))
                  (div (@ (class "section-label"))
-                   ,(string-append "DEMANDS \u00b7 " (string-upcase* scope-id)
-                                   "  " (number->string (length demand-intents)) " intents"))
-                 ;; Supply column
-                 ,@(if (not (null? resources))
-                       `((div (@ (class "supply-section"))
-                           (div (@ (class "supply-label")) "SUPPLY")
-                           ,@(map (lambda (r)
-                                    (let ((sn (let ((p (assoc (alist-ref r 'conforms-to "") spec-names equal?)))
-                                                (if p (cdr p) (alist-ref r 'conforms-to ""))))
-                                          (oh (alist-ref r 'onhand 0))
-                                          (unit (alist-ref r 'unit "")))
-                                      `(div (@ (class "supply-row"))
-                                         (span (@ (class "supply-spec")) ,sn)
-                                         (span (@ (class "supply-qty green"))
-                                           ,(string-append (n->s oh) " " unit)))))
-                                  resources)))
-                       '())
-                 ;; Demand cards
-                 (div (@ (class "demand-cards"))
-                   ,@(map (lambda (d)
-                            (let ((sn (let ((p (assoc (alist-ref d 'spec "") spec-names equal?)))
-                                        (if p (cdr p) (alist-ref d 'spec ""))))
-                                  (qty (alist-ref d 'qty 0))
-                                  (unit (alist-ref d 'unit "")))
-                              `(div (@ (class "demand-card"))
-                                 (div (@ (class "demand-spec")) ,sn)
-                                 (div (@ (class "demand-qty"))
-                                   ,(string-append (n->s qty) " " unit)))))
-                          demand-intents))))
+                   ,(string-append
+                     "DEMANDS \u00b7 " (string-upcase* scope-id)
+                     (if (null? demand-intents) ""
+                         (string-append "  " (number->string (length demand-intents))
+                                        " intents"))))
+                 (div (@ (class "demands-grid"))
+                   ;; \u2500\u2500 SUPPLY column \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+                   ,@(if (and (null? resources) (null? deficits)) '()
+                         `((div (@ (class "supply-col"))
+                             ;; SUPPLY rows (on-hand resources)
+                             ,@(if (null? resources) '()
+                                   `((div (@ (class "supply-label")) "SUPPLY")
+                                     ,@(map (lambda (r)
+                                              (let ((sn (let ((p (assoc (alist-ref r 'conforms-to "")
+                                                                        spec-names equal?)))
+                                                          (if p (cdr p) (alist-ref r 'conforms-to ""))))
+                                                    (oh (alist-ref r 'onhand 0))
+                                                    (unit (alist-ref r 'unit "")))
+                                                `(div (@ (class "supply-row"))
+                                                   (span (@ (class "supply-emoji")) "📦")
+                                                   (span (@ (class "supply-spec")) ,sn)
+                                                   (span (@ (class "supply-qty"))
+                                                     ,(string-append (n->s oh) " " unit)))))
+                                            resources)))
+                             ;; DEFICITS rows (shortfalls)
+                             ,@(if (null? deficits) '()
+                                   `((div (@ (class "supply-label supply-label-deficits"))
+                                          "DEFICITS")
+                                     ,@(map (lambda (d)
+                                              (let* ((spec (alist-ref d 'spec ""))
+                                                     (sn   (let ((p (assoc spec spec-names equal?)))
+                                                             (if p (cdr p) spec)))
+                                                     (sf   (alist-ref d 'shortfall 0))
+                                                     (done? (and (number? sf) (= sf 0))))
+                                                `(div (@ (class "supply-row deficit-row"))
+                                                   (span (@ (class "supply-emoji")) "📦")
+                                                   (span (@ (class "supply-spec")) ,sn)
+                                                   ,(if done?
+                                                        `(span (@ (class "supply-check")) "✓")
+                                                        `(span (@ (class "supply-qty deficit-qty"))
+                                                               ,(string-append "−" (n->s sf)))))))
+                                            deficits))))))
+                   ;; \u2500\u2500 DEMAND CARDS column \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+                   ,@(if (null? demand-intents) '()
+                         `((div (@ (class "demand-col"))
+                             ,@(map (lambda (d)
+                                      (let ((sid  (alist-ref d 'spec ""))
+                                            (sn   (let ((p (assoc (alist-ref d 'spec "")
+                                                                  spec-names equal?)))
+                                                    (if p (cdr p) (alist-ref d 'spec ""))))
+                                            (qty  (alist-ref d 'qty 0))
+                                            (unit (alist-ref d 'unit "")))
+                                        ;; Render a compact, readonly
+                                        ;; demand card with the dc-* class
+                                        ;; scheme from demand.css. We can't
+                                        ;; call demand-card directly without
+                                        ;; building VF records, so we mirror
+                                        ;; its DOM shape inline.
+                                        `(div (@ (class "dc-card compact"))
+                                           (div (@ (class "dc-card-header"))
+                                             (span (@ (class "dc-emoji")) "📦")
+                                             (span (@ (class "dc-spec-name")) ,sn)
+                                             (span (@ (class "dc-unit-display")) ,unit))
+                                           (div (@ (class "dc-rows"))
+                                             (div (@ (class "dc-row"))
+                                               (span (@ (class "dc-qty-text"))
+                                                 ,(n->s qty))
+                                               (span (@ (class "dc-unit-label")) ,unit))))))
+                                    demand-intents)))))))
              '())
 
        ;; Metrics band
@@ -922,6 +991,7 @@
                                 (selected "") on-select on-close-detail on-mode-change on-card-click
                                 (mode 'plan) (flow-ctx #f) (recorded-events '())
                                 (svg-width 1100) (svg-height 720)
+                                (log-open? #f) on-toggle-log
                                 (class ""))
   "Compose the full federation planning page.
    Body: event-log sidebar | graph view | optional detail panel
@@ -937,34 +1007,38 @@
                        (let ((c (assoc selected commitments-by-scope equal?)))
                          (if c (cdr c) '()))
                        '())))
-    `(div (@ (class ,(string-append "fed-page " class)))
+    `(div (@ (class ,(string-append "fed-page "
+                                    (if has-selection "fed-page-with-detail " "")
+                                    class)))
        ;; Header
        (div (@ (class "stat-bar")) "FEDERATION PLANNING")
-       ;; Body: sidebar + graph + optional detail panel
+       ;; Top body: collapsible event log + graph (full width).
        (div (@ (class "fed-body"))
-         ,(federation-event-log events)
+         ,(federation-event-log events
+                                #:open? log-open?
+                                #:on-toggle on-toggle-log)
          ,(federation-graph-view scopes results trades
                                  #:resources-by-scope resources-by-scope
                                  #:buffers-by-scope buffers-by-scope
                                  #:selected selected
                                  #:on-select on-select
                                  #:svg-width svg-width
-                                 #:svg-height svg-height)
-         ,@(if (and has-selection sel-result-data)
-               `(,(scope-detail-panel selected sel-result-data trades
-                                      on-close-detail
-                                      #:processes sel-procs
-                                      #:commitments sel-cmts
-                                      #:spec-names spec-names
-                                      #:resources (let ((r (assoc selected resources-by-scope equal?)))
-                                                    (if r (cdr r) '()))
-                                      #:demand-intents (alist-ref sel-result-data 'demand-intents '())
-                                      #:mode mode
-                                      #:on-mode-change on-mode-change
-                                      #:flow-ctx flow-ctx
-                                      #:on-card-click on-card-click
-                                      #:recorded-events recorded-events))
-               '()))
-       ;; Bottom inventory band
-       ,(inventory-band resources-by-scope spec-names
-                        #:selected-scope selected))))
+                                 #:svg-height svg-height))
+       ;; Bottom: scope detail panel — full width, only when a scope is
+       ;; selected. Matches the planner's layout (graph on top, scope
+       ;; detail on bottom) rather than the right-rail variant.
+       ,@(if (and has-selection sel-result-data)
+             `(,(scope-detail-panel selected sel-result-data trades
+                                    on-close-detail
+                                    #:processes sel-procs
+                                    #:commitments sel-cmts
+                                    #:spec-names spec-names
+                                    #:resources (let ((r (assoc selected resources-by-scope equal?)))
+                                                  (if r (cdr r) '()))
+                                    #:demand-intents (alist-ref sel-result-data 'demand-intents '())
+                                    #:mode mode
+                                    #:on-mode-change on-mode-change
+                                    #:flow-ctx flow-ctx
+                                    #:on-card-click on-card-click
+                                    #:recorded-events recorded-events))
+             '()))))

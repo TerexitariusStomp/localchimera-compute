@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Live flows in real space — pan &amp; zoom the metabolism</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="d3.v7.min.js"></script>
+<script src="flows-map-data.js"></script>
+<script src="boundaries.js"></script>
+<script src="wind-grid.js"></script>
+<style>
+  :root{ --C:#76e0a0; --N:#5aa6ff; --P:#ffb04a; --K:#c79bff; --warm:#ff9a3a; }
+  html,body{margin:0;background:#0c0f12;color:#eee;font-family:"Libertinus Serif",Georgia,serif;}
+  .wrap{max-width:1100px;margin:0 auto;padding:18px 16px 50px;}
+  h1{font-size:21px;font-weight:700;margin:0 0 2px;color:#f3efe6;}
+  .sub{font-style:italic;color:#aab;font-size:13.5px;margin:0 0 10px;}
+  #stage{position:relative;width:100%;height:640px;border-radius:8px;overflow:hidden;box-shadow:0 2px 14px rgba(0,0,0,.4);}
+  #map{position:absolute;inset:0;}
+  #ov{position:absolute;inset:0;pointer-events:none;}
+  .controls{display:flex;gap:12px;align-items:center;margin:8px 0;font-size:13px;color:#cdd;flex-wrap:wrap;}
+  .controls button{font:inherit;font-size:12.5px;padding:4px 10px;border:1px solid #3a4750;background:#1b2228;border-radius:5px;cursor:pointer;color:#cfe;}
+  .controls button:hover{background:#222b32;}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 20px;align-items:center;background:rgba(20,26,30,.6);border:1px solid #2a343c;border-radius:6px;padding:8px 12px;font-size:12px;color:#dfe;line-height:1.5;margin:8px 0 0;}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:middle;}
+  #info{position:absolute;top:10px;left:10px;width:236px;max-width:46%;background:rgba(12,16,20,.93);border:1px solid #3a4750;border-radius:8px;padding:10px 12px 11px;font-size:12.5px;color:#e8eef2;line-height:1.5;box-shadow:0 3px 16px rgba(0,0,0,.5);display:none;z-index:5;}
+  #info h4{margin:0 0 5px;font-size:14.5px;color:#fff;font-weight:700;}
+  #info .row{margin:2px 0;}
+  #info .muted{color:#93a0a8;}
+  #info .chip{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 3px 0 7px;vertical-align:middle;}
+  #info .close{position:absolute;top:5px;right:9px;cursor:pointer;color:#93a0a8;font-size:16px;line-height:1;}
+  #info .close:hover{color:#fff;}
+  figcaption{font-size:13.5px;line-height:1.55;color:#cbd2d8;margin-top:12px;border-top:1px solid #2a343c;padding-top:12px;}
+  figcaption b{color:#f3efe6;}
+  a{color:#8fc7ff;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Live flows in real space</h1>
+  <p class="sub">pan &amp; zoom the planet &mdash; wherever you are, the transport actually happening there is drawn on the ground</p>
+  <div class="controls">
+    <button id="loop">close the loop</button>
+    <button id="ribbons">hide ribbons</button>
+    <button id="runoff">hide runoff</button>
+    <button id="pause">pause</button>
+    <label>speed <input id="speed" type="range" min="0.2" max="3" step="0.1" value="1"></label>
+    <button id="fly">fly: countryside ↔ city</button>
+  </div>
+  <figure style="margin:0">
+    <div id="stage"><div id="map"></div><canvas id="ov"></canvas><div id="info"></div></div>
+    <div class="legend">
+      <div><b>containment</b> &mdash; carrier ⊃ resource ⊃ contents:
+        <span style="border:1.5px solid #b9912f;border-radius:3px;padding:1px 3px;background:rgba(245,238,218,.12)">carrier
+          <span style="border:1px solid #5a9a4a;border-radius:2px;padding:0 3px">resource
+            <span style="color:#76e0a0">▪</span><span style="color:#5aa6ff">▪</span><span style="color:#ffb04a">▪</span><span style="color:#c79bff">▪</span></span></span></div>
+      <div><i style="background:#9a8f7a"></i> materials/goods &nbsp; <i style="background:#ff5a4a"></i> sewage (rift)</div>
+      <div><i style="background:#aab0b6"></i> emissions rising to the sky</div>
+      <div><i style="background:linear-gradient(90deg,#5aa6ff,#ffb04a)"></i> diffuse fields — runoff (gravity) &amp; drift (wind), the rift made continuous</div>
+    </div>
+    <figcaption>
+      <b>Real geography, real transport.</b> Each moving <b>container</b> carries a <b>bundle</b> of
+      C·N·P·K along an actual route between <i>named, precise</i> places &mdash;
+      <b>Flevoland farmland → Food Center Amsterdam → Dam → De Pijp</b>,
+      <b>Port of Rotterdam → city</b>. Particles are glued to the ground, so their speed and spacing are
+      <i>spatial</i>: zoom into the Flevopolder to watch the field haul; zoom to Amsterdam for the
+      market→centre→homes flow and the city → <b>IJmuiden / North Sea Canal</b>
+      <b style="color:#ff7a6a">sewage rift</b>. Smoke rises off the cities (emissions to the sky). Hit
+      <i>close the loop</i> to route the <span style="color:#c79bff">compost</span> back to the fields.
+      Basemap © Esri.
+    </figcaption>
+  </figure>
+</div>
+
+<script>
+const EL={C:"#76e0a0",N:"#5aa6ff",P:"#ffb04a",K:"#c79bff"};
+// ---------- data: named places + named economic-resource flows (from flows-map-data.js) ----------
+const DATA = window.__flowmap || {meta:{note:""},view:{center:[4.86,52.36],zoom:10},places:[],flows:[],emissions:[]};
+const map=new maplibregl.Map({
+  container:"map",
+  style:{ version:8,
+    sources:{
+      sat:{type:"raster",tileSize:256,maxzoom:19,attribution:"© Esri",
+        tiles:["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"]},
+      lbl:{type:"raster",tileSize:256,maxzoom:19,
+        tiles:["https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"]}
+    },
+    layers:[{id:"sat",type:"raster",source:"sat"},{id:"lbl",type:"raster",source:"lbl",paint:{"raster-opacity":0.7}}]
+  },
+  center:DATA.view.center, zoom:DATA.view.zoom, attributionControl:true
+});
+map.addControl(new maplibregl.NavigationControl(),"top-right");
+
+const LINE={food:"rgba(255,224,150,.42)",goods:"rgba(182,171,146,.4)",sewage:"rgba(255,90,74,.5)",compost:"rgba(199,155,255,.55)",fert:"rgba(90,166,255,.5)"};
+const EMC={CO2:"#aab0b6",heat:"#ff7a52",N2O:"#7fb0ff"};
+const ELS=["C","N","P","K"], km=(a,b)=>d3.geoDistance(a,b)*6371, D2R=Math.PI/180;
+// ---------- spatial tree: a place is a POINT, a POLYGON region (ring) or a CIRCLE region (center+radiusKm) ----------
+// area-weighted polygon centroid (planar lng/lat — exact enough at city scale)
+function centroid(r){ let A=0,cx=0,cy=0; for(let i=0;i<r.length;i++){ const a=r[i],b=r[(i+1)%r.length],f=a[0]*b[1]-b[0]*a[1]; A+=f; cx+=(a[0]+b[0])*f; cy+=(a[1]+b[1])*f; }
+  if(Math.abs(A)<1e-12){ const n=r.length; return [r.reduce((s,p)=>s+p[0],0)/n, r.reduce((s,p)=>s+p[1],0)/n]; } A*=0.5; return [cx/(6*A),cy/(6*A)]; }
+const places={};
+DATA.places.forEach(p=>{
+  let ring=p.area; if(typeof ring==="string") ring=(window.__boundaries||{})[ring]||null;       // real admin polygon, if vendored
+  const n={ name:p.name, kind:p.kind, parent:p.in||null, emoji:p.emoji };
+  if(p.radiusKm){ n.region=n.circle=true; n.c=[p.lng,p.lat]; n.rKm=p.radiusKm; n.ll=n.c; }       // CIRCLE region
+  else if(ring){ n.region=true; n.ring=ring; n.ll=centroid(ring); }                               // POLYGON region
+  else n.ll=[p.lng,p.lat];                                                                        // POINT
+  places[p.id]=n; });
+const kmToLat=k=>k/110.574, kmToLon=(k,lat)=>k/(111.320*Math.cos(lat*D2R));
+function km2px(k,lat){ return k*1000/(156543.03392*Math.cos(lat*D2R)/Math.pow(2,map.getZoom())); }
+// ray ∩ polygon edge: the boundary point on the ext→centroid line
+function segT(p,c,a,b){ const r=[c[0]-p[0],c[1]-p[1]],s=[b[0]-a[0],b[1]-a[1]],d=r[0]*s[1]-r[1]*s[0]; if(Math.abs(d)<1e-12)return null;
+  const q=[a[0]-p[0],a[1]-p[1]],t=(q[0]*s[1]-q[1]*s[0])/d,u=(q[0]*r[1]-q[1]*r[0])/d; return (t>=0&&t<=1&&u>=0&&u<=1)?t:null; }
+function ringHit(ext,ctr,ring){ let best=null,bt=Infinity; for(let i=0;i<ring.length;i++){ const t=segT(ext,ctr,ring[i],ring[(i+1)%ring.length]); if(t!=null&&t<bt){ bt=t; best=[ext[0]+(ctr[0]-ext[0])*t, ext[1]+(ctr[1]-ext[1])*t]; } } return best||ctr; }
+function seedIn(r){ let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9; r.forEach(p=>{x0=Math.min(x0,p[0]);y0=Math.min(y0,p[1]);x1=Math.max(x1,p[0]);y1=Math.max(y1,p[1]);});
+  for(let k=0;k<60;k++){ const p=[x0+Math.random()*(x1-x0), y0+Math.random()*(y1-y0)]; if(regionContains({ring:r},p)) return p; } return [(x0+x1)/2,(y0+y1)/2]; }
+// region geometry — polygon OR analytic circle (contains=geo distance, anchor=ray∩circle, draw/clip=ctx.arc)
+function regionContains(n,p){ if(n.circle) return km(p,n.c)<=n.rKm;
+  let inside=false,r=n.ring; for(let i=0,j=r.length-1;i<r.length;j=i++){ const xi=r[i][0],yi=r[i][1],xj=r[j][0],yj=r[j][1];
+    if(((yi>p[1])!=(yj>p[1]))&&(p[0]<(xj-xi)*(p[1]-yi)/((yj-yi)||1e-9)+xi)) inside=!inside; } return inside; }
+function regionAnchor(n,ext){ if(!ext) return n.ll;
+  if(n.circle){ const dx=ext[0]-n.c[0], dy=ext[1]-n.c[1], d=Math.hypot(dx,dy)||1e-6; return [n.c[0]+dx/d*kmToLon(n.rKm,n.c[1]), n.c[1]+dy/d*kmToLat(n.rKm)]; }
+  return ringHit(ext,n.ll,n.ring); }
+function regionSeed(n){ if(n.circle){ const a=Math.random()*6.2832, rr=Math.sqrt(Math.random()); return [n.c[0]+Math.cos(a)*rr*kmToLon(n.rKm,n.c[1]), n.c[1]+Math.sin(a)*rr*kmToLat(n.rKm)]; } return seedIn(n.ring); }
+function traceRegion(n){ if(n.circle){ const s=map.project(n.c), r=km2px(n.rKm,n.c[1])*dpr; ctx.moveTo(s.x*dpr+r,s.y*dpr); ctx.arc(s.x*dpr,s.y*dpr,r,0,6.2832); }
+  else n.ring.forEach((p,i)=>{ const s=map.project(p); i?ctx.lineTo(s.x*dpr,s.y*dpr):ctx.moveTo(s.x*dpr,s.y*dpr); }); }
+function regionDiag(n){ if(n.circle) return 2*km2px(n.rKm,n.c[1]); let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  n.ring.forEach(p=>{ const s=map.project(p); x0=Math.min(x0,s.x);y0=Math.min(y0,s.y);x1=Math.max(x1,s.x);y1=Math.max(y1,s.y); }); return Math.hypot(x1-x0,y1-y0); }
+// where a flow arriving FROM `ext` touches node `id` (boundary point); bands themselves clip flush to the edge/arc
+function anchor(id,ext){ const n=places[id]; return n.region?regionAnchor(n,ext):n.ll; }
+// ---------- level-of-detail: a node is the visible UNIT when it fits on screen, else we descend ----------
+const UNIT_MAX=360;   // CSS px: a region whose on-screen diagonal exceeds this is "entered" → resolve to children
+function projDiag(id){ const n=places[id]; return n.region?regionDiag(n):0; }
+function unit(id){ const chain=[]; for(let n=id;n;n=places[n].parent) chain.unshift(n);   // root → leaf
+  for(const c of chain) if(projDiag(c)<=UNIT_MAX) return c; return id; }   // shallowest node that fits
+
+// ---------- flows & per-zoom aggregation up the containment tree ----------
+const rawFlows=DATA.flows.map(fl=>{ const comp=fl.comp||{}; return Object.assign({},fl,{comp,els:ELS.filter(e=>(comp[e]||0)>0)}); });
+let elemTot={C:1,N:1,P:1,K:1};                 // per-element visible totals (band/square = share of its own kind)
+const linkState=new Map();                     // persistent particle phases + flash, keyed by aggregated link id
+function partsFor(key,n){ let st=linkState.get(key); if(!st){ st={parts:[],flash:0}; linkState.set(key,st); }
+  while(st.parts.length<n) st.parts.push({u:st.parts.length/n}); st.parts.length=n; return st; }
+// roll each flow's endpoints up to the current visible units; sum bands of flows that share a unit-pair
+function aggregate(){
+  const m=new Map();
+  rawFlows.forEach(fl=>{ if((fl.loop&&!loopOn)||(fl.kind==="fert"&&loopOn)) return;
+    const ua=unit(fl.from), ub=unit(fl.to); if(ua===ub) return;                 // internal to a region → not a crossing
+    const key=ua+"→"+ub; let lk=m.get(key);
+    if(!lk){ lk={key,from:ua,to:ub,comp:{},value:0,recipes:new Set(),rift:false,loop:false,_mv:-1}; m.set(key,lk); }
+    ELS.forEach(e=>{ if(fl.comp[e]) lk.comp[e]=(lk.comp[e]||0)+fl.comp[e]; });
+    lk.value+=fl.value||0; lk.recipes.add(fl.recipe||"transfer"); lk.rift=lk.rift||!!fl.rift; lk.loop=lk.loop||!!fl.loop;
+    if((fl.value||0)>lk._mv){ lk._mv=fl.value||0; lk.kind=fl.kind; lk.carrier=fl.carrier; lk.resource=fl.resource; lk.emoji=fl.emoji; } });
+  const links=[...m.values()];
+  links.forEach(lk=>{ const ca=places[lk.from].ll, cb=places[lk.to].ll;
+    lk.a=anchor(lk.from,cb); lk.b=anchor(lk.to,ca);                             // boundary points for the guide + particles
+    lk.els=ELS.filter(e=>(lk.comp[e]||0)>0); lk.I=d3.geoInterpolate(lk.a,lk.b); lk.km=km(lk.a,lk.b);
+    lk.dur=Math.max(3,Math.min(18,lk.km*0.45)); lk.n=Math.max(2,Math.min(7,Math.round(1.7*Math.sqrt(lk.value||1)+1))); });
+  return links;
+}
+const emits=DATA.emissions.map(e=>{ const n=Math.max(2,Math.min(7,Math.round(Math.sqrt(e.value||1)+2)));
+  return {at:e.at,kind:e.kind,c:EMC[e.kind]||"#aab0b6",n,parts:Array.from({length:n},(_,i)=>({u:i/n}))}; });
+// ---------- diffuse field flows: a substance seeping DOWN A GRADIENT to a sink (runoff/leaching) ----------
+// real elevation φ for gravity runoff: AWS Terrarium tiles (free, tokenless, CORS-enabled).
+// Decodes to metres; samples lazily; returns null until a tile lands → field falls back to the
+// drainage bias, so it degrades gracefully if the network/CORS is unavailable.
+const DEMZ=12, demTiles=new Map();
+const lon2t=(lon)=>(lon+180)/360*Math.pow(2,DEMZ);
+const lat2t=(lat)=>{ const r=lat*Math.PI/180; return (1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*Math.pow(2,DEMZ); };
+function loadDem(x,y){ const k=x+"/"+y; if(demTiles.has(k))return; demTiles.set(k,null);
+  const img=new Image(); img.crossOrigin="anonymous";
+  img.onload=()=>{ try{ const c=document.createElement("canvas"); c.width=c.height=256; const g=c.getContext("2d"); g.drawImage(img,0,0); demTiles.set(k,g.getImageData(0,0,256,256).data); }catch(e){ demTiles.set(k,"x"); } };
+  img.onerror=()=>{ demTiles.set(k,"x"); };
+  img.src=`https://s3.amazonaws.com/elevation-tiles-prod/terrarium/${DEMZ}/${x}/${y}.png`; }
+function elevAt(lon,lat){ const fx=lon2t(lon), fy=lat2t(lat), tx=Math.floor(fx), ty=Math.floor(fy), k=tx+"/"+ty, d=demTiles.get(k);
+  if(d===undefined){ loadDem(tx,ty); return null; } if(!d||d==="x") return null;
+  const px=Math.min(255,(fx-tx)*256|0), py=Math.min(255,(fy-ty)*256|0), i=(py*256+px)*4;
+  return (d[i]*256+d[i+1]+d[i+2]/256)-32768; }
+// vector field v(lng,lat) for the advect mode: a vendored u/v raster (window.__windgrid =
+// {x0,y0,dx,dy,nx,ny,u:[],v:[]}, row-major) if present, else a synthesized prevailing-SW field
+// with rotational swirl (the LIC wind-map look) — drop in real GFS/current data with no code change.
+function windAt(lon,lat){ const g=window.__windgrid;
+  if(g){ const fx=(lon-g.x0)/g.dx, fy=(lat-g.y0)/g.dy, x=Math.max(0,Math.min(g.nx-2,fx|0)), y=Math.max(0,Math.min(g.ny-2,fy|0));
+    const tx=fx-x, ty=fy-y, i=y*g.nx+x, j=i+g.nx, lerp=(a,b,t)=>a+(b-a)*t;
+    const u=lerp(lerp(g.u[i],g.u[i+1],tx),lerp(g.u[j],g.u[j+1],tx),ty), v=lerp(lerp(g.v[i],g.v[i+1],tx),lerp(g.v[j],g.v[j+1],tx),ty);
+    return [u,v]; }
+  return [0.85+0.5*Math.sin(lat*1.3+lon*0.7), 0.55+0.5*Math.cos(lon*1.1-lat*0.9)]; }   // prevailing SW→NE + swirl
+const fields=(DATA.fields||[]).map(fd=>{ const node=places[fd.region];
+  const sink=fd.sink?(Array.isArray(fd.sink)?fd.sink:places[fd.sink].ll):null;
+  const els=ELS.filter(e=>(fd.comp[e]||0)>0), tot=els.reduce((s,e)=>s+fd.comp[e],0)||1;
+  const pick=()=>{ let x=Math.random()*tot; for(const e of els){ x-=fd.comp[e]; if(x<=0) return e; } return els[0]; };
+  const parts=Array.from({length:320},()=>({p:regionSeed(node),hist:[],el:pick(),life:0.4+Math.random()*0.8}));
+  return Object.assign({},fd,{node,sink,els,parts,pick}); });
+{ const lg=document.querySelector(".legend"); if(lg&&DATA.meta&&DATA.meta.note)
+  lg.insertAdjacentHTML("beforeend",`<div style="margin-top:5px;color:#9aa6ad;font-size:11px">${DATA.meta.note} · regions, recipes &amp; names resolve as you zoom</div>`); }
+// region styling: translucent fill + dashed outline, drawn under the ribbons
+const RGN={farm:"#6f9f4a",city:"#c8a24a",port:"#5a86b0",province:"#9a7fc0"};
+function drawRegion(n){ ctx.save(); ctx.beginPath(); traceRegion(n); ctx.closePath();
+  ctx.fillStyle=String(d3.color(RGN[n.kind]||"#8aa06a").copy({opacity:0.10})); ctx.fill();
+  ctx.setLineDash([6*dpr,5*dpr]); ctx.lineWidth=1.4*dpr; ctx.strokeStyle="rgba(222,202,150,.72)"; ctx.stroke(); ctx.setLineDash([]); ctx.restore(); }
+function regionLabel(x,y,name,emoji,sel){ ctx.save();
+  if(emoji){ if(sel){ ctx.beginPath(); ctx.arc(x*dpr,(y-13)*dpr,15*dpr,0,7); ctx.strokeStyle="#ffd24a"; ctx.lineWidth=2*dpr; ctx.stroke(); }
+    ctx.font=`${19*dpr}px "Noto Color Emoji","Apple Color Emoji",serif`; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(emoji,x*dpr,(y-13)*dpr); }
+  ctx.font=`italic 600 ${12.5*dpr}px Georgia`; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.lineJoin="round";
+  ctx.lineWidth=3.4*dpr; ctx.strokeStyle="rgba(0,0,0,.7)"; ctx.strokeText(name,x*dpr,y*dpr);
+  ctx.fillStyle="rgba(244,232,196,.95)"; ctx.fillText(name,x*dpr,y*dpr); ctx.restore(); }
+
+// ---------- canvas overlay ----------
+const cv=document.getElementById("ov"), ctx=cv.getContext("2d");
+let dpr=Math.min(2,window.devicePixelRatio||1);
+function resize(){ const r=document.getElementById("stage").getBoundingClientRect(); cv.width=r.width*dpr; cv.height=r.height*dpr; cv.style.width=r.width+"px"; cv.style.height=r.height+"px"; }
+resize(); window.addEventListener("resize",resize); map.on("resize",resize);
+
+const KINDFILL={food:"#5a9a4a",sewage:"#c0392b",fert:"#3a78c2",goods:"#9a8f7a",compost:"#7d57b0"};
+// nested containment box: carrier ⊃ resource ⊃ contents. element squares are SIZED by
+// each element's share of its own total. `full` draws the labelled box (carrier/resource/
+// C·N·P·K) like the inset; otherwise a tiny unlabelled nested box.
+// a container drawn as an emoji glyph (selectable); a halo marks the selected one
+function emojiGlyph(x,y,e,sel){ ctx.save(); ctx.translate(x*dpr,y*dpr);
+  const r=(sel?15:12)*dpr;                                            // opaque backing chip → reads above the bands
+  ctx.beginPath(); ctx.arc(0,0,r,0,7);
+  ctx.fillStyle=sel?"rgba(255,238,170,.92)":"rgba(248,244,236,.9)"; ctx.fill();
+  ctx.lineWidth=(sel?2.2:1)*dpr; ctx.strokeStyle=sel?"#e8a400":"rgba(40,40,40,.45)"; ctx.stroke();
+  ctx.font=`${17*dpr}px "Noto Color Emoji","Apple Color Emoji",serif`; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(e,0,0); ctx.restore(); }
+function container(x,y,fl,full,sel){
+  const els=fl.els||fl.elsP||[], kc=KINDFILL[fl.kind]||"#7a8a6a";
+  if(sel){ ctx.save(); ctx.beginPath(); ctx.arc(x*dpr,y*dpr,(full?20:9)*dpr,0,7); ctx.strokeStyle="#ffd24a"; ctx.lineWidth=2*dpr; ctx.stroke(); ctx.restore(); }
+  if(full){
+    const SS=15*dpr, gap=3*dpr;
+    const sides=els.map(e=>Math.max(5*dpr,Math.min(SS,Math.sqrt((fl.comp[e]||0)/(elemTot[e]||1))*SS)));
+    const sqW=els.length? sides.reduce((a,b)=>a+b,0)+gap*(els.length-1):12*dpr;
+    const maxS=els.length? Math.max.apply(null,sides):12*dpr;
+    ctx.save(); ctx.translate(x*dpr,y*dpr); ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.font=`bold ${9.5*dpr}px Georgia`; const carW=ctx.measureText(fl.carrier).width, resW=ctx.measureText(fl.resource).width;
+    const ipad=4*dpr, opad=4*dpr, carH=14*dpr, resH=13*dpr, letH=els.length?10*dpr:0;
+    const innerW=Math.max(sqW,resW)+ipad*2, innerH=resH+maxS+letH+ipad*2;
+    const outerW=Math.max(innerW,carW)+opad*2, outerH=carH+innerH+opad;
+    const ox=-outerW/2, oy=-outerH/2;
+    ctx.fillStyle="rgba(248,241,224,.97)"; ctx.strokeStyle="#b9912f"; ctx.lineWidth=1.5*dpr;
+    roundRect(ox,oy,outerW,outerH,3*dpr); ctx.fill(); ctx.stroke();
+    ctx.fillStyle="#8a5a2a"; ctx.fillText(fl.carrier,0,oy+carH/2+1*dpr);                       // carrier name
+    const iy=oy+carH, ix=-innerW/2;
+    ctx.fillStyle=String(d3.color(kc).copy({opacity:0.14})); ctx.strokeStyle=kc; ctx.lineWidth=1.1*dpr;
+    roundRect(ix,iy,innerW,innerH,2.4*dpr); ctx.fill(); ctx.stroke();
+    ctx.font=`bold ${8.5*dpr}px Georgia`; ctx.fillStyle=String(d3.color(kc).darker(0.7)); ctx.fillText(fl.resource,0,iy+resH/2+1*dpr);  // resource name
+    if(els.length){ const baseY=iy+resH+ipad+maxS; let cx=-sqW/2;
+      els.forEach((e,i)=>{ const s=sides[i]; ctx.fillStyle=EL[e]; ctx.fillRect(cx,baseY-s,s,s); cx+=s+gap; });
+      ctx.font=`${7*dpr}px Georgia`; ctx.fillStyle="rgba(40,40,40,.85)"; let lx=-sqW/2;
+      els.forEach((e,i)=>{ const s=sides[i]; ctx.fillText(e,lx+s/2,baseY+letH/2+1*dpr); lx+=s+gap; }); }
+    else { ctx.fillStyle="#9a8f7a"; ctx.fillRect(-5*dpr,iy+resH+ipad,10*dpr,10*dpr); }
+    ctx.restore(); return;
+  }
+  const gap=1.2*dpr, MAX=8*dpr;
+  const sides=els.map(e=>Math.max(2*dpr,Math.min(MAX,Math.sqrt((fl.comp[e]||0)/(elemTot[e]||1))*MAX)));
+  const wt=els.length? sides.reduce((a,b)=>a+b,0)+gap*(els.length-1):5*dpr;
+  const maxS=els.length? Math.max.apply(null,sides):5*dpr;
+  const ipX=2*dpr, ipY=2*dpr, op=2.3*dpr;
+  const iW=wt+ipX*2, iH=maxS+ipY*2, oW=iW+op*2, oH=iH+op*2;
+  ctx.save(); ctx.translate(x*dpr,y*dpr);
+  ctx.fillStyle="rgba(245,238,218,.93)"; ctx.strokeStyle="#b9912f"; ctx.lineWidth=1*dpr;
+  roundRect(-oW/2,-oH/2,oW,oH,2.4*dpr); ctx.fill(); ctx.stroke();
+  ctx.fillStyle=String(d3.color(kc).copy({opacity:0.22})); ctx.strokeStyle=kc; ctx.lineWidth=0.9*dpr;
+  roundRect(-iW/2,-iH/2,iW,iH,1.8*dpr); ctx.fill(); ctx.stroke();
+  if(els.length){ let cx=-wt/2; const base=maxS/2;
+    els.forEach((e,i)=>{ const s=sides[i]; ctx.fillStyle=EL[e]; ctx.fillRect(cx,base-s,s,s); cx+=s+gap; }); }
+  else { ctx.fillStyle="#9a8f7a"; ctx.fillRect(-2.5*dpr,-2.5*dpr,5*dpr,5*dpr); }
+  ctx.restore();
+}
+function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+function marker(x,y,name,emoji,sel){
+  ctx.save();
+  if(sel){ ctx.beginPath(); ctx.arc(x*dpr,y*dpr,(emoji?14:8)*dpr,0,7); ctx.strokeStyle="#ffd24a"; ctx.lineWidth=2*dpr; ctx.stroke(); }
+  if(emoji){ ctx.font=`${17*dpr}px "Noto Color Emoji","Apple Color Emoji",serif`; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(emoji,x*dpr,y*dpr); }
+  else { ctx.beginPath(); ctx.arc(x*dpr,y*dpr,4.5*dpr,0,7); ctx.fillStyle="rgba(255,255,255,.92)"; ctx.fill();
+    ctx.lineWidth=1.6*dpr; ctx.strokeStyle="#10161b"; ctx.stroke(); }
+  const oy=emoji?13:7;
+  ctx.font=`${11.5*dpr}px Georgia`; ctx.textAlign="center"; ctx.textBaseline="bottom";
+  ctx.lineWidth=3.2*dpr; ctx.strokeStyle="rgba(0,0,0,.78)"; ctx.lineJoin="round"; ctx.strokeText(name,x*dpr,(y-oy)*dpr);
+  ctx.fillStyle="#f6f2e8"; ctx.fillText(name,x*dpr,(y-oy)*dpr);
+  ctx.restore();
+}
+function dot(x,y,r,col,alpha){ ctx.globalAlpha=alpha; ctx.fillStyle=col; ctx.beginPath(); ctx.arc(x*dpr,y*dpr,r*dpr,0,7); ctx.fill(); ctx.globalAlpha=1; }
+function recipeBox(x,y,name,hot){ ctx.save(); ctx.font=`${8.5*dpr}px Georgia`; ctx.textAlign="center"; ctx.textBaseline="middle";
+  const w=ctx.measureText(name).width+10*dpr, h=13*dpr;
+  ctx.fillStyle=hot?"#fbeec0":"rgba(255,250,238,.93)"; ctx.strokeStyle="#9a7610"; ctx.lineWidth=(hot?1.8:1)*dpr;
+  roundRect(x*dpr-w/2,y*dpr-h/2,w,h,2.4*dpr); ctx.fill(); ctx.stroke();
+  ctx.fillStyle="#7a5e10"; ctx.fillText(name,x*dpr,y*dpr); ctx.restore(); }
+
+// ---------- animation ----------
+let playing=true, speedMul=1, last=null, loopOn=false, ready=false, ribbonsOn=true, fieldsOn=true;
+let selectedKey=null, selectedNode=null, curLinks=[]; let hitTargets=[];   // clickable instances this frame (for the info card)
+map.on("load",()=>{ ready=true; });
+function frame(ts){
+  if(last==null)last=ts; const dt=Math.min(0.05,(ts-last)/1000); last=ts;
+  ctx.clearRect(0,0,cv.width,cv.height);
+  if(ready){
+    const zoom=map.getZoom();
+    hitTargets=[];                                            // rebuilt each frame for click hit-testing
+    const links=aggregate(); curLinks=links;                  // flows rolled up to the current visible units
+    // Web-Mercator ground scale: ribbons are a real-world corridor (km wide), so they scale
+    // WITH the map instead of staying a fixed pixel slab that balloons when you zoom out.
+    const lat0=map.getCenter().lat;
+    const pxPerKm=1000/(156543.03392*Math.cos(lat0*Math.PI/180)/Math.pow(2,zoom));
+    // region extents, drawn under everything
+    for(const id in places){ if(places[id].region) drawRegion(places[id]); }
+    // diffuse fields: streaklets advecting down −∇φ (toward the sink) + a little curl, clipped to
+    // the medium, coloured by element — the runoff/leaching that follows gravity instead of a route.
+    if(fieldsOn) fields.forEach(fd=>{
+      ctx.save();
+      ctx.beginPath(); traceRegion(fd.node); ctx.closePath(); ctx.clip();
+      ctx.lineCap="round";
+      fd.parts.forEach(pt=>{
+        if(playing){
+          let dx,dy, reached=false;
+          if(fd.mode==="advect"){ const w=windAt(pt.p[0],pt.p[1]); dx=w[0]; dy=w[1]; }   // carried by a vector field
+          else{
+            // φ = elevation + β·(distance to sink): −∇φ = real steepest descent (dendritic channels
+            // where terrain has relief) + a drainage bias that wins on flat polderland (toward pumps).
+            const gx=fd.sink[0]-pt.p[0], gy=fd.sink[1]-pt.p[1], d=Math.hypot(gx,gy)||1e-6; reached=d<0.012;
+            const e=elevAt(pt.p[0],pt.p[1]);
+            if(e===null){ dx=gx/d; dy=gy/d; }                                // DEM not ready → drainage bias
+            else{ const E=0.0009, BETA=800;
+              const eL=elevAt(pt.p[0]-E,pt.p[1]), eR=elevAt(pt.p[0]+E,pt.p[1]), eD=elevAt(pt.p[0],pt.p[1]-E), eU=elevAt(pt.p[0],pt.p[1]+E);
+              dx=-((eR??e)-(eL??e))/(2*E) + BETA*gx/d; dy=-((eU??e)-(eD??e))/(2*E) + BETA*gy/d; }
+          }
+          const cu=0.25*Math.sin(pt.p[0]*9+pt.p[1]*11);                      // a little curl for organic spread
+          let ux=dx-cu*dy, uy=dy+cu*dx; const un=Math.hypot(ux,uy)||1; ux/=un; uy/=un;
+          const step=0.05*dt*speedMul;                                       // deg/s ground speed
+          pt.hist.push(pt.p); if(pt.hist.length>40) pt.hist.shift();         // long streak (≈ the integral line)
+          pt.p=[pt.p[0]+ux*step, pt.p[1]+uy*step]; pt.life-=0.16*dt*speedMul;
+          if(reached||pt.life<=0||!regionContains(fd.node,pt.p)){ pt.p=regionSeed(fd.node); pt.hist=[]; pt.el=fd.pick(); pt.life=0.5+Math.random()*0.8; }
+        }
+        if(pt.hist.length<2) return;
+        const fade=Math.min(1,pt.life+0.25), n=pt.hist.length;
+        for(let i=1;i<n;i++){ const a=map.project(pt.hist[i-1]), b=map.project(pt.hist[i]);
+          const t=i/n, al=t*0.95*fade;
+          ctx.strokeStyle=String(d3.color(EL[pt.el]).copy({opacity:al})); ctx.lineWidth=(0.5+t*2.0)*dpr;
+          ctx.beginPath(); ctx.moveTo(a.x*dpr,a.y*dpr); ctx.lineTo(b.x*dpr,b.y*dpr); ctx.stroke(); }
+      });
+      ctx.restore();
+    });
+    // per-element visible totals → every band is its share of its own kind's total
+    const eT={C:0,N:0,P:0,K:0}; links.forEach(lk=>ELS.forEach(e=>eT[e]+=(lk.comp[e]||0)));
+    elemTot={C:eT.C||1,N:eT.N||1,P:eT.P||1,K:eT.K||1};
+    // ribbons (proportional per-element bands) + thin guide + named containers, terminating at region edges
+    links.forEach(lk=>{
+      const A=map.project(lk.a), B=map.project(lk.b);
+      if(ribbonsOn){
+        // SC = px per unit element-share = a ground width of ~1.1 km, so a full-share band is
+        // a 1.1 km corridor on the earth (clamped so it stays legible at any zoom).
+        const els=lk.els, SC=Math.max(10,Math.min(150,1.1*pxPerKm))*dpr;
+        // bands run centroid→centroid (a,b lie on that same line); CLIP to the EXTERIOR of any
+        // region endpoint, so the canvas cuts the ribbon exactly along the real polygon boundary —
+        // perfectly flush at any angle, corner or curve, with no edge math.
+        const P0=map.project(places[lk.from].ll), P1=map.project(places[lk.to].ll);
+        const ax=P0.x*dpr,ay=P0.y*dpr,bx=P1.x*dpr,by=P1.y*dpr;
+        const dx=bx-ax,dy=by-ay,L=Math.hypot(dx,dy)||1, px=-dy/L,py=dx/L;   // unit perpendicular
+        ctx.save();
+        const regs=[lk.from,lk.to].map(id=>places[id]).filter(n=>n.region);
+        if(regs.length){ ctx.beginPath(); ctx.rect(0,0,cv.width,cv.height);
+          regs.forEach(n=>{ traceRegion(n); ctx.closePath(); });
+          ctx.clip("evenodd"); }
+        ctx.lineCap="butt";
+        if(els.length){
+          const bw=els.map(e=>Math.max(1.2*dpr,(lk.comp[e]/elemTot[e])*SC));
+          let off=-bw.reduce((a,b)=>a+b,0)/2;
+          els.forEach((e,i)=>{ const w=bw[i], c=off+w/2; off+=w;
+            ctx.strokeStyle=String(d3.color(EL[e]).copy({opacity:0.5})); ctx.lineWidth=w;
+            ctx.beginPath(); ctx.moveTo(ax+px*c,ay+py*c); ctx.lineTo(bx+px*c,by+py*c); ctx.stroke(); });
+        } else { const w=Math.max(2*dpr,0.4*SC);   // goods: one faint grey band
+          ctx.strokeStyle="rgba(154,143,122,.4)"; ctx.lineWidth=w;
+          ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx,by); ctx.stroke(); }
+        ctx.restore();
+      }
+      ctx.strokeStyle = LINE[lk.kind]||"rgba(255,230,160,.35)";
+      ctx.lineWidth=(lk.rift?1.4:0.9)*dpr; ctx.setLineDash(lk.loop?[5*dpr,5*dpr]:[]);
+      ctx.beginPath(); ctx.moveTo(A.x*dpr,A.y*dpr); ctx.lineTo(B.x*dpr,B.y*dpr); ctx.stroke(); ctx.setLineDash([]);
+    });
+    // containers/emojis in a SECOND pass, so they always sit ON TOP of every ribbon (not just their own)
+    links.forEach(lk=>{ const st=partsFor(lk.key,lk.n);
+      st.parts.forEach((pt,i)=>{ if(playing){ pt.u+=dt*speedMul/lk.dur; if(pt.u>1){pt.u-=1; st.flash=0.5;} }
+        const s=map.project(lk.I(pt.u)); hitTargets.push({x:s.x,y:s.y,lk}); const sel=lk.key===selectedKey;
+        if(lk.emoji) emojiGlyph(s.x,s.y,lk.emoji,sel); else container(s.x,s.y,lk, i===0 && zoom>=12, sel); }); });
+    // emissions rising in screen space (to the sky)
+    emits.forEach(e=>{ const base=map.project(places[e.at].ll);
+      e.parts.forEach(pt=>{ if(playing){ pt.u+=dt*speedMul*0.5; if(pt.u>1)pt.u-=1; }
+        dot(base.x+Math.sin(pt.u*9)*4, base.y-pt.u*46, 2.6-pt.u*1.2, e.c, (1-pt.u)*0.8); }); });
+    // recipes (transitions) that FIRE the crossing flows — at the source unit, flashing as they fire
+    if(zoom>=11){ const byUnit={};
+      links.forEach(lk=>{ const a=byUnit[lk.from]||(byUnit[lk.from]=new Map()); lk.recipes.forEach(r=>{ if(!a.has(r))a.set(r,lk.key); }); });
+      for(const pid in byUnit){ const ps=map.project(places[pid].ll); let stack=0;
+        byUnit[pid].forEach((lkKey,name)=>{ const ay=ps.y-24-stack*15; stack++;
+          ctx.strokeStyle="rgba(154,118,16,.55)"; ctx.lineWidth=0.8*dpr; ctx.setLineDash([2*dpr,2*dpr]);
+          ctx.beginPath(); ctx.moveTo(ps.x*dpr,(ps.y-6)*dpr); ctx.lineTo(ps.x*dpr,(ay+6.5)*dpr); ctx.stroke(); ctx.setLineDash([]);
+          const stt=linkState.get(lkKey); recipeBox(ps.x,ay,name,stt&&stt.flash>0); }); } }
+    linkState.forEach(st=>{ if(st.flash>0) st.flash-=dt; });
+    // labels: only the nodes that are units at this zoom (rolled-up interiors stay unlabelled)
+    const units=new Set(); links.forEach(lk=>{ units.add(lk.from); units.add(lk.to); });
+    units.forEach(id=>{ const n=places[id], s=map.project(n.ll), sel=id===selectedNode;
+      hitTargets.push({x:s.x, y:s.y-(n.emoji?(n.region?13:0):0), place:id});   // economic resource = clickable
+      if(n.region) regionLabel(s.x,s.y,n.name,n.emoji,sel); else marker(s.x,s.y,n.name,n.emoji,sel); });
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+// ---------- controls ----------
+document.getElementById("loop").onclick=function(){ loopOn=!loopOn; this.textContent=loopOn?"open the rift":"close the loop"; };
+document.getElementById("ribbons").onclick=function(){ ribbonsOn=!ribbonsOn; this.textContent=ribbonsOn?"hide ribbons":"average ribbons"; };
+document.getElementById("runoff").onclick=function(){ fieldsOn=!fieldsOn; this.textContent=fieldsOn?"hide runoff":"runoff"; };
+// click a container (emoji or box) → show what that part of the plan is flowing
+const infoEl=document.getElementById("info");
+function hideInfo(){ infoEl.style.display="none"; selectedKey=null; selectedNode=null; }
+// click an economic resource / place → what flows in and out of it at this zoom
+function showNodeInfo(id){ const n=places[id];
+  const fmt=l=>`${l.emoji?l.emoji+" ":""}${l.resource||l.kind} <span class="muted">${(l.value||0).toFixed(1)}</span>`;
+  const inc=curLinks.filter(l=>l.to===id), out=curLinks.filter(l=>l.from===id);
+  infoEl.innerHTML=`<span class="close">×</span>`
+    +`<h4>${n.emoji?n.emoji+" ":""}${n.name}</h4>`
+    +`<div class="row"><span class="muted">kind:</span> ${n.kind||"—"}${n.region?(n.circle?" · circle region":" · region"):""}</div>`
+    +(inc.length?`<div class="row"><span class="muted">in:</span> ${inc.map(fmt).join(", ")}</div>`:``)
+    +(out.length?`<div class="row"><span class="muted">out:</span> ${out.map(fmt).join(", ")}</div>`:``)
+    +(!inc.length&&!out.length?`<div class="row muted">no crossing flows at this zoom</div>`:``);
+  infoEl.style.display="block"; infoEl.querySelector(".close").onclick=hideInfo;
+}
+function showInfo(lk){
+  const chips=lk.els.map(e=>`<span class="chip" style="background:${EL[e]}"></span>${e} ${(lk.comp[e]||0).toFixed(2)}`).join(" ");
+  infoEl.innerHTML=`<span class="close">×</span>`
+    +`<h4>${lk.emoji?lk.emoji+" ":""}${lk.resource||lk.kind}</h4>`
+    +`<div class="row"><span class="muted">containment:</span> ${lk.carrier||"—"} ⊃ ${lk.resource||"—"}</div>`
+    +`<div class="row"><span class="muted">recipe:</span> ${[...lk.recipes].join(", ")||"—"}</div>`
+    +`<div class="row"><span class="muted">route:</span> ${places[lk.from].name} → ${places[lk.to].name}</div>`
+    +`<div class="row"><span class="muted">bundle kt/yr:</span>${chips||" —"}</div>`
+    +`<div class="row"><span class="muted">N throughput:</span> ${(lk.value||0).toFixed(1)} kt N/yr</div>`
+    +(lk.rift?`<div class="row" style="color:#ff8a6a">⚠ crosses a boundary — the rift</div>`:``)
+    +(lk.loop?`<div class="row" style="color:#c79bff">↺ closed loop (compost return)</div>`:``);
+  infoEl.style.display="block";
+  infoEl.querySelector(".close").onclick=hideInfo;
+}
+map.on("click",ev=>{ let best=null,bd=20;
+  hitTargets.forEach(t=>{ const d=Math.hypot(t.x-ev.point.x,t.y-ev.point.y); if(d<bd){ bd=d; best=t; } });
+  if(best&&best.lk){ selectedKey=best.lk.key; selectedNode=null; showInfo(best.lk); }
+  else if(best&&best.place){ selectedNode=best.place; selectedKey=null; showNodeInfo(best.place); }
+  else hideInfo(); });
+map.getCanvas().style.cursor="";
+map.on("mousemove",ev=>{ const hit=hitTargets.some(t=>Math.hypot(t.x-ev.point.x,t.y-ev.point.y)<20); map.getCanvas().style.cursor=hit?"pointer":""; });
+document.getElementById("pause").onclick=function(){ playing=!playing; this.textContent=playing?"pause":"play"; };
+document.getElementById("speed").oninput=function(){ speedMul=+this.value; };
+let atCity=false;
+document.getElementById("fly").onclick=function(){ atCity=!atCity;
+  if(atCity) map.flyTo({center:places.dam.ll,zoom:13.2,duration:2600});     // Amsterdam: market→centre→homes
+  else map.flyTo({center:places.flevo.ll,zoom:12.6,duration:2600}); };      // Flevoland fields
+</script>
+</body>
+</html>

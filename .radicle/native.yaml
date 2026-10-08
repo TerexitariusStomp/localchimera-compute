@@ -1,0 +1,29 @@
+# .radicle/native.yaml — Radicle-native CI contract for playnet.
+#
+# SCHEMA: exactly one key, `shell`, holding a bash snippet. This is not a
+# stylistic choice — it is radicle-native-ci's `RunSpec`, which is
+#
+#     #[serde(deny_unknown_fields)]
+#     pub struct RunSpec { pub shell: String }
+#
+# and the adapter runs it with `bash` and `set -xeuo pipefail` (src/runspec.rs,
+# src/run.rs: RUNSPEC_PATH = ".radicle/native.yaml").
+#
+# WHY THAT MATTERS, RECORDED SO IT IS NOT REDISCOVERED. This file used to hold
+#
+#     steps:
+#       - name: tests
+#         run: make test
+#
+# which is valid YAML, carries no `shell` field, and under deny_unknown_fields
+# fails to deserialize. So the adapter exited 1 having run nothing, wrote a
+# report containing only the commit diff, and the broker recorded Failure. Every
+# CI run since the broker took over did that — the red badge was the pipeline
+# reporting its own misconfiguration, and no commit was ever actually validated.
+# The `steps:` shape came from deploy/scripts/radicle-ci-hook.sh, which parsed
+# `run:` lines with sed; the two readers were assumed to share this file and
+# never did.
+#
+# Both read it now: patch_ci_run_native extracts this same `shell` block.
+shell: |
+  make test

@@ -1,0 +1,79 @@
+# tests/QUARANTINE — tests EXCLUDED from `make test` (the green baseline), each
+# with a reason. Read by tools/run-scm-tests.sh. Format: one repo-relative path
+# per line; everything after `#` is the reason. Blank lines ignored.
+#
+# Three kinds of exclusion, all explicit so nothing rots silently:
+#   needs-*   — hermetic only with an external daemon/lib/service running.
+#   bench-*   — a benchmark or genuinely long solve, not a pass/fail unit test.
+#   broken:*  — REAL red, self-contained, TRACKED debt to fix (the work-list).
+#
+# Run the quarantined set for visibility (without gating) with:
+#   RUN_QUARANTINED=1 make test-all
+# Fix a `broken:` entry, delete its line, and it rejoins the baseline.
+#
+# ── AUDITED 2026-08-14: every line below was RUN, not re-read ────────────────
+# A reason written once is a claim about the world that stops being checked, and
+# "quarantined" ages into "forgotten" — so each entry was executed and its stated
+# reason compared against what actually happened. Two were wrong:
+#
+#   test-mesh-smoke.scm was listed as hanging to timeout without a Reticulum
+#   mesh. It does not hang. It prints `SKIP: needs rns-bridge debug binary +
+#   node + rns-wasm pkg` and exits 0 in 10 s. A test that declines cleanly is
+#   the opposite of what this file is for — it belongs in the baseline, where
+#   its skip is visible and where it will actually run the day the deps exist.
+#
+#   test-planner-service.scm was the sole `broken:` entry, filed for a record
+#   identity clash. It passes — 65 checks, 6 s. The clash is gone.
+#
+# Both rejoined the baseline. The remaining twelve were confirmed: the ten
+# needs-* entries all fail fast against absent daemons (6–22 s, exit 1), and the
+# two bench entries are excluded by runtime, not by breakage.
+#
+# Re-run this audit the same way — execute the list, do not read it.
+
+# ── env-dependent: need an external daemon / native lib / live service ────────
+tests/keri/integration/test-keria-issuance.scm      # needs-keria (POST 127.0.0.1:3903/boot)
+tests/keri/integration/test-keri-backend-live.scm   # needs-keria
+tests/keri/integration/test-real-keria.scm          # needs-keria
+tests/keri/integration/test-witness-receipts.scm    # needs-keria witness pool
+tests/keri/test-ipex-pull-flow.scm                  # needs-keria (agent/exchange endpoints)
+tests/governance/test-keria-store-pending.scm       # needs-keria (credentials endpoint)
+tests/monero/test-monero-wallet.scm                 # needs-monerod / wallet-rpc
+tests/test-push-crypto.scm                          # needs-libgcrypt (dlopen libgcrypt.so) + vapid keys
+tests/playnet/test-planner-service-ocapn.scm        # needs-live-gateway (waits on an sref file a gateway writes)
+tests/integration/test-multi-gateway-driver.scm     # driver, not a unit test — requires <sref-A> <sref-B> args
+tests/planner/federation-wire-host.scm              # helper process, not a unit test — requires A|B <sref-file> <seed-byte>; test-federation-wire-procs launches it
+tests/governance/two-box/box1.scm                   # helper process, not a unit test — needs the PLAYNET_* env run-two-box.sh sets (`make test-witness-two-box`)
+tests/governance/two-box/box2.scm                   # helper process, not a unit test — same harness as box1
+
+# ── benchmarks / long solves: not pass/fail units ────────────────────────────
+tests/planner/bench-relational.scm                  # bench-slow (>120s by design)
+
+# ── REAL red, self-contained, tracked debt — the work-list ───────────────────
+# EMPTY, as of the 2026-08-14 audit. The one entry here —
+# tests/playnet/test-planner-service.scm, filed for a ResourceSpecification
+# record-identity clash between the deprecated seed and the live service — now
+# runs 65 checks green and has rejoined the baseline.
+
+# ── tests OF deprecated code — RETIRED 2026-08-04 ────────────────────────────
+# test-control, test-grammar2 and test-federation-a-planning imported nothing
+# but (playnet deprecated …) and the harness. A quarantine line kept them
+# nominally alive while guaranteeing they never ran, which reads as "might come
+# back" — they were not coming back. Deleted rather than listed.
+#
+# NOTE, still open: tests/planner/test-grammar.scm and
+# tests/playnet/test-federation-a.scm import ONLY deprecated modules too, and
+# both GATE the baseline today (0s and 1s, green). Whether the live suite should
+# gate on retired code is a call worth making deliberately rather than by
+# omission — they are left running until it is made.
+
+
+# bench-kleingaerten: Berlin's whole allotment register — 1,065 sites, 71,382
+# parcels, 2,917 ha — solved robustly across the KEP tenure ladder. Exceeds the
+# runner's 300 s budget and also 700 s when run alone; it has never completed
+# inside this harness, at any commit, including before the solver work of
+# 2026-08-13. Not a regression and not a pass/fail unit: it is the largest solve
+# in the repo by two orders of magnitude. UNMEASURED and worth knowing: whether
+# it terminates at all. Run it deliberately with a real budget before trusting
+# the conclusion its header states.
+tests/planner/test-berlin-kleingaerten.scm

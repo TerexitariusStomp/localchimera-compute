@@ -1,0 +1,201 @@
+#!/usr/bin/env bash
+# pre-push — five guards on the way out:
+#
+#   1. Block pushes to centralized hosting (GitHub/GitLab). This repo is
+#      Radicle-only; canonical lives on the box seed.
+#
+#   2. Reject UNSIGNED commits heading toward Radicle. Canonical is a
+#      delegate-signed quorum and the board authenticates the chain, but
+#      `commit.gpgsign=true` is only a *config* — it is silently bypassed by
+#      `--no-gpg-sign`, by committing on a host without the key, or by tooling
+#      that commits with the key unavailable. That is exactly how an UNSIGNED
+#      commit (d4d0c17e "notify: unified router") landed mid-chain on
+#      2026-07-24 and sat there, a latent block on the next `make ship`.
+#      A config can't enforce; a hook can. If any commit in the pushed range
+#      is unsigned, we stop here — re-sign before it can poison canonical.
+#
+#   3. Reject the operator's real machine identity leaking toward Radicle:
+#      real $HOME-derived absolute paths baked into COMMIT MESSAGES (git's
+#      default merge message quotes the local clone's path; the
+#      prepare-commit-msg hook scrubs those at the source, this backstops
+#      commits made without it) or into text OR binary content
+#      (compiler debug strings, RPATHs, doc-generator metadata — this repo
+#      already had to rewrite history once for exactly this: /home/<user>
+#      and /media/<user> paths embedded in a built .wasm and in PDF author
+#      metadata). Checked dynamically against the CURRENT operator's actual
+#      username/homedir — never hardcoded, so this script itself can't
+#      become a leak. Catches accidents; doesn't replace judgment — for a
+#      pre-push gut check on staged/diffed changes, use the
+#      opsec-scrub-reviewer subagent.
+#
+#   4. Reject a satellite pin that does not resolve. deploy/satellites.scm is
+#      the only way another repo's content reaches the deployed system; a pin
+#      whose commit is missing from the local clone or whose tree hashes
+#      differently is a deploy that cannot build. Checked by
+#      deploy/scripts/satellite-pins.scm; needs the clones beside this repo
+#      (or PLAYNET_SATELLITES_DIR).
+#
+#   5. Reject an AI co-authorship trailer heading toward Radicle
+#      ("Co-Authored-By: Claude …", "Claude-Session: …" — docs/dev/
+#      opsec-roadmap.md). prepare-commit-msg strips these at commit time;
+#      this backstops a commit made without it (another host, a hand-typed
+#      message, a tool that writes commits directly). Only scans the
+#      commits THIS push would introduce — pre-existing history already
+#      carrying the trailer is a separate, larger decision and is untouched.
+#
+# Install via `make install-hooks` (symlinks this into .git/hooks/pre-push).
+#
+# Bypass (rare, e.g. pushing a WIP branch to a personal Radicle namespace):
+#   PLAYNET_ALLOW_UNSIGNED=1 git push …
+#   PLAYNET_ALLOW_IDENTITY_LEAK=1 git push …
+#   PLAYNET_ALLOW_UNPINNED=1 git push …
+#   PLAYNET_ALLOW_AI_TRAILER=1 git push …
+
+set -euo pipefail
+
+remote_name="${1:-}"
+url="${2:-}"
+
+# --- Guard 1: no centralized hosting -----------------------------------------
+if echo "$url" | grep -qiE 'github\.com|gitlab\.com'; then
+    echo "ERROR: push to centralized hosting ($url) blocked — this repo is Radicle-only." >&2
+    exit 1
+fi
+
+# --- Guard 2: no unsigned commits toward Radicle -----------------------------
+# Only enforce for the deploy path (the `rad` remote and direct box SSH URLs);
+# a local mirror or backup push shouldn't be gated.
+case "$remote_name $url" in
+    *rad*|*ssh://*radicle*|*playnet*) : ;;   # deploy path → enforce
+    *) exit 0 ;;                              # anything else → skip
+esac
+
+[ "${PLAYNET_ALLOW_UNSIGNED:-0}" = "1" ] && exit 0
+
+z40=0000000000000000000000000000000000000000
+bad=0
+# git feeds each ref as: <local_ref> <local_sha> <remote_ref> <remote_sha>
+while read -r local_ref local_sha remote_ref remote_sha; do
+    [ "$local_sha" = "$z40" ] && continue            # branch deletion
+    if [ "$remote_sha" = "$z40" ]; then
+        # New ref on the remote: check the commits it would introduce that
+        # aren't already anywhere on the remote (avoid re-scanning all history).
+        range=$(git rev-list "$local_sha" --not --remotes 2>/dev/null || git rev-list "$local_sha")
+    else
+        range=$(git rev-list "$remote_sha..$local_sha")
+    fi
+    for c in $range; do
+        sig=$(git log --format='%G?' -1 "$c")
+        # G=good, U=good-but-untrusted, E=can't check → allow; N=none, B=bad → reject.
+        case "$sig" in
+            G|U|E) : ;;
+            *)
+                bad=1
+                echo "  UNSIGNED: $(git log --format='%h %s' -1 "$c")" >&2
+                ;;
+        esac
+    done
+
+    # --- Guard 3: no real machine identity leaking toward Radicle -----------
+    if [ "${PLAYNET_ALLOW_IDENTITY_LEAK:-0}" != "1" ]; then
+        me="$(id -un)"
+        home_pat="/home/${me}"
+        media_pat="/media/${me}"
+        for c in $range; do
+            # Commit MESSAGES leak the same way file contents do: git's
+            # default merge message quotes the local clone's path, and
+            # tooling pastes absolute paths into bodies. Nine such messages
+            # reached public history before this check existed. The
+            # prepare-commit-msg hook scrubs them at commit time; this is
+            # the backstop for commits made without it.
+            msg_hit=$(git log --format='%B' -1 "$c" \
+                      | grep -F -e "$home_pat" -e "$media_pat" \
+                      | head -1) || true
+            if [ -n "$msg_hit" ]; then
+                identity_bad=1
+                echo "  IDENTITY LEAK: commit MESSAGE @ $(git log --format='%h' -1 "$c") — real machine path" >&2
+            fi
+            msg_bare=$(git log --format='%B' -1 "$c" \
+                       | grep -w -F -e "$me" \
+                       | head -1) || true
+            if [ -n "$msg_bare" ]; then
+                identity_bad=1
+                echo "  IDENTITY LEAK: commit MESSAGE @ $(git log --format='%h' -1 "$c") — bare username" >&2
+            fi
+            for f in $(git diff-tree --no-commit-id --name-only -r "$c"); do
+                hit=$(git show "$c:$f" 2>/dev/null \
+                      | strings -a 2>/dev/null \
+                      | grep -F -e "$home_pat" -e "$media_pat" \
+                      | head -1) || true
+                if [ -n "$hit" ]; then
+                    identity_bad=1
+                    echo "  IDENTITY LEAK: $f @ $(git log --format='%h' -1 "$c") — real machine path" >&2
+                fi
+                bare=$(git show "$c:$f" 2>/dev/null \
+                       | strings -a 2>/dev/null \
+                       | grep -w -F -e "$me" \
+                       | head -1) || true
+                if [ -n "$bare" ]; then
+                    identity_bad=1
+                    echo "  IDENTITY LEAK: $f @ $(git log --format='%h' -1 "$c") — bare username" >&2
+                fi
+            done
+        done
+    fi
+
+    # --- Guard 5: no AI co-authorship trailer heading toward Radicle --------
+    if [ "${PLAYNET_ALLOW_AI_TRAILER:-0}" != "1" ]; then
+        for c in $range; do
+            trailer_hit=$(git log --format='%B' -1 "$c" \
+                          | grep -E '^Co-Authored-By:[^<]*<[^>]*@anthropic\.com>[[:space:]]*$|^Claude-Session:[[:space:]]*https://claude\.ai/(code/)?session_[A-Za-z0-9_-]+[[:space:]]*$' \
+                          | head -1) || true
+            if [ -n "$trailer_hit" ]; then
+                ai_trailer_bad=1
+                echo "  AI TRAILER: commit MESSAGE @ $(git log --format='%h' -1 "$c") — $trailer_hit" >&2
+            fi
+        done
+    fi
+done
+
+if [ "$bad" = "1" ]; then
+    echo "" >&2
+    echo "ERROR: refusing to push unsigned commit(s) toward Radicle canonical." >&2
+    echo "  Re-sign the range, e.g.:" >&2
+    echo "    git rebase --exec 'git commit --amend --no-edit -S' <base>" >&2
+    echo "  or override for a non-canonical push: PLAYNET_ALLOW_UNSIGNED=1 git push …" >&2
+    exit 1
+fi
+
+if [ "${identity_bad:-0}" = "1" ]; then
+    echo "" >&2
+    echo "ERROR: refusing to push real machine identity toward Radicle canonical." >&2
+    echo "  Fix the offending file(s) above (or history-rewrite if already committed)." >&2
+    echo "  Ask the opsec-scrub-reviewer subagent for a pre-push scan next time." >&2
+    echo "  Override (only if you're SURE it's a false positive):" >&2
+    echo "    PLAYNET_ALLOW_IDENTITY_LEAK=1 git push …" >&2
+    exit 1
+fi
+
+if [ "${ai_trailer_bad:-0}" = "1" ]; then
+    echo "" >&2
+    echo "ERROR: refusing to push an AI co-authorship trailer toward Radicle canonical." >&2
+    echo "  Amend the message(s) above to drop the Co-Authored-By/Claude-Session line." >&2
+    echo "  Override (only for a non-canonical WIP push):" >&2
+    echo "    PLAYNET_ALLOW_AI_TRAILER=1 git push …" >&2
+    exit 1
+fi
+
+# --- Guard 4: every satellite pin resolves ------------------------------------
+if [ "${PLAYNET_ALLOW_UNPINNED:-0}" != "1" ] && [ -f deploy/satellites.scm ]; then
+    if ! GUILE_AUTO_COMPILE=0 deploy/scripts/satellite-pins.scm check >&2; then
+        echo "" >&2
+        echo "ERROR: a satellite pin in deploy/satellites.scm does not resolve." >&2
+        echo "  Clone the satellite beside this repo (../playnet-<name>) or set" >&2
+        echo "  PLAYNET_SATELLITES_DIR; move a pin with: make bump SAT=<name>" >&2
+        echo "  Override (a WIP push to a non-canonical namespace only):" >&2
+        echo "    PLAYNET_ALLOW_UNPINNED=1 git push …" >&2
+        exit 1
+    fi
+fi
+
+exit 0

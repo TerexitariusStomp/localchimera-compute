@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Unified Scientific Method — An Instrument of Inquiry</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#E8EAE3;
+  --paper-deep:#DDE0D6;
+  --ink:#161F1A;
+  --ink-soft:#3C463F;
+  --ink-faint:#6E7A70;
+  --red:#C0331B;
+  --red-deep:#8F2413;
+  --ochre:#B08328;
+  --line:#B9BFB2;
+  --white:#F6F7F2;
+  --rail:clamp(40px,5vw,56px);
+  /* fluid spacing scale — one source of truth for every breakpoint */
+  --gutter:clamp(1.1rem,4vw,2rem);
+  --space-section:clamp(2.6rem,7vw,5rem);
+  --space-card:clamp(1.1rem,2.5vw,1.6rem);
+  font-size:16px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:'Spectral',serif;
+  font-weight:400;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+h1,h2,h3,p,label,textarea{overflow-wrap:break-word}
+svg{max-width:100%;height:auto}
+::selection{background:var(--red);color:var(--white)}
+
+/* ---------- masthead ---------- */
+.masthead{
+  min-height:88vh;
+  display:grid;
+  grid-template-rows:auto 1fr auto;
+  border-bottom:3px solid var(--ink);
+  position:relative;
+  overflow:hidden;
+}
+.mast-top{
+  display:flex;justify-content:space-between;align-items:baseline;
+  padding:clamp(.9rem,2vw,1.25rem) var(--gutter);
+  font-family:'IBM Plex Mono',monospace;font-size:clamp(.62rem,1.5vw,.72rem);letter-spacing:.08em;
+  text-transform:uppercase;color:var(--ink-soft);
+  border-bottom:1px solid var(--line);
+}
+.mast-core{
+  display:grid;place-items:center;text-align:center;padding:clamp(2.2rem,6vw,3rem) var(--gutter);
+  position:relative;
+}
+.mast-core h1{
+  font-family:'Archivo',sans-serif;
+  font-variation-settings:'wdth' 72,'wght' 850;
+  text-transform:uppercase;
+  font-size:clamp(2.6rem,8.5vw,7.2rem);
+  line-height:.92;
+  letter-spacing:-.01em;
+}
+.mast-core h1 .redword{color:var(--red)}
+.mast-sub{
+  margin-top:1.6rem;max-width:44ch;
+  font-size:clamp(.98rem,1.6vw,1.18rem);
+  font-weight:300;color:var(--ink-soft);
+}
+.mast-epigraph{
+  margin-top:2.4rem;
+  font-style:italic;font-weight:300;font-size:.95rem;color:var(--ink-faint);
+}
+.mast-epigraph strong{font-style:normal;font-family:'IBM Plex Mono',monospace;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;display:block;margin-top:.4rem;color:var(--ink-soft);font-weight:500}
+.mast-bottom{
+  display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line);
+}
+.mast-bottom>div{
+  padding:clamp(.8rem,2vw,1rem) var(--gutter);font-family:'IBM Plex Mono',monospace;font-size:.7rem;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);
+}
+.mast-bottom>div:last-child{text-align:right;border-left:1px solid var(--line)}
+/* the converging axes motif in the hero */
+.axes{
+  position:absolute;inset:0;pointer-events:none;opacity:.55;
+}
+.axes svg{width:100%;height:100%}
+
+/* ---------- section scaffolding ---------- */
+.section-label{
+  font-family:'IBM Plex Mono',monospace;font-size:.7rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--red);font-weight:500;
+}
+.premise{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);
+  gap:clamp(1.4rem,4vw,3rem);padding:var(--space-section) var(--gutter);max-width:1180px;margin:0 auto;
+}
+.premise h2{
+  font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 75,'wght' 800;
+  text-transform:uppercase;font-size:clamp(1.5rem,3vw,2.2rem);line-height:1.05;
+  margin-top:.6rem;
+}
+.premise-body p{font-size:clamp(.98rem,1.4vw,1.05rem);font-weight:300;margin-bottom:1.1rem;max-width:62ch}
+.premise-body p em{font-weight:400}
+.premise-body .law{
+  border-left:3px solid var(--red);padding:.8rem 1.2rem;margin:1.6rem 0;
+  font-weight:400;background:var(--paper-deep);font-size:1.02rem;
+}
+
+/* ---------- the two axes legend ---------- */
+.axes-legend{
+  max-width:1180px;margin:0 auto;padding:0 var(--gutter) clamp(2.4rem,6vw,4rem);
+  display:grid;grid-template-columns:1fr 1fr;gap:0;
+  border-top:3px solid var(--ink);
+}
+.axis-card{padding:var(--space-card);border-bottom:1px solid var(--line)}
+.axis-card:first-child{border-right:1px solid var(--line)}
+.axis-card h3{
+  font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 80,'wght' 750;
+  text-transform:uppercase;font-size:1.05rem;letter-spacing:.02em;
+  display:flex;align-items:center;gap:.6rem;
+}
+.axis-dot{width:.75rem;height:.75rem;border-radius:50%;flex:none}
+.axis-dot.t{background:var(--ink)}
+.axis-dot.h{background:var(--red)}
+.axis-card p{font-size:.92rem;font-weight:300;color:var(--ink-soft);margin-top:.6rem;max-width:48ch}
+
+/* ---------- instrument ---------- */
+.instrument{
+  max-width:1180px;margin:0 auto;padding:clamp(2.4rem,6vw,4rem) var(--gutter) clamp(1rem,3vw,2rem);
+}
+.instrument-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:1.5rem;margin-bottom:clamp(1.6rem,4vw,2.5rem)}
+.instrument-head h2{
+  font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 75,'wght' 850;
+  text-transform:uppercase;font-size:clamp(1.8rem,4vw,3rem);line-height:1;
+}
+.inquiry-meta{display:flex;gap:.75rem;flex-wrap:wrap}
+.inquiry-meta input{
+  font-family:'IBM Plex Mono',monospace;font-size:max(.85rem,16px);
+  background:var(--white);border:1px solid var(--ink);padding:.55rem .8rem;
+  color:var(--ink);min-width:260px;
+}
+.inquiry-meta input:focus{outline:2px solid var(--red);outline-offset:1px}
+.btn{
+  font-family:'IBM Plex Mono',monospace;font-size:.75rem;letter-spacing:.08em;
+  text-transform:uppercase;font-weight:500;cursor:pointer;
+  border:1px solid var(--ink);background:var(--ink);color:var(--white);
+  padding:.6rem 1.1rem;transition:background .15s,color .15s;
+}
+.btn:hover{background:var(--red);border-color:var(--red)}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.ghost:hover{background:var(--ink);color:var(--white)}
+.btn:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+
+/* completeness ledger */
+.ledger{
+  display:grid;grid-template-columns:repeat(7,1fr);gap:2px;
+  background:var(--ink);border:2px solid var(--ink);margin-bottom:clamp(2rem,5vw,3.5rem);
+}
+.ledger button{
+  background:var(--paper-deep);border:none;cursor:pointer;padding:.7rem .3rem .55rem;
+  font-family:'IBM Plex Mono',monospace;display:grid;gap:.35rem;justify-items:center;
+  transition:background .15s;
+}
+.ledger button:hover{background:var(--white)}
+.ledger button:focus-visible{outline:2px solid var(--red);outline-offset:-3px}
+.ledger .num{font-size:.95rem;font-weight:500;color:var(--ink)}
+.ledger .bar{width:70%;height:5px;background:var(--line);position:relative;overflow:hidden}
+.ledger .bar i{position:absolute;inset:0;transform-origin:left;background:var(--red);transform:scaleX(0);transition:transform .4s ease}
+.ledger .pct{font-size:.6rem;color:var(--ink-faint);letter-spacing:.05em}
+
+/* stage panels — the dialectical spine */
+.stages{position:relative}
+.spine{
+  position:absolute;left:calc(var(--rail)/2 - 1px);top:0;bottom:0;width:2px;
+  background:var(--ink);
+}
+.stage{
+  position:relative;display:grid;
+  grid-template-columns:var(--rail) minmax(0,1fr);
+  margin-bottom:clamp(2rem,5vw,3.2rem);
+}
+.node{
+  position:sticky;top:1.2rem;align-self:start;
+  display:grid;place-items:center;height:var(--rail);
+}
+.node span{
+  width:2.4rem;height:2.4rem;border-radius:50%;
+  background:var(--paper);border:2px solid var(--ink);
+  display:grid;place-items:center;
+  font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 80,'wght' 800;
+  font-size:.85rem;z-index:2;transition:background .2s,color .2s,border-color .2s;
+}
+.stage.complete .node span{background:var(--red);border-color:var(--red);color:var(--white)}
+.stage-card{
+  background:var(--white);border:2px solid var(--ink);margin-left:1.2rem;
+}
+.stage-head{
+  padding:var(--space-card) var(--space-card) clamp(.9rem,2vw,1.1rem);border-bottom:1px solid var(--line);
+  display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem;align-items:baseline;
+}
+.stage-head h3{
+  font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 78,'wght' 800;
+  text-transform:uppercase;font-size:1.25rem;letter-spacing:.01em;
+}
+.stage-head .charge{
+  font-style:italic;font-weight:300;font-size:.9rem;color:var(--ink-soft);max-width:52ch;
+}
+.stage-body{padding:var(--space-card) var(--space-card) clamp(1.3rem,3vw,1.7rem);display:grid;gap:clamp(1.1rem,2.5vw,1.4rem)}
+.dual{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:clamp(1.1rem,2.5vw,1.4rem)}
+.field label{
+  display:flex;align-items:center;gap:.5rem;
+  font-family:'IBM Plex Mono',monospace;font-size:.68rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-soft);font-weight:500;margin-bottom:.45rem;
+}
+.field label .axis-dot{width:.55rem;height:.55rem}
+.field .hint{
+  font-size:.82rem;font-weight:300;font-style:italic;color:var(--ink-faint);
+  margin:-.15rem 0 .5rem;line-height:1.45;
+}
+textarea{
+  width:100%;min-height:5.2rem;resize:vertical;
+  font-family:'Spectral',serif;font-size:max(.95rem,16px);font-weight:400;line-height:1.55;
+  background:var(--paper);border:1px solid var(--line);padding:.75rem .9rem;color:var(--ink);
+}
+textarea:focus{outline:none;border-color:var(--ink);background:#EFF1EA}
+textarea.h-axis:focus{border-color:var(--red)}
+.verdict{display:flex;gap:.6rem;flex-wrap:wrap}
+.verdict input{position:absolute;opacity:0;pointer-events:none}
+.verdict label{
+  cursor:pointer;border:1px solid var(--ink);padding:.5rem .9rem;
+  font-family:'IBM Plex Mono',monospace;font-size:.7rem;letter-spacing:.06em;
+  text-transform:uppercase;margin:0;color:var(--ink);
+  transition:background .15s,color .15s;
+}
+.verdict input:checked+label{background:var(--ink);color:var(--white)}
+.verdict input:focus-visible+label{outline:2px solid var(--red);outline-offset:2px}
+.verdict input[value="compromised"]:checked+label{background:var(--red);border-color:var(--red)}
+.verdict input[value="expansive"]:checked+label{background:#2E5A38;border-color:#2E5A38}
+
+/* the closing test */
+.closing{
+  border-top:3px solid var(--ink);margin-top:4rem;
+  background:var(--ink);color:var(--paper);
+}
+.closing-inner{max-width:1180px;margin:0 auto;padding:var(--space-section) var(--gutter);display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:clamp(2rem,5vw,3rem);align-items:center}
+.closing h2{
+  font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 72,'wght' 850;
+  text-transform:uppercase;font-size:clamp(1.6rem,4vw,2.8rem);line-height:1.02;
+}
+.closing h2 .redword{color:#E4593C}
+.closing p{font-weight:300;font-size:1rem;color:#B9C0B4;margin-top:1.1rem;max-width:52ch}
+.export-panel{background:#212B24;border:1px solid #3C463F;padding:var(--space-card)}
+.export-panel h4{font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:#8FA093;font-weight:500;margin-bottom:1rem}
+.export-panel .btn{width:100%;margin-bottom:.6rem;background:var(--paper);color:var(--ink);border-color:var(--paper)}
+.export-panel .btn:hover{background:var(--red);color:var(--white);border-color:var(--red)}
+.export-panel .btn.ghost{background:transparent;color:var(--paper);border-color:#5A665C}
+.export-panel .btn.ghost:hover{background:var(--paper);color:var(--ink)}
+pre.schema{
+  margin-top:1rem;background:#141B16;border:1px solid #3C463F;
+  font-family:'IBM Plex Mono',monospace;font-size:.68rem;line-height:1.5;
+  color:#9DB4A2;padding:1rem;overflow:auto;max-height:280px;white-space:pre;
+}
+.colophon{
+  border-top:1px solid #3C463F;background:var(--ink);color:#7E8B80;
+  font-family:'IBM Plex Mono',monospace;font-size:clamp(.6rem,1.5vw,.68rem);letter-spacing:.06em;
+  text-transform:uppercase;padding:clamp(.9rem,2vw,1.1rem) var(--gutter);display:flex;justify-content:space-between;flex-wrap:wrap;gap:.6rem;
+}
+
+/* toast */
+.toast{
+  position:fixed;bottom:1.4rem;left:50%;transform:translate(-50%,150%);
+  background:var(--ink);color:var(--white);font-family:'IBM Plex Mono',monospace;
+  font-size:.75rem;letter-spacing:.06em;padding:.7rem 1.2rem;
+  transition:transform .3s ease;z-index:50;border:1px solid var(--red);
+}
+.toast.show{transform:translate(-50%,0)}
+
+/* ---------- laboratory ---------- */
+.laboratory *{min-width:0}
+.laboratory input,.laboratory select,.laboratory textarea{max-width:100%}
+.laboratory select{
+  width:100%;
+  white-space:normal;          /* let long option labels wrap where supported */
+  text-overflow:ellipsis;
+}
+.laboratory{overflow-x:clip}
+
+.laboratory{
+  border-top:3px solid var(--ink);
+  background:var(--paper-deep);
+}
+.lab-inner{max-width:1180px;margin:0 auto;padding:var(--space-section) var(--gutter)}
+.lab-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:1.2rem;margin-bottom:.8rem}
+.lab-head h2{
+  font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 75,'wght' 850;
+  text-transform:uppercase;font-size:clamp(1.8rem,4vw,3rem);line-height:1;
+}
+.lab-intro{font-weight:300;font-size:clamp(.95rem,1.4vw,1.05rem);color:var(--ink-soft);max-width:64ch;margin-bottom:2rem}
+.lab-intro em{font-weight:400}
+
+/* stressor filter bar */
+.stressor-bar{
+  display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;
+  border:2px solid var(--ink);background:var(--white);
+  padding:.8rem;margin-bottom:2rem;
+}
+.stressor-bar .bar-label{
+  font-family:'IBM Plex Mono',monospace;font-size:.65rem;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink-soft);font-weight:500;margin-right:.4rem;
+}
+.chip{
+  cursor:pointer;border:1px solid var(--ink);background:transparent;color:var(--ink);
+  font-family:'IBM Plex Mono',monospace;font-size:.68rem;letter-spacing:.05em;
+  text-transform:uppercase;padding:.45rem .8rem;min-height:36px;
+  transition:background .15s,color .15s;
+}
+.chip:hover{background:var(--paper)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--white)}
+.chip.add-dim{border-style:dashed;color:var(--ink-faint)}
+.chip:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+
+/* triad grid */
+.triad{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:2px;
+  background:var(--ink);border:2px solid var(--ink);margin-bottom:2.5rem;
+}
+.triad-col{background:var(--paper);display:flex;flex-direction:column;min-height:220px}
+.triad-col>h3{
+  font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 80,'wght' 800;
+  text-transform:uppercase;font-size:.95rem;letter-spacing:.03em;
+  padding:.85rem 1rem .7rem;border-bottom:2px solid var(--ink);
+  display:flex;justify-content:space-between;align-items:baseline;
+}
+.triad-col>h3 small{font-family:'IBM Plex Mono',monospace;font-size:.62rem;font-weight:400;letter-spacing:.05em;color:var(--ink-faint);text-transform:none}
+.triad-col.fragile>h3{color:var(--red-deep)}
+.triad-col.robust>h3{color:var(--ink-soft)}
+.triad-col.antifragile>h3{color:#2E5A38}
+.triad-col .col-body{padding:.8rem;display:grid;grid-template-columns:minmax(0,1fr);gap:.8rem;align-content:start;flex:1}
+.triad-empty{
+  font-style:italic;font-weight:300;font-size:.82rem;color:var(--ink-faint);
+  padding:.4rem .2rem;
+}
+.unobserved-row{
+  border:2px solid var(--ink);border-top:none;background:var(--paper);
+  padding:.8rem;display:flex;flex-wrap:wrap;gap:.8rem;align-items:center;
+  margin-top:-2.5rem;margin-bottom:2.5rem;
+}
+.unobserved-row{overflow-wrap:anywhere}
+.unobserved-row .bar-label{
+  font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-faint);font-weight:500;
+}
+
+/* recipe card */
+.recipe-card{
+  background:var(--white);border:1px solid var(--ink);
+  padding:.9rem 1rem 1rem;display:grid;gap:.55rem;
+}
+.recipe-card h4{
+  font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 82,'wght' 750;
+  font-size:.95rem;text-transform:uppercase;letter-spacing:.02em;line-height:1.2;
+}
+.recipe-card .reading{
+  font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.05em;
+  color:var(--ink-soft);display:flex;justify-content:space-between;gap:.6rem;flex-wrap:wrap;
+}
+.recipe-card .spark{border:1px solid var(--line);background:var(--paper);display:block;width:100%;height:56px}
+.recipe-card .card-actions{display:flex;gap:.4rem;flex-wrap:wrap}
+.recipe-card .card-actions .btn{font-size:.62rem;padding:.5rem .7rem;min-height:36px}
+.recipe-card.sample .stamp{
+  font-family:'IBM Plex Mono',monospace;font-size:.55rem;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--ochre);
+}
+.recipe-card.mini{padding:.7rem .8rem}
+.recipe-card.mini h4{font-size:.85rem}
+
+/* recipe workshop (forms) */
+.workshop{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:2px;background:var(--ink);border:2px solid var(--ink);
+}
+.workshop>div{background:var(--white);padding:var(--space-card)}
+.workshop h3{
+  font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 78,'wght' 800;
+  text-transform:uppercase;font-size:1.05rem;margin-bottom:.3rem;
+}
+.workshop .whint{font-style:italic;font-weight:300;font-size:.85rem;color:var(--ink-faint);margin-bottom:1rem}
+.workshop label{
+  display:block;font-family:'IBM Plex Mono',monospace;font-size:.65rem;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);
+  font-weight:500;margin:.9rem 0 .35rem;
+}
+.workshop input[type=text],.workshop select,.workshop textarea{
+  width:100%;font-family:'Spectral',serif;font-size:max(.95rem,16px);
+  background:var(--paper);border:1px solid var(--line);padding:.6rem .8rem;color:var(--ink);
+}
+.workshop input[type=text]:focus,.workshop select:focus{outline:none;border-color:var(--ink)}
+.workshop .dim-picks{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.2rem}
+.workshop .dim-picks .chip{font-size:.62rem;padding:.4rem .6rem}
+.rep-scale{display:grid;grid-template-columns:1fr auto;gap:.8rem;align-items:center}
+.rep-scale input[type=range]{width:100%;accent-color:var(--red)}
+.rep-scale output{
+  font-family:'IBM Plex Mono',monospace;font-size:.8rem;min-width:3.2ch;text-align:right;
+}
+.workshop .btn{margin-top:1.1rem}
+
+/* regimes: Mediocristan/statistical vs Extremistan/probability-free */
+.regime-bar{margin-top:-1.2rem;margin-bottom:2rem;border-top:none}
+.regime-note{
+  font-style:italic;font-weight:300;font-size:.82rem;color:var(--ink-faint);
+  flex-basis:100%;margin-top:.2rem;
+}
+.badge{
+  display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:.55rem;
+  letter-spacing:.1em;text-transform:uppercase;padding:.2rem .45rem;
+  border:1px solid currentColor;justify-self:start;
+}
+.badge.stat{color:#1F4E79}
+.badge.pfree{color:var(--ochre)}
+.recipe-card .stat-read{
+  font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.03em;
+  color:#1F4E79;border-top:1px dashed var(--line);padding-top:.45rem;
+}
+.recipe-card .pfree-read{
+  font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.03em;
+  color:var(--ochre);border-top:1px dashed var(--line);padding-top:.45rem;
+}
+.workshop select{cursor:pointer}
+.regime-hint{
+  font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.04em;
+  margin-top:.4rem;padding:.5rem .7rem;border:1px dashed var(--line);
+}
+.regime-hint.stat{color:#1F4E79}
+.regime-hint.pfree{color:var(--ochre)}
+
+/* repetition ledger inside detail */
+.rep-ledger{border:1px solid var(--line);margin-top:.6rem;overflow-x:auto}
+.rep-ledger table{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:.68rem}
+.rep-ledger th,.rep-ledger td{padding:.45rem .6rem;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+.rep-ledger td:first-child{white-space:nowrap}
+.rep-ledger th{letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);font-weight:500;background:var(--paper)}
+.rep-ledger tr:last-child td{border-bottom:none}
+
+@media (max-width:860px){
+  .premise{grid-template-columns:1fr}
+  .axes-legend{grid-template-columns:1fr}
+  .axis-card:first-child{border-right:none;border-bottom:1px solid var(--line)}
+  .closing-inner{grid-template-columns:1fr}
+  .ledger .pct{display:none}
+  .instrument-head{align-items:stretch}
+  .inquiry-meta{width:100%}
+  .inquiry-meta input{flex:1 1 220px;min-width:0}
+  .triad{grid-template-columns:minmax(0,1fr)}
+  .triad-col{min-height:0}
+  .workshop{grid-template-columns:minmax(0,1fr)}
+}
+
+/* ---------- phones ---------- */
+@media (max-width:640px){
+  /* masthead: shorter, denser */
+  .masthead{min-height:78svh}
+  .mast-sub{margin-top:1.1rem;font-size:.95rem}
+  .mast-epigraph{margin-top:1.6rem;font-size:.85rem;padding:0 .4rem}
+  .mast-top{flex-direction:column;gap:.15rem;align-items:flex-start}
+  .mast-bottom{grid-template-columns:1fr}
+  .mast-bottom>div:last-child{text-align:left;border-left:none;border-top:1px solid var(--line)}
+  .axes{opacity:.3}
+
+  /* meta inputs go full-width */
+  .instrument-head{flex-direction:column;gap:1rem}
+  .inquiry-meta{flex-direction:column;gap:.6rem}
+  .inquiry-meta input{width:100%}
+
+  /* ledger: sticky wayfinder while scrolling the stages */
+  .ledger{
+    position:sticky;top:0;z-index:20;margin-bottom:2rem;
+    box-shadow:0 2px 0 var(--paper);
+  }
+  .ledger button{padding:.6rem .1rem .5rem;min-height:44px}
+  .ledger .num{font-size:.8rem}
+
+  /* stages: drop the side rail — spine and numeral move onto the card */
+  .spine{display:none}
+  .stage{grid-template-columns:1fr}
+  .node{position:static;height:auto;justify-items:start}
+  .node span{
+    width:2rem;height:2rem;font-size:.75rem;
+    border-radius:0;margin-bottom:-2px;border-bottom:none;
+    background:var(--white);
+  }
+  .stage-card{margin-left:0}
+  .stage-head{flex-direction:column;gap:.35rem}
+  .stage-head h3{font-size:1.1rem}
+  .stage-head .charge{font-size:.85rem}
+  textarea{min-height:4.4rem}
+
+  /* touch targets */
+  .btn{padding:.85rem 1.1rem;min-height:44px}
+  .verdict{gap:.5rem}
+  .verdict label{padding:.75rem .9rem;min-height:44px;display:flex;align-items:center;flex:1 1 auto;justify-content:center}
+
+  pre.schema{font-size:.6rem;max-height:220px}
+  .colophon{flex-direction:column;gap:.3rem}
+  .toast{width:calc(100% - 2rem);text-align:center}
+}
+
+/* short landscape phones: don't force a tall hero */
+@media (max-height:520px) and (orientation:landscape){
+  .masthead{min-height:auto}
+  .mast-core{padding:1.6rem var(--gutter)}
+  .mast-core h1{font-size:clamp(2rem,7vh,3.2rem)}
+}
+
+/* very small phones */
+@media (max-width:380px){
+  .mast-core h1{font-size:2.35rem}
+  .ledger .bar{width:85%}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .ledger .bar i{transition:none}
+  .toast{transition:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ MASTHEAD ============ -->
+<header class="masthead">
+  <div class="axes" aria-hidden="true">
+    <svg viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice">
+      <line x1="0" y1="80" x2="1200" y2="620" stroke="#161F1A" stroke-width="1.5"/>
+      <line x1="0" y1="620" x2="1200" y2="80" stroke="#C0331B" stroke-width="1.5"/>
+      <circle cx="600" cy="350" r="7" fill="#161F1A"/>
+      <circle cx="600" cy="350" r="14" fill="none" stroke="#C0331B" stroke-width="1.5"/>
+    </svg>
+  </div>
+  <div class="mast-top">
+    <span>Instrument of inquiry · No. 1</span>
+    <span>After the manuscripts of 1844</span>
+  </div>
+  <div class="mast-core">
+    <div>
+      <h1>The Unified<br>Scientific <span class="redword">Method</span></h1>
+      <p class="mast-sub">One basis for life, one basis for science. An instrument for conducting inquiry along two axes at once — the technical and the human — until they converge.</p>
+      <p class="mast-epigraph">"The idea of one basis for life and another for science is from the very outset a lie."
+        <strong>— Economic & Philosophic Manuscripts, Third MS.</strong>
+      </p>
+    </div>
+  </div>
+  <div class="mast-bottom">
+    <div>Seven stages · Two axes · One science</div>
+    <div><a href="#instrument" style="color:inherit">Begin the inquiry ↓</a></div>
+  </div>
+</header>
+
+<!-- ============ FOUNDATIONAL PREMISE ============ -->
+<section class="premise">
+  <div>
+    <span class="section-label">Foundational premise</span>
+    <h2>Science is humanity's engagement with nature becoming conscious of itself</h2>
+  </div>
+  <div class="premise-body">
+    <p>The nature that science studies is never a bare "given" standing apart from human history — it is nature as already shaped by labor, industry, and social practice. Correspondingly, the scientist is not a disembodied observer, but a sensuous, historically formed being whose capacities of perception and reasoning are themselves products of cumulative human development.</p>
+    <p>Inquiry that forgets either fact produces knowledge that is abstract and alienated — technically functional, perhaps, but false to its own foundations. The aim of science is the development and confirmation of human powers: <em>to know the world is, at the same time, to expand what human beings are capable of being and doing.</em></p>
+    <div class="law">Every finding is therefore recorded twice — once along the technical axis, once along the human axis — and judged complete only where the two agree.</div>
+  </div>
+</section>
+
+<!-- ============ AXES LEGEND ============ -->
+<section class="axes-legend" aria-label="The two axes of every record">
+  <div class="axis-card">
+    <h3><span class="axis-dot t"></span>Technical axis</h3>
+    <p>Internal coherence, measurement, control, replication, predictive power. Rigor is not relaxed; it is joined to reflexivity, never substituted by it.</p>
+  </div>
+  <div class="axis-card">
+    <h3><span class="axis-dot h"></span>Human axis</h3>
+    <p>The history sedimented in the object, the standpoint of the investigator, and the bearing of the work on human capacity and freedom.</p>
+  </div>
+</section>
+
+<!-- ============ INSTRUMENT ============ -->
+<main class="instrument" id="instrument">
+  <div class="instrument-head">
+    <div>
+      <span class="section-label">The instrument</span>
+      <h2>Record of Inquiry</h2>
+    </div>
+    <div class="inquiry-meta">
+      <input id="inq-title" type="text" placeholder="Title of inquiry" aria-label="Title of inquiry">
+      <input id="inq-investigator" type="text" placeholder="Investigator(s)" aria-label="Investigators" style="min-width:200px">
+    </div>
+  </div>
+
+  <nav class="ledger" id="ledger" aria-label="Stage completeness"></nav>
+
+  <div class="stages" id="stages">
+    <div class="spine" aria-hidden="true"></div>
+    <!-- stages injected by JS -->
+  </div>
+</main>
+
+<!-- ============ LABORATORY ============ -->
+<section class="laboratory" id="laboratory">
+  <div class="lab-inner">
+    <div class="lab-head">
+      <div>
+        <span class="section-label">The laboratory</span>
+        <h2>Recipes &amp; Repetitions</h2>
+      </div>
+      <button class="btn ghost" id="btn-adopt">Adopt current inquiry as recipe</button>
+    </div>
+    <p class="lab-intro">A single inquiry is not yet science — knowledge is confirmed in <em>practice</em>, through repetition. Each experiment lives here as a <em>recipe</em>: a repeatable design exposed to chosen stressors. Every run of the recipe is a <em>repetition</em> that records the stress actually experienced and the fraction of available value captured (the minimax-regret ground: how close did this run come to the best achievable in its circumstances?). The grid below never takes a recipe's word for its own character — it classifies each one as fragile, robust, or antifragile <em>with respect to the filtered stressor</em>, computed from the observed repetitions alone.</p>
+
+    <div class="stressor-bar" id="stressor-bar" role="toolbar" aria-label="Filter recipes by stressor dimension">
+      <span class="bar-label">Classify with respect to:</span>
+      <!-- chips injected -->
+      <button class="chip add-dim" id="btn-add-dim" type="button">+ dimension</button>
+    </div>
+
+    <div class="stressor-bar regime-bar" id="regime-bar" role="toolbar" aria-label="Filter recipes by epistemic regime">
+      <span class="bar-label">Epistemic regime:</span>
+      <!-- chips injected -->
+      <p class="regime-note">Statistics is trusted only where it is trustworthy: thin tails <em>and</em> a stable process (Mediocristan). Fat tails, a shifting process, or honest ignorance of either → probability-free reasoning. When in doubt, the tool defaults to probability-free — the asymmetry of the error demands it: misusing statistics in Extremistan ruins you; misusing minimax in Mediocristan merely costs efficiency.</p>
+    </div>
+
+    <div class="triad" id="triad">
+      <div class="triad-col fragile">
+        <h3>Fragile <small>harmed by it</small></h3>
+        <div class="col-body" id="col-fragile"></div>
+      </div>
+      <div class="triad-col robust">
+        <h3>Robust <small>indifferent to it</small></h3>
+        <div class="col-body" id="col-robust"></div>
+      </div>
+      <div class="triad-col antifragile">
+        <h3>Antifragile <small>gains from it</small></h3>
+        <div class="col-body" id="col-antifragile"></div>
+      </div>
+    </div>
+    <div class="unobserved-row" id="unobserved-row">
+      <span class="bar-label">Awaiting observation (fewer than 3 repetitions under this stressor):</span>
+      <span id="unobserved-list"></span>
+    </div>
+
+    <div class="workshop">
+      <div>
+        <h3>Draft a recipe</h3>
+        <p class="whint">A repeatable experimental design. Small, low-cost, exit-preserving — a bet whose downside is bounded and whose upside is open.</p>
+        <label for="rc-name">Name of the experiment</label>
+        <input type="text" id="rc-name" placeholder="e.g. Weekly cold-outreach batch of five">
+        <label for="rc-design">Design (what one repetition consists of)</label>
+        <textarea id="rc-design" rows="2" placeholder="What is done, on what material, with what exit?"></textarea>
+        <label for="rc-value">Available value (what 100% capture means)</label>
+        <input type="text" id="rc-value" placeholder="The best achievable outcome of one repetition, in its circumstances">
+        <label for="rc-tails">Tail behavior of the domain</label>
+        <select id="rc-tails">
+          <option value="unknown">Unknown — treated as fat</option>
+          <option value="thin">Thin — no event dominates</option>
+          <option value="fat">Fat — one event can dominate</option>
+        </select>
+        <label for="rc-process">Stability of the generating process</label>
+        <select id="rc-process">
+          <option value="unknown">Unknown — treated as shifting</option>
+          <option value="stable">Stable — same dice each time</option>
+          <option value="shifting">Shifting — the dice change</option>
+        </select>
+        <div class="regime-hint" id="rc-regime-hint"></div>
+        <label>Stressors this recipe is exposed to</label>
+        <div class="dim-picks" id="rc-dims" role="group" aria-label="Stressor exposure"></div>
+        <button class="btn" id="btn-save-recipe">Add recipe to the shelf</button>
+      </div>
+      <div>
+        <h3>Record a repetition</h3>
+        <p class="whint">Ground truth. One row of observation: how much stress the world actually delivered, and what fraction of the available value this run captured.</p>
+        <label for="rp-recipe">Recipe</label>
+        <select id="rp-recipe"></select>
+        <div id="rp-scales"></div>
+        <label for="rp-value">Value captured <span style="text-transform:none">(fraction of best achievable, %)</span></label>
+        <div class="rep-scale">
+          <input type="range" id="rp-value" min="0" max="100" value="50" step="5">
+          <output id="rp-value-out">50%</output>
+        </div>
+        <label for="rp-note">Field note</label>
+        <input type="text" id="rp-note" placeholder="What happened, briefly">
+        <button class="btn" id="btn-save-rep">Record repetition</button>
+        <div class="rep-ledger" id="rep-ledger" hidden>
+          <table>
+            <thead><tr><th>Rep</th><th>Stress</th><th>Captured</th><th>Note</th></tr></thead>
+            <tbody id="rep-rows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CLOSING PRINCIPLE + EXPORT ============ -->
+<section class="closing">
+  <div class="closing-inner">
+    <div>
+      <span class="section-label" style="color:#E4593C">Closing principle</span>
+      <h2>Where science and life diverge, the fault lies in the <span class="redword">science</span></h2>
+      <p>At every stage the same test applies: does this act of knowing confirm and expand human powers, or does it require treating human life as external to truth? To found the two on separate grounds is, from the outset, a lie.</p>
+    </div>
+    <div class="export-panel">
+      <h4>The record as data</h4>
+      <button class="btn" id="btn-export">Download inquiry as JSON</button>
+      <button class="btn ghost" id="btn-schema">View the universal schema</button>
+      <button class="btn ghost" id="btn-clear">Clear this record</button>
+      <pre class="schema" id="schema-view" hidden></pre>
+    </div>
+  </div>
+  <div class="colophon">
+    <span>Unified Method · One science of nature & humanity</span>
+    <span id="save-state">Nothing recorded yet</span>
+  </div>
+</section>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* ============================================================
+   DATA STRUCTURE — the universal Inquiry record.
+   Designed so any science (physics, biology, sociology…) can
+   instantiate it: every stage carries a technical[] and human[]
+   field set, because the method's core claim is that both axes
+   belong to *every* act of knowing, not only the social sciences.
+   ============================================================ */
+
+const METHOD = [
+  {
+    id:"orientation", numeral:"I", title:"Orientation",
+    charge:"Locate the inquiry within human need, capacity, and historical situation — stated, not hidden.",
+    fields:[
+      {key:"purpose",   axis:"h", label:"Human stake", hint:"What human power, relation, or need does this inquiry serve — and for whom?"},
+      {key:"genealogy", axis:"h", label:"Genealogy of the object", hint:"What social & material history produced this phenomenon and the means of studying it?"},
+      {key:"standpoint",axis:"h", label:"Standpoint of the investigator", hint:"What training, position, and interests make you capable of perceiving this at all?"}
+    ]
+  },
+  {
+    id:"observation", numeral:"II", title:"Observation",
+    charge:"Cultivated senses, extended by cultivated instruments, meeting a world already worked by human history.",
+    fields:[
+      {key:"record",     axis:"t", label:"What is observed", hint:"The systematic, instrumented record of the phenomenon."},
+      {key:"mediation",  axis:"h", label:"What the apparatus has done", hint:"How the instrument, institution, and observer's training produced this appearance."}
+    ]
+  },
+  {
+    id:"question", numeral:"III", title:"Formation of the Question",
+    charge:"A concrete relation — never an abstraction that erases the history, labor, or human presence in the phenomenon.",
+    fields:[
+      {key:"relation",  axis:"t", label:"The concrete relation under study", hint:"State the specific relation, in its specificity."},
+      {key:"erasures",  axis:"h", label:"Guard against erasure", hint:"Where people are part of the object: what concrete conditions must remain constitutive, not averaged away?"}
+    ]
+  },
+  {
+    id:"hypothesis", numeral:"IV", title:"Hypothesis",
+    charge:"A definite, testable relation — framed so it can fail, and so its outcome is legible on both axes.",
+    fields:[
+      {key:"claim",       axis:"t", label:"The claim", hint:"A falsifiable proposition about the relation identified above."},
+      {key:"failure",     axis:"t", label:"Condition of failure", hint:"What observation would refute it?"},
+      {key:"legibility",  axis:"h", label:"Human legibility", hint:"How will confirmation or failure read in terms of human stakes?"}
+    ]
+  },
+  {
+    id:"trial", numeral:"V", title:"Trial",
+    charge:"Controlled, repeatable engagement. Every safeguard against error applies in full force — rigor joined to reflexivity.",
+    fields:[
+      {key:"design",   axis:"t", label:"Design of the trial", hint:"Manipulation, controls, comparison, replication plan."},
+      {key:"results",  axis:"t", label:"Results", hint:"What the trial yielded, with measures of uncertainty."}
+    ]
+  },
+  {
+    id:"interpretation", numeral:"VI", title:"Interpretation",
+    charge:"Results read on two axes at once, inseparably — and their agreement or divergence recorded openly.",
+    fields:[
+      {key:"technicalReading", axis:"t", label:"Technical reading", hint:"Internal coherence and predictive power of the result."},
+      {key:"humanReading",     axis:"h", label:"Human reading", hint:"Bearing on human capacity and freedom — including how the result was obtained."}
+    ],
+    verdict:{
+      key:"verdict", label:"Standing of the finding",
+      options:[
+        {value:"expansive",   label:"Sound & expansive"},
+        {value:"incomplete",  label:"Incomplete"},
+        {value:"compromised", label:"Compromised"}
+      ],
+      hint:"A result that is technically sound but narrows human life, or required treating people as interchangeable units, is recorded as incomplete or compromised — never silently passed."
+    }
+  },
+  {
+    id:"disclosure", numeral:"VII", title:"Disclosure",
+    charge:"Knowledge is completed only in its transmission and use — the fate of a finding is part of the inquiry's outcome.",
+    fields:[
+      {key:"conditions", axis:"h", label:"Conditions of production", hint:"The history in the object, the standpoint of the investigator, the interests served or threatened."},
+      {key:"uptake",     axis:"h", label:"Anticipated uptake", hint:"Who will command this finding? Who may be transformed by it — and who reduced?"}
+    ]
+  }
+];
+
+/* -------- state -------- */
+const blank = () => {
+  const s = { meta:{title:"", investigators:"", started:new Date().toISOString(), method:"unified-scientific-method/v1"}, stages:{} };
+  METHOD.forEach(st=>{
+    s.stages[st.id] = {};
+    st.fields.forEach(f=> s.stages[st.id][f.key]="");
+    if(st.verdict) s.stages[st.id][st.verdict.key]="";
+  });
+  return s;
+};
+let inquiry = blank();
+
+/* -------- render -------- */
+const stagesEl = document.getElementById('stages');
+const ledgerEl = document.getElementById('ledger');
+
+function buildStages(){
+  METHOD.forEach(st=>{
+    const wrap = document.createElement('section');
+    wrap.className='stage'; wrap.id='stage-'+st.id;
+    wrap.setAttribute('aria-labelledby','h-'+st.id);
+
+    const fieldsHtml = st.fields.map(f=>`
+      <div class="field ${st.fields.length>1?'':'solo'}">
+        <label for="${st.id}-${f.key}"><span class="axis-dot ${f.axis}"></span>${f.label}</label>
+        <p class="hint">${f.hint}</p>
+        <textarea id="${st.id}-${f.key}" class="${f.axis==='h'?'h-axis':''}" data-stage="${st.id}" data-key="${f.key}"></textarea>
+      </div>`).join('');
+
+    const dualWrap = st.fields.length>1
+      ? `<div class="dual">${fieldsHtml}</div>` : fieldsHtml;
+
+    const verdictHtml = st.verdict ? `
+      <div class="field">
+        <label><span class="axis-dot h"></span>${st.verdict.label}</label>
+        <p class="hint">${st.verdict.hint}</p>
+        <div class="verdict" role="radiogroup" aria-label="${st.verdict.label}">
+          ${st.verdict.options.map(o=>`
+            <input type="radio" name="${st.id}-verdict" id="${st.id}-v-${o.value}" value="${o.value}" data-stage="${st.id}" data-key="${st.verdict.key}">
+            <label for="${st.id}-v-${o.value}">${o.label}</label>`).join('')}
+        </div>
+      </div>` : '';
+
+    wrap.innerHTML = `
+      <div class="node"><span aria-hidden="true">${st.numeral}</span></div>
+      <div class="stage-card">
+        <div class="stage-head">
+          <h3 id="h-${st.id}">${st.numeral}. ${st.title}</h3>
+          <p class="charge">${st.charge}</p>
+        </div>
+        <div class="stage-body">${dualWrap}${verdictHtml}</div>
+      </div>`;
+    stagesEl.appendChild(wrap);
+
+    const cell = document.createElement('button');
+    cell.type='button';
+    cell.setAttribute('aria-label','Go to stage '+st.numeral+': '+st.title);
+    cell.innerHTML = `<span class="num">${st.numeral}</span><span class="bar"><i></i></span><span class="pct">0%</span>`;
+    cell.addEventListener('click',()=>{
+    const target = document.getElementById('stage-'+st.id);
+    const sticky = getComputedStyle(ledgerEl).position==='sticky' ? ledgerEl.offsetHeight + 12 : 0;
+    const y = target.getBoundingClientRect().top + window.scrollY - sticky;
+    window.scrollTo({top:y, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'});
+  });
+    ledgerEl.appendChild(cell);
+  });
+}
+buildStages();
+
+/* -------- wiring -------- */
+function stageProgress(st){
+  const vals = st.fields.map(f=>inquiry.stages[st.id][f.key].trim());
+  if(st.verdict) vals.push(inquiry.stages[st.id][st.verdict.key]);
+  const done = vals.filter(Boolean).length;
+  return done/vals.length;
+}
+function refresh(){
+  METHOD.forEach((st,i)=>{
+    const p = stageProgress(st);
+    const cell = ledgerEl.children[i];
+    cell.querySelector('.bar i').style.transform = `scaleX(${p})`;
+    cell.querySelector('.pct').textContent = Math.round(p*100)+'%';
+    document.getElementById('stage-'+st.id).classList.toggle('complete', p===1);
+  });
+  const filled = METHOD.reduce((a,st)=>a+stageProgress(st),0);
+  const pct = Math.round(filled/METHOD.length*100);
+  document.getElementById('save-state').textContent =
+    pct===0 ? 'Nothing recorded yet' : `Record ${pct}% complete — held in memory this session`;
+}
+document.addEventListener('input', e=>{
+  const {stage,key} = e.target.dataset||{};
+  if(!stage) return;
+  inquiry.stages[stage][key] = e.target.type==='radio' ? e.target.value : e.target.value;
+  refresh();
+});
+document.getElementById('inq-title').addEventListener('input',e=>inquiry.meta.title=e.target.value);
+document.getElementById('inq-investigator').addEventListener('input',e=>inquiry.meta.investigators=e.target.value);
+
+/* -------- toast -------- */
+const toast = document.getElementById('toast');
+let toastTimer;
+function say(msg){
+  toast.textContent = msg; toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>toast.classList.remove('show'), 2600);
+}
+
+/* -------- export / schema / clear -------- */
+document.getElementById('btn-export').addEventListener('click',()=>{
+  inquiry.meta.exported = new Date().toISOString();
+  const blob = new Blob([JSON.stringify(inquiry,null,2)],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (inquiry.meta.title||'inquiry').toLowerCase().replace(/[^a-z0-9]+/g,'-') + '.json';
+  a.click(); URL.revokeObjectURL(a.href);
+  say('Inquiry downloaded');
+});
+
+const SCHEMA = {
+  "$comment":"Universal record of the Unified Scientific Method. Any discipline instantiates the same shape: every stage carries technical and/or human fields, because both axes belong to every act of knowing.",
+  "meta":{"title":"string","investigators":"string","started":"ISO-8601","method":"unified-scientific-method/v1"},
+  "stages":{
+    "orientation":{"purpose":"h","genealogy":"h","standpoint":"h"},
+    "observation":{"record":"t","mediation":"h"},
+    "question":{"relation":"t","erasures":"h"},
+    "hypothesis":{"claim":"t","failure":"t","legibility":"h"},
+    "trial":{"design":"t","results":"t"},
+    "interpretation":{"technicalReading":"t","humanReading":"h","verdict":"expansive | incomplete | compromised"},
+    "disclosure":{"conditions":"h","uptake":"h"}
+  },
+  "$axes":{"t":"technical — coherence, control, replication","h":"human — history, standpoint, freedom"}
+};
+const schemaView = document.getElementById('schema-view');
+document.getElementById('btn-schema').addEventListener('click',()=>{
+  const open = schemaView.hidden;
+  schemaView.hidden = !open;
+  if(open) schemaView.textContent = JSON.stringify(SCHEMA,null,2);
+  document.getElementById('btn-schema').textContent = open ? 'Hide the universal schema' : 'View the universal schema';
+});
+document.getElementById('btn-clear').addEventListener('click',()=>{
+  if(!confirm('Clear every field of this record? This cannot be undone.')) return;
+  inquiry = blank();
+  document.querySelectorAll('textarea').forEach(t=>t.value='');
+  document.querySelectorAll('.verdict input').forEach(r=>r.checked=false);
+  document.getElementById('inq-title').value='';
+  document.getElementById('inq-investigator').value='';
+  refresh(); say('Record cleared');
+});
+
+refresh();
+
+/* ============================================================
+   THE LABORATORY — recipes, repetitions, and the triad.
+
+   Data structures:
+   Dimension  — a stressor from Taleb's extended family (or custom).
+   Recipe     — a repeatable experimental design:
+                { id, name, design, availableValue, dimensions[],
+                  sample?, inquiry? (an attached unified-method record) }
+   Repetition — one observed instantiation of a recipe:
+                { at, stress:{dimId:0..10}, captured:0..100, note }
+   Classification is NEVER stored — it is computed, per dimension,
+   from repetitions alone. The recipe has no say in its own
+   character: observation grounds the triad. Response slope of
+   captured-value against delivered stress:
+   < -1.5 fragile · > +1.5 antifragile · between: robust.
+   Fewer than 3 observations: unclassified.
+   ============================================================ */
+
+const STRESSORS = [
+  {id:"volatility",  label:"Volatility"},
+  {id:"time",        label:"Time"},
+  {id:"randomness",  label:"Randomness"},
+  {id:"error",       label:"Error"},
+  {id:"disorder",    label:"Disorder"},
+  {id:"variability", label:"Variability"},
+  {id:"uncertainty", label:"Uncertainty"},
+  {id:"load",        label:"Stress · load"},
+  {id:"entropy",     label:"Entropy"},
+  {id:"unknown",     label:"The unknown"}
+];
+let dimensions = [...STRESSORS];
+let activeDim = "volatility";
+
+/* --- epistemic regimes ---
+   Statistics is licensed ONLY when tails are thin AND the process is
+   stable (Mediocristan, stationary). Everything else — fat tails, a
+   shifting process, or admitted ignorance of either — falls to the
+   probability-free mode. Unknowns default to the dangerous case:
+   the cost of misusing statistics in Extremistan is ruin; the cost
+   of misusing minimax in Mediocristan is mere inefficiency.        */
+function regimeOf(r){
+  return (r.tails==='thin' && r.process==='stable') ? 'statistical' : 'probability-free';
+}
+const REGIMES = [
+  {id:'all',              label:'All regimes'},
+  {id:'statistical',      label:'Statistical (thin · stable)'},
+  {id:'probability-free', label:'Probability-free (fat / shifting / unknown)'}
+];
+let activeRegime = 'all';
+
+const uid = () => Math.random().toString(36).slice(2,9);
+
+/* --- seed shelf: three sample recipes so the triad demonstrates itself --- */
+let recipes = [
+  {
+    id:"smpl-barbell", sample:true,
+    tails:"fat", process:"shifting",
+    name:"Barbell reading practice",
+    design:"90% canonical texts, 10% wild uncurated sources per week; drop anything after 20 pages without loss.",
+    availableValue:"One genuinely new connection between a canonical idea and a live problem.",
+    dimensions:["randomness","time","unknown","volatility"],
+    reps:[
+      {at:"2026-06-05", stress:{randomness:2, time:3, unknown:2, volatility:2}, captured:40, note:"Safe week, safe result"},
+      {at:"2026-06-12", stress:{randomness:5, time:4, unknown:5, volatility:4}, captured:55, note:"One odd pamphlet paid off"},
+      {at:"2026-06-19", stress:{randomness:8, time:6, unknown:7, volatility:8}, captured:85, note:"Chaos week — best synthesis yet"},
+      {at:"2026-06-26", stress:{randomness:7, time:5, unknown:8, volatility:7}, captured:80, note:"Unknown source → new frame"}
+    ]
+  },
+  {
+    id:"smpl-monolith", sample:true,
+    tails:"fat", process:"shifting",
+    name:"Single-plan product launch",
+    design:"One large feature, fixed 6-week schedule, no intermediate release.",
+    availableValue:"Feature ships and is adopted by the pilot group.",
+    dimensions:["volatility","uncertainty","error"],
+    reps:[
+      {at:"2026-05-02", stress:{volatility:1, uncertainty:2, error:1}, captured:85, note:"Calm cycle — shipped fine"},
+      {at:"2026-05-30", stress:{volatility:5, uncertainty:5, error:4}, captured:50, note:"Requirements shifted mid-way"},
+      {at:"2026-06-27", stress:{volatility:9, uncertainty:8, error:7}, captured:15, note:"Two surprises broke the plan"}
+    ]
+  },
+  {
+    id:"smpl-checklist", sample:true,
+    tails:"thin", process:"stable",
+    name:"Pre-mortem checklist",
+    design:"30-minute failure-imagination session before any commitment above threshold.",
+    availableValue:"All avoidable failure modes named before commitment.",
+    dimensions:["volatility","error","disorder"],
+    reps:[
+      {at:"2026-06-01", stress:{volatility:2, error:2, disorder:1}, captured:70, note:"Quiet decision"},
+      {at:"2026-06-10", stress:{volatility:6, error:5, disorder:5}, captured:72, note:"Held up under churn"},
+      {at:"2026-06-20", stress:{volatility:9, error:8, disorder:8}, captured:68, note:"Messy week, same output"}
+    ]
+  }
+];
+
+/* --- classification: grounded in observation only --- */
+function pointsFor(recipe, dimId){
+  return recipe.reps
+    .filter(r => r.stress[dimId] !== undefined)
+    .map(r => [r.stress[dimId], r.captured]);
+}
+function slopeOf(pts){
+  const n = pts.length;
+  const mx = pts.reduce((a,p)=>a+p[0],0)/n, my = pts.reduce((a,p)=>a+p[1],0)/n;
+  let num=0, den=0;
+  pts.forEach(([x,y])=>{ num += (x-mx)*(y-my); den += (x-mx)*(x-mx); });
+  return den===0 ? 0 : num/den;
+}
+function classify(recipe, dimId){
+  const pts = pointsFor(recipe, dimId);
+  if(pts.length < 3) return {cls:"unobserved", pts, k:null};
+  const k = slopeOf(pts);
+  const cls = k > 1.5 ? "antifragile" : k < -1.5 ? "fragile" : "robust";
+  return {cls, pts, k};
+}
+
+/* --- per-regime readouts ---
+   statistical (thin+stable only): inference is licensed → report
+   mean ± sd of captured value, and a standard error on the slope,
+   because here the law of large numbers actually holds.
+   probability-free: the slope is reported as pure description, and
+   NO confidence measure is attached — by design, not omission.     */
+function statRead(pts){
+  const n = pts.length;
+  const ys = pts.map(p=>p[1]);
+  const mean = ys.reduce((a,b)=>a+b,0)/n;
+  const sd = Math.sqrt(ys.reduce((a,y)=>a+(y-mean)**2,0)/(n-1));
+  let se = null;
+  if(n>2){
+    const k = slopeOf(pts);
+    const mx = pts.reduce((a,p)=>a+p[0],0)/n, my = mean;
+    const sse = pts.reduce((a,[x,y])=>a+(y-(my+k*(x-mx)))**2,0);
+    const sxx = pts.reduce((a,[x])=>a+(x-mx)**2,0);
+    se = sxx>0 ? Math.sqrt((sse/(n-2))/sxx) : null;
+  }
+  return {mean, sd, se, n};
+}
+
+/* --- sparkline: stress (x) vs captured value (y), with fitted line --- */
+function spark(pts, k){
+  const W=220,H=56,P=7;
+  const X = s => P + (s/10)*(W-2*P);
+  const Y = v => H-P - (v/100)*(H-2*P);
+  const dots = pts.map(([s,v])=>`<circle cx="${X(s).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="3" fill="#161F1A"/>`).join('');
+  let line = '';
+  if(k!==null && pts.length){
+    const mx = pts.reduce((a,p)=>a+p[0],0)/pts.length, my = pts.reduce((a,p)=>a+p[1],0)/pts.length;
+    const y0 = my + k*(0-mx), y1 = my + k*(10-mx);
+    const col = k>1.5 ? "#2E5A38" : k<-1.5 ? "#C0331B" : "#6E7A70";
+    line = `<line x1="${X(0)}" y1="${Y(Math.max(0,Math.min(100,y0)))}" x2="${X(10)}" y2="${Y(Math.max(0,Math.min(100,y1)))}" stroke="${col}" stroke-width="2"/>`;
+  }
+  return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Captured value against stress delivered">${line}${dots}</svg>`;
+}
+
+/* --- triad rendering --- */
+const cols = {
+  fragile: document.getElementById('col-fragile'),
+  robust: document.getElementById('col-robust'),
+  antifragile: document.getElementById('col-antifragile')
+};
+function dimLabel(id){ const d=dimensions.find(d=>d.id===id); return d?d.label:id; }
+function esc(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function renderTriad(){
+  Object.values(cols).forEach(c=>c.innerHTML='');
+  const unobserved = [];
+  const inRegime = r => activeRegime==='all' || regimeOf(r)===activeRegime;
+  const pool     = recipes.filter(inRegime);
+  const exposed  = pool.filter(r => r.dimensions.includes(activeDim));
+  const others   = pool.filter(r => !r.dimensions.includes(activeDim));
+
+  exposed.forEach(r=>{
+    const {cls, pts, k} = classify(r, activeDim);
+    if(cls==="unobserved"){ unobserved.push(r); return; }
+    const regime = regimeOf(r);
+    let modeLine;
+    if(regime==='statistical'){
+      const st = statRead(pts);
+      modeLine = `<div class="stat-read">statistical mode · mean ${st.mean.toFixed(0)}% ± ${st.sd.toFixed(0)} sd · slope se ${st.se!==null?'±'+st.se.toFixed(1):'—'} · n=${st.n}</div>`;
+    } else {
+      modeLine = `<div class="pfree-read">probability-free mode · descriptive slope only · no confidence attached, by design</div>`;
+    }
+    const card = document.createElement('article');
+    card.className = 'recipe-card' + (r.sample ? ' sample' : '');
+    card.innerHTML = `
+      <h4>${esc(r.name)}</h4>
+      <span class="badge ${regime==='statistical'?'stat':'pfree'}">${regime==='statistical'?'Mediocristan · statistical':'Extremistan · probability-free'}</span>
+      ${spark(pts,k)}
+      <div class="reading">
+        <span>${pts.length} repetitions</span>
+        <span>response ${k>=0?'+':''}${k.toFixed(1)} /stress</span>
+      </div>
+      ${modeLine}
+      ${r.sample?'<span class="stamp">sample</span>':''}
+      <div class="card-actions">
+        <button class="btn ghost" data-act="reps" data-id="${r.id}">Repetitions</button>
+        <button class="btn ghost" data-act="rep" data-id="${r.id}">+ Repetition</button>
+      </div>`;
+    cols[cls].appendChild(card);
+  });
+
+  Object.entries(cols).forEach(([cls,col])=>{
+    if(!col.children.length){
+      col.innerHTML = `<p class="triad-empty">No recipe has yet shown itself ${cls} under ${dimLabel(activeDim).toLowerCase()}. Observation will decide.</p>`;
+    }
+  });
+
+  const uEl = document.getElementById('unobserved-list');
+  const uNames = unobserved.map(r=>esc(r.name)).concat(
+    others.length ? [`<span style="opacity:.55">${others.length} recipe${others.length>1?'s':''} not exposed to this stressor</span>`] : []
+  );
+  uEl.innerHTML = uNames.length
+    ? uNames.map(n=>`<span style="font-family:'IBM Plex Mono',monospace;font-size:.68rem">${n}</span>`).join(' · ')
+    : `<span style="font-family:'IBM Plex Mono',monospace;font-size:.68rem;opacity:.55">none — every exposed recipe has been observed</span>`;
+}
+
+/* --- stressor filter bar --- */
+const bar = document.getElementById('stressor-bar');
+function renderBar(){
+  bar.querySelectorAll('.chip:not(.add-dim)').forEach(c=>c.remove());
+  const addBtn = document.getElementById('btn-add-dim');
+  dimensions.forEach(d=>{
+    const b = document.createElement('button');
+    b.type='button'; b.className='chip'; b.textContent=d.label;
+    b.setAttribute('aria-pressed', d.id===activeDim);
+    b.addEventListener('click',()=>{ activeDim=d.id; renderBar(); renderTriad(); });
+    bar.insertBefore(b, addBtn);
+  });
+}
+/* --- regime filter bar --- */
+const regimeBar = document.getElementById('regime-bar');
+function renderRegimeBar(){
+  regimeBar.querySelectorAll('.chip').forEach(c=>c.remove());
+  const note = regimeBar.querySelector('.regime-note');
+  REGIMES.forEach(rg=>{
+    const b=document.createElement('button');
+    b.type='button'; b.className='chip'; b.textContent=rg.label;
+    b.setAttribute('aria-pressed', rg.id===activeRegime);
+    b.addEventListener('click',()=>{ activeRegime=rg.id; renderRegimeBar(); renderTriad(); });
+    regimeBar.insertBefore(b, note);
+  });
+}
+
+/* --- live regime hint in the workshop --- */
+function updateRegimeHint(){
+  const hint = document.getElementById('rc-regime-hint');
+  const draft = {tails:document.getElementById('rc-tails').value, process:document.getElementById('rc-process').value};
+  const rg = regimeOf(draft);
+  if(rg==='statistical'){
+    hint.className='regime-hint stat';
+    hint.textContent='→ Statistical regime: thin tails + stable process. Means, deviations and standard errors will be reported — inference is licensed here.';
+  } else {
+    hint.className='regime-hint pfree';
+    hint.textContent='→ Probability-free regime: history cannot be trusted to estimate odds. Only the descriptive response slope will be reported — no confidence measures, by design.';
+  }
+}
+document.getElementById('rc-tails').addEventListener('change',updateRegimeHint);
+document.getElementById('rc-process').addEventListener('change',updateRegimeHint);
+
+document.getElementById('btn-add-dim').addEventListener('click',()=>{
+  const name = prompt('Name the new dimension (any axis of the world that can vary):');
+  if(!name || !name.trim()) return;
+  const id = name.trim().toLowerCase().replace(/[^a-z0-9]+/g,'-');
+  if(dimensions.some(d=>d.id===id)){ say('That dimension already exists'); return; }
+  dimensions.push({id, label:name.trim()});
+  renderBar(); renderRecipeDims(); renderRepScales();
+  say('Dimension added: '+name.trim());
+});
+
+/* --- recipe workshop --- */
+let draftDims = new Set();
+const rcDims = document.getElementById('rc-dims');
+function renderRecipeDims(){
+  rcDims.innerHTML='';
+  dimensions.forEach(d=>{
+    const b=document.createElement('button');
+    b.type='button'; b.className='chip'; b.textContent=d.label;
+    b.setAttribute('aria-pressed', draftDims.has(d.id));
+    b.addEventListener('click',()=>{
+      draftDims.has(d.id) ? draftDims.delete(d.id) : draftDims.add(d.id);
+      b.setAttribute('aria-pressed', draftDims.has(d.id));
+    });
+    rcDims.appendChild(b);
+  });
+}
+document.getElementById('btn-save-recipe').addEventListener('click',()=>{
+  const name = document.getElementById('rc-name').value.trim();
+  if(!name){ say('Give the recipe a name'); return; }
+  if(!draftDims.size){ say('Choose at least one stressor exposure'); return; }
+  recipes.push({
+    id:uid(), name,
+    design: document.getElementById('rc-design').value.trim(),
+    availableValue: document.getElementById('rc-value').value.trim(),
+    tails: document.getElementById('rc-tails').value,
+    process: document.getElementById('rc-process').value,
+    dimensions:[...draftDims], reps:[]
+  });
+  document.getElementById('rc-name').value='';
+  document.getElementById('rc-design').value='';
+  document.getElementById('rc-value').value='';
+  draftDims.clear(); renderRecipeDims();
+  renderRecipeSelect(); renderTriad();
+  say('Recipe added — now repeat it');
+});
+
+/* adopt the current unified-method inquiry as a recipe */
+document.getElementById('btn-adopt').addEventListener('click',()=>{
+  const name = inquiry.meta.title.trim() || 'Untitled inquiry';
+  recipes.push({
+    id:uid(), name,
+    design: inquiry.stages.trial.design || inquiry.stages.hypothesis.claim || '',
+    availableValue: inquiry.stages.orientation.purpose || '',
+    tails:'unknown', process:'unknown',
+    dimensions:['uncertainty'],
+    reps:[], inquiry: JSON.parse(JSON.stringify(inquiry))
+  });
+  renderRecipeSelect(); renderTriad();
+  rpSelect.value = recipes[recipes.length-1].id;
+  renderRepScales(); renderRepLedger();
+  say('Inquiry adopted as recipe — attach its stressors & repetitions');
+});
+
+/* --- repetition recorder --- */
+const rpSelect = document.getElementById('rp-recipe');
+function renderRecipeSelect(){
+  const keep = rpSelect.value;
+  rpSelect.innerHTML = recipes.map(r=>`<option value="${r.id}">${esc(r.name)}</option>`).join('');
+  if(recipes.some(r=>r.id===keep)) rpSelect.value = keep;
+  renderRepScales(); renderRepLedger();
+}
+function selectedRecipe(){ return recipes.find(r=>r.id===rpSelect.value) || recipes[0]; }
+const rpScales = document.getElementById('rp-scales');
+function renderRepScales(){
+  const r = selectedRecipe();
+  if(!r){ rpScales.innerHTML=''; return; }
+  rpScales.innerHTML = r.dimensions.map(dimId=>`
+    <label for="sc-${dimId}">${esc(dimLabel(dimId))} delivered <span style="text-transform:none">(0 calm — 10 storm)</span></label>
+    <div class="rep-scale">
+      <input type="range" id="sc-${dimId}" data-dim="${dimId}" min="0" max="10" value="5" step="1">
+      <output id="sc-${dimId}-out">5</output>
+    </div>`).join('');
+  rpScales.querySelectorAll('input[type=range]').forEach(sl=>{
+    sl.addEventListener('input',()=>document.getElementById(sl.id+'-out').textContent=sl.value);
+  });
+}
+rpSelect.addEventListener('change',()=>{ renderRepScales(); renderRepLedger(); });
+const rpVal = document.getElementById('rp-value');
+rpVal.addEventListener('input',()=>document.getElementById('rp-value-out').textContent = rpVal.value+'%');
+
+document.getElementById('btn-save-rep').addEventListener('click',()=>{
+  const r = selectedRecipe();
+  if(!r){ say('Draft a recipe first'); return; }
+  const stress = {};
+  rpScales.querySelectorAll('input[type=range]').forEach(sl=> stress[sl.dataset.dim]=Number(sl.value));
+  r.reps.push({
+    at:new Date().toISOString().slice(0,10),
+    stress, captured:Number(rpVal.value),
+    note: document.getElementById('rp-note').value.trim()
+  });
+  document.getElementById('rp-note').value='';
+  renderTriad(); renderRepLedger();
+  say(`Repetition ${r.reps.length} recorded — ${r.reps.length<3 ? (3-r.reps.length)+' more until classification' : 'classification updated'}`);
+});
+
+function renderRepLedger(){
+  const r = selectedRecipe();
+  const ledger = document.getElementById('rep-ledger');
+  if(!r || !r.reps.length){ ledger.hidden=true; return; }
+  ledger.hidden=false;
+  document.getElementById('rep-rows').innerHTML = r.reps.map((rep,i)=>`
+    <tr>
+      <td>${i+1} · ${rep.at}</td>
+      <td>${Object.entries(rep.stress).map(([d,v])=>`${esc(dimLabel(d))} ${v}`).join(', ')}</td>
+      <td>${rep.captured}%</td>
+      <td>${esc(rep.note||'—')}</td>
+    </tr>`).join('');
+}
+
+/* triad card actions (delegated) */
+document.getElementById('triad').addEventListener('click',e=>{
+  const btn = e.target.closest('button[data-act]');
+  if(!btn) return;
+  rpSelect.value = btn.dataset.id;
+  renderRepScales(); renderRepLedger();
+  document.querySelector('.workshop').scrollIntoView({block:'center'});
+  if(btn.dataset.act==='rep') document.getElementById('rp-note').focus({preventScroll:true});
+});
+
+/* --- fold the laboratory into the export --- */
+(function(){
+  const oldBtn = document.getElementById('btn-export');
+  const newBtn = oldBtn.cloneNode(true);
+  oldBtn.replaceWith(newBtn);
+  newBtn.addEventListener('click',()=>{
+    inquiry.meta.exported = new Date().toISOString();
+    const record = {
+      ...inquiry,
+      laboratory:{
+        dimensions,
+        recipes: recipes.map(r=>({
+          ...r,
+          regime: regimeOf(r),
+          classifications: Object.fromEntries(
+            r.dimensions.map(d=>{ const c=classify(r,d); return [d,{class:c.cls, responseSlope:c.k, observations:c.pts.length}]; })
+          )
+        }))
+      }
+    };
+    const blob = new Blob([JSON.stringify(record,null,2)],{type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (inquiry.meta.title||'inquiry').toLowerCase().replace(/[^a-z0-9]+/g,'-') + '.json';
+    a.click(); URL.revokeObjectURL(a.href);
+    say('Inquiry + laboratory downloaded');
+  });
+})();
+
+/* init laboratory */
+renderBar(); renderRegimeBar(); updateRegimeHint();
+renderRecipeDims(); renderRecipeSelect(); renderTriad();
+</script>
+</body>
+</html>

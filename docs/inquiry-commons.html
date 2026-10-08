@@ -1,0 +1,1029 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recipe intake — what we actually need</title>
+<meta name="description" content="A recipe-intake form: only the data module/playnet/planner/schemas.scm actually consumes, with each input shaped like the schema field it feeds, exported live as a draft recipe.">
+<style>
+  :root{
+    color-scheme: light;
+    --surface:#fcfcfb; --panel:#ffffff; --rule:#e6e5e1; --grid:#eceae6;
+    --ink:#0b0b0b; --ink2:#52514e; --ink3:#8a8983;
+    --accent:#1b6e4a; --accent-ink:#ffffff;
+    --partial:#c98500; --empty:#c7c5bd;
+    --shadow:0 1px 2px rgba(20,18,14,.05), 0 8px 24px -12px rgba(20,18,14,.14);
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --mono:ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:where(:not([data-theme="light"])){
+      color-scheme: dark;
+      --surface:#1a1a19; --panel:#212120; --rule:#33322f; --grid:#2b2b29;
+      --ink:#ffffff; --ink2:#c3c2b7; --ink3:#8a8983;
+      --accent:#39a874; --accent-ink:#0d1a14;
+      --partial:#c98500; --empty:#4a4944;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --surface:#1a1a19; --panel:#212120; --rule:#33322f; --grid:#2b2b29;
+    --ink:#ffffff; --ink2:#c3c2b7; --ink3:#8a8983;
+    --accent:#39a874; --accent-ink:#0d1a14;
+    --partial:#c98500; --empty:#4a4944;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--surface);color:var(--ink);font-family:var(--sans);
+       font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1180px;margin:0 auto;padding:32px 20px 100px;display:flex;flex-direction:column;gap:18px}
+  header{display:flex;flex-direction:column;gap:8px;max-width:78ch}
+  .eyebrow{font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink3);font-weight:600}
+  h1{font-family:var(--serif);font-weight:600;font-size:clamp(24px,3.4vw,32px);line-height:1.18;
+     letter-spacing:-.012em;margin:0;text-wrap:balance}
+  .standfirst{margin:0;color:var(--ink2);font-size:14.5px;max-width:66ch}
+  .standfirst a{color:inherit}
+  code{font-family:var(--mono);font-size:.92em;background:var(--grid);padding:.05em .35em;border-radius:4px}
+
+  /* ── section nav: one bar that is both the stepper and the progress meter ── */
+  .section-nav{display:flex;border:1px solid var(--rule);border-radius:10px;overflow:hidden;
+         background:var(--panel);box-shadow:var(--shadow)}
+  button.nav-seg{flex:1;position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;
+         font:inherit;padding:9px 4px 8px;border:none;border-right:1px solid var(--rule);border-radius:0;
+         background:transparent;color:var(--ink2);overflow:hidden;min-width:0}
+  button.nav-seg:last-child{border-right:none}
+  button.nav-seg:hover{background:var(--grid);border-color:var(--rule)}
+  .nav-seg svg{width:15px;height:15px;flex:none;stroke:var(--ink3)}
+  .nav-seg .seg-letter{font-size:10.5px;font-family:var(--mono);color:var(--ink3)}
+  .nav-seg.partial svg{stroke:var(--partial)}
+  .nav-seg.partial .seg-letter{color:var(--partial)}
+  .nav-seg.done svg{stroke:var(--accent)}
+  .nav-seg.done .seg-letter{color:var(--accent)}
+  .seg-fill{position:absolute;left:0;bottom:0;height:3px;width:0%;background:var(--accent);transition:width .2s ease}
+  .nav-seg.partial .seg-fill{background:var(--partial)}
+
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+  .toolbar .group{display:flex;gap:8px;flex-wrap:wrap}
+  .progress-label{font-size:12px;color:var(--ink3);display:flex;justify-content:space-between;gap:8px}
+  button{font:inherit;font-size:13px;cursor:pointer;border-radius:7px;border:1px solid var(--rule);
+         background:var(--panel);color:var(--ink);padding:7px 12px}
+  button:hover{border-color:var(--ink3)}
+  button.ghost{background:transparent}
+  button.icon-btn{padding:2px 7px;font-size:13px;line-height:1;border-radius:6px}
+  button.selected{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+
+  /* ── two-column layout ───────────────────────────────────────────── */
+  .layout{display:grid;grid-template-columns:1fr;gap:20px;align-items:start}
+  @media (min-width:980px){ .layout{grid-template-columns:1fr 380px} }
+  main{display:flex;flex-direction:column;gap:14px;min-width:0}
+  .aside{display:flex;flex-direction:column;gap:14px;min-width:0}
+  @media (min-width:980px){ .aside{position:sticky;top:18px;max-height:calc(100vh - 36px);overflow:auto} }
+
+  .section-card{background:var(--panel);border:1px solid var(--rule);border-radius:12px;
+         box-shadow:var(--shadow);overflow:hidden;scroll-margin-top:14px}
+  .section-head{display:flex;align-items:center;gap:10px;padding:14px 18px;cursor:pointer;
+         border-bottom:1px solid transparent}
+  .section-card.open .section-head{border-bottom-color:var(--rule)}
+  .section-head svg{width:17px;height:17px;flex:none;stroke:var(--ink3)}
+  .section-idx{font-family:var(--mono);font-size:12px;color:var(--ink3);flex:none;width:1.1em}
+  .section-title{font-family:var(--serif);font-weight:600;font-size:16.5px;flex:1;letter-spacing:-.005em}
+  .section-meta{font-size:11.5px;color:var(--ink3);font-family:var(--mono);flex:none}
+  .section-meta.partial{color:var(--partial)}
+  .section-meta.done{color:var(--accent);font-weight:600}
+  .section-chevron{color:var(--ink3);transition:transform .15s ease;flex:none;font-size:12px}
+  .section-card.open .section-chevron{transform:rotate(90deg)}
+  .section-body{display:none;padding:2px 18px 16px}
+  .section-card.open .section-body{display:flex;flex-direction:column;gap:4px}
+  .section-note{margin:0 0 8px;font-size:12.5px;color:var(--ink3);font-style:italic}
+
+  .group-block{display:flex;flex-direction:column;gap:2px;padding:9px 0 3px;border-top:1px solid var(--grid)}
+  .group-block:first-child{border-top:none;padding-top:0}
+  .group-label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);
+         font-weight:600;margin:5px 0 3px}
+
+  .q{display:flex;flex-direction:column;gap:5px;padding:7px 0}
+  .q-label{font-size:14px;color:var(--ink);text-wrap:pretty}
+  .q-tag{font-size:10px;text-transform:uppercase;letter-spacing:.06em;border-radius:5px;
+         padding:1px 5px;margin-left:6px;vertical-align:2px;border:1px solid var(--accent);color:var(--accent)}
+  .q-feeds{display:block;color:var(--ink3);font-size:11.5px;font-family:var(--mono);margin-top:1px}
+  textarea, input.field, select.field{
+         font:inherit;font-size:13.5px;padding:7px 9px;border-radius:7px;border:1px solid var(--rule);
+         background:var(--surface);color:var(--ink)}
+  textarea:focus, input.field:focus, select.field:focus{outline:2px solid var(--accent);outline-offset:1px}
+  textarea.wide{width:100%;min-height:2.3em;resize:vertical}
+  .field-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  input.short{width:min(360px, 100%)}
+  input.num{width:7.5em}
+  .unit-suffix{font-size:12.5px;color:var(--ink3);background:var(--grid);border:1px solid var(--rule);
+         border-left:none;border-radius:0 7px 7px 0;padding:7px 9px;margin-left:-1px}
+  input.num.has-suffix{border-radius:7px 0 0 7px}
+  .measure-pair{display:flex;width:100%}
+  .measure-pair input.mq{flex:1.4 1 0;min-width:3.6em;border-radius:7px 0 0 7px}
+  .measure-pair input.mq.num{flex:1 1 0;text-align:right}
+  .measure-pair input.mu{flex:1 1 0;min-width:3.6em;border-radius:0 7px 7px 0;border-left:none;margin-left:-1px}
+  .multi-row{display:flex;gap:18px;flex-wrap:wrap}
+  .multi-item{display:flex;flex-direction:column;gap:4px}
+  .multi-item-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3)}
+  .gate-row{display:flex;gap:6px;flex-wrap:wrap}
+  .gate-row button{padding:5px 12px}
+  .bool-detail{width:100%;min-height:2em;resize:vertical}
+
+  /* ── BOM-style cycle tables ──────────────────────────────────────── */
+  .cycle-wrap{display:flex;flex-direction:column;gap:6px}
+  .cycle-scroll{overflow-x:auto;border:1px solid var(--rule);border-radius:9px}
+  .cycle-grid{display:grid;align-items:center;gap:0}
+  .cycle-grid > .cg-cell{padding:7px 8px;border-bottom:1px solid var(--grid);min-width:0}
+  .cycle-grid.header > .cg-cell{font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;
+         color:var(--ink3);font-weight:600;background:var(--grid);border-bottom:1px solid var(--rule)}
+  .cycle-grid.row:last-child > .cg-cell{border-bottom:none}
+  .cycle-grid input.field{width:100%}
+  .cg-remove{display:flex;align-items:center;justify-content:center}
+  .cg-remove button{width:26px;height:26px;padding:0;border-radius:6px;color:var(--ink3)}
+  .cg-remove button:hover{color:var(--accent);border-color:var(--accent)}
+  .cg-primary-toggle{width:100%;font-size:12px;padding:5px 8px;text-align:center}
+  .add-row{align-self:flex-start;font-size:12.5px;color:var(--accent);border-color:var(--accent)}
+
+  /* ── aside: one card, two tabs (Preview / Scheme draft) ─────────────── */
+  .aside-card{background:var(--panel);border:1px solid var(--rule);border-radius:12px;
+         box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column}
+  .aside-tabs{display:flex;align-items:center;border-bottom:1px solid var(--rule);padding:2px 6px 0}
+  button.aside-tab{background:transparent;border:none;border-bottom:2px solid transparent;border-radius:0;
+         font-family:var(--serif);font-weight:600;font-size:13.5px;color:var(--ink3);
+         padding:10px 12px 8px;cursor:pointer}
+  button.aside-tab:hover{border-color:var(--rule);color:var(--ink)}
+  button.aside-tab.active{color:var(--ink);border-bottom-color:var(--accent)}
+  .aside-tab-actions{margin-left:auto;display:none;gap:6px;padding:4px 2px}
+  .aside-tab-actions.show{display:flex}
+  .aside-tab-actions button{font-size:11.5px;padding:4px 9px}
+  .aside-body{display:none;padding:16px 18px;flex-direction:column;gap:10px}
+  .aside-body.active{display:flex}
+  .preview-title{font-family:var(--serif);font-weight:600;font-size:16px}
+  .preview-skill{font-size:12px;color:var(--ink3)}
+  .flow-row{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:stretch;font-size:12px}
+  .flow-col{display:flex;flex-direction:column;gap:4px;min-width:0}
+  .flow-col-label{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3);font-weight:600}
+  .flow-chip{background:var(--grid);border-radius:6px;padding:4px 7px;font-size:11.5px;
+         overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .flow-mid{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+         border-left:1px dashed var(--rule);border-right:1px dashed var(--rule);padding:0 10px;text-align:center}
+  .flow-mid b{font-size:12.5px}
+  .flow-mid span{font-size:10.5px;color:var(--ink3)}
+  .flow-empty{color:var(--ink3);font-style:italic;font-size:12px}
+  .crossing-chips{display:flex;flex-wrap:wrap;gap:5px}
+  .crossing-chip{font-size:10.5px;border:1px solid var(--accent);color:var(--accent);border-radius:20px;padding:2px 8px}
+
+  #schemeBody{padding:14px 16px 16px}
+  pre.export{margin:0;font-family:var(--mono);font-size:11.5px;line-height:1.5;overflow:auto;
+         white-space:pre;max-height:50vh}
+
+  footer{color:var(--ink3);font-size:12px;padding-top:10px;border-top:1px solid var(--rule)}
+  footer a{color:inherit}
+
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);
+         color:var(--surface);padding:9px 16px;border-radius:8px;font-size:13px;box-shadow:var(--shadow);
+         opacity:0;pointer-events:none;transition:opacity .2s ease;z-index:20}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Derived from the 1880 inquiry &middot; pruned to what the planner ingests</span>
+    <h1>Recipe intake</h1>
+    <p class="standfirst">Roughly 61 of the prior tree's 107 leaves asked what a wage-worker's
+      employer did to them. None of that has a field in <code>schemas.scm</code>. What's left
+      here is smaller, and every input is shaped like the schema field it feeds — a quantity is
+      bound to its unit as one <code>make-measure</code>, an hour figure carries a fixed
+      <code>"hours"</code> suffix because the schema never lets it be anything else, and a batch's
+      outputs share one exclusive "primary" toggle because a recipe has exactly one. Fill it out
+      and watch the draft on the right assemble itself. See
+      <a href="inquiry-commons.md">inquiry-commons.md</a> for the reasoning, and
+      <a href="inquiry-tree.md">inquiry-tree.md</a> for the audit of what got cut.</p>
+  </header>
+
+  <div class="section-nav" id="sectionNav"></div>
+
+  <div class="toolbar">
+    <div class="progress-label" style="flex:1 1 220px">
+      <span id="progressText">0 of 0 answered</span>
+      <span id="progressPct">0%</span>
+    </div>
+    <div class="group">
+      <button id="expandAll" class="ghost">Expand all</button>
+      <button id="collapseAll" class="ghost">Collapse all</button>
+      <button id="clearBtn" class="ghost">Clear</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <main id="main"></main>
+    <aside class="aside">
+      <div class="aside-card">
+        <div class="aside-tabs">
+          <button type="button" class="aside-tab active" id="tabPreview">Preview</button>
+          <button type="button" class="aside-tab" id="tabScheme">Scheme draft</button>
+          <div class="aside-tab-actions" id="asideActions">
+            <button id="copyExport" class="ghost">Copy</button>
+            <button id="downloadExport" class="ghost">Download</button>
+          </div>
+        </div>
+        <div class="aside-body active" id="previewCard"></div>
+        <div class="aside-body" id="schemeBody"><pre class="export" id="exportPre"></pre></div>
+      </div>
+    </aside>
+  </div>
+
+  <footer>
+    Answers are saved only in this browser (localStorage) — nothing is sent anywhere. The
+    draft is a starting point: ids are slugified guesses, units aren't validated against the unit
+    registry, and hazard crossings are named but not wired to real <code>legal-aspects.scm</code>
+    ids. A maintainer still reads it before it goes near <code>knowledge/recipes/</code>.
+  </footer>
+</div>
+<div class="toast" id="toast"></div>
+<datalist id="unit-options">
+  <option value="kg"></option><option value="g"></option><option value="L"></option>
+  <option value="mL"></option><option value="each"></option><option value="m"></option>
+  <option value="m2"></option><option value="m3"></option><option value="kWh"></option>
+  <option value="loaf"></option><option value="meal"></option><option value="dozen"></option>
+  <option value="batch"></option><option value="bundle"></option>
+</datalist>
+
+<script>
+(function(){
+  "use strict";
+
+  const ICONS = {
+    A: '<circle cx="10" cy="7" r="3.2"/><path d="M4 17c0-3.3 2.7-6 6-6s6 2.7 6 6"/>',
+    B: '<path d="M3 11h3l2-5.5 4 11 2-5.5h3"/>',
+    C: '<path d="M3 6.5l7-3.5 7 3.5-7 3.5-7-3.5z"/><path d="M3 6.5v7l7 3.5 7-3.5v-7"/><path d="M10 10v7"/>',
+    D: '<rect x="3" y="8" width="8.5" height="8" rx="1.2"/><path d="M11.5 12H17m0 0l-2.6-2.6M17 12l-2.6 2.6"/>',
+    E: '<circle cx="10" cy="10" r="7"/><path d="M10 6v4l3 2"/>',
+    F: '<path d="M10 17.5V9"/><path d="M10 9C10 6 8 4 5 4c0 3 2 5 5 5z"/><path d="M10 12.5c0-2.5 1.7-4.5 4-4.5 0 2.5-1.7 4.5-4 4.5z"/>',
+    G: '<path d="M10 3l6 2.2v4.4c0 4-2.6 6.9-6 7.9-3.4-1-6-3.9-6-7.9V5.2L10 3z"/>',
+    H: '<path d="M10 17.5S16 12 16 8a6 6 0 10-12 0c0 4 6 9.5 6 9.5z"/><circle cx="10" cy="8" r="2.1"/>',
+    I: '<path d="M3 10h2M6 6.5v7M9 3.5v13M12 6.5v7M15 8.5v3M17 10h0.5"/>'
+  };
+
+  // kinds: short, number-unit (numeric + a FIXED unit, e.g. hours or each),
+  // measure (numeric qty bound to a free unit — a literal make-measure pair;
+  // subIds:[qtyId,unitId]), short-unit (a name bound to a free unit — same
+  // joined widget as measure, just not right-aligned; subIds:[nameId,unitId]),
+  // multi (several labeled number-unit fields shown as one compact row —
+  // subIds/parts — for facts like "hours/day + days/week" that are one
+  // question, not two), select (closed buttons), bool (yes/no + optional
+  // detail), text (open), cycle (repeatable rows; each row is a small table;
+  // a field of kind "radio-excl" is exclusive across every row in that cycle —
+  // at most one output may be primary, mirroring is-primary on the flow).
+  // Any leaf with a "subIds" array counts as answered if ANY of those answer
+  // keys is filled — one compound fact, one progress unit.
+  const TREE = [
+    {idx:"A", title:"Identity", children:[
+      {id:"A.1", label:"Name of this activity.", kind:"short", feeds:"<recipe-process>.name"},
+      {id:"A.2", label:"Skill or trade this activity is.", kind:"short", feeds:"skill-* spec triple · work flow's resource-conforms-to"},
+      {id:"A.3", label:"What single thing does this activity mainly deliver?", kind:"short-unit",
+        subIds:["A.3.1","A.3.2"], feeds:"spec-* triple · primary produce flow · resource-spec unit"}
+    ]},
+
+    {idx:"B", title:"Stages & labour", children:[
+      {id:"B.1", label:"The stages of labour. One row for a single-stage activity.",
+        kind:"cycle", instanceLabel:"stage", feeds:"one 'work recipe-flow per row — effort-quantity is always in hours",
+        fields:[
+          {key:"name", label:"Stage", kind:"short"},
+          {key:"hours", label:"Hours", kind:"number-unit", fixedUnit:"hours"},
+          {key:"skill", label:"Skill (blank = A.2)", kind:"short"}
+        ]}
+    ]},
+
+    {idx:"C", title:"Materials & means", children:[
+      {id:"C.1", label:"Materials consumed per batch.", kind:"cycle", instanceLabel:"material",
+        feeds:"one 'consume recipe-flow per row",
+        fields:[
+          {key:"name", label:"Material", kind:"short"},
+          {key:"qty", unitKey:"unit", label:"Quantity", kind:"measure"}
+        ]},
+      {id:"C.2", label:"Durable tools/machines used, not consumed.", kind:"cycle", instanceLabel:"tool",
+        feeds:"one 'use recipe-flow per row — count is always “each”, engagement always hours",
+        fields:[
+          {key:"name", label:"Tool", kind:"short"},
+          {key:"count", label:"Count", kind:"number-unit", fixedUnit:"each"},
+          {key:"hours", label:"Hours engaged", kind:"number-unit", fixedUnit:"hours"}
+        ]},
+      {id:"C.3", label:"Energy or motive power consumed.", kind:"cycle", instanceLabel:"energy source",
+        feeds:"one 'consume recipe-flow per row",
+        fields:[
+          {key:"name", label:"Source", kind:"short"},
+          {key:"qty", unitKey:"unit", label:"Quantity", kind:"measure"}
+        ]}
+    ]},
+
+    {idx:"D", title:"Outputs", children:[
+      {id:"D.1", label:"What this produces per batch.", kind:"cycle", instanceLabel:"output",
+        feeds:"one 'produce recipe-flow per row — exactly one row can be primary",
+        fields:[
+          {key:"name", label:"Output", kind:"short"},
+          {key:"qty", unitKey:"unit", label:"Quantity", kind:"measure"},
+          {key:"primary", label:"Primary", kind:"radio-excl"}
+        ]},
+      {id:"D.2", label:"Byproducts, waste, or reserve leaks — and where they go.", kind:"cycle", instanceLabel:"byproduct",
+        feeds:"one 'produce recipe-flow per row, note = where it goes",
+        fields:[
+          {key:"name", label:"Byproduct", kind:"short"},
+          {key:"qty", unitKey:"unit", label:"Quantity", kind:"measure"},
+          {key:"goesto", label:"Goes to", kind:"short"}
+        ]},
+      {id:"D.3", label:"Duration of one batch or cycle.", kind:"measure", subIds:["D.3.1","D.3.2"], feeds:"<recipe-process>.has-duration"},
+      {id:"D.4", label:"Minimum batch size, if it can't usefully run smaller.", kind:"short", feeds:"<recipe-process>.minimum-batch-quantity"}
+    ]},
+
+    {idx:"E", title:"Capacity & scheduling", children:[
+      {id:"E.1", label:"How many people currently hold this skill?", kind:"number-unit", fixedUnit:"people", feeds:"availability-pool / skill-standing roster headcount"},
+      {id:"E.2", label:"Realistic operating capacity", kind:"multi", subIds:["E.2.1","E.2.2"],
+        feeds:"<capacity-buffer>.total-capacity-hours · .period-days",
+        parts:[
+          {key:"E.2.1", partLabel:"Hours/day", fixedUnit:"hours/day"},
+          {key:"E.2.2", partLabel:"Days/week", fixedUnit:"days/week"}
+        ]},
+      {id:"E.3", label:"Does its schedule vary by season?", kind:"bool", feeds:"robust multi-scenario input"},
+      {id:"E.4", label:"Does it require continuous or night operation?", kind:"bool", feeds:"a technical constraint (a kiln can't stop) — not a shift-discipline question"},
+      {id:"E.5", label:"Rest genuinely built into the schedule.", kind:"text", feeds:"a floor the process respects"}
+    ]},
+
+    {idx:"F", title:"Skill standing & training", note:"skill-law.scm's competence law: C_t = (1−decay)·C_{t−1} + regen·practice_{t−1} + yield·train_{t−lag}, opening at an endowment.", children:[
+      {id:"F.1", label:"Roughly how many practiced hours to reach basic competence?", kind:"number-unit", fixedUnit:"hours", feeds:"skill's endow tag"},
+      {id:"F.2", label:"Does competence fade if the skill goes unpracticed?", kind:"select",
+        options:[["Not really","decay ≈ 0"],["Slowly, over months","decay ≈ 0.05"],["Quickly, over weeks","decay ≈ 0.3"]], feeds:"skill's decay tag"},
+      {id:"F.3", label:"Does teaching this cost the teacher extra hours, or fold into normal work?", kind:"select",
+        options:[["Costs the teacher extra hours",""],["Folds into normal work",""]], feeds:"skill's teacher/trainee tags"}
+    ]},
+
+    {idx:"G", title:"Crossings", note:"Which of the four crossings the commons mirrors with its own spec does this activity trip? The three it never trips by design — selling to the public, converting to state money, employing wage labour — aren't asked; they're the wage relation again, by another name.", children:[
+      {id:"G.1", label:"Does it build or occupy a structure?", kind:"bool", feeds:"building / fire / occupancy"},
+      {id:"G.2", label:"Does it perform a regulated act on a person?", kind:"bool", feeds:"practitioner licence / skill-gate"},
+      {id:"G.3", label:"Does it involve a dangerous or controlled thing?", kind:"bool", feeds:"safety spec"},
+      {id:"G.4", label:"Does it draw on the shared environment?", kind:"bool", feeds:"environmental / possibility-tension"},
+      {id:"G.5", label:"Known accidents or near-misses worth the hazard spec knowing.", kind:"text"},
+      {id:"G.6", label:"Protective measures already practiced.", kind:"text"}
+    ]},
+
+    {idx:"H", title:"Site & logistics", children:[
+      {id:"H.1", label:"Where this happens.", kind:"short", feeds:"bioregion/scope, or ‘distributed / home-based’"},
+      {id:"H.2", label:"Where inputs come from and outputs go.", kind:"text", feeds:"recipe-input-of / recipe-output-of chain wiring"},
+      {id:"H.3", label:"Movement time between here and there, if relevant.", kind:"short", feeds:"a transport recipe's input"}
+    ]},
+
+    {idx:"I", title:"Voice — lived correction", note:"The one place the open, subjective questions map onto something playnet built for: the voice field's “contrary observation” mechanism, which lets lived experience correct a recipe's stated hours or yield.", children:[
+      {id:"I.1", label:"Does everything above match your actual experience, or does the plan undercount something?", kind:"text"},
+      {id:"I.2", label:"Physical or health effects of this work worth recording.", kind:"text"},
+      {id:"I.3", label:"Anything else the plan should know.", kind:"text"}
+    ]}
+  ];
+
+  // ---- State -----------------------------------------------------------
+  const STORE_KEY = "commons-recipe-intake";
+  let state = {answers:{}, cycles:{}, open:{}};
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
+    if (saved && typeof saved === "object") state = Object.assign(state, saved);
+  } catch (e) { /* ignore corrupt storage */ }
+  function persist(){
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* unavailable */ }
+  }
+
+  function flattenLeaves(){
+    const leaves = [];
+    TREE.forEach(sec => walk(sec.children, leaves));
+    function walk(list, out){ (list||[]).forEach(n => n.group ? walk(n.children, out) : out.push(n)); }
+    return leaves;
+  }
+  const LEAVES = flattenLeaves();
+
+  function isAnswered(node){
+    if (node.kind === "cycle"){
+      const rows = state.cycles[node.id] || [];
+      return rows.length > 0 && rows.some(r => Object.values(r).some(v => (v||"").trim()));
+    }
+    if (node.subIds){
+      return node.subIds.some(id => (state.answers[id]||"").trim());
+    }
+    const v = state.answers[node.id];
+    return !!(v && v.trim());
+  }
+
+  // ---- Rendering: sections ------------------------------------------------
+  const main = document.getElementById("main");
+  const sectionNavEl = document.getElementById("sectionNav");
+
+  function render(){
+    main.innerHTML = "";
+    TREE.forEach(sec => main.appendChild(renderSection(sec)));
+    renderSectionNav();
+    updateProgress();
+    renderPreview();
+  }
+
+  function sectionStats(sec){
+    const leaves = [];
+    (function walk(list){ (list||[]).forEach(n => n.group ? walk(n.children) : leaves.push(n)); })(sec.children);
+    const done = leaves.filter(isAnswered).length;
+    return {done, total: leaves.length};
+  }
+
+  function renderSectionNav(){
+    sectionNavEl.innerHTML = "";
+    TREE.forEach(sec => {
+      const {done, total} = sectionStats(sec);
+      const pct = total ? Math.round((done / total) * 100) : 0;
+      const seg = document.createElement("button");
+      seg.type = "button";
+      seg.className = "nav-seg " + (done === 0 ? "" : done === total ? "done" : "partial");
+      seg.title = sec.title + " — " + done + "/" + total;
+      seg.innerHTML =
+        '<svg viewBox="0 0 20 20" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' + ICONS[sec.idx] + '</svg>' +
+        '<span class="seg-letter">' + sec.idx + '</span>' +
+        '<i class="seg-fill" style="width:' + pct + '%"></i>';
+      seg.addEventListener("click", () => {
+        state.open[sec.idx] = true; persist(); render();
+        const card = main.querySelector('.section-card[data-idx="' + sec.idx + '"]');
+        if (card) card.scrollIntoView({behavior:"smooth", block:"start"});
+      });
+      sectionNavEl.appendChild(seg);
+    });
+  }
+
+  function renderSection(sec){
+    const card = document.createElement("section");
+    card.className = "section-card" + (state.open[sec.idx] ? " open" : "");
+    card.dataset.idx = sec.idx;
+
+    const head = document.createElement("div");
+    head.className = "section-head";
+    head.innerHTML =
+      '<svg viewBox="0 0 20 20" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' + ICONS[sec.idx] + '</svg>' +
+      '<span class="section-idx">' + sec.idx + '</span>' +
+      '<span class="section-title">' + sec.title + '</span>' +
+      '<span class="section-meta" data-role="meta"></span>' +
+      '<span class="section-chevron">&#9656;</span>';
+    head.addEventListener("click", () => {
+      state.open[sec.idx] = !state.open[sec.idx];
+      card.classList.toggle("open", state.open[sec.idx]);
+      persist();
+    });
+    card.appendChild(head);
+
+    const body = document.createElement("div");
+    body.className = "section-body";
+    if (sec.note){
+      const p = document.createElement("p");
+      p.className = "section-note";
+      p.textContent = sec.note;
+      body.appendChild(p);
+    }
+    renderChildren(sec.children, body);
+    card.appendChild(body);
+
+    const {done, total} = sectionStats(sec);
+    const meta = head.querySelector('[data-role="meta"]');
+    meta.textContent = done + "/" + total;
+    meta.className = "section-meta " + (done === 0 ? "" : done === total ? "done" : "partial");
+    return card;
+  }
+
+  function renderChildren(list, container){
+    (list || []).forEach(node => {
+      if (node.group){
+        const wrap = document.createElement("div");
+        wrap.className = "group-block";
+        if (node.label){
+          const lab = document.createElement("div");
+          lab.className = "group-label";
+          lab.textContent = node.label;
+          wrap.appendChild(lab);
+        }
+        renderChildren(node.children, wrap);
+        container.appendChild(wrap);
+        return;
+      }
+      container.appendChild(renderLeaf(node));
+    });
+  }
+
+  function feedsLine(node){
+    return node.feeds ? '<span class="q-feeds">feeds ' + node.feeds + '</span>' : "";
+  }
+
+  // The one joined-pair widget: a value bound to its unit, exactly like a
+  // literal make-measure. Used for numeric qty+unit (measure), a name+unit
+  // (short-unit), and the qty+unit cell inside a cycle table — three call
+  // sites, one visual and behavioral definition.
+  function renderMeasurePair(getA, setA, getB, setB, opts){
+    opts = opts || {};
+    const pair = document.createElement("div");
+    pair.className = "measure-pair";
+    const a = document.createElement("input");
+    a.type = "text"; a.className = "field mq" + (opts.numeric ? " num" : "");
+    a.placeholder = opts.aPlaceholder || "";
+    a.value = getA() || "";
+    a.addEventListener("input", () => { setA(a.value); onAnswerChanged(); });
+    const b = document.createElement("input");
+    b.type = "text"; b.className = "field mu";
+    b.placeholder = opts.bPlaceholder || "unit";
+    if (opts.unitList !== false) b.setAttribute("list", "unit-options");
+    b.value = getB() || "";
+    b.addEventListener("input", () => { setB(b.value); onAnswerChanged(); });
+    pair.appendChild(a); pair.appendChild(b);
+    return pair;
+  }
+
+  function renderLeaf(node){
+    const row = document.createElement("div");
+    row.className = "q";
+    row.dataset.id = node.id;
+
+    if (node.kind === "cycle"){
+      row.innerHTML = '<div class="q-label">' + node.label + '<span class="q-tag">repeats</span>' + feedsLine(node) + '</div>';
+      row.appendChild(renderCycleTable(node));
+      return row;
+    }
+
+    row.innerHTML = '<div class="q-label">' + node.label + feedsLine(node) + '</div>';
+
+    if (node.kind === "text"){
+      const ta = document.createElement("textarea");
+      ta.className = "wide";
+      ta.placeholder = "Your reply…";
+      ta.value = state.answers[node.id] || "";
+      ta.addEventListener("input", () => { state.answers[node.id] = ta.value; persist(); onAnswerChanged(); });
+      row.appendChild(ta);
+
+    } else if (node.kind === "short"){
+      const wrap = document.createElement("div");
+      wrap.className = "field-row";
+      const inp = document.createElement("input");
+      inp.type = "text"; inp.className = "field short"; inp.placeholder = "Your reply…";
+      inp.value = state.answers[node.id] || "";
+      inp.addEventListener("input", () => { state.answers[node.id] = inp.value; persist(); onAnswerChanged(); });
+      wrap.appendChild(inp);
+      row.appendChild(wrap);
+
+    } else if (node.kind === "short-unit"){
+      const [aId, bId] = node.subIds;
+      row.appendChild(renderMeasurePair(
+        () => state.answers[aId], v => { state.answers[aId] = v; persist(); },
+        () => state.answers[bId], v => { state.answers[bId] = v; persist(); },
+        {aPlaceholder: "Your reply…"}
+      ));
+
+    } else if (node.kind === "measure"){
+      const [aId, bId] = node.subIds;
+      row.appendChild(renderMeasurePair(
+        () => state.answers[aId], v => { state.answers[aId] = v; persist(); },
+        () => state.answers[bId], v => { state.answers[bId] = v; persist(); },
+        {numeric: true, aPlaceholder: "45", bPlaceholder: "minutes / hours / days"}
+      ));
+
+    } else if (node.kind === "multi"){
+      const wrap = document.createElement("div");
+      wrap.className = "multi-row";
+      node.parts.forEach(part => {
+        const item = document.createElement("div");
+        item.className = "multi-item";
+        const lab = document.createElement("div");
+        lab.className = "multi-item-label";
+        lab.textContent = part.partLabel;
+        item.appendChild(lab);
+        const fr = document.createElement("div");
+        fr.className = "field-row";
+        const inp = document.createElement("input");
+        inp.type = "text"; inp.className = "field num has-suffix"; inp.placeholder = "0";
+        inp.value = state.answers[part.key] || "";
+        inp.addEventListener("input", () => { state.answers[part.key] = inp.value; persist(); onAnswerChanged(); });
+        const suf = document.createElement("span");
+        suf.className = "unit-suffix"; suf.textContent = part.fixedUnit;
+        fr.appendChild(inp); fr.appendChild(suf);
+        item.appendChild(fr);
+        wrap.appendChild(item);
+      });
+      row.appendChild(wrap);
+
+    } else if (node.kind === "number-unit"){
+      const wrap = document.createElement("div");
+      wrap.className = "field-row";
+      const inp = document.createElement("input");
+      inp.type = "text"; inp.className = "field num has-suffix"; inp.placeholder = "0";
+      inp.value = state.answers[node.id] || "";
+      inp.addEventListener("input", () => { state.answers[node.id] = inp.value; persist(); onAnswerChanged(); });
+      const suf = document.createElement("span");
+      suf.className = "unit-suffix"; suf.textContent = node.fixedUnit;
+      wrap.appendChild(inp); wrap.appendChild(suf);
+      row.appendChild(wrap);
+
+    } else if (node.kind === "select"){
+      const wrap = document.createElement("div");
+      wrap.className = "gate-row";
+      node.options.forEach(opt => {
+        const label = Array.isArray(opt) ? opt[0] : opt;
+        const hint = Array.isArray(opt) ? opt[1] : "";
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = hint ? (label + "  (" + hint + ")") : label;
+        if (state.answers[node.id] === label) b.classList.add("selected");
+        b.addEventListener("click", () => {
+          state.answers[node.id] = (state.answers[node.id] === label) ? "" : label;
+          persist(); render();
+        });
+        wrap.appendChild(b);
+      });
+      row.appendChild(wrap);
+
+    } else if (node.kind === "bool"){
+      const wrap = document.createElement("div");
+      wrap.className = "gate-row";
+      ["Yes","No"].forEach(opt => {
+        const b = document.createElement("button");
+        b.type = "button"; b.textContent = opt;
+        if (state.answers[node.id] === opt) b.classList.add("selected");
+        b.addEventListener("click", () => {
+          state.answers[node.id] = (state.answers[node.id] === opt) ? "" : opt;
+          persist(); render();
+        });
+        wrap.appendChild(b);
+      });
+      row.appendChild(wrap);
+      const ta = document.createElement("textarea");
+      ta.className = "bool-detail";
+      ta.placeholder = "Details (optional)…";
+      ta.value = state.answers[node.id + "__detail"] || "";
+      ta.addEventListener("input", () => { state.answers[node.id + "__detail"] = ta.value; persist(); onAnswerChanged(); });
+      row.appendChild(ta);
+    }
+
+    return row;
+  }
+
+  const COLW = {short:"minmax(0,1.3fr)", "number-unit":"minmax(0,1fr)", measure:"minmax(0,1.5fr)", "radio-excl":"84px"};
+  function columnTemplate(fields){
+    return fields.map(f => COLW[f.kind] || "1fr").join(" ") + " 34px";
+  }
+
+  function renderCycleTable(node){
+    const wrap = document.createElement("div");
+    wrap.className = "cycle-wrap";
+    const rows = state.cycles[node.id] || (state.cycles[node.id] = []);
+    const tmpl = columnTemplate(node.fields);
+
+    const scroll = document.createElement("div");
+    scroll.className = "cycle-scroll";
+
+    if (rows.length){
+      const header = document.createElement("div");
+      header.className = "cycle-grid header";
+      header.style.gridTemplateColumns = tmpl;
+      node.fields.forEach(f => {
+        const c = document.createElement("div");
+        c.className = "cg-cell";
+        c.textContent = f.label;
+        header.appendChild(c);
+      });
+      header.appendChild(document.createElement("div")).className = "cg-cell";
+      scroll.appendChild(header);
+    }
+
+    rows.forEach((rowData, i) => {
+      const r = document.createElement("div");
+      r.className = "cycle-grid row";
+      r.style.gridTemplateColumns = tmpl;
+      node.fields.forEach(f => r.appendChild(renderCycleCell(node, rowData, f, i)));
+      const rm = document.createElement("div");
+      rm.className = "cg-cell cg-remove";
+      const rmBtn = document.createElement("button");
+      rmBtn.className = "icon-btn ghost"; rmBtn.type = "button"; rmBtn.textContent = "×";
+      rmBtn.title = "Remove";
+      rmBtn.addEventListener("click", () => { rows.splice(i, 1); persist(); render(); });
+      rm.appendChild(rmBtn);
+      r.appendChild(rm);
+      scroll.appendChild(r);
+    });
+
+    wrap.appendChild(scroll);
+
+    const add = document.createElement("button");
+    add.className = "add-row ghost";
+    add.type = "button";
+    add.textContent = "+ Add " + (node.instanceLabel || "row");
+    add.addEventListener("click", () => { rows.push({}); persist(); render(); });
+    wrap.appendChild(add);
+    return wrap;
+  }
+
+  function renderCycleCell(node, rowData, f, rowIndex){
+    const cell = document.createElement("div");
+    cell.className = "cg-cell";
+
+    if (f.kind === "measure"){
+      cell.appendChild(renderMeasurePair(
+        () => rowData[f.key], v => { rowData[f.key] = v; persist(); },
+        () => rowData[f.unitKey], v => { rowData[f.unitKey] = v; persist(); },
+        {numeric: true, aPlaceholder: "qty"}
+      ));
+
+    } else if (f.kind === "number-unit"){
+      const wrap = document.createElement("div");
+      wrap.className = "field-row";
+      wrap.style.flexWrap = "nowrap";
+      const inp = document.createElement("input");
+      inp.type = "text"; inp.className = "field num has-suffix"; inp.style.cssText = "width:auto;min-width:3.2em;flex:1 1 0";
+      inp.value = rowData[f.key] || "";
+      inp.addEventListener("input", () => { rowData[f.key] = inp.value; persist(); onAnswerChanged(); });
+      const suf = document.createElement("span");
+      suf.className = "unit-suffix"; suf.textContent = f.fixedUnit;
+      wrap.appendChild(inp); wrap.appendChild(suf);
+      cell.appendChild(wrap);
+
+    } else if (f.kind === "radio-excl"){
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "cg-primary-toggle" + (rowData[f.key] === "Yes" ? " selected" : "");
+      b.textContent = rowData[f.key] === "Yes" ? "★ Primary" : "Set primary";
+      b.addEventListener("click", () => {
+        const rows = state.cycles[node.id] || [];
+        rows.forEach((r, i) => { r[f.key] = (i === rowIndex) ? "Yes" : ""; });
+        persist(); render();
+      });
+      cell.appendChild(b);
+
+    } else { // short
+      const inp = document.createElement("input");
+      inp.type = "text"; inp.className = "field";
+      inp.value = rowData[f.key] || "";
+      inp.addEventListener("input", () => { rowData[f.key] = inp.value; persist(); onAnswerChanged(); });
+      cell.appendChild(inp);
+    }
+    return cell;
+  }
+
+  function onAnswerChanged(){
+    updateProgress();
+    document.querySelectorAll(".section-card").forEach(card => {
+      const sec = TREE.find(s => s.idx === card.dataset.idx);
+      if (!sec) return;
+      const {done, total} = sectionStats(sec);
+      const meta = card.querySelector('[data-role="meta"]');
+      if (meta) {
+        meta.textContent = done + "/" + total;
+        meta.className = "section-meta " + (done === 0 ? "" : done === total ? "done" : "partial");
+      }
+    });
+    renderSectionNav();
+    renderPreview();
+  }
+
+  function updateProgress(){
+    const done = LEAVES.filter(isAnswered).length;
+    document.getElementById("progressText").textContent = done + " of " + LEAVES.length + " answered";
+    const pct = LEAVES.length ? Math.round((done / LEAVES.length) * 100) : 0;
+    document.getElementById("progressPct").textContent = pct + "%";
+  }
+
+  // ---- Aside tabs (Preview / Scheme draft) --------------------------------
+  function setAsideTab(tab){
+    document.getElementById("tabPreview").classList.toggle("active", tab === "preview");
+    document.getElementById("tabScheme").classList.toggle("active", tab === "scheme");
+    document.getElementById("previewCard").classList.toggle("active", tab === "preview");
+    document.getElementById("schemeBody").classList.toggle("active", tab === "scheme");
+    document.getElementById("asideActions").classList.toggle("show", tab === "scheme");
+  }
+  document.getElementById("tabPreview").addEventListener("click", () => setAsideTab("preview"));
+  document.getElementById("tabScheme").addEventListener("click", () => setAsideTab("scheme"));
+
+  // ---- Toolbar -----------------------------------------------------------
+  document.getElementById("expandAll").addEventListener("click", () => { TREE.forEach(s => state.open[s.idx] = true); persist(); render(); });
+  document.getElementById("collapseAll").addEventListener("click", () => { TREE.forEach(s => state.open[s.idx] = false); persist(); render(); });
+  document.getElementById("clearBtn").addEventListener("click", () => {
+    if (!confirm("Clear all saved answers in this browser? This can't be undone.")) return;
+    state = {answers:{}, cycles:{}, open:{}}; persist(); render();
+    toast("Cleared.");
+  });
+
+  // ---- Export & live preview ----------------------------------------------
+  function slugify(s){ return (s || "x").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "x"; }
+  function scmStr(s){ return '"' + String(s || "").replace(/\\/g,"\\\\").replace(/"/g,'\\"') + '"'; }
+  function ans(id){ return (state.answers[id] || "").trim(); }
+  function num(s, fallback){ const n = parseFloat(s); return isFinite(n) ? n : fallback; }
+
+  function collectModel(){
+    const processName = ans("A.1") || "Untitled activity";
+    const processSlug = slugify(processName);
+    const processId = "rp-" + processSlug;
+    const pspecId = "pspec-" + processSlug;
+    const skillName = ans("A.2") || processName;
+    const skillId = "skill-" + slugify(skillName);
+    const outName = ans("A.3.1") || processName;
+    const outUnit = ans("A.3.2") || "each";
+    const outSpecId = "spec-" + slugify(outName);
+    const stages = (state.cycles["B.1"] || []).filter(r => (r.name||"").trim() || (r.hours||"").trim());
+    const materials = (state.cycles["C.1"] || []).filter(r => (r.name||"").trim());
+    const tools = (state.cycles["C.2"] || []).filter(r => (r.name||"").trim());
+    const energies = (state.cycles["C.3"] || []).filter(r => (r.name||"").trim());
+    const outputs = (state.cycles["D.1"] || []).filter(r => (r.name||"").trim());
+    const byproducts = (state.cycles["D.2"] || []).filter(r => (r.name||"").trim());
+    return {processName, processSlug, processId, pspecId, skillName, skillId, outName, outUnit, outSpecId,
+            stages, materials, tools, energies, outputs, byproducts};
+  }
+
+  function buildExport(m){
+    const specs = new Map();
+    function addSpec(id, name, unit){ if (!specs.has(id)) specs.set(id, [id, name || id, unit || "each"]); }
+    addSpec(m.skillId, m.skillName, "hours");
+    addSpec(m.outSpecId, m.outName, m.outUnit);
+    m.materials.forEach(r => addSpec("spec-" + slugify(r.name), r.name, r.unit || "each"));
+    m.tools.forEach(r => addSpec("spec-" + slugify(r.name), r.name, "each"));
+    m.energies.forEach(r => addSpec("spec-" + slugify(r.name), r.name, r.unit || "unit"));
+    m.outputs.forEach(r => addSpec("spec-" + slugify(r.name), r.name, r.unit || "each"));
+    m.byproducts.forEach(r => addSpec("spec-" + slugify(r.name), r.name, r.unit || "each"));
+    m.stages.forEach(r => { if ((r.skill||"").trim()) addSpec("skill-" + slugify(r.skill), r.skill, "hours"); });
+
+    const flows = [];
+    let n = 0;
+    m.stages.forEach(r => {
+      n++;
+      const sid = (r.skill||"").trim() ? "skill-" + slugify(r.skill) : m.skillId;
+      flows.push(
+        '(make-recipe-flow "fl-work-' + n + '" \'work ' + scmStr(sid) + ' #f #f\n' +
+        '                   (make-measure ' + num(r.hours,0) + ' "hours") ' + scmStr(m.processId) + ' #f #f #f #f\n' +
+        '                   ' + scmStr(r.name || ("stage " + n)) + ' #f #f)');
+    });
+    m.materials.forEach(r => {
+      n++;
+      flows.push(
+        '(make-recipe-flow "fl-consume-' + n + '" \'consume ' + scmStr("spec-" + slugify(r.name)) + ' #f\n' +
+        '                   (make-measure ' + num(r.qty,0) + ' ' + scmStr(r.unit || "each") + ') #f\n' +
+        '                   ' + scmStr(m.processId) + ' #f #f #f #f #f #f #f)');
+    });
+    m.energies.forEach(r => {
+      n++;
+      flows.push(
+        '(make-recipe-flow "fl-energy-' + n + '" \'consume ' + scmStr("spec-" + slugify(r.name)) + ' #f\n' +
+        '                   (make-measure ' + num(r.qty,0) + ' ' + scmStr(r.unit || "unit") + ') #f\n' +
+        '                   ' + scmStr(m.processId) + ' #f #f #f #f #f #f #f)');
+    });
+    m.tools.forEach(r => {
+      n++;
+      flows.push(
+        '(make-recipe-flow "fl-use-' + n + '" \'use ' + scmStr("spec-" + slugify(r.name)) + ' #f\n' +
+        '                   (make-measure ' + num(r.count,1) + ' "each") (make-measure ' + num(r.hours,0) + ' "hours")\n' +
+        '                   ' + scmStr(m.processId) + ' #f #f #f #f #f #f #f)');
+    });
+    m.outputs.forEach(r => {
+      n++;
+      const primary = (r.primary === "Yes") ? "#t" : "#f";
+      flows.push(
+        '(make-recipe-flow "fl-produce-' + n + '" \'produce ' + scmStr("spec-" + slugify(r.name)) + ' #f\n' +
+        '                   (make-measure ' + num(r.qty,0) + ' ' + scmStr(r.unit || "each") + ') #f #f\n' +
+        '                   ' + scmStr(m.processId) + ' #f #f #f #f ' + primary + ' #f)');
+    });
+    m.byproducts.forEach(r => {
+      n++;
+      flows.push(
+        '(make-recipe-flow "fl-byproduct-' + n + '" \'produce ' + scmStr("spec-" + slugify(r.name)) + ' #f\n' +
+        '                   (make-measure ' + num(r.qty,0) + ' ' + scmStr(r.unit || "each") + ') #f #f\n' +
+        '                   ' + scmStr(m.processId) + ' #f #f #f ' + scmStr("goes to: " + (r.goesto || "?")) + ' #f #f)');
+    });
+
+    const durQty = ans("D.3.1"), durUnit = ans("D.3.2");
+    const durationExpr = durQty && isFinite(parseFloat(durQty))
+      ? '(make-duration ' + parseFloat(durQty) + ' ' + scmStr(durUnit || "hours") + ')'
+      : (durQty ? '#f ; TODO: duration was ' + scmStr(durQty + " " + durUnit) + ' — convert by hand' : '#f');
+    const minBatchRaw = ans("D.4");
+    const minBatchExpr = minBatchRaw
+      ? (isFinite(parseFloat(minBatchRaw)) ? '(make-measure ' + parseFloat(minBatchRaw) + ' ' + scmStr(m.outUnit) + ')'
+         : '#f ; TODO: minimum batch was ' + scmStr(minBatchRaw))
+      : '#f';
+
+    const crossings = [];
+    if (ans("G.1") === "Yes") crossings.push("building/fire/occupancy — " + (ans("G.1__detail") || "(no detail given)"));
+    if (ans("G.2") === "Yes") crossings.push("practitioner licence / skill-gate — " + (ans("G.2__detail") || "(no detail given)"));
+    if (ans("G.3") === "Yes") crossings.push("dangerous/controlled thing → hazard-analysis spec — " + (ans("G.3__detail") || "(no detail given)"));
+    if (ans("G.4") === "Yes") crossings.push("environmental draw / possibility-tension — " + (ans("G.4__detail") || "(no detail given)"));
+
+    const specLines = [...specs.values()].map(([id,name,unit]) =>
+      '    (' + scmStr(id) + ' ' + scmStr(name) + ' ' + scmStr(unit) + ')').join("\n");
+
+    const lines = [];
+    lines.push(";;; DRAFT — generated from docs/inquiry-commons.html, review before merging.");
+    lines.push(";;; Shaped after knowledge/recipes/household.scm's (id name unit) spec-triple");
+    lines.push(";;; convention and its hh-consume/hh-produce/hh-work/hh-use flows.");
+    lines.push("");
+    lines.push(";; ─── specs ───");
+    lines.push('(define *' + m.processSlug + '-specs*');
+    lines.push("  '(" + specLines.trim() + "))");
+    lines.push("");
+    lines.push(";; ─── process ───");
+    lines.push("(define " + m.processSlug + "-process");
+    lines.push('  (make-process-specification ' + scmStr(m.pspecId) + ' ' + scmStr(m.processName) + ' #f #f #f #f #f #f #f))');
+    lines.push("");
+    lines.push("(define " + m.processSlug + "-recipe-process");
+    lines.push('  (make-recipe-process ' + scmStr(m.processId) + ' ' + scmStr(m.processName) + ' #f #f');
+    lines.push('                       ' + scmStr(m.pspecId) + " '(" + scmStr("tag:" + m.processSlug) + ")");
+    lines.push('                       ' + durationExpr + ' #f ' + minBatchExpr + '))');
+    lines.push("");
+    lines.push(";; ─── flows ───");
+    lines.push("(define " + m.processSlug + "-flows");
+    lines.push("  (list");
+    lines.push(flows.map(f => "   " + f.split("\n").join("\n   ")).join("\n") || "   ;; (no rows filled in yet)");
+    lines.push("   ))");
+
+    if (ans("E.1") || ans("E.2.1") || ans("E.2.2")){
+      lines.push("");
+      lines.push(";; ─── capacity (survey only — load/thresholds are runtime-observed) ───");
+      lines.push(";; headcount holding this skill: " + (ans("E.1") || "?"));
+      lines.push('(define ' + m.processSlug + '-capacity');
+      lines.push('  (make-capacity-buffer ' + scmStr(m.processId) + ' ' + scmStr(m.pspecId));
+      lines.push('                        ' + num(ans("E.2.1"), 0) + ' ' + num(ans("E.2.2"), 0) + ' 0');
+      lines.push('                        0.8 0.95 "TODO: thresholds are a placeholder"))');
+    }
+    if (crossings.length){
+      lines.push("");
+      lines.push(";; ─── crossings this activity trips ───");
+      crossings.forEach(c => lines.push(";;   - " + c));
+      if (ans("G.5")) lines.push(";; known accidents/near-misses: " + ans("G.5"));
+      if (ans("G.6")) lines.push(";; protective measures in place: " + ans("G.6"));
+    }
+    const voice = [ans("I.1"), ans("I.2"), ans("I.3")].filter(Boolean);
+    if (voice.length){
+      lines.push("");
+      lines.push(";; ─── voice-field input (playnet.typ:2149's contrary observation) ───");
+      voice.forEach(v => v.split("\n").forEach(l => lines.push(";; " + l)));
+    }
+    return lines.join("\n");
+  }
+
+  function esc(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+
+  function renderPreview(){
+    const m = collectModel();
+    const card = document.getElementById("previewCard");
+
+    const inputChips = []
+      .concat(m.materials.map(r => esc(r.name) + (r.qty ? " · " + esc(r.qty) + (r.unit ? " " + esc(r.unit) : "") : "")))
+      .concat(m.energies.map(r => esc(r.name) + (r.qty ? " · " + esc(r.qty) + (r.unit ? " " + esc(r.unit) : "") : "")))
+      .concat(m.tools.map(r => esc(r.name) + " (tool)"));
+    const outputChips = m.outputs.map(r => (r.primary === "Yes" ? "★ " : "") + esc(r.name) + (r.qty ? " · " + esc(r.qty) + (r.unit ? " " + esc(r.unit) : "") : ""));
+
+    const durationRaw = [ans("D.3.1"), ans("D.3.2")].filter(Boolean).join(" ");
+    const stagesHours = (state.cycles["B.1"]||[]).reduce((s,r)=> s + (parseFloat(r.hours)||0), 0);
+
+    const crossingChips = [];
+    if (ans("G.1") === "Yes") crossingChips.push("structure");
+    if (ans("G.2") === "Yes") crossingChips.push("regulated act");
+    if (ans("G.3") === "Yes") crossingChips.push("dangerous thing");
+    if (ans("G.4") === "Yes") crossingChips.push("environment");
+
+    card.innerHTML =
+      '<div class="preview-title">' + esc(m.processName === "Untitled activity" ? "Untitled activity" : m.processName) + '</div>' +
+      '<div class="preview-skill">' + (ans("A.2") ? "Skill: " + esc(ans("A.2")) : "No skill named yet") +
+        (stagesHours ? " · " + stagesHours + "h labour" : "") +
+        (durationRaw ? " · " + esc(durationRaw) + " / batch" : "") + '</div>' +
+      '<div class="flow-row">' +
+        '<div class="flow-col"><span class="flow-col-label">In</span>' +
+          (inputChips.length ? inputChips.map(c=>'<span class="flow-chip">'+c+'</span>').join("") : '<span class="flow-empty">none yet</span>') +
+        '</div>' +
+        '<div class="flow-mid"><b>&rarr;</b><span>' + (m.processId) + '</span></div>' +
+        '<div class="flow-col"><span class="flow-col-label">Out</span>' +
+          (outputChips.length ? outputChips.map(c=>'<span class="flow-chip">'+c+'</span>').join("") : '<span class="flow-empty">none yet</span>') +
+        '</div>' +
+      '</div>' +
+      (crossingChips.length ? '<div class="crossing-chips">' + crossingChips.map(c=>'<span class="crossing-chip">'+c+'</span>').join("") + '</div>' : '');
+
+    document.getElementById("exportPre").textContent = buildExport(m);
+  }
+
+  document.getElementById("copyExport").addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText(document.getElementById("exportPre").textContent); toast("Copied."); }
+    catch (e) { toast("Couldn't copy — select and copy manually."); }
+  });
+  document.getElementById("downloadExport").addEventListener("click", () => {
+    const blob = new Blob([document.getElementById("exportPre").textContent], {type: "text/plain"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "recipe-draft.scm";
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  });
+
+  let toastTimer = null;
+  function toast(msg){
+    const el = document.getElementById("toast");
+    el.textContent = msg; el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove("show"), 1800);
+  }
+
+  if (Object.keys(state.open).length === 0) state.open["A"] = true;
+  render();
+})();
+</script>
+</body>
+</html>

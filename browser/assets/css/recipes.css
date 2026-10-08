@@ -1,0 +1,417 @@
+/* recipes.css — Recipes tab styles, ported from
+   ~/Programs/planner/src/routes/recipes/+page.svelte */
+
+.rec-page {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 96px);
+  min-height: 0;
+  background: #0d0b0f;
+  color: rgba(228, 238, 255, 0.92);
+  font-family: monospace;
+  overflow: hidden;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+
+.rec-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 16px;
+  border-bottom: 1px solid #2a2230;
+  background: #110e13;
+  flex-shrink: 0;
+}
+
+.rec-page-title {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.rec-tab-row {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.rec-tab-btn {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.45);
+  font-family: monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  padding: 4px 12px;
+  border-radius: 3px;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.rec-tab-btn:hover {
+  color: rgba(255, 255, 255, 0.75);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.rec-tab-active {
+  background: rgba(126, 232, 162, 0.1);
+  border-color: rgba(126, 232, 162, 0.45);
+  color: #7ee8a2;
+}
+
+.rec-tab-count {
+  font-size: 9px;
+  opacity: 0.65;
+  margin-left: 6px;
+}
+
+/* ── Library: search bar ─────────────────────────────────────────────────── */
+
+.rec-library {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.rec-search-area {
+  flex-shrink: 0;
+  padding: 10px 16px;
+  border-bottom: 1px solid #2a2230;
+  background: #110e13;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rec-search-input {
+  flex: 1;
+  max-width: 420px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid #2a2230;
+  border-radius: 3px;
+  color: rgba(228, 238, 255, 0.92);
+  font-family: monospace;
+  font-size: 11px;
+  padding: 6px 10px;
+  transition: border-color 0.15s;
+}
+.rec-search-input::placeholder { opacity: 0.4; }
+.rec-search-input:focus { outline: none; border-color: rgba(126, 232, 162, 0.5); }
+
+.rec-search-count {
+  font-size: 10px;
+  opacity: 0.5;
+  letter-spacing: 0.05em;
+}
+
+/* ── Workshop: prompt + examples ─────────────────────────────────────────── */
+
+.rec-workshop {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.rec-prompt-area {
+  flex-shrink: 0;
+  padding: 12px 16px;
+  border-bottom: 1px solid #2a2230;
+  background: #110e13;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rec-examples-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.rec-examples-lbl {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+.rec-chip {
+  background: none;
+  border: 1px solid rgba(232, 176, 78, 0.28);
+  color: rgba(232, 176, 78, 0.75);
+  font-family: monospace;
+  font-size: 10px;
+  padding: 3px 9px;
+  border-radius: 3px;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.rec-chip:hover {
+  border-color: rgba(232, 176, 78, 0.65);
+  color: #e8b04e;
+  background: rgba(232, 176, 78, 0.07);
+}
+
+.rec-input-row {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.rec-prompt-input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid #2a2230;
+  border-radius: 4px;
+  color: rgba(228, 238, 255, 0.92);
+  font-family: monospace;
+  font-size: 12px;
+  padding: 9px 12px;
+  resize: vertical;
+  line-height: 1.5;
+  min-width: 0;
+  min-height: 72px;
+  transition: border-color 0.15s;
+}
+.rec-prompt-input::placeholder { opacity: 0.4; }
+.rec-prompt-input:focus { outline: none; border-color: rgba(126, 232, 162, 0.5); }
+
+.rec-generate-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(126, 232, 162, 0.4);
+  color: #7ee8a2;
+  font-family: monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  padding: 0 20px;
+  min-height: 72px;
+  border-radius: 4px;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.15s, background 0.15s, opacity 0.15s;
+}
+.rec-generate-btn:hover {
+  border-color: rgba(126, 232, 162, 0.7);
+  background: rgba(126, 232, 162, 0.07);
+}
+.rec-generate-busy {
+  opacity: 0.45;
+  cursor: progress;
+}
+
+.rec-error-msg {
+  font-size: 11px;
+  color: #fc5858;
+  opacity: 0.9;
+}
+
+/* ── Cards area ──────────────────────────────────────────────────────────── */
+
+.rec-cards-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 14px;
+}
+
+.rec-empty {
+  width: 100%;
+  text-align: center;
+  padding: 40px 16px;
+  opacity: 0.4;
+  font-style: italic;
+}
+
+/* ── Recipe card ─────────────────────────────────────────────────────────── */
+
+.rec-card {
+  width: 280px;
+  flex-shrink: 0;
+  border-radius: 5px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s, opacity 0.2s;
+}
+
+.rec-card-active {
+  border: 1px solid rgba(126, 232, 162, 0.55);
+  background: rgba(126, 232, 162, 0.05);
+  box-shadow: 0 0 20px rgba(126, 232, 162, 0.14);
+}
+
+.rec-card-inactive {
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.03);
+  opacity: 0.5;
+}
+
+.rec-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.rec-card-name-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.rec-card-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(228, 238, 255, 0.96);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rec-card-output {
+  font-size: 10px;
+  color: #7ee8a2;
+  opacity: 0.8;
+  letter-spacing: 0.04em;
+}
+
+.rec-toggle-pill {
+  align-self: flex-start;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.5);
+  font-family: monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  padding: 2px 7px;
+  border-radius: 999px;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.rec-toggle-pill:hover { color: rgba(255, 255, 255, 0.85); }
+.rec-pill-on {
+  border-color: rgba(126, 232, 162, 0.55);
+  color: #7ee8a2;
+  background: rgba(126, 232, 162, 0.08);
+}
+
+.rec-card-note {
+  font-size: 11px;
+  opacity: 0.65;
+  line-height: 1.45;
+}
+
+/* ── Processes + flows ───────────────────────────────────────────────────── */
+
+.rec-proc-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rec-proc-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 3px;
+}
+
+.rec-proc-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  margin-bottom: 2px;
+}
+
+.rec-proc-seq {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: rgba(126, 232, 162, 0.15);
+  color: #7ee8a2;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.rec-proc-name {
+  font-weight: 600;
+  color: rgba(228, 238, 255, 0.92);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rec-proc-dur {
+  font-size: 9px;
+  opacity: 0.55;
+}
+
+.rec-flow-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  padding: 1px 0;
+  min-width: 0;
+}
+
+.rec-flow-orphan { opacity: 0.55; padding-left: 6px; }
+
+.rec-action-badge {
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  padding: 1px 5px;
+  border: 1px solid;
+  border-radius: 2px;
+  text-transform: lowercase;
+  white-space: nowrap;
+}
+
+.rec-flow-spec {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgba(228, 238, 255, 0.85);
+}
+
+.rec-flow-qty {
+  font-size: 9px;
+  opacity: 0.65;
+  white-space: nowrap;
+}
+
+/* ── Mobile ─────────────────────────────────────────────────────────────── */
+
+@media (max-width: 700px) {
+  .rec-page { height: calc(100vh - 96px); }
+  .rec-header { padding: 8px 10px; gap: 8px; }
+  .rec-search-area, .rec-prompt-area { padding: 8px 10px; }
+  .rec-input-row { flex-direction: column; }
+  .rec-generate-btn { min-height: 40px; width: 100%; }
+  .rec-cards-area { padding: 10px; gap: 10px; }
+  .rec-card { width: 100%; }
+}

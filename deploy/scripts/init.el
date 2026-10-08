@@ -13,7 +13,7 @@
 ;;;      out of the repo (the local-dev case: drop a `(load "…/init.el")`
 ;;;      into ~/.emacs.d/init.el and it Just Works).
 ;;;   3. /home/playnet/playnet-repo — the path the Guix activation
-;;;      service deploys this file to on the Hetzner VM.
+;;;      service deploys this file to on the bootstrap VPS provider VM.
 
 (defvar playnet-project-root
   (or (getenv "PLAYNET_PROJECT_ROOT")
@@ -71,7 +71,7 @@ path and the live-reload watch roots.")
 ;;; When you save a Scheme file under module/ in any subtree of the
 ;;; playnet repo, push the new definitions into the running browser tab
 ;;; via the REPL relay (port 37146 by default).  No page reload, no
-;;; rebuild.  Pairs with `make weave-dev` / `make serve-dev` and the
+;;; rebuild.  Pairs with `make serve-dev` and the
 ;;; live-watch shepherd service on the VM.
 ;;;
 ;;; Two implementations are bundled and you can pick whichever fits:

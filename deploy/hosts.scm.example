@@ -1,0 +1,39 @@
+;;; deploy/hosts.scm — materialized host state (GITIGNORED, DO NOT COMMIT)
+;;;
+;;; This file is written automatically by the fleet reconciler every
+;;; time it provisions a new host or observes a state change on an
+;;; existing one. Do not edit by hand unless you know what you're
+;;; doing — the reconciler will overwrite your changes on its next
+;;; tick.
+;;;
+;;; Each entry is a <materialized-host> record (see deploy/guix/fleet.scm)
+;;; that maps a logical name to the concrete SporeStack machine:
+;;; machine-id, current IPv4, SSH host key (once scanned), bootstrap
+;;; state, and the atomic-XMR amount debited for its provisioning.
+;;;
+;;; This file's shape:
+;;;   (list <materialized-host> <materialized-host> ...)
+;;;
+;;; And it gets primitive-load'ed by machines.scm at deploy time so
+;;; `managed-host-environment-type` can build a `machine-ssh-configuration`
+;;; for every materialized entry.
+;;;
+;;; This .example file is committed as documentation. The real
+;;; hosts.scm is in .gitignore.
+
+(use-modules (playnet fleet records))
+
+(list
+ ;; Example entry (this is what the reconciler would write after
+ ;; provisioning playnet-dev-1 from the desired-fleet.scm example):
+ (materialized-host
+  #:name "playnet-dev-1"
+  #:machine-id "ss_m_example_replace_with_real_id"
+  #:ipv4 "198.51.100.23"
+  #:ipv6 "2001:db8::1"
+  #:provider "digitalocean"
+  #:flavor "vps-1vcpu-1gb"
+  #:created-at 1712000000
+  #:estimated-monthly-atomic 33300000000   ; 0.0333 XMR in atomic units
+  #:ssh-host-key "ssh-ed25519 AAAA... replace-with-real-keyscan-output"
+  #:bootstrap-state 'pending))

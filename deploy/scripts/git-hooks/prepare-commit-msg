@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# prepare-commit-msg — scrub two things from a commit message BEFORE the
+# commit exists (a message is immutable once made, so this is the only
+# clean fix):
+#
+#   1. The operator's real machine identity. Git writes the merge source
+#      into the default merge message — "Merge branch 'main' of
+#      /home/<user>/Programs/playnet" — and tooling sometimes quotes
+#      absolute paths ("Plan: /home/<user>/…"). Nine such messages reached
+#      public history (see docs/history/resign-2026-08-27.tsv rows reading
+#      "<local clone>"). Patterns are derived from the CURRENT operator's
+#      username — never hardcoded, so this script can't itself become a
+#      leak. The pre-push hook's Guard 3 backstops anything that still
+#      gets through (including hand-typed bare usernames, too ambiguous
+#      to edit automatically).
+#
+#   2. Any AI co-authorship trailer. This repo's policy (docs/dev/
+#      opsec-roadmap.md) is no "Co-Authored-By: Claude …", no
+#      "Claude-Session: …" — the session-link form of the trailer names a
+#      specific conversation, not just that AI assisted. These lines show
+#      up because an AI agent's own system prompt tells it to append them;
+#      this repo's policy overrides that regardless of what asked for it.
+#      Pre-push Guard 5 backstops anything that still gets through.
+#      PRE-EXISTING history already carries this trailer on most commits
+#      since 2026-03 — a separate, much larger decision (scrub vs. leave),
+#      not something this hook touches.
+#
+# Install via `make install-hooks`.
+
+set -euo pipefail
+
+msg_file="${1:?prepare-commit-msg: no message file}"
+
+me="$(id -un)"
+
+# Merge messages name the local clone as a path; the path says nothing a
+# reader needs ("<local clone>" says the same) and leaks the username.
+sed -i -E "s#(Merge .* of )(/home|/media)/${me}[^ ']*#\1<local clone>#g" "$msg_file"
+
+# Any other absolute path under the operator's home or media mounts:
+# keep the message readable, drop the identity.
+sed -i -E "s#/home/${me}#~#g; s#/media/${me}#/media/<user>#g" "$msg_file"
+
+# AI co-authorship / session trailers: drop the whole line. Anchored on
+# the VALUE shape (an @anthropic.com address, a claude.ai session URL),
+# not just the key — a key-only match once ate a sentence of ordinary
+# prose that happened to wrap onto a line starting with "Claude-Session:".
+sed -i -E '/^Co-Authored-By:[^<]*<[^>]*@anthropic\.com>[[:space:]]*$/d; /^Claude-Session:[[:space:]]*https:\/\/claude\.ai\/(code\/)?session_[A-Za-z0-9_-]+[[:space:]]*$/d' "$msg_file"
+
+exit 0

@@ -1,20 +1,953 @@
 secrets.scm
 secrets.env
 .env
-cogno-lisp/
+prompt.md
 minikanren/
-tests/screenshots/
-node_modules/
+tests/ux/screenshots/
+node_modules
 .claude/settings.local.json
 .vscode/settings.json
+veridian-wallet/
+free-assoc/
+# Hoot 0.8 live-hacking dev bundles (see docs/dev/LIVE_HACKING.md)
+browser/.dev/
+playnet.code-workspace
 
-# User-built Hoot wasm bundles (deps + sources are in git, the binary is not)
-# Rebuild with `make browser/repl.wasm` / `make weave/weave.wasm`.
-# The small reflect.wasm / wtf8.wasm runtimes alongside them are vendored
-# Hoot artifacts and stay tracked.
+# Rust build artifacts
+# rns-wasm/ and server/rns-bridge/ are satellites (deploy/satellites.scm),
+# placed by `make satellites` locally and by the CI hook on the box — never
+# tracked here. Their build products stay ignored under them too.
+/rns-wasm
+/server/rns-bridge
+# build-rns-wasm.sh's tool cache (wasm-bindgen-cli + cargo home), kept across deploys
+/.rns-wasm-tools/
+
+# rns-wasm built artifacts copied for serving (rebuild with wasm-pack).
+# The crate itself lives at the repo root, OUTSIDE the served browser/
+# tree; only these two products land in the document root.
+browser/rns_wasm.js
+browser/rns_wasm_bg.wasm
+# build-rns-wasm.sh's content stamp: the hash of the crate sources those two were built from
+browser/.rns-wasm-stamp
+
+# repl.wasm is a 10.5 MB BUILD PRODUCT of hoot/repl.scm and the modules it
+# imports. It was tracked, so every rebuild wrote ten megabytes of churn into
+# the history of a repo that has twice been rewritten to stay small. The box
+# builds its own copy — radicle-ci-hook.sh runs `make browser/repl.wasm` on
+# each push — so the committed bytes were never the ones being served.
+# Build locally with: make browser/repl.wasm
 browser/repl.wasm
+
+# Vendored transformers.js + ONNX runtime for the local Whisper worker.
+# Committed to the repo so prod's rad-CI rsync ships them — gitignoring
+# them broke the prod path because the radicle-ci-hook can't re-fetch
+# 22 MB from a CDN over Tor on every deploy. fetch.sh updates them.
+
+# Corpus texts, derived indexes and embedding-model weights.
+# manifest.scm + profile.scm ARE committed — they carry the provenance and the
+# fetch recipe, so `corpus fetch && corpus build` reconstructs everything here.
+# The bytes themselves stay local: .git is already large, every Radicle clone
+# and CI rsync pays for what lands in it, and third-party book text has no
+# business on a public remote. See docs/corpus/README.md.
+docs/corpus/**/texts/
+docs/corpus/**/.index/
+docs/corpus/.models/
+tools/corpus/node_modules/
+
+# Provider configs contain server IPs — NEVER commit
+deploy/providers/*.scm
+!deploy/providers/example.scm
+
+# Fleet reconciler — materialized host state (contains IPs)
+deploy/hosts.scm
+deploy/desired-fleet.scm
+deploy/fleet-network.scm
+
+# age encryption key — NEVER commit (back up alongside Monero seed)
+deploy/.age-key.txt
+
+# A real household's own family-budget numbers (ui/app/tabs/family.ts,
+# ?familydata=local) — NEVER commit. This repo is public and anonymously
+# cloneable; real names/vendors/amounts stay on the machine that typed them.
+browser/app/family-data*.local.json
+# YubiKey identity is SAFE to commit (it's a public reference to the
+# hardware key slot, not a secret — decryption requires physical touch)
+!deploy/.age-yubikey-identity.txt
+
+# Dev notes
+docs/dev/build-notes.md
+docs/dev/opsec-roadmap.md
+docs/dev/sms-wall.md
+
+# Third-party source PDFs (copyrighted; kept local, not seeded on the channel)
+docs/SecondOrder_Leuven22_references/
+
+# Build scripts with embedded credentials — NEVER commit
+build-iso.sh
+
+# Guix system image symlinks + GC roots from `make iso` / `make iso-raw`.
+# Local pointers at /gnu/store paths; rebuild instead of committing.
+result-iso
+result-iso-raw
+
+# Claude Code / opencode: local settings ignored via line 8 above.
+# agents/commands/skills/plans are versioned; .opencode/.gitignore excludes its own
+# node_modules/package*.json.
+
+# Deploy snapshot of the booted ISO — contains the live host IP, never commit
+deploy/iso-cid.txt
+
+# gateway runtime state (designator/vapid keys, syrup stores, srefs) — never commit
+/data/
+
+# local Valhalla build + tiles (not vendored)
+.valhalla/
+
+# Capacitor shell (app/): deps + generated artifacts — cap sync recreates
+app/node_modules/
+app/android/app/src/main/assets/public/
+app/android/app/src/main/assets/capacitor.config.json
+app/android/app/src/main/assets/capacitor.plugins.json
+app/android/.gradle/
+app/android/app/build/
+app/android/build/
+app/android/local.properties
+app/www/
+app/android/capacitor-cordova-android-plugins/
+.dev-data/
+
+# opsec audit report — never commit (contains the leak inventory)
+OPSEC-LEAKS.local.md
+
+# docs/planning/*.local.md — any planning note meant to stay off canonical,
+# by convention
+docs/planning/*.local.md
+
+# docs/agreements/ — the member-body agreement template and every filled copy.
+# A filled agreement names real organisations, addresses and signatories; this
+# repo is public and pseudonymous. Nothing under it is ever committed.
+/docs/agreements/
+
+# Real Radicle seed list (production onion) — delivered out-of-band, never committed
+deploy/radicle-seeds.local.txt
+
+# Python bytecode cache (build artifact)
+**/__pycache__/
+
+# Reference scans — kept local, out of the Tor-seeded repo. A 12 MB book is a
+# permanent 12 MB in every clone, and a filename carrying its download site
+# advertises that site to everyone who fetches the project.
+docs/*essays in optimal planning*.pdf
+
+# Large antifragile reference binaries — kept local, out of the Tor-seeded repo
+docs/antifragile/**/*.pdf
+docs/antifragile/**/*.png
+docs/antifragile/**/*.jpeg
+docs/antifragile/**/*.jpg
+
+# dev live-reload token (tools/livereload-watch.py)
+browser/reload-token.txt
+
+# dev onion data dir (tools/onion.sh) — contains the hidden-service key, never commit
+.onion-data/
+
+# basemap tile proxy cache (server/serve-static.scm /tiles)
+data/tile-cache/
+
+# Safety net: headless-browser dev screenshots go to ~/playnet-dev-shots (OUTSIDE
+# this repo). But if a stray headless Firefox/Chromium run ever writes a profile
+# into the tree again, never let its scratch files become committable. Anchored
+# to the repo root (leading /) — a browser profile only ever lands at top level,
+# so this can't shadow a legit *.sqlite fixture nested elsewhere.
+/cache2/
+/startupCache/
+/extension-store/
+/extensions/
+/*.sqlite
+/*.sqlite-wal
+/*.sqlite-shm
+/prefs.js
+/.parentlock
+/sessionCheckpoints.json
+/SiteSecurityServiceState.bin
+/bounce-tracking-protection.sqlite
+
+# browser e2e scratch (tests/ux/ux-full.sh keeps it on failure for diagnosis)
+/.ux-e2e-data/
+.test-failures/
+
+# solver-certificate Lean project (docs/formal/): not part of playnet's
+# build (see its own README). `lake update`/`lake build` fetch mathlib and
+# its ~7 dependencies plus their prebuilt .olean cache into .lake/ — a
+# multi-GB build artifact, not source. lake-manifest.json (the dependency
+# lockfile, pinning exact revs) IS committed, same as Cargo.lock.
+docs/formal/solver-certificate/.lake/
+
+# --- Slim-repo policy (2026-08-27): a public Tor-seeded clone pays forever
+# for every committed byte, and heartwood's 2-minute fetch window caps how
+# much a contributor can pull. The pack budget is ~50 MiB. ---
+
+# Hoot wasm build products — the box builds its own on each deploy
+# (radicle-ci-hook.sh build_browser_wasm, P-filtered in the rsync); the
+# repl.wasm note above carries the full story.
+browser/day-boot.wasm
+browser/family.wasm
+browser/scope.wasm
 weave/weave.wasm
 
-# Hoot 0.8 live-hacking dev bundles (see docs/LIVE_HACKING.md)
-browser/.dev/
-weave/.dev/
+# Documents: typeset outputs of the in-repo .typ sources (`typst compile`
+# rebuilds them) and third-party literature (kept local like the corpus
+# texts — the .md/.typ companions stay committed and citable).
+*.pdf
+*.epub
+*.odp
+*.pptx
+docs/evr/NAC_sepv2.html
+docs/data/bea/2002detail.zip
+docs/valhalla/*/images/
+
+# UX-test outputs (screenshots, recordings) — written by every test run
+tests/ux/_artifacts/
+/xorg_poster.png
+
+# built at deploy by deploy/scripts/build-docs-epub.sh (radicle-ci-hook build_docs_epub)
+browser/docs/
+
+# browser/radicle is the explorer satellite (deploy/satellites.scm), placed by
+# `make satellites` locally and by the CI hook on the box — never tracked here.
+/browser/radicle
+
+# /app/ and /tooling/ are satellites (deploy/satellites.scm), placed by
+# `make satellites`; the box does not consume them. Never tracked here.
+# Anchored: an unanchored `app/` also ignored ui/app and browser/app.
+/app
+/tooling
+
+# generated by `make check-hoot-planner`: the engine with #:declarative? on, and the probe wasm
+/.hoot-src
+
+# the identity of the wasm toolchain (Guix pin + playnet-hoot.scm + patches); the wasm rules depend on it
+/.hoot-toolchain
+
+# Superseded drafts of the long-form paper and the explainer, kept on the
+# maintainer's machine and out of the public tree (commons-4.typ is the
+# README's paper of record; commons-5.typ is still tracked pending review).
+docs/papers/commons-2.typ
+docs/papers/commons-3.typ
+docs/explainers/commons.typ
+docs/explainers/commons.typ.asc
+
+# Old long-form paper drafts, no longer needed in the public tree; kept on the
+# maintainer's machine and ignored by path.
+docs/papers/commons-4.typ
+docs/papers/commons-5.typ
+
+# Archived governance drafts (theory-framed); kept on the maintainer's machine
+# and ignored by path, not by directory, so a new file here stays visible.
+docs/governance/archive/C23-BK4-GOVERNANCE.md
+docs/governance/archive/GOVERNANCE-OCAP.md
+docs/governance/archive/GUARDIANSHIP-DESIGN.md
+docs/governance/archive/INTERCEPT-LIQUID-WORKERS.md
+docs/governance/archive/RESOURCE-CLASSIFICATIONS.md
+docs/governance/archive/SVO.md
+docs/governance/archive/econ.md
+docs/governance/archive/economy.md
+docs/governance/archive/equations.md
+docs/governance/archive/gov.md
+docs/governance/archive/ideas.md
+docs/governance/archive/manifesto.md
+docs/governance/archive/method-v2.md
+docs/governance/archive/method.md
+docs/governance/archive/orig.md
+docs/governance/archive/original.md
+
+# Old playnet paper drafts and a dev reading note on the theory-framed reading;
+# kept on the maintainer's machine, ignored by path.
+docs/papers/playnet-0.9.typ
+docs/papers/playnet-0.9B.typ
+docs/papers/playnet-0.9C.typ
+docs/dev/reading-iv-interpretation.md
+
+# The SVO lens grammar and its relations note: a theory-framed formal model,
+# kept on the maintainer's machine and ignored by path.
+module/playnet/lang/svo.scm
+docs/relations/GRAMMAR.md
+
+# theory-framed essays and a paper todo, kept on the maintainer's machine
+docs/essays/capitalVol2Ch8.md
+docs/essays/reproduction-of-labor.md
+docs/papers/commons-6-todo.md
+
+# Kept on the maintainer's machine, ignored by path.
+docs/options/OPTION.md
+docs/options/COMMONS-OPTION.md
+docs/options/COMMONS-OPTION-VF.md
+
+# Every tracked document below is moved out of the tree and kept on the
+# maintainer's machine. Nothing here is deleted; documents return only by
+# an explicit decision.
+.claude/agents/acdc-signing-reviewer.md
+.claude/agents/deploy-preflight.md
+.claude/agents/goblins-actor-reviewer.md
+.claude/agents/opsec-scrub-reviewer.md
+.claude/agents/provenance-tag-assistant.md
+.claude/agents/spec-conformance.md
+.claude/agents/test-runner.md
+.claude/commands/actors.md
+.claude/commands/browser.md
+.claude/commands/character-shaping.md
+.claude/commands/deploy.md
+.claude/commands/emacs.md
+.claude/commands/evaluator.md
+.claude/commands/form.md
+.claude/commands/goblins.md
+.claude/commands/guix.md
+.claude/commands/hoot-docs.md
+.claude/commands/key-pool.md
+.claude/commands/knowledge.md
+.claude/commands/planner.md
+.claude/commands/relational.md
+.claude/commands/relay.md
+.claude/commands/repl.md
+.claude/commands/reticulum.md
+.claude/commands/scheme.md
+.claude/commands/shepherd.md
+.claude/commands/tails-setup.md
+.claude/plans/floofy-wibbling-kite.md
+.claude/skills/default/SKILL.md
+.opencode/commands/actors.md
+.opencode/commands/browser.md
+.opencode/commands/character-shaping.md
+.opencode/commands/deploy.md
+.opencode/commands/emacs.md
+.opencode/commands/evaluator.md
+.opencode/commands/goblins.md
+.opencode/commands/guix.md
+.opencode/commands/hoot-docs.md
+.opencode/commands/key-pool.md
+.opencode/commands/knowledge.md
+.opencode/commands/planner.md
+.opencode/commands/relational.md
+.opencode/commands/relay.md
+.opencode/commands/repl.md
+.opencode/commands/reticulum.md
+.opencode/commands/scheme.md
+.opencode/commands/shepherd.md
+.opencode/commands/tails-setup.md
+.opencode/commands/units.md
+.opencode/skills/actors/SKILL.md
+.opencode/skills/browser/SKILL.md
+.opencode/skills/character-shaping/SKILL.md
+.opencode/skills/corpus/SKILL.md
+.opencode/skills/deploy/SKILL.md
+.opencode/skills/despaghetti/SKILL.md
+.opencode/skills/emacs/SKILL.md
+.opencode/skills/evaluator/SKILL.md
+.opencode/skills/goblins/SKILL.md
+.opencode/skills/guix/SKILL.md
+.opencode/skills/hoot-docs/SKILL.md
+.opencode/skills/key-pool/SKILL.md
+.opencode/skills/knowledge/SKILL.md
+.opencode/skills/planner/SKILL.md
+.opencode/skills/recipes/SKILL.md
+.opencode/skills/relational/SKILL.md
+.opencode/skills/relay/SKILL.md
+.opencode/skills/repl/SKILL.md
+.opencode/skills/reticulum/SKILL.md
+.opencode/skills/scheme/SKILL.md
+.opencode/skills/shepherd/SKILL.md
+.opencode/skills/tails-setup/SKILL.md
+.opencode/skills/transcribe/SKILL.md
+.opencode/skills/typescript/SKILL.md
+CLAUDE.md
+CONTRIBUTING.md
+LICENSE-ADDITIONAL-TERMS.md
+LICENSE.md
+README.md
+SECURITY.md
+THIRD-PARTY-NOTICES.md
+deploy/DEPLOY-GUIDE.md
+deploy/README.md
+deploy/UPSTREAM-ISSUES.md
+deploy/peer/README.md
+deploy/server-1/README.md
+deploy/typst-packages/preview/cetz/0.3.4/README.md
+deploy/typst-packages/preview/cetz/0.3.4/src/aabb.typ
+deploy/typst-packages/preview/cetz/0.3.4/src/anchor.typ
+deploy/typst-packages/preview/cetz/0.3.4/src/bezier.typ
+deploy/typst-packages/preview/cetz/0.3.4/src/canvas.typ
+deploy/typst-packages/preview/cetz/0.3.4/src/complex.typ
+deploy/typst-packages/preview/cetz/0.3.4/src/coordinate.typ
+deploy/typst-packages/preview/cetz/0.3.4/src/deps.typ
+deploy/typst-packages/preview/cetz/0.3.4/src/draw.typ
+deploy/typst-packages/preview/cetz/0.3.4/src/draw/grouping.typ
+deploy/typst-packages/preview/cetz/0.3.4/src/draw/projection.typ
+deploy/typst-packages/preview/cetz/0.3.4/src/draw/shapes.typ
+deploy/typst-packages/preview/cetz/0.3.4/src/draw/styling.typ
+deploy/typst-packages/preview/cetz/0.3.4/src/draw/transformations.typ
+deploy/typst-packages/preview/cetz/0.3.4/src/draw/util.typ
+deploy/typst-packages/preview/cetz/0.3.4/src/drawable.typ
+deploy/typst-packages/preview/cetz/0.3.4/src/hobby.typ
+deploy/typst-packages/preview/cetz/0.3.4/src/intersection.typ
+deploy/typst-packages/preview/cetz/0.3.4/src/lib.typ
+deploy/typst-packages/preview/cetz/0.3.4/src/lib/angle.typ
+deploy/typst-packages/preview/cetz/0.3.4/src/lib/decorations.typ
+deploy/typst-packages/preview/cetz/0.3.4/src/lib/decorations/brace.typ
+deploy/typst-packages/preview/cetz/0.3.4/src/lib/decorations/path.typ
+deploy/typst-packages/preview/cetz/0.3.4/src/lib/palette.typ
+deploy/typst-packages/preview/cetz/0.3.4/src/lib/pin.typ
+deploy/typst-packages/preview/cetz/0.3.4/src/lib/tree.typ
+deploy/typst-packages/preview/cetz/0.3.4/src/mark-shapes.typ
+deploy/typst-packages/preview/cetz/0.3.4/src/mark.typ
+deploy/typst-packages/preview/cetz/0.3.4/src/matrix.typ
+deploy/typst-packages/preview/cetz/0.3.4/src/path-util.typ
+deploy/typst-packages/preview/cetz/0.3.4/src/polygon.typ
+deploy/typst-packages/preview/cetz/0.3.4/src/process.typ
+deploy/typst-packages/preview/cetz/0.3.4/src/sorting.typ
+deploy/typst-packages/preview/cetz/0.3.4/src/styles.typ
+deploy/typst-packages/preview/cetz/0.3.4/src/util.typ
+deploy/typst-packages/preview/cetz/0.3.4/src/vector.typ
+deploy/typst-packages/preview/cetz/0.3.4/src/version.typ
+deploy/typst-packages/preview/oxifmt/0.2.1/README.md
+deploy/typst-packages/preview/oxifmt/0.2.1/oxifmt.typ
+docs/Agroecology and Regenerative Agriculture/book.md
+docs/antifragile/antifragile.md
+docs/architecture/ARCHITECTURE-EXPLAINED.md
+docs/architecture/ARCHITECTURE.md
+docs/architecture/COMBINATORS.md
+docs/architecture/COMPLEXITY.md
+docs/architecture/STACK.md
+docs/architecture/sequence-chart.md
+docs/archive/recognition-economy.typ
+docs/archive/social-category.typ
+docs/clock/golden-angle.typ
+docs/clock/scope-cell-drawing.typ
+docs/clock/scope-cell-spec.typ
+docs/clock/scope-cell.typ
+docs/clock/tau-time.typ
+docs/common-property.typ
+docs/compounding.typ
+docs/conditions-of-production.typ
+docs/corpus/README.md
+docs/credential-seam.typ
+docs/ddi/ch7-conformance.md
+docs/ddi/ch8-adjustments.md
+docs/ddi/ddmrp-operational-map.md
+docs/ddi/ddmrp-schema-alignment.md
+docs/ddi/ddmrp.md
+docs/ddi/flow.md
+docs/ddi/images-extracted.md
+docs/ddi/notes.md
+docs/ddi/specs.md
+docs/deploy/AMD-ATTESTATION.md
+docs/deploy/BACKUP-RECOVERY.md
+docs/deploy/CLEARNET-FACES.md
+docs/deploy/FIRST-DEPLOY.md
+docs/deploy/FLEET-HOST-INSTALL.md
+docs/deploy/INCIDENT-RESPONSE.md
+docs/deploy/META-GUIDE.md
+docs/deploy/OOBI-CLEARNET.md
+docs/deploy/TAILS-OPERATOR-NOTES.md
+docs/dev/LIVE_HACKING.md
+docs/dev/MANUAL-VERIFICATION.md
+docs/dev/SELF-IMPROVING-LOOP.md
+docs/dev/browser-ws-verify-test.md
+docs/dev/client-storage-survey.md
+docs/dev/clock-projection.md
+docs/dev/contributing.md
+docs/dev/deprecation-tracking.md
+docs/dev/design-heuristics.md
+docs/dev/interface-architecture.md
+docs/dev/interface-walkthrough-governance.md
+docs/dev/interface-walkthrough.md
+docs/dev/note.md
+docs/dev/tabs-data-map.md
+docs/dev/telegram-commands.md
+docs/dev/todo.md
+docs/dev/variable-substitutions.md
+docs/dev/variables-map.md
+docs/dev/welfare-voice-scope.md
+docs/enough-for-everyone.typ
+docs/essays/iiw-handout.md
+docs/essays/learning_ecological_harmony.md
+docs/essays/schiller.md
+docs/evr/algorithms.md
+docs/evr/billings-overview.md
+docs/explainers/kitchen-on-demand.md
+docs/family-budget.typ
+docs/first-person/being-recognised.md
+docs/first-person/contacts.md
+docs/first-person/deployment.md
+docs/first-person/first-person-intent-mapping.md
+docs/first-person/first-person-project-structure.md
+docs/first-person/fpp-on-keri.md
+docs/first-person/root-of-trust.md
+docs/form-and-substance.typ
+docs/formal/solver-certificate/README.md
+docs/governance/ARCHITECTURE.md
+docs/governance/BOOTSTRAP.md
+docs/governance/FEDERATION-COMPOSITION.md
+docs/governance/FEDERATION-WITNESSES.md
+docs/governance/FREE-ASSOCIATION.md
+docs/governance/GOVERNANCE-CEREMONIES.md
+docs/governance/GOVERNANCE-COMPARATIVE.md
+docs/governance/GOVERNANCE-PROPORTIONAL.md
+docs/governance/HARDENING.md
+docs/governance/IMPLEMENTATION.md
+docs/governance/IPEX-PIPELINE.md
+docs/governance/KERI-OCAP-ARCHITECTURE.md
+docs/governance/LEAVES-ARE-REAL.md
+docs/governance/PLAN-GOVERNANCE.md
+docs/governance/PLAYNET-AS-IPEX-PEER.md
+docs/governance/README.md
+docs/governance/SCOPE-HANDOFF.md
+docs/governance/UC-DEPLOYMENT.md
+docs/governance/UC-FAILOVER.md
+docs/governance/USER-DATA-PORTABILITY.md
+docs/governance/VOICE-ACTOR.md
+docs/governance/democracy-on-keri.md
+docs/governance/governance-surface.md
+docs/governance/persistence-operations.md
+docs/guile-hoot-docs/00-introduction.md
+docs/guile-hoot-docs/01-status.md
+docs/guile-hoot-docs/02-installation.md
+docs/guile-hoot-docs/03-tutorial.md
+docs/guile-hoot-docs/04-compiling-to-wasm.md
+docs/guile-hoot-docs/05-toolchain-reference.md
+docs/guile-hoot-docs/06-contributing.md
+docs/guile-hoot-docs/07-license.md
+docs/guile-hoot-docs/08-foreign-function-interface.md
+docs/guile-hoot-docs/09-javascript-reflection.md
+docs/guile-hoot-docs/10-guile-reflection.md
+docs/guile-hoot-docs/README.md
+docs/guix/ROADMAP.md
+docs/guix/advanced-package-management.md
+docs/guix/mac-randomization.md
+docs/guix/packaging-workflows.md
+docs/guix/systems-config.md
+docs/history/identity-scrub-2026-09-21.md
+docs/inquiry-commons.md
+docs/inquiry-tree.md
+docs/inquiry.md
+docs/kan-comp/COINDUCTIVE-BOUNDARIES.md
+docs/kan-comp/GOBLINS-KANREN.md
+docs/kan-comp/KAN.md
+docs/keri/ACDC.md
+docs/keri/IMPLEMENTATION.md
+docs/keri/IPEX.md
+docs/keri/KERI-INTEGRATION.md
+docs/keri/KERI.md
+docs/keri/OOBI.md
+docs/keri/PLAN-KERI-UX.md
+docs/keri/PLAYNET-KERI-CONFORMANCE.md
+docs/keri/SIGNIFY-PARITY.md
+docs/legal/README.md
+docs/networking/LXMF-STORE-AND-FORWARD.md
+docs/networking/PEER-DISCOVERY.md
+docs/networking/RETICULUM-IDENTITIES.md
+docs/networking/RETICULUM-NETLAYER.md
+docs/networking/crypto.md
+docs/networking/federation-comparison.md
+docs/networking/prelay.md
+docs/notifications/NOTIFICATION-TYPES.md
+docs/notifications/NOTIFICATIONS-MANUAL-TEST.md
+docs/notifications/NOTIFICATIONS.md
+docs/notifications/UNIFIED-ROUTER.md
+docs/nutritional-engine.typ
+docs/observation/README.md
+docs/observation/capture.md
+docs/observation/measure.md
+docs/observation/ngsi-ld.md
+docs/observation/observe-wiring.md
+docs/observation/observe.md
+docs/observation/physics-register.md
+docs/observation/physics.md
+docs/observation/readings-are-counts.md
+docs/open-threads.md
+docs/options/OPTION-PREMIUM-SPEC.md
+docs/papers/clock-focus.typ
+docs/papers/commons-drift.md
+docs/papers/commons-variables.md
+docs/papers/one-hour.typ
+docs/papers/planner-as-active-inference.typ
+docs/papers/play-clock.typ
+docs/papers/the-margin.typ
+docs/planner/COMPUTE.md
+docs/planner/DEPENDENCY_ANALYSIS.md
+docs/planner/README.md
+docs/planner/architecture.md
+docs/planning/admin-derived-demand.typ
+docs/planning/audits/acdc-signing-audit-2026-07-21.md
+docs/planning/audits/goblins-actor-audit-2026-07-20.md
+docs/planning/audits/protocol-inventory-2026-09-12.md
+docs/planning/books/accounting-horizon.md
+docs/planning/books/accounting-work-log.md
+docs/planning/books/beyond-valueflows.md
+docs/planning/books/confirmed-flow-stock-defects.md
+docs/planning/books/correct-by-construction-confirmation.md
+docs/planning/books/leave-and-take.md
+docs/planning/books/portable-event-log.md
+docs/planning/books/transport-modes-and-observation.md
+docs/planning/books/valueflows-accounting-by-construction.md
+docs/planning/books/valueflows-accounting-rules.md
+docs/planning/books/valueflows-native-inventory.md
+docs/planning/codebase-organization.md
+docs/planning/faces/ai-stack-wiring.md
+docs/planning/faces/calendar-design.md
+docs/planning/faces/city-symbol-table.md
+docs/planning/faces/communications-recipes.md
+docs/planning/faces/corpus-guile-native.md
+docs/planning/faces/door-inventory.md
+docs/planning/faces/festival-live-coherence-threads.md
+docs/planning/faces/meeting-station.md
+docs/planning/faces/nl-interface.md
+docs/planning/faces/offline-outbox.md
+docs/planning/faces/recipe-patchbay.md
+docs/planning/faces/spine-worker.md
+docs/planning/faces/voice-search-pipeline.md
+docs/planning/faces/watch-progressive-disclosure.md
+docs/planning/faces/world-loop.md
+docs/planning/federation/FEDERATED-SOLVE.md
+docs/planning/federation/capacity-combine-across-scopes.md
+docs/planning/federation/federation-flow-map.md
+docs/planning/federation/federation-identity-and-folds.md
+docs/planning/federation/international-socialization.md
+docs/planning/federation/labour-aggregation-architecture.md
+docs/planning/federation/labour-assignment-and-rotation.md
+docs/planning/federation/live-location-and-desire-aggregation.md
+docs/planning/federation/means-pool-uc-allocation.md
+docs/planning/federation/monitoring-channel.md
+docs/planning/federation/patchwork-scopes-containment.md
+docs/planning/federation/three-trees.md
+docs/planning/food/agroecology-bring-over.md
+docs/planning/food/berlin-food-data-sources.md
+docs/planning/food/berlin-food-networks.md
+docs/planning/food/berlin-socialize-infra.md
+docs/planning/food/berlin-verteilstation-requirements.md
+docs/planning/food/diet-constraints.md
+docs/planning/food/feel-the-food.md
+docs/planning/food/foodsharing-requirements.md
+docs/planning/food/forestry-bring-over.md
+docs/planning/food/free-healthy-food-for-everyone.md
+docs/planning/food/natural-processes-research-plan.md
+docs/planning/food/permaculture-bring-over.md
+docs/planning/food/reproduction-of-labour-power.md
+docs/planning/food/resource-slots-mapping.md
+docs/planning/identity/device-keys.md
+docs/planning/identity/first-person-portable-citizen-index.md
+docs/planning/identity/folksonomy.md
+docs/planning/identity/keri-openvtc-library-split.md
+docs/planning/identity/openvtc-parity.md
+docs/planning/identity/repo-split-and-protocol-doors.md
+docs/planning/identity/skill-maintenance-recipes.md
+docs/planning/identity/skill-standing.md
+docs/planning/identity/trust-substrate-belief-acceptance.md
+docs/planning/identity/truth-telling.md
+docs/planning/legal/berlin-food-policy-reform.md
+docs/planning/legal/gdpr-analysis.md
+docs/planning/legal/inspection-in-plan.md
+docs/planning/legal/legal-compliance-lifecycle.md
+docs/planning/legal/legal-crossings.md
+docs/planning/legal/two-rulebooks.md
+docs/planning/provenance-bridge.md
+docs/planning/provenance-graph.md
+docs/planning/social-genetics.typ
+docs/planning/socialization/anon-purchase-gift-cards.md
+docs/planning/socialization/housing-socialization.md
+docs/planning/socialization/reimbursement-funding-source.md
+docs/planning/socialization/social-means-common-property-divergences.md
+docs/planning/socialization/socialization-surfaces.md
+docs/planning/socialization/socialize-interface.md
+docs/planning/socialization/temporary-socialization.md
+docs/planning/socialization/three-bills.md
+docs/planning/solve/antifragile-sweep.md
+docs/planning/solve/cadence-phase-axis.md
+docs/planning/solve/capacity-denomination-open-questions.md
+docs/planning/solve/commitment-horizon.md
+docs/planning/solve/control_system.md
+docs/planning/solve/discrete-layer.md
+docs/planning/solve/drawn-stock-weight.md
+docs/planning/solve/ecological-tipping-ideal.md
+docs/planning/solve/ecological-tipping-tensions.md
+docs/planning/solve/harmony-planning-design.md
+docs/planning/solve/intra-period-time.md
+docs/planning/solve/plan-acceptance.md
+docs/planning/solve/planner-coherence-open-threads.md
+docs/planning/solve/planner-cross-pollination.md
+docs/planning/solve/planner-known-gaps.md
+docs/planning/solve/planner-open-questions.md
+docs/planning/solve/planning-under-uncertainty.md
+docs/planning/solve/possibility-tensions-unified.md
+docs/planning/solve/propagator.md
+docs/planning/solve/quantity-as-a-cap.md
+docs/planning/solve/recipe-metabolism-barbell.md
+docs/planning/solve/reproduction-bands.md
+docs/planning/solve/robust-multiscenario.md
+docs/planning/solve/robust-tractability.md
+docs/planning/solve/scenario-intent-shocks.md
+docs/planning/solve/scenario-tree.md
+docs/planning/solve/space-time-navigation.md
+docs/planning/solve/step-notes.md
+docs/planning/solve/temporal-expression-vs-rrule.md
+docs/planning/solve/time-and-uncertainty.md
+docs/planning/solve/wiod-planner.md
+docs/planning/solve/worker-supply-capacity-solver-bug.md
+docs/planning/voice/README.md
+docs/planning/voice/feasibility-follows-the-map.md
+docs/planning/voice/outside-mapped.md
+docs/planning/voice/voice-follows-work.md
+docs/planning/voice/voice-in-lean.md
+docs/planning/voice/voice-over-the-plan.md
+docs/planning/voice/weights-and-books.md
+docs/playnet-color-audit.md
+docs/playnet.md
+docs/playnet.typ
+docs/radicle-issues.md
+docs/recipe-and-thing.typ
+docs/reference/SecondOrder_Leuven22_references/README.md
+docs/reference/SecondOrder_Leuven22_references/fleet-geo-distribution-plan.md
+docs/reference/berlin-food/README.md
+docs/reference/heart.md
+docs/reference/real_time_compute.md
+docs/regenerativa-agreements/Agreements/Agreement-1-Ownership.md
+docs/regenerativa-agreements/Agreements/Agreement-2-Membership.md
+docs/regenerativa-agreements/Agreements/Agreement-3-Stewardship.md
+docs/regenerativa-agreements/Agreements/Agreement-4-Mentorship.md
+docs/regenerativa-agreements/Agreements/Agreement-5-Sponsorship.md
+docs/regenerativa-agreements/Agreements/Agreement-6-Partnership.md
+docs/regenerativa-agreements/Agreements/Agreement-7-Intrapreneurship.md
+docs/regenerativa-agreements/Agreements/Agreement-8-Eldership.md
+docs/regenerativa-agreements/Annexes/Agreement-1-Annex-1-Asset-Description-and-Access.md
+docs/regenerativa-agreements/Annexes/Agreement-1-Annex-2-Permitted-Use-and-Regenerative-Impact.md
+docs/regenerativa-agreements/Annexes/Agreement-1-Annex-3-Hub-Care-Protocol.md
+docs/regenerativa-agreements/Annexes/Agreement-1-Annex-4-Shared-Infrastructure.md
+docs/regenerativa-agreements/Annexes/Agreement-1-Annex-5-Hub-DNA.md
+docs/regenerativa-agreements/Annexes/Agreement-1-Annex-6-Asset-Care-Protocol.md
+docs/regenerativa-agreements/Annexes/Agreement-2-Annex-1-Member-Onboarding.md
+docs/regenerativa-agreements/Annexes/Agreement-3-Annex-1-Steward-Onboarding.md
+docs/regenerativa-agreements/Annexes/Agreement-4-Annex-1-Programme-Template.md
+docs/regenerativa-agreements/Annexes/Agreement-5-Annex-1-Support-Schedule.md
+docs/regenerativa-agreements/Annexes/Agreement-5-Annex-2-Recognition-Terms.md
+docs/regenerativa-agreements/Annexes/Agreement-6-Annex-1-Partner-Onboarding-and-Register.md
+docs/regenerativa-agreements/Annexes/Agreement-6-Annex-2-Economics-Schedule.md
+docs/regenerativa-agreements/Annexes/Agreement-6-Annex-3-Project-Sheet.md
+docs/regenerativa-agreements/Annexes/Agreement-6-Annex-4-Contribution-Log.md
+docs/regenerativa-agreements/Annexes/Agreement-7-Annex-1-Venture-Sheet.md
+docs/regenerativa-agreements/Annexes/Agreement-7-Annex-2-Phase-Review.md
+docs/regenerativa-agreements/Annexes/Agreement-7-Annex-3-Emergence.md
+docs/regenerativa-agreements/Annexes/Agreement-8-Annex-1-Elder-Council-Charter.md
+docs/regenerativa-agreements/Annexes/Agreement-8-Annex-2-Transition-Rite-Record.md
+docs/regenerativa-agreements/COMPATIBILITY.md
+docs/regenerativa-agreements/Companion-Docs/Constellation-FAQ-Concerns-by-Agreement.md
+docs/regenerativa-agreements/Companion-Docs/Internal-Regulation-Organisation-in-Holons.md
+docs/regenerativa-agreements/Companion-Docs/Living-Governance-Resolutions.md
+docs/regenerativa-agreements/Companion-Docs/Mutual-Prosperity-Covenant.md
+docs/regenerativa-agreements/Companion-Docs/Network-Passport.md
+docs/regenerativa-agreements/Companion-Docs/Operational-Procedures.md
+docs/regenerativa-agreements/Companion-Docs/Participant-and-Community-Charter.md
+docs/regenerativa-agreements/Companion-Docs/Regenerative-Impact-Framework.md
+docs/regenerativa-agreements/Companion-Docs/Safeguarding-Policy-and-Code-of-Conduct.md
+docs/regenerativa-agreements/Companion-Docs/Statute-ReGenerativa-APS.md
+docs/regenerativa-agreements/Companion-Docs/Statuto-ReGenerativa-APS.md
+docs/regenerativa-agreements/Companion-Docs/The-Fund-in-Plain-Language.md
+docs/regenerativa-agreements/Constellation-Cheatsheet.md
+docs/regenerativa-agreements/Constellation-Overview.md
+docs/regenerativa-agreements/General-Terms-and-Conditions.md
+docs/regenerativa-agreements/Introduction-A-Constellation-of-Agreements.md
+docs/regenerativa-agreements/LICENSE.md
+docs/regenerativa-agreements/README.md
+docs/relations/OBSERVATION-AND-RELATIONS.md
+docs/relations/RELATIONS.md
+docs/relations/relational-metaprogramming.md
+docs/rights.md
+docs/robust.typ
+docs/safety.md
+docs/security/COMMUNIQUE-NEXT-STEPS.md
+docs/security/OPERATOR-GUIDE.md
+docs/security/PATH-TO-10.md
+docs/security/PENTEST-REPORT.md
+docs/security/XB-307-FINAL-STATUS.md
+docs/social-compute.typ
+docs/social-material.typ
+docs/social-means.typ
+docs/social-roles.typ
+docs/social-time.typ
+docs/socialization-agreement.typ
+docs/solarpunk-now/README.md
+docs/solarpunk-now/breaking-it-down.md
+docs/solarpunk-now/infinity-tools.md
+docs/solarpunk-now/material-composition.md
+docs/solarpunk-now/small-scale-production.md
+docs/solarpunk-now/stone-paper-for-producers.typ
+docs/spec-updates.md
+docs/strategy.typ
+docs/the-plan-and-the-ecological-crisis.typ
+docs/the-plan-and-the-laws.typ
+docs/todo.md
+docs/totality.typ
+docs/valhalla/README_nodejs.md
+docs/valhalla/README_python.md
+docs/valhalla/SOURCE.md
+docs/valhalla/api/elevation/api-reference.md
+docs/valhalla/api/expansion/api-reference.md
+docs/valhalla/api/index.md
+docs/valhalla/api/isochrone/api-reference.md
+docs/valhalla/api/locate/api-reference.md
+docs/valhalla/api/map-matching/api-reference.md
+docs/valhalla/api/matrix/api-reference.md
+docs/valhalla/api/openapi.md
+docs/valhalla/api/optimized/api-reference.md
+docs/valhalla/api/protocol-buffers.md
+docs/valhalla/api/status/api-reference.md
+docs/valhalla/api/tile/api-reference.md
+docs/valhalla/api/turn-by-turn/api-reference.md
+docs/valhalla/api/turn-by-turn/overview.md
+docs/valhalla/baldr.md
+docs/valhalla/building.md
+docs/valhalla/contributing.md
+docs/valhalla/decoding.md
+docs/valhalla/elevation.md
+docs/valhalla/incidents.md
+docs/valhalla/index.md
+docs/valhalla/locales.md
+docs/valhalla/loki.md
+docs/valhalla/meili.md
+docs/valhalla/meili/algorithms.md
+docs/valhalla/meili/configuration.md
+docs/valhalla/meili/implementation_details.md
+docs/valhalla/meili/library_api.md
+docs/valhalla/meili/overview.md
+docs/valhalla/meili/service_api.md
+docs/valhalla/midgard.md
+docs/valhalla/mjolnir.md
+docs/valhalla/mjolnir/admins.md
+docs/valhalla/mjolnir/attribution.md
+docs/valhalla/mjolnir/data_sources.md
+docs/valhalla/mjolnir/geojson.md
+docs/valhalla/mjolnir/getting_started_guide.md
+docs/valhalla/mjolnir/historical_traffic.md
+docs/valhalla/mjolnir/map_roulette.md
+docs/valhalla/mjolnir/map_roulette_blog.md
+docs/valhalla/mjolnir/tag_parsing.md
+docs/valhalla/mjolnir/why_tiles.md
+docs/valhalla/odin.md
+docs/valhalla/python/actor.md
+docs/valhalla/python/config.md
+docs/valhalla/python/decode_polyline.md
+docs/valhalla/python/exceptions.md
+docs/valhalla/python/graph_utils.md
+docs/valhalla/python/predicted_speeds.md
+docs/valhalla/releasing.md
+docs/valhalla/route_overview.md
+docs/valhalla/sif.md
+docs/valhalla/sif/dynamic-costing.md
+docs/valhalla/sif/elevation_costing.md
+docs/valhalla/skadi.md
+docs/valhalla/speeds.md
+docs/valhalla/terminology.md
+docs/valhalla/test/gurka.md
+docs/valhalla/testing.md
+docs/valhalla/thor.md
+docs/valhalla/thor/isochrones.md
+docs/valhalla/thor/path-algorithm.md
+docs/valhalla/tiles.md
+docs/valhalla/tyr.md
+docs/valhalla/tzdb_update.md
+docs/valhalla/valhalla-intro.md
+docs/valueflows/algorithms/cashflows.md
+docs/valueflows/algorithms/critical-path.md
+docs/valueflows/algorithms/dependent-demand.md
+docs/valueflows/algorithms/equations.md
+docs/valueflows/algorithms/netflows.md
+docs/valueflows/algorithms/overview.md
+docs/valueflows/algorithms/provenance.md
+docs/valueflows/algorithms/rollup.md
+docs/valueflows/algorithms/track.md
+docs/valueflows/appendix/presentations.md
+docs/valueflows/appendix/rea.md
+docs/valueflows/appendix/usedfor.md
+docs/valueflows/concepts/accounting.md
+docs/valueflows/concepts/actions.md
+docs/valueflows/concepts/agents.md
+docs/valueflows/concepts/classification.md
+docs/valueflows/concepts/concepts-overview.md
+docs/valueflows/concepts/ecology.md
+docs/valueflows/concepts/estimates.md
+docs/valueflows/concepts/exchanges.md
+docs/valueflows/concepts/flows.md
+docs/valueflows/concepts/location.md
+docs/valueflows/concepts/plan.md
+docs/valueflows/concepts/processes.md
+docs/valueflows/concepts/proposals.md
+docs/valueflows/concepts/recipes.md
+docs/valueflows/concepts/resources.md
+docs/valueflows/concepts/scoping.md
+docs/valueflows/concepts/transfers.md
+docs/valueflows/examples/README.md
+docs/valueflows/examples/ex-agent.md
+docs/valueflows/examples/ex-complex.md
+docs/valueflows/examples/ex-exchange.md
+docs/valueflows/examples/ex-overview.md
+docs/valueflows/examples/ex-planning.md
+docs/valueflows/examples/ex-production.md
+docs/valueflows/examples/ex-proposals.md
+docs/valueflows/examples/ex-resource.md
+docs/valueflows/examples/ex-scenario.md
+docs/valueflows/index.md
+docs/valueflows/introduction/contributors.md
+docs/valueflows/introduction/core.md
+docs/valueflows/introduction/faq.md
+docs/valueflows/introduction/introduction.md
+docs/valueflows/introduction/principles.md
+docs/valueflows/introduction/status.md
+docs/valueflows/specification/external-terms.md
+docs/valueflows/specification/inverses.md
+docs/valueflows/specification/json-schemas.md
+docs/valueflows/specification/model-text.md
+docs/valueflows/specification/spec-overview.md
+docs/valueflows/specification/uml.md
+docs/xaas/XAAS-AI-DEEP.md
+docs/xaas/XAAS.md
+module/playnet/deprecated/planner/attic/README.md
+module/playnet/deprecated/planner/attic/deprecated-planner-tests/README.md
+module/playnet/keri/README.md
+module/playnet/planner/README.md
+module/playnet/planner/algorithms/rollup/README.md
+module/playnet/planner/comms/README.md
+module/playnet/planner/knowledge/data/sources.md
+module/playnet/planner/knowledge/recipes/docs/cold-chain.md
+module/playnet/planner/knowledge/recipes/docs/dev.md
+module/playnet/planner/knowledge/recipes/docs/dwelling.md
+module/playnet/planner/knowledge/recipes/docs/federation.md
+module/playnet/planner/knowledge/recipes/docs/flat-key.md
+module/playnet/planner/knowledge/recipes/docs/food-surplus.md
+module/playnet/planner/knowledge/recipes/docs/household.md
+module/playnet/planner/knowledge/recipes/docs/humisoil.md
+module/playnet/planner/knowledge/recipes/docs/infrastructure.md
+module/playnet/planner/knowledge/recipes/docs/held-option.md
+module/playnet/planner/knowledge/recipes/docs/meeting.md
+module/playnet/planner/knowledge/recipes/docs/mimir.md
+module/playnet/planner/knowledge/recipes/docs/tenant-maintenance.md
+tails/SETUP_GUIDE.md
+tests/test-ai-repl-session.md
+tests/ux/README-ux-e2e.md
+tools/RADICLE-ONION-SETUP.md
+
+# Kept on the maintainer machine, not required by anything tracked.
+docs/inquiry.html
+docs/_scripts/lint-colors.py
+docs/history/resign-2026-08-27.tsv
+
+# Kept on the maintainer's machine, ignored by path, and no longer
+# required by anything tracked.
+module/playnet/planner/knowledge/recipes/held-option.scm
+tests/planner/test-held-option-scenario.scm
+tests/planner/test-option-bundle.scm
+tests/planner/test-option-live.scm
+tests/planner/test-program-budget.scm
+
+# Kept on the maintainer's machine, ignored by path, and no longer
+# required by anything tracked.
+module/playnet/planner/knowledge/recipes/tenant-maintenance.scm
+tests/planner/held-option-scenario-test.scm
+module/playnet/deprecated/planner/attic/deprecated-planner-tests/test-held-option-scenario.scm

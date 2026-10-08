@@ -8,18 +8,25 @@
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
   #:use-module (playnet interface transport)
+  #:use-module (playnet notify rendered)
   #:export (^repl-adapter))
 
 
 (define (^repl-adapter _bcom output-port)
   ;; output-port: Scheme port for response output
 
+  (define (write-text text)
+    (display text output-port)
+    (newline output-port)
+    (force-output output-port))
+
   (methods
 
+    ((deliver _ctx rendered)
+     (write-text (rendered->text rendered)))
+
     ((send-message _ctx text)
-     (display text output-port)
-     (newline output-port)
-     (force-output output-port))
+     (write-text (if (string? text) text (rendered->text text))))
 
     ((send-formatted _ctx blocks)
      ;; No rich formatting in terminal — fall back to plain text

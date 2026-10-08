@@ -1,0 +1,225 @@
+# resign-2026-08-17.tsv — old SHA -> new SHA, for the re-signing rewrite of 2026-08-17.
+#
+# Two commits from 2026-08-15 (d0ce6d17, 438b3124) were never GPG-signed, and the
+# pre-push hook refuses unsigned commits toward Radicle canonical. Re-signing them
+# rewrote every descendant: 208 commits from da0ca195 (exclusive) to the tip, which
+# became 8c00e9b0. Content is unchanged — each pair was checked to have an identical
+# tree hash and subject, 208 of 208 — so this maps names, not versions.
+#
+# Anything written before that date which cites a commit by SHA (a memory note, a
+# doc, an issue, a code comment) points at a commit that no longer exists. Look it up:
+#
+#     grep ^$(git rev-parse <old-sha>) docs/history/resign-2026-08-17.tsv | cut -f2
+#
+# Columns: old-sha <TAB> new-sha <TAB> subject.  Oldest first.
+# History BELOW da0ca195 (2026-07-01 and earlier) is untouched by this rewrite and
+# remains unsigned; an earlier rewrite on 2026-07-01 has no mapping recorded, which
+# is the reason this file exists.
+d0ce6d1714538821a90bfc3f61413d5d7bac8c18	3ab2a1f7d31b89b41d38a4565182b6c0a4ef1193	matching: classification affinity between needs and offers, the ring, the treemap
+7e39400bcf53605ba80fcbd04ccd77e21638088e	dd64e9bb81fe255c914225487f466810c0b9d03a	browser: a reply speaks where you are — toasts
+ee63ad8dca5569e9762587816cea8c901f0f702b	aa00d723811a98f109a91e95c31431f31f5fe1fe	log: the captain's log — spoken days become ledger facts
+c5e03e52b6eb70a9d3c5b1e07d152c0496c12163	01b6d9ea7627e015d5cf83be20de3835148fff44	build: gates for the two ways a dependency goes unseen
+401866c26121e96bccb2962f8d7f4c29413cdd93	23def7325859e1d91b78833b7d18afc455788ccd	fragility: force UTF-8 on the snapshot output port
+c81fa471cf35495ad4efa31034a69f8ae9e1c840	b258f4b8f1f126e5fce9563af9acc3399e1a33cb	browser: served bytes grouped, build inputs out of the document root
+8b39d5cfc9db169a6b99b2ecd4f303e34d2ddfd7	2070ef8025ab042626a7c04ab179e5fd8f677ef2	wip: the panel seam, light basemaps, and a ccache freshener
+dd62053c4c13d6c615f43fc829a5a14e427abfc1	e7989c1dbe73f280d875836782176490c4f0520b	browser: the panel seam sits flush, and settings holds the rail open
+438b3124daa60aa8518e35f284e9f3ef7a58c122	513fd4c46ae72bad040e09361f971e6a9c4edc2b	match: the ring speaks — slot cards, hover, and the map's own search
+5f59d2ee34beb92fda55e690bb53f1fd7b0583c8	a9edf58146e0477c250e71bc1814e291d3479e3d	planner: the VF ontology becomes a module, and 32 fragments become liftable
+4795e9e077428bbcda00ada18d96db1deeedba00	b558e1d5c5bc50d127960c26a262f03197a67adf	planner: two more fragments become modules, and the lift becomes a script
+a52e81b98d47a9c5d60ff115cbf325a72c34a36d	db45671de65f2ef4b04dcba0adf775c0b94a3b98	ts: a TypeScript seam that compiles into the served tree
+bd04f23d5ff8269dbd6a52e26211dcff28b7393a	39ae3914fba6804e01ee49f5f1abd4eb135963cd	ui: the TypeScript source root is named for what it is
+d8fe2d52aa3f08fa1bb75348a6eba9f549ede9e1	f816b84d4f20bbc424ca16a95d01d9666075b826	ui: the five leaves become TypeScript
+885d174930cf0c8533823a85a69c46dae470aeec	577b9e7818720b4ddcb6257ee82828aae000f9ca	ui: geom, calendars, worldclock — and a d3 declared by hand
+fba2459ee0155c2540f3dd5def29fff19a396c76	9bef3952c91368fbb898011ae5f54eecaec30c73	ui: toast, extract, audio, nutrition — and the seam's handlers, named
+ed6c6c9e65b50f8cc78402f837c65a863ec349a7	1fc5f99bf150d22e880d00879f145c2e96df6b58	planner: two hub fragments lift, and three names that were never bound
+0a395f987085da0536859efd510ee49ee423b9e2	c7efad5d2d872debc46a22be7aee6465c5dc4c3e	ui: the desire tree gets a name, and theme paints through a declared d3
+b4956a68803d96829d756a6f06ca20c1f8979f3a	0ad7510c168a764ad21ab4e6689932d64bfd7867	ui: no `any` left, and unit tests for the two modules that had none
+364524917086f67d953710559208d7f0e3e59863	d0b117d7e35040b99ade7215427654593b2dab4e	skills: the typescript skill speaks about ui/ rather than about pnpm
+9963bb2f49d0b19d4a0069a20c4454f7a721c77a	07fc59e476abfb24925af4c4d6873b9e98826f70	ui: core, template, walkie-transcript, panel, settings
+abd870f2259c9766195563e45cc984ddabdc19b0	78f82ff17988b9cc24b13cae43177a97047ee7df	planner: twenty-one fragments become modules, and the overrides they shadowed
+c6d4640a475285a8ad6918a115cae52ec9e05128	2e1a25dcd3748607b08df19ac3c03c70970bf980	ui: the first tabs — recipes, ecology, inventory
+44a5a3fe947641f21da0c1d0fb63221af066f595	8363b9add5b2dc730dae72d1367f955aee118368	ui: plan, log, shop — the last of the selection-free tabs
+4d1120c4395831fcdc644d43670bb745bf5c70cd	e1e7cd70186b7e2710e2b15610f098cdd17b0eba	planner: thirty-one more fragments become modules, and a guard that reads files
+b0441070d48f65ec6d2412c38712061dc11cb9f4	eecd6618b4ea5fa9f173fb861cc583e3c8dae892	ui: events, wake, and the whole slots stack
+c083a56facd3bba012555b1fad56236f3a490ae5	d0aa8208b3749d3803ca61443c03da10cf52b3bb	planner: the option/correlation cycle breaks, four more fragments lift
+62a0eb743ba25590c49d10bb78dac592c877702c	d387650eb4e95bfdc6b43e7766c0bc4c388e012e	skills: the verification recipe needs --verbatimModuleSyntax
+35c22f69d616a84970cea88188baa9e039f9282f	bc4794263bb144a0106add35ed8b2fbd1d6cfe8e	ui: atlas, location — and d3's Selection, declared as a surface
+b6266fea9c243cb277fbf7efaa99775764ce21d5	c6fe07bf0a273b4ae06b40f3e3d35c0386380199	ui: search, governance, taxonomy — and the datum finally threaded
+4532f39ea3ec1d5bc659ae3b69e11cdfaf6c814e	60d75ca853fae820b4b768bc0984c3b662937fc4	ui: match — the ring, and d3's event type made generic
+c09caed407c83567d9b8c0af5fe005d7342f69f5	897d4b1ddc209e704f30e8ad612657b855c6094a	planner: transport and the whole option chain lift, via their callers
+a6c55bd432b37601a47d85e1fed2d06bd1bf2f72	172483ac500f6026e4f21f417d880696cbe1c757	ui: dropoff — the drop points, and the row shape they share
+dd12b0547cf1eddb75db8726ad21ab9088462351	c004a54c6ad3aba986e4a08c05cea6f102d70495	planner: the rollup chain comes out, three lines at its root
+ba77bb7c469b45b71a1bcc604e1a846ac86d3ef0	e92106de10a211eef89e35eb377704ee02e366a2	ui: containers — the containment forest, and maplibre declared
+9a3e6cf76e801304ae2bf9a2c3f2e2335e7e3cdc	6f536dbe8c2ad200b1d8c32a1c93824ea80d83f4	tests: widen the containment fold suite; the scratch check needs its ambients
+3e8ca1bd0761bd58ae526805f64b781764cb7149	c5e075eff52424dd9a541d21939c4a9ee57fdd16	ui: settings-sections — the rows, checked against the registry that renders them
+6c744ac967e1ef19d7c62443285e6f86f22f88f6	ed651c92f293b773090026bc2f1765ddede9e38b	ui: main.d.ts breaks the cycle; contacts converts against it
+7eac58e8da5704fe59ecbf5460f61a48864ccd5e	544c8484c5a2172f2c5eb688f8615b57d4b772c2	ui: commit the emit location.ts has been producing since its String() narrowing
+43bef211ab5ae4309375ef7b7b33d898a921d6aa	7c35a2b77a9a880fcf46f090f84902b1f07daea8	build: ask the gate about the COMMIT, not the working tree
+6e967a15bdff38197afff994c2799216961e0d4a	c5662bc7b5ac6919377acef808cd63935a658ce0	skill: record test-day-signup-ux as red at baseline, and how to prove it
+ac96e094f4bf1a35667c6413abda7d819bee57d8	76c354c622ec16f33c77cd2a4a201c714a318071	matter: drop four imports nothing calls, and the comment that claimed they mattered
+20ebd0d7523e1d5756b3c068edb7dbbeb4957479	d3ba30ac9ed033a118168ee033e6199d6a1c1f43	build: sed for the gate's own error path
+fe418f4ee652dbca615074ab9391bd649f5aacc5	2322ca8eafde30e81c4539b245cb30b41c9006b3	ui: matter — the rift face, and the wire format it only draws
+ad77e81c7ca54b6aaf7f926864c58ab626fc3e10	5586afea3a7a8bed1ab1a7eb54033faee725fe01	ui: calrail — the month, the clocks, the calendars, the people
+6e025d917cf546c9ed77ddcb1c5af9ca39ea0b93	813dccc29f9e400d0d7123146b8a2487326b0ffe	ui: noUnusedLocals — an import nothing calls still reads as a dependency
+17635daeba0d9868a7ed7655af2b0260066bd5f4	70220a97baab01de8b7046ffff6c0d83c3ff3d99	chat: willing() is not called here
+a7363a361851d09be42440c21f1a5f6345a8e3bc	9c0a16acb8da5625b33a0d2f7411c65684a276e6	planner: capacity lifts, and the monolith keeps its one entry point
+dfba2a48641a7c587c132def98242d526cd8c06c	47cca6f9d50f851a4a953a2b424bf5aef290f712	ui: chat — the room that is a topic, and four guards written in HTML
+06a79e2398b24604550083d2c505d786378acb7c	412b6d18ec61e3cddbc379c778062c7f6c84c1be	faces: eleven more imports nothing calls
+bc415666bdd18e0ba9f87bbcbb03918d1d95635f	b3ab5893a7d5a9927b86994cf25425e0329e28a1	ui: id — the identity sheet, and eleven handlers the seam had never named
+17d0d3d2a1ee9931e5a40432eadc83013e4dc88a	0510b55d6f0db940b4797934c9ff9f99262e21f6	planner: conformance-catalogue and berlin-flotte, the last cheap two
+20bf8f63cb98910bae8875051f6fb7ddd24658f4	103f690ea7f2b9c3cccf3d0c70c3769a4fc72df5	ui: share — the bar where declaring is the write, and socialize's fourth argument
+19eba4718a386be31f3d47383dcf495441f54de2	ae92d86da762ddfdacef5b016141c84c19592431	mapsearch: restore the `map` import I dropped by hand
+68fb1566e52183e427a5c6c25c4348420d10fae9	adfbd062b147ee3a4c12a6d76e04f1f480f95c68	ui: mapsearch and pool — the row that is always placed, the `o` that is not always an offer
+4b931d0b565a651fb6c90472d73e586a24bd380c	ee666641bc65475130594b10be87a833f7aba9c9	ui: calendar — the week grid, and the block that is not an event
+97cd3e88453ca619400904041b54a9aa0d58d0c9	657bd4c258f8bf930ec450bf53da196c05790cf8	ui: fragility — one wheel, three families, and the vocabulary it draws them in
+68687599a336cb28846bd58983c4a485e587be3f	efc280325cface636f257ad928a2608d63b54d1e	ui: law — the legal exterior, and the schema the Scheme side owns
+71be23735685aab5261dc3e338dfeca2bb21ebe9	bd800a60b0789c6f6a7609e043b5bd95441f985d	skill: main.js is all that is left
+6e37ec69af8ad7857c14726f58284b1108a3bdc6	8d5231fa5265d79ba30d71c18967c3a8230c52b5	planner: a good's level is held between two walls — the reproduction band
+0a4ed87c33a62ea118a4aa4df7ff1a0b5024997a	8eb0d7c2069f415d301bfb7760e54822c844fa65	planner: four unbound names the umbrellas were carrying
+148414bb99e366ea607d86aa2b84760e734728e4	743ee67736a3e77d856d7ecd21d8cc8debc99276	dial: band geometry becomes a module — the two wheels are one instrument
+503b97740e7948ec24d6b2e39ad8255768e57d48	87fcb619ab18c716cc25540172e56b3506998a6c	dial: the offline side of the seam gathers into one file
+88405fd2eacd5cbb49eb7d3eb1906eae2f921990	26c17c8286792d5a9b7d00f385a42e5a78220616	tools: the three rituals become commands
+6339d3cd1bf54f0ce1afcd6981687b3efe6a39e3	c7864b090b437bd60db822273e71973ddc210417	dial: the wayfinder becomes a module, and its reach into the dial gets a name
+1e13224994cc1562723ac720fb7a394727c2dac3	6c15d43e0dcfc0f32348e8ee2f850485134ac294	robust: every wall is held in every future — and the granary the plan banks itself
+2783cc00760d4b4c00fe586a47d5643990809a3c	ff64a1ddd2af82ba1a1d4a5889390182a69fdac3	robust: the mean world keeps its seasons; the band constructor takes the record's name
+63cf4ac9468b890535780962a141c1df261892a3	ea3d481bf851f613b47f6629f7b4510fd7ae4253	dial: the outward projection becomes a module
+deeed29b701455559d534717d8270b224c46e3dc	f0174ee4542bab85b180ceeb3dacef7c93f8fcb6	dial: the orb becomes a module, and it can name your contacts again
+9571008cfefd9105d67bc6826238fa259760f926	1e91b75d247ba818cdbd30aa8e9e0a6baf000676	robust: carried-forward — the granary read as a first-stage decision
+016e4ba198691a09827b9ace52f1e64d2a2f2514	3c461f5d2489ca833e3f9c95eb65e2577c0a2fa8	docs: the granary is banked before the monsoon is known
+f478f88fa17a29ad9a4074cda3861b865920da05	a27db83c1333cad7b1b75fa6d24b3c8beca3158b	planner: both umbrellas reach zero unbound names
+fa43f7e37795f3f60bad4c1bf9f83f499fa74db9	acd06422364b2850226a18f49fd734ec1ea9eb91	dial: the scroll, the scope and the crumb — and a live regression caught
+2e752d7fa6d5d59cdbaa37a4eae2fc59f5f24f64	b7ff46f4360307631010fae2e219b0555d508cf2	dial: the tiles and the offer field come out of the map
+60721f99866665b429824a752cabf7283eaf9bf0	2f5add66441d5155143c77049f2bc82e32e00400	skill: main.js is being dissolved, not converted
+10ca0aa06c87cba3992a436d1bba4b2eb5403fcc	a49ba4c2d2ef0e70f1638ec3dcb93b3d71f37542	planner: the umbrellas stop promising what they cannot deliver
+91bd347f6e1ff452a3e3a5971aefb291c0fa525e	891d2a720944317dd5885eaec0f05270dd15b5f0	planner: the reserve and the inspector reach a live scope
+0f3661b17ff57d9a84f11af366d3964f6652ae59	7a0a5c627b1e06f5389ff541b6bde277241d010f	planner: three wrong names, and the six fragments they were hiding
+fe7773b10b273c7d6c0042caa2e27aa921251a9e	6003871a57e8430823eeca079a5c3ccf4cdc6e6f	tests: the reserve under scarcity, stacked, at the edge, and across the vat wall
+3c55aa69e0cbd828a70f0f1dcfd3b52b145985e6	3f12e11cf85679a518a1e61aede52480f12d2520	dial: the editable ring is one machine, and now it lives in one file
+e853b94505a940eec57ce826523f21510774dfea	f0154a748a7522aa38c422079b2279b41f3eab0f	dial: one renderer for everything on the map
+054df7d4df6af07d9852b2ef7715ac3a7be645df	3e3cdc874ff63e99c9bc4a789753f15b2e470f2b	dial: the recipe graph and the plan column part company
+b7417db6d39ee9fd38d5014e7f0fbf814bd8b57e	0c17d33c429524c9c47b347287c2b234c466d9e0	dial: the sun comes out of main, and its claims get checked
+7403d150c40b6e1aded7fbc4c4d741056feb8644	18b69d57dbad04e9d511bc1b27968cbd499fe434	skill: what fifteen extractions taught, written down
+0aab1c1e2633610228f7255a4e6e3cfa1ea42650	3dabf5338454f5fcec3f9a8dfc5580f7faf769df	skill: unescape the apostrophes the last commit doubled
+7b4436543e2ce883074d7157f8e9e5fc05ab917d	4d02b0eb127338f235c80d95eaf4c318ee0e41ef	dial: places, willingness and the containment forest come out of the map
+55d21dcd79c86ce89206075ad48a87243e9c919c	8ecfc0dd13546f51acfff39c0b9c1a16c22f559e	dial: the satellite fabric and the compass become modules
+f1681f35b032022a6cadae1c590a49c0421abcb9	bc8795490e05791f9c9eda571069f5c0d913ce2b	dial: the bearing dial becomes a module
+3178473486afde73da81351372abe969f22c2247	f27a46deedec29f3d38ae5ca0efdee9a990106c2	robust: the reserve yields to true calamity — and its dilemma when calamity is now
+c999e0ddc493e637bf95a3fca6d28b128307c091	0052ee8ffb85bf51a4952e6ccbe6e86f29276f9c	planner: the engine stops being a program
+208adc7356c8c2c5dfe7d670a0dc398b657d20b1	2497470e2ed01ba052013bab39cd8b7a6b03f44d	dial: the arrangement is a shared record, not nine host members
+927fda00a075a7ee82f0244b1211fd58e94dadfd	6bde5206bcd3ae84adcd068c1747ddfe5b20359b	tests: the mock live scope becomes a fixture; a flat future set becomes a tree
+939fabc583077e4c885dc13e110f3f8d6d694641	88a14356a7899460dc9cb99f36022cd8a47ccfdd	dial: the planet beneath the bands becomes a module
+091544ee54d3707002efe0f770d7cea2f8271740	47e27b7c6626730565b4724f6eda63b7a8486f0c	planner: recipe-response becomes a module, and the tool stops welding parens into prose
+0800a859689cd1567d047236ed41406126a122b0	4e1b8c33a15dcc2fcb68c1e3a6799fd51c7c1b7b	dial: the inbound seam becomes named passes
+3a6dd50c95643ae9ea07ef8e96fcee5837407e22	92209834b4ffc47ad6703cd840df188f97b0362e	skill: a host is for a decision, not for a fact
+5de530d442fe9bb45183d4de5e126a0dd29e4b0f	c7b841bd6c278c46e354d3e788a55075ed8ef1cf	planner: three more satellites become modules, and the kernel generator can write again
+9015e973070a43a117ad7c1146fab86bfccf4af6	ad9334c7d38b713cf6488f979d3d6cc06b19c68e	live: the governed reserve is on by default
+bf05cf8f5c5456a6d9a8de1f29ead012a3936c78	668a666ae598ae1f9e22c1c5d6088d055116cf18	tests: inspection-live S4 spends the standing credential, lint-clean
+ecaac1c68ea7af3dea41129299f8d17c93fcc36c	0c8e31ff2eb1f429fc1783b53874292754612897	planner: eco-catalogue and crossings become modules — and the suite runner stops hiding 35 tests
+4517494abce2451f0b594e968060c7eae761f802	d0069aafc4d061269035c5f7fc5b2a5aaec56796	planner: the library's default backend, stated; solve* restored
+baef219a72bb414f93b81e81c6d7aa10c6518d9f	73bfec19ad30a682c3730fe06cdadc348c319f4f	live: a plan with no answer prices its reserve's dilemma
+c818bc9927b6da6a995d8f74038d649355ce6b09	05750a093d7a78453375c460ce78b7053dda0a5f	despaghetti: what the arc learned, written down
+2fa860d450c3ae91631070afbcd3d9b2b5c62847	2d3eb0f9472d1b8d09737ec3f54939d38dcd0cb0	dial: the reserve on the wheel — room above the calamity stock
+73807d782752f40766a264479103a1e81054af1b	845b1dd250c780abc1ee56264cf7e82d370b3173	live: the floor-vs-wall dilemma, priced on the scope's own world
+6b3bfd4a934331c8d43237e2a51122b7fb14b7a2	27992e01a2ea177ff2f3c52b57818b138686f3fe	id: connecting is not away — and three red suites go green
+77e4a81096bf6f4fb50ba8621e96ba156ea9c295	b80f6c69e6972fe24d41fd819c66c525a42e1b8e	planner: the solver becomes a module — 2498 lines, 186 names, one interface
+3bfab5bb2f0072cb57983992433d8bee65d0aa6a	c33792fbc037af2df65bc38479e0dc7f135df62b	dial: your own time becomes a module — and selecting a ribbon redraws it
+8513da120e106a47097008afb22b7a8c454079fd	d90ab114fdd8db1c8bd00ec6bd3ad0aa60d810ae	planner: the VF compiler becomes a module — "same text, both loaders" ends
+c8d74b013f2805f945d034bdd5a4d58d5c1b2963	63e041d34f5854d17b2cc1ef4195bac4f5fb4e61	skill: a red suite is a bug report you have not read yet
+1ad94758b8763f53357a4518667a6cafbde5e349	7d439da998422b981a81e71cfbce12c86f11e55a	despaghetti: correct the skill on set!, which I had backwards
+2081ce8af4be6ab437f3360f0ec39064fa1ff2f4	fa39dce10f30937386871a7c29a21c86cb4e050b	dial: individual ⇄ social becomes a module
+297da355e8dcae8ff772bffcfac4fc212559bcf1	5cdbc12ff653fd5cf4e7de9272a8735f8277587f	dial: the spine becomes a module
+cb7c4fde749f3343d38d50b8078ebb24313b1104	827f47f052e20aa7ce939bb6f53a8110ce9886f2	solver: stop shadowing the core assv-ref
+0206e5f93ca05fd7e72e9f74a602ae27f7508f2b	bd0a9e3ca0c5bccae86d5ba7d84fec753d7f028c	knowledge: us-states-fips becomes a module; unbreak the law-snapshot emitter
+88cf8bdb04286be102d39da6f3cc099232d933e8	90c2686bb7d23e10207596745aaccb0206907ab4	knowledge: places.scm becomes a module — the containment tree, imported
+d212e66691497de322facec1aef08280544632c2	5c40871c9dfc769a46347f3b9570212278f1f3e4	planner: retire PLANNER_LIB, the ritual that outlived its reason
+e8bbe5eeb776f319bc95100a1fbd17abdd7a7761	ddd386c276e19b530c3ee386de239ca9a5d45c9f	legal: the rule registry becomes a module — 81 names, 31 loaders
+e78866a9e44a863a80ce1cd4507b35948c81c6cb	2aeed340b3546a5c9d7482f500960a9e002d2e22	legal: reform + legal-aspects become modules
+20cbfced122914b992db2affb846577f8e813f3c	94db0650840a38006087f8e449be4aee3f2d1cf1	legal: context-pack, reform-mirrors, structural-demands become modules
+c782f0f3cb1be4300a79ca886c1e282aec98ff17	a95c118170e2f82a03706a5e6fa1d8e735e312bc	dial: the event ribbons become a module
+239a83aef93c1c9358c1afe76d5421f354f950d0	63751479e18eb78c88d0d571cb4f6eadebd48e78	legal: the last three — service.scm reaches zero includes
+a33db0aae90c3c6d171ed44d1c9d18c87b39d35d	0eb5d086b9e1b97c3148addd992f37a05efa3dc9	dial: the priority bar becomes a module
+674817aa9e98da4b3667404ebc77a08d4dc12319	8bf928236505b9c1686b51b37860fd5a31a78b57	dial: the hand becomes a module
+563e067f5eb384fbbad47f82cee9d893ce65e0f6	5c846e0877cfabf39e939d9978f87303c6da088f	dial: the rim's marks become a module
+72463d8a930c938683c3327b7ed751f83cccb849	da8104a123dd34aa9220af841cee14744aade8fe	ddmrp: the two collisions it printed on every load
+bc1382138c044cc590f0abaa46d6eb5ef0b36f13	0492091015bcb12f13130ed10b5e02de3b1b7251	dial: the earth reveal becomes a module
+6de13a791869c9b8af2924ee8f0f4df8819aed69	33ca6dffc8cae91f245acec9617e5d59a9b532c0	dial: the scale of the turn becomes a module
+bdf0212267a1dee0254eaac9da499fab6e1b413a	623d2f7585848a53223dacde3e0be89dbfe72117	planner: the prod umbrella reaches zero includes
+fa0979af7839865ca0ccb8c9c125966447c4456e	3e1ce8ea2e7bfb38f4b2e2c33ef63b0a0cc94016	deprecated: break the five dependency cycles in the relational cluster
+e2254c42b3ec29fd12974fd0ca5d473a4fd24d4a	42d6e95a6406fa33da9f95fccbce3b7a6f76059b	dial: the faces become a table
+c22a68a9977d424c43b43f46d350fb90e85f1e6b	d3cda5cedfb6d4e0703c66e058a3e39ba7275a08	dial: the focus and its layout join the stage
+1bb49bfcbc6edbe2a34ef708564d6ae9bf5d6ef5	55c963c9cce8091cc66cb021a2097ddcd6134fcf	dial: the wheel becomes a module, and its temporal readings another
+5a9c8dab7be8cc38370746ea0438626c89f50647	97fd5c8b6e6d881326090aed537e1143d7342669	dial: the answers to an event become a module
+be40b3a217cb46215e86e6364b137a12ff15d40f	fc7e61acb5bbbce93ef2f320e4f6234d6ed4cc16	deprecated: the relational cluster becomes 28 modules — both umbrellas at zero
+b9c651e1a67af7148f9a3c286a129441385ed440	e2e53dd1fc68f486bcbb1cd23d9f386b7eefe0a6	dial: opening the map joins the map
+4643966637c01b890218ce3b73e6f0de33ad76d3	11b448efca9056d715459a403c65cc39707a34de	skill: what the last two umbrellas taught
+ee54de9dfd1d788176db2974ccafc92f76748b98	3949561a85654496bf21c8307f74716dca21c96e	dial: main converts whole, and the scaffolding comes down
+6d454c3e3ad5778ccfdc0b65a6bf8898dd38a4b8	8af1429643cb41a20ce561bb2e4efc81e3d98e73	dial: the canvas becomes a module
+336b64c22579518b286973afb530b7c4b34a4591	13ccd5a63f702085cf940c897073653ac41028bf	dial: one dilation, one tween
+8180afb4fb34b6af37cf0e765120bfd2620a3ee7	baa784164bf720303022f41357b5727137d2c99c	governance: two cycles, and both were misplaced code
+bf25bac5ff5cf0f7edcf7faa5ecc9432477df41a	92c61f061a777886d4a69a9c5662099ec2c35b7a	tests: one static server, not eighteen copies
+67d74f0f603b138ac6dd78f2c52f974660e75012	658be8e617dd3e8ad49b027c08ec3608014b7f63	governance: the third umbrella reaches zero includes
+3c7fd1ec4e3a4ee88ad2b9b702f5b9ea95523145	367af40759cc51d9e29d882cf4f777f7eecc8764	dial: main stops being a doorway
+b0b5471e2eac843d1c552415627e8f09d5f5f929	cedcff8036df92ed1b9a0e785ba9b2c7dae11caa	dial: the hosts answer questions again, not lookups
+51ea634f18713a4e87022b8c833a89f6cecfb52b	42c7c9a2571154f05a6668aab7e12112b48f2334	typescript skill: the arc it describes is finished
+3eb0f0b846c879b0685e4308be59bb1ab84e43b2	5b8d73d915a894c5443b0db69767367debfac334	legal: the six siblings become modules, and the loads become imports
+222eaee0c9b12eb8ed226010402b2012ba50909c	49ac4a720b824fcf9e9fdea11293db62c4a5c0ec	despaghetti skill: what the governance and legal lifts taught it
+cf3bb6c9a1777449829b52e9c65bbd35c4cbe713	1182954e638e750c918dc06a556950892dead499	dial: the one edge that read acyclic while being circular
+86a30a7164607b0c17f03a200511e5906aa1c454	26f5b82bc06410b02cae52872e642d3952f01c96	dial: two digits, written once
+3daea16e22381db8cb8e0ae882552772cd82356c	a4678d921bcb27a3f648a0da04850917299a723e	dial: one door to the device's memory
+43822d9ed6bb25c27db1118964f4b215c182d71d	ad3cec6e361869fd18fff101a0008c09b94ed1fc	governance: one renderer, not two
+6d2a8c713fd5984bf5ea639cc32b9879680d7961	607773f3c66421462201f70442293ca187350252	location: the sheet as the one expression it is
+c271a7c00f716f9ceabe120dd45f428c4ed5aee3	fa00bffa865491350ec79bf88454ab82e10030bf	typescript skill: three things this pass learned the hard way
+d831fc2a406184256e7d298e8afb4c550ce57792	eaea5be1242a930c3ef25f406a99c893168e5958	discrete layer: the recipe states it, the plan decides it, the certificate says so
+62ce29497ea3204f8cfe0e1f285e486b569c4b9c	454685eb0dacf0a1be68d47df840cbd707211cb1	plan face: the discrete verdict and the placement, on the wire and in the head
+3cb54315c3d8c8dc44c4df3fb7a2a3a2b679dc79	f2f200a23b788e08538de9a6db5e6df7f524ebb8	docs: the discrete layer through the records, and where a barrier meets an integer
+0c56363b7e9cf65917dea8cf21d883010f7c3cae	a4499f3d168bf27f0f40737e27bfec8e5b489a34	planner: twelve fragments become modules, and a demo stops running on import
+011ab96517a3f2c4b5460d14baf7cd3773211fa7	9ef3746cc998a8f2df923810eaeb07f4460290f9	map: one way out, named where it is raised
+f877c0c0a9f710069b983d83f5bc5a8b4ac138e8	65d1d979450d4be24747456d7447a26c45ebf7c9	robust: a pinned recourse column is a scenario's own fact
+968e294a096f42da6a8e89221673aecfa58c15ac	301c8f42854264a3d5a5ac9d1d5c0928b4fb9550	movers: a day of bands, and each band's own hours
+bdc192c1bc0451aa3bfa7557305bd2820f7ad5c2	38aff541b0f0c5ee2d38f1758c5567e1d8136ce5	discrete: the node budget is the scope's to set, and the certificate says when it bound
+16996a2f68572c366c56ec244ad85ac4eb65a257	79f2a4fc6759972040fa0ee6b6a7f48bc5bd43c3	palette: how a thing is faring, said once
+29c41b3ea3d01776db759a23773c8a1f4e62e420	69f49540626bd9965e1fb3fbbae46764218c6e69	federation keeps the relaxation, and says so; a plain program's infeasibility stays the solver's verdict
+087c0a4d37fdf5c757fa996bded9bed7fbe008df	798f601228862bc53f2fca4b26971357aca17e07	docs: the discrete layer's budget and federation, as they stand
+718508bcc7d22906420eb71deceee0611a6c1093	ac89fad341ea53cef611ea1bb7d50e49e0ee3ab0	core: three ways the commons does not answer, read alike
+243b2e95d62ff7f1dac375535eaa77993cf0697e	071fc85f11adaf5bac63212c776e92885b29a949	plan-scope: the band dial reaches the live solve
+dc39cd924742891fe0105b8ac0d586e7573d559a	a99a97aae844c7757cac5dc5237ded867890deea	docs: the band dial's two doors
+17d2a2c8f63394c432a68e13eea7e2be3f707bd7	afd2ac8fa4464206faada3faba26df01b55df20d	calendar: the header converts, the grid says why it does not
+14655fcfb5748c4d16b6d9d191582b8f15d0e121	90b5fa29d2149ca30d46ef17d3ef524d8ae1aae1	playnet.typ: the band dial, a mover's hours per band, the governed node budget, and what a federated solve keeps relaxed
+7a3d51a77855d4557362e1d2977005a618457cd5	ec6ddf434e7d6955b2023f9709cd8cb3f716b56c	day: the faces fall into four groups, spaced not ruled
+7f61849f4e3e8ca261090e71793d5a89daf6105b	2c6248668391e805e47746e04117853443261678	tests: two suites import the catalogue from its own module
+659307b3848be6fd6c5dc5970d5c9d667ba08225	cb24489aa7a8637ef3d88bd211c928aca9dbe537	knowledge: fifteen seeders and recipes become modules
+f0a747ec39ec52a201208b147bec23d24961e4a1	2de9cbb99d9052ec618fd8793746bf52ef8c06ac	live planner: the node budget through its own spawn door
+29ebc482ea644884e808a2b6b8b8c5d12e7942ce	74dd84a45519ba9fee6a2f6132abfcf899e7b04d	faces: re-fitting is the table's to say, and it fixes a stale stage
+c13b46bad2a19cd80fb24b45e256edc18fee6c24	a2596fceaac0dec6ef3ba27fcd00cd6481f02c7d	the last sixteen: include-from-path is gone from the repo
+45a8d2c2f051a511bcbcbbe5ce80fd7ae404b43c	c446e1bd0ee115157a963b00b4884ee51972de82	despaghetti skill: the four traps the last sixty files cost
+dd8ff2f14dd7c05441171fe1cd420d8f287c5523	bba1edb344db4db8fa08f275fed2d672c8286c06	stage: ask the record which face is live, not the paint
+9bf03591d36e015216e8981bc65481b5a48c9e52	85eac6aec183095d5ba4598accdb72a020c8619e	respond: one ladder of answers, one sentence about what a thing is
+d85ba993f68bca287533fa46a3a12537fc651a4a	163f3d28f311a2c23788fe68df7f1cd551c8f406	types: four names that each meant two things
+9a7df14915ae541e2ed7e83c9ccb7e41ee3b4a91	dbc4241cf3041a43dde2d1cf3548f46bd1b8d8bc	slots mapping: free-association ToolBar/ResourceSlots → ui/dial, per concept, with the bring-over list
+cd398bf8621a1d06a103692e8e2ab77d644f900c	e7ea3702bdfa127e240816973fe871c25e20f13d	share bar: the expanded draft panel — type picker, when/where before ➕, and the mic's words land as an editable transcript
+7dfa76422f145f8094e5907e590a073e61da1183	c6849c21e54a3c8e54313abb3ff65fd171749ac6	slots mapping: steps 1, 2, 2b landed
+f6e26ec064a0dc52d0ec7ab5fb65babae48d5f4d	cabf6a80a9a7b0f5c71757b4ef06c78f4f52c384	share bar: the draft panel is its own module (slots/draft.ts), the pill reaches it through one accessor
+b4442f4632988ff2cd17cfdcd0902317239963ef	cbdabece012ca031a9837f5cef0728512a8e33c9	slots mapping: the panel's module named
+164015124a77fa36d858067f750ba61ddb90a5ef	00836766f3c56b0019c2259b415a4826c272c5e1	law: drawing the map is not safe to do from the program view
+ab93240fecf5383d00000aae210fa3c7d7d51f77	ed4b16b57fb9445d41363e95f7f88164085deb13	share bar: free-association's toolbar row, and the panel slides up above it
+62dc4e4c2bddb0c0846804ea90077c2fc4ae2644	544fd2029b54391a7e27e10c7a26232ded7e08bd	slot card: free-association's ResourceSlots row — bordered inputs, compact summary buttons, 💬 to the chat sheet
+dba674148ce23d9a61adfe1ee5ffc4361d39be29	b67c9c587a4f8509f5263b618feca8e06cbdebfb	slot card: how a need is met — communal first, credit as fallback, then the gap
+e63f1f3c28fac4f651bea6aace1e33b2afe7e053	8bb84be8680e12f1bee3b60a3518b32cf9cc5e93	share bar: fluid at every width — the pill takes the row, the name takes the pill, the cards take the drawer
+67db493c880848500e3c3149e1dbdb6b4bd906ac	dc663d65e2af5cbbfa9a4c0e538aca9d8dcc6b4f	slots: the criteria sidecar on the wire — ⚙️ divisibility and 🔒 eligibility rules, enforced by the ring
+a7104ef2229946b1af78462d45aa46ee76bc112e	2ac71b74deaa27cb34ec73cafced03ced1616e80	filter rules: <intent-matching-criteria> carries the rule, feasibility pre-gates on it bilaterally
+45786c4f6aff3babd35f515247e6f19a70ef1c80	de437e32d66b005ef18b1065d2054607b020ac37	calendar: the week grid's drag editor, converted where it can be
+67a2c13c0610023976aaca552dbe1cffb7feddcb	808fbcca9083ff7376499c3deb60f9e16ff7704e	share bar: the name doubles as the search — one filter sifts your cards, with clock and sort facets
+d939767c2493d2970fb602bff6cd3be47c4e67ec	8f3ed729d544dea17564606d849f8fae7f4a6f26	slots: the arcs wire carries the week and month tiers the window always had
+56f26ce15fdce94e393e7fa429fadf99ab5fbc86	18b6d9ded849d4ce200021040398b811a0de6741	crumb: the scope picker's option list, and the one node that stays
+cde699f030230a4a05a839fa2e08a3dc7b593cd2	4ca41dc1a20f071da43623838f8794d220b65c77	slots: where — 🌐 online (a link on the sidecar) and + a new place (a spatial-thing the citizen names)
+c8d5c889a3b56d234f915a395e0c66bdb662cb59	1c36667e63e3cd2a2e54120550faba13c156a88f	slots: ⭐ who a capacity serves first — priority-distribution on the sidecar, a dimension of the ring's score
+1c32769accc1052beaedffad1b077467ecdd9457	130cc90e04fb7cd2bb46043521fb1673c1ca42aa	taxonomy face: the tree's search — the dial's pill over the terms, a hit zooms to where it lives
+b69b899fa94a164586025ad2412462329184cd38	c863193b53c16af79ffd42aeadc48d724b142c82	share bar: the offline twin and optimism — your slots as you last saw them, and every declare lands before its reply
+158ce9b1b02d681fe411b2b6732692845139ffcc	b4eabcd5380621f0162d3e4161ec0545e9317ce9	share bar: saved views — name the live facets, toggle them, several combine by union
+e6af765f1b6fd2a41035998b4b72ee9c9df201dc	3775b28ef7b847f004f84e736522569a9ab79197	slots mapping: every step landed, the seams that remain named inline
+48c073a128547a1bd5a3f3f99cfdb0b2b1f44695	aa9f555f5826d13afec24027e865cd00e8ca4c2b	slots: the need row carries met — the last solve's provision of its spec, on the wire
+91cbc3610008cd551cb5d2879ba153f624e0941a	7b838bcaf87a6f85d36ab38d18a4e9b09a6e4447	slots mapping: the marks say what stands
+d1473e7a2975baaace1838686286583fe03505c0	74a7d6358c8a417aa9d95812918b4c6f2ab8a1e4	slots: the 💬 unread badge — a topic's history against when you last looked, live pushes counting up
+cfed718da1056bbadd71c8f60895456f557a665d	a3ec356e853182d89d91b95908ae0389c678344b	slots: 🔒 rules read real recognition and distance — the contact book, the two places' coordinates
+61a21f846b6f632bb58d290a6da34797799e7908	a5363578708d51bffb0415f0bf60ac5a3de7eb89	slots mapping: the badge and the rule context landed
+e6ab4711851722d44ae61f989f72b59a4c506a7b	8c00e9b0ca1c57d5fb52b0381398c5ccc4b86707	DRY pass: chat push joins the seam's fan-out; the eligibility context has one shape, not two

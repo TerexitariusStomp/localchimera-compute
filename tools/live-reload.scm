@@ -10,7 +10,7 @@
 ;;; body, then calls (refresh!) so the page re-renders.
 ;;;
 ;;; Usage:
-;;;   tools/live-reload.scm module/weave/ui/room.scm
+;;;   tools/live-reload.scm module/playnet/org/gplay.scm
 ;;;
 ;;; Options (env vars override the defaults):
 ;;;   PLAYNET_REPL_HOST   default 127.0.0.1
@@ -64,7 +64,7 @@
 ;; entries are tried in order, first match wins.
 ;;
 ;; "module/" → strip "module/", split rest, so
-;;    module/weave/ui/room.scm → (weave ui room)
+;;    module/playnet/org/gplay.scm → (playnet org gplay)
 ;;    module/playnet/ui/calendar.scm → (playnet ui calendar)
 ;;
 ;; Add new rows for new live-hackable subtrees.
@@ -79,15 +79,15 @@
 ;; Order matters: first matching prefix wins. Put the most specific path
 ;; prefixes first so a generic catch-all doesn't shadow them.
 (define %routes
-  '(("browser/repl.scm" . (guile-user))
+  '(("hoot/repl.scm" . (guile-user))
     ("module/" . "module/")))
 
 ;;; ── Path → module name ──────────────────────────────────────────────────────
 
 (define (path->module path)
   "Convert a repo-relative PATH into a module-name list. Routes are
-   either a string-prefix-strip rule (module/weave/ui/room.scm → (weave
-   ui room)) or a literal modname for top-level scripts (browser/repl.scm
+   either a string-prefix-strip rule (module/playnet/org/gplay.scm → (playnet
+   gplay)) or a literal modname for top-level scripts (hoot/repl.scm
    → (guile-user)). Returns #f if no route matches."
   (define (try routes)
     (cond
@@ -220,7 +220,7 @@ output to stderr (prefixed with TAG) and returns a <drain-result>."
         (let ((addr (false-if-exception
                      (connect sock AF_INET (inet-pton AF_INET %repl-host) %repl-port))))
           (unless addr
-            (warn "no REPL relay at ~a:~a (is `make weave-dev` / `make serve-dev` running?)"
+            (warn "no REPL relay at ~a:~a (is `make serve-dev` running?)"
                   %repl-host %repl-port)
             (close-port sock)
             (exit 2)))

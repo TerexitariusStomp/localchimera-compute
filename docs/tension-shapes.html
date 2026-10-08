@@ -1,0 +1,708 @@
+<title>Four tension shapes — what the planner climbs</title>
+<style>
+  :root{
+    color-scheme: light;
+    --surface:#fcfcfb; --panel:#ffffff; --rule:#e6e5e1; --grid:#eceae6;
+    --ink:#0b0b0b; --ink2:#52514e; --ink3:#8a8983;
+    --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+    --shadow:0 1px 2px rgba(20,18,14,.05), 0 8px 24px -12px rgba(20,18,14,.14);
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --mono:ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:where(:not([data-theme="light"])){
+      color-scheme: dark;
+      --surface:#1a1a19; --panel:#212120; --rule:#33322f; --grid:#2b2b29;
+      --ink:#ffffff; --ink2:#c3c2b7; --ink3:#8a8983;
+      --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --surface:#1a1a19; --panel:#212120; --rule:#33322f; --grid:#2b2b29;
+    --ink:#ffffff; --ink2:#c3c2b7; --ink3:#8a8983;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--surface);color:var(--ink);font-family:var(--sans);
+       font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1180px;margin:0 auto;padding:40px 24px 64px;display:flex;flex-direction:column;gap:26px}
+  header{display:flex;flex-direction:column;gap:10px;max-width:70ch}
+  .eyebrow{font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink3);font-weight:600}
+  h1{font-family:var(--serif);font-weight:600;font-size:clamp(26px,3.4vw,38px);line-height:1.15;
+     letter-spacing:-.012em;margin:0;text-wrap:balance}
+  .standfirst{margin:0;color:var(--ink2);font-size:16.5px;text-wrap:pretty}
+  .charts{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  @media (max-width:860px){.charts{grid-template-columns:1fr}}
+  .panel{background:var(--panel);border:1px solid var(--rule);border-radius:10px;
+         padding:18px 18px 14px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:2px}
+  .panel h2{font-family:var(--serif);font-size:18px;font-weight:600;margin:0;letter-spacing:-.005em}
+  .panel .why{margin:0 0 10px;color:var(--ink2);font-size:13.5px}
+  .plot{position:relative;width:100%;aspect-ratio:5/4;min-height:230px;touch-action:none}
+  .plot canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .plot:focus-visible{outline:2px solid var(--s1);outline-offset:3px;border-radius:4px}
+  .cross{position:absolute;top:0;bottom:26px;width:1px;background:var(--ink3);opacity:0;
+         pointer-events:none;transition:opacity .12s ease}
+  .plot.live .cross{opacity:.6}
+  .readout{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 22px;
+           background:var(--panel);border:1px solid var(--rule);border-radius:10px;
+           padding:13px 18px;box-shadow:var(--shadow)}
+  .slack{font-family:var(--mono);font-size:13px;color:var(--ink2);font-variant-numeric:tabular-nums}
+  .slack b{color:var(--ink);font-weight:600}
+  .hint{color:var(--ink3);font-size:12.5px}
+  .rd{display:flex;align-items:center;gap:8px;font-size:13px}
+  .swatch{width:14px;height:3px;border-radius:2px;flex:none}
+  .rd .nm{color:var(--ink2)}
+  .rd .vv{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--ink);font-weight:600}
+  .note{margin:0;color:var(--ink3);font-size:12.5px;font-style:italic;
+        border-left:2px solid var(--rule);padding-left:11px;max-width:82ch}
+  .tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:10px;
+             background:var(--panel);box-shadow:var(--shadow)}
+  table{border-collapse:collapse;width:100%;min-width:760px;font-size:14px}
+  caption{text-align:left;padding:16px 18px 2px;font-family:var(--serif);font-size:18px;
+          font-weight:600;color:var(--ink)}
+  caption span{display:block;font-family:var(--sans);font-size:13.5px;font-weight:400;
+               color:var(--ink2);padding-top:3px}
+  th,td{text-align:left;padding:11px 18px;border-top:1px solid var(--rule);vertical-align:top}
+  thead th{font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3);
+           font-weight:600;border-top:none;padding-top:14px}
+  .kind{display:flex;align-items:center;gap:9px;font-weight:600;white-space:nowrap}
+  .dot{width:11px;height:11px;border-radius:50%;flex:none}
+  code{font-family:var(--mono);font-size:12.5px;background:color-mix(in oklab,var(--ink) 7%,transparent);
+       padding:1px 5px;border-radius:4px;white-space:nowrap}
+  td.beh,td.carries{color:var(--ink2)}
+  td.carries{font-size:13.5px}
+  .explain{background:var(--panel);border:1px solid var(--rule);border-radius:10px;
+           padding:22px 24px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:12px}
+  .explain h2{font-family:var(--serif);font-size:20px;font-weight:600;margin:0 0 2px;letter-spacing:-.006em}
+  .explain p{margin:0;max-width:76ch;color:var(--ink2)}
+  .explain strong{color:var(--ink);font-weight:600}
+  .explain em{color:var(--ink)}
+  .explain .metaphor{border-top:1px solid var(--rule);padding-top:13px;margin-top:3px}
+  .origin{display:inline-block;font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;
+          font-weight:600;padding:2px 7px;border-radius:999px;white-space:nowrap}
+  .origin.world{color:var(--ink2);background:color-mix(in oklab,var(--ink) 9%,transparent)}
+  .origin.method{color:var(--s4);background:color-mix(in oklab,var(--s4) 16%,transparent)}
+  tr.methodrow td{color:var(--ink3)}
+  tr.methodrow .kind{color:var(--ink2)}
+  footer{color:var(--ink3);font-size:12.5px;max-width:76ch}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Planner · the convex program</span>
+    <h1>Four tension shapes — every limit and every want is one of these</h1>
+    <p class="standfirst">The left panel is what a tension <em>costs</em>. The right panel is its <em>curvature</em> —
+      the weight it carries in the Newton step, and so what actually steers the climb. Sweep either plot; both read
+      the same slack. Below them, the three composed into one program — where a feasible region and an optimum actually exist.</p>
+  </header>
+
+  <section class="explain">
+    <h2>How a plan is found</h2>
+    <p><strong>A plan is a <em>point</em>: one number per activity.</strong> The limits carve out a convex region
+      and harmony is concave on it, so there is exactly one best answer — or one flat face of equally-best answers —
+      and every path upward reaches it. That is what makes the whole question tractable, and it is why the word
+      <em>search</em> misleads here: nothing is explored, sampled, or enumerated, and no space of candidate plans is
+      ever sifted.</p>
+    <p>What the engine does is <strong>solve</strong>. The plan sits at one point, and every tension reads
+      <em>its own slack</em> off that same point — that is what “position along these curves” means. A limit reads
+      how much room is left; a desire reads how much of the want is met. From those readings the engine assembles
+      two things: the total <strong>pull</strong> <code>Σ φ′·a</code>, and the total <strong>curvature</strong>
+      <code>Σ φ″·aaᵀ</code>. Then it solves for the step at which those pulls would cancel — <code>H⁻¹·pull</code> —
+      and moves there. On a quadratic that lands on the answer in a single step; on this objective it takes a
+      handful. The curves are the <em>local model</em> from which the next position is
+      computed.</p>
+    <p>There <em>is</em> a trajectory, and it is the last panel’s central path. The barrier weight starts high,
+      which parks the plan at the <strong>analytic centre</strong> — as far from every limit as it can get, barely
+      listening to the objective at all. Then the weight is swept down and the plan slides toward the optimum. That
+      is a <em>homotopy</em>: a sequence of easy problems deforming into the hard one, each solved from where the
+      last finished.</p>
+    <p>One genuine search does exist, and only one: the <strong>indivisible</strong> choice — a mill that must run
+      at scale or not at all. That really is combinatorial, and it is handled by branch and bound, where every node
+      is one of these solves and the certificate is what licenses discarding whole branches unexplored.</p>
+    <p><strong>Every panel here is wired to that one coordinate — slack — and any of them will drive the
+      others.</strong> Sweep the 1-D program and its level becomes three slacks, which light up on the curves
+      above. Sweep the polytope and its point becomes five, one per limit. Sweep a curve and that slack is shown
+      wherever it falls: as levels in the program, and in the polytope as a line running parallel to each limit,
+      exactly that much room in from it. They are the same quantity read four ways, with no translation between
+      pictures.</p>
+    <p class="metaphor"><strong>So which picture is right?</strong> <em>Solving simultaneous equations by
+      successive approximation</em> — which is literally what it is, the equations being the KKT conditions. Or, if
+      you want something physical: a ball settling in a bowl whose walls grow infinitely steep as you near them,
+      except this ball reads the curvature and jumps straight to where it would have come to rest. A maze, a search
+      tree and hill-climbing with restarts all picture somewhere to get stuck; convexity means there is nowhere.</p>
+  </section>
+
+  <div class="charts">
+    <section class="panel">
+      <h2>φ(s) — the tension</h2>
+      <p class="why">what it costs to sit at this slack</p>
+      <div class="plot" id="plotA" tabindex="0" role="img"
+        aria-label="Tension against slack. Both barrier shapes rise steeply toward infinity as slack approaches zero. The desire falls as a parabola reaching zero at satiation. Congestion rises quadratically.">
+        <canvas id="cvA"></canvas><div class="cross" id="crA"></div>
+      </div>
+    </section>
+    <section class="panel">
+      <h2>φ″(s) — the curvature</h2>
+      <p class="why">its weight in the Newton step: H = Σ φ″·aaᵀ</p>
+      <div class="plot" id="plotB" tabindex="0" role="img"
+        aria-label="Curvature against slack. Both barriers diverge near the wall, with fragility above the hard limit everywhere. Congestion is constant. The desire is constant until satiation then drops to exactly zero.">
+        <canvas id="cvB"></canvas><div class="cross" id="crB"></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="readout" id="readout">
+    <span class="slack">slack s = <b id="sVal">—</b></span>
+    <span class="hint" id="hint">hover a plot, or focus it and use ← →</span>
+  </div>
+
+  <p class="note">Values read φ(s) / φ″(s). Past satiation the desire’s curvature is exactly zero — the objective
+    goes flat, and the optimum broadens from a point into a face. A band <code>L ≤ x ≤ U</code> is simply two
+    hard limits; at zero width it has no interior at all, which is the degenerate pin.</p>
+
+  <section class="panel" style="padding-bottom:18px">
+    <h2>Put them together and a feasible region appears</h2>
+    <p class="why">one activity, held between two hard limits, pulled by one desire — the whole program in a line</p>
+    <div class="plot" id="plotC" style="aspect-ratio:auto;height:270px" tabindex="0" role="img"
+      aria-label="Total cost against the activity level. Outside the two hard limits the region is hatched and unreachable. Between them the shading lightens toward a single interior minimum, which is the optimum.">
+      <canvas id="cvC"></canvas><div class="cross" id="crC"></div>
+    </div>
+    <div class="readout" style="border:none;box-shadow:none;padding:12px 0 0;background:none">
+      <span class="slack">x = <b id="xVal">—</b></span>
+      <span class="rd"><span class="nm">total cost</span><span class="vv" id="cVal">—</span></span>
+      <span class="rd"><span class="nm">above optimum</span><span class="vv" id="dVal">—</span></span>
+      <span class="hint" id="hintC">sweep the band</span>
+    </div>
+  </section>
+
+  <section class="panel" style="padding-bottom:18px">
+    <h2>Two activities, and the shape the limits actually make</h2>
+    <p class="why">the feasible set is a polytope; the barrier keeps the plan inside it; the path is how the solver
+      crosses — and here the optimum is an <em>edge</em>, not a corner</p>
+    <div class="plot" id="plotD" style="aspect-ratio:auto;height:380px" tabindex="0" role="img"
+      aria-label="A five-sided feasible region in two activities. Shading lightens toward higher harmony. The objective runs parallel to one edge, so the whole edge is optimal. A curved path runs from the analytic centre of the region to the middle of that edge, marking successive barrier weights.">
+      <canvas id="cvD"></canvas>
+    </div>
+    <p class="note" style="margin-top:12px">Every limit is a straight cut; together they make a polytope. The barrier
+      is what keeps the plan strictly <em>inside</em> it, and the path is where the plan sits as the barrier weight is
+      swept down — from the analytic centre, where every limit is equally far away, toward the optimum. The objective
+      here runs parallel to an edge, so there is no single best corner: the whole edge is optimal, and the path
+      arrives at the middle of it. That is a face, and it is the ordinary case rather than a curiosity.</p>
+  </section>
+
+  <div class="tablewrap">
+    <table>
+      <caption>What wears which shape<span>The same curves, what the federation puts in each — and which of them are claims about the <em>world</em> rather than artefacts of the <em>method</em>.</span></caption>
+      <thead><tr><th>Shape</th><th>Origin</th><th>Weight</th><th>Behaviour</th><th>What carries it</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="kind"><span class="dot" style="background:var(--s1)"></span>hard limit</span></td>
+          <td><span class="origin world">world</span></td>
+          <td><code>t → 0.005</code><br>swept</td>
+          <td class="beh">Diverges at the wall, so uncrossable at any price. The swept weight means it is barely
+            felt until the slack is nearly gone — the plan rides to the edge.</td>
+          <td class="carries">material balance · labour ≤ available · capacity · <strong>nutrition floors</strong> ·
+            x ≥ 0 · minimum-batch floors · licensing gates · band edges</td>
+        </tr>
+        <tr>
+          <td><span class="kind"><span class="dot" style="background:var(--s2)"></span>fragility</span></td>
+          <td><span class="origin world">world</span></td>
+          <td><code>w</code> fixed,<br>governed</td>
+          <td class="beh">The same divergent shape, but its weight never sweeps away — so it is felt <em>at</em> the
+            optimum. This is what lets the federation ease off before a limit by arithmetic rather than by resolve.</td>
+          <td class="carries">ecological envelopes, tip placed precautionarily inside the science range ·
+            cumulative draw budgets · planetary-boundary rates · ecological cascade · rented capacity ·
+            inspection confidence</td>
+        </tr>
+        <tr>
+          <td><span class="kind"><span class="dot" style="background:var(--s3)"></span>desire</span></td>
+          <td><span class="origin world">world</span></td>
+          <td><code>w_d</code><br>priority</td>
+          <td class="beh">Fractional, so scale-free. Zero once met, so harmony cannot be bought by overproducing.
+            <strong>Bounded</strong> — a wholly unmet want costs w and no more, which is exactly what makes wants
+            tradeable, and an expensive one abandonable.</td>
+          <td class="carries">consumption demand at priority weight · reserve tranche: same good, target =
+            consumption + reserve, low weight, so it fills last and is shed first</td>
+        </tr>
+        <tr>
+          <td><span class="kind"><span class="dot" style="background:var(--s4)"></span>congestion</span></td>
+          <td><span class="origin world">world</span></td>
+          <td><code>w</code> fixed</td>
+          <td class="beh">Two-sided, and constant in curvature: it penalises deviation in either direction by the
+            same amount everywhere.</td>
+          <td class="carries">EMP worker fairness — equal total burden, or equal share within a skill pool ·
+            scope-coordination proximal terms</td>
+        </tr>
+        <tr class="methodrow">
+          <td><span class="kind"><span class="dot" style="background:var(--s4);opacity:.55"></span>coordination pull</span></td>
+          <td><span class="origin method">method</span></td>
+          <td><code>ρ/2</code></td>
+          <td class="beh">A congestion shape, but nobody in the economy feels it: it holds neighbouring scopes to a
+            common price while the coordination converges. Same curve as EMP fairness, entirely different claim.</td>
+          <td class="carries">the proximal term in scope coordination</td>
+        </tr>
+        <tr class="methodrow">
+          <td><span class="kind"><span class="dot" style="background:var(--s1);opacity:.55"></span>reconciliation cap</span></td>
+          <td><span class="origin method">method</span></td>
+          <td><code>t</code> swept</td>
+          <td class="beh">A hard-limit shape pinning a crossing to what its owner ships, so a federated plan can be
+            made executable. It is scaffolding the coordinator erects, not a limit the world imposes.</td>
+          <td class="carries">the import cap during reconciliation</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="note" style="padding:0 18px 16px;border:none">Marked at the point they are built, so the rule holds by
+      construction — <strong>the solver sees everything, the certificate sees only the world.</strong> A method
+      tension may steer the climb; it may never appear in what a plan claims to have proven. The distinction earns
+      its keep twice over: certifying against the coordination pull would credit a scope for satisfying scaffolding
+      the coordinator erected, and reading a reconciliation cap as a real limit sends a bound to infinity.</p>
+  </div>
+
+  <footer>Curves drawn from the engine’s own definitions: one spec table generates both the Scheme closures and the
+    C kernel, checked bit-for-bit. Plotted with t = 0.12, fragility w = 0.45, desire w = 1 at satiation D = 1, and
+    congestion w = 0.35, so the four are comparable on one pair of axes.</footer>
+</div>
+
+<script>
+(function(){
+  const SERIES=[
+    {k:'bar', name:'hard limit', tok:'--s1', f:s=>-0.12*Math.log(s), g:s=>0.12/(s*s)},
+    {k:'frag',name:'fragility',  tok:'--s2', f:s=>-0.45*Math.log(s), g:s=>0.45/(s*s)},
+    {k:'des', name:'desire',     tok:'--s3', f:s=>s<1?(1-s)*(1-s):0, g:s=>s<1?2:0},
+    {k:'qc',  name:'congestion', tok:'--s4', f:s=>0.35*s*s,          g:()=>0.70}
+  ];
+  const PAN={
+    A:{cv:'cvA',cross:'crA',plot:'plotA',pick:'f',ymin:-0.45,ymax:1.60,ticks:[-0.4,0,0.4,0.8,1.2,1.6]},
+    B:{cv:'cvB',cross:'crB',plot:'plotB',pick:'g',ymin:-0.15,ymax:3.00,ticks:[0,1,2,3]}
+  };
+  const SMIN=0.012,SMAX=2,SLO=-0.26,PADL=44,PADR=14,PADT=12,PADB=26;
+  let cursor=null, cursorC=null, cursorD=null;
+  // SLACK IS THE SHARED COORDINATE. Any panel may emit a set of slacks; every
+  // other panel shows where those slacks fall in its own picture. `src` keeps a
+  // panel from redundantly re-drawing what it just emitted.
+  let shared=null;                       // {src, items:[{s, tok}]}
+  const emit=(src,items)=>{                // coincident slacks are one fact, drawn once
+    if(items&&items.length){
+      const seen=new Set(); items=items.filter(m=>{
+        const k=m.tok+':'+m.s.toFixed(3);
+        return seen.has(k) ? false : (seen.add(k), true);
+      });
+    }
+    shared = items&&items.length ? {src,items} : null; drawAll();
+  };
+  const wants=(item,t)=> item.tok===null || item.tok===t;
+  const tok=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+  function draw(key){
+    const P=PAN[key], cv=document.getElementById(P.cv);
+    const box=cv.parentElement.getBoundingClientRect();
+    const dpr=Math.min(window.devicePixelRatio||1,2);
+    const W=Math.max(1,Math.round(box.width)), H=Math.max(1,Math.round(box.height));
+    cv.width=W*dpr; cv.height=H*dpr;
+    const c=cv.getContext('2d'); c.setTransform(dpr,0,0,dpr,0,0); c.clearRect(0,0,W,H);
+    const pw=W-PADL-PADR, ph=H-PADT-PADB;
+    const X=s=>PADL+((s-SLO)/(SMAX-SLO))*pw, Y=v=>PADT+ph-((v-P.ymin)/(P.ymax-P.ymin))*ph;
+
+    // the wall at s = 0, and the half-plane no plan can reach
+    const xw=X(0);
+    c.save();
+    c.fillStyle=tok('--ink3'); c.globalAlpha=.07;
+    c.fillRect(PADL,PADT,xw-PADL,ph);
+    c.beginPath(); c.rect(PADL,PADT,xw-PADL,ph); c.clip();     // hatch stays INSIDE the strip
+    c.globalAlpha=.30; c.strokeStyle=tok('--ink3'); c.lineWidth=1;
+    for(let d=-ph; d<xw-PADL; d+=7){
+      c.beginPath(); c.moveTo(PADL+d,PADT+ph); c.lineTo(PADL+d+ph,PADT); c.stroke();
+    }
+    c.restore();
+    c.save(); c.strokeStyle=tok('--ink2'); c.lineWidth=1.5; c.globalAlpha=.75;
+    c.beginPath(); c.moveTo(xw,PADT); c.lineTo(xw,PADT+ph); c.stroke(); c.restore();
+
+    c.font='11px '+tok('--mono'); c.textBaseline='middle';
+    c.strokeStyle=tok('--grid'); c.lineWidth=1; c.fillStyle=tok('--ink3');
+    P.ticks.forEach(t=>{
+      const y=Math.round(Y(t))+.5;
+      c.beginPath(); c.moveTo(PADL,y); c.lineTo(PADL+pw,y); c.stroke();
+      c.textAlign='right'; c.fillText(String(t),PADL-7,y);
+    });
+    c.save(); c.strokeStyle=tok('--ink3'); c.globalAlpha=.5;
+    const y0=Math.round(Y(0))+.5;
+    c.beginPath(); c.moveTo(PADL,y0); c.lineTo(PADL+pw,y0); c.stroke(); c.restore();
+    c.textAlign='center';
+    [0,0.5,1,1.5,2].forEach(s=>c.fillText(String(s),X(s),PADT+ph+13));
+    if(key==='A'){c.save();c.textAlign='left';c.font='italic 10.5px '+tok('--sans');c.fillStyle=tok('--ink3');c.fillText('no plan here',PADL+3,PADT+ph-8);c.restore();}
+    if(key==='B'){
+      c.save(); c.setLineDash([3,3]); c.strokeStyle=tok('--grid');
+      c.beginPath(); c.moveTo(Math.round(X(1))+.5,PADT); c.lineTo(Math.round(X(1))+.5,PADT+ph); c.stroke(); c.restore();
+    }
+    c.lineWidth=2; c.lineJoin='round'; c.lineCap='round';
+    SERIES.forEach(S=>{
+      c.strokeStyle=tok(S.tok); c.beginPath(); let pen=false;
+      for(let i=0;i<=760;i++){
+        const s=SMIN+(SMAX-SMIN)*i/760, v=S[P.pick](s);
+        if(!isFinite(v)||v>P.ymax||v<P.ymin){pen=false;continue;}
+        const x=X(s),y=Y(v);
+        if(!pen){c.moveTo(x,y);pen=true;} else c.lineTo(x,y);
+      }
+      c.stroke();
+      if(shared){                                   // where this tension sits, elsewhere
+        shared.items.forEach(m=>{
+          if(!wants(m,S.tok) || m.s<=0) return;
+          const v=S[P.pick](m.s);
+          if(!isFinite(v)||v>P.ymax||v<P.ymin) return;
+          c.save(); c.globalAlpha=.95;
+          c.beginPath(); c.arc(X(m.s),Y(v),3.8,0,Math.PI*2);
+          c.fillStyle=tok('--panel'); c.fill();
+          c.lineWidth=2; c.strokeStyle=tok(S.tok); c.stroke(); c.restore();
+        });
+      }
+      if(cursor!==null&&cursor>0){
+        const v=S[P.pick](cursor);
+        if(isFinite(v)&&v<=P.ymax&&v>=P.ymin){
+          c.beginPath(); c.arc(X(cursor),Y(v),4.5,0,Math.PI*2);
+          c.fillStyle=tok(S.tok); c.fill();
+          c.strokeStyle=tok('--panel'); c.lineWidth=2; c.stroke();
+        }
+      }
+    });
+  }
+
+  const r=document.getElementById('readout');
+  SERIES.forEach(S=>{
+    const d=document.createElement('span'); d.className='rd';
+    d.innerHTML='<span class="swatch" style="background:var('+S.tok+')"></span>'+
+                '<span class="nm">'+S.name+'</span><span class="vv" data-v="'+S.k+'">—</span>';
+    r.appendChild(d);
+  });
+  const fmt=v=>!isFinite(v)?'∞':(Math.abs(v)>=100?v.toFixed(0):v.toFixed(2));
+
+  function setCursor(s){
+    cursor=(s===null)?null:Math.min(SMAX,Math.max(SLO,s));
+    document.getElementById('sVal').textContent=cursor===null?'—':cursor.toFixed(3);
+    document.getElementById('hint').style.display=cursor===null?'':'none';
+    SERIES.forEach(S=>{
+      const el=document.querySelector('[data-v="'+S.k+'"]');
+      el.textContent=cursor===null?'—':(cursor<=0?'—':fmt(S.f(cursor))+' / '+fmt(S.g(cursor)));
+    });
+    shared = (cursor===null||cursor<=0) ? null : {src:'AB', items:[{s:cursor, tok:null}]};
+    drawC(); drawD();
+    ['A','B'].forEach(k=>{
+      const P=PAN[k], plot=document.getElementById(P.plot), cr=document.getElementById(P.cross);
+      if(cursor===null) plot.classList.remove('live');
+      else{
+        plot.classList.add('live');
+        const pw=plot.getBoundingClientRect().width-PADL-PADR;
+        cr.style.left=(PADL+((cursor-SLO)/(SMAX-SLO))*pw)+'px';
+      }
+      draw(k);
+    });
+  }
+
+  ['A','B'].forEach(k=>{
+    const plot=document.getElementById(PAN[k].plot);
+    const toS=ev=>{const b=plot.getBoundingClientRect();return SLO+((ev.clientX-b.left-PADL)/(b.width-PADL-PADR))*(SMAX-SLO);};
+    plot.addEventListener('pointermove',e=>setCursor(toS(e)));
+    plot.addEventListener('pointerleave',()=>setCursor(null));
+    plot.addEventListener('focus',()=>{if(cursor===null)setCursor(1);});
+    plot.addEventListener('keydown',e=>{
+      const st=e.shiftKey?0.1:0.02;
+      if(e.key==='ArrowRight'){setCursor((cursor??1)+st);e.preventDefault();}
+      if(e.key==='ArrowLeft'){setCursor((cursor??1)-st);e.preventDefault();}
+      if(e.key==='Escape')setCursor(null);
+    });
+    draw(k);
+  });
+
+  // ── the composite: two hard limits + one desire, over one activity ─────────
+  const CL=0.35, CU=1.75, CD=1.00, CW=1.0, CT=0.05;   // CD = 1 ⇒ panel C's slacks live on panel A's axis
+  const cost=x=>{
+    if(x<=CL||x>=CU) return Infinity;
+    const g=x<CD?(CD-x)/CD:0;
+    return CW*g*g - CT*Math.log(x-CL) - CT*Math.log(CU-x);
+  };
+  let xopt=CL, cmin=Infinity;
+  for(let i=1;i<2000;i++){ const x=CL+(CU-CL)*i/2000, v=cost(x); if(v<cmin){cmin=v;xopt=x;} }
+  const XLO=0.06, XHI=2.04;
+
+  function drawC(){
+    const cv=document.getElementById('cvC'), box=cv.parentElement.getBoundingClientRect();
+    const dpr=Math.min(window.devicePixelRatio||1,2);
+    const W=Math.max(1,Math.round(box.width)), H=Math.max(1,Math.round(box.height));
+    cv.width=W*dpr; cv.height=H*dpr;
+    const c=cv.getContext('2d'); c.setTransform(dpr,0,0,dpr,0,0); c.clearRect(0,0,W,H);
+    const pw=W-PADL-PADR, ph=H-PADT-PADB;
+    const X=x=>PADL+((x-XLO)/(XHI-XLO))*pw;
+    const ymin=cmin-0.06, ymax=cmin+1.15;
+    const Y=v=>PADT+ph-((v-ymin)/(ymax-ymin))*ph;
+
+    // unreachable on both sides of the band
+    c.save(); c.fillStyle=tok('--ink3'); c.globalAlpha=.07;
+    c.fillRect(PADL,PADT,X(CL)-PADL,ph); c.fillRect(X(CU),PADT,PADL+pw-X(CU),ph);
+    c.globalAlpha=.28; c.strokeStyle=tok('--ink3'); c.lineWidth=1;
+    [[PADL,X(CL)],[X(CU),PADL+pw]].forEach(([a,b])=>{
+      c.save(); c.beginPath(); c.rect(a,PADT,b-a,ph); c.clip();
+      for(let d=-ph;d<b-a;d+=7){ c.beginPath(); c.moveTo(a+d,PADT+ph); c.lineTo(a+d+ph,PADT); c.stroke(); }
+      c.restore();
+    });
+    c.restore();
+
+    // the basin: shading heaviest where the plan is worst, clearing toward the optimum
+    const gr=c.createLinearGradient(X(CL),0,X(CU),0);
+    for(let i=0;i<=48;i++){
+      const x=CL+(CU-CL)*i/48, v=cost(x);
+      const n=Math.max(0,Math.min(1,(v-cmin)/(ymax-cmin)));
+      gr.addColorStop(i/48, `rgba(138,137,131,${(0.44*Math.pow(n,0.55)).toFixed(3)})`);
+    }
+    c.fillStyle=gr; c.fillRect(X(CL),PADT,X(CU)-X(CL),ph);
+
+    // walls
+    c.save(); c.strokeStyle=tok('--s1'); c.lineWidth=2; c.globalAlpha=.85;
+    [CL,CU].forEach(x=>{ c.beginPath(); c.moveTo(X(x),PADT); c.lineTo(X(x),PADT+ph); c.stroke(); });
+    c.restore();
+
+    // the total cost
+    c.strokeStyle=tok('--ink'); c.lineWidth=2; c.lineJoin='round'; c.beginPath();
+    let pen=false;
+    for(let i=0;i<=900;i++){
+      const x=XLO+(XHI-XLO)*i/900, v=cost(x);
+      if(!isFinite(v)||v>ymax||v<ymin){pen=false;continue;}
+      const px=X(x), py=Y(v);
+      if(!pen){c.moveTo(px,py);pen=true;} else c.lineTo(px,py);
+    }
+    c.stroke();
+
+    // the optimum
+    c.beginPath(); c.arc(X(xopt),Y(cmin),5.5,0,Math.PI*2);
+    c.fillStyle=tok('--ink'); c.fill(); c.lineWidth=2; c.strokeStyle=tok('--panel'); c.stroke();
+
+    c.font='11px '+tok('--mono'); c.fillStyle=tok('--ink3'); c.textBaseline='middle';
+    c.textAlign='center';
+    [0.5,1,1.5,2].forEach(x=>c.fillText(String(x),X(x),PADT+ph+13));
+    c.font='italic 11px '+tok('--sans');
+    c.textAlign='center';
+    c.fillText('unreachable', (PADL+X(CL))/2, PADT+14);
+    c.fillText('unreachable', (X(CU)+PADL+pw)/2, PADT+14);
+    c.fillStyle=tok('--ink2'); c.font='600 11.5px '+tok('--sans');
+    c.fillText('feasible region', (X(CL)+X(CU))/2, PADT+14);
+    c.fillStyle=tok('--ink2');
+    c.fillText('optimum', X(xopt), Y(cmin)-16);
+    c.fillStyle=tok('--ink3'); c.font='italic 11px '+tok('--sans');
+    c.fillText('shading = how far above optimal', (X(CL)+X(CU))/2, PADT+32);
+    c.save(); c.fillStyle=tok('--s1'); c.font='600 11px '+tok('--sans');
+    c.textAlign='right'; c.fillText('L', X(CL)-6, PADT+ph-10);
+    c.textAlign='left';  c.fillText('U', X(CU)+6, PADT+ph-10);
+    c.restore();
+
+    if(shared && shared.src!=='C'){                 // where those slacks land HERE
+      shared.items.forEach(m=>{
+        const loci=[];
+        if(wants(m,'--s1')){ loci.push([CL+m.s,'--s1']); loci.push([CU-m.s,'--s1']); }
+        if(wants(m,'--s3')) loci.push([m.s,'--s3']);
+        loci.forEach(([lx,tk])=>{
+          if(lx<=CL||lx>=CU) return;
+          c.save(); c.setLineDash([2,3]); c.globalAlpha=.85;
+          c.strokeStyle=tok(tk); c.lineWidth=1.5;
+          c.beginPath(); c.moveTo(X(lx),PADT); c.lineTo(X(lx),PADT+ph); c.stroke(); c.restore();
+        });
+      });
+    }
+    if(cursorC!==null){
+      const v=cost(cursorC);
+      if(isFinite(v)&&v<=ymax){
+        c.beginPath(); c.arc(X(cursorC),Y(v),4.5,0,Math.PI*2);
+        c.fillStyle=tok('--ink'); c.fill(); c.lineWidth=2; c.strokeStyle=tok('--panel'); c.stroke();
+      }
+    }
+  }
+
+  function setC(x){
+    cursorC=(x===null)?null:Math.min(XHI,Math.max(XLO,x));
+    const inBand=cursorC!==null&&cursorC>CL&&cursorC<CU;
+    document.getElementById('xVal').textContent=cursorC===null?'—':cursorC.toFixed(3);
+    document.getElementById('cVal').textContent=!inBand?(cursorC===null?'—':'unreachable'):cost(cursorC).toFixed(3);
+    document.getElementById('dVal').textContent=!inBand?'—':'+'+(cost(cursorC)-cmin).toFixed(3);
+    document.getElementById('hintC').style.display=cursorC===null?'':'none';
+    const plot=document.getElementById('plotC'), cr=document.getElementById('crC');
+    if(cursorC===null) plot.classList.remove('live');
+    else{ plot.classList.add('live');
+      const pw=plot.getBoundingClientRect().width-PADL-PADR;
+      cr.style.left=(PADL+((cursorC-XLO)/(XHI-XLO))*pw)+'px'; }
+    emit('C', (cursorC===null||cursorC<=CL||cursorC>=CU) ? null
+              : [{s:cursorC-CL,tok:'--s1'},{s:CU-cursorC,tok:'--s1'},{s:cursorC,tok:'--s3'}]);
+  }
+  (function(){
+    const plot=document.getElementById('plotC');
+    const toX=ev=>{const b=plot.getBoundingClientRect();return XLO+((ev.clientX-b.left-PADL)/(b.width-PADL-PADR))*(XHI-XLO);};
+    plot.addEventListener('pointermove',e=>setC(toX(e)));
+    plot.addEventListener('pointerleave',()=>setC(null));
+    plot.addEventListener('focus',()=>{if(cursorC===null)setC(xopt);});
+    plot.addEventListener('keydown',e=>{
+      const st=e.shiftKey?0.08:0.015;
+      if(e.key==='ArrowRight'){setC((cursorC??xopt)+st);e.preventDefault();}
+      if(e.key==='ArrowLeft'){setC((cursorC??xopt)-st);e.preventDefault();}
+      if(e.key==='Escape')setC(null);
+    });
+    drawC();
+  })();
+
+  // ── the polytope: two activities, five limits, an objective along an edge ──
+  const LIM=[ {a:-1,b:0,c:0,   nm:'x ≥ 0'},      // written as a·x + b·y + c ≥ 0
+              {a:0,b:-1,c:0,   nm:'y ≥ 0'},
+              {a:1, b:0, c:1.1,nm:'x ≤ 1.1'},
+              {a:0, b:1, c:0.9,nm:'y ≤ 0.9'},
+              {a:1, b:1, c:1.5,nm:'x + y ≤ 1.5'} ];
+  const slackOf=(L,x,y)=> L.c - (L.a*x + L.b*y);
+  const inside=(x,y)=>LIM.every(L=>slackOf(L,x,y)>1e-9);
+  const OBJ=(x,y)=>x+y;                                  // parallel to x + y ≤ 1.5
+  const VERTS=[[0,0],[1.1,0],[1.1,0.4],[0.6,0.9],[0,0.9]];
+  // the central path: argmax OBJ + t·Σ log(slack), by grid search (robust, and this is a picture)
+  const TS=[1.2,0.6,0.3,0.15,0.075,0.035,0.016,0.007,0.003];
+  const PATH=TS.map(t=>{
+    let bx=0,by=0,bv=-Infinity;
+    for(let i=1;i<240;i++) for(let j=1;j<200;j++){
+      const x=1.15*i/240, y=0.95*j/200;
+      if(!inside(x,y)) continue;
+      let v=OBJ(x,y); for(const L of LIM) v+=t*Math.log(slackOf(L,x,y));
+      if(v>bv){bv=v;bx=x;by=y;}
+    }
+    return {t,x:bx,y:by};
+  });
+
+  function drawD(){
+    const cv=document.getElementById('cvD'), box=cv.parentElement.getBoundingClientRect();
+    const dpr=Math.min(window.devicePixelRatio||1,2);
+    const W=Math.max(1,Math.round(box.width)), H=Math.max(1,Math.round(box.height));
+    cv.width=W*dpr; cv.height=H*dpr;
+    const c=cv.getContext('2d'); c.setTransform(dpr,0,0,dpr,0,0); c.clearRect(0,0,W,H);
+    const ML=54, MB=46, MT=18, MR=26;
+    const sc=Math.min((W-ML-MR)/1.25, (H-MB-MT)/1.05);
+    const ox=ML+((W-ML-MR)-1.25*sc)/2;                 // centred, aspect kept
+    const X=x=>ox+x*sc, Y=y=>H-MB-y*sc;
+
+    // objective shading over the polytope: lighter toward higher harmony
+    const omin=0, omax=1.5;
+    c.save(); c.beginPath();
+    VERTS.forEach((v,i)=> i?c.lineTo(X(v[0]),Y(v[1])):c.moveTo(X(v[0]),Y(v[1]))); c.closePath(); c.clip();
+    const gr=c.createLinearGradient(X(0),Y(0),X(0.75),Y(0.75));
+    for(let i=0;i<=24;i++){
+      const n=i/24;   // along the objective direction
+      gr.addColorStop(n, `rgba(138,137,131,${(0.34*(1-n)).toFixed(3)})`);
+    }
+    c.fillStyle=gr; c.fillRect(0,0,W,H);
+    c.restore();
+
+    // the limits, each a straight cut
+    c.save(); c.strokeStyle=tok('--s1'); c.lineWidth=2; c.globalAlpha=.85;
+    c.beginPath();
+    VERTS.forEach((v,i)=> i?c.lineTo(X(v[0]),Y(v[1])):c.moveTo(X(v[0]),Y(v[1]))); c.closePath(); c.stroke();
+    c.restore();
+
+    // the optimal FACE — the whole edge, not a corner
+    c.save(); c.strokeStyle=tok('--ink'); c.lineWidth=5; c.lineCap='round';
+    c.beginPath(); c.moveTo(X(1.1),Y(0.4)); c.lineTo(X(0.6),Y(0.9)); c.stroke(); c.restore();
+
+    // the central path
+    c.save(); c.strokeStyle=tok('--ink2'); c.lineWidth=2; c.setLineDash([5,3]);
+    c.beginPath(); PATH.forEach((p,i)=> i?c.lineTo(X(p.x),Y(p.y)):c.moveTo(X(p.x),Y(p.y))); c.stroke();
+    c.restore();
+    PATH.forEach((p,i)=>{
+      c.beginPath(); c.arc(X(p.x),Y(p.y), i===0?5:(i===PATH.length-1?5.5:3), 0, Math.PI*2);
+      c.fillStyle= i===PATH.length-1 ? tok('--ink') : tok('--ink2');
+      c.fill(); c.lineWidth=1.5; c.strokeStyle=tok('--panel'); c.stroke();
+    });
+
+    // ── where the shared slacks land here ────────────────────────────────
+    // a slack of s on limit a·x+b·y ≤ c is the whole line a·x+b·y = c−s:
+    // parallel to that limit, s of room in from it.
+    if(shared && shared.src!=='D'){
+      c.save();
+      c.beginPath(); VERTS.forEach((v,i)=> i?c.lineTo(X(v[0]),Y(v[1])):c.moveTo(X(v[0]),Y(v[1])));
+      c.closePath(); c.clip();
+      c.setLineDash([2,3]); c.lineWidth=1.5; c.strokeStyle=tok('--s1'); c.globalAlpha=.8;
+      shared.items.forEach(m=>{
+        if(!wants(m,'--s1') || m.s<=0) return;
+        LIM.forEach(L=>{
+          const k=L.c-m.s, R=6;                       // a·x + b·y = k, drawn long and clipped
+          const px = Math.abs(L.a)>Math.abs(L.b) ? [k/L.a,0] : [0,k/L.b];
+          const dx=-L.b, dy=L.a;
+          c.beginPath();
+          c.moveTo(X(px[0]-R*dx), Y(px[1]-R*dy));
+          c.lineTo(X(px[0]+R*dx), Y(px[1]+R*dy));
+          c.stroke();
+        });
+      });
+      c.restore();
+    }
+
+    // the plan itself, when this panel is the one being swept
+    if(cursorD){
+      c.save();
+      c.beginPath(); c.arc(X(cursorD.x),Y(cursorD.y),5,0,Math.PI*2);
+      c.fillStyle=tok('--ink'); c.fill();
+      c.lineWidth=2; c.strokeStyle=tok('--panel'); c.stroke();
+      c.setLineDash([2,3]); c.lineWidth=1.25; c.strokeStyle=tok('--ink3'); c.globalAlpha=.75;
+      LIM.forEach(L=>{                                // its slack to each limit, drawn
+        const t=slackOf(L,cursorD.x,cursorD.y)/(L.a*L.a+L.b*L.b);
+        c.beginPath(); c.moveTo(X(cursorD.x),Y(cursorD.y));
+        c.lineTo(X(cursorD.x+L.a*t), Y(cursorD.y+L.b*t)); c.stroke();
+      });
+      c.restore();
+    }
+
+    // axes + labels
+    c.font='11px '+tok('--mono'); c.fillStyle=tok('--ink3'); c.textAlign='center'; c.textBaseline='middle';
+    [0,0.5,1].forEach(v=>c.fillText(String(v),X(v),Y(0)+16));
+    c.textAlign='right';
+    [0.5,1].forEach(v=>c.fillText(String(v),X(0)-9,Y(v)));
+    c.font='12px '+tok('--sans'); c.fillStyle=tok('--ink2');
+    c.textAlign='center'; c.fillText('activity x', X(0.55), Y(0)+32);
+    c.save(); c.translate(X(0)-34, Y(0.45)); c.rotate(-Math.PI/2);
+    c.fillText('activity y',0,0); c.restore();
+
+    c.font='600 11.5px '+tok('--sans'); c.textAlign='left';
+    c.fillStyle=tok('--ink'); c.fillText('optimal face', X(0.90), Y(0.68));
+    c.fillStyle=tok('--ink2'); c.fillText('central path', X(0.30), Y(0.52));
+    c.fillStyle=tok('--ink3'); c.font='italic 11px '+tok('--sans');
+    c.fillText('analytic centre', X(PATH[0].x)+9, Y(PATH[0].y)+15);
+    c.fillStyle=tok('--s1'); c.font='600 11px '+tok('--sans'); c.textAlign='left';
+    c.fillText('every limit is a straight cut', X(1.18), Y(0.16));
+  }
+
+  (function(){
+    const plot=document.getElementById('plotD');
+    if(!plot) return;
+    const toXY=ev=>{
+      const b=plot.getBoundingClientRect();
+      const ML=54, MB=46, MT=18, MR=26;
+      const sc=Math.min((b.width-ML-MR)/1.25, (b.height-MB-MT)/1.05);
+      const ox=ML+((b.width-ML-MR)-1.25*sc)/2;
+      return {x:(ev.clientX-b.left-ox)/sc, y:(b.height-MB-(ev.clientY-b.top))/sc};
+    };
+    const setD=pt=>{
+      cursorD = (pt && inside(pt.x,pt.y)) ? pt : null;
+      // one point in the polytope IS five slacks, one per limit
+      emit('D', cursorD ? LIM.map(L=>({s:slackOf(L,cursorD.x,cursorD.y), tok:'--s1'})) : null);
+    };
+    plot.addEventListener('pointermove',e=>setD(toXY(e)));
+    plot.addEventListener('pointerleave',()=>setD(null));
+    plot.addEventListener('focus',()=>{if(!cursorD)setD({x:PATH[3].x,y:PATH[3].y});});
+    plot.addEventListener('keydown',e=>{
+      const st=e.shiftKey?0.08:0.02, p=cursorD||{x:PATH[3].x,y:PATH[3].y};
+      const K={ArrowRight:[st,0],ArrowLeft:[-st,0],ArrowUp:[0,st],ArrowDown:[0,-st]}[e.key];
+      if(K){ const n={x:p.x+K[0],y:p.y+K[1]}; if(inside(n.x,n.y)) setD(n); e.preventDefault(); }
+      if(e.key==='Escape') setD(null);
+    });
+  })();
+
+  const drawAll=()=>{['A','B'].forEach(draw); drawC(); drawD();};
+  const redraw=drawAll;
+  drawD();
+  window.addEventListener('resize',redraw);
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change',redraw);
+  new MutationObserver(redraw).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+})();
+</script>

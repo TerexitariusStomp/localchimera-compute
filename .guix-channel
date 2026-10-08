@@ -1,0 +1,36 @@
+;; .guix-channel — this repository is a Guix channel.
+;;
+;; Package modules live under deploy/guix/ (modules-only setup,
+;; Cookbook §7.3). The Guile load path is rooted there, so
+;; (use-modules (radicle-service)) etc. work after `guix pull`.
+;;
+;; ── Subscribing ────────────────────────────────────────────────────────
+;;
+;; `guix pull` clones via plain git, which does NOT speak the `rad://`
+;; protocol. To pull this channel you need a working git URL — either
+;; an HTTPS Radicle gateway (third-party SPOF) or a local Radicle node
+;; exposing the repo as plain git.
+;;
+;; HTTPS gateway (simplest, third-party trust):
+;;
+;;   (channel
+;;     (name 'playnet)
+;;     (url "https://iris.radicle.xyz/z27dFkN28LQAsSsG3DVHcfBqYAArQ.git")
+;;     (branch "main"))
+;;
+;; Local Radicle node (no third party, requires `rad clone` first):
+;;
+;;   rad clone rad:z27dFkN28LQAsSsG3DVHcfBqYAArQ
+;;   (channel
+;;     (name 'playnet)
+;;     (url ,(string-append (getenv "HOME")
+;;             "/.radicle/storage/z27dFkN28LQAsSsG3DVHcfBqYAArQ"))
+;;     (branch "main"))
+;;
+;; Always pin (commit "…") + (introduction …) — see deploy/channels.scm.
+;; Without those, anything reachable at the URL above can ship code into
+;; your builds.
+
+(channel
+  (version 0)
+  (directory "deploy/guix"))

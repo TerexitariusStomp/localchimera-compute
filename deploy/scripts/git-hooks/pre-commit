@@ -1,0 +1,208 @@
+#!/usr/bin/env bash
+# pre-commit — three jobs on the way in:
+#
+#   1. Reject staged .scm files that do not read as Scheme. Blocking here
+#      is what makes the check useful: the compiler only ever sees files
+#      that some module imports, so a standalone script with an unbalanced
+#      form commits clean and stays broken. `make lint-parens` covers the
+#      whole tree; this covers the few files actually being committed, on
+#      their STAGED content rather than the working copy.
+#
+#   2. When a commit touches ui/, assert the committed browser/*.js still
+#      matches a fresh compile of it. The emitted JavaScript is committed, so
+#      the two travel together or the served tree runs code the sources no
+#      longer describe.
+#
+#   3. Auto-encrypt deploy/secrets.scm (below).
+#
+# Run via: git config core.hooksPath deploy/scripts/git-hooks
+# (also handled by `make install-hooks`).
+#
+# Why (2) exists:
+#   secrets.scm is gitignored, so accidentally committing PLAINTEXT is
+#   not the failure mode. The failure mode is editing secrets.scm,
+#   forgetting to re-encrypt, then committing — leaving secrets.scm.age
+#   stale in the repo. On next deploy the activation gexp reads the
+#   stale encrypted version → wallet/luks/etc. mismatched → service
+#   bricked, and the operator's edits are silently lost.
+#
+# What it does:
+#   If deploy/secrets.scm exists AND its content differs from a fresh
+#   decryption of secrets.scm.age, re-encrypt and stage the new .age.
+#   This keeps the encrypted blob in lockstep with the plaintext
+#   without operator ceremony.
+
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+
+# ── Guard 1: staged Scheme parses ───────────────────────────────────────────
+# Materialise the staged blobs (not the working tree) into a temp dir that
+# mirrors their paths, then hand them to the same reader `make lint-parens`
+# uses. Skips deleted files and the tree-sitter query dir, whose .scm files
+# are a different language.
+lint_staged_parens() {
+    command -v guile >/dev/null 2>&1 || return 0
+    [ -f "$REPO_ROOT/tools/lint-parens.scm" ] || return 0
+
+    local staged
+    staged=$(git diff --cached --name-only --diff-filter=ACMR -- '*.scm' \
+             | grep -v '^tooling/tree-sitter-wisp/queries/' || true)
+    [ -n "$staged" ] || return 0
+
+    local tmp
+    tmp=$(mktemp -d)
+    # shellcheck disable=SC2064
+    trap "rm -rf '$tmp'" RETURN
+
+    local f
+    while IFS= read -r f; do
+        mkdir -p "$tmp/$(dirname "$f")"
+        git show ":$f" > "$tmp/$f"
+    done <<< "$staged"
+
+    # LC_ALL — the reader needs a UTF-8 locale or a `#\ä` char literal reads as
+    # "unknown character name", and berlin-baumscheiben.scm normalises German
+    # umlauts with four of them. A hook that blocks a correct file is worse than
+    # no hook: the fix people reach for is --no-verify, and then it guards nothing.
+    if ! (cd "$tmp" && LC_ALL="${LC_ALL:-C.UTF-8}" guile --no-auto-compile "$REPO_ROOT/tools/lint-parens.scm" $staged); then
+        echo "" >&2
+        echo "pre-commit: staged Scheme above does not read to EOF — commit blocked." >&2
+        echo "pre-commit: fix the form, or 'git commit --no-verify' to override." >&2
+        return 1
+    fi
+}
+
+lint_staged_parens
+
+# ── Guard 1, second half: a library names only what its parts export ────────
+# A library module such as (playnet governance) re-exports names its parts
+# define. Committed apart from those parts, it names something the committed
+# parts lack, and the first load stops with "Undefined variable" (the gateway
+# did, on every start, for nine hours). That fault is made at the commit, so the
+# commit is where it is refused: the check reads the INDEX's whole module/ tree
+# (the staged blobs plus everything else as committed), never the working tree,
+# which may hold the other half of someone's change.
+check_staged_reexports() {
+    command -v guile >/dev/null 2>&1 || return 0
+    [ -f "$REPO_ROOT/tools/check-reexports.scm" ] || return 0
+    git diff --cached --name-only --diff-filter=ACMRD -- 'module/*.scm' | grep -q . || return 0
+
+    local tmp
+    tmp=$(mktemp -d)
+    # shellcheck disable=SC2064
+    trap "rm -rf '$tmp'" RETURN
+    (cd "$REPO_ROOT" && git ls-files -z -- module | xargs -0 git checkout-index --prefix="$tmp/" --)
+
+    if ! LC_ALL="${LC_ALL:-C.UTF-8}" guile --no-auto-compile "$REPO_ROOT/tools/check-reexports.scm" "$tmp"; then
+        echo "" >&2
+        echo "pre-commit: a library above re-exports a name no other module exports — commit blocked." >&2
+        echo "pre-commit: commit the module that defines it in the same commit (or take the name out of the list)." >&2
+        return 1
+    fi
+}
+
+check_staged_reexports
+
+# ── Guard 2: the committed JavaScript matches the TypeScript ────────────────
+# ui/ compiles into browser/ and the output is COMMITTED, so a .ts committed
+# without re-running `make ui` leaves the served tree running the old code with
+# nothing to say so.
+#
+# This began as a path match — "a staged .ts must bring its .js" — on the theory
+# that tsc in a hook was too slow to be welcome. That guard was wrong three times
+# out of the four commits it saw: a pure MOVE emits nothing new, a .d.ts emits
+# nothing at all, and a TYPE-ONLY edit (adding an interface member) emits
+# byte-identical output. Each needed its own exemption, and none of them could be
+# decided without knowing what tsc would actually produce.
+#
+# So ask tsc. `make check-ui-fresh` compiles to a scratch dir and diffs, and it
+# costs ~1.6s once the guix profile is warm — only on commits that touch ui/.
+# It answers the real question instead of a proxy for it, and the three
+# exemptions disappear because none of those cases produce a diff.
+#
+# It reads the WORKING TREE rather than staged blobs (Guard 1 does the stricter
+# thing). That catches the mistake people make — edit the .ts, forget `make ui` —
+# and not the exotic one of staging a stale .js beside a fresh source.
+ui_emit_fresh() {
+    # Either half can be the one that drifts: a .ts staged without its output,
+    # or an output staged without the .ts that produces it.
+    git diff --cached --name-only --diff-filter=ACMR -- 'ui/' 'browser/' | grep -q . || return 0
+    command -v guix >/dev/null 2>&1 || return 0
+    [ -f "$REPO_ROOT/tsconfig.json" ] || return 0
+
+    # --staged, NOT the working tree. This checkout is shared by concurrent
+    # sessions, so commits are path-limited to one session's files — and a
+    # regenerated .js that is correct on disk but never staged satisfies a
+    # disk-reading gate while leaving HEAD inconsistent. That is exactly how
+    # browser/app/tabs/location.js went three lines stale.
+    if ! (cd "$REPO_ROOT" && make -s check-ui-staged); then
+        echo "" >&2
+        echo "pre-commit: this COMMIT would leave generated JavaScript behind ui/." >&2
+        echo "pre-commit: run 'make ui' and stage the emitted .js, or 'git commit --no-verify'." >&2
+        return 1
+    fi
+}
+
+ui_emit_fresh
+
+# ── Guard 3: secrets.scm stays in lockstep with secrets.scm.age ─────────────
+PLAINTEXT="$REPO_ROOT/deploy/secrets.scm"
+ENCRYPTED="$REPO_ROOT/deploy/secrets.scm.age"
+AGE_KEY="$REPO_ROOT/deploy/.age-key.txt"
+YUBIKEY_IDENTITY="$REPO_ROOT/deploy/.age-yubikey-identity.txt"
+
+# No plaintext on disk → nothing to encrypt. Done.
+[ -f "$PLAINTEXT" ] || exit 0
+
+# No age binary → tell the operator how to fix it, don't block.
+if ! command -v age >/dev/null 2>&1; then
+    echo "pre-commit: age not installed. Skipping secrets re-encrypt." >&2
+    echo "pre-commit: install via 'guix shell -m deploy/manifests/dev-manifest.scm'" >&2
+    exit 0
+fi
+
+# If neither identity exists we cannot encrypt either. Bail.
+if [ ! -f "$AGE_KEY" ] && [ ! -f "$YUBIKEY_IDENTITY" ]; then
+    echo "pre-commit: no age identity found — set up with secrets-encrypt.sh first" >&2
+    exit 0
+fi
+
+# Determine if re-encryption is needed: decrypt current .age (if any)
+# and compare its hash to the plaintext hash. If they match, nothing
+# to do — exit fast.
+NEED_REENCRYPT=1
+if [ -f "$ENCRYPTED" ]; then
+    if [ -f "$AGE_KEY" ]; then
+        DECRYPTED_HASH=$(age -d -i "$AGE_KEY" "$ENCRYPTED" 2>/dev/null | sha256sum | cut -d' ' -f1)
+    else
+        # YubiKey decrypt would require a touch — too disruptive for a
+        # pre-commit run. Default to re-encrypting unconditionally.
+        DECRYPTED_HASH=""
+    fi
+    PLAINTEXT_HASH=$(sha256sum < "$PLAINTEXT" | cut -d' ' -f1)
+    if [ "$DECRYPTED_HASH" = "$PLAINTEXT_HASH" ]; then
+        NEED_REENCRYPT=0
+    fi
+fi
+
+if [ "$NEED_REENCRYPT" = "0" ]; then
+    exit 0
+fi
+
+echo "pre-commit: secrets.scm drift detected — re-encrypting..."
+
+# Encrypt without shredding the plaintext (operator is mid-edit; keep
+# their working copy). secrets-encrypt.sh does shred, so call age
+# directly here.
+if [ -f "$YUBIKEY_IDENTITY" ]; then
+    RECIPIENT=$(grep "^age1yubikey" "$YUBIKEY_IDENTITY" | head -1)
+    echo "pre-commit: encrypting with YubiKey — touch the key when prompted."
+    age -e -r "$RECIPIENT" -o "$ENCRYPTED" "$PLAINTEXT"
+else
+    AGE_PUB=$(age-keygen -y "$AGE_KEY")
+    age -e -r "$AGE_PUB" -o "$ENCRYPTED" "$PLAINTEXT"
+fi
+
+git add "$ENCRYPTED"
+echo "pre-commit: staged updated deploy/secrets.scm.age"

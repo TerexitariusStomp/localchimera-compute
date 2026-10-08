@@ -1,0 +1,71 @@
+#!/bin/bash
+# vsudo - sudo wrapper for Tails
+# Prompts for the Tails administration password on the terminal.
+# Uses read -s (hidden input) which respects keyboard layout correctly.
+# Caches the password for 5 minutes.
+
+VSUDO_CACHE="/tmp/vsudo-cache"
+VSUDO_TIMEOUT=300
+
+vsudo_prompt() {
+    local attempt=1
+    local max_attempts=3
+
+    while [ $attempt -le $max_attempts ]; do
+        printf "[vsudo] Tails admin password (attempt %d/%d): " "$attempt" "$max_attempts"
+        read -rs PASS
+        echo
+
+        if [ -z "$PASS" ]; then
+            attempt=$((attempt + 1))
+            echo "[vsudo] Password cannot be empty." >&2
+            continue
+        fi
+
+        if echo "$PASS" | sudo -S -p "" true 2>/dev/null; then
+            echo "$PASS" > "$VSUDO_CACHE"
+            chmod 600 "$VSUDO_CACHE"
+            echo "$(date +%s)" >> "$VSUDO_CACHE"
+            echo "[vsudo] Authenticated (valid for 5 minutes)."
+            return 0
+        else
+            attempt=$((attempt + 1))
+            echo "[vsudo] Incorrect password." >&2
+        fi
+    done
+
+    echo "[vsudo] Too many failed attempts." >&2
+    return 1
+}
+
+vsudo_cached_pass() {
+    if [ ! -f "$VSUDO_CACHE" ]; then
+        return 1
+    fi
+    local cached_time
+    cached_time=$(tail -1 "$VSUDO_CACHE" 2>/dev/null)
+    local now
+    now=$(date +%s)
+    if [ -z "$cached_time" ] || [ $(( now - cached_time )) -ge $VSUDO_TIMEOUT ]; then
+        rm -f "$VSUDO_CACHE"
+        return 1
+    fi
+    head -1 "$VSUDO_CACHE"
+}
+
+# Try cached password first
+CACHED=$(vsudo_cached_pass)
+if [ -n "$CACHED" ]; then
+    echo "$CACHED" | sudo -S -p "" true 2>/dev/null
+    if [ $? -eq 0 ]; then
+        echo "$CACHED" | sudo -S -p "" "$@"
+        exit $?
+    fi
+    rm -f "$VSUDO_CACHE"
+fi
+
+# No valid cache - prompt
+vsudo_prompt || exit 1
+
+CACHED=$(vsudo_cached_pass)
+echo "$CACHED" | sudo -S -p "" "$@"

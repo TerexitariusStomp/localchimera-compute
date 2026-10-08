@@ -8,13 +8,14 @@
 
 (define-module (playnet org)
   #:use-module (goblins)
-  #:use-module (playnet gplay)
-  #:use-module (playnet evaluator)
-  #:use-module (playnet endorsement)
+  #:use-module (playnet org gplay)
+  #:use-module (playnet lang evaluator)
+  #:use-module (playnet org endorsement)
   #:use-module (srfi srfi-1)
   #:use-module (ice-9 receive)
   #:use-module (srfi srfi-9)
-  #:export (make-open-org
+  #:export (make-org
+            make-open-org
             make-governed-org
             org?
             org-name
@@ -34,13 +35,21 @@
 
 ;;; ── Open org ──────────────────────────────────────────────────────────────
 
-(define* (make-open-org name #:optional (base-bindings default-base-bindings))
-  "Create an open org (no governance).
-   Returns an <org> record."
+(define* (make-org name
+                   #:optional (base-bindings default-base-bindings)
+                   #:key (output #f))
+  "Create an open org (no governance). Optionally route display/write/
+   newline/format to OUTPUT (a port). Returns an <org> record."
   (let ((vat (spawn-vat)))
     (with-vat vat
-      (let ((raw-org (make-initial-org (append (make-io-bindings) base-bindings))))
+      (let* ((io-bindings (if output
+                              (make-io-bindings output)
+                              (make-io-bindings)))
+             (raw-org (make-initial-org (append io-bindings base-bindings))))
         (%make-org name vat raw-org)))))
+
+;; Back-compat alias — same constructor, different name.
+(define make-open-org make-org)
 
 ;;; ── Governed org ──────────────────────────────────────────────────────────
 

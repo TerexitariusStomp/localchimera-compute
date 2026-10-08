@@ -7,7 +7,7 @@
 (add-to-load-path "module")
 
 (use-modules (ice-9 readline)
-             (playnet gplay))
+             (playnet org gplay))
 
 (activate-readline)
 

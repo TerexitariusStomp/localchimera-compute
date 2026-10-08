@@ -1,0 +1,282 @@
+/* demand.css — Resource demand card.
+ * Ported from planner/src/lib/components/commune/ResourceDemandCard.svelte
+ * Class prefix: dc- (demand card)
+ *
+ * Uses --border-dim, --border-faint, --bg-overlay, --font-sans, --text-xs
+ * from dashboard.css; falls back below if those are not yet defined.
+ */
+
+.dc-card {
+  --dc-accent: 124, 58, 237;     /* violet */
+  --dc-bg:     #16161e;
+  --dc-fg:     #e2e8f0;
+  --dc-mute:   rgba(255, 255, 255, 0.45);
+  --dc-faint:  rgba(255, 255, 255, 0.04);
+  --dc-line:   rgba(255, 255, 255, 0.1);
+  --dc-unit:   rgba(167, 139, 250, 0.9);
+
+  width: 200px;
+  min-height: 200px;
+  flex-shrink: 0;
+  background: var(--dc-bg);
+  border: 1px solid var(--border-dim, rgba(255,255,255,0.08));
+  border-left: 3px solid rgba(var(--dc-accent), 0.8);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: var(--text-xs, 0.72rem);
+  color: var(--dc-fg);
+}
+
+/* ── Header ───────────────────────────────────────────────────────────── */
+
+.dc-card-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-overlay, rgba(255,255,255,0.02));
+  padding: 5px 6px;
+  border-bottom: 1px solid var(--border-faint, rgba(255,255,255,0.05));
+}
+
+.dc-emoji { font-size: 0.9rem; flex-shrink: 0; }
+
+.dc-spec-name {
+  flex: 1;
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--dc-fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.dc-unit-input {
+  width: 44px;
+  font-family: monospace;
+  font-size: 0.6rem;
+  color: var(--dc-unit);
+  background: var(--border-faint, rgba(255,255,255,0.05));
+  border: 1px solid var(--dc-line);
+  border-radius: 3px;
+  padding: 1px 3px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.dc-unit-input:focus {
+  outline: none;
+  border-color: rgba(var(--dc-accent), 0.5);
+  background: rgba(var(--dc-accent), 0.08);
+}
+
+.dc-unit-display {
+  font-family: monospace;
+  font-size: 0.6rem;
+  color: rgba(167, 139, 250, 0.7);
+  flex-shrink: 0;
+  padding: 1px 3px;
+}
+
+.dc-type-toggle {
+  font-size: 0.55rem;
+  padding: 1px 4px;
+  border-radius: 3px;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  background: rgba(34, 197, 94, 0.1);
+  color: #86efac;
+  cursor: pointer;
+  flex-shrink: 0;
+  line-height: 1.4;
+}
+.dc-type-toggle:disabled { cursor: default; pointer-events: none; }
+.dc-type-toggle:not(:disabled):hover { opacity: 0.75; }
+.dc-type-toggle--claim {
+  border-color: rgba(234, 179, 8, 0.3);
+  background: rgba(234, 179, 8, 0.1);
+  color: #fde68a;
+}
+
+/* ── Art band / tags / note (full mode) ───────────────────────────────── */
+
+.dc-card-art {
+  height: 36px;
+  flex-shrink: 0;
+  overflow: hidden;
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      rgba(124, 58, 237, 0.06) 0px,
+      rgba(124, 58, 237, 0.06) 1px,
+      transparent 1px,
+      transparent 6px
+    ),
+    linear-gradient(135deg, rgba(124, 58, 237, 0.18) 0%, rgba(0,0,0,0) 100%);
+}
+
+.dc-tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  padding: 4px 7px;
+  border-bottom: 1px solid var(--dc-faint);
+}
+
+.dc-class-tag {
+  font-size: 0.54rem;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 3px;
+  letter-spacing: 0.03em;
+  text-transform: lowercase;
+  color: rgba(255,255,255,0.5);
+  background: var(--bg-overlay, rgba(255,255,255,0.02));
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.dc-class-tag--individual-claimable {
+  color: #fde68a;
+  background: rgba(234, 179, 8, 0.1);
+  border-color: rgba(234, 179, 8, 0.35);
+}
+.dc-class-tag--communal {
+  color: #86efac;
+  background: rgba(34, 197, 94, 0.1);
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.dc-card-desc {
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.35);
+  padding: 4px 7px;
+  margin: 0;
+  border-bottom: 1px solid var(--dc-faint);
+  line-height: 1.3;
+}
+
+/* ── Rows ─────────────────────────────────────────────────────────────── */
+
+.dc-rows { display: flex; flex-direction: column; flex: 1; }
+
+.dc-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--dc-faint);
+}
+
+.dc-qty {
+  width: 48px;
+  text-align: right;
+  background: var(--border-faint, rgba(255,255,255,0.05));
+  border: 1px solid var(--dc-line);
+  color: var(--dc-fg);
+  border-radius: 3px;
+  padding: 2px 5px;
+  font-size: 0.72rem;
+  flex-shrink: 0;
+  appearance: textfield;
+}
+.dc-qty::-webkit-inner-spin-button,
+.dc-qty::-webkit-outer-spin-button { display: none; }
+
+.dc-qty-text {
+  width: 48px;
+  text-align: right;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--dc-fg);
+  flex-shrink: 0;
+  font-family: monospace;
+}
+
+.dc-unit-label {
+  font-family: monospace;
+  font-size: 0.6rem;
+  color: rgba(167, 139, 250, 0.65);
+  flex-shrink: 0;
+  max-width: 36px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dc-pill {
+  flex: 1;
+  border: 1px solid var(--dc-line);
+  background: var(--bg-overlay, rgba(255,255,255,0.02));
+  color: var(--dc-mute);
+  font-size: 0.6rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+  padding: 2px 4px;
+  border-radius: 3px;
+  min-width: 0;
+}
+button.dc-pill { cursor: pointer; }
+.dc-loc-pill { flex: 0 0 auto; max-width: 52px; }
+button.dc-pill.active,
+.dc-icon-btn.active {
+  background: rgba(var(--dc-accent), 0.2);
+  border-color: rgba(var(--dc-accent), 0.5);
+  color: #c4b5fd;
+}
+
+.dc-icon-btn {
+  border: 1px solid var(--dc-line);
+  background: var(--bg-overlay, rgba(255,255,255,0.02));
+  padding: 1px 3px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.dc-del {
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.08);
+  color: rgba(239, 68, 68, 0.6);
+  padding: 1px 4px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 0.6rem;
+  flex-shrink: 0;
+}
+.dc-del:hover { background: rgba(239, 68, 68, 0.18); }
+
+.dc-expand {
+  background: rgba(0,0,0,0.25);
+  border-bottom: 1px solid var(--border-faint, rgba(255,255,255,0.05));
+}
+
+.dc-add-row {
+  margin: 5px 7px;
+  border: 1px dashed rgba(var(--dc-accent), 0.35);
+  color: rgba(167, 139, 250, 0.6);
+  background: transparent;
+  border-radius: 3px;
+  font-size: 0.65rem;
+  padding: 2px 7px;
+  cursor: pointer;
+  align-self: flex-start;
+}
+.dc-add-row:hover { background: rgba(var(--dc-accent), 0.1); }
+
+/* ── Compact mode ─────────────────────────────────────────────────────── */
+
+.dc-card.compact { width: 140px; min-height: 0; }
+.dc-card.compact .dc-card-header { padding: 3px 5px; }
+.dc-card.compact .dc-emoji       { font-size: 0.75rem; }
+.dc-card.compact .dc-spec-name   { font-size: 0.68rem; }
+.dc-card.compact .dc-unit-input  { width: 36px; font-size: 0.55rem; }
+.dc-card.compact .dc-unit-display{ font-size: 0.55rem; }
+.dc-card.compact .dc-row         { padding: 2px 5px; gap: 2px; }
+.dc-card.compact .dc-qty         { width: 38px; font-size: 0.65rem; padding: 1px 3px; }
+.dc-card.compact .dc-qty-text    { width: 38px; font-size: 0.65rem; }
+.dc-card.compact .dc-unit-label  { font-size: 0.55rem; }
+.dc-card.compact .dc-del         { padding: 1px 3px; font-size: 0.55rem; }
+.dc-card.compact .dc-add-row     { margin: 3px 5px; font-size: 0.58rem; padding: 1px 5px; }

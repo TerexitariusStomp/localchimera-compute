@@ -1,7 +1,7 @@
 ;;; Reticulum netlayer for Goblins OCapN
 ;;;
 ;;; Enables Goblins actors over Reticulum mesh networks (LoRa, serial,
-;;; I2P, packet radio, TCP, etc.) via an external Python bridge daemon.
+;;; I2P, packet radio, TCP, etc.) via the rns-bridge daemon (Rust/rns-rs).
 ;;;
 ;;; Follows the same pattern as (goblins ocapn netlayer libp2p):
 ;;; - Control socket to bridge daemon (line-delimited text)
@@ -94,12 +94,20 @@
                                          init-control-sock
                                          init-incoming-server
                                          init-outgoing-path)
+  #:version 1
   #:portrait (lambda ()
                (list dest-hash control-path socket-dir))
+  #:restore
+  (lambda (version dest-hash control-path socket-dir)
+    (case version
+      ;; Re-establish bridge connection using saved config.
+      ;; No init sockets passed → triggers setup-bridge reconnection.
+      ((1) (spawn ^reticulum-netlayer:setup dest-hash control-path socket-dir))
+      (else (error "Unknown ^reticulum-netlayer:setup version" version))))
 
-  (define-values (_hash _control-sock incoming-server outgoing-path)
+  (define-values (_hash control-sock incoming-server outgoing-path)
     (if (and init-control-sock init-incoming-server init-outgoing-path)
-        (values #f #f init-incoming-server init-outgoing-path)
+        (values #f init-control-sock init-incoming-server init-outgoing-path)
         (let-values (((dv cs is op) (setup-bridge control-path socket-dir)))
           (values dv cs is op))))
 
@@ -126,8 +134,45 @@
          (setup-outgoing-sock sock dest)
          sock))))
 
-  (^base-port-netlayer bcom our-location
-                       incoming-accept outgoing-connect-location))
+  ;; Base netlayer behavior, with one mesh-specific method layered on:
+  ;; relay a PRE-SIGNED announce packet (browser personas — their
+  ;; identity key never leaves the browser, so rns-wasm packAnnounce
+  ;; builds + signs the packet there; the gateway verifies it against
+  ;; the persona's KEL-anchored pubkey BEFORE calling this; here we
+  ;; only forward the bytes to the bridge's ANNOUNCE_RAW command).
+  (define base
+    (^base-port-netlayer bcom our-location
+                         incoming-accept outgoing-connect-location))
+
+  (lambda args
+    (match args
+      [('announce-raw! packet-hex)
+       (unless control-sock
+         (error "reticulum-netlayer: no control socket for announce-raw!"))
+       (<-np control-sock 'write-line
+             (string-append "ANNOUNCE_RAW " packet-hex))
+       'ok]
+      ;; Register a persona destination at the bridge so the transport
+      ;; accepts + surfaces single packets addressed to it (DELIVERY
+      ;; lines on the gateway's SUBSCRIBE connection → ^mesh-mailbox).
+      ;; The caller (lobby-session) verifies destination ownership
+      ;; against the persona's KEL-anchored pubkey first.
+      [('register-dest! dest-hex)
+       (unless control-sock
+         (error "reticulum-netlayer: no control socket for register-dest!"))
+       (<-np control-sock 'write-line
+             (string-append "REGISTER " dest-hex))
+       'ok]
+      ;; Transmit a pre-built DATA packet (browser-composed LXMF —
+      ;; signed + encrypted browser-side; the lobby gates on packet
+      ;; type before calling this).
+      [('send-raw! packet-hex)
+       (unless control-sock
+         (error "reticulum-netlayer: no control socket for send-raw!"))
+       (<-np control-sock 'write-line
+             (string-append "SEND_RAW " packet-hex))
+       'ok]
+      [args (apply base args)])))
 
 ;;; The fresh netlayer (no destination hash yet — needs setup)
 (define-actor (^reticulum-netlayer:fresh _bcom swap-to control-path socket-dir)
@@ -154,8 +199,8 @@
                               #:key
                               [control-path default-control-path]
                               [socket-dir default-socket-dir])
-  "Spawn a Reticulum netlayer. Connects to reticulum-bridge.py via
-   the control socket. Enables Goblins actors over any Reticulum transport."
+  "Spawn a Reticulum netlayer. Connects to rns-bridge via the control
+   socket. Enables Goblins actors over any Reticulum transport."
   (define-values (swap-to-vow swap-to-resolver)
     (spawn-promise-and-resolver))
 

@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Accessibility Statement — playnet</title>
+<link rel="stylesheet" href="assets/css/legal.css">
+</head>
+<body>
+<div class="wrap">
+
+<div class="top">
+  <a class="brand" href="app.html">playnet</a>
+  <span class="sep">·</span>
+  <span>accessibility statement</span>
+  <span class="sep">·</span>
+  <a href="terms.html">terms of use</a>
+  <span class="sep">·</span>
+  <a href="privacy.html">privacy notice</a>
+  <span class="spacer"></span>
+  <a href="app.html">← back to the dial</a>
+</div>
+
+<h1>Accessibility Statement</h1>
+<p class="sub">
+  Version <b>1.0.0</b> · effective <b>2026-10-05</b> · for the gateway operated by
+  <span class="op unset" data-op="name">[operator not configured — see docs/legal/README.md]</span>
+</p>
+
+<div class="note">
+  <strong>This statement is written to be true rather than reassuring.</strong> playnet has not
+  been audited against a formal accessibility standard. What follows is what is actually built,
+  what is known to fall short, and how to tell us what we got wrong — not a conformance badge we
+  have not earned.
+</div>
+
+<h2>1. Who this is for</h2>
+<p>
+  This statement covers the playnet web application at this gateway's address: the dial, its
+  faces, and the pages linked from it, including this one, the terms of use and the privacy
+  notice. It does not cover a third-party page it links out to (a map tile provider, a notification
+  service, a web search).
+</p>
+
+<h2>2. Standard, and status</h2>
+<p>
+  The target is <a href="https://www.w3.org/TR/WCAG21/">WCAG 2.1</a> level AA, the standard most
+  accessibility law points to. <strong>We have not run a formal audit against it</strong> — no
+  automated scan, no screen-reader pass, no assessment by someone who relies on assistive
+  technology day to day. The honest status is <strong>not assessed</strong>, not "conformant" and
+  not "partially conformant" in the formal sense those words carry in an accessibility statement,
+  even though parts of the application are built with accessibility in mind, below.
+</p>
+
+<h2>3. What is actually built</h2>
+<ul>
+  <li>Every interactive control in the app's shared component set — the chip buttons that make up
+      most of the interface's choices (diet, body, location mode, housing, skills, and more) — is a
+      real <code>&lt;button&gt;</code> element, reachable and operable by keyboard alone (Tab to
+      reach it, Enter or Space to activate it), not a non-interactive element with a click handler
+      bolted on.</li>
+  <li>Dialogs and sheets are marked <code>role="dialog"</code> with
+      <code>aria-modal="true"</code> and a label, and controls whose meaning is not in their visible
+      text (an icon-only button, a status mark) carry an <code>aria-label</code> or
+      <code>title</code> — roughly 70 such attributes across the interface at last count, not a
+      single pass added once and left to rot.</li>
+  <li>Every image the application itself renders carries alternative text.</li>
+  <li>Motion that is purely decorative respects a reduced-motion preference where the platform
+      exposes one.</li>
+  <li>The onboarding walk and the settings pages are built as a sequence of labelled fields with
+      a visible reason beside each ask, not a single dense form.</li>
+</ul>
+
+<h2>4. What is known to fall short</h2>
+<p>
+  Said plainly, because a list of gaps is more useful than a blanket disclaimer:
+</p>
+<ul>
+  <li><strong>Colour contrast has not been measured</strong> against the AA thresholds across every
+      theme the interface offers (light, dark, and the look-and-feel options in settings). Some
+      combinations may fall short.</li>
+  <li><strong>The map, the recipe graph and other canvas- or SVG-heavy faces</strong> are visual by
+      nature and have no complete non-visual equivalent; a screen-reader user can reach the data
+      they show through other faces (the list and settings views) but not always through the
+      visualisation itself.</li>
+  <li><strong>No screen-reader testing has been done.</strong> ARIA attributes are present where we
+      judged them necessary, but presence is not the same as a correct, tested reading order.</li>
+  <li><strong>Live, frequently-updating regions</strong> (the plan recomposing, a live transcript,
+      presence in a meeting) have not been checked for whether they announce sensibly to assistive
+      technology rather than overwhelming it.</li>
+  <li><strong>Voice and AI features</strong> (hold-to-speak, on-device transcription) are an
+      accessibility aid for some and a barrier for others; every voice-driven action in the app also
+      has a typed or tapped equivalent, by design, but we have not verified every one of them
+      end to end.</li>
+</ul>
+
+<h2>5. Tell us what we got wrong</h2>
+<p>
+  If something in this application is not usable for you, we want to know, specifically: what page
+  or face, what you were trying to do, and what happened (or what assistive technology you were
+  using, if you are able to say). Write to
+  <span class="op unset" data-op="contact">[operator contact not configured]</span> — the same
+  contact the terms of use (§7) and the privacy notice (§1) name. We answer within a reasonable
+  time and will tell you honestly whether and when a fix is planned, the same way the rest of these
+  notices do.
+</p>
+
+<h2>6. Alternatives</h2>
+<p>
+  Everything the web application does is also reachable through the gateway's documented API
+  (<a href="api/docs/">the door reference</a>) and, for a member who prefers it, a terminal or voice
+  interface where this gateway offers one. If the web interface is not usable for you right now, ask
+  the contact above whether one of these covers what you need in the meantime.
+</p>
+
+<h2>7. Why this is published</h2>
+<p>
+  Some places' law requires an accessibility statement for a service like this one; others do not,
+  or the question has not been settled for this operator (see
+  <code>docs/legal/README.md</code> §10). We publish it regardless, because the alternative — saying
+  nothing — tells a member nothing about whether the application was built with them in mind, and
+  the honest answer is partly yes, partly not yet.
+</p>
+
+<footer>
+  playnet — free software under AGPL-3.0 with additional terms.
+  Accessibility Statement v1.0.0, effective 2026-10-05.
+  See also the <a href="terms.html">terms of use</a> and the <a href="privacy.html">privacy
+  notice</a>.
+</footer>
+
+</div>
+<script src="lib/legal-operator.js"></script>
+</body>
+</html>

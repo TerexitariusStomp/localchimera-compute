@@ -1,0 +1,49 @@
+;;; deploy/providers/onion.scm — Tor-routed deployment provider config
+;;;
+;;; Use this provider config for ANONYMOUS deployment where the operator's
+;;; IP must never be visible to the server's hosting provider.
+;;;
+;;; Prerequisites:
+;;;   1. Tor running locally: tor --SocksPort 9050
+;;;   2. SSH config for .onion routing in ~/.ssh/config:
+;;;
+;;;        Host *.onion
+;;;          ProxyCommand socat - SOCKS4A:localhost:%h:%p,socksport=9050
+;;;          ServerAliveInterval 60
+;;;          ServerAliveCountMax 3
+;;;
+;;;   3. The server's .onion address (from first deploy or from
+;;;      /var/lib/tor/hidden-services/playnet/hostname)
+;;;
+;;; Usage:
+;;;   PLAYNET_PROVIDER=deploy/providers/onion.scm guix deploy deploy/machines.scm
+;;;
+;;; Copy this file to deploy/providers/onion.scm and fill in the
+;;; .onion address after the first deploy.
+
+`((host-ip     . "PASTE_YOUR_ONION_ADDRESS_HERE.onion")
+  (host-name   . "playnet")
+  (system      . "x86_64-linux")
+  ;; SSH host key — get from first deploy or from hosts.scm
+  (ssh-host-key . "ssh-ed25519 PASTE_HOST_KEY_HERE")
+  ;; Optional clearnet domain — set to #f for onion-only operation.
+  ;; When set, enables nginx HTTPS with self-signed cert (the CDN
+  ;; terminates TLS at the edge). Per docs/deploy/CLEARNET-FACES.md.
+  ;; (clearnet-domain . #f)
+  (ssh-host-key . "ssh-ed25519 PASTE_HOST_KEY_HERE")
+  ;; Standard EFI bootloader + root on /dev/sda1
+  (initrd-modules . ("virtio_scsi"))
+  (bootloader . ,(bootloader-configuration
+                  (bootloader grub-efi-removable-bootloader)
+                  (targets '("/boot/efi"))
+                  (terminal-outputs '(console))
+                  (theme #f)))
+  (file-systems . ,(cons* (file-system
+                            (mount-point "/")
+                            (device "/dev/sda1")
+                            (type "ext4"))
+                          (file-system
+                            (mount-point "/boot/efi")
+                            (device "/dev/sda15")
+                            (type "vfat"))
+                          %base-file-systems)))

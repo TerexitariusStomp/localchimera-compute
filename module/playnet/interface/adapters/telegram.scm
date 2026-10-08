@@ -1,84 +1,96 @@
 ;;; module/playnet/interface/adapters/telegram.scm — Telegram transport adapter
 ;;;
-;;; Uses ^key-pool with a telegram-provider profile to seal the bot token
-;;; and make Telegram Bot API calls. The bot token never leaves the
-;;; ^api-key actor boundary — same pattern as OpenRouter/OpenAI keys.
+;;; Two actors:
 ;;;
-;;; The adapter itself is a transport actor (send-message, send-formatted,
-;;; parse-command). It is paired with a telegram-bridge daemon that handles
-;;; webhook/long-poll and feeds incoming messages to channels.
+;;;   ^telegram-token  — Sealed token actor. Captures the bot token in
+;;;                      closure and exposes (post path body-string) which
+;;;                      POSTs to https://api.telegram.org/bot<token><path>.
+;;;                      The token never leaves the actor boundary.
+;;;
+;;;   ^telegram-adapter — Transport adapter. Implements send-message,
+;;;                       send-formatted, and parse-command. Talks to
+;;;                       Telegram exclusively via a ^telegram-token ref.
+;;;
+;;; Telegram's auth model (token-as-path-segment, one bot per token) does
+;;; not fit the ^key-pool shape (header-based, rotatable). A dedicated
+;;; sealed actor is the right capability shape: one per bot, one process
+;;; per bot, no rotation.
 
 (define-module (playnet interface adapters telegram)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
   #:use-module (playnet interface transport)
+  #:use-module (playnet notify rendered)
+  #:use-module (web client)
+  #:use-module (rnrs bytevectors)
   #:use-module (json)
-  #:export (^telegram-adapter
-            telegram-provider))
+  #:export (^telegram-token
+            ^telegram-adapter))
 
 
 ;; =========================================================================
-;; Telegram provider profile — fits the ^key-pool provider pattern exactly
+;; ^telegram-token — sealed bot token + private HTTP client
 ;; =========================================================================
 
-(define (telegram-provider)
-  "Provider profile for Telegram Bot API.
-   Telegram puts the token in the URL path, not an Authorization header.
-   The ^api-key actor's base-url is set to include the token."
-  `((name             . "telegram")
-    (base-url         . "https://api.telegram.org")
-    ;; Telegram auth is token-in-URL, so no auth header needed.
-    ;; The ^api-key actor appends /bot<token><path> to base-url.
-    (auth-header-fn   . ,(lambda (_token) '()))
-    (credit-check     . #f)
-    (cost-extractor   . ,(lambda (_json) #f))  ;; Telegram API is free
-    (error-classifier . ,(lambda (code _err-json msg)
-                           (cond
-                             ((eqv? code 429) 'rate-limited)
-                             ((eqv? code 401) 'depleted)   ;; revoked token
-                             ((eqv? code 403) 'depleted)   ;; bot blocked
-                             (else 'degraded))))))
+(define (^telegram-token _bcom token)
+  ;; token: bot token string, captured in closure, never returned.
+  (define base-url
+    (string-append "https://api.telegram.org/bot" token))
 
-
-;; =========================================================================
-;; ^telegram-adapter — transport adapter using ^key-pool for API calls
-;; =========================================================================
-
-(define (^telegram-adapter _bcom bot-pool)
-  ;; bot-pool: ^key-pool ref holding one or more Telegram bot tokens
-  ;;
-  ;; Note: The ^key-pool 'request method POSTs to base-url + path.
-  ;; For Telegram, path is e.g. "/sendMessage" and the key-pool's
-  ;; ^api-key actor handles inserting the bot token in the request.
+  (define (http-post-json path body-string)
+    (let ((url (string-append base-url path)))
+      (call-with-values
+          (lambda ()
+            (http-post url
+                       #:body (string->utf8 body-string)
+                       #:headers '((content-type . (application/json)))
+                       #:streaming? #f
+                       #:decode-body? #f
+                       #:verify-certificate? #t))
+        (lambda (_response body-bv)
+          (if (bytevector? body-bv)
+              (utf8->string body-bv)
+              body-bv)))))
 
   (methods
+    ((post path body-string)
+     (http-post-json path body-string))))
+
+
+;; =========================================================================
+;; ^telegram-adapter — transport adapter
+;; =========================================================================
+
+(define (^telegram-adapter _bcom token-ref)
+  (define (post-text chat-id text)
+    ($ token-ref 'post "/sendMessage"
+       (scm->json-string
+        `((chat_id . ,chat-id)
+          (text . ,text)
+          (parse_mode . "Markdown")))))
+  (methods
+
+    ((deliver chat-id rendered)
+     (post-text chat-id (rendered->text rendered)))
 
     ((send-message chat-id text)
-     ;; POST /sendMessage to Telegram Bot API via key-pool.
-     ($ bot-pool 'request
-        "/sendMessage"
-        (scm->json-string
-         `((chat_id . ,chat-id)
-           (text . ,text)
-           (parse_mode . "Markdown")))))
+     (post-text chat-id (if (string? text) text (rendered->text text))))
 
     ((send-formatted chat-id blocks)
-     ;; Rich messages: join blocks as Markdown sections.
      (let ((text (string-join
                   (map (lambda (b)
                          (if (string? b) b (format #f "~a" b)))
                        blocks)
                   "\n\n")))
-       ($ bot-pool 'request
-          "/sendMessage"
+       ($ token-ref 'post "/sendMessage"
           (scm->json-string
            `((chat_id . ,chat-id)
              (text . ,text)
              (parse_mode . "Markdown"))))))
 
     ((parse-command raw-text)
-     ;; Telegram commands start with /
-     ;; Also handle @botname suffix: /inventory@mybot args
+     ;; Telegram commands start with /. Also handle @botname suffix:
+     ;; /inventory@mybot args
      (let ((trimmed (string-trim-both raw-text)))
        (if (and (> (string-length trimmed) 0)
                 (char=? (string-ref trimmed 0) #\/))
@@ -89,10 +101,9 @@
                   (args (if space-idx
                             (string-trim-both (substring trimmed (+ space-idx 1)))
                             ""))
-                  ;; Strip @botname suffix if present
                   (at-idx (string-index cmd-part #\@))
                   (cmd (if at-idx
                            (substring cmd-part 0 at-idx)
                            cmd-part)))
-             (values cmd args))
-           (values #f #f))))))
+             (cons cmd args))
+           (cons #f #f))))))

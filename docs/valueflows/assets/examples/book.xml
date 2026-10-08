@@ -1,0 +1,55 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:132.0) Gecko/20100101 Firefox/132.0" compressed="false" version="24.8.9">
+  <diagram id="BQL5SDyLPihtyZrJrx3J" name="Page-1">
+    <mxGraphModel dx="747" dy="-628" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fad9d5;strokeColor=none;align=left;verticalAlign=top;" parent="1" vertex="1">
+          <mxGeometry x="22" y="1610" width="538" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="3" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=none;align=left;verticalAlign=top;" parent="1" vertex="1">
+          <mxGeometry x="22" y="1669" width="538" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="5" value="&lt;div&gt;transfer book&lt;/div&gt;&lt;div&gt; to Bob&lt;/div&gt;" style="shape=delay;whiteSpace=wrap;html=1;rounded=0;glass=1;comic=0;" parent="1" vertex="1">
+          <mxGeometry x="145" y="1687" width="106" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="6" value="" style="endArrow=classic;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="5" target="7" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="183" y="1622" as="sourcePoint" />
+            <mxPoint x="264.5" y="1602" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="7" value="claim to transfer book back to library" style="shape=delay;whiteSpace=wrap;html=1;rounded=0;glass=1;comic=0;" parent="1" vertex="1">
+          <mxGeometry x="277" y="1621" width="123" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="9" value="&lt;div&gt;library book ISBN:1234&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="33.5" y="1687" width="82" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="10" value="" style="endArrow=classic;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="9" target="5" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="120" y="1819" as="sourcePoint" />
+            <mxPoint x="170" y="1769" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="11" value="&lt;div&gt;transfer book&lt;/div&gt;&lt;div&gt; to library&lt;br&gt;&lt;/div&gt;" style="shape=delay;whiteSpace=wrap;html=1;rounded=0;glass=1;comic=0;" parent="1" vertex="1">
+          <mxGeometry x="329" y="1687" width="106" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="12" value="" style="endArrow=classic;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" parent="1" source="7" target="11" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="310" y="1820" as="sourcePoint" />
+            <mxPoint x="360" y="1770" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="13" value="&lt;div&gt;library book ISBN:1234&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="459" y="1687" width="82" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="14" value="" style="endArrow=classic;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="11" target="13" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="370" y="1820" as="sourcePoint" />
+            <mxPoint x="420" y="1770" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

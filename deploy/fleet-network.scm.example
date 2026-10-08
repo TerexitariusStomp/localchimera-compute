@@ -1,0 +1,13 @@
+;;; deploy/fleet-network.scm — fleet-wide network defaults for child hosts.
+;;;
+;;; The lowest layer. Above it, lowest to highest: the environment
+;;;   (PLAYNET_PREFIX, PLAYNET_GATEWAY, PLAYNET_INTERFACE, PLAYNET_NAMESERVERS),
+;;; the host's provider-params in desired-fleet.scm ("network-prefix" …), and
+;;; the options of deploy/scripts/render-child-os.scm.
+;;;
+;;; Copy this file to deploy/fleet-network.scm and edit for your fleet.
+
+'((prefix . 24)
+  (gateway . "172.16.0.1")
+  (interface . "eth0")
+  (name-servers . ("1.1.1.1" "9.9.9.9")))

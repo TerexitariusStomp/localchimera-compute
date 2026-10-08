@@ -1,0 +1,2739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Playnet Commons — Federation Labour Allocation Surface</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<style>
+  :root {
+    /* Data-viz colour tokens (--c-*) are injected from PALETTE.hues at
+       startup; see the JS bootstrap. Only chrome-side vars live here. */
+    --bg: #0e0e0e;
+    --bg-card: #161616;
+    --bg-card2: #1c1c1c;
+    --text: #d8d8d8;
+    --text-dim: #888888;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+    font-size: 13px; line-height: 1.5;
+    padding: 12px 16px;
+    overflow-x: hidden;
+  }
+  .top-bar {
+    display: flex; align-items: baseline; gap: 16px;
+    margin-bottom: 8px;
+  }
+  h1 {
+    font-size: 20px; font-weight: 700;
+    margin-bottom: 0; white-space: nowrap;
+  }
+  h1 .p { color: var(--c-plan); }
+  h1 .l { color: var(--c-deep); }
+  h1 .a { color: var(--c-res); }
+  h1 .y { color: var(--c-yea); }
+  h1 .n { color: #d4708a; }
+  h1 .e { color: var(--c-lpd); }
+  h1 .t { color: #7ab0d4; }
+  .subtitle { font-size: 12px; color: var(--text-dim); font-style: italic; }
+
+  /* ── Main layout: treemap left, sidebar right ── */
+  .main-layout {
+    display: flex; gap: 12px;
+    height: calc(100vh - 24px);
+    min-height: 500px;
+  }
+  .surface-col {
+    flex: 1; min-width: 0;
+    display: flex; flex-direction: column;
+  }
+  .surface-col .hint {
+    font-size: 11px; color: var(--text-dim); font-style: italic;
+    margin-bottom: 4px;
+  }
+  .chart-container { flex: 1; min-height: 0; position: relative; }
+  #surface svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+  .sidebar {
+    width: 240px; min-width: 200px; flex-shrink: 0;
+    display: flex; flex-direction: column; gap: 6px;
+    padding-top: 4px;
+  }
+  .sidebar > .panel { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; }
+  .sidebar > .panel svg { flex: 1; min-height: 0; }
+
+  .fig-caption {
+    font-size: 11px; color: var(--text-dim);
+    line-height: 1.55;
+  }
+  .fig-caption b { color: var(--text); }
+  .cat-moc { color: var(--c-yea); font-weight: 600; }
+  .cat-mop { color: var(--c-deep); font-weight: 600; }
+  .cat-lpd { color: var(--c-lpd); font-weight: 600; }
+  .cat-adm { color: var(--c-cap); font-weight: 600; }
+  .cat-com { color: var(--c-com); font-weight: 600; }
+  .cat-warm { color: var(--c-warm); font-weight: 600; }
+  .cat-mid { color: var(--c-mid); font-weight: 600; }
+  .cat-free { color: #7ab0d4; font-weight: 600; }
+  .cat-plan { color: var(--c-plan); font-weight: 600; }
+  .cat-metab { color: var(--c-metab); font-weight: 600; }
+
+  .eq-block {
+    background: var(--bg-card2); border: 1px solid #2a2a2a;
+    border-radius: 6px; padding: 8px 12px; font-size: 12px;
+  }
+  .eq-block .eq { font-family: "Times New Roman", serif; font-size: 13px; padding: 4px 0; }
+  .eq-block .eq-note { font-size: 10px; color: var(--text-dim); font-style: italic; }
+
+  .bar-group { margin: 0; }
+  .bar-group svg, .dial-row svg { width: 100%; height: auto; display: block; }
+  .bar-label { font-size: 10px; color: var(--text-dim); font-style: italic; margin-bottom: 2px; }
+  .dial-row { display: flex; flex-direction: column; gap: 6px; }
+
+  svg text { fill: var(--text); }
+
+  /* ── Map view (ported from browser/assets/css/repl.css) ── */
+  .map-header {
+    position: absolute; top: 0; left: 0; right: 0; height: 30px;
+    color: white; display: flex; align-items: center; padding: 0 10px;
+    font-weight: bold; font-size: 13px; cursor: pointer; z-index: 11;
+    border-radius: 3px;
+  }
+  .map-header:hover { filter: brightness(1.1); }
+  .map-canvas {
+    position: absolute; top: 30px; left: 0; right: 0; bottom: 0;
+    background: #0a0810;
+  }
+  .map-canvas .maplibregl-canvas { outline: none; }
+  .map-side-panel {
+    position: absolute; top: 42px; right: 12px; width: 260px;
+    max-height: calc(100% - 54px); background: rgba(24,20,32,0.92);
+    backdrop-filter: blur(8px); border: 1px solid rgba(110,78,168,0.35);
+    border-radius: 14px; box-shadow: 0 8px 28px rgba(0,0,0,0.55);
+    color: #d8c8e6; overflow: hidden; z-index: 10;
+    display: flex; flex-direction: column;
+  }
+  .map-side-panel .panel-head {
+    padding: 10px 14px; border-bottom: 1px solid rgba(110,78,168,0.25);
+    font-size: 10px; color: #cbb8d8; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;
+  }
+  .map-side-panel .panel-body { flex: 1; overflow-y: auto; padding: 8px 10px; }
+  .map-side-panel .panel-row {
+    padding: 8px; border-radius: 8px; cursor: pointer; margin-bottom: 4px;
+    background: rgba(26,20,34,0.55);
+  }
+  .map-side-panel .panel-row:hover, .map-side-panel .panel-row.active { background: rgba(60,40,80,0.85); }
+  .map-side-panel .panel-row-inner { display: flex; gap: 8px; align-items: center; font-size: 11px; }
+  .map-side-panel .row-emoji { font-size: 16px; }
+  .map-side-panel .row-label { flex: 1; color: #efe2fa; font-weight: 600; }
+  .map-side-panel .row-count { color: #d4b830; font-size: 10px; }
+  .map-side-panel .row-meta { font-size: 9px; color: #8b7b96; margin-left: 24px; margin-top: 2px; }
+  .map-slot-marker { display: flex; flex-direction: column; align-items: center; cursor: pointer; user-select: none; }
+  .map-slot-marker .marker-icon {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: #6f4ea8; border: 2px solid #efe2fa;
+    display: flex; align-items: center; justify-content: center; font-size: 18px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+  }
+  .map-slot-marker .marker-label {
+    margin-top: 2px; padding: 1px 6px; background: rgba(24,20,32,0.85);
+    color: #efe2fa; border-radius: 8px; font-size: 9px; white-space: nowrap;
+  }
+  /* Journey draft drawer — persistent across all views in the sidebar. */
+  .journey-drawer {
+    flex: 0 0 auto;
+    background: linear-gradient(180deg, rgba(212,184,48,0.10), rgba(24,20,32,0.85));
+    border: 1px solid rgba(212,184,48,0.35);
+    border-radius: 10px;
+    padding: 8px 10px;
+    color: #d8c8e6;
+    font-size: 11px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .journey-drawer.empty { opacity: 0.5; }
+  .journey-drawer .jd-head {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 10px; font-weight: 700; color: #d4b830;
+    letter-spacing: 0.06em; text-transform: uppercase;
+  }
+  .journey-drawer .jd-actions { display: flex; gap: 4px; }
+  .journey-drawer .jd-action {
+    padding: 3px 8px; border-radius: 5px; cursor: pointer; font-size: 9px; font-weight: 600;
+    background: rgba(110,78,168,0.3); color: #efe2fa;
+  }
+  .journey-drawer .jd-action.primary { background: rgba(212,184,48,0.3); color: #d4b830; }
+  .journey-drawer .jd-action:hover { filter: brightness(1.2); }
+  .journey-drawer .jd-empty { font-style: italic; color: #8b7b96; font-size: 10px; }
+  .journey-drawer .jd-list { display: flex; flex-direction: column; gap: 3px; max-height: 240px; overflow-y: auto; }
+  .journey-drawer .jd-item {
+    display: flex; gap: 6px; align-items: center;
+    padding: 4px 6px; background: rgba(0,0,0,0.4); border-radius: 6px;
+    font-size: 10px;
+  }
+  .journey-drawer .jd-item.dragging { opacity: 0.4; }
+  .journey-drawer .jd-num {
+    width: 16px; height: 16px; border-radius: 50%;
+    background: #7a6a8a; color: white; font-size: 9px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .journey-drawer .jd-item-label { flex: 1; color: #efe2fa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .journey-drawer .jd-item-meta { color: #8b7b96; font-size: 9px; }
+  .journey-drawer .jd-item-remove {
+    color: #8b7b96; cursor: pointer; padding: 0 4px; font-size: 11px;
+  }
+  .journey-drawer .jd-item-remove:hover { color: #efe2fa; }
+  .journey-drawer .jd-handle { cursor: grab; color: #6a5a78; font-size: 12px; padding: 0 2px; }
+
+  .user-marker {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: #d4b830; border: 2px solid white;
+    box-shadow: 0 0 0 5px rgba(212,184,48,0.25), 0 2px 8px rgba(0,0,0,0.5);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 5px rgba(212,184,48,0.25), 0 2px 8px rgba(0,0,0,0.5); }
+    50%      { box-shadow: 0 0 0 12px rgba(212,184,48,0.08), 0 2px 8px rgba(0,0,0,0.5); }
+  }
+
+  #surface { position: relative; }
+  #surface svg { transition: opacity 0.3s ease; }
+  .scope-cell { cursor: pointer; }
+  .scope-cell:hover rect.cell-bg { filter: brightness(1.15); }
+  .back-zone { cursor: pointer; }
+  .back-zone:hover rect { filter: brightness(1.2); }
+</style>
+</head>
+<body>
+
+<div class="main-layout">
+  <!-- ═══ LEFT: treemap surface ═══ -->
+  <div class="surface-col">
+    <div class="hint">area &prop; social labour-hours &middot; click a scope to zoom in &middot; click the header to zoom out</div>
+    <div class="chart-container" id="surface"></div>
+  </div>
+
+  <!-- ═══ RIGHT: sidebar — 5 equal-flex treemap panels + journey drawer ═══ -->
+  <div class="sidebar">
+    <!-- Journey draft drawer: compact when empty, expanded when items added -->
+    <div id="journey-drawer" class="journey-drawer"></div>
+    <!-- Phi (desire satisfaction) + free-time are now spatial in the treemap;
+         we keep only the voice / credit panels in the sidebar. -->
+    <div class="panel" id="panel-prod"></div>
+    <div class="panel" id="panel-cons"></div>
+    <div class="panel" id="panel-credit"></div>
+  </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// PALETTE — single source of truth for every semantic color in the surface.
+//
+//   PALETTE.hues   — base semantic hues, one hex per role
+//   PALETTE.<helper>  — pure expressions: lighten / darken / mix / pair /
+//                       shades / ramp. All derived shades go through these.
+//   PALETTE.creditMid, .creditClaimed, .creditRemaining — derived from the
+//                       labour ↔ free axis via FREE_TIME.
+//   PALETTE.voice  — demonstrative palette for per-person voice bars,
+//                       composed from the same semantic hues.
+//
+// Anywhere a cell needs a color, prefer PALETTE.hues.<role> + a helper over
+// a raw hex. The legacy `C` map below is a thin alias layer; new code should
+// reference PALETTE directly.
+// ═══════════════════════════════════════════════════════════════════════════
+
+const FREE_TIME = { labour: 68, free: 32, freeMetShare: 0.45 };
+
+const PALETTE = {
+  // ── Base semantic hues — a constellation around the labour↔free axis ──
+  //
+  // The labour↔free pair is the *spectrum* itself: warm ↔ cool. Credit is a
+  // parametric mix between the two (see creditMid below). Every other
+  // category sits as a position along — or just off — this axis:
+  //
+  //   refuse(355°) ─ labour(28°) ─ plan(50°) ─ commons(100°) ─ production(130°)
+  //                                                                │
+  //                            care(175°) ─ free(200°) ─ means(215°) ─ skills(250°)
+  //
+  // labour → plan → commons → production: "you decide, you do, it becomes
+  // collective, it's materialized." care + skills flank free as the two
+  // halves of reproduction (embodied / abstract). means is the dead-labour
+  // pole past free. refuse sits OFF the cycle — the alarm hue for when the
+  // loop doesn't close.
+  hues: {
+    labour:     "#b87333",   // WARM POLE — your living labour-time
+    plan:       "#d4b830",   // gold — decision/validation, one step cool of labour
+    commons:    "#7fb46a",   // yellow-green — communal share of production
+    production: "#4a8a5a",   // green — labour materialized (the "realized" middle)
+    care:       "#4a8a87",   // teal — reproductive-embodied, bridges to free
+    free:       "#7ab0d4",   // COOL POLE — free time
+    means:      "#2c4a6e",   // navy — stored / dead labour
+    skills:     "#6a5fa0",   // violet — reproductive-abstract, care's structural partner
+    refuse:     "#b04050",   // off-spectrum red — alarm when the cycle doesn't close
+    admin:      "#666666",   // gray — coordination glue
+    reserve:    "#2f6b60",   // deep teal — reproduced for INSURANCE (held in reserve, away from use)
+    ink:        "#1a1a1a",
+    faint:      "#888888",
+  },
+
+  // ── UI chrome ───────────────────────────────────────────────────────────
+  // The purple-violet identity of the map view + journey drawer. Distinct
+  // from `hues` (data-viz). Used by every cssText / inline-style block.
+  chrome: {
+    text:       "#efe2fa",   // primary text on dark chrome
+    textDim:    "#cbb8d8",   // secondary text / inactive tabs
+    textFaint:  "#8b7b96",   // meta / placeholder
+    textMuted:  "#d8c8e6",   // headings on chrome
+    panelBg:    "#0a0810",   // deep purple-black map background
+    ok:         "#9bd1a4",   // success / done
+    accent:     "#6f4ea8",   // chrome accent purple
+  },
+
+  // ── Expression helpers ──────────────────────────────────────────────────
+  // Offsets are on a 0–1 axis (mapped onto d3's brighter/darker curve).
+  //   PALETTE.lighten(c, 0.3)  → 30% toward white
+  //   PALETTE.darken (c, 0.3)  → 30% toward black
+  //   PALETTE.mix    (a, b, t) → linear RGB interpolation
+  //   PALETTE.pair   (c)       → { fill, unfill } for two-zone satisfaction
+  //   PALETTE.shades (c, [-0.2, 0, 0.4]) → explicit offsets
+  //   PALETTE.ramp   (c, n)    → n evenly-spaced shades, default range
+  lighten: (c, t = 0.3) => d3.color(c).brighter(t * 3).formatHex(),
+  darken:  (c, t = 0.3) => d3.color(c).darker(t * 3).formatHex(),
+  mix:     (a, b, t)    => d3.interpolateRgb(a, b)(t),
+  pair:    (c, t = 0.75) => ({ fill: c, unfill: PALETTE.lighten(c, t) }),
+  shades:  (c, ts) => ts.map(t =>
+    t < 0 ? PALETTE.darken(c, -t) : t > 0 ? PALETTE.lighten(c, t) : c),
+  ramp:    (c, n, { from = -0.3, to = 0.9 } = {}) => {
+    if (n === 1) return [c];
+    const step = (to - from) / (n - 1);
+    return Array.from({ length: n }, (_, i) => {
+      const t = from + i * step;
+      return t < 0 ? PALETTE.darken(c, -t) : t > 0 ? PALETTE.lighten(c, t) : c;
+    });
+  },
+
+  // ── Derived semantic shorthands ─────────────────────────────────────────
+  // Named here so call sites stay declarative. Add a new one rather than
+  // sprinkling lighten/darken at the use site.
+  get coherence()       { return PALETTE.mix(this.hues.means, this.hues.care, 0.4); },
+  get labourLight()     { return PALETTE.lighten(this.hues.labour, 0.4); },
+  get meansLight()      { return PALETTE.lighten(this.hues.means, 0.4); },
+
+  // ── Credit axis: derived from the labour ↔ free dial ────────────────────
+  get freeFrac()        { return FREE_TIME.free / (FREE_TIME.labour + FREE_TIME.free); },
+  get creditMid()       { return PALETTE.mix(this.hues.labour, this.hues.free, this.freeFrac); },
+  get creditClaimed()   { return PALETTE.lighten(this.creditMid, 0.25); },
+  get creditRemaining() { return PALETTE.darken(this.creditMid, 0.3); },
+
+  // ── Voice palette ───────────────────────────────────────────────────────
+  // Per-person bars in producer/consumer voice panels. Drawn from the same
+  // semantic hues + a few derived shades so the panels visually rhyme with
+  // the surface they describe.
+  get voice() {
+    const h = this.hues;
+    return [
+      h.means,                              // p1
+      h.production,                         // p2
+      h.labour,                             // p3
+      PALETTE.lighten(h.skills, 0.15),      // p4
+      PALETTE.lighten(h.means, 0.45),       // p5
+      h.care,                               // p6
+      PALETTE.darken(h.means, 0.15),        // p7
+      h.commons,                            // p8
+      PALETTE.lighten(h.labour, 0.2),       // p9
+      PALETTE.lighten(h.skills, 0.25),      // p10
+      PALETTE.lighten(h.means, 0.55),       // p11
+      PALETTE.mix(h.commons, h.care, 0.5),  // p12
+    ];
+  },
+};
+
+// Inject CSS `--c-*` vars from PALETTE so stylesheet rules and JS share one
+// source of truth. Mapping is { css-name: PALETTE expression }; add an entry
+// to expose a new colour to CSS.
+const CSS_PALETTE_VARS = {
+  "c-production": PALETTE.hues.production,
+  "c-commons":    PALETTE.hues.commons,
+  "c-labour":     PALETTE.hues.labour,
+  "c-free":       PALETTE.hues.free,
+  "c-means":      PALETTE.hues.means,
+  "c-skills":     PALETTE.hues.skills,
+  "c-admin":      PALETTE.hues.admin,
+  "c-plan":       PALETTE.hues.plan,
+  "c-care":       PALETTE.hues.care,
+  "c-refuse":     PALETTE.hues.refuse,
+  "c-coherence":  PALETTE.coherence,
+  // Legacy aliases for existing CSS classes (.cat-mop, .cat-yea, …).
+  "c-yea":        PALETTE.hues.production,
+  "c-deep":       PALETTE.hues.means,
+  "c-warm":       PALETTE.hues.labour,
+  "c-lpd":        PALETTE.hues.skills,
+  "c-com":        PALETTE.hues.commons,
+  "c-cap":        PALETTE.hues.admin,
+  "c-mid":        PALETTE.meansLight,
+  "c-metab":      PALETTE.coherence,
+  "c-res":        PALETTE.hues.refuse,
+};
+for (const [name, value] of Object.entries(CSS_PALETTE_VARS))
+  document.documentElement.style.setProperty(`--${name}`, value);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// h() — tiny hyperscript: declare DOM trees instead of mutating them.
+//
+//   h("div", { class: "foo", style: { color: "red" }, onClick: handler },
+//     h("span", null, "hello"),
+//     items.map(i => h("li", null, i.label)),
+//   )
+//
+//   props:
+//     class / className        — CSS classes
+//     style: object            — inline styles (camelCase keys ok)
+//     dataset: object          — data-* attributes
+//     onClick / onChange / ... — event handlers (any "on*" key)
+//     selected, disabled, ...  — boolean attributes
+//     other                    — set via setAttribute
+//   children:
+//     strings/numbers → text nodes
+//     null/false      → skipped
+//     arrays          → flattened
+//     Node            → appended as-is
+// ═══════════════════════════════════════════════════════════════════════════
+function h(tag, props, ...children) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (v == null || v === false) continue;
+    if (k === "style" && typeof v === "object") Object.assign(el.style, v);
+    else if (k === "class" || k === "className") el.className = v;
+    else if (k === "dataset") Object.assign(el.dataset, v);
+    else if (k.startsWith("on") && typeof v === "function") el[k.toLowerCase()] = v;
+    else if (v === true) el.setAttribute(k, "");
+    else el.setAttribute(k, v);
+  }
+  for (const c of children.flat(Infinity)) {
+    if (c == null || c === false) continue;
+    el.appendChild(c.nodeType ? c : document.createTextNode(String(c)));
+  }
+  return el;
+}
+const mount = (parent, ...children) => {
+  parent.innerHTML = "";
+  for (const c of children.flat(Infinity)) {
+    if (c == null || c === false) continue;
+    parent.appendChild(c.nodeType ? c : document.createTextNode(String(c)));
+  }
+};
+
+let _uid = 0;
+function uid(name) {
+  const id = `O-${name}-${++_uid}`;
+  return { id, href: `#${id}`, toString() { return `url(#${id})`; } };
+}
+
+let W = 928, H = 750;
+const surfaceDiv = document.getElementById("surface");
+const fmt = d3.format(",d");
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TREE — the data structure and the operations that walk it.
+//
+// The whole app is a tree: federation ▸ scope ▸ category ▸ leaf. Every cell
+// on screen is a node; every panel reflects an aggregation. We express that
+// directly via a few primitives, then dispatch rendering on `kindOf(node)`.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ── Tree primitives — pure, work on any {name, children} shape ──────────
+const walkTree = (node, visit, depth = 0) => {
+  if (!node) return;
+  visit(node, depth);
+  for (const ch of node.children || []) walkTree(ch, visit, depth + 1);
+};
+const findInTree = (node, pred) => {
+  if (!node) return null;
+  if (pred(node)) return node;
+  for (const ch of node.children || []) {
+    const hit = findInTree(ch, pred);
+    if (hit) return hit;
+  }
+  return null;
+};
+const sumTree = (node) =>
+  node.value || (node.children?.reduce((s, c) => s + sumTree(c), 0) || 0);
+
+// ── Node kind — which renderer should draw this cell? ───────────────────
+// Derived from the existing data shape; the TREE itself stays declarative
+// and the kind is purely a render concern.
+const kindOf = (d) =>
+  d._progress !== undefined ? "scope"
+  : d._ind                  ? "ind"
+  : d._sat !== undefined    ? "sat"
+  : d.children              ? "container"
+  : null;
+
+// ── Category → tab color, used by container cells ───────────────────────
+const CAT_COLOR = {
+  moc: PALETTE.hues.production, ind: PALETTE.hues.production,
+  com: PALETTE.hues.commons,
+  mop: PALETTE.hues.means,      mop_sub: PALETTE.hues.means,
+  lpd: PALETTE.hues.skills,     lpd_sub: PALETTE.hues.skills,
+  adm: PALETTE.hues.admin,
+  rsv: PALETTE.hues.reserve,
+};
+const colorOf = (d) => d._catColor || CAT_COLOR[d._cat] || PALETTE.hues.faint;
+
+// Shared rainbow spectrum — the Playnet logo letters and the "Playtime" label
+// both spell across it (warm → cool, in cycle order). One source of truth.
+const SPECTRUM = [
+  PALETTE.hues.plan,       PALETTE.hues.labour, PALETTE.hues.refuse,
+  PALETTE.hues.production,  PALETTE.hues.commons, PALETTE.hues.skills, PALETTE.hues.free,
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// VIEW STATE — two orthogonal global lenses, both live at every zoom level.
+// ═══════════════════════════════════════════════════════════════════════════
+//   scope:   social      — aggregate over the whole federation (default)
+//            individual  — your per-capita share (hours ÷ POP)
+//   measure: time        — labour-hours delivered against plan (default)
+//            priority     — desire satisfaction Φ (how well wants are met)
+// Both are plain global indices (0/1). No per-node ownership, no ancestor
+// walk: the toggles always belong to the focused tab. That's the whole
+// placement rule.
+// `axis` is special: it only applies at an `_axisRoot` node (the federation),
+// where it chooses which projection of the technology matrix T we aggregate —
+// columns (scopes: branches of doing) or rows (categories: kinds of thing
+// made). It rides in VIEW like the others but its toggle is drawn only on the
+// axis-root tab (see drawHeader), and `childrenFor` reads it to pick the set.
+const VIEW = { scope: 0, measure: 0, detail: 0, axis: 0 };
+const POP  = 90; // federation citizens — divisor for the individual lens
+const TOGGLES = [
+  { key: "scope",   modes: ["social", "individual"], colors: [PALETTE.hues.plan,       PALETTE.hues.commons] },
+  { key: "measure", modes: ["time",   "priority"],   colors: [PALETTE.hues.production,  PALETTE.hues.labour]  },
+  // detail: simple = one progress bar (% worked); detailed = the intent breakdown.
+  { key: "detail",  modes: ["simple", "detailed"],   colors: [PALETTE.hues.free,        PALETTE.hues.skills]  },
+];
+// The axis lens — drawn only on the federation (axis-root) tab.
+// Two projections of the one matrix, both PARTITIONS summing to L. Each leaf is
+// a sentence whose SUBJECT is the viewer (implicit), VERB is the activity/scope
+// (`act` — the doing), and OBJECT is the spec (`cat`+`path` — the thing made).
+// activities↓ groups by the VERB (branches of doing); categories→ groups by the
+// OBJECT (kinds made). Same sentences, same total — column-dual and row-dual.
+const AXIS_TOGGLE = { key: "axis", modes: ["activities ↓", "categories →"],
+                      colors: [PALETTE.hues.labour, PALETTE.hues.production] };
+// Which child-set does this node expose? An axis-root swaps between its two
+// projections by the global lens; every other node uses its declared children.
+const AXIS_SETS = ["_colChildren", "_rowChildren"];
+const childrenFor = (d) =>
+  d._axisRoot ? d[AXIS_SETS[VIEW.axis]] : d.children;
+
+// Total social time = N · T. Federation (work) is a SUBSET; free time is the
+// other portion. Their area-split equals f. Each one's fill shows Φ (the
+// social desire satisfaction within that domain).
+// Each node may declare its own presentation, so renderers stay generic:
+//   _titleRender   "rainbow" → multi-colour breadcrumb title (the Playnet logo)
+//   _totalCaption  string    → caption before the hours total in the header tab
+//   _zones         fn(pct)   → custom two-zone label recipe (else "% worked")
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SPARSE CLASSIFICATION TREE — categories → taxonomy → resource-specs.
+//
+// No scopes. Labour is directly universal: every economic resource is declared
+// ONCE, tagged with its economic CATEGORY (`cat`) and a classification `path`
+// (from just under the category down to just above the leaf). `buildCategories`
+// grows the tree by lazy recursive insertion, so a taxonomy node exists ONLY
+// where some resource is actually classified under it — the tree is *sparse*:
+// empty branches, unused modes, and resource-free categories simply never
+// appear. The same good can sit under two modes (food▸grain▸bread as BOTH
+// individual-claimable AND communal): mode × taxonomy are independent axes,
+// both just path segments, both built by the one recursion.
+// ═══════════════════════════════════════════════════════════════════════════
+const CATS = [
+  { key: "moc", name: "means of consumption" },
+  { key: "mop", name: "means of production" },
+  { key: "lpd", name: "skilled population" },
+  { key: "adm", name: "administration" },
+  { key: "rsv", name: "reserve" },
+];
+// The only path segments that recolor off their parent: the two MoC
+// distribution modes. Every other taxonomy node inherits its category's hue.
+const SEG_CAT = { "individual claimable": "ind", "communal": "com" };
+
+// Lazy recursive insert: walk `path`, creating each missing container exactly
+// once, then drop the leaf at the end. This single recursion IS the sparsity —
+// nothing is pre-declared; structure appears only along paths that carry data.
+function classify(parent, path, leaf) {
+  if (path.length === 0) { parent.children.push(leaf); return; }
+  const [head, ...rest] = path;
+  let node = parent.children.find(c => c._taxon && c.name === head);
+  if (!node) {
+    node = { name: head, _taxon: true, _cat: SEG_CAT[head] || parent._cat,
+             _label: head, children: [] };
+    parent.children.push(node);
+  }
+  classify(node, rest, leaf);
+}
+
+// Build the four category roots from the flat registry, stripping the
+// build-only keys (`cat`, `path`) so each leaf keeps its original render shape.
+// Categories with no resources are pruned — sparse at the top ring too. Every
+// container total (mode, taxonomy, category, federation) is folded from the
+// leaves by `repro`/`sumTree`, never hardcoded, so it can't drift.
+function buildCategories(resources) {
+  const roots = CATS.map(c => ({ name: c.name, _cat: c.key, _label: c.name, children: [] }));
+  const byKey = Object.fromEntries(CATS.map((c, i) => [c.key, roots[i]]));
+  for (const { cat, path = [], ...leaf } of resources) classify(byKey[cat], path, leaf);
+  return roots.filter(r => r.children.length);
+}
+
+// ── The COLUMN axis — activities, the other fold of the same matrix ─────────
+// `buildCategories` folds the registry ACROSS ROWS (categories: kinds of thing
+// made). `buildActivities` folds it DOWN COLUMNS: each resource also names the
+// `act` (activity) that makes it, so grouping by `act` gives the *branches of
+// doing* — an activity node (rendered as a scope tile, carrying its own
+// progress/Φ/M stats) whose children are its own category breakdown. Both
+// surfaces are the SAME leaves, summed two ways — one matrix, two projections,
+// identical total. No stubs: every activity is classified to resource grain.
+// Per-activity render stats only (NOT size — size folds from the leaves, so the
+// column total can never drift from the row total). _progress drives the fill,
+// _priority the Φ lens, _M the coherence panel.
+const ACT_STATS = {
+  food:          { _progress:0.85, _priority:0.82, _M:0.75, _color:PALETTE.hues.labour },
+  manufacturing: { _progress:0.78, _priority:0.71, _M:0.60, _color:PALETTE.hues.production },
+  construction:  { _progress:0.82, _priority:0.79, _M:0.55, _color:PALETTE.hues.production },
+  education:     { _progress:0.70, _priority:0.88, _M:0.40, _color:PALETTE.hues.production },
+  health:        { _progress:0.75, _priority:0.91, _M:0.65, _color:PALETTE.hues.production },
+  transport:     { _progress:0.88, _priority:0.83, _M:0.35, _color:PALETTE.hues.production },
+  energy:        { _progress:0.92, _priority:0.89, _M:0.80, _color:PALETTE.hues.production },
+  textiles:      { _progress:0.68, _priority:0.64, _M:0.50, _color:PALETTE.hues.production },
+  "tool-making": { _progress:0.80, _priority:0.73, _M:0.70, _color:PALETTE.hues.production },
+  forestry:      { _progress:0.90, _priority:0.77, _M:0.85, _color:PALETTE.hues.production },
+  fishing:       { _progress:0.72, _priority:0.69, _M:0.90, _color:PALETTE.hues.production },
+  arts:          { _progress:0.65, _priority:0.81, _M:0.30, _color:PALETTE.hues.production },
+  mining:        { _progress:0.85, _priority:0.58, _M:0.45, _color:PALETTE.hues.production },
+  "UC admin":    { _progress:0.90, _priority:0.70, _M:0.42, _color:PALETTE.hues.admin, _isAdmin:true },
+  "reserves":    { _progress:0.66, _priority:0.85, _M:0.70, _color:PALETTE.hues.reserve, _isReserve:true },
+};
+const foldValue = (n) => n.value || (n.children || []).reduce((s, c) => s + foldValue(c), 0);
+function buildActivities(resources) {
+  const byAct = new Map();
+  for (const { act, ...rest } of resources) {
+    if (!byAct.has(act)) byAct.set(act, []);
+    byAct.get(act).push(rest);
+  }
+  // One scope-like node per activity (declared order), children folded into its
+  // own categories → taxonomy → specs by the same recursion as the rows. Its
+  // `value` is the SUM of its leaves — so activities and categories are two
+  // folds of one registry and always carry the identical grand total.
+  return Object.keys(ACT_STATS).filter(a => byAct.has(a)).map(a => {
+    const children = buildCategories(byAct.get(a));
+    const value = children.reduce((s, c) => s + foldValue(c), 0);
+    return { name: a, value, ...ACT_STATS[a], _label: `${a} — ${value} h`, children };
+  });
+}
+
+// ── Resource registry — every economic resource, declared once ──────────────
+// Each leaf is one SUBJECT–VERB–OBJECT sentence of the plan:
+//   SUBJECT = the viewer (implicit — the citizen reading the surface)
+//   VERB    = `act` — the activity / scope, the *doing*                → COLUMNS
+//   OBJECT  = `cat` + `path` + name — the spec, the thing made         → ROWS
+// "(we) food → bread", "(we) health → medical skills", "(we) energy → turbines".
+// The two surfaces are the two ways to read the same sentences: group by the
+// VERB and you get activities (buildActivities, Figure 1, branches of doing);
+// group by the OBJECT and you get categories (buildCategories, Figure 2, kinds
+// made). Same sentences, same total — the column-dual and row-dual of one matrix.
+// Reuse across modes (bread under both individual-claimable AND communal) shows
+// the same taxonomy node materialising under two parents — one good, two rails.
+const RESOURCE_LEAVES = [
+  // ═══ FOOD · 1 800 h ═══
+  { act:"food", cat:"moc", path:["individual claimable","food","grain"],   name:"bread · 5k loaves",    value:330, _ind:true, _planned:330, _you:30, _others:230, _validated:297, _qty:5000, _unit:"loaves", _desireW:15, _desireSat:0.80 },
+  { act:"food", cat:"moc", path:["individual claimable","food","dairy"],   name:"dairy · 2.1k L",       value:260, _ind:true, _planned:260, _you:20, _others:170, _validated:221, _qty:2100, _unit:"L", _desireW:10, _desireSat:0.80 },
+  { act:"food", cat:"moc", path:["individual claimable","food","produce"], name:"veg. · 1.8t",          value:230, _ind:true, _planned:230, _you:16, _others:150, _validated:200, _qty:1800, _unit:"kg", _desireW:8, _desireSat:0.75 },
+  { act:"food", cat:"moc", path:["individual claimable","food","prepared"],name:"meals · 9k portions", value:160, _ind:true, _planned:160, _you:12, _others:100, _validated:130, _qty:9000, _unit:"portions", _desireW:6, _desireSat:0.72 },
+  { act:"food", cat:"moc", path:["communal","food","grain"],   name:"bread · 3.5k loaves",      value:170, _sat:0.90, _maint:0.20, _catColor:PALETTE.hues.commons, _desireW:5, _desireSat:null },
+  { act:"food", cat:"moc", path:["communal","food","produce"], name:"veg. · 1.2t",              value:140, _sat:0.88, _maint:0.25, _catColor:PALETTE.hues.commons, _desireW:3, _desireSat:null },
+  { act:"food", cat:"moc", path:["communal","food","dairy"],   name:"dairy · 900 L",            value:110, _sat:0.85, _maint:0.20, _catColor:PALETTE.hues.commons, _desireW:2, _desireSat:null },
+  { act:"food", cat:"mop", path:["infrastructure"], name:"irrigation · 3 systems", value:70, _sat:0.88, _maint:0.45, _catColor:PALETTE.hues.means },
+  { act:"food", cat:"mop", path:["materials"],      name:"seed · 8t",              value:45, _sat:0.95, _maint:0.30, _catColor:PALETTE.hues.means },
+  { act:"food", cat:"mop", path:["facilities"],     name:"storage · 2 bays",       value:65, _sat:1.00, _maint:0.82, _ins:0.12, _catColor:PALETTE.hues.means },
+  { act:"food", cat:"lpd", path:["food-safety skills"], name:"cert. · 6 people",      value:120, _sat:1.00, _maint:0.70, _ins:0.15, _catColor:PALETTE.hues.skills },
+  { act:"food", cat:"lpd", path:["food-safety skills"], name:"insp. · 4 people",      value:70, _sat:1.00, _maint:0.70, _ins:0.15, _catColor:PALETTE.hues.skills },
+  { act:"food", cat:"adm", path:[], name:"self-governance", value:30, _sat:0.85, _maint:0.55, _catColor:PALETTE.hues.admin },
+  // ═══ MANUFACTURING · 1 500 h ═══
+  { act:"manufacturing", cat:"moc", path:["individual claimable","household"],   name:"furnishing · 120 pcs", value:200, _ind:true, _planned:200, _you:7, _others:120, _validated:160, _qty:120, _unit:"pcs", _desireW:10, _desireSat:0.70 },
+  { act:"manufacturing", cat:"moc", path:["individual claimable","electronics"], name:"devices · 600 units",  value:200, _ind:true, _planned:200, _you:8, _others:120, _validated:156, _qty:600, _unit:"units", _desireW:7, _desireSat:0.72 },
+  { act:"manufacturing", cat:"moc", path:["individual claimable","household"],   name:"other · 850 units",    value:100, _ind:true, _planned:100, _you:3, _others:62, _validated:82, _qty:850, _unit:"units", _desireW:4, _desireSat:0.75 },
+  { act:"manufacturing", cat:"mop", path:["machinery"],  name:"machine tools · 30",  value:500, _sat:0.80, _maint:0.60, _catColor:PALETTE.hues.means },
+  { act:"manufacturing", cat:"mop", path:["components"], name:"parts · 12k units",   value:300, _sat:0.78, _maint:0.50, _catColor:PALETTE.hues.means },
+  { act:"manufacturing", cat:"lpd", path:["machinist skills"], name:"machinists · 20 people", value:170, _sat:0.75, _maint:0.50, _catColor:PALETTE.hues.skills },
+  { act:"manufacturing", cat:"adm", path:[], name:"self-governance", value:30, _sat:0.85, _maint:0.55, _catColor:PALETTE.hues.admin },
+  // ═══ CONSTRUCTION · 1 200 h ═══
+  { act:"construction", cat:"moc", path:["individual claimable","housing"], name:"shelter · 40 units", value:120, _ind:true, _planned:120, _you:4, _others:80, _validated:100, _qty:40, _unit:"units", _desireW:6, _desireSat:0.67 },
+  { act:"construction", cat:"moc", path:["communal","housing"],             name:"housing · 60 units", value:230, _sat:0.85, _maint:0.25, _catColor:PALETTE.hues.commons, _desireW:8, _desireSat:null },
+  { act:"construction", cat:"mop", path:["infrastructure"], name:"roads · 12 km",  value:350, _sat:0.82, _maint:0.50, _catColor:PALETTE.hues.means },
+  { act:"construction", cat:"mop", path:["infrastructure"], name:"bridges · 3",    value:200, _sat:0.80, _maint:0.40, _catColor:PALETTE.hues.means },
+  { act:"construction", cat:"mop", path:["materials"],      name:"cement · 400t",  value:150, _sat:0.88, _maint:0.30, _catColor:PALETTE.hues.means },
+  { act:"construction", cat:"lpd", path:["building skills"], name:"masons · 15 people", value:120, _sat:0.78, _maint:0.45, _catColor:PALETTE.hues.skills },
+  { act:"construction", cat:"adm", path:[], name:"self-governance", value:30, _sat:0.85, _maint:0.55, _catColor:PALETTE.hues.admin },
+  // ═══ EDUCATION · 1 000 h ═══ (mostly labour-power)
+  { act:"education", cat:"moc", path:["communal","schooling"], name:"schooling · 1.2k pupils", value:300, _sat:0.72, _maint:0.50, _catColor:PALETTE.hues.commons, _desireW:9, _desireSat:null },
+  { act:"education", cat:"lpd", path:["teaching skills"],  name:"teachers · 40 people",    value:350, _sat:0.70, _maint:0.50, _ins:0.10, _catColor:PALETTE.hues.skills },
+  { act:"education", cat:"lpd", path:["research skills"],  name:"researchers · 18 people", value:250, _sat:0.68, _maint:0.45, _ins:0.10, _catColor:PALETTE.hues.skills },
+  { act:"education", cat:"mop", path:["facilities"], name:"classrooms · 30", value:70, _sat:0.80, _maint:0.70, _catColor:PALETTE.hues.means },
+  { act:"education", cat:"adm", path:[], name:"self-governance", value:30, _sat:0.85, _maint:0.55, _catColor:PALETTE.hues.admin },
+  // ═══ HEALTH · 900 h ═══
+  { act:"health", cat:"moc", path:["communal","care"], name:"clinics · 1.5k visits", value:350, _sat:0.78, _maint:0.45, _ins:0.12, _catColor:PALETTE.hues.commons, _desireW:13, _desireSat:null },
+  { act:"health", cat:"lpd", path:["medical skills"],  name:"physicians · 24 people", value:300, _sat:0.76, _maint:0.50, _ins:0.15, _catColor:PALETTE.hues.skills },
+  { act:"health", cat:"lpd", path:["nursing skills"],  name:"nurses · 40 people",     value:150, _sat:0.74, _maint:0.50, _ins:0.12, _catColor:PALETTE.hues.skills },
+  { act:"health", cat:"mop", path:["medical equipment"], name:"equipment · 60 units", value:70, _sat:0.82, _maint:0.60, _catColor:PALETTE.hues.means },
+  { act:"health", cat:"adm", path:[], name:"self-governance", value:30, _sat:0.85, _maint:0.55, _catColor:PALETTE.hues.admin },
+  // ═══ TRANSPORT · 700 h ═══ (vehicles + infrastructure)
+  { act:"transport", cat:"mop", path:["vehicles"],       name:"bike-share · 60 bikes",    value:200, _sat:0.90, _maint:0.50, _catColor:PALETTE.hues.means },
+  { act:"transport", cat:"mop", path:["vehicles"],       name:"car-share · 12 cars",      value:250, _sat:0.85, _maint:0.55, _catColor:PALETTE.hues.means },
+  { act:"transport", cat:"mop", path:["infrastructure"], name:"public transit · 8 lines", value:180, _sat:0.92, _maint:0.60, _catColor:PALETTE.hues.means },
+  { act:"transport", cat:"mop", path:["infrastructure"], name:"road maintenance",         value:40,  _sat:0.80, _maint:0.95, _catColor:PALETTE.hues.means },
+  { act:"transport", cat:"adm", path:[], name:"self-governance", value:30, _sat:0.88, _maint:0.55, _catColor:PALETTE.hues.admin },
+  // ═══ ENERGY · 600 h ═══
+  { act:"energy", cat:"mop", path:["generation"], name:"solar · 12 arrays",  value:250, _sat:0.92, _maint:0.50, _catColor:PALETTE.hues.means },
+  { act:"energy", cat:"mop", path:["generation"], name:"wind · 8 turbines",  value:200, _sat:0.90, _maint:0.50, _catColor:PALETTE.hues.means },
+  { act:"energy", cat:"mop", path:["grid"],       name:"grid · 40 km",       value:120, _sat:0.94, _maint:0.60, _catColor:PALETTE.hues.means },
+  { act:"energy", cat:"adm", path:[], name:"self-governance", value:30, _sat:0.90, _maint:0.55, _catColor:PALETTE.hues.admin },
+  // ═══ TEXTILES · 500 h ═══
+  { act:"textiles", cat:"moc", path:["individual claimable","clothing"], name:"garments · 2k items", value:250, _ind:true, _planned:250, _you:9, _others:150, _validated:200, _qty:2000, _unit:"items", _desireW:7, _desireSat:0.68 },
+  { act:"textiles", cat:"moc", path:["individual claimable","clothing"], name:"fabric · 3k m",       value:150, _ind:true, _planned:150, _you:5, _others:90,  _validated:110, _qty:3000, _unit:"m", _desireW:5, _desireSat:0.70 },
+  { act:"textiles", cat:"lpd", path:["textile skills"], name:"weavers · 12 people", value:70, _sat:0.66, _maint:0.50, _catColor:PALETTE.hues.skills },
+  { act:"textiles", cat:"adm", path:[], name:"self-governance", value:30, _sat:0.85, _maint:0.55, _catColor:PALETTE.hues.admin },
+  // ═══ TOOL-MAKING · 500 h ═══
+  { act:"tool-making", cat:"mop", path:["tools"], name:"hand tools · 120 pcs", value:220, _sat:0.82, _maint:0.70, _ins:0.10, _catColor:PALETTE.hues.means },
+  { act:"tool-making", cat:"mop", path:["tools"], name:"power tools · 30 pcs",  value:180, _sat:0.80, _maint:0.60, _catColor:PALETTE.hues.means },
+  { act:"tool-making", cat:"lpd", path:["toolmaking skills"], name:"toolmakers · 10 people", value:70, _sat:0.74, _maint:0.50, _catColor:PALETTE.hues.skills },
+  { act:"tool-making", cat:"adm", path:[], name:"self-governance", value:30, _sat:0.85, _maint:0.55, _catColor:PALETTE.hues.admin },
+  // ═══ FORESTRY · 400 h ═══
+  { act:"forestry", cat:"mop", path:["materials"], name:"timber · 600 m³", value:250, _sat:0.90, _maint:0.30, _catColor:PALETTE.hues.means },
+  { act:"forestry", cat:"moc", path:["communal","food","produce"], name:"foraged · 2t", value:60, _sat:0.85, _maint:0.20, _catColor:PALETTE.hues.commons, _desireW:2, _desireSat:null },
+  { act:"forestry", cat:"lpd", path:["forestry skills"], name:"foresters · 8 people", value:60, _sat:0.78, _maint:0.45, _catColor:PALETTE.hues.skills },
+  { act:"forestry", cat:"adm", path:[], name:"self-governance", value:30, _sat:0.88, _maint:0.55, _catColor:PALETTE.hues.admin },
+  // ═══ FISHING · 350 h ═══
+  { act:"fishing", cat:"moc", path:["individual claimable","food","fish"], name:"fish · 4t",   value:180, _ind:true, _planned:180, _you:6, _others:110, _validated:140, _qty:4000, _unit:"kg", _desireW:6, _desireSat:0.72 },
+  { act:"fishing", cat:"moc", path:["communal","food","fish"],             name:"fish · 1.5t", value:90,  _sat:0.80, _maint:0.20, _catColor:PALETTE.hues.commons, _desireW:3, _desireSat:null },
+  { act:"fishing", cat:"lpd", path:["fishing skills"], name:"fishers · 10 people", value:50, _sat:0.70, _maint:0.45, _catColor:PALETTE.hues.skills },
+  { act:"fishing", cat:"adm", path:[], name:"self-governance", value:30, _sat:0.85, _maint:0.55, _catColor:PALETTE.hues.admin },
+  // ═══ ARTS · 300 h ═══
+  { act:"arts", cat:"moc", path:["communal","culture"],            name:"performances · 120", value:160, _sat:0.65, _maint:0.40, _catColor:PALETTE.hues.commons, _desireW:6, _desireSat:null },
+  { act:"arts", cat:"moc", path:["individual claimable","culture"], name:"artworks · 200 pcs", value:80, _ind:true, _planned:80, _you:4, _others:48, _validated:60, _qty:200, _unit:"pcs", _desireW:3, _desireSat:0.70 },
+  { act:"arts", cat:"lpd", path:["arts skills"], name:"artists · 14 people", value:40, _sat:0.68, _maint:0.45, _catColor:PALETTE.hues.skills },
+  { act:"arts", cat:"adm", path:[], name:"self-governance", value:20, _sat:0.85, _maint:0.55, _catColor:PALETTE.hues.admin },
+  // ═══ MINING · 250 h ═══
+  { act:"mining", cat:"mop", path:["materials"], name:"ore · 80t",  value:160, _sat:0.85, _maint:0.30, _catColor:PALETTE.hues.means },
+  { act:"mining", cat:"mop", path:["materials"], name:"coal · 40t", value:60,  _sat:0.84, _maint:0.30, _catColor:PALETTE.hues.means },
+  { act:"mining", cat:"adm", path:[], name:"self-governance", value:30, _sat:0.85, _maint:0.55, _catColor:PALETTE.hues.admin },
+  // ═══ UC ADMIN · 200 h ═══ (federation-level, independent of the scopes it verifies)
+  //   three recipe-types: independent verification (backs credit) · coordination · mediation
+  { act:"UC admin", cat:"adm", path:["independent verification"], name:"audit · credit-bearing claims", value:70, _sat:0.90, _maint:0.60, _catColor:PALETTE.hues.admin },
+  { act:"UC admin", cat:"adm", path:["independent verification"], name:"ecological-draw monitoring",     value:25, _sat:0.88, _maint:0.55, _catColor:PALETTE.hues.admin },
+  { act:"UC admin", cat:"adm", path:["coordination"], name:"cross-scope plan coordination", value:45, _sat:0.92, _maint:0.50, _catColor:PALETTE.hues.admin },
+  { act:"UC admin", cat:"adm", path:["coordination"], name:"refederation · split / merge",  value:30, _sat:0.88, _maint:0.40, _catColor:PALETTE.hues.admin },
+  { act:"UC admin", cat:"adm", path:["mediation"], name:"dispute mediation",                value:30, _sat:0.85, _maint:0.40, _catColor:PALETTE.hues.admin },
+  // ═══ RESERVE · the ECOLOGICAL BASE the federation reproduces ═══
+  //   nature's regenerative base — held apart, with no use-cell home of its own.
+  //   social insurance is NOT here: it lives as the _ins band inside each use-cell
+  //   (a spare oven, a redundant practitioner), so nothing is double-counted.
+  //   reproducing this base is the conscious social regulation of society's
+  //   material metabolism with nature. each scope stewards its own + federation-wide.
+  { act:"food", cat:"rsv", path:[], name:"soil & watershed restoration", value:50, _sat:0.66, _maint:0.45, _catColor:PALETTE.hues.reserve },
+  { act:"forestry", cat:"rsv", path:[], name:"forest regeneration · 50k trees", value:60, _sat:0.70, _maint:0.45, _qty:50000, _unit:"trees", _catColor:PALETTE.hues.reserve },
+  { act:"fishing", cat:"rsv", path:[], name:"fishery stock rebuild", value:40, _sat:0.62, _maint:0.40, _catColor:PALETTE.hues.reserve },
+  { act:"energy", cat:"rsv", path:[], name:"watershed / hydrology reserve", value:25, _sat:0.64, _maint:0.40, _catColor:PALETTE.hues.reserve },
+  { act:"mining", cat:"rsv", path:[], name:"land / tailings remediation", value:20, _sat:0.55, _maint:0.40, _catColor:PALETTE.hues.reserve },
+  { act:"reserves", cat:"rsv", path:[], name:"carbon / atmosphere drawdown", value:80, _sat:0.58, _maint:0.40, _catColor:PALETTE.hues.reserve },
+  { act:"reserves", cat:"rsv", path:[], name:"seed bank · biodiversity", value:60, _sat:0.80, _maint:0.55, _catColor:PALETTE.hues.reserve },
+];
+
+const TREE = {
+  name: "playnet", _color: PALETTE.hues.means, _label: "Playnet · Q2 2027",
+  _titleRender: "rainbow", _totalCaption: "total social time",
+  children: [
+    // FREE TIME — what we win as productivity rises. Free time's own Φ.
+    // Sized to ~32% of social time (the labour↔free dial is a separate constant).
+    { name: "free time", value: 4300, _progress: 0.90, _priority: 0.86, _color: PALETTE.hues.free,
+      _label: "free time",
+      _zones: (pct) => ({
+        dark: PALETTE.hues.free, light: PALETTE.darken(PALETTE.hues.free, 0.7), tab: PALETTE.hues.free,
+        sat: { primary: "Playtime", primaryRich: "rainbow", secondary: "(free time with social-desire satisfaction)" },
+        gap: { primary: "free time without social-desire satisfaction", secondary: `${100-pct}%` },
+        tooltip: (v) => `free time · ${v} h\nplaytime ${pct}% (free time with social-desire satisfaction)\nfree time without ${100-pct}%`,
+      }) },
+
+    // FEDERATION — the work side of social time. Total folds from the registry
+    // (no hardcoded value), so the activities ↓ and categories → axes always
+    // agree. Its Φ = 0.74 from the doc.
+    { name: "federation", _progress: 0.74, _priority: 0.74, _M: 0.55,
+      _color: PALETTE.hues.means, _label: "federation",
+      _totalCaption: "total social labour-time",
+      _zones: (pct) => ({
+        dark: PALETTE.hues.production, light: PALETTE.lighten(PALETTE.hues.production, 0.7), tab: PALETTE.hues.labour,
+        sat: { primary: "work with social-desire satisfaction", secondary: `${pct}%` },
+        gap: { primary: "work without social-desire satisfaction", secondary: `${100-pct}%` },
+        tooltip: (v) => `federation · ${v} h work time\nwork with social-desire satisfaction ${pct}%\nwork without ${100-pct}%`,
+      }),
+      // Children are FOLDED from the one registry below (set after TREE). Both
+      // axes are projections of RESOURCE_LEAVES — see the FED wiring.
+      children: [] },
+  ]
+};
+
+// ── The federation carries BOTH projections of the one matrix T. ────────────
+// One registry, folded two ways: down COLUMNS by `act` → activities (branches
+// of doing, Figure 1); across ROWS by `cat`/`path` → categories (kinds of
+// thing made, Figure 2). Same leaves, same total, two faces. The axis toggle
+// (federation tab only) swaps which fold the surface aggregates.
+const FED = TREE.children.find(c => c.name === "federation");
+FED._colChildren   = buildActivities(RESOURCE_LEAVES);  // activities ↓ (partition)
+FED._rowChildren   = buildCategories(RESOURCE_LEAVES);  // categories → (partition)
+FED.children = FED._colChildren;                         // default: activities
+// At the playnet root the federation renders as a single (scope-kind) tile, so
+// d3 sizes it by `value` — fold that from the registry so it can never drift
+// from the activities/categories total (both = this sum).
+FED.value = FED._colChildren.reduce((s, c) => s + foldValue(c), 0);
+FED._axisRoot = true;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SPATIAL LAYER — economic resources at space-time locations
+//   resource specification → many economic resources (at lat/lng, with qty,
+//   provider, kind, when). Clicking a leaf cell opens a map view showing
+//   them sorted by proximity to the user.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Sofia, Bulgaria (where playnet.earth is hosted).
+const USER_LOC = { lat: 42.6977, lng: 23.3219, label: "you" };
+
+// Resource catalogue keyed by resource-specification name (matches leaf.name
+// in TREE). Each entry: array of economic resources at concrete locations.
+// Generates spread of locations around Sofia.
+function loc(dLat, dLng) { return { lat: USER_LOC.lat + dLat, lng: USER_LOC.lng + dLng }; }
+
+const RESOURCES = {
+  "bread · 5k loaves": [
+    { id:"br1", ...loc( 0.004, -0.008), qty: 200, unit:"loaves", kind:"available", provider:"Bakery Vitosha",      emoji:"🍞", when:"now",    access:"credit" },
+    { id:"br2", ...loc(-0.006,  0.005), qty: 120, unit:"loaves", kind:"produced",  provider:"Sourdough Co-op",    emoji:"🥖", when:"+2h",    access:"credit" },
+    { id:"br3", ...loc( 0.012, -0.003), qty: 300, unit:"loaves", kind:"available", provider:"Commons Bread Hub",  emoji:"🍞", when:"now",    access:"commons" },
+    { id:"br4", ...loc(-0.011, -0.012), qty:  80, unit:"loaves", kind:"in_transit",provider:"Mladost Distribution", emoji:"🥖", when:"+45min", access:"credit" },
+    { id:"br5", ...loc( 0.018,  0.009), qty: 150, unit:"loaves", kind:"available", provider:"Slatina Bakery",     emoji:"🍞", when:"now",    access:"credit" },
+  ],
+  "dairy · 2.1k L": [
+    { id:"dy1", ...loc( 0.003,  0.011), qty:  60, unit:"L", kind:"available", provider:"Vitosha Dairy",      emoji:"🥛", when:"now",   access:"credit" },
+    { id:"dy2", ...loc(-0.008,  0.007), qty:  40, unit:"L", kind:"available", provider:"Commons Milk Pool",  emoji:"🥛", when:"now",   access:"commons" },
+    { id:"dy3", ...loc( 0.014, -0.015), qty:  80, unit:"L", kind:"produced",  provider:"Pancharevo Farm",    emoji:"🐄", when:"+3h",   access:"credit" },
+  ],
+  "veg. · 1.8t": [
+    { id:"vg1", ...loc( 0.007,  0.014), qty: 220, unit:"kg", kind:"available", provider:"Market Garden East", emoji:"🥬", when:"now",  access:"credit" },
+    { id:"vg2", ...loc(-0.009, -0.006), qty: 180, unit:"kg", kind:"available", provider:"Commons Veg Box",   emoji:"🥕", when:"now",  access:"commons" },
+    { id:"vg3", ...loc( 0.020, -0.011), qty: 340, unit:"kg", kind:"produced",  provider:"Lozenets Co-op",    emoji:"🥦", when:"+1d",  access:"credit" },
+    { id:"vg4", ...loc(-0.015,  0.013), qty:  90, unit:"kg", kind:"available", provider:"Roof Garden",       emoji:"🥬", when:"now",  access:"commons" },
+  ],
+  "medical · 480 visits": [
+    { id:"md1", ...loc( 0.005, -0.010), qty:  12, unit:"slots/day", kind:"available", provider:"Clinic Vitosha",    emoji:"🏥", when:"today",  access:"commons" },
+    { id:"md2", ...loc(-0.012,  0.004), qty:   8, unit:"slots/day", kind:"available", provider:"Health Commons",    emoji:"⚕️", when:"today",  access:"commons" },
+    { id:"md3", ...loc( 0.016,  0.012), qty:   6, unit:"slots/day", kind:"available", provider:"Mladost Polyclinic",emoji:"🩺", when:"today",  access:"commons" },
+  ],
+  "shelter · 60 units": [
+    { id:"sh1", ...loc( 0.002,  0.018), qty: 12, unit:"units", kind:"available", provider:"Commons Housing A", emoji:"🏠", when:"now", access:"commons" },
+    { id:"sh2", ...loc(-0.014, -0.008), qty: 18, unit:"units", kind:"in_progress", provider:"Build East",     emoji:"🏗️", when:"+30d", access:"commons" },
+  ],
+  "hand tools · 45 pcs": [
+    { id:"ht1", ...loc(-0.003,  0.006), qty: 18, unit:"pcs", kind:"available", provider:"Tool Library North", emoji:"🔧", when:"now",   access:"commons" },
+    { id:"ht2", ...loc( 0.010, -0.007), qty: 12, unit:"pcs", kind:"available", provider:"Makerspace South",   emoji:"🛠️", when:"now",   access:"commons" },
+    { id:"ht3", ...loc(-0.011,  0.015), qty: 15, unit:"pcs", kind:"available", provider:"Repair Café",         emoji:"🔨", when:"now",   access:"commons" },
+  ],
+  "power tools · 12 pcs": [
+    { id:"pt1", ...loc(-0.005,  0.009), qty: 6, unit:"pcs", kind:"available", provider:"Workshop Vitosha", emoji:"⚡", when:"now", access:"commons" },
+    { id:"pt2", ...loc( 0.013, -0.004), qty: 4, unit:"pcs", kind:"available", provider:"Tool Coop",        emoji:"🔌", when:"now", access:"commons" },
+  ],
+  "irrigation · 3 systems": [
+    { id:"ir1", ...loc( 0.022, -0.013), qty: 1, unit:"system", kind:"in_use",    provider:"Lozenets Field",   emoji:"💧", when:"running", access:"commons" },
+    { id:"ir2", ...loc(-0.018,  0.011), qty: 1, unit:"system", kind:"available", provider:"East Plot",        emoji:"💧", when:"now",     access:"commons" },
+  ],
+  "anatomy · 4 people": [
+    { id:"an1", ...loc( 0.006,  0.003), qty: 1, unit:"cohort", kind:"open",     provider:"Clinic Vitosha · 4 apprentices", emoji:"📚", when:"Tue 9am", access:"commons" },
+    { id:"an2", ...loc(-0.010, -0.005), qty: 1, unit:"seat",   kind:"open",     provider:"Health Commons · 1 seat open",   emoji:"👨‍🏫", when:"Thu 2pm", access:"commons" },
+  ],
+  "clinical · 4 people": [
+    { id:"cl1", ...loc( 0.008,  0.011), qty: 2, unit:"shifts", kind:"open", provider:"Clinic Vitosha · shadowing slots", emoji:"🩺", when:"this week", access:"commons" },
+  ],
+  "cert. · 6 people": [
+    { id:"cr1", ...loc(-0.007,  0.002), qty: 1, unit:"session", kind:"open", provider:"Food Safety School", emoji:"📋", when:"Sat 10am", access:"commons" },
+  ],
+
+  // ── Means of transportation ───────────────────────────────────────────────
+  // These are also exposed as overlays on every map view when the user is
+  // on go-to + bike (bikes appear) or go-to + drive (cars appear).
+  "bike-share · 60 bikes": [
+    { id:"bk1", ...loc( 0.002,  0.001), qty: 8, unit:"bikes", kind:"available", provider:"Vitosha Station",   emoji:"🚲", when:"now", access:"commons" },
+    { id:"bk2", ...loc(-0.004,  0.006), qty: 5, unit:"bikes", kind:"available", provider:"Slaveykov Stand",   emoji:"🚲", when:"now", access:"commons" },
+    { id:"bk3", ...loc( 0.009,  0.004), qty: 4, unit:"bikes", kind:"available", provider:"Mladost Dock",      emoji:"🚲", when:"now", access:"commons" },
+    { id:"bk4", ...loc(-0.008, -0.003), qty: 6, unit:"bikes", kind:"available", provider:"Lozenets Rack",     emoji:"🚲", when:"now", access:"commons" },
+    { id:"bk5", ...loc( 0.011, -0.009), qty: 3, unit:"bikes", kind:"available", provider:"Park Hub",          emoji:"🚲", when:"now", access:"commons" },
+    { id:"bk6", ...loc(-0.013,  0.008), qty: 7, unit:"bikes", kind:"available", provider:"East End Stand",    emoji:"🚴", when:"now", access:"commons" },
+  ],
+  "car-share · 12 cars": [
+    { id:"cr1", ...loc( 0.006,  0.002), qty: 2, unit:"cars", kind:"available", provider:"Commons Carshare North", emoji:"🚗", when:"now", access:"commons" },
+    { id:"cr2", ...loc(-0.005, -0.010), qty: 1, unit:"car",  kind:"available", provider:"Slatina Carshare",       emoji:"🚙", when:"now", access:"commons" },
+    { id:"cr3", ...loc( 0.014,  0.006), qty: 1, unit:"car",  kind:"available", provider:"Mladost EV Pool",        emoji:"🔌", when:"now", access:"commons" },
+    { id:"cr4", ...loc(-0.011, -0.007), qty: 1, unit:"car",  kind:"in_use",    provider:"Lozenets Carshare",      emoji:"🚗", when:"+25min", access:"commons" },
+  ],
+  "public transit · 8 lines": [
+    { id:"pt1", ...loc( 0.003, -0.005), qty: 1, unit:"stop", kind:"frequent", provider:"Tram 22 · NDK",        emoji:"🚊", when:"every 6 min", access:"commons" },
+    { id:"pt2", ...loc(-0.006,  0.003), qty: 1, unit:"stop", kind:"frequent", provider:"Bus 76 · Mladost",     emoji:"🚌", when:"every 10 min", access:"commons" },
+    { id:"pt3", ...loc( 0.010,  0.001), qty: 1, unit:"stop", kind:"frequent", provider:"Metro M1 · Serdika",   emoji:"🚇", when:"every 4 min", access:"commons" },
+  ],
+};
+
+// Movability classification per leaf — drives which actions appear in the
+// map view's action card. Keyed by the spec name's stem (before " · ").
+//   movable      — goods that can be physically transported (bread, tools)
+//   fixed-service — service delivered AT a location (medical visits, training)
+//   fixed-infra   — immovable infrastructure (housing, irrigation, workshop)
+const MOVABILITY = {
+  "bread":      "movable",
+  "dairy":      "movable",
+  "veg.":       "movable",
+  "fabric":     "movable",
+  "furnishing": "movable",
+  "other":      "movable",
+  "seed":       "movable",
+  "ore":        "movable",
+  "hand tools": "movable",
+  "power tools":"movable",
+  "shelter":    "fixed-infra",
+  "irrigation": "fixed-infra",
+  "roads":      "fixed-infra",
+  "storage":    "fixed-infra",
+  "workshop":   "fixed-infra",
+  "facilities": "fixed-infra",
+  "medical":    "fixed-service",
+  "childcare":  "fixed-service",
+  "anatomy":    "fixed-service",
+  "clinical":   "fixed-service",
+  "cert.":      "fixed-service",
+  "insp.":      "fixed-service",
+  "structural":     "fixed-service",
+  "materials":      "fixed-service",
+  // Means of transportation: bikes / cars / transit (stations are fixed,
+  // the vehicles themselves go places when checked out).
+  "bike-share":     "fixed-infra",
+  "car-share":      "fixed-infra",
+  "public transit": "fixed-infra",
+};
+
+// ── Transport overlays: OSRM profile → which vehicle pool to show + ring hue.
+// Adding a new self-travel mode (e.g. scooter) is one entry here. bikes ride
+// on free-time energy (cool ring); cars carry labour-intensity (warm ring).
+const TRANSPORT_OVERLAYS = {
+  bike: { pool: RESOURCES["bike-share · 60 bikes"] || [], ring: PALETTE.hues.free },
+  car:  { pool: RESOURCES["car-share · 12 cars"]   || [], ring: PALETTE.hues.labour },
+};
+function movabilityOf(name) {
+  const stem = name.split("·")[0].trim();
+  return MOVABILITY[stem] || "movable"; // default to movable
+}
+
+// Attach resources + movability to leaves by name (TREE stays declarative).
+// Walk the row-dual too — its category cells are *separate* node objects, so
+// the same spec-leaf must be reached on both axes to keep the map drilldown.
+const attachResources = (node) => {
+  if (RESOURCES[node.name]) {
+    node._resources = RESOURCES[node.name];
+    node._movability = movabilityOf(node.name);
+  }
+};
+walkTree(TREE, attachResources);
+// TREE walks _colChildren (= FED.children); cover the other two projections too,
+// since each builds its own separate leaf objects for the same specs.
+(FED._rowChildren   || []).forEach(r => walkTree(r, attachResources));
+
+// Haversine distance (km) — for "near me" sort and label.
+function haversine(a, b) {
+  const R = 6371, toRad = (d) => d * Math.PI / 180;
+  const dLat = toRad(b.lat - a.lat), dLng = toRad(b.lng - a.lng);
+  const s = Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
+function distLabel(km) {
+  if (km < 1) return `${Math.round(km * 1000)} m`;
+  return `${km.toFixed(1)} km`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MAP VIEW — clicking a leaf cell with _resources opens this.
+// Same breadcrumb header + back-on-click as the treemap; replaces SVG with
+// a maplibre-gl map + a floating side panel sorted by proximity.
+// ═══════════════════════════════════════════════════════════════════════════
+
+let _mapInstance = null;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// JOURNEY DRAFT — persistent across treemap navigation and map sessions.
+// Each item: { kind: "resource" | "custom", ...details }.
+// User builds a journey by adding stops as they browse; "view journey" shows
+// a routed map; "confirm all" posts the work-intents.
+// ═══════════════════════════════════════════════════════════════════════════
+const journey = { items: [] };
+
+function journeyAdd(item) {
+  journey.items.push({ ...item, id: `j${Date.now()}${Math.random().toString(36).slice(2,5)}` });
+  renderJourneyDrawer();
+}
+function journeyRemove(id) {
+  journey.items = journey.items.filter(it => it.id !== id);
+  renderJourneyDrawer();
+}
+function journeyClear() {
+  journey.items = [];
+  renderJourneyDrawer();
+}
+function journeyMove(id, dir) {
+  const i = journey.items.findIndex(it => it.id === id);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= journey.items.length) return;
+  [journey.items[i], journey.items[j]] = [journey.items[j], journey.items[i]];
+  renderJourneyDrawer();
+}
+
+async function handleOriginChange(e) {
+  const v = e.target.value;
+  if (v === "live") {
+    await setLiveOrigin();
+    _originMode = _liveOrigin ? "live" : "current";
+  } else if (v === "custom") {
+    const q = prompt("Custom origin · address or 'lat, lng'");
+    if (!q) { _originMode = "current"; }
+    else {
+      const hit = (typeof window.__resolveDest === "function") ? await window.__resolveDest(q) : null;
+      if (!hit) {
+        const m = q.match(/^\s*(-?\d+(?:\.\d+)?)\s*[,\s]\s*(-?\d+(?:\.\d+)?)\s*$/);
+        if (m) _customOrigin = { lat: parseFloat(m[1]), lng: parseFloat(m[2]), label: q };
+      } else {
+        _customOrigin = hit;
+      }
+      _originMode = _customOrigin ? "custom" : "current";
+    }
+  } else {
+    _originMode = "current";
+  }
+  renderJourneyDrawer();
+}
+
+const ORIGIN_OPTIONS = [
+  { v: "current", label: "current" },
+  { v: "live",    label: "live location" },
+  { v: "custom",  label: "custom…" },
+];
+
+function originChip() {
+  const small = (color, weight) => ({ color, fontSize: "9px", ...(weight && { fontWeight: weight }) });
+  return h("div", { class: "jd-origin" },
+    h("span",   { style: small(PALETTE.chrome.textFaint) }, "from"),
+    h("select", { class: "jd-origin-mode", onChange: handleOriginChange,
+                  style: { padding: "2px 4px", fontSize: "9px",
+                           background: "rgba(0,0,0,0.4)", color: PALETTE.chrome.text,
+                           border: "1px solid rgba(110,78,168,0.4)", borderRadius: "4px", outline: "none" } },
+      ORIGIN_OPTIONS.map(o =>
+        h("option", { value: o.v, selected: _originMode === o.v }, o.label))),
+    h("span", { style: small(PALETTE.hues.plan, 600) }, getOrigin().label || "—"),
+  );
+}
+
+function journeyItem(it, i) {
+  const icon = it.kind === "resource" ? (it.emoji || "📦") : "📍";
+  const meta = it.kind === "resource"
+    ? `${it.intent.replace("-", " ")} · ${it.when}` : "custom stop";
+  return h("div", { class: "jd-item", dataset: { id: it.id } },
+    h("div", { class: "jd-num" }, `${icon}${i + 1}`),
+    h("div", { class: "jd-handle", title: "reorder",
+               onClick: (e) => { e.stopPropagation(); journeyMove(it.id, e.shiftKey ? +1 : -1); } }, "⋮"),
+    h("div", { class: "jd-item-label", title: it.label }, it.label),
+    h("div", { class: "jd-item-meta" }, meta),
+    h("div", { class: "jd-item-remove", title: "remove",
+               onClick: (e) => { e.stopPropagation(); journeyRemove(it.id); } }, "✕"),
+  );
+}
+
+function renderJourneyDrawer() {
+  const el = document.getElementById("journey-drawer");
+  if (!el) return;
+  const n = journey.items.length;
+  el.classList.toggle("empty", n === 0);
+
+  if (n === 0) {
+    mount(el,
+      h("div", { class: "jd-head" }, h("span", null, "journey draft")),
+      originChip(),
+      h("div", { class: "jd-empty" },
+        "click + add to journey on any resource — also add custom stops via the map"),
+    );
+    return;
+  }
+
+  mount(el,
+    h("div", { class: "jd-head" },
+      h("span", null, `journey draft · ${n} stop${n > 1 ? "s" : ""}`),
+      h("div", { class: "jd-actions" },
+        h("div", { class: "jd-action",         onClick: openJourneyMap }, "view on map"),
+        h("div", { class: "jd-action primary", onClick: confirmJourney }, "✓ confirm"),
+        h("div", { class: "jd-action",         onClick: journeyClear   }, "clear"),
+      ),
+    ),
+    originChip(),
+    h("div", { class: "jd-list" }, journey.items.map(journeyItem)),
+  );
+}
+
+// Render all journey items on a fresh map (no resource focus — just the route
+// through every drafted stop).
+function openJourneyMap() {
+  if (journey.items.length === 0) return;
+  // Hijack the surface: drop a synthetic "leaf" that drawMap renders as a journey.
+  const synthLeaf = {
+    name: "journey draft",
+    _resources: journey.items.map((it, i) => ({
+      id: it.id,
+      lat: it.lat, lng: it.lng,
+      qty: i + 1, unit: "stop",
+      emoji: it.emoji || "📍",
+      provider: it.label,
+      kind: it.kind === "resource" ? (it.intent || "stop") : "custom",
+      when: it.when || "—",
+      access: "journey",
+    })),
+    _movability: "movable",
+    _isJourney: true,
+  };
+  // Pass the real federation TREE as the only ancestor so clicking the
+  // breadcrumb back-button cleanly returns to the federation view (the
+  // earlier synthetic ancestor had no children → zoomTo bailed → blank).
+  APP.navigate({ surface: "map", leaf: synthLeaf, ancestors: [TREE] });
+}
+
+function confirmJourney() {
+  const n = journey.items.length;
+  if (n === 0) return;
+  alert(`✓ Journey confirmed.\n${n} work-intent${n>1?"s":""} posted, routed via OSRM.\n\n` +
+        journey.items.map((it, i) => `${i+1}. ${it.label} — ${it.kind === "resource" ? `${it.intent} · ${it.when}` : "custom stop"}`).join("\n"));
+  journeyClear();
+}
+
+// ── Pure surface renderer — reads APP.state, draws the map view. ────────
+// Called by the surface view's mount(); never call directly, always go
+// through APP.navigate({ surface: "map", leaf, ancestors }).
+function renderMapSurface() {
+  const { leaf, ancestors } = APP.state;
+  if (_mapInstance) { try { _mapInstance.remove(); } catch(e){} _mapInstance = null; }
+
+  // Pin state — hoisted so all inner closures can reach them (avoids TDZ
+  // errors when showActions runs before any let declaration further down).
+  let _dropoffPin = null;
+  let _stopPins   = [];
+
+  const resources = leaf._resources || [];
+  const sorted = [...resources]
+    .map(r => ({ ...r, _km: haversine(USER_LOC, r) }))
+    .sort((a, b) => a._km - b._km);
+
+  const crumbs = [...ancestors.map(a => a.name), leaf.name].join(" / ");
+  const accessColor = (r) => r.access === "commons" ? PALETTE.hues.commons : PALETTE.hues.plan;
+
+  const head = h("div", {
+    class: "map-header", title: "click to go back",
+    style: { background: PALETTE.hues.labour },
+    onClick: () => APP.navigate({ surface: "tree", node: ancestors.at(-1), ancestors: ancestors.slice(0, -1) }),
+  },
+    `← ${crumbs} `,
+    h("span", { style: { opacity: 0.75, marginLeft: "8px", fontWeight: 500 } },
+      `· ${sorted.length} resources near you`),
+  );
+
+  const mapDiv = h("div", { id: "leaf-map", class: "map-canvas" });
+
+  const panel = h("div", { class: "map-side-panel" },
+    h("div", { class: "panel-head" }, `${leaf.name.split("·")[0].trim()} · near you`),
+    h("div", { class: "panel-body" },
+      sorted.map(r =>
+        h("div", { class: "panel-row", dataset: { rid: r.id } },
+          h("div", { class: "panel-row-inner" },
+            h("span", { class: "row-emoji" }, r.emoji),
+            h("span", { class: "row-label" }, r.provider),
+            h("span", { class: "row-count" }, `${r.qty} ${r.unit}`),
+          ),
+          h("div", { class: "row-meta" },
+            `${distLabel(r._km)} · ${r.kind} · ${r.when} · `,
+            h("span", { style: { color: accessColor(r) } }, r.access),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  mount(surfaceDiv, head, mapDiv, panel);
+
+  // ── Maplibre map (satellite imagery from free Esri ArcGIS Online) ──
+  const map = new maplibregl.Map({
+    container: "leaf-map",
+    style: {
+      version: 8,
+      glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
+      sources: {
+        satellite: {
+          type: "raster",
+          tiles: [
+            "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+          ],
+          tileSize: 256,
+          maxzoom: 19,
+          attribution: "© Esri",
+        },
+        labels: {
+          type: "raster",
+          tiles: [
+            "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
+          ],
+          tileSize: 256,
+          maxzoom: 19,
+        },
+      },
+      layers: [
+        { id: "sat",    type: "raster", source: "satellite" },
+        { id: "labels", type: "raster", source: "labels"    },
+      ],
+    },
+    center: [USER_LOC.lng, USER_LOC.lat],
+    zoom: 14,
+    attributionControl: false,
+    preserveDrawingBuffer: false,
+    antialias: true,
+  });
+  _mapInstance = map;
+  // Surface load failures (route still draws on a blank canvas if tiles 404).
+  map.on("error", (e) => console.warn("[map]", e?.error?.message || e));
+
+  // User marker (gold, pulsing)
+  const userEl = document.createElement("div");
+  userEl.className = "user-marker";
+  userEl.title = "you";
+  new maplibregl.Marker({ element: userEl, anchor: "center" })
+    .setLngLat([USER_LOC.lng, USER_LOC.lat])
+    .addTo(map);
+
+  // Resource markers — emoji + label, click to route + highlight + show actions
+  const markerEls = {};
+  let currentProfile = "foot";  // OSRM profile: foot | bike | car
+  const showRouteTo = (r) => {
+    highlightResource(panel, r.id);
+    map.flyTo({ center: [r.lng, r.lat], zoom: 14, duration: 600 });
+    currentProfile = "foot";
+    showActions(r);  // showActions runs the route per the current intent.
+  };
+  for (const r of sorted) {
+    const el = h("div", {
+      class: "map-slot-marker",
+      onClick: (e) => { e.stopPropagation(); showRouteTo(r); },
+    },
+      h("div", { class: "marker-icon" }, r.emoji),
+      h("div", { class: "marker-label" }, `${r.qty} ${r.unit}`),
+    );
+    new maplibregl.Marker({ element: el, anchor: "bottom" })
+      .setLngLat([r.lng, r.lat]).addTo(map);
+    markerEls[r.id] = el;
+  }
+
+  panel.querySelectorAll(".panel-row").forEach(row => {
+    row.onclick = () => {
+      const r = sorted.find(x => x.id === row.dataset.rid);
+      if (r) showRouteTo(r);
+    };
+  });
+
+  // ── Routing — call OSRM directly, draw GeoJSON LineString on the map. ──
+  function ensureRouteLayer() {
+    if (map.getSource("route")) return;
+    map.addSource("route", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+    map.addLayer({ id: "route-shadow", type: "line", source: "route",
+      layout: { "line-join": "round", "line-cap": "round" },
+      paint: { "line-color": "#000", "line-width": 8, "line-opacity": 0.65 }});
+    map.addLayer({ id: "route-line", type: "line", source: "route",
+      layout: { "line-join": "round", "line-cap": "round" },
+      paint: { "line-color": PALETTE.hues.plan, "line-width": 4 }});
+  }
+  map.on("styledata", ensureRouteLayer);
+
+  // ── Journey-mode short-circuit: when leaf._isJourney, just draw the whole
+  // chain of stops with an origin pin and a single connecting route line.
+  if (leaf._isJourney) {
+    drawJourneyOnMap(map, sorted, panel);
+    return;
+  }
+
+  // Profile-aware routing. Updates the route line + the active row's distance/time
+  // and updates the action card's mode buttons.
+  const MODES = [
+    { id: "foot", emoji: "🚶", label: "walk"  },
+    { id: "bike", emoji: "🚲", label: "bike"  },
+    { id: "car",  emoji: "🚗", label: "drive" },
+  ];
+  // ── Action card: intent tabs drive everything.
+  //   Intent tabs (depend on movability):
+  //     - fixed:   [ go to ]
+  //     - movable: [ go to | deliver to me | deliver elsewhere ]
+  //   When-row: a two-state toggle "asap | by [time]". Wording adapts to intent.
+  //   Transit pills: walk / bike / drive — for self-pickup these are YOUR mode,
+  //   for delivery they're the COURIER's mode.
+  //   Confirm button writes the work-intent.
+  function showActions(r) {
+    panel.querySelectorAll(".action-card").forEach(el => el.remove());
+    if (_dropoffPin) { try { _dropoffPin.remove(); } catch(e){} _dropoffPin = null; }
+    // Tear down any stop pins from the previous card.
+    _stopPins.forEach(p => { try { p.remove(); } catch(e){} });
+    _stopPins = [];
+    const row = panel.querySelector(`.panel-row[data-rid="${r.id}"]`);
+    if (!row) return;
+
+    // Per-card state (closed over by event handlers).
+    const movable = leaf._movability === "movable";
+    let intent     = "go-to";   // "go-to" | "deliver"
+    let pickerMode = "current"; // "current" | "live" | "custom" — origin for go-to, destination for deliver
+    let when       = "asap";    // "asap" | "by"
+    const t0 = new Date(); t0.setMinutes(Math.ceil(t0.getMinutes() / 15) * 15 + 30, 0, 0);
+    const defaultTime = `${String(t0.getHours()).padStart(2,"0")}:${String(t0.getMinutes()).padStart(2,"0")}`;
+
+    // Shared style tokens — one knob per visual idiom.
+    const S = {
+      pill: { flex: 1, padding: "6px 4px", borderRadius: "6px", cursor: "pointer",
+              textAlign: "center", fontSize: "10px", background: "rgba(40,30,56,0.6)",
+              color: PALETTE.chrome.textDim },
+      sectionLabel: { fontSize: "9px", color: PALETTE.chrome.textDim, textTransform: "uppercase",
+                      letterSpacing: "0.05em", fontWeight: 600 },
+    };
+    const pill = (extraStyle, props, ...kids) =>
+      h("div", { ...props, style: { ...S.pill, ...(extraStyle || {}) } }, kids);
+
+    // 1. Intent tabs — go-to / deliver (deliver only for movables)
+    const INTENTS = [{ id:"go-to", label:"🚶 go to" },
+                     ...(movable ? [{ id:"deliver", label:"📦 deliver" }] : [])];
+    const intentRow = h("div", { class: "intent-row",
+      style: { display: "flex", gap: "3px", marginBottom: "8px" } },
+      INTENTS.map(it => pill({ fontWeight: 600 },
+        { dataset: { intent: it.id },
+          onClick: (e) => { e.stopPropagation(); intent = it.id; repaint(); } },
+        it.label)),
+    );
+
+    // 2. Destination picker (populated in repaint when intent === "deliver")
+    const dropSlot = h("div", { class: "drop-slot" });
+
+    // 3. When-row — ASAP / by [time]
+    const whenChip = (whenId) => pill(null,
+      { class: "when-chip", dataset: { when: whenId },
+        onClick: (e) => { e.stopPropagation(); when = whenId; repaint(); } });
+    const whenRow = h("div", { class: "when-row",
+      style: { display: "flex", gap: "4px", marginBottom: "8px", alignItems: "center" } },
+      whenChip("asap"), whenChip("by"),
+      h("input", { type: "time", class: "when-time", value: defaultTime,
+        style: { width: "90px", padding: "5px 6px", borderRadius: "6px",
+                 border: "1px solid rgba(110,78,168,0.4)", background: "rgba(0,0,0,0.4)",
+                 color: PALETTE.chrome.text, font: "inherit", fontSize: "10px",
+                 outline: "none", opacity: 0.4 },
+        onChange: () => repaint(false) }),
+    );
+
+    // 4. Transit modes — walk/bike/drive
+    const modesRow = h("div", { class: "modes-row",
+      style: { display: "flex", gap: "4px", marginBottom: "8px" } },
+      MODES.map(m => pill(null,
+        { dataset: { mode: m.id },
+          onClick: (e) => { e.stopPropagation(); currentProfile = m.id; runRoute(); paintActiveMode(); } },
+        h("div", { style: { fontSize: "14px" } }, m.emoji),
+        h("div", { class: "m-label" }, m.label),
+        h("div", { class: "m-stat", style: { fontSize: "9px", color: PALETTE.chrome.textFaint, marginTop: "2px" } }, "—"),
+      )),
+    );
+
+    // 5. Stops on the way — numbered draggable pins, route passes through.
+    const stops = []; // { id, pin, lat, lng, row }
+    const stopsList = h("div", { style: { display: "flex", flexDirection: "column", gap: "4px" } });
+    const stopsSlot = h("div", { class: "stops-slot",
+      style: { display: "flex", flexDirection: "column", gap: "4px", marginBottom: "8px",
+               paddingTop: "6px", borderTop: "1px solid rgba(110,78,168,0.2)" } },
+      h("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" } },
+        h("div", { style: S.sectionLabel }, "stops on the way"),
+        h("div", { class: "add-stop",
+          style: { padding: "3px 8px", borderRadius: "5px", cursor: "pointer",
+                   background: "rgba(110,78,168,0.3)", color: PALETTE.chrome.text,
+                   fontSize: "10px", fontWeight: 600 },
+          onClick: (e) => { e.stopPropagation(); addStop(); } }, "+ add stop"),
+      ),
+      stopsList,
+    );
+
+    function addStop() {
+      const id = `s${Date.now()}${Math.random().toString(36).slice(2,5)}`;
+      const center = map.getCenter();
+      const stop = { id, lat: center.lat, lng: center.lng };
+      const pinEl = h("div", { style: {
+        width: "24px", height: "24px", borderRadius: "50%",
+        background: PALETTE.hues.skills, border: `2px solid ${PALETTE.chrome.text}`,
+        color: "white", fontWeight: 700, fontSize: "11px",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        cursor: "grab", boxShadow: "0 2px 6px rgba(0,0,0,0.5)",
+      } }, stops.length + 1);
+      stop.pin = new maplibregl.Marker({ element: pinEl, anchor: "center", draggable: true })
+        .setLngLat([stop.lng, stop.lat]).addTo(map);
+      stop.pin.on("drag", () => {
+        const ll = stop.pin.getLngLat();
+        stop.lat = ll.lat; stop.lng = ll.lng;
+        runRoute();
+      });
+      stops.push(stop);
+      _stopPins.push(stop.pin);
+      renderStopRow(stop);
+      runRoute();
+    }
+
+    function renderStopRow(stop) {
+      const idx = stops.indexOf(stop);
+      const onKey = async (e) => {
+        if (e.key !== "Enter") return;
+        const q = input.value.trim();
+        if (!q) return;
+        const hit = await resolveDestination(q);
+        if (!hit) { input.style.borderColor = PALETTE.hues.refuse; return; }
+        stop.lat = hit.lat; stop.lng = hit.lng;
+        stop.pin.setLngLat([hit.lng, hit.lat]);
+        input.value = hit.label.length > 32 ? hit.label.slice(0, 30) + "…" : hit.label;
+        input.style.borderColor = "rgba(110,78,168,0.4)";
+        runRoute();
+      };
+      const input = h("input", { class: "stop-input", type: "text",
+        placeholder: "address or lat, lng — or drag pin",
+        style: { flex: 1, padding: "5px 7px", borderRadius: "5px",
+                 border: "1px solid rgba(110,78,168,0.4)", background: "rgba(0,0,0,0.4)",
+                 color: PALETTE.chrome.text, font: "inherit", fontSize: "10px", outline: "none" },
+        onKeydown: onKey });
+      stop.row = h("div", { style: { display: "flex", gap: "4px", alignItems: "center" } },
+        h("div", { style: {
+          width: "18px", height: "18px", borderRadius: "50%",
+          background: PALETTE.hues.skills, color: "white",
+          fontSize: "10px", fontWeight: 700, display: "flex",
+          alignItems: "center", justifyContent: "center", flexShrink: 0,
+        } }, idx + 1),
+        input,
+        h("div", { class: "stop-remove",
+          style: { padding: "3px 6px", borderRadius: "5px", cursor: "pointer",
+                   color: PALETTE.chrome.textDim, fontSize: "12px" },
+          onClick: (e) => { e.stopPropagation(); removeStop(stop); } }, "✕"),
+      );
+      stopsList.appendChild(stop.row);
+    }
+
+    function removeStop(stop) {
+      try { stop.pin.remove(); } catch(e){}
+      const i = stops.indexOf(stop);
+      if (i >= 0) stops.splice(i, 1);
+      const j = _stopPins.indexOf(stop.pin);
+      if (j >= 0) _stopPins.splice(j, 1);
+      stop.row.remove();
+      // Renumber remaining stops.
+      stops.forEach((s, i) => {
+        s.pin.getElement().textContent = i + 1;
+        const numEl = s.row.firstElementChild;
+        if (numEl) numEl.textContent = i + 1;
+      });
+      runRoute();
+    }
+
+    // Confirm / Add-to-journey buttons. Tokens for both share the same shape
+    // but differ on accent — defined inline so the colour is self-explanatory.
+    const bigBtn = (bgRgba, color, borderRgba, label, onClick, extraProps) => h("div", {
+      ...extraProps,
+      style: { flex: 1, padding: "7px 8px", borderRadius: "6px", cursor: "pointer",
+               textAlign: "center", fontSize: "10px", fontWeight: 700,
+               background: bgRgba, color, border: `1px solid ${borderRgba}` },
+      onClick: (e) => { e.stopPropagation(); onClick(); },
+    }, label);
+    const addBtn     = bigBtn("rgba(212,184,48,0.18)", PALETTE.hues.plan, "rgba(212,184,48,0.4)",
+                              "+ add to journey", () => addToJourney(), { class: "add-journey-btn" });
+    const confirmBtn = bigBtn("rgba(106,170,122,0.25)", PALETTE.chrome.ok, "rgba(106,170,122,0.4)",
+                              "✓ confirm", () => confirmAction(), { class: "confirm-btn" });
+    const actionsRow = h("div", { class: "actions-row", style: { display: "flex", gap: "4px" } },
+                         addBtn, confirmBtn);
+
+    // ── Assemble the card. Visual order: intent → drop → when → modes → stops → actions ──
+    const card = h("div", { class: "action-card",
+      style: { marginTop: "8px", padding: "8px", background: "rgba(10,8,16,0.7)",
+               borderRadius: "8px", border: "1px solid rgba(110,78,168,0.3)" } },
+      intentRow, dropSlot, whenRow, modesRow, stopsSlot, actionsRow);
+    ["click","mousedown","change","input","keydown"].forEach(ev =>
+      card.addEventListener(ev, e => e.stopPropagation()));
+
+    function addToJourney() {
+      // Convert current selection into a journey item.
+      const item = {
+        kind: "resource",
+        label: `${r.provider}${leaf.name ? ` · ${leaf.name.split("·")[0].trim()}` : ""}`,
+        emoji: r.emoji,
+        lat: r.lat, lng: r.lng,
+        intent,
+        when: (() => {
+          const t = whenRow.querySelector(".when-time").value;
+          return when === "asap" ? "ASAP" : `by ${t}`;
+        })(),
+        leafName: leaf.name,
+      };
+      journeyAdd(item);
+      // Stops added in the action card → also pin as custom journey items in order.
+      for (const s of stops) {
+        journeyAdd({ kind: "custom", label: `via ${s.lat.toFixed(4)}, ${s.lng.toFixed(4)}`, lat: s.lat, lng: s.lng });
+      }
+      addBtn.textContent = "✓ added to journey";
+      addBtn.style.opacity = "0.6";
+    }
+
+    row.appendChild(card);
+
+    // ── Repaint based on (intent, when) ──────────────────────────────────
+    function repaint(reroute = true) {
+      // Intent tabs visual
+      intentRow.querySelectorAll("[data-intent]").forEach(b => {
+        const active = b.dataset.intent === intent;
+        b.style.background = active ? PALETTE.hues.labour : "rgba(40,30,56,0.6)";
+        b.style.color      = active ? "white" : PALETTE.chrome.textDim;
+      });
+      // When chips — universal: ASAP / by [time]
+      whenRow.querySelectorAll(".when-chip").forEach(c => {
+        const active = c.dataset.when === when;
+        c.textContent = c.dataset.when === "asap" ? "ASAP" : "by";
+        c.style.background = active ? PALETTE.hues.plan : "rgba(40,30,56,0.6)";
+        c.style.color      = active ? PALETTE.hues.ink : PALETTE.chrome.textDim;
+        c.style.fontWeight = active ? "700" : "normal";
+      });
+      const timeInput = whenRow.querySelector(".when-time");
+      timeInput.disabled = (when === "asap");
+      timeInput.style.opacity = (when === "asap") ? "0.4" : "1";
+
+      // Location picker: shown for BOTH intents.
+      //   go-to  → "FROM" (where you start)
+      //   deliver→ "TO"   (where it's delivered)
+      // We pass intent + runRoute + a mode-setter as deps because the picker
+      // lives at renderMap-scope and can't see showActions's closure vars.
+      dropSlot.innerHTML = "";
+      if (_dropoffPin) { try { _dropoffPin.remove(); } catch(e){} _dropoffPin = null; }
+      renderPickerSlot(dropSlot, r, {
+        intent,
+        initialMode: pickerMode,
+        setMode: (m) => { pickerMode = m; },
+        runRoute,
+      });
+
+      // Transit modes only relevant when YOU travel.
+      modesRow.style.display = (intent === "go-to") ? "flex" : "none";
+
+      // Journey accumulates places YOU travel through — a delivery isnt
+      // a stop you visit, the courier handles it. So + add to journey is
+      // only meaningful for go-to.
+      addBtn.style.display = (intent === "go-to") ? "block" : "none";
+
+      // Confirm button label
+      confirmBtn.textContent = `✓ ${confirmLabel()}`;
+
+      if (reroute) runRoute();
+    }
+
+    function whenSummary() {
+      const t = whenRow.querySelector(".when-time").value;
+      return when === "asap" ? "ASAP" : `by ${t}`;
+    }
+    function confirmLabel() {
+      if (intent === "go-to") return `navigate · ${whenSummary()}`;
+      return `request delivery · ${whenSummary()}`;
+    }
+
+    // Resolve the picker's location (used as origin for go-to, dest for deliver).
+    function getPickerLocation() {
+      if (pickerMode === "current") return { ...USER_LOC };
+      if (pickerMode === "live" && _liveOrigin) return { ..._liveOrigin };
+      if (pickerMode === "custom" && _dropoffPin) {
+        const ll = _dropoffPin.getLngLat();
+        return { lat: ll.lat, lng: ll.lng };
+      }
+      return { ...USER_LOC }; // fallback to current
+    }
+
+    function confirmAction() {
+      const loc = getPickerLocation();
+      const locLabel = pickerMode === "custom"
+        ? `${loc.lat.toFixed(5)}, ${loc.lng.toFixed(5)}`
+        : pickerMode === "live" ? "your live location" : "your current location";
+      const summary = intent === "go-to"
+        ? `✓ navigation set · from ${locLabel} · ${whenSummary()}`
+        : `✓ delivery scheduled · to ${locLabel} · ${whenSummary()} — courier work-intent posted to ${r.provider}`;
+      card.querySelectorAll(".intent-row, .when-row, .modes-row, .drop-slot, .stops-slot, .actions-row").forEach(el => el.remove());
+      card.appendChild(h("div", { style: {
+        padding: "8px", fontSize: "10px", color: PALETTE.chrome.ok,
+        fontWeight: 600, whiteSpace: "pre-wrap",
+      } }, summary));
+      if (_dropoffPin) { _dropoffPin.remove(); _dropoffPin = null; }
+    }
+
+    // Route — three cases:
+    //   go-to + walk/bike : you walk/bike from picker-location to resource  (gold)
+    //   go-to + car       : pickup driver → you (at picker-location) → r   (purple)
+    //   deliver           : courier from resource → picker-location          (green)
+    function runRoute() {
+      const pickerLoc = getPickerLocation();
+      let waypoints, who, profile;
+      if (intent === "go-to") {
+        if (currentProfile === "car") {
+          const driver = pickupOrigin(r);
+          waypoints = [driver, pickerLoc, ...stops.map(s => ({ lat: s.lat, lng: s.lng })), { lat: r.lat, lng: r.lng }];
+          who = "pickup"; profile = "car";
+        } else {
+          waypoints = [pickerLoc, ...stops.map(s => ({ lat: s.lat, lng: s.lng })), { lat: r.lat, lng: r.lng }];
+          who = "you"; profile = currentProfile;
+        }
+      } else {
+        waypoints = [{ lat: r.lat, lng: r.lng }, ...stops.map(s => ({ lat: s.lat, lng: s.lng })), pickerLoc];
+        who = "courier"; profile = "car";
+      }
+      setRouteStyle(who);
+      annotatePanelHead(who, r);
+      paintTransportOverlay();
+      routeWaypoints(waypoints, profile, r);
+    }
+
+    // Transport overlay: show nearby vehicles when go-to + a vehicle profile.
+    // Declared as a profile→{pool, ring} table so adding a mode is one entry.
+    let _transportMarkers = [];
+    function paintTransportOverlay() {
+      _transportMarkers.forEach(m => { try { m.remove(); } catch(e){} });
+      _transportMarkers = [];
+      if (intent !== "go-to") return;
+      const overlay = TRANSPORT_OVERLAYS[currentProfile];
+      if (!overlay) return;
+      const { pool, ring: ringColor } = overlay;
+      for (const t of pool) {
+        const el = h("div", {
+          title: `${t.provider} · ${t.qty} ${t.unit} · ${t.when}`,
+          style: {
+            width: "24px", height: "24px", borderRadius: "50%",
+            background: "rgba(24,20,32,0.85)", border: `2px solid ${ringColor}`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: "13px", cursor: "pointer",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.4)",
+          },
+        }, t.emoji);
+        const mk = new maplibregl.Marker({ element: el, anchor: "center" })
+          .setLngLat([t.lng, t.lat]).addTo(map);
+        _transportMarkers.push(mk);
+      }
+    }
+
+    // Deterministic synthetic driver origin near the user (so we can render a
+    // visible "driver → you → resource" pickup leg).  In production this would
+    // come from the live fleet of available drivers.
+    function pickupOrigin(r) {
+      // Seed from resource id so repeated route runs are stable.
+      const seed = (r.id || "").split("").reduce((s, c) => s + c.charCodeAt(0), 0);
+      const angle = (seed % 360) * Math.PI / 180;
+      const km = 0.6 + (seed % 4) * 0.2; // 0.6–1.2 km away
+      const dLat = (km / 111) * Math.cos(angle);
+      const dLng = (km / (111 * Math.cos(USER_LOC.lat * Math.PI / 180))) * Math.sin(angle);
+      return { lat: USER_LOC.lat + dLat, lng: USER_LOC.lng + dLng };
+    }
+
+    function setRouteStyle(who) {
+      if (!map.getLayer("route-line")) return;
+      const colour = who === "courier" ? PALETTE.hues.production : who === "pickup" ? PALETTE.hues.skills : PALETTE.hues.plan;
+      map.setPaintProperty("route-line", "line-color", colour);
+    }
+    function annotatePanelHead(who, r) {
+      const head = panel.querySelector(".panel-head");
+      if (!head) return;
+      const label = who === "courier" ? `🚐 courier route · ${r.provider} → you`
+                  : who === "pickup"  ? `🚗 pickup driver route · you → ${r.provider}`
+                  :                     `🚶 your route · you → ${r.provider}`;
+      head.innerHTML = label;
+    }
+
+    repaint();
+    paintActiveMode();
+  }
+
+  // Multi-stop routing — pass [origin, ...stops, destination] as waypoints.
+  // OSRM strings them with semicolons in the URL and returns one combined route.
+  async function routeWaypoints(waypoints, profile, r) {
+    const coords = waypoints.map(w => `${w.lng},${w.lat}`).join(";");
+    const url = `https://router.project-osrm.org/route/v1/${profile}/${coords}?overview=full&geometries=geojson`;
+    let resp;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`OSRM ${res.status}`);
+      resp = await res.json();
+    } catch (e) { updateActionStats(r, `⚠ unavailable`, profile); return; }
+    const route = resp?.routes?.[0];
+    if (!route) return;
+    const trySet = () => {
+      const src = map.getSource("route");
+      if (!src) { setTimeout(trySet, 50); return; }
+      src.setData({ type: "FeatureCollection", features: [{ type: "Feature", geometry: route.geometry, properties: {} }] });
+      const xs = route.geometry.coordinates;
+      const bounds = xs.reduce((b, c) => b.extend(c), new maplibregl.LngLatBounds(xs[0], xs[0]));
+      map.fitBounds(bounds, { padding: { top: 60, right: 280, bottom: 60, left: 60 }, duration: 700, maxZoom: 16 });
+    };
+    trySet();
+    const km = route.distance / 1000, min = Math.round(route.duration / 60);
+    const mode = MODES.find(m => m.id === profile);
+    updateActionStats(r, `${mode.emoji} ${km.toFixed(2)} km · ${min} min`, profile);
+  }
+
+  // Location picker — used for both intents (go-to → FROM, deliver → TO).
+  // Takes a deps object because it's defined at renderMap-scope and can't
+  // see the showActions closure vars (intent / pickerMode / runRoute).
+  function renderPickerSlot(slot, r, deps) {
+    const { intent, initialMode, setMode, runRoute } = deps;
+    const slotLabel = intent === "go-to" ? "from" : "to";
+
+    // Shared pill style for the dest tabs.
+    const tabStyle = { flex: 1, padding: "5px 4px", borderRadius: "5px", cursor: "pointer",
+                       textAlign: "center", fontSize: "10px",
+                       background: "rgba(40,30,56,0.6)", color: PALETTE.chrome.textDim };
+    const destTab = (id, label) => h("div", { class: "dest-tab", dataset: { dest: id },
+      style: tabStyle, onClick: (e) => { e.stopPropagation(); setPickerMode(id); } }, label);
+
+    const status    = h("div", { class: "dropoff-status",
+      style: { fontSize: "9px", color: PALETTE.chrome.textFaint, fontStyle: "italic" } });
+    const input     = h("input", { class: "dropoff-input", type: "text",
+      placeholder: "address, or lat, lng",
+      style: { padding: "6px 8px", borderRadius: "6px",
+               border: "1px solid rgba(110,78,168,0.4)", background: "rgba(0,0,0,0.4)",
+               color: PALETTE.chrome.text, font: "inherit", fontSize: "10px", outline: "none" } });
+    const customRow = h("div", { class: "dest-custom-row",
+      style: { display: "none", flexDirection: "column", gap: "4px" } }, input);
+
+    slot.style.cssText = "display:flex;flex-direction:column;gap:6px;margin-bottom:8px;padding-top:6px;border-top:1px solid rgba(110,78,168,0.2);";
+    mount(slot,
+      h("div", { style: { fontSize: "9px", color: PALETTE.chrome.textDim,
+                          textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600 } }, slotLabel),
+      h("div", { class: "dest-tabs", style: { display: "flex", gap: "3px" } },
+        destTab("current", "current"), destTab("live", "live"), destTab("custom", "custom")),
+      customRow, status,
+    );
+
+    // Drop pin factory — same look used by both setPickerMode (when switching
+    // to "custom") and the geocode-on-Enter handler.
+    const makeDropoffPin = (lat, lng) => {
+      const pinEl = h("div", { style: {
+        fontSize: "28px", lineHeight: 1, cursor: "grab",
+        textShadow: "0 2px 4px rgba(0,0,0,0.6)",
+      } }, "📍");
+      _dropoffPin = new maplibregl.Marker({ element: pinEl, anchor: "bottom", draggable: true })
+        .setLngLat([lng, lat]).addTo(map);
+      _dropoffPin.on("drag", () => runRoute());
+    };
+
+    // Status line — "<prefix> · <gold lat,lng>" for current/live.
+    const statusWithCoords = (prefix, { lat, lng }) => mount(status,
+      `${prefix} · `,
+      h("span", { style: { color: PALETTE.hues.plan } }, `${lat.toFixed(4)}, ${lng.toFixed(4)}`));
+
+    const setPickerMode = async (mode) => {
+      setMode(mode);
+      slot.querySelectorAll(".dest-tab").forEach(t => {
+        const active = t.dataset.dest === mode;
+        t.style.background = active ? PALETTE.hues.labour : "rgba(40,30,56,0.6)";
+        t.style.color      = active ? "white" : PALETTE.chrome.textDim;
+        t.style.fontWeight = active ? "700" : "normal";
+      });
+      customRow.style.display = (mode === "custom") ? "flex" : "none";
+
+      if (mode !== "custom" && _dropoffPin) { _dropoffPin.remove(); _dropoffPin = null; }
+
+      if (mode === "current") {
+        statusWithCoords("current location", USER_LOC);
+      } else if (mode === "live") {
+        status.textContent = "requesting browser location…";
+        const ll = await setLiveOrigin();
+        if (ll) statusWithCoords("live location", ll);
+        else    status.textContent = "⚠ live location unavailable — falling back to current";
+      } else {
+        if (!_dropoffPin) {
+          const c = map.getCenter();
+          makeDropoffPin(c.lat, c.lng);
+        }
+        status.textContent = "drag the 📍 on the map, or type an address ⏎";
+      }
+      runRoute();
+    };
+
+    input.onkeydown = async (e) => {
+      if (e.key !== "Enter") return;
+      const q = input.value.trim();
+      if (!q) return;
+      status.textContent = "looking up…";
+      const hit = await resolveDestination(q);
+      if (!hit) { status.textContent = "⚠ no match — try address or 'lat, lng'"; return; }
+      if (!_dropoffPin) makeDropoffPin(hit.lat, hit.lng);
+      else _dropoffPin.setLngLat([hit.lng, hit.lat]);
+      map.flyTo({ center: [hit.lng, hit.lat], zoom: 15, duration: 500 });
+      input.value = hit.label.length > 40 ? hit.label.slice(0, 38) + "…" : hit.label;
+      mount(status, h("span", { style: { color: PALETTE.hues.plan } },
+        `${hit.lat.toFixed(4)}, ${hit.lng.toFixed(4)}`));
+      runRoute();
+    };
+
+    setPickerMode(initialMode);  // initial paint
+  }
+
+  function paintActiveMode() {
+    const card = panel.querySelector(".action-card");
+    if (!card) return;
+    card.querySelectorAll(".modes-row > div").forEach(btn => {
+      const isActive = btn.dataset.mode === currentProfile;
+      btn.style.background = isActive ? PALETTE.hues.plan : "rgba(40,30,56,0.6)";
+      btn.style.color = isActive ? PALETTE.hues.ink : PALETTE.chrome.textDim;
+      btn.style.fontWeight = isActive ? "700" : "normal";
+    });
+  }
+
+  function updateActionStats(r, text, profile) {
+    const card = panel.querySelector(".action-card");
+    if (!card) return;
+    const btn = card.querySelector(`.modes-row > div[data-mode="${profile}"]`);
+    if (btn) {
+      const stat = btn.querySelector(".m-stat");
+      if (stat) stat.textContent = text.split(" ").slice(1).join(" "); // drop emoji
+    }
+  }
+
+  // ── Drop-off picker: lets the user choose where to send a movable resource.
+  //   Three ways to set the destination:
+  //     1. Drag the gold pin on the map.
+  //     2. Type an address in the input → geocoded via Nominatim.
+  //     3. Type "lat, lng" coordinates → parsed directly.
+  //   The route line live-updates from resource → drop-off, and the action card
+  //   shows the delivery distance + walking-equivalent time.
+  // (_dropoffPin and _stopPins hoisted at top of renderMap)
+
+  // Coordinate parser: accepts "lat, lng" or "lat lng" — Sofia ≈ (42.7, 23.3).
+  function parseCoords(s) {
+    const m = s.match(/^\s*(-?\d+(?:\.\d+)?)\s*[,\s]\s*(-?\d+(?:\.\d+)?)\s*$/);
+    if (!m) return null;
+    const a = parseFloat(m[1]), b = parseFloat(m[2]);
+    if (Math.abs(a) <= 90 && Math.abs(b) <= 180) return { lat: a, lng: b, label: `${a}, ${b}` };
+    if (Math.abs(b) <= 90 && Math.abs(a) <= 180) return { lat: b, lng: a, label: `${b}, ${a}` };
+    return null;
+  }
+  // Address geocoder: free Nominatim, biased to Sofia area.
+  async function geocode(query) {
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&accept-language=en&viewbox=23.1,42.8,23.5,42.6&bounded=0`;
+    try {
+      const res = await fetch(url, { headers: { "Accept": "application/json" }});
+      const data = await res.json();
+      if (!Array.isArray(data) || data.length === 0) return null;
+      return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), label: data[0].display_name };
+    } catch { return null; }
+  }
+  async function resolveDestination(q) {
+    return parseCoords(q) || (await geocode(q));
+  }
+  // Expose for the journey drawer's custom-origin prompt.
+  window.__resolveDest = resolveDestination;
+}
+
+function highlightResource(panel, rid) {
+  panel.querySelectorAll(".panel-row").forEach(r => r.classList.toggle("active", r.dataset.rid === rid));
+  const row = panel.querySelector(`.panel-row[data-rid="${rid}"]`);
+  if (row) row.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Journey origin — where the routed journey starts from.
+//   "current": the saved USER_LOC (e.g. saved home / office)
+//   "live":    navigator.geolocation (browser asks permission)
+//   "custom":  set by drag/address — stored in _customOrigin
+// ═══════════════════════════════════════════════════════════════════════════
+let _originMode = "current"; // "current" | "live" | "custom"
+let _customOrigin = null;    // { lat, lng, label } when _originMode === "custom"
+let _liveOrigin = null;      // populated from geolocation
+
+function getOrigin() {
+  if (_originMode === "live" && _liveOrigin) return _liveOrigin;
+  if (_originMode === "custom" && _customOrigin) return _customOrigin;
+  return { ...USER_LOC, label: "current location" };
+}
+async function setLiveOrigin() {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) { _originMode = "current"; resolve(null); return; }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        _liveOrigin = { lat: pos.coords.latitude, lng: pos.coords.longitude, label: "live location" };
+        resolve(_liveOrigin);
+      },
+      () => { _originMode = "current"; resolve(null); },
+      { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
+    );
+  });
+}
+
+// Draw a journey: chain of stops with one continuous OSRM route through all.
+async function drawJourneyOnMap(map, stops, panel) {
+  // Origin point first (depending on selected origin mode).
+  const origin = getOrigin();
+  // Origin marker (gold pulsing) at the start.
+  new maplibregl.Marker({ element: h("div", { class: "user-marker", title: origin.label }), anchor: "center" })
+    .setLngLat([origin.lng, origin.lat]).addTo(map);
+
+  // Numbered stop markers in order.
+  for (let i = 0; i < stops.length; i++) {
+    const s = stops[i];
+    const el = h("div", { style: {
+        width: "32px", height: "32px", borderRadius: "50%",
+        background: PALETTE.hues.skills, border: `2px solid ${PALETTE.chrome.text}`,
+        display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center",
+        cursor: "pointer", color: "white", fontWeight: 700,
+        boxShadow: "0 2px 6px rgba(0,0,0,0.5)",
+      },
+      onClick: (e) => { e.stopPropagation(); highlightResource(panel, s.id);
+                        map.flyTo({ center: [s.lng, s.lat], zoom: 15, duration: 500 }); } },
+      h("div", { style: { fontSize: "9px", lineHeight: 1 } }, i + 1),
+      h("div", { style: { fontSize: "11px", lineHeight: 1, marginTop: "1px" } }, s.emoji),
+    );
+    new maplibregl.Marker({ element: el, anchor: "center" })
+      .setLngLat([s.lng, s.lat]).addTo(map);
+  }
+
+  // One OSRM call through every waypoint.
+  const points = [origin, ...stops];
+  const coords = points.map(p => `${p.lng},${p.lat}`).join(";");
+  const url = `https://router.project-osrm.org/route/v1/foot/${coords}?overview=full&geometries=geojson`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`OSRM ${res.status}`);
+    const data = await res.json();
+    const route = data?.routes?.[0];
+    if (!route) return;
+    const trySet = () => {
+      const src = map.getSource("route");
+      if (!src) { setTimeout(trySet, 50); return; }
+      src.setData({ type: "FeatureCollection", features: [{ type: "Feature", geometry: route.geometry, properties: {} }] });
+      const xs = route.geometry.coordinates;
+      const bounds = xs.reduce((b, c) => b.extend(c), new maplibregl.LngLatBounds(xs[0], xs[0]));
+      map.fitBounds(bounds, { padding: { top: 60, right: 280, bottom: 60, left: 60 }, duration: 700, maxZoom: 15 });
+    };
+    trySet();
+    // Annotate the panel header with totals.
+    const km = route.distance / 1000, min = Math.round(route.duration / 60);
+    const head = panel.querySelector(".panel-head");
+    if (head) mount(head,
+      `journey · ${stops.length} stops · `,
+      h("span", { style: { color: PALETTE.hues.plan } }, `${km.toFixed(1)} km · ${min} min walking`));
+  } catch (e) {
+    console.warn("journey routing failed:", e);
+  }
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CELL ABSTRACTION — pure spec + one renderer for every kind of cell.
+//
+//   Cell = { tab: {color, label}, zones: Zone[], border: {color}, tooltip, onClick? }
+//   Zone = { value, color, primary?, secondary?, textColor? }   (zones rendered bottom-up)
+//
+// Every leaf and branch in the tree maps to a Cell via nodeToCell(d, …).
+// drawCell renders any Cell at given geometry. renderHierarchy walks a d3
+// layout calling nodeToCell + drawCell — no other rendering logic anywhere.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ── Pick the largest font size that fits `label` in width `w` (with padding).
+// `sizes` is sorted largest→smallest. Returns { size, label } or null.
+function fitText(labels, w, sizes = [22,19,17,15,13,11,9,8,7], pad = 10, ratio = 0.58) {
+  for (const s of sizes)
+    for (const lbl of labels)
+      if (lbl.length * s * ratio < w - pad) return { size: s, label: lbl };
+  return { size: 7, label: labels[labels.length - 1] };
+}
+
+// ── The one cell renderer.  Takes pure data, makes SVG. ──
+// ── Cell drawing primitives ─────────────────────────────────────────────
+// Each primitive takes a d3 selection + a rect + a config. drawCell is just
+// composition. To make a new cell variant, compose differently.
+
+// Near-black tab background with a 3px coloured left-edge stripe. Shared
+// by every tab on the surface: cells, the breadcrumb header, anywhere we
+// want the "tab" visual identity.
+function drawTabBackground(g, rect, color) {
+  g.append("rect").attr("x",rect.x).attr("y",rect.y).attr("width",rect.w).attr("height",rect.h)
+    .attr("fill", d3.color(color).darker(2.4).formatHex());
+  g.append("rect").attr("x",rect.x).attr("y",rect.y).attr("width",3).attr("height",rect.h)
+    .attr("fill", color);
+}
+
+function drawTab(g, rect, tab) {
+  drawTabBackground(g, rect, tab.color);
+  const sizes = [17,16,15,14,13,12,11,10,9,8,7].filter(s => s < rect.h - 4);
+  const fit = fitText(
+    [tab.label, tab.shortLabel].filter(Boolean),
+    rect.w,
+    sizes.length ? sizes : [Math.max(7, rect.h - 4)],
+  );
+  if (rect.w > 30) {
+    g.append("text").attr("x", rect.x + rect.w/2).attr("y", rect.y + rect.h/2 + fit.size*0.36)
+      .attr("text-anchor","middle").attr("fill","white").attr("font-weight","700")
+      .attr("font-size", fit.size + "px").text(fit.label);
+  }
+}
+
+function drawZones(g, rect, zones) {
+  const { x, y, w, h } = rect;
+  if (h < 2 || !zones?.length) return;
+  const totalVal = zones.reduce((s, z) => s + z.value, 0);
+  if (totalVal <= 0) return;
+  const cx = x + w/2;
+  let cy = y + h;
+  for (const z of zones) {
+    const zH = (z.value / totalVal) * h;
+    cy -= zH;
+    const rect = (yy, hh, fill) => hh > 0 &&
+      g.append("rect").attr("x",x).attr("y",yy).attr("width",w).attr("height",hh).attr("fill",fill);
+    if (zH > 0) {
+      // Optional within-band two-tone: realized (solid) below, unmet cap above.
+      const unmetH = z.unmetValue > 0 && z.value > 0 ? (z.unmetValue / z.value) * zH : 0;
+      if (unmetH > 0) {
+        rect(cy, unmetH, z.unmetColor);                 // unmet cap (top)
+        rect(cy + unmetH, zH - unmetH, z.color);        // realized (bottom)
+        if (unmetH > 0.5 && zH - unmetH > 0.5)          // faint done/left divider
+          g.append("line").attr("x1",x).attr("y1",cy+unmetH).attr("x2",x+w).attr("y2",cy+unmetH)
+            .attr("stroke","rgba(255,255,255,0.18)").attr("stroke-width",0.5);
+      } else {
+        rect(cy, zH, z.color);
+      }
+    }
+    if (cy > y + 1 && cy < y + h - 1)
+      g.append("line").attr("x1",x).attr("y1",cy).attr("x2",x+w).attr("y2",cy)
+        .attr("stroke","rgba(0,0,0,0.5)").attr("stroke-width",1);
+    drawZoneLabel(g, { cx, cy, zH, w }, z);
+  }
+}
+
+// "Playtime" uses the shared rainbow spectrum (same as the Playnet title).
+const RAINBOW = SPECTRUM;
+
+function drawZoneLabel(g, { cx, cy, zH, w }, z) {
+  if (zH <= 14 || w <= 32 || !(z.primary || z.secondary)) return;
+  const dark = z.textColor === "dark";
+  const fc   = dark ? PALETTE.hues.ink : "white";
+  const dim  = dark ? PALETTE.hues.faint : "rgba(255,255,255,0.65)";
+  // Primary font tier: scale with the zone — small cells stay 9/11, mid cells
+  // get 14, very large cells scale up to 28 so headlines actually feel like
+  // headlines.
+  const ps = w > 160 && zH > 120 ? 28
+           : w > 120 && zH > 90  ? 22
+           : w > 80  && zH > 60  ? 16
+           : zH > 30             ? 11
+           : 9;
+
+  const plain = (yOff, fill, size, str, weight = "700") =>
+    g.append("text").attr("x", cx).attr("y", cy + zH/2 + yOff).attr("text-anchor","middle")
+     .attr("fill", fill).attr("font-size", size).attr("font-weight", weight).text(str);
+
+  // Rainbow primary — render each character as a coloured tspan. Filter the
+  // spectrum so no letter ends up the same colour as its zone background
+  // (the "Playtime" on the cyan free-time cell would otherwise lose its `m`).
+  const rainbow = (yOff, size, str, weight = "800") => {
+    const palette = RAINBOW.filter(c => c.toLowerCase() !== (z.color || "").toLowerCase());
+    const t = g.append("text").attr("x", cx).attr("y", cy + zH/2 + yOff).attr("text-anchor","middle")
+      .attr("font-size", size).attr("font-weight", weight);
+    for (let i = 0; i < str.length; i++)
+      t.append("tspan").attr("fill", palette[i % palette.length]).text(str[i]);
+  };
+
+  const primary = (yOff, fill, size) => z.primaryRich === "rainbow"
+    ? rainbow(yOff, (size === "8px" ? 10 : (parseInt(size) + 2)) + "px", z.primary)
+    : plain(yOff, fill, size, z.primary || "");
+
+  // Shrink a label so it fits the cell width (avoids "maintenance" spilling
+  // past a narrow cell's edge). Floors at 7px; never enlarges past `base`.
+  const fitSize = (str, base) =>
+    Math.max(7, Math.min(base, Math.floor((w - 8) / Math.max(1, str.length * 0.56))));
+
+  if (zH > 28 && w > 50 && z.secondary) {
+    // Primary headline above; secondary caption below at the same scale so
+    // both read as body text (the caption is still distinguished by weight
+    // and the dim fill). Both are width-fitted so long captions don't overflow.
+    const ss = fitSize(z.secondary, Math.max(10, ps - 4));
+    primary(-Math.round(ss/2), fc, fitSize(z.primary || "", ps) + "px");
+    plain(Math.round(ps/2) + 4, dim, ss + "px", z.secondary, "400");
+  } else if (z.primary) {
+    primary(4, fc, fitSize(z.primary, ps) + "px");
+  }
+}
+
+function drawBorder(g, rect, border) {
+  if (!border?.color) return;
+  g.append("rect").attr("x",rect.x).attr("y",rect.y).attr("width",rect.w).attr("height",rect.h)
+    .attr("fill","none").attr("stroke","rgba(0,0,0,0.45)").attr("stroke-width", 0.75);
+}
+
+function attachInteraction(g, { tooltip, onClick }) {
+  if (tooltip) g.append("title").text(tooltip);
+  if (onClick) g.on("click", (e) => { e.stopPropagation(); onClick(); });
+}
+
+// ── drawCell — pure composition over the primitives ────────────────────
+function drawCell(parent, x, y, w, h, cell) {
+  if (w < 1 || h < 1) return;
+  const hdrH = Math.min(22, h);
+  if (hdrH < 8) return;
+  const g = parent.append("g").attr("class", cell.onClick ? "scope-cell" : "");
+  drawTab   (g, { x, y, w, h: hdrH }, cell.tab);
+  if (h >= hdrH + 4)
+    drawZones (g, { x, y: y + hdrH, w, h: h - hdrH }, cell.zones);
+  drawBorder(g, { x, y, w, h }, cell.border);
+  attachInteraction(g, cell);
+}
+
+// ── Cell renderers — one per node kind, dispatched via CELL_RENDERERS ───
+// Each returns a Cell spec: { tab, zones, border, tooltip, onClick }.
+// Adding a new kind = add a key to kindOf() + a function below.
+
+const stemOf = (name) => name.split("·")[0].trim();
+const nameOnResource = (d) => d._resources ? "\n— click to see resources near you —" : "";
+
+// ── The two view lenses, resolved from the global VIEW ──────────────────
+// scope=individual divides every hour figure by POP (your per-capita share);
+// measure=priority swaps the labour-hour reading for the desire-satisfaction
+// reading. Renderers consult these instead of branching on raw indices.
+const isInd    = (view) => view.scope === 1;
+const isPrio   = (view) => view.measure === 1;
+const isDetail = (view) => view.detail === 1;
+const lensNum = (h, view) => isInd(view) ? (h / POP).toFixed(1) : fmt(h);
+const lensUnit = (view) => isInd(view) ? "h/you" : "h";
+const lensH = (h, view) => `${lensNum(h, view)} ${lensUnit(view)}`;
+
+function scopeCell(d, ancestors, view) {
+  const prio = isPrio(view);
+  const hasKids = !!d.children;
+  const base = d._isAdmin ? PALETTE.hues.admin : d._isReserve ? PALETTE.hues.reserve : PALETTE.hues.production;
+  const hrs  = lensH(repro(d).total, view);
+  const onClick = hasKids ? () => APP.navigate({ surface: "tree", node: d, ancestors }) : null;
+
+  // Regular scope, time lens → the *same* intent fill as a leaf, but folded over
+  // its whole subtree: the surface is self-similar, every zoom level reads the
+  // maintenance/production/insurance mix. (Bespoke cells — free time, federation —
+  // keep their own `_zones` recipe; the priority lens still reads Φ.)
+  if (!prio && typeof d._zones !== "function") {
+    const r = repro(d), pct = Math.round(r.realized / r.total * 100);
+    return {
+      tab: { color: base, label: `${d.name} · ${hrs}`, shortLabel: `${d.name} · ${hrs}` },
+      zones: fillZones(d, base, view),
+      border: { color: base },
+      tooltip: `${d.name}\n${hrs} required · ${pct}% performed`
+        + (isDetail(view) ? `\n${intentMix(d)}` : "")
+        + (hasKids ? "\nclick to zoom in" : ""),
+      onClick,
+    };
+  }
+
+  // Bespoke two-zone recipe: a node's own `_zones(pct)` (free time, federation),
+  // or the Φ reading under the priority lens.
+  const fillVal = prio ? (d._priority ?? d._progress ?? 0) : (d._progress || 0);
+  const pct = Math.round(fillVal * 100);
+  const recipe = (!prio && typeof d._zones === "function")
+    ? d._zones(pct)
+    : {
+        dark:  d._isAdmin ? PALETTE.hues.admin : d._isReserve ? PALETTE.hues.reserve : PALETTE.hues.labour,
+        light: PALETTE.lighten(d._isAdmin ? PALETTE.hues.admin : d._isReserve ? PALETTE.hues.reserve : PALETTE.hues.labour, 0.7),
+        tab:   d._isAdmin ? PALETTE.hues.admin : d._isReserve ? PALETTE.hues.reserve : PALETTE.hues.labour,
+        sat:   { primary: `Φ ${pct}%`, secondary: "desire met" },
+        gap:   { primary: `${100 - pct}%`, secondary: "unmet desire" },
+        tooltip: (v) => `${d.name}\n${v} · Φ ${pct}% desire satisfaction · ${100 - pct}% unmet${hasKids ? "\nclick to zoom in" : ""}`,
+      };
+
+  return {
+    tab: { color: recipe.tab, label: `${d.name} · ${hrs}`, shortLabel: `${d.name} · ${hrs}` },
+    zones: [
+      { value: fillVal,     color: recipe.dark,  ...recipe.sat },
+      { value: 1 - fillVal, color: recipe.light, textColor: "dark", ...recipe.gap },
+    ],
+    border: { color: recipe.tab },
+    tooltip: recipe.tooltip(hrs),
+    onClick,
+  };
+}
+
+// Realized reproduction labour splits by intent into the three deductions:
+// *maintenance* (holds the target steady — simple reproduction), *production*
+// (builds it toward a rising target — expanded reproduction), and *insurance*
+// (the reserve margin held against accidents and calamities).
+// `MAINT_BY_COLOR` / `INS_BY_COLOR` give per-category shares of realized labour;
+// production is the remainder. A node may override with `_maint` / `_ins`.
+// Individual-claimable goods (no `_catColor`) default to mostly-production:
+// a claimed consumable is produced fresh and consumed, not a standing stock
+// held and maintained — so the labour reads as production, not upkeep.
+const MAINT_BY_COLOR = {
+  [PALETTE.hues.commons]:    0.78,  // communal goods: mostly continual re-making
+  [PALETTE.hues.means]:      0.82,  // means of production: depreciation/repair
+  [PALETTE.hues.skills]:     0.62,  // skills: recert + replacing leavers
+  [PALETTE.hues.admin]:      0.80,
+  [PALETTE.hues.production]: 0.72,
+};
+const INS_BY_COLOR = {
+  [PALETTE.hues.commons]:    0.10,  // reserve of product (buffered goods)
+  [PALETTE.hues.means]:      0.12,  // spare-parts / stand-by capacity
+  [PALETTE.hues.skills]:     0.15,  // redundant practitioners (living reserve)
+  [PALETTE.hues.admin]:      0.08,
+  [PALETTE.hues.production]: 0.08,
+};
+const maintShareOf = (d, cc) => d._maint ?? MAINT_BY_COLOR[cc] ?? (d._ind ? 0.18 : 0.7);
+const insShareOf   = (d, cc) => d._ins   ?? INS_BY_COLOR[cc]   ?? 0.08;
+
+// The reproduction-labour decomposition is one data table — the three
+// deductions, each a fold key, a caption, and an intent-lightness (darkest =
+// maintenance). Every renderer maps over this; a fourth deduction is one row.
+const INTENTS = [
+  { key: "maint", label: "maintenance", L: 0.30 },
+  { key: "prod",  label: "production",  L: 0.47 },
+  { key: "ins",   label: "insurance",   L: 0.64 },
+];
+
+// Tree fold (catamorphism): the reproduction-labour decomposition of ANY node.
+// A leaf computes its split from required hours, completion, and intent shares;
+// a branch is just the per-component sum of its children — so the same
+// maintenance/production/insurance mix, and the same realized/required ratio,
+// is an emergent property at every level of the tree. Memoised (tree is static).
+function repro(node) {
+  if (node._repro) return node._repro;
+  let r;
+  if (node.children?.length) {
+    r = { total: 0, realized: 0, maint: 0, prod: 0, ins: 0 };
+    for (const ch of node.children) { const c = repro(ch); for (const k in r) r[k] += c[k]; }
+  } else {
+    const p = node.value || 0;
+    const sat = node._sat ?? (node._planned ? node._validated / node._planned : node._progress ?? 0);
+    const maint = p * maintShareOf(node, node._catColor);
+    const ins   = Math.min(p * insShareOf(node, node._catColor), Math.max(0, p - maint));
+    r = { total: p, realized: p * sat, maint, ins, prod: p - maint - ins };
+  }
+  return (node._repro = r);
+}
+
+// The intent fill of ANY node, from its fold — the self-similar surface element
+// shared by leaves and scopes. One band per intent (maintenance base → reserve
+// top): solid realized below, a lighter desaturated cap of the *same* tone above
+// for the labour still to come. *Lightness* names the intent, *saturation* the
+// state, off the given base hue `cc`.
+function intentZones(node, cc, view) {
+  const r = repro(node), p = r.total || 1;
+  const left = 1 - r.realized / p;
+  const tone = (L, unmet) => {
+    const c = d3.hsl(cc);
+    if (unmet) { c.l = Math.min(0.9, L + 0.20); c.s *= 0.45; } else c.l = L;
+    return c.formatHex();
+  };
+  return INTENTS.map(it => ({
+    value: r[it.key], unmetValue: r[it.key] * left,
+    color: tone(it.L, false), unmetColor: tone(it.L, true),
+    primary: lensH(r[it.key], view), secondary: it.label,
+    ...((it.L > 0.58 || left > 0.55) && { textColor: "dark" }),
+  }));
+}
+
+// Intent mix as a one-line caption (e.g. "maintenance 71% · production 19% …").
+const intentMix = (node) => {
+  const r = repro(node);
+  return INTENTS.map(it => `${it.label} ${Math.round(r[it.key] / r.total * 100)}%`).join(" · ");
+};
+
+// The simple lens: one progress bar from the same fold — realized labour (solid)
+// below the labour still to come (light). The calm summary the `detailed` toggle
+// expands into the intent bands. Same data, less of it at once.
+function progressZones(node, cc, view) {
+  const r = repro(node), p = r.total || 1, done = r.realized, pct = Math.round(done / p * 100);
+  return [
+    { value: done,     color: cc,                       primary: lensH(done, view),     secondary: `${pct}% worked` },
+    { value: p - done, color: PALETTE.lighten(cc, 0.6), primary: lensH(p - done, view), secondary: `${100 - pct}% unmet`, textColor: "dark" },
+  ];
+}
+
+// Either lens for any node: the intent breakdown (detailed) or one bar (simple).
+const fillZones = (node, cc, view) =>
+  isDetail(view) ? intentZones(node, cc, view) : progressZones(node, cc, view);
+
+// ── The one leaf renderer. Every leaf is reproduction labour toward a target. ─
+// Cell height = the total labour *required* to reach the reproduction target
+// this period. It splits by intent into three structural bands — *maintenance*
+// (holds the target steady — simple reproduction), *production* (builds it
+// toward a higher one — expanded reproduction), and *insurance* (the reserve
+// margin). Each band is sized by its share of the required
+// total; within it, the labour already performed is solid and the labour still
+// to come is a lighter, unlabelled cap. Realized labour fills by priority —
+// maintenance first, then production, the reserve last (it fills from slack).
+function leafCell(d, ancestors, view) {
+  if (isPrio(view)) return priorityCell(d, view);
+  const r = repro(d), p = r.total;
+  const cc   = d._catColor || (d._ind ? PALETTE.hues.production : PALETTE.hues.faint);
+  const target = (d.name.split("·")[1] || "").trim();
+  const hrs    = lensH(p, view);
+  const named  = target ? `${stemOf(d.name)} · ${target}` : stemOf(d.name);
+  return {
+    tab: {
+      color: cc,
+      label:      `${named} · ${hrs}`,
+      shortLabel: target ? named : `${stemOf(d.name)} · ${hrs}`,
+    },
+    zones: fillZones(d, cc, view),
+    border: { color: cc },
+    tooltip: `${d.name}${target ? `\ntarget ${target}` : ""}\n${hrs} required this period · ${Math.round(r.realized / p * 100)}% performed\n`
+      + INTENTS.map(it => `${it.label} ${lensH(r[it.key], view)} (${Math.round(r[it.key] / p * 100)}%)`).join("\n")
+      + nameOnResource(d),
+    onClick: d._resources ? () => APP.navigate({ surface: "map", leaf: d, ancestors }) : null,
+  };
+}
+
+function containerCell(d, ancestors, view) {
+  const r = repro(d), color = d._color || colorOf(d);
+  // Total always comes from the fold — never a hardcoded `_label` number, so it
+  // can't drift. Keep any descriptive prefix in `_label`, strip its stale total.
+  const prefix = (d._label || d.name).replace(/\s*[—·]\s*[\d,\s]+\s*h\s*$/, "").trim();
+  const fullLabel = `${prefix} — ${lensH(r.total, view)}`;
+  // The fold also gives the container its own intent mix for free — surfaced in
+  // the tooltip (its children tile the area, so the tab can't carry a fill).
+  return {
+    tab: { color, label: fullLabel, shortLabel: `${prefix} · ${lensH(r.total, view)}` },
+    zones: null,
+    border: { color, width: 1.5 },
+    tooltip: `${fullLabel}\n${intentMix(d)}\nclick to zoom in`,
+    onClick: () => APP.navigate({ surface: "tree", node: d, ancestors }),
+  };
+}
+
+// Priority lens for MoC leaves (ind + communal sat): the cell reads as desire
+// weight Φ instead of labour-hours. desire weight scales per-capita too.
+function priorityCell(d, view) {
+  const desW   = d._desireW || 0;
+  const sat    = d._desireSat;
+  const isCom  = d._catColor === PALETTE.hues.commons;
+  const cc     = isCom ? PALETTE.hues.commons : PALETTE.labourLight;
+  const cl     = PALETTE.lighten(cc, 0.7);
+  const tabColor = isCom ? PALETTE.hues.commons : PALETTE.hues.labour;
+  const w = (x) => lensH(x, view);
+  const tab    = { color: tabColor,
+                   label: `${stemOf(d.name)} · ${w(desW)} priority`,
+                   shortLabel: `${stemOf(d.name)} ${lensNum(desW, view)}` };
+  if (sat == null) {
+    return {
+      tab, border: { color: tabColor },
+      zones: [{ value: 1, color: cl, primary: w(desW), secondary: "social allocation", textColor: "dark" }],
+      tooltip: `${d.name}\n${w(desW)} priority weight\nsocial allocation`,
+    };
+  }
+  return {
+    tab, border: { color: tabColor },
+    zones: [
+      { value: sat,     color: cc, primary: w(desW*sat),     secondary: `${Math.round(sat*100)}% filled` },
+      { value: 1 - sat, color: cl, primary: w(desW*(1-sat)), secondary: "gap", textColor: "dark" },
+    ],
+    tooltip: `${d.name}\n${w(desW)} priority weight\n${Math.round(sat*100)}% delivered`,
+  };
+}
+
+const CELL_RENDERERS = { scope: scopeCell, ind: leafCell, sat: leafCell, container: containerCell };
+const nodeToCell = (d, ancestors, view) => {
+  const r = CELL_RENDERERS[kindOf(d)];
+  return r ? r(d, ancestors, view) : null;
+};
+
+// Walk the laid-out d3 hierarchy, drawing every descendant. Scope nodes are
+// treated as leaves by the layout's children accessor (see zoomTo), so we
+// don't need to short-circuit recursion ourselves — .descendants() naturally
+// stops there.
+function renderHierarchy(svg, root, ancestors, view) {
+  for (const h of root.descendants().slice(1)) {
+    const cell = nodeToCell(h.data, ancestors, view);
+    if (cell) drawCell(svg, h.x0, h.y0, h.x1 - h.x0, h.y1 - h.y0, cell);
+  }
+}
+
+// ── Pill-shaped toggle widget (N modes, click cycles to the next). ──
+// `tg` is a toggle spec { modes:[...], colors:[...] }; `active` is 0..N-1.
+// Two modes → a flip; three+ → a segmented cycle. The slider sits under the
+// active segment and each label lights when current.
+function drawToggle(parent, x, y, w, h, tg, active, onChange) {
+  const n = tg.modes.length, seg = w / n;
+  const g = parent.append("g").style("cursor","pointer");
+  g.append("rect").attr("x",x).attr("y",y).attr("width",w).attr("height",h).attr("fill","rgba(0,0,0,0.3)").attr("rx",h/2);
+  g.append("rect").attr("x", x + seg * active).attr("y",y).attr("width",seg).attr("height",h)
+    .attr("fill", tg.colors[active]).attr("rx", h/2);
+  tg.modes.forEach((m, i) => {
+    g.append("text").attr("x", x + seg * i + seg/2).attr("y", y + h*0.7)
+      .attr("text-anchor","middle").attr("fill", i === active ? "white" : "rgba(255,255,255,0.5)")
+      .attr("font-size", n > 2 ? "8px" : "9px").attr("font-weight", i === active ? "bold" : "normal").text(m);
+  });
+  const next = (active + 1) % n;
+  g.append("title").text(`switch to ${tg.modes[next]}`);
+  g.on("click", (e) => { e.stopPropagation(); onChange(next); });
+}
+
+// ── Breadcrumb header text, rendered as one continuous trail. ──
+// The path (rainbow logo or "← a / b / c") and the total caption live in the
+// SAME <text> element via tspans, so the total always follows the trail with
+// no width measurement needed — it just flows after the last crumb.
+function appendTitleText(textSel, ancestors, node, total, view) {
+  // 1. The path.
+  if (ancestors.length === 0 && node._titleRender === "rainbow") {
+    const label = (node._label || node.name).split("·")[0].trim();
+    [...label].forEach((ch, i) =>
+      textSel.append("tspan").attr("fill", SPECTRUM[i % SPECTRUM.length])
+        .attr("font-weight","bold").text(ch));
+  } else {
+    const crumbs = ancestors.map(a => a.name).concat(node.name);
+    textSel.append("tspan").attr("fill","white").attr("font-weight","bold")
+      .text("← " + crumbs.join(" / "));
+  }
+  // 2. The total caption, flowing right after the path (dimmer, lighter weight).
+  const cap = node._totalCaption || "";
+  const caption = cap ? `${cap} · ${lensH(total, view)}` : lensH(total, view);
+  textSel.append("tspan").attr("fill","rgba(255,255,255,0.8)").attr("font-weight","500")
+    .attr("dx", 6).text(`· ${caption}`);
+}
+
+// ── Header = breadcrumb tab at the top of the view (root cell). ──
+// The two view toggles always live here, on the focused tab — that is the
+// entire placement rule. Both lenses (scope, measure) apply at every level.
+function drawHeader(svg, root, node, ancestors, color, total, view) {
+  const rect = { x: root.x0, y: root.y0, w: root.x1 - root.x0, h: 22 };
+  const hdrG = svg.append("g").style("cursor", ancestors.length ? "pointer" : "default");
+  drawTabBackground(hdrG, rect, color);
+
+  // One text element: path + total caption flow as one trail (no measurement).
+  const titleEl = hdrG.append("text").attr("x", rect.x + 8).attr("y", rect.y + 15)
+    .attr("font-size","12px");
+  appendTitleText(titleEl, ancestors, node, total, view);
+
+  // Toggles, laid out right-to-left on the focus tab. The axis lens is added
+  // only at an axis-root (the federation), where row/column duals both exist.
+  const tgs = node._axisRoot ? [...TOGGLES, AXIS_TOGGLE] : TOGGLES;
+  const PW = 104, PGAP = 6;
+  tgs.forEach((tg, i) => {
+    const x = root.x1 - 8 - (tgs.length - i) * PW - (tgs.length - 1 - i) * PGAP;
+    drawToggle(svg, x, rect.y + 3, PW, 16, tg, view[tg.key], (next) => {
+      VIEW[tg.key] = next;
+      APP.navigate({ surface: "tree", node, ancestors });
+    });
+  });
+
+  if (ancestors.length) {
+    hdrG.append("title").text("click to go back");
+    hdrG.on("click", () =>
+      APP.navigate({ surface: "tree", node: ancestors.at(-1), ancestors: ancestors.slice(0, -1) }));
+  }
+}
+
+// ── Pure surface renderer — reads APP.state, draws the tree view. ───────
+// Called by the surface view's mount(); never call directly, always go
+// through APP.navigate({ surface: "tree", node, ancestors }).
+function renderTreeSurface() {
+  const { node, ancestors } = APP.state;
+  if (_mapInstance) { try { _mapInstance.remove(); } catch(e){} _mapInstance = null; }
+  surfaceDiv.innerHTML = "";
+
+  if (!node.children) return;
+
+  // Measure container for pixel-perfect rendering
+  const rect = surfaceDiv.getBoundingClientRect();
+  W = Math.round(rect.width);
+  H = Math.round(rect.height);
+  if (W < 100 || H < 100) { W = 928; H = 750; }
+
+  const color = node._color || colorOf(node) || PALETTE.hues.means;
+  const total = sumTree(node);
+
+  // The two lenses are global and always live on the focused tab — no owner
+  // lookup, no ancestor walk. `view` is just the current VIEW snapshot.
+  const view = VIEW;
+
+  // One spacing constant. Every black gap on the surface is GAP px. Layout
+  // is inset by GAP from all four sides; paddingTop reserves room for the
+  // breadcrumb header. Scope nodes act as leaves (custom children accessor).
+  const GAP = 8;
+  const root = layoutTreemap(
+    { name: node.name, children: childrenFor(node) },
+    [W - 2*GAP, H - 2*GAP],
+    {
+      // Scopes act as leaves; otherwise descend via childrenFor so an
+      // axis-root swaps its column/row dual under the active axis lens.
+      children: (n) => kindOf(n) === "scope" ? null : childrenFor(n),
+      padding:  { outer: 0, top: 22 + GAP, inner: GAP },
+      round:    false,
+    },
+  );
+
+  const svg = d3.create("svg")
+    .attr("viewBox", [0,0,W,H])
+    .attr("style","font:10px sans-serif;opacity:0;");
+  const defs = svg.append("defs");
+  // All drawing lives inside this translated group → uniform GAP margin around everything.
+  const root_g = svg.append("g").attr("transform", `translate(${GAP},${GAP})`);
+
+  drawHeader(root_g, root, node, ancestors, color, total, view);
+
+  // ── Render every node uniformly: nodeToCell + drawCell ──
+  renderHierarchy(root_g, root, [...ancestors, node], view);
+
+  surfaceDiv.appendChild(svg.node());
+  requestAnimationFrame(() => svg.attr("style","font:10px sans-serif;opacity:1;transition:opacity 0.3s ease;"));
+}
+// Re-render on resize for pixel-perfect SVG — just re-mount the whole app.
+let _resizeTimer;
+window.addEventListener("resize", () => {
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(() => APP.render(), 200);
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SIDEBAR — 5 equal-flex treemap panels
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ── Shared treemap-layout primitive ─────────────────────────────────────
+// Both the main surface and every sidebar panel are treemaps. They differ
+// only in the cell renderer and the layout knobs. This is the one place
+// that calls d3.treemap.
+//
+//   data          — { name, children: [...] } (children may contain children)
+//   size          — [w, h] in viewBox pixels
+//   opts.children — custom accessor (e.g. treat scopes as leaves)
+//   opts.padding  — { outer=0, top=0, inner=1 }
+//   opts.sum      — leaf-value extractor (default: d.value)
+//   opts.round    — round to whole pixels (default true)
+//
+// Returns the d3 hierarchy root with `.x0/.y0/.x1/.y1` filled in. Iterate
+// `.descendants().slice(1)` to draw children, or `.leaves()` for flat
+// panels.
+function layoutTreemap(data, [w, h], opts = {}) {
+  const { children, padding = {}, sum = (d) => d.value || 0, round = true } = opts;
+  const tm = d3.treemap().size([w, h])
+    .paddingOuter(padding.outer ?? 0)
+    .paddingTop  (padding.top   ?? padding.outer ?? 0)
+    .paddingInner(padding.inner ?? 1)
+    .round(round);
+  return tm(
+    d3.hierarchy(data, children).sum(sum).sort((a, b) => b.value - a.value)
+  );
+}
+
+// Pull a viewBox from a container after the label has been laid out. Used
+// by every sidebar panel so they all share the same measure logic.
+function measurePanelBox(div, lbl) {
+  const rect = div.getBoundingClientRect();
+  const lblH = lbl.getBoundingClientRect().height + 4;
+  return {
+    w: Math.max(40, Math.round(rect.width)),
+    h: Math.max(40, Math.round(rect.height - lblH)),
+  };
+}
+
+// Standard panel scaffold: clear, label, then run `draw(svg, w, h)` on the
+// next frame with the measured box. Returns nothing.
+function withPanel(containerId, label, draw) {
+  const div = document.getElementById(containerId);
+  div.innerHTML = "";
+  const lbl = document.createElement("div");
+  lbl.className = "bar-label";
+  lbl.innerHTML = label;
+  div.appendChild(lbl);
+  requestAnimationFrame(() => {
+    const { w, h } = measurePanelBox(div, lbl);
+    const svg = d3.create("svg").attr("viewBox", [0, 0, w, h])
+      .attr("preserveAspectRatio","none")
+      .attr("style", `width:100%;height:${h}px;display:block;`);
+    draw(svg, w, h);
+    div.appendChild(svg.node());
+  });
+}
+
+// Generic treemap panel: lays out segments and draws one rect each.
+function renderPanel(containerId, label, segments) {
+  withPanel(containerId, label, (svg, w, h) => {
+    const root = layoutTreemap(
+      { name: "root", children: segments.map(s => ({ name: s.label, value: s.value, _color: s.color })) },
+      [w, h],
+      { padding: { inner: 1 }, round: true },
+    );
+    for (const leaf of root.leaves()) {
+      const d = leaf.data, x = leaf.x0, y = leaf.y0, lw = leaf.x1 - leaf.x0, lh = leaf.y1 - leaf.y0;
+      svg.append("rect").attr("x",x).attr("y",y).attr("width",lw).attr("height",lh)
+        .attr("fill", d._color).attr("rx", 1);
+      svg.append("title").text(`${d.name}: ${d.value.toFixed(1)}`);
+      if (lw * lh > 400 && Math.min(lw, lh) > 18) {
+        const mind = Math.min(lw, lh);
+        svg.append("text").attr("x", x + lw/2).attr("y", y + lh/2 + 3)
+          .attr("text-anchor","middle").attr("fill","white").attr("font-weight","bold")
+          .attr("font-size", mind > 50 ? "11px" : mind > 30 ? "9px" : "7px").text(d.name);
+      }
+    }
+  });
+}
+
+// ── Subscript digits for voice labels ───────────────────────────────────
+const SUB = ["", "₁","₂","₃","₄","₅","₆","₇","₈","₉","₁₀","₁₁","₁₂"];
+const voiceRow = (pcts, suffix) => pcts.map((v, i) => ({
+  label: `p${SUB[i + 1]} ${v}${suffix}`, value: v, color: PALETTE.voice[i],
+}));
+
+// ── Federation-level panels ────────────────────────────────────────────
+const fedFreeTime = () => [
+  { label: `labour l = ${FREE_TIME.labour}%`, value: FREE_TIME.labour, color: PALETTE.hues.labour },
+  { label: `free f = ${FREE_TIME.free}%`,     value: FREE_TIME.free,   color: PALETTE.hues.free   },
+];
+// Federation social desire satisfaction M̄ — labour-weighted mean of activity
+// _M, weighted by each activity's folded hours (sumTree, never a stale value).
+function computeSocialDesireSat() {
+  let num = 0, den = 0;
+  for (const s of (FED._colChildren || [])) {
+    if (typeof s._M === "number") { const v = sumTree(s); num += s._M * v; den += v; }
+  }
+  return den > 0 ? num / den : 0;
+}
+const fedDesireSat = () => {
+  const m = computeSocialDesireSat();
+  const sat = Math.round(m * 100), unmet = 100 - sat;
+  return [
+    { label: `unmet ${unmet}%`,        value: unmet, color: PALETTE.hues.refuse },
+    { label: `satisfied M̄ = ${sat}%`,  value: sat,   color: PALETTE.hues.plan   },
+  ];
+};
+
+// Dial of Withering — one square. Width-split: labour column (width = l) on
+// the left, free-time column (width = f) on the right. Inside each column the
+// shaded portion (from the bottom) is the share of NEEDS MET during that mode,
+// expressed as a fraction of total time. Total filled area = total needs met.
+//
+//   workMet = M̄·l       — needs met during work, as a share of total time
+//   freeMet = M̄_free·f  — needs met during free time, as a share of total time
+//
+// M̄_free is the share of free-time hours that ended up meeting a social need
+// (mutual aid, communal cooking, care, etc.) — set in FREE_TIME.freeMetShare.
+function renderDial(containerId, label) {
+  withPanel(containerId, label, (svg, W, H) => {
+    const l           = FREE_TIME.labour / 100;
+    const f           = FREE_TIME.free   / 100;
+    const workMetFrac = computeSocialDesireSat();              // M̄ within work
+    const freeMetFrac = FREE_TIME.freeMetShare ?? 0.45;        // M̄ within free
+    const workMet     = workMetFrac * l;                       // share of total
+    const freeMet     = freeMetFrac * f;
+
+    const lPx = Math.round(W * l);
+    const fPx = W - lPx;
+    const workMetH = Math.round(H * workMetFrac);
+    const freeMetH = Math.round(H * freeMetFrac);
+    const pct = x => Math.round(x * 100);
+    const cells = [
+      // Work column — light backdrop + filled "needs met" portion at bottom.
+      { x:0, y:0,            w:lPx, h:H - workMetH, fill:PALETTE.lighten(PALETTE.hues.labour, 0.55), label:`work: unmet ${pct(l - workMet)}%` },
+      { x:0, y:H - workMetH, w:lPx, h:workMetH,     fill:PALETTE.hues.labour,                       label:`needs met at work ${pct(workMet)}% (M̄·l)` },
+      // Free column — light backdrop + filled "needs met in free time".
+      { x:lPx, y:0,            w:fPx, h:H - freeMetH, fill:PALETTE.lighten(PALETTE.hues.free, 0.55), label:`free: leisure ${pct(f - freeMet)}%` },
+      { x:lPx, y:H - freeMetH, w:fPx, h:freeMetH,     fill:PALETTE.hues.free,                       label:`needs met in free time ${pct(freeMet)}% (M̄_f·f)` },
+    ];
+    for (const c of cells) {
+      svg.append("rect").attr("x",c.x).attr("y",c.y).attr("width",c.w).attr("height",c.h)
+        .attr("fill",c.fill);
+      svg.append("title").text(c.label);
+      if (c.w * c.h > 800 && Math.min(c.w, c.h) > 20) {
+        svg.append("text").attr("x", c.x + c.w/2).attr("y", c.y + c.h/2 + 3)
+          .attr("text-anchor","middle").attr("fill","white")
+          .attr("font-size", Math.min(c.w, c.h) > 50 ? "10px" : "8px")
+          .attr("font-weight","bold").text(c.label);
+      }
+    }
+    // Divider between work / free columns.
+    svg.append("line").attr("x1",lPx).attr("x2",lPx).attr("y1",0).attr("y2",H)
+      .attr("stroke","#0e0e0e").attr("stroke-width",1);
+  });
+}
+// ── Sidebar panel data ──────────────────────────────────────────────────
+const creditData = () => [
+  { label: "claimed 45 h",    value: 45,  color: PALETTE.creditClaimed   },
+  { label: "remaining 435 h", value: 435, color: PALETTE.creditRemaining },
+];
+
+// ── Sidebar declared as a list. Each panel: { id, kind, fed, scope }.
+//   kind:  "panel" (treemap) | "dial" (2D dial)
+//   fed:   { label, data() } for the federation view
+//   scope: same shape, used at depth ≥ 1
+// Adding or reordering a panel = edit this list. To diverge fed/scope
+// further, just give them different label or data builders.
+const SIDEBAR_PANELS = [
+  { id: "panel-prod", kind: "panel",
+    fed:   { label: "producer voice ∝ L<sub>p</sub> (unequal)",
+             data:  () => voiceRow([6.2,5.8,5.5,5.2,5.0,4.8,4.5,4.3,4.0,3.8,3.5,3.2], "%") },
+    scope: { label: "scope producer voice: L<sub>p,s</sub>/L<sub>s</sub>",
+             data:  () => voiceRow([480, 360, 320, 280, 200, 160], " h") } },
+  // freetime / Φ panels removed — these are now spatial in the treemap.
+  { id: "panel-cons", kind: "panel",
+    fed:   { label: "consumer voice v<sub>p</sub><sup>cons</sup> (more equal)",
+             data:  () => voiceRow([4.8,4.6,4.4,4.3,4.2,4.1,4.0,3.9,3.8,3.7,3.6,3.5], "%") },
+    scope: { label: "scope consumer voice: v<sub>p</sub><sup>cons</sup>",
+             data:  () => voiceRow([380, 340, 310, 290, 250, 230], " h") } },
+  { id: "panel-credit", kind: "panel",
+    fed:   { label: "credit: 45/480 h — K·v<sub>p</sub><sup>cons</sup>", data: creditData },
+    scope: { label: "credit: 45/480 h — K·v<sub>p</sub><sup>cons</sup>", data: creditData } },
+];
+
+const PANEL_RENDERERS = {
+  panel: (id, label, data) => renderPanel(id, label, data),
+  dial:  (id, label)       => renderDial(id, label),
+};
+
+function renderSidebar(depth) {
+  const view = depth >= 1 ? "scope" : "fed";
+  for (const p of SIDEBAR_PANELS) {
+    const cfg = p[view];
+    PANEL_RENDERERS[p.kind](p.id, cfg.label, cfg.data?.());
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// APP — the interface is a tree of views.
+//
+// Each view owns a region of the DOM and knows how to render itself given a
+// state slice. The router (`navigate`) maps state changes to view renders.
+// Adding a new view = add an entry; swapping the surface implementation =
+// change the entry's `render`.
+//
+//   APP.views: { id, mount } walked by mountApp at startup
+//   APP.navigate(target, opts)  — go to a different surface state
+//   APP.state — { surface: "tree"|"map", node, ancestors, leaf? }
+// ═══════════════════════════════════════════════════════════════════════════
+const APP = {
+  state: { surface: "tree", node: TREE, ancestors: [], leaf: null },
+
+  views: [
+    { id: "surface", mount: () =>
+        (APP.state.surface === "map" ? renderMapSurface : renderTreeSurface)() },
+    { id: "sidebar", mount: () => renderSidebar(APP.state.ancestors.length) },
+    { id: "drawer",  mount: renderJourneyDrawer },
+  ],
+
+  render() { for (const v of this.views) v.mount(); },
+
+  navigate(patch) {
+    Object.assign(this.state, patch);
+    this.render();
+  },
+};
+
+APP.render();
+
+</script>
+</body>
+</html>

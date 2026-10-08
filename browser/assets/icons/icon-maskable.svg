@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- The maskable form of icon.svg: the ground runs to every edge and the
+       mark sits inside the central 80% a launcher's mask always keeps. -->
+  <rect width="512" height="512" fill="#110e13"/>
+  <g transform="translate(256,256) scale(0.95) translate(-268,-186)">
+    <g transform="translate(256,280)" text-anchor="middle" font-family="monospace" font-weight="bold" fill="#a8e6cf">
+      <text font-size="260" dy="0">λ</text>
+    </g>
+    <circle cx="380" cy="132" r="40" fill="none" stroke="#e0ceed" stroke-width="12"/>
+    <circle cx="380" cy="132" r="8" fill="#e0ceed"/>
+  </g>
+</svg>

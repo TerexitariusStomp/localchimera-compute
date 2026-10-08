@@ -1,0 +1,24 @@
+# No secrets in the repo - these live in the encrypted vault only
+# See SETUP_GUIDE.md for how to populate the vault on first run
+
+# Binaries (too large for git, ship via USB)
+opencode/bin/
+*.AppImage
+
+# Config templates are OK but never include actual keys
+opencode/auth/
+opencode/data/
+
+# Feather wallet data (secrets)
+feather_data/wallets/
+feather_data/shared-ringdb/
+feather_data/settings.json
+
+# Guix store (too large, ship via USB)
+guix-store/gnu/
+
+# Vault cipher (encrypted, but don't ship blobs)
+../vault-cipher/
+
+# Radicle data (contains node state, not just config)
+# Only the restore script is tracked

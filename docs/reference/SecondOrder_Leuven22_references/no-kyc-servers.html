@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>No-KYC EPYC / SEV-SNP servers — economy scale, rent vs buy, reputation</title>
+<style>
+  body { font: 14px/1.5 -apple-system, system-ui, sans-serif; margin: 2rem; color: #1a1a1a; }
+  h1 { font-size: 1.4rem; } h2 { font-size: 1.05rem; margin-top: 1.6rem; }
+  p.note { color: #555; max-width: 66rem; }
+  code { background:#f0f0f0; padding:1px 4px; border-radius:3px; }
+  table { border-collapse: collapse; width: 100%; margin-top: .6rem; font-size: 12px; }
+  th, td { border: 1px solid #ccc; padding: 5px 7px; text-align: left; vertical-align: top; }
+  th { background: #222; color: #fff; position: sticky; top: 0; }
+  tr:nth-child(even) { background: #f6f6f6; }
+  .yes { color: #0a7d2c; font-weight: 600; } .no { color: #b00020; } .maybe { color: #b07000; }
+  .rep-hi { color: #0a7d2c; font-weight: 600; } .rep-mid { color: #b07000; } .rep-lo { color: #b00020; font-weight: 600; }
+  .sc-nat { color:#7a5; } .sc-cont { color:#39c; } .sc-world { color:#0a7d2c; font-weight:600; } .sc-fine { color:#7c3aed; font-weight:700; }
+  .rent { background:#eef4ff; } .buy { background:#fff4e6; }
+  a { color: #0645ad; }
+  caption { caption-side: bottom; color: #777; font-size: 11.5px; margin-top: .6rem; text-align: left; }
+  .ladder { font-size:12px; color:#444; background:#fafafa; border:1px solid #e2e2e2; padding:.6rem .8rem; border-radius:5px; max-width:66rem; }
+  .opt   { background:#eafbf0; }
+  .coord { background:#fff7e6; }
+  .wit   { background:#f3eefe; }
+  .obj { font-size:12.5px; color:#222; background:#f0f7ff; border:1px solid #cfe0f5; padding:.7rem .9rem; border-radius:6px; max-width:66rem; }
+  .obj code { background:#e2ecf8; }
+  .tag { font-size:10.5px; padding:1px 5px; border-radius:9px; white-space:nowrap; }
+  .t-eu { background:#dde9ff; color:#13407a; }
+  .t-5e { background:#ffe0e0; color:#8a0014; }
+  .t-neu{ background:#e3f7e6; color:#0a6b27; }
+  .risk-hi { color:#b00020; font-weight:600; } .risk-md { color:#b07000; } .risk-lo { color:#0a7d2c; font-weight:600; }
+  .totals td { background:#1f2a37; color:#fff; font-weight:600; }
+</style>
+</head>
+<body>
+<h1>No-KYC AMD EPYC / SEV-SNP servers — economy scale, rent vs buy, reputation, stability</h1>
+<p class="note">
+  <strong>Economy-scale column</strong> = the largest plan a single box can hold <em>monolithically</em>, from
+  <code>playnet.typ</code>: at the measured <strong>~250 bytes/nonzero</strong>, a box holds
+  <code>RAM ÷ 250 B ≈ RAM_GB × 4×10⁶</code> technology-matrix nonzeros (nnz).
+</p>
+<p class="ladder">
+  <strong>playnet.typ scale ladder</strong> (nnz → economy): &nbsp;
+  <span class="sc-nat">~10⁶ city/coarse-national</span> →
+  <span class="sc-nat">~10⁷ national, located</span> →
+  <span class="sc-cont">~10⁸ continental</span> →
+  <span class="sc-world">~10⁹ world, aggregated</span> →
+  <span class="sc-fine">10¹⁰–10¹¹ world, finely resolved</span>.<br>
+  <strong>This column is the single-box ceiling.</strong> The paper's actual claim is that the economy
+  <em>decomposes by scope across machines</em> — so a fleet of <em>N</em> of these nodes reaches ~<em>N×</em> the
+  nnz, and the 10¹¹ finely-resolved world is a <em>federated cluster</em> (one node per scope), never one box.
+  Memory, not arithmetic, is what forces that federation.
+</p>
+
+<h2>RENT — crypto / no-KYC hosting</h2>
+<table>
+<thead>
+<tr><th>Provider</th><th>Type</th><th>CPU (EPYC)</th><th>Max RAM</th><th>Economy scale (single-box max)</th><th>SEV-SNP self-ctrl</th><th>Price/mo</th><th>Crypto</th><th>KYC</th><th>Reputation (reviewed?)</th><th>Stability</th></tr>
+</thead>
+<tbody>
+<tr class="rent" style="background:#e6ffe9"><td><a href="https://www.vpsbg.eu/pricing">VPSBG</a> <b>(maxed)</b></td><td>VDS mem-opt (dedicated EPYC)</td><td>AMD EPYC Genoa, DDR5-4800 (Sofia)</td><td>256 GB</td><td class="sc-world">~1×10⁹ — world (aggregated)</td><td class="yes">Yes — 1-click SEV-SNP L3 (only VPS-class SNP here)</td><td><b>not published</b> — auth-gated; est. €700–1500 <i>(−20% annual)</i></td><td>BTC <b>Lightning</b> +card</td><td class="yes">None (email)</td><td class="rep-hi">5+ yrs, positive uptime reviews; Sofia BG</td><td class="rep-hi">High — 5+ yrs, active dev; only caveat = single Sofia region (no geo-redundancy)</td></tr>
+<tr class="rent" style="background:#e6ffe9"><td><a href="https://www.websiteplanet.com/web-hosting/vps-bg/">VPSBG</a> (anchor)</td><td>Cloud VPS (shared)</td><td>AMD EPYC (Sofia)</td><td>32 GB / 8 vCPU</td><td class="sc-cont">~1.3×10⁸ — continental (low)</td><td class="yes">Yes — 1-click SEV-SNP L3</td><td>$247.41 <b>(real)</b></td><td>BTC <b>Lightning</b> +card</td><td class="yes">None (email)</td><td class="rep-hi">(as above)</td><td class="rep-hi">High (single region)</td></tr>
+<tr class="rent"><td><a href="https://www.trustpilot.com/review/redswitches.com">RedSwitches</a></td><td>Bare metal</td><td>EPYC 9124 (16C)</td><td>128 GB</td><td class="sc-cont">~5×10⁸ — continental</td><td class="yes">Yes</td><td>$284.70</td><td>BTC ETH <b>XMR</b> +5</td><td class="yes">None*</td><td class="rep-hi">High — est. 2009, 18 DCs, 5000+ cust., 4★ Trustpilot (69)</td><td class="rep-hi">High — 15+ yrs</td></tr>
+<tr class="rent"><td><a href="https://www.redswitches.com/buy-dedicated-servers-with-bitcoin/">RedSwitches</a></td><td>Bare metal</td><td>EPYC 9554P (64C)</td><td>512 GB</td><td class="sc-world">~2×10⁹ — world (aggregated)</td><td class="yes">Yes</td><td>$567–912</td><td>BTC ETH <b>XMR</b> +5</td><td class="yes">None*</td><td class="rep-hi">High (as above)</td><td class="rep-hi">High</td></tr>
+<tr class="rent"><td><a href="https://www.redswitches.com/buy-dedicated-servers-with-bitcoin/">RedSwitches</a></td><td>Bare metal</td><td>EPYC 9555P (64C)</td><td>1152 GB (1.1 TB)</td><td class="sc-world">~4.6×10⁹ — world (aggregated); best single node</td><td class="yes">Yes</td><td>$937–1128</td><td>BTC ETH <b>XMR</b> +5</td><td class="yes">None*</td><td class="rep-hi">High (as above)</td><td class="rep-hi">High</td></tr>
+<tr class="rent"><td><a href="https://www.redswitches.com/buy-dedicated-servers-with-bitcoin/">RedSwitches</a></td><td>Bare metal</td><td>EPYC 9575F (64C)</td><td>768 GB</td><td class="sc-world">~3×10⁹ — world (aggregated)</td><td class="yes">Yes</td><td>$1099–1601</td><td>BTC ETH <b>XMR</b> +5</td><td class="yes">None*</td><td class="rep-hi">High (as above)</td><td class="rep-hi">High</td></tr>
+<tr class="rent"><td><a href="https://lowendtalk.com/discussion/196009/extravm-2-year-review">ExtraVM</a></td><td>VPS</td><td>Ryzen9 / EPYC (shared)</td><td>n/p (VPS)</td><td class="sc-cont">≲2×10⁸ — national→continental</td><td class="no">No</td><td>from $4.50</td><td>BTC ETH <b>XMR</b> +50</td><td class="yes">None (email)</td><td class="rep-hi">High (community-verified) — est. 2014, LowEndTalk</td><td class="rep-hi">High — 99.95–99.99%</td></tr>
+<tr class="rent"><td><a href="https://evoluso.com/anonymous-dedicated-servers">Evoluso</a></td><td>Bare metal</td><td>EPYC 7443P Milan (24C)</td><td>64 GB</td><td class="sc-cont">~2.5×10⁸ — continental</td><td class="yes">Yes</td><td>€249</td><td>BTC ETH <b>XMR</b> LTC +50</td><td class="yes">None (no ID)</td><td class="rep-mid">Moderate-Low — claims 2009, thin reviews (~3)</td><td class="rep-mid">Moderate — small</td></tr>
+<tr class="rent"><td><a href="https://evoluso.com/anonymous-dedicated-servers">Evoluso</a></td><td>Bare metal</td><td>EPYC 7643 Milan (48C)</td><td>256 GB</td><td class="sc-world">~1×10⁹ — world (aggregated, just reaches)</td><td class="yes">Yes</td><td>€399</td><td>BTC ETH <b>XMR</b> LTC +50</td><td class="yes">None (no ID)</td><td class="rep-mid">Moderate-Low (as above)</td><td class="rep-mid">Moderate</td></tr>
+<tr class="rent"><td><a href="https://kycnot.me/service/sporestack">SporeStack</a></td><td>Bare metal (Vultr)</td><td>Vultr (24C)</td><td>256 GB</td><td class="sc-world">~1×10⁹ — world (aggregated)</td><td class="no">No</td><td>$1398</td><td>BTC <b>XMR</b> BCH</td><td class="yes">None — no email</td><td class="rep-mid">Good in niche — TX LLC 2018, KYCnot.me 88.2; <i>not</i> bulletproof</td><td class="rep-mid">Moderate — 1-person op</td></tr>
+<tr class="rent"><td><a href="https://sporestack.com/pricing/">SporeStack</a></td><td>VPS</td><td>Shared</td><td>16 GB</td><td class="sc-nat">~6×10⁷ — national (located)</td><td class="no">No</td><td>$3–96</td><td>BTC <b>XMR</b> BCH</td><td class="yes">None — no email</td><td class="rep-mid">Good in niche (as above)</td><td class="rep-mid">Moderate</td></tr>
+<tr class="rent"><td><a href="https://anubizhost.com/en/bitcoin-dedicated-server">AnubizHost</a></td><td>Bare metal</td><td>Unspecified (4–8C)</td><td>32 GB</td><td class="sc-cont">~1.3×10⁸ — continental (low)</td><td class="maybe">Unknown</td><td>$99</td><td>BTC +others</td><td class="yes">None</td><td class="rep-mid">Moderate / unverified — 4.8★ & 99.96% <b>self-published</b></td><td class="maybe">Claimed, unverified</td></tr>
+<tr class="rent"><td><a href="https://anubizhost.com/en/bitcoin-dedicated-server">AnubizHost</a></td><td>Bare metal</td><td>Dual-socket</td><td>256+ GB</td><td class="sc-world">≥1×10⁹ — world (aggregated)</td><td class="maybe">Unknown</td><td>Quote</td><td>BTC +others</td><td class="yes">None</td><td class="rep-mid">Moderate / unverified (as above)</td><td class="maybe">Claimed, unverified</td></tr>
+<tr class="rent"><td><a href="https://www.trustpilot.com/review/vikhost.com">VIKHOST</a></td><td>BM / VPS</td><td>Dell/SM/HP (EPYC?)</td><td>config-dependent</td><td class="maybe">depends on config (RAM÷250 B)</td><td class="maybe">Unknown</td><td>from $5.99</td><td>BTC <b>XMR</b> ZEC +12</td><td class="yes">None</td><td class="rep-mid">Moderate — ~3+ yrs, Tier-III DC</td><td class="rep-lo">Elevated — Kyiv, UA (war-zone)</td></tr>
+<tr class="rent"><td><a href="https://www.halcyon.ai/blog/update-cloudzy-command-and-control-provider-report">Cloudzy</a></td><td>VPS</td><td>EPYC (shared)</td><td>n/p (VPS)</td><td class="sc-cont">≲2×10⁸ — national→continental</td><td class="no">No</td><td>varies</td><td>BTC ETH USDT (<b>no XMR</b>)</td><td class="yes">None (email)</td><td class="rep-lo">AVOID — Halcyon 2023: 40–60% malicious, alleged Iran op, sanctions risk</td><td class="rep-lo">legal/seizure risk high</td></tr>
+</tbody>
+</table>
+
+<h2>BUY — own the hardware (not no-KYC hosting; shown for the rent-vs-buy comparison)</h2>
+<table>
+<thead>
+<tr><th>Option</th><th>Type</th><th>CPU (EPYC)</th><th>Max RAM</th><th>Economy scale (single-box max)</th><th>SEV-SNP self-ctrl</th><th>Cost (one-time)</th><th>Payment</th><th>KYC</th><th>Reputation</th><th>Stability</th></tr>
+</thead>
+<tbody>
+<tr class="buy"><td><a href="https://www.ebay.com/sch/i.html?_nkw=epyc+server+2+socket">Used EPYC 2-socket</a></td><td>Own bare metal</td><td>EPYC 7003/9004 (2P)</td><td>~6 TB</td><td class="sc-fine">~2.4×10¹⁰ — world, finely resolved (low band)</td><td class="yes">Yes</td><td>~$3k–15k</td><td>Private cash/crypto (eBay/broker)</td><td class="yes">Low — private sale</td><td class="rep-mid">Varies by seller; HW OEM-grade</td><td class="rep-hi">Permanent — you own it</td></tr>
+<tr class="buy"><td><a href="https://store.supermicro.com/us_en/systems/a-systems/h13-2u-a-hyper-as-2125hs-tnr.html">New EPYC 2-socket</a></td><td>Own bare metal</td><td>EPYC 9005 (Supermicro H13 / Dell R7625)</td><td>~6 TB</td><td class="sc-fine">~2.4×10¹⁰ — world, finely resolved (low band)</td><td class="yes">Yes</td><td>~$15k–120k</td><td>Reseller invoice (crypto via intermediary)</td><td class="maybe">Medium — invoice</td><td class="rep-hi">High — Supermicro/Dell OEMs</td><td class="rep-hi">Permanent — you own it</td></tr>
+</tbody>
+</table>
+
+<caption>* RedSwitches: "no KYC in supported regions." Economy scale = single-box monolithic ceiling at ~250 B/nnz (playnet.typ); decomposition across N nodes multiplies it ~N×. Reputation = independent signals except AnubizHost (self-published). Verify config/crypto/SEV-SNP at checkout; fetch over torsocks. June 2026.</caption>
+
+<hr style="margin:2.4rem 0 1.2rem;border:0;border-top:2px solid #222;">
+<h1 id="plan">Geo-distributed fleet — the plan</h1>
+<p class="note">
+  Companion to <code>fleet-geo-distribution-plan.md</code>. The provider tables above are <em>inputs</em>;
+  this section is the <strong>plan</strong>: how many servers, what size, in which jurisdictions, with the
+  <strong>KERI witness</strong> layer, and the <strong>optimal</strong> fleet that satisfies every constraint
+  at least cost. The lever is <em>decomposition</em>: the planner solves <strong>scope&nbsp;by&nbsp;scope</strong>,
+  coupled only by <strong>pulls on shared goods</strong> (ADMM, ~30 rounds, scope-count-independent), so
+  <code>per-node RAM ≈ (target nnz ÷ scopes) × 250&nbsp;B</code> — a finely-resolved world (10¹⁰ nnz) over 40
+  scopes is ~64&nbsp;GB/node, not a 2.5&nbsp;TB monolith. Pull-coupling is small and latency-tolerant, so nodes
+  sit on <em>different continents</em> for free.
+</p>
+
+<h2>Sizing — nodes per economy scale</h2>
+<table>
+<thead>
+<tr><th>Economy scale</th><th>total nnz</th><th>over 40 scopes → per node</th><th>over 6 scopes → per node</th><th>servers (natural split)</th></tr>
+</thead>
+<tbody>
+<tr><td class="sc-cont">continental</td><td>~10⁸</td><td>~0.6 GB</td><td>~4 GB</td><td>6</td></tr>
+<tr><td class="sc-world">world, aggregated</td><td>~10⁹</td><td>~6 GB</td><td>~42 GB</td><td>6</td></tr>
+<tr class="opt"><td class="sc-fine">world, finely-resolved (low)</td><td>~10¹⁰</td><td><b>~64 GB</b></td><td>~420 GB</td><td>40 × 64 GB</td></tr>
+<tr><td class="sc-fine">world, finely-resolved (high)</td><td>~10¹¹</td><td><b>~625 GB</b></td><td>~4.2 TB</td><td>40 × 640 GB, <em>or</em> ~10–15 owned fat nodes</td></tr>
+</tbody>
+<caption>Paper's reference split = <b>40 scopes / 240 sectors</b>, so 40 is the natural full-federation node count. At 6 coarse scopes (food · energy · manufacturing · health · transport · housing) a node holds ~7× more.</caption>
+</table>
+
+<h2>Jurisdiction &amp; data-regulation matrix</h2>
+<p class="note">
+  Two risks are <em>distinct</em>. <strong>Confidentiality</strong> is handled in hardware: SEV-SNP keeps plan
+  memory encrypted and attested, so a seized plan-node yields ciphertext, not data. What survives is
+  <strong>availability</strong> — a seizure/compulsion can <em>halt</em> a node — so the levers are
+  <em>jurisdiction diversity</em>, <em>redundancy</em>, and a <em>witness threshold no single legal bloc can reach</em>.
+</p>
+<p class="obj">
+  <strong>Two hard rules.</strong> &nbsp;<b>(a) Confidential compute on every node</b> — SEV-SNP, or an equivalent
+  (Intel TDX; owned bare-metal where <em>you</em> control the kernel) — applied to <em>all</em> roles, witnesses and
+  coordinators included; this excludes any plaintext-memory host (SporeStack-VPS, ExtraVM, Cloudzy) from the fleet
+  entirely. &nbsp;<b>(b) No Five-Eyes jurisdiction</b> (US · UK · CA · AU · NZ) — excluded outright, even for
+  availability-only roles, because intel-sharing makes a single compulsion effectively five.
+</p>
+<table>
+<thead>
+<tr><th>Jurisdiction</th><th>Data-protection regime</th><th>Cooperation bloc</th><th>Seizure / disclosure exposure</th><th>Best role</th></tr>
+</thead>
+<tbody>
+<tr><td>🇧🇬 Bulgaria</td><td>EU GDPR</td><td><span class="tag t-eu">EU e-evidence</span></td><td class="risk-md">Med — EU production orders (EPOC); blunted by no-KYC + SNP</td><td>plan node (SNP), witness</td></tr>
+<tr><td>🇳🇱 Netherlands</td><td>EU GDPR</td><td><span class="tag t-eu">EU e-evidence</span></td><td class="risk-md">Med — cooperative LE, AMS-IX hub</td><td>plan node (SNP), witness</td></tr>
+<tr><td>🇩🇪 Germany</td><td>EU GDPR + BDSG</td><td><span class="tag t-eu">EU e-evidence</span></td><td class="risk-md">Med — strong DP law, cooperative LE</td><td>plan node (SNP)</td></tr>
+<tr><td>🇨🇭 Switzerland</td><td>revFADP (nLPD) — non-EU</td><td><span class="tag t-neu">neutral</span></td><td class="risk-lo">Low–Med — MLAT only on serious crime, high threshold, data haven</td><td>witness, coordinator, plan node</td></tr>
+<tr><td>🇮🇸 Iceland</td><td>EEA (GDPR-aligned), IMMI free-speech legacy</td><td><span class="tag t-eu">EEA</span></td><td class="risk-lo">Low — remote, renewable power, strong speech protections</td><td>witness, coordinator, cold node</td></tr>
+<tr><td>🇸🇬 Singapore</td><td>PDPA — non-EU</td><td><span class="tag t-neu">non-aligned (Asia)</span></td><td class="risk-md">Med — outside EU/Five-Eyes MLAT web, but strong domestic surveillance</td><td>Asia plan node, witness (bloc diversity)</td></tr>
+<tr style="opacity:.55"><td>🇨🇦 Canada <span class="tag t-5e">EXCLUDED</span></td><td>PIPEDA</td><td><span class="tag t-5e">Five Eyes</span></td><td class="risk-hi">High — Five-Eyes intel sharing (US/UK/AU/NZ); a single order propagates to five states</td><td><b>excluded — no role</b> (rule b)</td></tr>
+</tbody>
+<caption>Rule of thumb: keep the <b>plan-data majority</b> outside any one cooperation bloc; <b>Five-Eyes is excluded outright</b> (rule b), so the live blocs are <span class="tag t-eu">EU/EEA</span>, <span class="tag t-neu">neutral (CH)</span>, and <span class="tag t-neu">non-aligned Asia (SG)</span>.</caption>
+</table>
+
+<h2>KERI witness set — a quorum no single bloc can seize</h2>
+<p class="note">
+  Each federation AID publishes its key events to <em>N</em> witnesses; an event is accountable once
+  <strong>toad</strong> of them receipt it. Witnesses hold <em>public</em> key-event logs (not plan data), so they
+  are tiny (~1–2 GB) and could in principle run anywhere — but <b>rule (a) puts them on SEV-SNP nodes too</b>
+  (one node profile to attest, defence in depth). The design constraint is seizure: pick <em>N</em>,
+  <strong>toad</strong>, and placement so the <b>largest witness set under any one cooperating bloc is &lt; toad</b>
+  — then no bloc can either <em>censor</em> (block reaching toad) or <em>fork</em> (gather a competing toad) the key state.
+</p>
+<p class="obj">
+  <strong>Chosen:</strong> <code>N = 6</code>, <code>toad = 4</code> (majority of 6 ⇒ no fork; tolerates 2 down).
+  With Five-Eyes excluded the supply is EU-heavy, so balance <b>2 per bloc</b> — EU/EEA · neutral&nbsp;CH ·
+  non-aligned&nbsp;SG — leaning on owned SNP colo to fill the second CH and SG slots. Then a
+  <em>full seizure of any one bloc (2) still leaves 4 = toad</em> ⇒ key-event continuity holds, and every witness is SNP.
+</p>
+<table>
+<thead>
+<tr><th>#</th><th>Jurisdiction</th><th>Provider (small SNP node)</th><th>Bloc</th><th>SNP</th><th>~$/mo</th></tr>
+</thead>
+<tbody>
+<tr class="wit"><td>w1</td><td>🇧🇬 Bulgaria</td><td>VPSBG (smallest SNP slice)</td><td><span class="tag t-eu">EU</span></td><td class="yes">✅ L3</td><td>~$30</td></tr>
+<tr class="wit"><td>w2</td><td>🇮🇸 Iceland</td><td>AnubizHost / owned colo</td><td><span class="tag t-eu">EEA</span></td><td class="maybe">✅ confirm</td><td>~$20</td></tr>
+<tr class="wit"><td>w3</td><td>🇨🇭 Switzerland</td><td>Evoluso CH (EPYC SNP)</td><td><span class="tag t-neu">neutral</span></td><td class="yes">✅</td><td>~$30</td></tr>
+<tr class="wit"><td>w4</td><td>🇨🇭 Switzerland</td><td>owned EPYC SNP (colo)</td><td><span class="tag t-neu">neutral</span></td><td class="yes">✅ own-kernel</td><td>~$25</td></tr>
+<tr class="wit"><td>w5</td><td>🇸🇬 Singapore</td><td>RedSwitches SG (EPYC SNP)</td><td><span class="tag t-neu">Asia</span></td><td class="yes">✅</td><td>~$30</td></tr>
+<tr class="wit"><td>w6</td><td>🇸🇬 Singapore</td><td>owned EPYC SNP (colo)</td><td><span class="tag t-neu">Asia</span></td><td class="yes">✅ own-kernel</td><td>~$25</td></tr>
+</tbody>
+<caption>Bloc tallies: EU/EEA = 2 (w1,w2) · neutral CH = 2 (w3,w4) · Asia SG = 2 (w5,w6). <b>Max bloc 2 &lt; toad 4</b> ⇒ a full seizure of any single bloc leaves the quorum live. Co-reside w1/w3/w5 on the matching SNP scope/coordinator node (zero extra box); only w4,w6 need a dedicated small SNP node, so the witness layer adds ≈ 2 boxes, <b>~$160/mo</b>.</caption>
+</table>
+
+<h2>Optimal geo-distributed fleet</h2>
+<p class="obj">
+  <strong>Find-optimal = a tiny program.</strong> &nbsp;
+  <code>minimise&nbsp;total&nbsp;$/mo</code> &nbsp; subject to &nbsp;
+  (1) <b>every</b> node (plan · coordinator · witness) attests <b>SEV-SNP or equivalent</b> — no plaintext-memory host; &nbsp;
+  (2) <b>no Five-Eyes</b> jurisdiction (US/UK/CA/AU/NZ); &nbsp;
+  (3) no <b>provider</b> holds &gt; ⅓ of plan nodes; &nbsp;
+  (4) no <b>jurisdiction</b> holds &gt; ⅓ of plan nodes; &nbsp;
+  (5) ≥ <b>3 continents</b>; &nbsp;
+  (6) plan-data <b>majority outside any one cooperation bloc</b>; &nbsp;
+  (7) witness placement with <b>max-bloc &lt; toad</b>; &nbsp;
+  (8) ≥ <b>2 coordinator</b> regions. &nbsp;
+  The fleet below is the cheapest point that meets all eight.
+</p>
+<table>
+<thead>
+<tr><th>Role / scope</th><th>Provider</th><th>Jurisdiction</th><th>Spec</th><th>SNP</th><th>Witness</th><th>~$/mo</th></tr>
+</thead>
+<tbody>
+<tr class="opt"><td><b>food</b> (plan)</td><td>VPSBG</td><td>🇧🇬 BG <span class="tag t-eu">EU</span></td><td>64 GB EPYC Genoa</td><td class="yes">✅ L3</td><td class="wit">w1</td><td>~$150</td></tr>
+<tr class="opt"><td><b>energy</b> (plan)</td><td>RedSwitches</td><td>🇩🇪 DE <span class="tag t-eu">EU</span></td><td>EPYC 9124, 128 GB</td><td class="yes">✅</td><td>—</td><td>$284</td></tr>
+<tr class="opt"><td><b>manufacturing</b> (plan)</td><td>RedSwitches</td><td>🇸🇬 SG <span class="tag t-neu">Asia</span></td><td>EPYC 9555P, 256 GB</td><td class="yes">✅</td><td class="wit">w5</td><td>~$937</td></tr>
+<tr class="opt"><td><b>health</b> (plan)</td><td>Evoluso</td><td>🇳🇱 NL <span class="tag t-eu">EU</span></td><td>EPYC 7443P, 128 GB</td><td class="yes">✅</td><td>—</td><td>~$300</td></tr>
+<tr class="opt"><td><b>transport</b> (plan)</td><td>Evoluso</td><td>🇨🇭 CH <span class="tag t-neu">neutral</span></td><td>EPYC 7443P, 128 GB</td><td class="yes">✅</td><td class="wit">w3</td><td>~$322</td></tr>
+<tr class="opt"><td><b>housing</b> (plan)</td><td>AnubizHost</td><td>🇮🇸 IS <span class="tag t-eu">EEA</span></td><td>dual-socket, 128 GB</td><td class="maybe">⚠ confirm SNP</td><td class="wit">w2</td><td>~$200</td></tr>
+<tr class="coord"><td>coordinator ×1</td><td>Evoluso CH</td><td>🇨🇭 CH <span class="tag t-neu">neutral</span></td><td>small EPYC SNP, 8 GB</td><td class="yes">✅</td><td>—</td><td>~$30</td></tr>
+<tr class="coord"><td>coordinator ×2</td><td>AnubizHost / owned</td><td>🇮🇸 IS <span class="tag t-eu">EEA</span></td><td>small EPYC SNP</td><td class="maybe">✅ confirm</td><td>—</td><td>~$20</td></tr>
+<tr class="coord"><td>coordinator ×3</td><td>RedSwitches SG</td><td>🇸🇬 SG <span class="tag t-neu">Asia</span></td><td>small EPYC SNP</td><td class="yes">✅</td><td>—</td><td>~$20</td></tr>
+<tr class="wit"><td>witness w1 (BG)</td><td>VPSBG</td><td>🇧🇬 BG <span class="tag t-eu">EU</span></td><td>SNP slice (rides food node)</td><td class="yes">✅ L3</td><td class="wit">w1</td><td>—</td></tr>
+<tr class="wit"><td>witness w4 (CH·2)</td><td>owned colo</td><td>🇨🇭 CH <span class="tag t-neu">neutral</span></td><td>owned EPYC SNP micro</td><td class="yes">✅</td><td class="wit">w4</td><td>~$25</td></tr>
+<tr class="wit"><td>witness w6 (SG·2)</td><td>owned colo</td><td>🇸🇬 SG <span class="tag t-neu">Asia</span></td><td>owned EPYC SNP micro</td><td class="yes">✅</td><td class="wit">w6</td><td>~$25</td></tr>
+</tbody>
+<tfoot>
+<tr class="totals"><td colspan="3">~11 boxes · 4 jurisdictions · 3 continents · 6 witnesses (toad 4) · <b>every node SNP</b> · zero Five-Eyes</td><td>~832 GB plan RAM</td><td>all ✅/⚠</td><td>6×</td><td>~$2.4–2.6k/mo</td></tr>
+</tfoot>
+<caption>
+  Constraint check: <b>(1)</b> every box SNP (housing/IS to confirm) ✔; <b>(2)</b> no Five-Eyes ✔; <b>(3)</b> providers —
+  RedSwitches 2, Evoluso 2, VPSBG 1, AnubizHost 1 over 6 plan nodes (max ⅓) ✔; <b>(4)</b> jurisdictions BG·DE·SG·NL·CH·IS
+  distinct ✔; <b>(5)</b> EU + Asia + Iceland/EEA ✔; <b>(6)</b> plan majority is still <span class="risk-md">4 EU/EEA vs 2
+  non-EU</span> — the one soft spot; tip it by moving an EU scope onto an owned box in CH/IS (see <em>finely-resolved</em>
+  below); <b>(7)</b> witness max-bloc 2 &lt; toad 4 ✔; <b>(8)</b> 3 coordinator regions ✔. Reaches
+  <span class="sc-world">~3.3×10⁹ nnz — world, aggregated</span>. (w1/w3/w5 co-reside on the matching scope/coordinator
+  node; only w4,w6 are extra boxes.)
+</caption>
+</table>
+
+<h2>Scaling the optimum to a finely-resolved world (10¹⁰→10¹¹)</h2>
+<p class="note">
+  Hold the same shape (jurisdiction spread, witness quorum, provider caps); add memory. Two paths:
+</p>
+<table>
+<thead>
+<tr><th>Path</th><th>Servers</th><th>Reaches</th><th>Cost</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr class="rent"><td><b>Rent</b> — 40 × ~64 GB SNP VPS</td><td>40, ~10/provider over 4 providers, 6+ countries</td><td class="sc-fine">10¹⁰ (low band)</td><td>~$10–12k/mo</td><td>no capital, full provider-disappearance exposure</td></tr>
+<tr class="buy"><td><b>Buy</b> — used 2-socket EPYC fat nodes</td><td>~10–15 owned, self-colo, multi-region</td><td class="sc-fine">10¹⁰ → 10¹¹</td><td><b>~$80–150k capex</b> + ~$2–3k/mo colo</td><td>cost is RAM-dominated (24× 128 GB LRDIMM ≈ $5.4k/node)</td></tr>
+<tr class="buy"><td>&nbsp;&nbsp;↳ just 10¹⁰, redundant</td><td>2–3 owned ~4 TB nodes</td><td class="sc-fine">10¹⁰</td><td>~$15–30k capex</td><td>“a handful of boxes”</td></tr>
+<tr class="rent"><td>Rent 10¹¹ for comparison</td><td>40 × ~640 GB (RedSwitches 512 GB tier)</td><td class="sc-fine">10¹¹ (high band)</td><td>~$36k/mo</td><td>buy pays back the ~$120k fleet in <b>~3–4 months</b></td></tr>
+</tbody>
+<caption>
+  Hybrid is cheapest + most seizure-resistant: put the <b>largest scopes on owned used-EPYC boxes</b> in CH/IS
+  (tipping the plan-data majority non-cooperative), keep small/peripheral scopes + all witnesses on rented no-KYC
+  SNP VPS. Per-node capex bands: 1.5 TB ~$3–5k · 3–4 TB ~$7–9k · 6 TB ~$14–22k (256 GB 3DS LRDIMMs dominate the top).
+</caption>
+</table>
+
+<p class="note" style="margin-top:1.2rem;">
+  <strong>Operational invariants</strong> (from the plan doc): couple scopes over the project mesh (Tor / Reticulum),
+  <em>pulls only</em> — small, latency-tolerant, never expose plan data publicly. Attest each node with SEV-SNP
+  measured-boot before it joins. Acquire every node no-KYC under its operating pseudonym (BTC/XMR/Lightning);
+  never cross-fund from the home identity. Keep ≤ ⅓ of nodes on any one provider and ≤ ⅓ in any one jurisdiction
+  so no single failure or seizure drops a quorum of scopes — or of witnesses.
+</p>
+
+</body>
+</html>

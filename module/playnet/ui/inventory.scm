@@ -20,10 +20,11 @@
 
 (define-module (playnet ui inventory)
   #:use-module (srfi srfi-1)
-  #:use-module (playnet ddmrp)
+  #:use-module (playnet utils alist)
   #:use-module (playnet ui components)
   #:use-module (playnet ui calendar)
   #:export (inventory-page
+            inventory-view-toggle
             category-sidebar
             spec-library-grid
             spec-detail-panel
@@ -376,15 +377,36 @@
                                  kids)))))))))
 
 
+;;; ── view-mode toggle (personal / scope) ─────────────────────────────────────
+
+(define (inventory-view-toggle view-mode on-toggle-view-mode)
+  "Pill toggle switching between personal inventory and scope inventory.
+   VIEW-MODE: 'personal or 'scope (default).
+   ON-TOGGLE-VIEW-MODE: 1-arg callback receiving the new mode symbol."
+  (define (pill label mode)
+    `(button (@ (class ,(string-append "inv-view-pill"
+                                       (if (eq? view-mode mode) " active" "")))
+                (click ,(lambda (e) (on-toggle-view-mode mode))))
+             ,label))
+  `(div (@ (class "inv-view-toggle"))
+        ,(pill "personal" 'personal)
+        ,(pill "scope" 'scope)))
+
+
 ;;; ── inventory-page (top-level composer) ──────────────────────────────────────
 
 (define* (inventory-page #:key snapshot
-                              scopes current-scope plans current-plan
-                              members current-acting-as
+                              ;; Scope, plan, and acting-as are session
+                              ;; state (rendered above the view in
+                              ;; repl.scm). They flow in here as read-only
+                              ;; context — filter for queries and the
+                              ;; ownership-based view mode.
+                              current-scope current-plan current-acting-as
+                              (view-mode 'scope)
                               selected-spec-id selected-resource-id
                               detail breadcrumb custody-expanded?
                               active-category
-                              on-select-scope on-select-plan on-select-acting-as
+                              on-toggle-view-mode
                               on-select-category on-select-spec on-select-resource
                               on-pop-breadcrumb on-toggle-custody
                               on-clear-selection)
@@ -394,24 +416,61 @@
    currently-fetched resource-detail alist (or #f while loading). All
    selection state is held by the caller and threaded through.
 
+   VIEW-MODE is 'personal or 'scope.  In personal mode the resource list
+   is filtered to items whose custodian matches CURRENT-ACTING-AS.
+
    Layout:
 
-     ┌─────────── render-scope-bar (calendar.scm) ───────────┐
+     ┌──────── inventory-view-toggle (personal / scope) ──────┤
      ├──────────┬──────────────────────────┬─────────────────┤
      │ category │  spec-library-grid       │  spec-detail or │
      │ sidebar  │                          │  resource-detail│
      └──────────┴──────────────────────────┴─────────────────┘"
-  (let* ((specs       (or (and snapshot (alist-ref snapshot 'specs '())) '()))
-         (resources   (or (and snapshot (alist-ref snapshot 'resources '())) '()))
+  (let* ((all-resources (or (and snapshot (alist-ref snapshot 'resources '())) '()))
+         ;; In personal mode, keep only resources held by the acting-as person.
+         (resources
+           (if (and (eq? view-mode 'personal) current-acting-as)
+               (filter (lambda (r)
+                         (equal? (alist-ref r 'custodian #f) current-acting-as))
+                       all-resources)
+               all-resources))
+         ;; Recompute spec counts against the (possibly filtered) resources.
+         (raw-specs  (or (and snapshot (alist-ref snapshot 'specs '())) '()))
+         (specs
+           (if (eq? view-mode 'personal)
+               ;; Recount: only specs that still have visible resources.
+               (filter-map
+                 (lambda (s)
+                   (let* ((sid   (alist-ref s 'id ""))
+                          (mine  (filter (lambda (r)
+                                           (equal? (alist-ref r 'conforms-to) sid))
+                                         resources))
+                          (count (length mine)))
+                     (if (> count 0)
+                         ;; Patch counts into the spec alist.
+                         (let ((patched
+                                (map (lambda (pair)
+                                       (cond
+                                         ((eq? (car pair) 'resource-count)
+                                          (cons 'resource-count count))
+                                         ((eq? (car pair) 'onhand-total)
+                                          (cons 'onhand-total
+                                                (fold (lambda (r acc)
+                                                        (+ acc (or (alist-ref r 'onhand) 0)))
+                                                      0 mine)))
+                                         (else pair)))
+                                     s)))
+                           patched)
+                         #f)))
+                 raw-specs)
+               raw-specs))
          (cat-tree    (or (and snapshot (alist-ref snapshot 'category-tree '())) '()))
          (selected-spec
           (and selected-spec-id
                (find (lambda (s) (equal? (alist-ref s 'id) selected-spec-id))
                      specs))))
     `(div (@ (class "inv-page"))
-          ,(render-scope-bar scopes current-scope plans current-plan
-                             members current-acting-as
-                             on-select-scope on-select-plan on-select-acting-as)
+          ,(inventory-view-toggle view-mode on-toggle-view-mode)
           (div (@ (class "inv-body"))
                ,(category-sidebar cat-tree active-category on-select-category)
                ,(spec-library-grid specs selected-spec-id active-category
@@ -435,6 +494,11 @@
                    `(div (@ (class "inv-detail inv-detail-hint"))
                          (div (@ (class "inv-detail-header"))
                               (div (@ (class "inv-detail-title"))
-                                   "inventory"))
+                                   ,(if (eq? view-mode 'personal)
+                                        "personal inventory"
+                                        "inventory")))
                          (div (@ (class "inv-empty"))
-                              "Pick a category, then click a tile to see its concrete resources."))))))))
+                              ,(if (and (eq? view-mode 'personal)
+                                        (not current-acting-as))
+                                   "Select who you are in \"Acting as\" to see your personal inventory."
+                                   "Pick a category, then click a tile to see its concrete resources.")))))))))

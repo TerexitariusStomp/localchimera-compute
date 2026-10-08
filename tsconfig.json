@@ -1,0 +1,59 @@
+{
+  // ui/ → browser/ : TypeScript sources OUTSIDE the document root, emitting
+  // JavaScript INTO it. The tree mirrors: ui/app/seam.ts → browser/app/seam.js.
+  //
+  // (Not to be confused with module/playnet/ui/*.scm — that is the SXML the
+  //  repl app renders server-side in Scheme. This ui/ is the dial's own source,
+  //  the thing a browser runs.)
+  //
+  // The emitted .js is COMMITTED, like repl.wasm, day-boot.wasm and reflect.js
+  // already are. That keeps every consumer of browser/ working untouched — a
+  // fresh clone, `make serve`, the CI rsync, the prod static service (which
+  // serves the mutable checkout directly) and the Capacitor `stage` rsync all
+  // see a complete tree with no build having run. `make check-ui-fresh` is what
+  // keeps the committed output honest.
+  //
+  // Migration is per-file: a module lives EITHER as hand-written
+  // browser/app/x.js OR as ui/app/x.ts, never both. `include` below is the
+  // manifest of which ones are generated, and check-ui-fresh fails on overlap.
+  "compilerOptions": {
+    // The dial runs as native ES modules in a modern browser with no bundler
+    // and no downlevelling, so emit is close to type-erasure and the committed
+    // .js stays readable as the thing that actually runs.
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+
+    "rootDir": "ui",
+    "outDir": "browser",
+    "newLine": "lf",
+
+    "strict": true,
+    "noImplicitOverride": true,
+    // An import nothing calls is dead weight that READS as a dependency, and
+    // three faces carried one whose header comment described it as load-bearing
+    // — matter claimed to reuse the dial's band geometry through `layout` and
+    // `depth`, and reached neither. verbatimModuleSyntax keeps such an import in
+    // the emit, so it is served too. Both flags were already at zero violations
+    // across the tree once eight stragglers came out; they stay that way.
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    // An error must not leave a half-written module in the served tree.
+    "noEmitOnError": true,
+    // Type-only syntax says so explicitly, so emit never depends on how tsc
+    // resolved a name.
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true,
+
+    // No source maps, deliberately. A map is only useful to a browser that can
+    // fetch the .ts it points at, which would mean serving the sources we just
+    // moved out of the document root (or inlining them there with
+    // inlineSources). At ES2022 the emit is type-erasure, so the committed .js
+    // reads as the source anyway. One line to revisit if that stops being true.
+    "sourceMap": false,
+    "removeComments": false
+  },
+  "include": ["ui/**/*.ts"]
+}

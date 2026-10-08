@@ -13,7 +13,7 @@
 (define-module (playnet ui network)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-11)
-  #:use-module (playnet ddmrp)
+  #:use-module (playnet utils alist)
   #:use-module (playnet ui components)
   #:export (scope-network-diagram))
 
@@ -156,7 +156,7 @@
                      (let* ((is-work (eq? (alist-ref c 'action) 'work))
                             (spec-id (alist-ref c 'resource-conforms-to ""))
                             (qty (if is-work
-                                     (alist-ref c 'effort-qty 0)
+                                     (alist-ref c 'effort 0)
                                      (alist-ref c 'qty 0)))
                             (unit (if is-work
                                       (alist-ref c 'effort-unit "hr")

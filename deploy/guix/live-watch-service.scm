@@ -1,25 +1,22 @@
 ;;; deploy/guix/live-watch-service.scm — Shepherd service that runs
 ;;; tools/live-watch.sh against the playnet dev checkout.
 ;;;
-;;; Companion to (weave-dev-service): once `herd start weave-dev` has
-;;; the dev wasm bundle running and the REPL relay listening on 37146,
-;;; `herd start live-watch` starts an inotify loop that pushes saved
-;;; Scheme files into the running browser tab. No editor required —
-;;; works for any tool that performs an atomic write (Emacs, Vim, VS
-;;; Code, Helix, sshfs-mounted laptop editors, …).
+;;; Once `make serve-dev` has the dev wasm bundle running and the REPL
+;;; relay listening on 37146, `herd start live-watch` starts an inotify
+;;; loop that pushes saved Scheme files into the running browser tab.
+;;; No editor required — works for any tool that performs an atomic
+;;; write (Emacs, Vim, VS Code, Helix, sshfs-mounted laptop editors, …).
 ;;;
 ;;; Manual lifecycle:
 ;;;
-;;;   sudo herd start weave-dev      # 1. dev wasm + REPL relay
+;;;   make serve-dev                 # 1. dev wasm + REPL relay
 ;;;   sudo herd start live-watch     # 2. inotify loop
 ;;;   # … live-hack from any editor that touches files under
 ;;;   #     /home/playnet/dev-checkout/module/ …
 ;;;   sudo herd stop  live-watch
-;;;   sudo herd stop  weave-dev
 ;;;
-;;; auto-start? #f and respawn? #f for the same reason as
-;;; weave-dev-service: this is an opt-in dev tool. Logs to
-;;; /var/log/live-watch.log.
+;;; auto-start? #f and respawn? #f — this is an opt-in dev tool.
+;;; Logs to /var/log/live-watch.log.
 
 (define-module (live-watch-service)
   #:use-module (gnu services)
@@ -101,4 +98,4 @@
    (description
     "Watch the playnet dev checkout for Scheme file saves and push the
 new definitions into the running Hoot REPL relay. Manual start; pairs
-with weave-dev-service.")))
+with serve-dev.")))

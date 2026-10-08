@@ -1,0 +1,37 @@
+From 8d4f7c91b2b3b0e9cfeac120c58d5bb6a9461e4f Mon Sep 17 00:00:00 2001
+From: Z572 <z572@z572.online>
+Date: Sun, 7 Jun 2026 15:51:46 +0800
+Subject: [PATCH] Fix the negate error implementation
+
+---
+ lib/guile.scm | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/lib/guile.scm b/lib/guile.scm
+index 2a312a8..b21ecdd 100644
+--- a/lib/guile.scm
++++ b/lib/guile.scm
+@@ -1985,6 +1985,12 @@
+ 
+   (define (const x) (lambda args x))
+ 
++  (define (negate proc)
++    "Return a procedure with the same arity as PROC that returns the `not'
++of PROC's result."
++    (lambda args
++      (not (apply proc args))))
++
+   ;; TODO: Implement arrays.
+   (define (array? obj) #f)
+   (define (make-shared-array array proc . dims)
+@@ -2197,7 +2203,6 @@
+ 
+   (define (inf) +inf.0)
+   (define (nan) +nan.0)
+-  (define (negate x) (- x))
+ 
+   (define* (object->string obj #:optional (print write))
+     (call-with-output-string (lambda (port) (print obj port))))
+-- 
+2.43.0
+

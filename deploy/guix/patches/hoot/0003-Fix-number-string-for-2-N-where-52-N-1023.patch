@@ -1,0 +1,60 @@
+From d2b1a80affc8e75b8cfde8cc46fb196736f54cef Mon Sep 17 00:00:00 2001
+From: Andy Wingo <wingo@igalia.com>
+Date: Fri, 28 Aug 2026 14:55:31 +0200
+Subject: [PATCH] =?UTF-8?q?Fix=20number->string=20for=20=C2=B12^N,=20where?=
+ =?UTF-8?q?=2052=20<=3D=20N=20<=3D=201023?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Transcription error of the Dybvig/Burger algorithm.
+---
+ lib/hoot/write.scm  |  2 +-
+ test/test-write.scm | 14 +++++++++++++-
+ 2 files changed, 14 insertions(+), 2 deletions(-)
+
+diff --git a/lib/hoot/write.scm b/lib/hoot/write.scm
+index 34ff5d3..694398d 100644
+--- a/lib/hoot/write.scm
++++ b/lib/hoot/write.scm
+@@ -176,7 +176,7 @@
+                   (scale pos (* f be 2) 2 be be 0 B))
+                 (let* ((be (ash 1 e))
+                        (be1 (* be b)))
+-                  (scale pos (* f be 2) (* b 2) be1 be 0 B)))
++                  (scale pos (* f be1 2) (* b 2) be1 be 0 B)))
+             (if (or (= e min-e) (not (= f (ash 1 (- p 1)))))
+                 (scale pos (* f 2) (* (ash 1 (- e)) 2) 1 1 0 B)
+                 (scale pos (* f b 2) (* (ash 1 (- 1 e)) 2) b 1 0 B)))))
+diff --git a/test/test-write.scm b/test/test-write.scm
+index 0186b8b..c4b309b 100644
+--- a/test/test-write.scm
++++ b/test/test-write.scm
+@@ -1,4 +1,4 @@
+-;;; Copyright (C) 2023, 2025 Igalia, S.L.
++;;; Copyright (C) 2023, 2025, 2026 Igalia, S.L.
+ ;;;
+ ;;; Licensed under the Apache License, Version 2.0 (the "License");
+ ;;; you may not use this file except in compliance with the License.
+@@ -64,6 +64,18 @@
+ (test-write "#<procedure>" (lambda () 42))
+ (test-write #:foo)
+ (test-write "#<port>" (open-input-string "foo"))
++(test-write -0.0)
++(test-write 0.0)
++(test-write 4503599627370496.0) ;; 2**52
++(test-write 4503599627370496.0) ;; -2**52
++
++;; Unlike Guile, JavaScript's string->number always puts a + on an
++;; exponent, and our JS runner prints values using reflect.js's
++;; flonum_to_string.
++(parameterize ((use-node? #f) (use-d8? #f))
++  (test-write 8.98846567431158e307) ;; 2**1023
++  (test-write 8.98846567431158e307)) ;; -2**1023
++
+ ;; Not yet implemented:
+ ;;   Boxes
+ ;;   Atomic boxes
+-- 
+2.43.0
+

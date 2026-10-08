@@ -1,0 +1,35 @@
+;; .guix-authorizations — operator keys authorized to sign commits to
+;; this channel.
+;;
+;; Per Guix Cookbook §17.5 (Specifying Channel Authorizations), `guix
+;; pull` walks the commit graph from the channel introduction to the
+;; tip and refuses any commit not signed by a fingerprint listed here
+;; (or in the .guix-authorizations of one of its ancestors).
+;;
+;; Adding or removing a key is itself a commit that must be signed by
+;; a currently-authorized key — that is how key rotation works without
+;; a flag day.
+;;
+;; Bootstrap procedure (one-time, run by the first operator):
+;;
+;;   1. gpg --quick-gen-key 'Playnet Operator <ops@example.com>' \
+;;          ed25519 cert,sign 0
+;;   2. gpg --export --armor <KEY-ID> > deploy/keys/<KEY-ID>.asc
+;;   3. Replace the placeholder fingerprint below with the real one
+;;      (gpg --fingerprint <KEY-ID> | sed -n 's/.* = //p').
+;;   4. git config commit.gpgsign true && git config user.signingkey <KEY-ID>
+;;   5. Commit and tag the bootstrap signed commit. Update
+;;      deploy/channels.scm: set (introduction) to that commit + fp.
+;;
+;; Format: an alist whose single key is `authorizations`, whose value
+;; is a list of (openpgp-fingerprint "…") forms.
+
+(authorizations
+ (version 0)
+ (("CAFF 2F2B B5CF DFE2 2FBF  B938 6A54 8079 D617 7B2F"
+   ;; ed25519 — Playnet Operator <ops@playnet.local>, bootstrap key.
+   ;; Pubkey: deploy/keys/CAFF2F2BB5CFDFE22FBFB9386A548079D6177B2F.asc
+   ;; Secret material lives on the operator's PLAYNET USB stick at
+   ;;   /media/anon00/PLAYNET/secrets/playnet-ops-gpg/
+   ;; (never committed). Revocation certificate stored alongside.
+   (name "playnet-operator-bootstrap"))))

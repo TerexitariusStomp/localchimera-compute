@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>playnet gateway doors</title>
+  <!-- Swagger UI, vendored (browser/vendor/swagger-ui, Apache-2.0): the box
+       serves no CDN. The document it renders, ../openapi.json, is emitted
+       from module/playnet/protocol.scm by tools/protocol-emit.scm; every
+       door the browser may call is listed, and the HTTP door's paths are
+       the ones a device-signed request may POST to. -->
+  <link rel="stylesheet" href="/vendor/swagger-ui/swagger-ui.css">
+  <style>
+    body { margin: 0; background: #fafafa; }
+    .topbar { display: none; }
+    .playnet-note { font: 14px system-ui, sans-serif; padding: 12px 20px; background: #fff3cd; border-bottom: 1px solid #ffe69c; }
+    .playnet-note code { background: #fff; padding: 1px 4px; }
+  </style>
+</head>
+<body>
+  <div class="playnet-note">
+    These are the gateway's doors, declared once in <code>module/playnet/protocol.scm</code>
+    and grouped by topic. Calls to non-anonymous doors carry an RFC 9421 signature from an
+    enrolled device key; "Try it out" works once this browser holds one. The same doors are
+    MCP tools: <code>POST /api/mcp</code> speaks JSON-RPC, and
+    <a href="../mcp-tools.json">mcp-tools.json</a> is the tool list.
+  </div>
+  <div id="swagger-ui"></div>
+  <script src="/vendor/swagger-ui/swagger-ui-bundle.js"></script>
+  <script src="/vendor/swagger-ui/swagger-ui-standalone-preset.js"></script>
+  <script>
+    window.addEventListener("load", function () {
+      window.ui = SwaggerUIBundle({
+        url: "/api/openapi.json",
+        dom_id: "#swagger-ui",
+        deepLinking: true,
+        docExpansion: "list",
+        defaultModelsExpandDepth: 0,
+        presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
+        layout: "BaseLayout"
+      });
+    });
+  </script>
+</body>
+</html>

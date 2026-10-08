@@ -1,0 +1,139 @@
+;;; deploy/fleet-child-os.scm.example — a fleet child with a remotely unlocked root
+;;;
+;;; The minimal operating-system of a rented host that reboots unattended:
+;;; the initrd opens an SSH door, the parent sends the LUKS passphrase, the
+;;; system boots.  See deploy/guix/remote-unlock.scm for the door itself.
+;;;
+;;; Disk layout (GPT):
+;;;   1. BIOS boot partition, 1 MiB  — GRUB's core image on BIOS firmware;
+;;;                                    idle on UEFI firmware
+;;;   2. ESP, vfat, mounted at /boot — GRUB's modules and grub.cfg, and
+;;;                                    EFI/BOOT/BOOTX64.EFI on UEFI firmware
+;;;   3. plain ext4 at /gnu/store    — public software; GRUB reads the kernel
+;;;                                    and the initrd from here
+;;;   4. LUKS2, "/" inside           — /etc, /var, /home, /root
+;;;
+;;; /boot sits outside LUKS because GRUB reads grub.cfg and its modules
+;;; before any passphrase exists on the machine.
+;;;
+;;; Every @NAME@ is a host-specific value.  deploy/scripts/render-child-os.scm
+;;; fills them (deploy/scripts/qemu-test-remote-unlock.sh and any installer
+;;; use it too); by hand, replace each one:
+;;;
+;;;   @HOST_NAME@             host name
+;;;   @LUKS_UUID@             `cryptsetup luksUUID /dev/…4`
+;;;   @STORE_UUID@            ext4 UUID of the store partition
+;;;   @ESP_UUID@              vfat volume id of the ESP, "1234-ABCD" form
+;;;   @BOOTLOADER@            grub-efi-removable-bootloader (UEFI) or
+;;;                           grub-bootloader (BIOS)
+;;;   @BOOTLOADER_TARGET@     "/boot" (UEFI: the ESP mount point) or the
+;;;                           disk, e.g. "/dev/vda" (BIOS)
+;;;   @ADDRESS_CIDR@          static IPv4, "203.0.113.7/24"
+;;;   @GATEWAY@               default gateway, "203.0.113.1"
+;;;   @INTERFACE@             "eth0": net.ifnames=0 below keeps the kernel's
+;;;                           name, so initrd and booted system agree
+;;;   @NAME_SERVERS@          quoted strings, e.g. "9.9.9.9" "149.112.112.112"
+;;;   @EXTRA_KERNEL_ARGUMENTS@ quoted strings, possibly none, e.g.
+;;;                           "console=ttyS0,115200" — the last console= is
+;;;                           /dev/console, where the fallback prompt shows
+;;;   @PARENT_PUBLIC_KEY@     the parent's ed25519 public key line: the one
+;;;                           key the initrd door accepts
+;;;   @ROOT_AUTHORIZED_KEY@   public key line authorized for root in the
+;;;                           booted system's sshd (the fleet uses the
+;;;                           parent's key here as well)
+;;;   @INITRD_HOST_KEY_FILE@  absolute file name of the initrd door's OpenSSH
+;;;                           private host key (made by the parent; a key of
+;;;                           its own, distinct from /etc/ssh/ssh_host_*)
+;;;
+;;; Build or install with the module on the load path:
+;;;   guix system init -L deploy/guix fleet-child-os.scm /mnt
+
+(use-modules (gnu)
+             (gnu services ssh)
+             (gnu services networking)
+             (remote-unlock))
+
+(define %parent-public-key "@PARENT_PUBLIC_KEY@")
+
+;; The LUKS root.  Opening it in the initrd means: static network up, SSH
+;; door on port 22, wait for the parent's passphrase (the console prompt
+;; stays as the second door), network down again.
+(define cryptroot
+  (mapped-device
+   (source (uuid "@LUKS_UUID@"))
+   (target "cryptroot")
+   (type (remote-unlock-luks-mapping
+          #:address "@ADDRESS_CIDR@"
+          #:gateway "@GATEWAY@"
+          #:interface "@INTERFACE@"
+          #:authorized-key %parent-public-key
+          #:host-key-file (local-file "@INITRD_HOST_KEY_FILE@"
+                                      "initrd-host-key")))))
+
+(operating-system
+  (host-name "@HOST_NAME@")
+  (timezone "Etc/UTC")
+  (locale "en_US.utf8")
+
+  ;; net.ifnames=0: the interface keeps the kernel's name (eth0) in the
+  ;; booted system, the same name the udev-less initrd sees.
+  (kernel-arguments '("net.ifnames=0" @EXTRA_KERNEL_ARGUMENTS@))
+
+  ;; virtio_net, virtio_blk and virtio_scsi are part of %base-initrd-modules.
+  ;; A host with another NIC adds its driver here so the door has a link.
+  (initrd-modules %base-initrd-modules)
+
+  (bootloader (bootloader-configuration
+               (bootloader @BOOTLOADER@)
+               (targets '("@BOOTLOADER_TARGET@"))
+               (timeout 1)))
+
+  (mapped-devices (list cryptroot))
+
+  (file-systems
+   (cons* (file-system
+            (mount-point "/")
+            (device "/dev/mapper/cryptroot")
+            (type "ext4")
+            (dependencies (list cryptroot)))
+          ;; The store, in the clear.  needed-for-boot? makes the initrd
+          ;; mount it right after the root.
+          (file-system
+            (mount-point "/gnu/store")
+            (device (uuid "@STORE_UUID@"))
+            (type "ext4")
+            (needed-for-boot? #t))
+          (file-system
+            (mount-point "/boot")
+            (device (uuid "@ESP_UUID@" 'fat))
+            (type "vfat"))
+          %base-file-systems))
+
+  (services
+   (cons* (service static-networking-service-type
+                   (list (static-networking
+                          (addresses
+                           (list (network-address
+                                  (device "@INTERFACE@")
+                                  (value "@ADDRESS_CIDR@"))))
+                          ;; The gateway is reachable on the link by declaration:
+                          ;; a /32 address has no subnet that holds it. The
+                          ;; initrd's door adds its default route the same way.
+                          (routes
+                           (list (network-route
+                                  (destination "@GATEWAY@")
+                                  (device "@INTERFACE@"))
+                                 (network-route
+                                  (destination "default")
+                                  (gateway "@GATEWAY@"))))
+                          (name-servers '(@NAME_SERVERS@)))))
+          ;; The booted system's sshd: its host keys are generated on first
+          ;; boot under the encrypted /etc/ssh.
+          (service openssh-service-type
+                   (openssh-configuration
+                    (permit-root-login 'prohibit-password)
+                    (password-authentication? #f)
+                    (authorized-keys
+                     `(("root" ,(plain-file "root.pub"
+                                            "@ROOT_AUTHORIZED_KEY@\n"))))))
+          %base-services)))
