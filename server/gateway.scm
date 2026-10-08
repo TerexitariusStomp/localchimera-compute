@@ -1670,7 +1670,7 @@
 
        (define terminal-svc
          (with-vat gateway-vat
-           (spawn ^terminal-service signup-vat signup-agent)))
+           (spawn ^terminal-service signup-vat signup-agent gateway-vat)))
 
        ;; ── Wallet cap (from wallet-service) + fleet reconciler ───────
        ;; The wallet and policy actors live in a SEPARATE process
@@ -1740,7 +1740,17 @@
        ;; through the policy's invoice bracket and settles as a VF transfer
        ;; out of the member's claim (monero/payout.scm). Needs the policy
        ;; cap; without a wallet-service the intents simply wait.
-       (when (and xmr-live-resource spend-policy)
+       ;;
+       ;; This is the one of the three XMR mechanisms that sends money to
+       ;; someone other than the operator's own infrastructure — the
+       ;; money-transmission / custody question docs/legal/README.md §10 row 3
+       ;; leaves open. Donation watch and the AI top-up below are the
+       ;; operator receiving and spending its own funds and start with the
+       ;; wallet regardless; this one is opt-in, default OFF, independent of
+       ;; whether a wallet is live at all — set PLAYNET_PAYOUTS_ENABLED to a
+       ;; value other than "0" once row 3 is actually settled.
+       (when (and xmr-live-resource spend-policy
+                  (let ((v (getenv "PLAYNET_PAYOUTS_ENABLED"))) (and v (not (string=? v "0")))))
          (start-payout-runner! gateway-vat planner-service spend-policy %fc-key gov-acdc-store
                                #:interval-seconds 120 #:log! log!)
          (log! "  [gateway] payout runner on (2 min tick)~%"))
