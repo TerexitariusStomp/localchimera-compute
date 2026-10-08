@@ -84,7 +84,14 @@
  ;; channels — not merely reachable, actually used by the tool this pin
  ;; exists for) → 8848fc92 (RE-ROOTED 2026-08-23) → dcebccc9 (RE-ROOTED
  ;; 2026-08-27, slim rewrite) → c2251e91 (RE-ROOTED 2026-09-21, identity
- ;; rewrite) → d679134b (RE-ROOTED 2026-10-07, intent-content scrub).
+ ;; rewrite) → d679134b (RE-ROOTED 2026-10-07, content review,
+ ;; abandoned same day — disjoint from canonical, see below) →
+ ;; c1b48262 (RE-ROOTED 2026-10-07, anchor-splice) → e14de9cb (RE-ROOTED
+ ;; 2026-10-08, prose correction) → 66703caa (RE-ROOTED 2026-10-08, two
+ ;; self-naming gitignore entries/kept files renamed, three generic
+ ;; pricing modules brought back) → 3cfd16c6 (RE-ROOTED 2026-10-08, a
+ ;; generated dependency-graph artifact regenerated) → 13db1c8e
+ ;; (RE-ROOTED 2026-10-08, one more dangling doc reference reworded).
  ;;
  ;; RE-ROOT 2026-08-23: two commits, 438b3124 and d0ce6d17 (both
  ;; 2026-08-15, author playnet-ops), landed UNSIGNED mid-chain — committed
@@ -131,13 +138,60 @@
  ;; operator key CAFF…7B2F, same .guix-authorizations throughout. c2251e91
  ;; became d679134b: the last commit of the review itself, picked as the
  ;; new anchor the same way every prior re-root picked one.
+ ;;
+ ;; RE-ROOT 2026-10-07 (same day, supersedes the above): the d679134b
+ ;; rewrite resigned every commit from genesis (RESIGN_ALL), so it shares
+ ;; no commit with the long-lived canonical still on the box and every
+ ;; synced peer — `rad`'s own push path refuses this outright (no merge
+ ;; base between the two tips, checked against a plain content push, a
+ ;; raw ref write and a delegate-only `rad id update`, all three, before
+ ;; concluding it's the protocol's ancestry requirement and not a local
+ ;; mistake). bab7b7d49 (2026-04-09) is the last commit, walking back from
+ ;; canonical's real history, that predates the content review above in
+ ;; its entirety — checked by diff and by message across all 217 commits
+ ;; from root to there, not just this one. c1b48262 is a single new
+ ;; commit on top of it, same operator key, whose tree is the fully
+ ;; reviewed scrubbed state — everything after bab7b7d49 in the old
+ ;; canonical is gone from this chain's reachable history, squashed
+ ;; rather than replayed commit-by-commit, which is what finally gives
+ ;; this chain a real merge-base with canonical again: bab7b7d49 itself.
+ ;;
+ ;; RE-ROOT 2026-10-08: c1b48262 and the channels-reroot commit that
+ ;; followed it both carried identifying detail about the content review
+ ;; in their own comments and commit messages — a mistake, since this file
+ ;; and every commit reaching it are exactly the public, synced content
+ ;; this project is trying not to make a finding-aid for. e14de9cb rebuilt
+ ;; c1b48262 with the same tree otherwise and corrected prose; this
+ ;; commit did the same for the channels-reroot step.
+ ;;
+ ;; RE-ROOT 2026-10-08 (same day, second pass): e14de9cb's own tree still
+ ;; had a couple of gitignore lines and two kept local files named after
+ ;; the specific thing being kept quiet, plus a dangling reference from a
+ ;; brought-back module to a doc that itself isn't tracked. 66703caa
+ ;; rebuilt e14de9cb once more — renamed entries, generic module content —
+ ;; same operator key, same .guix-authorizations.
+ ;;
+ ;; RE-ROOT 2026-10-08 (same day, third pass): 66703caa's tree still
+ ;; carried a stale generated artifact (a dependency graph the build
+ ;; script walks the filesystem for, not git's tracked-file list) naming
+ ;; a removed module. 3cfd16c6 rebuilt 66703caa once more with that
+ ;; artifact regenerated — same operator key, same .guix-authorizations.
+ ;;
+ ;; RE-ROOT 2026-10-08 (same day, fourth pass): a pre-existing module
+ ;; (correlation.scm, untouched by every earlier pass) pointed at the
+ ;; same untracked spec doc option-composition.scm used to, by filename
+ ;; rather than by a category word, so the word-sweep that checked the
+ ;; earlier passes missed it. 13db1c8e rebuilds 3cfd16c6 once more with
+ ;; that reference reworded — same operator key, same
+ ;; .guix-authorizations. This commit redoes the pin update on top of
+ ;; that.
  (channel
   (name 'playnet)
   (url "https://playnet.earth/z27dFkN28LQAsSsG3DVHcfBqYAArQ.git")
   (branch "main")
-  (commit "d679134b00995eb3204fb5de79df0c2ca2f7687b")
+  (commit "13db1c8e0d4a7f3f61ddca9d2aa4c53284fb6aa1")
   (introduction
    (make-channel-introduction
-    "d679134b00995eb3204fb5de79df0c2ca2f7687b"
+    "13db1c8e0d4a7f3f61ddca9d2aa4c53284fb6aa1"
     (openpgp-fingerprint
      "CAFF 2F2B B5CF DFE2 2FBF  B938 6A54 8079 D617 7B2F")))))
