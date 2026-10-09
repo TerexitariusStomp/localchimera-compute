@@ -49,22 +49,14 @@
              (srfi srfi-1) (srfi srfi-13))
 
 (use-modules (playnet test vf-ttl))
+(use-modules ((playnet utils records) #:select (vf-record-accessor)))
 
 (define root (vf-repo-root))
 (define ttl (ttl-action-table root))
 
+;; one accessor per TTL property, read off the record type (vf-ttl %behaviour-props)
 (define accessors
-  `((event-quantity     . ,action-definition-event-quantity)
-    (input-output       . ,action-definition-input-output)
-    (pairs-with         . ,action-definition-pairs-with)
-    (create-resource    . ,action-definition-create-resource)
-    (accounting-effect  . ,action-definition-accounting-effect)
-    (onhand-effect      . ,action-definition-onhand-effect)
-    (location-effect    . ,action-definition-location-effect)
-    (contained-effect   . ,action-definition-contained-effect)
-    (accountable-effect . ,action-definition-accountable-effect)
-    (stage-effect       . ,action-definition-stage-effect)
-    (state-effect       . ,action-definition-state-effect)))
+  (map (lambda (f) (cons f (vf-record-accessor <action-definition> f))) %behaviour-props))
 
 (define (repo-def action)
   (let ((e (assq action *action-definitions*))) (and e (cdr e))))

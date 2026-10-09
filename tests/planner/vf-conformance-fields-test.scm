@@ -20,11 +20,7 @@
 (define properties (ttl-properties root))          ; (name label domain range card) …
 (define property-names (map car properties))
 
-(define (kebab->camel-class sym)
-  (string-concatenate (map string-titlecase (string-split (symbol->string sym) #\-))))
-(define (kebab->camel-field sym)
-  (let ((parts (string-split (symbol->string sym) #\-)))
-    (string-concatenate (cons (car parts) (map string-titlecase (cdr parts))))))
+;; kebab->camel-class / kebab->camel-field: (playnet test vf-ttl)
 
 ;; the record types that are classes of the TTL, by their names
 (define (record-types module-name)

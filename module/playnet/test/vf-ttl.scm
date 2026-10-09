@@ -51,7 +51,10 @@
   #:use-module (ice-9 textual-ports)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-13)
-  #:export (vf-repo-root %ttl-path camel->kebab strip-vf clean-tokens
+  #:use-module ((playnet planner vf schemas) #:select (<action-definition>))
+  #:use-module ((playnet utils records) #:select (vf-record-type-fields))
+  #:export (vf-repo-root %ttl-path camel->kebab kebab->camel-class kebab->camel-field strip-vf clean-tokens
+            %beyond-ttl-action-fields
             read-lines ttl-blocks label-of action-block? parse-action-block
             load-ttl-actions %prop-map %behaviour-props ttl-value->symbol
             ttl-action-table ttl-label
@@ -142,23 +145,23 @@
 
 ;;; ── TTL values → playnet symbols ────────────────────────────────────────────
 
-(define %prop-map
-  '(("eventQuantity"     . event-quantity)
-    ("inputOutput"       . input-output)
-    ("pairsWith"         . pairs-with)
-    ("createResource"    . create-resource)
-    ("accountingEffect"  . accounting-effect)
-    ("onhandEffect"      . onhand-effect)
-    ("locationEffect"    . location-effect)
-    ("containedEffect"   . contained-effect)
-    ("accountableEffect" . accountable-effect)
-    ("stageEffect"       . stage-effect)
-    ("stateEffect"       . state-effect)))
+;; the record's own field list is the map: kebab field ↔ camelCase TTL property.
+;; Two fields of <action-definition> are playnet's, beyond the TTL's vf:Action
+;; properties, and are declared so here (the fields test holds the list).
+(define (kebab->camel-class sym)
+  (string-concatenate (map string-titlecase (string-split (symbol->string sym) #\-))))
+(define (kebab->camel-field sym)
+  (let ((parts (string-split (symbol->string sym) #\-)))
+    (string-concatenate (cons (car parts) (map string-titlecase (cdr parts))))))
+
+(define %beyond-ttl-action-fields '(implies-transfer eligible-for-exchange))
 
 (define %behaviour-props
-  '(event-quantity input-output pairs-with create-resource accounting-effect
-    onhand-effect location-effect contained-effect accountable-effect
-    stage-effect state-effect))
+  (filter (lambda (f) (not (memq f %beyond-ttl-action-fields)))
+          (vf-record-type-fields <action-definition>)))
+
+(define %prop-map
+  (map (lambda (f) (cons (kebab->camel-field f) f)) %behaviour-props))
 
 (define (ttl-value->symbol prop raw)
   "RAW (a TTL local name) read as the playnet symbol for property PROP (a
