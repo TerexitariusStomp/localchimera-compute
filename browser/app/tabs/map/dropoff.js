@@ -435,8 +435,15 @@ export function dropPoints() {
         return { lng: q.lng, lat: q.lat, kind: "drop", c, m: metresTo(c) };
     });
 }
+/** The drop's label, as the map draws it: near, its name and count; far, its distance and first tag. */
+export function dropLabel(pt) {
+    const c = pt.c;
+    return found(c)
+        ? { text: `${c.name} · ${contents(c.id).length}`, ink: "#7a5a2e" }
+        : { text: `${fmtM(pt.m)}${(c.tags || []).length ? " · " + (c.tags || [])[0] : ""}`, ink: "#7a5a2e" };
+}
 export function dropEl(pt) {
-    const c = pt.c, near = found(c), n = contents(c.id).length;
+    const c = pt.c, near = found(c);
     const el = document.createElement("div");
     el.className = "drop-marker" + (near ? " near" : " far") +
         (opened(c.id) ? " opened" : "") + (openId === c.id ? " sel" : "");
@@ -444,11 +451,7 @@ export function dropEl(pt) {
     // the ratings and the distance. Near enough, the box itself, and what's in it.
     // a point's name, hint and tags are wire text — whoever registered the box
     // wrote them — so they land escaped, as content.
-    paint(el, near
-        ? html `<div class="drop-icon">${c.emoji}</div>
-           <div class="drop-label">${c.name}<span class="drop-n">${n}</span></div>`
-        : html `<div class="drop-ring">?</div>
-           <div class="drop-label">${fmtM(pt.m)}${tagHtml(c, 1)}</div>`);
+    paint(el, near ? html `<div class="drop-icon">${c.emoji}</div>` : html `<div class="drop-ring">?</div>`);
     el.title = near ? `${c.name} — open it` : `${c.name} — ${fmtM(pt.m)} away · ${c.hint}`;
     el.onclick = e => {
         e.stopPropagation();

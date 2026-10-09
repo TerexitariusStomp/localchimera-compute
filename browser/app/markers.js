@@ -17,7 +17,7 @@
 // Each rendered unit persists in the registry under a STABLE KEY (a point's own
 // id; a cluster's zoom-and-cell) and is morphed in place, so the DOM never
 // blinks. The flicker was always the rebuild.
-import { PLACES, cWarm, cYea } from './core.js';
+import { PLACES, cDeep, cWarm, cYea } from './core.js';
 import { fmtClock } from './timefmt.js';
 import { themed } from './theme.js';
 import { relevantOffers } from './offers.js';
@@ -29,6 +29,9 @@ import * as share from './tabs/social/share.js';
 import * as atlas from './tabs/map/atlas.js';
 import { stage, onMapFace } from './stage.js';
 import { renderJourneys } from './journeys.js';
+import { setLabels } from './tabs/map/labels.js';
+import { poolLabel } from './tabs/map/pool.js';
+import { dropLabel } from './tabs/map/dropoff.js';
 import { effect } from './reactive.js';
 /** How close on screen is close enough to fold into one bubble. */
 const CLUSTER_PX = 34;
@@ -125,8 +128,8 @@ function bareEl(pt) {
     const onMap = onMapFace();
     if (pt.kind === "place" && pt.p.mode !== "work") {
         el.className = "map-slot-marker" + (host.selectedPlace() === pt.i ? " sel" : "");
-        el.innerHTML = `<div class="marker-icon">${pt.p.emoji}</div>` +
-            `<div class="marker-label">${pt.p.name}</div>`;
+        el.innerHTML = `<div class="marker-icon">${pt.p.emoji}</div>`;
+        el.title = pt.p.name;
         el.onclick = e => {
             e.stopPropagation();
             if (onMap)
@@ -147,8 +150,7 @@ function bareEl(pt) {
         el.className = `map-offer-marker tier-${tier}` +
             (host.isWilling(target) ? " willing" : "") + (sel ? " sel" : "");
         el.style.setProperty("--oc", o && o.kind === "free" ? cYea : cWarm);
-        const label = o ? `${fmtClock(o.t0)} ${o.label}` : pt.p.name;
-        el.innerHTML = `<span class="odot"></span><span class="olabel">${label}</span>`;
+        el.innerHTML = `<span class="odot"></span>`;
         el.title = o
             ? (tier === "open" ? `eligible — ${o.label} · select to offer willingness`
                 : `${o.from ? o.from + " · " : ""}${o.label}`)
@@ -167,6 +169,28 @@ function bareEl(pt) {
         };
     }
     return el;
+}
+/** What a single marker's label says, and in which ink — the map draws it (tabs/map/labels.ts). */
+function labelOf(pt) {
+    const at = { lng: pt.lng, lat: pt.lat };
+    if (pt.kind === "place") {
+        const p = pt.p;
+        if (p.mode === "work")
+            return { ...at, text: p.name, ink: cWarm, sel: host.selectedPlace() === pt.i };
+        return { ...at, text: p.name, ink: cDeep, sel: host.selectedPlace() === pt.i };
+    }
+    if (pt.kind === "offer") {
+        const o = pt.o;
+        const tier = o.tier || (o.status === "proposed" ? "offered" : "day");
+        const selEv = host.selectedEv();
+        return { ...at, text: `${fmtClock(o.t0)} ${o.label}`, ink: o.kind === "free" ? cYea : cWarm,
+            sel: Boolean(selEv && evKey(selEv) === evKey(o)), open: tier === "open" && !host.isWilling(o) };
+    }
+    if (pt.kind === "pool")
+        return { ...at, ...poolLabel(pt) };
+    if (pt.kind === "drop")
+        return { ...at, ...dropLabel(pt) };
+    return null;
 }
 /** The face a member shows inside a cluster bubble. Offers carry none. */
 const emojiOf = (pt) => pt.kind === "place" ? pt.p.emoji
@@ -234,6 +258,7 @@ function clusterEl(group) {
 let markerReg = new Map();
 /** Take every marker off the map. */
 export function clearMarkers() {
+    setLabels([]);
     markerReg.forEach(r => r.marker.remove());
     markerReg = new Map();
     placeEl = [];
@@ -280,6 +305,7 @@ export function renderMarkers() {
         cells.get(k).push(pt);
     }
     const seen = new Set();
+    const labels = [];
     for (const [cell, group] of cells) {
         const single = group.length === 1;
         const key = single ? ptKey(group[0]) : `c:${zq}:${cell}`;
@@ -305,7 +331,13 @@ export function renderMarkers() {
         }
         if (single && group[0].kind === "place")
             placeEl[group[0].i] = markerReg.get(key).el;
+        if (single) {
+            const l = labelOf(group[0]);
+            if (l)
+                labels.push(l);
+        }
     }
+    setLabels(labels); // the names, drawn by the map beside the faces
     // whatever this render no longer names, leaves — the ONLY removal path
     for (const [key, reg] of markerReg)
         if (!seen.has(key)) {

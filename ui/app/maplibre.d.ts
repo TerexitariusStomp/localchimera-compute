@@ -35,11 +35,15 @@ declare global {
       type: "MultiPolygon";
       coordinates: Position[][][];
     }
+    interface Point {
+      type: "Point";
+      coordinates: Position;
+    }
     interface LineString {
       type: "LineString";
       coordinates: Position[];
     }
-    type Geometry = Polygon | MultiPolygon | LineString;
+    type Geometry = Point | Polygon | MultiPolygon | LineString;
 
     interface Feature {
       type: "Feature";
@@ -91,7 +95,7 @@ declare global {
 
     interface LayerSpec {
       id: string;
-      type: "fill" | "line";
+      type: "fill" | "line" | "symbol";
       source: string;
       paint?: Record<string, StyleValue>;
       layout?: Record<string, StyleValue>;

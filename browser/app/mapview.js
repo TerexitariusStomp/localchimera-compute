@@ -29,6 +29,7 @@ import { stage, onEarth, onMapFace } from './stage.js';
 import { L } from './layers.js';
 import { renderMarkers } from './markers.js';
 import { mountJourneys } from './journeys.js';
+import { mountLabels, rethemeLabels } from './tabs/map/labels.js';
 import { refreshContainers } from './regions.js';
 import { drawChrome } from './chrome.js';
 import { drawEvents } from './ribbons.js';
@@ -151,8 +152,11 @@ function mkMap() {
 }
 // a theme pick re-hues the ground in place (the dial's own overlays are drawn
 // through the theme already; see main.ts's playnet:theme handler for the rest)
-document.addEventListener("playnet:theme", () => { if (map)
-    rethemeBasemap(map); });
+document.addEventListener("playnet:theme", () => { if (map) {
+    rethemeBasemap(map);
+    rethemeLabels();
+    renderMarkers();
+} });
 /**
  * Ensure a map bound to THIS face's element.
  *
@@ -397,6 +401,7 @@ export function openMap() {
     }
     containers.mount(m); // the nested-container desire overlay
     mountJourneys(m); // the move arcs, derived from the same offer set
+    mountLabels(m); // the markers' names, drawn by the map in the ground's register
     refreshContainers();
     if (onMapFace()) {
         // the drop points ride the same markers, so their card hands back a restyle

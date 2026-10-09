@@ -41,6 +41,16 @@ export function poolPoints() {
     }
     return pts;
 }
+/** The pool point's label, as the map draws it: name, then what the solve says of it. */
+export function poolLabel(pt) {
+    const s = pt.s;
+    const occ = (!pt.need && isFinite(+s.drawn) && +s.qty)
+        ? `${Math.round(+s.drawn * +s.qty)}/${+s.qty} taken` : "";
+    const qty = s.qty ? `${s.qty} ${s.unit || ""}`.trim() : "";
+    const text = `${s.name || s.spec || ""}${occ ? " · " + occ : qty ? " · " + qty : ""}`
+        + (pt.need && s.matched ? ` → ${s.matched}` : "");
+    return { text, ink: pt.need && s.matched ? "#2e7d32" : "#b87333" };
+}
 // ── the DOM for one pool point ──────────────────────────────────────────────
 export function poolEl(pt) {
     // a POOL point always carries its slot — atlas's own rowOfPt reads pt.s! on
@@ -50,18 +60,8 @@ export function poolEl(pt) {
     el.className = "map-slot-marker pool-marker" + (pt.need ? " pool-need" : "")
         + (pt.need && s.matched ? " pool-matched" : "");
     const face = s.emoji || (pt.need ? "🌱" : "🤲");
-    // occupancy, when the solve reported it: drawn is a 0..1 fraction of the
-    // slot's own qty — "1/2 taken" on the label, same figure the cluster sums
-    // the branch is only taken when +s.qty is truthy, so the coercions are real
-    const occ = (!pt.need && isFinite(+s.drawn) && +s.qty)
-        ? `${Math.round(+s.drawn * +s.qty)}/${+s.qty} taken` : "";
     const qty = s.qty ? `${s.qty} ${s.unit || ""}`.trim() : "";
-    // a slot's name and its match are the PUBLISHER's text, straight off the pool
-    // wire, so the marker renders them escaped, as content.
-    render(el, html `
-    <div class="marker-icon">${face}</div>
-    <div class="marker-label">${s.name || s.spec || ""}${occ ? " · " + occ
-        : qty ? " · " + qty : ""}${pt.need && s.matched ? html ` <span class="pool-match">→ ${s.matched}</span>` : ""}</div>`);
+    render(el, html `<div class="marker-icon">${face}</div>`);
     el.title = (slotsPool().demo ? "demo — " : "") + (pt.need
         ? (s.matched
             ? `matched — the plan fills ${s.name || s.spec} from ${s.matched}; ` +
