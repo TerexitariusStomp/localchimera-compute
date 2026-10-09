@@ -96,8 +96,8 @@
   "The range a stock that HELD stands in once any of FLOWS (plan-reader) has
    happened: ((low . n) (high . n) (flows . FLOWS)). Each flow may or may not
    have, so the low end takes every draw and the high end every addition."
-  (let ((draw (apply + (map (lambda (f) (min 0 (assq-ref f 'quantity))) flows)))
-        (add  (apply + (map (lambda (f) (max 0 (assq-ref f 'quantity))) flows))))
+  (let ((draw (apply + (map (lambda (f) (min 0 (row-figure f))) flows)))
+        (add  (apply + (map (lambda (f) (max 0 (row-figure f))) flows))))
     `((low . ,(max 0.0 (exact->inexact (+ held draw))))
       (high . ,(exact->inexact (+ held add)))
       (flows . ,flows))))
@@ -416,7 +416,7 @@
      (lambda (r)
        (let* ((rid  (assq-ref r 'id))
               (in   (assq-ref r 'contained-in))
-              (spec (assq-ref r 'conforms-to)))
+              (spec (row-spec r)))
          ;; a thing inside another is a line of that other's visit
          (and (string? rid)
               (not (and (string? in) (member in ids)))

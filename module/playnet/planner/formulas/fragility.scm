@@ -62,34 +62,36 @@
 
 (define-module (playnet planner formulas fragility)
   #:use-module (srfi srfi-1)
-  #:use-module ((playnet utils records) #:select (vf-record-type vf-record-constructor vf-record-predicate vf-record-accessor))
+  #:use-module ((playnet utils records) #:select (define-vf-record vf-record-type vf-record-constructor vf-record-predicate vf-record-accessor))
   #:use-module (playnet planner vf schemas)
   #:use-module ((playnet planner aggregation containment) #:select (containment-chain))
-  #:export (<fragility> %make-fragility fragility? fragility-profile fragility-extent
-            fragility-window fragility-specs fragility-level fragility-note fragility-side
-            fragility-kind fragility-key make-fragility fragility-with-profile frag-on-good
-            floor-on-good frag-rate frag-budget frag-contained frag-within pooled-budget
-            places-within as-fragility as-fragilities fragility-spec-names fragility-specs-of))
+  #:export (%make-fragility
+            fragility-kind
+            fragility-key
+            make-fragility
+            fragility-with-profile
+            frag-on-good
+            floor-on-good
+            frag-rate
+            frag-budget
+            frag-contained
+            frag-within
+            pooled-budget
+            places-within
+            as-fragility
+            as-fragilities
+            fragility-spec-names
+            fragility-specs-of))
 
 ;; ── the record ─────────────────────────────────────────────────────────────
-(define <fragility>
-  (vf-record-type 'Fragility
-    '((immutable profile)   ; (lo hi alpha w) — the tension's shape, unchanged
-      (immutable extent)    ; what it measures  (see below)
-      (immutable window)    ; 'rate | 'horizon
-      (immutable specs)     ; for `within`: the specs it covers
-      (immutable level)     ; a MEASURED starting level, when the limit is a stock
-      (immutable note)
-      (immutable side))))   ; 'ceiling (a limit on a draw) | 'floor (a level to hold)
+(define-vf-record <fragility> Fragility
+  (profile extent window specs level note side))
+  ;; (lo hi alpha w) — the tension's shape, unchanged
+  ;; what it measures  (see below)
+  ;; 'rate | 'horizon
+  ;; for `within`: the specs it covers
+  ;; a MEASURED starting level, when the limit is a stock   ; 'ceiling (a limit on a draw) | 'floor (a level to hold)
 (define %make-fragility (vf-record-constructor <fragility>))
-(define fragility?        (vf-record-predicate <fragility>))
-(define fragility-profile (vf-record-accessor <fragility> 'profile))
-(define fragility-extent  (vf-record-accessor <fragility> 'extent))
-(define fragility-window  (vf-record-accessor <fragility> 'window))
-(define fragility-specs   (vf-record-accessor <fragility> 'specs))
-(define fragility-level   (vf-record-accessor <fragility> 'level))
-(define fragility-note    (vf-record-accessor <fragility> 'note))
-(define fragility-side    (vf-record-accessor <fragility> 'side))
 
 ;; EXTENT is (kind . key):
 ;;   (good      . "spec#place@t")  one located good, one cell

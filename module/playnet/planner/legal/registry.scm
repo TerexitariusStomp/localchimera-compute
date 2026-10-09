@@ -34,7 +34,7 @@
 ;; for every includer, so exporting the lot preserves what they saw. `vf-record-type`
 ;; stays #:select'ed — a type is its name, the same object on both sides of the seam.
 (define-module (playnet planner legal registry)
-  #:use-module ((playnet utils records) #:select (vf-record-accessor vf-record-constructor vf-record-predicate vf-record-type))
+  #:use-module ((playnet utils records) #:select (define-vf-record vf-record-accessor vf-record-constructor vf-record-predicate vf-record-type))
   #:use-module (srfi srfi-1)
   #:use-module (ice-9 format)
   #:use-module ((playnet planner facts places) #:select (place-extra-ref place-parent-of place-known?))
@@ -43,27 +43,83 @@
   ;; combinator to be worth shadowing on purpose. #:replace is how Guile lets a
   ;; module say the override is deliberate, and it silences the warning.
   #:replace (rule negate)
-  #:export (<demand> make-demand demand? demand-kind demand-name
-            demand-rides demand-spec demand-detail demand-ref demand-retain
-            demand-renew obtain pay tell forbid %demand-kinds
-            demand-kind->vf-action demand=? demand-weight demands-weight bill-weight
-            *burden-tiers* guard-atoms guard-places guard-crossings border-rule? read-pack pack-section regime-endpoints
-            place-chain place-endpoints rule-speaks-of provenance-problems
-            guard-asks rule-doubted hit-unknowns custody-unknown
-            <legal-context> %make-legal-context common-ancestor paths-cross? endpoints-diverge?
-            legal-context ctx-crossings ctx-place-path ctx-agents ctx-assets
-            ctx-act ctx-endpoints ctx-channel ctx-border-level always
-            on-crossing in-jurisdiction place-has at-origin at-destination border-level-is
-            act-is via-channel agent-has asset-has for-citizens-of
-            all-of any-of compile-guard <legal-rule>
-            %make-legal-rule legal-rule-guard-form legal-rule? legal-rule-guard
-            legal-rule-demands legal-rule-label legal-rule-source legal-rule-as-of legal-rule-confidence
-            legal-rule-until rule-in-force? legal-rule-cancels rule-may-cancel?
-            legal-rule-steward demand->sexp sexp->demand rule->sexp sexp->rule
-            rules->sexp sexp->rules save-rule-pack load-rule-pack pack-paths load-rule-packs
+  #:export (make-demand
+            demand-ref
+            demand-retain
+            demand-renew
+            obtain
+            pay
+            tell
+            forbid
+            %demand-kinds
+            demand-kind->vf-action
+            demand=?
+            demand-weight
+            demands-weight
+            bill-weight
+            *burden-tiers*
+            guard-atoms
+            guard-places
+            guard-crossings
+            border-rule?
+            read-pack
+            pack-section
+            regime-endpoints
+            place-chain
+            place-endpoints
+            rule-speaks-of
+            provenance-problems
+            guard-asks
+            rule-doubted
+            hit-unknowns
+            custody-unknown
+            %make-legal-context
+            common-ancestor
+            paths-cross?
+            endpoints-diverge?
+            legal-context
+            ctx-border-level
+            always
+            on-crossing
+            in-jurisdiction
+            place-has
+            at-origin
+            at-destination
+            border-level-is
+            act-is
+            via-channel
+            agent-has
+            asset-has
+            for-citizens-of
+            all-of
+            any-of
+            compile-guard
+            %make-legal-rule
+            rule-in-force?
+            rule-may-cancel?
+            demand->sexp
+            sexp->demand
+            rule->sexp
+            sexp->rule
+            rules->sexp
+            sexp->rules
+            save-rule-pack
+            load-rule-pack
+            pack-paths
+            load-rule-packs
             jurisdiction-path
-            %bill-keys demand-bill-key bill-ref legal-demands
-            %confidences rule-sure? forbid-sure? bill-forbid bill-unread %stances bill-stance stance-forbids?))
+            %bill-keys
+            demand-bill-key
+            bill-ref
+            legal-demands
+            %confidences
+            rule-sure?
+            forbid-sure?
+            bill-forbid
+            bill-unread
+            %stances
+            bill-stance
+            stance-forbids?))
 
 (cond-expand (guile) (else
   ;; a page has no file system: no file is there to read, and none is written
@@ -94,20 +150,12 @@
 ;;; spec  : a set of atoms (the standard) | #f   (only spec-bearing obtains)
 ;;; detail: alist — issuer/per (obtain), base/rate (pay), to/discloses (tell),
 ;;;                 reason (forbid)
-(define <demand>
-  (vf-record-type 'Demand
-    '((immutable kind) (immutable name) (immutable rides)
-      (immutable spec) (immutable detail))))
+(define-vf-record <demand> Demand
+  (kind name rides spec detail))
 (define make-demand   (vf-record-constructor <demand>))
-(define demand?       (vf-record-predicate <demand>))
 ;; the four kinds a demand can be — the one list the statute extractor's prompt
 ;; and check read, so a kind added here reaches the model the same day
 (define %demand-kinds '(obtain pay tell forbid))
-(define demand-kind   (vf-record-accessor  <demand> 'kind))
-(define demand-name   (vf-record-accessor  <demand> 'name))
-(define demand-rides  (vf-record-accessor  <demand> 'rides))
-(define demand-spec   (vf-record-accessor  <demand> 'spec))
-(define demand-detail (vf-record-accessor  <demand> 'detail))
 (define (demand-ref d key) (assq-ref (demand-detail d) key))
 (define (demand-retain d) (demand-ref d 'retain))   ; statutory keep-period (years) | #f
 ;;; RENEW — the cadence on which a held credential or a filing comes round again,
@@ -217,16 +265,14 @@
 ;;; that wraps a single-jurisdiction activity once. The constructor trips a
 ;;; `border` crossing whenever the endpoints diverge; production, transport and
 ;;; the border are then the same kind of object, folded the same way.
-(define <legal-context>
-  (vf-record-type 'LegalContext
-    '((immutable crossings) (immutable place-path)
-      (immutable agents) (immutable assets) (immutable act) (immutable endpoints)
-      ;; CHANNEL — how the good reaches a person (legal/crossings.scm `recipe-channel`).
-      ;; A crossing says what the act is; the channel says how it lands. Rules for
-      ;; a public fridge turn on the PAIR: the same home-cooked pot may pass hand
-      ;; to hand and may not be left in a Fairteiler. #f = unspecified, and a
-      ;; channel guard then does not fire.
-      (immutable channel))))
+(define-vf-record <legal-context> LegalContext
+  (crossings place-path agents assets act endpoints channel)
+  #:prefix ctx)
+  ;; CHANNEL — how the good reaches a person (legal/crossings.scm `recipe-channel`).
+  ;; A crossing says what the act is; the channel says how it lands. Rules for
+  ;; a public fridge turn on the PAIR: the same home-cooked pot may pass hand
+  ;; to hand and may not be left in a Fairteiler. #f = unspecified, and a
+  ;; channel guard then does not fire.
 (define %make-legal-context (vf-record-constructor <legal-context>))
 
 ;;; deepest common ancestor of two jurisdiction-paths (paths run self→root):
@@ -257,13 +303,6 @@
          (xs  (if (endpoints-diverge? eps) (lset-adjoin eq? crossings 'border) crossings))
          (pp  (if (null? place-path) (if (pair? eps) (car eps) '()) place-path)))
     (%make-legal-context xs pp agents assets act eps channel)))
-(define ctx-crossings  (vf-record-accessor <legal-context> 'crossings))
-(define ctx-place-path (vf-record-accessor <legal-context> 'place-path))
-(define ctx-agents     (vf-record-accessor <legal-context> 'agents))
-(define ctx-assets     (vf-record-accessor <legal-context> 'assets))
-(define ctx-act        (vf-record-accessor <legal-context> 'act))
-(define ctx-endpoints  (vf-record-accessor <legal-context> 'endpoints))
-(define ctx-channel    (vf-record-accessor <legal-context> 'channel))
 ;;; the level at which an arc crosses (its common ancestor), or #f for a point.
 (define (ctx-border-level ctx)
   (let ((eps (ctx-endpoints ctx)))
@@ -397,12 +436,9 @@
               %askable))
 
 ;;; ─── LegalRule : guard FORM (data) + compiled predicate, with provenance ──
-(define <legal-rule>
-  (vf-record-type 'LegalRule
-    '((immutable guard) (immutable guard-form) (immutable demands) (immutable label)
-      (immutable source) (immutable as-of) (immutable confidence) (immutable steward)
-      (immutable until)     ; in force UNTIL (exclusive); #f = no end
-      (immutable cancels))))  ; demand NAMES this rule derogates from; '() = none
+(define-vf-record <legal-rule> LegalRule
+  (guard guard-form demands label source as-of confidence steward until cancels))
+  ;; in force UNTIL (exclusive); #f = no end  ; demand NAMES this rule derogates from; '() = none
 (define %make-legal-rule (vf-record-constructor <legal-rule>))
 ;;; AS-OF is the date the rule came into force, UNTIL the date it ceases to be
 ;;; (exclusive). Both are optional and both are provenance a pack already
@@ -438,17 +474,6 @@
                      (confidence 'reported) (steward #f) (until #f) (cancels '()))
   (%make-legal-rule (compile-guard guard-form) guard-form demands label source as-of
                     confidence steward until cancels))
-(define legal-rule-guard-form  (vf-record-accessor  <legal-rule> 'guard-form))
-(define legal-rule?            (vf-record-predicate <legal-rule>))
-(define legal-rule-guard       (vf-record-accessor  <legal-rule> 'guard))
-(define legal-rule-demands     (vf-record-accessor  <legal-rule> 'demands))
-(define legal-rule-label       (vf-record-accessor  <legal-rule> 'label))
-(define legal-rule-source      (vf-record-accessor  <legal-rule> 'source))
-(define legal-rule-as-of       (vf-record-accessor  <legal-rule> 'as-of))
-(define legal-rule-confidence  (vf-record-accessor  <legal-rule> 'confidence))
-(define legal-rule-steward     (vf-record-accessor  <legal-rule> 'steward))
-(define legal-rule-until       (vf-record-accessor  <legal-rule> 'until))
-(define legal-rule-cancels     (vf-record-accessor  <legal-rule> 'cancels))
 ;;; ─── confidence : how well a steward has checked a rule ──────────────────
 ;;; `verified` — a steward read the source and stands behind the rule;
 ;;; `reported` — taken from a source as stated; `uncertain` — the pack doubts

@@ -31,50 +31,45 @@
 ;; and the climb raises an unbound variable the moment it is actually taken.
 ;; The module depends only on srfi-1, so importing it closes no loop.
 (define-module (playnet planner knowledge worlds bioregions)
-  #:use-module ((playnet utils records) #:select (vf-record-type vf-record-constructor vf-record-predicate vf-record-accessor vf-record-modifier vf-record-type-name vf-record-type-fields))
+  #:use-module ((playnet utils records) #:select (define-vf-record vf-record-type vf-record-constructor vf-record-predicate vf-record-accessor vf-record-modifier vf-record-type-name vf-record-type-fields))
   #:use-module (playnet planner aggregation containment)
   #:use-module (srfi srfi-1)
   #:use-module (playnet planner vf schemas)
   #:use-module (playnet planner beyond scenario)
   #:use-module ((playnet planner formulas shocks) #:select (normalize-shocks tail-beyond-record))
-  #:export (<bioregion> %make-bioregion make-bioregion bioregion? bioregion-id
-            bioregion-name bioregion-lat bioregion-lon bioregion-parent
-            bioregion-scenarios bioregion-fragilities bioregion-boundary
-            *spatial-boundaries* set-spatial-boundary! spatial-boundary-of
-            bioregion-spatial *bioregions* register-bioregion!
-            attach-bioregion-scenarios! bioregion-find scope-bioregion
-            scope-bioregion-scenarios scope-bioregion-fragilities
-            bioregion-scenarios-for bioregion-of assemble-scenarios))
+  #:export (%make-bioregion
+            make-bioregion
+            *spatial-boundaries*
+            set-spatial-boundary!
+            spatial-boundary-of
+            bioregion-spatial
+            *bioregions*
+            register-bioregion!
+            attach-bioregion-scenarios!
+            bioregion-find
+            scope-bioregion
+            scope-bioregion-scenarios
+            scope-bioregion-fragilities
+            bioregion-scenarios-for
+            bioregion-of
+            assemble-scenarios))
 
 
 ;; a type is its name — the same object on both sides of the load seam
 
 
 
-(define <bioregion>
-  (vf-record-type 'Bioregion
-    '((immutable id)            ; SpatialThing id (the ecological agent)
-      (immutable name)
-      (immutable lat)
-      (immutable lon)
-      (immutable parent)        ; enclosing container id (containment), or #f
-      (immutable scenarios)     ; <planning-scenario> list — the futures
-      (immutable fragilities)   ; (spec . (lo hi α w)) list — the limits
-      (immutable boundary))))   ; GeoJSON extent (Polygon/MultiPolygon) or #f — the shape
+(define-vf-record <bioregion> Bioregion
+  (id name lat lon parent scenarios fragilities boundary))
+  ;; SpatialThing id (the ecological agent)
+  ;; enclosing container id (containment), or #f
+  ;; <planning-scenario> list — the futures
+  ;; (spec . (lo hi α w)) list — the limits   ; GeoJSON extent (Polygon/MultiPolygon) or #f — the shape
 (define %make-bioregion       (vf-record-constructor <bioregion>))
 ;; boundary optional so existing 7-arg constructions are unchanged (a shed with no
 ;; polygon is a point at lat/lon; with one it is a real region).
 (define* (make-bioregion id name lat lon parent scenarios fragilities #:optional (boundary #f))
   (%make-bioregion id name lat lon parent scenarios fragilities boundary))
-(define bioregion?            (vf-record-predicate   <bioregion>))
-(define bioregion-id          (vf-record-accessor    <bioregion> 'id))
-(define bioregion-name        (vf-record-accessor    <bioregion> 'name))
-(define bioregion-lat         (vf-record-accessor    <bioregion> 'lat))
-(define bioregion-lon         (vf-record-accessor    <bioregion> 'lon))
-(define bioregion-parent      (vf-record-accessor    <bioregion> 'parent))
-(define bioregion-scenarios   (vf-record-accessor    <bioregion> 'scenarios))
-(define bioregion-fragilities (vf-record-accessor    <bioregion> 'fragilities))
-(define bioregion-boundary    (vf-record-accessor    <bioregion> 'boundary))
 
 ;; GENERIC SpatialThing EXTENTS — an extent is a property of ANY SpatialThing (a
 ;; nation, a district, a building footprint, an ecoregion), not of a bioregion. The

@@ -57,18 +57,36 @@
   #:use-module (playnet planner formulas cadence)
   #:use-module (playnet planner knowledge catalogues compiler)   ; catalogue->wire / catalogue->policy — shared with conformance-catalogue.scm
   #:re-export (catalogue->wire catalogue->policy)
-  #:export (*planetary-boundaries* *climate-tipping-points* *limit-reversibility*
-            limit-reversibility-row reversibility-character reversibility-years
-            reversibility-implies *tcre* *warming-now* *planetary-catalogue*
+  #:export (*planetary-boundaries*
+            *climate-tipping-points*
+            *limit-reversibility*
+            limit-reversibility-row
+            reversibility-character
+            reversibility-years
+            reversibility-implies
+            *tcre*
+            *warming-now*
+            *planetary-catalogue*
             tipping-character-of
-            witnessed-tipping-characters limit-roster roster-of-verdict
-            limit-attenuation-rate <migrated-limit> %make-migrated-limit
-            migrated-limit? migrated-spec migrated-place migrated-stock migrated-rate
-            migrated-weight limit-tip-of migrate-limit migrated-limits migrated-gate
-            migrated-proc-id migrated->resources migrated->storables migrated->procs
-            migrated->flows migrated->stock-frag migrated->caps
-            limit-monitoring-cadence monitored-alpha)
-  #:use-module ((playnet utils records) #:select (vf-record-accessor vf-record-constructor vf-record-predicate vf-record-type)))
+            witnessed-tipping-characters
+            limit-roster
+            roster-of-verdict
+            limit-attenuation-rate
+            %make-migrated-limit
+            limit-tip-of
+            migrate-limit
+            migrated-limits
+            migrated-gate
+            migrated-proc-id
+            migrated->resources
+            migrated->storables
+            migrated->procs
+            migrated->flows
+            migrated->stock-frag
+            migrated->caps
+            limit-monitoring-cadence
+            monitored-alpha)
+  #:use-module ((playnet utils records) #:select (define-vf-record vf-record-accessor vf-record-constructor vf-record-predicate vf-record-type)))
 
 (cond-expand (guile) (else
   (define (string-contains s pat)          ; the first index of PAT in S, or #f (Hoot has no srfi-13)
@@ -329,19 +347,12 @@
 
 ;; ONE migrated limit. Everything else about it is derivable from these four, so
 ;; the projections below build the records a solve wants without threading state.
-(define <migrated-limit>
-  (vf-record-type 'MigratedLimit
-    '((immutable spec) (immutable place) (immutable stock) (immutable rate)
-      (immutable weight))))   ; the profile's governance w — carried so the level's
+(define-vf-record <migrated-limit> MigratedLimit
+  (spec place stock rate weight)
+  #:prefix migrated)   ; the profile's governance w — carried so the level's
                               ; ≥0 balance stays FELT AT THE OPTIMUM rather than
                               ; silently reverting to the swept bar every good has
 (define %make-migrated-limit (vf-record-constructor <migrated-limit>))
-(define migrated-limit?  (vf-record-predicate <migrated-limit>))
-(define migrated-spec    (vf-record-accessor <migrated-limit> 'spec))
-(define migrated-place   (vf-record-accessor <migrated-limit> 'place))
-(define migrated-stock   (vf-record-accessor <migrated-limit> 'stock))
-(define migrated-rate    (vf-record-accessor <migrated-limit> 'rate))   ; #f ⇒ removal only
-(define migrated-weight  (vf-record-accessor <migrated-limit> 'weight))
 
 (define (limit-tip-of entry)
   (+ (list-ref entry 2) (* (list-ref entry 4) (- (list-ref entry 3) (list-ref entry 2)))))

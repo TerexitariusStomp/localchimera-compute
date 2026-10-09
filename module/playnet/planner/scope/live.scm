@@ -2239,7 +2239,7 @@
 ;; from a willing-only plan) and the SNAPSHOT (which reads stored intents). Each
 ;; materialized assignment is persisted as a work Intent — deterministic id
 ;; mi|worker|skill|cell, provider unbound, suggested-provider in meta — so
-;; record->cal-alist reads match-status=matched and it surfaces under the
+;; the calendar's intent row reads match-status=matched and it surfaces under the
 ;; calendar's "Awaiting your acceptance" for that worker, who then accepts
 ;; (promote-to-commitment). Prior mi| intents are cleared first, so a worker who
 ;; withdrew (or got re-balanced out) drops cleanly.
@@ -2293,7 +2293,7 @@
 ;; The live calendar carries STORED work needs (not a goods demand), so the
 ;; willing loop materializes by ASSIGNMENT, not a convex re-solve: for each open
 ;; work need, every worker who marked willing for its (skill, cell) gets a
-;; suggested mi| intent — the "race". record->cal-alist reads suggested-provider →
+;; suggested mi| intent — the "race". The calendar's intent row reads suggested-provider →
 ;; matched → it surfaces under "Awaiting your acceptance" for that worker, who
 ;; accepts (promote-to-commitment; the cq>aq guard binds their hour budget THERE,
 ;; so over-subscribed willingness can't over-commit). Clears prior mi| first.

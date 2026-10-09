@@ -158,7 +158,7 @@
                                    (list-tail fields (min (length lst) (length fields)))))))))
 
 ;; ── one declaration per record type ─────────────────────────────────────────
-;; (define-vf-record <agent> Agent (id type name …) [#:register register!])
+;; (define-vf-record <agent> Agent (id type name …) [#:register register!] [#:prefix p])
 ;; defines the type (vf-record-type, so it keeps its identity across the load
 ;; seam), the predicate `agent?` and one accessor `agent-<field>` per field —
 ;; the names the hand-written blocks spelled, now read off the type name and
@@ -180,13 +180,19 @@
             s)))
     (syntax-case x ()
       ((_ type name (field ...) . opts)
-       (let* ((pfx (prefix-of (syntax->datum #'type)))
+       (let* ((o (syntax->datum #'opts))
+              (opt (lambda (k) (let loop ((o o)) (cond ((or (null? o) (null? (cdr o))) #f)
+                                                      ((eq? (car o) k) (cadr o))
+                                                      (else (loop (cddr o)))))))
+              ;; #:prefix p names the accessors p-<field> (the predicate stays <type>?) where
+              ;; they do not read off the type name (rstock-spec of <regenerating-stock>)
+              (tpfx (prefix-of (syntax->datum #'type)))
+              (pfx (let ((p (opt #:prefix))) (if p (sym->str p) tpfx)))
               (ctx #'type)
               (mk (lambda (str) (datum->syntax ctx (string->symbol str))))
               (fields (syntax->datum #'(field ...)))
-              (reg (let ((o (syntax->datum #'opts)))
-                     (and (pair? o) (eq? (car o) #:register) (cadr o)))))
-         (with-syntax ((pred (mk (string-append pfx "?")))
+              (reg (opt #:register)))
+         (with-syntax ((pred (mk (string-append tpfx "?")))
                        ((acc ...) (map (lambda (f) (mk (string-append pfx "-" (sym->str f)))) fields))
                        (register (if reg (datum->syntax ctx reg) #f)))
            (if reg

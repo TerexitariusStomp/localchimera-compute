@@ -11,23 +11,18 @@
 
 (define-module (playnet planner beyond lot)
   #:use-module (srfi srfi-1)
-  #:use-module ((playnet utils records) #:select (vf-record-type vf-record-constructor vf-record-predicate vf-record-accessor vf-record-modifier vf-record-type-name vf-record-type-fields vf-record-copier))
-  #:use-module ((playnet planner vf serdes) #:select (register-vf-records!))
-  #:export (<batch-lot-record> make-batch-lot-record batch-lot-record?
-            batch-lot-record-id batch-lot-record-batch-lot-code
-            batch-lot-record-expiration-date batch-lot-record-expiration-kind))
+  #:use-module ((playnet utils records) #:select (define-vf-record vf-record-type vf-record-constructor vf-record-predicate vf-record-accessor vf-record-modifier vf-record-type-name vf-record-type-fields vf-record-copier))
+  #:use-module ((playnet planner vf serdes) #:select (register-vf-records! register-vf-record!))
+  #:export (make-batch-lot-record))
 
 ;;; BatchLotRecord — tracking for serialized/lot-controlled resources.
 ;;; Fields: id (string), batch-lot-code? (string), expiration-date? (ISO datetime string),
 ;;;         expiration-kind? ('best-before | 'use-by): which date the label states.
 ;;;         A good past its best-before passes on with a notice; a good past its
 ;;;         use-by does not pass on (docs/planning/food/berlin-verteilstation-requirements.md).
-(define <batch-lot-record>
-  (vf-record-type 'BatchLotRecord
-    '((immutable id)
-      (immutable batch-lot-code)
-      (immutable expiration-date)
-      (immutable expiration-kind))))
+(define-vf-record <batch-lot-record> BatchLotRecord
+  (id batch-lot-code expiration-date expiration-kind)
+  #:register register-vf-record!)
 
 ;; Smart constructor: `expiration-kind` is keyword-only and last, so every
 ;; three-positional call site stands as written; serdes round-trips it through
@@ -38,12 +33,6 @@
   (%make-batch-lot-record id batch-lot-code expiration-date
                           (and (memq expiration-kind '(best-before use-by))
                                expiration-kind)))
-(define batch-lot-record?                  (vf-record-predicate   <batch-lot-record>))
-(define batch-lot-record-id                (vf-record-accessor    <batch-lot-record> 'id))
-(define batch-lot-record-batch-lot-code    (vf-record-accessor    <batch-lot-record> 'batch-lot-code))
-(define batch-lot-record-expiration-date   (vf-record-accessor    <batch-lot-record> 'expiration-date))
-(define batch-lot-record-expiration-kind   (vf-record-accessor    <batch-lot-record> 'expiration-kind))
 
 ;; ── persistence: these records register their own types ─────────────────────
-(register-vf-records!
-  <batch-lot-record>)
+;; each type registers itself as it is declared (define-vf-record #:register)

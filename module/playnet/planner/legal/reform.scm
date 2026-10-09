@@ -24,34 +24,30 @@
 ;; vf-record-type stays #:select'ed — a type is its name, the same object on
 ;; both sides of the seam. The legal vocabulary it diffs against is a module now.
 (define-module (playnet planner legal reform)
-  #:use-module ((playnet utils records) #:select (vf-record-accessor vf-record-constructor vf-record-predicate vf-record-type))
+  #:use-module ((playnet utils records) #:select (define-vf-record vf-record-accessor vf-record-constructor vf-record-predicate vf-record-type))
   #:use-module (playnet planner legal registry)
   #:use-module (srfi srfi-1)
   #:use-module (ice-9 format)
-  #:export (<spec-mirror> %make-spec-mirror spec-mirror spec-mirror?
-            spec-mirror-name spec-mirror-kind spec-mirror-legal
-            spec-mirror-internal spec-mirror-desired
-            has-spec? spec-kind? reform-regions
-            reform-entry reform-move move-rank reform-program))
+  #:export (%make-spec-mirror
+            spec-mirror
+            has-spec?
+            spec-kind?
+            reform-regions
+            reform-entry
+            reform-move
+            move-rank
+            reform-program))
 
 ;;; ─── SpecMirror : a legal spec beside the federation's internal & desired ─
 ;;; kind ∈ permit | licence (spec-bearing) | levy | disclosure (non-spec)
 ;;;        | registration | entity (existence).
 ;;; legal/internal/desired : SETS of atoms (clauses). legal = '()/#f ⇒ existence.
-(define <spec-mirror>
-  (vf-record-type 'SpecMirror
-    '((immutable name) (immutable kind) (immutable legal)
-      (immutable internal) (immutable desired))))
+(define-vf-record <spec-mirror> SpecMirror
+  (name kind legal internal desired))
 (define %make-spec-mirror (vf-record-constructor <spec-mirror>))
 (define* (spec-mirror name #:key (kind 'permit) (legal '()) (internal '())
                       (desired '()))
   (%make-spec-mirror name kind legal internal desired))
-(define spec-mirror?            (vf-record-predicate <spec-mirror>))
-(define spec-mirror-name        (vf-record-accessor  <spec-mirror> 'name))
-(define spec-mirror-kind        (vf-record-accessor  <spec-mirror> 'kind))
-(define spec-mirror-legal       (vf-record-accessor  <spec-mirror> 'legal))
-(define spec-mirror-internal    (vf-record-accessor  <spec-mirror> 'internal))
-(define spec-mirror-desired     (vf-record-accessor  <spec-mirror> 'desired))
 
 (define (has-spec? m) (let ((L (spec-mirror-legal m))) (and (list? L) (pair? L))))
 (define (spec-kind? k) (and (memq k '(permit licence)) #t))   ; inspectable standard

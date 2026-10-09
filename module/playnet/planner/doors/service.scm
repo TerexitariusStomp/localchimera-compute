@@ -594,7 +594,7 @@
                   `((proc  . ,(assq-ref r 'process))
                     (place . ,(assq-ref r 'place))
                     (when  . ,(assq-ref r 'begin))
-                    (until . ,(assq-ref r 'until))
+                    (until . ,(row-until r))
                     ,@(let ((w (assq-ref r 'why))) (if w `((why . ,w)) '()))
                     (needs . ,(map (lambda (n)
                                      (let ((nm (assq-ref n 'name)))
@@ -925,9 +925,9 @@ scope walk wherever a solve wants the scope's declared needs."
     (when (and obs (assq 'claims alist))
       (let* ((rows (or (assq-ref alist 'claims) '()))
              (fresh (map (lambda (r)
-                           (claim-commitment (assq-ref r 'conforms-to) (assq-ref r 'claimant)
-                                             (assq-ref r 'quantity) scope-id
-                                             #:place (assq-ref r 'at-location)
+                           (claim-commitment (row-spec r) (assq-ref r 'claimant)
+                                             (row-quantity r) scope-id
+                                             #:place (row-place r)
                                              #:when-iso (let ((p (assq-ref r 'period))) (and p (format #f "~a" p)))))
                          rows))
              (keep  (map commitment-id fresh)))
@@ -1765,8 +1765,8 @@ service does not know the scope (nothing to filter by)."
            (let* ((spec    (intent-resource-conforms-to it))
                   (synthetic-flow
                     (make-recipe-flow #:id iid #:action 'work #:resource-conforms-to spec))
-                  (scope-id (let ((scope-list (intent-in-scope-of it)))
-                              (and (pair? scope-list) (car scope-list))))
+                  (scope-id (let ((scopes (row-scopes it)))   ; inScopeOf, a list (or one id on an older row)
+                              (and (pair? scopes) (car scopes))))
                   (result (match-work-flows
                             (list synthetic-flow) obs as
                             #:scope-id scope-id

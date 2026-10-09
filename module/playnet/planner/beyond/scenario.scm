@@ -11,12 +11,10 @@
 
 (define-module (playnet planner beyond scenario)
   #:use-module (srfi srfi-1)
-  #:use-module ((playnet utils records) #:select (vf-record-type vf-record-constructor vf-record-predicate vf-record-accessor vf-record-modifier vf-record-type-name vf-record-type-fields vf-record-copier))
-  #:use-module ((playnet planner vf serdes) #:select (register-vf-records!))
-  #:export (<planning-scenario> %make-planning-scenario make-planning-scenario
-            planning-scenario? planning-scenario-id planning-scenario-scenario
-            planning-scenario-probability planning-scenario-yield-multipliers
-            planning-scenario-note planning-scenario-path))
+  #:use-module ((playnet utils records) #:select (define-vf-record vf-record-type vf-record-constructor vf-record-predicate vf-record-accessor vf-record-modifier vf-record-type-name vf-record-type-fields vf-record-copier))
+  #:use-module ((playnet planner vf serdes) #:select (register-vf-records! register-vf-record!))
+  #:export (%make-planning-scenario
+            make-planning-scenario))
 
 ;;; PlanningScenario — a STOCHASTIC decoration of a vf:Scenario for robust
 ;;; planning. vf:Scenario is deliberately loose ("a grouping mechanism for
@@ -41,14 +39,9 @@
 ;;;          scenario in a set is the flat (non-tree) case: every scenario is its
 ;;;          own leaf under one shared root, exactly the existing robust
 ;;;          first-stage/recourse split. See docs/planning/solve/scenario-tree.md.
-(define <planning-scenario>
-  (vf-record-type 'PlanningScenario
-    '((immutable id)
-      (immutable scenario)
-      (immutable probability)
-      (immutable yield-multipliers)
-      (immutable note)
-      (immutable path))))
+(define-vf-record <planning-scenario> PlanningScenario
+  (id scenario probability yield-multipliers note path)
+  #:register register-vf-record!)
 
 ;; PATH is optional and defaults to '() so every existing 5-argument call site
 ;; (24 of them, across the knowledge/ bioregions and every robust test) keeps
@@ -57,14 +50,6 @@
 (define* (make-planning-scenario id scenario probability yield-multipliers note
                                  #:optional (path '()))
   (%make-planning-scenario id scenario probability yield-multipliers note path))
-(define planning-scenario?              (vf-record-predicate   <planning-scenario>))
-(define planning-scenario-id            (vf-record-accessor    <planning-scenario> 'id))
-(define planning-scenario-scenario      (vf-record-accessor    <planning-scenario> 'scenario))
-(define planning-scenario-probability   (vf-record-accessor    <planning-scenario> 'probability))
-(define planning-scenario-yield-multipliers (vf-record-accessor <planning-scenario> 'yield-multipliers))
-(define planning-scenario-note          (vf-record-accessor    <planning-scenario> 'note))
-(define planning-scenario-path          (vf-record-accessor    <planning-scenario> 'path))
 
 ;; ── persistence: these records register their own types ─────────────────────
-(register-vf-records!
-  <planning-scenario>)
+;; each type registers itself as it is declared (define-vf-record #:register)

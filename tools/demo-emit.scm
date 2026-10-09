@@ -8,8 +8,8 @@
 ;;; the demo neighbourhood (planner/knowledge/worlds/demo-neighbourhood.scm) stands in a
 ;;; real scope, its acts are played through the real doors, and what the planner
 ;;; and governance then answer the demo's person is written down in the shapes
-;;; the page reads them in ((playnet wire snapshot), (playnet wire replies), the
-;;; same converters the page's spine answers through). So the page holds no demo
+;;; the page reads them in (the wire tables of (playnet wire replies) and the row
+;;; tables each door's reply is finished through — the same the gateway answers through). So the page holds no demo
 ;;; figures of its own: it plays what a gateway would have sent.
 ;;;
 ;;; The recording is made on one fixed day with the clock stood on it, where ids

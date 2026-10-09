@@ -32,36 +32,35 @@
 ;; (make-record-type, matching <bioregion>/<spatial-thing> — the planner is
 ;; primitive-loaded without srfi-9's define-record-type in scope.)
 (define-module (playnet planner formulas stocks)
-  #:use-module ((playnet utils records) #:select (vf-record-type vf-record-constructor vf-record-predicate vf-record-accessor vf-record-modifier vf-record-type-name vf-record-type-fields))
+  #:use-module ((playnet utils records) #:select (define-vf-record vf-record-type vf-record-constructor vf-record-predicate vf-record-accessor vf-record-modifier vf-record-type-name vf-record-type-fields))
   #:use-module (srfi srfi-1)
   #:use-module (playnet planner vf schemas)
-  #:export (<regenerating-stock> %make-regenerating-stock make-regenerating-stock
-            regenerating-stock? rstock-spec rstock-name rstock-place rstock-init
-            rstock-unit *regenerating-stocks* register-regenerating-stock!
-            regenerating-stock-ref clear-regenerating-stocks!
-            regenerating-stock->resource regenerating-stock-resources
-            regenerating-stock-storables stock-draw-flow stock-restore-flow))
+  #:export (%make-regenerating-stock
+            make-regenerating-stock
+            *regenerating-stocks*
+            register-regenerating-stock!
+            regenerating-stock-ref
+            clear-regenerating-stocks!
+            regenerating-stock->resource
+            regenerating-stock-resources
+            regenerating-stock-storables
+            stock-draw-flow
+            stock-restore-flow))
 
 
 ;; a type is its name — the same object on both sides of the load seam
 
-(define <regenerating-stock>
-  (vf-record-type 'RegeneratingStock
-    '((immutable spec)      ; the good whose LEVEL is the condition (e.g. "soil-fertility")
-      (immutable name)      ; human label
-      (immutable place)     ; where the stock stands (the land, the workshop, the basin)
-      (immutable init)      ; starting level S0 — a real measurement
-      (immutable unit))))   ; the level's unit (a stock index, kg N, m of head, tonnes)
+(define-vf-record <regenerating-stock> RegeneratingStock
+  (spec name place init unit)
+  #:prefix rstock)
+  ;; the good whose LEVEL is the condition (e.g. "soil-fertility")
+  ;; human label
+  ;; where the stock stands (the land, the workshop, the basin)
+  ;; starting level S0 — a real measurement   ; the level's unit (a stock index, kg N, m of head, tonnes)
 (define %make-regenerating-stock (vf-record-constructor <regenerating-stock>))
 ;; unit optional — a bare index needs no unit.
 (define* (make-regenerating-stock spec name place init #:optional (unit "unit"))
   (%make-regenerating-stock spec name place init unit))
-(define regenerating-stock?    (vf-record-predicate <regenerating-stock>))
-(define rstock-spec  (vf-record-accessor <regenerating-stock> 'spec))
-(define rstock-name  (vf-record-accessor <regenerating-stock> 'name))
-(define rstock-place (vf-record-accessor <regenerating-stock> 'place))
-(define rstock-init  (vf-record-accessor <regenerating-stock> 'init))
-(define rstock-unit  (vf-record-accessor <regenerating-stock> 'unit))
 
 ;; The registry — seeded config, like the bioregion/SpatialThing tables. reset!
 ;; leaves it (a stock is a fact about the world, not per-solve state).
