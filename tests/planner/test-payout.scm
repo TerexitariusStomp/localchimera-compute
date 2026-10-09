@@ -22,9 +22,12 @@
 (use-modules ((playnet planner observation account) #:select (declare-claimable!)))
 (use-modules ((playnet test scope) #:select (plan-claim!)))   ; the plan's row, stood by the fixture
 
-;; the rail a good is on is the PLAN's word (rail.scm, read off the recipes); no
-;; plan runs here, so the fixture stands in for it: raised XMR is a final good,
-;; nobody's input — the individual rail, what a citizen claims
+;; Left for documentation only: spec-xmr is on the bar list
+;; (facts/barred-specs.scm) now, so this stand-in — what the fixture would
+;; need if the rail were read off the recipes alone — has no effect; the
+;; claim door's own refusal of spec-xmr is asserted directly below, and
+;; alice's already-claimed state is seeded by hand instead (see "claim, then
+;; ask to send").
 (declare-claimable! "spec-xmr")
 
 (define ADDR "44AFFq5kSiGBoZ4NMDwYtN18obc8AemS33DBLWs3H7otXft3XjrpDtQGv7SqSsaBYBb98uNbr2VBBEt7f2wfn3RVGQBEP3A")
@@ -89,7 +92,29 @@
 
 (with-vat vat
   (display "\n── claim, then ask to send ──\n")
-  (check "alice claims 1 XMR" (car ($ svc 'claim "s1" %xmr-resource-id 1 "alice" #f)) 'ok)
+  ;; The claim door now correctly refuses spec-xmr: no citizen may claim a
+  ;; financial instrument against credit (facts/barred-specs.scm). This test
+  ;; is about the PAYOUT RUNNER's own behaviour once a citizen already holds
+  ;; XMR, not about whether the claim itself should be let through —
+  ;; test-external-asset-claim.scm covers that directly — so the fixture
+  ;; stands in for an already-settled claim the same way raise-xmr!/work!
+  ;; stand in for the chain and the hour log: it records the transfer event
+  ;; account-store's own 'claim method would have written, without walking
+  ;; through the now-closed door.
+  (check "the claim door itself refuses spec-xmr, as it should"
+         (car ($ svc 'claim "s1" %xmr-resource-id 1 "alice" #f)) 'error)
+  (let ((obs ($ SR 'observer)))
+    ($ obs 'record-event
+       (make-economic-event #:id "ev-claim-stand-in" #:action 'transfer
+                            #:resource-inventoried-as %xmr-resource-id
+                            #:to-resource-inventoried-as (string-append %xmr-resource-id "-alice")
+                            #:resource-conforms-to %xmr-spec-id
+                            #:resource-classified-as '("currency" "cryptocurrency")
+                            #:provider "agent-playnet" #:receiver "alice"
+                            #:resource-quantity (make-measure 1 "XMR")
+                            #:effort-quantity (make-measure 20 "hour")
+                            #:in-scope-of '()
+                            #:distribution-mode 'individual-claimable)))
   (check "1 XMR available to send" (avail) 1.0)
 
   (check "a typo is not an address"

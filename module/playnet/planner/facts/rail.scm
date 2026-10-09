@@ -15,6 +15,7 @@
 ;;; rule and the crossings all read it without a cycle.
 (define-module (playnet planner facts rail)
   #:use-module (srfi srfi-1)
+  #:use-module ((playnet planner facts barred-specs) #:select (barred-individual?))
   #:export (rails-of spec-rail publish-rails! declare-rail! rails
             spec-claimable? declare-claimable! claimable-specs
             publish-social-portion! declare-social-portion! spec-social-portion social-portions
@@ -72,11 +73,15 @@
   "The rail SPEC is on, as STORE's own last solve classified it — never a
    different scope's, once STORE has solved at all. With no STORE, or
    before STORE has ever solved, the legacy single-plan table (declared or
-   published there); #f when nothing has spoken at all."
+   published there); #f when nothing has spoken at all. The one exception:
+   a spec on the bar list (facts/barred-specs.scm) answers 'communal always,
+   whatever any solve, `declare-rail!`, or future caller ever wrote for it —
+   not a record's word, read before the table is."
   (and spec
-       (let ((t (store-rail-table store)))
-         (if t (hash-ref t spec #f)
-             (hash-ref *spec-rail* spec #f)))))
+       (or (and (barred-individual? spec) 'communal)
+           (let ((t (store-rail-table store)))
+             (if t (hash-ref t spec #f)
+                 (hash-ref *spec-rail* spec #f))))))
 
 (define (publish-rails! rails)
   "The plan's word, legacy/no-store layer: RAILS ((spec . rail) …) replaces
@@ -147,4 +152,8 @@
 
 (define* (spec-claimable? spec #:optional (store #f)) (eq? (spec-rail spec store) 'individual))
 (define (declare-claimable! . specs) (for-each (lambda (s) (declare-rail! s 'individual)) specs))
-(define (claimable-specs) (filter-map (lambda (p) (and (eq? (cdr p) 'individual) (car p))) (rails)))
+(define* (claimable-specs #:optional (store #f))
+  "Every spec a citizen may claim: the individual rail, read through spec-rail so
+   the bar list holds here as it does for each spec asked alone."
+  (filter (lambda (spec) (spec-claimable? spec store))
+          (map car (let ((t (store-rail-table store))) (if t (hash-map->list cons t) (rails))))))
