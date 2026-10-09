@@ -18,6 +18,7 @@
 (define-module (playnet planner formulas flows)
   #:use-module (playnet planner vf schemas)
   #:use-module ((playnet utils keyed-id) #:select (keyed-id))
+  #:use-module ((playnet utils records) #:select (vf-record-accessor))
   #:use-module ((playnet utils clock) #:select (now instant->civil))
   #:export (row-id row-action row-spec row-quantity row-unit row-effort
             row-provider row-input-of row-output-of row-run row-place
@@ -30,30 +31,35 @@
 
 (define (number-of m) (and m (measure-has-numerical-value m)))
 
-;; one reader per property: of a Commitment, of an Intent, of a stored alist row
-(define-syntax-rule (define-row-reader name of-commitment of-intent key)
-  (define (name r)
-    (cond ((commitment? r) (of-commitment r))
-          ((intent? r) (of-intent r))
-          (else (let ((p (and (pair? r) (assq 'key r)))) (and p (cdr p)))))))
+;; one reader per property: of a Commitment, of an Intent, of a stored alist row.
+;; A reader names the FIELD once; the commitment and intent accessors are read
+;; off the two types, so a field the schema renames fails here at load.
+(define-syntax-rule (define-row-reader name field key)
+  (define name
+    (let ((of-commitment (vf-record-accessor <commitment> 'field))
+          (of-intent     (vf-record-accessor <intent> 'field)))
+      (lambda (r)
+        (cond ((commitment? r) (of-commitment r))
+              ((intent? r) (of-intent r))
+              (else (let ((p (and (pair? r) (assq 'key r)))) (and p (cdr p)))))))))
 
-(define-row-reader row-id        commitment-id intent-id id)
-(define-row-reader row-spec      commitment-resource-conforms-to intent-resource-conforms-to conforms-to)
-(define-row-reader row-provider  commitment-provider intent-provider provider)
-(define-row-reader row-input-of  commitment-input-of intent-input-of input-of)
-(define-row-reader row-output-of commitment-output-of intent-output-of output-of)
-(define-row-reader row-place     commitment-at-location intent-at-location at-location)
-(define-row-reader row-when      commitment-has-beginning intent-has-beginning when)
-(define-row-reader row-until     commitment-has-end intent-has-end until)
-(define-row-reader row-note      commitment-note intent-note note)
-(define-row-reader row-tags      commitment-resource-classified-as intent-resource-classified-as classified-as)
-(define-row-reader row-scope     commitment-in-scope-of intent-in-scope-of in-scope-of)
-(define-row-reader row-satisfies commitment-satisfies intent-satisfies satisfies)
-(define-row-reader row-finished  commitment-finished intent-finished finished)
-(define-row-reader %action       commitment-action intent-action action)
-(define-row-reader %quantity     commitment-resource-quantity intent-resource-quantity quantity)
-(define-row-reader %effort       commitment-effort-quantity intent-effort-quantity effort)
-(define-row-reader %unit         commitment-resource-quantity intent-resource-quantity unit)
+(define-row-reader row-id        id                     id)
+(define-row-reader row-spec      resource-conforms-to   conforms-to)
+(define-row-reader row-provider  provider               provider)
+(define-row-reader row-input-of  input-of               input-of)
+(define-row-reader row-output-of output-of              output-of)
+(define-row-reader row-place     at-location            at-location)
+(define-row-reader row-when      has-beginning          when)
+(define-row-reader row-until     has-end                until)
+(define-row-reader row-note      note                   note)
+(define-row-reader row-tags      resource-classified-as classified-as)
+(define-row-reader row-scope     in-scope-of            in-scope-of)
+(define-row-reader row-satisfies satisfies              satisfies)
+(define-row-reader row-finished  finished               finished)
+(define-row-reader %action       action                 action)
+(define-row-reader %quantity     resource-quantity      quantity)
+(define-row-reader %effort       effort-quantity        effort)
+(define-row-reader %unit         resource-quantity      unit)
 
 (define (row-action r)
   "R's action, a symbol."
