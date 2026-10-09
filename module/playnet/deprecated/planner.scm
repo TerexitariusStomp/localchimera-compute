@@ -923,7 +923,6 @@
             ;; infrastructure recipe data
             ))
 
-(use-modules (playnet planner vf serdes-bindings))
 ;; vf-relations is its own module: (playnet planner vf-relations).
 ;; It uses (playnet lang kanren), which has an incompatible state shape
 ;; with the (playnet kanren-constraints) primitives used above.

@@ -8,7 +8,6 @@
   #:use-module (playnet planner formulas actions)
   #:use-module (playnet utils store-utils)
   #:use-module (playnet planner vf serdes)
-  #:use-module (playnet planner vf serdes-bindings)   ; the registered record types vf-serialize reads
   #:use-module (goblins utils hashmap)
   #:export (resource-specification->list list->resource-specification
             process-specification->list list->process-specification
@@ -37,7 +36,7 @@
 ;;
 ;; All record-to-list / list-to-record conversion now goes through the
 ;; generic introspective walker in `lib/utils/serdes.scm`. Each record
-;; type is registered once in `lib/utils/serdes-bindings.scm`; adding
+;; type is registered once, as it is declared (vf/schemas.scm define-vf-record); adding
 ;; a new field to a record requires no change here.
 ;;
 ;; The per-type names are kept as one-line wrappers so the existing

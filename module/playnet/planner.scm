@@ -10,7 +10,7 @@
 ;;   schemas.scm
 ;;   store-utils.scm
 ;;   utils/serdes.scm
-;;   utils/serdes-bindings.scm
+;;   (record types register themselves for serdes as they are declared: schemas.scm define-vf-record)
 ;;   process-registry.scm
 ;;   ddmrp/buffer-zones.scm
 ;;   ddmrp/capacity-buffers.scm
@@ -851,8 +851,7 @@
             ;; the federation's fragility catalogue (eco-catalogue.scm): planetary
             ;; boundaries + climate tipping points as profiles, and the limits they
             ;; migrate into — read by the tension-registry, service.scm and live.scm
-            )
-  #:use-module (playnet planner vf serdes-bindings))
+            ))
 ;; Three groups that used to be listed here are modules now, and reach the
 ;; umbrella's interface through #:re-export above rather than this list:
 ;; conformance-catalogue (governed barrier steepness), the former conformance-helpers

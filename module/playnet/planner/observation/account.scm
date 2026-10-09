@@ -34,7 +34,6 @@
   #:use-module (srfi srfi-1)
   #:use-module (ice-9 match)
   #:use-module (playnet planner vf serdes)
-  #:use-module (playnet planner vf serdes-bindings)   ; the registered record types vf-serialize reads
   #:use-module (playnet planner vf schemas)
   #:use-module ((playnet planner formulas flows) #:select (make-work-event))
   #:use-module (playnet planner observation states)

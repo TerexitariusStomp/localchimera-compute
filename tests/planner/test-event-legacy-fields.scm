@@ -16,7 +16,6 @@
 (use-modules (playnet test harness)
              (playnet planner vf schemas)
              (playnet planner vf serdes)
-             (playnet planner vf serdes-bindings)
              (playnet planner bridge codec)
              (srfi srfi-1))
 

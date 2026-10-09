@@ -43,143 +43,74 @@
 
 (define-module (playnet planner vf schemas)
   #:use-module (srfi srfi-1)
-  #:use-module ((playnet utils records) #:select (vf-record-type vf-record-constructor vf-record-predicate vf-record-accessor vf-record-modifier vf-record-type-name vf-record-type-fields vf-record-copier vf-record-maker))
-  #:export (<measure> make-measure measure? measure-has-numerical-value measure-has-unit
-            <duration> make-duration duration? duration-has-numerical-value
-            duration-has-unit <unit> make-unit unit? unit-id unit-label unit-symbol
-            unit-classified-as <spatial-thing> %make-spatial-thing make-spatial-thing
-            spatial-thing? spatial-thing-id spatial-thing-name spatial-thing-note
-            spatial-thing-lat spatial-thing-long spatial-thing-alt
-            spatial-thing-mappable-address spatial-thing-contained-in
-            spatial-thing-boundary *vf-actions* vf-action? *quantity-effects*
-            quantity-effect? *property-effects* property-effect? <action-definition>
-            make-action-definition action-definition? action-definition-event-quantity
-            action-definition-input-output action-definition-pairs-with
-            
-            action-definition-create-resource
-            action-definition-accounting-effect action-definition-onhand-effect
-            action-definition-location-effect action-definition-contained-effect
-            action-definition-accountable-effect action-definition-stage-effect
-            action-definition-state-effect action-definition-implies-transfer
-            action-definition-eligible-for-exchange *action-definitions* get-action-def
-            measure-qty *agent-types* agent-type? <agent>
-            make-agent agent? agent-id agent-type agent-name agent-note agent-image
-            agent-primary-location agent-classified-as agent-availability-window
-            <agent-relationship-role> make-agent-relationship-role
-            agent-relationship-role? agent-relationship-role-id
-            agent-relationship-role-label agent-relationship-role-inverse-label
-            agent-relationship-role-note agent-relationship-role-classified-as
-            <agent-relationship> make-agent-relationship agent-relationship?
-            agent-relationship-id agent-relationship-subject agent-relationship-object
-            agent-relationship-relationship agent-relationship-in-scope-of
-            agent-relationship-note <resource-specification> %make-resource-specification
-            make-resource-specification copy-resource-specification resource-specification? resource-specification-id
-            resource-specification-name resource-specification-note
-            resource-specification-image resource-specification-resource-classified-as
-            resource-specification-keep-in-place resource-spec-keep-in-place?
-            resource-specification-composition resource-specification-with-composition
-            resource-specification-default-unit-of-resource specs->units
-            resource-specification-default-unit-of-effort
-            resource-specification-substitutable
-            resource-specification-medium-of-exchange
-            resource-specification-buffer-profile-id
-            resource-specification-positioning-analysis
-            resource-specification-satisfied-by <process-specification>
-            make-process-specification process-specification? process-specification-id
-            process-specification-name process-specification-note
-            process-specification-image process-specification-is-decoupling-point
-            process-specification-is-control-point process-specification-buffer-type
-            process-specification-is-divergent-point
-            process-specification-is-convergent-point <recipe-flow> make-recipe-flow
-            recipe-flow? recipe-flow-id recipe-flow-action
-            recipe-flow-resource-conforms-to recipe-flow-resource-classified-as
-            recipe-flow-resource-quantity recipe-flow-effort-quantity
-            recipe-flow-recipe-input-of recipe-flow-recipe-output-of
-            recipe-flow-recipe-clause-of recipe-flow-stage recipe-flow-state
-            recipe-flow-note recipe-flow-is-primary recipe-flow-resolve-from-flow copy-recipe-flow
-            <recipe-process> make-recipe-process recipe-process? recipe-process-id
-            recipe-process-name recipe-process-note recipe-process-image
-            recipe-process-process-conforms-to recipe-process-process-classified-as
-            recipe-process-has-duration recipe-process-sequence-group
-            recipe-process-minimum-batch-quantity <recipe-exchange> make-recipe-exchange
-            recipe-exchange? recipe-exchange-id recipe-exchange-name recipe-exchange-note
-            <recipe> make-recipe recipe? recipe-id recipe-name recipe-note
-            recipe-based-on recipe-primary-output recipe-recipe-processes
-            recipe-recipe-exchanges <recipe-group> make-recipe-group recipe-group?
-            recipe-group-id recipe-group-name recipe-group-note recipe-group-recipes
-            <economic-resource> %mode-from-tags %strip-mode-tags %make-economic-resource
-            make-economic-resource copy-economic-resource economic-resource?
-            economic-resource-id economic-resource-name economic-resource-note
-            economic-resource-image economic-resource-tracking-identifier
-            economic-resource-conforms-to economic-resource-classified-as
-            economic-resource-distribution-mode economic-resource-accounting-quantity
-            economic-resource-onhand-quantity economic-resource-current-location
-            economic-resource-current-virtual-location
-            economic-resource-primary-accountable economic-resource-custodian-scope
-            economic-resource-stage economic-resource-state
-            economic-resource-contained-in economic-resource-unit-of-effort
-            economic-resource-lot economic-resource-previous-event
-            economic-resource-availability-window resource-rented? resource-sovereign?
-            %rented-frag-profile %rented-frag-profiles rented-frag-profile
-            rented-frag-tip %rented-frag-tip rented-goods <economic-event>
-            %make-economic-event make-economic-event economic-event? economic-event-id
-            economic-event-action economic-event-input-of economic-event-output-of
-            economic-event-resource-inventoried-as
-            economic-event-to-resource-inventoried-as economic-event-resource-conforms-to
-            economic-event-resource-classified-as economic-event-distribution-mode
-            resource-distribution-mode event-distribution-mode economic-event-provider
-            economic-event-receiver economic-event-resource-quantity
-            economic-event-effort-quantity economic-event-has-beginning
-            economic-event-has-end economic-event-has-point-in-time
-            economic-event-created economic-event-at-location economic-event-to-location
-            economic-event-state economic-event-fulfills economic-event-satisfies
-            economic-event-corrects economic-event-realization-of economic-event-settles
-            economic-event-note economic-event-in-scope-of economic-event-previous-event
-            copy-economic-event <process> make-process process? process-id process-name
-            process-note process-based-on process-classified-as process-planned-within
-            process-nested-in process-in-scope-of process-has-beginning process-has-end
-            process-finished <intent> make-intent intent? intent-id intent-action
-            intent-name intent-note intent-image intent-input-of intent-output-of
-            intent-resource-inventoried-as intent-resource-conforms-to
-            intent-resource-classified-as intent-resource-quantity intent-effort-quantity
-            intent-available-quantity intent-minimum-quantity intent-provider
-            intent-receiver intent-has-beginning intent-has-end intent-has-point-in-time
-            intent-due intent-at-location intent-stage intent-state intent-planned-within
-            intent-satisfies intent-in-scope-of intent-finished
-            intent-availability-window copy-intent intent->commitment <commitment>
-            make-commitment commitment? commitment-id commitment-action commitment-note
-            commitment-input-of commitment-output-of commitment-resource-inventoried-as
-            commitment-resource-conforms-to commitment-resource-classified-as
-            commitment-resource-quantity commitment-effort-quantity commitment-provider
-            commitment-receiver commitment-has-beginning commitment-has-end
-            commitment-has-point-in-time commitment-due commitment-created
-            commitment-at-location commitment-in-scope-of commitment-stage
-            commitment-state commitment-satisfies commitment-clause-of
-            commitment-independent-demand-of commitment-planned-within
-            commitment-finished commitment-availability-window copy-commitment <claim>
-            make-claim claim? claim-id claim-action claim-provider claim-receiver
-            claim-triggered-by claim-resource-quantity claim-effort-quantity
-            claim-resource-conforms-to claim-resource-classified-as claim-due
-            claim-created claim-note claim-finished <plan> make-plan plan? plan-id
-            plan-name plan-note plan-due plan-created plan-has-independent-demand
-            plan-refinement-of plan-classified-as <scenario-definition>
-            make-scenario-definition scenario-definition? scenario-definition-id
-            scenario-definition-name scenario-definition-note
-            scenario-definition-has-duration scenario-definition-in-scope-of <scenario>
-            make-scenario scenario? scenario-id scenario-name scenario-note
-            scenario-defined-as scenario-refinement-of scenario-has-beginning
-            scenario-has-end scenario-in-scope-of <agreement> make-agreement agreement?
-            agreement-id agreement-name agreement-note agreement-created
-            agreement-stipulates agreement-stipulates-reciprocal <agreement-bundle>
-            make-agreement-bundle agreement-bundle? agreement-bundle-id
-            agreement-bundle-name agreement-bundle-note agreement-bundle-created
-            agreement-bundle-bundles <proposal> make-proposal proposal? proposal-id
-            proposal-name proposal-note proposal-has-beginning proposal-has-end
-            proposal-unit-based proposal-created proposal-purpose
-            proposal-eligible-location proposal-in-scope-of proposal-publishes
-            proposal-reciprocal proposal-proposed-to <proposal-list> make-proposal-list
-            proposal-list? proposal-list-id proposal-list-name proposal-list-note
-            proposal-list-created proposal-list-lists))
+  #:use-module ((playnet utils records) #:select (define-vf-record vf-record-type vf-record-constructor vf-record-predicate vf-record-accessor vf-record-modifier vf-record-type-name vf-record-type-fields vf-record-copier vf-record-maker))
+  #:use-module ((playnet planner vf serdes) #:select (register-vf-record!))
+  #:export (copy-agent copy-recipe-process copy-process
+            make-measure
+            make-duration
+            make-unit
+            %make-spatial-thing
+            make-spatial-thing
+            *vf-actions*
+            vf-action?
+            *quantity-effects*
+            quantity-effect?
+            *property-effects*
+            property-effect?
+            make-action-definition
+            *action-definitions*
+            get-action-def
+            measure-qty
+            *agent-types*
+            agent-type?
+            make-agent
+            make-agent-relationship-role
+            make-agent-relationship
+            %make-resource-specification
+            make-resource-specification
+            copy-resource-specification
+            resource-spec-keep-in-place?
+            resource-specification-with-composition
+            specs->units
+            make-process-specification
+            make-recipe-flow
+            copy-recipe-flow
+            make-recipe-process
+            make-recipe-exchange
+            make-recipe
+            make-recipe-group
+            %mode-from-tags
+            %strip-mode-tags
+            %make-economic-resource
+            make-economic-resource
+            copy-economic-resource
+            resource-rented?
+            resource-sovereign?
+            %rented-frag-profile
+            %rented-frag-profiles
+            rented-frag-profile
+            rented-frag-tip
+            %rented-frag-tip
+            rented-goods
+            %make-economic-event
+            make-economic-event
+            resource-distribution-mode
+            event-distribution-mode
+            copy-economic-event
+            make-process
+            make-intent
+            copy-intent
+            intent->commitment
+            make-commitment
+            copy-commitment
+            make-claim
+            make-plan
+            make-scenario-definition
+            make-scenario
+            make-agreement
+            make-agreement-bundle
+            make-proposal
+            make-proposal-list))
 
 ;; ═══════════════════════════════════════════════════════════════════════
 ;; PRIMITIVES
@@ -187,63 +118,39 @@
 
 ;;; Measure — a quantity with a unit.
 ;;; Fields: has-numerical-value (number), has-unit (string, e.g. "kg", "hours", OM2 URI).
-(define <measure>
-  (vf-record-type 'Measure
-    '((immutable has-numerical-value)
-      (immutable has-unit))))
+(define-vf-record <measure> Measure
+  (has-numerical-value has-unit)
+  #:register register-vf-record!)
 
 (define make-measure                   (vf-record-constructor <measure>))
-(define measure?                       (vf-record-predicate   <measure>))
-(define measure-has-numerical-value    (vf-record-accessor    <measure> 'has-numerical-value))
-(define measure-has-unit               (vf-record-accessor    <measure> 'has-unit))
 
 
 ;;; Duration — time span for processes and recipes.
 ;;; Fields: has-numerical-value (number), has-unit (string, e.g. "hours", "days").
-(define <duration>
-  (vf-record-type 'Duration
-    '((immutable has-numerical-value)
-      (immutable has-unit))))
+(define-vf-record <duration> Duration
+  (has-numerical-value has-unit)
+  #:register register-vf-record!)
 
 (define make-duration                   (vf-record-constructor <duration>))
-(define duration?                       (vf-record-predicate   <duration>))
-(define duration-has-numerical-value    (vf-record-accessor    <duration> 'has-numerical-value))
-(define duration-has-unit               (vf-record-accessor    <duration> 'has-unit))
 
 
 ;;; Unit — measurement unit definition.
 ;;; Fields: id (string), label (string), symbol (string),
 ;;;         classified-as (optional: list of strings | #f).
-(define <unit>
-  (vf-record-type 'Unit
-    '((immutable id)
-      (immutable label)
-      (immutable symbol)
-      (immutable classified-as))))
+(define-vf-record <unit> Unit
+  (id label symbol classified-as)
+  #:register register-vf-record!)
 
 (define make-unit              (vf-record-constructor <unit>))
-(define unit?                  (vf-record-predicate   <unit>))
-(define unit-id                (vf-record-accessor    <unit> 'id))
-(define unit-label             (vf-record-accessor    <unit> 'label))
-(define unit-symbol            (vf-record-accessor    <unit> 'symbol))
-(define unit-classified-as     (vf-record-accessor    <unit> 'classified-as))
 
 
 ;;; SpatialThing — a location in space.
 ;;; Fields: id (string), name? (string), note? (string),
 ;;;         lat? (number), long? (number), alt? (number),
 ;;;         mappable-address? (string), contained-in? (string — parent SpatialThing ID).
-(define <spatial-thing>
-  (vf-record-type 'SpatialThing
-    '((immutable id)
-      (immutable name)
-      (immutable note)
-      (immutable lat)
-      (immutable long)
-      (immutable alt)
-      (immutable mappable-address)
-      (immutable contained-in)
-      (immutable boundary))))     ; GeoJSON geometry (Polygon/MultiPolygon) or #f — the EXTENT
+(define-vf-record <spatial-thing> SpatialThing
+  (id name note lat long alt mappable-address contained-in boundary)
+  #:register register-vf-record!)     ; GeoJSON geometry (Polygon/MultiPolygon) or #f — the EXTENT
 
 ;; A SpatialThing spatializes as GeoJSON. By default it is a POINT (lat/long) — a farm,
 ;; a venue. When `boundary` is set (a GeoJSON geometry: real, concave, ridgeline-
@@ -253,16 +160,6 @@
 ;; boundary holds it). `boundary` is optional, so every existing 8-arg call is unchanged.
 (define %make-spatial-thing                 (vf-record-constructor <spatial-thing>))
 (define make-spatial-thing (vf-record-maker <spatial-thing>))
-(define spatial-thing?                      (vf-record-predicate   <spatial-thing>))
-(define spatial-thing-id                    (vf-record-accessor    <spatial-thing> 'id))
-(define spatial-thing-name                  (vf-record-accessor    <spatial-thing> 'name))
-(define spatial-thing-note                  (vf-record-accessor    <spatial-thing> 'note))
-(define spatial-thing-lat                   (vf-record-accessor    <spatial-thing> 'lat))
-(define spatial-thing-long                  (vf-record-accessor    <spatial-thing> 'long))
-(define spatial-thing-alt                   (vf-record-accessor    <spatial-thing> 'alt))
-(define spatial-thing-mappable-address      (vf-record-accessor    <spatial-thing> 'mappable-address))
-(define spatial-thing-contained-in          (vf-record-accessor    <spatial-thing> 'contained-in))
-(define spatial-thing-boundary              (vf-record-accessor    <spatial-thing> 'boundary))
 
 
 ;; ═══════════════════════════════════════════════════════════════════════
@@ -326,51 +223,11 @@
 ;;;   state-effect         (property-effect symbol)
 ;;;   implies-transfer     (symbol: all-rights | custody | #f for none)
 ;;;   eligible-for-exchange (boolean)
-(define <action-definition>
-  (vf-record-type 'ActionDefinition
-    '((immutable event-quantity)
-      (immutable input-output)
-      (immutable pairs-with)
-      (immutable create-resource)
-      (immutable accounting-effect)
-      (immutable onhand-effect)
-      (immutable location-effect)
-      (immutable contained-effect)
-      (immutable accountable-effect)
-      (immutable stage-effect)
-      (immutable state-effect)
-      (immutable implies-transfer)
-      (immutable eligible-for-exchange))))
+(define-vf-record <action-definition> ActionDefinition
+  (event-quantity input-output pairs-with create-resource accounting-effect onhand-effect location-effect contained-effect accountable-effect stage-effect state-effect implies-transfer eligible-for-exchange)
+  #:register register-vf-record!)
 
 (define make-action-definition (vf-record-maker <action-definition>))
-(define action-definition?
-  (vf-record-predicate <action-definition>))
-(define action-definition-event-quantity
-  (vf-record-accessor <action-definition> 'event-quantity))
-(define action-definition-input-output
-  (vf-record-accessor <action-definition> 'input-output))
-(define action-definition-pairs-with
-  (vf-record-accessor <action-definition> 'pairs-with))
-(define action-definition-create-resource
-  (vf-record-accessor <action-definition> 'create-resource))
-(define action-definition-accounting-effect
-  (vf-record-accessor <action-definition> 'accounting-effect))
-(define action-definition-onhand-effect
-  (vf-record-accessor <action-definition> 'onhand-effect))
-(define action-definition-location-effect
-  (vf-record-accessor <action-definition> 'location-effect))
-(define action-definition-contained-effect
-  (vf-record-accessor <action-definition> 'contained-effect))
-(define action-definition-accountable-effect
-  (vf-record-accessor <action-definition> 'accountable-effect))
-(define action-definition-stage-effect
-  (vf-record-accessor <action-definition> 'stage-effect))
-(define action-definition-state-effect
-  (vf-record-accessor <action-definition> 'state-effect))
-(define action-definition-implies-transfer
-  (vf-record-accessor <action-definition> 'implies-transfer))
-(define action-definition-eligible-for-exchange
-  (vf-record-accessor <action-definition> 'eligible-for-exchange))
 
 (define *action-definitions*
   (list
@@ -486,53 +343,22 @@
 ;;;         primary-location? (string: SpatialThing ID),
 ;;;         classified-as? (list of strings),
 ;;;         availability-window? (<availability-window> | <specific-date-window> | #f).
-(define <agent>
-  (vf-record-type 'Agent
-    '((immutable id)
-      (immutable type)
-      (immutable name)
-      (immutable note)
-      (immutable image)
-      (immutable primary-location)
-      (immutable classified-as)
-      (immutable availability-window))))
+(define-vf-record <agent> Agent
+  (id type name note image primary-location classified-as availability-window)
+  #:register register-vf-record!)
 
 (define make-agent (vf-record-maker <agent>))
-(define agent?                          (vf-record-predicate   <agent>))
-(define agent-id                        (vf-record-accessor    <agent> 'id))
-(define agent-type                      (vf-record-accessor    <agent> 'type))
-(define agent-name                      (vf-record-accessor    <agent> 'name))
-(define agent-note                      (vf-record-accessor    <agent> 'note))
-(define agent-image                     (vf-record-accessor    <agent> 'image))
-(define agent-primary-location          (vf-record-accessor    <agent> 'primary-location))
-(define agent-classified-as             (vf-record-accessor    <agent> 'classified-as))
-(define agent-availability-window       (vf-record-accessor    <agent> 'availability-window))
+(define copy-agent (vf-record-copier <agent>))
 
 
 ;;; AgentRelationshipRole — a named role an agent plays relative to another.
 ;;; Fields: id (string), label (string), inverse-label? (string),
 ;;;         note? (string), classified-as? (list of strings).
-(define <agent-relationship-role>
-  (vf-record-type 'AgentRelationshipRole
-    '((immutable id)
-      (immutable label)
-      (immutable inverse-label)
-      (immutable note)
-      (immutable classified-as))))
+(define-vf-record <agent-relationship-role> AgentRelationshipRole
+  (id label inverse-label note classified-as)
+  #:register register-vf-record!)
 
 (define make-agent-relationship-role (vf-record-maker <agent-relationship-role>))
-(define agent-relationship-role?
-  (vf-record-predicate <agent-relationship-role>))
-(define agent-relationship-role-id
-  (vf-record-accessor <agent-relationship-role> 'id))
-(define agent-relationship-role-label
-  (vf-record-accessor <agent-relationship-role> 'label))
-(define agent-relationship-role-inverse-label
-  (vf-record-accessor <agent-relationship-role> 'inverse-label))
-(define agent-relationship-role-note
-  (vf-record-accessor <agent-relationship-role> 'note))
-(define agent-relationship-role-classified-as
-  (vf-record-accessor <agent-relationship-role> 'classified-as))
 
 
 ;;; AgentRelationship — a directed relationship between two agents.
@@ -540,30 +366,11 @@
 ;;; Fields: id (string), subject (string: Agent ID), object (string: Agent ID),
 ;;;         relationship (string: AgentRelationshipRole ID),
 ;;;         in-scope-of? (string: Agent ID), note? (string).
-(define <agent-relationship>
-  (vf-record-type 'AgentRelationship
-    '((immutable id)
-      (immutable subject)
-      (immutable object)
-      (immutable relationship)
-      (immutable in-scope-of)
-      (immutable note))))
+(define-vf-record <agent-relationship> AgentRelationship
+  (id subject object relationship in-scope-of note)
+  #:register register-vf-record!)
 
 (define make-agent-relationship (vf-record-maker <agent-relationship>))
-(define agent-relationship?
-  (vf-record-predicate <agent-relationship>))
-(define agent-relationship-id
-  (vf-record-accessor <agent-relationship> 'id))
-(define agent-relationship-subject
-  (vf-record-accessor <agent-relationship> 'subject))
-(define agent-relationship-object
-  (vf-record-accessor <agent-relationship> 'object))
-(define agent-relationship-relationship
-  (vf-record-accessor <agent-relationship> 'relationship))
-(define agent-relationship-in-scope-of
-  (vf-record-accessor <agent-relationship> 'in-scope-of))
-(define agent-relationship-note
-  (vf-record-accessor <agent-relationship> 'note))
 
 
 ;; ═══════════════════════════════════════════════════════════════════════
@@ -578,39 +385,26 @@
 ;;;         buffer-profile-id? (string: BufferProfile ID),
 ;;;         positioning-analysis? (<positioning-analysis>),
 ;;;         satisfied-by? (skills: DNF of substitute clauses — see below).
-(define <resource-specification>
-  (vf-record-type 'ResourceSpecification
-    '((immutable id)
-      (immutable name)
-      (immutable note)
-      (immutable image)
-      (immutable resource-classified-as)
-      (immutable default-unit-of-resource)
-      (immutable default-unit-of-effort)
-      (immutable substitutable)
-      (immutable medium-of-exchange)
-      (immutable buffer-profile-id)
-      (immutable positioning-analysis)
-      ;; satisfied-by (skills): the substitution/equivalence relation. A DNF —
-      ;; a list of CLAUSES, each clause a list of (component-skill . min-hours).
-      ;; An agent CONFORMS to this spec if it holds the spec directly OR holds
-      ;; every component of SOME clause at ≥ its min validated hours. '() / #f =
-      ;; direct conformance only. This is what lets {electrician,surgeon} satisfy
-      ;; an electrosurgery requirement without holding "electrosurgeon" directly.
-      (immutable satisfied-by)
-      ;; keep-in-place: a container whose `use` relocates its contents through
-      ;; TIME (storage) rather than space (transport) — drives proc-temporal? /
-      ;; arc-scale. Promoted from the legacy "stationary" classifiedAs tag, and
-      ;; the promotion is COMPLETE: the smart constructor below folds any such
-      ;; tag into this field and strips it, so the field is the only thing read.
-      (immutable keep-in-place)
-      ;; composition: what one unit of this spec CARRIES, stated by the scope that
-      ;; holds it — ((leaf . amount) …) in knowledge/catalogues/substances.scm's grammar (an
-      ;; element's mass fraction, "heat" in kWh, "entropy" in kWh/K). A warmed form
-      ;; states its excess here (knowledge/thermal.scm); the recipe store hands
-      ;; every stated row to the solve and the lint in front of the fallback table.
-      ;; '() / #f = nothing stated: the table or a recipe's derivation speaks.
-      (immutable composition))))
+(define-vf-record <resource-specification> ResourceSpecification
+  (id name note image resource-classified-as default-unit-of-resource default-unit-of-effort substitutable medium-of-exchange buffer-profile-id positioning-analysis satisfied-by keep-in-place composition)
+  #:register register-vf-record!)
+  ;; satisfied-by (skills): the substitution/equivalence relation. A DNF —
+  ;; a list of CLAUSES, each clause a list of (component-skill . min-hours).
+  ;; An agent CONFORMS to this spec if it holds the spec directly OR holds
+  ;; every component of SOME clause at ≥ its min validated hours. '() / #f =
+  ;; direct conformance only. This is what lets {electrician,surgeon} satisfy
+  ;; an electrosurgery requirement without holding "electrosurgeon" directly.
+  ;; keep-in-place: a container whose `use` relocates its contents through
+  ;; TIME (storage) rather than space (transport) — drives proc-temporal? /
+  ;; arc-scale. Promoted from the legacy "stationary" classifiedAs tag, and
+  ;; the promotion is COMPLETE: the smart constructor below folds any such
+  ;; tag into this field and strips it, so the field is the only thing read.
+  ;; composition: what one unit of this spec CARRIES, stated by the scope that
+  ;; holds it — ((leaf . amount) …) in knowledge/catalogues/substances.scm's grammar (an
+  ;; element's mass fraction, "heat" in kWh, "entropy" in kWh/K). A warmed form
+  ;; states its excess here (knowledge/thermal.scm); the recipe store hands
+  ;; every stated row to the solve and the lint in front of the fallback table.
+  ;; '() / #f = nothing stated: the table or a recipe's derivation speaks.
 
 ;; Smart constructor: the keyword-only trailing fields (`satisfied-by`,
 ;; `keep-in-place`) keep every existing 11-positional call site working
@@ -634,59 +428,20 @@
 (define (make-resource-specification . args)
   "(make-resource-specification #:id … #:name … #:resource-classified-as …), settled."
   (%settle-resource-specification (apply %resource-specification args)))
-(define resource-specification?
-  (vf-record-predicate <resource-specification>))
-(define resource-specification-id
-  (vf-record-accessor <resource-specification> 'id))
-(define resource-specification-name
-  (vf-record-accessor <resource-specification> 'name))
-(define resource-specification-note
-  (vf-record-accessor <resource-specification> 'note))
-(define resource-specification-image
-  (vf-record-accessor <resource-specification> 'image))
-(define resource-specification-resource-classified-as
-  (vf-record-accessor <resource-specification> 'resource-classified-as))
-(define resource-specification-keep-in-place
-  (vf-record-accessor <resource-specification> 'keep-in-place))
-(define resource-specification-composition
-  (vf-record-accessor <resource-specification> 'composition))
 (define (resource-specification-with-composition spec composition)
   "SPEC with COMPOSITION stated on it and every other field as it was: the one
    place a specification is copied to change what it carries."
-  (make-resource-specification
-   #:id (resource-specification-id spec) #:name (resource-specification-name spec)
-   #:note (resource-specification-note spec) #:image (resource-specification-image spec)
-   #:resource-classified-as (resource-specification-resource-classified-as spec)
-   #:default-unit-of-resource (resource-specification-default-unit-of-resource spec) #:default-unit-of-effort (resource-specification-default-unit-of-effort spec)
-   #:substitutable (resource-specification-substitutable spec) #:medium-of-exchange (resource-specification-medium-of-exchange spec)
-   #:buffer-profile-id (resource-specification-buffer-profile-id spec) #:positioning-analysis (resource-specification-positioning-analysis spec)
-   #:satisfied-by (resource-specification-satisfied-by spec)
-   #:keep-in-place (resource-specification-keep-in-place spec)
-   #:composition composition))
+  (copy-resource-specification spec #:composition composition))
 ;; Field-only read — the constructor normalises any legacy "stationary" tag
 ;; into keep-in-place at construction, so no tag is consulted at query time.
 (define (resource-spec-keep-in-place? s)
   (and (resource-specification-keep-in-place s) #t))
-(define resource-specification-default-unit-of-resource
-  (vf-record-accessor <resource-specification> 'default-unit-of-resource))
-(define resource-specification-default-unit-of-effort
-  (vf-record-accessor <resource-specification> 'default-unit-of-effort))
 (define (specs->units specs)
   "The unit each of SPECS counts in, ((spec-id . unit) …): the specification's own
    default-unit-of-resource, for every spec that states one."
   (filter-map (lambda (sp) (and=> (resource-specification-default-unit-of-resource sp)
                                   (lambda (u) (cons (resource-specification-id sp) u))))
               specs))
-(define resource-specification-substitutable
-  (vf-record-accessor <resource-specification> 'substitutable))
-(define resource-specification-medium-of-exchange
-  (vf-record-accessor <resource-specification> 'medium-of-exchange))
-(define resource-specification-buffer-profile-id
-  (vf-record-accessor <resource-specification> 'buffer-profile-id))
-(define resource-specification-positioning-analysis
-  (vf-record-accessor <resource-specification> 'positioning-analysis))
-(define resource-specification-satisfied-by
-  (vf-record-accessor <resource-specification> 'satisfied-by))
 
 
 ;;; ProcessSpecification — the "type" of a process.
@@ -694,39 +449,11 @@
 ;;;         is-decoupling-point? (boolean), is-control-point? (boolean),
 ;;;         buffer-type? (symbol: stock | time | capacity),
 ;;;         is-divergent-point? (boolean), is-convergent-point? (boolean).
-(define <process-specification>
-  (vf-record-type 'ProcessSpecification
-    '((immutable id)
-      (immutable name)
-      (immutable note)
-      (immutable image)
-      (immutable is-decoupling-point)
-      (immutable is-control-point)
-      (immutable buffer-type)
-      (immutable is-divergent-point)
-      (immutable is-convergent-point))))
+(define-vf-record <process-specification> ProcessSpecification
+  (id name note image is-decoupling-point is-control-point buffer-type is-divergent-point is-convergent-point)
+  #:register register-vf-record!)
 
 (define make-process-specification (vf-record-maker <process-specification>))
-(define process-specification?
-  (vf-record-predicate <process-specification>))
-(define process-specification-id
-  (vf-record-accessor <process-specification> 'id))
-(define process-specification-name
-  (vf-record-accessor <process-specification> 'name))
-(define process-specification-note
-  (vf-record-accessor <process-specification> 'note))
-(define process-specification-image
-  (vf-record-accessor <process-specification> 'image))
-(define process-specification-is-decoupling-point
-  (vf-record-accessor <process-specification> 'is-decoupling-point))
-(define process-specification-is-control-point
-  (vf-record-accessor <process-specification> 'is-control-point))
-(define process-specification-buffer-type
-  (vf-record-accessor <process-specification> 'buffer-type))
-(define process-specification-is-divergent-point
-  (vf-record-accessor <process-specification> 'is-divergent-point))
-(define process-specification-is-convergent-point
-  (vf-record-accessor <process-specification> 'is-convergent-point))
 
 
 ;; ═══════════════════════════════════════════════════════════════════════
@@ -744,54 +471,11 @@
 ;;;         stage? (string: ProcessSpecification ID), state? (string),
 ;;;         note? (string), is-primary? (boolean),
 ;;;         resolve-from-flow? (string: RecipeFlow ID).
-(define <recipe-flow>
-  (vf-record-type 'RecipeFlow
-    '((immutable id)
-      (immutable action)
-      (immutable resource-conforms-to)
-      (immutable resource-classified-as)
-      (immutable resource-quantity)
-      (immutable effort-quantity)
-      (immutable recipe-input-of)
-      (immutable recipe-output-of)
-      (immutable recipe-clause-of)
-      (immutable stage)
-      (immutable state)
-      (immutable note)
-      (immutable is-primary)
-      (immutable resolve-from-flow))))
+(define-vf-record <recipe-flow> RecipeFlow
+  (id action resource-conforms-to resource-classified-as resource-quantity effort-quantity recipe-input-of recipe-output-of recipe-clause-of stage state note is-primary resolve-from-flow)
+  #:register register-vf-record!)
 
 (define make-recipe-flow (vf-record-maker <recipe-flow>))
-(define recipe-flow?
-  (vf-record-predicate <recipe-flow>))
-(define recipe-flow-id
-  (vf-record-accessor <recipe-flow> 'id))
-(define recipe-flow-action
-  (vf-record-accessor <recipe-flow> 'action))
-(define recipe-flow-resource-conforms-to
-  (vf-record-accessor <recipe-flow> 'resource-conforms-to))
-(define recipe-flow-resource-classified-as
-  (vf-record-accessor <recipe-flow> 'resource-classified-as))
-(define recipe-flow-resource-quantity
-  (vf-record-accessor <recipe-flow> 'resource-quantity))
-(define recipe-flow-effort-quantity
-  (vf-record-accessor <recipe-flow> 'effort-quantity))
-(define recipe-flow-recipe-input-of
-  (vf-record-accessor <recipe-flow> 'recipe-input-of))
-(define recipe-flow-recipe-output-of
-  (vf-record-accessor <recipe-flow> 'recipe-output-of))
-(define recipe-flow-recipe-clause-of
-  (vf-record-accessor <recipe-flow> 'recipe-clause-of))
-(define recipe-flow-stage
-  (vf-record-accessor <recipe-flow> 'stage))
-(define recipe-flow-state
-  (vf-record-accessor <recipe-flow> 'state))
-(define recipe-flow-note
-  (vf-record-accessor <recipe-flow> 'note))
-(define recipe-flow-is-primary
-  (vf-record-accessor <recipe-flow> 'is-primary))
-(define recipe-flow-resolve-from-flow
-  (vf-record-accessor <recipe-flow> 'resolve-from-flow))
 (define copy-recipe-flow (vf-record-copier <recipe-flow>))
 
 
@@ -802,58 +486,21 @@
 ;;;         has-duration? (<duration>),
 ;;;         sequence-group? (integer),
 ;;;         minimum-batch-quantity? (<measure>).
-(define <recipe-process>
-  (vf-record-type 'RecipeProcess
-    '((immutable id)
-      (immutable name)
-      (immutable note)
-      (immutable image)
-      (immutable process-conforms-to)
-      (immutable process-classified-as)
-      (immutable has-duration)
-      (immutable sequence-group)
-      (immutable minimum-batch-quantity))))
+(define-vf-record <recipe-process> RecipeProcess
+  (id name note image process-conforms-to process-classified-as has-duration sequence-group minimum-batch-quantity)
+  #:register register-vf-record!)
 
 (define make-recipe-process (vf-record-maker <recipe-process>))
-(define recipe-process?
-  (vf-record-predicate <recipe-process>))
-(define recipe-process-id
-  (vf-record-accessor <recipe-process> 'id))
-(define recipe-process-name
-  (vf-record-accessor <recipe-process> 'name))
-(define recipe-process-note
-  (vf-record-accessor <recipe-process> 'note))
-(define recipe-process-image
-  (vf-record-accessor <recipe-process> 'image))
-(define recipe-process-process-conforms-to
-  (vf-record-accessor <recipe-process> 'process-conforms-to))
-(define recipe-process-process-classified-as
-  (vf-record-accessor <recipe-process> 'process-classified-as))
-(define recipe-process-has-duration
-  (vf-record-accessor <recipe-process> 'has-duration))
-(define recipe-process-sequence-group
-  (vf-record-accessor <recipe-process> 'sequence-group))
-(define recipe-process-minimum-batch-quantity
-  (vf-record-accessor <recipe-process> 'minimum-batch-quantity))
+(define copy-recipe-process (vf-record-copier <recipe-process>))
 
 
 ;;; RecipeExchange — a template exchange agreement in a recipe.
 ;;; Fields: id (string), name? (string), note? (string).
-(define <recipe-exchange>
-  (vf-record-type 'RecipeExchange
-    '((immutable id)
-      (immutable name)
-      (immutable note))))
+(define-vf-record <recipe-exchange> RecipeExchange
+  (id name note)
+  #:register register-vf-record!)
 
 (define make-recipe-exchange (vf-record-maker <recipe-exchange>))
-(define recipe-exchange?
-  (vf-record-predicate <recipe-exchange>))
-(define recipe-exchange-id
-  (vf-record-accessor <recipe-exchange> 'id))
-(define recipe-exchange-name
-  (vf-record-accessor <recipe-exchange> 'name))
-(define recipe-exchange-note
-  (vf-record-accessor <recipe-exchange> 'note))
 
 
 ;;; Recipe — groups RecipeProcesses and RecipeExchanges into a reusable template.
@@ -862,43 +509,21 @@
 ;;;         primary-output? (string: ResourceSpecification ID),
 ;;;         recipe-processes? (list of strings: RecipeProcess IDs),
 ;;;         recipe-exchanges? (list of strings: RecipeExchange IDs).
-(define <recipe>
-  (vf-record-type 'Recipe
-    '((immutable id)
-      (immutable name)
-      (immutable note)
-      (immutable based-on)
-      (immutable primary-output)
-      (immutable recipe-processes)
-      (immutable recipe-exchanges))))
+(define-vf-record <recipe> Recipe
+  (id name note based-on primary-output recipe-processes recipe-exchanges)
+  #:register register-vf-record!)
 
 (define make-recipe (vf-record-maker <recipe>))
-(define recipe?                  (vf-record-predicate   <recipe>))
-(define recipe-id                (vf-record-accessor    <recipe> 'id))
-(define recipe-name              (vf-record-accessor    <recipe> 'name))
-(define recipe-note              (vf-record-accessor    <recipe> 'note))
-(define recipe-based-on          (vf-record-accessor    <recipe> 'based-on))
-(define recipe-primary-output    (vf-record-accessor    <recipe> 'primary-output))
-(define recipe-recipe-processes  (vf-record-accessor    <recipe> 'recipe-processes))
-(define recipe-recipe-exchanges  (vf-record-accessor    <recipe> 'recipe-exchanges))
 
 
 ;;; RecipeGroup — groups multiple Recipes that together produce more than one output.
 ;;; Fields: id (string), name (string), note? (string),
 ;;;         recipes (list of strings: Recipe IDs).
-(define <recipe-group>
-  (vf-record-type 'RecipeGroup
-    '((immutable id)
-      (immutable name)
-      (immutable note)
-      (immutable recipes))))
+(define-vf-record <recipe-group> RecipeGroup
+  (id name note recipes)
+  #:register register-vf-record!)
 
 (define make-recipe-group (vf-record-maker <recipe-group>))
-(define recipe-group?          (vf-record-predicate   <recipe-group>))
-(define recipe-group-id        (vf-record-accessor    <recipe-group> 'id))
-(define recipe-group-name      (vf-record-accessor    <recipe-group> 'name))
-(define recipe-group-note      (vf-record-accessor    <recipe-group> 'note))
-(define recipe-group-recipes   (vf-record-accessor    <recipe-group> 'recipes))
 
 
 ;; ═══════════════════════════════════════════════════════════════════════
@@ -933,38 +558,18 @@
 ;;;         lot? (<batch-lot-record>),
 ;;;         previous-event? (string: EconomicEvent ID),
 ;;;         availability-window? (temporal-expression).
-(define <economic-resource>
-  (vf-record-type 'EconomicResource
-    '((immutable id)
-      (immutable name)
-      (immutable note)
-      (immutable image)
-      (immutable tracking-identifier)
-      (immutable conforms-to)
-      (immutable classified-as)
-      (immutable accounting-quantity)
-      (immutable onhand-quantity)
-      (immutable current-location)
-      (immutable current-virtual-location)
-      (immutable primary-accountable)
-      (immutable custodian-scope)
-      (immutable stage)
-      (immutable state)
-      (immutable contained-in)
-      (immutable unit-of-effort)
-      (immutable lot)
-      (immutable previous-event)
-      (immutable availability-window)
-      ;; distribution-mode: 'communal | 'individual-claimable | #f — import
-      ;; vocabulary, normalised from the legacy "communal"/"individually-claimable"
-      ;; classifiedAs tag, and provenance on the events a claim writes. The rail
-      ;; a good is actually on is read off the recipes (rail.scm rails-of,
-      ;; published by the plan): a claim recipe for someone puts it on the
-      ;; individual rail, the scope's own consumption keeps it communal, `use`
-      ;; makes it a means, and a made good that is nobody's input is individual.
-      ;; This field decides nothing; the accountability invariant (communal ⟹
-      ;; accountable = commune) checks the published rail (algorithms/custody.scm).
-      (immutable distribution-mode))))
+(define-vf-record <economic-resource> EconomicResource
+  (id name note image tracking-identifier conforms-to classified-as accounting-quantity onhand-quantity current-location current-virtual-location primary-accountable custodian-scope stage state contained-in unit-of-effort lot previous-event availability-window distribution-mode)
+  #:register register-vf-record!)
+  ;; distribution-mode: 'communal | 'individual-claimable | #f — import
+  ;; vocabulary, normalised from the legacy "communal"/"individually-claimable"
+  ;; classifiedAs tag, and provenance on the events a claim writes. The rail
+  ;; a good is actually on is read off the recipes (rail.scm rails-of,
+  ;; published by the plan): a claim recipe for someone puts it on the
+  ;; individual rail, the scope's own consumption keeps it communal, `use`
+  ;; makes it a means, and a made good that is nobody's input is individual.
+  ;; This field decides nothing; the accountability invariant (communal ⟹
+  ;; accountable = commune) checks the published rail (algorithms/custody.scm).
 
 ;; Migration normalisation: a legacy "communal"/"individually-claimable" tag in
 ;; classifiedAs is read INTO the distribution-mode field and stripped out, so
@@ -1000,55 +605,11 @@
 (define (make-economic-resource . args)
   "(make-economic-resource #:id … #:conforms-to … #:onhand-quantity …), settled."
   (%settle-economic-resource (apply %economic-resource args)))
-(define economic-resource?
-  (vf-record-predicate <economic-resource>))
 
 ;; The one functional update on an <economic-resource> — copy-commitment's
 ;; sibling: every field defaults to the record's own, and a field added to the
 ;; record is carried by every setter written over this.
 (define copy-economic-resource (vf-record-copier <economic-resource>))
-(define economic-resource-id
-  (vf-record-accessor <economic-resource> 'id))
-(define economic-resource-name
-  (vf-record-accessor <economic-resource> 'name))
-(define economic-resource-note
-  (vf-record-accessor <economic-resource> 'note))
-(define economic-resource-image
-  (vf-record-accessor <economic-resource> 'image))
-(define economic-resource-tracking-identifier
-  (vf-record-accessor <economic-resource> 'tracking-identifier))
-(define economic-resource-conforms-to
-  (vf-record-accessor <economic-resource> 'conforms-to))
-(define economic-resource-classified-as
-  (vf-record-accessor <economic-resource> 'classified-as))
-(define economic-resource-distribution-mode
-  (vf-record-accessor <economic-resource> 'distribution-mode))
-(define economic-resource-accounting-quantity
-  (vf-record-accessor <economic-resource> 'accounting-quantity))
-(define economic-resource-onhand-quantity
-  (vf-record-accessor <economic-resource> 'onhand-quantity))
-(define economic-resource-current-location
-  (vf-record-accessor <economic-resource> 'current-location))
-(define economic-resource-current-virtual-location
-  (vf-record-accessor <economic-resource> 'current-virtual-location))
-(define economic-resource-primary-accountable
-  (vf-record-accessor <economic-resource> 'primary-accountable))
-(define economic-resource-custodian-scope
-  (vf-record-accessor <economic-resource> 'custodian-scope))
-(define economic-resource-stage
-  (vf-record-accessor <economic-resource> 'stage))
-(define economic-resource-state
-  (vf-record-accessor <economic-resource> 'state))
-(define economic-resource-contained-in
-  (vf-record-accessor <economic-resource> 'contained-in))
-(define economic-resource-unit-of-effort
-  (vf-record-accessor <economic-resource> 'unit-of-effort))
-(define economic-resource-lot
-  (vf-record-accessor <economic-resource> 'lot))
-(define economic-resource-previous-event
-  (vf-record-accessor <economic-resource> 'previous-event))
-(define economic-resource-availability-window
-  (vf-record-accessor <economic-resource> 'availability-window))
 
 ;; ── tenure: an agent's relationship to a resource's RIGHTS vs its CUSTODY ────
 ;; ValueFlows separates two relationships (concepts/resources.md §rights/custody),
@@ -1149,39 +710,12 @@
 ;;;         settles? (string: Claim ID),
 ;;;         note? (string), in-scope-of? (list of strings: Agent IDs),
 ;;;         previous-event? (string: EconomicEvent ID).
-(define <economic-event>
-  (vf-record-type 'EconomicEvent
-    '((immutable id)
-      (immutable action)
-      (immutable input-of)
-      (immutable output-of)
-      (immutable resource-inventoried-as)
-      (immutable to-resource-inventoried-as)
-      (immutable resource-conforms-to)
-      (immutable resource-classified-as)
-      (immutable provider)
-      (immutable receiver)
-      (immutable resource-quantity)
-      (immutable effort-quantity)
-      (immutable has-beginning)
-      (immutable has-end)
-      (immutable has-point-in-time)
-      (immutable created)
-      (immutable at-location)
-      (immutable to-location)
-      (immutable state)
-      (immutable fulfills)
-      (immutable satisfies)
-      (immutable corrects)
-      (immutable realization-of)
-      (immutable settles)
-      (immutable note)
-      (immutable in-scope-of)
-      (immutable previous-event)
-      ;; distribution-mode: carried on the transfer — 'communal |
-      ;; 'individual-claimable | #f. Promoted from the legacy
-      ;; "individually-claimable" classifiedAs tag on the event.
-      (immutable distribution-mode))))
+(define-vf-record <economic-event> EconomicEvent
+  (id action input-of output-of resource-inventoried-as to-resource-inventoried-as resource-conforms-to resource-classified-as provider receiver resource-quantity effort-quantity has-beginning has-end has-point-in-time created at-location to-location state fulfills satisfies corrects realization-of settles note in-scope-of previous-event distribution-mode)
+  #:register register-vf-record!)
+  ;; distribution-mode: carried on the transfer — 'communal |
+  ;; 'individual-claimable | #f. Promoted from the legacy
+  ;; "individually-claimable" classifiedAs tag on the event.
 
 ;; Smart constructor: `distribution-mode` is keyword-only and last, so every
 ;; existing 29-positional call site (make-work-event / make-trip-event, etc.)
@@ -1200,26 +734,6 @@
 (define (make-economic-event . args)
   "(make-economic-event #:id … #:action … #:resource-conforms-to …), settled."
   (%settle-economic-event (apply %economic-event args)))
-(define economic-event?
-  (vf-record-predicate <economic-event>))
-(define economic-event-id
-  (vf-record-accessor <economic-event> 'id))
-(define economic-event-action
-  (vf-record-accessor <economic-event> 'action))
-(define economic-event-input-of
-  (vf-record-accessor <economic-event> 'input-of))
-(define economic-event-output-of
-  (vf-record-accessor <economic-event> 'output-of))
-(define economic-event-resource-inventoried-as
-  (vf-record-accessor <economic-event> 'resource-inventoried-as))
-(define economic-event-to-resource-inventoried-as
-  (vf-record-accessor <economic-event> 'to-resource-inventoried-as))
-(define economic-event-resource-conforms-to
-  (vf-record-accessor <economic-event> 'resource-conforms-to))
-(define economic-event-resource-classified-as
-  (vf-record-accessor <economic-event> 'resource-classified-as))
-(define economic-event-distribution-mode
-  (vf-record-accessor <economic-event> 'distribution-mode))
 ;; distribution-mode lives in the FIELD. The smart constructors normalise a
 ;; legacy "communal"/"individually-claimable" classifiedAs tag INTO the field
 ;; (and strip it from classifiedAs) at construction — %mode-from-tags /
@@ -1227,44 +741,6 @@
 ;; field-only. No tag is consulted at query time.
 (define (resource-distribution-mode r) (economic-resource-distribution-mode r))
 (define (event-distribution-mode e)    (economic-event-distribution-mode e))
-(define economic-event-provider
-  (vf-record-accessor <economic-event> 'provider))
-(define economic-event-receiver
-  (vf-record-accessor <economic-event> 'receiver))
-(define economic-event-resource-quantity
-  (vf-record-accessor <economic-event> 'resource-quantity))
-(define economic-event-effort-quantity
-  (vf-record-accessor <economic-event> 'effort-quantity))
-(define economic-event-has-beginning
-  (vf-record-accessor <economic-event> 'has-beginning))
-(define economic-event-has-end
-  (vf-record-accessor <economic-event> 'has-end))
-(define economic-event-has-point-in-time
-  (vf-record-accessor <economic-event> 'has-point-in-time))
-(define economic-event-created
-  (vf-record-accessor <economic-event> 'created))
-(define economic-event-at-location
-  (vf-record-accessor <economic-event> 'at-location))
-(define economic-event-to-location
-  (vf-record-accessor <economic-event> 'to-location))
-(define economic-event-state
-  (vf-record-accessor <economic-event> 'state))
-(define economic-event-fulfills
-  (vf-record-accessor <economic-event> 'fulfills))
-(define economic-event-satisfies
-  (vf-record-accessor <economic-event> 'satisfies))
-(define economic-event-corrects
-  (vf-record-accessor <economic-event> 'corrects))
-(define economic-event-realization-of
-  (vf-record-accessor <economic-event> 'realization-of))
-(define economic-event-settles
-  (vf-record-accessor <economic-event> 'settles))
-(define economic-event-note
-  (vf-record-accessor <economic-event> 'note))
-(define economic-event-in-scope-of
-  (vf-record-accessor <economic-event> 'in-scope-of))
-(define economic-event-previous-event
-  (vf-record-accessor <economic-event> 'previous-event))
 
 ;; The one functional update on an <economic-event>: copy-economic-resource's
 ;; sibling. Every field defaults to the record's own, so a field added to the
@@ -1286,33 +762,12 @@
 ;;;         in-scope-of? (list of strings: Agent IDs),
 ;;;         has-beginning? (ISO datetime), has-end? (ISO datetime),
 ;;;         finished? (boolean).
-(define <process>
-  (vf-record-type 'Process
-    '((immutable id)
-      (immutable name)
-      (immutable note)
-      (immutable based-on)
-      (immutable classified-as)
-      (immutable planned-within)
-      (immutable nested-in)
-      (immutable in-scope-of)
-      (immutable has-beginning)
-      (immutable has-end)
-      (immutable finished))))
+(define-vf-record <process> Process
+  (id name note based-on classified-as planned-within nested-in in-scope-of has-beginning has-end finished)
+  #:register register-vf-record!)
 
 (define make-process (vf-record-maker <process>))
-(define process?                  (vf-record-predicate   <process>))
-(define process-id                (vf-record-accessor    <process> 'id))
-(define process-name              (vf-record-accessor    <process> 'name))
-(define process-note              (vf-record-accessor    <process> 'note))
-(define process-based-on          (vf-record-accessor    <process> 'based-on))
-(define process-classified-as     (vf-record-accessor    <process> 'classified-as))
-(define process-planned-within    (vf-record-accessor    <process> 'planned-within))
-(define process-nested-in         (vf-record-accessor    <process> 'nested-in))
-(define process-in-scope-of       (vf-record-accessor    <process> 'in-scope-of))
-(define process-has-beginning     (vf-record-accessor    <process> 'has-beginning))
-(define process-has-end           (vf-record-accessor    <process> 'has-end))
-(define process-finished          (vf-record-accessor    <process> 'finished))
+(define copy-process (vf-record-copier <process>))
 
 
 ;; ═══════════════════════════════════════════════════════════════════════
@@ -1338,67 +793,11 @@
 ;;;         in-scope-of? (list of strings: Agent IDs),
 ;;;         finished? (boolean),
 ;;;         availability-window? (temporal-expression).
-(define <intent>
-  (vf-record-type 'Intent
-    '((immutable id)
-      (immutable action)
-      (immutable name)
-      (immutable note)
-      (immutable image)
-      (immutable input-of)
-      (immutable output-of)
-      (immutable resource-inventoried-as)
-      (immutable resource-conforms-to)
-      (immutable resource-classified-as)
-      (immutable resource-quantity)
-      (immutable effort-quantity)
-      (immutable available-quantity)
-      (immutable minimum-quantity)
-      (immutable provider)
-      (immutable receiver)
-      (immutable has-beginning)
-      (immutable has-end)
-      (immutable has-point-in-time)
-      (immutable due)
-      (immutable at-location)
-      (immutable stage)
-      (immutable state)
-      (immutable planned-within)
-      (immutable satisfies)
-      (immutable in-scope-of)
-      (immutable finished)
-      (immutable availability-window))))
+(define-vf-record <intent> Intent
+  (id action name note image input-of output-of resource-inventoried-as resource-conforms-to resource-classified-as resource-quantity effort-quantity available-quantity minimum-quantity provider receiver has-beginning has-end has-point-in-time due at-location stage state planned-within satisfies in-scope-of finished availability-window)
+  #:register register-vf-record!)
 
 (define make-intent (vf-record-maker <intent>))
-(define intent?                              (vf-record-predicate   <intent>))
-(define intent-id                            (vf-record-accessor    <intent> 'id))
-(define intent-action                        (vf-record-accessor    <intent> 'action))
-(define intent-name                          (vf-record-accessor    <intent> 'name))
-(define intent-note                          (vf-record-accessor    <intent> 'note))
-(define intent-image                         (vf-record-accessor    <intent> 'image))
-(define intent-input-of                      (vf-record-accessor    <intent> 'input-of))
-(define intent-output-of                     (vf-record-accessor    <intent> 'output-of))
-(define intent-resource-inventoried-as       (vf-record-accessor    <intent> 'resource-inventoried-as))
-(define intent-resource-conforms-to          (vf-record-accessor    <intent> 'resource-conforms-to))
-(define intent-resource-classified-as        (vf-record-accessor    <intent> 'resource-classified-as))
-(define intent-resource-quantity             (vf-record-accessor    <intent> 'resource-quantity))
-(define intent-effort-quantity               (vf-record-accessor    <intent> 'effort-quantity))
-(define intent-available-quantity            (vf-record-accessor    <intent> 'available-quantity))
-(define intent-minimum-quantity              (vf-record-accessor    <intent> 'minimum-quantity))
-(define intent-provider                      (vf-record-accessor    <intent> 'provider))
-(define intent-receiver                      (vf-record-accessor    <intent> 'receiver))
-(define intent-has-beginning                 (vf-record-accessor    <intent> 'has-beginning))
-(define intent-has-end                       (vf-record-accessor    <intent> 'has-end))
-(define intent-has-point-in-time             (vf-record-accessor    <intent> 'has-point-in-time))
-(define intent-due                           (vf-record-accessor    <intent> 'due))
-(define intent-at-location                   (vf-record-accessor    <intent> 'at-location))
-(define intent-stage                         (vf-record-accessor    <intent> 'stage))
-(define intent-state                         (vf-record-accessor    <intent> 'state))
-(define intent-planned-within                (vf-record-accessor    <intent> 'planned-within))
-(define intent-satisfies                     (vf-record-accessor    <intent> 'satisfies))
-(define intent-in-scope-of                   (vf-record-accessor    <intent> 'in-scope-of))
-(define intent-finished                      (vf-record-accessor    <intent> 'finished))
-(define intent-availability-window           (vf-record-accessor    <intent> 'availability-window))
 
 
 ;;; Commitment — a promised future event, agreed to by agents.
@@ -1422,93 +821,11 @@
 ;;;         planned-within? (string: Plan ID),
 ;;;         finished? (boolean),
 ;;;         availability-window? (temporal-expression).
-(define <commitment>
-  (vf-record-type 'Commitment
-    '((immutable id)
-      (immutable action)
-      (immutable note)
-      (immutable input-of)
-      (immutable output-of)
-      (immutable resource-inventoried-as)
-      (immutable resource-conforms-to)
-      (immutable resource-classified-as)
-      (immutable resource-quantity)
-      (immutable effort-quantity)
-      (immutable provider)
-      (immutable receiver)
-      (immutable has-beginning)
-      (immutable has-end)
-      (immutable has-point-in-time)
-      (immutable due)
-      (immutable created)
-      (immutable at-location)
-      (immutable in-scope-of)
-      (immutable stage)
-      (immutable state)
-      (immutable satisfies)
-      (immutable clause-of)
-      (immutable independent-demand-of)
-      (immutable planned-within)
-      (immutable finished)
-      (immutable availability-window))))
+(define-vf-record <commitment> Commitment
+  (id action note input-of output-of resource-inventoried-as resource-conforms-to resource-classified-as resource-quantity effort-quantity provider receiver has-beginning has-end has-point-in-time due created at-location in-scope-of stage state satisfies clause-of independent-demand-of planned-within finished availability-window)
+  #:register register-vf-record!)
 
 (define make-commitment (vf-record-maker <commitment>))
-(define commitment?
-  (vf-record-predicate <commitment>))
-(define commitment-id
-  (vf-record-accessor <commitment> 'id))
-(define commitment-action
-  (vf-record-accessor <commitment> 'action))
-(define commitment-note
-  (vf-record-accessor <commitment> 'note))
-(define commitment-input-of
-  (vf-record-accessor <commitment> 'input-of))
-(define commitment-output-of
-  (vf-record-accessor <commitment> 'output-of))
-(define commitment-resource-inventoried-as
-  (vf-record-accessor <commitment> 'resource-inventoried-as))
-(define commitment-resource-conforms-to
-  (vf-record-accessor <commitment> 'resource-conforms-to))
-(define commitment-resource-classified-as
-  (vf-record-accessor <commitment> 'resource-classified-as))
-(define commitment-resource-quantity
-  (vf-record-accessor <commitment> 'resource-quantity))
-(define commitment-effort-quantity
-  (vf-record-accessor <commitment> 'effort-quantity))
-(define commitment-provider
-  (vf-record-accessor <commitment> 'provider))
-(define commitment-receiver
-  (vf-record-accessor <commitment> 'receiver))
-(define commitment-has-beginning
-  (vf-record-accessor <commitment> 'has-beginning))
-(define commitment-has-end
-  (vf-record-accessor <commitment> 'has-end))
-(define commitment-has-point-in-time
-  (vf-record-accessor <commitment> 'has-point-in-time))
-(define commitment-due
-  (vf-record-accessor <commitment> 'due))
-(define commitment-created
-  (vf-record-accessor <commitment> 'created))
-(define commitment-at-location
-  (vf-record-accessor <commitment> 'at-location))
-(define commitment-in-scope-of
-  (vf-record-accessor <commitment> 'in-scope-of))
-(define commitment-stage
-  (vf-record-accessor <commitment> 'stage))
-(define commitment-state
-  (vf-record-accessor <commitment> 'state))
-(define commitment-satisfies
-  (vf-record-accessor <commitment> 'satisfies))
-(define commitment-clause-of
-  (vf-record-accessor <commitment> 'clause-of))
-(define commitment-independent-demand-of
-  (vf-record-accessor <commitment> 'independent-demand-of))
-(define commitment-planned-within
-  (vf-record-accessor <commitment> 'planned-within))
-(define commitment-finished
-  (vf-record-accessor <commitment> 'finished))
-(define commitment-availability-window
-  (vf-record-accessor <commitment> 'availability-window))
 
 (define copy-intent (vf-record-copier <intent>))
 
@@ -1542,37 +859,11 @@
 ;;;         resource-classified-as? (list of strings),
 ;;;         due? (ISO datetime), created? (ISO datetime),
 ;;;         note? (string), finished? (boolean).
-(define <claim>
-  (vf-record-type 'Claim
-    '((immutable id)
-      (immutable action)
-      (immutable provider)
-      (immutable receiver)
-      (immutable triggered-by)
-      (immutable resource-quantity)
-      (immutable effort-quantity)
-      (immutable resource-conforms-to)
-      (immutable resource-classified-as)
-      (immutable due)
-      (immutable created)
-      (immutable note)
-      (immutable finished))))
+(define-vf-record <claim> Claim
+  (id action provider receiver triggered-by resource-quantity effort-quantity resource-conforms-to resource-classified-as due created note finished)
+  #:register register-vf-record!)
 
 (define make-claim (vf-record-maker <claim>))
-(define claim?                            (vf-record-predicate   <claim>))
-(define claim-id                          (vf-record-accessor    <claim> 'id))
-(define claim-action                      (vf-record-accessor    <claim> 'action))
-(define claim-provider                    (vf-record-accessor    <claim> 'provider))
-(define claim-receiver                    (vf-record-accessor    <claim> 'receiver))
-(define claim-triggered-by                (vf-record-accessor    <claim> 'triggered-by))
-(define claim-resource-quantity            (vf-record-accessor    <claim> 'resource-quantity))
-(define claim-effort-quantity              (vf-record-accessor    <claim> 'effort-quantity))
-(define claim-resource-conforms-to         (vf-record-accessor    <claim> 'resource-conforms-to))
-(define claim-resource-classified-as       (vf-record-accessor    <claim> 'resource-classified-as))
-(define claim-due                          (vf-record-accessor    <claim> 'due))
-(define claim-created                      (vf-record-accessor    <claim> 'created))
-(define claim-note                         (vf-record-accessor    <claim> 'note))
-(define claim-finished                     (vf-record-accessor    <claim> 'finished))
 
 
 ;; ═══════════════════════════════════════════════════════════════════════
@@ -1585,27 +876,11 @@
 ;;;         has-independent-demand? (list of strings: Commitment/Intent IDs),
 ;;;         refinement-of? (string: Scenario ID),
 ;;;         classified-as? (list of strings).
-(define <plan>
-  (vf-record-type 'Plan
-    '((immutable id)
-      (immutable name)
-      (immutable note)
-      (immutable due)
-      (immutable created)
-      (immutable has-independent-demand)
-      (immutable refinement-of)
-      (immutable classified-as))))
+(define-vf-record <plan> Plan
+  (id name note due created has-independent-demand refinement-of classified-as)
+  #:register register-vf-record!)
 
 (define make-plan (vf-record-maker <plan>))
-(define plan?                           (vf-record-predicate   <plan>))
-(define plan-id                         (vf-record-accessor    <plan> 'id))
-(define plan-name                       (vf-record-accessor    <plan> 'name))
-(define plan-note                       (vf-record-accessor    <plan> 'note))
-(define plan-due                        (vf-record-accessor    <plan> 'due))
-(define plan-created                    (vf-record-accessor    <plan> 'created))
-(define plan-has-independent-demand     (vf-record-accessor    <plan> 'has-independent-demand))
-(define plan-refinement-of              (vf-record-accessor    <plan> 'refinement-of))
-(define plan-classified-as              (vf-record-accessor    <plan> 'classified-as))
 
 
 ;; ═══════════════════════════════════════════════════════════════════════
@@ -1615,27 +890,11 @@
 ;;; ScenarioDefinition — a named category or template for a kind of scenario.
 ;;; Fields: id (string), name (string), note? (string),
 ;;;         has-duration? (<duration>), in-scope-of? (string: Agent ID).
-(define <scenario-definition>
-  (vf-record-type 'ScenarioDefinition
-    '((immutable id)
-      (immutable name)
-      (immutable note)
-      (immutable has-duration)
-      (immutable in-scope-of))))
+(define-vf-record <scenario-definition> ScenarioDefinition
+  (id name note has-duration in-scope-of)
+  #:register register-vf-record!)
 
 (define make-scenario-definition (vf-record-maker <scenario-definition>))
-(define scenario-definition?
-  (vf-record-predicate <scenario-definition>))
-(define scenario-definition-id
-  (vf-record-accessor <scenario-definition> 'id))
-(define scenario-definition-name
-  (vf-record-accessor <scenario-definition> 'name))
-(define scenario-definition-note
-  (vf-record-accessor <scenario-definition> 'note))
-(define scenario-definition-has-duration
-  (vf-record-accessor <scenario-definition> 'has-duration))
-(define scenario-definition-in-scope-of
-  (vf-record-accessor <scenario-definition> 'in-scope-of))
 
 
 ;;; Scenario — a grouping of processes, intents, plans for analysis/budgeting.
@@ -1644,27 +903,11 @@
 ;;;         refinement-of? (string: Scenario ID),
 ;;;         has-beginning? (ISO datetime), has-end? (ISO datetime),
 ;;;         in-scope-of? (string: Agent ID).
-(define <scenario>
-  (vf-record-type 'Scenario
-    '((immutable id)
-      (immutable name)
-      (immutable note)
-      (immutable defined-as)
-      (immutable refinement-of)
-      (immutable has-beginning)
-      (immutable has-end)
-      (immutable in-scope-of))))
+(define-vf-record <scenario> Scenario
+  (id name note defined-as refinement-of has-beginning has-end in-scope-of)
+  #:register register-vf-record!)
 
 (define make-scenario (vf-record-maker <scenario>))
-(define scenario?                  (vf-record-predicate   <scenario>))
-(define scenario-id                (vf-record-accessor    <scenario> 'id))
-(define scenario-name              (vf-record-accessor    <scenario> 'name))
-(define scenario-note              (vf-record-accessor    <scenario> 'note))
-(define scenario-defined-as        (vf-record-accessor    <scenario> 'defined-as))
-(define scenario-refinement-of     (vf-record-accessor    <scenario> 'refinement-of))
-(define scenario-has-beginning     (vf-record-accessor    <scenario> 'has-beginning))
-(define scenario-has-end           (vf-record-accessor    <scenario> 'has-end))
-(define scenario-in-scope-of       (vf-record-accessor    <scenario> 'in-scope-of))
 
 
 ;; ═══════════════════════════════════════════════════════════════════════
@@ -1676,43 +919,21 @@
 ;;;         created? (ISO datetime),
 ;;;         stipulates? (list of strings: primary Commitment IDs),
 ;;;         stipulates-reciprocal? (list of strings: reciprocal Commitment IDs).
-(define <agreement>
-  (vf-record-type 'Agreement
-    '((immutable id)
-      (immutable name)
-      (immutable note)
-      (immutable created)
-      (immutable stipulates)
-      (immutable stipulates-reciprocal))))
+(define-vf-record <agreement> Agreement
+  (id name note created stipulates stipulates-reciprocal)
+  #:register register-vf-record!)
 
 (define make-agreement (vf-record-maker <agreement>))
-(define agreement?                           (vf-record-predicate   <agreement>))
-(define agreement-id                         (vf-record-accessor    <agreement> 'id))
-(define agreement-name                       (vf-record-accessor    <agreement> 'name))
-(define agreement-note                       (vf-record-accessor    <agreement> 'note))
-(define agreement-created                    (vf-record-accessor    <agreement> 'created))
-(define agreement-stipulates                 (vf-record-accessor    <agreement> 'stipulates))
-(define agreement-stipulates-reciprocal      (vf-record-accessor    <agreement> 'stipulates-reciprocal))
 
 
 ;;; AgreementBundle — groups multiple Agreements.
 ;;; Fields: id (string), name? (string), note? (string),
 ;;;         created? (ISO datetime), bundles? (list of strings: Agreement IDs).
-(define <agreement-bundle>
-  (vf-record-type 'AgreementBundle
-    '((immutable id)
-      (immutable name)
-      (immutable note)
-      (immutable created)
-      (immutable bundles))))
+(define-vf-record <agreement-bundle> AgreementBundle
+  (id name note created bundles)
+  #:register register-vf-record!)
 
 (define make-agreement-bundle (vf-record-maker <agreement-bundle>))
-(define agreement-bundle?              (vf-record-predicate   <agreement-bundle>))
-(define agreement-bundle-id            (vf-record-accessor    <agreement-bundle> 'id))
-(define agreement-bundle-name          (vf-record-accessor    <agreement-bundle> 'name))
-(define agreement-bundle-note          (vf-record-accessor    <agreement-bundle> 'note))
-(define agreement-bundle-created       (vf-record-accessor    <agreement-bundle> 'created))
-(define agreement-bundle-bundles       (vf-record-accessor    <agreement-bundle> 'bundles))
 
 
 ;; ═══════════════════════════════════════════════════════════════════════
@@ -1729,54 +950,18 @@
 ;;;         publishes? (list of strings: Intent IDs),
 ;;;         reciprocal? (list of strings: Intent IDs),
 ;;;         proposed-to? (list of strings: Agent IDs).
-(define <proposal>
-  (vf-record-type 'Proposal
-    '((immutable id)
-      (immutable name)
-      (immutable note)
-      (immutable has-beginning)
-      (immutable has-end)
-      (immutable unit-based)
-      (immutable created)
-      (immutable purpose)
-      (immutable eligible-location)
-      (immutable in-scope-of)
-      (immutable publishes)
-      (immutable reciprocal)
-      (immutable proposed-to))))
+(define-vf-record <proposal> Proposal
+  (id name note has-beginning has-end unit-based created purpose eligible-location in-scope-of publishes reciprocal proposed-to)
+  #:register register-vf-record!)
 
 (define make-proposal (vf-record-maker <proposal>))
-(define proposal?                      (vf-record-predicate   <proposal>))
-(define proposal-id                    (vf-record-accessor    <proposal> 'id))
-(define proposal-name                  (vf-record-accessor    <proposal> 'name))
-(define proposal-note                  (vf-record-accessor    <proposal> 'note))
-(define proposal-has-beginning         (vf-record-accessor    <proposal> 'has-beginning))
-(define proposal-has-end               (vf-record-accessor    <proposal> 'has-end))
-(define proposal-unit-based            (vf-record-accessor    <proposal> 'unit-based))
-(define proposal-created               (vf-record-accessor    <proposal> 'created))
-(define proposal-purpose               (vf-record-accessor    <proposal> 'purpose))
-(define proposal-eligible-location     (vf-record-accessor    <proposal> 'eligible-location))
-(define proposal-in-scope-of           (vf-record-accessor    <proposal> 'in-scope-of))
-(define proposal-publishes             (vf-record-accessor    <proposal> 'publishes))
-(define proposal-reciprocal            (vf-record-accessor    <proposal> 'reciprocal))
-(define proposal-proposed-to           (vf-record-accessor    <proposal> 'proposed-to))
 
 
 ;;; ProposalList — groups multiple Proposals.
 ;;; Fields: id (string), name? (string), note? (string),
 ;;;         created? (ISO datetime), lists? (list of strings: Proposal IDs).
-(define <proposal-list>
-  (vf-record-type 'ProposalList
-    '((immutable id)
-      (immutable name)
-      (immutable note)
-      (immutable created)
-      (immutable lists))))
+(define-vf-record <proposal-list> ProposalList
+  (id name note created lists)
+  #:register register-vf-record!)
 
 (define make-proposal-list (vf-record-maker <proposal-list>))
-(define proposal-list?              (vf-record-predicate   <proposal-list>))
-(define proposal-list-id            (vf-record-accessor    <proposal-list> 'id))
-(define proposal-list-name          (vf-record-accessor    <proposal-list> 'name))
-(define proposal-list-note          (vf-record-accessor    <proposal-list> 'note))
-(define proposal-list-created       (vf-record-accessor    <proposal-list> 'created))
-(define proposal-list-lists         (vf-record-accessor    <proposal-list> 'lists))

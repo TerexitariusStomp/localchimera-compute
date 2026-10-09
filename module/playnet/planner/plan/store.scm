@@ -8,7 +8,6 @@
 (define-module (playnet planner plan store)
   #:use-module (playnet utils store-utils)
   #:use-module (playnet planner vf serdes)
-  #:use-module (playnet planner vf serdes-bindings)   ; the registered record types vf-serialize reads
   #:use-module (playnet planner algorithms propagation)
   #:use-module (playnet planner algorithms signals)
   #:use-module (playnet planner vf schemas)
@@ -148,7 +147,7 @@
 ;;
 ;; All per-type `X->list` / `list->X*` pairs have been replaced by
 ;; `vf-serialize` / `vf-deserialize` from utils/serdes.scm, which uses
-;; the record-type registry in utils/serdes-bindings.scm to introspect
+;; the record-type registry (schemas.scm define-vf-record registers each type) to introspect
 ;; fields automatically.
 ;;
 ;; The legacy Measure helpers sm/dm and the per-type pairs that were here
@@ -987,26 +986,7 @@
               ;; Rebuild intent with assigned id so indexes are consistent
               (intent-with-id
                 (if (intent-id intent-fields) intent-fields
-                    (make-intent
-                      #:id iid #:action (intent-action intent-fields)
-                      #:name (intent-name intent-fields) #:note (intent-note intent-fields)
-                      #:image (intent-image intent-fields) #:input-of (intent-input-of intent-fields)
-                      #:output-of (intent-output-of intent-fields)
-                      #:resource-inventoried-as (intent-resource-inventoried-as intent-fields)
-                      #:resource-conforms-to (intent-resource-conforms-to intent-fields)
-                      #:resource-classified-as (intent-resource-classified-as intent-fields)
-                      #:resource-quantity (intent-resource-quantity intent-fields)
-                      #:effort-quantity (intent-effort-quantity intent-fields)
-                      #:available-quantity (intent-available-quantity intent-fields)
-                      #:minimum-quantity (intent-minimum-quantity intent-fields)
-                      #:provider (intent-provider intent-fields) #:receiver (intent-receiver intent-fields)
-                      #:has-beginning (intent-has-beginning intent-fields) #:has-end (intent-has-end intent-fields)
-                      #:has-point-in-time (intent-has-point-in-time intent-fields) #:due (intent-due intent-fields)
-                      #:at-location (intent-at-location intent-fields) #:stage (intent-stage intent-fields)
-                      #:state (intent-state intent-fields) #:planned-within (intent-planned-within intent-fields)
-                      #:satisfies (intent-satisfies intent-fields) #:in-scope-of (intent-in-scope-of intent-fields)
-                      #:finished (intent-finished intent-fields)
-                      #:availability-window (intent-availability-window intent-fields))))
+                    (copy-intent intent-fields #:id iid)))
               (new-intents (hashmap-set (pss-intents st) iid intent-with-id))
               (new-tag-idx (index-intent-tags (pss-tag-index st) intent-with-id))
               (new-ibs (index-intent-spec (pss-intents-by-spec st) intent-with-id))
@@ -1045,33 +1025,13 @@
               (output-of (assq-ref opts 'output-of))
               (planned-within-override (assq-ref opts 'planned-within))
               (cid (generate-id "commit-"))
-              (commitment (make-commitment
-                            #:id cid #:action (or action-override (intent-action intent))
-                            #:input-of (intent-input-of intent)
-                            #:output-of (or output-of (intent-output-of intent)) #:resource-conforms-to (intent-resource-conforms-to intent)
-                            #:resource-classified-as (intent-resource-classified-as intent)
-                            #:resource-quantity (intent-resource-quantity intent)
-                            #:effort-quantity (intent-effort-quantity intent)
-                            #:provider provider #:receiver receiver #:due (intent-due intent)
-                            #:at-location (intent-at-location intent) #:satisfies iid
-                            #:planned-within (or planned-within-override (intent-planned-within intent))))
+              ;; the one promotion map (intent->commitment), then the door's own overrides
+              (commitment (copy-commitment (intent->commitment intent cid provider receiver)
+                                           #:action (or action-override (intent-action intent))
+                                           #:output-of (or output-of (intent-output-of intent))
+                                           #:planned-within (or planned-within-override (intent-planned-within intent))))
               ;; Mark intent finished
-              (finished-intent (make-intent
-                                 #:id iid #:action (intent-action intent) #:name (intent-name intent)
-                                 #:note (intent-note intent) #:image (intent-image intent)
-                                 #:input-of (intent-input-of intent) #:output-of (intent-output-of intent)
-                                 #:resource-inventoried-as (intent-resource-inventoried-as intent)
-                                 #:resource-conforms-to (intent-resource-conforms-to intent)
-                                 #:resource-classified-as (intent-resource-classified-as intent)
-                                 #:resource-quantity (intent-resource-quantity intent) #:effort-quantity (intent-effort-quantity intent)
-                                 #:available-quantity (intent-available-quantity intent) #:minimum-quantity (intent-minimum-quantity intent)
-                                 #:provider (intent-provider intent) #:receiver (intent-receiver intent)
-                                 #:has-beginning (intent-has-beginning intent) #:has-end (intent-has-end intent)
-                                 #:has-point-in-time (intent-has-point-in-time intent) #:due (intent-due intent)
-                                 #:at-location (intent-at-location intent) #:stage (intent-stage intent)
-                                 #:state (intent-state intent) #:planned-within (intent-planned-within intent)
-                                 #:satisfies (intent-satisfies intent) #:in-scope-of (intent-in-scope-of intent)
-                                 #:finished #t #:availability-window (intent-availability-window intent)))
+              (finished-intent (copy-intent intent #:finished #t))
               ;; Update meta
               (old-meta (hashmap-ref (pss-meta st) iid '()))
               (new-meta-entry (cons* (cons 'status 'approved)
@@ -1090,22 +1050,7 @@
     ((reject-replenishment iid)
      (let ((intent (hashmap-ref (pss-intents st) iid #f)))
        (unless intent (error (format #f "Replenishment ~a not found" iid)))
-       (let* ((finished-intent (make-intent
-                                 #:id iid #:action (intent-action intent) #:name (intent-name intent)
-                                 #:note (intent-note intent) #:image (intent-image intent)
-                                 #:input-of (intent-input-of intent) #:output-of (intent-output-of intent)
-                                 #:resource-inventoried-as (intent-resource-inventoried-as intent)
-                                 #:resource-conforms-to (intent-resource-conforms-to intent)
-                                 #:resource-classified-as (intent-resource-classified-as intent)
-                                 #:resource-quantity (intent-resource-quantity intent) #:effort-quantity (intent-effort-quantity intent)
-                                 #:available-quantity (intent-available-quantity intent) #:minimum-quantity (intent-minimum-quantity intent)
-                                 #:provider (intent-provider intent) #:receiver (intent-receiver intent)
-                                 #:has-beginning (intent-has-beginning intent) #:has-end (intent-has-end intent)
-                                 #:has-point-in-time (intent-has-point-in-time intent) #:due (intent-due intent)
-                                 #:at-location (intent-at-location intent) #:stage (intent-stage intent)
-                                 #:state (intent-state intent) #:planned-within (intent-planned-within intent)
-                                 #:satisfies (intent-satisfies intent) #:in-scope-of (intent-in-scope-of intent)
-                                 #:finished #t #:availability-window (intent-availability-window intent)))
+       (let* ((finished-intent (copy-intent intent #:finished #t))
               (old-meta (hashmap-ref (pss-meta st) iid '()))
               (new-meta-entry (cons (cons 'status 'rejected)
                                     (if (pair? old-meta) old-meta '()))))

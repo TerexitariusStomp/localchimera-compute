@@ -138,33 +138,10 @@
            (string-append "aggregated from " (number->string n)
                           " demand"
                           (if (= n 1) "" "s"))))
-    (make-intent                                    ; the id is the caller's to assign
-      #:action (intent-action first)
-      #:name merged-name
-      #:note merged-note
-      #:image (intent-image first)
-      #:input-of (intent-input-of first) #:output-of (intent-output-of first)
-      #:resource-inventoried-as (intent-resource-inventoried-as first)
-      #:resource-conforms-to (intent-resource-conforms-to first)
-      #:resource-classified-as (intent-resource-classified-as first)
+    (copy-intent first                              ; the id is the caller's to assign
+      #:id #f #:name merged-name #:note merged-note
       #:resource-quantity summed-quantity
-      #:effort-quantity (intent-effort-quantity first)
-      #:available-quantity (intent-available-quantity first)
-      #:minimum-quantity (intent-minimum-quantity first)
-      #:provider (intent-provider first)
-      #:receiver (intent-receiver first)
-      #:has-beginning merged-begin
-      #:has-end merged-end
-      #:has-point-in-time (intent-has-point-in-time first)
-      #:due (intent-due first)
-      #:at-location (intent-at-location first)
-      #:stage (intent-stage first)
-      #:state (intent-state first)
-      #:planned-within (intent-planned-within first)
-      #:satisfies (intent-satisfies first)
-      #:in-scope-of (intent-in-scope-of first)
-      #:finished (intent-finished first)
-      #:availability-window (intent-availability-window first))))
+      #:has-beginning merged-begin #:has-end merged-end)))
 
 
 ;; =========================================================================

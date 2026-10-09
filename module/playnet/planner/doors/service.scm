@@ -91,7 +91,6 @@
   ;; a read door's reply leaves as the rows the page reads
   #:use-module ((playnet wire replies) #:select (finished))
   #:use-module ((playnet wire rows) #:select (with-context wire-row* wire->plain))
-  #:use-module (playnet planner vf serdes-bindings)
   #:use-module (playnet planner formulas actions)
   #:use-module (playnet planner observation states)
   #:use-module (playnet planner beyond schedules)
@@ -244,16 +243,7 @@
    BEGAN (has-beginning) is the instant the coins started moving."
   ($ ps 'remove-intent (intent-id i))
   ($ ps 'add-intent-silent
-     (make-intent
-      #:id (intent-id i) #:action (intent-action i) #:name (intent-name i) #:note (intent-note i) #:image (intent-image i)
-      #:input-of (intent-input-of i) #:output-of (intent-output-of i)
-      #:resource-inventoried-as (intent-resource-inventoried-as i) #:resource-conforms-to (intent-resource-conforms-to i) #:resource-classified-as (intent-resource-classified-as i)
-      #:resource-quantity (intent-resource-quantity i) #:effort-quantity (intent-effort-quantity i) #:available-quantity (intent-available-quantity i) #:minimum-quantity (intent-minimum-quantity i)
-      #:provider (intent-provider i) #:receiver (intent-receiver i)
-      #:has-beginning began #:has-end (intent-has-end i) #:has-point-in-time (intent-has-point-in-time i) #:due (intent-due i)
-      #:at-location (intent-at-location i) #:stage (intent-stage i) #:state state
-      #:planned-within (intent-planned-within i) #:satisfies (intent-satisfies i) #:in-scope-of (intent-in-scope-of i) #:finished finished?
-      #:availability-window (intent-availability-window i))))
+     (copy-intent i #:has-beginning began #:state state #:finished finished?)))
 
 ;;; ── A journey is a performed Process ─────────────────────────────────
 ;; The trip's process and the commitment for its arrival are named from the
@@ -4631,11 +4621,7 @@ service does not know the scope (nothing to filter by)."
          (let ((as ($ root 'agent-store)))
            ($ as 'update-agent aid
               (lambda (old)
-                (make-agent #:id (agent-id old) #:type (agent-type old)
-                            #:name (agent-name old) #:note (agent-note old)
-                            #:image (agent-image old) #:primary-location (agent-primary-location old)
-                            #:classified-as (agent-classified-as old)
-                            #:availability-window availability-window)))
+                (copy-agent old #:availability-window availability-window)))
            `(ok . ,aid)))))
 
     ;; the member's own PROFILE — the typed tags the subsistence context and the
@@ -4653,11 +4639,7 @@ service does not know the scope (nothing to filter by)."
                 (with-tags (lambda (old) (append (remove profile-tag? (or old '())) tags))))
            (or ($ as 'update-agent aid
                   (lambda (old)
-                    (make-agent #:id (agent-id old) #:type (agent-type old)
-                                #:name (agent-name old) #:note (agent-note old)
-                                #:image (agent-image old) #:primary-location (agent-primary-location old)
-                                #:classified-as (with-tags (agent-classified-as old))
-                                #:availability-window (agent-availability-window old))))
+                    (copy-agent old #:classified-as (with-tags (agent-classified-as old)))))
                (begin
                  ($ as 'add-agent
                     (make-agent #:id aid #:type 'person #:name aid #:classified-as (with-tags '())))
@@ -4700,11 +4682,7 @@ service does not know the scope (nothing to filter by)."
                               (else (error "a home needs a known place or coordinates")))))
                (or ($ as 'update-agent aid
                       (lambda (old)
-                        (make-agent #:id (agent-id old) #:type (agent-type old)
-                                    #:name (agent-name old) #:note (agent-note old)
-                                    #:image (agent-image old) #:primary-location id
-                                    #:classified-as (agent-classified-as old)
-                                    #:availability-window (agent-availability-window old))))
+                        (copy-agent old #:primary-location id)))
                    ($ as 'add-agent
                       (make-agent #:id aid #:type 'person #:name aid #:primary-location id
                                   #:classified-as '())))
@@ -4783,11 +4761,7 @@ service does not know the scope (nothing to filter by)."
            ;; solve then plans over 0 available hours forever).
            (or ($ as 'update-agent aid
                   (lambda (old)
-                    (make-agent #:id (agent-id old) #:type (agent-type old)
-                                #:name (agent-name old) #:note (agent-note old)
-                                #:image (agent-image old) #:primary-location (agent-primary-location old)
-                                #:classified-as (agent-classified-as old)
-                                #:availability-window window)))
+                    (copy-agent old #:availability-window window)))
                (begin
                  ($ as 'add-agent
                     (make-agent #:id aid #:type 'person #:name aid #:classified-as '()

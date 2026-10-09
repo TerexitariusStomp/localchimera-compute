@@ -21,7 +21,6 @@
 
 (define-module (playnet planner observation observer)
   #:use-module (playnet planner vf serdes)
-  #:use-module (playnet planner vf serdes-bindings)   ; the registered record types vf-serialize reads
   #:use-module (playnet planner vf schemas)
   #:use-module (playnet planner formulas actions)
   #:use-module (playnet planner observation states)
@@ -1987,7 +1986,7 @@
 ;;
 ;; Routed through the generic introspective walker in
 ;; `lib/utils/serdes.scm`. Each record type is registered once in
-;; `lib/utils/serdes-bindings.scm`. Adding a field to <economic-event>
+;; `define-vf-record` (vf/schemas.scm). Adding a field to <economic-event>
 ;; or <economic-resource> requires no change here — vf-serialize reads
 ;; the fields off the record-type-descriptor at registration time.
 

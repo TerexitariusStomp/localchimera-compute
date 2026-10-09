@@ -37,7 +37,7 @@
   #:export (vf-record-type vf-record-type-names
             vf-record-constructor vf-record-predicate vf-record-accessor vf-record-modifier
             vf-record-type-name vf-record-type-fields vf-record? vf-record-copier vf-record-maker
-            vf-record-from-list))
+            vf-record-from-list define-vf-record))
 
 (define (field-name f)
   "A field spec is a bare symbol or (immutable NAME) / (mutable NAME)."
@@ -156,3 +156,48 @@
     (lambda (lst)
       (apply make (append lst (map (lambda (f) #f)
                                    (list-tail fields (min (length lst) (length fields)))))))))
+
+;; ── one declaration per record type ─────────────────────────────────────────
+;; (define-vf-record <agent> Agent (id type name …) [#:register register!])
+;; defines the type (vf-record-type, so it keeps its identity across the load
+;; seam), the predicate `agent?` and one accessor `agent-<field>` per field —
+;; the names the hand-written blocks spelled, now read off the type name and
+;; the field list — and exports every one of them. With #:register, the
+;; type is handed to that procedure as it is defined (the serdes registry),
+;; so a record type is persistable by being declared. The keyword maker, a
+;; positional constructor and a copier stay one-liners beside the form,
+;; since their names vary (make-x, %x, %make-x, copy-x).
+(define-syntax define-vf-record
+  (lambda (x)
+    (define (sym->str s) (symbol->string s))
+    (define (prefix-of type-sym)
+      ;; <economic-event> → "economic-event"
+      (let ((s (sym->str type-sym)))
+        (if (and (> (string-length s) 2)
+                 (char=? (string-ref s 0) #\<)
+                 (char=? (string-ref s (- (string-length s) 1)) #\>))
+            (substring s 1 (- (string-length s) 1))
+            s)))
+    (syntax-case x ()
+      ((_ type name (field ...) . opts)
+       (let* ((pfx (prefix-of (syntax->datum #'type)))
+              (ctx #'type)
+              (mk (lambda (str) (datum->syntax ctx (string->symbol str))))
+              (fields (syntax->datum #'(field ...)))
+              (reg (let ((o (syntax->datum #'opts)))
+                     (and (pair? o) (eq? (car o) #:register) (cadr o)))))
+         (with-syntax ((pred (mk (string-append pfx "?")))
+                       ((acc ...) (map (lambda (f) (mk (string-append pfx "-" (sym->str f)))) fields))
+                       (register (if reg (datum->syntax ctx reg) #f)))
+           (if reg
+               #'(begin
+                   (define type (vf-record-type 'name '((immutable field) ...)))
+                   (define pred (vf-record-predicate type))
+                   (define acc (vf-record-accessor type 'field)) ...
+                   (register type)
+                   (export type pred acc ...))
+               #'(begin
+                   (define type (vf-record-type 'name '((immutable field) ...)))
+                   (define pred (vf-record-predicate type))
+                   (define acc (vf-record-accessor type 'field)) ...
+                   (export type pred acc ...)))))))))

@@ -78,7 +78,6 @@
 (use-modules (playnet test harness)
              (playnet planner vf schemas)
              (playnet planner observation observer)
-             (playnet planner vf serdes-bindings)
              (goblins) (goblins vat)
              (goblins utils hashmap)
              (srfi srfi-1) (srfi srfi-13)

@@ -2378,12 +2378,7 @@
                 (want (assoc-ref units (recipe-flow-resource-conforms-to f)))
                 (k (and u want (not (equal? u want)) (memq (recipe-flow-action f) *flow-actions*) (unit-ratio u want))))
            (if k
-               (make-recipe-flow #:id (recipe-flow-id f) #:action (recipe-flow-action f) #:resource-conforms-to (recipe-flow-resource-conforms-to f)
-                                 #:resource-classified-as (recipe-flow-resource-classified-as f)
-                                 #:resource-quantity (make-measure (* k (measure-has-numerical-value m)) want)
-                                 #:effort-quantity (recipe-flow-effort-quantity f) #:recipe-input-of (recipe-flow-recipe-input-of f) #:recipe-output-of (recipe-flow-recipe-output-of f)
-                                 #:recipe-clause-of (recipe-flow-recipe-clause-of f) #:stage (recipe-flow-stage f) #:state (recipe-flow-state f) #:note (recipe-flow-note f)
-                                 #:is-primary (recipe-flow-is-primary f) #:resolve-from-flow (recipe-flow-resolve-from-flow f))
+               (copy-recipe-flow f #:resource-quantity (make-measure (* k (measure-has-numerical-value m)) want))
                f)))
        flows))
 

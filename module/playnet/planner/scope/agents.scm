@@ -8,7 +8,6 @@
   #:use-module ((playnet utils records) #:select (vf-record-from-list))
   #:use-module (playnet utils store-utils)
   #:use-module (playnet planner vf serdes)
-  #:use-module (playnet planner vf serdes-bindings)   ; the registered record types vf-serialize reads
   #:use-module (goblins utils hashmap)
   #:export (agent->list list->agent agent-relationship-role->list
             list->agent-relationship-role agent-relationship->list

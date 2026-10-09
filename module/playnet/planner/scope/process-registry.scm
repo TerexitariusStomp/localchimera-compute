@@ -85,12 +85,7 @@
     ((mark-finished id)
      (let ((proc (hashmap-ref procs id #f)))
        (if (not proc) (values)
-           (let ((updated (make-process
-                            #:id id #:name (process-name proc) #:note (process-note proc)
-                            #:based-on (process-based-on proc) #:classified-as (process-classified-as proc)
-                            #:planned-within (process-planned-within proc) #:nested-in (process-nested-in proc)
-                            #:in-scope-of (process-in-scope-of proc) #:has-beginning (process-has-beginning proc)
-                            #:has-end (process-has-end proc) #:finished #t)))
+           (let ((updated (copy-process proc #:finished #t)))
              (bcom (^process-registry bcom (hashmap-set procs id updated)))))))
 
     ((unregister id)

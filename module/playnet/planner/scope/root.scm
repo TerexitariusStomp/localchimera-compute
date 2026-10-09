@@ -15,7 +15,6 @@
   #:use-module (playnet utils store-utils)
   ;; the stores a scope root holds serialize their records by type: every type they
   ;; hold is registered by this module, so whoever holds a scope root has them
-  #:use-module (playnet planner vf serdes-bindings)
   #:use-module ((playnet planner plan horizon-gate) #:select (make-horizon-gate))
   #:use-module (playnet planner observation live-registry)
   #:use-module (playnet planner observation observer)

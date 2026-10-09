@@ -141,7 +141,7 @@
            ;; A struct, but not a registered VF record. Loud failure.
            (error 'vf-serialize
                   "Unregistered record type encountered during serialization. \
-Add (register-vf-record! <your-type>) in lib/utils/serdes-bindings.scm."
+Declare it with define-vf-record #:register register-vf-record! (vf/schemas.scm), or call register-vf-record! where it is defined."
                   v))))
     (else
      (error 'vf-serialize "Don't know how to serialize value" v))))
@@ -163,7 +163,7 @@ Add (register-vf-record! <your-type>) in lib/utils/serdes-bindings.scm."
        (if (not entry)
            (error 'vf-deserialize
                   "Unknown record type in serialized data. \
-Did you forget to (register-vf-record! <type>) in serdes-bindings.scm?"
+Did you forget #:register register-vf-record! on its define-vf-record?"
                   name)
            (let* ((fields (vector-ref entry 3))
                   (constructor (vector-ref entry 2))

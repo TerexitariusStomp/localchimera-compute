@@ -19,7 +19,6 @@
   #:use-module ((playnet planner vf schemas) #:select (intent-id intent-finished))
   #:use-module ((playnet planner facts person-facts) #:select (need-id?))
   #:use-module ((playnet planner vf serdes) #:select (vf-serialize vf-deserialize))
-  #:use-module (playnet planner vf serdes-bindings)   ; the registered record types vf-serialize reads
   #:export (scope->replica hold-replica! replica->text text->replica))
 
 (define (standing-needs plan-store)
