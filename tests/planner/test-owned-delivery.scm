@@ -144,13 +144,34 @@
 (format #t "  cap  truthful: ada ~,2f · ben ~,2f   padded: ada ~,2f · ben ~,2f   padded×10: ada ~,2f · ben ~,2f~%"
         (got cap-truth "ada") (got cap-truth "ben") (got cap-pad "ada") (got cap-pad "ben")
         (got cap-pad2 "ada") (got cap-pad2 "ben"))
-(check "cap: water-filling — ben truthful is served his whole 10 (levels 12/12, his ask binds)"
-       (>= (got cap-truth "ben") 9.5) #t)
-(check "cap: …and ada takes the rest, 14" (< (abs (- (got cap-truth "ada") 14.0)) 0.6) #t)
+;; The people in the scope eat first: each has an eat~bread process (the reproduction
+;; floor), so the loaves the wants ration are the bake less what is eaten. The
+;; water-filling is stated over THAT remainder, not over the bake.
+(define (eaten r spec)
+  (fold (lambda (m a)
+          (if (and (eq? (assq-ref m 'action) 'consume) (equal? (assq-ref m 'conforms-to) spec)
+                   (string-prefix? "eat~" (or (assq-ref m 'input-of) "")))
+              (+ a (abs (or (assq-ref m 'quantity) 0))) a))
+        0.0 (or (assq-ref r 'material) '())))
+(define (water-fill supply ada-ask ben-ask)   ; equal masses: both at the level, capped by the ask
+  (let* ((ben (min ben-ask (/ supply 2.0))) (ada (min ada-ask (- supply ben))))
+    (cons ada ben)))
+(define (near? a b) (< (abs (- a b)) 0.6))
+(define cap-left (- 24.0 (eaten cap-truth "bread")))
+(define cap-fill (water-fill cap-left 20.0 10.0))
+(check "cap: the people eat before the wants are rationed (the remainder is less than the bake)"
+       (and (> (eaten cap-truth "bread") 1.0) (< cap-left 24.0)) #t)
+(check "cap: water-filling — ben truthful is served min(his 10, the level)"
+       (near? (got cap-truth "ben") (cdr cap-fill)) #t)
+(check "cap: …and ada takes the rest of what is left after eating"
+       (near? (got cap-truth "ada") (car cap-fill)) #t)
+(check "cap: nothing left over — every loaf not eaten reaches a want"
+       (near? (+ (got cap-truth "ada") (got cap-truth "ben")) cap-left) #t)
 (check "cap: padding buys ben nothing of his true want (10 met before, 10 met after)"
        (>= (min (got cap-pad "ben") 10.0) 9.5) #t)
-(check "cap: equal masses, both rationed ⇒ equal levels: 12/12"
-       (and (< (abs (- (got cap-pad "ada") 12.0)) 0.6) (< (abs (- (got cap-pad "ben") 12.0)) 0.6)) #t)
+(check "cap: equal masses, both rationed ⇒ equal levels, each half of what is left after eating"
+       (let ((half (/ (- 24.0 (eaten cap-pad "bread")) 2.0)))
+         (and (near? (got cap-pad "ada") half) (near? (got cap-pad "ben") half))) #t)
 (check "cap: a report above the level is INERT — ×10 the ask, the same plan to the digit"
        (and (< (abs (- (got cap-pad2 "ada") (got cap-pad "ada"))) 1e-3)
             (< (abs (- (got cap-pad2 "ben") (got cap-pad "ben"))) 1e-3)) #t)

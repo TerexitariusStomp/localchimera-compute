@@ -113,7 +113,8 @@
     accept-assignment decline-assignment record-effort drop-event chat-post
     home-of move-home
     request-payout my-payouts retire-payout
-    record-purchase ratify-kind audit-kinds our-slots))
+    record-purchase ratify-kind audit-kinds our-slots
+    scope-replica))                    ; the scope's books copied to the asking member's device
 
 ;; Where a door takes its person, 1-based, the scope being first: the second
 ;; place unless the table says otherwise (`claim` names what is claimed first).

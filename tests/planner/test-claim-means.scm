@@ -122,8 +122,21 @@
                           (+ a (abs (or (assq-ref m 'quantity) 0))) a))
         0.0 (or (assq-ref alist 'material) '())))
 (format #t "  bread~~ada ~,1f · oven~~ada ~,1f~%" (produced r "bread~ada") (produced r "oven~ada"))
-(check "ada is delivered her bread through the claim — one bake, the oven's capacity, 10 kg"
-       (>= (produced r "bread~ada") 9.5) #t)   ; the oven is a means: one of it, one bake per period
+;; The oven is a means: one of it, one bake per period, 10 kg. The people in the scope eat
+;; first (each has an eat~bread process, the reproduction floor), so what the claim
+;; delivers is the bake less what is eaten.
+(define (eaten alist spec)
+  (fold (lambda (m a)
+          (if (and (eq? (assq-ref m 'action) 'consume) (equal? (assq-ref m 'conforms-to) spec)
+                   (string-prefix? "eat~" (or (assq-ref m 'input-of) "")))
+              (+ a (abs (or (assq-ref m 'quantity) 0))) a))
+        0.0 (or (assq-ref alist 'material) '())))
+(check "ada is delivered her bread through the claim — one bake, the oven's capacity, 10 kg, less what is eaten"
+       (< (abs (- (produced r "bread~ada") (- 10.0 (eaten r "bread")))) 0.3) #t)
+(check "the bake is the oven's one: no more than 10 kg of bread is made"
+       (<= (produced r "bread") 10.001) #t)
+(check "what is eaten and what is claimed account for the whole bake"
+       (< (abs (- (+ (eaten r "bread") (produced r "bread~ada")) (produced r "bread"))) 0.3) #t)
 (check "no oven~ada is ever produced — the ask is an unmet want, never a claim" (= 0.0 (produced r "oven~ada")) #t)
 
 (display "\n")
