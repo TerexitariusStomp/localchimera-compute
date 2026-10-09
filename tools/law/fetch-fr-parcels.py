@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """fetch-fr-parcels.py — one French commune's cadastral parcels as places.
 
-    tools/law/fetch-fr-parcels.py 33330 > data/law/fr-33330-parcels.sexp
+    tools/law/fetch-fr-parcels.py <insee> > data/law/fr-<insee>-parcels.sexp
 
-A parcel's `contained-in` is the COMMUNE, never its zone. Measured on Pompignac,
-about 5% of parcels are cut by a zone-TYPE boundary and 7% by a zone label — and
+A parcel's `contained-in` is the COMMUNE, never its zone. Measured on a real
+test commune, about 5% of parcels are cut by a zone-TYPE boundary and 7% by a
+zone label — and
 `contained-in` is single-parent, so a zone cannot be a parcel's container without
 lying about one parcel in twenty. The zones a parcel touches ride `within`
 instead, so a straddling parcel becomes several endpoints and meets BOTH zones'
@@ -211,5 +212,6 @@ def main(insee, limit=None):
     sys.stdout.write("\n".join(hdr) + "\n((places\n" + "\n".join(rows) + ")\n (rules))\n")
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else "33330",
-         int(sys.argv[2]) if len(sys.argv) > 2 else None)
+    if len(sys.argv) < 2:
+        sys.exit("usage: fetch-fr-parcels.py <insee> [limit]")
+    main(sys.argv[1], int(sys.argv[2]) if len(sys.argv) > 2 else None)

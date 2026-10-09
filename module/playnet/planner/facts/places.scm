@@ -55,7 +55,7 @@
 
 ;;; Extras ACCUMULATE across registrations, because a place is named by more than
 ;;; one context pack and each has something different to say about it: the pack
-;;; that puts Pompignac in its département also gives its INSEE code and
+;;; that puts a commune in its département also gives its INSEE code and
 ;;; population, while a water pack says which SAGE it stands `within` and a wine
 ;;; pack names its appellation. If a re-registration replaced the extras
 ;;; wholesale, whichever file the directory listed LAST would erase the others —

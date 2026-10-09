@@ -117,8 +117,9 @@
                                      'mirror))))))
 (check-pred "two nations with different histories stand differently on the same demand"
             (not (eq? (status-at "france" church) (status-at "germany" church))))
+(place! "fr-99999" "A commune, synthetic for this check" "france" #:kind 'locality)
 (check-pred "a place inherits the nearest reading up its chain"
-            (eq? (incumbent-at "fr-33330" church) (incumbent-at "france" church)))
+            (eq? (incumbent-at "fr-99999" church) (incumbent-at "france" church)))
 (check-pred "a demand nobody has read in a place is unread there"
             (eq? 'unread (status-at "france" "Retire rent")))
 (check-pred "a place nobody has read is unread"

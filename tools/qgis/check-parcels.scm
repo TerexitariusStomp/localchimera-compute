@@ -20,7 +20,7 @@
 ;;; rule check-boundaries.scm applies, and the same one
 ;;; ui/app/tabs/map/containers.ts inGeometry applies client-side.
 ;;;
-;;; Usage: guile tools/qgis/check-parcels.scm 33330 [--all]
+;;; Usage: guile tools/qgis/check-parcels.scm <insee> [--all]
 ;;;   Samples 200 parcels by default; --all checks every one (slower).
 ;;; Exit 1 when any parcel's claim does not hold.
 

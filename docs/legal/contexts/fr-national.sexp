@@ -1,5 +1,5 @@
 ;;; fr-national.sexp — what France asks of ACQUIRING and TRANSFERRING real
-;;; property. Hand-authored from cited statute, unlike fr-33330.sexp which the
+;;; property. Hand-authored from cited statute, unlike a commune pack, which the
 ;;; adapter generates: this is code, not a dataset, and no open service publishes
 ;;; it as rules.
 ;;;

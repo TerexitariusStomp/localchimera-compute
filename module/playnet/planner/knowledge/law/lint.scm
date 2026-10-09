@@ -226,7 +226,7 @@
     ;; A check this file deliberately does NOT make: "a regime nothing stands
     ;; within". It looks like the same silence the rest of these catch, and it is
     ;; unsound — a law folder is partial by design (that is what `known` is for),
-    ;; and a zone's members can live anywhere: Pompignac's parcels sit in
+    ;; and a zone's members can live anywhere: a commune's parcels sit in
     ;; data/law/, so every one of its 23 zones would be reported empty. A signal
     ;; that fires 25 times wrongly teaches a reader to skip the ones that matter,
     ;; which costs more than the check is worth.

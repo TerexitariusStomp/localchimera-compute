@@ -282,7 +282,7 @@
 ;;;
 ;;; It is what a national rule needs. SAFER holds a pre-emption over agricultural
 ;;; land everywhere in France, but the zones that ARE agricultural are named per
-;;; commune (fr-33330-A, fr-33330-A1, …), so before this the adapter had to emit
+;;; commune (fr-NNNNN-A, fr-NNNNN-A1, …), so before this the adapter had to emit
 ;;; the rule once per zone it found — thirty-six thousand communes' worth of the
 ;;; same sentence. With it the nation says it once and the adapter only has to
 ;;; CLASSIFY: mark a zone agricultural, and every rule about agricultural land

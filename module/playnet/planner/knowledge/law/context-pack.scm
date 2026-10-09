@@ -148,7 +148,7 @@
 ;;; A scope's legal gate walks its OWN `^spatial-thing-store` (that is the tree
 ;;; a solve's cells resolve against), so a pack that teaches the fold a
 ;;; jurisdiction must reach that store too — otherwise a rule guarded on
-;;; `(in-jurisdiction "fr-33330-A")` can never fire, because no cell's chain
+;;; `(in-jurisdiction "fr-NNNNN-A")` can never fire, because no cell's chain
 ;;; names it. Parents are added before children, so the store's own cycle check
 ;;; sees a complete chain.
 ;;; ─── the law in force : every pack on disk ───────────────────────────────

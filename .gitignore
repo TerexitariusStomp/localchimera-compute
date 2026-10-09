@@ -951,3 +951,13 @@ tests/planner/test-program-budget.scm
 module/playnet/planner/knowledge/recipes/tenant-maintenance.scm
 tests/planner/held-option-scenario-test.scm
 module/playnet/deprecated/planner/attic/deprecated-planner-tests/test-held-option-scenario.scm
+
+# A real commune's PLU pack, kept on the maintainer's machine until a
+# replacement commune's data is fetched to stand in its place.
+docs/legal/contexts/fr-test-commune.sexp
+docs/legal/contexts/fr-test-commune-regimes.sexp
+docs/legal/contexts/fr-test-commune-reglement.sexp
+tests/planner/test-law-pack-commune.scm
+tests/planner/test-law-food-in-commune.scm
+tests/planner/test-legal-derogation.scm
+tests/planner/test-law-socialize-parcel.scm

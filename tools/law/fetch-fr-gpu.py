@@ -5,7 +5,7 @@ A context pack (knowledge/context-pack.scm) is where a place is and what the law
 asks there, in one file. This is the FRANCE adapter that produces one: it reads
 the open national services and writes the pack's two halves.
 
-    tools/law/fetch-fr-gpu.py 33330 > docs/legal/contexts/fr-33330.sexp
+    tools/law/fetch-fr-gpu.py <insee> > docs/legal/contexts/fr-<insee>.sexp
 
 Sources, all open, no key:
   geo.api.gouv.fr          the administrative chain (commune → EPCI → dept → region)
@@ -60,8 +60,8 @@ def get(url, **params):
 # being softened to cover for detail this adapter does not have.
 #
 # The remedy is a companion pack that reads the document and SUPERSEDES these by
-# demand name (`cancels`): for Pompignac that is fr-33330-reglement.sexp, from
-# 33330_reglement_20241212.pdf ch. 4 art. 1-2. A category rule is the best a
+# demand name (`cancels`): for a given commune that is fr-<insee>-reglement.sexp,
+# from its own PLU règlement PDF. A category rule is the best a
 # dataset can do and the worst a règlement can say; where someone has read the
 # prose, the prose governs.
 ZONE_RULES = {
@@ -180,9 +180,10 @@ def main(insee):
     # is recorded below as provenance.
     geom = json.dumps(simplify(muni_f["geometry"]))
     # …and then KEEP only this commune's own document. A geometry query is a
-    # spatial filter, not a jurisdictional one: Pompignac's outline touches four
+    # spatial filter, not a jurisdictional one: a commune's outline can touch its
     # neighbours', so the first version of this pulled their zones in as if they
-    # were Pompignac's — 27 zones where the commune has 23. The partition says
+    # were its own — a real test commune showed 27 zones where it has 23. The
+    # partition says
     # whose plan a zone belongs to, and only two can be this commune's: its own
     # communal document, or its EPCI's intercommunal one.
     mine = {"DU_%s" % insee} | ({"DU_%s" % epci["code"]} if epci else set())
@@ -194,7 +195,8 @@ def main(insee):
         sys.stderr.write("fetch-fr-gpu: %s reports a document (is_rnu false) but no zone "
                          "covers it — check apicarto.\n" % insee)
     # all THREE geometries: a protection can be a surface, a line or a point, and
-    # reading only surfaces silently missed 66 of Pompignac's 182 prescriptions.
+    # reading only surfaces silently missed most of the same test commune's
+    # prescriptions (66 of 182).
     presc = []
     for layer in ("prescription-surf", "prescription-lin", "prescription-pct"):
         presc += own(get("https://apicarto.ign.fr/api/gpu/%s" % layer,
@@ -376,4 +378,6 @@ def main(insee):
     sys.stdout.write(out)
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else "33330")
+    if len(sys.argv) < 2:
+        sys.exit("usage: fetch-fr-gpu.py <insee>")
+    main(sys.argv[1])

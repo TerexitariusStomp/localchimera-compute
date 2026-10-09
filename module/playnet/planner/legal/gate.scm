@@ -121,7 +121,7 @@
 ;;; ── the OTHER regimes a place stands in : `within` ────────────────────────
 ;;; `contained-in` is single-parent, and rightly: a place is physically inside
 ;;; exactly one thing. But a place STANDS IN several regimes at once that do not
-;;; nest with each other — Pompignac is in three overlapping SAGE water
+;;; nest with each other — a commune can sit in three overlapping SAGE water
 ;;; perimeters, an AOC, and a biosphere reserve's transition zone, none of which
 ;;; contains any other. Each of those regimes IS a hierarchy of its own (a SAGE
 ;;; sits in a basin; a communal appellation sits in a regional one), so a flat

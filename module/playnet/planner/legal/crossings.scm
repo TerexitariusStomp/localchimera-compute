@@ -207,7 +207,7 @@
 ;;; ─── the ACT : what KIND of activity this is, off the recipe ─────────────
 ;;; A crossing says the activity touches the state; the CHANNEL says how the good
 ;;; lands; the ACT says what kind of act it is — `food`, `alcohol`, `agriculture`,
-;;; `housing`. Thresholds turn on it: Pompignac's zone A forbids building unless
+;;; `housing`. Thresholds turn on it: a commune's zone A forbids building unless
 ;;; the act is farming, and half a licensing code reads the same way.
 ;;;
 ;;; It is a tag on the flow or its spec (`act:agriculture`), read exactly as a
