@@ -19,8 +19,8 @@
 
 (define-module (playnet identity fixture)
   #:use-module (playnet keri signify-portable)
-  #:use-module (playnet gateway signup-agent)
-  #:use-module (playnet gateway oobi-host)
+  #:use-module (playnet identity seat)
+  #:use-module (playnet identity oobi-host)
   #:use-module (playnet gateway lobby)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)

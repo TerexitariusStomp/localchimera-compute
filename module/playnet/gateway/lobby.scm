@@ -40,7 +40,7 @@
                 #:select (keri-crypto-random-bytes))
   #:use-module ((playnet utils hex) #:select (bv->hex))
   #:use-module (playnet utils constant-time)
-  #:use-module ((playnet gateway signup-agent)
+  #:use-module ((playnet identity seat)
                 #:select (verify-rotation-event normalize-vecs aid-tag))
   #:use-module ((playnet keri reticulum-binding)
                 #:select (kel-reticulum-pub verify-announce-packet
@@ -1656,7 +1656,7 @@
      ;; Browser-resident-Signify path: the user creates the AID locally
      ;; and ships the inception event + signatures. The server verifies
      ;; them offline (no KERIA round-trip) and stores the ICP in
-     ;; ^oobi-host. Per (playnet gateway signup-agent) verify-self-signed-icp,
+     ;; ^oobi-host. Per (playnet identity seat) verify-self-signed-icp,
      ;; we check (i) AID matches icp.k[0], (ii) recomputed SAID matches
      ;; icp.d, (iii) sigs[0] verifies under the AID's pubkey.
      ;; Returns 'ok or (list 'error "reason").

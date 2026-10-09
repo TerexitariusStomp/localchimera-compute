@@ -20,8 +20,8 @@
               #:select (make-device-authorization-credential cred-said cred-claims
                         cred-signature cred-schema cred-issuer cred-holder))
              (playnet identity devices)
-             (playnet gateway signup-agent)
-             (playnet gateway oobi-host)
+             (playnet identity seat)
+             (playnet identity oobi-host)
              (playnet gateway lobby)
              (goblins)
              (goblins actor-lib methods)

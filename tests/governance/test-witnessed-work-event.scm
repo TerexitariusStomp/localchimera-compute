@@ -243,7 +243,7 @@
 ;; (oobi-current-key-from-dir): a pure file read the planner-vat attest can
 ;; make. This pins that whole chain with a fabricated dir entry.
 
-(use-modules ((playnet gateway oobi-host)
+(use-modules ((playnet identity oobi-host)
               #:select (oobi-entry-path oobi-current-key-from-dir))
              ((playnet governance attestation-ceremony)
               #:select (current-aid-key-resolver)))

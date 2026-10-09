@@ -18,7 +18,7 @@
              (playnet keri signify)            ; installs native crypto backend
              (playnet keri signify-portable)
              (playnet keri crypto-primitives)
-             (playnet gateway oobi-host)
+             (playnet identity oobi-host)
              ((playnet keri inception)
               #:select (governance-create-scope-aid!
                         scope-inception-aid scope-inception-signed-icp))

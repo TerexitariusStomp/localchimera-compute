@@ -15,7 +15,7 @@
              (playnet governance keri-backend live)
              (playnet governance scope-recovery)
              (playnet governance kel-store)
-             (playnet gateway oobi-host)
+             (playnet identity oobi-host)
              (playnet keri signify)
              (goblins) (goblins vat)
              (ice-9 format))

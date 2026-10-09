@@ -16,8 +16,8 @@
              ((playnet keri citizen-sig)
               #:select (make-keri-identity keri-identity-keypair keri-identity-aid
                         aid-signer-keys-resolver))
-             ((playnet gateway signup-agent) #:select (verify-carried-kel))
-             ((playnet gateway oobi-host)
+             ((playnet identity seat) #:select (verify-carried-kel))
+             ((playnet identity oobi-host)
               #:select (oobi-write-entry-to-dir! read-oobi-entry-from-dir oobi-current-key-from-dir))
              (goblins) (goblins vat) (goblins utils hashmap)
              (rnrs bytevectors) (ice-9 ftw) (srfi srfi-1) (srfi srfi-13))

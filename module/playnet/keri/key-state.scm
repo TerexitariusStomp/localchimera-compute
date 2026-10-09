@@ -13,7 +13,7 @@
 ;;; this identifier's":
 ;;;
 ;;;   `check-rotation`   one rotation against the state before it (the browser
-;;;                      citizen's signup, gateway/signup-agent.scm)
+;;;                      citizen's signup, identity/seat.scm)
 ;;;   `events->states`   a whole log, event by event: the state after each
 ;;;   `events->key-state` the state after the last
 ;;;   `key-in-force-at`  the key in force when an event SEALED a SAID (an ixn

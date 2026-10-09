@@ -1230,7 +1230,7 @@
                    ("PLAYNET_SCOPES_DURABLE"  . "1")
                    ("PLAYNET_OOBI_AUTO_MIRROR" . "1")
                    ;; GDPR deferral, not a capability gap: a real signup binds a
-                   ;; real name/email to an AID (gateway/signup-agent.scm member
+                   ;; real name/email to an AID (identity/seat.scm member
                    ;; record), which is the one place Articles 5(1)(e)/9/13/17/
                    ;; 30/32/35 and Chapter V all activate at once — see
                    ;; docs/planning/legal/gdpr-analysis.md. Closed here until

@@ -2,7 +2,7 @@
 ;;; events into the existing ^oobi-host so scope KELs are served at
 ;;; the well-known KERI OOBI HTTP endpoints.
 ;;;
-;;; Reuse note: `^oobi-host` (`module/playnet/gateway/oobi-host.scm`) and
+;;; Reuse note: `^oobi-host` (`module/playnet/identity/oobi-host.scm`) and
 ;;; `serve-static.scm` already serve `/oobi/{aid}` (CESR text stream)
 ;;; and `/.well-known/keri/oobi/{aid}` (KERI well-known well-known
 ;;; path) over HTTP, with durable on-disk storage. We do not need a

@@ -60,7 +60,7 @@
     (file knowledge "module/playnet/lang/knowledge.scm")
     (file system-kb "module/playnet/lang/system-kb.scm")
     (file gateway "server/gateway.scm")
-    (file signup-agent "module/playnet/gateway/signup-agent.scm")
+    (file signup-agent "module/playnet/identity/seat.scm")
     (file guix-deploy "deploy/guix/machines.scm")
     (file guix-deploy "deploy/guix/deploy.sh")
     (file provision "deploy/guix/users.scm")
