@@ -80,7 +80,8 @@
                                   (let ((i (string-contains s "(adjustment-event")))
                                     (if i (loop (substring s (+ i 1)) (+ n 1)) n))))
                               '("module/playnet/planner/doors/service.scm"
-                                "module/playnet/planner/doors/count-door.scm")))
+                                "module/playnet/planner/doors/count-door.scm"
+                                "module/playnet/planner/doors/slots.scm")))
                 4))
 (check-pred "no place builds a raise or lower by hand any more"
             (not (string-contains (source-of "module/playnet/planner/doors/service.scm") "(if (> delta 0) 'raise 'lower)")))

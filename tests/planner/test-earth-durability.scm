@@ -29,14 +29,17 @@
 (define-values (vat1 earth1)
   (spawn-persistent-vat earth-env (lambda () (spawn-earth)) store1))
 
+(define berlin-seeded #f)
 (with-vat vat1
   (check "earth is the root (name)" ($ earth1 (quote name)) "earth")
   (let ((broot ($ earth1 'ensure-commune! BERLIN "Berlin/Brandenburg")))   ; born under earth
     (seed-berlin-commune! broot)
     (check "earth holds 1 commune"           ($ earth1 'count) 1)
     (check-pred "…and it is Berlin"           ($ earth1 'has-commune? BERLIN))
-    (check "Berlin seeded: 4 resources (land+water+labour+ground)"
-           (length ($ ($ broot 'observer) 'all-resources)) 4)))
+    ;; what the seeder lays (land, water, labour, ground, the grower's skill) may grow; what
+    ;; is held is what must survive a restore
+    (set! berlin-seeded (length ($ ($ broot 'observer) 'all-resources)))
+    (check-pred "Berlin is seeded with its farm's resources" (>= berlin-seeded 4))))
 
 ;; rehydrate from the SAME store — the thunk MUST NOT run (state comes from the store)
 (define-values (vat2 earth2)
@@ -46,7 +49,7 @@
   (check "REHYDRATED: earth still holds Berlin" ($ earth2 'count) 1)
   (let ((broot ($ earth2 'commune BERLIN)))
     (check "REHYDRATED: Berlin root name" ($ broot (quote name)) "Berlin/Brandenburg")
-    (check "REHYDRATED: Berlin 4 resources survived" (length ($ ($ broot (quote observer)) (quote all-resources))) 4)
+    (check "REHYDRATED: Berlin's resources survived" (length ($ ($ broot (quote observer)) (quote all-resources))) berlin-seeded)
     (check "REHYDRATED: Berlin's grow-recipes survived (3 staples)"
            (length (filter (lambda (r) (string-prefix? "r-grow-" (recipe-id r)))
                            ($ ($ broot 'recipe-store) 'all-recipes)))
@@ -68,7 +71,7 @@
   (spawn-persistent-vat earth-env (lambda () (error "thunk ran!")) store2))
 (with-vat vatB
   (check "REHYDRATED: earth holds BOTH communes" ($ earthB 'count) 2)
-  (check "REHYDRATED: Berlin kept its 4 resources" (length ($ ($ ($ earthB (quote commune) BERLIN) (quote observer)) (quote all-resources))) 4)
+  (check "REHYDRATED: Berlin kept its resources" (length ($ ($ ($ earthB (quote commune) BERLIN) (quote observer)) (quote all-resources))) berlin-seeded)
   (check "REHYDRATED: Playnet kept ITS 1 resource — separate economy"
          (length ($ ($ ($ earthB 'commune PLAYNET) 'observer) 'all-resources)) 1))
 

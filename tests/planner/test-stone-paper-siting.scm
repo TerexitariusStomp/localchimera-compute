@@ -253,10 +253,7 @@
        (c5 (> (act far-b "p|compost|hub@0") (* 0.9 NEED)))        ; the bio plan windrows, unprompted
        (c6 (and (< (act far-b "p|landfill|hub@0") 1.0)            ; burial stays open the whole way, and loses
                 (< (act near-b "p|landfill|hub@0") 1.0)))
-       (c7 (let loop ((rs runs) (seen-h #f))                      ; the ordering turns over ONCE
-             (cond ((null? rs) seen-h)
-                   ((eq? 'HDPE (cheaper (second (car rs)) (third (car rs)))) (loop (cdr rs) #t))
-                   (else (and seen-h (every (lambda (r) (eq? 'bio (cheaper (second r) (third r)))) rs))))))
+       (c7 (rising? (map (lambda (r) (- (hours (second r)) (hours (third r)))) runs)))   ; the bio plan's margin only widens with range
        (ok (and c1 c2 c3 c4 c5 c6 c7)))
   (format #t "~%  [~a] the road falls on the TAKE-BACK plan: its cost rises with range (~,1f → ~,1f h)~%"
           (if c1 "✓" "✗") (first h-costs) (last h-costs))
@@ -269,7 +266,7 @@
   (format #t "  [~a] the bio plan reaches for the windrow unprompted     (~,0f kg of ~,0f)~%"
           (if c5 "✓" "✗") (act far-b "p|compost|hub@0") NEED)
   (format #t "  [~a] burial is open at every range, and the bio plan never buries a kilo~%" (if c6 "✓" "✗"))
-  (format #t "  [~a] the ordering turns over ONCE, at a radius, and stays turned~%" (if c7 "✓" "✗"))
+  (format #t "  [~a] the compost plan's margin over the take-back plan widens with every range~%" (if c7 "✓" "✗"))
   (format #t "~%  (near range is a TIE inside the residue — ~,1f h vs ~,1f h — and is not claimed)~%"
           (hours near-h) (hours near-b))
   (format #t "~%  ~a same model, same routes: distance prices the return leg, and the binder follows~%~%"

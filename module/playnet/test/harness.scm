@@ -46,10 +46,22 @@
 ;; table; an unknown message errors loudly. Dozens of planner tests
 ;; defined this locally before it moved here; a local copy simply
 ;; shadows this one.
+;; The hooks a store is asked to register when a scope is wired (a listener on its
+;; intents or agents, a change callback), and the two reads the wiring itself makes
+;; of the observer, answer an empty reading on every mock: a suite that mocks a store
+;; for what it is ABOUT does not list each hook the wiring grew since. Any other
+;; unknown message still errors loudly.
+(define %mock-defaults
+  '((set-on-agent . #t) (set-on-agent-removed . #t)
+    (add-event-listener . #t) (add-intent-listener . #t) (add-change-listener . #t)
+    (skills-of . ()) (fold-by . ()) (open-fulfillments . ()) (hours-by . ()) (hours-on . 0)))
+
 (define (^mock bcom table)
   (lambda (msg . args)
-    (let ((p (assq msg table)))
-      (if p (apply (cdr p) args) (error "mock: no method" msg)))))
+    (let ((p (or (assq msg table) (assq msg %mock-defaults))))
+      (cond ((not p) (error "mock: no method" msg))
+            ((procedure? (cdr p)) (apply (cdr p) args))
+            (else (cdr p))))))
 
 (define (raises? thunk)
   "True when THUNK raises — check-error's predicate twin, for checks

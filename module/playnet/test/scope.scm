@@ -128,6 +128,9 @@
 ;; a test hands it a registry.
 (define* (mock-scope-root #:key observer agent-store spatial-thing-store recipe-store
                                 (plan-store #f) (alert-store #f) (legal-registry #f)
+                                ;; the credit ledger plan-scope wires its labour fold to: an empty one
+                                (account-store (spawn ^mock `((credit-cells . ,(lambda () '()))
+                                                              (add-change-listener . ,(lambda (f) #t)))))
                                 (name "mock"))
   (spawn ^mock
          `((name . ,(lambda () name))
@@ -138,4 +141,5 @@
               `((observer . ,observer) (agent-store . ,agent-store)
                 (spatial-thing-store . ,spatial-thing-store) (recipe-store . ,recipe-store)
                 (plan-store . ,plan-store) (alert-store . ,alert-store)
+                (account-store . ,account-store)
                 (legal-registry . ,legal-registry))))))

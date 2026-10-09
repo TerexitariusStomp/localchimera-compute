@@ -40,6 +40,8 @@
         ((get-meta) (hash-ref tbl (car args) #f))
         ((all-meta) (hash-map->list cons tbl))
         ((all-commitments) '())  ; no persisted commitments in this fixture (position predicate reads this)
+        ((all-intents) '())      ; nor intents
+        ((add-intent-listener) #t)   ; the demand fold registers its listener when the scope is wired
         (else (error "meta-store: no method" msg))))))
 
 ;; ── VF records: bread chain; ada and bob can BOTH bake (the field has two candidates) ──

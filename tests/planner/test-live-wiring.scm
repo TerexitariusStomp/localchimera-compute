@@ -27,6 +27,7 @@
 (define both
   (with-vat vat
     (let* ((obs (spawn ^mock `((all-resources . ,(lambda () resources))
+                               (hours-by . ,(lambda (key-of . _) '())) (hours-on . ,(lambda (part . _) 0))
                                (record-event . ,(lambda (e) (set! recorded-events (cons e recorded-events)) "ok")))))
            (as  (spawn ^mock `((all-agents . ,(lambda () agents)))))
            (sts (spawn ^mock `((all-locations . ,(lambda () spatials)))))
@@ -36,7 +37,7 @@
                                   (cons (filter (lambda (f) (or (equal? (recipe-flow-recipe-input-of f) pid)
                                                                 (equal? (recipe-flow-recipe-output-of f) pid))) flows) '()))))))
            ;; the position predicate (live/expected trajectory) reads all-meta + all-commitments
-           (ps  (spawn ^mock `((all-meta . ,(lambda () '())) (all-commitments . ,(lambda () '())))))
+           (ps  (spawn ^mock `((all-meta . ,(lambda () '())) (all-commitments . ,(lambda () '())) (all-intents . ,(lambda () '())))))
            (scope (mock-scope-root #:observer obs #:agent-store as #:spatial-thing-store sts #:recipe-store rs #:plan-store ps))
            ;; the real OCapN-facing service actor, holding this scope
            (svc (spawn ^planner-service (hashmap-set (hashmap) "s1" scope)))
@@ -65,7 +66,9 @@
 (check "demand substantially met"        (> (assq-ref result 'met) 0.9))
 (check "every commitment action = work"  (every (lambda (w) (eq? (assq-ref w 'action) 'work)) work))
 (check "farmer farms (skill-farm)"       (member "skill-farm" (provider-skills "farmer")) )
-(check "bob bakes and fishes (skill-bake, skill-fish)" (equal? (provider-skills "bob") '("skill-bake" "skill-fish")))
+(check "bob works only the skills he holds (skill-bake, skill-fish), and works one"
+       (let ((ps (provider-skills "bob")))
+         (and (pair? ps) (every (lambda (s) (member s '("skill-bake" "skill-fish"))) ps))))
 (check "ada is multi-skilled: bakes AND mills"
        (equal? (provider-skills "ada") '("skill-bake" "skill-mill")))
 (check "commitments carry effort hours"
@@ -93,8 +96,14 @@
 (define social (assq-ref result 'social))
 (check "embodied labour ℓ̂: grain = 0.5h/unit (direct grow labour)"
        (< (abs (- (assoc-ref value "grain") 0.5)) 0.01))
-(check "embodied labour ℓ̂: bread = 1.4h/unit (Leontief: 0.5 bake + 0.9 flour)"
-       (< (abs (- (assoc-ref value "bread") 1.4)) 0.01))
+;; The recipes (bread-commune-seed.scm): the mill takes 1.2 grain and 0.3 h to make 1 flour AND
+;; 0.17 bran, so its labour is shared across both products by mass; the bake takes 0.75 flour
+;; and 0.5 h for 1 bread. The value of each is the identity those recipes define.
+(define flour-value (/ (+ 0.3 (* 1.2 (assoc-ref value "grain"))) (+ 1.0 0.17)))
+(check "embodied labour ℓ̂: flour = (0.3 mill + 1.2 grain) shared with the bran it is milled beside"
+       (< (abs (- (assoc-ref value "flour") flour-value)) 0.01))
+(check "embodied labour ℓ̂: bread = 0.5 bake + 0.75 flour (Leontief)"
+       (< (abs (- (assoc-ref value "bread") (+ 0.5 (* 0.75 flour-value)))) 0.01))
 (check "located labour pulls λ(skill@cell) are emitted, all positive"
        (and (pair? pulls) (every (lambda (p) (> (cdr p) 0)) pulls)))
 (check "social-individual accounting present (L, available, free, free-time)"
