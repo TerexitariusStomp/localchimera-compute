@@ -142,7 +142,7 @@
              ((playnet governance pending-recompositions)
               #:select (current-pending-recompositions
                         spawn-pending-recompositions))
-             ((playnet utils common) #:select (env-int))
+             ((playnet utils common) #:select (env-int env-flag?))
              ((playnet governance keri scope-exchange) #:select (current-pending-grants))
              ((playnet governance keri ipex-policy) #:select (current-credential-finder
                                                    current-credential-finder-by-said))
@@ -844,8 +844,7 @@
        ;; commune is created under the UC below and registered by its real
        ;; scope-aid (add-scope!), so the dial's scope-list shows a real
        ;; commune, never the "org:meeting" demo string.
-       (define %seed-demo?
-         (let ((v (getenv "PLAYNET_SEED_DEMO"))) (and v (not (string=? v "0")))))
+       (define %seed-demo? (env-flag? "PLAYNET_SEED_DEMO"))
        (define planner-service
          (with-vat planner-vat
            ;; PLAYNET_SEED_FED=granary|table seeds the founding commune as one
@@ -1749,8 +1748,7 @@
        ;; wallet regardless; this one is opt-in, default OFF, independent of
        ;; whether a wallet is live at all — set PLAYNET_PAYOUTS_ENABLED to a
        ;; value other than "0" once row 3 is actually settled.
-       (when (and xmr-live-resource spend-policy
-                  (let ((v (getenv "PLAYNET_PAYOUTS_ENABLED"))) (and v (not (string=? v "0")))))
+       (when (and xmr-live-resource spend-policy (env-flag? "PLAYNET_PAYOUTS_ENABLED"))
          (start-payout-runner! gateway-vat planner-service spend-policy %fc-key gov-acdc-store
                                #:interval-seconds 120 #:log! log!)
          (log! "  [gateway] payout runner on (2 min tick)~%"))

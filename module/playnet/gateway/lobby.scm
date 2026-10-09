@@ -13,7 +13,7 @@
 ;;;   which can then be used for open-terminal / get-mailbox.
 
 (define-module (playnet gateway lobby)
-  #:use-module ((playnet utils common) #:select (string-or-false))
+  #:use-module ((playnet utils common) #:select (string-or-false env-flag?))
   #:use-module (playnet gateway evidence)
   #:use-module ((playnet gateway limits) #:select (%max-user-data-bytes %picture-max-chars))
   #:use-module ((playnet planner formulas counting) #:select (%contest-prefix))
@@ -1630,13 +1630,32 @@
         (list 'error "not a registered member — credential required"))
        (else (on-success))))
 
+    ;; The account-creation feature, on or off: a GDPR-deferral switch, not
+    ;; a capability gap. PLAYNET_DISABLE_REAL_SIGNUP turns new real-identity
+    ;; signups off; unset (the default) leaves them on, matching every
+    ;; deploy before this flag existed. See docs/planning/legal/gdpr-
+    ;; analysis.md and deploy/os.scm's gateway-service environment for why
+    ;; production sets it and dev does not. The doors it gates are the ones
+    ;; declared `#:feature account-creation` in protocol.scm — the same
+    ;; declaration the product's law reads them off (`doors-of-feature`);
+    ;; tests/keri/test-signup-disabled-gate.scm holds the wrappers below to
+    ;; exactly that set, so neither can drift from the other.
+    (define (real-signup-enabled?)
+      (not (env-flag? "PLAYNET_DISABLE_REAL_SIGNUP")))
+
+    (define (signup-gated thunk)
+      (if (real-signup-enabled?)
+          (thunk)
+          (list 'error "real account creation is temporarily disabled on this gateway")))
+
     (declared-methods lobby
 
      ;; ── Account registration (KERI) ───────────────────────────────────────
      ;; Legacy path: user provides AID prefix + OOBI URL hosted elsewhere.
      ;; Server resolves OOBI via KERIA (witness-verified), then persists.
      ((signup username email aid-prefix oobi-url)
-      (<- signup-agent 'register! username email aid-prefix oobi-url))
+      (signup-gated (lambda ()
+        (<- signup-agent 'register! username email aid-prefix oobi-url))))
 
      ;; Browser-resident-Signify path: the user creates the AID locally
      ;; and ships the inception event + signatures. The server verifies
@@ -1646,8 +1665,9 @@
      ;; icp.d, (iii) sigs[0] verifies under the AID's pubkey.
      ;; Returns 'ok or (list 'error "reason").
      ((signup-with-icp username email aid-prefix icp-alist sigs)
-      (<- signup-agent 'register-with-icp!
-          username email aid-prefix icp-alist sigs oobi-host))
+      (signup-gated (lambda ()
+        (<- signup-agent 'register-with-icp!
+            username email aid-prefix icp-alist sigs oobi-host))))
 
      ;; The controller brings its whole KEL — icp, sigs, and ROTATIONS
      ;; (a vector of (rot . sigs) in sn order) — and takes a seat here
@@ -1657,8 +1677,9 @@
      ;; log, verified end to end by signup-agent. A KEL with no
      ;; rotations is signup-with-icp.
      ((signup-with-kel username email aid-prefix icp-alist sigs rotations)
-      (<- signup-agent 'register-with-kel!
-          username email aid-prefix icp-alist sigs rotations oobi-host))
+      (signup-gated (lambda ()
+        (<- signup-agent 'register-with-kel!
+            username email aid-prefix icp-alist sigs rotations oobi-host))))
 
      ;; The controller's log has moved on elsewhere and this commune is
      ;; behind: ROTATIONS (a vector of (rot . sigs), sn order, continuing
@@ -1685,9 +1706,10 @@
      ;; already witnessed here. The seat is what keri-authenticate checks
      ;; for; scope standing below the UC is a governance act, not this.
      ((join username email aid-prefix)
-      (<- signup-agent 'join! username email aid-prefix
-          (and oobi-host (string? aid-prefix)
-               ($ oobi-host 'get aid-prefix) #t)))
+      (signup-gated (lambda ()
+        (<- signup-agent 'join! username email aid-prefix
+            (and oobi-host (string? aid-prefix)
+                 ($ oobi-host 'get aid-prefix) #t)))))
      ((has-seat aid-prefix)
       (<- signup-agent 'has-seat? aid-prefix))
 

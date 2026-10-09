@@ -9,6 +9,7 @@
 ;;; its own vat, as in the gateway, so the gated answer is a promise.
 
 (use-modules (playnet test harness)
+             (playnet test keri-identity)
              (playnet keri signify-portable)
              ((playnet keri cesr) #:select (cesr-bytes->qb64))
              (playnet gateway signup-agent)
@@ -20,38 +21,10 @@
              (rnrs bytevectors)
              (ice-9 format))
 
-(define gateway-vat (spawn-vat #:name "gateway"))
-(define signup-vat  (spawn-vat #:name "signup"))
-
-(define bran "seat-gate-passcode-21ch")
-(define kp0 (bran->signing-keypair bran))
-(define kp1 (bran->rotation-keypair bran 1))
-(define (q kp) (public-key->aid-prefix (ed25519-keypair-public kp)))
-(define-values (icp-json icp-said icp-alist)
-  (build-icp #:keys (list (q kp0)) #:nkeys (list (next-key-digest (ed25519-keypair-public kp1)))))
-(define aid (assoc-ref icp-alist "i"))
-(define icp-sigs (vector (sign-event icp-json kp0)))
-
-(define signup-agent
-  (with-vat signup-vat (spawn ^signup-agent (hashmap) (hashmap))))
-(define oobi-host
-  (with-vat gateway-vat (spawn ^oobi-host)))
-(define stub
-  (with-vat gateway-vat (spawn (lambda (_bcom) (methods)))))
-(define lobby
-  (with-vat gateway-vat
-    (spawn ^lobby signup-agent stub stub stub stub stub stub stub oobi-host)))
-
-;; settle a cross-vat promise from a lobby method
-(define (settle p)
-  (let ((box #f) (done #f))
-    (with-vat gateway-vat
-      (on p (lambda (v) (set! box v) (set! done #t))
-          #:catch (lambda (e) (set! box (list 'error e)) (set! done #t))))
-    (let loop ((i 0))
-      (unless (or done (> i 200))
-        (usleep 10000) (loop (+ i 1))))
-    box))
+(define-values (kp0 kp1 icp-json icp-said icp-alist aid icp-sigs)
+  (test-identity "seat-gate-passcode-21ch"))
+(define-values (gateway-vat signup-vat signup-agent oobi-host lobby settle)
+  (lobby-fixture))
 
 (define (challenge-and-answer kp)
   (let* ((nonce (with-vat gateway-vat ($ lobby 'keri-challenge aid)))

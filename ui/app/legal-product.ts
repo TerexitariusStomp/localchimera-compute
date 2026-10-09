@@ -38,6 +38,7 @@ export interface ProductFeature {
   id: string; name: string; crossings: string[]; doors: string[]; section: string;
 }
 export const PRODUCT_FEATURES: ProductFeature[] = [
+  { id: "account-creation", name: "Account creation", crossings: ["data-processing"], doors: ["lobby/signup", "lobby/signup-with-icp", "lobby/signup-with-kel", "lobby/join"], section: "social/id" },
   { id: "payouts", name: "Payouts in XMR", crossings: ["hold-funds"], doors: ["session/request-payout", "session/my-payouts", "session/retire-payout"], section: "shop/payouts" },
   { id: "credit", name: "Credit for contribution", crossings: ["credit-contribution"], doors: ["session/my-claims", "session/claim"], section: "shop/claims" },
   { id: "health-profile", name: "Conditions stated in the profile", crossings: ["data-processing", "health-data"], doors: ["session/set-profile"], section: "share/attributes" },

@@ -1227,6 +1227,20 @@
                    ;; docs/governance/persistence-operations.md.
                    ("PLAYNET_SCOPES_DURABLE"  . "1")
                    ("PLAYNET_OOBI_AUTO_MIRROR" . "1")
+                   ;; GDPR deferral, not a capability gap: a real signup binds a
+                   ;; real name/email to an AID (gateway/signup-agent.scm member
+                   ;; record), which is the one place Articles 5(1)(e)/9/13/17/
+                   ;; 30/32/35 and Chapter V all activate at once — see
+                   ;; docs/planning/legal/gdpr-analysis.md. Closed here until
+                   ;; that plan's consent/erasure/portability work (also in that
+                   ;; doc) is far enough along to carry the obligation. Checked
+                   ;; in gateway/lobby.scm's real-signup-enabled?; gates the
+                   ;; doors declared `#:feature account-creation` in
+                   ;; protocol.scm and nothing else.
+                   ;; tools/dev.sh does not set this — local dev keeps signing up
+                   ;; real AIDs as it always has, which is the developer's own
+                   ;; test data, not a third party's.
+                   ("PLAYNET_DISABLE_REAL_SIGNUP" . "1")
                    ;; The photo read (docs/observation/capture.md §9). The vision
                    ;; model is an enclave slug (TEE/…) that reads images, named in
                    ;; the provider's own config; unset, the see door answers

@@ -8,6 +8,7 @@
 ;;; session door and the signature door. docs/planning/identity/device-keys.md.
 
 (use-modules (playnet test harness)
+             (playnet test keri-identity)
              (playnet keri signify-portable)
              ((playnet keri cesr) #:select (cesr-bytes->qb64))
              ((playnet keri citizen-sig)
@@ -31,39 +32,17 @@
               (mkdir d) d))
 (device-registry-dir tmp)
 
-(define gateway-vat (spawn-vat #:name "gateway"))
-(define signup-vat  (spawn-vat #:name "signup"))
-
 (define bran "device-auth-passcode-21ch")
-(define kp0 (bran->signing-keypair bran))
-(define kp1 (bran->rotation-keypair bran 1))
-(define (q kp) (public-key->aid-prefix (ed25519-keypair-public kp)))
-(define-values (icp-json icp-said icp-alist)
-  (build-icp #:keys (list (q kp0)) #:nkeys (list (next-key-digest (ed25519-keypair-public kp1)))))
-(define aid (assoc-ref icp-alist "i"))
-(define icp-sigs (vector (sign-event icp-json kp0)))
+(define-values (kp0 kp1 icp-json icp-said icp-alist aid icp-sigs)
+  (test-identity bran))
+(define-values (gateway-vat signup-vat signup-agent oobi-host lobby settle)
+  (lobby-fixture))
 
 ;; two devices, each a fresh key; the AID is the B-prefixed public key
 (define (device-keypair) (seed->ed25519-keypair (keri-crypto-random-bytes 32)))
 (define (device-aid kp) (cesr-bytes->qb64 "B" (ed25519-keypair-public kp)))
 (define laptop (device-keypair))
 (define phone  (device-keypair))
-
-(define signup-agent (with-vat signup-vat (spawn ^signup-agent (hashmap) (hashmap))))
-(define oobi-host (with-vat gateway-vat (spawn ^oobi-host)))
-(define stub (with-vat gateway-vat (spawn (lambda (_bcom) (methods)))))
-(define lobby
-  (with-vat gateway-vat
-    (spawn ^lobby signup-agent stub stub stub stub stub stub stub oobi-host)))
-
-(define (settle p)
-  (let ((box #f) (done #f))
-    (with-vat gateway-vat
-      (on p (lambda (v) (set! box v) (set! done #t))
-          #:catch (lambda (e) (set! box (list 'error e)) (set! done #t))))
-    (let loop ((i 0))
-      (unless (or done (> i 200)) (usleep 10000) (loop (+ i 1))))
-    box))
 
 (define (sign-nonce nonce kp) (cesr-bytes->qb64 "0B" (sign-bytes (string->utf8 nonce) kp)))
 (define (root-auth)
@@ -179,7 +158,7 @@
 (define kp2 (bran->rotation-keypair bran 2))
 (define-values (rot-json rot-said rot-alist)
   (build-rot aid (assoc-ref icp-alist "d")
-             #:keys (list (q kp1))
+             #:keys (list (keypair->aid-prefix kp1))
              #:nkeys (list (next-key-digest (ed25519-keypair-public kp2)))
              #:sn 1))
 (check "the root rotates"

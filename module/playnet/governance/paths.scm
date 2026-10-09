@@ -18,7 +18,7 @@
 
 (define-module (playnet governance paths)
   #:use-module (ice-9 ftw)
-  #:use-module ((playnet utils common) #:select (string-or-false))
+  #:use-module ((playnet utils common) #:select (string-or-false env-flag?))
   #:use-module ((ice-9 rdelim) #:select (read-line))
   #:use-module ((srfi srfi-13) #:select (string-trim-both string-null?))
   #:export (current-playnet-state-dir-override
@@ -195,8 +195,7 @@
    process: PLAYNET_SCOPES_DURABLE is set to anything other than \"0\"
    or empty.  Used as the default for `#:durable?` on spawn-scope and
    spawn-universal-commune."
-  (let ((v (getenv "PLAYNET_SCOPES_DURABLE")))
-    (and v (not (string=? v "")) (not (string=? v "0")))))
+  (env-flag? "PLAYNET_SCOPES_DURABLE"))
 
 (define (remove-tree! path)
   "Delete PATH and everything under it. Tolerates an absent PATH and

@@ -50,7 +50,8 @@
 ;;; The doors that ARE a feature are declared on the doors (`#:feature`,
 ;;; protocol.scm) and read from there, so a feature's calls are stated once.
 (define *product-features*
-  '((payouts        "Payouts in XMR"                   (hold-funds)                     "shop/payouts")
+  '((account-creation "Account creation"               (data-processing)                "social/id")
+    (payouts        "Payouts in XMR"                   (hold-funds)                     "shop/payouts")
     (credit         "Credit for contribution"          (credit-contribution)            "shop/claims")
     (health-profile "Conditions stated in the profile" (data-processing health-data)    "share/attributes")
     (location       "Position and home"                (data-processing location-data)  "location")

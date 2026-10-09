@@ -156,13 +156,13 @@ or #f when no handler sends it."
 
     ;; ── lobby ──
     (door lobby signup (username email aid-prefix oobi-url)
-          #:auth anonymous #:topic identity #:reply ok-or-error #:kind performative
+          #:auth anonymous #:topic identity #:reply ok-or-error #:kind performative #:feature account-creation
           #:doc "Registers a seat for an AID whose OOBI is hosted elsewhere: resolves it through KERIA, persists the member, and replies ok or (error reason). Use signup-with-icp when the browser holds its own KEL.")
     (door lobby signup-with-icp (username email aid-prefix icp-alist sigs)
-          #:auth anonymous #:topic identity #:reply promise:ok-or-error #:kind performative
+          #:auth anonymous #:topic identity #:reply promise:ok-or-error #:kind performative #:feature account-creation
           #:doc "Takes a seat for a browser-made AID from its inception event and signatures, verified offline (AID = k[0], SAID, sig) and witnessed into ^oobi-host; replies ok or (error reason).")
     (door lobby signup-with-kel (username email aid-prefix icp-alist sigs rotations)
-          #:auth anonymous #:topic identity #:reply ok-or-error #:kind performative
+          #:auth anonymous #:topic identity #:reply ok-or-error #:kind performative #:feature account-creation
           #:doc "Takes a seat under an AID's whole KEL (inception, sigs, rotations in sn order), verified end to end and witnessed into ^oobi-host; replies ok or (error reason). No rotations: use signup-with-icp.")
     (door lobby extend-kel (aid-prefix rotations)
           #:auth anonymous #:topic identity #:reply ok-or-error #:kind constative
@@ -171,7 +171,7 @@ or #f when no handler sends it."
           #:auth anonymous #:topic identity #:reply ok-or-error #:kind constative
           #:doc "Records a verifiable KEL into ^oobi-host without a seat, levelling a known AID up and refusing a different history under one AID; replies ok or (error reason). Call join afterwards for a seat.")
     (door lobby join (username email aid-prefix)
-          #:auth anonymous #:topic identity #:reply ok-or-error #:kind performative
+          #:auth anonymous #:topic identity #:reply ok-or-error #:kind performative #:feature account-creation
           #:doc "Grants a seat in this gateway's universal commune to an AID already witnessed in ^oobi-host (empty username mints a handle); replies ok or (error reason). The seat is what keri-authenticate checks.")
     (door lobby has-seat (aid-prefix)
           #:auth anonymous #:topic identity #:reply boolean #:kind read

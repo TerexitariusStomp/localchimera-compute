@@ -18,6 +18,13 @@
 ;;;   env-int name default           — getenv NAME parsed as int, or
 ;;;                                    DEFAULT on absent/unparseable.
 ;;;
+;;;   env-flag? name                 — getenv NAME as a switch: #t when set
+;;;                                    to anything but "" or "0". The one
+;;;                                    reading for every PLAYNET_* on/off
+;;;                                    var; four modules each spelled it
+;;;                                    before, two of them counting "" as
+;;;                                    on.
+;;;
 ;;;   parse-csv-env name             — getenv NAME split on commas,
 ;;;                                    trimmed, empties dropped.
 ;;;
@@ -43,6 +50,7 @@
   #:export (safe-call
             for-each-catching
             env-int
+            env-flag?
             parse-csv-env
             read-sexp-file
             read-all-sexps-file
@@ -111,6 +119,13 @@
      ((or (not v) (string=? v "")) default)
      ((string->number v))
      (else default))))
+
+(define (env-flag? name)
+  "Read env var NAME as an on/off switch: #t when it is set to anything
+   other than \"\" or \"0\". Unset and empty both read as off, the same
+   way env-int reads them as absent."
+  (let ((v (getenv name)))
+    (and v (not (string=? v "")) (not (string=? v "0")))))
 
 (define (parse-csv-env name)
   "Parse env var NAME as a list of non-empty trimmed strings (comma-
