@@ -39,6 +39,7 @@
 ;;; event carry their own semantics and pass untouched.
 
 (define-module (playnet planner plan horizon-gate)
+  #:use-module ((playnet planner formulas actions) #:select (drawing-actions))
   #:use-module (playnet planner vf schemas)
   #:use-module (playnet planner beyond schedules)
   #:use-module ((playnet utils clock) #:select (now civil->instant instant->weekday seconds->days))
@@ -163,7 +164,7 @@
                                               (recipe-process-id (car ps)))))
                                      '()))
                          (cp* (fold (lambda (f acc)
-                                      (let ((b (and (memq (recipe-flow-action f) '(consume use))
+                                      (let ((b (and (memq (recipe-flow-action f) drawing-actions)
                                                     (recipe-flow-resource-conforms-to f)
                                                     (spec-booking-days
                                                      observer

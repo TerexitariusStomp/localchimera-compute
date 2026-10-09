@@ -34,6 +34,10 @@
 (define %alt (string-join %verbs "|"))
 (define %verb-rx (make-regexp (string-append "(^|[^A-Za-z0-9_-])(" %alt ")($|[^A-Za-z0-9_-])")))
 (define %list-rx (make-regexp "'\\(([^()]*)\\)"))
+;; an unquoted `case` clause holding two or more verbs: ((produce dropoff) 1)
+(define %case-rx (make-regexp "\\(\\(([a-z-]+( [a-z-]+)+)\\)($| )"))
+;; a list of verbs as strings, the record-flow door's whitelist: '("produce" "consume" …)
+(define %strlist-rx (make-regexp "'\\((\"[a-z-]+\"( \"[a-z-]+\")+)\\)"))
 (define %eq1-rx (make-regexp "\\((eq\\?|equal\\?) .*'(produce|consume)($|[^A-Za-z0-9_-])|\\(\\((produce|consume)\\) "))
 (define %string-rx (make-regexp "\"[^\"]*\""))
 
@@ -53,10 +57,16 @@
 ;; the solve emits, a table's own notation, a colour per action, a count's record.
 (define (meant? line) (and (string-contains line "verb-meant:") #t))
 
+(define (uncommented line)
+  (let ((i (string-index line #\;))) (if i (substring line 0 i) line)))
+
 (define (site? line)
-  (let ((code (code-of line)))
-    (and (not (meant? line)) (or (any (lambda (m) (>= (verbs-in (match:substring m 1)) 2)) (list-matches %list-rx code))
-        (and (regexp-exec %eq1-rx code) #t)))))
+  (let ((code (code-of line)) (raw (uncommented line)))
+    (and (not (meant? line))
+         (or (any (lambda (m) (>= (verbs-in (match:substring m 1)) 2)) (list-matches %list-rx code))
+             (any (lambda (m) (>= (verbs-in (match:substring m 1)) 2)) (list-matches %case-rx code))
+             (any (lambda (m) (>= (verbs-in (match:substring m 1)) 2)) (list-matches %strlist-rx raw))
+             (and (regexp-exec %eq1-rx code) #t)))))
 
 (define (skip? path)
   (or (string-contains path "/deprecated/") (string-contains path "/tests/")

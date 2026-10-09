@@ -14,6 +14,7 @@
 ;;; the product ("chain is as strong as weakest link").
 
 (define-module (playnet planner matching feasibility)
+  #:use-module ((playnet planner formulas actions) #:select (input-action?))
   #:use-module (srfi srfi-1)
   #:use-module (playnet planner vf schemas)
   #:use-module (playnet planner beyond schedules)

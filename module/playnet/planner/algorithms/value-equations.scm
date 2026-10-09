@@ -4,6 +4,7 @@
 ;;; A scorer is (event) -> number. Income is distributed proportional to scores.
 
 (define-module (playnet planner algorithms value-equations)
+  #:use-module ((playnet planner formulas actions) #:select (using-up-actions nonconsuming-input-actions))
   #:use-module (playnet planner algorithms track-trace)
   #:use-module (playnet planner vf schemas)
   #:use-module (playnet utils store-utils)
@@ -28,7 +29,7 @@
 
 (define (resource-scorer event)
   "Score by resource qty consumed (consume/use/cite only)."
-  (if (and (memq (economic-event-action event) '(consume use cite))
+  (if (and (memq (economic-event-action event) (append using-up-actions nonconsuming-input-actions))
            (economic-event-resource-quantity event))
       (measure-has-numerical-value (economic-event-resource-quantity event))
       0))

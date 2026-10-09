@@ -1461,7 +1461,7 @@ service does not know the scope (nothing to filter by)."
     (if (not rp) '()
         ;; the means a process puts in someone's hands: what it uses, and
         ;; what it carries (a pickup — the key a carrier walks to the door)
-        (filter-map (lambda (f) (and (memq (recipe-flow-action f) '(use pickup))
+        (filter-map (lambda (f) (and (memq (recipe-flow-action f) (append occupying-actions (filter input-action? relocating-actions)))
                                      (recipe-flow-resource-conforms-to f)))
                     (car ($ ($ scope-root 'recipe-store) 'flows-for-process
                             (recipe-process-id rp)))))))
@@ -1508,7 +1508,7 @@ service does not know the scope (nothing to filter by)."
         ;; finishes it. Stated at the door, so no presentation rule
         ;; anywhere upstream has to remember it.
         (let ((it ($ ps 'get-intent iid)))
-          (when (and it (memq (intent-action it) '(consume use))
+          (when (and it (memq (intent-action it) drawing-actions)
                      (intent-receiver it)
                      (not (equal? (intent-receiver it) provider)))
             (error "a demand is worked toward, never accepted shut" iid))
@@ -4201,7 +4201,8 @@ service does not know the scope (nothing to filter by)."
        (lambda (root)
          (catch-as-failure
            (lambda ()
-             (if (not (member action '("produce" "consume" "pickup" "dropoff" "use")))
+             (if (not (memq (string->symbol action)                    ; the actions a material row carries: a flow, a relocation, an occupation
+                            (append *flow-actions* relocating-actions occupying-actions)))
                  (failure (string-append "unknown flow action: " action))
                  (let* ((obs  ($ root 'observer))
                         (rows (if (and (string? row-id) (not (string-null? row-id)))

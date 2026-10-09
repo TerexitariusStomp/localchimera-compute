@@ -91,12 +91,7 @@
             *default-search-radius-km*
             *remote-h3-index*
             *h3-edge-lengths-km*
-            *h3-areas-km2*
-
-            *input-actions*
-            *output-actions*
-            input-action?
-            output-action?))
+            *h3-areas-km2*))
 
 
 ;;; ── VF action discrimination ───────────────────────────────────────────────
@@ -106,11 +101,8 @@
 ;;; *emits* it (output — produce/deliver-service). Both sides are
 ;;; <intent>s; the distinction is purely in the action field.
 
-(define *input-actions*  '(consume use accept))
-(define *output-actions* '(produce deliver-service))
-
-(define (input-action?  a) (and (symbol? a) (memq a *input-actions*)  #t))
-(define (output-action? a) (and (symbol? a) (memq a *output-actions*) #t))
+;; which side an intent is on is the action table's io column: input-action? /
+;; output-action? of (playnet planner formulas actions), the one reading.
 
 
 ;;; ── Skill ──────────────────────────────────────────────────────────────────

@@ -141,7 +141,7 @@
         (ballot . ,(contest-ballot-id (economic-event-id e) #t))
         (at . ,(or (economic-event-has-point-in-time e) (economic-event-created e) ""))
         (delta . ,(if q
-                      (* (if (eq? 'raise (economic-event-action e)) 1 -1)
+                      (* (or (onhand-sign (economic-event-action e)) 0)
                          (exact->inexact (measure-qty q)))
                       0.0))
         (unit . ,(cond (q (measure-has-unit q)) (fig (cdr fig)) (else "")))

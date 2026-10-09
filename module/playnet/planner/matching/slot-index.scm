@@ -12,6 +12,7 @@
 ;;; Ported from docs/free-assoc/src/lib/protocol/slot-index.ts.
 
 (define-module (playnet planner matching slot-index)
+  #:use-module ((playnet planner formulas actions) #:select (output-action?))
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-9)
   #:use-module (goblins utils hashmap)

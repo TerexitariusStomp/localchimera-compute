@@ -361,7 +361,7 @@ Rules:
     ((consume)          "#fc5858")   ; verb-meant: a display choice per action
     ((work)             "#76c3f5")
     ((transfer)         "#e8b04e")
-    ((use move)         "#b0c4f0")
+    ((use move)         "#b0c4f0")   ; verb-meant: a display choice per action
     ((transferAllRights transferCustody transferComplete) "#e8b04e")
     (else "rgba(255,255,255,0.45)")))
 

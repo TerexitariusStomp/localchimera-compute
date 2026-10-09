@@ -15,6 +15,7 @@
 ;; needed from here, which made the two a genuine cycle rather than an
 ;; ordering problem.
 (define-module (playnet planner algorithms option-premium)
+  #:use-module ((playnet planner formulas actions) #:select (using-up-actions transferring-actions effort-actions))
   #:use-module (playnet planner vf schemas)
   #:use-module (playnet planner ddmrp records)
   #:use-module (goblins)
@@ -61,8 +62,8 @@
 ;; transfer.  Walks each recipe's input flows, sums qty × price.
 ;; ─────────────────────────────────────────────────────────────────────
 
-(define *consuming-input-actions*
-  '(consume transfer transfer-all-rights transfer-custody))
+(define *consuming-input-actions*            ; a stock used up, or handed over
+  (append using-up-actions transferring-actions))
 
 (define (sum-recipe-flows recipe-store recipe-id price-of action-filter)
   "Walk a recipe's processes, sum (qty × price) for flows matching action-filter."
@@ -113,8 +114,8 @@
 ;; price-of as underlier.
 ;; ─────────────────────────────────────────────────────────────────────
 
-(define *all-input-actions*
-  '(consume transfer transfer-all-rights transfer-custody work use))
+(define *all-input-actions*                  ; …and the effort and occupation besides
+  (append using-up-actions transferring-actions effort-actions))
 
 (define* (compute-plan-strike recipe-store plan-recipe-ids
                               #:key (price-of (lambda (spec unit) 0)))

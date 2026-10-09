@@ -192,7 +192,7 @@
                      (and (economic-event-input-of e)
                           (member (economic-event-input-of e) proc-ids)
                           (memq (economic-event-action e)
-                                '(consume use work cite))))
+                                (append using-up-actions (filter input-action? inert-flow-actions)))))   ; every input a process takes
                    candidate-events))
          (entries
            (map (lambda (e)

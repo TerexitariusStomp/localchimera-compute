@@ -32,6 +32,7 @@
 ;;; Pure over numbers, strings and alists; the service assembles the rows.
 
 (define-module (playnet planner formulas counting)
+  #:use-module ((playnet planner formulas actions) #:select (*stock-moving-actions* using-up-actions labour-actions))
   #:use-module (srfi srfi-1)
   #:use-module ((playnet planner formulas cadence) #:select (recert-interval-discrete))
   #:use-module ((playnet planner facts audit) #:select (audit-draw))
@@ -116,10 +117,10 @@
   "An event of ACTION whose output-of is OUTPUT-OF and input-of INPUT-OF is a
    part of a count: its adjustment (raise or lower), its record (a produce) or
    the counter's hours (a work on the planned run)."
-  (case action
-    ((raise lower produce) (count-run-process? output-of))
-    ((work)                (count-process? input-of))
-    (else                  #f)))
+  (cond ((and (memq action *stock-moving-actions*) (not (memq action using-up-actions)))   ; a raise, a lower, a produce
+         (count-run-process? output-of))
+        ((memq action labour-actions) (count-process? input-of))
+        (else #f)))
 
 ;; the ballot a contest of an event opens: contest:<event id>, and for a count
 ;; the id of its adjustment whichever of its parts is named

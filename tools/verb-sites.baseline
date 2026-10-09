@@ -1,14 +1,2 @@
 # tools/lint-verbs.scm: sites that spell actions by hand, per file. The counts only fall.
 # `make lint-verbs` fails when a file holds more; `guile tools/lint-verbs.scm --write` keeps a gain.
-1 module/playnet/planner/algorithms/rollup.scm
-1 module/playnet/planner/algorithms/value-equations.scm
-1 module/playnet/planner/comms/plan.scm
-2 module/playnet/planner/doors/service.scm
-2 module/playnet/planner/facts/audit.scm
-1 module/playnet/planner/federation/crossing-set.scm
-1 module/playnet/planner/knowledge/dsl/vf-lint.scm
-2 module/playnet/planner/matching/schemas.scm
-3 module/playnet/planner/plan/accepts.scm
-1 module/playnet/planner/plan/horizon-gate.scm
-3 module/playnet/planner/scope/live.scm
-1 module/playnet/planner/solve/compile.scm

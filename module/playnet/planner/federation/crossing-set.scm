@@ -38,7 +38,7 @@
   (let* ((spec-of   recipe-flow-resource-conforms-to)
          (act       (lambda (f) (recipe-flow-action f)))
          (labour    (filter-map (lambda (f) (and (eq? (act f) 'work) (spec-of f))) flows))
-         (capacity  (filter-map (lambda (f) (and (memq (act f) '(use cite)) (spec-of f))) flows))
+         (capacity  (filter-map (lambda (f) (and (memq (act f) nonconsuming-input-actions) (spec-of f))) flows))
          (material  (filter-map (lambda (f) (and (memq (act f) *flow-actions*) (spec-of f))) flows))
          (held      (filter-map economic-resource-conforms-to resources))
          (dealt     (append held (call-with-values (lambda () (upstream-closure flows demand-specs))

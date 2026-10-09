@@ -19,6 +19,7 @@
 ;;; (every grant of the author's, a standing, …), and then π = 1/k. The
 ;;; factor is the scope's policy; the arithmetic is here.
 (define-module (playnet planner facts audit)
+  #:use-module ((playnet planner formulas actions) #:select (using-up-actions))
   #:use-module (srfi srfi-1)
   #:use-module (playnet planner vf schemas)
   #:export (audit-rate observed-of audit-verdict conduit-verdict audit-draw plan-welfare))
@@ -54,9 +55,9 @@
           (let ((act (economic-event-action e))
                 (at  (%instant e)))
             (if (and (equal? (economic-event-resource-conforms-to e) spec)
-                     (memq act '(consume transfer deliver-service use))
+                     (memq act '(consume transfer deliver-service use))   ; verb-meant: what WHO took — a transfer of rights or custody alone is not counted
                      (or (equal? (economic-event-receiver e) who)
-                         (and (eq? act 'consume) (equal? (economic-event-provider e) who)))
+                         (and (memq act using-up-actions) (equal? (economic-event-provider e) who)))
                      (or (not since) (not (string? at)) (string>=? at since)))
                 (+ acc (or (and=> (economic-event-resource-quantity e) measure-has-numerical-value) 0))
                 acc)))

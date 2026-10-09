@@ -34,6 +34,9 @@
             committed-by-spec committed-quantity
             ;; playnet's own columns
             relocating-actions relocating-action? same-flow?
+            ;; the sets the doors and the algorithms ask for
+            transferring-actions occupying-actions drawing-actions nonconsuming-input-actions
+            onhand-sign
             ;; what a skill is
             labour-specs labour?))
 
@@ -65,8 +68,10 @@
 ;; it out, fulfil one another's commitments.
 (define (same-flow? a b)
   (or (eq? a b)
-      (and (memq a '(produce raise)) (memq b '(produce raise)) #t)
-      (and (memq a '(consume lower)) (memq b '(consume lower)) #t)))
+      (and (memq a *stock-moving-actions*) (memq b *stock-moving-actions*)
+           (eq? (action-definition-accounting-effect (cdr (assq a *action-definitions*)))
+                (action-definition-accounting-effect (cdr (assq b *action-definitions*))))
+           #t)))
 
 ;;; ── a process's sides ───────────────────────────────────────────────────────
 
@@ -128,6 +133,35 @@
 ;; gift and a tax are all one of these; what tells them apart is what comes back.
 (define *rights-moving-actions*
   (actions-where (lambda (d) (eq? (action-definition-accountable-effect d) 'update-to))))
+
+;; A hand-off between agents: rights move (accountable `update-to`), or custody moves
+;; (location `update-to`) with no accounting effect — transfer, transfer-all-rights,
+;; transfer-custody. A `move` moves the thing with its accounting, so it is not one.
+(define transferring-actions
+  (actions-where (lambda (d) (or (eq? (action-definition-accountable-effect d) 'update-to)
+                                 (and (eq? (action-definition-location-effect d) 'update-to)
+                                      (eq? (action-definition-accounting-effect d) 'no-effect))))))
+;; An act that OCCUPIES a thing for a while: event quantity `both` (use).
+(define occupying-actions
+  (actions-where (lambda (d) (eq? (action-definition-event-quantity d) 'both))))
+;; What a process DRAWS on from the world: a stock used up, or a means occupied.
+(define drawing-actions
+  (append (actions-where (lambda (d) (and (eq? (action-definition-input-output d) 'input)
+                                          (eq? (action-definition-accounting-effect d) 'decrement))))
+          occupying-actions))
+;; An input that consumes nothing and is not labour: a means occupied, a reference cited.
+(define nonconsuming-input-actions
+  (actions-where (lambda (d) (and (eq? (action-definition-input-output d) 'input)
+                                  (eq? (action-definition-onhand-effect d) 'no-effect)
+                                  (not (eq? (action-definition-event-quantity d) 'effort-quantity))))))
+;; The sign an act puts on a stock on hand: +1 for an increment, -1 for a decrement,
+;; #f where the table says no effect (a use, a work) or a relocation of the same thing.
+(define (onhand-sign action)
+  (let ((d (assq action *action-definitions*)))
+    (and d (case (action-definition-onhand-effect (cdr d))
+             ((increment increment-to) 1)
+             ((decrement) -1)
+             (else #f)))))
 
 ;;; ── what a recipe makes ─────────────────────────────────────────────────────
 ;; The one reading of "this flow is an output": an act that puts a quantity on hand

@@ -194,7 +194,7 @@
   (case (economic-event-action event)
     ((work)     (attest-contribution! acdc-store scope-aid event #:signer signer))
     ((transfer) (attest-consumption!  acdc-store scope-aid event #:signer signer))
-    ((produce consume use move raise lower pickup dropoff deliver-service)
+    ((produce consume use move raise lower pickup dropoff deliver-service)   ; verb-meant: which acts get a credential is a decision (beyond-valueflows §6.6), not the table's
      (unless (void-correction? event)
        (attest-observation! acdc-store scope-aid event #:signer signer)))))
 

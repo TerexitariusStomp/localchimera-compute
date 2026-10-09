@@ -179,7 +179,7 @@
                                   (set! out-units (acons spec (and=> (recipe-flow-resource-quantity rf) measure-has-unit) out-units)))
                ((relocating-action? action) (set! relocated (cons spec relocated)))                      ; TRANSPORT: pickup@origin / dropoff@destination of the SAME good (locationEffect) → an ARC activity (relocate, not a same-cell consume/produce)
                ((eq? action 'move) (set! moved (cons spec moved)))                                           ; MOVE: spatial relocation, same custody → mark the good movable
-               ((memq action '(transfer transfer-custody transfer-all-rights)) #t)                           ; TRANSFER: re-assign custody/rights BETWEEN agents — the provisioning/exchange interface (cross-scope pulls, §solve-decomposed), not a within-scope production flow
+               ((memq action transferring-actions) #t)                           ; TRANSFER: re-assign custody/rights BETWEEN agents — the provisioning/exchange interface (cross-scope pulls, §solve-decomposed), not a within-scope production flow
                ((eq? oh 'decrement) (set! inputs (acons spec rq inputs)))                                     ; consume · accept · combine · lower
                ((eq? oh 'decrement-increment) (set! moved (cons spec moved)))                                 ; any other same-resource relocate → movable
                (else #t))))

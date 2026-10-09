@@ -2543,7 +2543,7 @@
                          ((pickup)  carry)
                          ((dropoff) (lot-id-or-new here good place))
                          (else #f))))
-         (into    (and (not stockless) (eq? act 'produce) (lot-id-or-new here good place)))
+         (into    (and (not stockless) (memq act creating-actions) (lot-id-or-new here good place)))
          ;; the agent accountable for the stock an event moves (its lot's primaryAccountable, the
          ;; rights side of the custody/rights split) is the event's provider and receiver: one
          ;; agent on both sides, so no transfer of rights arises. A cargo on its way has one
@@ -2565,7 +2565,7 @@
                      #:at-location place                                        ; at-location, to-location, state
                      #:fulfills cid                                    ; FULFILLS the commitment, satisfies corrects realization settles
                      #:note (row-note mc))))                 ; note in-scope-of previous exclude market
-         (events  (if (or stockless (eq? act 'produce))
+         (events  (if (or stockless (memq act creating-actions))
                       (let ((lot (and (not stockless) (pair? here) (car here))))
                         (list (event 0 into (bare-spec good) qty (accountable-of lot)
                                      (stock-unit scope-root good lot))))

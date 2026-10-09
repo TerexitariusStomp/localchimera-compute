@@ -10,6 +10,7 @@
 ;;; personhood gate.
 
 (define-module (playnet planner doors count-door)
+  #:use-module ((playnet planner formulas actions) #:select (onhand-sign))
   #:use-module (playnet planner formulas flows)
   #:use-module (srfi srfi-1)
   #:use-module (goblins)
@@ -79,11 +80,7 @@
                   (q     (row-quantity m))
                   (iso   (row-when m))
                   (place (row-place m))
-                  (sign  (and (equal? place here)
-                              (case act
-                                ((produce dropoff) 1)
-                                ((consume pickup) -1)
-                                (else #f)))))
+                  (sign  (and (equal? place here) (onhand-sign act))))   ; +1 a produce or a dropoff, -1 a consume or a pickup
              (and sign (string? good) (number? q) (> q 0)
                   (lot-of? r good persons)
                   (or (not (string? iso)) (<= (civil->instant iso) instant))
@@ -321,7 +318,7 @@
       (record . ,(string-append eid "-record"))
       (hours . 0.0)
       (delta . ,(if q
-                    (* (if (eq? 'raise (economic-event-action adj)) 1 -1) (exact->inexact (measure-qty q)))
+                    (* (or (onhand-sign (economic-event-action adj)) 0) (exact->inexact (measure-qty q)))
                     0.0))
       (sighting . "")
       (again . #t)

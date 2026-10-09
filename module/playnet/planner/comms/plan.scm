@@ -24,6 +24,7 @@
 ;;; <measure> accessors). Load: (load ".../planner/comms/plan.scm").
 
 (define-module (playnet planner comms plan)
+  #:use-module ((playnet planner formulas actions) #:select (labour-actions creating-actions transferring-actions))
   #:use-module (playnet planner vf schemas)
   #:use-module (playnet planner observation states)
   #:use-module (ice-9 format)
@@ -100,7 +101,7 @@
 ;; the actions an OUTSIDE contributor can fulfil (bring a good, do the work, hand
 ;; it over, render a service). A `use` of a fixed natural cap is not among them.
 (define %recruitable-actions
-  '(work produce transfer transfer-all-rights transfer-custody deliver-service))
+  (append labour-actions creating-actions transferring-actions))
 
 (define (intent-recruitable? intent)
   "Can an outside agent supply this gap? Derived from the intent's action, with a

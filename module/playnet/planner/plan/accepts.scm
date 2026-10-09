@@ -82,16 +82,16 @@
          (coms (append extra (if ps ($ ps 'all-commitments) '())))
          ;; a pinnable accept names its process — input-of for work,
          ;; output-of for produce; anything else has no column home
-         (proc-of (lambda (c) (case (commitment-action c)
-                                ((work)    (commitment-input-of c))
-                                ((produce) (commitment-output-of c))
-                                (else #f))))
+         (proc-of (lambda (c) (let ((a (commitment-action c)))
+                                (cond ((memq a labour-actions)   (commitment-input-of c))
+                                      ((memq a creating-actions) (commitment-output-of c))
+                                      (else #f)))))
          ;; a planned count is scheduled by its cadence (counting.scm) and
          ;; has no column in the solve: it books its counter's hours through
          ;; the deployment seed and pins nothing
          (coms (filter (lambda (c) (not (count-process? (proc-of c)))) coms))
          (unmapped (filter (lambda (c)
-                             (and (memq (commitment-action c) '(work produce))
+                             (and (memq (commitment-action c) (append labour-actions creating-actions))
                                   (not (commitment-finished c))
                                   (not (proc-of c))))
                            coms)))
@@ -332,7 +332,7 @@
          ;; upstream closure: producers of a floor spec, plus producers of
          ;; what those consume or use, to fixpoint
          (procs (call-with-values
-                    (lambda () (upstream-closure flows floor-specs #:inputs '(consume use)))
+                    (lambda () (upstream-closure flows floor-specs #:inputs drawing-actions))
                   (lambda (_specs procs) procs)))
          (fs (or (assq-ref report 'first-stage-plan) '()))
          (floor-procs (filter (lambda (p) (> (or (assoc-ref fs p) 0) *support-tolerance*)) procs))
