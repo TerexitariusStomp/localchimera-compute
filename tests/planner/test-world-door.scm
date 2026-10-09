@@ -37,8 +37,7 @@
     (means->movers!         *riders*)               ; a mobile means rides too
     (absorb-specs!          *stationary*)           ; a keep-in-place spec
     (store-recipe           *stationary*)           ; a warehouse keeps its place
-    (adopt-container-pools! *resource-suppliers*)   ; containment-derived pools
-    (ingest-records!        *mode-recipes*)))       ; the manners bag
+    (adopt-container-pools! *resource-suppliers*))) ; containment-derived pools
 
 ;;; ── scanning: top-level forms and the (set! g …) sites inside each ────────
 (define (slurp path) (call-with-input-file path read-string))
@@ -57,6 +56,18 @@
     (cond ((and (pair? f) (pred f)) (walk (cdr f) (cons f acc)))
           ((pair? f) (walk (car f) (walk (cdr f) acc)))
           (else acc))))
+(define (calls-in form pred)
+  "Every subform of FORM that PRED accepts and that stands where a call stands: not as the
+   head of a list, where `(case msg ((reset!) …))` writes the datum `(reset!)`."
+  (define (walk f counted? acc)           ; COUNTED? is #f for a form in head position
+    (if (not (pair? f))
+        acc
+        (let ((acc (if (and counted? (pred f)) (cons f acc) acc)))
+          (let loop ((es (if (list? f) f (list (car f)))) (first? #t) (acc acc))
+            (if (null? es)
+                acc
+                (loop (cdr es) #f (walk (car es) (not first?) acc)))))))
+  (walk form #t '()))
 (define (set-of-door? f) (and (eq? (car f) 'set!) (pair? (cdr f)) (memq (cadr f) door-globals)))
 (define (call-of? name) (lambda (f) (eq? (car f) name)))
 
@@ -117,7 +128,7 @@
                                                (let ((n (defined-name form)))
                                                  (if (and (not (eq? n name))
                                                           (not (and (pair? form) (eq? (car form) 'define-module)))   ; the export list names it
-                                                          (pair? (sites-in form (call-of? name))))
+                                                          (pair? (calls-in form (call-of? name))))
                                                      (list (or n '<toplevel>)) '())))
                                              (forms-of path)))
                                module-files)))))

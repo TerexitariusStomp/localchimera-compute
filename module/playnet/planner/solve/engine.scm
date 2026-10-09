@@ -2868,6 +2868,22 @@
 ;; a structural pool (Lab|, Svc|, credit|) renews and weighs nothing.
 (define *stock-price* (make-hash-table))      ; spec → crystallized SNLT, hours per unit
 (define *stock-draw-hours* 1.0)               ; a governed dial, stated per solve (#:stock-draw-hours)
+
+;; THE SETTINGS A SOLVE IS GIVEN, ONE WRITE: the voice field and the governed dials
+;; (governance-policy.scm). Both assemblies call this after they ingest — the single
+;; deterministic one in `%plan-from-records`, the robust one in `robust-assemble` —
+;; because ingest resets the globals (and it stands after the globals it writes, which a
+;; compiled `set!` of a module variable defined further down the file does not reach); a dial stated and unstated is left as it stands.
+(define* (apply-solve-settings! #:key (voice-tau 0.0) (voice-pushes '()) (voice-hours #f) (scope-path #f)
+                                      (pref-bound #f) (emp-rho #f) (kappa #f) (want-as-cap 'unstated)
+                                      (stock-draw-hours #f)
+                                #:allow-other-keys)
+  (set! *voice-tau* voice-tau) (set! *voice-pushes* voice-pushes) (set! *voice-hours* voice-hours) (set! *scope-path* scope-path)
+  (when (number? pref-bound) (set-dial! 'pref-bound pref-bound))
+  (when (number? emp-rho) (set-dial! 'emp-rho emp-rho))
+  (when (number? kappa) (set-dial! 'kappa kappa))
+  (unless (eq? want-as-cap 'unstated) (set-dial! 'want-as-cap want-as-cap))
+  (when (number? stock-draw-hours) (set-dial! 'stock-draw-hours stock-draw-hours)))
 (define (stock-draw-costs cols idx)           ; → ((column-index . hours) …)
   (let ((made (make-hash-table)) (stock (make-hash-table))
         (nets (map (lambda (c)                  ; each column's NET by spec, read once
@@ -6084,10 +6100,10 @@
   ;; plan must produce ≥ floor to keep its balance non-negative — the reproduction
   ;; of labour-power defended by the barrier every good has).
   (set! *budgeted-floors* budgeted-floors)
-  (set! *voice-tau* voice-tau) (set! *voice-pushes* voice-pushes) (set! *voice-hours* voice-hours) (set! *scope-path* scope-path)  ; the field's inputs, after ingest's reset
-  (when (number? pref-bound) (set-dial! 'pref-bound pref-bound)) (when (number? emp-rho) (set-dial! 'emp-rho emp-rho))
-  (when (number? kappa) (set-dial! 'kappa kappa)) (unless (eq? want-as-cap 'unstated) (set-dial! 'want-as-cap want-as-cap))
-  (when (number? stock-draw-hours) (set-dial! 'stock-draw-hours stock-draw-hours))
+  ;; the voice field's inputs and the governed dials, after ingest's reset
+  (apply-solve-settings! #:voice-tau voice-tau #:voice-pushes voice-pushes #:voice-hours voice-hours #:scope-path scope-path
+                         #:pref-bound pref-bound #:emp-rho emp-rho #:kappa kappa #:want-as-cap want-as-cap
+                         #:stock-draw-hours stock-draw-hours)
   (set! *acquire* acquire) (set! *promote* promote)   ; before the pour: the tier table decides what is poured
   (when (and (getenv "PLANNER_PD_DEBUG") (pair? budgeted-floors)) (format (current-error-port) "  [budget] laid ~s~%" budgeted-floors))
   (apply-repro-bands! (repro-bands #:floors repro-floors #:caps repro-caps

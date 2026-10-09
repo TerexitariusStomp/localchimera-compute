@@ -54,7 +54,18 @@
     #:horizon #:period-spans #:willing? #:legal-forbids? #:legal-decorate #:per-agent?
     #:desire-weights #:arc-table #:arc-topology? #:manners #:never-raw #:raws
     #:resource-suppliers #:specs #:span-of #:whole #:proc-frag
-    #:certificates))                 ; each citizen's drawable credit — a fact about the world, the bar over their claims
+    #:certificates                   ; each citizen's drawable credit — a fact about the world, the bar over their claims
+    #:live-avail                     ; the registry's reservations: a registered resource ingests at what is free of them
+    #:refine-periods?))              ; whether the partition refines at the roster's clock boundaries
+
+;; ingest-records! reads two world keywords a scenario does not take. Each switches on an
+;; engine mode the live solve has never run, and each moves plans that stand today, so
+;; each waits on a decision of its own:
+;;   #:skill-dynamics  practice laws that make a skill's competence a state carried from
+;;                     period to period (test-dev-world, test-dev-ledger move);
+;;   #:composition     the chemistry's element rows (reaction-network-test, test-bread-seed move).
+;; The test holds this list and %world-keywords to every keyword ingest-records! reads.
+(define %held-back-world-keywords '(#:skill-dynamics #:composition))
 
 (define (world-opts opts)
   "The keyword pairs in OPTS that describe the world, ready to `apply` onto
@@ -263,7 +274,7 @@
          (forms '()) (terms '()))
     ;; no future captures any value: there is no fraction to maximize, and a τ
     ;; want with nothing behind it floats to the barrier's centre and lands in
-    ;; the fill report as a want half met (Pompignac, unregistered: 0.1 met of
+    ;; the fill report as a want half met (a commune, unregistered: 0.1 met of
     ;; a demand no column feeds). No epigraph, and the wants stand alone.
     (if (<= Wtau 0.0)
         (begin (when (getenv "PLANNER_PD_DEBUG") (format (current-error-port) "  [maximin] no future captures any value — no epigraph~%")) #f)
@@ -354,6 +365,9 @@
          ;; and every branch below is a view over it (the weather seam).
          (pristine (begin (apply ingest-records! resources agents spatials
                                  recipe-procs recipe-flows (world-opts opts))
+                          ;; the voice field and the governed dials, set after ingest's reset
+                          ;; exactly as the single deterministic solve sets them
+                          (apply apply-solve-settings! opts)
                           (world-pristine)))
          (blocks (map (lambda (s)
                         (apply robust-scenario-block s pristine
