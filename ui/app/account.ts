@@ -56,14 +56,15 @@ const PAGES: Record<string, Page> = {
   body: { title: "body", sections: ["body"] },
   health: { title: "health", sections: ["self", "away"] },
   keys: { title: "keys and devices", sections: ["device", "passcode", "recovery", "forget"] },
-  where: { title: "where you are", sections: ["where"] },
+  // the map one keeps for a place sits with the place
+  where: { title: "where you are", sections: ["where", "maps"] },
   housing: { title: "your housing", sections: ["housing"] },
   time: { title: "your time", sections: ["time"] },
   look: { title: "look and feel", sections: ["look"] },
   clocks: { title: "calendars and clocks", sections: ["calendars", "clocks"] },
   faces: { title: "faces", sections: ["tabs"] },
   // erasure sits where a person looks for it: with their keys, and with their data
-  notices: { title: "your data and the notices", sections: ["notices", "forget"] },
+  notices: { title: "your data and the notices", sections: ["notices", "storage", "maps", "forget"] },
   report: { title: "report a concern", sections: ["report"] },
 };
 
@@ -150,7 +151,7 @@ function menu(close: () => void): HTMLElement[] {
             into("🧍", "body", "what your floors are read from", "body"),
             into("❤️", "health", "private — conditions, and days away", "health"),
             into("🔑", "keys and devices", "stay signed in, change your passcode, recovery", "keys"),
-            into("📍", "where you are", "your place, and sharing it", "where"),
+            into("📍", "where you are", "your place, sharing it, and offline maps", "where"),
             into("🏠", "your housing", "your home, and what the night gives you", "housing"),
             into("🕰️", "your time", "hours a day, which days, what it earns", "time"),
             door({ icon: "📻", label: "the commune's channel",
