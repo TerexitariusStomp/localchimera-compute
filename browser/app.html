@@ -639,18 +639,14 @@
      it — only the head and the foot take the pointer. The frame's shadow is
      the dimmed surround; its corners are the area. Phone: inset from the
      edges, clear of the bottom bar; desktop: a centred portrait rect. */
-  .area-sel { position: absolute; inset: 0; z-index: 7; pointer-events: none; }
-  .area-frame { position: absolute; left: 8%; right: 8%; top: 64px; bottom: calc(76px + var(--barh, 68px));
+  .area-sel { position: absolute; inset: 0; z-index: 7; pointer-events: none; --area-top: 0px; }
+  .area-frame { position: absolute; left: 8%; right: 8%; top: calc(64px + var(--area-top)); bottom: calc(76px + var(--barh, 68px));
     border: 2px solid var(--t-ffffff); border-radius: 12px;
     box-shadow: 0 0 0 100vmax rgb(var(--t-000000-rgb) / 0.42); }
-  @media (min-width: 900px) {
-    .area-frame { left: 50%; top: 50%; width: min(520px, 50vw); height: min(680px, 70vh); right: auto; bottom: auto;
-      transform: translate(-50%, -50%); }
-  }
   .area-head, .area-foot { position: absolute; left: 0; right: 0; display: flex; align-items: center; gap: 10px;
     padding: 10px 14px; pointer-events: auto; background: rgb(var(--t-ffffff-rgb) / 0.96);
     box-shadow: 0 1px 6px rgb(var(--t-000000-rgb) / 0.25); }
-  .area-head { top: 0; font-size: 17px; font-weight: 600; }
+  .area-head { top: var(--area-top); font-size: 17px; font-weight: 600; }
   .area-head span { flex: 1 1 auto; }
   .area-x { border: none; background: transparent; font-size: 18px; cursor: pointer; color: var(--t-444444);
     width: 36px; height: 36px; border-radius: 50%; }
@@ -660,10 +656,17 @@
   .area-dl { min-height: 44px; border: none; border-radius: 22px; background: var(--t-2c4a6e); color: var(--t-ffffff);
     font: inherit; font-weight: 650; font-size: 14px; cursor: pointer; }
   .area-dl:disabled { opacity: .45; cursor: default; }
+  /* desktop: the frame is a centred portrait rect, and the head and the foot
+     hang off its top and bottom edges — so they ride with it, above whatever
+     is pinned to the page's top and clear of the share bar at its foot */
   @media (min-width: 900px) {
-    .area-head, .area-foot { left: 50%; transform: translateX(-50%); width: min(560px, 60vw); border-radius: 12px; }
-    .area-head { top: 12px; }
-    .area-foot { bottom: 16px; flex-direction: row; }
+    .area-sel { --area-h: min(600px, 58vh); }
+    .area-frame { left: 50%; top: 50%; width: min(520px, 50vw); height: var(--area-h); right: auto; bottom: auto;
+      transform: translate(-50%, -50%); }
+    .area-head, .area-foot { left: 50%; right: auto; width: min(560px, 60vw); border-radius: 12px; bottom: auto;
+      transform: translateX(-50%); }
+    .area-head { top: calc(50% - var(--area-h) / 2 - 64px); }
+    .area-foot { top: calc(50% + var(--area-h) / 2 + 12px); flex-direction: row; }
     .area-size { flex: 1 1 auto; text-align: left; }
     .area-dl { min-width: 160px; }
   }

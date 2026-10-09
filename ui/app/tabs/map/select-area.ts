@@ -93,6 +93,15 @@ export function enterSelectArea(opts: Opts = {}): void {
       <div class="area-foot"><span class="area-size"></span>
         <button type="button" class="area-dl">Download</button></div>`;
     map.getContainer().appendChild(el);
+    // whatever is pinned over the top of the page (the deployment's status
+    // ribbon) is cleared by measuring it, not by knowing it
+    const clearTop = (): void => {
+      const over = [...document.querySelectorAll<HTMLElement>("body > [class*='banner']")]
+        .reduce((h, b) => Math.max(h, b.getBoundingClientRect().bottom), 0);
+      el!.style.setProperty("--area-top", `${Math.max(0, over)}px`);
+    };
+    clearTop();
+    window.addEventListener("resize", clearTop);
     el.querySelector<HTMLElement>(".area-x")!.onclick = leaveSelectArea;
     const onKey = (e: KeyboardEvent): void => { if (e.key === "Escape") leaveSelectArea(); };
     document.addEventListener("keydown", onKey);
@@ -111,7 +120,8 @@ export function enterSelectArea(opts: Opts = {}): void {
       keep(area).then(() => { leaveSelectArea(); opts.onKept?.(area.name); },
                       e => trouble.set(e instanceof Error ? e.message : String(e)));
     };
-    unbind = () => { document.removeEventListener("keydown", onKey); map.off("moveend", remeasure); stop(); };
+    unbind = () => { document.removeEventListener("keydown", onKey); window.removeEventListener("resize", clearTop);
+                     map.off("moveend", remeasure); stop(); };
   }
   selecting.set(true);
   if (opts.fit) {
