@@ -1,0 +1,26 @@
+# tools/probes — scripts that reproduce a finding
+
+Each script prints the evidence for one confirmed defect that is still open. They are
+tools, not tests: `make test` does not run them, and a probe that stops printing its
+evidence has stopped finding the defect (move it to a test then).
+
+| Script | Finding | Evidence it prints |
+|---|---|---|
+| `held-good-skill.scm` | a good a person holds is read as a skill they have | a person with a stock of water and no skill meets work that asks for skill "water" |
+| `movable-circulation.scm` | free carries of `#:movable` goods admit a circulation the books refuse | per seeded world: rows planned, served, left; the largest single carry (tens of thousands of units for a demand of ten) |
+| `claimable-by-products.sh` | the claimable set includes metabolic by-products, nutrient pools and a held skill | the goods (`faeces`, `co2`, `urea`, `ambient-heat`, `h2o-g`, `skill-bake`) and the count of per-person pools |
+
+Run the Scheme ones inside the dev manifest:
+
+    guix shell --pure -L deploy/guix -m deploy/manifests/dev-test-manifest.scm -- \
+      guile --no-auto-compile -q -L module tools/probes/held-good-skill.scm
+
+A fourth finding needs no script: `standing-settings` reads `admit?` and `proc-frag` off a
+standing no reader produces —
+
+    grep -rn "(cons 'admit?\|'admit? \.\|(admit? \. " module server --include=*.scm   # prints nothing
+
+The sweep that found the calls which could never run is `tools/compile-warnings.sh`
+(`make lint-compile`, part of `make test`). The laws that held are
+`tests/planner/test-property-{plan,enact,credit}.scm`. The account of all of it, with
+causes and the order to close the open ones, is `docs/planning/books/correctness-hunt-2026-10-08.md`.

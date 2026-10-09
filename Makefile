@@ -1020,7 +1020,7 @@ $(KERNEL_SO): $(KERNEL_SRC) module/playnet/planner/solve/kernel/Makefile
 .PHONY: test test-all test-fast
 # `make test RED_BASELINE=file` compares the red list by name with FILE (written on
 # the first run) and fails only on a test that is red and not named there.
-test test-all: lint-parens lint-law lint-layers lint-verbs freshen-ccache $(KERNEL_SO) ci-env
+test test-all: lint-parens lint-law lint-layers lint-verbs lint-compile freshen-ccache $(KERNEL_SO) ci-env
 	$(TEST_ENV) RED_BASELINE=$(RED_BASELINE) \
 	  bash tools/run-scm-tests.sh
 
@@ -1148,6 +1148,13 @@ lint-layers:
 .PHONY: lint-verbs
 lint-verbs:
 	@LC_ALL=C.UTF-8 tools/own-ccache.sh guile tools/lint-verbs.scm
+
+# Every live module compiled with the unbound-variable and arity warnings: a call that
+# cannot run (a name no import supplies, a wrong argument count) is refused before a test
+# has to reach it. tools/compile-warnings.sh explains what it counts and what it sets aside.
+.PHONY: lint-compile
+lint-compile:
+	@$(TEST_ENV) tools/compile-warnings.sh --check
 
 # playnet's own development, planned by the planner: every open Radicle
 # issue is a want, its area a skill, its kind a recipe (module/playnet/

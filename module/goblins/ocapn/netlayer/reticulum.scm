@@ -12,6 +12,7 @@
 
 (define-module (goblins ocapn netlayer reticulum)
   #:use-module (ice-9 match)
+  #:use-module (srfi srfi-11)               ; let-values, in the setup that opens the bridge sockets itself
   #:use-module (rnrs io ports)
   #:use-module (goblins)
   #:use-module (goblins vat)

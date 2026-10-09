@@ -7,6 +7,7 @@
   #:use-module (srfi srfi-1)
   #:use-module (playnet planner vf schemas)   ; the VF record constructors it seeds
   #:use-module (goblins)                   ; $ — it talks to a live recipe-store
+  #:use-module ((playnet utils store-utils) #:select (generate-id))   ; the id of each seeded resource
   #:export (*spec-names* seed-federation-specs seed-federation-recipes
             seed-federation-inventory))
 
