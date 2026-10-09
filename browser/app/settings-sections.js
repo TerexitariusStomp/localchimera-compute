@@ -30,6 +30,8 @@ import { render } from './template.js';
 import { effect } from './reactive.js';
 import { storageRows } from './storage-view.js';
 import { mapPacksBlock } from './map-packs-view.js';
+import { POI_FAMILIES, poiFamilyOn, setPoiFamily } from './basemap.js';
+import { theMap } from './mapview.js';
 import { reportBlock } from './report.js';
 import { TERMS_HREF, PRIVACY_HREF, ACCESSIBILITY_HREF } from './legal-product.js';
 // nothing here repaints anything: every row writes through a signal, and the
@@ -271,6 +273,15 @@ export function registerAllSettings() {
                     + "retire the identity for good. Your signed key log stays, as records about an "
                     + "identifier nobody can resolve to you.",
                 rows: () => [{ kind: "custom", build: mount(forgetSection) }] },
+            { id: "places", title: "places on the map",
+                note: "What OpenStreetMap knows of a place — its parks, stations, schools, restaurants — "
+                    + "labelled on the map, family by family. Off, a family is not drawn; the dial's own "
+                    + "pins always are.",
+                rows: () => POI_FAMILIES.map(f => ({
+                    kind: "toggle", label: f.label, redraws: false,
+                    get: () => poiFamilyOn(f.id),
+                    set: (v) => setPoiFamily(f.id, v, theMap()),
+                })) },
             { id: "maps", title: "offline maps",
                 note: "A region kept here draws with no network at all — the map reads it off this device "
                     + "before asking the gateway. A download lands in slices and resumes where it stopped.",

@@ -248,6 +248,8 @@ declare global {
       _controlsBound?: boolean;
 
       setPaintProperty(layer: string, name: string, value: StyleValue): Map;
+      /** Narrow a layer to the features an expression admits — how the places families apply. */
+      setFilter(layer: string, filter: Expression): Map;
       setLayoutProperty(layer: string, name: string, value: StyleValue): Map;
 
       /**
