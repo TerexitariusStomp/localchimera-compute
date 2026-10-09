@@ -75,11 +75,16 @@
 (define win (all-week-window "00:00" "23:59"))
 ;; each cell has produce, a fd-cook worker, and that cook holds a Food Handler
 ;; Card (the person competence the foodville rule also demands — so the ENTITY
-;; establishment permit is the one thing left to register).
+;; establishment permit is the one thing left to register) and the administration
+;; skill the register work (obtain-permit's `work` flow) asks for — a skill is a
+;; worked spec someone holds; a card or a crate of produce is not one.
 (define fd-resources
   (append (map (lambda (p) (er (string-append "pr-" p) "produce" (string-append "a-" p) #:place p #:qty 100.0)) cells)
           (map (lambda (p) (er (string-append "ck-" p) "fd-cook" (string-append "w-" p) #:place p #:qty 1.0)) cells)
-          (map (lambda (p) (er (string-append "card-" p) "Food Handler Card" (string-append "w-" p) #:place p #:qty 1.0)) cells)))
+          (map (lambda (p) (er (string-append "adm-" p) (resource-specification-id compliance-admin-skill-spec) (string-append "w-" p) #:place p #:qty 1.0)) cells)
+          ;; the card is a CREDENTIAL (the record says so, as held-permit does): a
+          ;; licence is a skill the law asks of the person (legal/gate.scm)
+          (map (lambda (p) (er (string-append "card-" p) "Food Handler Card" (string-append "w-" p) #:place p #:qty 1.0 #:tags '("credential"))) cells)))
 (define fd-agents (map (lambda (p) (make-agent #:id (string-append "w-" p) #:type 'person
                                                #:primary-location p #:classified-as '()
                                                #:availability-window win)) cells))

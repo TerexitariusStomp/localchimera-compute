@@ -7,11 +7,12 @@
 ;;; what was held, plus what the rows produced, less what they consumed — and every
 ;;; row is served, none left over.
 ;;;
-;;; Goods that MOVE are left out. With #:movable goods a world's free carries admit a
-;;; circulation (P0→P1 and P1→P0 at tens of thousands of units) that the solve is
-;;; indifferent to and the books refuse ("the cargo has not been picked up"); a live
-;;; scope moves goods through costed mode recipes, which price a circulation out. That
-;;; indifference is recorded in docs/planning/books/beyond-valueflows.md §4.4.
+;;; Goods that MOVE are in: a random subset of the specs is declared #:movable, every
+;;; pair of places neighbours, τ > 0. A carry costs its τ·km in every labour model
+;;; (engine labform carry-terms) and opposing carries of one good between one pair of
+;;; cells are netted before rows are emitted (net-carries), so the rows hold a pickup
+;;; to its dropoff and the books keep every one. Before 2026-10-09 the carries were free
+;;; under workers and the solve circulated tens of thousands of units the books refused.
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-property-enact.scm
 (use-modules (playnet test harness) (playnet test books)
@@ -45,7 +46,7 @@
                         (ins (list (cons (spec k) (+ 0.5 (* 0.5 (rnd st 3)))))))
                    (list (format #f "t~a" k) outs ins 0.1)))
                '(0 1 2)))
-         (movable '())
+         (movable (filter (lambda (s) (= 0 (rnd st 2))) (map spec '(0 1 2 3))))   ; some goods move
          (seeds (map (lambda (i) (list (spec i) (pick st pn) (+ 20.0 (* 10.0 (rnd st 10))))) '(0 1)))
          (demand-spec (spec 3)) (demand-at (pick st pn)) (demand-q (+ 3.0 (rnd st 8))))
     (declare-world! #:places places

@@ -40,7 +40,7 @@
   #:use-module ((playnet planner solve engine) #:select (*default-agent-hours*))
   #:export (^labour-pool labour-monoid wire-labour-pool!
             skill-specs-for-agent skill-resources-for-agent
-            skill-onhand-delta skill-count-deltas skill-resource-id?))
+            skill-onhand-delta skill-count-deltas))
 
 (define labour-monoid (make-monoid (make-labour-pool) pool-merge))
 
@@ -130,21 +130,21 @@
 ;; it — which is exactly why a revocation (a lower to zero) leaves the roster
 ;; while the resource and its history remain.
 
-;; A skill is an economic resource named for what it is: "skill:<aid>:<spec>"
-;; (declare-skill) or "skill-<aid>-labor" (the auto-seeded generic). The
-;; filter lives here on the id, so the observer's reads keep their wide shape.
-(define (skill-resource-id? rid)
-  (and (string? rid)
-       (or (string-prefix? "skill:" rid)
-           (string-prefix? "skill-" rid))))
+;; A skill is an economic resource conforming to a WORKED spec — one that states
+;; an effort unit or that a recipe draws as work (formulas/actions labour?). The
+;; readers below are TOLD what labour is (LABOUR?, spec-id → bool, built once per
+;; scope by scope-labour? in scope/live); the solver (engine vf-agent-skills)
+;; reads the same predicate, so the roster and the solve cannot differ on what a
+;; held skill is. The observer's reads keep their wide shape; the filter is here.
 
 (define (mqty m) (if m (measure-has-numerical-value m) 0))
 
-(define (skill-onhand-delta ev)
+(define (skill-onhand-delta ev labour?)
   "The image of one commutative skill event: ((agent . spec) . ±q) for a
-raise/lower on a skill resource, #f — no image — for every other event."
+raise/lower on a skill resource (one whose spec LABOUR? admits), #f — no
+image — for every other event."
   (and (memq (economic-event-action ev) *adjustment-actions*)
-       (skill-resource-id? (economic-event-resource-inventoried-as ev))
+       (labour? (economic-event-resource-conforms-to ev))
        (economic-event-provider ev)
        (economic-event-resource-conforms-to ev)
        (cons (cons (economic-event-provider ev)
@@ -152,32 +152,33 @@ raise/lower on a skill resource, #f — no image — for every other event."
              (let ((q (mqty (economic-event-resource-quantity ev))))
                (if (eq? (economic-event-action ev) 'lower) (- q) q)))))
 
-(define (skill-count-deltas events)
+(define (skill-count-deltas events labour?)
   "The image's free extension to a whole log: merge ∘ map, in the tree's
 keyed-sum monoid — associativity of ⊕ is what makes it order-free."
-  (sum-by-key '() (filter-map skill-onhand-delta events)))
+  (sum-by-key '() (filter-map (lambda (ev) (skill-onhand-delta ev labour?)) events)))
 
-(define (skill-resources-for-agent observer aid)
-  "The skill resources AID holds at on-hand > 0, whatever id they carry
-(`skill:AID:spec` declared, `skill-AID-labor` seeded with an offer of time)."
+(define (skill-resources-for-agent observer aid labour?)
+  "The skill resources AID holds at on-hand > 0: those whose spec LABOUR? admits,
+whatever id they carry."
   (filter (lambda (r)
-            (and (skill-resource-id? (economic-resource-id r))
+            (and (labour? (economic-resource-conforms-to r))
                  (> (mqty (economic-resource-onhand-quantity r)) 0)))
           ($ observer 'skills-of aid)))
 
-(define (skill-specs-for-agent observer aid)
+(define (skill-specs-for-agent observer aid labour?)
   "The threshold read: the spec-ids AID holds at on-hand > 0 — the same
 reading vf-agent-skills gives the solver, so roster and solve see one truth.
-`skills-of` answers a list of ALL the agent's holdings; the id filter narrows
-it to skills."
+`skills-of` answers a list of ALL the agent's holdings; LABOUR? narrows it
+to skills."
   (delete-duplicates
    (filter-map economic-resource-conforms-to
-               (skill-resources-for-agent observer aid))))
+               (skill-resources-for-agent observer aid labour?))))
 
 ;;; ── Wiring helper ───────────────────────────────────────────────────────────
 
 (define* (wire-labour-pool! scope-root labour-pool-ref
                             #:key (skills-for-agent-fn #f)
+                                  (labour? (lambda (spec) #f))
                                   (parent-pool-ref #f)
                                   (scope-id #f))
   "Wire a scope's labour pool into the federation fold:
@@ -186,12 +187,14 @@ it to skills."
      2. this node hands its TOTAL up to PARENT-POOL-REF, keyed by SCOPE-ID
    SCOPE-ID is the key the parent files this subtree under, so it can be
    dropped exactly when the scope refederates (fold-node-reparent!). Call after
-   scope-root's rewire-callbacks."
+   scope-root's rewire-callbacks. SKILLS-FOR-AGENT-FN, else the roster's own
+   read under LABOUR? (scope-labour? of the root, which the caller holds; with
+   neither, a person's holdings name no skill and they fold as generic labour)."
   (let* ((agent-store ($ scope-root 'agent-store))
          (observer    ($ scope-root 'observer))
          (skills-fn (or skills-for-agent-fn
                         (lambda (aid)
-                          (skill-specs-for-agent observer aid)))))
+                          (skill-specs-for-agent observer aid labour?)))))
     ($ agent-store 'set-on-agent
        (lambda (agent)
          ($ labour-pool-ref 'agent-changed agent skills-fn)))

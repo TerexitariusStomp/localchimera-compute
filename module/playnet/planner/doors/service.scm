@@ -164,7 +164,7 @@
 (use-modules ((playnet planner observation practice) #:select (join-by-id practice-view-hours practice-view-dated)))
 (use-modules ((playnet planner facts person-facts)
               #:select (need-id need-prefix need-id? means-id means-prefix means-id?
-                        skill-id generic-skill-id person-place-id person-place-prefix dwelling-id
+                        skill-id generic-skill-id skill-spec generic-labour-spec generic-labour-spec-id person-place-id person-place-prefix dwelling-id
                         position-key position-key? position-prefix person-argument-position
                         home-row home-row-aid
                         location-share-key location-modes fix-fresh?
@@ -343,10 +343,10 @@
 ;;; location@0 — the same key the convex *willing?* gate reads, so the toggle
 ;;; round-trips and a later willing-only plan honours it.
 
-(define (skill-holders obs)
+(define (skill-holders obs labour?)
   "spec-id → list of agent-ids who hold it as a skill ER (onhand > 0): the
-   roster's one reading of a held skill (labour-fold skill-resource-id?, the
-   same predicate skill-specs-for-agent reads), so a means a person holds
+   roster's one reading of a held skill (LABOUR?, scope-labour? of the root —
+   the same predicate skill-specs-for-agent reads), so a means a person holds
    never reads as a skill they have."
   (let ((tbl (make-hash-table)))
     (for-each
@@ -354,7 +354,7 @@
         (let ((pa   (economic-resource-primary-accountable r))
               (spec (economic-resource-conforms-to r)))
           (when (and pa spec
-                     (skill-resource-id? (economic-resource-id r))
+                     (labour? spec)
                      (> (measure-has-numerical-value
                           (economic-resource-onhand-quantity r)) 0))
             (hash-set! tbl spec (cons pa (hash-ref tbl spec '()))))))
@@ -1342,7 +1342,7 @@ service does not know the scope (nothing to filter by)."
          (member-ids (scope-member-ids scope-root scope-id))
          (alerts  ($ als 'of-kind 'unmatched-role))
          ;; willingness overlay tables — one scan each, shared across intents
-         (holders (skill-holders obs))
+         (holders (skill-holders obs (scope-labour? scope-root)))
          (willing (willing-by-key ps))
          ;; the standing solve's labour pulls, the plan's pull on each open shift
          (cached  (last-solve-ref scope-id))
@@ -2040,7 +2040,7 @@ service does not know the scope (nothing to filter by)."
                                 #:provider agent-id #:receiver agent-id
                                 #:when now #:created now #:counted 0
                                 #:note "skill revoked")))))
-     (skill-resources-for-agent obs agent-id)))
+     ($ obs 'skills-of agent-id)))
   (skill-id agent-id skill-spec-id))
 ;; Lower a held resource R of AGENT-ID to zero: the one record of "no longer
 ;; held here", whether the means was retired or the person moved on.
@@ -2054,11 +2054,18 @@ service does not know the scope (nothing to filter by)."
           #:provider agent-id #:receiver agent-id
           #:resource-quantity (make-measure q (measure-has-unit (economic-resource-onhand-quantity r))) #:has-point-in-time now #:created now
           #:note note)))))
-(define (declare-skill! obs agent-id skill-spec-id)
-  (let* ((rid (skill-id agent-id skill-spec-id))
+(define (declare-skill! root agent-id skill-spec-id)
+  "AGENT-ID holds the skill SKILL-SPEC-ID at ROOT: the resource raised to held,
+   and the spec declared as worked where the store has none of that id — what
+   makes the resource read as a skill (formulas/actions labour-specs)."
+  (let* ((obs ($ root 'observer))
+         (rs  ($ root 'recipe-store))
+         (rid (skill-id agent-id skill-spec-id))
          (r   ($ obs 'get-resource rid))
          (qty (and r (measure-has-numerical-value
                       (economic-resource-onhand-quantity r)))))
+    (unless ($ rs 'get-resource-spec skill-spec-id)
+      ($ rs 'add-resource-spec (skill-spec skill-spec-id)))
     (cond
       ;; first declaration: the resource enters with its balance
       ((not r)
@@ -2128,7 +2135,13 @@ service does not know the scope (nothing to filter by)."
   ;;   stamp    (root sid world alist) → the alist with what only the projection knows
   ;;   pool     (root sid) → the socialized slot rows, live (slots-at)
   ;;   hands    (sid) → ((owner part-string portion) …), the plan-part rail's read
-  ;;   standing (root sid) → the barbell's slope and gate, contrary observations
+  ;;   standing (root sid) → what stands over the scope's recipes, an alist a
+  ;;            solve reads as settings (standing-settings): `responses` and
+  ;;            `observed` (governance/recipe-standing scope-standing writes
+  ;;            these two); `admit?` (recipe → bool, a consensus barring a
+  ;;            recipe here) and `proc-frag` are keys a reader MAY carry and
+  ;;            the production reader does not — a test reader does
+  ;;            (test-means-gateway), which is what keeps the two reads
   ;;   steward  (sid agent spec skills) → may this agent be assigned to work on a lent means
   ;;   knows    (owner agent) → how the owner knows them: recognition, groups, vouched (make-knows)
   ;;   debts owed settle — governance's one debt representation (governance/debts.scm)
@@ -2537,8 +2550,8 @@ service does not know the scope (nothing to filter by)."
                 (length means)))
             ;; the held skills, whatever id they carry
             (define (carry-skills)
-              (let ((skills (skill-specs-for-agent fobs aid)))
-                (for-each (lambda (sp) (declare-skill! tobs aid sp) (revoke-skill! fobs aid sp)) skills)
+              (let ((skills (skill-specs-for-agent fobs aid (scope-labour? fr))))
+                (for-each (lambda (sp) (declare-skill! tr aid sp) (revoke-skill! fobs aid sp)) skills)
                 (length skills)))
             ;; the places the person named: copied, since a commune keeps the
             ;; geography its citizens gave it; their own `here` and `home` are
@@ -2719,7 +2732,7 @@ service does not know the scope (nothing to filter by)."
       (lambda ()
         (let* ((rs  ($ root 'recipe-store))
                (obs ($ root 'observer))
-               (held (skill-holders obs))
+               (held (skill-holders obs (scope-labour? root)))
                (want (call-with-values (lambda () (gather-recipes rs))
                        (lambda (procs flows)
                          (delete-duplicates
@@ -3062,7 +3075,9 @@ service does not know the scope (nothing to filter by)."
     (let* ((obs ($ root 'observer))
            (as  ($ root 'agent-store))
            (ps  ($ root 'plan-store))
-           (skills-fn (lambda (aid) (skill-specs-for-agent obs aid)))
+           ;; what labour is, read off the store at each ask: a skill declared after
+           ;; the wiring (declare-skill! writes its spec) is labour the next refold
+           (skills-fn (lambda (aid) (skill-specs-for-agent obs aid (scope-labour? root))))
            (descend (lambda (node parent) ($ parent 'add-child id node) node)))
       (list
        ;; the labour pool: agent-store on-agent → refold; skills off the observer
@@ -4650,9 +4665,8 @@ service does not know the scope (nothing to filter by)."
                  ;; raise them on request, not assumed some other way: the one
                  ;; default a fresh profile gets, same as every other skill a
                  ;; member may later revoke if it doesn't hold for them.
-                 (let ((obs ($ root 'observer)))
-                   (declare-skill! obs aid "walk")
-                   (declare-skill! obs aid "cycle"))
+                 (declare-skill! root aid "walk")
+                 (declare-skill! root aid "cycle")
                  #t))
            `(ok . ,tags)))))
     ;; the member's registered HOME — the agent record's primary-location, the
@@ -4782,11 +4796,16 @@ service does not know the scope (nothing to filter by)."
                  ;; by primary-accountable), and spec-labor is the one every
                  ;; person can work — without it a first citizen's offered
                  ;; hours count for nothing the plan can schedule.
+                 ;; …and the spec says it is worked (its effort unit), which is
+                 ;; what makes the resource read as a skill at all
+                 ;; (declare-skill!'s own step, for the generic)
+                 (unless ($ ($ root 'recipe-store) 'get-resource-spec generic-labour-spec-id)
+                   ($ ($ root 'recipe-store) 'add-resource-spec generic-labour-spec))
                  ($ ($ root 'observer) 'record-resource
                     (make-economic-resource
                      #:id (generic-skill-id aid)
-                     #:name (string-append aid " spec-labor")
-                     #:conforms-to "spec-labor"
+                     #:name (string-append aid " " generic-labour-spec-id)
+                     #:conforms-to generic-labour-spec-id
                      #:accounting-quantity (make-measure 1 "each") #:onhand-quantity (make-measure 1 "each") #:primary-accountable aid))))
            `(ok . ,aid)))))
 
@@ -4959,7 +4978,7 @@ service does not know the scope (nothing to filter by)."
     ((declare-skill scope-id agent-id skill-spec-id)
      (with-scope scope-id
        (lambda (root)
-         (let ((rid (declare-skill! ($ root 'observer) agent-id skill-spec-id)))
+         (let ((rid (declare-skill! root agent-id skill-spec-id)))
            ($ ($ root 'agent-store) 'update-agent agent-id (lambda (a) a))
            `(ok . ,rid)))))
 
@@ -4968,7 +4987,7 @@ service does not know the scope (nothing to filter by)."
      (with-scope scope-id
        (lambda (root)
          (success `((skills . ,(skill-specs-for-agent ($ root 'observer)
-                                                      agent-id)))))))
+                                                      agent-id (scope-labour? root))))))))
 
     ;; raise's inverse: withdrawing the self-declaration lowers the on-hand
     ;; to zero. The resource stays, carrying both events.
@@ -4999,7 +5018,7 @@ service does not know the scope (nothing to filter by)."
      (with-scope scope-id
        (lambda (root)
          (let* ((obs     ($ root 'observer))
-                (held    (skill-specs-for-agent obs agent-id))
+                (held    (skill-specs-for-agent obs agent-id (scope-labour? root)))
                 (practice (practice-view-of obs (person-observers agent-id)))
                 (hours   (practice-view-hours practice agent-id))
                 (social  (door-read 'standing scope-id agent-id (map car (roster-entries))))

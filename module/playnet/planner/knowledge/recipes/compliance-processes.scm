@@ -36,9 +36,9 @@
             seed-file-return-recipe seed-disclose-recipe
             seed-compliance-recipes-for-bill))
 
-(define compliance-admin-skill-spec
+(define compliance-admin-skill-spec   ; a worked spec: its effort unit is what says so (formulas/actions labour-specs)
   (make-resource-specification #:id "spec-admin" #:name "Administration"
-                               #:resource-classified-as '() #:default-unit-of-resource "hours"))
+                               #:resource-classified-as '() #:default-unit-of-resource "person" #:default-unit-of-effort "hours"))
 (define compliance-state-money-spec
   (make-resource-specification #:id "spec-state-money" #:name "State Money"
                                #:resource-classified-as '("fiat") #:default-unit-of-resource "unit"))

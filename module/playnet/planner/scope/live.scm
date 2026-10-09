@@ -56,7 +56,7 @@
   #:use-module ((playnet planner knowledge catalogues diets)    ; what a person will not eat: the eat recipe's one predicate
                 #:select (diet-tags eats?))
   #:declarative? #f                           ; we (primitive-)load the engine at module init
-  #:export (solve-with-readers plan-scope practice-view-of plan-scope->alist plan-scope->plan make-work-event scope-bills scope-consumption scope-food-specs agent->subsistence-ctx profile-tag? scope-composition recipe-derived-contains persist-materialized! materialize-willing! gather-recipes
+  #:export (solve-with-readers plan-scope practice-view-of plan-scope->alist plan-scope->plan make-work-event scope-bills scope-consumption scope-food-specs agent->subsistence-ctx profile-tag? scope-composition recipe-derived-contains persist-materialized! materialize-willing! gather-recipes scope-labour? scope-resource-specs
             work-intent clear-intents-by-prefix! lot-of? scope-persons spec-unit planned-row plan->rows plan-map-flows held-commitment met-quantity arriving-lots
             find-recipe-process-for-spec mode-process-for-manner trip-manner-of scope-manners
              ;; the cross-vat federation bridge (engine + engine/federation-solve.scm), re-exported
@@ -886,6 +886,16 @@
 (define (scope-resource-specs rs)
   (or (false-if-exception ($ rs 'all-resource-specs)) '()))
 
+;; What a skill is, for one scope: the labour? predicate (formulas/actions) over
+;; the scope's recipes and specs, read fresh off its store — a root without one
+;; (a bare mock) names no labour.
+(define (scope-labour? scope-root)
+  (let ((rs (false-if-exception ($ scope-root 'recipe-store))))
+    (if (not rs)
+        (lambda (spec) #f)
+        (call-with-values (lambda () (gather-recipes rs))
+          (lambda (procs flows) (labour? flows (scope-resource-specs rs)))))))
+
 ;; ── a skill's law, live ────────────────────────────────────────────────────
 ;; A skill's ResourceSpecification may declare its lifecycle as typed tags
 ;; (skill-law.scm): skill-laws reads them off the scope's specs, and
@@ -938,10 +948,10 @@
 ;; (skill-hours-of), then O(1) lookups — or, for a skill with a law, where its
 ;; competence stands (the same fold the profile shows). Empty catalogue ⇒
 ;; agent-skills passes through unchanged (and #f lets plan-from-records default).
-(define* (conformance-agent-skills catalogue view resources agent-skills #:optional (laws '()) (today #f))
+(define* (conformance-agent-skills catalogue view resources agent-skills #:optional (laws '()) (today #f) (labour? (lambda (s) #f)))
   (if (null? catalogue)
       agent-skills
-      (let ((base (or agent-skills (vf-agent-skills resources)))
+      (let ((base (or agent-skills (vf-agent-skills resources labour?)))
             ;; agent-id → ledger: the observer folds the standing work events
             ;; per ask, and the asks run once per labour row (person × period),
             ;; so each agent's ledger is read once and the rows share it
@@ -1302,11 +1312,12 @@
          (laws       (skill-laws (scope-resource-specs rs)))
          (today      (instant->unix (now)))
          (practice   (practice-view-of obs (if practice-peers (practice-peers) '())))
-         (eff-skills (conformance-agent-skills catalogue practice resources agent-skills laws today))
+         (labour-of  (scope-labour? scope-root))   ; what a skill is: a worked spec (formulas/actions labour?)
+         (eff-skills (conformance-agent-skills catalogue practice resources agent-skills laws today labour-of))
          ;; the engine's skill dynamics: who is trainable in what, opening where
          ;; the record leaves them (engine apply-skill-dynamics!)
          (skill-dyn  (if (null? laws) '()
-                         (skill-dynamics-of practice agents (or eff-skills (vf-agent-skills resources)) laws today)))
+                         (skill-dynamics-of practice agents (or eff-skills (vf-agent-skills resources labour-of)) laws today)))
          ;; 'auto: routing priors ⊕ observed-trip EWMA; an alist passes through;
          ;; anything else (e.g. '()) disables — pure rate×haversine geometry.
          (arcs (cond ((eq? arc-table 'auto) (live-arc-table obs manners #:manner-of (trip-manner-of scope-root)))

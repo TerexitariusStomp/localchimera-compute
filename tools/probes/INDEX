@@ -6,19 +6,24 @@ evidence has stopped finding the defect (move it to a test then).
 
 | Script | Finding | Evidence it prints |
 |---|---|---|
-| `held-good-skill.scm` | a good a person holds is read as a skill they have | a person with a stock of water and no skill meets work that asks for skill "water" |
-| `movable-circulation.scm` | free carries of `#:movable` goods admit a circulation the books refuse | per seeded world: rows planned, served, left; the largest single carry (tens of thousands of units for a demand of ten) |
 | `claimable-by-products.sh` | the claimable set includes metabolic by-products, nutrient pools and a held skill | the goods (`faeces`, `co2`, `urea`, `ambient-heat`, `h2o-g`, `skill-bake`) and the count of per-person pools |
 
-Run the Scheme ones inside the dev manifest:
-
-    guix shell --pure -L deploy/guix -m deploy/manifests/dev-test-manifest.scm -- \
-      guile --no-auto-compile -q -L module tools/probes/held-good-skill.scm
+Closed since, each probe now a suite:
+- a good a person holds read as a skill they have (`held-good-skill.scm`) — a skill is a
+  worked spec (formulas/actions `labour-specs`); `tests/planner/test-held-good-is-not-a-skill.scm`.
+- free carries of `#:movable` goods admitting a circulation (`movable-circulation.scm`) — a
+  carry costs its τ·km in every labour model and opposing carries net before rows are
+  emitted (engine `carry-terms`, `net-carries`); `tests/planner/test-property-enact.scm`
+  plans movable worlds.
 
 A fourth finding needs no script: `standing-settings` reads `admit?` and `proc-frag` off a
-standing no reader produces —
+standing the production reader (`scope-standing`) never carries —
 
-    grep -rn "(cons 'admit?\|'admit? \.\|(admit? \. " module server --include=*.scm   # prints nothing
+    grep -rn "(cons 'admit?\|'admit? \.\|(admit? \. " module server --include=*.scm   # the test reader only
+
+Read again on 2026-10-09: the two keys are the `standing` reader's interface, exercised by
+`tests/planner/test-means-gateway.scm`'s reader (a consensus barring a scope's recipes), so
+they stay; the reader contract in `doors/service.scm` now names them.
 
 The sweep that found the calls which could never run is `tools/compile-warnings.sh`
 (`make lint-compile`, part of `make test`). The laws that held are

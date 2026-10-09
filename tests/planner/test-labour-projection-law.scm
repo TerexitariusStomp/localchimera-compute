@@ -24,8 +24,16 @@
              (playnet planner pools labour-fold)
              (playnet planner observation observer)
              (playnet planner aggregation fold-node)
+             ((playnet planner formulas actions) #:select (labour?))
              (goblins)
              (srfi srfi-1))
+
+;; what labour is here — the recipes' word (formulas/actions labour?); a bare
+;; observer has no store, so the suite states it: cook and weld are worked
+(define labour-here
+  (labour? (list (make-recipe-flow #:id "w1" #:action 'work #:resource-conforms-to "cook")
+                 (make-recipe-flow #:id "w2" #:action 'work #:resource-conforms-to "weld"))
+           '()))
 
 (define (skill-resource rid spec aid q)
   (er rid spec aid #:name rid #:place #f #:qty q #:unit "each" #:tags #f))
@@ -72,7 +80,7 @@
   (replay! obs-a log)
   (check "the two sides agree per key"
          (sorted (project obs-a))
-         (sorted (sum-by-key baseline (skill-count-deltas log))))
+         (sorted (sum-by-key baseline (skill-count-deltas log labour-here))))
   (check "and say what they should: cook 5, weld 0"
          (sorted (project obs-a))
          '((("ana" . "cook") . 5) (("ana" . "weld") . 0)))
@@ -83,23 +91,23 @@
   (check "a permuted log folds to the same state"
          (sorted (project obs-b)) (sorted (project obs-a)))
   (check "and the deltas merge to the same sum"
-         (sorted (skill-count-deltas (reverse log)))
-         (sorted (skill-count-deltas log)))
+         (sorted (skill-count-deltas (reverse log) labour-here))
+         (sorted (skill-count-deltas log labour-here)))
 
   (display "\n── 3. held-ness is the threshold read on top ──\n")
   (check "the roster keeps exactly the keys above zero"
-         (skill-specs-for-agent obs-a "ana") '("cook"))
+         (skill-specs-for-agent obs-a "ana" labour-here) '("cook"))
   (check "either replay order, same roster"
-         (skill-specs-for-agent obs-b "ana") '("cook"))
+         (skill-specs-for-agent obs-b "ana" labour-here) '("cook"))
 
   (display "\n── 4. outside the fragment: no delta, scope-local only ──\n")
   (check "a produce on the same resource has no homomorphic image"
          (skill-onhand-delta
-          (skill-event "e5" 'produce "skill:ana:cook" "cook" "ana" 1))
+          (skill-event "e5" 'produce "skill:ana:cook" "cook" "ana" 1) labour-here)
          #f)
   (check "a raise on a non-skill resource has none either"
          (skill-onhand-delta
-          (skill-event "e6" 'raise "means:ana:oven" "oven" "ana" 1))
+          (skill-event "e6" 'raise "means:ana:oven" "oven" "ana" 1) labour-here)
          #f))
 
 (test-summary!)

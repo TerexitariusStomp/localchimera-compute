@@ -71,6 +71,7 @@
 ;; args.
 (define-module (playnet governance socialization)
   #:use-module (playnet planner formulas flows)
+  #:use-module ((playnet planner formulas actions) #:select (labour-specs))
   #:use-module (srfi srfi-1)
   #:use-module ((playnet utils keywords) #:select (kw-without kw-ref))
   #:use-module (playnet governance credentials)
@@ -791,7 +792,13 @@
              (filter-map (lambda (f) (and (eq? (recipe-flow-action f) action)
                                           (recipe-flow-resource-conforms-to f)))
                          flows)))))))
-(define (labour-specs-of scope-root) (verb-specs-of scope-root 'work))
+(define (labour-specs-of scope-root)
+  "What labour is here: the worked specs (formulas/actions labour-specs — an
+   effort unit stated, or a recipe drawing it as work), read off the store."
+  (let ((rs (false-if-exception ($ scope-root 'recipe-store))))
+    (if (not rs) '()
+        (call-with-values (lambda () (gather-recipes rs))
+          (lambda (procs flows) (labour-specs flows (scope-resource-specs rs)))))))
 
 (define (%scope-subtree-resources scope)
   (scope-subtree-collect scope (lambda (root) ($ ($ root 'observer) 'all-resources))))

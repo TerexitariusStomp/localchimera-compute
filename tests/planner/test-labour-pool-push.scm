@@ -10,6 +10,8 @@
 
 (use-modules (playnet test harness)
              (playnet planner pools labour-fold)
+             ((playnet planner formulas actions) #:select (labour?))
+             ((playnet planner facts person-facts) #:select (generic-labour-spec))
              (playnet planner pools availability-pool)
              (playnet planner facts availability)
              (playnet planner observation observer) (playnet planner vf schemas) (playnet planner beyond schedules)               ; make-agent, availability accessors
@@ -83,11 +85,15 @@
   ($ obs 'seed-resource (resource "skill:agent:4:spec-cook" "spec-cook" "agent:4"))
   ($ obs 'seed-resource (resource "skill-agent:4-labor" "spec-labor" "agent:4"))
   ($ obs 'seed-resource (resource "means:agent:4:oven" "spec-oven" "agent:4"))
+  ;; what labour is here: the recipes' word (formulas/actions labour?) — a
+  ;; bare observer has no store, so the suite states it
+  (define labour-here (labour? (list (make-recipe-flow #:id "w" #:action 'work #:resource-conforms-to "spec-cook"))
+                               (list generic-labour-spec)))
   (check "the two skill resources' specs, and only those"
-         (sort (skill-specs-for-agent obs "agent:4") string<?)
+         (sort (skill-specs-for-agent obs "agent:4" labour-here) string<?)
          '("spec-cook" "spec-labor"))
   ($ scope 'agent-changed (agent "agent:4")
-     (lambda (aid) (skill-specs-for-agent obs aid)))
+     (lambda (aid) (skill-specs-for-agent obs aid labour-here)))
   (check "the pool folds agent:4 under spec-cook (56h a week)"
          ($ scope 'total-hours #:skill "spec-cook") 56)
   (check "and never under the means spec"

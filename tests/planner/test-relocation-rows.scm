@@ -228,24 +228,27 @@
            (plan1 (begin ($ obs 'seed-resource (res "R" "bread" 100.0 "A" #:acct "commune"))
                          (replan ($ obs 'all-resources) 30.0)))
            (pu (find (lambda (r) (and (eq? 'pickup (assq-ref r 'action)) (equal? "A" (assq-ref r 'at-location)))) plan1))
+           ;; what the plan hauls: a want of 30 against a carry priced at τ·km lands
+           ;; a little under 30, and the books keep the plan's own figure
+           (q  (assq-ref pu 'quantity))
            (run (assq-ref pu 'input-of)))
       (check-pred "the first plan hauls the bread to B" (> (hauled plan1) 29.0))
       (let ((do-row (find (lambda (r) (and (eq? 'dropoff (assq-ref r 'action)) (equal? run (assq-ref r 'output-of))
                                            (equal? "B" (assq-ref r 'at-location)))) plan1)))
         ;; the pickup is confirmed, the dropoff is not yet
-        (enact-rows scope (list (acons 'quantity 30.0 (alist-delete 'quantity pu))))
-        (check "30 are on the way, at no place" (list (onhand-of obs (keyed-id "carry" run "bread")) (spec-total obs "bread" #:place "B")) '(30.0 0.0))
+        (enact-rows scope (list pu))
+        (check "the haul is on the way, at no place" (list (onhand-of obs (keyed-id "carry" run "bread")) (spec-total obs "bread" #:place "B")) (list q 0.0))
         (check "the lot on the way counts at the place its dropoff lands it"
                (map (lambda (r) (list (economic-resource-id r) (economic-resource-current-location r)
                                       (mq (economic-resource-onhand-quantity r))))
                     (filter (lambda (r) (equal? "B" (economic-resource-current-location r)))
                             (arriving-lots obs plan1 ($ obs 'all-resources))))
-               (list (list (keyed-id "carry" run "bread") "B" 30.0)))
+               (list (list (keyed-id "carry" run "bread") "B" q)))
         (let ((blind (replan (arriving-lots obs '() ($ obs 'all-resources)) 30.0))
               (seen  (replan (arriving-lots obs plan1 ($ obs 'all-resources)) 30.0)))
           (check-pred "a solve that sees only places hauls the on-the-way bread again" (> (hauled blind) 20.0))
           (check-pred "a solve told what the plan lands plans as if it had landed"
-                      (begin (enact-rows scope (list (acons 'quantity 30.0 (alist-delete 'quantity do-row))))
+                      (begin (enact-rows scope (list do-row))
                              (< (abs (- (hauled seen) (hauled (replan ($ obs 'all-resources) 30.0)))) 1e-6)))
           (check-pred "…and that is far less than the blind solve hauls" (< (hauled seen) (/ (hauled blind) 2)))
           #t)))))

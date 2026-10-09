@@ -25,10 +25,10 @@
 
 (define-module (playnet planner facts person-facts)
   #:use-module (srfi srfi-1)
-  #:use-module ((playnet planner vf schemas) #:select (intent-id intent-finished intent-receiver))
+  #:use-module ((playnet planner vf schemas) #:select (intent-id intent-finished intent-receiver make-resource-specification))
   #:export (need-id need-prefix need-id? declared-need?
             means-id means-prefix means-id?
-            skill-id generic-skill-id
+            skill-id generic-skill-id skill-spec generic-labour-spec generic-labour-spec-id
             person-place-id person-place-prefix dwelling-id
             position-key position-key? position-prefix
             location-share-key location-modes fix-lease-seconds fix-fresh?
@@ -59,6 +59,19 @@
 ;; a declared skill, and the generic labour skill an offer of time seeds
 (define (skill-id aid spec) (string-append "skill:" aid ":" spec))
 (define (generic-skill-id aid) (string-append "skill-" aid "-labor"))
+;; The generic labour every person can work, as the spec it is: a worked spec
+;; states its unit of effort (formulas/actions labour-specs reads that field), so
+;; an offer of time seeds this spec beside the person's skill resource and the
+;; roster, the solve and the holders table all read the hours as labour.
+(define (skill-spec id)
+  "The spec a declared skill ID conforms to, as a WORKED spec: a person is its
+   stock, hours its effort. Declared into the scope's store when the store
+   holds no spec of that id (declare-skill!), so a skill a person states is
+   labour by the record's own word, recipe or no recipe."
+  (make-resource-specification #:id id #:name id
+                               #:default-unit-of-resource "person" #:default-unit-of-effort "hours"))
+(define generic-labour-spec-id "spec-labor")
+(define generic-labour-spec (skill-spec generic-labour-spec-id))
 
 ;; a place the person names (`here`, `home`, a slug) and the dwelling they live in
 (define (person-place-prefix aid) (string-append "place:" aid ":"))

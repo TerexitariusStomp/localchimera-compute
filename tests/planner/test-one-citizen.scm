@@ -19,6 +19,7 @@
              (playnet planner facts partition)
              (playnet planner pools availability-pool)
              ((playnet planner pools labour-fold) #:select (skill-specs-for-agent))
+             ((playnet planner scope live) #:select (scope-labour?))
              (playnet planner knowledge recipes federation-demo)
              (goblins)
              (goblins utils hashmap)
@@ -191,7 +192,7 @@
     (check "Table holds them" (held-at b) 1)
     (check "his skills are held at Table, and not at Granary"
            (list (and (member "baking" (assq-ref (cdr ($ svc 'my-skills "Table" "bob")) 'skills)) #t)
-                 (skill-specs-for-agent ($ a 'observer) "bob"))
+                 (skill-specs-for-agent ($ a 'observer) "bob" (scope-labour? a)))
            '(#t ()))
     (check "his agent record is at Table only"
            (list (and ($ ($ b 'agent-store) 'get-agent "bob") #t)
@@ -240,7 +241,7 @@
       (check "retiring a means through the other scope lowers it at the home" (length (means-held a)) 0)
       ($ svc 'revoke-skill "Table" "fay" "baking")
       (check "revoking a skill through the other scope reaches the home"
-             (and (member "baking" (skill-specs-for-agent ($ a 'observer) "fay")) #t) #f)
+             (and (member "baking" (skill-specs-for-agent ($ a 'observer) "fay" (scope-labour? a))) #t) #f)
       ($ svc 'set-home "Table" "fay" "" 42.7 23.3)
       (check "a home place stated through the other scope is made at the home"
              (list (and ($ ($ a 'spatial-thing-store) 'get-location "place:fay:home") #t)
@@ -361,12 +362,12 @@
     ($ svc 'add-scope! "Table" b)
     ($ svc 'set-availability-ranges "Granary" "dana" "[{\"start\":\"09:00\",\"end\":\"17:00\"}]")
     (check "dana holds the generic labour skill at Granary"
-           (skill-specs-for-agent ($ a 'observer) "dana") '("spec-labor"))
+           (skill-specs-for-agent ($ a 'observer) "dana" (scope-labour? a)) '("spec-labor"))
     (define r ($ svc 'move-home "dana" "Table"))
     (check "the skill is carried" (assq-ref (cdr r) 'carried) 2)       ; the record and the skill
     (check "Granary no longer lists her as holding any skill"
-           (skill-specs-for-agent ($ a 'observer) "dana") '())
-    (check "Table holds it" (skill-specs-for-agent ($ b 'observer) "dana") '("spec-labor"))
+           (skill-specs-for-agent ($ a 'observer) "dana" (scope-labour? a)) '())
+    (check "Table holds it" (skill-specs-for-agent ($ b 'observer) "dana" (scope-labour? b)) '("spec-labor"))
     (check "asking again carries nothing"
            (assq-ref (cdr ($ svc 'move-home "dana" "Table")) 'carried) 0)))
 

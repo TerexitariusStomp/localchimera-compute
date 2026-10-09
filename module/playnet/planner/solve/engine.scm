@@ -298,7 +298,7 @@
 (define *avail-factor* (lambda (located-good) 1.0))
 (define *places* '()) (define *periods* '(0)) (define *cells* '())
 (define *spatial-things* '())   ; the containment tree, as ingested — read by `within` fragilities
-(define *movable* '()) (define *storable* '()) (define *tau* 0.0) (define *hold* 0.0)
+(define *movable* '()) (define *storable* '()) (define *tau* 0.0) (define *hold* 0.0)   ; τ = 0 by default: a declared-movable good carries free between neighbours, logistics abstracted by choice; a scope that wants the haul felt sets τ (hours per unit per km)
 (define *neighbours* (make-hash-table))   ; place -> (adjacent-place …): the transport NETWORK. Spatial moves run only along declared edges, so transport is O(P·degree) not O(P²). A place with NO entry is connected to ALL (the default — legacy fully-connected behaviour with nothing declared).
 (define *stationary* '())   ; specs whose ResourceSpecification.keepInPlace is set (warehouse/silo/shelf …) — an explicit FIELD, not a classifiedAs tag, and NOT an absolute "unmovable". It only says: USING this thing as a container keeps its contents in place (a through-TIME move = storage), whereas using a vehicle moves them through SPACE. Nothing is truly immovable — relocating the warehouse ITSELF is just a different recipe in which the warehouse is the cargo. Default: every spec is mobile; the arc (space vs time) is DERIVED from the container the recipe uses, never marked on the recipe.
 (define *demand* (make-hash-table)) (define *A* (make-hash-table))
@@ -3601,6 +3601,17 @@
                   (set! forms (cons (mk-frag tip (map (lambda (c) (cons (car c) (- (cdr c)))) gc) w)
                                     forms))))))
             *band*)
+          ;; a declared-movable good's carry (an `m|` column) costs its τ·km in
+          ;; every labour model: with workers the objective is built from their
+          ;; bundles, which no carry is in, so the term is appended here — else
+          ;; a carry is free and the program is indifferent to sending q units
+          ;; out and q back, and lands on any q (test-property-enact pins it)
+          (define carry-terms
+            (append-map (lambda (c)
+                          (if (and (> (col-labour c) 0.0) (equal? (assq-ref (key-terms (col-key c)) 'prefix) "m"))
+                              (list (cons (hash-ref idx (col-key c)) (col-labour c)))
+                              '()))
+                        cols))
           (set! labform                                                                                          ; free-time κ·labour, + commute cost, + skill-time preference:
             (if (workers?)                                                                                       ; per worker column, coeff = 1 + τ·km + π_{w,s}, π = tilt·2ρ/H
                 (let* ((tilts (worker-tilts)) (H (offered-labour-hours))
@@ -3621,6 +3632,7 @@
                     (filter (lambda (b) (list-ref b 4)) *supplier-bundles*)))                                        ; κ free-time is a LABOUR cost — means draws carry none
                 (append-map (lambda (c) (if (> (col-labour c) 0.0)                                               ; or process labour (aggregate path)
                           (list (cons (hash-ref idx (col-key c)) (col-labour c))) '())) cols)))
+          (when (workers?) (set! labform (append labform carry-terms)))
           ;; ── a held margin is a wall at its ease when the tier table says so ──
           (when (eq? (tier-shape 'margin) 'wall)
             (hash-for-each (lambda (g b)
@@ -5502,10 +5514,34 @@
           (set! q (list (let find ((i 0)) (if (vector-ref done i) (find (+ i 1)) i))))
           (loop))))
       (reverse out))))
-(define (plan->material x cols idx)
-  (let ((items '()))
+;; the key is m|<spec>|<from>|<to>, and a spec may itself carry a `|` (Pres|w,
+;; Cond|durable, Svc|spec): the cells are the LAST two segments, the spec is
+;; everything between
+(define (carry-key-parts key)
+  (let* ((parts (string-split key #\|)) (n (length parts)))
+    (values (string-join (list-head (cdr parts) (- n 3)) "|")
+            (list-ref parts (- n 2)) (list-ref parts (- n 1)))))
+;; A carry and its mirror — q of one good a→b and q' back b→a in one plan —
+;; cancel: what moves is the net, in the net's direction (merge-coeffs reads an
+;; arc and its mirror the same way). The books hold a dropoff to its pickup, so
+;; a pair emitted whole is a pair they refuse; netted, each carry is one real
+;; move. Returns column key → net value, 0 for the losing direction.
+(define (net-carries x cols idx)
+  (let ((raw (make-hash-table)) (net (make-hash-table)))
     (for-each (lambda (c)
-      (let* ((vv (col-value x idx (col-key c))) (kt (key-terms (col-key c))) (arc (assq-ref kt 'arc)))
+                (when (equal? (assq-ref (key-terms (col-key c)) 'prefix) "m")
+                  (hash-set! raw (col-key c) (col-value x idx (col-key c)))))
+              cols)
+    (hash-for-each (lambda (key vv)
+                     (call-with-values (lambda () (carry-key-parts key))
+                       (lambda (spec from to)
+                         (hash-set! net key (max 0.0 (- vv (hash-ref raw (string-append "m|" spec "|" to "|" from) 0.0)))))))
+                   raw)
+    net))
+(define (plan->material x cols idx)
+  (let ((items '()) (carry-net (net-carries x cols idx)))
+    (for-each (lambda (c)
+      (let* ((vv (hash-ref carry-net (col-key c) (col-value x idx (col-key c)))) (kt (key-terms (col-key c))) (arc (assq-ref kt 'arc)))
         (when (> vv 1e-4)
           (cond
             ((assq-ref kt 'process)                  ; production: produce outputs, consume inputs
@@ -5590,9 +5626,8 @@
              ;; the spec is everything between. A presence carried forward is a
              ;; person or a means staying put — placement (solve-report), not a
              ;; material commitment.
-             (let* ((parts (string-split (col-key c) #\|))
-                    (n (length parts)) (from (list-ref parts (- n 2))) (to (list-ref parts (- n 1)))
-                    (spec (string-join (list-head (cdr parts) (- n 3)) "|")))
+             (call-with-values (lambda () (carry-key-parts (col-key c)))
+              (lambda (spec from to)
                ;; a carry between two cells of ONE place (band→band, day→day)
                ;; is the stock staying put — placement, like a presence, never
                ;; a material commitment: nobody moves a thing to where it is
@@ -5610,7 +5645,7 @@
                        (what (if (string-prefix? "Svc|" spec) (substring spec 4) spec)))
                    (hash-set! *runs* run (bare-run-template))
                    (set! items (cons (vector 'consume what vv run (place-of from) #f (car sf) (cdr sf) from #f 'pickup) items))
-                   (set! items (cons (vector 'produce what vv run (place-of to) #f (car st) (cdr st) #f to 'dropoff) items))))))))) )
+                   (set! items (cons (vector 'produce what vv run (place-of to) #f (car st) (cdr st) #f to 'dropoff) items)))))))))) )
       cols)
     ;; rows in dependency order for display (enaction reads the books, not this order);
     ;; each id names the flow it commits (action, spec, process, places, instant), so a
@@ -5805,10 +5840,12 @@
 ;; an agent's skills = the conforms-to of the skill ERs it is primaryAccountable for.
 (define *metabolism-tstart* 0.03)   ; warm re-solve re-centres near the standing optimum (few Newton steps)
 ;; The VF reading of an agent's held skills: the resource-conforms-to of every
-;; EconomicResource it is primaryAccountable for with positive on-hand. Returns a
-;; (lambda (agent) → (skill …)) closed over RESOURCES — the default `agent-skills`,
-;; and the base the live layer expands through satisfied-by (effective-skills).
-(define (vf-agent-skills resources)
+;; EconomicResource it is primaryAccountable for with positive on-hand WHOSE SPEC
+;; IS LABOUR — LABOUR? the one predicate (formulas/actions labour?): the spec
+;; states an effort unit or a recipe works it. Returns a (lambda (agent) →
+;; (skill …)) closed over RESOURCES — the default `agent-skills`, and the base the
+;; live layer expands through satisfied-by (effective-skills).
+(define (vf-agent-skills resources labour?)
   ;; indexed once by the holder: the closure answers each agent — once per
   ;; labour row, person × period — off that agent's own resources, where a
   ;; scan of RESOURCES (O(crowd) once the reserves hold a body per person)
@@ -5820,7 +5857,11 @@
               resources)
     (lambda (a)
       (filter-map (lambda (r)
-                    (and (> (mqty (economic-resource-onhand-quantity r)) 0.0)
+                    (and (or (labour? (economic-resource-conforms-to r))     ; a skill is a worked spec — a stock of water is not one
+                             ;; …or a CREDENTIAL the person holds: a licence IS a skill
+                             ;; (legal/gate.scm, skill-reqs), and the record says it is one
+                             (member "credential" (or (economic-resource-classified-as r) '())))
+                         (> (mqty (economic-resource-onhand-quantity r)) 0.0)
                          (economic-resource-conforms-to r)))
                   (reverse (hash-ref by-holder (agent-id a) '()))))))
 
@@ -5874,7 +5915,7 @@
     #:resource-suppliers resource-suppliers #:composition composition #:span-of span-of
     #:mode-recipes mode-entries
     #:live-avail live-avail #:spec-units (specs->units specs)
-    #:agent-skills (or agent-skills (vf-agent-skills resources)))
+    #:agent-skills (or agent-skills (vf-agent-skills resources (labour? recipe-flows specs))))
   ;; the skills' laws and where each worker's competence stands, after the
   ;; roster is declared and before the forms are built
   (when skill-dynamics (apply-skill-dynamics! skill-dynamics))

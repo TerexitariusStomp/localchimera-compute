@@ -26,14 +26,16 @@
   #:export (actions-where action-input-output
             ;; a process's sides
             process-input-actions process-output-actions input-action? output-action?
-            consuming-actions inert-flow-actions effort-actions in-place-actions
+            consuming-actions inert-flow-actions effort-actions labour-actions in-place-actions
             ;; the books (docs/observation/readings-are-counts.md)
             *stock-moving-actions* *adjustment-actions* *flow-actions* *rights-moving-actions*
             ;; what a recipe makes
             making-actions output-flow? upstream-closure creating-actions using-up-actions
             committed-by-spec committed-quantity
             ;; playnet's own columns
-            relocating-actions relocating-action? same-flow?))
+            relocating-actions relocating-action? same-flow?
+            ;; what a skill is
+            labour-specs labour?))
 
 (define (actions-where pred)
   "The actions whose table row satisfies PRED, in the table's order."
@@ -95,6 +97,10 @@
 ;; An act that carries effort: the table's event quantity is `effort` (work) or both (use).
 (define effort-actions
   (actions-where (lambda (d) (memq (action-definition-event-quantity d) '(effort-quantity both)))))
+;; An act that IS labour: effort alone (work). A `use` carries hours too, but of a
+;; means — the thing used is not a skill.
+(define labour-actions
+  (actions-where (lambda (d) (eq? (action-definition-event-quantity d) 'effort-quantity))))
 
 ;; An act on a thing where it stands, which then stands elsewhere or in other hands'
 ;; care: location effect `update` (pickup · dropoff · accept · modify). VF reads a
@@ -204,3 +210,43 @@
                                    flows)))
                (seen* (append seen frontier)))
           (loop (lset-difference equal? taken seen*) seen* (append procs new-procs))))))
+
+;; ── what a skill is ──────────────────────────────────────────────────────────
+;; A skill is a ResourceSpecification that is WORKED: it states a unit of effort
+;; (defaultUnitOfEffort — the field VF gives a worked spec, which `skill*` writes),
+;; or some recipe flow draws it under a labour action (the table's `work`). A
+;; resource conforming to such a spec, held by a person at on-hand > 0, is a
+;; skill they hold. Nothing about a resource's id says so: the roster
+;; (pools/labour-fold), the solver (engine vf-agent-skills), the holders table and
+;; the socialization view all read this one function, so a stock of water a person
+;; holds never reads as the skill "water" unless a recipe works water.
+(define (labour-specs flows specs)
+  "The spec ids that are labour, read off the recipe FLOWS and the resource SPECS:
+   a spec stating an effort unit, a spec standing in a `satisfied-by` relation (a
+   composite skill and the parts that satisfy it — the relation is between
+   skills), and a spec a recipe works."
+  (delete-duplicates
+   (append (filter-map (lambda (sp) (and (resource-specification-default-unit-of-effort sp)
+                                         (resource-specification-id sp)))
+                       specs)
+           (append-map (lambda (sp)
+                         (let ((by (resource-specification-satisfied-by sp)))
+                           (if (pair? by)
+                               (cons (resource-specification-id sp)
+                                     ;; a DNF: clauses of (spec . threshold) pairs
+                                     (append-map (lambda (clause)
+                                                   (filter-map (lambda (t) (cond ((pair? t) (and (string? (car t)) (car t)))
+                                                                                 ((string? t) t) (else #f)))
+                                                               (if (list? clause) clause (list clause))))
+                                                 by))
+                               '())))
+                       specs)
+           (filter-map (lambda (f) (and (memq (recipe-flow-action f) labour-actions)
+                                        (recipe-flow-resource-conforms-to f)))
+                       flows))))
+
+(define (labour? flows specs)
+  "The predicate (spec-id → bool) over labour-specs, indexed once."
+  (let ((t (make-hash-table)))
+    (for-each (lambda (sp) (hash-set! t sp #t)) (labour-specs flows specs))
+    (lambda (spec) (and spec (hash-ref t spec #f) #t))))
