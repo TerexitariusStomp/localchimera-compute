@@ -60,10 +60,15 @@
 
 ;; ingest-records! reads two world keywords a scenario does not take. Each switches on an
 ;; engine mode the live solve has never run, and each moves plans that stand today, so
-;; each waits on a decision of its own:
+;; each waits on a decision of its own. Measured 2026-10-09, each forwarded alone, after
+;; the skill reading became the worked spec's (formulas/actions labour-specs):
 ;;   #:skill-dynamics  practice laws that make a skill's competence a state carried from
-;;                     period to period (test-dev-world, test-dev-ledger move);
-;;   #:composition     the chemistry's element rows (reaction-network-test, test-bread-seed move).
+;;                     period to period — test-dev-world: the heavy want and 38 of 40
+;;                     hours go unplanned; test-dev-ledger: the issue's lead changes
+;;                     (ann → box); the other two suites stand;
+;;   #:composition     the chemistry's element rows — reaction-network-test: demand met
+;;                     falls from 1.0 and R1 no longer makes the CO that R2 consumes;
+;;                     test-bread-seed: the work per process differs; the other two stand.
 ;; The test holds this list and %world-keywords to every keyword ingest-records! reads.
 (define %held-back-world-keywords '(#:skill-dynamics #:composition))
 
