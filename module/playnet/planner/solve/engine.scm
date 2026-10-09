@@ -5455,12 +5455,13 @@
 ;; a good the plan draws from the ambient world (an externality declared in
 ;; *raws*: air, sunlight) has no stock to resolve, and the constructor tags it so
 ;; (formulas/flows make-flow-commitment, which also tags a `use`). A `use` row's
-;; figure is HOURS of the means engaged, written under the spec's count unit;
-;; VF's field for a use's duration is effortQuantity (inventory F2), and the move
-;; waits on the readers. The unit is the SPEC's: a qualified good
-;; (spec/stage!state, spec~aid) is a lot of the bare spec.
+;; figure is HOURS of the means engaged: effortQuantity, the field VF gives a use's
+;; duration; every other row's is a quantity of its spec in the SPEC's unit — a
+;; qualified good (spec/stage!state, spec~aid) is a lot of the bare spec.
 (define (mk-mat-commitment ambient? id action spec qty proc place begin end)
-  (make-flow-commitment #:id id #:action action #:spec spec #:qty qty
+  (make-flow-commitment #:id id #:action action #:spec spec
+                        #:qty (and (not (memq action occupying-actions)) qty)
+                        #:hours (and (memq action occupying-actions) qty)
                         #:unit (hash-ref *spec-units* (bare-spec spec) %placeholder-unit)
                         #:process proc #:place place #:has-beginning begin #:has-end end
                         #:ambient? (ambient? spec)))

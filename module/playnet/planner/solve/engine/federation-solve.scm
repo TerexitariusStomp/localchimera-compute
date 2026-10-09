@@ -396,7 +396,7 @@
   (map (lambda (mc)
          `((action      . ,(commitment-action mc))
            (conforms-to . ,(commitment-resource-conforms-to mc))
-           (quantity    . ,(measure-has-numerical-value (commitment-resource-quantity mc)))
+           (quantity    . ,(row-figure mc))   ; a use row's figure is its hours
            (at-location . ,(commitment-at-location mc))))
        (plan->material plan cols idx)))
 

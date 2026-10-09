@@ -1761,8 +1761,9 @@
     `((id          id any)
       (action      action any)                         ; produce | consume | pickup | dropoff | use
       (conforms-to resource-conforms-to any)           ; the resource specification
-      (quantity    ,(lambda (c ctx) (measured (commitment-resource-quantity c))) any)
+      (quantity    ,(lambda (c ctx) (row-figure c)) any)   ; the row's one number: its quantity, or a means occupied its hours
       (unit        ,(lambda (c ctx) (and=> (commitment-resource-quantity c) measure-has-unit)) any)
+      (effort      ,(lambda (c ctx) (measured (commitment-effort-quantity c))) any)   ; a means occupied: its hours, stated as effort
       (output-of   output-of any)                      ; the producing process
       (input-of    input-of any)                       ; the consuming process
       (classified-as resource-classified-as any)       ; ("ambient"): drawn from the world, no stock behind it
@@ -1790,7 +1791,7 @@
     (make-flow-commitment
      #:id (row-id m) #:action (row-action m) #:note (row-note m)
      #:process (row-run m) #:spec (bare-spec (row-spec m)) #:tags (row-tags m)
-     #:qty (row-quantity m) #:unit (or (row-unit m) %placeholder-unit)
+     #:qty (row-quantity m) #:hours (row-effort m) #:unit (or (row-unit m) %placeholder-unit)
      #:has-point-in-time (and w (format #f "~a" w))
      #:place (row-place m) #:in-scope-of scope-id)))
 
@@ -2564,7 +2565,8 @@
                      #:resource-inventoried-as rid #:to-resource-inventoried-as to-lot                                         ; resource-inventoried-as, to-res-inv (the lot the cargo moves into)
                      #:resource-conforms-to conforms #:resource-classified-as (and (row-ambient? mc) (list %ambient-tag))      ; conforms-to (the lot's spec), classified-as
                      #:provider agent #:receiver agent                                        ; provider, receiver: the one accountable agent
-                     #:resource-quantity (make-measure q unit)                           ; resource-quantity, effort
+                     #:resource-quantity (and q (make-measure q unit))                   ; resource-quantity: what moved
+                     #:effort-quantity (and (not q) (row-effort mc) (make-measure (row-effort mc) "hours"))   ; effort: a means occupied for hours
  #:has-point-in-time stamp #:created recorded                               ; has-beginning has-end has-point-in-time created
                      #:at-location place                                        ; at-location, to-location, state
                      #:fulfills cid                                    ; FULFILLS the commitment, satisfies corrects realization settles

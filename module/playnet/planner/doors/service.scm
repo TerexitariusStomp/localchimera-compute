@@ -625,7 +625,7 @@
                                  (spec-id . ,(or (row-spec m) ""))
                                  (spec   . ,(let ((sp (row-spec m)))
                                               (or (lookup-spec-name rs sp) sp "")))
-                                 (qty    . ,(or (row-quantity m) 0))
+                                 (qty    . ,(or (row-figure m) 0))   ; a use row's figure is its hours
                                  (place  . ,(or (row-place m) ""))
                                  (when   . ,(or (row-when m) ""))
                                  (proc   . ,(or (row-run m) ""))

@@ -19,7 +19,8 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-ride-performed.scm
 
-(use-modules (playnet test harness)
+(use-modules ((playnet planner formulas flows) #:select (row-figure))
+             (playnet test harness)
              (playnet test books)
              (playnet planner knowledge recipes berlin-commune-seed) (playnet planner knowledge recipes berlin-transit) (playnet planner knowledge recipes transport) (playnet planner solve compile) (playnet planner vf schemas) (srfi srfi-1) (srfi srfi-11)
              (playnet planner scope live)
@@ -55,7 +56,7 @@
         ((module-ref E 'plan->material) x cols idx)))))
 (define (row m)
   `((id . ,(commitment-id m)) (action . ,(commitment-action m)) (conforms-to . ,(commitment-resource-conforms-to m))
-    (quantity . ,(measure-has-numerical-value (commitment-resource-quantity m)))
+    (quantity . ,(row-figure m))
     (at-location . ,(commitment-at-location m)) (input-of . ,(commitment-input-of m)) (output-of . ,(commitment-output-of m))
     (classified-as . ,(commitment-resource-classified-as m)) (note . ,(commitment-note m))))
 (define rows (map row planned))

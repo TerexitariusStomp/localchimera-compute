@@ -9,7 +9,8 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-confirmed-move.scm
 
-(use-modules (playnet test scope)
+(use-modules ((playnet planner formulas flows) #:select (row-figure))
+             (playnet test scope)
              (playnet test harness)
              (playnet test books)
              (playnet planner observation observer) (playnet planner vf schemas) (srfi srfi-1)
@@ -97,7 +98,7 @@
 (check "the plan carries the water with a pickup and a dropoff" (map commitment-action (sort moves (lambda (a b) (eq? (commitment-action a) 'pickup)))) '(pickup dropoff))
 (define (row m)                       ; the wire shape the doors hand the books
   `((id . ,(commitment-id m)) (action . ,(commitment-action m)) (conforms-to . ,(commitment-resource-conforms-to m))
-    (quantity . ,(measure-has-numerical-value (commitment-resource-quantity m)))
+    (quantity . ,(row-figure m))
     (at-location . ,(commitment-at-location m)) (input-of . ,(commitment-input-of m)) (output-of . ,(commitment-output-of m))
     (note . ,(commitment-note m))))
 (define enacted

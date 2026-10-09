@@ -11,7 +11,8 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-enact-order.scm
 
-(use-modules (playnet test harness)
+(use-modules ((playnet planner formulas flows) #:select (row-figure))
+             (playnet test harness)
              (playnet test books)
              (playnet planner vf schemas) (srfi srfi-1) (srfi srfi-11)
              (playnet planner scope live)
@@ -42,7 +43,7 @@
         ((module-ref E 'plan->material) x cols idx)))))
 (define (row m)
   `((id . ,(commitment-id m)) (action . ,(commitment-action m)) (conforms-to . ,(commitment-resource-conforms-to m))
-    (quantity . ,(measure-has-numerical-value (commitment-resource-quantity m)))
+    (quantity . ,(row-figure m))
     (at-location . ,(commitment-at-location m)) (input-of . ,(commitment-input-of m)) (output-of . ,(commitment-output-of m))
     (note . ,(commitment-note m))))
 (define rows (map row planned))

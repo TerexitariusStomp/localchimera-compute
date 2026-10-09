@@ -19,7 +19,8 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-relocation-rows.scm
 
-(use-modules (playnet test harness)
+(use-modules ((playnet planner formulas flows) #:select (row-figure))
+             (playnet test harness)
              (playnet test books)
              ((playnet utils keyed-id) #:select (keyed-id))
              (playnet planner knowledge recipes berlin-commune-seed) (playnet planner knowledge recipes berlin-transit) (playnet planner knowledge recipes transport) (playnet planner formulas capacity) (playnet planner scope root) (playnet planner solve compile) (playnet planner vf schemas) (srfi srfi-1) (srfi srfi-11)
@@ -39,7 +40,7 @@
 (define E (resolve-module '(playnet planner solve engine)))
 (define (row m)
   `((id . ,(commitment-id m)) (action . ,(commitment-action m)) (conforms-to . ,(commitment-resource-conforms-to m))
-    (quantity . ,(measure-has-numerical-value (commitment-resource-quantity m)))
+    (quantity . ,(row-figure m))
     (at-location . ,(commitment-at-location m)) (input-of . ,(commitment-input-of m)) (output-of . ,(commitment-output-of m))
     (classified-as . ,(commitment-resource-classified-as m)) (note . ,(commitment-note m))))
 

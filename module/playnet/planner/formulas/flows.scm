@@ -25,7 +25,7 @@
             row-provider row-input-of row-output-of row-run row-place
             row-when row-until row-note row-tags row-scope row-satisfies
             row-finished row-ambient? carried-lot-id %ambient-tag
-            row-scopes row-satisfies? scopes-of
+            row-scopes row-satisfies? scopes-of row-figure
             make-work-commitment make-work-event make-flow-commitment))
 
 (define %ambient-tag "ambient")   ; resourceClassifiedAs of a flow with no stock behind it: the world's own, a means in use
@@ -74,6 +74,10 @@
 (define (row-effort r)
   "The hours of effort R takes, as a number; #f where it states none."
   (let ((e (%effort r))) (if (measure? e) (number-of e) e)))
+
+(define (row-figure r)
+  "The one number R states: its quantity of its spec, or, for a means occupied, its hours."
+  (or (row-quantity r) (row-effort r)))
 
 (define (row-run r)
   "The process R is a flow of: the one it is the output of, else the one it is an input of."
@@ -155,9 +159,10 @@
 ;; The solve's rows (engine plan->material), a row the scope holds back
 ;; (scope/live held-commitment) and the test books' rows are all built here:
 ;; the action's side gives input-of / output-of (the table's io column), the
-;; figure rides as resource-quantity in UNIT, and a row with no stock behind it
-;; — an ambient draw, a means occupied — carries the ambient tag.
-(define* (make-flow-commitment #:key id action spec qty unit process place
+;; figure rides as resource-quantity in UNIT — or, for a means OCCUPIED (a `use`),
+;; as HOURS in effort-quantity, the field VF gives a use's duration — and a row
+;; with no stock behind it (an ambient draw, a means occupied) carries the ambient tag.
+(define* (make-flow-commitment #:key id action spec qty unit hours process place
                                      has-beginning has-end (has-point-in-time has-beginning)
                                      (ambient? #f) tags note in-scope-of)
   (make-commitment #:id id #:action action
@@ -165,7 +170,8 @@
                    #:output-of (and (output-action? action) process)
                    #:resource-conforms-to spec
                    #:resource-classified-as (or tags (and (or ambient? (memq action occupying-actions)) (list %ambient-tag)))
-                   #:resource-quantity (make-measure qty unit)
+                   #:resource-quantity (and qty (make-measure qty unit))
+                   #:effort-quantity (and hours (make-measure hours "hours"))
                    #:has-beginning has-beginning #:has-end has-end #:has-point-in-time has-point-in-time
                    #:at-location place #:note note
                    #:in-scope-of (let ((l (scopes-of in-scope-of))) (and (pair? l) l))))

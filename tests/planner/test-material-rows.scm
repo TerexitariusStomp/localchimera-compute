@@ -56,7 +56,7 @@
                           (row-input-of f) (row-output-of f) (row-place f) (row-when f) (row-ambient? f)))
   (check "the record and its row answer every reader alike" (reads stated) (reads row))
   (check "a row states these keys, in this order" (map car row)
-         '(id action conforms-to quantity unit output-of input-of classified-as at-location when note)))
+         '(id action conforms-to quantity unit effort output-of input-of classified-as at-location when note)))
 
 (display "\n── THE PLAN AT ITS EDGES: records inside, rows on the wire, serialized in the store ──\n")
 (define S (resolve-module '(playnet planner doors service)))

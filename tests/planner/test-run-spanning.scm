@@ -31,7 +31,8 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-run-spanning.scm
 
-(use-modules (srfi srfi-1) (ice-9 format))
+(use-modules ((playnet planner formulas flows) #:select (row-figure))
+             (srfi srfi-1) (ice-9 format))
 (use-modules (playnet planner solve engine)
              (playnet planner vf schemas)
              (playnet planner knowledge dsl shorthand))
@@ -81,7 +82,7 @@
             (best '())        ; (action . spec) → (qty . date) of the LARGEST commitment
             (dates '()))      ; (action . spec) → sorted date set over ALL its commitments
         (for-each (lambda (c)
-                    (let* ((q (and=> (commitment-resource-quantity c) measure-has-numerical-value))
+                    (let* ((q (row-figure c))   ; a use row's figure is its hours (effortQuantity)
                            (k (cons (commitment-action c) (commitment-resource-conforms-to c)))
                            (d (and=> (commitment-has-beginning c)
                                      (lambda (s) (and (string? s) (substring s 0 10))))))
