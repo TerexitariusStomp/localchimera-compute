@@ -8,6 +8,9 @@
   #:use-module (goblins actor-lib methods)
   #:use-module (playnet push crypto)
   #:use-module (playnet push subscriptions)
+  ;; the store itself is crypto-free and lives in (playnet push store);
+  ;; re-exported here so the gateway's one import of push stands
+  #:use-module (playnet push store)
   #:use-module (playnet notify rendered)
   #:use-module (playnet keri cesr)
   #:use-module (rnrs bytevectors)
@@ -17,34 +20,8 @@
   #:use-module (json)
   #:use-module (ice-9 format)
   #:use-module (srfi srfi-1)
-  #:export (^push-adapter
-            ^push-subscription-store))
-
-
-;;; ── ^push-subscription-store ───────────────────────────────────────────
-;;; Keeps each device's subscription parsed, keyed by the device's id
-;;; ((playnet push subscriptions) says why).
-
-(define (^push-subscription-store bcom subscriptions)
-  (methods
-   ;; SUBSCRIPTION is the browser's JSON; one that does not parse is refused
-   ;; and the device keeps the subscription it had.
-   ((register device-id subscription)
-    (let ((sub (parse-subscription subscription)))
-      (if sub
-          (bcom (^push-subscription-store
-                 bcom
-                 (cons (cons device-id sub)
-                       (remove (lambda (p) (equal? (car p) device-id))
-                               subscriptions)))
-                'ok)
-          'malformed)))
-   ((unregister device-id)
-    (bcom (^push-subscription-store
-            bcom (remove (lambda (p) (equal? (car p) device-id))
-                         subscriptions))))
-   ((entries) subscriptions)
-   ((count) (length subscriptions))))
+  #:export (^push-adapter)
+  #:re-export (^push-subscription-store))
 
 
 ;;; ── Push delivery ──────────────────────────────────────────────────────
