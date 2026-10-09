@@ -71,14 +71,14 @@ export interface PoiFamily { id: string; label: string; kinds: string[]; on: boo
 
 export const POI_FAMILIES: PoiFamily[] = [
   { id: "nature",  label: "parks and nature",     on: true,
-    kinds: ["park", "garden", "forest", "beach", "peak", "marina", "zoo", "animal"] },
+    kinds: ["park", "garden", "forest", "beach", "peak", "viewpoint", "marina", "zoo", "animal"] },
   { id: "transit", label: "getting around",       on: true,
     kinds: ["station", "subway", "tram_stop", "bus_stop", "bus_station", "ferry_terminal", "aerodrome", "bicycle_parking"] },
   { id: "care",    label: "care and help",        on: true,
     kinds: ["hospital", "clinic", "doctors", "dentist", "pharmacy", "social_facility", "childcare",
             "kindergarten", "community_centre", "veterinary", "shelter"] },
   { id: "play",    label: "play and sport",       on: true,
-    kinds: ["playground", "pitch", "sports_centre", "swimming_pool", "dog_park", "picnic_site", "viewpoint"] },
+    kinds: ["playground", "pitch", "sports_centre", "swimming_pool", "dog_park", "picnic_site"] },
   { id: "commons", label: "the commons",          on: true,
     kinds: ["library", "allotments", "recycling", "drinking_water", "toilets", "bench", "information"] },
   { id: "civic",   label: "schools and civic",    on: false,
