@@ -309,8 +309,9 @@ export function registerAllSettings() {
                     { kind: "link", label: "privacy notice", href: PRIVACY_HREF, text: "read ↗" },
                     { kind: "link", label: "accessibility statement", href: ACCESSIBILITY_HREF, text: "read ↗" },
                     { kind: "note",
-                        html: "The notices disclose the gaps deliberately — what is kept, what cannot yet "
-                            + "be erased, and who the controller is for <i>this</i> gateway." },
+                        html: "The notices disclose the gaps deliberately — what is kept, what is erased by "
+                            + "<b>forget me</b> (below) and what stays as data about a pseudonym, and who the "
+                            + "controller is for <i>this</i> gateway." },
                     (() => {
                         const aid = () => (idHint() || {}).aid || "";
                         const on = () => voteConsentGiven(aid());

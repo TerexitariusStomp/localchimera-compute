@@ -55,14 +55,15 @@ const PAGES: Record<string, Page> = {
   diet: { title: "diet", sections: ["diet"] },
   body: { title: "body", sections: ["body"] },
   health: { title: "health", sections: ["self", "away"] },
-  keys: { title: "keys and devices", sections: ["device", "passcode", "recovery"] },
+  keys: { title: "keys and devices", sections: ["device", "passcode", "recovery", "forget"] },
   where: { title: "where you are", sections: ["where"] },
   housing: { title: "your housing", sections: ["housing"] },
   time: { title: "your time", sections: ["time"] },
   look: { title: "look and feel", sections: ["look"] },
   clocks: { title: "calendars and clocks", sections: ["calendars", "clocks"] },
   faces: { title: "faces", sections: ["tabs"] },
-  notices: { title: "your data and the notices", sections: ["notices"] },
+  // erasure sits where a person looks for it: with their keys, and with their data
+  notices: { title: "your data and the notices", sections: ["notices", "forget"] },
   report: { title: "report a concern", sections: ["report"] },
 };
 
@@ -160,7 +161,7 @@ function menu(close: () => void): HTMLElement[] {
   g3.append(into("🎨", "look and feel", "theme, ambient sound, the week, credit", "look"),
             into("🗓", "calendars and clocks", "which calendars show, and the world clock", "clocks"),
             into("🧭", "faces", "which faces show in the bar", "faces"),
-            into("🛡", "your data and the notices", "what is kept, and the terms", "notices"),
+            into("🛡", "your data and the notices", "what is kept, the terms, and forget me", "notices"),
             into("🚩", "report a concern", "unlawful or harmful content, a child at risk", "report"),
             door({ icon: "⚙", label: "all settings", sub: "dial views, the gateway's doors, developer", go: () => openSettings() }),
             door({ icon: "?", label: "help and about", sub: "what playnet is, the code, the chat, keeping it running", go: openScroll }));
