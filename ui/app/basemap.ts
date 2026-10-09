@@ -40,7 +40,10 @@ const lang = (): string => (navigator.language || "en").slice(0, 2);
 // The style's `pois` layer draws every kind OpenStreetMap tags; a city block
 // of restaurants is noise over the dial's own pins. The kinds fall into
 // families a person switches on and off; the choice persists per device and
-// applies as a FILTER on that one layer — no style reload.
+// applies as a FILTER on that one layer — no style reload. What starts on is
+// the commons' side of the street: nature, ways to get around, culture, and
+// what is free to use — benches, public toilets, drinking water. Food, shops
+// and institutions start off; a device turns them on.
 
 /** A family of place kinds, as the Protomaps `pois` layer names them. */
 export interface PoiFamily { id: string; label: string; kinds: string[]; on: boolean; }
@@ -50,7 +53,7 @@ export const POI_FAMILIES: PoiFamily[] = [
     kinds: ["park", "garden", "forest", "beach", "peak", "marina", "zoo", "animal"] },
   { id: "transit", label: "getting around",       on: true,
     kinds: ["station", "bus_stop", "ferry_terminal", "aerodrome"] },
-  { id: "civic",   label: "schools and civic",    on: true,
+  { id: "civic",   label: "schools and civic",    on: false,
     kinds: ["school", "university", "library", "townhall", "post_office", "building"] },
   { id: "culture", label: "culture and sights",   on: true,
     kinds: ["museum", "theatre", "attraction", "artwork", "stadium"] },
@@ -58,7 +61,7 @@ export const POI_FAMILIES: PoiFamily[] = [
     kinds: ["restaurant", "cafe", "bar", "fast_food"] },
   { id: "shops",   label: "shops",                on: false,
     kinds: ["supermarket", "convenience", "books", "clothes", "electronics", "beauty"] },
-  { id: "street",  label: "benches, toilets, water", on: false,
+  { id: "street",  label: "benches, public toilets, drinking water", on: true,
     kinds: ["bench", "toilets", "drinking_water"] },
 ];
 

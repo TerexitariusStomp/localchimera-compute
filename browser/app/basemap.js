@@ -36,7 +36,7 @@ export const POI_FAMILIES = [
         kinds: ["park", "garden", "forest", "beach", "peak", "marina", "zoo", "animal"] },
     { id: "transit", label: "getting around", on: true,
         kinds: ["station", "bus_stop", "ferry_terminal", "aerodrome"] },
-    { id: "civic", label: "schools and civic", on: true,
+    { id: "civic", label: "schools and civic", on: false,
         kinds: ["school", "university", "library", "townhall", "post_office", "building"] },
     { id: "culture", label: "culture and sights", on: true,
         kinds: ["museum", "theatre", "attraction", "artwork", "stadium"] },
@@ -44,7 +44,7 @@ export const POI_FAMILIES = [
         kinds: ["restaurant", "cafe", "bar", "fast_food"] },
     { id: "shops", label: "shops", on: false,
         kinds: ["supermarket", "convenience", "books", "clothes", "electronics", "beauty"] },
-    { id: "street", label: "benches, toilets, water", on: false,
+    { id: "street", label: "benches, public toilets, drinking water", on: true,
         kinds: ["bench", "toilets", "drinking_water"] },
 ];
 /** The families switched on, as ids; the defaults until the device says otherwise. */
