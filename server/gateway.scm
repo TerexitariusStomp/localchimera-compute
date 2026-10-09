@@ -63,7 +63,7 @@
              ((playnet planner federation host) #:select (read-kept keep! berth-swiss! berth-sturdyref wire-handshake))
              ((playnet gateway http-door-server) #:select (start-http-door!))
              ((playnet gateway device-registry)
-              #:select (device-registry-dir live-device-keys))
+              #:select (device-registry-dir device-keys-at))
              ((playnet keri citizen-sig) #:select (aid-signer-keys-resolver make-keri-identity))
              ((rnrs bytevectors) #:select (make-bytevector))
              ((playnet gateway mesh-mailbox)
@@ -1787,14 +1787,15 @@
             (lambda (aid) (oobi-current-key-from-dir oobi-dir aid)))
            ;; The keys that sign AS an AID, for every SAID/nonce verification
            ;; anywhere (citizen-sig verify-bytes-under-aid): its current KEL
-           ;; key, and the device keys its root authorized — both pure file
-           ;; reads, vat-free. docs/planning/identity/device-keys.md.
+           ;; key, and the device keys its root had authorized at the
+           ;; statement's time (AT; #f = now) — both pure file reads,
+           ;; vat-free. docs/planning/identity/device-keys.md.
            (device-registry-dir %data-dir)
            (aid-signer-keys-resolver
-            (lambda (aid)
+            (lambda (aid at)
               (let ((cur (oobi-current-key-from-dir oobi-dir aid)))
                 (append (if (string? cur) (list cur) '())
-                        (live-device-keys aid (current-time))))))
+                        (device-keys-at aid (or at (current-time)))))))
            (with-vat gateway-vat
              (oobi-host-spawn-from-dir oobi-dir))))
 

@@ -60,7 +60,7 @@
 ;; every signature under an AID is checked against B's oobi dir — the
 ;; verifier's side; A never verifies in this test
 (aid-signer-keys-resolver
- (lambda (a) (let ((k (oobi-current-key-from-dir DIR-B a))) (if k (list k) '()))))
+ (lambda (a _at) (let ((k (oobi-current-key-from-dir DIR-B a))) (if k (list k) '()))))
 
 (define vat (spawn-vat))
 (with-vat vat
@@ -170,7 +170,7 @@
                         parsed))))
       ($ svc-c 'set-fp-root! ROOT)
       (aid-signer-keys-resolver
-       (lambda (a) (let ((k (oobi-current-key-from-dir dir-c a))) (if k (list k) '()))))
+       (lambda (a _at) (let ((k (oobi-current-key-from-dir dir-c a))) (if k (list k) '()))))
       (check "without the log, Alice's signature cannot be checked — refused"
              (car ($ svc-c 'present-bundle TIA bare)) 'error)
       (check "with a log that stops before her rotation, the signature fails — refused"

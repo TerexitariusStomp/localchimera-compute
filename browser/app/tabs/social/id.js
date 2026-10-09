@@ -1607,10 +1607,11 @@ export function forgetSection(f) {
             return;
         }
         say("Your commune erases every record of its own about you — your handle, name and email, "
-            + "the ways to reach you, your devices, cards, contacts, pins, taxonomy, log, mailboxes and "
-            + "spooled mail — the link between your identity and you last. Your signed key log and "
-            + "credentials stay as they are: records about an identifier nobody can resolve to you. "
-            + "Encrypted backups hold the erased records for up to 30 days.");
+            + "the ways to reach you, your cards, contacts, pins, taxonomy, log, mailboxes and "
+            + "spooled mail — the link between your identity and you last, and retires every device "
+            + "of yours. Your signed key log, your credentials and your devices' authorizations stay "
+            + "as they are: records about an identifier nobody can resolve to you. Encrypted backups "
+            + "hold the erased records for up to 30 days.");
         const form = sec.append("form").attr("autocomplete", "on").attr("action", "#");
         form.append("input").attr("type", "text").attr("name", "username").attr("autocomplete", "username")
             .property("value", h.aid).attr("readonly", true).attr("tabindex", "-1").attr("aria-hidden", "true")

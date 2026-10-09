@@ -340,12 +340,19 @@
    signed `d` proves nothing about the content unless `d` was actually
    derived from the content (ACDC §2.5). We re-derive first, so a
    validly-signed SAID grafted onto swapped attributes is rejected here
-   rather than trusted downstream."
+   rather than trusted downstream.
+
+   Verified AT THE CREDENTIAL'S OWN TIME: a key that signed as the issuer
+   then — a device the issuer's root had authorized — stays the signer of
+   that statement after the device is revoked, expires, or its person is
+   forgotten, exactly as a rotated-away root key keeps what it signed
+   (key-in-force-at). A credential without a timestamp verifies as of now."
   (let ((sig (cred-signature cred)))
     (and sig
          (cred-said-consistent? cred)
          (string? sig)
-         (verify-said-signature (cred-said cred) sig (cred-issuer cred)))))
+         (verify-said-signature (cred-said cred) sig (cred-issuer cred)
+                                (cred-timestamp cred)))))
 
 (define (client-signature-ok? cred caller-aid signature)
   "The single gate for the client-signing protocol: SIGNATURE is a valid Ed25519

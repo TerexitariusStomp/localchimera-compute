@@ -38,8 +38,10 @@
             device-credential-verdict
             device-enroll!
             device-revoke!
-            device-forget!
+            devices-retire!
             devices-of
+            device-keys-at
+            device-entry-live-at?
             device-entry
             device-entry-live?
             live-device-keys
@@ -180,31 +182,58 @@
                  entries))
            #t))))
 
-(define (device-forget! person-aid)
-  "Erase PERSON-AID's registry file — every authorization, live or revoked —
-   and reply how many entries it held. Nothing stays: with no file,
-   `live-device-keys` is () and `device-owner-of` finds no device of theirs.
-   Idempotent: no file replies 0."
-  (let* ((f (devices-file person-aid))
-         (n (length (read-entries person-aid))))
-    (when (file-exists? f) (delete-file f))
-    n))
+(define (devices-retire! person-aid now)
+  "Retire every live authorization of PERSON-AID at NOW — a forget
+   (gateway/forget.scm) — and reply how many were live. The entries stay:
+   each is a device-authorization credential, a signed statement of key
+   material the person's root made, and the log a past signature of that
+   device is read against (`device-keys-at`). From NOW no device of theirs
+   signs, and `device-owner-of` finds no live device of theirs. Idempotent:
+   none live replies 0."
+  (let* ((entries (read-entries person-aid))
+         (live    (filter (lambda (e) (device-entry-live-at? e now)) entries)))
+    (when (pair? live)
+      (write-entries!
+       person-aid
+       (map (lambda (e)
+              (if (memq e live)
+                  (map (lambda (kv) (if (eq? (car kv) 'revoked-at) (cons 'revoked-at now) kv)) e)
+                  e))
+            entries)))
+    (length live)))
 
 (define (devices-of person-aid) (read-entries person-aid))
 
 (define (device-entry person-aid said)
   (find (lambda (e) (equal? (aref e 'said) said)) (read-entries person-aid)))
 
-(define (device-entry-live? entry now)
+;; The registry is a device key's LOG — what the KEL is to a root key.
+;; Whether a device signed AS the person at an instant is read off its
+;; entry's window: enrolled, and neither expired nor revoked by then. A
+;; retirement closes the window; it never re-reads the past, so a vouch a
+;; phone made while authorized stays the person's after the phone is
+;; revoked, expires, or its person is forgotten (`key-in-force-at` for
+;; devices: keri/citizen-sig.scm's resolver asks with the time of the
+;; statement).
+(define (device-entry-live-at? entry at)
   (and entry
-       (not (aref entry 'revoked-at))
-       (let ((exp (aref entry 'expires-at)))
-         (or (not exp) (< now exp)))))
+       (let ((from (aref entry 'enrolled-at))
+             (exp  (aref entry 'expires-at))
+             (rev  (aref entry 'revoked-at)))
+         (and (or (not (number? from)) (<= from at))
+              (or (not exp) (< at exp))
+              (or (not rev) (< at rev))))))
+
+(define (device-entry-live? entry now) (device-entry-live-at? entry now))
+
+(define (device-keys-at person-aid at)
+  "The device AIDs (B-prefix keys) that signed as PERSON-AID at instant AT."
+  (filter-map (lambda (e) (and (device-entry-live-at? e at) (aref e 'device-aid)))
+              (read-entries person-aid)))
 
 (define (live-device-keys person-aid now)
   "The device AIDs (B-prefix keys) that sign as PERSON-AID right now."
-  (filter-map (lambda (e) (and (device-entry-live? e now) (aref e 'device-aid)))
-              (read-entries person-aid)))
+  (device-keys-at person-aid now))
 
 (define (device-entry-doors entry)
   "The door names this device may call, as symbols, or #f for every

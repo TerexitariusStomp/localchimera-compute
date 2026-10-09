@@ -14,6 +14,8 @@
              ((playnet keri citizen-sig)
               #:select (aid-signer-keys-resolver verify-said-signature sign-said))
              ((playnet keri crypto-primitives) #:select (keri-crypto-random-bytes))
+             ((playnet keri acdc) #:select (make-credential))
+             ((playnet openvtc first-person) #:select (cred-signature-valid?))
              ((playnet governance credentials)
               #:select (make-device-authorization-credential cred-said cred-claims
                         cred-signature cred-schema cred-issuer cred-holder))
@@ -43,6 +45,7 @@
 (define (device-aid kp) (cesr-bytes->qb64 "B" (ed25519-keypair-public kp)))
 (define laptop (device-keypair))
 (define phone  (device-keypair))
+(define other-aid "EOTHERAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")   ; a credential's holder
 
 (define (sign-nonce nonce kp) (cesr-bytes->qb64 "0B" (sign-bytes (string->utf8 nonce) kp)))
 (define (root-auth)
@@ -123,8 +126,8 @@
 (check "unbound resolver: a device signature is nobody's"
        (not (verify-said-signature said dev-sig aid)))
 (aid-signer-keys-resolver
- (lambda (a) (append (let ((k ($ oobi-host 'current-key a))) (if (string? k) (list k) '()))
-                     (live-device-keys a (current-time)))))
+ (lambda (a at) (append (let ((k ($ oobi-host 'current-key a))) (if (string? k) (list k) '()))
+                        (device-keys-at a (or at (current-time))))))
 (check "bound: the device signs as the person"
        (with-vat gateway-vat (verify-said-signature said dev-sig aid)))
 (check "…and the root still does"
@@ -136,8 +139,29 @@
 (define laptop-said (assoc-ref (json-string->scm laptop-wire) "said"))
 (check "the device revokes itself" (and dev (eq? 'ok (with-vat gateway-vat ($ dev 'revoke-device laptop-said)))))
 (check "revoked: sign-in refused" (err-with? (device-auth laptop-wire laptop) "revoked"))
-(check "revoked: signature is nobody's"
+(check "revoked: signature is nobody's — as of now"
        (not (with-vat gateway-vat (verify-said-signature said dev-sig aid))))
+;; the registry is the device key's log: a statement is verified at its own
+;; time, and the laptop was authorized then (enrolled 1700000000, revoked
+;; today) — so what it signed while live stays the person's, as a
+;; rotated-away root key keeps what it signed
+(check "…but a statement made while the device was live stays the person's"
+       (with-vat gateway-vat (verify-said-signature said dev-sig aid 1700000001)))
+(check "…and not one dated before the device was authorized"
+       (not (with-vat gateway-vat (verify-said-signature said dev-sig aid 1699999999))))
+;; the same at the credential layer: a credential the laptop signed as the
+;; person, timestamped while it was live, is valid to cred-signature-valid?
+;; after the revocation — the personhood audit reads such a vouch as signed
+(check "a credential the device signed while live is still the person's signed credential"
+       (with-vat gateway-vat
+         (cred-signature-valid?
+          (make-credential "playnet-test/v1" aid other-aid '((timestamp . 1700000001))
+                           #:signing-keypair laptop))))
+(check "…and one it dates after its revocation is not"
+       (not (with-vat gateway-vat
+              (cred-signature-valid?
+               (make-credential "playnet-test/v1" aid other-aid '((timestamp . 4102444800))
+                                #:signing-keypair laptop)))))
 (check "my-devices shows the revocation"
        (let ((ds (with-vat gateway-vat ($ root 'my-devices))))
          (and (= 1 (length ds)) (integer? (assoc-ref (car ds) "revokedAt")))))

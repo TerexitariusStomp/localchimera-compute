@@ -62,7 +62,7 @@
 
 ;; A is the verifier: both key resolvers read A's dir
 (aid-signer-keys-resolver
- (lambda (a) (let ((k (oobi-current-key-from-dir DIR-A a))) (if k (list k) '()))))
+ (lambda (a _at) (let ((k (oobi-current-key-from-dir DIR-A a))) (if k (list k) '()))))
 (current-aid-key-resolver (lambda (a) (oobi-current-key-from-dir DIR-A a)))
 
 (define vat (spawn-vat))

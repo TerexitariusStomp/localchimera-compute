@@ -15,12 +15,13 @@
 ;;; event-log, not a plan-store or scope row (claims, work events,
 ;;; commitments, credit, home, skills). The AID stays in every one of them as
 ;;; the pseudonymous agent it always was, so balances, attribution and SAID
-;;; chains are as they were, and `key-in-force-at` still verifies every
-;;; signature the KEL's keys made against the key of its day. (Material a
-;;; DEVICE key signed has no key in any log: once the device file is gone it
-;;; re-verifies the way it does after `device-revoke!` or expiry — the
-;;; personhood audit reads such a vouch as unsigned. That is the device
-;;; registry's standing design, shared with revocation.) This module imports
+;;; chains are as they were, and every signature is verified at its own
+;;; time: a root key's against the key of its day (`key-in-force-at`), a
+;;; device key's against the device registry's window for it
+;;; (`device-keys-at`) — which is why a forget RETIRES the person's devices
+;;; (their authorizations close now and stay, each a signed credential)
+;;; rather than erasing the registry: a vouch a phone made while authorized
+;;; stays the person's. This module imports
 ;;; no planner, governance, observation or KERI-store module —
 ;;; tests/keri/test-forget.scm holds that as a check — so it cannot reach a
 ;;; ledger by construction. The files it does erase are the gateway's custody
@@ -36,8 +37,8 @@
 ;;;      through); a seat proven afresh clears the mark;
 ;;;   1. what the member record is needed to find (the presence name);
 ;;;   2. every side-store: bindings, push subscriptions, the desk, the
-;;;      devices, the cards, the user files, the folds, the mesh and offline
-;;;      mailboxes, the mail spool;
+;;;      devices (retired), the cards, the user files, the folds, the mesh
+;;;      and offline mailboxes, the mail spool;
 ;;;   3. LAST, the member record and the AID→handle index.
 ;;;
 ;;; The order is the invariant: a crash midway leaves a person who can still
@@ -51,7 +52,7 @@
 (define-module (playnet gateway forget)
   #:use-module (goblins)
   #:use-module (srfi srfi-1)
-  #:use-module ((playnet gateway device-registry) #:select (device-forget!))
+  #:use-module ((playnet gateway device-registry) #:select (devices-retire!))
   #:use-module ((playnet gateway cards) #:select (cards-forget!))
   #:use-module ((playnet gateway user-files) #:select (user-files-forget!))
   #:use-module ((playnet interface adapters email) #:select (mail-spool-forget!))
@@ -167,7 +168,7 @@
             (call-with-values drop-bindings
               (lambda (bindings push mail)
                 (let ((points  (if desk (count-of (desk 'forget aid)) 0))
-                      (devices (device-forget! aid))
+                      (devices (devices-retire! aid (current-time)))
                       (cards   (if cards-dir (cards-forget! cards-dir aid) 0))
                       (files   (user-files-forget! aid))
                       (mesh    (drop-mesh)))

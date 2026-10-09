@@ -126,11 +126,15 @@
   (sign-bytes-under-aid (string->utf8 said-string) keypair))
 
 ;; The keys that sign AS an AID, beyond the one its prefix encodes: the
-;; gateway binds this cell to (aid → list of qb64 D/B keys) — the AID's
-;; current KEL key after rotations, and every live device key the root has
-;; authorized (playnet gateway device-registry). Unbound, or an AID it knows
-;; nothing about → the prefix alone, the pre-existing D/B behaviour. Reads
-;; are vat-free (a file read), so verification stays synchronous anywhere.
+;; gateway binds this cell to (aid at → list of qb64 D/B keys) — the AID's
+;; current KEL key after rotations, and every device key the root had
+;; authorized AT instant `at` (playnet gateway device-registry
+;; device-keys-at); `at` is #f for "now". A statement is verified at its
+;; own time, so a device's vouch stays the person's after the device is
+;; revoked or its person forgotten, as a rotated-away root key keeps what it
+;; signed. Unbound, or an AID it knows nothing about → the prefix alone, the
+;; pre-existing D/B behaviour. Reads are vat-free (a file read), so
+;; verification stays synchronous anywhere.
 (define aid-signer-keys-resolver
   (let ((v #f)) (case-lambda (() v) ((new) (set! v new) new))))
 
@@ -141,11 +145,12 @@
        (= 32 (bytevector-length pub-bv))
        (keri-crypto-ed25519-verify pub-bv data-bv sig-bv)))
 
-(define (verify-bytes-under-aid data-bv sig-qb64 signer-aid)
+(define* (verify-bytes-under-aid data-bv sig-qb64 signer-aid #:optional (at #f))
   "Verify that SIG-QB64 (CESR qb64) is a valid Ed25519 signature over
    the bytevector DATA-BV by SIGNER-AID: the key its D/B prefix encodes,
-   or any key `aid-signer-keys-resolver` names for it (current KEL key,
-   live device keys). Returns #t/#f without raising on malformed input.
+   or any key `aid-signer-keys-resolver` names for it as of AT (current KEL
+   key, the device keys authorized at AT; AT #f = now). Returns #t/#f
+   without raising on malformed input.
 
    The verifier delegates to keri-crypto-ed25519-verify so it works
    identically on server (goblins crypto) and browser (noble libs)."
@@ -158,7 +163,7 @@
          (or (try signer-aid)
              (let ((resolve (aid-signer-keys-resolver)))
                (and resolve
-                    (let ((keys (catch #t (lambda () (resolve signer-aid)) (lambda _ '()))))
+                    (let ((keys (catch #t (lambda () (resolve signer-aid at)) (lambda _ '()))))
                       (and (list? keys)
                            (any (lambda (k) (and (string? k) (try k))) keys)))))))))
 
@@ -175,13 +180,13 @@
                               (cesr-qb64->bytes sig-qb64))))
     (lambda _ #f)))
 
-(define (verify-said-signature said-string sig-qb64 signer-aid)
+(define* (verify-said-signature said-string sig-qb64 signer-aid #:optional (at #f))
   "Verify that SIG-QB64 is a valid Ed25519 signature over SAID-STRING's
-   UTF-8 bytes by the keyholder of SIGNER-AID. Thin wrapper over
-   verify-bytes-under-aid for the common SAID-string case."
+   UTF-8 bytes by a keyholder of SIGNER-AID as of AT (#f = now). Thin
+   wrapper over verify-bytes-under-aid for the common SAID-string case."
   (and (string? said-string)
        (verify-bytes-under-aid (string->utf8 said-string)
-                               sig-qb64 signer-aid)))
+                               sig-qb64 signer-aid at)))
 
 ;; =========================================================================
 ;; Multisig over a SAID — k-of-n group signing of a credential

@@ -165,8 +165,12 @@
 (check "no push subscription" (= 0 (with-vat gateway-vat ($ push-store 'count))))
 (check "not present" (not (member "Alice" (with-vat gateway-vat ($ presence 'online-users)))))
 (check "Bob is still present" (and (member "Bob" (with-vat gateway-vat ($ presence 'online-users))) #t))
-(check "no device file" (null? (devices-of aid)))
-(check "a device signature is nobody's" (null? (live-device-keys aid (current-time))))
+(check "every device retired, its authorization kept as the key's log"
+       (and (pair? (devices-of aid))
+            (every (lambda (e) (number? (assq-ref e 'revoked-at))) (devices-of aid))))
+(check "no device signs as them now" (null? (live-device-keys aid (current-time))))
+(check "…but a device that was authorized at 1700000001 signed as them then"
+       (equal? (list (device-aid laptop)) (device-keys-at aid 1700000001)))
 (check "no point at the desk" (null? (desk 'pending aid)))
 (check "their cards went, the stranger's stayed"
        (and (not (file-exists? (card-file aid other))) (not (file-exists? (card-file other aid)))
@@ -185,7 +189,7 @@
        (err-with? (with-vat gateway-vat ($ dev 'whoami)) "forgotten"))
 (check "…every door of it, a writer included"
        (err-with? (with-vat gateway-vat ($ dev 'sync-contacts '())) "forgotten"))
-(check "the device is refused at the door as never enrolled" (err-with? (device-auth) "enrolled"))
+(check "the device is refused at the door as revoked" (err-with? (device-auth) "revoked"))
 
 (format #t "~%=== the key log stands: data about a pseudonym ===~%")
 (check "the oobi-host still serves the log" (with-vat gateway-vat ($ oobi-host 'known? aid)))
