@@ -116,6 +116,8 @@
   (check "oobi-host stored the entry" (pair? entry))
   (check "stored entry's AID matches"
          (equal? alice-aid (assq-ref entry 'aid)))
+  (check "oobi-host counts one entry" (= 1 (with-vat vat ($ oobi-host 'count))))
+  (check "signup-agent counts one member" (= 1 (with-vat vat ($ signup-agent 'member-count))))
   (check "stored entry's icp matches what we sent"
          (equal? (assoc-ref icp-alist "d")
                  (assoc-ref (assq-ref entry 'icp) "d"))))

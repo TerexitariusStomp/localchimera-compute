@@ -981,9 +981,10 @@
                  (nfp-pct . ,(and status (assq-ref status 'nfp-pct)))))))
       commits)))
 
-(define (compute-min-max-buffer profile adu dlt-days)
+(define* (compute-min-max-buffer profile adu dlt-days
+                                 #:key (adu-unit "each") (moq 0) (moq-unit "each"))
   "Min/max bounds from buffer zone levels."
-  (let ((zones (compute-buffer-zone-levels profile adu dlt-days)))
+  (let ((zones (compute-buffer-zone-levels profile adu adu-unit dlt-days moq moq-unit)))
     `(,@zones
       (min . ,(assq-ref zones 'tor))
       (max . ,(assq-ref zones 'tog)))))
@@ -1136,7 +1137,10 @@
   (let ((ltf-val (or (assq-ref *standard-ltf* ltf-class) 2.0))
         (vf-val (or (assq-ref *standard-vf* vf-class) 0.5)))
     (make-buffer-profile
-      (generate-id "bp-") #f ltf-val vf-val ost-mult #f 50)))
+      (generate-id "bp-") #f #f      ; id, name, item-type
+      ltf-val #f #f vf-val           ; lead-time-factor, vrd, vrs, variability-factor
+      #f ost-mult                    ; order-cycle-days, ost-multiplier
+      #f #f #f #f #f)))              ; cadence, lead-time and variability categories, code, note
 
 (define (cascade-component-daf component-base-adu parent-contributions)
   "Effective DAF for shared component. Ch 8 §8.2.1.

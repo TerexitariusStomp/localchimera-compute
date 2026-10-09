@@ -48,4 +48,15 @@
          (and (lset<= equal? '("skill-bake" "skill-farm" "skill-mill") skills)
               (eq? #t (assq-ref plan 'feasible)))))
 
+;; a recipe the library is told to forget leaves its catalogue
+(define after-removal
+  (with-vat vat
+    (let ((rl (spawn-recipe-library (bread-defs))))
+      ($ rl 'remove-recipe "bread-recipe")
+      ($ rl 'catalog))))
+(check "removing a recipe takes it out of the catalogue"
+       (not (assoc "bread-recipe" after-removal)))
+(check "…and leaves the town's other recipes"
+       (= (length after-removal) (- (length catalog) 1)))
+
 (test-summary!)

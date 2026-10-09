@@ -63,7 +63,7 @@
      (bcom (^recipe-library bcom (hashmap-set lib (recipe-id recipe) (recipe-def recipe processes flows)))
            (recipe-id recipe)))
     ((remove-recipe id)
-     (bcom (^recipe-library bcom (hashmap-delete lib id))))
+     (bcom (^recipe-library bcom (hashmap-remove lib id))))
     ((catalog)                                  ; ((id . name) …) for browsing
      (map (lambda (d) (cons (recipe-id (def-recipe d)) (recipe-name (def-recipe d)))) (hashmap-values lib)))
     ((count) (length (hashmap-keys lib)))))

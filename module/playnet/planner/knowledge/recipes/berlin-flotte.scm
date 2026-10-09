@@ -38,6 +38,7 @@
   #:use-module (playnet planner beyond schedules)
   #:use-module (srfi srfi-1)
   #:use-module (playnet planner knowledge recipes berlin-transit)
+  #:use-module ((playnet planner knowledge recipes transit-shed) #:select (vehicle-resource))
   #:export (%flotte-lender flotte-kommunal-lender *flotte-total-bikes*
             *flotte-kommunal-bikes* *flotte-stations* *flotte-max-loan-days*
             flotte-loan-window flotte-berlin-resources flotte-spread-resources))
@@ -75,9 +76,11 @@
   (let ((lender (if bezirk (flotte-kommunal-lender bezirk) %flotte-lender))
         (window (flotte-loan-window days)))
     (map (lambda (i)
-           (bt-cargo-bike-resource
-            (string-append id-prefix (number->string i))
-            scope #:loaned? #t #:at at #:lender lender #:window window))
+           ;; a Lastenrad in the lender's free-loan pool, bookable on the loan window's days
+           (copy-economic-resource
+            (vehicle-resource (string-append id-prefix (number->string i))
+                              "spec-bt-cargo-bike" scope #:lender lender #:at at)
+            #:availability-window window))
          (iota count))))
 
 ;;; ─── the whole Berlin loan pool, spread across its lenders ────────────────

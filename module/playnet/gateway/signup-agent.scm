@@ -47,6 +47,7 @@
   #:use-module (ice-9 format)
   #:use-module (ice-9 regex)
   #:use-module (srfi srfi-1)
+  #:use-module ((playnet utils store-utils) #:select (hashmap-count))
   #:export (^signup-agent signup-agent-env
             verify-self-signed-icp
             verify-rotation-event
@@ -747,7 +748,7 @@
 
     ;; ── member-count ─────────────────────────────────────────────────────────
     ((member-count)
-     (hashmap-size members))))
+     (hashmap-count members))))
 
 ;;; ── Persistence environment ──────────────────────────────────────────────────
 

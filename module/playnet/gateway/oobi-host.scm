@@ -44,6 +44,7 @@
   #:use-module (ice-9 textual-ports)
   #:use-module (ice-9 ftw)
   #:use-module (srfi srfi-1)
+  #:use-module ((playnet utils store-utils) #:select (hashmap-count))
   #:use-module ((srfi srfi-13) #:select (string-suffix?))
   #:use-module ((playnet keri signify-portable) #:select (event-first-key))
   #:export (^oobi-host
@@ -298,7 +299,7 @@
      (hashmap-fold (lambda (_k v acc) (cons v acc)) '() entries))
 
     ;; ── count ─────────────────────────────────────────────────────────────────
-    ((count) (hashmap-size entries))
+    ((count) (hashmap-count entries))
 
     ;; ── current-key ──────────────────────────────────────────────────────────
     ;; Return the qb64 of the *current* signing key for AID — i.e. the

@@ -288,6 +288,24 @@
   (check "zero: adu=0" adu 0)
   (check "zero: no consuming events" (length consuming) 0))
 ;;; ════════════════════════════════════════════════════════════════════════════
+;;; 9. The shorthand profile and the min/max bounds are callable
+;;;
+;;; Both were written against an older constructor and zone-level signature, and
+;;; no suite called them.
+;;; ════════════════════════════════════════════════════════════════════════════
+
+(display "\n── Shorthand profile, min/max ──\n")
+
+(let* ((profile (standard-profile 'medium 'medium))
+       (bounds  (compute-min-max-buffer profile 10 10)))
+  (check-pred "standard-profile makes a buffer profile" (buffer-profile? profile))
+  (check "its lead-time factor is the standard's medium" (buffer-profile-lead-time-factor profile) 2.0)
+  (check "min is the top of red" (assq-ref bounds 'min) (assq-ref bounds 'tor))
+  (check "max is the top of green" (assq-ref bounds 'max) (assq-ref bounds 'tog))
+  (check-pred "the zones nest: red below yellow below green"
+              (< 0 (assq-ref bounds 'tor) (assq-ref bounds 'toy) (assq-ref bounds 'tog))))
+
+;;; ════════════════════════════════════════════════════════════════════════════
 
 (newline)
 (display (string-append "── Results: "

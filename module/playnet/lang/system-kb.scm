@@ -8,6 +8,7 @@
 ;;;   (run* (proof) (trigger-chain-o 'rad-push 'kernel proof))
 
 (define-module (playnet lang system-kb)
+  #:use-module ((srfi srfi-1) #:select (delete-duplicates))
   #:use-module (playnet lang kanren)
   #:use-module (playnet lang knowledge)
   #:export (*system-facts*

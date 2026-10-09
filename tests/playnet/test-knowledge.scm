@@ -294,6 +294,11 @@
 ;;; Summary
 ;;; ════════════════════════════════════════════════════════════════════════════
 
+(display "\n── query-layers ──\n")
+(check-pred "the system's layers are a list without repeats"
+            (let ((ls (query-layers)))
+              (and (list? ls) (pair? ls) (= (length ls) (length (delete-duplicates ls))))))
+
 (newline)
 (display (string-append "── Results: "
                         (number->string pass-count) " passed, "
