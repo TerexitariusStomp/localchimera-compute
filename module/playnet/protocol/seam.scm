@@ -358,7 +358,7 @@
              "passcode: string, retire: string"
              "Promise<unknown>"
              ((lobby . fetch-icp) (lobby . witness-kel) (session . forget-me))
-             "Forget me: the commune erases every record of its own keyed by this identity, the link between identity and person last (gateway/forget.scm); with RETIRE \"retire\", a terminal rotation goes first — no next key — closing the log for good: no rotation, no recovery, no new key can take the identity over (the key it reveals stays the passcode's). Replies the receipt as JSON ({dropped:{member,bindings,…},kept:[…]}), or \"err:…\". The page then forgets what this device held.")
+             "Forget me: the commune erases every record of its own keyed by this identity, the link between identity and person last (identity/forget.scm); with RETIRE \"retire\", a terminal rotation goes first — no next key — closing the log for good: no rotation, no recovery, no new key can take the identity over (the key it reveals stays the passcode's). Replies the receipt as JSON ({dropped:{member,bindings,…},kept:[…]}), or \"err:…\". The page then forgets what this device held.")
     (handler "fpEnroll"
              ""
              "Promise<unknown>"

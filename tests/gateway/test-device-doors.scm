@@ -11,7 +11,7 @@
 
 (use-modules (playnet test harness)
              (playnet gateway lobby)
-             (playnet gateway device-registry)
+             (playnet identity devices)
              ((playnet keri signify-portable)
               #:select (bran->signing-keypair public-key->aid-prefix seed->ed25519-keypair))
              ((playnet keri crypto-primitives) #:select (keri-crypto-random-bytes ed25519-keypair-public))

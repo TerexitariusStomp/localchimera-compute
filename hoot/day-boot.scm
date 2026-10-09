@@ -2602,7 +2602,7 @@
                    (else "err:wrong passcode for this identity"))))
 
 ;; forgetMe: the commune erases every record of its own keyed by this
-;; identity, the link between identity and person last (gateway/forget.scm,
+;; identity, the link between identity and person last (identity/forget.scm,
 ;; the session's forget-me door); the reply is the receipt — what went, by
 ;; kind and count, and what stays — as JSON. With RETIRE "retire" a terminal
 ;; rotation goes first: the key the log committed to is revealed and NO next

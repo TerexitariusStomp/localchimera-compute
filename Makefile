@@ -2628,7 +2628,7 @@ test-keri-signup-disabled-gate:
 	$(GUILE_TEST_DEV) -L module tests/keri/test-signup-disabled-gate.scm
 
 # forget-me erases every store of the gateway's own keyed by an AID, the
-# AID→person link last, and leaves the key log — gateway/forget.scm; a
+# AID→person link last, and leaves the key log — identity/forget.scm; a
 # rotation naming no next key retires the identity for good
 test-keri-forget:
 	$(GUILE_TEST_DEV) -L module tests/keri/test-forget.scm

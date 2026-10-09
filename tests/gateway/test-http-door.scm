@@ -16,7 +16,7 @@
 (use-modules (playnet test harness)
              (playnet gateway http-door)
              ((playnet planner vf schemas) #:select (make-measure))
-             (playnet gateway device-registry)
+             (playnet identity devices)
              ((playnet keri signify-portable)
               #:select (bran->signing-keypair bran->rotation-keypair public-key->aid-prefix
                         build-icp next-key-digest seed->ed25519-keypair sign-bytes))

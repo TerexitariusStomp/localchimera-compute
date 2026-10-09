@@ -8,7 +8,7 @@
 ;;; session door and the signature door. docs/planning/identity/device-keys.md.
 
 (use-modules (playnet test harness)
-             (playnet test keri-identity)
+             (playnet identity fixture)
              (playnet keri signify-portable)
              ((playnet keri cesr) #:select (cesr-bytes->qb64))
              ((playnet keri citizen-sig)
@@ -19,7 +19,7 @@
              ((playnet governance credentials)
               #:select (make-device-authorization-credential cred-said cred-claims
                         cred-signature cred-schema cred-issuer cred-holder))
-             (playnet gateway device-registry)
+             (playnet identity devices)
              (playnet gateway signup-agent)
              (playnet gateway oobi-host)
              (playnet gateway lobby)

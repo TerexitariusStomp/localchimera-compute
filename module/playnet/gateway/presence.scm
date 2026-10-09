@@ -103,7 +103,7 @@
    ;; walkie offering to a dead inbox.
    ;; A name that is neither a session nor in any room is a no-op: nothing
    ;; is broadcast and the sink keeps whatever transport it has — a forget
-   ;; (gateway/forget.scm) leaves by several names, and a name presence
+   ;; (identity/forget.scm) leaves by several names, and a name presence
    ;; never held must not cut another live user's alerts.
    ((leave name)
     (let* ((held?        (and (hashmap-ref sessions name #f) #t))

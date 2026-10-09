@@ -31,7 +31,7 @@
                 #:select (verify-said-signature verify-said-signature-under-key))
   #:use-module ((playnet openvtc first-person)
                 #:select (holds-any-live-phc?))
-  #:use-module ((playnet gateway device-registry)
+  #:use-module ((playnet identity devices)
                 #:select (device-wire->cred device-credential-verdict
                           device-enroll! device-revoke! devices-of device-entry
                           device-entry-doors
@@ -63,10 +63,10 @@
                 #:select (card-wire->card card-verdict card-at card-put! card-get card-drop! person-aid?))
   ;; erasure: every store of the gateway's own keyed by an AID, as one act;
   ;; every session's dispatch passes the forgotten gate
-  #:use-module ((playnet gateway forget)
+  #:use-module ((playnet identity forget)
                 #:select (forget-member! forgotten-gated unmark-forgotten!))
   ;; the per-AID files a member's sync doors keep (one module lists the kinds)
-  #:use-module ((playnet gateway user-files)
+  #:use-module ((playnet identity user-files)
                 #:select (%data-dir %user-file %read-user-data %write-user-data!
                           %seed-user-docs!))
   #:use-module ((srfi srfi-1) #:select (filter-map))
@@ -133,7 +133,7 @@
   "Let go of the picture held for a contest ballot that has settled."
   (release-evidence! (%data-dir) ballot-id))
 
-;; the per-AID files, named once each (gateway/user-files.scm holds the
+;; the per-AID files, named once each (identity/user-files.scm holds the
 ;; path scheme and the list of kinds a forget erases)
 (define (contacts-file-for aid-prefix) (%user-file "contacts" aid-prefix))
 (define (cards-dir) (string-append (%data-dir) "/cards"))
@@ -245,7 +245,7 @@
   ;; the two together.
   ;; A session is spawned only once has-seat? held: a seat proven afresh is
   ;; a person who is a member again, so any forgotten mark on the AID lifts
-  ;; (gateway/forget.scm).
+  ;; (identity/forget.scm).
   (unmark-forgotten! aid-prefix)
   (define (planner! . msg)
     (if planner-service (apply <- planner-service msg) (list 'error "no planner service")))
@@ -952,7 +952,7 @@
         (list 'error "no such device")))
 
    ;; ── forget ───────────────────────────────────────────────────────────
-   ;; Erasure, as gateway/forget.scm states it: every store of this
+   ;; Erasure, as identity/forget.scm states it: every store of this
    ;; gateway's own keyed by this AID goes, the AID→person link last; the
    ;; key log stays, data about a pseudonym nobody here can resolve. Root
    ;; only — a device key able to erase its person would make a stolen

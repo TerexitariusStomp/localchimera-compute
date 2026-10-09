@@ -20,7 +20,7 @@
 (use-modules (playnet test harness)
              (playnet gateway mcp-door)
              (playnet gateway http-door)
-             (playnet gateway device-registry)
+             (playnet identity devices)
              (playnet protocol) (playnet protocol shapes) (playnet protocol mcp)
              ((playnet keri signify-portable)
               #:select (bran->signing-keypair bran->rotation-keypair public-key->aid-prefix

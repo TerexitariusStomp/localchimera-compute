@@ -32,7 +32,7 @@
 ;; ── the wire ────────────────────────────────────────────────────────────
 ;; {"said","issuer","holder","claims":{"u","kind","ctx","style","issued-at",
 ;;  "expires-at"},"sig"} — the shape the device-authorization wire has
-;; (gateway/device-registry.scm). KIND and STYLE are symbols in the
+;; (identity/devices.scm). KIND and STYLE are symbols in the
 ;; credential, and they are SAID material, so they are read back as symbols.
 
 (define (contact-point-wire->cred wire)

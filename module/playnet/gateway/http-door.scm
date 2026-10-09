@@ -34,7 +34,7 @@
   #:use-module ((playnet utils records) #:select (vf-record?))
   #:use-module (playnet protocol)
   #:use-module (playnet protocol shapes)
-  #:use-module ((playnet gateway device-registry) #:select (device-owner-of device-entry-doors))
+  #:use-module ((playnet identity devices) #:select (device-owner-of device-entry-doors))
   #:use-module ((playnet keri citizen-sig) #:select (aid-prefix->pubkey))
   #:use-module ((playnet keri cesr) #:select (cesr-bytes->qb64 cesr-qb64->bytes))
   #:use-module ((playnet keri crypto-primitives)

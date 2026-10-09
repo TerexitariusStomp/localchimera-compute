@@ -4,7 +4,7 @@
 ;;; entry, bindings (browser, push, email), a point waiting at the desk, an
 ;;; enrolled device, cards given and received, every kind of user file, an
 ;;; offline mailbox, a spooled mail — is forgotten through the root session's
-;;; one door. The properties (gateway/forget.scm, gdpr-analysis.md §3.1):
+;;; one door. The properties (identity/forget.scm, gdpr-analysis.md §3.1):
 ;;;   every store of the gateway's own is empty of them, and the receipt
 ;;;   counts what went; the old cap refuses; the key log STANDS (the
 ;;;   pseudonym can take a seat again — disassociation with the chain intact);
@@ -20,7 +20,7 @@
 (setenv "PLAYNET_MAIL_DIR" (string-append tmp "/mail"))
 
 (use-modules (playnet test harness)
-             (playnet test keri-identity)
+             (playnet identity fixture)
              (playnet keri signify-portable)
              ((playnet keri cesr) #:select (cesr-bytes->qb64))
              ((playnet keri crypto-primitives) #:select (keri-crypto-random-bytes))
@@ -28,9 +28,9 @@
               #:select (make-device-authorization-credential cred-said cred-claims
                         cred-signature cred-schema cred-issuer cred-holder))
              ((playnet planner knowledge law product) #:select (product-feature feature-doors))
-             (playnet gateway device-registry)
-             (playnet gateway forget)
-             ((playnet gateway user-files) #:select (%user-file %user-file-kinds))
+             (playnet identity devices)
+             (playnet identity forget)
+             ((playnet identity user-files) #:select (%user-file %user-file-kinds))
              (playnet gateway presence)
              (playnet gateway mailbox)
              (playnet gateway lobby)
@@ -200,7 +200,7 @@
                 (let ((name (module-name m)))
                   (not (and (pair? name) (>= (length name) 2) (eq? 'playnet (car name))
                             (memq (cadr name) '(planner governance keri observation))))))
-              (module-uses (resolve-module '(playnet gateway forget)))))
+              (module-uses (resolve-module '(playnet identity forget)))))
 (check "the pseudonym can take a seat again"
        (eq? 'ok (settle (with-vat gateway-vat ($ lobby 'join "" "" aid)))))
 (define root2 (session-of (root-auth)))

@@ -128,7 +128,7 @@
 ;; The keys that sign AS an AID, beyond the one its prefix encodes: the
 ;; gateway binds this cell to (aid at → list of qb64 D/B keys) — the AID's
 ;; current KEL key after rotations, and every device key the root had
-;; authorized AT instant `at` (playnet gateway device-registry
+;; authorized AT instant `at` (playnet identity devices
 ;; device-keys-at); `at` is #f for "now". A statement is verified at its
 ;; own time, so a device's vouch stays the person's after the device is
 ;; revoked or its person forgotten, as a rotated-away root key keeps what it

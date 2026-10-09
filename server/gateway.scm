@@ -62,7 +62,7 @@
              ((playnet planner vf schemas) #:select (resource-specification-default-unit-of-resource))
              ((playnet planner federation host) #:select (read-kept keep! berth-swiss! berth-sturdyref wire-handshake))
              ((playnet gateway http-door-server) #:select (start-http-door!))
-             ((playnet gateway device-registry)
+             ((playnet identity devices)
               #:select (device-registry-dir device-keys-at))
              ((playnet keri citizen-sig) #:select (aid-signer-keys-resolver make-keri-identity))
              ((rnrs bytevectors) #:select (make-bytevector))
