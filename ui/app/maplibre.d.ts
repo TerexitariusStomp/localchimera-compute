@@ -271,6 +271,15 @@ declare global {
       getCanvas(): HTMLCanvasElement;
     }
 
+    /**
+     * Teach the library a URL scheme: the handler answers a tile request with
+     * its bytes (uncompressed — the library does not inflate what a protocol
+     * hands it). app/map-packs.ts's `osm://`, which reads kept regions off the
+     * device before asking the gateway.
+     */
+    function addProtocol(scheme: string,
+                         handler: (req: { url: string }, abort: AbortController) => Promise<{ data: ArrayBuffer }>): void;
+
     /** What addControl expects — the same tiny contract mapbox-controls.js's
      *  vendored classes and deck.gl's MapboxOverlay both implement. */
     interface IControl {

@@ -8,10 +8,11 @@
 ;;;
 ;;; module/playnet/planner/knowledge/law/product.scm's `attribution` notice is
 ;;; already the one source for ui/app/legal-product.ts (tools/emit-product-law.scm).
-;;; Three more places quote the RID that string carries, verbatim or bare, and
+;;; Two more places quote the RID that string carries, verbatim or bare, and
 ;;; were hand-edited until now: LICENSE-ADDITIONAL-TERMS.md (the full quoted
-;;; sentence Section 7b asks every deployment to preserve), and the footers of
-;;; browser/app.html and browser/info/index.html (the bare token alone). This
+;;; sentence Section 7b asks every deployment to preserve) and the footer of
+;;; browser/info/index.html (the bare token alone). The app itself shows the
+;;; sentence through ui/app/legal-product.ts, which is the first emitter's. This
 ;;; touches only the `rad:<id>` TOKEN in each — never the prose around it —
 ;;; so it rewrites cleanly regardless of how each file phrases its own
 ;;; sentence, including across a Radicle RID transition (the reason this
@@ -32,7 +33,7 @@
     (unless m (error "attribution notice carries no rad:<id> token"))
     (match:substring m)))
 
-(define TARGETS '("LICENSE-ADDITIONAL-TERMS.md" "browser/app.html" "browser/info/index.html"))
+(define TARGETS '("LICENSE-ADDITIONAL-TERMS.md" "browser/info/index.html"))
 
 (define (slurp path)
   (call-with-input-file path get-string-all))

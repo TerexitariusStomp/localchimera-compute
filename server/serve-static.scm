@@ -39,7 +39,7 @@
   #:use-module ((playnet keri did) #:select (aid->did-keri))
   #:use-module ((playnet utils pmtiles)
                 #:select (pmtiles-archives pmtiles-tile pmtiles-tile-compression
-                          pmtiles-info))
+                          pmtiles-info pmtiles-path archive-bytes))
   #:use-module ((playnet keri schemas) #:select (schema-document-for-said))
   #:use-module ((playnet gateway oobi-host)
                 #:select ((read-oobi-entry-from-dir . read-oobi-entry)
@@ -66,6 +66,7 @@
             handle-peer-status
             handle-osm-tile
             handle-osm-regions
+            handle-osm-pack
             handle-feedback-post
             handle-feedback-list
             handle-feedback-delete
@@ -528,6 +529,50 @@ gzipped archives answer under Content-Encoding: gzip."
                     (cache-control . (public (max-age . 604800) immutable)))))
                 (cdr hit))
         (not-found))))
+
+(define %pack-chunk (* 8 1024 1024))
+
+(define (handle-osm-pack name request)
+  "The archive NAME (as regions.json lists it, with its .pmtiles suffix), for
+the device's own copy: a Range answers 206 with at most 8 MiB, so a download
+over Tor is a series of resumable slices; no Range answers the whole file.
+A name no archive carries is a 404 — the request never becomes a path."
+  (let ((a (any (lambda (a) (and (string=? (basename (pmtiles-path a)) name) a))
+                (pmtiles-archives %map-dir))))
+    (if (not a)
+        (not-found)
+        (let* ((size  (assq-ref (pmtiles-info a) 'bytes))
+               (range (request-range request))
+               (span  (and (pair? range) (eq? (car range) 'bytes)
+                           (pair? (cdr range)) (pair? (cadr range))
+                           (cadr range)))
+               (start (and span (car span)))
+               (end   (and span (min (- size 1)
+                                     (or (cdr span) (- size 1))
+                                     (+ start %pack-chunk -1)))))
+          (cond
+           ((and span (or (not (integer? start)) (>= start size) (< end start)))
+            (values (build-response #:code 416
+                                    #:headers (with-headers %security-headers
+                                               `((content-range . (bytes * ,size)))))
+                    ""))
+           (span
+            (values (build-response
+                     #:code 206
+                     #:headers (with-headers %security-headers
+                                `((content-type . (application/octet-stream))
+                                  (content-range . (bytes (,start . ,end) ,size))
+                                  (accept-ranges . (bytes))
+                                  (cache-control . (public (max-age . 604800) immutable)))))
+                    (archive-bytes a start (+ 1 (- end start)))))
+           (else
+            (values (build-response
+                     #:code 200
+                     #:headers (with-headers %security-headers
+                                `((content-type . (application/octet-stream))
+                                  (accept-ranges . (bytes))
+                                  (cache-control . (public (max-age . 604800) immutable)))))
+                    (archive-bytes a 0 size))))))))
 
 (define (handle-osm-regions)
   "The archives on offer — name, bounds, zooms, size — for the map's region
@@ -1650,6 +1695,10 @@ list and the offline-pack chooser."
      (handle-route (uri-query (request-uri request))))
     (('GET "tiles" "osm" "regions.json")
      (handle-osm-regions))
+    (('GET "tiles" "osm" pack)
+     (if (string-suffix? ".pmtiles" pack)
+         (handle-osm-pack pack request)
+         (not-found)))
     (('GET "tiles" "osm" z x y)
      (handle-osm-tile z x y))
     (('POST "trace")
@@ -1686,6 +1735,7 @@ list and the offline-pack chooser."
   (format #t "  /route?from=&to=&profile=     → Valhalla route proxy (GeoJSON-ish)~%")
   (format #t "  /tiles/osm/{z}/{x}/{y}        → OpenStreetMap vector tiles from ~a/*.pmtiles~%" %map-dir)
   (format #t "  /tiles/osm/regions.json       → the archives on offer~%")
+  (format #t "  /tiles/osm/{name}.pmtiles     → one archive, by Range, for a device's offline copy~%")
   (format #t "  /feedback (POST)              → anonymous feedback pool (tier 1 of the issue flow)~%")
   (format #t "  /report (POST)                → reports of unlawful or harmful content, kept apart from feedback~%")
   (format #t "  (else)                        → static files from ~a~%~%"

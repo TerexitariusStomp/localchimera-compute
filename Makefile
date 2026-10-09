@@ -2724,6 +2724,29 @@ test-observability-endpoints:
 test-pmtiles:
 	$(GUILE_TEST_DEV) -L module -L tests -L . tests/server/test-pmtiles.scm
 
+# The device-side reader (browser/app/pmtiles.js) against the same fixture, so
+# a region kept on a phone reads exactly as the gateway reads it.
+.PHONY: test-pmtiles-browser
+test-pmtiles-browser:
+	node tests/browser/pmtiles-test.mjs
+
+# A region kept on the device, end to end, in a real browser: the dev server is
+# started over the fixture map directory, the page downloads the fixture region
+# in Range slices into IndexedDB, and the osm:// protocol answers a tile off
+# the device with the gateway's tiles cut. Needs the browser-test shell
+# (chromium + playwright); the server is `serve` on its own port and map dir,
+# spelled out rather than recursed into ($(MAKE) in a recipe runs even under -n).
+.PHONY: test-map-packs-ux
+test-map-packs-ux:
+	@log=$$(mktemp); \
+	setsid env PLAYNET_DEV=1 PLAYNET_FIBERS=1 PLAYNET_MAP_DIR=tests/fixtures/map $(HOOT_RUN_DEV) -L . -L module \
+	  -c '((@ (server serve-static) run-static-server) #:work-dir "browser" #:oobi-dir "data/oobi-host" #:port 8092)' >$$log 2>&1 & pid=$$!; \
+	for i in $$(seq 1 120); do curl -sf http://127.0.0.1:8092/tiles/osm/regions.json >/dev/null && break; sleep 1; done; \
+	curl -sf http://127.0.0.1:8092/tiles/osm/regions.json >/dev/null || { echo "test-map-packs-ux: the server did not come up"; cat $$log; kill -- -$$pid 2>/dev/null; exit 1; }; \
+	UX_BASE=http://127.0.0.1:8092 guix shell -L deploy/guix -m deploy/manifests/browser-test-manifest.scm -- \
+	  sh -c '[ -e node_modules ] || ln -s "$$GUIX_ENVIRONMENT/lib/node_modules" node_modules; export CHROMIUM_PATH=$$(command -v chromium); node tests/ux/map-packs-ux.mjs'; rc=$$?; \
+	kill -- -$$pid 2>/dev/null; rm -f $$log; exit $$rc
+
 test-playnet-scope:
 	$(GUILE_TEST_DEV) -L module -L tests tests/tools/test-playnet-scope.scm
 

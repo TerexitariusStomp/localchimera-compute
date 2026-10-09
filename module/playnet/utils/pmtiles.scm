@@ -27,6 +27,7 @@
   #:use-module (zlib)
   #:export (pmtiles-open
             pmtiles-path
+            archive-bytes
             pmtiles-tile
             pmtiles-tile-compression
             pmtiles-info

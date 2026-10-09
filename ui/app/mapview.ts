@@ -23,6 +23,7 @@ import { devMode } from './prefs.js';
 import { R, U } from './geom.js';
 import { USER, PLACES } from './core.js';
 import { mapStyle, rethemeBasemap } from './basemap.js';
+import { installOsmProtocol } from './map-packs.js';
 import { clearMarkers } from './markers.js';
 import { relevantOffers, MAP_ALL_ID } from './offers.js';
 import { stage, onEarth, onMapFace } from './stage.js';
@@ -154,6 +155,7 @@ export function sizeEarthMap(): void {
 export const WALK_ZOOM = 16;
 
 function mkMap(): void {
+  installOsmProtocol();   // the style's osm:// source: kept packs first, then the gateway
   const m = new maplibregl.Map({
     container: MAP_EL(),
     style: mapStyle(),

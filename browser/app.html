@@ -609,6 +609,16 @@
   .reach-note { margin: 0; font-size: 11px; color: var(--t-999999); }
   .reach-on { font-size: 11px; font-weight: 600; color: var(--t-2e7d52); }
   .reach .slot-btn { min-height: 28px; }
+  /* offline maps (app/map-packs-view.ts): one row per region the gateway offers */
+  .packs { display: flex; flex-direction: column; gap: 8px; }
+  .pack-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .pack-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .pack-name { font-weight: 600; min-width: 6em; }
+  .pack-state { flex: 1 1 auto; font-size: 11.5px; color: var(--t-6a7a68); }
+  .pack-act { display: flex; gap: 6px; }
+  .pack-note { margin: 0; font-size: 11px; color: var(--t-999999); }
+  .pack-trouble { color: var(--t-7a4bb0); }
+  .packs .slot-btn { min-height: 28px; }
   .reach .slot-btn.arm { background: var(--t-b04a3a); border-color: var(--t-b04a3a); color: var(--t-ffffff); font-weight: 700; }
   .reach-add { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .reach-add select, .reach-add input, .reach-code { font: inherit; font-size: 12.5px; min-height: 28px; padding: 3px 8px;

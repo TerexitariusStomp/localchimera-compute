@@ -29,6 +29,7 @@ import { reachBlock } from './reach-view.js';
 import { render } from './template.js';
 import { effect } from './reactive.js';
 import { storageRows } from './storage-view.js';
+import { mapPacksBlock } from './map-packs-view.js';
 import { reportBlock } from './report.js';
 import { TERMS_HREF, PRIVACY_HREF, ACCESSIBILITY_HREF } from './legal-product.js';
 // nothing here repaints anything: every row writes through a signal, and the
@@ -200,6 +201,7 @@ export function registerAllSettings() {
     const sleepSpansBlock = mountFragment(createSleepSpansBlock());
     const awayBlockSettings = mountFragment(createAwayBlock());
     const reachBlockSettings = mountFragment(reachBlock);
+    const mapPacksSettings = mountFragment(mapPacksBlock);
     // one element for the life of the page: a change in progress survives a
     // look at another section, and its own effect follows who is signed in
     let passcodeEl = null;
@@ -269,9 +271,13 @@ export function registerAllSettings() {
                     + "retire the identity for good. Your signed key log stays, as records about an "
                     + "identifier nobody can resolve to you.",
                 rows: () => [{ kind: "custom", build: mount(forgetSection) }] },
+            { id: "maps", title: "offline maps",
+                note: "A region kept here draws with no network at all — the map reads it off this device "
+                    + "before asking the gateway. A download lands in slices and resumes where it stopped.",
+                rows: () => [{ kind: "custom", build: mapPacksSettings }] },
             { id: "storage", title: "what this device keeps",
-                note: "Your key event log, this device's key, your log and your pictures are kept in this "
-                    + "browser's storage. The passcode is the one thing kept nowhere.",
+                note: "Your key event log, this device's key, your log, your pictures and any map regions "
+                    + "you keep are in this browser's storage. The passcode is the one thing kept nowhere.",
                 rows: storageRows },
         ],
     });

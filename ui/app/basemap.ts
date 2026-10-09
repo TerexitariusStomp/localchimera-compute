@@ -1,10 +1,11 @@
 // app/basemap.ts — the ground under the map: OpenStreetMap, served from here.
 //
-// One vector source, the same-origin /tiles/osm route (server/serve-static.scm),
-// which reads PMTiles archives cut from a Protomaps build of OpenStreetMap
-// (tools/map-tiles.sh). The browser never contacts a tile provider: no
-// per-tile location leak, the map works over the onion, and it works with no
-// network once the tiles are on the device. The style is @protomaps/basemaps'
+// One vector source, the `osm://` scheme app/map-packs.ts teaches maplibre: a
+// region kept on this device answers first, the same-origin /tiles/osm route
+// (server/serve-static.scm) otherwise — PMTiles archives cut from a Protomaps
+// build of OpenStreetMap (tools/map-tiles.sh). The browser never contacts a
+// tile provider: no per-tile location leak, the map works over the onion, and
+// it works with no network for every region kept. The style is @protomaps/basemaps'
 // (vendor/basemaps/basemaps.js) over its light palette, and the palette goes
 // through the dial's theme on the way in, so a dark theme gets a dark map and
 // a theme pick re-hues the ground in place.
@@ -43,7 +44,7 @@ export function mapStyle(): unknown {
     glyphs: o + "/assets/map/fonts/{fontstack}/{range}.pbf",
     sprite: o + "/assets/map/sprites/light",
     sources: {
-      osm: { type: "vector", tiles: [o + "/tiles/osm/{z}/{x}/{y}"],
+      osm: { type: "vector", tiles: ["osm://{z}/{x}/{y}"],
              maxzoom: OSM_MAXZOOM, attribution: ATTRIBUTION },
     },
     layers: groundLayers(),

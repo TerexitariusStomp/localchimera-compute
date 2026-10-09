@@ -75,7 +75,8 @@
 
 ;; ── the routes ────────────────────────────────────────────────────────────
 (setenv "PLAYNET_MAP_DIR" %fixture-dir)
-(use-modules ((server serve-static) #:select (handle-osm-tile handle-osm-regions)))
+(use-modules ((server serve-static) #:select (handle-osm-tile handle-osm-regions handle-osm-pack))
+             (web request) (web uri))
 (define (call-handler thunk) (call-with-values thunk list))
 (define (header pair name) (assq-ref (response-headers (car pair)) name))
 
@@ -97,5 +98,28 @@
            (string-contains body "\"bounds\":[13.0,52.3,13.8,52.7]")
            (string-contains body "\"maxZoom\":2")
            #t))))
+
+
+;; ── the pack: one archive by Range ─────────────────────────────────────────
+(define (pack-request range)
+  (build-request (string->uri "http://localhost/tiles/osm/tiny.pmtiles")
+                 #:headers (if range `((range . ,range)) '())))
+(define whole (call-with-input-file %fixture get-bytevector-all #:binary #t))
+(let ((r (call-handler (lambda () (handle-osm-pack "tiny.pmtiles" (pack-request '(bytes (0 . 126))))))))
+  (check "a Range answers 206" (response-code (car r)) 206)
+  (check "…with the content range and the size" (header r 'content-range) `(bytes (0 . 126) ,(bytevector-length whole)))
+  (check "…and exactly those bytes" (bytevector-length (cadr r)) 127)
+  (check "…the header's bytes" (utf8->string (let ((m (make-bytevector 7))) (bytevector-copy! (cadr r) 0 m 0 7) m)) "PMTiles"))
+(let ((r (call-handler (lambda () (handle-osm-pack "tiny.pmtiles" (pack-request '(bytes (200 . #f))))))))
+  (check "an open-ended Range runs to the end" (header r 'content-range) `(bytes (200 . ,(- (bytevector-length whole) 1)) ,(bytevector-length whole)))
+  (check "…and carries the tail" (bytevector-length (cadr r)) (- (bytevector-length whole) 200)))
+(check "a Range past the end answers 416"
+  (response-code (car (call-handler (lambda () (handle-osm-pack "tiny.pmtiles" (pack-request '(bytes (100000 . #f)))))))) 416)
+(let ((r (call-handler (lambda () (handle-osm-pack "tiny.pmtiles" (pack-request #f))))))
+  (check "no Range answers the whole file" (response-code (car r)) 200)
+  (check "…byte for byte" (cadr r) whole)
+  (check "…saying ranges are welcome" (header r 'accept-ranges) '(bytes)))
+(check "a name no archive carries is 404, never a path"
+  (response-code (car (call-handler (lambda () (handle-osm-pack "../../etc/passwd.pmtiles" (pack-request #f)))))) 404)
 
 (test-summary!)
