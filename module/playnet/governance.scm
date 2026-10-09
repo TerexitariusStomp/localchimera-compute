@@ -19,7 +19,7 @@
   #:use-module (playnet openvtc sybil-detect)
   #:use-module (playnet governance recovery)
   #:use-module (playnet governance expression)
-  #:use-module (playnet governance enrollment-ceremony)
+  #:use-module (playnet identity enrollment)
   #:use-module (playnet openvtc personhood-policy)
   #:use-module (playnet governance async)
   #:use-module (playnet governance recipe-standing)
@@ -215,7 +215,7 @@
               global-total-social-svc-async global-citizen-ability-async global-ability-norm-async on->
               open-ballot-async spawn-ballot-from-snapshot tally-mandated-async
               voice-share-async vow-fold-async vow-let*
-              ;; from (playnet governance enrollment-ceremony)
+              ;; from (playnet identity enrollment)
               enrollment-statement-said spawn-enrollment-ceremony
               enroll-ceremony-for-candidate enroll-asks enrollment-record
               witness-recent-enrollments expire-stale-enrollments!
@@ -324,7 +324,7 @@
   #:use-module (playnet governance scope-witness)
   #:re-export (^scope-witness spawn-scope-witness
                scope-witness-mirror! scope-witness-kel-for)
-  #:use-module (playnet governance oobi-host-mirror)
+  #:use-module (playnet identity oobi-host-mirror)
   #:re-export (^oobi-host-mirror spawn-oobi-host-mirror)
   #:use-module (playnet governance scope-graph)
   #:re-export (^scope-graph current-scope-graph)

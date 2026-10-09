@@ -22,7 +22,7 @@
 ;;; `(<- self 'tick)` every interval-sec. Goblins vat's turn loop
 ;;; processes the message in due course. Same pattern as the project's
 ;;; existing periodic actors (see ^http-witness-publisher in
-;;; governance/oobi-host-mirror.scm and adjacent files).
+;;; identity/oobi-host-mirror.scm and adjacent files).
 ;;;
 ;;; Per `docs/commons.typ` §3686: "no one is a *member* of any scope,
 ;;; every leaf is a *universal leaf*". The curator implements the

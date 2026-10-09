@@ -66,7 +66,7 @@
   #:use-module ((playnet governance attestation-ceremony)
                 #:select (^attestation-ceremony register-attestation-ceremony!))
   #:use-module (playnet governance keri scope-exchange)
-  #:use-module (playnet governance enrollment-ceremony)
+  #:use-module (playnet identity enrollment)
   #:use-module (playnet governance kel-store)
   #:use-module (playnet governance bran-custody)
   #:use-module (goblins ocapn ids)

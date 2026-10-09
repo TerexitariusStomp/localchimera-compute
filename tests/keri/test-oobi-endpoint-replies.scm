@@ -22,7 +22,7 @@
              ((playnet keri inception)
               #:select (governance-create-scope-aid!
                         scope-inception-aid scope-inception-signed-icp))
-             (playnet governance oobi-host-mirror)
+             (playnet identity oobi-host-mirror)
              ((server serve-static) #:select ())  ; for @@ body-builder access
              (goblins)
              (json)

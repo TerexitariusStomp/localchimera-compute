@@ -10,7 +10,7 @@
 
 (use-modules (playnet test harness))
 (use-modules (playnet planner scope root))
-(use-modules (playnet governance enrollment-ceremony) (playnet governance scope) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet openvtc credentials) (playnet openvtc first-person))
+(use-modules (playnet identity enrollment) (playnet governance scope) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet openvtc credentials) (playnet openvtc first-person))
 (use-modules ((playnet keri signify) #:select (ed25519-keypair-public)))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap)
              (rnrs bytevectors) (srfi srfi-1))

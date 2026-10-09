@@ -8,7 +8,7 @@
 ;;; its k-of-n multisig form.
 
 (use-modules (playnet governance witness-relay)
-             (playnet governance credentials) (playnet governance enrollment-ceremony) (playnet keri acdc) (playnet keri acdc-store) (playnet openvtc credentials) (playnet openvtc first-person)
+             (playnet governance credentials) (playnet identity enrollment) (playnet keri acdc) (playnet keri acdc-store) (playnet openvtc credentials) (playnet openvtc first-person)
              (playnet planner vf schemas) (srfi srfi-1)
              (goblins)
              (ice-9 format)
