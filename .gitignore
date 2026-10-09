@@ -152,7 +152,9 @@ browser/reload-token.txt
 .onion-data/
 
 # basemap tile proxy cache (server/serve-static.scm /tiles)
-data/tile-cache/
+# the basemap's glyph ranges (10 MB of Noto Sans): tools/map-tiles.sh fetches
+# them beside the archives; the deploy rsync ships them with browser/
+browser/assets/map/fonts/
 
 # Safety net: headless-browser dev screenshots go to ~/playnet-dev-shots (OUTSIDE
 # this repo). But if a stray headless Firefox/Chromium run ever writes a profile

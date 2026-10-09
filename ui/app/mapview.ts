@@ -22,7 +22,7 @@ import { effect } from './reactive.js';
 import { devMode } from './prefs.js';
 import { R, U } from './geom.js';
 import { USER, PLACES } from './core.js';
-import { mapStyle, mountBasemapPick } from './basemap.js';
+import { mapStyle, rethemeBasemap } from './basemap.js';
 import { clearMarkers } from './markers.js';
 import { relevantOffers, MAP_ALL_ID } from './offers.js';
 import { stage, onEarth, onMapFace } from './stage.js';
@@ -162,13 +162,16 @@ function mkMap(): void {
     attributionControl: true, antialias: true,
   });
   m.on("error", e => console.warn("[map]", e));
-  mountBasemapPick(m);
   const ue = document.createElement("div");
   ue.className = "user-marker"; ue.title = "you";
   userMarker = new maplibregl.Marker({ element: ue, anchor: "center" })
     .setLngLat([USER.lng, USER.lat]).addTo(m);
   map = m;
 }
+
+// a theme pick re-hues the ground in place (the dial's own overlays are drawn
+// through the theme already; see main.ts's playnet:theme handler for the rest)
+document.addEventListener("playnet:theme", () => { if (map) rethemeBasemap(map); });
 
 /**
  * Ensure a map bound to THIS face's element.

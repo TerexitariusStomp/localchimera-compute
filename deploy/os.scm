@@ -773,8 +773,8 @@
         ;; holds it for the life of the process: an rsync that lands new
         ;; routes leaves the running server answering with the route table
         ;; it booted with. A route added after the last restart falls
-        ;; through to the SPA fallback, so /tiles/… returns app.html and
-        ;; the map draws markers over empty ground.
+        ;; through to the SPA fallback, so /tiles/osm/… returns app.html
+        ;; and the map draws markers over empty ground.
         "/run/current-system/profile/bin/herd restart playnet-static, "
         "/run/current-system/profile/bin/herd restart dev-bridge, "
         "/run/current-system/profile/bin/herd restart playnet-matrix-bridge, "
@@ -800,6 +800,7 @@
             mosquitto
             guile-mqtt
             guile-json-4
+            guile-zlib                 ; serve-static's PMTiles reader (the basemap's archives)
             radicle
             rsync
             curl                       ; operator HTTP checks

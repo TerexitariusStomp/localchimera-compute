@@ -734,7 +734,7 @@ GUILE_TEST_DEV = $(TEST_ENV) guile --no-auto-compile
 DEV_ENV = guix shell -L deploy/guix -m deploy/manifests/dev-test-manifest.scm -- $(OWN_CCACHE) env LC_ALL=C.UTF-8
 
 HOOT_RUN       = $(HOOT_PINNED) shell guile-next $(HOOT_PKG) \
-                   guile-goblins guile-fibers guile-websocket -- \
+                   guile-goblins guile-fibers guile-websocket guile-zlib -- \
                    $(OWN_CCACHE) guile --no-auto-compile
 HOOT_RUN_DEV   = $(HOOT_RUN)
 HOOT_BUILD     = $(HOOT_PINNED) shell guile-next $(HOOT_PKG) guile-goblins -- $(OWN_CCACHE)
@@ -903,15 +903,17 @@ routing-serve:
 routing-stop:
 	bash tools/valhalla-local.sh stop
 
-# Pre-warm the basemap tile cache for the SAME regions the routing atlas covers
-# (SF + Berlin) — the map's offline twin of `make routing-data`. Replays the
-# browser's tile requests through the /tiles proxy, so it needs `make serve`
-# running and inherits its config (PLAYNET_TILES_TOR, cache dir, …).
-#   make tiles-warm                 # default z8..13 for all regions (~5k tiles)
-#   ZMIN=8 ZMAX=15 REGIONS=berlin make tiles-warm
-.PHONY: tiles-warm
-tiles-warm:
-	python3 tools/tiles-warm.py
+# The basemap's archives: tools/map-tiles.sh cuts one PMTiles file per region of
+# tools/regions.tsv from a Protomaps build of OpenStreetMap (a range read of
+# the planet file, over Tor) into data/map/, and fetches the labels' glyphs
+# into browser/assets/map/fonts/. Both are out of git; the deploy rsync ships
+# the glyphs with browser/, and the box cuts its own archives.
+#   make map-tiles                        every region to z15
+#   REGIONS=berlin MAXZOOM=12 make map-tiles
+#   MAP_DIR=/var/lib/playnet/map make map-tiles    on the box
+.PHONY: map-tiles
+map-tiles:
+	bash tools/map-tiles.sh
 
 # test      — the FULL green baseline: every hermetic .scm test under tests/ and
 #             module/**/tests/, auto-discovered (a new test file can never rot by
@@ -2716,6 +2718,11 @@ test-pending-grants-fiber-inheritance:
 
 test-observability-endpoints:
 	$(GUILE_TEST_DEV) -L module -L tests -L . tests/server/test-observability-endpoints.scm
+
+# The basemap's tile source: the PMTiles reader and the /tiles/osm routes,
+# against the committed fixture (tools/pmtiles-tiny.scm writes it).
+test-pmtiles:
+	$(GUILE_TEST_DEV) -L module -L tests -L . tests/server/test-pmtiles.scm
 
 test-playnet-scope:
 	$(GUILE_TEST_DEV) -L module -L tests tests/tools/test-playnet-scope.scm

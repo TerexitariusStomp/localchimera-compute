@@ -42,6 +42,7 @@
          "guile-goblins"
          "guile-gcrypt"
          "guile-json"
+         "guile-zlib"                      ; the basemap's PMTiles reader (gzipped directories)
          "guile-sqlite3"                   ; corpus-guile-native phase 2+: read the corpus's .db directly
          "guile-fibers"
          "libsodium"                       ; for Ed25519 seed → keypair FFI

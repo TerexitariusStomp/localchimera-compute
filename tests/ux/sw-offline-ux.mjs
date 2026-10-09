@@ -70,9 +70,9 @@ try {
         await cached(`playnet-${build1}`, '/vendor/maplibre-gl.js') && await cached(`playnet-${build1}`, '/vendor/deck.gl.js')
         && await cached(`playnet-${build1}`, '/day-boot.js'));
   h.rec('the REPL page’s wasm is left for the REPL page', !(await cached(`playnet-${build1}`, '/repl.wasm')));
-  const tile = await page.evaluate(async () => (await fetch('/tiles/sat/1/0/0.png')).ok);
+  const regions = await page.evaluate(async () => (await fetch('/tiles/osm/regions.json')).ok);
   h.rec('a server route is answered and stays out of the cache',
-        tile && !(await cached(`playnet-${build1}`, '/tiles/sat/1/0/0.png')));
+        regions && !(await cached(`playnet-${build1}`, '/tiles/osm/regions.json')));
   h.rec('the dial’s modules are in it', await cached(`playnet-${build1}`, '/app/main.js')
                                        && await cached(`playnet-${build1}`, '/app/tabs/calendar.js')
                                        && await cached(`playnet-${build1}`, '/spine-worker.js'));

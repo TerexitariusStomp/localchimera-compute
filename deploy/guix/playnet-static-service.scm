@@ -30,8 +30,7 @@
             playnet-static-configuration-user
             playnet-static-configuration-work-dir
             playnet-static-configuration-oobi-dir
-            playnet-static-configuration-tile-cache-dir
-            playnet-static-configuration-tiles-tor?
+            playnet-static-configuration-map-dir
             playnet-static-configuration-operator
             playnet-static-configuration-clearnet-ws
             playnet-static-service-type))
@@ -51,20 +50,13 @@
   ;; ^oobi-host on-disk store. Same directory the gateway writes to.
   (oobi-dir  playnet-static-configuration-oobi-dir
              (default "/var/lib/playnet/oobi-host"))
-  ;; Fetch-through cache for the /tiles basemap proxy. Absolute, and
-  ;; alongside the rest of the runtime state under /var/lib/playnet,
-  ;; rather than serve-static's default relative `data/tile-cache` —
-  ;; which resolves against whatever directory the service happens to
-  ;; exec in, and lands accumulated cache inside the checkout that every
-  ;; push rsyncs.
-  (tile-cache-dir playnet-static-configuration-tile-cache-dir
-                  (default "/var/lib/playnet/tile-cache"))
-  ;; Route upstream tile fetches through Tor. This box resolves no
-  ;; clearnet DNS, so a direct fetch fails at name resolution; torsocks
-  ;; carries both the lookup and the request, and keeps the origin's
-  ;; address away from the tile upstream while it does.
-  (tiles-tor? playnet-static-configuration-tiles-tor?
-              (default #t))
+  ;; The basemap's PMTiles archives (one per region, cut by
+  ;; `MAP_DIR=… make map-tiles` on the box, like the Valhalla atlas).
+  ;; Absolute, under the runtime state, rather than serve-static's default
+  ;; relative `data/map` — which resolves against whatever directory the
+  ;; service happens to exec in.
+  (map-dir playnet-static-configuration-map-dir
+           (default "/var/lib/playnet/map"))
   ;; Who runs this gateway, as (NAME . VALUE) environment pairs —
   ;; PLAYNET_OPERATOR_NAME, _CONTACT, … (deploy/os.scm builds them from the
   ;; provider config's `operator`). serve-static answers /operator.json and
@@ -87,8 +79,7 @@
         (user       (playnet-static-configuration-user config))
         (work-dir   (playnet-static-configuration-work-dir config))
         (oobi-dir   (playnet-static-configuration-oobi-dir config))
-        (tile-cache (playnet-static-configuration-tile-cache-dir config))
-        (tiles-tor? (playnet-static-configuration-tiles-tor? config))
+        (map-dir    (playnet-static-configuration-map-dir config))
         (operator   (playnet-static-configuration-operator config))
         (clearnet-ws (playnet-static-configuration-clearnet-ws config)))
     (list
@@ -128,25 +119,7 @@
                   ;; turns each observability endpoint into a permanent
                   ;; "not yet booted" response.
                   "PLAYNET_STATE_DIR=/var/lib/playnet"
-                  ;; The /tiles proxy fetches a cold tile by exec'ing curl,
-                  ;; under torsocks when PLAYNET_TILES_TOR is set, and
-                  ;; open-pipe* resolves both names on PATH. This list is
-                  ;; the child's whole environment — with no PATH entry
-                  ;; execvp falls back to a default that holds neither
-                  ;; binary, and every cold tile answers 404.
-                  (string-append
-                   "PATH="
-                   #$(file-append (@ (gnu packages curl) curl) "/bin") ":"
-                   #$(file-append (@ (gnu packages tor) torsocks) "/bin"))
-                  ;; That curl reaches an https upstream, and a store curl
-                  ;; carries no CA bundle of its own — it reads one from the
-                  ;; environment, which a login shell would normally supply.
-                  ;; Absent these it rejects every tile with "server
-                  ;; certificate verification failed. CAfile: none".
-                  "SSL_CERT_DIR=/etc/ssl/certs"
-                  "SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt"
-                  (string-append "PLAYNET_TILE_CACHE=" #$tile-cache)
-                  #$@(if tiles-tor? #~("PLAYNET_TILES_TOR=1") #~())
+                  (string-append "PLAYNET_MAP_DIR=" #$map-dir)
                   #$@(map (lambda (kv) (string-append (car kv) "=" (cdr kv)))
                           operator)
                   #$@(if clearnet-ws
@@ -163,10 +136,10 @@
       (respawn? #t)))))
 
 (define (playnet-static-activation config)
-  "Ensure the OOBI and tile-cache directories exist and are owned by the
-runtime user."
+  "Ensure the OOBI and map directories exist and are owned by the runtime
+user."
   (let ((oobi-dir   (playnet-static-configuration-oobi-dir config))
-        (tile-cache (playnet-static-configuration-tile-cache-dir config))
+        (map-dir    (playnet-static-configuration-map-dir config))
         (user       (playnet-static-configuration-user config)))
     #~(begin
         (use-modules (guix build utils))
@@ -174,7 +147,7 @@ runtime user."
           (for-each (lambda (dir)
                       (mkdir-p dir)
                       (chown dir (passwd:uid pw) (passwd:gid pw)))
-                    (list #$oobi-dir #$tile-cache))))))
+                    (list #$oobi-dir #$map-dir))))))
 
 ;;; ── Service type ───────────────────────────────────────────────────────────
 

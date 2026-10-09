@@ -80,7 +80,6 @@ export const K = {
   themeBg:        k("pn.theme.bg", "the theme's ground colour (read before first paint)"),
   themeCss:       k("pn.theme.css", "the theme's rendered CSS (read before first paint)"),
   scope:          k("pn.scope", "the commune last looked at"),
-  basemap:        k("pn.basemap", "the map's base layer"),
   aiModel:        k("pn.ai.model", "the model the orb asks", "dial-ai-model"),
   calendarsOff:   k("pn.calendars.off", "calendars switched off", "playnet-calendars-off"),
   dialViews:      k("pn.dial.views", "the dial's view toggles", "playnet-dial-views"),

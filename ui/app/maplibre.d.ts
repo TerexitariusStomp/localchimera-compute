@@ -97,6 +97,24 @@ declare global {
       layout?: Record<string, StyleValue>;
     }
 
+    /**
+     * A layer as a STYLE carries it — what @protomaps/basemaps hands back for
+     * the ground under the map (app/basemap.ts). Wider than LayerSpec, which is
+     * the dial's own two overlay kinds: a vector-tile layer names its
+     * source-layer, filters, and may be a symbol or the background.
+     */
+    interface StyleLayer {
+      id: string;
+      type: "background" | "fill" | "line" | "symbol";
+      source?: string;
+      "source-layer"?: string;
+      filter?: Expression;
+      minzoom?: number;
+      maxzoom?: number;
+      paint?: Record<string, StyleValue>;
+      layout?: Record<string, StyleValue>;
+    }
+
     interface GeoJSONSourceSpec {
       type: "geojson";
       data: SourceData;

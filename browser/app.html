@@ -22,6 +22,9 @@
      matches the already-vendored d3 + topojson. -->
 <link rel="stylesheet" href="vendor/maplibre-gl.css">
 <script src="vendor/maplibre-gl.js"></script>
+<!-- the ground under the map: @protomaps/basemaps' style layers for the
+     OpenStreetMap tiles this origin serves (browser/vendor/basemaps/) -->
+<script src="vendor/basemaps/basemaps.js"></script>
 <!-- deck.gl 9.3.10 vendored locally (see browser/vendor/deck.gl.js), same
      same-origin discipline as maplibre-gl above: window.deck, no CDN, no
      bundler. app/tabs/map/deck.ts is the one door onto it (MapboxOverlay,
@@ -1738,7 +1741,6 @@
      where the capsule leaves them room — a wide screen, its 760px centred clear of both — and rise above it where it
      would cover them (a phone, a narrow window) */
   @media (max-width: 1299px) {
-    #main[data-face="map"] #basemapPick { bottom: calc(10px + var(--barh, 68px)); }
     #main[data-face="map"] #orbwrap .maplibregl-ctrl-bottom-right { bottom: var(--barh, 68px); }
   }
   #sharebar { position: absolute; inset: 0; z-index: 30;
@@ -4795,35 +4797,6 @@
     line-height: 1; background: var(--t-ffffff); border-radius: 50%;
     padding: 2px; box-shadow: 0 1px 3px rgb(var(--t-000000-rgb) / 0.25);
     pointer-events: none; }
-  /* small screens: the basemap picker keeps its corner */
-  @media (max-width: 700px) {
-    #basemapPick .bm-name { display: none; }
-    #basemapPick .bm-thumb { width: 34px; height: 34px; }
-  }
-  /* the basemap picker: a row of layer chips at the map's foot — each face a
-     real tile of its own layer, the lit ring the one in force. Street is the
-     default: it weighs a fraction of imagery, so the map is up fast.
-     Collapsed it is a plain icon button, thumb-sized and unlabelled — a
-     control, not a card. Hovered (or tapped, on touch — :focus-within stands
-     in for hover there) it unfolds into the named row, Google-Maps-layer-
-     switcher style; the names are exactly what the unfold is for, so they
-     stay off the collapsed button. */
-  #basemapPick { position: absolute; left: 10px; bottom: 10px; z-index: 5;
-    display: flex; gap: 6px; padding: 4px; border-radius: 10px;
-    background: rgb(var(--t-ffffff-rgb) / 0.92);
-    box-shadow: 0 1px 6px rgb(var(--t-000000-rgb) / 0.3); }
-  #basemapPick .bm-opt { display: flex; flex-direction: column; align-items: center;
-    gap: 2px; cursor: pointer; width: 42px; text-decoration: none; }
-  #basemapPick:hover .bm-opt, #basemapPick:focus-within .bm-opt { width: 50px; }
-  #basemapPick .bm-opt:not(.on) { display: none; }
-  #basemapPick:hover .bm-opt, #basemapPick:focus-within .bm-opt { display: flex; }
-  #basemapPick .bm-thumb { width: 42px; height: 42px; border-radius: 8px;
-    background-size: cover; background-position: center;
-    border: 2px solid rgb(var(--t-000000-rgb) / 0.12); }
-  #basemapPick .bm-opt.on .bm-thumb { border-color: var(--t-2c4a6e); }
-  #basemapPick .bm-name { font-size: 10px; color: var(--t-444444); display: none; }
-  #basemapPick:hover .bm-name, #basemapPick:focus-within .bm-name { display: block; }
-  #basemapPick .bm-opt.on .bm-name { color: var(--t-2c4a6e); font-weight: 650; }
   /* a cluster bubble shows its MEMBERS' faces (up to four, huddled), with a
      corner badge for the overflow / the faceless count / the pool's occ:tot —
      the group reads as what it holds, not as a number */

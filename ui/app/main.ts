@@ -144,8 +144,8 @@ import { initRings } from './ring.js';
 // the offer field (app/offers.js): every offer with a place, tiered by how it
 // relates to you, and the two questions the rim and the map both ask of it
 import { seedMapAll } from './offers.js';
-// the tiles under the map: the three faces of the same proxy, the pick that
-// persists per device, and the style they are named in (app/basemap.js)
+// the ground under the map: OpenStreetMap from this origin, styled through the
+// theme (app/basemap.js)
 
 // which commune the whole UI reads (app/scope.js), and the header breadcrumb
 // that shows it beside the taxonomy focus (app/crumb.js)
@@ -964,8 +964,8 @@ initCalendar();   // now that stage.face is initialized: wire the week-grid face
 // re-hues by itself but ALREADY-PAINTED nodes keep the old theme's values until
 // something repaints them. A theme pick is rare and user-driven, so just repaint
 // everything: the dial (settle), the face that owns the stage (setFace rebuilds
-// the flat faces), and the reactive panels (markDayChanged). The map keeps its
-// own tile style, so leave it alone.
+// the flat faces), and the reactive panels (markDayChanged). The map re-hues
+// its own ground (app/mapview.js listens too).
 document.addEventListener("playnet:theme", () => {
   if (stage.mode !== "dial") return;                 // on the map: nothing of ours is painted
   settle();

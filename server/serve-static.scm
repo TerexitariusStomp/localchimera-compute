@@ -24,7 +24,6 @@
   #:use-module (ice-9 match)
   #:use-module (ice-9 textual-ports)
   #:use-module (ice-9 binary-ports)
-  #:use-module (ice-9 popen)            ; curl → basemap tiles (optionally torsocks)
   #:use-module (rnrs bytevectors)
   #:use-module (web server)
   #:use-module (web request)
@@ -38,6 +37,9 @@
                 #:select (cesr-stream-event cesr-stream-kel
                           scm->json-canonical))
   #:use-module ((playnet keri did) #:select (aid->did-keri))
+  #:use-module ((playnet utils pmtiles)
+                #:select (pmtiles-archives pmtiles-tile pmtiles-tile-compression
+                          pmtiles-info))
   #:use-module ((playnet keri schemas) #:select (schema-document-for-said))
   #:use-module ((playnet gateway oobi-host)
                 #:select ((read-oobi-entry-from-dir . read-oobi-entry)
@@ -62,6 +64,8 @@
             handle-pending-grants
             handle-audit
             handle-peer-status
+            handle-osm-tile
+            handle-osm-regions
             handle-feedback-post
             handle-feedback-list
             handle-feedback-delete
@@ -325,6 +329,7 @@
     ("txt"  . text/plain)
     ("webp" . image/webp)
     ("woff2" . font/woff2)
+    ("pbf"  . application/x-protobuf)  ;; the basemap's glyph ranges (assets/map/fonts)
     ("ogg"  . audio/ogg)
     ("wav"  . audio/wav)
     ("webmanifest" . application/manifest+json)
@@ -481,118 +486,67 @@
 (define (not-found)
   (empty-response 404))
 
-;;; ── Basemap tiles (/tiles/{layer}/{z}/{y}/{x}) — same-origin proxy + cache ──
-;;; The dial's map used to fetch raster tiles straight from Esri/ArcGIS in the
-;;; browser: an https-CDN call per tile, per pan/zoom, leaking the exact area
-;;; you're viewing to a third party AND blocked as mixed-content over the onion.
-;;; This routes them through the box instead — first-party, so the client never
-;;; touches Esri and the map works over Tor / the mesh. A *fetch-through disk
-;;; cache*: a hit serves purely local bytes (the map keeps working fully offline
-;;; once an area has been seen — the regional cache builds itself); a miss curls
-;;; upstream, caches, and serves. Same dumb-relay ethos as /route.
+;;; ── Basemap tiles (/tiles/osm/{z}/{x}/{y}) — OpenStreetMap, served from here ──
+;;; The map draws vector tiles cut from OpenStreetMap data (a Protomaps build,
+;;; `make map-tiles`) and held as PMTiles archives under PLAYNET_MAP_DIR, one
+;;; file per region. Nothing upstream is called at request time: a tile is
+;;; a byte range of a local file, found by its Hilbert id, and a tile no
+;;; archive holds is a 404. The browser never contacts a tile provider — no
+;;; per-tile location leak, nothing to proxy, and the map works over the
+;;; onion and with no network at all. Attribution ("© OpenStreetMap
+;;; contributors") is the ODbL's one ask and rides in the style.
 ;;;
-;;;   PLAYNET_TILE_CACHE   cache dir           (default data/tile-cache)
-;;;   PLAYNET_TILES_TOR=1  curl via torsocks   (hide the box from Esri too)
-;;;   PLAYNET_TILES_OFFLINE=1  cache-only, never curl upstream (air-gapped)
-(define %tile-cache-dir (or (getenv "PLAYNET_TILE_CACHE") "data/tile-cache"))
-(define %tiles-tor?     (and (getenv "PLAYNET_TILES_TOR") #t))
-(define %tiles-offline? (and (getenv "PLAYNET_TILES_OFFLINE") #t))
+;;;   PLAYNET_MAP_DIR   where the *.pmtiles archives live (default data/map)
+(define %map-dir (or (getenv "PLAYNET_MAP_DIR") "data/map"))
 
-;; Whitelist: only these two layer tokens are ever proxied, and each maps to a
-;; FIXED upstream path — nothing from the request steers the URL, so there is no
-;; SSRF surface. (base-path . content-type-header-value) — the content-type is
-;; the already-parsed value shape the (web http) writer expects, like the JSON
-;; endpoints above, so no parse-header round-trip.
-(define %tile-upstreams
-  '(("sat"    . ("World_Imagery"                         . (image/jpeg)))
-    ;; the LIGHT basemaps — street and topo carry their own labels and weigh a
-    ;; fraction of imagery, so the dial defaults to street and the map is up
-    ;; before a satellite tile would have left the CDN
-    ("street" . ("World_Street_Map"                      . (image/jpeg)))
-    ("topo"   . ("World_Topo_Map"                        . (image/jpeg)))
-    ("labels" . ("Reference/World_Boundaries_and_Places" . (image/png)))))
-
-;; z/y/x must be bare non-negative integers — rejects "..", slashes, anything
-;; that could escape the cache path or the upstream URL.
+;; z/x/y must be bare non-negative integers — nothing else reaches the reader.
 (define (tile-int s)
   (let ((n (and s (string->number s))))
     (and (integer? n) (exact? n) (>= n 0) n)))
 
-(define (esri-tile-url base z y x)
-  (string-append "https://server.arcgisonline.com/ArcGIS/rest/services/"
-                 base "/MapServer/tile/"
-                 (number->string z) "/" (number->string y) "/" (number->string x)))
+(define (handle-osm-tile z x y)
+  "Tile Z/X/Y from the first archive (by name) that holds it, as stored —
+gzipped archives answer under Content-Encoding: gzip."
+  (let* ((zn (tile-int z)) (xn (tile-int x)) (yn (tile-int y))
+         ;; (archive . bytes) — found as ONE value, so the search cannot drop
+         ;; the body the way a multi-value return inside `any` would
+         (hit (and zn xn yn
+                   (any (lambda (a)
+                          (let ((bv (pmtiles-tile a zn xn yn)))
+                            (and bv (cons a bv))))
+                        (pmtiles-archives %map-dir)))))
+    (if hit
+        (values (build-response
+                 #:code 200
+                 #:headers
+                 (with-headers %security-headers
+                  `((content-type . (application/vnd.mapbox-vector-tile))
+                    ,@(if (eq? (pmtiles-tile-compression (car hit)) 'gzip)
+                          '((content-encoding . (gzip)))
+                          '())
+                    ;; a build is immutable; a new build is new archives
+                    (cache-control . (public (max-age . 604800) immutable)))))
+                (cdr hit))
+        (not-found))))
 
-(define (tile-cache-path layer z y x)
-  (string-append %tile-cache-dir "/" layer "/"
-                 (number->string z) "/" (number->string y) "/" (number->string x)))
-
-;; mkdir -p, tolerant of races and existing dirs.
-(define (ensure-dir path)
-  (unless (file-exists? path)
-    (ensure-dir (dirname path))
-    (catch 'system-error (lambda () (mkdir path))
-      (lambda _ (unless (file-exists? path) (throw 'tile-mkdir path))))))
-
-(define (read-file-bytes path)
-  (false-if-exception
-   (call-with-input-file path get-bytevector-all #:binary #t)))
-
-;; Write atomically: fill a uniquely-named temp file in the same dir, then
-;; rename onto the final path (atomic within a filesystem). Under the concurrent
-;; fibers backend two requests can race on the same cold tile; this guarantees a
-;; reader never sees a half-written file, and the last writer wins cleanly.
-;; gensym is thread-safe and unique per call — no mkstemp/pid juggling.
-(define (write-file-bytes path bv)
-  (false-if-exception
-   (begin (ensure-dir (dirname path))
-          (let ((tmp (string-append path "." (symbol->string (gensym "tmp")))))
-            (call-with-output-file tmp
-              (lambda (p) (put-bytevector p bv)) #:binary #t)
-            (rename-file tmp path)
-            #t))))
-
-;; Fetch a tile from Esri via curl (handles the https that the guile web client
-;; can't cleanly, and gives the torsocks toggle for free). argv is a list — no
-;; shell — and every piece of the URL is whitelisted/integer-checked upstream.
-(define (curl-tile url)
-  (false-if-exception
-   (let* ((argv (append (if %tiles-tor? '("torsocks") '())
-                        (list "curl" "-sSL" "--max-time" "20"
-                              "--fail" "-A" "playnet-dial-tileproxy" url)))
-          (port (apply open-pipe* OPEN_READ argv))
-          (bv   (get-bytevector-all port))
-          (st   (close-pipe port)))
-     (and (zero? (status:exit-val st))
-          (bytevector? bv) (> (bytevector-length bv) 0) bv))))
-
-(define (tile-response bv content-type)
+(define (handle-osm-regions)
+  "The archives on offer — name, bounds, zooms, size — for the map's region
+list and the offline-pack chooser."
   (values (build-response
            #:code 200
            #:headers (with-headers %security-headers
-                      ;; tiles are immutable — let the browser cache hard.
-                      (list (cons 'content-type content-type)
-                            '(cache-control . (public (max-age . 604800) immutable)))))
-          bv))
-
-(define (handle-tiles layer z y x)
-  (let ((up (assoc-ref %tile-upstreams layer))
-        (zn (tile-int z)) (yn (tile-int y)) (xn (tile-int x)))
-    (if (and up zn yn xn)
-        (let* ((base   (car up))
-               (ctype  (cdr up))
-               (cpath  (tile-cache-path layer zn yn xn))
-               (cached (read-file-bytes cpath)))   ; #f on a cache miss
-          (cond
-           (cached (tile-response cached ctype))
-           (%tiles-offline? (not-found))
-           (else
-            (let ((bv (curl-tile (esri-tile-url base zn yn xn))))
-              (if bv
-                  (begin (write-file-bytes cpath bv)
-                         (tile-response bv ctype))
-                  (not-found))))))
-        (not-found))))
+                      '((content-type . (application/json (charset . "utf-8")))
+                        (cache-control . (no-cache)))))
+          (scm->json-canonical
+           (list->vector
+            (map (lambda (a)
+                   (let ((info (pmtiles-info a)))
+                     `(("name" . ,(assq-ref info 'name))
+                       ("bounds" . ,(list->vector (assq-ref info 'bounds)))
+                       ("minZoom" . ,(assq-ref info 'min-zoom))
+                       ("maxZoom" . ,(assq-ref info 'max-zoom))
+                       ("bytes" . ,(assq-ref info 'bytes)))))
+                 (pmtiles-archives %map-dir))))))
 
 (define (forbidden-component? c)
   ;; Block path traversal AND hidden files / dirs (the old nginx
@@ -1694,8 +1648,10 @@
        (handle-audit aid-clean)))
     (('GET "route")
      (handle-route (uri-query (request-uri request))))
-    (('GET "tiles" layer z y x)
-     (handle-tiles layer z y x))
+    (('GET "tiles" "osm" "regions.json")
+     (handle-osm-regions))
+    (('GET "tiles" "osm" z x y)
+     (handle-osm-tile z x y))
     (('POST "trace")
      (handle-trace body))
     (('POST "feedback")
@@ -1728,7 +1684,8 @@
   (format #t "  /pending-grants.json          → IPEX retry-queue contents~%")
   (format #t "  /audit/{aid}.json             → most recent audit cycle for federation~%")
   (format #t "  /route?from=&to=&profile=     → Valhalla route proxy (GeoJSON-ish)~%")
-  (format #t "  /tiles/{layer}/{z}/{y}/{x}    → basemap tile proxy + disk cache (first-party)~%")
+  (format #t "  /tiles/osm/{z}/{x}/{y}        → OpenStreetMap vector tiles from ~a/*.pmtiles~%" %map-dir)
+  (format #t "  /tiles/osm/regions.json       → the archives on offer~%")
   (format #t "  /feedback (POST)              → anonymous feedback pool (tier 1 of the issue flow)~%")
   (format #t "  /report (POST)                → reports of unlawful or harmful content, kept apart from feedback~%")
   (format #t "  (else)                        → static files from ~a~%~%"
@@ -1748,10 +1705,10 @@
               (server-impl)
               `(#:port ,port #:addr ,INADDR_LOOPBACK)))
 
-;; Prefer the fibers backend so a slow handler — a cold-tile curl to Esri, a
-;; Valhalla POST — runs on its own fiber instead of freezing the single accept
-;; loop; every other request (app.html, the live-reload poll, cached tiles)
-;; keeps being served concurrently. Loading (web server fibers) both registers
+;; Prefer the fibers backend so a slow handler — a Valhalla POST, a tile read
+;; off a cold disk — runs on its own fiber instead of freezing the single
+;; accept loop; every other request (app.html, the live-reload poll, other
+;; tiles) keeps being served concurrently. Loading (web server fibers) both registers
 ;; the 'fibers impl and lets us detect availability; fall back to the stable
 ;; single-threaded 'http impl if guile-fibers isn't in this environment.
 ;; The fibers backend is OPT-IN via PLAYNET_FIBERS=1 (set by `make serve`), not
