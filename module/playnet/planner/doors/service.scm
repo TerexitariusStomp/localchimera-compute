@@ -1968,7 +1968,7 @@ service does not know the scope (nothing to filter by)."
                  #:resource-quantity (make-measure (exact->inexact qty) unit) #:has-point-in-time (iso-now) #:created (iso-now)           ; 13-16
                  #:at-location place #:to-location (and (not taking?) place)     ; 17-18 at-location, to-location
                    ; 19-24
-                 #:note (or note "") #:in-scope-of scope                  ; 25-26 note, in-scope-of
+                 #:note (or note "") #:in-scope-of (list scope)           ; 25-26 note, in-scope-of (a list, as VF has it)
 ))                          ; 27-29
              ;; …and the CONTAINMENT act: it is now inside the box, or out of it.
              ;; A take that leaves some behind does NOT empty the box — what is
@@ -2716,6 +2716,7 @@ service does not know the scope (nothing to filter by)."
         (false-if-exception
          ($ ps 'set-fresh-check
             (make-fresh-check root
+              #:solve (lambda kw (apply plan-fn* root id kw))   ; the readers' door, as every solve here
               #:solve-opts-thunk
               (lambda ()
                 (let ((cached (last-solve-ref id)))

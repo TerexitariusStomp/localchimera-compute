@@ -36,6 +36,7 @@
   #:use-module (playnet planner vf serdes)
   #:use-module (playnet planner vf serdes-bindings)   ; the registered record types vf-serialize reads
   #:use-module (playnet planner vf schemas)
+  #:use-module ((playnet planner formulas flows) #:select (make-work-event))
   #:use-module (playnet planner observation states)
   #:use-module (goblins)
   #:use-module (srfi srfi-1)
@@ -335,8 +336,9 @@
           (make-intent #:id iid #:action 'work #:resource-conforms-to "spec-labor" #:effort-quantity qty
                        #:provider agent-id))
        ($ observer-ref 'record-event
-          (make-economic-event #:id evid #:action 'work #:resource-conforms-to "spec-labor"
-                               #:provider agent-id #:effort-quantity qty #:satisfies iid))
+          (make-work-event #:id evid #:resource-spec "spec-labor" #:provider agent-id
+                           #:effort-qty svc-amount #:effort-unit "hour" #:satisfies iid
+                           #:timestamp #f #:note #f))
        (let ((existing (hashmap-ref accounts agent-id #f)))
          (bcom (^account-store bcom observer-ref recipe-store-ref
                  (if existing accounts

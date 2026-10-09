@@ -10,6 +10,7 @@
   #:use-module (goblins)
   #:use-module (goblins utils hashmap)
   #:use-module (playnet planner vf schemas)
+  #:use-module ((playnet planner formulas flows) #:select (make-work-commitment))
   #:use-module (playnet planner beyond schedules)
   #:use-module (srfi srfi-1)
   #:use-module (playnet planner federation plan-bundle)
@@ -53,7 +54,7 @@
    in-scope-of: a commitment carries the terms of the work it places, so the
    event that fulfils it does too (live.scm make-work-event) and the fold of
    hours by part reads them off the event alone."
-  (make-commitment
+  (make-work-commitment
    ;; keyed by the ASSIGNMENT, not just (plan, agent): a multi-skill agent
    ;; deployed onto two work-intents in one plan produced two commitments
    ;; sharing one id — the plan-store's hashmap-set silently replaced the
@@ -61,8 +62,8 @@
    ;; survivor twice. The intent-id is unique per assignment and already
    ;; in hand — the (process . spec)/work-coeffs keying lesson again.
    #:id (string-append "lc:" plan-id ":" (or agent "?") ":" (or intent-id "?"))
-   #:action 'work #:input-of process #:resource-conforms-to skill
-   #:effort-quantity (make-measure hours "hours") #:provider agent #:at-location place #:in-scope-of scope
+   #:input-of process #:skill skill
+   #:hours hours #:provider agent #:at-location place #:in-scope-of scope
    #:satisfies intent-id #:independent-demand-of plan-id #:planned-within plan-id #:availability-window window))
 
 

@@ -46,6 +46,7 @@
   #:use-module (goblins utils hashmap)
   #:use-module (playnet planner pools credit-fold)
   #:use-module (playnet planner vf schemas)
+  #:use-module ((playnet planner formulas flows) #:select (make-work-event))
   #:use-module (srfi srfi-1)
   #:use-module (playnet governance acdc-store)
   #:use-module (goblins)
@@ -480,12 +481,12 @@
               (let* ((worker (cred-holder cred))
                      (hours  (cred-claim cred 'hours))
                      (unit   (or (cred-claim cred 'unit) "hour"))
-                     (event (make-economic-event
-                              #:id evt-id #:action 'work
-                              #:resource-conforms-to (cred-claim cred 'resource-conforms-to)
+                     (event (make-work-event
+                              #:id evt-id
+                              #:resource-spec (cred-claim cred 'resource-conforms-to)
                               #:provider worker
-                              #:effort-quantity (make-measure hours unit)
-                              #:created (cred-claim cred 'timestamp)
+                              #:effort-qty hours #:effort-unit unit
+                              #:timestamp #f #:created (cred-claim cred 'timestamp) #:note #f
                               #:fulfills (cred-claim cred 'fulfills)
                               #:satisfies (cred-claim cred 'satisfies))))
                 ($ observer 'record-event event)

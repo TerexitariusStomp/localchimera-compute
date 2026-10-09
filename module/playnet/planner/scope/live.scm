@@ -13,6 +13,7 @@
 ;;; boundary intact. Lives in a Goblins module but the engine inside stays pure.
 
 (define-module (playnet planner scope live)
+  #:re-export (make-work-event)
   #:use-module (playnet planner formulas flows)
   #:use-module ((playnet planner knowledge dsl shorthand) #:select (flow*))
   #:use-module (playnet utils keywords)
@@ -56,7 +57,7 @@
   #:use-module ((playnet planner knowledge catalogues diets)    ; what a person will not eat: the eat recipe's one predicate
                 #:select (diet-tags eats?))
   #:declarative? #f                           ; we (primitive-)load the engine at module init
-  #:export (solve-with-readers plan-scope practice-view-of plan-scope->alist plan-scope->plan make-work-event scope-bills scope-consumption scope-food-specs agent->subsistence-ctx profile-tag? scope-composition recipe-derived-contains persist-materialized! materialize-willing! gather-recipes scope-labour? scope-resource-specs
+  #:export (solve-with-readers plan-scope practice-view-of plan-scope->alist plan-scope->plan scope-bills scope-consumption scope-food-specs agent->subsistence-ctx profile-tag? scope-composition recipe-derived-contains persist-materialized! materialize-willing! gather-recipes scope-labour? scope-resource-specs
             work-intent clear-intents-by-prefix! lot-of? scope-persons spec-unit planned-row plan->rows plan-map-flows held-commitment met-quantity arriving-lots
             find-recipe-process-for-spec mode-process-for-manner trip-manner-of scope-manners
              ;; the cross-vat federation bridge (engine + engine/federation-solve.scm), re-exported
@@ -1436,12 +1437,19 @@
                                                   (let ((sp (recipe-flow-resource-conforms-to f)))
                                                     (and sp (memq (recipe-flow-action f) using-up-actions) (not (spec-owner sp)) sp)))
                                                 flows))
-                          ;; what stands to be claimed at all: made by a recipe, or stocked
+                          ;; what stands to be claimed at all: made by one of the SCOPE's
+                          ;; recipes (FLOWS0 — the eat recipes appended to FLOWS are each
+                          ;; person's own metabolism, and its products, nutrient pools and
+                          ;; exhalations, are nobody's to claim), or stocked — a stock of
+                          ;; labour (a held skill, labour-of) being no good either
                           (made     (append (filter-map (lambda (f)
                                                           (let ((sp (recipe-flow-resource-conforms-to f)))
                                                             (and sp (output-flow? f) (not (spec-owner sp)) sp)))
-                                                        flows)
-                                            (filter-map economic-resource-conforms-to resources))))
+                                                        flows0)
+                                            (filter-map (lambda (r)
+                                                          (let ((sp (economic-resource-conforms-to r)))
+                                                            (and sp (not (labour-of sp)) sp)))
+                                                        resources))))
                      (let ((rails (rails-of #:used used #:consumed consumed #:made made #:claimed claimed)))
                        (publish-rails! rails)
                        ;; THIS scope's own word, keyed so no other scope's solve can
@@ -2362,39 +2370,7 @@
 ;; NB the clock keyword is #:when-iso, never #:when: a parameter named
 ;; `when` lexically shadows the macro, the trap that broke the service's
 ;; record-flow method (its fix carries the story).
-;; ── the ONE constructor of a 'work event ─────────────────────────────────────
-;; Every door that records effort against a commitment builds its event here,
-;; and the event carries the commitment's own TERMS — the place, the window it
-;; was placed in, the scope of the solve that placed it — so that the fold of
-;; hours by part (observer `hours-by`, keyed by `event-terms`) reads events
-;; alone, the terms survive any later change to the plan-store, and an hour
-;; logged late is dated by the window it was worked in, which a windowed part
-;; ("nights") needs (docs/planning/voice/voice-follows-work.md, step 0).
-;; FULFILLS links the event to its commitment and nothing else: the observer
-;; enforces fulfills ⊕ satisfies, the intent's satisfaction is the commitment's
-;; edge, and an event claiming both would count the same quantity twice.
-(define* (make-work-event #:key id provider effort-qty (effort-unit "hours")
-                                fulfills input-of resource-spec
-                                at-location has-beginning has-end in-scope-of
-                                (receiver provider)
-                                (note "Effort recorded from calendar")
-                                (timestamp (instant->civil (now)))
-                                (created timestamp))
-  (make-economic-event
-    #:id id                                 ; 1 id (auto-generated if #f)
-    #:action 'work                              ; 2 action
-    #:input-of input-of                        ; 3-4 input-of, output-of
-                              ; 5-6 (to-)resource-inventoried-as
-    #:resource-conforms-to resource-spec                   ; 7-8 resource-conforms-to, classified-as
-    #:provider provider #:receiver receiver                  ; 9-10 provider, receiver
-                                 ; 11 resource-quantity
-    #:effort-quantity (make-measure effort-qty effort-unit) ; 12 effort-quantity
-    #:has-beginning has-beginning #:has-end has-end #:has-point-in-time timestamp #:created created ; 13-16 has-beginning, -end, -point-in-time, created
-    #:at-location at-location                  ; 17-19 at-location, to-location, state
-    #:fulfills fulfills                           ; 20 fulfills
-                        ; 21-24 satisfies, corrects, realization-of, settles
-    #:note note                               ; 25 note
-    #:in-scope-of in-scope-of))             ; 26-27 in-scope-of, prev-event
+;; make-work-event lives in (playnet planner formulas flows) with its commitment twin; re-exported here.
 
 (define (end-fulfilled! scope-root cid)
   "The commitment CID ended, fulfilled: one dated fact on the store's rail, beside a
@@ -2561,11 +2537,11 @@
          (carried (and carry ($ obs 'get-resource carry)))
          ;; what the event takes from: the lots at its place (a consume, a pickup), or the carried lot (a dropoff)
          (draws   (cond (stockless '())
-                        ((memq act '(consume pickup))
+                        ((or (memq act using-up-actions) (and (relocating-action? act) (input-action? act)))   ; a consume, a pickup
                          (or (draw-from here qty)
                              (error "record-flow-done: the books hold no such stock to take" cid good place qty
                                     (fold + 0 (map lot-onhand here)))))
-                        ((eq? act 'dropoff)
+                        ((and (relocating-action? act) (output-action? act))   ; a dropoff
                          (if (and carried (not (target-passed? qty (lot-onhand carried))))
                              (list (cons carried qty))
                              (error "record-flow-done: the cargo has not been picked up to be dropped off" cid good place qty

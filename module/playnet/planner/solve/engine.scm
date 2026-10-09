@@ -610,7 +610,7 @@
 ;; a loaf, a night), keyed by base spec; 1.0 unstated. Exogenous knowledge
 ;; (a catalogue fact), never a report: a scale a report could move would
 ;; re-open the door the kind closes.
-(define *cap-scale* (make-hash-table))
+(define *cap-scale* (make-hash-table))   ; stands across reset!: a catalogue fact a caller states (set-cap-scale!), as *willing?* does; never a solve's own
 (define (set-cap-scale! spec c) (if (and (number? c) (> c 0)) (hash-set! *cap-scale* spec c) (hash-remove! *cap-scale* spec)))
 (define (cap-scale-of g) (hash-ref *cap-scale* (spec-base (key-spec g)) 1.0))            ; 'total ⇒ equal TOTAL burden per worker | 'pool ⇒ uniform WITHIN each skill pool
 (define *worker-pref* (make-hash-table)) ; (worker-id . skill) -> π̂ : skill-time preference (− eager, + reluctant, 0 neutral)
@@ -3852,7 +3852,7 @@
   (set! *commute-manner* "pedestrian") (set! *material-manner* "auto")
   (set! *commute-hours* #f) (set! *manner-pace* '()) (hash-clear! *runs*)
   (set! *period-class-of* (lambda (t) #f))
-  (for-each hash-clear! (list *demand* *A* *cap* *frag-cap* *frag-budget* *frag-spec* *band* *frag-container* *frag-within* *contained* *span-of* *eco-couple* *couplings* *frag-prior* *stock-frag-w* *init* *latlon* *never-raw* *raws* *reserve* *desire-weight* *proc-skill* *period-days* *period-spans* *worker-pref* *skill-spec* *arc-hours*)))
+  (for-each hash-clear! (list *demand* *A* *cap* *frag-cap* *frag-budget* *frag-spec* *band* *frag-container* *frag-within* *contained* *span-of* *eco-couple* *couplings* *frag-prior* *stock-frag-w* *init* *latlon* *alt* *never-raw* *raws* *reserve* *desire-weight* *proc-skill* *period-days* *period-spans* *worker-pref* *skill-spec* *arc-hours*)))
 (define (mkcells!) (set! *cells* (append-map (lambda (p) (map (lambda (t) (cell p t)) *periods*)) *places*)))
 ;; the roster, layered onto a standing world — ingest-located! computes each
 ;; agent's located hours AFTER the declaration (the availability windows are
@@ -5341,9 +5341,10 @@
   ;; in-scope-of = the scope of the solve that placed the hour (the head of
   ;; *scope-path*, set by the door that solves for a scope): reach has its fact
   ;; by construction, and the event that fulfils this carries it too.
-  (make-commitment #:id id #:action 'work #:input-of proc #:resource-conforms-to skill #:effort-quantity (make-measure effort "hours") #:provider provider
-                   #:has-beginning begin #:has-end end #:has-point-in-time begin #:at-location place #:in-scope-of (and (pair? *scope-path*) (car *scope-path*))
-                   #:satisfies satisfies))  ; satisfies = (need-id offer-id)
+  (make-work-commitment #:id id #:provider provider #:skill skill #:hours effort #:input-of proc
+                        #:has-beginning begin #:has-end end #:at-location place
+                        #:in-scope-of (and (pair? *scope-path*) (car *scope-path*))
+                        #:satisfies satisfies))  ; satisfies = (need-id offer-id)
 ;; gather supply (workers) + demand (processes) per located labour good, then build
 ;; the need + offer intents and the commitments that satisfy both.
 (define *work-emission-floor* 0.05)   ; hours. An ACT under three minutes is
@@ -5460,6 +5461,10 @@
                    ;; declared in *raws*: air, sunlight) has no stock to resolve
                    ;; and a `use` leaves the means where it was: the event names no stock either
                    #:resource-classified-as (and (or (ambient? spec) (eq? action 'use)) (list %ambient-tag))
+                   ;; a `use` row's figure is HOURS of the means engaged, written here under the
+                   ;; spec's count unit; VF's field for a use's duration is effortQuantity
+                   ;; (inventory F2), and the move waits on the readers — eighteen fixtures,
+                   ;; the wire tables and the demo recording read the hours from here
                    #:resource-quantity (make-measure qty (hash-ref *spec-units* spec %placeholder-unit))
                    #:has-beginning begin #:has-end end #:has-point-in-time begin #:at-location place))
 ;; a material ITEM, before it becomes a commitment, carries the LOCATED goods it

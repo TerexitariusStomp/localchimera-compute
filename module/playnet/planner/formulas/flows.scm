@@ -18,10 +18,13 @@
 (define-module (playnet planner formulas flows)
   #:use-module (playnet planner vf schemas)
   #:use-module ((playnet utils keyed-id) #:select (keyed-id))
+  #:use-module ((playnet utils clock) #:select (now instant->civil))
   #:export (row-id row-action row-spec row-quantity row-unit row-effort
             row-provider row-input-of row-output-of row-run row-place
             row-when row-until row-note row-tags row-scope row-satisfies
-            row-finished row-ambient? carried-lot-id %ambient-tag))
+            row-finished row-ambient? carried-lot-id %ambient-tag
+            row-scopes row-satisfies? scopes-of
+            make-work-commitment make-work-event))
 
 (define %ambient-tag "ambient")   ; resourceClassifiedAs of a flow with no stock behind it: the world's own, a means in use
 
@@ -75,3 +78,68 @@
   "The lot of its own a run's cargo is on the way: one per run and spec, the same for
    the pickup that fills it and the dropoff that empties it."
   (keyed-id "carry" (row-run r) (row-spec r)))
+
+;; ── the list-valued fields, read as lists whatever a row wrote ──────────────
+;; VF's inScopeOf and satisfies are lists. Rows written before 2026-10-09 may
+;; carry one id bare; every reader takes either through these two.
+(define (scopes-of x)
+  "X as the list inScopeOf is: a list as it stands, one id as a list of one, nothing as none."
+  (cond ((not x) '()) ((pair? x) x) ((null? x) '()) (else (list x))))
+(define (row-scopes r)
+  "The scopes R stands in, as a list."
+  (scopes-of (row-scope r)))
+(define (row-satisfies? r id)
+  "Does R satisfy ID: among what it satisfies (a list), or the one id an earlier row wrote."
+  (let ((s (row-satisfies r)))
+    (and id (cond ((pair? s) (and (member id s) #t))
+                  (else (equal? s id))))))
+
+;; ── the ONE constructor of a work Commitment ────────────────────────────────
+;; Every solve and door that commits hours builds the row here: `work`, the skill
+;; as resourceConformsTo, the hours as effortQuantity, the scope as a list.
+(define* (make-work-commitment #:key id provider skill hours (unit "hours") input-of
+                                     at-location has-beginning has-end
+                                     (has-point-in-time has-beginning) due
+                                     in-scope-of satisfies planned-within independent-demand-of
+                                     availability-window note)
+  (make-commitment #:id id #:action 'work #:input-of input-of #:resource-conforms-to skill
+                   #:effort-quantity (make-measure hours unit) #:provider provider
+                   #:has-beginning has-beginning #:has-end has-end #:has-point-in-time has-point-in-time #:due due
+                   #:at-location at-location #:in-scope-of (let ((l (scopes-of in-scope-of))) (and (pair? l) l))
+                   #:satisfies satisfies #:planned-within planned-within #:independent-demand-of independent-demand-of
+                   #:availability-window availability-window #:note note))
+
+;; ── the ONE constructor of a 'work event ─────────────────────────────────────
+;; Every door that records effort against a commitment builds its event here,
+;; and the event carries the commitment's own TERMS — the place, the window it
+;; was placed in, the scope of the solve that placed it — so that the fold of
+;; hours by part (observer `hours-by`, keyed by `event-terms`) reads events
+;; alone, the terms survive any later change to the plan-store, and an hour
+;; logged late is dated by the window it was worked in, which a windowed part
+;; ("nights") needs (docs/planning/voice/voice-follows-work.md, step 0).
+;; FULFILLS links the event to its commitment and nothing else: the observer
+;; enforces fulfills ⊕ satisfies, the intent's satisfaction is the commitment's
+;; edge, and an event claiming both would count the same quantity twice — a
+;; caller states one or the other.
+(define* (make-work-event #:key id provider effort-qty (effort-unit "hours")
+                                fulfills satisfies input-of resource-spec
+                                at-location has-beginning has-end in-scope-of
+                                (receiver provider)
+                                (note "Effort recorded from calendar")
+                                (timestamp (instant->civil (now)))
+                                (created timestamp))
+  (make-economic-event
+    #:id id                                 ; 1 id (auto-generated if #f)
+    #:action 'work                              ; 2 action
+    #:input-of input-of                        ; 3-4 input-of, output-of
+                              ; 5-6 (to-)resource-inventoried-as
+    #:resource-conforms-to resource-spec                   ; 7-8 resource-conforms-to, classified-as
+    #:provider provider #:receiver receiver                  ; 9-10 provider, receiver
+                                 ; 11 resource-quantity
+    #:effort-quantity (make-measure effort-qty effort-unit) ; 12 effort-quantity
+    #:has-beginning has-beginning #:has-end has-end #:has-point-in-time timestamp #:created created ; 13-16 has-beginning, -end, -point-in-time, created
+    #:at-location at-location                  ; 17-19 at-location, to-location, state
+    #:fulfills fulfills #:satisfies satisfies   ; 20-21 fulfills, satisfies
+                        ; 22-24 corrects, realization-of, settles
+    #:note note                               ; 25 note
+    #:in-scope-of (let ((l (scopes-of in-scope-of))) (and (pair? l) l))))   ; 26-27 in-scope-of, prev-event

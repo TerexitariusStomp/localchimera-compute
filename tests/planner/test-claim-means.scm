@@ -89,6 +89,12 @@
 (check "the oven is never claimed — what a process uses, no person claims" (claimed-spec "oven") #f)
 (check "bread is on the rail" (spec-claimable? "bread") #t)
 (check "the oven is not, however it is tagged" (spec-claimable? "oven") #f)
+;; the set is the goods the scope offers: a person's metabolism (the eat recipes'
+;; by-products, their nutrient pools "nu|aid") and a held skill are no goods to claim
+(check "no nutrient pool is claimable" (filter (lambda (sp) (string-contains sp "|")) (claimable-specs)) '())
+(check "no metabolic by-product is claimable"
+       (filter (lambda (sp) (member sp '("faeces" "co2" "urea" "ambient-heat" "h2o-g"))) (claimable-specs)) '())
+(check "a held skill is not claimable" (spec-claimable? "skill-bake") #f)
 ;; the whole rail, as the plan published it — three words, each read off a verb
 (format #t "  rails: bread ~s · wheat ~s · oven ~s~%" (spec-rail "bread") (spec-rail "wheat") (spec-rail "oven"))
 (check "bread: a claim consumes it for someone — individual" (spec-rail "bread") 'individual)

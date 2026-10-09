@@ -61,6 +61,7 @@
 (define-module (playnet planner dev ledger)
   #:use-module (playnet planner scope root)
   #:use-module (playnet planner vf schemas)
+  #:use-module ((playnet planner formulas flows) #:select (make-work-commitment))
   #:use-module (srfi srfi-1)
   #:use-module (playnet planner vf schemas)
   #:use-module ((playnet planner scope live) #:select (make-work-event record-work-done record-flow-done))
@@ -110,16 +111,14 @@
          (and (or (not only) (equal? only agent))
               (begin
                 (unless ($ ps 'get-commitment cid)
-                  (let ((c (make-commitment
-                            #:id cid #:action 'work #:note (row-ref row 'title)
-                            #:input-of (dev-process-id oid)                 ; input-of, output-of
- #:resource-conforms-to (row-ref row 'skill)              ; inventoried-as, conforms-to, classified-as
- #:effort-quantity (make-measure (cdr share) "hours")   ; resource-quantity, effort-quantity
-                            #:provider agent                                ; provider, receiver
-                            #:has-beginning (and span (car span)) #:has-end (and span (cdr span))   ; has-beginning, has-end, point-in-time
-                            #:due (and span (cdr span))                ; due, created
-                            #:at-location %dev-place #:in-scope-of (list %scope-name)           ; at-location, in-scope-of
-)))
+                  (let ((c (make-work-commitment
+                            #:id cid #:note (row-ref row 'title)
+                            #:input-of (dev-process-id oid)
+                            #:skill (row-ref row 'skill) #:hours (cdr share)
+                            #:provider agent
+                            #:has-beginning (and span (car span)) #:has-end (and span (cdr span))
+                            #:due (and span (cdr span))
+                            #:at-location %dev-place #:in-scope-of %scope-name)))
                     ;; on the plan-store, where the scope keeps what it decided,
                     ;; and with the observer, which tracks its fulfilment
                     ($ ps 'add-commitment c)

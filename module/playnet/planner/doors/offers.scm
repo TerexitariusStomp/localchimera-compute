@@ -320,7 +320,7 @@
 ;; no offer published — was certified by nothing, and its only guard was
 ;; the NEXT solve's raise: loud but late. make-fresh-check closes that:
 ;; the candidate rides ONE trial solve as an extra pinned commitment —
-;; the very compile the real accept would get — and the trial's raise
+;; through the same door the real accept's next solve takes — and the trial's raise
 ;; (a starved wall, a homeless column) becomes the door's refusal, now.
 ;; Installed on the plan-store as `set-fresh-check` by the service (the
 ;; one layer that holds both the scope and the last solve's demand);
@@ -328,7 +328,11 @@
 ;; intents only. SOLVE-OPTS-THUNK supplies the trial's world per call
 ;; (the last solve's own demand), so the trial prices the world as it
 ;; stands at accept time.
-(define* (make-fresh-check scope-root #:key (solve-opts-thunk (lambda () '())))
+(define* (make-fresh-check scope-root #:key (solve-opts-thunk (lambda () '()))
+                                            ;; the solve the trial rides: the service hands the door every
+                                            ;; plan goes through (its readers — world, demand, standing);
+                                            ;; the bare planner only where no service stands
+                                            (solve (lambda kw (apply plan-scope->plan scope-root kw))))
   ;; the candidate as the commitment promotion WOULD make — the same field
   ;; map, so the trial solves exactly what the accept would pin
   (define (trial-commitment it)
@@ -337,7 +341,7 @@
   (lambda (intent)
     (catch* #t
       (lambda ()
-        (apply plan-scope->plan scope-root
+        (apply solve
                #:extra-accepts (list (trial-commitment intent))
                (solve-opts-thunk))
         #t)
