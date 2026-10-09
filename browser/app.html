@@ -643,7 +643,8 @@
   .area-frame { position: absolute; left: 8%; right: 8%; top: calc(64px + var(--area-top)); bottom: calc(76px + var(--barh, 68px));
     border: 2px solid var(--t-ffffff); border-radius: 12px;
     box-shadow: 0 0 0 100vmax rgb(var(--t-000000-rgb) / 0.42); }
-  .area-head, .area-foot { position: absolute; left: 0; right: 0; display: flex; align-items: center; gap: 10px;
+  /* above the frame's shadow (the dim), which otherwise lies over the head: it comes later in the tree */
+  .area-head, .area-foot { position: absolute; z-index: 1; left: 0; right: 0; display: flex; align-items: center; gap: 10px;
     padding: 10px 14px; pointer-events: auto; background: rgb(var(--t-ffffff-rgb) / 0.96);
     box-shadow: 0 1px 6px rgb(var(--t-000000-rgb) / 0.25); }
   .area-head { top: var(--area-top); font-size: 17px; font-weight: 600; }
