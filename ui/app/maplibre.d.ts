@@ -217,8 +217,10 @@ declare global {
       getLayer(id: string): unknown;
       removeLayer(id: string): Map;
 
-      /** The element the map was built into — where the picker mounts. */
+      /** The element the map was built into — where an overlay mounts. */
       getContainer(): HTMLElement;
+      /** A position in the container's pixels → its coordinate: how the area frame reads the map under it. */
+      unproject(point: [number, number]): LngLat;
       /** Re-read the container's size. Every sizer ends with one. */
       resize(): Map;
       /** Tear the instance down. A face switch rebuilds rather than moves. */

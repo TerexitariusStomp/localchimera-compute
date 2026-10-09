@@ -41,7 +41,7 @@
                 #:select (pmtiles-archives pmtiles-tile pmtiles-tile-compression
                           pmtiles-info pmtiles-path archive-bytes))
   #:use-module ((playnet keri schemas) #:select (schema-document-for-said))
-  #:use-module ((playnet gateway oobi-host)
+  #:use-module ((playnet identity oobi-host)
                 #:select ((read-oobi-entry-from-dir . read-oobi-entry)
                           (read-oobi-entries-from-dir . read-oobi-entries)))
   ;; Read-only scope discovery — use the path-level helpers from
@@ -76,7 +76,7 @@
             handle-operator
             handle-security-txt))
 
-;;; The on-disk layout used here is owned by (playnet gateway oobi-host); we
+;;; The on-disk layout used here is owned by (playnet identity oobi-host); we
 ;;; route reads through `read-oobi-entry-from-dir` so the bucket-prefix
 ;;; convention can't drift between writer (actor) and reader (HTTP).
 
@@ -557,14 +557,21 @@ A name no archive carries is a 404 — the request never becomes a path."
                                                `((content-range . (bytes * ,size)))))
                     ""))
            (span
-            (values (build-response
-                     #:code 206
-                     #:headers (with-headers %security-headers
-                                `((content-type . (application/octet-stream))
-                                  (content-range . (bytes (,start . ,end) ,size))
-                                  (accept-ranges . (bytes))
-                                  (cache-control . (public (max-age . 604800) immutable)))))
-                    (archive-bytes a start (+ 1 (- end start)))))
+            (let ((bv (archive-bytes a start (+ 1 (- end start)))))
+              (if bv
+                  (values (build-response
+                           #:code 206
+                           #:headers (with-headers %security-headers
+                                      `((content-type . (application/octet-stream))
+                                        (content-range . (bytes (,start . ,end) ,size))
+                                        (accept-ranges . (bytes))
+                                        (cache-control . (public (max-age . 604800) immutable)))))
+                          bv)
+                  ;; the file shrank under us (an archive being replaced): say so, never a half body
+                  (values (build-response #:code 416
+                                          #:headers (with-headers %security-headers
+                                                     `((content-range . (bytes * ,size)))))
+                          ""))))
            (else
             (values (build-response
                      #:code 200
@@ -590,7 +597,9 @@ list and the offline-pack chooser."
                        ("bounds" . ,(list->vector (assq-ref info 'bounds)))
                        ("minZoom" . ,(assq-ref info 'min-zoom))
                        ("maxZoom" . ,(assq-ref info 'max-zoom))
-                       ("bytes" . ,(assq-ref info 'bytes)))))
+                       ("bytes" . ,(assq-ref info 'bytes))
+                       ;; the OSM data's date — null when the archive says none
+                       ("build" . ,(or (assq-ref info 'build) 'null)))))
                  (pmtiles-archives %map-dir))))))
 
 (define (forbidden-component? c)

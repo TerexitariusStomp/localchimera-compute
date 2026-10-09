@@ -25,12 +25,14 @@
   #:use-module (srfi srfi-9)
   #:use-module (srfi srfi-11)
   #:use-module (zlib)
+  #:use-module ((playnet utils json-portable) #:select (json-read-ordered))
   #:export (pmtiles-open
             pmtiles-path
             archive-bytes
             pmtiles-tile
             pmtiles-tile-compression
             pmtiles-info
+            pmtiles-metadata
             pmtiles-archives
             tile-id
             decode-directory
@@ -81,12 +83,13 @@ position on the Hilbert curve of its own zoom."
 ;;; ── The archive record ────────────────────────────────────────────────────
 
 (define-record-type <pmtiles>
-  (make-pmtiles path root-off root-len leaf-off leaf-len data-off data-len
+  (make-pmtiles path root-off root-len meta-off meta-len leaf-off leaf-len data-off data-len
                 internal-compression tile-compression tile-type
                 min-zoom max-zoom bounds root leaves)
   pmtiles?
   (path pmtiles-path)
   (root-off pmtiles-root-off) (root-len pmtiles-root-len)
+  (meta-off pmtiles-meta-off) (meta-len pmtiles-meta-len)
   (leaf-off pmtiles-leaf-off) (leaf-len pmtiles-leaf-len)
   (data-off pmtiles-data-off) (data-len pmtiles-data-len)
   (internal-compression pmtiles-internal-compression)
@@ -175,7 +178,7 @@ vector (MVT)."
       (let* ((root-off (u64 h 8)) (root-len (u64 h 16))
              (raw (archive-bytes path root-off root-len))
              (root (decode-directory (if (eq? ic 'gzip) (gunzip raw) raw))))
-        (make-pmtiles path root-off root-len
+        (make-pmtiles path root-off root-len (u64 h 24) (u64 h 32)
                       (u64 h 40) (u64 h 48) (u64 h 56) (u64 h 64)
                       ic tc (u8 h 99) (u8 h 100) (u8 h 101)
                       (map (lambda (off) (/ (s32 h off) 1e7)) '(102 106 110 114))
@@ -214,15 +217,28 @@ directories chain."
 Content-Encoding a server sends them under."
   (pmtiles-tile-compression* a))
 
+(define (pmtiles-metadata a)
+  "The archive's JSON metadata (the builder's: name, layers, the OSM data's
+date) as json-portable reads it — an alist of string keys; empty when none."
+  (let ((len (pmtiles-meta-len a)))
+    (if (zero? len) '()
+        (let* ((raw (archive-bytes a (pmtiles-meta-off a) len))
+               (bv (if (eq? (pmtiles-internal-compression a) 'gzip) (gunzip raw) raw)))
+          (or (false-if-exception (json-read-ordered (utf8->string bv))) '())))))
+
 (define (pmtiles-info a)
-  "What a client needs to know about archive A: its name, extent, zooms and
-size, as an alist."
-  (let ((path (pmtiles-path a)))
+  "What a client needs to know about archive A: its name, extent, zooms, size
+and the date of the OpenStreetMap data it was cut from (a Protomaps build's
+`planetiler:osm:osmosisreplicationtime`; #f when the metadata has none)."
+  (let ((path (pmtiles-path a))
+        (meta (pmtiles-metadata a)))
     `((name . ,(basename path ".pmtiles"))
       (bounds . ,(pmtiles-bounds a))
       (min-zoom . ,(pmtiles-min-zoom a))
       (max-zoom . ,(pmtiles-max-zoom a))
-      (bytes . ,(stat:size (stat path))))))
+      (bytes . ,(stat:size (stat path)))
+      (build . ,(let ((t (assoc-ref meta "planetiler:osm:osmosisreplicationtime")))
+                  (and (string? t) t))))))
 
 ;;; ── The archive directory ─────────────────────────────────────────────────
 

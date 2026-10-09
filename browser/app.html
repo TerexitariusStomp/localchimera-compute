@@ -609,16 +609,64 @@
   .reach-note { margin: 0; font-size: 11px; color: var(--t-999999); }
   .reach-on { font-size: 11px; font-weight: 600; color: var(--t-2e7d52); }
   .reach .slot-btn { min-height: 28px; }
-  /* offline maps (app/map-packs-view.ts): one row per region the gateway offers */
-  .packs { display: flex; flex-direction: column; gap: 8px; }
-  .pack-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-  .pack-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .pack-name { font-weight: 600; min-width: 6em; }
-  .pack-state { flex: 1 1 auto; font-size: 11.5px; color: var(--t-6a7a68); }
-  .pack-act { display: flex; gap: 6px; }
+  /* offline maps (app/map-packs-view.ts): the downloaded maps, the regions on
+     offer, one primary button — Google Maps' shape, in the dial's tokens */
+  .packs { display: flex; flex-direction: column; gap: 10px; }
+  .pack-h { margin: 6px 0 0; font-size: 12px; font-weight: 600; color: var(--t-6a7a68); }
+  .pack-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+  .pack-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 6px 0; }
+  .pack-badge { flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--t-2c4a6e); color: var(--t-ffffff); font-size: 15px; font-weight: 700; }
+  .pack-badge-busy { background: conic-gradient(var(--t-2c4a6e) calc(var(--pct, 0) * 1%), var(--t-eeeeee) 0); }
+  .pack-body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .pack-name { font-weight: 600; }
+  .pack-state { font-size: 11.5px; color: var(--t-6a7a68); }
+  .pack-more { flex: 0 0 auto; border: none; background: transparent; font-size: 20px; line-height: 1;
+    padding: 2px 8px; cursor: pointer; color: var(--t-444444); border-radius: 8px; }
+  .pack-more:hover { background: var(--t-eeeeee); }
+  .pack-menu { flex: 1 1 100%; display: flex; flex-direction: column; gap: 8px; padding: 6px 0 2px 38px; }
+  .pack-rename { display: flex; gap: 6px; }
+  .pack-rename input { flex: 1; min-width: 0; border: 1px solid var(--t-eeeeee); border-radius: 8px; padding: 6px 8px; font: inherit; }
+  .pack-acts { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pack-del[data-sure] { background: var(--t-b04a3a); border-color: var(--t-b04a3a); color: var(--t-ffffff); }
   .pack-note { margin: 0; font-size: 11px; color: var(--t-999999); }
   .pack-trouble { color: var(--t-7a4bb0); }
   .packs .slot-btn { min-height: 28px; }
+  .pack-primary { margin-top: 6px; width: 100%; min-height: 44px; border: none; border-radius: 22px;
+    background: var(--t-2c4a6e); color: var(--t-ffffff); font: inherit; font-weight: 650; font-size: 14px; cursor: pointer; }
+  .pack-primary:hover { filter: brightness(1.08); }
+  /* the area frame (app/tabs/map/select-area.ts): the map pans and zooms UNDER
+     it — only the head and the foot take the pointer. The frame's shadow is
+     the dimmed surround; its corners are the area. Phone: inset from the
+     edges, clear of the bottom bar; desktop: a centred portrait rect. */
+  .area-sel { position: absolute; inset: 0; z-index: 7; pointer-events: none; }
+  .area-frame { position: absolute; left: 8%; right: 8%; top: 64px; bottom: calc(76px + var(--barh, 68px));
+    border: 2px solid var(--t-ffffff); border-radius: 12px;
+    box-shadow: 0 0 0 100vmax rgb(var(--t-000000-rgb) / 0.42); }
+  @media (min-width: 900px) {
+    .area-frame { left: 50%; top: 50%; width: min(520px, 50vw); height: min(680px, 70vh); right: auto; bottom: auto;
+      transform: translate(-50%, -50%); }
+  }
+  .area-head, .area-foot { position: absolute; left: 0; right: 0; display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; pointer-events: auto; background: rgb(var(--t-ffffff-rgb) / 0.96);
+    box-shadow: 0 1px 6px rgb(var(--t-000000-rgb) / 0.25); }
+  .area-head { top: 0; font-size: 17px; font-weight: 600; }
+  .area-head span { flex: 1 1 auto; }
+  .area-x { border: none; background: transparent; font-size: 18px; cursor: pointer; color: var(--t-444444);
+    width: 36px; height: 36px; border-radius: 50%; }
+  .area-x:hover { background: var(--t-eeeeee); }
+  .area-foot { bottom: var(--barh, 68px); flex-direction: column; align-items: stretch; }
+  .area-size { text-align: center; font-size: 13px; color: var(--t-444444); }
+  .area-dl { min-height: 44px; border: none; border-radius: 22px; background: var(--t-2c4a6e); color: var(--t-ffffff);
+    font: inherit; font-weight: 650; font-size: 14px; cursor: pointer; }
+  .area-dl:disabled { opacity: .45; cursor: default; }
+  @media (min-width: 900px) {
+    .area-head, .area-foot { left: 50%; transform: translateX(-50%); width: min(560px, 60vw); border-radius: 12px; }
+    .area-head { top: 12px; }
+    .area-foot { bottom: 16px; flex-direction: row; }
+    .area-size { flex: 1 1 auto; text-align: left; }
+    .area-dl { min-width: 160px; }
+  }
   .reach .slot-btn.arm { background: var(--t-b04a3a); border-color: var(--t-b04a3a); color: var(--t-ffffff); font-weight: 700; }
   .reach-add { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .reach-add select, .reach-add input, .reach-code { font: inherit; font-size: 12.5px; min-height: 28px; padding: 3px 8px;

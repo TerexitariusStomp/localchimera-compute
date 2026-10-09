@@ -51,6 +51,8 @@
   (let ((i (pmtiles-info a)))
     (list (assq-ref i 'name) (assq-ref i 'bounds) (assq-ref i 'min-zoom) (assq-ref i 'max-zoom)))
   '("tiny" (13.0 52.3 13.8 52.7) 0 2))
+(check "the build date is read from the metadata"
+  (assq-ref (pmtiles-info a) 'build) "2026-10-08T04:00:00Z")
 (check "a root entry's tile" (tile-text a 0 0 0) "0/0/0")
 (check "a leaf entry's tile" (tile-text a 1 0 0) "1/0/0")
 (check "the second tile of a run shares its bytes" (tile-text a 1 0 1) "1/0/0")
@@ -97,6 +99,7 @@
       (and (string-contains body "\"name\":\"tiny\"")
            (string-contains body "\"bounds\":[13.0,52.3,13.8,52.7]")
            (string-contains body "\"maxZoom\":2")
+           (string-contains body "\"build\":\"2026-10-08T04:00:00Z\"")
            #t))))
 
 

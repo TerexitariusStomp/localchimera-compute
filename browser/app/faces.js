@@ -43,6 +43,7 @@ import { clearMarkers } from './markers.js';
 import { askGeolocation, resetHeading } from './compass.js';
 import { endNav } from './nav.js';
 import { openMap, teardownMap } from './mapview.js';
+import { leaveSelectArea } from './tabs/map/select-area.js';
 import { L, threads, timeLayers } from './layers.js';
 import { initShare } from './tabs/social/share.js';
 import { closeSettings, releaseRail } from './settings.js';
@@ -152,6 +153,7 @@ function enterMapFace() {
 }
 /** Leave the map instantly — no rise animation, because a tab is not a journey. */
 function exitMapFace() {
+    leaveSelectArea(); // the area frame, if it was up, goes with the map
     teardownMap(); // the same put-away the dial uses rising out of earth
     endNav();
     clearMarkers();

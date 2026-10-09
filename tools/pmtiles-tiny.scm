@@ -76,7 +76,8 @@
                ;; run-length 0: a leaf at leaf-section offset 0
                (list (tile-id 1 0 0) 0 0 (bytevector-length leaf))))))
 
-(define metadata (string->utf8 "{\"name\":\"tiny\"}"))
+(define metadata
+  (gzip (string->utf8 "{\"name\":\"tiny\",\"planetiler:osm:osmosisreplicationtime\":\"2026-10-08T04:00:00Z\"}")))
 
 (define (header root-off root-len meta-off meta-len leaf-off leaf-len data-off data-len)
   (let ((h (make-bytevector 127 0)))
