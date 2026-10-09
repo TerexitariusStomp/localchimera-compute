@@ -36,7 +36,7 @@
              (playnet gateway lobby)
              (playnet push store)
              (playnet notify recipient)
-             ((playnet gateway contact-points) #:select (make-contact-point-desk))
+             ((playnet identity contact-points) #:select (make-contact-point-desk))
              (goblins)
              (goblins actor-lib methods)
              (goblins utils hashmap)

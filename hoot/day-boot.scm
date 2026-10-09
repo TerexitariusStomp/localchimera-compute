@@ -1803,7 +1803,7 @@
 ;; ── cards: how to reach you, handed to one contact ───────────────────────
 ;; The content is sealed here to the receiver's own encryption key and the
 ;; card's identifier signed, so the commune carries a card it can tell is
-;; yours and cannot read (gateway/cards.scm). The key is read from the
+;; yours and cannot read (identity/cards.scm). The key is read from the
 ;; receiver's own log — the latest one it anchors — and the log is verified
 ;; to be the one their identifier names (kel-verifies?), so the key sealed
 ;; to is theirs whoever served the log.

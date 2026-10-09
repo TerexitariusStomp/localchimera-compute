@@ -56,10 +56,10 @@
   ;; than restating the kind list here.
   #:use-module ((playnet notify recipient)
                 #:select (durable-kind? binding-kind binding-ctx))
-  #:use-module ((playnet gateway contact-points)
+  #:use-module ((playnet identity contact-points)
                 #:select (contact-point-wire->cred contact-point-verdict))
   #:use-module ((playnet openvtc credentials) #:select (contact-point-binding-fields))
-  #:use-module ((playnet gateway cards)
+  #:use-module ((playnet identity cards)
                 #:select (card-wire->card card-verdict card-at card-put! card-get card-drop! person-aid?))
   ;; erasure: every store of the gateway's own keyed by an AID, as one act;
   ;; every session's dispatch passes the forgotten gate
@@ -224,7 +224,7 @@
                                     (pins #f) (doors #f) (ai-svc #f)
                                     (contact-desk #f))
   ;; CONTACT-DESK: the commune's desk for presented contact points
-  ;; (gateway/contact-points.scm make-contact-point-desk), or #f for a commune
+  ;; (identity/contact-points.scm make-contact-point-desk), or #f for a commune
   ;; that delivers to none.
   ;; DOORS: #f, or the door names (symbols) this device's authorization
   ;; allows — an outside interface enrolled with an allowlist answers those
@@ -529,7 +529,7 @@
    ;; therefore a real erasure path for a notification address.
    ;;
    ;; What binds is the person's own contact-point credential, presented
-   ;; (gateway/contact-points.scm): self-issued, blinded, signed. The commune
+   ;; (identity/contact-points.scm): self-issued, blinded, signed. The commune
    ;; rebuilds it, checks it is the presenter's own, and holds it at the desk
    ;; while a code travels to the address itself; the code said back
    ;; (confirm-contact-point) is what binds the channel. So a commune delivers
@@ -696,7 +696,7 @@
    ;; ── Cards ── how to reach this person, handed to one contact. The
    ;; content is sealed to the receiver in the giver's browser; the commune
    ;; keeps ciphertext it can tell is the giver's, one card per pair, and a
-   ;; withdrawal erases it (gateway/cards.scm). A card goes to, and is read
+   ;; withdrawal erases it (identity/cards.scm). A card goes to, and is read
    ;; from, the people in the caller's own book.
    ((give-card subject-aid wire)
     (let ((card (card-wire->card wire)))

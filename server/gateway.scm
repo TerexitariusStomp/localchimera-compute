@@ -166,7 +166,7 @@
               #:select (^recipient-registry recipient-table->datum datum->recipient-table))
              ((playnet notify rendered) #:select (rendered-notification))
              ((playnet interface adapters email) #:select (^email-adapter email-transport?))
-             ((playnet gateway contact-points) #:select (make-contact-point-desk))
+             ((playnet identity contact-points) #:select (make-contact-point-desk))
              ((playnet notify router) #:select (^notify-router))
              ;; Monero + fleet provisioning
              (playnet gateway monero-boot)
@@ -1610,7 +1610,7 @@
                   alert-sink)))   ; legacy sink = fallback for unbound recipients
 
        ;; The desk a presented contact point waits at while its code travels
-       ;; to the address itself (gateway/contact-points.scm). Its channels
+       ;; to the address itself (identity/contact-points.scm). Its channels
        ;; are the durable kinds this commune delivers on.
        (define contact-desk
          (make-contact-point-desk

@@ -53,7 +53,7 @@
   #:use-module (goblins)
   #:use-module (srfi srfi-1)
   #:use-module ((playnet identity devices) #:select (devices-retire!))
-  #:use-module ((playnet gateway cards) #:select (cards-forget!))
+  #:use-module ((playnet identity cards) #:select (cards-forget!))
   #:use-module ((playnet identity user-files) #:select (user-files-forget!))
   #:use-module ((playnet interface adapters email) #:select (mail-spool-forget!))
   #:export (forget-member! forgotten? forgotten-gated unmark-forgotten!))

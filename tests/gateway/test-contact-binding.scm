@@ -28,13 +28,13 @@
 
 (use-modules (playnet test harness)
              (playnet gateway lobby)
-             (playnet gateway contact-points)
+             (playnet identity contact-points)
              ((playnet notify recipient)
               #:select (^recipient-registry binding-kind binding-ctx binding-style
                         durable-kind? recipient-table->datum datum->recipient-table))
              ((playnet openvtc credentials)
               #:select (make-contact-point-credential *contact-point-kinds*))
-             ((playnet social reach-kinds)
+             ((playnet identity reach-kinds)
               #:select (commune-reach-kinds reach-value-fault))
              ((playnet keri acdc) #:select (cred-said cred-issuer cred-holder cred-claims cred-signature))
              ((playnet keri citizen-sig)

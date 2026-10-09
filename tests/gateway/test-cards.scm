@@ -16,7 +16,7 @@
 
 (use-modules (playnet test harness)
              (playnet gateway lobby)
-             (playnet gateway cards)
+             (playnet identity cards)
              ((playnet keri citizen-sig)
               #:select (make-keri-identity keri-identity-keypair keri-identity-aid sign-said))
              ((playnet keri signify-portable) #:select (scm->json-canonical))

@@ -1947,7 +1947,7 @@ check-limits-fresh:
 	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/check-emit-fresh.sh check-limits-fresh ui/app/limits-catalogue.ts limits-emit tools/limits-emit.scm
 
 # The kinds of way a person is reached — on their own list, told to a
-# commune, put on a card: social/reach-kinds.scm states them once;
+# commune, put on a card: identity/reach-kinds.scm states them once;
 # ui/app/reach-catalogue.ts is the generated copy the page reads.
 .PHONY: reach-emit check-reach-fresh
 reach-emit:
