@@ -33,7 +33,7 @@
             making-actions output-flow? upstream-closure creating-actions using-up-actions
             committed-by-spec committed-quantity
             ;; playnet's own columns
-            relocating-actions relocating-action? same-flow?
+            relocating-actions relocating-action? relocating-side same-flow?
             ;; the sets the doors and the algorithms ask for
             transferring-actions occupying-actions drawing-actions nonconsuming-input-actions
             onhand-sign
@@ -62,6 +62,9 @@
 ;; run). The table cannot tell pickup from accept, or dropoff from modify.
 (define relocating-actions '(pickup dropoff))
 (define (relocating-action? action) (and (memq action relocating-actions) #t))
+(define (relocating-side io)
+  "The relocating action on the IO side ('input: the pickup; 'output: the dropoff)."
+  (find (lambda (a) (eq? (action-input-output a) io)) relocating-actions))
 
 ;; An acquisition is planned as a produce and recorded as a raise, a loss as a lower
 ;; against a consume: the pairs of actions that bring a good into the books, and take

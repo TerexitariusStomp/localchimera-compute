@@ -20,7 +20,7 @@
   #:use-module ((playnet utils keyed-id) #:select (keyed-id))
   #:use-module ((playnet planner aggregation fold-node) #:select (sum-by-key))
   #:use-module (playnet utils clock)
-  #:use-module ((playnet utils units) #:select (unit->substance %placeholder-unit))
+  #:use-module ((playnet utils units) #:select (unit->substance %placeholder-unit placeholder-unit?))
   #:use-module ((playnet planner knowledge recipes transport) #:select (recipe-hold))   ; the keep process storage composes
   #:use-module (goblins)                      ; $ — synchronous near-call (same vat)
   #:use-module (goblins actor-lib methods)    ; define-actor / methods (for ^live-planner)
@@ -1787,11 +1787,12 @@
   "The commitment the scope SCOPE-ID holds for the plan's material flow M, under the plan's
    own id. Events name the bare spec; the stage and state are the lot's."
   (let ((w (row-when m)))
-    (make-commitment
+    (make-flow-commitment
      #:id (row-id m) #:action (row-action m) #:note (row-note m)
-     #:input-of (row-input-of m) #:output-of (row-output-of m) #:resource-conforms-to (bare-spec (row-spec m)) #:resource-classified-as (row-tags m)
-     #:resource-quantity (make-measure (row-quantity m) (or (row-unit m) %placeholder-unit)) #:has-point-in-time (and w (format #f "~a" w))
-     #:at-location (row-place m) #:in-scope-of (list scope-id))))
+     #:process (row-run m) #:spec (bare-spec (row-spec m)) #:tags (row-tags m)
+     #:qty (row-quantity m) #:unit (or (row-unit m) %placeholder-unit)
+     #:has-point-in-time (and w (format #f "~a" w))
+     #:place (row-place m) #:in-scope-of scope-id)))
 
 ;; The one plan→alist projection. CONCRETE side: who works which slot — (intend …)
 ;; (work …). ABSTRACT side: the value/labour-time the plan implies — (prices …) the
@@ -2474,8 +2475,11 @@
    scope's recipe store states none."
   (let ((sp (false-if-exception ($ ($ scope-root 'recipe-store) 'get-resource-spec spec))))
     (and sp (resource-specification-default-unit-of-resource sp))))
-(define (stock-unit scope-root good lot)
-  (or (spec-unit scope-root (bare-spec good))
+(define (stock-unit scope-root good lot row)
+  "The unit the flow ROW of GOOD is counted in: the row's own, where it states one;
+   else the specification's; else the lot's; else the placeholder."
+  (or (let ((u (row-unit row))) (and u (not (placeholder-unit? u)) u))
+      (spec-unit scope-root (bare-spec good))
       (and lot (measure-has-unit (economic-resource-onhand-quantity lot)))
       %placeholder-unit))
 (define (planned-stamp w)
@@ -2568,12 +2572,12 @@
          (events  (if (or stockless (memq act creating-actions))
                       (let ((lot (and (not stockless) (pair? here) (car here))))
                         (list (event 0 into (bare-spec good) qty (accountable-of lot)
-                                     (stock-unit scope-root good lot))))
+                                     (stock-unit scope-root good lot mc))))
                       (let loop ((ds draws) (k 0))
                         (if (null? ds) '()
                             (cons (event k (economic-resource-id (caar ds)) (economic-resource-conforms-to (caar ds)) (cdar ds)
                                         (or cargo-accountable (accountable-of (caar ds)))
-                                        (stock-unit scope-root good (caar ds)))
+                                        (stock-unit scope-root good (caar ds) mc))
                                   (loop (cdr ds) (+ k 1))))))))
     (register-row-process! scope-root mc runs)
     (for-each (lambda (e) ($ obs 'record-event e)) events)

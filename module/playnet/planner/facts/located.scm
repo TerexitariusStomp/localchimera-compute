@@ -11,6 +11,7 @@
 
 (define-module (playnet planner facts located)
   #:use-module (srfi srfi-1)
+  #:use-module (srfi srfi-13)
   #:export (lg cell good-spec located-cell place-of period-of
             key-period key-date key-retime parse-located-good
             bar-fields bar-field key-prefix
@@ -73,13 +74,27 @@
   (if (and (string? cl) (string-index cl #\@))
       (list (cons 'cell cl) (cons 'place (place-of cl)) (cons 'period (period-of cl)))
       '()))
+(define (cell-key? s) (and (string? s) (string-index s #\@) #t))
 (define (key-terms key)
   (let* ((p (string-split key #\|)) (prefix (car p)) (n (length p)))
     (cons (cons 'prefix prefix)
-          (cond ((and (equal? prefix "p") (= n 3))
-                 (cons (cons 'process (cadr p)) (cell-terms (caddr p))))
-                ((and (equal? prefix "p") (= n 4))
-                 (cons* (cons 'process (cadr p)) (cons 'arc (cons (caddr p) (cadddr p))) (cell-terms (caddr p))))
+          (cond ;; a budgeted floor's cover column, p|spec|d#cell (engine lay-budgeted-floors):
+                ;; no process runs here — the floor's own rows
+                ;; (a cell is place@t and never carries a `#`; the `#` is the floor's)
+                ((and (equal? prefix "p") (= n 3) (string-index (caddr p) #\#))
+                 (let* ((last (caddr p)) (i (string-index last #\#)))
+                   (cons* (cons 'floor (cadr p)) (cons 'source (substring last 0 i)) (cell-terms (substring last (+ i 1))))))
+                ;; a process column: p|<process>|<cell>, or p|<process>|<a>|<b> for an arc.
+                ;; A process id may itself carry a `|` (a hold through a container is
+                ;; keep|K~spec), so the cells are the trailing segments and the process
+                ;; is everything between
+                ((and (equal? prefix "p") (>= n 3) (cell-key? (list-ref p (- n 1))))
+                 (let* ((two? (and (>= n 4) (cell-key? (list-ref p (- n 2)))))
+                        (cells (if two? (list (list-ref p (- n 2)) (list-ref p (- n 1))) (list (list-ref p (- n 1)))))
+                        (process (string-join (list-head (cdr p) (- n 1 (length cells))) "|")))
+                   (if two?
+                       (cons* (cons 'process process) (cons 'arc (cons (car cells) (cadr cells))) (cell-terms (car cells)))
+                       (cons (cons 'process process) (cell-terms (car cells))))))
                 ((and (equal? prefix "m") (= n 4))
                  (cons* (cons 'good (cadr p)) (cons 'arc (cons (caddr p) (cadddr p))) (cell-terms (caddr p))))
                 ((and (member prefix '("w" "wr")) (= n 4))

@@ -21,6 +21,7 @@
   #:use-module (playnet planner vf schemas)
   #:use-module (srfi srfi-1)
   #:use-module (playnet planner scope live)
+  #:use-module ((playnet planner formulas flows) #:select (make-flow-commitment))
   #:use-module (srfi srfi-1)
   #:export (fresh-scope res flow-row onhand-of spec-total resource-ids confirm mq ok? refused?))
 
@@ -35,11 +36,11 @@
   (make-economic-resource #:id id #:name id #:conforms-to spec #:accounting-quantity (make-measure qty unit) #:onhand-quantity (make-measure qty unit)
                           #:current-location place #:primary-accountable acct #:stage stage #:state state #:contained-in contained))
 
-(define* (flow-row id act spec qty place #:key in out note)
-  "The plan's material row the confirming doors take: ACT of QTY SPEC at PLACE, an
-   input of process IN or an output of OUT."
-  `((id . ,id) (action . ,act) (conforms-to . ,spec) (quantity . ,qty) (at-location . ,place)
-    (input-of . ,in) (output-of . ,out) (note . ,note)))
+(define* (flow-row id act spec qty place #:key in out note (unit "unit"))
+  "The plan's material row the confirming doors take: ACT of QTY SPEC at PLACE, a
+   flow of the process IN or OUT — the record the solve emits (make-flow-commitment)."
+  (make-flow-commitment #:id id #:action act #:spec spec #:qty qty #:unit unit #:place place
+                        #:process (or in out) #:note note))
 
 (define (mq m) (and m (measure-has-numerical-value m)))
 (define (ok? r) (and (pair? r) (eq? (car r) 'ok)))

@@ -5452,21 +5452,18 @@
     (hash-for-each (lambda (g q) (when (> q 0.0) (hash-set! stocked (good-spec g) #t))) *cap*)
     (lambda (spec) (and (hash-ref *raws* spec #f) (not (hash-ref stocked spec #f))))))
 (define (ambient-spec? spec) ((ambient-test) spec))
+;; a good the plan draws from the ambient world (an externality declared in
+;; *raws*: air, sunlight) has no stock to resolve, and the constructor tags it so
+;; (formulas/flows make-flow-commitment, which also tags a `use`). A `use` row's
+;; figure is HOURS of the means engaged, written under the spec's count unit;
+;; VF's field for a use's duration is effortQuantity (inventory F2), and the move
+;; waits on the readers. The unit is the SPEC's: a qualified good
+;; (spec/stage!state, spec~aid) is a lot of the bare spec.
 (define (mk-mat-commitment ambient? id action spec qty proc place begin end)
-  (make-commitment #:id id #:action action
-                   #:input-of (and (input-action? action) proc)    ; input-of: the side the action table gives the action
-                   #:output-of (and (output-action? action) proc)   ; output-of
- #:resource-conforms-to spec
-                   ;; a good the plan draws from the ambient world (an externality
-                   ;; declared in *raws*: air, sunlight) has no stock to resolve
-                   ;; and a `use` leaves the means where it was: the event names no stock either
-                   #:resource-classified-as (and (or (ambient? spec) (eq? action 'use)) (list %ambient-tag))
-                   ;; a `use` row's figure is HOURS of the means engaged, written here under the
-                   ;; spec's count unit; VF's field for a use's duration is effortQuantity
-                   ;; (inventory F2), and the move waits on the readers — eighteen fixtures,
-                   ;; the wire tables and the demo recording read the hours from here
-                   #:resource-quantity (make-measure qty (hash-ref *spec-units* spec %placeholder-unit))
-                   #:has-beginning begin #:has-end end #:has-point-in-time begin #:at-location place))
+  (make-flow-commitment #:id id #:action action #:spec spec #:qty qty
+                        #:unit (hash-ref *spec-units* (bare-spec spec) %placeholder-unit)
+                        #:process proc #:place place #:has-beginning begin #:has-end end
+                        #:ambient? (ambient? spec)))
 ;; a material ITEM, before it becomes a commitment, carries the LOCATED goods it
 ;; touches so we can order the flows by dependency (produce a good before it is
 ;; consumed; a process consumes before it produces): #(action spec qty proc place
@@ -5588,8 +5585,8 @@
                               (qty (* (cdr lot) (abs (* coeff vv)))))
                          (set! items
                                (cons (if (> coeff 0.0)
-                                         (vector 'produce (car lot) qty run (place-of cl) #f (car sp) (cdr sp) #f cl 'dropoff)
-                                         (vector 'consume (car lot) qty run (place-of cl) #f (car sp) (cdr sp) cl #f 'pickup))
+                                         (vector 'produce (car lot) qty run (place-of cl) #f (car sp) (cdr sp) #f cl (relocating-side 'output))
+                                         (vector 'consume (car lot) qty run (place-of cl) #f (car sp) (cdr sp) cl #f (relocating-side 'input)))
                                      items)))))
                    (unless (or (string-prefix? "Lab|" g)
                                ;; a presence is where a person (an Agent) or a means IS: the position
@@ -5608,7 +5605,7 @@
                                     (sp (period-span (period-of cl))) (b (car sp)) (e (cdr sp)))
                                (cond ((> coeff 0.0)
                                       (set! items (cons (vector 'produce spec qty (or run proc) place #f b e #f cl
-                                                                (and (member spec cargo) 'dropoff))
+                                                                (and (member spec cargo) (relocating-side 'output)))
                                                         items)))
                                      ;; a vehicle's or network's service is a means in use: it still exists
                                      ;; afterwards, so the row is a `use` of its own specification
@@ -5616,7 +5613,7 @@
                                       (set! items (cons (vector 'use (substring spec 4) qty (or run proc) place #f b e #f #f) items)))
                                      (else
                                       (set! items (cons (vector 'consume spec qty (or run proc) place #f b e cl #f
-                                                                (and (member spec cargo) 'pickup))
+                                                                (and (member spec cargo) (relocating-side 'input)))
                                                         items))))))))) ))
                  (col-flows c))
                (hash-for-each (lambda (spec nc)          ; the hold's net draw — spoilage, if any
@@ -5649,8 +5646,8 @@
                        ;; picked up and dropped off, under its own specification
                        (what (if (string-prefix? "Svc|" spec) (substring spec 4) spec)))
                    (hash-set! *runs* run (bare-run-template))
-                   (set! items (cons (vector 'consume what vv run (place-of from) #f (car sf) (cdr sf) from #f 'pickup) items))
-                   (set! items (cons (vector 'produce what vv run (place-of to) #f (car st) (cdr st) #f to 'dropoff) items)))))))))) )
+                   (set! items (cons (vector 'consume what vv run (place-of from) #f (car sf) (cdr sf) from #f (relocating-side 'input)) items))
+                   (set! items (cons (vector 'produce what vv run (place-of to) #f (car st) (cdr st) #f to (relocating-side 'output)) items)))))))))) )
       cols)
     ;; rows in dependency order for display (enaction reads the books, not this order);
     ;; each id names the flow it commits (action, spec, process, places, instant), so a
