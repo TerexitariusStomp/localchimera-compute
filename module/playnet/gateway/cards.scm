@@ -117,9 +117,9 @@
   "Erase every card AID gave and every card AID was given — its AID is in
    the name of each — and reply how many went. A card someone else gave
    them is theirs to read and nobody's once they are forgotten; a card they
-   gave carries their name to the receiver, who keeps a copy of their own
-   (the wire is sealed to the receiver) and loses nothing readable here.
-   Idempotent: no directory, or no card of theirs, replies 0."
+   gave carries their name to its receiver, and this file is the receiver's
+   only durable copy: the receiver loses it, which is what a person being
+   forgotten asks. Idempotent: no directory, or no card of theirs, replies 0."
   (if (and (person-aid? aid) (file-exists? dir))
       (let ((mine (or (scandir dir
                                (lambda (f)

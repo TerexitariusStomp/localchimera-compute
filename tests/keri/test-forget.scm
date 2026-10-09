@@ -30,6 +30,7 @@
              ((playnet planner knowledge law product) #:select (product-feature feature-doors))
              (playnet gateway device-registry)
              (playnet gateway forget)
+             ((playnet gateway user-files) #:select (%user-file %user-file-kinds))
              (playnet gateway presence)
              (playnet gateway mailbox)
              (playnet gateway lobby)
@@ -95,9 +96,8 @@
     (settle (with-vat gateway-vat
               ($ lobby 'keri-authenticate-device aid laptop-wire (sign-nonce nonce laptop) nonce)))))
 
-(define aid16 (substring aid 0 16))
-(define (user-file kind) (string-append tmp "/" kind "-" aid16 ".scm"))
-(define %kinds '("contacts" "credentials" "taxonomy" "log" "pins" "allotment" "shamir"))
+(define (user-file kind) (%user-file kind aid))   ; the data dir is tmp (set above)
+(define %kinds %user-file-kinds)
 (define (write-file! path text)
   (call-with-output-file path (lambda (p) (display text p))))
 (define other "EOTHERAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
@@ -116,6 +116,9 @@
 (with-vat gateway-vat ($ root 'announce "Alice" inbox))
 (check "present" (let ((users (with-vat gateway-vat ($ presence 'online-users))))
                    (and (list? users) (member "Alice" users) #t)))
+;; another live user, who must be untouched by Alice's forget — presence
+;; leaves by several names, and one it never held is a no-op there
+(with-vat gateway-vat ($ presence 'announce "Bob" inbox))
 (check "push bound" (eq? 'ok (with-vat gateway-vat ($ root 'register-push "dev1" sub-json))))
 (with-vat gateway-vat ($ registry 'bind aid 'email email 'rich))
 (check "the keeper heard the email binding"
@@ -161,6 +164,7 @@
 (check "the keeper heard the row go" (and (list? durable-seen) (not (assoc aid durable-seen))))
 (check "no push subscription" (= 0 (with-vat gateway-vat ($ push-store 'count))))
 (check "not present" (not (member "Alice" (with-vat gateway-vat ($ presence 'online-users)))))
+(check "Bob is still present" (and (member "Bob" (with-vat gateway-vat ($ presence 'online-users))) #t))
 (check "no device file" (null? (devices-of aid)))
 (check "a device signature is nobody's" (null? (live-device-keys aid (current-time))))
 (check "no point at the desk" (null? (desk 'pending aid)))
@@ -174,6 +178,13 @@
 (check "the mailbox is gone from the manager"
        (not (eq? mb (with-vat gateway-vat ($ mailbox-mgr 'get-or-create aid)))))
 (check "the old cap refuses" (err-with? (with-vat gateway-vat ($ root 'whoami)) "forgotten"))
+;; a PARALLEL session of the same AID — the phone's device session, opened
+;; before the forget — refuses too: it could otherwise sync its contact book
+;; back after the link is gone
+(check "the device session opened before the forget refuses as well"
+       (err-with? (with-vat gateway-vat ($ dev 'whoami)) "forgotten"))
+(check "…every door of it, a writer included"
+       (err-with? (with-vat gateway-vat ($ dev 'sync-contacts '())) "forgotten"))
 (check "the device is refused at the door as never enrolled" (err-with? (device-auth) "enrolled"))
 
 (format #t "~%=== the key log stands: data about a pseudonym ===~%")
@@ -188,6 +199,9 @@
               (module-uses (resolve-module '(playnet gateway forget)))))
 (check "the pseudonym can take a seat again"
        (eq? 'ok (settle (with-vat gateway-vat ($ lobby 'join "" "" aid)))))
+(define root2 (session-of (root-auth)))
+(check "…and a seat proven afresh acts: the mark lifts"
+       (and root2 (equal? aid (with-vat gateway-vat ($ root2 'whoami)))))
 (check "the product feature erasure names exactly this door"
        (equal? (feature-doors (product-feature 'erasure)) '((session . forget-me))))
 
@@ -197,7 +211,6 @@
             (forget-member! aid #:signup-agent signup-agent #:registry registry
                             #:push-store push-store #:presence presence #:desk desk
                             #:mailbox-mgr mailbox-mgr
-                            #:user-files (map user-file %kinds)
                             #:cards-dir (string-append tmp "/cards")
                             #:mail-dir (string-append tmp "/mail")))))
 (define again (forget-again))
@@ -206,6 +219,26 @@
        (every (lambda (k) (equal? 0 (dropped again k)))
               '(bindings push contact-points devices cards files mailbox mail)))
 (check "a third time, all zeros" (equal? 0 (dropped (forget-again) 'member)))
+(check "the seat proven before the second forget refuses now"
+       (err-with? (with-vat gateway-vat ($ root2 'whoami)) "forgotten"))
+;; a gateway with none of the optional stores: every absent one counts 0
+(check "with no store but the data dir, the receipt is all zeros"
+       (let ((r (settle (with-vat gateway-vat (forget-member! aid)))))
+         (and (pair? r) (assq 'dropped r)
+              (every (lambda (kv) (equal? 0 (cdr kv))) (assq-ref r 'dropped)))))
+;; a store that refuses midway: the person is told what stopped and that
+;; signing in again finishes it; the steps before it ran, and a second run
+;; finds them done (every step is ensure-absent)
+(define refusing (with-vat gateway-vat (spawn (lambda (_bcom) (methods)))))
+(with-vat gateway-vat ($ registry 'bind aid 'email email 'rich))
+(check "a refusal midway names the stage; the steps before it ran"
+       (let ((r (settle (with-vat gateway-vat
+                          (forget-member! aid #:signup-agent signup-agent #:registry registry
+                                          #:mailbox-mgr refusing)))))
+         (and (err-with? r "stopped while dropping the mailbox")
+              (err-with? r "sign in again")
+              ;; the side-store step before it did run — idempotent, so no harm
+              (not (with-vat gateway-vat ($ registry 'known? aid))))))
 
 (format #t "~%=== retiring the identity: a rotation naming no next key ===~%")
 (define-values (rot-json rot-said rot-alist)

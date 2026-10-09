@@ -15,7 +15,7 @@
 (define-module (playnet gateway lobby)
   #:use-module ((playnet utils common) #:select (string-or-false env-flag?))
   #:use-module (playnet gateway evidence)
-  #:use-module ((playnet gateway limits) #:select (%max-user-data-bytes %picture-max-chars))
+  #:use-module ((playnet gateway limits) #:select (%picture-max-chars))
   #:use-module ((playnet planner formulas counting) #:select (%contest-prefix))
   #:use-module ((playnet planner observation evidence) #:select (evidence-hash?))
   #:use-module (goblins)
@@ -61,8 +61,14 @@
   #:use-module ((playnet openvtc credentials) #:select (contact-point-binding-fields))
   #:use-module ((playnet gateway cards)
                 #:select (card-wire->card card-verdict card-at card-put! card-get card-drop! person-aid?))
-  ;; erasure: every store of the gateway's own keyed by an AID, as one act
-  #:use-module ((playnet gateway forget) #:select (forget-member! forgotten-session))
+  ;; erasure: every store of the gateway's own keyed by an AID, as one act;
+  ;; every session's dispatch passes the forgotten gate
+  #:use-module ((playnet gateway forget)
+                #:select (forget-member! forgotten-gated unmark-forgotten!))
+  ;; the per-AID files a member's sync doors keep (one module lists the kinds)
+  #:use-module ((playnet gateway user-files)
+                #:select (%data-dir %user-file %read-user-data %write-user-data!
+                          %seed-user-docs!))
   #:use-module ((srfi srfi-1) #:select (filter-map))
   #:use-module (playnet gateway allotment)   ; the week's unplanned photo reads
   #:use-module ((playnet wire replies) #:select (finished))   ; registers the allotment table
@@ -71,7 +77,6 @@
   ;; the pin book: a citizen's shared lists fold like their taxonomy cut
   #:use-module ((playnet planner folksonomy pins) #:select (pins-doc-public))
   #:use-module ((json parser) #:select (json-string->scm))
-  #:use-module ((ice-9 ftw) #:select (scandir))
   #:use-module (ice-9 format)
   #:export (^lobby ^lobby-session ^planner-facet %planner-public-doors release-contest-evidence!
             %default-ice-urls ice-servers-from-urls
@@ -124,24 +129,12 @@
 ;;; donation-address, public reads). Everything that operates on
 ;;; behalf of an identified caller lives here.
 
-(define (%data-dir)
-  (or (getenv "PLAYNET_DATA_DIR")
-      (string-append (or (getenv "HOME") "/tmp")
-                     "/.local/state/playnet")))
-
 (define (release-contest-evidence! ballot-id)
   "Let go of the picture held for a contest ballot that has settled."
   (release-evidence! (%data-dir) ballot-id))
 
-(define (%user-file kind aid-prefix)
-  (string-append (%data-dir) "/" kind "-"
-                 (substring aid-prefix 0 (min 16 (string-length aid-prefix)))
-                 ".scm"))
-
-;; every kind of per-AID file the session keeps — what a forget erases
-(define %user-file-kinds
-  '("contacts" "credentials" "taxonomy" "log" "pins" "allotment" "shamir"))
-
+;; the per-AID files, named once each (gateway/user-files.scm holds the
+;; path scheme and the list of kinds a forget erases)
 (define (contacts-file-for aid-prefix) (%user-file "contacts" aid-prefix))
 (define (cards-dir) (string-append (%data-dir) "/cards"))
 (define (credentials-file-for aid-prefix) (%user-file "credentials" aid-prefix))
@@ -173,21 +166,6 @@
                       (<-np pins-ref 'contribute aid
                             (pins-doc-public (pins-json->doc doc))))))
 
-;; the one scanner both seeds share: every aid-wrapped PREFIX file in the
-;; data dir, handed to CONTRIBUTE! as (aid doc); a bad file is skipped
-(define (%seed-user-docs! prefix contribute!)
-  (let ((dir (%data-dir)))
-    (for-each
-     (lambda (f)
-       (catch #t
-         (lambda ()
-           (let ((v (%read-user-data (string-append dir "/" f))))
-             (when (and (list? v) (assq 'aid v) (assq 'doc v))
-               (contribute! (cdr (assq 'aid v)) (cdr (assq 'doc v))))))
-         (lambda _ #f)))
-     (filter (lambda (f) (string-prefix? prefix f))
-             (or (scandir dir) '())))))
-
 (define (pins-json->doc json)
   (catch #t
     (lambda ()
@@ -205,30 +183,6 @@
                                         (subject . ,(str (ref p "subject")))))
                           (vec (ref v "pins")))))))
     (lambda _ '((lists . ()) (pins . ())))))
-
-;; Per-AID sync payloads funnel through %write-user-data!, which holds each to
-;; %max-user-data-bytes (gateway/limits.scm).
-
-(define (%user-data-size data)
-  "Byte size of a sync payload: the bytevector length for an encrypted blob,
-   else the serialised length."
-  (if (bytevector? data)
-      (bytevector-length data)
-      (bytevector-length
-       (string->utf8 (call-with-output-string (lambda (p) (write data p)))))))
-
-(define (%write-user-data! file data)
-  (let ((sz (%user-data-size data)))
-    (when (> sz %max-user-data-bytes)
-      (error "sync payload exceeds cap" sz %max-user-data-bytes)))
-  (let ((dir (dirname file)))
-    (unless (file-exists? dir)
-      (catch 'system-error (lambda () (mkdir dir)) (lambda _ #f)))
-    (call-with-output-file file
-      (lambda (p) (write data p) (newline p)))))
-
-(define (%read-user-data file)
-  (if (file-exists? file) (call-with-input-file file read) '()))
 
 ;; Four endpoints (issue-credential, revoke-credential, open-terminal,
 ;; get-mailbox) used to gate on a role credential from the maintainer
@@ -261,7 +215,7 @@
         ((list? hand-json) hand-json)
         (else (error "hand: a JSON object of part-string → portion" hand-json))))
 
-(define* (^lobby-session bcom aid-prefix
+(define* (^lobby-session _bcom aid-prefix
                          terminal-svc mailbox-mgr governance-svc signup-agent
                          #:optional (oobi-host #f) (acdc-store #f)
                                     (folksonomy #f) (presence #f)
@@ -289,6 +243,10 @@
   ;; (a gateway without one) the door answers the absence. The door's
   ;; declaration names the target (protocol.scm #:to), and the lint holds
   ;; the two together.
+  ;; A session is spawned only once has-seat? held: a seat proven afresh is
+  ;; a person who is a member again, so any forgotten mark on the AID lifts
+  ;; (gateway/forget.scm).
+  (unmark-forgotten! aid-prefix)
   (define (planner! . msg)
     (if planner-service (apply <- planner-service msg) (list 'error "no planner service")))
   (define (root-only what thunk)
@@ -493,6 +451,9 @@
             r)
         #:promise? #t))
 
+  ;; outermost: once the AID is forgotten, every message is refused —
+  ;; this cap's and every other live session's of the same AID
+  (forgotten-gated aid-prefix
   (door-gated doors
   (declared-methods session
 
@@ -995,26 +956,25 @@
    ;; gateway's own keyed by this AID goes, the AID→person link last; the
    ;; key log stays, data about a pseudonym nobody here can resolve. Root
    ;; only — a device key able to erase its person would make a stolen
-   ;; phone an erasure. The reply is the receipt, and this cap becomes a
-   ;; refusal from here: nothing is written as the AID through it again.
+   ;; phone an erasure. The reply is the receipt. From the act's first turn
+   ;; every session of this AID — this one, a phone's — refuses at the gate
+   ;; its dispatch passes through (forgotten-gated, below the methods).
    ((forget-me)
     (root-only "forgetting you"
       (lambda ()
         (format (current-error-port) "[lobby-session] forgetting ~a\n" (aid-tag aid-prefix))
-        (bcom (forgotten-session)
-              (forget-member!
-               aid-prefix
-               #:signup-agent signup-agent #:registry recipient-registry
-               #:push-store push-store #:presence presence
-               #:presence-names (if announced-name (list announced-name) '())
-               #:desk contact-desk
-               #:mailbox-mgr mailbox-mgr #:pins pins #:folksonomy folksonomy
-               #:mesh-mailbox (current-mesh-mailbox)
-               #:mesh-dests (let ((pub (anchored-mesh-pub)))
-                              (if pub (map cdr (anchored-destinations pub)) '()))
-               #:user-files (map (lambda (k) (%user-file k aid-prefix)) %user-file-kinds)
-               #:cards-dir (cards-dir)
-               #:mail-dir (getenv "PLAYNET_MAIL_DIR"))))))
+        (forget-member!
+         aid-prefix
+         #:signup-agent signup-agent #:registry recipient-registry
+         #:push-store push-store #:presence presence
+         #:presence-names (if announced-name (list announced-name) '())
+         #:desk contact-desk
+         #:mailbox-mgr mailbox-mgr #:pins pins #:folksonomy folksonomy
+         #:mesh-mailbox (current-mesh-mailbox)
+         #:mesh-dests (let ((pub (anchored-mesh-pub)))
+                        (if pub (map cdr (anchored-destinations pub)) '()))
+         #:cards-dir (cards-dir)
+         #:mail-dir (getenv "PLAYNET_MAIL_DIR")))))
 
    ;; Rotation — bound to this session's AID. Caller can't rotate
    ;; someone else through this cap. Root-only: a device key cannot
@@ -1592,7 +1552,7 @@
     (planner! 'accept-invite scope-id aid-prefix proposal-id))
    ;; Accepts a work offer with this AID as provider and the scope as receiver, then re-plans the scope.
    ((accept-work-offer scope-id proposal-id)
-    (planner! 'accept-work-offer scope-id aid-prefix proposal-id)))))
+    (planner! 'accept-work-offer scope-id aid-prefix proposal-id))))))
 
 ;;; ── ^planner-facet ───────────────────────────────────────────────────────────
 ;;;

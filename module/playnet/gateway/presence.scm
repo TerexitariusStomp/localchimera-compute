@@ -101,18 +101,25 @@
    ;; Leaving the gateway leaves every room too — a disconnected peer is not
    ;; in a meeting, and a roster that outlives the session would have the
    ;; walkie offering to a dead inbox.
+   ;; A name that is neither a session nor in any room is a no-op: nothing
+   ;; is broadcast and the sink keeps whatever transport it has — a forget
+   ;; (gateway/forget.scm) leaves by several names, and a name presence
+   ;; never held must not cut another live user's alerts.
    ((leave name)
-    (let* ((new-sessions (hashmap-remove sessions name))
-           (was-in       (rooms-with rooms name))
-           (new-rooms    (fold (lambda (room acc) (room-drop acc room name))
-                               rooms was-in)))
-      (when notification-sink
-        (<-np notification-sink 'unbind-transport))
-      (broadcast-presence! new-sessions)
-      (for-each (lambda (room) (broadcast-roster! new-sessions new-rooms room))
-                was-in)
-      (bcom (self new-sessions new-rooms)
-            (online-user-list new-sessions))))
+    (let* ((held?        (and (hashmap-ref sessions name #f) #t))
+           (was-in       (rooms-with rooms name)))
+      (if (not (or held? (pair? was-in)))
+          (online-user-list sessions)
+          (let* ((new-sessions (hashmap-remove sessions name))
+                 (new-rooms    (fold (lambda (room acc) (room-drop acc room name))
+                                     rooms was-in)))
+            (when (and held? notification-sink)
+              (<-np notification-sink 'unbind-transport))
+            (broadcast-presence! new-sessions)
+            (for-each (lambda (room) (broadcast-roster! new-sessions new-rooms room))
+                      was-in)
+            (bcom (self new-sessions new-rooms)
+                  (online-user-list new-sessions))))))
 
    ;; ── rooms ─────────────────────────────────────────────────────────
    ;; Join is idempotent: re-joining a room you are in returns the roster

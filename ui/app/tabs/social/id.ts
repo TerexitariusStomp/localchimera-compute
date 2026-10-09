@@ -1555,9 +1555,10 @@ export function forgetSection(f: d3.Selection): void {
     const retireRow = form.append("div").attr("class", "consent");
     const retire = retireRow.append("input").attr("type", "checkbox").attr("id", `pnretire${n}`);
     retireRow.append("label").attr("for", `pnretire${n}`)
-      .text("also retire this identity everywhere: a last key event names no next key, so nothing "
-            + "ever signs as it again, at any commune. Leave this off to keep the identity and "
-            + "only be forgotten here.");
+      .text("also retire this identity: a last key event names no next key, closing its log for "
+            + "good — no rotation, no recovery, no new key can ever take it over (the key it "
+            + "reveals stays your passcode's). Leave this off to keep the identity and only be "
+            + "forgotten here.");
     const sureRow = form.append("div").attr("class", "consent");
     const sure = sureRow.append("input").attr("type", "checkbox").attr("id", `pnsure${n}`);
     sureRow.append("label").attr("for", `pnsure${n}`)

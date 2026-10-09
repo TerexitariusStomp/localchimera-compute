@@ -2606,10 +2606,16 @@
 ;; the session's forget-me door); the reply is the receipt — what went, by
 ;; kind and count, and what stays — as JSON. With RETIRE "retire" a terminal
 ;; rotation goes first: the key the log committed to is revealed and NO next
-;; key is named, so no key ever signs as the identity again (KERI: an
-;; identifier that cannot be rotated is non-transferable, and abandoned);
-;; the commune verifies it as it verifies any rotation and refuses every
-;; rotation after it. The page then forgets what this device held.
+;; key is named, so the log is closed — it can never rotate again, no new
+;; key can take the identity over, and there is no recovery from it (KERI:
+;; an identifier that cannot be rotated is non-transferable, and
+;; abandoned). The key it revealed is still the passcode's, and still
+;; signs: retiring closes the future of the identity, it does not disown
+;; what the passcode holds. The commune verifies the event as it verifies
+;; any rotation and refuses every rotation after it; the log in hand is
+;; saved with it before the forget, so a forget that stops partway leaves
+;; this device's log level with the commune's. The page then forgets what
+;; this device held.
 (define (handle-forget-me bran retire cb)
   (cond
    ((not *lobby*)   (reply! cb "err:forgetting needs the commune in reach"))
@@ -2660,7 +2666,9 @@
                      (reply! cb (string-append "err:the commune refused the retirement: "
                                                (if (and (pair? (cdr w)) (string? (cadr w)))
                                                    (cadr w) "no reason given")))
-                     (k)))
+                     (begin
+                       (kel-save! (make-kel (kel-icp kel) (assoc-ref kel "sigs") rots))
+                       (k))))
                #:catch (lambda _ (reply! cb "err:could not reach the commune's witness")))))))))
 
 (define (handle-change-passcode current new cb)

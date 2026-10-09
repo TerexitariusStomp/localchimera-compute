@@ -64,7 +64,7 @@
          (stub (with-vat gateway-vat (spawn (lambda (_bcom) (methods)))))
          (lobby (with-vat gateway-vat
                   (spawn ^lobby signup-agent stub
-                         (or presence stub) stub (or mailbox-mgr stub) stub stub stub
+                         (or presence stub) stub mailbox-mgr stub stub stub
                          oobi-host #f push-store #f folksonomy recipient-registry
                          #f pins #f contact-desk)))
          (settle (lambda (p)
