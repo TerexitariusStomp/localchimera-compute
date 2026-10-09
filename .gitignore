@@ -152,9 +152,6 @@ browser/reload-token.txt
 .onion-data/
 
 # basemap tile proxy cache (server/serve-static.scm /tiles)
-# the basemap style's licence rides beside the vendored bundle, through the
-# LICENSE.md rule above
-!browser/vendor/basemaps/LICENSE.md
 # the basemap's glyph ranges (10 MB of Noto Sans): tools/map-tiles.sh fetches
 # them beside the archives; the deploy rsync ships them with browser/
 browser/assets/map/fonts/
@@ -368,6 +365,9 @@ CLAUDE.md
 CONTRIBUTING.md
 LICENSE-ADDITIONAL-TERMS.md
 LICENSE.md
+# the basemap style's licence rides beside its vendored bundle (a later
+# negation wins over the rule above it)
+!browser/vendor/basemaps/LICENSE.md
 README.md
 SECURITY.md
 THIRD-PARTY-NOTICES.md
