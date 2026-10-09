@@ -158,7 +158,7 @@
                                  base)
                   (string-append "GUILE_LOAD_COMPILED_PATH="
                                  "/run/current-system/profile/lib/guile/3.0/site-ccache"))
-            #:log-file "/var/log/playnet-static.log")))
+            #:log-file "/var/log/playnet/static.log")))
       (stop #~(make-kill-destructor))
       (respawn? #t)))))
 

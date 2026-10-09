@@ -66,6 +66,7 @@
              (deploy-runner-service)
              (backup-service)            ; playnet-backup-service-type
               (gnu services base)
+              (gnu services admin)       ; log-rotation-service-type
               (gnu services mcron)        ; required by backup-service-type
              (gnu services networking)  ;; also provides tor-service-type
              (gnu services shepherd)
@@ -1311,7 +1312,7 @@
       ;;   2. Write token to /run/secrets/telegram-bot-token (mode 0400,
       ;;      owned by playnet user). Single line, no trailing newline.
       ;;   3. `guix deploy`. Service starts; tail the log:
-      ;;      /var/log/playnet-telegram-bridge.log
+      ;;      /var/log/playnet/telegram-bridge.log
       ;;
       ;; The service is harmless if the token file is absent — Shepherd
       ;; will fail to start it and respawn-loop. To disable entirely,
@@ -1358,7 +1359,7 @@
                                              "(use-modules (system repl server)) (run-server (make-unix-domain-server-socket #:path \"/var/run/playnet/repl.sock\"))")
                                        #:user "playnet"
                                        #:group "users"
-                                       #:log-file "/var/log/playnet-repl.log"
+                                       #:log-file "/var/log/playnet/repl.log"
                                        #:environment-variables
                                        (list (string-append "GUILE_LOAD_PATH="
                                               "/run/current-system/profile/share/guile/site/3.0:"
@@ -2324,6 +2325,16 @@ COMMIT
       ;; only to the substitute server operator (an upstream we're
       ;; already trusting for binary integrity via signing keys).
       (modify-services %base-services
+        ;; Hourly rotation of every shepherd-logged service, as the tmpfs
+        ;; comment above and the privacy notice (§2.1, product.scm's
+        ;; log-rotation fact) state. Guix's default calendar is Sunday
+        ;; 22:00 — the 2026-09-06 ENOSPC was that rotation, a week of logs
+        ;; zstd'd at once; an hour's worth at a time keeps the 256M tmpfs
+        ;; far from full now that the gateway and valhalla log there too.
+        (log-rotation-service-type config =>
+          (log-rotation-configuration
+           (inherit config)
+           (calendar-event #~(calendar-event #:minutes '(0)))))
         (guix-service-type config =>
           (guix-configuration
            (inherit config)

@@ -103,7 +103,7 @@
           (list (string-append "HOME=/home/" #$user)
                 (string-append "LD_LIBRARY_PATH=" #$lib-dir ":" #$prof-lib)
                 (string-append "PATH=" #$bin-dir ":/run/current-system/profile/bin"))
-          #:log-file "/var/log/playnet-valhalla.log"))
+          #:log-file "/var/log/playnet/valhalla.log"))
       (stop #~(make-kill-destructor))
       (respawn? #t)))))
 

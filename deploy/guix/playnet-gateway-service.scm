@@ -327,7 +327,10 @@
                         (list #$@(map (lambda (kv)
                                         #~(string-append #$(car kv) "=" #$(cdr kv)))
                                       env))))))
-            #:log-file "/var/log/playnet-gateway.log"))
+            ;; under the RAM-only /var/log/playnet (deploy/os.scm), with the
+            ;; other service logs: what the privacy notice says of server
+            ;; logs (§2.1) is true of this one
+            #:log-file "/var/log/playnet/gateway.log"))
             args)))
       (stop #~(make-kill-destructor))
       ;; A boot that cannot succeed stops instead of looping. Shepherd's default

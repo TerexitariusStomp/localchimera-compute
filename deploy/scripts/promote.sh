@@ -236,7 +236,7 @@ if [ "${PROMOTE_VERIFY:-1}" = 1 ]; then
     done
     if [ "$ok" -lt 2 ]; then
         echo "[promote] FAILED: $short is deployed but the gateway is not serving (entry-points.json: ${code:-?})."
-        echo "          ssh $BOX 'herd status playnet-gateway; tail -30 /var/log/playnet-gateway.log'"
+        echo "          ssh $BOX 'herd status playnet-gateway; tail -30 /var/log/playnet/gateway.log'"
         exit 1
     fi
     echo "[promote] verified — $short deployed and the gateway is serving"

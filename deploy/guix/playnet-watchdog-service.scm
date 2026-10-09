@@ -103,7 +103,7 @@
            (start #~(make-forkexec-constructor
                     (list #$script)
                     #:user #$user
-                    #:log-file "/var/log/playnet-watchdog.log"))
+                    #:log-file "/var/log/playnet/watchdog.log"))
            (stop #~(make-kill-destructor))
            (respawn? #t)))))
 

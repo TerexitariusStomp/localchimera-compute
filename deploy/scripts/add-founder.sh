@@ -47,9 +47,9 @@ torsocks ssh "$BOX" "
   if (ss -ltn 2>/dev/null || netstat -ltn 2>/dev/null) | grep -q ':9090'; then
     echo '[add-founder] gateway is up (OCapN :9090).'
   else
-    echo '[add-founder] WARN: :9090 not listening — check /var/log/playnet-gateway.log'
+    echo '[add-founder] WARN: :9090 not listening — check /var/log/playnet/gateway.log'
   fi
-  if tail -200 /var/log/playnet-gateway.log | grep -aq 'seeded founder PHC: $AID'; then
+  if tail -200 /var/log/playnet/gateway.log | grep -aq 'seeded founder PHC: $AID'; then
     echo '[add-founder] ✓ founder PHC seeded — First-Person is enforcing.'
   else
     echo '[add-founder] note: no fresh seed line (already held a live PHC, or check the log).'
