@@ -7,24 +7,9 @@
 // lists them beside the commons' own rows. The features come from the tiles
 // already on screen: queryRenderedFeatures under a tap, querySourceFeatures
 // for a search — nothing is fetched that the map has not drawn.
-import { POI_FAMILIES, poiFamiliesOn } from "../../basemap.js";
+import { POI_FAMILIES, POI_FACE, poiFamiliesOn } from "../../basemap.js";
 const LAYER = "pois";
 const SOURCE = "osm";
-/** An emoji per kind, for the row's face; the style draws the sprite on the map. */
-const FACE = {
-    park: "🌳", garden: "🌱", forest: "🌲", beach: "🏖", peak: "⛰", marina: "⚓", zoo: "🦁", animal: "🐾",
-    station: "🚉", bus_stop: "🚏", ferry_terminal: "⛴", aerodrome: "✈",
-    school: "🏫", university: "🎓", library: "📚", townhall: "🏛", post_office: "📮", building: "🏢",
-    museum: "🖼", theatre: "🎭", attraction: "🎡", artwork: "🎨", stadium: "🏟",
-    restaurant: "🍽", cafe: "☕", bar: "🍸", fast_food: "🍔",
-    supermarket: "🛒", convenience: "🏪", books: "📖", clothes: "👕", electronics: "🔌", beauty: "💇",
-    bench: "🪑", toilets: "🚻", drinking_water: "🚰",
-    subway: "🚇", tram_stop: "🚊", bus_station: "🚌", bicycle_parking: "🚲",
-    hospital: "🏥", clinic: "🩺", doctors: "🩺", dentist: "🦷", pharmacy: "💊", social_facility: "🤝", childcare: "🧸",
-    kindergarten: "🧸", community_centre: "🏘", place_of_worship: "🕊", veterinary: "🐕", shelter: "⛺",
-    playground: "🛝", pitch: "⚽", sports_centre: "🏃", swimming_pool: "🏊", dog_park: "🐕", picnic_site: "🧺", viewpoint: "🔭",
-    allotments: "🥕", recycling: "♻", information: "ℹ", memorial: "🕯", courthouse: "⚖", police: "👮", fire_station: "🚒",
-};
 /** The kind, as a person reads it: "public toilets", "bus stop". */
 const WORD = {
     toilets: "public toilets", drinking_water: "drinking water", fast_food: "fast food",
@@ -48,7 +33,7 @@ export function placeRow(f) {
         return null;
     const [lng, lat] = f.geometry.coordinates;
     return { id: `osm:${f.id ?? `${kind}:${lng.toFixed(5)},${lat.toFixed(5)}`}`, kind: "place",
-        emoji: FACE[kind] ?? "📍", name, provider: "OpenStreetMap", note: kindWord(kind),
+        emoji: POI_FACE[kind] ?? "📍", name, provider: "OpenStreetMap", note: kindWord(kind),
         lat, lng, arcs: [] };
 }
 /** The place drawn under POINT (the map's pixels), or null. */

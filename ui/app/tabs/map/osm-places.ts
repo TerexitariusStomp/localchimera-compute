@@ -9,26 +9,10 @@
 // for a search — nothing is fetched that the map has not drawn.
 
 import type { PlacedRow } from "./atlas.js";
-import { POI_FAMILIES, poiFamiliesOn } from "../../basemap.js";
+import { POI_FAMILIES, POI_FACE, poiFamiliesOn } from "../../basemap.js";
 
 const LAYER = "pois";
 const SOURCE = "osm";
-
-/** An emoji per kind, for the row's face; the style draws the sprite on the map. */
-const FACE: Record<string, string> = {
-  park: "🌳", garden: "🌱", forest: "🌲", beach: "🏖", peak: "⛰", marina: "⚓", zoo: "🦁", animal: "🐾",
-  station: "🚉", bus_stop: "🚏", ferry_terminal: "⛴", aerodrome: "✈",
-  school: "🏫", university: "🎓", library: "📚", townhall: "🏛", post_office: "📮", building: "🏢",
-  museum: "🖼", theatre: "🎭", attraction: "🎡", artwork: "🎨", stadium: "🏟",
-  restaurant: "🍽", cafe: "☕", bar: "🍸", fast_food: "🍔",
-  supermarket: "🛒", convenience: "🏪", books: "📖", clothes: "👕", electronics: "🔌", beauty: "💇",
-  bench: "🪑", toilets: "🚻", drinking_water: "🚰",
-  subway: "🚇", tram_stop: "🚊", bus_station: "🚌", bicycle_parking: "🚲",
-  hospital: "🏥", clinic: "🩺", doctors: "🩺", dentist: "🦷", pharmacy: "💊", social_facility: "🤝", childcare: "🧸",
-  kindergarten: "🧸", community_centre: "🏘", place_of_worship: "🕊", veterinary: "🐕", shelter: "⛺",
-  playground: "🛝", pitch: "⚽", sports_centre: "🏃", swimming_pool: "🏊", dog_park: "🐕", picnic_site: "🧺", viewpoint: "🔭",
-  allotments: "🥕", recycling: "♻", information: "ℹ", memorial: "🕯", courthouse: "⚖", police: "👮", fire_station: "🚒",
-};
 
 /** The kind, as a person reads it: "public toilets", "bus stop". */
 const WORD: Record<string, string> = {
@@ -54,7 +38,7 @@ export function placeRow(f: maplibregl.QueriedFeature): PlacedRow | null {
   if (!name || f.geometry.type !== "Point") return null;
   const [lng, lat] = f.geometry.coordinates as [number, number];
   return { id: `osm:${f.id ?? `${kind}:${lng.toFixed(5)},${lat.toFixed(5)}`}`, kind: "place",
-           emoji: FACE[kind] ?? "📍", name, provider: "OpenStreetMap", note: kindWord(kind),
+           emoji: POI_FACE[kind] ?? "📍", name, provider: "OpenStreetMap", note: kindWord(kind),
            lat, lng, arcs: [] };
 }
 

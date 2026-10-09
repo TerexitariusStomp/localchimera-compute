@@ -30,7 +30,7 @@ import { render } from './template.js';
 import { effect } from './reactive.js';
 import { storageRows } from './storage-view.js';
 import { mapPacksBlock } from './map-packs-view.js';
-import { POI_FAMILIES, poiFamilyOn, setPoiFamily } from './basemap.js';
+import { POI_FAMILIES, familyFaces, poiFamilyOn, setPoiFamily } from './basemap.js';
 import { theMap } from './mapview.js';
 import { reportBlock } from './report.js';
 import { TERMS_HREF, PRIVACY_HREF, ACCESSIBILITY_HREF } from './legal-product.js';
@@ -278,7 +278,7 @@ export function registerAllSettings() {
                     + "labelled on the map, family by family. Off, a family is not drawn; the dial's own "
                     + "pins always are.",
                 rows: () => POI_FAMILIES.map(f => ({
-                    kind: "toggle", label: f.label, redraws: false,
+                    kind: "toggle", label: f.label, note: familyFaces(f), redraws: false,
                     get: () => poiFamilyOn(f.id),
                     set: (v) => setPoiFamily(f.id, v, theMap()),
                 })) },

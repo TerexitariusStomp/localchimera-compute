@@ -31,6 +31,33 @@ function flavor() {
 }
 /** The labels' language: the device's, as OSM names it (`name:xx`). */
 const lang = () => (navigator.language || "en").slice(0, 2);
+// ── the places the map labels ────────────────────────────────────────────
+// The style's `pois` layer draws every kind OpenStreetMap tags; a city block
+// of restaurants is noise over the dial's own pins. The kinds fall into
+// families a person switches on and off; the choice persists per device and
+// applies as a FILTER on that one layer — no style reload. What starts on is
+// the commons' side of the street: nature, ways to get around, culture, and
+// what is free to use — care, play, the commons' benches, toilets and water.
+// Food, shops and institutions start off; a device turns them on. The tiles
+// carry more kinds than the style draws: a kind with no sprite of its own is
+// drawn as the style's plain dot, its name beside it.
+/** An emoji per kind: the row's face in the panel and the search, and the family's in settings; the map draws the sprite. */
+export const POI_FACE = {
+    park: "🌳", garden: "🌱", forest: "🌲", beach: "🏖", peak: "⛰", marina: "⚓", zoo: "🦁", animal: "🐾",
+    station: "🚉", bus_stop: "🚏", ferry_terminal: "⛴", aerodrome: "✈",
+    school: "🏫", university: "🎓", library: "📚", townhall: "🏛", post_office: "📮", building: "🏢",
+    museum: "🖼", theatre: "🎭", attraction: "🎡", artwork: "🎨", stadium: "🏟",
+    restaurant: "🍽", cafe: "☕", bar: "🍸", fast_food: "🍔",
+    supermarket: "🛒", convenience: "🏪", books: "📖", clothes: "👕", electronics: "🔌", beauty: "💇",
+    bench: "🪑", toilets: "🚻", drinking_water: "🚰",
+    subway: "🚇", tram_stop: "🚊", bus_station: "🚌", bicycle_parking: "🚲",
+    hospital: "🏥", clinic: "🩺", doctors: "🩺", dentist: "🦷", pharmacy: "💊", social_facility: "🤝", childcare: "🧸",
+    kindergarten: "🧸", community_centre: "🏘", veterinary: "🐕", shelter: "⛺",
+    playground: "🛝", pitch: "⚽", sports_centre: "🏃", swimming_pool: "🏊", dog_park: "🐕", picnic_site: "🧺", viewpoint: "🔭",
+    allotments: "🥕", recycling: "♻", information: "ℹ", memorial: "🕯", courthouse: "⚖", police: "👮", fire_station: "🚒",
+};
+/** The faces of a family's kinds, for its row in settings. */
+export const familyFaces = (f) => [...new Set(f.kinds.map(k => POI_FACE[k]).filter(Boolean))].join(" ");
 export const POI_FAMILIES = [
     { id: "nature", label: "parks and nature", on: true,
         kinds: ["park", "garden", "forest", "beach", "peak", "marina", "zoo", "animal"] },
@@ -38,7 +65,7 @@ export const POI_FAMILIES = [
         kinds: ["station", "subway", "tram_stop", "bus_stop", "bus_station", "ferry_terminal", "aerodrome", "bicycle_parking"] },
     { id: "care", label: "care and help", on: true,
         kinds: ["hospital", "clinic", "doctors", "dentist", "pharmacy", "social_facility", "childcare",
-            "kindergarten", "community_centre", "place_of_worship", "veterinary", "shelter"] },
+            "kindergarten", "community_centre", "veterinary", "shelter"] },
     { id: "play", label: "play and sport", on: true,
         kinds: ["playground", "pitch", "sports_centre", "swimming_pool", "dog_park", "picnic_site", "viewpoint"] },
     { id: "commons", label: "the commons", on: true,
