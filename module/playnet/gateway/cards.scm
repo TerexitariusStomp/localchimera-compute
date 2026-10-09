@@ -22,11 +22,12 @@
   #:use-module (srfi srfi-1)
   #:use-module (json)
   #:use-module ((ice-9 textual-ports) #:select (get-string-all))
+  #:use-module ((ice-9 ftw) #:select (scandir))
   #:use-module ((playnet keri said) #:select (compute-said))
   #:use-module ((playnet keri citizen-sig) #:select (verify-said-signature))
   #:export (%card-schema %card-max-sealed
             person-aid? card-said card-wire->card card-verdict card-at
-            card-put! card-get card-drop!))
+            card-put! card-get card-drop! cards-forget!))
 
 (define %card-schema "playnet-card/v1")
 ;; the ciphertext as hex: a name and a handful of lines, with room to spare
@@ -111,3 +112,22 @@
   (let ((file (card-file dir to from)))
     (when (and file (file-exists? file)) (delete-file file))
     #t))
+
+(define (cards-forget! dir aid)
+  "Erase every card AID gave and every card AID was given — its AID is in
+   the name of each — and reply how many went. A card someone else gave
+   them is theirs to read and nobody's once they are forgotten; a card they
+   gave carries their name to the receiver, who keeps a copy of their own
+   (the wire is sealed to the receiver) and loses nothing readable here.
+   Idempotent: no directory, or no card of theirs, replies 0."
+  (if (and (person-aid? aid) (file-exists? dir))
+      (let ((mine (or (scandir dir
+                               (lambda (f)
+                                 (and (string-suffix? ".card" f)
+                                      (let ((stem (substring f 0 (- (string-length f) 5))))
+                                        (or (string-prefix? (string-append aid ".") stem)
+                                            (string-suffix? (string-append "." aid) stem))))))
+                      '())))
+        (for-each (lambda (f) (delete-file (string-append dir "/" f))) mine)
+        (length mine))
+      0))

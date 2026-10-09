@@ -40,12 +40,22 @@
       ((1) (spawn ^mailbox-manager mailboxes))
       (else (error "Unknown ^mailbox-manager version" version))))
   (methods
+   ;; `bcom` takes effect only as the method's return value: the mailbox
+   ;; rides as its second argument so the manager keeps what it made.
    ((get-or-create identity-key)
     (or (hashmap-ref mailboxes identity-key #f)
         (let ((mb (spawn ^mailbox '())))
           (bcom (^mailbox-manager bcom
-                                  (hashmap-set mailboxes identity-key mb)))
-          mb)))))
+                                  (hashmap-set mailboxes identity-key mb))
+                mb))))
+   ;; erasure: the identity's mailbox and whatever waited in it go together;
+   ;; replies how many messages went (0 when no mailbox stood)
+   ((forget identity-key)
+    (let ((mb (hashmap-ref mailboxes identity-key #f)))
+      (if mb
+          (bcom (^mailbox-manager bcom (hashmap-remove mailboxes identity-key))
+                ($ mb 'count))
+          0)))))
 
 (define mailbox-env
   (make-persistence-env

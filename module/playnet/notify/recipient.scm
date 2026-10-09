@@ -126,10 +126,13 @@
 
   ;; the registry as it stands after a change; a change to a durable
   ;; binding is told to the keeper once it has happened
-  (define (next table* durable?)
+  ;; REPLY rides as bcom's second argument: a bcom takes effect only as the
+  ;; method's return value, so a method that answers something must answer
+  ;; it through here.
+  (define* (next table* durable? #:optional (reply *unspecified*))
     (when (and durable? on-durable)
       (catch #t (lambda () (on-durable (durable-of table*))) (lambda _ #f)))
-    (bcom (^recipient-registry bcom table* on-durable)))
+    (bcom (^recipient-registry bcom table* on-durable) reply))
 
   (define (entry aid)
     (or (assoc-ref table aid) (cons '() (default-prefs))))
@@ -167,6 +170,19 @@
     ((set-prefs aid prefs)
      (let ((e (entry aid)))
        (next (put aid (cons (car e) prefs)) #f)))
+
+    ;; ── Erasure ────────────────────────────────────────────────────
+    ;; The AID's whole row goes — bindings and prefs — and the keeper
+    ;; hears when a durable one stood. Replies the bindings that went as
+    ;; plain (kind ctx style) data, so the caller can put down what each
+    ;; one pointed at (a push subscription, a spooled mail). Idempotent:
+    ;; an unknown AID replies ().
+    ((forget aid)
+     (let* ((row (assoc-ref table aid))
+            (bs  (if row (car row) '())))
+       (next (remove (lambda (p) (equal? (car p) aid)) table)
+             (any (lambda (b) (durable-kind? (binding-kind b))) bs)
+             (map (lambda (b) (list (binding-kind b) (binding-ctx b) (binding-style b))) bs))))
 
     ;; ── Reads ──────────────────────────────────────────────────────
 

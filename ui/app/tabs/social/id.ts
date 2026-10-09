@@ -1520,6 +1520,99 @@ export function passcodeSection(f: d3.Selection): void {
 }
 
 /**
+ * FORGET ME. The commune erases every record of its own keyed by this
+ * identity — the link between identity and person last — and replies a
+ * receipt; then this device forgets what it held (signOutDevice). What stays
+ * is said before the act, because it is the design and not a gap: the key
+ * log (signed, digest-chained; a hole would break everything ever signed as
+ * it), the credentials and the scope's records, as data about an identifier
+ * nobody can resolve to a person. It asks for the passcode — a device key
+ * alone cannot erase its person — and offers to retire the identity first:
+ * a last key event naming no next key, after which nothing signs as it
+ * again, anywhere.
+ */
+export function forgetSection(f: d3.Selection): void {
+  const sec = f.append("div");
+  const clear = (): void => { sec.selectAll("*").remove(); };
+  const say = (text: string): void => { sec.append("div").attr("class", "opt").text(text); };
+  const n = ((forgetSection as Counted)._n = ((forgetSection as Counted)._n || 0) + 1);
+
+  const ask = (): void => {
+    clear();
+    const h = who.peek();
+    if (!h || !HOLDS_IDENTITY(idState.peek())) { say("sign in to be forgotten."); return; }
+    say("Your commune erases every record of its own about you — your handle, name and email, "
+        + "the ways to reach you, your devices, cards, contacts, pins, taxonomy, log, mailboxes and "
+        + "spooled mail — the link between your identity and you last. Your signed key log and "
+        + "credentials stay as they are: records about an identifier nobody can resolve to you. "
+        + "Encrypted backups hold the erased records for up to 30 days.");
+    const form = sec.append("form").attr("autocomplete", "on").attr("action", "#");
+    form.append("input").attr("type", "text").attr("name", "username").attr("autocomplete", "username")
+      .property("value", h.aid).attr("readonly", true).attr("tabindex", "-1").attr("aria-hidden", "true")
+      .style("display", "none");
+    const cur = form.append("input").attr("type", "password").attr("name", "password")
+      .attr("autocomplete", "current-password").attr("placeholder", "your passcode");
+    const retireRow = form.append("div").attr("class", "consent");
+    const retire = retireRow.append("input").attr("type", "checkbox").attr("id", `pnretire${n}`);
+    retireRow.append("label").attr("for", `pnretire${n}`)
+      .text("also retire this identity everywhere: a last key event names no next key, so nothing "
+            + "ever signs as it again, at any commune. Leave this off to keep the identity and "
+            + "only be forgotten here.");
+    const sureRow = form.append("div").attr("class", "consent");
+    const sure = sureRow.append("input").attr("type", "checkbox").attr("id", `pnsure${n}`);
+    sureRow.append("label").attr("for", `pnsure${n}`)
+      .text("I understand what stays, and that this cannot be undone.");
+    const err = form.append("div").attr("class", "err");
+    const go = form.append("button").attr("class", "go").attr("type", "submit")
+      .attr("disabled", true).style("opacity", "0.45").text("forget me");
+    sure.on("change", () => {
+      const ok = sure.property("checked") as boolean;
+      go.attr("disabled", ok ? null : true).style("opacity", ok ? "1" : "0.45");
+    });
+    let busy = false;
+    form.on("submit", async (e) => {
+      e.preventDefault();
+      if (busy || !(sure.property("checked") as boolean)) return;
+      const passcode = cur.property("value") as string;
+      if (!passcode || passcode.length < 21) { err.text("the passcode needs 21+ characters"); return; }
+      busy = true; err.text("");
+      go.attr("disabled", true).style("opacity", "0.45").text("forgetting…");
+      const r = String(await (HANDLERS.forgetMe
+        ? HANDLERS.forgetMe(passcode, (retire.property("checked") as boolean) ? "retire" : "")
+        : "err:offline"));
+      if (r.startsWith("err:")) {
+        busy = false;
+        go.attr("disabled", null).style("opacity", "1").text("forget me");
+        err.text(r.slice(4));
+        return;
+      }
+      let receipt: { dropped?: Record<string, number>; kept?: string[] } = {};
+      try { receipt = JSON.parse(r) as typeof receipt; } catch (_) { /* a receipt is shown when it parses */ }
+      done(receipt, retire.property("checked") as boolean);
+    });
+  };
+
+  const done = (receipt: { dropped?: Record<string, number>; kept?: string[] }, retired: boolean): void => {
+    clear();
+    sec.append("div").attr("class", "saved")
+       .text(retired ? "✓ forgotten, and the identity is retired." : "✓ forgotten.");
+    const went = Object.entries(receipt.dropped || {}).filter(([, v]) => v > 0);
+    say(went.length
+        ? "what went: " + went.map(([k, v]) => `${k.replace(/-/g, " ")} ${v}`).join(", ")
+        : "nothing of yours was held here.");
+    if (receipt.kept?.length) say("what stays: " + receipt.kept.map(k => k.replace(/-/g, " ")).join(", ")
+                                  + " — records about an identifier, not about you.");
+    say("this device forgets you next.");
+    sec.append("button").attr("class", "go").attr("type", "button").style("margin-top", "8px")
+       .text("done").on("click", () => { void signOutDevice(); });
+  };
+
+  ask();
+  let seen = !!who.peek();
+  effect(() => { const now = !!who(); if (now !== seen) { seen = now; ask(); } });
+}
+
+/**
  * Retire every device key this identity authorized — a passcode change's
  * second half: a device someone else enrolled with the old passcode goes with
  * the rest. This device's own key goes too and is authorized afresh, under

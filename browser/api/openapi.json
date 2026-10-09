@@ -19734,6 +19734,14 @@
     },
     {
       "object": "session",
+      "name": "forget-me",
+      "auth": "root",
+      "topic": "identity",
+      "x-playnet-transport": "captp",
+      "summary": "Erases every record of this gateway's own keyed by this AID — bindings, push subscriptions, contact points, devices, cards, user files, mailboxes, spooled mail — and last the member record and AID-to-handle index, leaving the key log as data about a pseudonym; replies the receipt (what went, by kind and count, and what stays), refuses a device-tier session, and this session cap refuses everything from then on."
+    },
+    {
+      "object": "session",
       "name": "rotate-aid",
       "auth": "root",
       "topic": "identity",

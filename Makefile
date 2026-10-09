@@ -2625,6 +2625,12 @@ test-keri-lobby-seat-gate:
 test-keri-signup-disabled-gate:
 	$(GUILE_TEST_DEV) -L module tests/keri/test-signup-disabled-gate.scm
 
+# forget-me erases every store of the gateway's own keyed by an AID, the
+# AID→person link last, and leaves the key log — gateway/forget.scm; a
+# rotation naming no next key retires the identity for good
+test-keri-forget:
+	$(GUILE_TEST_DEV) -L module tests/keri/test-forget.scm
+
 # losing your passcode is survivable when you gave pieces of it to people you
 # trust — and k-1 of them learn nothing
 test-recovery-share:
@@ -2759,7 +2765,7 @@ test-schemas:
 	$(GUILE_TEST_DEV) -L module tools/saidify-schemas.scm --check
 	$(GUILE_TEST_DEV) -L module tests/keri/test-schemas.scm
 
-test-keri: test-keri-blake3 test-keri-signify test-keri-signify-portable test-keri-oobi-replies test-keri-signify-integration test-keri-signup-with-icp test-keri-signup-with-kel test-keri-lobby-seat-gate test-keri-signup-disabled-gate test-recovery-share test-keri-reticulum-binding test-mesh-mailbox test-did-keri test-keri-bridge test-keri-bridge-extra test-keri-credentials test-keri-credentials-ipex test-ipex-policy test-ipex-grant-handler test-keri-witnesses test-keri-notifications test-keri-recovery test-keri-lobby-auth test-schemas
+test-keri: test-keri-blake3 test-keri-signify test-keri-signify-portable test-keri-oobi-replies test-keri-signify-integration test-keri-signup-with-icp test-keri-signup-with-kel test-keri-lobby-seat-gate test-keri-signup-disabled-gate test-keri-forget test-recovery-share test-keri-reticulum-binding test-mesh-mailbox test-did-keri test-keri-bridge test-keri-bridge-extra test-keri-credentials test-keri-credentials-ipex test-ipex-policy test-ipex-grant-handler test-keri-witnesses test-keri-notifications test-keri-recovery test-keri-lobby-auth test-schemas
 
 # ── SMS Wall ───────────────────────────────────────────────────────────────────
 # Smoke test for the WALLS.RIP API client module

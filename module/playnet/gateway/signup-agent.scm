@@ -746,6 +746,22 @@
     ((lookup-aid aid-prefix)
      (hashmap-ref aid-index aid-prefix #f))
 
+    ;; ── forget! ──────────────────────────────────────────────────────────────
+    ;; Erase the link between an AID and a person: the member record (handle,
+    ;; email, display name) and the AID→handle index entry go, and the next
+    ;; portrait is written without them. The AID's key log is untouched —
+    ;; what survives is data about a pseudonym nobody here can resolve
+    ;; (docs/planning/legal/gdpr-analysis.md §3.1). The handle is free again.
+    ;; Replies 1 when a record went, 0 when none stood: idempotent.
+    ((forget! aid)
+     (let ((username (hashmap-ref aid-index aid #f)))
+       (if username
+           (bcom (^signup-agent bcom
+                                (hashmap-remove members username)
+                                (hashmap-remove aid-index aid))
+                 1)
+           0)))
+
     ;; ── member-count ─────────────────────────────────────────────────────────
     ((member-count)
      (hashmap-count members))))

@@ -51,6 +51,7 @@
 ;;; protocol.scm) and read from there, so a feature's calls are stated once.
 (define *product-features*
   '((account-creation "Account creation"               (data-processing)                "social/id")
+    (erasure        "Erasure (forget me)"              (data-processing)                "social/id")
     (payouts        "Payouts in XMR"                   (hold-funds)                     "shop/payouts")
     (credit         "Credit for contribution"          (credit-contribution)            "shop/claims")
     (health-profile "Conditions stated in the profile" (data-processing health-data)    "share/attributes")
@@ -79,8 +80,8 @@
 ;;;                    hard verification; an operator may set it higher at
 ;;;                    their own contact, which this constant does not carry.
 (define *product-notices*
-  '((legal-version    . "2026-10-05")
-    (document-version . "1.1.0")
+  '((legal-version    . "2026-10-09")
+    (document-version . "1.2.0")
     (licence       . "free software under AGPL-3.0 with additional terms")
     (attribution   . "Powered by Playnet — a self-evolving commons and economic planner (rad:z27dFkN28LQAsSsG3DVHcfBqYAArQ)")
     (terms         . "terms.html")
@@ -94,7 +95,11 @@
     ;; breach-notice-hours : GDPR Art 33's window to the supervisory authority
     ;; speech-model-mb     : the first-use download of the speech model (browser/lib/asr-worker.js)
     ;; change-notice-days  : how long an unfavourable change to the terms waits
+    ;; backup-keep-days    : how long the encrypted daily snapshots stand, and so
+    ;;                       how long an erased record lags in them
+    ;;                       (PLAYNET_BACKUP_KEEP, deploy/scripts/backup-state.sh)
     (log-rotation        . "hourly")
+    (backup-keep-days    . 30)
     (breach-notice-hours . 72)
     (speech-model-mb     . 80)
     (change-notice-days  . 14)))

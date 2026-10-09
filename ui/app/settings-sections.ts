@@ -21,7 +21,7 @@ import { weekStart, setWeekStart, homeFace, setHomeFace, devMode, setDevMode } f
 import { CURRENCIES, currency, setCurrency, currencyInForce, currencyForHere, perHour, fmtMoney } from './money.js';
 import { tabCatalogue, tabShown, setTabShown, resetTabs } from './faces.js';
 import { locationMode, setLocationMode, homeName } from './tabs/social/location.js';
-import { devicesSection, passcodeSection, recoveryFriends, identifierBlock, identity, openIdentityDoor, idHint, voteConsentGiven, recordVoteConsent, forgetVoteConsent } from './tabs/social/id.js';
+import { devicesSection, passcodeSection, forgetSection, recoveryFriends, identifierBlock, identity, openIdentityDoor, idHint, voteConsentGiven, recordVoteConsent, forgetVoteConsent } from './tabs/social/id.js';
 import { registerProfileSettings } from './profile.js';
 import { registerDwellingSettings } from './dwelling.js';
 import { dietPanel, bodyPanel, healthPanel, registerTimeSettings } from './attributes.js';
@@ -261,6 +261,11 @@ export function registerAllSettings(): void {
       { id: "recovery", title: "if you lose your passcode",
         note: "It cannot be reset — but it can be split among people you trust.",
         rows: () => [ { kind: "custom", build: mount(recoveryFriends) } ] },
+      { id: "forget", title: "forget me",
+        note: "Erase every record this commune holds about you, in one act, and optionally "
+            + "retire the identity for good. Your signed key log stays, as records about an "
+            + "identifier nobody can resolve to you.",
+        rows: () => [ { kind: "custom", build: mount(forgetSection) } ] },
       { id: "storage", title: "what this device keeps",
         note: "Your key event log, this device's key, your log and your pictures are kept in this "
             + "browser's storage. The passcode is the one thing kept nowhere.",

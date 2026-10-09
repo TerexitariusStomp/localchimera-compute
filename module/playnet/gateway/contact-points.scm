@@ -106,6 +106,8 @@
                                      code, or (error . words)
      ('pending aid)                  the (kind ctx) pairs AID has waiting
      ('drop aid kind ctx)            put a held point down
+     ('forget aid)                   put down all AID's points and the record
+                                     of codes sent to them (erasure)
 
    One vat calls it (the gateway's), so its tables are plain."
   (let ((held (make-hash-table))      ; (aid kind ctx) → (code expires attempts style)
@@ -150,4 +152,12 @@
          (hash-fold (lambda (k v acc)
                       (if (and (equal? aid (car k)) (<= (now) (cadr v))) (cons (cdr k) acc) acc))
                     '() held))
-        (('drop aid kind ctx) (hash-remove! held (list aid kind ctx)) #t)))))
+        (('drop aid kind ctx) (hash-remove! held (list aid kind ctx)) #t)
+        ;; erasure: every point AID has waiting, and the record of codes
+        ;; sent to them; replies how many points went
+        (('forget aid)
+         (let ((keys (hash-fold (lambda (k v acc) (if (equal? aid (car k)) (cons k acc) acc))
+                                '() held)))
+           (for-each (lambda (k) (hash-remove! held k)) keys)
+           (hash-remove! sent aid)
+           (length keys)))))))

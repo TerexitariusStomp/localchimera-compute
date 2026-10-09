@@ -34,9 +34,12 @@
   #:use-module ((playnet utils operator) #:select (operator-email))
   #:use-module (ice-9 popen)
   #:use-module (ice-9 textual-ports)
+  #:use-module ((ice-9 rdelim) #:select (read-line))
+  #:use-module ((ice-9 ftw) #:select (scandir))
   #:use-module (ice-9 format)
   #:use-module (srfi srfi-1)
   #:export (^email-adapter email-transport? email-transport msmtp-arguments
+            mail-spool-forget!
             smtp-from rfc5322-message send-raw-email!))
 
 (define %smtp-from
@@ -133,6 +136,26 @@
   (call-with-output-file (format #f "~a/~a-~a.eml" dir (current-time) %mail-count)
     (lambda (port)
       (format port "To: ~a\nSubject: ~a\n\n~a\n" to subject body))))
+
+(define (mail-spool-forget! dir addresses)
+  "Erase every spooled mail in DIR addressed to one of ADDRESSES — the spool
+   is the one place an address is written out in full — and reply how many
+   went. A missing directory or an empty address list replies 0."
+  (if (and (string? dir) (file-exists? dir) (pair? addresses))
+      (let* ((to-line (lambda (f)
+                        (catch #t
+                          (lambda ()
+                            (call-with-input-file (string-append dir "/" f)
+                              (lambda (p) (let ((l (read-line p)))
+                                            (and (string? l) (string-prefix? "To: " l)
+                                                 (substring l 4))))))
+                          (lambda _ #f))))
+             (theirs (filter (lambda (f) (and (string-suffix? ".eml" f)
+                                              (member (to-line f) addresses)))
+                             (or (scandir dir) '()))))
+        (for-each (lambda (f) (delete-file (string-append dir "/" f))) theirs)
+        (length theirs))
+      0))
 
 ;; a header is one line: a line break in a recipient or a subject would
 ;; begin a header of its own

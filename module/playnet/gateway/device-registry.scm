@@ -38,6 +38,7 @@
             device-credential-verdict
             device-enroll!
             device-revoke!
+            device-forget!
             devices-of
             device-entry
             device-entry-live?
@@ -178,6 +179,16 @@
                        e))
                  entries))
            #t))))
+
+(define (device-forget! person-aid)
+  "Erase PERSON-AID's registry file — every authorization, live or revoked —
+   and reply how many entries it held. Nothing stays: with no file,
+   `live-device-keys` is () and `device-owner-of` finds no device of theirs.
+   Idempotent: no file replies 0."
+  (let* ((f (devices-file person-aid))
+         (n (length (read-entries person-aid))))
+    (when (file-exists? f) (delete-file f))
+    n))
 
 (define (devices-of person-aid) (read-entries person-aid))
 

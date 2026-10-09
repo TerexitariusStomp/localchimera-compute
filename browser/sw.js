@@ -1,4 +1,4 @@
-const CACHE = 'playnet-v24-dev';
+const CACHE = 'playnet-v25-dev';
 
 // ── the lists ───────────────────────────────────────────────────────────────
 // Four lists say what this worker handles, and three of them are written by

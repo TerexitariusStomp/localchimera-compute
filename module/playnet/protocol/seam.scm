@@ -354,6 +354,11 @@
              "void"
              ((session . family-split))
              "The family face: split PURSE across NEEDS (JSON rows) by harmony; MEMBERS-JSON is the household's own consumer voice (playnet.typ §The credit identity) — {person,capacity,hours} rows, \"[]\" reads every owner as an equal citizen; reply is the solve's rows or \"err:…\".")
+    (handler "forgetMe"
+             "passcode: string, retire: string"
+             "Promise<unknown>"
+             ((lobby . fetch-icp) (lobby . witness-kel) (session . forget-me))
+             "Forget me: the commune erases every record of its own keyed by this identity, the link between identity and person last (gateway/forget.scm); with RETIRE \"retire\", a terminal rotation goes first — no next key — so no key ever signs as the identity again. Replies the receipt as JSON ({dropped:{member,bindings,…},kept:[…]}), or \"err:…\". The page then forgets what this device held.")
     (handler "fpEnroll"
              ""
              "Promise<unknown>"

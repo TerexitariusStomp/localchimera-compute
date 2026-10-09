@@ -61,6 +61,8 @@
   #:use-module ((playnet openvtc credentials) #:select (contact-point-binding-fields))
   #:use-module ((playnet gateway cards)
                 #:select (card-wire->card card-verdict card-at card-put! card-get card-drop! person-aid?))
+  ;; erasure: every store of the gateway's own keyed by an AID, as one act
+  #:use-module ((playnet gateway forget) #:select (forget-member! forgotten-session))
   #:use-module ((srfi srfi-1) #:select (filter-map))
   #:use-module (playnet gateway allotment)   ; the week's unplanned photo reads
   #:use-module ((playnet wire replies) #:select (finished))   ; registers the allotment table
@@ -135,6 +137,10 @@
   (string-append (%data-dir) "/" kind "-"
                  (substring aid-prefix 0 (min 16 (string-length aid-prefix)))
                  ".scm"))
+
+;; every kind of per-AID file the session keeps — what a forget erases
+(define %user-file-kinds
+  '("contacts" "credentials" "taxonomy" "log" "pins" "allotment" "shamir"))
 
 (define (contacts-file-for aid-prefix) (%user-file "contacts" aid-prefix))
 (define (cards-dir) (string-append (%data-dir) "/cards"))
@@ -255,7 +261,7 @@
         ((list? hand-json) hand-json)
         (else (error "hand: a JSON object of part-string → portion" hand-json))))
 
-(define* (^lobby-session _bcom aid-prefix
+(define* (^lobby-session bcom aid-prefix
                          terminal-svc mailbox-mgr governance-svc signup-agent
                          #:optional (oobi-host #f) (acdc-store #f)
                                     (folksonomy #f) (presence #f)
@@ -289,6 +295,9 @@
     (if (eq? tier 'root)
         (thunk)
         (list 'error (string-append what " needs the passcode: sign in with it first"))))
+  ;; the name this session announced itself under: presence keys by it, so
+  ;; a forget leaves by it too
+  (define announced-name #f)
   ;; The session AID's KEL-anchored reticulum pubkey (latest anchor
   ;; across icp+rotations), or #f. Both mesh methods gate on it: the
   ;; anchor is what makes a destination THIS persona's.
@@ -499,6 +508,7 @@
    ;; holds a session (see repl.scm announce-presence!). Presence itself
    ;; still keys by display name for the who/introduce/WebRTC surface.
    ((announce name user-inbox)
+    (set! announced-name name)
     (when recipient-registry
       (<-np recipient-registry 'bind aid-prefix 'browser user-inbox 'terse))
     (when presence (<- presence 'announce name user-inbox)))
@@ -980,6 +990,32 @@
         'ok
         (list 'error "no such device")))
 
+   ;; ── forget ───────────────────────────────────────────────────────────
+   ;; Erasure, as gateway/forget.scm states it: every store of this
+   ;; gateway's own keyed by this AID goes, the AID→person link last; the
+   ;; key log stays, data about a pseudonym nobody here can resolve. Root
+   ;; only — a device key able to erase its person would make a stolen
+   ;; phone an erasure. The reply is the receipt, and this cap becomes a
+   ;; refusal from here: nothing is written as the AID through it again.
+   ((forget-me)
+    (root-only "forgetting you"
+      (lambda ()
+        (format (current-error-port) "[lobby-session] forgetting ~a\n" (aid-tag aid-prefix))
+        (bcom (forgotten-session)
+              (forget-member!
+               aid-prefix
+               #:signup-agent signup-agent #:registry recipient-registry
+               #:push-store push-store #:presence presence
+               #:presence-names (if announced-name (list announced-name) '())
+               #:desk contact-desk
+               #:mailbox-mgr mailbox-mgr #:pins pins #:folksonomy folksonomy
+               #:mesh-mailbox (current-mesh-mailbox)
+               #:mesh-dests (let ((pub (anchored-mesh-pub)))
+                              (if pub (map cdr (anchored-destinations pub)) '()))
+               #:user-files (map (lambda (k) (%user-file k aid-prefix)) %user-file-kinds)
+               #:cards-dir (cards-dir)
+               #:mail-dir (getenv "PLAYNET_MAIL_DIR"))))))
+
    ;; Rotation — bound to this session's AID. Caller can't rotate
    ;; someone else through this cap. Root-only: a device key cannot
    ;; author a rotation (it is not in the bran's chain).
@@ -1041,7 +1077,7 @@
                     (<- announcer 'announce-raw! packet-hex)
                     (format (current-error-port)
                             "[lobby-session] relay-announce ~a for ~a\n"
-                            dest-hex aid-prefix)
+                            dest-hex (aid-tag aid-prefix))
                     'ok)
                   (list 'error (if (string? v) v "invalid announce packet"))))))))
       (lambda (key . args)

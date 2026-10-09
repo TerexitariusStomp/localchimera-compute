@@ -7,9 +7,9 @@
 // crossing with the doors that are each feature.
 /** The date the terms and the privacy notice in force took effect — what a
  *  member's acceptance is of. */
-export const LEGAL_VERSION = "2026-10-05";
+export const LEGAL_VERSION = "2026-10-09";
 /** The number the two documents call themselves by. */
-export const DOCUMENT_VERSION = "1.1.0";
+export const DOCUMENT_VERSION = "1.2.0";
 /** The licence, as one line. */
 export const LICENCE_LINE = "free software under AGPL-3.0 with additional terms";
 /** The attribution LICENSE-ADDITIONAL-TERMS.md asks every deployment to show. */
@@ -30,6 +30,7 @@ export const PRODUCT_CROSSINGS = [
 ];
 export const PRODUCT_FEATURES = [
     { id: "account-creation", name: "Account creation", crossings: ["data-processing"], doors: ["lobby/signup", "lobby/signup-with-icp", "lobby/signup-with-kel", "lobby/join"], section: "social/id" },
+    { id: "erasure", name: "Erasure (forget me)", crossings: ["data-processing"], doors: ["session/forget-me"], section: "social/id" },
     { id: "payouts", name: "Payouts in XMR", crossings: ["hold-funds"], doors: ["session/request-payout", "session/my-payouts", "session/retire-payout"], section: "shop/payouts" },
     { id: "credit", name: "Credit for contribution", crossings: ["credit-contribution"], doors: ["session/my-claims", "session/claim"], section: "shop/claims" },
     { id: "health-profile", name: "Conditions stated in the profile", crossings: ["data-processing", "health-data"], doors: ["session/set-profile"], section: "share/attributes" },

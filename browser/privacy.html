@@ -23,7 +23,7 @@
 
 <h1>Privacy Notice</h1>
 <p class="sub">
-  Version <b data-fact="document-version">1.1.0</b> · effective <b data-fact="legal-version">2026-10-05</b> · for the gateway operated by
+  Version <b data-fact="document-version">1.2.0</b> · effective <b data-fact="legal-version">2026-10-09</b> · for the gateway operated by
   <span class="op unset" data-op="name">[operator not configured — see docs/legal/README.md]</span>
 </p>
 
@@ -342,11 +342,16 @@
   <li><strong>Rectification.</strong> You can change your display name and email yourself in
       settings; a credential cannot be edited, so correcting one means revoking it and issuing a
       corrected replacement.</li>
-  <li><strong>Erasure of the link between your AID and you.</strong> This is the meaningful erasure
-      available here. Removing the member record and the AID-to-name index leaves behind a
-      pseudonym that nobody can resolve to a person. Combined with dropping your notification
-      bindings, presence entry and push subscription, it removes essentially all the directly
-      identifying data we hold.</li>
+  <li><strong>Erasure of the link between your AID and you — yourself, in one act.</strong> This is
+      the meaningful erasure available here, and <em>forget me</em> under settings › identity
+      performs it: every record of our own keyed by your AID goes — your notification bindings and
+      push subscriptions, contact points waiting to be confirmed, your devices, cards, contacts,
+      pins, taxonomy, log, mailboxes and any mail spooled to your address — and last the member
+      record and the AID-to-name index. What is left behind is a pseudonym that nobody can resolve
+      to a person. You are shown a receipt of what went, by kind and count, and of what stays. It
+      asks for your passcode: a device key alone cannot erase its person. You may also retire the
+      identity itself first, by a last key event that names no next key, after which nothing can
+      ever sign as it again, at any commune.</li>
   <li><strong>Objection and restriction</strong> for our own processing on this gateway.</li>
 </ul>
 
@@ -359,13 +364,19 @@
     <li><strong>The fact and timing of every credential issuance is permanent</strong>, because it
         is anchored in a key event log. Removing a credential's contents can never remove the
         record that something was issued at that moment.</li>
-    <li><strong>Copies at other gateways are beyond our control.</strong> We will pass on your
-        erasure request to gateways we know received your data, but we cannot compel them.</li>
+    <li><strong>Copies at other gateways are beyond our control.</strong> What leaves this gateway
+        is your key log and the credentials you hold — data about a pseudonym. The link between
+        that pseudonym and you (your handle, name and email) is kept here alone and never travels,
+        so it is erased wherever it exists when it is erased here. A copy of the log at another
+        gateway or witness is not ours to erase, and it does not name you.</li>
     <li><strong>A payout cannot be recalled.</strong> A transaction on the Monero blockchain is
         permanent.</li>
-    <li><strong>Automated deletion is not implemented today.</strong> Every store in the reference
-        implementation is append-only; revoking a credential flips its status and leaves the body
-        on disk. Erasure requests are carried out manually by the operator, within these limits.</li>
+    <li><strong>Backups lag the erasure.</strong> Encrypted daily snapshots of the gateway's state
+        hold the erased records until they age out, after
+        <span data-fact="backup-keep-days">30</span> days.</li>
+    <li><strong>Credential contents are not yet shreddable.</strong> Revoking a credential flips its
+        status and leaves the body on disk; the key that would make a body unrecoverable while its
+        digest stays verifiable (§5.3) is not yet built.</li>
   </ul>
 </div>
 
@@ -374,9 +385,6 @@
   Stated so you can judge the gap rather than take a promise on trust:
 </p>
 <ul>
-  <li>a <strong>forget</strong> operation that drops the member record, index, notification
-      bindings, presence and push subscription in one step, and best-effort notifies the gateways
-      that received your data;</li>
   <li><strong>encryption of credential bodies at rest under a per-person key</strong>, so that
       destroying that key makes the contents unrecoverable while the signatures, links and anchors
       stay verifiable — the erasure route the KERI specification itself sanctions ("only copies of
@@ -475,9 +483,11 @@
   described in §2.1 and the credentials in §2.2. Credential validity windows — a personhood
   credential's expiry, a skill's valid-until — govern whether a credential still <em>counts</em>,
   not whether it is still stored; a lapsed credential remains readable on disk. This is a known
-  defect. Server logs are rotated <span data-fact="log-rotation">hourly</span> with their identifying fields already redacted (§9); what
+  defect. Server logs are rotated <span data-fact="log-rotation">hourly</span> with their identifying fields already redacted (§9), and
+  encrypted backups age out after <span data-fact="backup-keep-days">30</span> days; what
   is not yet built is a retention sweep for the member and credential stores themselves, and
-  member data kept only while you participate. Records the law requires us to keep, such as those of a payout, are kept for as
+  member data kept only while you participate — though you can end your participation and erase
+  your records yourself at any time (§5.1). Records the law requires us to keep, such as those of a payout, are kept for as
   long as it requires. Key events and credential anchors are kept for good, for the reasons in §4.1.
 </p>
 
@@ -562,7 +572,7 @@
 
 <footer>
   playnet — free software under AGPL-3.0 with additional terms.
-  Privacy Notice v<span data-fact="document-version">1.1.0</span>, effective <span data-fact="legal-version">2026-10-05</span>.
+  Privacy Notice v<span data-fact="document-version">1.2.0</span>, effective <span data-fact="legal-version">2026-10-09</span>.
   See also the <a href="terms.html">terms of use</a>.
   Engineering detail behind this notice: <code>docs/planning/legal/gdpr-analysis.md</code>.
 </footer>

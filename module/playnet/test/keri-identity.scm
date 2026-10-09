@@ -46,19 +46,27 @@
                 (assoc-ref icp-alist "i")
                 (vector (sign-event icp-json kp0)))))))
 
-(define (lobby-fixture)
+(define* (lobby-fixture #:key (gateway-vat (spawn-vat #:name "gateway"))
+                              (presence #f) (mailbox-mgr #f) (push-store #f)
+                              (recipient-registry #f) (contact-desk #f)
+                              (pins #f) (folksonomy #f))
   "→ (values gateway-vat signup-vat signup-agent oobi-host lobby settle):
    a lobby over a real signup-agent (in its own vat, as in the gateway) and
-   oobi-host, every other service a method-less stub; settle resolves a
+   oobi-host, every other service a method-less stub unless a keyword
+   names one. A test of the stores themselves (test-forget) spawns its own
+   GATEWAY-VAT, the real stores in it, and hands both over:
+   `(lobby-fixture #:gateway-vat v #:presence p …)`. settle resolves a
    promise from a lobby call in the gateway vat, (list 'error e) on a
    broken one, #f if nothing arrives in ~2 s."
-  (let* ((gateway-vat (spawn-vat #:name "gateway"))
-         (signup-vat  (spawn-vat #:name "signup"))
+  (let* ((signup-vat  (spawn-vat #:name "signup"))
          (signup-agent (with-vat signup-vat (spawn ^signup-agent (hashmap) (hashmap))))
          (oobi-host (with-vat gateway-vat (spawn ^oobi-host)))
          (stub (with-vat gateway-vat (spawn (lambda (_bcom) (methods)))))
          (lobby (with-vat gateway-vat
-                  (spawn ^lobby signup-agent stub stub stub stub stub stub stub oobi-host)))
+                  (spawn ^lobby signup-agent stub
+                         (or presence stub) stub (or mailbox-mgr stub) stub stub stub
+                         oobi-host #f push-store #f folksonomy recipient-registry
+                         #f pins #f contact-desk)))
          (settle (lambda (p)
                    (let ((box #f) (done #f))
                      (with-vat gateway-vat

@@ -422,6 +422,10 @@ or #f when no handler sends it."
     (door session revoke-device (said)
           #:auth device #:topic identity #:reply ok-or-error #:kind performative #:to self
           #:doc "Retires the device credential SAID from this AID's registry from either tier, so a lost phone is revoked from the laptop; replies ok or an error when no such device exists.")
+    (door session forget-me ()
+          #:auth root #:topic identity #:reply alist #:kind performative #:to self
+          #:feature erasure
+          #:doc "Erases every record of this gateway's own keyed by this AID — bindings, push subscriptions, contact points, devices, cards, user files, mailboxes, spooled mail — and last the member record and AID-to-handle index, leaving the key log as data about a pseudonym; replies the receipt (what went, by kind and count, and what stays), refuses a device-tier session, and this session cap refuses everything from then on.")
     (door session rotate-aid (rot-alist-raw sigs)
           #:auth root #:topic identity #:reply ok-or-error #:kind performative #:to self
           #:doc "Verifies rotation event ROT-ALIST-RAW with SIGS against this AID's key state and appends it to the oobi-host KEL; replies ok or an error, and refuses a device-tier session.")

@@ -2601,6 +2601,68 @@
                    ((passcode-opens? *kel* bran) "ok")
                    (else "err:wrong passcode for this identity"))))
 
+;; forgetMe: the commune erases every record of its own keyed by this
+;; identity, the link between identity and person last (gateway/forget.scm,
+;; the session's forget-me door); the reply is the receipt — what went, by
+;; kind and count, and what stays — as JSON. With RETIRE "retire" a terminal
+;; rotation goes first: the key the log committed to is revealed and NO next
+;; key is named, so no key ever signs as the identity again (KERI: an
+;; identifier that cannot be rotated is non-transferable, and abandoned);
+;; the commune verifies it as it verifies any rotation and refuses every
+;; rotation after it. The page then forgets what this device held.
+(define (handle-forget-me bran retire cb)
+  (cond
+   ((not *lobby*)   (reply! cb "err:forgetting needs the commune in reach"))
+   ((not *session*) (reply! cb "err:sign in with your passcode first"))
+   ((not *kel*)     (reply! cb "err:no identity here"))
+   ((not (passcode-opens? *kel* bran)) (reply! cb "err:wrong passcode for this identity"))
+   ((equal? retire "retire") (retire-identity! bran (lambda () (forget-me! cb)) cb))
+   (else (forget-me! cb))))
+
+(define (receipt->json r)
+  (scm->json-canonical
+   `(("dropped" . ,(map (lambda (kv) (cons (symbol->string (car kv)) (cdr kv)))
+                        (or (alist-ref r 'dropped) '())))
+     ("kept" . ,(list->vector (map symbol->string (or (alist-ref r 'kept) '())))))))
+
+(define (forget-me! cb)
+  (with-vat *vat*
+    (on (<- *session* 'forget-me)
+        (lambda (r-raw)
+          (let ((r (denormalize-syrup r-raw)))
+            (if (and (pair? r) (eq? 'error (car r)))
+                (reply! cb (string-append "err:" (if (and (pair? (cdr r)) (string? (cadr r)))
+                                                     (cadr r) "the commune refused")))
+                (reply! cb (receipt->json r)))))
+        #:catch (lambda _ (reply! cb "err:could not reach the commune")))))
+
+(define (retire-identity! bran k cb)
+  (let* ((kel   *kel*)
+         (aid   (kel-aid kel))
+         (depth (kel-depth kel))
+         ;; the key the last event committed to: revealed by this rotation
+         ;; and the one that signs it
+         (kp    (passcode-keypair bran (+ 1 (- depth (passcode-base kel bran)))))
+         (prior (kel-last-event kel)))
+    (call-with-values
+     (lambda ()
+       (build-rot aid (assoc-ref prior "d")
+                  #:keys (list (keypair-key kp)) #:nkeys '() #:nsith 0
+                  #:sn (+ depth 1)))
+     (lambda (json _said rot)
+       (let ((rots (append (kel-rotations kel)
+                           (list (cons rot (vector (sign-event json kp)))))))
+         (with-vat *vat*
+           (on (<- *lobby* 'witness-kel aid (kel-icp kel) (assoc-ref kel "sigs")
+                   (list->vector rots))
+               (lambda (w)
+                 (if (and (pair? w) (eq? 'error (car w)))
+                     (reply! cb (string-append "err:the commune refused the retirement: "
+                                               (if (and (pair? (cdr w)) (string? (cadr w)))
+                                                   (cadr w) "no reason given")))
+                     (k)))
+               #:catch (lambda _ (reply! cb "err:could not reach the commune's witness")))))))))
+
 (define (handle-change-passcode current new cb)
   (cond
    ((not *lobby*) (reply! cb "err:changing your passcode needs the commune in reach"))
@@ -3864,6 +3926,7 @@
             ("join"          . ,handle-join)
             ("passcodeCheck"   . ,handle-passcode-check)
             ("changePasscode"  . ,handle-change-passcode)
+            ("forgetMe"        . ,handle-forget-me)
             ("guardianSplit"   . ,handle-guardian-split)
             ("guardianRecover" . ,handle-guardian-recover)
             ("kelExport"     . ,handle-kel-export)
