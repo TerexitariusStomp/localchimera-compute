@@ -36,6 +36,7 @@ import { rows, rowOfPt, passesFilter, havKm, fmtKm } from './atlas.js';
 import * as pins from './pins.js';
 import * as book from './book.js';
 import { heldHere, wireHeldHere } from './held-here.js';
+import { placesNamed } from './osm-places.js';
 import { revealSlot, F, railSwitch, openSheetView, closeSheetView, sheetViewIs, sheetHolds, sheetHeight } from '../social/share.js';
 // a result is somebody ELSE's listing — name, provider, note and match all come
 // off the search wire, so each is escaped where it lands in the card.
@@ -54,8 +55,11 @@ const cluster = signal(null); // a tapped bundle's rows (cluster view)
 // ── search + rank (their relevance/distance sort; atlas's one haversine) ────
 function results() {
     bump();
-    return rows()
-        .filter(r => F.passes(r))
+    // the commons' rows, and — when a name is asked for — OpenStreetMap's places
+    // on the tiles the map holds (tabs/map/osm-places.ts), one list by distance
+    const map = theMap();
+    const osm = map ? placesNamed(map, query()) : [];
+    return [...rows().filter(r => F.passes(r)), ...osm]
         .map(r => ({ ...r, km: havKm(USER, r) }))
         .sort((x, y) => x.km - y.km)
         .slice(0, 40);

@@ -146,6 +146,13 @@ declare global {
       z: number;
     }
 
+    /** A feature as a query hands one back: the tile's own properties, an id when the tile gives one. */
+    interface QueriedFeature {
+      id?: number | string;
+      properties: Record<string, unknown>;
+      geometry: { type: string; coordinates: unknown };
+    }
+
     /** A coordinate as maplibre hands one back. */
     interface LngLat {
       lng: number;
@@ -184,6 +191,12 @@ declare global {
       /** A pointer event on the map: where it landed. contextmenu is the one
        *  the dial reads (right-click, or press-and-hold on touch). */
       on(type: "contextmenu", listener: (e: { lngLat: { lat: number; lng: number } }) => void): Map;
+      /** A tap on the map itself (a marker's own click stops before it): where, in the container's pixels. */
+      on(type: "click", listener: (e: { point: { x: number; y: number }; lngLat: LngLat }) => void): Map;
+      /** The drawn features under a point, of the layers named — how a tap finds the place under it. */
+      queryRenderedFeatures(point: [number, number], opts: { layers: string[] }): QueriedFeature[];
+      /** The features of a source layer on the tiles the map holds — what a search by name reads. */
+      querySourceFeatures(source: string, opts: { sourceLayer: string }): QueriedFeature[];
       once(type: string, listener: () => void): Map;
       off(type: string, listener: () => void): Map;
 

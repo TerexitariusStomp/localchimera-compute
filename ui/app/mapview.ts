@@ -40,6 +40,7 @@ import * as containers from './tabs/map/containers.js';
 import * as dropoff from './tabs/map/dropoff.js';
 import * as pool from './tabs/map/pool.js';
 import * as mapsearch from './tabs/map/mapsearch.js';
+import { placeAt } from './tabs/map/osm-places.js';
 import { bakeMapAnchor, MAP_ANCHOR } from './tabs/map/atlas.js';
 import { mountDeck } from './tabs/map/deck.js';
 
@@ -456,8 +457,15 @@ export function teardownMap(): void {
  * the gesture settles. The threads are the exception: they are welded to the
  * disc rather than to the world, so they follow every frame of a move.
  */
-function bindMapMarkers(m: maplibregl.Map & { _markersBound?: boolean; _threadsBound?: boolean; _spotBound?: boolean }): void {
+function bindMapMarkers(m: maplibregl.Map & { _markersBound?: boolean; _threadsBound?: boolean; _spotBound?: boolean; _placesBound?: boolean }): void {
   if (!m._markersBound) { m.on("zoomend", renderMarkers); m._markersBound = true; }
+  // a tap on one of OpenStreetMap's places (the basemap's own labels) opens
+  // it in the panel as a row of the map's own — the dial's markers stop their
+  // click before the map sees it, so this fires only on the ground
+  if (!m._placesBound) {
+    m.on("click", e => { if (!onMapFace()) return; const r = placeAt(m, e.point); if (r) mapsearch.showOnPanel(r); });
+    m._placesBound = true;
+  }
   // a dropped pin: right-click, or press-and-hold on touch (maplibre raises
   // contextmenu for both) — a bare spot opens in the panel, ready to save
   if (!m._spotBound) {
