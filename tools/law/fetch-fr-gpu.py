@@ -172,7 +172,7 @@ def main(insee):
     # the ~14,900 communes under an intercommunal PLUi the document is filed
     # under the EPCI's SIREN, so that query returns zero features and the adapter
     # used to emit a pack with a correct administrative chain and no zoning at
-    # all — for Bordeaux, 0 zones instead of 2,478, reported as success.
+    # all — for a large city, 0 zones instead of thousands, reported as success.
     #
     # Querying by the commune's own GEOMETRY finds whatever document covers the
     # ground, communal or intercommunal, and the server does the clipping. The
@@ -270,7 +270,7 @@ def main(insee):
                 ds = [demand("forbid", reason, detail={"reason": reason, "direction": False})]
             elif dkind == "tell":
                 ds = [demand("tell", reason, rides="entity",
-                             detail={"to": "SAFER Nouvelle-Aquitaine",
+                             detail={"to": "SAFER %s" % reg["nom"],
                                      "discloses": [Sym("parcelle"), Sym("prix"), Sym("acquereur")],
                                      "direction": False, "retain": False, "renew": False})]
             else:
