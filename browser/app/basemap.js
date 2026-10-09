@@ -35,51 +35,71 @@ export const POI_FAMILIES = [
     { id: "nature", label: "parks and nature", on: true,
         kinds: ["park", "garden", "forest", "beach", "peak", "marina", "zoo", "animal"] },
     { id: "transit", label: "getting around", on: true,
-        kinds: ["station", "bus_stop", "ferry_terminal", "aerodrome"] },
+        kinds: ["station", "subway", "tram_stop", "bus_stop", "bus_station", "ferry_terminal", "aerodrome", "bicycle_parking"] },
+    { id: "care", label: "care and help", on: true,
+        kinds: ["hospital", "clinic", "doctors", "dentist", "pharmacy", "social_facility", "childcare",
+            "kindergarten", "community_centre", "place_of_worship", "veterinary", "shelter"] },
+    { id: "play", label: "play and sport", on: true,
+        kinds: ["playground", "pitch", "sports_centre", "swimming_pool", "dog_park", "picnic_site", "viewpoint"] },
+    { id: "commons", label: "the commons", on: true,
+        kinds: ["library", "allotments", "recycling", "drinking_water", "toilets", "bench", "information", "memorial"] },
     { id: "civic", label: "schools and civic", on: false,
-        kinds: ["school", "university", "library", "townhall", "post_office", "building"] },
+        kinds: ["school", "university", "townhall", "post_office", "building", "courthouse", "police", "fire_station"] },
     { id: "culture", label: "culture and sights", on: true,
         kinds: ["museum", "theatre", "attraction", "artwork", "stadium"] },
     { id: "food", label: "food and drink", on: false,
         kinds: ["restaurant", "cafe", "bar", "fast_food"] },
     { id: "shops", label: "shops", on: false,
         kinds: ["supermarket", "convenience", "books", "clothes", "electronics", "beauty"] },
-    { id: "street", label: "benches, public toilets, drinking water", on: true,
-        kinds: ["bench", "toilets", "drinking_water"] },
 ];
-/** The families switched on, as ids; the defaults until the device says otherwise. */
-export function poiFamiliesOn() {
-    const v = readStr(K.mapPois);
-    if (v === null)
-        return POI_FAMILIES.filter(f => f.on).map(f => f.id);
-    return v ? v.split(",") : [];
+/** The families switched OFF, as ids — what is remembered, so a family added later starts as its default. */
+function poiFamiliesOff() {
+    const v = readStr(K.mapPoisOff);
+    return new Set(v === null ? POI_FAMILIES.filter(f => !f.on).map(f => f.id) : v ? v.split(",") : []);
 }
-export const poiFamilyOn = (id) => poiFamiliesOn().includes(id);
+/** The families switched on, as ids. */
+export function poiFamiliesOn() {
+    const off = poiFamiliesOff();
+    return POI_FAMILIES.filter(f => !off.has(f.id)).map(f => f.id);
+}
+export const poiFamilyOn = (id) => !poiFamiliesOff().has(id);
 /** Switch family ID on or off, remember it, and re-filter the map if one is up. */
 export function setPoiFamily(id, on, map) {
-    const now = new Set(poiFamiliesOn());
+    const off = poiFamiliesOff();
     if (on)
-        now.add(id);
+        off.delete(id);
     else
-        now.delete(id);
-    writeStr(K.mapPois, [...now].join(","));
+        off.add(id);
+    writeStr(K.mapPoisOff, [...off].join(","));
     if (map)
         applyPoiChoice(map);
 }
 const POI_LAYER = "pois";
-/** The style's own filter for the places layer, narrowed to the kinds switched on. */
-function poiFilter(own) {
+/**
+ * The places layer's filter: the kinds switched on, each from the zoom the
+ * build gives it (`min_zoom`, as the style's own filter reads it). The
+ * style's kind list is replaced, not narrowed: the tiles carry kinds it
+ * never draws, and the families name some of them.
+ */
+function poiFilter() {
     const on = new Set(poiFamiliesOn());
     const kinds = POI_FAMILIES.filter(f => on.has(f.id)).flatMap(f => f.kinds);
-    const mine = ["in", ["get", "kind"], ["literal", kinds]];
-    return own ? ["all", own, mine] : mine;
+    return ["all", ["in", ["get", "kind"], ["literal", kinds]], [">=", ["zoom"], ["+", ["get", "min_zoom"], 0]]];
 }
-/** Narrow the places layer of LAYERS to the chosen families. */
-const withPoiChoice = (layers) => layers.map(l => l.id === POI_LAYER ? { ...l, filter: poiFilter(l.filter) } : l);
+/** The kinds the sprite sheet has an icon for (assets/map/sprites); every other kind takes the dot. */
+const SPRITED = ["beach", "forest", "marina", "park", "peak", "zoo", "garden", "bench", "aerodrome", "bus_stop",
+    "ferry_terminal", "stadium", "university", "library", "school", "animal", "toilets", "drinking_water", "post_office",
+    "building", "restaurant", "fast_food", "cafe", "bar", "supermarket", "convenience", "books", "beauty", "electronics",
+    "clothes", "attraction", "museum", "theatre", "artwork"];
+/** The style's icon by kind — the station's own name in the sheet — and the dot for a kind the sheet lacks. */
+const poiIcon = () => ["match", ["get", "kind"], SPRITED, ["get", "kind"], "station", "train_station", "townspot"];
+/** Narrow the places layer of LAYERS to the chosen families, and give every kind a face. */
+const withPoiChoice = (layers) => layers.map(l => l.id === POI_LAYER
+    ? { ...l, filter: poiFilter(), layout: { ...(l.layout || {}), "icon-image": poiIcon() } }
+    : l);
 /** Re-filter the places layer of a live map after a choice. */
 export function applyPoiChoice(map) {
-    const own = basemaps.layers("osm", basemaps.LIGHT, { lang: lang() }).find(l => l.id === POI_LAYER)?.filter;
-    map.setFilter(POI_LAYER, poiFilter(own));
+    map.setFilter(POI_LAYER, poiFilter());
 }
 const groundLayers = () => withPoiChoice(basemaps.layers("osm", flavor(), { lang: lang() }));
 /** The style mkMap builds the map with. */

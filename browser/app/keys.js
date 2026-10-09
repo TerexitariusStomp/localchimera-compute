@@ -75,7 +75,7 @@ export const K = {
     aiModel: k("pn.ai.model", "the model the orb asks", "dial-ai-model"),
     calendarsOff: k("pn.calendars.off", "calendars switched off", "playnet-calendars-off"),
     dialViews: k("pn.dial.views", "the dial's view toggles", "playnet-dial-views"),
-    mapPois: k("pn.map.pois", "which families of places the map labels (app/basemap.js)"),
+    mapPoisOff: k("pn.map.pois.off", "the families of places the map does NOT label (app/basemap.js)"),
     worldClocks: k("pn.world-clocks", "the world clock's rows", "playnet-world-clocks"),
     dockPos: k("pn.dock.pos", "where the voice dock sits", "playnet.dock.pos"),
     panelW: k("pn.panel.w", "the side panel's width", "playnet.panel.w"),

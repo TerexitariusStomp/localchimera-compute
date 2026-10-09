@@ -19,11 +19,19 @@ const FACE = {
     restaurant: "🍽", cafe: "☕", bar: "🍸", fast_food: "🍔",
     supermarket: "🛒", convenience: "🏪", books: "📖", clothes: "👕", electronics: "🔌", beauty: "💇",
     bench: "🪑", toilets: "🚻", drinking_water: "🚰",
+    subway: "🚇", tram_stop: "🚊", bus_station: "🚌", bicycle_parking: "🚲",
+    hospital: "🏥", clinic: "🩺", doctors: "🩺", dentist: "🦷", pharmacy: "💊", social_facility: "🤝", childcare: "🧸",
+    kindergarten: "🧸", community_centre: "🏘", place_of_worship: "🕊", veterinary: "🐕", shelter: "⛺",
+    playground: "🛝", pitch: "⚽", sports_centre: "🏃", swimming_pool: "🏊", dog_park: "🐕", picnic_site: "🧺", viewpoint: "🔭",
+    allotments: "🥕", recycling: "♻", information: "ℹ", memorial: "🕯", courthouse: "⚖", police: "👮", fire_station: "🚒",
 };
 /** The kind, as a person reads it: "public toilets", "bus stop". */
 const WORD = {
     toilets: "public toilets", drinking_water: "drinking water", fast_food: "fast food",
     bus_stop: "bus stop", ferry_terminal: "ferry terminal", post_office: "post office", townhall: "town hall",
+    tram_stop: "tram stop", bus_station: "bus station", bicycle_parking: "bicycle parking", social_facility: "social facility",
+    community_centre: "community centre", place_of_worship: "place of worship", sports_centre: "sports centre",
+    swimming_pool: "swimming pool", dog_park: "dog park", picnic_site: "picnic site", fire_station: "fire station",
 };
 export const kindWord = (kind) => WORD[kind] ?? kind.replace(/_/g, " ");
 /** The kinds the families switched on admit. */
