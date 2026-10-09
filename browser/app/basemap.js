@@ -73,7 +73,7 @@ export const POI_FAMILIES = [
     { id: "civic", label: "schools and civic", on: false,
         kinds: ["school", "university", "townhall", "post_office", "building", "courthouse", "police", "fire_station"] },
     { id: "culture", label: "culture and sights", on: true,
-        kinds: ["museum", "theatre", "attraction", "artwork", "memorial", "stadium"] },
+        kinds: ["museum", "theatre", "attraction", "artwork", "memorial"] },
     { id: "food", label: "food and drink", on: false,
         kinds: ["restaurant", "cafe", "bar", "fast_food"] },
     { id: "shops", label: "shops", on: false,
