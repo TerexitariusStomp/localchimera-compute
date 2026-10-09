@@ -116,5 +116,5 @@
   (for-each
    (lambda (ch)
      (when (channel-rented? ch scope)
-       (hash-set! *frag-cap* (lg (string-append "Svc|" (svc-name ch)) cell) profile)))
+       (hash-set! *frag-cap* (lg (svc-good (svc-name ch)) cell) profile)))
    channels))

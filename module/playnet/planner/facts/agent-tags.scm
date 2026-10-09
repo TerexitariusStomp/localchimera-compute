@@ -10,9 +10,32 @@
 (define-module (playnet planner facts agent-tags)
   #:use-module (srfi srfi-1)
   #:use-module (playnet planner vf schemas)     ; agent-classified-as
-  #:export (tag-value tag-values tag-number agent-tag-value agent-tag-values))
+  #:export (tag-value tag-values tag-number tag-key? agent-tag-value agent-tag-values %tag-keys))
 
 (define (prefix-of key) (string-append key ":"))
+
+;; The keys a "key:value" classification tag may carry, each read through
+;; tag-value / tag-values and nowhere by a hand substring. A key read anywhere
+;; in the planner stands here (tests/planner/test-tag-keys-registered.scm holds
+;; every `string-prefix? "<key>:"` in the planner to this list, the time keys
+;; (facts/agent-time) and the tension terms (facts/tension-terms)).
+(define %tag-keys
+  '("diet" "allergy" "excludes"      ; a person's diet (catalogues/diets, subsistence)
+    "work"                           ; a process's work intensity (subsistence)
+    "manner"                         ; a transport process's routing costing (compile, live)
+    "self"                           ; a condition a person tells the commons (live)
+    "skill"                          ; a skill spec's law, skill:<key>:<n> (formulas/skill-law)
+    "attests"                        ; a dwelling's attestations (housing-substance)
+    "jurisdiction"                   ; an adapter's mask (doors/adapters)
+    "vf:perishability"               ; a food's perishability class (worlds/feel-the-food)
+    "tag:plan"                       ; a plan's own tags (plan/store)
+    "sex" "age" "pregnant" "lactating" "region" "labour-hours" "standard" "shed"   ; the profile (scope/live)
+    "weight-kg" "height-cm" "altitude-m" "lat" "month"))
+
+(define (tag-key? t key)
+  "Is T a \"KEY:…\" tag?"
+  (let ((pfx (prefix-of key)))
+    (and (string? t) (>= (string-length t) (string-length pfx)) (string=? (substring t 0 (string-length pfx)) pfx))))
 
 (define (tag-values tags key)
   "Every value of a \"key:value\" tag in TAGS, in order, as strings."

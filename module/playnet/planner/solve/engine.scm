@@ -67,6 +67,7 @@
 ;; set-legal-decorate!, set-acquire!, set-dial!) so neither build writes
 ;; into an imported binding.
 (define-module (playnet planner solve engine)
+  #:re-export (svc-good? lab-good svc-good)   ; the bar-key grammar's, read here and by the engine's importers (facts/located)
   #:use-module (playnet planner formulas flows)
   #:declarative? #f
   #:use-module (srfi srfi-1)
@@ -123,7 +124,7 @@
             batch-keys *bnb-nodes* build-columns build-located *cap* carried-forward
             *budgeted-floors* plan-bills bills-fold tier-shape acquire-bill bill-net located-bill *acquire* *promote* chain-duration-gaps close-elements! template-creates template-at-edge? col-flows col-key col-labour
             column-terms build-terms *col-terms* *scope-path*
-            *voice-tau* *voice-pushes* *voice-hours* *voice-stances* *col-ell* column-labour-hours svc-good? svc-spec
+            *voice-tau* *voice-pushes* *voice-hours* *voice-stances* *col-ell* column-labour-hours svc-spec
             col-value commune->scope-record *commute-hours* *commute-manner* *composition* *contained* *container-pools*
             cost-of-config dates-through declared-clock-boundaries declared-partition  declare-whole! declare-proc-frag! *proc-frag* *legal-frag* legal-frag-forms
             *why-not* why-not why-not-tally *avail-factor*
@@ -135,7 +136,7 @@
 
                *frag-prior*  *frag-spec*
             frag-tip *frag-within*  good-labour-content good-level good-pulls  ingest-located!
-            ingest-records! ingest-stock! make-stock-key stock-vocabulary person-set refused-stock ingest-travel-times! *init*  km lab-good labour-pulls
+            ingest-records! ingest-stock! make-stock-key stock-vocabulary person-set refused-stock ingest-travel-times! *init*  km labour-pulls
             *legal-decorate*  located-solve located-warm make-band  *manner-pace*
             *material-manner* *mbq-procs* *millb-template* *mobile-people?* *neighbours* node-fractional
             node-solve parity-assert *period-class-of* period-dates
@@ -441,8 +442,6 @@
 ;; chemistry layer reads this list as its boundary carriers (catalogues/substances.scm), so the
 ;; one statement serves the solve and the books.
 
-(define (credit-good? s)                  ; "credit|aid": a citizen's labour-certificate, drawn by their claim columns
-  (and (string? s) (string-prefix? "credit|" s)))
 (define (structural-raw? s)              ; the planner-generated pool that is free by construction
   ;; credit has no cap of its own: a claim column draws it at the good's
   ;; crystallized SNLT and the plan's tally of that draw IS the citizen's drawdown
@@ -452,7 +451,7 @@
   ;; re-reads the balance where a claim becomes an event (account.scm `claim`)
   ;; only against a race. A reproduction floor is a need met from the commons
   ;; (live.scm eat), and nothing a person holds or lacks buys a way out of it or into it.
-  (and (string? s) (or (string-prefix? "Lab|" s) (credit-good? s))))
+  (and (string? s) (or (lab-good? s) (credit-good? s))))
 ;; `Svc|durable` is NOT free by construction — it is free only where the durable
 ;; EXISTS. Using a machine nobody has was the last draw in the system that could
 ;; conjure itself: a recipe drawing Svc|oven with no oven stocked anywhere and no
@@ -473,7 +472,7 @@
   (hash-clear! *svc-known*)
   (hash-for-each (lambda (g _)
                    (let ((sp (good-spec g)))
-                     (when (string-prefix? "Svc|" sp) (hash-set! *svc-known* sp #t))))
+                     (when (svc-good? sp) (hash-set! *svc-known* sp #t))))
                  *cap*)
   ;; …and a means held as a SUPPLIER BUNDLE is held just as much as one declared
   ;; cell by cell. Two ways of saying the same thing — "this scope has an oven" —
@@ -519,7 +518,7 @@
 (define (mover-service? spec)
   (and (hash-ref (caddr (rider-skill-index)) spec #f) #t))
 (define (svc-held? s)                    ; a service whose durable the scope actually holds
-  (and (string? s) (string-prefix? "Svc|" s) (hash-ref *svc-known* s #f) #t))
+  (and (string? s) (svc-good? s) (hash-ref *svc-known* s #f) #t))
 ;; BARRIER-BOUNDED: a good under a fragility (a cap/spec/budget/container tip) or in
 ;; the cascade (*eco-couple*) is NOT an externality — its barrier IS its balance. The
 ;; ≥0 stock balance is REPLACED by the fragility form (felt before the tip, never
@@ -732,11 +731,9 @@
 ;; byte-identical to a plain eco-cap; only declared substitutes change anything.
 (define *resource-suppliers* '())
 (define (workers?) (pair? *workers*))
-(define (lab-good skill cell) (string-append "Lab|" skill "|" cell))
-;; a service good is "Svc|" + its spec: the one prefix, and the one reader of it
-(define %svc-prefix "Svc|")
-(define (svc-good? g) (and (string? g) (string-prefix? %svc-prefix g)))
-(define (svc-spec g) (substring g (string-length %svc-prefix)))
+;; lab-good, svc-good?, pres-good, credit-good? and the rest of the bar-key grammar:
+;; (playnet planner facts located), the one builder and reader of every key
+(define (svc-spec g) (bar-spec g))
 ;; ── WORKER-AS-RIDER: a mobile worker present where the plan puts them ────────────
 ;; A rider's PRESENCE is a unit good Pres|w, init=1 at their base at the FIRST period;
 ;; it CARRIES forward by free "stay" columns (so relocate-AND-stay falls out) and is
@@ -805,7 +802,6 @@
 (define *inert-caps* '())    ; the last ingest's caps that name a good no recipe touches (ingest-located!)
 (define (inert-caps) *inert-caps*)
 (define (skilled?) (or *roster-labour?* (workers?) (riders?)))          ; labour routes through Lab|skill goods (not aggregate) when EITHER is present
-(define (pres-good w) (string-append "Pres|" w))
 (define *borne-hours* (make-hash-table))  ; (mover-id . Svc|spec) → ((period . hours) …): the capacity of what a mover BEARS — the saw in a carried toolbox
 ;; A rider's HOURS in a period: one number holds for every period; an alist
 ;; ((period . hours) …) reads each period its own — a person whose roster entries
@@ -1272,9 +1268,9 @@
               '() *composition*)))
 (define (substance-bearing? good)          ; Svc|/Lab|/El|/credit| carry no substance of their own
   (and (string? good)
-       (not (string-prefix? "Svc|" good))
-       (not (string-prefix? "Lab|" good))
-       (not (string-prefix? "El|" good))
+       (not (svc-good? good))
+       (not (lab-good? good))
+       (not (el-good? good))
        (not (credit-good? good))))
 (define (slack-key element) (string-append "±" element))   ; a row carries its bar on a leaf under the leaf's name behind the sign (catalogues/substances.scm)
 (define (template-element-sides tpl element)
@@ -1348,12 +1344,12 @@
                          (when (getenv "PLANNER_RAW_LINT")     ; the lint's own word, beside starved and stranded
                            (format (current-error-port) "[RAW-LINT] ~a creates what it did not draw, per run; the template is refused: ~s~%" (proc-id tpl) made))
                          #f)
-                  (let ((outs (filter (lambda (oq) (not (string-prefix? "El|" (car oq)))) (proc-outputs tpl)))
+                  (let ((outs (filter (lambda (oq) (not (el-good? (car oq)))) (proc-outputs tpl)))
                         (rows (if (template-at-edge? tpl) '()
                                   (filter-map (lambda (e)
                                                 (let ((net (template-element-net tpl e)))
                                                   (and (> net 1e-12) (not (template-unread? tpl e))
-                                                       (cons (string-append "El|" e) net))))
+                                                       (cons (el-good e) net))))
                                               els))))
                     (append (list (proc-id tpl) (append outs rows)) (cddr tpl))))))
           *templates*)))))
@@ -1366,7 +1362,7 @@
     specs)
   (for-each (lambda (su) (hash-set! *spec-units* (car su) (cdr su))) (specs->units specs)))
 (define (proc-temporal? tpl)                                  ; uses a stationary container ⇒ a storage (through-time) move; else a spatial (transport) move
-  (any (lambda (iq) (and (string-prefix? "Svc|" (car iq)) (spec-stationary? (substring (car iq) 4)))) (proc-inputs tpl)))
+  (any (lambda (iq) (and (svc-good? (car iq)) (spec-stationary? (bar-spec (car iq))))) (proc-inputs tpl)))
 (define (arc-scale tpl a b)                   ; storage scales by one period; transport by ROAD distance plus the climb's equivalent
   (if (proc-temporal? tpl) 1.0
       (let ((manner (tpl-manner tpl)))
@@ -2023,7 +2019,7 @@
   (let ((kt (key-terms (col-key c))) (skills '()) (means '()) (delivers '()) (consumes '()))
     (for-each (lambda (fc)
                 (let ((g (car fc)) (q (cdr fc)))
-                  (cond ((string-prefix? "Lab|" g)
+                  (cond ((lab-good? g)
                          (let ((s (bar-field g 1))) (unless (member s skills) (set! skills (cons s skills)))))
                         ((svc-good? g)
                          (let ((s (svc-spec (good-spec g)))) (unless (member s means) (set! means (cons s means)))))
@@ -2048,7 +2044,7 @@
 (define (column-labour-hours c)
   (if (> (col-labour c) 0.0)
       (col-labour c)
-      (fold (lambda (fc a) (if (and (string-prefix? "Lab|" (car fc)) (< (cdr fc) 0.0)) (- a (cdr fc)) a)) 0.0 (col-flows c))))
+      (fold (lambda (fc a) (if (and (lab-good? (car fc)) (< (cdr fc) 0.0)) (- a (cdr fc)) a)) 0.0 (col-flows c))))
 
 ;; ── the voice field's inputs for THIS solve ─────────────────────────────────
 ;; Set by the door that solves for a scope (plan-from-records #:voice-tau
@@ -2391,7 +2387,7 @@
                          (ins   (map (lambda (iq) (cons (lg (car iq) a)            ; Svc (use, a duration) rides the time scale; consumes ride distance
                                                         (- (* (cdr iq)
                                                               (svc-hours-factor (car iq) tpl (period-of a))
-                                                              (if (string-prefix? "Svc|" (car iq)) dt d)))))
+                                                              (if (svc-good? (car iq)) dt d)))))
                                      (proc-inputs tpl)))
                          (drv   (if (skilled?)                                     ; DRIVER routed through work→Lab: consume Lab|skill@origin (×time scale)
                                     (filter-map (lambda (sl) (and (> (cdr sl) 0.0) (cons (lab-good (car sl) a) (- (* (cdr sl) dt))))) sklabs)
@@ -2464,7 +2460,7 @@
                        ;; van as a material the act eats.
                        (map (lambda (iq)
                               (let ((g (car iq)))
-                                (if (string-prefix? "Svc|" g)
+                                (if (svc-good? g)
                                     (list 'use (substring g 4) (cdr iq) #f raw-ok?)
                                     (list 'consume g (cdr iq) #f raw-ok?))))
                             (proc-inputs tpl))
@@ -2525,7 +2521,7 @@
                                        (append-map
                                         (lambda (iq)
                                           (let ((g (car iq)))
-                                            (if (and spanning? (string-prefix? "Svc|" g))
+                                            (if (and spanning? (svc-good? g))
                                                 ;; a timed draw is unit-hours for the whole run and
                                                 ;; splits pro rata; an untimed one holds the unit for
                                                 ;; each band's covered hours
@@ -2615,7 +2611,7 @@
            ;; and its loss (docs/observation/readings-are-counts.md §1.5 fact 6)
            (excess-good? (lambda (g) (let ((row (hash-ref *composition* g #f)))
                                        (and row (let ((h (assoc-ref row "heat"))) (and h (not (zero? h))))))))
-           (flow-good? (lambda (g) (or (string-prefix? "Svc|" g) (string-prefix? "Lab|" g) (excess-good? g))))
+           (flow-good? (lambda (g) (or (svc-good? g) (lab-good? g) (excess-good? g))))
            (all-specs (if intra?
                           (delete-duplicates
                            (remove flow-good?
@@ -2671,7 +2667,7 @@
              (for-each (lambda (fc)
                          (when (< (cdr fc) 0.0)
                            (let ((g (good-spec (car fc))))
-                             (when (string-prefix? "credit|" g)
+                             (when (credit-good? g)
                                (let ((p (assoc g draws)))
                                  (if p (set-cdr! p (- (cdr p) (cdr fc)))
                                      (set! draws (cons (cons g (- (cdr fc))) draws))))))))
@@ -2683,7 +2679,7 @@
                        draws)))
          cols)
         (for-each (lambda (cert)
-                    (let* ((aid (car cert)) (hours (max 0.0 (cdr cert))) (good (string-append "credit|" aid))
+                    (let* ((aid (car cert)) (hours (max 0.0 (cdr cert))) (good (credit-good aid))
                            (entries (reverse (hash-ref bucket good '()))))
                       (when (getenv "PLANNER_PD_DEBUG")
                         (format (current-error-port) "  [cert] ~a: ~a h over ~a columns ~s~%" aid hours (length entries) (map car entries)))
@@ -2916,7 +2912,7 @@
                       (let ((s (hash-ref stock sp 0.0)))
                         (if (and (< v 0.0) (> s 0.0)
                                  (not (or (hash-ref made sp #f) (structural-raw? sp)
-                                          (string-prefix? "Svc|" sp) (barrier-bounded? sp))))
+                                          (svc-good? sp) (barrier-bounded? sp))))
                             (+ a (let ((price (hash-ref *stock-price* (spec-base sp) #f)))
                                    (if price (* price (- v)) (* *stock-draw-hours* (/ (- v) s)))))
                             a)))
@@ -2928,7 +2924,7 @@
 (define (acquire-price spec labour?)
   "The hours one unit of SPEC costs to bring in, by *acquire*: a selector names the
    spec, the spec without its Svc| prefix, \"labour\" for any labour row, or #t for all. #f when nothing sells it."
-  (let ((bare (if (string-prefix? "Svc|" spec) (substring spec 4) spec)))
+  (let ((bare (if (svc-good? spec) (bar-spec spec) spec)))
     (any (lambda (a)
            (let ((sel (car a)))
              (and (or (eq? sel #t)
@@ -2937,7 +2933,7 @@
                   (cdr a))))
          *acquire*)))
 (define (acquire-cost key)            ; the price of a located row: Lab|skill|cell reads its skill, spec#cell its spec
-  (if (string-prefix? "Lab|" key)
+  (if (lab-good? key)
       (acquire-price (bar-field key 1) #t)
       (acquire-price (key-spec key) #f)))
 (define (acquire-columns cols)
@@ -2958,7 +2954,7 @@
                                       (when cost
                                         (hash-set! *acquired-keys* row #t)
                                         (add! (string-append "acq|" row) (list (cons row 1.0)) 0.0
-                                              (if (string-prefix? "Lab|" row) (bar-field row 2) (col-cell c))
+                                              (if (lab-good? row) (bar-field row 2) (col-cell c))
                                               cost))))))
                               (col-flows c)))
                   cols)
@@ -2981,7 +2977,7 @@
                             (and (acq-col? c)
                                  (let ((v (col-value x idx (col-key c))))
                                    (and (> v 1e-6)
-                                        (list (substring (col-key c) 4) v (* v (hash-ref *acquire-cost-of* (col-key c) 0.0)))))))
+                                        (list (bar-spec (col-key c)) v (* v (hash-ref *acquire-cost-of* (col-key c) 0.0)))))))
                           cols)))
     `((bill . ,rows) (bill-hours . ,(fold + 0.0 (map caddr rows))))))
 (define (prune-unreachable-draws cols)
@@ -3781,7 +3777,7 @@
       (let ((lab-need (make-hash-table)) (suppliers (make-hash-table)))
         (for-each (lambda (c)
           (for-each (lambda (fl)
-            (when (string-prefix? "Lab|" (car fl))
+            (when (lab-good? (car fl))
               (if (< (cdr fl) 0.0)
                   (hash-set! lab-need (car fl)                                        ; hours consumed by seeded production
                              (+ (hash-ref lab-need (car fl) 0.0) (* (- (cdr fl)) (vector-ref x0 (hash-ref idx (col-key c))))))
@@ -4449,8 +4445,8 @@
   (let ((s (make-hash-table)))
     (for-each (lambda (tpl)
                 (for-each (lambda (iq)
-                            (when (string-prefix? "Svc|" (car iq))
-                              (hash-set! s (substring (car iq) 4) #t)))
+                            (when (svc-good? (car iq))
+                              (hash-set! s (bar-spec (car iq)) #t)))
                           (proc-inputs tpl)))
               *templates*)
     ;; a travel mode rides what it `use`s (a vehicle, a network, a pass); the mode
@@ -5162,7 +5158,7 @@
                             (append (proc-outputs tpl) (proc-inputs tpl))))
                 *templates*)
       (let ((inert (filter (lambda (k) (let ((g (good-spec k)))
-                                         (not (or (hash-ref named g #f) (string-prefix? "Lab|" g)))))
+                                         (not (or (hash-ref named g #f) (lab-good? g)))))
                            (hash-map->list (lambda (k _) k) seen))))
         (set! *inert-caps* (sort inert string<?))      ; the finding as DATA, for a caller or a suite to read
         (when (pair? inert)
@@ -5377,7 +5373,7 @@
                    (hash-set! supply g (cons (cons (assq-ref kt 'worker) v) (hash-ref supply g '())))))
                 ((equal? (assq-ref kt 'prefix) "p")     ; p|proc|cell → consumes Lab|skill|cell at coeff −ℓ
                  (for-each (lambda (fc)
-                   (when (string-prefix? "Lab|" (car fc))
+                   (when (lab-good? (car fc))
                      ;; a ride is a run of its mode: the work it asks (a driver, a carrier) is that mode's need
                      (hash-set! demand (car fc) (cons (cons (let ((pr (assq-ref kt 'process))) (or (ride-mode-process pr) pr))
                                                             (* (- (cdr fc)) v))
@@ -5577,8 +5573,8 @@
                    ;; a MEANS on a ride between two places is a thing carried: picked up
                    ;; where it stood and dropped off where it lands, the lot itself, whole
                    (let* ((lot (and arc? (not (equal? (place-of org) (place-of dst)))
-                                    (string-prefix? "Pres|" (good-spec g))
-                                    (hash-ref *means-lot* (substring (good-spec g) 5) #f)))
+                                    (pres-good? (good-spec g))
+                                    (hash-ref *means-lot* (bar-spec (good-spec g)) #f)))
                           (run (and lot (run-id proc org dst))))
                      (when (and lot (> (abs (* coeff vv)) 1e-4))
                        (hash-set! *runs* run (or (ride-mode-process proc) proc))
@@ -5589,15 +5585,15 @@
                                          (vector 'produce (car lot) qty run (place-of cl) #f (car sp) (cdr sp) #f cl (relocating-side 'output))
                                          (vector 'consume (car lot) qty run (place-of cl) #f (car sp) (cdr sp) cl #f (relocating-side 'input)))
                                      items)))))
-                   (unless (or (string-prefix? "Lab|" g)
+                   (unless (or (lab-good? g)
                                ;; a presence is where a person (an Agent) or a means IS: the position
                                ;; machinery states that (set-position, the live fix), and VF has no flow
                                ;; that makes it at one place and uses it up at another
-                               (string-prefix? "Pres|" (good-spec g))
+                               (pres-good? (good-spec g))
                                ;; the hold's own container occupancy is the same
                                ;; non-event as the pair it elides: the ground was
                                ;; occupied by a thing staying where it is
-                               (and (pair? held) (string-prefix? "Svc|" (good-spec g))))
+                               (and (pair? held) (svc-good? (good-spec g))))
                      (let ((spec (good-spec g)) (qty (abs (* coeff vv))))
                        (if (member spec held)
                            (hash-set! net spec (+ (hash-ref net spec 0.0) coeff))
@@ -5610,8 +5606,8 @@
                                                         items)))
                                      ;; a vehicle's or network's service is a means in use: it still exists
                                      ;; afterwards, so the row is a `use` of its own specification
-                                     ((string-prefix? "Svc|" spec)
-                                      (set! items (cons (vector 'use (substring spec 4) qty (or run proc) place #f b e #f #f) items)))
+                                     ((svc-good? spec)
+                                      (set! items (cons (vector 'use (bar-spec spec) qty (or run proc) place #f b e #f #f) items)))
                                      (else
                                       (set! items (cons (vector 'consume spec qty (or run proc) place #f b e cl #f
                                                                 (and (member spec cargo) (relocating-side 'input)))
@@ -5639,13 +5635,13 @@
                ;; (a Commitment names no destination, and `move` binds to no Process).
                ;; Each carry is the one run of its own, an instance of the mode its manner
                ;; names.
-               (unless (or (string-prefix? "Pres|" spec)
+               (unless (or (pres-good? spec)
                            (equal? (place-of from) (place-of to)))
                  (let ((run (run-id spec from to))
                        (sf (period-span (period-of from))) (st (period-span (period-of to)))
                        ;; a means carried between places (a key, a vehicle) is the thing itself that is
                        ;; picked up and dropped off, under its own specification
-                       (what (if (string-prefix? "Svc|" spec) (substring spec 4) spec)))
+                       (what (if (svc-good? spec) (bar-spec spec) spec)))
                    (hash-set! *runs* run (bare-run-template))
                    (set! items (cons (vector 'consume what vv run (place-of from) #f (car sf) (cdr sf) from #f (relocating-side 'input)) items))
                    (set! items (cons (vector 'produce what vv run (place-of to) #f (car st) (cdr st) #f to (relocating-side 'output)) items)))))))))) )
@@ -5695,11 +5691,11 @@
                               (cons nm (/ t (max (+ s c0) 1e-9)))))))
                     slack)))
 (define (labour-pulls duals)               ; ((skill@cell . λ) …): the Σℓλ side — located labour pulls
-  (filter-map (lambda (nd) (and (string-prefix? "Lab|" (car nd))
+  (filter-map (lambda (nd) (and (lab-good? (car nd))
                   (let ((p (string-split (car nd) #\|)))            ; Lab|skill|cell
                     (cons (string-append (cadr p) "@" (caddr p)) (cdr nd))))) duals))
 (define (good-pulls duals)                 ; ((located-good . μ) …): the Σdμ side — the pulls of material & ecological scarcity
-  (filter (lambda (nd) (not (string-prefix? "Lab|" (car nd)))) duals))
+  (filter (lambda (nd) (not (lab-good? (car nd)))) duals))
 (define (good-labour-content)               ; ((spec . ℓ̂-hours) …): crystallized SNLT per unit, off the recipe graph
   ;; The one value rollup — `crystallize` (algorithms/rollup/fixpoint.scm): the Leontief
   ;; adjoint iterated to its fixpoint, min across alternative recipes, a joint recipe's
@@ -5711,7 +5707,7 @@
   (hash-map->list cons
     (crystallize (map (lambda (tpl)
                         (list (proc-labour tpl) (proc-inputs tpl)
-                              (filter (lambda (oq) (not (string-prefix? "El|" (car oq)))) (proc-outputs tpl))))
+                              (filter (lambda (oq) (not (el-good? (car oq)))) (proc-outputs tpl))))
                       *templates*))))
 (define (worker-total x cols idx)           ; L: living labour actually worked (Σ worker supply)
   (fold (lambda (c a) (if (equal? (key-prefix (col-key c)) "w") (+ a (vector-ref x (hash-ref idx (col-key c)))) a)) 0.0 cols))

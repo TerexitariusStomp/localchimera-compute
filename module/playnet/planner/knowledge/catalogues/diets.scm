@@ -21,6 +21,7 @@
 ;;; want, never a rule here (docs/planning/food/diet-constraints.md).
 
 (define-module (playnet planner knowledge catalogues diets)
+  #:use-module ((playnet planner facts agent-tags) #:select (tag-key? tag-values))
   #:use-module (srfi srfi-1)
   #:export (*diets* *allergens* *food-classes* diet-tags diet-exclusions
             food-classes-of eats?))
@@ -57,21 +58,14 @@
 
 (define (diet-tags tags)
   "The diet statements among TAGS: every diet:, allergy: and excludes: tag."
-  (filter (lambda (t) (and (string? t)
-                           (or (string-prefix? "diet:" t) (string-prefix? "allergy:" t) (string-prefix? "excludes:" t))))
-          tags))
+  (filter (lambda (t) (or (tag-key? t "diet") (tag-key? t "allergy") (tag-key? t "excludes"))) tags))
 
 (define (diet-exclusions tags)
   "The food classes a person with TAGS refuses."
   (delete-duplicates
-   (append-map (lambda (t)
-                 (cond ((string-prefix? "diet:" t)
-                        (let ((d (assoc (substring t 5) *diets*))) (if d (cddr d) '())))
-                       ((string-prefix? "allergy:" t)
-                        (list (string-append "vf:allergen:contains-" (substring t 8))))
-                       ((string-prefix? "excludes:" t) (list (substring t 9)))
-                       (else '())))
-               (diet-tags tags))
+   (append (append-map (lambda (name) (let ((d (assoc name *diets*))) (if d (cddr d) '()))) (tag-values tags "diet"))
+           (map (lambda (a) (string-append "vf:allergen:contains-" a)) (tag-values tags "allergy"))
+           (tag-values tags "excludes"))
    string=?))
 
 (define (food-classes-of spec classified-as)

@@ -71,6 +71,7 @@
 ;;; saying which sense is being asked cannot be costed. Kept as data because the
 ;;; Leitfaden's criteria are grouped exactly this way.
 (define-module (playnet planner knowledge worlds feel-the-food)
+  #:use-module ((playnet planner facts agent-tags) #:select (tag-value))
   #:use-module (playnet planner vf schemas)
   #:use-module (goblins)
   #:use-module (srfi srfi-1)
@@ -122,13 +123,7 @@
 ;;; the middle rather than the cheapest.
 (define (spec-perishability spec)
   (let ((cls (and spec (resource-specification-resource-classified-as spec))))
-    (or (and (list? cls)
-             (any (lambda (c)
-                    (and (string? c)
-                         (string-prefix? "vf:perishability:" c)
-                         (string->symbol
-                          (substring c (string-length "vf:perishability:")))))
-                  cls))
+    (or (and (list? cls) (and=> (tag-value cls "vf:perishability") string->symbol))
         %feel-the-food-default)))
 
 ;;; ─── the statutory rule ──────────────────────────────────────────────────

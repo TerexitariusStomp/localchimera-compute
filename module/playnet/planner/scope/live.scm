@@ -13,6 +13,7 @@
 ;;; boundary intact. Lives in a Goblins module but the engine inside stays pure.
 
 (define-module (playnet planner scope live)
+  #:use-module ((playnet planner facts located) #:select (credit-good))
   #:re-export (make-work-event)
   #:use-module (playnet planner formulas flows)
   #:use-module ((playnet planner knowledge dsl shorthand) #:select (flow*))
@@ -256,9 +257,7 @@
   "The routing costings the scope's modes carry, sorted: what the prior refresh prices."
   (sort (delete-duplicates (filter-map recipe-manner (mode-processes ($ scope-root 'recipe-store)))) string<?))
 
-(define (manner-tag classified-as)           ; \"manner:bicycle\" → \"bicycle\"
-  (let ((t (find (lambda (c) (and (string? c) (string-prefix? "manner:" c))) (or classified-as '()))))
-    (and t (substring t 7))))
+(define manner-tag manner-of-tags)           ; "manner:bicycle" → "bicycle" (solve/compile, the one reader)
 
 (define (trip-manner-of scope-root)
   "(process id → manner or #f): the costing a performed trip was made under — its
@@ -366,7 +365,7 @@
                                                          #:resource-quantity (make-measure 1.0 unit) #:recipe-input-of pid))
                                  (if (and (number? snlt) (< snlt +inf.0) (> snlt 0.0))
                                      (list (make-recipe-flow #:id (string-append pid "|credit") #:action 'consume
-                                                             #:resource-conforms-to (string-append "credit|" (cdr o))
+                                                             #:resource-conforms-to (credit-good (cdr o))
                                                              #:resource-quantity (make-measure snlt "hour") #:recipe-input-of pid))
                                      '())
                                  (list (make-recipe-flow #:id (string-append pid "|out") #:action 'produce #:resource-conforms-to g
@@ -621,7 +620,7 @@
       ;; SELF: the conditions this person chose to tell the commons ("self:<id>",
       ;; the catalogue's *self-conditions*); what they keep to themselves stays
       ;; in their own browser's layer
-      (self . ,(filter-map (lambda (t) (and (string? t) (string-prefix? "self:" t) (substring t 5))) tags))
+      (self . ,(tag-values tags "self"))
       ;; DIET: the diet:/allergy:/excludes: tags as stated — the eat recipe's
       ;; menu (knowledge/diets.scm) and the catalogue's L2b layer both read them
       (diet . ,(diet-tags tags))
@@ -987,7 +986,7 @@
 (define (substitutable-caps-split eco-caps catalogue)
   (partition-suppliers eco-caps
     (lambda (ec)
-      (and (string-prefix? "Svc|" (car ec))
+      (and (svc-good? (car ec))
            (let* ((parts   (string-split (substring (car ec) 4) #\#))  ; Svc|spec#place@t → (spec place@t)
                   (closure (means-closure (car parts) catalogue)))
              (and (pair? (cdr closure))                                ; substitutes for something ⇒ durable? #t supplier

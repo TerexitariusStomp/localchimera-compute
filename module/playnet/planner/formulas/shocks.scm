@@ -31,6 +31,7 @@
 ;;;       calibration.
 
 (define-module (playnet planner formulas shocks)
+  #:use-module ((playnet planner facts located) #:select (svc-good svc-good?))
   #:use-module (srfi srfi-1)
   #:use-module (ice-9 format)
   #:use-module ((playnet planner beyond scenario) #:select (make-planning-scenario planning-scenario-id planning-scenario-scenario planning-scenario-probability planning-scenario-yield-multipliers planning-scenario-note planning-scenario-path))
@@ -115,9 +116,9 @@
   ;; prefix.
   (define (names? k sh proc-id spec)
     (if (eq? (shock-action sh) 'use)
-        (and (string? spec) (string-prefix? "Svc|" spec)
+        (and (string? spec) (svc-good? spec)
              (or (equal? k proc-id)
-                 (and (string? k) (string=? (string-append "Svc|" k) spec))))
+                 (and (string? k) (string=? (svc-good k) spec))))
         (or (equal? k proc-id) (equal? k spec))))
   (define (touches? sh proc-id spec place)
     (let ((k (shock-key sh)))
@@ -255,7 +256,7 @@
       (let* ((action (car fl)) (spec (caddr fl))
              ;; the build asks of a used service under its "Svc|spec" good
              (asked (if (and (eq? action 'use) (string? spec) (not (string-prefix? "Svc|" spec)))
-                        (string-append "Svc|" spec) spec)))
+                        (svc-good spec) spec)))
         (fold (lambda (w f) (farther f (factor action (cadr fl) asked (car w) (cdr w))))
               1.0 wheres)))
     (map (lambda (ch)

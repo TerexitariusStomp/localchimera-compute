@@ -56,6 +56,7 @@
 ;;; spatial relation the plan already reads, affordability has no wall.
 
 (define-module (playnet planner knowledge catalogues housing-substance)
+  #:use-module ((playnet planner facts agent-tags) #:select (tag-values))
   #:use-module (srfi srfi-1)
   #:use-module (playnet planner vf schemas)
   #:use-module ((playnet planner knowledge catalogues substances) #:select (closure-rows closure-reduction closure-bands substance-content %delivered-heat))
@@ -333,7 +334,7 @@
          (catch* #t
            (lambda ()
              (dwelling-unit (economic-resource-id r) type (economic-resource-current-location r)
-                            #:attests (filter-map (lambda (t) (and (string-prefix? "attests:" t) (substring t 8))) tags)
+                            #:attests (tag-values tags "attests")
                             #:certified? (and (member "certified" tags) #t)
                             #:capacity (or (num "beds:") 1.0)
                             #:eur (num "rent-eur-night:")

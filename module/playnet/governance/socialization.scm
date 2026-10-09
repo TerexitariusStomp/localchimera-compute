@@ -70,6 +70,7 @@
 ;; emitted as no claim at all — so the two paths agree bit-for-bit where they share
 ;; args.
 (define-module (playnet governance socialization)
+  #:use-module ((playnet planner facts located) #:select (svc-good))
   #:use-module (playnet planner formulas flows)
   #:use-module ((playnet planner formulas actions) #:select (labour-specs))
   #:use-module (srfi srfi-1)
@@ -971,7 +972,7 @@
      (lambda (m)
        (let ((g (row-spec m)) (q (or (row-quantity m) 0)))
          (when (and (string? g) (eq? 'use (row-action m)))   ; a means in use, under its own specification
-           (let ((svc (string-append "Svc|" g)))
+           (let ((svc (svc-good g)))
              (hash-set! draw svc (+ (hash-ref draw svc 0) (abs q)))))))
      (or (assq-ref alist 'material) '()))
     (for-each
@@ -982,7 +983,7 @@
            (hash-set! cap g (+ (hash-ref cap g 0) v)))))
      (or caps '()))
     (map (lambda (s)
-           (let* ((g (string-append "Svc|" (or (assq-ref s 'spec) "")))
+           (let* ((g (svc-good (or (assq-ref s 'spec) "")))
                   (c (hash-ref cap g 0)) (d (hash-ref draw g 0)))
              (cons (cons 'drawn (if (> c 0) (exact->inexact (min 1.0 (/ d c))) 0.0))
                    s)))
@@ -1063,7 +1064,7 @@
          ;; consume grant lends stock, not a service, so it has no Svc| good
          (rented (delete-duplicates
                   (filter-map (lambda (s) (and (equal? "use" (assq-ref s 'kind))
-                                               (string-append "Svc|" (assq-ref s 'spec))))
+                                               (svc-good (assq-ref s 'spec))))
                               slots)))
          ;; the care terms' material half, compiled to demand: a live grant
          ;; with a condition-floor asks for its upkeep deliverable (named by

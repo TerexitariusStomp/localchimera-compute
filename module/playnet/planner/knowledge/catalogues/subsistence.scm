@@ -20,6 +20,7 @@
 ;; a nutrient band: (spec group unit rda ul w).  ul = #f ⇒ ceiling-free (a floor
 ;; only — "more is fine"). rda = the adequate deficiency floor.
 (define-module (playnet planner knowledge catalogues subsistence)
+  #:use-module ((playnet planner facts agent-tags) #:select (tag-values))
   #:use-module (srfi srfi-1)
   #:use-module (playnet planner vf schemas)
   #:export (sub-nut sub-spec sub-group sub-unit sub-rda sub-ul sub-w
@@ -457,9 +458,7 @@
 (define (work-intensity-weight id) (or (assoc-ref *work-intensity* (or id "moderate")) 1.0))
 (define (work-intensity-of-tags tags)
   "The intensity class a recipe process carries among TAGS as \"work:<class>\", or #f."
-  (any (lambda (t) (and (string? t) (string-prefix? "work:" t)
-                        (assoc (substring t 5) *work-intensity*) (substring t 5)))
-       (or tags '())))
+  (find (lambda (c) (assoc c *work-intensity*)) (tag-values (or tags '()) "work")))
 (define (effective-labour-hours ctx)
   "The day's committed hours weighted by how hard they are."
   (* (or (ctx-ref ctx 'labour-hours 0) 0) (work-intensity-weight (ctx-ref ctx 'labour-intensity #f))))
@@ -664,11 +663,8 @@
     ("vegan"      ("iron" #:rda 1.8) ("zinc" #:rda 1.5))))
 (define (diet-floor-shifts tags)
   "The shift rows the diet: tags among TAGS carry — each diet's rows once."
-  (append-map (lambda (t)
-                (or (and (string? t) (string-prefix? "diet:" t)
-                         (assoc-ref *diet-shifts* (substring t 5)))
-                    '()))
-              tags))
+  (append-map (lambda (name) (or (assoc-ref *diet-shifts* name) '()))
+              (tag-values (or tags '()) "diet")))
 (define (subsistence-L2-diet prof ctx)
   (sub-shift* prof (diet-floor-shifts (ctx-ref ctx 'diet '()))))
 

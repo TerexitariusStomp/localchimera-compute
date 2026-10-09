@@ -119,7 +119,7 @@
                                         #:resource-quantity (make-measure yield "kg")
                                         #:recipe-output-of "grow" #:is-primary #t)))
          (floor (navdanya-food-floor household))
-         (eco-caps  (map (lambda (t ha) (cons (format #f "Svc|land#~a@~a" place t)
+         (eco-caps  (map (lambda (t ha) (cons (lg (svc-good "land") (cell place t))
                                               (stock->flow ha t)))      ; usable ha × the season's hours
                              years weather))     ; per-year usable land
          (floors    (map (lambda (t)    (cons (format #f "food#~a@~a" place t) floor)) years)))

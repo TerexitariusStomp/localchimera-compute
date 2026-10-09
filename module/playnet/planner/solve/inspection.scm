@@ -30,6 +30,7 @@
 ;; `use` flow names a MEANS edge (an instrument whose conformance the process
 ;; assumes). ((kind . spec) …), each spec once.
 (define-module (playnet planner solve inspection)
+  #:use-module ((playnet planner formulas flows) #:select (row-figure))
   #:use-module (playnet planner formulas actions)
   #:use-module (srfi srfi-1)
   #:use-module ((playnet planner aggregation fold-node) #:select (sum-by-key))
@@ -141,11 +142,8 @@
                       coms)
           (filter-map (lambda (mc)
                         (let ((spec (commitment-resource-conforms-to mc)))
-                          (and (eq? (commitment-action mc) 'use)   ; a means in use, under its own specification
+                          (and (memq (commitment-action mc) occupying-actions)   ; a means in use, under its own specification
                                (string? spec)
-                               (cell spec
-                                     (and (commitment-resource-quantity mc)
-                                          (measure-has-numerical-value
-                                           (commitment-resource-quantity mc)))))))
+                               (cell spec (row-figure mc)))))   ; its hours (effortQuantity)
                       mat))))
     (sort (sum-by-key '() cells) (lambda (a b) (string<? (car a) (car b))))))

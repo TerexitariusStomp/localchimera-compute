@@ -15,7 +15,10 @@
   #:export (lg cell good-spec located-cell place-of period-of
             key-period key-date key-retime parse-located-good
             bar-fields bar-field key-prefix
-            key-terms key-process key-arc))
+            key-terms key-process key-arc
+            bar-good bar-good? bar-spec
+            svc-good svc-good? lab-good lab-good? pres-good pres-good?
+            el-good el-good? credit-good credit-good?))
 
 ;; ── constructors ────────────────────────────────────────────────────────────
 (define (lg good cell) (string-append good "#" cell))                ; a good at a cell
@@ -49,6 +52,28 @@
                     (or (string->number (substring key (+ at 1))) 0)))))
 
 ;; ── bar keys: "prefix|field|field…" ─────────────────────────────────────────
+;; ── the bar keys: <kind>|<spec>… — one builder and one reader per kind ────────
+;; Svc|spec   the per-period SERVICE good of a durable `use`d in a process
+;; Lab|skill|cell  the located labour pool of a skill
+;; Pres|w     a mover's presence (a person, a means on a ride)
+;; El|e       an element row of the chemistry
+;; credit|aid a citizen's labour certificate, drawn by their claim columns
+(define (bar-good kind spec) (string-append kind "|" spec))
+(define (bar-good? kind g) (and (string? g) (string-prefix? (string-append kind "|") g)))
+(define (bar-spec g)
+  "What stands after the kind of a bar key: Svc|bread → bread."
+  (let ((i (string-index g #\|))) (if i (substring g (+ i 1)) g)))
+(define (svc-good spec)    (bar-good "Svc" spec))
+(define (svc-good? g)      (bar-good? "Svc" g))
+(define (lab-good skill cell) (string-append "Lab|" skill "|" cell))
+(define (lab-good? g)      (bar-good? "Lab" g))
+(define (pres-good w)      (bar-good "Pres" w))
+(define (pres-good? g)     (bar-good? "Pres" g))
+(define (el-good e)        (bar-good "El" e))
+(define (el-good? g)       (bar-good? "El" g))
+(define (credit-good aid)  (bar-good "credit" aid))
+(define (credit-good? g)   (bar-good? "credit" g))
+
 (define (bar-fields k) (string-split k #\|))
 (define (bar-field k i)
   "The I-th bar field of K, or #f when K has fewer."

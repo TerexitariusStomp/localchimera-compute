@@ -28,7 +28,9 @@
 ;; SKILL is read straight off the recipe here (not bolted on). effortQuantity is
 ;; the hours (a time-based action; it affects no economic resource).
 (define-module (playnet planner solve compile)
-  #:re-export (%ambient-tag)
+  #:use-module ((playnet planner facts agent-tags) #:select (tag-value))
+  #:use-module ((playnet planner facts located) #:select (svc-good svc-good? bar-spec lg cell))
+  #:re-export (svc-good %ambient-tag)   ; the Svc| namer is the key grammar's (facts/located); re-exported for the two loaders that read it here
   #:use-module ((playnet planner formulas flows) #:select (%ambient-tag))
   #:use-module (srfi srfi-1)
   #:use-module (playnet planner vf schemas)
@@ -37,9 +39,9 @@
   #:use-module (playnet planner knowledge dsl shorthand)
   #:re-export (rp out in wrk out/u in/u wrk/u)   ; the recipe spelling is the DSL's (knowledge/dsl/shorthand.scm)
   #:re-export (output-flow? upstream-closure)   ; what a recipe makes is read off the action table, beside it (schemas.scm)
-  #:export (mqty action-def alist-add svc-good compile-process proc-id proc-outputs
+  #:export (mqty action-def alist-add compile-process proc-id proc-outputs
             proc-inputs proc-labour proc-skill-labours proc-moved proc-relocated
-            proc-timed-svc proc-duration proc-batch proc-whole? proc-tags proc-output-good compile-recipe recipe-manner
+            proc-timed-svc proc-duration proc-batch proc-whole? proc-tags proc-output-good compile-recipe recipe-manner manner-of-tags
             qualified-good good-names bare-spec *templates* set-templates!
             *use-unit-gaps* use-unit-gaps clear-use-unit-gaps!
             *batch-unit-gaps* batch-unit-gaps clear-batch-unit-gaps!))
@@ -55,7 +57,7 @@
 ;; one — so the engine and the umbrella, which both import this module, name
 ;; the service good the same way; a recipe with a `use` flow compiles on
 ;; either path.
-(define (svc-good spec) (string-append "Svc|" spec))    ; the per-period SERVICE good of a durable `use`d in a process — the instrument twin of lab-good's Lab| pool (both are structural pools, see spec-skips-balance? / STRUCTURAL). Located via (lg (svc-good spec) cell). Kept core-local like lab-good; svc-eco-caps builds the located form directly in the sibling umbrella.
+;; svc-good (facts/located): the per-period SERVICE good of a durable `use`d in a process — the instrument twin of lab-good's Lab| pool (both are structural pools, see spec-skips-balance? / STRUCTURAL). Located via (lg (svc-good spec) cell). Kept core-local like lab-good; svc-eco-caps builds the located form directly in the sibling umbrella.
 
 (define* (compile-process rp-id flows duration #:optional (duration-hours #f) (batch #f) (whole? #f) (tags '()))
   ;; a process may carry SEVERAL work flows of DIFFERENT skills (VF allows it), so
@@ -232,10 +234,8 @@
   (and (pair? (proc-outputs c)) (caar (proc-outputs c))))
 ;; The router's costing a transport process travels under: its
 ;; "manner:<costing>" classification, or #f when it states none.
-(define (recipe-manner rp)
-  (let ((tg (find (lambda (t) (and (string? t) (string-prefix? "manner:" t)))
-                  (or (recipe-process-process-classified-as rp) '()))))
-    (and tg (substring tg 7))))
+(define (manner-of-tags tags) (tag-value (or tags '()) "manner"))
+(define (recipe-manner rp) (manner-of-tags (recipe-process-process-classified-as rp)))
 (define (compile-recipe procs flows)        ; labour from explicit work-flows, else has-duration
   ;; bucket flows by their process id ONCE (input-of / output-of) — O(F+P), not an
   ;; O(P·F) per-process filter. On a dense table (e.g. a national I-O with ~10³

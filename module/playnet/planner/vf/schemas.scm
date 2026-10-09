@@ -42,6 +42,7 @@
 ;;; `(use-modules (playnet planner))` still sees them.
 
 (define-module (playnet planner vf schemas)
+  #:use-module ((playnet planner facts located) #:select (svc-good))
   #:use-module (srfi srfi-1)
   #:use-module ((playnet utils records) #:select (define-vf-record vf-record-type vf-record-constructor vf-record-predicate vf-record-accessor vf-record-modifier vf-record-type-name vf-record-type-fields vf-record-copier vf-record-maker))
   #:use-module ((playnet planner vf serdes) #:select (register-vf-record!))
@@ -680,7 +681,7 @@
         (reverse out)
         (let ((r (car rs)))
           (if (resource-rented? r scope)
-              (let ((g (string-append "Svc|" (economic-resource-conforms-to r))))
+              (let ((g (svc-good (economic-resource-conforms-to r))))
                 (loop (cdr rs) (if (member g out) out (cons g out))))
               (loop (cdr rs) out))))))
 

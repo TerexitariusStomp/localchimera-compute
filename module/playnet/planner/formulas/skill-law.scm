@@ -22,6 +22,7 @@
 ;;; conformance threshold asks — and what a profile shows.
 
 (define-module (playnet planner formulas skill-law)
+  #:use-module ((playnet planner facts agent-tags) #:select (tag-values))
   #:use-module (srfi srfi-1)
   #:use-module ((playnet utils clock) #:select (iso->epoch))
   #:export (skill-law-of *skill-law-identity* law-ref competence-fold effective-skills))
@@ -38,15 +39,14 @@
    `skill:<key>:<number>` tag, KEY one of the engine's set-skill-spec!
    keywords. #f when the spec declares none — the identity then holds."
   (let ((law (filter-map
-              (lambda (t)
-                (and (string? t) (string-prefix? "skill:" t)
-                     (let* ((rest (substring t 6)) (i (string-index rest #\:)))
-                       (and i
-                            (let ((key (string->symbol (substring rest 0 i)))
-                                  (val (string->number (substring rest (+ i 1)))))
-                              (and val (assq key *skill-law-identity*)
-                                   (cons key (if (eq? key 'lag) (inexact->exact (round val)) (exact->inexact val)))))))))
-              (or tags '()))))
+              (lambda (rest)                       ; "<key>:<number>", the value of a skill: tag
+                (let ((i (string-index rest #\:)))
+                  (and i
+                       (let ((key (string->symbol (substring rest 0 i)))
+                             (val (string->number (substring rest (+ i 1)))))
+                         (and val (assq key *skill-law-identity*)
+                              (cons key (if (eq? key 'lag) (inexact->exact (round val)) (exact->inexact val))))))))
+              (tag-values (or tags '()) "skill"))))
     (and (pair? law) law)))
 
 (define* (competence-fold practice law #:key today (period-days 1))

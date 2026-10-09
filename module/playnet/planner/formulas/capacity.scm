@@ -61,6 +61,7 @@
 ;;; whichever side loads first defines it once.
 
 (define-module (playnet planner formulas capacity)
+  #:use-module ((playnet planner facts located) #:select (svc-good lg cell))
   #:use-module (playnet utils units)
   #:use-module (playnet planner vf schemas)
   #:use-module (goblins)
@@ -162,7 +163,7 @@
   "The located key of a spec's SERVICE at PLACE in period T. The one encoding of
    `Svc|spec#place@t`, so a caller that computes a capacity per period — one whose
    availability window opens for part of the horizon — still spells the key here."
-  (string-append "Svc|" spec "#" place "@" (number->string t)))
+  (lg (svc-good spec) (cell place t)))
 
 (define (svc-eco-caps facts periods)
   (append-map

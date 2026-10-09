@@ -6,6 +6,7 @@
 ;;;        scenario-definitions) + signal metadata + secondary indexes.
 
 (define-module (playnet planner plan store)
+  #:use-module ((playnet planner facts agent-tags) #:select (tag-values))
   #:use-module (playnet utils store-utils)
   #:use-module (playnet planner vf serdes)
   #:use-module (playnet planner algorithms propagation)
@@ -1018,8 +1019,7 @@
          (error (format #f "Replenishment ~a already finished" iid)))
        ;; Validate: must have replenishment tag
        (unless (and (intent-resource-classified-as intent)
-                    (any (lambda (t) (string-prefix? "tag:plan:replenishment" t))
-                         (intent-resource-classified-as intent)))
+                    (member "replenishment" (tag-values (intent-resource-classified-as intent) "tag:plan")))
          (error (format #f "Intent ~a is not a replenishment signal" iid)))
        (let* ((action-override (assq-ref opts 'action))
               (output-of (assq-ref opts 'output-of))
@@ -1067,7 +1067,7 @@
      (hashmap-filter
        (lambda (i) (and (equal? (intent-output-of i) process-id)
                         (let ((tags (intent-resource-classified-as i)))
-                          (and tags (any (lambda (t) (string-prefix? "tag:plan:" t)) tags)))))
+                          (and tags (pair? (tag-values tags "tag:plan"))))))
        (pss-intents st)))
 
     ;; --- Bulk operations ---

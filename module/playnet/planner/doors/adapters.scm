@@ -28,6 +28,7 @@
 ;;; Run the demo:  guile -L module module/playnet/planner/doors/adapters.scm
 
 (define-module (playnet planner doors adapters)
+  #:use-module ((playnet planner facts agent-tags) #:select (agent-tag-value))
   #:use-module (playnet planner legal registry)
   #:use-module ((playnet planner knowledge law context-pack) #:select (current-legal-rules))
   #:use-module (playnet planner vf schemas)
@@ -165,9 +166,7 @@
 ;;; a person (competence) demand to the named practitioner. An optional jurisdiction
 ;;; disambiguates the SAME spec held by different masks in different places.
 (define (mask-jurisdiction agent)                 ; read the "jurisdiction:X" tag → X
-  (let ((c (or (agent-classified-as agent) '())))
-    (any (lambda (t) (and (string? t) (string-prefix? "jurisdiction:" t)
-                          (substring t (string-length "jurisdiction:")))) c)))
+  (agent-tag-value agent "jurisdiction"))
 (define (adapter-covers? spawn spec)              ; this mask's door covers the credential?
   (and (member spec (adapter-spawn-entity-needs spawn)) #t))
 (define* (resolve-mask masks spec #:optional (jurisdiction #f))
