@@ -229,26 +229,38 @@
     id))
 
 ;;; ─── the crossings a body trips ──────────────────────────────────────────
-(define (body-crossings as observer body)
+(define* (body-crossings as observer body #:key (claims '()) (resolve-spec (lambda (id) #f)))
   "Declared on the body ∪ read off what it holds ∪ read off the events it
-   provides. OBSERVER #f: only the declared ones."
+   provides ∪ read off CLAIMS it is party to (the observer keeps a claim's
+   target, not its record, so the caller brings the records). OBSERVER #f:
+   only the declared ones. RESOLVE-SPEC: spec id → its <resource-specification>
+   (the recipe store's), so a record's kind of thing is read as the law reads it."
   (let* ((id (agent-id body))
          (resolve (lambda (sid) (and observer ($ observer 'get-resource sid))))
          (declared (classification-crossings (agent-tags body)))
          (held (if observer
                    (asset-crossings (map (lambda (r) (legal-asset-fields r resolve))
                                          (body-holdings observer id))
-                                    resolve)
+                                    resolve-spec)
                    '()))
+         (resolve-record (lambda (rid) (or (and observer ($ observer 'get-event rid))
+                                           (find (lambda (c) (equal? (claim-id c) rid)) claims))))
+         (resolve-agreement (lambda (aid) (and observer ($ observer 'get-agreement aid))))
+         (read-record (lambda (r) (record-crossings r resolve-spec #:resolve-agreement resolve-agreement
+                                                    #:resolve-record resolve-record)))
          (done (if observer
                    (append-map (lambda (e)
-                                 (if (equal? (economic-event-provider e) id)
-                                     (record-crossings e resolve)
-                                     '()))
+                                 (if (equal? (economic-event-provider e) id) (read-record e) '()))
                                ($ observer 'events-for-agent id))
                    '()))
+         ;; money claimed by or owed to the body: a claim it receives for the
+         ;; use of what it lent reads as metered use
+         (claimed (append-map (lambda (c)
+                                (if (or (equal? (claim-receiver c) id) (equal? (claim-provider c) id))
+                                    (read-record c) '()))
+                              claims))
          (sold (if (pair? (body-sells body)) '(public-sale) '())))
-    (delete-duplicates (append declared held done sold))))
+    (delete-duplicates (append declared held done claimed sold))))
 
 ;;; ─── admission : the eight tests, as findings ────────────────────────────
 ;;; (test crossing roles-where-it-is-fine severity-otherwise detail)
@@ -264,7 +276,11 @@
     (licence     pool-risk            ()                            warning
      "insures or pools risk: a licensed door comes with it")
     (licence     act-on-person        ()                            warning
-     "performs a regulated act on a person: a licensed door comes with it")))
+     "performs a regulated act on a person: a licensed door comes with it")
+    (cost-share  cost-share           ()                            info
+     "bears a lent thing's running cost as a fixed sum by period: a share, not a rent")
+    (lessor      metered-use          (seller)                      warning
+     "is paid for a lent thing by the use made of it: a lease in all but name, and the role of a lessor")))
 
 (define (finding-about severity kind body detail)
   (finding severity kind (agent-id body) (string-append (agent-name body) " " detail)))
@@ -328,12 +344,14 @@
                           acc)
                     acc))))))
 
-(define* (admission-findings as observer scope-id #:key (bodies (scope-bodies as scope-id)))
-  "The eight tests over every body of SCOPE-ID, most severe first."
+(define* (admission-findings as observer scope-id #:key (bodies (scope-bodies as scope-id)) (claims '())
+                             (resolve-spec (lambda (id) #f)))
+  "The eight tests over every body of SCOPE-ID, most severe first. CLAIMS:
+   the money claims the bodies are party to, read for metered use."
   (findings-by-severity
    (append
     (append-map (lambda (b)
-                  (let ((cs (body-crossings as observer b)))
+                  (let ((cs (body-crossings as observer b #:claims claims #:resolve-spec resolve-spec)))
                     (append (crossing-findings b cs)
                             (structural-findings b cs (and observer (pair? (body-holdings observer (agent-id b))))))))
                 bodies)
