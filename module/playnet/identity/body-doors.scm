@@ -38,6 +38,7 @@
 
 (define-module (playnet identity body-doors)
   #:use-module (goblins)
+  #:use-module ((playnet utils wire-shapes) #:select (sym->str))
   #:use-module ((playnet protocol dispatch) #:select (declared-doors))
   #:use-module ((playnet utils boot-cell) #:select (make-boot-cell))
   #:use-module ((playnet utils hex) #:select (bv->hex))
@@ -79,7 +80,6 @@
     (cond ((boolean? v) v)
           ((string? v) (and (member v '("yes" "true" "locked" "on")) #t))
           (else default))))
-(define (sym->str x) (cond ((symbol? x) (symbol->string x)) ((string? x) x) (else "")))
 (define (count-of k) (if (string? k) (string->number k) k))
 
 (define (body-session-doors* aid-prefix acdc-store governance-svc body-service)

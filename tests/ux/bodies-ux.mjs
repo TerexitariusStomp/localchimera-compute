@@ -1,8 +1,10 @@
 /// tests/ux/bodies-ux.mjs — the legal bodies you steward: the account row opens
 /// the page, the declaration reads as a sentence whose words are its pickers,
 /// the steward picker lists the contact book, a body shows "1 of 2 signed",
-/// a holding wears the law's status, and a refusal from the commune lands as
-/// one hint. The seam is stubbed (window.__seam.handlers), no gateway.
+/// a holding wears the law's status, the law's stance on the body reads in the
+/// law face's words, its jurisdiction opens the law face on that place, and a
+/// refusal from the commune lands as one hint. The seam is stubbed
+/// (window.__seam.handlers), no gateway.
 ///
 /// Run via: make test-bodies-ux
 import { harness, launch, summarize, sleep, installSeamHook } from './ux-harness.mjs';
@@ -22,12 +24,14 @@ const text = sel => page.evaluate(s => document.querySelector(s)?.textContent ||
 
 const SCOPE = 'EScopeAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
 const BODY = { id: 'body:abc123', name: 'Le Four Commun', tags: ['body', 'kind:association', 'role:provider', 'jurisdiction:fr'],
-               steward: true, ceremony: { have: 1, need: 2, published: null, what: 'inception' } };
+               steward: true, jurisdiction: 'fr', holdings: [], exposure: {},
+               ceremony: { have: 1, need: 2, published: null, what: 'inception' } };
 const WHOLE = { ...BODY, stewards: ['EAliceAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', 'EBobAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'],
                 members: [], crossings: ['organise'],
                 holdings: [{ id: 'res:fr/rc-auto', spec: 'fr/rc-auto', name: 'RC auto', validUntil: '2025-01-01', status: 'expired' }],
                 findings: [{ severity: 'warning', kind: 'selling', subject: 'body:abc123', detail: 'one body sells at the market' }],
-                exposure: {} };
+                exposure: { stance: 'notice', doors: ['sell'], holds: [{ demand: 'RC auto', status: 'expired' }],
+                            owes: ['Registrierung als Lebensmittelunternehmer'], forbidden: [], doubted: [] } };
 
 // the stubbed commune: the seam's body handlers, and a scope to act in
 const stub = async () => page.evaluate(async ({ SCOPE, BODY, WHOLE }) => {
@@ -70,7 +74,8 @@ for (const [label, vp] of [['desktop', { width: 1400, height: 900 }], ['phone', 
 
     // the declaration reads as a sentence; its words are pickers
     const say = await text('.acct-card .bodies .bd-say');
-    h.rec(`${label}: the declaration is a sentence`, /Declare .*a association acting as provider in fr, assets locked, register inspectable/.test(say.replace(/\s+/g, ' ')), say);
+    // the jurisdiction reads by the law snapshot's name once it is in, by its code until then
+    h.rec(`${label}: the declaration is a sentence`, /Declare .*a association acting as provider in (France|fr), assets locked, register inspectable/.test(say.replace(/\s+/g, ' ')), say);
     await page.evaluate(() => [...document.querySelectorAll('.acct-card .bodies .bd-say .ld-tok')].find(t => t.textContent === 'association').click());
     await sleep(150);
     const kinds = await page.$$eval('.acct-card .bodies .sl-presets .sl-chip', cs => cs.map(c => c.textContent));
@@ -97,6 +102,9 @@ for (const [label, vp] of [['desktop', { width: 1400, height: 900 }], ['phone', 
     h.rec(`${label}: both stewards are listed`, stewards >= 2, String(stewards));
     const status = await text('.acct-card .bodies .bd-holding .bd-status');
     h.rec(`${label}: the holding wears the law's status: expired`, status === 'expired', status);
+    const law = (await text('.acct-card .bodies .bd-law')).replace(/\s+/g, ' ');
+    h.rec(`${label}: the law's stance on the body reads in the law face's words, with what it owes`,
+          (await text('.acct-card .bodies .bd-law .bd-stance')) === 'notice' && /owes Registrierung/.test(law), law);
     h.rec(`${label}: the admission finding shows`, /selling/.test(await text('.acct-card .bodies .bd-findings')));
 
     // a refusal lands as one hint
@@ -118,6 +126,22 @@ try {
   await page.goto(`${BASE}/app.html?face=bodies`, { waitUntil: 'domcontentloaded' });
   await sleep(1800);
   h.rec('?face=bodies mounts the bodies face', await vis('#bodiesface .bodies .bd-say'));
+  // the jurisdiction picker offers the snapshot's places by name
+  await stub(); await sleep(200);
+  await page.evaluate(() => [...document.querySelectorAll('#bodiesface .bodies .bd-say .ld-tok')].find(t => /France|^fr$/.test(t.textContent)).click());
+  await sleep(150);
+  const places = await page.$$eval('#bodiesface .bodies .bd-juris .sl-chip', cs => cs.map(c => c.textContent));
+  h.rec('the jurisdiction picker lists the law snapshot\'s nations and regions by name', places.includes('Germany') && places.includes('California'), places.slice(0, 8).join(' | '));
+  // a body's jurisdiction is a link into the law face, on that place
+  await page.evaluate(() => document.querySelector('#bodiesface .bodies .bd-row .slot-btn').click());
+  await sleep(300);
+  const juris = await text('#bodiesface .bodies .bd-head a.bd-juris');
+  h.rec('the body\'s jurisdiction is named as the law face names it', juris === 'France', juris);
+  await page.evaluate(() => document.querySelector('#bodiesface .bodies .bd-head a.bd-juris').click());
+  await page.waitForSelector('#lawdocket .dk-head h4', { timeout: 8000 }); await sleep(600);
+  const landed = await page.evaluate(() => ({ face: document.getElementById('main')?.dataset.face,
+    title: document.querySelector('#lawdocket .dk-head h4')?.textContent, bodies: !!document.querySelector('#bodiesface.on') }));
+  h.rec('the jurisdiction link opens the law face on that place', landed.face === 'law' && landed.title === 'France' && !landed.bodies, JSON.stringify(landed));
 } catch (e) { h.rec('face: fatal', false, e.message); }
 
 h.rec('no page errors', errs.length === 0, errs.slice(0, 2).join(' | '));

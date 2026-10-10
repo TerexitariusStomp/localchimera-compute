@@ -18,8 +18,13 @@ import { nameOf } from './contact-book.js';
 import { audiencePicker } from './slots/criteria.js';
 import { audienceOf, ruleOf } from './lend-core.js';
 import { bodies, current, draft, setDraft, draftFault, declare, readBody, closeBody, addSteward,
-         openCeremony, sign, hold, admit, tagValue, provisional, ceremonyWords,
-         KINDS, ROLES, JURISDICTIONS, type Body, type BodyHolding, type Finding } from './bodies.js';
+         openCeremony, sign, hold, admit, tagValue, provisional, ceremonyWords, jurisdictions,
+         jurisdictionOf, jurisdictionName, jurisdictionPlace,
+         KINDS, ROLES, type Body, type BodyHolding, type Finding } from './bodies.js';
+// a body stands in a place the law face reads: its jurisdiction opens there, and
+// the law's stance on it wears the map's own words and paint
+import { lawDeepLink, lawStancePaint } from './tabs/law.js';
+import { setFace } from './faces.js';
 
 type Picker = "name" | "kind" | "role" | "jurisdiction" | "assetLock" | "register" | "stewards" | null;
 let openPicker: Picker = null;
@@ -40,6 +45,7 @@ const short = (aid: string): string => nameOf(aid);
 // ── the declaration ─────────────────────────────────────────────────────────
 function declareSentence(redraw: () => void): HTMLElement {
   const d = draft();
+  jurisdictions();              // the snapshot's places: read here so the sentence names them once they are in
   const box = el("div", "sl-soc ld bd-declare");
   const tok = (k: Picker, text: string): HTMLElement => {
     const a = el("a", "ld-tok" + (openPicker === k ? " on" : ""), text);
@@ -50,7 +56,7 @@ function declareSentence(redraw: () => void): HTMLElement {
   const say = el("div", "sl-soc-say bd-say");
   say.append(txt("Declare "), tok("name", d.name.trim() ? `«${d.name.trim()}»` : "«a name»"),
              txt(", a "), tok("kind", d.kind), txt(" acting as "), tok("role", d.role),
-             txt(" in "), tok("jurisdiction", d.jurisdiction),
+             txt(" in "), tok("jurisdiction", jurisdictionName(d.jurisdiction)),
              txt(", assets "), tok("assetLock", d.assetLock ? "locked" : "free"),
              txt(", register "), tok("register", d.register),
              txt(`, in ${scopeName()}; stewarded by `),
@@ -76,7 +82,17 @@ function declareSentence(redraw: () => void): HTMLElement {
     queueMicrotask(() => i.focus());
   } else if (openPicker === "kind") chips("kind", KINDS);
   else if (openPicker === "role") chips("role", ROLES);
-  else if (openPicker === "jurisdiction") chips("jurisdiction", JURISDICTIONS);
+  else if (openPicker === "jurisdiction") {
+    // the snapshot's nations and regions, by name; the id is what the draft keeps
+    const row = el("div", "sl-presets bd-juris");
+    for (const j of jurisdictions()) {
+      const c = el("a", "sl-chip" + (jurisdictionPlace(d.jurisdiction) === j.id ? " on" : ""), j.name);
+      c.title = j.id;
+      c.addEventListener("click", () => { setDraft({ jurisdiction: j.id }); openPicker = null; });
+      row.appendChild(c);
+    }
+    body.appendChild(row);
+  }
   else if (openPicker === "assetLock") {
     const row = el("div", "sl-presets");
     for (const [v, label, title] of [[true, "locked", "its assets cannot be shared out to members"], [false, "free", "its assets may be shared out"]] as const) {
@@ -126,14 +142,43 @@ function findingRow(f: Finding): HTMLElement {
   return li;
 }
 
+/** "the law here: <stance>" in the law face's paint, and what the body still owes or is forbidden. */
+function lawLine(b: Body): HTMLElement {
+  const x = b.exposure || {};
+  const row = el("div", "reach-row bd-law");
+  const [colour, word] = lawStancePaint(x.stance);
+  const value = el("span", "reach-value");
+  const stance = el("b", "bd-stance " + (x.stance || "unread"), word);
+  stance.style.color = colour;
+  value.append(document.createTextNode("the law here: "), stance);
+  if (x.owes?.length) value.append(el("span", "bd-owes", " · owes " + x.owes.join(", ")));
+  if (x.forbidden?.length) {
+    const f = el("span", "bd-forbidden", " · forbidden: " + x.forbidden.join(", "));
+    f.style.color = lawStancePaint("off")[0];
+    value.appendChild(f);
+  }
+  if (x.doubted?.length) value.append(el("span", "bd-doubted", " · doubted: " + x.doubted.join(", ")));
+  row.append(el("span", "reach-kind", "exposure"), value);
+  return row;
+}
+
 function bodyPanel(b: Body, redraw: () => void): HTMLElement {
   const box = el("div", "bd-body");
   const head = el("div", "reach-row bd-head");
-  head.append(el("span", "reach-kind", b.name),
-              el("span", "reach-value", `${tagValue(b, "kind") || "body"} · ${tagValue(b, "role") || ""} · ${tagValue(b, "jurisdiction") || ""}`),
-              btn("close", "put this body down", () => closeBody()));
+  const where = el("span", "reach-value");
+  where.append(document.createTextNode(`${tagValue(b, "kind") || "body"} · ${tagValue(b, "role") || ""} · `));
+  const j = jurisdictionOf(b);
+  if (j) {
+    // the jurisdiction opens the law face on that place
+    const a = el("a", "bd-juris", jurisdictionName(j));
+    a.title = "read the law of " + jurisdictionName(j);
+    a.addEventListener("click", () => { lawDeepLink(jurisdictionPlace(j)); setFace("law"); });
+    where.appendChild(a);
+  }
+  head.append(el("span", "reach-kind", b.name), where, btn("close", "put this body down", () => closeBody()));
   box.appendChild(head);
   box.appendChild(el("div", "reach-note bd-id", provisional(b) ? "provisional — the identifier comes with the inception" : b.id));
+  box.appendChild(lawLine(b));
 
   // the stewards, and the ceremony that makes the body's identifier
   const stew = el("ul", "reach-list bd-stewards");

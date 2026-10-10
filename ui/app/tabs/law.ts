@@ -26,6 +26,11 @@ import { signal, effect } from '../reactive.js';
 import { chip } from '../chips.js';
 import { segRail } from '../seg.js';
 import type { Stance, BillKey, ReadingStatus } from '../legal-product.js';
+// the legal bodies you steward: each stands in a jurisdiction the map reads,
+// and holds (or owes) what the bill here asks
+import { bodies, readBodies, readBody, jurisdictionOf, jurisdictionPlace } from '../bodies.js';
+import type { Body } from '../bodies.js';
+import { setFace } from '../faces.js';
 
 /**
  * The legal fold, exactly as tools/emit-law-snapshot.scm writes it: for every
@@ -225,9 +230,34 @@ function lawFill(p: LawPlace | null, id: string): string {
   return lawColor(placeScore(p));
 }
 function lawScopeColor(id: string): string {
-  return lawActivePlaces.has(id) ? "#9a7fc4" : LAW_UNREAD;
+  return lawLit.has(id) ? "#9a7fc4" : LAW_UNREAD;
 }
-let lawActivePlaces = new Set<string>();       // every place with a member operating in it or below it
+const lawMemberPlaces = new Set<string>();     // every place with a member operating in it or below it
+let lawLit = lawMemberPlaces;                  // those, and every place a body of ours is declared in or below: drawLaw reads it off
+/** Every place the federation works in or below — a member's place, or a body's jurisdiction. */
+function lawActivePlaces(): Set<string> {
+  const lit = new Set(lawMemberPlaces);
+  for (const b of bodies()) { const j = lawBodyPlace(b); if (j) lawPath(j).forEach(id => lit.add(id)); }
+  return lit;
+}
+/** The snapshot place a body is declared in, or null when the map has no such place. */
+const lawBodyPlace = (b: Body): string | null => { const j = jurisdictionOf(b); return j && placeOf(jurisdictionPlace(j)) ? jurisdictionPlace(j) : null; };
+/** Our bodies declared at a place or anywhere up its chain — the ones the law here reaches. */
+function lawBodiesAt(id: string | null): Body[] {
+  if (!id) return [];
+  const path = lawPath(id);
+  return bodies().filter(b => { const j = lawBodyPlace(b); return !!j && path.includes(j); });
+}
+/** Stance → [colour, word], the paint the map uses for a place under that stance. */
+export function lawStancePaint(stance: Stance | string | null | undefined): [string, string] {
+  switch (stance) {
+    case "off": return LAW_FORBIDDEN;
+    case "soft": return [LAW_TIER_PAINT[4], "forbidden — doubted"];
+    case "notice": return [LAW_TIER_PAINT[2], "notice"];
+    case "open": return [LAW_TIER_PAINT[0], "open"];
+    default: return [LAW_UNREAD, "unread"];
+  }
+}
 
 function placeOf(id: string): LawPlace | null { return lawData && lawData.places ? lawData.places[id] : null; }
 function lawRecipe(id: string) { return lawData && (lawData.recipes || []).find(r => r.id === id); }
@@ -251,7 +281,7 @@ let initLaw = async function () {
     lawWorldTopo = await (await fetch("data/geo/world-countries-110m.json")).json();
     // where the federation operates (for the "who operates" reading): a
     // member's place and every place that contains it
-    (lawData.federation.members || []).forEach(m => lawPath(m.place).forEach(id => lawActivePlaces.add(id)));
+    (lawData.federation.members || []).forEach(m => lawPath(m.place).forEach(id => lawMemberPlaces.add(id)));
     lawLoaded.set(true);                              // the effects below take it from here
   } catch (e) { console.warn("[law] load failed", e); lawData = null as unknown as LawSnapshot; }
   lawLoading = false;
@@ -461,6 +491,7 @@ function drawLaw() {
   // the width) — a pixel-matched viewBox.
   const [W, H] = lawSizeSvg();
   const box = lawMapBox(W, H);
+  lawLit = lawActivePlaces();
 
   // pick the projection + features for this level of the contained-in tree.
   const usView = lawNode() === "us" || lawIsUsState(lawNode());
@@ -646,7 +677,19 @@ function lawDemand(d: LawDemand, cls: string): Fragment {
   if (d.reason && d.reason !== "null" && d.reason !== d.name) meta.push(d.reason);
   if (d.direction && d.direction !== "null") meta.push(d.direction);
   return html`<div class="dk-dem ${cls}"><b>${d.name}</b>${meta.length ? html`<span class="dk-meta">${meta.join(" · ")}</span>` : null}
+    ${lawHeldBy(d.name)}
     ${d.reform && d.reform !== "null" ? lawCells(d.reform) : null}</div>`;
+}
+// what a holding's status means for the demand: the paint of the tier it would land in
+const LAW_HOLD_PAINT: Record<string, string> =
+  { satisfied: LAW_TIER_PAINT[0], held: LAW_TIER_PAINT[0], obligation: LAW_TIER_PAINT[2], doubted: LAW_TIER_PAINT[3],
+    missing: LAW_FORBIDDEN[0], expired: LAW_FORBIDDEN[0], forbidden: LAW_FORBIDDEN[0] };
+/** "held by <body> · <status>" for each of our bodies here that holds something against this demand. */
+function lawHeldBy(name: string | undefined): Fragment | null {
+  if (!name || lawArc() != null) return null;
+  const marks = lawBodiesAt(lawPlaceId()).flatMap(b => (b.holdings || []).filter(h => h.spec === name).map(h => ({ b, h })));
+  return marks.length ? html`<span class="dk-meta dk-held">${marks.map(({ b, h }) =>
+    html`<span class="dk-hold ${h.status}" title="${h.name || h.spec}">held by <b>${b.name}</b> · <span class="st" style="color:${LAW_HOLD_PAINT[h.status] || LAW_UNREAD}">${h.status}</span></span>`)}</span>` : null;
 }
 // every group of a bill has its words (the keys are the fold's: BILL_KEYS), shown
 // with the prohibition first
@@ -705,6 +748,9 @@ function lawWays(id: string | null): Fragment {
   const members = !ours ? [] : id ? membersForPlace(id) : (lawData.federation.members || []);
   const arcs = ours && !id ? (lawData.federation.arcs || []) : [];
   const kids = id ? Object.entries(lawData.places).filter(([, c]) => c.parent === id) : [];
+  const ourBodies = lawBodiesAt(id);
+  // reading a body whole opens it on its own face
+  const openBody = (b: Body) => void readBody(b.id).then(r => { if (r === "ok") setFace("bodies"); });
   return html`
     ${id && !ab ? html`<div class="dk-meta dk-none">no law is read here yet for this activity</div>` : null}
     ${rows.map(r => { const m = metaOf(r.id), sel = lawMode() === r.id, best = !!ab && !lawForbids(headlineScore(ab)) && ab.recommended === r.id;
@@ -715,6 +761,9 @@ function lawWays(id: string | null): Fragment {
     ${members.length ? html`<div class="dk-grp">operating ${id ? "here" : "in the federation"}</div>
       <div class="dk-chips">${members.map(m => { const r = lawRecipe(m.recipe!);
         return chip(m.place === id, String(m.scope), () => lawGoto(m.place), "runs " + (r ? String(r.name) : m.recipe)); })}</div>` : null}
+    ${ourBodies.length ? html`<div class="dk-grp">our bodies here</div>
+      <div class="dk-chips dk-bodies">${ourBodies.map(b => chip(lawBodyPlace(b) === id, b.name, () => openBody(b),
+        "declared in " + (placeOf(lawBodyPlace(b)!)!.name) + " — read it whole"))}</div>` : null}
     ${arcs.length ? html`<div class="dk-grp">supply arcs — the border is a crossing</div>
       ${arcs.map((a, i) => html`<div class="dk-way" onclick=${() => { lawLeg.set("export"); lawArc.set(i); }}>
         <span class="dk-b" style="--tier:${a.crossesBorder ? "#d4824a" : "#7a8088"}">${String(a.burden)}</span>
@@ -902,7 +951,7 @@ function lawRail(): void {
 
 // ── state-owning API for the core face-switcher & boot deep-link ──────────
 // enter the law face: kick the loader; the effects paint once it lands.
-export function lawEnter() { lawRail(); startLawEffect(); initLaw(); }
+export function lawEnter() { lawRail(); startLawEffect(); initLaw(); if (!bodies().length) void readBodies(); }
 
 // URL deep-link (?face=law&place=…&view=program): the boot block in main.js
 // calls this, then setFace("law"). All the law-state mutation stays in here.
@@ -928,13 +977,13 @@ function startLawEffect() {
   if (lawEffectOn) return;
   lawEffectOn = true;
   effect(() => {
-    lawSel(); lawReading(); lawActivity(); lawMode(); lawTab(); lawArc(); lawLeg();
+    lawSel(); lawReading(); lawActivity(); lawMode(); lawTab(); lawArc(); lawLeg(); bodies();
     if (!lawLoaded() || stage.face !== "law") return;
     render("#lawbar", lawBar());
     render("#lawdocket", lawDocket());
   });
   effect(() => {
-    lawSel(); lawReading(); lawActivity(); lawMode(); lawArc();
+    lawSel(); lawReading(); lawActivity(); lawMode(); lawArc(); bodies();
     if (lawLoaded() && stage.face === "law") drawLaw();
   });
 }

@@ -46,12 +46,13 @@
   #:use-module (ice-9 format)
   #:use-module (goblins)
   #:use-module (playnet planner vf schemas)
-  #:use-module ((playnet planner facts agent-tags) #:select (agent-tag-value agent-tag-values))
+  #:use-module ((playnet planner facts agent-tags) #:select (tag agent-tag-value agent-tag-values))
   #:use-module ((playnet utils operator) #:select (operator-ref))
   #:use-module (playnet planner knowledge body-roles)
   #:use-module ((playnet planner legal crossings)
                 #:select (classification-crossings asset-crossings record-crossings))
   #:use-module ((playnet planner legal gate) #:select (legal-asset-fields))
+  #:use-module ((playnet planner legal adapters) #:select (mask-subject-of))
   #:use-module ((playnet planner legal registry) #:select (demand-name))
   #:use-module ((playnet planner beyond lot) #:select (make-batch-lot-record))
   #:use-module (playnet planner knowledge dsl findings)
@@ -63,14 +64,13 @@
             declare-body! body-add-steward! body-add-member! close-body!
             body-holdings body-present-holding! body-crossings
             *admission-tests* admission-findings
-            scope-body-subject body-reconcile-subject
+            scope-body-subject body-reconcile-subject body-holds-spec?
             cell-place))
 
 ;;; ─── the record ───────────────────────────────────────────────────────────
 (define body-class "body")
 (define (agent-tags a) (or (agent-classified-as a) (quote ())))
 
-(define (tag key v) (and v (string-append key ":" (format #f "~a" v))))
 (define (yes-no v) (if v "yes" "no"))
 
 (define* (make-body id name #:key (kind 'association) (roles '()) (jurisdiction #f)
@@ -362,14 +362,14 @@
             ((one here))
             (else #f)))))
 
+(define (body-holds-spec? observer)
+  "(body spec) → does BODY hold a resource conforming to SPEC?"
+  (lambda (b spec)
+    (any (lambda (r) (equal? (economic-resource-conforms-to r) spec))
+         (body-holdings observer (agent-id b)))))
+
 (define* (body-reconcile-subject as observer bodies #:key (person-of (lambda (d) 'person)) (fallback 'scope))
-  "A `subject-of` for compliance.scm `reconcile`: an entity demand goes to the
-   body holding its spec, a person demand to PERSON-OF, else FALLBACK."
-  (lambda (d kind)
-    (if (eq? kind 'obtain-person)
-        (person-of d)
-        (let ((b (find (lambda (b)
-                         (any (lambda (r) (equal? (economic-resource-conforms-to r) (demand-name d)))
-                              (body-holdings observer (agent-id b))))
-                       bodies)))
-          (if b (agent-id b) fallback)))))
+  "A `subject-of` for compliance.scm `reconcile`: the one `mask-subject-of`
+   makes (legal/adapters.scm), a body covering a demand by holding its spec."
+  (mask-subject-of bodies #:covers? (body-holds-spec? observer) #:id-of agent-id
+                   #:person-of person-of #:fallback fallback))

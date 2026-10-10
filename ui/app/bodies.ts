@@ -15,6 +15,7 @@ import { signal } from './reactive.js';
 import { readJSON, writeJSON } from './store.js';
 import { scopeSig } from './scope.js';
 import { K } from './keys.js';
+import type { Stance } from './legal-product.js';
 
 /** What a body holds — a permit, a policy, a registration — and the law's reading of it. */
 export interface BodyHolding { id: string; spec: string; name: string; issuer?: string; validUntil?: string | null; status: string }
@@ -22,17 +23,32 @@ export interface BodyHolding { id: string; spec: string; name: string; issuer?: 
 export interface BodyCeremony { have: number; need: number; published: string | null; what: string }
 /** One line a lint says of the scope's bodies. */
 export interface Finding { severity: string; kind: string; subject: string; detail: string }
+/**
+ * What the law in force at the body's jurisdiction means for it: the stance the
+ * fold read off its bill, the doors it trips, each demand against what it holds,
+ * and the demands it still owes, is forbidden, or stands doubted on. `{}` until
+ * the commune has read it.
+ */
+export interface BodyExposure {
+  stance?: Stance; doors?: string[];
+  holds?: { demand: string; status: string }[];
+  owes?: string[]; forbidden?: string[]; doubted?: string[];
+}
 /** A body as the commune states it; the whole read fills the optional parts. */
 export interface Body {
   id: string; name: string; tags: string[];
   steward?: boolean; ceremony?: BodyCeremony | null;
+  /** The place it is declared in — a law-snapshot place id, or one of the older codes. */
+  jurisdiction?: string | null;
   stewards?: string[]; members?: string[]; crossings?: string[];
-  holdings?: BodyHolding[]; findings?: Finding[]; exposure?: Record<string, unknown>;
+  holdings?: BodyHolding[]; findings?: Finding[]; exposure?: BodyExposure;
 }
 
 /** The value of a `key:value` tag on a body, or "". */
 export const tagValue = (b: Body, key: string): string =>
   (b.tags.find(t => t.startsWith(key + ":")) || "").slice(key.length + 1);
+/** Where a body is declared: the field, or the tag a body declared earlier carries. */
+export const jurisdictionOf = (b: Body): string => b.jurisdiction || tagValue(b, "jurisdiction");
 /** Whether a body's identifier is still the provisional one its declaration minted. */
 export const provisional = (b: Body): boolean => b.id.startsWith("body:");
 
@@ -97,7 +113,40 @@ export interface BodyDraft {
 }
 export const KINDS = ["association", "cooperative", "company", "foundation", "operator"];
 export const ROLES = ["provider", "seller", "employer", "adapter", "custodian"];
-export const JURISDICTIONS = ["fr", "de", "es", "it", "be", "ch", "us", "ca"];
+// ── jurisdictions: the law snapshot's places ────────────────────────────────
+// A body is declared in a place the law face reads — a nation or a region of
+// data/snapshots/law-snapshot.json, by its id. The codes below are what bodies
+// declared before the snapshot was the list carry, and what the picker offers
+// while the snapshot is not in: each names the snapshot place it stands for.
+export interface Jurisdiction { id: string; name: string }
+const JURISDICTION_CODES: Record<string, string> =
+  { fr: "france", de: "germany", us: "us", ca: "canada", mx: "mexico", uk: "uk", es: "es", it: "it", be: "be", ch: "ch" };
+/** The picker's list while the snapshot is not in: the codes, each its own name. */
+export const JURISDICTIONS = Object.keys(JURISDICTION_CODES);
+const jurisSig = signal<Jurisdiction[]>(JURISDICTIONS.map(id => ({ id, name: id })));
+const placeNames = new Map<string, string>();
+let jurisLoad: Promise<void> | null = null;
+/** Read the snapshot once; the list and the names stand on what it says. Offline, the codes stand. */
+function loadJurisdictions(): Promise<void> {
+  if (jurisLoad) return jurisLoad;
+  jurisLoad = (typeof fetch === "function" ? fetch("data/snapshots/law-snapshot.json").then(r => r.json()) : Promise.reject(new Error("no fetch")))
+    .then((snap: { nations?: { id: string; name: string }[]; places?: Record<string, { name: string; kind?: string }> }) => {
+      const places = snap.places || {};
+      for (const [id, p] of Object.entries(places)) placeNames.set(id, p.name);
+      const nations = (snap.nations || []).map(n => ({ id: n.id, name: n.name }));
+      const seen = new Set(nations.map(n => n.id));
+      const regions = Object.entries(places).filter(([id, p]) => !seen.has(id) && (p.kind === "nation" || p.kind === "region"))
+        .map(([id, p]) => ({ id, name: p.name }));
+      if (nations.length) jurisSig.set([...nations, ...regions]);
+    }, () => { /* offline: the codes stand */ });
+  return jurisLoad;
+}
+/** The places a body can be declared in. A tracked read; the first one reads the snapshot. */
+export function jurisdictions(): Jurisdiction[] { void loadJurisdictions(); return jurisSig(); }
+/** The snapshot place a jurisdiction names: the id itself, or the place its code stands for. */
+export const jurisdictionPlace = (j: string): string => placeNames.has(j) ? j : JURISDICTION_CODES[j] || j;
+/** How the law face names it, or the jurisdiction as given. */
+export const jurisdictionName = (j: string): string => placeNames.get(jurisdictionPlace(j)) || j;
 const DRAFT = K.bodiesDraft;
 const blank = (): BodyDraft => ({ name: "", kind: KINDS[0]!, role: ROLES[0]!, jurisdiction: JURISDICTIONS[0]!, assetLock: true, register: "inspectable", stewards: [] });
 const cleanDraft = (raw: unknown): BodyDraft => {

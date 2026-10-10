@@ -3,9 +3,14 @@
 /// docket together, so this drives each of the three and checks the other two
 /// followed. It asserts what the face promises a reader: the page never
 /// scrolls, the program is the program of the PLACE, and nothing on a shelter
-/// screen speaks of food.
+/// screen speaks of food. The legal bodies you steward stand on it too: a body
+/// declared in a place is a chip at that place, what it holds marks the bill,
+/// and its jurisdiction lights under the who-operates lens. The seam is stubbed
+/// (window.__seam.handlers), no gateway.
+import { readFileSync } from 'node:fs';
 import { harness, launch, summarize, sleep } from './ux-harness.mjs';
 import { serveBrowser } from './ux-serve.mjs';
+const SNAP = JSON.parse(readFileSync(new URL('../../browser/data/snapshots/law-snapshot.json', import.meta.url), 'utf8'));
 const { base: BASE, close: closeServer } = await serveBrowser();
 const h = harness(); const browser = await launch();
 const errs = [];
@@ -161,6 +166,57 @@ await ph.evaluate(() => document.querySelector('#lawlegend .lg-lens').click()); 
 const l1 = await ph.evaluate(() => document.querySelector('#lawlegend .lg-lens')?.textContent);
 h.rec('on a phone the legend carries the lens and a tap moves it', l0.bar === 'none' && /burden/.test(l0.lens) && /operates/.test(l1), JSON.stringify([l0, l1]));
 await ph.close();
+
+// our bodies on the face: one declared in France ("fr", the code a body declared
+// before the snapshot was the list carries), holding one demand of France's bill, missing
+const frAB = SNAP.places.france.byActivity[SNAP.defaultActivity];
+const frWay = frAB.modes.find(m => m.id === frAB.recommended);
+const DEMAND = frWay.bill.obtainEntity[0].name;
+const SCOPE = 'EScopeAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+const BODY = { id: 'body:abc123', name: 'Le Four Commun', tags: ['body', 'kind:association', 'role:provider', 'jurisdiction:fr'],
+               steward: true, jurisdiction: 'fr', ceremony: null,
+               holdings: [{ id: 'res:x', spec: DEMAND, kind: 'registration', name: 'the registration', status: 'missing' }],
+               exposure: { stance: 'notice', doors: [], holds: [{ demand: DEMAND, status: 'missing' }], owes: [DEMAND], forbidden: [], doubted: [] } };
+// the stubbed commune: a scope to read in, and the body handlers
+const stubBodies = (page) => page.evaluate(async ({ SCOPE, BODY }) => {
+  const { seam } = await import('/app/seam.js');
+  const { scopesSig, scopeSig } = await import('/app/scope.js');
+  scopesSig.set([{ id: SCOPE, name: 'Testhaven' }]); scopeSig.set(SCOPE); seam.scope = SCOPE;
+  window.__bodyCalls = [];
+  seam.handlers.bodiesRead = async (s) => { window.__bodyCalls.push(['bodiesRead', s]); return JSON.stringify([BODY]); };
+  seam.handlers.bodyRead = async (id) => { window.__bodyCalls.push(['bodyRead', id]); return JSON.stringify({ ...BODY, stewards: [], members: [], crossings: [], findings: [] }); };
+}, { SCOPE, BODY });
+const bd = await open('&place=france', 1280, 720);
+await bd.evaluate(() => document.querySelector('#lawbar .lw-lens a:last-child').click()); await sleep(300);
+const purple = () => bd.evaluate(() => [...document.querySelectorAll('#dial path[fill="#9a7fc4"]')].length);
+const lit0 = await purple();
+h.rec('before the bodies are read, the ways name no body', (await bd.$$eval('#lawdocket .dk-bodies .ob-chip', cs => cs.length)) === 0);
+await stubBodies(bd);
+await bd.evaluate(async () => { const { readBodies } = await import('/app/bodies.js'); await readBodies(); }); await sleep(400);
+const chips = await bd.$$eval('#lawdocket .dk-bodies .ob-chip', cs => cs.map(c => c.textContent));
+h.rec('a body declared here is a chip under "our bodies here"', chips.join() === 'Le Four Commun', chips.join('|'));
+h.rec('the who-operates lens lights the body\'s jurisdiction too', (await purple()) > lit0, `${lit0} → ${await purple()}`);
+await clickText(bd, '#lawdocket .dk-way', frWay.name); await sleep(300);
+const held = await bd.evaluate(() => [...document.querySelectorAll('#lawdocket .dk-bill .dk-hold')].map(n => n.textContent.replace(/\s+/g, ' ')));
+h.rec('the bill says who holds a demand here, and the holding\'s status', held.length === 1 && /held by Le Four Commun · missing/.test(held[0]), JSON.stringify(held));
+h.rec('a demand nobody holds carries no mark', (await bd.evaluate(() => document.querySelectorAll('#lawdocket .dk-bill .dk-dem').length)) > held.length || frWay.bill.obtainEntity.length === 1);
+// the chip reads the body whole and opens it on its own face
+await bd.evaluate(() => document.querySelector('#lawdocket .dk-bodies .ob-chip').click()); await sleep(500);
+const opened = await bd.evaluate(() => ({ face: document.getElementById('main')?.dataset.face, calls: window.__bodyCalls.map(c => c[0]),
+  name: document.querySelector('#bodiesface .bd-body .bd-head .reach-kind')?.textContent }));
+h.rec('the chip opens the body on the bodies face', opened.face === 'bodies' && opened.calls.includes('bodyRead') && opened.name === 'Le Four Commun', JSON.stringify(opened));
+await bd.close();
+// entering the law face with a seat taken and no bodies read asks the commune once
+const en = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+en.on('pageerror', e => errs.push(String(e)));
+await en.goto(`${BASE}/app.html`, { waitUntil: 'networkidle' }); await sleep(400);
+await stubBodies(en);
+await en.evaluate(async () => { const { lawDeepLink } = await import('/app/tabs/law.js'); const { setFace } = await import('/app/faces.js'); lawDeepLink('france'); setFace('law'); });
+await en.waitForSelector('#lawdocket .dk-head h4'); await sleep(600);
+const entered = await en.evaluate(() => ({ calls: window.__bodyCalls.map(c => c[0]), title: document.querySelector('#lawdocket .dk-head h4')?.textContent,
+  chips: [...document.querySelectorAll('#lawdocket .dk-bodies .ob-chip')].map(c => c.textContent) }));
+h.rec('entering the law face reads the bodies, and the place shows them', entered.calls.filter(c => c === 'bodiesRead').length === 1 && entered.title === 'France' && entered.chips.length === 1, JSON.stringify(entered));
+await en.close();
 
 h.rec('no page errors', errs.length === 0, errs.slice(0, 3).join(' | '));
 await browser.close(); closeServer(); summarize(h);

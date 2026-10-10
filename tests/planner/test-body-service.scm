@@ -134,4 +134,20 @@
               (and (ok? r) (= 1 (vector-length (cdr r))) (not (assoc-ref (vector-ref (cdr r) 0) "steward")))))
 (check-pred "admit answers the scope's findings" (vector? (cdr (reply 'admit! "aid:ada" scope "EBODY"))))
 
+(display "\n── what the law face reads off the list ──\n")
+(define listed (vector-ref (cdr (reply 'list "aid:bo" scope)) 0))
+(check "the list carries the body's jurisdiction" (assoc-ref listed "jurisdiction") "france")
+(check-pred "…its holdings with the law's status, as the read does"
+            (let ((h (vector->list (assoc-ref listed "holdings"))))
+              (and (pair? h) (member (assoc-ref (car h) "status") '("satisfied" "expired" "missing")))))
+(check-pred "…and its stance there"
+            (member (assoc-ref (assoc-ref listed "exposure") "stance") '("open" "notice" "soft" "off")))
+(check-pred "the holdings and the exposure read one bill: every demand's status agrees"
+            (let ((hs (vector->list (assoc-ref listed "holdings")))
+                  (ex (vector->list (assoc-ref (assoc-ref listed "exposure") "holds"))))
+              (every (lambda (e)
+                       (let ((h (find (lambda (h) (equal? (assoc-ref h "spec") (assoc-ref e "demand"))) hs)))
+                         (and h (equal? (assoc-ref h "status") (assoc-ref e "status")))))
+                     ex)))
+
 (test-summary!)

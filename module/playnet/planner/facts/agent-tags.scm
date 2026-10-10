@@ -10,7 +10,7 @@
 (define-module (playnet planner facts agent-tags)
   #:use-module (srfi srfi-1)
   #:use-module (playnet planner vf schemas)     ; agent-classified-as
-  #:export (tag-value tag-values tag-number tag-key? agent-tag-value agent-tag-values %tag-keys))
+  #:export (tag tag-value tag-values tag-number tag-key? agent-tag-value agent-tag-values %tag-keys))
 
 (define (prefix-of key) (string-append key ":"))
 
@@ -32,6 +32,10 @@
     "tag:plan"                       ; a plan's own tags (plan/store)
     "sex" "age" "pregnant" "lactating" "region" "labour-hours" "standard" "shed"   ; the profile (scope/live)
     "weight-kg" "height-cm" "altitude-m" "lat" "month"))
+
+(define (tag key v)
+  "The \"KEY:V\" tag, written the one way the readers below read it; #f for no V."
+  (and v (string-append (prefix-of key) (if (string? v) v (object->string v)))))
 
 (define (tag-key? t key)
   "Is T a \"KEY:…\" tag?"

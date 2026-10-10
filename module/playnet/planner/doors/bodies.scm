@@ -27,6 +27,7 @@
   #:use-module (goblins actor-lib methods)
   #:use-module (srfi srfi-1)
   #:use-module (ice-9 format)
+  #:use-module (playnet utils wire-shapes)
   #:use-module (playnet planner vf schemas)
   #:use-module (playnet planner legal bodies)
   #:use-module ((playnet planner legal registry)
@@ -40,8 +41,6 @@
 
 (define (ok x) (cons 'ok x))
 (define (fail msg) (cons 'error msg))
-(define (vec l) (list->vector (if (list? l) l '())))
-(define (sym->str x) (cond ((symbol? x) (symbol->string x)) ((string? x) x) (else "")))
 (define (today) (iso-date (instant->civil (now))))
 
 (define (body->wire b)
@@ -114,13 +113,16 @@
           (lambda () (legal-demands (legal-context #:crossings cs #:place-path path #:act 'activity)
                                     #:rules rules))
         (lambda (bill hits) (values bill hits cs path rules)))))
-  (define (holdings->wire b s)
+  (define (body-standing b s)
+    "ONE fold of B's bill under its scope: → (values bill hits crossings path
+     rules), or #f when the scope keeps no books."
+    (and (assq-ref s 'observer) (call-with-values (lambda () (body-bill b s)) list)))
+  (define (holdings->wire b s standing)
     "Each entity demand of the body's bill with the status the compliance
      fold reads, then every held resource no rule asked for."
     (let ((observer (assq-ref s 'observer)) (agents (assq-ref s 'agents)))
-      (if (not observer) '()
-          (call-with-values (lambda () (body-bill b s))
-            (lambda (bill hits cs path rules)
+      (if (not standing) '()
+          (apply (lambda (bill hits cs path rules)
               (let* ((entries (reconcile bill hits observer (today)
                                          #:subject-of (body-reconcile-subject agents observer (list b))))
                      (held (body-holdings observer (agent-id b)))
@@ -139,14 +141,23 @@
                                                  ("status" . "held") ("id" . ,(economic-resource-id r))
                                                  ("name" . ,(or (economic-resource-name r) "")))))
                                         held)))
-                (append demanded extra)))))))
-  (define (exposure b s)
+                (append demanded extra)))
+            standing))))
+  (define (exposure b s standing)
     (let ((observer (assq-ref s 'observer)))
-      (if (not observer) '()
-          (call-with-values (lambda () (body-bill b s))
-            (lambda (bill hits cs path rules)
-              (exposure->wire (adapter-exposure observer (agent-id b) #:crossings cs
-                                                #:place-path path #:rules rules #:as-of (today))))))))
+      (if (not standing) '()
+          (apply (lambda (bill hits cs path rules)
+                   (exposure->wire (adapter-exposure observer (agent-id b) #:crossings cs
+                                                     #:place-path path #:rules rules #:as-of (today)
+                                                     #:bill+hits (list bill hits))))
+                 standing))))
+  (define (body-law->wire b s)
+    "What the law face reads of a body: where it stands, what it holds with
+     the law's status, and its stance there — one fold of its bill."
+    (let ((standing (body-standing b s)))
+      `(("jurisdiction" . ,(body-jurisdiction b))
+        ("holdings" . ,(vec (holdings->wire b s standing)))
+        ("exposure" . ,(exposure b s standing)))))
 
   (methods
    ((set-desk! d) (set! desk d) #t)
@@ -211,7 +222,8 @@
                  (bs (bodies-of agents aid))
                  (rows (map (lambda (b)
                               (append (body->wire b)
-                                      `(("steward" . ,(steward? s (agent-id b) aid)))))
+                                      `(("steward" . ,(steward? s (agent-id b) aid)))
+                                      (body-law->wire b s)))
                             bs)))
             (if (or (not desk) (null? bs))
                 (ok (vec (map (lambda (r) (append r '(("ceremony" . #f)))) rows)))
@@ -237,9 +249,8 @@
                                       ("stewards" . ,(vec (body-stewards agents id)))
                                       ("members" . ,(vec (body-members agents id)))
                                       ("crossings" . ,(vec (map sym->str (body-crossings agents observer b))))
-                                      ("holdings" . ,(vec (holdings->wire b s)))
-                                      ("findings" . ,(findings->wire (admission-findings agents observer sid)))
-                                      ("exposure" . ,(exposure b s))))))
+                                      ("findings" . ,(findings->wire (admission-findings agents observer sid))))
+                                    (body-law->wire b s))))
                  (if (not desk) (ok (append base '(("ceremony" . #f))))
                      (on (<- desk 'status id)
                          (lambda (st) (ok (append base `(("ceremony" . ,st)))))

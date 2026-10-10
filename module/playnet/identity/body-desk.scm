@@ -22,13 +22,13 @@
 
 (define-module (playnet identity body-desk)
   #:use-module (goblins)
+  #:use-module ((playnet utils wire-shapes) #:select (sym->str))
   #:use-module (goblins actor-lib methods)
   #:use-module (srfi srfi-1)
   #:use-module (ice-9 format)
   #:use-module ((playnet identity body-ceremony) #:select (spawn-body-ceremony))
   #:export (^body-ceremony-desk ceremony-standing))
 
-(define (sym->str x) (cond ((symbol? x) (symbol->string x)) ((string? x) x) (else "")))
 
 (define (ceremony-standing cer)
   "The wire shape of a ceremony's status, or #f for none."

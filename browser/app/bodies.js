@@ -17,6 +17,8 @@ import { scopeSig } from './scope.js';
 import { K } from './keys.js';
 /** The value of a `key:value` tag on a body, or "". */
 export const tagValue = (b, key) => (b.tags.find(t => t.startsWith(key + ":")) || "").slice(key.length + 1);
+/** Where a body is declared: the field, or the tag a body declared earlier carries. */
+export const jurisdictionOf = (b) => b.jurisdiction || tagValue(b, "jurisdiction");
 /** Whether a body's identifier is still the provisional one its declaration minted. */
 export const provisional = (b) => b.id.startsWith("body:");
 // ── reading ─────────────────────────────────────────────────────────────────
@@ -92,7 +94,36 @@ export function okJSON(r) {
 }
 export const KINDS = ["association", "cooperative", "company", "foundation", "operator"];
 export const ROLES = ["provider", "seller", "employer", "adapter", "custodian"];
-export const JURISDICTIONS = ["fr", "de", "es", "it", "be", "ch", "us", "ca"];
+const JURISDICTION_CODES = { fr: "france", de: "germany", us: "us", ca: "canada", mx: "mexico", uk: "uk", es: "es", it: "it", be: "be", ch: "ch" };
+/** The picker's list while the snapshot is not in: the codes, each its own name. */
+export const JURISDICTIONS = Object.keys(JURISDICTION_CODES);
+const jurisSig = signal(JURISDICTIONS.map(id => ({ id, name: id })));
+const placeNames = new Map();
+let jurisLoad = null;
+/** Read the snapshot once; the list and the names stand on what it says. Offline, the codes stand. */
+function loadJurisdictions() {
+    if (jurisLoad)
+        return jurisLoad;
+    jurisLoad = (typeof fetch === "function" ? fetch("data/snapshots/law-snapshot.json").then(r => r.json()) : Promise.reject(new Error("no fetch")))
+        .then((snap) => {
+        const places = snap.places || {};
+        for (const [id, p] of Object.entries(places))
+            placeNames.set(id, p.name);
+        const nations = (snap.nations || []).map(n => ({ id: n.id, name: n.name }));
+        const seen = new Set(nations.map(n => n.id));
+        const regions = Object.entries(places).filter(([id, p]) => !seen.has(id) && (p.kind === "nation" || p.kind === "region"))
+            .map(([id, p]) => ({ id, name: p.name }));
+        if (nations.length)
+            jurisSig.set([...nations, ...regions]);
+    }, () => { });
+    return jurisLoad;
+}
+/** The places a body can be declared in. A tracked read; the first one reads the snapshot. */
+export function jurisdictions() { void loadJurisdictions(); return jurisSig(); }
+/** The snapshot place a jurisdiction names: the id itself, or the place its code stands for. */
+export const jurisdictionPlace = (j) => placeNames.has(j) ? j : JURISDICTION_CODES[j] || j;
+/** How the law face names it, or the jurisdiction as given. */
+export const jurisdictionName = (j) => placeNames.get(jurisdictionPlace(j)) || j;
 const DRAFT = K.bodiesDraft;
 const blank = () => ({ name: "", kind: KINDS[0], role: ROLES[0], jurisdiction: JURISDICTIONS[0], assetLock: true, register: "inspectable", stewards: [] });
 const cleanDraft = (raw) => {

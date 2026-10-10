@@ -24,6 +24,10 @@ import { html, raw, render } from '../template.js';
 import { signal, effect } from '../reactive.js';
 import { chip } from '../chips.js';
 import { segRail } from '../seg.js';
+// the legal bodies you steward: each stands in a jurisdiction the map reads,
+// and holds (or owes) what the bill here asks
+import { bodies, readBodies, readBody, jurisdictionOf, jurisdictionPlace } from '../bodies.js';
+import { setFace } from '../faces.js';
 /**
  * Null only between module load and the first initLaw() or lawDeepLink. The two
  * entry points that could run before either — drawLaw and lawSetView — check and
@@ -110,9 +114,39 @@ function lawFill(p, id) {
     return lawColor(placeScore(p));
 }
 function lawScopeColor(id) {
-    return lawActivePlaces.has(id) ? "#9a7fc4" : LAW_UNREAD;
+    return lawLit.has(id) ? "#9a7fc4" : LAW_UNREAD;
 }
-let lawActivePlaces = new Set(); // every place with a member operating in it or below it
+const lawMemberPlaces = new Set(); // every place with a member operating in it or below it
+let lawLit = lawMemberPlaces; // those, and every place a body of ours is declared in or below: drawLaw reads it off
+/** Every place the federation works in or below — a member's place, or a body's jurisdiction. */
+function lawActivePlaces() {
+    const lit = new Set(lawMemberPlaces);
+    for (const b of bodies()) {
+        const j = lawBodyPlace(b);
+        if (j)
+            lawPath(j).forEach(id => lit.add(id));
+    }
+    return lit;
+}
+/** The snapshot place a body is declared in, or null when the map has no such place. */
+const lawBodyPlace = (b) => { const j = jurisdictionOf(b); return j && placeOf(jurisdictionPlace(j)) ? jurisdictionPlace(j) : null; };
+/** Our bodies declared at a place or anywhere up its chain — the ones the law here reaches. */
+function lawBodiesAt(id) {
+    if (!id)
+        return [];
+    const path = lawPath(id);
+    return bodies().filter(b => { const j = lawBodyPlace(b); return !!j && path.includes(j); });
+}
+/** Stance → [colour, word], the paint the map uses for a place under that stance. */
+export function lawStancePaint(stance) {
+    switch (stance) {
+        case "off": return LAW_FORBIDDEN;
+        case "soft": return [LAW_TIER_PAINT[4], "forbidden — doubted"];
+        case "notice": return [LAW_TIER_PAINT[2], "notice"];
+        case "open": return [LAW_TIER_PAINT[0], "open"];
+        default: return [LAW_UNREAD, "unread"];
+    }
+}
 function placeOf(id) { return lawData && lawData.places ? lawData.places[id] : null; }
 function lawRecipe(id) { return lawData && (lawData.recipes || []).find(r => r.id === id); }
 // members operating at a place (the place itself, or — for a state — its localities)
@@ -135,7 +169,7 @@ let initLaw = async function () {
         lawWorldTopo = await (await fetch("data/geo/world-countries-110m.json")).json();
         // where the federation operates (for the "who operates" reading): a
         // member's place and every place that contains it
-        (lawData.federation.members || []).forEach(m => lawPath(m.place).forEach(id => lawActivePlaces.add(id)));
+        (lawData.federation.members || []).forEach(m => lawPath(m.place).forEach(id => lawMemberPlaces.add(id)));
         lawLoaded.set(true); // the effects below take it from here
     }
     catch (e) {
@@ -251,6 +285,7 @@ function drawLaw() {
     // the width) — a pixel-matched viewBox.
     const [W, H] = lawSizeSvg();
     const box = lawMapBox(W, H);
+    lawLit = lawActivePlaces();
     // pick the projection + features for this level of the contained-in tree.
     const usView = lawNode() === "us" || lawIsUsState(lawNode());
     let features, placeIdOf;
@@ -443,7 +478,18 @@ function lawDemand(d, cls) {
     if (d.direction && d.direction !== "null")
         meta.push(d.direction);
     return html `<div class="dk-dem ${cls}"><b>${d.name}</b>${meta.length ? html `<span class="dk-meta">${meta.join(" · ")}</span>` : null}
+    ${lawHeldBy(d.name)}
     ${d.reform && d.reform !== "null" ? lawCells(d.reform) : null}</div>`;
+}
+// what a holding's status means for the demand: the paint of the tier it would land in
+const LAW_HOLD_PAINT = { satisfied: LAW_TIER_PAINT[0], held: LAW_TIER_PAINT[0], obligation: LAW_TIER_PAINT[2], doubted: LAW_TIER_PAINT[3],
+    missing: LAW_FORBIDDEN[0], expired: LAW_FORBIDDEN[0], forbidden: LAW_FORBIDDEN[0] };
+/** "held by <body> · <status>" for each of our bodies here that holds something against this demand. */
+function lawHeldBy(name) {
+    if (!name || lawArc() != null)
+        return null;
+    const marks = lawBodiesAt(lawPlaceId()).flatMap(b => (b.holdings || []).filter(h => h.spec === name).map(h => ({ b, h })));
+    return marks.length ? html `<span class="dk-meta dk-held">${marks.map(({ b, h }) => html `<span class="dk-hold ${h.status}" title="${h.name || h.spec}">held by <b>${b.name}</b> · <span class="st" style="color:${LAW_HOLD_PAINT[h.status] || LAW_UNREAD}">${h.status}</span></span>`)}</span>` : null;
 }
 // every group of a bill has its words (the keys are the fold's: BILL_KEYS), shown
 // with the prohibition first
@@ -502,6 +548,10 @@ function lawWays(id) {
     const members = !ours ? [] : id ? membersForPlace(id) : (lawData.federation.members || []);
     const arcs = ours && !id ? (lawData.federation.arcs || []) : [];
     const kids = id ? Object.entries(lawData.places).filter(([, c]) => c.parent === id) : [];
+    const ourBodies = lawBodiesAt(id);
+    // reading a body whole opens it on its own face
+    const openBody = (b) => void readBody(b.id).then(r => { if (r === "ok")
+        setFace("bodies"); });
     return html `
     ${id && !ab ? html `<div class="dk-meta dk-none">no law is read here yet for this activity</div>` : null}
     ${rows.map(r => {
@@ -516,6 +566,8 @@ function lawWays(id) {
         const r = lawRecipe(m.recipe);
         return chip(m.place === id, String(m.scope), () => lawGoto(m.place), "runs " + (r ? String(r.name) : m.recipe));
     })}</div>` : null}
+    ${ourBodies.length ? html `<div class="dk-grp">our bodies here</div>
+      <div class="dk-chips dk-bodies">${ourBodies.map(b => chip(lawBodyPlace(b) === id, b.name, () => openBody(b), "declared in " + (placeOf(lawBodyPlace(b)).name) + " — read it whole"))}</div>` : null}
     ${arcs.length ? html `<div class="dk-grp">supply arcs — the border is a crossing</div>
       ${arcs.map((a, i) => html `<div class="dk-way" onclick=${() => { lawLeg.set("export"); lawArc.set(i); }}>
         <span class="dk-b" style="--tier:${a.crossesBorder ? "#d4824a" : "#7a8088"}">${String(a.burden)}</span>
@@ -702,7 +754,8 @@ function lawRail() {
 }
 // ── state-owning API for the core face-switcher & boot deep-link ──────────
 // enter the law face: kick the loader; the effects paint once it lands.
-export function lawEnter() { lawRail(); startLawEffect(); initLaw(); }
+export function lawEnter() { lawRail(); startLawEffect(); initLaw(); if (!bodies().length)
+    void readBodies(); }
 // URL deep-link (?face=law&place=…&view=program): the boot block in main.js
 // calls this, then setFace("law"). All the law-state mutation stays in here.
 export function lawDeepLink(place, view) {
@@ -736,6 +789,7 @@ function startLawEffect() {
         lawTab();
         lawArc();
         lawLeg();
+        bodies();
         if (!lawLoaded() || stage.face !== "law")
             return;
         render("#lawbar", lawBar());
@@ -747,6 +801,7 @@ function startLawEffect() {
         lawActivity();
         lawMode();
         lawArc();
+        bodies();
         if (lawLoaded() && stage.face === "law")
             drawLaw();
     });

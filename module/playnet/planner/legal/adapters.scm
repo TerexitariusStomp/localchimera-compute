@@ -142,9 +142,11 @@
 ;;; What doors it opens, what entity credentials it holds (folded as-of), what it
 ;;; owes (levies/disclosures), what is forbidden and what is only doubted, and
 ;;; the stance of the whole — one mask's legal surface.
+;;; BILL+HITS, when the caller folded the bill already, spares a second fold.
 (define* (adapter-exposure observer subject #:key (crossings '()) (place-path '())
-                           (act #f) (rules #f) (as-of #f))
-  (let* ((bh   (adapter-bill #:crossings crossings #:place-path place-path #:act act #:rules rules))
+                           (act #f) (rules #f) (as-of #f) (bill+hits #f))
+  (let* ((bh   (or bill+hits
+                   (adapter-bill #:crossings crossings #:place-path place-path #:act act #:rules rules)))
          (bill (car bh)) (hits (cadr bh))
          (sure? (lambda (d) (forbid-sure? d hits))))
     `((doors     . ,crossings)
@@ -177,12 +179,17 @@
         masks))
 ;; → a reconcile/holding-status `subject-of`: entity demands to their mask,
 ;; person demands to the named practitioner (`person-of`), else `fallback`.
-(define* (mask-subject-of masks #:key (person-of (lambda (d) 'person)) (fallback 'scope))
+;; MASKS are spawns by default; COVERS? (mask spec) and ID-OF (mask) read any
+;; other thing that answers for a demand — a body holding the spec
+;; (legal/bodies.scm `body-reconcile-subject`).
+(define* (mask-subject-of masks #:key (person-of (lambda (d) 'person)) (fallback 'scope)
+                          (covers? adapter-covers?)
+                          (id-of (lambda (m) (agent-id (adapter-spawn-agent m)))))
   (lambda (d kind)
     (if (eq? kind 'obtain-person)
         (person-of d)                             ; competence rides a named person
-        (let ((m (resolve-mask masks (demand-name d))))   ; entity door → its mask
-          (if m (agent-id (adapter-spawn-agent m)) fallback)))))
+        (let ((m (find (lambda (m) (covers? m (demand-name d))) masks)))   ; entity door → its mask
+          (if m (id-of m) fallback)))))
 
 ;;; ─── demo (only when run as a script) ────────────────────────────────────
 (define (adapters-demo)
