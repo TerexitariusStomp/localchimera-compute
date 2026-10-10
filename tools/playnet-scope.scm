@@ -20,7 +20,7 @@
 ;;;   export-shamir <aid>  split bran k-of-n, write share-ACDC files
 ;;;   import-shamir <aid>  reconstitute bran from gathered share files
 ;;;
-;;; Reuses the on-disk schema from (playnet governance paths) so any
+;;; Reuses the on-disk schema from (playnet utils paths) so any
 ;;; future schema change lands here automatically. The Shamir subcommands
 ;;; wrap (playnet crypto shamir)'s split/combine + make-bran-share-credential
 ;;; so the wire format matches what bran-custody.scm uses internally.
@@ -41,7 +41,7 @@
               #:select (string-prefix? string-suffix?
                         string-trim-both string-null?))
              ((rnrs io ports) #:select (get-bytevector-n put-bytevector))
-             (playnet governance paths)
+             (playnet utils paths)
              ((playnet keri signify) #:select ())   ; loading it installs the crypto backend the vault helpers use
              ;; bran-custody.scm is `include-from-path`'d into
              ;; (playnet governance) — its vault helpers are exported

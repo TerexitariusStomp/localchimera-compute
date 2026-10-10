@@ -19,7 +19,7 @@
 ;;; same whether or not a signature ever exists.
 ;;;
 ;;; Resolving a person's agent-id to their KERI AID is the personhood policy's
-;;; own question (`openvtc/personhood-policy.scm`, `governance/enrollment-
+;;; own question (`keri/first-person/personhood-policy.scm`, `governance/enrollment-
 ;;; ceremony.scm`) — SIGNER-AID is a parameter here, never looked up.
 ;;; Producing a signature needs a device that holds the person's key; the
 ;;; browser side of that is a separate, larger, already-tracked question

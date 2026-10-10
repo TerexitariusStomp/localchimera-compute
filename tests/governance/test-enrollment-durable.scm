@@ -16,7 +16,7 @@
 (use-modules ((playnet keri signify) #:select ()))
 (use-modules (playnet test harness)
              
-             (playnet identity enrollment) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet openvtc credentials) (playnet openvtc first-person)
+             (playnet identity enrollment) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri first-person credentials) (playnet keri first-person predicates)
              ((playnet keri citizen-sig)
               #:select (make-keri-identity keri-identity-keypair keri-identity-aid sign-said))
              (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1))

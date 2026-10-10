@@ -13,7 +13,7 @@
 ;;; Run: guile -L module -L tests tests/server/test-feedback-endpoint.scm
 
 (use-modules (playnet test harness)
-             ((playnet governance paths) #:select (ensure-directory!))
+             ((playnet utils paths) #:select (ensure-directory!))
              ((server serve-static)
               #:select (handle-feedback-post
                         handle-feedback-list

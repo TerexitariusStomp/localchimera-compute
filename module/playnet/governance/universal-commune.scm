@@ -26,11 +26,11 @@
   #:use-module (srfi srfi-1)   ;; fold, lset-intersection, filter-map
   #:use-module (srfi srfi-13)  ;; string-join
   #:use-module (playnet governance credentials)
-  #:use-module (playnet governance paths)
+  #:use-module (playnet utils paths)
   #:use-module (playnet governance scope)
   #:use-module (playnet keri acdc)
   #:use-module (playnet keri inception)
-  #:use-module (playnet openvtc first-person)
+  #:use-module (playnet keri first-person predicates)
   #:use-module ((playnet governance keri-backend)
                 #:select (stub-keri-backend))
   ;; D2: ratification ACDCs delivered to remote predecessors via

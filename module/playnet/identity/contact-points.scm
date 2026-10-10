@@ -2,7 +2,7 @@
 ;;;
 ;;; A person holds their ways to be reached, and tells a commune one of them
 ;;; so it can notify them there. What they tell it is a contact-point
-;;; credential ((playnet openvtc credentials)): self-issued, blinded, in
+;;; credential ((playnet keri first-person credentials)): self-issued, blinded, in
 ;;; their own signature. This module is the commune's side of that:
 ;;;
 ;;;   the WIRE     the credential as the browser sends it, rebuilt here through
@@ -22,7 +22,7 @@
   #:use-module (ice-9 match)
   #:use-module (json)
   #:use-module (playnet keri acdc)
-  #:use-module (playnet openvtc credentials)
+  #:use-module (playnet keri first-person credentials)
   #:use-module ((playnet identity reach-kinds) #:select (reach-value-fault commune-reach-kinds))
   #:use-module ((playnet utils clock) #:select (instant->unix (now . clock-now)))
   #:export (contact-point-wire->cred contact-point-verdict

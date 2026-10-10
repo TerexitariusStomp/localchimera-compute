@@ -439,7 +439,7 @@ check-openvtc-parity:
 	@bash tools/openvtc-parity-check.sh
 
 # ── KERI + OpenVTC library (docs/planning/identity/keri-openvtc-library-split.md) ────
-# lint-keri-lib holds the import boundary of module/playnet/{keri,openvtc};
+# lint-keri-lib holds the import boundary of module/playnet/keri (First Person included);
 # keri-lib-cut builds the standalone playnet-keri repository from committed
 # history (local only — publishing it is a separate, deliberate step).
 .PHONY: lint-keri-lib keri-lib-cut

@@ -25,7 +25,7 @@
 
 (use-modules (playnet test harness))
 (use-modules (playnet planner scope root))
-(use-modules (playnet governance scope) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet openvtc credentials))
+(use-modules (playnet governance scope) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri first-person credentials))
 (use-modules ((playnet keri citizen-sig)
               #:select (make-keri-identity keri-identity-keypair keri-identity-aid))
              (goblins) (goblins vat) (goblins utils hashmap))

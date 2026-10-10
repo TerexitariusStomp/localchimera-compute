@@ -42,7 +42,7 @@
 (define-module (playnet governance credentials)
   #:use-module (playnet keri acdc)
   #:use-module ((playnet governance sturdyref-credential) #:select (*schema-playnet-federation-sturdyref* *schema-playnet-federation-census*))
-  #:use-module (playnet openvtc credentials)
+  #:use-module (playnet keri first-person credentials)
   #:use-module (playnet keri cesr)
   #:use-module (playnet keri said-portable)
   #:use-module (goblins utils hashmap)

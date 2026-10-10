@@ -21,7 +21,7 @@
 (use-modules (ice-9 ftw) (ice-9 match) (ice-9 format) (srfi srfi-1))
 
 (define %lib-dir "module/playnet/keri")
-(define %openvtc-dir "module/playnet/openvtc")
+(define %first-person-dir "module/playnet/keri/first-person")
 
 ;; Dependency-free modules the library stands on; they ship with it.
 (define %support
@@ -80,11 +80,11 @@
 
 (define (main args)
   (let* ((keri-files    (scm-files %lib-dir))
-         (openvtc-files (scm-files %openvtc-dir))
+         (openvtc-files (scm-files %first-person-dir))
          (support-files (map cdr %support))
          ;; the KERI library stands alone; the OpenVTC layer stands on it
          (bad (append (check keri-files    '((playnet keri)) "keri")
-                      (check openvtc-files '((playnet keri) (playnet openvtc)) "openvtc")
+                      (check openvtc-files '((playnet keri)) "first-person")
                       (check support-files '() "support"))))
     (cond
      ((member "--manifest" args)
@@ -92,9 +92,9 @@
                 (append keri-files openvtc-files support-files
                         (list "module/playnet/keri/schemas")
                         (pure-tests "tests/keri" '((playnet keri)))
-                        (pure-tests "tests/openvtc" '((playnet keri) (playnet openvtc))))))
+                        (pure-tests "tests/openvtc" '((playnet keri))))))
      ((null? bad)
-      (format #t "keri-lib gate: ~a library + ~a openvtc + ~a support files, every import inside the boundary\n"
+      (format #t "keri-lib gate: ~a library + ~a first-person + ~a support files, every import inside the boundary\n"
               (length keri-files) (length openvtc-files) (length support-files)))
      (else
       (for-each (lambda (v) (format #t "~a: outside import ~s\n" (car v) (cdr v))) bad)

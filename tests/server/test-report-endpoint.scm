@@ -8,7 +8,7 @@
 ;;; Run: guile -L module -L tests tests/server/test-report-endpoint.scm
 
 (use-modules (playnet test harness)
-             ((playnet governance paths) #:select (ensure-directory!))
+             ((playnet utils paths) #:select (ensure-directory!))
              ((server serve-static)
               #:select (handle-report-post handle-report-list handle-report-delete
                         handle-feedback-post handle-feedback-list))

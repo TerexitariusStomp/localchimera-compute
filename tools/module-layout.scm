@@ -127,7 +127,6 @@
  (from "planner/dev" "dev")
  (from "planner/bench" "bench")
  ;; the substrate
- (from "openvtc" "keri/first-person")
  (file "utils/repl-client" #f)            ; a tool: tools/ of the repository
  (file "utils/ts-emit" #f)                ; a tool: tools/ of the repository
  ;; governance, by what each file is
@@ -143,7 +142,6 @@
  (file "governance/http-witness-publisher" "keys")
  (file "governance/pending-grants" "keys")
  (from "governance/keri" "keys")
- (file "governance/paths" "utils")
  (file "governance/acdc-bridge" "observation")
  (file "governance/scope" "scope")
  (file "governance/scope-recovery" "scope")

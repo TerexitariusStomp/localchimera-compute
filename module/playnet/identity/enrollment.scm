@@ -9,7 +9,7 @@
 ;;;   1. A ceremony opens for a candidate AID — by the candidate's own
 ;;;      request (sponsor #f: "recognise me"), or by a PHC-holder who
 ;;;      introduces them — with the ecosystem's threshold k
-;;;      (personhood-policy.scm).
+;;;      (first-person/personhood-policy.scm).
 ;;;   2. Verified people ("witnesses") who have met the candidate sign the
 ;;;      *enrollment statement* (a SAID over the ceremony's key
 ;;;      parameters). Their signature binds the witness's AID to a
@@ -44,8 +44,8 @@
   #:use-module (playnet governance credentials)
   #:use-module (playnet governance attestation-ceremony)
   #:use-module (playnet keri said-portable)
-  #:use-module (playnet openvtc first-person)
-  #:use-module (playnet openvtc personhood-policy)
+  #:use-module (playnet keri first-person predicates)
+  #:use-module (playnet keri first-person personhood-policy)
   #:use-module ((playnet governance acdc-bridge)
                 #:select (remember-witness-pending!))
   #:use-module ((playnet governance witness-relay)

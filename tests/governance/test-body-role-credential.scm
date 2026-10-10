@@ -1,6 +1,6 @@
 ;;; tests/governance/test-body-role-credential.scm — a body's role credential, signed by its stewards
 ;;;
-;;; What this pins (openvtc/credentials.scm, the body-role projection):
+;;; What this pins (keri/first-person/credentials.scm, the body-role projection):
 ;;;   • k signatures from distinct stewards over the SAID verify; k−1 do not;
 ;;;   • a non-steward's signature does not count toward k;
 ;;;   • the SAID commits to the content and not to the block: one credential,
@@ -15,7 +15,7 @@
              ((playnet keri signify-portable) #:select (bran->signing-keypair public-key->aid-prefix))
              ((playnet keri citizen-sig) #:select (sign-said-multisig sign-said aid-signer-keys-resolver))
              ((playnet keri acdc) #:select (cred-said cred-schema cred-issuer cred-holder cred-claim cred-signature))
-             (playnet openvtc credentials)
+             (playnet keri first-person credentials)
              (srfi srfi-1))
 
 (define (key-of kp) (public-key->aid-prefix (ed25519-keypair-public kp)))

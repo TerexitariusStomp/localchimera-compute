@@ -12,7 +12,7 @@
 ;;; correctly, since those are what Phase 3 adds.
 
 (use-modules (playnet test harness)
-             (playnet governance paths)
+             (playnet utils paths)
              (srfi srfi-13)
              (ice-9 ftw))
 

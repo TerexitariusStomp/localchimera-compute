@@ -1,14 +1,14 @@
 ;;; test-first-person.scm — PHC + VRC shape, store queries, the I2I check, signed VRCs
 ;;;
 ;;; The First Person layer on its own two feet: credentials from
-;;; (playnet openvtc credentials), verification from (playnet openvtc
+;;; (playnet keri first-person credentials), verification from (playnet openvtc
 ;;; first-person), a store from (playnet keri acdc-store). The halves that run
 ;;; through a ^scope and the bootstrap ceremony are
 ;;; tests/governance/test-first-person.scm.
 
 (use-modules (playnet test harness))
 (use-modules (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig)
-             (playnet openvtc credentials) (playnet openvtc first-person))
+             (playnet keri first-person credentials) (playnet keri first-person predicates))
 (use-modules ((playnet keri signify) #:select (ed25519-keypair-public)))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap)
              (rnrs bytevectors) (srfi srfi-1))

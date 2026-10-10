@@ -23,7 +23,7 @@
   #:use-module (goblins actor-lib methods)
   #:use-module (goblins utils hashmap)
   #:use-module (playnet governance kel-store)
-  #:use-module (playnet governance paths)
+  #:use-module (playnet utils paths)
   #:export (^scope-witness
             spawn-scope-witness
             scope-witness-env

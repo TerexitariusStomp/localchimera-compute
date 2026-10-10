@@ -10,7 +10,7 @@
 
 (use-modules (playnet test harness))
 (use-modules (playnet keri acdc) (playnet keri acdc-store)
-             (playnet openvtc credentials) (playnet openvtc first-person)
+             (playnet keri first-person credentials) (playnet keri first-person predicates)
              (playnet keri citizen-sig) (playnet keri signify-portable))
 (use-modules ((playnet keri signify) #:select (ed25519-keypair-public)))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap)

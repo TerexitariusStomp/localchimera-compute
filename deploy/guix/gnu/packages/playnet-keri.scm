@@ -51,7 +51,7 @@
 
 (define %library-paths
   ;; What the package takes from the checkout, relative to its root.
-  '("module/playnet/keri" "module/playnet/openvtc"
+  '("module/playnet/keri"
     "module/playnet/utils/clock.scm" "module/playnet/utils/hex.scm"
     "module/playnet/utils/common.scm" "module/playnet/utils/said-store.scm"))
 
@@ -110,7 +110,7 @@
     (description
      "Self-addressing identifiers, key event logs, ACDC credentials, a
 Signify client and the First Person (PHC/VRC) credential layer, as Guile
-modules under (playnet keri …) and (playnet openvtc …).  The library computes
+modules under (playnet keri …), the First Person profile among them.  The library computes
 its identifiers standalone: Blake3-256 through libblake3, Ed25519 and X25519
 through libsodium.")
     (license license:agpl3+)))

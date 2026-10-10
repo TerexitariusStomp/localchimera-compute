@@ -5,7 +5,7 @@
 ;;; removed-gate error: the role-credential ceremony they gated on
 ;;; (governance-member?) was deleted 2026-08-19, never having bootstrapped
 ;;; for anyone. This is the replacement, wired to holds-any-live-phc?
-;;; (playnet openvtc first-person) — the same personhood-credential
+;;; (playnet keri first-person predicates) — the same personhood-credential
 ;;; machinery accept-socialization/may-govern? already gate on, portable
 ;;; across ecosystems the same way. No new authority concept.
 ;;;
@@ -21,7 +21,7 @@
 (use-modules (playnet test harness)
              (playnet gateway lobby)
              (playnet gateway mailbox)
-             (playnet keri acdc-store) (playnet openvtc credentials)
+             (playnet keri acdc-store) (playnet keri first-person credentials)
              (goblins) (goblins vat) (goblins actor-lib methods) (goblins utils hashmap))
 
 (define vat (spawn-vat))

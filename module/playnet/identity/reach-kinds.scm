@@ -9,7 +9,7 @@
 ;;;
 ;;; A kind a commune may be told is one of the recipient registry's durable
 ;;; channels ((playnet notify recipient)) and one of the contact-point
-;;; credential's kinds ((playnet openvtc credentials)); tests/gateway/
+;;; credential's kinds ((playnet keri first-person credentials)); tests/gateway/
 ;;; test-contact-points.scm holds the three lists to each other. The other
 ;;; kinds are for people: a card carries them, a commune never hears them.
 ;;;

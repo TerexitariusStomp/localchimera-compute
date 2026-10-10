@@ -6,7 +6,7 @@
 ;;; tests/governance/test-personhood-policy.scm.
 
 (use-modules (playnet test harness)
-             (playnet openvtc personhood-policy))
+             (playnet keri first-person personhood-policy))
 
 (display "\n── defaults, then an explicit value ──\n")
 (check "k defaults to 2"        (personhood-policy #f 'enrollment-k) 2)

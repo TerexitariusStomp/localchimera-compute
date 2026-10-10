@@ -17,7 +17,7 @@
 ;;; Run: guile -L module -L tests tests/server/test-observability-endpoints.scm
 
 (use-modules (playnet test harness)
-             (playnet governance paths)
+             (playnet utils paths)
              (web request)
              (web response)
              (rnrs bytevectors)

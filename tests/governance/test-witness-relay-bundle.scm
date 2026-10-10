@@ -11,8 +11,8 @@
 
 (use-modules (playnet test harness)
              (playnet planner scope root)
-             (playnet governance attestation-ceremony) (playnet identity enrollment) (playnet governance paths) (playnet governance service) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet openvtc credentials) (playnet openvtc first-person)
-             ((playnet governance paths) #:select (current-playnet-state-dir-override))
+             (playnet governance attestation-ceremony) (playnet identity enrollment) (playnet utils paths) (playnet governance service) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri first-person credentials) (playnet keri first-person predicates)
+             ((playnet utils paths) #:select (current-playnet-state-dir-override))
              ((playnet governance witness-relay)
               #:select (publish-witness-attest! land-remote-attests!))
              ((playnet governance attestation-ceremony)

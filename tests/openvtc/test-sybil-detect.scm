@@ -5,8 +5,8 @@
 
 (use-modules (playnet test harness))
 (use-modules (playnet keri acdc) (playnet keri acdc-store)
-             (playnet openvtc credentials) (playnet openvtc first-person)
-             (playnet openvtc sybil-detect))
+             (playnet keri first-person credentials) (playnet keri first-person predicates)
+             (playnet keri first-person sybil-detect))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap)
              (rnrs bytevectors) (srfi srfi-1))
 

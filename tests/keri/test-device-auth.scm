@@ -15,7 +15,7 @@
               #:select (aid-signer-keys-resolver verify-said-signature sign-said))
              ((playnet keri crypto-primitives) #:select (keri-crypto-random-bytes))
              ((playnet keri acdc) #:select (make-credential))
-             ((playnet openvtc first-person) #:select (cred-signature-valid?))
+             ((playnet keri first-person predicates) #:select (cred-signature-valid?))
              ((playnet governance credentials)
               #:select (make-device-authorization-credential cred-said cred-claims
                         cred-signature cred-schema cred-issuer cred-holder))

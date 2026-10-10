@@ -26,7 +26,7 @@
   #:use-module (goblins utils hashmap)
   #:use-module ((playnet utils boot-cell) #:select (make-boot-cell))
   #:use-module (rnrs bytevectors)
-  #:use-module ((playnet openvtc first-person)
+  #:use-module ((playnet keri first-person predicates)
                 #:select (holds-any-live-phc?))
   #:use-module ((playnet identity seat) #:select (aid-tag))
   #:use-module ((playnet keri reticulum-binding)

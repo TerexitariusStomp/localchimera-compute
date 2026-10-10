@@ -29,7 +29,7 @@
   #:use-module (srfi srfi-1)
   #:use-module (playnet governance socialization)
   #:use-module ((playnet governance debts) #:select (purchase-claim))
-  #:use-module (playnet openvtc first-person)
+  #:use-module (playnet keri first-person predicates)
   #:use-module ((playnet social relationship-kinds) #:select (normalize-rel))
   #:use-module (playnet governance credentials)
   #:use-module ((playnet planner facts parts) #:select (validate-hand))
@@ -57,7 +57,7 @@
                 #:select (spawn-enrollment-ceremony enroll-ceremony-for-candidate
                           enroll-asks expire-stale-enrollments! *self-request-evidence*
                           rehydrate-enrollment-ceremonies!))
-  #:use-module (playnet openvtc personhood-policy)
+  #:use-module (playnet keri first-person personhood-policy)
   #:use-module (ice-9 format)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
@@ -618,7 +618,7 @@
       (if (and (pair? args) (string? (car args))) (car args) "vouch failed"))
     ;; ── being recognised — the ceremony as the one door ─────────────────
     ;; The ecosystem's policy is read off the commune's own scope-root
-    ;; (personhood-policy.scm); absent a reachable scope, the defaults.
+    ;; (first-person/personhood-policy.scm); absent a reachable scope, the defaults.
     (define (policy-store scope-id)
       (let ((sc (scope-for scope-id)))
         (and sc (false-if-exception ($ ($ sc 'scope-root) 'plan-store)))))

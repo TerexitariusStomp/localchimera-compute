@@ -48,7 +48,7 @@
   #:use-module ((playnet identity forget) #:select (forget-member!))
   #:use-module ((playnet identity user-files)
                 #:select (%data-dir %user-file %read-user-data %write-user-data!))
-  #:use-module ((playnet openvtc credentials) #:select (contact-point-binding-fields))
+  #:use-module ((playnet keri first-person credentials) #:select (contact-point-binding-fields))
   #:use-module ((playnet governance keri notifications)
                 #:select (register-credential-watcher! unregister-credential-watcher!))
   #:use-module ((playnet notify recipient) #:select (durable-kind? binding-kind binding-ctx))

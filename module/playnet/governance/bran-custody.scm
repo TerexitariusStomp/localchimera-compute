@@ -39,7 +39,7 @@
   #:use-module (playnet governance credentials)
   #:use-module (playnet utils hex)
   #:use-module (rnrs bytevectors)
-  #:use-module (playnet governance paths)
+  #:use-module (playnet utils paths)
   #:use-module (playnet keri signify-portable)
   #:use-module (playnet keri crypto-primitives)
   #:use-module (playnet crypto shamir)

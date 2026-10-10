@@ -42,7 +42,7 @@
   #:use-module (playnet governance credentials)
   #:use-module (playnet governance ballot)
   #:use-module (playnet governance delegation-map)
-  #:use-module (playnet openvtc first-person)
+  #:use-module (playnet keri first-person predicates)
   #:use-module (goblins utils hashmap)
   #:use-module (playnet planner pools credit-fold)
   #:use-module (playnet planner vf schemas)

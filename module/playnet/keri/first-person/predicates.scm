@@ -17,11 +17,11 @@
 ;;;
 ;;; The verification half of the OpenVTC layer; (playnet governance) re-exports it.
 
-(define-module (playnet openvtc first-person)
+(define-module (playnet keri first-person predicates)
   #:use-module (srfi srfi-1)
   #:use-module ((playnet utils clock) #:select (instant->unix (now . clock-now)))   ; the one clock: instants inside, civil at the boundary
   #:use-module (playnet keri acdc)
-  #:use-module (playnet openvtc credentials)
+  #:use-module (playnet keri first-person credentials)
   #:use-module ((playnet keri acdc-store) #:select (non-revoked-by-schema))
   #:use-module (playnet keri citizen-sig)
   #:use-module (goblins)

@@ -7,7 +7,7 @@
 ;; the host crypto backend: loading (playnet keri signify) installs it
 (use-modules ((playnet keri signify) #:select ()))
 (use-modules (playnet test harness))
-(use-modules (playnet governance bootstrap) (playnet governance credentials) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet openvtc credentials) (playnet openvtc first-person))
+(use-modules (playnet governance bootstrap) (playnet governance credentials) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri first-person credentials) (playnet keri first-person predicates))
 (use-modules (playnet crypto shamir))
 (use-modules ((playnet keri citizen-sig)
               #:select (make-keri-identity keri-identity-aid keri-identity-keypair)))

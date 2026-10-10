@@ -17,7 +17,7 @@
 ;;; default — every scope that has never called `set-governance-policy!`
 ;;; keeps exactly today's behaviour, unchanged.
 ;;;
-;;; Same shape as personhood-policy.scm: an explicit value wins, else the
+;;; Same shape as first-person/personhood-policy.scm: an explicit value wins, else the
 ;;; scope's own plan-store meta row "governance-policy", else the default
 ;;; here. Written through ^scope's gov-cap-gated `set-governance-policy!`;
 ;;; every reader reads the row fresh, so a change binds the next act

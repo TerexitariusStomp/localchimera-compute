@@ -1611,7 +1611,7 @@
 
 ;; ── contact points: a way to reach you, told to this commune ─────────────
 ;; The credential is built here exactly as the gateway rebuilds it
-;; ((playnet openvtc credentials) make-contact-point-credential): symbol-keyed
+;; ((playnet keri first-person credentials) make-contact-point-credential): symbol-keyed
 ;; claims into compute-said, KIND and STYLE as symbols, a fresh blinding
 ;; nonce — so the SAID signed here is the SAID the gateway derives from the
 ;; wire. The person is authoritative for every field, so there is no preimage

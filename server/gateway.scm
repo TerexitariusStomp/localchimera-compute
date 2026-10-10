@@ -77,7 +77,7 @@
              ((playnet keri credentials) #:select (acdc-ensure-schemas-resolved!))
              (playnet keri inception)
              (playnet governance keri federation-peers)
-             ((playnet keri recovery) #:select (register-reconnect-hook!))
+             ((playnet keri keria-reconnect) #:select (register-reconnect-hook!))
              (playnet governance keri notifications)
              (playnet ai key-pool)
              (playnet interface backends scope)
@@ -119,7 +119,7 @@
              (playnet identity enrollment)
              (playnet governance http-witness-publisher)
              (playnet identity oobi-host-mirror)
-             (playnet governance paths)
+             (playnet utils paths)
              (playnet governance recipe-standing)
              (playnet governance recovery)
              (playnet governance scope)
@@ -127,8 +127,8 @@
              (playnet governance socialization)
              (playnet keri acdc)
              (playnet keri acdc-store)
-             (playnet openvtc credentials)
-             (playnet openvtc first-person)
+             (playnet keri first-person credentials)
+             (playnet keri first-person predicates)
              ;; The REPL prelude: an operator evaluates in (guile-user) over the REPL socket
              ;; (see "Gateway-internal REPL" below), where everything this script imports is
              ;; bound. The two umbrellas make the whole planner and governance surface

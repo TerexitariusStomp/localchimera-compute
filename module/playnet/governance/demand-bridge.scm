@@ -19,7 +19,7 @@
   #:use-module (srfi srfi-1)
   #:use-module (playnet planner vf schemas)
   #:use-module (playnet governance demand-registry)
-  #:use-module ((playnet openvtc first-person) #:select (holds-any-live-phc?))
+  #:use-module ((playnet keri first-person predicates) #:select (holds-any-live-phc?))
   #:export (promote-demands demand-entry->intent any-live-phc-holder-elaborate?))
 
 

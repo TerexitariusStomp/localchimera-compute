@@ -16,15 +16,15 @@
   #:use-module (playnet governance commune)
   #:use-module (playnet governance service)
   #:use-module (playnet governance scope)
-  #:use-module (playnet openvtc sybil-detect)
+  #:use-module (playnet keri first-person sybil-detect)
   #:use-module (playnet governance recovery)
   #:use-module (playnet governance expression)
   #:use-module (playnet identity enrollment)
-  #:use-module (playnet openvtc personhood-policy)
+  #:use-module (playnet keri first-person personhood-policy)
   #:use-module (playnet governance async)
   #:use-module (playnet governance recipe-standing)
   #:use-module (playnet governance means-fold)
-  #:use-module (playnet openvtc first-person)
+  #:use-module (playnet keri first-person predicates)
   #:use-module (playnet governance root-lineage)   ; installs the recomposition walk as the root lineage
   #:use-module (playnet governance ballot)
   #:use-module (playnet governance socialization)
@@ -189,7 +189,7 @@
               ;; from (playnet governance ballot)
               ^ballot ballot-env make-citizen-verifier make-sealer-verifier open-ballot
               tally-snapshot voice-snap voice-snap-delegation voice-snap-share
-              ;; from (playnet openvtc first-person)
+              ;; from (playnet keri first-person predicates)
               *default-sponsor-fanout-cap* *default-sponsor-fanout-window*
               aic-valid-by-root? any-live-phc-for assert-sponsor-fanout!
               authorized-issuer-cred cred-live-at? cred-multisig-valid?
@@ -220,7 +220,7 @@
               enroll-ceremony-for-candidate enroll-asks enrollment-record
               witness-recent-enrollments expire-stale-enrollments!
               rehydrate-enrollment-ceremonies! current-enroll-announcer *self-request-evidence*
-              ;; from (playnet openvtc personhood-policy)
+              ;; from (playnet keri first-person personhood-policy)
               personhood-policy *personhood-policy-defaults* effective-k
               ;; from (playnet governance expression)
               ^expression distribution-sum express expression-env open-expression
@@ -231,7 +231,7 @@
               recover-economic-state recover-federation-state
               recover-federation-state-remote recover-intents recover-lineage
               recover-personhood-state recover-work-events
-              ;; from (playnet openvtc sybil-detect)
+              ;; from (playnet keri first-person sybil-detect)
               detect-suspicious-subgraphs sponsor-fanout-counts suspicious-clusters
               suspicious-sponsors vrc-edges
               ;; from (playnet governance scope)
@@ -308,7 +308,7 @@
   #:use-module (playnet planner observation event-log-store)
   #:use-module (playnet utils said-store)
   #:use-module (playnet crypto shamir)
-  #:use-module (playnet governance paths)
+  #:use-module (playnet utils paths)
   #:re-export (current-playnet-state-dir-override
                playnet-state-dir scope-state-dir
                scope-acdc-dir scope-kel-dir scope-vault-path

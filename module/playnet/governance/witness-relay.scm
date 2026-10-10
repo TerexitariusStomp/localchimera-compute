@@ -28,7 +28,7 @@
 (define-module (playnet governance witness-relay)
   #:use-module (playnet governance acdc-bridge)
   #:use-module (playnet governance attestation-ceremony)
-  #:use-module ((playnet governance paths) #:select (playnet-state-dir))
+  #:use-module ((playnet utils paths) #:select (playnet-state-dir))
   #:use-module (ice-9 ftw)
   #:use-module (ice-9 textual-ports)
   #:use-module (ice-9 format)

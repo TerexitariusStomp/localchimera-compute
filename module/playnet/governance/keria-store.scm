@@ -22,13 +22,13 @@
   #:use-module (goblins utils hashmap)
   #:use-module (playnet keri credentials)
   #:use-module (playnet keri bridge)
-  #:use-module (playnet governance paths)
+  #:use-module (playnet utils paths)
   #:use-module (playnet keri acdc)
   #:use-module (playnet governance pending-grants)
   #:use-module (srfi srfi-1)
   #:use-module (ice-9 format)
   #:use-module ((playnet utils clock) #:select ((now . clock-now)))   ; the one clock: instants inside
-  #:use-module ((playnet governance paths) #:select (scope-state-dir))
+  #:use-module ((playnet utils paths) #:select (scope-state-dir))
   #:export (^keria-acdc-store
             spawn-keria-acdc-store
             keria-acdc-store-env

@@ -87,7 +87,7 @@
   #:use-module (playnet planner vf schemas)
   #:use-module (srfi srfi-1)
   #:use-module ((playnet planner observation account) #:select (set-person-substrate!))
-  #:use-module ((playnet openvtc first-person) #:select (holds-any-live-phc? personhood-bootstrapped?))
+  #:use-module ((playnet keri first-person predicates) #:select (holds-any-live-phc? personhood-bootstrapped?))
   #:use-module ((playnet planner solve engine) #:select (key-spec       ; "spec#place@t" → spec, the one split
                                                    declared-partition set-period-span!))   ; the standing partition, laid before the caps
   #:use-module (playnet planner scope live)

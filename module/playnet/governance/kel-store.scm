@@ -34,7 +34,7 @@
   #:use-module (ice-9 textual-ports)
   #:use-module (srfi srfi-1)
   #:use-module (playnet utils said-store)
-  #:use-module (playnet governance paths)
+  #:use-module (playnet utils paths)
   #:export (^kel-store
             spawn-kel-store
             kel-store-env

@@ -5,7 +5,7 @@
 ;;; is a row of the scope's plan-store (`get-meta` / `set-meta`): an alist of
 ;;; (key . value) under one name, beside defaults the code states. This module
 ;;; is the one reading and the one writing of such a row; a policy module names
-;;; its row and its defaults (legal/policy.scm, personhood-policy.scm,
+;;; its row and its defaults (legal/policy.scm, first-person/personhood-policy.scm,
 ;;; governance-policy.scm) and the scope's setters name what a value must be.
 ;;;
 ;;;   (governed-row plan-store "legal-policy" defaults 'uncertain-forbid explicit)

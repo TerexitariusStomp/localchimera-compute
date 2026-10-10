@@ -12,7 +12,7 @@
 ;; the host crypto backend: loading (playnet keri signify) installs it
 (use-modules ((playnet keri signify) #:select ()))
 (use-modules (playnet test harness)
-             (playnet governance paths)
+             (playnet utils paths)
              ;; vault helpers are exported via (playnet governance);
              ;; bran-custody is `include-from-path`'d, not its own module.
              ((playnet governance bran-custody) #:select (read-vault-bran write-vault-bran!))

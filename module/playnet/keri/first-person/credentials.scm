@@ -5,8 +5,8 @@
 ;;; (VRC), contact points (R-card channels), authorized issuers and device
 ;;; authorization. This module is that set rendered as ACDCs over KERI —
 ;;; the schema identifiers and the pure-data constructors. Verification
-;;; (liveness, root chaining, the trust triangle) is (playnet openvtc
-;;; first-person); the parity pin against upstream is
+;;; (liveness, root chaining, the trust triangle) is (playnet keri first-person
+;;; predicates); the parity pin against upstream is
 ;;; docs/planning/identity/openvtc-parity.md.
 ;;;
 ;;; Every constructor lives under the two SAID disciplines stated in
@@ -14,7 +14,7 @@
 ;;; append-only and emitted only when set), and a re-mint of an existing fact
 ;;; passes the fact's own timestamp.
 
-(define-module (playnet openvtc credentials)
+(define-module (playnet keri first-person credentials)
   #:use-module (playnet keri acdc)
   #:use-module (playnet keri citizen-sig)
   #:export (*schema-playnet-personhood* *schema-playnet-relationship*

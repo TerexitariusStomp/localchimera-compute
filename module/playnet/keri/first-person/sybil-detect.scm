@@ -1,4 +1,4 @@
-;;; sybil-detect.scm — advisory analysis over the PHC + VRC graph
+;;; first-person/sybil-detect.scm — advisory analysis over the PHC + VRC graph
 ;;;
 ;;; Pure functions; nothing in this module mutates the store or revokes
 ;;; credentials. The output is **advisory data for human governance**:
@@ -24,12 +24,12 @@
 ;;;
 ;;; Part of the OpenVTC layer; (playnet governance) re-exports it.
 
-(define-module (playnet openvtc sybil-detect)
+(define-module (playnet keri first-person sybil-detect)
   #:use-module (srfi srfi-1)
   #:use-module ((playnet utils clock) #:select (instant->unix (now . clock-now)))   ; the one clock: instants inside, civil at the boundary
   #:use-module (playnet keri acdc)
-  #:use-module (playnet openvtc credentials)
-  #:use-module (playnet openvtc first-person)
+  #:use-module (playnet keri first-person credentials)
+  #:use-module (playnet keri first-person predicates)
   #:use-module (goblins utils hashmap)
   #:use-module (goblins)
   #:export (canon-pair sponsor-fanout-counts median-of suspicious-sponsors

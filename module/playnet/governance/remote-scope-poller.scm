@@ -13,7 +13,7 @@
 ;;;   1. **Offline-rejoin catch-up.** If gateway B was offline when
 ;;;      gateway A pushed grants to B's UC, those grants are stuck in
 ;;;      A's pending-grants queue. The reconnect-edge drain (see
-;;;      keri/recovery.scm `register-reconnect-hook!`) flushes them.
+;;;      keri/keria-reconnect.scm `register-reconnect-hook!`) flushes them.
 ;;;      But if A's gateway restarted across the outage and lost the
 ;;;      pending entries (in-memory-only for the umbrella queue), the
 ;;;      poller fills the gap.

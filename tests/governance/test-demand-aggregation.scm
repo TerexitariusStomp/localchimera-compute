@@ -8,7 +8,7 @@
 (use-modules (playnet test harness)
              (playnet governance demand-registry) (playnet planner pools credit-fold) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
              (playnet org endorsement)
-             (playnet governance delegation-map) (playnet governance expression) (playnet governance voice-signer) (playnet keri acdc-store) (playnet openvtc credentials)
+             (playnet governance delegation-map) (playnet governance expression) (playnet governance voice-signer) (playnet keri acdc-store) (playnet keri first-person credentials)
              (playnet governance demand-registry)
              (playnet governance demand-bridge)
              (playnet governance demand-aggregation)

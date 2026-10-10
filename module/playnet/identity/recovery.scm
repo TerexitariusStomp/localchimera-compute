@@ -3,7 +3,7 @@
 ;;; What a scope can say of its personhood corpus from the credentials
 ;;; alone: the live PHCs of an ecosystem and the VRCs that vouch for them,
 ;;; each VRC read for a signature (verified at its own time —
-;;; openvtc/first-person.scm cred-signature-valid?), a live issuer PHC and
+;;; keri/first-person/predicates.scm cred-signature-valid?), a live issuer PHC and
 ;;; an I2I edge that holds. Pure: it never mutates the store; callers decide
 ;;; whether to revoke. Moved from governance/recovery.scm, which re-exports
 ;;; it (identity centralization, step 6).
@@ -12,7 +12,7 @@
   #:use-module (goblins)
   #:use-module (srfi srfi-1)
   #:use-module (playnet governance credentials)
-  #:use-module (playnet openvtc first-person)
+  #:use-module (playnet keri first-person predicates)
   #:use-module (playnet governance acdc-store)
   #:export (recover-personhood-state))
 

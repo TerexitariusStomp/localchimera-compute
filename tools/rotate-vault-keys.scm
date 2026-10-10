@@ -15,7 +15,7 @@
 ;;; the partial set rolled back from the temp file. Already-rotated
 ;;; vaults (decryptable under NEW) are left untouched (idempotent).
 
-(use-modules (playnet governance bran-custody) (playnet governance paths)
+(use-modules (playnet governance bran-custody) (playnet utils paths)
              (playnet keri signify)         ;; install crypto backend
              ((playnet utils hex) #:select (bv->hex hex->bv))
              (rnrs bytevectors)

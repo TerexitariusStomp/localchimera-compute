@@ -20,7 +20,7 @@
              (playnet gateway lobby)
              ((playnet identity body-doors) #:select (current-body-service provisional-body-id))
              ((playnet planner vf schemas) #:select (make-agent agent-id agent-name agent-classified-as))
-             ((playnet openvtc credentials) #:select (make-personhood-credential))
+             ((playnet keri first-person credentials) #:select (make-personhood-credential))
              ((playnet keri citizen-sig)
               #:select (make-keri-identity keri-identity-keypair keri-identity-aid sign-said verify-said-signature))
              (goblins)

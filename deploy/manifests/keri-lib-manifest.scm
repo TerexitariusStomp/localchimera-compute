@@ -1,7 +1,7 @@
 ;;; deploy/manifests/keri-lib-manifest.scm — everything the KERI + OpenVTC
 ;;; library needs, and nothing else.
 ;;;
-;;; The library is module/playnet/keri and module/playnet/openvtc
+;;; The library is module/playnet/keri (the First Person profile under keri/first-person/)
 ;;; (docs/planning/identity/keri-openvtc-library-split.md). This manifest is its whole
 ;;; dependency set, every package from Guix itself, so the standalone
 ;;; `playnet-keri` repository — which carries this file at this same path —

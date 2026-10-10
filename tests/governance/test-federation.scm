@@ -3,7 +3,7 @@
 (use-modules (playnet test harness))
 (use-modules (playnet planner scope root))
 (use-modules (playnet org endorsement))
-(use-modules (playnet governance commune) (playnet governance federation) (playnet governance voice-signer) (playnet keri acdc) (playnet keri acdc-store) (playnet openvtc credentials) (playnet openvtc first-person))
+(use-modules (playnet governance commune) (playnet governance federation) (playnet governance voice-signer) (playnet keri acdc) (playnet keri acdc-store) (playnet keri first-person credentials) (playnet keri first-person predicates))
 (use-modules (goblins) (goblins utils hashmap) (srfi srfi-1))
 
 

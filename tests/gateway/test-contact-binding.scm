@@ -32,7 +32,7 @@
              ((playnet notify recipient)
               #:select (^recipient-registry binding-kind binding-ctx binding-style
                         durable-kind? recipient-table->datum datum->recipient-table))
-             ((playnet openvtc credentials)
+             ((playnet keri first-person credentials)
               #:select (make-contact-point-credential *contact-point-kinds*))
              ((playnet identity reach-kinds)
               #:select (commune-reach-kinds reach-value-fault))

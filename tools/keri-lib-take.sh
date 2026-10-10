@@ -39,7 +39,7 @@ git -C "$KERI" log --no-merges --reverse --format='         %h %an — %s' "$RAN
 
 # ── the library's own paths ──────────────────────────────────────────────────
 mapfile -t OWN < <(cd "$ROOT" && guile --no-auto-compile -e main -s tools/lint-keri-lib.scm --manifest)
-OWN_DIRS=(module/playnet/keri/ module/playnet/openvtc/ tests/keri/ tests/openvtc/ docs/keri/ docs/first-person/)
+OWN_DIRS=(module/playnet/keri/ tests/keri/ tests/openvtc/ docs/keri/ docs/first-person/)
 OWN_FILES=(README.md guix/gnu/packages/playnet-keri.scm docs/planning/identity/openvtc-parity.md docs/planning/identity/keri-openvtc-library-split.md
            tools/openvtc-parity-check.sh tools/lint-keri-lib.scm deploy/manifests/keri-lib-manifest.scm)
 

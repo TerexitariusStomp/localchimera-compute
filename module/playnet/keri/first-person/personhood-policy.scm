@@ -1,4 +1,4 @@
-;;; personhood-policy.scm — the ecosystem's word on how a person is recognised.
+;;; first-person/personhood-policy.scm — the ecosystem's word on how a person is recognised.
 ;;;
 ;;; Four numbers govern enrollment, and they are the ECOSYSTEM's to set, not a
 ;;; caller's argument and not a founder's discretion per stranger:
@@ -23,7 +23,7 @@
 ;;; witness and grows into two — the first person is the operator's seed
 ;;; (founders.txt), never a deadlock.
 
-(define-module (playnet openvtc personhood-policy)
+(define-module (playnet keri first-person personhood-policy)
   #:use-module (playnet utils governed-row)
   #:export (personhood-policy *personhood-policy-defaults* effective-k))
 

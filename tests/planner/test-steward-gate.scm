@@ -19,7 +19,7 @@
              (playnet planner doors offers)
              (playnet planner federation plan-bundle)
              (playnet planner facts availability)
-             (playnet governance socialization) (playnet keri acdc) (playnet keri acdc-store) (playnet openvtc credentials)
+             (playnet governance socialization) (playnet keri acdc) (playnet keri acdc-store) (playnet keri first-person credentials)
              ((playnet governance socialization) #:select (lent-to))
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))

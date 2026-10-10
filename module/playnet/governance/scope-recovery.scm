@@ -30,10 +30,10 @@
   #:use-module ((ice-9 rdelim) #:select (read-line))
   #:use-module (rnrs bytevectors)
   #:use-module (srfi srfi-1)
-  ;; read-scope-kind / write-scope-kind! live in (playnet governance paths)
+  ;; read-scope-kind / write-scope-kind! live in (playnet utils paths)
   ;; so that scope.scm (included into (playnet governance)) can call them
   ;; without creating a circular dep through (playnet governance scope-recovery).
-  #:use-module ((playnet governance paths)
+  #:use-module ((playnet utils paths)
                 #:select (read-scope-kind write-scope-kind!))
   #:use-module ((playnet keri signify-portable)
                 #:select (bran->signing-keypair bran->next-keypair))
@@ -41,7 +41,7 @@
   #:use-module ((playnet utils hex) #:select (bv->hex hex->bv))
   #:use-module (playnet governance bran-custody)
   #:use-module (playnet governance kel-store)
-  #:use-module (playnet governance paths)
+  #:use-module (playnet utils paths)
   #:use-module (playnet governance scope)
   #:use-module (playnet keri acdc-store)
   #:use-module (playnet keri witness-publisher)

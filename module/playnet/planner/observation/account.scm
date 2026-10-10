@@ -595,7 +595,7 @@
 ;; The citizenship dividend is an EQUAL share among persons, and N in social
 ;; free time counts persons — so what a "citizen" is decides whether a second
 ;; account is a second share. It is a witnessed person (the First-Person
-;; personhood credential, openvtc/first-person.scm), never an account:
+;; personhood credential, keri/first-person/predicates.scm), never an account:
 ;; an account without personhood keeps every credit its own work earned
 ;; (contribution and solidarity are additive across accounts) and draws no
 ;; dividend. That is what makes consumer voice additive under an identity

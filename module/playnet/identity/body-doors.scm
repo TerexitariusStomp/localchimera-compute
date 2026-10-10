@@ -42,7 +42,7 @@
   #:use-module ((playnet utils boot-cell) #:select (make-boot-cell))
   #:use-module ((playnet utils hex) #:select (bv->hex))
   #:use-module ((playnet keri crypto-primitives) #:select (keri-crypto-sha256))
-  #:use-module ((playnet openvtc first-person) #:select (holds-any-live-phc?))
+  #:use-module ((playnet keri first-person predicates) #:select (holds-any-live-phc?))
   #:use-module ((json parser) #:select (json-string->scm))
   #:use-module (rnrs bytevectors)
   #:use-module (srfi srfi-13)

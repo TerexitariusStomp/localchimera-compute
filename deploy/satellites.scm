@@ -67,7 +67,7 @@
    (lands  . "tooling"))
  ;; The KERI / ACDC / Signify library and the First Person (OpenVTC)
  ;; credentials over it. A cut OUT of the core — tools/publish-keri-lib.sh
- ;; derives it from module/playnet/{keri,openvtc} and their tests — so the box
+ ;; derives it from module/playnet/keri and their tests — so the box
  ;; serves, seeds and pins it for the KERI and OpenVTC communities and places
  ;; nothing: the core already holds those files.
  '((name   . "keri")

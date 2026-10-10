@@ -1,4 +1,4 @@
-;;; module/playnet/keri/recovery.scm — Server recovery: reconnect KERIA
+;;; module/playnet/keri/keria-reconnect.scm — Server recovery: reconnect KERIA
 ;;;
 ;;; After a server restart or KERIA reconnect, this module verifies
 ;;; witnesses, reloads the governance AID, and syncs credentials/contacts.
@@ -7,7 +7,7 @@
 ;;; The witness pool holds all KEL history — no server-local state needed
 ;;; for identity recovery. Just the bran.
 
-(define-module (playnet keri recovery)
+(define-module (playnet keri keria-reconnect)
   #:use-module (playnet keri bridge)
   #:use-module (playnet keri credentials)
   #:use-module (playnet keri inception)

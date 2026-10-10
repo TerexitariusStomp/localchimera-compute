@@ -1,6 +1,6 @@
 ;;; tests/keri/test-keri-recovery.scm — server recovery tests
 ;;;
-;;; Exercises (playnet keri recovery):
+;;; Exercises (playnet keri keria-reconnect):
 ;;;   - recovery-reconnect!   (set URLs + connect)
 ;;;   - recovery-sync!        (count AIDs / credentials / contacts)
 ;;;   - recovery-check-witnesses  (resolve each + classify reachable/unreachable)
@@ -19,7 +19,7 @@
              (playnet keri bridge)
              (playnet keri credentials)
              (playnet keri inception)
-             (playnet keri recovery)
+             (playnet keri keria-reconnect)
              (web server)
              (web request)
              (web response)

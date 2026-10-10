@@ -18,8 +18,9 @@ move is four rewrites, done here the same way every time:
      module/playnet/planner/: `labour/pulls.scm`, and `labour/pulls` in a table.
      When the old path also names a directory (`knowledge/recipes`), only the
      spelling with `.scm` is rewritten.
-  4. tools/module-layout.scm: the file's entry under its target directory goes,
-     because the file now stands in that directory.
+  4. tools/module-layout.scm: the file's own `file` form goes, because the file
+     now stands where the form said; a `from` form is removed by hand once its
+     directory is empty.
 
 --bare also rewrites the bare file name (`comms-ai.scm` → `comms/ai.scm`) where
 no directory precedes it. Use it when the old name is distinctive; leave it off
@@ -96,7 +97,6 @@ def main(argv):
         sys.exit(f'move-module: already there: {new}')
     rs = rewrites(old, new, bare)
     stem = module_name(old)[-1]
-    planner = 'module/playnet/planner/'
     count = 0
     for f in tree_files():
         p = os.path.join(ROOT, f)
@@ -107,9 +107,10 @@ def main(argv):
         out = text
         for rx, rep in rs:
             out = rx.sub(rep, out)
-        if f == LAYOUT and old.startswith(planner):
-            rel = old[len(planner):-len('.scm')]
-            out = re.sub(r'[ \t]*(?<!directory )(?<!stays )"' + re.escape(rel) + r'"(?=[\s)])', '', out)
+        if f == LAYOUT:
+            # the file's own `file` form goes: it now stands where the form said
+            rel = old[len('module/playnet/'):-len('.scm')]
+            out = re.sub(r'\n[ \t]*\(file "' + re.escape(rel) + r'" [^\n]*', '', out)
         if out != text:
             before, after = text.splitlines(), out.splitlines()
             if len(before) == len(after):

@@ -69,7 +69,7 @@
   #:use-module ((playnet keri citizen-sig) #:select (verify-bytes-under-aid))
   #:use-module ((playnet keri key-state) #:select (indexed-sig-index events->states))
   #:use-module ((playnet identity oobi-host) #:select (oobi-entry-last-event))
-  #:use-module ((playnet governance paths) #:select (playnet-state-dir))
+  #:use-module ((playnet utils paths) #:select (playnet-state-dir))
   #:export (spawn-body-ceremony ^body-ceremony
             body-ceremony-record body-ceremony-records-dir
             body-ceremony-sign-bytes))

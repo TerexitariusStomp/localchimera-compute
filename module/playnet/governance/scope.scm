@@ -34,7 +34,7 @@
 
 (define-module (playnet governance scope)
   #:use-module (srfi srfi-1)
-  #:use-module (playnet openvtc first-person)
+  #:use-module (playnet keri first-person predicates)
   #:use-module (playnet governance root-lineage)   ; a scope recomposes, so its lineage walk loads with it
   #:use-module (playnet governance credentials)
   #:use-module ((playnet governance sturdyref-credential) #:select (sturdyref-credentials->spec census-credential-goods census-key-state *schema-playnet-federation-census* *schema-playnet-federation-sturdyref*))
@@ -46,7 +46,7 @@
   #:use-module ((playnet utils hex) #:select (bv->hex))
   #:use-module (playnet keri said-portable)
   #:use-module (playnet governance scope-graph)
-  #:use-module (playnet governance paths)
+  #:use-module (playnet utils paths)
   #:use-module (playnet planner facts validity)
   #:use-module (playnet planner pools credit-fold)
   #:use-module (playnet planner vf schemas)
@@ -873,7 +873,7 @@
 
     ;; The ecosystem's word on how a person is recognised: the
     ;; personhood-policy row on this commune's plan-store (enrollment-k,
-    ;; witness-cap, witness-window, ceremony-ttl — personhood-policy.scm).
+    ;; witness-cap, witness-window, ceremony-ttl — first-person/personhood-policy.scm).
     ;; Gov-cap gated; a partial alist updates only the keys it names, and
     ;; every reader reads the row fresh, so the change binds the next act.
     ((set-personhood-policy! gov-cap changes)

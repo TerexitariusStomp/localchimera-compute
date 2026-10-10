@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # publish-keri-lib.sh — cut the KERI + OpenVTC library out of core as its own repo.
 #
-# The library lives inside core (module/playnet/keri, module/playnet/openvtc,
+# The library lives inside core (module/playnet/keri with its first-person/ profile,
 # their support modules and pure tests — the set tools/lint-keri-lib.scm
 # --manifest prints). Core stays the place it is developed, so a change that
 # crosses the boundary is one commit. This script produces the small,
