@@ -14,9 +14,9 @@
 ;;; Run:  guile --no-auto-compile -L module/playnet/planner tests/planner/test-frag-budget-cascade.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner solve solver))
+(use-modules (playnet solve engine)
+             (playnet solve compile)
+             (playnet solve solver))
 
 (define s-tip 10.0) (define cpl 0.5)
 (define (recipes)

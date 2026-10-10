@@ -10,7 +10,7 @@
 ;;;         -l load-all.scm -l tests/test-recurrence.scm
 
 (use-modules (playnet test harness))
-(use-modules (playnet planner plan recurrence) (playnet planner vf schemas) (playnet planner beyond schedules))
+(use-modules (playnet plan recurrence) (playnet vf schemas) (playnet vf beyond schedules))
 (use-modules (srfi srfi-1))
 ;;; ── Harness ───────────────────────────────────────────────────────────────────
 

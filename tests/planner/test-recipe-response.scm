@@ -11,9 +11,9 @@
 ;;; Run: guile -L module tests/planner/test-recipe-response.scm
 
 (use-modules (srfi srfi-1) (ice-9 format)
-             (playnet planner solve recipe-response)
-             (playnet planner formulas shocks)
-             (playnet planner vf schemas) (playnet planner beyond scenario))
+             (playnet solve recipe-response)
+             (playnet vf formulas shocks)
+             (playnet vf schemas) (playnet vf beyond scenario))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

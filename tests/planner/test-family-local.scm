@@ -11,8 +11,8 @@
 ;;; Run: guile -L module tests/planner/test-family-local.scm
 
 (use-modules (playnet test planner prelude)
-             (playnet planner doors family solve)
-             (playnet planner doors family local)
+             (playnet doors family solve)
+             (playnet doors family local)
              (playnet utils json-portable)
              (srfi srfi-1) (ice-9 format))
 

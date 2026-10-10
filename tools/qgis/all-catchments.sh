@@ -3,7 +3,7 @@
 # catchment-job.scm / grass:r.water.outlet) for every seeded bioregion.
 #
 # Same pour points and DEM radius as all-watersheds.sh's table (the
-# bioregion's own lat/lon from module/playnet/planner/knowledge/<id>.scm);
+# bioregion's own lat/lon from module/playnet/knowledge/<id>.scm);
 # the fifth column is catchment-job.scm's stream threshold — accumulation
 # cells before a channel counts as "on the network" for snapping, not the
 # basin-size threshold watershed-job.scm uses. 2000 cells (~16 km² of

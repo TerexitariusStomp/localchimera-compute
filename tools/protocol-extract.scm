@@ -2,7 +2,7 @@
 !#
 ;;; tools/protocol-extract.scm — the door heads of the three protocol objects
 ;;;
-;;; Reads module/playnet/gateway/lobby.scm and module/playnet/planner/doors/service.scm
+;;; Reads module/playnet/gateway/lobby.scm and module/playnet/doors/service.scm
 ;;; as data, finds every Goblins `(methods ((name . args) …) …)` form, and
 ;;; prints one line per door: object, name, argument list as written. The
 ;;; Phase B1 declaration (playnet protocol) starts from this output, and the
@@ -96,7 +96,7 @@ NAME), else self."
   `((lobby   "module/playnet/gateway/lobby.scm" "module/playnet/identity/doors.scm")
     (session "module/playnet/gateway/lobby.scm" "module/playnet/identity/doors.scm"
              "module/playnet/identity/body-doors.scm")
-    (planner "module/playnet/planner/doors/service.scm")))
+    (planner "module/playnet/doors/service.scm")))
 
 (define (all-doors)
   (append-map (lambda (o) (map (lambda (d) (cons (car o) d)) (object-doors (cdr o) (car o))))

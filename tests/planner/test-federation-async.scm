@@ -22,11 +22,11 @@
 ;;; Run:  guile --no-auto-compile -q -L module tests/planner/test-federation-async.scm
 
 (use-modules (playnet test harness)
-             (playnet planner federation async)
-             (playnet planner solve admm-link)
-             ((playnet planner federation crossing) #:select (make-tuning make-crossing crossing-snapshot crossing-restore!))
-             ((playnet planner solve engine) #:select (make-boundary-oracle solve-consensus))
-             (playnet planner solve solver)
+             (playnet federation async)
+             (playnet solve admm-link)
+             ((playnet federation crossing) #:select (make-tuning make-crossing crossing-snapshot crossing-restore!))
+             ((playnet solve engine) #:select (make-boundary-oracle solve-consensus))
+             (playnet solve solver)
              (srfi srfi-1) (ice-9 format))
 
 (use-modules (playnet test planner federation-wire-fixture))

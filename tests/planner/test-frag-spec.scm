@@ -8,9 +8,9 @@
 ;;; Run:  guile --no-auto-compile -L module/playnet/planner tests/planner/test-frag-spec.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner solve solver))
+(use-modules (playnet solve engine)
+             (playnet solve compile)
+             (playnet solve solver))
 
 (define tip 10.0)   ; quantile_0.5(8,12)
 (define (emit-recipe)

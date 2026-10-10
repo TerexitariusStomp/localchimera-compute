@@ -24,8 +24,8 @@
 ;;; Run:  guile -L module/playnet/planner module/playnet/planner/commute-network-test.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner solve solver))
+(use-modules (playnet solve engine)
+             (playnet solve solver))
 
 (define H  40.0)   ; the worker's hours per period (ONE whole budget)
 (define D  30.0)   ; widget demanded at B, periods 1..3

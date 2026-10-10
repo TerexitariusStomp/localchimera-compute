@@ -10,10 +10,10 @@
 ;;; Run:  guile --no-auto-compile -L module/playnet/planner tests/planner/test-frag-integration.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner solve solver))
-(use-modules (playnet planner knowledge catalogues eco))
+(use-modules (playnet solve engine)
+             (playnet solve compile)
+             (playnet solve solver))
+(use-modules (playnet knowledge catalogues eco))
 
 (define (recipes)
   (compile-recipe

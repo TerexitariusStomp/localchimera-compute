@@ -8,7 +8,7 @@
 ;;; Run:  guile -L module -L tests tests/planner/test-declare-means.scm
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1) (playnet planner doors service) (playnet test harness)
+(use-modules (playnet scope root) (playnet vf schemas) (srfi srfi-1) (playnet doors service) (playnet test harness)
              (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1))
 
 (display "\n── declare-means: seed an owned means into a scope's observer ──\n")

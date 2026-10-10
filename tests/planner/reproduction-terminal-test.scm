@@ -20,13 +20,13 @@
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test scope))
 (use-modules (playnet test harness)
-             (ice-9 match) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
-             (playnet planner scope live)
+             (ice-9 match) (playnet scope root) (playnet vf schemas) (srfi srfi-1)
+             (playnet scope live)
              (goblins)
              (goblins persistence-store memory)
              (srfi srfi-1) (ice-9 format) (ice-9 match))
-(use-modules (playnet planner knowledge catalogues subsistence)
-             ((playnet planner knowledge catalogues substances) #:select (nutrient-content)))
+(use-modules (playnet knowledge catalogues subsistence)
+             ((playnet knowledge catalogues substances) #:select (nutrient-content)))
 
 (define PLACE "farm")
 ;; the farm's table: a body's band is fed whole by exactly this set

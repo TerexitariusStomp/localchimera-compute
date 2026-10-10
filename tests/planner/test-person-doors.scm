@@ -11,7 +11,7 @@
 
 (use-modules (playnet test harness)
              (playnet protocol)
-             (playnet planner facts person-facts)
+             (playnet vf facts person-facts)
              (srfi srfi-1))
 
 (define planner-doors (doors-of 'planner))

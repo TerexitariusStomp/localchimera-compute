@@ -9,7 +9,7 @@
 ;;; Run:  guile --no-auto-compile -L module/playnet/planner tests/planner/test-frag-farstart.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve solver))
+(use-modules (playnet solve solver))
 
 (define want 9.0839543)   ; the known optimum (desire→20, frag tip 10, fixed w 50)
 (define starts (list 0.5 9.0 50.0 200.0 1000.0 100000.0))

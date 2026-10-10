@@ -1,6 +1,6 @@
 ;;; test-page-scope.scm — a scope held in a page answers the doors a gateway answers.
 ;;;
-;;; (playnet planner doors page-scope) holds a scope root and answers the page's doors
+;;; (playnet doors page-scope) holds a scope root and answers the page's doors
 ;;; over it with the planner service's own door functions. What this pins:
 ;;;
 ;;;   • the neighbourhood stands and its counts, labels, needs and offers land;
@@ -25,10 +25,10 @@
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (goblins)
-             (playnet planner doors page-scope)
-             (playnet planner scope replica)
-             (playnet planner knowledge worlds demo-neighbourhood)
-             (playnet planner doors demo-stage)
+             (playnet doors page-scope)
+             (playnet scope replica)
+             (playnet knowledge worlds demo-neighbourhood)
+             (playnet doors demo-stage)
              (playnet wire replies)
              ((playnet utils json-portable) #:select (json-read-ordered scm->json-canonical))
              (srfi srfi-1))

@@ -9,8 +9,8 @@
 
 (use-modules (playnet test harness) (goblins) (goblins vat) (srfi srfi-1) (ice-9 format))
 
-(use-modules (playnet planner legal registry))            ; the fold + the guard DSL + serialization
-(use-modules (playnet planner legal registry-actor))      ; ^legal-registry + restore-legal-registry
+(use-modules (playnet legal registry))            ; the fold + the guard DSL + serialization
+(use-modules (playnet legal registry-actor))      ; ^legal-registry + restore-legal-registry
 
 (define tmpfile "/tmp/legal-registry-portrait.scm")
 

@@ -1,6 +1,6 @@
 ;;; emit-fragility-snapshot.scm — the fragility face's data, straight from the
 ;;; encoded catalogue. Reads the WITNESS TABLES in
-;;; module/playnet/planner/knowledge/catalogues/eco.scm (the real, cited planetary-boundary
+;;; module/playnet/knowledge/catalogues/eco.scm (the real, cited planetary-boundary
 ;;; and climate-tipping figures) and the solver weights in *planetary-catalogue*,
 ;;; and emits browser/data/snapshots/fragility-snapshot.json — the offline fallback the
 ;;; fragility face renders. The live gateway pushes the same shape via
@@ -10,13 +10,13 @@
 ;;;   guile --no-auto-compile -L module tools/emit-fragility-snapshot.scm
 ;;;
 ;;; The two witness tables and the solver catalogue come from
-;;; (playnet planner knowledge catalogues eco), imported below.
+;;; (playnet knowledge catalogues eco), imported below.
 
 (use-modules (ice-9 format) (srfi srfi-1))
 
 (define root (dirname (dirname (current-filename))))
 (define (rel p) (string-append root "/" p))
-(use-modules (playnet planner knowledge catalogues eco))
+(use-modules (playnet knowledge catalogues eco))
 
 ;; ── governance weight w per control, from the solver catalogue where the
 ;; federation actually draws the limit; a default steepness elsewhere (witness-
@@ -92,7 +92,7 @@
        *climate-tipping-points*))
 
 (define out
-  (J:obj (J:field "source" (J:s "Richardson et al. 2023 (nine planetary boundaries) + Armstrong McKay et al. 2022 (climate tipping elements), via module/playnet/planner/knowledge/catalogues/eco.scm"))
+  (J:obj (J:field "source" (J:s "Richardson et al. 2023 (nine planetary boundaries) + Armstrong McKay et al. 2022 (climate tipping elements), via module/playnet/knowledge/catalogues/eco.scm"))
          (J:field "warmingNow" (J:n *warming-now*))
          (J:field "controls" (J:arr controls))
          (J:field "tippingElements" (J:arr tips))))

@@ -5,7 +5,7 @@
 ;;; lineage chain via recover-lineage.
 
 (use-modules (playnet test harness))
-(use-modules (playnet planner scope root))
+(use-modules (playnet scope root))
 (use-modules (playnet credentials recomposition) (playnet keri acdc) (playnet governance recovery) (playnet governance scope) (playnet keri acdc) (playnet keri acdc-store))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))

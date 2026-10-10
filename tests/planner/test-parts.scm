@@ -17,8 +17,8 @@
 ;;; Run:  guile -q -L module tests/planner/test-parts.scm
 
 (use-modules (playnet test harness) (srfi srfi-1) (ice-9 format)
-             (playnet planner facts parts)
-             ((playnet planner solve engine) #:select (key-terms key-prefix key-process key-arc column-terms)))
+             (playnet vf facts parts)
+             ((playnet solve engine) #:select (key-terms key-prefix key-process key-arc column-terms)))
 
 (define (raises? thunk) (catch #t (lambda () (thunk) #f) (lambda _ #t)))
 

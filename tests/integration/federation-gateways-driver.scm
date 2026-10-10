@@ -22,8 +22,8 @@
 ;;; Usage: guile -L module -s tests/integration/federation-gateways-driver.scm <dir-A> <dir-B>
 
 (use-modules (playnet test planner federation-wire-fixture)
-             (playnet planner federation peer)
-             ((playnet planner federation host) #:select (read-kept keep! make-berth moor!))
+             (playnet federation peer)
+             ((playnet federation host) #:select (read-kept keep! make-berth moor!))
              ((playnet keri citizen-sig) #:select (keri-identity-aid))
              ((playnet keri acdc) #:select (cred-claim cred-holder cred-revoked?))
              ((playnet test harness) #:select (pick-free-port))

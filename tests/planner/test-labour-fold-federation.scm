@@ -14,11 +14,11 @@
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-labour-fold-federation.scm
 
 (use-modules (playnet test harness)
-             (playnet planner knowledge recipes federation-demo) (playnet planner scope root) (playnet planner vf schemas) (playnet planner observation states) (playnet planner beyond schedules) (srfi srfi-1)
-             (playnet planner doors service)
-             (playnet planner knowledge recipes federation-demo)
+             (playnet knowledge recipes federation-demo) (playnet scope root) (playnet vf schemas) (playnet observation states) (playnet vf beyond schedules) (srfi srfi-1)
+             (playnet doors service)
+             (playnet knowledge recipes federation-demo)
              (playnet test scope)
-             (playnet planner scope live)
+             (playnet scope live)
              (srfi srfi-13)
              (goblins)
              (goblins utils hashmap)

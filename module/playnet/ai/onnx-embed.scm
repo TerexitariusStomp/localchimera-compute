@@ -1,7 +1,7 @@
 ;;; module/playnet/ai/onnx-embed.scm — a sentence embedding, in-process, via
 ;;; ONNX Runtime's C API called directly through Guile's FFI. No Node, no
 ;;; Python, no subprocess: the same shape of thing
-;;; `module/playnet/planner/solve/solver.scm` already does for OSQP (`*kern-lib*`,
+;;; `module/playnet/solve/solver.scm` already does for OSQP (`*kern-lib*`,
 ;;; `dynamic-link`/`pointer->procedure`, marshaling arrays across the
 ;;; boundary) — phase 3 of docs/planning/faces/corpus-guile-native.md, the one
 ;;; piece that doc named as genuinely unproven until it ran.

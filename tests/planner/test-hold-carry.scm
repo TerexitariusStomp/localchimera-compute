@@ -32,14 +32,14 @@
 ;; actors nor the stores does not ask for it.)
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner vf schemas)
-             (playnet planner knowledge dsl shorthand))
+(use-modules (playnet solve engine)
+             (playnet solve compile)
+             (playnet vf schemas)
+             (playnet knowledge dsl shorthand))
 ;; transport.scm is a module now — use-modules, not primitive-load. A
 ;; define-module inside a primitive-loaded file switches current-module for
 ;; the REST of this file and never switches back.
-(use-modules (playnet planner knowledge recipes transport))
+(use-modules (playnet knowledge recipes transport))
 
 (define BRIDGE "under-the-bridge")   ; where the container stands
 (define SQUARE "square")             ; where the bread is wanted

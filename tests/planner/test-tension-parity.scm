@@ -11,7 +11,7 @@
 ;;; Run:  guile -L . module/playnet/planner/tension-parity-test.scm
 
 (use-modules (srfi srfi-1) (rnrs bytevectors) (ice-9 format))
-(use-modules (playnet planner solve solver))
+(use-modules (playnet solve solver))
 (unless (kern-available?) (begin (display "C kernel unavailable; cannot check parity\n") (exit 1)))
 
 (define rs (seed->random-state 271828))

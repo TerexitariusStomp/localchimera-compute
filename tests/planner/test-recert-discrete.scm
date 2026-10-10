@@ -22,7 +22,7 @@
 ;;; Run:  guile -L module/playnet/planner tests/planner/test-recert-discrete.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner formulas cadence))
+(use-modules (playnet vf formulas cadence))
 
 ;; exact average cost rate of a check every T periods.
 (define (cost-rate T D kappa K)

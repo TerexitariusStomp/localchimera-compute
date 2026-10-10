@@ -6,14 +6,14 @@
 ;;; docs/playnet.typ renders its crossings table and its by-branch grid from one
 ;;; Typst array, `crossing-catalogue`. The array's prose (the wrapper, the stand)
 ;;; is the spec's own; what it shares with the code is each row's `id` and
-;;; `kind`, which are `*default-crossings*` (module/playnet/planner/legal/crossings.scm).
+;;; `kind`, which are `*default-crossings*` (module/playnet/legal/crossings.scm).
 ;;; This reads both and reports a crossing one of them lacks, or a kind on which
 ;;; they differ.
 ;;;
 ;;; Exit 0 = they agree, 1 = they differ.
 ;;; Run: guile --no-auto-compile -L module tools/check-crossing-catalogue.scm [SPEC]   (make check-crossing-catalogue)
 (use-modules (ice-9 rdelim) (ice-9 regex) (ice-9 format) (srfi srfi-1)
-             (playnet planner legal crossings))
+             (playnet legal crossings))
 
 (define %spec "docs/playnet.typ")
 

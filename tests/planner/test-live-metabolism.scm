@@ -7,8 +7,8 @@
 
 (use-modules (playnet test scope)) ; mock-scope-root
 (use-modules (playnet test harness)
-             (playnet planner algorithms elastic) (playnet planner vf schemas)
-             (playnet planner scope live)
+             (playnet algorithms elastic) (playnet vf schemas)
+             (playnet scope live)
              (playnet test planner bread)
              (goblins) (goblins vat)
              (srfi srfi-1))

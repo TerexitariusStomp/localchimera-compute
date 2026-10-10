@@ -51,10 +51,10 @@
 (use-modules (srfi srfi-1) (ice-9 format))
 (define here (dirname (current-filename)))
 (define root (dirname (dirname here)))
-(use-modules (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner solve solver)
-             (playnet planner vf schemas))
+(use-modules (playnet solve engine)
+             (playnet solve compile)
+             (playnet solve solver)
+             (playnet vf schemas))
 
 ;; ── coefficients ────────────────────────────────────────────────────────────
 (define RESIN-H  0.02)     ; h/kg — HDPE resin

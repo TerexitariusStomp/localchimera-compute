@@ -14,10 +14,10 @@
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
-(use-modules (playnet planner pools credit-fold) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
+(use-modules (playnet pools credit-fold) (playnet scope root) (playnet vf schemas) (srfi srfi-1))
 (use-modules (goblins) (goblins persistence-store memory) (srfi srfi-1))
-(use-modules ((playnet planner pools credit-fold) #:select (voice-share))
-             ((playnet planner observation observer) #:select (event-terms))
+(use-modules ((playnet pools credit-fold) #:select (voice-share))
+             ((playnet observation observer) #:select (event-terms))
              ((playnet test scope) #:select (record-work!)))
 
 (define (approx= a b) (< (abs (- a b)) 1e-9))

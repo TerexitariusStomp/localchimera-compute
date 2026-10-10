@@ -29,12 +29,12 @@
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-whole-assignment.scm
 
 (use-modules (playnet test harness)
-             (playnet planner algorithms deferred-acceptance)
-             (playnet planner plan assignment)
+             (playnet algorithms deferred-acceptance)
+             (playnet plan assignment)
              (srfi srfi-1))
-(use-modules (playnet planner solve engine)
-             (playnet planner solve solver)
-             (playnet planner vf schemas)
+(use-modules (playnet solve engine)
+             (playnet solve solver)
+             (playnet vf schemas)
              (ice-9 format))
 (set! *backend* 'native-c)
 

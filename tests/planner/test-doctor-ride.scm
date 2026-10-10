@@ -17,8 +17,8 @@
 ;;; Run:  guile -L module/playnet/planner module/playnet/planner/doctor-ride-test.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner solve solver))
+(use-modules (playnet solve engine)
+             (playnet solve solver))
 
 (define H    40.0)   ; Dana's hours
 (define HBOB 40.0)   ; Bob the driver's hours

@@ -9,13 +9,13 @@
 ;;;
 ;;; Run: guile -L module tests/planner/test-legal-gate-store.scm
 
-(use-modules (playnet test harness) (playnet planner knowledge recipes store) (playnet planner knowledge recipes food-surplus) (playnet planner scope spatial-things) (playnet planner vf schemas)
+(use-modules (playnet test harness) (playnet knowledge recipes store) (playnet knowledge recipes food-surplus) (playnet scope spatial-things) (playnet vf schemas)
              (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1) (ice-9 format))
 
-(use-modules (playnet planner legal crossings))             ; recipe-crossings
-(use-modules (playnet planner legal registry))        ; the fold + vocabulary
-(use-modules (playnet planner legal registry-actor))  ; ^legal-registry
-(use-modules (playnet planner legal gate))            ; make-legal-gate
+(use-modules (playnet legal crossings))             ; recipe-crossings
+(use-modules (playnet legal registry))        ; the fold + vocabulary
+(use-modules (playnet legal registry-actor))  ; ^legal-registry
+(use-modules (playnet legal gate))            ; make-legal-gate
 
 (define (empty-recipe-store)
   (spawn ^recipe-store (hashmap) (hashmap) (hashmap) (hashmap) (hashmap)

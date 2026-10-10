@@ -12,19 +12,19 @@
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
-(use-modules (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
-(use-modules (playnet planner doors service))
+(use-modules (playnet scope root) (playnet vf schemas) (srfi srfi-1))
+(use-modules (playnet doors service))
 (use-modules (playnet monero specs))
 (use-modules (playnet monero payout))
-(use-modules ((playnet planner legal crossings) #:select (record-crossings)) (srfi srfi-1))
-(use-modules (playnet planner indexes query))
+(use-modules ((playnet legal crossings) #:select (record-crossings)) (srfi srfi-1))
+(use-modules (playnet indexes query))
 (use-modules (srfi srfi-13) (playnet utils clock))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1))
-(use-modules ((playnet planner observation account) #:select (declare-claimable!)))
+(use-modules ((playnet observation account) #:select (declare-claimable!)))
 (use-modules ((playnet test scope) #:select (plan-claim!)))   ; the plan's row, stood by the fixture
 
 ;; Left for documentation only: spec-xmr is on the bar list
-;; (facts/barred-specs.scm) now, so this stand-in — what the fixture would
+;; (vf/facts/barred-specs.scm) now, so this stand-in — what the fixture would
 ;; need if the rail were read off the recipes alone — has no effect; the
 ;; claim door's own refusal of spec-xmr is asserted directly below, and
 ;; alice's already-claimed state is seeded by hand instead (see "claim, then
@@ -94,7 +94,7 @@
 (with-vat vat
   (display "\n── claim, then ask to send ──\n")
   ;; The claim door now correctly refuses spec-xmr: no citizen may claim a
-  ;; financial instrument against credit (facts/barred-specs.scm). This test
+  ;; financial instrument against credit (vf/facts/barred-specs.scm). This test
   ;; is about the PAYOUT RUNNER's own behaviour once a citizen already holds
   ;; XMR, not about whether the claim itself should be let through —
   ;; test-external-asset-claim.scm covers that directly — so the fixture

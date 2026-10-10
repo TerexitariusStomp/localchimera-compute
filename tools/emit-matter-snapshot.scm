@@ -8,9 +8,9 @@
 ;;;   guix shell -m deploy/manifests/dev-test-manifest.scm -- \
 ;;;     guile --no-auto-compile -q -L module tools/emit-matter-snapshot.scm
 
-(use-modules (playnet planner scope root) (playnet planner vf schemas)
-             (playnet planner doors service)
-             (playnet planner knowledge catalogues substances)
+(use-modules (playnet scope root) (playnet vf schemas)
+             (playnet doors service)
+             (playnet knowledge catalogues substances)
              (goblins)
              (goblins persistence-store memory)
              (srfi srfi-1)

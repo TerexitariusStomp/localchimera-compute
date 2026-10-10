@@ -26,11 +26,11 @@
 ;;; Run: guile -L module/playnet/planner tests/planner/test-federated-repro.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner vf schemas))
-(use-modules (playnet planner knowledge catalogues subsistence)
-             (playnet planner knowledge dsl shorthand))
+(use-modules (playnet solve engine)
+             (playnet solve compile)
+             (playnet vf schemas))
+(use-modules (playnet knowledge catalogues subsistence)
+             (playnet knowledge dsl shorthand))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

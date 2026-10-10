@@ -14,11 +14,11 @@
 ;;;
 ;;; Run: guile -L module tests/planner/test-retention-disclosure.scm
 
-(use-modules (playnet test harness) (playnet planner vf schemas) (srfi srfi-1) (ice-9 format))
+(use-modules (playnet test harness) (playnet vf schemas) (srfi srfi-1) (ice-9 format))
 
-(use-modules (playnet planner legal crossings))
-(use-modules (playnet planner legal registry))
-(use-modules (playnet planner legal compliance)) (use-modules (playnet planner legal filings))
+(use-modules (playnet legal crossings))
+(use-modules (playnet legal registry))
+(use-modules (playnet legal compliance)) (use-modules (playnet legal filings))
 
 ;;; ─── (1) disclosure minimization + the pseudonymity floor ─────────────────
 ;; canonical data the federation holds about the scope — including things that

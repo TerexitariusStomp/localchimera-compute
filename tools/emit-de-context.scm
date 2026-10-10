@@ -35,11 +35,11 @@
 (define root (dirname here))
 (define (rel p) (string-append root "/" p))
 
-(use-modules (playnet planner vf schemas))
-(use-modules (playnet planner legal registry))
-(use-modules (playnet planner legal crossings))
-(use-modules (playnet planner facts places))
-(use-modules (playnet planner knowledge law context-pack))
+(use-modules (playnet vf schemas))
+(use-modules (playnet legal registry))
+(use-modules (playnet legal crossings))
+(use-modules (playnet vf facts places))
+(use-modules (playnet knowledge law context-pack))
 
 (use-modules (ice-9 format))
 

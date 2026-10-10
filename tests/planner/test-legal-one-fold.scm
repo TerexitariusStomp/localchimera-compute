@@ -12,17 +12,17 @@
 ;;; Run: guile -L module tests/planner/test-legal-one-fold.scm
 
 (use-modules (ice-9 regex) (playnet test harness)
-             (playnet planner doors legal)
-             (playnet planner legal gate)
-             (playnet planner legal registry-actor)
-             (playnet planner knowledge worlds free-food-distribution)
+             (playnet doors legal)
+             (playnet legal gate)
+             (playnet legal registry-actor)
+             (playnet knowledge worlds free-food-distribution)
              ((playnet protocol) #:select (%doors door-feature))
-             (playnet planner scope spatial-things) (playnet planner observation observer) (playnet planner plan store) (playnet planner vf schemas) (srfi srfi-1) (playnet planner legal compliance) (playnet planner legal adapters)
-             (playnet planner knowledge law structural-demands)
-             (playnet planner knowledge law lint)
-             (playnet planner legal policy) (playnet utils governed-row)
+             (playnet scope spatial-things) (playnet observation observer) (playnet plan store) (playnet vf schemas) (srfi srfi-1) (playnet legal compliance) (playnet legal adapters)
+             (playnet knowledge law structural-demands)
+             (playnet knowledge law lint)
+             (playnet legal policy) (playnet utils governed-row)
              ((playnet utils geo) #:select (in-geometry?))
-             ((playnet planner knowledge law jurisdiction-at) #:select (jurisdiction-at register-jurisdiction-outline!))
+             ((playnet knowledge law jurisdiction-at) #:select (jurisdiction-at register-jurisdiction-outline!))
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1) (srfi srfi-13) (ice-9 format) (ice-9 rdelim))
 
@@ -491,7 +491,7 @@
 (check "open sea stands in no jurisdiction" (jurisdiction-at 30.0 -40.0) #f)
 (register-jurisdiction-outline! here square)
 (check "an outline a scope registers is read the same way" (jurisdiction-at 10.5 10.5) here)
-(define standing-in (@@ (playnet planner doors service) standing-in))
+(define standing-in (@@ (playnet doors service) standing-in))
 (define (spot id lat lon up) (make-spatial-thing #:id id #:name id #:lat lat #:long lon
                                                  #:contained-in up))
 (check "a fix stands in the nearby place of its scope when that place is under the outline"

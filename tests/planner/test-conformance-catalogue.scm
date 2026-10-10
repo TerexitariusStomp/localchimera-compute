@@ -14,11 +14,11 @@
 (define (sibling f) (or (find file-exists? (filter-map (lambda (p) (and (string? p) (string-append (dirname p) "/" f)))
                                                        (cons (current-filename) (command-line))))
                         (string-append "module/playnet/planner/" f)))
-(use-modules (playnet planner knowledge catalogues tension-registry)    ; ^tension-registry, check-kind, fd, rel
-             (playnet planner formulas tension-kinds)       ; *kind-library*
-             (playnet planner knowledge catalogues compiler))          ; catalogue->policy / catalogue->wire — the shared compiler, not eco-specific
+(use-modules (playnet knowledge catalogues tension-registry)    ; ^tension-registry, check-kind, fd, rel
+             (playnet vf formulas tension-kinds)       ; *kind-library*
+             (playnet knowledge catalogues compiler))          ; catalogue->policy / catalogue->wire — the shared compiler, not eco-specific
 (setenv "CONFORMANCE_LIB" "1")
-(use-modules (playnet planner knowledge catalogues conformance)) ; *conformance-catalogue*, conformance-frag-weight
+(use-modules (playnet knowledge catalogues conformance)) ; *conformance-catalogue*, conformance-frag-weight
 
 (format #t "~%── the conformance confidence barrier is a governed fragility, not a hard-coded weight ──~%")
 

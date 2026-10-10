@@ -18,10 +18,10 @@
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-fold-laws.scm
 
 (use-modules (playnet test harness)
-             (playnet planner vf schemas) (playnet planner beyond schedules) (srfi srfi-1)
-             (playnet planner pools availability-pool)
-             ((playnet planner algorithms elastic) #:select (credit-combine))
-             ((playnet planner aggregation fold-node) #:select (keyed-sum-monoid monoid-combine))
+             (playnet vf schemas) (playnet vf beyond schedules) (srfi srfi-1)
+             (playnet pools availability-pool)
+             ((playnet algorithms elastic) #:select (credit-combine))
+             ((playnet vf aggregation fold-node) #:select (keyed-sum-monoid monoid-combine))
              (srfi srfi-1))
 
 ;; a fixed-seed generator: the same inputs every run

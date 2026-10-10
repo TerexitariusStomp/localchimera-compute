@@ -14,9 +14,9 @@
 ;;;         -l tests/planner/test-frag-budget-section-law.scm
 
 (use-modules (playnet test harness) (srfi srfi-1)
-             (playnet planner solve engine) (playnet planner solve compile)
-             (playnet planner solve solver) (playnet planner vf schemas)
-             (playnet planner knowledge dsl shorthand))
+             (playnet solve engine) (playnet solve compile)
+             (playnet solve solver) (playnet vf schemas)
+             (playnet knowledge dsl shorthand))
 
 (define wprofile (list 80.0 120.0 0.5 50.0))   ; the shed's water: ~100 m3 a period
 

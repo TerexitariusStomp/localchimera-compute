@@ -12,7 +12,7 @@
 ;;; still goes through.
 
 (use-modules (playnet test harness))
-(use-modules (playnet planner scope root))
+(use-modules (playnet scope root))
 (use-modules (playnet credentials commitments) (playnet credentials voting) (playnet keri acdc) (playnet governance scope) (playnet governance socialization) (playnet keri acdc) (playnet keri acdc-store))
 (use-modules (goblins) (goblins vat))
 
@@ -91,8 +91,8 @@
 ;; every dial the engine reads at solve time has one default here, equal to
 ;; the engine's own, so a scope with no policy row solves as the engine does
 (use-modules ((playnet governance governance-policy) #:select (*governed-dials* policy-dials governance-policy))
-             ((playnet planner solve engine) #:select (*pref-bound* want-as-cap?))
-             ((playnet planner solve solver) #:select (*kappa*)))
+             ((playnet solve engine) #:select (*pref-bound* want-as-cap?))
+             ((playnet solve solver) #:select (*kappa*)))
 (check "the registry names the voice bound, β, ρ, κ, the cap shape and the draw weight"
        (map car *governed-dials*) '(voice-tau pref-bound emp-rho kappa want-as-cap stock-draw-hours))
 (check "β's default is the engine's" (governance-policy #f 'pref-bound) *pref-bound*)

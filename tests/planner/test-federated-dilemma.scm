@@ -13,9 +13,9 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module -L tests tests/planner/test-federated-dilemma.scm
 
-(use-modules (playnet test harness) (playnet planner knowledge recipes federation-demo) (playnet planner scope root) (playnet planner vf schemas) (playnet planner scope live)
-             (playnet planner doors service)
-             (playnet planner knowledge recipes federation-demo)
+(use-modules (playnet test harness) (playnet knowledge recipes federation-demo) (playnet scope root) (playnet vf schemas) (playnet scope live)
+             (playnet doors service)
+             (playnet knowledge recipes federation-demo)
              (goblins) (goblins utils hashmap) (srfi srfi-1))
 
 (define (dilemma-for svc granary-stock)

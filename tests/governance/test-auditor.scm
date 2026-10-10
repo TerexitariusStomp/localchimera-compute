@@ -2,7 +2,7 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness))
-(use-modules (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
+(use-modules (playnet scope root) (playnet vf schemas) (srfi srfi-1))
 (use-modules (playnet governance auditor) (playnet credentials audit) (playnet credentials custody) (playnet keri acdc) (playnet governance scope) (playnet governance socialization) (playnet governance structural-invariants) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri first-person predicates))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap)
              (rnrs bytevectors)

@@ -12,12 +12,12 @@
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test scope)) ; mock-scope-root
 (use-modules (playnet test harness))
-(use-modules (playnet planner observation observer) (playnet planner scope root) (playnet planner solve recipe-response) (playnet planner vf schemas) (playnet planner beyond scenario) (srfi srfi-1))
-(use-modules ((playnet planner scope live) #:select (gather-recipes)))
-(use-modules (playnet credentials declarations) (playnet governance recipe-standing) (playnet keri acdc-store) (playnet planner solve recipe-response))
-(use-modules ((playnet planner solve recipe-response) #:select (capture-at response-shocks response-margin margin-shocks curve-reach
+(use-modules (playnet observation observer) (playnet scope root) (playnet solve recipe-response) (playnet vf schemas) (playnet vf beyond scenario) (srfi srfi-1))
+(use-modules ((playnet scope live) #:select (gather-recipes)))
+(use-modules (playnet credentials declarations) (playnet governance recipe-standing) (playnet keri acdc-store) (playnet solve recipe-response))
+(use-modules ((playnet solve recipe-response) #:select (capture-at response-shocks response-margin margin-shocks curve-reach
                                                           recipe-response-report standing-position)))
-(use-modules ((playnet planner formulas shocks) #:select (scenario-factor-on normalize-shocks flows-stress flows-factor scenario-shocks)))
+(use-modules ((playnet vf formulas shocks) #:select (scenario-factor-on normalize-shocks flows-stress flows-factor scenario-shocks)))
 (define (row-of rows ch) (find (lambda (r) (equal? ch (assq-ref r 'channel))) rows))
 (define (word-of rows ch) (assq-ref (row-of rows ch) 'word))
 (define (~= a b) (< (abs (- a b)) 1e-6))

@@ -9,10 +9,10 @@
 ;;; Run:  guile --no-auto-compile -L module tests/planner/test-subsistence-catalogue.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner vf schemas)
-             (playnet planner knowledge dsl shorthand))
-(use-modules (playnet planner knowledge catalogues subsistence))
+(use-modules (playnet solve engine)
+             (playnet vf schemas)
+             (playnet knowledge dsl shorthand))
+(use-modules (playnet knowledge catalogues subsistence))
 
 (define (floor-of ctx spec) (assoc-ref (subsistence-floors ctx) spec))
 (define (~= a b tol) (< (abs (- a b)) tol))

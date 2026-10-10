@@ -6,7 +6,7 @@
 ;;;   emit-attribution-notices.scm check            exit 1 if any target is stale
 ;;;   emit-attribution-notices.scm write             rewrite every target in place
 ;;;
-;;; module/playnet/planner/knowledge/law/product.scm's `attribution` notice is
+;;; module/playnet/knowledge/law/product.scm's `attribution` notice is
 ;;; already the one source for ui/app/legal-product.ts (tools/emit-product-law.scm).
 ;;; Two more places quote the RID that string carries, verbatim or bare, and
 ;;; were hand-edited until now: LICENSE-ADDITIONAL-TERMS.md (the full quoted
@@ -23,7 +23,7 @@
 ;;; file: every target already carries its OWN surrounding prose, hand-written
 ;;; and reviewed on its own terms — this changes only the token.
 
-(use-modules (playnet planner knowledge law product)
+(use-modules (playnet knowledge law product)
              (ice-9 textual-ports) (ice-9 regex))
 
 (define RID-RE (make-regexp "rad:[A-Za-z0-9]+"))

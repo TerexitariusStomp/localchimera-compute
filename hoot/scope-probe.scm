@@ -1,6 +1,6 @@
 ;;; scope-probe.scm — a whole scope, run by the browser build.
 ;;;
-;;; The page's own scope ((playnet planner doors page-scope)): a scope root with its
+;;; The page's own scope ((playnet doors page-scope)): a scope root with its
 ;;; observer and stores, the demo neighbourhood seeded into it and its acts
 ;;; played, then the page's doors asked. `make check-hoot-scope` proves the scope
 ;;; still compiles for Hoot; `make hoot-probe-scope` runs it under node.
@@ -15,11 +15,11 @@
 
 (use-modules (hoot ffi)
              (goblins)
-             (playnet planner doors page-scope)
-             ((playnet planner scope root) #:select (spawn-scope-root))
-             ((playnet planner knowledge dsl world) #:select (seed-world!))
-             ((playnet planner knowledge recipes bread-commune-seed) #:select (bread-world))
-             ((playnet planner scope live) #:select (plan-scope->alist))
+             (playnet doors page-scope)
+             ((playnet scope root) #:select (spawn-scope-root))
+             ((playnet knowledge dsl world) #:select (seed-world!))
+             ((playnet knowledge recipes bread-commune-seed) #:select (bread-world))
+             ((playnet scope live) #:select (plan-scope->alist))
              ((playnet utils json-portable) #:select (json-read-ordered)))
 
 (define-foreign %log "console" "log" f64 -> none)

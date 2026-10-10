@@ -8,7 +8,7 @@
 ;;; Run:  guile module/playnet/planner/ewma-fold-test.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve routing))
+(use-modules (playnet solve routing))
 
 (define (~= a b) (< (abs (- a b)) 1e-9))
 

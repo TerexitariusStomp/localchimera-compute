@@ -10,7 +10,7 @@
 ;;; Run:  guile --no-auto-compile -L module -L tests tests/governance/test-witness-relay-bundle.scm
 
 (use-modules (playnet test harness)
-             (playnet planner scope root)
+             (playnet scope root)
              (playnet governance attestation-ceremony) (playnet identity enrollment) (playnet utils paths) (playnet governance service) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri first-person credentials) (playnet keri first-person predicates)
              ((playnet utils paths) #:select (current-playnet-state-dir-override))
              ((playnet governance witness-relay)

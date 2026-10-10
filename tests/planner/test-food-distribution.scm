@@ -22,18 +22,18 @@
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test scope)) ; mock-scope-root
-(use-modules (playnet test harness) (playnet planner knowledge recipes store) (playnet planner scope spatial-things) (playnet planner observation observer) (playnet planner vf schemas) (srfi srfi-1) (playnet planner scope live)
+(use-modules (playnet test harness) (playnet knowledge recipes store) (playnet scope spatial-things) (playnet observation observer) (playnet vf schemas) (srfi srfi-1) (playnet scope live)
              (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1) (ice-9 format))
 
 (define here (dirname (current-filename)))
 (define root (dirname (dirname here)))
 (define (pl p) (load (string-append root "/module/playnet/planner/" p)))
-(use-modules (playnet planner legal crossings))
-(use-modules (playnet planner legal registry))
-(use-modules (playnet planner legal registry-actor))
-(use-modules (playnet planner legal gate)) (use-modules (playnet planner legal compliance))
-(use-modules (playnet planner knowledge recipes compliance-food))
-(use-modules (playnet planner knowledge recipes compliance-processes))
+(use-modules (playnet legal crossings))
+(use-modules (playnet legal registry))
+(use-modules (playnet legal registry-actor))
+(use-modules (playnet legal gate)) (use-modules (playnet legal compliance))
+(use-modules (playnet knowledge recipes compliance-food))
+(use-modules (playnet knowledge recipes compliance-processes))
 
 (define (empty-rs)
   (spawn ^recipe-store (hashmap) (hashmap) (hashmap) (hashmap) (hashmap)

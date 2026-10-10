@@ -1,8 +1,8 @@
 ;;; module/playnet/ui/zone-format.scm — DDMRP zone classification for rendering
 ;;;
 ;;; The live planner computes buffer zones as typed <buffer-zone> records
-;;; (module/playnet/planner/ddmrp/buffer-zones.scm) and its own
-;;; buffer-status (module/playnet/planner/ddmrp/buffers.scm) operates on
+;;; (module/playnet/ddmrp/buffer-zones.scm) and its own
+;;; buffer-status (module/playnet/ddmrp/buffers.scm) operates on
 ;;; those records. The SXML rendering layer, however, works with plain
 ;;; alist snapshots (tor/toy/tog as bare keys) coming off the wire — so it
 ;;; needs its own tiny, presentation-only copy of the same threshold logic

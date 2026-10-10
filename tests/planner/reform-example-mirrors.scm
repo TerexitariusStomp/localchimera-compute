@@ -7,7 +7,7 @@
 ;;;
 ;;;   guile -L module tests/planner/reform-example-mirrors.scm      ; prints the program
 
-(use-modules (playnet planner legal reform) (srfi srfi-1) (srfi srfi-13) (ice-9 format))
+(use-modules (playnet legal reform) (srfi srfi-1) (srfi srfi-13) (ice-9 format))
 
 (define *example-mirrors*
   (list

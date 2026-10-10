@@ -10,7 +10,7 @@
 ;;; Run:  guile module/playnet/planner/valhalla-live-test.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve routing))
+(use-modules (playnet solve routing))
 
 (unless (valhalla-up?)
   (format #t "  ~~ skip: no valhalla at ~a~%" *valhalla-base*)

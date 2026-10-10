@@ -13,7 +13,7 @@
 ;;; ("spec-test-liquidity") bootstrapped the same generic way
 ;;; `bootstrap-external-asset!` always has. XMR itself — along with every
 ;;; fiat currency and precious metal — is on the bar list now
-;;; (facts/barred-specs.scm): no citizen may claim a financial instrument
+;;; (vf/facts/barred-specs.scm): no citizen may claim a financial instrument
 ;;; against credit, whatever the acquisition recipe prices it at. The last
 ;;; section proves that directly, against the real spec-xmr/res-xmr-main.
 ;;;
@@ -21,11 +21,11 @@
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
-(use-modules (playnet planner scope root) (playnet planner vf schemas))
-(use-modules (playnet planner doors service))
+(use-modules (playnet scope root) (playnet vf schemas))
+(use-modules (playnet doors service))
 (use-modules (playnet monero specs))
-(use-modules ((playnet planner observation live-resource) #:select (^live-resource)))
-(use-modules ((playnet planner facts rail) #:select (declare-rail!)))
+(use-modules ((playnet observation live-resource) #:select (^live-resource)))
+(use-modules ((playnet vf facts rail) #:select (declare-rail!)))
 (use-modules ((playnet test scope) #:select (plan-claim!)))   ; the plan's row, stood by the fixture
 (use-modules (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1))
 

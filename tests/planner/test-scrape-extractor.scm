@@ -16,9 +16,9 @@
 
 (use-modules (playnet test harness) (srfi srfi-1) (ice-9 format))
 
-(use-modules (playnet planner legal crossings))
-(use-modules (playnet planner legal registry))
-(use-modules (playnet planner knowledge law scrape))
+(use-modules (playnet legal crossings))
+(use-modules (playnet legal registry))
+(use-modules (playnet knowledge law scrape))
 
 ;; a small synthetic municipal code (the "scraped" input).
 (define statute

@@ -6,9 +6,9 @@
 ;;; Run: guile --no-auto-compile -q -L module -L tests tests/planner/test-planner-earth-roster.scm
 
 (use-modules (playnet test harness)
-             (playnet planner scope earth) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
-             (playnet planner doors service)
-             (playnet planner vf schemas)
+             (playnet scope earth) (playnet scope root) (playnet vf schemas) (srfi srfi-1)
+             (playnet doors service)
+             (playnet vf schemas)
              (goblins)
              (goblins vat)
              (goblins utils hashmap)

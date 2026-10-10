@@ -32,7 +32,7 @@
   #:use-module (playnet credentials custody)
   #:use-module (playnet credentials registry)
   #:use-module (playnet keri acdc)
-  #:use-module (playnet planner facts validity)
+  #:use-module (playnet vf facts validity)
   #:use-module (srfi srfi-1)
   #:use-module (goblins actor-lib facet)
   #:use-module (playnet governance structural-invariants)

@@ -23,7 +23,7 @@
   #:use-module (goblins)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-13)                    ;; string-join
-  #:use-module (playnet planner vf schemas)
+  #:use-module (playnet vf schemas)
   #:use-module (srfi srfi-1)
   #:export (aggregate-demands
             windows-overlap?

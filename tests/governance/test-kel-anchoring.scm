@@ -18,7 +18,7 @@
 ;;; specified.
 
 (use-modules (playnet test harness)
-             (playnet planner scope root)
+             (playnet scope root)
              (playnet credentials membership) (playnet keri acdc) (playnet governance scope) (playnet keri acdc) (playnet keri acdc-store)
              (goblins))
 

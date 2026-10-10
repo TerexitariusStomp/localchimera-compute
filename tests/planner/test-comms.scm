@@ -8,11 +8,11 @@
 ;;; Run: guile -L module tests/planner/test-comms.scm
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test harness) (playnet planner vf schemas) (playnet planner observation states) (srfi srfi-1) (srfi srfi-13))
+(use-modules (playnet test harness) (playnet vf schemas) (playnet observation states) (srfi srfi-1) (srfi srfi-13))
 
 (define here (dirname (current-filename)))
 (define root (dirname (dirname here)))
-(use-modules (playnet planner comms plan))
+(use-modules (playnet comms plan))
 
 ;; ─── helpers : build real <intent> + <satisfaction-state> records ───────────
 ;; make-intent is a 28-field positional constructor; wrap it with keywords.
@@ -138,7 +138,7 @@
        (rank-comm-intents (list i-food) (lambda (_) 5.0) #:recruitable? (lambda (_) #f)) '())
 
 ;;; ─── 6. the IG card renderer (skeleton → SVG) ──────────────────────────────
-(use-modules (playnet planner comms card))
+(use-modules (playnet comms card))
 (display "\n── render-post-card: a deterministic SVG card ──\n")
 (define card (render-post-card "Short 12 kg for Saturday's share! [cite:intent-food]"))
 (check "the card is an SVG" (and (string-prefix? "<svg" card) #t) #t)

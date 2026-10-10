@@ -4,7 +4,7 @@
 ;;; This index is available for the scheduling/assignment phase.
 
 (define-module (playnet deprecated planner indexes agents)
-  #:use-module (playnet planner vf schemas)
+  #:use-module (playnet vf schemas)
   #:export (build-agent-index query-agents-by-spec get-total-agent-hours)
   #:use-module (srfi srfi-1)
   #:use-module (goblins utils hashmap))

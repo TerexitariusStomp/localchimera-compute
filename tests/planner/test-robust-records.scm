@@ -15,9 +15,9 @@
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-robust-records.scm
 
 (use-modules (playnet test planner prelude)
-             (playnet planner solve engine)
-             (playnet planner vf schemas) (playnet planner beyond scenario)
-             (playnet planner knowledge dsl shorthand)
+             (playnet solve engine)
+             (playnet vf schemas) (playnet vf beyond scenario)
+             (playnet knowledge dsl shorthand)
              (srfi srfi-1)
              (ice-9 format))
 

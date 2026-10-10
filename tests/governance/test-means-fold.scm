@@ -9,7 +9,7 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness))
-(use-modules (playnet planner formulas capacity) (playnet planner vf schemas) (srfi srfi-1))
+(use-modules (playnet vf formulas capacity) (playnet vf schemas) (srfi srfi-1))
 (use-modules (playnet governance means-fold))
 (use-modules (goblins))
 (use-modules (srfi srfi-1))

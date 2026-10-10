@@ -8,13 +8,13 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
-(use-modules (playnet planner scope root) (playnet planner vf schemas))
-(use-modules (playnet planner doors service))
+(use-modules (playnet scope root) (playnet vf schemas))
+(use-modules (playnet doors service))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1))
 
 ;; satisfying work → validated gross for AID
 
-(use-modules ((playnet planner observation account) #:select (declare-claimable!)))
+(use-modules ((playnet observation account) #:select (declare-claimable!)))
 ;; the rail is read off the recipes: this fixture stands in for the plan and
 ;; declares that a claim recipe stands for spec-bread (account.scm spec-claimable?)
 (declare-claimable! "spec-bread")

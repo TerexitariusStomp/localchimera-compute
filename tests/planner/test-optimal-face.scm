@@ -33,11 +33,11 @@
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-optimal-face.scm
 
 (use-modules (playnet test planner prelude)
-             (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner solve solver)
-             (playnet planner vf schemas)
-             (playnet planner formulas tension-kinds)
+             (playnet solve engine)
+             (playnet solve compile)
+             (playnet solve solver)
+             (playnet vf schemas)
+             (playnet vf formulas tension-kinds)
              (srfi srfi-1)
              (ice-9 format))
 

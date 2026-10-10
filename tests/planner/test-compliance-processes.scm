@@ -8,14 +8,14 @@
 ;;;
 ;;; Run: guile -L module tests/planner/test-compliance-processes.scm
 
-(use-modules (playnet test harness) (playnet planner knowledge recipes store) (playnet planner vf schemas) (srfi srfi-1)
+(use-modules (playnet test harness) (playnet knowledge recipes store) (playnet vf schemas) (srfi srfi-1)
              (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1) (ice-9 format))
 
-(use-modules (playnet planner legal crossings))
-(use-modules (playnet planner legal registry))
-(use-modules (playnet planner legal registry-actor))
-(use-modules (playnet planner knowledge recipes compliance-processes))
-(use-modules (playnet planner knowledge recipes compliance-food))
+(use-modules (playnet legal crossings))
+(use-modules (playnet legal registry))
+(use-modules (playnet legal registry-actor))
+(use-modules (playnet knowledge recipes compliance-processes))
+(use-modules (playnet knowledge recipes compliance-food))
 
 (define (empty-rs)
   (spawn ^recipe-store (hashmap) (hashmap) (hashmap) (hashmap) (hashmap)

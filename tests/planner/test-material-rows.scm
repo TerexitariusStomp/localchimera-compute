@@ -18,14 +18,14 @@
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-material-rows.scm
 
 (use-modules (playnet test harness)
-             (playnet planner vf schemas)
-             (playnet planner solve engine)
-             (playnet planner scope live)
-             (playnet planner formulas flows)
-             (playnet planner knowledge dsl shorthand)
+             (playnet vf schemas)
+             (playnet solve engine)
+             (playnet scope live)
+             (playnet vf formulas flows)
+             (playnet knowledge dsl shorthand)
              (srfi srfi-1))
 
-(define E (resolve-module '(playnet planner solve engine)))
+(define E (resolve-module '(playnet solve engine)))
 (define mk-mat-commitment (module-ref E 'mk-mat-commitment))
 (define run-id (module-ref E (quote run-id)))
 (define (never-ambient spec) #f)   ; the engine's ambient test: a spec drawn from the ambient world
@@ -59,7 +59,7 @@
          '(id action conforms-to quantity unit effort output-of input-of classified-as at-location when note)))
 
 (display "\n── THE PLAN AT ITS EDGES: records inside, rows on the wire, serialized in the store ──\n")
-(define S (resolve-module '(playnet planner doors service)))
+(define S (resolve-module '(playnet doors service)))
 (define solve->stored (module-ref S 'solve->stored))
 (define stored->solve (module-ref S 'stored->solve))
 (let* ((plan   `((met . 1.0) (work . ()) (material . (,stated)) (runs . ())))

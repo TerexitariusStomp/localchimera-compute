@@ -20,10 +20,10 @@
 ;;;          A|B <sref-file> <seed-byte> [peer <state-dir> <spec-file>]
 
 (use-modules (playnet test harness)
-             (playnet planner federation wire)
-             (playnet planner federation host)
+             (playnet federation wire)
+             (playnet federation host)
              (playnet gateway federate)
-             ((playnet planner solve engine) #:select (make-boundary-oracle))
+             ((playnet solve engine) #:select (make-boundary-oracle))
              ((playnet keri citizen-sig) #:select (make-keri-identity keri-identity-aid))
              (goblins) (goblins vat)
              (fibers)

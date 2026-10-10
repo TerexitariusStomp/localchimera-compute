@@ -133,12 +133,12 @@
   #:use-module (playnet deprecated planner algorithms dependent-demand)
   #:use-module (playnet deprecated planner algorithms netting)
   #:use-module (playnet deprecated planner utils demand-priority)
-  #:use-module (playnet planner execution scope-execution)
-  #:use-module (playnet planner scope root)
-  #:use-module (playnet planner ddmrp monitors)
+  #:use-module (playnet execution scope-execution)
+  #:use-module (playnet scope root)
+  #:use-module (playnet ddmrp monitors)
   ;; #:select — relational/compute.scm reimplements 26 of ddmrp's names over
   ;; lifted facts. Importing them all would make every one of those dead code.
-  #:use-module ((playnet planner ddmrp buffers)
+  #:use-module ((playnet ddmrp buffers)
                 #:select (analyze-recipe-topology detect-adu-alerts material-release-date
                          time-buffer-state leg-lead-time signal-compliance-history
                          adjust-vf-for-capacity compute-adu/events qualify-demand
@@ -157,86 +157,86 @@
                          standard-profile adu-drift-alert score-positioning-analysis
                          buffer-status recommend-buffer-type buffer-eligibility
                          buffer-health-history compute-execution-priority))
-  #:use-module (playnet planner observation live-registry)
-  #:use-module (playnet planner observation account)
-  #:use-module (playnet planner pools credit-fold)   ; the global-* reads and voice-share, off the fold
+  #:use-module (playnet observation live-registry)
+  #:use-module (playnet observation account)
+  #:use-module (playnet pools credit-fold)   ; the global-* reads and voice-share, off the fold
   ;; #:select — relational/compute.scm defines the other three over lifted facts.
   #:use-module ((playnet deprecated planner algorithms metabolism)
                 #:select (material-metabolism labour-metabolism metabolic-balance-legacy))
-  #:use-module (playnet planner algorithms rollup)
-  #:use-module (playnet planner plan store)
+  #:use-module (playnet algorithms rollup)
+  #:use-module (playnet plan store)
   ;; #:select — relational/compute.scm defines the other nine over lifted facts.
-  #:use-module ((playnet planner algorithms value-equations)
+  #:use-module ((playnet algorithms value-equations)
                 #:select (distribute-multiple-income))
   #:use-module (playnet deprecated planner indexes independent-supply)
-  #:use-module (playnet planner algorithms correlation)
-  #:use-module (playnet planner observation observer)
-  #:use-module (playnet planner plan schedule-book)
-  #:use-module (playnet planner federation remote-transport)
-  #:use-module (playnet planner federation store-registry)
-  #:use-module (playnet planner execution capacity-execute)
-  #:use-module (playnet planner execution alerts)
-  #:use-module (playnet planner observation live-resource)
-  #:use-module (playnet planner observation transition)
-  #:use-module (playnet planner observation demand-policy)
-  #:use-module (playnet planner ddmrp buffer-zones)
-  #:use-module (playnet planner ddmrp capacity-buffers)
-  #:use-module (playnet planner scope spatial-things)
-  #:use-module (playnet planner ddmrp buffer-snapshots)
+  #:use-module (playnet algorithms correlation)
+  #:use-module (playnet observation observer)
+  #:use-module (playnet plan schedule-book)
+  #:use-module (playnet federation remote-transport)
+  #:use-module (playnet federation store-registry)
+  #:use-module (playnet execution capacity-execute)
+  #:use-module (playnet execution alerts)
+  #:use-module (playnet observation live-resource)
+  #:use-module (playnet observation transition)
+  #:use-module (playnet observation demand-policy)
+  #:use-module (playnet ddmrp buffer-zones)
+  #:use-module (playnet ddmrp capacity-buffers)
+  #:use-module (playnet scope spatial-things)
+  #:use-module (playnet ddmrp buffer-snapshots)
   #:use-module (playnet deprecated planner utils buffer-type)
-  #:use-module (playnet planner plan recurrence)
-  #:use-module (playnet planner scope agents)
-  #:use-module (playnet planner scope process-registry)
-  #:use-module (playnet planner knowledge recipes humisoil)
-  #:use-module (playnet planner knowledge recipes grow)
-  #:use-module (playnet planner knowledge recipes meeting)
-  #:use-module (playnet planner knowledge recipes cold-chain)
-  #:use-module (playnet planner knowledge recipes food-surplus)
-  #:use-module (playnet planner knowledge recipes infrastructure)
-  #:use-module (playnet planner dev recipes)
-  #:use-module (playnet planner algorithms sne)
-  #:use-module (playnet planner algorithms signals)
-  #:use-module (playnet planner algorithms skill-matcher)
-  #:use-module (playnet planner algorithms critical-path)
+  #:use-module (playnet plan recurrence)
+  #:use-module (playnet scope agents)
+  #:use-module (playnet scope process-registry)
+  #:use-module (playnet knowledge recipes humisoil)
+  #:use-module (playnet knowledge recipes grow)
+  #:use-module (playnet knowledge recipes meeting)
+  #:use-module (playnet knowledge recipes cold-chain)
+  #:use-module (playnet knowledge recipes food-surplus)
+  #:use-module (playnet knowledge recipes infrastructure)
+  #:use-module (playnet dev recipes)
+  #:use-module (playnet algorithms sne)
+  #:use-module (playnet algorithms signals)
+  #:use-module (playnet algorithms skill-matcher)
+  #:use-module (playnet algorithms critical-path)
   #:use-module (playnet deprecated planner algorithms shortest-path)
   #:use-module (playnet deprecated planner algorithms network-flow)
   #:use-module (playnet deprecated planner algorithms flow-graph)
   ;; #:select — relational/compute.scm (and planning-facts.scm) define these
   ;; names again over lifted facts. An unselected import would make the umbrella
   ;; #:re-export publish the recipe-store version and shadow the override.
-  #:use-module ((playnet planner algorithms custody)
+  #:use-module ((playnet algorithms custody)
                 #:select (settle-custody scope-entrustment-capacity ledger-by-agent apply-transfer-custody apply-penalty penalty-svc current-custodian ledger-records build-custody-ledger make-custody-ledger held-by))
   ;; #:select, not a bare import: relational/compute.scm redefines the other two
   ;; names at top level, and an unselected import would make that a redefinition
   ;; of an imported binding rather than a clean local definition.
   #:use-module ((playnet deprecated planner algorithms positioning)
                 #:select (rank-control-point-candidates))
-  #:use-module (playnet planner algorithms track-trace)
+  #:use-module (playnet algorithms track-trace)
   #:use-module (playnet deprecated planner indexes intents)
   #:use-module (playnet deprecated planner indexes commitments)
   #:use-module (playnet deprecated planner indexes economic-events)
   #:use-module (playnet deprecated planner indexes economic-resources)
   #:use-module (playnet deprecated planner indexes independent-demand)
-  #:use-module (playnet planner indexes membership)
+  #:use-module (playnet indexes membership)
   #:use-module (playnet deprecated planner indexes proposals)
   #:use-module (playnet deprecated planner indexes agents)
   #:use-module (playnet deprecated planner indexes index-utils)
-  #:use-module (playnet planner knowledge recipes store)
-  #:use-module ((playnet planner algorithms propagation)
+  #:use-module (playnet knowledge recipes store)
+  #:use-module ((playnet algorithms propagation)
                 #:select (rp-duration-ms rp-duration-days *days-per-ms* min-snlt-for-spec recipe-output-qty *ms-per-minute* *ms-per-second* *ms-per-hour* compute-snlt create-flow-record *ms-per-day*))
-  #:use-module (playnet planner vf serdes)
+  #:use-module (playnet vf serdes)
   #:use-module (playnet utils store-utils)
   #:use-module (srfi srfi-1)
   ;; the VF ontology, a module of its own. Imported HERE rather than loaded in
   ;; the body, because #:re-export below is processed at define-module time —
   ;; an import further down the file arrives too late for it.
-  #:use-module (playnet planner vf schemas)
-  #:use-module (playnet planner formulas actions)
-  #:use-module (playnet planner observation states)
-  #:use-module (playnet planner beyond schedules)
-  #:use-module (playnet planner beyond scenario)
-  #:use-module (playnet planner beyond lot)
-  #:use-module (playnet planner ddmrp records)
+  #:use-module (playnet vf schemas)
+  #:use-module (playnet vf formulas actions)
+  #:use-module (playnet observation states)
+  #:use-module (playnet vf beyond schedules)
+  #:use-module (playnet vf beyond scenario)
+  #:use-module (playnet vf beyond lot)
+  #:use-module (playnet ddmrp records)
   #:use-module (playnet utils clock)
   #:use-module (goblins utils hashmap)
   #:use-module (ice-9 match)
@@ -261,7 +261,7 @@
   ;; every importer resolves fine until the first call. The #:use-module must sit
   ;; in THIS form: #:re-export is settled at define-module time, and the
   ;; top-level (use-modules …) further down arrives far too late.
-  #:use-module (playnet planner knowledge recipes federation)
+  #:use-module (playnet knowledge recipes federation)
   #:re-export (*spec-names* seed-federation-specs seed-federation-recipes
                seed-federation-inventory
               ;; from (playnet deprecated planner algorithms dependent-demand)
@@ -428,7 +428,7 @@
             ^ballot-store spawn-ballot-store ballot-store-env
             ;; Governance demand-registry (held by ^scope-root)
             ^demand-registry spawn-demand-registry demand-registry-env
-            ;; the VF ontology, imported from (playnet planner vf schemas)
+            ;; the VF ontology, imported from (playnet vf schemas)
             *action-definitions* *adjustment-types* *agent-types*
             *buffer-classifications* *buffer-item-types* *buffer-zones-enum*
             *days-of-week* *decoupling-tests* *override-reasons* *property-effects*
@@ -663,15 +663,15 @@
             deserialize-hashmap generate-id hashmap-any? hashmap-count hashmap-filter
             hashmap-filter-pairs hashmap-find hashmap-keys hashmap-map-values
             hashmap-values iso-datetime->epoch serialize-hashmap
-            ;; from (playnet planner vf serdes)
+            ;; from (playnet vf serdes)
             *vf-serdes-registry* register-vf-record! register-vf-records!
             vf-deserialize vf-record-instance? vf-serdes-clear!
             vf-serdes-lookup-by-instance vf-serdes-lookup-by-name vf-serialize
-            ;; from (playnet planner algorithms propagation)
+            ;; from (playnet algorithms propagation)
             *days-per-ms* *ms-per-day* *ms-per-hour* *ms-per-minute* *ms-per-second*
             compute-snlt create-flow-record min-snlt-for-spec
             rp-duration-days rp-duration-ms
-            ;; from (playnet planner knowledge recipes store)
+            ;; from (playnet knowledge recipes store)
             ^recipe-store action-input-output list->process-specification list->recipe
             list->recipe-exchange list->recipe-flow list->recipe-group
             list->recipe-process list->resource-specification
@@ -684,7 +684,7 @@
             build-agent-index get-total-agent-hours query-agents-by-spec
             ;; from (playnet deprecated planner indexes proposals)
             build-proposal-index query-proposals-by-purpose query-proposals-by-scope
-            ;; from (playnet planner indexes membership)
+            ;; from (playnet indexes membership)
             build-membership-index citizen-share commune-share
             ;; from (playnet deprecated planner indexes independent-demand)
             build-independent-demand-index get-total-demand-quantity
@@ -705,8 +705,8 @@
             ;; from (playnet deprecated planner indexes intents)
             build-intent-index query-intents-by-action query-intents-by-agent
             query-intents-by-plan query-intents-by-spec
-            ;; from (playnet planner algorithms resource-flows)
-            ;; from (playnet planner algorithms track-trace)
+            ;; from (playnet algorithms resource-flows)
+            ;; from (playnet algorithms track-trace)
             trace track
             ;; from (playnet deprecated planner algorithms positioning) — only the name the
             ;; relational planner does NOT override. routing-geometry and
@@ -714,8 +714,8 @@
             ;; over lifted facts, so they stay in #:export below: #:re-export would
             ;; publish positioning's recipe-store version and shadow the override.
             rank-control-point-candidates
-            ;; from (playnet planner ddmrp otif)
-            ;; from (playnet planner algorithms custody)
+            ;; from (playnet ddmrp otif)
+            ;; from (playnet algorithms custody)
             apply-penalty apply-transfer-custody build-custody-ledger
             current-custodian
             held-by ledger-by-agent
@@ -728,18 +728,18 @@
             max-flow min-cut
             ;; from (playnet deprecated planner algorithms shortest-path)
             bellman-ford dijkstra reconstruct-path
-            ;; from (playnet planner algorithms critical-path)
+            ;; from (playnet algorithms critical-path)
             critical-path
-            ;; from (playnet planner algorithms skill-matcher)
+            ;; from (playnet algorithms skill-matcher)
             match-work-flows
-            ;; from (playnet planner algorithms signals)
+            ;; from (playnet algorithms signals)
             *plan-tags* intent->signal plan-tag signal->intent
-            ;; from (playnet planner algorithms sne)
+            ;; from (playnet algorithms sne)
             *non-consuming-actions-sne* build-sne-index/actor compute-recipe-sne/actor
             compute-sne-for-recipe
-            ;; from (playnet planner dev recipes)
+            ;; from (playnet dev recipes)
             seed-dev-knowledge!
-            ;; from (playnet planner knowledge recipes infrastructure)
+            ;; from (playnet knowledge recipes infrastructure)
             infra-bandwidth-spec infra-compute-spec infra-dataset-spec
             infra-memory-spec infra-storage-spec infra-transcript-spec
             infrastructure-specs seed-infrastructure-recipes
@@ -749,7 +749,7 @@
             food-surplus-volunteer-spec seed-food-surplus-3step-recipe
             seed-food-surplus-donor-specs seed-food-surplus-recipe
             seed-food-surplus-recipient-specs
-            ;; from (playnet planner knowledge recipes cold-chain)
+            ;; from (playnet knowledge recipes cold-chain)
             cold-chain-food-specs cold-chain-process-specs cold-chain-storage-specs
             cold-chain-vehicle-specs pa-dairy pa-frozen pa-pantry pa-perishable
             pspec-deliver pspec-pack pspec-pre-cool pspec-receive pspec-sort-inspect
@@ -757,19 +757,19 @@
             spec-cargo-van spec-chilled-bay spec-dairy spec-dry-pantry spec-frozen-bay
             spec-frozen-meals-nut spec-frozen-meals-soy spec-leafy-greens
             spec-reefer-van
-            ;; from (playnet planner knowledge recipes meeting)
+            ;; from (playnet knowledge recipes meeting)
             seed-meeting-recipe
-            ;; from (playnet planner knowledge recipes grow)
+            ;; from (playnet knowledge recipes grow)
             seed-grow-recipe seed-grow-specs
-            ;; from (playnet planner knowledge recipes humisoil)
+            ;; from (playnet knowledge recipes humisoil)
             seed-humisoil-recipe seed-humisoil-specs
-            ;; from (playnet planner scope process-registry)
+            ;; from (playnet scope process-registry)
             ^process-registry list->process* process->list process-registry-env
-            ;; from (playnet planner scope agents)
+            ;; from (playnet scope agents)
             ^agent-store agent->list agent-relationship->list
             agent-relationship-role->list agent-store-env list->agent
             list->agent-relationship list->agent-relationship-role
-            ;; from (playnet planner plan recurrence)
+            ;; from (playnet plan recurrence)
             date-matches-window epoch->iso-date get-occurrence-status
             group-events-by-occurrence materialize-occurrence-dates
             occurrence-date-key unfulfilled-occurrences
@@ -777,22 +777,22 @@
             *buffer-types* *response-times* *tier-priority* *zone-ord*
             buffer-type-from-tags composite-buffer-priority get-buffer-type
             get-response-time
-            ;; from (playnet planner ddmrp buffer-snapshots)
+            ;; from (playnet ddmrp buffer-snapshots)
             ^snapshot-store buffer-snapshot->list list->buffer-snapshot
             snapshot-store-env
-            ;; from (playnet planner scope spatial-things)
+            ;; from (playnet scope spatial-things)
             ^spatial-thing-store is-descendant-or-equal-hm list->spatial-thing
             resolve-chain-hm resolve-coordinates-hm spatial-thing->list
             spatial-thing-store-env
-            ;; from (playnet planner ddmrp capacity-buffers)
+            ;; from (playnet ddmrp capacity-buffers)
             ^capacity-buffer-store capacity-buffer->list capacity-buffer-store-env
             list->capacity-buffer
-            ;; from (playnet planner ddmrp buffer-zones)
+            ;; from (playnet ddmrp buffer-zones)
             ^buffer-zone-store buffer-zone->list buffer-zone-store-env
             list->buffer-zone portrait->zones-hashmap zones-hashmap->portrait
-            ;; from (playnet planner observation demand-policy)
+            ;; from (playnet observation demand-policy)
             derive-communal-demand derive-dependent-demand
-            ;; from (playnet planner observation transition)
+            ;; from (playnet observation transition)
             compute-claim-capacities compute-collective-metrics
             compute-communal-satisfaction-ratio compute-dollar-balance
             compute-dollar-wage-phase-out-factor compute-dollar-wages-per-worker
@@ -800,20 +800,20 @@
             compute-real-wages compute-scope-transition-report
             compute-substitution-ratio compute-total-social-value
             compute-validated-hours compute-wage-rate-normalized extract-worker-hours
-            ;; from (playnet planner observation live-resource)
+            ;; from (playnet observation live-resource)
             ^live-resource live-resource-env
-            ;; from (playnet planner execution alerts)
+            ;; from (playnet execution alerts)
             ^alert-store alert-kind alert-spec-id alert-store-env alert-timestamp
-            ;; from (playnet planner execution capacity-execute)
+            ;; from (playnet execution capacity-execute)
             dispatch-async execute-with-event now-iso with-capacity
             with-enforced-capacity with-resources
-            ;; from (playnet planner federation store-registry)
+            ;; from (playnet federation store-registry)
             ^store-registry parse-ref qualify store-registry-env
-            ;; from (playnet planner federation remote-transport)
+            ;; from (playnet federation remote-transport)
             hydrate-store snapshot-store
-            ;; from (playnet planner plan schedule-book)
+            ;; from (playnet plan schedule-book)
             committed-effort-on has-use-conflict schedule-blocks-for
-            ;; from (playnet planner observation observer)
+            ;; from (playnet observation observer)
             <fold-ctx> <observer-state> ^observer append-index
             apply-container-location apply-direction-effects apply-quantity-effect
             apply-resource-effects capture-container-location check-process-completion
@@ -831,14 +831,14 @@
             override-action-def phase-append-event
             phase-apply-effects phase-breadcrumb-chain phase-implied-transfer
             phase-index-event serialize-observer-state split-custody?
-            ;; from (playnet planner algorithms correlation)
+            ;; from (playnet algorithms correlation)
             <covariance-view> compute-correlation correlate-pairs
             covariance-view-bucket-seconds covariance-view-id covariance-view-method
             covariance-view? make-covariance-view pearson-rho series-stddev
             ;; from (playnet deprecated planner indexes independent-supply)
             build-independent-supply-index get-total-supply-quantity
             query-supply-by-spec
-            ;; from (playnet planner algorithms value-equations)
+            ;; from (playnet algorithms value-equations)
             distribute-multiple-income
                         
             <plan-store-state> ^plan-store append-to-index
@@ -852,10 +852,10 @@
             pss-promote-intent pss-proposal-lists pss-proposals
             pss-scenario-definitions pss-scenarios pss-tag-index pss-with-commitments
             pss-with-intents remove-from-index serialize-plan-store-state
-            ;; from (playnet planner algorithms rollup)
+            ;; from (playnet algorithms rollup)
             cost-variance rollup-actual-cost rollup-standard-cost
             ;; from (playnet deprecated planner algorithms metabolism)
-            ;; from (playnet planner observation account)
+            ;; from (playnet observation account)
             ^account-store account->list account-store-env
             global-citizen-gross global-citizen-unmet
             global-contribution-claim global-effective-balance global-elastic-context
@@ -864,9 +864,9 @@
             global-total-claim-capacity global-total-social-svc
             list->account universal-credit-balance
             voice-share
-            ;; from (playnet planner observation live-registry)
+            ;; from (playnet observation live-registry)
             ^live-registry live-registry-env
-            ;; from (playnet planner ddmrp buffers)
+            ;; from (playnet ddmrp buffers)
             *ltf-ranges*
             *vf-ranges*
             adjust-vf-for-capacity adu-drift-alert aggregate-adjustment-factors
@@ -890,13 +890,13 @@
             score-positioning-analysis signal-compliance-history
             sort-by-priority-and-sequence standard-profile
             sum-onhand-at-location time-buffer-state
-            ;; from (playnet planner ddmrp monitors)
+            ;; from (playnet ddmrp monitors)
             buffer-status-monitor create-adu-shift-monitor create-recalibration-sink
             create-snapshot-sink material-sync-monitor standard-monitors
             standard-sinks
-            ;; from (playnet planner scope root)
+            ;; from (playnet scope root)
             ^scope-root scope-root-env spawn-scope-root
-            ;; from (playnet planner execution scope-execution)
+            ;; from (playnet execution scope-execution)
             make-execution-context record-and-monitor
             ;; from (playnet deprecated planner utils demand-priority)
             *default-harmony-level* *default-priority* default-priority-fn

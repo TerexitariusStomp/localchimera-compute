@@ -33,8 +33,8 @@
              ((playnet keri signify-portable) #:select (ed25519-keypair-public public-key->aid-prefix
                                                          next-key-digest))
              ((playnet utils hex) #:select (bv->hex))
-             ((playnet planner federation wire) #:select (signed-reply verify-signed make-key-ledger))
-             ((playnet planner federation peer) #:select (^attestation-fold))
+             ((playnet federation wire) #:select (signed-reply verify-signed make-key-ledger))
+             ((playnet federation peer) #:select (^attestation-fold))
              (goblins) (goblins vat) (rnrs bytevectors) (srfi srfi-1))
 
 (define vat (spawn-vat))

@@ -25,10 +25,10 @@
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
-(use-modules (playnet planner scope root) (playnet planner vf schemas))
+(use-modules (playnet scope root) (playnet vf schemas))
 (use-modules (goblins) (goblins persistence-store memory) (srfi srfi-1))
 (use-modules ((playnet utils clock) #:select (now days->seconds instant->civil))
-             ((playnet planner observation observer) #:select (void-event))
+             ((playnet observation observer) #:select (void-event))
              ((playnet test scope) #:select (record-work!)))
 
 (define (approx= a b) (< (abs (- a b)) 1e-9))

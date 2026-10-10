@@ -1,5 +1,5 @@
 ;;; tests/tools/test-dev-priorities.scm — pure parts of the AI dev loop's
-;;; live priority queue (module/playnet/planner/dev/priorities.scm)
+;;; live priority queue (module/playnet/dev/priorities.scm)
 ;;;
 ;;; The impure half (shelling out to `rad`, reading the watermark file,
 ;;; publishing to MQTT) lives in tools/dev-signal-cycle.scm and is
@@ -10,7 +10,7 @@
 ;;; Run: guile -L module -L tests tests/tools/test-dev-priorities.scm
 
 (use-modules (playnet test harness)
-             (playnet planner dev priorities)
+             (playnet dev priorities)
              ((srfi srfi-1) #:select (every find))
              ((srfi srfi-13) #:select (string-prefix? string-contains)))
 

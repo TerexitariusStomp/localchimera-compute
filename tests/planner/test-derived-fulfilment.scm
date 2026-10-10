@@ -23,9 +23,9 @@
 (use-modules (playnet test harness)
              (playnet test events)
              ((playnet test books) #:select (mq))
-             (playnet planner observation observer) (playnet planner vf schemas) (playnet planner observation states)
-             (playnet planner observation observer)
-             ((playnet planner vf serdes) #:select (vf-serialize))
+             (playnet observation observer) (playnet vf schemas) (playnet observation states)
+             (playnet observation observer)
+             ((playnet vf serdes) #:select (vf-serialize))
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
 

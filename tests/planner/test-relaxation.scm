@@ -25,11 +25,11 @@
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-relaxation.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner vf schemas)
-             (playnet planner knowledge dsl shorthand)
-             (playnet planner knowledge catalogues thermal)
-             ((playnet planner observation convert) #:select (carry-fraction time-constant)))
+(use-modules (playnet solve engine)
+             (playnet vf schemas)
+             (playnet knowledge dsl shorthand)
+             (playnet knowledge catalogues thermal)
+             ((playnet observation convert) #:select (carry-fraction time-constant)))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

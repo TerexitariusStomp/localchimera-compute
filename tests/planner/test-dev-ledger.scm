@@ -2,19 +2,19 @@
 ;;;
 ;;; A row of the week's plan taken is a commitment; an issue solved is the
 ;;; work that fulfils it and the deliverable produced
-;;; (module/playnet/planner/dev/ledger.scm). The tools that book these
+;;; (module/playnet/dev/ledger.scm). The tools that book these
 ;;; run on a timer and keep no memory, so every fact is booked once however
 ;;; often it is told, and the books stand across a restart.
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-dev-ledger.scm
 
 (use-modules (playnet test harness)
-             (playnet planner scope root) (playnet planner vf schemas) (playnet planner observation states) (srfi srfi-1)
-             (playnet planner vf schemas)
-             (playnet planner dev recipes)
-             (playnet planner dev priorities)
-             (playnet planner dev plan)
-             (playnet planner dev ledger)
+             (playnet scope root) (playnet vf schemas) (playnet observation states) (srfi srfi-1)
+             (playnet vf schemas)
+             (playnet dev recipes)
+             (playnet dev priorities)
+             (playnet dev plan)
+             (playnet dev ledger)
              (goblins) (goblins vat)
              (srfi srfi-1))
 

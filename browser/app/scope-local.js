@@ -4,7 +4,7 @@
 // of the scope its person is in, or the demo neighbourhood's where they are in
 // none. They are a real scope, the planner's scope root, observer and
 // door functions compiled for the browser (hoot/scope-worker.scm over
-// module/playnet/planner/doors/page-scope.scm), held in a worker of its own
+// module/playnet/doors/page-scope.scm), held in a worker of its own
 // (browser/scope-worker.js). A door asked here is answered by the code a gateway
 // answers it with, so a count made offline lands as a count lands.
 //

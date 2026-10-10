@@ -5,7 +5,7 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
-(use-modules (playnet planner ddmrp buffers) (playnet planner algorithms propagation) (playnet planner algorithms signals) (playnet planner algorithms sne) (playnet planner scope root) (playnet planner vf schemas) (playnet planner ddmrp records) (playnet utils store-utils) (srfi srfi-11))
+(use-modules (playnet ddmrp buffers) (playnet algorithms propagation) (playnet algorithms signals) (playnet algorithms sne) (playnet scope root) (playnet vf schemas) (playnet ddmrp records) (playnet utils store-utils) (srfi srfi-11))
 (use-modules (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)

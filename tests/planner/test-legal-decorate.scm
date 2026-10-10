@@ -16,13 +16,13 @@
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (goblins utils hashmap))
 (use-modules (playnet test scope)) ; mock-scope-root
-(use-modules (playnet test harness) (playnet planner knowledge recipes store) (playnet planner scope spatial-things) (playnet planner vf schemas) (playnet planner scope live)
+(use-modules (playnet test harness) (playnet knowledge recipes store) (playnet scope spatial-things) (playnet vf schemas) (playnet scope live)
              (goblins) (goblins vat) (srfi srfi-1) (ice-9 format))
 
-(use-modules (playnet planner legal crossings))
-(use-modules (playnet planner legal registry))
-(use-modules (playnet planner legal registry-actor)) (use-modules (playnet planner legal gate))
-(use-modules ((playnet planner solve engine) #:select (set-period-length!)))
+(use-modules (playnet legal crossings))
+(use-modules (playnet legal registry))
+(use-modules (playnet legal registry-actor)) (use-modules (playnet legal gate))
+(use-modules ((playnet solve engine) #:select (set-period-length!)))
 ;; A period here is a WEEK: the roster's Monday–Friday window is a working week of hours, on any date.
 (set-period-length! 1.0 "week")
 

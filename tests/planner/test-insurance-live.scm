@@ -29,13 +29,13 @@
 ;;; Run: guile -L module tests/planner/test-insurance-live.scm
 
 (use-modules (playnet test harness) (playnet test scope)
-             (playnet planner vf schemas) (srfi srfi-1)
-             (playnet planner scope live)
+             (playnet vf schemas) (srfi srfi-1)
+             (playnet scope live)
              (goblins) (goblins vat) (srfi srfi-1))
 
 ;; A period here is a WEEK: the roster's window is read over its seven days, so
 ;; `weekday-window` is a working week and `hours-of h` is h hours, on any date.
-(use-modules ((playnet planner solve engine) #:select (set-period-length!)))
+(use-modules ((playnet solve engine) #:select (set-period-length!)))
 (set-period-length! 1.0 "week")
 (define win (all-week-window "00:00" "23:00"))
 

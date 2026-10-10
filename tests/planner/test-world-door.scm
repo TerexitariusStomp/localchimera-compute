@@ -79,14 +79,14 @@
                        (sites-in form set-of-door?))))
               (forms-of path)))
 
-(define engine "module/playnet/planner/solve/engine.scm")
-(define satellites '("module/playnet/planner/solve/engine/robust.scm" "module/playnet/planner/solve/engine/fragility.scm"
-                     "module/playnet/planner/solve/engine/federation-solve.scm" "module/playnet/planner/solve/engine/worked-example.scm"))
+(define engine "module/playnet/solve/engine.scm")
+(define satellites '("module/playnet/solve/engine/robust.scm" "module/playnet/solve/engine/fragility.scm"
+                     "module/playnet/solve/engine/federation-solve.scm" "module/playnet/solve/engine/worked-example.scm"))
 (define (scm-files-under dir)
   (let ((acc '()))
     (ftw dir (lambda (f st flag) (when (and (eq? flag 'regular) (string-suffix? ".scm" f)) (set! acc (cons f acc))) #t))
     acc))
-(define outside (append (scm-files-under "module/playnet/planner/bench")
+(define outside (append (scm-files-under "module/playnet/bench")
                         (scm-files-under "tests/planner")
                         '("module/playnet/deprecated/planner/attic/demo.scm")))
 

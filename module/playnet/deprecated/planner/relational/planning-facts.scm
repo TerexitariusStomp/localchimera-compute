@@ -9,12 +9,12 @@
 
 (define-module (playnet deprecated planner relational planning-facts)
   #:use-module (goblins)
-  #:use-module (playnet planner vf schemas)
-  #:use-module (playnet planner ddmrp records)
+  #:use-module (playnet vf schemas)
+  #:use-module (playnet ddmrp records)
   #:use-module (playnet deprecated planner relational compute)
   #:use-module (playnet utils store-utils)
-  #:use-module (playnet planner observation observer)
-  #:use-module (playnet planner algorithms propagation)
+  #:use-module (playnet observation observer)
+  #:use-module (playnet algorithms propagation)
   #:export (*non-consuming-actions* build-indexes idx-ref idx-ref-single cred-claim-of
             custody-cred-live? cred-live? lift-live lift-custody-facts
             skill-cred-live? lift-skill-facts qty-of lift-intent-facts

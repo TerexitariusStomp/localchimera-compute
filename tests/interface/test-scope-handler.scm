@@ -12,8 +12,8 @@
              (goblins persistence-store memory)
              (ice-9 match)
              (srfi srfi-1) (srfi srfi-13)
-             (playnet planner scope root)
-             (playnet planner vf schemas)
+             (playnet scope root)
+             (playnet vf schemas)
              (playnet interface backends scope)
              (playnet interface command-dispatch))
 

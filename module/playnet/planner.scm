@@ -1,7 +1,7 @@
 ;;; module/playnet/planner.scm — the (playnet planner) umbrella module
 ;;;
-;;; Every planner/lib file is now a plain include-fragment under
-;;; module/playnet/planner/…, loaded by this umbrella in dependency
+;;; Every planner file is a module under module/playnet/…, imported by this
+;;; umbrella in dependency
 ;;; order. External consumers import the whole planner via
 ;;; `(use-modules (playnet planner))` — precise sub-imports are
 ;;; unnecessary because the planner is one cohesive system.
@@ -112,105 +112,105 @@
 ;; use-modules specs (deduped): 8
 
 (define-module (playnet planner)
-  #:use-module (playnet planner solve compile)
-  #:use-module (playnet planner legal crossings)
-  #:use-module (playnet planner knowledge catalogues eco)
-  #:use-module (playnet planner formulas stocks)
-  #:use-module (playnet planner solve recipe-response)
-  #:use-module (playnet planner knowledge recipes berlin-flotte)
-  #:use-module (playnet planner knowledge catalogues conformance)
-  #:use-module (playnet planner knowledge recipes berlin-commune-seed)
-  #:use-module (playnet planner knowledge recipes berlin-festival-seed)
-  #:use-module (playnet planner knowledge recipes berlin-food-seed)
-  #:use-module (playnet planner knowledge recipes berlin-transit)
-  #:use-module (playnet planner knowledge worlds feel-the-food)
-  #:use-module (playnet planner formulas cadence)
-  #:use-module (playnet planner formulas capacity)
-  #:use-module (playnet planner formulas skill-law)
-  #:use-module (playnet planner facts validity)
-  #:use-module (playnet planner formulas capacity)
-  #:use-module (playnet planner execution scope-execution)
-  #:use-module (playnet planner scope earth)
-  #:use-module (playnet planner scope root)
-  #:use-module (playnet planner ddmrp monitors)
-  #:use-module (playnet planner ddmrp buffers)
-  #:use-module (playnet planner observation live-registry)
-  #:use-module (playnet planner observation account)
-  #:use-module (playnet planner algorithms elastic)       ; the credit identity's arithmetic, its two published facts
-  #:use-module (playnet planner pools credit-fold)   ; the cross-scope reads: the walk is the fold
-  #:use-module (playnet planner algorithms rollup)
-  #:use-module (playnet planner algorithms rollup relative-snlt)
-  #:use-module (playnet planner knowledge recipes foodsharing-kit)
-  #:use-module (playnet planner knowledge recipes household)
-  #:use-module (playnet planner algorithms rollup common)
-  #:use-module (playnet planner plan store)
-  #:use-module (playnet planner knowledge recipes transit-shed)
-  #:use-module (playnet planner knowledge recipes stone-paper)
-  #:use-module (playnet planner knowledge recipes beenius-wax)
-  #:use-module (playnet planner knowledge recipes transport)
-  #:use-module (playnet planner algorithms value-equations)
-  #:use-module (playnet planner knowledge recipes bay-area-commune-seed)
-  #:use-module (playnet planner algorithms correlation)
-  #:use-module (playnet planner observation observer)
-  #:use-module (playnet planner plan schedule-book)
-  #:use-module (playnet planner federation remote-transport)
-  #:use-module (playnet planner federation store-registry)
-  #:use-module (playnet planner execution capacity-execute)
-  #:use-module (playnet planner execution alerts)
-  #:use-module (playnet planner observation live-resource)
-  #:use-module (playnet planner observation host-facts)
-  #:use-module (playnet planner observation transition)
-  #:use-module (playnet planner observation demand-policy)
-  #:use-module (playnet planner ddmrp buffer-zones)
-  #:use-module (playnet planner ddmrp capacity-buffers)
-  #:use-module (playnet planner scope spatial-things)
-  #:use-module (playnet planner ddmrp buffer-snapshots)
-  #:use-module (playnet planner plan recurrence)
-  #:use-module (playnet planner scope agents)
-  #:use-module (playnet planner scope process-registry)
-  #:use-module (playnet planner knowledge recipes humisoil)
-  #:use-module (playnet planner knowledge recipes grow)
-  #:use-module (playnet planner knowledge recipes meeting)
-  #:use-module (playnet planner knowledge recipes mimir)
-  #:use-module (playnet planner knowledge recipes cold-chain)
-  #:use-module (playnet planner knowledge recipes food-surplus)
-  #:use-module (playnet planner knowledge recipes food-chain-seed)
-  #:use-module (playnet planner knowledge recipes federation-demo)
-  #:use-module (playnet planner knowledge recipes farm-commune-seed)
-  #:use-module (playnet planner knowledge recipes bread-commune-seed)
-  #:use-module (playnet planner knowledge recipes dwelling)
-  #:use-module (playnet planner knowledge recipes flat-key)
-  #:use-module (playnet planner knowledge recipes currency)
-  #:use-module (playnet planner knowledge recipes container)
-  #:use-module (playnet planner knowledge recipes infrastructure)
-  #:use-module (playnet planner dev recipes)
-  #:use-module (playnet planner algorithms sne)
-  #:use-module (playnet planner algorithms signals)
-  #:use-module (playnet planner algorithms skill-matcher)
-  #:use-module (playnet planner algorithms critical-path)
-  #:use-module (playnet planner algorithms custody)
-  #:use-module (playnet planner ddmrp otif)
-  #:use-module (playnet planner algorithms track-trace)
-  #:use-module (playnet planner algorithms resource-flows)
-  #:use-module (playnet planner indexes membership)
-  #:use-module (playnet planner knowledge recipes store)
-  #:use-module (playnet planner algorithms propagation)
-  #:use-module (playnet planner vf serdes)
+  #:use-module (playnet solve compile)
+  #:use-module (playnet legal crossings)
+  #:use-module (playnet knowledge catalogues eco)
+  #:use-module (playnet vf formulas stocks)
+  #:use-module (playnet solve recipe-response)
+  #:use-module (playnet knowledge recipes berlin-flotte)
+  #:use-module (playnet knowledge catalogues conformance)
+  #:use-module (playnet knowledge recipes berlin-commune-seed)
+  #:use-module (playnet knowledge recipes berlin-festival-seed)
+  #:use-module (playnet knowledge recipes berlin-food-seed)
+  #:use-module (playnet knowledge recipes berlin-transit)
+  #:use-module (playnet knowledge worlds feel-the-food)
+  #:use-module (playnet vf formulas cadence)
+  #:use-module (playnet vf formulas capacity)
+  #:use-module (playnet vf formulas skill-law)
+  #:use-module (playnet vf facts validity)
+  #:use-module (playnet vf formulas capacity)
+  #:use-module (playnet execution scope-execution)
+  #:use-module (playnet scope earth)
+  #:use-module (playnet scope root)
+  #:use-module (playnet ddmrp monitors)
+  #:use-module (playnet ddmrp buffers)
+  #:use-module (playnet observation live-registry)
+  #:use-module (playnet observation account)
+  #:use-module (playnet algorithms elastic)       ; the credit identity's arithmetic, its two published facts
+  #:use-module (playnet pools credit-fold)   ; the cross-scope reads: the walk is the fold
+  #:use-module (playnet algorithms rollup)
+  #:use-module (playnet algorithms rollup relative-snlt)
+  #:use-module (playnet knowledge recipes foodsharing-kit)
+  #:use-module (playnet knowledge recipes household)
+  #:use-module (playnet algorithms rollup common)
+  #:use-module (playnet plan store)
+  #:use-module (playnet knowledge recipes transit-shed)
+  #:use-module (playnet knowledge recipes stone-paper)
+  #:use-module (playnet knowledge recipes beenius-wax)
+  #:use-module (playnet knowledge recipes transport)
+  #:use-module (playnet algorithms value-equations)
+  #:use-module (playnet knowledge recipes bay-area-commune-seed)
+  #:use-module (playnet algorithms correlation)
+  #:use-module (playnet observation observer)
+  #:use-module (playnet plan schedule-book)
+  #:use-module (playnet federation remote-transport)
+  #:use-module (playnet federation store-registry)
+  #:use-module (playnet execution capacity-execute)
+  #:use-module (playnet execution alerts)
+  #:use-module (playnet observation live-resource)
+  #:use-module (playnet observation host-facts)
+  #:use-module (playnet observation transition)
+  #:use-module (playnet observation demand-policy)
+  #:use-module (playnet ddmrp buffer-zones)
+  #:use-module (playnet ddmrp capacity-buffers)
+  #:use-module (playnet scope spatial-things)
+  #:use-module (playnet ddmrp buffer-snapshots)
+  #:use-module (playnet plan recurrence)
+  #:use-module (playnet scope agents)
+  #:use-module (playnet scope process-registry)
+  #:use-module (playnet knowledge recipes humisoil)
+  #:use-module (playnet knowledge recipes grow)
+  #:use-module (playnet knowledge recipes meeting)
+  #:use-module (playnet knowledge recipes mimir)
+  #:use-module (playnet knowledge recipes cold-chain)
+  #:use-module (playnet knowledge recipes food-surplus)
+  #:use-module (playnet knowledge recipes food-chain-seed)
+  #:use-module (playnet knowledge recipes federation-demo)
+  #:use-module (playnet knowledge recipes farm-commune-seed)
+  #:use-module (playnet knowledge recipes bread-commune-seed)
+  #:use-module (playnet knowledge recipes dwelling)
+  #:use-module (playnet knowledge recipes flat-key)
+  #:use-module (playnet knowledge recipes currency)
+  #:use-module (playnet knowledge recipes container)
+  #:use-module (playnet knowledge recipes infrastructure)
+  #:use-module (playnet dev recipes)
+  #:use-module (playnet algorithms sne)
+  #:use-module (playnet algorithms signals)
+  #:use-module (playnet algorithms skill-matcher)
+  #:use-module (playnet algorithms critical-path)
+  #:use-module (playnet algorithms custody)
+  #:use-module (playnet ddmrp otif)
+  #:use-module (playnet algorithms track-trace)
+  #:use-module (playnet algorithms resource-flows)
+  #:use-module (playnet indexes membership)
+  #:use-module (playnet knowledge recipes store)
+  #:use-module (playnet algorithms propagation)
+  #:use-module (playnet vf serdes)
   #:use-module (playnet utils store-utils)
   #:use-module (srfi srfi-1)
   ;; §0 — the VF ontology. A real module: loaded once, so ONE set of record
   ;; types, which is what every loader's `(unless (defined? ...))` guard was
   ;; hand-rolling. Re-exported below, so consumers see no change.
-  #:use-module (playnet planner vf schemas)
-  #:use-module (playnet planner formulas actions)
-  #:use-module (playnet planner observation states)
-  #:use-module (playnet planner beyond schedules)
-  #:use-module (playnet planner beyond scenario)
-  #:use-module (playnet planner beyond lot)
-  #:use-module (playnet planner ddmrp records)
+  #:use-module (playnet vf schemas)
+  #:use-module (playnet vf formulas actions)
+  #:use-module (playnet observation states)
+  #:use-module (playnet vf beyond schedules)
+  #:use-module (playnet vf beyond scenario)
+  #:use-module (playnet vf beyond lot)
+  #:use-module (playnet ddmrp records)
   ;; the containment climb — a place inside a place, an oven inside a flat.
   ;; One walk, cycle-safe and depth-capped, for every reading taken up that tree.
-  #:use-module (playnet planner aggregation containment)
+  #:use-module (playnet vf aggregation containment)
   ;; the unit algebra, for the ONE stock→capacity conversion (utils/capacity.scm)
   #:use-module (playnet utils clock)
   #:use-module ((playnet utils units)
@@ -238,7 +238,7 @@
   ;; every importer resolves fine until the first call. The #:use-module must sit
   ;; in THIS form: #:re-export is settled at define-module time, and the
   ;; top-level (use-modules …) further down arrives far too late.
-  #:use-module (playnet planner knowledge recipes federation)
+  #:use-module (playnet knowledge recipes federation)
   #:re-export (*spec-names* seed-federation-specs seed-federation-recipes
                seed-federation-inventory)
   #:re-export (let-values
@@ -488,15 +488,15 @@
             deserialize-hashmap generate-id hashmap-any? hashmap-count hashmap-filter
             hashmap-filter-pairs hashmap-find hashmap-keys hashmap-map-values
             hashmap-values iso-datetime->epoch serialize-hashmap
-            ;; from (playnet planner vf serdes)
+            ;; from (playnet vf serdes)
             *vf-serdes-registry* register-vf-record! register-vf-records!
             vf-deserialize vf-record-instance? vf-serdes-clear!
             vf-serdes-lookup-by-instance vf-serdes-lookup-by-name vf-serialize
-            ;; from (playnet planner algorithms propagation)
+            ;; from (playnet algorithms propagation)
             *days-per-ms* *ms-per-day* *ms-per-hour* *ms-per-minute* *ms-per-second*
             *non-consuming-actions* compute-snlt create-flow-record min-snlt-for-spec
             recipe-output-qty rp-duration-days rp-duration-ms
-            ;; from (playnet planner knowledge recipes store)
+            ;; from (playnet knowledge recipes store)
             ^recipe-store action-input-output find-flow recipe-deliverable list->process-specification
             list->recipe list->recipe-exchange list->recipe-flow list->recipe-group
             list->recipe-process list->resource-specification process-inputs
@@ -507,7 +507,7 @@
 
 
 
-            ;; from (playnet planner indexes membership)
+            ;; from (playnet indexes membership)
             build-membership-index citizen-share commune-share
 
 
@@ -523,14 +523,14 @@
 
 
 
-            ;; from (playnet planner algorithms resource-flows)
+            ;; from (playnet algorithms resource-flows)
             cash-flow-report
-            ;; from (playnet planner algorithms track-trace)
+            ;; from (playnet algorithms track-trace)
             trace track
 
-            ;; from (playnet planner ddmrp otif)
+            ;; from (playnet ddmrp otif)
             compute-otif
-            ;; from (playnet planner algorithms custody)
+            ;; from (playnet algorithms custody)
             apply-penalty apply-transfer-custody build-custody-ledger
             current-custodian custody-level
             entrustment-limit held-by incentive-compatible ledger-by-agent
@@ -540,46 +540,46 @@
 
 
 
-            ;; from (playnet planner algorithms critical-path)
+            ;; from (playnet algorithms critical-path)
             critical-path
-            ;; from (playnet planner algorithms skill-matcher)
+            ;; from (playnet algorithms skill-matcher)
             match-work-flows
-            ;; from (playnet planner algorithms signals)
+            ;; from (playnet algorithms signals)
             *plan-tags* intent->signal plan-tag signal->intent
-            ;; from (playnet planner algorithms sne)
+            ;; from (playnet algorithms sne)
             *non-consuming-actions-sne* build-sne-index/actor compute-recipe-sne/actor
             compute-sne-for-recipe direct-sne-for-spec
-            ;; from (playnet planner dev recipes)
+            ;; from (playnet dev recipes)
             seed-dev-knowledge!
-            ;; from (playnet planner knowledge recipes infrastructure)
+            ;; from (playnet knowledge recipes infrastructure)
             infra-bandwidth-spec infra-compute-spec infra-dataset-spec
             infra-memory-spec infra-storage-spec infra-transcript-spec
             infrastructure-specs seed-infrastructure-recipes
                         
             *dwelling-specs* seed-dwelling-recipe seed-dwelling-specs
             %rent-eur-per-night seed-rent-recipe
-            ;; from (playnet planner knowledge recipes flat-key)
+            ;; from (playnet knowledge recipes flat-key)
             flat-key-world seed-flat-key-recipes!
-            ;; from (playnet planner knowledge recipes currency)
+            ;; from (playnet knowledge recipes currency)
             *currency-fiat-specs* *currency-store-of-value-specs*
             seed-currency-specs
-            ;; from (playnet planner knowledge recipes container)
+            ;; from (playnet knowledge recipes container)
             seed-container-specs
                         
             seed-farm-commune! seed-holds! seed-farm-holds!
-            ;; from (playnet planner knowledge recipes bread-commune-seed)
+            ;; from (playnet knowledge recipes bread-commune-seed)
             seed-bread-recipes! seed-bread-commune!
-            ;; from (playnet planner knowledge recipes federation-demo)
+            ;; from (playnet knowledge recipes federation-demo)
             seed-fed-commune!
-            ;; from (playnet planner knowledge recipes food-chain-seed)
+            ;; from (playnet knowledge recipes food-chain-seed)
             food-stage seed-food-chain!
-            ;; from (playnet planner knowledge recipes food-surplus)
+            ;; from (playnet knowledge recipes food-surplus)
             food-surplus-collected-spec food-surplus-produce-spec
             food-surplus-reefer-van-spec food-surplus-sorted-produce-spec
             food-surplus-volunteer-spec seed-food-surplus-3step-recipe
             seed-food-surplus-donor-specs seed-food-surplus-recipe
             seed-food-surplus-recipient-specs
-            ;; from (playnet planner knowledge recipes cold-chain)
+            ;; from (playnet knowledge recipes cold-chain)
             cold-chain-food-specs cold-chain-process-specs cold-chain-storage-specs
             cold-chain-vehicle-specs cold-chain-skill-specs pa-dairy pa-frozen
             pa-pantry pa-perishable
@@ -589,43 +589,43 @@
             spec-dry-pantry spec-frozen-bay
             spec-frozen-meals-nut spec-frozen-meals-soy spec-leafy-greens
             spec-reefer-van
-            ;; from (playnet planner knowledge recipes meeting)
+            ;; from (playnet knowledge recipes meeting)
             meeting-whole-acts seed-meeting-recipe
-            ;; from (playnet planner knowledge recipes mimir)
+            ;; from (playnet knowledge recipes mimir)
             mimir-whole-acts seed-mimir-specs seed-mimir-recipes
-            ;; from (playnet planner knowledge recipes grow)
+            ;; from (playnet knowledge recipes grow)
             seed-grow-recipe seed-grow-specs
-            ;; from (playnet planner knowledge recipes humisoil)
+            ;; from (playnet knowledge recipes humisoil)
             seed-humisoil-recipe seed-humisoil-specs
-            ;; from (playnet planner scope process-registry)
+            ;; from (playnet scope process-registry)
             ^process-registry list->process* process->list process-registry-env
-            ;; from (playnet planner scope agents)
+            ;; from (playnet scope agents)
             ^agent-store agent->list agent-relationship->list
             agent-relationship-role->list agent-store-env list->agent
             list->agent-relationship list->agent-relationship-role
-            ;; from (playnet planner plan recurrence)
+            ;; from (playnet plan recurrence)
             date-matches-window epoch->iso-date get-occurrence-status
             group-events-by-occurrence materialize-occurrence-dates
             occurrence-date-key unfulfilled-occurrences
 
 
 
-            ;; from (playnet planner ddmrp buffer-snapshots)
+            ;; from (playnet ddmrp buffer-snapshots)
             ^snapshot-store buffer-snapshot->list list->buffer-snapshot
             snapshot-store-env
-            ;; from (playnet planner scope spatial-things)
+            ;; from (playnet scope spatial-things)
             ^spatial-thing-store circle-boundary is-descendant-or-equal-hm
             list->spatial-thing resolve-chain-hm resolve-coordinates-hm
             spatial-thing->list spatial-thing-store-env
-            ;; from (playnet planner ddmrp capacity-buffers)
+            ;; from (playnet ddmrp capacity-buffers)
             ^capacity-buffer-store capacity-buffer->list capacity-buffer-store-env
             list->capacity-buffer
-            ;; from (playnet planner ddmrp buffer-zones)
+            ;; from (playnet ddmrp buffer-zones)
             ^buffer-zone-store buffer-zone->list buffer-zone-store-env
             list->buffer-zone portrait->zones-hashmap zones-hashmap->portrait
-            ;; from (playnet planner observation demand-policy)
+            ;; from (playnet observation demand-policy)
             derive-communal-demand derive-dependent-demand
-            ;; from (playnet planner observation transition)
+            ;; from (playnet observation transition)
             compute-claim-capacities compute-collective-metrics
             compute-communal-satisfaction-ratio compute-dollar-balance
             compute-dollar-wage-phase-out-factor compute-dollar-wages-per-worker
@@ -633,25 +633,25 @@
             compute-real-wages compute-scope-transition-report
             compute-substitution-ratio compute-total-social-value
             compute-validated-hours compute-wage-rate-normalized extract-worker-hours
-            ;; from (playnet planner observation live-resource)
+            ;; from (playnet observation live-resource)
             ^live-resource live-resource-env
-            ;; from (playnet planner observation host-facts)
+            ;; from (playnet observation host-facts)
             parse-meminfo parse-loadavg parse-herd-running parse-running-value
             parse-ps-table process-tree-usage
             placement-ledger read-host-facts sync-host-facts!
-            ;; from (playnet planner execution alerts)
+            ;; from (playnet execution alerts)
             ^alert-store alert-kind alert-spec-id alert-store-env alert-timestamp
-            ;; from (playnet planner execution capacity-execute)
+            ;; from (playnet execution capacity-execute)
             dispatch-async execute-with-event now-iso with-capacity
             with-enforced-capacity with-resources
-            ;; from (playnet planner federation store-registry)
+            ;; from (playnet federation store-registry)
             ^store-registry parse-ref qualify store-registry-env
-            ;; from (playnet planner federation remote-transport)
+            ;; from (playnet federation remote-transport)
             hydrate-store snapshot-store
-            ;; from (playnet planner plan schedule-book)
+            ;; from (playnet plan schedule-book)
             can-commit-work? can-use-resource? committed-effort-on has-use-conflict
             schedule-blocks-for
-            ;; from (playnet planner observation observer)
+            ;; from (playnet observation observer)
             <fold-ctx> <observer-state> ^observer append-index
             apply-container-location apply-direction-effects apply-quantity-effect
             apply-resource-effects capture-container-location check-process-completion
@@ -669,34 +669,34 @@
             override-action-def phase-append-event
             phase-apply-effects phase-breadcrumb-chain phase-implied-transfer
             phase-index-event serialize-observer-state split-custody?
-            ;; from (playnet planner algorithms correlation)
+            ;; from (playnet algorithms correlation)
             <covariance-view> compute-correlation correlate-pairs
             covariance-view-bucket-seconds covariance-view-id covariance-view-method
             covariance-view? make-covariance-view pearson-rho series-stddev
 
 
-            ;; from (playnet planner knowledge recipes bay-area-commune-seed)
+            ;; from (playnet knowledge recipes bay-area-commune-seed)
             seed-bay-area-commune!
-            ;; from (playnet planner algorithms value-equations)
+            ;; from (playnet algorithms value-equations)
             distribute-income distribute-multiple-income effort-equation effort-scorer
             equal-equation equal-scorer make-depreciation-scorer make-hybrid-equation
             resource-scorer score-event
-            ;; from (playnet planner knowledge recipes transport)
+            ;; from (playnet knowledge recipes transport)
             car-ride consume-flow* dropoff-flow mode-recipe pickup-flow pspec-transport
             recipe-carry recipe-hold relocation-recipe seed-recipe-entry!
             seed-baseline-modes! baseline-modes seed-transport-recipe seed-transport-specs spec-car spec-petrol spec-rider
             transport-specs use-flow work-flow*
-            ;; from (playnet planner knowledge recipes beenius-wax)
+            ;; from (playnet knowledge recipes beenius-wax)
             seed-beenius-build-recipe seed-beenius-journey seed-beenius-remelt-recipe
             seed-beenius-specs seed-beenius-sticks-recipe seed-beenius-wax-recipe
-            ;; from (playnet planner knowledge recipes stone-paper)
+            ;; from (playnet knowledge recipes stone-paper)
             seed-stone-paper-bio-recipe seed-stone-paper-compost-recipe
             seed-stone-paper-recipe seed-stone-paper-reclaim-recipe
             seed-stone-paper-specs
                         
             network-resource pass-resource seed-relocation-recipe!
             transit-manners vehicle-resource
-            ;; from (playnet planner plan store)
+            ;; from (playnet plan store)
             <plan-store-state> ^plan-store append-to-index
             deserialize-plan-store-state empty-plan-store-state fold-promotions
             index-commitment-spec index-intent-spec index-intent-tags
@@ -708,10 +708,10 @@
             pss-promote-intent pss-proposal-lists pss-proposals
             pss-scenario-definitions pss-scenarios pss-tag-index pss-with-commitments
             pss-with-intents remove-from-index serialize-plan-store-state
-            ;; from (playnet planner algorithms rollup common)
+            ;; from (playnet algorithms rollup common)
             recipe-gross-effort recipe-net-outputs rollup-recipes-producing
             standalone-snlt-for-spec
-            ;; from (playnet planner knowledge recipes household)
+            ;; from (playnet knowledge recipes household)
             *household-bin-runs* *household-kit* *household-specs*
             *household-waste-streams* household-flows household-living-defs
             household-living-flows household-processes household-recipe-defs
@@ -720,19 +720,19 @@
             seed-household-specs seed-household-waste-recipes
             household-care-flows household-care-processes household-care-recipe-defs
             seed-household-care-recipes
-            ;; from (playnet planner knowledge recipes foodsharing-kit)
+            ;; from (playnet knowledge recipes foodsharing-kit)
             *foodsaver-skill-args* *foodsharing-kit* declare-foodsaver-skill!
             enrol-foodsaver-trainee! foodsaver-skill foodsaver-skill-args
             foodsharing-cold-uses foodsharing-hand-uses foodsharing-kit-uses
             kit-per-pickup kit-spec-id kit-spec-name kit-unit seed-foodsharing-kit!
             seed-foodsharing-kit-specs!
-            ;; from (playnet planner algorithms rollup relative-snlt)
+            ;; from (playnet algorithms rollup relative-snlt)
             rollup-relative-snlt rollup-relative-snlt-for
-            ;; from (playnet planner algorithms rollup)
+            ;; from (playnet algorithms rollup)
             cost-variance crystallized-snlt-for-spec recipe-unit-snlt
             rollup-actual-cost rollup-producers-of rollup-standard-cost
 
-            ;; from (playnet planner observation account)
+            ;; from (playnet observation account)
             ^account-store account->list account-store-env
             consumer-voice current-social-free-time global-citizen-claimed
             global-citizen-count global-citizen-gross global-citizen-unmet
@@ -745,9 +745,9 @@
             global-total-social-svc list->account
             set-social-free-time! universal-credit-balance voice-share
             claimable-specs spec-claimable? spec-rail
-            ;; from (playnet planner observation live-registry)
+            ;; from (playnet observation live-registry)
             ^live-registry live-registry-env live-availability
-            ;; from (playnet planner ddmrp buffers)
+            ;; from (playnet ddmrp buffers)
             *consuming-actions* *epsilon* *ltf-ranges* *seconds-per-day*
             *standard-ltf* *standard-vf* *vf-ranges* adjust-vf-for-capacity
             adu-drift-alert aggregate-adjustment-factors analyze-recipe-topology
@@ -772,60 +772,60 @@
             signal-integrity-report sort-by-priority-and-sequence standard-profile
             sum-onhand-at-location time-buffer-state time-in-zone
             validate-buffer-profile zone-distribution zone-transitions
-            ;; from (playnet planner ddmrp monitors)
+            ;; from (playnet ddmrp monitors)
             buffer-status-monitor create-adu-shift-monitor create-recalibration-sink
             create-snapshot-sink material-sync-monitor standard-monitors
             standard-sinks
-            ;; from (playnet planner scope root)
+            ;; from (playnet scope root)
             ^scope-root scope-root-env spawn-scope-root
-            ;; from (playnet planner scope earth)
+            ;; from (playnet scope earth)
             ^earth earth-env spawn-earth
-            ;; from (playnet planner execution scope-execution)
+            ;; from (playnet execution scope-execution)
             make-execution-context record-and-monitor
-            ;; from (playnet planner formulas capacity)
+            ;; from (playnet vf formulas capacity)
             holding-capacity
-            ;; from (playnet planner facts validity)
+            ;; from (playnet vf facts validity)
             apply-recert-schedule cred-claim-of cred-with-valid-until cred-live? custody-cred-live?
-            ;; from (playnet planner formulas cadence)
+            ;; from (playnet vf formulas cadence)
             conformance-recert-schedule edge-reliance inspection-intensity
             recert-interval-discrete reliance->valid-until
-            ;; from (playnet planner formulas skill-law)
+            ;; from (playnet vf formulas skill-law)
             effective-skills
-            ;; from (playnet planner formulas capacity)
+            ;; from (playnet vf formulas capacity)
             held-svc-caps svc-cap-key svc-eco-caps
-            ;; from (playnet planner knowledge worlds feel-the-food)
+            ;; from (playnet knowledge worlds feel-the-food)
             *batch-homogeneity* *feel-the-food-profiles* *feel-the-food-senses*
             chargenvermutung-asserts-rho chargenvermutung-condemns?
             chargenvermutung-sample feel-the-food-profile feel-the-food-rate
             feel-the-food-sample feel-the-food-saturates? feel-the-food-verdict
             homogeneity sample->implied-rho seed-feel-the-food! sense-criteria
             sense-destructive? spec-perishability unpresumed-units
-            ;; from (playnet planner knowledge recipes berlin-transit)
+            ;; from (playnet knowledge recipes berlin-transit)
             *berlin-mode-recipes*
             berlin-network-resources berlin-transit-manners berlin-transit-resources
             berlin-transit-svc-caps bt-cargo-bike-resource bt-network-resource
             bt-transit-pass-resource seed-berlin-cargo-bike-recipe
             seed-berlin-transit! seed-berlin-transit-haul-recipe
             seed-berlin-transit-specs
-            ;; from (playnet planner knowledge recipes berlin-food-seed)
+            ;; from (playnet knowledge recipes berlin-food-seed)
             *berlin-food-batch* *berlin-food-chain-stages* berlin-food-chain-stages
             seed-berlin-food-recipe! seed-berlin-food-scope!
-            ;; from (playnet planner knowledge recipes berlin-commune-seed)
+            ;; from (playnet knowledge recipes berlin-commune-seed)
             seed-berlin-commune! seed-berlin-transit-arm!
-            ;; from (playnet planner knowledge recipes berlin-festival-seed)
+            ;; from (playnet knowledge recipes berlin-festival-seed)
             seed-berlin-festival-arm! attach-festival-futures!
-            ;; from (playnet planner knowledge catalogues conformance)
+            ;; from (playnet knowledge catalogues conformance)
             *conformance-catalogue* conformance-frag-weight
-            ;; from (playnet planner knowledge recipes berlin-flotte)
+            ;; from (playnet knowledge recipes berlin-flotte)
             *flotte-kommunal-bikes* *flotte-max-loan-days* *flotte-stations*
             *flotte-total-bikes* flotte-berlin-resources flotte-kommunal-lender
             flotte-loan-window flotte-spread-resources
 
 
 
-              ;; from (playnet planner solve recipe-response)
+              ;; from (playnet solve recipe-response)
               observed-capture recipe-response-report
-              ;; from (playnet planner knowledge catalogues eco)
+              ;; from (playnet knowledge catalogues eco)
               *climate-tipping-points* *limit-reversibility* *planetary-boundaries*
               *planetary-catalogue* catalogue->policy catalogue->wire
               limit-attenuation-rate limit-monitoring-cadence limit-roster migrate-limit
@@ -834,18 +834,18 @@
               migrated-rate migrated-spec migrated-stock monitored-alpha
               reversibility-character reversibility-years roster-of-verdict
               witnessed-tipping-characters
-              ;; from (playnet planner legal crossings)
+              ;; from (playnet legal crossings)
               crossing-gloss crossing-kind recipe-channel rail-channel recipe-crossings
               register-crossing!
-              ;; from (playnet planner solve compile)
+              ;; from (playnet solve compile)
               clear-use-unit-gaps! compile-process compile-recipe use-unit-gaps
               batch-unit-gaps clear-batch-unit-gaps!)
   #:export (; §5 — a RecipeProcess + its flows → a template
             ; the compile-time lint register
             ;; FEEL THE FOOD — the sensory check as a costed, destructive sample
             ;; joint production (rollup/common.scm, rollup/relative-snlt.scm)
-            ;; convex-shared pure helpers (formulas/capacity.scm, formulas/skill-law.scm)
-            ;; close the credential loop: reliance → recert cadence (formulas/cadence.scm, facts/validity.scm)
+            ;; convex-shared pure helpers (vf/formulas/capacity.scm, vf/formulas/skill-law.scm)
+            ;; close the credential loop: reliance → recert cadence (vf/formulas/cadence.scm, vf/facts/validity.scm)
             ;; the legal crossings a recipe trips (legal/crossings.scm) — an OPEN catalogue,
             ;; so a jurisdiction's stewards register their own
             ;; the federation's fragility catalogue (eco-catalogue.scm): planetary

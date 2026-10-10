@@ -19,7 +19,7 @@
 ;;;
 ;;; THE BODY SERVICE is the one procedure these doors act through: the
 ;;; gateway sets `current-body-service` at boot to a sender for the
-;;; ^body-service actor of (playnet planner doors bodies), which lives in the
+;;; ^body-service actor of (playnet doors bodies), which lives in the
 ;;; planner's vat beside the stores; the session reads the cell when it
 ;;; spawns. Each op is one message, answered (ok . wire) | (error . msg):
 ;;;

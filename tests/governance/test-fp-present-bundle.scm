@@ -10,7 +10,7 @@
 ;;; Run:  guile --no-auto-compile -L module -L tests tests/governance/test-fp-present-bundle.scm
 
 (use-modules (playnet test harness)
-             (playnet planner scope root) (srfi srfi-1)
+             (playnet scope root) (srfi srfi-1)
              (playnet governance service) (playnet governance socialization) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri first-person credentials) (playnet keri first-person predicates)
              (playnet keri signify-portable)
              ((playnet keri citizen-sig)

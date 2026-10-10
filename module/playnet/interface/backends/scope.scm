@@ -38,8 +38,8 @@
   #:use-module (playnet interface output-sink)
   #:use-module (playnet interface call-context)
   #:use-module (playnet notify registry)
-  #:use-module (playnet planner vf schemas)   ; the resource and event accessors the commands print
-  #:use-module ((playnet planner execution scope-execution) #:select (record-and-monitor))
+  #:use-module (playnet vf schemas)   ; the resource and event accessors the commands print
+  #:use-module ((playnet execution scope-execution) #:select (record-and-monitor))
   #:export (^scope-handler
             make-scope-handler
             ;; ctx accessors for scope-extended contexts

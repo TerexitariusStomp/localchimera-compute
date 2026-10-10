@@ -24,29 +24,29 @@
 ;;;
 ;;; Run: guile -L module tests/planner/test-berlin-food-chain.scm
 
-(use-modules (playnet test harness) (playnet planner knowledge recipes store) (playnet planner knowledge recipes berlin-food-seed) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1) (playnet planner scope live)
+(use-modules (playnet test harness) (playnet knowledge recipes store) (playnet knowledge recipes berlin-food-seed) (playnet scope root) (playnet vf schemas) (srfi srfi-1) (playnet scope live)
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1) (ice-9 format))
 
 ;; tests run from the repository root (the Run: line); the root is resolved by
 ;; its marker rather than by current-filename, which is #f or -L-relative
 ;; depending on how the file was loaded — both wrong for building paths.
-(define root (or (and (file-exists? "module/playnet/planner/solve/engine.scm") (getcwd))
+(define root (or (and (file-exists? "module/playnet/solve/engine.scm") (getcwd))
                  (error "run this test from the repository root")))
-(use-modules (playnet planner legal crossings))
-(use-modules (playnet planner legal registry))
-(use-modules (playnet planner facts places))
-(use-modules (playnet planner knowledge law context-pack))
-(use-modules (playnet planner knowledge catalogues us-states-fips))
-(use-modules (playnet planner knowledge worlds free-food-distribution))   ; the US belts + the packs
-(use-modules (playnet planner legal gate))
-(use-modules ((playnet planner solve engine) #:select (set-period-length!)))
+(use-modules (playnet legal crossings))
+(use-modules (playnet legal registry))
+(use-modules (playnet vf facts places))
+(use-modules (playnet knowledge law context-pack))
+(use-modules (playnet knowledge catalogues us-states-fips))
+(use-modules (playnet knowledge worlds free-food-distribution))   ; the US belts + the packs
+(use-modules (playnet legal gate))
+(use-modules ((playnet solve engine) #:select (set-period-length!)))
 ;; A period here is a WEEK: the seeded chain names its weekdays (Tuesday's sort), and this plan is one period over all of them.
 (set-period-length! 1.0 "week")
 
 ;; the engine's container table, read the way test-berlin-live-scope reads live
-;; internals — it lives in the engine, which is loaded into (playnet planner scope live).
-(define (live-stationary) (@@ (playnet planner scope live) *stationary*))
+;; internals — it lives in the engine, which is loaded into (playnet scope live).
+(define (live-stationary) (@@ (playnet scope live) *stationary*))
 
 (define (empty-recipe-store)
   (spawn ^recipe-store (hashmap) (hashmap) (hashmap) (hashmap) (hashmap)

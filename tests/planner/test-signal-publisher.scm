@@ -7,9 +7,9 @@
 
 (use-modules (playnet test harness))
 (use-modules )
-(use-modules ((playnet planner bridge signal-publisher)
+(use-modules ((playnet bridge signal-publisher)
               #:select (signal-topic publish-one!))
-             ((playnet planner bridge codec)
+             ((playnet bridge codec)
               #:select (json-string->signal))
              (srfi srfi-1))
 

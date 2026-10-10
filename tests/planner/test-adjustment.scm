@@ -1,5 +1,5 @@
 ;;; test-adjustment.scm — a count lands the difference
-;;; (module/playnet/planner/observation/adjustment.scm).
+;;; (module/playnet/observation/adjustment.scm).
 ;;;
 ;;; What this pins:
 ;;;   • a figure that agrees with the ledger is no difference, and a figure
@@ -17,8 +17,8 @@
 (add-to-load-path "module")
 (use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness)
-             (playnet planner vf schemas)
-             (playnet planner observation adjustment))
+             (playnet vf schemas)
+             (playnet observation adjustment))
 
 (define (near? a b) (< (abs (- a b)) 1e-12))
 
@@ -74,20 +74,20 @@
   (call-with-input-file f (lambda (p) (let loop ((acc '())) (let ((l (read-line p))) (if (eof-object? l) (apply string-append (reverse acc)) (loop (cons (string-append l "\n") acc))))))))
 (use-modules (ice-9 rdelim))
 (define (uses? file) (string-contains (source-of file) "adjustment-event"))
-(check-pred "a host's probe lands through it" (uses? "module/playnet/planner/observation/host-facts.scm"))
+(check-pred "a host's probe lands through it" (uses? "module/playnet/observation/host-facts.scm"))
 (check-pred "a person's count, a re-declared means and a skill land through it"
             (>= (apply + (map (lambda (file)
                                 (let loop ((s (source-of file)) (n 0))
                                   (let ((i (string-contains s "(adjustment-event")))
                                     (if i (loop (substring s (+ i 1)) (+ n 1)) n))))
-                              '("module/playnet/planner/doors/service.scm"
-                                "module/playnet/planner/doors/count-door.scm"
-                                "module/playnet/planner/doors/slots.scm")))
+                              '("module/playnet/doors/service.scm"
+                                "module/playnet/doors/count-door.scm"
+                                "module/playnet/doors/slots.scm")))
                 4))
 (check-pred "no place builds a raise or lower by hand any more"
-            (not (string-contains (source-of "module/playnet/planner/doors/service.scm") "(if (> delta 0) 'raise 'lower)")))
+            (not (string-contains (source-of "module/playnet/doors/service.scm") "(if (> delta 0) 'raise 'lower)")))
 
-(use-modules ((playnet planner formulas counting) #:select (count-figure))
+(use-modules ((playnet vf formulas counting) #:select (count-figure))
              (srfi srfi-1))
 (check "an adjustment states the figure that was counted"
        (count-figure (economic-event-resource-classified-as

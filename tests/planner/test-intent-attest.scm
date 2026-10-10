@@ -10,7 +10,7 @@
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
-(use-modules (playnet planner plan store) (playnet planner vf schemas))   ; slim records (Intent/Measure) — same identity governance uses
+(use-modules (playnet plan store) (playnet vf schemas))   ; slim records (Intent/Measure) — same identity governance uses
 ;; the relational fact-lifting layer is retired; pull only the lift fns (they read
 ;; credential alists, not records, so record identity is irrelevant here)
 (use-modules ((playnet deprecated planner)

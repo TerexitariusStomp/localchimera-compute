@@ -1,6 +1,6 @@
 ;;; test-key-terms-shapes.scm — key-terms reads every column the build lays.
 ;;;
-;;; A column's key is the one grammar the plan's rows are read off (facts/located.scm):
+;;; A column's key is the one grammar the plan's rows are read off (vf/facts/located.scm):
 ;;; p|<process>|<cell> and p|<process>|<a>|<b> for a run and a haul, m|… for a carry,
 ;;; w|… for a worker. Two shapes went unread: a hold through a container, whose process
 ;;; id carries a `|` of its own (p|keep|K~spec|a|b, read as a bare prefix), and a
@@ -11,8 +11,8 @@
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-key-terms-shapes.scm
 
 (use-modules (playnet test harness)
-             (playnet planner facts located)
-             (playnet planner solve engine) (playnet planner solve compile)
+             (playnet vf facts located)
+             (playnet solve engine) (playnet solve compile)
              (srfi srfi-1) (ice-9 format))
 
 (display "\n── the two shapes that went unread ──\n")

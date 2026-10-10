@@ -8,8 +8,8 @@
 ;;; effort-quantity directly; resource flows contribute qty × SNLT(spec).
 
 (define-module (playnet deprecated planner algorithms flow-graph)
-  #:use-module (playnet planner vf schemas)
-  #:use-module (playnet planner algorithms propagation)
+  #:use-module (playnet vf schemas)
+  #:use-module (playnet algorithms propagation)
   #:export (build-flow-graph internal-flow external-flow total-flow bilateral-flow
             coherence interdependence merge-candidates split-candidates
             boundary-objective)

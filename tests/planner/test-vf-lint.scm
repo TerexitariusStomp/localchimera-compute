@@ -1,4 +1,4 @@
-;;; tests/planner/test-vf-lint.scm — (playnet planner knowledge dsl vf-lint): one lint, two inputs
+;;; tests/planner/test-vf-lint.scm — (playnet knowledge dsl vf-lint): one lint, two inputs
 ;;;
 ;;; What this pins:
 ;;;   RECIPE STORE  a well-formed recipe is clean; each rule fires on the shape it
@@ -17,10 +17,10 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness)
-             (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1) (playnet planner vf schemas)
-             (playnet planner knowledge dsl vf-lint) (playnet planner knowledge dsl findings)
-             ((playnet planner knowledge catalogues substances) #:select (thermal-form base-at-ambient-row))
-             ((playnet planner knowledge catalogues substances) #:select (nuclide? sunlight-for water-for rated-kw))
+             (playnet scope root) (playnet vf schemas) (srfi srfi-1) (playnet vf schemas)
+             (playnet knowledge dsl vf-lint) (playnet knowledge dsl findings)
+             ((playnet knowledge catalogues substances) #:select (thermal-form base-at-ambient-row))
+             ((playnet knowledge catalogues substances) #:select (nuclide? sunlight-for water-for rated-kw))
              (goblins) (srfi srfi-1) (srfi srfi-13))
 
 (define vat (spawn-vat #:name "vf-lint"))

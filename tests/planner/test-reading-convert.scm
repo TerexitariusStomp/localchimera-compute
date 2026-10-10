@@ -16,7 +16,7 @@
 ;;;
 ;;; Run:  guile -q -L module tests/planner/test-reading-convert.scm
 
-(use-modules (playnet test harness) (playnet planner observation convert) (srfi srfi-1))
+(use-modules (playnet test harness) (playnet observation convert) (srfi srfi-1))
 
 (define (approx= a b . tol) (< (abs (- a b)) (if (pair? tol) (car tol) 1e-9)))
 (define rng (seed->random-state 11))

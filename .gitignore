@@ -923,23 +923,23 @@ docs/xaas/XAAS.md
 module/playnet/deprecated/planner/attic/README.md
 module/playnet/deprecated/planner/attic/deprecated-planner-tests/README.md
 module/playnet/keri/README.md
-module/playnet/planner/README.md
-module/playnet/planner/algorithms/rollup/README.md
-module/playnet/planner/comms/README.md
-module/playnet/planner/knowledge/data/sources.md
-module/playnet/planner/knowledge/recipes/docs/cold-chain.md
-module/playnet/planner/knowledge/recipes/docs/dev.md
-module/playnet/planner/knowledge/recipes/docs/dwelling.md
-module/playnet/planner/knowledge/recipes/docs/federation.md
-module/playnet/planner/knowledge/recipes/docs/flat-key.md
-module/playnet/planner/knowledge/recipes/docs/food-surplus.md
-module/playnet/planner/knowledge/recipes/docs/household.md
-module/playnet/planner/knowledge/recipes/docs/humisoil.md
-module/playnet/planner/knowledge/recipes/docs/infrastructure.md
-module/playnet/planner/knowledge/recipes/docs/held-option.md
-module/playnet/planner/knowledge/recipes/docs/meeting.md
-module/playnet/planner/knowledge/recipes/docs/mimir.md
-module/playnet/planner/knowledge/recipes/docs/tenant-maintenance.md
+module/playnet/README.md
+module/playnet/algorithms/rollup/README.md
+module/playnet/comms/README.md
+module/playnet/knowledge/data/sources.md
+module/playnet/knowledge/recipes/docs/cold-chain.md
+module/playnet/knowledge/recipes/docs/dev.md
+module/playnet/knowledge/recipes/docs/dwelling.md
+module/playnet/knowledge/recipes/docs/federation.md
+module/playnet/knowledge/recipes/docs/flat-key.md
+module/playnet/knowledge/recipes/docs/food-surplus.md
+module/playnet/knowledge/recipes/docs/household.md
+module/playnet/knowledge/recipes/docs/humisoil.md
+module/playnet/knowledge/recipes/docs/infrastructure.md
+module/playnet/knowledge/recipes/docs/held-option.md
+module/playnet/knowledge/recipes/docs/meeting.md
+module/playnet/knowledge/recipes/docs/mimir.md
+module/playnet/knowledge/recipes/docs/tenant-maintenance.md
 tails/SETUP_GUIDE.md
 tests/test-ai-repl-session.md
 tests/ux/README-ux-e2e.md
@@ -952,7 +952,7 @@ docs/history/resign-2026-08-27.tsv
 
 # Kept on the maintainer's machine, ignored by path, and no longer
 # required by anything tracked.
-module/playnet/planner/knowledge/recipes/held-option.scm
+module/playnet/knowledge/recipes/held-option.scm
 tests/planner/test-held-option-scenario.scm
 tests/planner/test-option-bundle.scm
 tests/planner/test-option-live.scm
@@ -960,7 +960,7 @@ tests/planner/test-program-budget.scm
 
 # Kept on the maintainer's machine, ignored by path, and no longer
 # required by anything tracked.
-module/playnet/planner/knowledge/recipes/tenant-maintenance.scm
+module/playnet/knowledge/recipes/tenant-maintenance.scm
 tests/planner/held-option-scenario-test.scm
 module/playnet/deprecated/planner/attic/deprecated-planner-tests/test-held-option-scenario.scm
 

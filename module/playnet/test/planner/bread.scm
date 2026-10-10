@@ -17,12 +17,12 @@
 ;;; re-exported so a suite reads them from one place.
 
 (define-module (playnet test planner bread)
-  #:use-module (playnet planner scope root)
-  #:use-module (playnet planner vf schemas)
+  #:use-module (playnet scope root)
+  #:use-module (playnet vf schemas)
   #:use-module (srfi srfi-1)
-  #:use-module (playnet planner knowledge dsl world)
-  #:use-module (playnet planner knowledge recipes bread-commune-seed)
-  #:use-module (playnet planner knowledge dsl recipe-library)
+  #:use-module (playnet knowledge dsl world)
+  #:use-module (playnet knowledge recipes bread-commune-seed)
+  #:use-module (playnet knowledge dsl recipe-library)
   #:use-module (goblins)
   #:use-module (srfi srfi-1)
   #:re-export (bread-world bread-plain-world bread-world-at

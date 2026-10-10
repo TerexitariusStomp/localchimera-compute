@@ -9,8 +9,8 @@
 ;;; the very block the build draws on.
 
 (use-modules (playnet test harness))
-(use-modules (playnet planner knowledge recipes store) (playnet planner knowledge recipes beenius-wax) (playnet planner knowledge recipes stone-paper) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
-(use-modules (playnet planner doors service))
+(use-modules (playnet knowledge recipes store) (playnet knowledge recipes beenius-wax) (playnet knowledge recipes stone-paper) (playnet scope root) (playnet vf schemas) (srfi srfi-1))
+(use-modules (playnet doors service))
 (use-modules (goblins)
              (goblins persistence-store memory)
              (srfi srfi-1))

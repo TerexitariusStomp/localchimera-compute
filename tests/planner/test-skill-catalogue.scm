@@ -13,14 +13,14 @@
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness)
-             ((playnet planner vf schemas)
+             ((playnet vf schemas)
               #:select (resource-specification-id resource-specification-resource-classified-as
                         resource-specification-default-unit-of-resource
                         resource-specification-default-unit-of-effort))
-             ((playnet planner formulas skill-law) #:select (skill-law-of))
-             ((playnet planner knowledge skills skill-catalogue)
+             ((playnet vf formulas skill-law) #:select (skill-law-of))
+             ((playnet knowledge skills skill-catalogue)
               #:select (%skill-catalogue catalogue-skill))
-             ((playnet planner dev recipes) #:select (dev-skill))
+             ((playnet dev recipes) #:select (dev-skill))
              (srfi srfi-1))
 
 ;; the taxonomy docs/radicle-issues.md states under `### area:` — read as a

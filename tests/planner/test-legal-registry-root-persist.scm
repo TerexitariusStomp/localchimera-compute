@@ -9,9 +9,9 @@
 ;;; Run: guile -L module tests/planner/test-legal-registry-root-persist.scm
 
 (use-modules (playnet test scope))
-(use-modules (playnet test harness) (playnet planner scope root) (playnet planner vf schemas) (playnet planner legal compliance)
-             (playnet planner legal registry) (playnet planner legal registry-actor)
-             (playnet planner knowledge recipes compliance-food)
+(use-modules (playnet test harness) (playnet scope root) (playnet vf schemas) (playnet legal compliance)
+             (playnet legal registry) (playnet legal registry-actor)
+             (playnet knowledge recipes compliance-food)
              (goblins) (goblins vat) (goblins persistence-store memory)
              (srfi srfi-1) (ice-9 format) (ice-9 receive))
 

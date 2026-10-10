@@ -6,8 +6,8 @@
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-federation-seed.scm
 
 (use-modules (playnet test harness)
-             (playnet planner vf schemas)
-             (playnet planner knowledge recipes federation)
+             (playnet vf schemas)
+             (playnet knowledge recipes federation)
              (goblins) (srfi srfi-1))
 
 (define vat (spawn-vat #:name "fed-seed"))

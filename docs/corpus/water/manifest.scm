@@ -22,7 +22,7 @@
 ;;;
 ;;; NOT here, deliberately: the gridded and measured layers. ERA5 precipitation,
 ;;; SoilGrids, WRI Aqueduct and GAEZ are DATA (research plan §2.3) and several
-;;; are already pinned in module/playnet/planner/knowledge/data/. A raster is not
+;;; are already pinned in module/playnet/knowledge/data/. A raster is not
 ;;; a text and does not belong in a retrieval index.
 
 (corpus

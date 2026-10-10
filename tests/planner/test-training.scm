@@ -41,8 +41,8 @@
 (use-modules (srfi srfi-1) (ice-9 format))
 ;; resolve planner.scm by finding the sibling that exists (current-filename is
 ;; #f under some run modes, so scan the script-path candidates as well).
-(use-modules (playnet planner solve engine)
-             (playnet planner solve solver))
+(use-modules (playnet solve engine)
+             (playnet solve solver))
 
 ;; ── parameters ───────────────────────────────────────────────────────────────
 (define H   40.0)    ; each person's hours per period (the renewable time budget)

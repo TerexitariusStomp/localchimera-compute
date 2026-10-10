@@ -24,13 +24,13 @@
 ;;; Run:  guile --no-auto-compile -q -L module tests/planner/test-federation-direction.scm
 
 (use-modules (playnet test harness)
-             (playnet planner federation async)
-             (playnet planner solve admm-link)
-             ((playnet planner solve engine)
+             (playnet federation async)
+             (playnet solve admm-link)
+             ((playnet solve engine)
               #:select (commune->scope-record make-boundary-oracle solve-consensus federated-solve federated-flows loose-gives
                         federated-dilemma close-stranded-links lg cell))
-             (playnet planner solve solver)
-             (playnet planner vf schemas)
+             (playnet solve solver)
+             (playnet vf schemas)
              (playnet test planner federation-wire-fixture)
              (srfi srfi-1) (ice-9 format))
 

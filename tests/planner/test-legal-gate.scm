@@ -17,13 +17,13 @@
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test scope)) ; mock-scope-root
-(use-modules (playnet test harness) (playnet planner legal crossings) (playnet planner vf schemas) (srfi srfi-1) (playnet planner scope live)
+(use-modules (playnet test harness) (playnet legal crossings) (playnet vf schemas) (srfi srfi-1) (playnet scope live)
              (goblins) (goblins vat) (srfi srfi-1) (ice-9 string-fun))
 
 (define here (dirname (current-filename)))
 (define root (dirname (dirname here)))
-(use-modules (playnet planner legal crossings))                                  ; recipe → crossings
-(use-modules (playnet planner legal registry)) ; crossings → demands
+(use-modules (playnet legal crossings))                                  ; recipe → crossings
+(use-modules (playnet legal registry)) ; crossings → demands
 
 ;; ── the recipe: recover produce → cook → share a meal. Crossings are DECLARED
 ;;    as `crossing:<x>` classification tags on the specs (per §11) — derived, not

@@ -10,12 +10,12 @@
 ;;; Run:  guile -L module -L tests tests/planner/test-claim-means.scm
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test scope)) ; mock-scope-root
-(use-modules ((playnet planner facts rail) #:select (spec-claimable? claimable-specs spec-rail))
-             ((playnet planner legal crossings) #:select (rail-channel))
-             ((playnet planner formulas actions) #:select (relocating-actions)))
+(use-modules ((playnet vf facts rail) #:select (spec-claimable? claimable-specs spec-rail))
+             ((playnet legal crossings) #:select (rail-channel))
+             ((playnet vf formulas actions) #:select (relocating-actions)))
 (use-modules (playnet test harness)
-             (playnet planner algorithms custody) (playnet planner legal crossings) (playnet planner facts rail) (playnet planner vf schemas) (srfi srfi-1)
-             (playnet planner scope live)
+             (playnet algorithms custody) (playnet legal crossings) (playnet vf facts rail) (playnet vf schemas) (srfi srfi-1)
+             (playnet scope live)
              (playnet governance socialization) (playnet keri acdc-store)
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1) (ice-9 format))

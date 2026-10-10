@@ -11,9 +11,9 @@
 ;;; Run:  guile --no-auto-compile -q -L module tests/planner/test-location-lease.scm
 
 (use-modules (playnet test harness)
-             (playnet planner knowledge recipes federation-demo) (playnet planner scope root)
-             (playnet planner doors service)
-             (playnet planner knowledge recipes federation-demo)
+             (playnet knowledge recipes federation-demo) (playnet scope root)
+             (playnet doors service)
+             (playnet knowledge recipes federation-demo)
              ((playnet utils clock) #:select (now))
              (goblins) (goblins utils hashmap)
              (srfi srfi-1))

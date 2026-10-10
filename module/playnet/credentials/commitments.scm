@@ -15,7 +15,7 @@
 (define-module (playnet credentials commitments)
   #:use-module (playnet keri acdc)
   #:use-module (goblins utils hashmap)
-  #:use-module (playnet planner vf schemas)
+  #:use-module (playnet vf schemas)
   #:use-module (srfi srfi-1)
   #:export (*predicate-spec-registry*
             *schema-playnet-agreement*

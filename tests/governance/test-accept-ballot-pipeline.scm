@@ -10,7 +10,7 @@
 ;;; gateway's own RPC surface rather than by hand-fabricating a tally.
 
 (use-modules (playnet test harness))
-(use-modules (playnet planner scope root) (srfi srfi-1))
+(use-modules (playnet scope root) (srfi srfi-1))
 (use-modules (playnet governance scope) (playnet governance service) (playnet governance socialization) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri said-portable))
 (use-modules ((playnet keri citizen-sig)
               #:select (make-keri-identity keri-identity-keypair keri-identity-aid

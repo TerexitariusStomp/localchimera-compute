@@ -1,6 +1,6 @@
 ;;; family-probe.scm — the household split, run by the browser build.
 ;;;
-;;; `family-split` is the planner's own solve (playnet planner doors family solve): the
+;;; `family-split` is the planner's own solve (playnet doors family solve): the
 ;;; engine, the reference interior-point core, the recipes, all of it. This entry
 ;;; imports it the way a page would and times a few solves, so `make
 ;;; check-hoot-planner` proves the whole planner still compiles for Hoot, and a
@@ -9,7 +9,7 @@
 ;;; Run:  make check-hoot-planner            (compiles it)
 ;;;       make hoot-probe-family             (compiles and runs it under node)
 
-(use-modules (hoot ffi) (playnet planner doors family solve))
+(use-modules (hoot ffi) (playnet doors family solve))
 
 (define-foreign %now "performance" "now" -> f64)
 (define-foreign %log "console" "log" f64 -> none)

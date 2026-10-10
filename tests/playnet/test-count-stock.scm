@@ -30,10 +30,10 @@
 (use-modules (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)
-             (playnet planner scope root) (playnet planner vf schemas) (playnet planner observation states) (srfi srfi-1)
-             (playnet planner doors service)
-             ((playnet planner observation observer) #:select (void-event))
-             ((playnet planner formulas counting) #:select (count-figure))
+             (playnet scope root) (playnet vf schemas) (playnet observation states) (srfi srfi-1)
+             (playnet doors service)
+             ((playnet observation observer) #:select (void-event))
+             ((playnet vf formulas counting) #:select (count-figure))
              (srfi srfi-1))
 
 (display "\n── Setup: a scope, its service, three stocks ──\n")
@@ -364,8 +364,8 @@
 
 (display "\n── 8. count-refusal and count-plan, read directly ──\n")
 
-(use-modules ((playnet planner doors count-door) #:select (count-refusal count-plan count-run))
-             ((playnet planner formulas counting) #:select (count-expected count-agreed?))
+(use-modules ((playnet doors count-door) #:select (count-refusal count-plan count-run))
+             ((playnet vf formulas counting) #:select (count-expected count-agreed?))
              ((playnet utils clock) #:select (civil->instant)))
 
 (define (stock rid qty unit)

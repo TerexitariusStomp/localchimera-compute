@@ -10,9 +10,9 @@
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
-(use-modules (playnet planner knowledge recipes store) (playnet planner knowledge recipes berlin-commune-seed) (playnet planner knowledge recipes berlin-transit) (playnet planner knowledge recipes transit-shed) (playnet planner knowledge recipes transport) (playnet planner formulas capacity) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
-(use-modules (playnet planner doors service))
-(use-modules (playnet planner scope live))   ; plan-scope->alist
+(use-modules (playnet knowledge recipes store) (playnet knowledge recipes berlin-commune-seed) (playnet knowledge recipes berlin-transit) (playnet knowledge recipes transit-shed) (playnet knowledge recipes transport) (playnet vf formulas capacity) (playnet scope root) (playnet vf schemas) (srfi srfi-1))
+(use-modules (playnet doors service))
+(use-modules (playnet scope live))   ; plan-scope->alist
 (use-modules (goblins)
              (goblins persistence-store memory)
              (srfi srfi-1)
@@ -31,10 +31,10 @@
 ;; is read off the recipe: the network and the pass as `use` flows, a driver as a
 ;; `work` flow, the mover's own skill and pace on the work flow resolved from the
 ;; pickup (engine mrec-skill / mrec-pace)
-(define mrec-name  (@ (playnet planner solve engine) mrec-name))
-(define mrec-skill (@ (playnet planner solve engine) mrec-skill))
-(define mrec-pace  (@ (playnet planner solve engine) mrec-pace))
-(define mrec-manner (@ (playnet planner solve engine) mrec-manner))
+(define mrec-name  (@ (playnet solve engine) mrec-name))
+(define mrec-skill (@ (playnet solve engine) mrec-skill))
+(define mrec-pace  (@ (playnet solve engine) mrec-pace))
+(define mrec-manner (@ (playnet solve engine) mrec-manner))
 (define (entry-flows e action)
   (filter (lambda (f) (eq? action (recipe-flow-action f))) (cadr e)))
 (define (entry-vehicle e)
@@ -268,7 +268,7 @@
   (with-vat cvat
     (plan-scope->alist croot #:manners manners
       #:demand (list (cons "food#berlin-commune-farm@0" 5000.0))))
-  (let ((m (resolve-module '(playnet planner scope live))))
+  (let ((m (resolve-module '(playnet scope live))))
     (list (module-ref m '*workers*) (module-ref m '*riders*))))
 (define pinned (engine-after-solve berlin-transit-manners))
 (define mobile (engine-after-solve (cons '(mobile-people . #t) berlin-transit-manners)))
@@ -319,7 +319,7 @@
 ;; (engine/robust.scm's %world-keywords) — assert the engine's own state afterwards, not
 ;; merely that a plan came back, because a branch that quietly dropped these
 ;; keywords is exactly the failure this guards.
-(define %engine (resolve-module '(playnet planner scope live)))
+(define %engine (resolve-module '(playnet scope live)))
 (define (engine sym) (module-ref %engine sym))
 (define probe-arc "berlin-commune-farm|berlin-markthalle|auto")
 (define plan

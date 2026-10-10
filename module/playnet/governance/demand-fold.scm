@@ -5,7 +5,7 @@
 ;;; is the other end of that wire: the demand a solve answers for is the sum of
 ;;; those needs over the subtree of the root being planned.
 ;;;
-;;; It is the federation fold (aggregation/fold-node.scm) over demand's three
+;;; It is the federation fold (vf/aggregation/fold-node.scm) over demand's three
 ;;; pieces:
 ;;;
 ;;;   monoid   quantities summed by cell (the shared `sum-by-key`)
@@ -41,19 +41,19 @@
 
 (define-module (playnet governance demand-fold)
   #:use-module (srfi srfi-1)
-  #:use-module (playnet planner pools credit-fold)
-  #:use-module (playnet planner vf schemas)
+  #:use-module (playnet pools credit-fold)
+  #:use-module (playnet vf schemas)
   #:use-module (srfi srfi-1)
   #:use-module (playnet utils clock)
   #:use-module ((playnet utils clock) #:select ((now . clock-now)))   ; the clock's now under a name no local `now` shadows
-  #:use-module (playnet planner aggregation fold-node)
-  #:use-module (playnet planner scope live)
-  #:use-module ((playnet planner facts person-facts) #:select (declared-need?))
-  #:use-module (playnet planner aggregation scope-tree)
-  #:use-module ((playnet planner pools credit-fold) #:select (consumer-voices))   ; every holder's voice off one reading
-  #:use-module (playnet planner facts tension-terms)
-  #:use-module ((playnet planner solve emphasis) #:select (emphasis-masses fill-default))  ; the spec's law: shares × voice
-  #:use-module ((playnet planner solve engine) #:select (*desire-w0* owned-spec))         ; one citizen's whole emphasis; the citizen's own good
+  #:use-module (playnet vf aggregation fold-node)
+  #:use-module (playnet scope live)
+  #:use-module ((playnet vf facts person-facts) #:select (declared-need?))
+  #:use-module (playnet vf aggregation scope-tree)
+  #:use-module ((playnet pools credit-fold) #:select (consumer-voices))   ; every holder's voice off one reading
+  #:use-module (playnet vf facts tension-terms)
+  #:use-module ((playnet solve emphasis) #:select (emphasis-masses fill-default))  ; the spec's law: shares × voice
+  #:use-module ((playnet solve engine) #:select (*desire-w0* owned-spec))         ; one citizen's whole emphasis; the citizen's own good
   #:use-module (goblins)
   #:export (%cell-sep %demand-key %demand-key-parts %need-cells %need-cell %declared-need?
             %needs-of-plan-store scope-own-demand demand-monoid %live-in-period?

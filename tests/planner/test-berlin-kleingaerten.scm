@@ -47,11 +47,11 @@
 ;;; Run: guile -L module tests/planner/test-berlin-kleingaerten.scm
 
 (use-modules (playnet test planner prelude)
-             (playnet planner solve engine)
-             (playnet planner vf schemas) (playnet planner beyond scenario)
+             (playnet solve engine)
+             (playnet vf schemas) (playnet vf beyond scenario)
              (srfi srfi-1)
              (ice-9 format))
-(use-modules (playnet planner knowledge worlds berlin-kleingaerten))
+(use-modules (playnet knowledge worlds berlin-kleingaerten))
 
 (define %place "berlin-kg")
 ;; a FLAT place, as in both companion tests: the harvest pools at one node so a single

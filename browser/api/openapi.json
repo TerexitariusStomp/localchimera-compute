@@ -19676,8 +19676,8 @@
     "/api/planner/presets": {
       "post": {
         "operationId": "planner.presets",
-        "summary": "Lists the worlds a scope can start from — the economies the tree ships as data (module/playnet/planner/knowledge/worlds/presets.scm): id, name and doc per preset.",
-        "description": "Lists the worlds a scope can start from — the economies the tree ships as data (module/playnet/planner/knowledge/worlds/presets.scm): id, name and doc per preset.\n\nObject: `planner`. Callable by anyone. Reply shape: `alist-list`.",
+        "summary": "Lists the worlds a scope can start from — the economies the tree ships as data (module/playnet/knowledge/worlds/presets.scm): id, name and doc per preset.",
+        "description": "Lists the worlds a scope can start from — the economies the tree ships as data (module/playnet/knowledge/worlds/presets.scm): id, name and doc per preset.\n\nObject: `planner`. Callable by anyone. Reply shape: `alist-list`.",
         "tags": [
           "knowledge"
         ],
@@ -20917,7 +20917,7 @@
       "auth": "operator",
       "topic": "stock",
       "x-playnet-transport": "none",
-      "summary": "Forwards METHOD and its own ARGS to the UC credit pool (module/playnet/planner/pools/credit-fold.scm) and replies its answer. METHOD is one of: cells, context, pool, sum-met, sum-unmet, citizen-count, citizens (no further args); citizen-claimed/citizen-unmet/contribution-claim/solidarity-supplement (aid); citizen-gross/voice-share (aid, [level]); citizenship-share/total-claim-capacity/effective-balance (aid, [citizenship-fraction]); total-social-svc ([level]). Genuinely polymorphic per method, so ARGS stays a positional tail rather than one fixed shape."
+      "summary": "Forwards METHOD and its own ARGS to the UC credit pool (module/playnet/pools/credit-fold.scm) and replies its answer. METHOD is one of: cells, context, pool, sum-met, sum-unmet, citizen-count, citizens (no further args); citizen-claimed/citizen-unmet/contribution-claim/solidarity-supplement (aid); citizen-gross/voice-share (aid, [level]); citizenship-share/total-claim-capacity/effective-balance (aid, [citizenship-fraction]); total-social-svc ([level]). Genuinely polymorphic per method, so ARGS stays a positional tail rather than one fixed shape."
     },
     {
       "object": "planner",
@@ -20925,7 +20925,7 @@
       "auth": "operator",
       "topic": "stock",
       "x-playnet-transport": "none",
-      "summary": "Hands back the UC voice pool root object (module/playnet/planner/pools/voice-fold.scm): producer stances over parts, folded anonymously; reads pushes, hours-of, hours, cells."
+      "summary": "Hands back the UC voice pool root object (module/playnet/pools/voice-fold.scm): producer stances over parts, folded anonymously; reads pushes, hours-of, hours, cells."
     },
     {
       "object": "planner",
@@ -20973,7 +20973,7 @@
       "auth": "operator",
       "topic": "stock",
       "x-playnet-transport": "none",
-      "summary": "Hands back the UC reading pool root object (module/playnet/planner/pools/reading-fold.scm): every scope's readings of a spec, keyed by technique, act and scope, one cell per source; reads readings, latest, drift, sources, contrary, cells."
+      "summary": "Hands back the UC reading pool root object (module/playnet/pools/reading-fold.scm): every scope's readings of a spec, keyed by technique, act and scope, one cell per source; reads readings, latest, drift, sources, contrary, cells."
     },
     {
       "object": "planner",
@@ -21021,7 +21021,7 @@
       "auth": "operator",
       "topic": "planning",
       "x-playnet-transport": "none",
-      "summary": "Forwards METHOD and its own ARGS to the UC slack fold (module/playnet/planner/pools/slack-fold.scm) and replies its answer. METHOD is one of: cells, slacks (no further args); slack (place); geomean ([places], default every place with a want). Genuinely polymorphic per method, so ARGS stays a positional tail rather than one fixed shape."
+      "summary": "Forwards METHOD and its own ARGS to the UC slack fold (module/playnet/pools/slack-fold.scm) and replies its answer. METHOD is one of: cells, slacks (no further args); slack (place); geomean ([places], default every place with a want). Genuinely polymorphic per method, so ARGS stays a positional tail rather than one fixed shape."
     },
     {
       "object": "planner",

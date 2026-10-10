@@ -10,7 +10,7 @@
 ;;;   (load (string-append (dirname (current-filename)) "/legal-example-rules.scm"))
 ;;;   guile -L module tests/planner/legal-example-rules.scm      ; prints the demo
 
-(use-modules (playnet planner legal registry) (srfi srfi-1) (srfi srfi-13) (ice-9 format))
+(use-modules (playnet legal registry) (srfi srfi-1) (srfi srfi-13) (ice-9 format))
 
 ;;; ─── the rules ───────────────────────────────────────────────────────────
 (define *example-rules*

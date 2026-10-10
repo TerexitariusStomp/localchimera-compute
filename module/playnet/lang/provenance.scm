@@ -114,16 +114,16 @@
     (builds legal-aspects reform)
 
     ;; ── where each ref's facts live ──
-    (defines beenius-wax "module/playnet/planner/knowledge/recipes/beenius-wax.scm")
-    (defines buffer-zones "module/playnet/planner/ddmrp/buffer-zones.scm")
-    (defines capacity-buffers "module/playnet/planner/ddmrp/capacity-buffers.scm")
-    (defines compliance "module/playnet/planner/legal/compliance.scm")
-    (defines filings "module/playnet/planner/legal/filings.scm")
-    (defines legal-aspects "module/playnet/planner/knowledge/law/aspects.scm")
+    (defines beenius-wax "module/playnet/knowledge/recipes/beenius-wax.scm")
+    (defines buffer-zones "module/playnet/ddmrp/buffer-zones.scm")
+    (defines capacity-buffers "module/playnet/ddmrp/capacity-buffers.scm")
+    (defines compliance "module/playnet/legal/compliance.scm")
+    (defines filings "module/playnet/legal/filings.scm")
+    (defines legal-aspects "module/playnet/knowledge/law/aspects.scm")
     (defines provenance "module/playnet/lang/provenance.scm")
-    (defines reform "module/playnet/planner/legal/reform.scm")
-    (defines spatial-things "module/playnet/planner/scope/spatial-things.scm")
-    (defines stone-paper "module/playnet/planner/knowledge/recipes/stone-paper.scm")))
+    (defines reform "module/playnet/legal/reform.scm")
+    (defines spatial-things "module/playnet/scope/spatial-things.scm")
+    (defines stone-paper "module/playnet/knowledge/recipes/stone-paper.scm")))
 ;;; END generated
 
 

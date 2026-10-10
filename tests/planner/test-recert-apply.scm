@@ -10,7 +10,7 @@
 ;;; Run:  guile -L module/playnet/planner tests/planner/test-recert-apply.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner facts validity))
+(use-modules (playnet vf facts validity))
 
 ;; a schedule exactly as plan-scope->alist emits it: (skill . interval-in-periods | #f).
 (define schedule '(("electrician" . 1.5) ("baker" . 4.0) ("gardener" . #f)))

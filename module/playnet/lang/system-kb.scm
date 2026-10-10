@@ -69,7 +69,7 @@
     (file radicle-ci "deploy/scripts/radicle-ci-hook.sh")
     (file radicle-ci "deploy/guix/radicle-service.scm")
     (file planner "module/playnet/planner.scm")
-    (file planner "module/playnet/planner/vf/schemas.scm")
+    (file planner "module/playnet/vf/schemas.scm")
     (file planner "module/playnet/planner/relational/planning-facts.scm")
     (file planner "module/playnet/planner/relational/demand-relation.scm")
     (file planner "module/playnet/planner/relational/plan-relation.scm")

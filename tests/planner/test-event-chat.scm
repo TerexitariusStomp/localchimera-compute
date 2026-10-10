@@ -16,8 +16,8 @@
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
-(use-modules (playnet planner scope root) (playnet planner vf schemas))
-(use-modules (playnet planner doors service))
+(use-modules (playnet scope root) (playnet vf schemas))
+(use-modules (playnet doors service))
 (use-modules (goblins)
              (goblins actor-lib methods)
              (goblins persistence-store memory)

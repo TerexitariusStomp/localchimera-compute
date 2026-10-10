@@ -37,7 +37,7 @@
     ;; ── Resource specifications ────────────────────────────────────────────
     ;; Infrastructure
     ;; Specs + recipes (transcribe, replicate) live in
-    ;; module/playnet/planner/knowledge/recipes/infrastructure.scm.
+    ;; module/playnet/knowledge/recipes/infrastructure.scm.
     (seed-infrastructure-recipes rs)
 
     ;; ── Agents ─────────────────────────────────────────────────────────────

@@ -7,7 +7,7 @@
 ;;; Run:  guile --no-auto-compile -L module -L tests tests/governance/test-personhood-policy.scm
 
 (use-modules (playnet test harness)
-             (playnet planner scope root) (playnet planner doors service)
+             (playnet scope root) (playnet doors service)
              (playnet governance scope) (playnet keri acdc-store) (playnet keri first-person personhood-policy)
              (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1))
 

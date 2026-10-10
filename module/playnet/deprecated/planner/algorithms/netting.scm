@@ -25,9 +25,9 @@
 ;; standing on a duplicated constant.
 (define-module (playnet deprecated planner algorithms netting)
   #:use-module (goblins)
-  #:use-module (playnet planner vf schemas)
+  #:use-module (playnet vf schemas)
   #:use-module (playnet utils store-utils)
-  #:use-module (playnet planner observation observer)
+  #:use-module (playnet observation observer)
   #:export (*epsilon-pu* *non-consuming-actions-net* planning-signal? <netter-state>
             make-netter-state netter-state? ns-allocated ns-claimed-by-plan
             ns-conservation-floors ns-claim-witness empty-netter-state ns-allocated?

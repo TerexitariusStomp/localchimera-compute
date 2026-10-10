@@ -18,8 +18,8 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness)
-             (playnet planner vf schemas)
-             (playnet planner doors service)          ; ^planner-service
+             (playnet vf schemas)
+             (playnet doors service)          ; ^planner-service
              (playnet governance socialization) (playnet keri acdc-store)               ; socialize-private-resource, socialized-plan-fn
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))

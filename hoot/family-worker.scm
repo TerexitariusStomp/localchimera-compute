@@ -12,7 +12,7 @@
 ;;;
 ;;; Build: make browser/family.wasm     Check: make check-family-worker
 
-(use-modules (hoot ffi) (playnet planner doors family local))
+(use-modules (hoot ffi) (playnet doors family local))
 
 (define-foreign %set-handler "family" "setHandler" (ref string) (ref extern) -> none)
 (define-foreign %call-callback "family" "callCallback" (ref extern) (ref string) -> none)

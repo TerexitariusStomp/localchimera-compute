@@ -24,7 +24,7 @@
 ;;;   guile --no-auto-compile -q -L module tests/planner/test-kernel-isa-guard.scm
 
 (use-modules (playnet test planner prelude)
-             (playnet planner solve solver)
+             (playnet solve solver)
              (srfi srfi-1)
              (ice-9 format)
              (system foreign))

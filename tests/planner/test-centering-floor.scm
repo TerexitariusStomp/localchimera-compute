@@ -27,10 +27,10 @@
 ;;; Run: guile tests/planner/… (discovered by tools/run-scm-tests.sh)
 
 (use-modules (playnet test planner prelude)
-             (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner solve solver)
-             (playnet planner vf schemas)
+             (playnet solve engine)
+             (playnet solve compile)
+             (playnet solve solver)
+             (playnet vf schemas)
              (srfi srfi-1)
              (ice-9 format))
 

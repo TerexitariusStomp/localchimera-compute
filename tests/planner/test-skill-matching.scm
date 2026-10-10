@@ -26,9 +26,9 @@
 ;;;   guile --no-auto-compile -q -L module -L . tests/planner/test-skill-matching.scm
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test harness) (playnet planner formulas skill-law) (playnet planner vf schemas) (srfi srfi-1) (playnet planner scope live) (playnet test scope)
-             ((playnet planner solve engine) #:select (plan-from-records))
-             ((playnet planner formulas skill-law) #:select (effective-skills))
+(use-modules (playnet test harness) (playnet vf formulas skill-law) (playnet vf schemas) (srfi srfi-1) (playnet scope live) (playnet test scope)
+             ((playnet solve engine) #:select (plan-from-records))
+             ((playnet vf formulas skill-law) #:select (effective-skills))
              (goblins) (goblins vat) (srfi srfi-1) (ice-9 format))
 
 (define vat (spawn-vat #:name "skill-matching"))

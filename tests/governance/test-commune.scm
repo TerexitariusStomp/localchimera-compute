@@ -1,7 +1,7 @@
 ;;; test-commune.scm — ^commune with 4-seal facets
 
 (use-modules (playnet test harness))
-(use-modules (playnet planner scope root) (playnet planner vf schemas) (playnet planner observation states))
+(use-modules (playnet scope root) (playnet vf schemas) (playnet observation states))
 (use-modules (playnet org endorsement))
 (use-modules (playnet governance commune))
 (use-modules (goblins) (goblins utils hashmap))

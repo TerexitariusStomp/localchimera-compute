@@ -14,9 +14,9 @@
 ;;; Run:  guile --no-auto-compile -L module/playnet/planner tests/planner/test-frag-prior.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner solve solver))
+(use-modules (playnet solve engine)
+             (playnet solve compile)
+             (playnet solve solver))
 
 (define s-tip 10.0)   ; co2 tip = quantile_0.5 of [8,12]
 (define (emit-recipe)

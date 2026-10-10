@@ -34,7 +34,7 @@
 (define-module (playnet monero poller)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
-  #:use-module (playnet planner vf schemas)
+  #:use-module (playnet vf schemas)
   #:use-module (srfi srfi-1)
   #:use-module (playnet monero wallet)
   #:use-module (playnet monero specs)

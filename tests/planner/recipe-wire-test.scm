@@ -8,9 +8,9 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness)
-             (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
-             (playnet planner doors service)
-             ((playnet planner doors record-rows) #:select (record-context))
+             (playnet scope root) (playnet vf schemas) (srfi srfi-1)
+             (playnet doors service)
+             ((playnet doors record-rows) #:select (record-context))
              (playnet wire rows)
              (goblins)
              (goblins persistence-store memory)

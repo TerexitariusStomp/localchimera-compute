@@ -18,9 +18,9 @@
 ;;; Run:  guile -L module -L tests tests/planner/test-per-recipe-composition.scm
 
 (use-modules (playnet test harness)
-             (playnet planner scope root) (playnet planner vf schemas)
-             (playnet planner doors service)
-             (playnet planner knowledge catalogues substances)
+             (playnet scope root) (playnet vf schemas)
+             (playnet doors service)
+             (playnet knowledge catalogues substances)
              (goblins)
              (goblins persistence-store memory)
              (srfi srfi-1))

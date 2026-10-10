@@ -13,13 +13,13 @@
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-provider-away.scm
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet planner knowledge dsl shorthand))
+(use-modules (playnet knowledge dsl shorthand))
 (use-modules (playnet test harness)
              (goblins)
-             (playnet planner scope root) (playnet planner vf schemas)
-             (playnet planner vf schemas)
-             ((playnet planner plan accepts) #:select (accepts->pins))
-             (playnet planner scope root))
+             (playnet scope root) (playnet vf schemas)
+             (playnet vf schemas)
+             ((playnet plan accepts) #:select (accepts->pins))
+             (playnet scope root))
 
 (define flows
   (list (wk* "aW" "farming" 2.0 "growB")

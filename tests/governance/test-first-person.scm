@@ -4,7 +4,7 @@
 ;;; tests/openvtc/test-first-person.scm.
 
 (use-modules (playnet test harness))
-(use-modules (playnet planner scope root))
+(use-modules (playnet scope root))
 (use-modules (playnet org endorsement))
 (use-modules (playnet governance bootstrap) (playnet governance scope) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri first-person credentials) (playnet keri first-person predicates))
 (use-modules (playnet crypto shamir))

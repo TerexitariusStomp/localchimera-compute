@@ -45,7 +45,7 @@
              (gnu packages rsync)
              (gnu packages curl)            ; curl — operator HTTP checks (torsocks-wrapped)
              (gnu packages base)            ; gnu-make — CI wasm rebuild (`make browser/repl.wasm`)
-             (gnu packages commencement)    ; gcc-toolchain — planner kernel build (`make -C module/playnet/planner/solve/kernel`)
+             (gnu packages commencement)    ; gcc-toolchain — planner kernel build (`make -C module/playnet/solve/kernel`)
              (gnu packages rust-apps)       ; radicle
              (gnu packages version-control)
              (gnu packages ssh)

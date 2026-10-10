@@ -44,12 +44,12 @@
 (use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test scope))
 (use-modules (playnet test planner prelude)
-             (playnet planner solve engine)
-             (playnet planner vf schemas) (playnet planner beyond schedules)
+             (playnet solve engine)
+             (playnet vf schemas) (playnet vf beyond schedules)
              (srfi srfi-1)
              (ice-9 format))
 
-(use-modules (playnet planner knowledge recipes household))
+(use-modules (playnet knowledge recipes household))
 
 (define PLACE "flat")
 (define ALL-DAYS '(monday tuesday wednesday thursday friday saturday sunday))

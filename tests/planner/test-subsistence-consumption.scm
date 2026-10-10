@@ -19,19 +19,19 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -L module tests/planner/test-subsistence-consumption.scm
 
-;; self-locate the `module` dir so (playnet planner knowledge catalogues substances) resolves
+;; self-locate the `module` dir so (playnet knowledge catalogues substances) resolves
 ;; under any -L (the test-tensions loop passes -L module/playnet/planner).
 (use-modules (srfi srfi-1) (ice-9 format))
 (let ((self (find file-exists? (filter string? (cons (false-if-exception (current-filename)) (command-line))))))
   (when self (add-to-load-path (string-append (dirname self) "/../../module"))))
 (use-modules (playnet test harness)
-             (playnet planner knowledge catalogues substances)   ; nutrient-content · menu-carries · menu-starves
-             (playnet planner solve engine)
-             (playnet planner vf schemas)
-             (playnet planner knowledge dsl shorthand)
-             (playnet planner knowledge dsl world)
-             (playnet planner knowledge recipes bread-commune-seed)
-             (playnet planner knowledge catalogues subsistence))
+             (playnet knowledge catalogues substances)   ; nutrient-content · menu-carries · menu-starves
+             (playnet solve engine)
+             (playnet vf schemas)
+             (playnet knowledge dsl shorthand)
+             (playnet knowledge dsl world)
+             (playnet knowledge recipes bread-commune-seed)
+             (playnet knowledge catalogues subsistence))
 
 ;; ── the table: what the bread town produces that carries nutrition
 (define TABLE

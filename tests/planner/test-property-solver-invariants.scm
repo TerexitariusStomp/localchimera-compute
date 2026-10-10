@@ -59,7 +59,7 @@
 ;;; Run:  guile --no-auto-compile -q -L module tests/planner/test-property-solver-invariants.scm
 
 (use-modules (playnet test planner prelude)
-             (playnet planner solve solver)
+             (playnet solve solver)
              (srfi srfi-1)
              (ice-9 format))
 

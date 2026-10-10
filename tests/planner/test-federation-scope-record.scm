@@ -10,10 +10,10 @@
 ;;; Run:  guile --no-auto-compile -q -L module tests/planner/test-federation-scope-record.scm
 
 (use-modules (playnet test harness)
-             (playnet planner knowledge recipes federation-demo) (playnet planner federation store-registry) (playnet planner scope root)
-             (playnet planner scope live)
-             (playnet planner doors service)
-             ((playnet planner solve engine) #:select (make-boundary-oracle))
+             (playnet knowledge recipes federation-demo) (playnet federation store-registry) (playnet scope root)
+             (playnet scope live)
+             (playnet doors service)
+             ((playnet solve engine) #:select (make-boundary-oracle))
              (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)

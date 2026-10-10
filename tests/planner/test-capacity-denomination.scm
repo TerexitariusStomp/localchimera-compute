@@ -26,11 +26,11 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner knowledge dsl shorthand))
-(use-modules (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner vf schemas)
-             (playnet planner formulas capacity))
+(use-modules (playnet knowledge dsl shorthand))
+(use-modules (playnet solve engine)
+             (playnet solve compile)
+             (playnet vf schemas)
+             (playnet vf formulas capacity))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

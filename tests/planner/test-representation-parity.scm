@@ -32,10 +32,10 @@
 ;;;        tests/planner/test-representation-parity.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner vf schemas)
-             (playnet planner knowledge dsl shorthand))
-(use-modules (playnet planner knowledge catalogues eco))
+(use-modules (playnet solve engine)
+             (playnet vf schemas)
+             (playnet knowledge dsl shorthand))
+(use-modules (playnet knowledge catalogues eco))
 ;; A period here is a WEEK: the roster's Monday 00:00–23:00 is twenty-three hours a period, on any date.
 (set-period-length! 1.0 "week")
 

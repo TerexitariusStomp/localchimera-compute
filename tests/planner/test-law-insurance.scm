@@ -15,11 +15,11 @@
 ;;; Run: guile -L module tests/planner/test-law-insurance.scm
 
 (use-modules (playnet test harness)
-             (playnet planner doors legal)
-             (playnet planner legal registry)
-             (playnet planner knowledge law context-pack)
-             (playnet planner knowledge law aspects)
-             (playnet planner knowledge law lint)
+             (playnet doors legal)
+             (playnet legal registry)
+             (playnet knowledge law context-pack)
+             (playnet knowledge law aspects)
+             (playnet knowledge law lint)
              (srfi srfi-1) (ice-9 format))
 
 (define (bill-of thunk) (call-with-values thunk list))          ; → (bill hits)

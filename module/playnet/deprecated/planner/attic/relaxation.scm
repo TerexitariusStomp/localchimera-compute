@@ -29,12 +29,12 @@
 ;;;
 ;;; Labour is NOT one fungible ceiling. Each work-flow names a *skill*; each
 ;;; skill k has its own availability A_k, aggregated from a worker roster —
-;;; mirroring (playnet planner pools availability-pool)'s rule "one body, one
+;;; mirroring (playnet pools availability-pool)'s rule "one body, one
 ;;; availability, one entry per skill". The single labour barrier therefore
 ;;; splits into Σ_k barrier(L_k, A_k): scarce skilled labour (say bakers)
 ;;; throttles and allocates desire by pull, exactly as the soil envelope
 ;;; throttles material throughput. Once the convex core settles the quantities,
-;;; the real (playnet planner algorithms deferred-acceptance) matcher assigns named
+;;; the real (playnet algorithms deferred-acceptance) matcher assigns named
 ;;; workers to the period's work-slots — labour as a matched flow, made visible.
 ;;;
 ;;; The loop is event-driven (it reacts to consumption EconomicEvents) and
@@ -87,11 +87,11 @@
              ;; the real labour matcher — pure, string-keyed (producer-proposing
              ;; deferred acceptance with voice tiebreak). We pass it plain
              ;; agent/slot strings, so its records never meet our VF records.
-             (playnet planner algorithms deferred-acceptance))
+             (playnet algorithms deferred-acceptance))
 ;; schemas.scm has module identity now, so import it. The load-path gymnastics
 ;; this replaces existed only because it did not: current-filename is #f under
 ;; `guile -L …`, so the path had to be rediscovered three ways at run time.
-(use-modules (playnet planner vf schemas))
+(use-modules (playnet vf schemas))
 
 ;; ═══ static configuration (the surface's knowledge layer) ═══════════════════
 ;; Filled by `define-world!` at the bottom. These never change as events flow.

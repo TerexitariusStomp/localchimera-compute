@@ -13,8 +13,8 @@
 ;;; Run: guile --no-auto-compile -q -L module -L tests tests/planner/test-bay-area-subscopes.scm
 
 (use-modules (playnet test harness)
-             (playnet planner knowledge recipes bay-area-commune-seed) (playnet planner scope earth) (playnet planner vf schemas) (playnet planner beyond scenario) (srfi srfi-1)
-             (playnet planner scope live)
+             (playnet knowledge recipes bay-area-commune-seed) (playnet scope earth) (playnet vf schemas) (playnet vf beyond scenario) (srfi srfi-1)
+             (playnet scope live)
              (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)
@@ -22,10 +22,10 @@
 
 (define SF "E_commune_SF")
 (define OAK "E_commune_Oakland")
-(define live-yields  (@@ (playnet planner knowledge worlds bay-area) *bay-area-crop-yields*))
-(define live-scen-of (@@ (playnet planner scope live) scope-bioregion-scenarios))
-(define live-frag-of (@@ (playnet planner scope live) scope-bioregion-fragilities))
-(define frag-specs-of (@@ (playnet planner scope live) fragility-specs-of))
+(define live-yields  (@@ (playnet knowledge worlds bay-area) *bay-area-crop-yields*))
+(define live-scen-of (@@ (playnet scope live) scope-bioregion-scenarios))
+(define live-frag-of (@@ (playnet scope live) scope-bioregion-fragilities))
+(define frag-specs-of (@@ (playnet scope live) fragility-specs-of))
 
 ;; ── two subscopes born under earth, each seeded in the Bay ──
 (define store (make-memory-store))
@@ -54,7 +54,7 @@
        (= 4 (length (scope-scen OAK))))
 (check "the seeded yields match the vendored *bay-area-crop-yields* (no drift)"
        (every (lambda (cw) (= (cddr cw) (assoc-ref live-yields (car cw))))
-              (@@ (playnet planner knowledge recipes bay-area-commune-seed) *bay-area-commune-crops*)))
+              (@@ (playnet knowledge recipes bay-area-commune-seed) *bay-area-commune-crops*)))
 
 ;; ── SF plans, bounded by its water budget (the California constraint) ──
 (define sf-met

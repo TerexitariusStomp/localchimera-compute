@@ -20,7 +20,7 @@
 ;;; Works anywhere: a host without shepherd reports its capacity with an
 ;;; empty service list (laptops), the box reports every running service.
 
-(use-modules (playnet planner observation host-facts)
+(use-modules (playnet observation host-facts)
              (playnet mqtt publish)
              (ice-9 pretty-print))
 

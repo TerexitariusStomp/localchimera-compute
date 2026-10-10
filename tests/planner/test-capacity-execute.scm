@@ -4,7 +4,7 @@
 ;;;         -l load-all.scm -l tests/test-capacity-execute.scm
 
 (use-modules (playnet test harness))
-(use-modules (playnet planner execution capacity-execute) (playnet planner observation live-resource) (playnet planner scope root) (playnet planner vf schemas))
+(use-modules (playnet execution capacity-execute) (playnet observation live-resource) (playnet scope root) (playnet vf schemas))
 (use-modules (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)

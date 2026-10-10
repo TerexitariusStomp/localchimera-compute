@@ -28,7 +28,7 @@
 ;;; Run:  guile -L module module/playnet/planner/spatial-proto.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner vf schemas))
+(use-modules (playnet vf schemas))
 
 ;; ── the containment tree (real SpatialThing records) ────────────────────────
 ;; earth ⊃ {city, country}.  Soil-nutrient is a located resource: scarce under

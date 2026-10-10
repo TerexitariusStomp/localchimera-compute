@@ -18,7 +18,7 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness)
-             (playnet planner algorithms rollup) (playnet planner algorithms track-trace) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
+             (playnet algorithms rollup) (playnet algorithms track-trace) (playnet scope root) (playnet vf schemas) (srfi srfi-1)
              (goblins)
              (goblins persistence-store memory)
              (srfi srfi-1))

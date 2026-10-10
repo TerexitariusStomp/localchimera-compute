@@ -26,7 +26,7 @@
 ;;;   guile --no-auto-compile -q -L module tests/planner/test-holdings-audit.scm
 
 (use-modules (playnet test harness))
-(use-modules (playnet planner knowledge recipes berlin-commune-seed) (playnet planner knowledge recipes berlin-food-seed) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
+(use-modules (playnet knowledge recipes berlin-commune-seed) (playnet knowledge recipes berlin-food-seed) (playnet scope root) (playnet vf schemas) (srfi srfi-1))
 (use-modules (goblins) (srfi srfi-1) (srfi srfi-13) (ice-9 format))
 
 (use-modules ((playnet utils units) #:select ((time-unit? . bare-time-unit?))))   ; the one reader of "is this a time?"

@@ -12,7 +12,7 @@
 ;;; Run: guile -L module -L tests tests/planner/test-declare-arg-split.scm
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet planner scope root) (playnet planner vf schemas) (playnet planner doors service) (playnet test harness)
+(use-modules (playnet scope root) (playnet vf schemas) (playnet doors service) (playnet test harness)
              (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1))
 
 (define vat (spawn-vat #:name "declare-arg-split"))

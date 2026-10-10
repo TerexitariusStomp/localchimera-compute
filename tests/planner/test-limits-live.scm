@@ -23,7 +23,7 @@
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test scope))
-(use-modules (playnet test harness) (playnet planner knowledge catalogues eco) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1) (playnet planner scope live)
+(use-modules (playnet test harness) (playnet knowledge catalogues eco) (playnet scope root) (playnet vf schemas) (srfi srfi-1) (playnet scope live)
              (goblins) (goblins persistence-store memory)
              (srfi srfi-1) (ice-9 format))
 
@@ -53,7 +53,7 @@
   (spawn-persistent-vat scope-root-env (lambda () (spawn-scope-root "Commons")) mem))
 ;; A period here is a WEEK — the fixture's "season" — so Ada's 09:00–17:00 every
 ;; day is 56 h of land work a period, the labour these limits were sized on.
-(use-modules ((playnet planner solve engine) #:select (set-period-length!)))
+(use-modules ((playnet solve engine) #:select (set-period-length!)))
 (set-period-length! 1.0 "week")
 (define win (all-week-window "09:00" "17:00"))
 

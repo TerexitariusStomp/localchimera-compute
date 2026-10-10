@@ -15,15 +15,15 @@
 ;;; under workers and the solve circulated tens of thousands of units the books refused.
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-property-enact.scm
-(use-modules ((playnet planner formulas flows) #:select (row-figure))
+(use-modules ((playnet vf formulas flows) #:select (row-figure))
              (playnet test harness) (playnet test books)
-             (playnet planner vf schemas) (srfi srfi-1) (srfi srfi-11)
-             (playnet planner scope live)
-             (playnet planner solve engine) (playnet planner solve compile) (playnet planner solve solver)
+             (playnet vf schemas) (srfi srfi-1) (srfi srfi-11)
+             (playnet scope live)
+             (playnet solve engine) (playnet solve compile) (playnet solve solver)
              (goblins) (goblins vat) (goblins persistence-store memory) (goblins utils hashmap)
              (ice-9 format))
 (setvbuf (current-output-port) 'none)
-(define E (resolve-module '(playnet planner solve engine)))
+(define E (resolve-module '(playnet solve engine)))
 (define N 10)
 (define SEED0 1)
 

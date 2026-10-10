@@ -6,8 +6,8 @@
 ;;; Exit 0 = clean (warnings allowed), 1 = errors.
 ;;; Run: guile --no-auto-compile -L module tools/lint-law-packs.scm [DIR …]
 (use-modules (ice-9 format) (srfi srfi-1)
-             (playnet planner knowledge law lint)
-             (playnet planner facts places))
+             (playnet knowledge law lint)
+             (playnet vf facts places))
 
 (define %default-dirs '("docs/legal/contexts"))
 

@@ -6,10 +6,10 @@
 ;;; leaves Radicle as it stands.
 ;;;
 ;;;   issues   every open issue is a want for its deliverable
-;;;            (module/playnet/planner/dev/priorities.scm issue-facts)
+;;;            (module/playnet/dev/priorities.scm issue-facts)
 ;;;   people   docs/dev-scope.sexp, or DEV_SCOPE_PATH
-;;;            (module/playnet/planner/dev/recipes.scm)
-;;;   plan     module/playnet/planner/dev/plan.scm
+;;;            (module/playnet/dev/recipes.scm)
+;;;   plan     module/playnet/dev/plan.scm
 ;;;
 ;;; Usage:
 ;;;   make dev-plan
@@ -23,11 +23,11 @@
 ;;; Requires: rad on PATH (unless --issues), and the planner's solve
 ;;; environment (the dev-test manifest; `make dev-plan` supplies it).
 
-(use-modules (playnet planner scope root)
-             (playnet planner dev priorities)
-             (playnet planner dev plan)
-             (playnet planner dev rad-issues)
-             ((playnet planner dev recipes) #:select (person-ref))
+(use-modules (playnet scope root)
+             (playnet dev priorities)
+             (playnet dev plan)
+             (playnet dev rad-issues)
+             ((playnet dev recipes) #:select (person-ref))
              (goblins) (goblins vat)
              (ice-9 format)
              (ice-9 pretty-print)

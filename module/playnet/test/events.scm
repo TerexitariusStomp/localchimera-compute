@@ -12,9 +12,9 @@
 ;;;   (try-record st (ev …))      ; => (ok . state) | (error . irritants)
 
 (define-module (playnet test events)
-  #:use-module (playnet planner observation observer)
-  #:use-module (playnet planner vf schemas)
-  #:use-module ((playnet planner vf serdes) #:select (vf-serialize))
+  #:use-module (playnet observation observer)
+  #:use-module (playnet vf schemas)
+  #:use-module ((playnet vf serdes) #:select (vf-serialize))
   #:use-module ((playnet utils store-utils) #:select (serialize-hashmap))
   #:use-module (goblins utils hashmap)
   #:use-module (srfi srfi-1)

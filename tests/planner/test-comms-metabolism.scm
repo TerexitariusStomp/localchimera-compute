@@ -15,14 +15,14 @@
 ;;;         tests/planner/test-comms-metabolism.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner knowledge dsl shorthand))
-(use-modules (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner solve solver)
-             (playnet planner vf schemas))
+(use-modules (playnet knowledge dsl shorthand))
+(use-modules (playnet solve engine)
+             (playnet solve compile)
+             (playnet solve solver)
+             (playnet vf schemas))
 ;; comms/metabolism.scm is a fragment over the engine's world: it loads into
 ;; this module and reads the engine through the imports above.
-(primitive-load (%search-load-path "playnet/planner/comms/metabolism.scm"))
+(primitive-load (%search-load-path "playnet/comms/metabolism.scm"))
 
 (define fails 0)
 (define (check* label pass?) (unless pass? (set! fails (+ fails 1)))

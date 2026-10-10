@@ -19,19 +19,19 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-ride-performed.scm
 
-(use-modules ((playnet planner formulas flows) #:select (row-figure))
+(use-modules ((playnet vf formulas flows) #:select (row-figure))
              (playnet test harness)
              (playnet test books)
-             (playnet planner knowledge recipes berlin-commune-seed) (playnet planner knowledge recipes berlin-transit) (playnet planner knowledge recipes transport) (playnet planner solve compile) (playnet planner vf schemas) (srfi srfi-1) (srfi srfi-11)
-             (playnet planner scope live)
-             (playnet planner doors service)
-             (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner solve solver)
-             (playnet planner vf schemas)
-             ((playnet planner facts person-facts) #:select (position-key))
-             (playnet planner knowledge dsl shorthand)
-             ((playnet planner knowledge recipes transport) #:select (mode-recipe seed-baseline-modes!))
+             (playnet knowledge recipes berlin-commune-seed) (playnet knowledge recipes berlin-transit) (playnet knowledge recipes transport) (playnet solve compile) (playnet vf schemas) (srfi srfi-1) (srfi srfi-11)
+             (playnet scope live)
+             (playnet doors service)
+             (playnet solve engine)
+             (playnet solve compile)
+             (playnet solve solver)
+             (playnet vf schemas)
+             ((playnet vf facts person-facts) #:select (position-key))
+             (playnet knowledge dsl shorthand)
+             ((playnet knowledge recipes transport) #:select (mode-recipe seed-baseline-modes!))
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1) (srfi srfi-13))
 
@@ -47,7 +47,7 @@
 (hash-set! *cap* (lab-good "driving" (cell "A" 0)) 40.0)
 (hash-set! *demand* (lg "treated" (cell "B" 0)) 20.0)
 
-(define E (resolve-module '(playnet planner solve engine)))
+(define E (resolve-module '(playnet solve engine)))
 (define planned
   (call-with-values build-located
     (lambda (forms labform ncol cols goods raws idx)
@@ -120,7 +120,7 @@
         (check "arriving at B leaves her declared position where she put it"
                (assq-ref ($ ($ scope 'plan-store) 'get-meta (position-key "Dana" 0)) 'place) "A")))))
 
-(define live-arc-table (@@ (playnet planner scope live) live-arc-table))
+(define live-arc-table (@@ (playnet scope live) live-arc-table))
 (display "\n── LOOP: a performed trip moves the next solve's arc hours; with none, nothing moves ──\n")
 ;; The arc table is the routing priors folded with the trips the federation performed.
 ;; With no trip it is the priors alone (here: none), and the solve reads geometry; a
@@ -138,7 +138,7 @@
             (lambda ()
               (plan-scope->alist scope #:manners berlin-transit-manners
                                  #:demand (list (cons "food#berlin-commune-farm@0" 20000.0)))
-              (hash-ref (@@ (playnet planner solve engine) *arc-hours*) arc #f))))
+              (hash-ref (@@ (playnet solve engine) *arc-hours*) arc #f))))
       (check "with no trip performed, the table holds no measurement of the arc" (assoc-ref (table) arc) #f)
       (check "…and the solve reads none" (arc-hours-after-solve) #f)
       (let* ((began ($ svc 'journey-begin "org:t" "agent-ana" "berlin-commune-farm" "berlin-markthalle" "pedestrian"))

@@ -18,8 +18,8 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness)
-             (playnet planner knowledge recipes dwelling) (playnet planner scope root) (playnet planner vf schemas) (playnet planner beyond schedules) (srfi srfi-1)
-             (playnet planner doors service)
+             (playnet knowledge recipes dwelling) (playnet scope root) (playnet vf schemas) (playnet vf beyond schedules) (srfi srfi-1)
+             (playnet doors service)
              (playnet governance socialization) (playnet keri acdc-store)
              (goblins) (goblins persistence-store memory)
              (goblins utils hashmap)

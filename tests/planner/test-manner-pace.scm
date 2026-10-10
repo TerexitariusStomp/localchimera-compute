@@ -20,10 +20,10 @@
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-manner-pace.scm
 
 (use-modules (playnet test harness)
-             (playnet planner knowledge recipes berlin-commune-seed) (playnet planner knowledge recipes berlin-transit) (playnet planner knowledge recipes transit-shed) (playnet planner formulas capacity) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
-             (playnet planner scope live)
-             (playnet planner doors service)
-             (playnet planner knowledge recipes berlin-transit)
+             (playnet knowledge recipes berlin-commune-seed) (playnet knowledge recipes berlin-transit) (playnet knowledge recipes transit-shed) (playnet vf formulas capacity) (playnet scope root) (playnet vf schemas) (srfi srfi-1)
+             (playnet scope live)
+             (playnet doors service)
+             (playnet knowledge recipes berlin-transit)
              (goblins) (goblins vat)
              (srfi srfi-1))
 

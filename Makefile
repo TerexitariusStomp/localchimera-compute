@@ -30,7 +30,7 @@ DAY_BOOT_WASM_DEPS = \
                      module/playnet/keri/said-portable.scm \
                      module/playnet/keri/signify-portable.scm \
                      module/playnet/identity/kel.scm \
-                     module/playnet/planner/doors/family/wire.scm \
+                     module/playnet/doors/family/wire.scm \
                      module/playnet/wire/rows.scm \
                      module/playnet/wire/snapshot.scm \
                      module/playnet/utils/json-portable.scm
@@ -48,9 +48,9 @@ browser/day-boot.wasm: hoot/day-boot.scm $(DAY_BOOT_WASM_DEPS) $(HOOT_TOOLCHAIN_
 # declarative engine would bake in the compile-time value of every global it
 # imports — is built from a copy with the flag turned on. The copy sits FIRST on
 # the load path (a later -L is searched first); everything else is the tree's own. (See the note above
-# define-module in module/playnet/planner/solve/engine.scm.)
+# define-module in module/playnet/solve/engine.scm.)
 HOOT_SRC = .hoot-src
-$(HOOT_SRC)/playnet/planner/solve/engine.scm: module/playnet/planner/solve/engine.scm
+$(HOOT_SRC)/playnet/solve/engine.scm: module/playnet/solve/engine.scm
 	@mkdir -p $(dir $@)
 	sed 's/^  #:declarative? #f$$/  #:declarative? #t/' $< > $@
 	@grep -q '^  #:declarative? #t$$' $@ || { echo "engine.scm: no '#:declarative? #f' line to turn on"; rm -f $@; exit 1; }
@@ -58,14 +58,14 @@ $(HOOT_SRC)/playnet/planner/solve/engine.scm: module/playnet/planner/solve/engin
 # reaches it: its copy is built only for the scope's own targets, under a directory
 # of its own, so the household build above never reads it.
 HOOT_SCOPE_SRC = .hoot-src/scope
-$(HOOT_SCOPE_SRC)/playnet/planner/scope/live.scm: module/playnet/planner/scope/live.scm
+$(HOOT_SCOPE_SRC)/playnet/scope/live.scm: module/playnet/scope/live.scm
 	@mkdir -p $(dir $@)
 	sed 's/^  #:declarative? #f/  #:declarative? #t/' $< > $@
 	@grep -q '^  #:declarative? #t' $@ || { echo "live.scm: no '#:declarative? #f' line to turn on"; rm -f $@; exit 1; }
 # periods.scm is the same case again (*period-length* is assigned across
 # modules); a household's solve reaches it as a scope's does, so its copy
 # stands beside the engine's, read by every planner bundle
-$(HOOT_SRC)/playnet/planner/formulas/periods.scm: module/playnet/planner/formulas/periods.scm
+$(HOOT_SRC)/playnet/vf/formulas/periods.scm: module/playnet/vf/formulas/periods.scm
 	@mkdir -p $(dir $@)
 	sed 's/^  #:declarative? #f/  #:declarative? #t/' $< > $@
 	@grep -q '^  #:declarative? #t' $@ || { echo "periods.scm: no '#:declarative? #f' line to turn on"; rm -f $@; exit 1; }
@@ -77,7 +77,7 @@ $(HOOT_SRC)/playnet/planner/formulas/periods.scm: module/playnet/planner/formula
 HOOT_PLANNER_ARGS = -L module -L $(GOBLINS_LOAD_PATH) -L $(FIBERS_LOAD_PATH) -L $(HOOT_SRC)
 
 .PHONY: check-hoot-planner hoot-probe-family hoot-probe-admm hoot-probe-async
-check-hoot-planner: $(HOOT_SRC)/playnet/planner/solve/engine.scm $(HOOT_SRC)/playnet/planner/formulas/periods.scm
+check-hoot-planner: $(HOOT_SRC)/playnet/solve/engine.scm $(HOOT_SRC)/playnet/vf/formulas/periods.scm
 	$(HOOT_BUILD_DEV) bash -c 'guild compile-wasm $(HOOT_PLANNER_ARGS) -o $(HOOT_SRC)/family-probe.wasm hoot/family-probe.scm'
 
 # runs the probe under node; the wasm imports goblins' crypto, which a solve never calls
@@ -88,18 +88,18 @@ hoot-probe-family: check-hoot-planner
 # Every module it reaches states its imports in its define-module
 # (tools/hoist-use-modules.py --check) and keeps host-only calls behind cond-expand.
 .PHONY: check-hoot-scope hoot-probe-scope
-check-hoot-scope: $(HOOT_SRC)/playnet/planner/solve/engine.scm $(HOOT_SRC)/playnet/planner/formulas/periods.scm $(HOOT_SCOPE_SRC)/playnet/planner/scope/live.scm
+check-hoot-scope: $(HOOT_SRC)/playnet/solve/engine.scm $(HOOT_SRC)/playnet/vf/formulas/periods.scm $(HOOT_SCOPE_SRC)/playnet/scope/live.scm
 	$(HOOT_BUILD_DEV) bash -c 'guild compile-wasm $(HOOT_PLANNER_ARGS) -L $(HOOT_SCOPE_SRC) -o $(HOOT_SRC)/scope-probe.wasm hoot/scope-probe.scm'
 hoot-probe-scope: check-hoot-scope
 	node tools/run-wasm.cjs $(HOOT_SRC)/scope-probe.wasm
 
 # the federated solve (solve-decomposed) through the browser build: each scope on the reference core
-hoot-probe-admm: $(HOOT_SRC)/playnet/planner/solve/engine.scm
+hoot-probe-admm: $(HOOT_SRC)/playnet/solve/engine.scm
 	$(HOOT_BUILD_DEV) bash -c 'guild compile-wasm $(HOOT_PLANNER_ARGS) -o $(HOOT_SRC)/admm-probe.wasm hoot/admm-probe.scm'
 	node tools/run-wasm.cjs $(HOOT_SRC)/admm-probe.wasm
 
 # the coordinator-free solve: peers over a simulated network, each on the reference core
-hoot-probe-async: $(HOOT_SRC)/playnet/planner/solve/engine.scm
+hoot-probe-async: $(HOOT_SRC)/playnet/solve/engine.scm
 	$(HOOT_BUILD_DEV) bash -c 'guild compile-wasm $(HOOT_PLANNER_ARGS) -o $(HOOT_SRC)/async-probe.wasm hoot/async-probe.scm'
 	node tools/run-wasm.cjs $(HOOT_SRC)/async-probe.wasm
 
@@ -110,66 +110,65 @@ hoot-probe-async: $(HOOT_SRC)/playnet/planner/solve/engine.scm
 # Transitive (playnet …) import closure of hoot/family-worker.scm; see
 # `make check-wasm-deps`.
 FAMILY_WASM_DEPS = \
-                    module/playnet/planner/beyond/scenario.scm \
-                    module/playnet/planner/beyond/schedules.scm \
-                    module/playnet/planner/formulas/actions.scm \
-                    module/playnet/planner/formulas/flows.scm \
-                    module/playnet/planner/observation/states.scm \
-                    module/playnet/planner/solve/admm-link.scm \
-                    module/playnet/planner/facts/agent-tags.scm \
-                    module/playnet/planner/facts/boundary.scm \
-                    module/playnet/planner/formulas/cadence.scm \
-                    module/playnet/planner/formulas/fragility.scm \
-                    module/playnet/planner/facts/agent-time.scm \
-                    module/playnet/planner/aggregation/containment.scm \
-                    module/playnet/planner/aggregation/fold-node.scm \
-                    module/playnet/planner/aggregation/scope-tree.scm \
-                    module/playnet/planner/algorithms/propagation.scm \
-                    module/playnet/planner/algorithms/rollup.scm \
-                    module/playnet/planner/algorithms/rollup/common.scm \
-                    module/playnet/planner/algorithms/rollup/fixpoint.scm \
-                    module/playnet/planner/algorithms/rollup/relative-snlt.scm \
-                    module/playnet/planner/knowledge/worlds/bioregions.scm \
-                    module/playnet/planner/solve/compile.scm \
-                    module/playnet/planner/solve/emphasis.scm \
-                    module/playnet/planner/solve/engine.scm \
-                    module/playnet/planner/solve/externality.scm \
-                    module/playnet/planner/doors/family/local.scm \
-                    module/playnet/planner/doors/family/wire.scm \
-                    module/playnet/planner/doors/family/solve.scm \
-                    module/playnet/planner/solve/engine/federation-oracle.scm \
-                    module/playnet/planner/solve/engine/federation-solve.scm \
-                    module/playnet/planner/solve/engine/fragility.scm \
-                    module/playnet/planner/knowledge/data/fdc-sr-legacy.scm \
-                    module/playnet/planner/knowledge/catalogues/food-sources.scm \
-                    module/playnet/planner/knowledge/catalogues/housing.scm \
-                    module/playnet/planner/knowledge/recipes/household.scm \
-                    module/playnet/planner/knowledge/dsl/shorthand.scm \
-                    module/playnet/planner/knowledge/catalogues/subsistence.scm \
-                    module/playnet/planner/knowledge/catalogues/substances.scm \
-                    module/playnet/planner/facts/located.scm \
-                    module/playnet/planner/facts/availability.scm \
-                    module/playnet/planner/observation/account.scm \
-                    module/playnet/planner/algorithms/elastic.scm \
-                    module/playnet/planner/facts/parts.scm \
-                    module/playnet/planner/formulas/periods.scm \
-                    module/playnet/planner/formulas/propagate.scm \
-                    module/playnet/planner/facts/rail.scm \
-                    module/playnet/planner/facts/barred-specs.scm \
-                    module/playnet/planner/solve/recipe-response.scm \
-                    module/playnet/planner/solve/engine/robust.scm \
-                    module/playnet/planner/vf/schemas.scm \
-                    module/playnet/planner/formulas/shocks.scm \
-                    module/playnet/planner/solve/solver.scm \
-                    module/playnet/planner/formulas/stocks.scm \
+                    module/playnet/vf/beyond/scenario.scm \
+                    module/playnet/vf/beyond/schedules.scm \
+                    module/playnet/vf/formulas/actions.scm \
+                    module/playnet/vf/formulas/flows.scm \
+                    module/playnet/observation/states.scm \
+                    module/playnet/solve/admm-link.scm \
+                    module/playnet/vf/facts/agent-tags.scm \
+                    module/playnet/vf/facts/boundary.scm \
+                    module/playnet/vf/formulas/cadence.scm \
+                    module/playnet/vf/formulas/fragility.scm \
+                    module/playnet/vf/facts/agent-time.scm \
+                    module/playnet/vf/aggregation/containment.scm \
+                    module/playnet/vf/aggregation/fold-node.scm \
+                    module/playnet/vf/aggregation/scope-tree.scm \
+                    module/playnet/algorithms/propagation.scm \
+                    module/playnet/algorithms/rollup.scm \
+                    module/playnet/algorithms/rollup/common.scm \
+                    module/playnet/algorithms/rollup/fixpoint.scm \
+                    module/playnet/algorithms/rollup/relative-snlt.scm \
+                    module/playnet/knowledge/worlds/bioregions.scm \
+                    module/playnet/solve/compile.scm \
+                    module/playnet/solve/emphasis.scm \
+                    module/playnet/solve/engine.scm \
+                    module/playnet/solve/externality.scm \
+                    module/playnet/doors/family/local.scm \
+                    module/playnet/doors/family/wire.scm \
+                    module/playnet/doors/family/solve.scm \
+                    module/playnet/solve/engine/federation-oracle.scm \
+                    module/playnet/solve/engine/federation-solve.scm \
+                    module/playnet/solve/engine/fragility.scm \
+                    module/playnet/knowledge/data/fdc-sr-legacy.scm \
+                    module/playnet/knowledge/catalogues/food-sources.scm \
+                    module/playnet/knowledge/catalogues/housing.scm \
+                    module/playnet/knowledge/recipes/household.scm \
+                    module/playnet/knowledge/dsl/shorthand.scm \
+                    module/playnet/knowledge/catalogues/subsistence.scm \
+                    module/playnet/knowledge/catalogues/substances.scm \
+                    module/playnet/vf/facts/located.scm \
+                    module/playnet/vf/facts/availability.scm \
+                    module/playnet/observation/account.scm \
+                    module/playnet/algorithms/elastic.scm \
+                    module/playnet/vf/facts/parts.scm \
+                    module/playnet/vf/formulas/periods.scm \
+                    module/playnet/vf/formulas/propagate.scm \
+                    module/playnet/vf/facts/rail.scm \
+                    module/playnet/vf/facts/barred-specs.scm \
+                    module/playnet/solve/recipe-response.scm \
+                    module/playnet/solve/engine/robust.scm \
+                    module/playnet/vf/schemas.scm \
+                    module/playnet/vf/formulas/shocks.scm \
+                    module/playnet/solve/solver.scm \
+                    module/playnet/vf/formulas/stocks.scm \
                     module/playnet/utils/store-utils.scm \
-                    module/playnet/planner/formulas/tension-kinds.scm \
-                    module/playnet/planner/formulas/capacity.scm \
-                    module/playnet/planner/vf/serdes-bindings.scm \
-                    module/playnet/planner/vf/serdes.scm \
-                    module/playnet/planner/facts/tension-terms.scm \
-                    module/playnet/planner/solve/voice-field.scm \
-                    module/playnet/planner/solve/engine/worked-example.scm \
+                    module/playnet/vf/formulas/tension-kinds.scm \
+                    module/playnet/vf/formulas/capacity.scm \
+                    module/playnet/vf/serdes.scm \
+                    module/playnet/vf/facts/tension-terms.scm \
+                    module/playnet/solve/voice-field.scm \
+                    module/playnet/solve/engine/worked-example.scm \
                     module/playnet/utils/alist.scm \
                     module/playnet/utils/catch.scm \
                     module/playnet/utils/clock.scm \
@@ -181,7 +180,7 @@ FAMILY_WASM_DEPS = \
                     module/playnet/utils/units.scm \
                     module/playnet/wire/rows.scm
 
-browser/family.wasm: hoot/family-worker.scm $(FAMILY_WASM_DEPS) $(HOOT_SRC)/playnet/planner/solve/engine.scm $(HOOT_SRC)/playnet/planner/formulas/periods.scm $(HOOT_TOOLCHAIN_STAMP)
+browser/family.wasm: hoot/family-worker.scm $(FAMILY_WASM_DEPS) $(HOOT_SRC)/playnet/solve/engine.scm $(HOOT_SRC)/playnet/vf/formulas/periods.scm $(HOOT_TOOLCHAIN_STAMP)
 	$(HOOT_BUILD_DEV) bash -c 'guild compile-wasm $(HOOT_PLANNER_ARGS) -o browser/family.wasm hoot/family-worker.scm'
 
 # boots browser/family.wasm under node, through the page's own boot module, and
@@ -192,7 +191,7 @@ check-family-worker: browser/family.wasm
 
 # ── A scope on the device ───────────────────────────────────────────────────
 # browser/scope.wasm is a whole scope for the page (hoot/scope-worker.scm over
-# (playnet planner doors page-scope)): the demo neighbourhood's books and a person's
+# (playnet doors page-scope)): the demo neighbourhood's books and a person's
 # own, answering the doors a gateway answers, run in browser/scope-worker.js. A
 # gitignored build product like family.wasm.
 # Transitive (playnet …) import closure of hoot/scope-worker.scm; see
@@ -205,140 +204,139 @@ SCOPE_WASM_DEPS = \
                    module/playnet/keri/crypto-primitives.scm \
                    module/playnet/keri/said-portable.scm \
                    module/playnet/keri/said.scm \
-                   module/playnet/planner/beyond/lot.scm \
-                   module/playnet/planner/beyond/scenario.scm \
-                   module/playnet/planner/beyond/schedules.scm \
-                   module/playnet/planner/formulas/actions.scm \
-                   module/playnet/planner/formulas/flows.scm \
-                   module/playnet/planner/observation/states.scm \
-                   module/playnet/planner/plan/accepts.scm \
-                   module/playnet/planner/solve/admm-link.scm \
-                   module/playnet/planner/facts/agent-tags.scm \
-                   module/playnet/planner/facts/boundary.scm \
-                   module/playnet/planner/formulas/cadence.scm \
-                   module/playnet/planner/formulas/fragility.scm \
-                   module/playnet/planner/facts/agent-time.scm \
-                   module/playnet/planner/scope/agents.scm \
-                   module/playnet/planner/aggregation/containment.scm \
-                   module/playnet/planner/aggregation/fold-node.scm \
-                   module/playnet/planner/aggregation/scope-tree.scm \
-                   module/playnet/planner/algorithms/propagation.scm \
-                   module/playnet/planner/algorithms/rollup.scm \
-                   module/playnet/planner/algorithms/rollup/common.scm \
-                   module/playnet/planner/algorithms/rollup/fixpoint.scm \
-                   module/playnet/planner/algorithms/rollup/relative-snlt.scm \
-                   module/playnet/planner/algorithms/signals.scm \
-                   module/playnet/planner/facts/audit.scm \
-                   module/playnet/planner/knowledge/worlds/bioregions.scm \
-                   module/playnet/planner/knowledge/catalogues/compiler.scm \
-                   module/playnet/planner/solve/compile.scm \
-                   module/playnet/planner/legal/compliance.scm \
-                   module/playnet/planner/knowledge/catalogues/conformance.scm \
-                   module/playnet/planner/facts/validity.scm \
-                   module/playnet/planner/doors/count-door.scm \
-                   module/playnet/planner/formulas/counting.scm \
-                   module/playnet/planner/doors/counts.scm \
-                   module/playnet/planner/legal/crossings.scm \
-                   module/playnet/planner/knowledge/catalogues/eco.scm \
-                   module/playnet/planner/solve/engine.scm \
+                   module/playnet/vf/beyond/lot.scm \
+                   module/playnet/vf/beyond/scenario.scm \
+                   module/playnet/vf/beyond/schedules.scm \
+                   module/playnet/vf/formulas/actions.scm \
+                   module/playnet/vf/formulas/flows.scm \
+                   module/playnet/observation/states.scm \
+                   module/playnet/plan/accepts.scm \
+                   module/playnet/solve/admm-link.scm \
+                   module/playnet/vf/facts/agent-tags.scm \
+                   module/playnet/vf/facts/boundary.scm \
+                   module/playnet/vf/formulas/cadence.scm \
+                   module/playnet/vf/formulas/fragility.scm \
+                   module/playnet/vf/facts/agent-time.scm \
+                   module/playnet/scope/agents.scm \
+                   module/playnet/vf/aggregation/containment.scm \
+                   module/playnet/vf/aggregation/fold-node.scm \
+                   module/playnet/vf/aggregation/scope-tree.scm \
+                   module/playnet/algorithms/propagation.scm \
+                   module/playnet/algorithms/rollup.scm \
+                   module/playnet/algorithms/rollup/common.scm \
+                   module/playnet/algorithms/rollup/fixpoint.scm \
+                   module/playnet/algorithms/rollup/relative-snlt.scm \
+                   module/playnet/algorithms/signals.scm \
+                   module/playnet/vf/facts/audit.scm \
+                   module/playnet/knowledge/worlds/bioregions.scm \
+                   module/playnet/knowledge/catalogues/compiler.scm \
+                   module/playnet/solve/compile.scm \
+                   module/playnet/legal/compliance.scm \
+                   module/playnet/knowledge/catalogues/conformance.scm \
+                   module/playnet/vf/facts/validity.scm \
+                   module/playnet/doors/count-door.scm \
+                   module/playnet/vf/formulas/counting.scm \
+                   module/playnet/doors/counts.scm \
+                   module/playnet/legal/crossings.scm \
+                   module/playnet/knowledge/catalogues/eco.scm \
+                   module/playnet/solve/engine.scm \
                    module/playnet/utils/envelope.scm \
-                   module/playnet/planner/execution/alerts.scm \
-                   module/playnet/planner/solve/externality.scm \
-                   module/playnet/planner/solve/engine/federation-oracle.scm \
-                   module/playnet/planner/solve/engine/federation-solve.scm \
-                   module/playnet/planner/solve/engine/fragility.scm \
-                   module/playnet/planner/plan/horizon-gate.scm \
-                   module/playnet/planner/solve/inspection.scm \
-                   module/playnet/planner/doors/inventory.scm \
-                   module/playnet/planner/knowledge/worlds/bay-area-derived.scm \
-                   module/playnet/planner/knowledge/worlds/bay-area.scm \
-                   module/playnet/planner/knowledge/worlds/berlin-derived.scm \
-                   module/playnet/planner/knowledge/worlds/berlin.scm \
-                   module/playnet/planner/ddmrp/buffer-snapshots.scm \
-                   module/playnet/planner/ddmrp/buffer-zones.scm \
-                   module/playnet/planner/ddmrp/capacity-buffers.scm \
-                   module/playnet/planner/ddmrp/records.scm \
-                   module/playnet/planner/knowledge/worlds/cascadia-derived.scm \
-                   module/playnet/planner/knowledge/worlds/cascadia.scm \
-                   module/playnet/planner/knowledge/law/context-pack.scm \
-                   module/playnet/planner/knowledge/law/pack-dir.scm \
-                   module/playnet/planner/knowledge/data/fdc-sr-legacy.scm \
-                   module/playnet/planner/knowledge/worlds/demo-neighbourhood.scm \
-                   module/playnet/planner/knowledge/catalogues/diets.scm \
-                   module/playnet/planner/knowledge/worlds/doon-derived.scm \
-                   module/playnet/planner/knowledge/worlds/doon-shed.scm \
-                   module/playnet/planner/knowledge/worlds/sheds.scm \
-                   module/playnet/planner/knowledge/worlds/doon-valley.scm \
-                   module/playnet/planner/knowledge/catalogues/food-sources.scm \
-                   module/playnet/planner/knowledge/catalogues/housing.scm \
-                   module/playnet/planner/knowledge/catalogues/housing-substance.scm \
-                   module/playnet/planner/knowledge/law/incumbent-readings.scm \
-                   module/playnet/planner/knowledge/catalogues/insurance.scm \
-                   module/playnet/planner/knowledge/law/aspects.scm \
-                   module/playnet/planner/facts/places.scm \
-                   module/playnet/planner/knowledge/law/protections.scm \
-                   module/playnet/planner/knowledge/recipes/store.scm \
-                   module/playnet/planner/knowledge/recipes/dwelling.scm \
-                   module/playnet/planner/knowledge/recipes/transport.scm \
-                   module/playnet/planner/knowledge/catalogues/rest.scm \
-                   module/playnet/planner/knowledge/dsl/shorthand.scm \
-                   module/playnet/planner/scope/spatial-things.scm \
-                   module/playnet/planner/knowledge/catalogues/subsistence.scm \
-                   module/playnet/planner/knowledge/catalogues/substances.scm \
-                   module/playnet/planner/knowledge/catalogues/thermal.scm \
-                   module/playnet/planner/knowledge/dsl/world.scm \
-                   module/playnet/planner/facts/labels.scm \
-                   module/playnet/planner/algorithms/deferred-acceptance.scm \
-                   module/playnet/planner/plan/assignment.scm \
-                   module/playnet/planner/legal/gate.scm \
-                   module/playnet/planner/legal/policy.scm \
-                   module/playnet/planner/legal/registry-actor.scm \
-                   module/playnet/planner/legal/registry.scm \
-                   module/playnet/planner/scope/live.scm \
-                   module/playnet/planner/facts/located.scm \
-                   module/playnet/planner/facts/availability.scm \
-                   module/playnet/planner/observation/account.scm \
-                   module/playnet/planner/observation/adjustment.scm \
-                   module/playnet/planner/observation/convert.scm \
-                   module/playnet/planner/algorithms/elastic.scm \
-                   module/playnet/planner/observation/evidence.scm \
-                   module/playnet/planner/observation/live-registry.scm \
-                   module/playnet/planner/observation/live-resource.scm \
-                   module/playnet/planner/observation/log-observe.scm \
-                   module/playnet/planner/observation/observer.scm \
-                   module/playnet/planner/pools/reading-fold.scm \
-                   module/playnet/planner/doors/offers.scm \
-                   module/playnet/planner/doors/page-scope.scm \
-                   module/playnet/planner/facts/parts.scm \
-                   module/playnet/planner/formulas/periods.scm \
-                   module/playnet/planner/facts/person-facts.scm \
-                   module/playnet/planner/plan/store.scm \
-                   module/playnet/planner/observation/practice.scm \
-                   module/playnet/planner/scope/process-registry.scm \
-                   module/playnet/planner/formulas/propagate.scm \
-                   module/playnet/planner/facts/rail.scm \
-                   module/playnet/planner/facts/barred-specs.scm \
-                   module/playnet/planner/solve/recipe-response.scm \
-                   module/playnet/planner/legal/reform.scm \
-                   module/playnet/planner/scope/replica.scm \
-                   module/playnet/planner/solve/engine/robust.scm \
-                   module/playnet/planner/solve/routing.scm \
-                   module/playnet/planner/vf/schemas.scm \
-                   module/playnet/planner/scope/root.scm \
-                   module/playnet/planner/formulas/shocks.scm \
-                   module/playnet/planner/formulas/skill-law.scm \
-                   module/playnet/planner/doors/slots.scm \
-                   module/playnet/planner/scope/snapshot.scm \
-                   module/playnet/planner/solve/solver.scm \
-                   module/playnet/planner/formulas/stocks.scm \
+                   module/playnet/execution/alerts.scm \
+                   module/playnet/solve/externality.scm \
+                   module/playnet/solve/engine/federation-oracle.scm \
+                   module/playnet/solve/engine/federation-solve.scm \
+                   module/playnet/solve/engine/fragility.scm \
+                   module/playnet/plan/horizon-gate.scm \
+                   module/playnet/solve/inspection.scm \
+                   module/playnet/doors/inventory.scm \
+                   module/playnet/knowledge/worlds/bay-area-derived.scm \
+                   module/playnet/knowledge/worlds/bay-area.scm \
+                   module/playnet/knowledge/worlds/berlin-derived.scm \
+                   module/playnet/knowledge/worlds/berlin.scm \
+                   module/playnet/ddmrp/buffer-snapshots.scm \
+                   module/playnet/ddmrp/buffer-zones.scm \
+                   module/playnet/ddmrp/capacity-buffers.scm \
+                   module/playnet/ddmrp/records.scm \
+                   module/playnet/knowledge/worlds/cascadia-derived.scm \
+                   module/playnet/knowledge/worlds/cascadia.scm \
+                   module/playnet/knowledge/law/context-pack.scm \
+                   module/playnet/knowledge/law/pack-dir.scm \
+                   module/playnet/knowledge/data/fdc-sr-legacy.scm \
+                   module/playnet/knowledge/worlds/demo-neighbourhood.scm \
+                   module/playnet/knowledge/catalogues/diets.scm \
+                   module/playnet/knowledge/worlds/doon-derived.scm \
+                   module/playnet/knowledge/worlds/doon-shed.scm \
+                   module/playnet/knowledge/worlds/sheds.scm \
+                   module/playnet/knowledge/worlds/doon-valley.scm \
+                   module/playnet/knowledge/catalogues/food-sources.scm \
+                   module/playnet/knowledge/catalogues/housing.scm \
+                   module/playnet/knowledge/catalogues/housing-substance.scm \
+                   module/playnet/knowledge/law/incumbent-readings.scm \
+                   module/playnet/knowledge/catalogues/insurance.scm \
+                   module/playnet/knowledge/law/aspects.scm \
+                   module/playnet/vf/facts/places.scm \
+                   module/playnet/knowledge/law/protections.scm \
+                   module/playnet/knowledge/recipes/store.scm \
+                   module/playnet/knowledge/recipes/dwelling.scm \
+                   module/playnet/knowledge/recipes/transport.scm \
+                   module/playnet/knowledge/catalogues/rest.scm \
+                   module/playnet/knowledge/dsl/shorthand.scm \
+                   module/playnet/scope/spatial-things.scm \
+                   module/playnet/knowledge/catalogues/subsistence.scm \
+                   module/playnet/knowledge/catalogues/substances.scm \
+                   module/playnet/knowledge/catalogues/thermal.scm \
+                   module/playnet/knowledge/dsl/world.scm \
+                   module/playnet/vf/facts/labels.scm \
+                   module/playnet/algorithms/deferred-acceptance.scm \
+                   module/playnet/plan/assignment.scm \
+                   module/playnet/legal/gate.scm \
+                   module/playnet/legal/policy.scm \
+                   module/playnet/legal/registry-actor.scm \
+                   module/playnet/legal/registry.scm \
+                   module/playnet/scope/live.scm \
+                   module/playnet/vf/facts/located.scm \
+                   module/playnet/vf/facts/availability.scm \
+                   module/playnet/observation/account.scm \
+                   module/playnet/observation/adjustment.scm \
+                   module/playnet/observation/convert.scm \
+                   module/playnet/algorithms/elastic.scm \
+                   module/playnet/observation/evidence.scm \
+                   module/playnet/observation/live-registry.scm \
+                   module/playnet/observation/live-resource.scm \
+                   module/playnet/observation/log-observe.scm \
+                   module/playnet/observation/observer.scm \
+                   module/playnet/pools/reading-fold.scm \
+                   module/playnet/doors/offers.scm \
+                   module/playnet/doors/page-scope.scm \
+                   module/playnet/vf/facts/parts.scm \
+                   module/playnet/vf/formulas/periods.scm \
+                   module/playnet/vf/facts/person-facts.scm \
+                   module/playnet/plan/store.scm \
+                   module/playnet/observation/practice.scm \
+                   module/playnet/scope/process-registry.scm \
+                   module/playnet/vf/formulas/propagate.scm \
+                   module/playnet/vf/facts/rail.scm \
+                   module/playnet/vf/facts/barred-specs.scm \
+                   module/playnet/solve/recipe-response.scm \
+                   module/playnet/legal/reform.scm \
+                   module/playnet/scope/replica.scm \
+                   module/playnet/solve/engine/robust.scm \
+                   module/playnet/solve/routing.scm \
+                   module/playnet/vf/schemas.scm \
+                   module/playnet/scope/root.scm \
+                   module/playnet/vf/formulas/shocks.scm \
+                   module/playnet/vf/formulas/skill-law.scm \
+                   module/playnet/doors/slots.scm \
+                   module/playnet/scope/snapshot.scm \
+                   module/playnet/solve/solver.scm \
+                   module/playnet/vf/formulas/stocks.scm \
                    module/playnet/utils/store-utils.scm \
-                   module/playnet/planner/formulas/tension-kinds.scm \
-                   module/playnet/planner/formulas/capacity.scm \
-                   module/playnet/planner/vf/serdes-bindings.scm \
-                   module/playnet/planner/vf/serdes.scm \
-                   module/playnet/planner/facts/tension-terms.scm \
-                   module/playnet/planner/solve/voice-field.scm \
-                   module/playnet/planner/solve/engine/worked-example.scm \
+                   module/playnet/vf/formulas/tension-kinds.scm \
+                   module/playnet/vf/formulas/capacity.scm \
+                   module/playnet/vf/serdes.scm \
+                   module/playnet/vf/facts/tension-terms.scm \
+                   module/playnet/solve/voice-field.scm \
+                   module/playnet/solve/engine/worked-example.scm \
                    module/playnet/utils/alist.scm \
                    module/playnet/utils/catch.scm \
                    module/playnet/utils/clock.scm \
@@ -354,7 +352,7 @@ SCOPE_WASM_DEPS = \
                    module/playnet/wire/rows.scm \
                    module/playnet/wire/snapshot.scm
 
-browser/scope.wasm: hoot/scope-worker.scm $(SCOPE_WASM_DEPS) $(HOOT_SRC)/playnet/planner/solve/engine.scm $(HOOT_SRC)/playnet/planner/formulas/periods.scm $(HOOT_SCOPE_SRC)/playnet/planner/scope/live.scm $(HOOT_TOOLCHAIN_STAMP)
+browser/scope.wasm: hoot/scope-worker.scm $(SCOPE_WASM_DEPS) $(HOOT_SRC)/playnet/solve/engine.scm $(HOOT_SRC)/playnet/vf/formulas/periods.scm $(HOOT_SCOPE_SRC)/playnet/scope/live.scm $(HOOT_TOOLCHAIN_STAMP)
 	$(HOOT_BUILD_DEV) bash -c 'guild compile-wasm $(HOOT_PLANNER_ARGS) -L $(HOOT_SCOPE_SRC) -o browser/scope.wasm hoot/scope-worker.scm'
 # boots browser/scope.wasm under node, through the page's own boot module, and
 # asks its doors what the planner service answers of the same acts
@@ -1011,16 +1009,16 @@ ci-env:
 #
 # It builds INSIDE the test environment, not against the host's compiler, so the
 # object and the Guile that loads it come from one manifest.
-KERNEL_SO := module/playnet/planner/solve/kernel/libplanner_kernel.so
-KERNEL_SRC := module/playnet/planner/solve/kernel/kernel.c \
-              module/playnet/planner/solve/kernel/kernel_kinds.h
+KERNEL_SO := module/playnet/solve/kernel/libplanner_kernel.so
+KERNEL_SRC := module/playnet/solve/kernel/kernel.c \
+              module/playnet/solve/kernel/kernel_kinds.h
 
 .PHONY: kernel
 kernel: $(KERNEL_SO)
 
-$(KERNEL_SO): $(KERNEL_SRC) module/playnet/planner/solve/kernel/Makefile
+$(KERNEL_SO): $(KERNEL_SRC) module/playnet/solve/kernel/Makefile
 	$(TEST_ENV) \
-	  make -C module/playnet/planner/solve/kernel
+	  make -C module/playnet/solve/kernel
 
 .PHONY: test test-all test-fast
 # `make test RED_BASELINE=file` compares the red list by name with FILE (written on
@@ -1079,7 +1077,7 @@ lint-docs:
 # runtime will ever say so. Reads the packs without registering them, so it costs
 # a second and needs no vat.
 #
-# Runs INSIDE $(TEST_ENV): loading the packs pulls in (playnet planner knowledge
+# Runs INSIDE $(TEST_ENV): loading the packs pulls in (playnet knowledge
 # context-pack), which imports (goblins). A bare `guile` finds goblins only where
 # the user's profile happens to carry it, so native CI (system profile only)
 # failed here with "no code for module (goblins)".
@@ -1094,7 +1092,7 @@ lint-law:
 	@$(GUILE_TEST_DEV) -L module tools/lint-law-packs.scm
 
 # Every recipe in the tree as ValueFlows the planner can run: one store, every
-# seeder, (playnet planner knowledge dsl vf-lint) over it. Errors fail; warnings
+# seeder, (playnet knowledge dsl vf-lint) over it. Errors fail; warnings
 # and info print. tools/lint-recipes.scm.
 .PHONY: lint-recipes
 lint-recipes:
@@ -1816,7 +1814,7 @@ protocol-emit:
 	$(GUILE_TEST_DEV) -L module tools/protocol-emit.scm seam ui/app/seam-wire.ts
 
 # The subsistence catalogue's tables, emitted for the browser. The catalogue
-# (module/playnet/planner/knowledge/catalogues/subsistence.scm) states every
+# (module/playnet/knowledge/catalogues/subsistence.scm) states every
 # nutrient band once; ui/app/nutrition-catalogue.ts is its generated copy,
 # committed like seam-wire.ts, and a stale copy is refused the same way.
 nutrition-emit:
@@ -1903,7 +1901,7 @@ FDC_RELEASE = FoodData_Central_sr_legacy_food_csv_2018-04
 FDC_URL = https://fdc.nal.usda.gov/fdc-datasets/$(FDC_RELEASE).zip
 FDC_SHA256 = b80817294b8850530aaedf2e515c02593b1824f763a0ff356e5c2081643e6fd0
 FDC_CACHE ?= $(HOME)/.cache/playnet/fdc
-FDC_SLICE = module/playnet/planner/knowledge/data/fdc-sr-legacy.scm
+FDC_SLICE = module/playnet/knowledge/data/fdc-sr-legacy.scm
 .PHONY: fdc-snapshot check-fdc-fresh
 $(FDC_CACHE)/$(FDC_RELEASE)/food_nutrient.csv:
 	@mkdir -p $(FDC_CACHE); cd $(FDC_CACHE) && \
@@ -2330,7 +2328,7 @@ test-discrete:
 # each bioregion: "LABEL|COUNTRY|CROPS" — re-generate + diff its checked-in derived file.
 VERIFY_DERIVED = "doon|India|rice,maize,ragi,pulses" "cascadia|United States|wheat,potato,bean,pea" "berlin|Germany|wheat,barley,potato,maize" "bay-area|United States|tomato,potato,bean,pea"
 verify-derived:
-	@cd module/playnet/planner/knowledge/data && for spec in $(VERIFY_DERIVED); do \
+	@cd module/playnet/knowledge/data && for spec in $(VERIFY_DERIVED); do \
 	  label=$${spec%%|*}; rest=$${spec#*|}; country=$${rest%%|*}; crops=$${rest#*|}; \
 	  guile emit-derived.scm "$$label" "$$country" "$$crops" > /tmp/$$label-derived.check && \
 	  if diff -q ../worlds/$$label-derived.scm /tmp/$$label-derived.check >/dev/null; then \
@@ -3063,7 +3061,7 @@ test-witness-two-box:
 # the law (emphasis), the meter (externality), the audit, the family solve,
 # the fold, the service doors, a want on the citizen's own good, the fold's
 # prices between scopes, and the credit fold's persons. Kernel suites need
-# libplanner_kernel (make -C module/playnet/planner/solve/kernel).
+# libplanner_kernel (make -C module/playnet/solve/kernel).
 .PHONY: test-truth-telling
 test-truth-telling: $(KERNEL_SO)
 	@for t in emphasis externality audit family-money-harmony federated-repro eisenberg-gale; do \

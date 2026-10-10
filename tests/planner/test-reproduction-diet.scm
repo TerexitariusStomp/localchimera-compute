@@ -18,9 +18,9 @@
 ;;; Run:  guile --no-auto-compile -L module tests/planner/test-reproduction-diet.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner solve solver))
+(use-modules (playnet solve engine)
+             (playnet solve compile)
+             (playnet solve solver))
 
 ;; people: (id kcal-floor protein-floor)
 (define PEOPLE '(("ana" 2800 70) ("bo" 2200 55) ("cy" 1500 35)))

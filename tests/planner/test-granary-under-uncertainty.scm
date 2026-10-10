@@ -32,14 +32,14 @@
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-granary-under-uncertainty.scm
 
 (use-modules (playnet test planner prelude)
-             (playnet planner solve engine)
-             (playnet planner vf schemas) (playnet planner beyond scenario)
-             (playnet planner knowledge worlds bioregions)
+             (playnet solve engine)
+             (playnet vf schemas) (playnet vf beyond scenario)
+             (playnet knowledge worlds bioregions)
              (srfi srfi-1)
              (ice-9 format))
-(use-modules (playnet planner knowledge worlds doon-valley))
-(primitive-load (or (%search-load-path "playnet/planner/knowledge/recipes/navdanya-farm.scm")
-                    "module/playnet/planner/knowledge/recipes/navdanya-farm.scm"))
+(use-modules (playnet knowledge worlds doon-valley))
+(primitive-load (or (%search-load-path "playnet/knowledge/recipes/navdanya-farm.scm")
+                    "module/playnet/knowledge/recipes/navdanya-farm.scm"))
 
 ;; ── the farm: land as a renewable per-season capacity, rice, food storable ──
 (define PLACE "doon-farm") (define PEOPLE 28) (define HA 2.0)

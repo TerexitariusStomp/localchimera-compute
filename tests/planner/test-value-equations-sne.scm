@@ -4,14 +4,14 @@
 ;;;   lib/algorithms/value-equations.scm — distribute-income, effort-equation,
 ;;;     equal-equation, make-hybrid-equation, effort-scorer, resource-scorer,
 ;;;     make-depreciation-scorer
-;;;   module/playnet/planner/algorithms/sne.scm — compute-sne-for-recipe, build-sne-index/actor
-;;;   module/playnet/planner/algorithms/rollup.scm — cost-variance
+;;;   module/playnet/algorithms/sne.scm — compute-sne-for-recipe, build-sne-index/actor
+;;;   module/playnet/algorithms/rollup.scm — cost-variance
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/planner/test-value-equations-sne.scm
 
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
-(use-modules (playnet planner algorithms rollup) (playnet planner algorithms value-equations) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
+(use-modules (playnet algorithms rollup) (playnet algorithms value-equations) (playnet scope root) (playnet vf schemas) (srfi srfi-1))
 (use-modules (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)

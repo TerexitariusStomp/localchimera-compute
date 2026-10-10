@@ -18,11 +18,11 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test scope)) ; mock-scope-root
-(use-modules ((playnet planner facts rail) #:select (spec-claimable? spec-rail))
-             ((playnet planner observation account) #:select (resource-individually-claimable?)))
+(use-modules ((playnet vf facts rail) #:select (spec-claimable? spec-rail))
+             ((playnet observation account) #:select (resource-individually-claimable?)))
 (use-modules (playnet test harness)
-             (playnet planner facts rail) (playnet planner vf schemas)
-             (playnet planner scope live)
+             (playnet vf facts rail) (playnet vf schemas)
+             (playnet scope live)
              (playnet governance socialization) (playnet keri acdc-store)
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1) (ice-9 format))

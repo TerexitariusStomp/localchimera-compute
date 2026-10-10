@@ -22,14 +22,14 @@
 (use-modules (playnet test scope))
 (use-modules (srfi srfi-1) (ice-9 format))
 
-(use-modules (playnet planner solve engine)
-             (playnet planner solve solver)
-             (playnet planner vf schemas))
+(use-modules (playnet solve engine)
+             (playnet solve solver)
+             (playnet vf schemas))
 ;; option-premium is a module; option-composition is still a fragment and
 ;; reads its names out of the current module, so import before loading it.
-(use-modules (playnet planner algorithms option-premium))
-(use-modules (playnet planner algorithms option-composition))
-(use-modules ((playnet planner formulas actions) #:select (committed-by-spec creating-actions)))
+(use-modules (playnet algorithms option-premium))
+(use-modules (playnet algorithms option-composition))
+(use-modules ((playnet vf formulas actions) #:select (committed-by-spec creating-actions)))
 
 (define *pass* 0) (define *fail* 0)
 (define (ok? name cond)

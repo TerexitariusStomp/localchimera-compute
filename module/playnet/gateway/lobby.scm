@@ -16,8 +16,8 @@
   #:use-module ((playnet utils common) #:select (string-or-false env-flag?))
   #:use-module (playnet gateway evidence)
   #:use-module ((playnet gateway limits) #:select (%picture-max-chars))
-  #:use-module ((playnet planner formulas counting) #:select (%contest-prefix))
-  #:use-module ((playnet planner observation evidence) #:select (evidence-hash?))
+  #:use-module ((playnet vf formulas counting) #:select (%contest-prefix))
+  #:use-module ((playnet observation evidence) #:select (evidence-hash?))
   #:use-module (goblins)
   #:use-module ((playnet protocol) #:select (%doors door-name door-object door-auth))
   #:use-module ((playnet protocol dispatch) #:select (declared-methods declared-methods*))
@@ -53,9 +53,9 @@
   #:use-module (playnet gateway allotment)   ; the week's unplanned photo reads
   #:use-module ((playnet wire replies) #:select (finished))   ; registers the allotment table
   #:use-module ((playnet social lens) #:select (resolve-lens))
-  #:use-module ((playnet planner folksonomy graph) #:select (template->doc))
+  #:use-module ((playnet folksonomy graph) #:select (template->doc))
   ;; the pin book: a citizen's shared lists fold like their taxonomy cut
-  #:use-module ((playnet planner folksonomy pins) #:select (pins-doc-public))
+  #:use-module ((playnet folksonomy pins) #:select (pins-doc-public))
   #:use-module ((json parser) #:select (json-string->scm))
   #:use-module (ice-9 format)
   #:export (^lobby ^lobby-session ^planner-facet %planner-public-doors release-contest-evidence!

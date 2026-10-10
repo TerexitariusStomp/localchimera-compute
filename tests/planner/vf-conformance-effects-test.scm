@@ -6,7 +6,7 @@
 ;;; Effects" / "Resource Effects" / "Implied Transfers"; concepts/transfers.md;
 ;;; concepts/accounting.md, "Making Corrections"; the per-action values in
 ;;; docs/valueflows/assets/all_vf.TTL). The observer
-;;; (module/playnet/planner/observation/observer.scm) is the stockbook that folds
+;;; (module/playnet/observation/observer.scm) is the stockbook that folds
 ;;; events into resources. Here an INDEPENDENT REFERENCE INTERPRETER of the spec's
 ;;; prose, driven by the action table PARSED FROM THE TTL AT RUN TIME (not by the
 ;;; repo's own *action-definitions*), predicts the resources after each event, and
@@ -76,8 +76,8 @@
 ;;;     guile --no-auto-compile -q -L module tests/planner/vf-conformance-effects-test.scm
 
 (use-modules (playnet test harness)
-             (playnet planner vf schemas)
-             (playnet planner observation observer)
+             (playnet vf schemas)
+             (playnet observation observer)
              (goblins) (goblins vat)
              (goblins utils hashmap)
              (srfi srfi-1) (srfi srfi-13)

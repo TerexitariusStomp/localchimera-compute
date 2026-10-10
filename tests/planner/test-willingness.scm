@@ -24,9 +24,9 @@
 ;;; Run:  guile -L module/playnet/planner module/playnet/planner/willingness-test.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner solve solver)
-             (playnet planner vf schemas))
+(use-modules (playnet solve engine)
+             (playnet solve solver)
+             (playnet vf schemas))
 
 (define DEMAND 50.0)
 (define BUDGET 40.0)

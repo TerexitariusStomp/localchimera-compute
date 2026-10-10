@@ -8,9 +8,9 @@
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-berlin-flotte.scm
 
 (use-modules (playnet test harness)
-             (playnet planner vf schemas)
-             (playnet planner beyond schedules)
-             (playnet planner knowledge recipes berlin-flotte)
+             (playnet vf schemas)
+             (playnet vf beyond schedules)
+             (playnet knowledge recipes berlin-flotte)
              (srfi srfi-1))
 
 (define bikes (flotte-berlin-resources "org:kiez" #:count 3 #:at "place:kiez"))

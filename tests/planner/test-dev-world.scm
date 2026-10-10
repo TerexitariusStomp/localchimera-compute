@@ -18,13 +18,13 @@
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-dev-world.scm
 
 (use-modules (playnet test harness)
-             (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
-             (playnet planner vf schemas)
-             (playnet planner knowledge dsl world)
-             (playnet planner dev recipes)
-             ((playnet planner knowledge recipes meeting) #:select (meeting-world))
-             (playnet planner dev priorities)
-             (playnet planner dev plan)
+             (playnet scope root) (playnet vf schemas) (srfi srfi-1)
+             (playnet vf schemas)
+             (playnet knowledge dsl world)
+             (playnet dev recipes)
+             ((playnet knowledge recipes meeting) #:select (meeting-world))
+             (playnet dev priorities)
+             (playnet dev plan)
              (goblins) (goblins vat)
              (srfi srfi-1))
 

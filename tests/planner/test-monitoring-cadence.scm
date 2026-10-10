@@ -1,7 +1,7 @@
 ;;; test-monitoring-cadence.scm — survey labour narrows a boundary, and buys α
 ;;; back off the precautionary floor.
 ;;;
-;;; `formulas/cadence.scm` already derives a recert cadence from the load a
+;;; `vf/formulas/cadence.scm` already derives a recert cadence from the load a
 ;;; plan routes through a skill edge: edge-reliance(throughput, harm) → a* → an
 ;;; interval. Nothing in that chain is skill-specific — LOADS is `((edge . hours)
 ;;; …)`, read off a live solve. An ecological boundary's DRAW is the same shape,
@@ -25,7 +25,7 @@
 (use-modules (srfi srfi-1) (ice-9 format))
 ;; edge-reliance / inspection-intensity / reliance->valid-until — the generic
 ;; inspection chain (formulas/cadence), which the catalogue below imports.
-(use-modules (playnet planner knowledge catalogues eco))
+(use-modules (playnet knowledge catalogues eco))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

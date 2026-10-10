@@ -25,7 +25,7 @@
              (playnet calendar invitation)
              (playnet calendar mailer)
              (playnet calendar reply-handler)
-             (playnet planner scope root))
+             (playnet scope root))
 
 ;;; ── ical.scm ─────────────────────────────────────────────────────────────
 

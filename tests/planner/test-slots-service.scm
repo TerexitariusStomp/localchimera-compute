@@ -10,10 +10,10 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
-(use-modules (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
-(use-modules (playnet planner doors service))
+(use-modules (playnet scope root) (playnet vf schemas) (srfi srfi-1))
+(use-modules (playnet doors service))
 (use-modules ((playnet wire rows) #:select (plain-reply)))
-(use-modules ((playnet planner solve engine) #:select (set-cap-scale!)))
+(use-modules ((playnet solve engine) #:select (set-cap-scale!)))
 (use-modules (goblins) (goblins vat) (goblins actor-lib methods) (goblins utils hashmap) (srfi srfi-1))
 
 (define ARCS "[{\"start\":\"09:00\",\"end\":\"12:00\",\"days\":[\"monday\",\"wednesday\"]},{\"start\":\"18:00\",\"end\":\"20:00\",\"days\":[\"friday\"]}]")

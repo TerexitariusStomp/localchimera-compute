@@ -8,11 +8,11 @@
 ;;;   guile tools/lint-verbs.scm --list     print every site
 ;;;
 ;;; The action table (vf/schemas.scm) says what each action does, and
-;;; (playnet planner formulas actions) answers the questions code asks of it. A site
+;;; (playnet vf formulas actions) answers the questions code asks of it. A site
 ;;; that writes a quoted list of verbs, or compares an action to a verb literal, holds a
 ;;; copy of what the table says (docs/planning/books/beyond-valueflows.md §6.2, Appendix A).
 ;;; A SITE is a line of library code (module/, server/, tools/; not tests, deprecated code
-;;; or the two files that state the table: vf/schemas.scm and formulas/actions.scm) holding
+;;; or the two files that state the table: vf/schemas.scm and vf/formulas/actions.scm) holding
 ;;; either a quoted list naming two or more of the nineteen actions (a set the table could
 ;;; give), or a test of something against the literal `produce` or `consume`. Those two
 ;;; stand for a question the table answers with more than one action: what a process
@@ -70,7 +70,7 @@
 
 (define (skip? path)
   (or (string-contains path "/deprecated/") (string-contains path "/tests/")
-      (string-suffix? "vf/schemas.scm" path) (string-suffix? "formulas/actions.scm" path)))
+      (string-suffix? "vf/schemas.scm" path) (string-suffix? "vf/formulas/actions.scm" path)))
 
 (define (scm-files root)
   (if (not (file-exists? root)) '()

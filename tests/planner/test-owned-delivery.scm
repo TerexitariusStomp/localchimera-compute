@@ -11,11 +11,11 @@
 ;;; Run:  guile -L module -L tests tests/planner/test-owned-delivery.scm
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test scope)) ; mock-scope-root
-(use-modules ((playnet planner solve engine) #:select (set-dial! set-cap-scale!)))
-(use-modules ((playnet planner facts audit) #:select (plan-welfare)))
+(use-modules ((playnet solve engine) #:select (set-dial! set-cap-scale!)))
+(use-modules ((playnet vf facts audit) #:select (plan-welfare)))
 (use-modules (playnet test harness)
-             (playnet planner vf schemas) (srfi srfi-1)
-             (playnet planner scope live)
+             (playnet vf schemas) (srfi srfi-1)
+             (playnet scope live)
              (playnet governance socialization) (playnet keri acdc-store)
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1) (ice-9 format))

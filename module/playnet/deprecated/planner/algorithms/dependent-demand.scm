@@ -23,11 +23,11 @@
 ;; into the regular intents list and identified by this predicate.
 (define-module (playnet deprecated planner algorithms dependent-demand)
   #:use-module (goblins)
-  #:use-module (playnet planner vf schemas)
-  #:use-module (playnet planner algorithms propagation)
+  #:use-module (playnet vf schemas)
+  #:use-module (playnet algorithms propagation)
   #:use-module (playnet utils store-utils)
-  #:use-module (playnet planner algorithms skill-matcher)
-  #:use-module (playnet planner observation observer)
+  #:use-module (playnet algorithms skill-matcher)
+  #:use-module (playnet observation observer)
   #:use-module (playnet deprecated planner algorithms netting)
   #:export (unmet-intent? *epsilon-dd* *non-consuming-dd* flow-allows-resource?
             dependent-demand))

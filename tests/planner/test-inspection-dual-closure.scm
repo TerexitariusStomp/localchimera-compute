@@ -17,15 +17,15 @@
 ;;; Reliance = the THROUGHPUT, not the barrier's slack-dual w/s: the inspection FOC
 ;;; pins that slack at s ≈ wρ/(κℓ), nearly independent of demand (it measures the check
 ;;; cost, not the reliance). The load the plan routes through the edge is what a silent
-;;; miss would cost — see edge-reliance in formulas/cadence.scm.
+;;; miss would cost — see edge-reliance in vf/formulas/cadence.scm.
 ;;;
 ;;; Run:  guile --no-auto-compile -L module/playnet/planner \
 ;;;         tests/planner/test-inspection-dual-closure.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve solver))               ; mk-bar/mk-frag/mk-des/solve-native/*kappa*
-(use-modules (playnet planner formulas cadence) (playnet planner facts validity))   ; edge-reliance/reliance->valid-until/custody-cred-live?
-(use-modules (playnet planner knowledge catalogues conformance)) ; the GOVERNED confidence-barrier steepness
+(use-modules (playnet solve solver))               ; mk-bar/mk-frag/mk-des/solve-native/*kappa*
+(use-modules (playnet vf formulas cadence) (playnet vf facts validity))   ; edge-reliance/reliance->valid-until/custody-cred-live?
+(use-modules (playnet knowledge catalogues conformance)) ; the GOVERNED confidence-barrier steepness
 
 (set! *kappa* 1.0)
 (define WCONF (conformance-frag-weight))   ; confidence barrier steepness — read from the governed profile

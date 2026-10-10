@@ -18,12 +18,12 @@
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test scope))
-(use-modules (playnet test harness) (playnet planner vf schemas) (playnet planner scope live)
+(use-modules (playnet test harness) (playnet vf schemas) (playnet scope live)
              (srfi srfi-1) (ice-9 format))
 
 ;; A period here is a WEEK: Ada's 09:00–17:00 every day is 56 h of fishing, the
 ;; labour this dilemma was sized on, and the same on any date.
-(use-modules ((playnet planner solve engine) #:select (set-period-length!)))
+(use-modules ((playnet solve engine) #:select (set-period-length!)))
 (set-period-length! 1.0 "week")
 (define win (all-week-window "09:00" "17:00"))
 (define agents (list (make-agent #:id "ada" #:type 'person #:name "Ada" #:primary-location "town"

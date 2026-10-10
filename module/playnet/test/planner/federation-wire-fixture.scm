@@ -15,11 +15,11 @@
 ;;; and what it needs — the engine's DSL, the host's keeping — it names.
 
 (define-module (playnet test planner federation-wire-fixture)
-  #:use-module ((playnet planner solve engine) #:select (commune->scope-record lg cell make-boundary-oracle solve-consensus))
-  #:use-module ((playnet planner solve compile) #:select (rp out in wrk))
-  #:use-module (playnet planner vf schemas)
-  #:use-module ((playnet planner federation host) #:select (read-kept keep! wire-handshake))
-  #:use-module ((playnet planner federation peer) #:select (call-from-thread))
+  #:use-module ((playnet solve engine) #:select (commune->scope-record lg cell make-boundary-oracle solve-consensus))
+  #:use-module ((playnet solve compile) #:select (rp out in wrk))
+  #:use-module (playnet vf schemas)
+  #:use-module ((playnet federation host) #:select (read-kept keep! wire-handshake))
+  #:use-module ((playnet federation peer) #:select (call-from-thread))
   #:use-module ((playnet keri citizen-sig) #:select (make-keri-identity keri-identity-aid keri-identity-keypair))
   #:use-module (goblins)
   #:use-module (rnrs bytevectors)
@@ -191,7 +191,7 @@
                       (fx-ssh (string-append
                                "cd " fx-remote-root " && LD_LIBRARY_PATH=" fx-remote-libs " " fx-remote-guile
                                " --no-auto-compile -q -L module -c"
-                               " '(display ((@ (playnet planner federation host) wire-handshake)))' 2>/dev/null")))))
+                               " '(display ((@ (playnet federation host) wire-handshake)))' 2>/dev/null")))))
           (unless (equal? (symbol->string here) there)
             (error (format #f "the two ends shake hands differently: here ~a, on ~a ~s. Run this side on the channel pin's Goblins: make test-federation-peer-remote"
                            here fx-remote there)))

@@ -10,8 +10,8 @@
 ;;;
 ;;; Run:  make hoot-probe-async
 
-(use-modules (hoot ffi) (playnet planner solve engine) (playnet planner solve solver)
-             (playnet planner federation async))
+(use-modules (hoot ffi) (playnet solve engine) (playnet solve solver)
+             (playnet federation async))
 (include-from-path "playnet/test/planner/federated-fixtures.scm")
 
 (define-foreign %now "performance" "now" -> f64)

@@ -11,7 +11,7 @@
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
-(use-modules (playnet planner observation observer) (playnet planner vf schemas) (srfi srfi-1))
+(use-modules (playnet observation observer) (playnet vf schemas) (srfi srfi-1))
 (use-modules (playnet governance acdc-bridge) (playnet credentials work) (playnet keri acdc) (playnet keri acdc) (playnet keri acdc-store))
 (use-modules (goblins) (goblins vat) (srfi srfi-1))
 

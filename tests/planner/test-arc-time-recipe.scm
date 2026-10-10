@@ -14,8 +14,8 @@
 ;;; Run:  guile module/playnet/planner/arc-time-recipe-test.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine))
-(use-modules ((playnet planner knowledge recipes transport) #:select (mode-recipe)))
+(use-modules (playnet solve engine))
+(use-modules ((playnet knowledge recipes transport) #:select (mode-recipe)))
 
 (define VPK 0.01)   ; van-hours per km
 (define DPK 0.05)   ; driver-hours per km

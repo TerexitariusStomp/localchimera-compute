@@ -21,8 +21,8 @@
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness)
              (playnet test events)
-             (playnet planner observation observer)
-             (playnet planner observation observer)
+             (playnet observation observer)
+             (playnet observation observer)
              (goblins utils hashmap)
              (srfi srfi-1))
 

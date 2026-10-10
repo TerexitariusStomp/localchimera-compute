@@ -11,10 +11,10 @@
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-scenario-shocks.scm
 
 (use-modules (playnet test planner prelude)
-             (playnet planner solve engine)
-             (playnet planner formulas shocks)
-             (playnet planner vf schemas) (playnet planner beyond scenario)
-             (playnet planner knowledge dsl shorthand)
+             (playnet solve engine)
+             (playnet vf formulas shocks)
+             (playnet vf schemas) (playnet vf beyond scenario)
+             (playnet knowledge dsl shorthand)
              (srfi srfi-1)
              (ice-9 format))
 (define (~= a b) (< (abs (- a b)) 1e-6))

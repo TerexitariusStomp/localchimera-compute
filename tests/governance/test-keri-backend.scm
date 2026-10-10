@@ -6,7 +6,7 @@
 ;;; the dispatch path is exercised correctly without touching KERIA.
 
 (use-modules (playnet test harness))
-(use-modules (playnet planner scope root) (srfi srfi-1))
+(use-modules (playnet scope root) (srfi srfi-1))
 (use-modules (playnet governance scope) (playnet keri acdc-store))
 (use-modules (playnet keys keri-backend))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap)

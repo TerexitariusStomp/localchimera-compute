@@ -12,7 +12,7 @@
 //
 // WHAT THE TINT IS, said exactly, because the easy name for it is wrong. It is
 // not the scope tree's demand fold (that aggregates over SCOPES — the
-// federation tree, aggregation/scope-tree.scm — and most places are not
+// federation tree, vf/aggregation/scope-tree.scm — and most places are not
 // scopes). It is `location-slacks` (service.scm): produced ÷ demanded PER
 // PLACE, out of one scope's last solve, which this module then re-aggregates up
 // the SPATIAL tree. A per-place fill, folded over geography.

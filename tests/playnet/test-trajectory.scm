@@ -9,11 +9,11 @@
 ;;; Run:  guile -L module tests/playnet/test-trajectory.scm
 
 (use-modules (playnet test harness)
-             (playnet planner vf schemas)              ; make-commitment
-             (playnet planner doors service)      ; agent-position-predicate
-             (playnet planner scope live)         ; set-period-span! (period ↔ wall-clock)
+             (playnet vf schemas)              ; make-commitment
+             (playnet doors service)      ; agent-position-predicate
+             (playnet scope live)         ; set-period-span! (period ↔ wall-clock)
              ((playnet utils clock) #:select (now))
-             ((playnet planner facts person-facts) #:select (fix-lease-seconds))
+             ((playnet vf facts person-facts) #:select (fix-lease-seconds))
              (goblins) (goblins vat)
              (srfi srfi-1))
 

@@ -13,11 +13,11 @@
 
 (use-modules (srfi srfi-1) (ice-9 format)
              (goblins) (goblins actor-lib methods) (goblins actor-lib facet))
-(use-modules (playnet planner solve engine)
-             (playnet planner vf schemas)
-             (playnet planner knowledge dsl shorthand))
-(use-modules (playnet planner knowledge catalogues tension-registry)    ; brings goblins + ^tension-registry
-             (playnet planner knowledge catalogues eco))      ; *planetary-catalogue* — the catalogue's own module
+(use-modules (playnet solve engine)
+             (playnet vf schemas)
+             (playnet knowledge dsl shorthand))
+(use-modules (playnet knowledge catalogues tension-registry)    ; brings goblins + ^tension-registry
+             (playnet knowledge catalogues eco))      ; *planetary-catalogue* — the catalogue's own module
 
 (define ocean-co2-tip (/ 0.05 0.00027))  ; ocean acidification — the binding cascaded wall ≈ 185.2 GtCO2
 ;; spawn the registry ACTOR and ask IT for the eco-policy (the governance→solver boundary)

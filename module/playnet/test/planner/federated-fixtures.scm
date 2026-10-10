@@ -1,7 +1,7 @@
 ;;; federated-fixtures.scm — the one place a federated test economy is built.
 ;;;
 ;;; Shared by tests/planner/test-decomposed-optimality.scm and
-;;; module/playnet/planner/bench/bench-decomp.scm. It exists because three
+;;; module/playnet/bench/bench-decomp.scm. It exists because three
 ;;; copies of "an S-scope chain" drifted apart, and two of the three were wrong
 ;;; in ways that looked like real findings:
 ;;;

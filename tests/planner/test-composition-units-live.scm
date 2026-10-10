@@ -8,10 +8,10 @@
 ;;;
 ;;; Run:  guile -q -L module tests/planner/test-composition-units-live.scm
 
-(use-modules (playnet test harness) (playnet planner scope root) (playnet planner vf schemas) (playnet planner vf schemas)
-             (playnet planner knowledge dsl shorthand)
-             ((playnet planner scope live) #:select (scope-composition))
-             ((playnet planner knowledge catalogues substances) #:select (*contains*))
+(use-modules (playnet test harness) (playnet scope root) (playnet vf schemas) (playnet vf schemas)
+             (playnet knowledge dsl shorthand)
+             ((playnet scope live) #:select (scope-composition))
+             ((playnet knowledge catalogues substances) #:select (*contains*))
              (goblins) (srfi srfi-1))
 
 (define (n-of comp spec) (assoc-ref (assoc-ref comp spec) "N"))

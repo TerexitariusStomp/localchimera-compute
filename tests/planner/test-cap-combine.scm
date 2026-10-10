@@ -10,11 +10,11 @@
 ;;; Run:  guile --no-auto-compile -q -L module \
 ;;;         -l tests/planner/test-cap-combine.scm
 
-(use-modules (playnet planner knowledge dsl shorthand))
+(use-modules (playnet knowledge dsl shorthand))
 (use-modules (playnet test harness)
-             (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner vf schemas))
+             (playnet solve engine)
+             (playnet solve compile)
+             (playnet vf schemas))
 
 (define place (place* "shop"))
 (define (cap good t v) (cons (lg good (cell "shop" t)) v))

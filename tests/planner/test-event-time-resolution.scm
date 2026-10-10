@@ -20,13 +20,13 @@
 
 (use-modules (playnet test harness)
              (playnet test books)
-             (playnet planner vf schemas) (playnet planner observation states) (srfi srfi-11)
-             (playnet planner scope live)
-             (playnet planner doors service)
+             (playnet vf schemas) (playnet observation states) (srfi srfi-11)
+             (playnet scope live)
+             (playnet doors service)
              (goblins) (goblins vat) (goblins persistence-store memory) (goblins utils hashmap)
              (srfi srfi-1))
 
-(define cache-solve! (@@ (playnet planner doors service) cache-solve!))
+(define cache-solve! (@@ (playnet doors service) cache-solve!))
 
 (display "\n── NAME: the resource is the one the books hold at the flow's place ──\n")
 (let-values (((vat scope) (fresh-scope)))
@@ -90,7 +90,7 @@
       (check "a draw larger than any one lot is split across lots, lowest id first"
              (list (onhand-of obs "w1") (onhand-of obs "w2")) '(0.0 10.0)))))
 
-((@ (playnet planner solve engine) declare-world!)   ; water is a good some recipe makes, and none uses
+((@ (playnet solve engine) declare-world!)   ; water is a good some recipe makes, and none uses
  #:spans '((0 "2026-10-02" "2026-10-02"))
  #:templates (list (list "well" '(("water" . 1.0)) '() 0.0 '() '() '() '() '())))
 (let-values (((vat scope) (fresh-scope)))

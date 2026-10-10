@@ -5,7 +5,7 @@
 ;;; across the fake OCapN network.
 
 (use-modules (playnet test harness))
-(use-modules (playnet planner scope root))
+(use-modules (playnet scope root))
 (use-modules (playnet org endorsement))
 (use-modules (playnet governance async) (playnet governance commune) (playnet governance federation) (playnet governance sturdyref-credential) (playnet keri acdc-store))
 (use-modules (goblins)

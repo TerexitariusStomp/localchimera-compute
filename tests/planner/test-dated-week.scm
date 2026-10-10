@@ -11,21 +11,21 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-dated-week.scm
 (use-modules (playnet test harness)
-             (playnet planner vf schemas) (playnet planner beyond schedules)
-             (playnet planner facts availability)
-             ((playnet planner solve engine) #:select (declare-world! agent-window-hours))
-             (playnet planner doors service)
-             (playnet planner knowledge dsl shorthand)
+             (playnet vf schemas) (playnet vf beyond schedules)
+             (playnet vf facts availability)
+             ((playnet solve engine) #:select (declare-world! agent-window-hours))
+             (playnet doors service)
+             (playnet knowledge dsl shorthand)
              (srfi srfi-1))
 ;; the engine's period reader and the service's wire are internal doors
-(define temporal-hours-within (@@ (playnet planner solve engine) temporal-hours-within))
-(define arcs-json->window (@@ (playnet planner doors service) arcs-json->window))
-(define window->arcs (@@ (playnet planner doors service) window->arcs))
+(define temporal-hours-within (@@ (playnet solve engine) temporal-hours-within))
+(define arcs-json->window (@@ (playnet doors service) arcs-json->window))
+(define window->arcs (@@ (playnet doors service) window->arcs))
 (use-modules (playnet wire rows))
 ;; a window's rows as the page reads them (record-rows.scm), read back as plain alists
 (define (availability-window->alist aw)
   (wire->plain (map (lambda (r) (wire-row* (wire-table-ref 'availability-day) r))
-                    ((@@ (playnet planner doors record-rows) availability-rows) aw))))
+                    ((@@ (playnet doors record-rows) availability-rows) aw))))
 
 ;; 2026-09-07 is a Monday; the exception falls on Tuesday the 8th
 (define week (weekday-window "09:00" "17:00"))

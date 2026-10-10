@@ -13,9 +13,9 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner vf schemas) (playnet planner beyond schedules)
-             ((playnet planner knowledge dsl shorthand) #:select (er all-week-window)))
+(use-modules (playnet solve engine)
+             (playnet vf schemas) (playnet vf beyond schedules)
+             ((playnet knowledge dsl shorthand) #:select (er all-week-window)))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

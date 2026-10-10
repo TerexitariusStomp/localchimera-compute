@@ -1,7 +1,7 @@
 ;;; test-expression.scm — weighted distribution over per-scope per-domain targets
 
 (use-modules (playnet test harness))
-(use-modules (playnet planner pools credit-fold) (srfi srfi-1))
+(use-modules (playnet pools credit-fold) (srfi srfi-1))
 (use-modules (playnet org endorsement))
 (use-modules (playnet governance delegation-map) (playnet governance expression) (playnet governance voice-signer))
 (use-modules (goblins) (goblins utils hashmap) (srfi srfi-1))

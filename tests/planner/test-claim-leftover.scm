@@ -18,11 +18,11 @@
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test scope)) ; mock-scope-root plan-claim!
 (use-modules (playnet test harness)
-             (playnet planner algorithms elastic) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
-             (playnet planner scope live)
-             (playnet planner doors service)
+             (playnet algorithms elastic) (playnet scope root) (playnet vf schemas) (srfi srfi-1)
+             (playnet scope live)
+             (playnet doors service)
              
-             ((playnet planner observation account) #:select (spec-social-portion declare-claimable! declare-social-portion!))
+             ((playnet observation account) #:select (spec-social-portion declare-claimable! declare-social-portion!))
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1) (ice-9 format))
 
@@ -106,7 +106,7 @@
                           #:in-scope-of '())))
 
 (declare-claimable! "spec-wheat")   ; the fixture's stand-in for the plan's rail
-((@ (playnet planner algorithms elastic) set-social-free-time!) 0)   ; layer 1's solve published f; the doors read the base model
+((@ (playnet algorithms elastic) set-social-free-time!) 0)   ; layer 1's solve published f; the doors read the base model
 (define vat2 (spawn-vat #:name "claim-leftover-doors"))
 (define-values (svc obs as rs sr)
   (with-vat vat2

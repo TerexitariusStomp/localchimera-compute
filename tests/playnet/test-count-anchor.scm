@@ -5,8 +5,8 @@
 (add-to-load-path "module")
 (use-modules (playnet test harness)
              (goblins) (goblins persistence-store memory) (goblins utils hashmap)
-             (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1) (playnet planner doors service)
-             ((playnet planner observation observer) #:select (void-event))
+             (playnet scope root) (playnet vf schemas) (srfi srfi-1) (playnet doors service)
+             ((playnet observation observer) #:select (void-event))
              (srfi srfi-1))
 (use-modules ((playnet wire rows) #:select (plain-reply)))   ; a door's rows, read back as alists
 

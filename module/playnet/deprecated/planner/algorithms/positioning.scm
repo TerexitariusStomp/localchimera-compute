@@ -3,8 +3,8 @@
 ;;; Analyzes recipe structures for decoupling point and control point candidates.
 
 (define-module (playnet deprecated planner algorithms positioning)
-  #:use-module (playnet planner vf schemas)
-  #:use-module (playnet planner algorithms propagation)
+  #:use-module (playnet vf schemas)
+  #:use-module (playnet algorithms propagation)
   #:use-module (goblins)
   #:export (routing-geometry rank-decoupling-candidates rank-control-point-candidates)
   #:use-module (srfi srfi-1))

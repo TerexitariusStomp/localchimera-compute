@@ -20,11 +20,11 @@
 ;;; Run:  guile --no-auto-compile -q -L module tests/planner/test-federation-peer.scm
 
 (use-modules (playnet test harness)
-             (playnet planner federation peer)
-             (playnet planner federation async)
-             ((playnet planner federation wire) #:select (signed-reply))
-             ((playnet planner solve engine) #:select (make-boundary-oracle solve-consensus))
-             (playnet planner solve solver)
+             (playnet federation peer)
+             (playnet federation async)
+             ((playnet federation wire) #:select (signed-reply))
+             ((playnet solve engine) #:select (make-boundary-oracle solve-consensus))
+             (playnet solve solver)
              ((playnet keri citizen-sig) #:select (make-keri-identity keri-identity-aid))
              (goblins) (goblins actor-lib methods)
              (srfi srfi-1) (ice-9 format))

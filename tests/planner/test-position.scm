@@ -13,7 +13,7 @@
 ;;; Run:  guile -L module/playnet/planner module/playnet/planner/position-test.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine))
+(use-modules (playnet solve engine))
 
 ;; care@market = 35 wanted; Ada (skill doc, 40 hrs) lives in town, market ~100 km off.
 (define (deliver-care agent-position)

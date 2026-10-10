@@ -13,11 +13,11 @@
 ;;;
 ;;; Run: guile -L module tests/planner/test-law-coverage.scm
 
-(use-modules (playnet test harness) (playnet planner knowledge recipes store) (playnet planner knowledge recipes food-surplus) (srfi srfi-1)
-             (playnet planner legal gate) (playnet planner legal crossings)
-             (playnet planner knowledge law lint)
-             (playnet planner knowledge law context-pack)
-             (playnet planner knowledge recipes compliance-food)
+(use-modules (playnet test harness) (playnet knowledge recipes store) (playnet knowledge recipes food-surplus) (srfi srfi-1)
+             (playnet legal gate) (playnet legal crossings)
+             (playnet knowledge law lint)
+             (playnet knowledge law context-pack)
+             (playnet knowledge recipes compliance-food)
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1) (ice-9 format))
 

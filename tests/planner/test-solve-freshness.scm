@@ -7,9 +7,9 @@
 ;;; max-age — and leaves fresh caches alone.
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-solve-freshness.scm
-(use-modules (playnet planner scope root) (playnet planner vf schemas)
-             (playnet planner doors service)
-             ((playnet planner facts tension-terms) #:select (with-tension-terms))
+(use-modules (playnet scope root) (playnet vf schemas)
+             (playnet doors service)
+             ((playnet vf facts tension-terms) #:select (with-tension-terms))
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1) (ice-9 format))
 (define *pass* 0) (define *fail* 0)

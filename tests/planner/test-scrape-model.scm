@@ -17,9 +17,9 @@
 (use-modules (playnet test harness) (srfi srfi-1) (ice-9 format))
 
 (define here (dirname (current-filename)))
-(use-modules (playnet planner legal crossings))
-(use-modules (playnet planner legal registry))
-(use-modules (playnet planner knowledge law scrape))
+(use-modules (playnet legal crossings))
+(use-modules (playnet legal registry))
+(use-modules (playnet knowledge law scrape))
 
 ;; the statute: a CONDITIONAL PROHIBITION (the regex's blind spot) + a competence.
 (define statute
@@ -127,8 +127,8 @@
 (display "
 ── (4c) the law lint's findings are the re-ask's reason ──
 ")
-(use-modules ((playnet planner knowledge law lint) #:select (lint-demand-records))
-             ((playnet planner knowledge dsl findings) #:select (finding-kind findings->reason)))
+(use-modules ((playnet knowledge law lint) #:select (lint-demand-records))
+             ((playnet knowledge dsl findings) #:select (finding-kind findings->reason)))
 (define twice
   '(((crossing . public-sale) (kind . pay) (name . "City Fee"))
     ((crossing . public-sale) (kind . pay) (name . "city fee"))))

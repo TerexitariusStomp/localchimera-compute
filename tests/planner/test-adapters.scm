@@ -8,13 +8,13 @@
 ;;;
 ;;; Run: guile -L module tests/planner/test-adapters.scm
 
-(use-modules (playnet test harness) (playnet planner observation observer) (playnet planner vf schemas)
+(use-modules (playnet test harness) (playnet observation observer) (playnet vf schemas)
              (goblins) (goblins vat) (srfi srfi-1) (ice-9 format))
 
-(use-modules (playnet planner legal crossings))
-(use-modules (playnet planner legal registry))
-(use-modules (playnet planner legal compliance)) (use-modules (playnet planner legal filings))
-(use-modules (playnet planner legal adapters)) (use-modules (playnet planner knowledge recipes compliance-food))
+(use-modules (playnet legal crossings))
+(use-modules (playnet legal registry))
+(use-modules (playnet legal compliance)) (use-modules (playnet legal filings))
+(use-modules (playnet legal adapters)) (use-modules (playnet knowledge recipes compliance-food))
 
 ;; the door this mask opens: public food-vending in foodville.
 (define crossings '(food-vending))

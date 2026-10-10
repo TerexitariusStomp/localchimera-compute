@@ -13,9 +13,9 @@
 ;;; Run:  guile --no-auto-compile -q -L module -L tests tests/planner/test-person-index.scm
 
 (use-modules (playnet test harness)
-             (playnet planner scope root)
-             (playnet planner doors service)
-             ((playnet planner facts person-facts) #:select (need-id))
+             (playnet scope root)
+             (playnet doors service)
+             ((playnet vf facts person-facts) #:select (need-id))
              (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1))
 
 (define vat (spawn-vat))

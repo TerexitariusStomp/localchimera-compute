@@ -1,7 +1,7 @@
 ;;; proposals.scm — Proposal query index
 
 (define-module (playnet deprecated planner indexes proposals)
-  #:use-module (playnet planner vf schemas)
+  #:use-module (playnet vf schemas)
   #:export (build-proposal-index query-proposals-by-purpose query-proposals-by-scope)
   #:use-module (srfi srfi-1)
   #:use-module (goblins utils hashmap))

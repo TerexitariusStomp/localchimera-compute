@@ -10,7 +10,7 @@
 ;;; Run:  guile --no-auto-compile -q -L module tests/planner/test-rest-catalogue.scm
 
 (use-modules (srfi srfi-1) (ice-9 format)
-             (playnet planner knowledge catalogues rest))
+             (playnet knowledge catalogues rest))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

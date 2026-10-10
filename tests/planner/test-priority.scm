@@ -16,8 +16,8 @@
 ;;; Run:  guile -L module/playnet/planner tests/planner/test-priority.scm
 
 (use-modules (playnet test harness) (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner solve solver))
+(use-modules (playnet solve engine)
+             (playnet solve solver))
 
 
 ;; One solve over {medicine, cake}, 10 h labour, both demanded at 10.

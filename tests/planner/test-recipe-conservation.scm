@@ -36,8 +36,8 @@
 ;;;   guile --no-auto-compile -q -L module tests/planner/test-recipe-conservation.scm
 
 (use-modules (playnet test harness))
-(use-modules (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
-(use-modules (playnet planner knowledge catalogues substances))
+(use-modules (playnet scope root) (playnet vf schemas) (srfi srfi-1))
+(use-modules (playnet knowledge catalogues substances))
 (use-modules (goblins) (srfi srfi-1) (srfi srfi-13) (ice-9 format))
 
 ;;; EVERY seeder the umbrella exports, DISCOVERED rather than listed. A hand-written

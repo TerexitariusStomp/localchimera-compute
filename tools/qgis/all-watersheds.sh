@@ -2,7 +2,7 @@
 # tools/qgis/all-watersheds.sh — queue a watershed job for every seeded bioregion.
 #
 # One line per shed: id, pour point (the bioregion's own lat/lon from
-# module/playnet/planner/knowledge/<id>.scm), DEM tile radius in degrees,
+# module/playnet/knowledge/<id>.scm), DEM tile radius in degrees,
 # and the r.watershed basin threshold in cells (GLO-90 ≈ 90 m ⇒ 1 cell ≈ 0.008 km²).
 #
 #   berlin     — Spree/Havel lowland: flat, so a large threshold keeps one shed.

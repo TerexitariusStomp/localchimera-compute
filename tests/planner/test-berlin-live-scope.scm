@@ -9,9 +9,9 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-berlin-live-scope.scm
 
-(use-modules (playnet planner knowledge recipes berlin-commune-seed) (playnet planner scope root) (playnet planner vf schemas) (playnet planner beyond scenario) (srfi srfi-1)
-             (playnet planner scope live)
-             (playnet planner doors service)
+(use-modules (playnet knowledge recipes berlin-commune-seed) (playnet scope root) (playnet vf schemas) (playnet vf beyond scenario) (srfi srfi-1)
+             (playnet scope live)
+             (playnet doors service)
              (goblins)
              (goblins vat)
              (goblins utils hashmap)
@@ -24,12 +24,12 @@
       (begin (set! *fail* (+ *fail* 1)) (format #t "  ✗ ~a~%" name))))
 
 ;; live-module internals (the bioregion registry berlin.scm registered into):
-(define live-yields   (@@ (playnet planner knowledge worlds berlin) *berlin-crop-yields*))
-(define live-scen-of  (@@ (playnet planner scope live) scope-bioregion-scenarios))
-(define live-frag-of  (@@ (playnet planner scope live) scope-bioregion-fragilities))
+(define live-yields   (@@ (playnet knowledge worlds berlin) *berlin-crop-yields*))
+(define live-scen-of  (@@ (playnet scope live) scope-bioregion-scenarios))
+(define live-frag-of  (@@ (playnet scope live) scope-bioregion-fragilities))
 ;; a shed's limits are <fragility> RECORDS now, and may still be (spec . profile)
 ;; pairs — fragility-specs-of reads either, which is what these assertions want.
-(define frag-specs-of (@@ (playnet planner scope live) fragility-specs-of))
+(define frag-specs-of (@@ (playnet scope live) fragility-specs-of))
 
 (define vat (spawn-vat #:name "berlin-live"))
 (define svc (with-vat vat (spawn ^planner-service (hashmap))))
@@ -71,7 +71,7 @@
        (and (equal? place "berlin-commune-farm") (>= (length spatials) 3)))
 (check "the seeded grow-recipe yields match the vendored *berlin-crop-yields* (no drift)"
        (every (lambda (cw) (= (cddr cw) (assoc-ref live-yields (car cw))))
-              (@@ (playnet planner knowledge recipes berlin-commune-seed) *berlin-commune-crops*)))
+              (@@ (playnet knowledge recipes berlin-commune-seed) *berlin-commune-crops*)))
 (check "the LIVE scope inherits the Berlin shed's 4 real futures by containment (incl. drought)"
        (and (= (length scen) 4)
             (find (lambda (s) (equal? (planning-scenario-id s) "berlin-drought")) scen)))

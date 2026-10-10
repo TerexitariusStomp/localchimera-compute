@@ -5,7 +5,7 @@
 ;;; writes exactly two things — a KEL into the oobi-host (the body's own
 ;;; inception, later its rotations) and, through the `close!` thunk the
 ;;; caller supplies, the VF records the planner side keeps (make-body and
-;;; the steward relationships, (playnet planner legal bodies)). It holds no
+;;; the steward relationships, (playnet legal bodies)). It holds no
 ;;; store of its own: a ceremony's durable record under <witness-dir> is
 ;;; the ask's own self, as an enrollment's is.
 ;;;

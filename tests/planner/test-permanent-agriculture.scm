@@ -16,9 +16,9 @@
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-permanent-agriculture.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve compile)
-             (playnet planner vf schemas))
-(use-modules (playnet planner knowledge recipes permanent-agriculture))
+(use-modules (playnet solve compile)
+             (playnet vf schemas))
+(use-modules (playnet knowledge recipes permanent-agriculture))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

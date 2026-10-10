@@ -27,8 +27,8 @@
 ;;;        tests/planner/test-limit-roster.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner formulas stocks))
-(use-modules (playnet planner knowledge catalogues eco))
+(use-modules (playnet vf formulas stocks))
+(use-modules (playnet knowledge catalogues eco))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

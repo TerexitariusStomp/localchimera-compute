@@ -9,7 +9,7 @@
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
-(use-modules (playnet planner scope root) (playnet planner vf schemas))
+(use-modules (playnet scope root) (playnet vf schemas))
 (use-modules (goblins)
              (goblins persistence-store memory)
              (srfi srfi-1))

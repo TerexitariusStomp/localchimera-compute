@@ -13,12 +13,12 @@
 ;;; Run:  guile -L module/playnet/planner tests/planner/test-resource-conformance.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner solve solver)
-             (playnet planner vf schemas)
-             (playnet planner knowledge dsl shorthand))
-(use-modules (playnet planner formulas capacity))
+(use-modules (playnet solve engine)
+             (playnet solve compile)
+             (playnet solve solver)
+             (playnet vf schemas)
+             (playnet knowledge dsl shorthand))
+(use-modules (playnet vf formulas capacity))
 
 ;; bake 1 bread per oven-hour: a `use` of an OVEN (Svc|oven) + a little labour.
 (define bake-oven

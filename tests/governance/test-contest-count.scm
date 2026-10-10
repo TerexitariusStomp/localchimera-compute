@@ -28,9 +28,9 @@
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules ((playnet wire rows) #:select (plain-reply)))   ; a door's rows, read back as alists
 (use-modules (playnet test harness)
-             (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
+             (playnet scope root) (playnet vf schemas) (srfi srfi-1)
              (playnet governance scope) (playnet governance service) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri said-portable)
-             ((playnet planner observation evidence) #:select (evidence-tag))
+             ((playnet observation evidence) #:select (evidence-tag))
              ((playnet keri citizen-sig)
               #:select (make-keri-identity keri-identity-keypair keri-identity-aid sign-said))
              (goblins) (goblins utils hashmap) (srfi srfi-1))

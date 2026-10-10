@@ -6,7 +6,7 @@
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
-(use-modules (playnet planner scope root) (playnet planner vf schemas) (playnet planner observation states))
+(use-modules (playnet scope root) (playnet vf schemas) (playnet observation states))
 (use-modules (playnet org endorsement))
 (use-modules (playnet governance ballot) (playnet governance commune) (playnet credentials commitments) (playnet credentials membership) (playnet credentials voting) (playnet credentials work) (playnet keri acdc) (playnet governance delegation-map) (playnet governance federation) (playnet governance recovery) (playnet governance voice-signer) (playnet keri acdc) (playnet keri acdc-store) (playnet keri said-portable))
 (use-modules (goblins) (goblins utils hashmap) (srfi srfi-1))

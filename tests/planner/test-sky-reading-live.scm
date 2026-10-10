@@ -11,10 +11,10 @@
 ;;; Run:  guile -q -L module tests/planner/test-sky-reading-live.scm
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test harness) (playnet planner scope root) (playnet planner vf schemas) (playnet planner vf schemas)
-             (playnet planner knowledge dsl shorthand) (playnet planner knowledge dsl world)
-             ((playnet planner knowledge catalogues substances) #:select (sunlight-for insolation-kwh-per-m2-day area-m2))
-             ((playnet planner scope live) #:select (plan-scope))
+(use-modules (playnet test harness) (playnet scope root) (playnet vf schemas) (playnet vf schemas)
+             (playnet knowledge dsl shorthand) (playnet knowledge dsl world)
+             ((playnet knowledge catalogues substances) #:select (sunlight-for insolation-kwh-per-m2-day area-m2))
+             ((playnet scope live) #:select (plan-scope))
              (goblins) (srfi srfi-1))
 
 (define PLACE "field")

@@ -4,7 +4,7 @@
 //
 //   places   SpatialThing.contained-in — GEOGRAPHY. This is what the hulls nest,
 //            and the only one of the three that is inherently spatial.
-//   scopes   the federation tree (aggregation/scope-tree.scm) — where demand and
+//   scopes   the federation tree (vf/aggregation/scope-tree.scm) — where demand and
 //            labour actually aggregate. A scope is a container of a governance
 //            kind; most containers are not scopes.
 //   things   EconomicResource.contained-in — the MEREOLOGY of stuff: a box in a

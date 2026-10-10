@@ -20,8 +20,8 @@
 
 (use-modules (playnet test harness)
              (playnet test books)
-             (playnet planner vf schemas) (playnet planner observation states) (srfi srfi-11)
-             (playnet planner scope live)
+             (playnet vf schemas) (playnet observation states) (srfi srfi-11)
+             (playnet scope live)
              ((playnet utils units) #:select (placeholder-unit?))
              (goblins) (goblins vat)
              (srfi srfi-1))
@@ -77,7 +77,7 @@
              (map (lambda (r) (lot-unit obs (economic-resource-id r))) (lots-of obs "mystery")) '("unit")))))
 
 ;; a plan row the way the plan states it, held on the observer the way the doors hold it
-(define hold-row! (@@ (playnet planner doors service) hold-row!))
+(define hold-row! (@@ (playnet doors service) hold-row!))
 (define (row-in-kg id) (flow-row id 'consume "veg" 2.0 "A" #:in "p1" #:unit "kg"))
 (define (event-of-grams id fulfills)
   (make-economic-event #:id id #:action 'consume #:input-of "p1" #:resource-inventoried-as "v1"

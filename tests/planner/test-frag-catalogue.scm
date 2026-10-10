@@ -15,10 +15,10 @@
 ;;; Run:  guile --no-auto-compile -L module/playnet/planner tests/planner/test-frag-catalogue.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner solve solver))   ; tests/ → planner dir
-(use-modules (playnet planner knowledge catalogues eco))
+(use-modules (playnet solve engine)
+             (playnet solve compile)
+             (playnet solve solver))   ; tests/ → planner dir
+(use-modules (playnet knowledge catalogues eco))
 
 (define ocean-co2-tip (/ 0.05 0.00027))  ; aragonite headroom 0.05 Ω / (Ω per GtCO2)  ≈ 185.2 — the BINDING wall
 (define warm-co2-tip  (/ 0.2  0.00045))  ; warming headroom 0.2°C / TCRE              ≈ 444.4 — slacker

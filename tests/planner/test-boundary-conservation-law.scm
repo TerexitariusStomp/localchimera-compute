@@ -14,8 +14,8 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module -L tests tests/planner/test-boundary-conservation-law.scm
 
-(use-modules (playnet test harness) (playnet planner knowledge recipes federation-demo) (playnet planner scope root) (srfi srfi-1) (playnet planner scope live)
-             (playnet planner knowledge recipes federation-demo)
+(use-modules (playnet test harness) (playnet knowledge recipes federation-demo) (playnet scope root) (srfi srfi-1) (playnet scope live)
+             (playnet knowledge recipes federation-demo)
              (goblins) (srfi srfi-1))
 
 (define (record root sid demand)

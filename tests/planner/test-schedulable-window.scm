@@ -19,12 +19,12 @@
 ;;; Run:  guile --no-auto-compile -q -L module tests/planner/test-schedulable-window.scm
 
 (use-modules (srfi srfi-1) (ice-9 format)
-             (playnet planner vf schemas) (playnet planner beyond schedules)
-             (playnet planner facts availability)
-             (playnet planner facts agent-time)
-             (playnet planner knowledge dsl shorthand)
-             (playnet planner pools availability-pool)
-             ((playnet planner solve engine) #:select (declare-world! agent-window-hours)))
+             (playnet vf schemas) (playnet vf beyond schedules)
+             (playnet vf facts availability)
+             (playnet vf facts agent-time)
+             (playnet knowledge dsl shorthand)
+             (playnet pools availability-pool)
+             ((playnet solve engine) #:select (declare-world! agent-window-hours)))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

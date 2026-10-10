@@ -15,18 +15,18 @@
 ;;;                        #:demand …))
 
 (define-module (playnet test scope)
-  #:use-module (playnet planner vf schemas)
+  #:use-module (playnet vf schemas)
   #:use-module (srfi srfi-1)
-  #:use-module (playnet planner knowledge dsl world)
-  #:use-module (playnet planner knowledge dsl shorthand)
+  #:use-module (playnet knowledge dsl world)
+  #:use-module (playnet knowledge dsl shorthand)
   #:use-module ((playnet test harness) #:select (^mock))
   #:use-module (goblins)
   #:use-module (srfi srfi-1)
   #:re-export (^mock
                rp* out* wk* use* consume* spec* er holding person* org* place*
                weekday-window all-week-window hours-of)
-  #:use-module ((playnet planner facts parts) #:select (part->string))
-  #:use-module ((playnet planner observation account) #:select (claim-commitment))
+  #:use-module ((playnet vf facts parts) #:select (part->string))
+  #:use-module ((playnet observation account) #:select (claim-commitment))
   #:export (mock-scope mock-scope-root mock-world record-work! push-on plan-claim!))
 
 ;; ── the plan's claim, stated by a fixture ───────────────────────────────────
@@ -65,7 +65,7 @@
       0.0))
 
 ;; the message-table actor is the harness's ((^mock bcom `((msg . proc) …)));
-;; the record shorthands are (playnet planner knowledge dsl shorthand)'s — both
+;; the record shorthands are (playnet knowledge dsl shorthand)'s — both
 ;; re-exported here so a suite importing this module reads ONE binding each
 
 ;; the stores a <world> answers from — every read plan-scope makes, nothing

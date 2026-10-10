@@ -32,10 +32,10 @@
 ;;; Run: guile tests/planner/test-decomposition-invariance.scm
 
 (use-modules (playnet test planner prelude)
-             (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner vf schemas)
-             (playnet planner knowledge dsl shorthand)
+             (playnet solve engine)
+             (playnet solve compile)
+             (playnet vf schemas)
+             (playnet knowledge dsl shorthand)
              (srfi srfi-1)
              (ice-9 format))
 

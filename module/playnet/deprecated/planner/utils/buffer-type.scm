@@ -1,7 +1,7 @@
 ;;; buffer-type.scm — Buffer type classification from resource tags
 
 (define-module (playnet deprecated planner utils buffer-type)
-  #:use-module (playnet planner vf schemas)
+  #:use-module (playnet vf schemas)
   #:export (*buffer-types* *tier-priority* *zone-ord* *response-times*
             buffer-type-from-tags get-response-time composite-buffer-priority
             get-buffer-type)

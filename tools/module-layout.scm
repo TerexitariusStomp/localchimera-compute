@@ -67,7 +67,7 @@
  (stays "indexes" 5 "the membership index and the VF query facade")
  (stays "execution" 5 "execution alerts, the scope's reactive execution, and capacity-managed execution")
  (stays "ddmrp" 5 "the buffer planner (DDMRP), a family beside the ValueFlows core: its records, buffer algorithms, the three buffer stores and the execution monitors")
- (tier "planner/ddmrp/records" 1 "the family's vocabulary: nine record types a recipe or a specification may state")
+ (tier "ddmrp/records" 1 "the family's vocabulary: nine record types a recipe or a specification may state")
 
  ;; ── rank 6 ──
  (stays "pools" 6 "what rises through the scope tree: the folds of readings, voice, credit, labour, desire, and the labour pool the labour fold stands on")
@@ -102,13 +102,6 @@
  (stays "deprecated" #f "retired code")
 
  ;; ── where today's files belong (codebase-layout.md §3–§4, §7) ──
- ;; the planner, shifted: every directory one level up, the vocabulary under vf/
- (from "planner" "")
- (from "planner/vf" "vf")
- (from "planner/facts" "vf/facts")
- (from "planner/formulas" "vf/formulas")
- (from "planner/beyond" "vf/beyond")
- (from "planner/aggregation" "vf/aggregation")
  ;; the substrate
  (file "utils/repl-client" #f)            ; a tool: tools/ of the repository
  (file "utils/ts-emit" #f)                ; a tool: tools/ of the repository

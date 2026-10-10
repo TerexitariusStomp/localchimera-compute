@@ -25,7 +25,7 @@
 
 (use-modules (srfi srfi-1)
              (goblins utils hashmap)
-             (playnet planner federation iteration))
+             (playnet federation iteration))
 
 
 ;; ═════════════════════════════════════════════════════════════════════════

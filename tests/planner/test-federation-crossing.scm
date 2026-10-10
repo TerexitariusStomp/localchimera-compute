@@ -25,10 +25,10 @@
 ;;; Run:  guile --no-auto-compile -q -L module tests/planner/test-federation-crossing.scm
 
 (use-modules (playnet test harness)
-             (playnet planner federation async)
-             (playnet planner solve admm-link)
-             ((playnet planner solve engine) #:select (make-boundary-oracle solve-consensus solve-decomposed))
-             (playnet planner solve solver)
+             (playnet federation async)
+             (playnet solve admm-link)
+             ((playnet solve engine) #:select (make-boundary-oracle solve-consensus solve-decomposed))
+             (playnet solve solver)
              (srfi srfi-1) (ice-9 format))
 
 (load (string-append (dirname (current-filename)) "/federation-crossing-fixture.scm"))

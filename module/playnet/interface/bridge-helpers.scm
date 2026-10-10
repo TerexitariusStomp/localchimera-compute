@@ -37,7 +37,7 @@
   #:use-module (playnet interface channel-manager)
   #:use-module (playnet interface org-stub)
   #:use-module (playnet interface flow)
-  #:use-module (playnet planner scope root)
+  #:use-module (playnet scope root)
   #:export (build-local-channel-mgr
             build-remote-channel-mgr
             dispatch-to-channel!

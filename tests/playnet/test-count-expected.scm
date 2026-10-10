@@ -13,13 +13,13 @@
 (add-to-load-path "module")
 (use-modules (playnet test harness)
              (goblins) (goblins persistence-store memory) (goblins utils hashmap)
-             (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1) (playnet planner doors service)
-             ((playnet planner formulas counting) #:select (count-expected count-figure))
+             (playnet scope root) (playnet vf schemas) (srfi srfi-1) (playnet doors service)
+             ((playnet vf formulas counting) #:select (count-expected count-figure))
              ((playnet utils keyed-id) #:select (keyed-id))
              (srfi srfi-1))
 (use-modules ((playnet wire rows) #:select (plain-reply)))   ; a door's rows, read back as alists
 
-(define cache-solve! (@@ (playnet planner doors service) cache-solve!))
+(define cache-solve! (@@ (playnet doors service) cache-solve!))
 
 (define store (make-memory-store))
 (define-values (vat scope)
@@ -123,7 +123,7 @@
 (with-vat vat ($ ($ scope 'agent-store) 'add-agent (make-agent #:id "ada" #:type 'person
                                                                #:name "ada" #:classified-as '())))
 ;; the plan's vocabulary: a recipe makes jam and none uses it, so a kept jar is its keeper's own
-((@ (playnet planner solve engine) declare-world!)
+((@ (playnet solve engine) declare-world!)
  #:spans '((0 "2026-09-28" "2026-09-28"))
  #:templates (list (list "preserve" '(("jam" . 1.0)) '() 0.0 '() '() '() '() '())))
 (display "\n── 6. a person's stock is a lot of the good they own ──\n")
@@ -175,7 +175,7 @@
 (check-pred "past the range, the excess is what the ledger was off by" (near? (mean-abs "cumin") 3.0))
 ;;; ── 9. a count that moves a stock marks the plan stale ───────────────────
 (display "\n── 9. a count that moves the stock marks the plan stale ──\n")
-(define %stale (@@ (playnet planner doors service) %stale-solves))
+(define %stale (@@ (playnet doors service) %stale-solves))
 (define (stale?) (hash-ref %stale "org:commune" #f))
 (seed! "pantry/thyme" "thyme" 10.0 "org:commune" "place:pantry")
 (plan! '())                                   ; a solve lands: the plan is fresh

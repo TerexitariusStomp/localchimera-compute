@@ -10,9 +10,9 @@
 
 (use-modules (playnet test harness)
              (srfi srfi-11)
-             (playnet planner scope live)
+             (playnet scope live)
              (playnet test planner bread)
-             ((playnet planner solve engine) #:select (inert-caps))
+             ((playnet solve engine) #:select (inert-caps))
              (goblins) (goblins vat))
 
 (define (solve caps)

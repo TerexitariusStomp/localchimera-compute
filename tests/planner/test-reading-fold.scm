@@ -22,10 +22,10 @@
 ;;; Run:  guile -q -L module tests/planner/test-reading-fold.scm
 
 (use-modules ((playnet utils units) #:select (%count-unit)))
-(use-modules (playnet test harness) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
-             (playnet planner pools reading-fold)
-             (playnet planner aggregation fold-node)
-             ((playnet planner solve engine) #:select (observed-shocks))
+(use-modules (playnet test harness) (playnet scope root) (playnet vf schemas) (srfi srfi-1)
+             (playnet pools reading-fold)
+             (playnet vf aggregation fold-node)
+             ((playnet solve engine) #:select (observed-shocks))
              (goblins) (goblins utils hashmap) (srfi srfi-1))
 
 (define (approx= a b) (< (abs (- a b)) 1e-9))

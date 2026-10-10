@@ -8,7 +8,7 @@
 
 (use-modules (playnet test harness)
              (playnet credentials commitments) (playnet keri acdc) (playnet governance debts) (playnet keri acdc) (playnet keri acdc-store)
-             (playnet planner scope root) (srfi srfi-1)
+             (playnet scope root) (srfi srfi-1)
              ((playnet monero specs) #:select (bootstrap-monero-resource! bootstrap-external-asset!))
              (srfi srfi-1)
              (goblins) (goblins vat))

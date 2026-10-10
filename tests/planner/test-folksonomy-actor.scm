@@ -10,8 +10,8 @@
 ;;;         -l tests/planner/test-folksonomy-actor.scm
 
 (use-modules (playnet test harness)
-             (playnet planner folksonomy actor)
-             (playnet planner folksonomy graph)
+             (playnet folksonomy actor)
+             (playnet folksonomy graph)
              (goblins)
              (srfi srfi-1))
 

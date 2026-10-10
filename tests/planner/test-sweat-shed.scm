@@ -23,17 +23,17 @@
 (let ((self (find file-exists? (filter string? (cons (false-if-exception (current-filename))
                                                      (command-line))))))
   (when self (add-to-load-path (string-append (dirname self) "/../../module"))))
-(use-modules (playnet planner knowledge catalogues subsistence))
+(use-modules (playnet knowledge catalogues subsistence))
 ;; the sheds themselves. Each imports its own generated derived file, which is
 ;; where *<shed>-derived-warm-quarter-degc* comes from. doon-valley is a MODULE
 ;; and belongs in the import above, not in this list: a filename inside a data
 ;; list reaches `load` without any scanner seeing it, and loading a module that
 ;; way captures the rest of the caller into its namespace.
-(use-modules (playnet planner knowledge worlds doon-valley))
-(use-modules (playnet planner knowledge worlds doon-shed)
-             (playnet planner knowledge worlds cascadia)
-             (playnet planner knowledge worlds berlin)
-             (playnet planner knowledge worlds bay-area))
+(use-modules (playnet knowledge worlds doon-valley))
+(use-modules (playnet knowledge worlds doon-shed)
+             (playnet knowledge worlds cascadia)
+             (playnet knowledge worlds berlin)
+             (playnet knowledge worlds bay-area))
 
 (define pass 0) (define fail 0)
 (define (ok? name p)

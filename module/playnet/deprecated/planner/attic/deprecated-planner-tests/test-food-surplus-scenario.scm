@@ -67,7 +67,7 @@
 (display "\n=== Seed resource specs ===\n")
 
 ;; Specs and the collect-and-sort recipe live in
-;; module/playnet/planner/knowledge/recipes/food-surplus.scm — imported
+;; module/playnet/knowledge/recipes/food-surplus.scm — imported
 ;; via (use-modules (playnet deprecated planner)). Local aliases keep the rest of
 ;; the test reading naturally.
 (define produce-spec         food-surplus-produce-spec)
@@ -104,7 +104,7 @@
   ;; ── Food Runners: logistics coordinator ──
   ;; Has the collection recipe + logistics resources.
   ;; Recipe (specs + processes + flows) lives in
-  ;; module/playnet/planner/knowledge/recipes/food-surplus.scm.
+  ;; module/playnet/knowledge/recipes/food-surplus.scm.
   (let ((rs ($ food-runners 'recipe-store))
         (obs ($ food-runners 'observer)))
     (seed-food-surplus-recipe rs)
@@ -615,7 +615,7 @@
 (display "\n=== Section D: 3-process recipe ===\n")
 
 ;; 3-step recipe (specs + processes + flows) lives in
-;; module/playnet/planner/knowledge/recipes/food-surplus.scm.
+;; module/playnet/knowledge/recipes/food-surplus.scm.
 (with-vat vat
   (let ((rs ($ food-runners 'recipe-store)))
     (seed-food-surplus-3step-recipe rs)

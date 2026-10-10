@@ -8,7 +8,7 @@
 ;;; (docs/valueflows/assets/all_vf.TTL, "# Actions"; prose in
 ;;; docs/valueflows/concepts/actions.md) is the authority. This test PARSES that
 ;;; file at run time and compares every (action, property) cell with
-;;; `*action-definitions*` (module/playnet/planner/vf/schemas.scm) through the
+;;; `*action-definitions*` (module/playnet/vf/schemas.scm) through the
 ;;; schema accessors, one check per cell. A failing check is a real divergence
 ;;; from the published vocabulary.
 ;;;
@@ -45,7 +45,7 @@
 ;;;     guile --no-auto-compile -q -L module tests/planner/vf-conformance-table-test.scm
 
 (use-modules (playnet test harness)
-             (playnet planner vf schemas) (playnet planner formulas actions)
+             (playnet vf schemas) (playnet vf formulas actions)
              (srfi srfi-1) (srfi srfi-13))
 
 (use-modules (playnet test vf-ttl))

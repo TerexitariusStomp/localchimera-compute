@@ -15,13 +15,13 @@
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-doon-valley-robust.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner vf schemas) (playnet planner beyond scenario)
-             (playnet planner knowledge dsl shorthand))
-;; engine/robust.scm arrives with the engine — (playnet planner solve engine) loads it into
+(use-modules (playnet solve engine)
+             (playnet vf schemas) (playnet vf beyond scenario)
+             (playnet knowledge dsl shorthand))
+;; engine/robust.scm arrives with the engine — (playnet solve engine) loads it into
 ;; itself and exports its names, so the load that stood here was a second copy
 ;; of the same text into this module (retired with the engine-as-module arc).
-(use-modules (playnet planner knowledge worlds doon-valley))
+(use-modules (playnet knowledge worlds doon-valley))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

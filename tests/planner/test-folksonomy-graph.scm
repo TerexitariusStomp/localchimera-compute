@@ -9,7 +9,7 @@
 ;;;         -l tests/planner/test-folksonomy-graph.scm
 
 (use-modules (playnet test harness)
-             (playnet planner folksonomy graph)
+             (playnet folksonomy graph)
              (srfi srfi-1))
 
 (define (assq-ref alist key) (let ((p (assq key alist))) (and p (cdr p))))

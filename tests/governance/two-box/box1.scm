@@ -10,7 +10,7 @@
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet governance witness-relay)
              (playnet credentials work) (playnet keri acdc) (playnet keri first-person credentials) (playnet identity enrollment) (playnet keri acdc) (playnet keri acdc-store) (playnet keri first-person credentials) (playnet keri first-person predicates)
-             (playnet planner vf schemas) (srfi srfi-1)
+             (playnet vf schemas) (srfi srfi-1)
              (goblins)
              (ice-9 format)
              (ice-9 rdelim)

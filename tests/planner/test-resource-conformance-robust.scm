@@ -15,8 +15,8 @@
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test scope)) ; mock-scope-root
 (use-modules (playnet test harness)
-             (playnet planner vf schemas) (playnet planner beyond scenario)
-             (playnet planner scope live)
+             (playnet vf schemas) (playnet vf beyond scenario)
+             (playnet scope live)
              (goblins) (goblins vat) (srfi srfi-1))
 
 (define holdings (list (er "res:conv-oven" "convection-oven" "commune" #:qty 1 #:unit %count-unit)))

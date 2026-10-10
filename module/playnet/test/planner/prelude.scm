@@ -16,8 +16,8 @@
 (define-module (playnet test planner prelude)
   #:use-module (srfi srfi-1)
   #:use-module (ice-9 format)
-  #:use-module (playnet planner solve engine)
-  #:use-module (playnet planner solve solver)
+  #:use-module (playnet solve engine)
+  #:use-module (playnet solve solver)
   #:export (fixture-file planner-file check check-done Vof)
   #:replace (solve-located))
 

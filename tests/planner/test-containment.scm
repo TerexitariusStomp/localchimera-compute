@@ -15,9 +15,9 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner vf schemas))
+(use-modules (playnet solve engine)
+             (playnet solve compile)
+             (playnet vf schemas))
 
 ;; ── (1) store recipe over a temporal arc; spoilage = a consume of the good ─────────
 ;; (the relocation and the spoilage are SEPARATE flow entries on milk@0 — the solver sums them.)

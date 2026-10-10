@@ -30,11 +30,11 @@
 ;;; Run: guile -L module tests/planner/test-berlin-garden-notice.scm
 
 (use-modules (playnet test planner prelude)
-             (playnet planner solve engine)
-             (playnet planner vf schemas) (playnet planner beyond scenario)
+             (playnet solve engine)
+             (playnet vf schemas) (playnet vf beyond scenario)
              (srfi srfi-1)
              (ice-9 format))
-(use-modules (playnet planner knowledge worlds berlin-gemeinschaftsgaerten))
+(use-modules (playnet knowledge worlds berlin-gemeinschaftsgaerten))
 
 ;; the twelve largest named mapped gardens — 48,630 m² of the 106,558 m² mapped
 (define %gardens (list-head *berlin-gemeinschaftsgaerten* 12))

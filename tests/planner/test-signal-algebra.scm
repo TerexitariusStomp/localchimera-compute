@@ -11,7 +11,7 @@
 ;;;         -l load-all.scm -l tests/test-signal-algebra.scm
 
 (use-modules (playnet test harness))
-(use-modules (playnet planner ddmrp buffers) (playnet planner algorithms signals) (playnet planner scope root) (playnet planner vf schemas) (playnet planner ddmrp records) (playnet utils store-utils) (srfi srfi-11))
+(use-modules (playnet ddmrp buffers) (playnet algorithms signals) (playnet scope root) (playnet vf schemas) (playnet ddmrp records) (playnet utils store-utils) (srfi srfi-11))
 (use-modules (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)

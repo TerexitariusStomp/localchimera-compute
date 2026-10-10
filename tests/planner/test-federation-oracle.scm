@@ -18,10 +18,10 @@
 ;;;
 ;;; Run:  guile -L module/playnet/planner tests/planner/test-federation-oracle.scm
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner vf schemas)
-             (playnet planner knowledge dsl shorthand))
+(use-modules (playnet solve engine)
+             (playnet solve compile)
+             (playnet vf schemas)
+             (playnet knowledge dsl shorthand))
 
 (define (res spec loc q) (er (string-append spec "@" loc) spec #f #:place loc #:qty q #:unit "kg"))
 (define (place id lat lon) (place* id #:lat lat #:lon lon))

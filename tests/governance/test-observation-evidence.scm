@@ -21,11 +21,11 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness)
-             (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
+             (playnet scope root) (playnet vf schemas) (srfi srfi-1)
              (playnet governance acdc-bridge) (playnet keri acdc) (playnet keri acdc-store)
              (playnet credentials work) (playnet keri acdc)
              ((playnet governance acdc-bridge) #:select (make-credentialing-on-event))
-             (playnet planner observation evidence)
+             (playnet observation evidence)
              (goblins)
              (goblins persistence-store memory)
              (srfi srfi-1))

@@ -16,9 +16,9 @@
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-federation-snapshot.scm
 
 (use-modules ((playnet wire rows) #:select (wire->plain))   ; a door's rows, read back as alists
-             (playnet planner knowledge recipes federation-demo) (playnet planner federation store-registry) (playnet planner scope root) (srfi srfi-1)
-             (playnet planner scope live)
-             (playnet planner doors service)
+             (playnet knowledge recipes federation-demo) (playnet federation store-registry) (playnet scope root) (srfi srfi-1)
+             (playnet scope live)
+             (playnet doors service)
              (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)

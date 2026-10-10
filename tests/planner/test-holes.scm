@@ -9,11 +9,11 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness))
-(use-modules (playnet planner vf schemas))
-(use-modules (playnet planner knowledge dsl shorthand))
-(use-modules (playnet planner knowledge dsl world))
-(use-modules (playnet planner knowledge dsl holes))
-(use-modules ((playnet planner knowledge recipes store) #:select (^recipe-store)))
+(use-modules (playnet vf schemas))
+(use-modules (playnet knowledge dsl shorthand))
+(use-modules (playnet knowledge dsl world))
+(use-modules (playnet knowledge dsl holes))
+(use-modules ((playnet knowledge recipes store) #:select (^recipe-store)))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1))
 
 (define vat (spawn-vat))

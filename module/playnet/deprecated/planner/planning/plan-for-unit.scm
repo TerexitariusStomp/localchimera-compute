@@ -30,16 +30,16 @@
 (define-module (playnet deprecated planner planning plan-for-unit)
   #:use-module (goblins)
   #:use-module (playnet deprecated planner algorithms netting)
-  #:use-module (playnet planner vf schemas)
-  #:use-module (playnet planner beyond lot)
-  #:use-module (playnet planner ddmrp records)
-  #:use-module (playnet planner ddmrp buffers)
+  #:use-module (playnet vf schemas)
+  #:use-module (playnet vf beyond lot)
+  #:use-module (playnet ddmrp records)
+  #:use-module (playnet ddmrp buffers)
   #:use-module (playnet deprecated planner algorithms dependent-demand)
   #:use-module (playnet deprecated planner algorithms dependent-supply)
   #:use-module (playnet deprecated planner algorithms shortest-path)
   #:use-module (playnet utils store-utils)
-  #:use-module (playnet planner observation observer)
-  #:use-module (playnet planner algorithms signals)
+  #:use-module (playnet observation observer)
+  #:use-module (playnet algorithms signals)
   #:export (*class-order* extract-demands extract-supply rank-supply-by-distance
             classify-demand sort-classified block-a ctx-dependent-demand block-b
             *max-replenishment-passes* block-c pass-1b debts->deficit-signals

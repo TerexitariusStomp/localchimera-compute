@@ -11,7 +11,7 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness)
-             (playnet planner vf schemas) (srfi srfi-1) (srfi srfi-11) (playnet planner scope live) (playnet planner vf schemas)
+             (playnet vf schemas) (srfi srfi-1) (srfi srfi-11) (playnet scope live) (playnet vf schemas)
              (playnet test planner bread)
              (goblins) (goblins vat)
              (srfi srfi-1))

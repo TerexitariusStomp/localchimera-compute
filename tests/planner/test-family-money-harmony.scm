@@ -1,7 +1,7 @@
 ;;; test-family-money-harmony.scm — a family spreads a scarce purse across its
 ;;; members' needs by harmony, each need entering as its KIND.
 ;;;
-;;; (playnet planner doors family solve): four people — Alice, Bob, Christine, Dennis — and the
+;;; (playnet doors family solve): four people — Alice, Bob, Christine, Dennis — and the
 ;;; household they share state a week of needs as they ARE, each with a kind
 ;;; (floor | held | des) and an attached voice — the row's total tension mass.
 ;;; The purse is a finite stock of euros; income is the household's own Pfand
@@ -23,7 +23,7 @@
 ;;; Run:  guile --no-auto-compile -L module tests/planner/test-family-money-harmony.scm
 
 (use-modules (playnet test harness) (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner doors family solve))
+(use-modules (playnet doors family solve))
 
 
 (define NEEDS %family-demo-needs)

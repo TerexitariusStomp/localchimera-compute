@@ -16,7 +16,7 @@
 ;;; Run:  guile -L module/playnet/planner tests/planner/test-inspection-credential.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner formulas cadence) (playnet planner facts validity))
+(use-modules (playnet vf formulas cadence) (playnet vf facts validity))
 
 ;; INDEPENDENT oracle: argmin over [0,1] of J(a) = ℓa + D·e^{−κa} (convex). Non-circular
 ;; — the closed form is nowhere plugged into itself.

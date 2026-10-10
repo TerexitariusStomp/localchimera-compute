@@ -9,9 +9,9 @@
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness)
-             (playnet planner vf schemas) (srfi srfi-11)
-             (playnet planner scope live)
-             (playnet planner plan store)
+             (playnet vf schemas) (srfi srfi-11)
+             (playnet scope live)
+             (playnet plan store)
              (playnet test planner bread)
              (goblins) (goblins vat)
              (srfi srfi-1))

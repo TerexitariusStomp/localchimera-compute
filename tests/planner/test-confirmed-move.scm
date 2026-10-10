@@ -9,12 +9,12 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-confirmed-move.scm
 
-(use-modules ((playnet planner formulas flows) #:select (row-figure))
+(use-modules ((playnet vf formulas flows) #:select (row-figure))
              (playnet test scope)
              (playnet test harness)
              (playnet test books)
-             (playnet planner observation observer) (playnet planner vf schemas) (srfi srfi-1)
-             (playnet planner scope live)
+             (playnet observation observer) (playnet vf schemas) (srfi srfi-1)
+             (playnet scope live)
              (goblins) (goblins vat)
              (srfi srfi-1))
 
@@ -82,8 +82,8 @@
 ;; The engine's own located solve carries 100 L from A to B (stock at A, demand at B);
 ;; plan->material emits the pickup and dropoff rows, and enacting them against an observer that
 ;; holds the same crate must conserve the spec and land the water at B.
-(use-modules (playnet planner solve engine) (playnet planner solve compile) (playnet planner solve solver))
-(define E (resolve-module '(playnet planner solve engine)))
+(use-modules (playnet solve engine) (playnet solve compile) (playnet solve solver))
+(define E (resolve-module '(playnet solve engine)))
 (declare-world! #:places '(("A" 0.0 0.0) ("B" 0.0 0.05)) #:templates '() #:movable '("water"))
 (hash-set! *init* (lg "water" (cell "A" 0)) 100.0)
 (hash-set! *demand* (lg "water" (cell "B" 0)) 30.0)

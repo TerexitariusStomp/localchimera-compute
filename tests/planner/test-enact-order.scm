@@ -11,12 +11,12 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-enact-order.scm
 
-(use-modules ((playnet planner formulas flows) #:select (row-figure))
+(use-modules ((playnet vf formulas flows) #:select (row-figure))
              (playnet test harness)
              (playnet test books)
-             (playnet planner vf schemas) (srfi srfi-1) (srfi srfi-11)
-             (playnet planner scope live)
-             (playnet planner solve engine) (playnet planner solve compile) (playnet planner solve solver)
+             (playnet vf schemas) (srfi srfi-1) (srfi srfi-11)
+             (playnet scope live)
+             (playnet solve engine) (playnet solve compile) (playnet solve solver)
              (goblins) (goblins vat) (goblins persistence-store memory) (goblins utils hashmap)
              (srfi srfi-1))
 
@@ -34,7 +34,7 @@
 (hash-set! *demand* (lg "meal" (cell "B" 0)) 10.0)
 (hash-set! *init* (lg "soil" (cell "A" 0)) 5.0)
 (hash-set! *demand* (lg "food" (cell "A" 0)) 20.0)
-(define E (resolve-module '(playnet planner solve engine)))
+(define E (resolve-module '(playnet solve engine)))
 (define planned
   (call-with-values build-located
     (lambda (forms labform ncol cols goods raws idx)

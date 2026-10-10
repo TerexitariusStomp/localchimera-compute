@@ -26,11 +26,11 @@
 ;;; Run: guile -L module tests/planner/test-berlin-festival.scm
 
 (use-modules (playnet test planner prelude)
-             (playnet planner solve engine)
-             (playnet planner vf schemas) (playnet planner beyond scenario)
+             (playnet solve engine)
+             (playnet vf schemas) (playnet vf beyond scenario)
              (srfi srfi-1)
              (ice-9 format))
-(use-modules (playnet planner knowledge worlds berlin-baumscheiben))
+(use-modules (playnet knowledge worlds berlin-baumscheiben))
 
 ;; ── the ground: real pit counts per Bezirk, pooled at one festival place ──────
 ;; (intra-Berlin transport is out of scope; the districts stay distinguishable by

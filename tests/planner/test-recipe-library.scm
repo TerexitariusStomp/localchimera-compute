@@ -8,8 +8,8 @@
 (use-modules (playnet test scope)) ; mock-scope-root
 (use-modules (playnet test harness)
              (srfi srfi-1)
-             (playnet planner scope live)
-             (playnet planner knowledge dsl recipe-library)
+             (playnet scope live)
+             (playnet knowledge dsl recipe-library)
              (playnet test planner bread)   ; bread-defs · bread-plain-resources · bread-plain-agents · bread-spatials
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))

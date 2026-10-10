@@ -13,11 +13,11 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-bills.scm
 
-(use-modules (playnet test harness) (playnet planner knowledge recipes berlin-food-seed) (playnet planner scope root) (playnet planner solve compile) (srfi srfi-1) (playnet planner scope live)
-             (playnet planner solve engine) (playnet planner solve compile) (playnet planner solve solver)
+(use-modules (playnet test harness) (playnet knowledge recipes berlin-food-seed) (playnet scope root) (playnet solve compile) (srfi srfi-1) (playnet scope live)
+             (playnet solve engine) (playnet solve compile) (playnet solve solver)
              (goblins) (goblins vat)
              (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner knowledge recipes berlin-food-seed))
+(use-modules (playnet knowledge recipes berlin-food-seed))
 ;; A period here is a WEEK: the seeded chain names its weekdays, and this plan is one period over all of them.
 (set-period-length! 1.0 "week")
 

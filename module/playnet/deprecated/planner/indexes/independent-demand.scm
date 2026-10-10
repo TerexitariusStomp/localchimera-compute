@@ -1,7 +1,7 @@
 ;;; independent-demand.scm — Demand index from open intents
 
 (define-module (playnet deprecated planner indexes independent-demand)
-  #:use-module (playnet planner vf schemas)
+  #:use-module (playnet vf schemas)
   #:use-module (playnet utils store-utils)
   #:export (build-independent-demand-index query-demand-by-spec query-demand-by-action
             query-demand-by-scope query-open-demands get-total-demand-quantity)

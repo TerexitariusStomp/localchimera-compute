@@ -1,14 +1,14 @@
 ;;; docs/dev-scope.sexp — the development scope's people.
 ;;;
-;;; One datum: a list of people, in module/playnet/planner/knowledge/
+;;; One datum: a list of people, in module/playnet/knowledge/
 ;;; recipes/dev.scm's own shape. Each states an ID and the HOURS they give
 ;;; playnet's own development in a week — the one number the plan
-;;; (module/playnet/planner/dev/plan.scm) weighs every want against.
+;;; (module/playnet/dev/plan.scm) weighs every want against.
 ;;; AREAS narrows the areas whose work they take (`all`, the default, is
 ;;; every area the week's issues name); ROLES narrows the meeting roles
 ;;; they take (`all` by default for a person, none for an agent, unless
 ;;; stated); KIND `agent` marks a machine — no body to feed, no seat at the
-;;; meeting, and it never earns credit (module/playnet/planner/bridge/
+;;; meeting, and it never earns credit (module/playnet/bridge/
 ;;; dev-ledger.scm books its work to a human, or not at all); DID, when
 ;;; stated, is the person's Radicle identity, read by tools/dev-loop-
 ;;; close.scm to credit a solved issue to its assignee when no commitment

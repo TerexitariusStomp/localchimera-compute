@@ -18,11 +18,11 @@
 ;;;   harmony function. See make-harmony-level-fn below.
 
 (define-module (playnet deprecated planner utils demand-priority)
-  #:use-module (playnet planner vf schemas)
+  #:use-module (playnet vf schemas)
   #:use-module (goblins)
   #:use-module (srfi srfi-1)
   #:use-module (playnet deprecated planner utils buffer-type)
-  #:use-module (playnet planner ddmrp buffers)
+  #:use-module (playnet ddmrp buffers)
   #:export (*default-priority* default-priority-fn fact-matches? make-priority-fn
             *default-harmony-level* harmony-level-from-facts make-harmony-level-fn)
   #:use-module (srfi srfi-1))

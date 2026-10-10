@@ -6,7 +6,7 @@
 ;;;        -l load-all.scm -l tests/test-federation-membership.scm
 
 (use-modules (playnet test harness))
-(use-modules (playnet planner indexes membership) (playnet planner scope root) (playnet planner vf schemas))
+(use-modules (playnet indexes membership) (playnet scope root) (playnet vf schemas))
 (use-modules (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)

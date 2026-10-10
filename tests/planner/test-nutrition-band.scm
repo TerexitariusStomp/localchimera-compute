@@ -26,11 +26,11 @@
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-nutrition-band.scm
 
 (use-modules (playnet test planner prelude)
-             (playnet planner solve engine)
-             (playnet planner vf schemas)
+             (playnet solve engine)
+             (playnet vf schemas)
              (srfi srfi-1)
              (ice-9 format))
-(use-modules (playnet planner knowledge catalogues subsistence))
+(use-modules (playnet knowledge catalogues subsistence))
 
 (define RDA 1500.0) (define UL 2300.0) (define PER-MEAL 800.0) (define WANT 5.0)
 

@@ -7,9 +7,9 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
-(use-modules (playnet planner knowledge recipes dwelling) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
-(use-modules (playnet planner doors service))
-(use-modules (playnet planner knowledge catalogues substances))
+(use-modules (playnet knowledge recipes dwelling) (playnet scope root) (playnet vf schemas) (srfi srfi-1))
+(use-modules (playnet doors service))
+(use-modules (playnet knowledge catalogues substances))
 (use-modules (goblins)
              (goblins persistence-store memory)
              (srfi srfi-1))

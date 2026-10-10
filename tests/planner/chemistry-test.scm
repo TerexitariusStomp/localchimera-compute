@@ -6,11 +6,11 @@
 ;;; Run:  guile --no-auto-compile -q -L module -l tests/planner/chemistry-test.scm
 
 (use-modules ((playnet utils units) #:select (%count-unit)))
-(use-modules ((playnet planner knowledge catalogues subsistence) #:select (shed-rain-mm-day))
-             ((playnet planner knowledge dsl shorthand) #:select (consume*))
+(use-modules ((playnet knowledge catalogues subsistence) #:select (shed-rain-mm-day))
+             ((playnet knowledge dsl shorthand) #:select (consume*))
              (playnet test harness)
-             (playnet planner knowledge catalogues substances)
-             ((playnet planner vf schemas) #:select (recipe-flow? recipe-flow-resource-quantity measure-has-numerical-value measure-has-unit)) ((playnet planner formulas actions) #:select (*stock-moving-actions* *adjustment-actions* input-action? output-action?))
+             (playnet knowledge catalogues substances)
+             ((playnet vf schemas) #:select (recipe-flow? recipe-flow-resource-quantity measure-has-numerical-value measure-has-unit)) ((playnet vf formulas actions) #:select (*stock-moving-actions* *adjustment-actions* input-action? output-action?))
              (srfi srfi-1))
 
 (define (~= a b) (and (number? a) (number? b) (< (abs (- a b)) 1e-2)))

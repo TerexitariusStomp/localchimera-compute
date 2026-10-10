@@ -12,7 +12,7 @@
         (string-append (or (getenv "TMPDIR") "/tmp") "/pn-personhood-flow-" (number->string (getpid))))
 
 (use-modules (playnet test harness)
-             (playnet planner scope root) (srfi srfi-1) (playnet planner doors service)
+             (playnet scope root) (srfi srfi-1) (playnet doors service)
              (playnet governance attestation-ceremony) (playnet identity enrollment) (playnet governance scope) (playnet governance service) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri first-person credentials) (playnet keri first-person predicates)
              ((playnet governance attestation-ceremony) #:select (*attestation-ceremonies* land-witness-attestation!))
              ((playnet keri citizen-sig)

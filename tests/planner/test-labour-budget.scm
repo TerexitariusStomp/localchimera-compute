@@ -12,10 +12,10 @@
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness)
-             (playnet planner vf schemas) (playnet planner beyond schedules)
-             (playnet planner federation uc-matching)
-             (playnet planner pools availability-pool)
-             (playnet planner federation plan-bundle)
+             (playnet vf schemas) (playnet vf beyond schedules)
+             (playnet federation uc-matching)
+             (playnet pools availability-pool)
+             (playnet federation plan-bundle)
              (goblins utils hashmap)
              (srfi srfi-1))
 
@@ -31,7 +31,7 @@
     (car (apply greedy-deploy (list prop) `(("prop-1" ,@intents)) '(("prop-1" . 1)) pool kw))))
 
 (display "\n── a day is offered once, however many ranges name it ──\n")
-(use-modules ((playnet planner facts availability)
+(use-modules ((playnet vf facts availability)
               #:select (window-weekly-hours window-hours-on-dates)))
 (define (monday . ranges)
   (make-availability-window #f #f (list (make-day-schedule '(monday) (map (lambda (r) (make-time-range (car r) (cdr r))) ranges))) #f))

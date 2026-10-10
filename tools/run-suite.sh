@@ -59,8 +59,8 @@ export XDG_CACHE_HOME
 XDG_CACHE_HOME=$(bash tools/own-ccache.sh)
 
 # the hot roots: everything the planner+governance suites load through
-guile -L module -c '(use-modules (playnet planner solve solver) (playnet planner solve engine)
-                                 (playnet planner scope live) (playnet planner doors service)
+guile -L module -c '(use-modules (playnet solve solver) (playnet solve engine)
+                                 (playnet scope live) (playnet doors service)
                                  (playnet governance))' 2>&1 \
   | grep -v "^;;; \|^$" | grep -v "failed to install locale" || true
 

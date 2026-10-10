@@ -12,9 +12,9 @@
 ;;; Run: guile -L module tests/planner/test-legal-service-door.scm
 
 (use-modules (playnet test scope))
-(use-modules (playnet test harness) (playnet planner scope root) (playnet planner vf schemas) (playnet planner doors service)
-             (playnet planner legal registry) (playnet planner legal compliance)
-             (playnet planner knowledge recipes compliance-food)
+(use-modules (playnet test harness) (playnet scope root) (playnet vf schemas) (playnet doors service)
+             (playnet legal registry) (playnet legal compliance)
+             (playnet knowledge recipes compliance-food)
              (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1) (ice-9 format) (ice-9 ftw))
 
 (define packs (string-append (or (getenv "TMPDIR") "/tmp") "/playnet-law-packs-" (number->string (getpid))))

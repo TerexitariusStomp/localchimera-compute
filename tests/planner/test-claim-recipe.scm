@@ -15,9 +15,9 @@
 ;;; Run:  guile -L module tests/planner/test-claim-recipe.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner solve solver))
+(use-modules (playnet solve engine)
+             (playnet solve compile)
+             (playnet solve solver))
 
 (define recipes
   (compile-recipe

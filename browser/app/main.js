@@ -5,7 +5,7 @@
 // the rim and the calendar beside it; both select each other.
 //
 // τ-time features (docs/tau-time.typ), with their ValueFlows reading
-// (module/playnet/planner/vf/schemas.scm):
+// (module/playnet/vf/schemas.scm):
 //   needs   = standing Intents; their bump curves are smooth temporal
 //             expressions (AvailabilityWindow/TimeRange, made continuous)
 //   events  = EconomicEvents (action ∈ the 19 VF actions); `serves` is
@@ -196,7 +196,7 @@ initSpine({
     // a re-shaped tree, same root: keep where you are and redraw it
     redraw: () => { stage.cums = layout(stage.focus.children || []); settle(); },
 }, TAXONOMY, DEMO_DESIRE);
-// events in ValueFlows terms (module/playnet/planner/vf/schemas.scm):
+// events in ValueFlows terms (module/playnet/vf/schemas.scm):
 // each is an EconomicEvent — `action` from the 19 VF actions; `serves`
 // names the standing Intent (a need below) it `satisfies`. Work events
 // are crystallised hours travelling forward around the turn: the chord

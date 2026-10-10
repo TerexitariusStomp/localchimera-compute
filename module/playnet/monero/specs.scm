@@ -35,8 +35,8 @@
 
 (define-module (playnet monero specs)
   #:use-module (goblins)
-  #:use-module (playnet planner observation live-resource)
-  #:use-module (playnet planner vf schemas)
+  #:use-module (playnet observation live-resource)
+  #:use-module (playnet vf schemas)
   #:use-module (playnet monero wallet)
   #:export (xmr-spec
             %xmr-spec-id

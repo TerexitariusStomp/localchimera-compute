@@ -22,10 +22,10 @@
 
 (use-modules (playnet test scope)) ; mock-scope-root
 (use-modules (playnet test harness)
-             (playnet planner vf schemas) (srfi srfi-1)
-             (playnet planner scope live)
+             (playnet vf schemas) (srfi srfi-1)
+             (playnet scope live)
              (playnet test planner bread)
-             (playnet planner doors service)
+             (playnet doors service)
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
 
@@ -91,7 +91,7 @@
   (delete-duplicates (append-map (lambda (kv) (if (string-contains (car kv) "skill-bake") (map car (cdr kv)) '()))
                                  (or (assq-ref alist 'candidates) '()))))
 
-(display "\n── (playnet planner doors service): the solver-offers-first willingness loop ──\n")
+(display "\n── (playnet doors service): the solver-offers-first willingness loop ──\n")
 
 (display "\n  (1) FIELD — `plan` offers a candidate field over all reachable workers\n")
 (check "field substantially meets demand"     (> (assq-ref field 'met) 0.9))

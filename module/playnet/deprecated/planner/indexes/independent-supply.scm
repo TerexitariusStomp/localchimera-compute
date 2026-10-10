@@ -1,9 +1,9 @@
 ;;; independent-supply.scm — Supply index from inventory + scheduled outputs
 
 (define-module (playnet deprecated planner indexes independent-supply)
-  #:use-module (playnet planner vf schemas)
+  #:use-module (playnet vf schemas)
   #:use-module (playnet utils store-utils)
-  #:use-module (playnet planner observation observer)
+  #:use-module (playnet observation observer)
   #:export (build-independent-supply-index query-supply-by-spec
             get-total-supply-quantity)
   #:use-module (srfi srfi-1)

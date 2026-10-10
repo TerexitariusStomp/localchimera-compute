@@ -6,8 +6,8 @@
 ;;; dependence.
 
 (use-modules (playnet test harness))
-(use-modules (playnet planner observation host-facts) (playnet planner scope root) (srfi srfi-1))
-(use-modules ((playnet planner observation facts-sync) #:select (handle-snapshot!)))
+(use-modules (playnet observation host-facts) (playnet scope root) (srfi srfi-1))
+(use-modules ((playnet observation facts-sync) #:select (handle-snapshot!)))
 (use-modules (goblins)
              (goblins persistence-store memory)
              (srfi srfi-1))

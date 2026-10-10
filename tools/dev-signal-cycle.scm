@@ -6,7 +6,7 @@
 ;;; docs/radicle-issues.md's own pre-filing staging board — a second
 ;;; duplicate). Then: sorted open Radicle issues, prio:p0 > p1 > p2 >
 ;;; unlabeled, with no notion of who has the hours. Now: THE WEEK'S PLAN
-;;; (module/playnet/planner/dev/plan.scm) decides — an open issue is
+;;; (module/playnet/dev/plan.scm) decides — an open issue is
 ;;; a want, the box agent's own stated hours and area skills are its
 ;;; capacity, and the rows the plan places on the box are the candidates,
 ;;; first want first. Two sources feed it, in priority order —
@@ -16,10 +16,10 @@
 ;;;      it grows, this queues a triage task: cluster new entries, draft
 ;;;      candidate Radicle issues as 🟡 rows in docs/radicle-issues.md. It
 ;;;      never opens an issue itself and never touches the pool — see
-;;;      module/playnet/planner/dev/priorities.scm's %triage-body for
+;;;      module/playnet/dev/priorities.scm's %triage-body for
 ;;;      the exact brief.
 ;;;   2. The week's plan over open Radicle issues (`rad cob show`/`rad cob
-;;;      list`, via (playnet planner dev rad-issues)) — the rows the plan
+;;;      list`, via (playnet dev rad-issues)) — the rows the plan
 ;;;      places on the box agent, DEV_SCOPE_PATH's own stated hours and
 ;;;      areas (docs/dev-scope.sexp by default; see tools/dev-plan.scm).
 ;;;      When the plan cannot run (no scope declared yet, the solver
@@ -42,13 +42,13 @@
 ;;; ever needs the real "playnet development" commune under `earth`.
 ;;;
 ;;; Publishes to playnet/signals/deficit/<spec-id>, built by `signal-topic`
-;;; from module/playnet/planner/bridge/signal-publisher.scm — the ONE place
+;;; from module/playnet/bridge/signal-publisher.scm — the ONE place
 ;;; the signal topic contract lives, and the same shape server/dev-bridge.scm
 ;;; subscribes to (SIGNAL_TOPIC = playnet/signals/deficit/#).
 ;;;
 ;;; The decision logic (priority ranking, issue→entry shape, the watermark
-;;; gate, the plan itself) is pure and lives in (playnet planner bridge
-;;; dev-priorities) and (playnet planner dev plan) — see
+;;; gate, the plan itself) is pure and lives in (playnet bridge
+;;; dev-priorities) and (playnet dev plan) — see
 ;;; tests/tools/test-dev-priorities.scm and tests/planner/test-dev-world.scm.
 ;;; This script is the I/O shell: shell out to `rad`, read the watermark
 ;;; file, run the plan, book the take, publish.
@@ -70,16 +70,16 @@
 ;;; dev-bridge's cooldown already dampens.
 
 (use-modules (playnet mqtt publish)
-             ((playnet planner bridge signal-publisher)  ; THE topic contract
+             ((playnet bridge signal-publisher)  ; THE topic contract
               #:select (signal-topic))
-             ((playnet planner dev priorities)
+             ((playnet dev priorities)
               #:select (fact-ref fact->entry issues->facts spec-id->oid
                         sort-issue-entries feedback-triage-entry parse-watermark))
-             ((playnet planner dev plan)
+             ((playnet dev plan)
               #:select (read-dev-people seed-dev-scope!
                         plan-dev-week read-dev-plan rows-for row-ref))
-             ((playnet planner dev rad-issues) #:select (rad-issue-pairs))
-             (playnet planner scope root) (srfi srfi-1)
+             ((playnet dev rad-issues) #:select (rad-issue-pairs))
+             (playnet scope root) (srfi srfi-1)
              ((playnet utils paths) #:select (state-file))
              (goblins) (goblins vat)
              (json)

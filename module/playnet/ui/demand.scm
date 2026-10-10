@@ -2,7 +2,7 @@
 ;;;
 ;;; Port of planner/src/lib/components/commune/ResourceDemandCard.svelte.
 ;;; Operates directly on the ValueFlows records defined in
-;;; (playnet planner vf schemas): <resource-specification>, <intent>,
+;;; (playnet vf schemas): <resource-specification>, <intent>,
 ;;; <measure>, <availability-window>, <specific-date-window>.
 ;;;
 ;;; A demand card lists one or more <intent>s under a single
@@ -33,10 +33,10 @@
 (define-module (playnet ui demand)
   #:use-module (srfi srfi-1)
   #:use-module (playnet ui components)        ; fmt-num, str-join
-  #:use-module (playnet planner vf schemas)
-  #:use-module (playnet planner beyond schedules)
+  #:use-module (playnet vf schemas)
+  #:use-module (playnet vf beyond schedules)
   #:use-module (srfi srfi-1); ValueFlows records live here — the
-                                         ; umbrella re-exports (playnet planner
+                                         ; umbrella re-exports (playnet vf
                                          ; schemas), so this keeps working
   #:export (demand-card
             demand-row

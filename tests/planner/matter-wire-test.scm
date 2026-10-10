@@ -9,9 +9,9 @@
 ;;; (via the blake3 dev-test shell — see [[reference_blake3_test_profile]])
 
 (use-modules (playnet test harness)
-             (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
-             (playnet planner doors service)
-             (playnet planner knowledge catalogues substances)
+             (playnet scope root) (playnet vf schemas) (srfi srfi-1)
+             (playnet doors service)
+             (playnet knowledge catalogues substances)
              (goblins)
              (goblins persistence-store memory)
              (srfi srfi-1))

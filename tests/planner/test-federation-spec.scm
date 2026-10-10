@@ -16,7 +16,7 @@
 (use-modules (playnet test harness)
              ((playnet test planner federation-wire-fixture) #:select (fx-identity))
              (playnet governance scope) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig)
-             ((playnet planner federation host) #:select (roster-ends))
+             ((playnet federation host) #:select (roster-ends))
              ((playnet governance sturdyref-credential) #:select (sturdyref-credential-end spec-ready? verified-spec))
              ((playnet gateway federate) #:select (census-credential))
              ((playnet keri acdc) #:select (cred-said cred-schema cred-issuer cred-holder cred-signature

@@ -23,8 +23,8 @@
 ;;; Run:  guile -L module/playnet/planner tests/planner/test-inspection-in-plan.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve solver))
-(use-modules (playnet planner knowledge catalogues conformance))  ; governed barrier steepness
+(use-modules (playnet solve solver))
+(use-modules (playnet knowledge catalogues conformance))  ; governed barrier steepness
 
 (set! *kappa* 1.0)   ; price labour at 1/hour so inspection cost reads directly as ℓ
 

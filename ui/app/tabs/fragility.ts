@@ -2,10 +2,10 @@
 // space as a planetary-boundaries wheel, drawn as a continuous gradient.
 //
 // Each fragility is a possibility-tension of the `frag` kind
-// (module/playnet/planner/formulas/tension-kinds.scm): φ(s) = −w·log(s), where s is the
+// (module/playnet/vf/formulas/tension-kinds.scm): φ(s) = −w·log(s), where s is the
 // normalized slack — 1 at the healthy steady-state s★, 0 at the tipping point
 // (where the tension diverges). We render the real, cited catalogue from
-// module/playnet/planner/knowledge/catalogues/eco.scm (browser/data/snapshots/fragility-snapshot.json,
+// module/playnet/knowledge/catalogues/eco.scm (browser/data/snapshots/fragility-snapshot.json,
 // emitted by tools/emit-fragility-snapshot.scm); the live gateway pushes the
 // same shape over the bus ("fragility").
 //

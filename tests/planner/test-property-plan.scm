@@ -14,8 +14,8 @@
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-property-plan.scm
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness) (playnet test scope)
-             (playnet planner vf schemas) (playnet planner scope live)
-             (playnet planner beyond scenario)
+             (playnet vf schemas) (playnet scope live)
+             (playnet vf beyond scenario)
              (goblins) (goblins utils hashmap) (srfi srfi-1) (ice-9 format))
 (define N 8)
 (define SEED0 1)

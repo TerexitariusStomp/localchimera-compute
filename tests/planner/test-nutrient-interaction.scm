@@ -12,8 +12,8 @@
 ;;; Run:  guile --no-auto-compile -q -L module tests/planner/test-nutrient-interaction.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine) (playnet planner solve compile) (playnet planner solve solver))
-(use-modules (playnet planner knowledge catalogues nutrient-interaction))
+(use-modules (playnet solve engine) (playnet solve compile) (playnet solve solver))
+(use-modules (playnet knowledge catalogues nutrient-interaction))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

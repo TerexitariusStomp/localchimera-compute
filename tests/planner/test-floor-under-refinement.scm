@@ -14,10 +14,10 @@
 
 (use-modules (playnet test harness)
              ((playnet test planner prelude) #:select ())
-             (playnet planner solve engine)
-             (playnet planner vf schemas)
-             (playnet planner knowledge dsl shorthand)
-             (playnet planner knowledge recipes bread-commune-seed)
+             (playnet solve engine)
+             (playnet vf schemas)
+             (playnet knowledge dsl shorthand)
+             (playnet knowledge recipes bread-commune-seed)
              ((playnet utils clock) #:select (now instant->civil))
              (srfi srfi-1))
 

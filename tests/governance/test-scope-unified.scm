@@ -6,7 +6,7 @@
 ;;; conflict detection surfaces overlapping commitments.
 
 (use-modules (playnet test harness))
-(use-modules (playnet planner scope root))
+(use-modules (playnet scope root))
 (use-modules (playnet org endorsement))
 (use-modules (playnet credentials commitments) (playnet credentials membership) (playnet credentials recomposition) (playnet keri acdc) (playnet governance scope) (playnet keri acdc) (playnet keri acdc-store))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap)

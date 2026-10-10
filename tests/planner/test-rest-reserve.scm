@@ -10,11 +10,11 @@
 ;;; Run:  guile --no-auto-compile -q -L module tests/planner/test-rest-reserve.scm
 
 (use-modules (playnet test planner prelude)
-             (playnet planner solve engine)
-             (playnet planner facts availability)
-             (playnet planner facts agent-time)
-             (playnet planner vf schemas)
-             (playnet planner knowledge dsl shorthand)
+             (playnet solve engine)
+             (playnet vf facts availability)
+             (playnet vf facts agent-time)
+             (playnet vf schemas)
+             (playnet knowledge dsl shorthand)
              (srfi srfi-1) (ice-9 format))
 
 (define *pass* 0) (define *fail* 0)
@@ -51,7 +51,7 @@
 (check "N·T is Σ disposable time: 14 h for each of the two, offering or not"
        (near? (assq-ref reserved 'available) 28.0))
 (check "the hours each worker offers sit inside 14 h: Ada's whole day is kept to 14, Bo's eight stand"
-       (let* ((ws (@@ (playnet planner solve engine) *workers*))
+       (let* ((ws (@@ (playnet solve engine) *workers*))
               (hours (lambda (id) (let ((w (find (lambda (w) (equal? (car w) id)) ws))) (and w (cadddr w))))))
          (and (hours "ada") (hours "bo") (near? (hours "ada") 14.0) (near? (hours "bo") 8.0))))
 (check "f reads over the disposable time: f = 1 − spent / 28"
@@ -67,7 +67,7 @@
 (define (worker-hours-of agents id)
   (call-with-values
     (lambda () (plan-from-records '() agents spatials procs flows #:demand '(("bread#town@0" . 4.0)) #:per-agent? #t))
-    (lambda _ (let ((w (find (lambda (w) (equal? (car w) id)) (@@ (playnet planner solve engine) *workers*)))) (and w (cadddr w))))))
+    (lambda _ (let ((w (find (lambda (w) (equal? (car w) id)) (@@ (playnet solve engine) *workers*)))) (and w (cadddr w))))))
 (check "a person who states 23:00–07:00 offers the day less those eight hours: about 16, not 24"
        (near? (worker-hours-of (list nurse) "nurse") (- (* 24.0 (/ 1439.0 1440.0)) 8.0)))
 (check "the same person without the span offers the whole day"

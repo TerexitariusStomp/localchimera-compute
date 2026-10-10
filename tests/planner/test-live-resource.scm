@@ -8,10 +8,10 @@
 ;;;   5. Persistence round-trip
 
 (use-modules (playnet test harness))
-(use-modules (playnet planner observation live-registry) (playnet planner observation live-resource) (playnet planner scope root) (playnet planner vf schemas))
-(use-modules ((playnet planner solve engine)          ; the ingest door, for the
+(use-modules (playnet observation live-registry) (playnet observation live-resource) (playnet scope root) (playnet vf schemas))
+(use-modules ((playnet solve engine)          ; the ingest door, for the
               #:select (declare-world! ingest-stock! *cap* lg cell))  ; live-avail composition check
-             ((playnet planner solve compile) #:select (svc-good)))
+             ((playnet solve compile) #:select (svc-good)))
 (use-modules (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)

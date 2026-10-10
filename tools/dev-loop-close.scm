@@ -10,7 +10,7 @@
 ;;; not only the MQTT fulfilment signal. Booked by whoever the ledger
 ;;; already has committed (a human's own commit-row!, if one took the row
 ;;; first) or by the issue's assignee — box never holds a commitment or a
-;;; work event of its own (module/playnet/planner/dev/ledger.scm's
+;;; work event of its own (module/playnet/dev/ledger.scm's
 ;;; own header: mimir.md's precedent, an AI is a consumed resource, never
 ;;; labour). A merge whose issue is not yet marked solved is reported, not
 ;;; booked: closing the issue on Radicle is the human's word, never
@@ -54,9 +54,9 @@
 (use-modules (playnet mqtt publish)
              ((playnet utils common) #:select (capture non-empty-lines))
              ((playnet utils repl-client) #:select (repl-eval/read))
-             ((playnet planner dev priorities) #:select (spec-id->oid issue-facts fact-ref))
-             ((playnet planner dev rad-issues) #:select (rad-self-rid rad-cob-show))
-             ((playnet planner dev plan) #:select (read-dev-people person-for-did))
+             ((playnet dev priorities) #:select (spec-id->oid issue-facts fact-ref))
+             ((playnet dev rad-issues) #:select (rad-self-rid rad-cob-show))
+             ((playnet dev plan) #:select (read-dev-people person-for-did))
              (json)
              (ice-9 popen)
              (ice-9 rdelim)

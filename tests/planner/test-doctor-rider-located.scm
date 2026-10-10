@@ -22,12 +22,12 @@
 ;;; Run:  guile -L module/playnet/planner module/playnet/planner/doctor-rider-located-test.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner solve solver)
-             (playnet planner vf schemas)
-             (playnet planner knowledge dsl shorthand)
-             ((playnet planner knowledge recipes transport) #:select (mode-recipe)))
+(use-modules (playnet solve engine)
+             (playnet solve compile)
+             (playnet solve solver)
+             (playnet vf schemas)
+             (playnet knowledge dsl shorthand)
+             ((playnet knowledge recipes transport) #:select (mode-recipe)))
 
 
 (define WALK (mode-recipe "walk" #:skill "walk" #:pace 0.15))                                       ; the mover walks: bears "walk", 0.15 h/km (slow)

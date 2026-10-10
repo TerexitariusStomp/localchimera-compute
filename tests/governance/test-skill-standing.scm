@@ -14,8 +14,8 @@
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules ((playnet keri signify) #:select ()))
 (use-modules (playnet test harness))
-(use-modules (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
-(use-modules (playnet planner doors service))
+(use-modules (playnet scope root) (playnet vf schemas) (srfi srfi-1))
+(use-modules (playnet doors service))
 (use-modules (playnet governance acdc-bridge) (playnet keri acdc-store) (playnet keri citizen-sig))
 (use-modules ((playnet governance acdc-bridge)
               #:select (reconstruct-skill-attestation skill-attestation-standing

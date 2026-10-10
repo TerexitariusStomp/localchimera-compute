@@ -11,11 +11,11 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules ((playnet wire rows) #:select (wire->plain))   ; a door's rows, read back as alists
-             ((playnet planner legal crossings) #:select (record-crossings)))
+             ((playnet legal crossings) #:select (record-crossings)))
 (use-modules (playnet test harness)
-             (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
-             (playnet planner doors service)
-             ((playnet planner observation account) #:select (declare-claimable!))
+             (playnet scope root) (playnet vf schemas) (srfi srfi-1)
+             (playnet doors service)
+             ((playnet observation account) #:select (declare-claimable!))
              ((playnet test scope) #:select (plan-claim!))
              (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1))
 

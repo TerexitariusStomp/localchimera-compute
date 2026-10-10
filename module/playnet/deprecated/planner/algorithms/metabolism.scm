@@ -28,11 +28,11 @@
 
 (define-module (playnet deprecated planner algorithms metabolism)
   #:use-module (playnet utils units)
-  #:use-module (playnet planner vf schemas)
+  #:use-module (playnet vf schemas)
   #:use-module (goblins)
   #:use-module (srfi srfi-1)
   #:use-module (playnet utils store-utils)
-  #:use-module (playnet planner algorithms rollup)
+  #:use-module (playnet algorithms rollup)
   #:export (*input-actions* *output-actions* labour-metabolism material-metabolism
             metabolic-balance metabolic-balance-legacy))
 

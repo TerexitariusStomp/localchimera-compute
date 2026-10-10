@@ -14,7 +14,7 @@
 ;;; Run:  guile module/playnet/planner/arc-time-injection-test.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine))
+(use-modules (playnet solve engine))
 
 (define (setup!)
   (declare-world! #:places '(("A" 0.0 0.0) ("B" 0.0 0.9))   ; ~100 km, τ·km ≈ 0.2 h

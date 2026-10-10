@@ -16,7 +16,7 @@
 ;;;   guile --no-auto-compile -q -L module tests/planner/test-use-unit-lint.scm
 
 (use-modules (playnet test harness))
-(use-modules (playnet planner knowledge recipes beenius-wax) (playnet planner knowledge recipes berlin-transit) (playnet planner knowledge recipes cold-chain) (playnet planner knowledge recipes container) (playnet planner knowledge recipes currency) (playnet planner knowledge recipes federation) (playnet planner knowledge recipes food-surplus) (playnet planner knowledge recipes grow) (playnet planner knowledge recipes humisoil) (playnet planner knowledge recipes infrastructure) (playnet planner knowledge recipes meeting) (playnet planner knowledge recipes stone-paper) (playnet planner knowledge recipes transport) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
+(use-modules (playnet knowledge recipes beenius-wax) (playnet knowledge recipes berlin-transit) (playnet knowledge recipes cold-chain) (playnet knowledge recipes container) (playnet knowledge recipes currency) (playnet knowledge recipes federation) (playnet knowledge recipes food-surplus) (playnet knowledge recipes grow) (playnet knowledge recipes humisoil) (playnet knowledge recipes infrastructure) (playnet knowledge recipes meeting) (playnet knowledge recipes stone-paper) (playnet knowledge recipes transport) (playnet scope root) (playnet vf schemas) (srfi srfi-1))
 (use-modules (goblins) (srfi srfi-1) (srfi srfi-13) (ice-9 format))
 
 ;;; Every seeder in knowledge/recipes/ taking a recipe-store and nothing else. A

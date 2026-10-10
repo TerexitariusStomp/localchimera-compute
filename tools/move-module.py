@@ -4,20 +4,16 @@
     tools/move-module.py [--dry-run] [--bare] OLD.scm NEW.scm
 
 OLD and NEW are paths under module/ (module/playnet/planner/comms-ai.scm
-module/playnet/planner/comms/ai.scm). A Guile module's name is its path, so a
+module/playnet/comms/ai.scm). A Guile module's name is its path, so a
 move is four rewrites, done here the same way every time:
 
   1. `git mv`, so history follows the file as a rename.
   2. The module name, wherever it is written: `(playnet planner comms-ai)`
-     becomes `(playnet planner comms ai)` in a define-module, an import, an `@`
+     becomes `(playnet comms ai)` in a define-module, an import, an `@`
      reference, a comment, a doc. The closing paren is part of the match, so
-     moving `(playnet planner comms)` leaves `(playnet planner comms ai)` alone.
+     moving `(playnet comms)` leaves `(playnet comms ai)` alone.
   3. The path, wherever it is written with a directory in front of it:
-     `planner/comms-ai.scm` in an include, the Makefile, a doc, a comment. For a
-     planner file this includes the spelling docs and headers use, relative to
-     module/playnet/planner/: `labour/pulls.scm`, and `labour/pulls` in a table.
-     When the old path also names a directory (`knowledge/recipes`), only the
-     spelling with `.scm` is rewritten.
+     `comms/ai.scm` in an include, the Makefile, a doc, a comment.
   4. tools/module-layout.scm: the file's own `file` form goes, because the file
      now stands where the form said; a `from` form is removed by hand once its
      directory is empty.
@@ -28,7 +24,7 @@ for a name other directories share (`adapters.scm`).
 
 --dry-run prints each rewrite as file:line and changes nothing. A real run ends
 by listing every line that still mentions the old name's stem, for a hand
-check: a list that names several files under one prefix (`formulas/counting.scm,
+check: a list that names several files under one prefix (`vf/formulas/counting.scm,
 labels.scm`) carries the directory once, and only a reader sees that the second
 name moved elsewhere. Generated files (module/playnet/README.md,
 browser/) are left to their generators, and docs/history/ is a record.
@@ -71,13 +67,6 @@ def rewrites(old, new, bare):
     orel, nrel = '/'.join(o[1:]) + '.scm', '/'.join(n[1:]) + '.scm'
     path = re.compile(r'(?<![\w-])' + re.escape(orel))
     rs = [(name, '(' + ' '.join(n) + ')'), (path, nrel)]
-    if o[:2] == ['playnet', 'planner'] and n[:2] == ['playnet', 'planner'] and len(o) >= 4:
-        # the planner-relative spelling of docs and headers: labour/pulls(.scm)
-        prel_old, prel_new = '/'.join(o[2:]), '/'.join(n[2:])
-        is_dir = os.path.isdir(os.path.join(ROOT, 'module/playnet/planner', prel_old))
-        short = re.compile(r'(?<![\w/.-])' + re.escape(prel_old) + (r'(\.scm)' if is_dir else r'(\.scm)?')
-                           + r'(?![\w-]|\.ts|\.js)')
-        rs.append((short, lambda m: prel_new + (m.group(1) or '')))
     if bare:
         base = re.compile(r'(?<![\w/-])' + re.escape(o[-1] + '.scm'))
         rs.append((base, '/'.join(n[-2:]) + '.scm'))

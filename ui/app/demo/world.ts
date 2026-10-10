@@ -5,7 +5,7 @@
 // those stocks conform to, and the people who offer, ask, count and contest are the
 // same people everywhere. The people, the places, the venues, the goods and what
 // the ledger holds of each are read off the recording of the demo neighbourhood
-// (demo/recording.ts, from module/playnet/planner/knowledge/worlds/demo-neighbourhood.scm),
+// (demo/recording.ts, from module/playnet/knowledge/worlds/demo-neighbourhood.scm),
 // the same world a gateway adopts as the preset `neighbourhood`.
 //
 // Pure data and small derivations: type-only imports, no DOM, no signals, so a

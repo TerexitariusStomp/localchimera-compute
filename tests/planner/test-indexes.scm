@@ -11,7 +11,7 @@
 ;;;         -l load-all.scm -l tests/test-indexes.scm
 
 (use-modules (playnet test harness))
-(use-modules (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
+(use-modules (playnet scope root) (playnet vf schemas) (srfi srfi-1))
 (use-modules (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)

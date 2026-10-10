@@ -12,11 +12,11 @@
 ;;;   guile --no-auto-compile -q -L module tests/planner/test-housing-recipe.scm
 
 (use-modules (playnet test harness))
-(use-modules (playnet planner scope root) (playnet planner vf schemas))
-(use-modules (playnet planner doors service))
-(use-modules (playnet planner knowledge catalogues substances))
-(use-modules (playnet planner knowledge catalogues housing))
-(use-modules (playnet planner knowledge catalogues housing-substance))
+(use-modules (playnet scope root) (playnet vf schemas))
+(use-modules (playnet doors service))
+(use-modules (playnet knowledge catalogues substances))
+(use-modules (playnet knowledge catalogues housing))
+(use-modules (playnet knowledge catalogues housing-substance))
 (use-modules (goblins) (goblins persistence-store memory) (srfi srfi-1))
 
 (define store (make-memory-store))

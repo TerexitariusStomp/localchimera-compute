@@ -11,10 +11,10 @@
 ;;; Run:  guile -q -L module tests/planner/test-proofing-live.scm
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test harness) (playnet planner scope root) (playnet planner vf schemas)
-             (playnet planner knowledge dsl shorthand) (playnet planner knowledge dsl world)
-             (playnet planner knowledge recipes proofing)
-             ((playnet planner scope live) #:select (plan-scope scope-composition))
+(use-modules (playnet test harness) (playnet scope root) (playnet vf schemas)
+             (playnet knowledge dsl shorthand) (playnet knowledge dsl world)
+             (playnet knowledge recipes proofing)
+             ((playnet scope live) #:select (plan-scope scope-composition))
              (goblins) (srfi srfi-1))
 
 (define PLACE "town")

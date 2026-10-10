@@ -20,9 +20,9 @@
 ;;; Run:  guile --no-auto-compile -L module tests/planner/test-reproduction-live.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner vf schemas)
-             (playnet planner knowledge dsl shorthand))
+(use-modules (playnet solve engine)
+             (playnet vf schemas)
+             (playnet knowledge dsl shorthand))
 
 ;; A period here is a WEEK: the roster's window every day is 56 h a period, the
 ;; labour these floors were sized on, and the same on any date.

@@ -20,9 +20,9 @@
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-reserve-dilemma.scm
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test harness) (playnet planner vf schemas) (playnet planner beyond schedules) (playnet planner scope live)
+(use-modules (playnet test harness) (playnet vf schemas) (playnet vf beyond schedules) (playnet scope live)
              (srfi srfi-1) (ice-9 format))
-(use-modules ((playnet planner solve engine) #:select (set-period-length!)))
+(use-modules ((playnet solve engine) #:select (set-period-length!)))
 ;; A period here is a WEEK: `hours h` names Monday 00:00–h:00, so a period holding the week holds h hours, on any date.
 (set-period-length! 1.0 "week")
 

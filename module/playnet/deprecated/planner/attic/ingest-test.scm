@@ -1,6 +1,6 @@
 ;;; ingest-test.scm — REAL DATA: plan over the codebase's actual recipe knowledge.
 ;;;
-;;; Not hand-built bread. This loads module/playnet/planner/knowledge/recipes/
+;;; Not hand-built bread. This loads module/playnet/knowledge/recipes/
 ;;; federation.scm — the real ValueFlows recipe records the rest of the system
 ;;; uses — by mocking the recipe store to harvest them, compiles them into the
 ;;; activity matrix (signs from the standard action table; labour from each
@@ -11,7 +11,7 @@
 ;;; Run:  guile -L module module/playnet/planner/ingest-test.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner vf schemas))
+(use-modules (playnet vf schemas))
 
 ;; ── harvest the REAL records from the recipe store ───────────────────────────
 (define *procs* '()) (define *flows* '()) (define *specs* '())
@@ -24,7 +24,7 @@
       (else #t))))
 (define ($ obj msg . args) (apply obj msg args))
 (define store (mock-store))
-(primitive-load (string-append (getcwd) "/module/playnet/planner/knowledge/recipes/federation.scm"))
+(primitive-load (string-append (getcwd) "/module/playnet/knowledge/recipes/federation.scm"))
 (seed-federation-specs store)
 (seed-federation-recipes store)
 

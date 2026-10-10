@@ -11,12 +11,12 @@
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness)
-             (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
-             (playnet planner scope live)
+             (playnet scope root) (playnet vf schemas) (srfi srfi-1)
+             (playnet scope live)
              (goblins)
              (goblins persistence-store memory)
              (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner knowledge catalogues subsistence))
+(use-modules (playnet knowledge catalogues subsistence))
 
 (define mem (make-memory-store))
 (define-values (vat scope)

@@ -13,8 +13,8 @@
 ;;; Run: guile -L module tests/planner/test-law-lint.scm
 
 (use-modules (playnet test harness)
-             (playnet planner knowledge law lint)
-             (playnet planner facts places)
+             (playnet knowledge law lint)
+             (playnet vf facts places)
              (srfi srfi-1) (ice-9 format) (ice-9 ftw))
 
 (define contexts "docs/legal/contexts")

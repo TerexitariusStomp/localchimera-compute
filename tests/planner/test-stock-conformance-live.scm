@@ -19,8 +19,8 @@
 
 (use-modules (playnet test scope)) ; mock-scope-root
 (use-modules (playnet test harness)
-             (playnet planner vf schemas)
-             (playnet planner scope live)
+             (playnet vf schemas)
+             (playnet scope live)
              (goblins) (goblins vat) (srfi srfi-1))
 
 ;; the wheat-flour the commune actually holds (onhand ONHAND kg, at "town").

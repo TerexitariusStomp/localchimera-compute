@@ -14,7 +14,7 @@
   ;; dependent-demand/empty-netter-state have no new-planner port yet
   ;; (module/playnet/planner.scm's own header lists algorithms/netting.scm
   ;; and algorithms/dependent-demand.scm, but neither file actually exists
-  ;; under module/playnet/planner/algorithms/ — the comment is stale).
+  ;; under module/playnet/algorithms/ — the comment is stale).
   ;; Import ONLY those two bindings from the deprecated tree rather than
   ;; the whole (playnet deprecated planner) umbrella, so record types built
   ;; by (playnet planner) above stay the only ones in play everywhere else

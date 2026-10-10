@@ -10,16 +10,16 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
-(use-modules (playnet planner plan store) (playnet planner vf schemas) (srfi srfi-1))
-(use-modules (playnet planner scope live))       ; set-daily-horizon! — periods ↔ days
+(use-modules (playnet plan store) (playnet vf schemas) (srfi srfi-1))
+(use-modules (playnet scope live))       ; set-daily-horizon! — periods ↔ days
 (use-modules (playnet governance demand-fold))
-(use-modules (playnet planner aggregation fold-node))   ; fold-node-reparent!, coalescer
+(use-modules (playnet vf aggregation fold-node))   ; fold-node-reparent!, coalescer
 (use-modules (goblins))
 (use-modules (goblins utils hashmap))
 (use-modules (srfi srfi-1))
-(use-modules ((playnet planner facts tension-terms) #:select (with-tension-terms)))
+(use-modules ((playnet vf facts tension-terms) #:select (with-tension-terms)))
 (use-modules ((playnet governance demand-fold) #:select (demand-terms-for name-own-rows)))
-(use-modules ((playnet planner solve engine) #:select (*desire-w0*)))
+(use-modules ((playnet solve engine) #:select (*desire-w0*)))
 
 (define vat (spawn-vat))
 

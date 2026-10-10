@@ -14,11 +14,11 @@
 ;;; Run:  guile --no-auto-compile -L module/playnet/planner tests/planner/test-frag-container.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner solve solver)
-             (playnet planner vf schemas)
-             (playnet planner knowledge dsl shorthand))
+(use-modules (playnet solve engine)
+             (playnet solve compile)
+             (playnet solve solver)
+             (playnet vf schemas)
+             (playnet knowledge dsl shorthand))
 
 (define amazon-tip 100.0)   ; quantile_0.5(80,120)
 ;; a TREE resource, contained-in the Amazon: its place IS the Amazon, and it is one of the Amazon's contents

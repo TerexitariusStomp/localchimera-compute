@@ -3,7 +3,7 @@
 ;;;
 ;;; Design: `knowledge/feel-the-food.scm`, from the Verbraucherzentrale Berlin's
 ;;; Leitfaden §8 (vendored at docs/reference/berlin-food/). The inspection model
-;;; itself is not new — `formulas/cadence.scm` has carried a*, T* and the
+;;; itself is not new — `vf/formulas/cadence.scm` has carried a*, T* and the
 ;;; reliance D = φH since the INSPECTION arc, and `conformance-catalogue.scm`
 ;;; states that one profile "serves skills, instruments, and BATCHES alike".
 ;;; Batches were the third subject nobody had pointed it at.
@@ -23,7 +23,7 @@
 ;;;
 ;;; Run: guile -L module tests/planner/test-feel-the-food.scm
 
-(use-modules (playnet test harness) (playnet planner knowledge recipes store) (playnet planner knowledge worlds feel-the-food) (playnet planner vf schemas) (srfi srfi-1)
+(use-modules (playnet test harness) (playnet knowledge recipes store) (playnet knowledge worlds feel-the-food) (playnet vf schemas) (srfi srfi-1)
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1) (ice-9 format))
 

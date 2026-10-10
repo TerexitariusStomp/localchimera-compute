@@ -13,11 +13,11 @@
 ;;; Run:  guile --no-auto-compile -L module/playnet/planner tests/planner/test-frag-observe.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner solve solver)
-             (playnet planner vf schemas)
-             (playnet planner knowledge dsl shorthand))
+(use-modules (playnet solve engine)
+             (playnet solve compile)
+             (playnet solve solver)
+             (playnet vf schemas)
+             (playnet knowledge dsl shorthand))
 
 (define s-tip 10.0)   ; co2 tip = quantile_0.5 of [8,12]
 (define obs   4.0)    ; the OBSERVED draw already committed (the eco agent's onhand) ⇒ headroom 6

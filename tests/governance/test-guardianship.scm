@@ -1,7 +1,7 @@
 ;;; test-guardianship.scm — documentary guardianship; voice math unchanged
 
 (use-modules (playnet test harness))
-(use-modules (playnet planner pools credit-fold) (srfi srfi-1))
+(use-modules (playnet pools credit-fold) (srfi srfi-1))
 (use-modules (playnet org endorsement))
 (use-modules (playnet governance ballot) (playnet governance delegation-map) (playnet governance guardianship) (playnet governance voice-signer))
 (use-modules (goblins) (goblins utils hashmap) (srfi srfi-1))

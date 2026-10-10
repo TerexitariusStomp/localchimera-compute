@@ -26,8 +26,8 @@
 (use-modules (playnet test harness)
              ((playnet utils clock) #:select (civil->instant))
              (playnet test events)
-             (playnet planner observation observer) (playnet planner vf schemas) (srfi srfi-1)
-             (playnet planner observation observer)
+             (playnet observation observer) (playnet vf schemas) (srfi srfi-1)
+             (playnet observation observer)
              (goblins utils hashmap)
              (srfi srfi-1))
 

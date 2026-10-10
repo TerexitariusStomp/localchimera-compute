@@ -14,8 +14,8 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/planner/test-federation-live.scm
 
-(use-modules (playnet planner knowledge recipes federation-demo) (playnet planner federation store-registry) (playnet planner scope root)
-             (playnet planner scope live)
+(use-modules (playnet knowledge recipes federation-demo) (playnet federation store-registry) (playnet scope root)
+             (playnet scope live)
              (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)

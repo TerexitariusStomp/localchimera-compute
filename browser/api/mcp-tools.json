@@ -7142,7 +7142,7 @@
     {
       "name": "planner.presets",
       "title": "knowledge: presets",
-      "description": "Lists the worlds a scope can start from — the economies the tree ships as data (module/playnet/planner/knowledge/worlds/presets.scm): id, name and doc per preset. [knowledge; callable by anyone]",
+      "description": "Lists the worlds a scope can start from — the economies the tree ships as data (module/playnet/knowledge/worlds/presets.scm): id, name and doc per preset. [knowledge; callable by anyone]",
       "inputSchema": {
         "type": "object",
         "properties": {},

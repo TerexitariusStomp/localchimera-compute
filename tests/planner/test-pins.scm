@@ -7,7 +7,7 @@
 ;;; Run: guile -L module tests/planner/test-pins.scm
 
 (use-modules (playnet test harness)
-             (playnet planner folksonomy pins)
+             (playnet folksonomy pins)
              (srfi srfi-1))
 
 (define (doc lists pins) (make-pins-doc lists pins))

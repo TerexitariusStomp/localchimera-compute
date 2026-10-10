@@ -11,7 +11,7 @@
 ;;; Run: guile -L module tests/planner/vf-conformance-fields-test.scm
 
 (use-modules (playnet test harness)
-             (playnet planner vf schemas)
+             (playnet vf schemas)
              ((playnet utils records) #:select (vf-record-type-fields vf-record-type-name))
              (playnet test vf-ttl)
              (srfi srfi-1) (srfi srfi-13))
@@ -116,7 +116,7 @@
                                  (else "a property of its class, or declared otherwise")))
                    (or (property-of? prop class) (and why #t)))))
         (vf-record-type-fields rtd)))))
- (record-types '(playnet planner vf schemas)))
+ (record-types '(playnet vf schemas)))
 
 (check-pred "records of several classes were checked" (> (length checked) 10))
 
@@ -125,7 +125,7 @@
  (lambda (entry)
    (let* ((record (car entry))
           (rtd (find (lambda (t) (string=? (class-of t) (kebab->camel-class record)))
-                     (record-types '(playnet planner vf schemas)))))
+                     (record-types '(playnet vf schemas)))))
      (check (format #f "<~a> is a record of a class" record) (and rtd (memq record checked) #t))
      (when rtd
        (for-each

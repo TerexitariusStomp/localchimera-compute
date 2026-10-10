@@ -18,10 +18,10 @@
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-clock-horizon.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner knowledge dsl shorthand))
-(use-modules (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner vf schemas))
+(use-modules (playnet knowledge dsl shorthand))
+(use-modules (playnet solve engine)
+             (playnet solve compile)
+             (playnet vf schemas))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

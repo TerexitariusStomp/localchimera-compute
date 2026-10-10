@@ -16,10 +16,10 @@
 (use-modules (srfi srfi-1) (ice-9 format))
 
 ;; the engine, standalone — this defines the schemas in guile-user
-(use-modules (playnet planner vf schemas) (playnet planner beyond schedules))
+(use-modules (playnet vf schemas) (playnet vf beyond schedules))
 
 ;; …and now the module path, which evaluates the same definitions again
-(use-modules (playnet planner facts availability)
+(use-modules (playnet vf facts availability)
              ((playnet utils records) #:select (vf-record-type vf-record-constructor vf-record-accessor vf-record-copier vf-record-maker vf-record-from-list vf-record-type-fields)))
 
 (define *pass* 0) (define *fail* 0)

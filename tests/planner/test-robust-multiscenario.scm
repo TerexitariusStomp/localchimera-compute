@@ -26,7 +26,7 @@
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-robust-multiscenario.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve solver))
+(use-modules (playnet solve solver))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

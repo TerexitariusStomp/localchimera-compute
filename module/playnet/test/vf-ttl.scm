@@ -51,7 +51,7 @@
   #:use-module (ice-9 textual-ports)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-13)
-  #:use-module ((playnet planner vf schemas) #:select (<action-definition>))
+  #:use-module ((playnet vf schemas) #:select (<action-definition>))
   #:use-module ((playnet utils records) #:select (vf-record-type-fields))
   #:export (vf-repo-root %ttl-path camel->kebab kebab->camel-class kebab->camel-field strip-vf clean-tokens
             %beyond-ttl-action-fields

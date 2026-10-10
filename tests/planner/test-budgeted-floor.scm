@@ -15,10 +15,10 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-budgeted-floor.scm
 
-(use-modules (playnet planner knowledge dsl shorthand))
+(use-modules (playnet knowledge dsl shorthand))
 (use-modules (srfi srfi-1) (ice-9 format)
-             (playnet planner solve engine) (playnet planner vf schemas)
-             (playnet planner facts tension-terms))
+             (playnet solve engine) (playnet vf schemas)
+             (playnet vf facts tension-terms))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

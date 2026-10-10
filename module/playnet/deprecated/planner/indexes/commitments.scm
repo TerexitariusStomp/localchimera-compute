@@ -1,7 +1,7 @@
 ;;; commitments.scm — Commitment query index
 
 (define-module (playnet deprecated planner indexes commitments)
-  #:use-module (playnet planner vf schemas)
+  #:use-module (playnet vf schemas)
   #:export (build-commitment-index query-commitments-by-spec
             query-commitments-by-action query-commitments-by-agent
             query-commitments-by-plan query-commitments-by-process

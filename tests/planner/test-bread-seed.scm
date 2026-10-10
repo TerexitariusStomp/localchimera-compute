@@ -1,6 +1,6 @@
 ;;; test-bread-seed.scm — the bread town is ONE economy behind two doors.
 ;;;
-;;; bread-world ((playnet planner knowledge recipes bread-commune-seed)) is read
+;;; bread-world ((playnet knowledge recipes bread-commune-seed)) is read
 ;;; through two doors: (playnet test scope) mock-world, stores that answer with
 ;;; its tables, and seed-world! into a scope-root's REAL stores — the gateway's
 ;;; demo commune path (server/gateway.scm, PLAYNET_SEED_DEMO) and what
@@ -13,9 +13,9 @@
 
 (use-modules (playnet test harness)
              (playnet test scope)
-             (playnet planner knowledge recipes bread-commune-seed) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
-             (playnet planner scope live)
-             (playnet planner knowledge dsl world)
+             (playnet knowledge recipes bread-commune-seed) (playnet scope root) (playnet vf schemas) (srfi srfi-1)
+             (playnet scope live)
+             (playnet knowledge dsl world)
              (playnet test planner bread)
              (goblins) (goblins vat)
              (srfi srfi-1))

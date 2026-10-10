@@ -53,10 +53,10 @@
   #:use-module (playnet keri acdc)
 
   #:use-module (playnet keri acdc)
-  #:use-module (playnet planner algorithms rollup)
-  #:use-module (playnet planner vf schemas)
+  #:use-module (playnet algorithms rollup)
+  #:use-module (playnet vf schemas)
   #:use-module (srfi srfi-1)
-  #:use-module (playnet planner algorithms rollup)
+  #:use-module (playnet algorithms rollup)
   #:export (money-rate debt-commitment purchase-claim open-debts debt-remaining
             debt->alist open-debts-alist debts-owed-in-xmr settle-debts! %payout-spec))
 

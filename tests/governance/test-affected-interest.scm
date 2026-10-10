@@ -1,7 +1,7 @@
 ;;; test-affected-interest.scm — advisory voice from non-members
 
 (use-modules (playnet test harness))
-(use-modules (playnet planner pools credit-fold) (srfi srfi-1))
+(use-modules (playnet pools credit-fold) (srfi srfi-1))
 (use-modules (playnet org endorsement))
 (use-modules (playnet governance affected-interest) (playnet governance ballot) (playnet governance delegation-map) (playnet governance voice-signer))
 (use-modules (goblins) (goblins utils hashmap) (srfi srfi-1))

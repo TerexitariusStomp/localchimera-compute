@@ -19,11 +19,11 @@
 ;;;         tests/planner/test-robust-forwards-world.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner vf schemas) (playnet planner beyond scenario)
-             (playnet planner knowledge dsl shorthand)
-             ((playnet planner knowledge recipes transport) #:select (mode-recipe)))
-;; engine/robust.scm arrives with the engine — (playnet planner solve engine) loads it into
+(use-modules (playnet solve engine)
+             (playnet vf schemas) (playnet vf beyond scenario)
+             (playnet knowledge dsl shorthand)
+             ((playnet knowledge recipes transport) #:select (mode-recipe)))
+;; engine/robust.scm arrives with the engine — (playnet solve engine) loads it into
 ;; itself and exports its names, so the load that stood here was a second copy
 ;; of the same text into this module (retired with the engine-as-module arc).
 

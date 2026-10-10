@@ -5,9 +5,9 @@
 ;;;     tests/planner/test-humisoil-recipe.scm
 
 (use-modules (playnet test harness))
-(use-modules (playnet planner knowledge recipes humisoil) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
-(use-modules (playnet planner doors service))
-(use-modules (playnet planner knowledge catalogues substances))
+(use-modules (playnet knowledge recipes humisoil) (playnet scope root) (playnet vf schemas) (srfi srfi-1))
+(use-modules (playnet doors service))
+(use-modules (playnet knowledge catalogues substances))
 (use-modules (goblins)
              (goblins persistence-store memory)
              (srfi srfi-1))

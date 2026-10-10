@@ -7,9 +7,9 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
-(use-modules (playnet planner scope root) (playnet planner vf schemas) (playnet planner observation states) (srfi srfi-1))
-(use-modules (playnet planner doors service))
-(use-modules ((playnet planner observation account) #:select (declare-claimable!)))
+(use-modules (playnet scope root) (playnet vf schemas) (playnet observation states) (srfi srfi-1))
+(use-modules (playnet doors service))
+(use-modules ((playnet observation account) #:select (declare-claimable!)))
 (use-modules ((playnet test scope) #:select (plan-claim!)))   ; the plan's row, stood by the fixture
 (use-modules (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1))
 

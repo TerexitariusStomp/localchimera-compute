@@ -19,13 +19,13 @@
 ;;;         -l tests/planner/test-labour-projection-law.scm
 
 (use-modules ((playnet utils units) #:select (%count-unit)))
-(use-modules (playnet planner knowledge dsl shorthand)
+(use-modules (playnet knowledge dsl shorthand)
              (playnet test harness)
-             (playnet planner observation observer) (playnet planner vf schemas)
-             (playnet planner pools labour-fold)
-             (playnet planner observation observer)
-             (playnet planner aggregation fold-node)
-             ((playnet planner formulas actions) #:select (labour?))
+             (playnet observation observer) (playnet vf schemas)
+             (playnet pools labour-fold)
+             (playnet observation observer)
+             (playnet vf aggregation fold-node)
+             ((playnet vf formulas actions) #:select (labour?))
              (goblins)
              (srfi srfi-1))
 

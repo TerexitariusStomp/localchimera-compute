@@ -9,7 +9,7 @@
 ;;; <intent> records in the scope's plan-store via promote-demands.
 
 (use-modules (playnet test harness)
-             (playnet planner pools credit-fold) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
+             (playnet pools credit-fold) (playnet scope root) (playnet vf schemas) (srfi srfi-1)
              (playnet org endorsement)
              (playnet governance delegation-map) (playnet governance expression) (playnet governance voice-signer)
              (playnet governance demand-registry)

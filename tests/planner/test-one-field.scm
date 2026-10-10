@@ -29,10 +29,10 @@
 ;;; Run:  guile -L module/playnet/planner tests/planner/test-one-field.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner vf schemas)
-             (playnet planner knowledge dsl shorthand)
-             (playnet planner formulas stocks))
+(use-modules (playnet solve engine)
+             (playnet vf schemas)
+             (playnet knowledge dsl shorthand)
+             (playnet vf formulas stocks))
 
 (define SEASONS '(0 1 2 3))
 (define place    "farm")

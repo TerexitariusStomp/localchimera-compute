@@ -11,8 +11,8 @@
 ;;; value — which is why a rebuild can never disagree with the increments.
 
 (use-modules (playnet test harness)
-             (playnet planner aggregation fold-node)
-             (playnet planner aggregation scope-tree)
+             (playnet vf aggregation fold-node)
+             (playnet vf aggregation scope-tree)
              (playnet utils hashmap)
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))

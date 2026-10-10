@@ -10,8 +10,8 @@
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules ((playnet wire rows) #:select (wire->plain))   ; a door's rows, read back as alists
              (playnet test harness)
-             (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
-             (playnet planner doors service)
+             (playnet scope root) (playnet vf schemas) (srfi srfi-1)
+             (playnet doors service)
              (goblins)
              (goblins persistence-store memory)
              ((goblins utils hashmap) #:select (make-hashmap hashmap-set))

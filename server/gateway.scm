@@ -57,10 +57,10 @@
              ((srfi srfi-1) #:select (partition))
              (playnet gateway lobby)
              (playnet gateway federate)
-             ((playnet planner federation wire) #:select (signer-of signer-aid))
+             ((playnet federation wire) #:select (signer-of signer-aid))
              ((playnet governance sturdyref-credential) #:select (spec-goods))
-             ((playnet planner vf schemas) #:select (resource-specification-default-unit-of-resource))
-             ((playnet planner federation host) #:select (read-kept keep! berth-swiss! berth-sturdyref wire-handshake))
+             ((playnet vf schemas) #:select (resource-specification-default-unit-of-resource))
+             ((playnet federation host) #:select (read-kept keep! berth-swiss! berth-sturdyref wire-handshake))
              ((playnet gateway http-door-server) #:select (start-http-door!))
              ((playnet identity devices)
               #:select (device-registry-dir device-keys-at))
@@ -84,32 +84,32 @@
              (playnet interface org-stub)
              ;; what the gateway's code uses of (playnet planner), by the module that defines it
              (playnet keri acdc)
-             (playnet planner knowledge recipes bay-area-commune-seed)
-             (playnet planner knowledge recipes berlin-commune-seed)
-             (playnet planner knowledge recipes berlin-festival-seed)
-             (playnet planner knowledge recipes bread-commune-seed)
-             (playnet planner knowledge recipes farm-commune-seed)
-             (playnet planner knowledge recipes federation-demo)
-             (playnet planner scope earth)
-             (playnet planner scope root)
+             (playnet knowledge recipes bay-area-commune-seed)
+             (playnet knowledge recipes berlin-commune-seed)
+             (playnet knowledge recipes berlin-festival-seed)
+             (playnet knowledge recipes bread-commune-seed)
+             (playnet knowledge recipes farm-commune-seed)
+             (playnet knowledge recipes federation-demo)
+             (playnet scope earth)
+             (playnet scope root)
              ((srfi srfi-1) #:select (any delete-duplicates find))
              (srfi srfi-11)
-             ((playnet planner observation facts-sync)   ; host snapshots → live-registry
+             ((playnet observation facts-sync)   ; host snapshots → live-registry
               #:select (start-host-facts-sync!))
-             ((playnet planner dev priorities) #:select (issues->facts))
-             ((playnet planner dev plan) #:select (seed-dev-scope! read-dev-people))
+             ((playnet dev priorities) #:select (issues->facts))
+             ((playnet dev plan) #:select (seed-dev-scope! read-dev-people))
              ;; book-issue-done!/booked? reach the REPL environment below
              ;; unqualified (this script runs in (guile-user), like every
              ;; use-module here) — tools/dev-loop-close.scm's own repl-eval
              ;; calls them directly against the live dev-commune
-             ((playnet planner dev ledger) #:select (book-issue-done! booked?))
-             ((playnet planner dev rad-issues) #:select (rad-issue-pairs))
+             ((playnet dev ledger) #:select (book-issue-done! booked?))
+             ((playnet dev rad-issues) #:select (rad-issue-pairs))
              ((playnet mqtt publish) #:select (mqtt-password-file))
-             (playnet planner doors service)
-             (playnet planner folksonomy actor)
-             ((playnet planner folksonomy graph) #:select (make-folksonomy))
-             (playnet planner folksonomy seed)
-             ((playnet planner folksonomy pins) #:select (^pins make-pins))
+             (playnet doors service)
+             (playnet folksonomy actor)
+             ((playnet folksonomy graph) #:select (make-folksonomy))
+             (playnet folksonomy seed)
+             ((playnet folksonomy pins) #:select (^pins make-pins))
              ;; …and of (playnet governance)
              (playnet governance acdc-bridge)
              (playnet governance attestation-ceremony)
@@ -169,7 +169,7 @@
              ((playnet identity contact-points) #:select (make-contact-point-desk))
              ((playnet identity body-doors) #:select (current-body-service))
              ((playnet identity body-desk) #:select (^body-ceremony-desk))
-             ((playnet planner doors bodies) #:select (^body-service))
+             ((playnet doors bodies) #:select (^body-service))
              ((playnet notify router) #:select (^notify-router))
              ;; Monero + fleet provisioning
              (playnet gateway monero-boot)
@@ -626,7 +626,7 @@
        ;; cross-vat boundary.
        ;; ── EARTH: the planetary economic root ───────────────────────────────
        ;; The persisted root of the planner-vat is `earth` — a registry of every
-       ;; commune's economic scope-root (module/playnet/planner/scope/earth.scm). Each
+       ;; commune's economic scope-root (module/playnet/scope/earth.scm). Each
        ;; commune is a durable bundle UNDER earth, so ALL of them survive reboot
        ;; with their OWN state; and the ^planner-service reads THIS SAME registry —
        ;; one source of truth, no shadow scopes-hm. We root at earth DIRECTLY (no
@@ -936,7 +936,7 @@
        ;; absent all leave the planner on its geometric fallback (parity).
        (catch #t
          (lambda ()
-           (let ((refresh (module-ref (resolve-interface '(playnet planner scope live))
+           (let ((refresh (module-ref (resolve-interface '(playnet scope live))
                                       'refresh-scope-priors!)))
              (log! "  [gateway] arc-time priors: ~a~%"
                    (with-vat planner-vat (refresh meeting-scope)))))
@@ -2334,7 +2334,7 @@ failed (~a ~a); synthetic~%" k a)
                  ;; blocker — see the dev-commune plan's own out-of-scope
                  ;; note). An open Radicle issue is a want, its `area:` a skill
                  ;; (knowledge/skills/dev-skills.scm), the scope's people
-                 ;; docs/dev-scope.sexp states — module/playnet/planner/
+                 ;; docs/dev-scope.sexp states — module/playnet/
                  ;; bridge/dev-plan.scm's own plan-dev-week runs over exactly
                  ;; this commune, reached by tools/{dev-plan,dev-signal-cycle,
                  ;; dev-loop-close}.scm through the REPL socket below (so a
@@ -2538,7 +2538,7 @@ failed (~a ~a); synthetic~%" k a)
        ;; provisioning, purely within the capability model).
        ;;
        ;; Never built: ^scope has no `signal-publisher` method, and
-       ;; nothing anywhere spawns a (playnet planner bridge signal-
+       ;; nothing anywhere spawns a (playnet bridge signal-
        ;; publisher) actor to attach one — verified by repo-wide grep,
        ;; 2026-08-19. This whole feature's real trigger path is
        ;; server/fleet-bridge.scm, a separate process that subscribes to

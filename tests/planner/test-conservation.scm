@@ -23,9 +23,9 @@
 ;;;        tests/planner/test-conservation.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner knowledge dsl shorthand))
-(use-modules (playnet planner solve engine)
-             (playnet planner vf schemas))
+(use-modules (playnet knowledge dsl shorthand))
+(use-modules (playnet solve engine)
+             (playnet vf schemas))
 ;; A period here is a WEEK: `hours h` names Monday 00:00–h:00, so a period holding the week holds h hours, on any date.
 (set-period-length! 1.0 "week")
 

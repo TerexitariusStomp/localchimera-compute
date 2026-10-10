@@ -93,7 +93,7 @@
   #:use-module (playnet deprecated planner relational allocation)
   #:use-module (playnet deprecated planner relational federation)
   #:use-module (playnet deprecated planner relational demand-relation)
-  #:use-module (playnet planner vf schemas)
+  #:use-module (playnet vf schemas)
   #:use-module (playnet utils store-utils)
   #:use-module (playnet deprecated planner relational harmony)
   #:export (buffered-spec-set buffer-zone-fact toy-floor tor-floor decoupling-stop?

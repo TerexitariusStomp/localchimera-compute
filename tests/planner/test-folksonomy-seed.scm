@@ -10,10 +10,10 @@
 
 (use-modules (playnet test scope)) ; mock-scope-root
 (use-modules (playnet test harness)
-             (playnet planner folksonomy actor)
-             (playnet planner folksonomy graph)
-             (playnet planner folksonomy seed)
-             (playnet planner vf schemas) (srfi srfi-1)                 ; make-resource-specification
+             (playnet folksonomy actor)
+             (playnet folksonomy graph)
+             (playnet folksonomy seed)
+             (playnet vf schemas) (srfi srfi-1)                 ; make-resource-specification
              (goblins)
              (goblins actor-lib methods)
              (srfi srfi-1))

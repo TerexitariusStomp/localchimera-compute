@@ -12,8 +12,8 @@
 ;;; Run:  guile -L module tests/planner/test-ability-contribution.scm
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness)
-             (playnet planner observation account) (playnet planner scope root) (playnet planner vf schemas)
-             ((playnet planner observation account) #:select (declare-claimable! set-person-substrate!))
+             (playnet observation account) (playnet scope root) (playnet vf schemas)
+             ((playnet observation account) #:select (declare-claimable! set-person-substrate!))
              ((playnet test scope) #:select (record-work!))
              (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1))
 

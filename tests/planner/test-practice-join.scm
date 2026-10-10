@@ -9,12 +9,12 @@
 ;;; Run:  guile --no-auto-compile -q -L module tests/planner/test-practice-join.scm
 
 (use-modules (playnet test harness)
-             (playnet planner knowledge recipes federation-demo) (playnet planner scope root) (srfi srfi-1)
-             (playnet planner doors service)
-             ((playnet planner scope live) #:select (practice-view-of))
-             ((playnet planner observation practice) #:select (practice-view-hours practice-view-dated practice-rows-join))
+             (playnet knowledge recipes federation-demo) (playnet scope root) (srfi srfi-1)
+             (playnet doors service)
+             ((playnet scope live) #:select (practice-view-of))
+             ((playnet observation practice) #:select (practice-view-hours practice-view-dated practice-rows-join))
              ((playnet test scope) #:select (record-work!))
-             (playnet planner knowledge recipes federation-demo)
+             (playnet knowledge recipes federation-demo)
              (goblins) (goblins utils hashmap)
              (srfi srfi-1))
 

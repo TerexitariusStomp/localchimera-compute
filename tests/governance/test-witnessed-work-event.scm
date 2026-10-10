@@ -12,7 +12,7 @@
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules ((playnet keri signify) #:select ()))
 (use-modules (playnet test harness))
-(use-modules (playnet planner vf schemas) (srfi srfi-1))
+(use-modules (playnet vf schemas) (srfi srfi-1))
 (use-modules (playnet governance acdc-bridge) (playnet governance attestation-ceremony) (playnet credentials work) (playnet keri acdc) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri first-person predicates))
 (use-modules ((playnet keri citizen-sig)
               #:select (make-keri-identity keri-identity-aid keri-identity-keypair sign-said)))

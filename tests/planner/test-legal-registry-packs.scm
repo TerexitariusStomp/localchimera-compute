@@ -16,10 +16,10 @@
 
 (use-modules (playnet test harness) (goblins) (goblins vat) (srfi srfi-1) (ice-9 format))
 
-(use-modules (playnet planner legal crossings))
-(use-modules (playnet planner legal registry))
-(use-modules (playnet planner legal registry-actor))
-(use-modules ((playnet planner knowledge law context-pack) #:select (load-legal-registry)))
+(use-modules (playnet legal crossings))
+(use-modules (playnet legal registry))
+(use-modules (playnet legal registry-actor))
+(use-modules ((playnet knowledge law context-pack) #:select (load-legal-registry)))
 
 ;; two jurisdictions' laws, authored as ordinary rules.
 (define rule-foodville

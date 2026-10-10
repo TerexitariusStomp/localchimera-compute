@@ -167,10 +167,10 @@ EOF
   priors)
     # refresh the PLANNER's arc-time prior table off the running engine —
     # thin passthrough to the guile CLI (places as name=lat,lng args or
-    # --places-file; see module/playnet/planner/solve/refresh-priors.scm).
+    # --places-file; see module/playnet/solve/refresh-priors.scm).
     exec guix shell -L "$ROOT/deploy/guix" \
       -m "$ROOT/deploy/manifests/dev-test-manifest.scm" -- \
-      guile --no-auto-compile "$ROOT/module/playnet/planner/solve/refresh-priors.scm" "$@"
+      guile --no-auto-compile "$ROOT/module/playnet/solve/refresh-priors.scm" "$@"
     ;;
   profile)
     guix shell -m "$MANIFEST" --root="$PROFILE" -- true

@@ -11,12 +11,12 @@
 ;;;         tests/planner/test-comms-fragility.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner solve solver)
-             (playnet planner vf schemas))
+(use-modules (playnet solve engine)
+             (playnet solve solver)
+             (playnet vf schemas))
 ;; comms/fragility.scm is a fragment over the engine's world: it loads into
 ;; this module and reads the engine through the imports above.
-(primitive-load (%search-load-path "playnet/planner/comms/fragility.scm"))
+(primitive-load (%search-load-path "playnet/comms/fragility.scm"))
 
 (define (check label got expected)
   (if (equal? got expected)

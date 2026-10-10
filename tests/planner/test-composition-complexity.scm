@@ -9,7 +9,7 @@
 ;;;        -l load-all.scm -l tests/test-composition-complexity.scm
 
 (use-modules (playnet test harness))
-(use-modules (playnet planner federation store-registry) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
+(use-modules (playnet federation store-registry) (playnet scope root) (playnet vf schemas) (srfi srfi-1))
 (use-modules (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)

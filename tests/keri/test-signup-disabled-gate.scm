@@ -11,7 +11,7 @@
 
 (use-modules (playnet test harness)
              (playnet identity fixture)
-             ((playnet planner knowledge law product) #:select (product-feature feature-doors))
+             ((playnet knowledge law product) #:select (product-feature feature-doors))
              (goblins)
              (srfi srfi-1))
 

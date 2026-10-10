@@ -5,7 +5,7 @@
 
 (define-module (playnet credentials voting)
   #:use-module (playnet keri acdc)
-  #:use-module (playnet planner vf schemas)
+  #:use-module (playnet vf schemas)
   #:use-module (srfi srfi-1)
   #:export (*schema-playnet-ballot-snapshot*
             *schema-playnet-expression-stance*

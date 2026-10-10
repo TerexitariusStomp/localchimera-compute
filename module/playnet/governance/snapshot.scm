@@ -20,7 +20,7 @@
 
 (define-module (playnet governance snapshot)
   #:use-module (goblins utils hashmap)
-  #:use-module (playnet planner pools credit-fold)
+  #:use-module (playnet pools credit-fold)
   #:use-module (srfi srfi-1)
   #:export (citizen-record-id citizen-record-keri-aid citizen-record-delegation-map
             build-voice-snapshot build-citizen-registry))

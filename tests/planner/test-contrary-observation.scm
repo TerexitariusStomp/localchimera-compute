@@ -12,7 +12,7 @@
 
 (use-modules (playnet test harness)
              
-             (playnet planner scope live)
+             (playnet scope live)
              (playnet test planner bread)
              (goblins) (goblins vat)
              (srfi srfi-1))

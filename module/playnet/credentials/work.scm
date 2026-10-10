@@ -5,7 +5,7 @@
 
 (define-module (playnet credentials work)
   #:use-module (playnet keri acdc)
-  #:use-module (playnet planner vf schemas)
+  #:use-module (playnet vf schemas)
   #:use-module (srfi srfi-1)
   #:use-module ((playnet credentials commitments) #:select (*schema-playnet-commitment* *schema-playnet-intent*))
   #:export (*schema-playnet-claim*

@@ -11,9 +11,9 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness) (playnet test scope)
-             (playnet planner vf schemas) (playnet planner scope live)
-             ((playnet planner formulas actions) #:select (labour-specs labour?))
-             ((playnet planner facts person-facts) #:select (generic-labour-spec))
+             (playnet vf schemas) (playnet scope live)
+             ((playnet vf formulas actions) #:select (labour-specs labour?))
+             ((playnet vf facts person-facts) #:select (generic-labour-spec))
              (goblins) (srfi srfi-1) (ice-9 format))
 
 (define PLACE "town")

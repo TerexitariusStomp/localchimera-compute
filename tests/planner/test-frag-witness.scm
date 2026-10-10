@@ -12,7 +12,7 @@
 (define (sibling f) (or (find file-exists? (filter-map (lambda (p) (and (string? p) (string-append (dirname p) "/" f)))
                                                        (cons (current-filename) (command-line))))
                         (string-append "module/playnet/planner/" f)))
-(use-modules (playnet planner knowledge catalogues eco))
+(use-modules (playnet knowledge catalogues eco))
 
 ;; ── tipping points: 16 elements, well-ordered ranges, and the paper's headline (5 at/below ~1.5°C) ──
 (define tips *climate-tipping-points*)

@@ -21,8 +21,8 @@
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test scope))
-(use-modules (playnet test harness) (playnet planner knowledge recipes store) (playnet planner scope spatial-things) (playnet planner scope root) (playnet planner vf schemas) (playnet planner scope live)
-             (playnet planner legal gate)
+(use-modules (playnet test harness) (playnet knowledge recipes store) (playnet scope spatial-things) (playnet scope root) (playnet vf schemas) (playnet scope live)
+             (playnet legal gate)
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1) (srfi srfi-13) (ice-9 format))
 
@@ -127,8 +127,8 @@
 ;;; `make-legal-decorate` both take `#:soft-profile`, so the tolerance arrives at
 ;;; the solve by the same door the law does. Its eventual home is the tension
 ;;; catalogue a federation ratifies; this is the wire it comes in on.
-(use-modules (playnet planner legal registry) (playnet planner legal registry-actor)
-             (playnet planner legal crossings))
+(use-modules (playnet legal registry) (playnet legal registry-actor)
+             (playnet legal crossings))
 (define (scope-tolerance-of profile)
   (let ((vat (spawn-vat)))
     (with-vat vat
@@ -168,8 +168,8 @@
 ;;; keyword wins over the commune's row, and the row wins
 ;;; over the default. Nobody edits code to move a line the commune is entitled
 ;;; to move.
-(use-modules (playnet planner legal policy) (playnet planner legal compliance)
-             (playnet planner legal registry-actor))
+(use-modules (playnet legal policy) (playnet legal compliance)
+             (playnet legal registry-actor))
 
 (define governed
   (with-vat (spawn-vat)

@@ -14,11 +14,11 @@
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-mode-identity.scm
 
 (use-modules (playnet test harness)
-             (playnet planner knowledge recipes bay-area-commune-seed) (playnet planner knowledge recipes berlin-commune-seed) (playnet planner knowledge recipes berlin-transit) (playnet planner knowledge recipes farm-commune-seed) (playnet planner knowledge recipes transport) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1) (srfi srfi-11)
-             (playnet planner scope live)
-             (playnet planner knowledge recipes berlin-transit)
-             (playnet planner knowledge dsl vf-lint)
-             (playnet planner knowledge dsl findings)
+             (playnet knowledge recipes bay-area-commune-seed) (playnet knowledge recipes berlin-commune-seed) (playnet knowledge recipes berlin-transit) (playnet knowledge recipes farm-commune-seed) (playnet knowledge recipes transport) (playnet scope root) (playnet vf schemas) (srfi srfi-1) (srfi srfi-11)
+             (playnet scope live)
+             (playnet knowledge recipes berlin-transit)
+             (playnet knowledge dsl vf-lint)
+             (playnet knowledge dsl findings)
              (goblins) (goblins vat) (goblins persistence-store memory)
              (srfi srfi-1))
 
@@ -109,7 +109,7 @@
 (with-vat cvat
   (plan-scope->alist croot #:manners berlin-transit-manners
                      #:demand (list (cons "food#berlin-commune-farm@0" 20000.0))))
-(define cap (@@ (playnet planner solve engine) *cap*))
+(define cap (@@ (playnet solve engine) *cap*))
 (define (capped? spec)
   (hash-fold (lambda (k v found) (or found (and (> v 0.0) (string-prefix? (string-append "Svc|" spec "#") k) #t)))
              #f cap))

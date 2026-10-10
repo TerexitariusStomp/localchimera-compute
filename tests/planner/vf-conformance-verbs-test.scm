@@ -1,6 +1,6 @@
 ;;; vf-conformance-verbs-test.scm — the sets of actions, held to the vocabulary.
 ;;;
-;;; `(playnet planner formulas actions)` answers the questions code asks of the action
+;;; `(playnet vf formulas actions)` answers the questions code asks of the action
 ;;; table (is this verb an input, does it consume, does it take effort) by predicates
 ;;; over the table's columns. This test asks the same questions of the TTL itself,
 ;;; parsed at run time by (playnet test vf-ttl) and sharing no code with the repo's
@@ -16,8 +16,8 @@
 ;;;     guile --no-auto-compile -q -L module tests/planner/vf-conformance-verbs-test.scm
 
 (use-modules (playnet test harness)
-             (playnet planner vf schemas)
-             (playnet planner formulas actions)
+             (playnet vf schemas)
+             (playnet vf formulas actions)
              (srfi srfi-1))
 
 (use-modules (playnet test vf-ttl))

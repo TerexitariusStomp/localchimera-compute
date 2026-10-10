@@ -9,8 +9,8 @@
 ;;; Run: guile tests/planner/test-federated-reference-core.scm
 
 (use-modules (playnet test planner prelude)
-             (playnet planner solve engine)
-             (playnet planner solve solver)
+             (playnet solve engine)
+             (playnet solve solver)
              (srfi srfi-1)
              (ice-9 format))
 

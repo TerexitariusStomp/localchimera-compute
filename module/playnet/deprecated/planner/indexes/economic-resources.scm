@@ -1,7 +1,7 @@
 ;;; economic-resources.scm — Resource query index
 
 (define-module (playnet deprecated planner indexes economic-resources)
-  #:use-module (playnet planner vf schemas)
+  #:use-module (playnet vf schemas)
   #:export (build-economic-resource-index query-resources-by-spec
             query-resources-by-accountable query-resources-by-stage
             query-resources-by-location)

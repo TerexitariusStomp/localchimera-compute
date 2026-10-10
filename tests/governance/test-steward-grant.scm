@@ -5,8 +5,8 @@
 ;;; Run:  guile --no-auto-compile -L module -L tests tests/governance/test-steward-grant.scm
 
 (use-modules (playnet test harness)
-             (playnet planner scope root) (srfi srfi-1)
-             (playnet planner doors service)
+             (playnet scope root) (srfi srfi-1)
+             (playnet doors service)
              (playnet credentials custody) (playnet keri acdc) (playnet governance scope) (playnet governance socialization) (playnet keri acdc) (playnet keri acdc-store)
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))

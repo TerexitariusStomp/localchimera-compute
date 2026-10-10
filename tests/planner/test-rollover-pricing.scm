@@ -14,7 +14,7 @@
 ;;;     tests/planner/test-rollover-pricing.scm
 
 (use-modules (playnet test harness))
-(use-modules (playnet planner algorithms correlation) (playnet planner ddmrp buffers) (playnet planner algorithms option-premium) (playnet planner algorithms rollover-scheduler) (playnet planner vf schemas) (playnet planner ddmrp records)
+(use-modules (playnet algorithms correlation) (playnet ddmrp buffers) (playnet algorithms option-premium) (playnet algorithms rollover-scheduler) (playnet vf schemas) (playnet ddmrp records)
              (playnet credentials work) (playnet keri acdc) (playnet governance index-oracle) (playnet keri acdc) (playnet keri acdc-store)
              (goblins)
              (srfi srfi-1))

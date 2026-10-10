@@ -15,7 +15,7 @@
 ;;; Run:  guile -L module/playnet/planner module/playnet/planner/commute-located-test.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine))
+(use-modules (playnet solve engine))
 
 (define (run tau)
   (declare-world! #:places '(("A" 0.0 0.0) ("B" 0.0 0.9))   ; ~100 km east of A

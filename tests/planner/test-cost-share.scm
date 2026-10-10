@@ -12,12 +12,12 @@
 ;;; Run: guile -L module tests/planner/test-cost-share.scm
 
 (use-modules (playnet test harness)
-             (playnet planner vf schemas)
-             (playnet planner legal crossings)
-             (playnet planner legal bodies)
-             (playnet planner scope agents)
-             (playnet planner observation observer)
-             (playnet planner knowledge dsl findings)
+             (playnet vf schemas)
+             (playnet legal crossings)
+             (playnet legal bodies)
+             (playnet scope agents)
+             (playnet observation observer)
+             (playnet knowledge dsl findings)
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
 

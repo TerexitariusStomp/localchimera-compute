@@ -15,7 +15,7 @@
 ;;; Run:  guile -L module module/playnet/planner/spacetime-compiled.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner vf schemas))
+(use-modules (playnet vf schemas))
 
 ;; ════════════════════════════════════════════════════════════════════════════
 ;; PART A — THE COMPILER  (RecipeProcess + RecipeFlows → an activity column)

@@ -13,8 +13,8 @@
 ;;; Run:  guile --no-auto-compile -q -L module tests/planner/test-federation-wire.scm
 
 (use-modules (playnet test harness)
-             (playnet planner federation wire)
-             ((playnet planner solve engine) #:select (solve-decomposed make-boundary-oracle solve-consensus))
+             (playnet federation wire)
+             ((playnet solve engine) #:select (solve-decomposed make-boundary-oracle solve-consensus))
              ((playnet keri citizen-sig) #:select (make-keri-identity keri-identity-aid))
              (goblins) (goblins actor-lib methods)
              (srfi srfi-1) (ice-9 format))
@@ -22,7 +22,7 @@
 (use-modules (playnet test planner federation-wire-fixture))
 
 (define *last-certificate*
-  (lambda () (module-ref (resolve-module '(playnet planner solve engine)) '*last-certificate*)))
+  (lambda () (module-ref (resolve-module '(playnet solve engine)) '*last-certificate*)))
 
 ;; ── 1. parity: the oracle IS the scope's half of solve-decomposed ────────────
 ;; The consensus loop runs FIRST: solve-decomposed's finish settles the

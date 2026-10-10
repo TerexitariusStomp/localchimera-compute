@@ -19,19 +19,19 @@
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test scope)) ; mock-scope-root
-(use-modules (playnet test harness) (playnet planner knowledge recipes store) (playnet planner vf schemas) (playnet planner scope live)
+(use-modules (playnet test harness) (playnet knowledge recipes store) (playnet vf schemas) (playnet scope live)
              (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1) (ice-9 format))
 
 ;; tests run from the repository root (each file's own Run: line); the root is
 ;; resolved by its marker rather than by current-filename, which is #f or
 ;; -L-relative depending on how the file was loaded — both wrong for paths.
-(define root (or (and (file-exists? "module/playnet/planner/solve/engine.scm") (getcwd))
+(define root (or (and (file-exists? "module/playnet/solve/engine.scm") (getcwd))
                  (error "run this test from the repository root")))
 (define here (string-append root "/tests/planner"))
 (define (pl p) (load (string-append root "/module/playnet/planner/" p)))
-(use-modules (playnet planner legal crossings))
-(use-modules (playnet planner legal registry))
-(use-modules (playnet planner knowledge recipes compliance-processes))
+(use-modules (playnet legal crossings))
+(use-modules (playnet legal registry))
+(use-modules (playnet knowledge recipes compliance-processes))
 
 (define (empty-rs)
   (spawn ^recipe-store (hashmap) (hashmap) (hashmap) (hashmap) (hashmap)

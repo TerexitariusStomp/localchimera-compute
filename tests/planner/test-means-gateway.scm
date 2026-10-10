@@ -10,9 +10,9 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
-(use-modules (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
-(use-modules (playnet planner scope live))
-(use-modules (playnet planner doors service))
+(use-modules (playnet scope root) (playnet vf schemas) (srfi srfi-1))
+(use-modules (playnet scope live))
+(use-modules (playnet doors service))
 (use-modules (goblins) (goblins utils hashmap))
 (use-modules (srfi srfi-1))
 

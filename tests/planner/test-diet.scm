@@ -8,10 +8,10 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-diet.scm
 
-(use-modules (playnet test harness) (playnet planner vf schemas) (srfi srfi-1) (playnet planner scope live)
-             (playnet planner vf schemas)
-             (playnet planner knowledge catalogues diets)
-             (playnet planner knowledge catalogues subsistence)
+(use-modules (playnet test harness) (playnet vf schemas) (srfi srfi-1) (playnet scope live)
+             (playnet vf schemas)
+             (playnet knowledge catalogues diets)
+             (playnet knowledge catalogues subsistence)
              (srfi srfi-1) (ice-9 format))
 
 ;;; ─── the rule ───────────────────────────────────────────────────────────

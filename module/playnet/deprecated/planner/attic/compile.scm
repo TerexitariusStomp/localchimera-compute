@@ -20,10 +20,10 @@
 ;;; and ALTERNATIVE recipes (several columns touching one good-row = recipe choice)
 ;;; all fall out for free — the good-indexed model was the degenerate one-col case.
 ;;;
-;;; Run:  guile -L module module/playnet/planner/solve/compile.scm
+;;; Run:  guile -L module module/playnet/solve/compile.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner vf schemas))
+(use-modules (playnet vf schemas))
 
 ;; ── the COMPILER: a RecipeProcess + its RecipeFlows → one activity column ────
 ;; Each flow's ROLE is read from the standard VF action table, not hard-coded:

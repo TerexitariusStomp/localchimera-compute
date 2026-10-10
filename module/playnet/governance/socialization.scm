@@ -70,9 +70,9 @@
 ;; emitted as no claim at all — so the two paths agree bit-for-bit where they share
 ;; args.
 (define-module (playnet governance socialization)
-  #:use-module ((playnet planner facts located) #:select (svc-good))
-  #:use-module (playnet planner formulas flows)
-  #:use-module ((playnet planner formulas actions) #:select (labour-specs))
+  #:use-module ((playnet vf facts located) #:select (svc-good))
+  #:use-module (playnet vf formulas flows)
+  #:use-module ((playnet vf formulas actions) #:select (labour-specs))
   #:use-module (srfi srfi-1)
   #:use-module ((playnet utils keywords) #:select (kw-without kw-ref))
   #:use-module (playnet credentials custody)
@@ -80,22 +80,22 @@
   #:use-module (playnet keri acdc)
   #:use-module (playnet keri first-person credentials)
   #:use-module (playnet governance demand-fold)
-  #:use-module (playnet planner aggregation containment)
+  #:use-module (playnet vf aggregation containment)
   #:use-module (playnet keri acdc)
-  #:use-module (playnet planner formulas capacity)
-  #:use-module (playnet planner facts validity)
-  #:use-module (playnet planner observation account)
-  #:use-module (playnet planner observation observer)
-  #:use-module (playnet planner formulas capacity)
-  #:use-module (playnet planner vf schemas)
+  #:use-module (playnet vf formulas capacity)
+  #:use-module (playnet vf facts validity)
+  #:use-module (playnet observation account)
+  #:use-module (playnet observation observer)
+  #:use-module (playnet vf formulas capacity)
+  #:use-module (playnet vf schemas)
   #:use-module (srfi srfi-1)
-  #:use-module ((playnet planner observation account) #:select (set-person-substrate!))
+  #:use-module ((playnet observation account) #:select (set-person-substrate!))
   #:use-module ((playnet keri first-person predicates) #:select (holds-any-live-phc? personhood-bootstrapped?))
-  #:use-module ((playnet planner solve engine) #:select (key-spec       ; "spec#place@t" → spec, the one split
+  #:use-module ((playnet solve engine) #:select (key-spec       ; "spec#place@t" → spec, the one split
                                                    declared-partition set-period-span!))   ; the standing partition, laid before the caps
-  #:use-module (playnet planner scope live)
-  #:use-module (playnet planner aggregation scope-tree)
-  #:use-module ((playnet planner matching filter-rule)
+  #:use-module (playnet scope live)
+  #:use-module (playnet vf aggregation scope-tree)
+  #:use-module ((playnet matching filter-rule)
                 #:select (rule-passes? context criteria-json->alist criteria-ref))
   #:use-module ((playnet social lens) #:select (contact-aid contact-rel))
   #:use-module ((playnet social relationship-kinds) #:select (normalize-rel))
@@ -447,7 +447,7 @@
        (ownership-ok? store r now)))
 
 ;; The containment climb, in the terms EconomicResources are held in — the
-;; walk itself lives once, in (playnet planner aggregation containment).
+;; walk itself lives once, in (playnet vf aggregation containment).
 (define (%resource-resolver resources)
   (lambda (id) (find (lambda (y) (equal? id (economic-resource-id y))) resources)))
 
@@ -768,7 +768,7 @@
     (filter held?
             (project-socialized-custody (append own-resources extra) store commune-aid now))))
 
-;; The subtree walk itself lives in (playnet planner aggregation scope-tree) —
+;; The subtree walk itself lives in (playnet vf aggregation scope-tree) —
 ;; ONE walk for everything read off the federation tree, so a member with no
 ;; economic root, a down branch, a DAG and a cycle are handled in one place.
 
@@ -777,7 +777,7 @@
 ;; WHOLE SUBTREE, arbitrarily deep — each node's own scope-root resources, then its
 ;; members' recursively — so an ancestor (the commons, at the limit) sees a means
 ;; socialized anywhere below it. The pull twin of labour's arbitrarily-deep fold
-;; (aggregation/scope-tree.scm), but read FRESH each solve rather than pushed into a
+;; (vf/aggregation/scope-tree.scm), but read FRESH each solve rather than pushed into a
 ;; standing aggregate: exact under REFEDERATION with nothing to rewire — the tree is
 ;; whatever it is at planning time. A visited-set (eq? identity) folds a CYCLE or a
 ;; DAG (a commune shared by two federations) to ONE visit per node, so a loop

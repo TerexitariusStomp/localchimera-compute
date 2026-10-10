@@ -12,14 +12,14 @@
 ;;; Run:  guile -L module -L tests tests/planner/test-credit-fold.scm
 
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
-(use-modules (playnet test harness) (playnet planner observation account) (playnet planner pools credit-fold) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1) (playnet planner doors service)
-             ((playnet planner observation account)
+(use-modules (playnet test harness) (playnet observation account) (playnet pools credit-fold) (playnet scope root) (playnet vf schemas) (srfi srfi-1) (playnet doors service)
+             ((playnet observation account)
               #:select (set-person-substrate! household-consumer-voice household-social-free-time))
-             (playnet planner pools credit-fold)
+             (playnet pools credit-fold)
              (goblins) (goblins utils hashmap) (srfi srfi-1))
 
 
-(use-modules ((playnet planner observation account) #:select (declare-claimable!)))
+(use-modules ((playnet observation account) #:select (declare-claimable!)))
 (use-modules ((playnet test scope) #:select (record-work!)))
 ;; the rail is read off the recipes: this fixture stands in for the plan and
 ;; declares that a claim recipe stands for spec-bread (account.scm spec-claimable?)
@@ -264,7 +264,7 @@
 ;; construction: the voices sum to one, a draw (`claimed`) leaves them where
 ;; they were, and an empty pool leaves the share undefined.
 (display "\n── consumer voice: one law over cells, drawdown outside it ──\n")
-(use-modules ((playnet planner algorithms elastic) #:select (consumer-voices-of effective-balance)))
+(use-modules ((playnet algorithms elastic) #:select (consumer-voices-of effective-balance)))
 (let* ((member-cells (lambda (m) (list (cons (cons 'gross (car m)) (cadr m))
                                        (cons (cons 'ccf (car m)) (caddr m))
                                        (cons (cons 'citizen (car m)) 1))))

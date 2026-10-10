@@ -10,9 +10,9 @@
 ;;; Run:  guile --no-auto-compile -q -L module tests/planner/test-window-union.scm
 
 (use-modules (playnet test harness)
-             (playnet planner vf schemas) (playnet planner beyond schedules)
-             ((playnet planner solve engine) #:select (window-hours agent-window-hours set-period-span!))
-             ((playnet planner facts availability)
+             (playnet vf schemas) (playnet vf beyond schedules)
+             ((playnet solve engine) #:select (window-hours agent-window-hours set-period-span!))
+             ((playnet vf facts availability)
               #:select (window-weekly-hours window-hours-on-dates make-dated-week))
              (srfi srfi-1))
 

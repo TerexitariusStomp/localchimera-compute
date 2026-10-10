@@ -29,11 +29,11 @@
 ;;;        tests/planner/test-limit-migration.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner vf schemas)
-             (playnet planner formulas stocks))
-(use-modules (playnet planner knowledge catalogues eco)
-             (playnet planner knowledge dsl shorthand))
+(use-modules (playnet solve engine)
+             (playnet vf schemas)
+             (playnet vf formulas stocks))
+(use-modules (playnet knowledge catalogues eco)
+             (playnet knowledge dsl shorthand))
 ;; A period here is a WEEK: the roster's 09:00–17:00 every day is 56 h a period,
 ;; the labour these limits were sized on, and the same on any date.
 (set-period-length! 1.0 "week")

@@ -8,7 +8,7 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness)
-             (playnet planner scope root) (playnet planner vf schemas)
+             (playnet scope root) (playnet vf schemas)
              (goblins)
              (goblins utils hashmap)
              (srfi srfi-1))

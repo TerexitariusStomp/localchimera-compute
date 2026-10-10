@@ -10,8 +10,8 @@
 ;;; Run:  guile --no-auto-compile -q -L module tests/planner/test-federation-wire-procs.scm
 
 (use-modules (playnet test harness)
-             (playnet planner federation wire)
-             ((playnet planner solve engine) #:select (make-boundary-oracle))
+             (playnet federation wire)
+             ((playnet solve engine) #:select (make-boundary-oracle))
              ((playnet keri citizen-sig) #:select (make-keri-identity keri-identity-aid))
              (goblins) (goblins vat)
              (goblins actor-lib on)
@@ -19,7 +19,7 @@
              (goblins ocapn netlayer websocket)
              (goblins utils crypto)
              (fibers)
-             ((playnet planner federation host) #:select (read-kept))
+             ((playnet federation host) #:select (read-kept))
              (ice-9 threads) (ice-9 format)
              (srfi srfi-1))
 
@@ -83,7 +83,7 @@
 (unless (eq? (car result) 'error)
   (let ((met (list-ref result 0)) (rounds (list-ref result 1)) (pull (list-ref result 2))
         (reports (list-ref result 3))
-        (cert (module-ref (resolve-module '(playnet planner solve engine)) '*last-certificate*)))
+        (cert (module-ref (resolve-module '(playnet solve engine)) '*last-certificate*)))
     (format #t "   two processes: met ~,2f rounds ~a λ(flour) ~,6f   (in-process: met ~,2f rounds ~a λ ~,6f)~%"
             met rounds pull (car ref) (cadr ref) (caddr ref))
     (format #t "   certificate: ~s~%" cert)

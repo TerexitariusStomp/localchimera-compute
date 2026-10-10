@@ -14,9 +14,9 @@
 ;;; Run:  guile --no-auto-compile -q -L module -l tests/planner/composition-bridge-test.scm
 
 (use-modules (playnet test harness)
-             (playnet planner knowledge recipes grow) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
-             (playnet planner doors service)
-             (playnet planner knowledge catalogues substances)
+             (playnet knowledge recipes grow) (playnet scope root) (playnet vf schemas) (srfi srfi-1)
+             (playnet doors service)
+             (playnet knowledge catalogues substances)
              (goblins)
              (goblins persistence-store memory)
              (srfi srfi-1))

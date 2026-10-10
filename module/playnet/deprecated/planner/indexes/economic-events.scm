@@ -1,7 +1,7 @@
 ;;; economic-events.scm — Event query index
 
 (define-module (playnet deprecated planner indexes economic-events)
-  #:use-module (playnet planner vf schemas)
+  #:use-module (playnet vf schemas)
   #:export (build-economic-event-index query-events-by-spec query-events-by-action
             query-events-by-agent query-events-by-resource query-events-by-process)
   #:use-module (srfi srfi-1)

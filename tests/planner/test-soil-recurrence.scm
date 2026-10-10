@@ -23,16 +23,16 @@
 (define (sibling f) (or (find file-exists? (filter-map (lambda (p) (and (string? p) (string-append (dirname p) "/" f)))
                                                        (cons (current-filename) (command-line))))
                         (error "sibling not found" f)))
-(use-modules (playnet planner solve engine)
-             (playnet planner vf schemas)
-             (playnet planner formulas stocks)
-             (playnet planner knowledge worlds bioregions)
-             (playnet planner knowledge dsl shorthand))
-;; engine/robust.scm arrives with the engine — (playnet planner solve engine) loads it into
+(use-modules (playnet solve engine)
+             (playnet vf schemas)
+             (playnet vf formulas stocks)
+             (playnet knowledge worlds bioregions)
+             (playnet knowledge dsl shorthand))
+;; engine/robust.scm arrives with the engine — (playnet solve engine) loads it into
 ;; itself and exports its names, so the load that stood here was a second copy
 ;; of the same text into this module (retired with the engine-as-module arc).
-(use-modules (playnet planner knowledge worlds doon-valley))
-(primitive-load (sibling "../../module/playnet/planner/knowledge/recipes/navdanya-farm.scm"))
+(use-modules (playnet knowledge worlds doon-valley))
+(primitive-load (sibling "../../module/playnet/knowledge/recipes/navdanya-farm.scm"))
 
 (define SEASONS '(0 1 2 3 4 5 6 7))
 (define LAND 2.0)                                        ; hectares croppable per season

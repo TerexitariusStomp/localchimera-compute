@@ -12,7 +12,7 @@
   #:use-module (playnet deprecated planner relational allocation)
   #:use-module (playnet deprecated planner relational planning-facts)
   #:use-module (playnet deprecated planner relational demand-relation)
-  #:use-module (playnet planner vf schemas)
+  #:use-module (playnet vf schemas)
   #:use-module (playnet utils store-utils)
   #:export (*epsilon-plan* plan-o extract-open-demands by-due-date by-local-first
             by-harmony-priority demand-class all-demands-o relational-plan))

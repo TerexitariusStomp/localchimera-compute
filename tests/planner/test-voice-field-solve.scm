@@ -16,8 +16,8 @@
 ;;; Run:  guile -q -L module tests/planner/test-voice-field-solve.scm
 
 (use-modules (playnet test planner prelude)
-             (playnet planner solve engine) (playnet planner solve compile) (playnet planner solve solver)
-             (playnet planner facts parts) (playnet planner solve voice-field)
+             (playnet solve engine) (playnet solve compile) (playnet solve solver)
+             (playnet vf facts parts) (playnet solve voice-field)
              (srfi srfi-1) (ice-9 format))
 
 (define (~= a b . tol) (< (abs (- a b)) (if (pair? tol) (car tol) 1e-6)))

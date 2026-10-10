@@ -10,7 +10,7 @@
 ;;; Run: guile -L module tests/governance/test-socialization-contribution.scm
 
 (use-modules (playnet test harness)
-             (playnet planner scope root) (playnet planner vf schemas)
+             (playnet scope root) (playnet vf schemas)
              (playnet governance scope) (playnet governance socialization)
              (playnet credentials commitments) (playnet credentials custody)
              (playnet keri acdc) (playnet keri acdc-store)

@@ -1,4 +1,4 @@
-;;; test-live-wiring.scm — (playnet planner scope live): live scope-root → plan → VF work Commitments
+;;; test-live-wiring.scm — (playnet scope live): live scope-root → plan → VF work Commitments
 ;;;
 ;;; Exercises plan-scope against goblins actor stores (mocked here, but reached the
 ;;; same way the real scope-root is — synchronous near-calls inside a vat). The
@@ -9,10 +9,10 @@
 
 (use-modules (playnet test scope)) ; mock-scope-root
 (use-modules (playnet test harness)
-             (playnet planner vf schemas) (srfi srfi-1)
-             (playnet planner scope live)
+             (playnet vf schemas) (srfi srfi-1)
+             (playnet scope live)
              (playnet test planner bread)
-             (playnet planner doors service)
+             (playnet doors service)
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
 
@@ -62,7 +62,7 @@
 (define work (assq-ref result 'work))
 (define (provider-skills p) (sort (delete-duplicates (filter-map (lambda (w) (and (equal? (assq-ref w 'provider) p) (assq-ref w 'conforms-to))) work)) string<?))
 
-(display "\n── (playnet planner scope live): plan-scope over a live scope-root ──\n")
+(display "\n── (playnet scope live): plan-scope over a live scope-root ──\n")
 (check "demand substantially met"        (> (assq-ref result 'met) 0.9))
 (check "every commitment action = work"  (every (lambda (w) (eq? (assq-ref w 'action) 'work)) work))
 (check "farmer farms (skill-farm)"       (member "skill-farm" (provider-skills "farmer")) )

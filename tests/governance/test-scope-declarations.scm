@@ -7,7 +7,7 @@
 ;;; title rail read for the span gate's standing (title-rights-of).
 ;;; docs/planning/federation/federation-flow-map.md §7 item 4.
 
-(use-modules (playnet credentials custody) (playnet credentials declarations) (playnet governance recipe-standing) (playnet governance service) (playnet governance socialization) (playnet keri acdc-store) (playnet planner scope root) (playnet test harness)
+(use-modules (playnet credentials custody) (playnet credentials declarations) (playnet governance recipe-standing) (playnet governance service) (playnet governance socialization) (playnet keri acdc-store) (playnet scope root) (playnet test harness)
              ((playnet governance socialization) #:select (title-rights-of consented-span-of live-willingness-of))
              ((playnet governance recipe-standing) #:select (live-regime-of))
              ((playnet credentials custody) #:select (make-ownership-attestation-credential))

@@ -8,13 +8,13 @@
 ;;;
 ;;; Run: guile -L module tests/planner/test-filings.scm
 
-(use-modules (playnet test harness) (playnet planner observation observer) (playnet planner vf schemas) (playnet planner beyond lot)
+(use-modules (playnet test harness) (playnet observation observer) (playnet vf schemas) (playnet vf beyond lot)
              (goblins) (goblins vat) (srfi srfi-1) (ice-9 format))
 
 (define here (dirname (current-filename)))
-(use-modules (playnet planner legal crossings))
-(use-modules (playnet planner legal registry))
-(use-modules (playnet planner legal compliance)) (use-modules (playnet planner legal filings))
+(use-modules (playnet legal crossings))
+(use-modules (playnet legal registry))
+(use-modules (playnet legal compliance)) (use-modules (playnet legal filings))
 
 (define tmpl
   (filing-template "Food Establishment Permit Application"

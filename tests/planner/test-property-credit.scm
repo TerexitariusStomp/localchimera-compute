@@ -13,9 +13,9 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-property-credit.scm
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
-(use-modules (playnet test harness) (playnet planner algorithms elastic) (playnet planner pools credit-fold)
-             (playnet planner scope root) (playnet planner vf schemas) (playnet planner observation states)
-             ((playnet planner observation account) #:select (declare-claimable!))
+(use-modules (playnet test harness) (playnet algorithms elastic) (playnet pools credit-fold)
+             (playnet scope root) (playnet vf schemas) (playnet observation states)
+             ((playnet observation account) #:select (declare-claimable!))
              ((playnet test scope) #:select (plan-claim! record-work!))
              (goblins) (goblins persistence-store memory) (goblins utils hashmap) (srfi srfi-1) (srfi srfi-11) (ice-9 format))
 (declare-claimable! "spec-bread")

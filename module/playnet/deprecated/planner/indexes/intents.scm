@@ -1,7 +1,7 @@
 ;;; intents.scm — Intent query index
 
 (define-module (playnet deprecated planner indexes intents)
-  #:use-module (playnet planner vf schemas)
+  #:use-module (playnet vf schemas)
   #:export (build-intent-index query-intents-by-spec query-intents-by-action
             query-intents-by-agent query-intents-by-plan)
   #:use-module (srfi srfi-1)

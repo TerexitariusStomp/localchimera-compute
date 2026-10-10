@@ -19,11 +19,11 @@
 (use-modules (playnet test harness)
              (playnet wire rows)
              (playnet wire snapshot) (playnet wire replies)
-             (playnet planner doors family wire)
-             (playnet planner doors record-rows)
+             (playnet doors family wire)
+             (playnet doors record-rows)
              ((playnet utils records) #:select (vf-record-type-name))
-             (playnet planner vf schemas)
-             ((playnet planner knowledge dsl shorthand) #:select (flow*))
+             (playnet vf schemas)
+             ((playnet knowledge dsl shorthand) #:select (flow*))
              (srfi srfi-1))
 
 (define measure-row

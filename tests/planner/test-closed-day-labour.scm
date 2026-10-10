@@ -17,8 +17,8 @@
 ;;; Run:  guile --no-auto-compile -q -L module tests/planner/test-closed-day-labour.scm
 
 (use-modules (playnet test harness)
-             (playnet planner vf schemas) (playnet planner beyond schedules) (srfi srfi-11)
-             (playnet planner scope live)
+             (playnet vf schemas) (playnet vf beyond schedules) (srfi srfi-11)
+             (playnet scope live)
              (playnet test planner bread)
              ((playnet utils clock) #:select (now instant->civil))
              (goblins) (goblins vat)

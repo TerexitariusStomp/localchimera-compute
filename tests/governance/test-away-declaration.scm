@@ -6,7 +6,7 @@
 ;;; (sign under the person's own AID, verify under it) and the two ways it
 ;;; must fail: a tampered statement, and a signature from someone else.
 
-(use-modules (playnet planner facts away)
+(use-modules (playnet vf facts away)
              (playnet keri signify)   ; installs the server crypto backend, load-time
              ((playnet keri citizen-sig)
               #:select (make-keri-identity keri-identity-keypair keri-identity-aid))

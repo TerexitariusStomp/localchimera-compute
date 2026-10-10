@@ -7,13 +7,13 @@
 ;;;
 ;;; Run: guile -L module tests/planner/test-mask-resolution.scm
 
-(use-modules (playnet test harness) (playnet planner observation observer) (playnet planner vf schemas) (srfi srfi-1)
+(use-modules (playnet test harness) (playnet observation observer) (playnet vf schemas) (srfi srfi-1)
              (goblins) (goblins vat) (srfi srfi-1) (ice-9 format))
 
-(use-modules (playnet planner legal crossings))
-(use-modules (playnet planner legal registry))
-(use-modules (playnet planner legal registry-actor))
-(use-modules (playnet planner legal compliance)) (use-modules (playnet planner legal adapters))
+(use-modules (playnet legal crossings))
+(use-modules (playnet legal registry))
+(use-modules (playnet legal registry-actor))
+(use-modules (playnet legal compliance)) (use-modules (playnet legal adapters))
 
 (define (held-cred id spec holder)
   (make-economic-resource #:id id #:name spec #:conforms-to spec #:classified-as '("credential")

@@ -25,8 +25,8 @@
              (playnet deprecated ddmrp)        ; alist-ref
              (playnet ai key-pool)
              (playnet deprecated planner)
-             (playnet planner doors service)
-             (playnet planner scope live)         ; persist-materialized! (the bridge)
+             (playnet doors service)
+             (playnet scope live)         ; persist-materialized! (the bridge)
              (playnet deprecated planner seed-meeting-scope)
              (srfi srfi-1))
 ;;; ── Harness ────────────────────────────────────────────────────────────────
@@ -328,10 +328,10 @@
                      (member "attests:hs-safety" tags) (member "attests:hs-sanitation" tags)
                      (member "certified" tags) (member "rent-eur-night:20" tags) (member "tenure:rent" tags) #t))))
 (check-pred "a rented dwelling is held under split custody — the wheel's rented family reads it"
-            (let ((d (find (lambda (r) (equal? "dwelling:agent-bob" ((@ (playnet planner vf schemas) economic-resource-id) r)))
+            (let ((d (find (lambda (r) (equal? "dwelling:agent-bob" ((@ (playnet vf schemas) economic-resource-id) r)))
                            (with-vat planner-vat ($ ($ meeting-scope 'observer) 'all-resources)))))
-              (and d ((@ (playnet planner vf schemas) resource-rented?) d)
-                   (equal? "agent-bob" ((@ (playnet planner vf schemas) economic-resource-custodian-scope) d)))))
+              (and d ((@ (playnet vf schemas) resource-rented?) d)
+                   (equal? "agent-bob" ((@ (playnet vf schemas) economic-resource-custodian-scope) d)))))
 (let ((r (svc 'declare-dwelling "org:meeting" "agent-bob" "" 0 1 19 24 1 "" #f 0 "own")))
   (check-pred "declare-dwelling refuses a measurement that is not positive" (and (pair? r) (eq? (car r) 'error))))
 (let ((r (svc 'declare-dwelling "org:meeting" "agent-bob" "nowhere-such" 40 2 19 24 1 "" #f 0 "own")))

@@ -33,10 +33,10 @@
 ;;;        tests/planner/test-restoration-recipe.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner vf schemas)
-             (playnet planner knowledge dsl shorthand)
-             (playnet planner formulas stocks))
+(use-modules (playnet solve engine)
+             (playnet vf schemas)
+             (playnet knowledge dsl shorthand)
+             (playnet vf formulas stocks))
 
 (define *pass* 0) (define *fail* 0)
 (define (check-pred name ok)

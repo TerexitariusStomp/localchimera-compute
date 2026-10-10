@@ -21,8 +21,8 @@
 ;;; Run:  guile -L module/playnet/planner module/playnet/planner/wear-moral-depreciation-test.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner solve compile))
+(use-modules (playnet solve engine)
+             (playnet solve compile))
 
 ;; bake wears the oven; condition has two components with their own suppliers:
 ;;   fix   : repair  =   5 Cond_rep for  1 h  → 0.2 h/unit   (the repair rate)

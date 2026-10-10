@@ -12,7 +12,7 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/planner/test-offer-work-drift-door.scm
 
-(use-modules (playnet planner scope root) (playnet planner doors service) (playnet test harness)
+(use-modules (playnet scope root) (playnet doors service) (playnet test harness)
              (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1))
 
 (define vat (spawn-vat #:name "offer-work-drift-door"))

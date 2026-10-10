@@ -21,9 +21,9 @@
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
-(use-modules (playnet planner scope root) (playnet planner vf schemas) (playnet planner beyond scenario) (srfi srfi-1))
-(use-modules (playnet planner doors service))
-(use-modules ((playnet planner solve engine) #:select (observed-shocks scenario-with-shocks)))
+(use-modules (playnet scope root) (playnet vf schemas) (playnet vf beyond scenario) (srfi srfi-1))
+(use-modules (playnet doors service))
+(use-modules ((playnet solve engine) #:select (observed-shocks scenario-with-shocks)))
 (use-modules (playnet governance recipe-standing) (playnet governance scope) (playnet governance service) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri said-portable))
 (use-modules ((playnet governance recipe-standing) #:select (scope-standing)))
 (use-modules ((playnet keri citizen-sig)

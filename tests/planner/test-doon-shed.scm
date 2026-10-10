@@ -11,15 +11,15 @@
 ;;; Run:  guile --no-auto-compile -L module/playnet/planner tests/planner/test-doon-shed.scm
 
 (use-modules (playnet test planner prelude)
-             (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner vf schemas)
-             (playnet planner knowledge worlds bioregions)
+             (playnet solve engine)
+             (playnet solve compile)
+             (playnet vf schemas)
+             (playnet knowledge worlds bioregions)
              (srfi srfi-1)
              (ice-9 format))
-(use-modules (playnet planner knowledge worlds doon-valley)
-             (playnet planner knowledge dsl shorthand))   ; scenarios (data)
-(use-modules (playnet planner knowledge worlds doon-shed))     ; the assembled bioregion (one <bioregion>)
+(use-modules (playnet knowledge worlds doon-valley)
+             (playnet knowledge dsl shorthand))   ; scenarios (data)
+(use-modules (playnet knowledge worlds doon-shed))     ; the assembled bioregion (one <bioregion>)
 
 ;; everything the test needs is projected from the ONE object *doon-shed*:
 (define *doon-shed-id*  (bioregion-id *doon-shed*))

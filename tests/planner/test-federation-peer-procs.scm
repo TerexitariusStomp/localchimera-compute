@@ -29,10 +29,10 @@
 ;;; carrying the wire both ways), and the round trips are that network's.
 
 (use-modules (playnet test harness)
-             (playnet planner federation peer)
-             (playnet planner federation host)
+             (playnet federation peer)
+             (playnet federation host)
              (playnet gateway federate)
-             ((playnet planner solve engine) #:select (make-boundary-oracle solve-consensus))
+             ((playnet solve engine) #:select (make-boundary-oracle solve-consensus))
              ((playnet keri citizen-sig) #:select (make-keri-identity keri-identity-aid keri-identity-keypair))
              ((playnet credentials membership) #:select (make-federation-sturdyref-credential))
              ((playnet governance sturdyref-credential) #:select (sturdyref-credential-end))

@@ -1,4 +1,4 @@
-;;; test-shocks.scm — the shock algebra (playnet planner formulas shocks), read against
+;;; test-shocks.scm — the shock algebra (playnet vf formulas shocks), read against
 ;;; docs/antifragile/: one matcher behind every branch, the adverse direction,
 ;;; and a tail that stands beyond its record by construction.
 ;;;
@@ -6,8 +6,8 @@
 ;;;
 ;;; Run: guile -L module tests/planner/test-shocks.scm
 
-(use-modules (playnet planner formulas shocks)
-             (playnet planner vf schemas) (playnet planner beyond scenario)
+(use-modules (playnet vf formulas shocks)
+             (playnet vf schemas) (playnet vf beyond scenario)
              (srfi srfi-1)
              (ice-9 format))
 
@@ -131,8 +131,8 @@
                                                                      '(("rice" . 0.1) ("maize" . 0.1) ("pulses" . 0.1) (consume "water" 2.0) (produce "rice" 1 0.1))))
 
 ;; every seeded shed: the future its floors are defended in lies beyond its record
-(use-modules (playnet planner knowledge worlds berlin) (playnet planner knowledge worlds cascadia)
-             (playnet planner knowledge worlds bay-area) (playnet planner knowledge worlds doon-valley))
+(use-modules (playnet knowledge worlds berlin) (playnet knowledge worlds cascadia)
+             (playnet knowledge worlds bay-area) (playnet knowledge worlds doon-valley))
 (for-each
  (lambda (named)
    (let* ((set (cdr named)) (rec (map scenario-shocks (drop-right set 1)))

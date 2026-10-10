@@ -19,11 +19,11 @@
 ;;; Run: guile -L module tests/planner/test-response-solve.scm
 
 (use-modules (playnet test planner prelude)
-             (playnet planner solve engine)
-             (playnet planner vf schemas) (playnet planner beyond scenario)
-             (playnet planner formulas shocks)
-             (playnet planner solve recipe-response)
-             (playnet planner knowledge dsl shorthand)
+             (playnet solve engine)
+             (playnet vf schemas) (playnet vf beyond scenario)
+             (playnet vf formulas shocks)
+             (playnet solve recipe-response)
+             (playnet knowledge dsl shorthand)
              (srfi srfi-1)
              (ice-9 format))
 

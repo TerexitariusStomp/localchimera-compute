@@ -10,8 +10,8 @@
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-rotation.scm
 
 (use-modules (playnet test harness)
-             (playnet planner plan assignment)
-             (playnet planner plan rotation)
+             (playnet plan assignment)
+             (playnet plan rotation)
              (srfi srfi-1))
 
 ;;; The offer a week's plan makes: one need, three equally-granted people.

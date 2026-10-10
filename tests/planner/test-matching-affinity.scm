@@ -9,7 +9,7 @@
 ;;;         -l tests/planner/test-matching-affinity.scm
 
 (use-modules (playnet test harness)
-             (playnet planner matching affinity)
+             (playnet matching affinity)
              (srfi srfi-1))
 
 (define (assq-ref alist key) (let ((p (assq key alist))) (and p (cdr p))))

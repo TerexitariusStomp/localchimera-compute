@@ -14,7 +14,7 @@
              (goblins vat)
              (goblins actor-lib methods)
              (playnet test harness)
-             (playnet planner vf schemas) (srfi srfi-1)
+             (playnet vf schemas) (srfi srfi-1)
              (playnet monero wallet)
              (playnet monero poller)
              (srfi srfi-1)

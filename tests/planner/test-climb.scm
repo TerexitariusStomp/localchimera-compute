@@ -12,9 +12,9 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (srfi srfi-1) (ice-9 format)
-             (playnet planner solve engine) (playnet planner vf schemas)
-             (playnet planner knowledge dsl shorthand)
-             ((playnet planner knowledge recipes transport) #:select (pickup-flow dropoff-flow)))
+             (playnet solve engine) (playnet vf schemas)
+             (playnet knowledge dsl shorthand)
+             ((playnet knowledge recipes transport) #:select (pickup-flow dropoff-flow)))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

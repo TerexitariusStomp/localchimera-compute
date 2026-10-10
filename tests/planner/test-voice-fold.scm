@@ -16,12 +16,12 @@
 ;;;
 ;;; Run:  guile -q -L module tests/planner/test-voice-fold.scm
 
-(use-modules (playnet test harness) (playnet planner pools credit-fold) (playnet planner scope root) (srfi srfi-1) (playnet planner doors service)
-             (playnet planner facts parts) (playnet planner solve voice-field)
-             (playnet planner pools voice-fold)
-             ((playnet planner pools credit-fold) #:select (voice-share))
+(use-modules (playnet test harness) (playnet pools credit-fold) (playnet scope root) (srfi srfi-1) (playnet doors service)
+             (playnet vf facts parts) (playnet solve voice-field)
+             (playnet pools voice-fold)
+             ((playnet pools credit-fold) #:select (voice-share))
              ((playnet test scope) #:select (record-work! push-on))
-             ((playnet planner knowledge dsl shorthand) #:select (rp*))
+             ((playnet knowledge dsl shorthand) #:select (rp*))
              (goblins) (goblins utils hashmap) (srfi srfi-1))
 
 (define (approx= a b) (< (abs (- a b)) 1e-9))

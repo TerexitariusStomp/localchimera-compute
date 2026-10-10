@@ -9,8 +9,8 @@
 ;;; Run: guile -L module tests/planner/test-lint-records-door.scm
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test harness) (playnet planner scope root) (playnet planner vf schemas) (playnet planner doors service)
-             (playnet planner vf schemas)
+(use-modules (playnet test harness) (playnet scope root) (playnet vf schemas) (playnet doors service)
+             (playnet vf schemas)
              (goblins) (goblins vat) (goblins utils hashmap) (json) (srfi srfi-1))
 
 (define vat (spawn-vat))

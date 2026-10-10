@@ -12,7 +12,7 @@
 ;;;         -l load-all.scm -l tests/test-buffer-management.scm
 
 (use-modules (playnet test harness))
-(use-modules (playnet planner ddmrp buffers) (playnet planner federation remote-transport) (playnet planner scope root) (playnet planner vf schemas) (playnet planner ddmrp records) (playnet utils store-utils) (srfi srfi-1))
+(use-modules (playnet ddmrp buffers) (playnet federation remote-transport) (playnet scope root) (playnet vf schemas) (playnet ddmrp records) (playnet utils store-utils) (srfi srfi-1))
 (use-modules (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)

@@ -1,13 +1,13 @@
 ;; scratch harness: the festival seed in its located shape, with the live store's extras
 ;; EXTRAS=1|2  PERIODS=n  SKILLS=0  REPRO=0  WANT_SPEC=  WANT_PLACE=
-(use-modules (playnet planner knowledge recipes berlin-commune-seed) (playnet planner knowledge recipes berlin-festival-seed) (playnet planner knowledge recipes farm-commune-seed) (playnet planner scope root) (playnet planner vf schemas) (playnet planner beyond scenario) (srfi srfi-1) (playnet planner doors service) (playnet planner scope live)
-             (playnet planner knowledge worlds berlin-baumscheiben)
-             (playnet planner knowledge recipes berlin-festival-seed)
-             ((playnet planner knowledge recipes farm-commune-seed) #:select (seed-farm-holds!))
-             (playnet planner vf schemas) (playnet planner knowledge worlds bioregions)
+(use-modules (playnet knowledge recipes berlin-commune-seed) (playnet knowledge recipes berlin-festival-seed) (playnet knowledge recipes farm-commune-seed) (playnet scope root) (playnet vf schemas) (playnet vf beyond scenario) (srfi srfi-1) (playnet doors service) (playnet scope live)
+             (playnet knowledge worlds berlin-baumscheiben)
+             (playnet knowledge recipes berlin-festival-seed)
+             ((playnet knowledge recipes farm-commune-seed) #:select (seed-farm-holds!))
+             (playnet vf schemas) (playnet knowledge worlds bioregions)
              (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1) (ice-9 format))
 (define vat (spawn-vat #:name "festival-shape"))
-(when (getenv "BACKEND") ((@ (playnet planner solve solver) set-backend!) (string->symbol (getenv "BACKEND"))))
+(when (getenv "BACKEND") ((@ (playnet solve solver) set-backend!) (string->symbol (getenv "BACKEND"))))
 (define extras? (getenv "EXTRAS"))
 (define periods (string->number (or (getenv "PERIODS") "3")))
 (with-vat vat

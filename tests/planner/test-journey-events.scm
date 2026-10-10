@@ -18,9 +18,9 @@
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-journey-events.scm
 
 (use-modules (playnet test harness))
-(use-modules (playnet planner knowledge recipes transport) (playnet planner scope root) (playnet planner vf schemas) (playnet planner observation states) (srfi srfi-1))
-(use-modules (playnet planner doors service))
-(use-modules (playnet planner scope live))
+(use-modules (playnet knowledge recipes transport) (playnet scope root) (playnet vf schemas) (playnet observation states) (srfi srfi-1))
+(use-modules (playnet doors service))
+(use-modules (playnet scope live))
 (use-modules (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)

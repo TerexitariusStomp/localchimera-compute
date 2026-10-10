@@ -1,5 +1,5 @@
 ;;; test-counts.scm — what the ledger says of counts, and the shapes it reads
-;;; (module/playnet/planner/doors/counts.scm, observation/adjustment.scm).
+;;; (module/playnet/doors/counts.scm, observation/adjustment.scm).
 ;;;
 ;;; What this pins:
 ;;;   • an event is a part of a count by the one rule the contest reads
@@ -20,11 +20,11 @@
 (add-to-load-path "module")
 (use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness)
-             (playnet planner vf schemas)
-             (playnet planner formulas counting)
-             (playnet planner doors counts)
+             (playnet vf schemas)
+             (playnet vf formulas counting)
+             (playnet doors counts)
              (playnet utils envelope)
-             (playnet planner observation adjustment)
+             (playnet observation adjustment)
              (playnet utils clock)
              (playnet utils common))
 

@@ -15,11 +15,11 @@
 ;;; Run:  guile -L module/playnet/planner module/playnet/planner/use-mop-test.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner solve solver)
-             (playnet planner vf schemas)
-             (playnet planner knowledge dsl shorthand))
+(use-modules (playnet solve engine)
+             (playnet solve compile)
+             (playnet solve solver)
+             (playnet vf schemas)
+             (playnet knowledge dsl shorthand))
 
 (define bake-tpl
   (car (compile-recipe (list (rp "bake" "Bake"))

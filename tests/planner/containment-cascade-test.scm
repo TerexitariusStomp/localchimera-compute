@@ -9,7 +9,7 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness)
-             (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
+             (playnet scope root) (playnet vf schemas) (srfi srfi-1)
              (goblins)
              (goblins persistence-store memory)
              (srfi srfi-1))
@@ -92,8 +92,8 @@
     (check-pred "nitrogen cascaded two levels → 1.56" (~= (onhand obs "n") 1.56))))
 
 ;;; ── a count's lower and raise are inverses, and a void takes the cascade back ──
-(use-modules ((playnet planner observation adjustment) #:select (adjustment-event))
-             ((playnet planner observation observer) #:select (void-event))
+(use-modules ((playnet observation adjustment) #:select (adjustment-event))
+             ((playnet observation observer) #:select (void-event))
              ((playnet utils clock) #:select (civil->instant)))
 
 (define store3 (make-memory-store))

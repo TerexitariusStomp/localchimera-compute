@@ -14,9 +14,9 @@
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-event-legacy-fields.scm
 
 (use-modules (playnet test harness)
-             (playnet planner vf schemas)
-             (playnet planner vf serdes)
-             (playnet planner bridge codec)
+             (playnet vf schemas)
+             (playnet vf serdes)
+             (playnet bridge codec)
              (srfi srfi-1))
 
 (define ev

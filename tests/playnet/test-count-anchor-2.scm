@@ -5,8 +5,8 @@
 (add-to-load-path "module")
 (use-modules (playnet test harness)
              (goblins) (goblins persistence-store memory) (goblins utils hashmap)
-             (playnet planner scope root) (playnet planner vf schemas) (playnet planner doors service)
-             ((playnet planner observation observer) #:select (void-event))
+             (playnet scope root) (playnet vf schemas) (playnet doors service)
+             ((playnet observation observer) #:select (void-event))
              (srfi srfi-1))
 
 (define store (make-memory-store))

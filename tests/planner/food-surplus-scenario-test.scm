@@ -24,10 +24,10 @@
 (use-modules (srfi srfi-1) (ice-9 format))
 (define here (dirname (current-filename)))
 (define root (dirname (dirname here)))
-(use-modules (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner solve solver)
-             (playnet planner vf schemas))
+(use-modules (playnet solve engine)
+             (playnet solve compile)
+             (playnet solve solver)
+             (playnet vf schemas))
 
 ;; SORT: 1 kg produce (drawn from donor surplus) + 0.02 van-hours + 0.05 volunteer-hours
 ;; ⇒ 1 kg sorted-produce a recipient can receive.

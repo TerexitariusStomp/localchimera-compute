@@ -8,11 +8,11 @@
 ;;; on the way up.
 
 (use-modules (playnet test harness)
-             (playnet planner aggregation fold-node)
-             (playnet planner aggregation unfold-node)
-             (playnet planner federation descent)
-             (playnet planner federation uc-matching)
-             (playnet planner vf schemas)
+             (playnet vf aggregation fold-node)
+             (playnet vf aggregation unfold-node)
+             (playnet federation descent)
+             (playnet federation uc-matching)
+             (playnet vf schemas)
              (goblins) (goblins vat)
              (srfi srfi-1))
 

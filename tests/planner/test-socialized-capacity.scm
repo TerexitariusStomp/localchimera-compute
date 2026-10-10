@@ -18,12 +18,12 @@
 ;;; Run:  guile -L module/playnet/planner tests/planner/test-socialized-capacity.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner solve solver)
-             (playnet planner vf schemas)
-             (playnet planner knowledge dsl shorthand))
-(use-modules (playnet planner formulas capacity))  ; svc-eco-caps
+(use-modules (playnet solve engine)
+             (playnet solve compile)
+             (playnet solve solver)
+             (playnet vf schemas)
+             (playnet knowledge dsl shorthand))
+(use-modules (playnet vf formulas capacity))  ; svc-eco-caps
 
 ;; deliver 1 parcel per bike-hour: a `use` of the bike (Svc|bike) + a produced good.
 (define deliver-tpl

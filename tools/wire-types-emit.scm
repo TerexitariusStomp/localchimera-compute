@@ -16,8 +16,8 @@
 (use-modules (playnet wire rows)
              (playnet wire snapshot)
              (playnet wire replies)
-             (playnet planner doors family wire)
-             (playnet planner doors record-rows)
+             (playnet doors family wire)
+             (playnet doors record-rows)
              (ice-9 format)
              (srfi srfi-1))
 

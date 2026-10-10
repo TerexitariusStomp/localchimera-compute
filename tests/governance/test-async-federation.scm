@@ -9,7 +9,7 @@
 (setvbuf (current-output-port) 'line)
 
 (use-modules (playnet test harness))
-(use-modules (playnet planner scope root) (srfi srfi-11))
+(use-modules (playnet scope root) (srfi srfi-11))
 (use-modules (playnet org endorsement))
 (use-modules (playnet governance async) (playnet governance ballot) (playnet governance delegation-map) (playnet governance voice-signer))
 (use-modules (goblins) (goblins utils hashmap)

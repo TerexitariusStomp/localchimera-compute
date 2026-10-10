@@ -38,9 +38,9 @@
   #:use-module (playnet keri acdc-store)
   #:use-module (playnet governance scope)
   #:use-module (ice-9 match)
-  #:use-module (playnet planner facts partition)
+  #:use-module (playnet vf facts partition)
   #:use-module ((playnet governance socialization) #:select (ownership-ok?))
-  #:use-module ((playnet planner vf schemas) #:select (economic-resource-id economic-resource-primary-accountable agent-id))
+  #:use-module ((playnet vf schemas) #:select (economic-resource-id economic-resource-primary-accountable agent-id))
   #:use-module (goblins)
   #:export (scope-leaf? federation-leaves leaf-member-aids federation-aid-paths
             federation-membership-paths-unique? federation-double-counted-members

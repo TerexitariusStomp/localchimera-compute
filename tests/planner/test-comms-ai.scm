@@ -9,12 +9,12 @@
 ;;; Run: guile -L module tests/planner/test-comms-ai.scm
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test harness) (playnet planner vf schemas) (playnet planner observation states) (srfi srfi-1) (srfi srfi-1) (srfi srfi-13))
+(use-modules (playnet test harness) (playnet vf schemas) (playnet observation states) (srfi srfi-1) (srfi srfi-1) (srfi srfi-13))
 
 (define here (dirname (current-filename)))
 (define root (dirname (dirname here)))
 (define (pl p) (load (string-append root "/module/playnet/planner/" p)))
-(use-modules (playnet planner comms plan)) (use-modules (playnet planner comms ai))
+(use-modules (playnet comms plan)) (use-modules (playnet comms ai))
 
 ;; fixtures (as in test-comms) — real <intent> + <satisfaction-state>
 (define* (mk-intent id #:key (action 'produce) (name #f) (classified '()))

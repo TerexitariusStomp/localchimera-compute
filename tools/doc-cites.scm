@@ -194,7 +194,7 @@ directory of DOC; #f for any other cite."
 
 (define (scope-nodes-fields)
   "The constructor's field names, read off planner/doors/service.scm textually."
-  (let* ((lines (file-lines "module/playnet/planner/doors/service.scm"))
+  (let* ((lines (file-lines "module/playnet/doors/service.scm"))
          (n     (vector-length lines))
          (ctor  (let loop ((i 0))
                   (cond ((>= i n) #f)

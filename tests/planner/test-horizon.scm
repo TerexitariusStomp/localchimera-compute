@@ -12,9 +12,9 @@
 ;;; Run:  guile -L module/playnet/planner module/playnet/planner/horizon-test.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner vf schemas)
-             (playnet planner knowledge dsl shorthand))
+(use-modules (playnet solve engine)
+             (playnet vf schemas)
+             (playnet knowledge dsl shorthand))
 
 ;; ── records ──────────────────────────────────────────────────────────────────
 (define win (all-week-window "09:00" "17:00"))   ; 8h any day

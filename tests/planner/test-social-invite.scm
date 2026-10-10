@@ -7,8 +7,8 @@
 
 (use-modules ((playnet wire rows) #:select (wire->plain))   ; a door's rows, read back as alists
              (playnet test harness)
-             (playnet planner scope root)
-             (playnet planner doors service)
+             (playnet scope root)
+             (playnet doors service)
              ((playnet utils clock) #:select (now instant->civil days->seconds))
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))

@@ -21,7 +21,7 @@
 ;;;
 ;;; Run:  guile -L module -L tests tests/planner/test-monero-donation-scenario.scm
 
-(use-modules (playnet planner scope root) (playnet planner vf schemas)
+(use-modules (playnet scope root) (playnet vf schemas)
              (playnet monero specs)
              (playnet monero wallet)
              (playnet monero poller)

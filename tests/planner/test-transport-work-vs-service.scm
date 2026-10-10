@@ -18,12 +18,12 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner solve solver)
-             (playnet planner vf schemas)
-             (playnet planner knowledge dsl shorthand)
-             ((playnet planner knowledge recipes transport) #:select (mode-recipe)))
+(use-modules (playnet solve engine)
+             (playnet solve compile)
+             (playnet solve solver)
+             (playnet vf schemas)
+             (playnet knowledge dsl shorthand)
+             ((playnet knowledge recipes transport) #:select (mode-recipe)))
 (define (svc id spec rq proc)(make-recipe-flow #:id id #:action 'deliver-service
                                                #:resource-conforms-to spec
                                                #:resource-quantity (make-measure rq %count-unit)

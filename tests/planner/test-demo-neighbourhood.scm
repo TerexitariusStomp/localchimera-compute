@@ -23,11 +23,11 @@
 (add-to-load-path "module")
 (use-modules (playnet test harness))
 (use-modules ((playnet wire rows) #:select (plain-reply)))   ; a door's rows, read back as alists
-(use-modules (playnet planner vf schemas) (srfi srfi-1)
-             (playnet planner knowledge dsl world)
-             (playnet planner knowledge worlds presets)
-             (playnet planner knowledge worlds demo-neighbourhood)
-             (playnet planner doors demo-stage)
+(use-modules (playnet vf schemas) (srfi srfi-1)
+             (playnet knowledge dsl world)
+             (playnet knowledge worlds presets)
+             (playnet knowledge worlds demo-neighbourhood)
+             (playnet doors demo-stage)
              (srfi srfi-1))
 
 (define today (current-time))

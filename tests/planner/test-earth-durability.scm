@@ -1,6 +1,6 @@
 ;;; test-earth-durability.scm — the planetary root, durable per commune.
 ;;;
-;;; Proves ^earth (module/playnet/planner/scope/earth.scm) makes EACH commune's economic state
+;;; Proves ^earth (module/playnet/scope/earth.scm) makes EACH commune's economic state
 ;;; durable, closing the old "everything re-links to meeting-scope" limit:
 ;;;
 ;;;   Phase 1 — earth is the persisted root of a vat; create a Berlin commune under it,
@@ -14,7 +14,7 @@
 ;;; Run: guile --no-auto-compile -q -L module -L tests tests/planner/test-earth-durability.scm
 
 (use-modules (playnet test harness)
-             (playnet planner knowledge recipes berlin-commune-seed) (playnet planner scope earth) (playnet planner vf schemas) (srfi srfi-1)
+             (playnet knowledge recipes berlin-commune-seed) (playnet scope earth) (playnet vf schemas) (srfi srfi-1)
              (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)

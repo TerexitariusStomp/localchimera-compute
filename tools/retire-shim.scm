@@ -35,15 +35,15 @@
 
 ;;; ── the shim's layers, in the order the use-modules will state them ────────
 (define layers
-  '((playnet planner solve engine)
-    (playnet planner solve compile)
-    (playnet planner solve solver)
-    (playnet planner vf schemas)
-    (playnet planner solve recipe-response)
-    (playnet planner formulas capacity)
-    (playnet planner formulas stocks)
-    (playnet planner knowledge worlds bioregions)
-    (playnet planner formulas tension-kinds)))
+  '((playnet solve engine)
+    (playnet solve compile)
+    (playnet solve solver)
+    (playnet vf schemas)
+    (playnet solve recipe-response)
+    (playnet vf formulas capacity)
+    (playnet vf formulas stocks)
+    (playnet knowledge worlds bioregions)
+    (playnet vf formulas tension-kinds)))
 (define selects
   '(((playnet utils units) convert-unit/strict unit-known? unit->substance convert-unit unit-rate? unit-rate-parts)
     ((playnet utils clock) hhmm->minutes clock-length-minutes clock-overlap-minutes civil->instant instant->civil
@@ -131,13 +131,13 @@
 (define (resolve-fragment lit from-dir)
   (let* ((cands (list (string-append from-dir "/" lit)
                       (string-append "module/playnet/test/planner/" lit)
-                      (string-append "module/playnet/planner/" lit)
-                      (string-append "module/playnet/planner/knowledge/recipes/" lit)
+                      (string-append "module/playnet/" lit)
+                      (string-append "module/playnet/knowledge/recipes/" lit)
                       (string-append "tests/planner/" lit)
                       (string-append "module/playnet/test/planner/" (basename lit))
-                      (string-append "module/playnet/planner/" (basename lit))
-                      (string-append "module/playnet/planner/knowledge/recipes/" (basename lit))
-                      (string-append "module/playnet/planner/knowledge/" (basename lit))))
+                      (string-append "module/playnet/" (basename lit))
+                      (string-append "module/playnet/knowledge/recipes/" (basename lit))
+                      (string-append "module/playnet/knowledge/" (basename lit))))
          (hit (find file-exists? cands)))
     (and hit (canonicalize-path hit))))
 

@@ -123,7 +123,7 @@
 ;;    containment relations; a climb appearing here is a category error about
 ;;    to become an ownership proxy.
 (define %membership-files
-  '("module/playnet/planner/aggregation/scope-tree.scm"
+  '("module/playnet/vf/aggregation/scope-tree.scm"
     "module/playnet/governance/scope-graph.scm"
     "module/playnet/governance/scope.scm"
     "module/playnet/keys/scope-witness.scm"

@@ -15,8 +15,8 @@
 ;;; Run:  guile module/playnet/planner/arc-time-matrix-test.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine))
-(use-modules (playnet planner solve routing))
+(use-modules (playnet solve engine))
+(use-modules (playnet solve routing))
 
 (define (~= a b) (and a b (< (abs (- a b)) 1e-9)))
 (define (setup!)

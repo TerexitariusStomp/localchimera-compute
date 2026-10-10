@@ -302,7 +302,7 @@
   #:use-module (playnet org endorsement)
   #:use-module (ice-9 match)
   #:use-module (playnet governance ballot-store)
-  #:use-module ((playnet planner scope live)         ; governance→planner, one direction —
+  #:use-module ((playnet scope live)         ; governance→planner, one direction —
                 ;; holding-capacity deliberately NOT selected: the umbrella
                 ;; supplies the one conversion, so the two never collide
                 #:select (cell declared-period-hours period-span plan-scope
@@ -311,13 +311,13 @@
                           scenario-shocks shock-action shock-key shock-factor))
   ;; the federation fold: ONE walk over the scope tree and ONE keyed-sum
   ;; combine, shared by socialized capacity and declared demand alike
-  #:use-module (playnet planner aggregation scope-tree)
-  #:use-module (playnet planner aggregation fold-node)
+  #:use-module (playnet vf aggregation scope-tree)
+  #:use-module (playnet vf aggregation fold-node)
   ;; the unit algebra, for the means fold's rate test (means-fold.scm)
   #:use-module ((playnet utils units) #:select (unit-rate? unit->substance unit-rate-parts))
   ;; the containment climb (a place inside a place, an oven inside a flat)
-  #:use-module (playnet planner aggregation containment)
-  #:use-module (playnet planner observation event-log-store)
+  #:use-module (playnet vf aggregation containment)
+  #:use-module (playnet observation event-log-store)
   #:use-module (playnet utils said-store)
   #:use-module (playnet crypto shamir)
   #:use-module (playnet utils paths)

@@ -7,12 +7,12 @@
 ;;;
 ;;; Run: guile -L module tests/planner/test-demand-vf-action.scm
 
-(use-modules (playnet test harness) (playnet planner vf schemas) (srfi srfi-1)
+(use-modules (playnet test harness) (playnet vf schemas) (srfi srfi-1)
              (goblins) (goblins vat) (srfi srfi-1) (ice-9 format))
 
-(use-modules (playnet planner legal crossings))
-(use-modules (playnet planner legal registry))
-(use-modules (playnet planner legal registry-actor)) (use-modules (playnet planner legal compliance))
+(use-modules (playnet legal crossings))
+(use-modules (playnet legal registry))
+(use-modules (playnet legal registry-actor)) (use-modules (playnet legal compliance))
 
 ;;; ─── 1. the canonical mapping (the single source of truth) ─────────────────
 (display "\n── demand-kind->vf-action : obtain/pay/tell map, forbid does not ──\n")

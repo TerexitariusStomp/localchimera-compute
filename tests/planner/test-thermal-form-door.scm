@@ -11,10 +11,10 @@
 ;;; Run:  guile -q -L module tests/planner/test-thermal-form-door.scm
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test harness) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1) (playnet planner vf schemas)
-             (playnet planner knowledge catalogues thermal) (playnet planner knowledge dsl vf-lint)
-             (playnet planner knowledge dsl findings)
-             ((playnet planner knowledge catalogues substances) #:select (second-law-production *contains*))
+(use-modules (playnet test harness) (playnet scope root) (playnet vf schemas) (srfi srfi-1) (playnet vf schemas)
+             (playnet knowledge catalogues thermal) (playnet knowledge dsl vf-lint)
+             (playnet knowledge dsl findings)
+             ((playnet knowledge catalogues substances) #:select (second-law-production *contains*))
              (goblins) (srfi srfi-1))
 
 (define (approx= a b) (< (abs (- a b)) 1e-9))

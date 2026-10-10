@@ -18,19 +18,19 @@
 ;;;
 ;;; Run: guile -L module tests/planner/test-verteilstation-obligations.scm
 
-(use-modules (playnet test harness) (playnet planner knowledge recipes store) (playnet planner knowledge recipes berlin-food-seed) (playnet planner legal crossings) (playnet planner observation observer) (playnet planner vf schemas) (playnet planner beyond lot) (srfi srfi-1)
+(use-modules (playnet test harness) (playnet knowledge recipes store) (playnet knowledge recipes berlin-food-seed) (playnet legal crossings) (playnet observation observer) (playnet vf schemas) (playnet vf beyond lot) (srfi srfi-1)
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1) (ice-9 format))
 
 (define here (dirname (current-filename)))
-(use-modules (playnet planner legal crossings))
-(use-modules (playnet planner legal registry))
-(use-modules (playnet planner facts places))
-(use-modules (playnet planner knowledge law context-pack))
-(use-modules (playnet planner knowledge catalogues us-states-fips))
-(use-modules (playnet planner knowledge worlds free-food-distribution))
-(use-modules (playnet planner legal gate))
-(use-modules (playnet planner legal compliance))
+(use-modules (playnet legal crossings))
+(use-modules (playnet legal registry))
+(use-modules (playnet vf facts places))
+(use-modules (playnet knowledge law context-pack))
+(use-modules (playnet knowledge catalogues us-states-fips))
+(use-modules (playnet knowledge worlds free-food-distribution))
+(use-modules (playnet legal gate))
+(use-modules (playnet legal compliance))
 
 (define (empty-recipe-store)
   (spawn ^recipe-store (hashmap) (hashmap) (hashmap) (hashmap) (hashmap)

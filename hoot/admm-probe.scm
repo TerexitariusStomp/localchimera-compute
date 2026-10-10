@@ -10,7 +10,7 @@
 ;;;
 ;;; Run:  make hoot-probe-admm
 
-(use-modules (hoot ffi) (playnet planner solve engine) (playnet planner solve solver))
+(use-modules (hoot ffi) (playnet solve engine) (playnet solve solver))
 (include-from-path "playnet/test/planner/federated-fixtures.scm")
 
 (define-foreign %now "performance" "now" -> f64)

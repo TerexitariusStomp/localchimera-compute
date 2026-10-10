@@ -23,12 +23,12 @@
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (srfi srfi-1) (ice-9 format)
-             (playnet planner solve engine) (playnet planner vf schemas) (playnet planner facts located)
-             (playnet planner knowledge dsl shorthand) (playnet planner knowledge dsl world)
-             ((playnet planner knowledge catalogues thermal) #:select (relaxation-records))
-             ((playnet planner knowledge recipes farm-commune-seed) #:select ((farm-world . commune-farm-world)))   ; the suite's own farm-world is the hectare below
-             ((playnet planner knowledge catalogues substances) #:select (sunlight-for water-for insolation-kwh-per-m2-day area-m2))
-             ((playnet planner knowledge catalogues subsistence) #:select (reserve-nutrients)))
+             (playnet solve engine) (playnet vf schemas) (playnet vf facts located)
+             (playnet knowledge dsl shorthand) (playnet knowledge dsl world)
+             ((playnet knowledge catalogues thermal) #:select (relaxation-records))
+             ((playnet knowledge recipes farm-commune-seed) #:select ((farm-world . commune-farm-world)))   ; the suite's own farm-world is the hectare below
+             ((playnet knowledge catalogues substances) #:select (sunlight-for water-for insolation-kwh-per-m2-day area-m2))
+             ((playnet knowledge catalogues subsistence) #:select (reserve-nutrients)))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

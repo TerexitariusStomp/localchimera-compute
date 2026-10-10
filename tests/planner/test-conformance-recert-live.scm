@@ -15,8 +15,8 @@
 ;;; Run: guile -L module tests/planner/test-conformance-recert-live.scm
 
 (use-modules (playnet test harness) (playnet test scope)
-             (playnet planner vf schemas) (srfi srfi-1)
-             (playnet planner scope live)
+             (playnet vf schemas) (srfi srfi-1)
+             (playnet scope live)
              (goblins) (goblins vat) (srfi srfi-1))
 
 ;; every day: the plan stands on TODAY (no partition declared), whatever day that is

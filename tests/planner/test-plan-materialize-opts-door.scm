@@ -9,7 +9,7 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/planner/test-plan-materialize-opts-door.scm
 
-(use-modules (playnet planner vf schemas) (playnet planner doors service) (playnet test planner bread)
+(use-modules (playnet vf schemas) (playnet doors service) (playnet test planner bread)
              (playnet test harness)
              (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1))
 

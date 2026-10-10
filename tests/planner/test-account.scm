@@ -13,14 +13,14 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
-(use-modules (playnet planner algorithms elastic) (playnet planner pools credit-fold) (playnet planner scope root) (playnet planner vf schemas) (playnet planner observation states))
+(use-modules (playnet algorithms elastic) (playnet pools credit-fold) (playnet scope root) (playnet vf schemas) (playnet observation states))
 (use-modules (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)
              (srfi srfi-1))
 
 
-(use-modules ((playnet planner observation account) #:select (declare-claimable!)))
+(use-modules ((playnet observation account) #:select (declare-claimable!)))
 (use-modules ((playnet test scope) #:select (plan-claim!)))   ; the plan's row, stood by the fixture
 (use-modules ((playnet test scope) #:select (record-work!)))
 ;; the rail is read off the recipes: this fixture stands in for the plan and

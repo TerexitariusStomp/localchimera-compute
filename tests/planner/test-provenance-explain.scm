@@ -13,8 +13,8 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
-(use-modules (playnet planner scope root) (playnet planner vf schemas))
-(use-modules (playnet planner doors service))
+(use-modules (playnet scope root) (playnet vf schemas))
+(use-modules (playnet doors service))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1))
 
 (define vat (spawn-vat))

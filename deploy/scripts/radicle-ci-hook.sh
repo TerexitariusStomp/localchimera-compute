@@ -289,7 +289,7 @@ build_browser_wasm() {
 
 build_planner_kernel() {
     # Rebuild the planner's compiled hot-loop kernel (native-c backend) from
-    # module/playnet/planner/solve/kernel/kernel.c. The .so is gitignored and built
+    # module/playnet/solve/kernel/kernel.c. The .so is gitignored and built
     # locally — a push that changes kernel.c changes nothing on the box until
     # something rebuilds it, which is exactly the gap that let the held-
     # feasibility fix (kernel.c: pk_frac_to_boundary) sit unbuilt after landing
@@ -301,9 +301,9 @@ build_planner_kernel() {
         log "planner kernel: no C compiler on this host (deploy/os.scm needs gcc-toolchain + a reconfigure) — skipping, native-c backend stays unavailable"
         return 0
     fi
-    log "Rebuilding libplanner_kernel.so (module/playnet/planner/solve/kernel)"
+    log "Rebuilding libplanner_kernel.so (module/playnet/solve/kernel)"
     (
-        cd "$REPO_DIR/module/playnet/planner/solve/kernel"
+        cd "$REPO_DIR/module/playnet/solve/kernel"
         # Explicit CC: verified live that an inherited `CC=cc` (present in this
         # host's ambient root/sudo environment, cause unconfirmed) resolves to a
         # `cc` the invoking user cannot execute — "Permission denied", not

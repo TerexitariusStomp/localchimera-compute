@@ -14,10 +14,10 @@
 ;;;         -l tests/planner/test-labour-pool-live.scm
 
 (use-modules (playnet test harness)
-             (playnet planner scope root) (playnet planner vf schemas) (playnet planner beyond schedules)
-             (playnet planner doors service)
-             (playnet planner pools availability-pool)
-             (playnet planner facts availability)
+             (playnet scope root) (playnet vf schemas) (playnet vf beyond schedules)
+             (playnet doors service)
+             (playnet pools availability-pool)
+             (playnet vf facts availability)
              (goblins)
              (goblins utils hashmap)
              (srfi srfi-1))

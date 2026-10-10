@@ -30,8 +30,8 @@
 (use-modules (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)
-             (playnet planner scope root) (playnet planner vf schemas)
-             (playnet planner doors service)
+             (playnet scope root) (playnet vf schemas)
+             (playnet doors service)
              (srfi srfi-1))
 
 (display "\n── Setup: a scope with a box under a bridge ──\n")

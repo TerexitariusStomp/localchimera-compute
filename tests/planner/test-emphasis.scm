@@ -9,7 +9,7 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -L module tests/planner/test-emphasis.scm
 
-(use-modules (playnet test harness) (srfi srfi-1) (ice-9 format) (playnet planner solve emphasis))
+(use-modules (playnet test harness) (srfi srfi-1) (ice-9 format) (playnet solve emphasis))
 
 (define (~= a b) (< (abs (- a b)) 1e-9))
 (define (mass-of ms owner key)

@@ -10,14 +10,14 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness)
-             (playnet planner pools labour-fold)
-             ((playnet planner formulas actions) #:select (labour?))
-             ((playnet planner facts person-facts) #:select (generic-labour-spec))
-             (playnet planner pools availability-pool)
-             (playnet planner facts availability)
-             (playnet planner observation observer) (playnet planner vf schemas) (playnet planner beyond schedules)               ; make-agent, availability accessors
-             (playnet planner observation observer)
-             (playnet planner knowledge dsl shorthand)
+             (playnet pools labour-fold)
+             ((playnet vf formulas actions) #:select (labour?))
+             ((playnet vf facts person-facts) #:select (generic-labour-spec))
+             (playnet pools availability-pool)
+             (playnet vf facts availability)
+             (playnet observation observer) (playnet vf schemas) (playnet vf beyond schedules)               ; make-agent, availability accessors
+             (playnet observation observer)
+             (playnet knowledge dsl shorthand)
              (goblins)
              (srfi srfi-1))
 

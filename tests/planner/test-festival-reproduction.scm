@@ -33,21 +33,21 @@
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test scope)) ; mock-scope-root
-(use-modules (playnet test harness) (playnet planner knowledge recipes store) (playnet planner scope spatial-things) (playnet planner observation observer) (playnet planner vf schemas) (srfi srfi-1) (playnet planner scope live)
+(use-modules (playnet test harness) (playnet knowledge recipes store) (playnet scope spatial-things) (playnet observation observer) (playnet vf schemas) (srfi srfi-1) (playnet scope live)
              (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner knowledge catalogues subsistence)
-             ((playnet planner knowledge catalogues substances) #:select (nutrient-content)))
+(use-modules (playnet knowledge catalogues subsistence)
+             ((playnet knowledge catalogues substances) #:select (nutrient-content)))
 
 ;; tests run from the repository root (each file's own Run: line); the root is
 ;; resolved by its marker rather than by current-filename, which is #f or
 ;; -L-relative depending on how the file was loaded — both wrong for paths.
-(define root (or (and (file-exists? "module/playnet/planner/solve/engine.scm") (getcwd))
+(define root (or (and (file-exists? "module/playnet/solve/engine.scm") (getcwd))
                  (error "run this test from the repository root")))
 (define here (string-append root "/tests/planner"))
-(use-modules (playnet planner legal crossings))
-(use-modules (playnet planner legal registry))
-(use-modules (playnet planner legal registry-actor))
-(use-modules (playnet planner legal gate)) (use-modules (playnet planner legal compliance))
+(use-modules (playnet legal crossings))
+(use-modules (playnet legal registry))
+(use-modules (playnet legal registry-actor))
+(use-modules (playnet legal gate)) (use-modules (playnet legal compliance))
 
 (define N 300)   ; attendees. The mono-food era declared 2000 (and was reading
                  ; a phase-I escape, never a plan). The PLAN is scale-invariant

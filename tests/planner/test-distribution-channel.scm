@@ -51,11 +51,11 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner knowledge dsl shorthand))
+(use-modules (playnet knowledge dsl shorthand))
 (use-modules (playnet test planner prelude)
-             (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner vf schemas))
+             (playnet solve engine)
+             (playnet solve compile)
+             (playnet vf schemas))
 
 ;;; A barrier method sits INSIDE its feasible set, so a channel that the optimum
 ;;; would run to zero or to its ceiling is found near zero and near the ceiling.

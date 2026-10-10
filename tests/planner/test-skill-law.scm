@@ -17,11 +17,11 @@
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
-(use-modules (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
-(use-modules (playnet planner doors service))
-(use-modules ((playnet planner formulas skill-law)
+(use-modules (playnet scope root) (playnet vf schemas) (srfi srfi-1))
+(use-modules (playnet doors service))
+(use-modules ((playnet vf formulas skill-law)
               #:select (skill-law-of *skill-law-identity* law-ref competence-fold)))
-(use-modules ((playnet planner solve engine) #:select (set-competence! apply-skill-dynamics! iso->epoch)))
+(use-modules ((playnet solve engine) #:select (set-competence! apply-skill-dynamics! iso->epoch)))
 (use-modules (goblins) (goblins utils hashmap) (srfi srfi-1))
 
 (define (approx= a b) (< (abs (- a b)) 1e-6))
@@ -104,9 +104,9 @@
     (display "\n── the plan opens where the record leaves it ──\n")
     ;; the engine's door, as live.scm drives it: laws declared, competence set
     (apply-skill-dynamics! `(("ada" "skill-bake" ((decay . 0.5) (regen . 1.0) (endow . 2.0)) 7.5)))
-    (check-pred "the skill's law stands in the engine" (and ((@@ (playnet planner solve engine) skill-spec) "skill-bake") #t))
+    (check-pred "the skill's law stands in the engine" (and ((@@ (playnet solve engine) skill-spec) "skill-bake") #t))
     (check-pred "the worker's competence opens at the record's figure"
-                (approx= ((@@ (playnet planner solve engine) competence-p0) "ada" "skill-bake") 7.5))))
+                (approx= ((@@ (playnet solve engine) competence-p0) "ada" "skill-bake") 7.5))))
 
 (display "\n")
 (test-summary!)

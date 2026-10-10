@@ -1,5 +1,5 @@
 # Downloaded + derived WIOD data — large, reproducible from docs/wiod-planner.md.
-# Do not commit. The pipeline (docs/_scripts/, module/playnet/planner/bench-real.scm)
+# Do not commit. The pipeline (docs/_scripts/, module/playnet/bench/bench-real.scm)
 # regenerates everything here from the two curl downloads.
 *
 !.gitignore

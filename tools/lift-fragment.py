@@ -260,7 +260,7 @@ def exported_but_unbound():
     module's `define-actor` constructor can vanish and the umbrella still load.
     """
     import subprocess
-    # FOUR modules, not two. (playnet planner scope live) and (playnet planner
+    # FOUR modules, not two. (playnet scope live) and (playnet doors
     # service) re-export planner names too, and this check was blind to them
     # for the whole first half of the lift arc — it reported "clean" while live
     # carried a hollow #:export of holding-capacity, which shadowed the real
@@ -272,7 +272,7 @@ def exported_but_unbound():
     (lambda (k v) (unless (variable-bound? v) (format #t "~a~%" k)))
     (module-public-interface (resolve-module m))))
  (list (quote (playnet planner)) (quote (playnet deprecated planner))
-       (quote (playnet planner scope live)) (quote (playnet planner doors service))))
+       (quote (playnet scope live)) (quote (playnet doors service))))
 '''
     out = subprocess.run(["guile","--no-auto-compile","-L","module","-c",scm],
                          capture_output=True, text=True)
@@ -582,7 +582,7 @@ def main():
             missing = unbound(p)
             print("%-58s %s" % (p, missing if missing else "clean"))
         return
-    # --fix-overrides "(playnet planner ddmrp buffers)"
+    # --fix-overrides "(playnet ddmrp buffers)"
     # Run AFTER a lift whose pre-flight reported an OVERRIDE COLLISION.
     if sys.argv[1] == "--fix-overrides":
         for m in sys.argv[2:]:

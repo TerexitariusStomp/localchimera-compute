@@ -13,8 +13,8 @@
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test scope)) ; mock-scope-root
 (use-modules (playnet test harness)
-             (playnet planner vf schemas)
-             (playnet planner scope live)
+             (playnet vf schemas)
+             (playnet scope live)
              (playnet governance socialization) (playnet keri acdc-store)
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))

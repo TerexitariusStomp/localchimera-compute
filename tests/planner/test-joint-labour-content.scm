@@ -11,8 +11,8 @@
 ;;; Run:  guile -L module tests/planner/test-joint-labour-content.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner solve compile))
+(use-modules (playnet solve engine)
+             (playnet solve compile))
 
 (define (world procs flows)
   (declare-world! #:places '(("town" 0.0 0.0))

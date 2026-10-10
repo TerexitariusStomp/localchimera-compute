@@ -12,7 +12,7 @@
 ;;; Run:  guile --no-auto-compile -L module tests/planner/test-externality.scm
 
 (use-modules (playnet test harness) (srfi srfi-1) (ice-9 format)
-             (playnet planner solve externality))
+             (playnet solve externality))
 
 (define (~= a b tol) (< (abs (- a b)) tol))
 

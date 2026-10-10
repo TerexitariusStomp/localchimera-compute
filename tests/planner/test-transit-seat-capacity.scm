@@ -19,15 +19,15 @@
 ;;;         tests/planner/test-transit-seat-capacity.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner solve solver)
-             (playnet planner vf schemas)
-             (playnet planner knowledge dsl shorthand))
+(use-modules (playnet solve engine)
+             (playnet solve compile)
+             (playnet solve solver)
+             (playnet vf schemas)
+             (playnet knowledge dsl shorthand))
 ;; transport.scm is a module now — use-modules, not primitive-load. A
 ;; define-module inside a primitive-loaded file switches current-module for
 ;; the REST of this file and never switches back.
-(use-modules (playnet planner knowledge recipes transport))
+(use-modules (playnet knowledge recipes transport))
 
 (define *pass* 0) (define *fail* 0)
 (define (check label ok)

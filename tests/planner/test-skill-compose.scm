@@ -3,7 +3,7 @@
 ;;; Pure function: held ∪ transitive closure of satisfied-by clauses met at
 ;;; ≥ N validated hours. No ACDCs ⇒ no blake3.
 ;;;
-;;; Read from (playnet planner formulas skill-law) — the LIVE closure, the one
+;;; Read from (playnet vf formulas skill-law) — the LIVE closure, the one
 ;;; conformance-agent-skills hands the solver. A second copy of this function
 ;;; lives on under (playnet deprecated planner), and this suite used to import
 ;;; that one: byte-identical today, and a green here said nothing whatever about
@@ -13,7 +13,7 @@
 ;;; Run: guile -L module tests/planner/test-skill-compose.scm
 
 (use-modules (playnet test harness))
-(use-modules ((playnet planner formulas skill-law) #:select (effective-skills)))
+(use-modules ((playnet vf formulas skill-law) #:select (effective-skills)))
 (use-modules (srfi srfi-1))
 
 ;; electrosurgeon = (electrician ≥200h ∧ surgeon ≥150h); master = (electrosurgeon ≥50h)

@@ -127,7 +127,7 @@
    identity — because the form you most often need to edit structurally is the
    `define-module`, and a module's name is a LIST. Comparing with eq? against a
    symbol could never match it, so the one header carrying every #:export was the
-   one form this tool could not address. `(playnet planner legal gate)` works, and
+   one form this tool could not address. `(playnet legal gate)` works, and
    so does the shorthand `module` for whatever module the file declares."
   (let* ((forms (forms-of path))
          (printed (lambda (f) (format #f "~a" (cadr f)))))
@@ -215,7 +215,7 @@
   ;;     backtrace where a sentence belongs. Worse than a wrong answer, because
   ;;     a caller grepping the output counts the backtrace lines as exports.
   ;;   - "fewer than 5 exports ⇒ it did not load" is a number standing where a
-  ;;     test belongs. (playnet planner legal policy) publishes exactly two
+  ;;     test belongs. (playnet legal policy) publishes exactly two
   ;;     names and is perfectly loaded; the guard called it broken.
   ;;
   ;; What actually distinguishes a loaded module from an invented one is whether

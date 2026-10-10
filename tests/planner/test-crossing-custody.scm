@@ -22,7 +22,7 @@
 
 (use-modules (playnet test harness)
              ((playnet test planner federation-wire-fixture) #:select (fx-identity))
-             (playnet planner federation crossing-custody)
+             (playnet federation crossing-custody)
              (playnet gateway federate)
              (playnet governance scope) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig)
              ((playnet keri citizen-sig) #:select (make-keri-identity keri-identity-aid keri-identity-keypair))

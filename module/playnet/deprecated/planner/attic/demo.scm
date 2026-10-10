@@ -13,10 +13,10 @@
 ;;; every module that primitive-load'ed the engine silently acquired a `store`
 ;;; bound to a mock, and a `$` shim beside it.
 
-(use-modules (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner solve solver)
-             (playnet planner vf schemas)
+(use-modules (playnet solve engine)
+             (playnet solve compile)
+             (playnet solve solver)
+             (playnet vf schemas)
              (srfi srfi-1)
              (ice-9 format))
 ;; …and now run it. *demos?* is this file's own business — it used to live in
@@ -27,8 +27,8 @@
 ;; the scale-bench world generator, shared with bench/bench-scale.scm
 (primitive-load
   (or (and=> (current-filename) (lambda (f) (string-append (dirname f) "/bench/world.scm")))
-      (%search-load-path "playnet/planner/bench/world.scm")
-      (string-append (getcwd) "/module/playnet/planner/bench/world.scm")))
+      (%search-load-path "playnet/bench/world.scm")
+      (string-append (getcwd) "/module/playnet/bench/world.scm")))
 
 ;; ════════════════════════════════════════════════════════════════════════════
 ;; §9 — run the self-test + scenarios

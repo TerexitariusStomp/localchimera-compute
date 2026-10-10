@@ -10,10 +10,10 @@
 ;;;
 ;;; Run:  guile -q -L module tests/planner/test-host-facts-counts.scm
 
-(use-modules (playnet test harness) (playnet planner observation host-facts) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
-             (playnet planner observation host-facts)
-             (playnet planner pools reading-fold)
-             ((playnet planner vf schemas) #:select (economic-resource-onhand-quantity measure-has-numerical-value
+(use-modules (playnet test harness) (playnet observation host-facts) (playnet scope root) (playnet vf schemas) (srfi srfi-1)
+             (playnet observation host-facts)
+             (playnet pools reading-fold)
+             ((playnet vf schemas) #:select (economic-resource-onhand-quantity measure-has-numerical-value
                                                   economic-event-action economic-event-resource-quantity))
              (goblins) (srfi srfi-1))
 

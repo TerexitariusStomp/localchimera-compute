@@ -40,7 +40,7 @@
                           cred-signature cred-revoked? cred-said-consistent?))
   #:use-module ((playnet keri citizen-sig) #:select (verify-said-signature verify-said-signature-under-key))
   #:use-module ((playnet keri key-state) #:select (key-for-credential events->key-state state-key))
-  #:use-module ((playnet planner facts partition) #:select (held-twice))
+  #:use-module ((playnet vf facts partition) #:select (held-twice))
   #:use-module ((playnet credentials membership) #:select (*schema-playnet-federation-sturdyref* *schema-playnet-federation-census*))
   #:re-export (*schema-playnet-federation-sturdyref* *schema-playnet-federation-census*)
   #:export (sturdyref-credential-end census-credential-goods census-key-state

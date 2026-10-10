@@ -10,7 +10,7 @@
 (use-modules (playnet lang kanren)
              (playnet lang knowledge)
              (playnet lang provenance)
-             (playnet planner doors service provenance-trace)
+             (playnet doors service provenance-trace)
              (srfi srfi-1))
 
 (display "\n── provenance: direct grounding ──\n")
@@ -34,7 +34,7 @@
 
 (check "where-defined: legal-aspects resolves to its .scm"
        (where-defined 'legal-aspects)
-       "module/playnet/planner/knowledge/law/aspects.scm")
+       "module/playnet/knowledge/law/aspects.scm")
 
 (display "\n── provenance: transitive grounding + proof ──\n")
 

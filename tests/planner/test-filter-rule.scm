@@ -3,10 +3,10 @@
 ;;; Run: guile -L module tests/planner/test-filter-rule.scm
 
 (use-modules (playnet test harness)
-             (playnet planner vf schemas)
-             (playnet planner matching schemas)
-             (playnet planner matching feasibility)
-             (playnet planner matching filter-rule))
+             (playnet vf schemas)
+             (playnet matching schemas)
+             (playnet matching feasibility)
+             (playnet matching filter-rule))
 
 (define ctx '((aid . "A1") (recognition . 0.6) (scopes . ("s1"))
               (skills . ("spec-bread")) (groups . ("friends")) (distance-km . 4)))

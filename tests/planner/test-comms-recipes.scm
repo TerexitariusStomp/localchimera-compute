@@ -11,13 +11,13 @@
 ;;;
 ;;; Run: guile -L module tests/planner/test-comms-recipes.scm
 
-(use-modules (playnet test harness) (playnet planner knowledge recipes store) (playnet planner vf schemas)
+(use-modules (playnet test harness) (playnet knowledge recipes store) (playnet vf schemas)
              (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1) (ice-9 format))
 
 (define here (dirname (current-filename)))
 (define root (dirname (dirname here)))
 (define (pl p) (load (string-append root "/module/playnet/planner/" p)))
-(use-modules (playnet planner knowledge recipes comms-processes))
+(use-modules (playnet knowledge recipes comms-processes))
 
 (define (empty-rs)
   (spawn ^recipe-store (hashmap) (hashmap) (hashmap) (hashmap) (hashmap)

@@ -2,7 +2,7 @@
 ;;;
 ;;; With no gateway in reach the page still has books to read and count: a copy
 ;;; of the scope its person is in, or the demo neighbourhood's. They are a real
-;;; scope ((playnet planner doors page-scope): a scope root, its observer and stores,
+;;; scope ((playnet doors page-scope): a scope root, its observer and stores,
 ;;; the planner's own door functions), held here in a worker of its own
 ;;; (browser/scope-worker.js), so the spine's vat is not held up while a count
 ;;; lands or a schedule is read.
@@ -16,7 +16,7 @@
 ;;; Build: make browser/scope.wasm     Check: make check-scope-worker
 
 (use-modules (hoot ffi)
-             ((playnet planner doors page-scope) #:select (page-door))
+             ((playnet doors page-scope) #:select (page-door))
              ((playnet utils json-portable) #:select (json-read-ordered)))
 
 (define-foreign %set-handler "scope" "setHandler" (ref string) (ref extern) -> none)

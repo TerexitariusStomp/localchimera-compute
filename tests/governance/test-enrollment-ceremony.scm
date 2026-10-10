@@ -9,7 +9,7 @@
 ;;;   6. End-to-end via ^scope.open-enrollment.
 
 (use-modules (playnet test harness))
-(use-modules (playnet planner scope root))
+(use-modules (playnet scope root))
 (use-modules (playnet identity enrollment) (playnet governance scope) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri first-person credentials) (playnet keri first-person predicates))
 (use-modules ((playnet keri signify) #:select (ed25519-keypair-public)))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap)

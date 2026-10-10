@@ -17,19 +17,19 @@
 (define root (dirname here))
 (define (rel p) (string-append root "/" p))
 
-(use-modules (playnet planner vf schemas))                                  ; VF records (ProcessSpec/RecipeProcess/Recipe) for legal-aspects
-(use-modules (playnet planner legal registry))
-(use-modules (playnet planner legal crossings))                               ; the OPEN crossing catalogue
-(use-modules (playnet planner facts places))                        ; the ONE containment tree
-(use-modules (playnet planner knowledge law context-pack))        ; a jurisdiction = one drop-in file
-(use-modules (playnet planner knowledge catalogues us-states-fips))
-(use-modules (playnet planner legal reform))                                  ; (L,I,D) diff + its move
-(use-modules (playnet planner knowledge law aspects))                ; aspects as ProcessSpecs + recipe-aspects (grounds L,I,D)
-(use-modules (playnet planner knowledge worlds free-food-distribution))
-(use-modules (playnet planner knowledge law activities))
-(use-modules (playnet planner knowledge law reform-mirrors))     ; the I/D mirrors
-(use-modules (playnet planner knowledge law structural-demands)) ; the abolitions (deep program)
-(use-modules (playnet planner knowledge law snapshot-build))  ; the shared builder
+(use-modules (playnet vf schemas))                                  ; VF records (ProcessSpec/RecipeProcess/Recipe) for legal-aspects
+(use-modules (playnet legal registry))
+(use-modules (playnet legal crossings))                               ; the OPEN crossing catalogue
+(use-modules (playnet vf facts places))                        ; the ONE containment tree
+(use-modules (playnet knowledge law context-pack))        ; a jurisdiction = one drop-in file
+(use-modules (playnet knowledge catalogues us-states-fips))
+(use-modules (playnet legal reform))                                  ; (L,I,D) diff + its move
+(use-modules (playnet knowledge law aspects))                ; aspects as ProcessSpecs + recipe-aspects (grounds L,I,D)
+(use-modules (playnet knowledge worlds free-food-distribution))
+(use-modules (playnet knowledge law activities))
+(use-modules (playnet knowledge law reform-mirrors))     ; the I/D mirrors
+(use-modules (playnet knowledge law structural-demands)) ; the abolitions (deep program)
+(use-modules (playnet knowledge law snapshot-build))  ; the shared builder
 
 (use-modules (ice-9 format))
 (define out (if (> (length (command-line)) 1)

@@ -20,9 +20,9 @@
              (playnet ai llm) (json)
              (srfi srfi-1) (srfi srfi-13) (ice-9 format))
 
-(use-modules (playnet planner legal crossings))
-(use-modules (playnet planner legal registry))
-(use-modules (playnet planner knowledge law scrape))
+(use-modules (playnet legal crossings))
+(use-modules (playnet legal registry))
+(use-modules (playnet knowledge law scrape))
 
 (define statute
   (string-append

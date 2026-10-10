@@ -12,10 +12,10 @@
 
 (use-modules (playnet test harness)
              (playnet test events)
-             (playnet planner observation observer) (playnet planner vf schemas) (playnet utils store-utils) (srfi srfi-1)
-             (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner observation observer)
+             (playnet observation observer) (playnet vf schemas) (playnet utils store-utils) (srfi srfi-1)
+             (playnet solve engine)
+             (playnet solve compile)
+             (playnet observation observer)
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
 

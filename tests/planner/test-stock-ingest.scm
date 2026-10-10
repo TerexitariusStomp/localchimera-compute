@@ -19,10 +19,10 @@
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-stock-ingest.scm
 
 (use-modules (playnet test harness)
-             (playnet planner knowledge dsl shorthand)
-             (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner vf schemas)
+             (playnet knowledge dsl shorthand)
+             (playnet solve engine)
+             (playnet solve compile)
+             (playnet vf schemas)
              (srfi srfi-1))
 
 (define (near? a b) (< (abs (- a b)) 1e-6))

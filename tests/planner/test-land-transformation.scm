@@ -16,9 +16,9 @@
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-land-transformation.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve compile)
-             (playnet planner vf schemas))
-(use-modules (playnet planner knowledge recipes land-transformation-scales))
+(use-modules (playnet solve compile)
+             (playnet vf schemas))
+(use-modules (playnet knowledge recipes land-transformation-scales))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

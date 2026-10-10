@@ -18,10 +18,10 @@
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-span-declaration.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner vf schemas)
-             (playnet planner knowledge dsl shorthand))
+(use-modules (playnet solve engine)
+             (playnet solve compile)
+             (playnet vf schemas)
+             (playnet knowledge dsl shorthand))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

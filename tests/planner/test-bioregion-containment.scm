@@ -17,15 +17,15 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -L module/playnet/planner tests/planner/test-bioregion-containment.scm
 
-(use-modules (playnet planner knowledge dsl shorthand))
+(use-modules (playnet knowledge dsl shorthand))
 (use-modules (playnet test planner prelude)
-             (playnet planner solve engine)
-             (playnet planner solve compile)
-             (playnet planner vf schemas)
-             (playnet planner knowledge worlds bioregions)
+             (playnet solve engine)
+             (playnet solve compile)
+             (playnet vf schemas)
+             (playnet knowledge worlds bioregions)
              (srfi srfi-1)
              (ice-9 format))
-(use-modules (playnet planner knowledge worlds doon-valley))     ; *doon-valley-scenarios/tail-robust* (data)
+(use-modules (playnet knowledge worlds doon-valley))     ; *doon-valley-scenarios/tail-robust* (data)
 
 ;; ── The SpatialThing containment tree: a terrace inside a farm inside the shed ──
 ;; biosphere ⊃ doon-shed (the bioregion, at Dehradun) ⊃ navdanya-plot ⊃ terrace-3.

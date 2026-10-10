@@ -8,11 +8,11 @@
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-presets-door.scm
 
 (use-modules (playnet test harness)
-             (playnet planner scope root) (srfi srfi-1)
-             (playnet planner scope live)
-             (playnet planner doors service)
-             (playnet planner knowledge dsl world)
-             (playnet planner knowledge worlds presets)
+             (playnet scope root) (srfi srfi-1)
+             (playnet scope live)
+             (playnet doors service)
+             (playnet knowledge dsl world)
+             (playnet knowledge worlds presets)
              (playnet test planner bread)
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))

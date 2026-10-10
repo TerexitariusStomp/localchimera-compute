@@ -81,7 +81,7 @@
              (playnet wire rows)
              ((playnet wire snapshot) #:select (fold-snapshots))
              ;; the reply's JSON shape, the same one the page's own solve worker speaks
-             ((playnet planner doors family wire) #:select (family-split->json-alist family-bills->json-alist))
+             ((playnet doors family wire) #:select (family-split->json-alist family-bills->json-alist))
              ;; Shared SAID derivation — the SAME code the server uses, so a
              ;; stance we sign here derives the identical SAID there. Without
              ;; this the client could only blind-sign whatever SAID the server

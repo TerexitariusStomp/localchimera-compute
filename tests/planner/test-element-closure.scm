@@ -31,8 +31,8 @@
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-element-closure.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet planner solve engine)
-             (playnet planner solve compile))
+(use-modules (playnet solve engine)
+             (playnet solve compile))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

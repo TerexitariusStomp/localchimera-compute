@@ -11,7 +11,7 @@
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-tag-keys-registered.scm
 
 (use-modules (playnet test harness)
-             ((playnet planner facts agent-tags) #:select (%tag-keys tag-value tag-values tag-key?))
+             ((playnet vf facts agent-tags) #:select (%tag-keys tag-value tag-values tag-key?))
              (ice-9 ftw) (ice-9 rdelim) (ice-9 regex) (srfi srfi-1))
 
 (define %id-prefixes   ; keys of ids and store rows, read by the module that mints them

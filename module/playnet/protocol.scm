@@ -919,10 +919,10 @@ or #f when no handler sends it."
           #:doc "Hands back one scope's credit fold node, or #f when the scope has none.")
     (door planner credit-read (method . args)
           #:auth operator #:topic stock #:reply mixed #:kind read
-          #:doc "Forwards METHOD and its own ARGS to the UC credit pool (module/playnet/planner/pools/credit-fold.scm) and replies its answer. METHOD is one of: cells, context, pool, sum-met, sum-unmet, citizen-count, citizens (no further args); citizen-claimed/citizen-unmet/contribution-claim/solidarity-supplement (aid); citizen-gross/voice-share (aid, [level]); citizenship-share/total-claim-capacity/effective-balance (aid, [citizenship-fraction]); total-social-svc ([level]). Genuinely polymorphic per method, so ARGS stays a positional tail rather than one fixed shape.")
+          #:doc "Forwards METHOD and its own ARGS to the UC credit pool (module/playnet/pools/credit-fold.scm) and replies its answer. METHOD is one of: cells, context, pool, sum-met, sum-unmet, citizen-count, citizens (no further args); citizen-claimed/citizen-unmet/contribution-claim/solidarity-supplement (aid); citizen-gross/voice-share (aid, [level]); citizenship-share/total-claim-capacity/effective-balance (aid, [citizenship-fraction]); total-social-svc ([level]). Genuinely polymorphic per method, so ARGS stays a positional tail rather than one fixed shape.")
     (door planner voice-uc ()
           #:auth operator #:topic stock #:reply capability #:kind read
-          #:doc "Hands back the UC voice pool root object (module/playnet/planner/pools/voice-fold.scm): producer stances over parts, folded anonymously; reads pushes, hours-of, hours, cells.")
+          #:doc "Hands back the UC voice pool root object (module/playnet/pools/voice-fold.scm): producer stances over parts, folded anonymously; reads pushes, hours-of, hours, cells.")
     (door planner voice (scope-id)
           #:auth operator #:topic stock #:reply capability #:kind read
           #:doc "Hands back one scope's voice fold node, or #f when the scope has none.")
@@ -940,7 +940,7 @@ or #f when no handler sends it."
           #:doc "Replies the foods of SCOPE-ID that stand in for SPEC, ((spec . id) (cover . k)) by cover descending: k is the least, over the leaves SPEC carries that a body's floors name, of the other's amount over SPEC's per unit (catalogues/substances.scm leaf-substitutes). Substitution as a reading of the leaf registry, declared by nobody. docs/observation/physics.md §6.")
     (door planner readings-uc ()
           #:auth operator #:topic stock #:reply capability #:kind read
-          #:doc "Hands back the UC reading pool root object (module/playnet/planner/pools/reading-fold.scm): every scope's readings of a spec, keyed by technique, act and scope, one cell per source; reads readings, latest, drift, sources, contrary, cells.")
+          #:doc "Hands back the UC reading pool root object (module/playnet/pools/reading-fold.scm): every scope's readings of a spec, keyed by technique, act and scope, one cell per source; reads readings, latest, drift, sources, contrary, cells.")
     (door planner readings (scope-id)
           #:auth operator #:topic stock #:reply capability #:kind read
           #:doc "Hands back one scope's reading fold node, or #f when the scope has none.")
@@ -958,7 +958,7 @@ or #f when no handler sends it."
           #:doc "Hands back one scope's slack fold node, or #f when the scope has none.")
     (door planner slack-read (method . args)
           #:auth operator #:topic planning #:reply mixed #:kind read
-          #:doc "Forwards METHOD and its own ARGS to the UC slack fold (module/playnet/planner/pools/slack-fold.scm) and replies its answer. METHOD is one of: cells, slacks (no further args); slack (place); geomean ([places], default every place with a want). Genuinely polymorphic per method, so ARGS stays a positional tail rather than one fixed shape.")
+          #:doc "Forwards METHOD and its own ARGS to the UC slack fold (module/playnet/pools/slack-fold.scm) and replies its answer. METHOD is one of: cells, slacks (no further args); slack (place); geomean ([places], default every place with a want). Genuinely polymorphic per method, so ARGS stays a positional tail rather than one fixed shape.")
     (door planner match-labour! ()
           #:auth operator #:topic commitments #:reply ok-or-error #:kind performative
           #:doc "Matches every scope's request proposals against the UC labour pool in ONE steward-gated solve seeded by standing accepts, landing the deployment via the descent; replies commitment count and hours.")
@@ -976,7 +976,7 @@ or #f when no handler sends it."
           #:doc "Judges RECORDS-JSON (an array of ValueFlows records: kind, action, spec, qty, unit, arcs) against what SCOPE-ID knows — its specs and their units — and replies a JSON array of findings (severity, kind, subject, detail); an empty array means well formed.")
     (door planner presets ()
           #:auth anonymous #:topic knowledge #:reply alist-list #:kind read
-          #:doc "Lists the worlds a scope can start from — the economies the tree ships as data (module/playnet/planner/knowledge/worlds/presets.scm): id, name and doc per preset.")
+          #:doc "Lists the worlds a scope can start from — the economies the tree ships as data (module/playnet/knowledge/worlds/presets.scm): id, name and doc per preset.")
     (door planner adopt-preset! (scope-id preset-id)
           #:auth operator #:topic knowledge #:reply ok-or-error #:kind performative
           #:doc "Seeds preset PRESET-ID (see `presets`) into SCOPE-ID's stores — its specs, recipes, places, agents and stock, replacing by id; replies the counts seeded.")

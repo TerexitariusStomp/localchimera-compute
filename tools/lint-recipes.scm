@@ -3,7 +3,7 @@
 ;;; lint-recipes.scm — is every recipe in the tree ValueFlows the planner can run?
 ;;;
 ;;; Seeds every `seed-*` the planner umbrella exports into one recipe store
-;;; (dsl/vf-lint.scm `seed-every-recipe!`) and runs (playnet planner knowledge
+;;; (dsl/vf-lint.scm `seed-every-recipe!`) and runs (playnet knowledge
 ;;; vf-lint) over it. The tree is the registry: a seeder is swept by existing,
 ;;; and one wanting anything other than a store errors and is skipped, counted.
 ;;;
@@ -14,9 +14,9 @@
 ;;; Exit 0 = clean (warnings and info allowed), 1 = errors.
 ;;; Run: guile --no-auto-compile -L module tools/lint-recipes.scm
 (use-modules (ice-9 format) (srfi srfi-1) (srfi srfi-13)
-             (playnet planner scope root) (playnet planner knowledge dsl vf-lint)
-             (playnet planner knowledge dsl findings)
-             ((playnet planner knowledge law lint) #:select (crossing-sources))
+             (playnet scope root) (playnet knowledge dsl vf-lint)
+             (playnet knowledge dsl findings)
+             ((playnet knowledge law lint) #:select (crossing-sources))
              (goblins))
 
 (define (main args)

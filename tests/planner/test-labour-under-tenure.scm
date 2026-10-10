@@ -14,8 +14,8 @@
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test scope))
 (use-modules (playnet test harness)
-             (playnet planner vf schemas) (srfi srfi-1)
-             (playnet planner doors service)          ; ^planner-service
+             (playnet vf schemas) (srfi srfi-1)
+             (playnet doors service)          ; ^planner-service
              (playnet governance socialization) (playnet keri acdc-store)               ; socialize-private-resource, socialized-plan-fn
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
@@ -40,7 +40,7 @@
 (define spatials (list (make-spatial-thing #:id "town" #:lat 40.0 #:long -74.0)))
 ;; A period here is a WEEK: Alice's 09:00–17:00 every day is 56 h of baking, the
 ;; labour this fixture was sized on, and the same on any date.
-(use-modules ((playnet planner solve engine) #:select (set-period-length!)))
+(use-modules ((playnet solve engine) #:select (set-period-length!)))
 (set-period-length! 1.0 "week")
 (define win (all-week-window "09:00" "17:00"))
 (define agents (list (make-agent #:id OWNER #:type 'person #:name "Alice" #:primary-location "town"

@@ -1,4 +1,4 @@
-;;; test-solve-brief.scm — the orb's pure projection: (playnet planner doors service brief).
+;;; test-solve-brief.scm — the orb's pure projection: (playnet doors service brief).
 ;;;
 ;;; parse-overrides (what-if JSON/alist → plan-scope inputs) and
 ;;; plan-brief->string (plan-results alist → narration prose) are pure, so they
@@ -7,7 +7,7 @@
 ;;; Run:  guile -L module tests/planner/test-solve-brief.scm
 
 (use-modules (playnet test harness)
-             (playnet planner doors service brief)
+             (playnet doors service brief)
              (srfi srfi-13))          ; string-contains
 
 (format #t "~%── parse-overrides ──~%")

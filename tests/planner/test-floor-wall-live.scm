@@ -17,7 +17,7 @@
 ;;; Run: guile -L module tests/planner/test-floor-wall-live.scm
 
 (use-modules (playnet test harness) (playnet test scope)
-             (playnet planner vf schemas) (playnet planner scope live)
+             (playnet vf schemas) (playnet scope live)
              (goblins) (goblins vat) (srfi srfi-1))
 
 (define win (all-week-window "00:00" "23:00"))

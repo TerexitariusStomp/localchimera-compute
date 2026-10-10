@@ -18,8 +18,8 @@
 ;;; Run:  guile --no-auto-compile -q -L module tests/planner/test-crossing-column.scm
 
 (use-modules (playnet test harness)
-             (playnet planner solve solver)
-             ((playnet planner solve engine) #:select (make-boundary-oracle))
+             (playnet solve solver)
+             ((playnet solve engine) #:select (make-boundary-oracle))
              (srfi srfi-1) (ice-9 format))
 
 ;; a seeded stream, so a failure is a program someone can build again

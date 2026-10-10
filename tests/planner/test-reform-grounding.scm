@@ -18,18 +18,18 @@
 ;; schemas is a module now, so import it — `load` would define the module and
 ;; leave this file's namespace without the records. The fragments below stay
 ;; `load`ed: they still define into whoever loads them.
-(use-modules (playnet planner vf schemas))
-(use-modules (playnet planner legal crossings))   ; free-food-distribution + activities register their own
-(use-modules (playnet planner facts places))   ; …and the nations they register into
-(use-modules (playnet planner legal registry))
-(use-modules (playnet planner legal reform))
-(use-modules (playnet planner knowledge law aspects))
-(use-modules (playnet planner knowledge catalogues us-states-fips))
-(use-modules (playnet planner knowledge law context-pack))  ; the jurisdiction packs it reads off disk
-(use-modules (playnet planner knowledge worlds free-food-distribution))
-(use-modules (playnet planner knowledge law activities))
-(use-modules (playnet planner knowledge law reform-mirrors))
-(use-modules (playnet planner knowledge law structural-demands))
+(use-modules (playnet vf schemas))
+(use-modules (playnet legal crossings))   ; free-food-distribution + activities register their own
+(use-modules (playnet vf facts places))   ; …and the nations they register into
+(use-modules (playnet legal registry))
+(use-modules (playnet legal reform))
+(use-modules (playnet knowledge law aspects))
+(use-modules (playnet knowledge catalogues us-states-fips))
+(use-modules (playnet knowledge law context-pack))  ; the jurisdiction packs it reads off disk
+(use-modules (playnet knowledge worlds free-food-distribution))
+(use-modules (playnet knowledge law activities))
+(use-modules (playnet knowledge law reform-mirrors))
+(use-modules (playnet knowledge law structural-demands))
 (use-modules (srfi srfi-1) (ice-9 format))
 
 (define *pass* 0) (define *fail* 0)
