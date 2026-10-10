@@ -15,7 +15,7 @@
              (playnet utils paths)
              ;; vault helpers are exported via (playnet governance);
              ;; bran-custody is `include-from-path`'d, not its own module.
-             ((playnet governance bran-custody) #:select (read-vault-bran write-vault-bran!))
+             ((playnet keys bran-custody) #:select (read-vault-bran write-vault-bran!))
              ((playnet utils hex) #:select (hex->bv bv->hex))
              (rnrs bytevectors)
              (ice-9 ftw))
@@ -145,7 +145,7 @@
 ;; The cleanest single-process Shamir test: split bran into 3-of-5,
 ;; gather any 3 share files, reconstitute, assert byte-equal bran.
 ;; Uses the same shamir-split / shamir-combine that
-;; bran-custody.scm uses internally, plus our CLI's wrapping.
+;; keys/bran-custody.scm uses internally, plus our CLI's wrapping.
 
 (use-modules ((playnet crypto shamir) #:select (shamir-split shamir-combine))
              ((playnet credentials keys) #:select (make-bran-share-credential)) ((playnet keri acdc) #:select (cred-claim)))

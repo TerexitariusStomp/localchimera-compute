@@ -1,8 +1,4 @@
-;;; module/playnet/governance/bran-custody.scm — bran persistence
-;;;
-;;; Included fragment — imports come from (playnet governance), like
-;;; scope.scm. Symbols defined here are exported by the umbrella module's
-;;; explicit `#:export` list.
+;;; module/playnet/keys/bran-custody.scm — bran persistence
 ;;;
 ;;; A scope's "bran" is the 32-byte seed from which all of its KERI keys
 ;;; derive (signing keypair, next keypair, every rotation key — see
@@ -34,7 +30,7 @@
 
 ;;; ── Shamir share ↔ ACDC plumbing ───────────────────────────────────────────
 
-(define-module (playnet governance bran-custody)
+(define-module (playnet keys bran-custody)
   #:use-module (srfi srfi-1)
   #:use-module (playnet credentials keys)
   #:use-module (playnet keri acdc)

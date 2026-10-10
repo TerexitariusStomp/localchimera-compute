@@ -76,9 +76,9 @@
              (playnet keri bridge)
              ((playnet keri credentials) #:select (acdc-ensure-schemas-resolved!))
              (playnet keri inception)
-             (playnet governance keri federation-peers)
+             (playnet keys peers)
              ((playnet keri keria-reconnect) #:select (register-reconnect-hook!))
-             (playnet governance keri notifications)
+             (playnet keys notifications)
              (playnet ai key-pool)
              (playnet interface backends scope)
              (playnet interface org-stub)
@@ -117,7 +117,7 @@
              (playnet credentials registry) (playnet keri acdc) (playnet keri first-person credentials)
              (playnet governance debts)
              (playnet identity enrollment)
-             (playnet governance http-witness-publisher)
+             (playnet keys http-witness-publisher)
              (playnet identity oobi-host-mirror)
              (playnet utils paths)
              (playnet governance recipe-standing)
@@ -138,19 +138,19 @@
              (playnet governance)
              (playnet governance scope-recovery)
              (playnet governance scope-graph)
-             (playnet governance pending-grants)
+             (playnet keys pending-grants)
              ((playnet governance pending-recompositions)
               #:select (current-pending-recompositions
                         spawn-pending-recompositions))
              ((playnet utils common) #:select (env-int env-flag?))
-             ((playnet governance keri scope-exchange) #:select (current-pending-grants))
-             ((playnet governance keri ipex-policy) #:select (current-credential-finder
+             ((playnet keys exchange) #:select (current-pending-grants))
+             ((playnet keys ipex-policy) #:select (current-credential-finder
                                                    current-credential-finder-by-said))
              (playnet governance universal-commune)
              (playnet governance uc-curator)
              (playnet governance remote-scope-poller)
              (playnet governance witness-relay)
-             (playnet governance keri-backend live)
+             (playnet keys keri-backend live)
              (playnet identity seat)
              (playnet identity oobi-host)
              ;; Push notifications (Web Push / VAPID)
@@ -825,7 +825,7 @@
            (if (keri-connected?)
                (let ((proc (module-ref
                              (resolve-interface
-                               '(playnet governance keria-store))
+                               '(playnet keys keria-store))
                              'spawn-keria-acdc-store)))
                  (proc (gateway-controller-aid-name)))
                ;; No KERIA client → DURABLE local-disk store, NOT pure memory.
@@ -1111,7 +1111,7 @@
        ;; file (this was the one straggler in the XDG state dir). A queue
        ;; persisted at the old location migrates in once — retry entries
        ;; must survive the path change the same way they survive restarts.
-       (define pending-grants-file (data-path "pending-grants.scm"))
+       (define pending-grants-file (data-path "keys/pending-grants.scm"))
        (let ((old (string-append (playnet-state-dir) "/pending-grants.scm")))
          (when (and (file-exists? old) (not (file-exists? pending-grants-file)))
            (catch #t

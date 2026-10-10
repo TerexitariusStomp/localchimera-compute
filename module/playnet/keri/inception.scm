@@ -16,13 +16,13 @@
 ;;;      always signs with its OWN key — this file never holds cryptographic
 ;;;      authority over any commune's content. (The peers and parent a
 ;;;      deployment federates with are its own wiring: playnet's is
-;;;      (playnet governance keri federation-peers).)
+;;;      (playnet keys peers).)
 ;;;
 ;;;   3. Generic K-of-N multi-sig group AID creation (governance-create-group!)
 ;;;      — a pure protocol primitive over KERIA's multisig inception flow,
 ;;;      with no opinion on WHO the members are or WHY they're grouping.
 ;;;      Its live caller today is scope.scm's `merge-with`, via the
-;;;      `create-group` entry of (playnet governance keri-backend live)'s
+;;;      `create-group` entry of (playnet keys keri-backend live)'s
 ;;;      keri-backend alist: two communes recomposing into one co-signed AID.
 ;;;      It does NOT touch this gateway's own controller-identity state
 ;;;      (§2) — creating a multi-sig group for some scope merge has nothing
@@ -185,7 +185,7 @@
    The caller (typically the ^scope actor's bootstrap path) stores
    KEYPAIR and NEXT-KEYPAIR in the actor's bcom state, and persists
    BRAN via Shamir share-holders or an encrypted vault file (see
-   `(playnet governance bran-custody)`). The actor itself never holds
+   `(playnet keys bran-custody)`). The actor itself never holds
    the bran in bcom.
 
    BRAN — supply for recovery / deterministic restart (32-byte
@@ -262,8 +262,7 @@
   "Create a KERIA-managed k-of-n multi-sig group AID. Generic protocol
    primitive — has no opinion on who the members are or why they're
    grouping. Its live caller is scope.scm's `merge-with`, via the
-   `create-group` entry of the keri-backend alist ((playnet governance
-   keri-backend live)): two communes recomposing into one co-signed AID.
+   `create-group` entry of the keri-backend alist ((playnet keys keri-backend live)): two communes recomposing into one co-signed AID.
    Deliberately does NOT touch this gateway's own controller-identity
    state — creating a group AID for some scope merge has nothing to do
    with who this gateway is.

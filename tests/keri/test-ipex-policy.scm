@@ -12,7 +12,7 @@
 ;;; Run: guile -L module -L tests tests/keri/test-ipex-policy.scm
 
 (use-modules (playnet test harness)
-             (playnet governance keri ipex-policy)
+             (playnet keys ipex-policy)
              (playnet credentials membership) (playnet credentials voting))
 
 ;; ── install + lookup ─────────────────────────────────────────────────

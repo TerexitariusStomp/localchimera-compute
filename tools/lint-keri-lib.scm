@@ -6,7 +6,7 @@
 ;;; (docs/planning/identity/keri-openvtc-library-split.md). This gate holds that: every
 ;;; file in the library names only library modules and a short list of
 ;;; dependency-free support modules. Playnet wiring that speaks KERI lives in
-;;; module/playnet/governance/keri/ and imports the library from outside.
+;;; module/playnet/keys/ and imports the library from outside.
 ;;;
 ;;; A module name counts wherever it appears in CODE — a #:use-module, a
 ;;; use-modules, or a quoted '(playnet …) handed to resolve-module / @ / @@ —

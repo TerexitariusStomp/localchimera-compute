@@ -62,19 +62,19 @@
   #:use-module (playnet governance acdc-bridge)
   #:use-module (playnet keri citizen-sig)
   #:use-module (playnet keri inception)
-  #:use-module (playnet governance keri federation-peers)
+  #:use-module (playnet keys peers)
   #:use-module (playnet org endorsement)
-  #:use-module (playnet governance acdc-store)
+  #:use-module (playnet keri acdc-store)
   #:use-module (playnet governance async)
   #:use-module (playnet governance ballot)
   #:use-module (playnet governance governance-policy)
   #:use-module (playnet utils governed-row)
   #:use-module ((playnet governance attestation-ceremony)
                 #:select (^attestation-ceremony register-attestation-ceremony!))
-  #:use-module (playnet governance keri scope-exchange)
+  #:use-module (playnet keys exchange)
   #:use-module (playnet identity enrollment)
-  #:use-module (playnet governance kel-store)
-  #:use-module (playnet governance bran-custody)
+  #:use-module (playnet keys kel-store)
+  #:use-module (playnet keys bran-custody)
   #:use-module (goblins ocapn ids)
   #:use-module (srfi srfi-11)
   #:use-module (goblins)
@@ -1600,6 +1600,11 @@
      ;; in turn (social-means: a moving assignment). A bare grant with no care
      ;; terms needs none of this — it is a unilateral gift of use into the pool.
      ;;
+     ;; opts (kw-ref): 'contribution (money-spec amount unit due) — a share of
+     ;; the lent thing's running cost the commune bears: ONE more reciprocal
+     ;; clause, a fixed sum of money due on a date, never a price per use
+     ;; (docs/legal/structure.md §5; the records read it as `cost-share`,
+     ;; and a sum that tracked the use as `metered-use`, a rent).
      ;; opts (kw-ref): 'ratification SAID — a closed, labour-voice-weighted
      ;; `^ballot`'s ratification naming this exact grant (docs/playnet.typ:
      ;; "producers recognise... weighted by labour-voice"), the same
@@ -1627,15 +1632,29 @@
                          'transfer-custody
                          #:resource-conforms-to spec #:due until
                          #:signing-keypair keypair))
+              (contribution (kw-ref opts 'contribution #f))
+              (share-c (and contribution
+                            (let ((money-spec (list-ref contribution 0))
+                                  (amount (list-ref contribution 1))
+                                  (unit (list-ref contribution 2))
+                                  (due (list-ref contribution 3)))
+                              (make-commitment-credential
+                               scope-aid owner (string-append "share-" grant-said)
+                               'transfer
+                               #:resource-conforms-to money-spec
+                               #:resource-quantity (cons amount unit) #:due due
+                               #:signing-keypair keypair))))
               (agreement (make-agreement-credential
                           scope-aid owner (string-append "agr-" grant-said)
                           #:primary-commitment-ids    (list grant-said)
-                          #:reciprocal-commitment-ids (list (cred-said return-c))
+                          #:reciprocal-commitment-ids (append (list (cred-said return-c))
+                                                              (if share-c (list (cred-said share-c)) '()))
                           #:accepted-at (iso-utc-now)
                           #:signing-keypair keypair)))
          ;; idempotent: the ids are deterministic from the grant, so re-accepting
          ;; is a no-op rather than a duplicate.
          ($ acdc-store 'issue-idempotent return-c)
+         (when share-c ($ acdc-store 'issue-idempotent share-c))
          ($ acdc-store 'issue-idempotent agreement)
          (cred-said agreement))))
 

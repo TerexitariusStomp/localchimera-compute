@@ -1,11 +1,11 @@
-;;; federation-peers.scm — the peers and parent this gateway federates with
+;;; keys/peers.scm — the peers and parent this gateway federates with
 ;;;
 ;;; Operator-supplied, env-driven: PLAYNET_PEERS (OOBI URLs of peer gateways)
 ;;; and PLAYNET_UC_AID (the Universal Commune this gateway pushes
 ;;; federation-membership credentials to). Playnet wiring over the KERI
 ;;; library's bridge — (playnet keri inception) holds the AID inception itself.
 
-(define-module (playnet governance keri federation-peers)
+(define-module (playnet keys peers)
   #:use-module ((playnet keri bridge) #:select (keri-wait-operation keri-resolve-oobi))
   #:use-module ((playnet utils common) #:select (parse-csv-env for-each-catching))
   #:use-module ((srfi srfi-1) #:select (filter-map))

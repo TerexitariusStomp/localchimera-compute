@@ -54,7 +54,7 @@
   #:use-module (playnet planner vf schemas)
   #:use-module ((playnet planner formulas flows) #:select (make-work-event))
   #:use-module (srfi srfi-1)
-  #:use-module (playnet governance acdc-store)
+  #:use-module (playnet keri acdc-store)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
   #:export (latest-by-claim recover-delegation-map recover-commune-state

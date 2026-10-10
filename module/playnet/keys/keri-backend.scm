@@ -1,4 +1,4 @@
-;;; module/playnet/governance/keri-backend.scm — keri-backend factories for ^scope
+;;; module/playnet/keys/keri-backend.scm — keri-backend factories for ^scope
 ;;;
 ;;; The unified ^scope actor accepts an optional `keri-backend` alist. When
 ;;; #f, recomposition (merge/split) uses synthetic AIDs — fast for tests.
@@ -25,11 +25,11 @@
 ;;;
 ;;;   stub-keri-backend  — records calls into a list-cell; no KERIA, no crypto.
 ;;;                        Pure Scheme; safe for unit tests.
-;;;   live-keri-backend  — defined in (playnet governance keri-backend live);
+;;;   live-keri-backend  — defined in (playnet keys keri-backend live);
 ;;;                        depends on (playnet keri bridge) and libsodium.
 ;;;                        Re-exported here for ergonomics.
 
-(define-module (playnet governance keri-backend)
+(define-module (playnet keys keri-backend)
   #:use-module (goblins)
   #:use-module ((playnet keri inception)
                 #:select (make-scope-inception))

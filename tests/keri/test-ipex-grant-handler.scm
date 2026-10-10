@@ -10,7 +10,7 @@
 ;;;   - credential already admitted     → no admit, no spurn
 ;;;   - apply/offer/agree stubs         → always spurn
 ;;;
-;;; The handler itself lives in (playnet governance keri notifications) but is
+;;; The handler itself lives in (playnet keys notifications) but is
 ;;; not exported; we re-resolve it via `module-ref` for testing.
 ;;;
 ;;; Run: guile -L module -L tests tests/keri/test-ipex-grant-handler.scm
@@ -18,7 +18,7 @@
 (use-modules (playnet test harness)
              (playnet keri bridge)
              (playnet keri credentials)
-             (playnet governance keri ipex-policy)
+             (playnet keys ipex-policy)
              (playnet credentials membership)
              (web server)
              (web request)
@@ -29,7 +29,7 @@
              (json))
 
 ;; Pull the (non-exported) handler symbols out of the notifications module.
-(define notif-mod (resolve-module '(playnet governance keri notifications)))
+(define notif-mod (resolve-module '(playnet keys notifications)))
 (define handle-ipex-grant (module-ref notif-mod 'handle-ipex-grant))
 (define handle-ipex-apply (module-ref notif-mod 'handle-ipex-apply))
 

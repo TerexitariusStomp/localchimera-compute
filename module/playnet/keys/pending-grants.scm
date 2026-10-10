@@ -1,4 +1,4 @@
-;;; module/playnet/governance/pending-grants.scm — durable retry queue
+;;; module/playnet/keys/pending-grants.scm — durable retry queue
 ;;;
 ;;; Generic at-least-once delivery for outbound work that can't be
 ;;; recovered from elsewhere (i.e. KERIA was unreachable when we tried
@@ -26,7 +26,7 @@
 ;;; doesn't accept #:optional / #:key args — same pattern as
 ;;; ^scope-graph and ^keria-acdc-store.
 
-(define-module (playnet governance pending-grants)
+(define-module (playnet keys pending-grants)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
   #:use-module ((playnet utils common) #:select (read-all-sexps-file))

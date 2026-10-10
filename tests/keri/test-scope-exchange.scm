@@ -11,7 +11,7 @@
 ;;; Run: guile -L module -L tests tests/keri/test-scope-exchange.scm
 
 (use-modules (playnet test harness)
-             (playnet governance keri scope-exchange)
+             (playnet keys exchange)
              (playnet keri signify)
              ((playnet keri credentials) #:select (ipex-exn-acdc))
              ((playnet keri signify-portable)

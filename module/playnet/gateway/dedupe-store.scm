@@ -12,7 +12,7 @@
 ;;; RESULT, not minting a unique id — so it gets its own small store rather
 ;;; than reusing that pattern.
 ;;;
-;;; Modeled on ^kel-store (module/playnet/governance/kel-store.scm):
+;;; Modeled on ^kel-store (module/playnet/keys/kel-store.scm):
 ;;; content-addressed via (playnet utils said-store), #:portrait/#:restore,
 ;;; durable disk writes so a replay stays deduped across a gateway restart,
 ;;; not just within one process's lifetime. Unlike a KEL, dedupe entries

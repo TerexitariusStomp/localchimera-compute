@@ -1,4 +1,4 @@
-;;; module/playnet/governance/keri/scope-exchange.scm — IPEX exchanges signed by
+;;; module/playnet/keys/exchange.scm — IPEX exchanges signed by
 ;;;                                            scope-owned keys
 ;;;
 ;;; The playnet stack mints scope AIDs in pure Scheme via
@@ -23,14 +23,14 @@
 ;;; credentials lands at the gateway's own controller signify identity
 ;;; (via the existing notification poller); whether that identity can
 ;;; admit on behalf of a scope-AID Issuee is a separate question handled
-;;; in (playnet governance keri ipex-policy).
+;;; in (playnet keys ipex-policy).
 
-(define-module (playnet governance keri scope-exchange)
+(define-module (playnet keys exchange)
   #:use-module (goblins)
   #:use-module (playnet keri bridge)
   #:use-module (playnet keri signify)
   #:use-module ((playnet keri inception) #:select (gateway-controller-aid-name))
-  #:use-module (playnet governance pending-grants)
+  #:use-module (playnet keys pending-grants)
   #:use-module ((playnet keri signify-portable) #:select (ed25519-keypair-secret))
   #:use-module ((playnet utils hex) #:select (bv->hex hex->bv))
   #:use-module ((playnet keri crypto-primitives)

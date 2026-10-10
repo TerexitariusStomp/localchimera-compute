@@ -38,7 +38,7 @@
    #f (legacy bootstrap shares for the maintainer-governance bran),
    the claim is omitted. For autonomous-signer scope keys, it MUST be
    supplied so multiple scopes' shares don't collide in one store
-   (see bran-custody.scm).
+   (see keys/bran-custody.scm).
 
    SIGNING-KEYPAIR/MULTISIG-SIGNERS: the issuing governance group's own
    signature over this share — the same key material a share, once

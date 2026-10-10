@@ -1,4 +1,4 @@
-;;; module/playnet/governance/keria-store.scm — KERIA-backed ACDC store
+;;; module/playnet/keys/keria-store.scm — KERIA-backed ACDC store
 ;;;
 ;;; Phase-2 implementation of the ^acdc-store interface. Same methods as
 ;;; the in-memory ^acdc-store in acdc-store.scm, but persists credentials
@@ -9,14 +9,14 @@
 ;;; primary read path; `sync!` repopulates it from KERIA on recovery.
 ;;;
 ;;; Usage:
-;;;   (use-modules (playnet governance keria-store))
+;;;   (use-modules (playnet keys keria-store))
 ;;;   (with-vat vat
 ;;;     (define store (spawn-keria-acdc-store "governance" "E_holder_aid")))
 ;;;
 ;;; The issuer-aid-name is the local KERIA AID name (e.g. "governance").
 ;;; KERIA must be booted (keri-boot! or keri-connect!) before issuing.
 
-(define-module (playnet governance keria-store)
+(define-module (playnet keys keria-store)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
   #:use-module (goblins utils hashmap)
@@ -24,7 +24,7 @@
   #:use-module (playnet keri bridge)
   #:use-module (playnet utils paths)
   #:use-module (playnet keri acdc)
-  #:use-module (playnet governance pending-grants)
+  #:use-module (playnet keys pending-grants)
   #:use-module (srfi srfi-1)
   #:use-module (ice-9 format)
   #:use-module ((playnet utils clock) #:select ((now . clock-now)))   ; the one clock: instants inside
@@ -251,7 +251,7 @@
   ;; issuer-aid-name: local KERIA AID name for issuance
   ;;
   ;; Failed grants are enqueued to the unified ^pending-grants actor
-  ;; (see module/playnet/governance/pending-grants.scm) rather than
+  ;; (see module/playnet/keys/pending-grants.scm) rather than
   ;; carried in-actor — that queue is persisted to disk and drained
   ;; by the gateway, so umbrella-grant deliveries survive a KERIA
   ;; outage that bridges a gateway restart.
@@ -375,5 +375,5 @@
 
 (define keria-acdc-store-env
   (make-persistence-env
-    `((((playnet governance keria-store) ^keria-acdc-store)
+    `((((playnet keys keria-store) ^keria-acdc-store)
        ,^keria-acdc-store))))

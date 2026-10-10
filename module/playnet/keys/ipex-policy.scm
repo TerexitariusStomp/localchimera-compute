@@ -1,4 +1,4 @@
-;;; module/playnet/governance/keri/ipex-policy.scm — schema-keyed policy for inbound IPEX grants
+;;; module/playnet/keys/ipex-policy.scm — schema-keyed policy for inbound IPEX grants
 ;;;
 ;;; The grant handler (`handle-ipex-grant` in notifications.scm) consults
 ;;; this table on every inbound /exn/ipex/grant notification. Three things
@@ -25,7 +25,7 @@
 ;;; (for built-ins) or via `(register-grant-policy! schema record)` at
 ;;; runtime (for app-level extensions).
 
-(define-module (playnet governance keri ipex-policy)
+(define-module (playnet keys ipex-policy)
   #:use-module (goblins)
   #:use-module (playnet credentials membership)
   #:use-module (playnet credentials registry)

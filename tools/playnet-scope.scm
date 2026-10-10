@@ -23,7 +23,7 @@
 ;;; Reuses the on-disk schema from (playnet utils paths) so any
 ;;; future schema change lands here automatically. The Shamir subcommands
 ;;; wrap (playnet crypto shamir)'s split/combine + make-bran-share-credential
-;;; so the wire format matches what bran-custody.scm uses internally.
+;;; so the wire format matches what keys/bran-custody.scm uses internally.
 ;;;
 ;;; Usage:
 ;;;   guile -L module tools/playnet-scope.scm <subcommand> [args]
@@ -43,11 +43,11 @@
              ((rnrs io ports) #:select (get-bytevector-n put-bytevector))
              (playnet utils paths)
              ((playnet keri signify) #:select ())   ; loading it installs the crypto backend the vault helpers use
-             ;; bran-custody.scm is `include-from-path`'d into
+             ;; keys/bran-custody.scm is `include-from-path`'d into
              ;; (playnet governance) — its vault helpers are exported
              ;; from the umbrella module, so we import from there
-             ;; rather than a non-existent (playnet governance bran-custody).
-             ((playnet governance bran-custody) #:select (read-vault-bran write-vault-bran! host-vault-key)) ((playnet credentials keys) #:select (make-bran-share-credential)) ((playnet keri acdc) #:select (cred-said cred-claim cred-revoked?))
+             ;; rather than a non-existent (playnet keys bran-custody).
+             ((playnet keys bran-custody) #:select (read-vault-bran write-vault-bran! host-vault-key)) ((playnet credentials keys) #:select (make-bran-share-credential)) ((playnet keri acdc) #:select (cred-said cred-claim cred-revoked?))
              ((playnet crypto shamir) #:select (shamir-split shamir-combine))
              ((playnet utils hex) #:select (hex->bv bv->hex))
              ((playnet utils common) #:select (read-sexp-file)))
@@ -340,7 +340,7 @@
 ;; Reuses the existing primitives in (playnet governance):
 ;;
 ;;   shamir-split bran k n          → list of (idx k share-bv)
-;;   make-bran-share-credential …   → the same ACDC shape bran-custody.scm
+;;   make-bran-share-credential …   → the same ACDC shape keys/bran-custody.scm
 ;;                                    issues via split-and-issue-bran-shares!
 ;;
 ;; We don't go through an acdc-store because operators ship the share
@@ -387,7 +387,7 @@
            (shares  (shamir-split bran threshold n)))
       (ensure-directory! output-dir)
       ;; Each share is a (idx k share-bv) triple. Wrap as a
-      ;; playnet-bran-share/v1 credential matching what bran-custody.scm
+      ;; playnet-bran-share/v1 credential matching what keys/bran-custody.scm
       ;; writes — receivers read via reconstitute-bran-from-store OR our
       ;; import-shamir subcommand.
       (for-each
@@ -439,7 +439,7 @@
            (creds
             ;; Each share file is a credential alist; extract the
             ;; relevant claims using the same cred-claim path
-            ;; bran-custody.scm's reconstitute-bran-from-store uses.
+            ;; keys/bran-custody.scm's reconstitute-bran-from-store uses.
             (filter-map
              (lambda (f)
                (let ((cred (read-sexp-file (string-append share-dir "/" f))))

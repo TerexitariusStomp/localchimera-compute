@@ -1,4 +1,4 @@
-;;; module/playnet/governance/scope-witness.scm — federation-peer KEL mirror
+;;; module/playnet/keys/scope-witness.scm — federation-peer KEL mirror
 ;;;
 ;;; In rules.md / democracy-on-keri.md §4.1, a scope's KEL is published
 ;;; for verifiability beyond the home vat. We don't publish to a global
@@ -18,11 +18,11 @@
 ;;; also hold mirrors of its KEL. k peers = bran recovery; 1 peer = KEL
 ;;; recovery.
 
-(define-module (playnet governance scope-witness)
+(define-module (playnet keys scope-witness)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
   #:use-module (goblins utils hashmap)
-  #:use-module (playnet governance kel-store)
+  #:use-module (playnet keys kel-store)
   #:use-module (playnet utils paths)
   #:export (^scope-witness
             spawn-scope-witness
@@ -33,7 +33,7 @@
 (define-actor (^scope-witness bcom mirrors)
   ;; mirrors :: hashmap aid → ^kel-store ref
 
-  ;; mirrors' values are ^kel-store refs, which now (see kel-store.scm)
+  ;; mirrors' values are ^kel-store refs, which now (see keys/kel-store.scm)
   ;; carry their own #:portrait/#:restore, so Goblins can serialize this
   ;; graph natively.
   #:portrait
@@ -86,7 +86,7 @@
 
 (define scope-witness-env
   (make-persistence-env
-    `((((playnet governance) ^scope-witness) ,^scope-witness))
+    `((((playnet keys scope-witness) ^scope-witness) ,^scope-witness))
     #:extends (list kel-store-env)))
 
 (define (scope-witness-mirror! witness-ref aid event-body)

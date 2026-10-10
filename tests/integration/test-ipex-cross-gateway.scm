@@ -17,15 +17,15 @@
 (use-modules (playnet test harness)
              (playnet keri bridge)
              (playnet keri credentials)
-             (playnet governance keri scope-exchange)
+             (playnet keys exchange)
              (playnet keri signify)
              (playnet keri signify-portable)
              (playnet keri crypto-primitives)
-             (playnet governance keri ipex-policy)
+             (playnet keys ipex-policy)
              (playnet credentials membership)
              (playnet governance scope-graph)
-             (playnet governance pending-grants)
-             (playnet governance keria-store)
+             (playnet keys pending-grants)
+             (playnet keys keria-store)
              (playnet utils hex)
              (goblins) (goblins vat)
              (goblins actor-lib on)
@@ -46,7 +46,7 @@
 (declare-opaque-header! "signify-timestamp")
 
 ;; handle-ipex-grant is not exported; reach in via module-ref
-(define notif-mod (resolve-module '(playnet governance keri notifications)))
+(define notif-mod (resolve-module '(playnet keys notifications)))
 (define handle-ipex-grant (module-ref notif-mod 'handle-ipex-grant))
 
 (format #t "=== IPEX Cross-Gateway Integration Test ===~%~%")

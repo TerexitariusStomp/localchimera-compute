@@ -19,7 +19,7 @@
 (use-modules (playnet planner scope root) (srfi srfi-1))
 (use-modules (playnet credentials membership) (playnet credentials recomposition) (playnet keri acdc) (playnet governance scope) (playnet keri acdc) (playnet keri acdc-store))
 (use-modules (playnet governance universal-commune))
-(use-modules (playnet governance keri-backend))
+(use-modules (playnet keys keri-backend))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap))
 
 

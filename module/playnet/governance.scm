@@ -31,9 +31,9 @@
   #:use-module (playnet governance debts)
   #:use-module (playnet governance index-oracle)
   #:use-module (playnet governance delegation-map)
-  #:use-module (playnet governance bran-custody)
+  #:use-module (playnet keys bran-custody)
   #:use-module (playnet governance bootstrap)
-  #:use-module (playnet governance acdc-store)
+  #:use-module (playnet keri acdc-store)
   #:use-module (playnet governance acdc-bridge)
   #:use-module (playnet governance voice-signer)
   #:use-module (playnet governance snapshot)
@@ -167,10 +167,10 @@
               snapshot-complete? snapshot-input-saids snapshot-missing snapshot-over
               spawn-witnessed-work-ceremony witness-quorum work-events-for-skill
               ;; from (playnet governance acdc-store)
-              ^acdc-store acdc-store-env non-revoked-by-schema spawn-acdc-store
+              ^acdc-store non-revoked-by-schema spawn-acdc-store
               ;; from (playnet governance bootstrap)
               ^bootstrap-ceremony bootstrap-ceremony! spawn-bootstrap-ceremony
-              ;; from (playnet governance bran-custody)
+              ;; from (playnet keys bran-custody)
               ^bran-custodian host-vault-key read-vault-bran read-vault-secret
               reconstitute-bran-from-custodians reconstitute-bran-from-store
               restore-bran-custodian spawn-bran-custodian split-and-issue-bran-shares!
@@ -293,7 +293,7 @@
                           scope-inception-keypair
                           scope-inception-next-keypair
                           scope-inception-signed-icp))
-  #:use-module ((playnet governance keri federation-peers) #:select (known-uc-aid))
+  #:use-module ((playnet keys peers) #:select (known-uc-aid))
   #:re-export (governance-create-scope-aid!
                <scope-inception> make-scope-inception scope-inception?
                scope-inception-aid scope-inception-bran
@@ -330,10 +330,10 @@
                write-scope-aid-name! default-scope-aid-name
                durable-default? default-scope-witnesses
                ensure-directory!)
-  #:use-module (playnet governance kel-store)
+  #:use-module (playnet keys kel-store)
   #:re-export (^kel-store spawn-kel-store
                kel-event-said kel-event-seq kel-event-type kel-event-aid)
-  #:use-module (playnet governance scope-witness)
+  #:use-module (playnet keys scope-witness)
   #:re-export (^scope-witness spawn-scope-witness
                scope-witness-mirror! scope-witness-kel-for)
   #:use-module (playnet identity oobi-host-mirror)
@@ -342,21 +342,21 @@
   #:re-export (^scope-graph current-scope-graph)
   #:use-module (playnet governance audit-scheduler)
   #:re-export (^audit-scheduler spawn-audit-scheduler)
-  #:use-module (playnet governance http-witness-publisher)
+  #:use-module (playnet keys http-witness-publisher)
   #:re-export (^http-witness-publisher spawn-http-witness-publisher)
   #:use-module ((playnet keri witness-publisher)
                 #:select (witness-push-urls keri-publish-event!
                           keri-fetch-kel-from-witness))
   #:re-export (witness-push-urls keri-publish-event!
                keri-fetch-kel-from-witness)
-  #:use-module ((playnet governance keri scope-exchange) #:select (scope-deliver-grant! governance-cred->wire))
+  #:use-module ((playnet keys exchange) #:select (scope-deliver-grant! governance-cred->wire))
   #:use-module (json)
   #:use-module (goblins ocapn ids)
   #:use-module (playnet governance ballot-store)
   #:re-export (^ballot-store spawn-ballot-store ballot-store-env)
   #:export (;; ACDC layer (Phase-1 in-memory; Phase-2 swaps in KERIA)
             ;; Federation-member witness operation
-            ;; Bran custody (Shamir + vault) — (playnet governance bran-custody)
+            ;; Bran custody (Shamir + vault) — (playnet keys bran-custody)
             ;; means-fold: the capacity column of the federation fold
             ;; willingness: consent bounds how far a span may reach
             ;; recipe-standing: observer → runs → one record per recipe

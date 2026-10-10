@@ -1,11 +1,11 @@
-;;; module/playnet/governance/custodian-heartbeat.scm — periodic ping
+;;; module/playnet/keys/bran-custodians.scm — periodic ping
 ;;; of Shamir bran-share custodians; raises an alert when reachability
 ;;; drops below the configured threshold so the operator knows BEFORE
 ;;; recovery is needed that shares are unreachable.
 ;;;
 ;;; Two complementary mechanisms cover bran-custody resilience:
 ;;;
-;;;   - bran-custody.scm's ^bran-custodian actors hold one share each
+;;;   - keys/bran-custody.scm's ^bran-custodian actors hold one share each
 ;;;     and expose 'identify + 'release-share. They're passive — they
 ;;;     respond when polled.
 ;;;
@@ -19,7 +19,7 @@
 ;;; incoherence-alert schema, the gateway's periodic-fiber pattern,
 ;;; for-each-catching from util/common). No new infrastructure.
 
-(define-module (playnet governance custodian-heartbeat)
+(define-module (playnet keys bran-custodians)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
   #:use-module ((playnet utils common) #:select (safe-call))
@@ -115,4 +115,4 @@
 
 (define custodian-heartbeat-env
   (make-persistence-env
-    `((((playnet governance) ^custodian-heartbeat) ,^custodian-heartbeat))))
+    `((((playnet keys bran-custodians) ^custodian-heartbeat) ,^custodian-heartbeat))))

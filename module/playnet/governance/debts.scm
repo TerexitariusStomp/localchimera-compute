@@ -51,7 +51,7 @@
   #:use-module (srfi srfi-1)
   #:use-module (playnet credentials commitments)
   #:use-module (playnet keri acdc)
-  #:use-module (playnet governance acdc-store)
+
   #:use-module (playnet keri acdc)
   #:use-module (playnet planner algorithms rollup)
   #:use-module (playnet planner vf schemas)

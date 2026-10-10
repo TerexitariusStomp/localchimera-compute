@@ -1,4 +1,4 @@
-;;; module/playnet/governance/keri/witnesses-federation.scm — bootstrap a peer's
+;;; module/playnet/keys/witness-pool.scm — bootstrap a peer's
 ;;; KERIA witness pool from federation-issued ACDC assignments.
 ;;;
 ;;; A new peer joining a federation doesn't know which witnesses to
@@ -10,14 +10,13 @@
 ;;; witness pool the rest of the federation uses.
 ;;;
 ;;; The credential schema, constructor, and auditor live in
-;;; (playnet governance) — see make-witness-assignment-credential and
-;;; audit-witness-quorum-independence in
-;;; module/playnet/governance/credentials.scm.
+;;; (playnet credentials keys) — see make-witness-assignment-credential and
+;;; audit-witness-quorum-independence there.
 ;;;
 ;;; This module composes those data-layer helpers with the runtime
 ;;; OOBI resolver from (playnet keri bridge).
 
-(define-module (playnet governance keri witnesses-federation)
+(define-module (playnet keys witness-pool)
   #:use-module (ice-9 format)
   #:use-module (srfi srfi-1)            ;; count
   #:use-module ((goblins) #:select ($))   ; the acdc-store is an actor

@@ -43,7 +43,7 @@
 ;;;   acdc/   — content-addressed credential store (one S-expr per SAID)
 ;;;   kel/    — content-addressed KEL event store (one S-expr per event SAID)
 ;;;   vault   — optional XSalsa20-Poly1305-encrypted bran (only when no
-;;;             Shamir share-holders are configured; see bran-custody.scm)
+;;;             Shamir share-holders are configured; see keys/bran-custody.scm)
 ;;;
 ;;; Test code can override the resolved root via the parameter
 ;;; `current-playnet-state-dir-override` rather than mutating env vars.

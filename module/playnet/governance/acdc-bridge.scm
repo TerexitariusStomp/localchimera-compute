@@ -29,7 +29,7 @@
   #:use-module (playnet credentials work)
   #:use-module (playnet keri acdc)
   #:use-module (playnet governance attestation-ceremony)
-  #:use-module ((playnet governance acdc-store) #:select (non-revoked-by-schema))
+  #:use-module ((playnet keri acdc-store) #:select (non-revoked-by-schema))
   #:use-module (playnet utils boot-cell)
   #:use-module (playnet keri acdc)
   #:use-module (playnet planner observation observer)
@@ -608,12 +608,12 @@ issued through it as authoritative.\n"
 ;; The consolidation path for REMOTE witnesses is that actor generalized from
 ;; candidate-PHC to any credential SAID — its collecting state is exactly the
 ;; async form IPEX round-trips need — over the /multisig/exn routes and
-;; ipex-policy registry that already exist (governance/keri/notifications.scm,
-;; governance/keri/ipex-policy.scm). Do not grow this function a network layer.
+;; ipex-policy registry that already exist (keys/notifications.scm,
+;; keys/ipex-policy.scm). Do not grow this function a network layer.
 ;;
 ;; Vocabulary: "witness" here and in enrollment means VOUCHER — a party
 ;; co-signing that work happened. KERI's own "witness"
-;; (governance/keri/witnesses-federation.scm, receiptor.scm) is receipt infrastructure,
+;; (keys/witness-pool.scm, receiptor.scm) is receipt infrastructure,
 ;; an unrelated role.
 
 ;; A witness: holds its keypair privately, applies its own POLICY to what it

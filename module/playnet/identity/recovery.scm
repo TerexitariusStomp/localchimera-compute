@@ -14,7 +14,7 @@
   #:use-module (playnet keri acdc)
   #:use-module (playnet keri first-person credentials)
   #:use-module (playnet keri first-person predicates)
-  #:use-module (playnet governance acdc-store)
+
   #:export (recover-personhood-state))
 
 (define (recover-personhood-state acdc-store ecosystem-aid)

@@ -13,7 +13,7 @@
 (use-modules (playnet test harness)
              (playnet keri bridge)
              (playnet keri credentials)
-             (playnet governance keri ipex-policy)
+             (playnet keys ipex-policy)
              (playnet credentials membership) (playnet keri acdc) (playnet keri acdc)
              (web server)
              (web request)
@@ -23,7 +23,7 @@
              (ice-9 format)
              (json))
 
-(define notif-mod (resolve-module '(playnet governance keri notifications)))
+(define notif-mod (resolve-module '(playnet keys notifications)))
 (define handle-ipex-apply (module-ref notif-mod 'handle-ipex-apply))
 (define handle-ipex-offer (module-ref notif-mod 'handle-ipex-offer))
 (define handle-ipex-agree (module-ref notif-mod 'handle-ipex-agree))
@@ -200,7 +200,7 @@
 ;; ── apply: unbound finder → spurn ──────────────────────────────
 
 (reset-posts!)
-;; the finder is a global (see ipex-policy.scm) — unbind, run, restore
+;; the finder is a global (see keys/ipex-policy.scm) — unbind, run, restore
 (let ((saved (current-credential-finder)))
   (current-credential-finder #f)
   (catch #t

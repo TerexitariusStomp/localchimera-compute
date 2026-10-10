@@ -35,7 +35,7 @@
 (define-module (playnet identity oobi-host-mirror)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
-  #:use-module (playnet governance kel-store)
+  #:use-module (playnet keys kel-store)
   #:export (^oobi-host-mirror
             spawn-oobi-host-mirror))
 

@@ -1,4 +1,4 @@
-;;; module/playnet/governance/keri/notifications.scm — KERIA notification polling + dispatch
+;;; module/playnet/keys/notifications.scm — KERIA notification polling + dispatch
 ;;;
 ;;; This is the event bus for all async KERI activity. Nothing works without it:
 ;;; multi-sig confirmations, credential offers, IPEX grants — all arrive here.
@@ -25,17 +25,17 @@
 ;;; server). The IPEX route names are protocol-level, defined in
 ;;; IPEX.md §3 Table 1. See docs/keri/SIGNIFY-PARITY.md.
 
-(define-module (playnet governance keri notifications)
+(define-module (playnet keys notifications)
   #:use-module (playnet keri bridge)
   #:use-module (playnet keri credentials)
-  #:use-module (playnet governance keri ipex-policy)
+  #:use-module (playnet keys ipex-policy)
   #:use-module ((playnet keri inception) #:select (gateway-controller-aid-name))
-  #:use-module ((playnet governance keri scope-exchange)
+  #:use-module ((playnet keys exchange)
                 #:select (current-pending-grants governance-cred->wire))
   #:use-module ((playnet keri signify)
                 #:select (saidify-block %saidplaceholder))
   #:use-module (playnet governance scope-graph)
-  #:use-module (playnet governance keria-store)
+  #:use-module (playnet keys keria-store)
   ;; cred-said accessor for the governance-cred alist returned by
   ;; acdc-store queries (different from acdc-said which reads the
   ;; ACDC's "d" field).
@@ -377,7 +377,7 @@
 
 ;;; ── IPEX handlers (IPEX.md §3 Table 1) ──────────────────────────────────────
 ;;;
-;;; Inbound IPEX policy is in (playnet governance keri ipex-policy). The handler here
+;;; Inbound IPEX policy is in (playnet keys ipex-policy). The handler here
 ;;; only does protocol mechanics: fetch the exchange body, idempotency-guard,
 ;;; consult policy, then admit + mirror — or spurn. Per IPEX.md §3 we MUST
 ;;; spurn on reject; silent mark-read is non-conformant and leaves the

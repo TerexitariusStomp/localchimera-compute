@@ -35,7 +35,7 @@
   #:use-module (playnet credentials recomposition)
   #:use-module (playnet credentials work)
   #:use-module (playnet keri acdc)
-  #:use-module (playnet governance acdc-store)
+  #:use-module (playnet keri acdc-store)
   #:use-module (playnet governance scope)
   #:use-module (ice-9 match)
   #:use-module (playnet planner facts partition)

@@ -113,17 +113,6 @@
  (file "utils/repl-client" #f)            ; a tool: tools/ of the repository
  (file "utils/ts-emit" #f)                ; a tool: tools/ of the repository
  ;; governance, by what each file is
- (file "governance/acdc-store" #f)        ; a renaming shim of (playnet keri acdc-store)
- (file "governance/kel-store" "keys")
- (file "governance/keria-store" "keys")
- (file "governance/keri-backend" "keys")
- (from "governance/keri-backend" "keys/keri-backend")
- (file "governance/bran-custody" "keys")
- (file "governance/custodian-heartbeat" "keys")
- (file "governance/scope-witness" "keys")
- (file "governance/http-witness-publisher" "keys")
- (file "governance/pending-grants" "keys")
- (from "governance/keri" "keys")
  (file "governance/acdc-bridge" "observation")
  (file "governance/scope" "scope")
  (file "governance/scope-recovery" "scope")

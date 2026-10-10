@@ -11,7 +11,7 @@
 ;;; Run: guile -L module -L tests tests/governance/test-pending-grants.scm
 
 (use-modules (playnet test harness)
-             (playnet governance pending-grants)
+             (playnet keys pending-grants)
              (srfi srfi-1)
              (goblins))
 

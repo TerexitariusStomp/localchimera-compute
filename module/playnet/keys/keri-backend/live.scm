@@ -1,10 +1,10 @@
-;;; module/playnet/governance/keri-backend/live.scm — live KERIA backend
+;;; module/playnet/keys/keri-backend/live.scm — live KERIA backend
 ;;;
 ;;; Wraps the real KERIA bridge: every call hits the agent (libsodium +
 ;;; HTTP). Imported separately so unit tests using stub-keri-backend
 ;;; never load libsodium.
 
-(define-module (playnet governance keri-backend live)
+(define-module (playnet keys keri-backend live)
   #:use-module (playnet keri bridge)
   #:use-module (playnet keri inception)
   #:use-module ((playnet keri receiptor) #:select (parse-witness-env))
@@ -64,7 +64,7 @@
               ;; bran returned to caller. Bran is the durable secret —
               ;; persist via Shamir share-holders or vault-on-disk; the actor
               ;; itself never holds it. See democracy-on-keri.md §4.1 +
-              ;; bran-custody.scm. When KEL-STORE is supplied, the signed icp
+              ;; keys/bran-custody.scm. When KEL-STORE is supplied, the signed icp
               ;; body lands in the durable KEL store too.
               ;;
               ;; PLAYNET_PUBLIC_URL (the gateway's public base URL, where

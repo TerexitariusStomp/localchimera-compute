@@ -34,12 +34,12 @@
   #:use-module (playnet keri acdc)
   #:use-module (playnet keri inception)
   #:use-module (playnet keri first-person predicates)
-  #:use-module ((playnet governance keri-backend)
+  #:use-module ((playnet keys keri-backend)
                 #:select (stub-keri-backend))
   ;; D2: ratification ACDCs delivered to remote predecessors via
   ;; Phase-6 IPEX so cross-gateway recomposition's sealing-into-icp.a
   ;; step has the SAID it needs.
-  #:use-module ((playnet governance keri scope-exchange)
+  #:use-module ((playnet keys exchange)
                 #:select (scope-deliver-grant!))
   #:use-module ((playnet utils common) #:select (for-each-catching))
   #:export (spawn-universal-commune

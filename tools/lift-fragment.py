@@ -52,7 +52,7 @@ def defined_names(path):
         (set! names (append names (match f
           ;; (define-actor (^name bcom . args) …) binds ^name — miss this and the
           ;; module silently exports everything EXCEPT its actor constructors.
-          ;; define-syntax-rule is here for the same reason: bran-custody.scm's
+          ;; define-syntax-rule is here for the same reason: keys/bran-custody.scm's
           ;; with-host-vault-key went unexported, and the umbrella's #:export of
           ;; it became a hollow slot that resolved right up to first expansion.
           (((quote define-actor) (? pair? s) . _) (list (car s)))

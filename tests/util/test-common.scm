@@ -108,7 +108,7 @@
 
 ;; ── peer-base-urls (lives in keri/governance) — quick coverage ──────
 
-(use-modules ((playnet governance keri federation-peers) #:select (peer-base-urls)))
+(use-modules ((playnet keys peers) #:select (peer-base-urls)))
 
 (setenv "PLAYNET_PEERS"
         "https://gw1.example/oobi/E_aid1,https://gw2.example:8080/oobi/E_aid2,,https://gw3.example")

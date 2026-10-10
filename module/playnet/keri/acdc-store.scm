@@ -24,7 +24,7 @@
 ;;; the same credentials is safe.
 ;;;
 ;;; The persistence env that names this actor in a deployment's durable state
-;;; belongs to the deployment — playnet's is (playnet governance acdc-store).
+;;; belongs to the deployment.
 
 (define-module (playnet keri acdc-store)
   #:use-module (srfi srfi-1)

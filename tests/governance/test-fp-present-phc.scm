@@ -26,7 +26,7 @@
 (use-modules (playnet test harness))
 (use-modules (playnet governance ballot-store) (playnet credentials membership) (playnet credentials recomposition) (playnet keri acdc) (playnet keri first-person credentials) (playnet governance service) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri said-portable) (playnet keri first-person credentials) (playnet keri first-person predicates))
 (use-modules (playnet governance ballot-store))
-(use-modules ((playnet governance keri scope-exchange) #:select (governance-cred->wire)))
+(use-modules ((playnet keys exchange) #:select (governance-cred->wire)))
 (use-modules (goblins) (goblins vat) (goblins actor-lib methods)
              (goblins utils hashmap)
              (json) (rnrs bytevectors) (srfi srfi-1))

@@ -1,4 +1,4 @@
-;;; module/playnet/governance/http-witness-publisher.scm — kel-store
+;;; module/playnet/keys/http-witness-publisher.scm — kel-store
 ;;; subscriber that POSTs every event to remote witness URLs.
 ;;;
 ;;; Same protocol as ^scope-witness and ^oobi-host-mirror: receives
@@ -9,7 +9,7 @@
 ;;; Drop into `spawn-scope #:witnesses '(...)` alongside any in-vat
 ;;; mirrors to get cross-internet KEL distribution out of the box.
 
-(define-module (playnet governance http-witness-publisher)
+(define-module (playnet keys http-witness-publisher)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
   #:use-module (playnet keri witness-publisher)

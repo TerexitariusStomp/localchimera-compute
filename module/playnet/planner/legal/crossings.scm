@@ -65,7 +65,11 @@
     (food-vending    avoidable  "sells or serves food to the public" handover)
     (data-processing mirrored   "processes other people's personal data")
     (pool-risk       mirrored   "insures or pools risk for others" handover)
-    (organise        by-choice  "presses a program, organises or strikes collectively" no-flow)))
+    (organise        by-choice  "presses a program, organises or strikes collectively" no-flow)
+    ;; a cost of a lent thing, borne by the commune: flat by period it is a
+    ;; share of the running cost; by the use it is a lease, and the law reads rent
+    (cost-share      by-choice  "shares a lent thing's running cost, a fixed sum by period")
+    (metered-use     by-choice  "pays for a lent thing by the use made of it")))
 
 ;;; jurisdiction-registered extensions (mutable; in the live engine this is the
 ;;; governance actor's state — see legal/registry.scm's actor sketch).
@@ -348,7 +352,15 @@
     (hold-funds          record ,(lambda (r) (and (memq (fact-ref r 'action) *rights-moving-actions*)
                                                   (fact-kind? r 'money))))
     (credit-contribution record ,(lambda (r) (and (memq (fact-ref r 'action) *rights-moving-actions*)
-                                                  (fact-ref r 'labour-settled?) #t)))))
+                                                  (fact-ref r 'labour-settled?) #t)))
+    ;; money promised as a clause of a lend (the primary clause moves custody,
+    ;; not rights), not triggered by anything: a share of the running cost
+    (cost-share          record ,(lambda (r) (and (fact-kind? r 'money)
+                                                  (eq? 'custody (fact-ref r 'primary-moves))
+                                                  (not (fact-ref r 'triggered-action)))))
+    ;; money claimed because a thing was used: paid by the use, a lease
+    (metered-use         record ,(lambda (r) (and (fact-kind? r 'money)
+                                                  (memq (fact-ref r 'triggered-action) '(use consume)) #t)))))
 
 (define (patterns-at level)
   (filter (lambda (row) (eq? level (cadr row))) *crossing-patterns*))
@@ -411,39 +423,75 @@
    (append-map (lambda (a) (pattern-crossings 'asset (asset-fact a resolve-spec)))
                (or assets '()))))
 
-;;; ─── a RECORD's crossings : one intent, commitment or event ──────────────
+;;; ─── a RECORD's crossings : one intent, commitment, event or claim ───────
 ;;; What a door writes is a record, and the record says what was done: its
 ;;; action, the spec it moves, and — for a claim — that it is settled in labour
-;;; hours (an effort quantity beside the good).
-(define (record-fact record resolve-spec)
+;;; hours (an effort quantity beside the good). Two more facts a money record
+;;; carries, read through resolvers the caller supplies (#f: unknown, so the
+;;; pattern stays silent): what the agreement it is a clause of moves in its
+;;; primary clause (`primary-moves`: rights, custody, or #f), and the action
+;;; of the record a claim was triggered by (`triggered-action`).
+(define* (record-fact record resolve-spec
+                     #:optional (resolve-agreement #f) (resolve-record #f))
   (call-with-values
       (lambda ()
         (cond ((economic-event? record)
                (values (economic-event-action record)
                        (economic-event-resource-conforms-to record)
                        (economic-event-resource-classified-as record)
-                       (economic-event-effort-quantity record)))
+                       (economic-event-effort-quantity record) #f #f))
               ((commitment? record)
                (values (commitment-action record)
                        (commitment-resource-conforms-to record)
                        (commitment-resource-classified-as record)
-                       (commitment-effort-quantity record)))
+                       (commitment-effort-quantity record)
+                       (commitment-clause-of record) #f))
               ((intent? record)
                (values (intent-action record)
                        (intent-resource-conforms-to record)
                        (intent-resource-classified-as record)
-                       (intent-effort-quantity record)))
-              (else (error "record-crossings: an intent, a commitment or an event" record))))
-    (lambda (action spec-id own-classes effort)
+                       (intent-effort-quantity record) #f #f))
+              ((claim? record)
+               (values (claim-action record)
+                       (claim-resource-conforms-to record)
+                       (claim-resource-classified-as record)
+                       (claim-effort-quantity record) #f (claim-triggered-by record)))
+              (else (error "record-crossings: an intent, a commitment, an event or a claim" record))))
+    (lambda (action spec-id own-classes effort clause-of triggered-by)
       (call-with-values (lambda () (thing-read resolve-spec spec-id own-classes))
         (lambda (spec classes kinds)
-          `((action          . ,action)
-            (kinds           . ,kinds)
-            (classes         . ,classes)
-            (labour-settled? . ,(and effort #t))))))))
+          `((action           . ,action)
+            (kinds            . ,kinds)
+            (classes          . ,classes)
+            (labour-settled?  . ,(and effort #t))
+            (primary-moves    . ,(primary-moves clause-of resolve-agreement resolve-record))
+            (triggered-action . ,(and triggered-by resolve-record
+                                      (let ((t (resolve-record triggered-by)))
+                                        (and t (record-action t)))))))))))
 
-(define (record-crossings record resolve-spec)
-  (pattern-crossings 'record (record-fact record resolve-spec)))
+(define (record-action r)
+  (cond ((economic-event? r) (economic-event-action r))
+        ((commitment? r) (commitment-action r))
+        ((intent? r) (intent-action r))
+        ((claim? r) (claim-action r))
+        (else #f)))
+
+(define (primary-moves clause-of resolve-agreement resolve-record)
+  "What the primary clause of the agreement CLAUSE-OF names moves: 'rights
+   when its action moves rights, 'custody when it moves custody alone, #f when
+   nobody can say."
+  (and clause-of resolve-agreement resolve-record
+       (let ((agr (resolve-agreement clause-of)))
+         (and agr
+              (let* ((ids (or (agreement-stipulates agr) '()))
+                     (actions (filter-map (lambda (id) (and=> (resolve-record id) record-action)) ids)))
+                (cond ((null? actions) #f)
+                      ((any (lambda (a) (memq a *rights-moving-actions*)) actions) 'rights)
+                      (else 'custody)))))))
+
+(define* (record-crossings record resolve-spec
+                           #:key (resolve-agreement #f) (resolve-record #f))
+  (pattern-crossings 'record (record-fact record resolve-spec resolve-agreement resolve-record)))
 
 ;;; ─── demo (only when run as a script) ────────────────────────────────────
 (define (crossings-demo)

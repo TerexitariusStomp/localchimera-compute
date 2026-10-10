@@ -50,7 +50,7 @@
          (uc (spawn-universal-commune
               #:acdc-store uc-store
               #:durable? #f
-              #:keri-backend (@@ (playnet governance keri-backend)
+              #:keri-backend (@@ (playnet keys keri-backend)
                                  stub-keri-backend)))
          (a  (mk-fed a-store "A" "E_fed_A_AID"))
          (b  (mk-fed b-store "B" "E_fed_B_AID")))

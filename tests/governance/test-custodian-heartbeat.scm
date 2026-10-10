@@ -3,8 +3,8 @@
 ;; the host crypto backend: loading (playnet keri signify) installs it
 (use-modules ((playnet keri signify) #:select ()))
 (use-modules (playnet test harness)
-             (playnet governance bran-custody) (playnet credentials audit) (playnet keri acdc) (playnet keri acdc) (playnet keri acdc-store)
-             (playnet governance custodian-heartbeat)
+             (playnet keys bran-custody) (playnet credentials audit) (playnet keri acdc) (playnet keri acdc) (playnet keri acdc-store)
+             (playnet keys bran-custodians)
              (rnrs bytevectors)
              (goblins))
 

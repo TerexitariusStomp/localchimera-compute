@@ -333,8 +333,10 @@
     (for-each (lambda (f) (format #t "  read in part: ~a~%" f)) (reverse *unread*))))
 
 (define (departure-key d)
-  "One upward import as the baseline spells it: today's two paths."
-  (match d ((f from g to names) (string-append (playnet-rel f) " → " (playnet-rel g)))))
+  "One upward import as the baseline spells it: each file by the directory it will
+stand in and its name, so a move to that directory leaves the key as it is."
+  (define (key f t) (string-append (car t) "/" (basename f ".scm")))
+  (match d ((f from g to names) (string-append (key f from) " → " (key g to)))))
 
 (define (read-baseline)
   (if (file-exists? %baseline)
@@ -375,7 +377,7 @@
              (lambda (p)
                (set-port-encoding! p "UTF-8")
                (format p "# The upward imports the moves of docs/planning/codebase-layout.md §9 have yet to~%")
-               (format p "# resolve, one per line as today's paths; `make lint-layers` fails on one not listed~%")
+               (format p "# resolve, one per line as the two files' directories to come; `make lint-layers` fails on one not listed~%")
                (format p "# here, `tools/module-map.scm --baseline` records a shrunken set. Empty, it goes.~%")
                (for-each (lambda (d) (format p "~a~%" (departure-key d))) ds)))
            (format #t "~a: ~a upward import~:p recorded~%" %baseline (length ds)))

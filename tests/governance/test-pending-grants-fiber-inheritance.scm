@@ -22,8 +22,8 @@
 ;;; Run: guile -L module -L tests tests/governance/test-pending-grants-fiber-inheritance.scm
 
 (use-modules (playnet test harness)
-             (playnet governance pending-grants)
-             ((playnet governance keri scope-exchange) #:select (current-pending-grants))
+             (playnet keys pending-grants)
+             ((playnet keys exchange) #:select (current-pending-grants))
              (goblins)
              (ice-9 threads)
              (fibers))

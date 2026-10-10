@@ -1,6 +1,6 @@
 ;;; tests/keri/test-keri-notifications.scm — notification dispatch + handler tests
 ;;;
-;;; Exercises (playnet governance keri notifications):
+;;; Exercises (playnet keys notifications):
 ;;;   - Route constants (just strings, cheap sanity check)
 ;;;   - register-notification-handler!  (single + multiple handlers per route)
 ;;;   - Private dispatch-notification / process-notification via @@ access
@@ -15,7 +15,7 @@
 
 (use-modules (playnet test harness)
              (playnet keri bridge)
-             (playnet governance keri notifications)
+             (playnet keys notifications)
              (web server)
              (web request)
              (web response)
@@ -29,18 +29,18 @@
 
 ;; Reach into the module for the private dispatch + process procedures.
 (define dispatch-notification
-  (@@ (playnet governance keri notifications) dispatch-notification))
+  (@@ (playnet keys notifications) dispatch-notification))
 (define process-notification
-  (@@ (playnet governance keri notifications) process-notification))
+  (@@ (playnet keys notifications) process-notification))
 (define reset-handlers!
   (lambda ()
-    (module-define! (resolve-module '(playnet governance keri notifications))
+    (module-define! (resolve-module '(playnet keys notifications))
                     '*handlers* '())))
 
 ;; Read *local-aid-prefixes* so we can reset between tests.
 (define reset-local-aids!
   (lambda ()
-    (module-define! (resolve-module '(playnet governance keri notifications))
+    (module-define! (resolve-module '(playnet keys notifications))
                     '*local-aid-prefixes* #f)))
 
 ;;; ── Mock state ────────────────────────────────────────────────────────
@@ -232,7 +232,7 @@
 
 ;; Peek at the handler registry
 (define %handlers-after-install
-  (@@ (playnet governance keri notifications) *handlers*))
+  (@@ (playnet keys notifications) *handlers*))
 
 (check "multisig-rpy has a handler registered"
        (let ((h (assoc notification-route/multisig-rpy %handlers-after-install)))

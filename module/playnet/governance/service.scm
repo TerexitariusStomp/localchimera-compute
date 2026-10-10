@@ -52,7 +52,7 @@
   #:use-module (srfi srfi-1)
   #:use-module ((playnet utils clock) #:select (instant->civil (now . clock-now)))
   #:use-module (playnet governance delegation-map)
-  #:use-module (playnet governance keri scope-exchange)
+  #:use-module (playnet keys exchange)
   #:use-module ((playnet keri signify-portable) #:select (scm->json-canonical json-read-ordered))
   #:use-module (goblins utils hashmap)
   #:use-module (json)

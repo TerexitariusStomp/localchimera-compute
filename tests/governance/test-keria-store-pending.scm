@@ -6,7 +6,7 @@
 ;;; embedded queue — it enqueues to the unified ^pending-grants actor
 ;;; under kind = 'umbrella-grant. Gateway's drain pass calls
 ;;; (^pending-grants 'drain!) which dispatches via the replay-fn
-;;; registered in keria-store.scm.
+;;; registered in keys/keria-store.scm.
 ;;;
 ;;; What we assert:
 ;;;   - happy path: issue succeeds, central queue stays empty
@@ -21,8 +21,8 @@
 (use-modules (playnet test harness)
              (playnet keri bridge)
              (playnet keri credentials)
-             (playnet governance keria-store)
-             (playnet governance pending-grants)
+             (playnet keys keria-store)
+             (playnet keys pending-grants)
              (playnet credentials membership) (playnet keri acdc) (playnet keri acdc)
              (goblins)
              (web server)

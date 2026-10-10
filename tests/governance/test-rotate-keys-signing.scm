@@ -12,8 +12,8 @@
 ;;; Run: guile -L module -L tests tests/governance/test-rotate-keys-signing.scm
 
 (use-modules (playnet test harness)
-             (playnet governance kel-store) (playnet governance scope) (playnet keri citizen-sig)
-             ((playnet governance kel-store)
+             (playnet keys kel-store) (playnet governance scope) (playnet keri citizen-sig)
+             ((playnet keys kel-store)
               #:select (spawn-kel-store kel-event-said kel-event-seq))
              ((playnet keri citizen-sig)
               #:select (make-keri-identity keri-identity-aid keri-identity-keypair))

@@ -13,7 +13,7 @@
 ;;; gateway. Coordinators register entries BEFORE the recomposition
 ;;; ratification arrives ("I expect a ratification matching this
 ;;; pattern; when it lands, run this action"). The ratification-
-;;; arrived-hook (already wired in ipex-policy.scm post-admit-hook for
+;;; arrived-hook (already wired in keys/ipex-policy.scm post-admit-hook for
 ;;; recomposition-ratification) consults the registry and fires
 ;;; matching actions.
 ;;;

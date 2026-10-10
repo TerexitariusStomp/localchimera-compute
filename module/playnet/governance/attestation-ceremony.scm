@@ -17,7 +17,7 @@
 ;;;
 ;;; The actor is also the ASYNC form remote witnessing needs: a signature
 ;;; arriving over any transport — the /multisig/exn routes and ipex-policy
-;;; registry stand in governance/keri/notifications.scm — lands as ($ ceremony 'attest
+;;; registry stand in keys/notifications.scm — lands as ($ ceremony 'attest
 ;;; aid sig), across as many turns as the network takes. `collecting` is the
 ;;; whole state machine a round-trip requires.
 ;;;
@@ -146,7 +146,7 @@
                'attested)))))
 
 ;; The /multisig/exn stitch, registered by the caller that runs a KERIA
-;; poller (governance/keri/notifications.scm `register-notification-handler!` — multiple
+;; poller (keys/notifications.scm `register-notification-handler!` — multiple
 ;; handlers per route, so this rides beside the group-inception handling).
 ;; The payload convention: the exn's embed carries kind "witness-attest" with
 ;; the statement said, the witness aid, and the 0B sig. EXTRACT is injected

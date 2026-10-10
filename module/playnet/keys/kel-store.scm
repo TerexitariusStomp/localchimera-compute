@@ -1,4 +1,4 @@
-;;; module/playnet/governance/kel-store.scm — durable KEL event store
+;;; module/playnet/keys/kel-store.scm — durable KEL event store
 ;;;
 ;;; A scope's KEL (Key Event Log) is an append-only sequence of signed
 ;;; events: inception (icp), rotation (rot), interaction (ixn), and
@@ -26,7 +26,7 @@
 ;;; Helpers below extract SAID, sequence, type without committing to
 ;;; one key.
 
-(define-module (playnet governance kel-store)
+(define-module (playnet keys kel-store)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
   #:use-module (goblins utils hashmap)
@@ -203,7 +203,7 @@
 
 (define kel-store-env
   (make-persistence-env
-    `((((playnet governance) ^kel-store) ,^kel-store))))
+    `((((playnet keys kel-store) ^kel-store) ,^kel-store))))
 
 (define* (spawn-kel-store #:key (durable-dir #f) (aid #f) (subscribers '()))
   "Spawn a KEL event store. When DURABLE-DIR is provided, the store
