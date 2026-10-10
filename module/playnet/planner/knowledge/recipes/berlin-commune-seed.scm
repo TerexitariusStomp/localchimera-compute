@@ -8,6 +8,7 @@
 
 ;; staple → (summer-water-ML/ha . yield-kg/ha). maize ~2× as thirsty as the small grains.
 (define-module (playnet planner knowledge recipes berlin-commune-seed)
+  #:use-module ((playnet utils units) #:select (%effort-unit))
   #:use-module (playnet planner knowledge recipes farm-commune-seed)
   #:use-module (playnet planner vf schemas)
   #:use-module (goblins)
@@ -78,8 +79,8 @@
     ($ obs 'record-resource
        (make-economic-resource #:id (string-append "courier-" place) #:name "courier hours"
                                #:conforms-to "spec-bt-courier" #:classified-as '()
-                               #:accounting-quantity (make-measure courier-hours "hours")
-                               #:onhand-quantity (make-measure courier-hours "hours") #:primary-accountable worker))
+                               #:accounting-quantity (make-measure courier-hours %effort-unit)
+                               #:onhand-quantity (make-measure courier-hours %effort-unit) #:primary-accountable worker))
     ;; the ELECTRICITY the e-assist runs on. Without it the Lastenrad haul draws
     ;; charge from nowhere — the recipe consumes 0.015 kWh per trip-km and nothing
     ;; supplies it, so the plan gets free propulsion and the raw-lint says so.

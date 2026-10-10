@@ -11,6 +11,7 @@
 ;;;
 ;;; Run: guile -L module tests/planner/test-provenance-explain.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner scope root) (playnet planner vf schemas))
 (use-modules (playnet planner doors service))
@@ -26,13 +27,13 @@
       ;; shell aspect duress-from-diff realizes. So the live gate returns this recipe.
       ($ rs 'add-recipe-process
          (make-recipe-process #:id "rp-bake" #:name "Bake" #:process-conforms-to "plan-review"
-                              #:has-duration (make-duration 3 "hours")))
+                              #:has-duration (make-duration 3 %effort-unit)))
       ($ rs 'add-recipe-flow
          (make-recipe-flow #:id "rf-bake-work" #:action 'work #:resource-conforms-to "spec-labor"
-                           #:effort-quantity (make-measure 3 "hours") #:recipe-input-of "rp-bake"))
+                           #:effort-quantity (make-measure 3 %effort-unit) #:recipe-input-of "rp-bake"))
       ($ rs 'add-recipe-flow
          (make-recipe-flow #:id "rf-bake-out" #:action 'produce #:resource-conforms-to "spec-bread"
-                           #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-bake"))
+                           #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-bake"))
       ($ rs 'add-recipe (make-recipe #:id "recipe-bread" #:name "Bread" #:primary-output "spec-bread"
                                      #:recipe-processes (list "rp-bake")))
       svc)))

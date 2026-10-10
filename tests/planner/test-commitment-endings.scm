@@ -5,6 +5,7 @@
 ;;;
 ;;; docs/planning/solve/commitment-horizon.md. Fixture: (playnet test planner bread).
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness)
              (playnet planner vf schemas) (srfi srfi-1)
              (playnet planner scope live)
@@ -26,7 +27,7 @@
 (define (add-bake-accept! id hours)
   (with-vat vat ($ ps 'add-commitment
                    (make-commitment #:id id #:action 'work #:input-of "bake" #:resource-conforms-to "skill-bake"
-                                    #:effort-quantity (make-measure hours "hours") #:provider "ada" #:receiver "town" #:at-location "town"))))
+                                    #:effort-quantity (make-measure hours %effort-unit) #:provider "ada" #:receiver "town" #:at-location "town"))))
 
 
 (display "\n── 1. release: the decided rung's withdrawal ──\n")
@@ -48,7 +49,7 @@
 
 (with-vat vat ($ ps 'add-commitment
                  (make-commitment #:id "cmt-stale" #:action 'work #:input-of "mill" #:resource-conforms-to "skill-mill"
-                                  #:effort-quantity (make-measure 0.3 "hours") #:provider "bob" #:receiver "town" #:has-end (- nowu 3600) #:at-location "town")))
+                                  #:effort-quantity (make-measure 0.3 %effort-unit) #:provider "bob" #:receiver "town" #:has-end (- nowu 3600) #:at-location "town")))
 (solve)                                           ; the sweep runs before the compile
 (check "an accept whose window closed is finished, dated expired"
        (and (with-vat vat (commitment-finished ($ ps 'get-commitment "cmt-stale")))

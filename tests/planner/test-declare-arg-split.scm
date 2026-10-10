@@ -11,6 +11,7 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/planner/test-declare-arg-split.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet planner scope root) (playnet planner vf schemas) (playnet planner doors service) (playnet test harness)
              (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1))
 
@@ -29,14 +30,14 @@
 
 (display "\n── declare-means: every optional in its own slot ──\n")
 (with-vat vat
-  ($ svc 'declare-means "c1" "EAlice" "lathe" 12 "hours" "town"
+  ($ svc 'declare-means "c1" "EAlice" "lathe" 12 %effort-unit "town"
      #f "shared on weekdays" "🛠️" "Alice's lathe" "[\"tool\"]" "{\"priority\":1}"))
 (define lathe (with-vat vat ($ obs 'get-resource "means:EAlice:lathe")))
 (check "note lands" (economic-resource-note lathe) "shared on weekdays")
 (check "emoji lands" (economic-resource-image lathe) "🛠️")
 (check "name lands (not the auto-generated default)" (economic-resource-name lathe) "Alice's lathe")
 ;; every optional omitted: the code's own defaults apply, not a crash
-(with-vat vat ($ svc 'declare-means "c1" "EBob" "saw" 1 "hours" "town"))
+(with-vat vat ($ svc 'declare-means "c1" "EBob" "saw" 1 %effort-unit "town"))
 (define saw (with-vat vat ($ obs 'get-resource "means:EBob:saw")))
 (check "no name given: the auto default (AGENT's SPEC)" (economic-resource-name saw) "EBob's saw")
 

@@ -5,6 +5,7 @@
 ;;;   guile --no-auto-compile -q -L module \
 ;;;     tests/planner/test-dwelling-recipe.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner knowledge recipes dwelling) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
 (use-modules (playnet planner doors service))
@@ -41,14 +42,14 @@
       (check-pred "…of 8 hours — a night, atomic, never run-spanning at day bands"
                   (let ((d (recipe-process-has-duration rp)))
                     (and (= 8 (duration-has-numerical-value d))
-                         (string=? "hours" (duration-has-unit d))))))
+                         (string=? %effort-unit (duration-has-unit d))))))
 
     ;; ── the use flow carries BOTH quantities (the two-ovens rule) ───────────
     (let ((bed ($ rs 'get-recipe-flow "rf-shelter-bed")))
       (check-pred "bed use: resource-quantity = 1 each (the count engaged)"
                   (let ((m (recipe-flow-resource-quantity bed)))
                     (and m (= 1 (measure-has-numerical-value m))
-                         (string=? "each" (measure-has-unit m)))))
+                         (string=? %count-unit (measure-has-unit m)))))
       (check-pred "bed use: effort-quantity = 8 hours (how long it is held)"
                   (let ((m (recipe-flow-effort-quantity bed)))
                     (and m (= 8 (measure-has-numerical-value m))))))

@@ -9,6 +9,7 @@
 ;;;   test-offer-doors.scm          present-offers, accept-regret, the fresh check
 ;;;   test-commitment-drift.scm     dated facts, κ, the drift comparison
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness)
              (playnet planner vf schemas)
              (playnet planner scope live)
@@ -63,7 +64,7 @@
 (with-vat vat
   (let ((iid "offer:ada:mill@") (nowu (instant->unix (now))))
     ($ ps 'add-intent (make-intent #:id iid #:action 'work #:input-of "mill"
-                                   #:effort-quantity (make-measure 0.3 "hours")))
+                                   #:effort-quantity (make-measure 0.3 %effort-unit)))
     ($ ps 'add-proposal (make-proposal #:id (string-append "prop-" iid) #:name "o"
                           #:has-end (number->string (- nowu 60)) #:created (now) #:purpose 'offer
                           #:publishes (list iid) #:proposed-to '("ada")))))

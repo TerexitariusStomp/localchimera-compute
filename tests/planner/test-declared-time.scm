@@ -18,6 +18,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-declared-time.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet planner solve engine)
              (playnet planner solve compile)
@@ -33,7 +34,7 @@
 
 (define win all-week-window)                ; available FROM–TO, every day
 (define (res id spec qty place . window)
-  (er id spec #f #:place place #:qty qty #:unit "each" #:window (if (pair? window) (car window) #f)))
+  (er id spec #f #:place place #:qty qty #:unit %count-unit #:window (if (pair? window) (car window) #f)))
 
 ;; the declared day: 00–09, 09–17, 17–24
 (define DAY '(("2026-03-03T00:00" . "2026-03-03T09:00")

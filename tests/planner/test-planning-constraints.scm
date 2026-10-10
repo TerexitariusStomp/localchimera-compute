@@ -11,6 +11,7 @@
 ;;; Run:  cd planner && guile --no-auto-compile -q -L ../module \
 ;;;         -l load-all.scm -l tests/test-planning-constraints.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet deprecated planner))
 (use-modules (goblins)
@@ -41,17 +42,17 @@
     ;; Specs
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-widget" #:name "Widget"
-                                    #:default-unit-of-resource "each"))
+                                    #:default-unit-of-resource %count-unit))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-flour" #:name "Flour" #:default-unit-of-resource "kg"))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-bread" #:name "Bread"
-                                    #:default-unit-of-resource "each"))
+                                    #:default-unit-of-resource %count-unit))
     ($ rs 'add-resource-spec
-       (make-resource-specification #:id "spec-tool" #:name "Tool" #:default-unit-of-resource "each"))
+       (make-resource-specification #:id "spec-tool" #:name "Tool" #:default-unit-of-resource %count-unit))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-manual" #:name "Manual"
-                                    #:default-unit-of-resource "each"))
+                                    #:default-unit-of-resource %count-unit))
 
     ;; ── Widget recipe with durable 'use' input ──
     ;; Build Widget: consume 2kg flour + use 1 tool → produce 1 widget
@@ -59,7 +60,7 @@
        (make-process-specification #:id "pspec-build" #:name "Building"))
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-build" #:name "Build Widget" #:process-conforms-to "pspec-build"
-                            #:has-duration (make-duration 1 "hours")))
+                            #:has-duration (make-duration 1 %effort-unit)))
 
     ;; Consuming input: flour
     ($ rs 'add-recipe-flow
@@ -68,11 +69,11 @@
     ;; Durable input: tool (use — existence gate only)
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-tool-use" #:action 'use #:resource-conforms-to "spec-tool"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-input-of "rp-build"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-input-of "rp-build"))
     ;; Output: widget
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-widget-out" #:action 'produce #:resource-conforms-to "spec-widget"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-build"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-build"))
 
     ($ rs 'add-recipe
        (make-recipe #:id "recipe-widget" #:name "Build Widget" #:primary-output "spec-widget"
@@ -84,17 +85,17 @@
        (make-process-specification #:id "pspec-bake" #:name "Baking"))
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-bake-c" #:name "Bake with manual" #:process-conforms-to "pspec-bake"
-                            #:has-duration (make-duration 2 "hours")))
+                            #:has-duration (make-duration 2 %effort-unit)))
 
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-flour-bake" #:action 'consume #:resource-conforms-to "spec-flour"
                          #:resource-quantity (make-measure 5 "kg") #:recipe-input-of "rp-bake-c"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-manual-cite" #:action 'cite #:resource-conforms-to "spec-manual"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-input-of "rp-bake-c"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-input-of "rp-bake-c"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-bread-out-c" #:action 'produce #:resource-conforms-to "spec-bread"
-                         #:resource-quantity (make-measure 10 "each") #:recipe-output-of "rp-bake-c"))
+                         #:resource-quantity (make-measure 10 %count-unit) #:recipe-output-of "rp-bake-c"))
 
     ($ rs 'add-recipe
        (make-recipe #:id "recipe-bread-c" #:name "Bread with Manual" #:primary-output "spec-bread"
@@ -103,13 +104,13 @@
     ;; Seed inventory: tool, flour, manual (needed for produce-branch)
     ($ obs 'seed-resource
        (make-economic-resource #:id "r-tool" #:name "Tool" #:conforms-to "spec-tool"
-         #:accounting-quantity (make-measure 5 "each") #:onhand-quantity (make-measure 5 "each") #:primary-accountable "agent"))
+         #:accounting-quantity (make-measure 5 %count-unit) #:onhand-quantity (make-measure 5 %count-unit) #:primary-accountable "agent"))
     ($ obs 'seed-resource
        (make-economic-resource #:id "r-flour" #:name "Flour" #:conforms-to "spec-flour"
          #:accounting-quantity (make-measure 100 "kg") #:onhand-quantity (make-measure 100 "kg") #:primary-accountable "agent"))
     ($ obs 'seed-resource
        (make-economic-resource #:id "r-manual" #:name "Manual" #:conforms-to "spec-manual"
-         #:accounting-quantity (make-measure 1 "each") #:onhand-quantity (make-measure 1 "each") #:primary-accountable "agent"))
+         #:accounting-quantity (make-measure 1 %count-unit) #:onhand-quantity (make-measure 1 %count-unit) #:primary-accountable "agent"))
 
     (check-pred "constraint recipes seeded" #t)))
 ;;; ════════════════════════════════════════════════════════════════════════════
@@ -289,7 +290,7 @@
     ;; Seed tool and flour
     ($ obs 'seed-resource
        (make-economic-resource #:id "r-tool-c" #:name "Tool" #:conforms-to "spec-tool"
-         #:accounting-quantity (make-measure 1 "each") #:onhand-quantity (make-measure 1 "each") #:primary-accountable "agent-a"))
+         #:accounting-quantity (make-measure 1 %count-unit) #:onhand-quantity (make-measure 1 %count-unit) #:primary-accountable "agent-a"))
     ($ obs 'seed-resource
        (make-economic-resource #:id "r-flour-c" #:name "Flour" #:conforms-to "spec-flour"
          #:accounting-quantity (make-measure 10 "kg") #:onhand-quantity (make-measure 10 "kg") #:primary-accountable "agent-a"))))

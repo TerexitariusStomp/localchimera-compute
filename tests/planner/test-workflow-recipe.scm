@@ -11,6 +11,7 @@
 ;;; Run:  cd planner && guile --no-auto-compile -q -L ../module \
 ;;;         -l load-all.scm -l tests/test-workflow-recipe.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet deprecated planner))
 (use-modules (goblins)
@@ -53,18 +54,18 @@
     ;; Step 1: Harvest (1h) → 10kg raw herb
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-harvest" #:name "Harvest"
-                            #:has-duration (make-duration 1 "hours")))
+                            #:has-duration (make-duration 1 %effort-unit)))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-harvest-out" #:action 'produce #:resource-conforms-to "spec-raw-herb"
                          #:resource-quantity (make-measure 10 "kg") #:recipe-output-of "rp-harvest"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-harvest-work" #:action 'work
-                         #:effort-quantity (make-measure 1 "hours") #:recipe-input-of "rp-harvest"))
+                         #:effort-quantity (make-measure 1 %effort-unit) #:recipe-input-of "rp-harvest"))
 
     ;; Step 2: Clean (2h) → 10kg raw → 8kg clean
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-clean" #:name "Clean"
-                            #:has-duration (make-duration 2 "hours")))
+                            #:has-duration (make-duration 2 %effort-unit)))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-clean-in" #:action 'consume #:resource-conforms-to "spec-raw-herb"
                          #:resource-quantity (make-measure 10 "kg") #:recipe-input-of "rp-clean"))
@@ -73,12 +74,12 @@
                          #:resource-quantity (make-measure 8 "kg") #:recipe-output-of "rp-clean"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-clean-work" #:action 'work
-                         #:effort-quantity (make-measure 2 "hours") #:recipe-input-of "rp-clean"))
+                         #:effort-quantity (make-measure 2 %effort-unit) #:recipe-input-of "rp-clean"))
 
     ;; Step 3: Pack (1h) → 8kg clean → 20 packets
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-pack" #:name "Pack"
-                            #:has-duration (make-duration 1 "hours")))
+                            #:has-duration (make-duration 1 %effort-unit)))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-pack-in" #:action 'consume #:resource-conforms-to "spec-clean-herb"
                          #:resource-quantity (make-measure 8 "kg") #:recipe-input-of "rp-pack"))
@@ -87,7 +88,7 @@
                          #:resource-quantity (make-measure 20 "packet") #:recipe-output-of "rp-pack"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-pack-work" #:action 'work
-                         #:effort-quantity (make-measure 1 "hours") #:recipe-input-of "rp-pack"))
+                         #:effort-quantity (make-measure 1 %effort-unit) #:recipe-input-of "rp-pack"))
 
     ($ rs 'add-recipe
        (make-recipe #:id "recipe-herbs" #:name "Herb Production" #:primary-output "spec-packed-herb"
@@ -293,10 +294,10 @@
          #:accounting-quantity (make-measure 10 "kg") #:onhand-quantity (make-measure 10 "kg") #:primary-accountable "agent-a"))
     ($ obs 'seed-resource
        (make-economic-resource #:id "r-toy-raw" #:name "Wooden Toy" #:conforms-to "spec-raw-herb"
-         #:accounting-quantity (make-measure 0 "each") #:onhand-quantity (make-measure 0 "each") #:primary-accountable "agent-a"))
+         #:accounting-quantity (make-measure 0 %count-unit) #:onhand-quantity (make-measure 0 %count-unit) #:primary-accountable "agent-a"))
     ($ obs 'seed-resource
        (make-economic-resource #:id "r-toy-painted" #:name "Painted Toy" #:conforms-to "spec-raw-herb"
-         #:accounting-quantity (make-measure 0 "each") #:onhand-quantity (make-measure 0 "each") #:primary-accountable "agent-a"))
+         #:accounting-quantity (make-measure 0 %count-unit) #:onhand-quantity (make-measure 0 %count-unit) #:primary-accountable "agent-a"))
 
     ;; Event chain: wood → procA → toy-raw → procB → toy-painted
     ;; e1: consume wood (input of procA)
@@ -313,7 +314,7 @@
          #:id "e-tt-2" #:action 'produce #:output-of "proc-carve"
          #:resource-inventoried-as "r-toy-raw" #:resource-conforms-to "spec-raw-herb"
          #:provider "agent-a" #:receiver "agent-a"
-         #:resource-quantity (make-measure 1 "each") #:has-point-in-time "2026-03-28T10:00:00Z"))
+         #:resource-quantity (make-measure 1 %count-unit) #:has-point-in-time "2026-03-28T10:00:00Z"))
 
     ;; e3: consume wooden toy (input of procB)
     ($ obs 'record-event
@@ -321,7 +322,7 @@
          #:id "e-tt-3" #:action 'consume #:input-of "proc-paint"
          #:resource-inventoried-as "r-toy-raw" #:resource-conforms-to "spec-raw-herb"
          #:provider "agent-a" #:receiver "agent-a"
-         #:resource-quantity (make-measure 1 "each") #:has-point-in-time "2026-03-28T12:00:00Z"))
+         #:resource-quantity (make-measure 1 %count-unit) #:has-point-in-time "2026-03-28T12:00:00Z"))
 
     ;; e4: produce painted toy (output of procB)
     ($ obs 'record-event
@@ -329,7 +330,7 @@
          #:id "e-tt-4" #:action 'produce #:output-of "proc-paint"
          #:resource-inventoried-as "r-toy-painted" #:resource-conforms-to "spec-raw-herb"
          #:provider "agent-a" #:receiver "agent-a"
-         #:resource-quantity (make-measure 1 "each") #:has-point-in-time "2026-03-28T14:00:00Z"))
+         #:resource-quantity (make-measure 1 %count-unit) #:has-point-in-time "2026-03-28T14:00:00Z"))
 
     ;; --- Trace backward from painted toy ---
     (let ((nodes (trace "r-toy-painted" obs)))

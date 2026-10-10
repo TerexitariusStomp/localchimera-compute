@@ -19,6 +19,7 @@
 ;;; is (playnet test scope) mock-world. Every `$` here is a near-call.
 
 (define-module (playnet planner knowledge dsl world)
+  #:use-module ((playnet utils units) #:select (%count-unit))
   #:use-module (playnet planner formulas actions)
   #:use-module (playnet planner vf schemas)
   #:use-module (goblins)
@@ -201,10 +202,10 @@
                                                        #:recipe-processes (list pid))
                                           (make-resource-specification #:id sky
                                                                        #:name (string-append "The sky over " land)
-                                                                       #:default-unit-of-resource "each"
+                                                                       #:default-unit-of-resource %count-unit
                                                                        #:keep-in-place #t)
                                           (er (string-append sky "@" (or (cdr held) "here")) sky #f #:name (string-append "the sky over " land)
-                                              #:place (or (cdr held) "town") #:qty 1.0 #:unit "each"))))))
+                                              #:place (or (cdr held) "town") #:qty 1.0 #:unit %count-unit))))))
                          (world-specs w)))))
         (if (and (null? lit) (null? shine)) w
             (world-with w

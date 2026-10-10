@@ -50,6 +50,7 @@
 ;;; nothing.
 
 (define-module (playnet planner knowledge recipes transit-shed)
+  #:use-module ((playnet utils units) #:select (%count-unit))
   #:use-module (playnet planner vf schemas)
   #:use-module (goblins)
   #:use-module (playnet planner knowledge recipes transport)
@@ -104,7 +105,7 @@
   "The rolling stock a network's seats sit in — one vehicle, standing on the line.
    It carries no capacity of its own: what the plan rations is the SEATS, and this
    exists to say where they are (see `network-resource #:in-vehicle`). AT is the line."
-  (let ((q (make-measure 1.0 "each")))
+  (let ((q (make-measure 1.0 %count-unit)))
     (make-economic-resource #:id (string-append "res-veh-" spec) #:name spec
                             #:conforms-to (string-append spec "-vehicle")
                             #:classified-as '("infrastructure" "network" "transit" "vehicle")
@@ -139,7 +140,7 @@
   "A held travel pass. RIGHTS-HOLDER defaults to the OPERATOR (a subscription they
    can suspend); pass a member's agent id for one commoned into the use-pool, whose
    holder can recall it. Custody sits with SCOPE either way, and rights do not."
-  (let ((q (make-measure count "each")))
+  (let ((q (make-measure count %count-unit)))
     (make-economic-resource #:id id #:name id #:conforms-to spec #:classified-as '("infrastructure" "mobility" "pass")
                             #:accounting-quantity q #:onhand-quantity q #:current-location at #:primary-accountable (or rights-holder operator) #:custodian-scope scope)))
 
@@ -147,6 +148,6 @@
   "A held vehicle. Bought by the commune it is sovereign — SCOPE is
    primary-accountable and nobody can pull it. Drawn from a free-loan pool (pass
    #:lender) it is custody without rights, and joins the rented sector."
-  (let ((q (make-measure count "each")))
+  (let ((q (make-measure count %count-unit)))
     (make-economic-resource #:id id #:name id #:conforms-to spec #:classified-as '("infrastructure" "vehicle")
                             #:accounting-quantity q #:onhand-quantity q #:current-location at #:primary-accountable (or lender scope) #:custodian-scope scope)))

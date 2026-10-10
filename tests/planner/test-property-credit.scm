@@ -12,6 +12,7 @@
 ;;; The seeds are fixed, so a failure is a world someone can build again.
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-property-credit.scm
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness) (playnet planner algorithms elastic) (playnet planner pools credit-fold)
              (playnet planner scope root) (playnet planner vf schemas) (playnet planner observation states)
              ((playnet planner observation account) #:select (declare-claimable!))
@@ -41,14 +42,14 @@
                       ($ as 'credit-from-event ($ obs 'get-event (format #f "e~a" i)))
                       (when (= 0 (rnd st 3)) ($ as 'set-ccf aid (list-ref '(1/2 3/4) (rnd st 2))))))
                   aids (iota n))
-        ($ rs 'add-recipe-process (make-recipe-process #:id "rp-bake" #:name "Bake" #:process-conforms-to "pspec-bake" #:has-duration (make-duration 3 "hours")))
-        ($ rs 'add-recipe-flow (make-recipe-flow #:id "rf-w" #:action 'work #:resource-conforms-to "spec-labor" #:effort-quantity (make-measure 3 "hours") #:recipe-input-of "rp-bake"))
-        ($ rs 'add-recipe-flow (make-recipe-flow #:id "rf-o" #:action 'produce #:resource-conforms-to "spec-bread" #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-bake"))
+        ($ rs 'add-recipe-process (make-recipe-process #:id "rp-bake" #:name "Bake" #:process-conforms-to "pspec-bake" #:has-duration (make-duration 3 %effort-unit)))
+        ($ rs 'add-recipe-flow (make-recipe-flow #:id "rf-w" #:action 'work #:resource-conforms-to "spec-labor" #:effort-quantity (make-measure 3 %effort-unit) #:recipe-input-of "rp-bake"))
+        ($ rs 'add-recipe-flow (make-recipe-flow #:id "rf-o" #:action 'produce #:resource-conforms-to "spec-bread" #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-bake"))
         ($ rs 'add-recipe (make-recipe #:id "recipe-bread" #:name "Bread" #:primary-output "spec-bread" #:recipe-processes (list "rp-bake")))
         ($ obs 'record-event
            (make-economic-event #:id "ev-bread" #:action 'produce #:resource-inventoried-as "r-bread" #:resource-conforms-to "spec-bread"
                                 #:resource-classified-as (list "individually-claimable") #:provider "commune" #:receiver "commune"
-                                #:resource-quantity (make-measure loaves "each") #:has-point-in-time "2026-03-02T12:00:00Z"))
+                                #:resource-quantity (make-measure loaves %count-unit) #:has-point-in-time "2026-03-02T12:00:00Z"))
         (let* ((pool (lambda () (global-embodied-labor-in-pool (list scope))))
                (bal (lambda (aid f) (global-effective-balance aid (list scope) #f f)))
                (total (lambda (f) (fold + 0 (map (lambda (a) (bal a f)) aids)))))

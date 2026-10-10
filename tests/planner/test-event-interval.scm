@@ -14,6 +14,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-event-interval.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness)
              (playnet test events)
              (playnet planner observation observer) (playnet planner vf schemas)
@@ -25,7 +26,7 @@
 (define* (at e #:key begin end point created)
   (copy-economic-event e #:has-beginning begin #:has-end end #:has-point-in-time point #:created created))
 (define* (work #:key begin end point created)
-  (at (ev "w" 'work #:spec "weld" #:effort (cons 2.0 "hour") #:provider "ana" #:input "P")
+  (at (ev "w" 'work #:spec "weld" #:effort (cons 2.0 %effort-unit) #:provider "ana" #:input "P")
       #:begin begin #:end end #:point point #:created created))
 (define (instant s) (civil->instant s))
 

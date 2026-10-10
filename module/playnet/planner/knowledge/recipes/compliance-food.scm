@@ -19,6 +19,7 @@
 ;; the public receives. (id name note image classified-as unit … — 11 fields,
 ;; mirroring food-surplus.scm.)
 (define-module (playnet planner knowledge recipes compliance-food)
+  #:use-module ((playnet utils units) #:select (%effort-unit))
   #:use-module (playnet planner legal registry)
   #:use-module (playnet planner vf schemas)
   #:use-module (goblins)
@@ -40,7 +41,7 @@
 
 (define cf-cook-skill-spec
   (make-resource-specification
-    #:id "spec-cf-cook" #:name "Cook" #:resource-classified-as '() #:default-unit-of-resource "hours"))
+    #:id "spec-cf-cook" #:name "Cook" #:resource-classified-as '() #:default-unit-of-resource %effort-unit))
 
 ;; The credential specs — a permit/licence is an ordinary <resource-specification>
 ;; whose id is the demand-name (compliance.scm demand->spec-id). A held credential
@@ -66,7 +67,7 @@
   (state-exchange! recipe-store "rx-cf-vend" "A meal, sold to the public" #:money "spec-eur")
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-cf-vend" #:name "Vend Meal to Public"
-                          #:has-duration (make-duration 0.5 "hours")))
+                          #:has-duration (make-duration 0.5 %effort-unit)))
 
   ;; consume sorted produce
   ($ recipe-store 'add-recipe-flow
@@ -75,7 +76,7 @@
   ;; cook labour
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-cf-cook" #:action 'work #:resource-conforms-to "spec-cf-cook"
-                       #:effort-quantity (make-measure 0.5 "hours") #:recipe-input-of "rp-cf-vend"))
+                       #:effort-quantity (make-measure 0.5 %effort-unit) #:recipe-input-of "rp-cf-vend"))
   ;; produce the meal for the public (the output the demand pulls)
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-cf-meal-out" #:action 'produce #:resource-conforms-to "spec-cf-meal"
@@ -125,7 +126,7 @@
                                #:resource-classified-as '("food") #:default-unit-of-resource "meal"))
 (define fd-cook-spec
   (make-resource-specification #:id "fd-cook" #:name "Cook" #:resource-classified-as '()
-                               #:default-unit-of-resource "hours"))
+                               #:default-unit-of-resource %effort-unit))
 
 (define (seed-food-distribution-recipes recipe-store)
   "Seed the SHARE (member, licenceless) and VEND (public, permit-bearing) recipes
@@ -138,13 +139,13 @@
   (state-exchange! recipe-store "rx-fd-share" "A meal, shared with members")
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-fd-share" #:name "Share Meal with Members"
-                          #:has-duration (make-duration 0.5 "hours")))
+                          #:has-duration (make-duration 0.5 %effort-unit)))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-fd-share-in" #:action 'consume #:resource-conforms-to "spec-fd-member-produce"
                        #:resource-quantity (make-measure 1.0 "kg") #:recipe-input-of "rp-fd-share"))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-fd-share-cook" #:action 'work #:resource-conforms-to "fd-cook"
-                       #:effort-quantity (make-measure 0.5 "hours") #:recipe-input-of "rp-fd-share"))
+                       #:effort-quantity (make-measure 0.5 %effort-unit) #:recipe-input-of "rp-fd-share"))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-fd-share-out" #:action 'produce #:resource-conforms-to "member-meal"
                        #:resource-quantity (make-measure 1.0 "meal") #:recipe-output-of "rp-fd-share" #:recipe-clause-of "rx-fd-share" #:is-primary #t))
@@ -155,13 +156,13 @@
   (state-exchange! recipe-store "rx-fd-vend" "A meal, sold to the public" #:money "spec-eur")
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-fd-vend" #:name "Vend Meal to Public"
-                          #:has-duration (make-duration 0.5 "hours")))
+                          #:has-duration (make-duration 0.5 %effort-unit)))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-fd-vend-in" #:action 'consume #:resource-conforms-to "spec-fd-public-produce"
                        #:resource-quantity (make-measure 1.0 "kg") #:recipe-input-of "rp-fd-vend"))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-fd-vend-cook" #:action 'work #:resource-conforms-to "fd-cook"
-                       #:effort-quantity (make-measure 0.5 "hours") #:recipe-input-of "rp-fd-vend"))
+                       #:effort-quantity (make-measure 0.5 %effort-unit) #:recipe-input-of "rp-fd-vend"))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-fd-vend-out" #:action 'produce #:resource-conforms-to "public-meal"
                        #:resource-quantity (make-measure 1.0 "meal") #:recipe-output-of "rp-fd-vend" #:recipe-clause-of "rx-fd-vend" #:is-primary #t))

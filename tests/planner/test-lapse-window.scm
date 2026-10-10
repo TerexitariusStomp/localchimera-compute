@@ -23,6 +23,7 @@
 ;;;
 ;;; Run:  guile -q -L module tests/planner/test-lapse-window.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner scope root) (playnet planner vf schemas))
 (use-modules (goblins) (goblins persistence-store memory) (srfi srfi-1))
@@ -38,7 +39,7 @@
   ($ obs 'record-event
      (make-economic-event
        #:id eid #:action 'work #:output-of process #:resource-conforms-to "commons-care"
-       #:provider aid #:effort-quantity (make-measure hours "hour")
+       #:provider aid #:effort-quantity (make-measure hours %effort-unit)
        #:has-beginning when #:has-point-in-time when)))
 
 (define mem-store (make-memory-store))
@@ -73,12 +74,12 @@
     ;; a recipient states a desire of 10 on "tend"; bea's directed event
     ;; brings 4 → the process carries a word, satisfied 0.4.
     ($ obs 'register-intent
-       (make-intent #:id "i-tend" #:action 'work #:resource-conforms-to "spec-labor" #:effort-quantity (make-measure 10 "hour")
+       (make-intent #:id "i-tend" #:action 'work #:resource-conforms-to "spec-labor" #:effort-quantity (make-measure 10 %effort-unit)
                     #:provider "bea"))
     ($ obs 'record-event
        (make-economic-event
          #:id "w1" #:action 'work #:input-of "tend" #:resource-conforms-to "spec-labor"
-         #:provider "bea" #:effort-quantity (make-measure 4 "hour")
+         #:provider "bea" #:effort-quantity (make-measure 4 %effort-unit)
          #:has-beginning (days-ago 8) #:has-point-in-time (days-ago 8) #:satisfies "i-tend"))
     ;; cal's diffuse hours on the same process, long past the window:
     ;; the aggregate word (0.4) governs, the lapse vests nothing extra.
@@ -118,13 +119,13 @@
   (let ((obs ($ scope 'observer)))
     ($ obs 'register-intent
        (make-intent #:id "i-bo" #:action 'work #:resource-conforms-to "commons-care"
-                    #:effort-quantity (make-measure 3 "hour") #:provider "bo"))
+                    #:effort-quantity (make-measure 3 %effort-unit) #:provider "bo"))
     ($ obs 'register-commitment
        (make-commitment #:id "wc-bo" #:action 'work #:resource-conforms-to "commons-care"
-                        #:effort-quantity (make-measure 3 "hour") #:provider "bo" #:satisfies "i-bo"))
+                        #:effort-quantity (make-measure 3 %effort-unit) #:provider "bo" #:satisfies "i-bo"))
     ($ obs 'record-event
        (copy-economic-event
-        (make-economic-event #:id "d-bo" #:action 'work #:resource-conforms-to "commons-care" #:provider "bo" #:effort-quantity (make-measure 1 "hour")
+        (make-economic-event #:id "d-bo" #:action 'work #:resource-conforms-to "commons-care" #:provider "bo" #:effort-quantity (make-measure 1 %effort-unit)
                              #:has-beginning (days-ago 1) #:has-point-in-time (days-ago 1))
         #:fulfills "wc-bo"))
     (check "the intent's word governs the hours: none are pending on the window"

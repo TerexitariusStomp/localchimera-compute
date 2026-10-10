@@ -14,6 +14,7 @@
 ;;; Run:  guile --no-auto-compile -q -L module \
 ;;;         -l tests/planner/test-move-scope.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness)
              (playnet planner scope root) (playnet planner vf schemas) (playnet planner beyond schedules)
              (playnet planner doors service)
@@ -73,7 +74,7 @@
   (define psT ($ table 'plan-store))
   ($ psT 'add-intent
      (make-intent #:id "wi1" #:action 'work #:resource-conforms-to "spec-cook"
-                  #:effort-quantity (make-measure 2.0 "hours") #:planned-within "plan-t"))
+                  #:effort-quantity (make-measure 2.0 %effort-unit) #:planned-within "plan-t"))
   ($ psT 'add-proposal (make-rising-proposal "prop-t" "plan-t" "Table" '("wi1")))
   (define r ($ svc 'match-labour!))
   (check "the match succeeds over the nested tree" (car r) 'ok)

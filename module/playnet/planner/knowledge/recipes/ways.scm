@@ -22,6 +22,7 @@
 ;;; (a meal served by a person, to a person).
 
 (define-module (playnet planner knowledge recipes ways)
+  #:use-module ((playnet utils units) #:select (%effort-unit))
   #:use-module (playnet planner formulas actions)
   #:use-module (playnet planner vf schemas)
   #:use-module (goblins)
@@ -34,7 +35,7 @@
 (define (seed-way! rs id name primary flows exchanges)
   (let ((pid (string-append "rp-" id)))
     ($ rs 'add-recipe-process
-       (make-recipe-process #:id pid #:name name #:has-duration (make-duration 1 "hours")))
+       (make-recipe-process #:id pid #:name name #:has-duration (make-duration 1 %effort-unit)))
     (let loop ((fs flows) (i 0))
       (when (pair? fs)
         (let* ((f (car fs))
@@ -66,7 +67,7 @@
   (spec! rs "spec-way-ingredients" "Ingredients" "kg" '("food"))
   (spec! rs "spec-way-meal" "A cooked meal" "meal" '("food"))
   (spec! rs "spec-way-parcel" "A food parcel" "kg" '("food"))
-  (spec! rs "spec-way-labour" "Hours" "hours" #f)
+  (spec! rs "spec-way-labour" "Hours" %effort-unit #f)
 
   ;; ── free food ──
   ;; a meal cooked at home and handed to a neighbour

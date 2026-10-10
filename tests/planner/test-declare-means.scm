@@ -7,6 +7,7 @@
 ;;;
 ;;; Run:  guile -L module -L tests tests/planner/test-declare-means.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1) (playnet planner doors service) (playnet test harness)
              (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1))
 
@@ -16,7 +17,7 @@
          (scopes (hashmap-set (hashmap) "commune-1" root))
          (svc    (spawn ^planner-service scopes))
          (obs    ($ root 'observer)))
-    (let ((r ($ svc 'declare-means "commune-1" "EAlice" "lathe" 12 "hours" "town")))
+    (let ((r ($ svc 'declare-means "commune-1" "EAlice" "lathe" 12 %effort-unit "town")))
       (check "declare-means returns ok + the resource id"
              (and (eq? 'ok (car r)) (equal? "means:EAlice:lathe" (cdr r)))))
     (let ((res (find (lambda (x) (equal? "means:EAlice:lathe" (economic-resource-id x)))
@@ -32,7 +33,7 @@
              (equal? "town" (economic-resource-current-location res))))
 
     (display "\n── editing is an EVENT: re-declare moves on-hand through raise/lower ──\n")
-    ($ svc 'declare-means "commune-1" "EAlice" "lathe" 8 "hours" "town")
+    ($ svc 'declare-means "commune-1" "EAlice" "lathe" 8 %effort-unit "town")
     (let ((res ($ obs 'get-resource "means:EAlice:lathe")))
       (check "the lower landed: onhand = 8"
              (measure-has-numerical-value (economic-resource-onhand-quantity res)) 8)
@@ -40,7 +41,7 @@
              (any (lambda (e) (eq? 'lower (economic-event-action e)))
                   ($ obs 'events-for-resource "means:EAlice:lathe"))
              #t))
-    ($ svc 'declare-means "commune-1" "EAlice" "lathe" 20 "hours" "shed")
+    ($ svc 'declare-means "commune-1" "EAlice" "lathe" 20 %effort-unit "shed")
     (let ((res ($ obs 'get-resource "means:EAlice:lathe")))
       (check "a raise + a metadata edit in one declare: onhand 20, at the shed"
              (list (measure-has-numerical-value (economic-resource-onhand-quantity res))

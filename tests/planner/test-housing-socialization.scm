@@ -16,6 +16,7 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/planner/test-housing-socialization.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness)
              (playnet planner knowledge recipes dwelling) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
              (playnet planner doors service)
@@ -40,11 +41,11 @@
 ;; a minimal mock for the SIBLING commune that holds Alice's records
 (define (alice-flat)
   (make-economic-resource #:id "res:flat" #:name "Alice's flat" #:image "🏠"
-                          #:conforms-to "spec-dwelling" #:classified-as '() #:onhand-quantity (make-measure 1 "each")
+                          #:conforms-to "spec-dwelling" #:classified-as '() #:onhand-quantity (make-measure 1 %count-unit)
                           #:current-location "town" #:primary-accountable OWNER))
 (define (alice-beds)
   (make-economic-resource #:id "res:beds" #:name "Alice's guest room" #:image "🏠"
-                          #:conforms-to "spec-bed" #:classified-as '() #:onhand-quantity (make-measure 2 "each") #:primary-accountable OWNER #:contained-in "res:flat"))
+                          #:conforms-to "spec-bed" #:classified-as '() #:onhand-quantity (make-measure 2 %count-unit) #:primary-accountable OWNER #:contained-in "res:flat"))
 
 (define acdc #f)
 (define grant #f)

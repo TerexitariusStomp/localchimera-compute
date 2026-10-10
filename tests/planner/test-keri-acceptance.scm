@@ -14,6 +14,7 @@
 ;;;      suitable for emitting work-event ACDCs that reference the
 ;;;      agreement via `realization-of`.
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness)
              (playnet planner scope root) (playnet planner vf schemas)
              (playnet governance credentials) (playnet keri acdc) (playnet keri acdc-store)
@@ -173,7 +174,7 @@
            #:resource-classified-as '()                                         ;; resource-classified-as
            #:provider "bakery-bob"                                ;; provider
            #:receiver "keri-scope"                                ;; receiver
-           #:resource-quantity (make-measure 20 "each")                    ;; resource-quantity
+           #:resource-quantity (make-measure 20 %count-unit)                    ;; resource-quantity
                                           ;; effort-quantity
                                           ;; has-beginning
                                           ;; has-end

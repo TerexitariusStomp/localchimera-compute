@@ -29,6 +29,7 @@ import type { ScopeRecipe, ScopeRecipeStep, ScopeFlow, PlanNeed } from './seam.j
 import { metCol, CREDIT, STATUS } from './palette.js';
 
 import { on, emit } from './bus.js';
+import { isCountUnit } from "./units-catalogue.js";
 /**
  * Each RecipeFlow's verb — a ValueFlows action — is the single source of how it
  * reads: `dir` says whether it is drawn down or produced, and the colour says
@@ -53,7 +54,7 @@ const VERB: Record<string, Verb> = {
 const verbOf = (action: string | undefined): Partial<Verb> => VERB[action || ""] || {};
 
 const fmtQ = (f: ScopeFlow): string =>
-  `${f.q}${f.u && f.u !== "each" ? " " + f.u : ""}`.trim();
+  `${f.q}${f.u && !isCountUnit(f.u) ? " " + f.u : ""}`.trim();
 
 /**
  * A flow's label: its emoji where it has one (the demo recipes), else its spec
@@ -85,7 +86,7 @@ export function drawPlanList(): void {
   const labourH = plan.labourH != null ? plan.labourH
     : d3.sum(needs, n => n.labourH || 0);
   const produced = (plan.produced || [])
-    .map(p => `${p.emoji || (p.spec ? p.spec + " " : "")}${p.q}${p.u && p.u !== "each" ? " " + p.u : ""}`.trim())
+    .map(p => `${p.emoji || (p.spec ? p.spec + " " : "")}${p.q}${p.u && !isCountUnit(p.u) ? " " + p.u : ""}`.trim())
     .join(" · ");
   d3.select("#planledger").html(
     `<b style="color:${metCol(metPct)}">${Math.round(metPct * 100)}%</b> met`

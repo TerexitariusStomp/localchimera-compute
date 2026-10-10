@@ -21,6 +21,7 @@
 ;;;
 ;;; Run:  guile -q -L module tests/planner/test-reading-fold.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
              (playnet planner pools reading-fold)
              (playnet planner aggregation fold-node)
@@ -81,7 +82,7 @@
     (reading! obs "r0" 'produce "bread" 40 "kg" #:process "bake" #:agent "cy")
     (reading! obs "r1" 'raise "bread" 2 "kg" #:process "weigh" #:agent "ada")
     (reading! obs "r2" 'lower "bread" 1 "kg" #:process "weigh" #:agent "bob" #:at "2026-03-02T08:00:00Z")
-    (reading! obs "r3" 'produce "bread" 12 "each" #:process "bake" #:agent "cy" #:at "2026-03-02T09:00:00Z")
+    (reading! obs "r3" 'produce "bread" 12 %count-unit #:process "bake" #:agent "cy" #:at "2026-03-02T09:00:00Z")
     (reading! obs "r4" 'consume "flour" 3 "kg" #:agent "ada")
     (let* ((observed (lambda (sid) `(("bread" "bake" produce 12.0 6.0 "2026-03-03T08:00:00Z" "said-1")
                                      ("bread" "bake" produce 12.0 20.0 "2026-03-03T09:00:00Z" "said-2")

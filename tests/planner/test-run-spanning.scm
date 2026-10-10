@@ -31,6 +31,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-run-spanning.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules ((playnet planner formulas flows) #:select (row-figure))
              (srfi srfi-1) (ice-9 format))
 (use-modules (playnet planner solve engine)
@@ -56,7 +57,7 @@
    (list (consume* "b-in" "brew" 1.0 "B") (out* "b-out" "bottled" 1.0 "B") (wk* "b-w" "skill-b" 2.0 "B"))))
 
 (define (stock id spec q) (er id spec #f #:place PLACE #:qty q #:unit "kg"))
-(define (skill id sk who) (er id sk who #:place PLACE #:unit "each"))
+(define (skill id sk who) (er id sk who #:place PLACE #:unit %count-unit))
 (define agents (list (person* "fio" #:place PLACE #:window (all-week-window "00:00" "24:00"))
                      (person* "bo"  #:place PLACE #:window (all-week-window "00:00" "24:00"))))
 (define spatials (list (place* PLACE)))

@@ -12,6 +12,7 @@
 ;;; Run:  cd planner && guile --no-auto-compile -q -L ../module \
 ;;;         -l load-all.scm -l tests/test-container-mediation.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet deprecated planner))
 (use-modules (goblins)
@@ -63,7 +64,7 @@
     ($ rs 'add-recipe-process
        (make-recipe-process
          #:id "rp-harvest" #:name "Harvest" #:process-conforms-to "pspec-harvest"
-         #:has-duration (make-duration 4 "hours")))
+         #:has-duration (make-duration 4 %effort-unit)))
 
     ;; -- Recipe flows --
     ;; rf-use-soil: use soil (anchor flow, the container)

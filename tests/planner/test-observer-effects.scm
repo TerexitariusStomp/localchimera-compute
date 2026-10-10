@@ -12,6 +12,7 @@
 ;;; Run:  cd planner && guile --no-auto-compile -q -L ../module \
 ;;;         -l load-all.scm -l tests/test-observer-effects.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner algorithms track-trace) (playnet planner scope root) (playnet planner vf schemas) (playnet planner observation states) (srfi srfi-1))
 (use-modules (goblins)
@@ -43,11 +44,11 @@
        (make-resource-specification #:id "spec-flour" #:name "Flour" #:default-unit-of-resource "kg"))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-bread" #:name "Bread"
-                                    #:default-unit-of-resource "each"))
+                                    #:default-unit-of-resource %count-unit))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-gold" #:name "Gold" #:default-unit-of-resource "oz"))
     ($ rs 'add-resource-spec
-       (make-resource-specification #:id "spec-tool" #:name "Tool" #:default-unit-of-resource "each"))
+       (make-resource-specification #:id "spec-tool" #:name "Tool" #:default-unit-of-resource %count-unit))
     (check-pred "specs seeded" #t)))
 ;;; ════════════════════════════════════════════════════════════════════════════
 ;;; 1. Produce increments resource quantity
@@ -62,7 +63,7 @@
     ;; Seed resource at 0
     ($ obs 'seed-resource
        (make-economic-resource #:id "r-bread" #:name "Bread" #:conforms-to "spec-bread"
-         #:accounting-quantity (make-measure 0 "each") #:onhand-quantity (make-measure 0 "each") #:primary-accountable "agent-a"))
+         #:accounting-quantity (make-measure 0 %count-unit) #:onhand-quantity (make-measure 0 %count-unit) #:primary-accountable "agent-a"))
 
     ;; Produce 10
     ($ obs 'record-event
@@ -70,7 +71,7 @@
          #:id "ev-produce-1" #:action 'produce #:output-of "proc-1"
          #:resource-inventoried-as "r-bread" #:resource-conforms-to "spec-bread"
          #:provider "agent-a" #:receiver "agent-a"
-         #:resource-quantity (make-measure 10 "each") #:has-point-in-time "2026-03-28T08:00:00Z"))
+         #:resource-quantity (make-measure 10 %count-unit) #:has-point-in-time "2026-03-28T08:00:00Z"))
 
     (let ((r ($ obs 'get-resource "r-bread")))
       (check "produce: qty=10"
@@ -92,7 +93,7 @@
          #:id "ev-consume-1" #:action 'consume #:input-of "proc-2"
          #:resource-inventoried-as "r-bread" #:resource-conforms-to "spec-bread"
          #:provider "agent-a" #:receiver "agent-a"
-         #:resource-quantity (make-measure 3 "each") #:has-point-in-time "2026-03-28T09:00:00Z"))
+         #:resource-quantity (make-measure 3 %count-unit) #:has-point-in-time "2026-03-28T09:00:00Z"))
 
     (let ((r ($ obs 'get-resource "r-bread")))
       (check "consume: qty=7"
@@ -142,7 +143,7 @@
     ;; Seed tool
     ($ obs 'seed-resource
        (make-economic-resource #:id "r-tool" #:name "Hammer" #:conforms-to "spec-tool"
-         #:accounting-quantity (make-measure 1 "each") #:onhand-quantity (make-measure 1 "each") #:primary-accountable "agent-a"))
+         #:accounting-quantity (make-measure 1 %count-unit) #:onhand-quantity (make-measure 1 %count-unit) #:primary-accountable "agent-a"))
 
     ;; Use the tool
     ($ obs 'record-event
@@ -150,7 +151,7 @@
          #:id "ev-use-1" #:action 'use #:input-of "proc-3"
          #:resource-inventoried-as "r-tool" #:resource-conforms-to "spec-tool"
          #:provider "agent-a" #:receiver "agent-a"
-         #:resource-quantity (make-measure 1 "each") #:has-point-in-time "2026-03-28T11:00:00Z"))
+         #:resource-quantity (make-measure 1 %count-unit) #:has-point-in-time "2026-03-28T11:00:00Z"))
 
     ;; Quantity unchanged
     (let ((r ($ obs 'get-resource "r-tool")))
@@ -176,7 +177,7 @@
          #:id "ev-cite-1" #:action 'cite #:input-of "proc-4"
          #:resource-inventoried-as "r-tool" #:resource-conforms-to "spec-tool"
          #:provider "agent-a" #:receiver "agent-a"
-         #:resource-quantity (make-measure 1 "each") #:has-point-in-time "2026-03-28T12:00:00Z"))
+         #:resource-quantity (make-measure 1 %count-unit) #:has-point-in-time "2026-03-28T12:00:00Z"))
 
     (let ((r ($ obs 'get-resource "r-tool")))
       (check "cite: qty unchanged=1"
@@ -195,14 +196,14 @@
     ;; Seed capacity resource
     ($ obs 'seed-resource
        (make-economic-resource #:id "r-cap-alice" #:name "Alice Capacity" #:conforms-to "spec-tool"
-         #:accounting-quantity (make-measure 40 "hours") #:onhand-quantity (make-measure 40 "hours") #:primary-accountable "agent-alice"))
+         #:accounting-quantity (make-measure 40 %effort-unit) #:onhand-quantity (make-measure 40 %effort-unit) #:primary-accountable "agent-alice"))
 
     ;; Record work event
     ($ obs 'record-event
        (make-economic-event
          #:id "ev-work-1" #:action 'work #:input-of "proc-5"
          #:resource-inventoried-as "r-cap-alice" #:resource-conforms-to "spec-tool"
-         #:provider "agent-alice" #:receiver "agent-alice" #:effort-quantity (make-measure 8 "hours") #:has-point-in-time "2026-03-28T10:00:00Z"))
+         #:provider "agent-alice" #:receiver "agent-alice" #:effort-quantity (make-measure 8 %effort-unit) #:has-point-in-time "2026-03-28T10:00:00Z"))
 
     (let ((r ($ obs 'get-resource "r-cap-alice")))
       (check "work: onhand unchanged=40"
@@ -402,12 +403,12 @@
     ;; Seed a container resource (a bread basket)
     ($ obs 'seed-resource
        (make-economic-resource #:id "r-basket" #:name "Bread Basket" #:conforms-to "spec-bread"
-         #:accounting-quantity (make-measure 1 "each") #:onhand-quantity (make-measure 1 "each") #:primary-accountable "agent-a"))
+         #:accounting-quantity (make-measure 1 %count-unit) #:onhand-quantity (make-measure 1 %count-unit) #:primary-accountable "agent-a"))
 
     ;; Seed an ingredient resource (a bread loaf)
     ($ obs 'seed-resource
        (make-economic-resource #:id "r-loaf-1" #:name "Loaf 1" #:conforms-to "spec-bread"
-         #:accounting-quantity (make-measure 1 "each") #:onhand-quantity (make-measure 1 "each") #:primary-accountable "agent-a"))
+         #:accounting-quantity (make-measure 1 %count-unit) #:onhand-quantity (make-measure 1 %count-unit) #:primary-accountable "agent-a"))
 
     ;; Combine: loaf goes into basket
     ;; resource-inventoried-as = ingredient (from), to-resource-inventoried-as = container (to)
@@ -416,7 +417,7 @@
          #:id "ev-combine-1" #:action 'combine #:input-of "proc-combine"
          #:resource-inventoried-as "r-loaf-1" #:to-resource-inventoried-as "r-basket" #:resource-conforms-to "spec-bread"
          #:provider "agent-a" #:receiver "agent-a"
-         #:resource-quantity (make-measure 1 "each") #:has-point-in-time "2026-03-30T11:00:00Z"))
+         #:resource-quantity (make-measure 1 %count-unit) #:has-point-in-time "2026-03-30T11:00:00Z"))
 
     (let ((loaf ($ obs 'get-resource "r-loaf-1")))
       (check "combine: ingredient contained-in set to basket"
@@ -447,7 +448,7 @@
          #:id "ev-separate-1" #:action 'separate #:output-of "proc-separate"
          #:resource-inventoried-as "r-loaf-1" #:resource-conforms-to "spec-bread"
          #:provider "agent-a" #:receiver "agent-a"
-         #:resource-quantity (make-measure 1 "each") #:has-point-in-time "2026-03-30T12:00:00Z"))
+         #:resource-quantity (make-measure 1 %count-unit) #:has-point-in-time "2026-03-30T12:00:00Z"))
 
     (let ((loaf ($ obs 'get-resource "r-loaf-1")))
       (check "separate: contained-in cleared"
@@ -507,7 +508,7 @@
     ;; Seed a digital resource
     ($ obs 'seed-resource
        (make-economic-resource #:id "r-digital-orig" #:name "Digital Pattern" #:conforms-to "spec-tool"
-         #:accounting-quantity (make-measure 1 "each") #:onhand-quantity (make-measure 1 "each") #:primary-accountable "agent-a"))
+         #:accounting-quantity (make-measure 1 %count-unit) #:onhand-quantity (make-measure 1 %count-unit) #:primary-accountable "agent-a"))
 
     ;; Copy resource to new destination
     ($ obs 'record-event
@@ -515,7 +516,7 @@
          #:id "ev-copy-1" #:action 'copy
          #:resource-inventoried-as "r-digital-orig" #:to-resource-inventoried-as "r-digital-copy" #:resource-conforms-to "spec-tool"
          #:provider "agent-a" #:receiver "agent-a"
-         #:resource-quantity (make-measure 1 "each") #:has-point-in-time "2026-03-30T14:00:00Z"))
+         #:resource-quantity (make-measure 1 %count-unit) #:has-point-in-time "2026-03-30T14:00:00Z"))
 
     (let ((orig ($ obs 'get-resource "r-digital-orig"))
           (copy ($ obs 'get-resource "r-digital-copy")))
@@ -701,11 +702,11 @@
   (let ((obs ($ scope 'observer)))
     ;; an intent wanting 10 hours of milling
     ($ obs 'register-intent
-       (make-intent #:id "intent-chain-1" #:action 'work #:resource-conforms-to "skill-mill" #:effort-quantity (make-measure 10 "hours")
+       (make-intent #:id "intent-chain-1" #:action 'work #:resource-conforms-to "skill-mill" #:effort-quantity (make-measure 10 %effort-unit)
                     #:provider "agent-a" #:receiver "agent-a"))
     ;; a commitment for those 10 hours, SATISFYING the intent
     ($ obs 'register-commitment
-       (make-commitment #:id "c-chain-1" #:action 'work #:input-of "proc-chain" #:resource-conforms-to "skill-mill" #:effort-quantity (make-measure 10 "hours")
+       (make-commitment #:id "c-chain-1" #:action 'work #:input-of "proc-chain" #:resource-conforms-to "skill-mill" #:effort-quantity (make-measure 10 %effort-unit)
                         #:provider "agent-a" #:receiver "agent-a"
                         #:satisfies "intent-chain-1"))
     (let ((ss ($ obs 'get-satisfaction "intent-chain-1")))
@@ -715,7 +716,7 @@
     ($ obs 'record-event
        (make-economic-event
          #:id "ev-chain-1" #:action 'work #:input-of "proc-chain" #:resource-conforms-to "skill-mill"
-         #:provider "agent-a" #:receiver "agent-a" #:effort-quantity (make-measure 6 "hours") #:has-point-in-time "2026-03-30T18:00:00Z"
+         #:provider "agent-a" #:receiver "agent-a" #:effort-quantity (make-measure 6 %effort-unit) #:has-point-in-time "2026-03-30T18:00:00Z"
          #:fulfills "c-chain-1"))
     (let ((fs ($ obs 'get-fulfillment "c-chain-1"))
           (ss ($ obs 'get-satisfaction "intent-chain-1")))
@@ -729,7 +730,7 @@
     ($ obs 'record-event
        (make-economic-event
          #:id "ev-chain-2" #:action 'work #:input-of "proc-chain" #:resource-conforms-to "skill-mill"
-         #:provider "agent-a" #:receiver "agent-a" #:effort-quantity (make-measure 4 "hours") #:has-point-in-time "2026-03-30T22:00:00Z"
+         #:provider "agent-a" #:receiver "agent-a" #:effort-quantity (make-measure 4 %effort-unit) #:has-point-in-time "2026-03-30T22:00:00Z"
          #:fulfills "c-chain-1"))
     (let ((ss ($ obs 'get-satisfaction "intent-chain-1")))
       (check "chain: satisfaction complete at 10"
@@ -750,11 +751,11 @@
     ;; Seed resource for over-fulfillment test
     ($ obs 'seed-resource
        (make-economic-resource #:id "r-over" #:name "Over Resource" #:conforms-to "spec-bread"
-         #:accounting-quantity (make-measure 0 "each") #:onhand-quantity (make-measure 0 "each") #:primary-accountable "agent-a"))
+         #:accounting-quantity (make-measure 0 %count-unit) #:onhand-quantity (make-measure 0 %count-unit) #:primary-accountable "agent-a"))
 
     ;; Register commitment for 10 bread
     (let ((comm (make-commitment #:id "c-over-1" #:action 'produce #:output-of "proc-over" #:resource-conforms-to "spec-bread"
-                                 #:resource-quantity (make-measure 10 "each")
+                                 #:resource-quantity (make-measure 10 %count-unit)
                                  #:provider "agent-a" #:receiver "agent-a"
                                  #:planned-within "plan-ful")))
       ($ obs 'register-commitment comm)
@@ -765,7 +766,7 @@
            #:id "ev-over-1" #:action 'produce #:output-of "proc-over"
            #:resource-inventoried-as "r-over" #:resource-conforms-to "spec-bread"
            #:provider "agent-a" #:receiver "agent-a"
-           #:resource-quantity (make-measure 15 "each") #:has-point-in-time "2026-03-30T18:00:00Z"
+           #:resource-quantity (make-measure 15 %count-unit) #:has-point-in-time "2026-03-30T18:00:00Z"
            #:fulfills "c-over-1"))
 
       (let ((fs ($ obs 'get-fulfillment "c-over-1")))

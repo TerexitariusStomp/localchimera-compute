@@ -22,6 +22,7 @@
 ;;; Run:  guile --no-auto-compile -q -L module \
 ;;;         -l tests/planner/test-commitment-fulfillment-law.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness)
              (playnet planner observation observer) (playnet planner vf schemas) (playnet planner observation states)
              (playnet planner observation observer)
@@ -31,17 +32,17 @@
 ;; the shapes match test-observer-effects' chain section — the same ladder,
 ;; asked here for its algebra rather than its bookkeeping
 (define (work-intent iid hours)
-  (make-intent #:id iid #:action 'work #:resource-conforms-to "spec-cook" #:effort-quantity (make-measure hours "hours")
+  (make-intent #:id iid #:action 'work #:resource-conforms-to "spec-cook" #:effort-quantity (make-measure hours %effort-unit)
                #:provider "ana" #:receiver "ana"))
 
 (define (work-commitment cid iid hours)
-  (make-commitment #:id cid #:action 'work #:input-of "proc-1" #:resource-conforms-to "spec-cook" #:effort-quantity (make-measure hours "hours")
+  (make-commitment #:id cid #:action 'work #:input-of "proc-1" #:resource-conforms-to "spec-cook" #:effort-quantity (make-measure hours %effort-unit)
                    #:provider "ana" #:receiver "ana"
                    #:satisfies iid))
 
 (define (work-event eid cid hours)
   (make-economic-event #:id eid #:action 'work #:input-of "proc-1" #:resource-conforms-to "spec-cook"
-                       #:provider "ana" #:receiver "ana" #:effort-quantity (make-measure hours "hours") #:has-point-in-time "2026-08-20T12:00:00Z"
+                       #:provider "ana" #:receiver "ana" #:effort-quantity (make-measure hours %effort-unit) #:has-point-in-time "2026-08-20T12:00:00Z"
                        #:fulfills cid))
 
 (define (fulfilled-of fs) (measure-has-numerical-value

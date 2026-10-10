@@ -34,6 +34,7 @@
 ;;; the same four flows and re-runs of the same one process.
 
 (define-module (playnet planner knowledge recipes beenius-wax)
+  #:use-module ((playnet utils units) #:select (%count-unit %effort-unit))
   #:use-module (playnet planner knowledge recipes store)
   #:use-module (playnet planner vf schemas)
   #:use-module (goblins)
@@ -104,9 +105,9 @@
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-bn-weigh" #:name "Weigh all four components"
                           #:process-conforms-to "pspec-bn-weigh" #:process-classified-as '("tag:preparation")
-                          #:has-duration (make-duration 0.17 "hours")))
+                          #:has-duration (make-duration 0.17 %effort-unit)))
   (bn-add! recipe-store
-    (bn-use "rf-bn-weigh-scales-use" "spec-bn-scales" 1 "each" "rp-bn-weigh")
+    (bn-use "rf-bn-weigh-scales-use" "spec-bn-scales" 1 %count-unit "rp-bn-weigh")
     (work-flow* "rf-bn-weigh-work" 0.17 #f "rp-bn-weigh"))
 
   ;; ── Step 2: Melt — lanolin and resin first, they need the higher heat ────
@@ -116,13 +117,13 @@
      (make-recipe-process #:id "rp-bn-melt-base"
                           #:name "Melt lanolin & colophony in a water bath"
                           #:process-conforms-to "pspec-bn-melt" #:process-classified-as '("tag:melting")
-                          #:has-duration (make-duration 0.17 "hours")))
+                          #:has-duration (make-duration 0.17 %effort-unit)))
   (bn-add! recipe-store
     (consume-flow* "rf-bn-melt-lanolin-in" "spec-bn-lanolin" 30 "g" "rp-bn-melt-base")
     (consume-flow* "rf-bn-melt-resin-in" "spec-bn-colophony" 20 "g" "rp-bn-melt-base")
-    (bn-use "rf-bn-melt-glass-use" "spec-bn-glass" 1 "each" "rp-bn-melt-base")
-    (bn-use "rf-bn-melt-bath-use" "spec-bn-water-bath" 1 "each" "rp-bn-melt-base")
-    (bn-use "rf-bn-melt-guard-use" "spec-bn-hand-guard" 1 "each" "rp-bn-melt-base")
+    (bn-use "rf-bn-melt-glass-use" "spec-bn-glass" 1 %count-unit "rp-bn-melt-base")
+    (bn-use "rf-bn-melt-bath-use" "spec-bn-water-bath" 1 %count-unit "rp-bn-melt-base")
+    (bn-use "rf-bn-melt-guard-use" "spec-bn-hand-guard" 1 %count-unit "rp-bn-melt-base")
     (consume-flow* "rf-bn-melt-heat-in" "spec-bn-heat" 0.2 "kWh" "rp-bn-melt-base")
     (work-flow* "rf-bn-melt-work" 0.17 #f "rp-bn-melt-base")
     (bn-out "rf-bn-melt-out" "spec-bn-melt-base" 50 "g" "rp-bn-melt-base"))
@@ -134,11 +135,11 @@
      (make-recipe-process #:id "rp-bn-blend"
                           #:name "Add beeswax; hold until the melt runs clear"
                           #:process-conforms-to "pspec-bn-blend" #:process-classified-as '("tag:melting")
-                          #:has-duration (make-duration 0.17 "hours")))
+                          #:has-duration (make-duration 0.17 %effort-unit)))
   (bn-add! recipe-store
     (consume-flow* "rf-bn-blend-melt-in" "spec-bn-melt-base" 50 "g" "rp-bn-blend")
     (consume-flow* "rf-bn-blend-beeswax-in" "spec-bn-beeswax" 500 "g" "rp-bn-blend")
-    (bn-use "rf-bn-blend-bath-use" "spec-bn-water-bath" 1 "each" "rp-bn-blend")
+    (bn-use "rf-bn-blend-bath-use" "spec-bn-water-bath" 1 %count-unit "rp-bn-blend")
     (consume-flow* "rf-bn-blend-heat-in" "spec-bn-heat" 0.3 "kWh" "rp-bn-blend")
     (work-flow* "rf-bn-blend-work" 0.17 #f "rp-bn-blend")
     (bn-out "rf-bn-blend-out" "spec-bn-melt-clear" 550 "g" "rp-bn-blend"))
@@ -149,11 +150,11 @@
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-bn-kaolin" #:name "Work kaolin in off the heat"
                           #:process-conforms-to "pspec-bn-kaolin" #:process-classified-as '("tag:blending")
-                          #:has-duration (make-duration 0.17 "hours")))
+                          #:has-duration (make-duration 0.17 %effort-unit)))
   (bn-add! recipe-store
     (consume-flow* "rf-bn-kaolin-melt-in" "spec-bn-melt-clear" 550 "g" "rp-bn-kaolin")
     (consume-flow* "rf-bn-kaolin-clay-in" "spec-bn-kaolin" 60 "g" "rp-bn-kaolin")
-    (bn-use "rf-bn-kaolin-guard-use" "spec-bn-hand-guard" 1 "each" "rp-bn-kaolin")
+    (bn-use "rf-bn-kaolin-guard-use" "spec-bn-hand-guard" 1 %count-unit "rp-bn-kaolin")
     (work-flow* "rf-bn-kaolin-work" 0.17 #f "rp-bn-kaolin")
     (bn-out "rf-bn-kaolin-out" "spec-bn-melt-charged" 610 "g" "rp-bn-kaolin"))
 
@@ -164,10 +165,10 @@
      (make-recipe-process #:id "rp-bn-cast"
                           #:name "Pour onto baking paper and cool to kneadable"
                           #:process-conforms-to "pspec-bn-cast" #:process-classified-as '("tag:forming")
-                          #:has-duration (make-duration 0.5 "hours")))
+                          #:has-duration (make-duration 0.5 %effort-unit)))
   (bn-add! recipe-store
     (consume-flow* "rf-bn-cast-melt-in" "spec-bn-melt-charged" 610 "g" "rp-bn-cast")
-    (bn-use "rf-bn-cast-paper-use" "spec-bn-baking-paper" 1 "each" "rp-bn-cast")
+    (bn-use "rf-bn-cast-paper-use" "spec-bn-baking-paper" 1 %count-unit "rp-bn-cast")
     (work-flow* "rf-bn-cast-work" 0.08 #f "rp-bn-cast")
     (bn-out "rf-bn-cast-out" "spec-bn-wax-block" 610 "g" "rp-bn-cast"))
 
@@ -185,13 +186,13 @@
      (make-recipe-process #:id "rp-bn-cut"
                           #:name "Saw bamboo to 5/8/13/21 cm in a mitre box"
                           #:process-conforms-to "pspec-bn-cut" #:process-classified-as '("tag:woodworking")
-                          #:has-duration (make-duration 0.67 "hours")))
+                          #:has-duration (make-duration 0.67 %effort-unit)))
   (bn-add! recipe-store
-    (consume-flow* "rf-bn-cut-bamboo-in" "spec-bn-bamboo" 20 "each" "rp-bn-cut")
-    (bn-use "rf-bn-cut-saw-use" "spec-bn-mitre-box" 1 "each" "rp-bn-cut")
+    (consume-flow* "rf-bn-cut-bamboo-in" "spec-bn-bamboo" 20 %count-unit "rp-bn-cut")
+    (bn-use "rf-bn-cut-saw-use" "spec-bn-mitre-box" 1 %count-unit "rp-bn-cut")
     (work-flow* "rf-bn-cut-work" 0.67 #f "rp-bn-cut")
-    (bn-out "rf-bn-cut-out" "spec-bn-stick-set" 1 "each" "rp-bn-cut")
-    (bn-out "rf-bn-cut-offcuts-out" "spec-bn-offcuts" 20 "each" "rp-bn-cut"))
+    (bn-out "rf-bn-cut-out" "spec-bn-stick-set" 1 %count-unit "rp-bn-cut")
+    (bn-out "rf-bn-cut-offcuts-out" "spec-bn-offcuts" 20 %count-unit "rp-bn-cut"))
   ($ recipe-store 'add-recipe
      (make-recipe #:id "recipe-beenius-sticks" #:name "Fibonacci Stick Set" #:primary-output "spec-bn-stick-set"
                   #:recipe-processes (list "rp-bn-cut"))))
@@ -223,12 +224,12 @@
      (make-recipe-process #:id "rp-bn-build"
                           #:name "Roll balls, press sticks in, raise a structure"
                           #:process-conforms-to "pspec-bn-build" #:process-classified-as '("tag:assembly")
-                          #:has-duration (make-duration 1 "hours")))
+                          #:has-duration (make-duration 1 %effort-unit)))
   (bn-add! recipe-store
     (consume-flow* "rf-bn-build-wax-in" "spec-bn-wax-block" 610 "g" "rp-bn-build")
-    (consume-flow* "rf-bn-build-sticks-in" "spec-bn-stick-set" 1 "each" "rp-bn-build")
+    (consume-flow* "rf-bn-build-sticks-in" "spec-bn-stick-set" 1 %count-unit "rp-bn-build")
     (work-flow* "rf-bn-build-work" 1 #f "rp-bn-build")
-    (bn-out "rf-bn-build-out" "spec-bn-structure" 1 "each" "rp-bn-build"))
+    (bn-out "rf-bn-build-out" "spec-bn-structure" 1 %count-unit "rp-bn-build"))
 
   ;; Taking it down is where the material comes back.
   ($ recipe-store 'add-process-spec
@@ -237,15 +238,15 @@
      (make-recipe-process #:id "rp-bn-recover"
                           #:name "Take the structure down; pick wax off the sticks"
                           #:process-conforms-to "pspec-bn-recover" #:process-classified-as '("tag:disassembly")
-                          #:has-duration (make-duration 0.33 "hours")))
+                          #:has-duration (make-duration 0.33 %effort-unit)))
   (bn-add! recipe-store
-    (consume-flow* "rf-bn-recover-structure-in" "spec-bn-structure" 1 "each" "rp-bn-recover")
+    (consume-flow* "rf-bn-recover-structure-in" "spec-bn-structure" 1 %count-unit "rp-bn-recover")
     (work-flow* "rf-bn-recover-work" 0.33 #f "rp-bn-recover")
     (bn-out "rf-bn-recover-wax-out" "spec-bn-recovered-wax" 580 "g" "rp-bn-recover")
     ;; the 30 g the docstring has always described, as a flow: a loss is a named
     ;; output, or it is matter the books cannot follow
     (bn-out "rf-bn-recover-loss-out" "spec-bn-wax-handling-loss" 30 "g" "rp-bn-recover")
-    (bn-out "rf-bn-recover-sticks-out" "spec-bn-stick-set" 1 "each" "rp-bn-recover"))
+    (bn-out "rf-bn-recover-sticks-out" "spec-bn-stick-set" 1 %count-unit "rp-bn-recover"))
 
   ($ recipe-store 'add-recipe
      (make-recipe #:id "recipe-beenius-kit" #:name "Beenius Build" #:primary-output "spec-bn-structure"
@@ -270,14 +271,14 @@
      (make-recipe-process #:id "rp-bn-remelt"
                           #:name "Remelt, strain grit, top up and re-cast"
                           #:process-conforms-to "pspec-bn-remelt" #:process-classified-as '("tag:melting")
-                          #:has-duration (make-duration 0.75 "hours")))
+                          #:has-duration (make-duration 0.75 %effort-unit)))
   (bn-add! recipe-store
     (consume-flow* "rf-bn-remelt-recovered-in" "spec-bn-recovered-wax" 580 "g" "rp-bn-remelt")
     (consume-flow* "rf-bn-remelt-topup-in" "spec-bn-beeswax" 30 "g" "rp-bn-remelt")
-    (bn-use "rf-bn-remelt-bath-use" "spec-bn-water-bath" 1 "each" "rp-bn-remelt")
-    (bn-use "rf-bn-remelt-glass-use" "spec-bn-glass" 1 "each" "rp-bn-remelt")
-    (bn-use "rf-bn-remelt-sieve-use" "spec-bn-sieve" 1 "each" "rp-bn-remelt")
-    (bn-use "rf-bn-remelt-paper-use" "spec-bn-baking-paper" 1 "each" "rp-bn-remelt")
+    (bn-use "rf-bn-remelt-bath-use" "spec-bn-water-bath" 1 %count-unit "rp-bn-remelt")
+    (bn-use "rf-bn-remelt-glass-use" "spec-bn-glass" 1 %count-unit "rp-bn-remelt")
+    (bn-use "rf-bn-remelt-sieve-use" "spec-bn-sieve" 1 %count-unit "rp-bn-remelt")
+    (bn-use "rf-bn-remelt-paper-use" "spec-bn-baking-paper" 1 %count-unit "rp-bn-remelt")
     (consume-flow* "rf-bn-remelt-heat-in" "spec-bn-heat" 0.3 "kWh" "rp-bn-remelt")
     (work-flow* "rf-bn-remelt-work" 0.33 #f "rp-bn-remelt")
     (bn-out "rf-bn-remelt-out" "spec-bn-wax-block" 610 "g" "rp-bn-remelt"))

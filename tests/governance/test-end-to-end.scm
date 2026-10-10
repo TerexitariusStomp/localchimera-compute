@@ -5,6 +5,7 @@
 ;;; per-component tests can miss. Not exhaustive — meant to verify
 ;;; the whole stack composes as designed.
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner scope root) (srfi srfi-1))
 (use-modules (playnet governance auditor) (playnet governance credentials) (playnet governance scope) (playnet governance structural-invariants) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet openvtc first-person))
@@ -87,7 +88,7 @@
     ($ la 'attest-custody gla "spec:wheat" 50)
     ($ store 'issue
        (make-work-event-credential
-        "ELA" "alice" "evt-1" 4 "hour"
+        "ELA" "alice" "evt-1" 4 %effort-unit
         #:timestamp "2026-04-26T09:00:00Z"))
 
     (check-pred "phase-1 redistribution coherent"

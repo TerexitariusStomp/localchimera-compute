@@ -49,6 +49,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-distribution-channel.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet planner knowledge dsl shorthand))
 (use-modules (playnet test planner prelude)
@@ -77,7 +78,7 @@
 ;;; many of them a load needs, and in what else it spends.
 (define (make-machine-tpl)
   (car (compile-recipe (list (rp "mk" "Make machine"))
-         (list (out/u "m1" "machine" 1.0 "each" "mk")
+         (list (out/u "m1" "machine" 1.0 %count-unit "mk")
                (wrk "m2" 25.0 "mk")))))
 
 ;;; INDIVIDUAL-CLAIMABLE — the machine is claimed, kept, and used by one
@@ -85,8 +86,8 @@
 ;;; The labour is the household's own, and there is no journey.
 (define (individual-tpl)
   (car (compile-recipe (list (rp "wash-ind" "Wash at home"))
-         (list (out/u "i1" "clean-laundry" 1.0 "each" "wash-ind")
-               (in/u  "i2" "machine" 0.0025 "each" "wash-ind")
+         (list (out/u "i1" "clean-laundry" 1.0 %count-unit "wash-ind")
+               (in/u  "i2" "machine" 0.0025 %count-unit "wash-ind")
                (wrk   "i3" 0.15 "wash-ind")))))
 
 ;;; COMMUNAL — the machine is drawn on as capacity. It is idle for nobody, so a
@@ -95,8 +96,8 @@
 ;;; is the household's time, spent, and so stated as work.
 (define (communal-tpl travel)
   (car (compile-recipe (list (rp "wash-com" "Wash at the laundrette"))
-         (list (out/u "c1" "clean-laundry" 1.0 "each" "wash-com")
-               (in/u  "c2" "machine" 0.0005 "each" "wash-com")
+         (list (out/u "c1" "clean-laundry" 1.0 %count-unit "wash-com")
+               (in/u  "c2" "machine" 0.0005 %count-unit "wash-com")
                (wrk   "c3" (+ 0.05 travel) "wash-com")
                (use* "c4" "laundrette" "wash-com" 0.2 #:qty 1.0)))))
 
@@ -105,7 +106,7 @@
 ;;; condition under which a floor and a desire behave differently at all.
 (define (bake-tpl)
   (car (compile-recipe (list (rp "bake" "Bake"))
-         (list (out/u "b1" "bread" 1.0 "each" "bake")
+         (list (out/u "b1" "bread" 1.0 %count-unit "bake")
                (wrk "b2" 0.3 "bake")))))
 (define LOAVES 100.0)
 

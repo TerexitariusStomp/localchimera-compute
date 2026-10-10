@@ -8,6 +8,7 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module -L tests tests/planner/test-audit-person.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness)
              (playnet planner scope root) (playnet planner vf schemas)
              (playnet planner doors service)
@@ -23,14 +24,14 @@
     ($ svc 'add-scope! "Granary" a)
     ($ svc 'add-scope! "Table" b)
     ($ svc 'ratify-kind "Granary" "ben" "spec-insulin" "held")
-    ($ svc 'declare-need "Granary" "ada" "spec-insulin" 1 "each" "" "" "" "💉" #f #f
+    ($ svc 'declare-need "Granary" "ada" "spec-insulin" 1 %count-unit "" "" "" "💉" #f #f
        "insulin" "" "" "held" 100)
     (check "ada's home is the Granary, where the grant and the need stand"
            (list ($ svc 'home-of "ada") (length (grants))) '("Granary" 1))
     ;; she took it while she was at the Table: the event is the Table's
     ($ ob 'record-event
        (make-economic-event #:id "ev-ins-t" #:action 'consume #:resource-conforms-to "spec-insulin" #:provider "ada"
-                            #:resource-quantity (make-measure 1 "each") #:has-point-in-time "2099-01-01T08:00:00Z"))
+                            #:resource-quantity (make-measure 1 %count-unit) #:has-point-in-time "2099-01-01T08:00:00Z"))
 
     (display "\n── consumption at another scope counts ──\n")
     (let ((r (cdr ($ svc 'audit-kinds "Granary" "cy"))))
@@ -42,7 +43,7 @@
     (display "\n── an event told to two scopes is one event ──\n")
     ($ ($ a 'observer) 'record-event
        (make-economic-event #:id "ev-ins-t" #:action 'consume #:resource-conforms-to "spec-insulin" #:provider "ada"
-                            #:resource-quantity (make-measure 1 "each") #:has-point-in-time "2099-01-01T08:00:00Z"))
+                            #:resource-quantity (make-measure 1 %count-unit) #:has-point-in-time "2099-01-01T08:00:00Z"))
     (let ((r (cdr ($ svc 'audit-kinds "Granary" "cy"))))
       (check "told at both, it is still one hour of taking" (assq-ref (car (assq-ref r 'findings)) 'observed) 1.0))))
 

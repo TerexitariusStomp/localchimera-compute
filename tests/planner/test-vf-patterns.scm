@@ -10,6 +10,7 @@
 ;;; Run:  cd planner && guile --no-auto-compile -q -L ../module \
 ;;;         -l load-all.scm -l tests/test-vf-patterns.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner scope root) (playnet planner vf schemas))
 (use-modules (goblins)
@@ -42,15 +43,15 @@
        (make-resource-specification #:id "spec-plywood" #:name "Plywood"
                                     #:default-unit-of-resource "sheet"))
     ($ rs 'add-resource-spec
-       (make-resource-specification #:id "spec-desk" #:name "Desk" #:default-unit-of-resource "each"))
+       (make-resource-specification #:id "spec-desk" #:name "Desk" #:default-unit-of-resource %count-unit))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-bucket" #:name "Bucket"
-                                    #:default-unit-of-resource "each"))
+                                    #:default-unit-of-resource %count-unit))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-usd" #:name "USD" #:default-unit-of-resource "dollar"))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-cnc" #:name "CNC Machine"
-                                    #:default-unit-of-resource "each"))
+                                    #:default-unit-of-resource %count-unit))
 
     ($ as 'add-agent (make-agent #:id "alice" #:type 'person #:name "Alice"))
     ($ as 'add-agent (make-agent #:id "bob" #:type 'person #:name "Bob"))
@@ -103,7 +104,7 @@
          #:accounting-quantity (make-measure 10 "sheet") #:onhand-quantity (make-measure 10 "sheet") #:primary-accountable "alice"))
     ($ obs 'seed-resource
        (make-economic-resource #:id "r-cnc" #:name "CNC" #:conforms-to "spec-cnc"
-         #:accounting-quantity (make-measure 1 "each") #:onhand-quantity (make-measure 1 "each") #:primary-accountable "alice"))
+         #:accounting-quantity (make-measure 1 %count-unit) #:onhand-quantity (make-measure 1 %count-unit) #:primary-accountable "alice"))
 
     ;; Use CNC (no quantity effect)
     ($ obs 'record-event
@@ -111,7 +112,7 @@
          #:id "ev-use-cnc" #:action 'use #:input-of "proc-desk"
          #:resource-inventoried-as "r-cnc" #:resource-conforms-to "spec-cnc"
          #:provider "alice" #:receiver "alice"
-         #:resource-quantity (make-measure 1 "each") #:has-point-in-time "2026-03-02T08:00:00Z"))
+         #:resource-quantity (make-measure 1 %count-unit) #:has-point-in-time "2026-03-02T08:00:00Z"))
 
     ;; Consume plywood
     ($ obs 'record-event
@@ -127,7 +128,7 @@
          #:id "ev-produce-desk" #:action 'produce #:output-of "proc-desk"
          #:resource-inventoried-as "r-desk" #:resource-conforms-to "spec-desk"
          #:provider "alice" #:receiver "alice"
-         #:resource-quantity (make-measure 1 "each") #:has-point-in-time "2026-03-02T12:00:00Z"))
+         #:resource-quantity (make-measure 1 %count-unit) #:has-point-in-time "2026-03-02T12:00:00Z"))
 
     ;; Verify effects
     (let ((cnc ($ obs 'get-resource "r-cnc"))
@@ -156,7 +157,7 @@
          #:accounting-quantity (make-measure 100 "dollar") #:onhand-quantity (make-measure 100 "dollar") #:primary-accountable "carol"))
     ($ obs 'seed-resource
        (make-economic-resource #:id "r-store-buckets" #:name "Buckets" #:conforms-to "spec-bucket"
-         #:accounting-quantity (make-measure 20 "each") #:onhand-quantity (make-measure 20 "each") #:primary-accountable "store-agent"))
+         #:accounting-quantity (make-measure 20 %count-unit) #:onhand-quantity (make-measure 20 %count-unit) #:primary-accountable "store-agent"))
 
     ;; Leg 1: Carol transfers $5 to Store
     ($ obs 'record-event
@@ -172,7 +173,7 @@
          #:id "ev-deliver" #:action 'transfer
          #:resource-inventoried-as "r-store-buckets" #:to-resource-inventoried-as "r-carol-buckets" #:resource-conforms-to "spec-bucket"
          #:provider "store-agent" #:receiver "carol"
-         #:resource-quantity (make-measure 1 "each") #:has-point-in-time "2026-03-03T10:01:00Z"))
+         #:resource-quantity (make-measure 1 %count-unit) #:has-point-in-time "2026-03-03T10:01:00Z"))
 
     ;; Verify
     (let ((carol-usd ($ obs 'get-resource "r-carol-usd"))
@@ -265,7 +266,7 @@
          #:accounting-quantity (make-measure 1000 "USD") #:onhand-quantity (make-measure 1000 "USD") #:primary-accountable "agent-alice"))
     ($ obs 'seed-resource
        (make-economic-resource #:id "r-widget-bob" #:name "Bob Widgets" #:conforms-to "spec-wheat"
-         #:accounting-quantity (make-measure 10 "each") #:onhand-quantity (make-measure 10 "each") #:primary-accountable "agent-bob"))
+         #:accounting-quantity (make-measure 10 %count-unit) #:onhand-quantity (make-measure 10 %count-unit) #:primary-accountable "agent-bob"))
 
     ;; Payment leg: transfer 100 USD from Alice to Bob
     ($ obs 'record-event
@@ -281,7 +282,7 @@
          #:id "ev-agr-deliver" #:action 'transfer
          #:resource-inventoried-as "r-widget-bob" #:resource-conforms-to "spec-wheat"
          #:provider "agent-bob" #:receiver "agent-alice"
-         #:resource-quantity (make-measure 1 "each") #:has-point-in-time "2026-03-15T10:05:00Z" #:realization-of "agreement-1"))
+         #:resource-quantity (make-measure 1 %count-unit) #:has-point-in-time "2026-03-15T10:05:00Z" #:realization-of "agreement-1"))
 
     ;; Verify both events have realizationOf = agreement-1
     (let ((pay ($ obs 'get-event "ev-agr-pay"))
@@ -313,7 +314,7 @@
          #:id "ev-multi-2" #:action 'transfer
          #:resource-inventoried-as "r-widget-bob" #:resource-conforms-to "spec-wheat"
          #:provider "agent-bob" #:receiver "agent-alice"
-         #:resource-quantity (make-measure 1 "each") #:has-point-in-time "2026-03-16T10:05:00Z" #:realization-of "agreement-2"))
+         #:resource-quantity (make-measure 1 %count-unit) #:has-point-in-time "2026-03-16T10:05:00Z" #:realization-of "agreement-2"))
     ($ obs 'record-event
        (make-economic-event
          #:id "ev-multi-3" #:action 'transfer

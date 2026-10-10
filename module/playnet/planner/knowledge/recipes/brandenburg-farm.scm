@@ -77,7 +77,7 @@
                  ;; offline model require labour to produce, CONSISTENT with the live seed
                  ;; (seed-berlin-commune!) — no free food in either.
                  (make-economic-resource #:id "skill-farming" #:conforms-to "farming" #:classified-as '()
-                   #:accounting-quantity (make-measure 400.0 "hours") #:onhand-quantity (make-measure 400.0 "hours") #:primary-accountable "berlin-grower")
+                   #:accounting-quantity (make-measure 400.0 %effort-unit) #:onhand-quantity (make-measure 400.0 %effort-unit) #:primary-accountable "berlin-grower")
                 (if (> reserve 0.0)
                     (list (make-economic-resource #:id "granary" #:conforms-to "food" #:classified-as '()
                             #:accounting-quantity (make-measure reserve "kg") #:onhand-quantity (make-measure reserve "kg") #:current-location place))
@@ -88,7 +88,7 @@
                  (lambda (c)
                    (list (make-recipe-flow #:id (string-append c "-work") #:action 'work
                                            #:resource-conforms-to "farming"
-                                           #:effort-quantity (make-measure labour-h "hours")
+                                           #:effort-quantity (make-measure labour-h %effort-unit)
                                            #:recipe-input-of c)
                          (make-recipe-flow #:id (string-append c "-land") #:action 'consume
                                            #:resource-conforms-to "land"

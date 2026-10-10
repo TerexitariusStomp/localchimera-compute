@@ -10,6 +10,7 @@
 ;;;
 ;;; Run:  guile -L module -L tests tests/planner/test-consume-grant.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test scope)) ; mock-scope-root
 (use-modules (playnet test harness)
              (playnet planner vf schemas)
@@ -26,7 +27,7 @@
 (define flows
   (list (make-recipe-flow #:id "b-eur" #:action 'consume #:resource-conforms-to "spec-eur" #:resource-quantity (make-measure 1.0 "EUR")
                           #:recipe-input-of "buy")
-        (make-recipe-flow #:id "b-out" #:action 'produce #:resource-conforms-to "bread" #:resource-quantity (make-measure 1.0 "each")
+        (make-recipe-flow #:id "b-out" #:action 'produce #:resource-conforms-to "bread" #:resource-quantity (make-measure 1.0 %count-unit)
                           #:recipe-output-of "buy" #:is-primary #t)))
 (define recipes (list (make-recipe #:id "buy-recipe" #:name "Buy bread" #:primary-output "bread"
                                    #:recipe-processes '() #:recipe-exchanges '())))

@@ -8,6 +8,7 @@
 ;;; Run:  guile --no-auto-compile -q -L module \
 ;;;         -l tests/planner/test-labour-pool-push.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness)
              (playnet planner pools labour-fold)
              ((playnet planner formulas actions) #:select (labour?))
@@ -80,7 +81,7 @@
   ;; An observer holding one skill resource and one non-skill holding
   ;; (a declared means) for the same agent: only the skill's spec folds in.
   (define (resource rid spec aid)
-    (er rid spec aid #:name rid #:tags #f #:place #f #:qty 1 #:unit "each"))
+    (er rid spec aid #:name rid #:tags #f #:place #f #:qty 1 #:unit %count-unit))
   (define obs (spawn ^observer (empty-observer-state) '()))
   ($ obs 'seed-resource (resource "skill:agent:4:spec-cook" "spec-cook" "agent:4"))
   ($ obs 'seed-resource (resource "skill-agent:4-labor" "spec-labor" "agent:4"))

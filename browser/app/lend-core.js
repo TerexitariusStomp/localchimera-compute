@@ -7,6 +7,7 @@
 // owner holds), the recall, and how a grant reads.
 import { humanDate, specOf } from "./slots/model.js";
 import { DEFAULT_REL } from "./rel-catalogue.js";
+import { isCountUnit } from "./units-catalogue.js";
 const clauseInto = (a, r) => {
     if (!Array.isArray(r))
         return false;
@@ -57,7 +58,7 @@ export const relOf = (c) => c.rel || DEFAULT_REL;
 export const admitted = (a, people) => people.filter(c => (a.vouched && !!c.mine) || a.kinds.has(relOf(c)) || (!!c.mine && a.kinds.has(c.mine)) || a.people.has(c.aid));
 // ── how a grant reads ──────────────────────────────────────────────────────
 /** A thing counted in itself reads by its own name: "1 bicycle", "2 hours of your oven". */
-export const counted = (unit) => !unit || unit === "each" || unit === "unit";
+export const counted = isCountUnit;
 export const possessive = (name) => name + (name.endsWith("s") ? "'" : "'s");
 export const untilWords = (until) => until ? `until ${humanDate(until) || until}` : "until you recall it";
 /** How much a grant lends, in the thing's own words. */

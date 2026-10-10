@@ -18,6 +18,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-haul-work.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness)
              (playnet planner knowledge recipes transport) (playnet planner solve compile) (playnet planner vf schemas) (srfi srfi-1)
              (playnet planner solve engine)
@@ -77,7 +78,7 @@
 (display "\n── an accept of the driver's work ──\n")
 (define (accept id proc)
   (make-commitment #:id id #:action 'work #:input-of proc #:resource-conforms-to "courier"
-                   #:effort-quantity (make-measure 0.5 "hours") #:provider "w" #:at-location "A"))
+                   #:effort-quantity (make-measure 0.5 %effort-unit) #:provider "w" #:at-location "A"))
 (define ordinary (list (wk* "oW" "courier" 2.0 "dig") (out* "oF" "hole" 1.0 "dig")))
 (check "a work accept on a haul recipe pins nothing"
        (accepts->pins (list (accept "c-haul" "haul")) (cadr haul)) '())

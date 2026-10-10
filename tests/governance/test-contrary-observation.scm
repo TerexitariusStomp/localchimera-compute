@@ -19,6 +19,7 @@
 ;;;
 ;;; Run:  guile -q -L module tests/governance/test-contrary-observation.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner scope root) (playnet planner vf schemas) (playnet planner beyond scenario) (srfi srfi-1))
 (use-modules (playnet planner doors service))
@@ -33,11 +34,11 @@
 (define (intent! obs aid skill hours iid)
   ($ obs 'register-intent
      (make-intent #:id iid #:action 'work #:resource-conforms-to skill
-                  #:effort-quantity (make-measure hours "hour") #:provider aid)))
+                  #:effort-quantity (make-measure hours %effort-unit) #:provider aid)))
 (define (work! obs aid skill hours eid iid pid)
   ($ obs 'record-event
      (make-economic-event #:id eid #:action 'work #:input-of pid #:resource-conforms-to skill
-                          #:provider aid #:effort-quantity (make-measure hours "hour")
+                          #:provider aid #:effort-quantity (make-measure hours %effort-unit)
                           #:has-point-in-time "2026-03-01T08:00:00Z" #:satisfies iid)))
 (define (preimage-fields pre) (lambda (k) (let ((p (assq k pre))) (and p (cdr p)))))
 (define (said-of ar) (compute-said (ar 'issuer) (ar 'holder) (ar 'schema) (ar 'claims) (or (ar 'edges) '())))

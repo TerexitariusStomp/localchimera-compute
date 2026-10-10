@@ -10,6 +10,7 @@
 ;;; Run:  cd planner && guile --no-auto-compile -q -L ../module \
 ;;;         -l load-all.scm -l tests/test-resource-flows.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner algorithms propagation) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
 (use-modules (goblins)
@@ -43,7 +44,7 @@
        (make-resource-specification #:id "spec-flour" #:name "Flour" #:default-unit-of-resource "kg"))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-bread" #:name "Bread"
-                                    #:default-unit-of-resource "each"))
+                                    #:default-unit-of-resource %count-unit))
 
     ;; Seed resources
     ($ obs 'seed-resource
@@ -178,10 +179,10 @@
     ;; Add work flows for SNE computation
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-mill-w" #:name "Mill"
-                            #:has-duration (make-duration 2 "hours")))
+                            #:has-duration (make-duration 2 %effort-unit)))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-mill-work" #:action 'work
-                         #:effort-quantity (make-measure 1 "hours") #:recipe-input-of "rp-mill-w"))
+                         #:effort-quantity (make-measure 1 %effort-unit) #:recipe-input-of "rp-mill-w"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-mill-in" #:action 'consume #:resource-conforms-to "spec-wheat"
                          #:resource-quantity (make-measure 10 "kg") #:recipe-input-of "rp-mill-w"))
@@ -191,16 +192,16 @@
 
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-bake-w" #:name "Bake"
-                            #:has-duration (make-duration 4 "hours")))
+                            #:has-duration (make-duration 4 %effort-unit)))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-bake-work" #:action 'work
-                         #:effort-quantity (make-measure 2 "hours") #:recipe-input-of "rp-bake-w"))
+                         #:effort-quantity (make-measure 2 %effort-unit) #:recipe-input-of "rp-bake-w"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-bake-fi" #:action 'consume #:resource-conforms-to "spec-flour"
                          #:resource-quantity (make-measure 8 "kg") #:recipe-input-of "rp-bake-w"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-bake-bo" #:action 'produce #:resource-conforms-to "spec-bread"
-                         #:resource-quantity (make-measure 20 "each") #:recipe-output-of "rp-bake-w"))
+                         #:resource-quantity (make-measure 20 %count-unit) #:recipe-output-of "rp-bake-w"))
 
     ($ rs 'add-recipe
        (make-recipe #:id "recipe-bread-w" #:name "Bread (worked)" #:primary-output "spec-bread"

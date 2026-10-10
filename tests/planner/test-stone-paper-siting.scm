@@ -47,6 +47,7 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/planner/test-stone-paper-siting.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
 (define here (dirname (current-filename)))
 (define root (dirname (dirname here)))
@@ -76,8 +77,8 @@
 
 ;; ── flow builders the shared ones don't cover ───────────────────────────────
 (define (usef id spec hrs proc)   ; USE a durable → consume its per-period service Svc|spec
-  (make-recipe-flow #:id id #:action 'use #:resource-conforms-to spec #:resource-quantity (make-measure 1.0 "each")
-                    #:effort-quantity (make-measure hrs "hours") #:recipe-input-of proc))
+  (make-recipe-flow #:id id #:action 'use #:resource-conforms-to spec #:resource-quantity (make-measure 1.0 %count-unit)
+                    #:effort-quantity (make-measure hrs %effort-unit) #:recipe-input-of proc))
 (define (pick id spec proc)
   (make-recipe-flow #:id id #:action 'pickup #:resource-conforms-to spec
                     #:resource-quantity (make-measure 1.0 "kg") #:recipe-input-of proc))

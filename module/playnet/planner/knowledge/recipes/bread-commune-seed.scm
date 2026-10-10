@@ -38,6 +38,7 @@
 ;;; exported for the suites that read one table. Every `$` is a near-call.
 
 (define-module (playnet planner knowledge recipes bread-commune-seed)
+  #:use-module ((playnet utils units) #:select (%count-unit %effort-unit))
   #:use-module (playnet planner vf schemas)
   #:use-module (playnet planner knowledge dsl shorthand)
   #:use-module (playnet planner knowledge dsl world)
@@ -88,8 +89,8 @@
         ;; and the stocks REGROW: the sea and the meadow yield through the period, the
         ;; shine's shape (world.scm) — one unit of the water or the land used for the
         ;; day, a day's growth out — so a harvest is bounded by what its stock renews
-        (use* "m19" "sea" "regrow-fish" 24.0 #:qty 1.0 #:unit "each") (out* "m20" "fish-stock" 1000.0 "regrow-fish")
-        (use* "m21" "meadow" "regrow-fodder" 24.0 #:qty 1.0 #:unit "each") (out* "m22" "fodder" 2000.0 "regrow-fodder")
+        (use* "m19" "sea" "regrow-fish" 24.0 #:qty 1.0 #:unit %count-unit) (out* "m20" "fish-stock" 1000.0 "regrow-fish")
+        (use* "m21" "meadow" "regrow-fodder" 24.0 #:qty 1.0 #:unit %count-unit) (out* "m22" "fodder" 2000.0 "regrow-fodder")
         ;; salt is measured in GRAMS (catalogues/food-sources.scm): a day's salt is four to six
         ;; of them, and a run makes a hundred for half an hour of raking the pans —
         ;; PRICED per gram, since a barrier settles a costless direction mid-face
@@ -129,9 +130,9 @@
         ;; a harvest names its stock: the sea's fish, the herd's feed (physics.md §6)
         (spec* "fish-stock" "Fish in the sea" "kg") (spec* "fodder" "Fodder" "kg")
         ;; …and the stock's ground, a durable used through the day as it regrows
-        (spec* "sea" "The sea" "each") (spec* "meadow" "The meadow" "each")
-        (spec* "skill-farm" "Farm labour" "hours") (spec* "skill-mill" "Mill labour" "hours")
-        (spec* "skill-bake" "Bake labour" "hours") (spec* "skill-fish" "Fishing labour" "hours")))
+        (spec* "sea" "The sea" %count-unit) (spec* "meadow" "The meadow" %count-unit)
+        (spec* "skill-farm" "Farm labour" %effort-unit) (spec* "skill-mill" "Mill labour" %effort-unit)
+        (spec* "skill-bake" "Bake labour" %effort-unit) (spec* "skill-fish" "Fishing labour" %effort-unit)))
 
 ;; the town's standing stocks beside its soil: the ground's stores the grows root in
 ;; (world.scm world-rooted), the well and the line. One list, read by every
@@ -146,7 +147,7 @@
    bread-stores
    (list
         (er "sea" "fish-stock" #f #:qty 1.0e6) (er "hay" "fodder" #f #:qty 1.0e6)   ; the stocks the harvests draw, ample
-        (er "the-sea" "sea" #f #:qty 1.0 #:unit "each") (er "the-meadow" "meadow" #f #:qty 1.0 #:unit "each")
+        (er "the-sea" "sea" #f #:qty 1.0 #:unit %count-unit) (er "the-meadow" "meadow" #f #:qty 1.0 #:unit %count-unit)
         (er "sk1" "skill-farm" "farmer")
         (er "sk2" "skill-bake" "ada") (er "sk3" "skill-mill" "ada")
         (er "sk4" "skill-bake" "bob") (er "sk5" "skill-fish" "bob"))))
@@ -179,7 +180,7 @@
    bread-stores
    (list
         (er "sea" "fish-stock" #f #:qty 1.0e6) (er "hay" "fodder" #f #:qty 1.0e6)
-        (er "the-sea" "sea" #f #:qty 1.0 #:unit "each") (er "the-meadow" "meadow" #f #:qty 1.0 #:unit "each")
+        (er "the-sea" "sea" #f #:qty 1.0 #:unit %count-unit) (er "the-meadow" "meadow" #f #:qty 1.0 #:unit %count-unit)
         (er "s1" "skill-farm" "f") (er "s2" "skill-mill" "m") (er "s3" "skill-bake" "b") (er "s4" "skill-fish" "b"))))
 (define bread-plain-resources (bread-resources-at 1000.0))
 (define bread-plain-agents

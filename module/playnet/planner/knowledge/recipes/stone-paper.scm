@@ -57,6 +57,7 @@
 ;;; compounder that regrind feeds is out of reach.
 
 (define-module (playnet planner knowledge recipes stone-paper)
+  #:use-module ((playnet utils units) #:select (%count-unit %effort-unit))
   #:use-module (playnet planner knowledge recipes store)
   #:use-module (playnet planner vf schemas)
   #:use-module (goblins)
@@ -129,10 +130,10 @@
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-sp-crush" #:name "Crush limestone/marble quarry fines"
                           #:process-conforms-to "pspec-sp-crush" #:process-classified-as '("tag:mineral-processing")
-                          #:has-duration (make-duration 2 "hours")))
+                          #:has-duration (make-duration 2 %effort-unit)))
   (sp-add! recipe-store
     (consume-flow* "rf-sp-crush-fines-in" "spec-sp-quarry-fines" 830 "kg" "rp-sp-crush")
-    (sp-use "rf-sp-crush-crusher-use" "spec-sp-crusher" 1 "each" "rp-sp-crush")
+    (sp-use "rf-sp-crush-crusher-use" "spec-sp-crusher" 1 %count-unit "rp-sp-crush")
     (consume-flow* "rf-sp-crush-power-in" "spec-sp-electricity" 25 "kWh" "rp-sp-crush")
     (work-flow* "rf-sp-crush-work" 2 #f "rp-sp-crush")
     (sp-out "rf-sp-crush-out" "spec-sp-crushed-stone" 820 "kg" "rp-sp-crush"))
@@ -143,11 +144,11 @@
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-sp-grind" #:name "Grind to ~1–3 µm and stearate-coat"
                           #:process-conforms-to "pspec-sp-grind" #:process-classified-as '("tag:mineral-processing")
-                          #:has-duration (make-duration 4 "hours")))
+                          #:has-duration (make-duration 4 %effort-unit)))
   (sp-add! recipe-store
     (consume-flow* "rf-sp-grind-stone-in" "spec-sp-crushed-stone" 820 "kg" "rp-sp-grind")
     (consume-flow* "rf-sp-grind-stearate-in" "spec-sp-stearic-acid" 8 "kg" "rp-sp-grind")
-    (sp-use "rf-sp-grind-mill-use" "spec-sp-mill" 1 "each" "rp-sp-grind")
+    (sp-use "rf-sp-grind-mill-use" "spec-sp-mill" 1 %count-unit "rp-sp-grind")
     (consume-flow* "rf-sp-grind-power-in" "spec-sp-electricity" 130 "kWh" "rp-sp-grind")
     (work-flow* "rf-sp-grind-work" 3 #f "rp-sp-grind")
     (sp-out "rf-sp-grind-out" "spec-sp-caco3-powder" 800 "kg" "rp-sp-grind"))
@@ -158,7 +159,7 @@
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-sp-compound" #:name "Twin-screw compound & pelletise"
                           #:process-conforms-to "pspec-sp-compound" #:process-classified-as '("tag:polymer-processing")
-                          #:has-duration (make-duration 3 "hours")))
+                          #:has-duration (make-duration 3 %effort-unit)))
   (sp-add! recipe-store
     (consume-flow* "rf-sp-compound-powder-in" "spec-sp-caco3-powder" 800 "kg" "rp-sp-compound")
     (consume-flow* "rf-sp-compound-hdpe-in" "spec-sp-hdpe" 130 "kg" "rp-sp-compound")
@@ -167,7 +168,7 @@
   ;; makes from this line's own trim and from sheet returned at end of life
   (sp-add! recipe-store
     (consume-flow* "rf-sp-compound-regrind-in" "spec-sp-regrind" 50 "kg" "rp-sp-compound")
-    (sp-use "rf-sp-compound-machine-use" "spec-sp-compounder" 1 "each" "rp-sp-compound")
+    (sp-use "rf-sp-compound-machine-use" "spec-sp-compounder" 1 %count-unit "rp-sp-compound")
     (consume-flow* "rf-sp-compound-power-in" "spec-sp-electricity" 220 "kWh" "rp-sp-compound")
     (work-flow* "rf-sp-compound-work" 3 #f "rp-sp-compound")
     (sp-out "rf-sp-compound-out" "spec-sp-masterbatch" 1000 "kg" "rp-sp-compound"))
@@ -178,11 +179,11 @@
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-sp-extrude" #:name "Flat-die extrude, calender, biaxially stretch"
                           #:process-conforms-to "pspec-sp-extrude" #:process-classified-as '("tag:polymer-processing")
-                          #:has-duration (make-duration 4 "hours")))
+                          #:has-duration (make-duration 4 %effort-unit)))
   (sp-add! recipe-store
     (consume-flow* "rf-sp-extrude-pellets-in" "spec-sp-masterbatch" 1000 "kg" "rp-sp-extrude")
-    (sp-use "rf-sp-extrude-extruder-use" "spec-sp-extruder" 1 "each" "rp-sp-extrude")
-    (sp-use "rf-sp-extrude-stretcher-use" "spec-sp-stretcher" 1 "each" "rp-sp-extrude")
+    (sp-use "rf-sp-extrude-extruder-use" "spec-sp-extruder" 1 %count-unit "rp-sp-extrude")
+    (sp-use "rf-sp-extrude-stretcher-use" "spec-sp-stretcher" 1 %count-unit "rp-sp-extrude")
     (consume-flow* "rf-sp-extrude-power-in" "spec-sp-electricity" 380 "kWh" "rp-sp-extrude")
     (work-flow* "rf-sp-extrude-work" 4 #f "rp-sp-extrude")
     (sp-out "rf-sp-extrude-out" "spec-sp-web" 1000 "kg" "rp-sp-extrude"))
@@ -193,10 +194,10 @@
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-sp-finish" #:name "Corona-treat, slit and sheet"
                           #:process-conforms-to "pspec-sp-finish" #:process-classified-as '("tag:converting")
-                          #:has-duration (make-duration 3 "hours")))
+                          #:has-duration (make-duration 3 %effort-unit)))
   (sp-add! recipe-store
     (consume-flow* "rf-sp-finish-web-in" "spec-sp-web" 1000 "kg" "rp-sp-finish")
-    (sp-use "rf-sp-finish-converter-use" "spec-sp-converter" 1 "each" "rp-sp-finish")
+    (sp-use "rf-sp-finish-converter-use" "spec-sp-converter" 1 %count-unit "rp-sp-finish")
     (consume-flow* "rf-sp-finish-power-in" "spec-sp-electricity" 60 "kWh" "rp-sp-finish")
     (work-flow* "rf-sp-finish-work" 5 #f "rp-sp-finish")
     (sp-out "rf-sp-finish-out" "spec-stone-paper" 950 "kg" "rp-sp-finish")
@@ -218,10 +219,10 @@
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-sp-reclaim" #:name "Granulate used sheet into regrind"
                           #:process-conforms-to "pspec-sp-reclaim" #:process-classified-as '("tag:polymer-processing")
-                          #:has-duration (make-duration 2 "hours")))
+                          #:has-duration (make-duration 2 %effort-unit)))
   (sp-add! recipe-store
     (consume-flow* "rf-sp-reclaim-paper-in" "spec-stone-paper" 1000 "kg" "rp-sp-reclaim")
-    (sp-use "rf-sp-reclaim-mill-use" "spec-sp-mill" 1 "each" "rp-sp-reclaim")
+    (sp-use "rf-sp-reclaim-mill-use" "spec-sp-mill" 1 %count-unit "rp-sp-reclaim")
     (consume-flow* "rf-sp-reclaim-power-in" "spec-sp-electricity" 45 "kWh" "rp-sp-reclaim")
     (work-flow* "rf-sp-reclaim-work" 2 #f "rp-sp-reclaim")
     (sp-out "rf-sp-reclaim-out" "spec-sp-regrind" 980 "kg" "rp-sp-reclaim"))
@@ -229,10 +230,10 @@
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-sp-trim-grind" #:name "Granulate edge trim"
                           #:process-conforms-to "pspec-sp-reclaim" #:process-classified-as '("tag:polymer-processing")
-                          #:has-duration (make-duration 1 "hours")))
+                          #:has-duration (make-duration 1 %effort-unit)))
   (sp-add! recipe-store
     (consume-flow* "rf-sp-trim-grind-in" "spec-sp-trim" 50 "kg" "rp-sp-trim-grind")
-    (sp-use "rf-sp-trim-grind-mill-use" "spec-sp-mill" 1 "each" "rp-sp-trim-grind")
+    (sp-use "rf-sp-trim-grind-mill-use" "spec-sp-mill" 1 %count-unit "rp-sp-trim-grind")
     (consume-flow* "rf-sp-trim-grind-power-in" "spec-sp-electricity" 3 "kWh" "rp-sp-trim-grind")
     (work-flow* "rf-sp-trim-grind-work" 0.5 #f "rp-sp-trim-grind")
     (sp-out "rf-sp-trim-grind-out" "spec-sp-regrind" 50 "kg" "rp-sp-trim-grind"))
@@ -262,12 +263,12 @@
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-spb-compound" #:name "Twin-screw compound & pelletise (bio grade)"
                           #:process-conforms-to "pspec-sp-compound" #:process-classified-as '("tag:polymer-processing")
-                          #:has-duration (make-duration 3 "hours")))
+                          #:has-duration (make-duration 3 %effort-unit)))
   (sp-add! recipe-store
     (consume-flow* "rf-spb-compound-powder-in" "spec-sp-caco3-powder" 650 "kg" "rp-spb-compound")
     (consume-flow* "rf-spb-compound-resin-in" "spec-sp-biopolymer" 330 "kg" "rp-spb-compound")
     (consume-flow* "rf-spb-compound-additive-in" "spec-sp-additive" 20 "kg" "rp-spb-compound")
-    (sp-use "rf-spb-compound-machine-use" "spec-sp-compounder" 1 "each" "rp-spb-compound")
+    (sp-use "rf-spb-compound-machine-use" "spec-sp-compounder" 1 %count-unit "rp-spb-compound")
     ;; a 120–190 °C melt window draws less than HDPE's
     (consume-flow* "rf-spb-compound-power-in" "spec-sp-electricity" 200 "kWh" "rp-spb-compound")
     (work-flow* "rf-spb-compound-work" 3 #f "rp-spb-compound")
@@ -276,11 +277,11 @@
   ;; ── Extrude — the same die and frame, a cooler melt ──────────────────────
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-spb-extrude" #:name "Flat-die extrude, calender, biaxially stretch (bio grade)" #:process-conforms-to "pspec-sp-extrude" #:process-classified-as '("tag:polymer-processing")
-                          #:has-duration (make-duration 4 "hours")))
+                          #:has-duration (make-duration 4 %effort-unit)))
   (sp-add! recipe-store
     (consume-flow* "rf-spb-extrude-pellets-in" "spec-sp-bio-masterbatch" 1000 "kg" "rp-spb-extrude")
-    (sp-use "rf-spb-extrude-extruder-use" "spec-sp-extruder" 1 "each" "rp-spb-extrude")
-    (sp-use "rf-spb-extrude-stretcher-use" "spec-sp-stretcher" 1 "each" "rp-spb-extrude")
+    (sp-use "rf-spb-extrude-extruder-use" "spec-sp-extruder" 1 %count-unit "rp-spb-extrude")
+    (sp-use "rf-spb-extrude-stretcher-use" "spec-sp-stretcher" 1 %count-unit "rp-spb-extrude")
     (consume-flow* "rf-spb-extrude-power-in" "spec-sp-electricity" 340 "kWh" "rp-spb-extrude")
     (work-flow* "rf-spb-extrude-work" 4 #f "rp-spb-extrude")
     (sp-out "rf-spb-extrude-out" "spec-sp-bio-web" 1000 "kg" "rp-spb-extrude"))
@@ -289,10 +290,10 @@
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-spb-finish" #:name "Corona-treat, slit and sheet (bio grade)"
                           #:process-conforms-to "pspec-sp-finish" #:process-classified-as '("tag:converting")
-                          #:has-duration (make-duration 3 "hours")))
+                          #:has-duration (make-duration 3 %effort-unit)))
   (sp-add! recipe-store
     (consume-flow* "rf-spb-finish-web-in" "spec-sp-bio-web" 1000 "kg" "rp-spb-finish")
-    (sp-use "rf-spb-finish-converter-use" "spec-sp-converter" 1 "each" "rp-spb-finish")
+    (sp-use "rf-spb-finish-converter-use" "spec-sp-converter" 1 %count-unit "rp-spb-finish")
     (consume-flow* "rf-spb-finish-power-in" "spec-sp-electricity" 60 "kWh" "rp-spb-finish")
     (work-flow* "rf-spb-finish-work" 5 #f "rp-spb-finish")
     (sp-out "rf-spb-finish-out" "spec-stone-paper-bio" 950 "kg" "rp-spb-finish")
@@ -323,7 +324,7 @@
                           #:has-duration (make-duration 90 "days")))
   (sp-add! recipe-store
     (consume-flow* "rf-sp-compost-paper-in" "spec-stone-paper-bio" 1000 "kg" "rp-sp-compost")
-    (sp-use "rf-sp-compost-windrow-use" "spec-sp-windrow" 1 "each" "rp-sp-compost")
+    (sp-use "rf-sp-compost-windrow-use" "spec-sp-windrow" 1 %count-unit "rp-sp-compost")
     (consume-flow* "rf-sp-compost-power-in" "spec-sp-electricity" 12 "kWh" "rp-sp-compost")
     (work-flow* "rf-sp-compost-work" 3 #f "rp-sp-compost")
     (sp-out "rf-sp-compost-out" "spec-sp-mineral-residue" 650 "kg" "rp-sp-compost"))
@@ -334,7 +335,7 @@
                           #:has-duration (make-duration 90 "days")))
   (sp-add! recipe-store
     (consume-flow* "rf-spb-trim-compost-in" "spec-sp-bio-trim" 50 "kg" "rp-spb-trim-compost")
-    (sp-use "rf-spb-trim-compost-windrow-use" "spec-sp-windrow" 1 "each" "rp-spb-trim-compost")
+    (sp-use "rf-spb-trim-compost-windrow-use" "spec-sp-windrow" 1 %count-unit "rp-spb-trim-compost")
     (consume-flow* "rf-spb-trim-compost-power-in" "spec-sp-electricity" 1 "kWh" "rp-spb-trim-compost")
     (work-flow* "rf-spb-trim-compost-work" 0.5 #f "rp-spb-trim-compost")
     (sp-out "rf-spb-trim-compost-out" "spec-sp-mineral-residue" 33 "kg" "rp-spb-trim-compost"))

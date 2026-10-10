@@ -9,6 +9,7 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module -l tests/planner/reproduction-live-vat-test.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness)
              (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
              (playnet planner scope live)
@@ -41,11 +42,11 @@
     (define (grow rid nm out)
       ($ rs 'add-recipe-process (make-recipe-process #:id rid #:name nm
                                                      #:process-conforms-to "ps-grow"
-                                                     #:has-duration (make-duration 0.5 "hours")
+                                                     #:has-duration (make-duration 0.5 %effort-unit)
                                                      #:sequence-group 0))
       ($ rs 'add-recipe-flow (make-recipe-flow #:id (string-append rid "-w") #:action 'work
                                                #:resource-conforms-to "skill-grow"
-                                               #:effort-quantity (make-measure 0.5 "hours")
+                                               #:effort-quantity (make-measure 0.5 %effort-unit)
                                                #:recipe-input-of rid))
       ($ rs 'add-recipe-flow (make-recipe-flow #:id (string-append rid "-o") #:action 'produce #:resource-conforms-to out
                                                ;; salt is measured in grams (catalogues/food-sources.scm): a run makes a hundred of them, priced
@@ -77,13 +78,13 @@
                                  #:availability-window win))
     ($ obs 'seed-resource (make-economic-resource #:id "sk-gea" #:name "E can grow"
                                                   #:conforms-to "skill-grow"
-                                                  #:accounting-quantity (make-measure 12 "hours")
-                                                  #:onhand-quantity (make-measure 12 "hours")
+                                                  #:accounting-quantity (make-measure 12 %effort-unit)
+                                                  #:onhand-quantity (make-measure 12 %effort-unit)
                                                   #:primary-accountable "gea"))
     ($ obs 'seed-resource (make-economic-resource #:id "sk-gwe" #:name "W can grow"
                                                   #:conforms-to "skill-grow"
-                                                  #:accounting-quantity (make-measure 12 "hours")
-                                                  #:onhand-quantity (make-measure 12 "hours")
+                                                  #:accounting-quantity (make-measure 12 %effort-unit)
+                                                  #:onhand-quantity (make-measure 12 %effort-unit)
                                                   #:primary-accountable "gwe"))
     (check-pred "scope seeded" #t)))
 

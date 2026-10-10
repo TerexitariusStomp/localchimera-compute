@@ -13,6 +13,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-credit-integrity.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness)
              ((playnet test books) #:select (mq ok? refused?))
              (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-11)
@@ -47,32 +48,32 @@
            (gross (lambda (who) ($ obs 'validated-gross who))))
       (display "\n── record-effort: what counts as hours ──\n")
       (check "alice accepts her offer"                      (ok? acc) #t)
-      (check "+nan.0 hours are refused"        (refused? ($ svc 'record-effort "s1" cid "alice" +nan.0 "hours")) #t)
-      (check "+inf.0 hours are refused"        (refused? ($ svc 'record-effort "s1" cid "alice" +inf.0 "hours")) #t)
-      (check "negative hours are refused"      (refused? ($ svc 'record-effort "s1" cid "alice" -2.0 "hours")) #t)
-      (check "zero hours are refused"          (refused? ($ svc 'record-effort "s1" cid "alice" 0 "hours")) #t)
-      (check "a text quantity is refused"      (refused? ($ svc 'record-effort "s1" cid "alice" "2" "hours")) #t)
+      (check "+nan.0 hours are refused"        (refused? ($ svc 'record-effort "s1" cid "alice" +nan.0 %effort-unit)) #t)
+      (check "+inf.0 hours are refused"        (refused? ($ svc 'record-effort "s1" cid "alice" +inf.0 %effort-unit)) #t)
+      (check "negative hours are refused"      (refused? ($ svc 'record-effort "s1" cid "alice" -2.0 %effort-unit)) #t)
+      (check "zero hours are refused"          (refused? ($ svc 'record-effort "s1" cid "alice" 0 %effort-unit)) #t)
+      (check "a text quantity is refused"      (refused? ($ svc 'record-effort "s1" cid "alice" "2" %effort-unit)) #t)
       (check "kilograms are not hours"         (refused? ($ svc 'record-effort "s1" cid "alice" 0.5 "kg")) #t)
       (check "none of that reached the ledger" (gross "alice") 0)
       (check "the balance stays a number"      (number? ($ obs 'credit-balance "alice")) #t)
 
       (display "\n── record-effort: whose commitment, and how much it holds ──\n")
       (check "bob cannot record hours on alice's commitment"
-             (refused? ($ svc 'record-effort "s1" cid "bob" 1.0 "hours")) #t)
+             (refused? ($ svc 'record-effort "s1" cid "bob" 1.0 %effort-unit)) #t)
       (check "…and bob earns nothing from the attempt"      (gross "bob") 0)
       (check "more than the commitment holds is refused"
-             (refused? ($ svc 'record-effort "s1" cid "alice" 5.0 "hours")) #t)
-      (check "alice records 1 hour"            (ok? ($ svc 'record-effort "s1" cid "alice" 1.0 "hours")) #t)
+             (refused? ($ svc 'record-effort "s1" cid "alice" 5.0 %effort-unit)) #t)
+      (check "alice records 1 hour"            (ok? ($ svc 'record-effort "s1" cid "alice" 1.0 %effort-unit)) #t)
       (check "…and either spelling of the unit serves"
-             (ok? ($ svc 'record-effort "s1" cid "alice" 1.0 "hour")) #t)
+             (ok? ($ svc 'record-effort "s1" cid "alice" 1.0 %effort-unit)) #t)
       ;; hours count in proportion to how much of the commitment is in: 2 hours of
       ;; 3 weigh 2/3 (the satisfied-intent fraction), so the ledger reads 4/3
       (check "alice's gross weighs her 2 recorded hours by the 2/3 reached"
              (< (abs (- (gross "alice") (* 2.0 (/ 2.0 3.0)))) 1e-9) #t)
       (check "the last hour fits the remainder"
-             (ok? ($ svc 'record-effort "s1" cid "alice" 1.0 "hours")) #t)
+             (ok? ($ svc 'record-effort "s1" cid "alice" 1.0 %effort-unit)) #t)
       (check "a finished commitment takes no more hours"
-             (refused? ($ svc 'record-effort "s1" cid "alice" 0.5 "hours")) #t)
+             (refused? ($ svc 'record-effort "s1" cid "alice" 0.5 %effort-unit)) #t)
       (check "alice's gross is exactly her 3 committed hours" (< (abs (- (gross "alice") 3.0)) 1e-9) #t))))
 
 ;; ── record-effort: any time unit is hours once converted ──────────────────────
@@ -108,9 +109,9 @@
            (cb   (cdr ($ svc 'accept-assignment "s1" "i-b" "bob")))
            (gross (lambda (who) ($ obs 'validated-gross who))))
       (display "\n── record-effort: credit is per commitment ──\n")
-      (check "alice completes her 3 hours"  (ok? ($ svc 'record-effort "s1" ca "alice" 3.0 "hours")) #t)
+      (check "alice completes her 3 hours"  (ok? ($ svc 'record-effort "s1" ca "alice" 3.0 %effort-unit)) #t)
       (check "…and holds 3"                 (< (abs (- (gross "alice") 3.0)) 1e-9) #t)
-      (check "bob records 1 of his 3"       (ok? ($ svc 'record-effort "s1" cb "bob" 1.0 "hours")) #t)
+      (check "bob records 1 of his 3"       (ok? ($ svc 'record-effort "s1" cb "bob" 1.0 %effort-unit)) #t)
       (check "alice still holds 3"          (< (abs (- (gross "alice") 3.0)) 1e-9) #t)
       (check "bob's hour weighs the third of his word it answers"
              (< (abs (- (gross "bob") (/ 1.0 3.0))) 1e-9) #t))))
@@ -135,13 +136,13 @@
     (let ((rs ($ sr 'recipe-store)) (obs ($ sr 'observer)))
       ($ rs 'add-recipe-process
          (make-recipe-process #:id "rp-bake" #:name "Bake" #:process-conforms-to "pspec-bake"
-                              #:has-duration (make-duration 3 "hours")))
+                              #:has-duration (make-duration 3 %effort-unit)))
       ($ rs 'add-recipe-flow
          (make-recipe-flow #:id "rf-bake-work" #:action 'work #:resource-conforms-to "spec-labor"
-                           #:effort-quantity (make-measure 3 "hours") #:recipe-input-of "rp-bake"))
+                           #:effort-quantity (make-measure 3 %effort-unit) #:recipe-input-of "rp-bake"))
       ($ rs 'add-recipe-flow
          (make-recipe-flow #:id "rf-bake-out" #:action 'produce #:resource-conforms-to "spec-bread"
-                           #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-bake"))
+                           #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-bake"))
       ($ rs 'add-recipe (make-recipe #:id "recipe-bread" #:name "Bread"
                                      #:primary-output "spec-bread"
                                      #:recipe-processes (list "rp-bake")))
@@ -149,7 +150,7 @@
       ($ obs 'record-event
          (make-economic-event #:id "ev-bread" #:action 'produce #:resource-inventoried-as "r-bread" #:resource-conforms-to "spec-bread"
            #:resource-classified-as (list "individually-claimable") #:provider "commune" #:receiver "commune"
-           #:resource-quantity (make-measure 10 "each") #:has-point-in-time "2026-03-02T12:00:00Z"))
+           #:resource-quantity (make-measure 10 %count-unit) #:has-point-in-time "2026-03-02T12:00:00Z"))
       (plan-claim! obs "spec-bread" "alice" 6)
       (values sr svc obs))))
 

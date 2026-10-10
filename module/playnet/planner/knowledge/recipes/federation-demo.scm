@@ -11,6 +11,7 @@
 ;;; scope's stores. Every `$` here is a near-call — call within the scope's vat.
 
 (define-module (playnet planner knowledge recipes federation-demo)
+  #:use-module ((playnet utils units) #:select (%count-unit %effort-unit))
   #:use-module (playnet planner vf schemas)
   #:use-module (playnet planner knowledge dsl shorthand)
   #:use-module (playnet planner knowledge dsl world)
@@ -34,7 +35,7 @@
     (world
      ;; the work flow names its skill — the planner key willingness is offered
      ;; over, and the shape every candidate/eligible read keys on
-     #:specs (list (spec* "bread" "Bread" "kg") (spec* "flour" "Flour" "kg") (spec* "baking" "Baking" "hours"))
+     #:specs (list (spec* "bread" "Bread" "kg") (spec* "flour" "Flour" "kg") (spec* "baking" "Baking" %effort-unit))
      #:procs (list (rp* "bake" "Bake bread" 0.1))
      #:flows (list (make-recipe-flow #:id "bf-o" #:action 'produce #:resource-conforms-to "bread"
                                      #:resource-quantity (make-measure 1.0 "kg")
@@ -59,7 +60,7 @@
      ;; commune bakes nothing no matter the flour
      #:resources (cons (make-economic-resource #:id (string-append "skill:" baker ":baking")
                                                #:name (string-append baker " baking") #:conforms-to "baking"
-                                               #:accounting-quantity (make-measure 1 "each") #:onhand-quantity (make-measure 1 "each") #:primary-accountable baker)
+                                               #:accounting-quantity (make-measure 1 %count-unit) #:onhand-quantity (make-measure 1 %count-unit) #:primary-accountable baker)
                        (if (> flour-qty 0)
                            (list (fed-er (string-append "flour-" venue) "flour" flour-qty venue commune-aid))
                            '())))))

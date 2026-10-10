@@ -76,6 +76,7 @@
 ;;; this test is to lock in the *data layer* — to prove the schemas can
 ;;; carry the load — so that work has a sturdy place to land.
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
 (use-modules ((playnet utils clock) #:select (clock-contains?)))
 (use-modules (playnet planner algorithms track-trace) (playnet planner knowledge recipes cold-chain) (playnet planner federation store-registry) (playnet planner scope root) (playnet planner vf schemas) (playnet planner beyond schedules) (playnet planner beyond lot) (playnet planner ddmrp records) (srfi srfi-1))
@@ -365,7 +366,7 @@
          #:tracking-identifier "vin-RV1"
          #:conforms-to "spec-reefer-van"
          #:classified-as '("vf:asset:owned")
-         #:accounting-quantity (make-measure 8 "hours") #:onhand-quantity (make-measure 8 "hours")
+         #:accounting-quantity (make-measure 8 %effort-unit) #:onhand-quantity (make-measure 8 %effort-unit)
          #:current-location "loc-soma" #:primary-accountable "agent-food-runners"))
 
     ;; Frozen bay — capacity 1 m³·h, contained in the van.
@@ -480,7 +481,7 @@
          #:id "r-cargo-van-1" #:name "Cargo Van #1"
          #:tracking-identifier "vin-CV1"
          #:conforms-to "spec-cargo-van"
-         #:accounting-quantity (make-measure 8 "hours") #:onhand-quantity (make-measure 8 "hours")
+         #:accounting-quantity (make-measure 8 %effort-unit) #:onhand-quantity (make-measure 8 %effort-unit)
          #:current-location "loc-soma" #:primary-accountable "agent-food-runners"))
     ($ obs 'seed-resource
        (make-economic-resource
@@ -807,7 +808,7 @@
     #:resource-classified-as '("vf:food-class:prepared"              ;; 10 resource-classified-as — the filter
       "vf:temp-class:frozen"
       "vf:allergen-free:nut")
-    #:resource-quantity (make-measure 30 "each")       ;; 11-14 quantities
+    #:resource-quantity (make-measure 30 %count-unit)       ;; 11-14 quantities
  #:receiver "agent-glide"                        ;; 15-16 provider/receiver
  #:due "2026-04-09T10:00:00Z"         ;; 17-20 has-beg/has-end/has-pit/due
     #:at-location "loc-tenderloin")) ;; 21-28 location/stage/state/planned-within/satisfies/in-scope/finished/availability-window

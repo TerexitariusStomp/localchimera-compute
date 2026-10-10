@@ -23,6 +23,7 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/planner/test-snlt-order-invariance.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner algorithms rollup) (playnet planner algorithms sne) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
 (use-modules (goblins)
@@ -57,7 +58,7 @@
                    (make-process-specification #:id (string-append "ps-" pid) #:name pid))
                 ($ rs 'add-recipe-process
                    (make-recipe-process #:id pid #:name pid #:process-conforms-to (string-append "ps-" pid)
-                                        #:has-duration (make-duration 1 "hour"))))
+                                        #:has-duration (make-duration 1 %effort-unit))))
               '("rp-mill" "rp-bake"))
             ($ rs 'add-recipe (make-recipe #:id "r-mill" #:name "mill" #:primary-output mid
                                            #:recipe-processes '("rp-mill") #:recipe-exchanges '()))
@@ -70,7 +71,7 @@
                                    #:recipe-input-of inp #:recipe-output-of outp)))
             (define (wk id h inp)
               ($ rs 'add-recipe-flow
-                 (make-recipe-flow #:id id #:action 'work #:effort-quantity (make-measure h "hour")
+                 (make-recipe-flow #:id id #:action 'work #:effort-quantity (make-measure h %effort-unit)
                                    #:recipe-input-of inp)))
             ;; mill: consume 1 raw + 1h work -> produce 1 mid
             (fl "f1" 'consume raw 1.0 "rp-mill" #f) (wk "f2" 1.0 "rp-mill")
@@ -150,7 +151,7 @@
                (make-process-specification #:id "ps-grow" #:name "grow"))
             ($ rs 'add-recipe-process
                (make-recipe-process #:id "rp-grow" #:name "grow" #:process-conforms-to "ps-grow"
-                                    #:has-duration (make-duration 1 "hour")))
+                                    #:has-duration (make-duration 1 %effort-unit)))
             ($ rs 'add-recipe (make-recipe #:id "r-grow" #:name "grow" #:primary-output "corn"
                                            #:recipe-processes '("rp-grow") #:recipe-exchanges '()))
             ;; consume 0.2 corn (seed) + 4h work -> produce 1 corn
@@ -159,7 +160,7 @@
                                  #:resource-quantity (make-measure 0.2 "kg")
                                  #:recipe-input-of "rp-grow"))
             ($ rs 'add-recipe-flow
-               (make-recipe-flow #:id "g2" #:action 'work #:effort-quantity (make-measure corn-direct-hours "hour")
+               (make-recipe-flow #:id "g2" #:action 'work #:effort-quantity (make-measure corn-direct-hours %effort-unit)
                                  #:recipe-input-of "rp-grow"))
             ($ rs 'add-recipe-flow
                (make-recipe-flow #:id "g3" #:action 'produce #:resource-conforms-to "corn"

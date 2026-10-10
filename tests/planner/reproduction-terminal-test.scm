@@ -17,6 +17,7 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module -l tests/planner/reproduction-terminal-test.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test scope))
 (use-modules (playnet test harness)
              (ice-9 match) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
@@ -62,12 +63,12 @@
                  ($ rs 'add-recipe-process (make-recipe-process #:id pid
                                                                 #:name (string-append "Grow " food)
                                                                 #:process-conforms-to "ps-grow"
-                                                                #:has-duration (make-duration 1.0 "hours")
+                                                                #:has-duration (make-duration 1.0 %effort-unit)
                                                                 #:sequence-group 0))
                  ($ rs 'add-recipe-flow (make-recipe-flow #:id (string-append pid "-w")
                                                           #:action 'work
                                                           #:resource-conforms-to "skill-grow"
-                                                          #:effort-quantity (make-measure 1.0 "hours")
+                                                          #:effort-quantity (make-measure 1.0 %effort-unit)
                                                           #:recipe-input-of pid))
                  ($ rs 'add-recipe-flow (make-recipe-flow #:id (string-append pid "-l")
                                                           #:action 'consume
@@ -87,7 +88,7 @@
                                          #:primary-location PLACE #:classified-as '()
                                          #:availability-window win))
             ($ obs 'seed-resource (make-economic-resource #:id "sk-ada" #:name "Ada can grow" #:conforms-to "skill-grow"
-                                    #:accounting-quantity (make-measure 24.0 "hours") #:onhand-quantity (make-measure 24.0 "hours") #:primary-accountable "ada"))))
+                                    #:accounting-quantity (make-measure 24.0 %effort-unit) #:onhand-quantity (make-measure 24.0 %effort-unit) #:primary-accountable "ada"))))
         (cons vat scope)))))
 
 ;; the total PRODUCED of one spec, at one date — one fold, both readings below.

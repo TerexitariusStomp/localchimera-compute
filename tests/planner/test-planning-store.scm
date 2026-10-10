@@ -10,6 +10,7 @@
 ;;; Run:  cd planner && guile --no-auto-compile -q -L ../module \
 ;;;         -l load-all.scm -l tests/test-planning-store.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
 (use-modules (goblins)
@@ -40,7 +41,7 @@
        (make-resource-specification #:id "spec-flour" #:name "Flour" #:default-unit-of-resource "kg"))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-bread" #:name "Bread"
-                                    #:default-unit-of-resource "each"))
+                                    #:default-unit-of-resource %count-unit))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-apples" #:name "Apples"
                                     #:default-unit-of-resource "kg"))
@@ -51,10 +52,10 @@
        (make-process-specification #:id "pspec-bake" #:name "Baking"))
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-mill" #:name "Mill" #:process-conforms-to "pspec-mill"
-                            #:has-duration (make-duration 2 "hours")))
+                            #:has-duration (make-duration 2 %effort-unit)))
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-bake" #:name "Bake" #:process-conforms-to "pspec-bake"
-                            #:has-duration (make-duration 4 "hours")))
+                            #:has-duration (make-duration 4 %effort-unit)))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-w-in" #:action 'consume #:resource-conforms-to "spec-wheat"
                          #:resource-quantity (make-measure 10 "kg") #:recipe-input-of "rp-mill"))
@@ -66,7 +67,7 @@
                          #:resource-quantity (make-measure 8 "kg") #:recipe-input-of "rp-bake"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-b-out" #:action 'produce #:resource-conforms-to "spec-bread"
-                         #:resource-quantity (make-measure 20 "each") #:recipe-output-of "rp-bake"))
+                         #:resource-quantity (make-measure 20 %count-unit) #:recipe-output-of "rp-bake"))
     ($ rs 'add-recipe
        (make-recipe #:id "recipe-bread" #:name "Bread" #:primary-output "spec-bread"
                     #:recipe-processes (list "rp-mill" "rp-bake")))
@@ -103,7 +104,7 @@
     ;;   planned-within finished availability-window)
     ($ ps 'add-commitment
        (make-commitment #:id "c-test-1" #:action 'produce #:output-of "proc-1" #:resource-conforms-to "spec-bread"
-                        #:resource-quantity (make-measure 20 "each")
+                        #:resource-quantity (make-measure 20 %count-unit)
                         #:provider "agent-a" #:receiver "agent-b" #:planned-within "plan-test"))
     (check-pred "commitment created" (commitment? ($ ps 'get-commitment "c-test-1")))
     (check "commitment action" (commitment-action ($ ps 'get-commitment "c-test-1")) 'produce)
@@ -346,7 +347,7 @@
     ;; Create a standalone commitment (no input-of / output-of)
     ($ ps 'add-commitment
        (make-commitment #:id "c-standalone" #:action 'produce #:resource-conforms-to "spec-bread"
-                        #:resource-quantity (make-measure 15 "each")
+                        #:resource-quantity (make-measure 15 %count-unit)
                         #:provider "agent-alice" #:receiver "agent-bob" #:due "2026-05-01T00:00:00Z" #:planned-within "plan-test"))
     (check-pred "standalone commitment created"
                 (commitment? ($ ps 'get-commitment "c-standalone")))
@@ -374,7 +375,7 @@
                         #:provider "agent-a" #:receiver "agent-a" #:planned-within "plan-test"))
     ($ ps 'add-commitment
        (make-commitment #:id "c-bake-out" #:action 'produce #:output-of "proc-bake" #:resource-conforms-to "spec-bread"
-                        #:resource-quantity (make-measure 20 "each")
+                        #:resource-quantity (make-measure 20 %count-unit)
                         #:provider "agent-a" #:receiver "agent-a" #:planned-within "plan-test"))
 
     ;; Query commitments for proc-bake

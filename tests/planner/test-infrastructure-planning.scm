@@ -11,6 +11,7 @@
 ;;;   5. Verify plans correctly allocate infrastructure
 ;;;   6. Verify insufficient infrastructure → unmet demand
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet deprecated planner))
 (use-modules (goblins)
@@ -300,7 +301,7 @@
     ($ ps 'add-intent
        (make-intent #:id "i:need-transcript" #:action 'produce #:name "Need transcription" #:output-of "rp:transcribe" #:resource-conforms-to "spec:transcript"
                     #:resource-classified-as (list "tag:plan:request")
-                    #:resource-quantity (make-measure 1 "each") #:receiver "agent:commune" #:due "2026-04-02T00:00:00Z" #:planned-within "plan:infra"))))
+                    #:resource-quantity (make-measure 1 %count-unit) #:receiver "agent:commune" #:due "2026-04-02T00:00:00Z" #:planned-within "plan:infra"))))
 
 ;; Run the full relational planner
 (let ((plans (with-vat vat

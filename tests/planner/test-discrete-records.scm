@@ -15,6 +15,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-discrete-records.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet planner knowledge dsl shorthand))
 (use-modules ((playnet planner knowledge recipes transport) #:select (mode-recipe)))
@@ -108,7 +109,7 @@
 (define resources (list (er "sk-ada" "surgery" "ada" #:place "clinic" #:qty 1.0 #:unit "kg")))
 (define (theatre-procs whole?)
   (list (rp* "operate" "Operate" #:tags (if whole? '("whole-count") '()))))
-(define flows (list (out* "f1" "repair" 1.0 "operate" "each")
+(define flows (list (out* "f1" "repair" 1.0 "operate" %count-unit)
                     (wk* "f2" "surgery" 1.0 "operate")))
 (define demand (list (cons "repair#clinic@0" 2.5)))     ; the relaxation wants two and a half operations
 
@@ -340,7 +341,7 @@
                            (person* "south-farmer" #:name "S" #:place "south" #:window farm-win)))
 (define (tractor tags)
   (make-economic-resource #:id "tractor-7" #:tracking-identifier "tractor" #:conforms-to "tractor" #:classified-as tags
-    #:accounting-quantity (make-measure 1.0 "each") #:onhand-quantity (make-measure 1.0 "each") #:current-location "north"))
+    #:accounting-quantity (make-measure 1.0 %count-unit) #:onhand-quantity (make-measure 1.0 %count-unit) #:current-location "north"))
 (define (field-resources tags)
   (list (tractor tags)
         (er "sk-n" "farming" "north-farmer" #:place "north" #:qty 1.0 #:unit "kg")
@@ -348,7 +349,7 @@
 ;; plough one field-unit: one tractor for one hour, one farmer-hour
 (define field-procs (list (rp* "plough" "Plough" #:tags '())))
 (define field-flows
-  (list (out* "p1" "ploughed" 1.0 "plough" "each")
+  (list (out* "p1" "ploughed" 1.0 "plough" %count-unit)
         (use* "p2" "tractor" "plough" 1.0 #:qty 1.0)
         (wk* "p3" "farming" 1.0 "plough")))
 (define drive-mode (mode-recipe "drive" #:skill "self-propelled" #:pace 0.1))   ; the mover bears "self-propelled": own power, 0.1 h/km

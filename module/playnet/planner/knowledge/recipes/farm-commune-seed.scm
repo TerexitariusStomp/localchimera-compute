@@ -11,6 +11,7 @@
 ;; the farm (biosphere → shed → [city]), already built with make-spatial-thing; the farm
 ;; hangs under `parent`. All ids derive from `place`, so two communes never collide.
 (define-module (playnet planner knowledge recipes farm-commune-seed)
+  #:use-module ((playnet utils units) #:select (%count-unit %effort-unit))
   #:use-module (playnet planner vf schemas)
   #:use-module (playnet planner knowledge dsl shorthand)
   #:use-module (playnet planner knowledge dsl world)
@@ -64,14 +65,14 @@
    unit, so the good exists to be kept."
   (unless ($ rs 'get-resource-spec container)
     ($ rs 'add-resource-spec
-       (make-resource-specification #:id container #:name container-name #:default-unit-of-resource "each"
+       (make-resource-specification #:id container #:name container-name #:default-unit-of-resource %count-unit
                                     #:keep-in-place #t)))
   (let* ((rid (string-append container "-" place))
          (standing ($ obs 'get-resource rid)))
     (unless (and standing (equal? (economic-resource-conforms-to standing) container))
       ($ obs 'record-resource
          (make-economic-resource #:id rid #:name container-name #:conforms-to container #:classified-as '()
-                                 #:accounting-quantity (make-measure 1 "each") #:onhand-quantity (make-measure 1 "each")
+                                 #:accounting-quantity (make-measure 1 %count-unit) #:onhand-quantity (make-measure 1 %count-unit)
                                  #:current-location place #:primary-accountable holder))))
   (for-each
    (lambda (su)
@@ -142,7 +143,7 @@
     (world
      ;; the resource specs the crops trade in — food + the three scarce inputs
      #:specs (list (spec* "food" "Food (produce)" "kg") %land-spec
-                   (spec* "water" "Summer water" "ML") (spec* skill skill-label "hours"))
+                   (spec* "water" "Summer water" "ML") (spec* skill skill-label %effort-unit))
      ;; one grow recipe per crop: labour + a hectare USED through the period + its water
      ;; demand → produce food at its yield. The land is the durable ground the grow
      ;; stands on (keep-in-place, as the sky over it is): a run occupies a hectare for
@@ -191,7 +192,7 @@
                        (er (string-append "water-" place) "water" #f #:name "commune water"
                            #:place place #:qty water #:unit "ML")
                        (er (string-append "skill-" place) skill worker #:name "the worker's hours"
-                           #:place #f #:qty skill-hours #:unit "hours"))))))
+                           #:place #f #:qty skill-hours #:unit %effort-unit))))))
 
 (define* (seed-farm-commune! scope . args)
   "The farm (farm-world, same keywords) into SCOPE's stores, its water held so it

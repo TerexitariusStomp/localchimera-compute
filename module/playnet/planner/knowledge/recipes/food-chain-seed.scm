@@ -93,7 +93,7 @@
               #:classes (append classes (crossing-tags intake-crossings)))
   (food-spec! rs outlet outlet-name unit
               #:classes (append classes (crossing-tags outlet-crossings)))
-  (when work (food-spec! rs work work-name "hours"))
+  (when work (food-spec! rs work work-name %effort-unit))
   (when received
     (state-exchange! rs (string-append id "/received") (string-append intake-name ", received")
                      #:money (and (eq? received 'sale) money)))
@@ -121,7 +121,7 @@
                    (food-spec! rs (car u) (or (list-ref u 3) (car u)) #f
                                #:keep-in-place (eq? 'store (stage-ref s 'kind)))))
                (map (lambda (u) (list (car u) (cadr u)
-                                      (if (> (length u) 2) (list-ref u 2) "hours")
+                                      (if (> (length u) 2) (list-ref u 2) %effort-unit)
                                       (if (> (length u) 3) (list-ref u 3) #f)))
                     (stage-ref s 'uses))))
    stages)
@@ -170,7 +170,7 @@
 
             ($ rs 'add-recipe-process
                (make-recipe-process #:id pid #:name (stage-ref s 'label)
-                                    #:has-duration (and hours (make-duration hours "hours"))))
+                                    #:has-duration (and hours (make-duration hours %effort-unit))))
 
             (if store?
                 ;; PICK UP the good here and DROP IT OFF there — the pair that
@@ -235,7 +235,7 @@
               ($ rs 'add-recipe-flow
                  (make-recipe-flow #:id (string-append pid "-work") #:action 'work
                                    #:resource-conforms-to work
-                                   #:effort-quantity (make-measure hours "hours")
+                                   #:effort-quantity (make-measure hours %effort-unit)
                                    #:recipe-input-of pid)))
 
             (loop (cdr rest) (+ i 1) out-good (cons pid pids)))))))

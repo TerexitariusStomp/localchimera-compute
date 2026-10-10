@@ -5,6 +5,7 @@
 ;;;   guile --no-auto-compile -q -L module \
 ;;;     tests/planner/test-household-recipe.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner knowledge recipes household) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
 (use-modules (playnet planner knowledge catalogues substances))
@@ -90,7 +91,7 @@
                      (let ((d (recipe-process-has-duration rp)))
                        (if (string=? "rp-hh-living" (recipe-process-id rp))
                            (not d)
-                           (and d (string=? "hours" (duration-has-unit d))
+                           (and d (string=? %effort-unit (duration-has-unit d))
                                 (> (duration-has-numerical-value d) 0)))))
                    all-procs))
 

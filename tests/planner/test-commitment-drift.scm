@@ -6,6 +6,7 @@
 ;;; (playnet test planner bread). The history here is built ON PURPOSE
 ;;; and asserted directly — no section depends on another's residue.
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness)
              (playnet planner vf schemas)
              (playnet planner scope live)
@@ -24,14 +25,14 @@
 (define (accept! id proc hours provider . end)
   (with-vat vat ($ ps 'add-commitment
                    (make-commitment #:id id #:action 'work #:input-of proc #:resource-conforms-to (string-append "skill-" proc)
-                                    #:effort-quantity (make-measure hours "hours") #:provider provider #:receiver "town" #:has-end (and (pair? end) (car end)) #:at-location "town"))))
+                                    #:effort-quantity (make-measure hours %effort-unit) #:provider provider #:receiver "town" #:has-end (and (pair? end) (car end)) #:at-location "town"))))
 
 
 (display "\n── 1. declarations are dated facts — κ is a READ, not a meter ──\n")
 
 (with-vat vat
   ($ ps 'add-intent (make-intent #:id "churn-a" #:action 'work #:input-of "mill" #:resource-conforms-to "skill-mill"
-                                 #:effort-quantity (make-measure 0.3 "hours")
+                                 #:effort-quantity (make-measure 0.3 %effort-unit)
                                  #:at-location "town"))
   ($ ps 'remove-intent "churn-a"))
 (check "an add and a remove are two dated facts on the rail"
@@ -46,7 +47,7 @@
 (with-vat vat
   (let ((iid "offer:ada:mill@"))
     ($ ps 'add-intent (make-intent #:id iid #:action 'work #:input-of "mill"
-                                   #:effort-quantity (make-measure 0.3 "hours")))
+                                   #:effort-quantity (make-measure 0.3 %effort-unit)))
     ($ ps 'add-proposal (make-proposal #:id (string-append "prop-" iid) #:name "o"
                           #:has-end (number->string (- nowu 60)) #:created (now) #:purpose 'offer #:publishes (list iid) #:proposed-to '("ada")))))
 (with-vat vat (open-work-offers scope))                                  ; the urgency sweep

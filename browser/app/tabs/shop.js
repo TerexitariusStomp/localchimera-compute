@@ -52,6 +52,7 @@ import { emojiFor } from '../glyphs.js';
 import { PLAN } from '../core.js';
 import { mk } from '../dom.js';
 import { countMode, countTab, heldCard, heldGlyphs, wireHeld } from '../shop-count.js';
+import { isCountUnit } from '../units-catalogue.js';
 const fmtH = (h) => (h >= 100 ? Math.round(h) : Math.round(h * 10) / 10) + " h";
 // ── demo data (the design, standalone) ─────────────────────────────────────
 // What waits for you waits at a place of the demo world (demo/world.ts): the
@@ -280,7 +281,7 @@ const askd = (g) => g.mine.filter(r => r.state === "asked");
 const taken = (g) => g.mine.filter(r => r.state === "taken");
 const contention = (g) => g.asked - g.left;
 /** The unit a good is offered in: its own, or the slot's default when it is counted in itself. */
-const unitOf = (g) => { const u = g.offer?.unit || g.unit; return u && u !== "each" ? u : ""; };
+const unitOf = (g) => { const u = g.offer?.unit || g.unit; return u && !isCountUnit(u) ? u : ""; };
 function myLine(g) {
     const h = held(g), a = askd(g), t = taken(g);
     const parts = [];

@@ -12,6 +12,7 @@
 ;;;   • the certificate binds across cells: 2 h split over two places is 2 h
 ;;;
 ;;; Run:  guile -L module tests/planner/test-certificate-wall.scm
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test scope)) ; mock-scope-root
 (use-modules (playnet test harness)
              (playnet planner vf schemas) (srfi srfi-1)
@@ -23,7 +24,7 @@
 (define procs (list (make-recipe-process #:id "grow" #:name "Grow")))
 (define flows
   (list (make-recipe-flow #:id "gw" #:action 'work #:resource-conforms-to "skill-grow"
-                          #:effort-quantity (make-measure 1.0 "hours") #:recipe-input-of "grow")
+                          #:effort-quantity (make-measure 1.0 %effort-unit) #:recipe-input-of "grow")
         (make-recipe-flow #:id "go" #:action 'produce #:resource-conforms-to "wheat"
                           #:resource-quantity (make-measure 1.0 "kg") #:recipe-output-of "grow"
                           #:is-primary #t)))

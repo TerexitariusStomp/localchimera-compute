@@ -7,6 +7,7 @@
 ;;;
 ;;; Run: guile -L module tests/planner/test-skill-practiced.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner scope root) (playnet planner vf schemas))
 (use-modules (goblins)
@@ -18,11 +19,11 @@
 (define (work! obs aid skill hours event-id intent-id)
   ($ obs 'register-intent
      (make-intent #:id intent-id #:action 'work #:resource-conforms-to skill
-                  #:effort-quantity (make-measure hours "hour") #:provider aid))
+                  #:effort-quantity (make-measure hours %effort-unit) #:provider aid))
   ($ obs 'record-event
      (make-economic-event
        #:id event-id #:action 'work #:resource-conforms-to skill
-       #:provider aid #:effort-quantity (make-measure hours "hour") #:has-point-in-time "2026-03-01T08:00:00Z" #:satisfies intent-id)))
+       #:provider aid #:effort-quantity (make-measure hours %effort-unit) #:has-point-in-time "2026-03-01T08:00:00Z" #:satisfies intent-id)))
 
 (define store (make-memory-store))
 (define-values (vat scope)

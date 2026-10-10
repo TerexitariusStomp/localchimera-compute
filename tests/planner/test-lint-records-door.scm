@@ -8,6 +8,7 @@
 ;;;
 ;;; Run: guile -L module tests/planner/test-lint-records-door.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness) (playnet planner scope root) (playnet planner vf schemas) (playnet planner doors service)
              (playnet planner vf schemas)
              (goblins) (goblins vat) (goblins utils hashmap) (json) (srfi srfi-1))
@@ -21,7 +22,7 @@
       ($ rs 'add-resource-spec (make-resource-specification #:id "spec-flour" #:name "Flour"
                                                             #:default-unit-of-resource "kg"))
       ($ rs 'add-resource-spec (make-resource-specification #:id "spec-baker" #:name "Baker"
-                                                            #:default-unit-of-resource "hours"))
+                                                            #:default-unit-of-resource %effort-unit))
       ($ svc 'add-scope! "s1" sr)
       (values svc (lambda (json) ($ svc 'lint-records "s1" json))))))
 

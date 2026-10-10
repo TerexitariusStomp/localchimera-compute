@@ -7,6 +7,7 @@
 ;;; Run:  cd planner && guile --no-auto-compile -q -L ../module \
 ;;;         -l load-all.scm -l tests/test-meeting-roles.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet deprecated planner))
 (use-modules (goblins)
@@ -21,14 +22,14 @@
 ;; Shorthand: (work-flow id spec-id) → RecipeFlow with work action, 1h effort
 (define (work-flow id spec-id)
   (make-recipe-flow #:id id #:action 'work #:resource-conforms-to spec-id
-                    #:effort-quantity (make-measure 1 "hours") #:recipe-input-of "rp-meeting"))
+                    #:effort-quantity (make-measure 1 %effort-unit) #:recipe-input-of "rp-meeting"))
 
 ;; Shorthand: (skill-resource id agent-id spec-id) → seed resource
 (define (seed-skill! obs id agent-id spec-id)
   ($ obs 'seed-resource
      (make-economic-resource #:id id #:name (string-append agent-id " " spec-id)
        #:conforms-to spec-id
-       #:accounting-quantity (make-measure 1 "each") #:onhand-quantity (make-measure 1 "each") #:primary-accountable agent-id)))
+       #:accounting-quantity (make-measure 1 %count-unit) #:onhand-quantity (make-measure 1 %count-unit) #:primary-accountable agent-id)))
 
 ;; Shorthand: membership relationship
 (define (add-member! as id agent-id)
@@ -72,16 +73,16 @@
     ;; ── Resource specs (skills + output) ──
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec:facilitation" #:name "Facilitation"
-                                    #:default-unit-of-resource "hours"))
+                                    #:default-unit-of-resource %effort-unit))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec:note-taking" #:name "Note Taking"
-                                    #:default-unit-of-resource "hours"))
+                                    #:default-unit-of-resource %effort-unit))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec:participation" #:name "Participation"
-                                    #:default-unit-of-resource "hours"))
+                                    #:default-unit-of-resource %effort-unit))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec:meeting-minutes" #:name "Meeting Minutes"
-                                    #:default-unit-of-resource "each"))
+                                    #:default-unit-of-resource %count-unit))
 
     ;; ── Meeting process ──
     ($ rs 'add-process-spec
@@ -89,7 +90,7 @@
 
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-meeting" #:name "Run Meeting" #:process-conforms-to "pspec-meeting"
-                            #:has-duration (make-duration 1 "hours")))
+                            #:has-duration (make-duration 1 %effort-unit)))
 
     ;; ── Work flows (inputs) ──
     ($ rs 'add-recipe-flow (work-flow "rf-facilitate"    "spec:facilitation"))
@@ -100,7 +101,7 @@
     ;; ── Output flow ──
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-minutes-out" #:action 'produce #:resource-conforms-to "spec:meeting-minutes"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-meeting"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-meeting"))
 
     ;; ── Recipe ──
     ($ rs 'add-recipe

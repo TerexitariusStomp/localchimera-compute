@@ -41,6 +41,7 @@ import { showChat } from '../tabs/social/chat.js';
 import { STATUS } from '../palette.js';
 import { plannedCount } from '../count.js';
 import { openCapturePlanned } from '../capture.js';
+import { EFFORT_UNIT } from '../units-catalogue.js';
 // ── the gate ────────────────────────────────────────────────────────────────
 /**
  * The one refusal that is not an error: a provisional member cannot take part
@@ -374,7 +375,7 @@ const NEED_EMOJI = {
  */
 function needChip(nd) {
     const q = nd.qty != null && nd.qty > 0
-        ? `${+(+nd.qty).toFixed(2)}${nd.unit ? (nd.unit === "hours" ? "h" : " " + nd.unit) : ""}` : "";
+        ? `${+(+nd.qty).toFixed(2)}${nd.unit ? (nd.unit === EFFORT_UNIT ? "h" : " " + nd.unit) : ""}` : "";
     // held is unremarkable, so it is quiet; missing is the thing you came to
     // learn; unknown says nobody checked, which is not the same as absent
     const st = nd.met === "held" ? { o: 0.55, mark: "", col: "" }

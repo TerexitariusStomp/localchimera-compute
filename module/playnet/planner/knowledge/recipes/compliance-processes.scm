@@ -26,6 +26,7 @@
 
 ;; ─── shared specs : the reusable inputs of compliance work ──────────────────
 (define-module (playnet planner knowledge recipes compliance-processes)
+  #:use-module ((playnet utils units) #:select (%effort-unit))
   #:use-module (playnet planner legal registry)
   #:use-module (playnet planner vf schemas)
   #:use-module (goblins)
@@ -38,7 +39,7 @@
 
 (define compliance-admin-skill-spec   ; a worked spec: its effort unit is what says so (formulas/actions labour-specs)
   (make-resource-specification #:id "spec-admin" #:name "Administration"
-                               #:resource-classified-as '() #:default-unit-of-resource "person" #:default-unit-of-effort "hours"))
+                               #:resource-classified-as '() #:default-unit-of-resource "person" #:default-unit-of-effort %effort-unit))
 (define compliance-state-money-spec
   (make-resource-specification #:id "spec-state-money" #:name "State Money"
                                #:resource-classified-as '("fiat") #:default-unit-of-resource "unit"))
@@ -74,7 +75,7 @@
                                                           #:recipe-input-of rp))
 (define (%rf-work    id skill hours rp) (make-recipe-flow #:id id #:action 'work   
                                                           #:resource-conforms-to skill
-                                                          #:effort-quantity (make-measure hours "hours")
+                                                          #:effort-quantity (make-measure hours %effort-unit)
                                                           #:recipe-input-of rp))
 (define (%rf-produce id spec q unit rp) (make-recipe-flow #:id id #:action 'produce
                                                           #:resource-conforms-to spec
@@ -96,7 +97,7 @@
     ($ recipe-store 'add-recipe-process
        (make-recipe-process #:id rp #:name (%str "Obtain " permit-spec)
                             #:note (and authority (%str "issuer: " authority))
-                            #:process-conforms-to "pspec-obtain-permit" #:has-duration (make-duration admin-hours "hours")))
+                            #:process-conforms-to "pspec-obtain-permit" #:has-duration (make-duration admin-hours %effort-unit)))
     ($ recipe-store 'add-recipe-flow (%rf-cite (%str rp "/app") "filing" 1 "document" rp))
     ($ recipe-store 'add-recipe-flow (%rf-work (%str rp "/admin") "spec-admin" admin-hours rp))
     (when fee ($ recipe-store 'add-recipe-flow (%rf-consume (%str rp "/fee") "spec-state-money" fee "unit" rp)))
@@ -112,7 +113,7 @@
   (let ((rp (or id (%str "rp-renew:" permit-spec))))
     ($ recipe-store 'add-recipe-process
        (make-recipe-process #:id rp #:name (%str "Renew " permit-spec)
-                            #:process-conforms-to "pspec-renew" #:has-duration (make-duration admin-hours "hours")))
+                            #:process-conforms-to "pspec-renew" #:has-duration (make-duration admin-hours %effort-unit)))
     ($ recipe-store 'add-recipe-flow (%rf-cite (%str rp "/old") permit-spec 1 "cert" rp))   ; the expiring one
     ($ recipe-store 'add-recipe-flow (%rf-work (%str rp "/admin") "spec-admin" admin-hours rp))
     (when fee ($ recipe-store 'add-recipe-flow (%rf-consume (%str rp "/fee") "spec-state-money" fee "unit" rp)))
@@ -128,7 +129,7 @@
   (let ((rp (or id (%str "rp-file:" levy))))
     ($ recipe-store 'add-recipe-process
        (make-recipe-process #:id rp #:name (%str "File " levy)
-                            #:process-conforms-to "pspec-file-return" #:has-duration (make-duration admin-hours "hours")))
+                            #:process-conforms-to "pspec-file-return" #:has-duration (make-duration admin-hours %effort-unit)))
     ($ recipe-store 'add-recipe-flow (%rf-work (%str rp "/admin") "spec-admin" admin-hours rp))
     (when amount ($ recipe-store 'add-recipe-flow (%rf-consume (%str rp "/pay") "spec-state-money" amount "unit" rp)))
     ($ recipe-store 'add-recipe-flow (%rf-produce (%str rp "/out") levy 1 "return" rp))
@@ -143,7 +144,7 @@
   (let ((rp (or id (%str "rp-disclose:" disclosure))))
     ($ recipe-store 'add-recipe-process
        (make-recipe-process #:id rp #:name (%str "Disclose " disclosure)
-                            #:process-conforms-to "pspec-disclose" #:has-duration (make-duration admin-hours "hours")))
+                            #:process-conforms-to "pspec-disclose" #:has-duration (make-duration admin-hours %effort-unit)))
     ($ recipe-store 'add-recipe-flow (%rf-cite (%str rp "/facts") "filing" 1 "document" rp))
     ($ recipe-store 'add-recipe-flow (%rf-work (%str rp "/admin") "spec-admin" admin-hours rp))
     ($ recipe-store 'add-recipe-flow (%rf-produce (%str rp "/out") disclosure 1 "disclosure" rp))

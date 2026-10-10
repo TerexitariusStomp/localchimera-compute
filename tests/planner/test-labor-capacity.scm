@@ -12,6 +12,7 @@
 ;;; Run:  cd planner && guile --no-auto-compile -q -L ../module \
 ;;;         -l load-all.scm -l tests/test-labor-capacity.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
 (use-modules (goblins)
@@ -55,13 +56,13 @@
     ($ obs 'seed-resource
        (make-economic-resource #:id "capacity:alice" #:name "Alice Capacity"
          #:conforms-to "spec:agent-capacity"
-         #:accounting-quantity (make-measure 40 "hours") #:onhand-quantity (make-measure 40 "hours") #:primary-accountable "agent-alice"))
+         #:accounting-quantity (make-measure 40 %effort-unit) #:onhand-quantity (make-measure 40 %effort-unit) #:primary-accountable "agent-alice"))
 
     ;; Bob: 30 hours capacity
     ($ obs 'seed-resource
        (make-economic-resource #:id "capacity:bob" #:name "Bob Capacity"
          #:conforms-to "spec:agent-capacity"
-         #:accounting-quantity (make-measure 30 "hours") #:onhand-quantity (make-measure 30 "hours") #:primary-accountable "agent-bob"))
+         #:accounting-quantity (make-measure 30 %effort-unit) #:onhand-quantity (make-measure 30 %effort-unit) #:primary-accountable "agent-bob"))
 
     ;; Verify
     (let ((alice-cap ($ obs 'get-resource "capacity:alice"))
@@ -129,7 +130,7 @@
        (make-economic-event
          #:id "ev-work-alice" #:action 'work #:input-of "proc-welding"
          #:resource-inventoried-as "capacity:alice" #:resource-conforms-to "spec:agent-capacity"
-         #:provider "agent-alice" #:receiver "agent-alice" #:effort-quantity (make-measure 8 "hours") #:has-point-in-time "2026-03-28T10:00:00Z"))
+         #:provider "agent-alice" #:receiver "agent-alice" #:effort-quantity (make-measure 8 %effort-unit) #:has-point-in-time "2026-03-28T10:00:00Z"))
 
     ;; Onhand should remain 40 (work doesn't consume)
     (let ((r ($ obs 'get-resource "capacity:alice")))
@@ -156,15 +157,15 @@
     ;; Alice has 40h but offers 30 + 20 + 10 = 60h total (over-offer)
     ($ ps 'add-intent
        (make-intent #:id "i-offer-1" #:action 'work #:name "Alice work offer 1"
-                    #:input-of "proc-a" #:effort-quantity (make-measure 30 "hours")
+                    #:input-of "proc-a" #:effort-quantity (make-measure 30 %effort-unit)
                     #:provider "agent-alice" #:planned-within "plan-labor"))
     ($ ps 'add-intent
        (make-intent #:id "i-offer-2" #:action 'work #:name "Alice work offer 2"
-                    #:input-of "proc-b" #:effort-quantity (make-measure 20 "hours")
+                    #:input-of "proc-b" #:effort-quantity (make-measure 20 %effort-unit)
                     #:provider "agent-alice" #:planned-within "plan-labor"))
     ($ ps 'add-intent
        (make-intent #:id "i-offer-3" #:action 'work #:name "Alice work offer 3"
-                    #:input-of "proc-c" #:effort-quantity (make-measure 10 "hours")
+                    #:input-of "proc-c" #:effort-quantity (make-measure 10 %effort-unit)
                     #:provider "agent-alice" #:planned-within "plan-labor"))
 
     ;; All three intents should be created without error

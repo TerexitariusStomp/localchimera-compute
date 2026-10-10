@@ -14,6 +14,7 @@
 ;;; name is spelled with its constructor.
 
 (define-module (playnet planner knowledge dsl shorthand)
+  #:use-module ((playnet utils units) #:select (%count-unit %effort-unit))
   #:use-module (playnet planner vf schemas)
   #:use-module (playnet planner beyond schedules)
   #:use-module ((playnet planner formulas actions) #:select (input-action? output-action?))
@@ -29,7 +30,7 @@
 (define* (rp* id nm #:optional (duration #f)
               #:key (tags #f) (mbq #f) (mbq-unit "kg") (conforms-to #f))
   (make-recipe-process #:id id #:name nm #:process-conforms-to conforms-to #:process-classified-as tags
-                       #:has-duration (and duration (make-duration duration "hours"))
+                       #:has-duration (and duration (make-duration duration %effort-unit))
                        #:minimum-batch-quantity (and mbq (make-measure mbq mbq-unit))))
 ;; the flows: what a process produces (marked primary unless said otherwise),
 ;; consumes, works, uses. STAGE / STATE name the stage the flow's end of the
@@ -50,17 +51,17 @@
   (make-recipe-flow #:id id #:action 'consume #:resource-conforms-to spec
                     #:resource-classified-as tags #:resource-quantity (make-measure q unit)
                     #:recipe-input-of proc #:stage stage #:state state))
-(define* (wk* id skill hrs proc #:optional (unit "hours"))
+(define* (wk* id skill hrs proc #:optional (unit %effort-unit))
   (make-recipe-flow #:id id #:action 'work #:resource-conforms-to skill
                     #:effort-quantity (make-measure hrs unit) #:recipe-input-of proc))
 ;; a use draws HRS of the service; with #:qty it draws QTY units of it, for HRS
 ;; when HRS is a number and for the period's length when HRS is #f
-(define* (use* id spec proc #:optional (hrs 1.0) #:key (qty #f) (unit "each"))
+(define* (use* id spec proc #:optional (hrs 1.0) #:key (qty #f) (unit %count-unit))
   (if qty
       (make-recipe-flow #:id id #:action 'use #:resource-conforms-to spec #:resource-quantity (make-measure qty unit)
-                        #:effort-quantity (and hrs (make-measure hrs "hours")) #:recipe-input-of proc)
+                        #:effort-quantity (and hrs (make-measure hrs %effort-unit)) #:recipe-input-of proc)
       (make-recipe-flow #:id id #:action 'use #:resource-conforms-to spec
-                        #:resource-quantity (make-measure hrs "hours") #:recipe-input-of proc)))
+                        #:resource-quantity (make-measure hrs %effort-unit) #:recipe-input-of proc)))
 ;; a resource specification counted in UNIT
 (define* (spec* id nm unit #:key (keep-in-place #f))
   (make-resource-specification #:id id #:name nm #:default-unit-of-resource unit

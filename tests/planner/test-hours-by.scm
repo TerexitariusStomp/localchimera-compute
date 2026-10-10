@@ -12,6 +12,7 @@
 ;;;
 ;;; Run:  guile -q -L module tests/planner/test-hours-by.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner pools credit-fold) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
 (use-modules (goblins) (goblins persistence-store memory) (srfi srfi-1))
@@ -83,7 +84,7 @@
     ($ obs 'record-event
        (make-economic-event #:id "e3-void" #:action 'work #:input-of "bake"
                             #:resource-conforms-to "baker" #:provider "bob"
-                            #:effort-quantity (make-measure -30 "hour")
+                            #:effort-quantity (make-measure -30 %effort-unit)
                             #:has-point-in-time "2026-03-02T08:00:00Z" #:at-location "town"
                             #:satisfies "i3" #:corrects "e3"))
     (let ((by-provider ($ obs 'hours-by (lambda (ev) (economic-event-provider ev))))

@@ -34,6 +34,7 @@
 ;;; are re-seeded as the districts' own, and nothing of that shape solves
 ;;; again.
 (define-module (playnet planner knowledge recipes berlin-festival-seed)
+  #:use-module ((playnet utils units) #:select (%count-unit %effort-unit))
   #:use-module (playnet planner knowledge dsl shorthand)
   #:use-module (playnet planner knowledge dsl world)
   #:use-module (playnet planner vf schemas)
@@ -96,7 +97,7 @@
    #:id (string-append "skill:" crew ":" skill)
    #:name (string-append crew " " skill)
    #:conforms-to skill
-   #:accounting-quantity (make-measure 1 "each") #:onhand-quantity (make-measure 1 "each") #:primary-accountable crew))
+   #:accounting-quantity (make-measure 1 %count-unit) #:onhand-quantity (make-measure 1 %count-unit) #:primary-accountable crew))
 
 ;; ── the earlier shape leaves ────────────────────────────────────────────────
 ;; A store seeded before 2026-09-03 holds a grow process per (crop, district)
@@ -155,8 +156,8 @@
                                                  (map bs-place *berlin-baumscheiben*)))
                             (berlin-baumscheiben-spatials #:shed shed)))
    #:specs (list (spec* "meal" "Festival meal" "kg")
-                 (spec* %skill "Gardening" "hours")
-                 (spec* %cycle "Cargo-bike riding" "hours")
+                 (spec* %skill "Gardening" %effort-unit)
+                 (spec* %cycle "Cargo-bike riding" %effort-unit)
                  (spec* *pit-spec* "Street-tree pits" "m2"))
    #:procs (map (lambda (c) (rp* (festival-grow-id (car c)) (string-append "Grow " (car c)) (* %h-per-m2 1.0)))
                 %crops)
@@ -205,7 +206,7 @@
         #:name "Carry the harvest: pick-up → festival"
         #:pspec-name "Cargo-bike haul (pick-up → drop-off)"
         #:good "meal" #:payload %carry-kg #:unit "kg"
-        #:duration (make-duration 0.5 "hours")
+        #:duration (make-duration 0.5 %effort-unit)
         #:tags '("tag:transport")
         #:work (cons %cycle %carry-h-per-km)))
     ;; the pits are there tomorrow: a hold per district's ground, so a

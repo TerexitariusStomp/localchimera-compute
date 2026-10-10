@@ -27,6 +27,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-insurance-reserve.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test planner prelude)
              (playnet planner solve engine)
              (playnet planner vf schemas) (playnet planner beyond scenario)
@@ -40,7 +41,7 @@
 (define spatials (list (make-spatial-thing #:id "farm" #:lat 52.5 #:long 13.4)))
 (define procs (list (make-recipe-process #:id "grow" #:name "Grow")))
 (define flows (list (make-recipe-flow #:id "gw" #:action 'work    #:resource-conforms-to "farming"
-                                      #:effort-quantity (make-measure 1.0 "hours")
+                                      #:effort-quantity (make-measure 1.0 %effort-unit)
                                       #:recipe-input-of "grow")
                     (make-recipe-flow #:id "gb" #:action 'produce #:resource-conforms-to "bread"
                                       #:resource-quantity (make-measure 1.0 "kg")

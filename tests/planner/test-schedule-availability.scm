@@ -10,6 +10,7 @@
 ;;; Run:  cd planner && guile --no-auto-compile -q -L ../module \
 ;;;         -l load-all.scm -l tests/test-schedule-availability.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner plan schedule-book) (playnet planner scope root) (playnet planner plan recurrence) (playnet planner vf schemas) (playnet planner beyond schedules) (srfi srfi-1))
 (use-modules (goblins)
@@ -125,7 +126,7 @@
     ;; availability-window
     ($ ps 'add-commitment
        (make-commitment #:id "c-work-alice-1" #:action 'work
-                        #:effort-quantity (make-measure 6 "hours")
+                        #:effort-quantity (make-measure 6 %effort-unit)
                         #:provider "alice" #:receiver "org:acme" #:due "2026-02-23T10:00:00Z"))
     (check "effort on 2026-02-23 = 6"
            (committed-effort-on "alice" "2026-02-23" ps) 6)))
@@ -141,11 +142,11 @@
   (let ((ps ($ scope 'plan-store)))
     ($ ps 'add-commitment
        (make-commitment #:id "c-work-alice-2" #:action 'work
-                        #:effort-quantity (make-measure 3 "hours")
+                        #:effort-quantity (make-measure 3 %effort-unit)
                         #:provider "alice" #:receiver "org:acme" #:due "2026-02-23T09:00:00Z"))
     ($ ps 'add-commitment
        (make-commitment #:id "c-work-alice-3" #:action 'work
-                        #:effort-quantity (make-measure 2 "hours")
+                        #:effort-quantity (make-measure 2 %effort-unit)
                         #:provider "alice" #:receiver "org:beta" #:due "2026-02-23T14:00:00Z"))
     ;; Total = 6 (from test 5) + 3 + 2 = 11
     ;; All three work commitments on 2026-02-23 for alice
@@ -163,7 +164,7 @@
   (let ((ps ($ scope 'plan-store)))
     ($ ps 'add-commitment
        (make-commitment #:id "c-consume-carol" #:action 'consume
-                        #:effort-quantity (make-measure 4 "hours")
+                        #:effort-quantity (make-measure 4 %effort-unit)
                         #:provider "carol" #:receiver "org:acme" #:due "2026-02-23T09:00:00Z"))
     ;; Carol has only a consume commitment, not work → effort = 0
     (check "non-work effort = 0"

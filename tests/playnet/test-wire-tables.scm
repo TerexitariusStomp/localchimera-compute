@@ -15,6 +15,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/playnet/test-wire-tables.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness)
              (playnet wire rows)
              (playnet wire snapshot) (playnet wire replies)
@@ -39,7 +40,7 @@
       ("primary" is-primary bool)
       ("note" note opt-str))))
 
-(define f (flow* "f1" 'produce "bread" 4 "bake" "each" #:primary #t))
+(define f (flow* "f1" 'produce "bread" 4 "bake" %count-unit #:primary #t))
 (define names '(("bread" . "Bread")))
 
 (display "\n── FIELDS ──\n")

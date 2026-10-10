@@ -14,6 +14,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-event-chat.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner scope root) (playnet planner vf schemas))
 (use-modules (playnet planner doors service))
@@ -41,7 +42,7 @@
 
   ;; a plannable thing: care wanted at the clinic
   ($ ps 'add-intent
-     (make-intent #:id "i-care" #:action 'work #:name "care" #:resource-conforms-to "doctor" #:resource-classified-as '() #:effort-quantity (make-measure 4 "hours")
+     (make-intent #:id "i-care" #:action 'work #:name "care" #:resource-conforms-to "doctor" #:resource-classified-as '() #:effort-quantity (make-measure 4 %effort-unit)
                   #:has-beginning "2026-06-08T09:00:00Z"
                   #:at-location "clinic" #:in-scope-of '("org:test")))
 

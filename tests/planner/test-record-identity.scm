@@ -12,6 +12,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-record-identity.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
 
 ;; the engine, standalone — this defines the schemas in guile-user
@@ -95,7 +96,7 @@
                 (vf-record-type-fields <intent>))))
 (check "an economic event copied with one field keeps the other twenty-nine"
        (let* ((e (make-economic-event #:id "e1" #:action 'work #:input-of "P" #:provider "alice"
-                                      #:receiver "bob" #:effort-quantity (make-measure 2 "hour")
+                                      #:receiver "bob" #:effort-quantity (make-measure 2 %effort-unit)
                                       #:note "n"))
               (c (copy-economic-event e #:corrects "e0")))
          (and (equal? (economic-event-corrects c) "e0")

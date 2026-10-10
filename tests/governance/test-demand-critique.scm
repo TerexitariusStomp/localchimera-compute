@@ -1,5 +1,6 @@
 ;;; test-demand-critique.scm — solvability critique via relational planner.
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness)
              (playnet deprecated planner)
              (playnet deprecated governance demand-critique)
@@ -31,7 +32,7 @@
        (make-resource-specification #:id "spec-flour" #:name "Flour" #:default-unit-of-resource "kg"))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-bread" #:name "Bread"
-                                    #:default-unit-of-resource "each"))
+                                    #:default-unit-of-resource %count-unit))
     ;; Caviar spec EXISTS but has NO recipe → infeasible path.
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-caviar" #:name "Caviar"
@@ -44,10 +45,10 @@
        (make-process-specification #:id "pspec-bake" #:name "Baking"))
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-mill" #:name "Mill" #:process-conforms-to "pspec-mill"
-                            #:has-duration (make-duration 2 "hours")))
+                            #:has-duration (make-duration 2 %effort-unit)))
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-bake" #:name "Bake" #:process-conforms-to "pspec-bake"
-                            #:has-duration (make-duration 4 "hours")))
+                            #:has-duration (make-duration 4 %effort-unit)))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-wheat-in" #:action 'consume #:resource-conforms-to "spec-wheat"
                          #:resource-quantity (make-measure 10 "kg") #:recipe-input-of "rp-mill"))
@@ -59,7 +60,7 @@
                          #:resource-quantity (make-measure 8 "kg") #:recipe-input-of "rp-bake"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-bread-out" #:action 'produce #:resource-conforms-to "spec-bread"
-                         #:resource-quantity (make-measure 20 "each") #:recipe-output-of "rp-bake"))
+                         #:resource-quantity (make-measure 20 %count-unit) #:recipe-output-of "rp-bake"))
     ($ rs 'add-recipe
        (make-recipe #:id "recipe-bread" #:name "Bread Production" #:primary-output "spec-bread"
                     #:recipe-processes (list "rp-mill" "rp-bake"))))
@@ -83,7 +84,7 @@
   ;; ════════════════════════════════════════════════════════════════════
 
   (display "\n── 2. Vague (no quantity) ──\n")
-  (let* ((wish (make-demand-intent "spec-bread" #f "each"))
+  (let* ((wish (make-demand-intent "spec-bread" #f %count-unit))
          (c (critique-demand scope wish)))
     (check-pred "spec without qty → vague"
                 (eq? 'vague (critique-category c))))
@@ -107,7 +108,7 @@
   ;; ════════════════════════════════════════════════════════════════════
 
   (display "\n── 4. Tractable (full recipe chain) ──\n")
-  (let* ((wish (make-demand-intent "spec-bread" 20 "each"))
+  (let* ((wish (make-demand-intent "spec-bread" 20 %count-unit))
          (c (critique-demand scope wish)))
     (check-pred "bread with recipe → tractable"
                 (eq? 'tractable (critique-category c)))

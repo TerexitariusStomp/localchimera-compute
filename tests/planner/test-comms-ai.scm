@@ -8,6 +8,7 @@
 ;;;
 ;;; Run: guile -L module tests/planner/test-comms-ai.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness) (playnet planner vf schemas) (playnet planner observation states) (srfi srfi-1) (srfi srfi-1) (srfi srfi-13))
 
 (define here (dirname (current-filename)))
@@ -27,7 +28,7 @@
 (define i-cook (mk-intent "intent-cook" #:action 'work #:name "cook-hours"))
 (define i-floor (mk-intent "intent-floor" #:name "Calories" #:classified '("reproduction-floor")))
 (define s-food (mk-sat "intent-food" 52 40))
-(define s-cook (mk-sat "intent-cook" 8 6 #:unit "hours"))
+(define s-cook (mk-sat "intent-cook" 8 6 #:unit %effort-unit))
 (define s-floor (mk-sat "intent-floor" 2000 1500 #:unit "kcal"))
 (define intents (list i-food i-cook i-floor))
 (define sats    (list s-food s-cook s-floor))

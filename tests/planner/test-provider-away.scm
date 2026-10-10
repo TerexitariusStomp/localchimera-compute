@@ -12,6 +12,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-provider-away.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet planner knowledge dsl shorthand))
 (use-modules (playnet test harness)
              (goblins)
@@ -29,7 +30,7 @@
 (define* (mk-accept id #:key (proc "growB") (place "farm") (hours 1.0)
                     (provider "alice") (skill "farming") (beginning #f))
   (make-commitment #:id id #:action 'work #:input-of proc #:resource-conforms-to skill
-                   #:effort-quantity (make-measure hours "hours") #:provider provider
+                   #:effort-quantity (make-measure hours %effort-unit) #:provider provider
                    #:has-beginning beginning #:at-location place))
 
 (define vat (spawn-vat))

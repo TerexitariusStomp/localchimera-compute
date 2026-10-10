@@ -17,6 +17,7 @@
 import type { SeamData, Plan } from '../seam.js';
 import type { Signal } from '../reactive.js';
 import { isoDate } from '../timefmt.js';
+import { COUNT_UNIT, EFFORT_UNIT, isTimeUnit } from '../units-catalogue.js';
 
 /** A weekday name as the arcs wire spells it. */
 export type Day = "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
@@ -343,7 +344,7 @@ export const isMoneyUnit = (unit: string | null | undefined): boolean =>
 export function unitReading(unit: string, kind: SlotKind): string {
   const u = unit.trim(); const m = u.match(/^(.+)\/(day|week)$/);
   if (m) return `rate: ${m[1]} per ${m[2]} — the planner converts by its bands`;
-  if ((u === "hours" || u === "minutes" || u === "days") && kind !== "need")
+  if (isTimeUnit(u) && kind !== "need")
     return "budget: a pool of time, spent across the horizon";
   if (isMoneyUnit(u))
     return kind === "need" ? "money: the plan meets it by acquisition, weighted with everyone else's"
@@ -353,7 +354,7 @@ export function unitReading(unit: string, kind: SlotKind): string {
 
 export const blankSlot = (kind: SlotKind): Slot => ({
   id: null, spec: "", name: "", emoji: kind === "need" ? "🌱" : "🤲",
-  note: "", qty: 1, unit: kind === "need" ? "each" : "hours",
+  note: "", qty: 1, unit: kind === "need" ? COUNT_UNIT : EFFORT_UNIT,
   where: "", from: null, until: null, arcs: [],
 });
 

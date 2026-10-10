@@ -10,6 +10,7 @@
 ;;;
 ;;; Run:  guile -L module -L tests tests/governance/test-ownership-attestation.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet governance scope) (playnet governance service) (playnet governance socialization) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri said-portable) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1) (playnet test harness)
              ((playnet keri citizen-sig)
               #:select (make-keri-identity keri-identity-keypair keri-identity-aid
@@ -63,13 +64,13 @@
       (display "\n── the compat rule: ownership-ok? ──\n")
       (let ((res (make-economic-resource
                   #:id rid #:conforms-to "lathe"
-                  #:accounting-quantity (make-measure 1 "each") #:onhand-quantity (make-measure 1 "each") #:primary-accountable owner))
+                  #:accounting-quantity (make-measure 1 %count-unit) #:onhand-quantity (make-measure 1 %count-unit) #:primary-accountable owner))
             (forged (make-economic-resource
                      #:id rid #:conforms-to "lathe"
-                     #:accounting-quantity (make-measure 1 "each") #:onhand-quantity (make-measure 1 "each") #:primary-accountable (keri-identity-aid eve)))
+                     #:accounting-quantity (make-measure 1 %count-unit) #:onhand-quantity (make-measure 1 %count-unit) #:primary-accountable (keri-identity-aid eve)))
             (untitled (make-economic-resource
                        #:id "means:someone:kiln" #:conforms-to "kiln"
-                       #:accounting-quantity (make-measure 1 "each") #:onhand-quantity (make-measure 1 "each") #:primary-accountable "E_whoever")))
+                       #:accounting-quantity (make-measure 1 %count-unit) #:onhand-quantity (make-measure 1 %count-unit) #:primary-accountable "E_whoever")))
         (check "the titled owner passes" (ownership-ok? store res) #t)
         (check "a forged primary-accountable fails against the standing title"
                (ownership-ok? store forged) #f)

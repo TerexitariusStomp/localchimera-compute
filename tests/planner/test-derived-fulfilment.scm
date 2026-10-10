@@ -19,6 +19,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-derived-fulfilment.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness)
              (playnet test events)
              ((playnet test books) #:select (mq))
@@ -102,13 +103,13 @@
 ;; a `use` states both quantities (how many were engaged, for how long): a commitment
 ;; of hours is answered by the hours, and a commitment of vans by the vans
 (let ((o (new-observer)))
-  ($ o 'seed-resource (make-economic-resource #:id "van" #:name "van" #:conforms-to "van" #:accounting-quantity (make-measure 1.0 "each") #:onhand-quantity (make-measure 1.0 "each")
+  ($ o 'seed-resource (make-economic-resource #:id "van" #:name "van" #:conforms-to "van" #:accounting-quantity (make-measure 1.0 %count-unit) #:onhand-quantity (make-measure 1.0 %count-unit)
                                              #:current-location "A"))
-  ($ o 'register-commitment (commitment "hrs" 'use "van" 2.0 #:unit "hours"))
-  ($ o 'register-commitment (commitment "cnt" 'use "van" 1.0 #:unit "each"))
-  (let ((u (ev "u1" 'use #:rid "van" #:spec "van" #:q 1.0 #:unit "each" #:effort '(2.0 . "hour"))))
+  ($ o 'register-commitment (commitment "hrs" 'use "van" 2.0 #:unit %effort-unit))
+  ($ o 'register-commitment (commitment "cnt" 'use "van" 1.0 #:unit %count-unit))
+  (let ((u (ev "u1" 'use #:rid "van" #:spec "van" #:q 1.0 #:unit %count-unit #:effort '(2.0 . "hour"))))
     ($ o 'record-event (copy-economic-event u #:fulfills "hrs"))
-    ($ o 'record-event (copy-economic-event (ev "u2" 'use #:rid "van" #:spec "van" #:q 1.0 #:unit "each" #:effort '(2.0 . "hour")) #:fulfills "cnt")))
+    ($ o 'record-event (copy-economic-event (ev "u2" 'use #:rid "van" #:spec "van" #:q 1.0 #:unit %count-unit #:effort '(2.0 . "hour")) #:fulfills "cnt")))
   (check "a commitment of 2 hours reads the 2 hours, not the 1 van" (fulfilled o "hrs") 2.0)
   (check "a commitment of 1 each reads the 1 van, not the 2 hours" (fulfilled o "cnt") 1.0))
 

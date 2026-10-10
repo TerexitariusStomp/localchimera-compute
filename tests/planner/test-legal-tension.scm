@@ -19,6 +19,7 @@
 ;;;
 ;;; Run: guile -L module tests/planner/test-legal-tension.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test scope))
 (use-modules (playnet test harness) (playnet planner knowledge recipes store) (playnet planner scope spatial-things) (playnet planner scope root) (playnet planner vf schemas) (playnet planner scope live)
              (playnet planner legal gate)
@@ -33,12 +34,12 @@
         (make-recipe-flow #:id "f-in"  #:action 'consume #:resource-conforms-to "raw"
                           #:resource-quantity (make-measure 1.0 "kg") #:recipe-input-of "make")
         (make-recipe-flow #:id "f-wk"  #:action 'work #:resource-conforms-to "skill"
-                          #:effort-quantity (make-measure 0.5 "hours") #:recipe-input-of "make")))
+                          #:effort-quantity (make-measure 0.5 %effort-unit) #:recipe-input-of "make")))
 (define recipes (list (make-recipe #:id "r" #:name "Make" #:primary-output "good"
                                    #:recipe-processes '() #:recipe-exchanges '())))
 (define specs (list (make-resource-specification #:id "skill" #:name "Skill"
                                                  #:resource-classified-as '()
-                                                 #:default-unit-of-effort "hours")))
+                                                 #:default-unit-of-effort %effort-unit)))
 (define win (all-week-window "00:00" "23:59"))
 (define resources (list (er "raw-ici" "raw" "a-ici" #:place "ici" #:qty 100.0)
                         (er "sk-ici" "skill" "w-ici" #:place "ici" #:qty 1.0)))

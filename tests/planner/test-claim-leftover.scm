@@ -15,6 +15,7 @@
 ;;; Layer 2 — the doors: a real scope, the plan's row stood by plan-claim!.
 ;;;
 ;;; Run:  guile -L module tests/planner/test-claim-leftover.scm
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test scope)) ; mock-scope-root plan-claim!
 (use-modules (playnet test harness)
              (playnet planner algorithms elastic) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
@@ -37,7 +38,7 @@
 (define procs (list (make-recipe-process #:id "grow" #:name "Grow")))
 (define flows
   (list (make-recipe-flow #:id "gw" #:action 'work #:resource-conforms-to "skill-grow"
-                          #:effort-quantity (make-measure 1.0 "hours") #:recipe-input-of "grow")
+                          #:effort-quantity (make-measure 1.0 %effort-unit) #:recipe-input-of "grow")
         (make-recipe-flow #:id "go" #:action 'produce #:resource-conforms-to "wheat"
                           #:resource-quantity (make-measure 1.0 "kg") #:recipe-output-of "grow"
                           #:is-primary #t)))
@@ -97,10 +98,10 @@
 (define (work! obs aid skill hours eid iid)
   ($ obs 'register-intent
      (make-intent #:id iid #:action 'work #:resource-conforms-to skill
-                  #:effort-quantity (make-measure hours "hour") #:provider aid))
+                  #:effort-quantity (make-measure hours %effort-unit) #:provider aid))
   ($ obs 'record-event
      (make-economic-event #:id eid #:action 'work #:resource-conforms-to skill #:provider aid
-                          #:effort-quantity (make-measure hours "hour")
+                          #:effort-quantity (make-measure hours %effort-unit)
                           #:has-point-in-time "2026-03-01T08:00:00Z" #:satisfies iid
                           #:in-scope-of '())))
 
@@ -115,10 +116,10 @@
            (svc (spawn ^planner-service (hashmap-set (hashmap) "s1" sr))))
       ($ rs 'add-recipe-process
          (make-recipe-process #:id "rp-grow" #:name "Grow" #:process-conforms-to "pspec-grow"
-                              #:has-duration (make-duration 1 "hours")))
+                              #:has-duration (make-duration 1 %effort-unit)))
       ($ rs 'add-recipe-flow
          (make-recipe-flow #:id "rf-grow-work" #:action 'work #:resource-conforms-to "spec-labor"
-                           #:effort-quantity (make-measure 1 "hours") #:recipe-input-of "rp-grow"))
+                           #:effort-quantity (make-measure 1 %effort-unit) #:recipe-input-of "rp-grow"))
       ($ rs 'add-recipe-flow
          (make-recipe-flow #:id "rf-grow-out" #:action 'produce #:resource-conforms-to "spec-wheat"
                            #:resource-quantity (make-measure 1 "kg") #:recipe-output-of "rp-grow"))

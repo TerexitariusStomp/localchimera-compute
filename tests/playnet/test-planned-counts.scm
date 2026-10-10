@@ -26,6 +26,7 @@
 (chdir %project-root)
 
 (add-to-load-path "module")
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules ((playnet wire rows) #:select (plain-reply))   ; a door's rows, read back as alists
              (playnet test harness))
 (use-modules (goblins)
@@ -62,7 +63,7 @@
                 '("ada" "bob" "cyd")))
     ($ ($ scope 'recipe-store) 'add-resource-spec
        (make-resource-specification #:id "spec-bin" #:name "Storage bin"
-                                    #:resource-classified-as '("container") #:default-unit-of-resource "each" #:default-unit-of-effort "hours"
+                                    #:resource-classified-as '("container") #:default-unit-of-resource %count-unit #:default-unit-of-effort %effort-unit
                                     #:keep-in-place #t))
     ;; the inventory shows what conforms to a spec the recipes know
     (for-each (lambda (spec)
@@ -89,9 +90,9 @@
                                #:accounting-quantity (make-measure qty unit) #:onhand-quantity (make-measure qty unit)
                                #:current-location place #:primary-accountable owner #:custodian-scope "org:commune" #:contained-in in)))
 
-(seed! "bin/1"      "the jar bin" "spec-bin" 1.0  "each" "org:commune" "place:shelf" #f)
-(seed! "bin/1/jam"  "plum jam"    "jam"      12.0 "each" "org:commune" "place:shelf" "bin/1")
-(seed! "bin/1/lids" "lids"        "lid"      30.0 "each" "org:commune" "place:shelf" "bin/1")
+(seed! "bin/1"      "the jar bin" "spec-bin" 1.0  %count-unit "org:commune" "place:shelf" #f)
+(seed! "bin/1/jam"  "plum jam"    "jam"      12.0 %count-unit "org:commune" "place:shelf" "bin/1")
+(seed! "bin/1/lids" "lids"        "lid"      30.0 %count-unit "org:commune" "place:shelf" "bin/1")
 (seed! "rice"       "rice"        "rice"     40.0 "kg"   "ada"         "place:pantry" #f)
 
 (check-pred "setup: service spawned" svc)
@@ -197,7 +198,7 @@
 (display "\n── 4. counting on the commitment ──\n")
 
 (check-pred "a stock outside the target is another count"
-            (err (call 'count-stock "org:commune" rice-counter "bin/1/jam" 12.0 "each"
+            (err (call 'count-stock "org:commune" rice-counter "bin/1/jam" 12.0 %count-unit
                        "stated" "" "" (commitment-id cmt))))
 (check-pred "a commitment is its counter's alone"
             (err (call 'count-stock "org:commune" "ada" "rice" 40.0 "kg"
@@ -246,11 +247,11 @@
                       (ps 'all-commitments)))
 (check-pred "the bin's count is a commitment" bin-cmt)
 
-(define c1 (call 'count-stock "org:commune" bin-counter "bin/1" 1.0 "each"
+(define c1 (call 'count-stock "org:commune" bin-counter "bin/1" 1.0 %count-unit
                  "label" "" "" (commitment-id bin-cmt)))
-(define c2 (call 'count-stock "org:commune" bin-counter "bin/1/jam" 11.0 "each"
+(define c2 (call 'count-stock "org:commune" bin-counter "bin/1/jam" 11.0 %count-unit
                  "label" "" "" (commitment-id bin-cmt)))
-(define c3 (call 'count-stock "org:commune" bin-counter "bin/1/lids" 30.0 "each"
+(define c3 (call 'count-stock "org:commune" bin-counter "bin/1/lids" 30.0 %count-unit
                  "label" "" "" (commitment-id bin-cmt)))
 (check-pred "the bin and each thing in it is counted on the one commitment"
             (and (ok? c1) (ok? c2) (ok? c3)))
@@ -270,7 +271,7 @@
 
 (display "\n── 6. an undisclosed count ──\n")
 
-(seed! "tools" "the tool chest" "tools" 1.0 "each" "org:commune" "place:shed" #f)
+(seed! "tools" "the tool chest" "tools" 1.0 %count-unit "org:commune" "place:shed" #f)
 (define hid (call 'plan-counts "org:commune" "ada" "undisclosed" "bob" 5))
 (check "the undisclosed count is laid, to the counter named"
        (map (lambda (o) (assq-ref o 'counter)) (field hid 'laid)) '("bob"))

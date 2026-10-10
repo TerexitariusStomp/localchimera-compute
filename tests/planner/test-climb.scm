@@ -10,6 +10,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-climb.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (srfi srfi-1) (ice-9 format)
              (playnet planner solve engine) (playnet planner vf schemas)
              (playnet planner knowledge dsl shorthand)
@@ -28,14 +29,14 @@
         (make-spatial-thing #:id "high" #:name "High" #:lat 52.0 #:long 13.1 #:alt rise)))
 (define procs (list (rp* "haul" "Haul the crate")))
 (define flows
-  (list (pickup-flow "h/in" "crate" 1.0 "each" "haul")
-        (dropoff-flow "h/out" "crate" 1.0 "each" "haul")
+  (list (pickup-flow "h/in" "crate" 1.0 %count-unit "haul")
+        (dropoff-flow "h/out" "crate" 1.0 %count-unit "haul")
         (consume* "h/fuel" "fuel" 0.1 "haul" "litre")     ; spent over DISTANCE: a tenth of a litre per crate-kilometre
         (wk* "h/drive" "driving" 0.02 "haul")))           ; spent over TIME: a driver's hours per crate-kilometre
 (define (resources at)                  ; the crate, the fuel and the driver stand at AT
-  (list (er "crate1" "crate" #f #:place at #:qty 1.0 #:unit "each")
+  (list (er "crate1" "crate" #f #:place at #:qty 1.0 #:unit %count-unit)
         (er "fuel1" "fuel" #f #:place at #:qty 100.0 #:unit "litre")
-        (er "drv" "driving" "ada" #:place at #:qty 1.0 #:unit "hours")))
+        (er "drv" "driving" "ada" #:place at #:qty 1.0 #:unit %effort-unit)))
 
 ;; the fuel coefficient on the haul column from FROM to TO, litres per crate hauled
 (define (fuel-coefficient rise from to)

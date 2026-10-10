@@ -13,6 +13,7 @@
 
 ;; Infrastructure (occupied during use, released after).
 (define-module (playnet planner knowledge recipes infrastructure)
+  #:use-module ((playnet utils units) #:select (%count-unit %effort-unit))
   #:use-module (playnet planner vf schemas)
   #:use-module (goblins)
   #:export (infra-compute-spec infra-memory-spec infra-storage-spec
@@ -43,12 +44,12 @@
 (define infra-transcript-spec
   (make-resource-specification
     #:id "spec:transcript" #:name "Transcript"
-    #:resource-classified-as '("digital" "text") #:default-unit-of-resource "each"))
+    #:resource-classified-as '("digital" "text") #:default-unit-of-resource %count-unit))
 
 (define infra-dataset-spec
   (make-resource-specification
     #:id "spec:dataset" #:name "Dataset"
-    #:resource-classified-as '("digital" "data") #:default-unit-of-resource "each"))
+    #:resource-classified-as '("digital" "data") #:default-unit-of-resource %count-unit))
 
 (define infrastructure-specs
   (list infra-compute-spec infra-memory-spec infra-storage-spec
@@ -72,7 +73,7 @@
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp:transcribe" #:name "Transcribe audio"
                           #:process-conforms-to "pspec:transcribe"
-                          #:has-duration (make-duration 1 "hours")))
+                          #:has-duration (make-duration 1 %effort-unit)))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf:compute-in" #:action 'use #:resource-conforms-to "spec:compute"
                        #:resource-quantity (make-measure 4 "cpu-hours")
@@ -83,7 +84,7 @@
                        #:recipe-input-of "rp:transcribe"))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf:transcript-out" #:action 'produce #:resource-conforms-to "spec:transcript"
-                       #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp:transcribe"))
+                       #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp:transcribe"))
   ($ recipe-store 'add-recipe
      (make-recipe #:id "recipe:transcribe" #:name "Audio Transcription"
                   #:primary-output "spec:transcript" #:recipe-processes (list "rp:transcribe")))
@@ -93,7 +94,7 @@
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp:replicate" #:name "Replicate dataset"
                           #:process-conforms-to "pspec:replicate"
-                          #:has-duration (make-duration 2 "hours")))
+                          #:has-duration (make-duration 2 %effort-unit)))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf:bw-in" #:action 'use #:resource-conforms-to "spec:bandwidth"
                        #:resource-quantity (make-measure 10 "GB")
@@ -104,7 +105,7 @@
                        #:recipe-input-of "rp:replicate"))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf:dataset-out" #:action 'produce #:resource-conforms-to "spec:dataset"
-                       #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp:replicate"))
+                       #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp:replicate"))
   ($ recipe-store 'add-recipe
      (make-recipe #:id "recipe:replicate" #:name "Data Replication"
                   #:primary-output "spec:dataset" #:recipe-processes (list "rp:replicate"))))

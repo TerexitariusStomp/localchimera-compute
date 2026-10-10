@@ -15,6 +15,7 @@
 ;;; Run: tools/own-ccache.sh guile --no-auto-compile -q -L module tests/planner/test-adjustment.scm
 
 (add-to-load-path "module")
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness)
              (playnet planner vf schemas)
              (playnet planner observation adjustment))
@@ -37,14 +38,14 @@
 (display "\n── 2. the event ──\n")
 
 (define raised
-  (adjustment-event "e1" "bin/1" "jam" 2.5 "each"
+  (adjustment-event "e1" "bin/1" "jam" 2.5 %count-unit
                     #:provider "ada" #:receiver "ada" #:process "count:stated"
                     #:at "place:shelf" #:when "2026-10-01T09:00:00Z" #:created "2026-10-01T09:00:01Z"
                     #:note "count stated: 12.5 each" #:in-scope-of '("org:commune")
                     #:classified-as '("evidence:x")))
 (check "a difference above nothing is a raise" (economic-event-action raised) 'raise)
 (check "of its size" (measure-has-numerical-value (economic-event-resource-quantity raised)) 2.5)
-(check "in the stock's unit" (measure-has-unit (economic-event-resource-quantity raised)) "each")
+(check "in the stock's unit" (measure-has-unit (economic-event-resource-quantity raised)) %count-unit)
 (check "on the stock counted" (economic-event-resource-inventoried-as raised) "bin/1")
 (check "the technique is its process" (economic-event-output-of raised) "count:stated")
 (check "the spec rides it" (economic-event-resource-conforms-to raised) "jam")
@@ -58,14 +59,14 @@
 (check "its classifications" (economic-event-resource-classified-as raised) '("evidence:x"))
 (check "it fulfils nothing" (economic-event-fulfills raised) #f)
 
-(define lowered (adjustment-event "e2" "bin/1" "jam" -1.5 "each"))
+(define lowered (adjustment-event "e2" "bin/1" "jam" -1.5 %count-unit))
 (check "a difference below nothing is a lower" (economic-event-action lowered) 'lower)
 (check "of its size, never negative" (measure-has-numerical-value (economic-event-resource-quantity lowered)) 1.5)
 (check "what the caller left out is absent" (economic-event-output-of lowered) #f)
 
-(check "an agreeing count lands no event" (adjustment-event "e3" "bin/1" "jam" 0.0 "each") #f)
-(check "…nor one inside the tolerance" (adjustment-event "e4" "bin/1" "jam" (/ %count-tolerance 10) "each") #f)
-(check "…nor a figure that is no number" (adjustment-event "e5" "bin/1" "jam" #f "each") #f)
+(check "an agreeing count lands no event" (adjustment-event "e3" "bin/1" "jam" 0.0 %count-unit) #f)
+(check "…nor one inside the tolerance" (adjustment-event "e4" "bin/1" "jam" (/ %count-tolerance 10) %count-unit) #f)
+(check "…nor a figure that is no number" (adjustment-event "e5" "bin/1" "jam" #f %count-unit) #f)
 
 (display "\n── 3. the places that count ──\n")
 

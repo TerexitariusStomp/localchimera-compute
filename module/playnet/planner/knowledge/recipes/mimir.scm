@@ -49,6 +49,7 @@
 ;;; pre-design — hence `mimir-whole-acts`.
 
 (define-module (playnet planner knowledge recipes mimir)
+  #:use-module ((playnet utils units) #:select (%count-unit %effort-unit))
   #:use-module (playnet planner vf schemas)
   #:use-module (goblins)
   #:export (mimir-whole-acts seed-mimir-specs seed-mimir-recipes))
@@ -63,25 +64,25 @@
 ;; skill so the planner's skill-matcher can staff it (meeting.scm's pattern).
 (define (mimir-work-flow id process-id hours)
   (make-recipe-flow #:id id #:action 'work #:resource-conforms-to "spec:mimir-facilitator-h"
-                    #:effort-quantity (make-measure hours "hours") #:recipe-input-of process-id))
+                    #:effort-quantity (make-measure hours %effort-unit) #:recipe-input-of process-id))
 
 ;; A `use` flow for the AI co-facilitator: one instance engaged for HOURS.
 ;; Both quantities matter (count engaged + duration) per the recipes skill's
 ;; oven lesson — Mímir is a durable, not consumed by being consulted.
 (define (mimir-agent-use-flow id process-id hours)
   (make-recipe-flow #:id id #:action 'use #:resource-conforms-to "spec:mimir-agent"
-                    #:resource-quantity (make-measure 1 "each") #:effort-quantity (make-measure hours "hours")
+                    #:resource-quantity (make-measure 1 %count-unit) #:effort-quantity (make-measure hours %effort-unit)
                     #:recipe-input-of process-id))
 
 ;; A `consume` flow: one draft/prior-stage artifact into PROCESS-ID.
 (define (mimir-consume-flow id spec-id process-id)
   (make-recipe-flow #:id id #:action 'consume #:resource-conforms-to spec-id
-                    #:resource-quantity (make-measure 1 "each") #:recipe-input-of process-id))
+                    #:resource-quantity (make-measure 1 %count-unit) #:recipe-input-of process-id))
 
 ;; A `produce` flow: one artifact out of PROCESS-ID, primary for that process.
 (define (mimir-produce-flow id spec-id process-id)
   (make-recipe-flow #:id id #:action 'produce #:resource-conforms-to spec-id
-                    #:resource-quantity (make-measure 1 "each") #:recipe-output-of process-id #:is-primary #t))
+                    #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of process-id #:is-primary #t))
 
 (define (seed-mimir-specs recipe-store)
   "Add Mímir's resource specifications: the facilitator-hour and AI-agent
@@ -114,7 +115,7 @@
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-mimir-predesign" #:name "Pre-Design Interview"
                           #:process-conforms-to "pspec-mimir-predesign" #:process-classified-as '("tag:facilitation")
-                          #:has-duration (make-duration 2 "hours") #:sequence-group 0))
+                          #:has-duration (make-duration 2 %effort-unit) #:sequence-group 0))
   ($ recipe-store 'add-recipe-flow (mimir-work-flow "rf-mimir-predesign-work" "rp-mimir-predesign" 2))
   ($ recipe-store 'add-recipe-flow (mimir-agent-use-flow "rf-mimir-predesign-agent" "rp-mimir-predesign" 2))
   ($ recipe-store 'add-recipe-flow
@@ -127,7 +128,7 @@
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-mimir-gate-predesign" #:name "Self-Audit of the Pre-Design"
                           #:process-conforms-to "pspec-mimir-gate-predesign" #:process-classified-as '("tag:facilitation")
-                          #:has-duration (make-duration 0.1 "hours") #:sequence-group 1))
+                          #:has-duration (make-duration 0.1 %effort-unit) #:sequence-group 1))
   ($ recipe-store 'add-recipe-flow
      (mimir-consume-flow "rf-mimir-gate-predesign-in" "spec:mimir-predesign-draft" "rp-mimir-gate-predesign"))
   ($ recipe-store 'add-recipe-flow (mimir-agent-use-flow "rf-mimir-gate-predesign-agent" "rp-mimir-gate-predesign" 0.1))
@@ -140,7 +141,7 @@
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-mimir-design" #:name "Design the Movement and Format"
                           #:process-conforms-to "pspec-mimir-design" #:process-classified-as '("tag:facilitation")
-                          #:has-duration (make-duration 3 "hours") #:sequence-group 2))
+                          #:has-duration (make-duration 3 %effort-unit) #:sequence-group 2))
   ($ recipe-store 'add-recipe-flow
      (mimir-consume-flow "rf-mimir-design-predesign-in" "spec:mimir-predesign" "rp-mimir-design"))
   ($ recipe-store 'add-recipe-flow (mimir-work-flow "rf-mimir-design-work" "rp-mimir-design" 3))
@@ -158,7 +159,7 @@
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-mimir-instrument" #:name "Draft Questionnaire/Form"
                           #:process-conforms-to "pspec-mimir-instrument" #:process-classified-as '("tag:facilitation")
-                          #:has-duration (make-duration 1.5 "hours") #:sequence-group 2))
+                          #:has-duration (make-duration 1.5 %effort-unit) #:sequence-group 2))
   ($ recipe-store 'add-recipe-flow (mimir-work-flow "rf-mimir-instrument-work" "rp-mimir-instrument" 1.5))
   ($ recipe-store 'add-recipe-flow (mimir-agent-use-flow "rf-mimir-instrument-agent" "rp-mimir-instrument" 1.5))
   ($ recipe-store 'add-recipe-flow
@@ -170,7 +171,7 @@
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-mimir-gate-design" #:name "Self-Audit of the Session Design"
                           #:process-conforms-to "pspec-mimir-gate-design" #:process-classified-as '("tag:facilitation")
-                          #:has-duration (make-duration 0.1 "hours") #:sequence-group 3))
+                          #:has-duration (make-duration 0.1 %effort-unit) #:sequence-group 3))
   ($ recipe-store 'add-recipe-flow
      (mimir-consume-flow "rf-mimir-gate-design-in" "spec:mimir-session-design-draft" "rp-mimir-gate-design"))
   ($ recipe-store 'add-recipe-flow (mimir-agent-use-flow "rf-mimir-gate-design-agent" "rp-mimir-gate-design" 0.1))
@@ -183,7 +184,7 @@
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-mimir-sequence" #:name "Verify Prerequisites and Energy Curve"
                           #:process-conforms-to "pspec-mimir-sequence" #:process-classified-as '("tag:facilitation")
-                          #:has-duration (make-duration 1 "hours") #:sequence-group 4))
+                          #:has-duration (make-duration 1 %effort-unit) #:sequence-group 4))
   ($ recipe-store 'add-recipe-flow
      (mimir-consume-flow "rf-mimir-sequence-design-in" "spec:mimir-session-design" "rp-mimir-sequence"))
   ($ recipe-store 'add-recipe-flow (mimir-work-flow "rf-mimir-sequence-work" "rp-mimir-sequence" 1))
@@ -198,7 +199,7 @@
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-mimir-gate-sequence" #:name "Self-Audit of the Agenda"
                           #:process-conforms-to "pspec-mimir-gate-sequence" #:process-classified-as '("tag:facilitation")
-                          #:has-duration (make-duration 0.1 "hours") #:sequence-group 5))
+                          #:has-duration (make-duration 0.1 %effort-unit) #:sequence-group 5))
   ($ recipe-store 'add-recipe-flow
      (mimir-consume-flow "rf-mimir-gate-sequence-in" "spec:mimir-agenda-draft" "rp-mimir-gate-sequence"))
   ($ recipe-store 'add-recipe-flow (mimir-agent-use-flow "rf-mimir-gate-sequence-agent" "rp-mimir-gate-sequence" 0.1))
@@ -212,7 +213,7 @@
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-mimir-closing" #:name "Close the Case and Consolidate the Log"
                           #:process-conforms-to "pspec-mimir-closing" #:process-classified-as '("tag:facilitation")
-                          #:has-duration (make-duration 1 "hours") #:sequence-group 0))
+                          #:has-duration (make-duration 1 %effort-unit) #:sequence-group 0))
   ($ recipe-store 'add-recipe-flow
      (mimir-consume-flow "rf-mimir-closing-handback-in" "spec:mimir-handback" "rp-mimir-closing"))
   ($ recipe-store 'add-recipe-flow (mimir-work-flow "rf-mimir-closing-work" "rp-mimir-closing" 1))

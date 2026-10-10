@@ -83,6 +83,7 @@
 ;;; (governance/socialization.scm `project-socialized-custody`).
 
 (define-module (playnet planner knowledge recipes flat-key)
+  #:use-module ((playnet utils units) #:select (%count-unit %effort-unit))
   #:use-module (playnet planner vf schemas)
   #:use-module (playnet planner knowledge dsl shorthand)
   #:use-module (playnet planner knowledge dsl world)
@@ -98,16 +99,16 @@
 
 (define flat-key-world
   (world
-   #:specs (list (spec* "spec-flat-key" "Flat key" "each")
-                 (spec* "spec-flat-access" "An opening of the flat's door" "each")
-                 (spec* "spec-oven" "Oven" "each")
-                 (spec* "spec-oven-shift" "A shift at the oven" "each")
-                 (spec* "spec-key-blank" "Key blank" "each")
-                 (spec* "spec-key-cutter" "Key-cutting machine" "each")
-                 (spec* "spec-key-swarf" "Key swarf" "each")
-                 (spec* "skill-bake" "Bake labour" "hours")
-                 (spec* "skill-errand" "Errand labour" "hours")
-                 (spec* "skill-locksmith" "Locksmith labour" "hours"))
+   #:specs (list (spec* "spec-flat-key" "Flat key" %count-unit)
+                 (spec* "spec-flat-access" "An opening of the flat's door" %count-unit)
+                 (spec* "spec-oven" "Oven" %count-unit)
+                 (spec* "spec-oven-shift" "A shift at the oven" %count-unit)
+                 (spec* "spec-key-blank" "Key blank" %count-unit)
+                 (spec* "spec-key-cutter" "Key-cutting machine" %count-unit)
+                 (spec* "spec-key-swarf" "Key swarf" %count-unit)
+                 (spec* "skill-bake" "Bake labour" %effort-unit)
+                 (spec* "skill-errand" "Errand labour" %effort-unit)
+                 (spec* "skill-locksmith" "Locksmith labour" %effort-unit))
    #:procs (list (car key-carry)
                  (rp* "rp-flat-unlock" "Open the flat's door" 0.1
                       #:tags '("tag:housing" "whole-count"))
@@ -122,23 +123,23 @@
             (use* "rf-unlock-key" "spec-flat-key" "rp-flat-unlock" 0.1 #:qty 1)
             (wk* "rf-unlock-work" "skill-errand" 0.1 "rp-flat-unlock")
             (make-recipe-flow #:id "rf-unlock-flat" #:action 'cite #:resource-conforms-to "spec-dwelling"
-                              #:resource-quantity (make-measure 1 "each")
+                              #:resource-quantity (make-measure 1 %count-unit)
                               #:recipe-input-of "rp-flat-unlock")
             (make-recipe-flow #:id "rf-unlock-out" #:action 'deliver-service #:resource-conforms-to "spec-flat-access"
-                              #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-flat-unlock" #:is-primary #t)
+                              #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-flat-unlock" #:is-primary #t)
             ;; the shift behind it
-            (consume* "rf-shift-access" "spec-flat-access" 1 "rp-flat-oven-shift" "each")
+            (consume* "rf-shift-access" "spec-flat-access" 1 "rp-flat-oven-shift" %count-unit)
             (use* "rf-shift-oven" "spec-oven" "rp-flat-oven-shift" 2.0 #:qty 1)
             (wk* "rf-shift-work" "skill-bake" 2.0 "rp-flat-oven-shift")
             (make-recipe-flow #:id "rf-shift-out" #:action 'deliver-service #:resource-conforms-to "spec-oven-shift"
-                              #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-flat-oven-shift" #:is-primary #t)
+                              #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-flat-oven-shift" #:is-primary #t)
             ;; the copy
             (use* "rf-copy-key" "spec-flat-key" "rp-flat-key-copy" 0.25 #:qty 1)
             (use* "rf-copy-cutter" "spec-key-cutter" "rp-flat-key-copy" 0.25 #:qty 1)
-            (consume* "rf-copy-blank" "spec-key-blank" 1 "rp-flat-key-copy" "each")
+            (consume* "rf-copy-blank" "spec-key-blank" 1 "rp-flat-key-copy" %count-unit)
             (wk* "rf-copy-work" "skill-locksmith" 0.25 "rp-flat-key-copy")
-            (out* "rf-copy-out" "spec-flat-key" 1 "rp-flat-key-copy" "each")
-            (out* "rf-copy-swarf" "spec-key-swarf" 1 "rp-flat-key-copy" "each" #:primary #f)))
+            (out* "rf-copy-out" "spec-flat-key" 1 "rp-flat-key-copy" %count-unit)
+            (out* "rf-copy-swarf" "spec-key-swarf" 1 "rp-flat-key-copy" %count-unit #:primary #f)))
    #:recipes (list (make-recipe #:id "recipe-flat-key-carry" #:name "A flat key carried"
                                 #:primary-output "spec-flat-key" #:recipe-processes (list "rp-flat-key-carry"))
                    (make-recipe #:id "recipe-flat-access" #:name "An opened flat"

@@ -45,6 +45,7 @@
 ;;; Run: guile --no-auto-compile -L module/playnet/planner \
 ;;;        tests/planner/test-store-recipe.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet planner solve engine)
              (playnet planner vf schemas)
@@ -160,13 +161,13 @@
 
 (define legacy-spec
   (make-resource-specification #:id "silo-legacy" #:name "Silo (legacy tag)"
-    #:resource-classified-as '("container" "stationary") #:default-unit-of-resource "each"))
+    #:resource-classified-as '("container" "stationary") #:default-unit-of-resource %count-unit))
 (define field-spec
   (make-resource-specification #:id "silo-field" #:name "Silo (field)"
-    #:resource-classified-as '("container") #:default-unit-of-resource "each" #:keep-in-place #t))
+    #:resource-classified-as '("container") #:default-unit-of-resource %count-unit #:keep-in-place #t))
 (define mobile-spec
   (make-resource-specification #:id "van" #:name "Van"
-    #:resource-classified-as '("container") #:default-unit-of-resource "each"))
+    #:resource-classified-as '("container") #:default-unit-of-resource %count-unit))
 
 (check "a legacy \"stationary\" tag still lands as keep-in-place"
        (resource-spec-keep-in-place? legacy-spec))

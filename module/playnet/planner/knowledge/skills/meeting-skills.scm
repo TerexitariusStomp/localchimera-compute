@@ -9,14 +9,15 @@
 ;;; person/hours split.
 
 (define-module (playnet planner knowledge skills meeting-skills)
+  #:use-module ((playnet utils units) #:select (%effort-unit))
   #:use-module ((playnet planner knowledge skills skill-shorthand) #:select (skill*))
   #:export (%meeting-skills))
 
 (define %meeting-skills
   (list
    (skill* "spec:facilitation" "Facilitation" "chairing a meeting's agenda"
-           #:decay 0.0 #:regen 1.0 #:resource-unit "hours")
+           #:decay 0.0 #:regen 1.0 #:resource-unit %effort-unit)
    (skill* "spec:note-taking" "Note Taking" "recording a meeting's minutes"
-           #:decay 0.0 #:regen 1.0 #:resource-unit "hours")
+           #:decay 0.0 #:regen 1.0 #:resource-unit %effort-unit)
    (skill* "spec:participation" "Participation" "attending and contributing to a meeting"
-           #:decay 0.0 #:regen 1.0 #:resource-unit "hours")))
+           #:decay 0.0 #:regen 1.0 #:resource-unit %effort-unit)))

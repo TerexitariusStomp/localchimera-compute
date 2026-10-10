@@ -6,6 +6,7 @@
 ;;; Federation planner coordinates bottom-up, then lateral matching
 ;;; resolves cross-scope deficits.
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet deprecated planner))
 (use-modules (goblins)
@@ -45,7 +46,7 @@
 (define flour-spec (make-resource-specification #:id "spec-flour" #:name "Flour"
                                                 #:default-unit-of-resource "kg"))
 (define bread-spec (make-resource-specification #:id "spec-bread" #:name "Bread"
-                                                #:default-unit-of-resource "each"))
+                                                #:default-unit-of-resource %count-unit))
 
 (with-vat vat
   ;; Farm: grows wheat (no recipe — raw material)
@@ -64,7 +65,7 @@
     ($ rs 'add-resource-spec flour-spec)
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-grind" #:name "Grind"
-                            #:has-duration (make-duration 3 "hours")))
+                            #:has-duration (make-duration 3 %effort-unit)))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-wheat-in" #:action 'consume #:resource-conforms-to "spec-wheat"
                          #:resource-quantity (make-measure 10 "kg") #:recipe-input-of "rp-grind"))
@@ -85,13 +86,13 @@
     ($ rs 'add-resource-spec bread-spec)
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-bake" #:name "Bake"
-                            #:has-duration (make-duration 4 "hours")))
+                            #:has-duration (make-duration 4 %effort-unit)))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-flour-in" #:action 'consume #:resource-conforms-to "spec-flour"
                          #:resource-quantity (make-measure 5 "kg") #:recipe-input-of "rp-bake"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-bread-out" #:action 'produce #:resource-conforms-to "spec-bread"
-                         #:resource-quantity (make-measure 10 "each") #:recipe-output-of "rp-bake"))
+                         #:resource-quantity (make-measure 10 %count-unit) #:recipe-output-of "rp-bake"))
     ($ rs 'add-recipe (make-recipe #:id "recipe-bread" #:name "Bread" #:primary-output "spec-bread"
                                    #:recipe-processes (list "rp-bake")))
     ($ obs 'seed-resource
@@ -123,7 +124,7 @@
     ($ ps 'add-intent
        (make-intent #:id "i-bread-demand" #:action 'produce #:name "Need bread"
                     #:resource-conforms-to "spec-bread"
-                    #:resource-quantity (make-measure 30 "each") #:receiver "agent-bakery" #:due "2026-04-01T00:00:00Z"))
+                    #:resource-quantity (make-measure 30 %count-unit) #:receiver "agent-bakery" #:due "2026-04-01T00:00:00Z"))
 
     ;; Run planning
     (let ((result (plan-for-unit

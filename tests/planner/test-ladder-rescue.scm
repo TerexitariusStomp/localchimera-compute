@@ -21,6 +21,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-ladder-rescue.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet planner solve engine)
              (playnet planner vf schemas)
@@ -36,7 +37,7 @@
 (define flows (list (consume* "f-in" "mash" 1.0 "F") (out* "f-out" "brew" 1.0 "F") (wk* "f-w" "skill-f" 6.0 "F")
                     (consume* "b-in" "brew" 1.0 "B") (out* "b-out" "bottled" 1.0 "B") (wk* "b-w" "skill-b" 2.0 "B")))
 (define (held id spec q) (er id spec #f #:place PLACE #:qty q #:unit "kg"))
-(define (skill id sk who) (er id sk who #:place PLACE #:unit "each"))
+(define (skill id sk who) (er id sk who #:place PLACE #:unit %count-unit))
 (define agents (list (person* "fio" #:place PLACE #:window (all-week-window "00:00" "24:00"))
                      (person* "bo"  #:place PLACE #:window (all-week-window "00:00" "24:00"))))
 (define spatials (list (place* PLACE)))

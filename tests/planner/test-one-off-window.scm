@@ -11,6 +11,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-one-off-window.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet planner solve engine)
              (playnet planner vf schemas) (playnet planner beyond schedules)
@@ -22,7 +23,7 @@
       (begin (set! *fail* (+ *fail* 1)) (format #t "  ✗ ~a~%" name))))
 (define (near? a b tol) (< (abs (- a b)) tol))
 
-(define (res id window) (er id "oven" #f #:place "shop" #:unit "each" #:window window))
+(define (res id window) (er id "oven" #f #:place "shop" #:unit %count-unit #:window window))
 
 ;; a five-day horizon, one date per period
 (define DATES '("2026-03-12" "2026-03-13" "2026-03-14" "2026-03-15" "2026-03-16"))

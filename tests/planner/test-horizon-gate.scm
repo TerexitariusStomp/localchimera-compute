@@ -7,6 +7,7 @@
 ;;; BOTH doors — promote-to-commitment and accept-proposal — and installed on
 ;;; every scope by rewire-callbacks, so a fresh spawn-scope-root carries it.
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness)
              (playnet planner vf schemas)
              (playnet planner plan store)
@@ -24,14 +25,14 @@
 
 (define (work-intent id proc end)
   (make-intent #:id id #:action 'work #:input-of proc #:resource-conforms-to "skill-bake"
-               #:effort-quantity (make-measure 2.0 "hours") #:has-end end #:at-location "town" #:planned-within "plan-1"))
+               #:effort-quantity (make-measure 2.0 %effort-unit) #:has-end end #:at-location "town" #:planned-within "plan-1"))
 
 (define (raises? thunk) (catch #t (lambda () (thunk) #f) (lambda _ #t)))
 
 ;; the shape offer-work lays: a shift with BOTH ends stated
 (define (shift-intent id proc from until)
   (make-intent #:id id #:action 'work #:input-of proc #:resource-conforms-to "skill-bake"
-               #:effort-quantity (make-measure 2.0 "hours")
+               #:effort-quantity (make-measure 2.0 %effort-unit)
                #:has-beginning from #:has-end until #:at-location "town" #:planned-within "plan-1"))
 
 

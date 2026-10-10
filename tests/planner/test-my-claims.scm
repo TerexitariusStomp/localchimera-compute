@@ -6,6 +6,7 @@
 ;;; carries the good's crystallized SNLT, so the face prices nothing.
 ;;;
 ;;; Run:  guile -L module tests/planner/test-my-claims.scm
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules ((playnet wire rows) #:select (plain-reply))   ; a door's rows, read back as alists
              (playnet test harness)
              (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
@@ -24,13 +25,13 @@
            (svc (spawn ^planner-service (hashmap-set (hashmap) "s1" sr))))
       ($ rs 'add-recipe-process
          (make-recipe-process #:id "rp-bake" #:name "Bake" #:process-conforms-to "pspec-bake"
-                              #:has-duration (make-duration 3 "hours")))
+                              #:has-duration (make-duration 3 %effort-unit)))
       ($ rs 'add-recipe-flow
          (make-recipe-flow #:id "rf-bake-work" #:action 'work #:resource-conforms-to "spec-labor"
-                           #:effort-quantity (make-measure 3 "hours") #:recipe-input-of "rp-bake"))
+                           #:effort-quantity (make-measure 3 %effort-unit) #:recipe-input-of "rp-bake"))
       ($ rs 'add-recipe-flow
          (make-recipe-flow #:id "rf-bake-out" #:action 'produce #:resource-conforms-to "spec-bread"
-                           #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-bake"))
+                           #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-bake"))
       ($ rs 'add-recipe (make-recipe #:id "recipe-bread" #:name "Bread"
                                      #:primary-output "spec-bread"
                                      #:recipe-processes (list "rp-bake")))
@@ -38,7 +39,7 @@
       ($ obs 'record-event
          (make-economic-event #:id "ev-bread" #:action 'produce #:resource-inventoried-as "r-bread" #:resource-conforms-to "spec-bread"
            #:resource-classified-as (list "individually-claimable") #:provider "commune" #:receiver "commune"
-           #:resource-quantity (make-measure 10 "each") #:has-point-in-time "2026-03-02T12:00:00Z"))
+           #:resource-quantity (make-measure 10 %count-unit) #:has-point-in-time "2026-03-02T12:00:00Z"))
       (values svc obs))))
 
 (define (rows) (assq-ref (cdr (plain-reply ($ svc 'my-claims "s1" "ada"))) 'rows))
@@ -50,7 +51,7 @@
   (check "empty" (rows) '())
 
   (display "\n── a want stated, no plan yet: asked ──\n")
-  ($ svc 'declare-need "s1" "ada" "spec-bread" 3 "each" "town" "[]" "" "" "" "" "bread")
+  ($ svc 'declare-need "s1" "ada" "spec-bread" 3 %count-unit "town" "[]" "" "" "" "" "bread")
   (let ((r (row "asked")))
     (check "one row, asked"        (and r #t) #t)
     (check "…for bread, 3"         (and r (equal? (assq-ref r 'spec) "spec-bread") (= 3 (assq-ref r 'total))) #t)

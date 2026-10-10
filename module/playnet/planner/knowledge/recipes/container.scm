@@ -46,6 +46,7 @@
 ;;; at all when it happens once, ad hoc; `recipe-hold` is for when a scope
 ;;; wants that same shape to compile into a standing plan.
 (define-module (playnet planner knowledge recipes container)
+  #:use-module ((playnet utils units) #:select (%count-unit))
   #:use-module (playnet planner vf schemas)
   #:use-module (goblins)
   #:export (seed-container-specs))
@@ -56,5 +57,5 @@
   ($ recipe-store 'add-resource-spec
      (make-resource-specification
       #:id "spec-strongbox" #:name "Strongbox (lockable container)" #:image "🔒"
-      #:resource-classified-as '("custody" "container") #:default-unit-of-resource "each"
+      #:resource-classified-as '("custody" "container") #:default-unit-of-resource %count-unit
       #:keep-in-place #t)))

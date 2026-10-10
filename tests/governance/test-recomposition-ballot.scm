@@ -10,6 +10,7 @@
 ;;;   D. Wrong-spec ratification — three error branches: type mismatch,
 ;;;      spec mismatch, threshold not met.
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
 (use-modules (playnet governance auditor) (playnet governance credentials) (playnet governance scope) (playnet governance structural-invariants) (playnet keri acdc) (playnet keri acdc-store))
@@ -82,7 +83,7 @@
     ;; "no contributors NOW" rather than "no contributors at issue time").
     ($ store 'issue
        (make-work-event-credential
-        "EBLA" "alice" "B-evt-1" 4 "hour"
+        "EBLA" "alice" "B-evt-1" 4 %effort-unit
         #:timestamp "2026-04-26T10:00:00Z"))
     (check-pred "post-contributors: validator flags retroactively"
                 (not (recomposition-ratified? top)))
@@ -132,7 +133,7 @@
       ;; trigger the validator without ratification.
       ($ store 'issue
          (make-work-event-credential
-          "ECLA" "alice" "C-evt-1" 4 "hour"
+          "ECLA" "alice" "C-evt-1" 4 %effort-unit
           #:timestamp "2026-04-26T10:00:00Z"))
       ($ top 'admit-commune gtop "lb" lb 'ratification (cred-said rat-lb))
       ;; Both membership creds carry ratification edges.

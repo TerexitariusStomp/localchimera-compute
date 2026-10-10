@@ -18,6 +18,7 @@
 ;;;
 ;;; Run: guile -L module tests/planner/test-festival.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test scope)) ; mock-scope-root
 (use-modules (playnet test harness) (playnet planner knowledge recipes store) (playnet planner scope spatial-things) (playnet planner observation observer) (playnet planner vf schemas) (playnet planner scope live)
              (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1) (ice-9 format))
@@ -47,16 +48,16 @@
                                                #:default-unit-of-resource "meal")
                   (make-resource-specification #:id "cook" #:name "Cook"
                                                #:resource-classified-as '()
-                                               #:default-unit-of-resource "hours")))
+                                               #:default-unit-of-resource %effort-unit)))
   ($ rs 'add-recipe-process (make-recipe-process #:id "rp-serve" #:name "Serve Meal"
-                                                 #:has-duration (make-duration 0.001 "hours")))
+                                                 #:has-duration (make-duration 0.001 %effort-unit)))
   ($ rs 'add-recipe-flow (make-recipe-flow #:id "sv-in" #:action 'consume
                                            #:resource-conforms-to "produce"
                                            #:resource-quantity (make-measure 1.0 "kg")
                                            #:recipe-input-of "rp-serve"))
   ($ rs 'add-recipe-flow (make-recipe-flow #:id "sv-cook" #:action 'work
                                            #:resource-conforms-to "cook"
-                                           #:effort-quantity (make-measure 0.001 "hours")
+                                           #:effort-quantity (make-measure 0.001 %effort-unit)
                                            #:recipe-input-of "rp-serve"))
   ($ rs 'add-recipe-flow (make-recipe-flow #:id "sv-out" #:action 'produce
                                            #:resource-conforms-to "meal"
@@ -74,13 +75,13 @@
         (make-recipe-flow #:id "sv-in"  #:action 'consume #:resource-conforms-to "produce"
                           #:resource-quantity (make-measure 1.0 "kg") #:recipe-input-of "rp-serve")
         (make-recipe-flow #:id "sv-cook" #:action 'work #:resource-conforms-to "cook"
-                          #:effort-quantity (make-measure 0.001 "hours")
+                          #:effort-quantity (make-measure 0.001 %effort-unit)
                           #:recipe-input-of "rp-serve")))
 (define serve-recipes (list (make-recipe #:id "recipe-serve" #:name "Serve" #:primary-output "meal"
                                          #:recipe-processes '() #:recipe-exchanges '())))
 (define serve-specs (list (make-resource-specification #:id "cook" #:name "Cook"
                                                        #:resource-classified-as '()
-                                                       #:default-unit-of-effort "hours")))
+                                                       #:default-unit-of-effort %effort-unit)))
 (define (chain-for r) (if (equal? r "recipe-serve") serve-procs '()))
 
 ;; jurisdiction Y demands a gathering permit; X has no rule.

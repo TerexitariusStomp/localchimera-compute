@@ -10,6 +10,7 @@
 ;;;
 ;;; Run:  guile -q -L module tests/planner/test-sky-reading-live.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness) (playnet planner scope root) (playnet planner vf schemas) (playnet planner vf schemas)
              (playnet planner knowledge dsl shorthand) (playnet planner knowledge dsl world)
              ((playnet planner knowledge catalogues substances) #:select (sunlight-for insolation-kwh-per-m2-day area-m2))
@@ -23,7 +24,7 @@
   "A hectare under the June sun at 52.5° north, soil and a farmer: grain bounded by the light."
   (world-sky
    (world #:specs (list (spec* "land" "Land" "ha" #:keep-in-place #t) (spec* "soil-n" "Soil N" "kg")
-                        (spec* "grain" "Grain" "kg") (spec* "skill-farm" "Farm labour" "hours"))
+                        (spec* "grain" "Grain" "kg") (spec* "skill-farm" "Farm labour" %effort-unit))
           #:procs (list (rp* "grow" "Grow" 1.0))
           #:flows (list (consume* "g1" "soil-n" 0.05 "grow") (out* "g2" "grain" 1.0 "grow") (wk* "g3" "skill-farm" 0.001 "grow"))
           #:recipes (list (make-recipe #:id "r-grow" #:name "Grain" #:primary-output "grain"

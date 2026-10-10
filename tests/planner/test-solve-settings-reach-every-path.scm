@@ -11,6 +11,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-solve-settings-reach-every-path.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness) (playnet test scope)
              (playnet planner vf schemas) (playnet planner scope live)
              (goblins) (goblins utils hashmap)
@@ -22,7 +23,7 @@
 (define procs (list (make-recipe-process #:id "bake" #:name "Bake")))
 (define flows
   (list (make-recipe-flow #:id "bw" #:action 'work #:resource-conforms-to "skill-bake"
-                          #:effort-quantity (make-measure 1.0 "hours") #:recipe-input-of "bake")
+                          #:effort-quantity (make-measure 1.0 %effort-unit) #:recipe-input-of "bake")
         (make-recipe-flow #:id "bo" #:action 'produce #:resource-conforms-to "bread"
                           #:resource-quantity (make-measure 10.0 "kg") #:recipe-output-of "bake" #:is-primary #t)))
 (define recipes (list (make-recipe #:id "bake-recipe" #:name "Bake" #:primary-output "bread" #:recipe-processes (list "bake"))))

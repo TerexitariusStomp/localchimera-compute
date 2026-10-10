@@ -31,6 +31,7 @@
 ;;;
 ;;; Run: guile -L module tests/planner/test-festival-reproduction.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test scope)) ; mock-scope-root
 (use-modules (playnet test harness) (playnet planner knowledge recipes store) (playnet planner scope spatial-things) (playnet planner observation observer) (playnet planner vf schemas) (srfi srfi-1) (playnet planner scope live)
              (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1) (ice-9 format))
@@ -81,7 +82,7 @@
 (define (seed-grow rs)                            ; the REAL recipes, for the decorate
   ($ rs 'add-resource-spec (make-resource-specification #:id "skill-grow" #:name "Grow"
                                                         #:resource-classified-as '()
-                                                        #:default-unit-of-resource "hours"))
+                                                        #:default-unit-of-resource %effort-unit))
   (for-each
    (lambda (food)
      ($ rs 'add-resource-spec
@@ -90,11 +91,11 @@
                                      #:default-unit-of-resource "kg"))
      (let ((pid (grow-id food)))
        ($ rs 'add-recipe-process (make-recipe-process #:id pid #:name (string-append "Grow " food)
-                                                      #:has-duration (make-duration 0.001 "hours")
+                                                      #:has-duration (make-duration 0.001 %effort-unit)
                                                       #:sequence-group 0))
        ($ rs 'add-recipe-flow (make-recipe-flow #:id (string-append pid "-w") #:action 'work
                                                 #:resource-conforms-to "skill-grow"
-                                                #:effort-quantity (make-measure 0.1 "hours")
+                                                #:effort-quantity (make-measure 0.1 %effort-unit)
                                                 #:recipe-input-of pid))
        ($ rs 'add-recipe-flow (make-recipe-flow #:id (string-append pid "-o") #:action 'produce
                                                 #:resource-conforms-to food
@@ -112,14 +113,14 @@
 (define (mock-grow food)
   (let ((pid (grow-id food)))
     (cons (make-recipe-process #:id pid #:name (string-append "Grow " food)
-                               #:has-duration (make-duration 0.001 "hours") #:sequence-group 0)
+                               #:has-duration (make-duration 0.001 %effort-unit) #:sequence-group 0)
           (list (make-recipe-flow #:id (string-append pid "-o") #:action 'produce
                                   #:resource-conforms-to food
                                   #:resource-quantity (if (equal? food "salt") (make-measure 100.0 "g") (make-measure 1.0 "kg"))
                                   #:recipe-output-of pid #:is-primary #t)
                 (make-recipe-flow #:id (string-append pid "-w") #:action 'work
                                   #:resource-conforms-to "skill-grow"
-                                  #:effort-quantity (make-measure 0.1 "hours") #:recipe-input-of pid)
+                                  #:effort-quantity (make-measure 0.1 %effort-unit) #:recipe-input-of pid)
                 (make-recipe-flow #:id (string-append pid "-s") #:action 'consume
                                   #:resource-conforms-to "seed"
                                   #:resource-quantity (make-measure 1.0 "kg") #:recipe-input-of pid)))))
@@ -132,7 +133,7 @@
                                                       #:recipe-exchanges '())) menu))
 (define grow-specs (list (make-resource-specification #:id "skill-grow" #:name "Grow"
                                                       #:resource-classified-as '()
-                                                      #:default-unit-of-effort "hours")
+                                                      #:default-unit-of-effort %effort-unit)
                          (make-resource-specification #:id "seed" #:name "Seed"
                                                       #:resource-classified-as '()
                                                       #:default-unit-of-effort "kg")))

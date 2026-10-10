@@ -18,6 +18,7 @@
 ;;; Run: tools/own-ccache.sh guile --no-auto-compile -q -L module tests/planner/test-counts.scm
 
 (add-to-load-path "module")
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness)
              (playnet planner vf schemas)
              (playnet planner formulas counting)
@@ -29,7 +30,7 @@
 
 (display "\n── 1. what a count event is ──\n")
 
-(define adj (adjustment-event "evt-count-1" "bin/1" "jam" 2.0 "each"
+(define adj (adjustment-event "evt-count-1" "bin/1" "jam" 2.0 %count-unit
                               #:provider "ada" #:receiver "ada" #:process "count:stated"))
 (define rec (count-record-event "evt-count-1" "bin/1" "count-record"
                                 #:provider "ada" #:process "count:stated"
@@ -37,7 +38,7 @@
                                 #:created "2026-10-01T09:00:01Z" #:fulfills "cmt-9"
                                 #:note "count stated" #:in-scope-of '("org:commune")
                                 #:classified-as '("evidence:sha256:x")))
-(define plain (adjustment-event "evt-9" "bin/1" "jam" 2.0 "each"
+(define plain (adjustment-event "evt-9" "bin/1" "jam" 2.0 %count-unit
                                 #:provider "ada" #:receiver "ada" #:process "ride.ada.walk"))
 
 (check-pred "an adjustment of a count is a part of one" (count-event? adj))

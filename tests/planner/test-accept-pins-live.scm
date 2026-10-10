@@ -7,6 +7,7 @@
 ;;; #:pins — hand-decided columns the solve treats as facts. Fixture = the
 ;;; bread chain of test-live-wiring, mocked stores in a vat.
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness)
              (playnet planner vf schemas) (srfi srfi-11)
              (playnet planner scope live)
@@ -19,12 +20,12 @@
 
 (define bake-accept
   (make-commitment #:id "cmt-ada-bake" #:action 'work #:input-of "bake" #:resource-conforms-to "skill-bake"
-                   #:effort-quantity (make-measure 2.0 "hours") #:provider "ada" #:at-location "town"))
+                   #:effort-quantity (make-measure 2.0 %effort-unit) #:provider "ada" #:at-location "town"))
 ;; a provider-only labour commitment (no process) — the class the live compile
 ;; names on stderr and leaves out, without harming the accepts that map.
 (define no-proc
   (make-commitment #:id "lc:other:ada" #:action 'work #:resource-conforms-to "skill-bake"
-                   #:effort-quantity (make-measure 1.0 "hours") #:provider "ada"))
+                   #:effort-quantity (make-measure 1.0 %effort-unit) #:provider "ada"))
 
 (define (solve-with-store coms)
   (let ((vat (spawn-vat #:name "accept-pins")))

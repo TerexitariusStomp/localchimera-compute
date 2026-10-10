@@ -10,6 +10,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-labour-budget.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness)
              (playnet planner vf schemas) (playnet planner beyond schedules)
              (playnet planner federation uc-matching)
@@ -24,7 +25,7 @@
   (make-availability-window #f #f (list (make-day-schedule (list day) (list (make-time-range "09:00" "17:00")))) #f))
 (define* (wi id skill hours #:optional (day 'monday))
   (make-intent #:id id #:action 'work #:input-of "bakery" #:resource-conforms-to skill
-               #:effort-quantity (make-measure hours "hours") #:at-location "town" #:planned-within "plan-1" #:availability-window (on-day day)))
+               #:effort-quantity (make-measure hours %effort-unit) #:at-location "town" #:planned-within "plan-1" #:availability-window (on-day day)))
 (define (deploy intents pool . kw)
   (let ((prop (make-rising-proposal "prop-1" "plan-1" "scope-1" (map intent-id intents))))
     (car (apply greedy-deploy (list prop) `(("prop-1" ,@intents)) '(("prop-1" . 1)) pool kw))))
@@ -63,7 +64,7 @@
 (let* ((pool (pool-of (make-entry "alice" "bake" #f "town" 8.0)
                       (make-entry "alice" "mill" #f "town" 8.0)))
        (accept (make-commitment #:id "a1" #:action 'work #:input-of "bakery" #:resource-conforms-to "bake"
-                                #:effort-quantity (make-measure 6.0 "hours") #:provider "alice" #:at-location "town")))
+                                #:effort-quantity (make-measure 6.0 %effort-unit) #:provider "alice" #:at-location "town")))
   (check "alice has 6 hours assigned already: 4 more of milling does not fit"
          (length (deploy (list (wi "wi2" "mill" 4.0 (quote tuesday))) pool #:seed (list accept))) 0)
   (check "2 does"

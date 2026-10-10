@@ -16,6 +16,7 @@
 ;;;
 ;;; Run:  guile -L module/playnet/planner module/playnet/planner/transport-work-vs-service-test.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet planner solve engine)
              (playnet planner solve compile)
@@ -25,7 +26,7 @@
              ((playnet planner knowledge recipes transport) #:select (mode-recipe)))
 (define (svc id spec rq proc)(make-recipe-flow #:id id #:action 'deliver-service
                                                #:resource-conforms-to spec
-                                               #:resource-quantity (make-measure rq "each")
+                                               #:resource-quantity (make-measure rq %count-unit)
                                                #:recipe-output-of proc))
 (define (S x idx pred)(hash-fold (lambda (k i a)(if (pred k)(+ a (vector-ref x i)) a)) 0.0 idx))
 

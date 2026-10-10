@@ -16,6 +16,7 @@
 ;;;
 ;;; Run:  guile -L module -L tests tests/planner/test-rail-per-scope.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test scope)) ; mock-scope-root
 (use-modules ((playnet planner facts rail) #:select (spec-claimable? spec-rail))
              ((playnet planner observation account) #:select (resource-individually-claimable?)))
@@ -37,11 +38,11 @@
 (define a-procs (list (make-recipe-process #:id "ride" #:name "Ride")))
 (define a-flows
   (list (make-recipe-flow #:id "rw" #:action 'work #:resource-conforms-to "skill-ride"
-                          #:effort-quantity (make-measure 1.0 "hours") #:recipe-input-of "ride")
+                          #:effort-quantity (make-measure 1.0 %effort-unit) #:recipe-input-of "ride")
         (make-recipe-flow #:id "ri" #:action 'consume #:resource-conforms-to "fuel"
                           #:resource-quantity (make-measure 1.0 "kg") #:recipe-input-of "ride")
         (make-recipe-flow #:id "ru" #:action 'use #:resource-conforms-to "bike"
-                          #:resource-quantity (make-measure 1.0 "each") #:recipe-input-of "ride")   ; the ride USES the bike
+                          #:resource-quantity (make-measure 1.0 %count-unit) #:recipe-input-of "ride")   ; the ride USES the bike
         (make-recipe-flow #:id "ro" #:action 'produce #:resource-conforms-to "distance"
                           #:resource-quantity (make-measure 10.0 "km") #:recipe-output-of "ride"
                           #:is-primary #t)))
@@ -53,18 +54,18 @@
   (list (make-economic-resource #:id "sk-cy" #:conforms-to "skill-ride" #:classified-as '()
           #:accounting-quantity (make-measure 1.0 "kg") #:onhand-quantity (make-measure 1.0 "kg") #:current-location PLACE #:primary-accountable "cy")
         (make-economic-resource #:id "bike-A" #:name "A's bike" #:conforms-to "bike" #:classified-as '()
-          #:accounting-quantity (make-measure 1.0 "each") #:onhand-quantity (make-measure 1.0 "each") #:current-location PLACE #:primary-accountable "COMMUNE-A")))
+          #:accounting-quantity (make-measure 1.0 %count-unit) #:onhand-quantity (make-measure 1.0 %count-unit) #:current-location PLACE #:primary-accountable "COMMUNE-A")))
 
 ;; ── Commune B: her OWN "bike" is a final good — assembled, nothing of hers
 ;;    uses or consumes it further, so her OWN rail calls it INDIVIDUAL ──
 (define b-procs (list (make-recipe-process #:id "assemble" #:name "Assemble")))
 (define b-flows
   (list (make-recipe-flow #:id "aw" #:action 'work #:resource-conforms-to "skill-assemble"
-                          #:effort-quantity (make-measure 1.0 "hours") #:recipe-input-of "assemble")
+                          #:effort-quantity (make-measure 1.0 %effort-unit) #:recipe-input-of "assemble")
         (make-recipe-flow #:id "ai" #:action 'consume #:resource-conforms-to "parts"
-                          #:resource-quantity (make-measure 1.0 "each") #:recipe-input-of "assemble")
+                          #:resource-quantity (make-measure 1.0 %count-unit) #:recipe-input-of "assemble")
         (make-recipe-flow #:id "ao" #:action 'produce #:resource-conforms-to "bike"
-                          #:resource-quantity (make-measure 1.0 "each")
+                          #:resource-quantity (make-measure 1.0 %count-unit)
                           #:recipe-output-of "assemble" #:is-primary #t)))
 (define b-recipes (list (make-recipe #:id "assemble-recipe" #:name "Assemble"
                                      #:primary-output "bike" #:recipe-processes (list "assemble"))))
@@ -113,7 +114,7 @@
     (check "...and the account-store gate (the actual door a claim walks through) agrees"
            (resource-individually-claimable?
              (make-economic-resource #:id "bike-A" #:name "A's bike" #:conforms-to "bike" #:classified-as '()
-               #:accounting-quantity (make-measure 1.0 "each") #:onhand-quantity (make-measure 1.0 "each") #:current-location PLACE #:primary-accountable "COMMUNE-A")
+               #:accounting-quantity (make-measure 1.0 %count-unit) #:onhand-quantity (make-measure 1.0 %count-unit) #:current-location PLACE #:primary-accountable "COMMUNE-A")
              rs-a)
            #f)
     (check "B's bike IS individually claimable through B's own store"

@@ -15,6 +15,7 @@
 ;;;
 ;;; Run: guile -L module tests/planner/test-legal-gate.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test scope)) ; mock-scope-root
 (use-modules (playnet test harness) (playnet planner legal crossings) (playnet planner vf schemas) (srfi srfi-1) (playnet planner scope live)
              (goblins) (goblins vat) (srfi srfi-1) (ice-9 string-fun))
@@ -35,7 +36,7 @@
         (make-recipe-flow #:id "f-in"   #:action 'consume #:resource-conforms-to "produce"
                           #:resource-quantity (make-measure 1.0 "kg") #:recipe-input-of "share")
         (make-recipe-flow #:id "f-work" #:action 'work    #:resource-conforms-to "cook"
-                          #:effort-quantity (make-measure 0.5 "hours") #:recipe-input-of "share")))
+                          #:effort-quantity (make-measure 0.5 %effort-unit) #:recipe-input-of "share")))
 (define recipes (list (make-recipe #:id "share-recipe" #:name "Share a meal" #:primary-output "meal"
                                    #:recipe-processes '() #:recipe-exchanges '())))
 (define specs
@@ -47,7 +48,7 @@
                                      #:default-unit-of-resource "kg")
         (make-resource-specification #:id "cook"    #:name "Cook"
                                      #:resource-classified-as '()                                 
-                                     #:default-unit-of-resource "hours")))
+                                     #:default-unit-of-resource %effort-unit)))
 (define (resolve-spec id) (find (lambda (s) (equal? (resource-specification-id s) id)) specs))
 
 ;; ── LINK 1+2 proven directly: derive crossings, fold at a forbidding place ──

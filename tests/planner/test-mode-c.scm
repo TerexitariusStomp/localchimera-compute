@@ -12,6 +12,7 @@
 ;;; Run:  cd planner && guile --no-auto-compile -q -L ../module \
 ;;;         -l load-all.scm -l tests/test-mode-c.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet deprecated planner))
 (use-modules (goblins)
@@ -57,7 +58,7 @@
          #:id "spec-yarn" #:name "Yarn" #:default-unit-of-resource "kg"))
     ($ rs 'add-resource-spec
        (make-resource-specification
-         #:id "spec-garment" #:name "Garment" #:default-unit-of-resource "each"))
+         #:id "spec-garment" #:name "Garment" #:default-unit-of-resource %count-unit))
 
     ;; ── Process specs ──
     ($ rs 'add-process-spec
@@ -71,11 +72,11 @@
     ($ rs 'add-recipe-process
        (make-recipe-process
          #:id "rp-shear" #:name "Shear wool" #:process-conforms-to "pspec-shear"
-         #:has-duration (make-duration 2 "hours")))
+         #:has-duration (make-duration 2 %effort-unit)))
     ($ rs 'add-recipe-process
        (make-recipe-process
          #:id "rp-weave" #:name "Weave yarn" #:process-conforms-to "pspec-weave"
-         #:has-duration (make-duration 4 "hours")))
+         #:has-duration (make-duration 4 %effort-unit)))
 
     ;; ── Recipe flows ──
     ;; Shear: 10 kg wool in -> 8 kg yarn out
@@ -96,7 +97,7 @@
     ($ rs 'add-recipe-flow
        (make-recipe-flow
          #:id "rf-garment-out" #:action 'produce #:resource-conforms-to "spec-garment"
-         #:resource-quantity (make-measure 5 "each") #:recipe-output-of "rp-weave"))
+         #:resource-quantity (make-measure 5 %count-unit) #:recipe-output-of "rp-weave"))
 
     ;; ── Recipe ──
     ($ rs 'add-recipe

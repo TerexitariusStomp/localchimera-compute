@@ -17,6 +17,7 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/planner/test-purchase-reimburse.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner scope root) (playnet planner vf schemas) (playnet planner observation states) (playnet planner doors service) (playnet governance debts) (playnet governance scope) (playnet governance socialization) (playnet keri acdc) (playnet keri acdc-store)
              (playnet monero specs) (playnet monero payout))
@@ -145,8 +146,8 @@
   ;; in the SAME vat turn land in the same second with nothing to tell them
   ;; apart unless the id itself carries a running count, the same fix
   ;; request-payout already needed for its own iid a few hundred lines above
-  (let* ((r1 ($ svc 'record-purchase COMMUNE ALICE "spec-bricks" 10 "each" "spec-eur" 20 "town" "first batch" "rcpt-b1"))
-         (r2 ($ svc 'record-purchase COMMUNE ALICE "spec-bricks" 15 "each" "spec-eur" 30 "town" "second batch" "rcpt-b2")))
+  (let* ((r1 ($ svc 'record-purchase COMMUNE ALICE "spec-bricks" 10 %count-unit "spec-eur" 20 "town" "first batch" "rcpt-b1"))
+         (r2 ($ svc 'record-purchase COMMUNE ALICE "spec-bricks" 15 %count-unit "spec-eur" 30 "town" "second batch" "rcpt-b2")))
     (check "both record ok" (and (eq? 'ok (car r1)) (eq? 'ok (car r2))) #t)
     (check "…with DIFFERENT resource ids — the real bug, fixed"
            (not (equal? (assq-ref (cdr r1) 'resource) (assq-ref (cdr r2) 'resource))))

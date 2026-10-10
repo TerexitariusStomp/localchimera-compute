@@ -8,6 +8,7 @@
 ;;; Run:  cd planner && guile --no-auto-compile -q -L ../module \
 ;;;         -l load-all.scm -l tests/test-rollup-costvar.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner algorithms rollup) (playnet planner scope root) (playnet planner vf schemas))
 (use-modules (goblins)
@@ -48,13 +49,13 @@
        (make-resource-specification #:id "spec-wood" #:name "Wood"
                                     #:default-unit-of-resource "board"))
     ($ rs 'add-resource-spec
-       (make-resource-specification #:id "spec-nail" #:name "Nail" #:default-unit-of-resource "each"))
+       (make-resource-specification #:id "spec-nail" #:name "Nail" #:default-unit-of-resource %count-unit))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-labor" #:name "Labor"
-                                    #:default-unit-of-resource "hour"))
+                                    #:default-unit-of-resource %effort-unit))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-table" #:name "Table"
-                                    #:default-unit-of-resource "each"))
+                                    #:default-unit-of-resource %count-unit))
 
     ;; Process specs
     ($ rs 'add-process-spec
@@ -67,18 +68,18 @@
     ;; Recipe processes
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-mill-wood" #:name "Mill Wood" #:process-conforms-to "pspec-mill-wood"
-                            #:has-duration (make-duration 1 "hour")))
+                            #:has-duration (make-duration 1 %effort-unit)))
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-make-nails" #:name "Make Nails" #:process-conforms-to "pspec-make-nails"
-                            #:has-duration (make-duration 1 "hour")))
+                            #:has-duration (make-duration 1 %effort-unit)))
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-build" #:name "Build Table" #:process-conforms-to "pspec-build"
-                            #:has-duration (make-duration 2 "hour")))
+                            #:has-duration (make-duration 2 %effort-unit)))
 
     ;; Wood recipe: 1h labor → 1 board
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-mill-labor" #:action 'work #:resource-conforms-to "spec-labor"
-                         #:effort-quantity (make-measure 1 "hour") #:recipe-input-of "rp-mill-wood"))
+                         #:effort-quantity (make-measure 1 %effort-unit) #:recipe-input-of "rp-mill-wood"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-mill-out" #:action 'produce #:resource-conforms-to "spec-wood"
                          #:resource-quantity (make-measure 1 "board") #:recipe-output-of "rp-mill-wood"))
@@ -89,10 +90,10 @@
     ;; Nail recipe: 1h labor → 10 nails  ⇒ SNLT(nail) = 0.1h/each
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-nails-labor" #:action 'work #:resource-conforms-to "spec-labor"
-                         #:effort-quantity (make-measure 1 "hour") #:recipe-input-of "rp-make-nails"))
+                         #:effort-quantity (make-measure 1 %effort-unit) #:recipe-input-of "rp-make-nails"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-nails-out" #:action 'produce #:resource-conforms-to "spec-nail"
-                         #:resource-quantity (make-measure 10 "each") #:recipe-output-of "rp-make-nails"))
+                         #:resource-quantity (make-measure 10 %count-unit) #:recipe-output-of "rp-make-nails"))
     ($ rs 'add-recipe
        (make-recipe #:id "recipe-nail" #:name "Nail Recipe" #:primary-output "spec-nail"
                     #:recipe-processes (list "rp-make-nails")))
@@ -103,13 +104,13 @@
                          #:resource-quantity (make-measure 1 "board") #:recipe-input-of "rp-build"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-build-nails" #:action 'consume #:resource-conforms-to "spec-nail"
-                         #:resource-quantity (make-measure 10 "each") #:recipe-input-of "rp-build"))
+                         #:resource-quantity (make-measure 10 %count-unit) #:recipe-input-of "rp-build"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-build-labor" #:action 'work #:resource-conforms-to "spec-labor"
-                         #:effort-quantity (make-measure 2 "hour") #:recipe-input-of "rp-build"))
+                         #:effort-quantity (make-measure 2 %effort-unit) #:recipe-input-of "rp-build"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-build-out" #:action 'produce #:resource-conforms-to "spec-table"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-build"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-build"))
     ($ rs 'add-recipe
        (make-recipe #:id "recipe-table" #:name "Table Recipe" #:primary-output "spec-table"
                     #:recipe-processes (list "rp-build")))
@@ -147,7 +148,7 @@
     ;; Seed table resource
     ($ obs 'seed-resource
        (make-economic-resource #:id "r-table" #:name "My Table" #:conforms-to "spec-table"
-         #:accounting-quantity (make-measure 0 "each") #:onhand-quantity (make-measure 0 "each") #:primary-accountable "agent-workshop"))
+         #:accounting-quantity (make-measure 0 %count-unit) #:onhand-quantity (make-measure 0 %count-unit) #:primary-accountable "agent-workshop"))
 
     ;; Record actual events
     ($ obs 'record-event
@@ -160,19 +161,19 @@
        (make-economic-event
          #:id "ev-nails" #:action 'consume #:input-of "proc-build" #:resource-conforms-to "spec-nail"
          #:provider "agent-workshop" #:receiver "agent-workshop"
-         #:resource-quantity (make-measure 12 "each") #:has-point-in-time "2026-03-01T09:00:00Z"))
+         #:resource-quantity (make-measure 12 %count-unit) #:has-point-in-time "2026-03-01T09:00:00Z"))
 
     ($ obs 'record-event
        (make-economic-event
          #:id "ev-labor" #:action 'work #:input-of "proc-build" #:resource-conforms-to "spec-labor"
-         #:provider "agent-workshop" #:receiver "agent-workshop" #:effort-quantity (make-measure 3 "hour") #:has-point-in-time "2026-03-01T09:00:00Z"))
+         #:provider "agent-workshop" #:receiver "agent-workshop" #:effort-quantity (make-measure 3 %effort-unit) #:has-point-in-time "2026-03-01T09:00:00Z"))
 
     ($ obs 'record-event
        (make-economic-event
          #:id "ev-table" #:action 'produce #:output-of "proc-build"
          #:resource-inventoried-as "r-table" #:resource-conforms-to "spec-table"
          #:provider "agent-workshop" #:receiver "agent-workshop"
-         #:resource-quantity (make-measure 1 "each") #:has-point-in-time "2026-03-01T12:00:00Z"))
+         #:resource-quantity (make-measure 1 %count-unit) #:has-point-in-time "2026-03-01T12:00:00Z"))
 
     ;; Actual cost in SNLT hours from rollup-actual-cost:
     ;;   1 wood × 1h + 12 nails × 0.1h + 3h direct labor = 1 + 1.2 + 3 = 5.2 hours

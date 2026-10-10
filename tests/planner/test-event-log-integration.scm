@@ -9,6 +9,7 @@
 ;;;   guix shell -L deploy/guix -m deploy/manifests/dev-test-manifest.scm -- \
 ;;;     guile --no-auto-compile -q -L module tests/planner/test-event-log-integration.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness)
              (playnet planner observation observer) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
              (playnet planner doors service)
@@ -70,7 +71,7 @@
 (define (mk-work id provider hours)
   (make-economic-event
     #:id id #:action 'work #:provider provider
-    #:effort-quantity (make-measure hours "hour")
+    #:effort-quantity (make-measure hours %effort-unit)
     #:in-scope-of '()))
 
 (with-vat vatB

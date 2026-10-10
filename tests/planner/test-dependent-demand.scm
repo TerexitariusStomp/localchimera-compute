@@ -9,6 +9,7 @@
 ;;; Run:  cd planner && guile --no-auto-compile -q -L ../module \
 ;;;         -l load-all.scm -l tests/test-dependent-demand.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet deprecated planner))
 (use-modules (goblins)
@@ -52,19 +53,19 @@
        (make-resource-specification #:id "spec-flour" #:name "Flour" #:default-unit-of-resource "kg"))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-bread" #:name "Bread"
-                                    #:default-unit-of-resource "each"))
+                                    #:default-unit-of-resource %count-unit))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-wood" #:name "Wood"
                                     #:default-unit-of-resource "plank"))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-nails" #:name "Nails"
-                                    #:default-unit-of-resource "each"))
+                                    #:default-unit-of-resource %count-unit))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-table" #:name "Table"
-                                    #:default-unit-of-resource "each"))
+                                    #:default-unit-of-resource %count-unit))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-widget" #:name "Widget"
-                                    #:default-unit-of-resource "each"))
+                                    #:default-unit-of-resource %count-unit))
 
     ;; ── Bread recipe: wheat → flour → bread ──
     ($ rs 'add-process-spec
@@ -74,10 +75,10 @@
 
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-mill" #:name "Mill wheat" #:process-conforms-to "pspec-mill"
-                            #:has-duration (make-duration 2 "hours")))
+                            #:has-duration (make-duration 2 %effort-unit)))
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-bake" #:name "Bake bread" #:process-conforms-to "pspec-bake"
-                            #:has-duration (make-duration 4 "hours")))
+                            #:has-duration (make-duration 4 %effort-unit)))
 
     ;; Mill flows: 10 wheat → 8 flour
     ($ rs 'add-recipe-flow
@@ -92,7 +93,7 @@
                          #:resource-quantity (make-measure 8 "kg") #:recipe-input-of "rp-bake"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-bread-out" #:action 'produce #:resource-conforms-to "spec-bread"
-                         #:resource-quantity (make-measure 20 "each") #:recipe-output-of "rp-bake"))
+                         #:resource-quantity (make-measure 20 %count-unit) #:recipe-output-of "rp-bake"))
 
     ($ rs 'add-recipe
        (make-recipe #:id "recipe-bread" #:name "Bread Production" #:primary-output "spec-bread"
@@ -102,13 +103,13 @@
     ;; Recipe A: slow — 2h work per widget
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-widget-slow" #:name "Make Widget Slow"
-                            #:has-duration (make-duration 2 "hours")))
+                            #:has-duration (make-duration 2 %effort-unit)))
     ($ rs 'add-recipe-flow
-       (make-recipe-flow #:id "rf-ws-work" #:action 'work #:effort-quantity (make-measure 2 "hours")
+       (make-recipe-flow #:id "rf-ws-work" #:action 'work #:effort-quantity (make-measure 2 %effort-unit)
                          #:recipe-input-of "rp-widget-slow"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-ws-out" #:action 'produce #:resource-conforms-to "spec-widget"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-widget-slow"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-widget-slow"))
     ($ rs 'add-recipe
        (make-recipe #:id "recipe-widget-slow" #:name "Widget (Slow)" #:primary-output "spec-widget"
                     #:recipe-processes (list "rp-widget-slow")))
@@ -116,13 +117,13 @@
     ;; Recipe B: fast — 1h work per widget
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-widget-fast" #:name "Make Widget Fast"
-                            #:has-duration (make-duration 1 "hours")))
+                            #:has-duration (make-duration 1 %effort-unit)))
     ($ rs 'add-recipe-flow
-       (make-recipe-flow #:id "rf-wf-work" #:action 'work #:effort-quantity (make-measure 1 "hours")
+       (make-recipe-flow #:id "rf-wf-work" #:action 'work #:effort-quantity (make-measure 1 %effort-unit)
                          #:recipe-input-of "rp-widget-fast"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-wf-out" #:action 'produce #:resource-conforms-to "spec-widget"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-widget-fast"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-widget-fast"))
     ($ rs 'add-recipe
        (make-recipe #:id "recipe-widget-fast" #:name "Widget (Fast)" #:primary-output "spec-widget"
                     #:recipe-processes (list "rp-widget-fast")))
@@ -199,7 +200,7 @@
          #:accounting-quantity (make-measure 50 "kg") #:onhand-quantity (make-measure 50 "kg") #:primary-accountable "agent-commune"))
     ($ obs 'seed-resource
        (make-economic-resource #:id "r-bread" #:name "Bread Stock" #:conforms-to "spec-bread"
-         #:accounting-quantity (make-measure 0 "each") #:onhand-quantity (make-measure 0 "each") #:primary-accountable "agent-commune"))
+         #:accounting-quantity (make-measure 0 %count-unit) #:onhand-quantity (make-measure 0 %count-unit) #:primary-accountable "agent-commune"))
     (check-pred "inventory seeded" (= 3 (length ($ obs 'all-resources))))))
 
 (with-vat vat
@@ -442,7 +443,7 @@
     ;; Add a demand intent for 40 bread
     ($ ps 'add-intent
        (make-intent #:id "i-bread-40" #:action 'produce #:name "Bread demand" #:resource-conforms-to "spec-bread"
-                    #:resource-quantity (make-measure 40 "each") #:receiver "agent-commune" #:due (number->string due) #:planned-within "test-plan"))
+                    #:resource-quantity (make-measure 40 %count-unit) #:receiver "agent-commune" #:due (number->string due) #:planned-within "test-plan"))
 
     ;; Run planner
     (let ((results (run-plan 1 ns (plan)

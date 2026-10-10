@@ -19,6 +19,7 @@
 (chdir %project-root)
 (add-to-load-path "module")
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness)
              (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
              (playnet governance acdc-bridge) (playnet keri acdc) (playnet keri acdc-store)
@@ -45,7 +46,7 @@
 (define committed
   (make-observation-event-credential
    SCOPE HOLDER "evt-count-2" "raise"
-   #:qty 1 #:unit "each" #:scope-id "org:commune" #:resource-conforms-to "jam"
+   #:qty 1 #:unit %count-unit #:scope-id "org:commune" #:resource-conforms-to "jam"
    #:fulfills "cmt-1" #:timestamp "2026-10-01T11:00:00Z"))
 (check "a count that fulfils a commitment" (assq-ref committed 'said) "EOGTdzcGbTddVAmRy3UQcsfhIfKhtZv7R7mfpy9WWGdr")
 (check "…with no claim to a picture" (assq-ref (assq-ref plain 'claims) 'evidence) #f)

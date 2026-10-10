@@ -15,6 +15,7 @@
 ;;; Run:  cd planner && guile --no-auto-compile -q -L ../module \
 ;;;         -l load-all.scm -l tests/test-snapshot-hydration.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
 (use-modules (goblins)
@@ -52,7 +53,7 @@
                                     #:default-unit-of-resource "kg"))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-ingot" #:name "Iron Ingot"
-                                    #:default-unit-of-resource "each"))
+                                    #:default-unit-of-resource %count-unit))
 
     ;; Process specifications
     ($ rs 'add-process-spec
@@ -61,7 +62,7 @@
     ;; Recipe process
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-smelt" #:name "Smelt ore" #:process-conforms-to "pspec-smelt"
-                            #:has-duration (make-duration 3 "hours")))
+                            #:has-duration (make-duration 3 %effort-unit)))
 
     ;; Recipe flows
     ($ rs 'add-recipe-flow
@@ -69,7 +70,7 @@
                          #:resource-quantity (make-measure 50 "kg") #:recipe-input-of "rp-smelt"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-ingot-out" #:action 'produce #:resource-conforms-to "spec-ingot"
-                         #:resource-quantity (make-measure 10 "each") #:recipe-output-of "rp-smelt"))
+                         #:resource-quantity (make-measure 10 %count-unit) #:recipe-output-of "rp-smelt"))
 
     ;; Recipe
     ($ rs 'add-recipe
@@ -98,7 +99,7 @@
     ;; Intent: ingot request
     ($ ps 'add-intent
        (make-intent #:id "i-ingot-need" #:action 'produce #:name "Ingot demand" #:output-of "rp-smelt" #:resource-conforms-to "spec-ingot" #:resource-classified-as (list "tag:plan:request")
-                    #:resource-quantity (make-measure 10 "each") #:receiver "agent-foundry" #:due "2026-04-01T00:00:00Z" #:planned-within "plan-smelt"))
+                    #:resource-quantity (make-measure 10 %count-unit) #:receiver "agent-foundry" #:due "2026-04-01T00:00:00Z" #:planned-within "plan-smelt"))
 
     ;; Promote ore offer to commitment
     ($ ps 'promote-to-commitment "i-ore-offer"
@@ -125,7 +126,7 @@
     ($ obs 'seed-resource
        (make-economic-resource
          #:id "r-ingot" #:name "Ingot Stock" #:conforms-to "spec-ingot"
-         #:accounting-quantity (make-measure 0 "each") #:onhand-quantity (make-measure 0 "each") #:primary-accountable "agent-foundry"))
+         #:accounting-quantity (make-measure 0 %count-unit) #:onhand-quantity (make-measure 0 %count-unit) #:primary-accountable "agent-foundry"))
 
     ;; Record consume-ore event
     ($ obs 'record-event
@@ -141,7 +142,7 @@
          #:id "ev-produce-ingot" #:action 'produce #:output-of "rp-smelt"
          #:resource-inventoried-as "r-ingot" #:resource-conforms-to "spec-ingot"
          #:provider "agent-foundry" #:receiver "agent-foundry"
-         #:resource-quantity (make-measure 10 "each") #:has-point-in-time "2026-04-02T11:00:00Z"))
+         #:resource-quantity (make-measure 10 %count-unit) #:has-point-in-time "2026-04-02T11:00:00Z"))
 
     (check-pred "observer seeded" #t)))
 ;;; ── 1d. Agent-store ───────────────────────────────────────────────────────
@@ -336,7 +337,7 @@
              10)
       (check "hydrated: ingot unit" (measure-has-unit
                                       (economic-resource-accounting-quantity ingot))
-             "each"))
+             %count-unit))
 
     ;; Events survived
     (check "hydrated: events count" (length ($ obs 'all-events)) 2)

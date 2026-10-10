@@ -11,6 +11,7 @@
 ;;;     way the gateway injects it.
 
 ;; the host crypto backend: loading (playnet keri signify) installs it
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules ((playnet keri signify) #:select ()))
 (use-modules (playnet test harness))
 (use-modules (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
@@ -29,7 +30,7 @@
 
 (define (work-ev eid pid skill hours)
   (make-economic-event #:id eid #:action 'work #:output-of pid #:resource-conforms-to skill
-                       #:provider "EAda" #:effort-quantity (make-measure hours "hour")
+                       #:provider "EAda" #:effort-quantity (make-measure hours %effort-unit)
                        #:has-point-in-time "2026-03-01T08:00:00Z"))
 
 (define vat (spawn-vat))

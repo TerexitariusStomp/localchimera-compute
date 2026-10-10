@@ -9,6 +9,7 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module -L tests tests/planner/test-credit-spend.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules ((playnet wire rows) #:select (wire->plain))   ; a door's rows, read back as alists
              ((playnet planner legal crossings) #:select (record-crossings)))
 (use-modules (playnet test harness)
@@ -23,10 +24,10 @@
 (define (work! obs aid hours eid iid)
   ($ obs 'register-intent
      (make-intent #:id iid #:action 'work #:resource-conforms-to "spec-labor"
-                  #:effort-quantity (make-measure hours "hour") #:provider aid))
+                  #:effort-quantity (make-measure hours %effort-unit) #:provider aid))
   ($ obs 'record-event
      (make-economic-event #:id eid #:action 'work #:resource-conforms-to "spec-labor" #:provider aid
-                          #:effort-quantity (make-measure hours "hour")
+                          #:effort-quantity (make-measure hours %effort-unit)
                           #:has-point-in-time "2026-03-01T08:00:00Z" #:satisfies iid
                           #:in-scope-of '())))
 
@@ -41,21 +42,21 @@
     ;; the Table makes bread at 3 hours a loaf and holds ten, set aside four for ada
     ($ rs 'add-recipe-process (make-recipe-process #:id "rp-bake" #:name "Bake"
                                                    #:process-conforms-to "pspec-bake"
-                                                   #:has-duration (make-duration 3 "hours")))
+                                                   #:has-duration (make-duration 3 %effort-unit)))
     ($ rs 'add-recipe-flow (make-recipe-flow #:id "rf-w" #:action 'work
                                              #:resource-conforms-to "spec-labor"
-                                             #:effort-quantity (make-measure 3 "hours")
+                                             #:effort-quantity (make-measure 3 %effort-unit)
                                              #:recipe-input-of "rp-bake"))
     ($ rs 'add-recipe-flow (make-recipe-flow #:id "rf-o" #:action 'produce
                                              #:resource-conforms-to "spec-bread"
-                                             #:resource-quantity (make-measure 1 "each")
+                                             #:resource-quantity (make-measure 1 %count-unit)
                                              #:recipe-output-of "rp-bake"))
     ($ rs 'add-recipe (make-recipe #:id "recipe-bread" #:name "Bread" #:primary-output "spec-bread"
                                    #:recipe-processes (list "rp-bake")))
     ($ ob 'record-event
        (make-economic-event #:id "ev-bread" #:action 'produce #:resource-inventoried-as "r-bread" #:resource-conforms-to "spec-bread"
          #:resource-classified-as (list "individually-claimable") #:provider "commune" #:receiver "commune"
-         #:resource-quantity (make-measure 10 "each") #:has-point-in-time "2026-03-02T12:00:00Z"))
+         #:resource-quantity (make-measure 10 %count-unit) #:has-point-in-time "2026-03-02T12:00:00Z"))
     (plan-claim! ob "spec-bread" "ada" 4)
     ;; ada earned her hours at the Granary; the Table has seen none of them
     (work! oa "ada" 10 "ev-ada" "in-ada")

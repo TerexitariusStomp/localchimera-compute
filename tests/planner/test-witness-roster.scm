@@ -9,6 +9,7 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module -L tests tests/planner/test-witness-roster.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness)
              (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
              (playnet planner doors service)
@@ -33,7 +34,7 @@
     (record-work! oa "zed" 1 "ev-zed" "in-zed" #:skill "spec-labor")                 ; nobody we know
     ($ oa 'record-event                                                              ; the scope itself as a receiver
        (make-economic-event #:id "ev-buy" #:action 'consume #:resource-conforms-to "spec-bread" #:provider "vic" #:receiver "Granary"
-                            #:resource-quantity (make-measure 1 "each") #:has-point-in-time "2026-03-02T08:00:00Z"))
+                            #:resource-quantity (make-measure 1 %count-unit) #:has-point-in-time "2026-03-02T08:00:00Z"))
     ($ svc 'set-witness-door!
        `((open . ,(lambda (scope-aid ev roster) (set! seen roster) "said-1"))))
 

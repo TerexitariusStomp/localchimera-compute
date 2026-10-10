@@ -9,6 +9,7 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/planner/test-value-equations-sne.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner algorithms rollup) (playnet planner algorithms value-equations) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
 (use-modules (goblins)
@@ -43,13 +44,13 @@
                                     #:default-unit-of-resource "board"))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-table" #:name "Table"
-                                    #:default-unit-of-resource "each"))
+                                    #:default-unit-of-resource %count-unit))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-labor" #:name "Labor"
-                                    #:default-unit-of-resource "hour"))
+                                    #:default-unit-of-resource %effort-unit))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-drill" #:name "Drill"
-                                    #:default-unit-of-resource "each"))
+                                    #:default-unit-of-resource %count-unit))
 
     ;; ── Seed process spec ─────────────────────────────────────────
 
@@ -60,7 +61,7 @@
 
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-table" #:name "Make Table" #:process-conforms-to "pspec-table"
-                            #:has-duration (make-duration 10 "hour")))
+                            #:has-duration (make-duration 10 %effort-unit)))
 
     ;; Input: consume 1 wood
     ($ rs 'add-recipe-flow
@@ -70,12 +71,12 @@
     ;; Input: work (labor)
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-labor-in" #:action 'work #:resource-conforms-to "spec-labor"
-                         #:effort-quantity (make-measure 10 "hour") #:recipe-input-of "rp-table"))
+                         #:effort-quantity (make-measure 10 %effort-unit) #:recipe-input-of "rp-table"))
 
     ;; Output: produce 1 table
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-table-out" #:action 'produce #:resource-conforms-to "spec-table"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-table"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-table"))
 
     ;; Recipe
     ($ rs 'add-recipe
@@ -90,7 +91,7 @@
 
     ($ obs 'seed-resource
        (make-economic-resource #:id "r-table" #:name "Table" #:conforms-to "spec-table"
-         #:accounting-quantity (make-measure 0 "each") #:onhand-quantity (make-measure 0 "each") #:primary-accountable "alice"))
+         #:accounting-quantity (make-measure 0 %count-unit) #:onhand-quantity (make-measure 0 %count-unit) #:primary-accountable "alice"))
 
     ;; ── Record production chain ───────────────────────────────────
 
@@ -106,13 +107,13 @@
     ($ obs 'record-event
        (make-economic-event
          #:id "ev-work-alice" #:action 'work #:input-of "proc-table" #:resource-conforms-to "spec-labor"
-         #:provider "alice" #:receiver "alice" #:effort-quantity (make-measure 8 "hour") #:has-point-in-time "2026-03-01T08:00:00Z"))
+         #:provider "alice" #:receiver "alice" #:effort-quantity (make-measure 8 %effort-unit) #:has-point-in-time "2026-03-01T08:00:00Z"))
 
     ;; 3. Bob works 2 hours, input of proc-table
     ($ obs 'record-event
        (make-economic-event
          #:id "ev-work-bob" #:action 'work #:input-of "proc-table" #:resource-conforms-to "spec-labor"
-         #:provider "bob" #:receiver "bob" #:effort-quantity (make-measure 2 "hour") #:has-point-in-time "2026-03-01T09:00:00Z"))
+         #:provider "bob" #:receiver "bob" #:effort-quantity (make-measure 2 %effort-unit) #:has-point-in-time "2026-03-01T09:00:00Z"))
 
     ;; 4. Produce 1 table, output of proc-table
     ($ obs 'record-event
@@ -120,7 +121,7 @@
          #:id "ev-produce-table" #:action 'produce #:output-of "proc-table"
          #:resource-inventoried-as "r-table" #:resource-conforms-to "spec-table"
          #:provider "alice" #:receiver "alice"
-         #:resource-quantity (make-measure 1 "each") #:has-point-in-time "2026-03-01T12:00:00Z"))
+         #:resource-quantity (make-measure 1 %count-unit) #:has-point-in-time "2026-03-01T12:00:00Z"))
 
     ;; 5. Sale: transfer 1 table for $1000
     ;;    Use resource-inventoried-as for the resource being sold.
@@ -211,14 +212,14 @@
   ;; A 'use' event on a drill with 2h effort → (2/1000)*500 = 1.0
   (let ((use-event (make-economic-event
                      #:id "ev-use-drill" #:action 'use #:resource-conforms-to "spec-drill"
-                     #:provider "alice" #:receiver "alice" #:effort-quantity (make-measure 2 "hour") #:has-point-in-time "2026-03-01T08:00:00Z")))
+                     #:provider "alice" #:receiver "alice" #:effort-quantity (make-measure 2 %effort-unit) #:has-point-in-time "2026-03-01T08:00:00Z")))
     (check-pred "depreciation: use event score = 1.0"
                 (approx= (dep-score use-event) 1.0)))
 
   ;; A 'work' event should score 0 (not a use event)
   (let ((work-event (make-economic-event
                       #:id "ev-work-test" #:action 'work #:resource-conforms-to "spec-labor"
-                      #:provider "alice" #:receiver "alice" #:effort-quantity (make-measure 5 "hour") #:has-point-in-time "2026-03-01T08:00:00Z")))
+                      #:provider "alice" #:receiver "alice" #:effort-quantity (make-measure 5 %effort-unit) #:has-point-in-time "2026-03-01T08:00:00Z")))
     (check "depreciation: work event score = 0" (dep-score work-event) 0))
 
   ;; A 'consume' event should score 0
@@ -244,7 +245,7 @@
                            (* (/ dur-hours lifespan) sne)
                            0))))))
     (let ((use-event (make-economic-event
-                       #:id "ev-use-test2" #:action 'use #:resource-conforms-to "spec-drill" #:provider "alice" #:receiver "alice" #:effort-quantity (make-measure 2 "hour") #:has-point-in-time "2026-03-01T08:00:00Z")))
+                       #:id "ev-use-test2" #:action 'use #:resource-conforms-to "spec-drill" #:provider "alice" #:receiver "alice" #:effort-quantity (make-measure 2 %effort-unit) #:has-point-in-time "2026-03-01T08:00:00Z")))
       (check "depreciation: missing lifespan = 0" (dep2 use-event) 0))))
 ;;; ════════════════════════════════════════════════════════════════════════════
 ;;; Section 3: Cost variance (pure function)
@@ -277,11 +278,11 @@
 ;; Create a recipe-process with minimum-batch-quantity set to 100
 (let* ((rp-with-min (make-recipe-process #:id "rp-batch" #:name "Batch Process"
                                           #:process-conforms-to "pspec-table"
-                                          #:has-duration (make-duration 10 "hour")
-                                          #:minimum-batch-quantity (make-measure 100 "each")))
+                                          #:has-duration (make-duration 10 %effort-unit)
+                                          #:minimum-batch-quantity (make-measure 100 %count-unit)))
        (rp-no-min  (make-recipe-process #:id "rp-nobatch" #:name "No Batch Min"
                                          #:process-conforms-to "pspec-table"
-                                         #:has-duration (make-duration 10 "hour"))))
+                                         #:has-duration (make-duration 10 %effort-unit))))
 
   ;; Verify the field accessor works
   (check-pred "batch: field reads back correctly"
@@ -407,7 +408,7 @@
   ;; hybrid = 0.6 * 8 + 0.4 * 0 = 4.8
   (let ((work-event (make-economic-event
                       #:id "ev-hybrid-work" #:action 'work #:resource-conforms-to "spec-labor"
-                      #:provider "alice" #:receiver "alice" #:effort-quantity (make-measure 8 "hour") #:has-point-in-time "2026-03-01T08:00:00Z")))
+                      #:provider "alice" #:receiver "alice" #:effort-quantity (make-measure 8 %effort-unit) #:has-point-in-time "2026-03-01T08:00:00Z")))
     (check-pred "hybrid: work event score = 4.8"
                 (approx= (score-ev work-event hybrid-eq) 4.8)))
 
@@ -416,17 +417,17 @@
   ;; hybrid = 0.6 * 2 + 0.4 * 1.0 = 1.6
   (let ((use-event (make-economic-event
                      #:id "ev-hybrid-use" #:action 'use #:resource-conforms-to "spec-drill"
-                     #:provider "alice" #:receiver "alice" #:effort-quantity (make-measure 2 "hour") #:has-point-in-time "2026-03-01T08:00:00Z")))
+                     #:provider "alice" #:receiver "alice" #:effort-quantity (make-measure 2 %effort-unit) #:has-point-in-time "2026-03-01T08:00:00Z")))
     (check-pred "hybrid: use event score = 1.6"
                 (approx= (score-ev use-event hybrid-eq) 1.6)))
 
   ;; Test 3: both events together — total hybrid score
   (let* ((work-event (make-economic-event
                        #:id "ev-hybrid-work2" #:action 'work #:resource-conforms-to "spec-labor"
-                       #:provider "alice" #:receiver "alice" #:effort-quantity (make-measure 8 "hour") #:has-point-in-time "2026-03-01T08:00:00Z"))
+                       #:provider "alice" #:receiver "alice" #:effort-quantity (make-measure 8 %effort-unit) #:has-point-in-time "2026-03-01T08:00:00Z"))
          (use-event (make-economic-event
                       #:id "ev-hybrid-use2" #:action 'use #:resource-conforms-to "spec-drill"
-                      #:provider "alice" #:receiver "alice" #:effort-quantity (make-measure 2 "hour") #:has-point-in-time "2026-03-01T09:00:00Z"))
+                      #:provider "alice" #:receiver "alice" #:effort-quantity (make-measure 2 %effort-unit) #:has-point-in-time "2026-03-01T09:00:00Z"))
          (total (+ (score-ev work-event hybrid-eq)
                    (score-ev use-event hybrid-eq))))
     ;; 4.8 + 1.6 = 6.4

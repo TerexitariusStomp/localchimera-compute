@@ -7,6 +7,7 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module -l tests/planner/containment-cascade-test.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness)
              (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
              (goblins)
@@ -72,7 +73,7 @@
   (let ((obs ($ scope2 'observer)))
     ($ obs 'seed-resource
        (make-economic-resource #:id "v" #:name "Vehicle load" #:conforms-to "load"
-         #:accounting-quantity (make-measure 10 "each") #:onhand-quantity (make-measure 10 "each") #:primary-accountable "A"))
+         #:accounting-quantity (make-measure 10 %count-unit) #:onhand-quantity (make-measure 10 %count-unit) #:primary-accountable "A"))
     ($ obs 'seed-resource    ; carrot contained in the vehicle load
        (make-economic-resource #:id "c" #:name "Carrots" #:conforms-to "carrot"
          #:accounting-quantity (make-measure 100 "kg") #:onhand-quantity (make-measure 100 "kg") #:primary-accountable "A" #:contained-in "v"))
@@ -84,7 +85,7 @@
     ($ obs 'record-event
        (make-economic-event
          #:id "ev-load" #:action 'consume #:input-of "p" #:resource-inventoried-as "v" #:resource-conforms-to "load" #:provider "a" #:receiver "a"
-         #:resource-quantity (make-measure 4 "each") #:has-point-in-time "2026-06-12T13:00:00Z"))
+         #:resource-quantity (make-measure 4 %count-unit) #:has-point-in-time "2026-06-12T13:00:00Z"))
 
     (check-pred "vehicle load → 6"        (~= (onhand obs "v") 6))
     (check-pred "carrot cascaded ×0.6 → 60" (~= (onhand obs "c") 60))
@@ -102,17 +103,17 @@
 (with-vat vat3
   (let ((obs ($ scope3 'observer))
         (count (lambda (id delta at)
-                 (adjustment-event id "b" "bin" delta "each" #:provider "a" #:receiver "a"
+                 (adjustment-event id "b" "bin" delta %count-unit #:provider "a" #:receiver "a"
                                    #:process "count:stated" #:when at #:created at))))
     ($ obs 'seed-resource
        (make-economic-resource #:id "b" #:name "Bin" #:conforms-to "bin"
-         #:accounting-quantity (make-measure 10 "each") #:onhand-quantity (make-measure 10 "each") #:primary-accountable "A"))
+         #:accounting-quantity (make-measure 10 %count-unit) #:onhand-quantity (make-measure 10 %count-unit) #:primary-accountable "A"))
     ($ obs 'seed-resource
        (make-economic-resource #:id "j" #:name "Jars" #:conforms-to "jar"
-         #:accounting-quantity (make-measure 50 "each") #:onhand-quantity (make-measure 50 "each") #:primary-accountable "A" #:contained-in "b"))
+         #:accounting-quantity (make-measure 50 %count-unit) #:onhand-quantity (make-measure 50 %count-unit) #:primary-accountable "A" #:contained-in "b"))
     ($ obs 'seed-resource
        (make-economic-resource #:id "l" #:name "Lids" #:conforms-to "lid"
-         #:accounting-quantity (make-measure 5 "each") #:onhand-quantity (make-measure 5 "each") #:primary-accountable "A" #:contained-in "j"))
+         #:accounting-quantity (make-measure 5 %count-unit) #:onhand-quantity (make-measure 5 %count-unit) #:primary-accountable "A" #:contained-in "j"))
 
     ($ obs 'record-event (count "c1" -2 "2026-06-12T10:00:00Z"))
     (check-pred "a lower scales the contents ×0.8" (~= (onhand obs "j") 40))

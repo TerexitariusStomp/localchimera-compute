@@ -10,6 +10,7 @@
 ;;;
 ;;; Run:  guile -q -L module tests/planner/test-thermal-form-door.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1) (playnet planner vf schemas)
              (playnet planner knowledge catalogues thermal) (playnet planner knowledge dsl vf-lint)
              (playnet planner knowledge dsl findings)
@@ -56,7 +57,7 @@
   (define Q (/ 15.0 3600))
   (define (pump! id cop)
     ($ rs 'add-recipe-process (make-recipe-process #:id id #:name id
-                                                   #:has-duration (make-duration 1 "hours")))
+                                                   #:has-duration (make-duration 1 %effort-unit)))
     ($ rs 'add-recipe-flow (make-recipe-flow #:id (string-append id ".b") #:action 'consume
                                              #:resource-conforms-to "dough"
                                              #:resource-quantity (make-measure 1 "kg")

@@ -19,6 +19,7 @@
 ;;;
 ;;; Run: guile -L module tests/planner/test-transboundary-commons.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test scope))
 (use-modules (playnet test planner prelude)
              (playnet planner solve engine)
@@ -32,7 +33,7 @@
   (list (make-recipe-flow #:id "f-water" #:action 'consume #:resource-conforms-to "water"
                           #:resource-quantity (make-measure 1.0 "m3") #:recipe-input-of "rp-fest")
         (make-recipe-flow #:id "f-cook"  #:action 'work #:resource-conforms-to "cook"
-                          #:effort-quantity (make-measure 0.01 "hours") #:recipe-input-of "rp-fest")
+                          #:effort-quantity (make-measure 0.01 %effort-unit) #:recipe-input-of "rp-fest")
         (make-recipe-flow #:id "f-meal"  #:action 'produce #:resource-conforms-to "meal"
                           #:resource-quantity (make-measure 1.0 "meal") #:recipe-output-of "rp-fest"
                           #:is-primary #t)))

@@ -7,6 +7,7 @@
 ;;;
 ;;; Run: guile -L module tests/planner/test-comms.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness) (playnet planner vf schemas) (playnet planner observation states) (srfi srfi-1) (srfi srfi-13))
 
 (define here (dirname (current-filename)))
@@ -44,7 +45,7 @@
 
 (define s-food (mk-sat "intent-food" 52 40))              ; short 12
 (define s-water (mk-sat "intent-water" 10 10))            ; satisfied
-(define s-cook (mk-sat "intent-cook" 8 6 #:unit "hours")) ; short 2
+(define s-cook (mk-sat "intent-cook" 8 6 #:unit %effort-unit)) ; short 2
 (define s-floor (mk-sat "intent-floor" 2000 1500 #:unit "kcal")) ; short 500
 
 (define all-intents (list i-food i-water i-cook i-floor))

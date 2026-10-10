@@ -10,6 +10,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-derived-partition.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet planner knowledge dsl shorthand))
 (use-modules (playnet planner solve engine)
@@ -23,7 +24,7 @@
 
 (define win all-week-window)
 (define (res id spec place . window)
-  (er id spec #f #:place place #:qty 1.0 #:unit "each"
+  (er id spec #f #:place place #:qty 1.0 #:unit %count-unit
       #:window (if (pair? window) (car window) #f)))
 
 ;;; ════════════════════════════════════════════════════════════════════════════

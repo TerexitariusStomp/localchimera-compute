@@ -8,6 +8,7 @@
 ;;; retire-need withdraws. NO new schema fields anywhere.
 ;;; Run: guile -L module tests/planner/test-slots-service.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
 (use-modules (playnet planner doors service))
@@ -32,7 +33,7 @@
 (with-vat vat
   (let ((svc svc-ref))
     (display "\n── a CAPACITY slot: declare-means with pattern + note + emoji ──\n")
-    (let ((r ($ svc 'declare-means "s1" "alice" "spec-bike-repair" 4 "hours"
+    (let ((r ($ svc 'declare-means "s1" "alice" "spec-bike-repair" 4 %effort-unit
                 "loc-courtyard" ARCS "I fix flats and brakes" "🚲" "bike repair")))
       (check "declared" (car r) 'ok))
 
@@ -42,7 +43,7 @@
       (check "declared" (car r) 'ok))
 
     (display "\n── VF measures by kind: hours ride effort-quantity + 'use ──\n")
-    ($ svc 'declare-need "s1" "alice" "spec-childcare" 6 "hours"
+    ($ svc 'declare-need "s1" "alice" "spec-childcare" 6 %effort-unit
        "" "" "" "🧸" #f #f "childcare")
     (let* ((sl (cdr (plain-reply ($ svc 'my-slots "s1" "alice"))))
            (cc (find (lambda (n) (equal? (assq-ref n 'spec) "spec-childcare"))
@@ -311,10 +312,10 @@
     ($ svc 'declare-place "s1" "kim" "Kim's yard" 52.50 13.40)
     ($ svc 'declare-place "s1" "lou" "Lou's farm" 52.51 13.41)      ; ~1.3 km off
     ($ svc 'declare-place "s1" "max" "Max's field" 53.50 13.40)     ; ~111 km off
-    ($ svc 'declare-need "s1" "kim" "spec-eggs" 6 "each" "place:kim:kim-s-yard" "" "" "🥚" #f #f
+    ($ svc 'declare-need "s1" "kim" "spec-eggs" 6 %count-unit "place:kim:kim-s-yard" "" "" "🥚" #f #f
        "eggs" "[\"eggs\"]" "{\"filter-rule\":[\"min-recognition\",0.5]}")
-    ($ svc 'declare-means "s1" "lou" "spec-eggs" 12 "each" "place:lou:lou-s-farm" "" "" "🥚" "eggs" "[\"eggs\"]")
-    ($ svc 'declare-means "s1" "max" "spec-eggs" 12 "each" "place:max:max-s-field" "" "" "🥚" "eggs" "[\"eggs\"]")
+    ($ svc 'declare-means "s1" "lou" "spec-eggs" 12 %count-unit "place:lou:lou-s-farm" "" "" "🥚" "eggs" "[\"eggs\"]")
+    ($ svc 'declare-means "s1" "max" "spec-eggs" 12 %count-unit "place:max:max-s-field" "" "" "🥚" "eggs" "[\"eggs\"]")
     (define (hits-for need)
       (let* ((v (cdr (plain-reply ($ svc 'match-slots "s1" T3))))
              (row (find (lambda (m) (equal? (assq-ref m 'need) need)) (assq-ref v 'matches))))
@@ -325,7 +326,7 @@
                                 #:relationship "contact"))
     (check "…and admits a contact once the book names them"
            (hits-for "need:kim:spec-eggs") '("means:lou:spec-eggs"))
-    ($ svc 'declare-need "s1" "kim" "spec-eggs" 6 "each" "place:kim:kim-s-yard" "" "" "🥚" #f #f
+    ($ svc 'declare-need "s1" "kim" "spec-eggs" 6 %count-unit "place:kim:kim-s-yard" "" "" "🥚" #f #f
        "eggs" "[\"eggs\"]" "{\"filter-rule\":[\"within-km\",10]}")
     (check "within-km admits the near offer and denies the far one"
            (hits-for "need:kim:spec-eggs") '("means:lou:spec-eggs"))
@@ -338,11 +339,11 @@
 ;; withdraws.
 (with-vat vat
   (let* ((svc svc-ref)
-         (held-r (lambda (who) ($ svc 'declare-need "s1" who "spec-insulin" 1 "each" "" "" "" "💉" #f #f
+         (held-r (lambda (who) ($ svc 'declare-need "s1" who "spec-insulin" 1 %count-unit "" "" "" "💉" #f #f
                                   "insulin" "" "" "held" 100))))
     (display "\n── ratified kinds: the gate in declare-need ──\n")
     (check "a want needs no ratification"
-           (car ($ svc 'declare-need "s1" "ada" "spec-insulin" 1 "each" "" "" "" "💉" #f #f "insulin")) 'ok)
+           (car ($ svc 'declare-need "s1" "ada" "spec-insulin" 1 %count-unit "" "" "" "💉" #f #f "insulin")) 'ok)
     (check "an unratified held need is refused" (car (held-r "ada")) 'error)
     (check "…naming the rite"
            (and (string-contains (cdr (held-r "ada")) "ratify-kind") #t) #t)
@@ -353,11 +354,11 @@
              (list (assq-ref g 'spec) (assq-ref g 'kind) (assq-ref g 'by))
              '("spec-insulin" "held" "ben")))
     (check "a held grant does not cover a floor"
-           (car ($ svc 'declare-need "s1" "ada" "spec-insulin" 1 "each" "" "" "" "💉" #f #f
+           (car ($ svc 'declare-need "s1" "ada" "spec-insulin" 1 %count-unit "" "" "" "💉" #f #f
                    "insulin" "" "" "floor")) 'error)
     ($ svc 'ratify-kind "s1" "ben" "spec-insulin" "floor")
     (check "a floor grant covers the floor"
-           (car ($ svc 'declare-need "s1" "ada" "spec-insulin" 1 "each" "" "" "" "💉" #f #f
+           (car ($ svc 'declare-need "s1" "ada" "spec-insulin" 1 %count-unit "" "" "" "💉" #f #f
                    "insulin" "" "" "floor")) 'ok)
     (check "…and the held need beneath it" (car (held-r "ada")) 'ok)
     ($ svc 'ratify-kind "s1" "ben" "spec-insulin" "des")
@@ -373,7 +374,7 @@
 ;; ⇒ confirmed. The unmeasured gain (no burn history) audits every row.
 (with-vat vat
   (let* ((svc svc-ref) (root root-ref) (obs ($ root 'observer))
-         (held! (lambda () ($ svc 'declare-need "s1" "ada" "spec-insulin" 1 "each" "" "" "" "💉" #f #f
+         (held! (lambda () ($ svc 'declare-need "s1" "ada" "spec-insulin" 1 %count-unit "" "" "" "💉" #f #f
                               "insulin" "" "" "held" 100)))
          (grants (lambda () (assq-ref (cdr ($ svc 'ratified-kinds "s1")) 'grants))))
     (display "\n── stage 3: the audit of a ratified kind ──\n")
@@ -392,7 +393,7 @@
     ($ svc 'ratify-kind "s1" "ben" "spec-insulin" "held")
     ($ obs 'record-event
        (make-economic-event #:id "ev-ins-1" #:action 'consume #:resource-conforms-to "spec-insulin" #:provider "ada"
-                            #:resource-quantity (make-measure 1 "each") #:has-point-in-time "2099-01-01T08:00:00Z"))
+                            #:resource-quantity (make-measure 1 %count-unit) #:has-point-in-time "2099-01-01T08:00:00Z"))
     (let ((r (cdr ($ svc 'audit-kinds "s1" "cy"))))
       (check "taken as declared ⇒ confirmed" (assq-ref r 'padded) 0)
       (check "the confirmed row's observed quantity is on the finding"
@@ -489,7 +490,7 @@
       (check "…each stamped drawn 0 until a solve says otherwise"
              (assq-ref (car (assq-ref pool 'means)) 'drawn) 0.0))
     ($ svc 'slots-watch "live" ear)
-    ($ svc 'declare-need "live" "kim" "spec-bread" 2 "each" "" "" "" "🍞" #f #f "bread")
+    ($ svc 'declare-need "live" "kim" "spec-bread" 2 %count-unit "" "" "" "🍞" #f #f "bread")
     ($ svc 'declare-means "live" "lou" "spec-flour" 1 "kg" "")
     ($ svc 'retire-need "live" "kim" "spec-bread")
     ($ svc 'slots-changed! "live")))

@@ -9,6 +9,7 @@
 ;;; Run:  cd planner && guile --no-auto-compile -q -L ../module \
 ;;;         -l load-all.scm -l tests/test-dependent-supply.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet deprecated planner))
 (use-modules (goblins)
@@ -44,14 +45,14 @@
        (make-resource-specification #:id "spec-flour" #:name "Flour" #:default-unit-of-resource "kg"))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-bread" #:name "Bread"
-                                    #:default-unit-of-resource "each"))
+                                    #:default-unit-of-resource %count-unit))
 
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-mill" #:name "Mill"
-                            #:has-duration (make-duration 2 "hours")))
+                            #:has-duration (make-duration 2 %effort-unit)))
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-bake" #:name "Bake"
-                            #:has-duration (make-duration 4 "hours")))
+                            #:has-duration (make-duration 4 %effort-unit)))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-w" #:action 'consume #:resource-conforms-to "spec-wheat"
                          #:resource-quantity (make-measure 10 "kg") #:recipe-input-of "rp-mill"))
@@ -63,7 +64,7 @@
                          #:resource-quantity (make-measure 8 "kg") #:recipe-input-of "rp-bake"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-bo" #:action 'produce #:resource-conforms-to "spec-bread"
-                         #:resource-quantity (make-measure 20 "each") #:recipe-output-of "rp-bake"))
+                         #:resource-quantity (make-measure 20 %count-unit) #:recipe-output-of "rp-bake"))
     ($ rs 'add-recipe
        (make-recipe #:id "recipe-bread" #:name "Bread" #:primary-output "spec-bread"
                     #:recipe-processes (list "rp-mill" "rp-bake")))
@@ -214,7 +215,7 @@
                   ;; Add bread demand
                   ($ ps 'add-intent
                      (make-intent #:id "i-bread-ds" #:action 'produce #:name "Bread demand" #:resource-conforms-to "spec-bread"
-                                  #:resource-quantity (make-measure 20 "each") #:receiver "agent-a" #:due (number->string due)))
+                                  #:resource-quantity (make-measure 20 %count-unit) #:receiver "agent-a" #:due (number->string due)))
 
                   ;; relational-plan orchestrates fact lifting, index building, and planning
                   (let ((results (relational-plan 1 rs ps obs #:max-depth 5)))
@@ -593,12 +594,12 @@
 
     ;; Add a resource spec for an oven (durable equipment)
     ($ rs 'add-resource-spec
-       (make-resource-specification #:id "spec-oven" #:name "Oven" #:default-unit-of-resource "each"))
+       (make-resource-specification #:id "spec-oven" #:name "Oven" #:default-unit-of-resource %count-unit))
 
     ;; Add a 'use' flow to the bake process: bake requires oven (non-consuming)
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-oven-use" #:action 'use #:resource-conforms-to "spec-oven"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-input-of "rp-bake"))))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-input-of "rp-bake"))))
 
 (with-vat vat
   (let* ((facts (lift-planning-facts ($ scope 'recipe-store)))

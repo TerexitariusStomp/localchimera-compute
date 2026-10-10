@@ -22,6 +22,7 @@
 ;;; Pure solver (no ACDCs) ⇒ no blake3.
 ;;; Run: guile -L module tests/planner/test-resource-conformance-live.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test scope)) ; mock-scope-root
 (use-modules (playnet test harness)
              (playnet planner vf schemas)
@@ -29,7 +30,7 @@
              (goblins) (goblins vat) (srfi srfi-1))
 
 ;; the convection-oven the commune actually holds (custody at "town").
-(define holdings (list (er "res:conv-oven" "convection-oven" "commune" #:qty 1 #:unit "each")))
+(define holdings (list (er "res:conv-oven" "convection-oven" "commune" #:qty 1 #:unit %count-unit)))
 
 ;; bake: `use` an OVEN (1 oven-hour) → 1 bread. No `work` flow ⇒ the oven is the only scarcity.
 (define procs (list (rp* "bake" "Bake")))
@@ -40,7 +41,7 @@
 ;; the catalogue: `oven` is satisfied-by holding a `convection-oven`.
 (define oven-specs
   (list (make-resource-specification
-         #:id "oven" #:name "Oven" #:resource-classified-as '() #:default-unit-of-effort "hours"
+         #:id "oven" #:name "Oven" #:resource-classified-as '() #:default-unit-of-effort %effort-unit
          #:satisfied-by '((("convection-oven" . 0))))))
 
 (define spatials (list (make-spatial-thing #:id "town" #:lat 40.0 #:long -74.0)))

@@ -14,6 +14,7 @@
 //   { id, spec, name, emoji, note, qty, unit, where, from, until,
 //     arcs: [{start, end, days[]}] }
 import { isoDate } from '../timefmt.js';
+import { COUNT_UNIT, EFFORT_UNIT, isTimeUnit } from '../units-catalogue.js';
 export const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 export const WEEK_ORDINALS = ["1st", "2nd", "3rd", "4th", "5th"];
 export const TENSIONS = ["floor", "held", "des"];
@@ -167,7 +168,7 @@ export function unitReading(unit, kind) {
     const m = u.match(/^(.+)\/(day|week)$/);
     if (m)
         return `rate: ${m[1]} per ${m[2]} — the planner converts by its bands`;
-    if ((u === "hours" || u === "minutes" || u === "days") && kind !== "need")
+    if (isTimeUnit(u) && kind !== "need")
         return "budget: a pool of time, spent across the horizon";
     if (isMoneyUnit(u))
         return kind === "need" ? "money: the plan meets it by acquisition, weighted with everyone else's"
@@ -176,7 +177,7 @@ export function unitReading(unit, kind) {
 }
 export const blankSlot = (kind) => ({
     id: null, spec: "", name: "", emoji: kind === "need" ? "🌱" : "🤲",
-    note: "", qty: 1, unit: kind === "need" ? "each" : "hours",
+    note: "", qty: 1, unit: kind === "need" ? COUNT_UNIT : EFFORT_UNIT,
     where: "", from: null, until: null, arcs: [],
 });
 // name → spec id: the folksonomy slug ("fresh bread" → "spec-fresh-bread").

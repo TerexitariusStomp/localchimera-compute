@@ -15,6 +15,7 @@
 ;;;
 ;;; Run: guile -L module tests/planner/test-skill-law.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
 (use-modules (playnet planner doors service))
@@ -73,17 +74,17 @@
     ;; one skill with a law — a day's idleness halves it — and one without
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "skill-bake" #:name "baking"
-                                    #:resource-classified-as '("skill:decay:0.5" "skill:regen:1") #:default-unit-of-effort "hours"))
+                                    #:resource-classified-as '("skill:decay:0.5" "skill:regen:1") #:default-unit-of-effort %effort-unit))
     ($ rs 'add-resource-spec (make-resource-specification #:id "skill-plumb" #:name "plumbing"
                                                           #:resource-classified-as '()
-                                                          #:default-unit-of-effort "hours"))
+                                                          #:default-unit-of-effort %effort-unit))
     (define (work! skill hours eid iid when)
       ($ obs 'register-intent
          (make-intent #:id iid #:action 'work #:resource-conforms-to skill
-                      #:effort-quantity (make-measure hours "hour") #:provider "ada"))
+                      #:effort-quantity (make-measure hours %effort-unit) #:provider "ada"))
       ($ obs 'record-event
          (make-economic-event #:id eid #:action 'work #:resource-conforms-to skill #:provider "ada"
-                              #:effort-quantity (make-measure hours "hour") #:has-point-in-time when
+                              #:effort-quantity (make-measure hours %effort-unit) #:has-point-in-time when
                               #:satisfies iid)))
     ;; both skills: 6 h a year ago, 4 h a month ago
     (work! "skill-bake" 6 "b1" "i1" "2025-09-01T08:00:00Z")

@@ -9,6 +9,7 @@
 ;;;   6. Buffer (add zones, record snapshots)
 ;;;   7. Persist (save entire vat, restore, verify all state)
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (ice-9 match) (playnet planner federation remote-transport) (playnet planner scope root) (playnet planner vf schemas) (playnet planner ddmrp records))
 (use-modules (goblins)
@@ -57,7 +58,7 @@
        (make-resource-specification #:id "spec-flour" #:name "Flour" #:default-unit-of-resource "kg"))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-bread" #:name "Bread"
-                                    #:default-unit-of-resource "each"))
+                                    #:default-unit-of-resource %count-unit))
 
     ;; Process specs
     ($ rs 'add-process-spec
@@ -68,17 +69,17 @@
     ;; Recipe processes
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-mill" #:name "Mill wheat" #:process-conforms-to "pspec-mill"
-                            #:has-duration (make-duration 2 "hours")))
+                            #:has-duration (make-duration 2 %effort-unit)))
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-bake" #:name "Bake bread" #:process-conforms-to "pspec-bake"
-                            #:has-duration (make-duration 4 "hours")))
+                            #:has-duration (make-duration 4 %effort-unit)))
 
     ;; Recipe flows — include 'work flows so SNLT is computable.
     ;; 6hr work → 20 loaves = 0.3hr SNLT per loaf. Aggregate recipe SNLT:
     ;; work total = 6, output = 20, SNLT = 0.3.
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-mill-work" #:action 'work #:resource-conforms-to "spec-labor"
-                         #:effort-quantity (make-measure 2 "hours") #:recipe-input-of "rp-mill"))
+                         #:effort-quantity (make-measure 2 %effort-unit) #:recipe-input-of "rp-mill"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-wheat-in" #:action 'consume #:resource-conforms-to "spec-wheat"
                          #:resource-quantity (make-measure 10 "kg") #:recipe-input-of "rp-mill"))
@@ -87,13 +88,13 @@
                          #:resource-quantity (make-measure 8 "kg") #:recipe-output-of "rp-mill"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-bake-work" #:action 'work #:resource-conforms-to "spec-labor"
-                         #:effort-quantity (make-measure 4 "hours") #:recipe-input-of "rp-bake"))
+                         #:effort-quantity (make-measure 4 %effort-unit) #:recipe-input-of "rp-bake"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-flour-in" #:action 'consume #:resource-conforms-to "spec-flour"
                          #:resource-quantity (make-measure 8 "kg") #:recipe-input-of "rp-bake"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-bread-out" #:action 'produce #:resource-conforms-to "spec-bread"
-                         #:resource-quantity (make-measure 20 "each") #:recipe-output-of "rp-bake"))
+                         #:resource-quantity (make-measure 20 %count-unit) #:recipe-output-of "rp-bake"))
 
     ;; Recipe
     ($ rs 'add-recipe
@@ -142,7 +143,7 @@
        (make-economic-resource
          #:id "r-bread" #:name "Bread Stock" #:conforms-to "spec-bread"
          #:classified-as (list "individually-claimable")
-         #:accounting-quantity (make-measure 0 "each") #:onhand-quantity (make-measure 0 "each")
+         #:accounting-quantity (make-measure 0 %count-unit) #:onhand-quantity (make-measure 0 %count-unit)
          #:current-location "loc-bakery" #:primary-accountable "agent-commune"))
     (check "resources seeded" (= 3 (length ($ obs 'all-resources))))
     (check "wheat 200kg" (= 200 (measure-has-numerical-value
@@ -170,7 +171,7 @@
     ;; Bakery needs bread
     ($ ps 'add-intent
        (make-intent #:id "i-bread-need" #:action 'produce #:name "Bread demand" #:output-of "rp-bake" #:resource-conforms-to "spec-bread" #:resource-classified-as (list "tag:plan:request")
-                    #:resource-quantity (make-measure 40 "each") #:receiver "agent-commune" #:due "2026-04-01T00:00:00Z" #:planned-within "plan-weekly"))
+                    #:resource-quantity (make-measure 40 %count-unit) #:receiver "agent-commune" #:due "2026-04-01T00:00:00Z" #:planned-within "plan-weekly"))
 
     (check "intents" (= 2 (length ($ ps 'all-intents))))
     (check "offers" (= 1 (length ($ ps 'offers))))
@@ -224,7 +225,7 @@
          #:id "ev-produce-bread" #:action 'produce #:output-of "proc-bake"
          #:resource-inventoried-as "r-bread" #:resource-conforms-to "spec-bread" #:resource-classified-as (list "individually-claimable")
          #:provider "agent-commune" #:receiver "agent-commune"
-         #:resource-quantity (make-measure 40 "each") #:has-point-in-time "2026-03-28T16:00:00Z"
+         #:resource-quantity (make-measure 40 %count-unit) #:has-point-in-time "2026-03-28T16:00:00Z"
          #:at-location "loc-bakery"))
 
     ;; Verify resource state
@@ -254,22 +255,22 @@
     ;; commune (receiver) — the producer cannot self-author the plan
     ;; that validates their own work.
     ($ obs 'register-intent
-       (make-intent #:id "int-alice-6h" #:action 'work #:output-of "proc-mill" #:resource-conforms-to "spec-labor" #:effort-quantity (make-measure 6 "hours")
+       (make-intent #:id "int-alice-6h" #:action 'work #:output-of "proc-mill" #:resource-conforms-to "spec-labor" #:effort-quantity (make-measure 6 %effort-unit)
                     #:provider "agent-alice" #:receiver "agent-commune"))
     ($ obs 'record-event
        (make-economic-event
          #:id "ev-alice-work" #:action 'work #:input-of "proc-mill"
-         #:provider "agent-alice" #:receiver "agent-commune" #:effort-quantity (make-measure 6 "hours") #:has-point-in-time "2026-03-28T10:00:00Z" #:satisfies "int-alice-6h"))
+         #:provider "agent-alice" #:receiver "agent-commune" #:effort-quantity (make-measure 6 %effort-unit) #:has-point-in-time "2026-03-28T10:00:00Z" #:satisfies "int-alice-6h"))
     ($ acs 'credit-from-event
        ($ obs 'get-event "ev-alice-work"))
 
     ($ obs 'register-intent
-       (make-intent #:id "int-bob-8h" #:action 'work #:output-of "proc-bake" #:resource-conforms-to "spec-labor" #:effort-quantity (make-measure 8 "hours")
+       (make-intent #:id "int-bob-8h" #:action 'work #:output-of "proc-bake" #:resource-conforms-to "spec-labor" #:effort-quantity (make-measure 8 %effort-unit)
                     #:provider "agent-bob" #:receiver "agent-commune"))
     ($ obs 'record-event
        (make-economic-event
          #:id "ev-bob-work" #:action 'work #:input-of "proc-bake"
-         #:provider "agent-bob" #:receiver "agent-commune" #:effort-quantity (make-measure 8 "hours") #:has-point-in-time "2026-03-28T16:00:00Z" #:satisfies "int-bob-8h"))
+         #:provider "agent-bob" #:receiver "agent-commune" #:effort-quantity (make-measure 8 %effort-unit) #:has-point-in-time "2026-03-28T16:00:00Z" #:satisfies "int-bob-8h"))
     ($ acs 'credit-from-event
        ($ obs 'get-event "ev-bob-work"))
 

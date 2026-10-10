@@ -1,5 +1,6 @@
 ;;; test-structural-invariants.scm — leaves-are-real validators
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner scope root))
 (use-modules (playnet governance credentials) (playnet governance scope) (playnet governance structural-invariants) (playnet keri acdc) (playnet keri acdc-store))
@@ -141,7 +142,7 @@
     ($ top 'admit-commune gtop "la" la)
     ($ store 'issue
        (make-work-event-credential
-        "ELA" "alice" "evt-1" 4 "hour"
+        "ELA" "alice" "evt-1" 4 %effort-unit
         #:timestamp "2026-04-25T10:00:00Z"))
 
     (check-pred "labor issued by leaf is coherent"
@@ -165,7 +166,7 @@
     ;; Federation tries to attest someone's labor directly
     ($ store 'issue
        (make-work-event-credential
-        "ETOP" "alice" "evt-2" 100 "hour"
+        "ETOP" "alice" "evt-2" 100 %effort-unit
         #:timestamp "2026-04-25T10:00:00Z"))
 
     (check-pred "federation-issued labor flagged"
@@ -209,7 +210,7 @@
       ($ top 'admit-commune gtop "lb" lb 'ratification (cred-said rat-lb)))
     ($ store 'issue
        (make-work-event-credential
-        "ELA" "alice" "evt-3" 2 "hour"
+        "ELA" "alice" "evt-3" 2 %effort-unit
         #:timestamp "2026-04-25T10:00:00Z"))
 
     (check-pred "healthy tree is coherent"

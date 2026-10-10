@@ -5,6 +5,7 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module -l tests/planner/chemistry-test.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules ((playnet planner knowledge catalogues subsistence) #:select (shed-rain-mm-day))
              ((playnet planner knowledge dsl shorthand) #:select (consume*))
              (playnet test harness)
@@ -408,7 +409,7 @@
 (check "a good with no density and a mass unit has no volume" (litres-per-unit "soil" "kg") #f)
 (check-pred "the one bridge reads a megalitre, a tonne and a hectare: a row per kilogram or litre scales to the spec's unit"
             (and (~= (litres-per-unit "water" "ML") 1e6) (~= (unit-scale "t") 1000.0) (~= (unit-scale "ML") 1e6) (~= (unit-scale "kg") 1.0)
-                 (not (unit-scale "each")) (~= (area-m2 "acre") 4046.86)))
+                 (not (unit-scale %count-unit)) (~= (area-m2 "acre") 4046.86)))
 (check-pred "the farm's summer water is a water form: its litre, read at its megalitre scale by the scope" (water-form? "water"))
 (check-pred "a cubic metre holds 770 kg of grain or 250 of bread for a day: the container hours per unit, over the day"
             (and (~= (/ 24.0 (container-hours "grain" 1000.0)) 770.0) (~= (/ 24.0 (container-hours "bread" 1000.0)) 250.0)))
@@ -440,7 +441,7 @@
   (check-pred "heat-drawn: the carriers and only the carriers"
               (~= 5.3 (heat-drawn (bare-flows '((consume "sunlight" 5.0) (consume "spec-sp-electricity" 0.3) (consume "grain" 2.0) (consume "water" 1.0)))))))
 (check-pred "balance-flows reads a quantity in its row's basis: two megalitres are two million litres, a count stays a count"
-            (let ((t (balance-flows (list (consume* "w" "water" 2.0 "grow" "ML") (consume* "s" "sea" 1.0 "fish" "each")))))
+            (let ((t (balance-flows (list (consume* "w" "water" 2.0 "grow" "ML") (consume* "s" "sea" 1.0 "fish" %count-unit)))))
               (and (~= 2.0e6 (flow-qty (find (lambda (f) (eq? 'consume (flow-action f))) t)))
                    (= 1.0 (flow-qty (find (lambda (f) (equal? "sea" (flow-spec f))) t))))))
 
@@ -512,7 +513,7 @@
               (and (null? (process-creates "p" (bare-flows '((consume "soil-n" 1.0) (produce "food" 100.0))) comp #:boundary? #t))
                    (null? (process-creates "p" (bare-flows '((produce "food" 100.0))) comp)))))
 ;; ── one unit per spec ─────────────────────────────────────────────────────────
-(let* ((made (consume* "s" "salt" 100.0 "brine" "g")) (counted (consume* "b" "sea" 1.0 "brine" "each"))
+(let* ((made (consume* "s" "salt" 100.0 "brine" "g")) (counted (consume* "b" "sea" 1.0 "brine" %count-unit))
        (restated (flows-in-spec-units (list made counted) '(("salt" . "kg") ("sea" . "kg")))))
   (check-pred "a hundred grams of a salt counted in kilograms is a tenth of one"
               (let ((m (recipe-flow-resource-quantity (car restated))))

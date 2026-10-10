@@ -21,6 +21,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-limits-live.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test scope))
 (use-modules (playnet test harness) (playnet planner knowledge catalogues eco) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1) (playnet planner scope live)
              (goblins) (goblins persistence-store memory)
@@ -68,7 +69,7 @@
     ;; FERTILISE — draws the boundary to make food
     ($ rs 'add-recipe-process (make-recipe-process #:id "fertilise" #:name "Fertilise"
                                                    #:process-conforms-to "ps"
-                                                   #:has-duration (make-duration 0.5 "hours")
+                                                   #:has-duration (make-duration 0.5 %effort-unit)
                                                    #:sequence-group 0))
     ($ rs 'add-recipe-flow (make-recipe-flow #:id "fp" #:action 'produce
                                              #:resource-conforms-to "food"
@@ -80,7 +81,7 @@
                                              #:recipe-input-of "fertilise"))
     ($ rs 'add-recipe-flow (make-recipe-flow #:id "fw" #:action 'work
                                              #:resource-conforms-to "skill-land"
-                                             #:effort-quantity (make-measure 0.5 "hours")
+                                             #:effort-quantity (make-measure 0.5 %effort-unit)
                                              #:recipe-input-of "fertilise"))
     ($ rs 'add-recipe (make-recipe #:id "r-f" #:name "Fertilise" #:primary-output "food"
                                    #:recipe-processes (list "fertilise")))
@@ -88,7 +89,7 @@
     ;; not something the planetary catalogue asserts for everyone.
     ($ rs 'add-recipe-process (make-recipe-process #:id "scrub" #:name "Effluent works"
                                                    #:process-conforms-to "ps"
-                                                   #:has-duration (make-duration 4.0 "hours")
+                                                   #:has-duration (make-duration 4.0 %effort-unit)
                                                    #:sequence-group 0))
     ($ rs 'add-recipe-flow (make-recipe-flow #:id "sr" #:action 'produce
                                              #:resource-conforms-to "nitrogen"
@@ -96,14 +97,14 @@
                                              #:recipe-output-of "scrub" #:is-primary #t))
     ($ rs 'add-recipe-flow (make-recipe-flow #:id "sw" #:action 'work
                                              #:resource-conforms-to "skill-land"
-                                             #:effort-quantity (make-measure 4.0 "hours")
+                                             #:effort-quantity (make-measure 4.0 %effort-unit)
                                              #:recipe-input-of "scrub"))
     ($ rs 'add-recipe (make-recipe #:id "r-s" #:name "Effluent works" #:primary-output "nitrogen"
                                    #:recipe-processes (list "scrub")))
     ($ as 'add-agent (make-agent #:id "ada" #:type 'person #:name "Ada" #:primary-location PLACE
                                  #:classified-as '() #:availability-window win))
     ($ obs 'seed-resource (make-economic-resource #:id "sk" #:name "Ada can work land" #:conforms-to "skill-land"
-                            #:accounting-quantity (make-measure 40 "hours") #:onhand-quantity (make-measure 40 "hours") #:primary-accountable "ada"))
+                            #:accounting-quantity (make-measure 40 %effort-unit) #:onhand-quantity (make-measure 40 %effort-unit) #:primary-accountable "ada"))
     (check-pred "commune seeded" #t)))
 
 (define FOOD 150.0)

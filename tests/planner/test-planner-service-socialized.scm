@@ -16,6 +16,7 @@
 (setenv "PLAYNET_DATA_DIR"
         (string-append (or (getenv "TMPDIR") "/tmp") "/pn-svc-soc-test"))
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness)
              (playnet planner vf schemas)
              (playnet planner doors service)          ; ^planner-service
@@ -29,7 +30,7 @@
 
 (define procs (list (make-recipe-process #:id "deliver" #:name "Deliver")))
 (define flows
-  (list (make-recipe-flow #:id "d-use" #:action 'use #:resource-conforms-to "bike" #:resource-quantity (make-measure 1.0 "each") #:effort-quantity (make-measure 1.0 "hours")
+  (list (make-recipe-flow #:id "d-use" #:action 'use #:resource-conforms-to "bike" #:resource-quantity (make-measure 1.0 %count-unit) #:effort-quantity (make-measure 1.0 %effort-unit)
                           #:recipe-input-of "deliver")
         (make-recipe-flow #:id "d-out" #:action 'produce #:resource-conforms-to "delivered" #:resource-quantity (make-measure 1.0 "kg")
                           #:recipe-output-of "deliver" #:is-primary #t)))
@@ -40,7 +41,7 @@
 ;; Alice's bike lives in HER commune's books (intra-commune socialization).
 (define (bike)
   (make-economic-resource #:id "res:bike" #:conforms-to "bike" #:classified-as '()
-                          #:onhand-quantity (make-measure 1 "each") #:current-location "town" #:primary-accountable OWNER))
+                          #:onhand-quantity (make-measure 1 %count-unit) #:current-location "town" #:primary-accountable OWNER))
 (define spatials (list (make-spatial-thing #:id "town" #:lat 40.0 #:long -74.0)))
 (define vat (spawn-vat #:name "planner-service-socialized"))
 

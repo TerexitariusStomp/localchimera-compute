@@ -8,6 +8,7 @@
 ;;;   GUIX_ENVIRONMENT=<profile-with-libblake3> guile -L module \
 ;;;     tests/planner/test-skill-mint.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner observation observer) (playnet planner vf schemas))
 (use-modules (playnet governance acdc-bridge) (playnet governance credentials) (playnet keri acdc) (playnet keri acdc-store))
@@ -16,7 +17,7 @@
 (define (rec-work! obs aid skill hours eid)
   ($ obs 'record-event
      (make-economic-event
-       #:id eid #:action 'work #:resource-conforms-to skill #:provider aid #:effort-quantity (make-measure hours "hour") #:has-point-in-time "2026-03-01T08:00:00Z")))
+       #:id eid #:action 'work #:resource-conforms-to skill #:provider aid #:effort-quantity (make-measure hours %effort-unit) #:has-point-in-time "2026-03-01T08:00:00Z")))
 
 (define (skills-for acdc skill)
   (filter (lambda (c) (equal? (cred-claim c 'skill) skill))

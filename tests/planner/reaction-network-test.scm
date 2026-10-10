@@ -9,6 +9,7 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module -l tests/planner/reaction-network-test.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test scope)) ; mock-scope-root
 (use-modules (playnet test harness)
              (playnet planner observation observer) (playnet planner vf schemas) (srfi srfi-1)
@@ -25,7 +26,7 @@
 ;; parsimonious FBA: a vanishing labour cost per reaction → minimum-total-flux
 ;; (unique, no futile cycles). A shared "lab" skill, ample stock.
 (define (wk id proc) (make-recipe-flow #:id id #:action 'work #:resource-conforms-to "lab"
-                                       #:effort-quantity (make-measure 0.05 "hours")
+                                       #:effort-quantity (make-measure 0.05 %effort-unit)
                                        #:recipe-input-of proc))
 (define flows (append rxn-flows (list (wk "w-r1" "r1") (wk "w-r2" "r2"))))
 (define recipes (list net))

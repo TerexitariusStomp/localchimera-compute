@@ -10,6 +10,7 @@
 ;;;   guile --no-auto-compile -q -L module \
 ;;;     tests/planner/test-option-premium.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner algorithms option-premium) (playnet planner federation store-registry) (playnet planner scope root) (playnet planner vf schemas))
 (use-modules (goblins)
@@ -59,13 +60,13 @@
                                #:medium-of-exchange #t))
 (define labor-spec
   (make-resource-specification #:id "spec-labor" #:name "Labor hours"
-                               #:default-unit-of-resource "hours"))
+                               #:default-unit-of-resource %effort-unit))
 (define pipe-spec
   (make-resource-specification #:id "spec-pipe" #:name "Pipe (meters)"
                                #:default-unit-of-resource "m"))
 (define repair-spec
   (make-resource-specification #:id "spec-repair" #:name "Repair completed"
-                               #:default-unit-of-resource "each"))
+                               #:default-unit-of-resource %count-unit))
 
 ;; Recipe: repair job consuming $24 pipe + 2h labor → 1 repair
 (with-vat vat
@@ -75,17 +76,17 @@
 
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-repair" #:name "Do the repair"
-                            #:has-duration (make-duration 2 "hours")))
+                            #:has-duration (make-duration 2 %effort-unit)))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-pipe" #:action 'consume #:resource-conforms-to "spec-pipe"
                          #:resource-quantity (make-measure 3 "m")
                          #:recipe-input-of "rp-repair"))
     ($ rs 'add-recipe-flow
-       (make-recipe-flow #:id "rf-labor" #:action 'work #:effort-quantity (make-measure 2 "hours")
+       (make-recipe-flow #:id "rf-labor" #:action 'work #:effort-quantity (make-measure 2 %effort-unit)
                          #:recipe-input-of "rp-repair"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-repair-out" #:action 'produce #:resource-conforms-to "spec-repair"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-repair"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-repair"))
     ($ rs 'add-recipe
        (make-recipe #:id "recipe-repair" #:name "Repair job" #:primary-output "spec-repair"
                     #:recipe-processes (list "rp-repair")))))

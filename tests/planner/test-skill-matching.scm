@@ -25,6 +25,7 @@
 ;;; Run from repo root:
 ;;;   guile --no-auto-compile -q -L module -L . tests/planner/test-skill-matching.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness) (playnet planner formulas skill-law) (playnet planner vf schemas) (srfi srfi-1) (playnet planner scope live) (playnet test scope)
              ((playnet planner solve engine) #:select (plan-from-records))
              ((playnet planner formulas skill-law) #:select (effective-skills))
@@ -38,11 +39,11 @@
 (define (person id) (make-agent #:id id #:type 'person #:name id #:primary-location "shop"
                                 #:classified-as '() #:availability-window win))
 (define (skill-of id acct spec)
-  (make-economic-resource #:id id #:conforms-to spec #:classified-as '() #:accounting-quantity (make-measure 8.0 "hours")
-    #:onhand-quantity (make-measure 8.0 "hours") #:current-location "shop" #:primary-accountable acct #:custodian-scope acct))
+  (make-economic-resource #:id id #:conforms-to spec #:classified-as '() #:accounting-quantity (make-measure 8.0 %effort-unit)
+    #:onhand-quantity (make-measure 8.0 %effort-unit) #:current-location "shop" #:primary-accountable acct #:custodian-scope acct))
 (define shop (list (make-spatial-thing #:id "shop" #:name "Shop" #:lat 0.0 #:long 0.0)))
 (define bake-proc (list (make-recipe-process #:id "bake" #:name "Bake" #:process-conforms-to "pspec"
-                                             #:has-duration (make-duration 1.0 "hours"))))
+                                             #:has-duration (make-duration 1.0 %effort-unit))))
 ;; ONE process, TWO skill lines
 (define bake-flows
   (list (wk*  "w-mix"  "skill-mix"  1.0 "bake")
@@ -121,13 +122,13 @@
 ;; closure nothing consults looks exactly like a closure that is not there.
 (define (composite-world satisfied?)
   (with-vat vat
-    (let* ((spec (make-resource-specification #:id "skill-bake" #:name "Bake" #:resource-classified-as '() #:default-unit-of-resource "hours"
+    (let* ((spec (make-resource-specification #:id "skill-bake" #:name "Bake" #:resource-classified-as '() #:default-unit-of-resource %effort-unit
                    #:satisfied-by (if satisfied?
                                       (list (list (cons "skill-mix" 0) (cons "skill-oven" 0)))
                                       '())))
            (root (mock-scope
-                  #:resources (list (er "s1" "skill-mix"  "ada" #:place "shop" #:qty 8.0 #:unit "hours")
-                                    (er "s2" "skill-oven" "ada" #:place "shop" #:qty 8.0 #:unit "hours"))
+                  #:resources (list (er "s1" "skill-mix"  "ada" #:place "shop" #:qty 8.0 #:unit %effort-unit)
+                                    (er "s2" "skill-oven" "ada" #:place "shop" #:qty 8.0 #:unit %effort-unit))
                   #:agents  (list (make-agent #:id "ada" #:type 'person #:name "Ada"
                                               #:primary-location "shop" #:classified-as '()
                                               #:availability-window win))
@@ -137,7 +138,7 @@
                                                #:recipe-processes (quote ())
                                                #:recipe-exchanges (quote ())))
                   #:chain   (list (list "r-bake" (make-recipe-process #:id "bake" #:name "Bake" #:process-conforms-to "pspec"
-                                                                      #:has-duration (make-duration 1.0 "hours"))))
+                                                                      #:has-duration (make-duration 1.0 %effort-unit))))
                   #:flows   (list (wk* "w-comp" "skill-bake" 1.0 "bake")
                                   (out* "out" "loaf" 10 "bake"))
                   #:specs   (list spec))))

@@ -25,6 +25,7 @@
 (chdir %project-root)
 
 (add-to-load-path "module")
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (goblins)
              (goblins persistence-store memory)
@@ -53,14 +54,14 @@
     ;; keep-in-place is the whole declaration that this is a container
     ($ ($ scope 'recipe-store) 'add-resource-spec
        (make-resource-specification #:id "spec-box" #:name "Box in a public place"
-                                    #:resource-classified-as '("container") #:default-unit-of-resource "hours" #:default-unit-of-effort "hours"
+                                    #:resource-classified-as '("container") #:default-unit-of-resource %effort-unit #:default-unit-of-effort %effort-unit
                                     #:keep-in-place #t))
     ($ ($ scope 'recipe-store) 'add-resource-spec
        (make-resource-specification #:id "sack" #:name "Sack of flour" #:resource-classified-as '()
                                     #:default-unit-of-resource "kg"))
     ($ ($ scope 'observer) 'seed-resource
        (make-economic-resource #:id "box/bridge" #:name "the box" #:conforms-to "spec-box" #:classified-as '()
-                               #:accounting-quantity (make-measure 24.0 "hours") #:onhand-quantity (make-measure 24.0 "hours")
+                               #:accounting-quantity (make-measure 24.0 %effort-unit) #:onhand-quantity (make-measure 24.0 %effort-unit)
                                #:current-location BRIDGE))
     ($ ($ scope 'observer) 'seed-resource
        (make-economic-resource #:id "sack/1" #:name "a sack of flour" #:conforms-to "sack" #:classified-as '()

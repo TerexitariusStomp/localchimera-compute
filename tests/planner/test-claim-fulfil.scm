@@ -5,6 +5,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-claim-fulfil.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner scope root) (playnet planner vf schemas) (playnet planner observation states) (srfi srfi-1))
 (use-modules (playnet planner doors service))
@@ -17,10 +18,10 @@
 (define (work! obs aid skill hours eid iid)
   ($ obs 'register-intent
      (make-intent #:id iid #:action 'work #:resource-conforms-to skill
-                  #:effort-quantity (make-measure hours "hour") #:provider aid))
+                  #:effort-quantity (make-measure hours %effort-unit) #:provider aid))
   ($ obs 'record-event
      (make-economic-event #:id eid #:action 'work #:resource-conforms-to skill #:provider aid
-                          #:effort-quantity (make-measure hours "hour")
+                          #:effort-quantity (make-measure hours %effort-unit)
                           #:has-point-in-time "2026-03-01T08:00:00Z" #:satisfies iid
                           #:in-scope-of '())))
 
@@ -33,13 +34,13 @@
            (svc (spawn ^planner-service (hashmap-set (hashmap) "s1" sr))))
       ($ rs 'add-recipe-process
          (make-recipe-process #:id "rp-bake" #:name "Bake" #:process-conforms-to "pspec-bake"
-                              #:has-duration (make-duration 3 "hours")))
+                              #:has-duration (make-duration 3 %effort-unit)))
       ($ rs 'add-recipe-flow
          (make-recipe-flow #:id "rf-bake-work" #:action 'work #:resource-conforms-to "spec-labor"
-                           #:effort-quantity (make-measure 3 "hours") #:recipe-input-of "rp-bake"))
+                           #:effort-quantity (make-measure 3 %effort-unit) #:recipe-input-of "rp-bake"))
       ($ rs 'add-recipe-flow
          (make-recipe-flow #:id "rf-bake-out" #:action 'produce #:resource-conforms-to "spec-bread"
-                           #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-bake"))
+                           #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-bake"))
       ($ rs 'add-recipe (make-recipe #:id "recipe-bread" #:name "Bread"
                                      #:primary-output "spec-bread"
                                      #:recipe-processes (list "rp-bake")))
@@ -47,7 +48,7 @@
       ($ obs 'record-event
          (make-economic-event #:id "ev-bread" #:action 'produce #:resource-inventoried-as "r-bread" #:resource-conforms-to "spec-bread"
            #:resource-classified-as (list "individually-claimable") #:provider "commune" #:receiver "commune"
-           #:resource-quantity (make-measure 10 "each") #:has-point-in-time "2026-03-02T12:00:00Z"))
+           #:resource-quantity (make-measure 10 %count-unit) #:has-point-in-time "2026-03-02T12:00:00Z"))
       (values svc obs))))
 
 ;; the plan said: alice claims 3 loaves at town — its row, registered as the

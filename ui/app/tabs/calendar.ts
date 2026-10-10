@@ -83,6 +83,7 @@ import { html, render, raw } from '../template.js';
 import { awayOn } from '../away.js';
 import { AWAY_KINDS } from '../rest.js';
 import { openSettings } from '../settings.js';
+import { EFFORT_UNIT } from '../units-catalogue.js';
 
 const H = 42;                 // pixels per hour (grid row height)
 
@@ -776,7 +777,7 @@ function verbsOf(d: DayEvent): VerbLine[] {
 const ORDER = ["work", "use", "consume", "cite", "obtain-entity", "obtain-person", "pay", "tell",
                "transfer", "move", "produce", "deliver-service"];
 const fmtQ = (f: Flow): string =>
-  f.q == null ? "" : `${+(+f.q).toFixed(2)}${f.u ? (f.u === "hours" ? " h" : " " + f.u) : ""}`;
+  f.q == null ? "" : `${+(+f.q).toFixed(2)}${f.u ? (f.u === EFFORT_UNIT ? " h" : " " + f.u) : ""}`;
 
 /**
  * A flow's own place, on the map, at the act's own time. showEventOnMap is

@@ -7,6 +7,7 @@
 ;;; Run:  cd planner && guile --no-auto-compile -q -L ../module \
 ;;;         -l load-all.scm -l tests/test-space-time-scenario.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner plan store) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
 (use-modules (goblins)
@@ -110,10 +111,10 @@
 
     ;; 2 work commitments (spec-bread and spec-flour) with effort
     ($ ps 'add-commitment
-       (make-commitment #:id "c-w1" #:action 'work #:resource-conforms-to "spec-bread" #:effort-quantity (make-measure 5 "hour")
+       (make-commitment #:id "c-w1" #:action 'work #:resource-conforms-to "spec-bread" #:effort-quantity (make-measure 5 %effort-unit)
                         #:provider "alice"))
     ($ ps 'add-commitment
-       (make-commitment #:id "c-w2" #:action 'work #:resource-conforms-to "spec-flour" #:effort-quantity (make-measure 10 "hour")
+       (make-commitment #:id "c-w2" #:action 'work #:resource-conforms-to "spec-flour" #:effort-quantity (make-measure 10 %effort-unit)
                         #:provider "bob"))
 
     ;; Score inline: coverage = fraction of deficit intents whose spec

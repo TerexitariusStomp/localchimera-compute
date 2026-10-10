@@ -8,6 +8,7 @@
 ;;; Fixture: test-owned-delivery's, with an oven the bake uses and a stock of it.
 ;;;
 ;;; Run:  guile -L module -L tests tests/planner/test-claim-means.scm
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test scope)) ; mock-scope-root
 (use-modules ((playnet planner facts rail) #:select (spec-claimable? claimable-specs spec-rail))
              ((playnet planner legal crossings) #:select (rail-channel))
@@ -28,11 +29,11 @@
 (define procs (list (make-recipe-process #:id "bake" #:name "Bake")))
 (define flows
   (list (make-recipe-flow #:id "bw" #:action 'work #:resource-conforms-to "skill-bake"
-                          #:effort-quantity (make-measure 1.0 "hours") #:recipe-input-of "bake")
+                          #:effort-quantity (make-measure 1.0 %effort-unit) #:recipe-input-of "bake")
         (make-recipe-flow #:id "bi" #:action 'consume #:resource-conforms-to "wheat"
                           #:resource-quantity (make-measure 1.0 "kg") #:recipe-input-of "bake")
         (make-recipe-flow #:id "bu" #:action 'use #:resource-conforms-to "oven"
-                          #:resource-quantity (make-measure 1.0 "each") #:recipe-input-of "bake")   ; the bake USES the oven
+                          #:resource-quantity (make-measure 1.0 %count-unit) #:recipe-input-of "bake")   ; the bake USES the oven
         (make-recipe-flow #:id "bo" #:action 'produce #:resource-conforms-to "bread"
                           #:resource-quantity (make-measure 10.0 "kg") #:recipe-output-of "bake"
                           #:is-primary #t)))
@@ -49,7 +50,7 @@
           #:accounting-quantity (make-measure 1.0 "kg") #:onhand-quantity (make-measure 1.0 "kg") #:current-location PLACE #:primary-accountable "baker")
         ;; an oven stands, and is even TAGGED for the rail — the tag is an ask, the verb answers
         (make-economic-resource #:id "oven-1" #:name "The oven" #:conforms-to "oven" #:classified-as '()
-          #:accounting-quantity (make-measure 1.0 "each") #:onhand-quantity (make-measure 1.0 "each") #:current-location PLACE #:primary-accountable COMMUNE
+          #:accounting-quantity (make-measure 1.0 %count-unit) #:onhand-quantity (make-measure 1.0 %count-unit) #:current-location PLACE #:primary-accountable COMMUNE
           #:distribution-mode 'individual-claimable)
         ;; a stock of gold, TAGGED communal: nothing makes, consumes or uses it, so it is a
         ;; final good nobody's input — individual by the verbs, whatever the record says

@@ -6,6 +6,7 @@
 ;;;         -l module/playnet/planner/load-all.scm -l tests/planner/recipe-wire-test.scm
 ;;; (or via the blake3 dev-test shell — see [[reference_blake3_test_profile]])
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness)
              (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
              (playnet planner doors service)
@@ -30,10 +31,10 @@
                                     #:default-unit-of-resource "kg"))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-stove" #:name "Stove"
-                                    #:default-unit-of-resource "each"))
+                                    #:default-unit-of-resource %count-unit))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-meal" #:name "Cooked Meal"
-                                    #:default-unit-of-resource "each"))
+                                    #:default-unit-of-resource %count-unit))
     ($ rs 'add-process-spec
        (make-process-specification #:id "pspec-shop" #:name "Shopping"))
     ($ rs 'add-process-spec
@@ -41,23 +42,23 @@
     ;; step 1: Shop (seq 0) → produces veg
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-shop" #:name "Shop" #:process-conforms-to "pspec-shop"
-                            #:has-duration (make-duration 0.4 "hours") #:sequence-group 0))
+                            #:has-duration (make-duration 0.4 %effort-unit) #:sequence-group 0))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-veg-out" #:action 'produce #:resource-conforms-to "spec-veg"
                          #:resource-quantity (make-measure 2 "kg") #:recipe-output-of "rp-shop" #:is-primary #t))
     ;; step 2: Cook (seq 1) → consumes veg, uses stove + labour-hours, produces meal
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-cook" #:name "Cook" #:process-conforms-to "pspec-cook"
-                            #:has-duration (make-duration 0.6 "hours") #:sequence-group 1))
+                            #:has-duration (make-duration 0.6 %effort-unit) #:sequence-group 1))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-veg-in" #:action 'consume #:resource-conforms-to "spec-veg"
                          #:resource-quantity (make-measure 2 "kg") #:recipe-input-of "rp-cook"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-stove-use" #:action 'use #:resource-conforms-to "spec-stove"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-input-of "rp-cook"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-input-of "rp-cook"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-meal-out" #:action 'produce #:resource-conforms-to "spec-meal"
-                         #:resource-quantity (make-measure 4 "each") #:recipe-output-of "rp-cook" #:is-primary #t))
+                         #:resource-quantity (make-measure 4 %count-unit) #:recipe-output-of "rp-cook" #:is-primary #t))
     ($ rs 'add-recipe
        (make-recipe #:id "rp-cooked-meal" #:name "Cooked meal" #:primary-output "spec-meal"
                     #:recipe-processes (list "rp-shop" "rp-cook")))

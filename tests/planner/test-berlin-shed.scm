@@ -15,6 +15,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-berlin-shed.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
 (define (sibling f) (or (find file-exists? (filter-map (lambda (p) (and (string? p) (string-append (dirname p) "/" f)))
                                                        (cons (current-filename) (command-line))))

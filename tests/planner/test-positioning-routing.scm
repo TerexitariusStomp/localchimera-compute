@@ -3,6 +3,7 @@
 ;;; Run: cd planner && guile --no-auto-compile -q -L ../module \
 ;;;        -l load-all.scm -l tests/test-positioning-routing.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet deprecated planner))
 (use-modules (goblins)
@@ -40,23 +41,23 @@
     ;; ── Resource specs for all topologies ──
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-AB" #:name "Half A-B"
-                                    #:default-unit-of-resource "each"))
+                                    #:default-unit-of-resource %count-unit))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-BC" #:name "Half B-C"
-                                    #:default-unit-of-resource "each"))
+                                    #:default-unit-of-resource %count-unit))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-final" #:name "Final"
-                                    #:default-unit-of-resource "each"))
+                                    #:default-unit-of-resource %count-unit))
     ($ rs 'add-resource-spec
-       (make-resource-specification #:id "spec-X" #:name "Part X" #:default-unit-of-resource "each"))
+       (make-resource-specification #:id "spec-X" #:name "Part X" #:default-unit-of-resource %count-unit))
     ($ rs 'add-resource-spec
-       (make-resource-specification #:id "spec-Y" #:name "Part Y" #:default-unit-of-resource "each"))
+       (make-resource-specification #:id "spec-Y" #:name "Part Y" #:default-unit-of-resource %count-unit))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-Bfin" #:name "B Final"
-                                    #:default-unit-of-resource "each"))
+                                    #:default-unit-of-resource %count-unit))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-Cfin" #:name "C Final"
-                                    #:default-unit-of-resource "each"))
+                                    #:default-unit-of-resource %count-unit))
 
     ;; ──────────────────────────────────────────────────────────────────────────
     ;; Linear chain: A(2d) → B(3d) → C(5d)
@@ -78,21 +79,21 @@
     ;; A → B via spec-AB
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "f-AB-out" #:action 'produce #:resource-conforms-to "spec-AB"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-A"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-A"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "f-AB-in" #:action 'consume #:resource-conforms-to "spec-AB"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-input-of "rp-B"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-input-of "rp-B"))
     ;; B → C via spec-BC
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "f-BC-out" #:action 'produce #:resource-conforms-to "spec-BC"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-B"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-B"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "f-BC-in" #:action 'consume #:resource-conforms-to "spec-BC"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-input-of "rp-C"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-input-of "rp-C"))
     ;; C terminal output
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "f-fin" #:action 'produce #:resource-conforms-to "spec-final"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-C"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-C"))
 
     ($ rs 'add-recipe
        (make-recipe #:id "recipe-linear" #:name "Linear" #:primary-output "spec-final"
@@ -117,19 +118,19 @@
 
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "f-cAX" #:action 'produce #:resource-conforms-to "spec-X"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-cA"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-cA"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "f-cXC" #:action 'consume #:resource-conforms-to "spec-X"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-input-of "rp-cC"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-input-of "rp-cC"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "f-cBY" #:action 'produce #:resource-conforms-to "spec-Y"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-cB"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-cB"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "f-cYC" #:action 'consume #:resource-conforms-to "spec-Y"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-input-of "rp-cC"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-input-of "rp-cC"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "f-cfin" #:action 'produce #:resource-conforms-to "spec-final"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-cC"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-cC"))
 
     ($ rs 'add-recipe
        (make-recipe #:id "recipe-conv" #:name "Convergent" #:primary-output "spec-final"
@@ -154,22 +155,22 @@
 
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "f-dAX" #:action 'produce #:resource-conforms-to "spec-X"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-dA"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-dA"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "f-dXB" #:action 'consume #:resource-conforms-to "spec-X"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-input-of "rp-dB"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-input-of "rp-dB"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "f-dAY" #:action 'produce #:resource-conforms-to "spec-Y"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-dA"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-dA"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "f-dYC" #:action 'consume #:resource-conforms-to "spec-Y"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-input-of "rp-dC"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-input-of "rp-dC"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "f-dBf" #:action 'produce #:resource-conforms-to "spec-Bfin"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-dB"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-dB"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "f-dCf" #:action 'produce #:resource-conforms-to "spec-Cfin"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-dC"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-dC"))
 
     ($ rs 'add-recipe
        (make-recipe #:id "recipe-div" #:name "Divergent"

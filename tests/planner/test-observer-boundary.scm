@@ -18,6 +18,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-observer-boundary.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness)
              (playnet test events)
              (playnet planner observation observer)
@@ -92,8 +93,8 @@
   (check "a stock born in grams takes 2 kg as 2000 g"  (near? (onhand s "n1") 3000.0) #t)
   (check "…and keeps its own unit"                     (unit-of s "n1") "g"))
 (check "hour and hours are one unit"
-       (near? (onhand (cdr (try-record (fold-events (list (ev "o2" 'raise #:rid "h1" #:spec "hrs" #:q 10.0 #:unit "hour")))
-                                       (ev "u1" 'consume #:rid "h1" #:spec "hrs" #:q 2.0 #:unit "hours" #:input "P"))) "h1") 8.0) #t)
+       (near? (onhand (cdr (try-record (fold-events (list (ev "o2" 'raise #:rid "h1" #:spec "hrs" #:q 10.0 #:unit %effort-unit)))
+                                       (ev "u1" 'consume #:rid "h1" #:spec "hrs" #:q 2.0 #:unit %effort-unit #:input "P"))) "h1") 8.0) #t)
 (let ((r (try-record (flour) (ev "v1" 'consume #:rid "f1" #:spec "flour" #:q 2.0 #:unit "litre" #:input "P"))))
   (check "litres cannot be taken from a kilogram stock" (car r) 'error))
 ;; the planner's rows carry the placeholder unit "unit" until the doors state the
@@ -105,7 +106,7 @@
 ;; of 3 kg put into a box counted in hours leaves the box's count alone, and the
 ;; box has no kilograms to refuse
 (display "\n── a unit is checked where the quantity is applied ──\n")
-(let* ((s0 (fold-events (list (ev "ob" 'raise #:rid "box" #:spec "case" #:q 4.0 #:unit "hours")
+(let* ((s0 (fold-events (list (ev "ob" 'raise #:rid "box" #:spec "case" #:q 4.0 #:unit %effort-unit)
                               (ev "oi" 'raise #:rid "i1" #:spec "bread" #:q 3.0))))
        (r  (try-record s0 (ev "cmb" 'combine #:rid "i1" #:to-rid "box" #:spec "bread" #:q 3.0 #:input "P"))))
   (check "combining 3 kg into a box counted in hours is accepted" (car r) 'ok)
@@ -130,7 +131,7 @@
 ;; ── a use of a stock in hours leaves the stock's figure alone, wherever it is read ──
 (display "\n── what an event does to a stock is read the way it was applied ──\n")
 (let* ((st  (flour))
-       (use (ev "u1" 'use #:rid "f1" #:spec "flour" #:q 2.0 #:unit "hour" #:input "P")))
+       (use (ev "u1" 'use #:rid "f1" #:spec "flour" #:q 2.0 #:unit %effort-unit #:input "P")))
   (check "a use measured in hours is accepted on a kilogram stock" (car (try-record st use)) 'ok)
   (check "…and moves none of it, as the fold applied it"
          (event-onhand-delta use "f1" (resource st "f1")) 0))

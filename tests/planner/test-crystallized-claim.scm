@@ -8,6 +8,7 @@
 ;;; derived claim cost, and the wire price must all say 2, never 1.
 ;;; Run: guile -L module tests/planner/test-crystallized-claim.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner algorithms propagation) (playnet planner algorithms rollup) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
 (use-modules (playnet planner doors service))
@@ -23,10 +24,10 @@
 (define (work! obs aid skill hours eid iid)
   ($ obs 'register-intent
      (make-intent #:id iid #:action 'work #:resource-conforms-to skill
-                  #:effort-quantity (make-measure hours "hour") #:provider aid))
+                  #:effort-quantity (make-measure hours %effort-unit) #:provider aid))
   ($ obs 'record-event
      (make-economic-event #:id eid #:action 'work #:resource-conforms-to skill #:provider aid
-                          #:effort-quantity (make-measure hours "hour")
+                          #:effort-quantity (make-measure hours %effort-unit)
                           #:has-point-in-time "2026-03-01T08:00:00Z" #:satisfies iid
                           #:in-scope-of '())))
 
@@ -35,11 +36,11 @@
   (let ((rp (string-append "rp-" id)))
     ($ rs 'add-recipe-process
        (make-recipe-process #:id rp #:name name #:process-conforms-to (string-append "pspec-" id)
-                            #:has-duration (make-duration work-h "hours")))
+                            #:has-duration (make-duration work-h %effort-unit)))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id (string-append "rf-" id "-work") #:action 'work
                          #:resource-conforms-to "spec-labor"
-                         #:effort-quantity (make-measure work-h "hours") #:recipe-input-of rp))
+                         #:effort-quantity (make-measure work-h %effort-unit) #:recipe-input-of rp))
     (for-each
      (lambda (in)
        ($ rs 'add-recipe-flow
@@ -49,7 +50,7 @@
      inputs)
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id (string-append "rf-" id "-out") #:action 'produce #:resource-conforms-to spec
-                         #:resource-quantity (make-measure 1 "each") #:recipe-output-of rp))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of rp))
     ($ rs 'add-recipe (make-recipe #:id id #:name name #:primary-output spec
                                    #:recipe-processes (list rp)))))
 
@@ -69,7 +70,7 @@
       ($ obs 'record-event
          (make-economic-event #:id "ev-cake" #:action 'produce #:resource-inventoried-as "r-cake" #:resource-conforms-to "spec-cake"
            #:resource-classified-as (list "individually-claimable") #:provider "commune" #:receiver "commune"
-           #:resource-quantity (make-measure 5 "each") #:has-point-in-time "2026-03-02T12:00:00Z"))
+           #:resource-quantity (make-measure 5 %count-unit) #:has-point-in-time "2026-03-02T12:00:00Z"))
       (values svc rs obs))))
 
 (with-vat vat

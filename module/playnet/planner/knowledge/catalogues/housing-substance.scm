@@ -56,6 +56,7 @@
 ;;; spatial relation the plan already reads, affordability has no wall.
 
 (define-module (playnet planner knowledge catalogues housing-substance)
+  #:use-module ((playnet utils units) #:select (%effort-unit))
   #:use-module ((playnet planner facts agent-tags) #:select (tag-values))
   #:use-module (srfi srfi-1)
   #:use-module (playnet planner vf schemas)
@@ -173,14 +174,14 @@
 ;; column-key delimiter; GOODS keep '|' for the per-person rows, as nutrients do.
 (define (proc id name tags hours)
   (make-recipe-process #:id id #:name name #:process-classified-as tags
-                       #:has-duration (and hours (make-duration hours "hours"))))
+                       #:has-duration (and hours (make-duration hours %effort-unit))))
 (define (flow id action spec qty unit proc-in proc-out)
   (make-recipe-flow #:id id #:action action #:resource-conforms-to spec
                     #:resource-quantity (make-measure qty unit) #:recipe-input-of proc-in
                     #:recipe-output-of proc-out))
 (define (work id skill hours proc)
   (make-recipe-flow #:id id #:action 'work #:resource-conforms-to skill
-                    #:effort-quantity (make-measure hours "hours") #:recipe-input-of proc))
+                    #:effort-quantity (make-measure hours %effort-unit) #:recipe-input-of proc))
 
 ;; claim the form: rent in, one of the unit's rooms taken, a night of THIS dwelling out.
 ;; No `work` flow: paying rent is not labour here, as living-in is not — and

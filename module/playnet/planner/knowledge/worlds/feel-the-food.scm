@@ -71,6 +71,7 @@
 ;;; saying which sense is being asked cannot be costed. Kept as data because the
 ;;; Leitfaden's criteria are grouped exactly this way.
 (define-module (playnet planner knowledge worlds feel-the-food)
+  #:use-module ((playnet utils units) #:select (%count-unit %effort-unit))
   #:use-module ((playnet planner facts agent-tags) #:select (tag-value))
   #:use-module (playnet planner vf schemas)
   #:use-module (goblins)
@@ -252,7 +253,7 @@
           #:key (id "recipe-feel-the-food")
                 (raw "spec-ftf-uncertified") (raw-name "Ungeprüfte Charge")
                 (certified "spec-ftf-certified") (certified-name "Geprüfte Charge")
-                (unit "each") (batch 100.0) (class 'medium) (batch-kind 'sealed-lot)
+                (unit %count-unit) (batch 100.0) (class 'medium) (batch-kind 'sealed-lot)
                 (work "spec-ftf-pruefer") (work-name "Prüfer:in (Sinnesprüfung)")
                 (lam 1.0) (sample #f))
   "Seed the sensory check on a batch: BATCH units in, BATCH − k out, k checks of
@@ -274,16 +275,16 @@
                           (list "food" (string-append "vf:perishability:"
                                                       (symbol->string class))))
                     (list certified certified-name unit '("food"))
-                    (list work work-name "hours" '())))
+                    (list work work-name %effort-unit '())))
     ($ rs 'add-recipe-process
        (make-recipe-process #:id id #:name "Sinnesprüfung der Charge"
-                            #:has-duration (make-duration hours "hours")))
+                            #:has-duration (make-duration hours %effort-unit)))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id (string-append id "-in") #:action 'consume #:resource-conforms-to raw
                          #:resource-quantity (make-measure batch unit) #:recipe-input-of id))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id (string-append id "-work") #:action 'work #:resource-conforms-to work
-                         #:effort-quantity (make-measure hours "hours") #:recipe-input-of id))
+                         #:effort-quantity (make-measure hours %effort-unit) #:recipe-input-of id))
     ;; the yield loss IS the sample: k units were eaten to certify the rest
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id (string-append id "-out") #:action 'produce #:resource-conforms-to certified

@@ -13,6 +13,7 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/planner/test-bearing.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet planner knowledge dsl shorthand)
              ((playnet planner knowledge recipes transport) #:select (mode-recipe))
@@ -34,17 +35,17 @@
 ;; the toolbox's own bench and an hour of the sawyer
 (define procs (list (rp* "cut" "Cut a plank") (rp* "jig" "Build a jig")))
 (define flows
-  (list (out* "c1" "plank" 1.0 "cut" "each") (use* "c2" "saw" "cut" 1.0 #:qty 1.0) (wk* "c3" "sawing" 1.0 "cut")
-        (out* "j1" "jig" 1.0 "jig" "each") (use* "j2" "toolbox" "jig" 1.0 #:qty 1.0) (wk* "j3" "sawing" 1.0 "jig")))
+  (list (out* "c1" "plank" 1.0 "cut" %count-unit) (use* "c2" "saw" "cut" 1.0 #:qty 1.0) (wk* "c3" "sawing" 1.0 "cut")
+        (out* "j1" "jig" 1.0 "jig" %count-unit) (use* "j2" "toolbox" "jig" 1.0 #:qty 1.0) (wk* "j3" "sawing" 1.0 "jig")))
 ;; the toolbox travels in somebody's hands: a mode whose mover is the toolbox
 (define carry (mode-recipe "carry the toolbox" #:good "toolbox" #:skill "carried" #:pace 0.2
                            #:work '("errand" . 0.2)))
 
 (define (thing id spec place in)
   (make-economic-resource #:id id #:conforms-to spec #:classified-as '()
-    #:accounting-quantity (make-measure 1.0 "each") #:onhand-quantity (make-measure 1.0 "each") #:current-location place #:contained-in in))
-(define skills (list (er "sk-c" "errand" "carrier" #:place "north" #:qty 1.0 #:unit "hours")
-                     (er "sk-s" "sawing" "sawyer" #:place "south" #:qty 1.0 #:unit "hours")))
+    #:accounting-quantity (make-measure 1.0 %count-unit) #:onhand-quantity (make-measure 1.0 %count-unit) #:current-location place #:contained-in in))
+(define skills (list (er "sk-c" "errand" "carrier" #:place "north" #:qty 1.0 #:unit %effort-unit)
+                     (er "sk-s" "sawing" "sawyer" #:place "south" #:qty 1.0 #:unit %effort-unit)))
 
 (define* (plan things demand #:key (carried? #t))
   (call-with-values
@@ -96,7 +97,7 @@
   (call-with-values
       (lambda ()
         (plan-from-records (append boxed skills
-                                   (list (er "sk-s2" "sawing" "sawyer-2" #:place "south" #:qty 1.0 #:unit "hours")))
+                                   (list (er "sk-s2" "sawing" "sawyer-2" #:place "south" #:qty 1.0 #:unit %effort-unit)))
                            (cons (person* "sawyer-2" #:place "south" #:window day) agents) spatials
                            (cons (car carry) procs) (append (cadr carry) flows)
                            #:demand '(("plank#south@0" . 6.0) ("jig#south@0" . 6.0)) #:backend 'native-c))

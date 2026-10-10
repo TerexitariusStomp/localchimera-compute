@@ -12,6 +12,7 @@
 ;;; Run:  cd planner && guile --no-auto-compile -q -L ../module \
 ;;;         -l load-all.scm -l tests/test-critical-path.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet deprecated planner))
 (use-modules (goblins)
@@ -49,13 +50,13 @@
         (ps ($ scope 'plan-store)))
     ;; Specs for intermediate flow connections
     ($ rs 'add-resource-spec
-       (make-resource-specification #:id "spec-x" #:name "X" #:default-unit-of-resource "each"))
+       (make-resource-specification #:id "spec-x" #:name "X" #:default-unit-of-resource %count-unit))
     ($ rs 'add-resource-spec
-       (make-resource-specification #:id "spec-y" #:name "Y" #:default-unit-of-resource "each"))
+       (make-resource-specification #:id "spec-y" #:name "Y" #:default-unit-of-resource %count-unit))
     ($ rs 'add-resource-spec
-       (make-resource-specification #:id "spec-z" #:name "Z" #:default-unit-of-resource "each"))
+       (make-resource-specification #:id "spec-z" #:name "Z" #:default-unit-of-resource %count-unit))
     ($ rs 'add-resource-spec
-       (make-resource-specification #:id "spec-w" #:name "W" #:default-unit-of-resource "each"))
+       (make-resource-specification #:id "spec-w" #:name "W" #:default-unit-of-resource %count-unit))
 
     ;; Process specs
     ($ rs 'add-process-spec
@@ -70,45 +71,45 @@
     ;; Recipe processes: A(1h) → B(5h)/C(2h) → D(1h)
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-A" #:name "Start" #:process-conforms-to "pspec-start"
-                            #:has-duration (make-duration 1 "hours")))
+                            #:has-duration (make-duration 1 %effort-unit)))
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-B" #:name "Slow" #:process-conforms-to "pspec-slow"
-                            #:has-duration (make-duration 5 "hours")))
+                            #:has-duration (make-duration 5 %effort-unit)))
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-C" #:name "Fast" #:process-conforms-to "pspec-fast"
-                            #:has-duration (make-duration 2 "hours")))
+                            #:has-duration (make-duration 2 %effort-unit)))
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-D" #:name "End" #:process-conforms-to "pspec-end"
-                            #:has-duration (make-duration 1 "hours")))
+                            #:has-duration (make-duration 1 %effort-unit)))
 
     ;; Flows: A→B via spec-x, A→C via spec-y, B→D via spec-z, C→D via spec-w
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-ax" #:action 'produce #:resource-conforms-to "spec-x"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-A"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-A"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-bx" #:action 'consume #:resource-conforms-to "spec-x"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-input-of "rp-B"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-input-of "rp-B"))
 
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-ay" #:action 'produce #:resource-conforms-to "spec-y"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-A"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-A"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-cy" #:action 'consume #:resource-conforms-to "spec-y"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-input-of "rp-C"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-input-of "rp-C"))
 
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-bz" #:action 'produce #:resource-conforms-to "spec-z"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-B"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-B"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-dz" #:action 'consume #:resource-conforms-to "spec-z"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-input-of "rp-D"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-input-of "rp-D"))
 
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-cw" #:action 'produce #:resource-conforms-to "spec-w"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-C"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-C"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-dw" #:action 'consume #:resource-conforms-to "spec-w"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-input-of "rp-D"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-input-of "rp-D"))
 
     ;; Recipe: A → B,C → D
     ($ rs 'add-recipe

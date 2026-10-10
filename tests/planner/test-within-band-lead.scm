@@ -22,6 +22,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-within-band-lead.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet planner solve engine)
              (playnet planner solve compile)
@@ -46,7 +47,7 @@
         (consume* "c-in" "mid2" 1.0 "C") (out* "c-out" "final" 1.0 "C") (wk* "c-w" "skill-c" 10.0 "C")))
 
 (define (held id spec q) (er id spec #f #:place PLACE #:qty q #:unit "kg"))
-(define (skill id sk who) (er id sk who #:place PLACE #:unit "each"))
+(define (skill id sk who) (er id sk who #:place PLACE #:unit %count-unit))
 (define agents (map (lambda (n) (person* n #:place PLACE #:window (all-week-window "00:00" "24:00")))
                     '("ann" "ben" "cal")))
 (define spatials (list (place* PLACE)))

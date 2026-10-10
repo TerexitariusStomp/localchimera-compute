@@ -7,6 +7,7 @@
 ;;; co-signature lands, and checks the credential strengthened in place to
 ;;; its k-of-n multisig form.
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet governance witness-relay)
              (playnet governance credentials) (playnet identity enrollment) (playnet keri acdc) (playnet keri acdc-store) (playnet openvtc credentials) (playnet openvtc first-person)
              (playnet planner vf schemas) (srfi srfi-1)
@@ -31,7 +32,7 @@
 
 (define (work-ev)
   (make-economic-event #:id "e-2box-1" #:action 'work #:output-of "p-2box" #:resource-conforms-to "skill-bake"
-    #:provider "EAdaFar" #:effort-quantity (make-measure 3.0 "hours")
+    #:provider "EAdaFar" #:effort-quantity (make-measure 3.0 %effort-unit)
     #:has-point-in-time "2026-08-17T10:00:00Z"))
 
 (define vat (spawn-vat))

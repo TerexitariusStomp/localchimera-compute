@@ -17,6 +17,7 @@
 ;;;
 ;;; Run: guile -L module tests/planner/test-plan-schedules-obtain.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test scope)) ; mock-scope-root
 (use-modules (playnet test harness) (playnet planner knowledge recipes store) (playnet planner vf schemas) (playnet planner scope live)
              (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1) (ice-9 format))
@@ -47,16 +48,16 @@
                                                #:default-unit-of-resource "meal")
                   (make-resource-specification #:id "fd-cook" #:name "Cook"
                                                #:resource-classified-as '()
-                                               #:default-unit-of-resource "hours")))
+                                               #:default-unit-of-resource %effort-unit)))
   ($ rs 'add-recipe-process (make-recipe-process #:id "rp-vend" #:name "Vend Meal to Public"
-                                                 #:has-duration (make-duration 0.5 "hours")))
+                                                 #:has-duration (make-duration 0.5 %effort-unit)))
   ($ rs 'add-recipe-flow (make-recipe-flow #:id "vf-produce" #:action 'consume
                                            #:resource-conforms-to "produce"
                                            #:resource-quantity (make-measure 1.0 "kg")
                                            #:recipe-input-of "rp-vend"))
   ($ rs 'add-recipe-flow (make-recipe-flow #:id "vf-cook" #:action 'work
                                            #:resource-conforms-to "fd-cook"
-                                           #:effort-quantity (make-measure 0.5 "hours")
+                                           #:effort-quantity (make-measure 0.5 %effort-unit)
                                            #:recipe-input-of "rp-vend"))
   ($ rs 'add-recipe-flow (make-recipe-flow #:id "vf-permit" #:action 'consume
                                            #:resource-conforms-to "Food Establishment Permit"

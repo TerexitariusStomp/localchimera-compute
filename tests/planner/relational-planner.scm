@@ -3,6 +3,7 @@
 ;;; Run:  cd planner && guile --no-auto-compile -q -L ../module \
 ;;;         -l load-all.scm -l tests/relational-planner.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet deprecated planner))
 (use-modules (goblins)
@@ -41,15 +42,15 @@
     ($ rs 'add-resource-spec (make-resource-specification #:id "spec-flour" #:name "Flour"
                                                           #:default-unit-of-resource "kg"))
     ($ rs 'add-resource-spec (make-resource-specification #:id "spec-bread" #:name "Bread"
-                                                          #:default-unit-of-resource "each"))
+                                                          #:default-unit-of-resource %count-unit))
     ($ rs 'add-process-spec (make-process-specification #:id "pspec-mill" #:name "Milling"))
     ($ rs 'add-process-spec (make-process-specification #:id "pspec-bake" #:name "Baking"))
     ($ rs 'add-recipe-process (make-recipe-process #:id "rp-mill" #:name "Mill wheat"
                                                    #:process-conforms-to "pspec-mill"
-                                                   #:has-duration (make-duration 2 "hours")))
+                                                   #:has-duration (make-duration 2 %effort-unit)))
     ($ rs 'add-recipe-process (make-recipe-process #:id "rp-bake" #:name "Bake bread"
                                                    #:process-conforms-to "pspec-bake"
-                                                   #:has-duration (make-duration 4 "hours")))
+                                                   #:has-duration (make-duration 4 %effort-unit)))
     ($ rs 'add-recipe-flow (make-recipe-flow #:id "rf-wheat-in" #:action 'consume
                                              #:resource-conforms-to "spec-wheat"
                                              #:resource-quantity (make-measure 10 "kg")
@@ -64,7 +65,7 @@
                                              #:recipe-input-of "rp-bake"))
     ($ rs 'add-recipe-flow (make-recipe-flow #:id "rf-bread-out" #:action 'produce
                                              #:resource-conforms-to "spec-bread"
-                                             #:resource-quantity (make-measure 20 "each")
+                                             #:resource-quantity (make-measure 20 %count-unit)
                                              #:recipe-output-of "rp-bake"))
     ($ rs 'add-recipe (make-recipe #:id "recipe-bread" #:name "Bread Production"
                                    #:primary-output "spec-bread"
@@ -79,7 +80,7 @@
     ($ obs 'seed-resource (make-economic-resource #:id "r-flour" #:name "Flour Stock" #:conforms-to "spec-flour"
       #:accounting-quantity (make-measure 50 "kg") #:onhand-quantity (make-measure 50 "kg") #:current-location "loc-mill" #:primary-accountable "agent-commune"))
     ($ obs 'seed-resource (make-economic-resource #:id "r-bread" #:name "Bread Stock" #:conforms-to "spec-bread"
-      #:accounting-quantity (make-measure 0 "each") #:onhand-quantity (make-measure 0 "each") #:current-location "loc-bakery" #:primary-accountable "agent-commune"))
+      #:accounting-quantity (make-measure 0 %count-unit) #:onhand-quantity (make-measure 0 %count-unit) #:current-location "loc-bakery" #:primary-accountable "agent-commune"))
     (check-pred "inventory seeded" (= 3 (length ($ obs 'all-resources))))))
 ;;; ════════════════════════════════════════════════════════════════════════════
 ;;; 3. Lifted facts
@@ -182,7 +183,7 @@
         (due (+ (current-time) 86400)))
     ($ ps 'add-intent
        (make-intent #:id "i-test-bread" #:action 'produce #:name "Bread demand" #:resource-conforms-to "spec-bread"
-                    #:resource-quantity (make-measure 20 "each") #:receiver "agent-commune" #:due (number->string due) #:planned-within "test-plan"))
+                    #:resource-quantity (make-measure 20 %count-unit) #:receiver "agent-commune" #:due (number->string due) #:planned-within "test-plan"))
     (let ((results (run-plan 1 ns (plan) (plan-o test-ctx plan #:max-depth 5))))
       (check-pred "plan-o: finds a plan" (pair? results))
       (check-pred "plan-o: has entries" (and (pair? results) (pair? (car results)))))))

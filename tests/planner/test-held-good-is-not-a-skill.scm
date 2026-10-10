@@ -9,6 +9,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-held-good-is-not-a-skill.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness) (playnet test scope)
              (playnet planner vf schemas) (playnet planner scope live)
              ((playnet planner formulas actions) #:select (labour-specs labour?))
@@ -24,14 +25,14 @@
 (define (run skills goods work-skill)
   (let* ((procs (list (make-recipe-process #:id "bake" #:name "Bake")))
          (flows (list
-                 (make-recipe-flow #:id "bw" #:action 'work #:resource-conforms-to work-skill #:effort-quantity (make-measure 1.0 "hours") #:recipe-input-of "bake")
+                 (make-recipe-flow #:id "bw" #:action 'work #:resource-conforms-to work-skill #:effort-quantity (make-measure 1.0 %effort-unit) #:recipe-input-of "bake")
                  (make-recipe-flow #:id "bi" #:action 'consume #:resource-conforms-to "wheat" #:resource-quantity (make-measure 1.0 "kg") #:recipe-input-of "bake")
                  (make-recipe-flow #:id "bo" #:action 'produce #:resource-conforms-to "bread" #:resource-quantity (make-measure 10.0 "kg") #:recipe-output-of "bake" #:is-primary #t)))
          (recipes (list (make-recipe #:id "r" #:name "Bread" #:primary-output "bread" #:recipe-processes (list "bake"))))
          (agents (list (make-agent #:id "ann" #:type 'person #:name "ann" #:primary-location PLACE #:classified-as '() #:availability-window win)))
          (held (lambda (id spec)
                  (make-economic-resource #:id id #:conforms-to spec #:classified-as '()
-                                         #:accounting-quantity (make-measure 5.0 "each") #:onhand-quantity (make-measure 5.0 "each")
+                                         #:accounting-quantity (make-measure 5.0 %count-unit) #:onhand-quantity (make-measure 5.0 %count-unit)
                                          #:current-location PLACE #:primary-accountable "ann")))
          (resources (append (map (lambda (s) (held (string-append "ann-holds-" s) s)) skills)
                             (map (lambda (g) (held (string-append "ann-" g) g)) goods)))

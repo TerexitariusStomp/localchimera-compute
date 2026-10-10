@@ -13,11 +13,12 @@
 ;;; identity law (no decay, every hour kept) was intended or merely unstated.
 
 (define-module (playnet planner knowledge skills skill-shorthand)
+  #:use-module ((playnet utils units) #:select (%effort-unit))
   #:use-module (playnet planner vf schemas)
   #:export (skill*))
 
 (define* (skill* id name note #:key (decay 0.02) (regen 1.0)
-                                    (resource-unit "person") (effort-unit "hours"))
+                                    (resource-unit "person") (effort-unit %effort-unit))
   "A skill's resource specification: ID/NAME/NOTE, its stock in
    RESOURCE-UNIT, a work flow's draw in EFFORT-UNIT, and its law —
    DECAY/REGEN as skill-law.scm's own `skill:decay:N`/`skill:regen:N` tags."

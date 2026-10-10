@@ -10,6 +10,7 @@
 ;;;   4. Emits playnet-work-event ACDC with fulfills=SAID(C-1)
 ;;;   5. Verification: walk SAID reference to verify the chain
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner scope root) (playnet planner vf schemas))
 (use-modules (playnet governance credentials) (playnet keri acdc) (playnet keri acdc-store))
@@ -62,14 +63,14 @@
            ($ acdc-store 'issue-idempotent
               (make-work-event-credential
                 scope-aid worker
-                (economic-event-id event) hours "hour"
+                (economic-event-id event) hours %effort-unit
                 #:scope-id "Watershed"
                 #:fulfills fulfills-said)))))
 
     ;; Step 1: plan-store creates commitment C-1 (Alice promises 8h work)
     (let ((cid ($ plan-store 'add-commitment
                   (make-commitment #:id "C-1" #:action 'work
-                                   #:resource-conforms-to "spec-bread" #:effort-quantity (make-measure 8 "hour")
+                                   #:resource-conforms-to "spec-bread" #:effort-quantity (make-measure 8 %effort-unit)
                                    #:provider "E_alice"
                                    #:planned-within "plan-1"))))
       (check "commitment C-1 added"
@@ -88,7 +89,7 @@
     (let* ((event (make-economic-event
                     #:id "W-1" #:action 'work #:resource-conforms-to "spec-bread"
                     #:provider "E_alice"
-                    #:effort-quantity (make-measure 8 "hour") #:created "2026-04-20T08:00:00Z"
+                    #:effort-quantity (make-measure 8 %effort-unit) #:created "2026-04-20T08:00:00Z"
                     #:fulfills "C-1"  ;; fulfills
 )))
       ($ account-store 'credit-from-event event))
@@ -149,14 +150,14 @@
            ($ acdc-store 'issue-idempotent
               (make-work-event-credential
                 "E_bakery" worker
-                (economic-event-id event) hours "hour"
+                (economic-event-id event) hours %effort-unit
                 #:fulfills (and cmt-cred (cred-said cmt-cred)))))))
 
     ;; Work event references C-MISSING which doesn't exist
     (let ((event (make-economic-event
                    #:id "W-2" #:action 'work
                    #:provider "E_bob"
-                   #:effort-quantity (make-measure 4 "hour") #:created "2026-04-20T10:00:00Z"
+                   #:effort-quantity (make-measure 4 %effort-unit) #:created "2026-04-20T10:00:00Z"
                    #:fulfills "C-MISSING")))
       ($ account-store 'credit-from-event event))
 
@@ -194,12 +195,12 @@
               (economic-event-id event)
               (measure-has-numerical-value
                 (economic-event-effort-quantity event))
-              "hour"))))
+              %effort-unit))))
 
     (let ((event (make-economic-event
                    #:id "W-3" #:action 'work
                    #:provider "E_carol"
-                   #:effort-quantity (make-measure 5 "hour") #:created "2026-04-20T11:00:00Z")))
+                   #:effort-quantity (make-measure 5 %effort-unit) #:created "2026-04-20T11:00:00Z")))
       ;; Emit twice
       ($ account-store 'credit-from-event event)
       ($ account-store 'credit-from-event event))

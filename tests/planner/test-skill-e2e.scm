@@ -7,6 +7,7 @@
 ;;; Pure solver (no ACDCs) ⇒ no blake3.
 ;;; Run: guile -L module tests/planner/test-skill-e2e.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test scope)) ; mock-scope-root
 (use-modules (playnet test harness))
 (use-modules (playnet planner vf schemas) (srfi srfi-1))
@@ -23,7 +24,7 @@
                                    #:recipe-processes '() #:recipe-exchanges '())))
 ;; the catalogue: electrosurgeon is satisfied-by holding electrician AND surgeon
 (define specs (list (make-resource-specification
-                      #:id "electrosurgeon" #:name "Electrosurgeon" #:resource-classified-as '() #:default-unit-of-effort "hours"
+                      #:id "electrosurgeon" #:name "Electrosurgeon" #:resource-classified-as '() #:default-unit-of-effort %effort-unit
                       #:satisfied-by '((("electrician" . 0) ("surgeon" . 0))))))
 (define win (all-week-window "09:00" "17:00"))
 ;; doc holds BOTH components ⇒ electrosurgeon via substitute; tech holds only electrician

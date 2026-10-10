@@ -10,6 +10,7 @@
 ;;; credit, the skill's standing and the portable record all follow. Below
 ;;; half, the work stands and nothing is written.
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner scope root) (playnet planner vf schemas))
 (use-modules (playnet governance acdc-bridge) (playnet governance scope) (playnet governance service) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri said-portable))
@@ -30,11 +31,11 @@
 (define (intent! obs aid skill hours iid)
   ($ obs 'register-intent
      (make-intent #:id iid #:action 'work #:resource-conforms-to skill
-                  #:effort-quantity (make-measure hours "hour") #:provider aid)))
+                  #:effort-quantity (make-measure hours %effort-unit) #:provider aid)))
 (define (work! obs aid skill hours eid iid)
   ($ obs 'record-event
      (make-economic-event #:id eid #:action 'work #:resource-conforms-to skill #:provider aid
-                          #:effort-quantity (make-measure hours "hour")
+                          #:effort-quantity (make-measure hours %effort-unit)
                           #:has-point-in-time "2026-03-01T08:00:00Z" #:satisfies iid)))
 
 (define vat (spawn-vat))

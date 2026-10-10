@@ -19,6 +19,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-reserve-dilemma.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness) (playnet planner vf schemas) (playnet planner beyond schedules) (playnet planner scope live)
              (srfi srfi-1) (ice-9 format))
 (use-modules ((playnet planner solve engine) #:select (set-period-length!)))
@@ -37,7 +38,7 @@
                           #:resource-quantity (make-measure 10.0 "kg") #:recipe-output-of "grow"
                           #:is-primary #t)
         (make-recipe-flow #:id "g2" #:action 'work #:resource-conforms-to "farming"
-                          #:effort-quantity (make-measure 1.0 "hours") #:recipe-input-of "grow")))
+                          #:effort-quantity (make-measure 1.0 %effort-unit) #:recipe-input-of "grow")))
 
 (define FLOOR 100.0) (define RES 25.0)
 (define FLOORS `(("food#town@0" . ,FLOOR)))

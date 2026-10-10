@@ -11,6 +11,7 @@
 ;;;
 ;;; Run:  guile -L module -L tests tests/planner/test-credit-fold.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness) (playnet planner observation account) (playnet planner pools credit-fold) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1) (playnet planner doors service)
              ((playnet planner observation account)
               #:select (set-person-substrate! household-consumer-voice household-social-free-time))
@@ -33,13 +34,13 @@
   (let ((rs ($ root 'recipe-store)) (obs ($ root 'observer)))
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-bake" #:name "Bake" #:process-conforms-to "pspec-bake"
-                            #:has-duration (make-duration 3 "hours")))
+                            #:has-duration (make-duration 3 %effort-unit)))
     ($ rs 'add-recipe-flow
-       (make-recipe-flow #:id "rf-w" #:action 'work #:resource-conforms-to "spec-labor" #:effort-quantity (make-measure 3 "hours")
+       (make-recipe-flow #:id "rf-w" #:action 'work #:resource-conforms-to "spec-labor" #:effort-quantity (make-measure 3 %effort-unit)
                          #:recipe-input-of "rp-bake"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-o" #:action 'produce #:resource-conforms-to "spec-bread"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-bake"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-bake"))
     ($ rs 'add-recipe (make-recipe #:id "recipe-bread" #:name "Bread" #:primary-output "spec-bread"
                                    #:recipe-processes (list "rp-bake")))
     ($ obs 'record-event
@@ -47,7 +48,7 @@
         #:id (string-append "ev-bread-" ($ root 'name)) #:action 'produce
         #:resource-inventoried-as (string-append "r-bread-" ($ root 'name)) #:resource-conforms-to "spec-bread"
         #:resource-classified-as (list "individually-claimable") #:provider "commune" #:receiver "commune"
-        #:resource-quantity (make-measure n "each") #:has-point-in-time "2026-03-02T12:00:00Z"))))
+        #:resource-quantity (make-measure n %count-unit) #:has-point-in-time "2026-03-02T12:00:00Z"))))
 
 (define vat (spawn-vat))
 (define %svc #f) (define %uc #f) (define %a #f) (define %pending #f) (define b-root #f)

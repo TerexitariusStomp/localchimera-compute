@@ -24,6 +24,7 @@
 (chdir %project-root)
 
 (add-to-load-path "module")
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
 (use-modules ((playnet wire rows) #:select (plain-reply)))   ; a door's rows, read back as alists
 (use-modules (goblins)
@@ -65,7 +66,7 @@
                                #:current-location place #:primary-accountable owner)))
 
 (seed! "ada/flour"   "flour" 10.0 "kg" "ada"         "place:pantry")
-(seed! "bob/drill"   "drill" 1.0  "each" "bob"       "place:shed")
+(seed! "bob/drill"   "drill" 1.0  %count-unit "bob"       "place:shed")
 (seed! "pantry/rice" "rice"  40.0 "kg" "org:commune" "place:pantry")
 
 (check-pred "setup: service spawned" svc)
@@ -140,12 +141,12 @@
 
 ;; twenty jars on the books; a picture taken at noon shows twenty; four are
 ;; drawn in the afternoon; the picture is read in the evening
-(seed! "pantry/jars" "jar" 20.0 "each" "org:commune" "place:pantry")
+(seed! "pantry/jars" "jar" 20.0 %count-unit "org:commune" "place:pantry")
 (obs 'record-event
      (make-economic-event
       #:id "evt-jars-drawn" #:action 'consume #:input-of "proc-supper" #:resource-inventoried-as "pantry/jars" #:resource-conforms-to "jar"
-      #:provider "ada" #:receiver "ada" #:resource-quantity (make-measure 4.0 "each") #:has-point-in-time "2026-09-20T15:00:00Z"))
-(define noon (call 'count-stock "org:commune" "ada" "pantry/jars" 20.0 "each"
+      #:provider "ada" #:receiver "ada" #:resource-quantity (make-measure 4.0 %count-unit) #:has-point-in-time "2026-09-20T15:00:00Z"))
+(define noon (call 'count-stock "org:commune" "ada" "pantry/jars" 20.0 %count-unit
                    "photo" "" "2026-09-20T12:00:00Z"))
 (check-pred "the count is accepted" (ok? noon))
 (check "it agrees with the ledger of its instant: no adjustment" (field noon 'event) "")
@@ -153,7 +154,7 @@
 (check-pred "the door answers what is on hand now" (near? (field noon 'onhand) 16.0))
 
 ;; the same picture showing eighteen: two were missing at noon, and are now
-(define short (call 'count-stock "org:commune" "ada" "pantry/jars" 18.0 "each"
+(define short (call 'count-stock "org:commune" "ada" "pantry/jars" 18.0 %count-unit
                     "photo" "" "2026-09-20T12:00:00Z"))
 (check-pred "a count short at its instant lands that shortfall" (near? (field short 'delta) -2.0))
 (check-pred "on the ledger as it stands" (near? (onhand "pantry/jars") 14.0))
@@ -162,7 +163,7 @@
        "2026-09-20T12:00:00Z")
 
 ;; a later count stands: an older picture is an earlier sighting
-(define older (call 'count-stock "org:commune" "ada" "pantry/jars" 20.0 "each"
+(define older (call 'count-stock "org:commune" "ada" "pantry/jars" 20.0 %count-unit
                     "photo" "" "2026-09-20T09:00:00Z"))
 (check-pred "a count older than the stock's latest count lands" (ok? older))
 (check "…as an earlier sighting" (field older 'sighting) "earlier")
@@ -173,18 +174,18 @@
               (equal? '(20.0 . "each") (count-figure (economic-event-resource-classified-as rec)))))
 
 ;; a lower takes at most what is there
-(seed! "pantry/eggs" "egg" 12.0 "each" "org:commune" "place:pantry")
+(seed! "pantry/eggs" "egg" 12.0 %count-unit "org:commune" "place:pantry")
 (obs 'record-event
      (make-economic-event
       #:id "evt-eggs-drawn" #:action 'consume #:input-of "proc-supper" #:resource-inventoried-as "pantry/eggs" #:resource-conforms-to "egg"
-      #:provider "ada" #:receiver "ada" #:resource-quantity (make-measure 10.0 "each") #:has-point-in-time "2026-09-20T15:00:00Z"))
-(define eggs (call 'count-stock "org:commune" "ada" "pantry/eggs" 6.0 "each"
+      #:provider "ada" #:receiver "ada" #:resource-quantity (make-measure 10.0 %count-unit) #:has-point-in-time "2026-09-20T15:00:00Z"))
+(define eggs (call 'count-stock "org:commune" "ada" "pantry/eggs" 6.0 %count-unit
                    "photo" "" "2026-09-20T12:00:00Z"))
 (check-pred "six short at noon, two on the books now: the lower takes the two"
             (and (near? (field eggs 'delta) -2.0) (near? (onhand "pantry/eggs") 0.0)))
 
 ;; an instant in the future is now
-(define ahead (call 'count-stock "org:commune" "ada" "pantry/eggs" 3.0 "each"
+(define ahead (call 'count-stock "org:commune" "ada" "pantry/eggs" 3.0 %count-unit
                     "stated" "" "2999-01-01T00:00:00Z"))
 (check-pred "a count dated ahead lands as of now"
             (and (near? (onhand "pantry/eggs") 3.0)
@@ -219,9 +220,9 @@
 (check-pred "a technique is one the door knows"
             (err (call 'count-stock "org:commune" "ada" "ada/flour" 8.0 "kg" "guess")))
 (check-pred "a count names a stock that exists"
-            (err (call 'count-stock "org:commune" "ada" "no/such" 1.0 "each")))
+            (err (call 'count-stock "org:commune" "ada" "no/such" 1.0 %count-unit)))
 (check-pred "another person's stock is counted on a commitment"
-            (err (call 'count-stock "org:commune" "ada" "bob/drill" 0.0 "each")))
+            (err (call 'count-stock "org:commune" "ada" "bob/drill" 0.0 %count-unit)))
 (check-pred "…and stands untouched" (near? (onhand "bob/drill") 1.0))
 (check-pred "a count of nothing left is a count"
             (ok? (call 'count-stock "org:commune" "ada" "ada/flour" 0.0 "kg")))
@@ -234,19 +235,19 @@
 ;; the counter's hours, and the record the run produces
 (ps 'add-commitment
     (make-commitment #:id "cmt-count-work" #:action 'work #:input-of "count-shed" #:resource-conforms-to "skill-count"
-                     #:effort-quantity (make-measure 0.25 "hours") #:provider "ada" #:receiver "org:commune" #:at-location "place:shed" #:in-scope-of '("org:commune")))
+                     #:effort-quantity (make-measure 0.25 %effort-unit) #:provider "ada" #:receiver "org:commune" #:at-location "place:shed" #:in-scope-of '("org:commune")))
 (ps 'add-commitment
     (make-commitment #:id "cmt-count-record" #:action 'produce #:output-of "count-shed" #:resource-conforms-to "count-record"
-                     #:resource-quantity (make-measure 1.0 "each") #:provider "ada" #:receiver "org:commune" #:at-location "place:shed" #:in-scope-of '("org:commune")))
+                     #:resource-quantity (make-measure 1.0 %count-unit) #:provider "ada" #:receiver "org:commune" #:at-location "place:shed" #:in-scope-of '("org:commune")))
 
 (check-pred "a commitment is its counter's alone"
-            (err (call 'count-stock "org:commune" "carol" "bob/drill" 1.0 "each"
+            (err (call 'count-stock "org:commune" "carol" "bob/drill" 1.0 %count-unit
                        "stated" "" "" "cmt-count-work")))
 (check-pred "a count names a commitment the plan holds"
-            (err (call 'count-stock "org:commune" "ada" "bob/drill" 1.0 "each"
+            (err (call 'count-stock "org:commune" "ada" "bob/drill" 1.0 %count-unit
                        "stated" "" "" "cmt-none")))
 
-(define planned (call 'count-stock "org:commune" "ada" "bob/drill" 1.0 "each"
+(define planned (call 'count-stock "org:commune" "ada" "bob/drill" 1.0 %count-unit
                       "stated" "" "" "cmt-count-work"))
 (check-pred "on a commitment, another's stock is counted" (ok? planned))
 (check "the count agrees, so no adjustment lands" (field planned 'event) "")
@@ -348,12 +349,12 @@
        (assq-ref (cadr salt-rows) 'id) (field salt-off 'event))
 
 ;; a container's count scales what is in it; that is no reading of the contents
-(seed! "pantry/box" "box" 10.0 "each" "org:commune" "place:pantry")
+(seed! "pantry/box" "box" 10.0 %count-unit "org:commune" "place:pantry")
 (obs 'seed-resource
      (make-economic-resource #:id "pantry/box/tea" #:name "tea" #:conforms-to "tea" #:classified-as '()
                              #:accounting-quantity (make-measure 30.0 "kg") #:onhand-quantity (make-measure 30.0 "kg")
                              #:current-location "place:pantry" #:primary-accountable "org:commune" #:contained-in "pantry/box"))
-(call 'count-stock "org:commune" "ada" "pantry/box" 5.0 "each")
+(call 'count-stock "org:commune" "ada" "pantry/box" 5.0 %count-unit)
 (check-pred "the contents follow their container" (near? (onhand "pantry/box/tea") 15.0))
 (check "…and the fold holds no reading of them"
        (length (field (call 'readings-between "org:commune" "tea" "" "") 'rows)) 0)
@@ -382,7 +383,7 @@
 (check-pred "evidence that is no hash" (string? (count-refusal oats 8.0 "kg" "photo" "nope" #:agent "ada" #:standing? #t)))
 (check "a stock that is not the counter's to count" (count-refusal oats 8.0 "kg" "stated" #f #:agent "bob") "not yours to count")
 (check "an instant before the books held the stock" (refusal #:predates? #t) "the books did not hold this stock yet")
-(check "another unit than the stock's" (count-refusal oats 8.0 "each" "stated" #f #:agent "ada" #:standing? #t) "count in the stock's unit: kg")
+(check "another unit than the stock's" (count-refusal oats 8.0 %count-unit "stated" #f #:agent "ada" #:standing? #t) "count in the stock's unit: kg")
 (check "the technique alone is the process of a count no plan asked for" (count-run #f "photo") '(#f . "count:photo"))
 
 (define now (civil->instant "2026-09-28T12:00:00Z"))

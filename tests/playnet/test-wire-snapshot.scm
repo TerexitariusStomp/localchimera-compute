@@ -19,6 +19,7 @@
 (chdir %project-root)
 
 (add-to-load-path "module")
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness))
 (use-modules (goblins)
              (goblins utils hashmap)
@@ -44,7 +45,7 @@
                             (place* "place:pantry" #:parent "place:hall" #:name "Pantry"))
            #:agents (list (person* "you" #:place "place:hall" #:name "You"))
            #:resources (list (er "bin" "spec-bread" "org:hood" #:place "place:pantry"
-                                 #:qty 1.0 #:unit "each" #:name "Bread bin")
+                                 #:qty 1.0 #:unit %count-unit #:name "Bread bin")
                              (er "bread" "spec-bread" "org:hood" #:place "place:pantry"
                                  #:qty 12.0 #:unit "loaf" #:name "Bread"
                                  #:contained-in "bin")))))

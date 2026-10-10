@@ -12,6 +12,7 @@
 (setenv "PLAYNET_DATA_DIR"
         (string-append (or (getenv "TMPDIR") "/tmp") "/pn-steward-gate-test"))
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness)
              (playnet planner scope root) (playnet planner vf schemas) (playnet planner beyond schedules) (srfi srfi-1)
              (playnet planner doors service)
@@ -42,7 +43,7 @@
 ;; work-intent the solve or an offer lays does
 (define (cook-intent id proc)
   (make-intent #:id id #:action 'work #:input-of proc #:resource-conforms-to "spec-cook"
-               #:effort-quantity (make-measure 4.0 "hours") #:planned-within "plan-1"))
+               #:effort-quantity (make-measure 4.0 %effort-unit) #:planned-within "plan-1"))
 
 ;; Alice's contact book, as the lobby syncs it: Tia is a friend
 (define (contacts-of aid)
@@ -62,11 +63,11 @@
          (as    ($ root 'agent-store)))
     ($ rs 'add-recipe-process (make-recipe-process #:id "cook" #:name "Cook"))
     ($ rs 'add-recipe-flow
-       (make-recipe-flow #:id "cook-oven" #:action 'use #:resource-conforms-to "oven" #:resource-quantity (make-measure 1.0 "each")
-                         #:effort-quantity (make-measure 4.0 "hours") #:recipe-input-of "cook"))
+       (make-recipe-flow #:id "cook-oven" #:action 'use #:resource-conforms-to "oven" #:resource-quantity (make-measure 1.0 %count-unit)
+                         #:effort-quantity (make-measure 4.0 %effort-unit) #:recipe-input-of "cook"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "cook-work" #:action 'work #:resource-conforms-to "spec-cook"
-                         #:effort-quantity (make-measure 4.0 "hours") #:recipe-input-of "cook"))
+                         #:effort-quantity (make-measure 4.0 %effort-unit) #:recipe-input-of "cook"))
     ($ as 'add-agent (make-agent #:id TIA #:type 'person #:name "Tia" #:note "" #:image ""
                                  #:classified-as '() #:availability-window (window "09:00" "17:00")))
     ($ as 'add-agent (make-agent #:id SAM #:type 'person #:name "Sam" #:note "" #:image ""
@@ -211,8 +212,8 @@
   (call-with-values (lambda () (world ONLY-TIA))
     (lambda (svc root store grant may)
       ($ svc 'add-scope! "Home" (spawn-scope-root "Home"))
-      ($ svc 'declare-means HEARTH ALICE "oven" 1 "each" "" "" "" "🔥" "oven")
-      ($ svc 'declare-means HEARTH ALICE "bike" 1 "each" "" "" "" "🚲" "bike")
+      ($ svc 'declare-means HEARTH ALICE "oven" 1 %count-unit "" "" "" "🔥" "oven")
+      ($ svc 'declare-means HEARTH ALICE "bike" 1 %count-unit "" "" "" "🚲" "bike")
       (check "the governance reader names what the Hearth is lent"
              (map (lambda (g) (assq-ref g 'owner)) (lent-to store HEARTH)) (list ALICE))
       (let ((r ($ svc 'move-home ALICE "Home")))

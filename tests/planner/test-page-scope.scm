@@ -22,6 +22,7 @@
 (chdir %project-root)
 
 (add-to-load-path "module")
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (goblins)
              (playnet planner doors page-scope)
@@ -86,10 +87,10 @@
 (check "a declare answers the word the spine answers it with"
        (ask "declareMeans" "spec-tea" "3" "box" "place:home" "" "from the cupboard" "🍵" "tea to share" "" "") "ok")
 (check-pred "an observation lands and answers its event"
-            (string-prefix? "ok:evt-log-" (ask "logObserve" "produce" "spec-jar" "4" "each" "filled four jars" "")))
+            (string-prefix? "ok:evt-log-" (ask "logObserve" "produce" "spec-jar" "4" %count-unit "filled four jars" "")))
 (check "the same observation at the same instant is the same event"
-       (ask "logObserve" "work" "spec-bike-repair" "2" "hours" "fixed a flat" "2026-01-03T10:00:00Z")
-       (ask "logObserve" "work" "spec-bike-repair" "2" "hours" "fixed a flat" "2026-01-03T10:00:00Z"))
+       (ask "logObserve" "work" "spec-bike-repair" "2" %effort-unit "fixed a flat" "2026-01-03T10:00:00Z")
+       (ask "logObserve" "work" "spec-bike-repair" "2" %effort-unit "fixed a flat" "2026-01-03T10:00:00Z"))
 (check-pred "the pool holds everyone's needs" (> (vector-length (ref (read-json (ask "slotsAt")) "needs")) 5))
 
 (display "\n── a refusal ──\n")

@@ -13,6 +13,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-one-citizen.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness)
              (playnet planner knowledge recipes federation-demo) (playnet planner scope root) (playnet planner vf schemas) (playnet planner beyond schedules) (srfi srfi-1)
              (playnet planner doors service)
@@ -173,7 +174,7 @@
     (define (held-at root) (length (filter (lambda (r) (> (measure-has-numerical-value (economic-resource-onhand-quantity r)) 0))
                                            (means-at root))))
     ($ svc 'declare-need "Granary" "bob" "spec-bread" 4 "loaf" "loc-pantry" "" "" "🍞" #f #f "bread")
-    ($ svc 'declare-means "Granary" "bob" "spec-bike-repair" 3 "hours" "loc-yard" "" "I fix bikes" "🚲" "bike repair")
+    ($ svc 'declare-means "Granary" "bob" "spec-bike-repair" 3 %effort-unit "loc-yard" "" "I fix bikes" "🚲" "bike repair")
     ($ svc 'set-profile "Granary" "bob" "[]")         ; stating who you are is becoming a person here
     ($ svc 'declare-skill "Granary" "bob" "baking")
     ($ svc 'set-availability "Granary" "bob"
@@ -230,7 +231,7 @@
                 ($ ($ root 'observer) 'inventory)))
       ($ svc 'set-profile "Granary" "fay" "[]")
       ($ svc 'declare-need "Granary" "fay" "spec-bread" 3 "loaf" "loc-pantry" "" "" "🍞" #f #f "bread")
-      ($ svc 'declare-means "Granary" "fay" "spec-bike-repair" 2 "hours" "loc-yard" "" "I fix bikes" "🚲" "bike repair")
+      ($ svc 'declare-means "Granary" "fay" "spec-bike-repair" 2 %effort-unit "loc-yard" "" "I fix bikes" "🚲" "bike repair")
       ($ svc 'declare-skill "Granary" "fay" "baking")
       (check "her home is the scope she first wrote through" ($ svc 'home-of "fay") "Granary")
       (check "her need, read through the parent scope that sees it, is hers wherever the asker says home is"

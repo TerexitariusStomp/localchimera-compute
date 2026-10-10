@@ -9,6 +9,7 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/planner/test-housing-live.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness)
              (playnet planner vf schemas) (srfi srfi-1) (srfi srfi-11) (playnet planner scope live) (playnet planner vf schemas)
              (playnet test planner bread)
@@ -24,9 +25,9 @@
                           #:current-location "town"))
 (define purse (res "res:purse" "spec-eur" '() 200.0 "EUR"))
 (define GATES '("attests:hs-safety" "attests:hs-sanitation" "attests:hs-quiet" "attests:hs-dark" "attests:hs-accessibility"))
-(define studio (res "studio-1" "spec-dwelling" '("dwelling-type:studio" "beds:3" "attests:hs-safety" "attests:hs-sanitation" "attests:hs-quiet" "attests:hs-dark" "certified") 1 "each"))
-(define flat   (res "flat-7"  "spec-dwelling" (append '("dwelling-type:family-flat" "beds:2" "certified") GATES) 1 "each"))
-(define plain  (res "old-flat" "spec-dwelling" '() 1 "each"))   ; states no type: dwelling.scm's flat, left to it
+(define studio (res "studio-1" "spec-dwelling" '("dwelling-type:studio" "beds:3" "attests:hs-safety" "attests:hs-sanitation" "attests:hs-quiet" "attests:hs-dark" "certified") 1 %count-unit))
+(define flat   (res "flat-7"  "spec-dwelling" (append '("dwelling-type:family-flat" "beds:2" "certified") GATES) 1 %count-unit))
+(define plain  (res "old-flat" "spec-dwelling" '() 1 %count-unit))   ; states no type: dwelling.scm's flat, left to it
 
 ;; the bread scope's own people and stock stand — wil eats as they do — and he
 ;; and the dwellings join them

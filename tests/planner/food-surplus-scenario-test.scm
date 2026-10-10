@@ -20,6 +20,7 @@
 ;;;
 ;;; Run:  guile -L module tests/planner/food-surplus-scenario-test.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
 (define here (dirname (current-filename)))
 (define root (dirname (dirname here)))
@@ -36,8 +37,8 @@
                (make-recipe-flow #:id "s2" #:action 'consume #:resource-conforms-to "produce" #:resource-quantity (make-measure 1.0 "kg")    ; draw down donor surplus
  #:recipe-input-of "sort")
                (wrk "s3" 0.05 "sort")                                                  ; volunteer labour
-               (make-recipe-flow #:id "s4" #:action 'use #:resource-conforms-to "van" #:resource-quantity (make-measure 1.0 "each")          ; USE a reefer van (Svc|van)
-                                 #:effort-quantity (make-measure 0.02 "hours") #:recipe-input-of "sort")))))
+               (make-recipe-flow #:id "s4" #:action 'use #:resource-conforms-to "van" #:resource-quantity (make-measure 1.0 %count-unit)          ; USE a reefer van (Svc|van)
+                                 #:effort-quantity (make-measure 0.02 %effort-unit) #:recipe-input-of "sort")))))
 
 ;; One hub, one period. SURPLUS = donor produce on hand. VAN-HOURS = the Food Runners'
 ;; fielded reefer-van service this period. DEMAND = recipients' sorted-produce need.

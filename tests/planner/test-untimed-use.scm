@@ -21,6 +21,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-untimed-use.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet planner solve engine)
              (playnet planner solve compile)
@@ -41,7 +42,7 @@
 (define (recipe flow-hours proc-hours)
   (let ((procs (list (rp* "bake" "Bake" proc-hours)))
         (flows (list (use* "f-use" "oven" "bake" flow-hours #:qty 1.0)
-                     (out* "f-out" "loaf" 1.0 "bake" "each" #:primary #f))))
+                     (out* "f-out" "loaf" 1.0 "bake" %count-unit #:primary #f))))
     (compile-recipe procs flows)))
 
 ;;; The plan's real question: how many runs can the oven support over the span? That
@@ -71,7 +72,7 @@
     (format #t "    ~a: undivided ~,2f runs · in thirds ~,2f runs~%" label a b)
     (and (near? a b) a)))
 
-(define ovens (res "r" "oven" 3.0 "each"))
+(define ovens (res "r" "oven" 3.0 %count-unit))
 (define network (res "r" "oven" 200.0 "hours/day"))
 
 (format #t "~%── 1. a flow that states its own duration ──~%~%")
@@ -116,9 +117,9 @@
                 #:templates
                   (compile-recipe
                     (list (rp* "post" "Post"))
-                    (list (make-recipe-flow #:id "f-use" #:action 'use #:resource-conforms-to "channel" #:resource-quantity (make-measure 1.0 "each")
+                    (list (make-recipe-flow #:id "f-use" #:action 'use #:resource-conforms-to "channel" #:resource-quantity (make-measure 1.0 %count-unit)
                                             #:effort-quantity (make-measure 2.0 "slot") #:recipe-input-of "post")
-                          (out* "f-out" "reach" 1.0 "post" "each" #:primary #f))))
+                          (out* "f-out" "reach" 1.0 "post" %count-unit #:primary #f))))
 (check "a `slot` effort multiplies the count and is not taken for hours"
        (near? 2.0 (assoc-ref (proc-inputs (car *templates*)) (svc-good "channel"))))
 (check "…and the spec is NOT marked as occupied for a stated length"
@@ -145,7 +146,7 @@
           *periods* DAY-IN-FIVE)
 (define shift (all-week-window "06:00" "10:00"))
 (define worker (person* "ada" #:name "Ada" #:place PLACE #:window shift))
-(define machine (er "oven" "oven" #f #:place PLACE #:qty 1.0 #:unit "each" #:window shift))
+(define machine (er "oven" "oven" #f #:place PLACE #:qty 1.0 #:unit %count-unit #:window shift))
 (define agent-hrs (map (lambda (t) (agent-window-hours worker t)) *periods*))
 (define means-hrs (map (lambda (t) (resource-window-hours machine t)) *periods*))
 (format #t "    agent: ~a~%    means: ~a~%" agent-hrs means-hrs)

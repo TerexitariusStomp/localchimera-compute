@@ -18,6 +18,7 @@
 ;;; Run:  guile -L module/playnet/planner -L module --no-auto-compile \
 ;;;         tests/planner/test-option-composition.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test scope))
 (use-modules (srfi srfi-1) (ice-9 format))
 
@@ -68,7 +69,7 @@
                     #:is-primary #t))
 (define (work-flow id hrs proc)               ; living labour (the occupants' repair skill)
   (make-recipe-flow #:id id #:action 'work #:resource-conforms-to "spec-fix"
-                    #:effort-quantity (make-measure hrs "hours") #:recipe-input-of proc))
+                    #:effort-quantity (make-measure hrs %effort-unit) #:recipe-input-of proc))
 
 ;; common provisioning: fix the leak from a pipe; buy the pipe with fund dollars.
 (define procs-common (list (proc "rp-leak" "Patch the leak")

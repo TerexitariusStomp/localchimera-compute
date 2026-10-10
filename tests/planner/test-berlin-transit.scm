@@ -8,6 +8,7 @@
 ;;; the commune holds under someone else's rights reaches the frag wheel's rented
 ;;; sector by the SAME custody/rights test a rented platform account does.
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner knowledge recipes store) (playnet planner knowledge recipes berlin-commune-seed) (playnet planner knowledge recipes berlin-transit) (playnet planner knowledge recipes transit-shed) (playnet planner knowledge recipes transport) (playnet planner formulas capacity) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
 (use-modules (playnet planner doors service))
@@ -487,7 +488,7 @@
         #:process "rp-dv-haul" #:recipe "recipe-dv-haul" #:name "Bus haul: sacks by hand"
         #:pspec-name "Hand-Carried Bus Haul"
         #:good "spec-dv-freight" #:payload 40.0 #:unit "kg"
-        #:duration (make-duration 0.9 "hours") #:tags '("tag:transport")
+        #:duration (make-duration 0.9 %effort-unit) #:tags '("tag:transport")
         #:uses '(("spec-dv-bus" . 0.090)) #:work '("spec-dv-porter" . 0.070))
       (held-svc-caps (list (network-resource "spec-dv-bus" "commune-doon"
                                             #:operator "org:doon-transport"

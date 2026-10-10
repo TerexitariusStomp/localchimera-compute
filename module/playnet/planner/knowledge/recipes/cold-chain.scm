@@ -15,6 +15,7 @@
 ;; dry pantry long.
 
 (define-module (playnet planner knowledge recipes cold-chain)
+  #:use-module ((playnet utils units) #:select (%count-unit %effort-unit))
   #:use-module (playnet planner vf schemas)
   #:use-module (playnet planner ddmrp records)
   #:use-module ((playnet planner knowledge recipes transport)
@@ -90,7 +91,7 @@
       "vf:perishability:low"
       "vf:allergen:contains-soy"
       "vf:allergen-free:nut")
-    #:default-unit-of-resource "each" #:positioning-analysis pa-frozen))
+    #:default-unit-of-resource %count-unit #:positioning-analysis pa-frozen))
 
 (define spec-frozen-meals-nut
   (make-resource-specification
@@ -99,7 +100,7 @@
       "vf:temp-class:frozen"
       "vf:perishability:low"
       "vf:allergen:contains-nut")
-    #:default-unit-of-resource "each" #:positioning-analysis pa-frozen))
+    #:default-unit-of-resource %count-unit #:positioning-analysis pa-frozen))
 
 (define spec-dry-pantry
   (make-resource-specification
@@ -125,14 +126,14 @@
     ;; run occupies it for are the `use` flow's effort. Denominating the stock
     ;; itself in hours says the fleet IS a quantity of time, and the service cap
     ;; (stock × the hours it stands available) would then take that length twice.
-    #:default-unit-of-resource "each"))
+    #:default-unit-of-resource %count-unit))
 
 (define spec-cargo-van
   (make-resource-specification
     #:id "spec-cargo-van" #:name "Ambient Cargo Van"
     #:resource-classified-as '("vf:vehicle"
       "vf:temp-class:ambient")
-    #:default-unit-of-resource "hours"))
+    #:default-unit-of-resource %effort-unit))
 
 ;; ─── Storage compartment specifications ─────────────────────────────────────
 ;; Modeled as `'use`-able resources measured in cubic-meter-hours.
@@ -175,7 +176,7 @@
 
 (define spec-cc-handling
   (make-resource-specification
-    #:id "spec-cc-handling" #:name "Cold-chain Handling" #:default-unit-of-resource "hours"))
+    #:id "spec-cc-handling" #:name "Cold-chain Handling" #:default-unit-of-resource %effort-unit))
 
 (define cold-chain-skill-specs (list spec-cc-handling))
 
@@ -270,23 +271,23 @@
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-receive" #:name "Receive"
                           #:process-conforms-to "pspec-receive"
-                          #:has-duration (make-duration 0.25 "hours")))
+                          #:has-duration (make-duration 0.25 %effort-unit)))
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-pre-cool" #:name "Pre-Cool"
                           #:process-conforms-to "pspec-pre-cool"
-                          #:has-duration (make-duration 0.5 "hours")))
+                          #:has-duration (make-duration 0.5 %effort-unit)))
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-sort" #:name "Sort & Inspect"
                           #:process-conforms-to "pspec-sort-inspect"
-                          #:has-duration (make-duration 0.75 "hours")))
+                          #:has-duration (make-duration 0.75 %effort-unit)))
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-pack" #:name "Pack"
                           #:process-conforms-to "pspec-pack"
-                          #:has-duration (make-duration 0.25 "hours")))
+                          #:has-duration (make-duration 0.25 %effort-unit)))
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-deliver" #:name "Deliver"
                           #:process-conforms-to "pspec-deliver"
-                          #:has-duration (make-duration 0.5 "hours")))
+                          #:has-duration (make-duration 0.5 %effort-unit)))
 
   ;; ── flows: 100 kg of greens threaded through the pipeline, one distinct
   ;; spec per stage (food-chain-seed.scm's own convention — see

@@ -18,6 +18,7 @@
 ;;; Run:  guile --no-auto-compile -q -L module \
 ;;;         -l tests/planner/test-labour-projection-law.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet planner knowledge dsl shorthand)
              (playnet test harness)
              (playnet planner observation observer) (playnet planner vf schemas)
@@ -36,12 +37,12 @@
            '()))
 
 (define (skill-resource rid spec aid q)
-  (er rid spec aid #:name rid #:place #f #:qty q #:unit "each" #:tags #f))
+  (er rid spec aid #:name rid #:place #f #:qty q #:unit %count-unit #:tags #f))
 
 (define (skill-event id action rid spec aid q)
   (make-economic-event
    #:id id #:action action #:resource-inventoried-as rid #:resource-conforms-to spec #:provider aid #:receiver aid
-   #:resource-quantity (make-measure q "each") #:has-point-in-time "2026-08-20T12:00:00Z" #:created "2026-08-20T12:00:00Z" #:note "law test"))
+   #:resource-quantity (make-measure q %count-unit) #:has-point-in-time "2026-08-20T12:00:00Z" #:created "2026-08-20T12:00:00Z" #:note "law test"))
 
 (define vat (spawn-vat))
 

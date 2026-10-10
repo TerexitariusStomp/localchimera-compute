@@ -9,6 +9,7 @@
 ;;; own, as the curve every future of a solve takes (docs/playnet.typ, "Character
 ;;; is a measurement").
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test scope)) ; mock-scope-root
 (use-modules (playnet test harness))
 (use-modules (playnet planner observation observer) (playnet planner scope root) (playnet planner solve recipe-response) (playnet planner vf schemas) (playnet planner beyond scenario) (srfi srfi-1))
@@ -37,7 +38,7 @@
 
 ;; one WORK event fulfilling a commitment: realized hours against claimed hours
 (define (work-ev eid pid cid hours)
-  (make-economic-event #:id eid #:action 'work #:output-of pid #:resource-conforms-to "skill-bake" #:provider "EAda" #:effort-quantity (make-measure hours "hour") #:has-point-in-time "2026-03-01T08:00:00Z"
+  (make-economic-event #:id eid #:action 'work #:output-of pid #:resource-conforms-to "skill-bake" #:provider "EAda" #:effort-quantity (make-measure hours %effort-unit) #:has-point-in-time "2026-03-01T08:00:00Z"
     #:fulfills cid))
 
 ;; the injected claim side: every commitment claimed 10 hours of baking
@@ -163,7 +164,7 @@
 (define %days '("2026-03-01" "2026-03-02" "2026-03-03" "2026-03-04" "2026-03-05"))
 (define (mill-claim cid proc)      ; 10 hours of milling claimed, per act
   (make-commitment #:id cid #:action 'work #:input-of proc #:resource-conforms-to "skill-mill"
-                   #:effort-quantity (make-measure 10.0 "hour")))
+                   #:effort-quantity (make-measure 10.0 %effort-unit)))
 (with-vat vat
   (let* ((sr (spawn-scope-root "Standing Scope"))
          (rs ($ sr 'recipe-store)) (ps ($ sr 'plan-store)) (obs ($ sr 'observer)))
@@ -171,7 +172,7 @@
     (for-each (lambda (id nm spec)
                 ($ rs 'add-recipe-process (make-recipe-process #:id id #:name nm))
                 ($ rs 'add-recipe-flow (make-recipe-flow #:id (string-append id "-w") #:action 'work #:resource-conforms-to "skill-mill"
-                                                         #:effort-quantity (make-measure 2.0 "hours") #:recipe-input-of id))
+                                                         #:effort-quantity (make-measure 2.0 %effort-unit) #:recipe-input-of id))
                 ($ rs 'add-recipe (make-recipe #:id (string-append "r-" id) #:name nm
                                                #:primary-output spec #:recipe-processes (list id))))
               '("mill-a" "mill-b" "mill-c") '("A" "B" "C") '("bread-a" "bread-b" "bread-c"))
@@ -289,7 +290,7 @@
          (rs ($ sr 'recipe-store)) (ps ($ sr 'plan-store)) (obs ($ sr 'observer)))
     ($ rs 'add-recipe-process (make-recipe-process #:id "bake" #:name "Bake"))
     ($ rs 'add-recipe-flow (make-recipe-flow #:id "bake-w" #:action 'work #:resource-conforms-to "skill-bake"
-                                             #:effort-quantity (make-measure 2.0 "hours") #:recipe-input-of "bake"))
+                                             #:effort-quantity (make-measure 2.0 %effort-unit) #:recipe-input-of "bake"))
     ($ rs 'add-recipe-flow (make-recipe-flow #:id "bake-o" #:action 'produce
                                              #:resource-conforms-to "bread"
                                              #:resource-quantity (make-measure 4.0 "unit")
@@ -302,7 +303,7 @@
          ($ ps 'add-commitment
             (make-commitment #:id wc #:action 'work #:input-of "bake"
                              #:resource-conforms-to "skill-bake"
-                             #:effort-quantity (make-measure 10.0 "hour")))
+                             #:effort-quantity (make-measure 10.0 %effort-unit)))
          ($ obs 'register-commitment
             (make-commitment #:id mc #:action 'produce #:output-of "bake"
                              #:resource-conforms-to "bread"
@@ -341,7 +342,7 @@
     ($ ps 'add-commitment
        (make-commitment #:id "w-2026-04-05" #:action 'work #:input-of "bake"
                         #:resource-conforms-to "skill-bake"
-                        #:effort-quantity (make-measure 10.0 "hour")))
+                        #:effort-quantity (make-measure 10.0 %effort-unit)))
     ($ obs 'register-commitment
        (make-commitment #:id "m-2026-04-05" #:action 'produce #:output-of "bake"
                         #:resource-conforms-to "bread"

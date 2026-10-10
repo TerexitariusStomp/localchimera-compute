@@ -26,6 +26,7 @@
 ;;;   C: consume co2 44.0 (≈12.0 kg C) → crop 12.0   (runoff carries no carbon)
 
 (define-module (playnet planner knowledge recipes grow)
+  #:use-module ((playnet utils units) #:select (%effort-unit))
   #:use-module (playnet planner vf schemas)
   #:use-module ((playnet planner knowledge catalogues substances) #:select (sunlight-for water-for food-macros))
   #:use-module (goblins)
@@ -65,7 +66,7 @@
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-grow" #:name "Grow carrots"
                           #:process-conforms-to "pspec-grow" #:process-classified-as '("tag:cultivation")
-                          #:has-duration (make-duration 3 "hours")))
+                          #:has-duration (make-duration 3 %effort-unit)))
 
   ;; ── consume: the nutrient draw from soil + air, plus water ────────────────
   (for-each
@@ -87,7 +88,7 @@
   ;; ── work: grower labour ───────────────────────────────────────────────────
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-grow-work" #:action 'work #:resource-conforms-to "grow-labour"
-                       #:effort-quantity (make-measure 3 "hours") #:recipe-input-of "rp-grow"))
+                       #:effort-quantity (make-measure 3 %effort-unit) #:recipe-input-of "rp-grow"))
 
   ;; ── produce: the crop (primary) and the runoff that bleeds nutrients out ───
   ($ recipe-store 'add-recipe-flow

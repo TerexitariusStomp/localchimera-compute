@@ -8,6 +8,7 @@
 ;;;
 ;;; Run: guile -L module tests/planner/test-comms-run.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness) (playnet planner vf schemas) (playnet planner observation states) (srfi srfi-1) (srfi srfi-13))
 (define here (dirname (current-filename)))
 (define root (dirname (dirname here)))
@@ -27,7 +28,7 @@
                            #:classified '("hard-constraint")))               ; dual 100 but NOT recruitable
 (define i-water (mk-intent "intent-water" #:name "Water"))                   ; MET → dropped
 (define s-food  (mk-sat "intent-food" 52 40))
-(define s-cook  (mk-sat "intent-cook" 8 6 #:unit "hours"))
+(define s-cook  (mk-sat "intent-cook" 8 6 #:unit %effort-unit))
 (define s-hard  (mk-sat "intent-hard" 100 50))
 (define s-water (mk-sat "intent-water" 10 10))
 (define intents (list i-food i-cook i-hard i-water))

@@ -11,6 +11,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-skill-catalogue.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness)
              ((playnet planner vf schemas)
               #:select (resource-specification-id resource-specification-resource-classified-as
@@ -50,7 +51,7 @@
   (check "…and its regen" (assq-ref law 'regen) 1.0)
   (check "…the stock counted in people" (resource-specification-default-unit-of-resource s) "person")
   (check "…the effort a work flow draws counted in hours"
-         (resource-specification-default-unit-of-effort s) "hours"))
+         (resource-specification-default-unit-of-effort s) %effort-unit))
 (let* ((s   (catalogue-skill "spec:facilitation"))
        (law (skill-law-of (resource-specification-resource-classified-as s))))
   (check "a meeting role states the identity law explicitly" (assq-ref law 'decay) 0.0)

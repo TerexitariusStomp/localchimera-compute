@@ -16,6 +16,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-floor-wall-dilemma.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test scope))
 (use-modules (playnet test harness) (playnet planner vf schemas) (playnet planner scope live)
              (srfi srfi-1) (ice-9 format))
@@ -39,7 +40,7 @@
         (make-recipe-flow #:id "f2" #:action 'consume #:resource-conforms-to "reef"
                           #:resource-quantity (make-measure 1.0 "kg") #:recipe-input-of "fish")
         (make-recipe-flow #:id "f3" #:action 'work #:resource-conforms-to "skill-fish"
-                          #:effort-quantity (make-measure 1.0 "hours") #:recipe-input-of "fish")))
+                          #:effort-quantity (make-measure 1.0 %effort-unit) #:recipe-input-of "fish")))
 
 (define FLOOR  300.0)
 (define FLOORS (list (cons "kcal#town@0" FLOOR)))

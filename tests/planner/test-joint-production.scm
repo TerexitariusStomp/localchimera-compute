@@ -29,6 +29,7 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/planner/test-joint-production.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner algorithms rollup) (playnet planner algorithms rollup common) (playnet planner algorithms rollup relative-snlt) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
 (use-modules (goblins)
@@ -66,7 +67,7 @@
          (make-process-specification #:id (string-append "ps-" pid) #:name pid))
       ($ rs 'add-recipe-process
          (make-recipe-process #:id pid #:name pid #:process-conforms-to (string-append "ps-" pid)
-                              #:has-duration (make-duration 1 "hour"))))
+                              #:has-duration (make-duration 1 %effort-unit))))
     (for-each proc '("rp-shear" "rp-butcher" "rp-raise" "rp-bake"))
 
     (define (fl id action spec qty unit inp outp)
@@ -76,17 +77,17 @@
                            #:recipe-input-of inp #:recipe-output-of outp)))
     (define (wk id h inp)
       ($ rs 'add-recipe-flow
-         (make-recipe-flow #:id id #:action 'work #:effort-quantity (make-measure h "hour")
+         (make-recipe-flow #:id id #:action 'work #:effort-quantity (make-measure h %effort-unit)
                            #:recipe-input-of inp)))
 
     ;; standalone wool: 1 sheep + 2h → 3 wool
-    (fl "s1" 'consume "sheep" 1.0 "each" "rp-shear" #f) (wk "s2" 2.0 "rp-shear")
+    (fl "s1" 'consume "sheep" 1.0 %count-unit "rp-shear" #f) (wk "s2" 2.0 "rp-shear")
     (fl "s3" 'produce "wool" 3.0 "kg" #f "rp-shear")
     ;; standalone mutton: 1 sheep + 6h → 10 mutton
-    (fl "b1" 'consume "sheep" 1.0 "each" "rp-butcher" #f) (wk "b2" 6.0 "rp-butcher")
+    (fl "b1" 'consume "sheep" 1.0 %count-unit "rp-butcher" #f) (wk "b2" 6.0 "rp-butcher")
     (fl "b3" 'produce "mutton" 10.0 "kg" #f "rp-butcher")
     ;; JOINT: 1 lamb + joint-hours → wool-qty wool + mutton-qty mutton
-    (fl "r1" 'consume "lamb" 1.0 "each" "rp-raise" #f) (wk "r2" joint-hours "rp-raise")
+    (fl "r1" 'consume "lamb" 1.0 %count-unit "rp-raise" #f) (wk "r2" joint-hours "rp-raise")
     (fl "r3" 'produce "wool" wool-qty "kg" #f "rp-raise")
     (fl "r4" 'produce "mutton" mutton-qty "kg" #f "rp-raise")
     ;; single-output control: 1 flour + 2h → 1 bread

@@ -30,6 +30,7 @@
 ;; primitive-loading the engine works, but it is the one combination that has to
 ;; keep two record-type universes in step, so a test that needs neither the
 ;; actors nor the stores does not ask for it.)
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet planner solve engine)
              (playnet planner solve compile)
@@ -50,7 +51,7 @@
 (define spec-box
   (make-resource-specification
     #:id "spec-box" #:name "Box left in a public place" #:resource-classified-as '("container")
-    #:default-unit-of-resource "hours/day" #:default-unit-of-effort "hours"
+    #:default-unit-of-resource "hours/day" #:default-unit-of-effort %effort-unit
     #:keep-in-place #t))
 
 (define the-box

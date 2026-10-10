@@ -21,6 +21,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-container-pool.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet planner solve engine)
              (playnet planner solve compile)
@@ -45,7 +46,7 @@
   (er id spec #f #:place at #:qty qty #:unit unit #:contained-in inside))
 
 ;; seats ⊂ train, train ON THE LINE
-(define train (res "train" "train" 1.0 "each" "u2" #f))
+(define train (res "train" "train" 1.0 %count-unit "u2" #f))
 (define seats (res "seats" "seat" 240.0 "hours/day" #f "train"))
 
 (define (tpl spec)

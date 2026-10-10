@@ -10,6 +10,7 @@
 ;;;
 ;;; Run:  guile -q -L module tests/planner/test-proofing-live.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness) (playnet planner scope root) (playnet planner vf schemas)
              (playnet planner knowledge dsl shorthand) (playnet planner knowledge dsl world)
              (playnet planner knowledge recipes proofing)
@@ -24,7 +25,7 @@
    proofing chain seeded; returns the root."
   (let ((root (spawn-scope-root "bakery")))
     (seed-world! root
-      (world #:specs (list (spec* "flour" "Flour" "kg") (spec* "bread" "Bread" "kg") (spec* "skill-bake" "Bake labour" "hours")
+      (world #:specs (list (spec* "flour" "Flour" "kg") (spec* "bread" "Bread" "kg") (spec* "skill-bake" "Bake labour" %effort-unit)
                            (spec* "spec-sp-electricity" "Electricity" "kWh")
                            (spec* "proofing-box" "Proofing box" "hours/day" #:keep-in-place #t))
              #:spatials (list (place* PLACE))

@@ -28,6 +28,7 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module -L tests tests/planner/test-berlin-flat-key.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness)
              (playnet planner knowledge recipes flat-key) (playnet planner knowledge recipes transport) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
              (playnet planner doors service)
@@ -73,26 +74,26 @@
   (world-append
    (if boxed? key-stays-boxed flat-key-world)
    (if boxed?
-       (world #:specs (list (spec* "spec-lockbox" "Lockbox" "each"))
+       (world #:specs (list (spec* "spec-lockbox" "Lockbox" %count-unit))
               #:procs (list (car lockbox-carry)) #:flows (cadr lockbox-carry)
               #:recipes (list (make-recipe #:id "recipe-lockbox-carry" #:name "A lockbox carried"
                                            #:primary-output "spec-lockbox" #:recipe-processes (list "rp-lockbox-carry")))
-              #:resources (list (er "res:lockbox" "spec-lockbox" ALICE #:place "cy-home" #:qty 1.0 #:unit "each")))
+              #:resources (list (er "res:lockbox" "spec-lockbox" ALICE #:place "cy-home" #:qty 1.0 #:unit %count-unit)))
        (world))
    (world
     #:specs (list (make-resource-specification #:id "spec-dwelling" #:name "Dwelling (flat or house)" #:image "🏠"
-                                               #:default-unit-of-resource "each" #:keep-in-place #t))
+                                               #:default-unit-of-resource %count-unit #:keep-in-place #t))
     #:spatials (list (place* "flat"     #:lat 52.4990 #:lon 13.4180)
                      (place* "cy-home"  #:lat 52.4860 #:lon 13.4250)
                      (place* "dee-home" #:lat 52.4810 #:lon 13.4350))
     #:agents (map (lambda (p) (person* (car p) #:place (cadr p) #:window day)) roster)
-    #:resources (list (er "res:flat" "spec-dwelling" ALICE #:place "flat" #:qty 1.0 #:unit "each")
-                      (er "res:oven" "spec-oven" ALICE #:place #f #:qty 1.0 #:unit "each"
+    #:resources (list (er "res:flat" "spec-dwelling" ALICE #:place "flat" #:qty 1.0 #:unit %count-unit)
+                      (er "res:oven" "spec-oven" ALICE #:place #f #:qty 1.0 #:unit %count-unit
                           #:contained-in "res:flat")
                       (if boxed?
-                          (er "res:key" "spec-flat-key" ALICE #:place #f #:qty 1.0 #:unit "each"
+                          (er "res:key" "spec-flat-key" ALICE #:place #f #:qty 1.0 #:unit %count-unit
                               #:contained-in "res:lockbox")
-                          (er "res:key" "spec-flat-key" ALICE #:place "cy-home" #:qty 1.0 #:unit "each"))))))
+                          (er "res:key" "spec-flat-key" ALICE #:place "cy-home" #:qty 1.0 #:unit %count-unit))))))
 
 ;; (id place skill …)
 (define FULL-ROSTER `((,BO "flat" "skill-bake") (,SAM "flat" "skill-bake")
@@ -137,7 +138,7 @@
 ;; every work-intent the solve or an offer lays does
 (define (work-intent id proc skill hours)
   (make-intent #:id id #:action 'work #:input-of proc #:resource-conforms-to skill
-               #:effort-quantity (make-measure hours "hours") #:planned-within "plan-1"))
+               #:effort-quantity (make-measure hours %effort-unit) #:planned-within "plan-1"))
 ;; who the UC matching lands each piece of work on: ((process . provider) …)
 (define (landed svc root)
   (let ((ps ($ root 'plan-store)))
@@ -253,12 +254,12 @@
 ;; opens the door. Each hand-over is a `transfer-custody` event the receiver's
 ;; own custody node takes; the fold is the observer's kernel.
 (define chain
-  (list (ev "open" 'raise #:rid "res:key" #:spec "spec-flat-key" #:q 1.0 #:unit "each"
+  (list (ev "open" 'raise #:rid "res:key" #:spec "spec-flat-key" #:q 1.0 #:unit %count-unit
             #:provider ALICE #:receiver ALICE)
         (ev "to-cy" 'transfer-custody #:rid "res:key" #:to-rid "res:key@cy" #:spec "spec-flat-key"
-            #:q 1.0 #:unit "each" #:provider ALICE #:receiver CY)
+            #:q 1.0 #:unit %count-unit #:provider ALICE #:receiver CY)
         (ev "to-dee" 'transfer-custody #:rid "res:key@cy" #:to-rid "res:key@dee" #:spec "spec-flat-key"
-            #:q 1.0 #:unit "each" #:provider CY #:receiver DEE)))
+            #:q 1.0 #:unit %count-unit #:provider CY #:receiver DEE)))
 (define (hands events)                   ; who received custody of the key, in order
   (filter-map (lambda (e) (and (eq? 'transfer-custody (economic-event-action e))
                                (economic-event-receiver e)))

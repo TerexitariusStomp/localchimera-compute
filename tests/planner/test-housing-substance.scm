@@ -14,6 +14,7 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/planner/test-housing-substance.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet planner solve engine) (playnet planner solve compile) (playnet planner solve solver) (playnet planner vf schemas))
 (use-modules ((playnet planner knowledge catalogues subsistence) #:select (region-for-lat %hot-latitude %cold-latitude %high-latitude)))
@@ -202,7 +203,7 @@
 
 (format #t "~%── 6. a unit read off a resource: its rent rides its tag ──~%")
 (define (res id tags)
-  (make-economic-resource #:id id #:name id #:conforms-to "spec-dwelling" #:classified-as tags #:accounting-quantity (make-measure 1 "each") #:onhand-quantity (make-measure 1 "each")
+  (make-economic-resource #:id id #:name id #:conforms-to "spec-dwelling" #:classified-as tags #:accounting-quantity (make-measure 1 %count-unit) #:onhand-quantity (make-measure 1 %count-unit)
                           #:current-location "town"))
 (define rented (resource->dwelling-unit (res "room-9" '("dwelling-type:informal-room" "beds:2" "rent-eur-night:12.5" "tenure:rent"))))
 (check "rent-eur-night: is the unit's own price of a night" (and rented (= 12.5 (unit-eur rented))))

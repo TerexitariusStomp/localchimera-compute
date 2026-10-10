@@ -18,6 +18,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-containment-place.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet planner knowledge dsl shorthand))
 (use-modules (playnet planner solve engine)
@@ -38,7 +39,7 @@
 
 ;; seats ⊂ train @ alexanderplatz
 (define seats  (res "seats"  "seat"  200.0 "hours/day" #f "train-u2"))
-(define train  (res "train-u2" "train" 1.0 "each" "alexanderplatz" #f))
+(define train  (res "train-u2" "train" 1.0 %count-unit "alexanderplatz" #f))
 (define fleet  (list seats train))
 (define resolve (resource-resolver fleet))
 
@@ -48,8 +49,8 @@
        (equal? "alexanderplatz" (resource-place seats resolve)))
 
 ;; three deep: a crate in a container in a ship
-(define ship  (res "ship"  "ship"  1.0 "each" "hamburg" #f))
-(define box   (res "box"   "box"   1.0 "each" #f "ship"))
+(define ship  (res "ship"  "ship"  1.0 %count-unit "hamburg" #f))
+(define box   (res "box"   "box"   1.0 %count-unit #f "ship"))
 (define grain (res "grain" "grain" 50.0 "kg"  #f "box"))
 (define cargo (list ship box grain))
 (check "the walk goes as deep as the nesting does"
@@ -65,8 +66,8 @@
        (equal? "amazon" (resource-place tree)))
 
 ;; A cycle terminates rather than spinning: two crates each inside the other.
-(define c1 (res "c1" "crate" 1.0 "each" #f "c2"))
-(define c2 (res "c2" "crate" 1.0 "each" #f "c1"))
+(define c1 (res "c1" "crate" 1.0 %count-unit #f "c2"))
+(define c2 (res "c2" "crate" 1.0 %count-unit #f "c1"))
 (check "a containment cycle stops instead of looping"
        (string? (resource-place c1 (resource-resolver (list c1 c2)))))
 

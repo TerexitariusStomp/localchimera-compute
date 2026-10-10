@@ -10,6 +10,7 @@
 ;;; Run:  cd planner && guile --no-auto-compile -q -L ../module \
 ;;;         -l load-all.scm -l tests/test-netting-advanced.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet deprecated planner))
 (use-modules (goblins)
@@ -40,15 +41,15 @@
        (make-resource-specification #:id "spec-wood" #:name "Wood"
                                     #:default-unit-of-resource "plank"))
     ($ rs 'add-resource-spec
-       (make-resource-specification #:id "spec-yarn" #:name "Yarn" #:default-unit-of-resource "each"))
+       (make-resource-specification #:id "spec-yarn" #:name "Yarn" #:default-unit-of-resource %count-unit))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-flour" #:name "Flour" #:default-unit-of-resource "kg"))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-linen" #:name "Linen"
-                                    #:default-unit-of-resource "each"))
+                                    #:default-unit-of-resource %count-unit))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-steel" #:name "Steel"
-                                    #:default-unit-of-resource "each"))
+                                    #:default-unit-of-resource %count-unit))
     (check-pred "specs seeded" #t)))
 ;;; ════════════════════════════════════════════════════════════════════════════
 ;;; 1. Net demand against inventory — full satisfaction
@@ -90,7 +91,7 @@
     ;; Add a scheduled output intent: 4 yarn to be produced
     ($ ps 'add-intent
        (make-intent #:id "i-yarn-out" #:action 'produce #:name "Yarn production" #:output-of "proc-1" #:resource-conforms-to "spec-yarn"
-                    #:resource-quantity (make-measure 4 "each")
+                    #:resource-quantity (make-measure 4 %count-unit)
                     #:provider "agent-a" #:planned-within "test-plan"))
 
     ;; Net demand of 4 yarn — should be absorbed by the scheduled output
@@ -136,7 +137,7 @@
     ($ ps 'add-intent
        (make-intent #:id "i-yarn-in" #:action 'consume #:name "Yarn consumption"
                     #:input-of "proc-1" #:resource-conforms-to "spec-yarn"
-                    #:resource-quantity (make-measure 3 "each") #:receiver "agent-a" #:planned-within "test-plan"))
+                    #:resource-quantity (make-measure 3 %count-unit) #:receiver "agent-a" #:planned-within "test-plan"))
 
     ;; Net supply of 5 yarn — 3 pre-claimed → remaining 2
     (let-values (((new-ns remaining)
@@ -157,19 +158,19 @@
     ;; Seed 5 linen in inventory
     ($ obs 'seed-resource
        (make-economic-resource #:id "r-linen" #:name "Linen" #:conforms-to "spec-linen"
-         #:accounting-quantity (make-measure 5 "each") #:onhand-quantity (make-measure 5 "each") #:primary-accountable "agent-a"))
+         #:accounting-quantity (make-measure 5 %count-unit) #:onhand-quantity (make-measure 5 %count-unit) #:primary-accountable "agent-a"))
 
     ;; 3 more scheduled to be produced
     ($ ps 'add-intent
        (make-intent #:id "i-linen-out" #:action 'produce #:name "Linen output" #:output-of "proc-x" #:resource-conforms-to "spec-linen"
-                    #:resource-quantity (make-measure 3 "each")
+                    #:resource-quantity (make-measure 3 %count-unit)
                     #:provider "agent-a" #:planned-within "test-plan"))
 
     ;; 4 scheduled to be consumed
     ($ ps 'add-intent
        (make-intent #:id "i-linen-in" #:action 'consume #:name "Linen input"
                     #:input-of "proc-y" #:resource-conforms-to "spec-linen"
-                    #:resource-quantity (make-measure 4 "each") #:receiver "agent-a" #:planned-within "test-plan"))
+                    #:resource-quantity (make-measure 4 %count-unit) #:receiver "agent-a" #:planned-within "test-plan"))
 
     ;; netter-net-available = inventory + scheduled outputs = 5 + 3 = 8
     ;; (consumption intents are only deducted by netter-net-supply, not net-available)
@@ -298,7 +299,7 @@
     ;; Add a scheduled output commitment: 6 steel to be produced
     ($ ps 'add-commitment
        (make-commitment #:id "c-steel-out" #:action 'produce #:note "Steel output commitment" #:output-of "proc-steel" #:resource-conforms-to "spec-steel"
-                        #:resource-quantity (make-measure 6 "each")
+                        #:resource-quantity (make-measure 6 %count-unit)
                         #:provider "agent-a" #:planned-within "test-plan"))
 
     ;; Net demand of 6 steel — no inventory, only the commitment
@@ -316,7 +317,7 @@
     ;; Add a second commitment for steel (4 more)
     ($ ps 'add-commitment
        (make-commitment #:id "c-steel-out-2" #:action 'produce #:note "Steel output 2" #:output-of "proc-steel-2" #:resource-conforms-to "spec-steel"
-                        #:resource-quantity (make-measure 4 "each")
+                        #:resource-quantity (make-measure 4 %count-unit)
                         #:provider "agent-a" #:planned-within "test-plan"))
 
     ;; Net demand of 10 steel — should absorb both commitments (6 + 4 = 10)
@@ -590,7 +591,7 @@
     ;; Two containers (bin-A, bin-B) plus one top-level resource
     ($ obs 'seed-resource
        (make-economic-resource #:id "r-bin-A" #:name "Flour Bin A" #:conforms-to "spec-flour-c"
-         #:accounting-quantity (make-measure 1 "each") #:onhand-quantity (make-measure 1 "each") #:primary-accountable "agent-a"))
+         #:accounting-quantity (make-measure 1 %count-unit) #:onhand-quantity (make-measure 1 %count-unit) #:primary-accountable "agent-a"))
 
     ($ obs 'seed-resource
        (make-economic-resource #:id "r-fA1" #:name "Flour A1" #:conforms-to "spec-flour-c"

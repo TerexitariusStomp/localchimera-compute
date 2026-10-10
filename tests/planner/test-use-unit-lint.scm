@@ -84,7 +84,7 @@
 ;;; counted in seat-hours is the ordinary way to say "one seat". Comms channels
 ;;; instead draw `1 post-slot`, their spec's own unit, with no duration. Both
 ;;; forms are coherent and both cancel; VF constrains neither.
-(use-modules ((playnet utils units) #:select (time-unit?)))   ; the one reader of "is this a time?"
+(use-modules ((playnet utils units) #:select (time-unit? %count-unit %effort-unit)))   ; the one reader of "is this a time?"
 (define (unit-of m) (and m (measure-has-unit m)))
 
 ;;; ── the length a run takes, from either place it may be stated ──────────────
@@ -156,18 +156,18 @@
 ;;; moves with the partition, and it must be reported.
 (define bad-process (make-recipe-process #:id "rp-nolength" #:name "No length"))
 (define bad-flow
-  (make-recipe-flow #:id "f-bad" #:action 'use #:resource-conforms-to "spec-anything" #:resource-quantity (make-measure 1.0 "each")
+  (make-recipe-flow #:id "f-bad" #:action 'use #:resource-conforms-to "spec-anything" #:resource-quantity (make-measure 1.0 %count-unit)
                     #:recipe-input-of "rp-nolength"))
 (check-pred "…and the rule reports a `use` that states no length anywhere"
             (string? (finding bad-flow bad-process)))
 (check-pred "…while a process duration alone satisfies it"
             (not (finding bad-flow
                           (make-recipe-process #:id "rp-timed" #:name "Timed"
-                                               #:has-duration (make-duration 0.5 "hours")))))
+                                               #:has-duration (make-duration 0.5 %effort-unit)))))
 (check-pred "…and a duration on the flow alone likewise"
             (not (finding (make-recipe-flow #:id "f-ok" #:action 'use #:resource-conforms-to "spec-anything"
-                                            #:resource-quantity (make-measure 1.0 "each")
-                                            #:effort-quantity (make-measure 0.25 "hours")
+                                            #:resource-quantity (make-measure 1.0 %count-unit)
+                                            #:effort-quantity (make-measure 0.25 %effort-unit)
                                             #:recipe-input-of "rp-nolength")
                           bad-process)))
 
@@ -219,7 +219,7 @@
 (check-pred "…and the rule reports hours written into resourceQuantity"
             (string? (work-finding
                       (make-recipe-flow #:id "f-slot" #:action 'work #:resource-conforms-to "spec-hands"
-                                        #:resource-quantity (make-measure 0.5 "hours")
+                                        #:resource-quantity (make-measure 0.5 %effort-unit)
                                         #:recipe-input-of "rp-x"))))
 (check-pred "…and reports a `work` flow with no hours at all"
             (string? (work-finding
@@ -228,7 +228,7 @@
 (check-pred "…while hours in effortQuantity pass"
             (not (work-finding
                   (make-recipe-flow #:id "f-ok2" #:action 'work #:resource-conforms-to "spec-hands"
-                                    #:effort-quantity (make-measure 0.5 "hours")
+                                    #:effort-quantity (make-measure 0.5 %effort-unit)
                                     #:recipe-input-of "rp-x"))))
 
 (test-summary!)

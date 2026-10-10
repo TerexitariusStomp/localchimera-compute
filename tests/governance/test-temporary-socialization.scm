@@ -2,6 +2,7 @@
 ;;; resource into a commune's use-pool: custody moves, rights stay, the grant is
 ;;; window-bounded, and it reverts on lapse or owner recall. NOT a sale.
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner facts validity) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))       ; custody-cred-live?, spawn-scope-root
 (use-modules (playnet governance acdc-bridge) (playnet governance auditor) (playnet governance credentials) (playnet governance scope) (playnet governance socialization) (playnet keri acdc) (playnet keri acdc-store))
@@ -132,7 +133,7 @@
 ;; granted), located at "town".
 (define bike
   (make-economic-resource #:id "res:bike1" #:name "cargo bike"
-                          #:conforms-to SPEC #:classified-as '() #:onhand-quantity (make-measure 1 "each")
+                          #:conforms-to SPEC #:classified-as '() #:onhand-quantity (make-measure 1 %count-unit)
                           #:current-location "town" #:primary-accountable OWNER          ; current-location, primary-accountable
                           #:custodian-scope COMMUNE))  ; custodian-scope = COMMUNE
 
@@ -163,7 +164,7 @@
 (define OWNER-2 "EOwnerTwoAbcdefghijklmnopqrstuvwxyz01234")
 (define bike-2
   (make-economic-resource #:id "res:bike2" #:name "second cargo bike"
-                          #:conforms-to SPEC #:classified-as '() #:onhand-quantity (make-measure 1 "each")
+                          #:conforms-to SPEC #:classified-as '() #:onhand-quantity (make-measure 1 %count-unit)
                           #:current-location "town" #:primary-accountable OWNER-2
                           #:custodian-scope COMMUNE))
 (with-vat vat
@@ -179,7 +180,7 @@
 ;; because a bike in the next town over is not this town's bike.
 (define bike-far
   (make-economic-resource #:id "res:bike3" #:name "a bike elsewhere"
-                          #:conforms-to SPEC #:classified-as '() #:onhand-quantity (make-measure 1 "each")
+                          #:conforms-to SPEC #:classified-as '() #:onhand-quantity (make-measure 1 %count-unit)
                           #:current-location "hillside" #:primary-accountable OWNER-2
                           #:custodian-scope COMMUNE))
 (with-vat vat
@@ -262,10 +263,10 @@
 
 (define bike-res
   (make-economic-resource #:id "res:bike" #:conforms-to "spec:cargo-bike" #:classified-as '()
-                          #:onhand-quantity (make-measure 1 "each") #:current-location "depot" #:primary-accountable OWNER #:custodian-scope COMMUNE))
+                          #:onhand-quantity (make-measure 1 %count-unit) #:current-location "depot" #:primary-accountable OWNER #:custodian-scope COMMUNE))
 (define oven-fixed
   (make-economic-resource #:id "res:oven2" #:conforms-to "spec:oven" #:classified-as '()
-                          #:onhand-quantity (make-measure 1 "each") #:current-location "kitchen" #:primary-accountable OWNER #:custodian-scope COMMUNE))
+                          #:onhand-quantity (make-measure 1 %count-unit) #:current-location "kitchen" #:primary-accountable OWNER #:custodian-scope COMMUNE))
 
 (with-vat vat
   (let* ((store (spawn-acdc-store)))
@@ -302,7 +303,7 @@
 
 (define (bike-at loc cond)
   (make-economic-resource #:id "res:bike" #:conforms-to "spec:cargo-bike" #:classified-as '()
-                          #:onhand-quantity (make-measure cond "each") #:current-location loc #:primary-accountable OWNER #:custodian-scope COMMUNE))
+                          #:onhand-quantity (make-measure cond %count-unit) #:current-location loc #:primary-accountable OWNER #:custodian-scope COMMUNE))
 
 ;; the pure checker
 (check-pred "returned to depot, in condition ⇒ no breach"
@@ -402,7 +403,7 @@
 ;; the durable as it sits in the books BEFORE any grant: Alice owns it, no custodian.
 (define (owned-bike)
   (make-economic-resource #:id "res:bike3" #:conforms-to "spec:cargo-bike" #:classified-as '()
-                          #:onhand-quantity (make-measure 6 "each") #:current-location "yard" #:primary-accountable OWNER   ; primary-accountable=OWNER, custodian-scope=#f
+                          #:onhand-quantity (make-measure 6 %count-unit) #:current-location "yard" #:primary-accountable OWNER   ; primary-accountable=OWNER, custodian-scope=#f
 ))
 
 (with-vat vat
@@ -435,7 +436,7 @@
 
 (define (alice-bike)  ; lives in Alice's books; the commune owns nothing of its own
   (make-economic-resource #:id "res:abike" #:conforms-to "spec:cargo-bike" #:classified-as '()
-                          #:onhand-quantity (make-measure 1 "each") #:current-location "yard" #:primary-accountable OWNER))
+                          #:onhand-quantity (make-measure 1 %count-unit) #:current-location "yard" #:primary-accountable OWNER))
 
 (with-vat vat
   (let* ((store   (spawn-acdc-store))

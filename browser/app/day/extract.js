@@ -36,6 +36,7 @@ import { conform, readFirstJSONObject } from "../conform.js";
 import { recipes } from "../recipe-graph.js";
 import { seam } from "../seam.js";
 import { scopeSig } from "../scope.js";
+import { COUNT_UNIT, EFFORT_UNIT } from '../units-catalogue.js';
 // ── the vocabulary: what the scope knows how to make ───────────────────────
 // The recipe library's spec names — produces, inputs, outputs — deduped.
 // This is where the corpus→recipe pipeline meets the log: a textbook that
@@ -159,7 +160,7 @@ const PASSES = {
             events: sift("events", got.events, eventFault).kept
                 .map(v => stampKnown({
                 action: v.action, spec: String(v.spec), qty: +v.qty,
-                unit: String(v.unit || (v.action === "work" ? "h" : "each")),
+                unit: String(v.unit || (v.action === "work" ? EFFORT_UNIT : COUNT_UNIT)),
                 when: String(v.when || ""), summary: String(v.summary || "")
             }, specs)),
         }),

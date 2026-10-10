@@ -12,6 +12,7 @@
 ;;;              same plan.
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-property-plan.scm
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness) (playnet test scope)
              (playnet planner vf schemas) (playnet planner scope live)
              (playnet planner beyond scenario)
@@ -31,7 +32,7 @@
 (define (build w mult order-seed)
   (let* ((procs (list (make-recipe-process #:id "grow" #:name "Grow") (make-recipe-process #:id "mill" #:name "Mill")
                       (make-recipe-process #:id "bake" #:name "Bake")))
-         (kg (lambda (q) (make-measure q "kg"))) (hr (lambda (q) (make-measure q "hours")))
+         (kg (lambda (q) (make-measure q "kg"))) (hr (lambda (q) (make-measure q %effort-unit)))
          (flows (list
                  (make-recipe-flow #:id "gw" #:action 'work #:resource-conforms-to "skill" #:effort-quantity (hr (assq-ref w 'g-lab)) #:recipe-input-of "grow")
                  (make-recipe-flow #:id "go" #:action 'produce #:resource-conforms-to "grain" #:resource-quantity (kg 1.0) #:recipe-output-of "grow" #:is-primary #t)

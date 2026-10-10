@@ -1,5 +1,6 @@
 ;;; test-auditor.scm — ^federation-auditor + ^custody-half-life-watcher
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
 (use-modules (playnet governance auditor) (playnet governance credentials) (playnet governance scope) (playnet governance socialization) (playnet governance structural-invariants) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet openvtc first-person))
@@ -256,7 +257,7 @@
     ($ ($ ($ leaf 'scope-root) 'observer) 'seed-resource
        (make-economic-resource
         #:id rid #:conforms-to "lathe"
-        #:accounting-quantity (make-measure 1 "each") #:onhand-quantity (make-measure 1 "each") #:primary-accountable "EMallory"))
+        #:accounting-quantity (make-measure 1 %count-unit) #:onhand-quantity (make-measure 1 %count-unit) #:primary-accountable "EMallory"))
     ($ store 'issue (ownership-credential "EAlice" rid "lathe"))
     (let* ((auditor (spawn-federation-auditor top))
            (said    ($ auditor 'audit!))
@@ -281,7 +282,7 @@
          (gtop ($ top 'mint-gov-cap "op"))
          (lathe (lambda () (make-economic-resource
                             #:id "means:EAlice:lathe" #:conforms-to "lathe"
-                            #:accounting-quantity (make-measure 1 "each") #:onhand-quantity (make-measure 1 "each") #:primary-accountable "EAlice"))))
+                            #:accounting-quantity (make-measure 1 %count-unit) #:onhand-quantity (make-measure 1 %count-unit) #:primary-accountable "EAlice"))))
     ($ top 'admit-commune gtop "rl1" la)
     ($ top 'admit-commune gtop "rl2" lb)
     ;; one lathe in one leaf: clean

@@ -11,6 +11,7 @@
 ;;;
 ;;; Run:  guile -L module -L tests tests/planner/test-federation-depth.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness)
              (playnet planner vf schemas) (srfi srfi-1)
              (playnet governance credentials) (playnet governance socialization)
@@ -24,7 +25,7 @@
 ;; a resource of SPEC with a distinct id, so we can count what the resolver finds.
 (define (res id spec)
   (make-economic-resource #:id id #:conforms-to spec #:classified-as '()
-                          #:onhand-quantity (make-measure 1 "each") #:current-location "town" #:primary-accountable OWNER))
+                          #:onhand-quantity (make-measure 1 %count-unit) #:current-location "town" #:primary-accountable OWNER))
 
 ;; a COMMUNE leaf: a scope holding RESOURCES in its own observer, no sub-scopes.
 (define (commune resources)

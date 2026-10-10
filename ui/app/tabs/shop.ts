@@ -56,6 +56,7 @@ import { emojiFor } from '../glyphs.js';
 import { PLAN } from '../core.js';
 import { mk } from '../dom.js';
 import { countMode, countTab, heldCard, heldGlyphs, wireHeld } from '../shop-count.js';
+import { isCountUnit } from '../units-catalogue.js';
 
 /** One good on the pool's shelves — a claimable spec, or a communal provision. */
 interface BookEntry {
@@ -308,7 +309,7 @@ const taken = (g: Good) => g.mine.filter(r => r.state === "taken");
 const contention = (g: Good) => g.asked - g.left;
 
 /** The unit a good is offered in: its own, or the slot's default when it is counted in itself. */
-const unitOf = (g: Good): string => { const u = g.offer?.unit || g.unit; return u && u !== "each" ? u : ""; };
+const unitOf = (g: Good): string => { const u = g.offer?.unit || g.unit; return u && !isCountUnit(u) ? u : ""; };
 
 function myLine(g: Good): string {
   const h = held(g), a = askd(g), t = taken(g);

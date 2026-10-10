@@ -7,6 +7,7 @@
 ;;; Run:  guile --no-auto-compile -q -L module tests/planner/plan-snapshot-e2e.scm
 ;;; (via the blake3 dev-test shell — see [[reference_blake3_test_profile]])
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules ((playnet wire rows) #:select (wire->plain))   ; a door's rows, read back as alists
              (playnet test harness)
              (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
@@ -38,25 +39,25 @@
                                     #:default-unit-of-resource "kg"))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-meal" #:name "Cooked Meal"
-                                    #:default-unit-of-resource "each"))
+                                    #:default-unit-of-resource %count-unit))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "skill-cook" #:name "Cooking skill"
-                                    #:default-unit-of-resource "hours"))
+                                    #:default-unit-of-resource %effort-unit))
     ($ rs 'add-process-spec
        (make-process-specification #:id "pspec-cook" #:name "Cooking"))
     ;; one-step recipe: consume veg + cook-labour → produce meal
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-cook" #:name "Cook" #:process-conforms-to "pspec-cook"
-                            #:has-duration (make-duration 0.6 "hours") #:sequence-group 0))
+                            #:has-duration (make-duration 0.6 %effort-unit) #:sequence-group 0))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-veg-in" #:action 'consume #:resource-conforms-to "spec-veg"
                          #:resource-quantity (make-measure 0.5 "kg") #:recipe-input-of "rp-cook"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-cook-work" #:action 'work #:resource-conforms-to "skill-cook"
-                         #:effort-quantity (make-measure 0.6 "hours") #:recipe-input-of "rp-cook"))
+                         #:effort-quantity (make-measure 0.6 %effort-unit) #:recipe-input-of "rp-cook"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-meal-out" #:action 'produce #:resource-conforms-to "spec-meal"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-cook" #:is-primary #t))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-cook" #:is-primary #t))
     ($ rs 'add-recipe
        (make-recipe #:id "rp-cooked-meal" #:name "Cooked meal" #:primary-output "spec-meal"
                     #:recipe-processes (list "rp-cook")))
@@ -66,7 +67,7 @@
                                    #:classified-as '() #:availability-window win)))
     ($ obs 'seed-resource
        (make-economic-resource #:id "er-skill-chef" #:name "chef can cook" #:conforms-to "skill-cook"
-                               #:accounting-quantity (make-measure 8 "hours") #:onhand-quantity (make-measure 8 "hours") #:primary-accountable "chef"))
+                               #:accounting-quantity (make-measure 8 %effort-unit) #:onhand-quantity (make-measure 8 %effort-unit) #:primary-accountable "chef"))
     ;; some vegetables on hand to consume
     ($ obs 'seed-resource
        (make-economic-resource #:id "er-veg" #:name "veg stock" #:conforms-to "spec-veg"

@@ -5,6 +5,7 @@
 ;;;
 ;;; docs/planning/solve/commitment-horizon.md. Fixture: (playnet test planner bread).
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness)
              (playnet planner vf schemas) (playnet planner beyond scenario) (srfi srfi-1)
              (playnet planner scope live)
@@ -58,7 +59,7 @@
 (format #t "  the free solve's baking by ada: ~,3f h~%" opt-bake)
 (with-vat vat2 ($ ps2 'add-commitment
                   (make-commitment #:id "cmt-regret" #:action 'work #:input-of "bake" #:resource-conforms-to "skill-bake"
-                                   #:effort-quantity (make-measure opt-bake "hours") #:provider "ada" #:receiver "town" #:at-location "town")))
+                                   #:effort-quantity (make-measure opt-bake %effort-unit) #:provider "ada" #:receiver "town" #:at-location "town")))
 ;; the regret is the pin's, so the program is the chain alone (#:reproduce? #f,
 ;; as section 1): with the town feeding its people the free solve's optimum is
 ;; wide and flat, and a pin can read cheaper than a stopped solve by more than
@@ -97,7 +98,7 @@
                     #:solve-opts-thunk (lambda () (list #:demand '(("bread#town@0" . 4.0)) #:backend 'native-c)))))
 (define (self-intent id hours)
   (make-intent #:id id #:action 'work #:input-of "mill" #:resource-conforms-to "skill-mill"
-               #:effort-quantity (make-measure hours "hours") #:at-location "town"))
+               #:effort-quantity (make-measure hours %effort-unit) #:at-location "town"))
 (with-vat vat3 ($ ps3 'add-intent (self-intent "self-mill-ok" 1.44)))
 (check "a feasible never-held accept passes its trial and promotes"
        (string? (with-vat vat3 ($ ps3 'promote-to-commitment "self-mill-ok" '((provider . "ada") (receiver . "town"))))))

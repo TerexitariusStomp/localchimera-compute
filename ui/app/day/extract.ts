@@ -38,6 +38,7 @@ import { conform, readFirstJSONObject } from "../conform.js";
 import { recipes } from "../recipe-graph.js";
 import { seam } from "../seam.js";
 import { scopeSig } from "../scope.js";
+import { COUNT_UNIT, EFFORT_UNIT } from '../units-catalogue.js';
 /** The VF economic-event verbs a log entry can narrate. */
 export type LogAction = "work" | "produce" | "consume" | "use" | "raise" | "lower";
 
@@ -318,7 +319,7 @@ const PASSES: { [K in keyof PassResults]: Pass<PassContexts[K], PassResults[K]> 
       events: sift("events", got.events, eventFault).kept
         .map(v => stampKnown({
           action: v.action as LogAction, spec: String(v.spec), qty: +(v.qty as number),
-          unit: String(v.unit || (v.action === "work" ? "h" : "each")),
+          unit: String(v.unit || (v.action === "work" ? EFFORT_UNIT : COUNT_UNIT)),
           when: String(v.when || ""), summary: String(v.summary || "") }, specs)),
     }),
   },

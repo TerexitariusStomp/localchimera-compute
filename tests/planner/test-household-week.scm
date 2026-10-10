@@ -41,6 +41,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-household-week.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test scope))
 (use-modules (playnet test planner prelude)
              (playnet planner solve engine)
@@ -132,9 +133,9 @@
              (hh "soap" "spec-hh-soap" soap "kg")
              (hh "soiled" "spec-hh-dishes-soiled" soiled "load")
              (hh "soil" "spec-hh-soil-load" soil "kg")
-             (hh "sink" "spec-hh-sink" 1.0 "each")
-             (hh "dw" "spec-hh-dishwasher" dishwasher "each")
-             (hh "sk" "skill-hh-domestic" 1.0 "each"))
+             (hh "sink" "spec-hh-sink" 1.0 %count-unit)
+             (hh "dw" "spec-hh-dishwasher" dishwasher %count-unit)
+             (hh "sk" "skill-hh-domestic" 1.0 %count-unit))
        agents spatials (hh-defs-processes dish-defs) (hh-defs-flows dish-defs)
        #:horizon (cons "2026-03-02" 2) #:storable STORABLE
        #:agent-skills (lambda (a) '("skill-hh-domestic"))
@@ -219,10 +220,10 @@
          (hh "dirty" "spec-hh-laundry-dirty" 8.0 "kg")
          (hh "soil" "spec-hh-soil-load" 5.0 "kg")
          (hh "discard" "spec-hh-discards" 24.0 "kg")
-         (hh "pfand" "spec-hh-deposit-bottles" 12.0 "each"))
+         (hh "pfand" "spec-hh-deposit-bottles" 12.0 %count-unit))
    (map (lambda (row) (hh (string-append (car row) "-pool") (car row) (* 1.0 (cdr row)) "each"))
         (cons '("spec-hh-bin" . 4) (cons '("spec-hh-iron" . 1) *household-kit*)))
-   (list (hh "sk" "skill-hh-domestic" 1.0 "each"))))
+   (list (hh "sk" "skill-hh-domestic" 1.0 %count-unit))))
 
 ;; THE FULL SEVEN DAYS — and this horizon is itself a regression guard. Before
 ;; the phase-I preconditioner fix (solver.scm `phase1-decide`, 2026-08-13) the

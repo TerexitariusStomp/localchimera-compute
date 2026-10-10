@@ -15,6 +15,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-accept-wires.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet planner knowledge dsl shorthand))
 (use-modules (playnet test harness)
              ((playnet test planner prelude) #:select ())
@@ -51,7 +52,7 @@
                     (provider "alice") (skill "farming")
                     (end #f) (finished #f) (window #f))
   (make-commitment #:id id #:action 'work #:input-of proc #:resource-conforms-to skill
-                   #:effort-quantity (make-measure hours "hours") #:provider provider #:has-end end #:at-location place #:finished finished #:availability-window window))
+                   #:effort-quantity (make-measure hours %effort-unit) #:provider provider #:has-end end #:at-location place #:finished finished #:availability-window window))
 
 (define (solve-with . kw)
   (call-with-values
@@ -148,7 +149,7 @@
 
 (define bake-wi
   (make-intent #:id "wi1" #:action 'work #:input-of "bakery" #:resource-conforms-to "bake"
-               #:effort-quantity (make-measure 4.0 "hours") #:at-location "town" #:planned-within "plan-1"))
+               #:effort-quantity (make-measure 4.0 %effort-unit) #:at-location "town" #:planned-within "plan-1"))
 (define prop (make-rising-proposal "prop-1" "plan-1" "scope-1" '("wi1")))
 ;; wi-by-prop carries the intents directly:
 (define (deploy* . kw)

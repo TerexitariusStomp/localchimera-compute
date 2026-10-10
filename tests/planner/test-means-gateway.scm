@@ -8,6 +8,7 @@
 ;;; allocations LANDING: the next `solve` for each scope carries its share as
 ;;; a standing eco-cap, and the next `means-plan` warm-starts from it.
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
 (use-modules (playnet planner scope live))
@@ -30,10 +31,10 @@
                          #:resource-quantity (make-measure 1 "unit") #:recipe-input-of "rp-make"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-work" #:action 'work #:resource-conforms-to "general"
-                         #:effort-quantity (make-measure 0.2 "hours") #:recipe-input-of "rp-make"))
+                         #:effort-quantity (make-measure 0.2 %effort-unit) #:recipe-input-of "rp-make"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-out" #:action 'produce #:resource-conforms-to "thing"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-make"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-make"))
     ($ rs 'add-recipe (make-recipe #:id "recipe-thing" #:name "Thing" #:primary-output "thing"
                                    #:recipe-processes (list "rp-make")))))
 

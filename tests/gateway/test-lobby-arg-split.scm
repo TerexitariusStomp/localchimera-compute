@@ -16,6 +16,7 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/gateway/test-lobby-arg-split.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness)
              (playnet gateway lobby)
              (goblins) (goblins vat) (goblins actor-lib methods))
@@ -97,9 +98,9 @@
 (check "declare-place: the place it is inside reaches the planner in its own slot"
        (last-planner-call) (list "c1" ME "Shelf 1" 0 0 "" "place:site/pantry"))
 (with-vat vat
-  ($ session2 'declare-means "c1" "lathe" 1 "hours" "town" "" "note" "🛠️" "n" "[]" "{}"))
+  ($ session2 'declare-means "c1" "lathe" 1 %effort-unit "town" "" "note" "🛠️" "n" "[]" "{}"))
 (check "declare-means: all six optionals reach the planner in their own slots"
-       (last-planner-call) (list "c1" ME "lathe" 1 "hours" "town" "" "note" "🛠️" "n" "[]" "{}"))
+       (last-planner-call) (list "c1" ME "lathe" 1 %effort-unit "town" "" "note" "🛠️" "n" "[]" "{}"))
 (with-vat vat
   ($ session2 'declare-need "c1" "spec" 1 "kg" "town" "" "" "" "" "" "n" "[]" "{}" "des" 3))
 (check "declare-need: all five optionals reach the planner in their own slots"

@@ -80,6 +80,7 @@
 
 ;;; ─── specs ───────────────────────────────────────────────────────────────────
 (define-module (playnet planner knowledge recipes dwelling)
+  #:use-module ((playnet utils units) #:select (%count-unit %effort-unit))
   #:use-module (playnet planner vf schemas)
   #:use-module (goblins)
   #:export (*dwelling-specs* seed-dwelling-specs seed-dwelling-recipe
@@ -95,7 +96,7 @@
    service)."
   ($ recipe-store 'add-resource-spec
      (make-resource-specification
-      #:id "spec-dwelling" #:name "Dwelling (flat or house)" #:image "🏠" #:default-unit-of-resource "each"
+      #:id "spec-dwelling" #:name "Dwelling (flat or house)" #:image "🏠" #:default-unit-of-resource %count-unit
       #:keep-in-place #t))
   (for-each
    (lambda (row)
@@ -112,17 +113,17 @@
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-shelter-night" #:name "A night's shelter"
                           #:process-conforms-to "pspec-shelter" #:process-classified-as '("tag:housing")
-                          #:has-duration (make-duration 8 "hours")))
+                          #:has-duration (make-duration 8 %effort-unit)))
 
   ;; use: the bed, engaged 1 × 8 h — count AND duration, per the two-ovens rule
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-shelter-bed" #:action 'use #:resource-conforms-to "spec-bed"
-                       #:resource-quantity (make-measure 1 "each") #:effort-quantity (make-measure 8 "hours")
+                       #:resource-quantity (make-measure 1 %count-unit) #:effort-quantity (make-measure 8 %effort-unit)
                        #:recipe-input-of "rp-shelter-night"))
   ;; cite: the bed's container stands at the cell; non-rival, draws nothing
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-shelter-dwelling" #:action 'cite #:resource-conforms-to "spec-dwelling"
-                       #:resource-quantity (make-measure 1 "each")
+                       #:resource-quantity (make-measure 1 %count-unit)
                        #:recipe-input-of "rp-shelter-night"))
   ;; deliver-service: the night of shelter — produced and delivered, never held
   ($ recipe-store 'add-recipe-flow
@@ -154,7 +155,7 @@
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-rent-shelter" #:name "A night's rent"
                           #:process-conforms-to "pspec-rent" #:process-classified-as '("tag:housing" "tag:market")
-                          #:has-duration (make-duration 0.05 "hours")))  ; the tenant's own time, paying it
+                          #:has-duration (make-duration 0.05 %effort-unit)))  ; the tenant's own time, paying it
 
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-rent-eur" #:action 'consume #:resource-conforms-to "spec-eur"

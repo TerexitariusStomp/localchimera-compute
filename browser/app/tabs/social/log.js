@@ -40,6 +40,7 @@ import { fitNewest, SYNC_MAX_ENTRIES, SYNC_MAX_BYTES, LOCAL_MAX_BYTES } from './
 import { gateHint } from '../../day/respond.js';
 import { scopeSig } from '../../scope.js';
 import { K } from "../../keys.js";
+import { isCountUnit } from '../../units-catalogue.js';
 const isEmptyEntry = (e) => "empty" in e;
 // ── the entries: local-first, one signal drives the list ───────────────────
 // entry = { id, t (ms), text, contacts: [alias…], sug: {contacts, events},
@@ -240,7 +241,7 @@ function entryCard(e) {
       <span class="lg-ev-act lg-${v.action}">${v.action}</span>
       <span class="lg-ev-what${v.known ? " lg-knownspec" : ""}"
             title="${v.known ? "a spec in the scope's recipe library — the plan knows how to provision it" : ""}"
-            >${v.qty}${v.unit === "each" ? "" : v.unit} ${v.spec}</span>
+            >${v.qty}${isCountUnit(v.unit) ? "" : v.unit} ${v.spec}</span>
       ${v.summary ? html `<span class="lg-ev-sum">${v.summary}</span>` : ""}
       ${v.observed
         ? html `<span class="lg-ev-done" title="recorded on the observer as ${v.observed}">✓ observed</span>`
@@ -269,7 +270,7 @@ function digestSection() {
     <div class="lg-prop">
       <span class="lg-prop-what${p.known ? " lg-knownspec" : ""}"
             title="${p.known ? "a spec in the scope's recipe library — the plan knows how to provision it" : ""}"
-            >${p.emoji} <b>${p.name}</b> · ${p.qty}${p.unit === "each" ? "" : " " + p.unit}/week</span>
+            >${p.emoji} <b>${p.name}</b> · ${p.qty}${isCountUnit(p.unit) ? "" : " " + p.unit}/week</span>
       <span class="lg-prop-why">${p.why}</span>
       ${p.declared
         ? html `<span class="lg-ev-done">✓ planned</span>`

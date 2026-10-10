@@ -7,6 +7,7 @@
 ;;; fills its output port.
 ;;; Run: guile -L module tests/planner/test-holes.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner vf schemas))
 (use-modules (playnet planner knowledge dsl shorthand))
@@ -26,7 +27,7 @@
     ;; the kitchen: makes meals, leaves organic waste; the garden takes compost
     (seed-world-recipes! rs
       (world #:specs (list (spec* "vegetables" "Vegetables" "kg")
-                           (spec* "meal" "Meal" "each")
+                           (spec* "meal" "Meal" %count-unit)
                            (spec* "organic-waste" "Organic waste" "kg")
                            (spec* "vegetable-trimmings" "Trimmings" "kg")
                            (spec* "compost" "Compost" "kg")
@@ -34,7 +35,7 @@
                                                         #:resource-classified-as '("compost/vermicompost") #:default-unit-of-resource "kg"))
              #:procs (list (rp* "cook" "Cook" 0.6))
              #:flows (list (consume* "cook/veg" "vegetables" 2 "cook")
-                           (out* "cook/meal" "meal" 4 "cook" "each")
+                           (out* "cook/meal" "meal" 4 "cook" %count-unit)
                            (out* "cook/waste" "organic-waste" 0.5 "cook" #:primary #f))
              #:recipes (list (make-recipe #:id "rp-meal" #:name "Cooked meal"
                                           #:primary-output "meal" #:recipe-processes '("cook")

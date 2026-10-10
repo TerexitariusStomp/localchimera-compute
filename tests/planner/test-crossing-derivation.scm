@@ -9,6 +9,7 @@
 ;;;
 ;;; Run: guile -L module tests/planner/test-crossing-derivation.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness) (playnet planner knowledge recipes store) (playnet planner knowledge recipes dwelling) (playnet planner knowledge recipes food-surplus) (playnet planner knowledge recipes household) (playnet planner scope spatial-things) (playnet planner legal crossings) (playnet planner observation observer) (playnet planner vf schemas) (playnet planner formulas actions) (srfi srfi-1)
              (playnet planner legal crossings) (playnet planner doors legal)
              ((playnet planner vf schemas) #:select (*action-definitions* action-definition-accountable-effect)) ((playnet planner formulas actions) #:select (*rights-moving-actions*))
@@ -27,10 +28,10 @@
   (spawn ^recipe-store (hashmap) (hashmap) (hashmap) (hashmap) (hashmap)
                        (hashmap) (hashmap) (hashmap) (hashmap) (hashmap)))
 (define (flow id action spec in out . clause)          ; a recipe flow, by what matters here
-  (make-recipe-flow #:id id #:action action #:resource-conforms-to spec #:resource-quantity (make-measure 1 "each") #:recipe-input-of in #:recipe-output-of out
+  (make-recipe-flow #:id id #:action action #:resource-conforms-to spec #:resource-quantity (make-measure 1 %count-unit) #:recipe-input-of in #:recipe-output-of out
                     #:recipe-clause-of (and (pair? clause) (car clause))))
 (define (spec id classes . money?)
-  (make-resource-specification #:id id #:name id #:resource-classified-as classes #:default-unit-of-resource "each"
+  (make-resource-specification #:id id #:name id #:resource-classified-as classes #:default-unit-of-resource %count-unit
                                #:medium-of-exchange (and (pair? money?) (car money?))))
 (define vat (spawn-vat))
 (define-syntax-rule (in-vat body ...) (with-vat vat body ...))
@@ -92,7 +93,7 @@
     ($ rs 'add-resource-spec (spec "s-coin" '() #t))
     ($ rs 'add-process-spec (make-process-specification #:id "ps-cook" #:name "Cook"))
     ($ rs 'add-recipe-process (make-recipe-process #:id "rp-cook" #:name "Cook" #:process-conforms-to "ps-cook"
-                                                   #:has-duration (make-duration 1 "hours")))
+                                                   #:has-duration (make-duration 1 %effort-unit)))
     ($ rs 'add-recipe-flow (flow "f-in" 'consume "s-veg" "rp-cook" #f))
     (when sold?
       ($ rs 'add-recipe-exchange (make-recipe-exchange #:id "rx-meal" #:name "A meal for money"))
@@ -128,7 +129,7 @@
           (reg (spawn ^legal-registry (list purse-rule))))
       ($ rs 'add-resource-spec (spec "s-coin" '() #t))
       ($ rs 'add-recipe-process (make-recipe-process #:id "rp-keep" #:name "Keep the purse"
-                                                     #:has-duration (make-duration 1 "hours")))
+                                                     #:has-duration (make-duration 1 %effort-unit)))
       ($ rs 'add-recipe-flow (flow "f-keep" 'use "s-coin" "rp-keep" #f))
       ($ rs 'add-recipe (make-recipe #:id "r-keep" #:name "Keep" #:primary-output "s-coin"
                                      #:recipe-processes (list "rp-keep")))
@@ -214,7 +215,7 @@
       ($ rs 'add-resource-spec (spec "s-coin" '("crossing:state-money" "crossing:made-up-word"
                                                 "crossing:feed-in-public") #t))
       ($ rs 'add-recipe-process (make-recipe-process #:id "rp-pay" #:name "Pay"
-                                                     #:has-duration (make-duration 1 "hours")))
+                                                     #:has-duration (make-duration 1 %effort-unit)))
       ($ rs 'add-recipe-flow (flow "f-pay" 'consume "s-coin" "rp-pay" #f))
       ($ rs 'add-recipe (make-recipe #:id "r-pay" #:name "Pay" #:primary-output "s-coin"
                                      #:recipe-processes (list "rp-pay")))

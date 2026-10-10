@@ -12,13 +12,14 @@
 ;;; Pure solver (no ACDCs) ⇒ no blake3.
 ;;; Run: guile -L module tests/planner/test-resource-conformance-robust.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test scope)) ; mock-scope-root
 (use-modules (playnet test harness)
              (playnet planner vf schemas) (playnet planner beyond scenario)
              (playnet planner scope live)
              (goblins) (goblins vat) (srfi srfi-1))
 
-(define holdings (list (er "res:conv-oven" "convection-oven" "commune" #:qty 1 #:unit "each")))
+(define holdings (list (er "res:conv-oven" "convection-oven" "commune" #:qty 1 #:unit %count-unit)))
 
 (define procs (list (rp* "bake" "Bake")))
 (define flows (list (out* "b1" "bread" 1.0 "bake") (use* "b2" "oven" "bake" 1.0 #:qty 1.0)))
@@ -26,7 +27,7 @@
                                    #:recipe-processes '() #:recipe-exchanges '())))
 (define oven-specs
   (list (make-resource-specification
-         #:id "oven" #:name "Oven" #:resource-classified-as '() #:default-unit-of-effort "hours"
+         #:id "oven" #:name "Oven" #:resource-classified-as '() #:default-unit-of-effort %effort-unit
          #:satisfied-by '((("convection-oven" . 0))))))
 
 ;; two weather draws, both leaving the bake yield at 1.0 — the uncertainty is real

@@ -19,6 +19,7 @@
 ;;;   rp-ferment — 180-day tarp-sealed fermentation → HumiSoil
 
 (define-module (playnet planner knowledge recipes humisoil)
+  #:use-module ((playnet utils units) #:select (%count-unit %effort-unit))
   #:use-module (playnet planner vf schemas)
   #:use-module (goblins)
   #:export (*humisoil-spec-names* *humisoil-spec-units* seed-humisoil-specs
@@ -72,18 +73,18 @@
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-prep" #:name "Chip/grind biomass"
                           #:process-conforms-to "pspec-prep" #:process-classified-as '("tag:material-handling")
-                          #:has-duration (make-duration 4 "hours")))
+                          #:has-duration (make-duration 4 %effort-unit)))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-prep-biomass-in" #:action 'consume #:resource-conforms-to "spec-biomass"
                        #:resource-quantity (make-measure 1000 "kg") #:recipe-input-of "rp-prep"))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-prep-loader-use" #:action 'use #:resource-conforms-to "spec-loader"
-                       #:resource-quantity (make-measure 1 "each") #:recipe-input-of "rp-prep"))
+                       #:resource-quantity (make-measure 1 %count-unit) #:recipe-input-of "rp-prep"))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-prep-chipper-use" #:action 'use #:resource-conforms-to "spec-chipper"
-                       #:resource-quantity (make-measure 1 "each") #:recipe-input-of "rp-prep"))
+                       #:resource-quantity (make-measure 1 %count-unit) #:recipe-input-of "rp-prep"))
   ($ recipe-store 'add-recipe-flow
-     (make-recipe-flow #:id "rf-prep-work" #:action 'work #:effort-quantity (make-measure 4 "hours")
+     (make-recipe-flow #:id "rf-prep-work" #:action 'work #:effort-quantity (make-measure 4 %effort-unit)
                        #:recipe-input-of "rp-prep"))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-prep-out" #:action 'produce #:resource-conforms-to "spec-prepped-biomass"
@@ -95,7 +96,7 @@
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-windrow" #:name "Build M-windrow & seal under tarp"
                           #:process-conforms-to "pspec-windrow" #:process-classified-as '("tag:material-handling")
-                          #:has-duration (make-duration 2 "hours")))
+                          #:has-duration (make-duration 2 %effort-unit)))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-windrow-prepped-in" #:action 'consume #:resource-conforms-to "spec-prepped-biomass"
                        #:resource-quantity (make-measure 950 "kg") #:recipe-input-of "rp-windrow"))
@@ -107,16 +108,16 @@
                        #:resource-quantity (make-measure 600 "liters") #:recipe-input-of "rp-windrow"))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-windrow-loader-use" #:action 'use #:resource-conforms-to "spec-loader"
-                       #:resource-quantity (make-measure 1 "each") #:recipe-input-of "rp-windrow"))
+                       #:resource-quantity (make-measure 1 %count-unit) #:recipe-input-of "rp-windrow"))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-windrow-trommel-use" #:action 'use #:resource-conforms-to "spec-trommel-sprayer"
-                       #:resource-quantity (make-measure 1 "each") #:recipe-input-of "rp-windrow"))
+                       #:resource-quantity (make-measure 1 %count-unit) #:recipe-input-of "rp-windrow"))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-windrow-tarp-use" #:action 'use #:resource-conforms-to "spec-tarp"
-                       #:resource-quantity (make-measure 1 "each") #:recipe-input-of "rp-windrow"))
+                       #:resource-quantity (make-measure 1 %count-unit) #:recipe-input-of "rp-windrow"))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-windrow-work" #:action 'work
-                       #:effort-quantity (make-measure 2 "hours") #:recipe-input-of "rp-windrow"))
+                       #:effort-quantity (make-measure 2 %effort-unit) #:recipe-input-of "rp-windrow"))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-windrow-out" #:action 'produce #:resource-conforms-to "spec-covered-windrow"
                        #:resource-quantity (make-measure 1580 "kg") #:recipe-output-of "rp-windrow"))
@@ -133,7 +134,7 @@
                        #:resource-quantity (make-measure 1580 "kg") #:recipe-input-of "rp-ferment"))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-ferment-work" #:action 'work
-                       #:effort-quantity (make-measure 1 "hours") #:recipe-input-of "rp-ferment"))
+                       #:effort-quantity (make-measure 1 %effort-unit) #:recipe-input-of "rp-ferment"))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-ferment-out" #:action 'produce #:resource-conforms-to "spec-humisoil"
                        #:resource-quantity (make-measure 1200 "kg") #:recipe-output-of "rp-ferment"))

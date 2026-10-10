@@ -15,6 +15,7 @@
 ;;;
 ;;; Run: guile -L module tests/planner/test-vf-lint.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness)
              (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1) (playnet planner vf schemas)
              (playnet planner knowledge dsl vf-lint) (playnet planner knowledge dsl findings)
@@ -31,7 +32,7 @@
                                                         #:default-unit-of-resource unit)))
 (define (process! id hours)
   ($ rs 'add-recipe-process (make-recipe-process #:id id #:name id
-                                                 #:has-duration (and hours (make-duration hours "hours")))))
+                                                 #:has-duration (and hours (make-duration hours %effort-unit)))))
 (define* (flow! id action spec pid #:key (qty 1.0) (unit "kg") effort (primary #f) (out? #f))
   ($ rs 'add-recipe-flow
      (make-recipe-flow #:id id #:action action #:resource-conforms-to spec #:resource-quantity (and qty (make-measure qty unit)) #:effort-quantity effort
@@ -44,12 +45,12 @@
 
 (display "\n── a well-formed recipe is clean ──\n")
 (with-vat vat
-  (spec! "flour" "kg") (spec! "bread" "kg") (spec! "oven" "each") (spec! "baker" "hours") (spec! "spec-water" "liters")
+  (spec! "flour" "kg") (spec! "bread" "kg") (spec! "oven" %count-unit) (spec! "baker" %effort-unit) (spec! "spec-water" "liters")
   (process! "bake" 2)
   (flow! "f1" 'consume "flour" "bake" #:qty 5)
   (flow! "f1w" 'consume "spec-water" "bake" #:qty 1.5 #:unit "liters")     ; the water the loaves hold came from somewhere
-  (flow! "f2" 'use "oven" "bake" #:qty 1 #:unit "each" #:effort (make-measure 2 "hours"))
-  (flow! "f3" 'work "baker" "bake" #:qty #f #:effort (make-measure 2 "hours"))
+  (flow! "f2" 'use "oven" "bake" #:qty 1 #:unit %count-unit #:effort (make-measure 2 %effort-unit))
+  (flow! "f3" 'work "baker" "bake" #:qty #f #:effort (make-measure 2 %effort-unit))
   (flow! "f4" 'produce "bread" "bake" #:qty 4 #:primary #t #:out? #t)
   (recipe! "r-bread" "bread" '("bake")))
 (define clean (with-vat vat (lint-recipe-store rs)))
@@ -58,13 +59,13 @@
 
 (display "\n── each rule fires on its shape ──\n")
 (with-vat vat
-  (spec! "milk" "liters") (spec! "cheese" "kg") (spec! "vat" "each")
+  (spec! "milk" "liters") (spec! "cheese" "kg") (spec! "vat" %count-unit)
   (process! "curdle" #f)
   (flow! "g1" 'squeeze "milk" "curdle")                                    ; not a VF action
   (flow! "g2" 'consume "milk" "curdle" #:qty 10 #:unit "kg")                ; milk is counted in liters
   (flow! "g3" 'consume "ghost" "curdle")                                    ; no such spec
   (flow! "g4" 'consume "milk" "curdle" #:qty 0 #:unit "liters")             ; nothing
-  (flow! "g5" 'use "vat" "curdle" #:qty 1 #:unit "each")                    ; no length anywhere
+  (flow! "g5" 'use "vat" "curdle" #:qty 1 #:unit %count-unit)                    ; no length anywhere
   (flow! "g6" 'produce "cheese" "curdle" #:qty 1 #:primary #t #:out? #t)
   (flow! "g7" 'produce "cheese" "curdle" #:qty 1 #:primary #t #:out? #t)    ; two primaries
   ;; (a produce pointing IN is refused by the store itself at add time, so the
@@ -78,10 +79,10 @@
 
 (display "\n── a reading is a count of a stock: intensive units and the two heat frames ──\n")
 (with-vat vat
-  (spec! "room" "each") (spec! "warm-room" "each") (spec! "ch4" "kg") (spec! "o2" "kg") (spec! "co2" "kg") (spec! "h2o" "kg") (spec! "spec-bn-heat" "kWh")
+  (spec! "room" %count-unit) (spec! "warm-room" %count-unit) (spec! "ch4" "kg") (spec! "o2" "kg") (spec! "co2" "kg") (spec! "h2o" "kg") (spec! "spec-bn-heat" "kWh")
   (process! "heat-room" 1)
   (flow! "t1" 'consume "room" "heat-room" #:qty 20 #:unit "degC")            ; degrees move nothing
-  (flow! "t2" 'produce "warm-room" "heat-room" #:qty 1 #:unit "each" #:primary #t #:out? #t)
+  (flow! "t2" 'produce "warm-room" "heat-room" #:qty 1 #:unit %count-unit #:primary #t #:out? #t)
   (recipe! "r-warm" "warm-room" '("heat-room"))
   ;; combustion into a heat CARRIER: the carrier bridges the frames, so no refusal
   (process! "burn" 1)
@@ -226,7 +227,7 @@
 (display "\n── a process duration alone satisfies the use rule ──\n")
 (with-vat vat
   (process! "press" 1)
-  (flow! "h1" 'use "vat" "press" #:qty 1 #:unit "each")
+  (flow! "h1" 'use "vat" "press" #:qty 1 #:unit %count-unit)
   (flow! "h2" 'produce "cheese" "press" #:qty 1 #:primary #t #:out? #t)
   (recipe! "r-press" "cheese" '("press")))
 (check "no untimed-use on the timed process"
@@ -346,28 +347,28 @@
 
 (display "\n── power: a means passes energy at its rating ──\n")
 (with-vat vat
-  (spec! "spec-hh-iron" "each") (spec! "spec-sp-electricity" "kWh") (spec! "shirt" "kg")
+  (spec! "spec-hh-iron" %count-unit) (spec! "spec-sp-electricity" "kWh") (spec! "shirt" "kg")
   ;; half an hour of a one-kilowatt iron buys half a kilowatt-hour
   (process! "iron-ok" 0.5)
-  (flow! "i1" 'use "spec-hh-iron" "iron-ok" #:qty 1 #:unit "each" #:effort (make-measure 0.5 "hours"))
+  (flow! "i1" 'use "spec-hh-iron" "iron-ok" #:qty 1 #:unit %count-unit #:effort (make-measure 0.5 %effort-unit))
   (flow! "i2" 'consume "spec-sp-electricity" "iron-ok" #:qty 0.5 #:unit "kWh")
   (flow! "i3" 'consume "shirt" "iron-ok" #:qty 1) (flow! "i4" 'produce "shirt" "iron-ok" #:qty 1 #:primary #t #:out? #t)
   (recipe! "r-iron" "shirt" '("iron-ok"))
   ;; five kilowatt-hours through the same iron in the same half hour
   (process! "iron-greedy" 0.5)
-  (flow! "g1" 'use "spec-hh-iron" "iron-greedy" #:qty 1 #:unit "each" #:effort (make-measure 0.5 "hours"))
+  (flow! "g1" 'use "spec-hh-iron" "iron-greedy" #:qty 1 #:unit %count-unit #:effort (make-measure 0.5 %effort-unit))
   (flow! "g2" 'consume "spec-sp-electricity" "iron-greedy" #:qty 5 #:unit "kWh")
   (flow! "g3" 'consume "shirt" "iron-greedy" #:qty 1) (flow! "g4" 'produce "shirt" "iron-greedy" #:qty 1 #:primary #t #:out? #t)
   (recipe! "r-greedy-iron" "shirt" '("iron-greedy"))
   ;; the hours read off the process when the use states none
   (process! "iron-timed" 0.5)
-  (flow! "t1" 'use "spec-hh-iron" "iron-timed" #:qty 1 #:unit "each")
+  (flow! "t1" 'use "spec-hh-iron" "iron-timed" #:qty 1 #:unit %count-unit)
   (flow! "t2" 'consume "spec-sp-electricity" "iron-timed" #:qty 2 #:unit "kWh")
   (flow! "t3" 'consume "shirt" "iron-timed" #:qty 1) (flow! "t4" 'produce "shirt" "iron-timed" #:qty 1 #:primary #t #:out? #t)
   (recipe! "r-timed-iron" "shirt" '("iron-timed"))
   ;; two irons pass twice the energy
   (process! "iron-pair" 0.5)
-  (flow! "p1" 'use "spec-hh-iron" "iron-pair" #:qty 2 #:unit "each" #:effort (make-measure 0.5 "hours"))
+  (flow! "p1" 'use "spec-hh-iron" "iron-pair" #:qty 2 #:unit %count-unit #:effort (make-measure 0.5 %effort-unit))
   (flow! "p2" 'consume "spec-sp-electricity" "iron-pair" #:qty 1 #:unit "kWh")
   (flow! "p3" 'consume "shirt" "iron-pair" #:qty 1) (flow! "p4" 'produce "shirt" "iron-pair" #:qty 1 #:primary #t #:out? #t)
   (recipe! "r-pair-iron" "shirt" '("iron-pair")))
@@ -378,14 +379,14 @@
 (check-pred "the hours are the process's when the use states none" (member "iron-timed" (pw-subjects 'power)))
 (check-pred "two irons pass twice the energy" (not (member "iron-pair" (pw-subjects 'power))))
 (check "a means with no rating passes any amount, land's rating is the sun's, a device's its plate"
-       (list (rated-kw "oven" #:unit "each") (and (rated-kw "field" #:unit "ha" #:lat 0.0 #:month 3) #t) (rated-kw "spec-hh-iron" #:unit "each"))
+       (list (rated-kw "oven" #:unit %count-unit) (and (rated-kw "field" #:unit "ha" #:lat 0.0 #:month 3) #t) (rated-kw "spec-hh-iron" #:unit %count-unit))
        '(#f #t 1.0))
 
 (display "\n── motion: nothing moves for free ──\n")
 (with-vat vat
-  (spec! "porter" "hours")
+  (spec! "porter" %effort-unit)
   ($ rs 'add-resource-spec (make-resource-specification #:id "shelf" #:name "shelf"
-                                                        #:default-unit-of-resource "each"
+                                                        #:default-unit-of-resource %count-unit
                                                         #:keep-in-place #t))
   ;; grain moved through space by nothing
   (process! "teleport" #f)
@@ -394,7 +395,7 @@
   ;; carried: the porter's work moves it
   (process! "carry" #f)
   (flow! "c1" 'pickup "grain" "carry" #:qty 1) (flow! "c2" 'dropoff "grain" "carry" #:qty 1 #:out? #t)
-  (flow! "c3" 'work "porter" "carry" #:qty #f #:effort (make-measure 0.2 "hours"))
+  (flow! "c3" 'work "porter" "carry" #:qty #f #:effort (make-measure 0.2 %effort-unit))
   (recipe! "r-carry" "grain" '("carry"))
   ;; driven: a charge burnt moves it
   (process! "drive" #f)
@@ -407,24 +408,24 @@
                                                         #:default-unit-of-resource "hours/day"))
   (process! "ride" #f)
   (flow! "r1" 'pickup "grain" "ride" #:qty 1) (flow! "r2" 'dropoff "grain" "ride" #:qty 1 #:out? #t)
-  (flow! "r3" 'use "metro" "ride" #:qty 1 #:unit "each" #:effort (make-measure 0.6 "hours"))
+  (flow! "r3" 'use "metro" "ride" #:qty 1 #:unit %count-unit #:effort (make-measure 0.6 %effort-unit))
   (recipe! "r-ride" "grain" '("ride"))
   ;; held: through a keep-in-place container the arc is through time
   (process! "hold" #f)
   (flow! "h1" 'pickup "grain" "hold" #:qty 1) (flow! "h2" 'dropoff "grain" "hold" #:qty 1 #:out? #t)
-  (flow! "h3" 'use "shelf" "hold" #:qty 1 #:unit "each" #:effort (make-measure 0.02 "hours"))
+  (flow! "h3" 'use "shelf" "hold" #:qty 1 #:unit %count-unit #:effort (make-measure 0.02 %effort-unit))
   (recipe! "r-hold" "grain" '("hold"))
   ;; a means lugged as a bare good: the metro is something the ride `use`s
   (process! "lug" #f)
-  (flow! "l1" 'pickup "metro" "lug" #:qty 1 #:unit "each") (flow! "l2" 'dropoff "metro" "lug" #:qty 1 #:unit "each" #:out? #t)
-  (flow! "l3" 'work "porter" "lug" #:qty #f #:effort (make-measure 0.2 "hours"))
+  (flow! "l1" 'pickup "metro" "lug" #:qty 1 #:unit %count-unit) (flow! "l2" 'dropoff "metro" "lug" #:qty 1 #:unit %count-unit #:out? #t)
+  (flow! "l3" 'work "porter" "lug" #:qty #f #:effort (make-measure 0.2 %effort-unit))
   (recipe! "r-lug" "metro" '("lug"))
   ;; the same means as its own mover: a mode — the `work` resolved from its pickup
   (process! "roll" #f)
-  (flow! "o1" 'pickup "metro" "roll" #:qty 1 #:unit "each") (flow! "o2" 'dropoff "metro" "roll" #:qty 1 #:unit "each" #:out? #t)
+  (flow! "o1" 'pickup "metro" "roll" #:qty 1 #:unit %count-unit) (flow! "o2" 'dropoff "metro" "roll" #:qty 1 #:unit %count-unit #:out? #t)
   ($ rs 'add-recipe-flow
      (make-recipe-flow #:id "o3" #:action 'work #:resource-conforms-to "metro"
-                       #:effort-quantity (make-measure 0.2 "hours") #:recipe-input-of "roll"
+                       #:effort-quantity (make-measure 0.2 %effort-unit) #:recipe-input-of "roll"
                        #:resolve-from-flow "o1"))
   (recipe! "r-roll" "metro" '("roll")))
 (define mv (with-vat vat (lint-recipe-store rs)))

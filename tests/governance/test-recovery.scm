@@ -4,6 +4,7 @@
 ;;; reconstruct everything from the ACDCs alone, assert behavioral
 ;;; equivalence on the recovered actor graph.
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner scope root) (playnet planner vf schemas) (playnet planner observation states))
 (use-modules (playnet org endorsement))
@@ -370,7 +371,7 @@
            ($ store 'issue-idempotent
               (make-work-event-credential
                 "E_bakery" worker
-                (economic-event-id event) hours "hour"
+                (economic-event-id event) hours %effort-unit
                 #:fulfills (economic-event-fulfills event)
                 #:satisfies (economic-event-satisfies event))))))
 
@@ -399,13 +400,13 @@
     ;; Gate (§III.1) anchors credit on intent-satisfaction, so the
     ;; observer must know about the intent for the event to count.
     (let ((cmt (make-commitment #:id "C-recover" #:action 'work
-                                #:resource-conforms-to "spec-bread" #:effort-quantity (make-measure 4 "hour")
+                                #:resource-conforms-to "spec-bread" #:effort-quantity (make-measure 4 %effort-unit)
                                 #:provider "E_alice" #:receiver "E_bakery"
                                 #:planned-within "plan-test")))
       ($ plan-store 'add-commitment cmt))
 
     (let ((int (make-intent #:id "I-recover" #:action 'work #:resource-conforms-to "spec-bread"
-                            #:effort-quantity (make-measure 4 "hour") #:receiver "E_bakery"
+                            #:effort-quantity (make-measure 4 %effort-unit) #:receiver "E_bakery"
                             #:in-scope-of "plan-test")))
       ($ plan-store 'add-intent int)
       ($ ($ scope 'observer) 'register-intent int))
@@ -415,7 +416,7 @@
     (let ((event (make-economic-event
                    #:id "W-recover" #:action 'work
                    #:provider "E_alice" #:receiver "E_bakery"
-                   #:effort-quantity (make-measure 4 "hour") #:created "2026-04-20T09:00:00Z" #:satisfies "I-recover")))
+                   #:effort-quantity (make-measure 4 %effort-unit) #:created "2026-04-20T09:00:00Z" #:satisfies "I-recover")))
       ($ ($ scope 'observer) 'record-event event)
       ($ account-store 'credit-from-event event))
 

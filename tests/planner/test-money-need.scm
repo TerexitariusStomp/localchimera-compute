@@ -29,6 +29,7 @@
 ;;;
 ;;; Run:  guile -L module -L tests tests/planner/test-money-need.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness)
              (playnet planner algorithms rollup) (playnet planner knowledge recipes dwelling) (playnet planner knowledge recipes household) (playnet planner scope root) (playnet planner vf schemas) (playnet planner beyond schedules) (srfi srfi-1)
              (playnet planner doors service)
@@ -51,11 +52,11 @@
     #f))
 (define (alice-flat)
   (make-economic-resource #:id "res:flat" #:name "Alice's flat" #:image "🏠"
-                          #:conforms-to "spec-dwelling" #:classified-as '() #:onhand-quantity (make-measure 1 "each")
+                          #:conforms-to "spec-dwelling" #:classified-as '() #:onhand-quantity (make-measure 1 %count-unit)
                           #:current-location "town" #:primary-accountable OWNER))
 (define (alice-beds)
   (make-economic-resource #:id "res:beds" #:name "Alice's guest room" #:image "🏠"
-                          #:conforms-to "spec-bed" #:classified-as '() #:onhand-quantity (make-measure 2 "each") #:primary-accountable OWNER #:contained-in "res:flat"
+                          #:conforms-to "spec-bed" #:classified-as '() #:onhand-quantity (make-measure 2 %count-unit) #:primary-accountable OWNER #:contained-in "res:flat"
                           #:availability-window night-window))
 (define (alice-purse)
   (make-economic-resource #:id "res:purse" #:name "Alice's purse" #:conforms-to "spec-eur" #:classified-as '()

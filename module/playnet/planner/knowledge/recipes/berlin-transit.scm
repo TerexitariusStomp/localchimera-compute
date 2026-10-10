@@ -101,6 +101,7 @@
 ;;; districts the Lastenrad is the mode that actually competes with the van.
 
 (define-module (playnet planner knowledge recipes berlin-transit)
+  #:use-module ((playnet utils units) #:select (%effort-unit))
   #:use-module (playnet planner vf schemas)
   #:use-module (goblins)
   #:use-module (srfi srfi-1)
@@ -208,7 +209,7 @@
     #:name "Transit haul: crates by hand"
     #:pspec-name "Hand-Carried Transit Haul"
     #:good "spec-bt-freight" #:payload 25.0 #:unit "kg"
-    #:duration (make-duration 0.8 "hours")
+    #:duration (make-duration 0.8 %effort-unit)
     #:tags '("tag:transport" "tag:transit" "tag:freight" "tag:off-peak")
     #:uses '(("spec-bt-ubahn" . 0.050)          ; crates take a standing space
              ("spec-bt-transit-pass" . 0.050))
@@ -227,7 +228,7 @@
     #:name "Cargo-bike haul: pick-up → drop-off"
     #:pspec-name "Cargo-Bike Haul"
     #:good "spec-bt-freight" #:payload 100.0 #:unit "kg"
-    #:duration (make-duration 0.75 "hours")
+    #:duration (make-duration 0.75 %effort-unit)
     #:tags '("tag:transport" "tag:freight" "tag:cycle")
     #:uses '(("spec-bt-cargo-bike" . 0.075))
     #:work '("spec-bt-courier" . 0.075)

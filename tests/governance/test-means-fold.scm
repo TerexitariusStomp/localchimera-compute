@@ -7,6 +7,7 @@
 ;;; a live span declaration moves the KEY a capacity rises under — the fold and
 ;;; the pool-builder read the same rule, so they cannot disagree.
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner formulas capacity) (playnet planner vf schemas) (srfi srfi-1))
 (use-modules (playnet governance means-fold))
@@ -26,7 +27,7 @@
 
 (let* ((lathe (res "lathe-1" "lathe" 40.0 "hours/day" "workshop-a" #f))
        (press (res "press-1" "press" 16.0 "hours/day" #f "lathe-1"))   ; place inherited
-       (bread (res "bread-1" "bread" 30.0 "each"      "workshop-a" #f)); a stock, not a rate
+       (bread (res "bread-1" "bread" 30.0 %count-unit      "workshop-a" #f)); a stock, not a rate
        (facts (capacity-facts (capacity-cells (list lathe press bread)))))
   (check-pred "a time-rate holding contributes its unit-hours/day"
               (= 40.0 (fact "lathe" "workshop-a" facts)))
@@ -171,8 +172,8 @@
 
 (display "\n── 9. count-denominated durables, admitted by the recipe store's own fact ──\n")
 
-(let* ((ovens (res "oven-2" "oven" 3.0 "each" "workshop-a" #f))
-       (bread (res "bread-2" "bread" 30.0 "each" "workshop-a" #f))
+(let* ((ovens (res "oven-2" "oven" 3.0 %count-unit "workshop-a" #f))
+       (bread (res "bread-2" "bread" 30.0 %count-unit "workshop-a" #f))
        (used? (lambda (spec) (equal? spec "oven")))   ; the store: some recipe `use`s oven
        (facts (capacity-facts (capacity-cells (list ovens bread) #:durable? used?))))
   (check-pred "three ovens render 72 unit-hours/day — the stock reading"

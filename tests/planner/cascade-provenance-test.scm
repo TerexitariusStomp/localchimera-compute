@@ -16,6 +16,7 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module -l tests/planner/cascade-provenance-test.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness)
              (playnet planner algorithms rollup) (playnet planner algorithms track-trace) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
              (goblins)
@@ -37,22 +38,22 @@
     ;; ── a recipe that gives the widget embodied labour: 5 h → 1 widget ────────
     (for-each (lambda (s) ($ rs 'add-resource-spec s))
       (list (make-resource-specification #:id "spec-widget" #:name "Widget"
-                                         #:default-unit-of-resource "each")
+                                         #:default-unit-of-resource %count-unit)
             (make-resource-specification #:id "spec-labor"  #:name "Labor"
-                                         #:default-unit-of-resource "hour")
+                                         #:default-unit-of-resource %effort-unit)
             (make-resource-specification #:id "spec-crate"  #:name "Crate"
-                                         #:default-unit-of-resource "each")
+                                         #:default-unit-of-resource %count-unit)
             (make-resource-specification #:id "spec-meal"   #:name "Meal"
-                                         #:default-unit-of-resource "each")))
+                                         #:default-unit-of-resource %count-unit)))
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-widget" #:name "Make widget"
-                            #:has-duration (make-duration 5 "hour")))
+                            #:has-duration (make-duration 5 %effort-unit)))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-w-labor" #:action 'work #:resource-conforms-to "spec-labor"
-                         #:effort-quantity (make-measure 5 "hour") #:recipe-input-of "rp-widget"))
+                         #:effort-quantity (make-measure 5 %effort-unit) #:recipe-input-of "rp-widget"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-w-out" #:action 'produce #:resource-conforms-to "spec-widget"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-widget"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-widget"))
     ($ rs 'add-recipe
        (make-recipe #:id "recipe-widget" #:name "Widget Recipe" #:primary-output "spec-widget"
                     #:recipe-processes (list "rp-widget")))
@@ -60,22 +61,22 @@
     ;; ── a crate (1) holding a widget (1), and a meal resource to fill ─────────
     ($ obs 'seed-resource
        (make-economic-resource #:id "r-crate" #:name "Crate" #:conforms-to "spec-crate"
-         #:accounting-quantity (make-measure 1 "each") #:onhand-quantity (make-measure 1 "each") #:primary-accountable "kitchen"))
+         #:accounting-quantity (make-measure 1 %count-unit) #:onhand-quantity (make-measure 1 %count-unit) #:primary-accountable "kitchen"))
     ($ obs 'seed-resource
        (make-economic-resource #:id "r-crate-widget" #:name "Widget in crate" #:conforms-to "spec-widget"
-         #:accounting-quantity (make-measure 1 "each") #:onhand-quantity (make-measure 1 "each") #:primary-accountable "kitchen" #:contained-in "r-crate"))
+         #:accounting-quantity (make-measure 1 %count-unit) #:onhand-quantity (make-measure 1 %count-unit) #:primary-accountable "kitchen" #:contained-in "r-crate"))
     ($ obs 'seed-resource
        (make-economic-resource #:id "r-meal" #:name "Meal" #:conforms-to "spec-meal"
-         #:accounting-quantity (make-measure 0 "each") #:onhand-quantity (make-measure 0 "each") #:primary-accountable "kitchen"))
+         #:accounting-quantity (make-measure 0 %count-unit) #:onhand-quantity (make-measure 0 %count-unit) #:primary-accountable "kitchen"))
 
     ;; ── the boxing → transform boundary: cook consumes the crate, makes a meal.
     ;; Only the CRATE is named. The widget is drawn down by the cascade.
     ($ obs 'record-event
        (make-economic-event #:id "ev-cook-in" #:action 'consume #:input-of "P-cook" #:resource-inventoried-as "r-crate" #:resource-conforms-to "spec-crate"
-         #:provider "kitchen" #:receiver "kitchen" #:resource-quantity (make-measure 1 "each") #:has-point-in-time "2026-06-13T10:00:00Z"))
+         #:provider "kitchen" #:receiver "kitchen" #:resource-quantity (make-measure 1 %count-unit) #:has-point-in-time "2026-06-13T10:00:00Z"))
     ($ obs 'record-event
        (make-economic-event #:id "ev-cook-out" #:action 'produce #:output-of "P-cook" #:resource-inventoried-as "r-meal" #:resource-conforms-to "spec-meal"
-         #:provider "kitchen" #:receiver "kitchen" #:resource-quantity (make-measure 1 "each") #:has-point-in-time "2026-06-13T10:05:00Z"))
+         #:provider "kitchen" #:receiver "kitchen" #:resource-quantity (make-measure 1 %count-unit) #:has-point-in-time "2026-06-13T10:05:00Z"))
 
     (display "\n── the contained widget was drawn down (quantity sanity) ──\n")
     (check-pred "crate consumed to 0"  (~= (onhand obs "r-crate") 0))

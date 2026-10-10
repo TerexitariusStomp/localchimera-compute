@@ -24,6 +24,7 @@
 (chdir %project-root)
 
 (add-to-load-path "module")
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules ((playnet wire rows) #:select (plain-reply)))   ; a door's rows, read back as alists
 (use-modules (playnet test harness))
 (use-modules (goblins)
@@ -47,7 +48,7 @@
   (with-vat vat
     ($ ($ scope 'recipe-store) 'add-resource-spec
        (make-resource-specification #:id "spec-bin" #:name "Storage bin"
-                                    #:resource-classified-as '("container") #:default-unit-of-resource "each" #:default-unit-of-effort "hours"
+                                    #:resource-classified-as '("container") #:default-unit-of-resource %count-unit #:default-unit-of-effort %effort-unit
                                     #:keep-in-place #t))
     (spawn ^planner-service (hashmap-set (hashmap) "org:commune" scope))))
 
@@ -114,15 +115,15 @@
 
 (obs 'seed-resource
      (make-economic-resource #:id "bin/1" #:name "the jar bin" #:conforms-to "spec-bin" #:classified-as '()
-                             #:accounting-quantity (make-measure 1.0 "each") #:onhand-quantity (make-measure 1.0 "each")
+                             #:accounting-quantity (make-measure 1.0 %count-unit) #:onhand-quantity (make-measure 1.0 %count-unit)
                              #:current-location shelf-id #:primary-accountable "org:commune"))
 (obs 'seed-resource
      (make-economic-resource #:id "bin/2" #:name "the tin bin" #:conforms-to "spec-bin" #:classified-as '()
-                             #:accounting-quantity (make-measure 1.0 "each") #:onhand-quantity (make-measure 1.0 "each")
+                             #:accounting-quantity (make-measure 1.0 %count-unit) #:onhand-quantity (make-measure 1.0 %count-unit)
                              #:current-location shelf-id #:primary-accountable "org:commune"))
 (obs 'seed-resource
      (make-economic-resource #:id "bob/drill" #:name "bob's drill" #:conforms-to "drill" #:classified-as '()
-                             #:accounting-quantity (make-measure 1.0 "each") #:onhand-quantity (make-measure 1.0 "each") #:primary-accountable "bob"))
+                             #:accounting-quantity (make-measure 1.0 %count-unit) #:onhand-quantity (make-measure 1.0 %count-unit) #:primary-accountable "bob"))
 
 (define l1 (call 'label-stock "org:commune" "ada" "bin/1"))
 (check-pred "a stock is given a code" (ok? l1))
@@ -152,7 +153,7 @@
 (check "…and stays without a code"
        (economic-resource-tracking-identifier (resource "bob/drill")) #f)
 
-(define oven (call 'declare-means "org:commune" "ada" "oven" 1 "each" pantry-id))
+(define oven (call 'declare-means "org:commune" "ada" "oven" 1 %count-unit pantry-id))
 (check-pred "a thing declared is accepted" (ok? oven))
 (define oven-code (economic-resource-tracking-identifier (resource (cdr oven))))
 (check-pred "a thing declared has its code from the start"
@@ -162,7 +163,7 @@
      (copy-economic-resource (resource (cdr oven))
                              #:custodian-scope "org:commune" #:stage "stored" #:state "fresh"
                              #:previous-event "evt-before"))
-(call 'declare-means "org:commune" "ada" "oven" 2 "each" pantry-id #f "the big one")
+(call 'declare-means "org:commune" "ada" "oven" 2 %count-unit pantry-id #f "the big one")
 (check "a re-declaration keeps the code"
        (economic-resource-tracking-identifier (resource (cdr oven))) oven-code)
 (check "…and lands the new quantity"
@@ -180,7 +181,7 @@
 (display "\n── 3. reading a label ──\n")
 
 (define jars (call 'drop-event "org:commune" "dropoff" "bin/1" "ada"
-                   "jam" 12.0 "each" "bin/1/jam" "plum jam, this year's"))
+                   "jam" 12.0 %count-unit "bin/1/jam" "plum jam, this year's"))
 (check-pred "jars are left in the bin" (ok? jars))
 (check-pred "a thing left in a container has its code from the start"
             (string? (economic-resource-tracking-identifier (resource "bin/1/jam"))))
@@ -208,7 +209,7 @@
 ;; a code holding a 1 or a 0, typed with the letters they resemble
 (obs 'seed-resource
      (make-economic-resource #:id "tin/10" #:name "a tin" #:tracking-identifier "A1B0C1" #:conforms-to "tin" #:classified-as '()
-                             #:accounting-quantity (make-measure 1.0 "each") #:onhand-quantity (make-measure 1.0 "each")
+                             #:accounting-quantity (make-measure 1.0 %count-unit) #:onhand-quantity (make-measure 1.0 %count-unit)
                              #:current-location shelf-id #:primary-accountable "org:commune"))
 (check "a typed I, L or O reads as the digit it resembles"
        (assq-ref (field (call 'read-label "org:commune" "ada" "AiBoCl") 'resource) 'id)
@@ -225,16 +226,16 @@
 ;; the oven sits in the bin's containment and keeps a place of its own
 (obs 'seed-resource
      (make-economic-resource #:id "bin/1/scale" #:name "the kitchen scale" #:conforms-to "scale" #:classified-as '()
-                             #:accounting-quantity (make-measure 1.0 "each") #:onhand-quantity (make-measure 1.0 "each")
+                             #:accounting-quantity (make-measure 1.0 %count-unit) #:onhand-quantity (make-measure 1.0 %count-unit)
                              #:current-location pantry-id #:primary-accountable "org:commune" #:contained-in "bin/1"))
 ;; a nested container, and a thing in it that states no place
 (obs 'seed-resource
      (make-economic-resource #:id "bin/1/box" #:name "a box in the bin" #:conforms-to "spec-bin" #:classified-as '()
-                             #:accounting-quantity (make-measure 1.0 "each") #:onhand-quantity (make-measure 1.0 "each")
+                             #:accounting-quantity (make-measure 1.0 %count-unit) #:onhand-quantity (make-measure 1.0 %count-unit)
                              #:current-location shelf-id #:primary-accountable "org:commune" #:contained-in "bin/1"))
 (obs 'seed-resource
      (make-economic-resource #:id "bin/1/box/lids" #:name "spare lids" #:conforms-to "lid" #:classified-as '()
-                             #:accounting-quantity (make-measure 30.0 "each") #:onhand-quantity (make-measure 30.0 "each") #:primary-accountable "org:commune" #:contained-in "bin/1/box"))
+                             #:accounting-quantity (make-measure 30.0 %count-unit) #:onhand-quantity (make-measure 30.0 %count-unit) #:primary-accountable "org:commune" #:contained-in "bin/1/box"))
 
 (check "before the move, the jars are where the bin is"
        (economic-resource-current-location (resource "bin/1/jam")) shelf-id)
@@ -256,7 +257,7 @@
       #:resource-inventoried-as "bin/1" #:to-resource-inventoried-as "bin/1"
       #:resource-conforms-to "spec-bin"
       #:provider "ada" #:receiver "ada"
-      #:resource-quantity (make-measure 1.0 "each") #:has-point-in-time "2026-09-28T10:00:00Z" #:created "2026-09-28T10:00:00Z"
+      #:resource-quantity (make-measure 1.0 %count-unit) #:has-point-in-time "2026-09-28T10:00:00Z" #:created "2026-09-28T10:00:00Z"
       #:at-location shelf-id #:to-location cellar-shelf-id
       #:note "carried to the cellar" #:in-scope-of '("org:commune")))
 

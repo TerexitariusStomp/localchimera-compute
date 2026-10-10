@@ -4,6 +4,7 @@
 ;;; Mediterranean commune recipes (grain, dairy, bakery, etc.).
 
 (define-module (playnet planner knowledge recipes federation)
+  #:use-module ((playnet utils units) #:select (%count-unit %effort-unit))
   #:use-module (srfi srfi-1)
   #:use-module (playnet planner vf schemas)   ; the VF record constructors it seeds
   #:use-module (goblins)                   ; $ — it talks to a live recipe-store
@@ -30,7 +31,7 @@
     (lambda (pair)
       ($ recipe-store 'add-resource-spec
          (make-resource-specification #:id (car pair) #:name (cdr pair)
-                                      #:default-unit-of-resource "each")))
+                                      #:default-unit-of-resource %count-unit)))
     *spec-names*))
 
 (define (seed-federation-recipes recipe-store)
@@ -41,7 +42,7 @@
      (make-process-specification #:id "pspec-mill" #:name "Milling"))
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-mill" #:name "Mill grain" #:process-conforms-to "pspec-mill"
-                          #:has-duration (make-duration 3 "hours")))
+                          #:has-duration (make-duration 3 %effort-unit)))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-wheat-in" #:action 'consume #:resource-conforms-to "spec-wheat"
                        #:resource-quantity (make-measure 10 "kg") #:recipe-input-of "rp-mill"))
@@ -57,13 +58,13 @@
      (make-process-specification #:id "pspec-bake" #:name "Baking"))
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-bake" #:name "Bake bread" #:process-conforms-to "pspec-bake"
-                          #:has-duration (make-duration 4 "hours")))
+                          #:has-duration (make-duration 4 %effort-unit)))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-flour-in" #:action 'consume #:resource-conforms-to "spec-flour"
                        #:resource-quantity (make-measure 5 "kg") #:recipe-input-of "rp-bake"))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-bread-out" #:action 'produce #:resource-conforms-to "spec-bread"
-                       #:resource-quantity (make-measure 10 "each") #:recipe-output-of "rp-bake"))
+                       #:resource-quantity (make-measure 10 %count-unit) #:recipe-output-of "rp-bake"))
   ($ recipe-store 'add-recipe
      (make-recipe #:id "recipe-bread" #:name "Bread Production" #:primary-output "spec-bread"
                   #:recipe-processes (list "rp-bake")))
@@ -73,7 +74,7 @@
      (make-process-specification #:id "pspec-cheese" #:name "Cheese Making"))
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-cheese" #:name "Make cheese" #:process-conforms-to "pspec-cheese"
-                          #:has-duration (make-duration 8 "hours")))
+                          #:has-duration (make-duration 8 %effort-unit)))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-milk-in" #:action 'consume #:resource-conforms-to "spec-milk"
                        #:resource-quantity (make-measure 10 "liters") #:recipe-input-of "rp-cheese"))

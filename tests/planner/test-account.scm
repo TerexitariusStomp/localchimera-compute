@@ -11,6 +11,7 @@
 ;;; Run:  guile --no-auto-compile -q -L module \
 ;;;         -l planner/load-all.scm -l tests/planner/test-account.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner algorithms elastic) (playnet planner pools credit-fold) (playnet planner scope root) (playnet planner vf schemas) (playnet planner observation states))
 (use-modules (goblins)
@@ -147,13 +148,13 @@
     ;; 3 work-hours per loaf = SNLT of 3.
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-bake" #:name "Bake" #:process-conforms-to "pspec-bake"
-                            #:has-duration (make-duration 3 "hours")))
+                            #:has-duration (make-duration 3 %effort-unit)))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-bake-work" #:action 'work #:resource-conforms-to "spec-labor"
-                         #:effort-quantity (make-measure 3 "hours") #:recipe-input-of "rp-bake"))
+                         #:effort-quantity (make-measure 3 %effort-unit) #:recipe-input-of "rp-bake"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-bake-out" #:action 'produce #:resource-conforms-to "spec-bread"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-bake"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-bake"))
     ($ rs 'add-recipe
        (make-recipe #:id "recipe-bread" #:name "Bread Recipe" #:primary-output "spec-bread"
                     #:recipe-processes (list "rp-bake")))
@@ -166,7 +167,7 @@
          #:resource-inventoried-as "r-bread" #:resource-conforms-to "spec-bread"
          #:resource-classified-as (list "individually-claimable")
          #:provider "commune" #:receiver "commune"
-         #:resource-quantity (make-measure 10 "each") #:has-point-in-time "2026-03-02T12:00:00Z"))
+         #:resource-quantity (make-measure 10 %count-unit) #:has-point-in-time "2026-03-02T12:00:00Z"))
 
     (check "pool has bread" (= 1 (length ($ as 'pool-resources))))
     (check-pred "embodied labor = 30 hr" (= 30 ($ as 'embodied-labor-in-pool)))
@@ -215,7 +216,7 @@
     ;; and the citizen is read off the row, so a row minted for bob admits
     ;; nothing when alice presents it.
     (let ((bogus (make-commitment #:id "wc~bogus-alice" #:action 'transfer #:resource-conforms-to "spec-bread"
-                                  #:resource-quantity (make-measure 10 "each") #:receiver "alice" #:in-scope-of (list "scope2"))))
+                                  #:resource-quantity (make-measure 10 %count-unit) #:receiver "alice" #:in-scope-of (list "scope2"))))
       ($ obs 'register-commitment bogus)
       (check "a non-claim commitment admits no claim, however ample"
              (catch #t
@@ -306,13 +307,13 @@
     ;; Recipe: 1hr work per loaf, SNLT = 1.
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-bake" #:name "Bake" #:process-conforms-to "pspec-bake"
-                            #:has-duration (make-duration 1 "hour")))
+                            #:has-duration (make-duration 1 %effort-unit)))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-bake-work" #:action 'work #:resource-conforms-to "spec-labor"
-                         #:effort-quantity (make-measure 1 "hour") #:recipe-input-of "rp-bake"))
+                         #:effort-quantity (make-measure 1 %effort-unit) #:recipe-input-of "rp-bake"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-bake-out" #:action 'produce #:resource-conforms-to "spec-bread"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-bake"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-bake"))
     ($ rs 'add-recipe
        (make-recipe #:id "recipe-bread" #:name "Bread" #:primary-output "spec-bread"
                     #:recipe-processes (list "rp-bake")))
@@ -328,7 +329,7 @@
          #:resource-inventoried-as "r-bread-2" #:resource-conforms-to "spec-bread"
          #:resource-classified-as (list "individually-claimable")
          #:provider "commune" #:receiver "commune"
-         #:resource-quantity (make-measure 5 "each") #:has-point-in-time "2026-03-02T12:00:00Z"))
+         #:resource-quantity (make-measure 5 %count-unit) #:has-point-in-time "2026-03-02T12:00:00Z"))
 
     ;; Alice's effective = 1.25. Claiming 5hr must raise.
     (check "elastic share catches shortfall"
@@ -354,7 +355,7 @@
          #:id "ev-infra" #:action 'produce
          #:resource-inventoried-as "r-sensor" #:resource-conforms-to "spec-sensor"
          #:provider "commune" #:receiver "commune"
-         #:resource-quantity (make-measure 1 "each") #:has-point-in-time "2026-03-02T12:00:00Z"))
+         #:resource-quantity (make-measure 1 %count-unit) #:has-point-in-time "2026-03-02T12:00:00Z"))
 
     (check "infra not in pool" (= 1 (length ($ as 'pool-resources))))
 
@@ -448,13 +449,13 @@
     ;; Same recipe as before: SNLT = 3 hr/loaf.
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-bake" #:name "Bake" #:process-conforms-to "pspec-bake"
-                            #:has-duration (make-duration 3 "hours")))
+                            #:has-duration (make-duration 3 %effort-unit)))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-bake-work" #:action 'work #:resource-conforms-to "spec-labor"
-                         #:effort-quantity (make-measure 3 "hours") #:recipe-input-of "rp-bake"))
+                         #:effort-quantity (make-measure 3 %effort-unit) #:recipe-input-of "rp-bake"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-bake-out" #:action 'produce #:resource-conforms-to "spec-bread"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-bake"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-bake"))
     ($ rs 'add-recipe
        (make-recipe #:id "recipe-bread" #:name "Bread" #:primary-output "spec-bread"
                     #:recipe-processes (list "rp-bake")))
@@ -473,7 +474,7 @@
          #:resource-inventoried-as "r-bread" #:resource-conforms-to "spec-bread"
          #:resource-classified-as (list "individually-claimable")
          #:provider "commune" #:receiver "commune"
-         #:resource-quantity (make-measure 4 "each") #:has-point-in-time "2026-03-02"))
+         #:resource-quantity (make-measure 4 %count-unit) #:has-point-in-time "2026-03-02"))
 
     ;; Derivations:
     ;;   total-svc = 10 (alice only)
@@ -510,13 +511,13 @@
 
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-bake" #:name "Bake" #:process-conforms-to "pspec-bake"
-                            #:has-duration (make-duration 2 "hours")))
+                            #:has-duration (make-duration 2 %effort-unit)))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-bake-work" #:action 'work #:resource-conforms-to "spec-labor"
-                         #:effort-quantity (make-measure 2 "hours") #:recipe-input-of "rp-bake"))
+                         #:effort-quantity (make-measure 2 %effort-unit) #:recipe-input-of "rp-bake"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-bake-out" #:action 'produce #:resource-conforms-to "spec-bread"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-bake"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-bake"))
     ($ rs 'add-recipe
        (make-recipe #:id "recipe-bread" #:name "Bread" #:primary-output "spec-bread"
                     #:recipe-processes (list "rp-bake")))
@@ -532,7 +533,7 @@
          #:resource-inventoried-as "r-bread" #:resource-conforms-to "spec-bread"
          #:resource-classified-as (list "individually-claimable")
          #:provider "commune" #:receiver "commune"
-         #:resource-quantity (make-measure 5 "each") #:has-point-in-time "2026-03-02"))
+         #:resource-quantity (make-measure 5 %count-unit) #:has-point-in-time "2026-03-02"))
 
     (check-pred "embodied labor = 10" (= 10 ($ as 'embodied-labor-in-pool)))
     ;; Raw SNLT for 1 loaf = 2. Elastic price = 2 × (20/10) = 4.
@@ -610,13 +611,13 @@
 
     ($ rs-b 'add-recipe-process
        (make-recipe-process #:id "rp-bake" #:name "Bake" #:process-conforms-to "pspec-bake"
-                            #:has-duration (make-duration 3 "hours")))
+                            #:has-duration (make-duration 3 %effort-unit)))
     ($ rs-b 'add-recipe-flow
        (make-recipe-flow #:id "rf-bake-work" #:action 'work #:resource-conforms-to "spec-labor"
-                         #:effort-quantity (make-measure 3 "hours") #:recipe-input-of "rp-bake"))
+                         #:effort-quantity (make-measure 3 %effort-unit) #:recipe-input-of "rp-bake"))
     ($ rs-b 'add-recipe-flow
        (make-recipe-flow #:id "rf-bake-out" #:action 'produce #:resource-conforms-to "spec-bread"
-                         #:resource-quantity (make-measure 1 "each") #:recipe-output-of "rp-bake"))
+                         #:resource-quantity (make-measure 1 %count-unit) #:recipe-output-of "rp-bake"))
     ($ rs-b 'add-recipe
        (make-recipe #:id "recipe-bread" #:name "Bread" #:primary-output "spec-bread"
                     #:recipe-processes (list "rp-bake")))
@@ -625,7 +626,7 @@
          #:id "ev-bread" #:action 'produce
          #:resource-inventoried-as "r-bread" #:resource-conforms-to "spec-bread" #:resource-classified-as (list "individually-claimable")
          #:provider "commune" #:receiver "commune"
-         #:resource-quantity (make-measure 5 "each") #:has-point-in-time "2026"))))
+         #:resource-quantity (make-measure 5 %count-unit) #:has-point-in-time "2026"))))
 
 ;; Globally:
 ;;   total-svc = 10 (alice, from scope-a)

@@ -19,6 +19,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-time-verification.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet planner solve engine)
              (playnet planner solve compile)
@@ -33,7 +34,7 @@
 
 (define win all-week-window)
 (define (res id spec place . window)
-  (er id spec #f #:place place #:qty 1.0 #:unit "each" #:window (if (pair? window) (car window) #f)))
+  (er id spec #f #:place place #:qty 1.0 #:unit %count-unit #:window (if (pair? window) (car window) #f)))
 (define SHOP (list (place* "shop")))
 ;; a `use` flow: an input, like `in`, but the means is USED rather than consumed —
 ;; an untimed count of it

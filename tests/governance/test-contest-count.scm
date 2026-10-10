@@ -25,6 +25,7 @@
 (chdir %project-root)
 (add-to-load-path "module")
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules ((playnet wire rows) #:select (plain-reply)))   ; a door's rows, read back as alists
 (use-modules (playnet test harness)
              (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
@@ -59,10 +60,10 @@
   ($ obs 'record-event
      (make-economic-event #:id (string-append eid "-record") #:action 'produce #:output-of "count:stated" #:resource-conforms-to "count-record"
                           #:resource-classified-as (list (string-append "count-of:" rid))
-                          #:provider who #:receiver who #:resource-quantity (make-measure 1.0 "each") #:has-point-in-time "2026-10-01T10:00:00Z" #:created "2026-10-01T10:00:00Z" #:note "a record" #:in-scope-of '("Granary")))
+                          #:provider who #:receiver who #:resource-quantity (make-measure 1.0 %count-unit) #:has-point-in-time "2026-10-01T10:00:00Z" #:created "2026-10-01T10:00:00Z" #:note "a record" #:in-scope-of '("Granary")))
   ($ obs 'record-event
      (make-economic-event #:id (string-append eid "-hours") #:action 'work #:input-of "count~announced~rice" #:resource-conforms-to "skill-counting"
-                          #:provider who #:effort-quantity (make-measure 0.15 "hour") #:has-point-in-time "2026-10-01T10:00:00Z" #:note "a visit" #:in-scope-of '("Granary"))))
+                          #:provider who #:effort-quantity (make-measure 0.15 %effort-unit) #:has-point-in-time "2026-10-01T10:00:00Z" #:note "a visit" #:in-scope-of '("Granary"))))
 
 (define settled '())
 
@@ -109,7 +110,7 @@
            (begin
              ($ obs 'record-event
                 (make-economic-event #:id "evt-prod" #:action 'produce #:output-of "bake" #:resource-inventoried-as "loaf" #:resource-conforms-to "bread"
-                                     #:provider ada-aid #:receiver ada-aid #:resource-quantity (make-measure 1.0 "each") #:has-point-in-time "2026-10-01T10:00:00Z" #:note "baked" #:in-scope-of '("Granary")))
+                                     #:provider ada-aid #:receiver ada-aid #:resource-quantity (make-measure 1.0 %count-unit) #:has-point-in-time "2026-10-01T10:00:00Z" #:note "baked" #:in-scope-of '("Granary")))
              (car ($ svc 'contest-work bo-aid "Granary" "evt-prod" "")))
            'error)
     (check "a member contests the count by naming its record"

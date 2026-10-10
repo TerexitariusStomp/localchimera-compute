@@ -11,6 +11,7 @@ import { DEFAULT_REL } from "./rel-catalogue.js";
 import type { Rule } from "./slots/model.js";
 import type { Grant, GrantKind, Contact } from "./seam.js";
 import type { SeamHandlers } from "./seam-wire.js";
+import { isCountUnit } from "./units-catalogue.js";
 
 /** A thing of yours that can be lent: a declared means, or one named resource. */
 export interface Lendable {
@@ -86,7 +87,7 @@ export const admitted = (a: Audience, people: Contact[]): Contact[] =>
 
 // ── how a grant reads ──────────────────────────────────────────────────────
 /** A thing counted in itself reads by its own name: "1 bicycle", "2 hours of your oven". */
-export const counted = (unit: string | null | undefined): boolean => !unit || unit === "each" || unit === "unit";
+export const counted = isCountUnit;
 export const possessive = (name: string): string => name + (name.endsWith("s") ? "'" : "'s");
 export const untilWords = (until: string | null | undefined): string =>
   until ? `until ${humanDate(until) || until}` : "until you recall it";

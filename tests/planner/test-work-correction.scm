@@ -21,6 +21,7 @@
 ;;;
 ;;; Run: guile -L module tests/planner/test-work-correction.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules ((playnet test events) #:select (ev)))
 (use-modules (playnet planner observation observer) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
@@ -35,14 +36,14 @@
 (define (intent! obs aid skill hours intent-id)
   ($ obs 'register-intent
      (make-intent #:id intent-id #:action 'work #:resource-conforms-to skill
-                  #:effort-quantity (make-measure hours "hour") #:provider aid)))
+                  #:effort-quantity (make-measure hours %effort-unit) #:provider aid)))
 
 ;; a work event by AID in SKILL for HOURS (negative on a correction), satisfying
 ;; INTENT-ID, correcting CORRECTS when given
 (define* (work-event aid skill hours event-id intent-id #:optional (corrects #f))
   (make-economic-event
     #:id event-id #:action 'work #:resource-conforms-to skill
-    #:provider aid #:effort-quantity (and hours (make-measure hours "hour")) #:has-point-in-time "2026-03-01T08:00:00Z" #:satisfies intent-id #:corrects corrects))
+    #:provider aid #:effort-quantity (and hours (make-measure hours %effort-unit)) #:has-point-in-time "2026-03-01T08:00:00Z" #:satisfies intent-id #:corrects corrects))
 
 (define store (make-memory-store))
 (define-values (vat scope)

@@ -27,6 +27,7 @@
 ;;;   guix shell -L deploy/guix -m deploy/manifests/dev-test-manifest.scm -- \
 ;;;     guile --no-auto-compile -L module tests/planner/test-ledger-signing.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
 (use-modules (playnet governance acdc-bridge) (playnet governance scope) (playnet keri acdc) (playnet keri acdc-store) (playnet openvtc first-person))
@@ -58,15 +59,15 @@
       ;; work-event / skill / intent / claim schemas all get exercised.
       ($ ps 'add-intent
          (make-intent #:id "in1" #:action 'work #:resource-conforms-to "spec:baker"
-                      #:effort-quantity (make-measure 12 "hour") #:provider "ada"))
+                      #:effort-quantity (make-measure 12 %effort-unit) #:provider "ada"))
       ($ obs 'record-event
          (make-economic-event #:id "ev1" #:action 'work #:resource-conforms-to "spec:baker"
-                              #:provider "ada" #:effort-quantity (make-measure 12 "hour")
+                              #:provider "ada" #:effort-quantity (make-measure 12 %effort-unit)
                               #:has-point-in-time "2026-08-07T08:00:00Z" #:satisfies "in1"
                               #:in-scope-of '()))
       ($ obs 'record-event
          (make-economic-event #:id "cl1" #:action 'transfer #:resource-conforms-to "spec:bread"
-           #:resource-classified-as '("individually-claimable") #:receiver "ada" #:effort-quantity (make-measure 4 "hour") #:has-point-in-time "2026-08-07T09:00:00Z" #:in-scope-of '()))
+           #:resource-classified-as '("individually-claimable") #:receiver "ada" #:effort-quantity (make-measure 4 %effort-unit) #:has-point-in-time "2026-08-07T09:00:00Z" #:in-scope-of '()))
 
       (let* ((all   ($ acdc 'all))
              ;; The ledger issues under two different issuers, and the rule
@@ -117,7 +118,7 @@
     (let ((obs ($ sr 'observer)))
       ($ obs 'record-event
          (make-economic-event #:id "ev2" #:action 'work #:resource-conforms-to "spec:baker"
-                              #:provider "bo" #:effort-quantity (make-measure 5 "hour")
+                              #:provider "bo" #:effort-quantity (make-measure 5 %effort-unit)
                               #:has-point-in-time "2026-08-07T10:00:00Z" #:in-scope-of '()))
       (let ((all ($ acdc 'all)))
         (check "a keyless scope still records the work" (> (length all) 0))

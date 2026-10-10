@@ -11,6 +11,7 @@
 ;;;
 ;;; Run:  guile -q -L module tests/planner/test-water-floor-live.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness) (playnet planner scope root) (playnet planner vf schemas) (playnet planner vf schemas)
              (playnet planner knowledge dsl shorthand) (playnet planner knowledge dsl world)
              ((playnet planner scope live) #:select (plan-scope))
@@ -25,7 +26,7 @@
   (let ((root (spawn-scope-root "well-town")))
     (seed-world! root
       (world #:specs (list (spec* "spec-water" "Water" "liters") (spec* "drinking-water" "Drinking water" "L")
-                           (spec* "skill-house" "House labour" "hours"))
+                           (spec* "skill-house" "House labour" %effort-unit))
              #:procs (if draws? (list (rp* "draw-water" "Draw drinking water")) '())
              #:flows (if draws?
                          (list (consume* "w1" "spec-water" 1.0 "draw-water" "liters")

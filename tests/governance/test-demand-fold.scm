@@ -8,6 +8,7 @@
 ;;; into. So the same needs answer differently under a different tree, with
 ;;; nothing rewired.
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner plan store) (playnet planner vf schemas) (srfi srfi-1))
 (use-modules (playnet planner scope live))       ; set-daily-horizon! — periods ↔ days
@@ -26,7 +27,7 @@
 ;; a NEED slot exactly as planner service.scm `declare-need` builds it: an
 ;; <intent> with receiver = the citizen, id "need:AID:SPEC", goods carrying
 ;; resource-quantity + action consume, hours effort-quantity + action use.
-(define* (need aid spec qty #:key (unit "each") (loc #f) (from #f) (until #f))
+(define* (need aid spec qty #:key (unit %count-unit) (loc #f) (from #f) (until #f))
   (let ((hours? (member unit '("hour" "hours")))
         (m      (make-measure qty unit)))
     (make-intent
@@ -62,7 +63,7 @@
 
 ;; An hours need rides effort-quantity; it is demand for the spec all the same.
 (with-vat vat
-  (let* ((s (mk-scope (list (need "EAlice" "childcare" 6 #:unit "hours" #:loc "town"))
+  (let* ((s (mk-scope (list (need "EAlice" "childcare" 6 #:unit %effort-unit #:loc "town"))
                       (hashmap)))
          (d (scope-subtree-demand s '(0))))
     (check-pred "an hours need is demand too" (equal? '(("childcare#town@0" . 6)) d))))
@@ -318,7 +319,7 @@
 
     ;; an intent that is not a declared need is not demand
     ($ ps 'add-intent (make-intent #:id "mi|EBob|skill:cook|town@0" #:action 'work #:resource-conforms-to "skill:cook"
-                                   #:effort-quantity (make-measure 4 "hours") #:receiver "EBob" #:at-location "town" #:in-scope-of '()))
+                                   #:effort-quantity (make-measure 4 %effort-unit) #:receiver "EBob" #:at-location "town" #:in-scope-of '()))
     (check-pred "a work intent is not a declared need"
                 (null? ($ fed 'demand-for '(0))))))
 

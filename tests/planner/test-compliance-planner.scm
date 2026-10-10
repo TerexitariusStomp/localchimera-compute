@@ -14,6 +14,7 @@
 ;;;
 ;;; Run: guile -L module tests/planner/test-compliance-planner.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test scope)) ; mock-scope-root
 (use-modules (playnet test harness) (playnet planner knowledge recipes store) (playnet planner scope spatial-things) (playnet planner observation observer) (playnet planner vf schemas) (playnet planner scope live)
              (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1) (ice-9 format))
@@ -78,12 +79,12 @@
         (make-recipe-flow #:id "f-in"  #:action 'consume #:resource-conforms-to "produce"
                           #:resource-quantity (make-measure 1.0 "kg") #:recipe-input-of "cook")
         (make-recipe-flow #:id "f-wk"  #:action 'work #:resource-conforms-to "cook-skill"
-                          #:effort-quantity (make-measure 0.5 "hours") #:recipe-input-of "cook")))
+                          #:effort-quantity (make-measure 0.5 %effort-unit) #:recipe-input-of "cook")))
 (define p2-recipes (list (make-recipe #:id "r" #:name "Cook" #:primary-output "meal"
                                       #:recipe-processes '() #:recipe-exchanges '())))
 (define p2-specs (list (make-resource-specification #:id "cook-skill" #:name "Cook"
                                                     #:resource-classified-as '()
-                                                    #:default-unit-of-effort "hours")))
+                                                    #:default-unit-of-effort %effort-unit)))
 (define win (all-week-window "00:00" "23:59"))
 (define p2-resources
   (list (er "pr-foodville" "produce" "a-foodville" #:place "foodville" #:qty 100.0)

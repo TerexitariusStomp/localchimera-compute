@@ -5,6 +5,7 @@
 ;;;   (load "load-all.scm")
 ;;;   (load "tests/test-ddmrp-leaf-planner.scm")'
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet deprecated planner))
 (use-modules (goblins)
@@ -138,7 +139,7 @@
        (make-resource-specification #:id "spec-flour" #:name "Flour" #:default-unit-of-resource "kg"))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-bread" #:name "Bread"
-                                    #:default-unit-of-resource "each"))
+                                    #:default-unit-of-resource %count-unit))
     ;; Process specs
     ($ rs 'add-process-spec
        (make-process-specification #:id "pspec-mill" #:name "Milling"))
@@ -147,10 +148,10 @@
     ;; Recipe processes
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-mill" #:name "Mill wheat" #:process-conforms-to "pspec-mill"
-                            #:has-duration (make-duration 2 "hours")))
+                            #:has-duration (make-duration 2 %effort-unit)))
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-bake" #:name "Bake bread" #:process-conforms-to "pspec-bake"
-                            #:has-duration (make-duration 4 "hours")))
+                            #:has-duration (make-duration 4 %effort-unit)))
     ;; Recipe flows: wheat -> flour -> bread
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-wheat-in" #:action 'consume #:resource-conforms-to "spec-wheat"
@@ -163,7 +164,7 @@
                          #:resource-quantity (make-measure 8 "kg") #:recipe-input-of "rp-bake"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-bread-out" #:action 'produce #:resource-conforms-to "spec-bread"
-                         #:resource-quantity (make-measure 20 "each") #:recipe-output-of "rp-bake"))
+                         #:resource-quantity (make-measure 20 %count-unit) #:recipe-output-of "rp-bake"))
     ($ rs 'add-recipe
        (make-recipe #:id "recipe-bread" #:name "Bread Production" #:primary-output "spec-bread"
                     #:recipe-processes (list "rp-mill" "rp-bake")))
@@ -290,7 +291,7 @@
     ($ ps 'add-intent
        (make-intent #:id "i-bread-1" #:action 'consume #:name "Bread Demand"
                     #:resource-conforms-to "spec-bread"
-                    #:resource-quantity (make-measure 20 "each") #:receiver "agent-test" #:due "2026-12-31T00:00:00Z"))))
+                    #:resource-quantity (make-measure 20 %count-unit) #:receiver "agent-test" #:due "2026-12-31T00:00:00Z"))))
 
 ;; Now lift facts AGAIN (to pick up the new intent) and add the buffer zone
 (define final-facts

@@ -11,6 +11,7 @@
 ;;; declared skill through socialized-plan-fn. Now the recipes say what
 ;;; labour is (labour-specs-of: every spec a `work` flow conforms to), and
 ;;; the view lets it through tenure; consent for labour is the accept.
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test scope))
 (use-modules (playnet test harness)
              (playnet planner vf schemas) (srfi srfi-1)
@@ -27,10 +28,10 @@
 (define procs (list (make-recipe-process #:id "bake" #:name "Bake")))
 (define flows
   (list (make-recipe-flow #:id "bw" #:action 'work #:resource-conforms-to "skill-bake"
-                          #:effort-quantity (make-measure 1.0 "hours") #:recipe-input-of "bake")
+                          #:effort-quantity (make-measure 1.0 %effort-unit) #:recipe-input-of "bake")
         (make-recipe-flow #:id "bu" #:action 'use #:resource-conforms-to "bike"
-                          #:resource-quantity (make-measure 1.0 "each")
-                          #:effort-quantity (make-measure 0.1 "hours") #:recipe-input-of "bake")
+                          #:resource-quantity (make-measure 1.0 %count-unit)
+                          #:effort-quantity (make-measure 0.1 %effort-unit) #:recipe-input-of "bake")
         (make-recipe-flow #:id "bo" #:action 'produce #:resource-conforms-to "bread"
                           #:resource-quantity (make-measure 10.0 "kg") #:recipe-output-of "bake"
                           #:is-primary #t)))
@@ -46,10 +47,10 @@
                                  #:classified-as '() #:availability-window win)))
 ;; the skill EXACTLY as declare-skill seeds it: accountable = the person
 (define (skill) (make-economic-resource #:id (string-append "skill:" OWNER ":skill-bake") #:conforms-to "skill-bake" #:classified-as '()
-                  #:accounting-quantity (make-measure 1 "each") #:onhand-quantity (make-measure 1 "each") #:current-location "town" #:primary-accountable OWNER))
+                  #:accounting-quantity (make-measure 1 %count-unit) #:onhand-quantity (make-measure 1 %count-unit) #:current-location "town" #:primary-accountable OWNER))
 ;; her bike, a private MEANS: accountable = the person, no custodian
 (define (bike) (make-economic-resource #:id "res:bike" #:conforms-to "bike" #:classified-as '()
-                                       #:onhand-quantity (make-measure 1 "each")
+                                       #:onhand-quantity (make-measure 1 %count-unit)
                                        #:current-location "town" #:primary-accountable OWNER))
 (define vat (spawn-vat #:name "labour-under-tenure"))
 

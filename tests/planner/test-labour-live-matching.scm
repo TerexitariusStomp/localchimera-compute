@@ -10,6 +10,7 @@
 ;;; Run:  guile --no-auto-compile -q -L module \
 ;;;         -l tests/planner/test-labour-live-matching.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness)
              (playnet planner scope root) (playnet planner vf schemas) (playnet planner beyond schedules)
              (playnet planner doors service)
@@ -46,7 +47,7 @@
   (define psB ($ scopeB 'plan-store))
   ($ psA 'add-intent
      (make-intent #:id "wi1" #:action 'work #:resource-conforms-to "spec-cook"
-                  #:effort-quantity (make-measure 4.0 "hours") #:planned-within "plan-1"))
+                  #:effort-quantity (make-measure 4.0 %effort-unit) #:planned-within "plan-1"))
   ($ psA 'add-proposal (make-rising-proposal "prop-1" "plan-1" "Granary" '("wi1")))
 
   (display "\n── the UC matches the rising plan against the roster ──\n")

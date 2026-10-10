@@ -13,6 +13,7 @@
 ;;; Run:  cd planner && guile --no-auto-compile -q -L ../module \
 ;;;         -l load-all.scm -l tests/test-ddmrp-advanced.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner ddmrp buffers) (playnet planner scope root) (playnet planner vf schemas) (playnet planner ddmrp records) (playnet utils store-utils) (srfi srfi-1))
 (use-modules (goblins)
@@ -39,9 +40,9 @@
 (with-vat vat
   (let ((rs ($ scope 'recipe-store)))
     ($ rs 'add-resource-spec
-       (make-resource-specification #:id "spec-a" #:name "Item A" #:default-unit-of-resource "each"))
+       (make-resource-specification #:id "spec-a" #:name "Item A" #:default-unit-of-resource %count-unit))
     ($ rs 'add-resource-spec
-       (make-resource-specification #:id "spec-p" #:name "Item P" #:default-unit-of-resource "each"))
+       (make-resource-specification #:id "spec-p" #:name "Item P" #:default-unit-of-resource %count-unit))
     (check-pred "specs ok" #t)))
 ;;; ════════════════════════════════════════════════════════════════════════════
 ;;; 1. Buffer zone: TOR/TOY/TOG formula (standard)
@@ -66,7 +67,7 @@
          ;; TOY       = 150 + 100     = 250
          ;; green     = max(70, 100, 0) = 100 (redBase wins)
          ;; TOG       = 250 + 100     = 350
-         (levels (compute-buffer-zone-levels profile 10 "each" 10 0 "each")))
+         (levels (compute-buffer-zone-levels profile 10 %count-unit 10 0 %count-unit)))
     (check "std: red-base" (approx= 100 (assq-ref levels 'red-base)) #t)
     (check "std: red-safety" (approx= 50 (assq-ref levels 'red-safety)) #t)
     (check "std: tor" (approx= 150 (assq-ref levels 'tor)) #t)
@@ -86,7 +87,7 @@
                     1.0 #f #f 0.5 7 #f #f #f #f #f #f))
          ;; MOQ=120 > max(70, 100) → green=120
          ;; TOG = 250 + 120 = 370
-         (levels (compute-buffer-zone-levels profile 10 "each" 10 120 "each")))
+         (levels (compute-buffer-zone-levels profile 10 %count-unit 10 120 %count-unit)))
     (check "moq: tog" (approx= 370 (assq-ref levels 'tog)) #t)))
 ;;; ════════════════════════════════════════════════════════════════════════════
 ;;; 3. Order cycle days dominates green zone
@@ -102,7 +103,7 @@
                     1.0 #f #f 0.5 20 #f #f #f #f #f #f))
          ;; ADU=10, DOC=20 → ADU*DOC=200 > redBase(100) > MOQ(0)
          ;; TOG = 250 + 200 = 450
-         (levels (compute-buffer-zone-levels profile 10 "each" 10 0 "each")))
+         (levels (compute-buffer-zone-levels profile 10 %count-unit 10 0 %count-unit)))
     (check "doc: tog" (approx= 450 (assq-ref levels 'tog)) #t)))
 ;;; ════════════════════════════════════════════════════════════════════════════
 ;;; 4. Fig 7-20 exact example from DDMRP book
@@ -127,7 +128,7 @@
          ;; TOY       = 79.8 + 120    = 199.8
          ;; green     = max(70, 60, 50) = 70
          ;; TOG       = 199.8 + 70    = 269.8
-         (levels (compute-buffer-zone-levels profile 10 "each" 12 50 "each")))
+         (levels (compute-buffer-zone-levels profile 10 %count-unit 12 50 %count-unit)))
     (check "fig: red-base" (approx= 60 (assq-ref levels 'red-base)) #t)
     (check "fig: red-safety" (approx= 19.8 (assq-ref levels 'red-safety) 0.1) #t)
     (check "fig: tor" (approx= 79.8 (assq-ref levels 'tor) 0.1) #t)
@@ -151,8 +152,8 @@
        (make-buffer-zone
          "bz-status" "spec-a" "bp-std" 'replenished
          #f #f #f #f #f
-         10 "each" #f #f #f #f #f #f #f #f #f
-         10 0 "each" #f #f #f #f #f
+         10 %count-unit #f #f #f #f #f #f #f #f #f
+         10 0 %count-unit #f #f #f #f #f
          100 200 300 #f #f #f #f #f #f #f #f
          "2026-03-27T00:00:00Z"))
 
@@ -199,8 +200,8 @@
        (make-buffer-zone
          "bz-moq-round" "spec-a" "bp-std" 'replenished
          #f #f #f #f #f
-         10 "each" #f #f #f #f #f #f #f #f #f
-         5 50 "each" #f #f #f #f #f
+         10 %count-unit #f #f #f #f #f #f #f #f #f
+         5 50 %count-unit #f #f #f #f #f
          100 200 300 #f #f #f #f #f #f #f #f
          "2026-03-27T00:00:00Z"))
 
@@ -235,7 +236,7 @@
     ;; Seed resource
     ($ obs 'seed-resource
        (make-economic-resource #:id "r-adu-test" #:name "ADU Test" #:conforms-to "spec-a"
-         #:accounting-quantity (make-measure 1000 "each") #:onhand-quantity (make-measure 1000 "each") #:primary-accountable "agent-a"))
+         #:accounting-quantity (make-measure 1000 %count-unit) #:onhand-quantity (make-measure 1000 %count-unit) #:primary-accountable "agent-a"))
 
     ;; Produce event (should NOT count toward ADU — it's an increment)
     ($ obs 'record-event
@@ -243,7 +244,7 @@
          #:id "ev-adu-prod" #:action 'produce #:output-of "proc-1"
          #:resource-inventoried-as "r-adu-test" #:resource-conforms-to "spec-a"
          #:provider "agent-a" #:receiver "agent-a"
-         #:resource-quantity (make-measure 999 "each") #:has-point-in-time "2026-01-05T00:00:00Z"))
+         #:resource-quantity (make-measure 999 %count-unit) #:has-point-in-time "2026-01-05T00:00:00Z"))
 
     ;; Consume event (SHOULD count toward ADU)
     ($ obs 'record-event
@@ -251,7 +252,7 @@
          #:id "ev-adu-cons" #:action 'consume #:input-of "proc-2"
          #:resource-inventoried-as "r-adu-test" #:resource-conforms-to "spec-a"
          #:provider "agent-a" #:receiver "agent-a"
-         #:resource-quantity (make-measure 20 "each") #:has-point-in-time "2026-01-06T00:00:00Z"))
+         #:resource-quantity (make-measure 20 %count-unit) #:has-point-in-time "2026-01-06T00:00:00Z"))
 
     ;; ADU computation inline (compute-adu has SRFI-1 scoping issues)
     ;; ADU = total consuming qty / window-days

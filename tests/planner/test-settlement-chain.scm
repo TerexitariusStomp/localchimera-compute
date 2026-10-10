@@ -9,6 +9,7 @@
 ;;;   guix shell -L deploy/guix -m deploy/manifests/dev-test-manifest.scm -- \
 ;;;     guile --no-auto-compile -L module tests/planner/test-settlement-chain.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner observation observer) (playnet planner vf schemas))
 (use-modules (playnet governance acdc-bridge) (playnet governance credentials) (playnet keri acdc) (playnet keri acdc-store))
@@ -18,17 +19,17 @@
 (define (work! obs aid skill hours eid iid)
   ($ obs 'register-intent
      (make-intent #:id iid #:action 'work #:resource-conforms-to skill
-                  #:effort-quantity (make-measure hours "hour") #:provider aid))
+                  #:effort-quantity (make-measure hours %effort-unit) #:provider aid))
   ($ obs 'record-event
      (make-economic-event #:id eid #:action 'work #:resource-conforms-to skill #:provider aid
-                          #:effort-quantity (make-measure hours "hour")
+                          #:effort-quantity (make-measure hours %effort-unit)
                           #:has-point-in-time "2026-03-01T08:00:00Z" #:satisfies iid)))
 
 ;; CONSUMPTION: an individually-claimable transfer RECEIVED by AID (credit draw).
 (define (claim! obs aid spec cost eid)
   ($ obs 'record-event
      (make-economic-event #:id eid #:action 'transfer #:resource-conforms-to spec #:resource-classified-as '("individually-claimable") #:receiver aid                                    ; provider #f, receiver = claimant
- #:effort-quantity (make-measure cost "hour")             ; effort-quantity = credit drawn
+ #:effort-quantity (make-measure cost %effort-unit)             ; effort-quantity = credit drawn
  #:has-point-in-time "2026-03-02T08:00:00Z" #:in-scope-of '())))
 
 (define vat (spawn-vat))

@@ -17,6 +17,7 @@
 ;;;
 ;;; Run:  guile -L module -L tests tests/planner/test-socialization-live.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test scope)) ; mock-scope-root
 (use-modules (playnet test harness)
              (playnet planner vf schemas)
@@ -33,7 +34,7 @@
 ;; a delivery recipe: `use` the bike (1 bike-hour/parcel) → produce a delivered parcel
 (define procs (list (make-recipe-process #:id "deliver" #:name "Deliver")))
 (define flows
-  (list (make-recipe-flow #:id "d-use" #:action 'use #:resource-conforms-to "bike" #:resource-quantity (make-measure 1.0 "each") #:effort-quantity (make-measure 1.0 "hours")
+  (list (make-recipe-flow #:id "d-use" #:action 'use #:resource-conforms-to "bike" #:resource-quantity (make-measure 1.0 %count-unit) #:effort-quantity (make-measure 1.0 %effort-unit)
                           #:recipe-input-of "deliver")
         (make-recipe-flow #:id "d-out" #:action 'produce #:resource-conforms-to "delivered" #:resource-quantity (make-measure 1.0 "kg")
                           #:recipe-output-of "deliver" #:is-primary #t)))
@@ -44,7 +45,7 @@
 ;; the bike as it sits in the books: Alice owns it, no custodian, at "town".
 (define (bike)
   (make-economic-resource #:id "res:bike" #:conforms-to "bike" #:classified-as '()
-                          #:onhand-quantity (make-measure 1 "each") #:current-location "town" #:primary-accountable OWNER))
+                          #:onhand-quantity (make-measure 1 %count-unit) #:current-location "town" #:primary-accountable OWNER))
 (define spatials (list (make-spatial-thing #:id "town" #:lat 40.0 #:long -74.0)))
 
 (define vat (spawn-vat #:name "socialize-live"))
@@ -145,7 +146,7 @@
 (define (need-intent aid spec qty loc)
   (make-intent #:id (string-append "need:" aid ":" spec)
                #:action 'consume #:name spec #:resource-conforms-to spec
-               #:resource-quantity (make-measure qty "each") #:receiver aid #:at-location loc #:in-scope-of '()))
+               #:resource-quantity (make-measure qty %count-unit) #:receiver aid #:at-location loc #:in-scope-of '()))
 
 (define (run-declared qty)
   (with-vat vat

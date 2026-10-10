@@ -1,8 +1,9 @@
 ;;; test-audit.scm — the audit arithmetic (planner/facts/audit.scm), pure.
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness) (playnet planner vf schemas) (playnet planner facts audit))
 (define (ev id act spec who q at)
   (make-economic-event #:id id #:action act #:resource-conforms-to spec #:provider (if (eq? act 'consume) who "commune") #:receiver (if (eq? act 'consume) #f who)
-                       #:resource-quantity (make-measure q "each") #:has-point-in-time at))
+                       #:resource-quantity (make-measure q %count-unit) #:has-point-in-time at))
 (display "\n── Becker's rate ──\n")
 (check "gain = consequence ⇒ audit always" (audit-rate 5.0 5.0) 1.0)
 (check "consequence k× the gain ⇒ π = 1/k" (audit-rate 5.0 20.0) 0.25)

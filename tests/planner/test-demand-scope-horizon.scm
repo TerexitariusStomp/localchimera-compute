@@ -29,6 +29,7 @@
 ;;;
 ;;; Run:  guile -L module -L tests tests/planner/test-demand-scope-horizon.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test scope)) ; mock-scope-root
 (use-modules (playnet test harness)
              (playnet planner vf schemas)
@@ -57,7 +58,7 @@
 (define procs (list (make-recipe-process #:id "bake" #:name "Bake")))
 (define flows
   (list (make-recipe-flow #:id "bw" #:action 'work #:resource-conforms-to "skill-bake"
-                          #:effort-quantity (make-measure 1.0 "hours") #:recipe-input-of "bake")
+                          #:effort-quantity (make-measure 1.0 %effort-unit) #:recipe-input-of "bake")
         (make-recipe-flow #:id "bi" #:action 'consume #:resource-conforms-to "wheat"
                           #:resource-quantity (make-measure 1.0 "kg") #:recipe-input-of "bake")
         (make-recipe-flow #:id "bo" #:action 'produce #:resource-conforms-to "bread"

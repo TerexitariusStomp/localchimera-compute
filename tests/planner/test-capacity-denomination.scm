@@ -24,6 +24,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/planner/test-capacity-denomination.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet planner knowledge dsl shorthand))
 (use-modules (playnet planner solve engine)
@@ -79,12 +80,12 @@
 
 ;; three ovens, there all day: 3 × 24 = 72 oven-hours, however the day is cut
 (check "three ovens over a day are 72 oven-hours under any partition"
-       (invariant? "3 each" (list (res "r" "m" 3.0 "each")) 72.0))
+       (invariant? "3 each" (list (res "r" "m" 3.0 %count-unit)) 72.0))
 
 ;; …and a window narrows it the same way in every partition
 (check "staffed 08:00–16:00 they are 24, under any partition"
        (invariant? "3 each, 8h window"
-                   (list (res "r" "m" 3.0 "each" (win "08:00" "16:00"))) 24.0))
+                   (list (res "r" "m" 3.0 %count-unit (win "08:00" "16:00"))) 24.0))
 
 (format #t "~%── 2. a RATE carries its own denominator ──~%~%")
 
@@ -117,8 +118,8 @@
   (check "…which is twice the one-day figure" (near? two-days (* 2.0 one-day))))
 
 ;; and a count scales with the span too, for the same reason
-(let ((one-day  (total "m" (list (res "r" "m" 3.0 "each")) ONE))
-      (two-days (total "m" (list (res "r" "m" 3.0 "each")) TWO-DAYS)))
+(let ((one-day  (total "m" (list (res "r" "m" 3.0 %count-unit)) ONE))
+      (two-days (total "m" (list (res "r" "m" 3.0 %count-unit)) TWO-DAYS)))
   (check "three ovens over two days are 144 oven-hours"
          (and (near? one-day 72.0) (near? two-days 144.0))))
 
@@ -136,7 +137,7 @@
   (ingest-stock! holdings)
   (find (lambda (p) (string-prefix? "bg|" (car p))) *container-pools*))
 
-(define bare (list (res "bare" "m" 200.0 "hours")))
+(define bare (list (res "bare" "m" 200.0 %effort-unit)))
 (let ((one  (budget-pool bare ONE))
       (two  (budget-pool bare TWO-DAYS))
       (three (budget-pool bare THREE)))
@@ -165,7 +166,7 @@
         (else #f)))
 (define refused
   (catch #t
-    (lambda () (let ((h (res "bare" "m" 200.0 "hours")))
+    (lambda () (let ((h (res "bare" "m" 200.0 %effort-unit)))
                  (holding-capacity 200.0 (economic-resource-onhand-quantity h) h 24.0))
                #f)
     (lambda (key . args) (or (find-message args) key))))
@@ -178,7 +179,7 @@
 (format #t "~%── 5. a live level reads as a stock ──~%~%")
 (declare-world! #:spans '((0 "2026-03-03" "2026-03-03"))
                 #:templates (list (tpl "m")))
-(ingest-stock! (list (res "r" "m" 3.0 "each"))
+(ingest-stock! (list (res "r" "m" 3.0 %count-unit))
                #:live-avail (lambda (id) 5.0))
 (check "a live level of 5 renders 5 × the period's hours"
        (near? (car (svc-caps "m")) 120.0))

@@ -13,6 +13,7 @@
 ;;;
 ;;; Run:  guile -L module/playnet/planner module/playnet/planner/containment-test.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet planner solve engine)
              (playnet planner solve compile)
@@ -40,7 +41,7 @@
                                             (if with-ship?
                                                 (list (make-recipe-flow #:id "w3" #:action 'move
                                                                         #:resource-conforms-to "widget"
-                                                                        #:resource-quantity (make-measure 1.0 "each")
+                                                                        #:resource-quantity (make-measure 1.0 %count-unit)
                                                                         #:recipe-input-of "sw"))
                                                 '()))))
   (cons (append-map proc-moved *templates*)                                            ; what compile-process recorded as `move`d

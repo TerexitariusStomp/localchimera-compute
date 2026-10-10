@@ -6,6 +6,7 @@
 ;;;   - commitments-for-agreement filter resolves the set back
 ;;;   - reciprocal intents are promoted with counterparty flipped
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness)
              (playnet planner scope root) (playnet planner vf schemas)
              (goblins)
@@ -28,7 +29,7 @@
     ($ ps 'add-intent
        (make-intent
          #:id "i-bread" #:action 'produce #:name "bread delivery" #:resource-conforms-to "spec-bread" #:resource-classified-as '()
-         #:resource-quantity (make-measure 20 "each")
+         #:resource-quantity (make-measure 20 %count-unit)
          #:provider "alice"           ;; provider=alice, receiver open
  #:in-scope-of '("scope-A"))))
 
@@ -36,7 +37,7 @@
     ($ ps 'add-intent
        (make-intent
          #:id "i-coin" #:action 'transfer #:name "coin payment" #:resource-conforms-to "spec-coin" #:resource-classified-as '()
-         #:resource-quantity (make-measure 100 "each")
+         #:resource-quantity (make-measure 100 %count-unit)
          #:provider "bob"             ;; provider=bob, receiver open
  #:in-scope-of '("scope-A"))))
 

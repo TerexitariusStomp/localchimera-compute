@@ -21,6 +21,7 @@
 ;; is primitive-loaded. A scope threads this into its own options — the shape
 ;; `regenerating-stock-storables` already uses to hand a #:storable list over.
 (define-module (playnet planner knowledge recipes meeting)
+  #:use-module ((playnet utils units) #:select (%count-unit))
   #:use-module (playnet planner vf schemas)
   #:use-module (playnet planner knowledge dsl shorthand)
   #:use-module (playnet planner knowledge dsl world)
@@ -45,14 +46,14 @@
   ;; catalogue's own (knowledge/skills/meeting-skills.scm); only the
   ;; output — not a skill — stays declared here.
   (world
-   #:specs (cons (spec* "spec:meeting-minutes" "Meeting Minutes" "each")
+   #:specs (cons (spec* "spec:meeting-minutes" "Meeting Minutes" %count-unit)
                  %meeting-skills)
    #:procs (list (rp* "rp-meeting" "Run Meeting" 1 #:conforms-to "pspec-meeting"))
    #:flows (list (meeting-work-flow "rf-facilitate"    "spec:facilitation")
                  (meeting-work-flow "rf-notes"         "spec:note-taking")
                  (meeting-work-flow "rf-participate-1" "spec:participation")
                  (meeting-work-flow "rf-participate-2" "spec:participation")
-                 (out* "rf-minutes-out" "spec:meeting-minutes" 1 "rp-meeting" "each"))
+                 (out* "rf-minutes-out" "spec:meeting-minutes" 1 "rp-meeting" %count-unit))
    #:recipes (list (make-recipe #:id "recipe-meeting" #:name "Weekly Planning Meeting"
                                 #:primary-output "spec:meeting-minutes" #:recipe-processes (list "rp-meeting")))))
 

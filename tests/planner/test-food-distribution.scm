@@ -20,6 +20,7 @@
 ;;;
 ;;; Run: guile -L module tests/planner/test-food-distribution.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test scope)) ; mock-scope-root
 (use-modules (playnet test harness) (playnet planner knowledge recipes store) (playnet planner scope spatial-things) (playnet planner observation observer) (playnet planner vf schemas) (srfi srfi-1) (playnet planner scope live)
              (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1) (ice-9 format))
@@ -53,7 +54,7 @@
                           #:resource-quantity (make-measure 1.0 "kg")
                           #:recipe-input-of "rp-fd-share")
         (make-recipe-flow #:id "sf-wk"  #:action 'work #:resource-conforms-to "fd-cook"
-                          #:effort-quantity (make-measure 0.5 "hours")
+                          #:effort-quantity (make-measure 0.5 %effort-unit)
                           #:recipe-input-of "rp-fd-share")
         (make-recipe-flow #:id "vf-out" #:action 'produce #:resource-conforms-to "public-meal"
                           #:resource-quantity (make-measure 1.0 "kg")
@@ -61,7 +62,7 @@
         (make-recipe-flow #:id "vf-in"  #:action 'consume #:resource-conforms-to "produce"
                           #:resource-quantity (make-measure 1.0 "kg") #:recipe-input-of "rp-fd-vend")
         (make-recipe-flow #:id "vf-wk"  #:action 'work #:resource-conforms-to "fd-cook"
-                          #:effort-quantity (make-measure 0.5 "hours")
+                          #:effort-quantity (make-measure 0.5 %effort-unit)
                           #:recipe-input-of "rp-fd-vend")))
 (define fd-recipes (list (make-recipe #:id "recipe-fd-share" #:name "Share"
                                       #:primary-output "member-meal" #:recipe-processes '()
@@ -71,7 +72,7 @@
                                       #:recipe-exchanges '())))
 (define fd-specs (list (make-resource-specification #:id "fd-cook" #:name "Cook"
                                                     #:resource-classified-as '()
-                                                    #:default-unit-of-effort "hours")))
+                                                    #:default-unit-of-effort %effort-unit)))
 (define win (all-week-window "00:00" "23:59"))
 ;; each cell has produce, a fd-cook worker, and that cook holds a Food Handler
 ;; Card (the person competence the foodville rule also demands — so the ENTITY

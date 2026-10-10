@@ -69,6 +69,7 @@
 ;;; ─── specs ───────────────────────────────────────────────────────────────────
 ;;; (id name unit) — `spec-water` is shared with the HumiSoil chain, in liters.
 (define-module (playnet planner knowledge recipes household)
+  #:use-module ((playnet utils units) #:select (%count-unit %effort-unit))
   #:use-module (playnet planner vf schemas)
   #:use-module (goblins)
   #:use-module (srfi srfi-1)
@@ -154,7 +155,7 @@
 
 (define (household-spec-unit id)
   (let ((row (assoc id *household-specs*)))
-    (if row (caddr row) "each")))
+    (if row (caddr row) %count-unit)))
 
 (define (seed-household-specs recipe-store)
   "Register the household specs. `spec-water` comes from the HumiSoil spec set;
@@ -195,15 +196,15 @@
                     #:resource-quantity (make-measure qty (household-spec-unit spec))
                     #:recipe-output-of proc #:is-primary primary))
 (define* (hh-work id hours proc #:key (skill "skill-hh-domestic"))
-  (make-recipe-flow #:id id #:action 'work #:resource-conforms-to skill #:effort-quantity (make-measure hours "hours")
+  (make-recipe-flow #:id id #:action 'work #:resource-conforms-to skill #:effort-quantity (make-measure hours %effort-unit)
                     #:recipe-input-of proc))
 (define (hh-use id spec count hours proc)
-  (make-recipe-flow #:id id #:action 'use #:resource-conforms-to spec #:resource-quantity (make-measure count "each") #:effort-quantity (make-measure hours "hours")
+  (make-recipe-flow #:id id #:action 'use #:resource-conforms-to spec #:resource-quantity (make-measure count %count-unit) #:effort-quantity (make-measure hours %effort-unit)
                     #:recipe-input-of proc))
 
 (define* (hh-process id name hours #:key (tags '("tag:housework")))
   (make-recipe-process #:id id #:name name #:process-conforms-to "pspec-hh-domestic" #:process-classified-as tags
-                       #:has-duration (and hours (make-duration hours "hours"))))
+                       #:has-duration (and hours (make-duration hours %effort-unit))))
 
 ;;; The wet trio: whatever water, soap and soil a task draws comes back out as
 ;;; greywater, spent surfactant and waste, mass for mass. Returns the flows.
@@ -685,7 +686,7 @@
    (lambda (row)
      (let* ((spec (car row))
             (qty (* sets (cdr row)))
-            (m (make-measure qty "each")))
+            (m (make-measure qty %count-unit)))
        ($ obs 'record-resource
           (make-economic-resource
            #:id (string-append spec "-pool") #:name (or (and=> (assoc spec *household-specs*) cadr) spec) #:conforms-to spec #:classified-as '("household" "kit") #:accounting-quantity m #:onhand-quantity m

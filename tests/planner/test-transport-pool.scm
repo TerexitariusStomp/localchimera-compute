@@ -16,6 +16,7 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/planner/test-transport-pool.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness)
              (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
              (playnet planner doors service)
@@ -70,14 +71,14 @@
 
 (define (bobs-bike)
   (make-economic-resource #:id "res:lastenrad" #:name "Bob's Lastenrad" #:image "🚲"
-                          #:conforms-to "spec-cargo-bike" #:classified-as '() #:onhand-quantity (make-measure 2 "each")
+                          #:conforms-to "spec-cargo-bike" #:classified-as '() #:onhand-quantity (make-measure 2 %count-unit)
                           #:current-location "depot" #:primary-accountable OWNER))
 
 (with-vat vat
   (let ((rs ($ scope 'recipe-store)))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-cargo-bike" #:name "Cargo bike" #:image "🚲"
-                                    #:default-unit-of-resource "each"))
+                                    #:default-unit-of-resource %count-unit))
     ($ rs 'add-resource-spec
        (make-resource-specification #:id "spec-ride" #:name "A ride" #:image "🚲"
                                     #:default-unit-of-resource "seat-hours"))
@@ -86,10 +87,10 @@
     ($ rs 'add-recipe-process
        (make-recipe-process #:id "rp-ride" #:name "An hour's ride"
                             #:process-conforms-to "pspec-ride" #:process-classified-as '("tag:transport")
-                            #:has-duration (make-duration 1 "hours")))
+                            #:has-duration (make-duration 1 %effort-unit)))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-ride-bike" #:action 'use #:resource-conforms-to "spec-cargo-bike"
-                         #:resource-quantity (make-measure 1 "each") #:effort-quantity (make-measure 1 "hours")
+                         #:resource-quantity (make-measure 1 %count-unit) #:effort-quantity (make-measure 1 %effort-unit)
                          #:recipe-input-of "rp-ride"))
     ($ rs 'add-recipe-flow
        (make-recipe-flow #:id "rf-ride-out" #:action 'deliver-service #:resource-conforms-to "spec-ride"

@@ -10,6 +10,7 @@
 ;;;   guix shell -L deploy/guix -m deploy/manifests/dev-test-manifest.scm -- \
 ;;;     guile --no-auto-compile -L module tests/planner/test-scope-credentialing.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner scope root) (playnet planner vf schemas))
 (use-modules (playnet governance acdc-bridge) (playnet governance commune) (playnet governance credentials) (playnet keri acdc-store))
@@ -28,17 +29,17 @@
       ;; satisfied by a work event (→ on-event: work-event + skill ACDCs). gross=30.
       ($ ps 'add-intent
          (make-intent #:id "in1" #:action 'work #:resource-conforms-to "spec:surgeon"
-                      #:effort-quantity (make-measure 30 "hour") #:provider "ada"))
+                      #:effort-quantity (make-measure 30 %effort-unit) #:provider "ada"))
       ($ obs 'record-event
          (make-economic-event #:id "ev1" #:action 'work #:resource-conforms-to "spec:surgeon"
-                              #:provider "ada" #:effort-quantity (make-measure 30 "hour")
+                              #:provider "ada" #:effort-quantity (make-measure 30 %effort-unit)
                               #:has-point-in-time "2026-03-01T08:00:00Z" #:satisfies "in1"
                               #:in-scope-of '()))
 
       ;; CONSUMPTION: an individually-claimable transfer received by ada. claimed=10.
       ($ obs 'record-event
          (make-economic-event #:id "cl1" #:action 'transfer #:resource-conforms-to "spec:bread"
-           #:resource-classified-as '("individually-claimable") #:receiver "ada" #:effort-quantity (make-measure 10 "hour") #:has-point-in-time "2026-03-02T08:00:00Z" #:in-scope-of '()))
+           #:resource-classified-as '("individually-claimable") #:receiver "ada" #:effort-quantity (make-measure 10 %effort-unit) #:has-point-in-time "2026-03-02T08:00:00Z" #:in-scope-of '()))
 
       (define (creds schema) ($ acdc 'by-schema schema))
 
@@ -70,7 +71,7 @@
     (let ((obs ($ sr 'observer)) (ps ($ sr 'plan-store)))
       ($ ps 'add-intent
          (make-intent #:id "in2" #:action 'work #:resource-conforms-to "spec:weld"
-                      #:effort-quantity (make-measure 1.5 "hour") #:provider "cy"))
+                      #:effort-quantity (make-measure 1.5 %effort-unit) #:provider "cy"))
       ($ obs 'record-event
          (make-economic-event #:id "ev2" #:action 'work #:resource-conforms-to "spec:weld"
                               #:provider "cy" #:effort-quantity (make-measure 90 "minute")
@@ -91,7 +92,7 @@
     (display "\n── spawn-commune auto-wires the substrate ──\n")
     ($ ($ sr 'observer) 'record-event
        (make-economic-event #:id "wev" #:action 'work #:resource-conforms-to "spec:weld"
-                            #:provider "bob" #:effort-quantity (make-measure 5 "hour")
+                            #:provider "bob" #:effort-quantity (make-measure 5 %effort-unit)
                             #:has-point-in-time "2026-03-03T08:00:00Z" #:in-scope-of '()))
     (check "commune auto-minted a work-event ACDC"
            (length ($ acdc 'by-schema *schema-playnet-work-event*)) 1)

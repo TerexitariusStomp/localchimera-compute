@@ -20,6 +20,7 @@
 
 ;; ─── Resource specifications (infrastructure.scm idiom — 11 positional) ──────
 (define-module (playnet planner knowledge recipes comms-processes)
+  #:use-module ((playnet utils units) #:select (%count-unit %effort-unit))
   #:use-module (playnet planner vf schemas)
   #:use-module (goblins)
   #:export (comms-inference-spec comms-fact-spec comms-draft-spec comms-published-spec
@@ -35,7 +36,7 @@
 (define comms-fact-spec                 ; the announced fact — cited, not consumed
   (make-resource-specification
     #:id "spec:announced-fact" #:name "Announced fact"
-    #:resource-classified-as '("knowledge" "claim") #:default-unit-of-resource "each"))
+    #:resource-classified-as '("knowledge" "claim") #:default-unit-of-resource %count-unit))
 
 (define comms-draft-spec                ; the compose output
   (make-resource-specification
@@ -45,7 +46,7 @@
 (define comms-published-spec            ; the deliverable
   (make-resource-specification
     #:id "spec:published-post" #:name "Published post"
-    #:resource-classified-as '("content" "published") #:default-unit-of-resource "each"))
+    #:resource-classified-as '("content" "published") #:default-unit-of-resource %count-unit))
 
 ;; Two example channels. The spec is generic — the KIND of channel. Whether a
 ;; channel is rented (revocable) or sovereign is NOT a spec tag: it is a fact
@@ -97,7 +98,7 @@
 (define* (seed-compose-post-recipe recipe-store #:key (id "rp:compose"))
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id id #:name "Compose a post"
-                          #:process-conforms-to "pspec:compose-post" #:has-duration (make-duration 0.1 "hours")))
+                          #:process-conforms-to "pspec:compose-post" #:has-duration (make-duration 0.1 %effort-unit)))
   ($ recipe-store 'add-recipe-flow (%rf-use  (string-append id "/infer") "spec:inference"      1 "completions" id))
   ($ recipe-store 'add-recipe-flow (%rf-cite (string-append id "/fact")  "spec:announced-fact" 1 "each"        id))
   ($ recipe-store 'add-recipe-flow (%rf-prod (string-append id "/out")   "spec:post-draft"     1 "post"        id))
@@ -113,7 +114,7 @@
   (let ((rp (or id (string-append "rp:publish:" channel-spec))))
     ($ recipe-store 'add-recipe-process
        (make-recipe-process #:id rp #:name (string-append "Publish to " channel-spec)
-                            #:process-conforms-to "pspec:publish-post" #:has-duration (make-duration 0.05 "hours")))
+                            #:process-conforms-to "pspec:publish-post" #:has-duration (make-duration 0.05 %effort-unit)))
     ($ recipe-store 'add-recipe-flow (%rf-use  (string-append rp "/chan")  channel-spec      1 "post-slot" rp))
     ($ recipe-store 'add-recipe-flow (%rf-cite (string-append rp "/draft") "spec:post-draft" 1 "post"      rp))
     ($ recipe-store 'add-recipe-flow (%rf-prod (string-append rp "/out")   "spec:published-post" 1 "each"  rp))

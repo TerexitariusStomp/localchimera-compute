@@ -76,6 +76,7 @@
 ;; make-recipe-flow fields: id action conforms classified resource-qty effort
 ;;   input-of output-of clause stage state note is-primary resolve-from-flow
 (define-module (playnet planner knowledge recipes transport)
+  #:use-module ((playnet utils units) #:select (%count-unit %effort-unit))
   #:use-module (playnet planner vf schemas)
   #:use-module (goblins)
   #:use-module (srfi srfi-1)
@@ -94,14 +95,14 @@
                     #:recipe-output-of proc #:is-primary primary))
 (define (use-flow id spec count hours proc)     ; occupy COUNT of the resource for HOURS (both quantities)
   (make-recipe-flow #:id id #:action 'use #:resource-conforms-to spec
-                    #:resource-quantity (make-measure count "each")
-                    #:effort-quantity (make-measure hours "hours") #:recipe-input-of proc))
+                    #:resource-quantity (make-measure count %count-unit)
+                    #:effort-quantity (make-measure hours %effort-unit) #:recipe-input-of proc))
 (define (consume-flow* id spec qty unit proc)
   (make-recipe-flow #:id id #:action 'consume #:resource-conforms-to spec
                     #:resource-quantity (make-measure qty unit) #:recipe-input-of proc))
 (define (work-flow* id hours skill proc)
   (make-recipe-flow #:id id #:action 'work #:resource-conforms-to skill
-                    #:effort-quantity (make-measure hours "hours") #:recipe-input-of proc))
+                    #:effort-quantity (make-measure hours %effort-unit) #:recipe-input-of proc))
 
 ;; ─── The two bare shapes, as builders ───────────────────────────────────────
 ;; The car ride below is one filled-in instance of the frame above. These are the
@@ -116,7 +117,7 @@
 ;; that stays put.
 
 (define* (recipe-hold spec container-spec
-                      #:key (id "rp-hold") (unit "each") (hours 0.02) (loss 0.0)
+                      #:key (id "rp-hold") (unit %count-unit) (hours 0.02) (loss 0.0)
                             (name "Keep it where it is"))
   "SPEC waits in a CONTAINER-SPEC container: pick it up, `use` the container,
    drop it off. When that container's spec is keep-in-place, the pair is an arc
@@ -132,13 +133,13 @@
           ;; counts seats as well, because a seat is a thing you occupy; a box
           ;; just keeps what is in it.
           (make-recipe-flow #:id (string-append id "/box") #:action 'use #:resource-conforms-to container-spec
-                            #:effort-quantity (make-measure hours "hours") #:recipe-input-of id))
+                            #:effort-quantity (make-measure hours %effort-unit) #:recipe-input-of id))
     (if (> loss 0.0)
         (list (consume-flow* (string-append id "/loss") spec loss unit id))
         '()))))
 
 (define* (recipe-carry spec skill
-                       #:key (id "rp-carry") (unit "each") (hours-per-km 0.21)
+                       #:key (id "rp-carry") (unit %count-unit) (hours-per-km 0.21)
                              (name "Carry it there"))
   "SPEC moves between places under its own carrier: pick it up, work the
    journey, drop it off. No container, so the arc is through SPACE — and the
@@ -160,7 +161,7 @@
 ;; per-TRIP rates it knows and PAYLOAD divides them into the per-unit·km rates
 ;; the arc tiling reads.
 (define* (relocation-recipe id name good
-                            #:key (payload 1.0) (unit "each")
+                            #:key (payload 1.0) (unit %count-unit)
                                   (uses '())       ; ((spec . hours-per-trip-km) …) — a vehicle, a network seat, a pass held
                                   (work #f)        ; (skill . hours-per-trip-km) — a driver, a courier
                                   (consumes '())   ; ((spec qty-per-trip-km unit) …) — fuel, charge
@@ -210,14 +211,14 @@
     (list (car entry)
           (append (cadr entry)
                   (list (make-recipe-flow #:id (string-append id ".self") #:action 'work #:resource-conforms-to (or skill good)
-                                          #:effort-quantity (and pace (make-measure pace "hours")) #:recipe-input-of id #:resolve-from-flow (recipe-flow-id pickup)))))))
+                                          #:effort-quantity (and pace (make-measure pace %effort-unit)) #:recipe-input-of id #:resolve-from-flow (recipe-flow-id pickup)))))))
 
 ;; ─── Resource specifications (the TYPES; instances conform to these) ─────────
 (define spec-car
   (make-resource-specification
     #:id "spec-car" #:name "Car"
     #:resource-classified-as '("vf:vehicle" "vf:passenger" "vf:seats:4")   ; capability advertisement; 4 seats = its capacity when `use` is read
-    #:default-unit-of-resource "each"))
+    #:default-unit-of-resource %count-unit))
 
 (define spec-petrol
   (make-resource-specification
@@ -229,7 +230,7 @@
   (make-resource-specification
     #:id "spec-rider" #:name "Rider (person in transit)"
     #:resource-classified-as '("vf:person" "vf:passenger")                 ; the SAME resource is picked up and dropped off — only its location changes
-    #:default-unit-of-resource "each"))
+    #:default-unit-of-resource %count-unit))
 
 (define transport-specs (list spec-car spec-petrol spec-rider))
 
@@ -248,7 +249,7 @@
                #:uses '(("spec-car" . 0.02))             ; the car is occupied while it drives
                #:work '("spec-driving" . 0.02)           ; the driver's labour
                #:consumes '(("spec-petrol" 0.06 "litre")) ; ~6 L/100 km
-               #:duration (make-duration 0.4 "hours")))
+               #:duration (make-duration 0.4 %effort-unit)))
 
 ;; ─── Seeding ─────────────────────────────────────────────────────────────────
 (define (seed-transport-specs recipe-store)

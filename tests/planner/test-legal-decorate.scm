@@ -13,6 +13,7 @@
 ;;;
 ;;; Run: guile -L module tests/planner/test-legal-decorate.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (goblins utils hashmap))
 (use-modules (playnet test scope)) ; mock-scope-root
 (use-modules (playnet test harness) (playnet planner knowledge recipes store) (playnet planner scope spatial-things) (playnet planner vf schemas) (playnet planner scope live)
@@ -72,16 +73,16 @@
                                       #:recipe-input-of "cook")
                     (make-recipe-flow #:id "f-wk"  #:action 'work
                                       #:resource-conforms-to "cook-skill"
-                                      #:effort-quantity (make-measure 0.5 "hours")
+                                      #:effort-quantity (make-measure 0.5 %effort-unit)
                                       #:recipe-input-of "cook")))
 (define recipes (list (make-recipe #:id "r" #:name "Cook" #:primary-output "meal"
                                    #:recipe-processes '() #:recipe-exchanges '())))
 (define specs (list (make-resource-specification #:id "cook-skill" #:name "Cook"
                                                  #:resource-classified-as '()
-                                                 #:default-unit-of-effort "hours")
+                                                 #:default-unit-of-effort %effort-unit)
                     (make-resource-specification #:id "Handler Card" #:name "Food Handler Card"
                                                  #:resource-classified-as '()
-                                                 #:default-unit-of-effort "hours")))
+                                                 #:default-unit-of-effort %effort-unit)))
 (define win (all-week-window "00:00" "23:59"))
 ;; five places. each has produce + a "cook"-skilled worker; cityA's worker ALSO
 ;; holds the Handler Card. demand a meal at each.

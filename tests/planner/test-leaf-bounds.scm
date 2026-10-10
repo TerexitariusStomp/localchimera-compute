@@ -21,6 +21,7 @@
 ;;;
 ;;; Run: guile -L module tests/planner/test-leaf-bounds.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (srfi srfi-1) (ice-9 format)
              (playnet planner solve engine) (playnet planner vf schemas) (playnet planner facts located)
              (playnet planner knowledge dsl shorthand) (playnet planner knowledge dsl world)
@@ -139,7 +140,7 @@
 ;; on it in June at 52° north, and no more grain can grow than that light stores
 (define (farm-world lit?)
   (let ((w (world #:specs (list (spec* "land" "Land" "ha" #:keep-in-place #t) (spec* "soil-n" "Soil N" "kg")
-                                (spec* "grain" "Grain" "kg") (spec* "skill-farm" "Farm labour" "hours"))
+                                (spec* "grain" "Grain" "kg") (spec* "skill-farm" "Farm labour" %effort-unit))
                   #:procs (list (rp* "grow" "Grow" 1.0))
                   #:flows (list (consume* "g1" "soil-n" 0.05 "grow") (out* "g2" "grain" 1.0 "grow") (wk* "g3" "skill-farm" 0.001 "grow"))
                   #:recipes (list (make-recipe #:id "r-grow" #:name "Grain" #:primary-output "grain"
@@ -197,7 +198,7 @@
 
 (format #t "~%── the land rains into whatever the field drinks from, in its unit ──~%")
 (let* ((w (world #:specs (list (spec* "land" "Land" "ha" #:keep-in-place #t) (spec* "water" "Summer water" "ML")
-                               (spec* "grain" "Grain" "kg") (spec* "skill-farm" "Farm labour" "hours"))
+                               (spec* "grain" "Grain" "kg") (spec* "skill-farm" "Farm labour" %effort-unit))
                  #:procs (list (rp* "grow" "Grow" 1.0))
                  #:flows (list (consume* "g1" "water" 0.001 "grow" "ML") (out* "g2" "grain" 1.0 "grow") (wk* "g3" "skill-farm" 0.001 "grow"))
                  #:recipes (list (make-recipe #:id "r-grow" #:name "Grain" #:primary-output "grain"

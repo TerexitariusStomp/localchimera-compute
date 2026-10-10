@@ -39,6 +39,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-use-unit-register.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet planner solve compile)
              (playnet planner vf schemas)
@@ -54,14 +55,14 @@
   (clear-use-unit-gaps!)
   (compile-recipe
    (list (rp "rp-probe" "Probe"))
-   (list (out* "o" "spec-out" 1.0 "rp-probe" "each")
-         (make-recipe-flow #:id "u" #:action 'use #:resource-conforms-to "spec-chan" #:resource-quantity (make-measure 1.0 "each")
+   (list (out* "o" "spec-out" 1.0 "rp-probe" %count-unit)
+         (make-recipe-flow #:id "u" #:action 'use #:resource-conforms-to "spec-chan" #:resource-quantity (make-measure 1.0 %count-unit)
                            #:effort-quantity effort-measure #:recipe-input-of "rp-probe")))
   (use-unit-gaps))
 
 (format #t "~%── a non-time `use` effort is RECORDED, not merely printable ──~%")
 (define slot-gaps  (gaps-for (make-measure 1.0 "slot")))
-(define hour-gaps  (gaps-for (make-measure 1.0 "hours")))
+(define hour-gaps  (gaps-for (make-measure 1.0 %effort-unit)))
 (define min-gaps   (gaps-for (make-measure 30.0 "minutes")))
 (format #t "    effort 1.0 \"slot\"     → ~s~%" slot-gaps)
 (format #t "    effort 1.0 \"hours\"    → ~s~%" hour-gaps)

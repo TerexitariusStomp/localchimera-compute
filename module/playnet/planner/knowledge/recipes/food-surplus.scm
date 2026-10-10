@@ -23,6 +23,7 @@
 ;; under an exchange with nothing coming back — `share-food`. Each recipe states
 ;; the two exchanges (handover.scm); no tag says it.
 (define-module (playnet planner knowledge recipes food-surplus)
+  #:use-module ((playnet utils units) #:select (%count-unit %effort-unit))
   #:use-module (playnet planner vf schemas)
   #:use-module (goblins)
   #:use-module ((playnet planner knowledge recipes handover) #:select (state-exchange!))
@@ -44,11 +45,11 @@
   (make-resource-specification
     ;; counted in VANS — cf. cold-chain.scm's twin of this spec. The hours a run
     ;; occupies one for live on the `use` flow's effortQuantity, not here.
-    #:id "spec-reefer-van" #:name "Refrigerated Van" #:default-unit-of-resource "each"))
+    #:id "spec-reefer-van" #:name "Refrigerated Van" #:default-unit-of-resource %count-unit))
 
 (define food-surplus-volunteer-spec
   (make-resource-specification
-    #:id "spec-volunteer-hours" #:name "Volunteer Driver Hours" #:default-unit-of-resource "hours"))
+    #:id "spec-volunteer-hours" #:name "Volunteer Driver Hours" #:default-unit-of-resource %effort-unit))
 
 ;; ─── Seed functions ─────────────────────────────────────────────────────────
 
@@ -76,7 +77,7 @@
 
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-collect-sort" #:name "Collect & Sort Produce"
-                          #:has-duration (make-duration 1.5 "hours")))
+                          #:has-duration (make-duration 1.5 %effort-unit)))
 
   ;; Consume raw produce
   ($ recipe-store 'add-recipe-flow
@@ -87,13 +88,13 @@
      (make-recipe-flow #:id "rf-van-use" #:action 'use #:resource-conforms-to "spec-reefer-van"
                        ;; ONE van, occupied for the run's 1.5 h — the pair a `use`
                        ;; is: COUNT in resourceQuantity, HOURS in effortQuantity.
-                       #:resource-quantity (make-measure 1 "each") #:effort-quantity (make-measure 1.5 "hours")
+                       #:resource-quantity (make-measure 1 %count-unit) #:effort-quantity (make-measure 1.5 %effort-unit)
                        #:recipe-input-of "rp-collect-sort"))
   ;; Volunteer driver labor
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-driver-work" #:action 'work
                        #:resource-conforms-to "spec-volunteer-hours"
-                       #:effort-quantity (make-measure 1.5 "hours")
+                       #:effort-quantity (make-measure 1.5 %effort-unit)
                        #:recipe-input-of "rp-collect-sort"))
   ;; Produce sorted produce (90% yield)
   ($ recipe-store 'add-recipe-flow
@@ -135,18 +136,18 @@
   ;; Step 1: Pickup (0.5h) — raw produce in, collected produce out
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-cd-pickup" #:name "Pickup from donor"
-                          #:process-conforms-to "pspec-pickup" #:has-duration (make-duration 0.5 "hours")))
+                          #:process-conforms-to "pspec-pickup" #:has-duration (make-duration 0.5 %effort-unit)))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-cd-produce-in" #:action 'consume #:resource-conforms-to "spec-produce"
                        #:resource-quantity (make-measure 100 "kg") #:recipe-input-of "rp-cd-pickup" #:recipe-clause-of "rx-cd-received"))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-cd-van-pickup" #:action 'use #:resource-conforms-to "spec-reefer-van"
-                       #:resource-quantity (make-measure 1 "each") #:effort-quantity (make-measure 0.5 "hours")
+                       #:resource-quantity (make-measure 1 %count-unit) #:effort-quantity (make-measure 0.5 %effort-unit)
                        #:recipe-input-of "rp-cd-pickup"))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-cd-labor-pickup" #:action 'work
                        #:resource-conforms-to "spec-volunteer-hours"
-                       #:effort-quantity (make-measure 0.5 "hours") #:recipe-input-of "rp-cd-pickup"))
+                       #:effort-quantity (make-measure 0.5 %effort-unit) #:recipe-input-of "rp-cd-pickup"))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-cd-collected-out" #:action 'produce #:resource-conforms-to "spec-collected"
                        #:resource-quantity (make-measure 100 "kg") #:recipe-output-of "rp-cd-pickup"))
@@ -154,14 +155,14 @@
   ;; Step 2: Sort & inspect (0.75h) — 90% yield, 10% rejected
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-cd-sort" #:name "Sort & inspect"
-                          #:process-conforms-to "pspec-sort" #:has-duration (make-duration 0.75 "hours")))
+                          #:process-conforms-to "pspec-sort" #:has-duration (make-duration 0.75 %effort-unit)))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-cd-collected-in" #:action 'consume #:resource-conforms-to "spec-collected"
                        #:resource-quantity (make-measure 100 "kg") #:recipe-input-of "rp-cd-sort"))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-cd-labor-sort" #:action 'work
                        #:resource-conforms-to "spec-volunteer-hours"
-                       #:effort-quantity (make-measure 0.75 "hours") #:recipe-input-of "rp-cd-sort"))
+                       #:effort-quantity (make-measure 0.75 %effort-unit) #:recipe-input-of "rp-cd-sort"))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-cd-sorted-out" #:action 'produce #:resource-conforms-to "spec-sorted-produce"
                        #:resource-quantity (make-measure 90 "kg") #:recipe-output-of "rp-cd-sort"))
@@ -169,18 +170,18 @@
   ;; Step 3: Deliver (0.25h)
   ($ recipe-store 'add-recipe-process
      (make-recipe-process #:id "rp-cd-deliver" #:name "Deliver to recipient"
-                          #:process-conforms-to "pspec-deliver" #:has-duration (make-duration 0.25 "hours")))
+                          #:process-conforms-to "pspec-deliver" #:has-duration (make-duration 0.25 %effort-unit)))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-cd-sorted-in" #:action 'consume #:resource-conforms-to "spec-sorted-produce"
                        #:resource-quantity (make-measure 90 "kg") #:recipe-input-of "rp-cd-deliver"))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-cd-van-deliver" #:action 'use #:resource-conforms-to "spec-reefer-van"
-                       #:resource-quantity (make-measure 1 "each") #:effort-quantity (make-measure 0.25 "hours")
+                       #:resource-quantity (make-measure 1 %count-unit) #:effort-quantity (make-measure 0.25 %effort-unit)
                        #:recipe-input-of "rp-cd-deliver"))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-cd-labor-deliver" #:action 'work
                        #:resource-conforms-to "spec-volunteer-hours"
-                       #:effort-quantity (make-measure 0.25 "hours")
+                       #:effort-quantity (make-measure 0.25 %effort-unit)
                        #:recipe-input-of "rp-cd-deliver"))
   ($ recipe-store 'add-recipe-flow
      (make-recipe-flow #:id "rf-cd-delivered-out" #:action 'produce #:resource-conforms-to "spec-sorted-produce"

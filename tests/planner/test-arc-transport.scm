@@ -12,6 +12,7 @@
 ;;;
 ;;; Run:  guile -L module/playnet/planner module/playnet/planner/arc-transport-test.scm
 
+(use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet planner knowledge dsl shorthand))
 (use-modules (playnet planner solve engine)
@@ -24,11 +25,11 @@
                   (compile-recipe (list (rp* "p:haul" "Haul"))
                     (list (make-recipe-flow #:id "p1" #:action 'pickup 
                                             #:resource-conforms-to "widget"
-                                            #:resource-quantity (make-measure 1.0 "each")
+                                            #:resource-quantity (make-measure 1.0 %count-unit)
                                             #:recipe-input-of "p:haul")
                           (make-recipe-flow #:id "d1" #:action 'dropoff
                                             #:resource-conforms-to "widget"
-                                            #:resource-quantity (make-measure 1.0 "each")
+                                            #:resource-quantity (make-measure 1.0 %count-unit)
                                             #:recipe-output-of "p:haul")
                           (wk* "w1" #f 0.01 "p:haul"))))
 

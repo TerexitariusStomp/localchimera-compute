@@ -23,6 +23,7 @@ import { effect } from './reactive.js';
 import { primOut, recipeForSpec, recipeById, active, setActive, pushRecipe, popRecipe, trail, canGoBack, } from './recipe-graph.js';
 import { metCol, CREDIT, STATUS } from './palette.js';
 import { on, emit } from './bus.js';
+import { isCountUnit } from "./units-catalogue.js";
 const VERB = {
     consume: { dir: -1, col: CREDIT, word: "consume" }, // drawn down (credit rail)
     use: { dir: -1, col: "#6a8aaa", word: "use" }, // occupied, not spent
@@ -35,7 +36,7 @@ const VERB = {
     "deliver-service": { dir: 1, col: "#2e7d32", word: "deliver" }, // produced & delivered, never held
 };
 const verbOf = (action) => VERB[action || ""] || {};
-const fmtQ = (f) => `${f.q}${f.u && f.u !== "each" ? " " + f.u : ""}`.trim();
+const fmtQ = (f) => `${f.q}${f.u && !isCountUnit(f.u) ? " " + f.u : ""}`.trim();
 /**
  * A flow's label: its emoji where it has one (the demo recipes), else its spec
  * name — real recipes from the store carry a name, not an emoji.
@@ -62,7 +63,7 @@ export function drawPlanList() {
     const labourH = plan.labourH != null ? plan.labourH
         : d3.sum(needs, n => n.labourH || 0);
     const produced = (plan.produced || [])
-        .map(p => `${p.emoji || (p.spec ? p.spec + " " : "")}${p.q}${p.u && p.u !== "each" ? " " + p.u : ""}`.trim())
+        .map(p => `${p.emoji || (p.spec ? p.spec + " " : "")}${p.q}${p.u && !isCountUnit(p.u) ? " " + p.u : ""}`.trim())
         .join(" · ");
     d3.select("#planledger").html(`<b style="color:${metCol(metPct)}">${Math.round(metPct * 100)}%</b> met`
         + ` · <b>${labourH.toFixed(1)} h</b>${produced ? ` · ${produced}` : ""}`);

@@ -8,6 +8,7 @@
 ;;;   GUIX_ENVIRONMENT=<profile-with-libblake3> guile -L module \
 ;;;     tests/planner/test-intent-attest.scm
 
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner plan store) (playnet planner vf schemas))   ; slim records (Intent/Measure) — same identity governance uses
 ;; the relational fact-lifting layer is retired; pull only the lift fns (they read
@@ -27,7 +28,7 @@
     ;; receiver-side work need: 10h of surgeon at the clinic, in plan-x
     ($ ps 'add-intent (make-intent #:id "i1" #:action 'work #:input-of "proc-1"
                                    #:resource-conforms-to "spec:surgeon"
-                                   #:effort-quantity (make-measure 10 "hour") #:receiver "clinic"
+                                   #:effort-quantity (make-measure 10 %effort-unit) #:receiver "clinic"
                                    #:at-location "clinic" #:planned-within "plan-x"))
     (let* ((icreds ($ acdc 'by-schema *schema-playnet-intent*))
            (facts  (lift-intent-facts icreds)))
@@ -42,7 +43,7 @@
     (display "\n── Commitment attested + satisfies link ──\n")
     ($ ps 'add-commitment (make-commitment #:id "c1" #:action 'work #:input-of "proc-1"
                                            #:resource-conforms-to "spec:surgeon"
-                                           #:effort-quantity (make-measure 10 "hour")
+                                           #:effort-quantity (make-measure 10 %effort-unit)
                                            #:provider "doc" #:receiver "clinic" #:satisfies "i1"
                                            #:planned-within "plan-x"))
     (let* ((ccreds ($ acdc 'by-schema *schema-playnet-commitment*))

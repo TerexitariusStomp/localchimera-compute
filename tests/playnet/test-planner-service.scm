@@ -16,6 +16,7 @@
 (chdir %project-root)
 
 (add-to-load-path "module")
+(use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules ((playnet wire rows) #:select (wire->plain))   ; a door's rows, read back as alists
              (playnet test harness))
 (use-modules (goblins)
@@ -141,7 +142,7 @@
 (display "\n── 6. record-effort → fulfillment-state advances ──\n")
 
 (define rec-result
-  (svc 'record-effort "org:meeting" commit-id "agent-alice" 1 "hours"))
+  (svc 'record-effort "org:meeting" commit-id "agent-alice" 1 %effort-unit))
 
 (check-pred "record-effort returns ok envelope"
             (and (pair? rec-result) (eq? (car rec-result) 'ok)))
