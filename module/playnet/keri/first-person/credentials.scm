@@ -10,7 +10,7 @@
 ;;; docs/planning/identity/openvtc-parity.md.
 ;;;
 ;;; Every constructor lives under the two SAID disciplines stated in
-;;; (playnet governance credentials): emission is frozen (new fields are
+;;; (playnet credentials …): emission is frozen (new fields are
 ;;; append-only and emitted only when set), and a re-mint of an existing fact
 ;;; passes the fact's own timestamp.
 

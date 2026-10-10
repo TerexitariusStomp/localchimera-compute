@@ -18,7 +18,9 @@
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
   #:use-module (playnet governance audit-scheduler)
-  #:use-module (playnet governance credentials)
+  #:use-module (playnet credentials audit)
+  #:use-module (playnet credentials registry)
+  #:use-module (playnet keri acdc)
   #:use-module (playnet keri acdc)
   #:export (^audit-scheduler
             spawn-audit-scheduler

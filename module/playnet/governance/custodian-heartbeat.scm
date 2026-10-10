@@ -23,7 +23,8 @@
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
   #:use-module ((playnet utils common) #:select (safe-call))
-  #:use-module ((playnet governance credentials) #:select (make-incoherence-alert-credential cred-signed-by-scope))
+  #:use-module ((playnet credentials audit) #:select (make-incoherence-alert-credential))
+  #:use-module ((playnet credentials registry) #:select (cred-signed-by-scope))
   #:use-module (srfi srfi-1)
   #:use-module (ice-9 format)
   #:export (^custodian-heartbeat

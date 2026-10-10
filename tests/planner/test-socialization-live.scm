@@ -22,7 +22,7 @@
 (use-modules (playnet test harness)
              (playnet planner vf schemas)
              (playnet planner scope live)
-             (playnet governance credentials) (playnet governance socialization) (playnet keri acdc-store)
+             (playnet credentials custody) (playnet governance socialization) (playnet keri acdc-store)
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
 

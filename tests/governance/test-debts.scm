@@ -7,7 +7,7 @@
 ;;; Run: guile -L module -L tests tests/governance/test-debts.scm
 
 (use-modules (playnet test harness)
-             (playnet governance credentials) (playnet governance debts) (playnet keri acdc) (playnet keri acdc-store)
+             (playnet credentials commitments) (playnet keri acdc) (playnet governance debts) (playnet keri acdc) (playnet keri acdc-store)
              (playnet planner scope root) (srfi srfi-1)
              ((playnet monero specs) #:select (bootstrap-monero-resource! bootstrap-external-asset!))
              (srfi srfi-1)

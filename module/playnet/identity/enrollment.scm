@@ -41,7 +41,8 @@
 (define-module (playnet identity enrollment)
   #:use-module (srfi srfi-1)
   #:use-module ((playnet utils clock) #:select (instant->unix (now . clock-now)))   ; the one clock: instants inside, civil at the boundary
-  #:use-module (playnet governance credentials)
+  #:use-module (playnet keri acdc)
+  #:use-module (playnet keri first-person credentials)
   #:use-module (playnet governance attestation-ceremony)
   #:use-module (playnet keri said-portable)
   #:use-module (playnet keri first-person predicates)

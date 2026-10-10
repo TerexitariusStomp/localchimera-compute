@@ -23,7 +23,7 @@
 (use-modules (playnet test harness)
              (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1)
              (playnet governance acdc-bridge) (playnet keri acdc) (playnet keri acdc-store)
-             (playnet governance credentials)
+             (playnet credentials work) (playnet keri acdc)
              ((playnet governance acdc-bridge) #:select (make-credentialing-on-event))
              (playnet planner observation evidence)
              (goblins)

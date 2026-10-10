@@ -28,7 +28,10 @@
 ;; ── ^federation-auditor ─────────────────────────────────────────────────────
 
 (define-module (playnet governance auditor)
-  #:use-module (playnet governance credentials)
+  #:use-module (playnet credentials audit)
+  #:use-module (playnet credentials custody)
+  #:use-module (playnet credentials registry)
+  #:use-module (playnet keri acdc)
   #:use-module (playnet planner facts validity)
   #:use-module (srfi srfi-1)
   #:use-module (goblins actor-lib facet)

@@ -22,7 +22,7 @@
              (playnet keri signify-portable)
              (playnet keri crypto-primitives)
              (playnet governance keri ipex-policy)
-             (playnet governance credentials)
+             (playnet credentials membership)
              (playnet governance scope-graph)
              (playnet governance pending-grants)
              (playnet governance keria-store)

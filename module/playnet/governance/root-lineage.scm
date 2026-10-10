@@ -14,8 +14,7 @@
   #:use-module (playnet keri acdc)
   #:use-module ((playnet keri acdc-store) #:select (non-revoked-by-schema))
   #:use-module (playnet keri first-person predicates)
-  #:use-module ((playnet governance credentials)
-                #:select (*schema-playnet-scope-merger* *schema-playnet-scope-split*))
+  #:use-module ((playnet credentials recomposition) #:select (*schema-playnet-scope-merger* *schema-playnet-scope-split*))
   #:export (%recomposition-ancestors recomposition-lineage))
 
 (define (%recomposition-ancestors aid mergers splits)

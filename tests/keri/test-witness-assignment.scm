@@ -4,7 +4,7 @@
 ;;; Run: guile -L module -L tests tests/keri/test-witness-assignment.scm
 
 (use-modules (playnet test harness)
-             (playnet governance credentials) (playnet keri acdc)
+             (playnet credentials keys) (playnet keri acdc) (playnet keri acdc)
              (srfi srfi-1))   ;; every
 
 (define %federation "EFederation_alpha_00000000000000000000000000")

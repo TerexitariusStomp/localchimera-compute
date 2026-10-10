@@ -1,8 +1,8 @@
 ;;; test-first-person.scm — PHC + VRC shape, store queries, the I2I check, signed VRCs
 ;;;
 ;;; The First Person layer on its own two feet: credentials from
-;;; (playnet keri first-person credentials), verification from (playnet openvtc
-;;; first-person), a store from (playnet keri acdc-store). The halves that run
+;;; (playnet keri first-person credentials), verification from (playnet keri
+;;; first-person predicates), a store from (playnet keri acdc-store). The halves that run
 ;;; through a ^scope and the bootstrap ceremony are
 ;;; tests/governance/test-first-person.scm.
 

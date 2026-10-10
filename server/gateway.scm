@@ -114,7 +114,7 @@
              (playnet governance acdc-bridge)
              (playnet governance attestation-ceremony)
              (playnet governance auditor)
-             (playnet governance credentials)
+             (playnet credentials registry) (playnet keri acdc) (playnet keri first-person credentials)
              (playnet governance debts)
              (playnet identity enrollment)
              (playnet governance http-witness-publisher)

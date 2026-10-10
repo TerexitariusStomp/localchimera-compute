@@ -17,7 +17,7 @@
              ((playnet keri crypto-primitives) #:select (keri-crypto-random-bytes ed25519-keypair-public))
              ((playnet keri cesr) #:select (cesr-bytes->qb64))
              
-             ((playnet governance credentials) #:select (make-device-authorization-credential))
+             ((playnet keri first-person credentials) #:select (make-device-authorization-credential))
              (goblins) (goblins vat))
 
 (define vat (spawn-vat))

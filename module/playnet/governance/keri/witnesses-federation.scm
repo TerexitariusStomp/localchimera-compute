@@ -22,7 +22,8 @@
   #:use-module (srfi srfi-1)            ;; count
   #:use-module ((goblins) #:select ($))   ; the acdc-store is an actor
   #:use-module (playnet keri bridge)
-  #:use-module (playnet governance credentials)
+  #:use-module (playnet credentials keys)
+  #:use-module (playnet keri acdc)
   #:use-module (playnet keri acdc)
   #:export (federation-bootstrap-witness-pool!))
 

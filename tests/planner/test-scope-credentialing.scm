@@ -13,7 +13,7 @@
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner scope root) (playnet planner vf schemas))
-(use-modules (playnet governance acdc-bridge) (playnet governance commune) (playnet governance credentials) (playnet keri acdc-store))
+(use-modules (playnet governance acdc-bridge) (playnet governance commune) (playnet credentials commitments) (playnet credentials work) (playnet keri acdc-store))
 (use-modules (goblins) (goblins vat) (srfi srfi-1))
 
 (define vat (spawn-vat))

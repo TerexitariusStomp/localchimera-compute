@@ -23,7 +23,7 @@
              (playnet keri credentials)
              (playnet governance keria-store)
              (playnet governance pending-grants)
-             (playnet governance credentials) (playnet keri acdc)
+             (playnet credentials membership) (playnet keri acdc) (playnet keri acdc)
              (goblins)
              (web server)
              (web request)

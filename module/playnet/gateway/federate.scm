@@ -71,11 +71,10 @@
                           make-key-ledger signer-rotated-kel))
   #:use-module ((playnet planner solve engine) #:select (make-boundary-oracle))
   #:use-module ((playnet governance sturdyref-credential) #:select (verified-spec spec-ready?))
-  #:use-module ((playnet governance credentials)
-                #:select (make-federation-census-credential cred-with-signature cred-said
-                          make-observation-event-credential
-                          cred-signed-by-scope cred-claim cred-schema cred-revoked?
-                          *schema-playnet-observation-event*))
+  #:use-module ((playnet credentials membership) #:select (make-federation-census-credential))
+  #:use-module ((playnet credentials registry) #:select (cred-signed-by-scope))
+  #:use-module ((playnet credentials work) #:select (make-observation-event-credential *schema-playnet-observation-event*))
+  #:use-module ((playnet keri acdc) #:select (cred-with-signature cred-said cred-claim cred-schema cred-revoked?))
   #:use-module ((playnet planner federation crossing-custody)
                 #:select (crossing-legs leg-id leg-good leg-provider leg-receiver leg-qty))
   #:use-module ((playnet utils clock) #:select (now instant->civil))

@@ -21,7 +21,7 @@
 ;;; Everything here is pure data over (playnet keri said-portable)'s
 ;;; compute-said: schema-agnostic, actor-free, and the base every schema
 ;;; layer builds on — (playnet keri first-person credentials) for the First Person /
-;;; OpenVTC credentials, (playnet governance credentials) for playnet's own.
+;;; OpenVTC credentials, (playnet credentials …) for playnet's own.
 
 (define-module (playnet keri acdc)
   #:use-module (playnet keri cesr)

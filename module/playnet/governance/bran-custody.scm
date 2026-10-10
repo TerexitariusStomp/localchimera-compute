@@ -36,7 +36,8 @@
 
 (define-module (playnet governance bran-custody)
   #:use-module (srfi srfi-1)
-  #:use-module (playnet governance credentials)
+  #:use-module (playnet credentials keys)
+  #:use-module (playnet keri acdc)
   #:use-module (playnet utils hex)
   #:use-module (rnrs bytevectors)
   #:use-module (playnet utils paths)

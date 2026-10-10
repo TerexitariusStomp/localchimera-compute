@@ -42,7 +42,7 @@
   ;; (compute-said) the rest of governance uses for plan IDs etc., so
   ;; the digest is interpretable with no new tooling — anyone with
   ;; the member list can independently re-derive it.
-  #:use-module ((playnet governance credentials) #:select (compute-plan-said))
+  #:use-module ((playnet credentials registry) #:select (compute-plan-said))
   #:export (^uc-curator
             spawn-uc-curator
             uc-curator-default-interval-sec

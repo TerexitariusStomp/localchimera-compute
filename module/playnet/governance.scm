@@ -39,7 +39,19 @@
   #:use-module (playnet governance snapshot)
   #:use-module (playnet governance guardianship)
   #:use-module (playnet governance demand-fold)
-  #:use-module (playnet governance credentials)
+  #:use-module (playnet credentials audit)
+  #:use-module (playnet credentials commitments)
+  #:use-module (playnet credentials custody)
+  #:use-module (playnet credentials declarations)
+  #:use-module (playnet credentials delegation)
+  #:use-module (playnet credentials keys)
+  #:use-module (playnet credentials membership)
+  #:use-module (playnet credentials recomposition)
+  #:use-module (playnet credentials registry)
+  #:use-module (playnet credentials voting)
+  #:use-module (playnet credentials work)
+  #:use-module (playnet keri acdc)
+  #:use-module (playnet keri first-person credentials)
   #:use-module (playnet governance attestation-ceremony)
   #:use-module (playnet governance affected-interest)
   #:use-module (playnet utils clock)
@@ -74,8 +86,8 @@
               ^attestation-ceremony attestation-ceremony-for land-witness-attestation!
               register-attestation-ceremony! witness-attest-handler
               current-aid-key-resolver
-              ;; from (playnet governance credentials)
-              *claim-index-registry* *contact-point-kinds* *playnet-schemas*
+              ;; from (playnet credentials …)
+ *contact-point-kinds* *playnet-schemas*
               *schema-playnet-agreement* *schema-playnet-audit-pass*
               *schema-playnet-authorized-issuer* *schema-playnet-ballot-snapshot*
               *schema-playnet-bran-share* *schema-playnet-ccf-assessment*
@@ -99,7 +111,7 @@
               *schema-playnet-skill* *schema-playnet-span-declaration*
               *schema-playnet-stance* *schema-playnet-tally-result*
               *schema-playnet-witness-assignment* *schema-playnet-work-event*
-              *timestamp-claim-registry* audit-witness-quorum-independence
+ audit-witness-quorum-independence
               compile-mandate-spec compute-plan-said contact-point-acceptable?
               contact-point-binding-fields contact-point-identifying?
               contact-point-kind? count-witness-attestors cred-claim cred-claims

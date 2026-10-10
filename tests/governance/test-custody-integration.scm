@@ -2,7 +2,7 @@
 
 (use-modules (playnet test harness))
 (use-modules (playnet deprecated planner))
-(use-modules (playnet governance credentials) (playnet governance scope) (playnet keri acdc) (playnet keri acdc-store))
+(use-modules (playnet credentials commitments) (playnet credentials custody) (playnet keri acdc) (playnet governance scope) (playnet keri acdc) (playnet keri acdc-store))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
 

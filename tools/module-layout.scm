@@ -130,7 +130,6 @@
  (file "utils/repl-client" #f)            ; a tool: tools/ of the repository
  (file "utils/ts-emit" #f)                ; a tool: tools/ of the repository
  ;; governance, by what each file is
- (file "governance/credentials" "credentials")
  (file "governance/acdc-store" #f)        ; a renaming shim of (playnet keri acdc-store)
  (file "governance/kel-store" "keys")
  (file "governance/keria-store" "keys")
@@ -180,7 +179,6 @@
  (file "governance/demand-registry" "voice")
  (file "governance/demand-aggregation" "voice")
  (file "governance/demand-bridge" "voice")
- (file "governance/away-declaration" "vf/facts")
  (file "governance/service" "doors")
  ;; identity, less its doors and ceremonies
  (file "identity/doors" "doors")

@@ -7,7 +7,7 @@
 (use-modules (playnet test harness)
              (playnet planner scope root) (srfi srfi-1)
              (playnet planner doors service)
-             (playnet governance credentials) (playnet governance scope) (playnet governance socialization) (playnet keri acdc) (playnet keri acdc-store)
+             (playnet credentials custody) (playnet keri acdc) (playnet governance scope) (playnet governance socialization) (playnet keri acdc) (playnet keri acdc-store)
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
 

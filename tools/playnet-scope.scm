@@ -47,7 +47,7 @@
              ;; (playnet governance) — its vault helpers are exported
              ;; from the umbrella module, so we import from there
              ;; rather than a non-existent (playnet governance bran-custody).
-             ((playnet governance bran-custody) #:select (read-vault-bran write-vault-bran! host-vault-key)) ((playnet governance credentials) #:select (make-bran-share-credential)) ((playnet keri acdc) #:select (cred-said cred-claim cred-revoked?))
+             ((playnet governance bran-custody) #:select (read-vault-bran write-vault-bran! host-vault-key)) ((playnet credentials keys) #:select (make-bran-share-credential)) ((playnet keri acdc) #:select (cred-said cred-claim cred-revoked?))
              ((playnet crypto shamir) #:select (shamir-split shamir-combine))
              ((playnet utils hex) #:select (hex->bv bv->hex))
              ((playnet utils common) #:select (read-sexp-file)))

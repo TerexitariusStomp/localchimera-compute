@@ -9,7 +9,7 @@
 ;;;   3. A and B merge into C; B roots at C → A's person ACCEPTED via lineage.
 
 (use-modules (playnet test harness))
-(use-modules (playnet governance ballot-store) (playnet governance credentials) (playnet governance scope) (playnet governance service) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri first-person credentials) (playnet keri first-person predicates))
+(use-modules (playnet governance ballot-store) (playnet credentials recomposition) (playnet keri acdc) (playnet keri first-person credentials) (playnet governance scope) (playnet governance service) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri first-person credentials) (playnet keri first-person predicates))
 (use-modules (playnet governance ballot-store))
 (use-modules ((playnet governance keri scope-exchange) #:select (governance-cred->wire)))
 (use-modules ((playnet keri citizen-sig)

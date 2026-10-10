@@ -10,7 +10,7 @@
 
 (use-modules (playnet test harness))
 (use-modules )
-(use-modules (playnet governance credentials) (playnet utils paths) (playnet governance scope) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig))
+(use-modules (playnet credentials keys) (playnet keri acdc) (playnet utils paths) (playnet governance scope) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig))
 (use-modules (playnet governance keri-backend live))
 (use-modules (playnet governance scope-recovery))
 (use-modules (playnet keri signify))   ;; install crypto backend

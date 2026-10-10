@@ -3,6 +3,7 @@
 
     tools/retire-umbrella.py planner [--dry-run] FILE…
     tools/retire-umbrella.py governance [--dry-run] FILE…
+    tools/retire-umbrella.py 'governance credentials' [--dry-run] FILE…   (a nested umbrella)
 
 An umbrella ((playnet planner), (playnet governance)) re-exports hundreds of
 names from dozens of modules, so a file that imports it states nothing about
@@ -34,7 +35,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def umbrella_map(name):
-    out = subprocess.run(['guile', '--no-auto-compile', '-L', 'module', 'tools/umbrella-map.scm', 'playnet', name],
+    out = subprocess.run(['guile', '--no-auto-compile', '-L', 'module', 'tools/umbrella-map.scm', 'playnet', *name.split()],
                          cwd=ROOT, capture_output=True, text=True,
                          env={**os.environ, 'LC_ALL': 'C.UTF-8'}).stdout
     m = {}
@@ -131,6 +132,7 @@ def own_definitions(code):
 def rewrite(text, umb, exports):
     """→ (new text, imported modules, unresolved names) or (None, …) when nothing to do."""
     code = strip(text)
+    umb = r'\s+'.join(umb.split())
     spec = r'\(playnet\s+' + umb + r'\)'
     if not re.search(spec, code):
         return None, [], []
@@ -155,6 +157,11 @@ def rewrite(text, umb, exports):
         for n in have:
             by.setdefault(exports[n], []).append(n)
         parts = ['((' + mod + ') #:select (' + ' '.join(ns) + '))' for mod, ns in sorted(by.items())]
+        # after a define-module's #:use-module keyword, each spec needs its own keyword
+        before = m.string[:m.start()]
+        kw = re.search(r'(?m)^([ \t]*)#:use-module[ \t]*$', before[max(0, len(before) - 60):])
+        if kw:
+            return ('\n' + kw.group(1) + '#:use-module ').join(parts)
         return ' '.join(parts)
 
     # ((playnet planner) #:select (a b)) — one select per defining module
@@ -184,6 +191,8 @@ def main(argv):
     exports = umbrella_map(umb)
     if not exports:
         sys.exit('retire-umbrella: Guile gave no export map for (playnet %s)' % umb)
+    if '/' in umb:
+        sys.exit('retire-umbrella: name the umbrella as words: governance credentials')
     n = 0
     for f in files:
         p = os.path.join(ROOT, f)

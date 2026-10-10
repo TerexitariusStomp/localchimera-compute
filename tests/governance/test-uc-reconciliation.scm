@@ -8,7 +8,7 @@
 ;;; with ours (a recomposition ancestor/descendant) is NOT a collision.
 
 (use-modules (playnet test harness))
-(use-modules (playnet governance credentials) (playnet keri acdc-store))
+(use-modules (playnet credentials recomposition) (playnet keri acdc-store))
 (use-modules (playnet governance universal-commune))
 (use-modules (goblins) (goblins vat))
 

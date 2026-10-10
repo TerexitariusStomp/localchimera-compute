@@ -13,7 +13,7 @@
 
 (use-modules (playnet test harness)
              (playnet governance keri ipex-policy)
-             (playnet governance credentials))
+             (playnet credentials membership) (playnet credentials voting))
 
 ;; ── install + lookup ─────────────────────────────────────────────────
 

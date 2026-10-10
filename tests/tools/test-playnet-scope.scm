@@ -148,7 +148,7 @@
 ;; bran-custody.scm uses internally, plus our CLI's wrapping.
 
 (use-modules ((playnet crypto shamir) #:select (shamir-split shamir-combine))
-             ((playnet governance credentials) #:select (make-bran-share-credential)) ((playnet keri acdc) #:select (cred-claim)))
+             ((playnet credentials keys) #:select (make-bran-share-credential)) ((playnet keri acdc) #:select (cred-claim)))
 
 (define %shamir-aid "E_shamir_test_AID_zzzzzzzzzzzzzzzzzzzzzzzzz")
 (mk-scope! %shamir-aid 'federation)

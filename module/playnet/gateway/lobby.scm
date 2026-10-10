@@ -35,7 +35,7 @@
                           data-packet?))
   #:use-module ((playnet utils hex) #:select (hex->bv))
   ;; a grant's holder is the commune whose pool a recall moves
-  #:use-module ((playnet governance credentials) #:select (cred-holder))
+  #:use-module ((playnet keri acdc) #:select (cred-holder))
   ;; every session's dispatch passes the forgotten gate
   #:use-module ((playnet identity forget) #:select (forgotten-gated unmark-forgotten!))
   ;; the identity doors of both objects live in (playnet identity doors) as

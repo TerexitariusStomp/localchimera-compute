@@ -23,7 +23,7 @@
 
 (use-modules (playnet test harness)
              (srfi srfi-1)
-             (playnet governance credentials) (playnet governance scope) (playnet keri acdc) (playnet keri acdc-store)
+             (playnet credentials voting) (playnet keri acdc) (playnet governance scope) (playnet keri acdc) (playnet keri acdc-store)
              (playnet governance universal-commune)
              (goblins)
              (srfi srfi-1))

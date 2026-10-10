@@ -29,7 +29,12 @@
 
 (define-module (playnet governance structural-invariants)
   #:use-module (srfi srfi-1)
-  #:use-module (playnet governance credentials)
+  #:use-module (playnet credentials commitments)
+  #:use-module (playnet credentials custody)
+  #:use-module (playnet credentials membership)
+  #:use-module (playnet credentials recomposition)
+  #:use-module (playnet credentials work)
+  #:use-module (playnet keri acdc)
   #:use-module (playnet governance acdc-store)
   #:use-module (playnet governance scope)
   #:use-module (ice-9 match)

@@ -34,7 +34,7 @@
              (playnet gateway federate)
              ((playnet planner solve engine) #:select (make-boundary-oracle solve-consensus))
              ((playnet keri citizen-sig) #:select (make-keri-identity keri-identity-aid keri-identity-keypair))
-             ((playnet governance credentials) #:select (make-federation-sturdyref-credential))
+             ((playnet credentials membership) #:select (make-federation-sturdyref-credential))
              ((playnet governance sturdyref-credential) #:select (sturdyref-credential-end))
              (goblins actor-lib joiners) (goblins actor-lib timers)
              (goblins) (goblins vat)

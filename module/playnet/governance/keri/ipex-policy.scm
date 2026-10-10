@@ -27,7 +27,10 @@
 
 (define-module (playnet governance keri ipex-policy)
   #:use-module (goblins)
-  #:use-module (playnet governance credentials)
+  #:use-module (playnet credentials membership)
+  #:use-module (playnet credentials registry)
+  #:use-module (playnet credentials voting)
+  #:use-module (playnet keri acdc)
   #:use-module (playnet governance scope-graph)
   #:use-module (playnet governance sturdyref-credential)
   #:use-module (playnet keri acdc)

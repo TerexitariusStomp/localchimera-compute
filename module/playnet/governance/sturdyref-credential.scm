@@ -41,12 +41,11 @@
   #:use-module ((playnet keri citizen-sig) #:select (verify-said-signature verify-said-signature-under-key))
   #:use-module ((playnet keri key-state) #:select (key-for-credential events->key-state state-key))
   #:use-module ((playnet planner facts partition) #:select (held-twice))
-  #:export (*schema-playnet-federation-sturdyref* *schema-playnet-federation-census*
-            sturdyref-credential-end census-credential-goods census-key-state
+  #:use-module ((playnet credentials membership) #:select (*schema-playnet-federation-sturdyref* *schema-playnet-federation-census*))
+  #:re-export (*schema-playnet-federation-sturdyref* *schema-playnet-federation-census*)
+  #:export (sturdyref-credential-end census-credential-goods census-key-state
             sturdyref-credentials->spec verified-spec spec-ready? spec-goods))
 
-(define *schema-playnet-federation-sturdyref* "playnet-federation-sturdyref/v1")
-(define *schema-playnet-federation-census* "playnet-federation-census/v1")
 
 (define (signed-by? cred who kel)
   "Whether CRED's signature checks as WHO's. With WHO's key log KEL (a rotated

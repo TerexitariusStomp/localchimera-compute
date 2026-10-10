@@ -23,7 +23,9 @@
 ;;; A module of (playnet governance); the umbrella re-exports it.
 
 (define-module (playnet governance delegation-map)
-  #:use-module (playnet governance credentials)
+  #:use-module (playnet credentials commitments)
+  #:use-module (playnet credentials delegation)
+  #:use-module (playnet keri acdc)
   #:use-module (goblins utils hashmap)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)

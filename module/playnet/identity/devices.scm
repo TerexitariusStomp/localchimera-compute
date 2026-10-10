@@ -23,10 +23,8 @@
 ;;; SAID that commits to the content in hand.
 
 (define-module (playnet identity devices)
-  #:use-module ((playnet governance credentials)
-                #:select (*schema-playnet-device-authorization*
-                          cred-said cred-schema cred-issuer cred-holder
-                          cred-claims cred-signature))
+  #:use-module ((playnet keri acdc) #:select (cred-said cred-schema cred-issuer cred-holder cred-claims cred-signature))
+  #:use-module ((playnet keri first-person credentials) #:select (*schema-playnet-device-authorization*))
   #:use-module ((playnet keri said) #:select (compute-said))
   #:use-module ((playnet keri citizen-sig)
                 #:select (verify-said-signature-under-key))

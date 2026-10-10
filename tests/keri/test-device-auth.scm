@@ -16,9 +16,7 @@
              ((playnet keri crypto-primitives) #:select (keri-crypto-random-bytes))
              ((playnet keri acdc) #:select (make-credential))
              ((playnet keri first-person predicates) #:select (cred-signature-valid?))
-             ((playnet governance credentials)
-              #:select (make-device-authorization-credential cred-said cred-claims
-                        cred-signature cred-schema cred-issuer cred-holder))
+             ((playnet keri acdc) #:select (cred-said cred-claims cred-signature cred-schema cred-issuer cred-holder)) ((playnet keri first-person credentials) #:select (make-device-authorization-credential))
              (playnet identity devices)
              (playnet identity seat)
              (playnet identity oobi-host)

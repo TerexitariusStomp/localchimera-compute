@@ -2,7 +2,6 @@
 # resolve, one per line as today's paths; `make lint-layers` fails on one not listed
 # here, `tools/module-map.scm --baseline` records a shrunken set. Empty, it goes.
 governance/acdc-bridge → governance/attestation-ceremony
-governance/credentials → governance/sturdyref-credential
 governance/keri/ipex-policy → governance/pending-recompositions
 governance/keri/ipex-policy → governance/scope-graph
 governance/keri/ipex-policy → governance/sturdyref-credential

@@ -19,7 +19,7 @@
 
 (use-modules (playnet test harness)
              (playnet planner scope root)
-             (playnet governance credentials) (playnet governance scope) (playnet keri acdc) (playnet keri acdc-store)
+             (playnet credentials membership) (playnet keri acdc) (playnet governance scope) (playnet keri acdc) (playnet keri acdc-store)
              (goblins))
 
 (define vat (spawn-vat))

@@ -1,4 +1,4 @@
-;;; away-declaration.scm — a signed declaration, over an away: tag's own text.
+;;; facts/away.scm — a signed declaration, over an away: tag's own text.
 ;;;
 ;;; docs/planning/food/reproduction-of-labour-power.md §2c/§7: the declaration
 ;;; itself needs no proof — a person's word is the floor, and signing raises
@@ -26,7 +26,7 @@
 ;;; (browser-resident Signify) this module does not answer — it only makes
 ;;; verifying one, once it exists, a two-line call rather than a new design.
 
-(define-module (playnet governance away-declaration)
+(define-module (playnet planner facts away)
   #:use-module ((playnet keri citizen-sig)
                 #:select (sign-said verify-said-signature))
   #:export (sign-away-declaration verify-away-declaration))

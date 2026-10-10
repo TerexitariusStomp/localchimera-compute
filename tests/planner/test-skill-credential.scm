@@ -6,7 +6,7 @@
 
 (use-modules (playnet test harness))
 (use-modules )
-(use-modules (playnet governance credentials) (playnet keri acdc))
+(use-modules (playnet credentials work) (playnet keri acdc) (playnet keri acdc))
 (use-modules (srfi srfi-1))
 
 ;;; ════════════════════════════════════════════════════════════════════════════

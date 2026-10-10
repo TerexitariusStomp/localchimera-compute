@@ -1,7 +1,7 @@
 ;;; test-credentials.scm — ACDC constructors + mandate-spec compile
 
 (use-modules (playnet test harness))
-(use-modules (playnet governance credentials) (playnet keri acdc))
+(use-modules (playnet credentials commitments) (playnet credentials delegation) (playnet credentials membership) (playnet credentials registry) (playnet keri acdc) (playnet keri acdc))
 (use-modules (goblins) (goblins utils hashmap))
 
 

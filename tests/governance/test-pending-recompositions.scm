@@ -6,7 +6,7 @@
 ;;; integration test (deferred).
 
 (use-modules (playnet test harness)
-             (playnet governance credentials) (playnet keri acdc)
+             (playnet credentials voting) (playnet keri acdc) (playnet keri acdc)
              (playnet governance pending-recompositions)
              (goblins)
              (srfi srfi-1))

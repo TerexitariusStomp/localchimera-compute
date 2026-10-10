@@ -17,7 +17,7 @@
 (use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness)
              (playnet planner scope root) (playnet planner vf schemas)
-             (playnet governance credentials) (playnet keri acdc) (playnet keri acdc-store)
+             (playnet credentials commitments) (playnet keri acdc) (playnet keri acdc) (playnet keri acdc-store)
              (playnet governance demand-registry)
              (playnet governance demand-bridge)
              (goblins)

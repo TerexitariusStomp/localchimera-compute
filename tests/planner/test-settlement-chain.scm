@@ -12,7 +12,7 @@
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner observation observer) (playnet planner vf schemas))
-(use-modules (playnet governance acdc-bridge) (playnet governance credentials) (playnet keri acdc) (playnet keri acdc-store))
+(use-modules (playnet governance acdc-bridge) (playnet credentials work) (playnet keri acdc) (playnet keri acdc) (playnet keri acdc-store))
 (use-modules (goblins) (goblins vat) (srfi srfi-1))
 
 ;; CONTRIBUTION: recipient-side intent + a fully-satisfying work event (gross).

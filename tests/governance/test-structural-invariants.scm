@@ -3,7 +3,7 @@
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet planner scope root))
-(use-modules (playnet governance credentials) (playnet governance scope) (playnet governance structural-invariants) (playnet keri acdc) (playnet keri acdc-store))
+(use-modules (playnet credentials recomposition) (playnet credentials voting) (playnet credentials work) (playnet keri acdc) (playnet governance scope) (playnet governance structural-invariants) (playnet keri acdc) (playnet keri acdc-store))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap)
              (ice-9 rdelim)
              (srfi srfi-1) (srfi srfi-13))

@@ -24,7 +24,7 @@
 (use-modules ((playnet governance root-lineage) #:select ()))
 (use-modules (playnet test scope)) ; mock-scope-root
 (use-modules (playnet test harness))
-(use-modules (playnet governance ballot-store) (playnet governance credentials) (playnet governance service) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri said-portable) (playnet keri first-person credentials) (playnet keri first-person predicates))
+(use-modules (playnet governance ballot-store) (playnet credentials membership) (playnet credentials recomposition) (playnet keri acdc) (playnet keri first-person credentials) (playnet governance service) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri said-portable) (playnet keri first-person credentials) (playnet keri first-person predicates))
 (use-modules (playnet governance ballot-store))
 (use-modules ((playnet governance keri scope-exchange) #:select (governance-cred->wire)))
 (use-modules (goblins) (goblins vat) (goblins actor-lib methods)

@@ -1,7 +1,7 @@
 ;;; test-custody.scm — Custody-attestation + custody-transfer-commitment ACDCs
 
 (use-modules (playnet test harness))
-(use-modules (playnet governance credentials) (playnet keri acdc))
+(use-modules (playnet credentials custody) (playnet credentials registry) (playnet keri acdc) (playnet keri acdc))
 (use-modules (goblins))
 
 

@@ -16,7 +16,8 @@
 
 (define-module (playnet governance index-oracle)
   #:use-module (srfi srfi-1)
-  #:use-module (playnet governance credentials)
+  #:use-module (playnet credentials work)
+  #:use-module (playnet keri acdc)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
   #:export (^index-oracle spawn-index-oracle observation-value

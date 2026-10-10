@@ -25,7 +25,10 @@
   #:use-module (goblins utils hashmap)
   #:use-module (srfi srfi-1)   ;; fold, lset-intersection, filter-map
   #:use-module (srfi srfi-13)  ;; string-join
-  #:use-module (playnet governance credentials)
+  #:use-module (playnet credentials recomposition)
+  #:use-module (playnet credentials registry)
+  #:use-module (playnet credentials voting)
+  #:use-module (playnet keri acdc)
   #:use-module (playnet utils paths)
   #:use-module (playnet governance scope)
   #:use-module (playnet keri acdc)

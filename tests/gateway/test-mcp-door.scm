@@ -28,7 +28,7 @@
              ((playnet keri crypto-primitives) #:select (keri-crypto-random-bytes ed25519-keypair-public))
              ((playnet keri cesr) #:select (cesr-bytes->qb64))
              
-             ((playnet governance credentials) #:select (make-device-authorization-credential))
+             ((playnet keri first-person credentials) #:select (make-device-authorization-credential))
              (web request) (web response) (web uri)
              (rnrs bytevectors)
              (json) (ice-9 textual-ports)

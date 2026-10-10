@@ -19,7 +19,7 @@
              (playnet keri bridge)
              (playnet keri credentials)
              (playnet governance keri ipex-policy)
-             (playnet governance credentials)
+             (playnet credentials membership)
              (web server)
              (web request)
              (web response)

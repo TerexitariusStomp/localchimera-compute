@@ -21,7 +21,7 @@
 ;;; Run: guile --no-auto-compile -q -L module tests/planner/test-federation-rotation.scm
 
 (use-modules (playnet test harness)
-             (playnet governance credentials) (playnet governance kel-store) (playnet governance scope) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri inception)
+             (playnet credentials membership) (playnet credentials registry) (playnet keri acdc) (playnet governance kel-store) (playnet governance scope) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri inception)
              (playnet gateway federate)
              ((playnet governance kel-store) #:select (spawn-kel-store))
              ((playnet governance sturdyref-credential) #:select (verified-spec sturdyref-credential-end census-credential-goods))

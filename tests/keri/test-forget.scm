@@ -24,9 +24,7 @@
              (playnet keri signify-portable)
              ((playnet keri cesr) #:select (cesr-bytes->qb64))
              ((playnet keri crypto-primitives) #:select (keri-crypto-random-bytes))
-             ((playnet governance credentials)
-              #:select (make-device-authorization-credential cred-said cred-claims
-                        cred-signature cred-schema cred-issuer cred-holder))
+             ((playnet keri acdc) #:select (cred-said cred-claims cred-signature cred-schema cred-issuer cred-holder)) ((playnet keri first-person credentials) #:select (make-device-authorization-credential))
              ((playnet planner knowledge law product) #:select (product-feature feature-doors))
              (playnet identity devices)
              (playnet identity forget)

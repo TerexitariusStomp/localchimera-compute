@@ -6,7 +6,7 @@
 
 (use-modules (playnet test harness))
 (use-modules (playnet deprecated planner))
-(use-modules (playnet governance credentials) (playnet keri acdc))
+(use-modules (playnet credentials work) (playnet keri acdc) (playnet keri acdc))
 (use-modules (srfi srfi-1))
 
 (display "\n── Lift live skill credentials → (holds-skill …) ──\n")
