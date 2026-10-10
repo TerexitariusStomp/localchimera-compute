@@ -21,17 +21,24 @@
           (if (eof-object? f) (reverse acc) (loop (cons f acc))))))))
 
 (define (methods-forms tree)
-  "Every (methods …), (declared-methods OBJECT …) or (home-routed OBJECT ROUTE …) form anywhere under
-TREE, in order, each normalized to (methods clause …)."
+  "Every (methods …), (declared-methods OBJECT …), (declared-methods* OBJECT
+(fragment …) …), (declared-doors OBJECT …) or (home-routed OBJECT ROUTE …)
+form anywhere under TREE, in order, each normalized to (methods clause …).
+The forms that name their object carry it: (OBJECT . (methods clause …));
+a bare `methods` form carries #f."
   (let walk ((t tree) (acc '()))
     (cond
      ((and (pair? t) (eq? (car t) 'methods))
-      (walk (cdr t) (cons t acc)))
-     ((and (pair? t) (eq? (car t) 'declared-methods) (pair? (cdr t)))
-      (walk (cddr t) (cons (cons 'methods (cddr t)) acc)))
+      (walk (cdr t) (cons (cons #f t) acc)))
+     ((and (pair? t) (memq (car t) '(declared-methods declared-doors)) (pair? (cdr t)))
+      (walk (cddr t) (cons (cons (cadr t) (cons 'methods (cddr t))) acc)))
+     ;; (declared-methods* OBJECT (fragment …) clause …): the object's own clauses,
+     ;; composed with fragments declared elsewhere (declared-doors)
+     ((and (pair? t) (eq? (car t) 'declared-methods*) (pair? (cdr t)) (pair? (cddr t)))
+      (walk (cdddr t) (cons (cons (cadr t) (cons 'methods (cdddr t))) acc)))
      ;; (home-routed OBJECT ROUTE clause …): declared-methods behind the one routing function
      ((and (pair? t) (eq? (car t) 'home-routed) (pair? (cdr t)) (pair? (cddr t)))
-      (walk (cdddr t) (cons (cons 'methods (cdddr t)) acc)))
+      (walk (cdddr t) (cons (cons (cadr t) (cons 'methods (cdddr t))) acc)))
      ((pair? t) (walk (cdr t) (walk (car t) acc)))
      (else acc))))
 
@@ -43,14 +50,22 @@ TREE, in order, each normalized to (methods clause …)."
                   (_ #f)))
               (cdr mform)))
 
-(define (object-doors file object-name)
-  "The methods forms in FILE whose first door names identify OBJECT-NAME."
-  (let* ((forms (methods-forms (read-all file)))
-         (pick (lambda (first-door) (find (lambda (m) (assq first-door (door-heads m))) forms))))
-    (door-heads
-     (or (pick (case object-name
-                 ((lobby) 'signup) ((session) 'whoami) ((planner) 'set-personhood-checker!)))
-         (error "protocol-extract: object not found" object-name)))))
+(define (object-forms files object-name)
+  "The methods forms for OBJECT-NAME across FILES: every form that names the
+object, plus — for a bare `methods` form — the one whose first door marks it."
+  (let* ((tagged (append-map (lambda (f) (if (file-exists? f) (methods-forms (read-all f)) '()))
+                             files))
+         (named  (filter-map (lambda (p) (and (eq? (car p) object-name) (cdr p))) tagged))
+         (marker (case object-name
+                   ((lobby) 'signup) ((session) 'whoami) ((planner) 'set-personhood-checker!)))
+         (bare   (filter-map (lambda (p) (and (not (car p)) (assq marker (door-heads (cdr p))) (cdr p)))
+                             tagged)))
+    (let ((forms (append named bare)))
+      (if (null? forms) (error "protocol-extract: object not found" object-name) forms))))
+
+(define (object-doors files object-name)
+  "((name . args) …) for OBJECT-NAME: the union of its forms' heads, in order."
+  (append-map door-heads (object-forms files object-name)))
 
 (define (clause-target name clause)
   "Where a session clause sends its own act: planner (planner! or a send to
@@ -66,18 +81,20 @@ NAME), else self."
 
 (define (session-targets)
   "((name . target) …) for every session door, read off its clause body."
-  (let* ((forms (methods-forms (read-all "module/playnet/gateway/lobby.scm")))
-         (m (find (lambda (m) (assq 'whoami (door-heads m))) forms)))
-    (filter-map (lambda (clause)
-                  (match clause
-                    ((((? symbol? name) . _) . body) (cons name (clause-target name body)))
-                    (_ #f)))
-                (cdr m))))
+  (append-map (lambda (m)
+                (filter-map (lambda (clause)
+                              (match clause
+                                ((((? symbol? name) . _) . body) (cons name (clause-target name body)))
+                                (_ #f)))
+                            (cdr m)))
+              (object-forms (assq-ref %objects 'session) 'session)))
 
+;; An object's doors may be written in more than one file: the object's own
+;; module, and the fragments it composes (declared-doors, identity/doors.scm).
 (define %objects
-  `((lobby   . "module/playnet/gateway/lobby.scm")
-    (session . "module/playnet/gateway/lobby.scm")
-    (planner . "module/playnet/planner/doors/service.scm")))
+  `((lobby   "module/playnet/gateway/lobby.scm" "module/playnet/identity/doors.scm")
+    (session "module/playnet/gateway/lobby.scm" "module/playnet/identity/doors.scm")
+    (planner "module/playnet/planner/doors/service.scm")))
 
 (define (all-doors)
   (append-map (lambda (o) (map (lambda (d) (cons (car o) d)) (object-doors (cdr o) (car o))))

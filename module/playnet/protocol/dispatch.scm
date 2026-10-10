@@ -21,7 +21,9 @@
   #:use-module (goblins actor-lib methods)
   #:use-module (srfi srfi-1)
   #:use-module (ice-9 format)
-  #:export (declared-methods check-declared-heads! heads-drift))
+  #:export (declared-methods declared-methods* declared-doors compose-doors
+            fragment-heads fragment-dispatch
+            check-declared-heads! heads-drift))
 
 (define (heads-drift object heads)
   "The differences between HEADS ((name . args) …) written for OBJECT and the
@@ -65,3 +67,44 @@ declaration: a list of strings, empty when they agree."
      (begin
        (check-declared-heads! 'object '((name . args) ...))
        (methods ((name . args) body ...) ...)))))
+
+;; An object's doors may be written in more than one module: the identity
+;; doors of the lobby and the session live in (playnet identity doors) as
+;; FRAGMENTS, and the object composes them with its own clauses.
+;;
+;;   (declared-doors OBJECT clause …)            a fragment: its heads, with
+;;                                               the `methods` dispatcher of
+;;                                               its clauses
+;;   (declared-methods* OBJECT (fragment …) clause …)
+;;                                               the object: ONE check over
+;;                                               the union of heads, ONE
+;;                                               dispatcher — a message goes
+;;                                               to the fragment whose heads
+;;                                               name it, else to the object's
+;;                                               own clauses
+;;
+;; tools/protocol-extract.scm reads both forms, so the offline lint sees the
+;; same union the boot-time check does.
+(define-syntax declared-doors
+  (syntax-rules ()
+    ((_ object ((name . args) body ...) ...)
+     (cons '((name . args) ...) (methods ((name . args) body ...) ...)))))
+
+(define (fragment-heads f) (car f))
+(define (fragment-dispatch f) (cdr f))
+
+(define (compose-doors fragments own)
+  "The dispatcher of an object: FRAGMENTS (each a declared-doors value) in
+   front of its OWN clauses."
+  (lambda (method . args)
+    (let ((f (find (lambda (fr) (assq method (fragment-heads fr))) fragments)))
+      (apply (if f (fragment-dispatch f) own) method args))))
+
+(define-syntax declared-methods*
+  (syntax-rules ()
+    ((_ object (fragment ...) ((name . args) body ...) ...)
+     (let ((fragments (list fragment ...)))
+       (check-declared-heads! 'object
+                              (append '((name . args) ...)
+                                      (append-map fragment-heads fragments)))
+       (compose-doors fragments (methods ((name . args) body ...) ...))))))
