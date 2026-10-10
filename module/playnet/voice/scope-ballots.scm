@@ -51,8 +51,7 @@
             (updated (hashmap-set per-proposal commune-id stance-bundle))
             (new-cs  (hashmap-set (or commune-stances (hashmap))
                                   proposal-id updated)))
-       (bcom (rebuild members excluded ballots new-cs
-                member-sturdyrefs mycapn-ref acdc-store lineage))))
+       (bcom (rebuild #:commune-stances new-cs))))
 
     ((commune-stances-for proposal-id)
      (hashmap-ref (or commune-stances (hashmap)) proposal-id (hashmap)))
@@ -95,10 +94,7 @@
      (let ((b (open-ballot 'policy proposal-id 'federation description
                            citizen-registry citizen-voice-data
                            #:close-authority gov-sealed?)))
-       (bcom (rebuild members excluded
-                (hashmap-set ballots proposal-id b)
-                commune-stances
-                member-sturdyrefs mycapn-ref acdc-store lineage)
+       (bcom (rebuild #:ballots (hashmap-set ballots proposal-id b))
              b)))
 
     ((open-ballot-for-scope gov-cap proposal-id description
@@ -110,10 +106,7 @@
      (let ((b (open-ballot 'policy proposal-id (list 'scope name) description
                            citizen-registry citizen-voice-data
                            #:close-authority gov-sealed?)))
-       (bcom (rebuild members excluded
-                (hashmap-set ballots proposal-id b)
-                commune-stances
-                member-sturdyrefs mycapn-ref acdc-store lineage)
+       (bcom (rebuild #:ballots (hashmap-set ballots proposal-id b))
              b)))
 
     ;; Close a ballot held by this scope (gov-gated). A single gov-cap

@@ -103,9 +103,7 @@
        ;; its next tick. Guard for test/no-graph mode.
        (let ((g (current-scope-graph)))
          (when g (<- g 'note-parent-link commune-aid scope-aid)))
-       (bcom (rebuild (hashmap-set members commune-id commune-ref)
-                excluded ballots commune-stances
-                member-sturdyrefs mycapn-ref acdc-store lineage))))
+       (bcom (rebuild #:members (hashmap-set members commune-id commune-ref)))))
 
     ((remove-commune gov-cap commune-id)
      (unless (memq kind '(federation universal-commune))
@@ -130,10 +128,9 @@
      (let ((g (current-scope-graph))
            (commune-aid commune-id))
        (when g (<- g 'note-unlink commune-aid scope-aid)))
-     (bcom (rebuild (hashmap-remove members commune-id)
-              excluded ballots commune-stances
-              (and member-sturdyrefs (hashmap-remove member-sturdyrefs commune-id))
-              mycapn-ref acdc-store lineage)))
+     (bcom (rebuild #:members (hashmap-remove members commune-id)
+                    #:member-sturdyrefs (and member-sturdyrefs
+                                             (hashmap-remove member-sturdyrefs commune-id)))))
 
     ;; --- Cross-server: sturdyref-backed remote communes ---
 
@@ -179,10 +176,8 @@
        (maybe-authorize-issuer! commune-aid admitted-at opts)
        (let ((g (current-scope-graph)))
          (when g (<- g 'note-parent-link commune-aid scope-aid)))
-       (bcom (rebuild members excluded ballots commune-stances
-                (hashmap-set (or member-sturdyrefs (hashmap))
-                             commune-id sturdyref-uri)
-                mycapn-ref acdc-store lineage))))
+       (bcom (rebuild #:member-sturdyrefs (hashmap-set (or member-sturdyrefs (hashmap))
+                                                       commune-id sturdyref-uri)))))
 
     ;; The federation on the wire, read off its own store: every member's
     ;; sturdyref credential that stands (issued here, not revoked), and the
@@ -243,9 +238,7 @@
        (<- mycapn-ref 'enliven (string->ocapn-id uri))))
 
     ((store-resolved commune-id commune-ref)
-     (bcom (rebuild (hashmap-set members commune-id commune-ref)
-              excluded ballots commune-stances
-              member-sturdyrefs mycapn-ref acdc-store lineage)))
+     (bcom (rebuild #:members (hashmap-set members commune-id commune-ref))))
 
     ;; --- Cross-scope ACDC discovery (federation pattern) ---
     ((find-commitment-by-id commitment-id)

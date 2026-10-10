@@ -118,34 +118,15 @@
                                    (cons "rot"  rot-alist)
                                    (cons "sigs" (vector sig)))))
              ($ kel-store 'append rot-event)
-             (bcom (^scope bcom name kind scope-aid
-                           members member-sturdyrefs excluded
-                           ballots commune-stances
-                           gov-seal gov-sealed?
-                           planning-seal planning-sealed?
-                           delegate-seal delegate-sealed?
-                           member-seal member-sealed?
-                           acdc-store mycapn-ref scope-root-ref lineage
-                           keri-backend
-                           new-kp new-nkp
-                           kel-store)))))))
+             (bcom (rebuild #:keypair new-kp #:next-keypair new-nkp)))))))
 
     ((set-keri-backend backend)
      ;; Late-bind the KERI backend (alist of create-scope-aid / create-group /
      ;; rotate-keys / create-aid).
-     (bcom (^scope bcom name kind scope-aid
-                   members member-sturdyrefs excluded
-                   ballots commune-stances
-                   gov-seal gov-sealed?
-                   planning-seal planning-sealed?
-                   delegate-seal delegate-sealed?
-                   member-seal member-sealed?
-                   acdc-store mycapn-ref scope-root-ref lineage
-                   backend keypair next-keypair kel-store)))
+     (bcom (rebuild #:keri-backend backend)))
 
     ((keri-backend) keri-backend)
 
     ((set-lineage new-lineage)
      ;; Late-bind lineage (used by recover-lineage from recomposition ACDCs).
-     (bcom (rebuild members excluded ballots commune-stances
-              member-sturdyrefs mycapn-ref acdc-store new-lineage))))))
+     (bcom (rebuild #:lineage new-lineage))))))

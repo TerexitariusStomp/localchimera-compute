@@ -551,7 +551,7 @@
 ;;; (bcom (rebuild …)) as before.
 
 (define-record-type <scope-ctx>
-  (make-scope-ctx bcom name kind scope-aid members member-sturdyrefs excluded ballots commune-stances gov-seal gov-sealed? planning-seal planning-sealed? delegate-seal delegate-sealed? member-seal member-sealed? acdc-store mycapn-ref scope-root-ref lineage keri-backend keypair next-keypair kel-store rebuild scope-own-aic-said maybe-authorize-issuer! live-custody-attestations custody-attestation-for commitment-fulfilled? spec-matches? outstanding-commitments-of-spec)
+  (%make-scope-ctx bcom name kind scope-aid members member-sturdyrefs excluded ballots commune-stances gov-seal gov-sealed? planning-seal planning-sealed? delegate-seal delegate-sealed? member-seal member-sealed? acdc-store mycapn-ref scope-root-ref lineage keri-backend keypair next-keypair kel-store rebuild scope-own-aic-said maybe-authorize-issuer! live-custody-attestations custody-attestation-for commitment-fulfilled? spec-matches? outstanding-commitments-of-spec)
   scope-ctx?
   (bcom scope-ctx-bcom)
   (name scope-ctx-name)
@@ -587,6 +587,10 @@
   (spec-matches? scope-ctx-spec-matches?)
   (outstanding-commitments-of-spec scope-ctx-outstanding-commitments-of-spec))
 
+(define* (make-scope-ctx #:key bcom name kind scope-aid members member-sturdyrefs excluded ballots commune-stances gov-seal gov-sealed? planning-seal planning-sealed? delegate-seal delegate-sealed? member-seal member-sealed? acdc-store mycapn-ref scope-root-ref lineage keri-backend keypair next-keypair kel-store rebuild scope-own-aic-said maybe-authorize-issuer! live-custody-attestations custody-attestation-for commitment-fulfilled? spec-matches? outstanding-commitments-of-spec)
+  "The actor's fields and helpers, each by name."
+  (%make-scope-ctx bcom name kind scope-aid members member-sturdyrefs excluded ballots commune-stances gov-seal gov-sealed? planning-seal planning-sealed? delegate-seal delegate-sealed? member-seal member-sealed? acdc-store mycapn-ref scope-root-ref lineage keri-backend keypair next-keypair kel-store rebuild scope-own-aic-said maybe-authorize-issuer! live-custody-attestations custody-attestation-for commitment-fulfilled? spec-matches? outstanding-commitments-of-spec))
+
 (define-syntax with-scope-ctx
   (lambda (x)
     (syntax-case x ()
@@ -613,40 +617,80 @@
   (set! *scope-fragments* makers))
 
 (define-actor (^scope bcom
+                      #:key
                       name
                       kind                  ;; 'commune | 'federation | 'universal-commune
                       scope-aid             ;; AID string
-                      members               ;; hashmap member-id → ref-or-#f
-                      member-sturdyrefs     ;; hashmap (federation-only)
-                      excluded              ;; hashmap (commune-only)
-                      ballots               ;; hashmap proposal-id → ballot-ref
-                      commune-stances       ;; hashmap (federation-only)
+                      (members (hashmap))   ;; member-id → ref-or-#f
+                      (member-sturdyrefs #f) ;; hashmap (federation-only)
+                      (excluded #f)         ;; hashmap (commune-only)
+                      (ballots (hashmap))   ;; proposal-id → ballot-ref
+                      (commune-stances #f)  ;; hashmap (federation-only)
                       gov-seal       gov-sealed?
                       planning-seal  planning-sealed?
                       delegate-seal  delegate-sealed?
-                      member-seal    member-sealed?  ;; nullable for federations
-                      acdc-store
-                      mycapn-ref            ;; for federation sturdyref resolution
-                      scope-root-ref        ;; for commune economic substrate
-                      lineage               ;; list of ancestor scope-AIDs
-                      keri-backend          ;; alist for live KERI; #f = synthetic
-                      keypair               ;; scope's own Ed25519 keypair, host-isolated; #f = synthetic
-                      next-keypair          ;; pre-rotated next keypair; #f = synthetic
-                      kel-store)            ;; ^kel-store actor ref; #f = synthetic
-  #:version 4
+                      (member-seal #f) (member-sealed? #f) ;; #f for federations
+                      (acdc-store #f)
+                      (mycapn-ref #f)       ;; for federation sturdyref resolution
+                      (scope-root-ref #f)   ;; for commune economic substrate
+                      (lineage '())         ;; list of ancestor scope-AIDs
+                      (keri-backend #f)     ;; alist for live KERI; #f = synthetic
+                      (keypair #f)          ;; scope's own Ed25519 keypair, host-isolated; #f = synthetic
+                      (next-keypair #f)     ;; pre-rotated next keypair; #f = synthetic
+                      (kel-store #f))       ;; ^kel-store actor ref; #f = synthetic
+  #:version 5
 
-  (define (rebuild new-members new-excluded new-ballots new-commune-stances
-                   new-member-sturdyrefs new-mycapn-ref
-                   new-acdc-store new-lineage)
-    (^scope bcom name kind scope-aid
-            new-members new-member-sturdyrefs new-excluded
-            new-ballots new-commune-stances
-            gov-seal gov-sealed?
-            planning-seal planning-sealed?
-            delegate-seal delegate-sealed?
-            member-seal member-sealed?
-            new-acdc-store new-mycapn-ref scope-root-ref new-lineage
-            keri-backend keypair next-keypair kel-store))
+  ;; the same scope with the named fields changed: a clause that changes one
+  ;; returns (bcom (rebuild #:field value …)) and says nothing of the rest
+  (define* (rebuild #:key (name name)
+                    (kind kind)
+                    (scope-aid scope-aid)
+                    (members members)
+                    (member-sturdyrefs member-sturdyrefs)
+                    (excluded excluded)
+                    (ballots ballots)
+                    (commune-stances commune-stances)
+                    (gov-seal gov-seal)
+                    (gov-sealed? gov-sealed?)
+                    (planning-seal planning-seal)
+                    (planning-sealed? planning-sealed?)
+                    (delegate-seal delegate-seal)
+                    (delegate-sealed? delegate-sealed?)
+                    (member-seal member-seal)
+                    (member-sealed? member-sealed?)
+                    (acdc-store acdc-store)
+                    (mycapn-ref mycapn-ref)
+                    (scope-root-ref scope-root-ref)
+                    (lineage lineage)
+                    (keri-backend keri-backend)
+                    (keypair keypair)
+                    (next-keypair next-keypair)
+                    (kel-store kel-store))
+    (^scope bcom
+            #:name name
+            #:kind kind
+            #:scope-aid scope-aid
+            #:members members
+            #:member-sturdyrefs member-sturdyrefs
+            #:excluded excluded
+            #:ballots ballots
+            #:commune-stances commune-stances
+            #:gov-seal gov-seal
+            #:gov-sealed? gov-sealed?
+            #:planning-seal planning-seal
+            #:planning-sealed? planning-sealed?
+            #:delegate-seal delegate-seal
+            #:delegate-sealed? delegate-sealed?
+            #:member-seal member-seal
+            #:member-sealed? member-sealed?
+            #:acdc-store acdc-store
+            #:mycapn-ref mycapn-ref
+            #:scope-root-ref scope-root-ref
+            #:lineage lineage
+            #:keri-backend keri-backend
+            #:keypair keypair
+            #:next-keypair next-keypair
+            #:kel-store kel-store))
 
   ;; First-Person re-anchoring: when admission opts in with
   ;; 'authorize-issuer, bless the commune as an authorized PHC issuer under
@@ -738,7 +782,39 @@
         '()))
 
 
-  (let ((ctx (make-scope-ctx bcom name kind scope-aid members member-sturdyrefs excluded ballots commune-stances gov-seal gov-sealed? planning-seal planning-sealed? delegate-seal delegate-sealed? member-seal member-sealed? acdc-store mycapn-ref scope-root-ref lineage keri-backend keypair next-keypair kel-store rebuild scope-own-aic-said maybe-authorize-issuer! live-custody-attestations custody-attestation-for commitment-fulfilled? spec-matches? outstanding-commitments-of-spec)))
+  (let ((ctx (make-scope-ctx #:bcom bcom
+                             #:name name
+                             #:kind kind
+                             #:scope-aid scope-aid
+                             #:members members
+                             #:member-sturdyrefs member-sturdyrefs
+                             #:excluded excluded
+                             #:ballots ballots
+                             #:commune-stances commune-stances
+                             #:gov-seal gov-seal
+                             #:gov-sealed? gov-sealed?
+                             #:planning-seal planning-seal
+                             #:planning-sealed? planning-sealed?
+                             #:delegate-seal delegate-seal
+                             #:delegate-sealed? delegate-sealed?
+                             #:member-seal member-seal
+                             #:member-sealed? member-sealed?
+                             #:acdc-store acdc-store
+                             #:mycapn-ref mycapn-ref
+                             #:scope-root-ref scope-root-ref
+                             #:lineage lineage
+                             #:keri-backend keri-backend
+                             #:keypair keypair
+                             #:next-keypair next-keypair
+                             #:kel-store kel-store
+                             #:rebuild rebuild
+                             #:scope-own-aic-said scope-own-aic-said
+                             #:maybe-authorize-issuer! maybe-authorize-issuer!
+                             #:live-custody-attestations live-custody-attestations
+                             #:custody-attestation-for custody-attestation-for
+                             #:commitment-fulfilled? commitment-fulfilled?
+                             #:spec-matches? spec-matches?
+                             #:outstanding-commitments-of-spec outstanding-commitments-of-spec)))
     (compose-doors
      (map (lambda (make) (make ctx)) (scope-fragments))
      (methods
@@ -785,13 +861,11 @@
 
     ;; --- Recovery hook: rebind acdc-store post-construction ---
     ((set-acdc-store new-store)
-     (bcom (rebuild members excluded ballots commune-stances
-              member-sturdyrefs mycapn-ref new-store lineage)))
+     (bcom (rebuild #:acdc-store new-store)))
 
     ;; --- Cross-server: bind mycapn for sturdyref resolution ---
     ((set-mycapn ref)
-     (bcom (rebuild members excluded ballots commune-stances
-              member-sturdyrefs ref acdc-store lineage)))
+     (bcom (rebuild #:mycapn-ref ref)))
 
     ;; --- Recovery hook: register an already-reconstructed ballot ---
     ;; recover-ballot-state (federation/rebuild.scm) rebuilds a ^ballot
@@ -805,10 +879,7 @@
     ;; gate — recovery-only, same shape as set-acdc-store/set-mycapn
     ;; above, not a citizen-facing mutation.
     ((register-ballot! proposal-id ballot-ref)
-     (bcom (rebuild members excluded
-              (hashmap-set ballots proposal-id ballot-ref)
-              commune-stances
-              member-sturdyrefs mycapn-ref acdc-store lineage)))
+     (bcom (rebuild #:ballots (hashmap-set ballots proposal-id ballot-ref))))
 
     ;; --- Common reads ---
     ((members) members)
@@ -1053,25 +1124,24 @@
                         (make-endorsement-authority)
                         (values #f #f #f)))
                   (lambda (member-seal _mu member-sealed?)
-                    (let ((federation-like? (memq kind '(federation universal-commune)))
+                    (let* ((federation-like? (memq kind '(federation universal-commune)))
                           (new-ref
-                           (spawn ^scope name kind effective-aid
-                                  members
-                                  (if (memq kind '(federation universal-commune))
-                                      (hashmap) #f)  ;; sturdyrefs
-                                  (if (eq? kind 'commune) (hashmap) #f)     ;; excluded
-                                  (hashmap)                                  ;; ballots
-                                  (if (memq kind '(federation universal-commune))
-                                      (hashmap) #f)  ;; commune-stances
-                                  gov-seal      gov-sealed?
-                                  planning-seal planning-sealed?
-                                  delegate-seal delegate-sealed?
-                                  member-seal   member-sealed?
-                                  effective-acdc-store mycapn-ref scope-root-ref
-                                  lineage keri-backend
-                                  (or keypair      minted-kp)
-                                  (or next-keypair minted-nkp)
-                                  effective-kel-store)))
+                           (spawn ^scope
+                                  #:name name #:kind kind #:scope-aid effective-aid
+                                  #:members members
+                                  #:member-sturdyrefs (and federation-like? (hashmap))
+                                  #:excluded (and (eq? kind 'commune) (hashmap))
+                                  #:commune-stances (and federation-like? (hashmap))
+                                  #:gov-seal gov-seal           #:gov-sealed? gov-sealed?
+                                  #:planning-seal planning-seal #:planning-sealed? planning-sealed?
+                                  #:delegate-seal delegate-seal #:delegate-sealed? delegate-sealed?
+                                  #:member-seal member-seal     #:member-sealed? member-sealed?
+                                  #:acdc-store effective-acdc-store
+                                  #:mycapn-ref mycapn-ref #:scope-root-ref scope-root-ref
+                                  #:lineage lineage #:keri-backend keri-backend
+                                  #:keypair (or keypair minted-kp)
+                                  #:next-keypair (or next-keypair minted-nkp)
+                                  #:kel-store effective-kel-store)))
                       ;; Persist the kind tag and KERIA alias on disk so
                       ;; scope-recovery reads them at next boot — and so a
                       ;; tarball of <state>/scopes/<aid>/ is the complete

@@ -81,10 +81,10 @@
 ;;; resulting <materialized-host> is appended to hosts.scm.
 
 (define-record-type <in-flight-entry>
-  (make-in-flight-entry name state invoice-id payment-uri payment-currency
-                        swap-id swap-provider swap-deposit-name
-                        machine-id ipv4 ssh-key-pub
-                        budget-atomic last-error)
+  (%make-in-flight-entry name state invoice-id payment-uri payment-currency
+                         swap-id swap-provider swap-deposit-name
+                         machine-id ipv4 ssh-key-pub
+                         budget-atomic last-error)
   in-flight-entry?
   (name              in-flight-entry-name)              ; string
   (state             in-flight-entry-state)             ; symbol
@@ -116,27 +116,41 @@
         (in-flight-entry-budget-atomic e)
         (in-flight-entry-last-error e)))
 
+(define* (make-in-flight-entry name state
+                               #:key (invoice-id #f) (payment-uri #f) (payment-currency #f)
+                                     (swap-id #f) (swap-provider #f) (swap-deposit-name #f)
+                                     (machine-id #f) (ipv4 #f) (ssh-key-pub #f)
+                                     (budget-atomic 0) (last-error #f))
+  "An entry by name: what a stage knows, the rest #f until a later stage fills it."
+  (%make-in-flight-entry name state invoice-id payment-uri payment-currency
+                         swap-id swap-provider swap-deposit-name
+                         machine-id ipv4 ssh-key-pub budget-atomic last-error))
+
 (define (list->entry lst)
   (match lst
     ;; v3: with swap fields
     (('in-flight-v3 name state invoice-id payment-uri currency
                     swap-id swap-prov swap-dep-name
                     machine-id ipv4 ssh-key budget-atomic last-error)
-     (make-in-flight-entry name state invoice-id payment-uri currency
-                           swap-id swap-prov swap-dep-name
-                           machine-id ipv4 ssh-key budget-atomic last-error))
+     (make-in-flight-entry name state #:invoice-id invoice-id #:payment-uri payment-uri
+                           #:payment-currency currency
+                           #:swap-id swap-id #:swap-provider swap-prov #:swap-deposit-name swap-dep-name
+                           #:machine-id machine-id #:ipv4 ipv4 #:ssh-key-pub ssh-key
+                           #:budget-atomic budget-atomic #:last-error last-error))
     ;; v2: with currency, no swap fields
     (('in-flight name state invoice-id payment-uri currency
                  machine-id ipv4 ssh-key budget-atomic last-error)
-     (make-in-flight-entry name state invoice-id payment-uri currency
-                           #f #f #f
-                           machine-id ipv4 ssh-key budget-atomic last-error))
+     (make-in-flight-entry name state #:invoice-id invoice-id #:payment-uri payment-uri
+                           #:payment-currency currency
+                           #:machine-id machine-id #:ipv4 ipv4 #:ssh-key-pub ssh-key
+                           #:budget-atomic budget-atomic #:last-error last-error))
     ;; v1: no currency, no swap fields
     (('in-flight name state invoice-id payment-uri
                  machine-id ipv4 ssh-key budget-atomic last-error)
-     (make-in-flight-entry name state invoice-id payment-uri 'xmr
-                           #f #f #f
-                           machine-id ipv4 ssh-key budget-atomic last-error))
+     (make-in-flight-entry name state #:invoice-id invoice-id #:payment-uri payment-uri
+                           #:payment-currency 'xmr
+                           #:machine-id machine-id #:ipv4 ipv4 #:ssh-key-pub ssh-key
+                           #:budget-atomic budget-atomic #:last-error last-error))
     (_ (error "list->entry: bad shape" lst))))
 
 (define* (entry-with e
@@ -155,7 +169,7 @@
                      (last-error        'unchanged))
   (define (keep new current)
     (if (eq? new 'unchanged) current new))
-  (make-in-flight-entry
+  (%make-in-flight-entry
    (in-flight-entry-name e)
    (or state (in-flight-entry-state e))
    (keep invoice-id        (in-flight-entry-invoice-id e))
@@ -659,10 +673,9 @@ provider is the sentinel \"auto\", round-robin through healthy providers."
         (lambda (inv-id uri currency amount)
           (log-line logger "[~a] invoice ~a created (~a), uri=~a"
                     name inv-id currency uri)
-          (make-in-flight-entry
-           name 'invoice-pending inv-id uri currency
-           #f #f #f    ; swap-id, swap-provider, swap-deposit-name
-           #f #f ssh-key-pub 0 #f)))))
+          (make-in-flight-entry name 'invoice-pending
+                                #:invoice-id inv-id #:payment-uri uri #:payment-currency currency
+                                #:ssh-key-pub ssh-key-pub)))))
 
   (define (handle-invoice-pending entry)
     "Parse the invoice, dispatch payment by currency."
@@ -946,11 +959,9 @@ as a swap-status outcome and the next tick acts on it."
                   (desired-host-name host) key args)
         (if entry
             (entry-with entry #:last-error (format #f "~a: ~a" key args))
-            (make-in-flight-entry (desired-host-name host)
-                                  'new #f #f #f
-                                  #f #f #f  ; swap fields
-                                  #f #f ssh-key-pub 0
-                                  (format #f "~a: ~a" key args))))))
+            (make-in-flight-entry (desired-host-name host) 'new
+                                  #:ssh-key-pub ssh-key-pub
+                                  #:last-error (format #f "~a: ~a" key args))))))
 
   (define (emit-fleet-changed! names)
     (catch #t

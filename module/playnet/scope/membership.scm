@@ -79,10 +79,7 @@
          ($ acdc-store 'issue
             (make-exclusion-credential scope-aid aid name excluded-at
                                        #:signing-keypair keypair)))
-       (bcom (rebuild members
-                (hashmap-set (or excluded (hashmap)) aid #t)
-                ballots commune-stances
-                member-sturdyrefs mycapn-ref acdc-store lineage))))
+       (bcom (rebuild #:excluded (hashmap-set (or excluded (hashmap)) aid #t)))))
 
     ((reinstate-member gov-cap aid)
      (unless (eq? kind 'commune)
@@ -100,10 +97,7 @@
                         (equal? (cred-claim c 'commune) name)))
                  ($ acdc-store 'by-issuer scope-aid))))
          (for-each (lambda (c) ($ acdc-store 'revoke (cred-said c))) matches)))
-     (bcom (rebuild members
-              (and excluded (hashmap-remove excluded aid))
-              ballots commune-stances
-              member-sturdyrefs mycapn-ref acdc-store lineage)))
+     (bcom (rebuild #:excluded (and excluded (hashmap-remove excluded aid)))))
 
     ((admit-member gov-cap aid . rest)
      (unless (eq? kind 'commune)

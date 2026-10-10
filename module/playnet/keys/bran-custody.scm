@@ -153,8 +153,8 @@
   ;; convention, so a custodian can restore itself from disk alone.
   (string-append (custodian-share-path subject-aid holder-aid) ".meta"))
 
-(define* (spawn-bran-custodian holder-aid subject-aid index threshold share-bv
-                               #:key (durable? #f))
+(define* (spawn-bran-custodian holder-aid subject-aid
+                               #:key (index #f) (threshold #f) (share-bv #f) (durable? #f))
   "Spawn an active custodian actor wrapping one Shamir share of
    SUBJECT-AID's bran, held on behalf of HOLDER-AID.
 
@@ -162,9 +162,9 @@
    keyed by THIS PROCESS's own PLAYNET_VAULT_KEY — see custodian-share-path's
    note on why that matters for the k-of-n trust property) and written to
    disk immediately, alongside a small plaintext INDEX/THRESHOLD sidecar.
-   Pass SHARE-BV = #f (with DURABLE? #t) to restore an already-persisted
-   custodian instead of creating a fresh one — INDEX/THRESHOLD are then
-   read back from the sidecar rather than required from the caller."
+   A fresh custodian takes its SHARE-BV, INDEX and THRESHOLD; a restore
+   (DURABLE? #t and no share) reads INDEX and THRESHOLD back from the
+   sidecar."
   (cond
    (share-bv
     (when durable?
@@ -193,7 +193,8 @@
            (let ((idx      (car share))
                  (k        (cadr share))
                  (share-bv (caddr share)))
-             (spawn-bran-custodian holder subject-aid idx k share-bv #:durable? durable?)))
+             (spawn-bran-custodian holder subject-aid #:index idx #:threshold k
+                                   #:share-bv share-bv #:durable? durable?)))
          share-holder-aids
          shares)))
 
@@ -201,7 +202,7 @@
   "Restore a previously-durable ^bran-custodian from
    (custodian-share-path SUBJECT-AID HOLDER-AID) on this host. Errors if
    nothing was ever persisted there (custodian-meta-path missing)."
-  (spawn-bran-custodian holder-aid subject-aid #f #f #f #:durable? #t))
+  (spawn-bran-custodian holder-aid subject-aid #:durable? #t))
 
 (define (reconstitute-bran-from-custodians custodian-refs threshold)
   "Query each custodian for its share and Shamir-combine ≥THRESHOLD.
