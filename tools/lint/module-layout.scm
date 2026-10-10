@@ -80,7 +80,7 @@
 
  ;; ── rank 7: what a caller reaches, and the channels ──
  (stays "doors" 7 "what a caller reaches: the lobby and the session, the planner's reads, the identity doors, the governance doors as fragments, the door declarations, HTTP and MCP")
- (stays "gateway" 7 "the gateway's services: presence, mailboxes, terminal, the LLM service, the HTTP listener, dedupe, evidence, allotment, the corpus service")
+ (stays "gateway" 7 "the gateway's services: presence, mailboxes, terminal, the LLM service, the HTTP listener, evidence, allotment, the corpus service")
  (stays "interface" 7 "the chat channels: Matrix, Telegram, email, the browser, the router")
  (stays "notify" 7 "notifications: recipients, the registry, rendering, the router")
  (stays "push" 7 "web push: the adapter, VAPID, subscriptions, templates")
