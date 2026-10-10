@@ -99,6 +99,8 @@ run_suite "Contact points (user-held, gateway-custodied)" "test-contact-point.sc
 run_suite "Open-terminal/get-mailbox gated on a live PHC" "test-open-terminal-mailbox-gate.scm"
 run_suite "rotate-keys: real build-rot SAID, chained, signed by the pre-committed next-key" "test-rotate-keys-signing.scm"
 run_suite "dedupe-store: opId + gateway dedupe (offline-outbox.md phase 1)" "tests/gateway/test-dedupe-store.scm"
+run_suite "Temporary socialization (custody moves, the right stays)" "test-temporary-socialization.scm"
+run_suite "Socialization: a flat contribution clause" "test-socialization-contribution.scm"
 
 # ── Summary ──────────────────────────────────────────────────────────────────
 
