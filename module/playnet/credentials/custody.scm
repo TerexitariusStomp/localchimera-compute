@@ -22,13 +22,7 @@
   "playnet-custody-transfer-commitment/v1")
 (define *schema-playnet-reversion-attestation*   "playnet-reversion-attestation/v1")
 
-
-(define* (make-custody-attestation-credential
-          issuing-authority-aid custodian-aid resource-spec qty
-          #:key (valid-from #f) (valid-until #f) (supersedes #f)
-          (movable #f) (return-to #f) (condition-floor #f) (resource #f)
-          (qty-unit #f) (kind #f) (ref #f) (eligible #f)
-          (signing-keypair #f) (multisig-signers #f))
+(define-credential (make-custody-attestation-credential issuing-authority-aid custodian-aid resource-spec qty)
   "Custody-attestation ACDC: ISSUING-AUTHORITY-AID attests that
    CUSTODIAN-AID is the current steward of QTY of RESOURCE-SPEC.
 
@@ -83,129 +77,22 @@
    custodian can hand custody on. It holds for both flows, since a
    scope's custody chain is self-attested (issuer == issuee == scope)
    before any transfer."
-  (let ((edges (if supersedes
-                   (list (cons 'supersedes
-                               (make-edge supersedes
-                                          #:operator 'I2I
-                                          #:schema *schema-playnet-custody-attestation*)))
-                   '())))
-    (make-credential *schema-playnet-custody-attestation*
-                     issuing-authority-aid custodian-aid
-                     (let* ((base (list (cons 'custodian-aid  custodian-aid)
-                                        (cons 'resource-spec resource-spec)
-                                        (cons 'qty           qty)
-                                        (cons 'valid-from    valid-from)
-                                        (cons 'valid-until   valid-until)
-                                        (cons 'issued-by     issuing-authority-aid)))
-                            ;; optional grant metadata — each emitted only when set, so
-                            ;; a grant that uses none keeps the exact SAID it had before
-                            (cl base)
-                            (cl (if movable         (cons (cons 'movable movable) cl) cl))
-                            (cl (if return-to       (cons (cons 'return-to return-to) cl) cl))
-                            (cl (if condition-floor (cons (cons 'condition-floor condition-floor) cl) cl))
-                            (cl (if resource        (cons (cons 'resource-id resource) cl) cl))
-                            (cl (if qty-unit        (cons (cons 'qty-unit qty-unit) cl) cl))
-                            (cl (if kind            (cons (cons 'kind kind) cl) cl))
-                            ;; REF (append-only, emit-when-set — SAID-stable
-                            ;; for every grant minted before it existed): a
-                            ;; caller nonce distinguishing two same-termed
-                            ;; grants. Without it, recall-then-relend with
-                            ;; identical terms rebuilt the identical SAID,
-                            ;; and the revoked copy swallowed the re-issue —
-                            ;; the wire answered 'ok while the grant stayed
-                            ;; dead. Revocation stays append-only on purpose
-                            ;; (the old signature verifies forever, so
-                            ;; un-revoke-on-reissue would let anyone replay a
-                            ;; recalled grant back to life); a fresh ref is
-                            ;; the correct way to lend again.
-                            (cl (if ref             (cons (cons 'ref ref) cl) cl))
-                            ;; ELIGIBLE (append-only, emit-when-set — SAID-stable
-                            ;; for every grant minted before it existed): the
-                            ;; owner's steward rule, a filter-rule expression
-                            ;; (matching/filter-rule.scm) carried as the verbatim
-                            ;; JSON string the grantor signed. It bounds WHO may
-                            ;; be assigned to work drawing on this grant, the way
-                            ;; mandate-spec bounds a delegate's ballot — and like
-                            ;; every filter-rule it fails CLOSED: a clause the
-                            ;; evaluator does not know denies.
-                            (cl (if eligible        (cons (cons 'eligible eligible) cl) cl)))
-                       cl)
-                     edges
-                     #:signing-keypair signing-keypair
-                     #:multisig-signers multisig-signers)))
+  *schema-playnet-custody-attestation*
+  #:key ((valid-from #f) (valid-until #f) (supersedes #f) (movable #f) (return-to #f) (condition-floor #f) (resource #f) (qty-unit #f) (kind #f) (ref #f) (eligible #f))
+  #:signed (keypair multisig)
+  #:claims ((? eligible) (? ref) (? kind) (? qty-unit) (? resource-id resource) (? condition-floor) (? return-to) (? movable)
+            custodian-aid resource-spec qty valid-from valid-until (issued-by issuing-authority-aid))
+  #:edges ((? supersedes supersedes I2I *schema-playnet-custody-attestation*)))
 
-(define* (make-ownership-attestation-credential
-          owner-aid resource-id resource-spec
-          #:key (kind "declared") (holder #f) (valid-from #f) (valid-until #f)
-          (qty #f) (qty-unit #f) (ref #f) (supersedes #f) (stake #f)
-          (signing-keypair #f) (multisig-signers #f))
-  "Ownership-attestation ACDC: the TITLE claim behind a declared means,
-   as a first-class credential. Custody's sibling on the other side of
-   the rights/custody split: custody says who stewards a thing now,
-   this says whose claim on its congealed labour stands
-   (docs/common-property.typ).
-
-   KIND \"declared\" is a self-assertion: issuer = holder = the owner.
-   Self-issuance is the honest form of what declare-means already does —
-   the signature makes the claim non-repudiable, revocable, and a
-   subject others can attest or contest; it does not make it TRUE, which
-   is what the auditor's ownership-coherence check and, later, the
-   governed passage exist for. A future passage lands as KIND
-   \"passage\": a superseding attestation whose issuer is the old owner
-   and whose holder is the receiving scope — title moving as a chain,
-   exactly custody-transfer's shape.
-
-   QTY/QTY-UNIT: optional — the resource's own measure is the default
-   truth, and a standing title stores no derived quantities (the skill
-   credential's discipline). EMISSION, precisely (it is SAID-load-bearing):
-   `valid-from` and `kind` are emitted UNCONDITIONALLY — #f and the
-   \"declared\" default included — exactly as this constructor always has;
-   only `valid-until`/`qty`/`qty-unit` are emitted when set. Do not
-   \"align\" valid-from with valid-until: making it conditional would
-   silently re-SAID every existing bare title (a #f entry in the claims
-   alist IS SAID material — said-portable.scm).
-
-   SUPERSEDES: SAID of the prior ownership attestation this replaces
-   (I2I — only the titled owner passes title on). STAKE: SAID of an
-   auditor's SNLT stake attestation (NI2I) — the ℓ_own⁰ edge the
-   governed-passage design names; reserved, unused today."
-  (let* ((edges '())
-         (edges (if stake
-                    (cons (cons 'stake (make-edge stake #:operator 'NI2I))
-                          edges)
-                    edges))
-         (edges (if supersedes
-                    (cons (cons 'supersedes
-                                (make-edge supersedes
-                                           #:operator 'I2I
-                                           #:schema *schema-playnet-ownership-attestation*))
-                          edges)
-                    edges)))
-    (make-credential *schema-playnet-ownership-attestation*
-                     owner-aid (or holder owner-aid)   ; passage names the scope
-                     ;; base emits valid-from/kind unconditionally (#f and
-                     ;; default included) — historical, and therefore frozen:
-                     ;; see the docstring's EMISSION note before touching this
-                     (let* ((base (list (cons 'resource-id   resource-id)
-                                        (cons 'resource-spec resource-spec)
-                                        (cons 'kind          kind)
-                                        (cons 'valid-from    valid-from)
-                                        (cons 'issued-by     owner-aid)))
-                            (cl base)
-                            (cl (if valid-until (cons (cons 'valid-until valid-until) cl) cl))
-                            (cl (if qty         (cons (cons 'qty qty) cl) cl))
-                            (cl (if qty-unit    (cons (cons 'qty-unit qty-unit) cl) cl))
-                            ;; REF (append-only, emit-when-set): the caller
-                            ;; nonce that lets a disowned title be asserted
-                            ;; anew — identical terms rebuilt the identical
-                            ;; SAID, the revoked copy swallowed the re-issue,
-                            ;; and title-permits? then locked the owner out
-                            ;; of their own resource forever
-                            (cl (if ref         (cons (cons 'ref ref) cl) cl)))
-                       cl)
-                     edges
-                     #:signing-keypair signing-keypair
-                     #:multisig-signers multisig-signers)))
+(define-credential (make-ownership-attestation-credential owner-aid resource-id resource-spec)
+  "declared"
+  *schema-playnet-ownership-attestation*
+  #:key ((kind "declared") (holder #f) (valid-from #f) (valid-until #f) (qty #f) (qty-unit #f) (ref #f) (supersedes #f) (stake #f))
+  #:signed (keypair multisig)
+  #:holder (or holder owner-aid)
+  #:claims ((? ref) (? qty-unit) (? qty) (? valid-until) resource-id resource-spec kind valid-from (issued-by owner-aid))
+  #:edges ((? supersedes supersedes I2I *schema-playnet-ownership-attestation*) (? stake stake NI2I #f))
+  #:index (resource-id))
 
 (define* (make-custody-transfer-commitment-credential
           from-scope-aid to-scope-aid resource-spec qty
@@ -269,35 +156,18 @@
                      #:signing-keypair signing-keypair
                      #:multisig-signers multisig-signers)))
 
-(define* (make-reversion-attestation-credential
-          authority-aid default-custodian-aid
-          resource-spec qty expired-attestation-said
-          #:key (effective-at #f) (signing-keypair #f))
+(define-credential (make-reversion-attestation-credential authority-aid default-custodian-aid resource-spec qty expired-attestation-said)
   "Issued by the half-life watcher when a custody-attestation expires
    without renewal. Credits a configured DEFAULT-CUSTODIAN; carries a
    `reverted-from` edge to the expired SAID. SIGNING-KEYPAIR optional
    for KERI portability."
-  (let ((edges
-         (list (cons 'reverted-from
-                     (make-edge expired-attestation-said
-                                #:operator 'NI2I
-                                #:schema
-                                *schema-playnet-custody-attestation*)))))
-    (make-credential *schema-playnet-reversion-attestation*
-                     authority-aid default-custodian-aid
-                     (list (cons 'custodian-aid       default-custodian-aid)
-                           (cons 'resource-spec      resource-spec)
-                           (cons 'qty                qty)
-                           (cons 'valid-from         (or effective-at
-                                                          (iso-utc-now)))
-                           (cons 'valid-until        #f)
-                           (cons 'issued-by          authority-aid)
-                           (cons 'reverted-from-said expired-attestation-said))
-                     edges
-                     #:signing-keypair signing-keypair)))
+  *schema-playnet-reversion-attestation*
+  #:key ((effective-at #f))
+  #:signed (keypair)
+  #:claims ((custodian-aid default-custodian-aid) resource-spec qty (valid-from (or effective-at (iso-utc-now))) (valid-until #f) (issued-by authority-aid) (reverted-from-said expired-attestation-said))
+  #:edges ((reverted-from expired-attestation-said NI2I *schema-playnet-custody-attestation*)))
 
 ;; What the store knows of this family's schemas: the claims it indexes for
 ;; O(1) lookup, and the claim the observation time stands under. Registered
 ;; here at load, so a module that imports one family finds its credentials.
-(register-schema-claims!
- `((,*schema-playnet-ownership-attestation* (resource-id))))
+

@@ -57,69 +57,48 @@
                      #:signing-keypair signing-keypair
                      #:multisig-signers multisig-signers)))
 
-(define* (make-scope-split-credential parent-scope-aid sub-scope-aids
-                                       kind split-at
-                                       #:key (edges '())
-                                       (signing-keypair #f) (multisig-signers #f))
+(define-credential (make-scope-split-credential parent-scope-aid sub-scope-aids kind split-at)
   "One scope partitions into N sub-scopes.
    issuer = parent; holder = parent (self-attested split event).
    sub-scope-aids: list of new sub-scope AIDs.
    EDGES: optional extra ACDC edges (Phase-6 ratification, etc.)."
-  (make-credential *schema-playnet-scope-split*
-                   parent-scope-aid parent-scope-aid
-                   (list (cons 'parent-scope-aid parent-scope-aid)
-                         (cons 'sub-scope-aids   sub-scope-aids)
-                         (cons 'kind             kind)
-                         (cons 'split-at         split-at))
-                   edges
-                   #:signing-keypair signing-keypair
-                   #:multisig-signers multisig-signers))
+  *schema-playnet-scope-split*
+  #:key ((edges '()))
+  #:signed (keypair multisig)
+  #:holder parent-scope-aid
+  #:claims (parent-scope-aid sub-scope-aids kind split-at)
+  #:edges ((@ edges))
+  #:index (parent-scope-aid)
+  #:time split-at)
 
-(define* (make-conflict-resolution-credential meta-scope-aid
-                                              resource-id
-                                              conflicting-commitments
-                                              prevailing-commitment
-                                              resolution-method
-                                              resolved-at
-                                              #:key (signing-keypair #f) (multisig-signers #f))
+(define-credential (make-conflict-resolution-credential meta-scope-aid resource-id conflicting-commitments prevailing-commitment resolution-method resolved-at)
   "Meta-scope (federation) records resolution of overlapping commitments
    on RESOURCE-ID. conflicting-commitments: list of commitment-SAIDs.
    prevailing-commitment: SAID that wins (#f for split/mediation).
    resolution-method: symbol — 'fifo / 'priority / 'mediation / 'split / etc."
-  (make-credential *schema-playnet-conflict-resolution*
-                   meta-scope-aid meta-scope-aid
-                   (list (cons 'resource-id             resource-id)
-                         (cons 'conflicting-commitments conflicting-commitments)
-                         (cons 'prevailing-commitment   prevailing-commitment)
-                         (cons 'resolution-method       resolution-method)
-                         (cons 'resolved-at             resolved-at))
-                   '()
-                   #:signing-keypair signing-keypair
-                   #:multisig-signers multisig-signers))
+  *schema-playnet-conflict-resolution*
+  #:signed (keypair multisig)
+  #:holder meta-scope-aid
+  #:claims (resource-id conflicting-commitments prevailing-commitment resolution-method resolved-at)
+  #:index (resource-id)
+  #:time resolved-at)
 
-(define* (make-scope-rejoin-credential scope-aid old-federation-aid
-                                        new-federation-aid rejoined-at
-                                        #:key (edges '())
-                                        (signing-keypair #f) (multisig-signers #f))
+(define-credential (make-scope-rejoin-credential scope-aid old-federation-aid new-federation-aid rejoined-at)
   "Scope changes its parent federation.
    issuer = scope-aid; holder = scope-aid (self-attested move).
    Old federation also revokes membership ACDC; new issues fresh one.
    EDGES: optional extra ACDC edges (Phase-6 ratification, etc.)."
-  (make-credential *schema-playnet-scope-rejoin*
-                   scope-aid scope-aid
-                   (list (cons 'scope-aid          scope-aid)
-                         (cons 'old-federation-aid old-federation-aid)
-                         (cons 'new-federation-aid new-federation-aid)
-                         (cons 'rejoined-at        rejoined-at))
-                   edges
-                   #:signing-keypair signing-keypair
-                   #:multisig-signers multisig-signers))
+  *schema-playnet-scope-rejoin*
+  #:key ((edges '()))
+  #:signed (keypair multisig)
+  #:holder scope-aid
+  #:claims (scope-aid old-federation-aid new-federation-aid rejoined-at)
+  #:edges ((@ edges))
+  #:index (scope-aid)
+  #:time rejoined-at)
 
 ;; What the store knows of this family's schemas: the claims it indexes for
 ;; O(1) lookup, and the claim the observation time stands under. Registered
 ;; here at load, so a module that imports one family finds its credentials.
 (register-schema-claims!
- `((,*schema-playnet-scope-merger*        (new-scope-aid)    merged-at)
-   (,*schema-playnet-scope-split*         (parent-scope-aid) split-at)
-   (,*schema-playnet-scope-rejoin*        (scope-aid)        rejoined-at)
-   (,*schema-playnet-conflict-resolution* (resource-id)      resolved-at)))
+ `((,*schema-playnet-scope-merger* (new-scope-aid) merged-at)))

@@ -24,12 +24,7 @@
 (define *schema-playnet-recomposition-ratification*
   "playnet-recomposition-ratification/v1")
 
-
-
-(define* (make-stance-credential citizen-aid governance-group-aid
-                                 domain proposal-id position timestamp
-                                 #:key (ballot-snapshot-said #f)
-                                       (u 'auto))
+(define-credential (make-stance-credential citizen-aid governance-group-aid domain proposal-id position timestamp)
   "Citizen's vote on a ballot proposal — KERI-signed, durable. DOMAIN
    tags the ballot kind ('policy, 'recomposition, …) so
    downstream consumers can filter without re-deriving from proposal-id.
@@ -39,41 +34,16 @@
    migration: SAID-claim references become formal ACDC edges so a
    verifier walking the property graph can resolve in either direction.
    The `proposal-id` claim is retained for backwards compatibility."
-  (let ((edges (if ballot-snapshot-said
-                   (list (cons 'ballot-snapshot
-                               (make-edge ballot-snapshot-said
-                                          #:operator 'NI2I
-                                          #:schema *schema-playnet-ballot-snapshot*)))
-                   '())))
-    ;; issuer = the CITIZEN (a vote is the citizen's own assertion);
-    ;; issuee = the recording governance scope, the counter-party that tallies
-    ;; it. A targeted ACDC with a real Target AID (ACDC §7.6).
-    ;;
-    ;; The citizen's KERI key is client-side, so this is only a *conformant*
-    ;; ACDC when the client signs it — see `stance-signing-preimage` and the
-    ;; signature-verifying `cast` path in service.scm. An unsigned stance is
-    ;; honestly just an unsigned assertion; the orientation stays
-    ;; citizen-issued either way so there is ONE shape, and recovery reads the
-    ;; caster from the issuer.
-    ;; U is the blinding nonce. Generated here when absent, but the
-    ;; client-signed path MUST pass the one it signed over: `cast-signed`
-    ;; rebuilds this credential to check the signature, and a fresh nonce
-    ;; would change the SAID and fail every signature. It rides back from
-    ;; the client in the echoed claims, exactly as `timestamp` does.
-    (make-credential *schema-playnet-stance*
-                     citizen-aid governance-group-aid
-                     (append
-                      (u-claim u)
-                      (list (cons 'domain      domain)
-                            (cons 'proposal-id proposal-id)
-                            (cons 'position    position)
-                            (cons 'timestamp   timestamp)))
-                     edges)))
+  *schema-playnet-stance*
+  #:key ((ballot-snapshot-said #f) (u 'auto))
+  #:signed ()
+  #:nonce u
+  #:claims (domain proposal-id position timestamp)
+  #:edges ((? ballot-snapshot ballot-snapshot-said NI2I *schema-playnet-ballot-snapshot*))
+  #:index (domain proposal-id)
+  #:time timestamp)
 
-(define* (make-expression-stance-credential citizen-aid governance-group-aid
-                                            domain expression-id distribution
-                                            timestamp
-                                            #:key (u 'auto))
+(define-credential (make-expression-stance-credential citizen-aid governance-group-aid domain expression-id distribution timestamp)
   "Citizen's distribution across targets in an expression. DOMAIN tags what
    the targets are (e.g. 'plan, 'demand, 'resource, 'proposal-relevance).
    Same labor-proportional voice mechanism, any per-scope per-domain
@@ -83,22 +53,15 @@
    U: blinding nonce — see make-stance-credential. A distribution has a
    larger claim space than a position, but it is still enumerable for
    small target sets, so it gets the same treatment."
-  (make-credential *schema-playnet-expression-stance*
-                   citizen-aid governance-group-aid
-                   (append
-                    (u-claim u)
-                    (list (cons 'domain        domain)
-                          (cons 'expression-id expression-id)
-                          (cons 'distribution  distribution)
-                          (cons 'timestamp     timestamp)))))
+  *schema-playnet-expression-stance*
+  #:key ((u 'auto))
+  #:signed ()
+  #:nonce u
+  #:claims (domain expression-id distribution timestamp)
+  #:index (domain expression-id)
+  #:time timestamp)
 
-(define* (make-ballot-snapshot-credential governance-group-aid
-                                           domain proposal-id franchise
-                                           snapshot-said opened-at
-                                           #:key
-                                           (description #f)
-                                           (voice-snapshot-entries '())
-                                           (citizen-registry-aids '()))
+(define-credential (make-ballot-snapshot-credential governance-group-aid domain proposal-id franchise snapshot-said opened-at)
   "Governance group anchors the frozen voice-share weights at ballot open.
    DOMAIN tags the ballot kind ('policy, 'recomposition, …).
    voice-snapshot-entries: list of (citizen-id voice-share resolved-delegation)
@@ -106,45 +69,29 @@
                            (delegate-aid fraction mandate-spec-or-#f).
                            Enough to reconstruct the ballot.
    citizen-registry-aids: list of citizen AIDs known to this ballot."
-  (make-credential *schema-playnet-ballot-snapshot*
-                   governance-group-aid governance-group-aid
-                   (list (cons 'domain               domain)
-                         (cons 'proposal-id           proposal-id)
-                         (cons 'franchise             franchise)
-                         (cons 'snapshot-said         snapshot-said)
-                         (cons 'opened-at             opened-at)
-                         (cons 'description           description)
-                         (cons 'voice-snapshot-entries voice-snapshot-entries)
-                         (cons 'citizen-registry-aids citizen-registry-aids))))
+  *schema-playnet-ballot-snapshot*
+  #:key ((description #f) (voice-snapshot-entries '()) (citizen-registry-aids '()))
+  #:signed ()
+  #:holder governance-group-aid
+  #:claims (domain proposal-id franchise snapshot-said opened-at description voice-snapshot-entries citizen-registry-aids)
+  #:index (domain proposal-id)
+  #:time opened-at)
 
-(define* (make-tally-result-credential governance-group-aid
-                                       domain proposal-id franchise
-                                       winner tally-data
-                                       abstain-weight closed-at
-                                       #:key (ballot-snapshot-said #f))
+(define-credential (make-tally-result-credential governance-group-aid domain proposal-id franchise winner tally-data abstain-weight closed-at)
   "Governance group signs the final ballot decision — auditable proof.
    DOMAIN tags the ballot kind ('policy, 'recomposition, …).
 
    Per §4.9 migration: BALLOT-SNAPSHOT-SAID, when supplied, becomes an
    `e`-block NI2I edge so verifiers can walk tally → snapshot directly.
    The `proposal-id` claim is retained for backwards compatibility."
-  (let ((edges (if ballot-snapshot-said
-                   (list (cons 'ballot-snapshot
-                               (make-edge ballot-snapshot-said
-                                          #:operator 'NI2I
-                                          #:schema *schema-playnet-ballot-snapshot*)))
-                   '())))
-    (make-credential *schema-playnet-tally-result*
-                     governance-group-aid governance-group-aid
-                     (list (cons 'domain         domain)
-                           (cons 'proposal-id    proposal-id)
-                           (cons 'franchise      franchise)
-                           (cons 'winner         winner)
-                           (cons 'tally-data     tally-data)
-                           (cons 'abstain-weight abstain-weight)
-                           (cons 'closed-at      closed-at))
-                     edges)))
-
+  *schema-playnet-tally-result*
+  #:key ((ballot-snapshot-said #f))
+  #:signed ()
+  #:holder governance-group-aid
+  #:claims (domain proposal-id franchise winner tally-data abstain-weight closed-at)
+  #:edges ((? ballot-snapshot ballot-snapshot-said NI2I *schema-playnet-ballot-snapshot*))
+  #:index (domain proposal-id)
+  #:time closed-at)
 
 (define* (make-recomposition-ratification-credential
           scope-aid proposal-type proposal-spec
@@ -222,8 +169,4 @@
 ;; O(1) lookup, and the claim the observation time stands under. Registered
 ;; here at load, so a module that imports one family finds its credentials.
 (register-schema-claims!
- `((,*schema-playnet-stance*                     (domain proposal-id)          timestamp)
-   (,*schema-playnet-expression-stance*          (domain expression-id)        timestamp)
-   (,*schema-playnet-ballot-snapshot*            (domain proposal-id)          opened-at)
-   (,*schema-playnet-tally-result*               (domain proposal-id)          closed-at)
-   (,*schema-playnet-recomposition-ratification* (proposal-type proposal-spec) ratified-at)))
+ `((,*schema-playnet-recomposition-ratification* (proposal-type proposal-spec) ratified-at)))

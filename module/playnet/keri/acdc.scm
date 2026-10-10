@@ -31,7 +31,7 @@
   #:use-module ((playnet utils clock)
                 #:select (now civil->instant instant->civil instant->unix
                           window-close-epoch))
-  #:export (make-credential cred-with-signature credential-preimage-fields
+  #:export (make-credential define-credential cred-with-signature credential-preimage-fields
             cred-said cred-schema cred-issuer cred-holder cred-claims cred-edges
             cred-signature cred-revoked? cred-claim cred-edge
             cred-with-revoked cred-recompute-said cred-said-consistent?
@@ -174,6 +174,88 @@
   (equal? (cred-said c) (cred-recompute-said c)))
 
 ;; ── ACDC edges (ACDC §8) ─────────────────────────────────────────────────
+
+;; =========================================================================
+;; A credential kind, stated as data
+;; =========================================================================
+;;
+;; Every constructor in credentials/ is make-credential over a schema, an issuer,
+;; a holder, a list of claims and a list of edges, signed or not. What differs
+;; between kinds is data: which claims are always written and which only when
+;; given, which edge is added when an argument is given, which fields default,
+;; whether a blinding nonce rides, and which signing keywords the kind takes.
+;; `define-credential` states one kind as that data and expands to the
+;; constructor the tree has always had: the same name, positional order and
+;; keywords, so no call site moves, and the same claims and edges, so no SAID
+;; moves. The kind's index row (what the store knows of its schema) is part of
+;; the same statement, so a constructor and its registration cannot drift.
+;;
+;;   (define-credential (NAME positional …) "doc" SCHEMA
+;;     #:key    ((keyword default) …)          ; the keyword arguments
+;;     #:signed (keypair multisig)             ; which signing keywords it takes
+;;     #:issuer EXPR #:holder EXPR             ; the first two positionals when absent
+;;     #:nonce  U                              ; the `u` claim comes first, from U
+;;     #:claims (SPEC …)                       ; name | (name expr) | (? name) | (? name expr)
+;;     #:edges  (SPEC …)                       ; (label said OP schema) | (? label said OP schema) | (@ list)
+;;     #:index  (claim …) #:time claim)        ; the store's index row, when it has one
+;;
+;; A `?` claim or edge is written only when its value is given; `@` splices a
+;; list of edges the caller hands in. Claims and edges keep the order they are
+;; listed in; the SAID sorts them anyway.
+
+(define-syntax define-credential
+  (lambda (x)
+    (define (options stx)
+      (let loop ((l stx) (acc '()))
+        (syntax-case l ()
+          (() (reverse acc))
+          ((k v . rest) (keyword? (syntax->datum #'k))
+           (loop #'rest (cons (cons (syntax->datum #'k) #'v) acc))))))
+    (define (opt os k default) (let ((p (assq k os))) (if p (cdr p) default)))
+    (define (each f stx)                     ; a syntax list, mapped
+      (syntax-case stx () (() '()) ((a . rest) (cons (f #'a) (each f #'rest)))))
+    (define (claim-expr spec)
+      (syntax-case spec (?)
+        ((? n)   #'(let ((v n)) (if v (list (cons 'n v)) '())))
+        ((? n e) #'(let ((v e)) (if v (list (cons 'n v)) '())))
+        ((n e)   #'(list (cons 'n e)))
+        (n (identifier? #'n) #'(list (cons 'n n)))))
+    (define (edge-expr spec)
+      (syntax-case spec (? @)
+        ((@ e) #'e)
+        ((? label said op schema)
+         #'(let ((v said)) (if v (list (cons 'label (make-edge v #:operator 'op #:schema schema))) '())))
+        ((label said op schema)
+         #'(list (cons 'label (make-edge said #:operator 'op #:schema schema))))))
+    (syntax-case x ()
+      ((_ (name pos ...) doc schema o ...)
+       (let* ((os     (options #'(o ...)))
+              (poss   (each (lambda (s) s) #'(pos ...)))
+              (signed (syntax->datum (opt os #:signed #'())))
+              (nonce  (opt os #:nonce #f))
+              (index  (opt os #:index #f))
+              (time   (opt os #:time #f)))
+         (with-syntax (((k ...)      (opt os #:key #'()))
+                       ((c ...)      (each claim-expr (opt os #:claims #'())))
+                       ((e ...)      (each edge-expr (opt os #:edges #'())))
+                       (issuer       (opt os #:issuer (car poss)))
+                       (holder       (opt os #:holder (cadr poss)))
+                       ((sk ...)     (if (memq 'keypair signed)  #'((signing-keypair #f)) #'()))
+                       ((ms ...)     (if (memq 'multisig signed) #'((multisig-signers #f)) #'()))
+                       ((skarg ...)  (if (memq 'keypair signed)  #'(#:signing-keypair signing-keypair) #'()))
+                       ((msarg ...)  (if (memq 'multisig signed) #'(#:multisig-signers multisig-signers) #'()))
+                       ((nc ...)     (if nonce (list #`(u-claim #,nonce)) '()))
+                       ((reg ...)    (cond ((and index time) (list #`(register-schema-claims! (list (list schema '#,index '#,time)))))
+                                           (index            (list #`(register-schema-claims! (list (list schema '#,index)))))
+                                           (else '()))))
+           #'(begin
+               (define* (name pos ... #:key k ... sk ... ms ...)
+                 doc
+                 (make-credential schema issuer holder
+                                  (append nc ... c ...)
+                                  (append e ...)
+                                  skarg ... msarg ...))
+               reg ...)))))))
 
 (define* (make-edge target-said #:key (operator #f) (schema #f))
   "Construct an ACDC edge spec: a reference to TARGET-SAID with an

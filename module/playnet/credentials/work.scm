@@ -51,19 +51,7 @@
 ;; the portable ACDC set, exactly as the contribution side does.
 (define *schema-playnet-claim* "playnet-claim/v1")
 
-(define* (make-work-event-credential scope-aid worker-aid
-                                     event-id hours unit
-                                     #:key (scope-id #f) (process-id #f)
-                                           (timestamp #f)
-                                           (resource-conforms-to #f)
-                                           (fulfills #f)
-                                           (satisfies #f)
-                                           (skill-said #f)
-                                           ;; the trust floor: k-of-n WITNESSES on the
-                                           ;; event itself, so the evidence layer the
-                                           ;; recipe metabolism reads is not one scope's
-                                           ;; word (multisig block; cred-multisig-valid?)
-                                           (multisig-signers #f))
+(define-credential (make-work-event-credential scope-aid worker-aid event-id hours unit)
   "Work event ACDC: scope governance witnesses worker's labor.
    Issuer = scope-aid, holder = worker-aid.
    fulfills:  optional commitment SAID this event fulfills (planning).
@@ -77,46 +65,15 @@
    When supplied, FULFILLS / SATISFIES / SKILL-SAID are emitted as `e`-block
    NI2I edges (named 'fulfills / 'satisfies / 'skill) so verifiers can walk the
    property graph natively. Claim values are retained for back-compat."
-  (let ((edges
-         (append
-          (if fulfills
-              (list (cons 'fulfills
-                          (make-edge fulfills
-                                     #:operator 'NI2I
-                                     #:schema *schema-playnet-commitment*)))
-              '())
-          (if satisfies
-              (list (cons 'satisfies
-                          (make-edge satisfies
-                                     #:operator 'NI2I
-                                     #:schema *schema-playnet-intent*)))
-              '())
-          (if skill-said
-              (list (cons 'skill
-                          (make-edge skill-said
-                                     #:operator 'NI2I
-                                     #:schema *schema-playnet-skill*)))
-              '()))))
-    (make-credential *schema-playnet-work-event*
-                     scope-aid worker-aid
-                     (list (cons 'event-id            event-id)
-                           (cons 'hours               hours)
-                           (cons 'unit                unit)
-                           (cons 'scope-id            scope-id)
-                           (cons 'process-id          process-id)
-                           (cons 'timestamp           timestamp)
-                           (cons 'resource-conforms-to resource-conforms-to)
-                           (cons 'fulfills            fulfills)
-                           (cons 'satisfies           satisfies))
-                     edges
-                     #:multisig-signers multisig-signers)))
+  *schema-playnet-work-event*
+  #:key ((scope-id #f) (process-id #f) (timestamp #f) (resource-conforms-to #f) (fulfills #f) (satisfies #f) (skill-said #f))
+  #:signed (multisig)
+  #:claims (event-id hours unit scope-id process-id timestamp resource-conforms-to fulfills satisfies)
+  #:edges ((? fulfills fulfills NI2I *schema-playnet-commitment*) (? satisfies satisfies NI2I *schema-playnet-intent*) (? skill skill-said NI2I *schema-playnet-skill*))
+  #:index (event-id fulfills)
+  #:time timestamp)
 
-(define* (make-observation-event-credential scope-aid holder-aid event-id action
-                                            #:key (qty #f) (unit #f) (scope-id #f)
-                                                  (resource-conforms-to #f)
-                                                  (at-location #f) (to-location #f)
-                                                  (timestamp #f) (fulfills #f)
-                                                  (evidence #f))
+(define-credential (make-observation-event-credential scope-aid holder-aid event-id action)
   "Observation event ACDC: scope governance witnesses an occurrence the
    ledger folded — ONE shape for every quantified observational action
    (produce / consume / use / move / raise / lower / pickup / dropoff /
@@ -130,30 +87,14 @@
    EVIDENCE, when present, is the sha256 of the picture a photo read was made
    from; the claim is appended only when set, so every record that names no
    picture keeps the SAID it always had."
-  (make-credential *schema-playnet-observation-event*
-                   scope-aid holder-aid
-                   (append
-                    (list (cons 'event-id             event-id)
-                          (cons 'action               action)
-                          (cons 'qty                  qty)
-                          (cons 'unit                 unit)
-                          (cons 'scope-id             scope-id)
-                          (cons 'resource-conforms-to resource-conforms-to)
-                          (cons 'at-location          at-location)
-                          (cons 'to-location          to-location)
-                          (cons 'timestamp            timestamp)
-                          (cons 'fulfills             fulfills))
-                    (if evidence (list (cons 'evidence evidence)) '()))
-                   (if fulfills
-                       (list (cons 'fulfills
-                                   (make-edge fulfills
-                                              #:operator 'NI2I
-                                              #:schema *schema-playnet-commitment*)))
-                       '())))
+  *schema-playnet-observation-event*
+  #:key ((qty #f) (unit #f) (scope-id #f) (resource-conforms-to #f) (at-location #f) (to-location #f) (timestamp #f) (fulfills #f) (evidence #f))
+  #:signed ()
+  #:claims (event-id action qty unit scope-id resource-conforms-to at-location to-location timestamp fulfills (? evidence))
+  #:edges ((? fulfills fulfills NI2I *schema-playnet-commitment*))
+  #:index (event-id fulfills))
 
-(define* (make-contrary-observation-credential observer-aid scope-id process action spec
-                                                nominal reading witness observed-at
-                                                #:key (signing-keypair #f))
+(define-credential (make-contrary-observation-credential observer-aid scope-id process action spec nominal reading witness observed-at)
   "Contrary-observation ACDC: OBSERVER-AID, who ran PROCESS in SCOPE-ID, read
    ACTION on SPEC at READING where the map states NOMINAL; WITNESS is the id
    of the work event the reading came from. Issuer = holder = the observer:
@@ -163,22 +104,14 @@
    may speak — the worker the witness names — is a fact the service reads
    off the observer; what the solve makes of it is planner/solve/engine/robust.scm
    observed-shocks: the read moves in the cautious direction only."
-  (make-credential *schema-playnet-contrary-observation*
-                   observer-aid observer-aid
-                   (list (cons 'scope-id    scope-id)
-                         (cons 'process     process)
-                         (cons 'action      (if (symbol? action) (symbol->string action) action))
-                         (cons 'spec        spec)
-                         (cons 'nominal     nominal)
-                         (cons 'reading     reading)
-                         (cons 'witness     witness)
-                         (cons 'observed-at observed-at))
-                   '()
-                   #:signing-keypair signing-keypair))
+  *schema-playnet-contrary-observation*
+  #:signed (keypair)
+  #:holder observer-aid
+  #:claims (scope-id process (action (if (symbol? action) (symbol->string action) action)) spec nominal reading witness observed-at)
+  #:index (scope-id process action)
+  #:time observed-at)
 
-(define* (make-skill-credential
-          issuing-aid worker-aid skill founding-event-said
-          #:key (valid-from #f) (valid-until #f))
+(define-credential (make-skill-credential issuing-aid worker-aid skill founding-event-said)
   "Skill membership ACDC: ISSUING-AID attests that WORKER-AID holds SKILL,
    minted ONCE per (worker, skill) on the first work event conforming to it.
 
@@ -196,48 +129,27 @@
    skill whose valid-until is past is treated as lapsed by observers — the
    same live/expiry convention as custody attestations (so `*-cred-live?`
    transfers), the structural home for recertification-style decay."
-  (let ((edges (if founding-event-said
-                   (list (cons 'founding-event
-                               (make-edge founding-event-said
-                                          #:operator 'NI2I
-                                          #:schema *schema-playnet-work-event*)))
-                   '())))
-    (make-credential *schema-playnet-skill*
-                     issuing-aid worker-aid
-                     (list (cons 'skill              skill)
-                           (cons 'founding-event-id  founding-event-said)
-                           (cons 'valid-from         valid-from)
-                           (cons 'valid-until        valid-until)
-                           (cons 'issued-by          issuing-aid))
-                     edges)))
+  *schema-playnet-skill*
+  #:key ((valid-from #f) (valid-until #f))
+  #:signed ()
+  #:claims (skill (founding-event-id founding-event-said) valid-from valid-until (issued-by issuing-aid))
+  #:edges ((? founding-event founding-event-said NI2I *schema-playnet-work-event*))
+  #:index (skill))
 
-(define* (make-claim-event-credential
-          scope-aid claimant-aid event-id labor-cost unit
-          #:key (resource-spec #f) (qty #f) (timestamp #f) (settles #f))
+(define-credential (make-claim-event-credential scope-aid claimant-aid event-id labor-cost unit)
   "Claim-event ACDC: the consumption mirror of the work-event ACDC. CLAIMANT-AID
    draws LABOR-COST hours of earned credit to receive RESOURCE-SPEC. Issuer =
    scope, holder = claimant. No balance lives on the token — credit is DERIVED:
    gross (work-event ACDCs) − claimed (these). When SETTLES is a <claim> SAID,
    an NI2I edge records which planning-layer claim this draw settles."
-  (let ((edges (if settles
-                   (list (cons 'settles (make-edge settles #:operator 'NI2I #:schema #f)))
-                   '())))
-    (make-credential *schema-playnet-claim*
-                     scope-aid claimant-aid
-                     (list (cons 'event-id      event-id)
-                           (cons 'claimant      claimant-aid)
-                           (cons 'labor-cost    labor-cost)
-                           (cons 'unit          unit)
-                           (cons 'resource-spec resource-spec)
-                           (cons 'qty           qty)
-                           (cons 'timestamp     timestamp)
-                           (cons 'settles       settles))
-                     edges)))
+  *schema-playnet-claim*
+  #:key ((resource-spec #f) (qty #f) (timestamp #f) (settles #f))
+  #:signed ()
+  #:claims (event-id (claimant claimant-aid) labor-cost unit resource-spec qty timestamp settles)
+  #:edges ((? settles settles NI2I #f))
+  #:index (event-id))
 
-(define* (make-external-index-observation-credential
-          oracle-aid index-uri observed-value observed-at
-          #:key (holder-aid #f) (source-note #f)
-          (signing-keypair #f) (multisig-signers #f))
+(define-credential (make-external-index-observation-credential oracle-aid index-uri observed-value observed-at)
   "External index observation ACDC: an oracle records a scalar reading
    of an external data stream at a timestamp.
 
@@ -249,24 +161,15 @@
 
    Issuer = oracle-aid; holder defaults to oracle-aid unless specified
    (e.g. federated dashboards may hold externally-issued observations)."
-  (make-credential *schema-playnet-external-index-observation*
-                   oracle-aid
-                   (or holder-aid oracle-aid)
-                   (list (cons 'index-uri      index-uri)
-                         (cons 'observed-value observed-value)
-                         (cons 'observed-at    observed-at)
-                         (cons 'source-note    source-note))
-                   '()
-                   #:signing-keypair signing-keypair
-                   #:multisig-signers multisig-signers))
+  *schema-playnet-external-index-observation*
+  #:key ((holder-aid #f) (source-note #f))
+  #:signed (keypair multisig)
+  #:holder (or holder-aid oracle-aid)
+  #:claims (index-uri observed-value observed-at source-note)
+  #:index (index-uri)
+  #:time observed-at)
 
 ;; What the store knows of this family's schemas: the claims it indexes for
 ;; O(1) lookup, and the claim the observation time stands under. Registered
 ;; here at load, so a module that imports one family finds its credentials.
-(register-schema-claims!
- `((,*schema-playnet-work-event*                 (event-id fulfills)       timestamp)
-   (,*schema-playnet-observation-event*          (event-id fulfills))
-   (,*schema-playnet-external-index-observation* (index-uri)               observed-at)
-   (,*schema-playnet-contrary-observation*       (scope-id process action) observed-at)
-   (,*schema-playnet-skill*                      (skill))
-   (,*schema-playnet-claim*                      (event-id))))
+

@@ -9,7 +9,6 @@
   #:export (*schema-playnet-hosting-willingness*
             *schema-playnet-regime-claim*
             *schema-playnet-span-declaration*
-            %make-scope-self-declaration
             make-hosting-willingness-credential
             make-regime-claim-credential
             make-span-declaration-credential))
@@ -38,22 +37,9 @@
 ;; A scope speaking only for itself: issuer = holder = the scope, no edges, a
 ;; window, revocable on its own TEL with no counterparty. The shape span
 ;; declarations and hosting willingness share — each adds only its claims.
-(define* (%make-scope-self-declaration schema scope-aid claims
-          #:key (valid-from #f) (valid-until #f)
-          (signing-keypair #f) (multisig-signers #f))
-  (make-credential schema scope-aid scope-aid
-                   (append claims
-                           (list (cons 'valid-from  valid-from)
-                                 (cons 'valid-until valid-until)
-                                 (cons 'issued-by   scope-aid)))
-                   '()
-                   #:signing-keypair signing-keypair
-                   #:multisig-signers multisig-signers))
 
-(define* (make-span-declaration-credential
-          scope-aid resource-id span-place
-          #:key (valid-from #f) (valid-until #f)
-          (signing-keypair #f) (multisig-signers #f))
+
+(define-credential (make-span-declaration-credential scope-aid resource-id span-place)
   "Span-declaration ACDC: SCOPE-AID (the means' steward) declares that
    RESOURCE-ID's service pool is constituted at SPAN-PLACE — the container
    whose cells the pool spans, wider or narrower than where the thing sits.
@@ -67,17 +53,13 @@
    The claim references a place; it never IS one. The resource's location
    and the spatial tree stay untouched — this is the declaration half of
    'span is governed, location is fact'."
-  (%make-scope-self-declaration *schema-playnet-span-declaration* scope-aid
-                                (list (cons 'resource-id resource-id)
-                                      (cons 'span-place  span-place))
-                                #:valid-from valid-from #:valid-until valid-until
-                                #:signing-keypair signing-keypair
-                                #:multisig-signers multisig-signers))
+  *schema-playnet-span-declaration*
+  #:key ((valid-from #f) (valid-until #f))
+  #:signed (keypair multisig)
+  #:holder scope-aid
+  #:claims (resource-id span-place valid-from valid-until (issued-by scope-aid)))
 
-(define* (make-hosting-willingness-credential
-          scope-aid resource-spec ceiling
-          #:key (valid-from #f) (valid-until #f)
-          (signing-keypair #f) (multisig-signers #f))
+(define-credential (make-hosting-willingness-credential scope-aid resource-spec ceiling)
   "Hosting-willingness ACDC: SCOPE-AID declares it is willing and able to host
    up to CEILING unit-hours/day of RESOURCE-SPEC's service — running and
    maintaining it included. The labour availability pattern over means: what a
@@ -88,27 +70,21 @@
    revocable with no counterparty (revocation is the grantor's, always) —
    exactly the span declaration's shape, because both are a scope speaking
    only for itself (`%make-scope-self-declaration`)."
-  (%make-scope-self-declaration *schema-playnet-hosting-willingness* scope-aid
-                                (list (cons 'resource-spec resource-spec)
-                                      (cons 'ceiling       ceiling))
-                                #:valid-from valid-from #:valid-until valid-until
-                                #:signing-keypair signing-keypair
-                                #:multisig-signers multisig-signers))
+  *schema-playnet-hosting-willingness*
+  #:key ((valid-from #f) (valid-until #f))
+  #:signed (keypair multisig)
+  #:holder scope-aid
+  #:claims (resource-spec ceiling valid-from valid-until (issued-by scope-aid)))
 
-(define* (make-regime-claim-credential
-          scope-aid domain-spec tails process
-          #:key (valid-from #f) (valid-until #f)
-          (signing-keypair #f) (multisig-signers #f))
+(define-credential (make-regime-claim-credential scope-aid domain-spec tails process)
   "Regime-claim ACDC: SCOPE-AID attests DOMAIN-SPEC's epistemic regime —
    TAILS ∈ thin|fat|unknown, PROCESS ∈ stable|shifting|unknown. Statistics is
    licensed only by thin AND stable, both live; everything else, ignorance
    included, reads probability-free (the asymmetry of the error demands the
    dangerous default). Who may credibly claim a domain's tails is policy above
    this layer — witness it k-of-n exactly as work events are."
-  (%make-scope-self-declaration *schema-playnet-regime-claim* scope-aid
-                                (list (cons 'domain-spec domain-spec)
-                                      (cons 'tails       tails)
-                                      (cons 'process     process))
-                                #:valid-from valid-from #:valid-until valid-until
-                                #:signing-keypair signing-keypair
-                                #:multisig-signers multisig-signers))
+  *schema-playnet-regime-claim*
+  #:key ((valid-from #f) (valid-until #f))
+  #:signed (keypair multisig)
+  #:holder scope-aid
+  #:claims (domain-spec tails process valid-from valid-until (issued-by scope-aid)))

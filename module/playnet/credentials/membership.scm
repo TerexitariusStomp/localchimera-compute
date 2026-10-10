@@ -26,91 +26,57 @@
 (define *schema-playnet-federation-membership*  "playnet-federation-membership/v1")
 (define *schema-playnet-membership*             "playnet-membership/v1")
 
-(define* (make-ccf-credential issuer-group-aid holder-aid commune
-                              ccf assessed-at reason
-                              #:key (signing-keypair #f) (multisig-signers #f))
+(define-credential (make-ccf-credential issuer-group-aid holder-aid commune ccf assessed-at reason)
   "Capacity assessment by a commune's governance group, for a citizen.
    The latest non-revoked CCF credential per (commune, holder) wins at
    recovery time."
-  (make-credential *schema-playnet-ccf-assessment*
-                   issuer-group-aid
-                   holder-aid
-                   (list (cons 'commune     commune)
-                         (cons 'ccf         ccf)
-                         (cons 'assessed-at assessed-at)
-                         (cons 'reason      reason))
-                   '()
-                   #:signing-keypair signing-keypair
-                   #:multisig-signers multisig-signers))
+  *schema-playnet-ccf-assessment*
+  #:signed (keypair multisig)
+  #:claims (commune ccf assessed-at reason)
+  #:index ()
+  #:time assessed-at)
 
-(define* (make-exclusion-credential issuer-group-aid holder-aid commune
-                                    excluded-at
-                                    #:key (signing-keypair #f) (multisig-signers #f))
+(define-credential (make-exclusion-credential issuer-group-aid holder-aid commune excluded-at)
   "Exclusion of a citizen from a commune. Revocation = reinstatement."
-  (make-credential *schema-playnet-exclusion*
-                   issuer-group-aid
-                   holder-aid
-                   (list (cons 'commune     commune)
-                         (cons 'excluded-at excluded-at))
-                   '()
-                   #:signing-keypair signing-keypair
-                   #:multisig-signers multisig-signers))
+  *schema-playnet-exclusion*
+  #:signed (keypair multisig)
+  #:claims (commune excluded-at)
+  #:index ()
+  #:time excluded-at)
 
-(define* (make-federation-membership-credential issuer-group-aid
-                                                 commune-aid
-                                                 federation
-                                                 commune-id
-                                                 admitted-at
-                                                 #:key (edges '())
-                                                 (signing-keypair #f) (multisig-signers #f))
+(define-credential (make-federation-membership-credential issuer-group-aid commune-aid federation commune-id admitted-at)
   "Federation admits a commune as a member.
    EDGES: optional extra ACDC edges (used by Phase-6 recomposition
    ratification to attach a 'ratification edge to this credential)."
-  (make-credential *schema-playnet-federation-membership*
-                   issuer-group-aid
-                   commune-aid
-                   (list (cons 'federation  federation)
-                         (cons 'commune-id  commune-id)
-                         (cons 'admitted-at admitted-at))
-                   edges
-                   #:signing-keypair signing-keypair
-                   #:multisig-signers multisig-signers))
+  *schema-playnet-federation-membership*
+  #:key ((edges '()))
+  #:signed (keypair multisig)
+  #:claims (federation commune-id admitted-at)
+  #:edges ((@ edges))
+  #:index ()
+  #:time admitted-at)
 
-(define* (make-membership-credential issuer-group-aid holder-aid commune
-                                     admitted-at
-                                     #:key (signing-keypair #f) (multisig-signers #f))
+(define-credential (make-membership-credential issuer-group-aid holder-aid commune admitted-at)
   "Citizen is recognized as a member of commune. Issued on first account
    creation (work credit or CCF assessment)."
-  (make-credential *schema-playnet-membership*
-                   issuer-group-aid
-                   holder-aid
-                   (list (cons 'commune     commune)
-                         (cons 'admitted-at admitted-at))
-                   '()
-                   #:signing-keypair signing-keypair
-                   #:multisig-signers multisig-signers))
+  *schema-playnet-membership*
+  #:signed (keypair multisig)
+  #:claims (commune admitted-at)
+  #:index ()
+  #:time admitted-at)
 
-(define* (make-federation-sturdyref-credential issuer-group-aid commune-aid
-                                               commune-id sturdyref-uri
-                                               netlayer registered-at
-                                               #:key (signing-keypair #f) (multisig-signers #f))
+(define-credential (make-federation-sturdyref-credential issuer-group-aid commune-aid commune-id sturdyref-uri netlayer registered-at)
   "Sturdyref for a remote commune in a federation: how it is reached. Enables
    recovery by re-resolving the sturdyref via mycapn enliven. The goods that
    cross are not said here: the commune tells what it deals in with its own
    census (`make-federation-census-credential`) and the roster is what at
    least two members deal in. The `crosses` claim is still emitted, empty — a
    constructor's emission is frozen, a SAID commits to it."
-  (make-credential *schema-playnet-federation-sturdyref*
-                   issuer-group-aid
-                   commune-aid
-                   (list (cons 'commune-id     commune-id)
-                         (cons 'sturdyref-uri  sturdyref-uri)
-                         (cons 'netlayer       netlayer)
-                         (cons 'registered-at  registered-at)
-                         (cons 'crosses        '()))
-                   '()
-                   #:signing-keypair signing-keypair
-                   #:multisig-signers multisig-signers))
+  *schema-playnet-federation-sturdyref*
+  #:signed (keypair multisig)
+  #:claims (commune-id sturdyref-uri netlayer registered-at (crosses '()))
+  #:index ()
+  #:time registered-at)
 
 (define* (make-federation-census-credential commune-aid federation-aid goods told-at
                                             #:key (kel #f) (units '()) (signing-keypair #f) (multisig-signers #f))
@@ -138,9 +104,4 @@
 ;; O(1) lookup, and the claim the observation time stands under. Registered
 ;; here at load, so a module that imports one family finds its credentials.
 (register-schema-claims!
- `((,*schema-playnet-federation-sturdyref*  () registered-at)
-   (,*schema-playnet-federation-census*     () told-at)
-   (,*schema-playnet-ccf-assessment*        () assessed-at)
-   (,*schema-playnet-exclusion*             () excluded-at)
-   (,*schema-playnet-federation-membership* () admitted-at)
-   (,*schema-playnet-membership*            () admitted-at)))
+ `((,*schema-playnet-federation-census* () told-at)))

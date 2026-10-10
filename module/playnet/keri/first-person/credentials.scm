@@ -65,36 +65,17 @@
 ;; device is retired by revocation or by its own horizon. The signature is the
 ;; root's current KEL key over the SAID (client-signed: the browser derives the
 ;; SAID with compute-said and signs; the gateway rebuilds and verifies).
-(define* (make-device-authorization-credential person-aid device-aid label tier
-                                               enrolled-at
-                                               #:key (expires-at #f)
-                                                     (active #t)
-                                                     (doors #f)
-                                                     (signing-keypair #f))
+(define-credential (make-device-authorization-credential person-aid device-aid label tier enrolled-at)
   "DOORS, when a list of door names (strings), is the allowlist this device
    may call — an outside interface holds only the doors it needs. Absent, the
    device reaches every device-level door. The claim is present only when
    set, so credentials issued before it keep their SAIDs."
-  (make-credential *schema-playnet-device-authorization*
-                   person-aid
-                   device-aid
-                   (append
-                    (list (cons 'person-aid  person-aid)
-                          (cons 'device-aid  device-aid)
-                          (cons 'label       label)
-                          (cons 'tier        tier)
-                          (cons 'enrolled-at enrolled-at)
-                          (cons 'expires-at  expires-at)
-                          (cons 'active      active))
-                    (if doors (list (cons 'doors doors)) '()))
-                   '()
-                   #:signing-keypair signing-keypair))
+  *schema-playnet-device-authorization*
+  #:key ((expires-at #f) (active #t) (doors #f))
+  #:signed (keypair)
+  #:claims (person-aid device-aid label tier enrolled-at expires-at active (? doors)))
 
-(define* (make-authorized-issuer-credential root-aid ecosystem-aid blessed-at
-                                            #:key (active #t)
-                                                  (expires-at #f)
-                                                  (signing-keypair #f)
-                                                  (multisig-signers #f))
+(define-credential (make-authorized-issuer-credential root-aid ecosystem-aid blessed-at)
   "Authorized-Issuer Credential (AIC) — the trust-registry root's blessing
    that ECOSYSTEM-AID may issue Personhood Credentials. This is the FPP
    'trust registry = registry AID + TEL of authorized-issuer ACDCs'
@@ -109,26 +90,12 @@
    authority (cred-live-at?). SIGNING-KEYPAIR attaches the root's Ed25519
    signature over the SAID so a foreign verifier can confirm the blessing
    without trusting the store."
-  (make-credential *schema-playnet-authorized-issuer*
-                   root-aid
-                   ecosystem-aid
-                   (list (cons 'root-aid      root-aid)
-                         (cons 'ecosystem-aid ecosystem-aid)
-                         (cons 'blessed-at    blessed-at)
-                         (cons 'active        active)
-                         (cons 'expires-at    expires-at))
-                   '()
-                   #:signing-keypair signing-keypair
-                   #:multisig-signers multisig-signers))
+  *schema-playnet-authorized-issuer*
+  #:key ((active #t) (expires-at #f))
+  #:signed (keypair multisig)
+  #:claims (root-aid ecosystem-aid blessed-at active expires-at))
 
-(define* (make-personhood-credential ecosystem-aid holder-aid enrolled-at
-                                     #:key (enrollment-evidence-digest #f)
-                                           (active #t)
-                                           (sponsor-aid #f)
-                                           (expires-at #f)
-                                           (witness-edges '())
-                                           (issuer-authz-said #f)
-                                           (signing-keypair #f))
+(define-credential (make-personhood-credential ecosystem-aid holder-aid enrolled-at)
   "Personhood Credential (PHC). ISSUER and ECOSYSTEM-AID are the same AID —
    the ecosystem's governance group asserts that HOLDER-AID is a unique
    real person within this ecosystem.
@@ -151,31 +118,15 @@
    SIGNING-KEYPAIR: when provided, attaches an Ed25519 signature over
    the SAID (CESR qb64 under code \"0B\") so verifiers can check the
    ecosystem actually issued this PHC without trusting the store."
-  (make-credential *schema-playnet-personhood*
-                   ecosystem-aid
-                   holder-aid
-                   (list (cons 'ecosystem-aid               ecosystem-aid)
-                         (cons 'enrolled-at                 enrolled-at)
-                         (cons 'enrollment-evidence-digest  enrollment-evidence-digest)
-                         (cons 'active                      active)
-                         (cons 'sponsor-aid                 sponsor-aid)
-                         (cons 'expires-at                  expires-at))
-                   (append
-                     (if issuer-authz-said
-                         (list (cons 'issuer-authz
-                                     (make-edge issuer-authz-said
-                                                #:operator 'I2I
-                                                #:schema *schema-playnet-authorized-issuer*)))
-                         '())
-                     witness-edges)
-                   #:signing-keypair signing-keypair))
+  *schema-playnet-personhood*
+  #:key ((enrollment-evidence-digest #f) (active #t) (sponsor-aid #f) (expires-at #f) (witness-edges '()) (issuer-authz-said #f))
+  #:signed (keypair)
+  #:claims (ecosystem-aid enrolled-at enrollment-evidence-digest active sponsor-aid expires-at)
+  #:edges ((? issuer-authz issuer-authz-said I2I *schema-playnet-authorized-issuer*) (@ witness-edges))
+  #:index (ecosystem-aid sponsor-aid)
+  #:time enrolled-at)
 
-(define* (make-relationship-credential issuer-aid subject-aid
-                                       relationship-type issuer-phc-said
-                                       issued-at
-                                       #:key (subject-persona #f)
-                                             (expires-at #f)
-                                             (signing-keypair #f))
+(define-credential (make-relationship-credential issuer-aid subject-aid relationship-type issuer-phc-said issued-at)
   "Verifiable Relationship Credential (VRC). ISSUER-AID vouches for
    SUBJECT-AID under RELATIONSHIP-TYPE (symbol: 'trust, 'colleague,
    'guardian, 'delegate, …). Mutual relationships require two VRCs,
@@ -188,19 +139,13 @@
    ecosystem check, it implements the FPP I6 trust-triangle
    Sybil-resistance property structurally rather than by naming
    convention."
-  (make-credential *schema-playnet-relationship*
-                   issuer-aid
-                   subject-aid
-                   (list (cons 'relationship-type  relationship-type)
-                         (cons 'subject-persona    subject-persona)
-                         (cons 'issued-at          issued-at)
-                         (cons 'expires-at         expires-at))
-                   (list (cons 'issuer-phc
-                               (make-edge issuer-phc-said
-                                          #:operator 'I2I
-                                          #:schema *schema-playnet-personhood*)))
-                   #:signing-keypair signing-keypair))
-
+  *schema-playnet-relationship*
+  #:key ((subject-persona #f) (expires-at #f))
+  #:signed (keypair)
+  #:claims (relationship-type subject-persona issued-at expires-at)
+  #:edges ((issuer-phc issuer-phc-said I2I *schema-playnet-personhood*))
+  #:index ()
+  #:time issued-at)
 
 ;; =========================================================================
 ;; Contact points — user-held, presented to gateways as custody
@@ -246,12 +191,7 @@
 (define (contact-point-identifying? k)
   (and (memq k '(email telegram matrix)) #t))
 
-(define* (make-contact-point-credential subject-aid kind ctx
-                                        #:key (style 'terse)
-                                              (issued-at #f)
-                                              (expires-at #f)
-                                              (u 'auto)
-                                              (signing-keypair #f))
+(define-credential (make-contact-point-credential subject-aid kind ctx)
   "Self-issued contact-point ACDC: SUBJECT-AID declares that it can be
    reached on KIND at CTX. Issuer = holder = SUBJECT-AID — nobody else
    asserts how to reach you.
@@ -270,17 +210,12 @@
 
    SIGNING-KEYPAIR: the subject's own keypair. A gateway MUST verify this
    before binding, or anyone could redirect another AID's notifications."
-  (make-credential *schema-playnet-contact-point*
-                   subject-aid subject-aid
-                   (append
-                    (u-claim u)
-                    (list (cons 'kind       kind)
-                          (cons 'ctx        ctx)
-                          (cons 'style      style)
-                          (cons 'issued-at  (or issued-at (iso-utc-now)))
-                          (cons 'expires-at expires-at)))
-                   '()
-                   #:signing-keypair signing-keypair))
+  *schema-playnet-contact-point*
+  #:key ((style 'terse) (issued-at #f) (expires-at #f) (u 'auto))
+  #:signed (keypair)
+  #:holder subject-aid
+  #:nonce u
+  #:claims (kind ctx style (issued-at (or issued-at (iso-utc-now))) expires-at))
 
 (define (contact-point-binding-fields cred)
   "The (kind ctx style) triple a gateway feeds to ^recipient-registry's
@@ -329,10 +264,6 @@
     "contact point has expired")
    (else #t)))
 
-(register-schema-claims!
- `((,*schema-playnet-personhood*   (ecosystem-aid sponsor-aid) enrolled-at)
-   (,*schema-playnet-relationship* ()                          issued-at)))
-
 ;; =========================================================================
 ;; Body: a scope admits a body — the Legal Entity credential's shape
 ;; =========================================================================
@@ -358,11 +289,7 @@
 (define %issuance-disclaimer
   "The issuing scope issued this credential to the named holder with reasonable care, following its own admission ceremony, and the facts it carries were accurate at the time of issuance. A later change in the body's standing is read from revocation, not from this text.")
 
-(define* (make-body-credential ecosystem-aid body-aid admitted-at
-                               #:key (kind #f) (jurisdiction #f) (legal-ids #f)
-                                     (quorum #f) (expires-at #f)
-                                     (issuer-authz-said #f) (u 'auto)
-                                     (signing-keypair #f) (multisig-signers #f))
+(define-credential (make-body-credential ecosystem-aid body-aid admitted-at)
   "The body credential: ECOSYSTEM-AID (the admitting scope, the issuer) says
    BODY-AID (the body's group AID, the holder) is a body it admitted at
    ADMITTED-AT (ISO-8601 or epoch seconds). KIND (a symbol, the body class),
@@ -372,26 +299,14 @@
    as the I2I edge `issuer-authz` — this credential's issuer must be that
    AIC's holder. U is the blinding nonce, minted by default. The usage and
    issuance disclaimers ride as claims on every body credential."
-  (make-credential *schema-playnet-body*
-                   ecosystem-aid body-aid
-                   (append
-                    (u-claim u)
-                    (if kind (list (cons 'kind kind)) '())
-                    (if jurisdiction (list (cons 'jurisdiction jurisdiction)) '())
-                    (if legal-ids (list (cons 'legal-ids legal-ids)) '())
-                    (if quorum (list (cons 'quorum quorum)) '())
-                    (list (cons 'admitted-at admitted-at))
-                    (if expires-at (list (cons 'expires-at expires-at)) '())
-                    (list (cons 'usage-disclaimer %usage-disclaimer)
-                          (cons 'issuance-disclaimer %issuance-disclaimer)))
-                   (if issuer-authz-said
-                       (list (cons 'issuer-authz
-                                   (make-edge issuer-authz-said
-                                              #:operator 'I2I
-                                              #:schema *schema-playnet-authorized-issuer*)))
-                       '())
-                   #:signing-keypair signing-keypair
-                   #:multisig-signers multisig-signers))
+  *schema-playnet-body*
+  #:key ((kind #f) (jurisdiction #f) (legal-ids #f) (quorum #f) (expires-at #f) (issuer-authz-said #f) (u 'auto))
+  #:signed (keypair multisig)
+  #:nonce u
+  #:claims ((? kind) (? jurisdiction) (? legal-ids) (? quorum) admitted-at (? expires-at) (usage-disclaimer %usage-disclaimer) (issuance-disclaimer %issuance-disclaimer))
+  #:edges ((? issuer-authz issuer-authz-said I2I *schema-playnet-authorized-issuer*))
+  #:index ()
+  #:time admitted-at)
 
 ;; =========================================================================
 ;; Body role: a body says who holds a role in it
@@ -416,33 +331,22 @@
 
 (define *body-roles* '(steward member officer))
 
-(define* (make-body-role-credential body-aid holder-aid role since
-                                    #:key (until #f) (quorum #f) (u 'auto)
-                                          (body-cred-said #f))
+(define-credential (make-body-role-credential body-aid holder-aid role since)
   "The unsigned role credential: BODY-AID says HOLDER-AID holds ROLE (one of
    *body-roles*, a symbol) since SINCE (ISO-8601 or epoch seconds). UNTIL
    and QUORUM (the body's k) are emitted when given. U is the blinding
    nonce, minted by default. BODY-CRED-SAID, when given, is the SAID of the
    body's own credential, attached as the I2I edge `body`."
-  (make-credential *schema-playnet-body-role*
-                   body-aid holder-aid
-                   (append
-                    (u-claim u)
-                    (list (cons 'role role)
-                          (cons 'since since))
-                    (if until (list (cons 'until until)) '())
-                    (if quorum (list (cons 'quorum quorum)) '()))
-                   (if body-cred-said
-                       (list (cons 'body
-                                   (make-edge body-cred-said
-                                              #:operator 'I2I
-                                              #:schema *schema-playnet-body*)))
-                       '())))
+  *schema-playnet-body-role*
+  #:key ((until #f) (quorum #f) (u 'auto) (body-cred-said #f))
+  #:signed ()
+  #:nonce u
+  #:claims (role since (? until) (? quorum))
+  #:edges ((? body body-cred-said I2I *schema-playnet-body*))
+  #:index ()
+  #:time since)
 
 (define (body-role-credential-with-block cred sig-block)
   "CRED carrying SIG-BLOCK, the stewards' signatures over its SAID."
   (cred-with-signature cred sig-block))
 
-(register-schema-claims!
- `((,*schema-playnet-body*      () admitted-at)
-   (,*schema-playnet-body-role* () since)))

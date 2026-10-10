@@ -38,9 +38,7 @@
 ;; =========================================================================
 
 
-(define* (make-audit-pass-credential auditor-aid federation-aid
-                                      #:key (audited-at #f) (cycle #f)
-                                            (signing-keypair #f))
+(define-credential (make-audit-pass-credential auditor-aid federation-aid)
   "Heartbeat credential issued when the federation tree passes
    federation-tree-coherent?.
 
@@ -55,19 +53,13 @@
    SIGNING-KEYPAIR (Ed25519, matching AUDITOR-AID's KERI prefix)
    attaches a CESR signature for KERI portability; bare-data
    deployment passes #f."
-  (make-credential *schema-playnet-audit-pass*
-                   auditor-aid #f
-                   (list (cons 'federation-aid federation-aid)
-                         (cons 'audited-at     (or audited-at (iso-utc-now)))
-                         (cons 'cycle          cycle))
-                   '()
-                   #:signing-keypair signing-keypair))
+  *schema-playnet-audit-pass*
+  #:key ((audited-at #f) (cycle #f))
+  #:signed (keypair)
+  #:holder #f
+  #:claims (federation-aid (audited-at (or audited-at (iso-utc-now))) cycle))
 
-(define* (make-incoherence-alert-credential auditor-aid federation-aid
-                                             violations
-                                             #:key (audited-at #f)
-                                                   (cycle #f)
-                                                   (signing-keypair #f))
+(define-credential (make-incoherence-alert-credential auditor-aid federation-aid violations)
   "Issued when federation-tree-coherent? returns #f. VIOLATIONS is an
    alist of invariant → offending entities.
 
@@ -76,14 +68,11 @@
    subject rides in the `federation-aid` claim.
 
    SIGNING-KEYPAIR optional, see make-audit-pass-credential."
-  (make-credential *schema-playnet-incoherence-alert*
-                   auditor-aid #f
-                   (list (cons 'federation-aid federation-aid)
-                         (cons 'audited-at     (or audited-at (iso-utc-now)))
-                         (cons 'cycle          cycle)
-                         (cons 'violations     violations))
-                   '()
-                   #:signing-keypair signing-keypair))
+  *schema-playnet-incoherence-alert*
+  #:key ((audited-at #f) (cycle #f))
+  #:signed (keypair)
+  #:holder #f
+  #:claims (federation-aid (audited-at (or audited-at (iso-utc-now))) cycle violations))
 
 
 (define* (make-derived-state-snapshot-credential

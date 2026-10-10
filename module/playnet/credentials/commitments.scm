@@ -47,18 +47,7 @@
 (define *schema-playnet-redistribution-mandate*
   "playnet-redistribution-mandate/v1")
 
-
-(define* (make-commitment-credential provider-aid receiver-aid
-                                      commitment-id action
-                                      #:key (resource-conforms-to #f)
-                                            (resource-classified-as '())
-                                            (resource-quantity #f)
-                                            (effort-quantity #f)
-                                            (due #f) (plan-id #f)
-                                            (process-id #f) (satisfies #f)
-                                            (resource-inventoried-as #f)
-                                            (triggered-by #f)
-                                            (signing-keypair #f))
+(define-credential (make-commitment-credential provider-aid receiver-aid commitment-id action)
   "Commitment ACDC: provider promises to receiver.
    Issuer = provider, holder = receiver.
    resource-quantity, effort-quantity: pairs (qty . unit) or #f.
@@ -86,74 +75,20 @@
 
    signing-keypair: optional — the provider's Ed25519 keypair, so the promise
    carries its maker's signature (a scope signs its own commitment)."
-  (make-credential *schema-playnet-commitment*
-                   provider-aid receiver-aid
-                   (let* ((base (list (cons 'commitment-id        commitment-id)
-                                      (cons 'action               action)
-                                      (cons 'resource-conforms-to resource-conforms-to)
-                                      (cons 'resource-classified-as resource-classified-as)
-                                      (cons 'resource-quantity    resource-quantity)
-                                      (cons 'effort-quantity      effort-quantity)
-                                      (cons 'due                  due)
-                                      (cons 'plan-id              plan-id)
-                                      (cons 'process-id           process-id)
-                                      (cons 'satisfies            satisfies)))
-                          (cl (if resource-inventoried-as
-                                  (append base (list (cons 'resource-inventoried-as
-                                                           resource-inventoried-as)))
-                                  base))
-                          (cl (if triggered-by
-                                  (append cl (list (cons 'triggered-by triggered-by)))
-                                  cl)))
-                     cl)
-                   '() #:signing-keypair signing-keypair))
+  *schema-playnet-commitment*
+  #:key ((resource-conforms-to #f) (resource-classified-as '()) (resource-quantity #f) (effort-quantity #f) (due #f) (plan-id #f) (process-id #f) (satisfies #f) (resource-inventoried-as #f) (triggered-by #f))
+  #:signed (keypair)
+  #:claims (commitment-id action resource-conforms-to resource-classified-as resource-quantity effort-quantity due plan-id process-id satisfies (? resource-inventoried-as) (? triggered-by))
+  #:index (commitment-id))
 
-(define* (make-redistribution-mandate-credential
-          federation-aid scope-aid threshold-spec recipient-policy
-          #:key (period "monthly") (effective-from #f)
-          (signing-keypair #f) (multisig-signers #f))
-  "Redistribution mandate ACDC: FEDERATION-AID requires SCOPE-AID
-   (a member) to redistribute surplus above THRESHOLD-SPEC, with
-   destination chosen by RECIPIENT-POLICY.
+(define-credential (make-redistribution-mandate-credential federation-aid scope-aid threshold-spec recipient-policy)
+  "monthly"
+  *schema-playnet-redistribution-mandate*
+  #:key ((period "monthly") (effective-from #f))
+  #:signed (keypair multisig)
+  #:claims (federation-aid scope-aid threshold-spec recipient-policy period (effective-from (or effective-from (iso-utc-now)))))
 
-   Issuer = federation (the body imposing the mandate).
-   Holder  = member scope (the party bound by it).
-   SIGNING-KEYPAIR attaches the federation's issuer signature (the party
-   imposing the mandate). A member counter-signature (acceptance of the
-   obligation) is the eventual bilateral model — pass MULTISIG-SIGNERS
-   then. (No production issuer wires this yet — see the acdc-signing
-   audit; the earlier docstring claimed a signature the constructor had
-   no parameter to store.)
-
-   THRESHOLD-SPEC is a symbolic form, e.g.
-     (surplus-above (qty 100 \"kg\") spec:grain)
-     (idle-capacity-above (hours 40))
-     (custody-of-spec-above spec:widget 500)
-
-   RECIPIENT-POLICY is symbolic:
-     federation-pool
-     (equal-share to-leaves)
-     (need-weighted to-leaves)
-
-   PERIOD: a string like \"monthly\" / \"quarterly\" / \"weekly\";
-   informational — the auditor uses it to decide how often to check."
-  (make-credential *schema-playnet-redistribution-mandate*
-                   federation-aid scope-aid
-                   (list (cons 'federation-aid    federation-aid)
-                         (cons 'scope-aid         scope-aid)
-                         (cons 'threshold-spec    threshold-spec)
-                         (cons 'recipient-policy  recipient-policy)
-                         (cons 'period            period)
-                         (cons 'effective-from    (or effective-from
-                                                       (iso-utc-now))))
-                   '()
-                   #:signing-keypair signing-keypair
-                   #:multisig-signers multisig-signers))
-
-
-(define* (make-commitment-fulfillment-credential
-          receiver-aid provider-aid commitment-said
-          #:key (fulfilled-at #f) (note #f))
+(define-credential (make-commitment-fulfillment-credential receiver-aid provider-aid commitment-said)
   "Commitment-fulfillment ACDC issued by the RECEIVER of a commitment
    to the PROVIDER, marking that commitment as satisfied.
 
@@ -165,35 +100,18 @@
 
    Issuer = receiver (the party attesting that the obligation was met).
    Holder = provider. Carries the commitment SAID as an edge."
-  (let ((edges
-         (list (cons 'fulfills
-                     (make-edge commitment-said
-                                #:operator 'NI2I
-                                #:schema *schema-playnet-commitment*)))))
-    (make-credential *schema-playnet-commitment-fulfillment*
-                     receiver-aid provider-aid
-                     (list (cons 'commitment-said commitment-said)
-                           (cons 'fulfilled-at   (or fulfilled-at
-                                                      (iso-utc-now)))
-                           (cons 'note           note))
-                     edges)))
-
+  *schema-playnet-commitment-fulfillment*
+  #:key ((fulfilled-at #f) (note #f))
+  #:signed ()
+  #:claims (commitment-said (fulfilled-at (or fulfilled-at (iso-utc-now))) note)
+  #:edges ((fulfills commitment-said NI2I *schema-playnet-commitment*)))
 
 ;; Recognition of a plan or an intent at a federation level is the observer's
 ;; own rail (observation/observer.scm confirm-plan / recognize-intent): the
 ;; validation maps every credit and voice read gates on. It is a fact about
 ;; the scope's own record and needs no credential of its own.
 
-
-(define* (make-agreement-credential acceptor-aid proposer-aid
-                                     agreement-id
-                                     #:key (proposal-id #f)
-                                           (primary-commitment-ids '())
-                                           (reciprocal-commitment-ids '())
-                                           (counterparty-provider #f)
-                                           (counterparty-receiver #f)
-                                           (accepted-at #f)
-                                           (signing-keypair #f))
+(define-credential (make-agreement-credential acceptor-aid proposer-aid agreement-id)
   "Agreement ACDC: ACCEPTOR-AID has accepted PROPOSER-AID's proposal.
    Issuer = acceptor (the party taking on the commitments).
    Holder = proposer (the party whose proposal was accepted).
@@ -202,17 +120,12 @@
    promotion, and the acceptance timestamp.
    signing-keypair: optional — the acceptor's keypair, so the acceptance
    carries the acceptor's signature (a scope signs its own consent)."
-  (make-credential *schema-playnet-agreement*
-                   acceptor-aid proposer-aid
-                   (list (cons 'agreement-id             agreement-id)
-                         (cons 'proposal-id              proposal-id)
-                         (cons 'primary-commitment-ids   primary-commitment-ids)
-                         (cons 'reciprocal-commitment-ids reciprocal-commitment-ids)
-                         (cons 'counterparty-provider    counterparty-provider)
-                         (cons 'counterparty-receiver    counterparty-receiver)
-                         (cons 'accepted-at              accepted-at))
-                   '() #:signing-keypair signing-keypair))
-
+  *schema-playnet-agreement*
+  #:key ((proposal-id #f) (primary-commitment-ids '()) (reciprocal-commitment-ids '()) (counterparty-provider #f) (counterparty-receiver #f) (accepted-at #f))
+  #:signed (keypair)
+  #:claims (agreement-id proposal-id primary-commitment-ids reciprocal-commitment-ids counterparty-provider counterparty-receiver accepted-at)
+  #:index (agreement-id proposal-id)
+  #:time accepted-at)
 
 (define* (make-intent-credential issuer-aid intent-id action
                                   #:key (provider #f) (receiver #f)
@@ -252,7 +165,6 @@
                          (cons 'plan-id             plan-id)
                          (cons 'process-id          process-id)
                          (cons 'satisfies           satisfies))))
-
 
 ;; =========================================================================
 ;; Mandate-spec DSL ↔ predicate
@@ -328,6 +240,4 @@
 ;; O(1) lookup, and the claim the observation time stands under. Registered
 ;; here at load, so a module that imports one family finds its credentials.
 (register-schema-claims!
- `((,*schema-playnet-commitment* (commitment-id))
-   (,*schema-playnet-intent*     (intent-id))
-   (,*schema-playnet-agreement*  (agreement-id proposal-id) accepted-at)))
+ `((,*schema-playnet-intent* (intent-id))))

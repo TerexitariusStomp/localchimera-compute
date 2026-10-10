@@ -25,12 +25,7 @@
 (define *schema-playnet-witness-assignment*
   "playnet-witness-assignment/v1")
 
-
-(define* (make-bran-share-credential issuer-group-aid holder-aid
-                                     share-index threshold total-shares
-                                     share-data-hex
-                                     #:key (subject-aid #f)
-                                     (signing-keypair #f) (multisig-signers #f))
+(define-credential (make-bran-share-credential issuer-group-aid holder-aid share-index threshold total-shares share-data-hex)
   "Shamir bran share: issuer = governance group, holder = member.
    share-data-hex is the hex-encoded share bytevector.
 
@@ -46,21 +41,10 @@
    ACDC is a strictly weaker integrity guarantee than the credentials
    issued right alongside it in a bootstrap ceremony. #f leaves it
    unsigned (synthetic/test mode)."
-  (let ((claims-base (list (cons 'share-index  share-index)
-                           (cons 'threshold    threshold)
-                           (cons 'total-shares total-shares)
-                           (cons 'share-data   share-data-hex))))
-    (make-credential *schema-playnet-bran-share*
-                     issuer-group-aid
-                     holder-aid
-                     (if subject-aid
-                         (append claims-base
-                                 (list (cons 'subject-aid subject-aid)))
-                         claims-base)
-                     '()
-                     #:signing-keypair signing-keypair
-                     #:multisig-signers multisig-signers)))
-
+  *schema-playnet-bran-share*
+  #:key ((subject-aid #f))
+  #:signed (keypair multisig)
+  #:claims (share-index threshold total-shares (share-data share-data-hex) (? subject-aid)))
 
 ;; =========================================================================
 ;; Witness assignment — federation-member operation of KERI witnesses
@@ -85,21 +69,15 @@
 ;;   group-aid     string  — federation's group AID this witness serves
 ;;   assigned-at   integer — epoch seconds (timestamp claim)
 
-(define* (make-witness-assignment-credential federation-aid member-aid
-                                              witness-aid witness-oobi
-                                              group-aid assigned-at
-                                              #:key (signing-keypair #f))
+(define-credential (make-witness-assignment-credential federation-aid member-aid witness-aid witness-oobi group-aid assigned-at)
   "Federation-issued attestation that MEMBER-AID runs the KERIA witness
    identified by WITNESS-AID + WITNESS-OOBI on behalf of GROUP-AID.
    FEDERATION-AID is the issuer; MEMBER-AID is the holder."
-  (make-credential *schema-playnet-witness-assignment*
-                   federation-aid member-aid
-                   (list (cons 'witness-aid  witness-aid)
-                         (cons 'witness-oobi witness-oobi)
-                         (cons 'group-aid    group-aid)
-                         (cons 'assigned-at  assigned-at))
-                   '()
-                   #:signing-keypair signing-keypair))
+  *schema-playnet-witness-assignment*
+  #:signed (keypair)
+  #:claims (witness-aid witness-oobi group-aid assigned-at)
+  #:index (witness-aid)
+  #:time assigned-at)
 
 (define (witness-assignments-for-federation federation-aid all-creds)
   "Filter ALL-CREDS down to the non-revoked witness-assignment
@@ -163,5 +141,4 @@
 ;; What the store knows of this family's schemas: the claims it indexes for
 ;; O(1) lookup, and the claim the observation time stands under. Registered
 ;; here at load, so a module that imports one family finds its credentials.
-(register-schema-claims!
- `((,*schema-playnet-witness-assignment* (witness-aid) assigned-at)))
+

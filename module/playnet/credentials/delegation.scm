@@ -43,9 +43,7 @@
 ;;      (as observation/credentials' attest-* and cast-signed already do).
 ;; =========================================================================
 
-(define* (make-delegation-credential issuer-aid holder-aid franchise
-                                     fraction mandate-spec
-                                     #:key (mandate-text #f) (at #f))
+(define-credential (make-delegation-credential issuer-aid holder-aid franchise fraction mandate-spec)
   "Delegation: issuer (citizen) authorizes holder (delegate) to receive
    FRACTION of issuer's voice in FRANCHISE, optionally constrained by
    MANDATE-SPEC.
@@ -61,20 +59,7 @@
                  credential sees both forms — closer to the spirit of
                  ACDC's rule section + `l` (Legal Language) field
                  without yet introducing a separate rule block."
-  (make-credential *schema-playnet-delegation*
-                   issuer-aid
-                   holder-aid
-                   ;; AT (append-only, emit-when-set — SAID-stable for every
-                   ;; delegation minted before it existed): the write's own
-                   ;; timestamp. Without it the SAID was fully determined by
-                   ;; (delegator, delegate, franchise, fraction, mandate), so
-                   ;; RETURNING to a previously-used fraction rebuilt a SAID
-                   ;; the supersede path had already revoked — the issue
-                   ;; crashed the whole delegation write, and recovery's
-                   ;; replay (non-revoked only) would have dropped the
-                   ;; restored state even if it hadn't.
-                   (let ((base (list (cons 'franchise    franchise)
-                                     (cons 'fraction     fraction)
-                                     (cons 'mandate      mandate-spec)
-                                     (cons 'mandate-text mandate-text))))
-                     (if at (append base (list (cons 'at at))) base))))
+  *schema-playnet-delegation*
+  #:key ((mandate-text #f) (at #f))
+  #:signed ()
+  #:claims (franchise fraction (mandate mandate-spec) mandate-text (? at)))
