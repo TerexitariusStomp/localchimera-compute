@@ -1686,6 +1686,16 @@
                            (and=> (event-interval ev) cdr) (validated-effort st ev))))
               (standing-events st 'work)))
 
+(define (rotation-history st)
+  "Everyone's practice at this observer as the history a rota reads
+   (plan/rotation.scm rotation-tilt): ((worker skill . hours) …), one row per
+   standing work event that names a skill, the hours this observer validates."
+  (filter-map (lambda (ev)
+                (let ((worker (economic-event-provider ev))
+                      (skill  (economic-event-resource-conforms-to ev)))
+                  (and worker skill (cons* worker skill (validated-effort st ev)))))
+              (standing-events st 'work)))
+
 (define (earned-skills st aid)         (map car (skill-hours-of st aid)))
 (define (practiced-hours st aid skill)
   (cond ((assoc skill (skill-hours-of st aid)) => cdr) (else 0)))
@@ -2531,6 +2541,7 @@
     ;; the same practice as ROWS (event-id skill instant hours), hours validated
     ;; here, for the join across scopes (planner/observation/practice.scm)
     ((work-practice aid) (work-practice st aid))
+    ((rotation-history)  (rotation-history st))
 
     ;; Performed trips as a derived view over pickup→dropoff pairs (no stored
     ;; state) — the measurements the arc-time table folds against the routing

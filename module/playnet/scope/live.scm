@@ -13,7 +13,7 @@
 ;;; boundary intact. Lives in a Goblins module but the engine inside stays pure.
 
 (define-module (playnet scope live)
-  #:use-module ((playnet vf facts located) #:select (credit-good))
+  #:use-module ((playnet vf facts located) #:select (credit-good bar-field))
   #:re-export (make-work-event)
   #:use-module (playnet vf formulas flows)
   #:use-module ((playnet knowledge dsl shorthand) #:select (flow*))
@@ -51,6 +51,7 @@
   #:use-module (playnet knowledge catalogues substances)  ; nutrient-content · closure-rows · closure-flows (reproduction, the flow-shaped table-driven closure); *nutrient-ids*; derive-contains / closed-composition (the chemistry at the door)
   #:use-module (playnet legal compliance)             ; scope-legal-decorate — the scope's law at the door
   #:use-module (playnet plan assignment)  ; the offer field → a rota, for the acts one person must carry
+  #:use-module ((playnet plan rotation) #:select (rotation-tilt))  ; taking turns, from what was done
   #:use-module ((playnet plan store)      ; standing by the record's own terms
                 #:select (intent-window-passed?))
   #:use-module ((playnet plan accepts)            ; the commitment arc: what the standing commitments ARE to this solve, and what it did to them
@@ -1801,6 +1802,14 @@
 ;; the social-individual accounting (L, N·T, free time f). candidates? adds the OFFER
 ;; FIELD (per need-id, ((worker share offer-id) …)) — wanted on the OCapN wire, omitted
 ;; on the internal metabolism path (lp-alist).
+(define (rota-tilt scope-root)
+  "The rota's tilt from SCOPE-ROOT's history, or none without one."
+  (or (and scope-root
+           (false-if-exception
+            (rotation-tilt ($ ($ scope-root 'observer) 'rotation-history)
+                           #:class-of (lambda (need) (or (bar-field need 2) need)))))
+      (lambda (worker need peers) 0.0)))
+
 (define* (plan-results->alist ints coms mat fill ntot report #:key candidates? rota? (scope-root #f))
   ;; Publish the plan's social free time f so drawable credit + consumer voice
   ;; fold in the CITIZENSHIP dividend by default (account.scm) — every real
@@ -1876,15 +1885,17 @@
       ;; fractional commitments in `work` stand. Divisible work does not want a
       ;; rota; a week of farming with one name on it would be less true.
       ;;
-      ;; Rotation is NOT applied here: it needs a history this projection does
-      ;; not have (plan/rotation.scm takes one, and the ledger holds it). Until
-      ;; that is wired the rota is fair in the plan's own terms — the tie goes to
-      ;; whoever was granted most — and even-handed across weeks only by luck.
+      ;; Rotation: the tie goes to whoever is below their share of that skill's
+      ;; work, read off the scope's own standing work events (the observer's
+      ;; rotation-history, the same validated hours the credit ledger folds). A
+      ;; need is ni|proc|skill|cell, so its skill is the class a turn is counted
+      ;; in. With no scope root at hand the rota is fair in the plan's own terms.
       ,@(if rota? `((rota . ,(map (lambda (s)
                                     `((slot . ,(slot-key s)) (need . ,(slot-need s))
                                       (worker . ,(slot-worker s)) (hours . ,(slot-hours s))))
                                   (assign-plan-slots (or (assq-ref report 'candidates) '())
-                                                     #:atoms-of (whole-atoms-of)))))
+                                                     #:atoms-of (whole-atoms-of)
+                                                     #:tilt (rota-tilt scope-root)))))
             '())
       ;; WHAT EACH ACT NEEDS, and why the ones that are absent are absent.
       ;; Keyed by (process place period), which is what a calendar event already
