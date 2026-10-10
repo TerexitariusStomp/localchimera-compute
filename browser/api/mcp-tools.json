@@ -6577,6 +6577,65 @@
       "x-playnet-http": "/api/session/count-stock"
     },
     {
+      "name": "session.read-condition",
+      "title": "stock: read-condition",
+      "description": "Records this AID's reading of RESOURCE-ID's condition as READING UNIT, an intensive unit (°C), against AMBIENT (°C, the catalogue's when absent): the reading names the form the stock is in among the forms its base has declared, so the stock the books held under another form is counted as nothing and the same quantity lands on the stock of the form named. Replies (ok (form was reading ambient moved unit from-stock to-stock gone event word)) or a failure, among them a form the scope has not declared. [stock; callable by an enrolled device]",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "scope-id": {
+            "type": "string",
+            "description": "a scope (commune) id",
+            "x-playnet-shape": "scope-id"
+          },
+          "resource-id": {
+            "type": "string",
+            "description": "an economic-resource id in the scope (own-means: the titled thing; claim/resource-detail: the good)",
+            "x-playnet-shape": "id"
+          },
+          "reading": {
+            "type": "number",
+            "x-playnet-shape": "number"
+          },
+          "unit": {
+            "type": "string",
+            "description": "a unit symbol, e.g. kg, h, each",
+            "x-playnet-shape": "unit"
+          },
+          "when-iso": {
+            "type": "string",
+            "format": "date-time",
+            "description": "civil ISO 8601 at the boundary",
+            "x-playnet-shape": "instant"
+          },
+          "ambient": {
+            "type": "number",
+            "description": "the ambient temperature a condition is read against, °C; the catalogue's when absent",
+            "x-playnet-shape": "number"
+          },
+          "note": {
+            "type": "string",
+            "description": "a free-text note recorded on the row or event",
+            "x-playnet-shape": "string"
+          }
+        },
+        "required": [
+          "scope-id",
+          "resource-id",
+          "reading",
+          "unit"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false
+      },
+      "x-playnet-auth": "device",
+      "x-playnet-topic": "stock",
+      "x-playnet-http": "/api/session/read-condition"
+    },
+    {
       "name": "session.set-profile",
       "title": "identity: set-profile",
       "description": "Upserts this AID's profile tags in SCOPE-ID from a JSON array, replacing prior profile tags and keeping other classifications; replies (ok . tags). [identity; callable by an enrolled device]",

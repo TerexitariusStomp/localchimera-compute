@@ -774,6 +774,9 @@ or #f when no handler sends it."
     (door session count-stock (scope-id resource-id counted unit #:optional (technique #f) (place #f) (when-iso #f) (fulfills #f) (evidence #f) (note #f))
           #:auth device #:topic stock #:reply ok-or-error #:kind constative #:to planner
           #:doc "Records this AID's count of RESOURCE-ID in SCOPE-ID as COUNTED UNIT: a count that finds the ledger off lands a raise or lower of the difference on that stock, one that agrees lands none. TECHNIQUE (stated, label, photo), PLACE, WHEN-ISO and the EVIDENCE hash ride the event; FULFILLS names the counter's commitment of a planned count, whose record lands as a produce. Replies (ok (event record delta onhand)) or a failure.")
+    (door session read-condition (scope-id resource-id reading unit #:optional (when-iso #f) (ambient #f) (note #f))
+          #:auth device #:topic stock #:reply ok-or-error #:kind constative #:to planner
+          #:doc "Records this AID's reading of RESOURCE-ID's condition as READING UNIT, an intensive unit (°C), against AMBIENT (°C, the catalogue's when absent): the reading names the form the stock is in among the forms its base has declared, so the stock the books held under another form is counted as nothing and the same quantity lands on the stock of the form named. Replies (ok (form was reading ambient moved unit from-stock to-stock gone event word)) or a failure, among them a form the scope has not declared.")
     (door session set-profile (scope-id json)
           #:auth device #:topic identity #:reply ok-or-error #:kind constative #:to planner
           #:feature health-profile
@@ -1124,6 +1127,9 @@ or #f when no handler sends it."
     (door planner count-stock (scope-id agent-id resource-id counted unit #:optional (technique #f) (place #f) (when-iso #f) (fulfills #f) (evidence #f) (note #f))
           #:auth operator #:topic stock #:reply ok-or-error #:kind constative
           #:doc "Records an agent's count of a stock (personhood-gated): the difference from on-hand lands as a raise or lower on that resource with technique, place, instant and evidence hash; a planned count's record lands as a produce fulfilling the record's commitment. Replies the adjustment's event id, the record's event id, the difference and what is on hand after.")
+    (door planner read-condition (scope-id agent-id resource-id reading unit #:optional (when-iso #f) (ambient #f) (note #f))
+          #:auth operator #:topic stock #:reply ok-or-error #:kind constative
+          #:doc "Records an agent's reading of a stock's condition (personhood-gated): the intensive reading names the declared form the stock is in, and the stock moves from the form the books held to it. See session read-condition.")
     (door planner set-availability (scope-id aid availability-window)
           #:auth operator #:topic scopes #:reply ok-or-error #:kind preference
           #:doc "Replaces a member's availability window on their agent record; replies (ok . AID).")

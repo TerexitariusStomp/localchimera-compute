@@ -18022,6 +18022,135 @@
         }
       }
     },
+    "/api/session/read-condition": {
+      "post": {
+        "operationId": "session.read-condition",
+        "summary": "Records this AID's reading of RESOURCE-ID's condition as READING UNIT, an intensive unit (°C), against AMBIENT (°C, the catalogue's when absent): the reading names the form the stock is in among the forms its base has declared, so the stock the books held under another form is counted as nothing and the same quantity lands on the stock of the form named. Replies (ok (form was reading ambient moved unit from-stock to-stock gone event word)) or a failure, among them a form the scope has not declared.",
+        "description": "Records this AID's reading of RESOURCE-ID's condition as READING UNIT, an intensive unit (°C), against AMBIENT (°C, the catalogue's when absent): the reading names the form the stock is in among the forms its base has declared, so the stock the books held under another form is counted as nothing and the same quantity lands on the stock of the form named. Replies (ok (form was reading ambient moved unit from-stock to-stock gone event word)) or a failure, among them a form the scope has not declared.\n\nObject: `session`. Callable by an enrolled device. Reply shape: `ok-or-error`.",
+        "tags": [
+          "stock"
+        ],
+        "x-playnet-auth": "device",
+        "x-playnet-kind": "constative",
+        "x-playnet-to": "planner",
+        "x-playnet-object": "session",
+        "security": [
+          {
+            "deviceSignature": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "scope-id": {
+                    "type": "string",
+                    "description": "a scope (commune) id",
+                    "x-playnet-shape": "scope-id"
+                  },
+                  "resource-id": {
+                    "type": "string",
+                    "description": "an economic-resource id in the scope (own-means: the titled thing; claim/resource-detail: the good)",
+                    "x-playnet-shape": "id"
+                  },
+                  "reading": {
+                    "type": "number",
+                    "x-playnet-shape": "number"
+                  },
+                  "unit": {
+                    "type": "string",
+                    "description": "a unit symbol, e.g. kg, h, each",
+                    "x-playnet-shape": "unit"
+                  },
+                  "when-iso": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "civil ISO 8601 at the boundary",
+                    "x-playnet-shape": "instant"
+                  },
+                  "ambient": {
+                    "type": "number",
+                    "description": "the ambient temperature a condition is read against, °C; the catalogue's when absent",
+                    "x-playnet-shape": "number"
+                  },
+                  "note": {
+                    "type": "string",
+                    "description": "a free-text note recorded on the row or event",
+                    "x-playnet-shape": "string"
+                  }
+                },
+                "required": [
+                  "scope-id",
+                  "resource-id",
+                  "reading",
+                  "unit"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the door's reply (ok-or-error), as JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "const": "ok"
+                    },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "const": "ok"
+                        },
+                        {
+                          "description": "the value"
+                        }
+                      ],
+                      "description": "(ok . value)"
+                    },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "const": "error"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ],
+                      "description": "(error \"reason\")"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "error": {
+                          "type": "string"
+                        }
+                      },
+                      "description": "((error . \"reason\"))"
+                    }
+                  ],
+                  "x-playnet-reply": "ok-or-error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "no valid device signature (B4)"
+          },
+          "403": {
+            "description": "the door is outside this device's allowlist"
+          }
+        }
+      }
+    },
     "/api/session/set-profile": {
       "post": {
         "operationId": "session.set-profile",
@@ -21358,6 +21487,14 @@
       "topic": "stock",
       "x-playnet-transport": "none",
       "summary": "Records an agent's count of a stock (personhood-gated): the difference from on-hand lands as a raise or lower on that resource with technique, place, instant and evidence hash; a planned count's record lands as a produce fulfilling the record's commitment. Replies the adjustment's event id, the record's event id, the difference and what is on hand after."
+    },
+    {
+      "object": "planner",
+      "name": "read-condition",
+      "auth": "operator",
+      "topic": "stock",
+      "x-playnet-transport": "none",
+      "summary": "Records an agent's reading of a stock's condition (personhood-gated): the intensive reading names the declared form the stock is in, and the stock moves from the form the books held to it. See session read-condition."
     },
     {
       "object": "planner",

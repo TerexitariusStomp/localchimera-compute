@@ -121,7 +121,7 @@
   '(witness-open witness-inbox witness-attest
     journey-begin journey-end express-willingness
     count-commitment-of plan-counts count-history label-stock read-label
-    log-observe count-stock credit-balance
+    log-observe count-stock read-condition credit-balance
     invite-contact accept-invite
     offer-work accept-work-offer release-commitment
     accept-assignment decline-assignment record-effort drop-event chat-post

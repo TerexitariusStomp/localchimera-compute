@@ -1176,6 +1176,10 @@
                             (fulfills #f) (evidence #f) (note #f))
     (planner! 'count-stock scope-id aid-prefix resource-id counted unit
               technique place when-iso fulfills evidence note))
+   ;; Records this AID's reading of a stock's condition: the form the reading names.
+   ((read-condition scope-id resource-id reading unit
+                    #:optional (when-iso #f) (ambient #f) (note #f))
+    (planner! 'read-condition scope-id aid-prefix resource-id reading unit when-iso ambient note))
    ;; Upserts this AID's availability window from the dial's arcs JSON.
    ((set-availability-ranges scope-id json)
     (planner! 'set-availability-ranges scope-id aid-prefix json))

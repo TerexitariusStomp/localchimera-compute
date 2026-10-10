@@ -105,6 +105,7 @@
     (qty                . "the quantity of SPEC in UNIT, a positive number")
     (note               . "a free-text note recorded on the row or event")
     (counted            . "how much of the stock the counter found, zero or more, in the stock's own unit")
+    (ambient            . "the ambient temperature a condition is read against, °C; the catalogue's when absent")
     (parent             . "the id of the place a new place is inside, \"\" when it is inside none")
     (upload             . "the browser's own name for one sending of pictures to be read")
     (index              . "which picture of an upload a part belongs to, 0 to 3")
@@ -266,7 +267,7 @@
     ;; the voice field's hands: a hand as JSON, and the rows a scope lays down
     (hand-json . json) (rows . json)
     ;; a contrary observation on the map: the process run, the map's figure, the reading, the work event witnessing it
-    (process . id) (nominal . number) (reading . number) (witness . id)
+    (process . id) (nominal . number) (reading . number) (ambient . number) (witness . id)
     (target-ids . json) (subject . string) (options . alist)
     ;; a scope's own declarations: the scope spoken for, a hosting ceiling, a regime's domain and tails
     (scope-aid . aid) (ceiling . number) (domain-spec . spec) (tails . symbol) (resource-spec . spec)

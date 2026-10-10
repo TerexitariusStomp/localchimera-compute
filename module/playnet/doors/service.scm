@@ -4597,6 +4597,16 @@ service does not know the scope (nothing to filter by)."
     ;; leaves an optional field unstated. A count that moves the stock leaves
     ;; the plan standing on an old figure, so the plan is marked stale: its
     ;; wire says so until the next solve lands.
+    ;; a reading of a stock's condition: the form it names, landed as the counts
+    ;; that say so (count-door.scm do-read-condition)
+    ((read-condition scope-id agent-id resource-id reading unit
+                     #:optional (when-iso #f) (ambient #f) (note #f))
+     (with-person scope-id agent-id
+       (lambda (root)
+         (do-read-condition root scope-id agent-id resource-id reading (string-or-false unit)
+                            #:when-iso (string-or-false when-iso)
+                            #:ambient (let ((a (string-or-false ambient))) (and a (if (string? a) (string->number a) a)))
+                            #:note (string-or-false note)))))
     ((count-stock scope-id agent-id resource-id counted unit
                   #:optional (technique #f) (place #f) (when-iso #f)
                              (fulfills #f) (evidence #f) (note #f))

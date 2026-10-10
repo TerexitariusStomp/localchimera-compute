@@ -1,4 +1,8 @@
-;;; observation/convert.scm — a reading is a count of a stock; the door converts.
+;;; observation/convert.scm — the physics of a reading: what a condition's number is in extensive terms.
+;;;
+;;; A reading lands on the books as the form it names (doors/count-door.scm
+;;; do-read-condition, docs/observation/readings-are-counts.md §2.3); what is
+;;; here is the arithmetic a dashboard or a check wants of it.
 ;;;
 ;;; docs/observation/readings-are-counts.md: the reading fold's cells are
 ;;; EXTENSIVE and add across scopes, so an intensive number (degrees, percent)

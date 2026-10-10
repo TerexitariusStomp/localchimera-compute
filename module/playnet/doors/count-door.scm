@@ -10,7 +10,8 @@
 ;;; personhood gate.
 
 (define-module (playnet doors count-door)
-  #:use-module ((playnet utils units) #:select (%count-unit))
+  #:use-module ((playnet utils units) #:select (%count-unit %intensive-units))
+  #:use-module ((playnet knowledge catalogues substances) #:select (thermal-base thermal-form-id %ambient-kelvin))
   #:use-module ((playnet vf formulas actions) #:select (onhand-sign))
   #:use-module (playnet vf formulas flows)
   #:use-module (srfi srfi-1)
@@ -34,7 +35,7 @@
   #:use-module ((playnet utils clock)
                 #:select (epoch->civil civil->instant instant->civil instant->unix (now . clock-now)))
   #:use-module ((playnet utils common) #:select (string-or-false))
-  #:export (do-count-stock count-refusal count-plan count-run count-stocks scheduled-counts offer-count lay-counts
+  #:export (do-count-stock do-read-condition count-refusal count-plan count-run count-stocks scheduled-counts offer-count lay-counts
             plan-reader expected-range with-expected
             count-schedule-reply count-history-reply label-stock-reply read-label-reply)
   #:use-module ((playnet utils catch) #:select (catch* throw* with-throw-handler*)))
@@ -397,6 +398,97 @@
              (success (assq-ref plan 'reply)))))))))
 
 (define (commitment-action* c) (and c (commitment-action c)))
+
+;;; ── A condition read names the form the stock is in ──────────────────
+;;;
+;;; A thermometer's degrees or a probe's percent is no count of the stock: an
+;;; intensive number never enters the reading fold (docs/observation/readings-
+;;; are-counts.md §1.1). A state is a form (§2.3): dough at +6 K over the room is
+;;; the spec `dough+6K`, its heat a row of its composition. So a reading says
+;;; which form the stock is in, and lands as the counts that say so: the stock
+;;; of the form the books held is found to be nothing, and the whole of it is
+;;; found in the form the reading names. Mass and specific heat are not asked:
+;;; the form's row already carries them. A form the scope has not declared is
+;;; refused, since a scope tracks the states it has named (thermal-form!).
+
+(define %condition-tolerance 0.5)   ; K: a reading within this of a declared form is that form
+
+(define (form-delta spec-id)
+  "The excess a thermal form's id states, in K, or #f for a base."
+  (let ((base (thermal-base spec-id)))
+    (and base (string->number (substring spec-id (string-length base) (- (string-length spec-id) 1))))))
+
+(define* (do-read-condition root scope-id agent resource-id reading unit
+                            #:key (when-iso #f) (ambient #f) (note #f))
+  "AGENT reads RESOURCE-ID's condition as READING UNIT, an intensive unit, against
+   AMBIENT (°C; the catalogue's when #f). The reading names the form the stock
+   is in among the forms its base has declared on the recipe store, within
+   %condition-tolerance; the stock the books held under another form is
+   counted as nothing and the same quantity is raised on the stock of the
+   form named, created if the scope holds none. Replies the form, what moved
+   and the two events; a stock already in the form named moves nothing."
+  (let* ((row  (assoc-ref %intensive-units unit))
+         (obs  ($ root 'observer))
+         (rs   ($ root 'recipe-store))
+         (r    ($ obs 'get-resource resource-id))
+         (v    (if (string? reading) (string->number reading) reading)))
+    (cond
+     ((not row) (failure "that is a count, not a condition: count-stock takes it"))
+     ((not (eq? (caddr row) 'temperature))
+      (failure (format #f "no form of a thing is keyed by ~a yet: declare one first" unit)))
+     ((not r) (failure "no such stock"))
+     ((not (real? v)) (failure "a reading is a number"))
+     (else
+      (let* ((spec    (economic-resource-conforms-to r))
+             (base    (or (thermal-base spec) spec))
+             (amb     (or ambient (- %ambient-kelvin 273.15)))
+             (delta   (- v amb))
+             (near?   (lambda (d) (< (abs (- delta d)) %condition-tolerance)))
+             (forms   (filter (lambda (s) (equal? base (thermal-base (resource-specification-id s))))
+                              ($ rs 'all-resource-specs)))
+             (target  (cond ((near? 0) base)
+                            ((find (lambda (s) (near? (form-delta (resource-specification-id s)))) forms)
+                             => resource-specification-id)
+                            (else #f))))
+        (cond
+         ((not target)
+          (failure (format #f "no declared form of ~a at ~a K over ambient: declare it first" base
+                           (/ (round (* 10 delta)) 10.0))))
+         ((equal? target spec)
+          (success `((form . ,spec) (reading . ,v) (ambient . ,amb) (moved . 0)
+                     (word . "the stock is in the form the books hold"))))
+         (else
+          (catch-as-failure
+           (lambda ()
+             (let* ((m0    (economic-resource-onhand-quantity r))
+                    (q     (if m0 (exact->inexact (measure-qty m0)) 0.0))
+                    (u     (or (and m0 (measure-has-unit m0)) %count-unit))
+                    (brid  (or (thermal-base resource-id) resource-id))
+                    (trid  (if (equal? target base) brid (thermal-form-id brid (form-delta target))))
+                    (said  (or note (format #f "read ~a ~a against ~a: ~a is ~a" v unit amb base target)))
+                    (gone  (do-count-stock root scope-id agent resource-id 0 u
+                                           #:technique "stated" #:when-iso when-iso #:note said))
+                    (now   (clock-now))
+                    (then  (let ((t (and when-iso (civil->instant when-iso)))) (and t (< t now) t)))
+                    (eid   (if then
+                               (count-id-at agent trid when-iso q)
+                               (generate-id "evt-count-"))))
+               (if (not (eq? (car gone) 'ok))
+                   gone
+                   (begin
+                     ($ obs 'record-event
+                        (make-economic-event
+                         #:id eid #:action 'raise #:output-of "count:reading"
+                         #:resource-inventoried-as trid #:resource-conforms-to target
+                         #:resource-quantity (make-measure q u)
+                         #:has-point-in-time (instant->civil (or then now))
+                         #:provider agent #:receiver agent
+                         #:note said #:in-scope-of (list scope-id)))
+                     (success `((form . ,target) (was . ,spec) (reading . ,v) (ambient . ,amb)
+                                (moved . ,q) (unit . ,u)
+                                (from-stock . ,resource-id) (to-stock . ,trid)
+                                (gone . ,(assq-ref (cdr gone) 'event)) (event . ,eid)
+                                (word . ,said)))))))))))))))
 
 ;;; ── The planned count: the schedule, and the offers it lays ──────────
 ;;;
