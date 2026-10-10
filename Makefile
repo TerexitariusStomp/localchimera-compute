@@ -29,6 +29,7 @@ DAY_BOOT_WASM_DEPS = \
                      module/playnet/keri/crypto-primitives.scm \
                      module/playnet/keri/said-portable.scm \
                      module/playnet/keri/signify-portable.scm \
+                     module/playnet/identity/kel.scm \
                      module/playnet/planner/doors/family/wire.scm \
                      module/playnet/wire/rows.scm \
                      module/playnet/wire/snapshot.scm \
@@ -2633,6 +2634,10 @@ test-keri-signup-disabled-gate:
 test-keri-forget:
 	$(GUILE_TEST_DEV) -L module tests/keri/test-forget.scm
 
+# the key log in hand, as the browser keeps it — pure, so Guile pins it
+test-identity-kel:
+	$(GUILE_TEST_DEV) -L module tests/identity/test-kel-in-hand.scm
+
 # losing your passcode is survivable when you gave pieces of it to people you
 # trust — and k-1 of them learn nothing
 test-recovery-share:
@@ -2795,7 +2800,7 @@ test-schemas:
 	$(GUILE_TEST_DEV) -L module tools/saidify-schemas.scm --check
 	$(GUILE_TEST_DEV) -L module tests/keri/test-schemas.scm
 
-test-keri: test-keri-blake3 test-keri-signify test-keri-signify-portable test-keri-oobi-replies test-keri-signify-integration test-keri-signup-with-icp test-keri-signup-with-kel test-keri-lobby-seat-gate test-keri-signup-disabled-gate test-keri-forget test-recovery-share test-keri-reticulum-binding test-mesh-mailbox test-did-keri test-keri-bridge test-keri-bridge-extra test-keri-credentials test-keri-credentials-ipex test-ipex-policy test-ipex-grant-handler test-keri-witnesses test-keri-notifications test-keri-recovery test-keri-lobby-auth test-schemas
+test-keri: test-keri-blake3 test-keri-signify test-keri-signify-portable test-keri-oobi-replies test-keri-signify-integration test-keri-signup-with-icp test-keri-signup-with-kel test-keri-lobby-seat-gate test-keri-signup-disabled-gate test-keri-forget test-identity-kel test-recovery-share test-keri-reticulum-binding test-mesh-mailbox test-did-keri test-keri-bridge test-keri-bridge-extra test-keri-credentials test-keri-credentials-ipex test-ipex-policy test-ipex-grant-handler test-keri-witnesses test-keri-notifications test-keri-recovery test-keri-lobby-auth test-schemas
 
 # ── SMS Wall ───────────────────────────────────────────────────────────────────
 # Smoke test for the WALLS.RIP API client module
