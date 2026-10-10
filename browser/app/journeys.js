@@ -11,6 +11,7 @@
 // outlive the pins it connects.
 import { mapOffers, inTurnWindow } from './offers.js';
 import { passesFacets } from './facets.js';
+import { styleReady, onStyleReady } from './tabs/map/ready.js';
 const SRC = "journeys";
 const LINE = "journeys-line";
 const empty = () => ({ type: "FeatureCollection", features: [] });
@@ -34,8 +35,8 @@ export function mountJourneys(map) {
     _map = map;
     if (!map)
         return;
-    if (!map.isStyleLoaded()) {
-        map.once("load", () => mountJourneys(map));
+    if (!styleReady(map)) {
+        onStyleReady(map, () => mountJourneys(map));
         return;
     }
     if (map.__journeysMounted && map.getSource(SRC)) {

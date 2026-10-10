@@ -45,6 +45,10 @@ export const ACCESSIBILITY_HREF = ~a;
 /** The age the terms state (§8) as a floor, with no hard verification; an
  *  operator's own higher floor, if any, is stated at their contact, not here. */
 export const MIN_AGE = ~a;
+/** What this deployment has actually organized so far, as one sentence
+ *  (product.scm's `deployment-status`) — the demo banner's own text, and the
+ *  same sentence the terms and privacy notice quote in their marked figures. */
+export const DEPLOYMENT_STATUS = ~a;
 
 /** A legal crossing the product's own features trip. */
 export interface ProductCrossing { id: string; kind: string; gloss: string; }
@@ -77,6 +81,7 @@ export type ReadingStatus = typeof READING_STATUSES[number];
           (str (product-notice 'privacy))
           (str (product-notice 'accessibility))
           (product-notice 'min-age)
+          (str (product-notice 'deployment-status))
           (string-concatenate
            (map (lambda (row)
                   (format #f "  { id: ~a, kind: ~a, gloss: ~a },\n"

@@ -26,7 +26,7 @@
             substance-base-unit
             convert-unit
             units-convert unit-to unit-factor hours-in time-unit? placeholder-unit? %placeholder-unit unit-measurable-substance
-            %count-unit %effort-unit count-unit?
+            %count-unit %effort-unit count-unit? %time-unit-names
             unit-known? convert-unit/strict
             unit-rate-parts unit-rate?
             units-available?
@@ -327,6 +327,11 @@
         ((unit-to from to))
         ((and (unit-measurable-substance from) (unit-measurable-substance to)) #f)
         (else 1)))
+
+;; Every spelling of a unit of time the tables know — what the page is handed
+;; (tools/units-emit.scm → ui/app/units-catalogue.ts) so it asks the same question.
+(define %time-unit-names
+  (map (lambda (p) (symbol->string (car p))) (assq-ref *substance-categories* 'time)))
 
 (define (time-unit? unit)
   "UNIT measures time: a duration is stated in one."

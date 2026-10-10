@@ -103,7 +103,16 @@
     (backup-keep-days    . 30)
     (breach-notice-hours . 72)
     (speech-model-mb     . 80)
-    (change-notice-days  . 14)))
+    (change-notice-days  . 14)
+    ;; What this deployment has actually organized so far, as one sentence —
+    ;; the fact a banner, the terms and the privacy notice all quote (§9,
+    ;; §1), so it is edited in one place when it stops being true. This is an
+    ;; operational-status statement, not a legal one: it does not stand in
+    ;; for a record of processing, a DPIA or a named operator (docs/legal/operator.md
+    ;; §10 rows 1 and 4) — those are about who runs this and what it holds,
+    ;; not about what members have done with it.
+    (deployment-status
+     . "No real-world exchange of food, shelter, a ride, labour or money has been organized through this deployment yet — it is open today for interface testing.")))
 (define (product-notice key) (assq-ref *product-notices* key))
 
 ;;; ─── the bill and the stance of a feature at a place ─────────────────────

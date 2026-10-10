@@ -13,7 +13,7 @@
 (use-modules (playnet planner legal crossings))
 (use-modules (playnet planner legal registry))
 (use-modules (playnet planner legal registry-actor))
-(use-modules (playnet planner legal compliance)) (use-modules (playnet planner doors adapters))
+(use-modules (playnet planner legal compliance)) (use-modules (playnet planner legal adapters))
 
 (define (held-cred id spec holder)
   (make-economic-resource #:id id #:name spec #:conforms-to spec #:classified-as '("credential")

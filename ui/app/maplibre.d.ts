@@ -172,6 +172,8 @@ declare global {
       zoom: number;
       attributionControl?: boolean;
       antialias?: boolean;
+      /** Seconds the symbols fade in over; 0 is a hard cut. */
+      fadeDuration?: number;
     }
 
     /**

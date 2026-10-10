@@ -55,8 +55,6 @@ export interface DraftPanelConfig {
   /** False where the type picker only narrows a search — no ➕ to declare the
    *  unmatched word as a new term (e.g. Resources browsing the same spine). */
   canDeclare?(): boolean;
-  /** True while the top-level terms are shown as a row above the bar, so the picker's own top row is not drawn again. */
-  topIsBar?(): boolean;
 }
 
 export interface DraftPanel {
@@ -65,8 +63,6 @@ export interface DraftPanel {
   tab(): DraftTab | null;
   /** Open this tab (idempotent). */
   show(t: DraftTab): void;
-  /** Open the type drill one level down, at this top-level term. */
-  openAt(n: DesireNode): void;
   /** Open this tab, or close the panel when it is the one already open. */
   toggle(t: DraftTab): void;
   close(): void;
@@ -136,6 +132,8 @@ export function draftPanel(cfg: DraftPanelConfig): DraftPanel {
     // other tab (unit, emoji, where) is a short list or a grid and
     // stays in the compact popover family.
     root.classList.toggle("sp-wide", cur === "type");
+    // in flow, the drill ignores any left/right a docked popover (dockNear) left inline
+    if (cur === "type") { root.style.left = ""; root.style.right = ""; }
     if (cur) { body.title = TABS[cur].title; TABS[cur].render(); }
     cfg.onChange();
   };
@@ -238,9 +236,10 @@ export function draftPanel(cfg: DraftPanelConfig): DraftPanel {
       }
       body.appendChild(row);
     };
-    // the top level is drawn once: by the row above the bar while it shows, and
-    // by this picker's own row otherwise (until a term is chosen there)
-    if (!cfg.topIsBar?.() && (!path.length || q)) segRow(spine.children || [], 0);
+    // the top level is the strip's first row and stays while a term under it
+    // is open — lit on that term, so the strip reads as one filter from the
+    // top down; a second tap on the lit term steps back up, as at any level
+    segRow(spine.children || [], 0);
     path.forEach((n, i) => segRow(n.children || [], i + 1, n));
     const deepest = path[path.length - 1];
     if (deepest && !(deepest.children && deepest.children.length)) {
@@ -352,14 +351,10 @@ export function draftPanel(cfg: DraftPanelConfig): DraftPanel {
     emoji:  { title: "Choose emoji",    render: renderEmoji },
   };
 
-  // the bar's own top row hands over a chosen category: the type drill opens
-  // already one level down, so the top row is not shown twice
-  const openAt = (n: DesireNode): void => { typePath = [n]; show("type"); render(); };
-
   return {
     el: root, draft,
     tab: () => cur,
-    show, close, openAt,
+    show, close,
     refresh: () => { if (cur !== null) render(); },
     toggle: t => (cur === t ? close() : show(t)),
     reset: () => { Object.assign(draft, blankDraft()); cur = null; render(); },

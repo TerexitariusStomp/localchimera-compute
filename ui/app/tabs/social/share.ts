@@ -82,7 +82,6 @@ import { mk } from '../../dom.js';
 import { on } from '../../bus.js';
 import { scopeSig, scopeName } from '../../scope.js';
 import { K } from "../../keys.js";
-import { S as dialState } from '../../state.js';
 /**
  * Both rails as the my-slots wire carries them, plus whether this is the local
  * DEMO. `demo` is not decoration: it is the switch between mutating locally and
@@ -649,14 +648,16 @@ function ensureScaffold(bar: HTMLElement): void {
   // A popover's own dismiss: closes on any click that lands outside both
   // the box and the control that opened it — the clock and the pin each
   // wire one call of this rather than repeating the same listener body.
-  const closeOnOutsideClick = (isOpen: Signal<boolean>, selector: string): void => {
+  const closeOnOutsideTap = (isOpen: () => boolean, close: () => void, selector: string): void => {
     document.addEventListener("click", ev => {
       const t = ev.target as HTMLElement;
       // a target the popover itself just redrew is gone from the page, and
       // that is no click outside it
-      if (isOpen() && t.isConnected && !t.closest(selector)) isOpen.set(false);
+      if (isOpen() && t.isConnected && !t.closest(selector)) close();
     });
   };
+  const closeOnOutsideClick = (isOpen: Signal<boolean>, selector: string): void =>
+    closeOnOutsideTap(isOpen, () => isOpen.set(false), selector);
   const togs = mk("div", "share-togs");
   const togTime = mk("a", "share-tog share-tog-time");
   togTime.append(mk("span", "share-tog-i", "🕐"), mk("span", "share-tog-l", "time"));
@@ -1008,20 +1009,11 @@ function ensureScaffold(bar: HTMLElement): void {
     kind: rail, setKind: r => setRail(r),
     here: currentPlace,
     onNewPlace: newPlace,
-    onChange: () => { syncTogs(); placePanel(); },
+    onChange: syncTogs,
     canDeclare: () => drawerMode.peek() === "slots",
-    topIsBar: () => topOpen.peek(),
   });
   panelRef = panel;
   closePanelHook = () => panel.close();
-  // the type picker is wide: it rides in the sheet, above the bar, beside the
-  // inventory; the small popovers (unit, emoji, place) stay docked to the bar
-  function placePanel(): void {
-    if (panel.el.classList.contains("sp-wide")) closeSheetView();   // the picker takes the sheet
-    const home = panel.el.classList.contains("sp-wide") ? sheet : bar;
-    if (panel.el.parentElement === home) return;
-    if (home === sheet) grab.after(panel.el); else bar.insertBefore(panel.el, sheet);
-  }
   // Esc puts away what is up: the inventory first, else an open picker or popover (the account and faces
   // menus answer Esc themselves, the account stepping back out of a page before it closes)
   document.addEventListener("keydown", ev => {
@@ -1029,10 +1021,9 @@ function ensureScaffold(bar: HTMLElement): void {
     if (open.peek()) { ev.preventDefault(); open.set(false); return; }
     if (panel.tab() !== null) { ev.preventDefault(); panel.close(); }
   });
-  wireSheet(sheet, grab, () => {
+  wireSheet(sheet, grab, () => {   // the sheet going down leaves the taxonomy strip, a filter, where it is
     closeSheetView();
     open.set(false);
-    panel.close();
     const fb = document.getElementById("fbbtn");
     if (fb?.classList.contains("on")) fb.click();
   });
@@ -1127,34 +1118,29 @@ function ensureScaffold(bar: HTMLElement): void {
   // after both popovers exist: it runs once immediately, synchronously,
   // reading timeMenuOpen/whereMenuOpen before either signal would exist.
   effect(() => { F.timeBy(); F.radiusKm(); timeMenuOpen(); whereMenuOpen(); syncTogs(); });
-  // the name doubles as the type search: a tap on it opens the picker, typing
-  // sifts it. A tap, not focus — submit() hands focus back to the name after
-  // every declare, and that hand-back must not pop the picker open each time.
-  // type sits back in normal flow (CSS .sp-wide) — no docking, and any
-  // left/right a PRIOR unit/emoji popover left inline would otherwise
-  // fight that layout, so this clears it rather than calling dockNear.
-  // Resources browses the same taxonomy — its goods ARE specs filed under
-  // it — so the picker opens there too; picking one only narrows the search
-  // (fields.set moves nameIn/F.query), since Enter is already off in this
-  // mode. A skill is a word, not a spec, so Skills stays search-only.
+  // the name doubles as the type search. The taxonomy is ONE strip above the
+  // bar (the panel's type tab, in flow): its first row is the top-level
+  // terms, each term tapped adds its row beneath, and the words typed sift
+  // every row. A tap on the field or a keystroke raises it; nothing else
+  // opens or closes it — it is a filter over the map and the sheet alike, so
+  // it stays through the backpack, a tile, a popover, and leaves on ✕, Esc or
+  // a tap on the page. Resources browses the same taxonomy — its goods ARE
+  // specs filed under it; picking only narrows the search (fields.set moves
+  // nameIn/F.query). A skill is a word, not a spec, so Skills stays
+  // search-only. A tap, not focus — submit() hands focus back to the name
+  // after every declare, and that hand-back must not raise the strip.
   const typeBrowsable = () => drawerMode.peek() === "slots" || drawerMode.peek() === "resources";
-  const openType = () => { if (panel.tab() === null && typeBrowsable()) { riseTo(false); panel.el.style.left = ""; panel.el.style.right = ""; panel.show("type"); } };
-  // with the priority bar drawn, an empty field's tap leaves the terms to it;
-  // the picker rises when one of its terms is tapped
-  nameIn.addEventListener("click", openType);
+  const raiseType = () => { if (typeBrowsable() && panel.tab() === null) panel.show("type"); };
+  nameIn.addEventListener("click", raiseType);
   nameIn.addEventListener("input", () => {
-    topOpen.set(!!nameIn.value.trim());
-    if (topOpen.peek()) panel.close();   // the row above the bar is the chooser now, not the sheet
     panel.draft.spec = null; panel.draft.cats = [];
     F.query.set(nameIn.value);               // the name doubles as the search
     lit = 0;
     renderPreview();
-    if (!typeBrowsable()) return;   // skills only ever search
-    // the row above the bar is the chooser while something is typed; the
-    // picker rises once one of its terms is tapped
-    if (panel.tab() === null && nameIn.value.trim() && !topOpen.peek()) openType();
-    else if (panel.tab() === "type") panel.refresh();
+    raiseType();
+    if (panel.tab() === "type") panel.refresh();   // the words sift the strip
   });
+  closeOnOutsideTap(() => panel.tab() === "type", () => panel.close(), "#sharebar");
   emojiBtn.addEventListener("click", () => { dockNear(emojiBtn); panel.toggle("emoji"); });
   unitBtn.addEventListener("click", () => { dockNear(unitBtn); panel.toggle("unit"); });
 
@@ -1368,29 +1354,13 @@ function ensureScaffold(bar: HTMLElement): void {
   // holds are part of the expression, not a pair of chips beside it
   pill.append(togs);
   row.append(ctl);
-  // the top-level terms, a row of their own directly above the bar — a sibling
-  // of the bar row, so the earth and the backpack keep their place. Opened by
-  // an empty tap on the field; a pick, typing or a tap outside puts it away.
-  const topOpen = signal(false);
-  const topRow = mk("div", "sb-toprow");
-  const renderTop = (): void => {
-    topRow.replaceChildren();
-    for (const n of dialState.root?.children || []) {
-      const seg = mk("a", "sp-seg", n.name || n.id);
-      seg.style.setProperty("--seg-col", n.col || "#9a9384");
-      seg.addEventListener("click", () => {
-        topOpen.set(false); riseTo(false); panel.el.style.left = ""; panel.el.style.right = "";
-        panel.openAt(n);
-      });
-      topRow.append(seg);
-    }
-  };
-  effect(() => { if (topOpen()) renderTop(); topRow.classList.toggle("on", topOpen()); });
-  closeOnOutsideClick(topOpen, ".sb-toprow, .share-name");
   const railRow = mk("div", "share-railrow");
   railRow.append(railSwitch(true, true, true));
   drawer.append(railRow, mk("div", "share-lists"), mk("div", "share-lent-col"));
-  bar.append(row, topRow, preview, panel.el, sheet);
+  // the panel sits right above the bar row: in flow it is the taxonomy strip
+  // (column-reverse puts it directly above the expression); the compact tabs
+  // are absolutely placed and dock wherever dockNear says
+  bar.append(row, panel.el, preview, sheet);
   restyle();
 }
 

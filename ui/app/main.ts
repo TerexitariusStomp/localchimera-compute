@@ -30,6 +30,8 @@ import './diag.js';
 import './seam.js';
 // a storage write the device refuses is said once, on a card
 import './storage-notice.js';
+// what this deployment has actually organized so far, said once, as a ribbon
+import './demo-banner.js';
 // the dial's geometry: sample count, and nothing else main still needs
 import { n } from './geom.js';
 // pure calendar constants & date/duration formatting — see app/timefmt.js

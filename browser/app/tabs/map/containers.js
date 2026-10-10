@@ -29,6 +29,7 @@
 // reading means. This module is only the geometry and the fold.
 const TAU = 2 * Math.PI;
 const d3 = window.d3;
+import { styleReady, onStyleReady } from "./ready.js";
 // ── the forest: nodes[] with a `parent` id → rooted trees with children[] ──
 // A parent pointing outside the set (or nowhere) makes a root. Cycles can't
 // arise from a store that rejects them (spatial-things.scm add-location), but a
@@ -224,8 +225,8 @@ export function mount(map) {
     _map = map;
     if (!map)
         return;
-    if (!map.isStyleLoaded()) {
-        map.once("load", () => mount(map));
+    if (!styleReady(map)) {
+        onStyleReady(map, () => mount(map));
         return;
     }
     if (mounted)

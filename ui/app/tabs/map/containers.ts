@@ -31,6 +31,8 @@
 const TAU = 2 * Math.PI;
 const d3 = window.d3;
 
+import { styleReady, onStyleReady } from "./ready.js";
+
 type Position = maplibregl.Position;
 type Geometry = maplibregl.Geometry;
 type Expression = maplibregl.Expression;
@@ -270,7 +272,7 @@ function onZoom() { if (!mounted) return; lastZoom = _map!.getZoom(); applyPaint
 export function mount(map: maplibregl.Map | null): void {
   _map = map;
   if (!map) return;
-  if (!map.isStyleLoaded()) { map.once("load", () => mount(map)); return; }
+  if (!styleReady(map)) { onStyleReady(map, () => mount(map)); return; }
   if (mounted) return;
   lastZoom = map.getZoom();
   map.addSource(SRC, { type: "geojson", data: empty() });

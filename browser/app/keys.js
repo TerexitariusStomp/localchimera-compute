@@ -40,6 +40,7 @@ export const K = {
     idConsent: k("pn.id.consent", "the notices' version this person accepted, and when", "playnet-legal-consent"),
     voteConsent: k("pn.vote.consent", "explicit Art 9(2)(a) consent to record a political opinion against this identity, kept until the operator qualifies under Art 9(2)(d)", "playnet-vote-consent"),
     idNamePending: k("pn.id.name-pending", "a name typed before the commune could be told", "playnet-name-pending"),
+    demoBannerSeen: k("pn.demo.seen", "the deployment-status sentence this device has dismissed; reappears when the sentence changes", "playnet-demo-seen"),
     // ── this device ───────────────────────────────────────────────────────────
     deviceId: k("pn.device.id", "this device's id, for its push subscription", "playnet-device-id"),
     deviceWire: k("pn.device.wire", "the device authorization credential, as it crosses the wire (read by the spine)", "playnet-keri-device"),

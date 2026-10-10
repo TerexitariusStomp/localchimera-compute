@@ -17,7 +17,7 @@
              (playnet planner legal registry-actor)
              (playnet planner knowledge worlds free-food-distribution)
              ((playnet protocol) #:select (%doors door-feature))
-             (playnet planner scope spatial-things) (playnet planner observation observer) (playnet planner plan store) (playnet planner vf schemas) (srfi srfi-1) (playnet planner legal compliance) (playnet planner doors adapters)
+             (playnet planner scope spatial-things) (playnet planner observation observer) (playnet planner plan store) (playnet planner vf schemas) (srfi srfi-1) (playnet planner legal compliance) (playnet planner legal adapters)
              (playnet planner knowledge law structural-demands)
              (playnet planner knowledge law lint)
              (playnet planner legal policy) (playnet utils governed-row)

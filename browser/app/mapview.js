@@ -141,8 +141,14 @@ function mkMap() {
         center: lastCam ? lastCam.center : [USER.lng, USER.lat],
         zoom: lastCam ? lastCam.zoom : WALK_ZOOM,
         attributionControl: true, antialias: true,
+        fadeDuration: 0, // a name is there or it is not — no fade behind the ground's labels
     });
     m.on("error", e => console.warn("[map]", e));
+    // the dial's overlays take their source and layer as soon as the style's JSON
+    // is parsed, so a name arriving later is one setData away from the screen
+    containers.mount(m);
+    mountJourneys(m);
+    mountLabels(m);
     const ue = document.createElement("div");
     ue.className = "user-marker";
     ue.title = "you";

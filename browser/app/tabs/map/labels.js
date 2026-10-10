@@ -8,6 +8,7 @@
 // faces: the emoji, the rings, the cluster bubbles, the tap. Each render
 // hands this module one label per single marker, in that kind's own ink.
 import { themeColorsIn } from "../../theme.js";
+import { styleReady, onStyleReady } from "./ready.js";
 const SRC = "dial-labels";
 const LAYER = "dial-labels";
 let _map = null;
@@ -26,8 +27,8 @@ export function mountLabels(map) {
     _map = map;
     if (!map)
         return;
-    if (!map.isStyleLoaded()) {
-        map.once("load", () => mountLabels(map));
+    if (!styleReady(map)) {
+        onStyleReady(map, () => mountLabels(map));
         return;
     }
     if (map.__labelsMounted && map.getSource(SRC)) {
@@ -47,7 +48,10 @@ export function mountLabels(map) {
             "text-max-width": 8,
             "text-variable-anchor": ["left", "right"],
             "text-justify": "auto",
-            "text-offset": [1.25, 0], // ems: clear of a 22 px face at every size
+            // the ground's gap (its pois: 1.1 em off a ~15 px icon, ≈4.5 px clear)
+            // from a face that is 22 px at every zoom: (11 + 4.5) px in the ems of
+            // each zoom's text size, so the gap holds while the em moves
+            "text-offset": ["interpolate", ["linear"], ["zoom"], 12, ["literal", [1.55, 0]], 17, ["literal", [1.41, 0]], 19, ["literal", [1.03, 0]]],
             "text-padding": 2,
             "symbol-sort-key": ["case", ["get", "sel"], 0, 1],
         },

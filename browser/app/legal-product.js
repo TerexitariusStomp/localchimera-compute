@@ -20,6 +20,10 @@ export const ACCESSIBILITY_HREF = "accessibility.html";
 /** The age the terms state (§8) as a floor, with no hard verification; an
  *  operator's own higher floor, if any, is stated at their contact, not here. */
 export const MIN_AGE = 16;
+/** What this deployment has actually organized so far, as one sentence
+ *  (product.scm's `deployment-status`) — the demo banner's own text, and the
+ *  same sentence the terms and privacy notice quote in their marked figures. */
+export const DEPLOYMENT_STATUS = "No real-world exchange of food, shelter, a ride, labour or money has been organized through this deployment yet — it is open today for interface testing.";
 export const PRODUCT_CROSSINGS = [
     { id: "hold-funds", kind: "by-choice", gloss: "holds or pays out funds on a member's behalf" },
     { id: "credit-contribution", kind: "mirrored", gloss: "credits a member's work in an internal unit" },

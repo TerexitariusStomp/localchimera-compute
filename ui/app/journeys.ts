@@ -12,6 +12,7 @@
 
 import { mapOffers, inTurnWindow } from './offers.js';
 import { passesFacets } from './facets.js';
+import { styleReady, onStyleReady } from './tabs/map/ready.js';
 
 const SRC = "journeys";
 const LINE = "journeys-line";
@@ -37,7 +38,7 @@ let _map: maplibregl.Map | null = null;
 export function mountJourneys(map: maplibregl.Map | null): void {
   _map = map;
   if (!map) return;
-  if (!map.isStyleLoaded()) { map.once("load", () => mountJourneys(map)); return; }
+  if (!styleReady(map)) { onStyleReady(map, () => mountJourneys(map)); return; }
   if (map.__journeysMounted && map.getSource(SRC)) { renderJourneys(); return; }
   map.__journeysMounted = true;
   map.addSource(SRC, { type: "geojson", data: empty() });

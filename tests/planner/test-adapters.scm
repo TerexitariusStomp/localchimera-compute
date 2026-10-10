@@ -14,7 +14,7 @@
 (use-modules (playnet planner legal crossings))
 (use-modules (playnet planner legal registry))
 (use-modules (playnet planner legal compliance)) (use-modules (playnet planner legal filings))
-(use-modules (playnet planner doors adapters)) (use-modules (playnet planner knowledge recipes compliance-food))
+(use-modules (playnet planner legal adapters)) (use-modules (playnet planner knowledge recipes compliance-food))
 
 ;; the door this mask opens: public food-vending in foodville.
 (define crossings '(food-vending))
