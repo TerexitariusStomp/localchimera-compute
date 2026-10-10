@@ -1044,6 +1044,8 @@ function boot() {
     // asked first, so a new passcode is shown only to its holder.
     HANDLERS.passcodeCheck  = bridge("passcodeCheck", 1);    // passcode → "ok" | "err:…"
     HANDLERS.changePasscode = bridge("changePasscode", 2);   // current new → "ok:<aid>|<first key>"
+    // forget me: the passcode again, and "retire" to close the key log for good
+    HANDLERS.forgetMe       = bridge("forgetMe", 2);         // passcode retire → receipt JSON | "err:…"
     HANDLERS.guardianRecover = (linesJson) =>
       new Promise(res => schemeHandlers.guardianRecover
         ? schemeHandlers.guardianRecover(linesJson, res)
@@ -1066,6 +1068,9 @@ function boot() {
     HANDLERS.tier         = bridge("tier", 0, "");
     HANDLERS.devices      = bridge("devices", 0, "[]");
     HANDLERS.revokeDevice = bridge("revokeDevice", 1);
+    // where this person is reached on the map: declared at the home, read back
+    HANDLERS.setLocationSharing = bridge("setLocationSharing", 1);   // mode → mode | "err:…"
+    HANDLERS.locationSharing    = bridge("locationSharing", 0);      // → mode | "undeclared"
     // an OUTSIDE interface enrolled as a device: its own AID, a label, its doors
     HANDLERS.enrollExternalDevice = bridge("enrollExternalDevice", 3);
     // browser-side facts and the local wipe (the authorization's revocation
