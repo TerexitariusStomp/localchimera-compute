@@ -1,17 +1,17 @@
-;;; module/playnet/keys/keria-store.scm — KERIA-backed ACDC store
+;;; module/playnet/keys/keria-store.scm — the credential store with KERIA as the store of record
 ;;;
-;;; Phase-2 implementation of the ^acdc-store interface. Same methods as
-;;; the in-memory ^acdc-store in acdc-store.scm, but persists credentials
-;;; through KERIA via (playnet keri credentials) and (playnet keri bridge).
-;;;
-;;; Maintains a local cache (hashmap SAID → credential alist) for fast
-;;; reads. Writes go to both the cache and KERIA. The cache is the
-;;; primary read path; `sync!` repopulates it from KERIA on recovery.
+;;; ^acdc-store (keri/acdc-store.scm) holds the credentials, their typed claim
+;;; indexes and the durable directory; this actor stands in front of it and
+;;; adds the three effects KERIA brings: an issue goes to KERIA first and the
+;;; credential is kept under the SAID KERIA answers, an IPEX grant reaches the
+;;; holder (or waits in ^pending-grants), a revoke deletes in KERIA. Every
+;;; other door is the inner store's, so the two modes of a gateway answer one
+;;; method set, and `sync!` is an import of what KERIA lists.
 ;;;
 ;;; Usage:
 ;;;   (use-modules (playnet keys keria-store))
 ;;;   (with-vat vat
-;;;     (define store (spawn-keria-acdc-store "governance" "E_holder_aid")))
+;;;     (define store (spawn-keria-acdc-store "governance" #:durable-dir dir)))
 ;;;
 ;;; The issuer-aid-name is the local KERIA AID name (e.g. "governance").
 ;;; KERIA must be booted (keri-boot! or keri-connect!) before issuing.
@@ -24,6 +24,7 @@
   #:use-module (playnet keri bridge)
   #:use-module (playnet utils paths)
   #:use-module (playnet keri acdc)
+  #:use-module ((playnet keri acdc-store) #:select (spawn-acdc-store))
   #:use-module (playnet keys pending-grants)
   #:use-module (srfi srfi-1)
   #:use-module (ice-9 format)
@@ -246,8 +247,8 @@
                      (holder          . ,holder))))))
           #f))))))
 
-(define-actor (^keria-acdc-store bcom cache issuer-aid-name)
-  ;; cache:           hashmap SAID → governance credential alist (local mirror)
+(define-actor (^keria-acdc-store bcom inner issuer-aid-name)
+  ;; inner:           the ^acdc-store that holds the credentials
   ;; issuer-aid-name: local KERIA AID name for issuance
   ;;
   ;; Failed grants are enqueued to the unified ^pending-grants actor
@@ -255,122 +256,53 @@
   ;; carried in-actor — that queue is persisted to disk and drained
   ;; by the gateway, so umbrella-grant deliveries survive a KERIA
   ;; outage that bridges a gateway restart.
-  (methods
+  #:version 2
+  #:portrait (lambda () (list inner issuer-aid-name))
+  #:restore (lambda (version . args)
+              (case version
+                ((2) (apply spawn ^keria-acdc-store args))
+                (else (error "^keria-acdc-store: a cache-shaped portrait does not restore" version))))
 
-    ;; --- Writes ---
+  ;; KERIA first: the credential stands under the SAID KERIA answers
+  (define (issue-through-keria! cred)
+    (let ((keria-said (%issue-to-keria! issuer-aid-name cred)))
+      (%try-grant issuer-aid-name keria-said (cred-holder cred))
+      ;; idempotent under KERIA's SAID: KERIA dedupes by SAID server-side
+      ($ inner 'issue-idempotent (%cred-with-overrides cred keria-said #f))))
 
-    ((issue cred)
-     (let ((keria-said (%issue-to-keria! issuer-aid-name cred)))
-       (%try-grant issuer-aid-name keria-said (cred-holder cred))
-       (let ((updated-cred (%cred-with-overrides cred keria-said #f)))
-         (bcom (^keria-acdc-store bcom
-                                  (hashmap-set cache keria-said updated-cred)
-                                  issuer-aid-name)
-               keria-said))))
-
-    ((revoke said)
-     (let ((existing (hashmap-ref cache said #f)))
-       (unless existing
-         (error "Cannot revoke unknown SAID" said))
-       (keri-delete-credential said)
-       (bcom (^keria-acdc-store bcom
-                                (hashmap-set cache said
-                                             (cred-with-revoked existing #t))
-                                issuer-aid-name))))
-
-    ;; --- Reads (from local cache) ---
-
-    ((get said) (hashmap-ref cache said #f))
-
-    ((all)
-     (hashmap-fold (lambda (_k v acc) (cons v acc)) '() cache))
-
-    ((by-schema schema)
-     (hashmap-fold
-       (lambda (_k v acc)
-         (if (equal? schema (cred-schema v)) (cons v acc) acc))
-       '() cache))
-
-    ((by-holder aid)
-     (hashmap-fold
-       (lambda (_k v acc)
-         (if (equal? aid (cred-holder v)) (cons v acc) acc))
-       '() cache))
-
-    ((by-issuer aid)
-     (hashmap-fold
-       (lambda (_k v acc)
-         (if (equal? aid (cred-issuer v)) (cons v acc) acc))
-       '() cache))
-
-    ((non-revoked)
-     (hashmap-fold
-       (lambda (_k v acc)
-         (if (cred-revoked? v) acc (cons v acc)))
-       '() cache))
-
-    ;; --- Indexed reads (linear scan over cache; fine since cache is local) ---
-    ;; Production scale would mirror in-memory store's typed indexes.
-    ;; Current implementation: filter cache by (schema, claim-key, value).
-
-    ((by-claim schema claim-key value)
-     (hashmap-fold
-       (lambda (_k cred acc)
-         (if (and (equal? schema (cred-schema cred))
-                  (equal? value (cred-claim cred claim-key)))
-             (cons cred acc)
-             acc))
-       '() cache))
-
-    ((by-claim-1 schema claim-key value)
-     (hashmap-fold
-       (lambda (_k cred found)
-         (or found
-             (and (not (cred-revoked? cred))
-                  (equal? schema (cred-schema cred))
-                  (equal? value (cred-claim cred claim-key))
-                  cred)))
-       #f cache))
-
-    ((issue-idempotent cred)
-     ;; KERIA dedupes by SAID server-side. Local cache check first.
-     (let ((said (cred-said cred)))
-       (cond
-         ((hashmap-ref cache said #f) said)
-         (else
-          (let ((keria-said (%issue-to-keria! issuer-aid-name cred)))
-            (%try-grant issuer-aid-name keria-said (cred-holder cred))
-            (let ((updated (%cred-with-overrides cred keria-said #f)))
-              (bcom (^keria-acdc-store bcom
-                                       (hashmap-set cache keria-said updated)
-                                       issuer-aid-name)
-                    keria-said)))))))
-
-    ((no-op?) #f)
-
-    ;; --- KERIA-specific ---
-
-    ((sync!)
-     "Repopulate cache from KERIA. Call after recovery-reconnect!."
-     (let loop ((skip 0) (acc (hashmap)))
-       (let ((batch (keri-list-credentials #:skip skip #:limit 100)))
-         (if (or (not batch) (null? batch) (and (vector? batch) (= 0 (vector-length batch))))
-             (bcom (^keria-acdc-store bcom acc issuer-aid-name)
-                   (hashmap-fold (lambda (_k _v n) (+ n 1)) 0 acc))
-             (let* ((creds (if (vector? batch) (vector->list batch) batch))
-                    (new-acc (fold (lambda (kc a)
-                                    (let ((gc (keria-cred->governance-cred kc)))
-                                      (hashmap-set a (cred-said gc) gc)))
-                                  acc creds)))
-               (loop (+ skip (length creds)) new-acc))))))
-
-    ((issuer-aid-name) issuer-aid-name)))
+  (lambda (method . args)
+    (case method
+      ((issue) (issue-through-keria! (car args)))
+      ((issue-idempotent)
+       ;; KERIA dedupes by SAID server-side; the inner store first
+       (let ((said (cred-said (car args))))
+         (if ($ inner 'get said) said (issue-through-keria! (car args)))))
+      ((revoke)
+       (let ((said (car args)))
+         (unless ($ inner 'get said) (error "Cannot revoke unknown SAID" said))
+         (keri-delete-credential said)
+         ($ inner 'revoke said)))
+      ;; --- KERIA-specific ---
+      ((sync!)
+       ;; what KERIA lists, imported; answers how many it holds
+       (let loop ((skip 0) (n 0))
+         (let ((batch (keri-list-credentials #:skip skip #:limit 100)))
+           (if (or (not batch) (null? batch) (and (vector? batch) (= 0 (vector-length batch))))
+               n
+               (let ((creds (if (vector? batch) (vector->list batch) batch)))
+                 (for-each (lambda (kc) ($ inner 'issue-idempotent (keria-cred->governance-cred kc)))
+                           creds)
+                 (loop (+ skip (length creds)) (+ n (length creds))))))))
+      ((issuer-aid-name) issuer-aid-name)
+      ((inner-store) inner)
+      (else (apply $ inner method args)))))
 
 
-(define (spawn-keria-acdc-store issuer-aid-name)
-  "Spawn a KERIA-backed ^acdc-store. issuer-aid-name is the local AID
-   name in KERIA used for credential issuance."
-  (spawn ^keria-acdc-store (hashmap) issuer-aid-name))
+(define* (spawn-keria-acdc-store issuer-aid-name #:key (durable-dir #f))
+  "Spawn the credential store with KERIA as its store of record over an
+   ^acdc-store, durable under DURABLE-DIR when given. ISSUER-AID-NAME is
+   the local AID name in KERIA used for credential issuance."
+  (spawn ^keria-acdc-store (spawn-acdc-store #:durable-dir durable-dir) issuer-aid-name))
 
 
 (define keria-acdc-store-env

@@ -13,9 +13,9 @@
   #:export (spawn-credential-store! wire-credentialing! reconcile-planner!))
 
 ;; ── ACDC credential store ──────────────────────────────────────
-;; When KERIA is connected, use the KERIA-backed store so
-;; credentials persist via the witness pool. Otherwise fall back
-;; to the durable local-disk store.
+;; One ^acdc-store, durable on local disk, in both modes. With KERIA
+;; connected it stands behind ^keria-acdc-store, which adds the issue in
+;; KERIA, the IPEX grant and the delete on revoke.
 (define (spawn-credential-store! planner-vat)
   "The store in PLANNER-VAT, where the planner service reads it near."
   (let ((store
@@ -25,7 +25,7 @@
                              (resolve-interface
                                '(playnet keys keria-store))
                              'spawn-keria-acdc-store)))
-                 (proc (gateway-controller-aid-name)))
+                 (proc (gateway-controller-aid-name) #:durable-dir (data-path "acdc")))
                ;; No KERIA client → DURABLE local-disk store, NOT pure memory.
                ;; ^acdc-store's #:durable-dir writes every credential through
                ;; to disk and replays them on startup (survives process death)
