@@ -70,7 +70,7 @@ export type GrantKind = "use" | "consume";
 /**
  * A row of the wire as the page reads it where a snapshot carries what it has:
  * every key of the row the planner's table states (wire-rows.ts, generated from
- * module/playnet/wire/*.scm and planner/doors/record-rows.scm), optional, a figure
+ * module/playnet/wire/*.scm and doors/record-rows.scm), optional, a figure
  * also as the string a demo or a draft writes it.
  */
 export type Wide<T> = { [K in keyof T]?: T[K] extends number | null ? number | string : T[K] };

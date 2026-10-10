@@ -10,7 +10,7 @@
   #:use-module (goblins)
   #:use-module (playnet org gplay)
   #:use-module (playnet lang evaluator)
-  #:use-module (playnet org endorsement)
+  #:use-module (playnet utils endorsement)
   #:use-module (srfi srfi-1)
   #:use-module (ice-9 receive)
   #:use-module (srfi srfi-9)

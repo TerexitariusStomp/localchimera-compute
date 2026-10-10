@@ -27,7 +27,6 @@
 ;; -L-relative depending on how the file was loaded — both wrong for paths.
 (define root (or (and (file-exists? "module/playnet/solve/engine.scm") (getcwd))
                  (error "run this test from the repository root")))
-(define (pl p) (load (string-append root "/module/playnet/planner/" p)))
 (use-modules (playnet legal crossings))
 (use-modules (playnet legal registry))
 (use-modules (playnet knowledge recipes compliance-processes))

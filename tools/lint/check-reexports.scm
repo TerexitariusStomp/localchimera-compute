@@ -7,7 +7,7 @@
 ;;; The pre-commit hook runs it over the INDEX's module/ tree (Guard 1, second
 ;;; half), so a commit cannot contain a library naming what its parts lack.
 ;;;
-;;; A library module such as (playnet governance) re-exports names its parts
+;;; A library module such as (playnet boot prelude) re-exports names its parts
 ;;; define. When the parts and the library are committed apart, the library can
 ;;; name something the committed parts do not yet export, and the failure is a
 ;;; boot-time "Undefined variable" the first time anything loads the library:

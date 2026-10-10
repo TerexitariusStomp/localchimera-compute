@@ -19,7 +19,7 @@
 (use-modules (srfi srfi-1) (ice-9 format))
 (define (sibling f) (or (find file-exists? (filter-map (lambda (p) (and (string? p) (string-append (dirname p) "/" f)))
                                                        (cons (current-filename) (command-line))))
-                        (string-append "module/playnet/planner/" f)))
+                        f))
 (use-modules (playnet solve engine)
              (playnet vf schemas) (playnet vf beyond scenario)
              (playnet knowledge worlds bioregions))

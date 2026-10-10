@@ -2,8 +2,7 @@
 ;;; the shape app.html's plan drill-down reads. Seed a two-step recipe in a
 ;;; scope and assert the wire carries the chain, the flows, and the deliverable.
 ;;;
-;;; Run:  guile --no-auto-compile -q -L module \
-;;;         -l module/playnet/planner/load-all.scm -l tests/doors/recipe-wire-test.scm
+;;; Run:  tools/test/run-suite.sh tests/doors/recipe-wire-test.scm
 ;;; (or via the blake3 dev-test shell — see [[reference_blake3_test_profile]])
 
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))

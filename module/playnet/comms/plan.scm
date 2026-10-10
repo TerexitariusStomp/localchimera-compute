@@ -20,7 +20,7 @@
 ;;; citation — so a fabricated fact cannot reach a post. The dry skeleton is
 ;;; always a valid fallback.
 ;;;
-;;; Assumes (playnet planner) is loaded (the <intent>/<satisfaction-state>/
+;;; Assumes (playnet vf schemas) is loaded (the <intent>/<satisfaction-state>/
 ;;; <measure> accessors). Load: (load ".../planner/comms/plan.scm").
 
 (define-module (playnet comms plan)

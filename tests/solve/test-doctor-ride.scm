@@ -14,7 +14,7 @@
 ;;; (Forms-level proof on the real solver — the substrate for wiring Pres|worker into
 ;;;  build-located; it reuses Svc (car) and Lab (driver) verbatim.)
 ;;;
-;;; Run:  guile -L module/playnet/planner module/playnet/planner/doctor-ride-test.scm
+;;; Run:  tools/test/run-suite.sh tests/solve/test-doctor-ride.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet solve engine)

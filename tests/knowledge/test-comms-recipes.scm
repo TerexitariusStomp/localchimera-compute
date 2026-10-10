@@ -16,7 +16,6 @@
 
 (define here (dirname (current-filename)))
 (define root (dirname (dirname here)))
-(define (pl p) (load (string-append root "/module/playnet/planner/" p)))
 (use-modules (playnet knowledge recipes comms-processes))
 
 (define (empty-rs)

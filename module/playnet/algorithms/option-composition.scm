@@ -25,7 +25,7 @@
 ;;; and the credibility floor B(1−R) ≥ C of the bound.
 ;;;
 ;;; The concession is compute-attributed-premium's extractable bound; the
-;;; rollover seam is Proposal.reciprocal. Loaded in the (playnet planner)
+;;; rollover seam is Proposal.reciprocal. Loaded in the (playnet boot prelude)
 ;;; umbrella after option-premium.scm (it needs only compute-attributed-premium + the VF
 ;;; record accessors).
 ;;;

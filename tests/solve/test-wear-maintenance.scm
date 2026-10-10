@@ -8,7 +8,7 @@
 ;;; it) ALL fall out of the good/recipe machinery — no *wear-rate*, no special section,
 ;;; no special SNLT term. Condition's onhand is its starting *init*.
 ;;;
-;;; Run:  guile -L module/playnet/planner module/playnet/planner/wear-maintenance-test.scm
+;;; Run:  tools/test/run-suite.sh tests/solve/test-wear-maintenance.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet solve engine)

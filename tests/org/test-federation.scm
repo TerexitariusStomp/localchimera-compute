@@ -2,7 +2,7 @@
 
 (use-modules (playnet test harness))
 (use-modules (playnet scope root))
-(use-modules (playnet org endorsement))
+(use-modules (playnet utils endorsement))
 (use-modules (playnet boot scope) (playnet boot scope) (playnet voice voice-signer) (playnet keri acdc) (playnet keri acdc-store) (playnet keri first-person credentials) (playnet keri first-person predicates))
 (use-modules (goblins) (goblins utils hashmap) (srfi srfi-1))
 

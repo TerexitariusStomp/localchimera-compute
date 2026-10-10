@@ -270,7 +270,7 @@ const arcFault: Fault = a => {
 // ── the planner's own lint, inside the check ────────────────────────────────
 // A pass's fault-namers say what a row must LOOK like. What the scope would
 // REFUSE — a spec it does not know, a unit it counts differently — only the
-// planner knows, and its lint door says it as findings ((playnet planner
+// planner knows, and its lint door says it as findings ((playnet knowledge dsl
 // knowledge vf-lint), the same lint that gates the recipe tree). The
 // error-tier findings become the reason the model is asked again with; a shut
 // door (offline, standalone) is no finding, and the local check stands alone.

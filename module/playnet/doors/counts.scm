@@ -4,7 +4,7 @@
 ;;; which events are counts that stand, when a stock was last counted, who may
 ;;; count it, whose turn a planned count is, whether one is already asked, the
 ;;; rows a contest reads, and the code a stock is known by. The door that lands
-;;; a count, the schedule's rows and the offers stay in planner/doors/service.scm,
+;;; a count, the schedule's rows and the offers stay in doors/service.scm,
 ;;; which owns the error envelope and the inventory snapshot; the shape of a
 ;;; count's events is observation/adjustment.scm's, the grammar of its process
 ;;; counting.scm's.

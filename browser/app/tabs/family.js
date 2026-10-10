@@ -8,7 +8,7 @@
 // below the floors has no plan — and it takes no voice: the wall is free), a
 // HELD need trades at the margin but can never be zeroed, a WANT (des) can be
 // set aside for exactly the voice attached to it, quietest first. The solve
-// (planner/doors/family/solve.scm, the one the planner test pins)
+// (doors/family/solve.scm, the one the planner test pins)
 // turns every need into an acquisition recipe (euros in, the need out), holds
 // the purse as a finite stock, and lets the household's own Pfand run add to
 // it. When the purse is short the sacrifice SPREADS; nothing is cut by a queue.

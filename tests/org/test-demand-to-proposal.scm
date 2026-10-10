@@ -10,9 +10,9 @@
 
 (use-modules (playnet test harness)
              (playnet pools credit-fold) (playnet scope root) (playnet vf schemas) (srfi srfi-1)
-             (playnet org endorsement)
+             (playnet utils endorsement)
              (playnet voice delegation-map) (playnet voice expression) (playnet voice voice-signer)
-             (playnet voice demand-registry)
+             (playnet scope demand-registry)
              (playnet voice demand-bridge)
              (goblins)
              (goblins utils hashmap)

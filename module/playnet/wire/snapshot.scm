@@ -78,7 +78,7 @@
 (define (location->wire s) (wire-row* %location-wire s))
 
 ;; recipes ride the snapshot too — the dial's plan drill-down reads them; their tables
-;; read the recipe records (planner/doors/record-rows.scm).
+;; read the recipe records (doors/record-rows.scm).
 
 ;; the plan: real coverage from the most recent solve (or #f until one runs).
 ;; per-need met / coverage / labour are numbers; runs is an integer.
@@ -243,7 +243,7 @@
 (define (matter->wire m) (wire-row* %matter-wire m))
 
 ;; the scope itself: its members, its plans and a payout are tables over their records
-;; (planner/doors/record-rows.scm); an alert is one the execution layer raised
+;; (doors/record-rows.scm); an alert is one the execution layer raised
 (define %alert-wire
   (wire-table 'alert #f
     '(("kind" kind str) ("specId" spec-id str) ("processId" process-id str)

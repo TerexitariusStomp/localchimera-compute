@@ -12,7 +12,7 @@
   #:use-module (goblins utils hashmap)
   ;; NB: this matcher is a pure, self-contained algorithm over agent/slot
   ;; strings — it does not reference plan-bundle or uc-matching, so those
-  ;; imports were removed (they only pulled in the heavy (playnet planner)
+  ;; imports were removed (they only pulled in the heavy (playnet vf schemas)
   ;; umbrella). Keeps the matcher loadable on its own.
   #:export (deferred-acceptance assign-slots
             make-producer-prefs producer-prefs?

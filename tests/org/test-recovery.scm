@@ -7,7 +7,7 @@
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet scope root) (playnet vf schemas) (playnet observation states))
-(use-modules (playnet org endorsement))
+(use-modules (playnet utils endorsement))
 (use-modules (playnet voice ballot) (playnet boot scope) (playnet credentials commitments) (playnet credentials membership) (playnet credentials voting) (playnet credentials work) (playnet keri acdc) (playnet voice delegation-map) (playnet boot scope) (playnet federation rebuild) (playnet voice voice-signer) (playnet keri acdc) (playnet keri acdc-store) (playnet keri said-portable))
 (use-modules (goblins) (goblins utils hashmap) (srfi srfi-1))
 

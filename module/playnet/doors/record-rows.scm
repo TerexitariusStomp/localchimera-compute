@@ -1,4 +1,4 @@
-;;; planner/doors/record-rows.scm — a ValueFlows record as the page's row.
+;;; doors/record-rows.scm — a ValueFlows record as the page's row.
 ;;;
 ;;; The snapshot's record arms — commitments, intents, proposals, events — are
 ;;; lists of records; each leaves the planner written by the table here over its

@@ -2,7 +2,7 @@
 ;;; waits for its stewards' signatures.
 ;;;
 ;;; A ceremony (personhood/body-ceremony.scm) reads and writes the oobi-host, so
-;;; it lives in the oobi-host's vat; the body service (planner/doors/bodies.scm)
+;;; it lives in the oobi-host's vat; the body service (doors/bodies.scm)
 ;;; lives in the planner's. This desk is the one actor between them: it holds
 ;;; the open ceremonies by the body's provisional id, opens one on request,
 ;;; hands out the statement to sign, counts a signature, and reports standing.

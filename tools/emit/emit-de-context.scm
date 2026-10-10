@@ -30,9 +30,9 @@
 ;;; Belehrung in Berlin — a difference the fold derives, with nothing about
 ;;; Germany written into any recipe.
 
-(add-to-load-path (dirname (dirname (current-filename))))
+(add-to-load-path (dirname (dirname (dirname (current-filename)))))
 (define here (dirname (current-filename)))
-(define root (dirname here))
+(define root (dirname (dirname here)))
 (define (rel p) (string-append root "/" p))
 
 (use-modules (playnet vf schemas))

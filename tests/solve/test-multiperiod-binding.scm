@@ -10,7 +10,7 @@
 ;;; Bread wanted at town in period 0 (3) and period 1 (3); Ada bakes (labour-only,
 ;;; 8h available any day). If the binding holds, work happens in BOTH periods.
 ;;;
-;;; Run:  guile -L module/playnet/planner module/playnet/planner/multiperiod-binding-test.scm
+;;; Run:  tools/test/run-suite.sh tests/solve/test-multiperiod-binding.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet solve engine)

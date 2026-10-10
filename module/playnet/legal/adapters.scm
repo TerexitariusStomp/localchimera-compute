@@ -30,7 +30,6 @@
 (define-module (playnet legal adapters)
   #:use-module ((playnet vf facts agent-tags) #:select (agent-tag-value))
   #:use-module (playnet legal registry)
-  #:use-module ((playnet knowledge law context-pack) #:select (current-legal-rules))
   #:use-module (playnet vf schemas)
   #:use-module (playnet legal compliance)
   #:use-module (playnet legal filings)

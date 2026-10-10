@@ -44,7 +44,7 @@
 ;;; and `utils/records.scm` settled that, so a `<time-range>` is now one kind of
 ;;; thing everywhere.
 ;;;
-;;; What remains is direction. `<time-range>` lives in `(playnet planner)`, which
+;;; What remains is direction. `<time-range>` lives in `(playnet vf schemas)`, which
 ;;; reaches this module; a clock that read records would have to reach back, and
 ;;; the cycle is worse than the duplication it would remove.
 ;;;

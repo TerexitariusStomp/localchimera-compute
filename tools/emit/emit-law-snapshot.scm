@@ -11,10 +11,10 @@
 ;;;
 ;;; (bare guile — legal/registry.scm needs only srfi-1/13 + ice-9 format.)
 
-(add-to-load-path (dirname (dirname (current-filename))))
+(add-to-load-path (dirname (dirname (dirname (current-filename)))))
 
 (define here (dirname (current-filename)))
-(define root (dirname here))
+(define root (dirname (dirname here)))
 (define (rel p) (string-append root "/" p))
 
 (use-modules (playnet vf schemas))                                  ; VF records (ProcessSpec/RecipeProcess/Recipe) for legal-aspects

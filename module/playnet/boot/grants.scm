@@ -5,7 +5,7 @@
   #:use-module ((playnet federation scope-graph) #:select (current-scope-graph in-graph-vat))
   #:use-module ((playnet keri acdc) #:select (cred-holder cred-revoked?))
   #:use-module ((playnet keri keria-reconnect) #:select (register-reconnect-hook!))
-  #:use-module ((playnet keys ipex-policy) #:select (current-credential-finder current-credential-finder-by-said))
+  #:use-module ((playnet federation ipex-policy) #:select (current-credential-finder current-credential-finder-by-said))
   #:use-module ((playnet keys pending-grants) #:select (current-pending-grants spawn-pending-grants))
   #:use-module ((playnet utils paths) #:select (playnet-state-dir))
   #:use-module (fibers)

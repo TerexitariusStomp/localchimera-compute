@@ -197,8 +197,8 @@ check-family-worker: browser/family.wasm
 # Transitive (playnet …) import closure of hoot/scope-worker.scm; see
 # `make check-wasm-deps`.
 SCOPE_WASM_DEPS = \
-                   module/playnet/voice/ballot-store.scm \
-                   module/playnet/voice/demand-registry.scm \
+                   module/playnet/scope/ballot-store.scm \
+                   module/playnet/scope/demand-registry.scm \
                    module/playnet/keri/acdc.scm \
                    module/playnet/keri/cesr.scm \
                    module/playnet/keri/crypto-primitives.scm \
@@ -812,7 +812,7 @@ REPL_WASM_DEPS = \
                  module/playnet/lang/autocomplete.scm \
                  module/playnet/lang/kanren.scm \
                  module/playnet/lang/wisp.scm \
-                 module/playnet/org/endorsement.scm \
+                 module/playnet/utils/endorsement.scm \
                  module/playnet/org/gplay.scm \
                  module/playnet/ui/calendar.scm \
                  module/playnet/calendar/ical.scm \
@@ -1135,10 +1135,8 @@ check-notice-facts-fresh:
 # the layout as data, naming the tree to come; tools/lint/module-map.scm reads every
 # .scm in the tree as forms and lints each file at the rank it will stand at.
 # `module-map` writes module/playnet/README.md; `lint-layers` lists the upward
-# imports and any file the layout does not name, and exits 1 for one that
-# tools/lint/layers.baseline does not hold: the baseline is what the moves of the
-# layout's §9 have yet to resolve, `tools/lint/module-map.scm --baseline` records a
-# shrunken one, and `make test` runs the lint. The map carries importer counts,
+# imports and any file the layout does not name, and exits 1 for any: the tree
+# has no upward import, and `make test` runs the lint. The map carries importer counts,
 # so `check-module-map-fresh` is for the reader, not the gate. The tool imports
 # no playnet module and reads 1,600 files, so it runs compiled, under its own cache.
 .PHONY: module-map check-module-map-fresh lint-layers

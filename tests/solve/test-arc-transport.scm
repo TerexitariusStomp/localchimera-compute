@@ -10,7 +10,7 @@
 ;;;
 ;;; Verified by inspecting the built columns (solver-independent).
 ;;;
-;;; Run:  guile -L module/playnet/planner module/playnet/planner/arc-transport-test.scm
+;;; Run:  tools/test/run-suite.sh tests/solve/test-arc-transport.scm
 
 (use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))

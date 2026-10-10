@@ -2,7 +2,7 @@
 
 (use-modules (playnet test harness))
 (use-modules (playnet scope root) (playnet vf schemas) (playnet observation states))
-(use-modules (playnet org endorsement))
+(use-modules (playnet utils endorsement))
 (use-modules (playnet boot scope))
 (use-modules (goblins) (goblins utils hashmap))
 

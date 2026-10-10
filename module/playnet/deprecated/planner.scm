@@ -248,8 +248,8 @@
   #:use-module (srfi srfi-9)
   #:use-module (srfi srfi-11)
   #:use-module (playnet deprecated kanren-constraints)
-  #:use-module (playnet voice ballot-store)
-  #:use-module (playnet voice demand-registry)
+  #:use-module (playnet scope ballot-store)
+  #:use-module (playnet scope demand-registry)
   ;; Tests and external consumers historically got these via the
   ;; load-all.scm top-level pollution; re-export so `(use-modules
   ;; (playnet planner))` feels like the old load chain. The kanren

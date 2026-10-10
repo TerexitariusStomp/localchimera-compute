@@ -12,7 +12,7 @@
 ;;; and the merge is per-FIELD: an observed time inherits the prior's km
 ;;; rather than shadowing the road out of existence. No solver, no network.
 ;;;
-;;; Run:  guile module/playnet/planner/arc-time-matrix-test.scm
+;;; Run:  tools/test/run-suite.sh tests/solve/test-arc-time-matrix.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet solve engine))

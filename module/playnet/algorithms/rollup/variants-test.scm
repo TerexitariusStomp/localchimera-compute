@@ -42,7 +42,7 @@
 
 ;; A minimal in-line store actor, defined in THIS loaded instance so its records
 ;; share the engine's <recipe>/<recipe-flow> types (importing recipe-library via
-;; use-modules would re-instantiate (playnet planner) and split the types).
+;; use-modules would re-instantiate (playnet vf schemas) and split the types).
 ;; defs :: list of (recipe procs flows). Answers the 4-message read subset.
 (define-actor (^toy-store bcom defs)
   (define (find-def id) (find (lambda (d) (equal? (recipe-id (car d)) id)) defs))

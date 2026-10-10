@@ -11,7 +11,7 @@
 ;;;   4. manners don't bleed: a "bicycle" entry leaves the "pedestrian"
 ;;;      commute on its haversine fallback.
 ;;;
-;;; Run:  guile module/playnet/planner/arc-time-injection-test.scm
+;;; Run:  tools/test/run-suite.sh tests/solve/test-arc-time-injection.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet solve engine))

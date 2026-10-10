@@ -14,7 +14,7 @@
 ;;;     driver's labour (and the vehicle) are planned. Society plans that ENOUGH rides exist,
 ;;;     not that a specific person rides at a specific time.
 ;;;
-;;; Run:  guile -L module/playnet/planner module/playnet/planner/transport-work-vs-service-test.scm
+;;; Run:  tools/test/run-suite.sh tests/solve/test-transport-work-vs-service.scm
 
 (use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))

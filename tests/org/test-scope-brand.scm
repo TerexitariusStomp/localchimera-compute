@@ -8,7 +8,7 @@
 ;;; instances (in the same vat) can produce.
 
 (use-modules (playnet test harness))
-(use-modules (playnet org endorsement))
+(use-modules (playnet utils endorsement))
 (use-modules (playnet scope root))
 (use-modules (playnet boot scope))
 (use-modules (goblins) (goblins vat) (goblins actor-lib methods)

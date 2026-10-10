@@ -23,7 +23,7 @@
 ;;; credentials lands at the gateway's own controller signify identity
 ;;; (via the existing notification poller); whether that identity can
 ;;; admit on behalf of a scope-AID Issuee is a separate question handled
-;;; in (playnet keys ipex-policy).
+;;; in (playnet federation ipex-policy).
 
 (define-module (playnet keys exchange)
   #:use-module (goblins)

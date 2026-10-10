@@ -11,7 +11,7 @@
 ;;;   3. the commute scenario's (direct transport care) ledger is unchanged
 ;;;      between two identical runs (determinism guard for 2's comparison).
 ;;;
-;;; Run:  guile module/playnet/planner/arc-time-parity-test.scm
+;;; Run:  tools/test/run-suite.sh tests/solve/test-arc-time-parity.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet solve engine))

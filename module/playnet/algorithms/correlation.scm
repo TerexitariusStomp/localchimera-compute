@@ -6,7 +6,7 @@
 ;;; the two streams and running the method.
 ;;;
 ;;; Streams are procedure-valued to keep this module free of governance
-;;; dependencies (credentials live in (playnet governance); the adapter
+;;; dependencies (credentials live in (playnet credentials …); the adapter
 ;;; turning an ACDC source into a pairs-thunk lives there — see
 ;;; credential-stream->pairs-fn in index-oracle.scm).
 ;;;
@@ -137,7 +137,7 @@
 ;; stream-a, stream-b:  procedures (from-ts to-ts) → ((ts . value) ...)
 ;;                      from-ts / to-ts may be #f for open range.
 ;;                      Callers build these via credential-stream->pairs-fn
-;;                      (in (playnet governance)) or any custom adapter.
+;;                      (in (playnet credentials …)) or any custom adapter.
 ;; bucket-seconds:      alignment width. 86400 (daily) is a sane default.
 ;; method:              'pearson (extensible).
 

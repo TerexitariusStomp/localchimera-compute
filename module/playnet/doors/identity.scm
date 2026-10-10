@@ -45,10 +45,11 @@
   #:use-module ((playnet identity contact-points)
                 #:select (contact-point-wire->cred contact-point-verdict))
   #:use-module ((playnet identity forget) #:select (forget-member!))
+  #:use-module ((playnet interface adapters email) #:select (mail-spool-forget!))
   #:use-module ((playnet identity user-files)
                 #:select (%data-dir %user-file %read-user-data %write-user-data!))
   #:use-module ((playnet keri first-person credentials) #:select (contact-point-binding-fields))
-  #:use-module ((playnet keys notifications)
+  #:use-module ((playnet federation keria-notifications)
                 #:select (register-credential-watcher! unregister-credential-watcher!))
   #:use-module ((playnet notify recipient) #:select (durable-kind? binding-kind binding-ctx))
   #:use-module ((playnet social lens) #:select (contact-aid))
@@ -699,7 +700,8 @@
          #:mesh-dests (let ((pub (anchored-mesh-pub)))
                         (if pub (map cdr (anchored-destinations pub)) '()))
          #:cards-dir (cards-dir)
-         #:mail-dir (getenv "PLAYNET_MAIL_DIR")))))
+         #:mail-forget (lambda (addresses)
+                         (mail-spool-forget! (getenv "PLAYNET_MAIL_DIR") addresses))))))
 
    ;; Rotation — bound to this session's AID. Caller can't rotate
    ;; someone else through this cap. Root-only: a device key cannot

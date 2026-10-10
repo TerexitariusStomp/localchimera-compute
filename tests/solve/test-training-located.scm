@@ -18,7 +18,7 @@
 ;;;              the plan must RE-train to serve period 3.  Σtrain(lull) > Σtrain(sustained)
 ;;;              is decay made measurable.
 ;;;
-;;; Run:  guile -L module/playnet/planner module/playnet/planner/training-located-test.scm
+;;; Run:  tools/test/run-suite.sh tests/solve/test-training-located.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet solve engine))

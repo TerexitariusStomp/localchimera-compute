@@ -15,7 +15,7 @@
   #:use-module ((playnet keri credentials) #:select (acdc-ensure-schemas-resolved!))
   #:use-module ((playnet keri inception) #:select (gateway-controller-init!))
   #:use-module ((playnet keys http-witness-publisher) #:select (spawn-http-witness-publisher))
-  #:use-module ((playnet keys notifications) #:select (install-default-handlers! start-notification-poller!))
+  #:use-module ((playnet federation keria-notifications) #:select (install-default-handlers! start-notification-poller!))
   #:use-module ((playnet keys peers) #:select (known-uc-aid resolve-peer-oobis!))
   #:use-module ((playnet utils common) #:select (env-int))
   #:use-module ((playnet utils paths) #:select (default-scope-witnesses))

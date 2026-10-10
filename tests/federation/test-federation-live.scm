@@ -27,7 +27,7 @@
 
 ;; seed a commune's real stores: bake recipe (flour+work→bread), a worker, a
 ;; NESTED spatial tree (federation ⊃ commune ⊃ venue), and inventory.
-;; seeding is the reusable `seed-fed-commune!` from (playnet planner) — the same
+;; seeding is the reusable `seed-fed-commune!` from (playnet boot prelude) — the same
 ;; helper the gateway's demo path calls to stand up a federation of communes.
 
 ;; gather a commune's live records — the four pulls the service method does.

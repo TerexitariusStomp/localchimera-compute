@@ -12,7 +12,7 @@
 ;;;   (3) REAL VF OUTPUT — the plan emits work need/offer Intents + work Commitments AND
 ;;;       material produce/consume Commitments, topologically ordered (produce before consume).
 ;;;
-;;; Run:  guile -L module/playnet/planner module/playnet/planner/coherence-test.scm
+;;; Run:  tools/test/run-suite.sh tests/solve/test-coherence.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet solve engine)

@@ -1,6 +1,6 @@
 ;;; umbrella-map.scm — every name an umbrella module exports, and the module that defines it.
 ;;;
-;;;   guile -L module tools/edit/umbrella-map.scm playnet planner   →  NAME TAB (playnet planner …)
+;;;   guile -L module tools/edit/umbrella-map.scm playnet boot prelude   →  NAME TAB (playnet boot prelude …)
 ;;;
 ;;; "-" marks a name the umbrella defines itself, "?" one no loaded module owns. The
 ;;; input of tools/edit/retire-umbrella.py.

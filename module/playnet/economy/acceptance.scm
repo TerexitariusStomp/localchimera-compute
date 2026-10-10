@@ -50,7 +50,7 @@
      ;; optional evidence admit-commune/merge-with/split accept. Optional
      ;; unless this scope's own governance-policy has set
      ;; require-ratification, in which case require-ratification! refuses
-     ;; the act without one — see voice/quorum.scm.
+     ;; the act without one — see scope/policy.scm.
      (require-gov-cap! gov-sealed? gov-cap "accept-socialization" name)
      (require-store!   acdc-store    "accept-socialization" name)
      (require-ratification! scope-root-ref acdc-store scope-aid

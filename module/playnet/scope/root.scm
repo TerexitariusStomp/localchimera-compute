@@ -34,8 +34,8 @@
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
   #:use-module (goblins utils hashmap)
-  #:use-module (playnet voice ballot-store)
-  #:use-module (playnet voice demand-registry))
+  #:use-module (playnet scope ballot-store)
+  #:use-module (playnet scope demand-registry))
 
 
 ;; Assumes all store modules and schemas.scm are loaded.

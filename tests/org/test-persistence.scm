@@ -13,7 +13,7 @@
              ((goblins utils crypto) #:select (generate-key-pair key-pair->public-key))
              (playnet org factories)
              (playnet org gplay)
-             (playnet org endorsement)
+             (playnet utils endorsement)
              (ice-9 receive)
              (ice-9 match)
              (srfi srfi-1))

@@ -2,7 +2,7 @@
 ;;; it as the holder.
 ;;;
 ;;; Properties over legal/bodies.scm: who stands behind a body is a fold over
-;;; <agent-relationship>s with the roles of knowledge/body-roles.scm; a closed
+;;; <agent-relationship>s with the roles of legal/body-roles.scm; a closed
 ;;; register yields nobody; admission is the eight tests of
 ;;; docs/legal/structure.md §2 read as crossings, with the one refusal (two
 ;;; bodies selling the same good in the same place); and the solve's decorate
@@ -21,7 +21,7 @@
              (playnet knowledge recipes store)
              (playnet legal registry) (playnet legal registry-actor)
              (playnet legal gate) (playnet legal compliance)
-             (playnet legal bodies) (playnet knowledge body-roles)
+             (playnet legal bodies) (playnet legal body-roles)
              (playnet knowledge dsl findings)
              (playnet knowledge law context-pack)
              (goblins) (goblins vat) (goblins utils hashmap)

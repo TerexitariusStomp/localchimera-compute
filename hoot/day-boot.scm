@@ -3803,7 +3803,7 @@
                         ("balance" . ,(wire-value 'num (alist-ref v 'balance) #f)))))))))))
 
 ;; Family: a household purse split across its members' stated needs by
-;; harmony (planner/doors/family/solve.scm through the lobby). Scope-free and AID-free —
+;; harmony (doors/family/solve.scm through the lobby). Scope-free and AID-free —
 ;; the needs and the purse are the face's own statement and nothing is
 ;; written — so only a session is required. NEEDS-JSON is the face's rows as
 ;; it holds them; the reply is the solve's rows with `met` per need.

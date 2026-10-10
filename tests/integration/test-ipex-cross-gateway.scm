@@ -21,7 +21,7 @@
              (playnet keri signify)
              (playnet keri signify-portable)
              (playnet keri crypto-primitives)
-             (playnet keys ipex-policy)
+             (playnet federation ipex-policy)
              (playnet credentials membership)
              (playnet federation scope-graph)
              (playnet keys pending-grants)
@@ -46,7 +46,7 @@
 (declare-opaque-header! "signify-timestamp")
 
 ;; handle-ipex-grant is not exported; reach in via module-ref
-(define notif-mod (resolve-module '(playnet keys notifications)))
+(define notif-mod (resolve-module '(playnet federation keria-notifications)))
 (define handle-ipex-grant (module-ref notif-mod 'handle-ipex-grant))
 
 (format #t "=== IPEX Cross-Gateway Integration Test ===~%~%")

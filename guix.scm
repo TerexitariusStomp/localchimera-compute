@@ -40,7 +40,7 @@
                    (invoke guile "--no-auto-compile" "-q"
                            "-L" "module"
                            "tests/lang/test-knowledge.scm")
-                   ;; Relational planner tests (imports (playnet planner))
+                   ;; Relational planner tests (imports (playnet deprecated planner))
                    (invoke guile "--no-auto-compile" "-q"
                            "-L" "module"
                            "tests/deprecated/relational-planner.scm"))))

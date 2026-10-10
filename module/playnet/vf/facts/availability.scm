@@ -3,7 +3,7 @@
 ;;;
 ;;; Pure VF: operates only on the <availability-window>,
 ;;; <month-schedule>, <week-schedule>, <day-schedule>, <time-range>
-;;; records defined in (playnet planner). No <intent-binding> coupling
+;;; records defined in (playnet vf schemas). No <intent-binding> coupling
 ;;; — the feasibility layer pulls the window off
 ;;; (intent-availability-window …) before calling in here.
 ;;;

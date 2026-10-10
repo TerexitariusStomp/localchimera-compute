@@ -16,7 +16,7 @@
 ;;; (primary-accountable) or only custody? — read by comms/fragility.scm, so
 ;;; channel concentration surfaces on the fragility barrier with no new machinery.
 ;;;
-;;; Assumes schemas (via (playnet planner)) + a live ^recipe-store.
+;;; Assumes schemas ((playnet vf schemas)) + a live ^recipe-store.
 
 ;; ─── Resource specifications (infrastructure.scm idiom — 11 positional) ──────
 (define-module (playnet knowledge recipes comms-processes)

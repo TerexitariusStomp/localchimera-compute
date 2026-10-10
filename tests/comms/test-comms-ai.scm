@@ -13,7 +13,6 @@
 
 (define here (dirname (current-filename)))
 (define root (dirname (dirname here)))
-(define (pl p) (load (string-append root "/module/playnet/planner/" p)))
 (use-modules (playnet comms plan)) (use-modules (playnet comms ai))
 
 ;; fixtures (as in test-comms) — real <intent> + <satisfaction-state>

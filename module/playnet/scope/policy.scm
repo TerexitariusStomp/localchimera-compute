@@ -1,4 +1,4 @@
-;;; voice/quorum.scm — a scope's own word on how far real quorum must
+;;; scope/policy.scm — a scope's own word on how far real quorum must
 ;;; reach before its governance acts bind.
 ;;;
 ;;; `admit-commune`/`admit-commune-remote`/`merge-with`/`split`/
@@ -23,7 +23,7 @@
 ;;; every reader reads the row fresh, so a change binds the next act
 ;;; without a restart.
 
-(define-module (playnet voice quorum)
+(define-module (playnet scope policy)
   #:use-module (playnet utils governed-row)
   #:use-module (srfi srfi-1)
   #:export (governance-policy *governance-policy-defaults* *governed-dials* policy-dials))

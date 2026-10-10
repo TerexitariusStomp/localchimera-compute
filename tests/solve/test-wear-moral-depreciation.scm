@@ -18,7 +18,7 @@
 ;;; value over a longer life. The all-REBUILD limit (δ_rep=0) is classical
 ;;; depreciation at the build rate. The real case sits between, set by the split.
 ;;;
-;;; Run:  guile -L module/playnet/planner module/playnet/planner/wear-moral-depreciation-test.scm
+;;; Run:  tools/test/run-suite.sh tests/solve/test-wear-moral-depreciation.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet solve engine)

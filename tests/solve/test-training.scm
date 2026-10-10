@@ -36,7 +36,7 @@
 ;;; signature of wrongly assuming a doctor's skill is consumed each time she uses
 ;;; it. The pull funds training in both; only the person-bound reading relaxes it.
 ;;;
-;;; Run:  guile -L module/playnet/planner module/playnet/planner/training-test.scm
+;;; Run:  tools/test/run-suite.sh tests/solve/test-training.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
 ;; resolve planner.scm by finding the sibling that exists (current-filename is

@@ -28,7 +28,7 @@
              (playnet lang kanren)
              (playnet lang autocomplete)
              (playnet lang wisp)
-             (playnet deprecated ddmrp)
+             ((playnet utils alist) #:select (alist-ref alist-set))
              (playnet ui components)
              (playnet ui federation)
              (playnet ui network)

@@ -24,6 +24,7 @@
   #:use-module (goblins actor-lib methods)
   #:use-module (goblins utils hashmap)
   #:use-module (playnet utils boot-cell)
+  #:use-module ((playnet scope actor) #:select (scope-spawned))   ;; load: the graph listens for every spawn
   #:use-module (srfi srfi-1)
   #:export (^scope-graph
             aggregating-parent
@@ -56,6 +57,16 @@
   (let ((v (current-graph-vat)))
     (if v (with-vat v (thunk)) (thunk))))
 
+;;; A scope that spawns (scope/actor.scm `spawn-scope`) is noted here with its
+;;; KERIA alias, which the IPEX grant handler reads back (`get-aid-name`) to
+;;; sign admit/spurn under the right local identity. Set at load: the actor's
+;;; `scope-spawned` cell is the one it tells, and this module, which stands
+;;; above the actor, is the one that listens. Unset graph: nothing to note.
+(scope-spawned
+ (lambda (aid kind ref aid-name)
+   (let ((g (current-scope-graph)))
+     (when g (<- g 'note-spawn aid kind '() #:ref ref #:aid-name aid-name)))))
+
 ;;; The reparent sink: (proc child parents-after) fired on every edge change
 ;;; the note-* hooks record — an admission's membership ACDC, a removal, a
 ;;; dissolution. One per process, like the cells above (the graph is
@@ -71,8 +82,8 @@
 ;;; membership credentials name several: the smallest AID in string order.
 ;;; A rule of the AIDs alone, so every consumer and every boot picks the
 ;;; same one whatever order the edges arrived in; the sink receives the
-;;; parents already in this order. `resolve-merge-ratifier` (scope.scm)
-;;; chooses among shared parents by this rule. #f with no parents.
+;;; parents already in this order. `resolve-multi-merge-ratifier`
+;;; (universal-commune.scm) chooses among shared parents by this rule. #f with no parents.
 (define (parents-in-order parents) (sort parents string<?))
 (define (aggregating-parent parents)
   (and (pair? parents) (car (parents-in-order parents))))

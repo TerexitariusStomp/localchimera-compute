@@ -27,6 +27,7 @@
 
 (define-module (playnet personhood witness-relay)
   #:use-module (playnet observation credentials)
+  #:use-module (playnet personhood witnessed-work)
   #:use-module (playnet personhood attestation-ceremony)
   #:use-module ((playnet utils paths) #:select (playnet-state-dir))
   #:use-module (ice-9 ftw)

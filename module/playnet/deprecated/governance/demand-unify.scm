@@ -26,7 +26,7 @@
   #:use-module (srfi srfi-11)                 ;; let*-values
   #:use-module (srfi srfi-13)                 ;; string-join
   #:use-module (playnet lang kanren)
-  #:use-module (playnet voice demand-registry)
+  #:use-module (playnet scope demand-registry)
   #:export (try-unify-entries
             unify-demand-cluster
             *unifiable-keys*))

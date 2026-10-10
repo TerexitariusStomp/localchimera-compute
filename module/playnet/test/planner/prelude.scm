@@ -2,8 +2,7 @@
 ;;;
 ;;;   (use-modules (playnet test planner prelude))
 ;;;
-;;; provides fixture-file (a path beside this file) and planner-file (a path under
-;;; module/playnet/planner/, for loading a knowledge/ fixture),
+;;; provides fixture-file (a path beside this file),
 ;;; check + check-done (the pass/fail counter + summary), and the
 ;;; build→solve→index harness (solve-located + Vof). The engine itself is the
 ;;; test's own import — a test states the layers it reads (engine, compile,
@@ -18,17 +17,15 @@
   #:use-module (ice-9 format)
   #:use-module (playnet solve engine)
   #:use-module (playnet solve solver)
-  #:export (fixture-file planner-file check check-done Vof)
+  #:export (fixture-file check check-done Vof)
   #:replace (solve-located))
 
-;; the fixtures stand beside this file; the planner's own files are one directory over
+;; the fixtures stand beside this file
 (define %fixture-dir
   (dirname (or (%search-load-path "playnet/test/planner/prelude.scm")
                (current-filename)
                "module/playnet/test/planner/prelude.scm")))
-(define %planner-dir (string-append (dirname (dirname %fixture-dir)) "/planner"))
 (define (fixture-file f) (string-append %fixture-dir "/" f))   ; e.g. (fixture-file "federated-fixtures.scm")
-(define (planner-file f) (string-append %planner-dir "/" f))   ; e.g. (planner-file "knowledge/doon-valley.scm")
 
 ;; pass/fail counter + a named check
 (define *pass* 0) (define *fail* 0)

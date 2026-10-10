@@ -55,7 +55,6 @@
   #:use-module ((playnet identity devices) #:select (devices-retire!))
   #:use-module ((playnet identity cards) #:select (cards-forget!))
   #:use-module ((playnet identity user-files) #:select (user-files-forget!))
-  #:use-module ((playnet interface adapters email) #:select (mail-spool-forget!))
   #:export (forget-member! forgotten? forgotten-gated unmark-forgotten!))
 
 ;; What a forget leaves standing, named in every receipt. The key log is the
@@ -100,7 +99,7 @@
 (define* (forget-member! aid
                          #:key signup-agent registry push-store presence (presence-names '())
                          desk mailbox-mgr pins folksonomy mesh-mailbox (mesh-dests '())
-                         cards-dir mail-dir)
+                         cards-dir mail-forget)
   "Forget the member AID from every store of this gateway's own, in the one
    order the module header states; → a promise of the receipt
 
@@ -120,7 +119,10 @@
    session announced itself under (presence keys by name); the profile's
    display name and handle, and the AID the room rosters hold, are left by
    as well, and a name presence never held is a no-op there. MESH-DESTS are
-   the destinations the AID's anchored key derives; MAIL-DIR the spool."
+   the destinations the AID's anchored key derives. MAIL-FORGET erases the
+   spooled mail to a list of addresses and replies how many went: the email
+   adapter's `mail-spool-forget!` over its spool, handed in by the door, since
+   the spool is the adapter's; #f, and no mail is there to forget."
   (mark-forgotten! aid)
   (define (drop-bindings)
     ;; the row goes, and what each binding pointed at follows from it
@@ -130,7 +132,7 @@
       (when push-store (for-each (lambda (id) ($ push-store 'unregister id)) push-ids))
       (values (length bs)
               (length push-ids)
-              (mail-spool-forget! mail-dir addresses))))
+              (if mail-forget (mail-forget addresses) 0))))
   (define (drop-mesh)
     (if mesh-mailbox
         (fold (lambda (dest n) (+ n (length ($ mesh-mailbox 'drain! dest)))) 0 mesh-dests)

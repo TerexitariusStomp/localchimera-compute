@@ -1,7 +1,7 @@
 ;;; records.scm — record types with identity, across the load seam.
 ;;;
 ;;; `make-record-type` mints a FRESH type on every evaluation. The planner's
-;;; schemas are reached two ways — imported as a module by `(playnet planner)`,
+;;; schemas are reached two ways — imported as a module by `(playnet boot prelude)`,
 ;;; and `primitive-load`ed directly by the solver engine when it runs standalone
 ;;; — so the same definition was evaluated twice and produced two types that
 ;;; share a name and nothing else.

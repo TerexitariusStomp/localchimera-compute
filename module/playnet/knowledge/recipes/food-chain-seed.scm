@@ -30,7 +30,7 @@
 ;;; food-freedom notice and Berlin's §43 IfSG Belehrung without one line of law
 ;;; living in the recipe.
 ;;;
-;;; Included by (playnet planner) before the per-context configurations. Every
+;;; Loaded before the per-context configurations. Every
 ;;; `$` is a near-call, so call within the recipe-store's vat.
 
 ;;; ─── a STAGE, as data ─────────────────────────────────────────────────────

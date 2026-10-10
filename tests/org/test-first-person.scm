@@ -5,7 +5,7 @@
 
 (use-modules (playnet test harness))
 (use-modules (playnet scope root))
-(use-modules (playnet org endorsement))
+(use-modules (playnet utils endorsement))
 (use-modules (playnet federation bootstrap) (playnet boot scope) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri first-person credentials) (playnet keri first-person predicates))
 (use-modules (playnet crypto shamir))
 (use-modules ((playnet keri signify) #:select (ed25519-keypair-public)))

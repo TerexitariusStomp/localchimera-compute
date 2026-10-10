@@ -106,8 +106,8 @@
   #:use-module (playnet vf aggregation containment)
   #:use-module (playnet utils clock)
   #:use-module ((playnet utils units) #:select (convert-unit unit->substance unit-rate? unit-rate-parts unit-known?))
-  #:use-module (playnet voice ballot-store)
-  #:use-module (playnet voice demand-registry)
+  #:use-module (playnet scope ballot-store)
+  #:use-module (playnet scope demand-registry)
   #:use-module (playnet knowledge recipes federation)
   #:use-module (playnet federation auditor)
   #:use-module (playnet federation structural-invariants)
@@ -133,6 +133,7 @@
   #:use-module (playnet keys bran-custody)
   #:use-module (playnet federation bootstrap)
   #:use-module ((playnet keri acdc-store) #:hide (hashmap-count))   ; the store's count; utils/store-utils' hashmap-count is the one the planner reads
+  #:use-module (playnet personhood witnessed-work)
   #:use-module ((playnet observation credentials) #:hide (held-by))   ; algorithms/custody's held-by is the planner's
   #:use-module (playnet voice voice-signer)
   #:use-module (playnet voice snapshot)
@@ -161,7 +162,7 @@
   #:use-module ((playnet utils hex) #:select (bv->hex hex->bv))
   #:use-module ((playnet keri inception) #:select (governance-create-scope-aid! <scope-inception> make-scope-inception scope-inception? scope-inception-aid scope-inception-bran scope-inception-keypair scope-inception-next-keypair scope-inception-signed-icp))
   #:use-module ((playnet keys peers) #:select (known-uc-aid))
-  #:use-module (playnet org endorsement)
+  #:use-module (playnet utils endorsement)
   #:use-module ((playnet scope live) #:select (cell declared-period-hours period-span plan-scope plan-scope->alist resource-window-hours set-daily-horizon! scenario-shocks shock-action shock-key shock-factor))
   #:use-module (playnet vf aggregation scope-tree)
   #:use-module (playnet vf aggregation fold-node)
@@ -908,7 +909,7 @@
                vrc-edges ^scope clear-spec-generalizations!
                federation-memberships-of-holder may-govern?
                open-recomposition-ballot ratification-edges
-               register-spec-generalization! resolve-merge-ratifier scope-env
+               register-spec-generalization! scope-env
                spawn-scope kel-identifier register-rotation-keypair-fn!
                rotation-keypair-fn split-scope-with-aids
                stale-membership-edges verify-parent-ratification!

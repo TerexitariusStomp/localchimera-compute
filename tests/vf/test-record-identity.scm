@@ -1,7 +1,7 @@
 ;;; test-record-identity.scm — a record is the same kind of thing on both sides.
 ;;;
 ;;; The planner's schemas are reached two ways: imported as a module by
-;;; `(playnet planner)`, and `primitive-load`ed by the solver engine when it runs
+;;; `(playnet boot prelude)`, and `primitive-load`ed by the solver engine when it runs
 ;;; standalone. `make-record-type` mints a fresh type per evaluation, so the same
 ;;; definition produced two types sharing a name and nothing else.
 ;;;

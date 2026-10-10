@@ -1,14 +1,14 @@
 ;;; test-purchase-reimburse.scm — buying for the commons, and being paid back.
 ;;;
 ;;; Alice buys 2 kg of flour for the commons with her own €10 and records
-;;; it: the flour is RAISED into the commons (planner/doors/service.scm
+;;; it: the flour is RAISED into the commons (doors/service.scm
 ;;; record-purchase). What the commons then owes her back is restitution,
 ;;; not credit: Alice signs her OWN purchase-claim ("I gave the commons
 ;;; this" — economy/debts.scm purchase-claim, the exact twin of a
 ;;; socialization grant), and governance's own accept-reimbursement
 ;;; (governance/scope.scm) binds it as the primary to a reciprocal DEBT in
 ;;; an Agreement — the same shape accept-socialization already uses for a
-;;; grant and its return commitment. Payout settlement (planner/doors/service.scm
+;;; grant and its return commitment. Payout settlement (doors/service.scm
 ;;; settle-payout, injected #:settle-of) pays the debt: what is owed is
 ;;; payable as a payout, because the acquisition recipes price EUR and XMR
 ;;; in labour (€10 = 0.01 XMR), and the runner pays the debt first, out of

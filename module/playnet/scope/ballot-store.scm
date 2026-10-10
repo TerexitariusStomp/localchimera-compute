@@ -1,4 +1,4 @@
-;;; voice/ballot-store.scm — per-scope persistent registry of ballots and tallies
+;;; scope/ballot-store.scm — per-scope persistent registry of ballots and tallies
 ;;;
 ;;; Stand-alone module — depends only on Goblins, so the scope root (for its
 ;;; wiring) and the voice modules import it without a cycle.
@@ -13,7 +13,7 @@
 ;;;     — recorded at close, used by downstream readers (planner, audit)
 ;;;     even after the ballot actor is gc'd.
 
-(define-module (playnet voice ballot-store)
+(define-module (playnet scope ballot-store)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
   #:use-module (goblins utils hashmap)
@@ -118,4 +118,4 @@
 
 (define ballot-store-env
   (make-persistence-env
-    `((((playnet voice ballot-store) ^ballot-store) ,^ballot-store))))
+    `((((playnet scope ballot-store) ^ballot-store) ,^ballot-store))))

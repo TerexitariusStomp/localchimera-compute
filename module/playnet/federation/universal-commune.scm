@@ -300,8 +300,8 @@ pass the restored ref via #:existing-ref."
     (error "merge-bottom-up!: pass either (a b) or (list-of-refs)"))))
 
 (define (resolve-multi-merge-ratifier predecessor-stores predecessor-aids uc-aid)
-  "N-way variant of resolve-merge-ratifier. Intersects the parent sets
-   of all predecessors. Returns (values chosen-aid source stale-saids)."
+  "Who ratifies a merge: the parent every predecessor shares, else the
+   aggregating one among the shared, else the Universal Commune. Returns (values chosen-aid source stale-saids)."
   (let* ((per-scope-memberships
           (map (lambda (store aid)
                  (federation-memberships-of-holder store aid))
@@ -494,7 +494,7 @@ pass the restored ref via #:existing-ref."
   (let* ((store-a   ($ a-ref 'acdc-store))
          (a-aid     ($ a-ref 'scope-aid))
          (uc-aid    (and uc-ref ($ uc-ref 'scope-aid))))
-    ;; Reuse resolve-merge-ratifier with a single predecessor.
+    ;; The one-predecessor case of resolve-multi-merge-ratifier.
     (call-with-values
         (lambda ()
           (resolve-multi-merge-ratifier (list store-a) (list a-aid) uc-aid))

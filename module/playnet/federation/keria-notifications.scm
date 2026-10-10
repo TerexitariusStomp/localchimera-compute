@@ -1,4 +1,4 @@
-;;; module/playnet/keys/notifications.scm — KERIA notification polling + dispatch
+;;; module/playnet/federation/keria-notifications.scm — KERIA notification polling + dispatch
 ;;;
 ;;; This is the event bus for all async KERI activity. Nothing works without it:
 ;;; multi-sig confirmations, credential offers, IPEX grants — all arrive here.
@@ -25,10 +25,10 @@
 ;;; server). The IPEX route names are protocol-level, defined in
 ;;; IPEX.md §3 Table 1. See docs/keri/SIGNIFY-PARITY.md.
 
-(define-module (playnet keys notifications)
+(define-module (playnet federation keria-notifications)
   #:use-module (playnet keri bridge)
   #:use-module (playnet keri credentials)
-  #:use-module (playnet keys ipex-policy)
+  #:use-module (playnet federation ipex-policy)
   #:use-module ((playnet keri inception) #:select (gateway-controller-aid-name))
   #:use-module ((playnet keys exchange)
                 #:select (current-pending-grants governance-cred->wire))
@@ -43,7 +43,6 @@
   #:use-module (goblins)
   #:use-module (fibers)
   #:use-module (ice-9 format)
-  #:use-module (ice-9 match)
   ;; uri-encode is used in handle-multisig-rpy when forwarding the AID
   ;; into KERIA's /addEndRole path. Without this import the handler
   ;; throws "Unbound variable: uri-encode" — the catch wrapper swallows
@@ -377,7 +376,7 @@
 
 ;;; ── IPEX handlers (IPEX.md §3 Table 1) ──────────────────────────────────────
 ;;;
-;;; Inbound IPEX policy is in (playnet keys ipex-policy). The handler here
+;;; Inbound IPEX policy is in (playnet federation ipex-policy). The handler here
 ;;; only does protocol mechanics: fetch the exchange body, idempotency-guard,
 ;;; consult policy, then admit + mirror — or spurn. Per IPEX.md §3 we MUST
 ;;; spurn on reject; silent mark-read is non-conformant and leaves the

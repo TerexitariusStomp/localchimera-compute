@@ -3,7 +3,7 @@
 ;;; The share face writes a standing `need:AID:SPEC` intent; this is the other
 ;;; end of that wire. The demand is the SUM over the subtree of the root being
 ;;; planned, read fresh at planning time — because the root is CONSTITUTED by
-;;; the fold (scope.scm resolve-merge-ratifier: two scopes sharing no parent
+;;; the fold (universal-commune.scm resolve-multi-merge-ratifier: two scopes sharing no parent
 ;;; are ratified by the Universal Commune), never a standing place to deposit
 ;;; into. So the same needs answer differently under a different tree, with
 ;;; nothing rewired.

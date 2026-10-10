@@ -8,7 +8,7 @@
 ;;; This is finer than parity-assert (one delivered scalar, 4 scenarios): it
 ;;; checks the gradient, curvature, and objective directly, at random points.
 ;;;
-;;; Run:  guile -L . module/playnet/planner/tension-parity-test.scm
+;;; Run:  tools/test/run-suite.sh tests/solve/test-tension-parity.scm
 
 (use-modules (srfi srfi-1) (rnrs bytevectors) (ice-9 format))
 (use-modules (playnet solve solver))

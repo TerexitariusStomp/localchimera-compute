@@ -7,7 +7,7 @@
 ;;; process, and publishes the attest for box1's poll to land.
 
 (use-modules (playnet personhood witness-relay)
-             ((playnet observation credentials) #:select (witness-work-inbox))
+             ((playnet personhood witnessed-work) #:select (witness-work-inbox))
              ((playnet keri citizen-sig)
               #:select (make-keri-identity keri-identity-aid
                         keri-identity-keypair sign-said))

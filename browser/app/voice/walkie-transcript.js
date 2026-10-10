@@ -6,7 +6,7 @@
 // posted to the room's chat topic as kind:"transcript". Audio never leaves the
 // machine; only the words do, and they arrive already attributed — the chat
 // registry stamps the author's AID and their stratum server-side
-// (planner/doors/service/chat.scm), so a transcript is a stream of authored lines rather
+// (doors/service/chat.scm), so a transcript is a stream of authored lines rather
 // than one blob with names in it.
 //
 // WHY EACH PEER TRANSCRIBES ITSELF, rather than one machine transcribing the

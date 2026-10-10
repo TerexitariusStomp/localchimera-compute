@@ -12,10 +12,10 @@
 
 (use-modules (playnet test scope)) ; mock-scope-root
 (use-modules (playnet test harness))
-(use-modules (playnet voice ballot-store) (playnet utils store-utils) (srfi srfi-1))
-(use-modules (playnet org endorsement))
-(use-modules (playnet voice ballot-store) (playnet boot governance))
-(use-modules (playnet voice ballot-store))
+(use-modules (playnet scope ballot-store) (playnet utils store-utils) (srfi srfi-1))
+(use-modules (playnet utils endorsement))
+(use-modules (playnet scope ballot-store) (playnet boot governance))
+(use-modules (playnet scope ballot-store))
 (use-modules (goblins)
              (goblins actor-lib methods)
              (goblins utils hashmap))

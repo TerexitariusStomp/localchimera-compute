@@ -26,7 +26,7 @@
 ;;;   "operator"                 it is the body that runs this gateway
 ;;;
 ;;; Who stands behind it: <agent-relationship> subject = person AID, object =
-;;; body AID, relationship = a role of knowledge/body-roles.scm, in-scope-of =
+;;; body AID, relationship = a role of legal/body-roles.scm, in-scope-of =
 ;;; the scope. A body joins a scope as subject = body AID, object = scope,
 ;;; role:member — so `scope-member-ids` (doors/service.scm) lists it unchanged.
 ;;;
@@ -49,7 +49,7 @@
   #:use-module ((playnet vf facts agent-tags) #:select (tag agent-tag-value agent-tag-values))
   #:use-module ((playnet utils operator) #:select (operator-ref))
   #:use-module ((playnet utils lei) #:select (lei-valid?))
-  #:use-module (playnet knowledge body-roles)
+  #:use-module (playnet legal body-roles)
   #:use-module ((playnet legal crossings)
                 #:select (classification-crossings asset-crossings record-crossings))
   #:use-module ((playnet legal gate) #:select (legal-asset-fields))

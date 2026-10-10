@@ -71,7 +71,7 @@
    ((status) `((what . inception) (have . ,(length signed)) (need . ,k) (published . ,published)))))
 
 ;; the body service: tables, the stewardship gate read here as the real one
-;; reads it on the records (planner/doors/bodies.scm), and every call recorded
+;; reads it on the records (doors/bodies.scm), and every call recorded
 (define calls '())
 (define admit-errors #f)   ; the test switch: does admission find an error?
 (define bodies '())        ; (id . agent)

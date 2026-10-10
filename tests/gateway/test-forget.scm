@@ -20,6 +20,7 @@
 (setenv "PLAYNET_MAIL_DIR" (string-append tmp "/mail"))
 
 (use-modules (playnet test harness)
+             ((playnet interface adapters email) #:select (mail-spool-forget!))
              (playnet test identity)
              (playnet keri signify-portable)
              ((playnet keri cesr) #:select (cesr-bytes->qb64))
@@ -214,7 +215,7 @@
                             #:push-store push-store #:presence presence #:desk desk
                             #:mailbox-mgr mailbox-mgr
                             #:cards-dir (string-append tmp "/cards")
-                            #:mail-dir (string-append tmp "/mail")))))
+                            #:mail-forget (lambda (as) (mail-spool-forget! (string-append tmp "/mail") as))))))
 (define again (forget-again))
 (check "the seat just taken goes" (equal? 1 (dropped again 'member)))
 (check "everything else is zero"

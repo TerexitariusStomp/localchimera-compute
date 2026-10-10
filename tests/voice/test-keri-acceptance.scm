@@ -18,7 +18,7 @@
 (use-modules (playnet test harness)
              (playnet scope root) (playnet vf schemas)
              (playnet credentials commitments) (playnet keri acdc) (playnet keri acdc) (playnet keri acdc-store)
-             (playnet voice demand-registry)
+             (playnet scope demand-registry)
              (playnet voice demand-bridge)
              (goblins)
              (goblins actor-lib methods)

@@ -12,7 +12,7 @@
 ;;; commute hours: productive output drops, faux frais appears in the ledger, and the
 ;;; free-time accounting nets it (it is neither value-creating labour nor leisure).
 ;;;
-;;; Run:  guile -L module/playnet/planner module/playnet/planner/commute-located-test.scm
+;;; Run:  tools/test/run-suite.sh tests/solve/test-commute-located.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet solve engine))

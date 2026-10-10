@@ -21,7 +21,7 @@
 ;;;   (4) DECLINE→RE-SOLVE — from {Ada,Ben,Cy}, Cy withdraws; warm re-solve rebalances
 ;;;               feasibly onto {Ada,Ben}, Cy drops to zero, budgets still respected.
 ;;;
-;;; Run:  guile -L module/playnet/planner module/playnet/planner/willingness-test.scm
+;;; Run:  tools/test/run-suite.sh tests/solve/test-willingness.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet solve engine)

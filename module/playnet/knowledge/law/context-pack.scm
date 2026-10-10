@@ -47,11 +47,11 @@
             load-context-packs load-law load-legal-registry
             pack-place-rows pack-readings pack-aspects pack-protections register-pack-facts!
             seed-pack-places!
-            *pack-rules* current-legal-rules
+            *pack-rules*
             bill-at stance-at)
   ;; the registry's own (it scans a pack folder for rules too); handed on, since
   ;; a caller that loads packs asks this module where they are
-  #:re-export (pack-paths place-endpoints %contexts-dir))
+  #:re-export (pack-paths place-endpoints %contexts-dir current-legal-rules))
 
 (cond-expand (guile) (else
   ;; a page has no file system: no file is there to read, and none is written
@@ -161,10 +161,9 @@
 ;;; carries no rules, and its bill is empty.
 (define *pack-rules* (load-context-packs %contexts-dir))
 
-;;; The rules a fold reads when its caller names none. A parameter, so a caller
-;;; with law of its own — a live planner, whose scopes carry their own
-;;; registries — folds the same code over its own rules.
-(define current-legal-rules (make-parameter *pack-rules*))
+;;; The rules a fold reads when its caller names none (legal/registry.scm
+;;; `current-legal-rules`): the packs, from the moment this module loads.
+(current-legal-rules *pack-rules*)
 
 ;;; ─── the bill at a place : the one fold over the shared tree ─────────────
 ;;; The legal exterior of CROSSINGS at PLACE-ID → (values bill hits). Every

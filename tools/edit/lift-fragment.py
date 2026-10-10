@@ -270,7 +270,7 @@ def exported_but_unbound():
    (module-for-each
     (lambda (k v) (unless (variable-bound? v) (format #t "~a~%" k)))
     (module-public-interface (resolve-module m))))
- (list (quote (playnet planner)) (quote (playnet deprecated planner))
+ (list (quote (playnet boot prelude)) (quote (playnet deprecated planner))
        (quote (playnet scope live)) (quote (playnet doors service))))
 '''
     out = subprocess.run(["guile","--no-auto-compile","-L","module","-c",scm],

@@ -11,7 +11,7 @@
 ;;;   (2) `move` is a first-class action: a recipe flow with action `move` (spatial
 ;;;       relocation, same custody) marks its good movable — a lossless free carry.
 ;;;
-;;; Run:  guile -L module/playnet/planner module/playnet/planner/containment-test.scm
+;;; Run:  tools/test/run-suite.sh tests/solve/test-containment.scm
 
 (use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))

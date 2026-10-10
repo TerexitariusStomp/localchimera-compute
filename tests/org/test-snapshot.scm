@@ -7,7 +7,7 @@
 (use-modules (playnet test scope)) ; mock-scope-root
 (use-modules (playnet test harness))
 (use-modules (playnet utils store-utils))
-(use-modules (playnet org endorsement))
+(use-modules (playnet utils endorsement))
 (use-modules (playnet voice ballot) (playnet voice delegation-map) (playnet voice snapshot) (playnet voice voice-signer))
 (use-modules (goblins)
              (goblins actor-lib methods)

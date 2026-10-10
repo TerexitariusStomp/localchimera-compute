@@ -1265,7 +1265,7 @@ function boot() {
     HANDLERS.purchaseClaim = bridge("purchaseClaim", 8); // commune spec qty unit due resource ref trig(purchase-event id)
     // accepting a grant or a reimbursement — the commune's own word, no new
     // signature (the session's own identity is the proof). See
-    // governance/service.scm's own doc: no governor-role gate exists live
+    // doors/governance.scm's own doc: no governor-role gate exists live
     // anywhere yet, so this is open to any authenticated member — only
     // self-accepting one's own reimbursement is actually refused.
     HANDLERS.acceptSocialization = bridge("acceptSocialization", 2); // commune grantSaid

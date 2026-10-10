@@ -14,7 +14,7 @@
 
 (use-modules (playnet test harness)
              (playnet scope root) (srfi srfi-1)
-             (playnet governance service) (playnet keri acdc) (playnet keri acdc-store)
+             (playnet boot governance) (playnet doors governance) (playnet keri acdc) (playnet keri acdc-store)
              (playnet keri first-person credentials) (playnet keri first-person predicates)
              (playnet keri signify-portable)
              ((playnet keri citizen-sig)

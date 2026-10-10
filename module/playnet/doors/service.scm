@@ -48,7 +48,7 @@
                           node-readings-reply readings-between-reply))  ; the ninth: readings, every source kept apart, and their history
   #:use-module ((playnet knowledge catalogues thermal) #:select (declare-thermal-form!))   ; a state is a form: the scope declares it
   #:use-module ((playnet vf facts parts) #:select (validate-hand part->string))
-  #:use-module ((playnet voice quorum) #:select (governance-policy policy-dials))   ; the governed dials, one registry
+  #:use-module ((playnet scope policy) #:select (governance-policy policy-dials))   ; the governed dials, one registry
   #:use-module ((playnet pools slack-fold)
                 #:select (^slack-node))                    ; the seventh: desire, per place
   #:use-module ((playnet economy means-fold)
@@ -2217,7 +2217,7 @@ service does not know the scope (nothing to filter by)."
   ;; the scope's standing pushes and hours reader off its voice node, and the
   ;; path of scopes the solve stands in (leaf first) for a part naming a scope.
   ;; the governed dials, every row read fresh from the one registry
-  ;; (voice/quorum.scm): τ and the rest go to the engine as keywords;
+  ;; (scope/policy.scm): τ and the rest go to the engine as keywords;
   ;; with τ > 0 the scope's voice fold hands the field its pushes and hours
   ;; the scope roots a person's credit is read over: the roster's, walked live.
   ;; Credit is earned anywhere and spent anywhere (account.scm `claim`), and a

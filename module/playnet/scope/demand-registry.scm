@@ -1,4 +1,4 @@
-;;; voice/demand-registry.scm — per-scope registry of free-form demands
+;;; scope/demand-registry.scm — per-scope registry of free-form demands
 ;;;
 ;;; A "demand" is someone in a scope saying "this place needs X". Each
 ;;; demand is a *partial intent* — every VF intent field is optional
@@ -41,7 +41,7 @@
 ;;; record so the entry persists cleanly as plain data; <measure> is
 ;;; rebuilt at intent-construction time by the bridge.
 
-(define-module (playnet voice demand-registry)
+(define-module (playnet scope demand-registry)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
   #:use-module (goblins utils hashmap)
@@ -274,5 +274,5 @@
 
 (define demand-registry-env
   (make-persistence-env
-    `((((playnet voice demand-registry) ^demand-registry)
+    `((((playnet scope demand-registry) ^demand-registry)
        ,^demand-registry))))

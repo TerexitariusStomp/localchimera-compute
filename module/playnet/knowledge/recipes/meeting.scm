@@ -1,6 +1,5 @@
 ;;; meeting.scm — Weekly Planning Meeting recipe, as a <world>.
 ;;;
-;;; Originally inlined in module/playnet/planner/seed-meeting-scope.scm.
 ;;; Extracted so all reusable recipe seed data lives under
 ;;; knowledge/recipes/. The scope bootstrap (agents, skills, plan,
 ;;; dependent-demand) still lives in seed-meeting-scope.scm and

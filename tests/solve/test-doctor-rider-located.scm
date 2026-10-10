@@ -19,7 +19,7 @@
 ;;; them; (3) RELOCATE-AND-STAY — over many periods the rider travels ONCE and stays,
 ;;; rather than commuting every period.
 ;;;
-;;; Run:  guile -L module/playnet/planner module/playnet/planner/doctor-rider-located-test.scm
+;;; Run:  tools/test/run-suite.sh tests/solve/test-doctor-rider-located.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet solve engine)

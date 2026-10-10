@@ -49,8 +49,7 @@
 
 (define *voice-paths*
   '("module/playnet/federation/vows.scm"
-    "module/playnet/voice/snapshot.scm"
-    "module/playnet/governance/rules.scm"))
+    "module/playnet/voice/snapshot.scm"))
 
 ;; Forbidden in voice paths. set-ccf is the canonical violation;
 ;; the others would emerge from a "voice-weighted-by-ccf" refactor.
@@ -79,10 +78,10 @@
 ;; ── Recomputability discipline ──────────────────────────────────────────────
 
 (define *federation-paths*
-  '("module/playnet/planner/relational/federation-result.scm"
-    "module/playnet/planner/relational/federation.scm"
-    "module/playnet/planner/relational/plan-actor.scm"
-    "module/playnet/governance/scope.scm"))
+  '("module/playnet/deprecated/planner/relational/federation-result.scm"
+    "module/playnet/deprecated/planner/relational/federation.scm"
+    "module/playnet/deprecated/planner/relational/plan-actor.scm"
+    "module/playnet/scope/actor.scm"))
 
 ;; Pattern: a stored-aggregate field name. We're conservative and
 ;; only flag specific shapes; whitelist any legitimate uses.
@@ -125,7 +124,7 @@
 (define %membership-files
   '("module/playnet/vf/aggregation/scope-tree.scm"
     "module/playnet/federation/scope-graph.scm"
-    "module/playnet/governance/scope.scm"
+    "module/playnet/scope/actor.scm"
     "module/playnet/keys/scope-witness.scm"
     "module/playnet/scope/recovery.scm"))
 (define %containment-idents

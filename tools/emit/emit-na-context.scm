@@ -18,7 +18,7 @@
 ;;; steward has checked the statute, `reported` where it is named from the
 ;;; literature and awaits one. The belts are illustrative, stewardable sets.
 
-(add-to-load-path (string-append (dirname (dirname (current-filename))) "/module"))
+(add-to-load-path (string-append (dirname (dirname (dirname (current-filename)))) "/module"))
 
 (use-modules (srfi srfi-1)
              (ice-9 format)
@@ -27,7 +27,7 @@
              (playnet knowledge catalogues us-states-fips)
              (playnet knowledge law context-pack))
 
-(define root (dirname (dirname (current-filename))))
+(define root (dirname (dirname (dirname (current-filename)))))
 (define (rel p) (string-append root "/" p))
 
 (define nation

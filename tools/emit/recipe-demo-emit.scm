@@ -10,7 +10,7 @@
 ;;; demo recipes, and their standing is this file's: the demo's RUNS are
 ;;; stated here, and the standing is read off them by the very functions a
 ;;; live scope's is (planner/solve/recipe-response.scm for the reading,
-;;; the recipe-response table of planner/doors/record-rows.scm for the shape). So the page holds no
+;;; the recipe-response table of doors/record-rows.scm for the shape). So the page holds no
 ;;; copy of the reading: it draws what it is handed, live or demo alike.
 ;;; `make check-recipe-demo-fresh` regenerates and diffs the committed copy.
 

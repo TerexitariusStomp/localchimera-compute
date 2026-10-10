@@ -7,7 +7,7 @@
 ;;; up as values thousands of times too large), keyed both directions, and the
 ;;; tileset stamp must exist (it versions the prior file).
 ;;;
-;;; Run:  guile module/playnet/planner/valhalla-live-test.scm
+;;; Run:  tools/test/run-suite.sh tests/solve/test-valhalla-live.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet solve routing))

@@ -27,7 +27,7 @@
 ;;;
 ;;;   <!-- doc-cites: folds = make-scope-nodes -->
 ;;;
-;;; reads the constructor field list of <scope-nodes> in planner/doors/service.scm
+;;; reads the constructor field list of <scope-nodes> in doors/service.scm
 ;;; and requires the first word of every row's first cell in the two tables
 ;;; that follow the marker (the folds, then the descents) to be exactly those
 ;;; fields, in order.  Adding a fold is then one field, one spec, one row.
@@ -193,7 +193,7 @@ directory of DOC; #f for any other cite."
 (define rx-marker (make-regexp "<!-- doc-cites: folds = make-scope-nodes -->"))
 
 (define (scope-nodes-fields)
-  "The constructor's field names, read off planner/doors/service.scm textually."
+  "The constructor's field names, read off doors/service.scm textually."
   (let* ((lines (file-lines "module/playnet/doors/service.scm"))
          (n     (vector-length lines))
          (ctor  (let loop ((i 0))
@@ -231,7 +231,7 @@ or after START; returns (words . index-after-table)."
     (if (not mark) '()
         (let ((fields (scope-nodes-fields)))
           (if (not fields)
-              (list (format #f "~a: make-scope-nodes is not in planner/doors/service.scm" doc))
+              (list (format #f "~a: make-scope-nodes is not in doors/service.scm" doc))
               (let* ((folds    (table-first-words lines mark))
                      (descents (table-first-words lines (cdr folds)))
                      (rows     (append (car folds) (car descents))))

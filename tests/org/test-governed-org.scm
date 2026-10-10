@@ -7,7 +7,7 @@
 (use-modules (playnet test harness))
 (use-modules (playnet org factories)
              (playnet org gplay)
-             (playnet org endorsement)
+             (playnet utils endorsement)
              (goblins)
              (ice-9 receive))
 

@@ -12,7 +12,6 @@
 (use-modules (playnet test harness) (playnet vf schemas) (playnet observation states) (srfi srfi-1) (srfi srfi-13))
 (define here (dirname (current-filename)))
 (define root (dirname (dirname here)))
-(define (pl p) (load (string-append root "/module/playnet/planner/" p)))
 (use-modules (playnet comms plan)) (use-modules (playnet comms ai)) (use-modules (playnet comms run))
 
 (define* (mk-intent id #:key (action 'produce) (name #f) (classified '()))

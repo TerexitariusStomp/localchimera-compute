@@ -6,10 +6,10 @@
 ;;; equivalent promoted intents into one line item for the planner.
 
 (use-modules (playnet test harness)
-             (playnet voice demand-registry) (playnet pools credit-fold) (playnet scope root) (playnet vf schemas) (srfi srfi-1)
-             (playnet org endorsement)
+             (playnet scope demand-registry) (playnet pools credit-fold) (playnet scope root) (playnet vf schemas) (srfi srfi-1)
+             (playnet utils endorsement)
              (playnet voice delegation-map) (playnet voice expression) (playnet voice voice-signer) (playnet keri acdc-store) (playnet keri first-person credentials)
-             (playnet voice demand-registry)
+             (playnet scope demand-registry)
              (playnet voice demand-bridge)
              (playnet voice demand-aggregation)
              (goblins)

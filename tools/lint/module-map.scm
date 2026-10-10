@@ -4,10 +4,8 @@
 ;;; imports point up the layers.
 ;;;
 ;;;   tools/lint/module-map.scm                 the counts, by class
-;;;   tools/lint/module-map.scm --lint          each upward import, each unassigned file; exit 1 for an
-;;;                                        upward import tools/lint/layers.baseline does not hold, an
-;;;                                        unassigned file or a malformed define-module
-;;;   tools/lint/module-map.scm --baseline      record today's upward imports as the baseline, when none is new
+;;;   tools/lint/module-map.scm --lint          each upward import, each unassigned file; exit 1 for any
+;;;                                        upward import, unassigned file or malformed define-module
 ;;;   tools/lint/module-map.scm --unreached     modules no entry point reaches directly (markdown)
 ;;;   tools/lint/module-map.scm --write OUT     the map of module/playnet/ (module/playnet/README.md)
 ;;;
@@ -18,16 +16,16 @@
 ;;; string, in the Makefile or in guix.scm is unseen here, so "none found" means
 ;;; "check by hand".
 ;;;
-;;; Where a file belongs is tools/lint/module-layout.scm, which names the tree to
-;;; come (docs/planning/codebase-layout.md): a file is linted at the rank of the
-;;; directory it will stand in. The baseline holds the upward imports the moves
-;;; have yet to resolve; it only shrinks, and goes when it is empty.
+;;; Where a file belongs is tools/lint/module-layout.scm (docs/planning/
+;;; codebase-layout.md): a file is linted at the rank of its directory, and an
+;;; import from a higher rank fails the build. Across ranks, a composition at the
+;;; top (boot/) hands the higher thing down, or the lower module holds a cell the
+;;; higher one fills at load.
 
 (use-modules (ice-9 rdelim) (ice-9 popen) (ice-9 match) (ice-9 format)
              (srfi srfi-1) (srfi srfi-13))
 
 (define %lib      "module/playnet/")
-(define %baseline "tools/lint/layers.baseline")
 (define %umbrellas '("module/playnet/boot/prelude.scm"
                      "module/playnet/doors/protocol.scm" "module/playnet/org/factories.scm"))
 
@@ -332,57 +330,21 @@
               '(live umbrella tools tests bench none-found))
     (for-each (lambda (f) (format #t "  read in part: ~a~%" f)) (reverse *unread*))))
 
-(define (departure-key d)
-  "One upward import as the baseline spells it: each file by the directory it will
-stand in and its name, so a move to that directory leaves the key as it is."
-  (define (key f t) (string-append (car t) "/" (basename f ".scm")))
-  (match d ((f from g to names) (string-append (key f from) " → " (key g to)))))
-
-(define (read-baseline)
-  (if (file-exists? %baseline)
-      (call-with-input-file %baseline
-        (lambda (port)
-          (let loop ((acc '()))
-            (let ((l (read-line port)))
-              (cond ((eof-object? l) (reverse acc))
-                    ((or (string-null? l) (string-prefix? "#" l)) (loop acc))
-                    (else (loop (cons l acc))))))))
-      '()))
-
-(define (report-lint files write?)
-  (let* ((ds (departures files)) (us (unassigned files))
-         (held (read-baseline))
-         (new (filter (lambda (d) (not (member (departure-key d) held))) ds))
-         (gone (filter (lambda (k) (not (member k (map departure-key ds)))) held)))
+(define (report-lint files)
+  (let ((ds (departures files)) (us (unassigned files)))
     (for-each
      (match-lambda
        ((f from g to names)
-        (format #t "  ~a~a ~a → ~a ~a~a~%"
-                (if (member (departure-key (list f from g to names)) held) "" "NEW ")
+        (format #t "  ~a ~a → ~a ~a~a~%"
                 (car from) (playnet-rel f) (car to) (playnet-rel g)
                 (if names (format #f "  ~a" names) "  (the whole module)"))))
      ds)
     (for-each (lambda (f) (format #t "  unassigned: ~a~%" f)) us)
     (for-each (match-lambda ((f n bad) (format #t "  malformed define-module: ~a (~a) has a stray form ~s~%" f (name->string n) bad)))
               (reverse *malformed*))
-    (for-each (lambda (k) (format #t "  resolved since the baseline: ~a~%" k)) gone)
-    (format #t "lint-layers: ~a upward import~:p (~a in ~a, ~a new, ~a resolved), ~a unassigned file~:p, ~a malformed define-module~:p (tools/lint/module-layout.scm)~%"
-            (length ds) (- (length ds) (length new)) %baseline (length new) (length gone)
-            (length us) (length *malformed*))
-    (cond (write?
-           ;; the ratchet is on the count: a rename moves a line, a new import adds one
-           (when (and (file-exists? %baseline) (> (length ds) (length held)))
-             (format #t "~a upward imports, more than the ~a held: the baseline only shrinks; resolve them first~%" (length ds) (length held))
-             (exit 1))
-           (call-with-output-file %baseline
-             (lambda (p)
-               (set-port-encoding! p "UTF-8")
-               (format p "# The upward imports the moves of docs/planning/codebase-layout.md §9 have yet to~%")
-               (format p "# resolve, one per line as the two files' directories to come; `make lint-layers` fails on one not listed~%")
-               (format p "# here, `tools/lint/module-map.scm --baseline` records a shrunken set. Empty, it goes.~%")
-               (for-each (lambda (d) (format p "~a~%" (departure-key d))) ds)))
-           (format #t "~a: ~a upward import~:p recorded~%" %baseline (length ds)))
-          ((not (and (null? new) (null? us) (null? *malformed*))) (exit 1)))))
+    (format #t "lint-layers: ~a upward import~:p, ~a unassigned file~:p, ~a malformed define-module~:p (tools/lint/module-layout.scm)~%"
+            (length ds) (length us) (length *malformed*))
+    (unless (and (null? ds) (null? us) (null? *malformed*)) (exit 1))))
 
 (define (report-unreached files)
   (for-each
@@ -525,12 +487,11 @@ stand in and its name, so a move to that directory leaves the key as it is."
     (load-layout! "tools/lint/module-layout.scm")
     (match (cdr args)
       (() (report-summary files))
-      (("--lint") (report-lint files #f))
-      (("--baseline") (report-lint files #t))
+      (("--lint") (report-lint files))
       (("--unreached") (report-unreached files))
       (("--suites") (report-suites files #f))
       (("--check-suites") (report-suites files #t))
       (("--write" out) (call-with-output-file out (lambda (p) (set-port-encoding! p "UTF-8") (report-map files p))))
-      (_ (format (current-error-port) "usage: module-map.scm [--lint | --baseline | --unreached | --suites | --check-suites | --write OUT]~%") (exit 2)))))
+      (_ (format (current-error-port) "usage: module-map.scm [--lint | --unreached | --suites | --check-suites | --write OUT]~%") (exit 2)))))
 
 (main (command-line))

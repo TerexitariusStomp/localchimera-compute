@@ -1,7 +1,7 @@
 ;;; compile.scm — §5, THE VF COMPILER, the module (playnet solve compile).
 ;;;
 ;;; WHY THIS IS ITS OWN FILE. The compile stage is what BOTH the engine and the
-;;; (playnet planner) umbrella need, and each imports it: `compile-process` and
+;;; (playnet boot prelude) umbrella need, and each imports it: `compile-process` and
 ;;; `compile-recipe` are bound the same way on every path, so a test states
 ;;; (playnet solve compile) beside its engine import and the use-unit GUARD
 ;;; (an engine-side register) and the use-unit TEST (the recipe catalogue) can
@@ -387,7 +387,7 @@
 ;;
 ;; REACHES ONE ASSEMBLY PATH, and that is the reason it carries no test yet.
 ;; This file is loaded by `primitive-load` (most planner tests, the fixtures);
-;; the (playnet planner) umbrella never includes it, assembling the engine from
+;; the (playnet boot prelude) umbrella never includes it, assembling the engine from
 ;; ~96 include-from-path fragments instead. `compile-process` therefore exists on
 ;; two paths, and a guard installed here is invisible to anything that loads the
 ;; engine the other way — including test-use-unit-lint, which is exactly the file

@@ -14,7 +14,7 @@
 
 (use-modules (ice-9 format) (srfi srfi-1))
 
-(define root (dirname (dirname (current-filename))))
+(define root (dirname (dirname (dirname (current-filename)))))
 (define (rel p) (string-append root "/" p))
 (use-modules (playnet knowledge catalogues eco))
 

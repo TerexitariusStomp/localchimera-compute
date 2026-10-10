@@ -41,10 +41,9 @@
   #:use-module (playnet credentials voting)
   #:use-module (playnet keri acdc)
   #:use-module (playnet keri first-person credentials)
-  #:use-module ((playnet federation sturdyref-credential) #:select (sturdyref-credentials->spec census-credential-goods census-key-state *schema-playnet-federation-census* *schema-playnet-federation-sturdyref*))
   #:use-module (playnet keri signify-portable)
   #:use-module ((playnet utils hex) #:select (bv->hex))
-  #:use-module (playnet federation scope-graph)
+  #:use-module (playnet utils boot-cell)
   #:use-module (playnet utils paths)
   #:use-module (playnet vf facts validity)
   #:use-module (playnet vf schemas)
@@ -54,9 +53,9 @@
   #:use-module (playnet observation credentials)
   #:use-module (playnet keri inception)
   #:use-module (playnet keys peers)
-  #:use-module (playnet org endorsement)
+  #:use-module (playnet utils endorsement)
   #:use-module (playnet keri acdc-store)
-  #:use-module (playnet voice quorum)
+  #:use-module (playnet scope policy)
   #:use-module (playnet keys exchange)
   #:use-module (playnet keys kel-store)
   #:use-module (playnet keys bran-custody)
@@ -72,7 +71,7 @@
             verify-parent-ratification!
             federation-memberships-of
             federation-memberships-of-holder
-            resolve-merge-ratifier
+            scope-spawned
             ratification-edges
             stale-membership-edges
             do-anchor-best-effort
@@ -249,7 +248,7 @@
    calls in place of a bare `(when ratification-said (verify-ratification!
    ...))`. When RATIFICATION-SAID is supplied it is verified exactly as
    before. When it is absent, the act is refused if THIS scope's own
-   governance-policy (voice/quorum.scm) has set `require-ratification`
+   governance-policy (scope/policy.scm) has set `require-ratification`
    — read fresh off SCOPE-ROOT-REF's plan-store, defaulting to #f (today's
    behaviour) when the scope has no economic root or has never opted in."
   (cond
@@ -347,50 +346,6 @@
               (cons (cred-issuer c) (cred-said c))))
        ($ store 'by-schema *schema-playnet-federation-membership*))
       '()))
-
-(define (resolve-merge-ratifier store-a a-aid store-b b-aid uc-aid)
-  "Given the federation memberships of A and B, decide who ratifies
-   their merge. Returns (values ratifier-aid ratifier-source stale-saids)
-   where:
-
-     ratifier-aid   = the chosen parent's AID (or UC AID)
-     ratifier-source = 'shared-parent | 'multiple-shared | 'universal-commune
-     stale-saids    = list of membership SAIDs of A's and B's
-                      memberships that point at parents OTHER than the
-                      chosen ratifier — these become stale once C exists.
-
-   When A and B share exactly one parent, that parent ratifies. When they
-   share multiple, the aggregating parent (scope-graph.scm's one rule: the
-   smallest AID) ratifies and the rest are recorded as stale (caller may
-   want to disambiguate).
-   When they share none, UC ratifies.
-
-   Reasoning per docs/governance/democracy-on-keri.md §4.3 follow-up:
-   previous parents have observation rights and bookkeeping duties, not
-   ratification authority. The choice of \"where C lives\" is itself a
-   recomposition input."
-  (let* ((a-memberships (federation-memberships-of-holder store-a a-aid))
-         (b-memberships (federation-memberships-of-holder store-b b-aid))
-         (a-parents     (map car a-memberships))
-         (b-parents     (map car b-memberships))
-         (shared        (lset-intersection equal? a-parents b-parents))
-         (chosen        (or (aggregating-parent shared) uc-aid))
-         (source        (cond
-                         ((null? shared)        'universal-commune)
-                         ((null? (cdr shared))  'shared-parent)
-                         (else                  'multiple-shared)))
-         ;; Stale = every membership of A or B whose parent ≠ chosen.
-         (stale-saids
-          (append
-           (filter-map (lambda (m)
-                         (and (not (equal? (car m) chosen))
-                              (cdr m)))
-                       a-memberships)
-           (filter-map (lambda (m)
-                         (and (not (equal? (car m) chosen))
-                              (cdr m)))
-                       b-memberships))))
-    (values chosen source stale-saids)))
 
 (define (ratification-edges ratification-said)
   "Build the edges-list to attach to a recomposition ACDC. When
@@ -890,6 +845,12 @@
   "Reset the generalization registry. Useful in tests."
   (set! *spec-generalizations* (make-hash-table)))
 
+;; Who hears a scope spawn: (aid kind ref aid-name) → unspecified, set once at
+;; load by the module that keeps the gateway-wide graph (federation/scope-graph.scm,
+;; a rank above); unset, a spawn tells no one. A boot cell (utils/boot-cell.scm),
+;; so the vat a scope spawns in does not matter.
+(define scope-spawned (make-boot-cell))
+
 (define* (spawn-scope name
                       #:key
                       (kind 'commune)
@@ -1124,16 +1085,10 @@
                         (when durable?
                           (write-scope-kind! effective-aid kind)
                           (write-scope-aid-name! effective-aid scope-name))
-                        ;; Reactive hook: let the gateway-wide scope-graph
-                        ;; know a scope just appeared, with its KERIA alias.
-                        ;; The IPEX grant handler reads aid-name via
-                        ;; `(get-aid-name issuee)` to sign admit/spurn under
-                        ;; the right local identity.
-                        (let ((g (current-scope-graph)))
-                          (when g
-                            (<- g 'note-spawn effective-aid kind '()
-                                #:ref new-ref
-                                #:aid-name scope-name))))
+                        ;; a scope that appears is told, with its KERIA alias:
+                        ;; the scope graph listens (federation/scope-graph.scm)
+                        (let ((told (scope-spawned)))
+                          (when told (told effective-aid kind new-ref scope-name))))
                       ;; Turn ON the credential substrate: when this scope has both
                       ;; an economic substrate and a store, planner events mint the
                       ;; work/skill/intent/commitment/claim ACDCs. Idempotent, and

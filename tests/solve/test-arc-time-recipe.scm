@@ -11,7 +11,7 @@
 ;;; and with no table (or no pace) everything collapses to km: strict parity.
 ;;; Column inspection only — solver-independent, like containment-test.
 ;;;
-;;; Run:  guile module/playnet/planner/arc-time-recipe-test.scm
+;;; Run:  tools/test/run-suite.sh tests/solve/test-arc-time-recipe.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet solve engine))

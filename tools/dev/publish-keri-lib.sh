@@ -52,9 +52,9 @@ guile --no-auto-compile -e main -s tools/lint/lint-keri-lib.scm
 # the last published cut adds only new commits and is safe to list.
 mapfile -t PATHS < <(guile --no-auto-compile -e main -s tools/lint/lint-keri-lib.scm --manifest)
 PATHS+=(
-  module/playnet/governance/first-person.scm
-  module/playnet/governance/sybil-detect.scm
-  module/playnet/governance/personhood-policy.scm
+  module/playnet/keri/first-person/predicates.scm
+  module/playnet/keri/first-person/sybil-detect.scm
+  module/playnet/keri/first-person/personhood-policy.scm
   module/playnet/keri/README.md
   docs/keri
   docs/first-person

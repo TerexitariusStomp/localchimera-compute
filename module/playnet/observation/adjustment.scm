@@ -10,11 +10,11 @@
 ;;; "disagrees" each have one statement:
 ;;;
 ;;;   a host's probe        observation/host-facts.scm   count-host-stock!
-;;;   a person's count      planner/doors/count-door.scm       do-count-stock
+;;;   a person's count      doors/count-door.scm       do-count-stock
 ;;;                         (its record: count-record-event; what an event of
 ;;;                         a count is: count-event?, count-event-of)
-;;;   a re-declared means   planner/doors/service.scm          declare-means
-;;;   a skill held or not   planner/doors/service.scm          declare-skill, revoke-skill
+;;;   a re-declared means   doors/service.scm          declare-means
+;;;   a skill held or not   doors/service.scm          declare-skill, revoke-skill
 ;;;
 ;;; Pure over numbers and strings, importing the records alone, so the probe
 ;;; (which the service imports) and the service can both import it.

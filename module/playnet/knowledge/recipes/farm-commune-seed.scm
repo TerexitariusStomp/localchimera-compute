@@ -4,7 +4,7 @@
 ;;; tree, its scarce land/water/labour — and the mechanism (specs, grow recipes, commune +
 ;;; worker, the placement that inherits the shed's futures + limits) is shared.
 ;;;
-;;; Included by (playnet planner) BEFORE the per-region wrappers; every `$` is a near-call,
+;;; Loaded before the per-region wrappers; every `$` is a near-call,
 ;;; so call within the scope-root's vat.
 
 ;; crops: ((name . (summer-water-ML/ha . yield-kg/ha)) …). `tree` = the SpatialThings ABOVE

@@ -16,7 +16,7 @@
              (srfi srfi-1)
              (ice-9 format))
 
-(define root (dirname (dirname (current-filename))))
+(define root (dirname (dirname (dirname (current-filename)))))
 (define (rel p) (string-append root "/" p))
 
 (define store (make-memory-store))

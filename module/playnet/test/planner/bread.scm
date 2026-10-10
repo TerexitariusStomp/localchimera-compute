@@ -3,7 +3,7 @@
 ;;; commitment arc, the live wire and the willingness service plan over the
 ;;; same economy and cannot drift apart a skill or a window at a time.
 ;;;
-;;; The economy is bread-world in (playnet planner knowledge recipes
+;;; The economy is bread-world in (playnet knowledge recipes
 ;;; bread-commune-seed) — the world the dev gateway's demo commune is seeded
 ;;; from. spawn-bread-scope seeds it into a REAL scope-root (every store real:
 ;;; the plan-store the arc's facts live on, the alert-store, an observer

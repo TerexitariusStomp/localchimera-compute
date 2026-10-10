@@ -30,8 +30,8 @@
 ;;; the reverse would be a module cycle. So `^planner-service`'s payout
 ;;; methods reach this the same way they already reach socialization —
 ;;; injected as a plain procedure at spawn time (mirroring `socialized-plan-fn`
-;;; and `#:plan-fn`), never imported. planner/doors/service.scm never says
-;;; `(use-module (playnet governance ...))`.
+;;; and `#:plan-fn`), never imported. doors/service.scm never says
+;;; `(use-module (playnet doors ...))`.
 ;;;
 ;;; PARTIAL SETTLEMENT is event-sourced, not a mutable balance: a debt
 ;;; commitment states its FULL face amount, immutably, for its whole life.

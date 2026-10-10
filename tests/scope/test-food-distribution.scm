@@ -27,7 +27,6 @@
 
 (define here (dirname (current-filename)))
 (define root (dirname (dirname here)))
-(define (pl p) (load (string-append root "/module/playnet/planner/" p)))
 (use-modules (playnet legal crossings))
 (use-modules (playnet legal registry))
 (use-modules (playnet legal registry-actor))

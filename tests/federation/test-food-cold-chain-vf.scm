@@ -130,7 +130,7 @@
 
 ;; Specs and positioning-analysis records live in
 ;; module/playnet/knowledge/recipes/cold-chain.scm and are imported
-;; via (use-modules (playnet planner)). Test-local aliases for the bundle
+;; via (use-modules (playnet boot prelude)). Test-local aliases for the bundle
 ;; lists keep the rest of the test readable.
 (define all-food-specs    cold-chain-food-specs)
 (define all-vehicle-specs cold-chain-vehicle-specs)

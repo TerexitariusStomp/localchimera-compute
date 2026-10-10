@@ -6,7 +6,7 @@
 ;;; (offer-count, lay-counts). What the ledger says of counts, read off the
 ;;; observer, is counts.scm; the shape of a count's events is
 ;;; observation/adjustment.scm; the grammar and the cadence are counting.scm.
-;;; planner/doors/service.scm wraps these as doors: it owns the scope lookup and the
+;;; doors/service.scm wraps these as doors: it owns the scope lookup and the
 ;;; personhood gate.
 
 (define-module (playnet doors count-door)

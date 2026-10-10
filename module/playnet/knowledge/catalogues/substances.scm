@@ -18,7 +18,7 @@
 ;;; appears as that substance directly (the transformation override). Because
 ;;; elements are conserved, what leaves a loop to a sink vs returns is the rift.
 ;;;
-;;; This module is server-side (planner/doors/service.scm). It hands out the substance
+;;; This module is server-side (doors/service.scm). It hands out the substance
 ;;; ResourceSpecifications so a scope can register them, plus the pure closure
 ;;; the matter wire uses. Composition is authored per spec-id in `*contains*`.
 

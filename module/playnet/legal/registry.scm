@@ -43,7 +43,8 @@
   ;; combinator to be worth shadowing on purpose. #:replace is how Guile lets a
   ;; module say the override is deliberate, and it silences the warning.
   #:replace (rule negate)
-  #:export (make-demand
+  #:export (current-legal-rules
+            make-demand
             demand-ref
             demand-retain
             demand-renew
@@ -120,6 +121,12 @@
             %stances
             bill-stance
             stance-forbids?))
+
+;;; The rules a fold reads when its caller names none. A parameter: a caller with
+;;; law of its own — a live planner, whose scopes carry their own registries —
+;;; folds the same code over its own rules. The context packs bind it when they
+;;; load (knowledge/law/context-pack.scm, a rank above): unloaded, no rule stands.
+(define current-legal-rules (make-parameter '()))
 
 (cond-expand (guile) (else
   ;; a page has no file system: no file is there to read, and none is written

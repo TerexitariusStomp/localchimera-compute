@@ -76,7 +76,7 @@ lint_staged_parens() {
 lint_staged_parens
 
 # ── Guard 1, second half: a library names only what its parts export ────────
-# A library module such as (playnet governance) re-exports names its parts
+# A library module such as (playnet boot prelude) re-exports names its parts
 # define. Committed apart from those parts, it names something the committed
 # parts lack, and the first load stops with "Undefined variable" (the gateway
 # did, on every start, for nine hours). That fault is made at the commit, so the

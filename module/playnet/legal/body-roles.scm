@@ -1,4 +1,4 @@
-;;; knowledge/body-roles.scm — the roles a person holds in a legal body, as
+;;; legal/body-roles.scm — the roles a person holds in a legal body, as
 ;;; ValueFlows <agent-relationship-role> records.
 ;;;
 ;;; A body (legal/bodies.scm) is an organization <agent>; who stands behind it is
@@ -16,7 +16,7 @@
 ;;; `seed-body-roles!` puts them in an ^agent-store once; a store that has them
 ;;; is left as it is.
 
-(define-module (playnet knowledge body-roles)
+(define-module (playnet legal body-roles)
   #:use-module (srfi srfi-1)
   #:use-module (goblins)
   #:use-module (playnet vf schemas)

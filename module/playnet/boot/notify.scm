@@ -17,7 +17,7 @@
   #:use-module ((playnet interface backends scope) #:select (make-scope-handler))
   #:use-module ((playnet interface org-stub) #:select (^org-stub))
   #:use-module ((playnet keri cesr) #:select (b64url-encode))
-  #:use-module ((playnet keys notifications) #:select (set-notification-callback!))
+  #:use-module ((playnet federation keria-notifications) #:select (set-notification-callback!))
   #:use-module ((playnet notify recipient) #:select (^recipient-registry datum->recipient-table recipient-table->datum))
   #:use-module ((playnet notify registry) #:select (notification-formatter))
   #:use-module ((playnet notify rendered) #:select (rendered-notification))

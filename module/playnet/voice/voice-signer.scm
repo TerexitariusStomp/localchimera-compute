@@ -19,7 +19,7 @@
 
 
 (define-module (playnet voice voice-signer)
-  #:use-module (playnet org endorsement)
+  #:use-module (playnet utils endorsement)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
   #:export (^voice-signer spawn-voice-signer spawn-keri-voice-signer voice-signer-env))

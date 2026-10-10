@@ -9,7 +9,7 @@
 ;;; collect the agents reachable through the subtree, read each
 ;;; agent's availability-window + skills (EconomicResources), and
 ;;; project into the spatial index. One person is written at one home
-;;; (planner/doors/service.scm `home-scope-of`), so an entry arrives once; the
+;;; (doors/service.scm `home-scope-of`), so an entry arrives once; the
 ;;; merge below is a join for the record that arrives twice all the same,
 ;;; and a person's hours are counted once however many skills they hold.
 ;;;

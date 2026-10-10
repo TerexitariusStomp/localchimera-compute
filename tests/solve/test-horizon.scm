@@ -9,7 +9,7 @@
 ;;; Bread wanted at town on day 0 (4) and day 2 (4); Ada bakes (8h/day available,
 ;;; Mon–Sun). Horizon = 2026-06-01 + 3 days ⇒ periods 0/1/2 = Jun 1/2/3.
 ;;;
-;;; Run:  guile -L module/playnet/planner module/playnet/planner/horizon-test.scm
+;;; Run:  tools/test/run-suite.sh tests/solve/test-horizon.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet solve engine)

@@ -46,7 +46,7 @@
   #:use-module (playnet keri said-portable)
   #:use-module (playnet keri first-person predicates)
   #:use-module (playnet keri first-person personhood-policy)
-  #:use-module ((playnet observation credentials)
+  #:use-module ((playnet personhood witnessed-work)
                 #:select (remember-witness-pending!))
   #:use-module ((playnet personhood witness-relay)
                 #:select (publish-witness-request! retract-witness-request!

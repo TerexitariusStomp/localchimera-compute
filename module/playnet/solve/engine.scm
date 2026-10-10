@@ -61,7 +61,7 @@
 ;; is never read by the engine again — measured: build-columns saw no templates.
 ;; The browser build (Hoot) compiles a whole program and refuses a module that
 ;; may be redefined, so it builds from a copy of this file with the flag turned
-;; on (tools/hoot-engine.sh) — where an imported global is a wasm global read
+;; on (the Makefile's .hoot-src rule) — where an imported global is a wasm global read
 ;; each time. Every global a caller assigns has a setter (set-backend!,
 ;; set-templates!, set-last-certificate!, set-promote!, set-willing!,
 ;; set-legal-decorate!, set-acquire!, set-dial!) so neither build writes
@@ -168,7 +168,7 @@
 
 
 ;; The VF records. They MUST be the same record types the observer uses — this
-;; engine gets loaded into modules that already import (playnet planner) (live.scm
+;; engine gets loaded into modules that already import (playnet boot prelude) (live.scm
 ;; among them), and a second, incompatible set of record types is a silent
 ;; disaster: constructors from one set, predicates from the other, every match
 ;; failing for no visible reason.
@@ -580,7 +580,7 @@
 (define *workers* '())
 (define *proc-skill* (make-hash-table)) ; proc-id -> skill: OPTIONAL override of the recipe's work-flow resourceConformsTo
 (define *emp-rho* 0.05)               ; EMP congestion weight (small ⇒ equalize among equals); applied as ρ/(h_w·H) per worker so the term is ρ·util² — scale-free
-;; THE GOVERNED DIALS, ONE WRITE: every dial voice/quorum.scm registers
+;; THE GOVERNED DIALS, ONE WRITE: every dial scope/policy.scm registers
 ;; is set here by its registry key — by `plan-from-records` from the solve's
 ;; keywords, or by a direct-assembly caller (a test laying a world by hand).
 ;; The one write keeps each variable boxed under compilation.
@@ -2866,7 +2866,7 @@
 (define *stock-draw-hours* 1.0)               ; a governed dial, stated per solve (#:stock-draw-hours)
 
 ;; THE SETTINGS A SOLVE IS GIVEN, ONE WRITE: the voice field and the governed dials
-;; (voice/quorum.scm). Both assemblies call this after they ingest — the single
+;; (scope/policy.scm). Both assemblies call this after they ingest — the single
 ;; deterministic one in `%plan-from-records`, the robust one in `robust-assemble` —
 ;; because ingest resets the globals (and it stands after the globals it writes, which a
 ;; compiled `set!` of a module variable defined further down the file does not reach); a dial stated and unstated is left as it stands.
@@ -6104,7 +6104,7 @@
                                   ;; ((part . push) …), its hours reader (part → hours), and the
                                   ;; path of scopes this solve stands in (leaf first). τ = 0 ⇒ today.
                                   (voice-tau 0.0) (voice-pushes '()) (voice-hours #f) (scope-path #f)
-                                  ;; the other governed dials (voice/quorum.scm, the one
+                                  ;; the other governed dials (scope/policy.scm, the one
                                   ;; registry): stated, each sets its global for this solve;
                                   ;; unstated, the global stands as it is
                                   (pref-bound #f) (emp-rho #f) (kappa #f) (want-as-cap 'unstated) (stock-draw-hours #f)

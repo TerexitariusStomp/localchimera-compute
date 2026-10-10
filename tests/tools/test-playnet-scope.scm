@@ -13,7 +13,7 @@
 (use-modules ((playnet keri signify) #:select ()))
 (use-modules (playnet test harness)
              (playnet utils paths)
-             ;; vault helpers are exported via (playnet governance);
+             ;; vault helpers are exported via (playnet boot prelude);
              ;; bran-custody is `include-from-path`'d, not its own module.
              ((playnet keys bran-custody) #:select (read-vault-bran write-vault-bran!))
              ((playnet utils hex) #:select (hex->bv bv->hex))

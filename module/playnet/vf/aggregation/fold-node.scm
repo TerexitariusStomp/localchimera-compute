@@ -26,8 +26,8 @@
 ;;; taxonomy crosses signed by asserting AID, because an assertion is testimony.
 ;;;
 ;;; The failure push has to survive is REFEDERATION. A commune leaves one
-;;; federation for another; a merge constitutes a new parent (governance
-;;; scope.scm, resolve-merge-ratifier). If a parent MERGED each child's value
+;;; federation for another; a merge constitutes a new parent (federation/
+;;; universal-commune.scm, resolve-multi-merge-ratifier). If a parent MERGED each child's value
 ;;; into one aggregate on arrival, the departing child's contribution could
 ;;; never be found again — banked in a tree that no longer exists, dislodgeable
 ;;; only by a full rebuild. So a node keeps `child-id → that child's total`,

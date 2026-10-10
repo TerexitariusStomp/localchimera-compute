@@ -10,7 +10,7 @@
 ;;; she commutes town→market (τ·km drag eats her hours); with the override she IS
 ;;; at market (no commute) and delivers more from the same budget.
 ;;;
-;;; Run:  guile -L module/playnet/planner module/playnet/planner/position-test.scm
+;;; Run:  tools/test/run-suite.sh tests/solve/test-position.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet solve engine))

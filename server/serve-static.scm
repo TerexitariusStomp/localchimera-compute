@@ -1488,7 +1488,7 @@ list and the offline-pack chooser."
 ;;;
 ;;; Anonymous free-form feedback from the browser widget. Entries land in an
 ;;; append-only sexp file under the data dir (the house style for durable
-;;; queues — see planner/doors/service/chat.scm) and stay OUT of the Radicle COBs: the pool
+;;; queues — see doors/service/chat.scm) and stay OUT of the Radicle COBs: the pool
 ;;; is prunable testimony, the issue board is curated permanence. Synthesis
 ;;; (clustered feedback → one `rad issue` citing entry ids) happens
 ;;; operator-side.

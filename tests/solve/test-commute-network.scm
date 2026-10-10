@@ -21,7 +21,7 @@
 ;;;   move-worker scenario: cheap to move the person, costly to ship the widget ⇒ RELOCATE.
 ;;;   move-work   scenario: costly to move the person (transit eats the day) ⇒ SHIP the widget.
 ;;;
-;;; Run:  guile -L module/playnet/planner module/playnet/planner/commute-network-test.scm
+;;; Run:  tools/test/run-suite.sh tests/solve/test-commute-network.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet solve engine)

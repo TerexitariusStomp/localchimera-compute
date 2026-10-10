@@ -1,6 +1,6 @@
 ;;; matching/schemas.scm — Sidecar records for the matching layer.
 ;;;
-;;; The matcher operates on VF records from (playnet planner):
+;;; The matcher operates on VF records from (playnet vf schemas):
 ;;;   <intent>, <proposal>, <commitment>, <agreement>, <agent>,
 ;;;   <availability-window>, <measure>, <spatial-thing>.
 ;;;

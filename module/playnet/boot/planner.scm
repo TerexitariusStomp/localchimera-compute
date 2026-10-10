@@ -53,7 +53,7 @@ scope-list shows a real commune, never the \"org:meeting\" demo string."
                   (hashmap)               ; local scopes-hm unused in prod — earth is the roster
                   plain-plan-fn           ; the plain solve; governance enters as readers below
                   earth                   ; ONE source of truth: the planner reads earth
-                  ;; GOVERNANCE AS READERS (planner/doors/service.scm header): each
+                  ;; GOVERNANCE AS READERS (doors/service.scm header): each
                   ;; a fact derived off the stores, handed as a reader, never
                   ;; imported. socialized-readers: the custody view, the
                   ;; demand fold (#:scope-of hands back the service's

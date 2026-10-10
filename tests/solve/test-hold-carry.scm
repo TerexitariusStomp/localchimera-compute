@@ -26,7 +26,7 @@
 ;;; Run:  guile -L module tests/solve/test-hold-carry.scm
 
 ;; The engine, then the recipe pack on top of it — the way every other test in
-;; this directory loads. (Importing the (playnet planner) umbrella AND
+;; this directory loads. (Importing the (playnet boot prelude) umbrella AND
 ;; primitive-loading the engine works, but it is the one combination that has to
 ;; keep two record-type universes in step, so a test that needs neither the
 ;; actors nor the stores does not ask for it.)

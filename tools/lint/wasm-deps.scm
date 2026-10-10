@@ -34,7 +34,7 @@
 ;;; ── Two ways a file depends on another ──────────────────────────────────────
 ;;;
 ;;; Imports are one.  `include-from-path` is the other, and it is equally
-;;; static: all 141 include sites in this repo (98 in the (playnet planner)
+;;; static: all 141 include sites in this repo (98 in the (playnet boot prelude)
 ;;; umbrella alone) name their target as a literal string, so a walker can
 ;;; follow them exactly as it follows an import.  Includes are therefore
 ;;; treated as real edges here, not as a limitation to warn about.

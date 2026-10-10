@@ -1,5 +1,5 @@
 ;;; test-body-service.scm — the body service: a session's body acts, answered
-;;; on the records in the planner's vat (planner/doors/bodies.scm).
+;;; on the records in the planner's vat (doors/bodies.scm).
 ;;;
 ;;; Properties: the caller's AID gates every act on a body (a stranger is
 ;;; refused, a steward acts); a declared body is remembered in its scope and

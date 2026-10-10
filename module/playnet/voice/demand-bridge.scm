@@ -17,7 +17,7 @@
   #:use-module (goblins)
   #:use-module (srfi srfi-1)
   #:use-module (playnet vf schemas)
-  #:use-module (playnet voice demand-registry)
+  #:use-module (playnet scope demand-registry)
   #:use-module ((playnet keri first-person predicates) #:select (holds-any-live-phc?))
   #:export (promote-demands demand-entry->intent any-live-phc-holder-elaborate?))
 

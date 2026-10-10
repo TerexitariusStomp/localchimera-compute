@@ -11,7 +11,7 @@
                                                                   make-authorized-issuer-credential make-personhood-credential))
   #:use-module ((playnet keri first-person predicates) #:select (holds-any-live-phc? phc-live?))
   #:use-module ((playnet keys peers) #:select (known-uc-aid set-known-uc-aid!))
-  #:use-module ((playnet observation credentials) #:select (current-vouch-reader))
+  #:use-module ((playnet personhood witnessed-work) #:select (current-vouch-reader))
   #:use-module ((playnet personhood enrollment) #:select (current-enroll-announcer))
   #:use-module ((playnet personhood witness-relay) #:select (peer-universal-commune-aid poll-peer-witness!))
   #:use-module (fibers)

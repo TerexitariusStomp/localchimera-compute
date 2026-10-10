@@ -12,7 +12,7 @@
 ;;;   ample oven (Svc cap 100): demand met, capacity pull ~0.
 ;;;   scarce oven (Svc cap 20): output capped at the oven, pull steep.
 ;;;
-;;; Run:  guile -L module/playnet/planner module/playnet/planner/use-mop-test.scm
+;;; Run:  tools/test/run-suite.sh tests/solve/test-use-mop.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet solve engine)

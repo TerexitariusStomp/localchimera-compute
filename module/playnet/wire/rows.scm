@@ -5,7 +5,7 @@
 ;;; and coercions under them are here, shared by the page's
 ;;; spine (hoot/day-boot.scm) and by whatever else speaks the same wire
 ;;; natively (tools/emit/demo-emit.scm). Plain Scheme. The tables over the planner's
-;;; records (a commitment, a member, a recipe, …) stand in planner/doors/record-rows.scm,
+;;; records (a commitment, a member, a recipe, …) stand in doors/record-rows.scm,
 ;;; the rest in wire/snapshot.scm and wire/replies.scm; the page's types are
 ;;; generated from all of them (tools/emit/wire-types-emit.scm).
 

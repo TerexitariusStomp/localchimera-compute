@@ -1087,7 +1087,7 @@
                                       ;; AGENT-OF: (aid → agent | #f), a person's record where it is kept —
                                       ;; their home; a visitor's away days are read there. #f ⇒ this scope's store alone
                                       (agent-of #f)
-                                      (pref-bound #f) (emp-rho #f) (kappa #f) (want-as-cap 'unstated) (stock-draw-hours #f)   ; the governed dials (voice/quorum.scm); unstated ⇒ the engine's standing value
+                                      (pref-bound #f) (emp-rho #f) (kappa #f) (want-as-cap 'unstated) (stock-draw-hours #f)   ; the governed dials (scope/policy.scm); unstated ⇒ the engine's standing value
                                       ;; ((aid . drawable-hours) …): each citizen's certificate, the
                                       ;; bar over their claim columns (engine *certificates*). The
                                       ;; scope door reads it off the account-store when unstated

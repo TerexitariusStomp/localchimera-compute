@@ -27,7 +27,6 @@
                verify-parent-ratification!
                federation-memberships-of
                federation-memberships-of-holder
-               resolve-merge-ratifier
                ratification-edges
                stale-membership-edges
                do-anchor-best-effort

@@ -5,7 +5,7 @@
 ;;; the closed form. arc-table-merge: observed wins per key, priors fill the
 ;;; rest. Persistence: save/load roundtrip of the sexp prior file.
 ;;;
-;;; Run:  guile module/playnet/planner/ewma-fold-test.scm
+;;; Run:  tools/test/run-suite.sh tests/solve/test-ewma-fold.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet solve routing))

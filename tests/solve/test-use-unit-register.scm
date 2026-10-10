@@ -16,7 +16,7 @@
 ;;;
 ;;; WHY THIS FILE EXISTS SEPARATELY FROM tests/scope/test-use-unit-lint.scm.
 ;;;
-;;; It used to be a necessity: the (playnet planner) umbrella did not carry
+;;; It used to be a necessity: the (playnet boot prelude) umbrella did not carry
 ;;; `compile-process` or `compile-recipe` at all — they lived only in
 ;;; planner/planner.scm, reached by primitive-load — so the file holding the
 ;;; use-unit invariant sat on the one path that could not run the compile step
@@ -25,7 +25,7 @@
 ;;; That is no longer true. compile.scm is included by BOTH loaders now (see the
 ;;; note above the include in planner.scm: "Same text, both loaders"), and
 ;;; svc-good moved into it so the umbrella path can actually compile a `use`
-;;; flow. `(use-modules (playnet planner))` carries both procedures today.
+;;; flow. `(use-modules (playnet boot prelude))` carries both procedures today.
 ;;;
 ;;; So the split is now a CHOICE, not a necessity, and the two halves still
 ;;; exercise genuinely different things:

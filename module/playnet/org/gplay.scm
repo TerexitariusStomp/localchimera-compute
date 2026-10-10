@@ -8,7 +8,7 @@
   #:use-module (goblins actor-lib ward)
   ;; (goblins utils crypto) imported conditionally below — it pulls in (rnrs bytevectors)
   ;; which Hoot cannot compile. Hoot branch stubs these out; Guile branch uses real crypto.
-  #:use-module (playnet org endorsement)
+  #:use-module (playnet utils endorsement)
   #:use-module (playnet lang kanren)
   #:use-module ((srfi srfi-1) #:select (fold-right))
   #:use-module (ice-9 match)
@@ -1164,8 +1164,8 @@ can unseal."
      (((playnet org gplay) ^expressor-identity) ,^expressor-identity)
      (((playnet org gplay) ^expressor-controller) ,^expressor-controller)
      (((playnet org gplay) ^ref-store) ,^ref-store)
-     (((playnet org endorsement) ^name-predicate) ,^name-predicate)
-     (((playnet org endorsement) ^faceted-validator) ,^faceted-validator)
+     (((playnet utils endorsement) ^name-predicate) ,^name-predicate)
+     (((playnet utils endorsement) ^faceted-validator) ,^faceted-validator)
      (((playnet org gplay) ^output-port) ,^output-port))
    #:extends (list ward-env sealers-env)))
 

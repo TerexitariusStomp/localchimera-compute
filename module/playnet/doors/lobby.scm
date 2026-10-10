@@ -893,7 +893,7 @@
     (planner! 'retire-means scope-id aid-prefix spec))
    ;; payouts — "send N XMR of my claim to ⟨address⟩". The member is the
    ;; session AID (non-spoofable); the runner in the gateway moves the coins
-   ;; under the wallet policy. See planner/doors/service.scm request-payout.
+   ;; under the wallet policy. See doors/service.scm request-payout.
    ((request-payout scope-id address xmr due note)
     (planner! 'request-payout scope-id aid-prefix acdc-store address xmr due note))
    ((my-payouts scope-id)

@@ -10,7 +10,7 @@
 
 (use-modules (playnet test harness))
 (use-modules (playnet scope root) (srfi srfi-11))
-(use-modules (playnet org endorsement))
+(use-modules (playnet utils endorsement))
 (use-modules (playnet federation vows) (playnet voice ballot) (playnet voice delegation-map) (playnet voice voice-signer))
 (use-modules (goblins) (goblins utils hashmap)
              (goblins vat) (srfi srfi-1)

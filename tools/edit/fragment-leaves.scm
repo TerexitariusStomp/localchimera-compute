@@ -1,9 +1,9 @@
 #!/usr/bin/env -S guile --no-auto-compile -s
 !#
-;;; fragment-leaves.scm — which planner fragments could become real modules
+;;; fragment-leaves.scm — which included fragments could become real modules
 ;;;
-;;; The (playnet planner) umbrella assembles ~96 fragments by textual
-;;; include-from-path.  That costs two things: no fragment has an interface, so
+;;; An umbrella that assembles fragments by textual
+;;; include-from-path pays twice:  That costs two things: no fragment has an interface, so
 ;;; nothing checks what it actually needs; and Guile's per-module .go freshness
 ;;; check cannot see an edited fragment, because the fragment's text is baked
 ;;; into the includer's .go and the includer's own mtime never moves.

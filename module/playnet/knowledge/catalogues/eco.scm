@@ -1,4 +1,4 @@
-;;; eco-catalogue.scm — the federation's fragility catalogue.
+;;; knowledge/catalogues/eco.scm — the federation's fragility catalogue.
 ;;;
 ;;; Real planetary-boundary AND climate-tipping-point figures, expressed as fragility profiles and
 ;;; custodied by the tension-registry (§2.0.8 of the white paper). DRAFT FIGURES: every number here is

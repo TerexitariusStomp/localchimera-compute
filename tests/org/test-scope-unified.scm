@@ -7,7 +7,7 @@
 
 (use-modules (playnet test harness))
 (use-modules (playnet scope root))
-(use-modules (playnet org endorsement))
+(use-modules (playnet utils endorsement))
 (use-modules (playnet credentials commitments) (playnet credentials membership) (playnet credentials recomposition) (playnet keri acdc) (playnet boot scope) (playnet keri acdc) (playnet keri acdc-store))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap)
              (fibers) (fibers conditions) (ice-9 atomic) (srfi srfi-1))

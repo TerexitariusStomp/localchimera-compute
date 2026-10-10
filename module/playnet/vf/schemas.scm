@@ -39,7 +39,7 @@
 ;;;
 ;;; Self-contained: needs nothing beyond core Guile, which is why this is the
 ;;; first fragment liftable out. The umbrella re-exports every name below, so
-;;; `(use-modules (playnet planner))` still sees them.
+;;; `(use-modules (playnet boot prelude))` still sees them.
 
 (define-module (playnet vf schemas)
   #:use-module ((playnet vf facts located) #:select (svc-good))

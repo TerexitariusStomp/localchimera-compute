@@ -93,7 +93,7 @@
 ;; actor-based planner and — worse — is bound to a textually-duplicated
 ;; copy of every VF record type (deprecated/planner.scm `include-from-path`s
 ;; the same schemas.scm source into its own module, so its record types are
-;; nominally distinct from `(playnet planner)`'s), so mixing it with the
+;; nominally distinct from `(playnet boot prelude)`'s), so mixing it with the
 ;; monero modules (which are new-planner-only) crashed on any record crossing
 ;; the boundary. Query the live-resource actor directly instead — same
 ;; substantive claim (the resize is visible where a downstream reader would
