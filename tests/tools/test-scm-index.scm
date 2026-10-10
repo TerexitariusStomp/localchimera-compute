@@ -1,6 +1,6 @@
-;;; scm-index-test.scm — scope/shadow-aware find-callers + duplicate-shape detection
+;;; tests/tools/test-scm-index.scm — scope/shadow-aware find-callers + duplicate-shape detection
 ;;;
-;;; Run:  guile --no-auto-compile -q -L module -l module/playnet/tools/tests/scm-index-test.scm
+;;; Run:  guile --no-auto-compile -q -L module -l tests/tools/test-scm-index.scm
 
 (use-modules (playnet test harness)
              (playnet tools scm-index)

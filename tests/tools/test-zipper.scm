@@ -1,6 +1,6 @@
-;;; zipper-test.scm — round trips and local moves over the Huet zipper
+;;; tests/tools/test-zipper.scm — round trips and local moves over the Huet zipper
 ;;;
-;;; Run:  guile --no-auto-compile -q -L module -l module/playnet/tools/tests/zipper-test.scm
+;;; Run:  guile --no-auto-compile -q -L module -l tests/tools/test-zipper.scm
 
 (use-modules (playnet test harness)
              (playnet tools zipper))

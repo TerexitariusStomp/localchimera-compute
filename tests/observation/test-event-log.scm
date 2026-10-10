@@ -1,11 +1,11 @@
-;;; event-log-test.scm — the portable observer event log (gap #18).
+;;; tests/observation/test-event-log.scm — the portable observer event log (gap #18).
 ;;;
 ;;; Pure module, depends only on the keri primitives — needs libblake3.so, so
 ;;; run under the dev-test manifest:
 ;;;
 ;;;   guix shell -L deploy/guix -m deploy/manifests/dev-test-manifest.scm -- \
 ;;;     guile --no-auto-compile -q -L module \
-;;;       module/playnet/observation/event-log-test.scm
+;;;       tests/observation/test-event-log.scm
 
 (use-modules (playnet observation event-log)
              (srfi srfi-1)

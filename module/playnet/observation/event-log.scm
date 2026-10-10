@@ -28,7 +28,7 @@
 ;;;
 ;;; Run the suite:  guix shell -m deploy/manifests/dev-test-manifest.scm -- \
 ;;;                   guile --no-auto-compile -q -L module \
-;;;                     module/playnet/observation/event-log-test.scm
+;;;                     tests/observation/test-event-log.scm
 
 (define-module (playnet observation event-log)
   #:use-module (playnet keri blake3)

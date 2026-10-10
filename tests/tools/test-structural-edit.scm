@@ -1,6 +1,6 @@
-;;; structural-edit-test.scm — path-addressed paredit-style ops
+;;; tests/tools/test-structural-edit.scm — path-addressed paredit-style ops
 ;;;
-;;; Run:  guile --no-auto-compile -q -L module -l module/playnet/tools/tests/structural-edit-test.scm
+;;; Run:  guile --no-auto-compile -q -L module -l tests/tools/test-structural-edit.scm
 
 (use-modules (playnet test harness)
              (playnet tools structural-edit))

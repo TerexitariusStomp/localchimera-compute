@@ -86,7 +86,7 @@
  (stays "push" 7 "web push: the adapter, VAPID, subscriptions, templates")
  (stays "calendar" 7 "iCal, invitations, the mailer")
  (stays "comms" 7 "communications derived from the plan, built and awaiting integration")
- (stays "bridge" 7 "MQTT: the signal publisher, the topic observer, the codec")
+ (stays "bridge" 7 "MQTT: the signal publisher, the codec")
  (stays "ai" 7 "the LLM bridge, the key pool, conform, embeddings, TEE attestation")
  (stays "monero" 7 "the wallet, payouts, top-ups, the poller, the policy")
  (stays "fleet" 7 "the fleet: providers, the keeper, the reconciler, the CDN")
