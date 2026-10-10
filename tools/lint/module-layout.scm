@@ -64,7 +64,7 @@
  (stays "personhood" 5 "how a person is recognised: enrollment, the vouching ceremony, the witness relay, work witnessed by peers, the body ceremony and its desk, the scope's issuance fragment")
  (stays "matching" 5 "asks to offers")
  (stays "folksonomy" 5 "classification")
- (stays "indexes" 5 "the membership index and the VF query facade")
+ (stays "indexes" 5 "the membership index")
  (stays "execution" 5 "execution alerts, the scope's reactive execution, and capacity-managed execution")
  (stays "ddmrp" 5 "the buffer planner (DDMRP), a family beside the ValueFlows core: its records, buffer algorithms, the three buffer stores and the execution monitors")
  (tier "ddmrp/records" 1 "the family's vocabulary: nine record types a recipe or a specification may state")

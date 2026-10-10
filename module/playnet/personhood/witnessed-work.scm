@@ -47,7 +47,7 @@
 ;;
 ;; Vocabulary: "witness" here and in enrollment means VOUCHER — a party
 ;; co-signing that work happened. KERI's own "witness"
-;; (keys/witness-pool.scm, receiptor.scm) is receipt infrastructure,
+;; (keri/receiptor.scm) is receipt infrastructure,
 ;; an unrelated role.
 
 ;; A witness: holds its keypair privately, applies its own POLICY to what it
