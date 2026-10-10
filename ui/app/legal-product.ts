@@ -47,6 +47,7 @@ export const PRODUCT_FEATURES: ProductFeature[] = [
   { id: "contact-points", name: "Contact points", crossings: ["data-processing", "communications"], doors: ["session/present-contact-point", "session/confirm-contact-point", "session/withdraw-contact-point", "session/my-contact-points"], section: "social/contacts" },
   { id: "chat", name: "Chat", crossings: ["data-processing", "communications"], doors: ["session/chat-post"], section: "social/chat" },
   { id: "ai", name: "AI at the seat", crossings: ["data-processing", "ai-processing"], doors: ["session/transcribe", "session/ai-complete", "session/see-part", "session/see"], section: "ai" },
+  { id: "bodies", name: "Legal bodies", crossings: ["data-processing", "organise"], doors: ["session/declare-body", "session/body-add-steward", "session/body-open-ceremony", "session/body-sign-preimage", "session/body-sign-signed", "session/my-bodies", "session/body", "session/body-present-holding", "session/body-admit"], section: "settings/bodies" },
 ];
 
 // ── the vocabulary of a bill, as the fold states it (legal/registry.scm) ──

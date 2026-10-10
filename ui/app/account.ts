@@ -52,6 +52,7 @@ function row(r: RowSpec, close: () => void, wire = true, enter?: () => void): HT
 interface Page { title: string; sections: string[] }
 const PAGES: Record<string, Page> = {
   profile: { title: "your profile", sections: ["profile-where", "standing", "reach"] },
+  bodies: { title: "legal bodies", sections: ["bodies"] },
   diet: { title: "diet", sections: ["diet"] },
   body: { title: "body", sections: ["body"] },
   health: { title: "health", sections: ["self", "away"] },
@@ -154,6 +155,7 @@ function menu(close: () => void): HTMLElement[] {
             into("📍", "where you are", "your place, sharing it, places on the map, offline maps", "where"),
             into("🏠", "your housing", "your home, and what the night gives you", "housing"),
             into("🕰️", "your time", "hours a day, which days, what it earns", "time"),
+            into("🏛", "legal bodies", "an association, a cooperative — declared, stewarded, signed", "bodies"),
             door({ icon: "📻", label: "the commune's channel",
                    sub: net?.classList.contains("live") ? "you are on air" : "chat, and live audio with whoever is in it",
                    live: !!net?.classList.contains("live"), go: () => net?.click() }));

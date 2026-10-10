@@ -6610,6 +6610,298 @@
       "x-playnet-http": "/api/session/set-profile"
     },
     {
+      "name": "session.declare-body",
+      "title": "law: declare-body",
+      "description": "Declares a legal body in SCOPE-ID from JSON {name, kind, role, jurisdiction, assetLock, register}: the caller, a recognised person (live PHC), is its first steward; the id is provisional until the stewards sign its inception. Replies (ok . {id, name, tags}). [law; callable by an enrolled device]",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "scope-id": {
+            "type": "string",
+            "description": "a scope (commune) id",
+            "x-playnet-shape": "scope-id"
+          },
+          "json": {
+            "type": "string",
+            "contentMediaType": "application/json",
+            "description": "a JSON document, as a string",
+            "x-playnet-shape": "json"
+          }
+        },
+        "required": [
+          "scope-id",
+          "json"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false
+      },
+      "x-playnet-auth": "device",
+      "x-playnet-topic": "law",
+      "x-playnet-http": "/api/session/declare-body"
+    },
+    {
+      "name": "session.body-add-steward",
+      "title": "law: body-add-steward",
+      "description": "A steward of body ID names AID a steward too; replies (ok . #t), or refuses a caller who is no steward. [law; callable by an enrolled device]",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "on open/cast/close/get-result a proposal id; on retire-payout/settle-payout a payout intent id; on add-scope! a scope id",
+            "x-playnet-shape": "id"
+          },
+          "aid": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
+            "description": "a KERI AID prefix",
+            "x-playnet-shape": "aid"
+          }
+        },
+        "required": [
+          "id",
+          "aid"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false
+      },
+      "x-playnet-auth": "device",
+      "x-playnet-topic": "law",
+      "x-playnet-http": "/api/session/body-add-steward"
+    },
+    {
+      "name": "session.body-open-ceremony",
+      "title": "law: body-open-ceremony",
+      "description": "A steward opens body ID's inception ceremony: K of its stewards must sign the group inception from their own browsers. Replies (ok . {have, need, published, what}). [law; callable by an enrolled device]",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "on open/cast/close/get-result a proposal id; on retire-payout/settle-payout a payout intent id; on add-scope! a scope id",
+            "x-playnet-shape": "id"
+          },
+          "k": {
+            "type": "integer",
+            "description": "a requested quorum count; ignored, the ecosystem's own personhood quorum applies",
+            "x-playnet-shape": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "k"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false
+      },
+      "x-playnet-auth": "device",
+      "x-playnet-topic": "law",
+      "x-playnet-http": "/api/session/body-open-ceremony"
+    },
+    {
+      "name": "session.body-sign-preimage",
+      "title": "law: body-sign-preimage",
+      "description": "The statement a steward signs for body ID — KIND is inception, rotation or role — as (ok . {what, said}); refused while no ceremony is open or it is at another step. [law; callable by an enrolled device]",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "on open/cast/close/get-result a proposal id; on retire-payout/settle-payout a payout intent id; on add-scope! a scope id",
+            "x-playnet-shape": "id"
+          },
+          "kind": {
+            "type": "string",
+            "description": "a symbol, sent as its name",
+            "x-playnet-shape": "symbol"
+          }
+        },
+        "required": [
+          "id",
+          "kind"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false
+      },
+      "x-playnet-auth": "device",
+      "x-playnet-topic": "law",
+      "x-playnet-http": "/api/session/body-sign-preimage"
+    },
+    {
+      "name": "session.body-sign-signed",
+      "title": "law: body-sign-signed",
+      "description": "The steward's SIGNATURE over SAID (the statement body-sign-preimage gave), verified under this session's own AID and counted by the ceremony; at k the inception publishes. Replies (ok . {have, need, published}). [law; callable by an enrolled device]",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "on open/cast/close/get-result a proposal id; on retire-payout/settle-payout a payout intent id; on add-scope! a scope id",
+            "x-playnet-shape": "id"
+          },
+          "kind": {
+            "type": "string",
+            "description": "a symbol, sent as its name",
+            "x-playnet-shape": "symbol"
+          },
+          "said": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
+            "description": "a SAID",
+            "x-playnet-shape": "said"
+          },
+          "signature": {
+            "type": "string",
+            "description": "a CESR qb64 signature",
+            "x-playnet-shape": "qb64"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "said",
+          "signature"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false
+      },
+      "x-playnet-auth": "device",
+      "x-playnet-topic": "law",
+      "x-playnet-http": "/api/session/body-sign-signed"
+    },
+    {
+      "name": "session.my-bodies",
+      "title": "law: my-bodies",
+      "description": "The bodies this AID stewards or belongs to, each {id, name, tags, steward, ceremony}; replies (ok . rows). [law; callable by an enrolled device]",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "scope-id": {
+            "type": "string",
+            "description": "a scope (commune) id",
+            "x-playnet-shape": "scope-id"
+          }
+        },
+        "required": [
+          "scope-id"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false
+      },
+      "x-playnet-auth": "device",
+      "x-playnet-topic": "law",
+      "x-playnet-http": "/api/session/my-bodies"
+    },
+    {
+      "name": "session.body",
+      "title": "law: body",
+      "description": "Body ID, read by a steward or member: {id, name, tags, stewards, members, crossings, holdings (each with the law's status), findings (the scope's admission tests), exposure, ceremony}; replies (ok . body). [law; callable by an enrolled device]",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "on open/cast/close/get-result a proposal id; on retire-payout/settle-payout a payout intent id; on add-scope! a scope id",
+            "x-playnet-shape": "id"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false
+      },
+      "x-playnet-auth": "device",
+      "x-playnet-topic": "law",
+      "x-playnet-http": "/api/session/body"
+    },
+    {
+      "name": "session.body-present-holding",
+      "title": "law: body-present-holding",
+      "description": "A steward presents what body ID holds from JSON {kind, name, issuer, validUntil, ref} — a permit, a policy, a registration — as a resource the law reads against the bill; replies (ok . resource-id). [law; callable by an enrolled device]",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "on open/cast/close/get-result a proposal id; on retire-payout/settle-payout a payout intent id; on add-scope! a scope id",
+            "x-playnet-shape": "id"
+          },
+          "json": {
+            "type": "string",
+            "contentMediaType": "application/json",
+            "description": "a JSON document, as a string",
+            "x-playnet-shape": "json"
+          }
+        },
+        "required": [
+          "id",
+          "json"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false
+      },
+      "x-playnet-auth": "device",
+      "x-playnet-topic": "law",
+      "x-playnet-http": "/api/session/body-present-holding"
+    },
+    {
+      "name": "session.body-admit",
+      "title": "law: body-admit",
+      "description": "A governor admits body ID to SCOPE-ID; replies (ok . findings), the eight admission tests as findings, or refuses a caller without governor standing. [law; callable by an enrolled device]",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "scope-id": {
+            "type": "string",
+            "description": "a scope (commune) id",
+            "x-playnet-shape": "scope-id"
+          },
+          "id": {
+            "type": "string",
+            "description": "on open/cast/close/get-result a proposal id; on retire-payout/settle-payout a payout intent id; on add-scope! a scope id",
+            "x-playnet-shape": "id"
+          }
+        },
+        "required": [
+          "scope-id",
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false
+      },
+      "x-playnet-auth": "device",
+      "x-playnet-topic": "law",
+      "x-playnet-http": "/api/session/body-admit"
+    },
+    {
       "name": "session.set-availability-ranges",
       "title": "commitments: set-availability-ranges",
       "description": "Upserts this AID's availability window in SCOPE-ID from the dial's arcs JSON, creating the agent record with generic labour on first offer; replies the agent-store's answer. [commitments; callable by an enrolled device]",

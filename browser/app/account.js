@@ -49,6 +49,7 @@ function row(r, close, wire = true, enter) {
 }
 const PAGES = {
     profile: { title: "your profile", sections: ["profile-where", "standing", "reach"] },
+    bodies: { title: "legal bodies", sections: ["bodies"] },
     diet: { title: "diet", sections: ["diet"] },
     body: { title: "body", sections: ["body"] },
     health: { title: "health", sections: ["self", "away"] },
@@ -146,7 +147,7 @@ function menu(close) {
     }
     const net = document.getElementById("netbtn");
     const g2 = mk("div", "acct-group");
-    g2.append(into("✎", "your profile", "your place, skills, how to reach you", "profile"), into("🥗", "diet", "what you eat, and what you refuse", "diet"), into("🧍", "body", "what your floors are read from", "body"), into("❤️", "health", "private — conditions, and days away", "health"), into("🔑", "keys and devices", "stay signed in, change your passcode, recovery", "keys"), into("📍", "where you are", "your place, sharing it, places on the map, offline maps", "where"), into("🏠", "your housing", "your home, and what the night gives you", "housing"), into("🕰️", "your time", "hours a day, which days, what it earns", "time"), door({ icon: "📻", label: "the commune's channel",
+    g2.append(into("✎", "your profile", "your place, skills, how to reach you", "profile"), into("🥗", "diet", "what you eat, and what you refuse", "diet"), into("🧍", "body", "what your floors are read from", "body"), into("❤️", "health", "private — conditions, and days away", "health"), into("🔑", "keys and devices", "stay signed in, change your passcode, recovery", "keys"), into("📍", "where you are", "your place, sharing it, places on the map, offline maps", "where"), into("🏠", "your housing", "your home, and what the night gives you", "housing"), into("🕰️", "your time", "hours a day, which days, what it earns", "time"), into("🏛", "legal bodies", "an association, a cooperative — declared, stewarded, signed", "bodies"), door({ icon: "📻", label: "the commune's channel",
         sub: net?.classList.contains("live") ? "you are on air" : "chat, and live audio with whoever is in it",
         live: !!net?.classList.contains("live"), go: () => net?.click() }));
     const g3 = mk("div", "acct-group");

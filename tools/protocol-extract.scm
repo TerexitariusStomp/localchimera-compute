@@ -90,10 +90,12 @@ NAME), else self."
               (object-forms (assq-ref %objects 'session) 'session)))
 
 ;; An object's doors may be written in more than one file: the object's own
-;; module, and the fragments it composes (declared-doors, identity/doors.scm).
+;; module, and the fragments it composes (declared-doors, identity/doors.scm,
+;; identity/body-doors.scm).
 (define %objects
   `((lobby   "module/playnet/gateway/lobby.scm" "module/playnet/identity/doors.scm")
-    (session "module/playnet/gateway/lobby.scm" "module/playnet/identity/doors.scm")
+    (session "module/playnet/gateway/lobby.scm" "module/playnet/identity/doors.scm"
+             "module/playnet/identity/body-doors.scm")
     (planner "module/playnet/planner/doors/service.scm")))
 
 (define (all-doors)

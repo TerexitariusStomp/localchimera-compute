@@ -25,9 +25,9 @@
 ;;; holding-status (custody). Load compliance.scm + legal/filings.scm first (the
 ;;; umbrella / a test's planner-load chain does).
 ;;;
-;;; Run the demo:  guile -L module module/playnet/planner/doors/adapters.scm
+;;; Run the demo:  guile -L module module/playnet/planner/legal/adapters.scm
 
-(define-module (playnet planner doors adapters)
+(define-module (playnet planner legal adapters)
   #:use-module ((playnet planner facts agent-tags) #:select (agent-tag-value))
   #:use-module (playnet planner legal registry)
   #:use-module ((playnet planner knowledge law context-pack) #:select (current-legal-rules))

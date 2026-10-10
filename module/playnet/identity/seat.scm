@@ -39,7 +39,7 @@
   #:use-module (playnet keri signify-portable)
   #:use-module ((playnet keri citizen-sig)
                 #:select (verify-bytes-under-aid))
-  #:use-module ((playnet keri key-state) #:select (check-rotation check-icp verify-sig-on-event))
+  #:use-module ((playnet keri key-state) #:select (check-rotation check-icp verify-sig-on-event event-next-digests))
   #:use-module ((playnet identity oobi-host)
                 #:select (oobi-entry-last-event))
   #:use-module (rnrs bytevectors)
@@ -217,6 +217,11 @@
    public form must appear in the *next* rotation's `k`."
   (event-first-next-digest (last-event entry)))
 
+(define (last-event-next-digests entry)
+  "Every 'n' digest of the last event: one for a single-key log, k for a body
+   held by a quorum of stewards (keri/key-state.scm reads either)."
+  (event-next-digests (last-event entry)))
+
 (define (last-event-sn entry)
   ;; Delegates to event-sn (which returns -1 on parse failure); if
   ;; the entry has no last event the resulting expected-sn = 0 will
@@ -230,7 +235,7 @@
    (`check-rotation`, keri/key-state.scm)."
   (check-rotation aid-prefix
                   `((sn . ,(last-event-sn entry)) (said . ,(last-event-said entry))
-                    (next . ,(last-event-next-digest entry)))
+                    (next . ,(last-event-next-digests entry)))
                   rot-alist sigs))
 
 ;;; ── OOBI verification via KERIA ─────────────────────────────────────────────

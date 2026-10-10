@@ -26,6 +26,7 @@ import * as ambient from '../lib/ambient.js';
 import { createSleepSpansBlock } from './sleep.js';
 import { createAwayBlock } from './away.js';
 import { reachBlock } from './reach-view.js';
+import { bodiesBlock } from './bodies-view.js';
 import { render } from './template.js';
 import { effect } from './reactive.js';
 import { storageRows } from './storage-view.js';
@@ -251,6 +252,11 @@ export function registerAllSettings() {
                     + "and it notifies you there; put some on a card for a contact, from their row in Contacts. "
                     + "Each telling is yours to take back.",
                 rows: () => [{ kind: "custom", build: reachBlockSettings }] },
+            { id: "bodies", title: "legal bodies",
+                note: "An association, a cooperative, the operator: declared in the scope by a recognised "
+                    + "person, stewarded by the people it names, and given its identifier by k of its stewards "
+                    + "signing the inception from their own seats. The law reads what it holds.",
+                rows: () => [{ kind: "custom", build: bodiesBlock }] },
         ],
     });
     registerSettings({

@@ -68,6 +68,7 @@ import { initMatch } from './tabs/match.js';
 import { initTaxonomy } from './tabs/taxonomy.js';
 import { initFamily } from './tabs/family.js';
 import { initOnboard } from './tabs/onboard.js';
+import { bodiesEnter } from './bodies-view.js';
 import { identity } from './tabs/social/id.js';
 
 /** What a face owns, and what taking the stage means for it. */
@@ -168,6 +169,8 @@ const FACES: Record<string, Face> = {
   family:   { rail: "familySecs",   overlay: "familyface",   flat: true, mount: initFamily, railShut: true },
   // the start face: its screens lead out to other faces through this table rather than an import of it
   onboard:  { rail: "onboardSecs",  overlay: "onboardface",  flat: true, mount: () => initOnboard(setFace), railShut: true },
+  // the legal bodies you steward: its overlay is made on first entry (bodies-view.ts), so the page carries no tab for it
+  bodies:   { rail: "bodiesSecs",   overlay: "bodiesface",   flat: true, mount: bodiesEnter, railShut: true },
 };
 
 /** The faces that own the stage through an HTML overlay of their own. */

@@ -37,6 +37,10 @@
   #:use-module (playnet planner knowledge law aspects)
   #:use-module (playnet planner knowledge law activities)
   #:use-module (playnet planner knowledge law product)
+  #:use-module (playnet planner legal compliance)
+  #:use-module (playnet planner legal filings)
+  #:use-module (playnet planner legal adapters)
+  #:use-module (playnet planner legal bodies)
   ;; the registry shadows core's `rule` and `negate` on purpose; the door hands
   ;; that on, so an importer meets the legal ones without a warning
   #:re-export-and-replace (rule negate))
@@ -62,4 +66,8 @@
    (playnet planner knowledge law protections)
    (playnet planner knowledge law aspects)
    (playnet planner knowledge law activities)
-   (playnet planner knowledge law product)))
+   (playnet planner knowledge law product)
+   (playnet planner legal compliance)
+   (playnet planner legal filings)
+   (playnet planner legal adapters)
+   (playnet planner legal bodies)))

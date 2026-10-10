@@ -46,7 +46,8 @@
   #:use-module (srfi srfi-1)
   #:use-module ((playnet utils store-utils) #:select (hashmap-count))
   #:use-module ((srfi srfi-13) #:select (string-suffix?))
-  #:use-module ((playnet keri signify-portable) #:select (event-first-key))
+  #:use-module ((playnet keri signify-portable)
+                #:select (event-first-key event-first-next-digest))
   #:export (^oobi-host
             oobi-host-spawn-from-dir
             oobi-entry-path
@@ -159,6 +160,11 @@
                                (cons entry acc2)))
                             (else acc2)))
                          acc files))))))))))
+
+(define (array->list x)
+  "A KEL array field as a list: JSON parses `k`/`n` as vectors, locally
+   built events carry lists."
+  (cond ((vector? x) (vector->list x)) ((list? x) x) (else '())))
 
 ;;; ── ^oobi-host ──────────────────────────────────────────────────────────────
 
@@ -309,7 +315,31 @@
     ;; so verifiers must consult this rather than decoding the prefix.
     ((current-key aid)
      (event-first-key
-      (oobi-entry-last-event (hashmap-ref entries aid #f))))))
+      (oobi-entry-last-event (hashmap-ref entries aid #f))))
+
+    ;; ── current-keys ─────────────────────────────────────────────────────────
+    ;; Every signing key in force for AID — the latest establishment
+    ;; event's whole `k`, as a list. One key for a dial AID; the stewards'
+    ;; keys, in member order, for a body's k-of-n group AID. #f when the
+    ;; AID isn't registered.
+    ((current-keys aid)
+     (let ((ev (oobi-entry-last-event (hashmap-ref entries aid #f))))
+       (and ev (array->list (assoc-ref ev "k")))))
+
+    ;; ── current-next-digest ──────────────────────────────────────────────────
+    ;; The digest the latest establishment event commits the next key to
+    ;; (n[0]): what a group inception puts in its own `n` for this member.
+    ;; #f when unregistered or retired (an empty `n`).
+    ((current-next-digest aid)
+     (event-first-next-digest
+      (oobi-entry-last-event (hashmap-ref entries aid #f))))
+
+    ;; ── current-next-digests ─────────────────────────────────────────────────
+    ;; The whole `n` of the latest establishment event, as a list; #f when
+    ;; the AID isn't registered.
+    ((current-next-digests aid)
+     (let ((ev (oobi-entry-last-event (hashmap-ref entries aid #f))))
+       (and ev (array->list (assoc-ref ev "n")))))))
 
 ;;; ── Bootstrap helper: replay a durable-dir on respawn ──────────────────────
 

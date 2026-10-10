@@ -58,7 +58,8 @@
     (location       "Position and home"                (data-processing location-data)  "location")
     (contact-points "Contact points"                   (data-processing communications) "social/contacts")
     (chat           "Chat"                             (data-processing communications) "social/chat")
-    (ai             "AI at the seat"                   (data-processing ai-processing)  "ai")))
+    (ai             "AI at the seat"                   (data-processing ai-processing)  "ai")
+    (bodies         "Legal bodies"                     (data-processing organise)       "settings/bodies")))
 
 (define (product-feature id) (assq id *product-features*))
 (define (product-feature-ids) (map car *product-features*))

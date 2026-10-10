@@ -42,6 +42,9 @@
   ;; fragments; each object composes its own with them (declared-methods*)
   #:use-module ((playnet identity doors)
                 #:select (identity-lobby-doors identity-session-doors make-session-identity))
+  ;; the body doors — a legal body declared, stewarded, incepted k-of-n and
+  ;; read by the law — are a fragment too (playnet identity body-doors)
+  #:use-module ((playnet identity body-doors) #:select (body-session-doors))
   ;; the per-AID files a member's sync doors keep (one module lists the kinds)
   #:use-module ((playnet identity user-files)
                 #:select (%data-dir %user-file %read-user-data %write-user-data!
@@ -425,7 +428,10 @@
            #:governance-svc governance-svc #:planner! planner!
            #:announced-name (lambda () announced-name)
            #:own-book own-book #:anchored-mesh-pub anchored-mesh-pub
-           #:mesh-mailbox (current-mesh-mailbox))))
+           #:mesh-mailbox (current-mesh-mailbox)))
+    (body-session-doors
+          #:aid-prefix aid-prefix #:acdc-store acdc-store
+          #:governance-svc governance-svc))
 
    ;; ── Presence / push, AID-aware ─────────────────────────────────────
    ;; These mirror ^lobby's anonymous announce/register-push, but seed the

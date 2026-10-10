@@ -24,13 +24,17 @@
             make-personhood-credential make-relationship-credential
             *contact-point-kinds* contact-point-kind? contact-point-identifying?
             make-contact-point-credential contact-point-binding-fields
-            contact-point-acceptable?))
+            contact-point-acceptable?
+            *schema-playnet-body-role* *body-roles*
+            make-body-role-credential body-role-credential-with-block
+            body-role-credential-valid?))
 
 (define *schema-playnet-personhood*              "playnet-personhood/v1")
 (define *schema-playnet-relationship*            "playnet-relationship/v1")
 (define *schema-playnet-contact-point*           "playnet-contact-point/v1")
 (define *schema-playnet-authorized-issuer*       "playnet-authorized-issuer/v1")
 (define *schema-playnet-device-authorization*    "playnet-device-authorization/v1")
+(define *schema-playnet-body-role*               "playnet-body-role/v1")
 
 ;; =========================================================================
 ;; First-Person layer: Personhood Credential (PHC) + Relationship (VRC)
@@ -331,3 +335,52 @@
 ;; sponsor fan-out window are O(1) given the key.
 (register-claim-indexes!
  `((,*schema-playnet-personhood* . (ecosystem-aid sponsor-aid))))
+
+;; =========================================================================
+;; Body role: a body says who holds a role in it
+;; =========================================================================
+;;
+;; A body is a k-of-n group AID of its stewards' dial AIDs (identity/
+;; body-ceremony.scm); its roles, members and stewards are VF agent
+;; relationships, and this credential is a PROJECTION of one such record,
+;; minted on demand when a holder presents the role outside the fold. The
+;; issuer is the body, so the signature is a multisig BLOCK the stewards
+;; gather in their browsers — `((steward-aid . sig-qb64) …)` over the SAID —
+;; attached after the fact with `body-role-credential-with-block`; the
+;; constructor builds the credential unsigned and `make-credential`'s
+;; server-keypair `#:multisig-signers` path stays what it is, since no
+;; server holds a steward's key. A verifier reads the body's stewards and
+;; quorum (its KEL's `k` and `kt`, or the body record) and asks
+;; `body-role-credential-valid?`.
+
+(define *body-roles* '(steward member officer))
+
+(define* (make-body-role-credential body-aid holder-aid role since
+                                    #:key (until #f) (quorum #f) (u 'auto))
+  "The unsigned role credential: BODY-AID says HOLDER-AID holds ROLE (one of
+   *body-roles*, a symbol) since SINCE (ISO-8601 or epoch seconds). UNTIL
+   and QUORUM (the body's k) are emitted when given. U is the blinding
+   nonce, minted by default."
+  (make-credential *schema-playnet-body-role*
+                   body-aid holder-aid
+                   (append
+                    (u-claim u)
+                    (list (cons 'role role)
+                          (cons 'since since))
+                    (if until (list (cons 'until until)) '())
+                    (if quorum (list (cons 'quorum quorum)) '()))
+                   '()))
+
+(define (body-role-credential-with-block cred sig-block)
+  "CRED carrying SIG-BLOCK, the stewards' signatures over its SAID."
+  (cred-with-signature cred sig-block))
+
+(define (body-role-credential-valid? cred steward-aids k)
+  "#t when CRED is a body-role credential whose SAID commits to its content
+   and whose block carries K valid signatures from distinct members of
+   STEWARD-AIDS."
+  (let ((sig (cred-signature cred)))
+    (and (equal? (cred-schema cred) *schema-playnet-body-role*)
+         (pair? sig)
+         (cred-said-consistent? cred)
+         (verify-said-multisig (cred-said cred) sig steward-aids k))))

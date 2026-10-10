@@ -18126,6 +18126,937 @@
         }
       }
     },
+    "/api/session/declare-body": {
+      "post": {
+        "operationId": "session.declare-body",
+        "summary": "Declares a legal body in SCOPE-ID from JSON {name, kind, role, jurisdiction, assetLock, register}: the caller, a recognised person (live PHC), is its first steward; the id is provisional until the stewards sign its inception. Replies (ok . {id, name, tags}).",
+        "description": "Declares a legal body in SCOPE-ID from JSON {name, kind, role, jurisdiction, assetLock, register}: the caller, a recognised person (live PHC), is its first steward; the id is provisional until the stewards sign its inception. Replies (ok . {id, name, tags}).\n\nObject: `session`. Callable by an enrolled device. Reply shape: `ok-or-error`.",
+        "tags": [
+          "law"
+        ],
+        "x-playnet-auth": "device",
+        "x-playnet-kind": "performative",
+        "x-playnet-to": "self",
+        "x-playnet-object": "session",
+        "x-playnet-seam": "bodyDeclare",
+        "security": [
+          {
+            "deviceSignature": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "scope-id": {
+                    "type": "string",
+                    "description": "a scope (commune) id",
+                    "x-playnet-shape": "scope-id"
+                  },
+                  "json": {
+                    "type": "string",
+                    "contentMediaType": "application/json",
+                    "description": "a JSON document, as a string",
+                    "x-playnet-shape": "json"
+                  }
+                },
+                "required": [
+                  "scope-id",
+                  "json"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the door's reply (ok-or-error), as JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "const": "ok"
+                    },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "const": "ok"
+                        },
+                        {
+                          "description": "the value"
+                        }
+                      ],
+                      "description": "(ok . value)"
+                    },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "const": "error"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ],
+                      "description": "(error \"reason\")"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "error": {
+                          "type": "string"
+                        }
+                      },
+                      "description": "((error . \"reason\"))"
+                    }
+                  ],
+                  "x-playnet-reply": "ok-or-error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "no valid device signature (B4)"
+          },
+          "403": {
+            "description": "the door is outside this device's allowlist"
+          }
+        }
+      }
+    },
+    "/api/session/body-add-steward": {
+      "post": {
+        "operationId": "session.body-add-steward",
+        "summary": "A steward of body ID names AID a steward too; replies (ok . #t), or refuses a caller who is no steward.",
+        "description": "A steward of body ID names AID a steward too; replies (ok . #t), or refuses a caller who is no steward.\n\nObject: `session`. Callable by an enrolled device. Reply shape: `ok-or-error`.",
+        "tags": [
+          "law"
+        ],
+        "x-playnet-auth": "device",
+        "x-playnet-kind": "performative",
+        "x-playnet-to": "self",
+        "x-playnet-object": "session",
+        "x-playnet-seam": "bodyAddSteward",
+        "security": [
+          {
+            "deviceSignature": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "on open/cast/close/get-result a proposal id; on retire-payout/settle-payout a payout intent id; on add-scope! a scope id",
+                    "x-playnet-shape": "id"
+                  },
+                  "aid": {
+                    "type": "string",
+                    "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
+                    "description": "a KERI AID prefix",
+                    "x-playnet-shape": "aid"
+                  }
+                },
+                "required": [
+                  "id",
+                  "aid"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the door's reply (ok-or-error), as JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "const": "ok"
+                    },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "const": "ok"
+                        },
+                        {
+                          "description": "the value"
+                        }
+                      ],
+                      "description": "(ok . value)"
+                    },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "const": "error"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ],
+                      "description": "(error \"reason\")"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "error": {
+                          "type": "string"
+                        }
+                      },
+                      "description": "((error . \"reason\"))"
+                    }
+                  ],
+                  "x-playnet-reply": "ok-or-error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "no valid device signature (B4)"
+          },
+          "403": {
+            "description": "the door is outside this device's allowlist"
+          }
+        }
+      }
+    },
+    "/api/session/body-open-ceremony": {
+      "post": {
+        "operationId": "session.body-open-ceremony",
+        "summary": "A steward opens body ID's inception ceremony: K of its stewards must sign the group inception from their own browsers. Replies (ok . {have, need, published, what}).",
+        "description": "A steward opens body ID's inception ceremony: K of its stewards must sign the group inception from their own browsers. Replies (ok . {have, need, published, what}).\n\nObject: `session`. Callable by an enrolled device. Reply shape: `ok-or-error`.",
+        "tags": [
+          "law"
+        ],
+        "x-playnet-auth": "device",
+        "x-playnet-kind": "performative",
+        "x-playnet-to": "self",
+        "x-playnet-object": "session",
+        "x-playnet-seam": "bodyOpenCeremony",
+        "security": [
+          {
+            "deviceSignature": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "on open/cast/close/get-result a proposal id; on retire-payout/settle-payout a payout intent id; on add-scope! a scope id",
+                    "x-playnet-shape": "id"
+                  },
+                  "k": {
+                    "type": "integer",
+                    "description": "a requested quorum count; ignored, the ecosystem's own personhood quorum applies",
+                    "x-playnet-shape": "integer"
+                  }
+                },
+                "required": [
+                  "id",
+                  "k"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the door's reply (ok-or-error), as JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "const": "ok"
+                    },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "const": "ok"
+                        },
+                        {
+                          "description": "the value"
+                        }
+                      ],
+                      "description": "(ok . value)"
+                    },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "const": "error"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ],
+                      "description": "(error \"reason\")"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "error": {
+                          "type": "string"
+                        }
+                      },
+                      "description": "((error . \"reason\"))"
+                    }
+                  ],
+                  "x-playnet-reply": "ok-or-error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "no valid device signature (B4)"
+          },
+          "403": {
+            "description": "the door is outside this device's allowlist"
+          }
+        }
+      }
+    },
+    "/api/session/body-sign-preimage": {
+      "post": {
+        "operationId": "session.body-sign-preimage",
+        "summary": "The statement a steward signs for body ID — KIND is inception, rotation or role — as (ok . {what, said}); refused while no ceremony is open or it is at another step.",
+        "description": "The statement a steward signs for body ID — KIND is inception, rotation or role — as (ok . {what, said}); refused while no ceremony is open or it is at another step.\n\nObject: `session`. Callable by an enrolled device. Reply shape: `ok-or-error`.",
+        "tags": [
+          "law"
+        ],
+        "x-playnet-auth": "device",
+        "x-playnet-kind": "read",
+        "x-playnet-to": "self",
+        "x-playnet-object": "session",
+        "x-playnet-seam": "bodySign",
+        "security": [
+          {
+            "deviceSignature": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "on open/cast/close/get-result a proposal id; on retire-payout/settle-payout a payout intent id; on add-scope! a scope id",
+                    "x-playnet-shape": "id"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "description": "a symbol, sent as its name",
+                    "x-playnet-shape": "symbol"
+                  }
+                },
+                "required": [
+                  "id",
+                  "kind"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the door's reply (ok-or-error), as JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "const": "ok"
+                    },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "const": "ok"
+                        },
+                        {
+                          "description": "the value"
+                        }
+                      ],
+                      "description": "(ok . value)"
+                    },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "const": "error"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ],
+                      "description": "(error \"reason\")"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "error": {
+                          "type": "string"
+                        }
+                      },
+                      "description": "((error . \"reason\"))"
+                    }
+                  ],
+                  "x-playnet-reply": "ok-or-error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "no valid device signature (B4)"
+          },
+          "403": {
+            "description": "the door is outside this device's allowlist"
+          }
+        }
+      }
+    },
+    "/api/session/body-sign-signed": {
+      "post": {
+        "operationId": "session.body-sign-signed",
+        "summary": "The steward's SIGNATURE over SAID (the statement body-sign-preimage gave), verified under this session's own AID and counted by the ceremony; at k the inception publishes. Replies (ok . {have, need, published}).",
+        "description": "The steward's SIGNATURE over SAID (the statement body-sign-preimage gave), verified under this session's own AID and counted by the ceremony; at k the inception publishes. Replies (ok . {have, need, published}).\n\nObject: `session`. Callable by an enrolled device. Reply shape: `ok-or-error`.",
+        "tags": [
+          "law"
+        ],
+        "x-playnet-auth": "device",
+        "x-playnet-kind": "performative",
+        "x-playnet-to": "self",
+        "x-playnet-object": "session",
+        "x-playnet-seam": "bodySign",
+        "security": [
+          {
+            "deviceSignature": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "on open/cast/close/get-result a proposal id; on retire-payout/settle-payout a payout intent id; on add-scope! a scope id",
+                    "x-playnet-shape": "id"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "description": "a symbol, sent as its name",
+                    "x-playnet-shape": "symbol"
+                  },
+                  "said": {
+                    "type": "string",
+                    "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
+                    "description": "a SAID",
+                    "x-playnet-shape": "said"
+                  },
+                  "signature": {
+                    "type": "string",
+                    "description": "a CESR qb64 signature",
+                    "x-playnet-shape": "qb64"
+                  }
+                },
+                "required": [
+                  "id",
+                  "kind",
+                  "said",
+                  "signature"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the door's reply (ok-or-error), as JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "const": "ok"
+                    },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "const": "ok"
+                        },
+                        {
+                          "description": "the value"
+                        }
+                      ],
+                      "description": "(ok . value)"
+                    },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "const": "error"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ],
+                      "description": "(error \"reason\")"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "error": {
+                          "type": "string"
+                        }
+                      },
+                      "description": "((error . \"reason\"))"
+                    }
+                  ],
+                  "x-playnet-reply": "ok-or-error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "no valid device signature (B4)"
+          },
+          "403": {
+            "description": "the door is outside this device's allowlist"
+          }
+        }
+      }
+    },
+    "/api/session/my-bodies": {
+      "post": {
+        "operationId": "session.my-bodies",
+        "summary": "The bodies this AID stewards or belongs to, each {id, name, tags, steward, ceremony}; replies (ok . rows).",
+        "description": "The bodies this AID stewards or belongs to, each {id, name, tags, steward, ceremony}; replies (ok . rows).\n\nObject: `session`. Callable by an enrolled device. Reply shape: `ok-or-error`.",
+        "tags": [
+          "law"
+        ],
+        "x-playnet-auth": "device",
+        "x-playnet-kind": "read",
+        "x-playnet-to": "self",
+        "x-playnet-object": "session",
+        "x-playnet-seam": "bodiesRead",
+        "security": [
+          {
+            "deviceSignature": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "scope-id": {
+                    "type": "string",
+                    "description": "a scope (commune) id",
+                    "x-playnet-shape": "scope-id"
+                  }
+                },
+                "required": [
+                  "scope-id"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the door's reply (ok-or-error), as JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "const": "ok"
+                    },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "const": "ok"
+                        },
+                        {
+                          "description": "the value"
+                        }
+                      ],
+                      "description": "(ok . value)"
+                    },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "const": "error"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ],
+                      "description": "(error \"reason\")"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "error": {
+                          "type": "string"
+                        }
+                      },
+                      "description": "((error . \"reason\"))"
+                    }
+                  ],
+                  "x-playnet-reply": "ok-or-error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "no valid device signature (B4)"
+          },
+          "403": {
+            "description": "the door is outside this device's allowlist"
+          }
+        }
+      }
+    },
+    "/api/session/body": {
+      "post": {
+        "operationId": "session.body",
+        "summary": "Body ID, read by a steward or member: {id, name, tags, stewards, members, crossings, holdings (each with the law's status), findings (the scope's admission tests), exposure, ceremony}; replies (ok . body).",
+        "description": "Body ID, read by a steward or member: {id, name, tags, stewards, members, crossings, holdings (each with the law's status), findings (the scope's admission tests), exposure, ceremony}; replies (ok . body).\n\nObject: `session`. Callable by an enrolled device. Reply shape: `ok-or-error`.",
+        "tags": [
+          "law"
+        ],
+        "x-playnet-auth": "device",
+        "x-playnet-kind": "read",
+        "x-playnet-to": "self",
+        "x-playnet-object": "session",
+        "x-playnet-seam": "bodyRead",
+        "security": [
+          {
+            "deviceSignature": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "on open/cast/close/get-result a proposal id; on retire-payout/settle-payout a payout intent id; on add-scope! a scope id",
+                    "x-playnet-shape": "id"
+                  }
+                },
+                "required": [
+                  "id"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the door's reply (ok-or-error), as JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "const": "ok"
+                    },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "const": "ok"
+                        },
+                        {
+                          "description": "the value"
+                        }
+                      ],
+                      "description": "(ok . value)"
+                    },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "const": "error"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ],
+                      "description": "(error \"reason\")"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "error": {
+                          "type": "string"
+                        }
+                      },
+                      "description": "((error . \"reason\"))"
+                    }
+                  ],
+                  "x-playnet-reply": "ok-or-error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "no valid device signature (B4)"
+          },
+          "403": {
+            "description": "the door is outside this device's allowlist"
+          }
+        }
+      }
+    },
+    "/api/session/body-present-holding": {
+      "post": {
+        "operationId": "session.body-present-holding",
+        "summary": "A steward presents what body ID holds from JSON {kind, name, issuer, validUntil, ref} — a permit, a policy, a registration — as a resource the law reads against the bill; replies (ok . resource-id).",
+        "description": "A steward presents what body ID holds from JSON {kind, name, issuer, validUntil, ref} — a permit, a policy, a registration — as a resource the law reads against the bill; replies (ok . resource-id).\n\nObject: `session`. Callable by an enrolled device. Reply shape: `ok-or-error`.",
+        "tags": [
+          "law"
+        ],
+        "x-playnet-auth": "device",
+        "x-playnet-kind": "constative",
+        "x-playnet-to": "self",
+        "x-playnet-object": "session",
+        "x-playnet-seam": "bodyHold",
+        "security": [
+          {
+            "deviceSignature": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "on open/cast/close/get-result a proposal id; on retire-payout/settle-payout a payout intent id; on add-scope! a scope id",
+                    "x-playnet-shape": "id"
+                  },
+                  "json": {
+                    "type": "string",
+                    "contentMediaType": "application/json",
+                    "description": "a JSON document, as a string",
+                    "x-playnet-shape": "json"
+                  }
+                },
+                "required": [
+                  "id",
+                  "json"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the door's reply (ok-or-error), as JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "const": "ok"
+                    },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "const": "ok"
+                        },
+                        {
+                          "description": "the value"
+                        }
+                      ],
+                      "description": "(ok . value)"
+                    },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "const": "error"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ],
+                      "description": "(error \"reason\")"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "error": {
+                          "type": "string"
+                        }
+                      },
+                      "description": "((error . \"reason\"))"
+                    }
+                  ],
+                  "x-playnet-reply": "ok-or-error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "no valid device signature (B4)"
+          },
+          "403": {
+            "description": "the door is outside this device's allowlist"
+          }
+        }
+      }
+    },
+    "/api/session/body-admit": {
+      "post": {
+        "operationId": "session.body-admit",
+        "summary": "A governor admits body ID to SCOPE-ID; replies (ok . findings), the eight admission tests as findings, or refuses a caller without governor standing.",
+        "description": "A governor admits body ID to SCOPE-ID; replies (ok . findings), the eight admission tests as findings, or refuses a caller without governor standing.\n\nObject: `session`. Callable by an enrolled device. Reply shape: `promise:ok-or-error`.",
+        "tags": [
+          "law"
+        ],
+        "x-playnet-auth": "device",
+        "x-playnet-kind": "performative",
+        "x-playnet-to": "self",
+        "x-playnet-object": "session",
+        "x-playnet-seam": "bodyAdmit",
+        "security": [
+          {
+            "deviceSignature": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "scope-id": {
+                    "type": "string",
+                    "description": "a scope (commune) id",
+                    "x-playnet-shape": "scope-id"
+                  },
+                  "id": {
+                    "type": "string",
+                    "description": "on open/cast/close/get-result a proposal id; on retire-payout/settle-payout a payout intent id; on add-scope! a scope id",
+                    "x-playnet-shape": "id"
+                  }
+                },
+                "required": [
+                  "scope-id",
+                  "id"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the door's reply (promise:ok-or-error), as JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "const": "ok"
+                    },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "const": "ok"
+                        },
+                        {
+                          "description": "the value"
+                        }
+                      ],
+                      "description": "(ok . value)"
+                    },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "const": "error"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ],
+                      "description": "(error \"reason\")"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "error": {
+                          "type": "string"
+                        }
+                      },
+                      "description": "((error . \"reason\"))"
+                    }
+                  ],
+                  "x-playnet-reply": "promise:ok-or-error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "no valid device signature (B4)"
+          },
+          "403": {
+            "description": "the door is outside this device's allowlist"
+          }
+        }
+      }
+    },
     "/api/session/set-availability-ranges": {
       "post": {
         "operationId": "session.set-availability-ranges",

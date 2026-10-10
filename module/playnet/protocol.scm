@@ -778,6 +778,44 @@ or #f when no handler sends it."
           #:auth device #:topic identity #:reply ok-or-error #:kind constative #:to planner
           #:feature health-profile
           #:doc "Upserts this AID's profile tags in SCOPE-ID from a JSON array, replacing prior profile tags and keeping other classifications; replies (ok . tags).")
+    ;; ── bodies: a legal body declared, stewarded, incepted k-of-n, read by the law
+    ;;    (identity/body-doors.scm; every structure is a JSON string, every reply (ok . x) | (error . msg))
+    (door session declare-body (scope-id json)
+          #:auth device #:topic law #:reply ok-or-error #:kind performative #:to self
+          #:feature bodies
+          #:doc "Declares a legal body in SCOPE-ID from JSON {name, kind, role, jurisdiction, assetLock, register}: the caller, a recognised person (live PHC), is its first steward; the id is provisional until the stewards sign its inception. Replies (ok . {id, name, tags}).")
+    (door session body-add-steward (id aid)
+          #:auth device #:topic law #:reply ok-or-error #:kind performative #:to self
+          #:feature bodies
+          #:doc "A steward of body ID names AID a steward too; replies (ok . #t), or refuses a caller who is no steward.")
+    (door session body-open-ceremony (id k)
+          #:auth device #:topic law #:reply ok-or-error #:kind performative #:to self
+          #:feature bodies
+          #:doc "A steward opens body ID's inception ceremony: K of its stewards must sign the group inception from their own browsers. Replies (ok . {have, need, published, what}).")
+    (door session body-sign-preimage (id kind)
+          #:auth device #:topic law #:reply ok-or-error #:kind read #:to self
+          #:feature bodies
+          #:doc "The statement a steward signs for body ID — KIND is inception, rotation or role — as (ok . {what, said}); refused while no ceremony is open or it is at another step.")
+    (door session body-sign-signed (id kind said signature)
+          #:auth device #:topic law #:reply ok-or-error #:kind performative #:to self
+          #:feature bodies
+          #:doc "The steward's SIGNATURE over SAID (the statement body-sign-preimage gave), verified under this session's own AID and counted by the ceremony; at k the inception publishes. Replies (ok . {have, need, published}).")
+    (door session my-bodies (scope-id)
+          #:auth device #:topic law #:reply ok-or-error #:kind read #:to self
+          #:feature bodies
+          #:doc "The bodies this AID stewards or belongs to, each {id, name, tags, steward, ceremony}; replies (ok . rows).")
+    (door session body (id)
+          #:auth device #:topic law #:reply ok-or-error #:kind read #:to self
+          #:feature bodies
+          #:doc "Body ID, read by a steward or member: {id, name, tags, stewards, members, crossings, holdings (each with the law's status), findings (the scope's admission tests), exposure, ceremony}; replies (ok . body).")
+    (door session body-present-holding (id json)
+          #:auth device #:topic law #:reply ok-or-error #:kind constative #:to self
+          #:feature bodies
+          #:doc "A steward presents what body ID holds from JSON {kind, name, issuer, validUntil, ref} — a permit, a policy, a registration — as a resource the law reads against the bill; replies (ok . resource-id).")
+    (door session body-admit (scope-id id)
+          #:auth device #:topic law #:reply promise:ok-or-error #:kind performative #:to self
+          #:feature bodies
+          #:doc "A governor admits body ID to SCOPE-ID; replies (ok . findings), the eight admission tests as findings, or refuses a caller without governor standing.")
     (door session set-availability-ranges (scope-id json)
           #:auth device #:topic commitments #:reply ok-or-error #:kind preference #:to planner
           #:doc "Upserts this AID's availability window in SCOPE-ID from the dial's arcs JSON, creating the agent record with generic labour on first offer; replies the agent-store's answer.")

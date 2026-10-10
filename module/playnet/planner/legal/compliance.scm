@@ -48,7 +48,8 @@
   #:use-module (playnet planner legal registry)
   #:use-module (playnet planner legal registry-actor)
   #:use-module ((playnet utils clock) #:select (now instant->civil))
-  #:use-module (playnet planner legal policy))
+  #:use-module (playnet planner legal policy)
+  #:use-module ((playnet planner legal bodies) #:select (all-bodies scope-body-subject)))
 
 
 ;; deps: the demand vocabulary + fold, and its actor. The actor is still a
@@ -303,10 +304,14 @@
 ;;; primary-accountable). Without it — the plain case, one commune's own stores —
 ;;; a permit counts as held when any conforming resource stands in the observer
 ;;; (`'any`): the stores ARE the custody, and there is no one else to name.
+;;; SUBJECT-FOR names the holder by (proc cell spec) — a scope whose bodies
+;;; (legal/bodies.scm) hold its permits answers per demand; it stands in for
+;;; SUBJECT-AT when given.
 (define* (make-legal-decorate/observer
           #:key recipe-store spatial-thing-store registry observer
                 (act #f) (as-of #f) (subject-at #f)
-                (holder-field (if subject-at 'primary-accountable 'any))
+                (subject-for (and subject-at (lambda (p c s) (subject-at p c))))
+                (holder-field (if subject-for 'primary-accountable 'any))
                 (agent-store #f) (soft-profile %uncertain-forbid-profile))
   (make-legal-decorate
    #:recipe-store recipe-store #:spatial-thing-store spatial-thing-store
@@ -318,9 +323,10 @@
    ;; that decides whether a rule is still in force
    #:as-of as-of
    #:held? (lambda (proc-id cell spec)
-             (eq? 'satisfied (holding-status observer
-                                             (and subject-at (subject-at proc-id cell))
-                                             spec as-of #:holder-field holder-field)))))
+             (let ((subject (and subject-for (subject-for proc-id cell spec))))
+               (eq? 'satisfied (holding-status observer subject spec as-of
+                                               ;; a body answers for the demand, or nobody does
+                                               #:holder-field (if subject holder-field 'any)))))))
 
 ;;; ─── the scope's law, default-on at the solve door ─────────────────────
 ;;; A scope root carries its `^legal-registry` beside its other governance
@@ -339,10 +345,12 @@
 ;;; cannot name one (a mocked root, a minimal one) stands under no law — the
 ;;; empty case, not an error.
 ;;;
-;;; Custody at this door is `make-legal-decorate/observer`'s plain case: no
-;;; subject to name, so a permit standing in the root's own stores is the
-;;; root's permit. Expiry is read against today on the one clock (playnet utils
-;;; clock): an expired permit is not a permit.
+;;; Custody at this door: the root's bodies (legal/bodies.scm) answer for the
+;;; demands they hold or the doors they open (`scope-body-subject`); a demand
+;;; no body answers for is `make-legal-decorate/observer`'s plain case, a permit
+;;; standing in the root's own stores being the root's permit. Expiry is read
+;;; against today on the one clock (playnet utils clock): an expired permit is
+;;; not a permit.
 (define* (scope-legal-decorate root #:key (registry #f)
                                (as-of (iso-date (instant->civil (now))))
                                ;; the scope's OWN tolerance for legally-uncertain
@@ -352,13 +360,19 @@
                                 (legal-policy (false-if-exception ($ root 'plan-store))
                                               'uncertain-forbid)))
   (define registry* (or registry (false-if-exception ($ root 'legal-registry))))
+  (define agent-store (false-if-exception ($ root 'agent-store)))
+  (define observer (false-if-exception ($ root 'observer)))
+  (define bodies (or (and agent-store (false-if-exception (all-bodies agent-store))) '()))
   (and registry* (pair? ($ registry* 'rules))
        (make-legal-decorate/observer
         #:recipe-store ($ root 'recipe-store)
         #:spatial-thing-store ($ root 'spatial-thing-store)
         #:registry registry*
-        #:observer ($ root 'observer)
-        #:agent-store ($ root 'agent-store)
+        #:observer observer
+        #:agent-store agent-store
+        #:subject-for (and (pair? bodies)
+                           (scope-body-subject agent-store observer bodies
+                                               #:path-of (spatial-path-reader ($ root 'spatial-thing-store))))
         #:as-of as-of
         #:soft-profile soft-profile)))
 

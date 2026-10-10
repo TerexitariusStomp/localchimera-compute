@@ -64,7 +64,8 @@
     (eco-draw        mirrored   "draws on / emits into the shared environment")
     (food-vending    avoidable  "sells or serves food to the public" handover)
     (data-processing mirrored   "processes other people's personal data")
-    (pool-risk       mirrored   "insures or pools risk for others" handover)))
+    (pool-risk       mirrored   "insures or pools risk for others" handover)
+    (organise        by-choice  "presses a program, organises or strikes collectively" no-flow)))
 
 ;;; jurisdiction-registered extensions (mutable; in the live engine this is the
 ;;; governance actor's state — see legal/registry.scm's actor sketch).
@@ -338,6 +339,10 @@
     (hold-funds      asset   ,(lambda (a) (and (fact-kind? a 'money) (fact-ref a 'split?))))
     (own-property    asset   ,(lambda (a) (and (or (fact-kind? a 'land) (fact-kind? a 'dwelling))
                                                (not (member "tenure:lodged" (fact-ref a 'classes))))))
+    ;; a titled vehicle held is one on public ways: its registration and
+    ;; third-party cover are owed by whoever holds it, driven or not
+    (public-vehicle  asset   ,(lambda (a) (and (fact-kind? a 'vehicle)
+                                               (not (fact-kind? a 'self-propelled)))))
     ;; one record a door writes: money sent on a member's behalf; a good handed
     ;; over against labour hours
     (hold-funds          record ,(lambda (r) (and (memq (fact-ref r 'action) *rights-moving-actions*)

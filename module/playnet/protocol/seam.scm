@@ -689,6 +689,46 @@
              "Promise<unknown>"
              ((session . my-contact-points))
              "JSON {delivers: string[], points: {kind, value, state}[]}: the kinds this commune delivers on, and which of your contact points it holds (state bound or pending).")
+    (handler "bodyDeclare"
+             "scopeId: string, body: string"
+             "Promise<unknown>"
+             ((session . declare-body))
+             "Declare a legal body in a scope: BODY is JSON {name, kind, role, jurisdiction, assetLock, register}; you are its first steward. \"ok:\" + JSON {id, name, tags} | \"err:…\".")
+    (handler "bodyAddSteward"
+             "body: string, aid: string"
+             "Promise<unknown>"
+             ((session . body-add-steward))
+             "Name a person a steward of a body you steward. \"ok\" | \"err:…\".")
+    (handler "bodyOpenCeremony"
+             "body: string, k: number"
+             "Promise<unknown>"
+             ((session . body-open-ceremony))
+             "Open the body's inception: K of its stewards must sign. \"ok:\" + JSON {have, need, published, what} | \"err:…\".")
+    (handler "bodySign"
+             "body: string, what: string"
+             "Promise<unknown>"
+             ((session . body-sign-preimage) (session . body-sign-signed))
+             "Sign the body's open statement (WHAT: inception, rotation or role) here, with your own key, and hand the signature to the ceremony; at k it publishes. \"ok:\" + JSON {have, need, published} | \"err:…\".")
+    (handler "bodyRead"
+             "body: string"
+             "Promise<unknown>"
+             ((session . body))
+             "One body whole, as JSON {id, name, tags, stewards, members, crossings, holdings, findings, exposure, ceremony} | \"err:…\".")
+    (handler "bodiesRead"
+             "scopeId: string"
+             "Promise<unknown>"
+             ((session . my-bodies))
+             "The bodies you steward or belong to, as JSON [{id, name, tags, steward, ceremony}] | \"err:…\".")
+    (handler "bodyHold"
+             "body: string, holding: string"
+             "Promise<unknown>"
+             ((session . body-present-holding))
+             "Present what a body you steward holds: HOLDING is JSON {kind, name, issuer, validUntil, ref}. \"ok:\" + resource id | \"err:…\".")
+    (handler "bodyAdmit"
+             "scopeId: string, body: string"
+             "Promise<unknown>"
+             ((session . body-admit))
+             "Admit a body to a scope (a governor's act); the admission tests come back as JSON findings | \"err:…\".")
     (handler "pushKey"
              ""
              "Promise<unknown>"

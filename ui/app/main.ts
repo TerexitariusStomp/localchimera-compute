@@ -901,6 +901,8 @@ import {} from './tabs/governance.js';
 // ── the ecology face → app/tabs/ecology.js (the commons' ecological agents + speak)
 import {} from './tabs/ecology.js';
 import {} from './tabs/recipes.js';
+// the legal bodies model: reads your bodies on every seat taken (settings › legal bodies, ?face=bodies)
+import {} from './bodies.js';
 import {} from './tabs/plan.js';
 // the log face: the captain's log — voice-first entries that suggest contacts
 // and observable VF events

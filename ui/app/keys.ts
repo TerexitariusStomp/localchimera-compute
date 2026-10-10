@@ -65,6 +65,7 @@ export const K = {
   home:           k("pn.home", "the registered home place", "playnet-home"),
   locationMode:   k("pn.location.mode", "how location is shared", "playnet-location-mode"),
   reach:          k("pn.reach", "the ways to reach this person", "playnet-reach"),
+  bodiesDraft:    k("pn.bodies.draft", "a legal body drafted, not yet declared"),
   barcodes:       k("pn.barcodes", "barcodes paired with resources", "playnet-barcodes"),
   photoQueue:     k("pn.photo.queue", "shots waiting to be read", "playnet-photo-queue"),
   dropoffLog:     k("pn.dropoff.log", "the drop-off log", "playnet-dropoff-log"),

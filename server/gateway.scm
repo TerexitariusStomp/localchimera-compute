@@ -167,6 +167,9 @@
              ((playnet notify rendered) #:select (rendered-notification))
              ((playnet interface adapters email) #:select (^email-adapter email-transport?))
              ((playnet identity contact-points) #:select (make-contact-point-desk))
+             ((playnet identity body-doors) #:select (current-body-service))
+             ((playnet identity body-desk) #:select (^body-ceremony-desk))
+             ((playnet planner doors bodies) #:select (^body-service))
              ((playnet notify router) #:select (^notify-router))
              ;; Monero + fleet provisioning
              (playnet gateway monero-boot)
@@ -1798,6 +1801,26 @@
                         (device-keys-at aid (or at (current-time)))))))
            (with-vat gateway-vat
              (oobi-host-spawn-from-dir oobi-dir))))
+
+       ;; Legal bodies (docs/legal/bodies.md): the body service stands in the
+       ;; planner's vat beside the stores it folds over, reaching each scope's
+       ;; root through the planner service; the ceremony desk stands beside the
+       ;; oobi-host, where a body's k-of-n inception reads and writes key logs.
+       ;; A ceremony that publishes closes the body through the service, and
+       ;; every session's body doors send to the service through the cell.
+       (define body-service
+         (with-vat planner-vat
+           (spawn ^body-service
+                  (lambda (sid) ($ planner-service 'scope-root-ref sid))
+                  (lambda () (map (lambda (r) (assq-ref r 'id)) ($ planner-service 'scope-list))))))
+       (define body-desk
+         (with-vat gateway-vat
+           (spawn ^body-ceremony-desk oobi-host
+                  (lambda (scope-id provisional-id aid)
+                    (<-np body-service 'close! scope-id provisional-id aid)))))
+       (with-vat planner-vat ($ body-service 'set-desk! body-desk))
+       (current-body-service (lambda (op . args) (apply <- body-service op args)))
+       (log! "  [gateway] legal bodies: service up, ceremonies at the oobi-host~%")
 
        ;; §4.6 / §4.1: Wire the oobi-host-mirror into the default
        ;; witness list so durable scopes auto-publish their KEL events

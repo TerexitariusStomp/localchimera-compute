@@ -1042,7 +1042,7 @@ freshen-ccache:
 test-fast: lint-parens lint-law lint-docs check-wasm-deps check-ui-fresh test-gplay test-knowledge test-notify-registry test-notify-adapters test-push-adapter \
       test-recipient-registry test-notify-router test-email-transport check-provenance test-provenance \
       test-vault test-keystore test-handler-bridge test-capabilities test-pwa lint-sw test-rest test-bytes test-keys test-attention test-push test-rpc test-store test-idb test-log-bound test-rns-identity test-containment-fold test-reactive test-room-model test-mesh-plan test-ice-servers test-units-fallback test-utter test-count test-qr test-labels test-store-tree test-stock test-photo test-look test-lend test-contest test-store-view test-held test-demo-store test-demo-world test-symbols test-reach test-queue test-allotment-ui test-fuzzy test-conform-ui test-caption-window test-refsel test-diag-redact test-offers test-ring test-sky test-runway test-partition test-regions test-nutrition test-housing-ui test-declarations test-bran-derivations \
-      test-contact-binding test-cards test-planner-facet test-declared-dispatch test-http-door test-mcp-door test-device-doors test-vf-lint test-lint-records-door test-issue-revoke-credential test-admit-commune-door test-delegation-scope-arg test-lobby-arg-split test-websocket-fragments test-websocket-masking test-declare-arg-split test-offer-work-drift-door test-plan-materialize-opts-door test-count-stock test-count-anchor test-count-anchor-2 test-count-expected test-wire-snapshot test-observation-evidence test-labels-containers test-counting test-planned-counts test-allotment test-see-door test-contest-count test-evidence-door check-protocol check-protocol-fresh check-wire-types-fresh check-crossing-catalogue check-nutrition-fresh check-product-law-fresh check-attribution-fresh check-notice-facts-fresh check-rid-mentions test-calendar-mail check-de-fresh check-na-fresh check-law-fresh check-physics-fresh check-housing-fresh check-count-fresh check-rel-fresh check-reach-fresh check-units-fresh check-limits-fresh check-recipe-demo-fresh check-demo-fresh test-demo-neighbourhood test-adjustment test-counts check-test-wiring
+      test-contact-binding test-body-doors test-cards test-planner-facet test-declared-dispatch test-http-door test-mcp-door test-device-doors test-vf-lint test-lint-records-door test-issue-revoke-credential test-admit-commune-door test-delegation-scope-arg test-lobby-arg-split test-websocket-fragments test-websocket-masking test-declare-arg-split test-offer-work-drift-door test-plan-materialize-opts-door test-count-stock test-count-anchor test-count-anchor-2 test-count-expected test-wire-snapshot test-observation-evidence test-labels-containers test-counting test-planned-counts test-allotment test-see-door test-contest-count test-evidence-door check-protocol check-protocol-fresh check-wire-types-fresh check-crossing-catalogue check-nutrition-fresh check-product-law-fresh check-attribution-fresh check-notice-facts-fresh check-rid-mentions test-calendar-mail check-de-fresh check-na-fresh check-law-fresh check-physics-fresh check-housing-fresh check-count-fresh check-rel-fresh check-reach-fresh check-limits-fresh check-recipe-demo-fresh check-demo-fresh test-demo-neighbourhood test-adjustment test-counts check-test-wiring
 
 # Every tracked .scm reads to EOF. ~3s over ~1070 files, so it can sit in
 # front of the whole suite rather than off to the side.
@@ -1773,6 +1773,11 @@ test-bran-derivations:
 test-contact-binding:
 	$(GUILE_TEST_DEV) -L module -L tests tests/gateway/test-contact-binding.scm
 
+# the body doors: declare, stewards, the k-of-n inception signed from the seat,
+# holdings, the read and admission — over a stub body service
+test-body-doors:
+	$(GUILE_TEST_DEV) -L module -L tests tests/gateway/test-body-doors.scm
+
 # Cards on ^lobby-session — how to reach one person, handed to another:
 # signed by the giver, sealed to the receiver, one per pair, erased on withdrawal.
 test-cards:
@@ -1958,15 +1963,6 @@ reach-emit:
 
 check-reach-fresh:
 	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/check-emit-fresh.sh check-reach-fresh ui/app/reach-catalogue.ts reach-emit tools/reach-emit.scm
-
-# The units the planner writes and the questions it asks of one — utils/units.scm
-# states them once; ui/app/units-catalogue.ts is the generated copy the page reads.
-.PHONY: units-emit check-units-fresh
-units-emit:
-	$(GUILE_TEST_DEV) -L module tools/units-emit.scm ui/app/units-catalogue.ts
-
-check-units-fresh:
-	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/check-emit-fresh.sh check-units-fresh ui/app/units-catalogue.ts units-emit tools/units-emit.scm
 
 # The demo recipes' standing is read off their runs by the functions a live
 # scope's is (planner/solve/recipe-response.scm, doors/record-rows.scm's recipe-response table), so
@@ -2460,7 +2456,7 @@ test-ux: browser/repl.wasm
 # For the dial against a REAL gateway see test-signup-live-ux.
 # NB: the per-test targets must NOT be .PHONY — GNU Make skips implicit-rule
 # search for phony targets, so the pattern rule below would never fire.
-DIAL_UX = signup nav respond events availability recipe web recipeface walkie room settings share-bar share-sheet share-hear account-sheet face-dock feedback withholding log toast match pribar hand chrome earth faces wheel deeplink forum observe spacetime family corpus shop count labels planned-count law responsive sw-offline
+DIAL_UX = bodies signup nav respond events availability recipe web recipeface walkie room settings share-bar share-sheet share-hear account-sheet face-dock feedback withholding log toast match pribar hand chrome earth faces wheel deeplink forum observe spacetime family corpus shop count labels planned-count law responsive sw-offline
 .PHONY: test-app-ux
 test-app-ux: $(addprefix test-,$(addsuffix -ux,$(DIAL_UX)))
 
@@ -2649,6 +2645,15 @@ test-keri-forget:
 test-identity-kel:
 	$(GUILE_TEST_DEV) -L module tests/identity/test-kel-in-hand.scm
 
+# a body's AID is the k-of-n group of its stewards' dial AIDs: the ceremony,
+# the threshold reader, the rotation under the pre-rotation constraint
+test-identity-body-ceremony:
+	$(GUILE_TEST_DEV) -L module tests/identity/test-body-ceremony.scm
+
+# the body-role credential: a projection the stewards sign k of n
+test-governance-body-role-credential:
+	$(GUILE_TEST_DEV) -L module tests/governance/test-body-role-credential.scm
+
 # losing your passcode is survivable when you gave pieces of it to people you
 # trust — and k-1 of them learn nothing
 test-recovery-share:
@@ -2811,7 +2816,7 @@ test-schemas:
 	$(GUILE_TEST_DEV) -L module tools/saidify-schemas.scm --check
 	$(GUILE_TEST_DEV) -L module tests/keri/test-schemas.scm
 
-test-keri: test-keri-blake3 test-keri-signify test-keri-signify-portable test-keri-oobi-replies test-keri-signify-integration test-keri-signup-with-icp test-keri-signup-with-kel test-keri-lobby-seat-gate test-keri-signup-disabled-gate test-keri-forget test-identity-kel test-recovery-share test-keri-reticulum-binding test-mesh-mailbox test-did-keri test-keri-bridge test-keri-bridge-extra test-keri-credentials test-keri-credentials-ipex test-ipex-policy test-ipex-grant-handler test-keri-witnesses test-keri-notifications test-keri-recovery test-keri-lobby-auth test-schemas
+test-keri: test-keri-blake3 test-keri-signify test-keri-signify-portable test-keri-oobi-replies test-keri-signify-integration test-keri-signup-with-icp test-keri-signup-with-kel test-keri-lobby-seat-gate test-keri-signup-disabled-gate test-keri-forget test-identity-kel test-identity-body-ceremony test-governance-body-role-credential test-recovery-share test-keri-reticulum-binding test-mesh-mailbox test-did-keri test-keri-bridge test-keri-bridge-extra test-keri-credentials test-keri-credentials-ipex test-ipex-policy test-ipex-grant-handler test-keri-witnesses test-keri-notifications test-keri-recovery test-keri-lobby-auth test-schemas
 
 # ── SMS Wall ───────────────────────────────────────────────────────────────────
 # Smoke test for the WALLS.RIP API client module

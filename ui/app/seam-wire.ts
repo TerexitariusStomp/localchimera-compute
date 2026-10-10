@@ -411,6 +411,30 @@ export interface SeamHandlers {
   /** JSON {delivers: string[], points: {kind, value, state}[]}: the kinds this commune delivers on, and which of your contact points it holds (state bound or pending). */
   // doors: session/my-contact-points
   reachRead?(): Promise<unknown>;
+  /** Declare a legal body in a scope: BODY is JSON {name, kind, role, jurisdiction, assetLock, register}; you are its first steward. "ok:" + JSON {id, name, tags} | "err:…". */
+  // doors: session/declare-body
+  bodyDeclare?(scopeId: string, body: string): Promise<unknown>;
+  /** Name a person a steward of a body you steward. "ok" | "err:…". */
+  // doors: session/body-add-steward
+  bodyAddSteward?(body: string, aid: string): Promise<unknown>;
+  /** Open the body's inception: K of its stewards must sign. "ok:" + JSON {have, need, published, what} | "err:…". */
+  // doors: session/body-open-ceremony
+  bodyOpenCeremony?(body: string, k: number): Promise<unknown>;
+  /** Sign the body's open statement (WHAT: inception, rotation or role) here, with your own key, and hand the signature to the ceremony; at k it publishes. "ok:" + JSON {have, need, published} | "err:…". */
+  // doors: session/body-sign-preimage, session/body-sign-signed
+  bodySign?(body: string, what: string): Promise<unknown>;
+  /** One body whole, as JSON {id, name, tags, stewards, members, crossings, holdings, findings, exposure, ceremony} | "err:…". */
+  // doors: session/body
+  bodyRead?(body: string): Promise<unknown>;
+  /** The bodies you steward or belong to, as JSON [{id, name, tags, steward, ceremony}] | "err:…". */
+  // doors: session/my-bodies
+  bodiesRead?(scopeId: string): Promise<unknown>;
+  /** Present what a body you steward holds: HOLDING is JSON {kind, name, issuer, validUntil, ref}. "ok:" + resource id | "err:…". */
+  // doors: session/body-present-holding
+  bodyHold?(body: string, holding: string): Promise<unknown>;
+  /** Admit a body to a scope (a governor's act); the admission tests come back as JSON findings | "err:…". */
+  // doors: session/body-admit
+  bodyAdmit?(scopeId: string, body: string): Promise<unknown>;
   /** The commune's Web Push key (VAPID public key, base64url), which a browser subscribes with; "" when the commune sends no push. */
   // doors: lobby/vapid-public-key
   pushKey?(): Promise<unknown>;

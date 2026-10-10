@@ -2029,6 +2029,57 @@
             (fetch-contacts!)
             (reply! cb (string-append "ok:" (or (alist-ref v 'status) "")))))))))))
 
+;;; ── bodies: a legal body declared, stewarded, incepted k-of-n ───────────
+;; docs/legal/bodies.md. Each handler is one session door (identity/
+;; body-doors.scm); a structure crosses as the JSON string it is, and a reply
+;; with a body in it comes back as JSON. The one act done HERE is the
+;; signature: the statement is fetched, signed with this seat's own key
+;; (sign-said-as-self!, the witness-attest shape), and handed back.
+(define (body-json-reply cb)
+  (lambda (v) (reply! cb (string-append "ok:" (scm->json-canonical v)))))
+(define (handle-body-declare scope-id body cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'declare-body (if (string? scope-id) scope-id (or *scope* ""))
+                          (if (string? body) body "{}"))
+        (body-json-reply cb))))
+(define (handle-body-add-steward id aid cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'body-add-steward id aid)
+        (lambda (_) (reply! cb "ok")))))
+(define (handle-body-open-ceremony id k cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'body-open-ceremony id (if (number? k) (inexact->exact (round k)) 1))
+        (body-json-reply cb))))
+(define (handle-body-sign id what cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'body-sign-preimage id what)
+        (lambda (p)
+          (let ((said (and (pair? p) (assoc-ref p "said"))))
+            (if (not (string? said))
+                (reply! cb "err:nothing to sign")
+                (sign-said-as-self! said (lambda (sig)
+                  (if (not sig)
+                      (reply! cb "err:this device holds no key to sign with")
+                      (with-vat *vat*
+                        (planner-call cb (<- *session* 'body-sign-signed id what said sig)
+                          (body-json-reply cb))))))))))))
+(define (handle-body-read id cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'body id)
+        (lambda (v) (reply! cb (scm->json-canonical v))))))
+(define (handle-bodies-read scope-id cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'my-bodies (if (string? scope-id) scope-id (or *scope* "")))
+        (lambda (v) (reply! cb (scm->json-canonical v))))))
+(define (handle-body-hold id holding cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'body-present-holding id (if (string? holding) holding "{}"))
+        (lambda (v) (reply! cb (string-append "ok:" (if (string? v) v "")))))))
+(define (handle-body-admit scope-id id cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'body-admit (if (string? scope-id) scope-id (or *scope* "")) id)
+        (lambda (v) (reply! cb (scm->json-canonical v))))))
+
 ;;; ── the device key: cold root, hot device keys ──────────────────────────
 ;; docs/planning/identity/device-keys.md. The root authorizes THIS device's key with a
 ;; device-authorization credential it signs; the device keeps the wire
@@ -3930,6 +3981,22 @@
             ;; KERI key signs the stance ACDC (falls back to the legacy unsigned
             ;; cast when a session has no signing key).
             ("cast"           . ,handle-cast-signed)))
+;; The registry above is ONE quoted list, and Hoot's bundle traps at boot
+;; ("table index is out of bounds") once that one literal passes ~150
+;; entries — bisected 2026-10-10 with the body handlers: the same entries
+;; registered from a second list boot, so the registry grows as lists of
+;; this size, not as one. tools/protocol-lint reads every registration
+;; wherever it is written.
+(for-each (lambda (entry)
+            (seam-set-handler! (car entry) (procedure->external (cdr entry))))
+          `(("bodyDeclare"     . ,handle-body-declare)
+            ("bodyAddSteward"  . ,handle-body-add-steward)
+            ("bodyOpenCeremony" . ,handle-body-open-ceremony)
+            ("bodySign"        . ,handle-body-sign)
+            ("bodyRead"        . ,handle-body-read)
+            ("bodiesRead"      . ,handle-bodies-read)
+            ("bodyHold"        . ,handle-body-hold)
+            ("bodyAdmit"       . ,handle-body-admit)))
 
 ;; Hand-rolled sref parser. goblins' string->ocapn-id goes through
 ;; (web uri), whose Hoot compilation (JS-RegExp-backed shim) misparses
