@@ -162,12 +162,11 @@
                              (hashmap-set children-map parent without-c))))
       (values new-parents new-children)))
 
-  (define* (rebuild new-kind new-parents new-children
-                    #:optional
-                    (new-refs      refs-map)
-                    (new-aid-names aid-names-map))
-    (^scope-graph bcom new-kind new-parents new-children
-                  new-refs new-aid-names))
+  ;; the same graph with the named maps changed
+  (define* (rebuild #:key (kind-map kind-map) (parents-map parents-map)
+                    (children-map children-map) (refs-map refs-map)
+                    (aid-names-map aid-names-map))
+    (^scope-graph bcom kind-map parents-map children-map refs-map aid-names-map))
 
   (methods
 
@@ -235,7 +234,9 @@
          (cond
           ((null? ps)
            (when (pair? parents) (fire-reparent! np aid))
-           (bcom (rebuild new-kind np nc new-refs new-aid-names) 'ok))
+           (bcom (rebuild #:kind-map new-kind #:parents-map np #:children-map nc
+                          #:refs-map new-refs #:aid-names-map new-aid-names)
+                 'ok))
           (else
            (let* ((parent (car ps))
                   (np2    (hashmap-set np aid
@@ -257,7 +258,7 @@
      (let ((nr (if ref (hashmap-set refs-map aid ref) refs-map))
            (nn (if aid-name (hashmap-set aid-names-map aid aid-name)
                    aid-names-map)))
-       (bcom (rebuild kind-map parents-map children-map nr nn) 'ok)))
+       (bcom (rebuild #:refs-map nr #:aid-names-map nn) 'ok)))
 
     ((find-ref aid)        (hashmap-ref refs-map aid #f))
     ((get-aid-name aid)    (hashmap-ref aid-names-map aid #f))
@@ -271,13 +272,13 @@
      (call-with-values (lambda () (link! child parent 'local))
        (lambda (np nc)
          (fire-reparent! np child)
-         (bcom (rebuild kind-map np nc) 'ok))))
+         (bcom (rebuild #:parents-map np #:children-map nc) 'ok))))
 
     ((note-parent-link-with-source child parent source)
      (call-with-values (lambda () (link! child parent source))
        (lambda (np nc)
          (fire-reparent! np child)
-         (bcom (rebuild kind-map np nc) 'ok))))
+         (bcom (rebuild #:parents-map np #:children-map nc) 'ok))))
 
     ;; the reparent sink (see %on-reparent above): the one bridge from this
     ;; credential graph to a derived tree. Every scope with parents is
@@ -297,7 +298,7 @@
      (call-with-values (lambda () (unlink! child parent))
        (lambda (np nc)
          (fire-reparent! np child)
-         (bcom (rebuild kind-map np nc) 'ok))))
+         (bcom (rebuild #:parents-map np #:children-map nc) 'ok))))
 
     ;; ── note-decompose ────────────────────────────────────────────────────
     ;; A scope was split/dissolved. Drop it from all three maps; sever
@@ -336,7 +337,9 @@
        ;; every child of the dissolved scope changed parents — tell the sink
        (hashmap-fold (lambda (child _ acc) (fire-reparent! np2 child) acc)
                      #f children)
-       (bcom (rebuild nk np2 nc2 nr nn) 'ok)))
+       (bcom (rebuild #:kind-map nk #:parents-map np2 #:children-map nc2
+                      #:refs-map nr #:aid-names-map nn)
+             'ok)))
 
     ;; ── snapshot ──────────────────────────────────────────────────────────
     ;; Returns a serialisable snapshot for diagnostics / the /scopes

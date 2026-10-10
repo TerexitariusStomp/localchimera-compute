@@ -20,7 +20,7 @@
 
 (define-module (playnet ddmrp records)
   #:use-module (srfi srfi-1)
-  #:use-module ((playnet utils records) #:select (define-vf-record vf-record-type vf-record-constructor vf-record-predicate vf-record-accessor vf-record-modifier vf-record-type-name vf-record-type-fields vf-record-copier))
+  #:use-module ((playnet utils records) #:select (define-vf-record vf-record-type vf-record-constructor vf-record-predicate vf-record-accessor vf-record-modifier vf-record-type-name vf-record-type-fields vf-record-copier vf-record-maker))
   #:use-module ((playnet vf serdes) #:select (register-vf-records! register-vf-record!))
   #:export (make-positioning-analysis
             *decoupling-tests*
@@ -141,8 +141,7 @@
   (id name item-type lead-time-factor vrd vrs variability-factor order-cycle-days ost-multiplier recalculation-cadence lead-time-category variability-category code note)
   #:register register-vf-record!)
 
-(define make-buffer-profile
-  (vf-record-constructor <buffer-profile>))
+(define make-buffer-profile (vf-record-maker <buffer-profile>))
 
 
 ;;; BufferZone — per-ResourceSpecification computed DDMRP buffer parameters.

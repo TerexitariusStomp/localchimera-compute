@@ -71,14 +71,13 @@
 ;; one commons, one containment tree, alongside Doon/Cascadia/Berlin.
 (define *bay-area*
   (register-bioregion!
-   (make-bioregion "bay-area" "San Francisco Bay Area" 37.77 -122.42 "biosphere"
-     *bay-area-scenarios/tail-robust*                          ; FUTURES [DATA]
-     ;; Water is a COMMONS, and here the record says so outright: "over-allocated"
-     ;; IS the distributed-draw failure — many claims each defensible alone,
-     ;; collectively past the envelope. That is the exact case playnet.typ
-     ;; §"Shared budgets" gives the pooled budget for, so it is held over the
-     ;; whole shed. Topsoil stays per-plot: one field's carbon is not the next's.
-     (list (frag-within "bay-area" '("water") (list 80.0 120.0 0.15 65.0)
+   (make-bioregion #:id "bay-area"
+                   #:name "San Francisco Bay Area"
+                   #:lat 37.77
+                   #:lon -122.42
+                   #:parent "biosphere"
+                   #:scenarios *bay-area-scenarios/tail-robust*
+                   #:fragilities (list (frag-within "bay-area" '("water") (list 80.0 120.0 0.15 65.0)
                         #:note "over-allocated, extremely stressed, POOLED; α=0.15 [DRAFT]")
            (cons "topsoil" (list 80.0 120.0 0.30 40.0))))))    ; SOC-mining envelope; carbon-poor CA cropland [DRAFT]
 

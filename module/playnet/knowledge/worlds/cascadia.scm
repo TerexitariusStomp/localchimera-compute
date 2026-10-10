@@ -64,24 +64,13 @@
 ;; loaded by id from boundaries.json (bioregions.scm) — generic, no need to carry it here.
 (define *cascadia*
   (register-bioregion!
-   (make-bioregion "cascadia" "Cascadia" 45.0 -123.0 "biosphere"
-     *cascadia-scenarios/tail-robust*                          ; FUTURES [DATA]
-     ;; ── each limit at the SCALE it is actually held at ──────────────────────
-     ;; All three are drawn on by every scope in the region, so all three are
-     ;; POOLED (`within`): playnet.typ §"Shared budgets" — one envelope all
-     ;; consumers share, which "catches the distributed-draw failure mode in
-     ;; which many scopes each individually stay within their share, but
-     ;; collectively exceed it". A per-spec rate would give each logger their
-     ;; own forest and each irrigator their own river.
-     ;;
-     ;; What differs is the WINDOW, and old-growth is why the distinction is
-     ;; not cosmetic. Streamflow and salmon RENEW: a season's flow returns next
-     ;; season, a run that is not extirpated spawns again — so their limit is a
-     ;; rate, a sustainable draw that resets. Old growth does not renew on any
-     ;; horizon a plan can see; its own comment says irreversible, and a rate
-     ;; would have refilled it every period. It is a HORIZON total: cut it and
-     ;; it is cut.
-     (list (frag-within "cascadia" '("streamflow") (list 80.0 120.0 0.20 50.0)
+   (make-bioregion #:id "cascadia"
+                   #:name "Cascadia"
+                   #:lat 45.0
+                   #:lon -123.0
+                   #:parent "biosphere"
+                   #:scenarios *cascadia-scenarios/tail-robust*
+                   #:fragilities (list (frag-within "cascadia" '("streamflow") (list 80.0 120.0 0.20 50.0)
                         #:note "summer low-flow (salmon-bearing), pooled; renews each season [DRAFT]")
            (frag-within "cascadia" '("old-growth") (list 80.0 120.0 0.10 60.0)
                         #:window 'horizon

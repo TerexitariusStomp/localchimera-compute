@@ -349,8 +349,10 @@
                       (planning-scenario-note s)))
                    (bioregion-scenarios b))))
         (register-bioregion!
-         (make-bioregion "berlin" (bioregion-name b)
-                         (bioregion-lat b) (bioregion-lon b)
-                         (bioregion-parent b)
-                         cross
-                         (bioregion-fragilities b)))))))
+         (make-bioregion #:id "berlin"
+                         #:name (bioregion-name b)
+                         #:lat (bioregion-lat b)
+                         #:lon (bioregion-lon b)
+                         #:parent (bioregion-parent b)
+                         #:scenarios cross
+                         #:fragilities (bioregion-fragilities b)))))))

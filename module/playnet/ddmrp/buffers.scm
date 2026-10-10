@@ -1137,11 +1137,10 @@
   "Factory: create BufferProfile from shorthand selectors."
   (let ((ltf-val (or (assq-ref *standard-ltf* ltf-class) 2.0))
         (vf-val (or (assq-ref *standard-vf* vf-class) 0.5)))
-    (make-buffer-profile
-      (generate-id "bp-") #f #f      ; id, name, item-type
-      ltf-val #f #f vf-val           ; lead-time-factor, vrd, vrs, variability-factor
-      #f ost-mult                    ; order-cycle-days, ost-multiplier
-      #f #f #f #f #f)))              ; cadence, lead-time and variability categories, code, note
+    (make-buffer-profile #:id (generate-id "bp-")
+                         #:lead-time-factor ltf-val
+                         #:variability-factor vf-val
+                         #:ost-multiplier ost-mult)))
 
 (define (cascade-component-daf component-base-adu parent-contributions)
   "Effective DAF for shared component. Ch 8 §8.2.1.

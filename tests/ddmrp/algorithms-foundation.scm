@@ -116,13 +116,12 @@
 
     (display "\n=== Test: DDMRP Buffer Zones ===\n")
 
-    (let* ((profile (make-buffer-profile
-                      "bp-1" "Test Profile" 'manufactured
-                      1.0  ;; leadTimeFactor
-                      #f #f
-                      0.5  ;; variabilityFactor
-                      7    ;; orderCycleDays
-                      #f #f #f #f #f #f))
+    (let* ((profile (make-buffer-profile #:id "bp-1"
+                                         #:name "Test Profile"
+                                         #:item-type 'manufactured
+                                         #:lead-time-factor 1.0
+                                         #:variability-factor 0.5
+                                         #:order-cycle-days 7))
            ;; ADU=25, DLT=10, MOQ=50
            (levels (compute-buffer-zone-levels profile 25 "kg" 10 50 "kg")))
       ;; red-base = ADU * DLT * LTF = 25 * 10 * 1.0 = 250
@@ -191,8 +190,12 @@
            "2026-03-27T00:00:00Z")))
 
     (let* ((bz ($ ($ scope 'buffer-zone-store) 'get-zone "bz-wheat"))
-           (profile (make-buffer-profile
-                      "bp-1" "Test" 'manufactured 1.0 #f #f 0.5 7 #f #f #f #f #f #f))
+           (profile (make-buffer-profile #:id "bp-1"
+                                         #:name "Test"
+                                         #:item-type 'manufactured
+                                         #:lead-time-factor 1.0
+                                         #:variability-factor 0.5
+                                         #:order-cycle-days 7))
            (nfp-result (compute-nfp "spec-wheat" bz profile ps obs)))
       ;; NFP = onhand(930) + onorder(0) - qualifiedDemand(0) = 930
       (check "nfp" (approx= 930 (assq-ref nfp-result 'nfp) 1))

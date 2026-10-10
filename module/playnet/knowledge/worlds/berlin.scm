@@ -74,15 +74,13 @@
 ;; commons, one containment tree. Its boundary (map polygon) loads by id if declared.
 (define *berlin*
   (register-bioregion!
-   (make-bioregion "berlin" "Berlin/Brandenburg" 52.52 13.40 "biosphere"
-     *berlin-scenarios/tail-robust*                           ; FUTURES [DATA]
-     ;; Groundwater is a COMMONS — one body of water under the whole region, and
-     ;; every scope above it draws the same body, so it is pooled over the shed
-     ;; (playnet.typ §"Shared budgets"). Topsoil is not: the carbon under one
-     ;; field is not the carbon under the next, so it stays a per-plot RATE.
-     ;; Pooling it would make a farm that tends its soil pay for one that mines
-     ;; theirs; leaving groundwater per-plot would give every well its own aquifer.
-     (list (frag-within "berlin" '("groundwater") (list 80.0 120.0 0.20 55.0)
+   (make-bioregion #:id "berlin"
+                   #:name "Berlin/Brandenburg"
+                   #:lat 52.52
+                   #:lon 13.40
+                   #:parent "biosphere"
+                   #:scenarios *berlin-scenarios/tail-robust*
+                   #:fragilities (list (frag-within "berlin" '("groundwater") (list 80.0 120.0 0.20 55.0)
                         #:note "water-stress envelope (Aqueduct 0.48 High), POOLED; α=0.20 [DRAFT]")
            (cons "topsoil"     (list 80.0 120.0 0.30 45.0)))))); SOC-mining envelope; carbon-poor (23.5 g/kg) ⇒ binds sooner [DATA/DRAFT]
 

@@ -64,11 +64,11 @@
   ;; durable record a ceremony keeps of itself lives outside the actor (an
   ;; enrollment writes its file, work ceremonies keep none), so the ritual
   ;; stays one thing and persistence is the caller's injection.
-  (define (rebuild new-state new-atts new-final)
+  (define* (rebuild #:key (state state) (attestations attestations) (finalized finalized))
     (when on-change
-      (catch #t (lambda () (on-change new-state new-atts new-final)) (lambda _ #f)))
-    (^attestation-ceremony bcom new-state statement-said threshold-k
-                           eligible? issue! new-atts new-final on-change))
+      (catch #t (lambda () (on-change state attestations finalized)) (lambda _ #f)))
+    (^attestation-ceremony bcom state statement-said threshold-k
+                           eligible? issue! attestations finalized on-change))
 
   (methods
     ((status) state)
@@ -95,7 +95,7 @@
      (when (assoc witness-aid attestations)
        (error "attest: witness already attested" witness-aid))
      (let ((new-atts (cons (cons witness-aid signature) attestations)))
-       (bcom (rebuild 'collecting new-atts finalized)
+       (bcom (rebuild #:state 'collecting #:attestations new-atts)
              (length new-atts))))
 
     ((finalize)
@@ -105,10 +105,10 @@
        (error "finalize: not enough attestations"
               (length attestations) threshold-k))
      (let ((result (issue! attestations)))
-       (bcom (rebuild 'finalized attestations result) result)))
+       (bcom (rebuild #:state 'finalized #:finalized result) result)))
 
     ((abandon)
-     (bcom (rebuild 'abandoned attestations finalized)))))
+     (bcom (rebuild #:state 'abandoned)))))
 
 ;; ── The landing: a remote signature finds its ceremony ──────────────────────
 ;;

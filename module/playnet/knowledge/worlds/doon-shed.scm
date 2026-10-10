@@ -48,28 +48,13 @@
 
 (define *doon-shed*
   (register-bioregion!
-   (make-bioregion "doon-shed" "Doon Valley watershed" 30.32 78.03 "biosphere"
-     *doon-valley-scenarios/tail-robust*                     ; FUTURES [DATA]
-     ;; ── the two limits are held at DIFFERENT SCALES, and the difference is real ──
-     ;;
-     ;; GROUNDWATER is a COMMONS. One aquifer underlies the whole shed, and every
-     ;; farm above it draws the same body of water — so it is a `within` fragility
-     ;; over the shed, summing draws from every place at or under it. This is
-     ;; playnet.typ §"Shared budgets and possibility-tension": an agent drawn on by
-     ;; many scopes has ONE pooled budget, which "catches the distributed-draw
-     ;; failure mode in which many scopes each individually stay within their
-     ;; share, but collectively exceed it". Held as a per-spec rate instead, each
-     ;; farm would get its own private envelope and the shed would feel nothing as
-     ;; the water table fell — measured, not supposed (fragility-scales-test).
-     ;;
-     ;; TOPSOIL is not a commons. The carbon under one field is not the carbon
-     ;; under the next: mining mine leaves yours untouched, so it stays a per-spec
-     ;; RATE, felt by each plot on its own ground. Pooling it would let a farm
-     ;; that tends its soil pay for a neighbour that mines theirs.
-     ;;
-     ;; Same profile shape, same barrier, different scale — which is exactly what
-     ;; §"Worker, soil, and tool: one field" says these limits are.
-     (list (frag-within "doon-shed" '("groundwater") (list 80.0 120.0 0.2 50.0)
+   (make-bioregion #:id "doon-shed"
+                   #:name "Doon Valley watershed"
+                   #:lat 30.32
+                   #:lon 78.03
+                   #:parent "biosphere"
+                   #:scenarios *doon-valley-scenarios/tail-robust*
+                   #:fragilities (list (frag-within "doon-shed" '("groundwater") (list 80.0 120.0 0.2 50.0)
                         #:note "recharge envelope, POOLED across the shed; α=0.2 [DRAFT]")
            (cons "topsoil" (list 80.0 120.0 0.3 40.0))))))  ; SOC-mining envelope, per plot; α=0.3, state 34.3 g/kg [DATA]
 

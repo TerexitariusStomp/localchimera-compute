@@ -31,7 +31,7 @@
 ;; and the climb raises an unbound variable the moment it is actually taken.
 ;; The module depends only on srfi-1, so importing it closes no loop.
 (define-module (playnet knowledge worlds bioregions)
-  #:use-module ((playnet utils records) #:select (define-vf-record vf-record-type vf-record-constructor vf-record-predicate vf-record-accessor vf-record-modifier vf-record-type-name vf-record-type-fields))
+  #:use-module ((playnet utils records) #:select (define-vf-record vf-record-type vf-record-constructor vf-record-predicate vf-record-accessor vf-record-modifier vf-record-type-name vf-record-type-fields vf-record-maker))
   #:use-module (playnet vf aggregation containment)
   #:use-module (srfi srfi-1)
   #:use-module (playnet vf schemas)
@@ -66,10 +66,9 @@
   ;; <planning-scenario> list — the futures
   ;; (spec . (lo hi α w)) list — the limits   ; GeoJSON extent (Polygon/MultiPolygon) or #f — the shape
 (define %make-bioregion       (vf-record-constructor <bioregion>))
-;; boundary optional so existing 7-arg constructions are unchanged (a shed with no
-;; polygon is a point at lat/lon; with one it is a real region).
-(define* (make-bioregion id name lat lon parent scenarios fragilities #:optional (boundary #f))
-  (%make-bioregion id name lat lon parent scenarios fragilities boundary))
+;; by name: a shed with no #:boundary polygon is a point at #:lat #:lon; with one
+;; it is a real region
+(define make-bioregion (vf-record-maker <bioregion>))
 
 ;; GENERIC SpatialThing EXTENTS — an extent is a property of ANY SpatialThing (a
 ;; nation, a district, a building footprint, an ecoregion), not of a bioregion. The
@@ -97,7 +96,7 @@
 
 ;; back-compat: register a SCENARIOS-only bioregion by id (no coords, no fragilities).
 (define (attach-bioregion-scenarios! id scenarios)
-  (register-bioregion! (make-bioregion id #f #f #f #f scenarios '())))
+  (register-bioregion! (make-bioregion #:id id #:scenarios scenarios #:fragilities '())))
 
 ;; From a PLACE up the contained-in chain to the nearest REGISTERED bioregion,
 ;; returning the <bioregion> or #f. The climb itself is the shared one

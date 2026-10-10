@@ -53,13 +53,12 @@
 (display "\n── Buffer zone formula (standard) ──\n")
 
 (with-vat vat
-  (let* ((profile (make-buffer-profile
-                    "bp-std" "Standard" 'manufactured
-                    1.0   ;; leadTimeFactor
-                    #f #f
-                    0.5   ;; variabilityFactor
-                    7     ;; orderCycleDays
-                    #f #f #f #f #f #f))
+  (let* ((profile (make-buffer-profile #:id "bp-std"
+                                       #:name "Standard"
+                                       #:item-type 'manufactured
+                                       #:lead-time-factor 1.0
+                                       #:variability-factor 0.5
+                                       #:order-cycle-days 7))
          ;; ADU=10, DLT=10, MOQ=0
          ;; redBase   = 10 * 10 * 1.0 = 100
          ;; redSafety = 100 * 0.5     = 50
@@ -82,9 +81,12 @@
 (display "\n── MOQ dominates green ──\n")
 
 (with-vat vat
-  (let* ((profile (make-buffer-profile
-                    "bp-moq" "MOQ Test" 'manufactured
-                    1.0 #f #f 0.5 7 #f #f #f #f #f #f))
+  (let* ((profile (make-buffer-profile #:id "bp-moq"
+                                       #:name "MOQ Test"
+                                       #:item-type 'manufactured
+                                       #:lead-time-factor 1.0
+                                       #:variability-factor 0.5
+                                       #:order-cycle-days 7))
          ;; MOQ=120 > max(70, 100) → green=120
          ;; TOG = 250 + 120 = 370
          (levels (compute-buffer-zone-levels profile 10 %count-unit 10 120 %count-unit)))
@@ -98,9 +100,12 @@
 (display "\n── DOC dominates green ──\n")
 
 (with-vat vat
-  (let* ((profile (make-buffer-profile
-                    "bp-doc" "DOC Test" 'manufactured
-                    1.0 #f #f 0.5 20 #f #f #f #f #f #f))
+  (let* ((profile (make-buffer-profile #:id "bp-doc"
+                                       #:name "DOC Test"
+                                       #:item-type 'manufactured
+                                       #:lead-time-factor 1.0
+                                       #:variability-factor 0.5
+                                       #:order-cycle-days 20))
          ;; ADU=10, DOC=20 → ADU*DOC=200 > redBase(100) > MOQ(0)
          ;; TOG = 250 + 200 = 450
          (levels (compute-buffer-zone-levels profile 10 %count-unit 10 0 %count-unit)))
@@ -114,13 +119,12 @@
 (display "\n── Fig 7-20 exact example ──\n")
 
 (with-vat vat
-  (let* ((profile (make-buffer-profile
-                    "bp-fig" "Fig 7-20" 'manufactured
-                    0.5   ;; LTF
-                    #f #f
-                    0.33  ;; VF
-                    7     ;; DOC
-                    #f #f #f #f #f #f))
+  (let* ((profile (make-buffer-profile #:id "bp-fig"
+                                       #:name "Fig 7-20"
+                                       #:item-type 'manufactured
+                                       #:lead-time-factor 0.5
+                                       #:variability-factor 0.33
+                                       #:order-cycle-days 7))
          ;; ADU=10, DLT=12, MOQ=50
          ;; redBase   = 10 × 12 × 0.5 = 60
          ;; redSafety = 60 × 0.33     = 19.8
