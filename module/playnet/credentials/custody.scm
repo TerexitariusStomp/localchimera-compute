@@ -94,11 +94,11 @@
   #:edges ((? supersedes supersedes I2I *schema-playnet-ownership-attestation*) (? stake stake NI2I #f))
   #:index (resource-id))
 
-(define* (make-custody-transfer-commitment-credential
-          from-scope-aid to-scope-aid resource-spec qty
-          new-attestation-said revoked-attestation-said
-          #:key (carries-commitments '()) (effective-at #f)
-          (signing-keypair #f) (multisig-signers #f))
+(define-credential-procedure (make-custody-transfer-commitment-credential from-scope-aid to-scope-aid resource-spec qty new-attestation-said revoked-attestation-said)
+  #:key ((carries-commitments '())
+         (effective-at #f)
+         (signing-keypair #f)
+         (multisig-signers #f))
   "Custody-transfer commitment ACDC: FROM-SCOPE-AID commits to transfer
    custody of QTY RESOURCE-SPEC to TO-SCOPE-AID.
 

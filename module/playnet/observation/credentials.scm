@@ -82,7 +82,10 @@
    new skill SAID if minted, else #f (mint-once)."
   (and (not (skill-held? acdc-store worker skill))
        (let ((cred (cred-signed-by-scope
-                    (make-skill-credential scope-aid worker skill founding-said
+                    (make-skill-credential #:issuing-aid scope-aid
+                                           #:worker-aid worker
+                                           #:skill skill
+                                           #:founding-event-said founding-said
                                            #:valid-until valid-until)
                     signer)))
          ($ acdc-store 'issue cred)
@@ -106,7 +109,11 @@
              ;; metabolism's evidence layer stops being one scope's word.
              ;; Absent, the single-signer path is exactly what it always was.
              (base (make-work-event-credential
-                    scope-aid worker (economic-event-id event) hours unit
+                    #:scope-aid scope-aid
+                    #:worker-aid worker
+                    #:event-id (economic-event-id event)
+                    #:hours hours
+                    #:unit unit
                     #:process-id (or (economic-event-input-of event)
                                      (economic-event-output-of event))
                     #:timestamp (economic-event-has-point-in-time event)
@@ -131,8 +138,11 @@
       ($ acdc-store 'issue-idempotent
          (cred-signed-by-scope
           (make-claim-event-credential
-           scope-aid (economic-event-receiver event) (economic-event-id event)
-           (hours-in (measure-has-numerical-value teq) (measure-has-unit teq)) "hours"
+           #:scope-aid scope-aid
+           #:claimant-aid (economic-event-receiver event)
+           #:event-id (economic-event-id event)
+           #:labor-cost (hours-in (measure-has-numerical-value teq) (measure-has-unit teq))
+           #:unit "hours"
            #:resource-spec (economic-event-resource-conforms-to event)
            #:qty (and=> (economic-event-resource-quantity event) measure-has-numerical-value)
            #:timestamp (economic-event-has-point-in-time event)
@@ -154,8 +164,10 @@
       ($ acdc-store 'issue-idempotent
          (cred-signed-by-scope
           (make-observation-event-credential
-           scope-aid holder (economic-event-id event)
-           (symbol->string (economic-event-action event))
+           #:scope-aid scope-aid
+           #:holder-aid holder
+           #:event-id (economic-event-id event)
+           #:action (symbol->string (economic-event-action event))
            #:qty (measure-has-numerical-value m)
            #:unit (measure-has-unit m)
            #:resource-conforms-to (economic-event-resource-conforms-to event)
@@ -236,14 +248,18 @@
        (let ((iss (or (intent-provider intent) (intent-receiver intent) scope-aid)))
          ($ acdc-store 'issue-idempotent
             (let ((cred (make-intent-credential
-                         iss (intent-id intent) (intent-action intent)
-                         #:provider (intent-provider intent) #:receiver (intent-receiver intent)
+                         #:issuer-aid iss
+                         #:intent-id (intent-id intent)
+                         #:action (intent-action intent)
+                         #:provider (intent-provider intent)
+                         #:receiver (intent-receiver intent)
                          #:resource-conforms-to (intent-resource-conforms-to intent)
                          #:resource-quantity (measure->pair (intent-resource-quantity intent))
                          #:effort-quantity   (measure->pair (intent-effort-quantity intent))
                          #:available-quantity (measure->pair (intent-available-quantity intent))
                          #:minimum-quantity  (measure->pair (intent-minimum-quantity intent))
-                         #:due (intent-due intent) #:plan-id (intent-planned-within intent)
+                         #:due (intent-due intent)
+                         #:plan-id (intent-planned-within intent)
                          #:process-id (or (intent-input-of intent) (intent-output-of intent))
                          #:satisfies (intent-satisfies intent)
                          #:holder-aid scope-aid)))
@@ -254,11 +270,15 @@
              (recv (or (commitment-receiver c) scope-aid)))
          ($ acdc-store 'issue-idempotent
             (let ((cred (make-commitment-credential
-                         prov recv (commitment-id c) (commitment-action c)
+                         #:provider-aid prov
+                         #:receiver-aid recv
+                         #:commitment-id (commitment-id c)
+                         #:action (commitment-action c)
                          #:resource-conforms-to (commitment-resource-conforms-to c)
                          #:resource-quantity (measure->pair (commitment-resource-quantity c))
                          #:effort-quantity   (measure->pair (commitment-effort-quantity c))
-                         #:due (commitment-due c) #:plan-id (commitment-planned-within c)
+                         #:due (commitment-due c)
+                         #:plan-id (commitment-planned-within c)
                          #:process-id (or (commitment-input-of c) (commitment-output-of c))
                          #:satisfies (commitment-satisfies c))))
               (if (equal? prov scope-aid) (cred-signed-by-scope cred signer) cred))))))
@@ -271,7 +291,9 @@
              (proposer (or (assq-ref result 'counterparty) scope-aid)))
          ($ acdc-store 'issue-idempotent
             (let ((cred (make-agreement-credential
-                         acceptor proposer (assq-ref result 'agreement-id)
+                         #:acceptor-aid acceptor
+                         #:proposer-aid proposer
+                         #:agreement-id (assq-ref result 'agreement-id)
                          #:proposal-id (assq-ref result 'proposal-id)
                          #:primary-commitment-ids    (or (assq-ref result 'primary-commitment-ids) '())
                          #:reciprocal-commitment-ids (or (assq-ref result 'reciprocal-commitment-ids) '())
@@ -579,8 +601,11 @@ issued through it as authoritative.\n"
                                   (filter (lambda (c) (not (cred-revoked? c)))
                                           ($ acdc-store 'by-schema s)))
                                 schemas))))
-    (make-derived-state-snapshot-credential auditor-aid scope-aid snapshot-data
-      #:input-saids saids #:snapshot-at snapshot-at)))
+    (make-derived-state-snapshot-credential #:auditor-aid auditor-aid
+                                            #:scope-aid scope-aid
+                                            #:snapshot-data snapshot-data
+      #:input-saids saids
+                                            #:snapshot-at snapshot-at)))
 
 ;; Which credential store witnesses a scope: filled by install-credentialing!
 ;; (the one place that holds both), read by the service's witness door — the

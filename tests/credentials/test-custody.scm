@@ -12,7 +12,10 @@
 (display "\n── 1. Attestation structure ──\n")
 
 (let ((att (make-custody-attestation-credential
-            "EAuth" "EScopeA" "spec:widget" 100
+            #:issuing-authority-aid "EAuth"
+            #:custodian-aid "EScopeA"
+            #:resource-spec "spec:widget"
+            #:qty 100
             #:valid-from "2026-04-24T00:00:00Z"
             #:valid-until "2026-12-31T00:00:00Z")))
   (check-pred "schema custody-attestation/v1"
@@ -26,8 +29,14 @@
   (check-pred "no edges (genesis)" (null? (cred-edges att)))
   (check-pred "SAID is string"     (string? (cred-said att))))
 
-(let ((a1 (make-custody-attestation-credential "EA" "EB" "spec:x" 5))
-      (a2 (make-custody-attestation-credential "EA" "EB" "spec:x" 5)))
+(let ((a1 (make-custody-attestation-credential #:issuing-authority-aid "EA"
+                                               #:custodian-aid "EB"
+                                               #:resource-spec "spec:x"
+                                               #:qty 5))
+      (a2 (make-custody-attestation-credential #:issuing-authority-aid "EA"
+                                               #:custodian-aid "EB"
+                                               #:resource-spec "spec:x"
+                                               #:qty 5)))
   (check-pred "deterministic SAID" (equal? (cred-said a1) (cred-said a2))))
 
 
@@ -37,9 +46,15 @@
 
 (display "\n── 2. Supersedes edge ──\n")
 
-(let* ((prior (make-custody-attestation-credential "EAuth" "EA" "spec:x" 5))
+(let* ((prior (make-custody-attestation-credential #:issuing-authority-aid "EAuth"
+                                                   #:custodian-aid "EA"
+                                                   #:resource-spec "spec:x"
+                                                   #:qty 5))
        (succ  (make-custody-attestation-credential
-               "EAuth" "EB" "spec:x" 5
+               #:issuing-authority-aid "EAuth"
+               #:custodian-aid "EB"
+               #:resource-spec "spec:x"
+               #:qty 5
                #:supersedes (cred-said prior))))
   (let ((edge (cred-edge succ 'supersedes)))
     (check-pred "supersedes edge present" (not (not edge)))
@@ -53,13 +68,23 @@
 
 (display "\n── 3. Transfer commitment edges ──\n")
 
-(let* ((old-att (make-custody-attestation-credential "EAuth" "EA" "spec:x" 50))
+(let* ((old-att (make-custody-attestation-credential #:issuing-authority-aid "EAuth"
+                                                     #:custodian-aid "EA"
+                                                     #:resource-spec "spec:x"
+                                                     #:qty 50))
        (new-att (make-custody-attestation-credential
-                 "EAuth" "EB" "spec:x" 50
+                 #:issuing-authority-aid "EAuth"
+                 #:custodian-aid "EB"
+                 #:resource-spec "spec:x"
+                 #:qty 50
                  #:supersedes (cred-said old-att)))
        (xfer    (make-custody-transfer-commitment-credential
-                 "EA" "EB" "spec:x" 50
-                 (cred-said new-att) (cred-said old-att)
+                 #:from-scope-aid "EA"
+                 #:to-scope-aid "EB"
+                 #:resource-spec "spec:x"
+                 #:qty 50
+                 #:new-attestation-said (cred-said new-att)
+                 #:revoked-attestation-said (cred-said old-att)
                  #:carries-commitments '("ECommit1" "ECommit2"))))
   (check-pred "schema custody-transfer-commitment/v1"
               (equal? *schema-playnet-custody-transfer-commitment*
@@ -79,11 +104,21 @@
     (check-pred "carries-commitment-1 present"
                 (and c1 (equal? "ECommit2" (edge-target c1))))))
 
-(let* ((old-att (make-custody-attestation-credential "EAuth" "EA" "spec:x" 1))
-       (new-att (make-custody-attestation-credential "EAuth" "EB" "spec:x" 1))
+(let* ((old-att (make-custody-attestation-credential #:issuing-authority-aid "EAuth"
+                                                     #:custodian-aid "EA"
+                                                     #:resource-spec "spec:x"
+                                                     #:qty 1))
+       (new-att (make-custody-attestation-credential #:issuing-authority-aid "EAuth"
+                                                     #:custodian-aid "EB"
+                                                     #:resource-spec "spec:x"
+                                                     #:qty 1))
        (empty-xfer (make-custody-transfer-commitment-credential
-                    "EA" "EB" "spec:x" 1
-                    (cred-said new-att) (cred-said old-att)
+                    #:from-scope-aid "EA"
+                    #:to-scope-aid "EB"
+                    #:resource-spec "spec:x"
+                    #:qty 1
+                    #:new-attestation-said (cred-said new-att)
+                    #:revoked-attestation-said (cred-said old-att)
                     #:carries-commitments '())))
   (check-pred "no carries-commitment edges when list empty"
               (not (cred-edge empty-xfer 'carries-commitment-0))))

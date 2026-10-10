@@ -33,8 +33,12 @@
          (stranger (make-keri-identity)) (stranger-aid (keri-identity-aid stranger)))
     ;; Alice and Bob are recognised persons of this commune; the stranger
     ;; is not.
-    ($ store 'issue (make-personhood-credential eco-aid alice-aid "2026-01-01T00:00:00Z"))
-    ($ store 'issue (make-personhood-credential eco-aid bob-aid   "2026-01-01T00:00:00Z"))
+    ($ store 'issue (make-personhood-credential #:ecosystem-aid eco-aid
+                                                #:holder-aid alice-aid
+                                                #:enrolled-at "2026-01-01T00:00:00Z"))
+    ($ store 'issue (make-personhood-credential #:ecosystem-aid eco-aid
+                                                #:holder-aid bob-aid
+                                                #:enrolled-at "2026-01-01T00:00:00Z"))
 
     (let* ((ballot ($ scope 'open-ballot-for-scope gov "prop-1" "test proposal"
                      (hashmap) (hashmap)))

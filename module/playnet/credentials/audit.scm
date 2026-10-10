@@ -75,11 +75,10 @@
   #:claims (federation-aid (audited-at (or audited-at (iso-utc-now))) cycle violations))
 
 
-(define* (make-derived-state-snapshot-credential
-          auditor-aid scope-aid snapshot-data
-          #:key (input-saids '())
-                (snapshot-at #f)
-                (signing-keypair #f))
+(define-credential-procedure (make-derived-state-snapshot-credential auditor-aid scope-aid snapshot-data)
+  #:key ((input-saids '())
+         (snapshot-at #f)
+         (signing-keypair #f))
   "Auditor-issued snapshot of derived state (voice shares, P_extract,
    credit balances, …) for SCOPE-AID, computed from the inputs whose
    SAIDs are in INPUT-SAIDS.

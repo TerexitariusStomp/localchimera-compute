@@ -80,15 +80,25 @@
     ;; A holds: the root's blessing of A; Alice's personhood (issued by A);
     ;; Alice's key log; Alice's vouch for Tia, signed with her CURRENT key
     (oobi-write-entry-to-dir! DIR-A alice-entry)
-    ($ store-a 'issue (make-authorized-issuer-credential ROOT ECO-A 5
+    ($ store-a 'issue (make-authorized-issuer-credential #:root-aid ROOT
+                                                         #:ecosystem-aid ECO-A
+                                                         #:blessed-at 5
                         #:signing-keypair (keri-identity-keypair root)))
-    ($ store-a 'issue (make-personhood-credential ECO-A ALICE 100
+    ($ store-a 'issue (make-personhood-credential #:ecosystem-aid ECO-A
+                                                  #:holder-aid ALICE
+                                                  #:enrolled-at 100
                         #:signing-keypair (keri-identity-keypair eco-a)))
-    ($ store-a 'issue (make-personhood-credential ECO-A TIA 100
+    ($ store-a 'issue (make-personhood-credential #:ecosystem-aid ECO-A
+                                                  #:holder-aid TIA
+                                                  #:enrolled-at 100
                         #:signing-keypair (keri-identity-keypair eco-a)))
     (let ((phc (any-live-phc-for store-a ALICE)))
-      ($ store-a 'issue (make-relationship-credential ALICE TIA 'friends (cred-said phc)
-                          "2026-08-30T00:00:00Z" #:signing-keypair kp1)))
+      ($ store-a 'issue (make-relationship-credential #:issuer-aid ALICE
+                                                      #:subject-aid TIA
+                                                      #:relationship-type 'friends
+                                                      #:issuer-phc-said (cred-said phc)
+                          #:issued-at "2026-08-30T00:00:00Z"
+                                                      #:signing-keypair kp1)))
 
     (display "\n── what Tia carries away from A ──\n")
     (let* ((r ($ svc-a 'fp-my-vouches TIA))
@@ -139,7 +149,9 @@
              (svc-x (spawn-governance-service (list root-a) ($ root-a 'ballot-store)
                                               #:acdc-store store-x #:kel-of (kel-of-dir DIR-A))))
         ($ svc-x 'set-fp-root! ROOT)
-        ($ store-x 'issue (make-personhood-credential ECO-X SAM 100
+        ($ store-x 'issue (make-personhood-credential #:ecosystem-aid ECO-X
+                                                      #:holder-aid SAM
+                                                      #:enrolled-at 100
                             #:signing-keypair (keri-identity-keypair eco-x)))
         (let ((jx (cdr ($ svc-x 'fp-my-vouches SAM))))
           (check "an unblessed ecosystem's personhood is refused"

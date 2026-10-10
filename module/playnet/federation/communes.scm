@@ -81,7 +81,11 @@
               (and acdc-store
                    ($ acdc-store 'issue
                       (make-federation-membership-credential
-                        scope-aid commune-aid name commune-id admitted-at
+                        #:issuer-group-aid scope-aid
+                        #:commune-aid commune-aid
+                        #:federation name
+                        #:commune-id commune-id
+                        #:admitted-at admitted-at
                         #:edges (ratification-edges ratification-said)
                         #:signing-keypair keypair)))))
          ;; OOBI.md §3.2.1: anchor the credential SAID into our KEL via
@@ -152,15 +156,23 @@
               (and acdc-store
                    ($ acdc-store 'issue
                       (make-federation-membership-credential
-                        scope-aid commune-aid name commune-id admitted-at
+                        #:issuer-group-aid scope-aid
+                        #:commune-aid commune-aid
+                        #:federation name
+                        #:commune-id commune-id
+                        #:admitted-at admitted-at
                         #:edges (ratification-edges ratification-said)
                         #:signing-keypair keypair))))
              (sturdyref-said
               (and acdc-store
                    ($ acdc-store 'issue
                       (make-federation-sturdyref-credential
-                        scope-aid commune-aid commune-id sturdyref-uri
-                        'websocket admitted-at
+                        #:issuer-group-aid scope-aid
+                        #:commune-aid commune-aid
+                        #:commune-id commune-id
+                        #:sturdyref-uri sturdyref-uri
+                        #:netlayer 'websocket
+                        #:registered-at admitted-at
                         #:signing-keypair keypair)))))
          ;; OOBI.md §3.2.1 KEL-anchor both credentials; best-effort.
          (do-anchor-best-effort kel-store scope-aid keypair membership-said)
@@ -296,7 +308,11 @@
          (when acdc-store
            ($ acdc-store 'issue
               (make-scope-merger-credential
-                scope-aid other-aid combined-aid kind merged-at
+                #:predecessor-a-aid scope-aid
+                #:predecessor-b-aid other-aid
+                #:new-scope-aid combined-aid
+                #:kind kind
+                #:merged-at merged-at
                 #:edges (ratification-edges ratification-said)
                 ;; issuer = predecessor-a = this scope, so our keypair is the
                 ;; right signer.
@@ -364,7 +380,11 @@
          (when acdc-store
            ($ acdc-store 'issue
               (make-scope-merger-credential
-                scope-aid other-aid combined-aid kind merged-at
+                #:predecessor-a-aid scope-aid
+                #:predecessor-b-aid other-aid
+                #:new-scope-aid combined-aid
+                #:kind kind
+                #:merged-at merged-at
                 #:edges merger-edges
                 #:signing-keypair keypair)))
          combined-aid)))
@@ -413,9 +433,9 @@
          (when acdc-store
            ($ acdc-store 'issue
               (make-scope-merger-credential
-                ;; Legacy positional args ignored when #:predecessors given.
-                #f #f
-                combined-aid kind merged-at
+                #:new-scope-aid combined-aid
+                #:kind kind
+                #:merged-at merged-at
                 #:predecessors predecessors-sorted
                 #:edges merger-edges
                 ;; N-way issuer is (car predecessors-sorted) for determinism,
@@ -446,7 +466,10 @@
        (when acdc-store
          ($ acdc-store 'issue
             (make-scope-split-credential
-              scope-aid sub-scope-aids kind split-at
+              #:parent-scope-aid scope-aid
+              #:sub-scope-aids sub-scope-aids
+              #:kind kind
+              #:split-at split-at
               #:edges (ratification-edges ratification-said)
               #:signing-keypair keypair)))
        sub-scope-aids))
@@ -462,7 +485,10 @@
        (when acdc-store
          ($ acdc-store 'issue
             (make-scope-rejoin-credential
-              scope-aid old-fed-aid new-fed-aid (current-time)
+              #:scope-aid scope-aid
+              #:old-federation-aid old-fed-aid
+              #:new-federation-aid new-fed-aid
+              #:rejoined-at (current-time)
               #:edges (ratification-edges ratification-said)
               #:signing-keypair keypair)))
        'ok)))))

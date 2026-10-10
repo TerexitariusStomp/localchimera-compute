@@ -55,7 +55,15 @@
         (unless ev (error "the witness is a work event of yours in this scope's record"))
         (unless (equal? identity-key (economic-event-provider ev)) (error "the witness names another worker"))
         (unless (equal? process (economic-event-input-of ev)) (error "the witness is a run of another process"))
-        (make-contrary-observation-credential identity-key scope-id process act spec nominal reading witness at)))
+        (make-contrary-observation-credential #:observer-aid identity-key
+                                              #:scope-id scope-id
+                                              #:process process
+                                              #:action act
+                                              #:spec spec
+                                              #:nominal nominal
+                                              #:reading reading
+                                              #:witness witness
+                                              #:observed-at at)))
     (define (revoke-prior-contrary-observations! observer scope-id process action)
       (when acdc-store
         (revoke-where! (standing-contrary-observations acdc-store scope-id observer)

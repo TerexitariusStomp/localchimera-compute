@@ -244,8 +244,11 @@ pass the restored ref via #:existing-ref."
   (let* ((uc-aid    ($ uc-ref 'scope-aid))
          (uc-store  ($ uc-ref 'acdc-store))
          (cred0 (make-recomposition-ratification-credential
-                 uc-aid proposal-type proposal-spec
-                 ballot-said tally
+                 #:scope-aid uc-aid
+                 #:proposal-type proposal-type
+                 #:proposal-spec proposal-spec
+                 #:ballot-said ballot-said
+                 #:tally tally
                  #:threshold      threshold
                  #:threshold-met? threshold-met?
                  #:issuer-aid     uc-aid
@@ -554,8 +557,10 @@ pass the restored ref via #:existing-ref."
           (when store-a
             ($ store-a 'issue
                (cred-signed-by-scope
-                (make-scope-split-credential a-aid successor-aids
-                                             ($ a-ref 'kind) split-at
+                (make-scope-split-credential #:parent-scope-aid a-aid
+                                             #:sub-scope-aids successor-aids
+                                             #:kind ($ a-ref 'kind)
+                                             #:split-at split-at
                                              #:edges merger-edges)
                 a-ref)))
           ;; Best-effort dissolution rotation on A.

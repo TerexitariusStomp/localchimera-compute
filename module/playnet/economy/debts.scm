@@ -82,7 +82,10 @@
 (define* (debt-commitment commune-aid member-aid id spec qty unit due
                           #:key (triggered-by #f) (signing-keypair #f))
   (make-commitment-credential
-   commune-aid member-aid id 'transfer
+   #:provider-aid commune-aid
+   #:receiver-aid member-aid
+   #:commitment-id id
+   #:action 'transfer
    #:resource-conforms-to spec
    #:resource-quantity (cons qty (or unit spec))
    #:due due
@@ -116,7 +119,10 @@
                          #:key (resource-inventoried-as #f) (triggered-by #f)
                                (signing-keypair #f))
   (make-commitment-credential
-   member-aid commune-aid id 'transfer
+   #:provider-aid member-aid
+   #:receiver-aid commune-aid
+   #:commitment-id id
+   #:action 'transfer
    #:resource-conforms-to spec
    #:resource-quantity (cons qty (or unit spec))
    #:due due

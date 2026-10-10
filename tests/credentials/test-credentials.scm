@@ -11,7 +11,11 @@
 
 (display "\n── 1. Credential structure ──\n")
 
-(let ((c (make-delegation-credential "alice" "bob" 'federation 0.4 #f)))
+(let ((c (make-delegation-credential #:issuer-aid "alice"
+                                     #:holder-aid "bob"
+                                     #:franchise 'federation
+                                     #:fraction 0.4
+                                     #:mandate-spec #f)))
   (check-pred "schema is playnet-delegation/v1"
               (equal? *schema-playnet-delegation* (cred-schema c)))
   (check-pred "issuer alice"   (equal? "alice" (cred-issuer c)))
@@ -23,13 +27,29 @@
   (check-pred "not revoked"    (not (cred-revoked? c)))
   (check-pred "SAID is string" (string? (cred-said c))))
 
-(let ((c1 (make-delegation-credential "alice" "bob" 'federation 0.4 #f))
-      (c2 (make-delegation-credential "alice" "bob" 'federation 0.4 #f)))
+(let ((c1 (make-delegation-credential #:issuer-aid "alice"
+                                      #:holder-aid "bob"
+                                      #:franchise 'federation
+                                      #:fraction 0.4
+                                      #:mandate-spec #f))
+      (c2 (make-delegation-credential #:issuer-aid "alice"
+                                      #:holder-aid "bob"
+                                      #:franchise 'federation
+                                      #:fraction 0.4
+                                      #:mandate-spec #f)))
   (check-pred "same content → same SAID"
               (equal? (cred-said c1) (cred-said c2))))
 
-(let ((c1 (make-delegation-credential "alice" "bob" 'federation 0.4 #f))
-      (c2 (make-delegation-credential "alice" "bob" 'federation 0.5 #f)))
+(let ((c1 (make-delegation-credential #:issuer-aid "alice"
+                                      #:holder-aid "bob"
+                                      #:franchise 'federation
+                                      #:fraction 0.4
+                                      #:mandate-spec #f))
+      (c2 (make-delegation-credential #:issuer-aid "alice"
+                                      #:holder-aid "bob"
+                                      #:franchise 'federation
+                                      #:fraction 0.5
+                                      #:mandate-spec #f)))
   (check-pred "different content → different SAID"
               (not (equal? (cred-said c1) (cred-said c2)))))
 
@@ -40,29 +60,37 @@
 
 (display "\n── 2. Other schemas ──\n")
 
-(let ((c (make-ccf-credential "watershed-gov" "grandma" "Watershed" 0
-                              "2026-04-15" "advanced dementia")))
+(let ((c (make-ccf-credential #:issuer-group-aid "watershed-gov"
+                              #:holder-aid "grandma"
+                              #:commune "Watershed"
+                              #:ccf 0
+                              #:assessed-at "2026-04-15"
+                              #:reason "advanced dementia")))
   (check-pred "ccf schema" (equal? *schema-playnet-ccf-assessment* (cred-schema c)))
   (check-pred "ccf 0"      (= 0 (cred-claim c 'ccf)))
   (check-pred "commune"    (equal? "Watershed" (cred-claim c 'commune))))
 
-(let ((c (make-exclusion-credential "watershed-gov" "outlaw" "Watershed"
-                                    "2026-04-15")))
+(let ((c (make-exclusion-credential #:issuer-group-aid "watershed-gov"
+                                    #:holder-aid "outlaw"
+                                    #:commune "Watershed"
+                                    #:excluded-at "2026-04-15")))
   (check-pred "exclusion schema"
               (equal? *schema-playnet-exclusion* (cred-schema c))))
 
-(let ((c (make-federation-membership-credential "river-fed-gov"
-                                                 "watershed-aid"
-                                                 "River-Federation"
-                                                 "watershed"
-                                                 "2026-04-15")))
+(let ((c (make-federation-membership-credential #:issuer-group-aid "river-fed-gov"
+                                                 #:commune-aid "watershed-aid"
+                                                 #:federation "River-Federation"
+                                                 #:commune-id "watershed"
+                                                 #:admitted-at "2026-04-15")))
   (check-pred "fed-mem schema"
               (equal? *schema-playnet-federation-membership* (cred-schema c)))
   (check-pred "commune-id watershed"
               (equal? "watershed" (cred-claim c 'commune-id))))
 
-(let ((c (make-membership-credential "watershed-gov" "alice" "Watershed"
-                                     "2026-04-15")))
+(let ((c (make-membership-credential #:issuer-group-aid "watershed-gov"
+                                     #:holder-aid "alice"
+                                     #:commune "Watershed"
+                                     #:admitted-at "2026-04-15")))
   (check-pred "membership schema"
               (equal? *schema-playnet-membership* (cred-schema c))))
 

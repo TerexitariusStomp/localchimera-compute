@@ -44,7 +44,10 @@
      (let ((note (and (pair? rest) (car rest))))
        ($ acdc-store 'issue
           (make-external-index-observation-credential
-            oracle-aid index-uri value timestamp
+            #:oracle-aid oracle-aid
+            #:index-uri index-uri
+            #:observed-value value
+            #:observed-at timestamp
             #:source-note note
             #:signing-keypair signing-keypair))))
 

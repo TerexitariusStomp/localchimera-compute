@@ -26,9 +26,10 @@
 (display "\n── 1. Mandate ACDC ──\n")
 
 (let ((m (make-redistribution-mandate-credential
-          "EFED" "ELEAF"
-          '(custody-of-spec-above "spec:grain" 100)
-          'federation-pool)))
+          #:federation-aid "EFED"
+          #:scope-aid "ELEAF"
+          #:threshold-spec '(custody-of-spec-above "spec:grain" 100)
+          #:recipient-policy 'federation-pool)))
   (check-pred "schema correct"
               (equal? *schema-playnet-redistribution-mandate*
                       (cred-schema m)))
@@ -67,7 +68,10 @@
          (gov   ($ leaf 'mint-gov-cap "op")))
     ($ store 'issue
        (make-redistribution-mandate-credential
-        "EFED" "EL" '(custody-of-spec-above "spec:grain" 100) 'federation-pool))
+        #:federation-aid "EFED"
+        #:scope-aid "EL"
+        #:threshold-spec '(custody-of-spec-above "spec:grain" 100)
+        #:recipient-policy 'federation-pool))
     ($ leaf 'attest-custody gov "spec:grain" 50)
     (check-pred "no breaches"
                 (null? (redistribution-mandate-breaches leaf)))
@@ -87,7 +91,10 @@
          (gov   ($ leaf 'mint-gov-cap "op")))
     ($ store 'issue
        (make-redistribution-mandate-credential
-        "EFED" "EL4" '(custody-of-spec-above "spec:grain" 100) 'federation-pool))
+        #:federation-aid "EFED"
+        #:scope-aid "EL4"
+        #:threshold-spec '(custody-of-spec-above "spec:grain" 100)
+        #:recipient-policy 'federation-pool))
     ($ leaf 'attest-custody gov "spec:grain" 250)
     (let ((breaches (redistribution-mandate-breaches leaf)))
       (check-pred "one breach reported" (= 1 (length breaches)))
@@ -108,7 +115,10 @@
          (gov   ($ leaf 'mint-gov-cap "op")))
     ($ store 'issue
        (make-redistribution-mandate-credential
-        "EFED" "EL5" '(custody-of-spec-above "spec:grain" 100) 'federation-pool))
+        #:federation-aid "EFED"
+        #:scope-aid "EL5"
+        #:threshold-spec '(custody-of-spec-above "spec:grain" 100)
+        #:recipient-policy 'federation-pool))
     ($ leaf 'attest-custody gov "spec:grain" 250)
     (check-pred "before transfer: breached"
                 (not (redistribution-coherent? leaf)))
@@ -137,7 +147,10 @@
     ($ top 'admit-commune gtop "leaf" leaf)
     ($ store 'issue
        (make-redistribution-mandate-credential
-        "ETOP6" "EL6" '(custody-of-spec-above "spec:grain" 100) 'federation-pool))
+        #:federation-aid "ETOP6"
+        #:scope-aid "EL6"
+        #:threshold-spec '(custody-of-spec-above "spec:grain" 100)
+        #:recipient-policy 'federation-pool))
     ($ leaf 'attest-custody gleaf "spec:grain" 500)
     (let* ((auditor (spawn-federation-auditor top))
            (_ ($ auditor 'audit!))

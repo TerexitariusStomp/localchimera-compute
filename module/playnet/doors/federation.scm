@@ -108,19 +108,26 @@
       ((declare-span identity-key scope-aid resource-id place . opt)
        (%scope-declare! identity-key
                         (lambda () (make-span-declaration-credential
-                                    scope-aid resource-id place
+                                    #:scope-aid scope-aid
+                                    #:resource-id resource-id
+                                    #:span-place place
                                     #:valid-until (and (pair? opt) (car opt))))))
 
       ((declare-hosting identity-key scope-aid resource-spec ceiling . opt)
        (%scope-declare! identity-key
                         (lambda () (make-hosting-willingness-credential
-                                    scope-aid resource-spec (exact->inexact ceiling)
+                                    #:scope-aid scope-aid
+                                    #:resource-spec resource-spec
+                                    #:ceiling (exact->inexact ceiling)
                                     #:valid-until (and (pair? opt) (car opt))))))
 
       ((claim-regime identity-key scope-aid domain-spec tails process . opt)
        (%scope-declare! identity-key
                         (lambda () (make-regime-claim-credential
-                                    scope-aid domain-spec (%as-symbol tails) (%as-symbol process)
+                                    #:scope-aid scope-aid
+                                    #:domain-spec domain-spec
+                                    #:tails (%as-symbol tails)
+                                    #:process (%as-symbol process)
                                     #:valid-until (and (pair? opt) (car opt))))))
 
       ;; ── A federation admits a commune ────────────────────────────────────────

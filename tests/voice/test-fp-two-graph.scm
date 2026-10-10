@@ -46,7 +46,10 @@
                                  #:keypair (keri-identity-keypair commune-a)
                                  #:acdc-store store-a))
   (define aic-a (make-authorized-issuer-credential
-                  uca-aid ca-aid 10 #:signing-keypair (keri-identity-keypair uc-a)))
+                  #:root-aid uca-aid
+                  #:ecosystem-aid ca-aid
+                  #:blessed-at 10
+                  #:signing-keypair (keri-identity-keypair uc-a)))
   ($ store-a 'issue aic-a)
   ($ scope-a 'issue-phc ($ scope-a 'mint-gov-cap "a") "E_alice")
   (define alice-wire (phc-wire (phc-for store-a ca-aid "E_alice")))
@@ -76,7 +79,11 @@
   (define store-c (spawn-acdc-store))
   ($ store-c 'import (list (cons aic-a #f)))
   ($ store-c 'issue (make-scope-merger-credential
-                      uca-aid ucb-aid "E_uc_c" 'universal-commune 200))
+                      #:predecessor-a-aid uca-aid
+                      #:predecessor-b-aid ucb-aid
+                      #:new-scope-aid "E_uc_c"
+                      #:kind 'universal-commune
+                      #:merged-at 200))
   (define csvc (spawn-verifier store-c))
   ($ csvc 'set-fp-root! "E_uc_c")
   ($ csvc 'set-fp-strict-root! #t)

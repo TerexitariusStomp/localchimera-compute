@@ -29,8 +29,9 @@
 
 (display "\n── 1. PHC / VRC shape ──\n")
 
-(let ((phc (make-personhood-credential "E_eco" "E_alice"
-                                        "2026-04-23"
+(let ((phc (make-personhood-credential #:ecosystem-aid "E_eco"
+                                       #:holder-aid "E_alice"
+                                        #:enrolled-at "2026-04-23"
                                         #:enrollment-evidence-digest "h:abc")))
   (check-pred "PHC schema"
               (equal? *schema-playnet-personhood* (cred-schema phc)))
@@ -45,10 +46,16 @@
   (check-pred "evidence digest stored"
               (equal? "h:abc" (cred-claim phc 'enrollment-evidence-digest))))
 
-(let ((v1 (make-relationship-credential "E_alice" "E_bob" 'trust
-                                         "E_phc_a" "2026-04-23"))
-      (v2 (make-relationship-credential "E_alice" "E_bob" 'trust
-                                         "E_phc_a" "2026-04-23")))
+(let ((v1 (make-relationship-credential #:issuer-aid "E_alice"
+                                        #:subject-aid "E_bob"
+                                        #:relationship-type 'trust
+                                         #:issuer-phc-said "E_phc_a"
+                                        #:issued-at "2026-04-23"))
+      (v2 (make-relationship-credential #:issuer-aid "E_alice"
+                                        #:subject-aid "E_bob"
+                                        #:relationship-type 'trust
+                                         #:issuer-phc-said "E_phc_a"
+                                        #:issued-at "2026-04-23")))
   (check-pred "VRC schema"
               (equal? *schema-playnet-relationship* (cred-schema v1)))
   (check-pred "same content → same SAID"
@@ -61,10 +68,16 @@
     (check-pred "edge operator = I2I"
                 (eq? 'I2I (edge-operator edge)))))
 
-(let ((v-plain (make-relationship-credential "E_alice" "E_bob" 'trust
-                                              "E_phc_a" "2026-04-23"))
-      (v-diff  (make-relationship-credential "E_alice" "E_bob" 'trust
-                                              "E_phc_b" "2026-04-23")))
+(let ((v-plain (make-relationship-credential #:issuer-aid "E_alice"
+                                             #:subject-aid "E_bob"
+                                             #:relationship-type 'trust
+                                              #:issuer-phc-said "E_phc_a"
+                                             #:issued-at "2026-04-23"))
+      (v-diff  (make-relationship-credential #:issuer-aid "E_alice"
+                                             #:subject-aid "E_bob"
+                                             #:relationship-type 'trust
+                                              #:issuer-phc-said "E_phc_b"
+                                             #:issued-at "2026-04-23")))
   (check-pred "different edge target ⇒ different SAID (edges SAID-covered)"
               (not (equal? (cred-said v-plain) (cred-said v-diff)))))
 
@@ -77,7 +90,9 @@
 
 (with-vat vat
   (define store (spawn-acdc-store))
-  (define phc   (make-personhood-credential "E_eco" "E_alice" 100))
+  (define phc   (make-personhood-credential #:ecosystem-aid "E_eco"
+                                            #:holder-aid "E_alice"
+                                            #:enrolled-at 100))
 
   ($ store 'issue phc)
 
@@ -103,20 +118,26 @@
 (with-vat vat
   (define store (spawn-acdc-store))
   (define phc-a-real
-    (make-personhood-credential "E_eco1" "E_alice" 100))
+    (make-personhood-credential #:ecosystem-aid "E_eco1" #:holder-aid "E_alice" #:enrolled-at 100))
   (define phc-b-foreign
-    (make-personhood-credential "E_eco2" "E_bob" 100))
+    (make-personhood-credential #:ecosystem-aid "E_eco2" #:holder-aid "E_bob" #:enrolled-at 100))
 
   ($ store 'issue phc-a-real)
   ($ store 'issue phc-b-foreign)
 
   ;; Forge mutual VRCs — each party points at their own (wrong-ecosystem) PHC.
   ($ store 'issue
-     (make-relationship-credential "E_alice" "E_bob" 'trust
-                                    (cred-said phc-a-real) 101))
+     (make-relationship-credential #:issuer-aid "E_alice"
+                                   #:subject-aid "E_bob"
+                                   #:relationship-type 'trust
+                                    #:issuer-phc-said (cred-said phc-a-real)
+                                   #:issued-at 101))
   ($ store 'issue
-     (make-relationship-credential "E_bob" "E_alice" 'trust
-                                    (cred-said phc-b-foreign) 102))
+     (make-relationship-credential #:issuer-aid "E_bob"
+                                   #:subject-aid "E_alice"
+                                   #:relationship-type 'trust
+                                    #:issuer-phc-said (cred-said phc-b-foreign)
+                                   #:issued-at 102))
 
   ;; Triangle must fail in *both* ecosystems — bob has no PHC in E_eco1,
   ;; alice has no PHC in E_eco2.
@@ -131,19 +152,29 @@
 ;; work, not just shape-matching.
 (with-vat vat
   (define store (spawn-acdc-store))
-  (define phc-a (make-personhood-credential "E_eco" "E_alice" 100))
-  (define phc-b (make-personhood-credential "E_eco" "E_bob"   100))
+  (define phc-a (make-personhood-credential #:ecosystem-aid "E_eco"
+                                            #:holder-aid "E_alice"
+                                            #:enrolled-at 100))
+  (define phc-b (make-personhood-credential #:ecosystem-aid "E_eco"
+                                            #:holder-aid "E_bob"
+                                            #:enrolled-at 100))
   ($ store 'issue phc-a)
   ($ store 'issue phc-b)
 
   ;; Forged VRC: alice issues, but the edge points at BOB's PHC.
   ;; I2I requires issuer (alice) = holder of target (bob) — fails.
   ($ store 'issue
-     (make-relationship-credential "E_alice" "E_bob" 'trust
-                                    (cred-said phc-b) 101))
+     (make-relationship-credential #:issuer-aid "E_alice"
+                                   #:subject-aid "E_bob"
+                                   #:relationship-type 'trust
+                                    #:issuer-phc-said (cred-said phc-b)
+                                   #:issued-at 101))
   ($ store 'issue
-     (make-relationship-credential "E_bob" "E_alice" 'trust
-                                    (cred-said phc-a) 102))
+     (make-relationship-credential #:issuer-aid "E_bob"
+                                   #:subject-aid "E_alice"
+                                   #:relationship-type 'trust
+                                    #:issuer-phc-said (cred-said phc-a)
+                                   #:issued-at 102))
 
   (check-pred "triangle #f when VRC edges violate I2I (issuer ≠ target holder)"
               (not (trust-triangle-holds? store "E_alice" "E_bob" "E_eco" #:require-signatures? #f))))
@@ -166,15 +197,22 @@
 
   ;; PHCs for alice and bob — ecosystem issues (unsigned in this test).
   ($ store 'issue
-     (make-personhood-credential eco (keri-identity-aid alice) 100))
+     (make-personhood-credential #:ecosystem-aid eco
+                                 #:holder-aid (keri-identity-aid alice)
+                                 #:enrolled-at 100))
   ($ store 'issue
-     (make-personhood-credential eco (keri-identity-aid bob)   100))
+     (make-personhood-credential #:ecosystem-aid eco
+                                 #:holder-aid (keri-identity-aid bob)
+                                 #:enrolled-at 100))
 
   ;; Alice vouches for bob with her real keypair — signed VRC.
   (let* ((phc-a (phc-for store eco (keri-identity-aid alice)))
          (vrc   (make-relationship-credential
-                  (keri-identity-aid alice) (keri-identity-aid bob)
-                  'trust (cred-said phc-a) 101
+                  #:issuer-aid (keri-identity-aid alice)
+                  #:subject-aid (keri-identity-aid bob)
+                  #:relationship-type 'trust
+                  #:issuer-phc-said (cred-said phc-a)
+                  #:issued-at 101
                   #:signing-keypair (keri-identity-keypair alice))))
     (check-pred "signed VRC carries a signature"
                 (and (cred-signature vrc) #t))
@@ -191,8 +229,11 @@
   ;; NOT against alice's AID (which `cred-signature-valid?` checks).
   (let* ((phc-a  (phc-for store eco (keri-identity-aid alice)))
          (forged (make-relationship-credential
-                   (keri-identity-aid alice) (keri-identity-aid bob)
-                   'trust (cred-said phc-a) 101
+                   #:issuer-aid (keri-identity-aid alice)
+                   #:subject-aid (keri-identity-aid bob)
+                   #:relationship-type 'trust
+                   #:issuer-phc-said (cred-said phc-a)
+                   #:issued-at 101
                    #:signing-keypair (keri-identity-keypair eve))))
     (check-pred "forged VRC (eve signing as alice) fails cred-signature-valid?"
                 (not (cred-signature-valid? forged))))
@@ -203,13 +244,19 @@
          (phc-b (phc-for store eco (keri-identity-aid bob))))
     ($ store 'issue
        (make-relationship-credential
-         (keri-identity-aid alice) (keri-identity-aid bob)
-         'trust (cred-said phc-a) 101
+         #:issuer-aid (keri-identity-aid alice)
+         #:subject-aid (keri-identity-aid bob)
+         #:relationship-type 'trust
+         #:issuer-phc-said (cred-said phc-a)
+         #:issued-at 101
          #:signing-keypair (keri-identity-keypair alice)))
     ($ store 'issue
        (make-relationship-credential
-         (keri-identity-aid bob) (keri-identity-aid alice)
-         'trust (cred-said phc-b) 102
+         #:issuer-aid (keri-identity-aid bob)
+         #:subject-aid (keri-identity-aid alice)
+         #:relationship-type 'trust
+         #:issuer-phc-said (cred-said phc-b)
+         #:issued-at 102
          #:signing-keypair (keri-identity-keypair bob)))
 
     (check-pred "signed triangle holds without signature requirement"

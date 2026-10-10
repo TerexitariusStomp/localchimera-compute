@@ -127,10 +127,17 @@
                                          (signing-keypair #f))
   (define (ne s) (if (and (string? s) (string-null? s)) #f s))
   (make-custody-attestation-credential
-   owner-aid commune-aid resource-spec qty
-   #:valid-from (ne from) #:valid-until (ne until) #:movable (and movable? #t)
-   #:return-to (ne return-to) #:condition-floor (ne condition-floor)
-   #:resource (ne resource) #:qty-unit (ne qty-unit)
+   #:issuing-authority-aid owner-aid
+   #:custodian-aid commune-aid
+   #:resource-spec resource-spec
+   #:qty qty
+   #:valid-from (ne from)
+   #:valid-until (ne until)
+   #:movable (and movable? #t)
+   #:return-to (ne return-to)
+   #:condition-floor (ne condition-floor)
+   #:resource (ne resource)
+   #:qty-unit (ne qty-unit)
    #:kind (grant-kind-claim kind)
    #:ref (ne ref)
    #:eligible (ne eligible)
@@ -188,8 +195,12 @@
                                      (signing-keypair #f))
   (define (ne s) (if (and (string? s) (string-null? s)) #f s))
   (make-ownership-attestation-credential
-   owner-aid resource-id resource-spec
-   #:qty (ne qty) #:qty-unit (ne qty-unit) #:ref (ne ref)
+   #:owner-aid owner-aid
+   #:resource-id resource-id
+   #:resource-spec resource-spec
+   #:qty (ne qty)
+   #:qty-unit (ne qty-unit)
+   #:ref (ne ref)
    #:signing-keypair signing-keypair))
 
 (define* (%live-ownership-attestations store #:optional (now #f))

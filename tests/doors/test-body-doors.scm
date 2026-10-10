@@ -40,8 +40,12 @@
 
 ;;; ── the stubs ─────────────────────────────────────────────────────────────
 ;; the credential store: Alice and Bob are recognised persons, Carol is not
-(define phcs (list (make-personhood-credential %eco %alice 1700000000)
-                   (make-personhood-credential %eco %bob 1700000000)))
+(define phcs (list (make-personhood-credential #:ecosystem-aid %eco
+                                               #:holder-aid %alice
+                                               #:enrolled-at 1700000000)
+                   (make-personhood-credential #:ecosystem-aid %eco
+                                               #:holder-aid %bob
+                                               #:enrolled-at 1700000000)))
 (define (^acdc-store bcom)
   (methods
    ((by-schema schema) phcs)

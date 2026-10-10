@@ -33,11 +33,11 @@
        (lambda (intent)
          ($ acdc-store 'issue-idempotent
             (make-intent-credential
-              (or (intent-provider intent)
-                  (intent-receiver intent)
-                  scope-aid)
-              (intent-id intent)
-              (intent-action intent)
+              #:issuer-aid (or (intent-provider intent)
+                               (intent-receiver intent)
+                               scope-aid)
+              #:intent-id (intent-id intent)
+              #:action (intent-action intent)
               #:provider (intent-provider intent)
               #:receiver (intent-receiver intent)
               #:resource-conforms-to (intent-resource-conforms-to intent)
@@ -84,11 +84,11 @@
        (lambda (intent)
          ($ acdc-store 'issue-idempotent
             (make-intent-credential
-              (or (intent-provider intent)
-                  (intent-receiver intent)
-                  scope-aid)
-              (intent-id intent)
-              (intent-action intent)
+              #:issuer-aid (or (intent-provider intent)
+                               (intent-receiver intent)
+                               scope-aid)
+              #:intent-id (intent-id intent)
+              #:action (intent-action intent)
               #:provider (intent-provider intent)
               #:receiver (intent-receiver intent)
               #:resource-conforms-to (intent-resource-conforms-to intent)
@@ -99,10 +99,10 @@
        (lambda (cmt)
          ($ acdc-store 'issue-idempotent
             (make-commitment-credential
-              (or (commitment-provider cmt) "E_provider")
-              (or (commitment-receiver cmt) "E_receiver")
-              (commitment-id cmt)
-              (commitment-action cmt)
+              #:provider-aid (or (commitment-provider cmt) "E_provider")
+              #:receiver-aid (or (commitment-receiver cmt) "E_receiver")
+              #:commitment-id (commitment-id cmt)
+              #:action (commitment-action cmt)
               #:resource-conforms-to (commitment-resource-conforms-to cmt)
               #:plan-id (commitment-planned-within cmt)
               #:satisfies (commitment-satisfies cmt)))))
@@ -154,11 +154,11 @@
        (lambda (intent)
          ($ acdc-store 'issue-idempotent
             (make-intent-credential
-              (or (intent-provider intent)
-                  (intent-receiver intent)
-                  scope-aid)
-              (intent-id intent)
-              (intent-action intent)
+              #:issuer-aid (or (intent-provider intent)
+                               (intent-receiver intent)
+                               scope-aid)
+              #:intent-id (intent-id intent)
+              #:action (intent-action intent)
               #:provider (intent-provider intent)
               #:receiver (intent-receiver intent)
               #:resource-conforms-to (intent-resource-conforms-to intent)
@@ -215,7 +215,9 @@
        (lambda (intent)
          ($ acdc-store 'issue-idempotent
             (make-intent-credential
-              scope-aid (intent-id intent) (intent-action intent)
+              #:issuer-aid scope-aid
+              #:intent-id (intent-id intent)
+              #:action (intent-action intent)
               #:provider (intent-provider intent)
               #:resource-conforms-to (intent-resource-conforms-to intent)
               #:holder-aid scope-aid))))

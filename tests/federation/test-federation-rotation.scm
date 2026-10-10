@@ -67,7 +67,12 @@
       (check "and verifies under the AID" (call-with-values (lambda () (verify-signed word-0 aid)) (lambda (p a) a)) aid)
 
       (define cred-before (cred-signed-by-scope
-                           (make-federation-sturdyref-credential aid "EMember" "m" "ocapn://m/s/1" 'websocket "2026-10-02")
+                           (make-federation-sturdyref-credential #:issuer-group-aid aid
+                                                                 #:commune-aid "EMember"
+                                                                 #:commune-id "m"
+                                                                 #:sturdyref-uri "ocapn://m/s/1"
+                                                                 #:netlayer 'websocket
+                                                                 #:registered-at "2026-10-02")
                            fed))
       ($ fed 'anchor-acdc (cred-said cred-before))
       ($ fed 'rotate-keys)
@@ -126,7 +131,12 @@
 
       (display "\n── credentials ──\n")
       (define cred-after (cred-signed-by-scope
-                          (make-federation-sturdyref-credential aid "EMember2" "m2" "ocapn://m/s/2" 'websocket "2026-10-03")
+                          (make-federation-sturdyref-credential #:issuer-group-aid aid
+                                                                #:commune-aid "EMember2"
+                                                                #:commune-id "m2"
+                                                                #:sturdyref-uri "ocapn://m/s/2"
+                                                                #:netlayer 'websocket
+                                                                #:registered-at "2026-10-03")
                           fed))
       (define (end c kel)
         (call-with-values (lambda () (sturdyref-credential-end c #:issuer aid #:kel kel)) (lambda (a u) u)))
@@ -135,8 +145,18 @@
       (check "issued after: under the key now in force" (end cred-after (log)) "ocapn://m/s/2")
       (check "a credential signed by the inception key AFTER the rotation is refused"
              (let* ((forged (cred-with-signature
-                             (make-federation-sturdyref-credential aid "EMember3" "m3" "ocapn://m/s/3" 'websocket "2026-10-04")
-                             (sign-said (cred-said (make-federation-sturdyref-credential aid "EMember3" "m3" "ocapn://m/s/3" 'websocket "2026-10-04"))
+                             (make-federation-sturdyref-credential #:issuer-group-aid aid
+                                                                   #:commune-aid "EMember3"
+                                                                   #:commune-id "m3"
+                                                                   #:sturdyref-uri "ocapn://m/s/3"
+                                                                   #:netlayer 'websocket
+                                                                   #:registered-at "2026-10-04")
+                             (sign-said (cred-said (make-federation-sturdyref-credential #:issuer-group-aid aid
+                                                                                         #:commune-aid "EMember3"
+                                                                                         #:commune-id "m3"
+                                                                                         #:sturdyref-uri "ocapn://m/s/3"
+                                                                                         #:netlayer 'websocket
+                                                                                         #:registered-at "2026-10-04"))
                                         (scope-inception-keypair inc)))))
                (raises? (lambda () (end forged (log)))))
              #t)
@@ -155,7 +175,10 @@
               ($ fed 'accept-census c)
               (check "the federation holds the census that carries the log"
                      (and (assoc maid (assq-ref ($ fed 'federation-spec) 'census)) #t) #t)
-              (let ((stale (let ((plain (make-federation-census-credential maid aid '("gold") "t2")))
+              (let ((stale (let ((plain (make-federation-census-credential #:commune-aid maid
+                                                                           #:federation-aid aid
+                                                                           #:goods '("gold")
+                                                                           #:told-at "t2")))
                              (cred-with-signature plain (sign-said (cred-said plain) (scope-inception-keypair minc))))))
                 (check "a later census under the retired inception key, no log, is refused: the federation has read the rotation"
                        (raises? (lambda () ($ fed 'accept-census stale))) #t)

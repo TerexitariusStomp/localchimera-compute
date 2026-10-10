@@ -133,7 +133,9 @@ and activating the personhood gate."
                ($ store 'issue
                   (cred-signed-by-scope
                    (make-personhood-credential
-                    fc-aid faid (current-time)
+                    #:ecosystem-aid fc-aid
+                    #:holder-aid faid
+                    #:enrolled-at (current-time)
                     #:enrollment-evidence-digest "founder")
                    fc-scope))
                (log! "  [gateway] seeded founder PHC: ~a (~a)~%"
@@ -191,7 +193,9 @@ issuer, and PLAYNET_FP_STRICT_ROOT."
                                          (cred-live? c)))
                         ($ store 'by-schema *schema-playnet-authorized-issuer*)))))
           (unless standing
-            (let* ((aic (make-authorized-issuer-credential uc-aid fc-aid (current-time)))
+            (let* ((aic (make-authorized-issuer-credential #:root-aid uc-aid
+                                                           #:ecosystem-aid fc-aid
+                                                           #:blessed-at (current-time)))
                    (sig (with-vat gateway-vat
                           ($ uc-ref 'sign-said (cred-said aic)))))
               (with-vat planner-vat

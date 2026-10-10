@@ -15,7 +15,10 @@
 
 (display "\n── Skill membership token ──\n")
 
-(let* ((cred (make-skill-credential "EScope" "EWorker" "spec:surgeon" "Efounding-work-said")))
+(let* ((cred (make-skill-credential #:issuing-aid "EScope"
+                                    #:worker-aid "EWorker"
+                                    #:skill "spec:surgeon"
+                                    #:founding-event-said "Efounding-work-said")))
   (check "schema is playnet-skill" (cred-schema cred) *schema-playnet-skill*)
   (check "issuer is the scope"     (cred-issuer cred) "EScope")
   (check "holder is the worker"    (cred-holder cred) "EWorker")
@@ -31,9 +34,15 @@
 
 ;;; Expiry convention (shared with custody, so recertification decay reuses it)
 (display "\n── Live / expiry ──\n")
-(let ((future (make-skill-credential "ES" "EW" "spec:baker" "Ee"
+(let ((future (make-skill-credential #:issuing-aid "ES"
+                                     #:worker-aid "EW"
+                                     #:skill "spec:baker"
+                                     #:founding-event-said "Ee"
                                      #:valid-until "2099-12-31T00:00:00Z"))
-      (past   (make-skill-credential "ES" "EW" "spec:baker" "Ee"
+      (past   (make-skill-credential #:issuing-aid "ES"
+                                     #:worker-aid "EW"
+                                     #:skill "spec:baker"
+                                     #:founding-event-said "Ee"
                                      #:valid-until "1999-01-01T00:00:00Z")))
   (check-pred "future valid-until carried"  (equal? "2099-12-31T00:00:00Z"
                                                     (cred-claim future 'valid-until)))

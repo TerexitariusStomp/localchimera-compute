@@ -103,7 +103,10 @@
          ;; Issue an expired attestation directly so we don't depend on
          ;; clock movement during the test.
          (expired (make-custody-attestation-credential
-                   "EWorkshop" "EWorkshop" "spec:loom" 5
+                   #:issuing-authority-aid "EWorkshop"
+                   #:custodian-aid "EWorkshop"
+                   #:resource-spec "spec:loom"
+                   #:qty 5
                    #:valid-from "2020-01-01T00:00:00Z"
                    #:valid-until "2020-01-02T00:00:00Z")))
     ($ store 'issue expired)

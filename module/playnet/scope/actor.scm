@@ -719,7 +719,9 @@
       (let ((aic-said
              ($ acdc-store 'issue
                 (make-authorized-issuer-credential
-                  scope-aid commune-aid admitted-at
+                  #:root-aid scope-aid
+                  #:ecosystem-aid commune-aid
+                  #:blessed-at admitted-at
                   #:signing-keypair keypair))))
         (do-anchor-best-effort kel-store scope-aid keypair aic-said)
         (scope-deliver-grant!  scope-aid keypair aic-said commune-aid

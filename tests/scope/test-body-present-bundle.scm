@@ -81,12 +81,23 @@
                                           #:acdc-store store-b #:kel-landing (landing-into DIR-B)
                                           #:kel-of (kel-of-dir DIR-B)))
          ;; what A issued
-         (aic (make-authorized-issuer-credential ROOT ECO-A 5 #:signing-keypair (keri-identity-keypair root)))
-         (body (make-body-credential ECO-A BODY 100 #:kind 'cooperative #:quorum 2
+         (aic (make-authorized-issuer-credential #:root-aid ROOT
+                                                 #:ecosystem-aid ECO-A
+                                                 #:blessed-at 5
+                                                 #:signing-keypair (keri-identity-keypair root)))
+         (body (make-body-credential #:ecosystem-aid ECO-A
+                                     #:body-aid BODY
+                                     #:admitted-at 100
+                                     #:kind 'cooperative
+                                     #:quorum 2
                                      #:legal-ids '((lei . "506700GE1G29325QX363"))
                                      #:issuer-authz-said (cred-said aic)
                                      #:signing-keypair (keri-identity-keypair eco-a)))
-         (role0 (make-body-role-credential BODY TIA 'steward "2026-10-10T00:00:00Z" #:quorum 2
+         (role0 (make-body-role-credential #:body-aid BODY
+                                           #:holder-aid TIA
+                                           #:role 'steward
+                                           #:since "2026-10-10T00:00:00Z"
+                                           #:quorum 2
                                            #:body-cred-said (cred-said body)))
          (role (body-role-credential-with-block role0 (block role0 (first stewards) (second stewards)))))
     ($ svc-b 'set-fp-root! ROOT)
@@ -107,7 +118,11 @@
     (check "presenting again imports nothing and refuses nothing"
            ($ svc-b 'present-bundle TIA (bundle (list aic body role) (cons BODY body-kel))) '(ok . 0))
     (check "a second role rides on the body credential B already holds, log or no log"
-           (let* ((r0 (make-body-role-credential BODY TIA 'member "2026-10-11T00:00:00Z" #:body-cred-said (cred-said body)))
+           (let* ((r0 (make-body-role-credential #:body-aid BODY
+                                                 #:holder-aid TIA
+                                                 #:role 'member
+                                                 #:since "2026-10-11T00:00:00Z"
+                                                 #:body-cred-said (cred-said body)))
                   (r (body-role-credential-with-block r0 (block r0 (second stewards) (third stewards)))))
              ($ svc-b 'present-bundle TIA (bundle (list r))))
            '(ok . 1))
@@ -137,16 +152,29 @@
                (refused? ($ svc-c 'present-bundle TIA
                             (bundle (list aic body (body-role-credential-with-block role0 b)) (cons BODY body-kel))))))
       (check "a role whose edge names another body is refused"
-             (let* ((other (make-body-credential ECO-A "EOTHERBODYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" 100
+             (let* ((other (make-body-credential #:ecosystem-aid ECO-A
+                                                 #:body-aid "EOTHERBODYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                                                 #:admitted-at 100
                                                  #:issuer-authz-said (cred-said aic)
                                                  #:signing-keypair (keri-identity-keypair eco-a)))
-                    (r0 (make-body-role-credential BODY TIA 'steward "2026-10-10T00:00:00Z" #:quorum 2
+                    (r0 (make-body-role-credential #:body-aid BODY
+                                                   #:holder-aid TIA
+                                                   #:role 'steward
+                                                   #:since "2026-10-10T00:00:00Z"
+                                                   #:quorum 2
                                                    #:body-cred-said (cred-said other)))
                     (r (body-role-credential-with-block r0 (block r0 (first stewards) (second stewards)))))
                (refused? ($ svc-c 'present-bundle TIA (bundle (list aic body other r) (cons BODY body-kel))))))
       (check "a body credential from a scope no root blessed is refused"
-             (let* ((bx (make-body-credential ECO-X BODY 100 #:signing-keypair (keri-identity-keypair eco-x)))
-                    (r0 (make-body-role-credential BODY TIA 'steward "2026-10-10T00:00:00Z" #:quorum 2
+             (let* ((bx (make-body-credential #:ecosystem-aid ECO-X
+                                              #:body-aid BODY
+                                              #:admitted-at 100
+                                              #:signing-keypair (keri-identity-keypair eco-x)))
+                    (r0 (make-body-role-credential #:body-aid BODY
+                                                   #:holder-aid TIA
+                                                   #:role 'steward
+                                                   #:since "2026-10-10T00:00:00Z"
+                                                   #:quorum 2
                                                    #:body-cred-said (cred-said bx)))
                     (r (body-role-credential-with-block r0 (block r0 (first stewards) (second stewards)))))
                (refused? ($ svc-c 'present-bundle TIA (bundle (list bx r) (cons BODY body-kel))))))

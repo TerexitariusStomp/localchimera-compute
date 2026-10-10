@@ -39,7 +39,10 @@
     ;; Outstanding commitment to a buyer.
     ($ store 'issue
        (make-commitment-credential
-        "EBakery" "EBuyer" "comm-1" 'transfer
+        #:provider-aid "EBakery"
+        #:receiver-aid "EBuyer"
+        #:commitment-id "comm-1"
+        #:action 'transfer
         #:resource-conforms-to "spec:bread"
         #:resource-quantity (cons 5 "loaf")))
     ;; Provider tries to transfer with no carries — must fail.
@@ -68,7 +71,10 @@
          (scope (make-leaf store "Bakery2" "EBakery2"))
          (gov   ($ scope 'mint-gov-cap "op"))
          (cmt   (make-commitment-credential
-                 "EBakery2" "EBuyer" "comm-2" 'transfer
+                 #:provider-aid "EBakery2"
+                 #:receiver-aid "EBuyer"
+                 #:commitment-id "comm-2"
+                 #:action 'transfer
                  #:resource-conforms-to "spec:bread"
                  #:resource-quantity (cons 5 "loaf"))))
     ($ scope 'attest-custody gov "spec:bread" 10)
@@ -76,7 +82,9 @@
     ;; Receiver issues fulfillment.
     ($ store 'issue
        (make-commitment-fulfillment-credential
-        "EBuyer" "EBakery2" (cred-said cmt)))
+        #:receiver-aid "EBuyer"
+        #:provider-aid "EBakery2"
+        #:commitment-said (cred-said cmt)))
     ;; Outstanding now empty → transfer with carries='() succeeds.
     (let ((said ($ scope 'transfer-custody gov "spec:bread" 10 "EOther"
                   'carries '())))
@@ -103,7 +111,10 @@
     ;; Commitment for the SPECIFIC sub-spec
     ($ store 'issue
        (make-commitment-credential
-        "EMill" "EClient" "comm-3" 'transfer
+        #:provider-aid "EMill"
+        #:receiver-aid "EClient"
+        #:commitment-id "comm-3"
+        #:action 'transfer
         #:resource-conforms-to "spec:wheat-A"
         #:resource-quantity (cons 25 "kg")))
     ;; Outstanding-of-spec for the PARENT must surface it
@@ -137,7 +148,10 @@
     ($ scope 'attest-custody gov "spec:rye" 50)
     ($ store 'issue
        (make-commitment-credential
-        "EM2" "EC" "comm-4" 'transfer
+        #:provider-aid "EM2"
+        #:receiver-aid "EC"
+        #:commitment-id "comm-4"
+        #:action 'transfer
         #:resource-conforms-to "spec:wheat-A"   ;; unrelated branch
         #:resource-quantity (cons 5 "kg")))
     (check-pred "transfer of rye unaffected by wheat-A commitment"
@@ -160,11 +174,17 @@
          (scope (make-leaf store "M3" "EM3"))
          (gov   ($ scope 'mint-gov-cap "op"))
          (c-a (make-commitment-credential
-               "EM3" "EClient1" "comm-5a" 'transfer
+               #:provider-aid "EM3"
+               #:receiver-aid "EClient1"
+               #:commitment-id "comm-5a"
+               #:action 'transfer
                #:resource-conforms-to "spec:wheat-A"
                #:resource-quantity (cons 10 "kg")))
          (c-b (make-commitment-credential
-               "EM3" "EClient2" "comm-5b" 'transfer
+               #:provider-aid "EM3"
+               #:receiver-aid "EClient2"
+               #:commitment-id "comm-5b"
+               #:action 'transfer
                #:resource-conforms-to "spec:wheat-B"
                #:resource-quantity (cons 15 "kg"))))
     ($ scope 'attest-custody gov "spec:wheat" 100)

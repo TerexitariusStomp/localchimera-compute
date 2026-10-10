@@ -38,9 +38,15 @@
          (scope (make-keri-identity (make-bytevector 32 2))) (SCOPE (keri-identity-aid scope))
          (eco-x (make-keri-identity (make-bytevector 32 3))) (ECO-X (keri-identity-aid eco-x))
          (store (spawn-acdc-store))
-         (aic (make-authorized-issuer-credential ROOT SCOPE 5 #:signing-keypair (keri-identity-keypair root)))
-         (body (make-body-credential SCOPE BODY 100
-                                     #:kind 'cooperative #:jurisdiction "FR"
+         (aic (make-authorized-issuer-credential #:root-aid ROOT
+                                                 #:ecosystem-aid SCOPE
+                                                 #:blessed-at 5
+                                                 #:signing-keypair (keri-identity-keypair root)))
+         (body (make-body-credential #:ecosystem-aid SCOPE
+                                     #:body-aid BODY
+                                     #:admitted-at 100
+                                     #:kind 'cooperative
+                                     #:jurisdiction "FR"
                                      #:legal-ids '((lei . "506700GE1G29325QX363") (siren . "123456789"))
                                      #:quorum 2
                                      #:issuer-authz-said (cred-said aic)
@@ -81,25 +87,46 @@
     (check "under another root it does not chain" #f (body-credential-valid? body #:roots "ENOBODYSROOT" #:store store))
     (check "without a store the edge cannot resolve" #f (body-credential-valid? body #:roots ROOT))
     (check "a body admitted by the root itself needs no edge"
-           #t (body-credential-valid? (make-body-credential ROOT BODY 100 #:signing-keypair (keri-identity-keypair root))
+           #t (body-credential-valid? (make-body-credential #:ecosystem-aid ROOT
+                                                            #:body-aid BODY
+                                                            #:admitted-at 100
+                                                            #:signing-keypair (keri-identity-keypair root))
                                       #:roots ROOT #:store store))
     (check "a scope no root blessed does not chain"
-           #f (body-credential-valid? (make-body-credential ECO-X BODY 100 #:signing-keypair (keri-identity-keypair eco-x))
+           #f (body-credential-valid? (make-body-credential #:ecosystem-aid ECO-X
+                                                            #:body-aid BODY
+                                                            #:admitted-at 100
+                                                            #:signing-keypair (keri-identity-keypair eco-x))
                                       #:roots ROOT #:store store))
     (check "unsigned is not valid"
-           #f (body-credential-valid? (make-body-credential SCOPE BODY 100 #:issuer-authz-said (cred-said aic))))
+           #f (body-credential-valid? (make-body-credential #:ecosystem-aid SCOPE
+                                                            #:body-aid BODY
+                                                            #:admitted-at 100
+                                                            #:issuer-authz-said (cred-said aic))))
     (check "…unless the signature is not asked"
-           #t (body-credential-valid? (make-body-credential SCOPE BODY 100 #:issuer-authz-said (cred-said aic))
+           #t (body-credential-valid? (make-body-credential #:ecosystem-aid SCOPE
+                                                            #:body-aid BODY
+                                                            #:admitted-at 100
+                                                            #:issuer-authz-said (cred-said aic))
                                       #:roots ROOT #:store store #:require-signature? #f))
     (check "an expired body credential is not live"
-           #f (body-credential-valid? (make-body-credential SCOPE BODY 100 #:expires-at 200
+           #f (body-credential-valid? (make-body-credential #:ecosystem-aid SCOPE
+                                                            #:body-aid BODY
+                                                            #:admitted-at 100
+                                                            #:expires-at 200
                                                             #:signing-keypair (keri-identity-keypair scope))))
     (check "an edge at the wrong credential does not chain"
-           #f (body-credential-valid? (make-body-credential SCOPE BODY 100 #:issuer-authz-said (cred-said body)
+           #f (body-credential-valid? (make-body-credential #:ecosystem-aid SCOPE
+                                                            #:body-aid BODY
+                                                            #:admitted-at 100
+                                                            #:issuer-authz-said (cred-said body)
                                                             #:signing-keypair (keri-identity-keypair scope))
                                       #:roots ROOT #:store store))
     (check "an edge the issuer does not hold does not chain"
-           #f (body-credential-valid? (make-body-credential ECO-X BODY 100 #:issuer-authz-said (cred-said aic)
+           #f (body-credential-valid? (make-body-credential #:ecosystem-aid ECO-X
+                                                            #:body-aid BODY
+                                                            #:admitted-at 100
+                                                            #:issuer-authz-said (cred-said aic)
                                                             #:signing-keypair (keri-identity-keypair eco-x))
                                       #:roots ROOT #:store store))
     (check "a tampered claim under the old SAID is not valid"
@@ -109,15 +136,31 @@
                                     p))
                     body)))
     (check "a personhood is not a body credential"
-           #f (body-credential-valid? (make-personhood-credential SCOPE TIA 100 #:signing-keypair (keri-identity-keypair scope))))
+           #f (body-credential-valid? (make-personhood-credential #:ecosystem-aid SCOPE
+                                                                  #:holder-aid TIA
+                                                                  #:enrolled-at 100
+                                                                  #:signing-keypair (keri-identity-keypair scope))))
 
     (display "\n── a role chained to it ──\n")
-    (let* ((role (make-body-role-credential BODY TIA 'steward "2026-10-10T00:00:00Z" #:quorum 2 #:u "n"
+    (let* ((role (make-body-role-credential #:body-aid BODY
+                                            #:holder-aid TIA
+                                            #:role 'steward
+                                            #:since "2026-10-10T00:00:00Z"
+                                            #:quorum 2
+                                            #:u "n"
                                             #:body-cred-said (cred-said body)))
            (signed (body-role-credential-with-block role (sign-said-multisig (cred-said role) (list (first signers) (third signers)))))
-           (other (make-body-credential SCOPE OTHER-BODY 100 #:issuer-authz-said (cred-said aic)
+           (other (make-body-credential #:ecosystem-aid SCOPE
+                                        #:body-aid OTHER-BODY
+                                        #:admitted-at 100
+                                        #:issuer-authz-said (cred-said aic)
                                         #:signing-keypair (keri-identity-keypair scope)))
-           (astray (make-body-role-credential BODY TIA 'steward "2026-10-10T00:00:00Z" #:quorum 2 #:u "n"
+           (astray (make-body-role-credential #:body-aid BODY
+                                              #:holder-aid TIA
+                                              #:role 'steward
+                                              #:since "2026-10-10T00:00:00Z"
+                                              #:quorum 2
+                                              #:u "n"
                                               #:body-cred-said (cred-said other))))
       ($ store 'issue other)
       (check "the role's edge is I2I at the body schema"

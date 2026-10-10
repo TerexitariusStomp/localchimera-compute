@@ -38,16 +38,31 @@
 
 (define plain
   (make-observation-event-credential
-   SCOPE HOLDER "evt-count-1" "lower"
-   #:qty 2.5 #:unit "kg" #:scope-id "org:commune" #:resource-conforms-to "rice"
-   #:at-location "place:pantry" #:timestamp "2026-10-01T10:00:00Z" #:fulfills #f))
+   #:scope-aid SCOPE
+   #:holder-aid HOLDER
+   #:event-id "evt-count-1"
+   #:action "lower"
+   #:qty 2.5
+   #:unit "kg"
+   #:scope-id "org:commune"
+   #:resource-conforms-to "rice"
+   #:at-location "place:pantry"
+   #:timestamp "2026-10-01T10:00:00Z"
+   #:fulfills #f))
 (check "a count with no picture" (assq-ref plain 'said) "EHyIKXi1CgNb3R0SSUmxzvFoc9vHVeebnU0t3HHIcUUL")
 
 (define committed
   (make-observation-event-credential
-   SCOPE HOLDER "evt-count-2" "raise"
-   #:qty 1 #:unit %count-unit #:scope-id "org:commune" #:resource-conforms-to "jam"
-   #:fulfills "cmt-1" #:timestamp "2026-10-01T11:00:00Z"))
+   #:scope-aid SCOPE
+   #:holder-aid HOLDER
+   #:event-id "evt-count-2"
+   #:action "raise"
+   #:qty 1
+   #:unit %count-unit
+   #:scope-id "org:commune"
+   #:resource-conforms-to "jam"
+   #:fulfills "cmt-1"
+   #:timestamp "2026-10-01T11:00:00Z"))
 (check "a count that fulfils a commitment" (assq-ref committed 'said) "EOGTdzcGbTddVAmRy3UQcsfhIfKhtZv7R7mfpy9WWGdr")
 (check "…with no claim to a picture" (assq-ref (assq-ref plain 'claims) 'evidence) #f)
 
@@ -55,9 +70,17 @@
 
 (define seen
   (make-observation-event-credential
-   SCOPE HOLDER "evt-count-1" "lower"
-   #:qty 2.5 #:unit "kg" #:scope-id "org:commune" #:resource-conforms-to "rice"
-   #:at-location "place:pantry" #:timestamp "2026-10-01T10:00:00Z" #:fulfills #f
+   #:scope-aid SCOPE
+   #:holder-aid HOLDER
+   #:event-id "evt-count-1"
+   #:action "lower"
+   #:qty 2.5
+   #:unit "kg"
+   #:scope-id "org:commune"
+   #:resource-conforms-to "rice"
+   #:at-location "place:pantry"
+   #:timestamp "2026-10-01T10:00:00Z"
+   #:fulfills #f
    #:evidence pic))
 (check "the claim reads back" (assq-ref (assq-ref seen 'claims) 'evidence) pic)
 (check-pred "…and the SAID differs from the same count without it"

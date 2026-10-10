@@ -102,8 +102,12 @@
    tells its key log with it, so the signature is read under the key in force.
    UNITS, ((good . unit) …), are what it counts those goods in."
   (let* ((s (signer-of signer))
-         (cred (make-federation-census-credential (signer-aid s) federation-aid goods told-at
-                                                  #:kel (signer-rotated-kel s) #:units units)))
+         (cred (make-federation-census-credential #:commune-aid (signer-aid s)
+                                                  #:federation-aid federation-aid
+                                                  #:goods goods
+                                                  #:told-at told-at
+                                                  #:kel (signer-rotated-kel s)
+                                                  #:units units)))
     (cred-with-signature cred ((signer-sign s) (cred-said cred)))))
 
 (define (kept-ledger path)
@@ -236,8 +240,13 @@
    `transfer-custody` for the leg's quantity of its good on DAY. Its SAID is a
    function of the leg alone."
   (make-observation-event-credential
-   (leg-receiver leg) (leg-provider leg) (leg-id leg) 'transfer-custody
-   #:qty (leg-qty leg) #:unit unit #:resource-conforms-to (leg-good leg)
+   #:scope-aid (leg-receiver leg)
+   #:holder-aid (leg-provider leg)
+   #:event-id (leg-id leg)
+   #:action 'transfer-custody
+   #:qty (leg-qty leg)
+   #:unit unit
+   #:resource-conforms-to (leg-good leg)
    #:timestamp day))
 
 (define (issue-custody! store scope who legs unit-of day)

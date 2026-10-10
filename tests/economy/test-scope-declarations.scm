@@ -44,8 +44,13 @@
                    (assoc-ref (consented-span-of store #:place-scope-of place-scope-of #:spec-of spec-of) "lathe-1")))
     (check "a lapsed willingness is no consent, with no further event"
            (let ((s2 (spawn-acdc-store)))
-             ($ s2 'issue (make-span-declaration-credential SHOP "lathe-1" "town-square"))
-             ($ s2 'issue (make-hosting-willingness-credential TOWN "lathe" 20.0 #:valid-until PAST))
+             ($ s2 'issue (make-span-declaration-credential #:scope-aid SHOP
+                                                            #:resource-id "lathe-1"
+                                                            #:span-place "town-square"))
+             ($ s2 'issue (make-hosting-willingness-credential #:scope-aid TOWN
+                                                               #:resource-spec "lathe"
+                                                               #:ceiling 20.0
+                                                               #:valid-until PAST))
              (not (assoc-ref (consented-span-of s2 #:place-scope-of place-scope-of #:spec-of spec-of) "lathe-1"))))
 
     (display "\n── the regime, claimed and read per recipe ──\n")
@@ -59,10 +64,14 @@
 
     (display "\n── rights off the title rail, for the span gate's standing ──\n")
     (check "no title spoken: unknown, ungated" (not (title-rights-of store "lathe-1" UC)))
-    ($ store 'issue (make-ownership-attestation-credential SHOP "lathe-1" "lathe"))
+    ($ store 'issue (make-ownership-attestation-credential #:owner-aid SHOP
+                                                           #:resource-id "lathe-1"
+                                                           #:resource-spec "lathe"))
     (check "a live title names its issuer as the rights-holder"
            (equal? SHOP (title-rights-of store "lathe-1" UC)))
-    ($ store 'issue (make-ownership-attestation-credential UC "anvil-1" "anvil"))
+    ($ store 'issue (make-ownership-attestation-credential #:owner-aid UC
+                                                           #:resource-id "anvil-1"
+                                                           #:resource-spec "anvil"))
     (check "a title held by the universal commune reads as common"
            (eq? 'common (title-rights-of store "anvil-1" UC)))
     (check "standing gates the declaration: only the rights-holder's span passes"

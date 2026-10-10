@@ -172,8 +172,11 @@
   "Helper: write a fresh playnet-federation-membership/v1 ACDC into STORE,
    issued by FEDERATION-AID, holder = COMMUNE-AID."
   (let ((cred (make-federation-membership-credential
-               federation-aid commune-aid federation-aid commune-id
-               (current-time))))
+               #:issuer-group-aid federation-aid
+               #:commune-aid commune-aid
+               #:federation federation-aid
+               #:commune-id commune-id
+               #:admitted-at (current-time))))
     ($ store 'issue cred)
     (cred-said cred)))
 

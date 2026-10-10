@@ -185,10 +185,11 @@
               (let* ((m (entry-mandate entry))
                      (mandate-spec (and m (mandate-spec-of m)))
                      (cred (make-delegation-credential
-                             citizen-id delegate-id
-                             (rest->franchise rest)
-                             (entry-fraction entry)
-                             mandate-spec
+                             #:issuer-aid citizen-id
+                             #:holder-aid delegate-id
+                             #:franchise (rest->franchise rest)
+                             #:fraction (entry-fraction entry)
+                             #:mandate-spec mandate-spec
                              #:at at)))
                 ;; a SIGNED write with no AT can still rebuild a SAID the
                 ;; supersede history already revoked (returning to a prior

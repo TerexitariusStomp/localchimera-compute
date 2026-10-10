@@ -39,10 +39,10 @@
        (lambda (cmt)
          ($ acdc-store 'issue-idempotent
             (make-commitment-credential
-              (or (commitment-provider cmt) "E_provider")
-              (or (commitment-receiver cmt) "E_receiver")
-              (commitment-id cmt)
-              (commitment-action cmt)
+              #:provider-aid (or (commitment-provider cmt) "E_provider")
+              #:receiver-aid (or (commitment-receiver cmt) "E_receiver")
+              #:commitment-id (commitment-id cmt)
+              #:action (commitment-action cmt)
               #:resource-conforms-to (commitment-resource-conforms-to cmt)
               #:plan-id (commitment-planned-within cmt)))))
 
@@ -62,8 +62,11 @@
                 (fulfills-said (and cmt-cred (cred-said cmt-cred))))
            ($ acdc-store 'issue-idempotent
               (make-work-event-credential
-                scope-aid worker
-                (economic-event-id event) hours %effort-unit
+                #:scope-aid scope-aid
+                #:worker-aid worker
+                #:event-id (economic-event-id event)
+                #:hours hours
+                #:unit %effort-unit
                 #:scope-id "Watershed"
                 #:fulfills fulfills-said)))))
 
@@ -149,8 +152,11 @@
                                   'commitment-id cmt-id))))
            ($ acdc-store 'issue-idempotent
               (make-work-event-credential
-                "E_bakery" worker
-                (economic-event-id event) hours %effort-unit
+                #:scope-aid "E_bakery"
+                #:worker-aid worker
+                #:event-id (economic-event-id event)
+                #:hours hours
+                #:unit %effort-unit
                 #:fulfills (and cmt-cred (cred-said cmt-cred)))))))
 
     ;; Work event references C-MISSING which doesn't exist
@@ -191,11 +197,12 @@
        (lambda (event)
          ($ acdc-store 'issue-idempotent
             (make-work-event-credential
-              "E_test" (economic-event-provider event)
-              (economic-event-id event)
-              (measure-has-numerical-value
-                (economic-event-effort-quantity event))
-              %effort-unit))))
+              #:scope-aid "E_test"
+              #:worker-aid (economic-event-provider event)
+              #:event-id (economic-event-id event)
+              #:hours (measure-has-numerical-value
+                        (economic-event-effort-quantity event))
+              #:unit %effort-unit))))
 
     (let ((event (make-economic-event
                    #:id "W-3" #:action 'work

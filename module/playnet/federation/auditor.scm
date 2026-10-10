@@ -93,7 +93,8 @@
            (cred
             (cred-signed-by-scope
             (if coherent?
-                (make-audit-pass-credential fed-aid fed-aid
+                (make-audit-pass-credential #:auditor-aid fed-aid
+                                            #:federation-aid fed-aid
                                             #:cycle cycle)
                 (let ((violations
                        (filter (lambda (entry) (cdr entry))
@@ -143,7 +144,9 @@
                                            (records-held-twice
                                             federation-ref)))))))
                   (make-incoherence-alert-credential
-                   fed-aid fed-aid violations
+                   #:auditor-aid fed-aid
+                   #:federation-aid fed-aid
+                   #:violations violations
                    #:cycle cycle)))
             federation-ref)))
       (when sink-store ($ sink-store 'issue cred))
@@ -254,8 +257,11 @@
                   ;; actor's nominal label. (issued-by claim preserves it.)
                   (rev (cred-signed-by-scope
                         (make-reversion-attestation-credential
-                         ($ scope-ref 'scope-aid) default-cust spec qty
-                         (cred-said c))
+                         #:authority-aid ($ scope-ref 'scope-aid)
+                         #:default-custodian-aid default-cust
+                         #:resource-spec spec
+                         #:qty qty
+                         #:expired-attestation-said (cred-said c))
                         scope-ref)))
              ($ store 'issue rev)
              ($ store 'revoke (cred-said c))

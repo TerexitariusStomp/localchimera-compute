@@ -89,7 +89,12 @@
 (define laptop (device-keypair))
 (define laptop-wire
   (cred->wire (make-device-authorization-credential
-               aid (device-aid laptop) "laptop" "software" 1700000000 #:signing-keypair kp0)))
+               #:person-aid aid
+               #:device-aid (device-aid laptop)
+               #:label "laptop"
+               #:tier "software"
+               #:enrolled-at 1700000000
+               #:signing-keypair kp0)))
 (define (device-auth)
   (let ((nonce (with-vat gateway-vat ($ lobby 'keri-challenge aid))))
     (settle (with-vat gateway-vat

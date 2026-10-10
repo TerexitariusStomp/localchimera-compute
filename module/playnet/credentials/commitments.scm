@@ -127,18 +127,20 @@
   #:index (agreement-id proposal-id)
   #:time accepted-at)
 
-(define* (make-intent-credential issuer-aid intent-id action
-                                  #:key (provider #f) (receiver #f)
-                                        (resource-conforms-to #f)
-                                        (resource-classified-as '())
-                                        (resource-quantity #f)
-                                        (effort-quantity #f)
-                                        (available-quantity #f)
-                                        (minimum-quantity #f)
-                                        (due #f) (plan-id #f)
-                                        (process-id #f)
-                                        (satisfies #f)
-                                        (holder-aid #f))
+(define-credential-procedure (make-intent-credential issuer-aid intent-id action)
+  #:key ((provider #f)
+         (receiver #f)
+         (resource-conforms-to #f)
+         (resource-classified-as '())
+         (resource-quantity #f)
+         (effort-quantity #f)
+         (available-quantity #f)
+         (minimum-quantity #f)
+         (due #f)
+         (plan-id #f)
+         (process-id #f)
+         (satisfies #f)
+         (holder-aid #f))
   "Intent ACDC: unilateral signal — provider XOR receiver.
    Issuer = the agent declaring the intent (provider OR receiver).
    Holder = governance-group-aid (or scope-aid) by default — the

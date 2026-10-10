@@ -45,7 +45,10 @@
 
 (with-vat vat
   (let ()
-    (define grant-cred (make-custody-attestation-credential OWNER UC "bike" 4))
+    (define grant-cred (make-custody-attestation-credential #:issuing-authority-aid OWNER
+                                                            #:custodian-aid UC
+                                                            #:resource-spec "bike"
+                                                            #:qty 4))
 
     ;; ── (1) a bike three levels deep, found from the root ──
     ;; UC → region → district → leaf(bike)

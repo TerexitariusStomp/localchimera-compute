@@ -83,7 +83,12 @@
   `(("flour" ,@(sort (list aid-a aid-b) string<?))))
 (define a-masters? (string<? aid-a aid-b))     ; a good's master is its first participant by AID
 (define (credential-for issuer aid name sref)   ; a credential from another issuer than the federation
-  (make-federation-sturdyref-credential (keri-identity-aid issuer) aid name sref 'websocket "2026-09-27T00:00:00Z"
+  (make-federation-sturdyref-credential #:issuer-group-aid (keri-identity-aid issuer)
+                                        #:commune-aid aid
+                                        #:commune-id name
+                                        #:sturdyref-uri sref
+                                        #:netlayer 'websocket
+                                        #:registered-at "2026-09-27T00:00:00Z"
                                         #:signing-keypair (keri-identity-keypair issuer)))
 
 ;; ── commune A, through the door, here; the vat on a fibers thread, the reading on this one ──

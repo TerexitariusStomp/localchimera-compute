@@ -50,12 +50,21 @@
 (define (device-aid kp) (cesr-bytes->qb64 "B" (ed25519-keypair-public kp)))
 (define phone (device-keypair))
 (define %now 1760000000)
-(define cred (make-device-authorization-credential person (device-aid phone) "phone" "software"
-                                                   %now #:signing-keypair kp0))
+(define cred (make-device-authorization-credential #:person-aid person
+                                                   #:device-aid (device-aid phone)
+                                                   #:label "phone"
+                                                   #:tier "software"
+                                                   #:enrolled-at %now
+                                                   #:signing-keypair kp0))
 (device-enroll! person cred %now)
 (define narrow (device-keypair))
-(device-enroll! person (make-device-authorization-credential person (device-aid narrow) "bot" "software"
-                                                             %now #:doors '("whoami") #:signing-keypair kp0)
+(device-enroll! person (make-device-authorization-credential #:person-aid person
+                                                             #:device-aid (device-aid narrow)
+                                                             #:label "bot"
+                                                             #:tier "software"
+                                                             #:enrolled-at %now
+                                                             #:doors '("whoami")
+                                                             #:signing-keypair kp0)
                 %now)
 
 ;; ── stand-in objects and a synchronous call ───────────────────────────────

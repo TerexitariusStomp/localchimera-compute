@@ -142,7 +142,11 @@
     ($ top 'admit-commune gtop "la" la)
     ($ store 'issue
        (make-work-event-credential
-        "ELA" "alice" "evt-1" 4 %effort-unit
+        #:scope-aid "ELA"
+        #:worker-aid "alice"
+        #:event-id "evt-1"
+        #:hours 4
+        #:unit %effort-unit
         #:timestamp "2026-04-25T10:00:00Z"))
 
     (check-pred "labor issued by leaf is coherent"
@@ -166,7 +170,11 @@
     ;; Federation tries to attest someone's labor directly
     ($ store 'issue
        (make-work-event-credential
-        "ETOP" "alice" "evt-2" 100 %effort-unit
+        #:scope-aid "ETOP"
+        #:worker-aid "alice"
+        #:event-id "evt-2"
+        #:hours 100
+        #:unit %effort-unit
         #:timestamp "2026-04-25T10:00:00Z"))
 
     (check-pred "federation-issued labor flagged"
@@ -197,20 +205,28 @@
     ;; we hand-issue the ratification ACDCs (target = commune-aid);
     ;; production opens a real ballot via `open-recomposition-ballot`.
     (let ((rat-la (make-recomposition-ratification-credential
-                   "ELA" 'admit-commune
-                   '(admit-commune "la" "ELA")
-                   "E_test_snap_la" '((yes . 1))))
+                   #:scope-aid "ELA"
+                   #:proposal-type 'admit-commune
+                   #:proposal-spec '(admit-commune "la" "ELA")
+                   #:ballot-said "E_test_snap_la"
+                   #:tally '((yes . 1))))
           (rat-lb (make-recomposition-ratification-credential
-                   "ELB" 'admit-commune
-                   '(admit-commune "lb" "ELB")
-                   "E_test_snap_lb" '((yes . 1)))))
+                   #:scope-aid "ELB"
+                   #:proposal-type 'admit-commune
+                   #:proposal-spec '(admit-commune "lb" "ELB")
+                   #:ballot-said "E_test_snap_lb"
+                   #:tally '((yes . 1)))))
       ($ store 'issue rat-la)
       ($ store 'issue rat-lb)
       ($ top 'admit-commune gtop "la" la 'ratification (cred-said rat-la))
       ($ top 'admit-commune gtop "lb" lb 'ratification (cred-said rat-lb)))
     ($ store 'issue
        (make-work-event-credential
-        "ELA" "alice" "evt-3" 2 %effort-unit
+        #:scope-aid "ELA"
+        #:worker-aid "alice"
+        #:event-id "evt-3"
+        #:hours 2
+        #:unit %effort-unit
         #:timestamp "2026-04-25T10:00:00Z"))
 
     (check-pred "healthy tree is coherent"
@@ -309,7 +325,11 @@
   (let* ((store (spawn-acdc-store))
          ;; Forge a merger ACDC saying ENEW is a 'commune
          (forged (make-scope-merger-credential
-                  "EA" "EB" "ENEW" 'commune (current-time))))
+                  #:predecessor-a-aid "EA"
+                  #:predecessor-b-aid "EB"
+                  #:new-scope-aid "ENEW"
+                  #:kind 'commune
+                  #:merged-at (current-time))))
     ($ store 'issue forged)
     ;; But spawn ENEW as a federation
     (let* ((root (spawn-scope-root "NEW"))

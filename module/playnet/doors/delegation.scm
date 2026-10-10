@@ -82,11 +82,13 @@
        (list 'ok
              (credential-preimage-fields
               (make-delegation-credential
-               identity-key delegate-aid
-               (if (and (pair? rest) (eq? (car rest) 'scope))
-                   (list 'scope (cadr rest))
-                   'federation)
-               fraction #f))))
+               #:issuer-aid identity-key
+               #:holder-aid delegate-aid
+               #:franchise (if (and (pair? rest) (eq? (car rest) 'scope))
+                               (list 'scope (cadr rest))
+                               'federation)
+               #:fraction fraction
+               #:mandate-spec #f))))
 
       ((set-delegation-signed identity-key delegate-aid fraction signature . rest)
        (call-with-values
@@ -95,11 +97,13 @@
            (catch #t
              (lambda ()
                (let ((cred (make-delegation-credential
-                            identity-key delegate-aid
-                            (if (and (pair? rest) (eq? (car rest) 'scope))
-                                (list 'scope (cadr rest))
-                                'federation)
-                            fraction #f)))
+                            #:issuer-aid identity-key
+                            #:holder-aid delegate-aid
+                            #:franchise (if (and (pair? rest) (eq? (car rest) 'scope))
+                                            (list 'scope (cadr rest))
+                                            'federation)
+                            #:fraction fraction
+                            #:mandate-spec #f)))
                  (cond
                    ((not (client-signature-ok? cred identity-key signature))
                     (list 'error "delegation signature does not verify against caller AID"))
@@ -124,11 +128,13 @@
        (list 'ok
              (credential-preimage-fields
               (make-delegation-credential
-               identity-key delegate-aid
-               (if (and (pair? rest) (eq? (car rest) 'scope))
-                   (list 'scope (cadr rest))
-                   'federation)
-               fraction mandate-spec))))
+               #:issuer-aid identity-key
+               #:holder-aid delegate-aid
+               #:franchise (if (and (pair? rest) (eq? (car rest) 'scope))
+                               (list 'scope (cadr rest))
+                               'federation)
+               #:fraction fraction
+               #:mandate-spec mandate-spec))))
 
       ((set-delegation-mandated-signed identity-key delegate-aid fraction mandate-spec signature . rest)
        (call-with-values
@@ -137,11 +143,13 @@
            (catch #t
              (lambda ()
                (let ((cred (make-delegation-credential
-                            identity-key delegate-aid
-                            (if (and (pair? rest) (eq? (car rest) 'scope))
-                                (list 'scope (cadr rest))
-                                'federation)
-                            fraction mandate-spec))
+                            #:issuer-aid identity-key
+                            #:holder-aid delegate-aid
+                            #:franchise (if (and (pair? rest) (eq? (car rest) 'scope))
+                                            (list 'scope (cadr rest))
+                                            'federation)
+                            #:fraction fraction
+                            #:mandate-spec mandate-spec))
                      (pred (mandate mandate-spec)))
                  (cond
                    ((not pred)

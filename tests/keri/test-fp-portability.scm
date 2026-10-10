@@ -44,17 +44,27 @@
          ;; PHCs are unsigned (issued "by the ecosystem" in this test —
          ;; eco is a synthetic AID, no keypair). The triangle still
          ;; requires VRCs to be signed; PHC sig requirement is separate.
-         (phc-a (make-personhood-credential eco aid-a 100))
-         (phc-b (make-personhood-credential eco aid-b 100)))
+         (phc-a (make-personhood-credential #:ecosystem-aid eco
+                                            #:holder-aid aid-a
+                                            #:enrolled-at 100))
+         (phc-b (make-personhood-credential #:ecosystem-aid eco
+                                            #:holder-aid aid-b
+                                            #:enrolled-at 100)))
     ($ store 'issue phc-a)
     ($ store 'issue phc-b)
     ($ store 'issue
-       (make-relationship-credential aid-a aid-b 'trust
-                                      (cred-said phc-a) 101
+       (make-relationship-credential #:issuer-aid aid-a
+                                     #:subject-aid aid-b
+                                     #:relationship-type 'trust
+                                      #:issuer-phc-said (cred-said phc-a)
+                                     #:issued-at 101
                                       #:signing-keypair kp-a))
     ($ store 'issue
-       (make-relationship-credential aid-b aid-a 'trust
-                                      (cred-said phc-b) 102
+       (make-relationship-credential #:issuer-aid aid-b
+                                     #:subject-aid aid-a
+                                     #:relationship-type 'trust
+                                      #:issuer-phc-said (cred-said phc-b)
+                                     #:issued-at 102
                                       #:signing-keypair kp-b))))
 
 
@@ -141,7 +151,7 @@
   ;; Persist a revocation too — and verify it reloads as revoked.
   (let ((bad-aid (keri-identity-aid (fresh-identity 99))))
     ($ store-c 'issue
-       (make-personhood-credential eco bad-aid 200))
+       (make-personhood-credential #:ecosystem-aid eco #:holder-aid bad-aid #:enrolled-at 200))
     (let ((bad-phc (phc-for store-c eco bad-aid)))
       ($ store-c 'revoke (cred-said bad-phc))
       (check-pred "store-C: revoked PHC is not live"
@@ -196,8 +206,12 @@
   (define c-aid (keri-identity-aid carol))
   ;; ONE store holding PHCs from TWO ecosystems — the federated fold.
   (define store (spawn-acdc-store))
-  ($ store 'issue (make-personhood-credential eco-1 a-aid 100))
-  ($ store 'issue (make-personhood-credential eco-2 b-aid 100))
+  ($ store 'issue (make-personhood-credential #:ecosystem-aid eco-1
+                                              #:holder-aid a-aid
+                                              #:enrolled-at 100))
+  ($ store 'issue (make-personhood-credential #:ecosystem-aid eco-2
+                                              #:holder-aid b-aid
+                                              #:enrolled-at 100))
 
   ;; portable: a person from EITHER ecosystem is recognised
   (check-pred "alice (eco-1) is a person, portably"

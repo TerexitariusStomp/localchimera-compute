@@ -393,7 +393,12 @@
                 (share-bv  (caddr share))
                 (share-hex (bv->hex share-bv))
                 (cred      (make-bran-share-credential
-                            issuer holder idx k n share-hex
+                            #:issuer-group-aid issuer
+                            #:holder-aid holder
+                            #:share-index idx
+                            #:threshold k
+                            #:total-shares n
+                            #:share-data-hex share-hex
                             #:subject-aid aid))
                 (filename  (format #f "~a/share-~a-~a.scm"
                                    output-dir idx (truncate-aid holder))))

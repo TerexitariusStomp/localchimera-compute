@@ -260,11 +260,17 @@
                         (gov ($ f 'mint-gov-cap "op")))
                    ($ store-a 'issue
                       (make-commitment-credential
-                        "E_alice" "E_a" "C-A1" 'use
+                        #:provider-aid "E_alice"
+                        #:receiver-aid "E_a"
+                        #:commitment-id "C-A1"
+                        #:action 'use
                         #:resource-conforms-to "spec-bread"))
                    ($ store-b 'issue
                       (make-commitment-credential
-                        "E_bob" "E_b" "C-B1" 'use
+                        #:provider-aid "E_bob"
+                        #:receiver-aid "E_b"
+                        #:commitment-id "C-B1"
+                        #:action 'use
                         #:resource-conforms-to "spec-bread"))
                    ($ f 'admit-commune gov "a" commune-a)
                    ($ f 'admit-commune gov "b" commune-b)

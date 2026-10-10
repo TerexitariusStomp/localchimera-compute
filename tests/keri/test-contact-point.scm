@@ -31,12 +31,12 @@
 (define mallory-k (keri-identity-keypair mallory))
 
 (define (cp . args)
-  (apply make-contact-point-credential alice-a args))
+  (apply make-contact-point-credential #:subject-aid alice-a args))
 
 
 (display "\n── 1. Shape: self-issued, blinded, bindable ──\n")
 
-(let ((c (cp 'email "alice@example.org" #:signing-keypair alice-k)))
+(let ((c (cp #:kind 'email #:ctx "alice@example.org" #:signing-keypair alice-k)))
   (check "issuer = holder = the subject (nobody else asserts how to reach you)"
          (and (equal? (cred-issuer c) alice-a)
               (equal? (cred-holder c) alice-a)))
@@ -58,30 +58,36 @@
 ;; The attack: an address has a small enough claim space to enumerate. Without
 ;; a nonce, a holder of the SAID could confirm a guessed address by rebuilding
 ;; the credential. With one, rebuilding cannot reproduce the SAID.
-(let* ((real  (cp 'email "alice@example.org"))
+(let* ((real  (cp #:kind 'email #:ctx "alice@example.org"))
        (guess (make-contact-point-credential
-               alice-a 'email "alice@example.org"
+               #:subject-aid alice-a
+               #:kind 'email
+               #:ctx "alice@example.org"
                #:issued-at (cred-claim real 'issued-at))))
   (check "same content, different SAID — the guess cannot be confirmed"
          (not (equal? (cred-said real) (cred-said guess))))
   (check "supplying the exact nonce DOES reproduce it (rebuild path works)"
          (equal? (cred-said real)
                  (cred-said (make-contact-point-credential
-                             alice-a 'email "alice@example.org"
+                             #:subject-aid alice-a
+                             #:kind 'email
+                             #:ctx "alice@example.org"
                              #:u         (cred-claim real 'u)
                              #:issued-at (cred-claim real 'issued-at))))))
 
 
 (display "\n── 3. The security hinge: you may only bind your OWN channel ──\n")
 
-(let ((stolen (cp 'email "alice@example.org" #:signing-keypair alice-k)))
+(let ((stolen (cp #:kind 'email #:ctx "alice@example.org" #:signing-keypair alice-k)))
   (check "Mallory cannot present Alice's contact point"
          (string? (contact-point-acceptable? stolen mallory-a))))
 
 ;; The redirect attack: Mallory issues a contact point naming HIS address but
 ;; claiming Alice as subject, hoping the gateway binds it under her AID.
 (let ((forged (make-contact-point-credential
-               alice-a 'email "mallory@evil.example"
+               #:subject-aid alice-a
+               #:kind 'email
+               #:ctx "mallory@evil.example"
                #:signing-keypair mallory-k)))
   (check "a credential naming Alice as subject is not presentable by Mallory"
          (string? (contact-point-acceptable? forged mallory-a)))
@@ -91,7 +97,7 @@
 
 (display "\n── 4. Integrity and validation ──\n")
 
-(let* ((c (cp 'lxmf "abc123def456" #:signing-keypair alice-k))
+(let* ((c (cp #:kind 'lxmf #:ctx "abc123def456" #:signing-keypair alice-k))
        (tampered (map (lambda (p)
                         (if (eq? (car p) 'claims)
                             (cons 'claims
@@ -105,17 +111,17 @@
          (string? (contact-point-acceptable? tampered alice-a))))
 
 (check "unknown channel kind is rejected"
-       (string? (contact-point-acceptable? (cp 'carrier-pigeon "loft-3") alice-a)))
+       (string? (contact-point-acceptable? (cp #:kind 'carrier-pigeon #:ctx "loft-3") alice-a)))
 (check "empty destination is rejected"
-       (string? (contact-point-acceptable? (cp 'email "") alice-a)))
+       (string? (contact-point-acceptable? (cp #:kind 'email #:ctx "") alice-a)))
 (check "expired contact point is rejected"
-       (string? (contact-point-acceptable? (cp 'email "a@b.c" #:expires-at 1000)
+       (string? (contact-point-acceptable? (cp #:kind 'email #:ctx "a@b.c" #:expires-at 1000)
                                            alice-a #:now 2000)))
 (check "unexpired contact point is accepted"
-       (eq? #t (contact-point-acceptable? (cp 'email "a@b.c" #:expires-at 9999)
+       (eq? #t (contact-point-acceptable? (cp #:kind 'email #:ctx "a@b.c" #:expires-at 9999)
                                           alice-a #:now 2000)))
 (check "expiry is only checked when NOW is supplied"
-       (eq? #t (contact-point-acceptable? (cp 'email "a@b.c" #:expires-at 1000)
+       (eq? #t (contact-point-acceptable? (cp #:kind 'email #:ctx "a@b.c" #:expires-at 1000)
                                           alice-a)))
 
 
@@ -140,7 +146,7 @@
 ;; Nothing in the credential names a gateway. That IS the portability
 ;; property — presenting it elsewhere needs no migration, no export, and no
 ;; cooperation from the gateway that holds it today.
-(let ((c (cp 'lxmf "abc123def456" #:signing-keypair alice-k)))
+(let ((c (cp #:kind 'lxmf #:ctx "abc123def456" #:signing-keypair alice-k)))
   (check "acceptable at a second gateway with no prior knowledge of Alice"
          (eq? #t (contact-point-acceptable? c alice-a)))
   (check "and yields the identical binding there"

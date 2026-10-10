@@ -25,7 +25,11 @@
          ;; Pre-populate store with a merger ACDC for E_combined.
          (_ ($ store 'issue
                (make-scope-merger-credential
-                 "E_a" "E_b" "E_combined" 'commune 1000)))
+                 #:predecessor-a-aid "E_a"
+                 #:predecessor-b-aid "E_b"
+                 #:new-scope-aid "E_combined"
+                 #:kind 'commune
+                 #:merged-at 1000)))
          ;; Spawn a fresh scope with empty lineage.
          (root (spawn-scope-root "Combined"))
          (combined (spawn-scope "Combined"
@@ -54,7 +58,10 @@
   (let* ((store (spawn-acdc-store))
          (_ ($ store 'issue
                (make-scope-split-credential
-                 "E_parent" '("E_sub1" "E_sub2") 'commune 2000)))
+                 #:parent-scope-aid "E_parent"
+                 #:sub-scope-aids '("E_sub1" "E_sub2")
+                 #:kind 'commune
+                 #:split-at 2000)))
          (root (spawn-scope-root "Sub1"))
          (sub1 (spawn-scope "Sub1"
                              #:kind 'commune
@@ -80,11 +87,18 @@
          ;; Earlier event: E_root split into E_left and E_right
          (_1 ($ store 'issue
                 (make-scope-split-credential
-                  "E_root" '("E_left" "E_right") 'commune 1000)))
+                  #:parent-scope-aid "E_root"
+                  #:sub-scope-aids '("E_left" "E_right")
+                  #:kind 'commune
+                  #:split-at 1000)))
          ;; Later event: E_left and E_other merge into E_final
          (_2 ($ store 'issue
                 (make-scope-merger-credential
-                  "E_left" "E_other" "E_final" 'commune 2000)))
+                  #:predecessor-a-aid "E_left"
+                  #:predecessor-b-aid "E_other"
+                  #:new-scope-aid "E_final"
+                  #:kind 'commune
+                  #:merged-at 2000)))
          (root (spawn-scope-root "Final"))
          (final (spawn-scope "Final"
                               #:kind 'commune
@@ -112,7 +126,11 @@
 (with-vat vat
   (let* ((store (spawn-acdc-store))
          (cred (make-scope-merger-credential
-                 "E_x" "E_y" "E_revoked" 'commune 1000))
+                 #:predecessor-a-aid "E_x"
+                 #:predecessor-b-aid "E_y"
+                 #:new-scope-aid "E_revoked"
+                 #:kind 'commune
+                 #:merged-at 1000))
          (_ ($ store 'issue cred))
          (_2 ($ store 'revoke (cred-said cred)))
          (root (spawn-scope-root "Revoked"))

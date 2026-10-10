@@ -62,7 +62,9 @@
 
   ;; Root blesses the scope: a signed AIC (root → scope) lands in its store.
   ($ store 'issue (make-authorized-issuer-credential
-                    root-aid eco-aid 10
+                    #:root-aid root-aid
+                    #:ecosystem-aid eco-aid
+                    #:blessed-at 10
                     #:signing-keypair (keri-identity-keypair root)))
 
   ;; Now a PHC the scope issues carries the issuer-authz edge and chains to

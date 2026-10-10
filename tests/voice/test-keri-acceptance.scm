@@ -61,7 +61,9 @@
          (let ((said
                 ($ acdc 'issue
                    (make-agreement-credential
-                     acceptor-aid proposer-aid agr-id
+                     #:acceptor-aid acceptor-aid
+                     #:proposer-aid proposer-aid
+                     #:agreement-id agr-id
                      #:proposal-id proposal-id
                      #:primary-commitment-ids primary
                      #:reciprocal-commitment-ids recip

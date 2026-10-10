@@ -77,8 +77,12 @@
                   (share-bv  (caddr share))
                   (share-hex (bv->hex share-bv))
                   (cred (make-bran-share-credential
-                         issuer-aid holder
-                         idx k n share-hex
+                         #:issuer-group-aid issuer-aid
+                         #:holder-aid holder
+                         #:share-index idx
+                         #:threshold k
+                         #:total-shares n
+                         #:share-data-hex share-hex
                          #:subject-aid scope-aid
                          #:signing-keypair signing-keypair)))
              ($ acdc-store 'issue cred)

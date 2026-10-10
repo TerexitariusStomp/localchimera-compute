@@ -93,7 +93,10 @@
     ;; Outstanding commitment: scope-C promises 5 bread to someone.
     ($ store 'issue
        (make-commitment-credential
-        "EScopeC" "EBuyer" "comm-1" 'transfer
+        #:provider-aid "EScopeC"
+        #:receiver-aid "EBuyer"
+        #:commitment-id "comm-1"
+        #:action 'transfer
         #:resource-conforms-to "spec:bread"
         #:resource-quantity (cons 5 "loaf")))
     (check-pred "transfer with empty carries rejects orphan"
@@ -122,11 +125,17 @@
          (gov   ($ scope 'mint-gov-cap "op")))
     ($ scope 'attest-custody gov "spec:cloth" 30)
     (let* ((c1 (make-commitment-credential
-                "EScopeD" "EReceiver1" "comm-A" 'transfer
+                #:provider-aid "EScopeD"
+                #:receiver-aid "EReceiver1"
+                #:commitment-id "comm-A"
+                #:action 'transfer
                 #:resource-conforms-to "spec:cloth"
                 #:resource-quantity (cons 5 "m")))
            (c2 (make-commitment-credential
-                "EScopeD" "EReceiver2" "comm-B" 'transfer
+                #:provider-aid "EScopeD"
+                #:receiver-aid "EReceiver2"
+                #:commitment-id "comm-B"
+                #:action 'transfer
                 #:resource-conforms-to "spec:cloth"
                 #:resource-quantity (cons 7 "m"))))
       ($ store 'issue c1)

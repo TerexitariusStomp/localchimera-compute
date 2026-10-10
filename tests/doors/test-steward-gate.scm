@@ -113,8 +113,11 @@
       (check "…and Sam holds no rel in her book"        (may HEARTH SAM "oven") #f)
       (display "\n── the signed half: a relationship credential is a group too ──\n")
       ;; Alice vouches Sam as a friend — a VRC in the store, no book entry
-      (let ((vrc (make-relationship-credential ALICE SAM 'friends "EphcAlice"
-                                               "2026-08-30T00:00:00Z")))
+      (let ((vrc (make-relationship-credential #:issuer-aid ALICE
+                                               #:subject-aid SAM
+                                               #:relationship-type 'friends
+                                               #:issuer-phc-said "EphcAlice"
+                                               #:issued-at "2026-08-30T00:00:00Z")))
         ($ store 'issue vrc)
         (check "a live VRC admits him under in-group" (may HEARTH SAM "oven") #t)
         (check "the gate reads the rel off the credential, by the kind's one name"
@@ -126,8 +129,11 @@
   (call-with-values (lambda () (world VOUCHED))
     (lambda (svc root store grant may)
       (check "a book tag is no vouch: Tia waits"  (may HEARTH TIA "oven") #f)
-      (let ((vrc (make-relationship-credential ALICE TIA 'colleague "EphcAlice"
-                                               "2026-08-30T00:00:00Z")))
+      (let ((vrc (make-relationship-credential #:issuer-aid ALICE
+                                               #:subject-aid TIA
+                                               #:relationship-type 'colleague
+                                               #:issuer-phc-said "EphcAlice"
+                                               #:issued-at "2026-08-30T00:00:00Z")))
         ($ store 'issue vrc)
         (check "Alice's signed vouch admits her"  (may HEARTH TIA "oven") #t)
         (check "…and admits nobody else"          (may HEARTH SAM "oven") #f)
@@ -153,7 +159,11 @@
     (check "…a stranger's does not" (member (string-append "means:" SAM ":spec-bread") (hits)) #f)
     ($ svc 'declare-need "ring" ALICE "spec-bread" 2 "loaf" "" "" "" "🍞" #f #f "bread" "" VOUCHED)
     (check "locked to the vouched, a tagged friend waits" (hits) '())
-    ($ store 'issue (make-relationship-credential ALICE SAM 'friends "EphcAlice" "2026-08-30T00:00:00Z"))
+    ($ store 'issue (make-relationship-credential #:issuer-aid ALICE
+                                                  #:subject-aid SAM
+                                                  #:relationship-type 'friends
+                                                  #:issuer-phc-said "EphcAlice"
+                                                  #:issued-at "2026-08-30T00:00:00Z"))
     (check "…and her signed vouch for Sam opens it to him"
            (hits) (list (string-append "means:" SAM ":spec-bread"))))
 

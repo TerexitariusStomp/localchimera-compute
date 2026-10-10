@@ -69,7 +69,9 @@
     (display "\n── two witnesses, k = 2 ──\n")
     ;; Ana and Cy are recognised (the founder's ecosystem issues them directly
     ;; here — what a ceremony would have done); now the population is 3
-    (for-each (lambda (id) ($ store 'issue (make-personhood-credential ECO (aid id) 100)))
+    (for-each (lambda (id) ($ store 'issue (make-personhood-credential #:ecosystem-aid ECO
+                                                                       #:holder-aid (aid id)
+                                                                       #:enrolled-at 100)))
               (list ana cy))
     (check "Dee asks" (car ($ svc 'fp-request-enroll (aid dee) ECO)) 'ok)
     (let* ((my (cdr ($ svc 'fp-my-ceremony (aid dee) ECO)))

@@ -57,9 +57,13 @@
           ;; rebuilt by the constructor: the SAID it derives is the SAID a
           ;; faithful wire states
           (let ((cred (make-contact-point-credential
-                       issuer (string->symbol kind) ctx
-                       #:style (string->symbol style) #:issued-at issued-at
-                       #:expires-at (and (number? expires) expires) #:u u)))
+                       #:subject-aid issuer
+                       #:kind (string->symbol kind)
+                       #:ctx ctx
+                       #:style (string->symbol style)
+                       #:issued-at issued-at
+                       #:expires-at (and (number? expires) expires)
+                       #:u u)))
             (if (equal? said (cred-said cred))
                 (if sig (cred-with-signature cred sig) cred)
                 "the contact point's identifier does not match its content"))))))

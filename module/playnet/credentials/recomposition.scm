@@ -19,18 +19,20 @@
 (define *schema-playnet-scope-rejoin*            "playnet-scope-rejoin/v1")
 (define *schema-playnet-conflict-resolution*     "playnet-conflict-resolution/v1")
 
-(define* (make-scope-merger-credential predecessor-a-aid predecessor-b-aid
-                                        new-scope-aid kind merged-at
-                                        #:key (edges '()) (predecessors #f)
-                                        (signing-keypair #f) (multisig-signers #f))
+(define-credential-procedure (make-scope-merger-credential new-scope-aid kind merged-at)
+  #:key ((predecessor-a-aid #f)
+         (predecessor-b-aid #f)
+         (edges '())
+         (predecessors #f)
+         (signing-keypair #f)
+         (multisig-signers #f))
   "Scopes merge into a new combined scope.
 
-   Two-way (legacy): supply PREDECESSOR-A-AID and PREDECESSOR-B-AID
-   positionally; claims carry `predecessor-a` and `predecessor-b`.
+   Two-way: supply #:predecessor-a-aid and #:predecessor-b-aid; claims carry
+   `predecessor-a` and `predecessor-b`.
 
-   N-way: pass `#:predecessors '(aid1 aid2 aid3 …)`. Claims carry a
-   single `predecessors` list instead. Backwards-compatible — existing
-   2-way callers remain unchanged.
+   N-way: pass #:predecessors '(aid1 aid2 aid3 …) and leave the two-way
+   keywords out. Claims carry a single `predecessors` list instead.
 
    issuer = predecessor-a (or first of #:predecessors); holder = new-scope-aid.
    EDGES: optional extra ACDC edges (ratification, stale-membership)."

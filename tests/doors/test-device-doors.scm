@@ -52,11 +52,19 @@
 (define (device-aid kp) (cesr-bytes->qb64 "B" (ed25519-keypair-public kp)))
 (define bot (device-keypair)) (define phone (device-keypair))
 (define person (public-key->aid-prefix (ed25519-keypair-public kp0)))
-(device-enroll! person (make-device-authorization-credential person (device-aid bot) "bot" "software"
-                                                            1760000000 #:doors '("whoami" "my-slots")
+(device-enroll! person (make-device-authorization-credential #:person-aid person
+                                                             #:device-aid (device-aid bot)
+                                                             #:label "bot"
+                                                             #:tier "software"
+                                                            #:enrolled-at 1760000000
+                                                             #:doors '("whoami" "my-slots")
                                                             #:signing-keypair kp0) 1760000000)
-(device-enroll! person (make-device-authorization-credential person (device-aid phone) "phone" "software"
-                                                            1760000000 #:signing-keypair kp0) 1760000000)
+(device-enroll! person (make-device-authorization-credential #:person-aid person
+                                                             #:device-aid (device-aid phone)
+                                                             #:label "phone"
+                                                             #:tier "software"
+                                                            #:enrolled-at 1760000000
+                                                             #:signing-keypair kp0) 1760000000)
 (define (entry-of kp) (cdr (device-owner-of (device-aid kp) 1760000001)))
 (check "a doors claim reads back as symbols"
        (equal? '(whoami my-slots) (device-entry-doors (entry-of bot))))

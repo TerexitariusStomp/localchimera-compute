@@ -54,7 +54,9 @@
        ;; may override; #f in synthetic test mode leaves it unsigned.
        (let* ((sign-kp (or override-keypair keypair))
               (phc (make-personhood-credential
-                     scope-aid candidate-aid enrolled-at
+                     #:ecosystem-aid scope-aid
+                     #:holder-aid candidate-aid
+                     #:enrolled-at enrolled-at
                      #:enrollment-evidence-digest evidence-digest
                      #:issuer-authz-said (scope-own-aic-said)
                      #:signing-keypair sign-kp)))
@@ -73,7 +75,9 @@
      (require-store! acdc-store "bless-issuer" name)
      (let-optional rest ((blessed-at (current-time)))
        (let ((aic (make-authorized-issuer-credential
-                    scope-aid issuer-aid blessed-at
+                    #:root-aid scope-aid
+                    #:ecosystem-aid issuer-aid
+                    #:blessed-at blessed-at
                     #:signing-keypair keypair)))
          (when keypair
            (assert-signature-binds! aic scope-aid "bless-issuer"))
@@ -94,8 +98,12 @@
      (let-optional rest ((kind #f) (jurisdiction #f) (legal-ids '()) (quorum #f)
                          (admitted-at (current-time)))
        (let ((cred (make-body-credential
-                    scope-aid body-aid admitted-at
-                    #:kind kind #:jurisdiction jurisdiction #:legal-ids legal-ids
+                    #:ecosystem-aid scope-aid
+                    #:body-aid body-aid
+                    #:admitted-at admitted-at
+                    #:kind kind
+                    #:jurisdiction jurisdiction
+                    #:legal-ids legal-ids
                     #:quorum quorum
                     #:issuer-authz-said (scope-own-aic-said)
                     #:signing-keypair keypair)))
@@ -127,7 +135,9 @@
        ;; Signed by the scope's own keypair (as issue-phc); #f → unsigned.
        ;; Structurally rooted via the scope's own blessing edge.
        (let ((phc (make-personhood-credential
-                    scope-aid candidate-aid enrolled-at
+                    #:ecosystem-aid scope-aid
+                    #:holder-aid candidate-aid
+                    #:enrolled-at enrolled-at
                     #:enrollment-evidence-digest evidence-digest
                     #:sponsor-aid sponsor-aid
                     #:issuer-authz-said (scope-own-aic-said)
@@ -161,9 +171,11 @@
                 caller-aid))
        (let-optional rest ((keypair #f))
          (let ((vrc (make-relationship-credential
-                      caller-aid subject-aid relationship-type
-                      (cred-said caller-phc)
-                      (current-time)
+                      #:issuer-aid caller-aid
+                      #:subject-aid subject-aid
+                      #:relationship-type relationship-type
+                      #:issuer-phc-said (cred-said caller-phc)
+                      #:issued-at (current-time)
                       #:signing-keypair keypair)))
            (when keypair
              (assert-signature-binds! vrc caller-aid "vouch"))

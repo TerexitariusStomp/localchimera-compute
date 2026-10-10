@@ -58,7 +58,9 @@
     (check-pred "member commune not yet bootstrapped: still open"
                 (may-mint? stranger-aid))
 
-    ($ store 'issue (make-personhood-credential commune-aid citizen-aid "2026-01-01T00:00:00Z"))
+    ($ store 'issue (make-personhood-credential #:ecosystem-aid commune-aid
+                                                #:holder-aid citizen-aid
+                                                #:enrolled-at "2026-01-01T00:00:00Z"))
     (check-pred "citizen recognised by the member commune may govern the federation"
                 (may-mint? citizen-aid))
     (check-pred "a stranger recognised by no member commune is refused"
@@ -89,7 +91,9 @@
     (define (may-mint? aid)
       (catch #t (lambda () ($ fed 'mint-gov-cap aid) #t) (lambda _ #f)))
     (check-pred "no one recognised yet: the bootstrap window is open" (may-mint? stranger))
-    ($ store 'issue (make-personhood-credential "ERemote" founder "2026-01-01T00:00:00Z"))
+    ($ store 'issue (make-personhood-credential #:ecosystem-aid "ERemote"
+                                                #:holder-aid founder
+                                                #:enrolled-at "2026-01-01T00:00:00Z"))
     (check-pred "once it has a founder, the founder governs" (may-mint? founder))
     (check-pred "and a stranger no longer does" (not (may-mint? stranger)))))
 

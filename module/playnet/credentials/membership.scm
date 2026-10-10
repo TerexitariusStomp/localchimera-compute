@@ -78,8 +78,11 @@
   #:index ()
   #:time registered-at)
 
-(define* (make-federation-census-credential commune-aid federation-aid goods told-at
-                                            #:key (kel #f) (units '()) (signing-keypair #f) (multisig-signers #f))
+(define-credential-procedure (make-federation-census-credential commune-aid federation-aid goods told-at)
+  #:key ((kel #f)
+         (units '())
+         (signing-keypair #f)
+         (multisig-signers #f))
   "What a commune deals in, told to its federation: GOODS, the spec ids its
    records hold, make, consume and ask for (planner/federation/crossing-set.scm
    `commune-goods`). Issued by the COMMUNE — its records are its own to read —

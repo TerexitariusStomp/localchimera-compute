@@ -53,7 +53,11 @@
 
   ;; Alpha + beta merge into gamma (ratified scope-merger).
   ($ store 'issue (make-scope-merger-credential
-                    alpha beta gamma 'universal-commune 100))
+                    #:predecessor-a-aid alpha
+                    #:predecessor-b-aid beta
+                    #:new-scope-aid gamma
+                    #:kind 'universal-commune
+                    #:merged-at 100))
 
   ;; Now gamma is the one UC. A peer still reporting alpha (a predecessor)
   ;; is NOT a collision — it is lineally the same UC across the merge.

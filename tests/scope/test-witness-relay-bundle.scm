@@ -80,14 +80,22 @@
                                           #:acdc-store store-b #:kel-of (kel-of-dir DIR-B))))
     ($ svc-a 'set-fp-root! ROOT) ($ svc-b 'set-fp-root! ROOT)
     ;; A: blessed by the root; Ana recognised
-    ($ store-a 'issue (make-authorized-issuer-credential ROOT ECO-A 5
+    ($ store-a 'issue (make-authorized-issuer-credential #:root-aid ROOT
+                                                         #:ecosystem-aid ECO-A
+                                                         #:blessed-at 5
                         #:signing-keypair (keri-identity-keypair root)))
-    ($ store-a 'issue (make-personhood-credential ECO-A ANA 100
+    ($ store-a 'issue (make-personhood-credential #:ecosystem-aid ECO-A
+                                                  #:holder-aid ANA
+                                                  #:enrolled-at 100
                         #:signing-keypair (keri-identity-keypair eco-a)))
     ;; B: blessed by the root; Tia recognised, her log held
-    ($ store-b 'issue (make-authorized-issuer-credential ROOT ECO-B 5
+    ($ store-b 'issue (make-authorized-issuer-credential #:root-aid ROOT
+                                                         #:ecosystem-aid ECO-B
+                                                         #:blessed-at 5
                         #:signing-keypair (keri-identity-keypair root)))
-    ($ store-b 'issue (make-personhood-credential ECO-B TIA 100
+    ($ store-b 'issue (make-personhood-credential #:ecosystem-aid ECO-B
+                                                  #:holder-aid TIA
+                                                  #:enrolled-at 100
                         #:signing-keypair (keri-identity-keypair eco-b)))
     (oobi-write-entry-to-dir! DIR-B tia-entry)
 

@@ -52,8 +52,11 @@
 
 ;; the wire a browser sends: the credential's own fields, and the signature
 (define* (wire-of id kind ctx #:key (signer id) (style 'rich) (said #f) (sign? #t))
-  (let* ((cred (make-contact-point-credential (keri-identity-aid id) kind ctx
-                                              #:style style #:issued-at "2026-10-02T09:00:00Z"))
+  (let* ((cred (make-contact-point-credential #:subject-aid (keri-identity-aid id)
+                                              #:kind kind
+                                              #:ctx ctx
+                                              #:style style
+                                              #:issued-at "2026-10-02T09:00:00Z"))
          (claim (lambda (k) (assq-ref (cred-claims cred) k))))
     (scm->json-canonical
      `(("said" . ,(or said (cred-said cred)))

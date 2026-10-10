@@ -30,7 +30,9 @@
   ;; Issue an authorized-issuer credential UNDER the group AID, signed by
   ;; two of the three members.
   (define cred (make-authorized-issuer-credential
-                 group-aid "E_some_commune" 10
+                 #:root-aid group-aid
+                 #:ecosystem-aid "E_some_commune"
+                 #:blessed-at 10
                  #:multisig-signers (list (signer m1) (signer m2))))
 
   (check-pred "multisig credential carries a signature block (not a single sig)"
@@ -50,7 +52,9 @@
   ;; A non-member's signature does not count toward the threshold.
   (define outsider (fresh 54))
   (define cred2 (make-authorized-issuer-credential
-                  group-aid "E_commune_2" 11
+                  #:root-aid group-aid
+                  #:ecosystem-aid "E_commune_2"
+                  #:blessed-at 11
                   #:multisig-signers (list (signer m1) (signer outsider))))
   (check-pred "one member + one outsider does NOT meet threshold 2"
               (not (cred-multisig-valid? cred2 members 2)))
@@ -59,7 +63,9 @@
 
   ;; Duplicate member signatures count once.
   (define cred3 (make-authorized-issuer-credential
-                  group-aid "E_commune_3" 12
+                  #:root-aid group-aid
+                  #:ecosystem-aid "E_commune_3"
+                  #:blessed-at 12
                   #:multisig-signers (list (signer m1) (signer m1))))
   (check-pred "the same member signing twice counts once (not threshold 2)"
               (not (cred-multisig-valid? cred3 members 2))))

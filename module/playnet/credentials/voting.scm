@@ -93,16 +93,14 @@
   #:index (domain proposal-id)
   #:time closed-at)
 
-(define* (make-recomposition-ratification-credential
-          scope-aid proposal-type proposal-spec
-          ballot-said tally
-          #:key (threshold 0.5)
-                (threshold-met? #t)
-                (ratified-at #f)
-                (signing-keypair #f)
-                (issuer-aid #f)
-                (predecessors #f)
-                (successor-spec #f))
+(define-credential-procedure (make-recomposition-ratification-credential scope-aid proposal-type proposal-spec ballot-said tally)
+  #:key ((threshold 0.5)
+         (threshold-met? #t)
+         (ratified-at #f)
+         (signing-keypair #f)
+         (issuer-aid #f)
+         (predecessors #f)
+         (successor-spec #f))
   "Recomposition-ratification ACDC. Records that a labor-proportional
    ballot passed for a structural proposal.
 

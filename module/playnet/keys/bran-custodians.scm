@@ -83,12 +83,12 @@
           ;; not-yet-gateway-wired state). Was a synthetic keyless issuer.
           (let ((cred (cred-signed-by-scope
                        (make-incoherence-alert-credential
-                        subject-aid
-                        subject-aid
-                        `((custody-shares-unreachable
-                           . ((reachable . ,n-reachable)
-                              (threshold . ,threshold)
-                              (total     . ,n-total))))
+                        #:auditor-aid subject-aid
+                        #:federation-aid subject-aid
+                        #:violations `((custody-shares-unreachable
+                                        . ((reachable . ,n-reachable)
+                                           (threshold . ,threshold)
+                                           (total     . ,n-total))))
                         #:cycle cycle)
                        subject-scope-ref)))
             ($ sink-store 'issue cred)))

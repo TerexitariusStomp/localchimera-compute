@@ -36,7 +36,12 @@
 (define holder "EHOLDERAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
 
 (display "\n── the unsigned credential ──\n")
-(define cred (make-body-role-credential body-aid holder 'steward "2026-10-10T00:00:00Z" #:quorum 2 #:u "nonce-1"))
+(define cred (make-body-role-credential #:body-aid body-aid
+                                        #:holder-aid holder
+                                        #:role 'steward
+                                        #:since "2026-10-10T00:00:00Z"
+                                        #:quorum 2
+                                        #:u "nonce-1"))
 (check "schema" *schema-playnet-body-role* (cred-schema cred))
 (check "issuer is the body" body-aid (cred-issuer cred))
 (check "holder" holder (cred-holder cred))
@@ -46,7 +51,11 @@
 (check "unsigned" #f (cred-signature cred))
 (check "unsigned is not valid" #f (body-role-credential-valid? cred stewards 2))
 (check "until rides when given" "2027-01-01T00:00:00Z"
-       (cred-claim (make-body-role-credential body-aid holder 'member "2026-10-10T00:00:00Z" #:until "2027-01-01T00:00:00Z") 'until))
+       (cred-claim (make-body-role-credential #:body-aid body-aid
+                                              #:holder-aid holder
+                                              #:role 'member
+                                              #:since "2026-10-10T00:00:00Z"
+                                              #:until "2027-01-01T00:00:00Z") 'until))
 
 (display "\n── k of n ──\n")
 (define said (cred-said cred))
@@ -80,11 +89,24 @@
                       two))
 (check "a changed claim under the old SAID is not valid" #f (body-role-credential-valid? tampered stewards 2))
 (check "another role is another SAID"
-       (not (equal? said (cred-said (make-body-role-credential body-aid holder 'officer "2026-10-10T00:00:00Z" #:quorum 2 #:u "nonce-1")))))
+       (not (equal? said (cred-said (make-body-role-credential #:body-aid body-aid
+                                                               #:holder-aid holder
+                                                               #:role 'officer
+                                                               #:since "2026-10-10T00:00:00Z"
+                                                               #:quorum 2
+                                                               #:u "nonce-1")))))
 (check "another holder is another SAID"
-       (not (equal? said (cred-said (make-body-role-credential body-aid "EOTHERAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" 'steward "2026-10-10T00:00:00Z" #:quorum 2 #:u "nonce-1")))))
+       (not (equal? said (cred-said (make-body-role-credential #:body-aid body-aid
+                                                               #:holder-aid "EOTHERAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                                                               #:role 'steward
+                                                               #:since "2026-10-10T00:00:00Z"
+                                                               #:quorum 2
+                                                               #:u "nonce-1")))))
 (check "a contact point is not a body role"
-       #f (body-role-credential-valid? (body-role-credential-with-block (make-contact-point-credential holder 'email "a@b" #:u "n") (block (first stewards) (second stewards))) stewards 2))
+       #f (body-role-credential-valid? (body-role-credential-with-block (make-contact-point-credential #:subject-aid holder
+                                                                                                       #:kind 'email
+                                                                                                       #:ctx "a@b"
+                                                                                                       #:u "n") (block (first stewards) (second stewards))) stewards 2))
 
 (display "\n── stewards as key logs: the resolver ──\n")
 (define log-aids '("EALICEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" "EBOBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" "ECAROLAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"))
@@ -109,11 +131,23 @@
          (ROOT (keri-identity-aid root))
          (SCOPE (keri-identity-aid scope))
          (store (spawn-acdc-store))
-         (aic (make-authorized-issuer-credential ROOT SCOPE 5 #:signing-keypair (keri-identity-keypair root)))
-         (body-cred (make-body-credential SCOPE body-aid 100 #:kind 'cooperative #:quorum 2
+         (aic (make-authorized-issuer-credential #:root-aid ROOT
+                                                 #:ecosystem-aid SCOPE
+                                                 #:blessed-at 5
+                                                 #:signing-keypair (keri-identity-keypair root)))
+         (body-cred (make-body-credential #:ecosystem-aid SCOPE
+                                          #:body-aid body-aid
+                                          #:admitted-at 100
+                                          #:kind 'cooperative
+                                          #:quorum 2
                                           #:issuer-authz-said (cred-said aic)
                                           #:signing-keypair (keri-identity-keypair scope)))
-         (role (make-body-role-credential body-aid holder 'steward "2026-10-10T00:00:00Z" #:quorum 2 #:u "nonce-2"
+         (role (make-body-role-credential #:body-aid body-aid
+                                          #:holder-aid holder
+                                          #:role 'steward
+                                          #:since "2026-10-10T00:00:00Z"
+                                          #:quorum 2
+                                          #:u "nonce-2"
                                           #:body-cred-said (cred-said body-cred)))
          (signed (body-role-credential-with-block role (sign-said-multisig (cred-said role) (list (first signers) (second signers))))))
     ($ store 'issue aic)
@@ -123,7 +157,12 @@
     (check "the edge's schema is the body schema" *schema-playnet-body* (edge-schema (cred-edge role 'body)))
     (check "another SAID than the unchained role"
            (not (equal? (cred-said role)
-                        (cred-said (make-body-role-credential body-aid holder 'steward "2026-10-10T00:00:00Z" #:quorum 2 #:u "nonce-2")))))
+                        (cred-said (make-body-role-credential #:body-aid body-aid
+                                                              #:holder-aid holder
+                                                              #:role 'steward
+                                                              #:since "2026-10-10T00:00:00Z"
+                                                              #:quorum 2
+                                                              #:u "nonce-2")))))
     (check "k of n and the chain, the body credential in hand"
            #t (body-role-credential-valid? signed stewards 2 #:body-cred body-cred #:roots ROOT #:store store))
     (check "k of n and the chain, the body credential read from the store"
@@ -135,7 +174,9 @@
     (check "the edge with no body credential and no store fails" #f (body-role-credential-valid? signed stewards 2))
     (check "a body credential handed in that the edge does not name fails"
            #f (body-role-credential-valid? signed stewards 2
-                                           #:body-cred (make-body-credential SCOPE "EOTHERBODYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" 100
+                                           #:body-cred (make-body-credential #:ecosystem-aid SCOPE
+                                                                             #:body-aid "EOTHERBODYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                                                                             #:admitted-at 100
                                                                              #:signing-keypair (keri-identity-keypair scope))))
     (check "an unchained role handed a body credential fails"
            #f (body-role-credential-valid? two stewards 2 #:body-cred body-cred))

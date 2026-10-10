@@ -123,7 +123,9 @@
   (define alice-aid   (keri-identity-aid alice))
   ;; Foreign commune issues alice a SIGNED PHC (issuer signs the SAID).
   (define phc (make-personhood-credential
-                eco-aid alice-aid 100
+                #:ecosystem-aid eco-aid
+                #:holder-aid alice-aid
+                #:enrolled-at 100
                 #:signing-keypair (keri-identity-keypair foreign-eco)))
 
   (check-pred "in-store PHC is digest-consistent" (cred-said-consistent? phc))
@@ -161,7 +163,9 @@
   ($ svc 'set-fp-trusted-issuers! (list eco-aid))
 
   (define phc (make-personhood-credential
-                eco-aid alice-aid 100
+                #:ecosystem-aid eco-aid
+                #:holder-aid alice-aid
+                #:enrolled-at 100
                 #:signing-keypair (keri-identity-keypair foreign-eco)))
   (define wire (phc->wire-json phc))
 
@@ -188,19 +192,27 @@
          (bob       (fresh-identity 14))
          (bob-aid   (keri-identity-aid bob))
          (rogue-phc (make-personhood-credential
-                      rogue-aid bob-aid 100
+                      #:ecosystem-aid rogue-aid
+                      #:holder-aid bob-aid
+                      #:enrolled-at 100
                       #:signing-keypair (keri-identity-keypair rogue)))
          (r ($ svc 'present-phc bob-aid (phc->wire-json rogue-phc))))
     (check "untrusted issuer rejected" (cdr r) "issuer is not a federated commune"))
 
   ;; (d) An EXPIRED PHC is refused at ingest (liveness gate).
   (let* ((expired (make-personhood-credential
-                    eco-aid alice-aid 100 #:expires-at 50   ; expired before now
+                    #:ecosystem-aid eco-aid
+                    #:holder-aid alice-aid
+                    #:enrolled-at 100
+                    #:expires-at 50   ; expired before now
                     #:signing-keypair (keri-identity-keypair foreign-eco)))
          (carol     (fresh-identity 15))
          (carol-aid (keri-identity-aid carol))
          (expired2 (make-personhood-credential
-                     eco-aid carol-aid 100 #:expires-at 50
+                     #:ecosystem-aid eco-aid
+                     #:holder-aid carol-aid
+                     #:enrolled-at 100
+                     #:expires-at 50
                      #:signing-keypair (keri-identity-keypair foreign-eco)))
          (r ($ svc 'present-phc carol-aid (phc->wire-json expired2))))
     (check "expired PHC refused at ingest" (cdr r) "presented PHC is not live")))
@@ -234,7 +246,9 @@
 
   ;; Root blesses `eco` as an authorized PHC issuer (signed by root).
   (define aic (make-authorized-issuer-credential
-                root-aid eco-aid 10
+                #:root-aid root-aid
+                #:ecosystem-aid eco-aid
+                #:blessed-at 10
                 #:signing-keypair (keri-identity-keypair uc-root)))
   ($ store 'issue aic)
 
@@ -249,7 +263,9 @@
 
   ;; A PHC from the blessed ecosystem is honoured with NO whitelist entry.
   (let* ((phc (make-personhood-credential
-                eco-aid alice-aid 100
+                #:ecosystem-aid eco-aid
+                #:holder-aid alice-aid
+                #:enrolled-at 100
                 #:signing-keypair (keri-identity-keypair eco)))
          (r ($ svc 'present-phc alice-aid (phc->wire-json phc))))
     (check-pred "PHC from root-blessed ecosystem accepted (no whitelist)"
@@ -257,7 +273,9 @@
 
   ;; A PHC from an unblessed ecosystem is refused — no chain, no whitelist.
   (let* ((phc (make-personhood-credential
-                rogue-aid bob-aid 100
+                #:ecosystem-aid rogue-aid
+                #:holder-aid bob-aid
+                #:enrolled-at 100
                 #:signing-keypair (keri-identity-keypair rogue)))
          (r ($ svc 'present-phc bob-aid (phc->wire-json phc))))
     (check "unblessed ecosystem rejected" (cdr r) "issuer is not a federated commune"))
@@ -269,7 +287,9 @@
   (let* ((carol     (fresh-identity 18))
          (carol-aid (keri-identity-aid carol))
          (phc (make-personhood-credential
-                eco-aid carol-aid 100
+                #:ecosystem-aid eco-aid
+                #:holder-aid carol-aid
+                #:enrolled-at 100
                 #:signing-keypair (keri-identity-keypair eco)))
          (r ($ svc 'present-phc carol-aid (phc->wire-json phc))))
     (check "PHC refused once blessing revoked" (cdr r) "issuer is not a federated commune")))
@@ -292,11 +312,15 @@
 
   ;; Root blesses eco (signed), eco issues alice a PHC anchored to that AIC.
   (define aic (make-authorized-issuer-credential
-                root-aid eco-aid 10
+                #:root-aid root-aid
+                #:ecosystem-aid eco-aid
+                #:blessed-at 10
                 #:signing-keypair (keri-identity-keypair uc-root)))
   (define aic-said ($ store 'issue aic))
   (define phc (make-personhood-credential
-                eco-aid alice-aid 100
+                #:ecosystem-aid eco-aid
+                #:holder-aid alice-aid
+                #:enrolled-at 100
                 #:issuer-authz-said aic-said
                 #:signing-keypair (keri-identity-keypair eco)))
 
@@ -310,7 +334,9 @@
   ;; so a PHC minted by a DIFFERENT (unblessed) issuer can't borrow eco's AIC.
   (let ((rogue (fresh-identity 242)))
     (define rogue-phc (make-personhood-credential
-                        (keri-identity-aid rogue) alice-aid 100
+                        #:ecosystem-aid (keri-identity-aid rogue)
+                        #:holder-aid alice-aid
+                        #:enrolled-at 100
                         #:issuer-authz-said aic-said         ; points at eco's blessing
                         #:signing-keypair (keri-identity-keypair rogue)))
     (check-pred "unblessed issuer borrowing eco's AIC edge is rejected (I2I)"
@@ -319,10 +345,15 @@
   ;; Schema confusion: point the edge at some OTHER credential root issued
   ;; the ecosystem (here a membership cred, issuer==root, holder==eco). I2I
   ;; holds, but it is not an authorized-issuer credential → must be rejected.
-  (let* ((decoy (make-membership-credential root-aid eco-aid "eco" 5))
+  (let* ((decoy (make-membership-credential #:issuer-group-aid root-aid
+                                            #:holder-aid eco-aid
+                                            #:commune "eco"
+                                            #:admitted-at 5))
          (decoy-said ($ store 'issue decoy))
          (confused (make-personhood-credential
-                     eco-aid alice-aid 100
+                     #:ecosystem-aid eco-aid
+                     #:holder-aid alice-aid
+                     #:enrolled-at 100
                      #:issuer-authz-said decoy-said
                      #:signing-keypair (keri-identity-keypair eco))))
     (check-pred "edge pointing at a non-AIC credential is rejected (schema gate)"
@@ -350,21 +381,38 @@
 
   ;; Root blesses eco; eco enrolls alice + bob; they mutually vouch.
   (define aic (make-authorized-issuer-credential
-                root-aid eco-aid 10 #:signing-keypair (keri-identity-keypair uc-root)))
+                #:root-aid root-aid
+                #:ecosystem-aid eco-aid
+                #:blessed-at 10
+                #:signing-keypair (keri-identity-keypair uc-root)))
   (define aic-said ($ store 'issue aic))
   (define phc-a (make-personhood-credential
-                  eco-aid a-aid 100 #:issuer-authz-said aic-said
+                  #:ecosystem-aid eco-aid
+                  #:holder-aid a-aid
+                  #:enrolled-at 100
+                  #:issuer-authz-said aic-said
                   #:signing-keypair (keri-identity-keypair eco)))
   (define phc-b (make-personhood-credential
-                  eco-aid b-aid 100 #:issuer-authz-said aic-said
+                  #:ecosystem-aid eco-aid
+                  #:holder-aid b-aid
+                  #:enrolled-at 100
+                  #:issuer-authz-said aic-said
                   #:signing-keypair (keri-identity-keypair eco)))
   ($ store 'issue phc-a)
   ($ store 'issue phc-b)
   ($ store 'issue (make-relationship-credential
-                    a-aid b-aid 'trust (cred-said phc-a) 101
+                    #:issuer-aid a-aid
+                    #:subject-aid b-aid
+                    #:relationship-type 'trust
+                    #:issuer-phc-said (cred-said phc-a)
+                    #:issued-at 101
                     #:signing-keypair (keri-identity-keypair alice)))
   ($ store 'issue (make-relationship-credential
-                    b-aid a-aid 'trust (cred-said phc-b) 102
+                    #:issuer-aid b-aid
+                    #:subject-aid a-aid
+                    #:relationship-type 'trust
+                    #:issuer-phc-said (cred-said phc-b)
+                    #:issued-at 102
                     #:signing-keypair (keri-identity-keypair bob)))
 
   (check-pred "plain triangle holds (no root check)"
@@ -410,10 +458,16 @@
 
   ;; R1 blesses eco; eco enrolls alice with the structural edge.
   (define aic (make-authorized-issuer-credential
-                r1-aid eco-aid 10 #:signing-keypair (keri-identity-keypair r1)))
+                #:root-aid r1-aid
+                #:ecosystem-aid eco-aid
+                #:blessed-at 10
+                #:signing-keypair (keri-identity-keypair r1)))
   (define aic-said ($ store 'issue aic))
   (define phc (make-personhood-credential
-                eco-aid a-aid 100 #:issuer-authz-said aic-said
+                #:ecosystem-aid eco-aid
+                #:holder-aid a-aid
+                #:enrolled-at 100
+                #:issuer-authz-said aic-said
                 #:signing-keypair (keri-identity-keypair eco)))
   ($ store 'issue phc)
 
@@ -426,7 +480,11 @@
   (define r2-aid "E_other_root_R2")
   (define r3-aid "E_merged_root_R3")
   ($ store 'issue (make-scope-merger-credential
-                    r1-aid r2-aid r3-aid 'universal-commune 200))
+                    #:predecessor-a-aid r1-aid
+                    #:predecessor-b-aid r2-aid
+                    #:new-scope-aid r3-aid
+                    #:kind 'universal-commune
+                    #:merged-at 200))
 
   (check-pred "R3's lineage closure reaches back to R1"
               (and (member r1-aid (root-lineage-closure store r3-aid)) #t))
@@ -442,7 +500,10 @@
   (define r4-aid "E_split_root_R4")
   (define r5-aid "E_split_root_R5")
   ($ store 'issue (make-scope-split-credential
-                    r3-aid (list r4-aid r5-aid) 'federation 300))
+                    #:parent-scope-aid r3-aid
+                    #:sub-scope-aids (list r4-aid r5-aid)
+                    #:kind 'federation
+                    #:split-at 300))
 
   (check-pred "R4's closure reaches transitively through R3 to R1"
               (and (member r1-aid (root-lineage-closure store r4-aid)) #t))
@@ -481,14 +542,21 @@
   ;; Root blesses `blessed`; `listed` is only on the whitelist.
   (define aic-said
     ($ store 'issue (make-authorized-issuer-credential
-                      root-aid blessed-aid 10
+                      #:root-aid root-aid
+                      #:ecosystem-aid blessed-aid
+                      #:blessed-at 10
                       #:signing-keypair (keri-identity-keypair uc-root))))
 
   (define blessed-phc (make-personhood-credential
-                        blessed-aid a-aid 100 #:issuer-authz-said aic-said
+                        #:ecosystem-aid blessed-aid
+                        #:holder-aid a-aid
+                        #:enrolled-at 100
+                        #:issuer-authz-said aic-said
                         #:signing-keypair (keri-identity-keypair blessed)))
   (define listed-phc (make-personhood-credential
-                       listed-aid b-aid 100
+                       #:ecosystem-aid listed-aid
+                       #:holder-aid b-aid
+                       #:enrolled-at 100
                        #:signing-keypair (keri-identity-keypair listed)))
 
   ;; Non-strict (default): BOTH are honoured — chain OR whitelist.
@@ -504,7 +572,9 @@
                 (eq? 'ok (car ($ svc 'present-phc (keri-identity-aid carol)
                                     (phc->wire-json
                                      (make-personhood-credential
-                                       blessed-aid (keri-identity-aid carol) 100
+                                       #:ecosystem-aid blessed-aid
+                                       #:holder-aid (keri-identity-aid carol)
+                                       #:enrolled-at 100
                                        #:issuer-authz-said aic-said
                                        #:signing-keypair (keri-identity-keypair blessed))))))))
   (check "strict: whitelist-only issuer now REJECTED"
@@ -512,7 +582,9 @@
            (cdr ($ svc 'present-phc (keri-identity-aid dave)
                      (phc->wire-json
                       (make-personhood-credential
-                        listed-aid (keri-identity-aid dave) 100
+                        #:ecosystem-aid listed-aid
+                        #:holder-aid (keri-identity-aid dave)
+                        #:enrolled-at 100
                         #:signing-keypair (keri-identity-keypair listed))))))
          "issuer is not a federated commune"))
 

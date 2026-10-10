@@ -64,8 +64,12 @@
          ($ ($ scope-root-ref 'account-store) 'set-ccf aid new-ccf))
        (when acdc-store
          ($ acdc-store 'issue
-            (make-ccf-credential scope-aid aid name new-ccf
-                                 assessed-at reason
+            (make-ccf-credential #:issuer-group-aid scope-aid
+                                 #:holder-aid aid
+                                 #:commune name
+                                 #:ccf new-ccf
+                                 #:assessed-at assessed-at
+                                 #:reason reason
                                  #:signing-keypair keypair)))
        'ok))
 
@@ -77,7 +81,10 @@
      (let ((excluded-at (if (pair? rest) (car rest) (current-time))))
        (when acdc-store
          ($ acdc-store 'issue
-            (make-exclusion-credential scope-aid aid name excluded-at
+            (make-exclusion-credential #:issuer-group-aid scope-aid
+                                       #:holder-aid aid
+                                       #:commune name
+                                       #:excluded-at excluded-at
                                        #:signing-keypair keypair)))
        (bcom (rebuild #:excluded (hashmap-set (or excluded (hashmap)) aid #t)))))
 
@@ -109,6 +116,9 @@
          ($ ($ scope-root-ref 'account-store) 'ensure-account aid))
        (when acdc-store
          ($ acdc-store 'issue
-            (make-membership-credential scope-aid aid name admitted-at
+            (make-membership-credential #:issuer-group-aid scope-aid
+                                        #:holder-aid aid
+                                        #:commune name
+                                        #:admitted-at admitted-at
                                         #:signing-keypair keypair)))
        'ok)))))

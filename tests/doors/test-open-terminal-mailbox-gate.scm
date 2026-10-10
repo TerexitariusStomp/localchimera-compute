@@ -30,7 +30,9 @@
 (define ORG-PUBKEY "org-pubkey-legacy-flow")
 
 (define store (with-vat vat (spawn-acdc-store)))
-(define phc (make-personhood-credential "E_eco" MEMBER 100))
+(define phc (make-personhood-credential #:ecosystem-aid "E_eco"
+                                        #:holder-aid MEMBER
+                                        #:enrolled-at 100))
 (with-vat vat ($ store 'issue phc))
 
 ;; Minimal terminal-svc stub: just enough to prove the gate hands the call

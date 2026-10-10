@@ -271,7 +271,9 @@
             ;; builds over its scope's sign-said, so the key never
             ;; leaves the ^scope (the fp-grant/fp-vouch pattern).
             (let ((phc (make-personhood-credential
-                        scope-aid candidate-aid (instant->unix (clock-now))
+                        #:ecosystem-aid scope-aid
+                        #:holder-aid candidate-aid
+                        #:enrolled-at (instant->unix (clock-now))
                         #:enrollment-evidence-digest evidence-digest
                         #:sponsor-aid sponsor-aid
                         #:witness-edges (map witness-edge-for attestations)

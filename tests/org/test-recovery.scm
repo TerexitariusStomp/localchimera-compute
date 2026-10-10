@@ -289,7 +289,12 @@
                                           (cons 'entries entries)))))
       ($ store 'issue
          (make-ballot-snapshot-credential
-           "gov" 'policy "p-1" 'federation snap-said (current-time)
+           #:governance-group-aid "gov"
+           #:domain 'policy
+           #:proposal-id "p-1"
+           #:franchise 'federation
+           #:snapshot-said snap-said
+           #:opened-at (current-time)
            #:description "Test ballot"
            #:voice-snapshot-entries entries
            #:citizen-registry-aids registry-aids)))
@@ -300,9 +305,19 @@
 
     ;; Emit stance ACDCs
     ($ store 'issue
-       (make-stance-credential "alice" "gov" 'policy "p-1" 'yes (current-time)))
+       (make-stance-credential #:citizen-aid "alice"
+                               #:governance-group-aid "gov"
+                               #:domain 'policy
+                               #:proposal-id "p-1"
+                               #:position 'yes
+                               #:timestamp (current-time)))
     ($ store 'issue
-       (make-stance-credential "bob"   "gov" 'policy "p-1" 'no  (current-time)))
+       (make-stance-credential #:citizen-aid "bob"
+                               #:governance-group-aid "gov"
+                               #:domain 'policy
+                               #:proposal-id "p-1"
+                               #:position 'no
+                               #:timestamp (current-time)))
 
     ;; Original tally
     (let ((orig-tally (assoc-ref ($ b 'tally) 'tally)))
@@ -351,10 +366,10 @@
                (eq (commitment-effort-quantity cmt)))
            ($ store 'issue-idempotent
               (make-commitment-credential
-                (or (commitment-provider cmt) "E_provider")
-                (or (commitment-receiver cmt) "E_receiver")
-                (commitment-id cmt)
-                (commitment-action cmt)
+                #:provider-aid (or (commitment-provider cmt) "E_provider")
+                #:receiver-aid (or (commitment-receiver cmt) "E_receiver")
+                #:commitment-id (commitment-id cmt)
+                #:action (commitment-action cmt)
                 #:resource-conforms-to (commitment-resource-conforms-to cmt)
                 #:resource-quantity
                 (and rq (cons (measure-has-numerical-value rq)
@@ -370,8 +385,11 @@
                          (economic-event-effort-quantity event))))
            ($ store 'issue-idempotent
               (make-work-event-credential
-                "E_bakery" worker
-                (economic-event-id event) hours %effort-unit
+                #:scope-aid "E_bakery"
+                #:worker-aid worker
+                #:event-id (economic-event-id event)
+                #:hours hours
+                #:unit %effort-unit
                 #:fulfills (economic-event-fulfills event)
                 #:satisfies (economic-event-satisfies event))))))
 
@@ -382,9 +400,9 @@
                (eq (intent-effort-quantity i)))
            ($ store 'issue-idempotent
               (make-intent-credential
-                (or (intent-receiver i) (intent-provider i) "E_issuer")
-                (intent-id i)
-                (intent-action i)
+                #:issuer-aid (or (intent-receiver i) (intent-provider i) "E_issuer")
+                #:intent-id (intent-id i)
+                #:action (intent-action i)
                 #:receiver (intent-receiver i)
                 #:provider (and (not (intent-receiver i)) (intent-provider i))
                 #:resource-conforms-to (intent-resource-conforms-to i)

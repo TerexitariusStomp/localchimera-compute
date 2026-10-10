@@ -113,12 +113,19 @@
          (fed     (spawn ^mock `((members . ,(lambda ()
                     (hashmap-set (hashmap-set (hashmap) "A" commA) "F" sub-fed))))))
          (resolve (federation-resource-resolver fed))
-         (grant   (make-custody-attestation-credential OWNER COMMUNE "bike" 4)))
+         (grant   (make-custody-attestation-credential #:issuing-authority-aid OWNER
+                                                       #:custodian-aid COMMUNE
+                                                       #:resource-spec "bike"
+                                                       #:qty 4)))
     (check "fetches the member's resource, skips the scope-root-less member"
            (= 1 (length (resolve grant))))
     (check "a resource-id grant that matches nothing resolves empty"
            (null? (resolve (make-custody-attestation-credential
-                            OWNER COMMUNE "bike" 4 #:resource "no-such-id"))))
+                            #:issuing-authority-aid OWNER
+                            #:custodian-aid COMMUNE
+                            #:resource-spec "bike"
+                            #:qty 4
+                            #:resource "no-such-id"))))
     ;; STANDING. Lending a thing is an exercise of rights, so a grant reaches
     ;; only what its issuer actually owns. Naming the resource outright does not
     ;; buy past that — which it silently did while the resource-id branch of
@@ -127,10 +134,18 @@
     ;; thing the commons itself owned).
     (check "a grant from someone with no rights over it reaches nothing"
            (null? (resolve (make-custody-attestation-credential
-                            "EMallory" COMMUNE "bike" 4 #:resource "res:bike"))))
+                            #:issuing-authority-aid "EMallory"
+                            #:custodian-aid COMMUNE
+                            #:resource-spec "bike"
+                            #:qty 4
+                            #:resource "res:bike"))))
     (check "…and the owner's own grant still reaches it"
            (= 1 (length (resolve (make-custody-attestation-credential
-                                  OWNER COMMUNE "bike" 4 #:resource "res:bike")))))))
+                                  #:issuing-authority-aid OWNER
+                                  #:custodian-aid COMMUNE
+                                  #:resource-spec "bike"
+                                  #:qty 4
+                                  #:resource "res:bike")))))))
 
 
 ;;; ════════════════════════════════════════════════════════════════════════════

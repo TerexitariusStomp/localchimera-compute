@@ -66,9 +66,11 @@
         (when (equal? identity-key subject-aid) (error "cannot vouch for yourself"))
         (unless caller-phc (error "you must be a recognised person to vouch"))
         (make-relationship-credential
-         identity-key subject-aid
-         (string->symbol (normalize-rel rel))
-         (cred-said caller-phc) issued-at)))
+         #:issuer-aid identity-key
+         #:subject-aid subject-aid
+         #:relationship-type (string->symbol (normalize-rel rel))
+         #:issuer-phc-said (cred-said caller-phc)
+         #:issued-at issued-at)))
     ;; build-vrc's own refusals are worded; anything else reads "vouch failed"
     (define (vouch-refusal args)
       (if (and (pair? args) (string? (car args))) (car args) "vouch failed"))
@@ -487,7 +489,9 @@
              ;; the scope actor). Unsigned when this process holds no key
              ;; for that commune.
              (let* ((phc (make-personhood-credential
-                          scope-id candidate-aid (current-time)
+                          #:ecosystem-aid scope-id
+                          #:holder-aid candidate-aid
+                          #:enrolled-at (current-time)
                           #:sponsor-aid identity-key))
                     (sign (scope-signer scope-id))
                     (signed (if sign (sign phc) phc)))

@@ -15,8 +15,14 @@
 (define vat (spawn-vat))
 (with-vat vat
   (let ((acdc (spawn-acdc-store))
-        (s1 (make-skill-credential "ES" "EAda"   "spec:bake" "Ew1"))
-        (s2 (make-skill-credential "ES" "EBob"   "spec:weld" "Ew2")))
+        (s1 (make-skill-credential #:issuing-aid "ES"
+                                   #:worker-aid "EAda"
+                                   #:skill "spec:bake"
+                                   #:founding-event-said "Ew1"))
+        (s2 (make-skill-credential #:issuing-aid "ES"
+                                   #:worker-aid "EBob"
+                                   #:skill "spec:weld"
+                                   #:founding-event-said "Ew2")))
     ($ acdc 'issue s1)
     ($ acdc 'issue s2)
 
@@ -33,7 +39,10 @@
       (check-pred "not complete with a gap" (not (snapshot-complete? snap (list s1)))))
 
     (display "\n── A superset is still complete (presence, not exclusivity) ──\n")
-    (let ((s3 (make-skill-credential "ES" "ECarol" "spec:cook" "Ew3")))
+    (let ((s3 (make-skill-credential #:issuing-aid "ES"
+                                     #:worker-aid "ECarol"
+                                     #:skill "spec:cook"
+                                     #:founding-event-said "Ew3")))
       (check-pred "extra creds don't break completeness"
                   (snapshot-complete? snap (list s1 s2 s3))))))
 

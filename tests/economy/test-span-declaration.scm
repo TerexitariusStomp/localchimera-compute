@@ -18,7 +18,10 @@
 
 (display "\n── 1. The declaration: scope-signed, references a place ──\n")
 
-(let ((d (make-span-declaration-credential SCOPE LATHE "town" #:valid-until FUTURE)))
+(let ((d (make-span-declaration-credential #:scope-aid SCOPE
+                                           #:resource-id LATHE
+                                           #:span-place "town"
+                                           #:valid-until FUTURE)))
   (check-pred "issuer = the steward scope"  (equal? SCOPE (cred-issuer d)))
   (check-pred "holder = the same scope (its own governed act)"
               (equal? SCOPE (cred-holder d)))
@@ -34,8 +37,13 @@
 
 (with-vat vat
   (let ((store (spawn-acdc-store)))
-    ($ store 'issue (make-span-declaration-credential SCOPE LATHE "town" #:valid-until FUTURE))
-    ($ store 'issue (make-span-declaration-credential SCOPE "oven-9" "kitchen"))   ; open-ended
+    ($ store 'issue (make-span-declaration-credential #:scope-aid SCOPE
+                                                      #:resource-id LATHE
+                                                      #:span-place "town"
+                                                      #:valid-until FUTURE))
+    ($ store 'issue (make-span-declaration-credential #:scope-aid SCOPE
+                                                      #:resource-id "oven-9"
+                                                      #:span-place "kitchen"))   ; open-ended
     (let ((span-of (live-span-of store)))
       (check-pred "a live declaration projects"
                   (equal? "town" (assoc-ref span-of LATHE)))
@@ -48,7 +56,10 @@
 
 (with-vat vat
   (let ((store (spawn-acdc-store)))
-    ($ store 'issue (make-span-declaration-credential SCOPE LATHE "town" #:valid-until PAST))
+    ($ store 'issue (make-span-declaration-credential #:scope-aid SCOPE
+                                                      #:resource-id LATHE
+                                                      #:span-place "town"
+                                                      #:valid-until PAST))
     (check-pred "lapsed ⇒ absent from the view (span reverts to the holding place)"
                 (not (assoc-ref (live-span-of store) LATHE)))))
 
@@ -56,7 +67,10 @@
 
 (with-vat vat
   (let* ((store (spawn-acdc-store))
-         (d     (make-span-declaration-credential SCOPE LATHE "town" #:valid-until FUTURE)))
+         (d     (make-span-declaration-credential #:scope-aid SCOPE
+                                                  #:resource-id LATHE
+                                                  #:span-place "town"
+                                                  #:valid-until FUTURE)))
     ($ store 'issue d)
     (check-pred "projects while live" (equal? "town" (assoc-ref (live-span-of store) LATHE)))
     ($ store 'revoke (cred-said d))

@@ -135,7 +135,9 @@
                          (equal? (cred-holder aic) b-aid))))
 
   ;; A PHC B later issues to a person chains to the federation root.
-  (let ((phc (make-personhood-credential b-aid "E_person_in_bakery" 100)))
+  (let ((phc (make-personhood-credential #:ecosystem-aid b-aid
+                                         #:holder-aid "E_person_in_bakery"
+                                         #:enrolled-at 100)))
     (check-pred "a person enrolled by the blessed commune chains to root"
                 (issuer-chains-to-root? store fed-aid (cred-issuer phc)
                                         #:require-signature? #f))))

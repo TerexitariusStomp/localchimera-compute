@@ -82,7 +82,11 @@
      (when acdc-store
        ($ acdc-store 'issue
           (make-conflict-resolution-credential
-            scope-aid resource-id conflicting-saids
-            prevailing-said resolution-method (current-time)
+            #:meta-scope-aid scope-aid
+            #:resource-id resource-id
+            #:conflicting-commitments conflicting-saids
+            #:prevailing-commitment prevailing-said
+            #:resolution-method resolution-method
+            #:resolved-at (current-time)
             #:signing-keypair keypair)))
      'ok))))

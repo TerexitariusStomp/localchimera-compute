@@ -392,13 +392,22 @@
   (let ((store (spawn-acdc-store)))
     (check-pred "no claim: probability-free — the dangerous default"
                 (eq? 'probability-free (live-regime-of store "bread-domain")))
-    ($ store 'issue (make-regime-claim-credential "EWitness" "bread-domain" 'thin 'stable))
+    ($ store 'issue (make-regime-claim-credential #:scope-aid "EWitness"
+                                                  #:domain-spec "bread-domain"
+                                                  #:tails 'thin
+                                                  #:process 'stable))
     (check-pred "thin + stable, live: statistics is licensed"
                 (eq? 'statistical (live-regime-of store "bread-domain")))
-    ($ store 'issue (make-regime-claim-credential "EWitness" "wild-domain" 'fat 'stable))
+    ($ store 'issue (make-regime-claim-credential #:scope-aid "EWitness"
+                                                  #:domain-spec "wild-domain"
+                                                  #:tails 'fat
+                                                  #:process 'stable))
     (check-pred "fat tails: no licence, whatever the process"
                 (eq? 'probability-free (live-regime-of store "wild-domain")))
-    ($ store 'issue (make-regime-claim-credential "EWitness" "vague-domain" 'unknown 'stable))
+    ($ store 'issue (make-regime-claim-credential #:scope-aid "EWitness"
+                                                  #:domain-spec "vague-domain"
+                                                  #:tails 'unknown
+                                                  #:process 'stable))
     (check-pred "honest ignorance reads as the dangerous case"
                 (eq? 'probability-free (live-regime-of store "vague-domain")))))
 

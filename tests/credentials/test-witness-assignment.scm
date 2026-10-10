@@ -25,11 +25,12 @@
   "Issue a witness-assignment from %federation to MEMBER for the Nth witness."
   (let ((label (string-append (substring member 0 14) "-" (number->string n))))
     (make-witness-assignment-credential
-      %federation member
-      (witness-aid-for label)
-      (oobi-for label)
-      %group-aid
-      1700000000)))
+      #:federation-aid %federation
+      #:member-aid member
+      #:witness-aid (witness-aid-for label)
+      #:witness-oobi (oobi-for label)
+      #:group-aid %group-aid
+      #:assigned-at 1700000000)))
 
 (define (witness-aid-of cred) (cred-claim cred 'witness-aid))
 
@@ -62,9 +63,12 @@
        (c3 (assignment %member-3 1))
        (other-fed-cred
         (make-witness-assignment-credential
-          "EFederation_other_0000000000000000000000000000"
-          %member-4
-          (witness-aid-for "other") (oobi-for "other") %group-aid 1700000000))
+          #:federation-aid "EFederation_other_0000000000000000000000000000"
+          #:member-aid %member-4
+          #:witness-aid (witness-aid-for "other")
+          #:witness-oobi (oobi-for "other")
+          #:group-aid %group-aid
+          #:assigned-at 1700000000))
        (revoked
         (cred-with-revoked (assignment %member-4 1) #t))
        (all (list c1 c2 c3 other-fed-cred revoked))

@@ -35,10 +35,18 @@
          (gov   ($ scope 'mint-gov-cap "op")))
     ;; the standing attestation, every optional term set
     ($ store 'issue
-       (make-custody-attestation-credential "EKitchen" "EKitchen" "oven" 1
-         #:valid-from "2026-01-01T00:00:00Z" #:valid-until UNTIL
-         #:movable #t #:return-to "home" #:condition-floor "clean"
-         #:qty-unit "hours/day" #:eligible RULE #:ref "r1"))
+       (make-custody-attestation-credential #:issuing-authority-aid "EKitchen"
+                                            #:custodian-aid "EKitchen"
+                                            #:resource-spec "oven"
+                                            #:qty 1
+         #:valid-from "2026-01-01T00:00:00Z"
+                                            #:valid-until UNTIL
+         #:movable #t
+                                            #:return-to "home"
+                                            #:condition-floor "clean"
+         #:qty-unit "hours/day"
+                                            #:eligible RULE
+                                            #:ref "r1"))
     ($ scope 'transfer-custody gov "oven" 1 "ENext" 'carries '())
     (let ((next (find (lambda (c) (and (equal? "ENext" (cred-holder c))
                                        (not (cred-revoked? c))))

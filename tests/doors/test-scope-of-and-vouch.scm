@@ -78,7 +78,9 @@
     (check "before Away's first PHC: a stranger still accepts (bootstrap open)"
            (car ($ svc 'accept-socialization MEMBER away-aid (cred-said grant))) 'ok)
     ;; Away recognises its actual citizen.
-    ($ store 'issue (make-personhood-credential away-aid citizen-aid "2026-01-01T00:00:00Z"))
+    ($ store 'issue (make-personhood-credential #:ecosystem-aid away-aid
+                                                #:holder-aid citizen-aid
+                                                #:enrolled-at "2026-01-01T00:00:00Z"))
     (let ((grant2 (socialize-private-resource store OWNER away-aid "press" 2
                                               #:until FUTURE #:return-to "barn")))
       (check "post-bootstrap: a stranger with no PHC from Away is refused"
@@ -110,7 +112,9 @@
     (check "no personhood, no vouch"
            (car ($ svc 'fp-vouch-preimage alice-aid eco-aid TIA "friends" "t1")) 'error)
     ;; Alice holds a personhood in Eco — the precondition to vouch
-    ($ store 'issue (make-personhood-credential eco-aid alice-aid "2026-01-01T00:00:00Z"))
+    ($ store 'issue (make-personhood-credential #:ecosystem-aid eco-aid
+                                                #:holder-aid alice-aid
+                                                #:enrolled-at "2026-01-01T00:00:00Z"))
     (let* ((ar   (preimage-fields (cadr ($ svc 'fp-vouch-preimage alice-aid eco-aid TIA "friends" "t1"))))
            (said (said-of ar))
            (sig  (sign-said said alice-kp)))
@@ -154,7 +158,9 @@
                                (cdr ($ svc 'relationships me eco-aid (list them))))))
                   (lambda (k) (assq-ref r k))))))
     ;; Ana, Ben and Cy are recognised; Dee is a contact with nothing signed
-    (for-each (lambda (p) ($ store 'issue (make-personhood-credential eco-aid p "2026-01-01T00:00:00Z")))
+    (for-each (lambda (p) ($ store 'issue (make-personhood-credential #:ecosystem-aid eco-aid
+                                                                      #:holder-aid p
+                                                                      #:enrolled-at "2026-01-01T00:00:00Z")))
               (list ana ben cy))
     (check "nothing signed: recognised, and no vouch either way"
            (let ((r (row ana ben))) (list (r 'recognised) (r 'mine) (r 'theirs))) '(#t #f #f))

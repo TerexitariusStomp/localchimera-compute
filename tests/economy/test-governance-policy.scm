@@ -47,9 +47,11 @@
 
       ;; a ratification for the WRONG grant doesn't rescue it
       (let* ((wrong-rat (make-recomposition-ratification-credential
-                         COMMUNE 'accept-socialization
-                         "not-this-grant"
-                         "E_snap_wrong" '((accept . 5) (refuse . 0)))))
+                         #:scope-aid COMMUNE
+                         #:proposal-type 'accept-socialization
+                         #:proposal-spec "not-this-grant"
+                         #:ballot-said "E_snap_wrong"
+                         #:tally '((accept . 5) (refuse . 0)))))
         ($ store 'issue wrong-rat)
         (check-pred "mismatched ratification is still refused"
                     (catch #t
@@ -60,9 +62,11 @@
 
       ;; the correctly-targeted ratification lets it through
       (let* ((rat (make-recomposition-ratification-credential
-                   COMMUNE 'accept-socialization
-                   (cred-said grant2)
-                   "E_snap_ok" '((accept . 5) (refuse . 0)))))
+                   #:scope-aid COMMUNE
+                   #:proposal-type 'accept-socialization
+                   #:proposal-spec (cred-said grant2)
+                   #:ballot-said "E_snap_ok"
+                   #:tally '((accept . 5) (refuse . 0)))))
         ($ store 'issue rat)
         (check-pred "matching ratification: acceptance succeeds"
                     (string? ($ scope 'accept-socialization gov (cred-said grant2)
@@ -70,7 +74,10 @@
 
     ;; ── the same policy gates accept-reimbursement too ──
     (let* ((claim (make-commitment-credential
-                   OWNER COMMUNE "claim-1" 'transfer
+                   #:provider-aid OWNER
+                   #:receiver-aid COMMUNE
+                   #:commitment-id "claim-1"
+                   #:action 'transfer
                    #:resource-conforms-to "spec-eur"
                    #:resource-quantity '(20 . "EUR"))))
       ($ store 'issue claim)
@@ -79,9 +86,11 @@
                     (lambda () ($ scope 'accept-reimbursement gov (cred-said claim)) #f)
                     (lambda _ #t)))
       (let* ((rat (make-recomposition-ratification-credential
-                   COMMUNE 'accept-reimbursement
-                   (cred-said claim)
-                   "E_snap_debt" '((accept . 5) (refuse . 0)))))
+                   #:scope-aid COMMUNE
+                   #:proposal-type 'accept-reimbursement
+                   #:proposal-spec (cred-said claim)
+                   #:ballot-said "E_snap_debt"
+                   #:tally '((accept . 5) (refuse . 0)))))
         ($ store 'issue rat)
         (check-pred "matching ratification: accept-reimbursement succeeds"
                     (pair? ($ scope 'accept-reimbursement gov (cred-said claim)

@@ -67,7 +67,11 @@
      ("sig" . ,(cred-signature cred)))))
 (define (authorize kp label signer)
   (cred->wire (make-device-authorization-credential
-               aid (device-aid kp) label "software" 1700000000
+               #:person-aid aid
+               #:device-aid (device-aid kp)
+               #:label label
+               #:tier "software"
+               #:enrolled-at 1700000000
                #:signing-keypair signer)))
 
 (format #t "~%=== seat the root ===~%")

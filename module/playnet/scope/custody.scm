@@ -63,7 +63,10 @@
     ((attest-custody gov-cap resource-spec qty . opts)
      (require-gov-cap! gov-sealed? gov-cap "attest-custody" name)
      (let ((cred (make-custody-attestation-credential
-                  scope-aid scope-aid resource-spec qty
+                  #:issuing-authority-aid scope-aid
+                  #:custodian-aid scope-aid
+                  #:resource-spec resource-spec
+                  #:qty qty
                   #:valid-from  (kw-ref opts 'valid-from (iso-utc-now))
                   #:valid-until (kw-ref opts 'valid-until)
                   #:supersedes  (kw-ref opts 'supersedes)
@@ -108,7 +111,10 @@
               ;; bound this one. `ref` stays per-issuance — it is the
               ;; anti-replay nonce, not a term.
               (new-att (make-custody-attestation-credential
-                        scope-aid to-scope-aid resource-spec qty
+                        #:issuing-authority-aid scope-aid
+                        #:custodian-aid to-scope-aid
+                        #:resource-spec resource-spec
+                        #:qty qty
                         #:valid-from effective-at
                         #:supersedes (cred-said prior)
                         #:valid-until    (cred-claim prior 'valid-until)
@@ -121,8 +127,12 @@
                         #:eligible       (cred-claim prior 'eligible)
                         #:signing-keypair keypair))
               (xfer    (make-custody-transfer-commitment-credential
-                        scope-aid to-scope-aid resource-spec qty
-                        (cred-said new-att) (cred-said prior)
+                        #:from-scope-aid scope-aid
+                        #:to-scope-aid to-scope-aid
+                        #:resource-spec resource-spec
+                        #:qty qty
+                        #:new-attestation-said (cred-said new-att)
+                        #:revoked-attestation-said (cred-said prior)
                         #:carries-commitments carries
                         #:effective-at effective-at
                         #:signing-keypair keypair)))

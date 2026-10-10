@@ -67,9 +67,12 @@
               (spec  (cred-claim grant 'resource-spec))
               (until (cred-claim grant 'valid-until))
               (return-c (make-commitment-credential
-                         scope-aid owner (string-append "return-" grant-said)
-                         'transfer-custody
-                         #:resource-conforms-to spec #:due until
+                         #:provider-aid scope-aid
+                         #:receiver-aid owner
+                         #:commitment-id (string-append "return-" grant-said)
+                         #:action 'transfer-custody
+                         #:resource-conforms-to spec
+                         #:due until
                          #:signing-keypair keypair))
               (contribution (kw-ref opts 'contribution #f))
               (share-c (and contribution
@@ -78,13 +81,18 @@
                                   (unit (list-ref contribution 2))
                                   (due (list-ref contribution 3)))
                               (make-commitment-credential
-                               scope-aid owner (string-append "share-" grant-said)
-                               'transfer
+                               #:provider-aid scope-aid
+                               #:receiver-aid owner
+                               #:commitment-id (string-append "share-" grant-said)
+                               #:action 'transfer
                                #:resource-conforms-to money-spec
-                               #:resource-quantity (cons amount unit) #:due due
+                               #:resource-quantity (cons amount unit)
+                               #:due due
                                #:signing-keypair keypair))))
               (agreement (make-agreement-credential
-                          scope-aid owner (string-append "agr-" grant-said)
+                          #:acceptor-aid scope-aid
+                          #:proposer-aid owner
+                          #:agreement-id (string-append "agr-" grant-said)
                           #:primary-commitment-ids    (list grant-said)
                           #:reciprocal-commitment-ids (append (list (cred-said return-c))
                                                               (if share-c (list (cred-said share-c)) '()))

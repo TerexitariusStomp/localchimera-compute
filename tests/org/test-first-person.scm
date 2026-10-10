@@ -55,7 +55,11 @@
   ;; Issue one direction only.
   (let* ((phc-a (phc-for store gov-aid "E_alice"))
          (vrc-ab (make-relationship-credential
-                   "E_alice" "E_bob" 'trust (cred-said phc-a) 101)))
+                   #:issuer-aid "E_alice"
+                   #:subject-aid "E_bob"
+                   #:relationship-type 'trust
+                   #:issuer-phc-said (cred-said phc-a)
+                   #:issued-at 101)))
     ($ store 'issue vrc-ab)
     (check-pred "triangle #f with only one VRC"
                 (not (trust-triangle-holds? store "E_alice" "E_bob" gov-aid #:require-signatures? #f))))
@@ -63,7 +67,11 @@
   ;; Issue reverse direction — triangle closes.
   (let* ((phc-b (phc-for store gov-aid "E_bob"))
          (vrc-ba (make-relationship-credential
-                   "E_bob" "E_alice" 'trust (cred-said phc-b) 102)))
+                   #:issuer-aid "E_bob"
+                   #:subject-aid "E_alice"
+                   #:relationship-type 'trust
+                   #:issuer-phc-said (cred-said phc-b)
+                   #:issued-at 102)))
     ($ store 'issue vrc-ba)
     (check-pred "triangle closes with mutual VRCs"
                 (trust-triangle-holds? store "E_alice" "E_bob" gov-aid #:require-signatures? #f)))

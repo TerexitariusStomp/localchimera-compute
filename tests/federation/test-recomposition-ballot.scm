@@ -83,7 +83,11 @@
     ;; "no contributors NOW" rather than "no contributors at issue time").
     ($ store 'issue
        (make-work-event-credential
-        "EBLA" "alice" "B-evt-1" 4 %effort-unit
+        #:scope-aid "EBLA"
+        #:worker-aid "alice"
+        #:event-id "B-evt-1"
+        #:hours 4
+        #:unit %effort-unit
         #:timestamp "2026-04-26T10:00:00Z"))
     (check-pred "post-contributors: validator flags retroactively"
                 (not (recomposition-ratified? top)))
@@ -119,13 +123,17 @@
     ;; Issue ratification ACDCs (issuer = target = each commune itself)
     ;; for both admissions, then admit with ratification.
     (let* ((rat-la (make-recomposition-ratification-credential
-                    "ECLA" 'admit-commune
-                    '(admit-commune "la" "ECLA")
-                    "E_C_snap_la" '((yes . 5) (no . 0))))
+                    #:scope-aid "ECLA"
+                    #:proposal-type 'admit-commune
+                    #:proposal-spec '(admit-commune "la" "ECLA")
+                    #:ballot-said "E_C_snap_la"
+                    #:tally '((yes . 5) (no . 0))))
            (rat-lb (make-recomposition-ratification-credential
-                    "ECLB" 'admit-commune
-                    '(admit-commune "lb" "ECLB")
-                    "E_C_snap_lb" '((yes . 5) (no . 0)))))
+                    #:scope-aid "ECLB"
+                    #:proposal-type 'admit-commune
+                    #:proposal-spec '(admit-commune "lb" "ECLB")
+                    #:ballot-said "E_C_snap_lb"
+                    #:tally '((yes . 5) (no . 0)))))
       ($ store 'issue rat-la)
       ($ store 'issue rat-lb)
       ($ top 'admit-commune gtop "la" la 'ratification (cred-said rat-la))
@@ -133,7 +141,11 @@
       ;; trigger the validator without ratification.
       ($ store 'issue
          (make-work-event-credential
-          "ECLA" "alice" "C-evt-1" 4 %effort-unit
+          #:scope-aid "ECLA"
+          #:worker-aid "alice"
+          #:event-id "C-evt-1"
+          #:hours 4
+          #:unit %effort-unit
           #:timestamp "2026-04-26T10:00:00Z"))
       ($ top 'admit-commune gtop "lb" lb 'ratification (cred-said rat-lb))
       ;; Both membership creds carry ratification edges.
@@ -169,9 +181,11 @@
     ;; D1: type mismatch — ratification for merge-with used in admit-commune
     (let* ((rat-merge
             (make-recomposition-ratification-credential
-             "EDLB" 'merge-with
-             '(merge-with "EOTHER")
-             "E_d1_snap" '((yes . 1)))))
+             #:scope-aid "EDLB"
+             #:proposal-type 'merge-with
+             #:proposal-spec '(merge-with "EOTHER")
+             #:ballot-said "E_d1_snap"
+             #:tally '((yes . 1)))))
       ($ store 'issue rat-merge)
       (check-pred "merge-with rat rejected by admit-commune"
                   (catch #t
@@ -184,9 +198,11 @@
     ;; D2: spec mismatch — right type, wrong commune-aid
     (let* ((rat-wrong-spec
             (make-recomposition-ratification-credential
-             "EDLB" 'admit-commune
-             '(admit-commune "lb" "WRONG-AID")
-             "E_d2_snap" '((yes . 1)))))
+             #:scope-aid "EDLB"
+             #:proposal-type 'admit-commune
+             #:proposal-spec '(admit-commune "lb" "WRONG-AID")
+             #:ballot-said "E_d2_snap"
+             #:tally '((yes . 1)))))
       ($ store 'issue rat-wrong-spec)
       (check-pred "wrong-spec rat rejected"
                   (catch #t
@@ -199,9 +215,11 @@
     ;; D3: threshold not met
     (let* ((rat-not-met
             (make-recomposition-ratification-credential
-             "EDLB" 'admit-commune
-             '(admit-commune "lb" "EDLB")
-             "E_d3_snap" '((yes . 0) (no . 5))
+             #:scope-aid "EDLB"
+             #:proposal-type 'admit-commune
+             #:proposal-spec '(admit-commune "lb" "EDLB")
+             #:ballot-said "E_d3_snap"
+             #:tally '((yes . 0) (no . 5))
              #:threshold-met? #f)))
       ($ store 'issue rat-not-met)
       (check-pred "threshold-not-met rat rejected"
@@ -215,9 +233,11 @@
     ;; D4: revoked ratification
     (let* ((rat-revoked
             (make-recomposition-ratification-credential
-             "EDLB" 'admit-commune
-             '(admit-commune "lb" "EDLB")
-             "E_d4_snap" '((yes . 5)))))
+             #:scope-aid "EDLB"
+             #:proposal-type 'admit-commune
+             #:proposal-spec '(admit-commune "lb" "EDLB")
+             #:ballot-said "E_d4_snap"
+             #:tally '((yes . 5)))))
       ($ store 'issue rat-revoked)
       ($ store 'revoke (cred-said rat-revoked))
       (check-pred "revoked rat rejected"

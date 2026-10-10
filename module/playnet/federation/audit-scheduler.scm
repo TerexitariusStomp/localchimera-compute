@@ -79,7 +79,9 @@
                         (let ((cred
                                (cred-signed-by-scope
                                 (make-derived-state-snapshot-credential
-                                 scope-aid scope-aid data
+                                 #:auditor-aid scope-aid
+                                 #:scope-aid scope-aid
+                                 #:snapshot-data data
                                  #:input-saids input-saids
                                  #:snapshot-at as-of-seconds)
                                 scope-ref)))

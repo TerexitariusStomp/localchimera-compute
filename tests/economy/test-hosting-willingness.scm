@@ -26,7 +26,10 @@
 
 (display "\n── 1. The credential: a scope's own consent, with a ceiling ──\n")
 
-(let ((w (make-hosting-willingness-credential HOST "lathe" 20.0 #:valid-until FUTURE)))
+(let ((w (make-hosting-willingness-credential #:scope-aid HOST
+                                              #:resource-spec "lathe"
+                                              #:ceiling 20.0
+                                              #:valid-until FUTURE)))
   (check-pred "issuer = holder = the hosting scope"
               (and (equal? HOST (cred-issuer w)) (equal? HOST (cred-holder w))))
   (check-pred "willingness schema"
@@ -38,7 +41,9 @@
 (with-vat vat
   (display "\n── 2. Without the host's consent, a foreign span is dropped ──\n")
   (let ((store (spawn-acdc-store)))
-    ($ store 'issue (make-span-declaration-credential STEWARD "lathe-1" "town-square"))
+    ($ store 'issue (make-span-declaration-credential #:scope-aid STEWARD
+                                                      #:resource-id "lathe-1"
+                                                      #:span-place "town-square"))
     (check-pred "live-span-of sees the declaration (no gate)"
                 (equal? "town-square" (assoc-ref (live-span-of store) "lathe-1")))
     (check-pred "consented-span-of drops it — refusal is the default"
@@ -49,8 +54,13 @@
 
   (display "\n── 3. With it, the span passes; lapsed, it drops again ──\n")
   (let ((store (spawn-acdc-store)))
-    ($ store 'issue (make-span-declaration-credential STEWARD "lathe-1" "town-square"))
-    ($ store 'issue (make-hosting-willingness-credential HOST "lathe" 20.0 #:valid-until FUTURE))
+    ($ store 'issue (make-span-declaration-credential #:scope-aid STEWARD
+                                                      #:resource-id "lathe-1"
+                                                      #:span-place "town-square"))
+    ($ store 'issue (make-hosting-willingness-credential #:scope-aid HOST
+                                                         #:resource-spec "lathe"
+                                                         #:ceiling 20.0
+                                                         #:valid-until FUTURE))
     (check-pred "host consented ⇒ the span reaches its place"
                 (equal? "town-square"
                         (assoc-ref (consented-span-of store
@@ -58,8 +68,13 @@
                                                       #:spec-of spec-of)
                                    "lathe-1"))))
   (let ((store (spawn-acdc-store)))
-    ($ store 'issue (make-span-declaration-credential STEWARD "lathe-1" "town-square"))
-    ($ store 'issue (make-hosting-willingness-credential HOST "lathe" 20.0 #:valid-until PAST))
+    ($ store 'issue (make-span-declaration-credential #:scope-aid STEWARD
+                                                      #:resource-id "lathe-1"
+                                                      #:span-place "town-square"))
+    ($ store 'issue (make-hosting-willingness-credential #:scope-aid HOST
+                                                         #:resource-spec "lathe"
+                                                         #:ceiling 20.0
+                                                         #:valid-until PAST))
     (check-pred "consent lapsed ⇒ the span drops, with no further event"
                 (not (assoc-ref (consented-span-of store
                                                    #:place-scope-of place-scope-of
@@ -68,7 +83,9 @@
 
   (display "\n── 4. What needs no consent ──\n")
   (let ((store (spawn-acdc-store)))
-    ($ store 'issue (make-span-declaration-credential STEWARD "lathe-1" "workshop-a"))
+    ($ store 'issue (make-span-declaration-credential #:scope-aid STEWARD
+                                                      #:resource-id "lathe-1"
+                                                      #:span-place "workshop-a"))
     (check-pred "the steward's own walls"
                 (equal? "workshop-a"
                         (assoc-ref (consented-span-of store
@@ -76,7 +93,9 @@
                                                       #:spec-of spec-of)
                                    "lathe-1"))))
   (let ((store (spawn-acdc-store)))
-    ($ store 'issue (make-span-declaration-credential STEWARD "lathe-1" "riverbank"))
+    ($ store 'issue (make-span-declaration-credential #:scope-aid STEWARD
+                                                      #:resource-id "lathe-1"
+                                                      #:span-place "riverbank"))
     (check-pred "a place no scope claims: open ground"
                 (equal? "riverbank"
                         (assoc-ref (consented-span-of store
@@ -84,7 +103,9 @@
                                                       #:spec-of spec-of)
                                    "lathe-1"))))
   (let ((store (spawn-acdc-store)))
-    ($ store 'issue (make-span-declaration-credential STEWARD "lathe-1" "town-square"))
+    ($ store 'issue (make-span-declaration-credential #:scope-aid STEWARD
+                                                      #:resource-id "lathe-1"
+                                                      #:span-place "town-square"))
     (check-pred "no mappings supplied ⇒ the gate cannot be asked (live-span-of)"
                 (equal? "town-square"
                         (assoc-ref (consented-span-of store) "lathe-1")))))
@@ -97,28 +118,40 @@
                                     ((equal? rid "commons-1") 'common)
                                     (else #f)))))
     (let ((store (spawn-acdc-store)))
-      ($ store 'issue (make-span-declaration-credential STEWARD "lathe-1" "workshop-a"))
-      ($ store 'issue (make-span-declaration-credential "EMallory" "lathe-1" "workshop-a"))
+      ($ store 'issue (make-span-declaration-credential #:scope-aid STEWARD
+                                                        #:resource-id "lathe-1"
+                                                        #:span-place "workshop-a"))
+      ($ store 'issue (make-span-declaration-credential #:scope-aid "EMallory"
+                                                        #:resource-id "lathe-1"
+                                                        #:span-place "workshop-a"))
       (check-pred "the owner's declaration passes the standing gate"
                   (equal? "workshop-a"
                           (assoc-ref (consented-span-of store #:rights-of rights) "lathe-1"))))
     (let ((store (spawn-acdc-store)))
-      ($ store 'issue (make-span-declaration-credential "EMallory" "lathe-1" "town-square"))
+      ($ store 'issue (make-span-declaration-credential #:scope-aid "EMallory"
+                                                        #:resource-id "lathe-1"
+                                                        #:span-place "town-square"))
       (check-pred "a stranger's declaration over an owned means is dropped"
                   (not (assoc-ref (consented-span-of store #:rights-of rights) "lathe-1"))))
     (let ((store (spawn-acdc-store)))
-      ($ store 'issue (make-span-declaration-credential STEWARD "commons-1" "workshop-a"))
+      ($ store 'issue (make-span-declaration-credential #:scope-aid STEWARD
+                                                        #:resource-id "commons-1"
+                                                        #:span-place "workshop-a"))
       (check-pred "no scope has standing over a COMMON means — not even its custodian"
                   (not (assoc-ref (consented-span-of store #:rights-of rights #:uc-aid "EUC")
                                   "commons-1"))))
     (let ((store (spawn-acdc-store)))
-      ($ store 'issue (make-span-declaration-credential "EUC" "commons-1" "workshop-a"))
+      ($ store 'issue (make-span-declaration-credential #:scope-aid "EUC"
+                                                        #:resource-id "commons-1"
+                                                        #:span-place "workshop-a"))
       (check-pred "universal governance alone spans common property (a ratified reservation)"
                   (equal? "workshop-a"
                           (assoc-ref (consented-span-of store #:rights-of rights #:uc-aid "EUC")
                                      "commons-1"))))
     (let ((store (spawn-acdc-store)))
-      ($ store 'issue (make-span-declaration-credential "EMallory" "unknown-9" "anywhere"))
+      ($ store 'issue (make-span-declaration-credential #:scope-aid "EMallory"
+                                                        #:resource-id "unknown-9"
+                                                        #:span-place "anywhere"))
       (check-pred "unknown rights stay ungated — today's behaviour, stated"
                   (equal? "anywhere"
                           (assoc-ref (consented-span-of store #:rights-of rights) "unknown-9"))))))

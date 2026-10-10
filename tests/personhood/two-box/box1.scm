@@ -74,8 +74,12 @@
 ;; the candidate's PHC issues carrying the remote witness as an edge.
 (define candidate "ECandidate2Box0000000000000000000000000000")
 (with-vat vat
-  ($ store 'issue (make-personhood-credential "EScope2Box" "EAdaFar" (current-time)))
-  ($ store 'issue (make-personhood-credential "EScope2Box" w-aid (current-time)))
+  ($ store 'issue (make-personhood-credential #:ecosystem-aid "EScope2Box"
+                                              #:holder-aid "EAdaFar"
+                                              #:enrolled-at (current-time)))
+  ($ store 'issue (make-personhood-credential #:ecosystem-aid "EScope2Box"
+                                              #:holder-aid w-aid
+                                              #:enrolled-at (current-time)))
   (spawn-enrollment-ceremony "EScope2Box" candidate "evidence:2box"
                              "EAdaFar" 1 store))
 (format #t "[box1] enrollment open, ask published for ~a~%" candidate)

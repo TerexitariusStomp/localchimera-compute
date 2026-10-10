@@ -222,7 +222,11 @@
     ;; socialize the APARTMENT (lends 12 units of its own per-period service)
     (socialize-private-resource store OWNER COMMUNE "apartment" 12 #:until FUTURE)
     ;; owner RETAINS the fridge — the opt-out: a self-held custody attestation
-    ($ store 'issue (make-custody-attestation-credential OWNER OWNER "fridge" 5 #:valid-until FUTURE))
+    ($ store 'issue (make-custody-attestation-credential #:issuing-authority-aid OWNER
+                                                         #:custodian-aid OWNER
+                                                         #:resource-spec "fridge"
+                                                         #:qty 5
+                                                         #:valid-until FUTURE))
     (let* ((caps (commune-socialized-caps store COMMUNE contain-res '(0)))
            (cap  (lambda (spec) (assoc (string-append "Svc|" spec "#block@0") caps))))
       (check-pred "apartment socialized (the root)"          (and (cap "apartment") #t))
@@ -298,8 +302,14 @@
 ;; a movable grant stating: return to the depot, in condition ≥ 5; window PAST
 ;; (so the return is due).
 (define care-grant
-  (make-custody-attestation-credential OWNER COMMUNE "spec:cargo-bike" 4
-    #:valid-until PAST #:movable #t #:return-to "depot" #:condition-floor 5))
+  (make-custody-attestation-credential #:issuing-authority-aid OWNER
+                                       #:custodian-aid COMMUNE
+                                       #:resource-spec "spec:cargo-bike"
+                                       #:qty 4
+    #:valid-until PAST
+                                       #:movable #t
+                                       #:return-to "depot"
+                                       #:condition-floor 5))
 
 (define (bike-at loc cond)
   (make-economic-resource #:id "res:bike" #:conforms-to "spec:cargo-bike" #:classified-as '()

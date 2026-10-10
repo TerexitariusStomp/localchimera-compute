@@ -72,7 +72,9 @@
 (display "\n── the federation's own ladder still applies ──\n")
 ;; once the federation has recognised someone of its own, a governor of the
 ;; gateway it has not recognised cannot speak for it
-(with-vat vat ($ store 'issue (make-personhood-credential aid-f "EFounder" "2026-01-01T00:00:00Z")))
+(with-vat vat ($ store 'issue (make-personhood-credential #:ecosystem-aid aid-f
+                                                          #:holder-aid "EFounder"
+                                                          #:enrolled-at "2026-01-01T00:00:00Z")))
 (check "a governor the federation does not recognise is refused by it"
        (err? (admit! gov-session aid-f aid-d "ocapn://d/s/2")) #t)
 (check "and the federation has still one member" (members) (list aid-c))

@@ -182,7 +182,11 @@
          (unit   (and eq "hours")))
     (and worker skill
          (let ((base (make-work-event-credential
-                      scope-aid worker (economic-event-id event) hours unit
+                      #:scope-aid scope-aid
+                      #:worker-aid worker
+                      #:event-id (economic-event-id event)
+                      #:hours hours
+                      #:unit unit
                       #:process-id (or (economic-event-input-of event)
                                        (economic-event-output-of event))
                       #:timestamp (economic-event-has-point-in-time event)

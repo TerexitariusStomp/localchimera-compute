@@ -30,7 +30,9 @@
   (let* ((store (spawn-acdc-store))
          (ana (make-keri-identity)) (cy (make-keri-identity))
          (bo (make-keri-identity)) (dee (make-keri-identity)))
-    (for-each (lambda (id) ($ store 'issue (make-personhood-credential ECO (aid id) 100)))
+    (for-each (lambda (id) ($ store 'issue (make-personhood-credential #:ecosystem-aid ECO
+                                                                       #:holder-aid (aid id)
+                                                                       #:enrolled-at 100)))
               (list ana cy))
 
     (display "\n── the candidate's own ask ──\n")
@@ -79,10 +81,17 @@
       ;; the root blesses ECO and FAR as issuers; LONE is unblessed
       (for-each (lambda (eco)
                   ($ store 'issue (make-authorized-issuer-credential
-                                   root-aid eco 5 #:signing-keypair (keri-identity-keypair root))))
+                                   #:root-aid root-aid
+                                   #:ecosystem-aid eco
+                                   #:blessed-at 5
+                                   #:signing-keypair (keri-identity-keypair root))))
                 (list ECO far-aid))
-      ($ store 'issue (make-personhood-credential far-aid (aid w-far) 100))
-      ($ store 'issue (make-personhood-credential lone-aid (aid w-lone) 100))
+      ($ store 'issue (make-personhood-credential #:ecosystem-aid far-aid
+                                                  #:holder-aid (aid w-far)
+                                                  #:enrolled-at 100))
+      ($ store 'issue (make-personhood-credential #:ecosystem-aid lone-aid
+                                                  #:holder-aid (aid w-lone)
+                                                  #:enrolled-at 100))
       (let* ((c (spawn-enrollment-ceremony ECO (aid cand) *self-request-evidence* #f 2 store
                                            #:root-aid root-aid))
              (said ($ c 'statement-said)))

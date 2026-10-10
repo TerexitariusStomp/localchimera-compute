@@ -31,7 +31,7 @@
   #:use-module ((playnet utils clock)
                 #:select (now civil->instant instant->civil instant->unix
                           window-close-epoch))
-  #:export (make-credential define-credential cred-with-signature credential-preimage-fields
+  #:export (make-credential define-credential define-credential-procedure cred-with-signature credential-preimage-fields
             cred-said cred-schema cred-issuer cred-holder cred-claims cred-edges
             cred-signature cred-revoked? cred-claim cred-edge
             cred-with-revoked cred-recompute-said cred-said-consistent?
@@ -184,16 +184,23 @@
 ;; between kinds is data: which claims are always written and which only when
 ;; given, which edge is added when an argument is given, which fields default,
 ;; whether a blinding nonce rides, and which signing keywords the kind takes.
-;; `define-credential` states one kind as that data and expands to the
-;; constructor the tree has always had: the same name, positional order and
-;; keywords, so no call site moves, and the same claims and edges, so no SAID
-;; moves. The kind's index row (what the store knows of its schema) is part of
-;; the same statement, so a constructor and its registration cannot drift.
+;; `define-credential` states one kind as that data and expands to its
+;; constructor. Every argument is a keyword, named for the claim it carries, so
+;; a call reads as the sentence it states:
 ;;
-;;   (define-credential (NAME positional …) "doc" SCHEMA
-;;     #:key    ((keyword default) …)          ; the keyword arguments
+;;   (make-stance-credential #:citizen-aid  me
+;;                           #:domain       "housing"
+;;                           #:position     'for)
+;;
+;; The names a statement lists after the constructor are its required keywords;
+;; leaving one out raises an error that names it. The kind's index row (what
+;; the store knows of its schema) is part of the same statement, so a
+;; constructor and its registration cannot drift.
+;;
+;;   (define-credential (NAME required-keyword …) "doc" SCHEMA
+;;     #:key    ((keyword default) …)          ; the optional keyword arguments
 ;;     #:signed (keypair multisig)             ; which signing keywords it takes
-;;     #:issuer EXPR #:holder EXPR             ; the first two positionals when absent
+;;     #:issuer EXPR #:holder EXPR             ; the issuer and holder when they are not the first two keywords
 ;;     #:nonce  U                              ; the `u` claim comes first, from U
 ;;     #:claims (SPEC …)                       ; name | (name expr) | (? name) | (? name expr)
 ;;     #:edges  (SPEC …)                       ; (label said OP schema) | (? label said OP schema) | (@ list)
@@ -202,6 +209,20 @@
 ;; A `?` claim or edge is written only when its value is given; `@` splices a
 ;; list of edges the caller hands in. Claims and edges keep the order they are
 ;; listed in; the SAID sorts them anyway.
+
+;; A credential constructor written as a procedure, for the kinds that compute
+;; their claims: the same keyword discipline as `define-credential`. The names
+;; after the constructor are its required keywords; the keys after `#:key` are
+;; its optional ones, as in `define*`, in one list.
+(define (missing-keyword who key)
+  (error (string-append (symbol->string who) ": missing required keyword")
+         (symbol->keyword key)))
+
+(define-syntax define-credential-procedure
+  (syntax-rules ()
+    ((_ (name req ...) #:key (opt ...) doc body ...)
+     (define* (name #:key (req (missing-keyword 'name 'req)) ... opt ...)
+       doc body ...))))
 
 (define-syntax define-credential
   (lambda (x)
@@ -249,7 +270,7 @@
                                            (index            (list #`(register-schema-claims! (list (list schema '#,index)))))
                                            (else '()))))
            #'(begin
-               (define* (name pos ... #:key k ... sk ... ms ...)
+               (define* (name #:key (pos (missing-keyword 'name 'pos)) ... k ... sk ... ms ...)
                  doc
                  (make-credential schema issuer holder
                                   (append nc ... c ...)

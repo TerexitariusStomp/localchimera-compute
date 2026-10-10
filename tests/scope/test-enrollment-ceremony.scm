@@ -44,7 +44,9 @@
   (for-each
     (lambda (id)
       ($ store 'issue
-         (make-personhood-credential eco (keri-identity-aid id) 100)))
+         (make-personhood-credential #:ecosystem-aid eco
+                                     #:holder-aid (keri-identity-aid id)
+                                     #:enrolled-at 100)))
     (list alice bob carol))
 
   (define ceremony
@@ -197,9 +199,14 @@
   (define store   (spawn-acdc-store))
   ;; Self-blessing AIC (root == eco), signed — so own-aic-said finds it.
   ($ store 'issue (make-authorized-issuer-credential
-                    eco-aid eco-aid 5 #:signing-keypair (keri-identity-keypair eco)))
+                    #:root-aid eco-aid
+                    #:ecosystem-aid eco-aid
+                    #:blessed-at 5
+                    #:signing-keypair (keri-identity-keypair eco)))
   (for-each (lambda (id)
-              ($ store 'issue (make-personhood-credential eco-aid (keri-identity-aid id) 100)))
+              ($ store 'issue (make-personhood-credential #:ecosystem-aid eco-aid
+                                                          #:holder-aid (keri-identity-aid id)
+                                                          #:enrolled-at 100)))
             (list spon w1 w2))
   (define ceremony
     (spawn-enrollment-ceremony eco-aid (keri-identity-aid cand) "evidence:cand"

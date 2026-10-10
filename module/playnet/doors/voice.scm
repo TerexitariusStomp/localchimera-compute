@@ -110,8 +110,12 @@
                 ($ acdc-store 'issue
                    (sign-as-recorder
                     (make-ballot-snapshot-credential
-                     snap-issuer domain id franchise
-                     snapshot-said (current-time)
+                     #:governance-group-aid snap-issuer
+                     #:domain domain
+                     #:proposal-id id
+                     #:franchise franchise
+                     #:snapshot-said snapshot-said
+                     #:opened-at (current-time)
                      #:description description
                      #:voice-snapshot-entries entries
                      #:citizen-registry-aids registry-aids)))
@@ -239,7 +243,12 @@
                           ((ballot)
                            ($ acdc-store 'issue
                               (make-stance-credential
-                               identity-key (recorder-aid) domain id arg (current-time)
+                               #:citizen-aid identity-key
+                               #:governance-group-aid (recorder-aid)
+                               #:domain domain
+                               #:proposal-id id
+                               #:position arg
+                               #:timestamp (current-time)
                                #:ballot-snapshot-said (hashmap-ref snapshot-saids id #f))))
                           ((expression)
                            ;; arg is a live goblins hashmap — fold it to a
@@ -254,8 +263,12 @@
                            ;; what makes the mint succeed at all.
                            ($ acdc-store 'issue
                               (make-expression-stance-credential
-                               identity-key (recorder-aid) domain id
-                               (distribution->alist arg) (current-time))))))
+                               #:citizen-aid identity-key
+                               #:governance-group-aid (recorder-aid)
+                               #:domain domain
+                               #:expression-id id
+                               #:distribution (distribution->alist arg)
+                               #:timestamp (current-time))))))
                       'ok))
                   (lambda (key . args)
                     (list 'error (format #f "cast failed: ~a ~a" key args))))))))))
@@ -283,8 +296,12 @@
             (list 'ok
                   (credential-preimage-fields
                    (make-stance-credential
-                    identity-key (recorder-aid)
-                    ($ event 'domain) id position (current-time)
+                    #:citizen-aid identity-key
+                    #:governance-group-aid (recorder-aid)
+                    #:domain ($ event 'domain)
+                    #:proposal-id id
+                    #:position position
+                    #:timestamp (current-time)
                     #:ballot-snapshot-said (hashmap-ref snapshot-saids id #f))))))))
 
       ;; U is the blinding nonce the client signed over, echoed back from the
@@ -323,8 +340,12 @@ a stale client bundle needs a refresh"))
                 (catch #t
                   (lambda ()
                     (let ((cred (make-stance-credential
-                                 identity-key (recorder-aid)
-                                 ($ event 'domain) id position timestamp
+                                 #:citizen-aid identity-key
+                                 #:governance-group-aid (recorder-aid)
+                                 #:domain ($ event 'domain)
+                                 #:proposal-id id
+                                 #:position position
+                                 #:timestamp timestamp
                                  #:u u
                                  #:ballot-snapshot-said
                                  (hashmap-ref snapshot-saids id #f))))
@@ -374,9 +395,12 @@ a stale client bundle needs a refresh"))
            (validate-hand hand)
            (list 'ok (credential-preimage-fields
                       (make-expression-stance-credential
-                       identity-key (recorder-aid) "plan-part"
-                       (string-append "plan-part:" scope-id)
-                       (distribution->alist hand) (current-time)))))
+                       #:citizen-aid identity-key
+                       #:governance-group-aid (recorder-aid)
+                       #:domain "plan-part"
+                       #:expression-id (string-append "plan-part:" scope-id)
+                       #:distribution (distribution->alist hand)
+                       #:timestamp (current-time)))))
          (lambda (key . args) (list 'error (format #f "part-stance-preimage failed: ~a ~a" key args)))))
 
       ((cast-part-signed identity-key scope-id hand timestamp signature . opt)
@@ -390,9 +414,13 @@ a stale client bundle needs a refresh"))
               (lambda ()
                 (validate-hand hand)
                 (let ((cred (make-expression-stance-credential
-                             identity-key (recorder-aid) "plan-part"
-                             (string-append "plan-part:" scope-id)
-                             (distribution->alist hand) timestamp #:u u)))
+                             #:citizen-aid identity-key
+                             #:governance-group-aid (recorder-aid)
+                             #:domain "plan-part"
+                             #:expression-id (string-append "plan-part:" scope-id)
+                             #:distribution (distribution->alist hand)
+                             #:timestamp timestamp
+                             #:u u)))
                   (cond
                     ((not (client-signature-ok? cred vkey signature))
                      (list 'error "stance signature does not verify against caller AID"))
@@ -456,13 +484,18 @@ a stale client bundle needs a refresh"))
                                (tally-cred
                                 (sign-as-recorder
                                  (make-tally-result-credential
-                                  (recorder-aid) domain id 'federation
+                                  #:governance-group-aid (recorder-aid)
+                                  #:domain domain
+                                  #:proposal-id id
+                                  #:franchise 'federation
                                   ;; the folded, key-sorted entries — never
                                   ;; the raw hashmap, whose printer truncates
                                   ;; past 10 pairs (a lossy "auditable proof")
                                   ;; and which canonical-string now refuses
-                                  winner (canonical-string (said-sort-pairs entries))
-                                  abstain now
+                                  #:winner winner
+                                  #:tally-data (canonical-string (said-sort-pairs entries))
+                                  #:abstain-weight abstain
+                                  #:closed-at now
                                   ;; §4.9: edge to ballot-snapshot.
                                   #:ballot-snapshot-said snap-said))))
                           ($ acdc-store 'issue tally-cred)
@@ -482,8 +515,12 @@ a stale client bundle needs a refresh"))
                               (when threshold-met?
                                 (let ((rat (sign-as-recorder
                                             (make-recomposition-ratification-credential
-                                             (recorder-aid) proposal-type proposal-spec
-                                             snap-said entries #:threshold-met? #t))))
+                                             #:scope-aid (recorder-aid)
+                                             #:proposal-type proposal-type
+                                             #:proposal-spec proposal-spec
+                                             #:ballot-said snap-said
+                                             #:tally entries
+                                             #:threshold-met? #t))))
                                   ($ acdc-store 'issue rat)
                                   (set! ratification-said (cred-said rat))))))
                           ;; Free the proposal-id from the snapshot map

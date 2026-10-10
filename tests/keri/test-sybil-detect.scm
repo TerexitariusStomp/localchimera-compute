@@ -16,12 +16,18 @@
 
 (define* (issue-phc store eco aid #:optional (sponsor #f) (ts 100))
   ($ store 'issue
-     (make-personhood-credential eco aid ts
+     (make-personhood-credential #:ecosystem-aid eco
+                                 #:holder-aid aid
+                                 #:enrolled-at ts
                                   #:sponsor-aid sponsor)))
 
 (define* (issue-vrc store from to phc-said #:optional (ts 200))
   ($ store 'issue
-     (make-relationship-credential from to 'trust phc-said ts)))
+     (make-relationship-credential #:issuer-aid from
+                                   #:subject-aid to
+                                   #:relationship-type 'trust
+                                   #:issuer-phc-said phc-said
+                                   #:issued-at ts)))
 
 
 ;;; ════════════════════════════════════════════════════════════════════════════

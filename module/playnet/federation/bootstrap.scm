@@ -154,7 +154,9 @@
      (let* ((sign-kp (and keri-backend (assq-ref keri-backend 'signing-keypair)))
             (genesis-aic
              (make-authorized-issuer-credential
-               governance-aid governance-aid (instant->unix (clock-now))
+               #:root-aid governance-aid
+               #:ecosystem-aid governance-aid
+               #:blessed-at (instant->unix (clock-now))
                #:signing-keypair sign-kp))
             (aic-said ($ acdc-store 'issue genesis-aic))
             (issued
@@ -165,11 +167,16 @@
                        (now  (instant->unix (clock-now)))
                        (member-cred
                         (make-membership-credential
-                          governance-aid aid name now
+                          #:issuer-group-aid governance-aid
+                          #:holder-aid aid
+                          #:commune name
+                          #:admitted-at now
                           #:signing-keypair sign-kp))
                        (phc
                         (make-personhood-credential
-                          governance-aid aid now
+                          #:ecosystem-aid governance-aid
+                          #:holder-aid aid
+                          #:enrolled-at now
                           #:enrollment-evidence-digest
                           (string-append "founder:" name)
                           #:issuer-authz-said aic-said
@@ -201,11 +208,12 @@
            (let* ((aid (cadr founder))
                   (sa  (share->alist share))
                   (cred (make-bran-share-credential
-                          governance-aid aid
-                          (assoc-ref sa 'share-index)
-                          (assoc-ref sa 'threshold)
-                          n
-                          (assoc-ref sa 'share-data)
+                          #:issuer-group-aid governance-aid
+                          #:holder-aid aid
+                          #:share-index (assoc-ref sa 'share-index)
+                          #:threshold (assoc-ref sa 'threshold)
+                          #:total-shares n
+                          #:share-data-hex (assoc-ref sa 'share-data)
                           #:signing-keypair sign-kp)))
              ($ acdc-store 'issue cred)))
          founders

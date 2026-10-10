@@ -48,8 +48,12 @@
 (define stranger (device-keypair))
 (define %now 1760000000)
 
-(define cred (make-device-authorization-credential person (device-aid phone) "phone" "software"
-                                                   %now #:signing-keypair kp0))
+(define cred (make-device-authorization-credential #:person-aid person
+                                                   #:device-aid (device-aid phone)
+                                                   #:label "phone"
+                                                   #:tier "software"
+                                                   #:enrolled-at %now
+                                                   #:signing-keypair kp0))
 (device-enroll! person cred %now)
 
 ;; ── stand-in objects and a synchronous call ───────────────────────────────
@@ -126,8 +130,13 @@
 
 ;; a narrow interface: enrolled with doors '("whoami")
 (define narrow (device-keypair))
-(define narrow-cred (make-device-authorization-credential person (device-aid narrow) "bot" "software"
-                                                          %now #:doors '("whoami") #:signing-keypair kp0))
+(define narrow-cred (make-device-authorization-credential #:person-aid person
+                                                          #:device-aid (device-aid narrow)
+                                                          #:label "bot"
+                                                          #:tier "software"
+                                                          #:enrolled-at %now
+                                                          #:doors '("whoami")
+                                                          #:signing-keypair kp0))
 (device-enroll! person narrow-cred %now)
 (check "the allowlisted door answers"
        (= 200 (car (door "/api/session/whoami" "{}"

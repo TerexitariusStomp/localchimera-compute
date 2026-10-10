@@ -59,11 +59,17 @@
     ($ la  'admit-member  gla "alice")
     ($ lb  'admit-member  glb "bob")
     (let ((rat-la (make-recomposition-ratification-credential
-                   "ELA" 'admit-commune '(admit-commune "la" "ELA")
-                   "E_e2e_snap_la" '((yes . 1))))
+                   #:scope-aid "ELA"
+                   #:proposal-type 'admit-commune
+                   #:proposal-spec '(admit-commune "la" "ELA")
+                   #:ballot-said "E_e2e_snap_la"
+                   #:tally '((yes . 1))))
           (rat-lb (make-recomposition-ratification-credential
-                   "ELB" 'admit-commune '(admit-commune "lb" "ELB")
-                   "E_e2e_snap_lb" '((yes . 1)))))
+                   #:scope-aid "ELB"
+                   #:proposal-type 'admit-commune
+                   #:proposal-spec '(admit-commune "lb" "ELB")
+                   #:ballot-said "E_e2e_snap_lb"
+                   #:tally '((yes . 1)))))
       ($ store 'issue rat-la)
       ($ store 'issue rat-lb)
       ($ fed 'admit-commune gfed "la" la 'ratification (cred-said rat-la))
@@ -80,15 +86,20 @@
     ;; Redistribution mandate from FED → LA
     ($ store 'issue
        (make-redistribution-mandate-credential
-        fed-aid "ELA"
-        '(custody-of-spec-above "spec:wheat" 100)
-        'federation-pool))
+        #:federation-aid fed-aid
+        #:scope-aid "ELA"
+        #:threshold-spec '(custody-of-spec-above "spec:wheat" 100)
+        #:recipient-policy 'federation-pool))
 
     ;; Phase 1: 50 wheat + a labor event — compliant
     ($ la 'attest-custody gla "spec:wheat" 50)
     ($ store 'issue
        (make-work-event-credential
-        "ELA" "alice" "evt-1" 4 %effort-unit
+        #:scope-aid "ELA"
+        #:worker-aid "alice"
+        #:event-id "evt-1"
+        #:hours 4
+        #:unit %effort-unit
         #:timestamp "2026-04-26T09:00:00Z"))
 
     (check-pred "phase-1 redistribution coherent"
