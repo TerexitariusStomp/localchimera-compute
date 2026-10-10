@@ -1,6 +1,6 @@
 ;;; test-conformance-recert-live.scm — the recert schedule, read off a LIVE plan.
 ;;;
-;;; The live-wiring of the inspection work (docs/planning/legal/inspection-in-plan.md): a real
+;;; The live-wiring of the inspection work (docs/legal/inspection-in-plan.md): a real
 ;;; plan-scope->alist solve now emits `conformance-recert` — for every skill the plan
 ;;; actually leans on, the recert interval its OWN load implies. No toy solve: the load
 ;;; is folded off the `work` commitments the plan schedules, run through

@@ -220,7 +220,7 @@
 ;; is invertible by rainbow-table attack (ACDC §4.1), which would leak the
 ;; address to anyone holding a SAID.
 ;;
-;; See docs/planning/legal/gdpr-analysis.md §"Phase 1b".
+;; See docs/legal/gdpr-analysis.md §"Phase 1b".
 
 ;; Channel kinds accepted for a binding. Mirrors (playnet notify recipient)'s
 ;; taxonomy — duplicated as data rather than imported so the pure-data

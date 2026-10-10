@@ -1,5 +1,5 @@
 ;;; compliance-food.scm — the food-distribution worked example for the legal
-;;; compliance lifecycle (docs/planning/legal/legal-compliance-lifecycle.md §10).
+;;; compliance lifecycle (docs/legal/legal-compliance-lifecycle.md §10).
 ;;;
 ;;; A scope that VENDS food to the public trips a `food-vending` crossing (public
 ;;; sale). A jurisdiction answers that crossing with an ENTITY permit demand (a

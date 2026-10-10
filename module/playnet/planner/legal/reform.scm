@@ -1,7 +1,7 @@
 ;;; reform.scm — the reform program as the diff of legal / internal / desired specs.
 ;;; @defines reform
 ;;;
-;;; Design: docs/planning/legal/legal-crossings.md §"Dual power — reform as the diff".
+;;; Design: docs/legal/legal-crossings.md §"Dual power — reform as the diff".
 ;;; Pairs with legal/registry.scm: each binding DEMAND (obtain / pay / tell) is
 ;;; mirrored by what the federation INTERNALLY verifies (I) and what it DESIRES
 ;;; (D), beside the LEGAL spec (L). The reform program is the diff over (L,I,D).

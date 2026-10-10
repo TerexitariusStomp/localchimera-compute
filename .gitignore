@@ -123,10 +123,10 @@ OPSEC-LEAKS.local.md
 # by convention
 docs/planning/*.local.md
 
-# docs/agreements/ — the member-body agreement template and every filled copy.
+# docs/legal/agreements/ — the member-body agreement template and every filled copy.
 # A filled agreement names real organisations, addresses and signatories; this
 # repo is public and pseudonymous. Nothing under it is ever committed.
-/docs/agreements/
+/docs/legal/agreements/
 
 # Real Radicle seed list (production onion) — delivered out-of-band, never committed
 deploy/radicle-seeds.local.txt
@@ -547,6 +547,16 @@ docs/keri/PLAN-KERI-UX.md
 docs/keri/PLAYNET-KERI-CONFORMANCE.md
 docs/keri/SIGNIFY-PARITY.md
 docs/legal/README.md
+docs/legal/operator.md
+docs/legal/structure.md
+docs/legal/insurance/README.md
+docs/legal/insurance/survey-2026-10-10.md
+docs/legal/gdpr-analysis.md
+docs/legal/inspection-in-plan.md
+docs/legal/legal-compliance-lifecycle.md
+docs/legal/legal-crossings.md
+docs/legal/cases/berlin-food-policy-reform.md
+docs/legal/cases/two-rulebooks.md
 docs/networking/LXMF-STORE-AND-FORWARD.md
 docs/networking/PEER-DISCOVERY.md
 docs/networking/RETICULUM-IDENTITIES.md
@@ -648,12 +658,6 @@ docs/planning/identity/skill-maintenance-recipes.md
 docs/planning/identity/skill-standing.md
 docs/planning/identity/trust-substrate-belief-acceptance.md
 docs/planning/identity/truth-telling.md
-docs/planning/legal/berlin-food-policy-reform.md
-docs/planning/legal/gdpr-analysis.md
-docs/planning/legal/inspection-in-plan.md
-docs/planning/legal/legal-compliance-lifecycle.md
-docs/planning/legal/legal-crossings.md
-docs/planning/legal/two-rulebooks.md
 docs/planning/provenance-bridge.md
 docs/planning/provenance-graph.md
 docs/planning/social-genetics.typ

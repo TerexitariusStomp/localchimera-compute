@@ -741,7 +741,7 @@ function consentGate(f: d3.Selection, opts?: { force?: boolean }): () => boolean
 // scope (privacy notice §3.1). The notice's basis there is Art 9(2)(d), open
 // only to an operator that IS a body with a political, philosophical,
 // religious or trade-union aim — a legal-structure decision not yet made
-// (docs/legal/README.md §10 row 7). Until it is, (a) is the fallback:
+// (docs/legal/operator.md §10 row 7). Until it is, (a) is the fallback:
 // explicit, specific consent, asked separately from the general terms tick so
 // it is not bundled into a condition of having an identity at all — voting is
 // optional, so consenting to its one special-category fact must be too.

@@ -1,6 +1,6 @@
 ;;; legal/crossings.scm — the legal "crossings" a recipe can trip.
 ;;;
-;;; Design: docs/planning/legal/legal-crossings.md. A legal requirement is NOT a
+;;; Design: docs/legal/legal-crossings.md. A legal requirement is NOT a
 ;;; property of a recipe; it is the demand of a guard over context, and a
 ;;; recipe merely TRIPS crossings that feed that context. This file is the
 ;;; inductive core: an OPEN catalogue of crossings, and the derivation that reads

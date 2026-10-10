@@ -41,7 +41,7 @@
    ;; not per-profile), so a single governed row prices them all — stewardship scopes
    ;; may register sharper profiles for edges that drift faster or fail harder.
    '("conformance-confidence" rate 0.15 1.0 0.5 0.5
-     "DRAFT — steepness w is the confidence barrier weight of the in-plan inspection model (docs/planning/legal/inspection-in-plan.md); ratify at UC"
+     "DRAFT — steepness w is the confidence barrier weight of the in-plan inspection model (docs/legal/inspection-in-plan.md); ratify at UC"
      "conformance freshness" "verification" "freshness-margin")))
 
 ;; convenience: the governed steepness w for a conformance profile (what the in-plan

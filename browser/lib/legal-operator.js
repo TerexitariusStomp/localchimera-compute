@@ -12,7 +12,7 @@
 // from PLAYNET_OPERATOR_{NAME,CONTACT,ABUSE,PRIVACY,SECURITY,JURISDICTION,
 // ADDRESS,SUPERVISORY,REPRESENTATIVE}. On a deployed box they come from the
 // provider config's `operator` alist (deploy/os.scm); locally, export them
-// before `make serve`. docs/legal/README.md §2 lists each field.
+// before `make serve`. docs/legal/operator.md §2 lists each field.
 //
 // `abuse` is where a report of unlawful or harmful content, and any child-safety
 // concern, goes; `privacy` is where a data-subject request goes. Each is

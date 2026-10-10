@@ -200,7 +200,7 @@
    Deriving from the bran — rather than from browser state, or from the
    Reticulum identity — is what makes the backup recoverable from
    bran + AID and from NOTHING else: no second, weaker recovery path.
-   See docs/planning/legal/gdpr-analysis.md §\"Phase 1b\"."
+   See docs/legal/gdpr-analysis.md §\"Phase 1b\"."
   (hkdf #:ikm (string->utf8 bran)
         #:info (string->utf8 "playnet:blob:v1")
         #:length 32))

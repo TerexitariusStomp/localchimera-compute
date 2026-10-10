@@ -2623,7 +2623,7 @@ test-keri-lobby-seat-gate:
 	$(GUILE_TEST_DEV) -L module tests/keri/test-lobby-seat-gate.scm
 
 # PLAYNET_DISABLE_REAL_SIGNUP refuses signup/signup-with-icp/signup-with-kel/
-# join, leaves witness-kel/has-seat alone — see docs/planning/legal/gdpr-analysis.md
+# join, leaves witness-kel/has-seat alone — see docs/legal/gdpr-analysis.md
 test-keri-signup-disabled-gate:
 	$(GUILE_TEST_DEV) -L module tests/keri/test-signup-disabled-gate.scm
 

@@ -62,7 +62,7 @@
 (format #t "  [~a] P4 the profile surfaces on the governance wheel (control/group/unit/s), like any fragility~%" (if p4 "✓" "✗"))
 
 ;; P5 — the governed steepness IS the barrier weight: one ratified datum, not a constant
-;; buried in the solve. (docs/planning/legal/inspection-in-plan.md's WCONF now reads from here.)
+;; buried in the solve. (docs/legal/inspection-in-plan.md's WCONF now reads from here.)
 (define p5 (and (number? w) (= w 0.5)))
 (format #t "~%  governed confidence-barrier steepness w = ~a  (the in-plan −w·log(V−Q) reads this)~%" w)
 (format #t "  [~a] P5 the barrier weight is a governed datum — one row, ratifiable, not hard-coded~%" (if p5 "✓" "✗"))

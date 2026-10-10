@@ -7,7 +7,7 @@
 ;;; This is that slice: inspection as a real `work` recipe over real *workers* through
 ;;; build-located, so the check is routed to a QUALIFIED auditor at the right cell,
 ;;; spread by EMP, and drawn from the shared SNLT hour budget it competes with
-;;; production for. Design: docs/planning/legal/inspection-in-plan.md §"The slices" (2).
+;;; production for. Design: docs/legal/inspection-in-plan.md §"The slices" (2).
 ;;;
 ;;; It is the exact Cond|durable twin (planner.scm:922). A durable's CONDITION is a
 ;;; storable stock: production WEARS it (a `consume`), maintenance labour RESTORES it

@@ -72,7 +72,7 @@
   ;; text and left out renders as a visibly unfilled placeholder in the
   ;; notices. abuse, privacy and security fall back to contact. An address
   ;; becomes mailto:, a URL (an https: page, an .onion) stands as written.
-  ;; docs/legal/README.md §2 says what each is for.
+  ;; docs/legal/operator.md §2 says what each is for.
   ;; (operator . ((name . "Kreuzberg Commune e.V.")
   ;;              (contact . "contact@example.org")
   ;;              (abuse . "safety@example.org")

@@ -1,6 +1,6 @@
 ;;; legal/adapters.scm — the adapter is a FOLD, not an artifact: spawn, retire, rotate.
 ;;;
-;;; Design: docs/planning/legal/legal-compliance-lifecycle.md §12, and playnet.typ
+;;; Design: docs/legal/legal-compliance-lifecycle.md §12, and playnet.typ
 ;;; §"Standing: held by key, a mask at the door" (the per-door adapters,
 ;;; "dissolve it and register another"). Once compliance is a fold over the VF event log
 ;;; (compliance.scm) and filings are a deterministic Process (legal/filings.scm), a

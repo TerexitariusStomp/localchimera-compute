@@ -57,7 +57,7 @@
 (display "\n── provenance: the prose work-list ──\n")
 
 (check "claims-in: legal-crossings.md argues duress-from-diff"
-       (claims-in "docs/planning/legal/legal-crossings.md")
+       (claims-in "docs/legal/legal-crossings.md")
        '(duress-from-diff))
 
 (check "ungrounded-claims surfaces the eco ratchet (argued, not yet grounded)"

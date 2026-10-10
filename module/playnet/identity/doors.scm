@@ -121,7 +121,7 @@
     ;; The account-creation feature, on or off: a GDPR-deferral switch, not
     ;; a capability gap. PLAYNET_DISABLE_REAL_SIGNUP turns new real-identity
     ;; signups off; unset (the default) leaves them on, matching every
-    ;; deploy before this flag existed. See docs/planning/legal/gdpr-
+    ;; deploy before this flag existed. See docs/legal/gdpr-
     ;; analysis.md and deploy/os.scm's gateway-service environment for why
     ;; production sets it and dev does not. The doors it gates are the ones
     ;; declared `#:feature account-creation` in protocol.scm — the same

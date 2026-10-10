@@ -2,7 +2,7 @@
 ;;; over the VF event log, reconciled against what the state DEMANDS.
 ;;; @defines compliance
 ;;;
-;;; Design: docs/planning/legal/legal-compliance-lifecycle.md. `legal/registry.scm`
+;;; Design: docs/legal/legal-compliance-lifecycle.md. `legal/registry.scm`
 ;;; computes the DEMAND bill (what is required); this file answers "do we hold
 ;;; it?" — and it introduces NO new store. A permit / licence / registration is
 ;;; an ordinary <economic-resource> conforming to a <resource-specification>

@@ -1233,7 +1233,7 @@
                    ;; real name/email to an AID (identity/seat.scm member
                    ;; record), which is the one place Articles 5(1)(e)/9/13/17/
                    ;; 30/32/35 and Chapter V all activate at once — see
-                   ;; docs/planning/legal/gdpr-analysis.md. Closed here until
+                   ;; docs/legal/gdpr-analysis.md. Closed here until
                    ;; that plan's consent/erasure/portability work (also in that
                    ;; doc) is far enough along to carry the obligation. Checked
                    ;; in gateway/lobby.scm's real-signup-enabled?; gates the

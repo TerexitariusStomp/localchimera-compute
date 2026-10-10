@@ -223,7 +223,7 @@
 ;; (keri/said-portable.scm:84). Putting the nonce in `claims` buys the
 ;; blinding property at ZERO blast radius: the SAID scheme is unchanged
 ;; and every existing credential keeps its SAID. The conformant fix is
-;; Phase 3 (section restructuring) — see docs/planning/legal/gdpr-analysis.md
+;; Phase 3 (section restructuring) — see docs/legal/gdpr-analysis.md
 ;; §6.1 and PLAYNET-KERI-CONFORMANCE.md §2.7.
 ;; The `u` argument on the stance constructors is two-valued:
 ;;   'auto     — mint a fresh nonce (the default; what a new cast does)

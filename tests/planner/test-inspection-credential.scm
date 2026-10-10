@@ -11,7 +11,7 @@
 ;;; INTERVAL. Heavily-relied edge ⇒ high a* ⇒ short interval; below the reliance floor
 ;;; (D ≤ λℓ/κ) a* = 0 and the credential is OPEN — a barely-used claim is never worth
 ;;; recertifying (the Phase-1 floor, now realised as an expiry policy).
-;;; Design: docs/planning/legal/inspection-in-plan.md §"The slices" (4).
+;;; Design: docs/legal/inspection-in-plan.md §"The slices" (4).
 ;;;
 ;;; Run:  guile -L module/playnet/planner tests/planner/test-inspection-credential.scm
 

@@ -1742,7 +1742,7 @@
        ;;
        ;; This is the one of the three XMR mechanisms that sends money to
        ;; someone other than the operator's own infrastructure — the
-       ;; money-transmission / custody question docs/legal/README.md §10 row 3
+       ;; money-transmission / custody question docs/legal/operator.md §10 row 3
        ;; leaves open. Donation watch and the AI top-up below are the
        ;; operator receiving and spending its own funds and start with the
        ;; wallet regardless; this one is opt-in, default OFF, independent of

@@ -63,7 +63,7 @@
 ;;; there into whatever collects it). Operationally we only ever need
 ;;; enough to correlate one log line with another, so log a short AID
 ;;; prefix and nothing else — never the handle, never the email.
-;;; See docs/planning/legal/gdpr-analysis.md §3.5.
+;;; See docs/legal/gdpr-analysis.md §3.5.
 
 (define (aid-tag aid)
   "A short, non-identifying handle for logs: the first 8 chars of the
@@ -751,7 +751,7 @@
     ;; email, display name) and the AID→handle index entry go, and the next
     ;; portrait is written without them. The AID's key log is untouched —
     ;; what survives is data about a pseudonym nobody here can resolve
-    ;; (docs/planning/legal/gdpr-analysis.md §3.1). The handle is free again.
+    ;; (docs/legal/gdpr-analysis.md §3.1). The handle is free again.
     ;; Replies 1 when a record went, 0 when none stood: idempotent.
     ((forget! aid)
      (let ((username (hashmap-ref aid-index aid #f)))

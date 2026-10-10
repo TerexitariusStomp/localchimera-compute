@@ -1,6 +1,6 @@
 ;;; legal/registry.scm — guarded DEMANDS folded over an activity context.
 ;;;
-;;; Design: docs/planning/legal/legal-crossings.md. The elegant general core: a legal
+;;; Design: docs/legal/legal-crossings.md. The elegant general core: a legal
 ;;; rule is  (guard : context → bool) → demands,  and the legal exterior of an
 ;;; activity is the FOLD  ⋃ { d | (guard,d) ∈ rules, guard(context) }.
 ;;;

@@ -34,7 +34,7 @@
 ;; Anmeldung with the Bezirk's Grünflächenamt (per-Bezirk rules, loosely enforced,
 ;; revocable), and an event on street land is a Sondernutzung. That is the
 ;; compliance axis — a permit as a resource whose absence prunes a column
-;; (docs/planning/legal/legal-compliance-lifecycle.md) — and it is per-BEZIRK, which is
+;; (docs/legal/legal-compliance-lifecycle.md) — and it is per-BEZIRK, which is
 ;; what makes the twelve districts a real diversification set.
 
 ;; usable open soil per Baumscheibe, m². [DRAFT — governance figure, not a measurement]

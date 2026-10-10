@@ -1,7 +1,7 @@
 ;;; legal/scrape.scm — the FRONT of the curation pipeline: statute prose → a `reported`
 ;;; rule-pack (legal/registry.scm), with per-clause evidence for a steward.
 ;;;
-;;; Design: docs/planning/legal/legal-compliance-lifecycle.md §14. "All countries" is a
+;;; Design: docs/legal/legal-compliance-lifecycle.md §14. "All countries" is a
 ;;; data-curation pipeline — scrape → grade → steward-verify → sign — not an
 ;;; engineering push. This file is the SCRAPE stage. It reads legal text and emits
 ;;; rules at `confidence 'reported` (NEVER 'verified), so the downstream gate

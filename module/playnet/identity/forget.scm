@@ -1,6 +1,6 @@
 ;;; module/playnet/identity/forget.scm — erasure of a member, as one act
 ;;;
-;;; Article 17, in the shape docs/planning/legal/gdpr-analysis.md §3.1 and
+;;; Article 17, in the shape docs/legal/gdpr-analysis.md §3.1 and
 ;;; §5 prescribe: what is erased is the LINK between an AID and a person,
 ;;; together with every record of our own that is keyed by that AID. The
 ;;; AID's key log, the credentials it holds and the anchors in the scope's

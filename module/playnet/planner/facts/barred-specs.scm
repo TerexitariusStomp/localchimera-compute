@@ -31,7 +31,7 @@
 ;; coincidentally share (a test's own "gold-1"/"gold" fixture, for instance,
 ;; is not this "spec-gold" and is untouched by this table).
 (define *barred-individual-specs*
-  '(("spec-xmr"              financial-instrument "Monero — a live, wallet-backed external asset; the direct money-transmission exposure docs/legal/README.md row 3 names.")
+  '(("spec-xmr"              financial-instrument "Monero — a live, wallet-backed external asset; the direct money-transmission exposure docs/legal/operator.md row 3 names.")
     ("spec-eur"               financial-instrument "Euro — fiat currency.")
     ("spec-usd"               financial-instrument "US Dollar (also the tenant-maintenance strike fund's own spec) — fiat currency.")
     ("spec-gbp"               financial-instrument "Pound Sterling — fiat currency.")

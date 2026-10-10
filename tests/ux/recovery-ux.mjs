@@ -19,7 +19,7 @@
 ///      was sealed by the previous session under a bran-derived key. If it
 ///      decrypts on a browser that shares no state with that session, then
 ///      the backup really is recoverable from bran + AID and from nothing
-///      else. That is Layer 2 of docs/planning/legal/gdpr-analysis.md §"Phase 1b".
+///      else. That is Layer 2 of docs/legal/gdpr-analysis.md §"Phase 1b".
 ///
 /// Run via:  make test-recovery-ux
 ///           bash tests/ux/ux-full.sh tests/ux/recovery-ux.mjs

@@ -1,6 +1,6 @@
 ;;; compliance-processes.scm — the ProcessSpecification catalogue for compliance.
 ;;;
-;;; Design: docs/planning/legal/legal-compliance-lifecycle.md §11–§13. Meeting the state
+;;; Design: docs/legal/legal-compliance-lifecycle.md §11–§13. Meeting the state
 ;;; is WORK — obtaining a permit, renewing it, filing a return, making a
 ;;; disclosure are each a Process that turns inputs (an application, a fee, admin
 ;;; labour) into outputs (the held credential, a filed return). So they are

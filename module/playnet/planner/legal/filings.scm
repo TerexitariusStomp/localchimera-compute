@@ -3,7 +3,7 @@
 ;;; resource compliance.scm then sees as HELD. The whole lifecycle stays in VF.
 ;;; @defines filings
 ;;;
-;;; Design: docs/planning/legal/legal-compliance-lifecycle.md §5–§7. The "reproducibly"
+;;; Design: docs/legal/legal-compliance-lifecycle.md §5–§7. The "reproducibly"
 ;;; in the ask is exactly this: `render-filing` is a PURE function
 ;;;   artifact = f(template@version, canonical-VF-data) ,
 ;;; so re-running yields a byte-identical document with the same id — "regenerate

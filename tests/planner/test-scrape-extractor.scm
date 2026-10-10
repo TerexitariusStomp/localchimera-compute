@@ -1,5 +1,5 @@
 ;;; test-scrape-extractor.scm — the SCRAPE stage of the curation pipeline
-;;; (docs/planning/legal/legal-compliance-lifecycle.md §14): statute prose → a
+;;; (docs/legal/legal-compliance-lifecycle.md §14): statute prose → a
 ;;; `reported` rule-pack, reviewed, then steward-verified.
 ;;;
 ;;;   (1) extract — prose → rules grouped per crossing, onto the demand

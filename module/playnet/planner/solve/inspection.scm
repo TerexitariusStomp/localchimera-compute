@@ -2,7 +2,7 @@
 ;;; leans on, made into freshness stocks the plan must keep, and the loads it
 ;;; routes through them, read back off the solve.
 ;;;
-;;; docs/planning/legal/inspection-in-plan.md, slices 1–2, proved the mechanism in
+;;; docs/legal/inspection-in-plan.md, slices 1–2, proved the mechanism in
 ;;; tests: a conformance edge — a body still holding a skill, an oven still in
 ;;; spec — is a claim that DRIFTS; its verification freshness `Verif|<edge>` is a
 ;;; storable stock that relying on the edge WEARS (a `consume` on every recipe

@@ -1,7 +1,7 @@
 ;;; tests/keri/test-signup-disabled-gate.scm — PLAYNET_DISABLE_REAL_SIGNUP
 ;;; refuses identity-creating doors, leaves witnessing/seat-checking alone.
 ;;;
-;;; A GDPR-deferral switch (see docs/planning/legal/gdpr-analysis.md), checked
+;;; A GDPR-deferral switch (see docs/legal/gdpr-analysis.md), checked
 ;;; by gateway/lobby.scm's real-signup-enabled?. The var is set here, once,
 ;;; before any vat is spawned — mutating the process environment once vat
 ;;; threads are running is unspecified behavior in Guile, so this lives in its

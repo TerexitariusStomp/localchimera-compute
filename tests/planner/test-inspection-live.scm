@@ -1,7 +1,7 @@
 ;;; test-inspection-live.scm — inspection SCHEDULED in a live scope's plan, and
 ;;; the recert schedule read off both kinds of edge.
 ;;;
-;;; docs/planning/legal/inspection-in-plan.md proved the mechanism in tests (slices 1–2:
+;;; docs/legal/inspection-in-plan.md proved the mechanism in tests (slices 1–2:
 ;;; a Verif| freshness stock worn by reliance, restored by an inspect recipe costing
 ;;; a verifier's hours) and closed the credential loop for SKILLS off a live plan
 ;;; (test-conformance-recert-live). This is the live seam for the rest:
