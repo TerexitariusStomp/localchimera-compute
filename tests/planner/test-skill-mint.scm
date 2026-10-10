@@ -11,7 +11,7 @@
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet observation observer) (playnet vf schemas))
-(use-modules (playnet governance acdc-bridge) (playnet credentials work) (playnet keri acdc) (playnet keri acdc) (playnet keri acdc-store))
+(use-modules (playnet observation credentials) (playnet credentials work) (playnet keri acdc) (playnet keri acdc) (playnet keri acdc-store))
 (use-modules (goblins) (goblins vat) (srfi srfi-1))
 
 (define (rec-work! obs aid skill hours eid)

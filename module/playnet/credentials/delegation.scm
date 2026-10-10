@@ -40,7 +40,7 @@
 ;;      call with the default is a fresh SAID, so "re-attesting the
 ;;      same fact" duplicates rather than dedups. A caller re-minting
 ;;      an existing fact MUST pass the fact's own timestamp explicitly
-;;      (as acdc-bridge's attest-* and cast-signed already do).
+;;      (as observation/credentials' attest-* and cast-signed already do).
 ;; =========================================================================
 
 (define* (make-delegation-credential issuer-aid holder-aid franchise

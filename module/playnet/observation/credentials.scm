@@ -1,4 +1,4 @@
-;;; acdc-bridge.scm — the bridge between the planner's event/plan layer and the
+;;; observation/credentials.scm — the bridge between the planner's event/plan layer and the
 ;;; ACDC substrate, in BOTH directions. Issuance: planner events become portable
 ;;; signed credentials (work-event + skill via the observer on-event hook; intent
 ;;; + commitment via the plan-store callbacks). Reconstruction: the ACDC graph is
@@ -20,7 +20,7 @@
 ;;; (worker, skill), gated on a possession query — not on SAID idempotency,
 ;;; since each event's founding edge would otherwise yield a fresh SAID.
 
-(define-module (playnet governance acdc-bridge)
+(define-module (playnet observation credentials)
   #:use-module (srfi srfi-1)
   #:use-module ((playnet utils units) #:select (hours-in))
   #:use-module (playnet credentials audit)
@@ -28,7 +28,7 @@
   #:use-module (playnet credentials registry)
   #:use-module (playnet credentials work)
   #:use-module (playnet keri acdc)
-  #:use-module (playnet governance attestation-ceremony)
+  #:use-module (playnet personhood attestation-ceremony)
   #:use-module ((playnet keri acdc-store) #:select (non-revoked-by-schema))
   #:use-module (playnet utils boot-cell)
   #:use-module (playnet keri acdc)

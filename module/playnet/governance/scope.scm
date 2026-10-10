@@ -59,7 +59,7 @@
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-11)
   #:use-module (goblins utils hashmap)
-  #:use-module (playnet governance acdc-bridge)
+  #:use-module (playnet observation credentials)
   #:use-module (playnet keri citizen-sig)
   #:use-module (playnet keri inception)
   #:use-module (playnet keys peers)
@@ -69,10 +69,10 @@
   #:use-module (playnet governance ballot)
   #:use-module (playnet governance governance-policy)
   #:use-module (playnet utils governed-row)
-  #:use-module ((playnet governance attestation-ceremony)
+  #:use-module ((playnet personhood attestation-ceremony)
                 #:select (^attestation-ceremony register-attestation-ceremony!))
   #:use-module (playnet keys exchange)
-  #:use-module (playnet identity enrollment)
+  #:use-module (playnet personhood enrollment)
   #:use-module (playnet keys kel-store)
   #:use-module (playnet keys bran-custody)
   #:use-module (goblins ocapn ids)
@@ -1291,7 +1291,7 @@
        ($ b 'close gov-cap)))
 
     ;; k-of-n co-signed close: the SAME ^attestation-ceremony enrollment and
-    ;; witnessed work-events already use (attestation-ceremony.scm), with
+    ;; witnessed work-events already use (personhood/attestation-ceremony.scm), with
     ;; this commune's own may-govern? as ELIGIBLE? and the actual close as
     ;; ISSUE!. Opening the ceremony is gov-cap-gated and procedural — low-
     ;; stakes, the same as proposing a ballot at all — but nobody may CLOSE

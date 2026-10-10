@@ -1,7 +1,7 @@
-;;; module/playnet/identity/body-desk.scm — the desk where a body's inception
+;;; module/playnet/personhood/body-desk.scm — the desk where a body's inception
 ;;; waits for its stewards' signatures.
 ;;;
-;;; A ceremony (identity/body-ceremony.scm) reads and writes the oobi-host, so
+;;; A ceremony (personhood/body-ceremony.scm) reads and writes the oobi-host, so
 ;;; it lives in the oobi-host's vat; the body service (planner/doors/bodies.scm)
 ;;; lives in the planner's. This desk is the one actor between them: it holds
 ;;; the open ceremonies by the body's provisional id, opens one on request,
@@ -20,13 +20,13 @@
 ;;;     'sign body-id aid what said sig-qb64                   → standing   or raises
 ;;;   standing = (("have" . n) ("need" . k) ("published" . aid|#f) ("what" . w))
 
-(define-module (playnet identity body-desk)
+(define-module (playnet personhood body-desk)
   #:use-module (goblins)
   #:use-module ((playnet utils wire-shapes) #:select (sym->str))
   #:use-module (goblins actor-lib methods)
   #:use-module (srfi srfi-1)
   #:use-module (ice-9 format)
-  #:use-module ((playnet identity body-ceremony) #:select (spawn-body-ceremony))
+  #:use-module ((playnet personhood body-ceremony) #:select (spawn-body-ceremony))
   #:export (^body-ceremony-desk ceremony-standing))
 
 

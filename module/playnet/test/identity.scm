@@ -1,4 +1,4 @@
-;;; module/playnet/identity/fixture.scm — a test identity and a lobby to seat it
+;;; module/playnet/test/identity.scm — a test identity and a lobby to seat it
 ;;;
 ;;; The ~30 lines three lobby tests each spelled out word for word
 ;;; (test-device-auth, test-lobby-seat-gate, test-signup-disabled-gate):
@@ -17,7 +17,7 @@
 ;;; settle closes over the fixture's own gateway vat, so a test calls
 ;;; (settle p) exactly as its local copy was called.
 
-(define-module (playnet identity fixture)
+(define-module (playnet test identity)
   #:use-module (playnet keri signify-portable)
   #:use-module (playnet identity seat)
   #:use-module (playnet identity oobi-host)

@@ -7,7 +7,7 @@
 ;;; foundation, a purpose trust — and the mask a scope wears at one door
 ;;; (legal/adapters.scm) is a body too, with the role `adapter`. Its id is its
 ;;; AID: the k-of-n group identifier of its custodian-stewards
-;;; (identity/body-ceremony.scm), or a provisional id until that group is
+;;; (personhood/body-ceremony.scm), or a provisional id until that group is
 ;;; incepted (`close-body!` rebinds it).
 ;;;
 ;;; The record and its tags (vf/facts/agent-tags.scm registers the keys):

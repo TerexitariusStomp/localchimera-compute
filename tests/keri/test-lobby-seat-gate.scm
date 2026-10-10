@@ -9,7 +9,7 @@
 ;;; its own vat, as in the gateway, so the gated answer is a promise.
 
 (use-modules (playnet test harness)
-             (playnet identity fixture)
+             (playnet test identity)
              (playnet keri signify-portable)
              ((playnet keri cesr) #:select (cesr-bytes->qb64))
              (playnet identity seat)

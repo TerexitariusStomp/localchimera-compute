@@ -36,20 +36,19 @@
 ;;; read. An ask older than the ecosystem's ceremony-ttl lapses on the next
 ;;; read (expire-stale-enrollments!).
 ;;;
-;;; A module of (playnet governance); the umbrella re-exports it.
 
-(define-module (playnet identity enrollment)
+(define-module (playnet personhood enrollment)
   #:use-module (srfi srfi-1)
   #:use-module ((playnet utils clock) #:select (instant->unix (now . clock-now)))   ; the one clock: instants inside, civil at the boundary
   #:use-module (playnet keri acdc)
   #:use-module (playnet keri first-person credentials)
-  #:use-module (playnet governance attestation-ceremony)
+  #:use-module (playnet personhood attestation-ceremony)
   #:use-module (playnet keri said-portable)
   #:use-module (playnet keri first-person predicates)
   #:use-module (playnet keri first-person personhood-policy)
-  #:use-module ((playnet governance acdc-bridge)
+  #:use-module ((playnet observation credentials)
                 #:select (remember-witness-pending!))
-  #:use-module ((playnet governance witness-relay)
+  #:use-module ((playnet personhood witness-relay)
                 #:select (publish-witness-request! retract-witness-request!
                           witness-dir ensure-dir! safe-name))
   #:use-module (playnet utils boot-cell)
@@ -212,7 +211,7 @@
    this gateway recognises) when given — and has
    signed fewer than WITNESS-CAP enrollments in WITNESS-WINDOW.
 
-   The ritual itself is ^attestation-ceremony (attestation-ceremony.scm) —
+   The ritual itself is ^attestation-ceremony (personhood/attestation-ceremony.scm) —
    this injects enrollment's specifics (the statement, the witness rule, a
    finalizer that mints the PHC with one NI2I edge per witness, the durable
    record) and puts the ask on every rail: registered for attest landing,

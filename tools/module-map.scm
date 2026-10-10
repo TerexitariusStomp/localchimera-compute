@@ -370,8 +370,9 @@ stand in and its name, so a move to that directory leaves the key as it is."
             (length ds) (- (length ds) (length new)) %baseline (length new) (length gone)
             (length us) (length *malformed*))
     (cond (write?
-           (when (and (pair? new) (file-exists? %baseline))
-             (format #t "~a new upward import~:p: the baseline only shrinks; resolve them first~%" (length new))
+           ;; the ratchet is on the count: a rename moves a line, a new import adds one
+           (when (and (file-exists? %baseline) (> (length ds) (length held)))
+             (format #t "~a upward imports, more than the ~a held: the baseline only shrinks; resolve them first~%" (length ds) (length held))
              (exit 1))
            (call-with-output-file %baseline
              (lambda (p)

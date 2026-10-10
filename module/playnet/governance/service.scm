@@ -60,7 +60,7 @@
   #:use-module (playnet governance expression)
   #:use-module (playnet governance recovery)
   #:use-module (playnet governance voice-signer)
-  #:use-module ((playnet identity enrollment)
+  #:use-module ((playnet personhood enrollment)
                 #:select (spawn-enrollment-ceremony enroll-ceremony-for-candidate
                           enroll-asks expire-stale-enrollments! *self-request-evidence*
                           rehydrate-enrollment-ceremonies!))

@@ -1,4 +1,4 @@
-;;; attestation-ceremony.scm — the k-of-n vouching ritual, once.
+;;; personhood/attestation-ceremony.scm — the k-of-n vouching ritual, once.
 ;;;
 ;;; Enrollment (a PHC needs k humans who met the candidate) and witnessed work
 ;;; events (a claim on the commons needs k parties who saw the work) are ONE
@@ -19,13 +19,10 @@
 ;;; arriving over any transport — the /multisig/exn routes and ipex-policy
 ;;; registry stand in keys/notifications.scm — lands as ($ ceremony 'attest
 ;;; aid sig), across as many turns as the network takes. `collecting` is the
-;;; whole state machine a round-trip requires.
-;;;
-;;; Included fragment — imports come from (playnet governance). Precedes
-;;; enrollment-ceremony.scm, which is this actor with enrollment's three
-;;; specifics injected.
+;;; whole state machine a round-trip requires. Precedes personhood/enrollment.scm,
+;;; which is this actor with enrollment's three specifics injected.
 
-(define-module (playnet governance attestation-ceremony)
+(define-module (playnet personhood attestation-ceremony)
   #:use-module (playnet keri citizen-sig)
   #:use-module (playnet utils boot-cell)
   #:use-module (goblins)

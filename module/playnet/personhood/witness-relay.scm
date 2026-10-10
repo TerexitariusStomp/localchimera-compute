@@ -1,4 +1,4 @@
-;;; witness-relay.scm — the work-witness ceremony's CROSS-GATEWAY transport,
+;;; personhood/witness-relay.scm — the work-witness ceremony's CROSS-GATEWAY transport,
 ;;; on the rail gateways actually share: state files served by the static
 ;;; tier, pulled by the peer poll — the same shape /scopes federation rides.
 ;;;
@@ -25,9 +25,9 @@
 ;;; local attest does — the transport earns no leniency, and needs none:
 ;;; the co-signature carries its own cryptography).
 
-(define-module (playnet governance witness-relay)
-  #:use-module (playnet governance acdc-bridge)
-  #:use-module (playnet governance attestation-ceremony)
+(define-module (playnet personhood witness-relay)
+  #:use-module (playnet observation credentials)
+  #:use-module (playnet personhood attestation-ceremony)
   #:use-module ((playnet utils paths) #:select (playnet-state-dir))
   #:use-module (ice-9 ftw)
   #:use-module (ice-9 textual-ports)
@@ -36,7 +36,6 @@
   #:use-module ((web client)   #:select (http-get))
   #:use-module ((web response) #:select (response-code))
   #:use-module ((rnrs bytevectors) #:select (utf8->string bytevector?))
-  #:use-module (goblins)
   #:use-module (srfi srfi-1)
   #:export (publish-witness-request! retract-witness-request!
             publish-witness-attest!

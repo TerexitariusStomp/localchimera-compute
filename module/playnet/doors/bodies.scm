@@ -13,7 +13,7 @@
 ;;; What it stands on: (playnet legal bodies) for the records and the
 ;;; folds, (playnet legal compliance) for the reading of what a body
 ;;; holds, (playnet legal adapters) for its exposure, and the ceremony
-;;; desk (identity/body-desk.scm) in the oobi-host's vat for the k-of-n
+;;; desk (personhood/body-desk.scm) in the oobi-host's vat for the k-of-n
 ;;; inception, reached by `<-`. A body's scope is read off the records (a body
 ;;; is a member of its scope) and remembered.
 ;;;

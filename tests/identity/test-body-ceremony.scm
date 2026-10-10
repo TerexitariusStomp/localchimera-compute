@@ -1,6 +1,6 @@
 ;;; tests/identity/test-body-ceremony.scm — a body's AID is its stewards' k-of-n group
 ;;;
-;;; What this pins (module/playnet/identity/body-ceremony.scm and the
+;;; What this pins (module/playnet/personhood/body-ceremony.scm and the
 ;;; threshold reader in keri/key-state.scm):
 ;;;   • three stewards, k = 2: any two signatures publish the body's log,
 ;;;     `current-keys` on the body AID reads the member keys in roster order,
@@ -27,7 +27,7 @@
               #:select (check-icp check-sigs/threshold events->key-state
                         state-keys state-kt state-nexts))
              (playnet identity oobi-host)
-             (playnet identity body-ceremony)
+             (playnet personhood body-ceremony)
              (goblins)
              (rnrs bytevectors)
              (srfi srfi-1))

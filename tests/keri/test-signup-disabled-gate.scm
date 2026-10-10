@@ -10,7 +10,7 @@
 (setenv "PLAYNET_DISABLE_REAL_SIGNUP" "1")
 
 (use-modules (playnet test harness)
-             (playnet identity fixture)
+             (playnet test identity)
              ((playnet knowledge law product) #:select (product-feature feature-doors))
              (goblins)
              (srfi srfi-1))

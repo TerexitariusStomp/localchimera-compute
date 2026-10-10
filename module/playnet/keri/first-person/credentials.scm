@@ -336,7 +336,7 @@
 ;; =========================================================================
 ;;
 ;; A body is a k-of-n group AID of its stewards' dial AIDs (identity/
-;; body-ceremony.scm); its roles, members and stewards are VF agent
+;; personhood/body-ceremony.scm); its roles, members and stewards are VF agent
 ;; relationships, and this credential is a PROJECTION of one such record,
 ;; minted on demand when a holder presents the role outside the fold. The
 ;; issuer is the body, so the signature is a multisig BLOCK the stewards

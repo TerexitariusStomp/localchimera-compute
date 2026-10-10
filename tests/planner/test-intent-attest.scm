@@ -15,7 +15,7 @@
 ;; credential alists, not records, so record identity is irrelevant here)
 (use-modules ((playnet deprecated planner)
               #:select (lift-intent-facts lift-commitment-facts)))
-(use-modules (playnet governance acdc-bridge) (playnet credentials commitments) (playnet keri acdc-store))
+(use-modules (playnet observation credentials) (playnet credentials commitments) (playnet keri acdc-store))
 (use-modules (goblins) (goblins vat) (srfi srfi-1))
 
 (define vat (spawn-vat))

@@ -6,8 +6,8 @@
 ;;; registries, co-signs the statement with the key that never leaves this
 ;;; process, and publishes the attest for box1's poll to land.
 
-(use-modules (playnet governance witness-relay)
-             ((playnet governance acdc-bridge) #:select (witness-work-inbox))
+(use-modules (playnet personhood witness-relay)
+             ((playnet observation credentials) #:select (witness-work-inbox))
              ((playnet keri citizen-sig)
               #:select (make-keri-identity keri-identity-aid
                         keri-identity-keypair sign-said))

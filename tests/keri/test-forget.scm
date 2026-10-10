@@ -20,7 +20,7 @@
 (setenv "PLAYNET_MAIL_DIR" (string-append tmp "/mail"))
 
 (use-modules (playnet test harness)
-             (playnet identity fixture)
+             (playnet test identity)
              (playnet keri signify-portable)
              ((playnet keri cesr) #:select (cesr-bytes->qb64))
              ((playnet keri crypto-primitives) #:select (keri-crypto-random-bytes))

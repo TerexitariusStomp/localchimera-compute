@@ -1,4 +1,4 @@
-;;; body-ceremony.scm — a body's AID: the k-of-n group of its stewards' dial AIDs
+;;; personhood/body-ceremony.scm — a body's AID: the k-of-n group of its stewards' dial AIDs
 ;;;
 ;;; STAGING beside the identity core (codebase-organization.md §7): a body is
 ;;; its VF records, and this module's route is stated here. On close it
@@ -42,7 +42,7 @@
 ;;; after it.
 ;;;
 ;;; The collector is this module's own: `^attestation-ceremony`
-;;; (governance/attestation-ceremony.scm) verifies a `0B` signature over a
+;;; (personhood/attestation-ceremony.scm) verifies a `0B` signature over a
 ;;; statement SAID under the witness's AID, and a KEL signature is over the
 ;;; event's bytes at a member index, so its `attest` hook does not fit; the
 ;;; shape (collecting → published, eligible?, duplicates refused, a durable
@@ -56,7 +56,7 @@
 ;;; The actor reads and writes the oobi-host with `$`, so it lives in the
 ;;; oobi-host's vat (the lobby's).
 
-(define-module (playnet identity body-ceremony)
+(define-module (playnet personhood body-ceremony)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
   #:use-module (srfi srfi-1)

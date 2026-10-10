@@ -20,7 +20,7 @@
              (playnet test books)
              ((playnet test events) #:select (ev positional-snapshot))
              (playnet observation observer) (playnet scope root) (playnet vf schemas)
-             ((playnet governance acdc-bridge) #:select (install-event-log!))
+             ((playnet observation credentials) #:select (install-event-log!))
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
 

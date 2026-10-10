@@ -16,8 +16,8 @@
 (use-modules (playnet test harness))
 (use-modules (playnet scope root) (playnet vf schemas) (srfi srfi-1))
 (use-modules (playnet doors service))
-(use-modules (playnet governance acdc-bridge) (playnet keri acdc-store) (playnet keri citizen-sig))
-(use-modules ((playnet governance acdc-bridge)
+(use-modules (playnet observation credentials) (playnet keri acdc-store) (playnet keri citizen-sig))
+(use-modules ((playnet observation credentials)
               #:select (reconstruct-skill-attestation skill-attestation-standing
                         cred-attesters)))
 (use-modules ((playnet keri citizen-sig)

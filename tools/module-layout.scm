@@ -106,7 +106,6 @@
  (file "utils/repl-client" #f)            ; a tool: tools/ of the repository
  (file "utils/ts-emit" #f)                ; a tool: tools/ of the repository
  ;; governance, by what each file is
- (file "governance/acdc-bridge" "observation")
  (file "governance/scope" "scope")
  (file "governance/scope-recovery" "scope")
  (file "governance/recovery" "federation")
@@ -124,8 +123,6 @@
  (file "governance/auditor" "federation")
  (file "governance/audit-scheduler" "federation")
  (file "governance/async" "federation")
- (file "governance/attestation-ceremony" "personhood")
- (file "governance/witness-relay" "personhood")
  (file "governance/socialization" "economy")
  (file "governance/means-fold" "economy")
  (file "governance/demand-fold" "economy")
@@ -148,10 +145,6 @@
  ;; identity, less its doors and ceremonies
  (file "identity/doors" "doors")
  (file "identity/body-doors" "doors")
- (file "identity/enrollment" "personhood")
- (file "identity/body-ceremony" "personhood")
- (file "identity/body-desk" "personhood")
- (file "identity/fixture" "test")
  ;; the gateway, less the doors and the peer
  (file "gateway/lobby" "doors")
  (file "gateway/http-door" "doors")

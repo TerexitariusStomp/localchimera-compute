@@ -376,7 +376,7 @@
          (root (spawn ^mock `((plan-store . ,(lambda () ps)))))
          (node (spawn ^demand-node '() '()))
          (minted '()) (changes '()))
-    ;; an existing single-record listener (what acdc-bridge / scope-root bind)
+    ;; an existing single-record listener (what observation/credentials / scope-root bind)
     ($ ps 'set-on-intent (lambda (i) (set! minted (cons (intent-id i) minted))))
     ;; a second, folding listener on the same store
     ($ ps 'add-intent-listener (lambda (i a) (set! changes (cons a changes))))

@@ -15,7 +15,7 @@
              (playnet doors service)
              (playnet observation event-log)
              (playnet observation event-log-store)
-             (playnet governance acdc-bridge) (playnet keys kel-store)
+             (playnet observation credentials) (playnet keys kel-store)
              (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)

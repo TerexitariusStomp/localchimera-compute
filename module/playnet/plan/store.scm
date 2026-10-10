@@ -585,7 +585,7 @@
          ;; two keys are ONE channel read two ways, and what `on-intent` means
          ;; is defined HERE — once — so it means the same thing however it was
          ;; registered: through `set-on-intent`, or in an alist handed straight
-         ;; to the constructor (acdc-bridge and the scope wiring both build one).
+         ;; to the constructor (observation/credentials and the scope wiring both build one).
          (intent-listeners
           (filter-map
            (lambda (p)

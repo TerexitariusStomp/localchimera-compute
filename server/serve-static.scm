@@ -1036,7 +1036,7 @@ list and the offline-pack chooser."
           '())))))
 
 ;;; ── /witness/{requests,attests} ─────────────────────────────────────────
-;;; The work-witness relay's served half (governance/witness-relay.scm
+;;; The work-witness relay's served half (personhood/witness-relay.scm
 ;;; writes the files; peers' poll ticks read them here). Inlined file reads
 ;;; rather than importing witness-relay, for the same reason as
 ;;; list-known-scopes-inline: that module's import chain reaches libsodium,

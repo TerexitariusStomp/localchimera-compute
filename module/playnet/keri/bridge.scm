@@ -843,7 +843,7 @@
    endpoint) and use the multi-sig route namespace. NOTE: this rail is
    strictly GROUP coordination — keripy's Multiplexor drops any /multisig/*
    exn without embeds and requires payload gid membership, so it cannot
-   carry a directed message (see governance/witness-relay.scm, which is
+   carry a directed message (see personhood/witness-relay.scm, which is
    where cross-gateway witnessing rides instead)."
   (let ((body (exchange-body *signify-ctx* aid-name route
                              #:payload payload)))

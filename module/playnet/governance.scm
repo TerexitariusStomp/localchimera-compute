@@ -19,7 +19,7 @@
   #:use-module (playnet keri first-person sybil-detect)
   #:use-module (playnet governance recovery)
   #:use-module (playnet governance expression)
-  #:use-module (playnet identity enrollment)
+  #:use-module (playnet personhood enrollment)
   #:use-module (playnet keri first-person personhood-policy)
   #:use-module (playnet governance async)
   #:use-module (playnet governance recipe-standing)
@@ -34,7 +34,7 @@
   #:use-module (playnet keys bran-custody)
   #:use-module (playnet governance bootstrap)
   #:use-module (playnet keri acdc-store)
-  #:use-module (playnet governance acdc-bridge)
+  #:use-module (playnet observation credentials)
   #:use-module (playnet governance voice-signer)
   #:use-module (playnet governance snapshot)
   #:use-module (playnet governance guardianship)
@@ -52,7 +52,7 @@
   #:use-module (playnet credentials work)
   #:use-module (playnet keri acdc)
   #:use-module (playnet keri first-person credentials)
-  #:use-module (playnet governance attestation-ceremony)
+  #:use-module (playnet personhood attestation-ceremony)
   #:use-module (playnet governance affected-interest)
   #:use-module (playnet utils clock)
   #:use-module (goblins)
@@ -82,7 +82,7 @@
               ;; from (playnet governance affected-interest)
               ^affected-interest-voice affected-interest-env
               spawn-affected-interest-voice
-              ;; from (playnet governance attestation-ceremony)
+              ;; from (playnet personhood attestation-ceremony)
               ^attestation-ceremony attestation-ceremony-for land-witness-attestation!
               register-attestation-ceremony! witness-attest-handler
               current-aid-key-resolver
@@ -154,7 +154,7 @@
               citizen-record-id citizen-record-keri-aid
               ;; from (playnet governance voice-signer)
               ^voice-signer spawn-keri-voice-signer spawn-voice-signer voice-signer-env
-              ;; from (playnet governance acdc-bridge)
+              ;; from (playnet observation credentials)
               ^work-witness attest-contribution! event-log-reconcile!
               gather-witnessed-attestation! open-work-witnessing! witness-work-inbox scope-acdc-store current-vouch-reader
               witness-pending-context remember-remote-witness-request!
@@ -227,7 +227,7 @@
               global-total-social-svc-async global-citizen-ability-async global-ability-norm-async on->
               open-ballot-async spawn-ballot-from-snapshot tally-mandated-async
               voice-share-async vow-fold-async vow-let*
-              ;; from (playnet identity enrollment)
+              ;; from (playnet personhood enrollment)
               enrollment-statement-said spawn-enrollment-ceremony
               enroll-ceremony-for-candidate enroll-asks enrollment-record
               witness-recent-enrollments expire-stale-enrollments!

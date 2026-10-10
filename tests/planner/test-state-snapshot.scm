@@ -9,7 +9,7 @@
 
 (use-modules (playnet test harness))
 (use-modules )
-(use-modules (playnet governance acdc-bridge) (playnet credentials work) (playnet keri acdc) (playnet keri acdc) (playnet keri acdc-store))
+(use-modules (playnet observation credentials) (playnet credentials work) (playnet keri acdc) (playnet keri acdc) (playnet keri acdc-store))
 (use-modules (goblins) (goblins vat) (srfi srfi-1))
 
 (define vat (spawn-vat))
