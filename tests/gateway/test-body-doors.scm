@@ -48,11 +48,15 @@
    ((by-holder aid) (filter (lambda (c) #t) '()))))
 
 ;; governance: Alice is a governor, nobody else
+(define issued '())        ; what the commune was asked to issue
 (define (^governance bcom)
   (methods
    ((fp-status aid scope-id)
     (cons 'ok (list (cons 'person #t) (cons 'scope scope-id)
-                    (cons 'governor (equal? aid %alice)))))))
+                    (cons 'governor (equal? aid %alice)))))
+   ((admit-body aid scope-id body-aid . opts)
+    (set! issued (cons (cons body-aid opts) issued))
+    (list 'ok "EBodyCredentialSAIDAAAAAAAAAAAAAAAAAAAAAAAAA"))))
 
 ;; the ceremony: k signatures publish; one per steward counts
 (define (^ceremony bcom k said)
@@ -69,6 +73,7 @@
 ;; the body service: tables, the stewardship gate read here as the real one
 ;; reads it on the records (planner/doors/bodies.scm), and every call recorded
 (define calls '())
+(define admit-errors #f)   ; the test switch: does admission find an error?
 (define bodies '())        ; (id . agent)
 (define scopes '())        ; (id . scope-id)
 (define stewards '())      ; (id . aids)
@@ -175,7 +180,14 @@
                                        `(("steward" . #t)
                                          ("ceremony" . ,(standing (assoc-ref ceremonies (car p))))))))
                         bodies)))))
-    ((admit!) (ok #((("severity" . "info") ("kind" . "admitted") ("subject" . ,(list-ref args 2)) ("detail" . "admitted")))))
+    ((admit!)
+     ;; the findings, and the body's facts for its credential; `admit-errors`
+     ;; (a test switch) makes one finding an error
+     (ok `(("findings" . #((("severity" . ,(if admit-errors "error" "info")) ("kind" . "selling")
+                            ("subject" . ,(list-ref args 2)) ("detail" . "sells bread"))))
+           ("body" . ,(body->wire (assoc-ref bodies (list-ref args 2))))
+           ("kind" . "association") ("jurisdiction" . "fr") ("quorum" . 2)
+           ("legalIds" . (("lei" . "506700GE1G29325QX363"))))))
     (else (error "stub: no such op" op))))
 
 (current-body-service body-service)
@@ -227,7 +239,7 @@
 (check "the declarer is the first steward" (body-service 'stewards %body) (list %alice))
 (check "the record went to the service with the alist's keys"
        (let ((c (find (lambda (c) (eq? (car c) 'declare!)) calls)))
-         (and c (equal? (map car (list-ref c 5)) '(kind role jurisdiction asset-lock register quorum))
+         (and c (equal? (map car (list-ref c 5)) '(kind role jurisdiction asset-lock register legal-ids quorum))
               (eq? #t (assq-ref (list-ref c 5) 'asset-lock))
               (eq? 'inspectable (assq-ref (list-ref c 5) 'register)))))
 
@@ -297,9 +309,22 @@
 (define admitted (ask-promise alice 'body-admit %scope %body))
 (check "Alice, a governor, admits the body" (ok? admitted))
 (check "the admission's findings come back"
-       (and (vector? (cdr admitted)) (equal? "admitted" (assoc-ref (vector-ref (cdr admitted) 0) "kind"))))
-
-
+       (let ((fs (wire-ref admitted "findings")))
+         (and (vector? fs) (equal? "selling" (assoc-ref (vector-ref fs 0) "kind")))))
+(check "…and with no error among them the commune issued the body credential"
+       (wire-ref admitted "credential") "EBodyCredentialSAIDAAAAAAAAAAAAAAAAAAAAAAAAA")
+(check "the commune was asked with the body's facts: kind, jurisdiction, legal ids, quorum"
+       (let ((call (assoc %body issued)))
+         (and call (equal? (list-ref (cdr call) 0) "association") (equal? (list-ref (cdr call) 1) "fr")
+              (equal? (list-ref (cdr call) 2) '((lei . "506700GE1G29325QX363"))) (equal? (list-ref (cdr call) 3) 2))))
+(set! admit-errors #t)
+(set! issued '())
+(define admitted-with-error (ask-promise alice 'body-admit %scope %body))
+(check "with an error among the findings nothing is issued"
+       (and (ok? admitted-with-error) (not (wire-ref admitted-with-error "credential")) (null? issued)))
+(set! admit-errors #f)
+(check "the whole read carries the credential's slot (none held in this stub)"
+       (and (ok? (ask bob 'body %body)) (eq? #f (wire-ref (ask bob 'body %body) "credential"))))
 (display "\n── 5. my-bodies lists only the caller's ──\n")
 
 (define mine (ask alice 'my-bodies %scope))
@@ -307,6 +332,13 @@
 (check "and that she stewards it" (eq? #t (assoc-ref (vector-ref (cdr mine) 0) "steward")))
 (check "with the ceremony's standing" (equal? %group-aid (assoc-ref (assoc-ref (vector-ref (cdr mine) 0) "ceremony") "published")))
 (check "Carol sees none" (ask carol 'my-bodies %scope) '(ok . #()))
+
+(check "a malformed LEI is refused at the door"
+       (refused? (ask alice 'declare-body %scope "{\"name\":\"Bad LEI\",\"legalIds\":{\"lei\":\"506700GE1G29325QX364\"}}")))
+(check "a well-formed LEI rides the declaration, normalised"
+       (let ((c (begin (ask alice 'declare-body %scope "{\"name\":\"With LEI\",\"legalIds\":{\"lei\":\" 506700ge1g29325qx363 \"}}")
+                       (find (lambda (c) (and (eq? (car c) 'declare!) (equal? (list-ref c 4) "With LEI"))) calls))))
+         (and c (equal? (assq-ref (list-ref c 5) 'legal-ids) '((lei . "506700GE1G29325QX363"))))))
 
 
 (display "\n── 6. A commune that keeps no bodies ──\n")

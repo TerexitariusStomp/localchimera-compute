@@ -1,7 +1,7 @@
 ;;; module/playnet/doors/bodies.scm — the body service: the planner-vat
 ;;; actor a session's body doors act through.
 ;;;
-;;; The doors (identity/body-doors.scm) run in the gateway's vat and the
+;;; The doors (doors/body.scm) run in the gateway's vat and the
 ;;; stores a body is read from — its scope's agent store, observer, spatial
 ;;; store and legal registry — in the planner's, so every act on a body is one
 ;;; message here, answered as (ok . wire) or (error . msg) in the shapes the
@@ -269,9 +269,21 @@
                                          #:name (if (and (string? name) (not (string-null? name))) name spec)
                                          #:issuer issuer #:valid-until valid-until #:ref ref)))))))
 
-   ;; admission: the eight tests over the scope's bodies (the governor gate is the door's)
+   ;; admission: the eight tests over the scope's bodies, and the body's own
+   ;; facts for the credential the governor's door issues when none errs
+   ;; (the governor gate and the issuing are the door's)
    ((admit! aid scope-id id)
     (let ((s (stores scope-id)))
       (cond ((not s) (fail "scope not found"))
-            (else (ok (findings->wire
-                       (admission-findings (assq-ref s 'agents) (assq-ref s 'observer) scope-id #:resolve-spec (assq-ref s 'specs))))))))))
+            (else
+             (let ((b ($ (assq-ref s 'agents) 'get-agent id)))
+               (if (not (and b (body? b))) (fail "no such body")
+                   (ok `(("findings" . ,(findings->wire
+                                         (admission-findings (assq-ref s 'agents) (assq-ref s 'observer) scope-id
+                                                             #:resolve-spec (assq-ref s 'specs))))
+                         ("body" . ,(body->wire b))
+                         ("kind" . ,(sym->str (body-kind b)))
+                         ("jurisdiction" . ,(body-jurisdiction b))
+                         ("quorum" . ,(body-quorum b))
+                         ("legalIds" . ,(map (lambda (p) (cons (symbol->string (car p)) (cdr p)))
+                                             (body-legal-ids b)))))))))))))

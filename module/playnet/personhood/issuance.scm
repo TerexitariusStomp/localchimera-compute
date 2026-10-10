@@ -79,6 +79,31 @@
            (assert-signature-binds! aic scope-aid "bless-issuer"))
          ($ acdc-store 'issue aic))))
 
+    ((admit-body gov-cap body-aid . rest)
+     ;; A legal body admitted to this scope: the body credential, issued by
+     ;; this scope to the body's group AID with the same `issuer-authz` edge
+     ;; to the scope's own blessing a personhood credential carries, so a
+     ;; verifier walks body → scope → root (docs/legal/bodies.md §3, the
+     ;; vLEI's Legal Entity credential in our chain). The admission tests
+     ;; are the planner's (legal/bodies.scm); the door asks them first and
+     ;; comes here only when none errs. Trailing positional rest:
+     ;;   (kind jurisdiction legal-ids quorum admitted-at).
+     ;; Idempotent on the body: re-admitting is a no-op, not a duplicate.
+     (require-gov-cap! gov-sealed? gov-cap "admit-body" name)
+     (require-store!   acdc-store    "admit-body" name)
+     (let-optional rest ((kind #f) (jurisdiction #f) (legal-ids '()) (quorum #f)
+                         (admitted-at (current-time)))
+       (let ((cred (make-body-credential
+                    scope-aid body-aid admitted-at
+                    #:kind kind #:jurisdiction jurisdiction #:legal-ids legal-ids
+                    #:quorum quorum
+                    #:issuer-authz-said (scope-own-aic-said)
+                    #:signing-keypair keypair)))
+         (when keypair
+           (assert-signature-binds! cred scope-aid "admit-body"))
+         ($ acdc-store 'issue-idempotent cred)
+         (cred-said cred))))
+
     ((invite gov-cap sponsor-aid candidate-aid . rest)
      ;; Sponsored enrollment. Governance still gates issuance — the
      ;; sponsor's PHC is precondition, not bypass. Each invite-issued

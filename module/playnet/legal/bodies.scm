@@ -48,6 +48,7 @@
   #:use-module (playnet vf schemas)
   #:use-module ((playnet vf facts agent-tags) #:select (tag agent-tag-value agent-tag-values))
   #:use-module ((playnet utils operator) #:select (operator-ref))
+  #:use-module ((playnet utils lei) #:select (lei-valid?))
   #:use-module (playnet knowledge body-roles)
   #:use-module ((playnet legal crossings)
                 #:select (classification-crossings asset-crossings record-crossings))
@@ -58,7 +59,7 @@
   #:use-module (playnet knowledge dsl findings)
   #:export (body-class make-body body? body-kind body-roles body-jurisdiction
             body-asset-lock? body-register-inspectable? body-quorum body-door
-            body-sells body-operator? body-has-role?
+            body-sells body-operator? body-has-role? body-legal-ids body-lei
             scope-bodies all-bodies body-stewards body-members body-officers
             body-register bodies-of
             declare-body! body-add-steward! body-add-member! close-body!
@@ -75,9 +76,11 @@
 
 (define* (make-body id name #:key (kind 'association) (roles '()) (jurisdiction #f)
                     (asset-lock #f) (register 'closed) (quorum #f) (crossings '())
-                    (door #f) (sells '()) (extra '()))
+                    (door #f) (sells '()) (legal-ids '()) (extra '()))
   "A body as an organization <agent>: ID (its AID, or a provisional id), NAME,
-   and its facts as tags. It is tagged `operator` when NAME is the operator's."
+   and its facts as tags. LEGAL-IDS: the registry identifiers it carries, an
+   alist (scheme . code) — lei, siren, hrb, … It is tagged `operator` when
+   NAME is the operator's."
   (make-agent
    #:id id #:type 'organization #:name name
    #:classified-as
@@ -92,6 +95,9 @@
                          (and (equal? name (operator-ref 'name)) "operator")))
            (map (lambda (s) (tag "sells" s)) sells)
            (map (lambda (c) (tag "crossing" c)) crossings)
+           (filter-map (lambda (p) (and (pair? p) (cdr p)
+                                        (tag "legal-id" (string-append (format #f "~a" (car p)) ":" (format #f "~a" (cdr p))))))
+                       legal-ids)
            extra)))
 
 (define (body? a)
@@ -106,6 +112,14 @@
 (define (body-door a)          (and=> (agent-tag-value a "door") string->symbol))
 (define (body-sells a)         (agent-tag-values a "sells"))
 (define (body-operator? a)     (and (member "operator" (agent-tags a)) #t))
+(define (body-legal-ids a)
+  "The registry identifiers a body carries: ((scheme . code) …), read off its
+   legal-id:<scheme>:<code> tags."
+  (filter-map (lambda (v)
+                (let ((at (string-index v #\:)))
+                  (and at (cons (string->symbol (substring v 0 at)) (substring v (+ at 1))))))
+              (agent-tag-values a "legal-id")))
+(define (body-lei a) (assq-ref (body-legal-ids a) 'lei))
 
 ;;; ─── who stands behind it : folds over relationships ──────────────────────
 (define (rel-subjects-in-role as object role)
@@ -174,6 +188,7 @@
                            #:quorum (assq-ref facts 'quorum)
                            #:door (assq-ref facts 'door)
                            #:sells (or (assq-ref facts 'sells) '())
+                           #:legal-ids (or (assq-ref facts 'legal-ids) '())
                            #:crossings (or (assq-ref facts 'crossings) '()))))
     ($ as 'add-agent body)
     (relate! as id scope-id role:member scope-id)
@@ -296,7 +311,7 @@
              (else (list (finding-about sev test body detail))))))
    *admission-tests*))
 
-(define (structural-findings body crossings holds-anything?)
+(define (structural-findings body crossings holds-anything? steward-count)
   (append
    ;; unpaid work in a selling body
    (if (and (memq 'public-sale crossings) (memq 'credit-contribution crossings))
@@ -323,6 +338,21 @@
    (if (body-register-inspectable? body)
        (list (finding-about 'info 'register body
                             "keeps a register others can inspect"))
+       '())
+   ;; registry identifier: a malformed LEI is an error, none at all a note
+   (let ((lei (body-lei body)))
+     (cond ((and lei (not (lei-valid? lei)))
+            (list (finding-about 'error 'legal-id body
+                                 (string-append "carries an LEI that is no LEI: " lei))))
+           ((null? (body-legal-ids body))
+            (list (finding-about 'info 'legal-id body
+                                 "carries no registry identifier: an LEI, a company number, a register entry")))
+           (else '())))
+   ;; stewards: fewer than three is a note (one person's absence can stall the quorum)
+   (if (< steward-count 3)
+       (list (finding-about 'info 'stewards body
+                            (format #f "has ~a steward~a; three or more keep the quorum reachable"
+                                    steward-count (if (= steward-count 1) "" "s"))))
        '())))
 
 (define (same-market-refusals bodies)
@@ -353,7 +383,8 @@
     (append-map (lambda (b)
                   (let ((cs (body-crossings as observer b #:claims claims #:resolve-spec resolve-spec)))
                     (append (crossing-findings b cs)
-                            (structural-findings b cs (and observer (pair? (body-holdings observer (agent-id b))))))))
+                            (structural-findings b cs (and observer (pair? (body-holdings observer (agent-id b))))
+                                                 (length (body-stewards as (agent-id b)))))))
                 bodies)
     (same-market-refusals bodies))))
 

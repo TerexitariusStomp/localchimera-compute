@@ -20,13 +20,13 @@ import { audienceOf, ruleOf } from './lend-core.js';
 import { bodies, current, draft, setDraft, draftFault, declare, readBody, closeBody, addSteward,
          openCeremony, sign, hold, admit, tagValue, provisional, ceremonyWords, jurisdictions,
          jurisdictionOf, jurisdictionName, jurisdictionPlace,
-         KINDS, ROLES, type Body, type BodyHolding, type Finding } from './bodies.js';
+         KINDS, ROLES, leiValid, legalIdsOf, type Body, type BodyHolding, type Finding } from './bodies.js';
 // a body stands in a place the law face reads: its jurisdiction opens there, and
 // the law's stance on it wears the map's own words and paint
 import { lawDeepLink, lawStancePaint } from './tabs/law.js';
 import { setFace } from './faces.js';
 
-type Picker = "name" | "kind" | "role" | "jurisdiction" | "assetLock" | "register" | "stewards" | null;
+type Picker = "name" | "kind" | "role" | "jurisdiction" | "assetLock" | "register" | "stewards" | "lei" | null;
 let openPicker: Picker = null;
 let kDraft = 2;
 let pickingSteward = false;
@@ -60,7 +60,8 @@ function declareSentence(redraw: () => void): HTMLElement {
              txt(", assets "), tok("assetLock", d.assetLock ? "locked" : "free"),
              txt(", register "), tok("register", d.register),
              txt(`, in ${scopeName()}; stewarded by `),
-             tok("stewards", d.stewards.length ? d.stewards.map(short).join(", ") : "you alone"), txt("."));
+             tok("stewards", d.stewards.length ? d.stewards.map(short).join(", ") : "you alone"),
+             txt("; registered as "), tok("lei", d.lei ? "LEI " + d.lei : "no LEI"), txt("."));
   box.appendChild(say);
   const body = el("div", "sl-soc-body");
   const chips = (key: "kind" | "role" | "jurisdiction", opts: string[]): void => {
@@ -79,6 +80,16 @@ function declareSentence(redraw: () => void): HTMLElement {
     i.addEventListener("input", () => setDraft({ name: i.value }));
     i.addEventListener("keydown", (e: KeyboardEvent) => { if (e.key === "Enter") { openPicker = null; redraw(); } });
     body.appendChild(i);
+    queueMicrotask(() => i.focus());
+  } else if (openPicker === "lei") {
+    // the Legal Entity Identifier, when the body has one: twenty characters, ISO 7064 check digits
+    const i = el("input", "bd-lei");
+    i.type = "text"; i.maxLength = 20; i.placeholder = "LEI, if the body has one (20 characters)"; i.value = d.lei;
+    i.setAttribute("aria-label", "the body's Legal Entity Identifier");
+    i.addEventListener("input", () => setDraft({ lei: i.value }));
+    i.addEventListener("keydown", (e: KeyboardEvent) => { if (e.key === "Enter") { openPicker = null; redraw(); } });
+    body.appendChild(i);
+    if (d.lei && !leiValid(d.lei)) body.appendChild(el("div", "reach-note bd-warn", "not a valid LEI yet"));
     queueMicrotask(() => i.focus());
   } else if (openPicker === "kind") chips("kind", KINDS);
   else if (openPicker === "role") chips("role", ROLES);
@@ -178,6 +189,19 @@ function bodyPanel(b: Body, redraw: () => void): HTMLElement {
   head.append(el("span", "reach-kind", b.name), where, btn("close", "put this body down", () => closeBody()));
   box.appendChild(head);
   box.appendChild(el("div", "reach-note bd-id", provisional(b) ? "provisional — the identifier comes with the inception" : b.id));
+  // its registry identifiers, and the credential the commune issued on admission
+  const ids = legalIdsOf(b);
+  const idRow = el("div", "reach-row bd-legal");
+  idRow.append(el("span", "reach-kind", "registered"),
+               el("span", "reach-value", Object.keys(ids).length
+                  ? Object.entries(ids).map(([k, v]) => k.toUpperCase() + " " + v).join(" · ")
+                  : "no registry identifier"));
+  box.appendChild(idRow);
+  const credRow = el("div", "reach-row bd-cred");
+  credRow.append(el("span", "reach-kind", "credential"),
+                 el("span", "reach-value", b.credential ? "admitted — " + b.credential.slice(0, 12) + "…" : "not yet admitted"));
+  credRow.title = b.credential || "the body credential the commune issues when a governor admits it";
+  box.appendChild(credRow);
   box.appendChild(lawLine(b));
 
   // the stewards, and the ceremony that makes the body's identifier

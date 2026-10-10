@@ -143,4 +143,18 @@
                           #:catch (lambda (e) (list 'error (format #f "admit-commune: ~a" e)))
                           #:promise? #t))
                     #:catch (lambda (e) (list 'error (format #f "admit-commune: ~a" e)))
-                    #:promise? #t)))))))))
+                    #:promise? #t))))))
+
+      ;; ── Admitting a legal body — the commune issues its body credential ────
+      ;; The same forward as accept-socialization: the commune's own gov-cap,
+      ;; minted for IDENTITY-KEY (may-govern? decides), then the scope's
+      ;; admit-body (personhood/issuance.scm). OPTS, positional after the
+      ;; body AID: kind jurisdiction legal-ids quorum.
+      ((admit-body identity-key commune-aid body-aid . opts)
+       (let ((sc (scope-for commune-aid)))
+         (if (not sc)
+             (list 'error "admit-body: no scope reachable here for that commune")
+             (catch #t
+               (lambda ()
+                 (list 'ok (apply $ sc 'admit-body ($ sc 'mint-gov-cap identity-key) body-aid opts)))
+               (lambda (key . args) (list 'error (format #f "admit-body failed: ~a" args))))))))))

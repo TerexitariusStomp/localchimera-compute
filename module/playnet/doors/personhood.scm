@@ -170,24 +170,29 @@
                                       (cred-live-at? c now))))
              (landed (land-kels! kels))
              ;; a body's signing keys: the whole `k` of the latest
-             ;; establishment event in the key log the bundle carries (landed
-             ;; above, so verified), else what the bound resolver names
+             ;; establishment event in its key log — the one the bundle
+             ;; carries (landed above, so verified), else the one held here
+             ;; (kel-of), else what the bound resolver names; a group AID's
+             ;; stewards are only read whole from a log
              (->list (lambda (x) (cond ((vector? x) (vector->list x)) ((list? x) x) (else '()))))
+             (keys-of-kel (lambda (kel)
+                            (and (pair? kel)
+                                 (let* ((rots (->list (assoc-ref kel "rotations")))
+                                        (ev (if (pair? rots)
+                                                (assoc-ref (last rots) "rot")
+                                                (assoc-ref kel "icp"))))
+                                   (and ev (->list (assoc-ref ev "k")))))))
              (resolved-keys (lambda (aid)
                               (let* ((resolve (aid-signer-keys-resolver))
                                      (ks (and resolve (catch #t (lambda () (resolve aid #f))
                                                         (lambda _ '())))))
                                 (if (list? ks) ks '()))))
              (body-keys-of (lambda (body-aid)
-                             (let* ((kel (assoc-ref kels body-aid))
-                                    (from-kel
-                                     (and kel
-                                          (let* ((rots (->list (assoc-ref kel "rotations")))
-                                                 (ev (if (pair? rots)
-                                                         (assoc-ref (last rots) "rot")
-                                                         (assoc-ref kel "icp"))))
-                                            (and ev (->list (assoc-ref ev "k")))))))
-                               (if (pair? from-kel) from-kel (resolved-keys body-aid)))))
+                             (let ((carried (keys-of-kel (assoc-ref kels body-aid))))
+                               (if (pair? carried) carried
+                                   (let ((held (and kel-of
+                                                    (keys-of-kel (false-if-exception (kel-of body-aid))))))
+                                     (if (pair? held) held (resolved-keys body-aid)))))))
              ;; the role's block: K distinct stewards — signers whose key is
              ;; one of the body's — over the SAID; K is the body credential's
              ;; quorum, else the role's own, else one

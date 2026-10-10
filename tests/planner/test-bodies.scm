@@ -150,6 +150,32 @@
                  (any (lambda (f) (and (eq? 'voice (finding-kind f)) (eq? 'warning (finding-severity f))))
                       voice-charity)))
 
+;;; ─── the registry identifier ─────────────────────────────────────────────
+(display "\n── legal ids: the body carries its registry codes ──\n")
+(define with-lei
+  (with-vat vat
+    (let ((as (spawn ^agent-store (hashmap) (hashmap) (hashmap) '())))
+      (declare-body! as scope "body:lei" "GLEIF-like" '((role . provider) (jurisdiction . "berlin")
+                                                        (legal-ids . ((lei . "506700GE1G29325QX363") (hrb . "12345")))))
+      ($ as 'get-agent "body:lei"))))
+(check "the codes read back as (scheme . code)" (body-legal-ids with-lei) '((lei . "506700GE1G29325QX363") (hrb . "12345")))
+(check "the LEI reads by name" (body-lei with-lei) "506700GE1G29325QX363")
+(check-pred "a valid LEI passes admission without a legal-id error"
+            (null? (kinds-of (errors (admission (lambda (as obs)
+                                                  (declare-body! as scope "b:l" "L" '((role . provider) (legal-ids . ((lei . "506700GE1G29325QX363"))))))))
+                             'legal-id)))
+(check-pred "a malformed LEI is an admission error"
+            (pair? (kinds-of (errors (admission (lambda (as obs)
+                                                  (declare-body! as scope "b:l" "L" '((role . provider) (legal-ids . ((lei . "506700GE1G29325QX364"))))))))
+                             'legal-id)))
+(check-pred "no registry id at all is a note, not an error"
+            (let ((fs (admission (lambda (as obs) (declare-body! as scope "b:n" "N" '((role . provider)))))))
+              (and (null? (kinds-of (errors fs) 'legal-id))
+                   (any (lambda (f) (and (eq? 'legal-id (finding-kind f)) (eq? 'info (finding-severity f)))) fs))))
+(check-pred "fewer than three stewards is a note"
+            (any (lambda (f) (and (eq? 'stewards (finding-kind f)) (eq? 'info (finding-severity f))))
+                 (admission (lambda (as obs) (declare-body! as scope "b:s" "S" '((role . provider)))))))
+
 ;;; ─── the law reads the body as the holder ────────────────────────────────
 (display "\n── the decorate asks the body for the policy fr/rc-auto demands ──\n")
 ;; a ride recipe: `use` of a vehicle trips public-vehicle (legal/crossings.scm)

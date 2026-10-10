@@ -28,6 +28,7 @@
     "attests"                        ; a dwelling's attestations (housing-substance)
     "jurisdiction"                   ; a body's or an adapter's place (legal/bodies, legal/adapters)
     "kind" "role" "asset-lock" "register" "quorum" "door" "sells"   ; a legal body (legal/bodies)
+    "legal-id"                       ; a body's registry identifier, legal-id:<scheme>:<code> (legal/bodies)
     "vf:perishability"               ; a food's perishability class (worlds/feel-the-food)
     "tag:plan"                       ; a plan's own tags (plan/store)
     "sex" "age" "pregnant" "lactating" "region" "labour-hours" "standard" "shed"   ; the profile (scope/live)

@@ -6,16 +6,24 @@
 ;;;   • the SAID commits to the content and not to the block: one credential,
 ;;;     any block, one SAID; a changed claim is not the same credential;
 ;;;   • stewards whose AIDs are key logs (E-prefix) verify through the bound
-;;;     key resolver, as the gateway binds it.
+;;;     key resolver, as the gateway binds it;
+;;;   • a role carrying the `body` edge verifies k-of-n AND the chain to the
+;;;     body credential (predicates.scm): the edge names the body credential,
+;;;     the role's issuer is its holder, and the body credential stands.
 ;;;
 ;;; Run: guile -L module tests/governance/test-body-role-credential.scm
 (use-modules (playnet test harness)
              (playnet keri signify)
              ((playnet keri crypto-primitives) #:select (ed25519-keypair-public))
              ((playnet keri signify-portable) #:select (bran->signing-keypair public-key->aid-prefix))
-             ((playnet keri citizen-sig) #:select (sign-said-multisig sign-said aid-signer-keys-resolver))
-             ((playnet keri acdc) #:select (cred-said cred-schema cred-issuer cred-holder cred-claim cred-signature))
+             ((playnet keri citizen-sig) #:select (sign-said-multisig sign-said aid-signer-keys-resolver
+                                                  make-keri-identity keri-identity-aid keri-identity-keypair))
+             ((playnet keri acdc) #:select (cred-said cred-schema cred-issuer cred-holder cred-claim cred-signature
+                                            cred-edge edge-target edge-operator edge-schema))
+             ((playnet keri acdc-store) #:select (spawn-acdc-store))
              (playnet keri first-person credentials)
+             (playnet keri first-person predicates)
+             (goblins) (goblins vat) (rnrs bytevectors)
              (srfi srfi-1))
 
 (define (key-of kp) (public-key->aid-prefix (ed25519-keypair-public kp)))
@@ -90,5 +98,52 @@
 (check "and a stranger's log still does not count"
        #f (body-role-credential-valid? (body-role-credential-with-block cred (list (car log-block) (cons "ESTRANGERAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" (sign-said said stranger)))) log-aids 2))
 (aid-signer-keys-resolver #f)
+
+(display "\n── the chain: a role names its body credential ──\n")
+;; the root blesses the scope; the scope admits the body; the body issues
+;; the role, which names the body credential by its `body` edge
+(define vat (spawn-vat))
+(with-vat vat
+  (let* ((root (make-keri-identity (make-bytevector 32 7)))
+         (scope (make-keri-identity (make-bytevector 32 8)))
+         (ROOT (keri-identity-aid root))
+         (SCOPE (keri-identity-aid scope))
+         (store (spawn-acdc-store))
+         (aic (make-authorized-issuer-credential ROOT SCOPE 5 #:signing-keypair (keri-identity-keypair root)))
+         (body-cred (make-body-credential SCOPE body-aid 100 #:kind 'cooperative #:quorum 2
+                                          #:issuer-authz-said (cred-said aic)
+                                          #:signing-keypair (keri-identity-keypair scope)))
+         (role (make-body-role-credential body-aid holder 'steward "2026-10-10T00:00:00Z" #:quorum 2 #:u "nonce-2"
+                                          #:body-cred-said (cred-said body-cred)))
+         (signed (body-role-credential-with-block role (sign-said-multisig (cred-said role) (list (first signers) (second signers))))))
+    ($ store 'issue aic)
+    ($ store 'issue body-cred)
+    (check "the edge names the body credential" (cred-said body-cred) (edge-target (cred-edge role 'body)))
+    (check "the edge is I2I" 'I2I (edge-operator (cred-edge role 'body)))
+    (check "the edge's schema is the body schema" *schema-playnet-body* (edge-schema (cred-edge role 'body)))
+    (check "another SAID than the unchained role"
+           (not (equal? (cred-said role)
+                        (cred-said (make-body-role-credential body-aid holder 'steward "2026-10-10T00:00:00Z" #:quorum 2 #:u "nonce-2")))))
+    (check "k of n and the chain, the body credential in hand"
+           #t (body-role-credential-valid? signed stewards 2 #:body-cred body-cred #:roots ROOT #:store store))
+    (check "k of n and the chain, the body credential read from the store"
+           #t (body-role-credential-valid? signed stewards 2 #:roots ROOT #:store store))
+    (check "the chain without a root asked" #t (body-role-credential-valid? signed stewards 2 #:body-cred body-cred))
+    (check "k − 1 fails though the chain stands"
+           #f (body-role-credential-valid? (body-role-credential-with-block role (sign-said-multisig (cred-said role) (list (first signers))))
+                                           stewards 2 #:body-cred body-cred #:roots ROOT #:store store))
+    (check "the edge with no body credential and no store fails" #f (body-role-credential-valid? signed stewards 2))
+    (check "a body credential handed in that the edge does not name fails"
+           #f (body-role-credential-valid? signed stewards 2
+                                           #:body-cred (make-body-credential SCOPE "EOTHERBODYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" 100
+                                                                             #:signing-keypair (keri-identity-keypair scope))))
+    (check "an unchained role handed a body credential fails"
+           #f (body-role-credential-valid? two stewards 2 #:body-cred body-cred))
+    ;; chained validity: the body credential revoked, the role falls
+    ($ store 'revoke (cred-said body-cred))
+    (check "the body credential revoked, the role read from the store fails"
+           #f (body-role-credential-valid? signed stewards 2 #:roots ROOT #:store store))
+    (check "…and the store's revoked copy handed in fails the same way"
+           #f (body-role-credential-valid? signed stewards 2 #:body-cred ($ store 'get (cred-said body-cred))))))
 
 (test-summary!)

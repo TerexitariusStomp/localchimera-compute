@@ -44,6 +44,10 @@
   #:use-module ((playnet utils hex) #:select (bv->hex))
   #:use-module ((playnet keri crypto-primitives) #:select (keri-crypto-sha256))
   #:use-module ((playnet keri first-person predicates) #:select (holds-any-live-phc?))
+  #:use-module ((playnet keri first-person credentials) #:select (*schema-playnet-body*))
+  #:use-module ((playnet keri acdc) #:select (cred-schema cred-said cred-revoked?))
+  #:use-module ((playnet utils lei) #:select (lei-valid? lei-normalize))
+  #:use-module ((srfi srfi-1) #:select (find any filter-map))
   #:use-module ((json parser) #:select (json-string->scm))
   #:use-module (rnrs bytevectors)
   #:use-module (srfi srfi-13)
@@ -90,6 +94,16 @@
   (define (person?)
     (and acdc-store (holds-any-live-phc? acdc-store aid-prefix)))
   (define (named? x) (and (string? x) (not (string-null? x))))
+  (define (with-reply r k)
+    "K over the service's reply, a value now or a promise of one."
+    (if (pair? r) (k r) (on r k #:promise? #t)))
+  (define (body-credential-said body-id)
+    "The SAID of the live body credential this commune holds for BODY-ID, or #f."
+    (and acdc-store
+         (let ((c (find (lambda (c) (and (equal? *schema-playnet-body* (cred-schema c))
+                                         (not (cred-revoked? c))))
+                        (or (false-if-exception ($ acdc-store 'by-holder body-id)) '()))))
+           (and c (cred-said c)))))
 
   (declared-doors session
 
@@ -104,14 +118,25 @@
        ((not (jstr o "name")) (refuse "give the body a name"))
        ((> (string-length (jstr o "name")) %name-max) (refuse "a name is one short line"))
        ((not (person?)) (refuse "declaring a body takes a recognised person: get vouched for first"))
+       ((let ((lei (jstr (or (assoc-ref o "legalIds") '()) "lei"))) (and lei (not (lei-valid? lei))))
+        (refuse "that is no LEI: twenty characters with ISO 7064 check digits"))
        (else
-        (let ((name (jstr o "name")))
+        (let* ((name (jstr o "name"))
+               (ids (let ((l (assoc-ref o "legalIds")))
+                      (if (list? l)
+                          (filter-map (lambda (p) (and (string? (car p)) (string? (cdr p))
+                                                       (not (string-null? (cdr p)))
+                                                       (cons (string->symbol (car p))
+                                                             (if (equal? (car p) "lei") (lei-normalize (cdr p)) (cdr p)))))
+                                      l)
+                          '()))))
           (svc 'declare! aid-prefix scope-id (provisional-body-id name scope-id aid-prefix) name
                `((kind . ,(or (jstr o "kind") "association"))
                  (role . ,(or (jstr o "role") "provider"))
                  (jurisdiction . ,(jstr o "jurisdiction"))
                  (asset-lock . ,(jbool o "assetLock" #f))
                  (register . ,(if (equal? (jstr o "register") "inspectable") 'inspectable 'closed))
+                 (legal-ids . ,ids)
                  (quorum . 1))))))))
 
    ;; A steward of body ID names another steward.
@@ -147,9 +172,15 @@
    ((my-bodies scope-id)
     (if (named? scope-id) (svc 'list aid-prefix scope-id) (refuse "name the scope")))
 
-   ;; Body ID, read whole by a steward or a member.
+   ;; Body ID, read whole by a steward or a member, with the body credential
+   ;; this commune issued it on admission (its SAID), or #f.
    ((body id)
-    (if (named? id) (svc 'read aid-prefix id) (refuse "name the body")))
+    (if (not (named? id)) (refuse "name the body")
+        (with-reply (svc 'read aid-prefix id)
+          (lambda (r)
+            (if (and (pair? r) (eq? 'ok (car r)) (list? (cdr r)))
+                (cons 'ok (append (cdr r) `(("credential" . ,(body-credential-said id)))))
+                r)))))
 
    ;; A steward presents what body ID holds: JSON {kind name issuer validUntil ref}.
    ((body-present-holding id json)
@@ -160,7 +191,9 @@
             (else (svc 'present-holding! aid-prefix id (jstr o "kind") (jstr o "name")
                        (jstr o "issuer") (jstr o "validUntil") (jstr o "ref"))))))
 
-   ;; A governor admits body ID to SCOPE-ID; the reply is the admission's findings.
+   ;; A governor admits body ID to SCOPE-ID: the admission's findings come
+   ;; back, and when none of them errs the commune issues the body credential
+   ;; (personhood/issuance.scm admit-body) — the reply then carries its SAID.
    ((body-admit scope-id id)
     (cond
      ((not body-service) (refuse "this commune keeps no bodies"))
@@ -172,9 +205,30 @@
             ;; governance replies (ok (person . …) (governor . …) …): the alist is the tail
             (let ((governor? (and (pair? st) (eq? (car st) 'ok) (list? (cdr st))
                                   (assq-ref (cdr st) 'governor))))
-              (if governor?
-                  (svc 'admit! aid-prefix scope-id id)
-                  (refuse "a body is admitted by a governor"))))
+              (if (not governor?)
+                  (refuse "a body is admitted by a governor")
+                  (with-reply (svc 'admit! aid-prefix scope-id id)
+                    (lambda (a)
+                      (if (not (and (pair? a) (eq? 'ok (car a)) (list? (cdr a))))
+                          a
+                          (let* ((facts (cdr a))
+                                 (findings (assoc-ref facts "findings"))
+                                 (errs? (any (lambda (f) (equal? "error" (assoc-ref f "severity")))
+                                             (vector->list (if (vector? findings) findings #()))))
+                                 (legal-ids (map (lambda (p) (cons (string->symbol (car p)) (cdr p)))
+                                                 (or (assoc-ref facts "legalIds") '()))))
+                            (if errs?
+                                (cons 'ok `(("findings" . ,findings) ("credential" . #f)))
+                                (on (<- governance-svc 'admit-body aid-prefix scope-id id
+                                        (assoc-ref facts "kind") (assoc-ref facts "jurisdiction")
+                                        legal-ids (assoc-ref facts "quorum"))
+                                    (lambda (g)
+                                      (if (and (pair? g) (eq? 'ok (car g)))
+                                          (cons 'ok `(("findings" . ,findings) ("credential" . ,(cadr g))))
+                                          (cons 'ok `(("findings" . ,findings) ("credential" . #f)
+                                                      ("refused" . ,(if (pair? g) (format #f "~a" (cdr g)) "the commune could not issue"))))))
+                                    #:catch (lambda _ (cons 'ok `(("findings" . ,findings) ("credential" . #f))))
+                                    #:promise? #t)))))))))
           #:catch (lambda _ (refuse "governance could not be asked"))
           #:promise? #t))))))
 

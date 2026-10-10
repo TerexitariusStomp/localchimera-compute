@@ -132,7 +132,11 @@
 (check-pred "a member who stewards nothing sees it without stewardship"
             (let ((r (reply 'list "aid:cy" scope)))
               (and (ok? r) (= 1 (vector-length (cdr r))) (not (assoc-ref (vector-ref (cdr r) 0) "steward")))))
-(check-pred "admit answers the scope's findings" (vector? (cdr (reply 'admit! "aid:ada" scope "EBODY"))))
+(check-pred "admit answers the scope's findings and the body's facts for its credential"
+            (let ((a (reply 'admit! "aid:ada" scope "EBODY")))
+              (and (ok? a) (vector? (assoc-ref (cdr a) "findings"))
+                   (equal? "france" (assoc-ref (cdr a) "jurisdiction"))
+                   (equal? "association" (assoc-ref (cdr a) "kind")))))
 
 (display "\n── what the law face reads off the list ──\n")
 (define listed (vector-ref (cdr (reply 'list "aid:bo" scope)) 0))

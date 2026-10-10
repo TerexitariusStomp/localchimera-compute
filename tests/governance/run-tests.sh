@@ -101,6 +101,8 @@ run_suite "rotate-keys: real build-rot SAID, chained, signed by the pre-committe
 run_suite "dedupe-store: opId + gateway dedupe (offline-outbox.md phase 1)" "tests/gateway/test-dedupe-store.scm"
 run_suite "Temporary socialization (custody moves, the right stays)" "test-temporary-socialization.scm"
 run_suite "Socialization: a flat contribution clause" "test-socialization-contribution.scm"
+run_suite "Body credential: the vLEI-shaped chain root → AIC → body → role" "test-body-credential.scm"
+run_suite "Body bundle: a body credential and a chained role presented across gateways" "test-body-present-bundle.scm"
 
 # ── Summary ──────────────────────────────────────────────────────────────────
 

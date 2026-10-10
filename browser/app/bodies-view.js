@@ -17,7 +17,7 @@ import { scopeName } from './scope.js';
 import { nameOf } from './contact-book.js';
 import { audiencePicker } from './slots/criteria.js';
 import { audienceOf, ruleOf } from './lend-core.js';
-import { bodies, current, draft, setDraft, draftFault, declare, readBody, closeBody, addSteward, openCeremony, sign, hold, admit, tagValue, provisional, ceremonyWords, jurisdictions, jurisdictionOf, jurisdictionName, jurisdictionPlace, KINDS, ROLES } from './bodies.js';
+import { bodies, current, draft, setDraft, draftFault, declare, readBody, closeBody, addSteward, openCeremony, sign, hold, admit, tagValue, provisional, ceremonyWords, jurisdictions, jurisdictionOf, jurisdictionName, jurisdictionPlace, KINDS, ROLES, leiValid, legalIdsOf } from './bodies.js';
 // a body stands in a place the law face reads: its jurisdiction opens there, and
 // the law's stance on it wears the map's own words and paint
 import { lawDeepLink, lawStancePaint } from './tabs/law.js';
@@ -47,7 +47,7 @@ function declareSentence(redraw) {
     };
     const txt = (s) => document.createTextNode(s);
     const say = el("div", "sl-soc-say bd-say");
-    say.append(txt("Declare "), tok("name", d.name.trim() ? `«${d.name.trim()}»` : "«a name»"), txt(", a "), tok("kind", d.kind), txt(" acting as "), tok("role", d.role), txt(" in "), tok("jurisdiction", jurisdictionName(d.jurisdiction)), txt(", assets "), tok("assetLock", d.assetLock ? "locked" : "free"), txt(", register "), tok("register", d.register), txt(`, in ${scopeName()}; stewarded by `), tok("stewards", d.stewards.length ? d.stewards.map(short).join(", ") : "you alone"), txt("."));
+    say.append(txt("Declare "), tok("name", d.name.trim() ? `«${d.name.trim()}»` : "«a name»"), txt(", a "), tok("kind", d.kind), txt(" acting as "), tok("role", d.role), txt(" in "), tok("jurisdiction", jurisdictionName(d.jurisdiction)), txt(", assets "), tok("assetLock", d.assetLock ? "locked" : "free"), txt(", register "), tok("register", d.register), txt(`, in ${scopeName()}; stewarded by `), tok("stewards", d.stewards.length ? d.stewards.map(short).join(", ") : "you alone"), txt("; registered as "), tok("lei", d.lei ? "LEI " + d.lei : "no LEI"), txt("."));
     box.appendChild(say);
     const body = el("div", "sl-soc-body");
     const chips = (key, opts) => {
@@ -72,6 +72,24 @@ function declareSentence(redraw) {
             redraw();
         } });
         body.appendChild(i);
+        queueMicrotask(() => i.focus());
+    }
+    else if (openPicker === "lei") {
+        // the Legal Entity Identifier, when the body has one: twenty characters, ISO 7064 check digits
+        const i = el("input", "bd-lei");
+        i.type = "text";
+        i.maxLength = 20;
+        i.placeholder = "LEI, if the body has one (20 characters)";
+        i.value = d.lei;
+        i.setAttribute("aria-label", "the body's Legal Entity Identifier");
+        i.addEventListener("input", () => setDraft({ lei: i.value }));
+        i.addEventListener("keydown", (e) => { if (e.key === "Enter") {
+            openPicker = null;
+            redraw();
+        } });
+        body.appendChild(i);
+        if (d.lei && !leiValid(d.lei))
+            body.appendChild(el("div", "reach-note bd-warn", "not a valid LEI yet"));
         queueMicrotask(() => i.focus());
     }
     else if (openPicker === "kind")
@@ -175,6 +193,17 @@ function bodyPanel(b, redraw) {
     head.append(el("span", "reach-kind", b.name), where, btn("close", "put this body down", () => closeBody()));
     box.appendChild(head);
     box.appendChild(el("div", "reach-note bd-id", provisional(b) ? "provisional — the identifier comes with the inception" : b.id));
+    // its registry identifiers, and the credential the commune issued on admission
+    const ids = legalIdsOf(b);
+    const idRow = el("div", "reach-row bd-legal");
+    idRow.append(el("span", "reach-kind", "registered"), el("span", "reach-value", Object.keys(ids).length
+        ? Object.entries(ids).map(([k, v]) => k.toUpperCase() + " " + v).join(" · ")
+        : "no registry identifier"));
+    box.appendChild(idRow);
+    const credRow = el("div", "reach-row bd-cred");
+    credRow.append(el("span", "reach-kind", "credential"), el("span", "reach-value", b.credential ? "admitted — " + b.credential.slice(0, 12) + "…" : "not yet admitted"));
+    credRow.title = b.credential || "the body credential the commune issues when a governor admits it";
+    box.appendChild(credRow);
     box.appendChild(lawLine(b));
     // the stewards, and the ceremony that makes the body's identifier
     const stew = el("ul", "reach-list bd-stewards");

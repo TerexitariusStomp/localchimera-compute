@@ -7,7 +7,7 @@
 // own seats (docs/legal/bodies.md). Here is the model: what this commune
 // says of your bodies (read on every seat taken), the one body open for
 // reading, and the declaration drafted on this device. The view is
-// bodies-view.ts; the doors are identity/body-doors.scm, reached through the
+// bodies-view.ts; the doors are doors/body.scm, reached through the
 // seam's body handlers.
 import { HANDLERS } from './core.js';
 import { on } from './bus.js';
@@ -42,7 +42,18 @@ export interface Body {
   jurisdiction?: string | null;
   stewards?: string[]; members?: string[]; crossings?: string[];
   holdings?: BodyHolding[]; findings?: Finding[]; exposure?: BodyExposure;
+  /** The SAID of the body credential the commune issued on admission, or null. */
+  credential?: string | null;
 }
+/** A body's registry identifiers off its tags: lei, siren, hrb … */
+export const legalIdsOf = (b: Body): Record<string, string> => {
+  const out: Record<string, string> = {};
+  for (const t of b.tags) if (t.startsWith("legal-id:")) {
+    const rest = t.slice("legal-id:".length); const at = rest.indexOf(":");
+    if (at > 0) out[rest.slice(0, at)] = rest.slice(at + 1);
+  }
+  return out;
+};
 
 /** The value of a `key:value` tag on a body, or "". */
 export const tagValue = (b: Body, key: string): string =>
@@ -110,6 +121,19 @@ export function okJSON<T>(r: string): T | null {
 export interface BodyDraft {
   name: string; kind: string; role: string; jurisdiction: string;
   assetLock: boolean; register: "closed" | "inspectable"; stewards: string[];
+  /** The Legal Entity Identifier, if the body has one (ISO 17442, twenty characters). */
+  lei: string;
+}
+/** Is S a well-formed LEI: twenty alphanumerics whose ISO 7064 MOD 97-10 residue is 1? */
+export function leiValid(s: string): boolean {
+  const lei = s.trim().toUpperCase();
+  if (!/^[0-9A-Z]{20}$/.test(lei)) return false;
+  let acc = 0;
+  for (const ch of lei) {
+    const v = ch >= "A" ? String(ch.charCodeAt(0) - 55) : ch;
+    for (const d of v) acc = (acc * 10 + Number(d)) % 97;
+  }
+  return acc === 1;
 }
 export const KINDS = ["association", "cooperative", "company", "foundation", "operator"];
 export const ROLES = ["provider", "seller", "employer", "adapter", "custodian"];
@@ -148,10 +172,11 @@ export const jurisdictionPlace = (j: string): string => placeNames.has(j) ? j : 
 /** How the law face names it, or the jurisdiction as given. */
 export const jurisdictionName = (j: string): string => placeNames.get(jurisdictionPlace(j)) || j;
 const DRAFT = K.bodiesDraft;
-const blank = (): BodyDraft => ({ name: "", kind: KINDS[0]!, role: ROLES[0]!, jurisdiction: JURISDICTIONS[0]!, assetLock: true, register: "inspectable", stewards: [] });
+const blank = (): BodyDraft => ({ name: "", kind: KINDS[0]!, role: ROLES[0]!, jurisdiction: JURISDICTIONS[0]!, assetLock: true, register: "inspectable", stewards: [], lei: "" });
 const cleanDraft = (raw: unknown): BodyDraft => {
   const d = { ...blank(), ...(raw && typeof raw === "object" ? raw as Partial<BodyDraft> : {}) };
   d.name = typeof d.name === "string" ? d.name.slice(0, 80) : "";
+  d.lei = typeof d.lei === "string" ? d.lei.trim().toUpperCase().slice(0, 20) : "";
   d.stewards = Array.isArray(d.stewards) ? d.stewards.filter((s): s is string => typeof s === "string") : [];
   d.register = d.register === "closed" ? "closed" : "inspectable";
   d.assetLock = !!d.assetLock;
@@ -167,7 +192,8 @@ export function setDraft(patch: Partial<BodyDraft>): void {
 }
 /** What is wrong with the draft, or null when it can be declared. */
 export const draftFault = (d: BodyDraft): string | null =>
-  !d.name.trim() ? "give the body a name" : d.name.length > 80 ? "a name is one short line" : null;
+  !d.name.trim() ? "give the body a name" : d.name.length > 80 ? "a name is one short line"
+  : d.lei && !leiValid(d.lei) ? "that is no LEI: twenty characters with ISO 7064 check digits" : null;
 
 /** Declare the drafted body in this scope, then name its stewards; "ok" | "err:…". */
 export async function declare(): Promise<string> {
@@ -178,7 +204,8 @@ export async function declare(): Promise<string> {
   if (!scope) return "err:no scope yet";
   const r = await said(HANDLERS.bodyDeclare?.(scope, JSON.stringify({
     name: d.name.trim(), kind: d.kind, role: d.role, jurisdiction: d.jurisdiction,
-    assetLock: d.assetLock, register: d.register })));
+    assetLock: d.assetLock, register: d.register,
+    ...(d.lei ? { legalIds: { lei: d.lei } } : {}) })));
   const b = okJSON<Body>(r);
   if (!b) return r;
   for (const aid of d.stewards) await said(HANDLERS.bodyAddSteward?.(b.id, aid));
