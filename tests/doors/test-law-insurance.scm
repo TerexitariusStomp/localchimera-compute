@@ -26,7 +26,7 @@
 (define (at place crossing)
   (bill-of (lambda () (bill-at place (list crossing) #:act 'activity))))
 (define (kinds bh)                                               ; the non-empty kinds
-  (filter (lambda (k) (pair? (bill-ref (car bh) k))) '(obtain-entity obtain-person pay tell forbid)))
+  (filter (lambda (k) (pair? (bill-ref (car bh) k))) %bill-keys))
 (define (aspects-of bh)                                          ; the federation aspects the bill's specs name
   (delete-duplicates
    (append-map (lambda (d) (filter-map clause-aspect (or (demand-spec d) '())))

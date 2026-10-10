@@ -15,6 +15,7 @@
              ((playnet legal registry) #:select (%stances %bill-keys))
              ((playnet knowledge law incumbent-readings) #:select (%reading-statuses))
              ((playnet knowledge law snapshot-build) #:select (%bill-json-keys))
+             ((playnet legal bodies) #:select (%body-kinds))
              (playnet knowledge law product)
              (ice-9 format) (srfi srfi-1))
 
@@ -72,6 +73,9 @@ export type BillKey = typeof BILL_KEYS[number];
 /** How a structural demand stands at a place (law/incumbent-readings.scm). */
 export const READING_STATUSES = [~a] as const;
 export type ReadingStatus = typeof READING_STATUSES[number];
+/** The kinds a legal body can be (legal/bodies.scm `%body-kinds`). */
+export const BODY_KINDS = [~a] as const;
+export type BodyKind = typeof BODY_KINDS[number];
 "
           (str (product-notice 'legal-version))
           (str (product-notice 'document-version))
@@ -99,7 +103,8 @@ export type ReadingStatus = typeof READING_STATUSES[number];
                 (product-feature-ids)))
           (strs (map symbol->string %stances))
           (strs (map (lambda (k) (assq-ref %bill-json-keys k)) %bill-keys))
-          (strs (map symbol->string %reading-statuses))))
+          (strs (map symbol->string %reading-statuses))
+          (strs (map symbol->string %body-kinds))))
 
 (define out (if (> (length (command-line)) 1) (cadr (command-line)) "ui/app/legal-product.ts"))
 (call-with-output-file out

@@ -477,12 +477,19 @@ function lawDemand(d, cls) {
         meta.push(d.reason);
     if (d.direction && d.direction !== "null")
         meta.push(d.direction);
+    if (d.base && d.base !== "null")
+        meta.push(typeof d.rate === "number" ? `${d.rate} × ${d.base.replace(/-/g, " ")}` : `on ${d.base.replace(/-/g, " ")}`);
+    if (typeof d.amount === "number")
+        meta.push(`≈ ${d.amount}`);
+    if (d.after && d.after !== "null")
+        meta.push("after " + d.after);
     return html `<div class="dk-dem ${cls}"><b>${d.name}</b>${meta.length ? html `<span class="dk-meta">${meta.join(" · ")}</span>` : null}
     ${lawHeldBy(d.name)}
     ${d.reform && d.reform !== "null" ? lawCells(d.reform) : null}</div>`;
 }
 // what a holding's status means for the demand: the paint of the tier it would land in
 const LAW_HOLD_PAINT = { satisfied: LAW_TIER_PAINT[0], held: LAW_TIER_PAINT[0], obligation: LAW_TIER_PAINT[2], doubted: LAW_TIER_PAINT[3],
+    unclaimed: LAW_TIER_PAINT[1], blocked: LAW_TIER_PAINT[3],
     missing: LAW_FORBIDDEN[0], expired: LAW_FORBIDDEN[0], forbidden: LAW_FORBIDDEN[0] };
 /** "held by <body> · <status>" for each of our bodies here that holds something against this demand. */
 function lawHeldBy(name) {
@@ -495,9 +502,10 @@ function lawHeldBy(name) {
 // with the prohibition first
 const LAW_BILL_WORDS = {
     forbid: ["forbidden", "forbid"], obtainEntity: ["obtain — an authorisation", "obtain"],
-    obtainPerson: ["obtain — a competence", "obtain"], pay: ["pay — a levy", "pay"], tell: ["tell — a disclosure", "tell"]
+    obtainPerson: ["obtain — a competence", "obtain"], pay: ["pay — a levy", "pay"], tell: ["tell — a disclosure", "tell"],
+    grant: ["granted — an entitlement to claim", "grant"]
 };
-const LAW_BILL = ["forbid", "obtainEntity", "obtainPerson", "pay", "tell"].map(k => [k, ...LAW_BILL_WORDS[k]]);
+const LAW_BILL = ["forbid", "obtainEntity", "obtainPerson", "pay", "tell", "grant"].map(k => [k, ...LAW_BILL_WORDS[k]]);
 function lawBill(bill) {
     const blocks = LAW_BILL.map(([k, label, cls]) => {
         const arr = ((bill && bill[k]) || []);

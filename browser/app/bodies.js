@@ -15,6 +15,7 @@ import { signal } from './reactive.js';
 import { readJSON, writeJSON } from './store.js';
 import { scopeSig } from './scope.js';
 import { K } from './keys.js';
+import { BODY_KINDS } from './legal-product.js';
 /** A body's registry identifiers off its tags: lei, siren, hrb … */
 export const legalIdsOf = (b) => {
     const out = {};
@@ -117,7 +118,8 @@ export function leiValid(s) {
     }
     return acc === 1;
 }
-export const KINDS = ["association", "cooperative", "company", "foundation", "operator"];
+/** the kinds a body can be — the fold's own list (legal/bodies.scm `%body-kinds`) */
+export const KINDS = [...BODY_KINDS];
 export const ROLES = ["provider", "seller", "employer", "adapter", "custodian"];
 const JURISDICTION_CODES = { fr: "france", de: "germany", us: "us", ca: "canada", mx: "mexico", uk: "uk", es: "es", it: "it", be: "be", ch: "ch" };
 /** The picker's list while the snapshot is not in: the codes, each its own name. */

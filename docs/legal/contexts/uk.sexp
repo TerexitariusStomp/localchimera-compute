@@ -37,7 +37,23 @@
       (retain . #f) (renew . (every . year)))))
    "uk/motor-third-party"
    "Road Traffic Act 1988, s.143"
-   "20260101" verified "uk"))
+   "20260101" verified "uk")
+
+  ;; WHAT FOLLOWS FROM THE FORM: a charitable body — an association or a
+  ;; foundation registered as a charity — is OFFERED relief from corporation
+  ;; tax on its charitable receipts and from business rates. The fold keys on
+  ;; the ACTOR and stands in doubt where nobody named one.
+  ((all-of (in-jurisdiction "uk")
+           (any-of (on-crossing public-sale) (on-crossing credit-contribution))
+           (any-of (actor-has classified-as "kind:association")
+                   (actor-has classified-as "kind:foundation")))
+   ((grant "Charitable tax reliefs" entity
+     (charitable-purposes public-benefit registered-charity)
+     ((issuer . "HMRC (charity recognition); Charity Commission (registration)")
+      (per . one-time) (base . receipts) (rate . #f) (retain . #f) (renew . #f))))
+   "uk/charitable-reliefs"
+   "Charities Act 2011, ss. 2–4 and 30; Corporation Tax Act 2010, Part 11 (ss. 466–517); Local Government Finance Act 1988, s. 43(5)–(6)"
+   "20110314" reported "uk"))
  ;; The UK's words for federation aspects (law/aspects.scm `clause-aspect`).
  (aspects
   (employers-liability . injury-cover)

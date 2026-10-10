@@ -524,7 +524,9 @@
                                   (filter (lambda (f) (eq? 'uncovered-crossing (finding-kind f)))
                                           (law-coverage (federation-crossings)
                                                         (pack-crossings %contexts-dir))))))
-              (and (memq 'hold-funds uncovered)
+              ;; `communications` is one no pack reads; `hold-funds` was, until the
+              ;; German co-operative audit spoke of it (a rule in doubt still speaks)
+              (and (memq 'communications uncovered)
                    (every (lambda (c)
                             (call-with-values
                                 (lambda () (bill-at "berlin" (list c) #:act %product-act))

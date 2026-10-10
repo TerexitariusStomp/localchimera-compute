@@ -56,7 +56,9 @@
    (list 'forbid (make-regexp "no (person|one) (shall|may)|it is unlawful|it shall be unlawful|is prohibited|are prohibited|shall not|may not " regexp/icase) 0.8)
    (list 'obtain (make-regexp "(must|shall|required to) (first )?(obtain|hold|possess|apply for|secure|maintain|be granted|be issued|be licensed)( a| an| the)?" regexp/icase) 0.7)
    (list 'pay    (make-regexp "(must|shall|required to) (pay|remit|collect)( a| an| the)?" regexp/icase) 0.6)
-   (list 'tell   (make-regexp "(must|shall|required to) (file|submit|report|disclose|notify|provide notice of)( a| an| the)?" regexp/icase) 0.6)))
+   (list 'tell   (make-regexp "(must|shall|required to) (file|submit|report|disclose|notify|provide notice of)( a| an| the)?" regexp/icase) 0.6)
+   ;; what the law OFFERS: an entitlement, a status, a relief the actor may claim
+   (list 'grant  (make-regexp "(is|are|shall be) (entitled to|eligible for|exempt from)|may (claim|be granted|apply for)( a| an| the)?" regexp/icase) 0.6)))
 
 ;;; ─── lexicon 2 : activity keywords → a crossing symbol ────────────────────
 ;;; First hit wins, so put the SPECIFIC activity before the generic (food-vending
@@ -167,6 +169,7 @@
       ((pay)    (pay  #:name name))
       ((tell)   (tell #:name name))
       ((forbid) (forbid #:reason name))
+      ((grant)  (grant #:name name))
       (else #f))))
 
 (define (group-by-crossing records)                     ; → alist crossing → records

@@ -162,7 +162,11 @@ function lawLine(b: Body): HTMLElement {
   const stance = el("b", "bd-stance " + (x.stance || "unread"), word);
   stance.style.color = colour;
   value.append(document.createTextNode("the law here: "), stance);
-  if (x.owes?.length) value.append(el("span", "bd-owes", " · owes " + x.owes.join(", ")));
+  if (x.owes?.length) {
+    const sum = new Map((x.amounts || []).map(a => [a.demand, a.amount]));
+    value.append(el("span", "bd-owes", " · owes " + x.owes.map(n => sum.has(n) ? `${n} (≈ ${sum.get(n)})` : n).join(", ")));
+  }
+  if (x.offered?.length) value.append(el("span", "bd-offered", " · offered: " + x.offered.map(o => `${o.demand} · ${o.status}`).join(", ")));
   if (x.forbidden?.length) {
     const f = el("span", "bd-forbidden", " · forbidden: " + x.forbidden.join(", "));
     f.style.color = lawStancePaint("off")[0];

@@ -51,13 +51,13 @@
   #:use-module ((playnet utils lei) #:select (lei-valid?))
   #:use-module (playnet legal body-roles)
   #:use-module ((playnet legal crossings)
-                #:select (classification-crossings asset-crossings record-crossings))
-  #:use-module ((playnet legal gate) #:select (legal-asset-fields))
+                #:select (classification-crossings asset-crossings record-crossings spec-kinds))
+  #:use-module ((playnet legal gate) #:select (legal-asset-fields legal-agent-fields))
   #:use-module ((playnet legal adapters) #:select (mask-subject-of))
   #:use-module ((playnet legal registry) #:select (demand-name))
   #:use-module ((playnet vf beyond lot) #:select (make-batch-lot-record))
   #:use-module (playnet knowledge dsl findings)
-  #:export (body-class make-body body? body-kind body-roles body-jurisdiction
+  #:export (body-class %body-kinds make-body body? body-kind body-roles body-jurisdiction
             body-asset-lock? body-register-inspectable? body-quorum body-door
             body-sells body-operator? body-has-role? body-legal-ids body-lei
             scope-bodies all-bodies body-stewards body-members body-officers
@@ -65,11 +65,15 @@
             declare-body! body-add-steward! body-add-member! close-body!
             body-holdings body-present-holding! body-crossings
             *admission-tests* admission-findings
-            scope-body-subject body-reconcile-subject body-holds-spec?
+            scope-body-at scope-body-subject body-reconcile-subject body-holds-spec?
+            body-measures body-facts
             cell-place))
 
 ;;; ─── the record ───────────────────────────────────────────────────────────
 (define body-class "body")
+;;; the kinds a body can be — the one list the face's picker and the lint read
+;;; (tools/emit/emit-product-law.scm writes it into ui/app/legal-product.ts)
+(define %body-kinds '(association cooperative foundation purpose-trust unincorporated adapter))
 (define (agent-tags a) (or (agent-classified-as a) (quote ())))
 
 (define (yes-no v) (if v "yes" "no"))
@@ -80,7 +84,10 @@
   "A body as an organization <agent>: ID (its AID, or a provisional id), NAME,
    and its facts as tags. LEGAL-IDS: the registry identifiers it carries, an
    alist (scheme . code) — lei, siren, hrb, … It is tagged `operator` when
-   NAME is the operator's."
+   NAME is the operator's. KIND is one of `%body-kinds`."
+  (let ((kind (if (string? kind) (string->symbol kind) kind)))   ; the wire spells it as a string
+  (unless (memq kind %body-kinds)
+    (error "make-body: kind is one of" %body-kinds kind))
   (make-agent
    #:id id #:type 'organization #:name name
    #:classified-as
@@ -98,7 +105,7 @@
            (filter-map (lambda (p) (and (pair? p) (cdr p)
                                         (tag "legal-id" (string-append (format #f "~a" (car p)) ":" (format #f "~a" (cdr p))))))
                        legal-ids)
-           extra)))
+           extra))))
 
 (define (body? a)
   (and (agent? a) (member body-class (agent-tags a)) #t))
@@ -392,24 +399,65 @@
 (define (cell-place cell)
   (let ((at (string-index cell #\@))) (if at (substring cell 0 at) cell)))
 
-(define* (scope-body-subject as observer bodies #:key (path-of (lambda (place) (list (list place)))))
-  "(proc cell spec) → the body that answers for SPEC at CELL: the one holding a
-   resource conforming to it; else the one body standing in the cell's
-   jurisdiction, a mask before any other; else #f (nobody is named, as today)."
-  (lambda (proc cell spec)
-    (let* ((place (cell-place cell))
-           (chain (apply append (path-of place)))
-           (holding (find (lambda (b)
-                            (any (lambda (r) (equal? (economic-resource-conforms-to r) spec))
-                                 (body-holdings observer (agent-id b))))
-                          bodies))
+(define* (scope-body-at bodies #:key (path-of (lambda (place) (list (list place)))))
+  "cell → the body the scope stands behind there: the one body in the cell's
+   jurisdiction, a mask before any other; #f when none or several stand."
+  (lambda (cell)
+    (let* ((chain (apply append (path-of (cell-place cell))))
            (here (filter (lambda (b) (member (body-jurisdiction b) chain)) bodies))
            (masks (filter (lambda (b) (body-has-role? b 'adapter)) here))
-           (one (lambda (bs) (and (pair? bs) (null? (cdr bs)) (agent-id (car bs))))))
-      (cond (holding (agent-id holding))
-            ((one masks))
-            ((one here))
-            (else #f)))))
+           (one (lambda (bs) (and (pair? bs) (null? (cdr bs)) (car bs)))))
+      (or (one masks) (one here)))))
+
+(define* (scope-body-subject as observer bodies #:key (path-of (lambda (place) (list (list place)))))
+  "(proc cell spec) → the body that answers for SPEC at CELL: the one holding a
+   resource conforming to it; else the body standing there (`scope-body-at`);
+   else #f (nobody is named, as today)."
+  (let ((at (scope-body-at bodies #:path-of path-of)))
+    (lambda (proc cell spec)
+      (let ((holding (find (lambda (b)
+                             (any (lambda (r) (equal? (economic-resource-conforms-to r) spec))
+                                  (body-holdings observer (agent-id b))))
+                           bodies)))
+        (cond (holding (agent-id holding))
+              ((at cell) => agent-id)
+              (else #f))))))
+
+;;; ─── what can be counted of a body : its measures ─────────────────────────
+;;; The numbers a threshold or a levy's base reads (legal/registry.scm
+;;; `%measure-keys`), folded off the stores: who stands behind it, and the money
+;;; it took in since SINCE (an ISO date; #f = ever). A key the stores cannot
+;;; count is simply absent, and a guard on it answers `unknown` — the honest
+;;; reading, not a zero.
+(define* (body-measures as observer body #:key (resolve-spec (lambda (id) #f)) (since #f))
+  (let* ((id (agent-id body))
+         (money? (lambda (e)
+                   (let ((sid (economic-event-resource-conforms-to e)))
+                     (and sid (memq 'money (spec-kinds (resolve-spec sid) sid)) #t))))
+         (after? (lambda (e)
+                   (or (not since)
+                       (let ((t (economic-event-has-point-in-time e)))
+                         (and (string? t) (string>=? t since))))))
+         (received (if observer
+                       (filter (lambda (e) (and (equal? (economic-event-receiver e) id)
+                                                (eq? 'transfer (economic-event-action e))
+                                                (money? e) (after? e)))
+                               ($ observer 'events-for-agent id))
+                       '()))
+         (sum (lambda (es) (apply + (map (lambda (e)
+                                           (let ((m (economic-event-resource-quantity e)))
+                                             (if m (measure-has-numerical-value m) 0)))
+                                         es)))))
+    `((members  . ,(length (body-members as id)))
+      (stewards . ,(length (body-stewards as id)))
+      (officers . ,(length (body-officers as id)))
+      ,@(if observer `((receipts . ,(sum received))) '()))))
+
+(define* (body-facts as observer body #:key (resolve-spec (lambda (id) #f)) (since #f))
+  "→ (values agent-fields measures): the body as a guard sees the actor, and
+   its measures — what `legal-context #:actor #:measures` takes."
+  (values (legal-agent-fields body)
+          (body-measures as observer body #:resolve-spec resolve-spec #:since since)))
 
 (define (body-holds-spec? observer)
   "(body spec) → does BODY hold a resource conforming to SPEC?"

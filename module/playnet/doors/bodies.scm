@@ -55,6 +55,12 @@
         ("holds" . ,(vec (map (lambda (p) `(("demand" . ,(car p)) ("status" . ,(sym->str (cdr p)))))
                               (or (assq-ref x 'holds) '()))))
         ("owes" . ,(vec (or (assq-ref x 'owes) '())))
+        ;; each levy whose base the body's measures price, as a sum
+        ("amounts" . ,(vec (map (lambda (p) `(("demand" . ,(car p)) ("amount" . ,(cdr p))))
+                                (or (assq-ref x 'amounts) '()))))
+        ;; what the law offers the body, held or unclaimed
+        ("offered" . ,(vec (map (lambda (p) `(("demand" . ,(car p)) ("status" . ,(sym->str (cdr p)))))
+                                (or (assq-ref x 'offered) '()))))
         ("forbidden" . ,(vec (or (assq-ref x 'forbidden) '())))
         ("doubted" . ,(vec (or (assq-ref x 'doubted) '()))))))
 
@@ -101,30 +107,38 @@
               (else (proc b s))))))
 
   ;; ── the law's reading of what a body holds ───────────────────────────
+  (define (a-year-ago)
+    "today's date a year back — the window a body's receipts are summed over"
+    (let ((d (today))) (string-append (number->string (- (string->number (substring d 0 4)) 1)) (substring d 4))))
   (define (body-bill b s)
-    "(values bill hits crossings path) for B under its scope's rules."
+    "(values bill hits crossings path rules measures) for B under its scope's
+     rules, B itself in front of the law as the ACTOR, with its measures."
     (let* ((agents (assq-ref s 'agents)) (observer (assq-ref s 'observer))
            (spatial (assq-ref s 'spatial)) (registry (assq-ref s 'registry))
-           (cs (body-crossings agents observer b #:resolve-spec (assq-ref s 'specs)))
+           (specs (assq-ref s 'specs))
+           (cs (body-crossings agents observer b #:resolve-spec specs))
            (juris (body-jurisdiction b))
            (path (if (and spatial juris)
                      (car ((spatial-path-reader spatial) juris))
                      (if juris (list juris) '())))
            (rules (if registry ($ registry 'rules) '())))
-      (call-with-values
-          (lambda () (legal-demands (legal-context #:crossings cs #:place-path path #:act 'activity)
-                                    #:rules rules))
-        (lambda (bill hits) (values bill hits cs path rules)))))
+      (call-with-values (lambda () (body-facts agents observer b #:resolve-spec specs #:since (a-year-ago)))
+        (lambda (actor measures)
+          (call-with-values
+              (lambda () (legal-demands (legal-context #:crossings cs #:place-path path #:act 'activity
+                                                       #:actor actor #:measures measures)
+                                        #:rules rules))
+            (lambda (bill hits) (values bill hits cs path rules measures)))))))
   (define (body-standing b s)
-    "ONE fold of B's bill under its scope: → (values bill hits crossings path
-     rules), or #f when the scope keeps no books."
+    "ONE fold of B's bill under its scope: → (bill hits crossings path rules
+     measures), or #f when the scope keeps no books."
     (and (assq-ref s 'observer) (call-with-values (lambda () (body-bill b s)) list)))
   (define (holdings->wire b s standing)
     "Each entity demand of the body's bill with the status the compliance
      fold reads, then every held resource no rule asked for."
     (let ((observer (assq-ref s 'observer)) (agents (assq-ref s 'agents)))
       (if (not standing) '()
-          (apply (lambda (bill hits cs path rules)
+          (apply (lambda (bill hits cs path rules measures)
               (let* ((entries (reconcile bill hits observer (today)
                                          #:subject-of (body-reconcile-subject agents observer (list b))))
                      (held (body-holdings observer (agent-id b)))
@@ -148,10 +162,10 @@
   (define (exposure b s standing)
     (let ((observer (assq-ref s 'observer)))
       (if (not standing) '()
-          (apply (lambda (bill hits cs path rules)
+          (apply (lambda (bill hits cs path rules measures)
                    (exposure->wire (adapter-exposure observer (agent-id b) #:crossings cs
                                                      #:place-path path #:rules rules #:as-of (today)
-                                                     #:bill+hits (list bill hits))))
+                                                     #:bill+hits (list bill hits) #:measures measures)))
                  standing))))
   (define (body-law->wire b s)
     "What the law face reads of a body: where it stands, what it holds with

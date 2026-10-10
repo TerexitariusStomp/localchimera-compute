@@ -48,6 +48,8 @@ export const PRODUCT_FEATURES = [
 /** What a bill means for doing the thing, from nothing asked to nothing allowed. */
 export const STANCES = ["open", "notice", "unread", "soft", "off"];
 /** The groups of a bill, as its JSON names them. */
-export const BILL_KEYS = ["obtainEntity", "obtainPerson", "pay", "tell", "forbid"];
+export const BILL_KEYS = ["obtainEntity", "obtainPerson", "pay", "tell", "forbid", "grant"];
 /** How a structural demand stands at a place (law/incumbent-readings.scm). */
 export const READING_STATUSES = ["won", "partly", "standing", "unread"];
+/** The kinds a legal body can be (legal/bodies.scm `%body-kinds`). */
+export const BODY_KINDS = ["association", "cooperative", "foundation", "purpose-trust", "unincorporated", "adapter"];

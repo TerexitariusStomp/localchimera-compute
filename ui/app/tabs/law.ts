@@ -352,6 +352,13 @@ interface LawDemand {
   discloses?: string[];
   reason?: string;
   direction?: string;
+  /** A levy's or a subsidy's base (a measure of the actor) and rate; the amount
+   *  is rate × that measure, known only where an actor was counted. */
+  base?: string;
+  rate?: number | "null";
+  amount?: number | "null";
+  /** The demand this one comes after: the authority issues it only to a holder of that. */
+  after?: string;
   /**
    * The (L, I, D) cells of this demand: what we provide, what we would build,
    * what we bear and what we reject. "null" — the string — is how the snapshot
@@ -376,6 +383,8 @@ interface LawBill {
   obtainPerson?: LawDemand[];
   pay?: LawDemand[];
   tell?: LawDemand[];
+  /** What the law offers here: a right, a status, a subsidy to claim. */
+  grant?: LawDemand[];
   [key: string]: unknown;
 }
 
@@ -676,6 +685,9 @@ function lawDemand(d: LawDemand, cls: string): Fragment {
   if (d.discloses && d.discloses.length) meta.push("discloses " + d.discloses.join(", "));
   if (d.reason && d.reason !== "null" && d.reason !== d.name) meta.push(d.reason);
   if (d.direction && d.direction !== "null") meta.push(d.direction);
+  if (d.base && d.base !== "null") meta.push(typeof d.rate === "number" ? `${d.rate} × ${d.base.replace(/-/g, " ")}` : `on ${d.base.replace(/-/g, " ")}`);
+  if (typeof d.amount === "number") meta.push(`≈ ${d.amount}`);
+  if (d.after && d.after !== "null") meta.push("after " + d.after);
   return html`<div class="dk-dem ${cls}"><b>${d.name}</b>${meta.length ? html`<span class="dk-meta">${meta.join(" · ")}</span>` : null}
     ${lawHeldBy(d.name)}
     ${d.reform && d.reform !== "null" ? lawCells(d.reform) : null}</div>`;
@@ -683,6 +695,7 @@ function lawDemand(d: LawDemand, cls: string): Fragment {
 // what a holding's status means for the demand: the paint of the tier it would land in
 const LAW_HOLD_PAINT: Record<string, string> =
   { satisfied: LAW_TIER_PAINT[0], held: LAW_TIER_PAINT[0], obligation: LAW_TIER_PAINT[2], doubted: LAW_TIER_PAINT[3],
+    unclaimed: LAW_TIER_PAINT[1], blocked: LAW_TIER_PAINT[3],
     missing: LAW_FORBIDDEN[0], expired: LAW_FORBIDDEN[0], forbidden: LAW_FORBIDDEN[0] };
 /** "held by <body> · <status>" for each of our bodies here that holds something against this demand. */
 function lawHeldBy(name: string | undefined): Fragment | null {
@@ -695,9 +708,10 @@ function lawHeldBy(name: string | undefined): Fragment | null {
 // with the prohibition first
 const LAW_BILL_WORDS: Record<BillKey, [string, string]> = {
   forbid: ["forbidden", "forbid"], obtainEntity: ["obtain — an authorisation", "obtain"],
-  obtainPerson: ["obtain — a competence", "obtain"], pay: ["pay — a levy", "pay"], tell: ["tell — a disclosure", "tell"] };
+  obtainPerson: ["obtain — a competence", "obtain"], pay: ["pay — a levy", "pay"], tell: ["tell — a disclosure", "tell"],
+  grant: ["granted — an entitlement to claim", "grant"] };
 const LAW_BILL: [BillKey, string, string][] =
-  (["forbid", "obtainEntity", "obtainPerson", "pay", "tell"] as BillKey[]).map(k => [k, ...LAW_BILL_WORDS[k]]);
+  (["forbid", "obtainEntity", "obtainPerson", "pay", "tell", "grant"] as BillKey[]).map(k => [k, ...LAW_BILL_WORDS[k]]);
 function lawBill(bill: LawBill | null | undefined): Fragment {
   const blocks = LAW_BILL.map(([k, label, cls]) => { const arr = ((bill && bill[k]) || []) as LawDemand[];
     return arr.length ? html`<div class="dk-kind">${label}</div>${arr.map(d => lawDemand(d, cls))}` : null; }).filter(Boolean);

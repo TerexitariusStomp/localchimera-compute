@@ -42,6 +42,11 @@
            ("discloses" . ,(let ((v (assq-ref det 'discloses))) (if (pair? v) (J:syms v) "[]")))
            ("direction" . ,(let ((v (assq-ref det 'direction))) (if v (J:s v) "null")))
            ("reason" . ,(let ((v (assq-ref det 'reason))) (if v (J:s v) "null")))
+           ;; a levy's or a subsidy's base and rate, as the rule states them; the
+           ;; AMOUNT is rate × the actor's measure, and a place snapshot has no actor
+           ("base"   . ,(let ((v (assq-ref det 'base))) (if v (J:s v) "null")))
+           ("rate"   . ,(let ((v (assq-ref det 'rate))) (if (number? v) (J:n v) "null")))
+           ("after"  . ,(let ((v (assq-ref det 'after))) (if v (J:s v) "null")))
            ("reform" . ,(let ((rf (demand-reform d)))   ; the (L,I,D) cells, if any
                           (if rf (J:o `(("redundant" . ,(J:syms (or (assq-ref rf 'redundant) '())))
                                         ("absorbFirst" . ,(J:syms (or (assq-ref rf 'absorb-first) '())))
@@ -62,7 +67,7 @@
 ;;; here ride out beside it.
 (define %bill-json-keys
   '((obtain-entity . "obtainEntity") (obtain-person . "obtainPerson")
-    (pay . "pay") (tell . "tell") (forbid . "forbid")))
+    (pay . "pay") (tell . "tell") (forbid . "forbid") (grant . "grant")))
 (define* (bill->json bill hits #:optional (crossings '()))
   (let ((w (bill-weight bill))
         (stance (bill-stance bill hits #:crossings crossings)))

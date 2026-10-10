@@ -5,11 +5,13 @@
 ;;; activity is the FOLD  ⋃ { d | (guard,d) ∈ rules, guard(context) }.
 ;;;
 ;;; A DEMAND is what the state asks of a *chosen* activity, in one of four kinds
-;;; — the four activity-triggered modes of state interaction:
+;;; — the four activity-triggered modes of state interaction — and one thing it
+;;; OFFERS:
 ;;;   obtain  — a credential to get  (authorisation: licence / permit / registration / entity)
 ;;;   pay     — a levy               (tax / duty / fee)
 ;;;   tell    — a disclosure         (report / filing / beneficial-owner / breach notice)
 ;;;   forbid  — a prohibition        (no demand satisfies it; relocate / exposed-adapter / don't)
+;;;   grant   — an entitlement       (a right, a status, a subsidy the activity may claim)
 ;;; Two further modes stand OUTSIDE this fold and are noted, not folded:
 ;;;   standing    — the capacity to be a legal party (adjudication): a FIXTURE
 ;;;                 (one entity), drawn on reactively, not a per-activity demand.
@@ -38,6 +40,7 @@
   #:use-module (srfi srfi-1)
   #:use-module (ice-9 format)
   #:use-module ((playnet vf facts places) #:select (place-extra-ref place-parent-of place-known?))
+  #:use-module ((playnet vf facts agent-tags) #:select (tag))
   ;; `rule` and `negate` collide with core: core's `rule` is an unbound slot, and
   ;; core's `negate` negates a predicate — near enough in spirit to this guard
   ;; combinator to be worth shadowing on purpose. #:replace is how Guile lets a
@@ -48,11 +51,15 @@
             demand-ref
             demand-retain
             demand-renew
+            demand-after
+            demand-amount
             obtain
             pay
             tell
             forbid
+            grant
             %demand-kinds
+            %measure-keys
             demand-kind->vf-action
             demand=?
             demand-weight
@@ -71,6 +78,7 @@
             rule-speaks-of
             provenance-problems
             guard-asks
+            guard-measures
             rule-doubted
             hit-unknowns
             custody-unknown
@@ -91,6 +99,10 @@
             via-channel
             agent-has
             asset-has
+            actor-has
+            actor-kind-is
+            measure-at-least
+            measure-under
             for-citizens-of
             all-of
             any-of
@@ -151,20 +163,38 @@
              (else (define (scandir dir) '())))
 
 
-;;; ─── Demand : the four activity-triggered modes, one record ──────────────
-;;; kind  ∈ obtain | pay | tell | forbid
-;;; rides ∈ entity | person | #f   (facility-vs-competence, for `obtain`)
-;;; spec  : a set of atoms (the standard) | #f   (only spec-bearing obtains)
-;;; detail: alist — issuer/per (obtain), base/rate (pay), to/discloses (tell),
+;;; ─── Demand : the four activity-triggered modes and the offer, one record ─
+;;; kind  ∈ obtain | pay | tell | forbid | grant
+;;; rides ∈ entity | person | #f   (facility-vs-competence, for `obtain`/`grant`)
+;;; spec  : a set of atoms (the standard) | #f   (spec-bearing obtains and grants)
+;;; detail: alist — issuer/per/after (obtain), base/rate (pay, grant), to/discloses (tell),
 ;;;                 reason (forbid)
 (define-vf-record <demand> Demand
   (kind name rides spec detail))
 (define make-demand   (vf-record-constructor <demand>))
-;; the four kinds a demand can be — the one list the statute extractor's prompt
+;; the five kinds a demand can be — the one list the statute extractor's prompt
 ;; and check read, so a kind added here reaches the model the same day
-(define %demand-kinds '(obtain pay tell forbid))
+(define %demand-kinds '(obtain pay tell forbid grant))
+;;; The BASE of a levy or a subsidy names a MEASURE of the actor — a count or a
+;;; sum the context may carry (`measures`, below) — so an amount is rate × that
+;;; measure, computed once (`demand-amount`) and nowhere guessed. The keys a
+;;; base or a measure guard may name; the pack lint holds every pack to them.
+(define %measure-keys
+  '(members stewards officers   ; who stands behind the actor (legal/bodies.scm counts them)
+    employees payroll           ; wage labour, when a scope's books carry it
+    receipts sale-price         ; money the actor takes in; the price of one sale
+    customs-value               ; a border levy's base
+    floor-area balance-sheet))  ; thresholds the planning and co-operative law draw
 (define (demand-ref d key) (assq-ref (demand-detail d) key))
 (define (demand-retain d) (demand-ref d 'retain))   ; statutory keep-period (years) | #f
+(define (demand-after d)  (demand-ref d 'after))    ; the demand this one comes AFTER | #f
+;;; rate × the base's measure, or #f when the rule names no rate, no base, or
+;;; nobody measured the base: the one place a levy becomes a sum.
+(define (demand-amount d measures)
+  (let ((rate (demand-ref d 'rate)) (base (demand-ref d 'base)))
+    (and (number? rate) base measures
+         (let ((m (assq-ref measures base)))
+           (and (number? m) (* rate m))))))
 ;;; RENEW — the cadence on which a held credential or a filing comes round again,
 ;;; in the vocabulary compliance.scm's `obligation-for` matches:
 ;;;   ('renew-before . days)  renew this many days before it expires
@@ -179,13 +209,26 @@
 ;; `retain` — the statutory keep-period (YEARS) for the artifact this demand
 ;; yields; a datum that travels WITH the rule, stamped onto the filing at render
 ;; time (legal/filings.scm retention-sweep), so retention needs no global side-table.
+;; `after` — the NAME of the demand this one follows: a permit the authority
+;; issues only to a holder of another. The compliance fold reads it as an order
+;; (an obtain whose forerunner is unmet is `blocked`), the filings as a sequence.
 (define* (obtain #:key rides name (issuer #f) (per #f) (spec #f) (direction #f)
-                      (retain #f) (renew #f))
+                      (retain #f) (renew #f) (after #f))
   (make-demand 'obtain name rides spec
                `((issuer . ,issuer) (per . ,per) (direction . ,direction)
-                 (retain . ,retain) (renew . ,renew))))
+                 (retain . ,retain) (renew . ,renew) (after . ,after))))
 (define* (pay #:key name (base #f) (rate #f) (direction #f))
   (make-demand 'pay name 'entity #f `((base . ,base) (rate . ,rate) (direction . ,direction))))
+;;; `grant` — what the law OFFERS the activity in place: a right it may claim
+;;; (a Wohnrecht, a droit d'usage), a status (a charitable or non-lucrative
+;;; standing, with its reliefs), a subsidy (base/rate as a levy's, the other way
+;;; round). It weighs nothing, it never worsens a stance, and holding it is read
+;;; like a permit (compliance.scm): a grant not held is `unclaimed`, no gap.
+(define* (grant #:key name (rides 'entity) (issuer #f) (per #f) (spec #f)
+                     (base #f) (rate #f) (retain #f) (renew #f))
+  (make-demand 'grant name rides spec
+               `((issuer . ,issuer) (per . ,per) (base . ,base) (rate . ,rate)
+                 (retain . ,retain) (renew . ,renew))))
 (define* (tell #:key name (to #f) (discloses '()) (direction #f) (retain #f) (renew #f))
   (make-demand 'tell name 'entity #f
                `((to . ,to) (discloses . ,discloses) (direction . ,direction)
@@ -206,6 +249,10 @@
 ;;;   forbid → #f              a prohibition is NOT an economic event — it prunes
 ;;;                            the process column (a possibility-tension), so it
 ;;;                            has no fulfillment action at all.
+;;;   grant  → transfer        the authority PROVIDES: rights in a registered
+;;;                            entitlement, or money, move to the holder — the
+;;;                            same action as a levy with provider and receiver
+;;;                            the other way round (compliance.scm obligation-for).
 ;;;
 ;;; (Renewal of an obtained credential lowers to `modify`, not `produce` — that is
 ;;; a lifecycle action on the held resource, distinct from FRESH fulfillment, and
@@ -216,6 +263,7 @@
     ((pay)    'transfer)
     ((tell)   'deliver-service)
     ((forbid) #f)
+    ((grant)  'transfer)
     (else     #f)))
 
 (define (demand=? a b)
@@ -232,6 +280,7 @@
 (define (demand-weight d)
   (case (demand-kind d)
     ((forbid) +inf.0)
+    ((grant)  0.0)                                    ; an offer asks nothing
     ((tell)   0.5)                                    ; a disclosure — lightest
     ((pay)    1.0)                                    ; a levy
     ((obtain)
@@ -272,8 +321,17 @@
 ;;; that wraps a single-jurisdiction activity once. The constructor trips a
 ;;; `border` crossing whenever the endpoints diverge; production, transport and
 ;;; the border are then the same kind of object, folded the same way.
+;;; ACTOR — the one agent DOING the activity: the body a scope stands behind at
+;;; the cell (legal/bodies.scm `scope-body-at`), or the body reading its own
+;;; bill. The holders in `agents` are whoever holds the things; the actor is who
+;;; answers for the act, and the law that turns on a FORM — what an association
+;;; may hold, what a co-operative must have audited — reads it. #f = nobody named.
+;;; MEASURES — the actor's counts and sums, `((key . number) …)` under
+;;; `%measure-keys`: how many stand behind it, what it took in. A threshold is
+;;; two rules over one of these; a levy's amount is a rate times one. #f = nobody
+;;; measured; a key absent from the alist is one nobody could count.
 (define-vf-record <legal-context> LegalContext
-  (crossings place-path agents assets act endpoints channel)
+  (crossings place-path agents assets act endpoints channel actor measures)
   #:prefix ctx)
   ;; CHANNEL — how the good reaches a person (legal/crossings.scm `recipe-channel`).
   ;; A crossing says what the act is; the channel says how it lands. Rules for
@@ -301,15 +359,16 @@
        (any (lambda (p) (paths-cross? (car eps) p)) (cdr eps))))
 
 ;;; AGENTS and ASSETS are a list when someone looked — '() says "none here" —
-;;; and #f when nobody did. ACT and CHANNEL are #f when unstated.
+;;; and #f when nobody did. ACT and CHANNEL are #f when unstated. ACTOR is the
+;;; doer's agent fields or #f; MEASURES its counts or #f.
 (define* (legal-context #:key (crossings '()) (place-path '())
                         (agents #f) (assets #f) (act #f) (endpoints #f)
-                        (channel #f))
+                        (channel #f) (actor #f) (measures #f))
   (let* ((eps (or endpoints (list place-path)))
          ;; the border IS a crossing: an arc across diverging cells trips it.
          (xs  (if (endpoints-diverge? eps) (lset-adjoin eq? crossings 'border) crossings))
          (pp  (if (null? place-path) (if (pair? eps) (car eps) '()) place-path)))
-    (%make-legal-context xs pp agents assets act eps channel)))
+    (%make-legal-context xs pp agents assets act eps channel actor measures)))
 ;;; the level at which an arc crosses (its common ancestor), or #f for a point.
 (define (ctx-border-level ctx)
   (let ((eps (ctx-endpoints ctx)))
@@ -347,6 +406,15 @@
 (define (agent-has key val) (list 'agent-has key val))
 (define (asset-has key val) (list 'asset-has key val))
 (define (for-citizens-of c) (list 'agent-has 'citizenship c))
+;;; the DOER: a form's consequences key on the actor, not on whoever holds a
+;;; thing at the cell. `actor-kind-is` spells the body's kind tag the one way
+;;; the tag writer spells it (vf/facts/agent-tags.scm), so a pack never hand-types "kind:".
+(define (actor-has key val)  (list 'actor-has key val))
+(define (actor-kind-is kind) (list 'actor-has 'classified-as (tag "kind" kind)))
+;;; a THRESHOLD: the measure named is at least / under N. The two together are
+;;; the complementary pair "under 5 m² needs no permis, from 5 m² it does".
+(define (measure-at-least key n) (list 'measure-at-least key n))
+(define (measure-under key n)    (list 'measure-under key n))
 (define (all-of . gs)       (cons 'all-of gs))
 (define (any-of . gs)       (cons 'any-of gs))
 (define (negate g)          (list 'negate g))
@@ -387,6 +455,9 @@
   (if things
       (and (any (lambda (t) (field-has? (assq-ref t k) v)) things) #t)
       'unknown))
+(define (measured-is measures k test)   ; a measure nobody took is unknown
+  (let ((m (and measures (assq-ref measures k))))
+    (if (number? m) (and (test m) #t) 'unknown)))
 
 (define (compile-guard form)
   (let ((tag (and (pair? form) (car form))) (a (and (pair? form) (cdr form))))
@@ -410,6 +481,14 @@
       ;; (empty when there are none), #f when nobody did — then unknown
       ((agent-has)      (let ((k (car a)) (v (cadr a))) (lambda (ctx) (looked-has (ctx-agents ctx) k v))))
       ((asset-has)      (let ((k (car a)) (v (cadr a))) (lambda (ctx) (looked-has (ctx-assets ctx) k v))))
+      ;; the doer, read like a holder: nobody named ⇒ unknown
+      ((actor-has)      (let ((k (car a)) (v (cadr a)))
+                          (lambda (ctx) (looked-has (and=> (ctx-actor ctx) list) k v))))
+      ;; a threshold over a measure: nobody measured ⇒ unknown
+      ((measure-at-least) (let ((k (car a)) (n (cadr a)))
+                            (lambda (ctx) (measured-is (ctx-measures ctx) k (lambda (m) (>= m n))))))
+      ((measure-under)  (let ((k (car a)) (n (cadr a)))
+                          (lambda (ctx) (measured-is (ctx-measures ctx) k (lambda (m) (< m n))))))
       ((all-of)         (let ((cs (map compile-guard a))) (lambda (ctx) (k-every (map (lambda (c) (c ctx)) cs)))))
       ((any-of)         (let ((cs (map compile-guard a))) (lambda (ctx) (k-any   (map (lambda (c) (c ctx)) cs)))))
       ((negate)         (let ((c (compile-guard (car a)))) (lambda (ctx) (k-not (c ctx)))))
@@ -436,11 +515,19 @@
 (define* (guard-crossings form #:key (negated? #f))       ; the crossings
   (guard-atoms 'on-crossing form #:negated? negated?))
 ;;; Which of the facts a context may lack a form reads, at any depth:
-;;; `act`, `channel`, `assets`, `agents`.
-(define %askable '((act . act-is) (channel . via-channel) (assets . asset-has) (agents . agent-has)))
+;;; `act`, `channel`, `assets`, `agents`, `actor`, `measures`.
+(define %askable '((act . (act-is)) (channel . (via-channel)) (assets . (asset-has))
+                   (agents . (agent-has)) (actor . (actor-has))
+                   (measures . (measure-at-least measure-under))))
 (define (guard-asks form)
-  (filter-map (lambda (row) (and (pair? (guard-atoms (cdr row) form #:negated? #t)) (car row)))
+  (filter-map (lambda (row)
+                (and (any (lambda (tag) (pair? (guard-atoms tag form #:negated? #t))) (cdr row))
+                     (car row)))
               %askable))
+;;; the measure keys a form names, for the pack lint
+(define (guard-measures form)
+  (append (guard-atoms 'measure-at-least form #:negated? #t)
+          (guard-atoms 'measure-under form #:negated? #t)))
 
 ;;; ─── LegalRule : guard FORM (data) + compiled predicate, with provenance ──
 (define-vf-record <legal-rule> LegalRule
@@ -458,8 +545,9 @@
 ;;;
 ;;; Most apparent precedence is not precedence at all but missing CONTEXT: a
 ;;; threshold ("under 5 m² needs no permis") is two rules with complementary
-;;; guards over a fact the context already carries, and a zone that permits its
-;;; own use is `negate (act-is …)`. Those need nothing new. And a hierarchy of
+;;; guards over a MEASURE the context carries (`measure-under` / `measure-at-least`
+;;; floor-area 5), and a zone that permits its own use is `negate (act-is …)`.
+;;; Those need nothing new. And a hierarchy of
 ;;; norms — a PLU that must conform to its SCoT — is a question of VALIDITY that
 ;;; a prefect or a court settles; the fold sees the published text either way.
 ;;;
@@ -646,7 +734,8 @@
 ;;;   pay            levy
 ;;;   tell           disclosure
 ;;;   forbid         prohibition
-(define %bill-keys '(obtain-entity obtain-person pay tell forbid))
+;;;   grant          offer — an entitlement to claim
+(define %bill-keys '(obtain-entity obtain-person pay tell forbid grant))
 (define (demand-bill-key d)
   (case (demand-kind d)
     ((obtain) (case (demand-rides d)
@@ -691,7 +780,8 @@
      (let ((missing (filter (lambda (fact)
                               (not (case fact
                                      ((act) (ctx-act ctx)) ((channel) (ctx-channel ctx))
-                                     ((assets) (ctx-assets ctx)) ((agents) (ctx-agents ctx)))))
+                                     ((assets) (ctx-assets ctx)) ((agents) (ctx-agents ctx))
+                                     ((actor) (ctx-actor ctx)) ((measures) (ctx-measures ctx)))))
                             (guard-asks (legal-rule-guard-form r)))))
        (and (pair? missing) (cons (legal-rule-label r) missing))))
    hits))

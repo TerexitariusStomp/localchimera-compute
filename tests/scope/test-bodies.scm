@@ -226,4 +226,62 @@
 (check "the policy in the body's custody restores it" (prunes? "body:rides") #f)
 (check "the same policy in another agent's custody does not" (prunes? "aid:someone") #t)
 
+;;; ─── the body in front of its own law: the actor, and its measures ───────
+(display "\n── what follows from the form reads the ACTOR ──\n")
+(define measured
+  (with-vat vat
+    (let ((as (spawn ^agent-store (hashmap) (hashmap) (hashmap) '())))
+      (declare-body! as scope "body:m" "Measured e.V." '((kind . association) (role . provider) (jurisdiction . "berlin")))
+      (body-add-steward! as scope "body:m" "aid:bo")
+      (body-add-steward! as scope "body:m" "aid:ada")
+      (body-add-member!  as scope "body:m" "aid:cy")
+      (body-measures as #f ($ as 'get-agent "body:m")))))
+(check "members, stewards and officers are counted off the relationships; receipts need books"
+       measured '((members . 1) (stewards . 2) (officers . 0)))
+(define at-cell
+  (with-vat vat
+    (let ((as (spawn ^agent-store (hashmap) (hashmap) (hashmap) '())))
+      (declare-body! as scope "body:here" "Kiez e.V." '((role . provider) (jurisdiction . "berlin")))
+      (declare-body! as scope "body:mask" "Kiez Mask" '((role . adapter) (jurisdiction . "berlin")))
+      (declare-body! as scope "body:away" "Elsewhere" '((role . provider) (jurisdiction . "lyon")))
+      (let ((at (scope-body-at (all-bodies as) #:path-of (lambda (p) (list (list p "germany"))))))
+        (list (agent-id (at "berlin@0")) (agent-id (at "lyon@0")) (at "paris@0"))))))
+(check "scope-body-at: the mask before any other body here; the one body there; nobody elsewhere"
+       at-cell '("body:mask" "body:away" #f))
+
+;; a rule keyed on the form: an association driving needs a registration a
+;; co-operative does not — unheld, it prunes the column for the one and not the other
+(define %form-rule
+  (rule (all-of (in-jurisdiction "france") (on-crossing 'public-vehicle) (actor-kind-is 'association))
+        (list (obtain #:rides 'entity #:name "Registration the form owes"))
+        #:label "t/form" #:confidence 'verified))
+(define (prunes-for? kind)
+  (with-vat vat
+    (let* ((rs  (spawn ^recipe-store (hashmap) (hashmap) (hashmap) (hashmap) (hashmap)
+                       (hashmap) (hashmap) (hashmap) (hashmap) (hashmap)))
+           (sts (spawn ^spatial-thing-store (hashmap)))
+           (reg (spawn ^legal-registry (list %form-rule)))
+           (obs (spawn ^observer (empty-observer-state) '()))
+           (as  (spawn ^agent-store (hashmap) (hashmap) (hashmap) '())))
+      (seed-ride! rs)
+      ($ sts 'add-location (make-spatial-thing #:id "world"))
+      ($ sts 'add-location (make-spatial-thing #:id "france" #:contained-in "world"))
+      ($ sts 'add-location (make-spatial-thing #:id "lyon" #:contained-in "france"))
+      (when kind
+        (declare-body! as scope "body:actor" "The body" `((kind . ,kind) (role . provider) (jurisdiction . "france"))))
+      (let* ((bodies (all-bodies as))
+             (path-of (spatial-path-reader sts))
+             (at (scope-body-at bodies #:path-of path-of))
+             (dec (make-legal-decorate/observer
+                   #:recipe-store rs #:spatial-thing-store sts #:registry reg #:observer obs
+                   #:agent-store as #:act 'transport #:as-of "2026-10-10"
+                   #:subject-for (scope-body-subject as obs bodies #:path-of path-of)
+                   #:actor-for (lambda (cell)
+                                 (let ((b (at cell)))
+                                   (if b (body-facts as obs b) (values #f #f)))))))
+        (call-with-values (lambda () (dec "rp-ride" "lyon@0")) (lambda (prune? . _) prune?))))))
+(check "an association behind the scope: the form's demand is unheld, the column prunes" (prunes-for? 'association) #t)
+(check "a co-operative behind it: the rule does not fire" (prunes-for? 'cooperative) #f)
+(check "no body named: the rule stands in doubt and prunes nothing" (prunes-for? #f) #f)
+
 (test-summary!)

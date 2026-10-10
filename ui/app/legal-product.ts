@@ -59,8 +59,11 @@ export const PRODUCT_FEATURES: ProductFeature[] = [
 export const STANCES = ["open", "notice", "unread", "soft", "off"] as const;
 export type Stance = typeof STANCES[number];
 /** The groups of a bill, as its JSON names them. */
-export const BILL_KEYS = ["obtainEntity", "obtainPerson", "pay", "tell", "forbid"] as const;
+export const BILL_KEYS = ["obtainEntity", "obtainPerson", "pay", "tell", "forbid", "grant"] as const;
 export type BillKey = typeof BILL_KEYS[number];
 /** How a structural demand stands at a place (law/incumbent-readings.scm). */
 export const READING_STATUSES = ["won", "partly", "standing", "unread"] as const;
 export type ReadingStatus = typeof READING_STATUSES[number];
+/** The kinds a legal body can be (legal/bodies.scm `%body-kinds`). */
+export const BODY_KINDS = ["association", "cooperative", "foundation", "purpose-trust", "unincorporated", "adapter"] as const;
+export type BodyKind = typeof BODY_KINDS[number];

@@ -58,10 +58,14 @@
   (and (agent? a) (let ((c (agent-classified-as a))) (and (list? c) (member adapter-class c) #t))))
 
 ;;; ─── the bill for the doors a mask opens (a thin wrapper on legal-demands) ─
-(define* (adapter-bill #:key (crossings '()) (place-path '()) (act #f) (rules #f))
+;;; ACTOR / MEASURES: the body behind the doors and its counts, when the caller
+;;; names them — a form's own consequences read them (registry.scm `actor-has`).
+(define* (adapter-bill #:key (crossings '()) (place-path '()) (act #f) (rules #f)
+                       (actor #f) (measures #f))
   (call-with-values
       (lambda ()
-        (legal-demands (legal-context #:crossings crossings #:place-path place-path #:act act)
+        (legal-demands (legal-context #:crossings crossings #:place-path place-path #:act act
+                                      #:actor actor #:measures measures)
                        #:rules (or rules (current-legal-rules))))
     list))                                              ; (bill hits)
 
@@ -142,19 +146,27 @@
 ;;; owes (levies/disclosures), what is forbidden and what is only doubted, and
 ;;; the stance of the whole — one mask's legal surface.
 ;;; BILL+HITS, when the caller folded the bill already, spares a second fold.
+;;; MEASURES, when the caller counted the subject, price each levy (`amounts`);
+;;; what the law OFFERS the subject stands under `offered`, held or unclaimed.
 (define* (adapter-exposure observer subject #:key (crossings '()) (place-path '())
-                           (act #f) (rules #f) (as-of #f) (bill+hits #f))
+                           (act #f) (rules #f) (as-of #f) (bill+hits #f) (measures #f))
   (let* ((bh   (or bill+hits
                    (adapter-bill #:crossings crossings #:place-path place-path #:act act #:rules rules)))
          (bill (car bh)) (hits (cadr bh))
-         (sure? (lambda (d) (forbid-sure? d hits))))
+         (sure? (lambda (d) (forbid-sure? d hits)))
+         (status (lambda (d) (holding-status observer subject (demand-name d) as-of))))
     `((doors     . ,crossings)
       (stance    . ,(bill-stance bill hits #:crossings crossings))
-      (holds     . ,(map (lambda (d) (cons (demand-name d)
-                                           (holding-status observer subject (demand-name d) as-of)))
+      (holds     . ,(map (lambda (d) (cons (demand-name d) (status d)))
                          (bill-ref bill 'obtain-entity)))
       (owes      . ,(map demand-name (append (bill-ref bill 'pay)
                                              (bill-ref bill 'tell))))
+      (amounts   . ,(filter-map (lambda (d) (let ((a (demand-amount d measures)))
+                                              (and a (cons (demand-name d) a))))
+                                (bill-ref bill 'pay)))
+      (offered   . ,(map (lambda (d) (cons (demand-name d)
+                                           (let ((s (status d))) (if (eq? s 'missing) 'unclaimed s))))
+                         (bill-ref bill 'grant)))
       (forbidden . ,(map demand-name (filter sure? (bill-ref bill 'forbid))))
       (doubted   . ,(map demand-name (remove sure? (bill-ref bill 'forbid)))))))
 

@@ -49,7 +49,7 @@
   ;; owed" without pretending to say how much.
   ((all-of (in-jurisdiction "france") (on-crossing own-property))
    ((pay "Droits de mutation à titre onéreux" entity #f
-     ((base . prix-de-vente) (rate . #f) (direction . #f))))
+     ((base . sale-price) (rate . #f) (direction . #f))))
    "fr/dmto"
    "Code général des impôts, art. 1594 A et s. (taux départemental)"
    "20240101" reported "france")
@@ -92,7 +92,51 @@
      ((base . payroll) (rate . #f) (direction . #f))))
    "fr/at-mp"
    "Code de la sécurité sociale, art. L311-2 et L411-1"
-   "20260101" verified "france"))
+   "20260101" verified "france")
+
+  ;; WHAT FOLLOWS FROM THE FORM. These key on the ACTOR — the body the scope
+  ;; stands behind (`actor-has classified-as "kind:association"`, spelled by
+  ;; `actor-kind-is`) — and stand in doubt where nobody named one. The header's
+  ;; caveat is answered here: what turns on the entity is written against it.
+  ;; An association déclarée may hold the premises of its administration and
+  ;; the immeubles strictly necessary to its object; since 2014 one of general
+  ;; interest, declared three years, may receive and hold gifts and legacies.
+  ;; The law OFFERS that capacity; the fold reads it as a grant.
+  ((all-of (in-jurisdiction "france") (on-crossing own-property)
+           (actor-has classified-as "kind:association"))
+   ((grant "Capacité à recevoir et administrer des libéralités (association d'intérêt général)" entity
+     (interet-general declaree-depuis-trois-ans)
+     ((issuer . "préfecture (rescrit)") (per . one-time) (base . #f) (rate . #f)
+      (retain . #f) (renew . #f))))
+   "fr/association-liberalites"
+   "Loi du 1er juillet 1901, art. 6 (mod. loi n° 2014-856 du 31 juillet 2014, art. 74)"
+   "20140731" reported "france")
+
+  ;; A non-lucrative association with disinterested management is outside the
+  ;; impôts commerciaux, and its accessory lucrative receipts are franchised up
+  ;; to a ceiling the finance act indexes yearly — the BASE is the receipts, the
+  ;; ceiling is not guessed here.
+  ((all-of (in-jurisdiction "france") (on-crossing public-sale)
+           (actor-has classified-as "kind:association"))
+   ((grant "Franchise des impôts commerciaux (IS, TVA, CET)" entity
+     (gestion-desinteressee activite-non-lucrative)
+     ((issuer . "service des impôts (rescrit fiscal)") (per . one-time)
+      (base . receipts) (rate . #f) (retain . #f) (renew . #f))))
+   "fr/association-franchise-fiscale"
+   "Code général des impôts, art. 206 1 bis et 261 7-1°; BOI-IS-CHAMP-10-50-10-20"
+   "20240101" reported "france")
+
+  ;; The occupancy fragment on the books (docs/legal/structure.md §6): a
+  ;; personal right of use and habitation, gratuitous, opposable to the owner,
+  ;; published at the service de la publicité foncière.
+  ((all-of (in-jurisdiction "france") (on-crossing occupancy))
+   ((grant "Droit d'usage et d'habitation" entity
+     (publie gratuit personnel)
+     ((issuer . "notaire; service de la publicité foncière") (per . one-time)
+      (base . #f) (rate . #f) (retain . #f) (renew . #f))))
+   "fr/droit-usage-habitation"
+   "Code civil, art. 625 à 636; décret n° 55-22 du 4 janvier 1955, art. 28"
+   "19550104" reported "france"))
  ;; France's words for federation aspects (law/aspects.scm `clause-aspect`).
  ;; The communal packs the adapter generates state a PLU's articles as clauses;
  ;; the ones with a plain equivalent are mapped here, once, for every commune.

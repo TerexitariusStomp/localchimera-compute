@@ -15,7 +15,7 @@ import { signal } from './reactive.js';
 import { readJSON, writeJSON } from './store.js';
 import { scopeSig } from './scope.js';
 import { K } from './keys.js';
-import type { Stance } from './legal-product.js';
+import { BODY_KINDS, type Stance } from './legal-product.js';
 
 /** What a body holds — a permit, a policy, a registration — and the law's reading of it. */
 export interface BodyHolding { id: string; spec: string; name: string; issuer?: string; validUntil?: string | null; status: string }
@@ -33,6 +33,10 @@ export interface BodyExposure {
   stance?: Stance; doors?: string[];
   holds?: { demand: string; status: string }[];
   owes?: string[]; forbidden?: string[]; doubted?: string[];
+  /** each levy the body's own measures price, as a sum */
+  amounts?: { demand: string; amount: number }[];
+  /** what the law offers the body, held or unclaimed */
+  offered?: { demand: string; status: string }[];
 }
 /** A body as the commune states it; the whole read fills the optional parts. */
 export interface Body {
@@ -135,7 +139,8 @@ export function leiValid(s: string): boolean {
   }
   return acc === 1;
 }
-export const KINDS = ["association", "cooperative", "company", "foundation", "operator"];
+/** the kinds a body can be — the fold's own list (legal/bodies.scm `%body-kinds`) */
+export const KINDS: string[] = [...BODY_KINDS];
 export const ROLES = ["provider", "seller", "employer", "adapter", "custodian"];
 // ── jurisdictions: the law snapshot's places ────────────────────────────────
 // A body is declared in a place the law face reads — a nation or a region of

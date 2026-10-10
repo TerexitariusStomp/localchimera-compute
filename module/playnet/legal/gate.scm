@@ -194,8 +194,11 @@
 ;;; three gates below agree on what a guard sees. #f when the process trips no
 ;;; crossing: the law has nothing to say, and the things are not even looked
 ;;; up — an activity outside the law costs the solve nothing.
-(define (legal-context-at recipe-store path-of observer agent-store
-                          proc-id cell act)
+;;; ACTOR-AT: cell → (values agent-fields measures), the body the scope stands
+;;; behind there and what can be counted of it (legal/bodies.scm `body-facts`),
+;;; or #f when the scope names none — then the actor is unknown to a guard.
+(define* (legal-context-at recipe-store path-of observer agent-store
+                           proc-id cell act #:optional (actor-at #f))
   ;; ACT: the recipe's own `act:<kind>` tag when it carries one, else the
   ;; caller's default. Read exactly where crossings and the channel are read, so
   ;; one gate serves processes of different kinds instead of being told one act
@@ -220,11 +223,14 @@
                 (agents (legal-agents-of agent-store assets))
                 (crossings (lset-union eq? crossings (asset-crossings assets resolve))))
            (and (pair? crossings)
-                (legal-context #:crossings crossings #:place-path (car paths)
-                               #:endpoints paths
-                               #:act (or (recipe-act flows resolve) act)
-                               #:channel (recipe-channel flows resolve recipe-store)
-                               #:assets assets #:agents agents))))))
+                (call-with-values (lambda () (if actor-at (actor-at cell) (values #f #f)))
+                  (lambda (actor measures)
+                    (legal-context #:crossings crossings #:place-path (car paths)
+                                   #:endpoints paths
+                                   #:act (or (recipe-act flows resolve) act)
+                                   #:channel (recipe-channel flows resolve recipe-store)
+                                   #:assets assets #:agents agents
+                                   #:actor actor #:measures measures))))))))
 
 ;;; The crossings ONE process trips, read off the store that holds it: its flows,
 ;;; its specs and its recipe's exchanges. The call for anyone who has a store and
@@ -319,6 +325,7 @@
               (pay           . ,(map demand-name pays))
               (tell          . ,(map demand-name tells))
               (forbid        . ,(map demand-name forbids))
+              (grant         . ,(map demand-name (bill-ref bill 'grant)))   ; offered, never owed
               (unheld        . ,(map demand-name
                                      (filter (lambda (d) (eq? #f (held-spec? (demand-name d))))
                                              ents)))
@@ -334,16 +341,19 @@
 ;;; `unknown`: the permit is priced and named (`custody-unknown`) and nothing is
 ;;; pruned for it. compliance.scm passes an observer-backed one, and a permit it
 ;;; finds missing prunes the column.
+;;; `actor-for` : cell → (values agent-fields measures) | #f — who the scope
+;;; stands behind at that cell, so the law that turns on a FORM can read it.
 (define* (make-legal-decorate #:key recipe-store spatial-thing-store registry (act #f)
                               (held? (lambda (p c s) 'unknown))
                               (observer #f) (agent-store #f) (as-of #f)
+                              (actor-for #f)
                               ;; how much legally-uncertain activity this scope will
                               ;; carry — a dial the caller turns, not a constant
                               (soft-profile %uncertain-forbid-profile))
   (define path-of (spatial-path-reader spatial-thing-store))
   (lambda (proc-id cell)
     (let ((ctx (legal-context-at recipe-store path-of observer agent-store
-                                 proc-id cell act)))
+                                 proc-id cell act actor-for)))
       (if (not ctx) (values #f 0.0 '() #f '())
           (let ((bh ($ registry 'demands ctx as-of)))   ; (bill hits)
             (legal-bill->decoration (car bh) (cadr bh)

@@ -108,7 +108,17 @@
                 (when (and f u (string<= u f))
                   (add! (finding 'error 'empty-window label
                                  (format #f "~a: in force from ~a until ~a — never"
-                                         (basename path) from until)))))))
+                                         (basename path) from until)))))
+              ;; 3b. a measure nobody can take: a levy's base or a threshold's key
+              ;;     outside `%measure-keys` reads as unknown forever
+              (for-each
+               (lambda (k)
+                 (unless (memq k %measure-keys)
+                   (add! (finding 'error 'measure-unregistered label
+                                  (format #f "~a: names the measure ~s, which is none of ~s"
+                                          (basename path) k %measure-keys)))))
+               (append (guard-measures (legal-rule-guard-form r))
+                       (filter-map (lambda (d) (demand-ref d 'base)) (legal-rule-demands r))))))
           rules)))
      decls)
     ;; The crossing catalogue is OPEN by construction — `crossing-kind` answers

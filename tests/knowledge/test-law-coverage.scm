@@ -51,12 +51,18 @@
 (define fr (law-coverage recipe-x (pack-crossings fr-only)))
 (format #t "  under the FRENCH packs alone — uncovered ~a\n" (kinds fr 'uncovered-crossing))
 (format #t "                                inert     ~a\n" (kinds fr 'inert-crossing))
-(check-pred "the French packs are INERT for this commune — every rule guards a crossing no recipe trips"
-            (and (null? (lset-intersection eq? recipe-x (pack-crossings fr-only)))
+;; What a French rule speaks of here is only what follows from the FORM — the
+;; association's franchise on a public sale (fr-national.sexp): a rule keyed on
+;; the actor speaks of its crossing even where nobody named the actor. Every
+;; other rule guards a crossing no recipe trips, and is inert for this commune.
+(define spoken (lset-intersection eq? recipe-x (pack-crossings fr-only)))
+(check-pred "the French packs speak of this commune's doings only where a FORM's own law reaches them"
+            (and (lset<= eq? spoken '(public-sale own-property occupancy credit-contribution))
                  (pair? (kinds fr 'inert-crossing))))
-(check-pred "…so everything the commune actually does is reported as uncovered, not passed over"
+(check-pred "…and everything else the commune actually does is reported as uncovered, not passed over"
             (equal? (kinds fr 'uncovered-crossing)
-                    (sort recipe-x (lambda (a b) (string< (symbol->string a) (symbol->string b))))))
+                    (sort (lset-difference eq? recipe-x spoken)
+                          (lambda (a b) (string< (symbol->string a) (symbol->string b))))))
 
 (display "\n── and with the German pack, which was curated to a use case ──\n")
 (define all (law-coverage recipe-x (pack-crossings contexts)))

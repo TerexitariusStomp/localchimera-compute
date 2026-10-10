@@ -154,7 +154,7 @@
 
    ;; the fee on the IfSG Erstbelehrung — waived for volunteers ("weiße Karte")
    (de-rule (all-of (in-jurisdiction "berlin") (on-crossing 'public-fridge))
-            (list (pay #:name "Gebühr IfSG-Erstbelehrung" #:base 'each-person #:rate 20.0))
+            (list (pay #:name "Gebühr IfSG-Erstbelehrung" #:base 'members #:rate 20.0))
             "berlin/ifsg-erstbelehrung-gebuehr"
             "VZ Berlin Leitfaden 2023 §5 (20 € einmalig; kostenfreie \"weiße Karte\" für Ehrenamtliche)")
 
@@ -216,6 +216,59 @@
          #:label "de/bg-beitrag"
          #:source "SGB VII § 2 Abs. 1 Nr. 1, §§ 121 ff., § 150 Abs. 1"
          #:as-of %as-of #:confidence 'verified #:steward "scope:ffd.de")
+
+   ;; ── WHAT FOLLOWS FROM THE FORM. These key on the ACTOR — the body the
+   ;;    scope stands behind (legal/registry.scm `actor-kind-is`) — and stay in
+   ;;    doubt, priced and never pruned, where nobody named one.
+   ;;    An unregistered association is no legal person and holds no title in
+   ;;    its own name: taking real property into an e.V. needs the register.
+   (de-rule (all-of (in-jurisdiction "germany") (on-crossing 'own-property)
+                    (actor-kind-is 'association))
+            (list (obtain #:rides 'entity #:name "Eintragung ins Vereinsregister"
+                          #:issuer "Amtsgericht (Registergericht)" #:per 'one-time
+                          #:spec '(satzung vorstand mindestens-sieben-mitglieder)))
+            "de/vereinsregister"
+            "BGB §§ 21, 56, 59 (eingetragener Verein, Mindestmitgliederzahl, Anmeldung)")
+   ;;    What the law OFFERS a selfless body: Gemeinnützigkeit, with its relief
+   ;;    from corporation and trade tax — a status to claim, not a burden.
+   (de-rule (all-of (in-jurisdiction "germany")
+                    (any-of (on-crossing 'public-sale) (on-crossing 'credit-contribution))
+                    (any-of (actor-kind-is 'association) (actor-kind-is 'foundation)
+                            (actor-kind-is 'cooperative)))
+            (list (grant #:name "Gemeinnützigkeit (Freistellung von Körperschaft- und Gewerbesteuer)"
+                         #:issuer "Finanzamt" #:per 'one-time #:renew '(every . 3-years)
+                         #:spec '(selbstlos ausschliesslich unmittelbar)))
+            "de/gemeinnuetzigkeit"
+            "AO §§ 51–68 (steuerbegünstigte Zwecke); KStG § 5 Abs. 1 Nr. 9; GewStG § 3 Nr. 6")
+   ;;    A co-operative is audited by its Prüfungsverband: every two years while
+   ;;    its balance sheet stays under two million euros, yearly from there — the
+   ;;    one threshold stated as the two rules it is (registry.scm `measure-under`).
+   (de-rule (all-of (in-jurisdiction "germany") (actor-kind-is 'cooperative)
+                    (any-of (on-crossing 'public-sale) (on-crossing 'hold-funds) (on-crossing 'credit-contribution))
+                    (measure-under 'balance-sheet 2000000))
+            (list (tell #:name "Pflichtprüfung durch den Prüfungsverband"
+                        #:to "Genossenschaftlicher Prüfungsverband"
+                        #:discloses '(vermoegenslage geschaeftsfuehrung mitgliederliste)
+                        #:renew '(every . 2-years)))
+            "de/genossenschaft-pruefung-klein"
+            "GenG § 53 Abs. 1 S. 1 (mindestens in jedem zweiten Geschäftsjahr), § 54 (Pflichtmitgliedschaft)")
+   (de-rule (all-of (in-jurisdiction "germany") (actor-kind-is 'cooperative)
+                    (any-of (on-crossing 'public-sale) (on-crossing 'hold-funds) (on-crossing 'credit-contribution))
+                    (measure-at-least 'balance-sheet 2000000))
+            (list (tell #:name "Pflichtprüfung durch den Prüfungsverband"
+                        #:to "Genossenschaftlicher Prüfungsverband"
+                        #:discloses '(vermoegenslage geschaeftsfuehrung mitgliederliste)
+                        #:renew '(every . year)))
+            "de/genossenschaft-pruefung-gross"
+            "GenG § 53 Abs. 1 S. 2 (jährlich ab zwei Millionen Euro Bilanzsumme), § 54")
+   ;;    The occupancy fragment on the books (docs/legal/structure.md §6): a
+   ;;    right to live in a dwelling without a lease, registrable on the land.
+   (de-rule (all-of (in-jurisdiction "germany") (on-crossing 'occupancy))
+            (list (grant #:name "Wohnungsrecht (dingliches Wohnrecht)"
+                         #:issuer "Grundbuchamt" #:per 'one-time
+                         #:spec '(eintragung-im-grundbuch unentgeltlich)))
+            "de/wohnungsrecht"
+            "BGB § 1093 (Wohnungsrecht als beschränkte persönliche Dienstbarkeit); § 873 (Eintragung)")
 
    ;; ── THE CHANNEL MATRIX : what may not go down a NON-PERSONAL channel ─────
    ;;    The Leitfaden's Stage 1 and foodsharing's own Stage 1 agree almost item

@@ -4,7 +4,7 @@
 // LOCALLY — an on-device ASR model in a worker (app/audio.ts), the audio
 // never leaves the device — and then the TEXT ALONE rides the seam to the
 // gateway's anonymous AI service (the same key-pool the app's `(ai …)` forms
-// use; browser/lib/whisper-worker.js and gateway/services.scm are the in-app
+// use; browser/lib/whisper-worker.js and gateway/llm-service.scm are the in-app
 // counterparts). The model is the speaker's own choice.
 //
 // The orb answers as a PLANNING AGENT: it thinks inside the day it is showing.

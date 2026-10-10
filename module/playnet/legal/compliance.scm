@@ -49,7 +49,7 @@
   #:use-module (playnet legal registry-actor)
   #:use-module ((playnet utils clock) #:select (now instant->civil))
   #:use-module (playnet legal policy)
-  #:use-module ((playnet legal bodies) #:select (all-bodies scope-body-subject)))
+  #:use-module ((playnet legal bodies) #:select (all-bodies scope-body-subject scope-body-at body-facts)))
 
 
 ;; deps: the demand vocabulary + fold, and its actor. The actor is still a
@@ -159,6 +159,10 @@
 ;;; obligations (§ obligations), not holdings, so they report 'obligation.
 ;;;   subject-of : (demand kind) → the agent id expected to hold it. A person
 ;;;   obtain rides a named practitioner; an entity obtain rides the adapter/scope.
+;;;   A `grant` is looked up like a permit, and one not held is `unclaimed` — an
+;;;   offer standing open, never a gap. An `obtain` that names what it comes
+;;;   `after` is `blocked` while that forerunner is not satisfied: the authority
+;;;   will not issue it yet, so the work is the forerunner's.
 (define* (reconcile bill hits observer as-of
                     #:key (subject-of (lambda (d kind) 'scope))
                           (holder-field 'primary-accountable))
@@ -168,26 +172,37 @@
   (define (entry kind d status)
     (let ((subj (subject-of d kind)))
       (list (demand-key (juris d) d subj) kind (demand-name d) status)))
-  (append
-   (map (lambda (d) (entry 'forbid d (if (forbid-sure? d hits) 'forbidden 'doubted)))
-        (bill-ref bill 'forbid))
-   (map (lambda (d)
-          (entry 'obtain-entity d
-                 (holding-status observer (subject-of d 'obtain-entity)
-                                 (demand->spec-id d) as-of #:holder-field holder-field)))
-        (bill-ref bill 'obtain-entity))
-   (map (lambda (d)
-          (entry 'obtain-person d
-                 (holding-status observer (subject-of d 'obtain-person)
-                                 (demand->spec-id d) as-of #:holder-field holder-field)))
-        (bill-ref bill 'obtain-person))
-   (map (lambda (d) (entry 'pay d 'obligation)) (bill-ref bill 'pay))
-   (map (lambda (d) (entry 'tell d 'obligation)) (bill-ref bill 'tell))))
+  (define (held kind d)
+    (holding-status observer (subject-of d kind) (demand->spec-id d) as-of #:holder-field holder-field))
+  (define (obtain-entry kind d) (entry kind d (held kind d)))
+  (let* ((obtains (append (map (lambda (d) (obtain-entry 'obtain-entity d)) (bill-ref bill 'obtain-entity))
+                          (map (lambda (d) (obtain-entry 'obtain-person d)) (bill-ref bill 'obtain-person))))
+         (status-of (lambda (name)           ; a forerunner's status, by its name; absent ⇒ #f
+                      (let ((e (find (lambda (e) (equal? (list-ref e 2) name)) obtains)))
+                        (and e (entry-status e)))))
+         (ordered (map (lambda (e)
+                         (let* ((d (find (lambda (d) (equal? (demand-name d) (list-ref e 2)))
+                                         (append (bill-ref bill 'obtain-entity) (bill-ref bill 'obtain-person))))
+                                (after (and d (demand-after d))))
+                           (if (and after (eq? (entry-status e) 'missing)
+                                    (not (eq? (status-of after) 'satisfied)))
+                               (list (car e) (cadr e) (caddr e) 'blocked)
+                               e)))
+                       obtains)))
+    (append
+     (map (lambda (d) (entry 'forbid d (if (forbid-sure? d hits) 'forbidden 'doubted)))
+          (bill-ref bill 'forbid))
+     ordered
+     (map (lambda (d) (entry 'pay d 'obligation)) (bill-ref bill 'pay))
+     (map (lambda (d) (entry 'tell d 'obligation)) (bill-ref bill 'tell))
+     (map (lambda (d) (entry 'grant d (let ((s (held 'grant d))) (if (eq? s 'missing) 'unclaimed s))))
+          (bill-ref bill 'grant)))))
 
 ;; a reconciliation entry has a gap iff it stops the activity: missing / expired /
-;; forbidden. A doubted prohibition asks for a steward's reading and stops nothing.
+;; forbidden / blocked. A doubted prohibition asks for a steward's reading and
+;; stops nothing; an unclaimed grant is an offer, not a gap.
 (define (entry-status e) (list-ref e 3))
-(define (entry-gap? e) (memq (entry-status e) '(missing expired forbidden)))
+(define (entry-gap? e) (memq (entry-status e) '(missing expired forbidden blocked)))
 (define (reconcile-gaps entries) (filter entry-gap? entries))
 
 ;;; ─── obligations : the calendar = Commitments due to an authority ─────────
@@ -231,8 +246,13 @@
 ;;               delivers a service. Absent ⇒ the caller's #:action default.
 ;; Renewal lowers to `modify` (a lifecycle action on the held credential), NOT to
 ;; obtain's fresh `produce` — see demand-kind->vf-action's note.
-(define* (obligation-for spec-id cadence expiration provider authority
+;; A `grant` recurs the other way round: the AUTHORITY provides and we receive,
+;; the same transfer as a levy with the two parties swapped.
+(define* (obligation-for spec-id cadence expiration provider* authority*
                          #:key (kind #f) (action 'deliver-service))
+  (define grant? (eq? kind 'grant))
+  (define provider  (if grant? authority* provider*))
+  (define authority (if grant? provider* authority*))
   (match cadence
     (('renew-before . dd)
      (let ((due (and expiration (iso-minus-days expiration dd))))
@@ -312,13 +332,15 @@
                 (act #f) (as-of #f) (subject-at #f)
                 (subject-for (and subject-at (lambda (p c s) (subject-at p c))))
                 (holder-field (if subject-for 'primary-accountable 'any))
-                (agent-store #f) (soft-profile %uncertain-forbid-profile))
+                (agent-store #f) (actor-for #f) (soft-profile %uncertain-forbid-profile))
   (make-legal-decorate
    #:recipe-store recipe-store #:spatial-thing-store spatial-thing-store
    #:registry registry #:act act
    ;; the same observer that answers custody puts the activity's THINGS in front
-   ;; of the law (asset-has); an agent store puts their holders there (agent-has).
+   ;; of the law (asset-has); an agent store puts their holders there (agent-has);
+   ;; the body the scope stands behind at the cell is the ACTOR (actor-has).
    #:observer observer #:agent-store agent-store #:soft-profile soft-profile
+   #:actor-for actor-for
    ;; ONE date: the day that decides whether a permit is still valid is the day
    ;; that decides whether a rule is still in force
    #:as-of as-of
@@ -363,16 +385,28 @@
   (define agent-store (false-if-exception ($ root 'agent-store)))
   (define observer (false-if-exception ($ root 'observer)))
   (define bodies (or (and agent-store (false-if-exception (all-bodies agent-store))) '()))
+  (define path-of (and (pair? bodies) (spatial-path-reader ($ root 'spatial-thing-store))))
+  (define recipe-store ($ root 'recipe-store))
+  (define resolve-spec (lambda (id) ($ recipe-store 'get-resource-spec id)))
+  ;; the body the scope stands behind at a cell, and what can be counted of it
+  (define actor-for
+    (and (pair? bodies)
+         (let ((at (scope-body-at bodies #:path-of path-of)))
+           (lambda (cell)
+             (let ((b (at cell)))
+               (if b (body-facts agent-store observer b #:resolve-spec resolve-spec
+                                 #:since (and as-of (iso-minus-days as-of 365)))
+                   (values #f #f)))))))
   (and registry* (pair? ($ registry* 'rules))
        (make-legal-decorate/observer
-        #:recipe-store ($ root 'recipe-store)
+        #:recipe-store recipe-store
         #:spatial-thing-store ($ root 'spatial-thing-store)
         #:registry registry*
         #:observer observer
         #:agent-store agent-store
+        #:actor-for actor-for
         #:subject-for (and (pair? bodies)
-                           (scope-body-subject agent-store observer bodies
-                                               #:path-of (spatial-path-reader ($ root 'spatial-thing-store))))
+                           (scope-body-subject agent-store observer bodies #:path-of path-of))
         #:as-of as-of
         #:soft-profile soft-profile)))
 

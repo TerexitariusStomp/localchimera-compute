@@ -98,7 +98,7 @@
                       #:spec '(fire-safety hygiene labeling))
               (obtain #:rides 'person #:name "Food Handler Card"
                       #:per 'each-handler #:spec '(hygiene-training))
-              (pay #:name "Sales Tax" #:base 'gross-receipts #:rate 0.09))
+              (pay #:name "Sales Tax" #:base 'receipts #:rate 0.09))
         #:label "foodville/food-vending" #:source "(worked example ordinance)"
         #:as-of "2026-01-01" #:confidence 'verified #:steward "scope:food.foodville"))
 

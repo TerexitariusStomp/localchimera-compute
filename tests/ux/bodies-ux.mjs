@@ -79,7 +79,7 @@ for (const [label, vp] of [['desktop', { width: 1400, height: 900 }], ['phone', 
     await page.evaluate(() => [...document.querySelectorAll('.acct-card .bodies .bd-say .ld-tok')].find(t => t.textContent === 'association').click());
     await sleep(150);
     const kinds = await page.$$eval('.acct-card .bodies .sl-presets .sl-chip', cs => cs.map(c => c.textContent));
-    h.rec(`${label}: the kind word opens its chips`, kinds.includes('cooperative') && kinds.includes('operator'), kinds.join(' '));
+    h.rec(`${label}: the kind word opens its chips`, kinds.includes('cooperative') && kinds.includes('foundation'), kinds.join(' '));
     await page.evaluate(() => [...document.querySelectorAll('.acct-card .bodies .sl-chip')].find(c => c.textContent === 'cooperative').click());
     await sleep(150);
     h.rec(`${label}: a chip picked rewrites the sentence`, /a cooperative acting/.test((await text('.acct-card .bodies .bd-say')).replace(/\s+/g, ' ')));

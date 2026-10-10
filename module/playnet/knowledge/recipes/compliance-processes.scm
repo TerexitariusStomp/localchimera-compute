@@ -169,4 +169,8 @@
    (map (lambda (d) (seed-file-return-recipe recipe-store #:levy (demand-name d) #:admin-hours 1.0))
         (bill-ref bill 'pay))
    (map (lambda (d) (seed-disclose-recipe recipe-store #:disclosure (demand-name d) #:admin-hours 0.5))
-        (bill-ref bill 'tell))))
+        (bill-ref bill 'tell))
+   ;; claiming what the law offers is work too — the same application as a permit's
+   (map (lambda (d) (seed-obtain-permit-recipe recipe-store #:permit-spec (demand-name d)
+                                               #:authority authority #:admin-hours 1.0))
+        (filter demand-spec (bill-ref bill 'grant)))))
