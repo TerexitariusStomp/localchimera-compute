@@ -29,7 +29,7 @@ for a name other directories share (`adapters.scm`).
 by listing every line that still mentions the old name's stem, for a hand
 check: a list that names several files under one prefix (`formulas/counting.scm,
 labels.scm`) carries the directory once, and only a reader sees that the second
-name moved elsewhere. Generated files (module/playnet/planner/README.md,
+name moved elsewhere. Generated files (module/playnet/README.md,
 browser/) are left to their generators, and docs/history/ is a record.
 
 A move changes which module a name comes from only by its path; when a definition
@@ -44,7 +44,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TEXT = ('.scm', '.md', '.typ', '.sh', '.py', '.mjs', '.cjs', '.ts', '.txt', '.org', '.json', '.sexp')
-SKIP = ('browser/', 'node_modules/', 'docs/history/', 'module/playnet/planner/README.md', 'tools/move-module.py')
+SKIP = ('browser/', 'node_modules/', 'docs/history/', 'module/playnet/README.md', 'tools/move-module.py')
 LAYOUT = 'tools/module-layout.scm'
 
 
@@ -129,7 +129,7 @@ def main(argv):
     subprocess.check_call(['git', 'mv', old, new], cwd=ROOT)
     print(f'move-module: {old} → {new}: {count} line(s) rewritten')
     left = subprocess.run(['git', 'grep', '-nE', r'(^|[^\w/-])' + re.escape(stem) + r'(\.scm)?([^\w-]|$)', '--',
-                           '.', ':!browser', ':!module/playnet/planner/README.md'],
+                           '.', ':!browser', ':!module/playnet/README.md'],
                           cwd=ROOT, text=True, capture_output=True).stdout.splitlines()
     if left:
         print(f'still naming "{stem}" ({len(left)} lines; check by hand):')

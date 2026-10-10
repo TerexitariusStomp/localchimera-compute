@@ -75,7 +75,7 @@ def plan():
 def text_files():
     out = subprocess.check_output(['git', 'ls-files', '-co', '--exclude-standard'], text=True).splitlines()
     skip = ('browser/', 'node_modules/', 'docs/history/', 'docs/dependency-graph-data.js',
-            'module/playnet/planner/README.md', 'tools/regroup-docs.py')
+            'module/playnet/README.md', 'tools/regroup-docs.py')
     ext = ('.scm', '.md', '.typ', '.sh', '.py', '.mjs', '.cjs', '.ts', '.txt', '.org', '.json')
     for f in out:
         if f.startswith(skip) or not os.path.isfile(f):

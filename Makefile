@@ -1132,19 +1132,22 @@ notice-facts-emit:
 check-notice-facts-fresh:
 	@LC_ALL=C.UTF-8 guile --no-auto-compile -L module tools/emit-notice-facts.scm check
 
-# Where each planner file is, what reaches it, and which imports point up the
-# layers (docs/planning/codebase-organization.md). tools/module-layout.scm is
-# the layout as data; tools/module-map.scm reads every .scm in the tree as
-# forms. `module-map` writes module/playnet/planner/README.md, `lint-layers`
-# lists the upward imports and any planner file the layout does not name, and
-# exits 1 if there is one: `make test` runs it. The map carries importer counts, so
-# `check-module-map-fresh` is for the reader, not the gate. The tool imports no playnet module and reads 1,600
-# files, so it runs compiled, under its own cache.
+# Where each file of module/playnet/ is, what reaches it, and which imports point
+# up the layers (docs/planning/codebase-layout.md). tools/module-layout.scm is
+# the layout as data, naming the tree to come; tools/module-map.scm reads every
+# .scm in the tree as forms and lints each file at the rank it will stand at.
+# `module-map` writes module/playnet/README.md; `lint-layers` lists the upward
+# imports and any file the layout does not name, and exits 1 for one that
+# tools/layers.baseline does not hold: the baseline is what the moves of the
+# layout's §9 have yet to resolve, `tools/module-map.scm --baseline` records a
+# shrunken one, and `make test` runs the lint. The map carries importer counts,
+# so `check-module-map-fresh` is for the reader, not the gate. The tool imports
+# no playnet module and reads 1,600 files, so it runs compiled, under its own cache.
 .PHONY: module-map check-module-map-fresh lint-layers
 module-map:
-	@LC_ALL=C.UTF-8 tools/own-ccache.sh guile tools/module-map.scm --write module/playnet/planner/README.md
+	@LC_ALL=C.UTF-8 tools/own-ccache.sh guile tools/module-map.scm --write module/playnet/README.md
 check-module-map-fresh:
-	@LC_ALL=C.UTF-8 EMIT_CMD="tools/own-ccache.sh guile" tools/check-emit-fresh.sh check-module-map-fresh module/playnet/planner/README.md module-map tools/module-map.scm --write
+	@LC_ALL=C.UTF-8 EMIT_CMD="tools/own-ccache.sh guile" tools/check-emit-fresh.sh check-module-map-fresh module/playnet/README.md module-map tools/module-map.scm --write
 lint-layers:
 	@LC_ALL=C.UTF-8 tools/own-ccache.sh guile tools/module-map.scm --lint
 
