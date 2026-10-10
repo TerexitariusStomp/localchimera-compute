@@ -42,6 +42,7 @@
   #:use-module (srfi srfi-1)
   #:use-module (playnet planner vf schemas)
   #:use-module ((playnet planner knowledge recipes transport) #:select (pickup-flow dropoff-flow))
+  #:use-module ((playnet utils units) #:select (time-unit? %effort-unit))
   #:use-module (goblins)
   #:use-module ((playnet planner knowledge recipes handover) #:select (state-exchange!))
   #:export (food-stage stage-ref crossing-tags food-spec! seed-food-chain!))
@@ -220,14 +221,14 @@
             (for-each
              (lambda (u)
                (let* ((qty  (cadr u))
-                      (unit (if (> (length u) 2) (list-ref u 2) "hours"))
-                      (duration? (member unit '("hours" "hour" "h" "minutes" "minute"))))
+                      (unit (if (> (length u) 2) (list-ref u 2) %effort-unit))
+                      (duration? (time-unit? unit)))
                  ($ rs 'add-recipe-flow
                     (make-recipe-flow #:id (string-append pid "-use-" (car u)) #:action 'use #:resource-conforms-to (car u)
                                       #:resource-quantity (and (not duration?) (make-measure qty unit))
                                       #:effort-quantity (if duration?
                                           (make-measure qty unit)
-                                          (and hours (make-measure hours "hours")))
+                                          (and hours (make-measure hours %effort-unit)))
                                       #:recipe-input-of pid))))
              (stage-ref s 'uses))
             (when (and work hours)

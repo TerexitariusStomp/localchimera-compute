@@ -73,7 +73,7 @@
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-9)             ; <scope-nodes>
   #:use-module (playnet utils keywords)  ; alist->kw kw->alist kw-without kw-ref
-  #:use-module ((playnet utils units) #:select (time-unit? hours-in))   ; effort in any time unit, counted in hours
+  #:use-module ((playnet utils units) #:select (time-unit? hours-in %count-unit %effort-unit))   ; effort in any time unit, counted in hours
   #:use-module ((playnet utils keyed-id) #:select (keyed-id))
   #:use-module (srfi srfi-13)            ; string-prefix?
   #:use-module (ice-9 match)
@@ -285,7 +285,7 @@
    its own end. The observer pairs the two by the process."
   (make-economic-event
     #:id id #:action action #:input-of input-of #:output-of output-of #:resource-conforms-to spec
-    #:provider agent #:receiver agent #:resource-quantity (and spec (make-measure 1 "each"))
+    #:provider agent #:receiver agent #:resource-quantity (and spec (make-measure 1 %count-unit))
     #:has-beginning beg #:has-end end #:has-point-in-time point #:created (iso-now)
     #:at-location from #:to-location to
     #:fulfills fulfills
@@ -1821,7 +1821,7 @@ service does not know the scope (nothing to filter by)."
                          #:id eid
                          #:provider provider
                          #:effort-qty hours
-                         #:effort-unit "hours"
+                         #:effort-unit %effort-unit
                          #:fulfills cid
                          #:input-of (commitment-input-of cmt)
                          #:resource-spec (commitment-resource-conforms-to cmt)
@@ -1878,7 +1878,7 @@ service does not know the scope (nothing to filter by)."
     (and s (resource-spec-keep-in-place? s) #t)))
 
 (define* (do-drop-event root action container-id agent spec qty
-                        #:key (unit "each") (resource-id #f) (note #f)
+                        #:key (unit %count-unit) (resource-id #f) (note #f)
                               (name #f) (accountable #f) (scope #f))
   "Record ACTION ('dropoff | 'pickup) of QTY of SPEC at CONTAINER-ID by AGENT.
    RESOURCE-ID names the thing moved. On a pickup it must already exist; on a
@@ -2026,7 +2026,7 @@ service does not know the scope (nothing to filter by)."
                (qty (measure-has-numerical-value (economic-resource-onhand-quantity r))))
            ($ obs 'record-event
               (adjustment-event (generate-id (string-append "revoke:" rid ":" now ":")) rid skill-spec-id
-                                (count-difference qty 0) "each"
+                                (count-difference qty 0) %count-unit
                                 #:provider agent-id #:receiver agent-id
                                 #:when now #:created now #:counted 0
                                 #:note "skill revoked")))))
@@ -2063,13 +2063,13 @@ service does not know the scope (nothing to filter by)."
           (make-economic-resource
            #:id rid #:name (string-append agent-id " " skill-spec-id)
            #:conforms-to skill-spec-id
-           #:accounting-quantity (make-measure 1 "each") #:onhand-quantity (make-measure 1 "each") #:primary-accountable agent-id)))
+           #:accounting-quantity (make-measure 1 %count-unit) #:onhand-quantity (make-measure 1 %count-unit) #:primary-accountable agent-id)))
       ;; re-declaration after a revoke: raise it back to held
       ((<= qty 0)
        (let ((now (iso-now)))
          ($ obs 'record-event
             (adjustment-event (generate-id (string-append "declare:" rid ":" now ":")) rid skill-spec-id
-                              (count-difference qty 1) "each"
+                              (count-difference qty 1) %count-unit
                               #:provider agent-id #:receiver agent-id
                               #:when now #:created now #:counted 1
                               #:note "skill re-declared")))))
@@ -3694,14 +3694,14 @@ service does not know the scope (nothing to filter by)."
                  (make-commitment
                   #:id cid #:action 'pickup #:note "journey commitment (map)"
                   #:input-of pid                          ; input-of = the trip's process
- #:resource-conforms-to good #:resource-quantity (make-measure 1 "each")   ; one rider, as the mode's pickup flow says
+ #:resource-conforms-to good #:resource-quantity (make-measure 1 %count-unit)   ; one rider, as the mode's pickup flow says
                   #:provider agent-id #:receiver agent-id
                   #:has-beginning now #:created now                ; begins now; created now
                   #:at-location from-place #:in-scope-of (list scope-id)))
                 (dropoff
                  (make-commitment
                   #:id dcid #:action 'dropoff #:note "journey arrival (map)" #:output-of pid                          ; output-of = the trip's process
- #:resource-conforms-to good #:resource-quantity (make-measure 1 "each")
+ #:resource-conforms-to good #:resource-quantity (make-measure 1 %count-unit)
                   #:provider agent-id #:receiver agent-id #:created now
                   #:at-location to-place #:in-scope-of (list scope-id))))
            (ensure-place! ($ root 'spatial-thing-store) from-place)
@@ -4500,7 +4500,7 @@ service does not know the scope (nothing to filter by)."
          (do-drop-event root (if (equal? action "pickup") 'pickup 'dropoff)
                         container-id agent spec qty
                         #:scope scope-id         ; whose commons this box is
-                        #:unit (if (and (string? unit) (not (string-null? unit))) unit "each")
+                        #:unit (if (and (string? unit) (not (string-null? unit))) unit %count-unit)
                         #:resource-id (string-or-false resource-id)
                         #:note (string-or-false note)
                         #:accountable (string-or-false accountable)))))
@@ -4739,7 +4739,7 @@ service does not know the scope (nothing to filter by)."
                   (make-economic-resource
                    #:id rid #:name (string-append aid "'s dwelling") #:image "🏠"
                    #:conforms-to "spec-dwelling" #:classified-as tags
-                   #:accounting-quantity (make-measure 1 "each") #:onhand-quantity (make-measure 1 "each")
+                   #:accounting-quantity (make-measure 1 %count-unit) #:onhand-quantity (make-measure 1 %count-unit)
                    #:current-location loc
                    #:primary-accountable (if rented? (string-append "landlord:" aid) aid)   ; primary-accountable: who can recall it
                    #:custodian-scope (if rented? aid #f)                                 ; custodian-scope: who holds it meanwhile
@@ -4782,7 +4782,7 @@ service does not know the scope (nothing to filter by)."
                      #:id (generic-skill-id aid)
                      #:name (string-append aid " " generic-labour-spec-id)
                      #:conforms-to generic-labour-spec-id
-                     #:accounting-quantity (make-measure 1 "each") #:onhand-quantity (make-measure 1 "each") #:primary-accountable aid))))
+                     #:accounting-quantity (make-measure 1 %count-unit) #:onhand-quantity (make-measure 1 %count-unit) #:primary-accountable aid))))
            `(ok . ,aid)))))
 
     ;; Social invite (non-work). The inviter creates an Intent (action='use,
@@ -5347,7 +5347,7 @@ service does not know the scope (nothing to filter by)."
                                 ((and (string? cost) (string->number cost)) => (lambda (n) n))
                                 (else 0)))
                     (donation? (and donation? #t))
-                    (u    (or (string-or-false unit) "each"))
+                    (u    (or (string-or-false unit) %count-unit))
                     (stamp (iso-now))
                     ;; the instant alone is second-precision (iso-now) — two
                     ;; purchases of the same spec by the same agent within one
@@ -5701,7 +5701,7 @@ service does not know the scope (nothing to filter by)."
                                  (until   . ,(list-ref p 3))
                                  (tension . ,(symbol->string (list-ref p 4)))
                                  (qty     . ,(cdr c))
-                                 (unit    . ,(hash-ref units (list-ref p 0) "each"))
+                                 (unit    . ,(hash-ref units (list-ref p 0) %count-unit))
                                  (mine    . ,(or (assoc-ref mine-cells (car c)) 0))))))
                       cells))
                     (means
@@ -5848,7 +5848,7 @@ service does not know the scope (nothing to filter by)."
                                    (owner . ,(economic-resource-primary-accountable r))
                                    (qty   . ,q)
                                    (unit  . ,(or (mq (economic-resource-onhand-quantity r)
-                                                     measure-has-unit) "each"))
+                                                     measure-has-unit) %count-unit))
                                    (where . ,(economic-resource-current-location r))
                                    (cats  . ,(row-cats (economic-resource-classified-as r)
                                                        (economic-resource-conforms-to r)))

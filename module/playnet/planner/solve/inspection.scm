@@ -30,6 +30,7 @@
 ;; `use` flow names a MEANS edge (an instrument whose conformance the process
 ;; assumes). ((kind . spec) …), each spec once.
 (define-module (playnet planner solve inspection)
+  #:use-module ((playnet utils units) #:select (%effort-unit))
   #:use-module ((playnet planner formulas flows) #:select (row-figure))
   #:use-module (playnet planner formulas actions)
   #:use-module (srfi srfi-1)
@@ -95,7 +96,7 @@
          (set! iprocs (cons (make-recipe-process #:id rid #:name (string-append "inspect " spec)
                                                  #:sequence-group 0) iprocs))
          (set! iflows (cons (make-recipe-flow #:id (string-append rid "-w") #:action 'work #:resource-conforms-to verifier
-                                              #:effort-quantity (make-measure 1.0 "hours") #:recipe-input-of rid)
+                                              #:effort-quantity (make-measure 1.0 %effort-unit) #:recipe-input-of rid)
                             iflows))
          (set! iflows (cons (make-recipe-flow #:id (string-append rid ">" v) #:action 'produce #:resource-conforms-to v
                                               #:resource-quantity (make-measure restore "unit") #:recipe-output-of rid #:is-primary #t)

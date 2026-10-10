@@ -14,6 +14,8 @@
 ;;;   (units-convert have want)           → number | #f
 ;;;   (unit-factor from to)               → how many TO one FROM is | #f (unlike substances)
 ;;;   %placeholder-unit                   → the unit a row carries until its door states the spec's own
+;;;   %count-unit, %effort-unit           → "each", "hours": the unit a count and an effort are written in
+;;;   (count-unit? unit)                  → #t when UNIT counts (each, one, a run) or names none
 ;;;   (hours-in qty unit)                 → QTY of a time UNIT as hours
 ;;;   (time-unit? unit)                   → #t when UNIT measures time
 ;;;   (unit-measurable-substance unit)    → the substance a known unit adds up in | #f
@@ -24,6 +26,7 @@
             substance-base-unit
             convert-unit
             units-convert unit-to unit-factor hours-in time-unit? placeholder-unit? %placeholder-unit unit-measurable-substance
+            %count-unit %effort-unit count-unit?
             unit-known? convert-unit/strict
             unit-rate-parts unit-rate?
             units-available?
@@ -306,6 +309,14 @@
 
 (define %placeholder-unit "unit")   ; the unit a row carries until its door states the specification's own
 (define (placeholder-unit? u) (or (not u) (equal? u %placeholder-unit)))
+
+;; The two units the planner writes of its own accord: a count of a thing and an
+;; effort in time. Every site that mints a measure for one spells the constant, so
+;; the spelling stands once, and every reader that asks "is this a count?" asks
+;; count-unit? (a run is a count of runs; a unit nothing states is a count).
+(define %count-unit  "each")
+(define %effort-unit "hours")
+(define (count-unit? u) (or (not u) (and (member u '("each" "one" "run" "runs")) #t)))
 (define (unit-factor from to)
   "How many TO one FROM is, or #f when the two measure different substances. A
    count or a name the tables do not know (\"each\", \"loaf\") and the placeholder

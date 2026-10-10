@@ -18,12 +18,8 @@
 
 (define-module (playnet planner legal filings)
   #:use-module (ice-9 format)
-  #:export (%fl-dir %canon %fnv1a filing-said render-fields <filing-template>
-            %make-filing-template filing-template filing-template-fields
-            filing-template-name filing-template-jurisdiction
-            filing-template-demand-name filing-template-version filing-template-render
-            filing-template-confidence filing-template-source filing-template-as-of
-            filing-template-steward filing-provenance filing-submittable?
+  #:export (%fl-dir %canon %fnv1a filing-said render-fields
+            %make-filing-template filing-template filing-provenance filing-submittable?
             render-filing filing-preview submitted-event grant-event
             *submission-drivers* register-submission-driver! submission-driver-for
             clear-submission-drivers! submit-filing minimize-disclosure
@@ -31,7 +27,7 @@
             *retention-years* retention-years iso-add-years retain-until
             artifact-expired? drop-event retention-sweep filings-demo))
 
-(use-modules ((playnet utils records) #:select (vf-record-type)))
+(use-modules ((playnet utils records) #:select (define-vf-record vf-record-type vf-record-predicate vf-record-accessor vf-record-constructor vf-record-type-fields)))
 ;; a type is its name — the same object on both sides of the load seam
 
 (use-modules (srfi srfi-1) (srfi srfi-13) (ice-9 format))
@@ -98,12 +94,9 @@
                                (loop (cdr es) fields (cons ff withheld))))))))
             (else (error "unknown filing-template field source" src)))))))
 
-(define <filing-template>
-  (vf-record-type 'FilingTemplate
-    '((immutable name) (immutable jurisdiction) (immutable demand-name)
-      (immutable version) (immutable render) (immutable fields)
-      (immutable source) (immutable as-of) (immutable confidence) (immutable steward))))
-(define %make-filing-template (record-constructor <filing-template>))
+(define-vf-record <filing-template> FilingTemplate
+  (name jurisdiction demand-name version render fields source as-of confidence steward))
+(define %make-filing-template (vf-record-constructor <filing-template>))
 ;;; a template is built EITHER from a declarative `#:fields` spec (data, portable)
 ;;; or — the escape hatch — a bespoke `#:render` closure. `#:fields` derives the
 ;;; render, so callers get one behaviour either way.
@@ -117,16 +110,6 @@
                                                        (lambda (f w) f))))
                              (lambda (c) c))
                          fields source as-of confidence steward))
-(define filing-template-fields      (record-accessor <filing-template> 'fields))
-(define filing-template-name        (record-accessor <filing-template> 'name))
-(define filing-template-jurisdiction(record-accessor <filing-template> 'jurisdiction))
-(define filing-template-demand-name (record-accessor <filing-template> 'demand-name))
-(define filing-template-version     (record-accessor <filing-template> 'version))
-(define filing-template-render      (record-accessor <filing-template> 'render))
-(define filing-template-confidence  (record-accessor <filing-template> 'confidence))
-(define filing-template-source      (record-accessor <filing-template> 'source))
-(define filing-template-as-of       (record-accessor <filing-template> 'as-of))
-(define filing-template-steward     (record-accessor <filing-template> 'steward))
 
 ;;; the template's PROVENANCE — sourced/dated/graded/stewarded, exactly like a
 ;;; legal rule's, so a filing replays to "what did we file, from what, on date D".
@@ -275,18 +258,17 @@
 ;;; round-trips through write/read — the render is DERIVED, so nothing
 ;;; closure-shaped needs saving. A bespoke-closure template has no portable form;
 ;;; `->sexp` returns #f for it, naming the one thing that must stay in-code.
+;; The sexp is the type's fields in order, less `render` — the one field that is a
+;; closure, which `#:fields` derives again on the way back. A field added to the
+;; type is carried by the sexp with no edit; a template with no `#:fields` (a
+;; bespoke render) has no sexp.
+(define %sexp-fields (delq 'render (vf-record-type-fields <filing-template>)))
 (define (filing-template->sexp t)
   (and (filing-template-fields t)
-       (list (filing-template-name t) (filing-template-jurisdiction t)
-             (filing-template-demand-name t) (filing-template-version t)
-             (filing-template-fields t)
-             (filing-template-source t) (filing-template-as-of t)
-             (filing-template-confidence t) (filing-template-steward t))))
+       (map (lambda (f) ((vf-record-accessor <filing-template> f) t)) %sexp-fields)))
 (define (sexp->filing-template s)
-  (filing-template (list-ref s 0) #:jurisdiction (list-ref s 1) #:demand-name (list-ref s 2)
-                   #:version (list-ref s 3) #:fields (list-ref s 4)
-                   #:source (list-ref s 5) #:as-of (list-ref s 6)
-                   #:confidence (list-ref s 7) #:steward (list-ref s 8)))
+  (apply filing-template (car s)
+         (append-map (lambda (f v) (list (symbol->keyword f) v)) (cdr %sexp-fields) (cdr s))))
 
 ;;; ─── retention horizon : keep exactly as long as required, then drop (§13) ─
 ;;; Disclosure minimization across TIME. An artifact is retained only until its

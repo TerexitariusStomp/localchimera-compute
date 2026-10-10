@@ -23,6 +23,7 @@
   #:use-module ((playnet utils json-portable) #:select (json-read-ordered))
   #:use-module ((playnet utils catch) #:select (catch*))
   #:use-module ((playnet utils common) #:select (string-or-false))
+  #:use-module ((playnet utils units) #:select (time-unit? %count-unit %effort-unit))
   #:use-module ((playnet utils clock) #:select (iso-now))
   #:use-module ((playnet planner facts availability)
                 #:select (make-dated-week dated-week? dated-week-week dated-week-dated))
@@ -290,7 +291,7 @@
       (note  . ,(intent-note i))
       (who   . ,(intent-receiver i))
       (qty   . ,(or (mq measure measure-has-numerical-value) 0))
-      (unit  . ,(or (mq measure measure-has-unit) "each"))
+      (unit  . ,(or (mq measure measure-has-unit) %count-unit))
       (where . ,(intent-at-location i))
       (from  . ,(intent-has-beginning i))
       (until . ,(intent-has-end i))
@@ -322,7 +323,7 @@
   (lambda ()
     (let* ((ps  ($ root 'plan-store))
            (iid (need-id agent-id spec))
-           (u   (if (and (string? unit) (not (string-null? unit))) unit "each"))
+           (u   (if (and (string? unit) (not (string-null? unit))) unit %count-unit))
            (loc (string-or-false location))
            (window (arcs-json->window arcs-json))
            (name (or (string-or-false name) (string-or-false spec)))
@@ -337,12 +338,12 @@
                         ((and (string? voice) (string->number voice)) => (lambda (n) n))
                         (else 0)))
            (cats (with-tension-terms (cats-json->list cats-json) kind voice))
-           ;; VF measures by kind: hours — and any SERVICE-DENOMINATED
+           ;; VF measures by kind: a time — and any SERVICE-DENOMINATED
            ;; unit (*service-units*: a bed's person-nights, a network's
-           ;; seat-hours) — are occupancy: effort-quantity with action
+           ;; seat-hours) — is occupancy: effort-quantity with action
            ;; 'use (services OCCUPY, they are never held); anything else
            ;; is a good — resource-quantity, 'consume
-           (hours? (or (member u '("hour" "hours"))
+           (hours? (or (time-unit? u)
                        (member u *service-units*)))
            (m (make-measure qty u)))
       ;; the constitution's gate: a kind beyond a want is the scope's
@@ -372,7 +373,7 @@
    CRITERIA is the matcher's alist or #f; CHANGED! is called once it stands."
   (let* ((obs ($ root 'observer))
        (rid (means-id agent-id spec))
-       (u   (if (and (string? unit) (not (string-null? unit))) unit "each"))
+       (u   (if (and (string? unit) (not (string-null? unit))) unit %count-unit))
        (m   (make-measure qty u))
        (loc (if (and (string? location) (not (string-null? location))) location #f))
        (window (arcs-json->window arcs-json))
@@ -458,7 +459,7 @@
                           (note  . ,(economic-resource-note r))
                           (qty   . ,q)
                           (unit  . ,(or (mq (economic-resource-onhand-quantity r)
-                                            measure-has-unit) "each"))
+                                            measure-has-unit) %count-unit))
                           (where . ,(economic-resource-current-location r))
                           (cats  . ,(or (economic-resource-classified-as r) '()))
                           (criteria . ,(criteria-of r))

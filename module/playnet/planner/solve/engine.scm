@@ -76,7 +76,7 @@
   #:use-module (ice-9 format)
   #:use-module (rnrs bytevectors)
   #:use-module ((playnet planner solve voice-field) #:select (voice-labform voice-report))
-  #:use-module ((playnet utils units) #:select (convert-unit/strict unit-known? unit->substance convert-unit unit-rate? unit-rate-parts unit-factor %placeholder-unit))
+  #:use-module ((playnet utils units) #:select (convert-unit/strict unit-known? unit->substance convert-unit unit-rate? unit-rate-parts unit-factor %placeholder-unit %count-unit %effort-unit))
   #:use-module ((playnet utils clock) #:select (hhmm->minutes minutes->hhmm clock-length-minutes clock-overlap-minutes clock-ranges-minutes civil->instant instant->civil instant->weekday now timescale instant->unix unix->instant iso->epoch))
   #:use-module ((playnet planner facts availability) #:select (dated-week? dated-week-week dated-week-overrides))
   #:use-module ((playnet planner facts agent-time) #:select (agent-schedulable-window agent-disposable-hours agent-away-dates away-count))
@@ -1762,7 +1762,7 @@
 ;; transit time (charged in rider-forms' budget) is what moves them. Quantities are per-km
 ;; (vehicle service, driver hours); arc-transport scales them by distance.
 (define (mover-ride-flow id action spec rq eff proc-in proc-out)
-  (make-recipe-flow #:id id #:action action #:resource-conforms-to spec #:resource-quantity (and rq (make-measure rq "each")) #:effort-quantity (and eff (make-measure eff "hours"))
+  (make-recipe-flow #:id id #:action action #:resource-conforms-to spec #:resource-quantity (and rq (make-measure rq %count-unit)) #:effort-quantity (and eff (make-measure eff %effort-unit))
                     #:recipe-input-of proc-in #:recipe-output-of proc-out))
 ;; Every instantiated ride's origin — pid → (mode . rider) — recorded at the
 ;; moment the template is born, so the tiling (tpl-manner, tpl-pace), the
@@ -2464,7 +2464,7 @@
                                     (list 'use (substring g 4) (cdr iq) #f raw-ok?)
                                     (list 'consume g (cdr iq) #f raw-ok?))))
                             (proc-inputs tpl))
-                       (map (lambda (sl) (list 'work (car sl) (cdr sl) "hours"
+                       (map (lambda (sl) (list 'work (car sl) (cdr sl) %effort-unit
                                                (skill-ok? (car sl))))
                             sklabs)
                        (law-req 'obtain-entity (bill 'obtain-entity)
@@ -5328,11 +5328,11 @@
           0))))
 (define (mk-need-intent id skill effort proc place begin end)        ; receiver side: the process needs work
   (make-intent #:id id #:action 'work #:input-of proc #:resource-conforms-to skill
-               #:effort-quantity (make-measure effort "hours") #:has-beginning begin #:has-end end
+               #:effort-quantity (make-measure effort %effort-unit) #:has-beginning begin #:has-end end
                #:has-point-in-time begin #:at-location place))   ; provider #f
 (define (mk-offer-intent id worker skill effort place begin end)     ; provider side: the worker offers work
-  (make-intent #:id id #:action 'work #:resource-conforms-to skill #:effort-quantity (make-measure effort "hours")
-               #:available-quantity (make-measure effort "hours") #:provider worker #:has-beginning begin #:has-end end #:has-point-in-time begin #:at-location place))  ; provider=worker, availableQuantity=H
+  (make-intent #:id id #:action 'work #:resource-conforms-to skill #:effort-quantity (make-measure effort %effort-unit)
+               #:available-quantity (make-measure effort %effort-unit) #:provider worker #:has-beginning begin #:has-end end #:has-point-in-time begin #:at-location place))  ; provider=worker, availableQuantity=H
 (define (mk-work-commitment id provider skill effort proc place begin end satisfies)
   ;; in-scope-of = the scope of the solve that placed the hour (the head of
   ;; *scope-path*, set by the door that solves for a scope): reach has its fact

@@ -296,7 +296,7 @@
                          (q* (if (equal? ou u) q (convert-unit q u)))
                          (per* (if (equal? ou u) per (convert-unit per ou))))
                     (and (> per* 0.0) (/ q* per*))))
-                 ((or (not u) (member u '("one" "each" "run" "runs"))) q)
+                 ((count-unit? u) q)
                  (else
                   (set! *batch-unit-gaps* (cons (list rp-id u (map cdr out-units)) *batch-unit-gaps*))
                   (when (getenv "PLANNER_UNIT_LINT")

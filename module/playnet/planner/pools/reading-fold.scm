@@ -56,6 +56,7 @@
 ;;; and a flattering reading folds as the nominal and moves nothing.
 
 (define-module (playnet planner pools reading-fold)
+  #:use-module ((playnet utils units) #:select (%count-unit))
   #:use-module (srfi srfi-1)
   #:use-module (goblins)
   #:use-module (playnet planner aggregation fold-node)
@@ -109,7 +110,7 @@
   (let ((tags (economic-event-resource-classified-as ev)))
     (and (count-agreed? tags)
          (let ((spec (count-spec tags)) (fig (count-figure tags)))
-           (and spec (cons spec (if fig (cdr fig) "each")))))))
+           (and spec (cons spec (if fig (cdr fig) %count-unit)))))))
 
 (define (reading-key ev)
   "(spec process action unit #f) for an event with a quantity of a spec; #f
@@ -130,7 +131,7 @@
            (list spec
                  (or (economic-event-input-of ev) (economic-event-output-of ev))
                  (economic-event-action ev)
-                 (or (measure-has-unit q) "each")
+                 (or (measure-has-unit q) %count-unit)
                  #f))))))
 
 (define (unexplained ev)

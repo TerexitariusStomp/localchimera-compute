@@ -20,6 +20,7 @@
 ;;; (which the service imports) and the service can both import it.
 
 (define-module (playnet planner observation adjustment)
+  #:use-module ((playnet utils units) #:select (%count-unit))
   #:use-module (playnet planner vf schemas)
   #:use-module ((playnet planner formulas counting)
                 #:select (count-contestable? count-target count-of-tag count-record-id
@@ -97,7 +98,7 @@
                 (if agreed? (list %count-agreed-tag) '())
                 (or (figure-tags counted unit classified-as) '())) ; 7-8 conforms-to, classified-as
    #:provider provider #:receiver provider                          ; 9-10 the counter's own act
-   #:resource-quantity (make-measure 1.0 "each")               ; 11-12 resource-quantity, effort
+   #:resource-quantity (make-measure 1.0 %count-unit)               ; 11-12 resource-quantity, effort
  #:has-point-in-time when #:created created                         ; 13-16 beginning, end, point, created
    #:at-location at                                   ; 17-19 at-location, to-location, state
    #:fulfills fulfills                                ; 20-21 fulfills, satisfies

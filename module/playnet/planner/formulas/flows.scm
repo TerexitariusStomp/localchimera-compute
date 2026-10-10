@@ -16,6 +16,7 @@
 ;;; same readers take it, so a stored plan reads as it did.
 
 (define-module (playnet planner formulas flows)
+  #:use-module ((playnet utils units) #:select (%effort-unit))
   #:use-module (playnet planner vf schemas)
   #:use-module ((playnet utils keyed-id) #:select (keyed-id))
   #:use-module ((playnet utils records) #:select (vf-record-accessor))
@@ -108,7 +109,7 @@
 ;; ── the ONE constructor of a work Commitment ────────────────────────────────
 ;; Every solve and door that commits hours builds the row here: `work`, the skill
 ;; as resourceConformsTo, the hours as effortQuantity, the scope as a list.
-(define* (make-work-commitment #:key id provider skill hours (unit "hours") input-of
+(define* (make-work-commitment #:key id provider skill hours (unit %effort-unit) input-of
                                      at-location has-beginning has-end
                                      (has-point-in-time has-beginning) due
                                      in-scope-of satisfies planned-within independent-demand-of
@@ -132,7 +133,7 @@
 ;; enforces fulfills ⊕ satisfies, the intent's satisfaction is the commitment's
 ;; edge, and an event claiming both would count the same quantity twice — a
 ;; caller states one or the other.
-(define* (make-work-event #:key id provider effort-qty (effort-unit "hours")
+(define* (make-work-event #:key id provider effort-qty (effort-unit %effort-unit)
                                 fulfills satisfies input-of resource-spec
                                 at-location has-beginning has-end in-scope-of
                                 (receiver provider)
@@ -171,7 +172,7 @@
                    #:resource-conforms-to spec
                    #:resource-classified-as (or tags (and (or ambient? (memq action occupying-actions)) (list %ambient-tag)))
                    #:resource-quantity (and qty (make-measure qty unit))
-                   #:effort-quantity (and hours (make-measure hours "hours"))
+                   #:effort-quantity (and hours (make-measure hours %effort-unit))
                    #:has-beginning has-beginning #:has-end has-end #:has-point-in-time has-point-in-time
                    #:at-location place #:note note
                    #:in-scope-of (let ((l (scopes-of in-scope-of))) (and (pair? l) l))))

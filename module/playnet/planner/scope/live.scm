@@ -21,7 +21,7 @@
   #:use-module ((playnet utils keyed-id) #:select (keyed-id))
   #:use-module ((playnet planner aggregation fold-node) #:select (sum-by-key))
   #:use-module (playnet utils clock)
-  #:use-module ((playnet utils units) #:select (unit->substance %placeholder-unit placeholder-unit?))
+  #:use-module ((playnet utils units) #:select (unit->substance %placeholder-unit placeholder-unit? %count-unit %effort-unit))
   #:use-module ((playnet planner knowledge recipes transport) #:select (recipe-hold))   ; the keep process storage composes
   #:use-module (goblins)                      ; $ — synchronous near-call (same vat)
   #:use-module (goblins actor-lib methods)    ; define-actor / methods (for ^live-planner)
@@ -330,7 +330,7 @@
 ;; against a race (account.scm).
        ; the plan's word on the rail, and on the portion kept back
 (define* (claim-recipes goods #:key (supplied? (lambda (spec) #t)) (price (lambda (spec) #f))
-                              (means? (lambda (spec) #f)) (unit-of (lambda (spec) "each")))
+                              (means? (lambda (spec) #f)) (unit-of (lambda (spec) %count-unit)))
   "(procs . flows) — one claim recipe per distinct owned good \"spec~aid\" in
    GOODS whose base good the scope can SUPPLY (SUPPLIED?: some recipe produces
    it, or stock of it stands) and that is no MEANS: what a process `use`s — an
@@ -366,7 +366,7 @@
                                  (if (and (number? snlt) (< snlt +inf.0) (> snlt 0.0))
                                      (list (make-recipe-flow #:id (string-append pid "|credit") #:action 'consume
                                                              #:resource-conforms-to (credit-good (cdr o))
-                                                             #:resource-quantity (make-measure snlt "hour") #:recipe-input-of pid))
+                                                             #:resource-quantity (make-measure snlt %effort-unit) #:recipe-input-of pid))
                                      '())
                                  (list (make-recipe-flow #:id (string-append pid "|out") #:action 'produce #:resource-conforms-to g
                                                          #:resource-quantity (make-measure 1.0 unit) #:recipe-output-of pid #:is-primary #t))))))
@@ -412,7 +412,7 @@
       (if (null? cs) (values (reverse ps) fs)
           (let ((k (resource-specification-id (car cs))))
             (call-with-values
-                (lambda () (recipe-hold %good-class k #:id (string-append "keep|" k) #:unit "each"
+                (lambda () (recipe-hold %good-class k #:id (string-append "keep|" k) #:unit %count-unit
                                         #:name (string-append (resource-specification-name (car cs)) " keeps what stands on it")))
               (lambda (proc flows) (loop (cdr cs) (cons proc ps) (append flows fs)))))))))
 
@@ -1412,7 +1412,7 @@
                                                  (when (and sp m (memq (recipe-flow-action f) using-up-actions) (spec-owner sp))
                                                    (hash-set! h (car (spec-owner sp)) (measure-has-unit m)))))
                                              flows)
-                                   (lambda (spec) (or (hash-ref h spec #f) "each"))))
+                                   (lambda (spec) (or (hash-ref h spec #f) %count-unit))))
                         (goods   (owned-goods-of-demand demand))   ; distinct by construction
                         (cl      (claim-recipes goods
                                                 #:supplied? (lambda (spec) (hash-ref supplied spec #f))
@@ -2261,7 +2261,7 @@
 (define* (work-intent id #:key (name #f) proc skill hours
                       (from #f) (until #f) (point #f) (place #f) (plan #f))
   (make-intent #:id id #:action 'work #:name name
-               #:input-of proc #:resource-conforms-to skill #:effort-quantity (make-measure hours "hours")
+               #:input-of proc #:resource-conforms-to skill #:effort-quantity (make-measure hours %effort-unit)
                #:has-beginning from #:has-end until #:has-point-in-time point
                #:at-location place #:planned-within plan))
 (define* (persist-materialized! scope-root work-alists #:key (plan-id "plan-materialized"))
@@ -2565,7 +2565,7 @@
                      #:resource-conforms-to conforms #:resource-classified-as (and (row-ambient? mc) (list %ambient-tag))      ; conforms-to (the lot's spec), classified-as
                      #:provider agent #:receiver agent                                        ; provider, receiver: the one accountable agent
                      #:resource-quantity (and q (make-measure q unit))                   ; resource-quantity: what moved
-                     #:effort-quantity (and (not q) (row-effort mc) (make-measure (row-effort mc) "hours"))   ; effort: a means occupied for hours
+                     #:effort-quantity (and (not q) (row-effort mc) (make-measure (row-effort mc) %effort-unit))   ; effort: a means occupied for hours
  #:has-point-in-time stamp #:created recorded                               ; has-beginning has-end has-point-in-time created
                      #:at-location place                                        ; at-location, to-location, state
                      #:fulfills cid                                    ; FULFILLS the commitment, satisfies corrects realization settles

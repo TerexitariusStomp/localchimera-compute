@@ -9,6 +9,7 @@
 ;;; Intent directly.
 
 (define-module (playnet planner federation plan-bundle)
+  #:use-module ((playnet utils units) #:select (%effort-unit))
   #:use-module (srfi srfi-1)
   #:use-module (goblins)                 ; $ — the plan-store reads below
   #:use-module (playnet planner vf schemas)
@@ -80,7 +81,7 @@
   (map (lambda (i)
          (let* ((eq (intent-effort-quantity i))
                 (hrs (if eq (measure-has-numerical-value eq) 0))
-                (unit (if eq (measure-has-unit eq) "hours")))
+                (unit (if eq (measure-has-unit eq) %effort-unit)))
            (copy-intent i #:id (string-append (intent-id i) ":s" (number->string scale))
                         #:effort-quantity (make-measure (* scale hrs) unit))))
        intents))

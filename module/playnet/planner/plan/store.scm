@@ -6,6 +6,7 @@
 ;;;        scenario-definitions) + signal metadata + secondary indexes.
 
 (define-module (playnet planner plan store)
+  #:use-module ((playnet utils units) #:select (%count-unit))
   #:use-module ((playnet planner facts agent-tags) #:select (tag-values))
   #:use-module (playnet utils store-utils)
   #:use-module (playnet planner vf serdes)
@@ -1340,7 +1341,7 @@
                         (spec (recipe-flow-resource-conforms-to f))
                         (rq (recipe-flow-resource-quantity f))
                         (needed (if rq (* (measure-has-numerical-value rq) scale-factor) 0))
-                        (unit (if rq (measure-has-unit rq) "each")))
+                        (unit (if rq (measure-has-unit rq) %count-unit)))
                    ;; Durable inputs: skip demand if resource exists
                    (if (and is-durable spec observer)
                        (let ((resources (filter

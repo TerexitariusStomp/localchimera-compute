@@ -57,6 +57,7 @@
 ;;; are solved.
 
 (define-module (playnet planner dev recipes)
+  #:use-module ((playnet utils units) #:select (%count-unit %effort-unit))
   #:use-module (playnet planner vf schemas)
   #:use-module (playnet planner knowledge dsl shorthand)
   #:use-module (playnet planner knowledge dsl world)
@@ -105,7 +106,7 @@
    catalogue states — or, for an area the catalogue has not yet caught up
    with, a bare identity-law spec built the old way, so an unanticipated
    area still plans rather than silently losing its skill."
-  (or (catalogue-skill id) (spec* id fallback-name "hours")))
+  (or (catalogue-skill id) (spec* id fallback-name %effort-unit)))
 
 ;; dev-process-id once named the world's own per-issue process; the world no
 ;; longer mints one (issues->world, below). It survives as dev-ledger.scm's
@@ -140,10 +141,10 @@
    for a kind's own standing entry (dev-knowledge-world) and for any
    est:-driven variant (issue-variant-worlds)."
   (world
-   #:specs (list (spec* spec label "each"))
+   #:specs (list (spec* spec label %count-unit))
    #:procs (list (rp* pid label #:tags '("tag:dev" "whole-count") #:conforms-to "pspec-code-improvement"))
    #:flows (list (wk* (string-append pid "~work") (dev-skill #f) hours pid)
-                 (out* (string-append pid "~out") spec 1 pid "each"))
+                 (out* (string-append pid "~out") spec 1 pid %count-unit))
    #:recipes (list (make-recipe #:id rid #:name label #:primary-output spec
                                 #:recipe-processes (list pid)))))
 

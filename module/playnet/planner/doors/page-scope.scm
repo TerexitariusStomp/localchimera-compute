@@ -21,6 +21,7 @@
 ;;; Plain Scheme over Goblins; it builds for a page (`make check-hoot-scope`).
 
 (define-module (playnet planner doors page-scope)
+  #:use-module ((playnet utils units) #:select (%count-unit))
   #:use-module (goblins)
   #:use-module (srfi srfi-1)
   #:use-module ((playnet planner scope root) #:select (spawn-scope-root))
@@ -190,12 +191,12 @@
     ;; what people ask for and offer; a means' criteria are the matcher's to read, at a gateway
     ("declareNeed" 14
      ,(lambda (spec qty unit loc arcs note emoji from until name cats criteria tension voice)
-        (page-call 'declare-need *scope* *me* spec (num qty) (or (opt unit) "each") loc arcs note emoji
+        (page-call 'declare-need *scope* *me* spec (num qty) (or (opt unit) %count-unit) loc arcs note emoji
                    from until name cats #f tension (num voice)))
      ,(lambda (v) "ok"))
     ("declareMeans" 10
      ,(lambda (spec qty unit loc arcs note emoji name cats criteria)
-        (page-call 'declare-means *scope* *me* spec (num qty) (or (opt unit) "each") (opt loc)
+        (page-call 'declare-means *scope* *me* spec (num qty) (or (opt unit) %count-unit) (opt loc)
                    arcs note emoji name cats #f))
      ,(lambda (v) "ok"))
     ;; an observation of one's own doing; the page reads the event's id after "ok:"

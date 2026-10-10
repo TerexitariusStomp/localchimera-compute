@@ -54,6 +54,7 @@
 ;;; numbers only).
 
 (define-module (playnet planner doors family solve)
+  #:use-module ((playnet utils units) #:select (%count-unit))
   #:use-module ((playnet utils catch) #:select (catch* throw*))
   #:use-module (srfi srfi-1)
   #:use-module (playnet planner solve engine)
@@ -211,7 +212,7 @@
           (let* ((pid (string-append "eat-" (need-good n)))
                  (red (closure-reduction
                        (hh-process pid (string-append "Eat " (need-what n) " for " (need-person n)) 0)
-                       (list (list "" (need-good n) 1.0 "each"))
+                       (list (list "" (need-good n) 1.0 %count-unit))
                        (list (cons (need-substance-good n) 1.0)))))
             (hh-def (car red) (cdr red) (string-append "recipe-" pid) (need-what n) (need-substance-good n)))))
    needs))

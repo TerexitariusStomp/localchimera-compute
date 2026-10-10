@@ -84,8 +84,7 @@
 ;;; counted in seat-hours is the ordinary way to say "one seat". Comms channels
 ;;; instead draw `1 post-slot`, their spec's own unit, with no duration. Both
 ;;; forms are coherent and both cancel; VF constrains neither.
-(define %time-units '("hours" "hour" "h" "minutes" "minute" "days" "day"))
-(define (time-unit? u) (and u (member u %time-units) #t))
+(use-modules ((playnet utils units) #:select (time-unit?)))   ; the one reader of "is this a time?"
 (define (unit-of m) (and m (measure-has-unit m)))
 
 ;;; ── the length a run takes, from either place it may be stated ──────────────

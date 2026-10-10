@@ -7,6 +7,7 @@
 ;;; observation alike.
 
 (define-module (playnet planner observation log-observe)
+  #:use-module ((playnet utils units) #:select (%count-unit %effort-unit))
   #:use-module (goblins)
   #:use-module (playnet planner vf schemas)
   #:use-module ((playnet utils envelope) #:select (success failure catch-as-failure))
@@ -42,7 +43,7 @@
                 (m   (make-measure (exact->inexact qty)
                                    (if (and (string? unit) (not (string-null? unit)))
                                        unit
-                                       (if (eq? action 'work) "hours" "each"))))
+                                       (if (eq? action 'work) %effort-unit %count-unit))))
                 ;; only the creating actions mint a resource: the observer
                 ;; auto-creates it as the RECEIVER's — the speaker's own
                 (rid (and (memq action '(produce raise))   ; verb-meant: the two acts a spoken log makes a resource by

@@ -10,6 +10,7 @@
 ;;; personhood gate.
 
 (define-module (playnet planner doors count-door)
+  #:use-module ((playnet utils units) #:select (%count-unit))
   #:use-module ((playnet planner formulas actions) #:select (onhand-sign))
   #:use-module (playnet planner formulas flows)
   #:use-module (srfi srfi-1)
@@ -365,7 +366,7 @@
          (lambda ()
            (let* ((m0    (economic-resource-onhand-quantity r))
                   (have  (if m0 (exact->inexact (measure-qty m0)) 0.0))
-                  (u     (or unit (and m0 (measure-has-unit m0)) "each"))
+                  (u     (or unit (and m0 (measure-has-unit m0)) %count-unit))
                   ;; what the ledger held at the count's instant
                   (held  (if then
                              (exact->inexact (or ($ obs 'onhand-as-of resource-id then) have))

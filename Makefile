@@ -155,6 +155,7 @@ FAMILY_WASM_DEPS = \
                     module/playnet/planner/formulas/periods.scm \
                     module/playnet/planner/formulas/propagate.scm \
                     module/playnet/planner/facts/rail.scm \
+                    module/playnet/planner/facts/barred-specs.scm \
                     module/playnet/planner/solve/recipe-response.scm \
                     module/playnet/planner/solve/engine/robust.scm \
                     module/playnet/planner/vf/schemas.scm \
@@ -316,6 +317,7 @@ SCOPE_WASM_DEPS = \
                    module/playnet/planner/scope/process-registry.scm \
                    module/playnet/planner/formulas/propagate.scm \
                    module/playnet/planner/facts/rail.scm \
+                   module/playnet/planner/facts/barred-specs.scm \
                    module/playnet/planner/solve/recipe-response.scm \
                    module/playnet/planner/legal/reform.scm \
                    module/playnet/planner/scope/replica.scm \

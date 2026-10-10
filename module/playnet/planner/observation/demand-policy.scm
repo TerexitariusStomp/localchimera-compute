@@ -1,6 +1,7 @@
 ;;; demand-policy.scm — Demand derivation policies for communal planning
 
 (define-module (playnet planner observation demand-policy)
+  #:use-module ((playnet utils units) #:select (%count-unit))
   #:export (derive-dependent-demand derive-communal-demand)
   #:use-module (srfi srfi-1))
 
@@ -35,7 +36,7 @@
     (lambda (p)
       (let* ((mode (assq-ref p 'mode))
              (spec (assq-ref p 'spec-id))
-             (unit (or (assq-ref p 'unit) "each"))
+             (unit (or (assq-ref p 'unit) %count-unit))
              (qty (case mode
                     ((per-member) (* (or (assq-ref p 'qty-per-member) 0) member-count))
                     ((fixed) (or (assq-ref p 'fixed-qty) 0))

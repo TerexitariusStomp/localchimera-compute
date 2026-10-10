@@ -41,7 +41,7 @@
   #:use-module (srfi srfi-1)
   #:use-module (playnet utils store-utils)
   #:use-module ((playnet utils keyed-id) #:select (keyed-id))
-  #:use-module ((playnet utils units) #:select (%placeholder-unit))
+  #:use-module ((playnet utils units) #:select (%placeholder-unit %effort-unit))
   #:use-module (playnet planner algorithms rollup)
   #:use-module (playnet planner facts rail)
   #:re-export (claimable-specs declare-claimable! spec-claimable? spec-rail publish-rails! declare-rail!
@@ -330,13 +330,13 @@
      ;; intents belong to a registered plan.
      (let* ((iid  (generate-id "boot-int-"))
             (evid (generate-id "boot-ev-"))
-            (qty  (make-measure svc-amount "hour")))
+            (qty  (make-measure svc-amount %effort-unit)))
        ($ observer-ref 'register-intent
           (make-intent #:id iid #:action 'work #:resource-conforms-to "spec-labor" #:effort-quantity qty
                        #:provider agent-id))
        ($ observer-ref 'record-event
           (make-work-event #:id evid #:resource-spec "spec-labor" #:provider agent-id
-                           #:effort-qty svc-amount #:effort-unit "hour" #:satisfies iid
+                           #:effort-qty svc-amount #:effort-unit %effort-unit #:satisfies iid
                            #:timestamp #f #:note #f))
        (let ((existing (hashmap-ref accounts agent-id #f)))
          (bcom (^account-store bcom observer-ref recipe-store-ref
@@ -454,7 +454,7 @@
                        #:resource-classified-as (economic-resource-classified-as resource)
                        #:provider provider #:receiver claimant-aid
                        #:resource-quantity (make-measure qty unit)
-                       #:effort-quantity (make-measure labor-cost "hour")
+                       #:effort-quantity (make-measure labor-cost %effort-unit)
                        #:has-point-in-time (or when* #f)   ; WHEN wanted
                        #:to-location (or at-loc #f)        ; WHERE to
                        #:fulfills fulfills                  ; the planned claim

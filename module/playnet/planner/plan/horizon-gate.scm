@@ -43,6 +43,7 @@
   #:use-module (playnet planner vf schemas)
   #:use-module (playnet planner beyond schedules)
   #:use-module ((playnet utils clock) #:select (now civil->instant instant->weekday seconds->days))
+  #:use-module ((playnet utils units) #:select (time-unit? hours-in))
   #:use-module (goblins)
   #:use-module (srfi srfi-1)
   #:use-module (ice-9 format)
@@ -57,10 +58,7 @@
       (let ((v (duration-has-numerical-value d))
             (u (duration-has-unit d)))
         (cond ((not (and (number? v) (string? u))) 0)
-              ((member u '("day" "days" "d")) v)
-              ((member u '("hour" "hours" "h")) (/ v 24))
-              ((member u '("minute" "minutes" "min")) (/ v 1440))
-              ((member u '("week" "weeks" "w")) (* v 7))
+              ((time-unit? u) (/ (hours-in v u) 24))     ; any unit of time the unit tables know
               (else (error "horizon-gate: a duration unit the gate does not know" u))))))
 
 ;; the recipe process chain holding PROC-ID, off the recipe store; #f when

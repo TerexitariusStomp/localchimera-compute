@@ -9,6 +9,7 @@
 ;; Assumes schemas.scm, store-utils.scm, propagation.scm are loaded.
 
 (define-module (playnet planner ddmrp buffers)
+  #:use-module ((playnet utils units) #:select (%count-unit))
   #:use-module (playnet planner formulas actions)
   #:use-module (playnet planner vf schemas)
   #:use-module (playnet planner observation states)
@@ -121,7 +122,7 @@
          (unit (if (and (pair? consuming)
                         (economic-event-resource-quantity (car consuming)))
                    (measure-has-unit (economic-event-resource-quantity (car consuming)))
-                   "each")))
+                   %count-unit)))
     `((adu . ,(if (> window-days 0) (/ total-qty window-days) 0))
       (unit . ,unit)
       (window-days . ,window-days)
@@ -982,7 +983,7 @@
       commits)))
 
 (define* (compute-min-max-buffer profile adu dlt-days
-                                 #:key (adu-unit "each") (moq 0) (moq-unit "each"))
+                                 #:key (adu-unit %count-unit) (moq 0) (moq-unit %count-unit))
   "Min/max bounds from buffer zone levels."
   (let ((zones (compute-buffer-zone-levels profile adu adu-unit dlt-days moq moq-unit)))
     `(,@zones

@@ -27,7 +27,7 @@
   #:use-module (playnet planner beyond lot)
   #:use-module (playnet utils store-utils)
   #:use-module ((playnet planner facts parts) #:select (make-part covers?))
-  #:use-module ((playnet utils units) #:select (unit-factor hours-in time-unit? placeholder-unit? unit-measurable-substance))
+  #:use-module ((playnet utils units) #:select (unit-factor hours-in time-unit? placeholder-unit? unit-measurable-substance %count-unit))
   #:use-module ((playnet planner formulas counting) #:select (count-target count-figure count-base-id %count-tolerance))
   #:use-module ((playnet utils keyed-id) #:select (keyed-id))
   #:use-module (playnet utils clock)
@@ -233,7 +233,7 @@
 (define (resource-unit resource event)
   (or (resource-own-unit resource)
       (and (event-qty event) (measure-has-unit (event-qty event)))
-      "each"))
+      %count-unit))
 
 ;; ── an event's quantity, in the resource's unit ───────────────────────────────
 ;; A quantity is added to a stock in the stock's own unit: 500 g taken from a
@@ -447,10 +447,10 @@
                                  ;; keeps, so it has to be right here.
                                  #:accounting-quantity (make-measure 0 (or (and (event-qty event)
                                                           (measure-has-unit (event-qty event)))
-                                                     "each"))
+                                                     %count-unit))
                                  #:onhand-quantity (make-measure 0 (or (and (event-qty event)
                                                           (measure-has-unit (event-qty event)))
-                                                     "each"))
+                                                     %count-unit))
                                  ;; the lot a pickup makes is the cargo on its way: it stands at no place
                                  #:current-location (and (not (and (eq? direction 'to) (eq? (economic-event-action event) 'pickup)))
                                       (or (economic-event-at-location event)
@@ -684,7 +684,7 @@
                      (onh    (economic-resource-onhand-quantity kid))
                      (pre    (and onh (measure-has-numerical-value onh)))
                      (unit   (and onh (measure-has-unit onh)))
-                     (drawn  (and pre (make-measure (* pre (abs (- 1 factor))) (or unit "each"))))
+                     (drawn  (and pre (make-measure (* pre (abs (- 1 factor))) (or unit %count-unit))))
                      (cev    (make-cascade-event parent-event kid-id
                                                  (economic-resource-conforms-to kid) drawn
                                                  (if (> factor 1) 'raise 'consume)))
@@ -1822,7 +1822,7 @@
               (let-values (((st2 aff)
                             (observer-record-event
                              st (make-rebase-event event rid (economic-resource-conforms-to r)
-                                                   diff (or (measure-has-unit onh) "each")))))
+                                                   diff (or (measure-has-unit onh) %count-unit)))))
                 (loop (cdr rids) st2 (append affected aff)))
               (loop (cdr rids) st affected))))))
 
@@ -2266,7 +2266,7 @@
      (let* ((cid (commitment-id commitment))
             (qty (or (commitment-resource-quantity commitment)
                      (commitment-effort-quantity commitment)
-                     (make-measure 0 "each")))
+                     (make-measure 0 %count-unit)))
             ;; registering is stating the TARGET: how much, and what counts toward
             ;; it. What has been fulfilled is read off the events (fulfillment-of),
             ;; so registering a commitment again moves its target and leaves its
@@ -2298,7 +2298,7 @@
      (let* ((iid (intent-id intent))
             (qty (or (intent-resource-quantity intent)
                      (intent-effort-quantity intent)
-                     (make-measure 0 "each")))
+                     (make-measure 0 %count-unit)))
             (existing (hashmap-ref (os-intent-targets st) iid #f))
             (plan-id  (or (intent-planned-within intent)
                           (and existing (cdr existing)))))
@@ -2372,7 +2372,7 @@
      (let* ((cid (claim-id claim))
             (qty (or (claim-resource-quantity claim)
                      (claim-effort-quantity claim)
-                     (make-measure 0 "each"))))
+                     (make-measure 0 %count-unit))))
        (bcom (^observer bcom
                (os-rebuild st #:claim-targets (hashmap-set (os-claim-targets st) cid qty))
                callbacks))))
@@ -2595,7 +2595,7 @@
                     (onhand-qty . ,oh)
                     (unit . ,(if (economic-resource-accounting-quantity r)
                                  (measure-has-unit (economic-resource-accounting-quantity r))
-                                 "each"))
+                                 %count-unit))
                     (location . ,(economic-resource-current-location r))
                     (accountable . ,(economic-resource-primary-accountable r))
                     (batches . ,(filter-map

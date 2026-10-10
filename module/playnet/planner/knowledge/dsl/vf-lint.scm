@@ -27,12 +27,12 @@
   #:use-module (playnet planner knowledge dsl findings)
   #:use-module (playnet planner knowledge catalogues substances)   ; %ambient-kelvin, second-law-production, *heat-carriers*
   #:use-module ((playnet planner knowledge dsl world) #:select (store-composition store-flows))   ; the composition a store stands on, as the solve is handed it
-  #:use-module ((playnet utils units) #:select (%intensive-units))
+  #:use-module ((playnet utils units) #:select (%intensive-units time-unit?))   ; one reader of "is this a time?"
   #:use-module (goblins)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-13)
   #:use-module (ice-9 format)
-  #:export (seed-every-recipe! %vf-actions %input-actions %output-actions %time-units
+  #:export (seed-every-recipe! %vf-actions %input-actions %output-actions
             lint-recipe-store lint-records))
 
 ;;; ─── every recipe in the tree, in one store ──────────────────────────────
@@ -61,8 +61,6 @@
 ;; a flow INTO a process names input-of; a flow OUT names output-of
 (define %input-actions  process-input-actions)
 (define %output-actions process-output-actions)
-(define %time-units '("hours" "hour" "h" "minutes" "minute" "days" "day"))
-(define (time-unit? u) (and u (member u %time-units) #t))
 ;; an INTENSIVE unit (degrees, percent moisture) names a state, and a state is a
 ;; form: a reading is a count of a stock, converted at the door
 ;; (observation/convert.scm; docs/observation/readings-are-counts.md). A flow in

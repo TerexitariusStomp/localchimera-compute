@@ -11,6 +11,7 @@
   #:use-module (playnet planner vf schemas)
   #:use-module ((playnet planner formulas actions) #:select (inert-flow-actions))
   #:use-module (playnet utils store-utils)
+  #:use-module ((playnet utils units) #:select (hours-in))
   #:use-module (goblins)
   #:export (*ms-per-day* *ms-per-hour* *ms-per-minute* *ms-per-second* *days-per-ms*
             rp-duration-ms rp-duration-days *non-consuming-actions* recipe-output-qty
@@ -34,14 +35,8 @@
    Default: 1 hour if no duration specified."
   (let ((dur (recipe-process-has-duration rp)))
     (if (not dur) *ms-per-hour*
-        (let ((val (duration-has-numerical-value dur))
-              (unit (duration-has-unit dur)))
-          (cond
-            ((equal? unit "days")    (* val *ms-per-day*))
-            ((equal? unit "hours")   (* val *ms-per-hour*))
-            ((equal? unit "minutes") (* val *ms-per-minute*))
-            ((equal? unit "seconds") (* val *ms-per-second*))
-            (else *ms-per-hour*))))))
+        ;; in any unit of time the unit tables know; one they do not reads as hours
+        (* (hours-in (duration-has-numerical-value dur) (duration-has-unit dur)) *ms-per-hour*))))
 
 (define (rp-duration-days rp)
   "Convert a RecipeProcess's hasDuration to calendar days."

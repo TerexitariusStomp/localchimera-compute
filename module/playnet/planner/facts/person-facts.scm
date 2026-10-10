@@ -24,6 +24,7 @@
 ;;; person in its second place and is in none of the three lists.
 
 (define-module (playnet planner facts person-facts)
+  #:use-module ((playnet utils units) #:select (%effort-unit))
   #:use-module (srfi srfi-1)
   #:use-module ((playnet planner vf schemas) #:select (intent-id intent-finished intent-receiver make-resource-specification))
   #:export (need-id need-prefix need-id? declared-need?
@@ -69,7 +70,7 @@
    holds no spec of that id (declare-skill!), so a skill a person states is
    labour by the record's own word, recipe or no recipe."
   (make-resource-specification #:id id #:name id
-                               #:default-unit-of-resource "person" #:default-unit-of-effort "hours"))
+                               #:default-unit-of-resource "person" #:default-unit-of-effort %effort-unit))
 (define generic-labour-spec-id "spec-labor")
 (define generic-labour-spec (skill-spec generic-labour-spec-id))
 

@@ -29,8 +29,7 @@
 (use-modules (playnet planner knowledge recipes berlin-commune-seed) (playnet planner knowledge recipes berlin-food-seed) (playnet planner scope root) (playnet planner vf schemas) (srfi srfi-1))
 (use-modules (goblins) (srfi srfi-1) (srfi srfi-13) (ice-9 format))
 
-(define %time-units '("hours" "hour" "h" "minutes" "minute" "days" "day"))
-(define (bare-time-unit? u) (and u (member u %time-units) #t))
+(use-modules ((playnet utils units) #:select ((time-unit? . bare-time-unit?))))   ; the one reader of "is this a time?"
 
 ;;; A CAPACITY is a rate, and a rate is one unit written as a quotient —
 ;;; `hours/day`, `hours/week` (utils/units.scm §division units). So the two things
