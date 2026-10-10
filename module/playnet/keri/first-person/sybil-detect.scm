@@ -22,7 +22,7 @@
 ;;;       and almost always leak edges; Sybil clusters cosplay
 ;;;       community by mutual full-vouching inside a closed loop.
 ;;;
-;;; Part of the OpenVTC layer; (playnet governance) re-exports it.
+;;; Part of the OpenVTC layer.
 
 (define-module (playnet keri first-person sybil-detect)
   #:use-module (srfi srfi-1)

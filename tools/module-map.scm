@@ -28,8 +28,8 @@
 
 (define %lib      "module/playnet/")
 (define %baseline "tools/layers.baseline")
-(define %umbrellas '("module/playnet/planner.scm" "module/playnet/governance.scm"
-                     "module/playnet/doors/protocol.scm" "module/playnet/org.scm"))
+(define %umbrellas '("module/playnet/boot/prelude.scm"
+                     "module/playnet/doors/protocol.scm" "module/playnet/org/factories.scm"))
 
 
 ;;; ── reading the tree ────────────────────────────────────────────────────────

@@ -94,8 +94,8 @@
 ;;; NOTE — `compute-adu/events` is the EconomicEvent-based flavour.
 ;;; There is also `compute-adu` in relational/compute.scm operating on
 ;;; lifted facts; the two have incompatible signatures, so this one
-;;; carries a suffix to avoid the collision inside the (playnet planner)
-;;; umbrella.
+;;; carries a suffix to avoid the collision inside the flat namespace of
+;;; (playnet boot prelude).
 
 (define (compute-adu/events events spec-id window-days as-of-seconds)
   "Compute rolling ADU from historical EconomicEvents.
@@ -776,7 +776,7 @@
             ;; compute-adu/events, not compute-adu: this passes `events` (a list of
             ;; <economic-event>) and destructures an alist. relational/compute.scm's
             ;; compute-adu takes FACTS and returns a NUMBER, so (assq-ref … 'adu) on
-            ;; it is a type error — and it is not bound under (playnet planner) at
+            ;; it is a type error — and it is not bound under (playnet boot prelude) at
             ;; all, which is where this recalibration runs.
             (let* ((adu-result (compute-adu/events events (buffer-zone-spec-id zone)
                                  window-days as-of-seconds))

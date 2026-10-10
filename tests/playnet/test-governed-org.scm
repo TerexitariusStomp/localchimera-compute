@@ -5,7 +5,7 @@
 (add-to-load-path (string-append %project-root "/module"))
 
 (use-modules (playnet test harness))
-(use-modules (playnet org)
+(use-modules (playnet org factories)
              (playnet org gplay)
              (playnet org endorsement)
              (goblins)

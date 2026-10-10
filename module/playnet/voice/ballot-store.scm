@@ -1,8 +1,7 @@
 ;;; voice/ballot-store.scm — per-scope persistent registry of ballots and tallies
 ;;;
-;;; Stand-alone module — depends only on Goblins. Both (playnet planner)
-;;; (for ^scope-root wiring) and (playnet governance) (for re-export from
-;;; the umbrella) import this without creating a cycle.
+;;; Stand-alone module — depends only on Goblins, so the scope root (for its
+;;; wiring) and the voice modules import it without a cycle.
 ;;;
 ;;; Three pieces of state per proposal:
 ;;;   - meta `((opened-at . t) (kind . k) (domain . d) (description . s)

@@ -11,8 +11,8 @@
 ;;; durable: hang it off earth and the next persistence churn keeps it. No per-commune
 ;;; store files, no cross-vat plumbing — one planet, one graph.
 ;;;
-;;; Included by (playnet planner) after scope-root.scm (needs spawn-scope-root + the store
-;;; envs). Every `$`/`spawn` here is in the planner-vat — call within it.
+;;; Reads (playnet scope root) for spawn-scope-root and the store envs. Every
+;;; `$`/`spawn` here is in the planner-vat — call within it.
 
 ;; ^earth — scope-aid → ^scope-root. A persistence-aware actor (its hashmap of scope-root
 ;; refs serializes; each ^scope-root is itself persistence-aware), so the whole registry

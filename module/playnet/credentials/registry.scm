@@ -96,7 +96,7 @@
 ;; backend share a hash function — a foreign KERI verifier can check
 ;; either without knowing where it came from.
 ;;
-;; libblake3.so is loaded lazily: `(playnet governance)` loads even
+;; libblake3.so is loaded lazily: the credential layer loads even
 ;; when the FFI library isn't present, but actually computing a SAID
 ;; requires the library. Tests run via `make test-governance`, which
 ;; enters a guix shell that includes the `blake3` package.

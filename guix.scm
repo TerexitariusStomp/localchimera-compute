@@ -123,7 +123,7 @@
                     "playnet-planner"
                     (string-append "exec " guile-bin
                                    " --no-auto-compile"
-                                   " -c '(use-modules (playnet planner))"
+                                   " -c '(use-modules (playnet boot prelude))"
                                    " ((@ (system repl repl) start-repl))'"
                                    " \"$@\"\n"))
                    ;; Gateway: `cd $base` so terminal.scm's relative

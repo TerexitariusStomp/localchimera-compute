@@ -1,7 +1,7 @@
 #!/bin/sh
 # Run all planner test suites.
 #
-# Every test file imports the planner via `(use-modules (playnet planner))`.
+# Every test file imports the planner modules it uses.
 # This script cd's to the repo root so -L module resolves correctly and
 # each test is addressed as tests/planner/foo.scm.
 

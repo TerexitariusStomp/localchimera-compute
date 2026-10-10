@@ -377,4 +377,4 @@
 
 (define delegation-map-env
   (make-persistence-env
-    `((((playnet governance) ^delegation-map) ,^delegation-map))))
+    `((((playnet voice delegation-map) ^delegation-map) ,^delegation-map))))

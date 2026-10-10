@@ -15,7 +15,7 @@
 ;;; through the usual ^acdc-store 'issue path; seeding rituals live in
 ;;; bootstrap.scm and the scope invite/vouch methods.
 ;;;
-;;; The verification half of the OpenVTC layer; (playnet governance) re-exports it.
+;;; The verification half of the OpenVTC layer.
 
 (define-module (playnet keri first-person predicates)
   #:use-module (srfi srfi-1)

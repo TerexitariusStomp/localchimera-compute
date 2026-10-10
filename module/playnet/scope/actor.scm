@@ -18,7 +18,7 @@
 ;;; surfaced via `detect-commitment-conflicts` (a deliberation surface,
 ;;; not a planning error).
 ;;;
-;;; A module of (playnet governance); the umbrella re-exports it.
+;;; (playnet boot scope) composes it from its fragments.
 
 
 ;; ── Phase-6 ratification helpers ────────────────────────────────────────────

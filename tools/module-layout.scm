@@ -109,6 +109,4 @@
  ;; identity, less its doors and ceremonies
  ;; the gateway, less the doors and the peer
  ;; the root files
- (file "org" "org")
- (file "planner" "boot")
- (file "governance" "boot"))
+ )

@@ -1012,7 +1012,14 @@
     ;; the recipes draw it as the whole rather than as the soil-n/soil-p/soil-k stores
     ;; the grow recipe of recipes/grow.scm draws; until those seeds draw the stores,
     ;; or a soil row is derived from them, the gap is named here.
-    "soil"))
+    "soil"
+    ;; Produce as grown, as a share or as a vend (recipes/compliance-food.scm)
+    ;; and the ingredients of a way of giving out food (recipes/ways.scm): each a
+    ;; basket of whatever the season brings, drawn by the kilogram as one spec. A
+    ;; composition would be the basket's of the day, which the records carry and
+    ;; the spec does not. Swept since the registry of seeders became the modules
+    ;; of knowledge/recipes/ themselves (dsl/vf-lint.scm `recipe-seeders`).
+    "spec-cf-produce" "spec-fd-member-produce" "spec-fd-public-produce" "spec-way-ingredients"))
 
 ;;; ── the substance ResourceSpecifications (elements + molecules) ─────────────
 ;; A scope registers these (rs 'add-resource-spec …) to make nutrients real

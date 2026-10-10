@@ -43,10 +43,6 @@
              ((rnrs io ports) #:select (get-bytevector-n put-bytevector))
              (playnet utils paths)
              ((playnet keri signify) #:select ())   ; loading it installs the crypto backend the vault helpers use
-             ;; keys/bran-custody.scm is `include-from-path`'d into
-             ;; (playnet governance) — its vault helpers are exported
-             ;; from the umbrella module, so we import from there
-             ;; rather than a non-existent (playnet keys bran-custody).
              ((playnet keys bran-custody) #:select (read-vault-bran write-vault-bran! host-vault-key)) ((playnet credentials keys) #:select (make-bran-share-credential)) ((playnet keri acdc) #:select (cred-said cred-claim cred-revoked?))
              ((playnet crypto shamir) #:select (shamir-split shamir-combine))
              ((playnet utils hex) #:select (hex->bv bv->hex))
@@ -337,7 +333,7 @@
 ;; export-shamir — split bran k-of-n; write share-ACDC files
 ;; ─────────────────────────────────────────────────────────────────────
 ;;
-;; Reuses the existing primitives in (playnet governance):
+;; Reuses the existing primitives of keys/ and credentials/:
 ;;
 ;;   shamir-split bran k n          → list of (idx k share-bv)
 ;;   make-bran-share-credential …   → the same ACDC shape keys/bran-custody.scm

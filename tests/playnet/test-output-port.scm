@@ -6,7 +6,7 @@
 
 (use-modules (playnet test harness))
 (use-modules (playnet org gplay)
-             (playnet org)
+             (playnet org factories)
              (goblins))
 
 ;;; ── Harness ─────────────────────────────────────────────────────────────────

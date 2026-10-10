@@ -33,7 +33,7 @@
 (use-modules (playnet test harness)
              (playnet doors lobby)
              (playnet gateway evidence)
-             (playnet gateway services)
+             (playnet gateway llm-service)
              (playnet gateway allotment)
              ((playnet wire rows) #:select (plain-reply))
              ((playnet utils clock) #:select (civil->epoch))

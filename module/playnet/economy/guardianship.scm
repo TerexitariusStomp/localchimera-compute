@@ -89,4 +89,4 @@
 
 (define guardianship-env
   (make-persistence-env
-    `((((playnet governance) ^guardianship) ,^guardianship))))
+    `((((playnet economy guardianship) ^guardianship) ,^guardianship))))

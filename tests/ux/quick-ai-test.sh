@@ -22,7 +22,7 @@ fi
 cd "$(dirname "$0")/../.."
 
 guile -L module -c '
-(use-modules (playnet org) (playnet org gplay) (playnet ai bridge) (goblins))
+(use-modules (playnet org factories) (playnet org gplay) (playnet ai bridge) (goblins))
 (format #t "API key configured: ~a\n" (if (current-ai-api-key) "YES" "NO"))
 (format #t "Current model: ~a\n\n" (current-ai-model))
 (define o (make-org "ai-test"))

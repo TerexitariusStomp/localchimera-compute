@@ -77,5 +77,5 @@
 
 (define affected-interest-env
   (make-persistence-env
-    `((((playnet governance) ^affected-interest-voice)
+    `((((playnet voice affected-interest) ^affected-interest-voice)
        ,^affected-interest-voice))))

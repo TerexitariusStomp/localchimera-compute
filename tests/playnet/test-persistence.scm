@@ -11,7 +11,7 @@
              (goblins actor-lib ward)
              (goblins persistence-store bloblin)
              ((goblins utils crypto) #:select (generate-key-pair key-pair->public-key))
-             (playnet org)
+             (playnet org factories)
              (playnet org gplay)
              (playnet org endorsement)
              (ice-9 receive)

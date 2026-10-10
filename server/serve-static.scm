@@ -45,9 +45,8 @@
                 #:select ((read-oobi-entry-from-dir . read-oobi-entry)
                           (read-oobi-entries-from-dir . read-oobi-entries)))
   ;; Read-only scope discovery — use the path-level helpers from
-  ;; (playnet utils paths) rather than (playnet governance
-  ;; scope-recovery), because the latter transitively imports
-  ;; (playnet governance) which loads (playnet keri signify),
+  ;; (playnet utils paths) rather than (playnet scope recovery), because
+  ;; the latter transitively loads (playnet keri signify),
   ;; which dlopens libsodium. The playnet-static service runs in a
   ;; minimal env without libsodium and would crash-loop on startup.
   #:use-module ((playnet utils paths)

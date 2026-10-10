@@ -6,7 +6,6 @@ keys/ipex-policy → federation/pending-recompositions
 keys/ipex-policy → federation/sturdyref-credential
 keys/ipex-policy → federation/scope-graph
 keys/notifications → federation/scope-graph
-knowledge/dsl/vf-lint → boot/planner
 knowledge/law/product → doors/protocol
 knowledge/law/scrape → ai/conform
 legal/adapters → knowledge/law/context-pack

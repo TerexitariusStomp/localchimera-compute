@@ -36,7 +36,7 @@
              (srfi srfi-1)
              (srfi srfi-13))
 
-(define %umbrella "module/playnet/planner.scm")
+(define %umbrella "module/playnet/boot/prelude.scm")
 (define %verbose? (member "--verbose" (command-line)))
 
 ;;; ── The umbrella: its imports, and what it includes, in order ───────────────

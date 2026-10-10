@@ -89,4 +89,4 @@
 
 (define voice-signer-env
   (make-persistence-env
-    `((((playnet governance) ^voice-signer) ,^voice-signer))))
+    `((((playnet voice voice-signer) ^voice-signer) ,^voice-signer))))

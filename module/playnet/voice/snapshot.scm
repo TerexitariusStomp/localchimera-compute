@@ -2,8 +2,8 @@
 ;;;
 ;;; The ballot's voice-snapshot is `hashmap citizen-id → (voice-share .
 ;;; delegation-map-ref)`. Tests build this by hand. Production callers
-;;; should derive the voice-share from `voice-share` in
-;;; (playnet planner) — it walks the supplied scope-roots and divides
+;;; should derive the voice-share from the planner's `voice-share`
+;;; — it walks the supplied scope-roots and divides
 ;;; the citizen's gross-credited contribution by the federation total.
 ;;;
 ;;; This helper is deliberately small and pure: it knows nothing about

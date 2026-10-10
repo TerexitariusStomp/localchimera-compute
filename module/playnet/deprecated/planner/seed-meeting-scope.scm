@@ -10,7 +10,7 @@
   #:use-module (goblins)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-11)
-  #:use-module (playnet planner)
+  #:use-module (playnet boot prelude)
   ;; dependent-demand/empty-netter-state have no new-planner port yet
   ;; (module/playnet/planner.scm's own header lists algorithms/netting.scm
   ;; and algorithms/dependent-demand.scm, but neither file actually exists

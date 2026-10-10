@@ -33,9 +33,8 @@ import os, re, sys, textwrap
 # has to ask the LIVE module system what each umbrella publishes, and pairing
 # the two by list index broke the moment a third umbrella joined.
 UMBRELLAS = {
-    "module/playnet/planner.scm":            "(playnet planner)",
+    "module/playnet/boot/prelude.scm":       "(playnet boot prelude)",
     "module/playnet/deprecated/planner.scm": "(playnet deprecated planner)",
-    "module/playnet/governance.scm":         "(playnet governance)",
     "module/playnet/deprecated/federation-a.scm": "(playnet deprecated federation-a)",
 }
 

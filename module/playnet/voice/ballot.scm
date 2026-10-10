@@ -419,4 +419,4 @@
 
 (define ballot-env
   (make-persistence-env
-    `((((playnet governance) ^ballot) ,^ballot))))
+    `((((playnet voice ballot) ^ballot) ,^ballot))))

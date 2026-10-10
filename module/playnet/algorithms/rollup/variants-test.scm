@@ -30,7 +30,7 @@
 (use-modules (playnet solve engine)
              (playnet solve compile)
              (playnet vf schemas))
-(set-current-module (resolve-module '(playnet planner)))
+(set-current-module (resolve-module '(playnet boot prelude)))
 (use-modules (ice-9 format) (goblins) (goblins actor-lib methods) (goblins utils hashmap))
 (define here (@@ (guile-user) %here))
 (define (sib rel) (string-append here "/" rel))

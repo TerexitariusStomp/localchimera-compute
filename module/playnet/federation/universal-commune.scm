@@ -146,7 +146,7 @@
 
 (define uc-merge-proposals-env
   (make-persistence-env
-    `((((playnet governance) ^uc-merge-proposals) ,^uc-merge-proposals))))
+    `((((playnet federation universal-commune) ^uc-merge-proposals) ,^uc-merge-proposals))))
 
 ;;; Vat-local UC handle.
 (define *universal-commune-ref* #f)

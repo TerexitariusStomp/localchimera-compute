@@ -78,7 +78,7 @@
 ;; reached at the call, so a test that never federates never loads it.
 (define* (fx-federation! aid-a sref-a aid-b sref-b #:key (seed 3) (census '()))
   "In a turn. → (values federation-scope spec)."
-  (let* ((gov (resolve-interface '(playnet governance)))
+  (let* ((gov (resolve-interface '(playnet boot prelude)))
          (door (resolve-interface '(playnet federation federate)))
          (spawn-scope (module-ref gov 'spawn-scope))
          (spawn-acdc-store (module-ref gov 'spawn-acdc-store))

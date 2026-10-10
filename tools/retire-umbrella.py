@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 """retire-umbrella.py — a file that imports an umbrella module imports the modules it uses.
 
-    tools/retire-umbrella.py planner [--dry-run] FILE…
-    tools/retire-umbrella.py governance [--dry-run] FILE…
-    tools/retire-umbrella.py 'governance credentials' [--dry-run] FILE…   (a nested umbrella)
+    tools/retire-umbrella.py 'boot prelude' [--dry-run] FILE…
+    tools/retire-umbrella.py 'doors protocol' [--dry-run] FILE…   (any module that re-exports)
 
-An umbrella ((playnet planner), (playnet governance)) re-exports hundreds of
-names from dozens of modules, so a file that imports it states nothing about
-what it reads. This rewrites each import of the umbrella into imports of the
+An umbrella such as (playnet boot prelude), the operator REPL's prelude,
+re-exports hundreds of names from dozens of modules, so a file that imports it
+states nothing about what it reads. This rewrites each import of the umbrella into imports of the
 modules that DEFINE the names the file mentions:
 
   1. Guile (tools/umbrella-map.scm) maps every name the umbrella exports to the

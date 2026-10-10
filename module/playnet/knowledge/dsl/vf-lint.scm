@@ -32,25 +32,64 @@
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-13)
   #:use-module (ice-9 format)
-  #:export (seed-every-recipe! %vf-actions %input-actions %output-actions
+  #:use-module ((ice-9 ftw) #:select (scandir))
+  #:export (recipe-seeders seed-every-recipe! %vf-actions %input-actions %output-actions
             lint-recipe-store lint-records))
 
 ;;; ─── every recipe in the tree, in one store ──────────────────────────────
-;;; The tree is the registry: every `seed-*` the planner umbrella exports is a
-;;; recipe seeder by existing. This runs each against RECIPE-STORE; one wanting
-;;; anything other than a store errors and is skipped. → (values ran all), the
-;;; seeder names that ran and every name tried. Call inside a vat.
+;;; The tree is the registry: every `seed-*` a module of knowledge/recipes/
+;;; exports is a recipe seeder by existing.
+(define (recipe-seeders)
+  "Every seeder the modules of knowledge/recipes/ export, as ((name . procedure) …)
+sorted by name, and the modules that failed to load: (values seeders failed).
+A module that fails to load leaves its recipes out of every sweep, so a caller
+that holds the tree whole checks FAILED is empty."
+  (define (module-named? path name)
+    "PATH's first define-module names (playnet knowledge recipes NAME): the
+file is that module, not a world or a fragment kept beside the modules."
+    (call-with-input-file path
+      (lambda (p)
+        (let loop ()
+          (let ((f (read p)))
+            (cond ((eof-object? f) #f)
+                  ((and (pair? f) (eq? (car f) 'define-module))
+                   (equal? (cadr f) `(playnet knowledge recipes ,name)))
+                  (else (loop))))))))
+  (let* ((dir   (dirname (%search-load-path "playnet/knowledge/recipes/store.scm")))
+         (names (sort (filter-map (lambda (f)
+                                    (and (string-suffix? ".scm" f)
+                                         (let ((name (string->symbol (basename f ".scm"))))
+                                           (and (module-named? (string-append dir "/" f) name) name))))
+                                  (scandir dir))
+                      (lambda (a b) (string<? (symbol->string a) (symbol->string b)))))
+         (failed '())
+         (seeders
+          (append-map
+           (lambda (name)
+             (let ((iface (catch #t
+                            (lambda () (resolve-interface `(playnet knowledge recipes ,name)))
+                            (lambda _ (set! failed (cons name failed)) #f))))
+               (if iface
+                   (filter-map (lambda (sym)
+                                 (let ((v (false-if-exception (module-ref iface sym))))
+                                   (and (string-prefix? "seed-" (symbol->string sym))
+                                        (procedure? v)
+                                        (cons sym v))))
+                               (module-map (lambda (sym var) sym) iface))
+                   '())))
+           names)))
+    (values (sort seeders (lambda (a b) (string<? (symbol->string (car a)) (symbol->string (car b)))))
+            (reverse failed))))
+
+;;; This runs each seeder against RECIPE-STORE; one wanting anything other than
+;;; a store errors and is skipped. → (values ran all), the seeder names that ran
+;;; and every name tried. Call inside a vat.
 (define (seed-every-recipe! recipe-store)
-  (let* ((umbrella (resolve-interface '(playnet planner)))
-         (seeders (sort (filter (lambda (sym) (string-prefix? "seed-" (symbol->string sym)))
-                                (module-map (lambda (sym var) sym) umbrella))
-                        (lambda (a b) (string<? (symbol->string a) (symbol->string b)))))
-         (ran (filter-map (lambda (sym)
-                            (let ((p (false-if-exception (module-ref umbrella sym))))
-                              (and (procedure? p)
-                                   (false-if-exception (begin (p recipe-store) sym)))))
+  (let* ((seeders (recipe-seeders))
+         (ran (filter-map (lambda (p)
+                            (false-if-exception (begin ((cdr p) recipe-store) (car p))))
                           seeders)))
-    (values ran seeders)))
+    (values ran (map car seeders))))
 
 
 ;;; ─── the vocabulary ────────────────────────────────────────────────────────

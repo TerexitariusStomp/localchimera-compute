@@ -4,7 +4,7 @@
 ;;; synchronously from the caller's vat), a vector of message alists,
 ;;; and a model id, perform one chat-completions request and return the
 ;;; assistant content string. No actors, no Goblins exposure, no gplay
-;;; bridging — those live in (playnet gateway services) and (playnet ai bridge)
+;;; bridging — those live in (playnet gateway llm-service) and (playnet ai bridge)
 ;;; respectively, both depending on this module.
 ;;;
 ;;; The caller is responsible for vat placement: keep the key-pool in

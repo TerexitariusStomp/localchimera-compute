@@ -1,8 +1,8 @@
 #!/bin/sh
 # Run all governance test suites.
 #
-# Every test file imports the governance umbrella via
-# `(use-modules (playnet governance))`. This script cd's to the repo root
+# Every test file imports the governance modules it uses. This script cd's
+# to the repo root
 # so -L module resolves correctly.
 
 set -e

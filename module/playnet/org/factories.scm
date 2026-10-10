@@ -1,4 +1,4 @@
-;;; module/playnet/org.scm — Org factories and the 3-seal pattern
+;;; module/playnet/org/factories.scm — Org factories and the 3-seal pattern
 ;;;
 ;;; Kernel file #3 (alongside gplay.scm and endorsement.scm).
 ;;; Creates governed and open orgs with proper record wrappers.
@@ -6,7 +6,7 @@
 ;;; make-governed-org → (values org gov-seal infra-seal member-seal)
 ;;; make-open-org     → org
 
-(define-module (playnet org)
+(define-module (playnet org factories)
   #:use-module (goblins)
   #:use-module (playnet org gplay)
   #:use-module (playnet lang evaluator)

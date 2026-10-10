@@ -67,11 +67,9 @@
 ;;
 ;; Each combinator returns a predicate `(lambda (cred) bool)`. The
 ;; cred is a governance-cred alist with claims accessible via
-;; (cred-claim cred 'key). We can't import cred-claim here without a
-;; circular dep (it's in the umbrella module which loads this); we
-;; expect callers to use (playnet governance) themselves and just
-;; build the predicates from there. These combinators take other
-;; predicates and combine them — no direct cred access here.
+;; (cred-claim cred 'key). The caller builds the predicates with its own
+;; credential readers; these combinators take other predicates and combine
+;; them — no direct cred access here.
 
 (define (and-pattern . preds)
   "Match iff every PRED matches."

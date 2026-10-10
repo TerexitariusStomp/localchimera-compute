@@ -18,6 +18,7 @@
 (use-modules (playnet test harness))
 (use-modules (playnet knowledge recipes beenius-wax) (playnet knowledge recipes berlin-transit) (playnet knowledge recipes cold-chain) (playnet knowledge recipes container) (playnet knowledge recipes currency) (playnet knowledge recipes federation) (playnet knowledge recipes food-surplus) (playnet knowledge recipes grow) (playnet knowledge recipes humisoil) (playnet knowledge recipes infrastructure) (playnet knowledge recipes meeting) (playnet knowledge recipes stone-paper) (playnet knowledge recipes transport) (playnet scope root) (playnet vf schemas) (srfi srfi-1))
 (use-modules (goblins) (srfi srfi-1) (srfi srfi-13) (ice-9 format))
+(use-modules ((playnet knowledge dsl vf-lint) #:select (recipe-seeders)))
 
 ;;; Every seeder in knowledge/recipes/ taking a recipe-store and nothing else. A
 ;;; name absent from the module simply does not run: this is a sweep, not a
@@ -43,8 +44,8 @@
     seed-stone-paper-bio-recipe seed-stone-paper-compost-recipe
     seed-transport-specs seed-transport-recipe))
 
-(define %planner (resolve-module '(playnet planner)))
-(define (seeder sym) (false-if-exception (module-ref %planner sym)))
+(define %seeder-table (recipe-seeders))   ; (name . procedure), the tree as the registry
+(define (seeder sym) (assq-ref %seeder-table sym))
 
 (define vat (spawn-vat #:name "unit-lint"))
 (define root (with-vat vat (spawn-scope-root "Unit Lint")))

@@ -113,7 +113,7 @@
 
 (define audit-scheduler-env
   (make-persistence-env
-    `((((playnet governance) ^audit-scheduler) ,^audit-scheduler))))
+    `((((playnet federation audit-scheduler) ^audit-scheduler) ,^audit-scheduler))))
 
 (define* (spawn-audit-scheduler auditor-aid auditor-store compute-fn
                                 #:key (initial-scopes '()))

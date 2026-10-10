@@ -13,7 +13,7 @@
 
 (use-modules (playnet test harness)
              (playnet doors lobby)
-             (playnet gateway services)
+             (playnet gateway llm-service)
              (playnet ai llm)
              (goblins) (goblins vat) (goblins actor-lib methods)
              (goblins actor-lib on))

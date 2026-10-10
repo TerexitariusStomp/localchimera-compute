@@ -21,7 +21,7 @@
 
 (use-modules (playnet test harness))
 (use-modules (playnet deprecated planner))
-(use-modules (playnet governance))   ;; for compute-plan-said
+(use-modules (playnet boot prelude))   ;; for compute-plan-said
 (use-modules (goblins)
              (goblins utils hashmap)
              (srfi srfi-1))

@@ -1,4 +1,4 @@
-;;; module/playnet/gateway/services.scm — Gateway-exposed LLM actor
+;;; module/playnet/gateway/llm-service.scm — Gateway-exposed LLM actor
 ;;;
 ;;; A single ^ai-service capability covers everything the lobby needs
 ;;; from an LLM: chat completion, NL→Scheme expression, audio
@@ -10,7 +10,7 @@
 ;;; gateway-vat, which propagates through the lobby's `<-` chain to
 ;;; OCapN consumers naturally.
 
-(define-module (playnet gateway services)
+(define-module (playnet gateway llm-service)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
   #:use-module (gcrypt base64)

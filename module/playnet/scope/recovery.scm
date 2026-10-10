@@ -30,9 +30,8 @@
   #:use-module ((ice-9 rdelim) #:select (read-line))
   #:use-module (rnrs bytevectors)
   #:use-module (srfi srfi-1)
-  ;; read-scope-kind / write-scope-kind! live in (playnet utils paths)
-  ;; so that scope.scm (included into (playnet governance)) can call them
-  ;; without creating a circular dep through (playnet scope recovery).
+  ;; read-scope-kind / write-scope-kind! live in (playnet utils paths), so the
+  ;; scope actor reads them without a cycle through (playnet scope recovery).
   #:use-module ((playnet utils paths)
                 #:select (read-scope-kind write-scope-kind!))
   #:use-module ((playnet keri signify-portable)

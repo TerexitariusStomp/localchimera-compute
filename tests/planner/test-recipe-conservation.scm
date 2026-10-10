@@ -39,8 +39,9 @@
 (use-modules (playnet scope root) (playnet vf schemas) (srfi srfi-1))
 (use-modules (playnet knowledge catalogues substances))
 (use-modules (goblins) (srfi srfi-1) (srfi srfi-13) (ice-9 format))
+(use-modules ((playnet knowledge dsl vf-lint) #:select (recipe-seeders)))
 
-;;; EVERY seeder the umbrella exports, DISCOVERED rather than listed. A hand-written
+;;; EVERY seeder knowledge/recipes/ exports, DISCOVERED rather than listed. A hand-written
 ;;; list is a second place to keep true, and it was wrong: it named 43 and matched 27,
 ;;; so half the recipe tree went unswept — and `spec-sp-regrind` read as "never
 ;;; produced" only because `seed-stone-paper-reclaim-recipe` was missing from it, which
@@ -50,19 +51,12 @@
 ;;;
 ;;; A seeder wanting something other than a recipe store (a scope, an observer, more
 ;;; arguments) refuses the call and is skipped: this is a sweep, and the count it
-;;; reports is what it reached. A name the umbrella exports and no module defines is
-;;; another matter, a seed module that failed to load, and that fails here by name:
-;;; skipped in silence, its recipes left the sweep and read as a list gone stale.
-(define %seeders
-  (sort (filter (lambda (sym) (string-prefix? "seed-" (symbol->string sym)))
-                (module-map (lambda (sym var) sym)
-                            (resolve-interface '(playnet planner))))
-        (lambda (a b) (string<? (symbol->string a) (symbol->string b)))))
-
-(define %unloaded
-  (filter (lambda (sym) (not (false-if-exception (module-ref (resolve-interface '(playnet planner)) sym))))
-          %seeders))
-(check "every seeder the umbrella exports is defined: each seed module loads" %unloaded '())
+;;; reports is what it reached. A seed module that fails to load is another
+;;; matter, and that fails here by name: skipped in silence, its recipes would
+;;; leave the sweep and read as a list gone stale.
+(define-values (%seeder-table %unloaded) (recipe-seeders))
+(define %seeders (map car %seeder-table))
+(check "every seed module of knowledge/recipes/ loads" %unloaded '())
 
 (define vat (spawn-vat #:name "recipe-conservation"))
 (define root (with-vat vat (spawn-scope-root "conservation")))
@@ -71,11 +65,9 @@
 (define ran
   (with-vat vat
     (filter-map
-     (lambda (sym)
-       (let ((p (false-if-exception (module-ref (resolve-interface '(playnet planner)) sym))))
-         (and (procedure? p)
-              (false-if-exception (begin (p rs) sym)))))
-     %seeders)))
+     (lambda (p)
+       (false-if-exception (begin ((cdr p) rs) (car p))))
+     %seeder-table)))
 (format #t "\n── ~a of ~a recipe seeders ran ──\n" (length ran) (length %seeders))
 
 ;;; A process's substance flows, in `check-conservation`'s own shape.
