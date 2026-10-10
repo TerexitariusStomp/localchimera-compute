@@ -1,7 +1,7 @@
 ;;; deploy/manifests/dev-test-manifest.scm — fast dev test loop env
 ;;;
 ;;; Brings up vanilla Guile + Goblins + the Scheme libraries needed to run
-;;; everything under tests/playnet/, tests/planner/, and the *mock-only*
+;;; every suite under tests/ that needs no daemon, and the *mock-only*
 ;;; tests under tests/keri/ (i.e. test-keri-*.scm — NOT integration/).
 ;;;
 ;;; ── Why not deploy/channels.scm? ────────────────────────────────────────────
@@ -69,7 +69,7 @@
          "osqp"
          "units"
          "coreutils"
-         ;; tools/run-scm-tests.sh discovers the suite with `find` and fans out
+         ;; tools/test/run-scm-tests.sh discovers the suite with `find` and fans out
          ;; with `xargs`; neither is in coreutils. Without them the runner found
          ;; nothing, ran nothing, and printed `0 passed, 0 failed` — exit 0.
          "findutils"

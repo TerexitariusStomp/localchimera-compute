@@ -3321,7 +3321,7 @@
                                        (or (preimage-ref pre 'edges) '()))))
             (sign-said-as-self! said (lambda (sig)
             ;; cast-signed replies a BARE `'ok` symbol on success (not an
-            ;; `(ok . _)` envelope — see tests/governance/test-client-signing.scm),
+            ;; `(ok . _)` envelope — see tests/voice/test-client-signing.scm),
             ;; so planner-call's `('ok . v)` pattern can't match it; handle the
             ;; reply shapes directly.
             (with-vat *vat*

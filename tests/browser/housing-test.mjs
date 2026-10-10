@@ -4,7 +4,7 @@
 // The person layer is a PORT of knowledge/housing-catalogue.scm's L2 and L4 —
 // code in both places, a table in neither — so nothing but a test holds the
 // two to the same figures. These pin the catalogue's own claims, the ones
-// tests/planner/test-housing-substance.scm pins on the Scheme
+// tests/solve/test-housing-substance.scm pins on the Scheme
 // side: an adult's night is owed 9 m², 18–26 °C, half a room, safety and
 // sanitation, energy, dryness; accessibility carries no base floor; a climate
 // without a winter asks no warmth floor; the old and the very young are owed 20 °C; a young child's privacy floor halves; step-free raises the

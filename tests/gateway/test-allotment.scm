@@ -10,7 +10,7 @@
 ;;;     nothing of this one;
 ;;;   • a read given back is one more, and never more than the week began with.
 ;;;
-;;; Run: tools/own-ccache.sh guile --no-auto-compile -q -L module tests/gateway/test-allotment.scm
+;;; Run: tools/test/own-ccache.sh guile --no-auto-compile -q -L module tests/gateway/test-allotment.scm
 
 (add-to-load-path "module")
 (use-modules (playnet test harness)

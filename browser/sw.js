@@ -2,7 +2,7 @@ const CACHE = 'playnet-v26-dev';
 
 // ── the lists ───────────────────────────────────────────────────────────────
 // Four lists say what this worker handles, and three of them are written by
-// tools/sw-stamp.sh from the tree being served, so they equal the tree:
+// tools/emit/sw-stamp.sh from the tree being served, so they equal the tree:
 //
 //   CORE   what app.html's own tags load (its scripts, styles, icons)
 //   SHELL  the dial's module graph: app/ and lib/ modules, the root scripts,

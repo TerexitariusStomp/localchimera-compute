@@ -3,7 +3,7 @@
 //
 // rest.ts is a PORT of knowledge/rest-catalogue.scm's base, person layer and
 // labour increment, so nothing but a test holds the two to the same figures.
-// These pin the claims tests/planner/test-rest-catalogue.scm
+// These pin the claims tests/knowledge/test-rest-catalogue.scm
 // pins on the Scheme side.
 //
 // Run: node tests/browser/rest-test.mjs

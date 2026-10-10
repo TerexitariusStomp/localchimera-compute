@@ -11,7 +11,7 @@
 ;;; normalizes to itself, so a person's own word for a relationship is a lens
 ;;; and a group the day they use it.
 ;;;
-;;; ui/app/rel-catalogue.ts is the browser's copy (tools/rel-emit.scm).
+;;; ui/app/rel-catalogue.ts is the browser's copy (tools/emit/rel-emit.scm).
 
 (define-module (playnet social relationship-kinds)
   #:use-module (srfi srfi-1)

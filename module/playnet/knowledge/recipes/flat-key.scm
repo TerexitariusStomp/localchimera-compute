@@ -63,7 +63,7 @@
 ;;; A process that produces the spec it uses is a COPY of a lent means. The cut
 ;;; `use`s the key, so the steward gate admits the key's holders for it today;
 ;;; the owner's narrower word (her alone, or whoever she delegates) is an open
-;;; rule (tests/planner/test-berlin-flat-key.scm states where it stands).
+;;; rule (tests/doors/test-berlin-flat-key.scm states where it stands).
 ;;;
 ;;; ── conservation ────────────────────────────────────────────────────────────
 ;;; The opening and the shift are states; the key, the oven and the cutter are

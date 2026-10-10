@@ -905,7 +905,7 @@ initRegions({ hasMap: () => !!map() });
 // the map paints each place by the LIGHTEST compliant pathway's burden, and
 // drilling a state reveals the real member communes operating there and the
 // recipe each runs. Data is data/snapshots/law-snapshot.json, the output of
-// the REAL fold (tools/emit-law-snapshot.scm); the legal-snapshot door that
+// the REAL fold (tools/emit/emit-law-snapshot.scm); the legal-snapshot door that
 // would refresh it live is the operator's, and a seat never holds it.
 // ════════════════════════════════════════════════════════════════════════
 // ── the fragility face: the federation's safe operating space ───────────────

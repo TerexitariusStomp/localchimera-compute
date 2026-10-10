@@ -1201,7 +1201,7 @@
 ;;;
 ;;; The list is the declaration's: every planner door (playnet doors protocol)
 ;;; marks `anonymous`. Opening a door to the browser is one edit there, and
-;;; tools/protocol-lint.scm keeps the declaration and the code's heads in
+;;; tools/lint/protocol-lint.scm keeps the declaration and the code's heads in
 ;;; step.
 
 (define %planner-public-doors

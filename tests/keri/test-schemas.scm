@@ -14,7 +14,7 @@
 ;;;   make test-schemas
 ;;;
 ;;; The Makefile's `test-schemas` target also runs
-;;; `tools/saidify-schemas.scm --check` as a CI guard against edits that
+;;; `tools/emit/saidify-schemas.scm --check` as a CI guard against edits that
 ;;; weren't followed by `make schemas`.
 
 (use-modules (playnet test harness)

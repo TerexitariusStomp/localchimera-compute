@@ -12,7 +12,7 @@
 ;;; historical and moral element" — L4, governance-set, may only raise.
 ;;;
 ;;; This is the ONE canonical model: ui/app/nutrition-catalogue.ts is generated
-;;; from its tables (tools/nutrition-emit.scm), and it is read by BOTH the live solve (scope-consumption → plan-scope #:bands, each
+;;; from its tables (tools/emit/nutrition-emit.scm), and it is read by BOTH the live solve (scope-consumption → plan-scope #:bands, each
 ;;; nutrient's two walls as one row) and the fragility wire, so the dial and the
 ;;; plan agree. Plain defines (include-able,
 ;;; like the other knowledge files; also primitive-load-able for tests).
@@ -770,7 +770,7 @@
 
 ;; ── THE TABLES, AS ONE VALUE ─────────────────────────────────────────────
 ;; Every table the browser's nutrition layers fold over is stated HERE and
-;; nowhere else: tools/nutrition-emit.scm reads this alist and writes
+;; nowhere else: tools/emit/nutrition-emit.scm reads this alist and writes
 ;; ui/app/nutrition-catalogue.ts, and `make check-nutrition-fresh` refuses a
 ;; stale copy — the same shape the protocol declaration keeps with
 ;; seam-wire.ts. The formulas (activity, sweat) stay code on both sides; the

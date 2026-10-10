@@ -53,7 +53,7 @@
        guile-gcrypt          ; crypto helpers (signatures, persistence)
 
        ;; ── Live-hacking tooling ───────────────────────────────────────
-       inotify-tools         ; tools/live-watch.sh inotifywait loop
+       inotify-tools         ; tools/dev/live-watch.sh inotifywait loop
 
        ;; ── Editor + Geiser ────────────────────────────────────────────
        emacs-no-x

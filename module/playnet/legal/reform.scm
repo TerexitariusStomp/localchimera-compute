@@ -19,7 +19,7 @@
 ;;;   existence wrappers (entity / registration) carry no spec — the doorkeeper
 ;;;   floor, not a reform target.
 ;;;
-;;; The worked example (seven mirrors, one of each kind) is tests/planner/reform-example-mirrors.scm.
+;;; The worked example (seven mirrors, one of each kind) is tests/legal/reform-example-mirrors.scm.
 
 ;; vf-record-type stays #:select'ed — a type is its name, the same object on
 ;; both sides of the seam. The legal vocabulary it diffs against is a module now.

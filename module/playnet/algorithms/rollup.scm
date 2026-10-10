@@ -132,7 +132,7 @@
 ;; output), and a cycle — corn sown to grow corn — converges to the adjoint's own
 ;; value. A spec no recipe produces is +inf.0 at the top (unreachable is a real
 ;; answer) and contributes 0 as an input (flow-snlt-cost's convention — no labour
-;; basis). Locked by tests/planner/test-joint-production.scm and
+;; basis). Locked by tests/scope/test-joint-production.scm and
 ;; test-snlt-order-invariance.scm.
 
 (define (crystallized-snlt-for-spec recipe-store spec-id)

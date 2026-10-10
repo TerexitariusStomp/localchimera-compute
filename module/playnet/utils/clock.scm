@@ -205,7 +205,7 @@
     u2))
 
 ;; The clock stands on the present, or on one unix second a recorder stood it on
-;; (tools/demo-emit.scm), so a recording reads the same on every run.
+;; (tools/emit/demo-emit.scm), so a recording reads the same on every run.
 (define %stood #f)
 (define (stand-clock! unix) (set! %stood unix))
 (define (clock-stood?) (and %stood #t))

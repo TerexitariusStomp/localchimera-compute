@@ -10,9 +10,9 @@ Status words: **fixed** (a test that failed before passes now), **held back** (t
 is made and withdrawn on purpose, with the reason), **open** (confirmed by running, not
 yet changed), **not reproduced** (tried, and the code does the right thing).
 
-Everything below reproduces from the repository: the sweep is `tools/compile-warnings.sh`
+Everything below reproduces from the repository: the sweep is `tools/lint/compile-warnings.sh`
 (`make lint-compile`, part of `make test`), the findings that stay open have a script in
-`tools/probes/`, and the laws that held are the suites `tests/planner/test-property-*.scm`.
+`tools/probes/`, and the laws that held are the suites `tests/*/test-property-*.scm`.
 
 ---
 
@@ -62,7 +62,7 @@ scope takes (a bioregion's futures, or the single "deterministic" future), set n
 A dial a scope's governance stated, and the voice a stance carried, changed nothing in a
 live plan; `voice-displacement` compared two equal solves.
 
-*Evidence.* `tests/planner/test-solve-settings-reach-every-path.scm` passes a distinctive
+*Evidence.* `tests/scope/test-solve-settings-reach-every-path.scm` passes a distinctive
 value for each through `plan-scope->alist` and reads the engine's globals: all seven
 checks failed before the change and pass after.
 
@@ -143,7 +143,7 @@ the solver (`vf-agent-skills`), the roster (`pools/labour-fold`), the holders ta
 (`doors/service`) and the socialization view (`labour-specs-of`) all take it, and nothing
 reads a resource's id. A declared skill declares its spec as worked where the store has
 none (`declare-skill!`, `facts/person-facts skill-spec`); an offer of time declares the
-generic one (`generic-labour-spec`). `tests/planner/test-held-good-is-not-a-skill.scm`
+generic one (`generic-labour-spec`). `tests/scope/test-held-good-is-not-a-skill.scm`
 holds it; the probe is gone. One consequence stated there: a recipe that WORKS water makes
 water labour, and a woman holding water then works it — the recipe's own word, as before.
 Two more readings the full gate asked for: a spec standing in a `satisfied-by` relation (a
@@ -215,7 +215,7 @@ $ grep -n "admit?\|proc-frag" module/playnet/economy/recipe-standing.scm
 per-process fragility limits they feed are never set from a standing. *Direction of a
 fix:* produce them from the standing, or delete the reads.
 
-*Read again, 2026-10-09.* The grep above left `tests/` out. `tests/planner/test-means-gateway.scm`
+*Read again, 2026-10-09.* The grep above left `tests/` out. `tests/doors/test-means-gateway.scm`
 injects a `standing` reader that carries both keys (`((proc-frag . ()) (admit? . ,(lambda (r) #f)))`),
 and the suite's claim — a consensus hands a scope none of the bar — rests on `gather` reading
 `admit?` off it. So the keys are the reader's interface, exercised by a reader the suite

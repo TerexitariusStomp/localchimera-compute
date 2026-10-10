@@ -1,6 +1,6 @@
 ;;; berlin-festival-seed.scm — the food festival, LIVE on the Berlin commune.
 ;;;
-;;; The live half of tests/planner/test-berlin-festival.scm over the same real
+;;; The live half of tests/solve/test-berlin-festival.scm over the same real
 ;;; Baumkataster ground: twelve Bezirke of street-tree pits, each Bezirk a
 ;;; PLACE of its own (knowledge/berlin-baumscheiben.scm carries the register's
 ;;; centroids), the same two crops with the register's own shade read, seeded

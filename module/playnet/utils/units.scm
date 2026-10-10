@@ -329,7 +329,7 @@
         (else 1)))
 
 ;; Every spelling of a unit of time the tables know — what the page is handed
-;; (tools/units-emit.scm → ui/app/units-catalogue.ts) so it asks the same question.
+;; (tools/emit/units-emit.scm → ui/app/units-catalogue.ts) so it asks the same question.
 (define %time-unit-names
   (map (lambda (p) (symbol->string (car p))) (assq-ref *substance-categories* 'time)))
 

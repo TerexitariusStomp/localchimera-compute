@@ -62,7 +62,7 @@
 (define (flow-allows-resource? flow resource)
   "Does RESOURCE satisfy the FLOW's spec/state/stage filter?
 
-   Lifted out of tests/planner/test-food-cold-chain-vf.scm, which held the only
+   Lifted out of tests/federation/test-food-cold-chain-vf.scm, which held the only
    definition while dependent-demand below already called it — so any non-#f
    flow reaching that filter was an unbound-variable crash. The test is the
    spec: strict spec match, with state and stage enforced only when the flow

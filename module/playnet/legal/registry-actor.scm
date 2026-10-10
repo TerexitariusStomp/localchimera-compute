@@ -9,7 +9,7 @@
 ;;; in governance, exactly as tension-registry wraps tension-kinds.
 ;;;
 ;;; A `forbid` the registry yields IS a possibility-tension — it prunes the
-;;; activity's column in the solve (see tests/planner/test-legal-gate.scm).
+;;; activity's column in the solve (see tests/scope/test-legal-gate.scm).
 ;;;
 ;;; Run:  guile -L . module/playnet/legal/registry-actor.scm
 

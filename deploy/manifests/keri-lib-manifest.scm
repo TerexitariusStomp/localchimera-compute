@@ -26,4 +26,4 @@
          "libsodium"                      ; Ed25519 seed → keypair, X25519
          "coreutils" "bash" "grep" "sed" "findutils"
          "libblake3"                      ; Blake3-256 for SAIDs
-         "git")))                         ; tools/openvtc-parity-check.sh
+         "git")))                         ; tools/lint/openvtc-parity-check.sh

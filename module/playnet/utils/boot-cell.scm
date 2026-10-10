@@ -9,7 +9,7 @@
 ;;; BEFORE the boot code sets the parameter never sees the value —
 ;;; reads inside its actor methods silently return #f. That is a
 ;;; spawn-order landmine (proven empirically; see
-;;; tests/governance/test-pending-grants-fiber-inheritance.scm).
+;;; tests/keys/test-pending-grants-fiber-inheritance.scm).
 ;;; A boot cell is one mutable location shared by every thread, so
 ;;; boot order cannot matter. The cost: no parameterize — tests
 ;;; set and restore explicitly.

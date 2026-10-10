@@ -21,7 +21,7 @@
 ;;; parsed trees, and `read` discards every comment, so re-serializing a
 ;;; whole file through it would silently strip documentation. Use it for
 ;;; precise sub-form addressing and REPL-driven edits you'll review
-;;; before writing, not as a drop-in replacement for `tools/sexp.scm`'s
+;;; before writing, not as a drop-in replacement for `tools/edit/sexp.scm`'s
 ;;; comment-preserving text-splice `replace`.
 
 (define-module (playnet tools zipper)

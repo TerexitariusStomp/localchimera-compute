@@ -11,7 +11,7 @@
 ;;; The scope travels IN the payload — publish-one! annotates the signal
 ;;; with its scope-id — so the topic tree stays one flat signal fabric
 ;;; every consumer can subscribe to by kind, whichever scope emitted it.
-;;; tools/dev-signal-cycle.scm publishes through this same door.
+;;; tools/dev/dev-signal-cycle.scm publishes through this same door.
 ;;;
 ;;; Assumes schemas.scm, codec.scm, signals.scm are loaded.
 

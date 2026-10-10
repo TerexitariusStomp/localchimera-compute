@@ -17,7 +17,7 @@ This file states and proves that claim directly as a statement about the
 quadratic form `vᵀHv`, matching how `kkt-report` actually uses `σ` (always
 through a Rayleigh-quotient-shaped bound, never through an eigenvalue
 computation) and matching the finite-difference curvature check in
-`tests/planner/test-property-solver-invariants.scm`, which spot-checks the
+`tests/solve/test-property-solver-invariants.scm`, which spot-checks the
 Scheme implementation against exactly this claim on random programs.
 
 Deliberately abstracted away from CSR: a "term" is just `a : Vec n` (its full

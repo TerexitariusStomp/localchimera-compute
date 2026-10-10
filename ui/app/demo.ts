@@ -20,7 +20,7 @@
 import type { ScopeRecipe, ScopeRef, DayEvent } from './seam.js';
 import type { Bump } from './desire.js';
 // a demo recipe's standing is read off its runs by the reading a live scope's
-// is (tools/recipe-demo-emit.scm), so a channel's word and curve cannot drift
+// is (tools/emit/recipe-demo-emit.scm), so a channel's word and curve cannot drift
 // from its points
 import { DEMO_STANDING } from './recipe-demo-standing.js';
 import { placeOf } from './demo/world.js';
@@ -300,7 +300,7 @@ export const DEMO_RECIPES: ScopeRecipe[] = [{
       id: "rp-cooked-meal", name: "Cooked meal", emoji: "🍲", produces: "meal",
       need: "nourishment/meals",
       // standing/profile/yield/margin (recipes.ts, web.ts): read off the runs a
-      // real scope would have behind it (tools/recipe-demo-emit.scm). Robust
+      // real scope would have behind it (tools/emit/recipe-demo-emit.scm). Robust
       // here: the price of vegetables swings, the kitchen holds steady — and
       // under today's prices (stress 5) it delivers what its record shows there.
       ...DEMO_STANDING["rp-cooked-meal"],

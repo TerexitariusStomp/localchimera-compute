@@ -4,7 +4,7 @@
 /// handle-cast-signed) signs a stance ACDC with the citizen's own KERI key in
 /// the browser, and the gateway verifies that signature against the citizen's
 /// AID before recording the vote. Every other piece is covered — the server
-/// flow in tests/governance/test-client-signing.scm (40/40), the WASM's Ed25519
+/// flow in tests/voice/test-client-signing.scm (40/40), the WASM's Ed25519
 /// signing in tests/ux/recovery-ux.mjs, the WASM↔gateway seam in
 /// tests/ux/credential-sync-ux.mjs — but not this combination, through the DIAL.
 ///

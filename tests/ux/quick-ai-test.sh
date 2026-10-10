@@ -2,7 +2,7 @@
 
 # Quick AI Integration Test for playnet
 # Manual smoke test for the gplay (ai …)/(ai-eval …) bridge against a REAL
-# provider — not the mocked path tests/planner/test-ai-async-evaluator.scm
+# provider — not the mocked path tests/org/test-ai-async-evaluator.scm
 # exercises. Prints the result and exits; no interactive REPL.
 
 echo "=== playnet AI Integration Quick Test ==="

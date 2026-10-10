@@ -5,9 +5,9 @@
 ;;; whole planner and governance surface available there unqualified, the
 ;;; way the two umbrellas (playnet planner) and (playnet governance) did. No
 ;;; code imports it: every module names its own dependencies, and
-;;; tools/retire-umbrella.py rewrites an import of this prelude into the
+;;; tools/edit/retire-umbrella.py rewrites an import of this prelude into the
 ;;; modules a file actually uses. The dev ledger's doors are here too, which
-;;; tools/dev-loop-close.scm evaluates against the live dev commune; the
+;;; tools/dev/dev-loop-close.scm evaluates against the live dev commune; the
 ;;; Goblins and fibers forms an operator types come from server/gateway.scm's
 ;;; own imports.
 

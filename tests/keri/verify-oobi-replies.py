@@ -1,4 +1,4 @@
-"""Authoritative OOBI-body check, driven by tests/keri/test-oobi-endpoint-replies.scm.
+"""Authoritative OOBI-body check, driven by tests/identity/test-oobi-endpoint-replies.scm.
 
 Feeds a playnet-built OOBI body (KEL + framed OKEA endpoint replies) to
 keripy's parser — the same machinery KERIA's OOBI resolution runs — and

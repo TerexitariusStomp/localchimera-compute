@@ -22,7 +22,7 @@ try {
   if (connected) {
     // Best-effort downstream — scopes/calendar load lazily on view navigation
     // with seeded data; reported as INFO. The willingness band rendering itself
-    // is covered deterministically by tests/playnet/test-calendar-willingness.scm.
+    // is covered deterministically by tests/ui/test-calendar-willingness.scm.
     await sleep(2500);
     const scopes = await scopeOptions(page);
     h.info(`scopes loaded: ${scopes.join(',') || '(none — calendar view not navigated)'}`);

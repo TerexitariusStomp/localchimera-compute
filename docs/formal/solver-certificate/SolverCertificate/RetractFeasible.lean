@@ -8,7 +8,7 @@ toward a strictly-interior `anchor` by the least amount that restores every
 hard slack to `≥ 0`. If this were wrong — an off-by-one in the `max` over
 violated constraints, a sign error in the per-constraint root — the plan
 handed back would silently still be infeasible, the exact failure shape
-`tests/planner/test-property-solver-invariants.scm` caught for `solve-osqp`
+`tests/solve/test-property-solver-invariants.scm` caught for `solve-osqp`
 on `frag`-carrying programs (there: a different bug, same *shape* of bug —
 code that looks like it enforces a limit but doesn't).
 

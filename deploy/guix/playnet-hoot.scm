@@ -10,7 +10,7 @@
 ;;;
 ;;; The wasm Hoot emits uses the standard WebAssembly exception encoding
 ;;; (try_table / exnref): Chrome 137, Firefox 131, Safari 18.4.  Node 22 needs
-;;; --experimental-wasm-exnref to run it (tools/run-wasm.cjs adds it itself).
+;;; --experimental-wasm-exnref to run it (tools/test/run-wasm.cjs adds it itself).
 
 (define-module (playnet-hoot)
   #:use-module (guix packages)

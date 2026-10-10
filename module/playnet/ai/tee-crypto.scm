@@ -17,7 +17,7 @@
 ;;; (text hex-sig expected-address -> bool), so turning on client-side TEE
 ;;; enforcement is just: default that seam to this procedure.
 ;;;
-;;; Correctness is pinned by tests/planner/test-tee-crypto.scm against canonical
+;;; Correctness is pinned by tests/ai/test-tee-crypto.scm against canonical
 ;;; vectors (keccak256 of ""/"abc", a real web3.js personal_sign signature).
 
 (define-module (playnet ai tee-crypto)

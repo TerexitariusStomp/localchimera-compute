@@ -20,7 +20,7 @@
 ;;;   • the doors that write them (`person-write-doors`, routed to the home),
 ;;;     the doors that read them (`person-read-doors`), and the doors that act
 ;;;     at the scope the call names (`scope-subject-doors`).
-;;; tests/planner/test-person-doors.scm refuses a planner door that takes a
+;;; tests/doors/test-person-doors.scm refuses a planner door that takes a
 ;;; person in its second place and is in none of the three lists.
 
 (define-module (playnet vf facts person-facts)

@@ -44,7 +44,7 @@
              ;; REPL socket (boot/repl), where everything this script imports is
              ;; bound. The prelude makes the whole planner and governance surface
              ;; available there unqualified, and Goblins and fibers are the forms
-             ;; the operator's own expressions take (tools/dev-loop-close.scm
+             ;; the operator's own expressions take (tools/dev/dev-loop-close.scm
              ;; sends `with-vat`). They are here for the operator, not for the
              ;; code, which states its own imports in module/playnet/boot/.
              (playnet boot prelude)

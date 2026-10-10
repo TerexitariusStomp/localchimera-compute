@@ -5,13 +5,13 @@
 ;;;
 ;;;   (playnet keri credentials)  — the %schema-* SAID constants and the
 ;;;                                 boot-time OOBI resolver
-;;;   tools/saidify-schemas.scm   — the saidification work list
+;;;   tools/emit/saidify-schemas.scm   — the saidification work list
 ;;;   server/serve-static.scm     — the /oobi/{said} schema branch that
 ;;;                                 serves each document to resolvers
 ;;;
 ;;; In ACDC, a schema is identified by its SAID: `$id` holds a
 ;;; blake3-256 SAID computed over the document with `$id` blanked to 44
-;;; `#` chars (see tools/saidify-schemas.scm for the build step and
+;;; `#` chars (see tools/emit/saidify-schemas.scm for the build step and
 ;;; tests/keri/test-schemas.scm for the idempotency proof). The files
 ;;; live beside this module in module/playnet/keri/schemas/.
 ;;;

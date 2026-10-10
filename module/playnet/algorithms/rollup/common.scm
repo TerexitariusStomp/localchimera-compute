@@ -80,7 +80,7 @@
 ;; ---------------------------------------------------------------------------
 ;; PRICE. `sne-index` alone cannot price an input the index has not reached yet —
 ;; it reads absent as 0, which is how the same bug got into sne.scm (see
-;; tests/planner/test-snlt-order-invariance.scm). Every entry point below takes an
+;; tests/scope/test-snlt-order-invariance.scm). Every entry point below takes an
 ;; optional `price` resolver instead; when given it OVERRIDES the index, so an
 ;; unpriced input recurses rather than silently costing nothing.
 ;;
@@ -96,7 +96,7 @@
 ;; riding free again — a failure indistinguishable from the feature being absent.
 ;; The guard belongs here, at the single point every variant reads an input
 ;; through, and not at the call sites. Locked by the raw-input case in
-;; tests/planner/test-joint-production.scm.
+;; tests/scope/test-joint-production.scm.
 (define (rollup-input-price price sne-index spec)
   (let ((v (if price (price spec) (hashmap-ref sne-index spec 0))))
     (if (or (not v) (= v +inf.0)) 0 v)))

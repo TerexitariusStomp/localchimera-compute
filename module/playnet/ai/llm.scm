@@ -94,7 +94,7 @@
 ;;; replay. The final CRYPTOGRAPHIC step — Ethereum personal_sign ecrecover
 ;;; (keccak256 + secp256k1 pubkey recovery) — is implemented in pure Guile in
 ;;; (playnet ai tee-crypto) `tee-verify-ecdsa`, validated against canonical
-;;; vectors (tests/planner/test-tee-crypto.scm), and is the DEFAULT #:verify-ecdsa
+;;; vectors (tests/ai/test-tee-crypto.scm), and is the DEFAULT #:verify-ecdsa
 ;;; here — so client-side enforcement is ON: under policy 'enforce a TEE response
 ;;; whose signature does not recover to the attested enclave address is REJECTED.
 ;;; The seam stays injectable: pass #:verify-ecdsa %ecdsa-unwired to fail closed

@@ -9,7 +9,7 @@
 ;;; path '(2) means "3rd top-level form", and path '(2 1 0) means "1st
 ;;; child of 2nd child of the 3rd top-level form".
 ;;;
-;;; These ops fill a real gap: `tools/sexp.scm` only replaces whole
+;;; These ops fill a real gap: `tools/edit/sexp.scm` only replaces whole
 ;;; top-level forms by text-splicing (which is why it preserves
 ;;; comments). These operate BELOW that granularity, inside a form's own
 ;;; structure — slurp/barf/wrap/splice/raise, the moves paredit gives you

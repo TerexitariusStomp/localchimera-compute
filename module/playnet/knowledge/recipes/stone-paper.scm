@@ -50,7 +50,7 @@
 ;;; to return it to; composting returns the 65% that was always mineral, as a
 ;;; calcitic soil amendment, and needs a windrow. Which one a plan reaches for is
 ;;; therefore a question about DISTANCE, and the planner answers it as one:
-;;; tests/planner/test-stone-paper-siting.scm puts two hubs at different ranges
+;;; tests/solve/test-stone-paper-siting.scm puts two hubs at different ranges
 ;;; from one compounding line and lets the solve pick a grade for each.
 ;;;
 ;;; The bio grade draws no regrind, because a plan chooses it exactly where the

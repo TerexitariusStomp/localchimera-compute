@@ -3,7 +3,7 @@
 // One vector source, the `osm://` scheme app/map-packs.ts teaches maplibre: a
 // region kept on this device answers first, the same-origin /tiles/osm route
 // (server/serve-static.scm) otherwise — PMTiles archives cut from a Protomaps
-// build of OpenStreetMap (tools/map-tiles.sh). The browser never contacts a
+// build of OpenStreetMap (tools/emit/map-tiles.sh). The browser never contacts a
 // tile provider: no per-tile location leak, the map works over the onion, and
 // it works with no network for every region kept. The style is @protomaps/basemaps'
 // (vendor/basemaps/basemaps.js) over its light palette, and the palette goes

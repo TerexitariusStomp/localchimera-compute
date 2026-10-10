@@ -6,7 +6,7 @@
 # The files are COMMITTED: the deploy rsync ships them, the service worker
 # caches them, and no page asks a CDN for them. This script is how they are
 # updated — bump the version or commit, run it, update the digests it prints,
-# commit. The glyphs (10 MB) are not here: tools/map-tiles.sh fetches them at
+# commit. The glyphs (10 MB) are not here: tools/emit/map-tiles.sh fetches them at
 # deploy time beside the archives, by the same size budget that keeps the
 # speech model out of git.
 #

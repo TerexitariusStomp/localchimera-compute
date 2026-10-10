@@ -139,7 +139,7 @@
 ;; sown to grow corn) converging to the adjoint's own value. rollup.scm's
 ;; `crystallized-snlt-for-spec` and the engine's `good-labour-content` are the
 ;; same kernel, so the three agree by construction.
-;; Regression: tests/planner/test-snlt-order-invariance.scm.
+;; Regression: tests/scope/test-snlt-order-invariance.scm.
 
 (define (compute-recipe-sne/actor output-spec-id recipe-store sne-index . rest)
   "Best (minimum) SNE across all recipes producing output-spec-id, every

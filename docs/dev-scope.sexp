@@ -23,8 +23,8 @@
 ;;; but not yet recognized as YOUR identity by the credit system anywhere
 ;;; else. Fill it in once you know it; nothing else here needs to change.
 ;;;
-;;; Read by tools/dev-plan.scm, tools/dev-signal-cycle.scm and
-;;; tools/dev-loop-close.scm; DEV_SCOPE_PATH overrides this path. Edit the
+;;; Read by tools/dev/dev-plan.scm, tools/dev/dev-signal-cycle.scm and
+;;; tools/dev/dev-loop-close.scm; DEV_SCOPE_PATH overrides this path. Edit the
 ;;; hours here as they change — nothing else in the loop needs to know.
 
 (((id . "ops") (hours . 30) (areas . all)

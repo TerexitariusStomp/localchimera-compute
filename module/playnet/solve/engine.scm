@@ -386,7 +386,7 @@
 ;;                                     quantile_alpha — the exact *frag-cap* reading (alpha = 0 most precautious).
 ;; Both walls are "a wall, a range, and a point in it"; what the point DOES follows from the shape, and the shape from the side: on a ceiling thrift and the
 ;; barrier push the same way, so a log barrier settles and the tip is where the plan may NEVER go (frag); on a floor they oppose, a log barrier would settle at
-;; w/κ above the wall — a number about weights — so the tip is where the plan is AT EASE and lo is the wall (held). Measured in tests/planner/test-shape-by-side.scm; docs/planning/solve/reproduction-bands.md.
+;; w/κ above the wall — a number about weights — so the tip is where the plan is AT EASE and lo is the wall (held). Measured in tests/solve/test-shape-by-side.scm; docs/planning/solve/reproduction-bands.md.
 ;;   w                                 the governed steepness of the margin floor and the ceiling.
 ;; A nutrient band (rda ul w) is one entry; an insurance reserve is a floor-with-margin and no ceiling; an eco-style ceiling on a produced good is a ceiling
 ;; alone. One table, one emission (build-located "REPRODUCTION BAND"), one pour (apply-repro-bands!) shared by every solve path. Fed by plan-from-records
@@ -1155,7 +1155,7 @@
 ;; substance and denominator together — and the measure is where a unit lives.
 ;; `defaultUnitOfResource` stays the catalogue's word for what a kind is counted
 ;; in, which is what makes a holding that contradicts its spec a FINDING
-;; (tests/planner/test-holdings-audit.scm) rather than an arithmetic that quietly
+;; (tests/scope/test-holdings-audit.scm) rather than an arithmetic that quietly
 ;; splits into two answers depending on which of the two is asked.
 ;;; ── ELEMENT CLOSURE: conservation as a CONSTRAINT, not a reading ─────────────
 ;; docs/social-material.typ: "a balanced chemical reaction is a recipe … the convex
@@ -3583,7 +3583,7 @@
           ;; which is about raws and their coupling; a produced good has no
           ;; cascade. Both walls on one good are the two-sided band the
           ;; fragility dial draws — as two smooth terms, which is why the band
-          ;; is convex and Newton-safe (tests/planner/test-nutrition-band.scm).
+          ;; is convex and Newton-safe (tests/solve/test-nutrition-band.scm).
           (hash-for-each (lambda (g b)
             (let ((fl (band-floor b)) (hi (band-ceiling b)) (w (band-w b)) (gc (good-coeffs g)))
               (when (and (pair? fl) (eq? (tier-shape 'margin) 'soft))   ; a floor with a margin → held; a wall at its ease under a held tier (below), gone under rights
@@ -6963,7 +6963,7 @@
 ;; the worker-column levels of the ordinary solve and inherits the ordinary
 ;; certificate. `*emp-mode*` picks the reading of "equal": 'total equalises each
 ;; worker's total burden, 'pool their share within each (skill, cell) pool.
-;; Exercised by tests/planner/test-emp-modes.scm.
+;; Exercised by tests/solve/test-emp-modes.scm.
 ;;
 ;; A SECOND implementation used to live here — `assign-emp`, water-filling each
 ;; cell's hours across a roster inside 30 fixed sweeps. It was reachable only

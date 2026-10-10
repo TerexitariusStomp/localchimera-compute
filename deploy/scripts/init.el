@@ -77,7 +77,7 @@ path and the live-reload watch roots.")
 ;;; Two implementations are bundled and you can pick whichever fits:
 ;;;
 ;;;   playnet/live-reload-via-script  — shells out to
-;;;     tools/live-reload.scm. Works for any editor; no Geiser
+;;;     tools/dev/live-reload.scm. Works for any editor; no Geiser
 ;;;     connection required from Emacs.
 ;;;
 ;;;   playnet/live-reload-via-geiser  — uses the active Geiser-Hoot
@@ -124,10 +124,10 @@ configured live-reload roots."
                        playnet-live-reload-roots)))))
 
 (defun playnet/live-reload-via-script ()
-  "Shell out to tools/live-reload.scm with the current buffer's file."
+  "Shell out to tools/dev/live-reload.scm with the current buffer's file."
   (let* ((root (playnet--repo-root-for-buffer))
          (rel  (playnet--rel-path-from-root root buffer-file-name))
-         (script (expand-file-name "tools/live-reload.scm" root)))
+         (script (expand-file-name "tools/dev/live-reload.scm" root)))
     (when (and root rel (file-executable-p script))
       ;; Run async so saving never blocks the editor.
       (let ((default-directory root))

@@ -3,7 +3,7 @@
 ;;; One reader of the repository's Radicle issues (`rad cob show` JSON), and
 ;;; everything downstream reads its facts rather than the JSON a second
 ;;; time: the AI dev loop's priority queue (issue-oid-entries,
-;;; sort-issue-entries, tools/dev-signal-cycle.scm), and the development
+;;; sort-issue-entries, tools/dev/dev-signal-cycle.scm), and the development
 ;;; scope's plan (module/playnet/dev/recipes.scm,
 ;;; bridge/dev-plan.scm).
 ;;;
@@ -12,7 +12,7 @@
 ;;; want, `needs:` the issues whose deliverable it cites. fact->entry then
 ;;; projects a fact down to the OLDER, narrower shape the priority queue
 ;;; ships as a deficit signal: ((id . spec-id) (title . str) (body . str)
-;;; (due . str-or-#f)) — kept for tools/dev-signal-cycle.scm's own wire,
+;;; (due . str-or-#f)) — kept for tools/dev/dev-signal-cycle.scm's own wire,
 ;;; which predates the plan and is simpler than it.
 ;;;
 ;;; Also holds the feedback-pool half of the queue (feedback-triage-entry,
@@ -168,7 +168,7 @@
   (filter (lambda (f) (null? (needs-open f all-facts))) (open-facts all-facts)))
 
 ;; ── facts → the priority queue's own entry shape ─────────────────────────
-;; tools/dev-signal-cycle.scm's wire predates the plan and carries less: one
+;; tools/dev/dev-signal-cycle.scm's wire predates the plan and carries less: one
 ;; task, a title and a body, no skill or hours. fact->entry is the one
 ;; narrowing, so an issue's title and body are read once, here, whichever
 ;; queue asks for them.

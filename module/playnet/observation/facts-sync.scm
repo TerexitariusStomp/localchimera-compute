@@ -1,6 +1,6 @@
 ;;; facts-sync.scm — retained host snapshots → the scope's live-registry
 ;;;
-;;; The consumer half of the host-facts loop. tools/host-facts.scm
+;;; The consumer half of the host-facts loop. tools/dev/host-facts.scm
 ;;; --publish (on deploy/os.scm's five-minute mcron timer) leaves each
 ;;; host's reading as a RETAINED message on playnet/facts/host/<hostname>;
 ;;; this module subscribes that subtree and lands every snapshot in a

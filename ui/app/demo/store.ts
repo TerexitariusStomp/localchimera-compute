@@ -4,7 +4,7 @@
 // counts, the readings of each spec, the counts of each stock and the contests
 // open from the gateway. Offline they read this: what the planner and
 // governance answered the demo's person in the demo neighbourhood
-// (demo/recording.ts, written by tools/demo-emit.scm from a real scope), read
+// (demo/recording.ts, written by tools/emit/demo-emit.scm from a real scope), read
 // by the readers a gateway's replies are read by (count.ts, contest.ts). So
 // the figures here are the engine's own, in the wire's own shapes.
 //

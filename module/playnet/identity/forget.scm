@@ -23,7 +23,7 @@
 ;;; rather than erasing the registry: a vouch a phone made while authorized
 ;;; stays the person's. This module imports
 ;;; no planner, governance, observation or KERI-store module —
-;;; tests/keri/test-forget.scm holds that as a check — so it cannot reach a
+;;; tests/gateway/test-forget.scm holds that as a check — so it cannot reach a
 ;;; ledger by construction. The files it does erase are the gateway's custody
 ;;; of the member's OWN things (identity/user-files.scm), read by no planner.
 ;;;

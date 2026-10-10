@@ -9,14 +9,14 @@ evidence has stopped finding the defect (move it to a test then).
 
 Closed since, each probe now a suite:
 - a good a person holds read as a skill they have (`held-good-skill.scm`) — a skill is a
-  worked spec (formulas/actions `labour-specs`); `tests/planner/test-held-good-is-not-a-skill.scm`.
+  worked spec (formulas/actions `labour-specs`); `tests/scope/test-held-good-is-not-a-skill.scm`.
 - free carries of `#:movable` goods admitting a circulation (`movable-circulation.scm`) — a
   carry costs its τ·km in every labour model and opposing carries net before rows are
-  emitted (engine `carry-terms`, `net-carries`); `tests/planner/test-property-enact.scm`
+  emitted (engine `carry-terms`, `net-carries`); `tests/scope/test-property-enact.scm`
   plans movable worlds.
 - the claimable set holding metabolic by-products, nutrient pools and a held skill
   (`claimable-by-products.sh`) — the set is read off the scope's own recipes and its
-  stocked goods, labour excluded (scope/live `with-claims`); `tests/planner/test-claim-means.scm`.
+  stocked goods, labour excluded (scope/live `with-claims`); `tests/economy/test-claim-means.scm`.
   Still open there: `claimable-specs` reads the raw rail table and so bypasses the bar
   list `spec-rail` honours (facts/rail.scm, another session's in-flight change).
 
@@ -26,10 +26,10 @@ standing the production reader (`scope-standing`) never carries —
     grep -rn "(cons 'admit?\|'admit? \.\|(admit? \. " module server --include=*.scm   # the test reader only
 
 Read again on 2026-10-09: the two keys are the `standing` reader's interface, exercised by
-`tests/planner/test-means-gateway.scm`'s reader (a consensus barring a scope's recipes), so
+`tests/doors/test-means-gateway.scm`'s reader (a consensus barring a scope's recipes), so
 they stay; the reader contract in `doors/service.scm` now names them.
 
-The sweep that found the calls which could never run is `tools/compile-warnings.sh`
+The sweep that found the calls which could never run is `tools/lint/compile-warnings.sh`
 (`make lint-compile`, part of `make test`). The laws that held are
-`tests/planner/test-property-{plan,enact,credit}.scm`. The account of all of it, with
+`tests/scope/test-property-{plan,enact}.scm` and `tests/pools/test-property-credit.scm`. The account of all of it, with
 causes and the order to close the open ones, is `docs/planning/books/correctness-hunt-2026-10-08.md`.

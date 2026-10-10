@@ -47,7 +47,7 @@
     ;; solve (service.scm `policy-kw`) and hands it to the engine as a
     ;; keyword, so the engine's own global is a per-solve setting and never
     ;; a process-wide state some caller once wrote. A dial's default here
-    ;; equals the engine's (tests/governance/test-voice/quorum.scm pins
+    ;; equals the engine's (tests/economy/test-governance-policy.scm pins
     ;; the two), so a scope with no policy row solves as the engine does.
     ;; the voice field's bound (docs/planning/voice/voice-follows-work.md): how
     ;; far a producer stance may re-weigh an hour of a way of working, 0 ≤ τ < 1.

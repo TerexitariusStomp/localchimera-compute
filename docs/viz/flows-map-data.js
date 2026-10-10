@@ -17,7 +17,7 @@
 //   located matter solve — `service.scm matter-results->wire` gives per-process
 //   consume/produce events with quantities; multiply by `substances.scm` composition
 //   for per-element masses, and map each process id to a place [lng,lat]. (Mirror
-//   tools/emit-matter-snapshot.scm, adding a process→coordinate table.)
+//   tools/emit/emit-matter-snapshot.scm, adding a process→coordinate table.)
 window.__flowmap = {
   meta: { title: "Amsterdam nutrient metabolism (estimate)",
           note: "particle density ∝ kt N/yr (order-of-magnitude estimate) · coordinates real" },

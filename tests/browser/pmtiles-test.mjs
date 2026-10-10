@@ -1,7 +1,7 @@
 // tests/browser/pmtiles-test.mjs — PMTiles on the device (browser/app/pmtiles.js)
 //
 // The same fixture the Guile reader is checked against (tests/fixtures/map/
-// tiny.pmtiles, written by tools/pmtiles-tiny.scm): tile 0/0/0 in the root
+// tiny.pmtiles, written by tools/emit/pmtiles-tiny.scm): tile 0/0/0 in the root
 // directory, 1/0/0 and 1/0/1 as one run and 2/1/1 alone in a leaf, every other
 // tile a hole, each body the gzipped text "z/x/y". What is pinned is that the
 // two readers agree — the spec's worked tile ids, the run, the leaf hop, the

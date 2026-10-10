@@ -198,7 +198,7 @@
   (format #t "  spawn-adapter  = Agent + legal-demands + render-filing (seed, don't build)~%")
   (format #t "  retire-adapter = hollow? check + held-but-not-required (dissolve clean)~%")
   (format #t "  rotate-adapter = re-render filings on a fresh Agent + re-point custody~%")
-  (format #t "  see tests/planner/test-adapters.scm for spawn → retire → rotate.~%"))
+  (format #t "  see tests/observation/test-adapters.scm for spawn → retire → rotate.~%"))
 
 (when (and (pair? (command-line))
            (string-suffix? "legal/adapters.scm" (car (command-line))))

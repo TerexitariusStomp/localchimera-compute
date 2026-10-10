@@ -2,7 +2,7 @@
 ;;; live priority queue (module/playnet/dev/priorities.scm)
 ;;;
 ;;; The impure half (shelling out to `rad`, reading the watermark file,
-;;; publishing to MQTT) lives in tools/dev-signal-cycle.scm and is
+;;; publishing to MQTT) lives in tools/dev/dev-signal-cycle.scm and is
 ;;; exercised manually via --dry-run against a real checkout; this pins
 ;;; the decision logic: priority ranking, issue→entry shape, the
 ;;; feedback-pool watermark gate.

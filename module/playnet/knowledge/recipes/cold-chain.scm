@@ -6,7 +6,7 @@
 ;;; positioning-analysis customer-tolerance times, and capability-tagged
 ;;; vehicles + storage compartments.
 ;;;
-;;; Originally inlined in tests/planner/test-food-cold-chain-vf.scm.
+;;; Originally inlined in tests/federation/test-food-cold-chain-vf.scm.
 ;;; Extracted so the recipe and its spec library are reusable, and so
 ;;; all recipe seed data lives under knowledge/recipes/.
 

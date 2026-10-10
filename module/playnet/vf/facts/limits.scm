@@ -3,7 +3,7 @@
 ;;; Each is a bound a client has to stay within BEFORE it sends: a document or
 ;;; a picture over its bound is refused whole. So the page reads these same
 ;;; figures — ui/app/limits-catalogue.ts is the generated copy
-;;; (tools/limits-emit.scm, `make check-limits-fresh`) — and sizes what it
+;;; (tools/emit/limits-emit.scm, `make check-limits-fresh`) — and sizes what it
 ;;; sends against them (the log's backup, a feedback body, the pictures of a
 ;;; read, the picture a count names).
 ;;;

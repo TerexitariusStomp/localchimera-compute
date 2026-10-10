@@ -220,7 +220,7 @@
 ;; A conserved quantity is a LEAF a unit of a spec carries. Each is declared here
 ;; with its unit, its sign and its law, and everything else derives: the id lists
 ;; the readers key on (`leaf-ids`), the sign rule of `substance-content`
-;; (`signed-leaf?`), and the register's table (tools/physics-emit.scm). The tracked
+;; (`signed-leaf?`), and the register's table (tools/emit/physics-emit.scm). The tracked
 ;; elements are leaves too, of kind element, unsigned: matter is an amount or nothing.
 (define *leaves* '())                     ; ((id . (kind unit signed? law)) …), in declaration order
 (define* (declare-leaf! id kind unit law #:key (signed? #f))
@@ -1483,7 +1483,7 @@
 ;; FOOD → nutrient content PER UNIT (per kg) — READ, not authored. Each food
 ;; spec bound in knowledge/food-sources.scm stands for one USDA FoodData
 ;; Central food (SR Legacy, public domain), whose per-100 g rows are sliced
-;; into knowledge/data/fdc-sr-legacy.scm by tools/fdc-snapshot.scm and pinned
+;; into knowledge/data/fdc-sr-legacy.scm by tools/emit/fdc-snapshot.scm and pinned
 ;; by the release archive's sha256; the catalogue's nutrient ids map onto FDC's
 ;; there too (total n-3 = ALA + EPA + DHA + DPA). This table is that slice ×10,
 ;; one row per bound spec, plus the hand overlay for what the source does not

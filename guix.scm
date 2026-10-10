@@ -39,11 +39,11 @@
                    ;; Knowledge tests (kanren, knowledge, system-kb)
                    (invoke guile "--no-auto-compile" "-q"
                            "-L" "module"
-                           "tests/playnet/test-knowledge.scm")
+                           "tests/lang/test-knowledge.scm")
                    ;; Relational planner tests (imports (playnet planner))
                    (invoke guile "--no-auto-compile" "-q"
                            "-L" "module"
-                           "tests/planner/relational-planner.scm"))))
+                           "tests/deprecated/relational-planner.scm"))))
              (add-after 'install 'create-wrappers
                (lambda* (#:key inputs outputs #:allow-other-keys)
                  ;; Generate self-contained launchers under $out/bin.
@@ -140,7 +140,7 @@
                      "sms-verify"
                      (string-append "exec " guile-bin " --no-auto-compile -L "
                                     base "/module "
-                                    base "/tools/sms-verify.scm \"$@\"\n"))))))))
+                                    base "/tools/dev/sms-verify.scm \"$@\"\n"))))))))
   (inputs (list guile-next guile-hoot gnu-make guile-json-4 guile-goblins
                 guile-fibers guile-gnutls guile-websocket guile-gcrypt
                 ;; Native shared libs the Guile FFI dlopens by basename.

@@ -10,8 +10,8 @@
 ;;; can drift from it.
 ;;;
 ;;; docs/planning/books/beyond-valueflows.md §6.2 is the plan. Three things hold it:
-;;; tests/planner/vf-conformance-verbs-test.scm reads the same sets from all_vf.TTL by
-;;; the same predicates and holds these to them; tools/lint-verbs.scm counts the sites
+;;; tests/vf/vf-conformance-verbs-test.scm reads the same sets from all_vf.TTL by
+;;; the same predicates and holds these to them; tools/lint/lint-verbs.scm counts the sites
 ;;; that still spell verbs by hand, and that count only falls; and this file is the one
 ;;; home, so the table file (vf/schemas.scm) stays the vocabulary.
 ;;;

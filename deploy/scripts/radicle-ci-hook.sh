@@ -219,7 +219,7 @@ sync_application_code() {
             || log "rns-wasm build failed (non-fatal) — mesh browser leg stays stale"
     fi
 
-    # Stamp the deployed sw.js (tools/sw-stamp.sh says what the stamp is and
+    # Stamp the deployed sw.js (tools/emit/sw-stamp.sh says what the stamp is and
     # how it is written). Two properties this deploy relies on: the stamp is
     # a fingerprint of the dial's served bytes, so a deploy that changes none
     # of them leaves sw.js byte-identical and no browser reinstalls; and
@@ -228,7 +228,7 @@ sync_application_code() {
     # in one step.
     local bhash
     if [ -f "$REPO_DIR/browser/sw.js" ] \
-       && bhash=$(bash "$REPO_DIR/tools/sw-stamp.sh" "$DEPLOY_DIR/browser" \
+       && bhash=$(bash "$REPO_DIR/tools/emit/sw-stamp.sh" "$DEPLOY_DIR/browser" \
                        "$REPO_DIR/browser/sw.js" 2>/dev/null) \
        && [ -n "$bhash" ]; then
         log "Stamped sw.js CACHE = playnet-${bhash} (browser-asset fingerprint)"

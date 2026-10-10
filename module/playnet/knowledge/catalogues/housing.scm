@@ -100,7 +100,7 @@
 ;; ceiling stands everywhere but rises where a body is acclimatised: the
 ;; mid-20s edge is a temperate-climate figure, and heat-health thresholds are
 ;; set locally, so the hot region's ceiling is 30 °C. The named figures below
-;; are emitted to the browser (tools/housing-emit.scm), so no copy of them is
+;; are emitted to the browser (tools/emit/housing-emit.scm), so no copy of them is
 ;; typed twice.
 (define %acclimatised-ceiling 30.0)
 ;; the regions that have no winter — one list, emitted to the browser with the rest

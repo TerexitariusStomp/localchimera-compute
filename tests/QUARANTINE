@@ -1,5 +1,5 @@
 # tests/QUARANTINE — tests EXCLUDED from `make test` (the green baseline), each
-# with a reason. Read by tools/run-scm-tests.sh. Format: one repo-relative path
+# with a reason. Read by tools/test/run-scm-tests.sh. Format: one repo-relative path
 # per line; everything after `#` is the reason. Blank lines ignored.
 #
 # Three kinds of exclusion, all explicit so nothing rots silently:
@@ -36,22 +36,22 @@ tests/keri/integration/test-keria-issuance.scm      # needs-keria (POST 127.0.0.
 tests/keri/integration/test-keri-backend-live.scm   # needs-keria
 tests/keri/integration/test-real-keria.scm          # needs-keria
 tests/keri/integration/test-witness-receipts.scm    # needs-keria witness pool
-tests/keri/test-ipex-pull-flow.scm                  # needs-keria (agent/exchange endpoints)
-tests/governance/test-keria-store-pending.scm       # needs-keria (credentials endpoint)
+tests/keys/test-ipex-pull-flow.scm                  # needs-keria (agent/exchange endpoints)
+tests/keys/test-keria-store-pending.scm       # needs-keria (credentials endpoint)
 tests/monero/test-monero-wallet.scm                 # needs-monerod / wallet-rpc
-tests/test-push-crypto.scm                          # needs-libgcrypt (dlopen libgcrypt.so) + vapid keys
-tests/playnet/test-planner-service-ocapn.scm        # needs-live-gateway (waits on an sref file a gateway writes)
+tests/push/test-push-crypto.scm                          # needs-libgcrypt (dlopen libgcrypt.so) + vapid keys
+tests/gateway/test-planner-service-ocapn.scm        # needs-live-gateway (waits on an sref file a gateway writes)
 tests/integration/test-multi-gateway-driver.scm     # driver, not a unit test — requires <sref-A> <sref-B> args
-tests/planner/federation-wire-host.scm              # helper process, not a unit test — requires A|B <sref-file> <seed-byte>; test-federation-wire-procs launches it
-tests/governance/two-box/box1.scm                   # helper process, not a unit test — needs the PLAYNET_* env run-two-box.sh sets (`make test-witness-two-box`)
-tests/governance/two-box/box2.scm                   # helper process, not a unit test — same harness as box1
+tests/federation/federation-wire-host.scm              # helper process, not a unit test — requires A|B <sref-file> <seed-byte>; test-federation-wire-procs launches it
+tests/personhood/two-box/box1.scm                   # helper process, not a unit test — needs the PLAYNET_* env run-two-box.sh sets (`make test-witness-two-box`)
+tests/personhood/two-box/box2.scm                   # helper process, not a unit test — same harness as box1
 
 # ── benchmarks / long solves: not pass/fail units ────────────────────────────
-tests/planner/bench-relational.scm                  # bench-slow (>120s by design)
+tests/deprecated/bench-relational.scm                  # bench-slow (>120s by design)
 
 # ── REAL red, self-contained, tracked debt — the work-list ───────────────────
 # EMPTY, as of the 2026-08-14 audit. The one entry here —
-# tests/playnet/test-planner-service.scm, filed for a ResourceSpecification
+# tests/ai/test-planner-service.scm, filed for a ResourceSpecification
 # record-identity clash between the deprecated seed and the live service — now
 # runs 65 checks green and has rejoined the baseline.
 
@@ -61,9 +61,9 @@ tests/planner/bench-relational.scm                  # bench-slow (>120s by desig
 # nominally alive while guaranteeing they never ran, which reads as "might come
 # back" — they were not coming back. Deleted rather than listed.
 #
-# NOTE, still open: tests/planner/test-grammar.scm and
-# tests/playnet/test-federation-a.scm import ONLY deprecated modules too, and
-# both GATE the baseline today (0s and 1s, green). Whether the live suite should
+# NOTE, still open: tests/deprecated/ holds the suites that reach retired code
+# and nothing above the substrate (test-grammar and test-federation-a among
+# them), and they GATE the baseline today, green. Whether the live suite should
 # gate on retired code is a call worth making deliberately rather than by
 # omission — they are left running until it is made.
 
@@ -76,6 +76,6 @@ tests/planner/bench-relational.scm                  # bench-slow (>120s by desig
 # in the repo by two orders of magnitude. UNMEASURED and worth knowing: whether
 # it terminates at all. Run it deliberately with a real budget before trusting
 # the conclusion its header states.
-tests/planner/test-berlin-kleingaerten.scm
-tests/planner/zz-festival-scale.scm             # bench-festival: a scale benchmark, run as `FESTIVAL_N=<attendees> guile … zz-festival-scale.scm`; with no N it has no problem to solve
+tests/solve/test-berlin-kleingaerten.scm
+tests/scope/zz-festival-scale.scm             # bench-festival: a scale benchmark, run as `FESTIVAL_N=<attendees> guile … zz-festival-scale.scm`; with no N it has no problem to solve
 tests/integration/federation-gateways-driver.scm # needs-gateways: the driver half of the federation integration, given two gateways' state directories as arguments

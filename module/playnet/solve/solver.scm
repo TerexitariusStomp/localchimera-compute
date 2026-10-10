@@ -1553,7 +1553,7 @@
 ;; the two agreeing is itself a check.
 ;;
 ;; Read immediately after a solve; not safe across concurrent solves.
-;; Regression: tests/planner/test-certificate.scm.
+;; Regression: tests/solve/test-certificate.scm.
 (define *last-certificate* '((feasible? . #f) (optimal? . #f)))
 (define (certificate-of-last-solve) *last-certificate*)
 (define (set-last-certificate! c) (set! *last-certificate* c))   ; the door for a caller that resets it — an importer's own set! writes a box this module never reads once compiled
@@ -1722,7 +1722,7 @@
 ;; the cost does not worsen with scale (Newton steps grow with path length, not n).
 ;; Tighter still keeps paying (0.001 ⇒ labour −37.5%) but at +45% time; 0.005 takes
 ;; nearly all the saving for a tenth of the cost. Raise it only with a benchmark.
-;; Regression: tests/planner/test-centering-floor.scm.
+;; Regression: tests/solve/test-centering-floor.scm.
 ;;
 ;; …AND A FIXED FLOOR IS THE WRONG SHAPE, because the error it leaves grows with
 ;; the program while the number does not. Every barrier standing at t pushes the
@@ -1779,8 +1779,8 @@
 ;; assumes: derive the floor from the guarantee where the guarantee IS m·t;
 ;; where the bound rests on curvature, leave the floor at the shipped default,
 ;; because there the gap term is not what the certificate is made of. Both
-;; directions are held — tests/planner/test-centering-floor.scm §6 and
-;; tests/planner/test-federated-certificate.scm.
+;; directions are held — tests/solve/test-centering-floor.scm §6 and
+;; tests/solve/test-federated-certificate.scm.
 (define *target-gap* 0.005)             ; certified duality-gap target ⇒ t = g/m; #f ⇒ the floor is the caller's to set
 (define *kern-tmin-default* 0.005)      ; the floor where no derivation is licensed (the shipped constant)
 (define *kern-tmin-min* 1e-7)           ; numerical rail on the derived t, whatever m says
@@ -1818,7 +1818,7 @@
 ;; `*kern-tmin*` is therefore the floor IN FORCE, not a preference: with a
 ;; target set it is derived per solve and is better read as an output. A caller
 ;; who wants to pin it turns `*target-gap*` off and sets it, which is what
-;; tests/planner/test-centering-floor.scm does — it exists to measure the floor.
+;; tests/solve/test-centering-floor.scm does — it exists to measure the floor.
 (define* (sync-kern-dials! #:optional forms)
   (when forms (set! *kern-tmin* (tmin-for forms)))
   (false-if-exception (k-set-tmin (exact->inexact *kern-tmin*)))
@@ -2254,7 +2254,7 @@ against a deliberately wrong object rather than only against a right one."
 ;; allocation, and a .go it wrote hands the host guile's runtime buffers it
 ;; reads as immutable — so every native solve dies in vec->i32 with "expecting
 ;; mutable bytevector". (Measured: of the four build × build pairs only host-
-;; loads-next fails.) tools/own-ccache.sh keeps each build on its own cache;
+;; loads-next fails.) tools/test/own-ccache.sh keeps each build on its own cache;
 ;; a hand-run `guile tests/….scm` under guile-next, with auto-compile on, is
 ;; what writes the shared one. The check runs once at load and names the
 ;; condition where it starts.
@@ -2262,7 +2262,7 @@ against a deliberately wrong object rather than only against a right one."
   (catch 'wrong-type-arg
     (lambda () (bytevector-s32-native-set! bv 0 1))
     (lambda _
-      (error "(playnet solve solver) was loaded from a .go compiled by a different Guile build — run through tools/own-ccache.sh, or clear it with tools/stale-go-sweep.sh / rm -rf ~/.cache/guile/ccache"))))
+      (error "(playnet solve solver) was loaded from a .go compiled by a different Guile build — run through tools/test/own-ccache.sh, or clear it with tools/test/stale-go-sweep.sh / rm -rf ~/.cache/guile/ccache"))))
 
 (define (bvp p) (bytevector->pointer p))   ; bytevector → C pointer (≠ §3's list-packing f64*)
 ;; CORE: assumes x0 strictly bar-feasible (the §2b compiled barrier loop).
@@ -2518,7 +2518,7 @@ against a deliberately wrong object rather than only against a right one."
       ;; into credit, rollup and every report as a number-shaped absence.
       ;; So: verify, and fall back to the primal core when the step has diverged.
       ;; The certificate is worth nothing if the vector it certifies is not real.
-      ;; Regression: tests/planner/test-pd-finiteness.scm.
+      ;; Regression: tests/solve/test-pd-finiteness.scm.
       (let ((xv (f64bv->vec x n)))
         (if (plan-finite? xv)                     ; same predicate the attempt list uses
             (values xv iters mu yv)               ; ← plan, gap AND dual travel together
@@ -3149,7 +3149,7 @@ against a deliberately wrong object rather than only against a right one."
 ;; of medicine) and wrong as the ONLY number reported, because then no figure in
 ;; the system can express making MORE than anyone asked for. Every headline stayed
 ;; at 99.98% through a plan running 2.15× the activity it needed
-;; (tests/planner/test-centering-floor.scm). These two are its uncapped companions:
+;; (tests/solve/test-centering-floor.scm). These two are its uncapped companions:
 ;; report them beside it, never instead of it.
 (define (mean-overfill C x)                 ; mean max(0, delivered/demand − 1) — what mean-fill clamps away
   (let ((sv (term-values C x)) (nt (cnt C)) (sum 0.0) (nd 0))

@@ -1,10 +1,10 @@
-;;; module/playnet/tools/scm-index.scm --- symbol index over a tree of top-level forms
+;;; module/playnet/tools/edit/scm-index.scm --- symbol index over a tree of top-level forms
 ;;;
 ;;; Scope/shadow-aware queries over a list of forms as read by `read`:
 ;;; where a name is defined, everywhere it's genuinely referenced (not
 ;;; shadowed by a local binding), and which top-level defines share an
 ;;; identical body shape (copy-paste candidates). This is architectural
-;;; awareness on top of `tools/sexp.scm`'s pure text scanning — use
+;;; awareness on top of `tools/edit/sexp.scm`'s pure text scanning — use
 ;;; `find-callers` before changing a signature, `find-duplicate-shapes`
 ;;; before writing a helper that might already exist.
 ;;;

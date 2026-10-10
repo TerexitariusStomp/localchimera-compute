@@ -154,7 +154,7 @@
 
 ;; ── the child on another machine ─────────────────────────────────────────────
 ;; With PLAYNET_FED_REMOTE an ssh target, the child commune runs THERE: in
-;; PLAYNET_FED_REMOTE_ROOT (a checkout of module/ and tests/planner/, default
+;; PLAYNET_FED_REMOTE_ROOT (a checkout of module/ and tests/federation/, default
 ;; /tmp/fed), run by PLAYNET_FED_REMOTE_GUILE (the command that is `guile`
 ;; there in the same pinned environment as here — a `guix shell … -- guile`
 ;; from the box's checkout; default guile) with PLAYNET_FED_REMOTE_LIBS on its
@@ -239,7 +239,7 @@
         (let* ((cmd (string-append
                      "cd " fx-remote-root " && LD_LIBRARY_PATH=" fx-remote-libs
                      ;; setsid -f: a guile left in the session holds ssh open until it exits
-                     " setsid -f " fx-remote-guile " --no-auto-compile -q -L module tests/planner/federation-wire-host.scm "
+                     " setsid -f " fx-remote-guile " --no-auto-compile -q -L module tests/federation/federation-wire-host.scm "
                      (string-join (cons* which sref-path (number->string seed) more) " ")
                      " > " fx-remote-root "/host-" which ".log 2>&1 < /dev/null; sleep 1; pgrep -n -f federation-wire-host.scm"))
                (pid (string->number (string-trim-both (fx-ssh cmd)))))
@@ -247,7 +247,7 @@
           pid)
         (let ((pid ((@ (guile) spawn) "guile"
                     (append (list "guile" "--no-auto-compile" "-q" "-L" (string-append root "/module")
-                                  (string-append root "/tests/planner/federation-wire-host.scm")
+                                  (string-append root "/tests/federation/federation-wire-host.scm")
                                   which sref-path (number->string seed))
                             more))))
           (format #t "   host ~a spawned (pid ~a); waiting for its sturdyref…~%" which pid)

@@ -20,7 +20,7 @@ let matterSel = null; // a chosen substance to isolate, or null for all
 // the planner's matter-results->wire over the contains relation. The browser
 // never derives composition; it only draws. Data is S.matterFlow (a live
 // solve) or the committed matter-snapshot.json (the real wire's output over a
-// demo cycle, by tools/emit-matter-snapshot.scm) — exactly like the law face.
+// demo cycle, by tools/emit/emit-matter-snapshot.scm) — exactly like the law face.
 let matterSnap = null, matterLoaded = false, matterLoading = false;
 // The one boundary cast: S.matterFlow is a spine payload, typed unknown at the
 // seam, and a reader says what it expects. MatterGraph above IS that

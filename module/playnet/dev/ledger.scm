@@ -49,7 +49,7 @@
 ;;;
 ;;; box NEVER holds a commitment or a work event of its own (mimir.md's own
 ;;; precedent: an AI co-facilitator is a consumed resource, never labour).
-;;; tools/dev-signal-cycle.scm never calls commit-row! for it — dispatching
+;;; tools/dev/dev-signal-cycle.scm never calls commit-row! for it — dispatching
 ;;; a coding session is not a committable, creditable act; a human's own
 ;;; merge is. book-issue-done! keeps one defensive check for the same
 ;;; invariant, on BOTH its paths — a commitment for an `(kind . agent)`

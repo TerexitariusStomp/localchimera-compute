@@ -13,7 +13,7 @@
 ;;; test-contact-points.scm holds the three lists to each other. The other
 ;;; kinds are for people: a card carries them, a commune never hears them.
 ;;;
-;;; ui/app/reach-catalogue.ts is the browser's copy (tools/reach-emit.scm).
+;;; ui/app/reach-catalogue.ts is the browser's copy (tools/emit/reach-emit.scm).
 
 (define-module (playnet identity reach-kinds)
   #:use-module (srfi srfi-1)

@@ -1,6 +1,6 @@
 ;;; tests/tools/test-playnet-scope.scm
 ;;;
-;;; Pure-Scheme parts of tools/playnet-scope.scm: scope-summary,
+;;; Pure-Scheme parts of tools/dev/playnet-scope.scm: scope-summary,
 ;;; custody-mode, list-known-scope-aids, and the vault-key migration
 ;;; sequence (decrypt under K1, re-encrypt under K2). The shell-out
 ;;; export/import via tar+age is exercised end-to-end in the
@@ -30,7 +30,7 @@
 ;; Pre-bind main so the load-time call at end of script is harmless.
 (define main no-op)
 (define here (dirname (car (command-line))))
-(primitive-load (string-append here "/../../tools/playnet-scope.scm"))
+(primitive-load (string-append here "/../../tools/dev/playnet-scope.scm"))
 ;; main is now the tool's main, but we never call it from here.
 
 ;; Sandbox.

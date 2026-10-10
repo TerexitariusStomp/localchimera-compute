@@ -618,7 +618,7 @@ PK_HOT static double pk_frac_to_boundary(int nt, const int *ptr, const int *idx,
  * It was hardcoded here AND declared as *kern-tmin* in planner.scm: two copies of
  * one constant, so setting the Scheme one moved nothing and the knob read as live
  * while being inert. Scheme is now authoritative and pushes it through
- * pk_set_tmin. See tests/planner/test-centering-floor.scm. */
+ * pk_set_tmin. See tests/solve/test-centering-floor.scm. */
 static double pk_tmin = 0.02;
 
 void pk_set_tmin(double v) { if (v > 0.0) pk_tmin = v; }
@@ -819,7 +819,7 @@ static int pd_core(struct chol_s *S, int nt, int n, int nlab, const int *ptr, co
      * x = 43.74 with mu = 6.6e-7, an ecological limit passed by a factor of four
      * and reported as proven. pk_frac_to_boundary already covers kind 0 AND 3 —
      * the primal path-follower has always called it; this one never did.
-     * Regression: tests/planner/test-certificate.scm. */
+     * Regression: tests/solve/test-certificate.scm. */
     { double fb = pk_frac_to_boundary(nt, ptr, idx, val, kind, sv, dx);
       if (fb < al) al = fb; }
     al *= 0.99;

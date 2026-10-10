@@ -497,7 +497,7 @@
 
 ;; a recipe's standing, read off its record OWN: the entries both the recipe's row
 ;; and the standalone response row (a fixture is written by the very reading the
-;; wire takes, tools/recipe-demo-emit.scm) state
+;; wire takes, tools/emit/recipe-demo-emit.scm) state
 (define (response-entries own-of)
   (let ((runs (lambda (own) (or (and own (alist-ref own 'runs)) '())))
         (rows (lambda (own) (or (and own (alist-ref own 'rows)) '()))))

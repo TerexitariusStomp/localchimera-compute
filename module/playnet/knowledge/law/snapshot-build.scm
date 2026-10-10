@@ -1,5 +1,5 @@
 ;;; law/snapshot-build.scm — the law-face snapshot builder, SHARED by the
-;;; offline emitter (tools/emit-law-snapshot.scm) and the live legal-snapshot
+;;; offline emitter (tools/emit/emit-law-snapshot.scm) and the live legal-snapshot
 ;;; service method (planner service.scm). `(law-snapshot-string)` returns the
 ;;; snapshot JSON from the already-loaded legal fold + activity catalogue +
 ;;; reform mirrors — one builder, offline + live.
@@ -496,7 +496,7 @@
                                    ("performs" . ,(J:syms (or (assq-ref m 'performs) '()))))))
                             (activity-modes a)))))))
                    *activities*)))
-                 ("generatedBy" . ,(J:s "tools/emit-law-snapshot.scm — real legal fold (legal/registry.scm) over the activity catalogue"))
+                 ("generatedBy" . ,(J:s "tools/emit/emit-law-snapshot.scm — real legal fold (legal/registry.scm) over the activity catalogue"))
                  ("crossings" . ,(J:a (map (lambda (c)
                                              (J:o `(("id" . ,(J:s c))
                                                     ("kind" . ,(J:s (crossing-kind c)))

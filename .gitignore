@@ -145,14 +145,14 @@ docs/antifragile/**/*.png
 docs/antifragile/**/*.jpeg
 docs/antifragile/**/*.jpg
 
-# dev live-reload token (tools/livereload-watch.py)
+# dev live-reload token (tools/dev/livereload-watch.py)
 browser/reload-token.txt
 
-# dev onion data dir (tools/onion.sh) — contains the hidden-service key, never commit
+# dev onion data dir (tools/dev/onion.sh) — contains the hidden-service key, never commit
 .onion-data/
 
 # basemap tile proxy cache (server/serve-static.scm /tiles)
-# the basemap's glyph ranges (10 MB of Noto Sans): tools/map-tiles.sh fetches
+# the basemap's glyph ranges (10 MB of Noto Sans): tools/emit/map-tiles.sh fetches
 # them beside the archives; the deploy rsync ships them with browser/
 browser/assets/map/fonts/
 

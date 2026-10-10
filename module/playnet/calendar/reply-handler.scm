@@ -4,7 +4,7 @@
 ;;; scope for this module) extracts a text/calendar METHOD:REPLY body from
 ;;; incoming mail and hands it to the actor as a string. That MIME-part
 ;;; extraction is not in the repo yet (the earlier ingest-reply.sh was never
-;;; committed). Wiring it to a signed call on this actor is tools/door-call.scm's
+;;; committed). Wiring it to a signed call on this actor is tools/dev/door-call.scm's
 ;;; shape, once this actor is itself published as a door — not done here.
 ;;;
 ;;; The reply's UID is the proposal-id the invitation was sent under

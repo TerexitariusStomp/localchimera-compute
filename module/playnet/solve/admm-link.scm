@@ -332,7 +332,7 @@
 ;; and 97.1% met, and stays there however high the cap. Requiring met > 99
 ;; grinds every round under scarcity, where the optimum is below 100. So the
 ;; loop keeps going while met still climbs, and stops once it has flattened
-;; for MET-STALL consecutive balanced rounds (tests/planner/test-decomposed-optimality.scm).
+;; for MET-STALL consecutive balanced rounds (tests/solve/test-decomposed-optimality.scm).
 ;;
 ;; A scope that misses a round (ROUND! answers #f for it) contributes its last
 ;; reply, the ADMM under bounded staleness: a good any of whose scopes sat

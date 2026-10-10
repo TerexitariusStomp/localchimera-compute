@@ -12,7 +12,7 @@
 ;;;   · which part of the face each feature is, and its doors  (*product-features*)
 ;;;   · the notices the product shows about itself         (*product-notices*)
 ;;;
-;;; tools/emit-product-law.scm writes it out as ui/app/legal-product.ts, so the
+;;; tools/emit/emit-product-law.scm writes it out as ui/app/legal-product.ts, so the
 ;;; browser's consent version, licence line and attribution are these, and
 ;;; `make check-product-law-fresh` holds the copy to its source.
 ;;;
@@ -90,7 +90,7 @@
     (accessibility . "accessibility.html")
     (min-age       . 16)
     ;; Figures the notices quote about how the service runs. They are written
-    ;; into the pages (tools/emit-notice-facts.scm) so a page never states a
+    ;; into the pages (tools/emit/emit-notice-facts.scm) so a page never states a
     ;; number this file does not.
     ;; log-rotation        : shepherd's rotation of /var/log/playnet (deploy/os.scm)
     ;; breach-notice-hours : GDPR Art 33's window to the supervisory authority

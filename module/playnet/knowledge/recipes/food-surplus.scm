@@ -11,7 +11,7 @@
 ;;; modeled correctly with one step, and it keeps the demand explosion
 ;;; readable for the federation tests that consume this recipe.
 ;;;
-;;; Originally inlined in tests/planner/test-food-surplus-scenario.scm.
+;;; Originally inlined in tests/solve/food-surplus-scenario-test.scm.
 ;;; Extracted so the recipe is reusable across federation scenarios and
 ;;; lives alongside the other recipes under knowledge/recipes/.
 

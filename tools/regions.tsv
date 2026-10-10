@@ -1,8 +1,0 @@
-# tools/regions.tsv — the regions the federation uses: one row per region,
-# name and bounds (west south east north, degrees). The one list `make
-# map-tiles` cuts basemap archives from; tools/valhalla-local.sh names the same
-# places for the routing atlas.
-sanfrancisco	-122.63	37.11	-121.57	38.09
-berlin	13.05	52.33	13.77	52.68
-losangeles	-118.95	33.60	-117.60	34.40
-pompignac	-0.75	44.75	-0.35	44.95

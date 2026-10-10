@@ -22,7 +22,7 @@
 
 ;;; WHAT THE FILE HOLDS. The classes of docs/valueflows/assets/all_vf.TTL, the
 ;;; action table, and the Duration the TTL's hasDuration points at: nothing else.
-;;; tests/planner/vf-conformance-classes-test.scm holds the file to the TTL both
+;;; tests/ddmrp/vf-conformance-classes-test.scm holds the file to the TTL both
 ;;; ways. What playnet adds stands in a module per family: the buffer planner
 ;;; (ddmrp/records), recurring schedules (beyond/schedules), the lot
 ;;; (beyond/lot), the planning scenario (beyond/scenario) and the books' states

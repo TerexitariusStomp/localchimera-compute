@@ -14,7 +14,7 @@
 ;;;                       over (events, needs, offers, flows), against the
 ;;;                       specs and units a scope knows when it has them
 ;;;
-;;; Four readers: tools/lint-recipes.scm (the tree's gate), the planner's
+;;; Four readers: tools/lint/lint-recipes.scm (the tree's gate), the planner's
 ;;; lint-records door, the statute and log extractors' conform checks (a
 ;;; finding's detail is the fact a model is asked again with), and tests.
 ;;;

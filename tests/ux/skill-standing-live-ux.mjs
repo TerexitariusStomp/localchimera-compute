@@ -9,7 +9,7 @@
 ///
 /// What this run cannot show is the witnessed half: a fresh commune has no work
 /// events, so every row stands at "your word" — the fold over co-signed work is
-/// pinned by tests/governance/test-skill-standing.scm.
+/// pinned by tests/doors/test-skill-standing.scm.
 ///
 /// Run via:  make test-skill-standing-live-ux
 ///           bash tests/ux/ux-full.sh tests/ux/skill-standing-live-ux.mjs

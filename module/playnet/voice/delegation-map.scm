@@ -252,7 +252,7 @@
   ;; ACDC-STORE and recompiles each mandate from its DSL spec via
   ;; compile-mandate-spec — so a DSL-built mandate (the `mandate` helper
   ;; in credentials.scm) actually survives a restart intact, not just its
-  ;; fraction. It's tested (tests/governance/test-recovery.scm) but not
+  ;; fraction. It's tested (tests/org/test-recovery.scm) but not
   ;; yet wired into any boot path — that's the integration gap to close,
   ;; not a reason to add a second, inconsistent, lossier recovery
   ;; mechanism here.

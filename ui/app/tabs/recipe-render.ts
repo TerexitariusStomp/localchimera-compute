@@ -48,7 +48,7 @@ export function flowChip(f: ScopeFlow, move: Move | null = null): string {
 
 // ── a flow's response, drawn ─────────────────────────────────────────────────
 // The reading is the engine's (planner/solve/recipe-response.scm) and arrives whole
-// on the wire, live or demo alike (tools/recipe-demo-emit.scm): the curve, its
+// on the wire, live or demo alike (tools/emit/recipe-demo-emit.scm): the curve, its
 // reach, where its continuation lands, the word and the three levels it was
 // read off. This file draws what it is handed.
 //

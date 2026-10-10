@@ -43,7 +43,7 @@ REPO_ROOT="$(git rev-parse --show-toplevel)"
 # are a different language.
 lint_staged_parens() {
     command -v guile >/dev/null 2>&1 || return 0
-    [ -f "$REPO_ROOT/tools/lint-parens.scm" ] || return 0
+    [ -f "$REPO_ROOT/tools/lint/lint-parens.scm" ] || return 0
 
     local staged
     staged=$(git diff --cached --name-only --diff-filter=ACMR -- '*.scm' \
@@ -65,7 +65,7 @@ lint_staged_parens() {
     # "unknown character name", and berlin-baumscheiben.scm normalises German
     # umlauts with four of them. A hook that blocks a correct file is worse than
     # no hook: the fix people reach for is --no-verify, and then it guards nothing.
-    if ! (cd "$tmp" && LC_ALL="${LC_ALL:-C.UTF-8}" guile --no-auto-compile "$REPO_ROOT/tools/lint-parens.scm" $staged); then
+    if ! (cd "$tmp" && LC_ALL="${LC_ALL:-C.UTF-8}" guile --no-auto-compile "$REPO_ROOT/tools/lint/lint-parens.scm" $staged); then
         echo "" >&2
         echo "pre-commit: staged Scheme above does not read to EOF — commit blocked." >&2
         echo "pre-commit: fix the form, or 'git commit --no-verify' to override." >&2
@@ -85,7 +85,7 @@ lint_staged_parens
 # which may hold the other half of someone's change.
 check_staged_reexports() {
     command -v guile >/dev/null 2>&1 || return 0
-    [ -f "$REPO_ROOT/tools/check-reexports.scm" ] || return 0
+    [ -f "$REPO_ROOT/tools/lint/check-reexports.scm" ] || return 0
     git diff --cached --name-only --diff-filter=ACMRD -- 'module/*.scm' | grep -q . || return 0
 
     local tmp
@@ -94,7 +94,7 @@ check_staged_reexports() {
     trap "rm -rf '$tmp'" RETURN
     (cd "$REPO_ROOT" && git ls-files -z -- module | xargs -0 git checkout-index --prefix="$tmp/" --)
 
-    if ! LC_ALL="${LC_ALL:-C.UTF-8}" guile --no-auto-compile "$REPO_ROOT/tools/check-reexports.scm" "$tmp"; then
+    if ! LC_ALL="${LC_ALL:-C.UTF-8}" guile --no-auto-compile "$REPO_ROOT/tools/lint/check-reexports.scm" "$tmp"; then
         echo "" >&2
         echo "pre-commit: a library above re-exports a name no other module exports — commit blocked." >&2
         echo "pre-commit: commit the module that defines it in the same commit (or take the name out of the list)." >&2

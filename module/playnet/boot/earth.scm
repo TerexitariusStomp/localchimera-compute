@@ -59,7 +59,7 @@ its AID when a previous boot minted one."
               ($ earth 'all-communes)))
 
   ;; The machines read themselves into the plan: every host's retained
-  ;; five-minute snapshot (tools/host-facts.scm --publish on os.scm's
+  ;; five-minute snapshot (tools/dev/host-facts.scm --publish on os.scm's
   ;; mcron timer → playnet/facts/host/<hostname>) syncs into the
   ;; founding commune's live-registry, so plan-scope's solves read each
   ;; machine's reservation-aware free capacity (#:live-avail). Which

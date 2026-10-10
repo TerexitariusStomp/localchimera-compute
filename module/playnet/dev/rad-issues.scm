@@ -3,7 +3,7 @@
 ;;; The I/O half of the development loop's reading: shell out to `rad cob`,
 ;;; hand back each issue as (OID . JSON-ALIST). What an issue states is read
 ;;; off that pair by (playnet dev priorities), which is pure.
-;;; tools/dev-signal-cycle.scm, tools/dev-plan.scm and tools/dev-loop-close.scm
+;;; tools/dev/dev-signal-cycle.scm, tools/dev/dev-plan.scm and tools/dev/dev-loop-close.scm
 ;;; read the issues through this one door.
 
 (define-module (playnet dev rad-issues)

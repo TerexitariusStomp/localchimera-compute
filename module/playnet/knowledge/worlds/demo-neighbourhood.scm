@@ -7,9 +7,9 @@
 ;;; the planner answered:
 ;;;
 ;;;   • a gateway adopts it as the preset `neighbourhood` (worlds/presets.scm);
-;;;   • the page's offline demo is a recording of it (tools/demo-emit.scm →
+;;;   • the page's offline demo is a recording of it (tools/emit/demo-emit.scm →
 ;;;     ui/app/demo/recording.ts);
-;;;   • its suite reads it over a real scope (tests/planner/test-demo-neighbourhood.scm).
+;;;   • its suite reads it over a real scope (tests/doors/test-demo-neighbourhood.scm).
 ;;;
 ;;; Places are laid as offsets in degrees from the person, who stands at the
 ;;; origin: a face moves them to where the person is. Days are counted from the

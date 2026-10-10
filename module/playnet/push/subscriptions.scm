@@ -1,7 +1,7 @@
 ;;; module/playnet/push/subscriptions.scm — whose device a Web Push reaches.
 ;;;
 ;;; The decisions around the transport, as pure functions with no crypto and
-;;; no actors, so they are tested by themselves (tests/playnet/
+;;; no actors, so they are tested by themselves (tests/push/
 ;;; test-push-adapter.scm) and (playnet push adapter) carries them out.
 
 (define-module (playnet push subscriptions)

@@ -18,7 +18,7 @@
 ;;; effect on the tree it is checking — and its answer does not depend on the
 ;;; order the files happen to sort in, which is exactly what one of the bugs did.
 ;;;
-;;; Run: guile --no-auto-compile -L module tools/lint-law-packs.scm [DIR …]
+;;; Run: guile --no-auto-compile -L module tools/lint/lint-law-packs.scm [DIR …]
 
 (define-module (playnet knowledge law lint)
   #:use-module (srfi srfi-1)

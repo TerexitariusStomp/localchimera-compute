@@ -1,6 +1,6 @@
 ;;; test/vf-ttl.scm — reads the VF vocabulary's action individuals.
 ;;;
-;;; Shared by the four ValueFlows conformance tests (tests/planner/vf-conformance-*-test.scm), which `load` it. It parses the Turtle file
+;;; Shared by the four ValueFlows conformance tests (tests/*/vf-conformance-*-test.scm), which `load` it. It parses the Turtle file
 ;;; docs/valueflows/assets/all_vf.TTL AT RUN TIME, so the tests hold the repo to
 ;;; the vocabulary as published rather than to a hand copy of it.
 ;;;

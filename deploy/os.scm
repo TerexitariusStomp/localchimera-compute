@@ -1239,7 +1239,7 @@
                    ;; in doors/lobby.scm's real-signup-enabled?; gates the
                    ;; doors declared `#:feature account-creation` in
                    ;; doors/protocol.scm and nothing else.
-                   ;; tools/dev.sh does not set this — local dev keeps signing up
+                   ;; tools/dev/dev.sh does not set this — local dev keeps signing up
                    ;; real AIDs as it always has, which is the developer's own
                    ;; test data, not a third party's.
                    ("PLAYNET_DISABLE_REAL_SIGNUP" . "1")
@@ -1282,7 +1282,7 @@
       ;; down → serve-static relays "{}" and the map straight-lines, so a
       ;; missing/rebuilding tileset degrades gracefully. The engine tree is
       ;; built out-of-band under /home/playnet/playnet-repo/.valhalla/ (see
-      ;; tools/valhalla-local.sh: `make routing-data`); this service only
+      ;; tools/dev/valhalla-local.sh: `make routing-data`); this service only
       ;; supervises the already-built valhalla_service binary. Not yet built
       ;; on a host → the service respawn-loops harmlessly until the atlas
       ;; (SF + Berlin tiles) is present, and /route degrades meanwhile.
@@ -1667,11 +1667,11 @@
                        ;; schedule runs at :02 rather than :00 so it never
                        ;; coincides with shepherd's hourly log rotation.
                        #~(job "2-59/5 * * * *"
-                              "export GUILE_LOAD_PATH=/run/current-system/profile/share/guile/site/3.0; cd /home/playnet/playnet-repo && /run/current-system/profile/bin/flock -n /run/host-facts.lock /run/current-system/profile/bin/timeout 240 /run/current-system/profile/bin/guile --no-auto-compile -L module tools/host-facts.scm --publish >> /var/log/playnet/host-facts.log 2>&1")
+                              "export GUILE_LOAD_PATH=/run/current-system/profile/share/guile/site/3.0; cd /home/playnet/playnet-repo && /run/current-system/profile/bin/flock -n /run/host-facts.lock /run/current-system/profile/bin/timeout 240 /run/current-system/profile/bin/guile --no-auto-compile -L module tools/dev/host-facts.scm --publish >> /var/log/playnet/host-facts.log 2>&1")
                        ;; Weekly OpenVTC parity check, Sundays 07:00 UTC
                        ;; (docs/planning/identity/openvtc-parity.md). The check
-                       ;; (tools/openvtc-parity-check.sh) is a deterministic
-                       ;; git diff; tools/openvtc-parity-narrate.scm wraps it
+                       ;; (tools/lint/openvtc-parity-check.sh) is a deterministic
+                       ;; git diff; tools/lint/openvtc-parity-narrate.scm wraps it
                        ;; and, best-effort, asks our own key-pool / nano-gpt
                        ;; stack to summarize the flagged commits. The keys are
                        ;; read at run time from /run/secrets/api-keys — the
@@ -1686,7 +1686,7 @@
                                  "/run/current-system/profile/bin/flock -n /run/openvtc-parity.lock "
                                  "/run/current-system/profile/bin/timeout 300 "
                                  "/run/current-system/profile/bin/guile --no-auto-compile -L module "
-                                 "tools/openvtc-parity-narrate.scm >> /var/log/playnet/openvtc-parity.log 2>&1"))))))
+                                 "tools/lint/openvtc-parity-narrate.scm >> /var/log/playnet/openvtc-parity.log 2>&1"))))))
 
       ;; Daily encrypted backup of the at-risk persistent state
       ;; (KERIA witness keystores, Tor onion key, SporeStack token,
@@ -2125,7 +2125,7 @@ COMMIT
                                   (format port "~%")
                                   ;; host-facts: writes the host's retained
                                   ;; capacity/placement snapshot only
-                                  ;; (tools/host-facts.scm --publish, on the
+                                  ;; (tools/dev/host-facts.scm --publish, on the
                                   ;; mcron timer below)
                                   (format port "user host-facts~%")
                                   (format port "topic write playnet/facts/host/#~%")
@@ -2156,7 +2156,7 @@ COMMIT
                                 ;; from what mosquitto actually authenticates
                                 ;; against, and every MQTT-publishing service
                                 ;; (dev-bridge, fleet-bridge, tools/dev-signal-
-                                ;; cycle.scm, tools/dev-loop-close.scm) failed
+                                ;; cycle.scm, tools/dev/dev-loop-close.scm) failed
                                 ;; auth with no clue why. mosquitto_passwd -b -c
                                 ;; is deterministic given the same input, so
                                 ;; running it every activation is exactly as

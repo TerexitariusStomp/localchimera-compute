@@ -33,7 +33,7 @@ import type { Body } from '../bodies.js';
 import { setFace } from '../faces.js';
 
 /**
- * The legal fold, exactly as tools/emit-law-snapshot.scm writes it: for every
+ * The legal fold, exactly as tools/emit/emit-law-snapshot.scm writes it: for every
  * ACTIVITY, what each PLACE would have to obtain, notify or submit to before it
  * could do it — and, per mode, whether it is forbidden outright. The browser
  * never re-derives any of this; legal-registry.scm does the folding.

@@ -4,7 +4,7 @@
 ;;; code read aloud or copied by hand has one reading, and a typed I, L or O
 ;;; reads as the digit it resembles. The QR symbol on a printed label carries
 ;;; `playnet:` and the code, and nothing else. The browser holds the same
-;;; alphabet, length and scheme as generated constants (tools/count-emit.scm →
+;;; alphabet, length and scheme as generated constants (tools/emit/count-emit.scm →
 ;;; ui/app/count-catalogue.ts); the service draws and reads codes through this
 ;;; module alone.
 ;;;

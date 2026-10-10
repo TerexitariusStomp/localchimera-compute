@@ -7,7 +7,7 @@
 ;;; afterward, exactly like the cold-chain reefer-van pattern but in
 ;;; the digital domain.
 ;;;
-;;; Originally inlined in tests/planner/test-infrastructure-planning.scm.
+;;; Originally inlined in tests/deprecated/test-infrastructure-planning.scm.
 
 ;; ─── Resource specifications ────────────────────────────────────────────────
 

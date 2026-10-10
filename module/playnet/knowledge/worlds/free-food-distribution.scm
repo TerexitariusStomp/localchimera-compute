@@ -5,7 +5,7 @@
 ;;; This is content, not engine. The LAW is not here: every jurisdiction's
 ;;; places, rules, protections and words for aspects live in a context pack
 ;;; (docs/legal/contexts/*.sexp — the US, Mexico and Canada written by
-;;; tools/emit-na-context.scm, Germany by tools/emit-de-context.scm, France by
+;;; tools/emit/emit-na-context.scm, Germany by tools/emit/emit-de-context.scm, France by
 ;;; hand and by the GPU adapter). This file loads them and supplies what is the
 ;;; federation's own:
 ;;;
@@ -20,7 +20,7 @@
 ;;; Some differences are paperwork (a fold); one (a forbid) prunes a recipe
 ;;; column and forces a structurally different pathway. Both are shown.
 ;;;
-;;; Loaded by tools/emit-law-snapshot.scm (emits browser/data/snapshots/law-snapshot.json)
+;;; Loaded by tools/emit/emit-law-snapshot.scm (emits browser/data/snapshots/law-snapshot.json)
 ;;; and, in the live engine, by the planner-service legal-snapshot method.
 
 ;;; ─── crossings : what free food distribution can trip (placeless) ─────────

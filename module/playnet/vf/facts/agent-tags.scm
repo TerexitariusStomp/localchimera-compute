@@ -16,7 +16,7 @@
 
 ;; The keys a "key:value" classification tag may carry, each read through
 ;; tag-value / tag-values and nowhere by a hand substring. A key read anywhere
-;; in the planner stands here (tests/planner/test-tag-keys-registered.scm holds
+;; in the planner stands here (tests/vf/test-tag-keys-registered.scm holds
 ;; every `string-prefix? "<key>:"` in the planner to this list, the time keys
 ;; (facts/agent-time) and the tension terms (facts/tension-terms)).
 (define %tag-keys

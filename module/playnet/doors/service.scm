@@ -155,7 +155,7 @@
 ;;; law-face snapshot live) ──────────────────────────────────────────────
 ;;; The fold + the activity catalogue + the reform mirrors + the shared
 ;;; snapshot builder. Self-contained (no clash with the planner module): the
-;;; same code the offline emitter (tools/emit-law-snapshot.scm) runs, so the
+;;; same code the offline emitter (tools/emit/emit-law-snapshot.scm) runs, so the
 ;;; browser pulls dual-power/burden from the running planner instead of the
 ;;; committed law-snapshot.json.
 (use-modules (playnet legal registry))
@@ -1678,7 +1678,7 @@ service does not know the scope (nothing to filter by)."
 ;; has no day to meet that against, and the engine's fallback there sums the
 ;; window over every weekday a period might hold: measured, a 1.5 h window
 ;; entered the federated solve as 10.5 h and a shrunk roster bound nothing
-;; (tests/planner/test-labour-fold-federation.scm). So the day is laid the
+;; (tests/doors/test-labour-fold-federation.scm). So the day is laid the
 ;; way plan-commune-scope lays it for an empty scope — today — and it is ONE
 ;; day because a member's record carries one boundary column per traded
 ;; good (commune->scope-record: the link key is the good), which is a day's
@@ -2102,7 +2102,7 @@ service does not know the scope (nothing to filter by)."
   ;; ^planner-service spawned in the same process (tests spawn several; a
   ;; shared table reused the same AID across two unrelated rosters and a
   ;; stale "home" from the first answered route-home in the second before
-  ;; its own first write ever landed — caught by tests/planner/
+  ;; its own first write ever landed — caught by tests/doors/
   ;; test-one-citizen.scm's relationship-carrying section, which spawns a
   ;; fresh world per scenario and reuses "bob").
   (define *person-home-index* (make-hash-table))
@@ -2228,7 +2228,7 @@ service does not know the scope (nothing to filter by)."
   ;; below — effective-balance (elastic.scm) folds every given root's cells
   ;; into ONE combine, and its svc/citizenship-share baseline is a reading of
   ;; the WHOLE federation, not of this one person: narrowing it to "ada
-  ;; r:worked here" (confirmed by running tests/planner/test-credit-spend.scm
+  ;; r:worked here" (confirmed by running tests/doors/test-credit-spend.scm
   ;; — "Insufficient global effective balance" on a correct claim) silently
   ;; starves the balance of every scope she didn't personally touch, exactly
   ;; the same class of unsoundness as the abandoned consolidate-person! skip.

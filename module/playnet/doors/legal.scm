@@ -47,7 +47,7 @@
 
 ;; Re-export each interface whole, by name: the door adds no names and hides
 ;; none, and its own interface lists them, so a tool that asks what it publishes
-;; (tools/sexp.scm `publishes`) reads the layer. `rule` and `negate` are
+;; (tools/edit/sexp.scm `publishes`) reads the layer. `rule` and `negate` are
 ;; re-exported above, as replacements.
 (for-each
  (lambda (name)

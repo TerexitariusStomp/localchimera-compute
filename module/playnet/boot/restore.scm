@@ -99,7 +99,7 @@ persisted AIDs instead of re-minting one every boot."
 ;; CCF assessments, and federation memberships are sitting right there in
 ;; the just-restored acdc-store. (playnet federation rebuild) exists
 ;; precisely for this — replaying non-revoked ACDCs back into live actor
-;; state — and is exercised by tests/governance/test-recovery.scm. A second
+;; state — and is exercised by tests/org/test-recovery.scm. A second
 ;; pass over the whole list, because federation recovery needs every
 ;; commune ref already restored to resolve commune-id → live ref.
 (define (replay-scope-state! restored)

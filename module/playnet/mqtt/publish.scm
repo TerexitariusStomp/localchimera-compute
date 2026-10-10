@@ -7,7 +7,7 @@
 ;;; mosquitto_pub. Used by server/dev-bridge.scm (its own alerts, as the
 ;;; read-only "dev-bridge" user — that ACL grants it a narrow
 ;;; playnet/alerts/dev-bridge write, see deploy/os.scm) and by
-;;; tools/dev-signal-cycle.scm + tools/dev-loop-close.scm (as "publisher",
+;;; tools/dev/dev-signal-cycle.scm + tools/dev/dev-loop-close.scm (as "publisher",
 ;;; whose ACL already grants `topic write playnet/signals/#`).
 
 (define-module (playnet mqtt publish)
@@ -41,7 +41,7 @@
    valid deployment shape too. RETAIN? sets the MQTT retained flag — the
    broker keeps the last message on the topic, so a later subscriber reads
    the freshest snapshot immediately (the natural shape for a periodic
-   reading like tools/host-facts.scm --publish)."
+   reading like tools/dev/host-facts.scm --publish)."
   (let* ((pw (read-mqtt-password password-file))
          (auth-args (if (and username pw) (list "-u" username "-P" pw) '()))
          (argv (append (list "-h" host "-p" (number->string port))

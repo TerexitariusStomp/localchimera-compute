@@ -19,7 +19,7 @@ const tree = fs.mkdtempSync(path.join(os.tmpdir(), 'sw-offline-'));
 const SKIP = new Set(['.dev', 'radicle']);
 fs.cpSync('browser', tree, { recursive: true, dereference: true,
                              filter: (src) => !SKIP.has(path.basename(src)) });
-const stamp = () => execFileSync('bash', ['tools/sw-stamp.sh', tree], { encoding: 'utf8' }).trim();
+const stamp = () => execFileSync('bash', ['tools/emit/sw-stamp.sh', tree], { encoding: 'utf8' }).trim();
 const build1 = stamp();
 // a sub-app the worker passes through changes: the dial's stamp stands
 fs.writeFileSync(path.join(tree, 'boards', 'changed.txt'), 'a boards deploy');

@@ -4,8 +4,8 @@
 ;;; `lobby` (the sturdyref), the per-person `session` `keri-authenticate*`
 ;;; returns, and the `planner` facet the lobby hands out. Every field says
 ;;; what the code does today (docs/planning/audits/protocol-inventory-2026-09-12.md);
-;;; `tools/protocol-lint.scm` refuses a declaration whose heads differ from
-;;; the code's (`tools/protocol-extract.scm`), in either direction.
+;;; `tools/lint/protocol-lint.scm` refuses a declaration whose heads differ from
+;;; the code's (`tools/lint/protocol-extract.scm`), in either direction.
 ;;;
 ;;; A door:
 ;;;   (door OBJECT NAME ARGS #:auth A #:topic T #:reply R #:doc "…")
@@ -116,7 +116,7 @@ or #f when no handler sends it."
 ;; acts in the session itself (`self`) or forwards, with this session's AID
 ;; as the agent, to the planner service or the governance service. The
 ;; lobby's forwarding shape is one helper (doors/lobby.scm planner!); the lint
-;; (tools/protocol-lint.scm) refuses a door whose code sends elsewhere than
+;; (tools/lint/protocol-lint.scm) refuses a door whose code sends elsewhere than
 ;; its declaration says.
 (define %targets '(self planner governance))
 
@@ -126,7 +126,7 @@ or #f when no handler sends it."
 ;; stance, a hand, a want, a willingness); a PERFORMATIVE decides (fixes a
 ;; column, raises a wall, projects a view, opens or closes a thing); a READ
 ;; states nothing and answers. A door without a kind is refused here, so the
-;; inventory (tools/door-inventory.scm) is read off the declaration.
+;; inventory (tools/emit/door-inventory.scm) is read off the declaration.
 (define %kinds '(constative preference performative read))
 
 (define (door* object name args auth topic reply kind to doc feature)

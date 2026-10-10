@@ -3,7 +3,7 @@
 ;;; An operator evaluates in (guile-user) over the REPL socket, where the
 ;;; prelude (boot/prelude) and the refs bound here stand — fleet-reconciler,
 ;;; gateway-vat, spend-policy, planner-vat, dev-commune — so tools reach them
-;;; via repl-eval (tools/dev-loop-close.scm). NO monero-wallet binding —
+;;; via repl-eval (tools/dev/dev-loop-close.scm). NO monero-wallet binding —
 ;;; that's the whole point of process isolation. Only spend-policy (the
 ;;; OCapN cap) is here. Every $ call on dev-commune from the REPL needs
 ;;; (with-vat planner-vat ...), same as every other economic commune.

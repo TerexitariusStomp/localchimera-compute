@@ -6,7 +6,7 @@
 // normalized slack — 1 at the healthy steady-state s★, 0 at the tipping point
 // (where the tension diverges). We render the real, cited catalogue from
 // module/playnet/knowledge/catalogues/eco.scm (browser/data/snapshots/fragility-snapshot.json,
-// emitted by tools/emit-fragility-snapshot.scm); the live gateway pushes the
+// emitted by tools/emit/emit-fragility-snapshot.scm); the live gateway pushes the
 // same shape over the bus ("fragility").
 //
 // This is the CONSTRAINT DIAL of social-material.typ: "one wheel of limits, each

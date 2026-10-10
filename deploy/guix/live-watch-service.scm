@@ -1,5 +1,5 @@
 ;;; deploy/guix/live-watch-service.scm — Shepherd service that runs
-;;; tools/live-watch.sh against the playnet dev checkout.
+;;; tools/dev/live-watch.sh against the playnet dev checkout.
 ;;;
 ;;; Once `make serve-dev` has the dev wasm bundle running and the REPL
 ;;; relay listening on 37146, `herd start live-watch` starts an inotify
@@ -40,8 +40,8 @@
 (define-record-type* <live-watch-configuration>
   live-watch-configuration make-live-watch-configuration
   live-watch-configuration?
-  ;; Where the writable dev checkout lives. tools/live-watch.sh and
-  ;; tools/live-reload.scm both come from this checkout.
+  ;; Where the writable dev checkout lives. tools/dev/live-watch.sh and
+  ;; tools/dev/live-reload.scm both come from this checkout.
   (checkout    live-watch-configuration-checkout
                (default "/home/playnet/dev-checkout"))
   ;; Subpaths under CHECKOUT to watch. Each must be a directory.
@@ -71,7 +71,7 @@
           ;; Run via bash so $PATH expansion works inside the script.
           (cons*
            #$(file-append bash "/bin/bash")
-           (string-append #$checkout "/tools/live-watch.sh")
+           (string-append #$checkout "/tools/dev/live-watch.sh")
            (map (lambda (sub)
                   (string-append #$checkout "/" sub))
                 '#$watch-paths))

@@ -193,7 +193,7 @@ console.log("\n── the region a latitude implies ──");
 {
   const { REGION_LATITUDES: L } = await import("../../browser/app/nutrition-catalogue.js");
   check("the three latitudes come from the catalogue: hot within 30°, cold from 50°, high latitude from 60°", L.hot === 30 && L.cold === 50 && L.high === 60);
-  // the same places tests/planner/test-housing-substance.scm reads through region-for-lat
+  // the same places tests/solve/test-housing-substance.scm reads through region-for-lat
   check("a latitude implies its region by the Scheme rule: Lagos, Berlin, Oslo, Tromsø, and the edges at ±30° and ±50°",
     N.regionForLat(6.5) === "hotArid" && N.regionForLat(45) === "temperate" && N.regionForLat(52.5) === "cold" && N.regionForLat(69.6) === "highLatitude"
     && N.regionForLat(-30) === "hotArid" && N.regionForLat(-50) === "cold");

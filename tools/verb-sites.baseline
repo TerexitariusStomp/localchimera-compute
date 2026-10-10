@@ -1,2 +1,0 @@
-# tools/lint-verbs.scm: sites that spell actions by hand, per file. The counts only fall.
-# `make lint-verbs` fails when a file holds more; `guile tools/lint-verbs.scm --write` keeps a gain.

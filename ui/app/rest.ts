@@ -5,9 +5,9 @@
 // node runs it (tests/browser/rest-test.mjs).
 //
 // The numbers are the catalogue's, generated into rest-catalogue.ts
-// (tools/rest-emit.scm); the person layer here is a PORT of knowledge/rest-
+// (tools/emit/rest-emit.scm); the person layer here is a PORT of knowledge/rest-
 // catalogue.scm's — code in both places, a table in neither — pinned to its
-// figures by tests/browser/rest-test.mjs and tests/planner/
+// figures by tests/browser/rest-test.mjs and tests/knowledge/
 // test-rest-catalogue.scm. The plan RESERVES this time and does not allocate it:
 // the hours a person offers sit inside D = period − SNIRT
 // (docs/planning/food/reproduction-of-labour-power.md §2b).

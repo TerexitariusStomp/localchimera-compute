@@ -1,7 +1,7 @@
 ;;; module/playnet/planner/seed-meeting-scope.scm — populate the demo "meeting commune"
 ;;;
 ;;; Direct port of the setup block from
-;;; tests/planner/test-meeting-roles.scm:78-167, plus an explicit Plan
+;;; tests/deprecated/test-meeting-roles.scm:78-167, plus an explicit Plan
 ;;; record so the calendar's plan dropdown has something to show, plus
 ;;; the dependent-demand invocation that produces work intents with
 ;;; suggested-provider metadata for the skill-matched agents.

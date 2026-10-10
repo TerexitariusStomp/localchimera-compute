@@ -5,14 +5,14 @@
 ;;;
 ;;; This file serves two channels. The core is one (deploy/guix is its channel
 ;;; directory), and the published playnet-keri repository is the other
-;;; (`tools/publish-keri-lib.sh` places this file at
+;;; (`tools/dev/publish-keri-lib.sh` places this file at
 ;;; guix/gnu/packages/playnet-keri.scm there). The source is the channel's own checkout, so the package builds
 ;;; exactly the commit a channel pin names.
 ;;;
 ;;; The module sits in the (gnu packages) namespace, which is where `guix
 ;;; install`, `guix shell` and `guix build` look a package up by name.
 ;;;
-;;; The modules are the set `tools/lint-keri-lib.scm --manifest` prints: the
+;;; The modules are the set `tools/lint/lint-keri-lib.scm --manifest` prints: the
 ;;; library layers plus their support modules. Native libraries (libsodium,
 ;;; libblake3) are propagated, so a profile holding this package finds them
 ;;; the way the modules look for them (GUIX_ENVIRONMENT, ~/.guix-profile).

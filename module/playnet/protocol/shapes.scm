@@ -16,7 +16,7 @@
 ;;;               over CapTP and has no HTTP form
 ;;; A door with any such argument is emitted without a path.
 ;;;
-;;; tools/protocol-lint.scm refuses an argument name this table does not
+;;; tools/lint/protocol-lint.scm refuses an argument name this table does not
 ;;; know, so a new door either follows a known name or adds one here.
 
 (define-module (playnet protocol shapes)

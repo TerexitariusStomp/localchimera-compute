@@ -8,7 +8,7 @@
 ;;; dough's zero is stated, and the relaxation recipe that holds it in the box
 ;;; and lets it cool is on the store. The proofer buys its heat as electricity:
 ;;; exactly c·ΔT per kilogram, so element closure over heat lets it run and would
-;;; refuse a proofer stating less (tests/planner/test-relaxation.scm
+;;; refuse a proofer stating less (tests/solve/test-relaxation.scm
 ;;; shows the refusal on the engine).
 ;;;
 ;;; Seeded beside a scope's bread recipes by `seed-proofing!`; opt-in, so the

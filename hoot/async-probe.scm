@@ -6,7 +6,7 @@
 ;;; chain of scopes as four peers on the simulated network (seeded delays, loss,
 ;;; repeats) through the browser build and logs the fill percentage, the messages
 ;;; delivered, and the pull on each link. The native build settles the same
-;;; chain at 99.92% met in a few hundred messages (tests/planner/test-federation-async.scm).
+;;; chain at 99.92% met in a few hundred messages (tests/federation/test-federation-async.scm).
 ;;;
 ;;; Run:  make hoot-probe-async
 
@@ -30,7 +30,7 @@
           (%log (exact->inexact (cdr (assq 'delivered stats)))))))))
 
 ;; a crossing: two granaries supply one good, two bakers draw it — one pull, settled
-;; between four peers (the same economy as tests/planner/federation-crossing-fixture.scm)
+;; between four peers (the same economy as tests/federation/federation-crossing-fixture.scm)
 (define (scope-forms bcol soil A sign)
   (append (map (lambda (i) (mk-bar 0.0 (list (cons i 1.0)))) '(0 1 2))
           (list (mk-bar soil (list (cons 1 -1.0)))

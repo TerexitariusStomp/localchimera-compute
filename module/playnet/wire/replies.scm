@@ -4,7 +4,7 @@
 ;;; a JSON object (the row types of ui/app/seam.ts and the face that asks).
 ;;; `reply->wire` is that reading: each door's reply is a table, found by the door's name.
 ;;; The page's spine (hoot/day-boot.scm) and the demo recorder
-;;; (tools/demo-emit.scm) both answer through it. Plain Scheme.
+;;; (tools/emit/demo-emit.scm) both answer through it. Plain Scheme.
 
 (define-module (playnet wire replies)
   #:use-module (playnet wire rows)

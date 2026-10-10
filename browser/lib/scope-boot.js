@@ -12,7 +12,7 @@
 // Booted through lib/wasm-boot.js.
 //
 // One module for the page's worker (browser/scope-worker.js) and for the node
-// check (tools/check-scope-worker.cjs): both boot the same way.
+// check (tools/test/check-scope-worker.cjs): both boot the same way.
 
 import { bootHandlers } from "./wasm-boot.js";
 

@@ -337,7 +337,7 @@
                                  (lambda () (render-filing tmpl '((adapter-name . "Other") (site . "x"))
                                                            #:filer "scope:foodco")) list)))))
     (format #t "  submitted → authority, then grant raises the held permit — see~%")
-    (format #t "  tests/planner/test-filings.scm for the round-trip into holding-status.~%")))
+    (format #t "  tests/observation/test-filings.scm for the round-trip into holding-status.~%")))
 
 (when (and (pair? (command-line))
            (string-suffix? "legal/filings.scm" (car (command-line))))

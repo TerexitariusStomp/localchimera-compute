@@ -4,7 +4,7 @@
 ;;; ((playnet push subscriptions) says why that key). The store is the one
 ;;; piece of push state and touches no crypto: (playnet push adapter), which
 ;;; puts a notification on the wire, needs libgcrypt; a gateway test of the
-;;; stores a member is forgotten from (tests/keri/test-forget.scm) needs only
+;;; stores a member is forgotten from (tests/gateway/test-forget.scm) needs only
 ;;; this. The adapter re-exports it, so the gateway's import stands.
 
 (define-module (playnet push store)

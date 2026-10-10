@@ -40,7 +40,7 @@ browser/day-boot.wasm: hoot/day-boot.scm $(DAY_BOOT_WASM_DEPS) $(HOOT_TOOLCHAIN_
 	  guild compile-wasm -L module -L $(FIBERS_LOAD_PATH) \
 	    -L $(GOBLINS_LOAD_PATH) \
 	    --bundle -o browser/day-boot.wasm hoot/day-boot.scm
-	./tools/patch-reflect-mime.sh
+	./tools/dev/patch-reflect-mime.sh
 
 # ── The planner under Hoot ───────────────────────────────────────────────────
 # `guild compile-wasm` builds a whole program and refuses a module that may be
@@ -82,26 +82,26 @@ check-hoot-planner: $(HOOT_SRC)/playnet/solve/engine.scm $(HOOT_SRC)/playnet/vf/
 
 # runs the probe under node; the wasm imports goblins' crypto, which a solve never calls
 hoot-probe-family: check-hoot-planner
-	node tools/run-wasm.cjs $(HOOT_SRC)/family-probe.wasm
+	node tools/test/run-wasm.cjs $(HOOT_SRC)/family-probe.wasm
 # A whole scope for the page: a scope root with its observer and stores, the demo
 # neighbourhood seeded into it, a count through the count door (hoot/scope-probe.scm).
 # Every module it reaches states its imports in its define-module
-# (tools/hoist-use-modules.py --check) and keeps host-only calls behind cond-expand.
+# (tools/edit/hoist-use-modules.py --check) and keeps host-only calls behind cond-expand.
 .PHONY: check-hoot-scope hoot-probe-scope
 check-hoot-scope: $(HOOT_SRC)/playnet/solve/engine.scm $(HOOT_SRC)/playnet/vf/formulas/periods.scm $(HOOT_SCOPE_SRC)/playnet/scope/live.scm
 	$(HOOT_BUILD_DEV) bash -c 'guild compile-wasm $(HOOT_PLANNER_ARGS) -L $(HOOT_SCOPE_SRC) -o $(HOOT_SRC)/scope-probe.wasm hoot/scope-probe.scm'
 hoot-probe-scope: check-hoot-scope
-	node tools/run-wasm.cjs $(HOOT_SRC)/scope-probe.wasm
+	node tools/test/run-wasm.cjs $(HOOT_SRC)/scope-probe.wasm
 
 # the federated solve (solve-decomposed) through the browser build: each scope on the reference core
 hoot-probe-admm: $(HOOT_SRC)/playnet/solve/engine.scm
 	$(HOOT_BUILD_DEV) bash -c 'guild compile-wasm $(HOOT_PLANNER_ARGS) -o $(HOOT_SRC)/admm-probe.wasm hoot/admm-probe.scm'
-	node tools/run-wasm.cjs $(HOOT_SRC)/admm-probe.wasm
+	node tools/test/run-wasm.cjs $(HOOT_SRC)/admm-probe.wasm
 
 # the coordinator-free solve: peers over a simulated network, each on the reference core
 hoot-probe-async: $(HOOT_SRC)/playnet/solve/engine.scm
 	$(HOOT_BUILD_DEV) bash -c 'guild compile-wasm $(HOOT_PLANNER_ARGS) -o $(HOOT_SRC)/async-probe.wasm hoot/async-probe.scm'
-	node tools/run-wasm.cjs $(HOOT_SRC)/async-probe.wasm
+	node tools/test/run-wasm.cjs $(HOOT_SRC)/async-probe.wasm
 
 # ── The household's solve on the device ─────────────────────────────────────
 # browser/family.wasm is the planner's family solve for the browser, run in
@@ -187,7 +187,7 @@ browser/family.wasm: hoot/family-worker.scm $(FAMILY_WASM_DEPS) $(HOOT_SRC)/play
 # asks it the demo week: the same answer the planner test measured
 .PHONY: check-family-worker
 check-family-worker: browser/family.wasm
-	node tools/check-family-worker.cjs
+	node tools/test/check-family-worker.cjs
 
 # ── A scope on the device ───────────────────────────────────────────────────
 # browser/scope.wasm is a whole scope for the page (hoot/scope-worker.scm over
@@ -358,7 +358,7 @@ browser/scope.wasm: hoot/scope-worker.scm $(SCOPE_WASM_DEPS) $(HOOT_SRC)/playnet
 # asks its doors what the planner service answers of the same acts
 .PHONY: check-scope-worker
 check-scope-worker: browser/scope.wasm
-	node tools/check-scope-worker.cjs
+	node tools/test/check-scope-worker.cjs
 
 # ── Git hooks (versioned, install via symlinks) ─────────────────────────────
 # Hooks live under deploy/scripts/git-hooks/ so they ride in the repo.
@@ -434,7 +434,7 @@ carry:
 # Read-only; never moves the pin.
 .PHONY: check-openvtc-parity
 check-openvtc-parity:
-	@bash tools/openvtc-parity-check.sh
+	@bash tools/lint/openvtc-parity-check.sh
 
 # ── KERI + OpenVTC library (docs/planning/identity/keri-openvtc-library-split.md) ────
 # lint-keri-lib holds the import boundary of module/playnet/keri (First Person included);
@@ -442,10 +442,10 @@ check-openvtc-parity:
 # history (local only — publishing it is a separate, deliberate step).
 .PHONY: lint-keri-lib keri-lib-cut
 lint-keri-lib:
-	@guile --no-auto-compile -e main -s tools/lint-keri-lib.scm
+	@guile --no-auto-compile -e main -s tools/lint/lint-keri-lib.scm
 
 keri-lib-cut: lint-keri-lib
-	@bash tools/publish-keri-lib.sh
+	@bash tools/dev/publish-keri-lib.sh
 
 # Every suite the cut ships, in a PURE shell built from the library's own
 # manifest — the proof that a stranger with Guix and the playnet-keri repo has
@@ -453,7 +453,7 @@ keri-lib-cut: lint-keri-lib
 KERI_LIB_ENV = guix shell --pure -m deploy/manifests/keri-lib-manifest.scm --
 .PHONY: test-keri-lib
 test-keri-lib: lint-keri-lib
-	@tests="$$(guile --no-auto-compile -e main -s tools/lint-keri-lib.scm --manifest | grep '^tests/')"; \
+	@tests="$$(guile --no-auto-compile -e main -s tools/lint/lint-keri-lib.scm --manifest | grep '^tests/')"; \
 	$(KERI_LIB_ENV) $(OWN_CCACHE) sh -c 'fail=0; for t in '"$$(echo $$tests)"'; do \
 	  if guile --no-auto-compile -q -L module $$t >/tmp/keri-lib-test.log 2>&1; \
 	  then echo "ok   $$t"; else echo "FAIL $$t"; tail -5 /tmp/keri-lib-test.log; fail=1; fi; done; exit $$fail'
@@ -464,7 +464,7 @@ test-keri-lib: lint-keri-lib
 .PHONY: keri-lib-take
 keri-lib-take:
 	@[ -n "$(RANGE)" ] || { echo "usage: make keri-lib-take RANGE=main..patch/<id>   (a range in ../playnet-keri)"; exit 2; }
-	@bash tools/keri-lib-take.sh "$(RANGE)"
+	@bash tools/dev/keri-lib-take.sh "$(RANGE)"
 
 # Publish a cut the way every satellite moves: cut from committed history,
 # sign the tip with the key the core's commits carry (filter-repo writes
@@ -720,16 +720,16 @@ GUILE_TEST     = $(GUILE_RUN)
 # OWN_CCACHE keys Guile's compiled-file cache by the guile BINARY the shell
 # resolves. Two builds of one version share ~/.cache/guile/ccache/3.0-LE-8-4.7,
 # and a .go one compiled kills the other ("expecting mutable bytevector",
-# 117 suites red, zero regressions) — see tools/own-ccache.sh. Every guile
+# 117 suites red, zero regressions) — see tools/test/own-ccache.sh. Every guile
 # entry point below goes through it, so the manifest's guile, the pinned
 # time-machine guile and Hoot's guile-next each read only what they wrote.
-OWN_CCACHE = bash tools/own-ccache.sh
+OWN_CCACHE = bash tools/test/own-ccache.sh
 TEST_ENV = guix shell --pure -L deploy/guix \
              -m deploy/manifests/dev-test-manifest.scm -- $(OWN_CCACHE) env LC_ALL=C.UTF-8
 
 GUILE_TEST_DEV = $(TEST_ENV) guile --no-auto-compile
 
-# The development scope's own tool (tools/dev-plan.scm) needs `rad` on PATH
+# The development scope's own tool (tools/dev/dev-plan.scm) needs `rad` on PATH
 # beside the manifest's solver — NOT --pure, since `rad` lives in the host
 # profile and the manifest never names it.
 DEV_ENV = guix shell -L deploy/guix -m deploy/manifests/dev-test-manifest.scm -- $(OWN_CCACHE) env LC_ALL=C.UTF-8
@@ -773,7 +773,7 @@ FIBERS_LOAD_PATH = $(FIBERS_PREFIX)/share/guile/site/3.0
 # handshake is NOT compatible across versions — it fails as "WebSocket
 # designator verification failed" in the browser and "invalid client
 # verification message" in the gateway log. tests/ux/ux-full.sh and
-# tools/dev.sh both read these via `make -s print-goblins-path`.
+# tools/dev/dev.sh both read these via `make -s print-goblins-path`.
 .PHONY: print-goblins-path
 print-goblins-path:
 	@echo "$(GOBLINS_LOAD_PATH):$(GOBLINS_CCACHE)"
@@ -838,7 +838,7 @@ browser/repl.wasm: hoot/repl.scm $(REPL_WASM_DEPS) $(HOOT_TOOLCHAIN_STAMP)
 	  guild compile-wasm -L module -L $(FIBERS_LOAD_PATH) \
 	    -L $(GOBLINS_LOAD_PATH) \
 	    --bundle -o browser/repl.wasm hoot/repl.scm
-	./tools/patch-reflect-mime.sh
+	./tools/dev/patch-reflect-mime.sh
 
 # `serve` just runs the server — it does NOT build anything. The wasms
 # (day-boot.wasm, repl.wasm) are gitignored BUILD PRODUCTS (the box builds
@@ -870,7 +870,7 @@ serve:
 #   make shot URL='http://127.0.0.1:8080/app.html?face=cal' OUT=/tmp/cal.png W=420 H=800
 .PHONY: shot
 shot:
-	bash tools/shot.sh "$(if $(URL),$(URL),http://127.0.0.1:8080/app.html?face=share)" \
+	bash tools/dev/shot.sh "$(if $(URL),$(URL),http://127.0.0.1:8080/app.html?face=share)" \
 	  "$(if $(OUT),$(OUT),$(HOME)/playnet-dev-shots/shot.png)" $(if $(W),$(W),1400) $(if $(H),$(H),900)
 
 # The day dial, LIVE: the whole local stack in ONE command — a real gateway
@@ -881,7 +881,7 @@ shot:
 #   make dev
 .PHONY: dev
 dev: browser/day-boot.wasm
-	bash tools/dev.sh
+	bash tools/dev/dev.sh
 
 # The day dial, LIVE ON YOUR PHONE, over a throwaway .onion. A dedicated tor
 # instance (own data dir, system tor untouched) maps onion:80 -> :8080, and a
@@ -891,21 +891,21 @@ dev: browser/day-boot.wasm
 #   FRESH=1 make onion    # rotate to a brand-new onion
 .PHONY: onion
 onion:
-	bash tools/onion.sh
+	bash tools/dev/onion.sh
 
 # ── Offline routing engine (Tier-1 Valhalla; serve-static proxies /route) ───
 # Data pipeline (fetch → tzdb → calendar → config → transit → tiles) and the
-# engine itself live behind tools/valhalla-local.sh; see its header.
+# engine itself live behind tools/dev/valhalla-local.sh; see its header.
 .PHONY: routing-data routing-serve routing-stop
 routing-data:
-	bash tools/valhalla-local.sh all
+	bash tools/dev/valhalla-local.sh all
 routing-serve:
-	bash tools/valhalla-local.sh serve
+	bash tools/dev/valhalla-local.sh serve
 routing-stop:
-	bash tools/valhalla-local.sh stop
+	bash tools/dev/valhalla-local.sh stop
 
-# The basemap's archives: tools/map-tiles.sh cuts one PMTiles file per region of
-# tools/regions.tsv from a Protomaps build of OpenStreetMap (a range read of
+# The basemap's archives: tools/emit/map-tiles.sh cuts one PMTiles file per region of
+# tools/emit/regions.tsv from a Protomaps build of OpenStreetMap (a range read of
 # the planet file, over Tor) into data/map/, and fetches the labels' glyphs
 # into browser/assets/map/fonts/. Both are out of git; the deploy rsync ships
 # the glyphs with browser/, and the box cuts its own archives.
@@ -914,7 +914,7 @@ routing-stop:
 #   MAP_DIR=/var/lib/playnet/map make map-tiles    on the box
 .PHONY: map-tiles
 map-tiles:
-	bash tools/map-tiles.sh
+	bash tools/emit/map-tiles.sh
 
 # test      — the FULL green baseline: every hermetic .scm test under tests/ and
 #             module/**/tests/, auto-discovered (a new test file can never rot by
@@ -1025,7 +1025,7 @@ $(KERNEL_SO): $(KERNEL_SRC) module/playnet/solve/kernel/Makefile
 # the first run) and fails only on a test that is red and not named there.
 test test-all: lint-parens lint-law lint-layers lint-verbs lint-compile freshen-ccache $(KERNEL_SO) ci-env
 	$(TEST_ENV) RED_BASELINE=$(RED_BASELINE) \
-	  bash tools/run-scm-tests.sh
+	  bash tools/test/run-scm-tests.sh
 
 # run-scm-tests.sh leaves auto-compile ON because "a stale .go is worse than a
 # slow run". That holds for imports and NOT for includes: an edited fragment
@@ -1035,7 +1035,7 @@ test test-all: lint-parens lint-law lint-layers lint-verbs lint-compile freshen-
 # only reads mtimes.
 .PHONY: freshen-ccache
 freshen-ccache:
-	@bash tools/freshen-ccache.sh
+	@bash tools/test/freshen-ccache.sh
 
 test-fast: lint-parens lint-law lint-docs check-wasm-deps check-ui-fresh test-gplay test-knowledge test-notify-registry test-notify-adapters test-push-adapter \
       test-recipient-registry test-notify-router test-email-transport check-provenance test-provenance \
@@ -1055,7 +1055,7 @@ test-fast: lint-parens lint-law lint-docs check-wasm-deps check-ui-fresh test-gp
 # module resolution, so the pure shell buys nothing and costs a few seconds.
 .PHONY: lint-parens
 lint-parens:
-	@LC_ALL=C.UTF-8 guile --no-auto-compile tools/lint-parens.scm
+	@LC_ALL=C.UTF-8 guile --no-auto-compile tools/lint/lint-parens.scm
 
 # A planning map "read off the code" is a set of claims that a name lives at a
 # line of a file. Every cite in the flow map and its companions resolves
@@ -1071,7 +1071,7 @@ LINTED_DOCS = docs/planning/federation/federation-flow-map.md docs/planning/fede
       docs/observation/physics.md docs/observation/physics-register.md docs/the-plan-and-the-laws.typ
 .PHONY: lint-docs
 lint-docs:
-	@LC_ALL=C.UTF-8 guile --no-auto-compile tools/doc-cites.scm $(LINTED_DOCS)
+	@LC_ALL=C.UTF-8 guile --no-auto-compile tools/lint/doc-cites.scm $(LINTED_DOCS)
 
 # A rule that names a jurisdiction no pack places can never fire, and nothing at
 # runtime will ever say so. Reads the packs without registering them, so it costs
@@ -1085,18 +1085,18 @@ lint-docs:
 # crossings of the code's catalogue (legal/crossings.scm), each of the same kind.
 .PHONY: check-crossing-catalogue
 check-crossing-catalogue:
-	@$(GUILE_TEST_DEV) -L module tools/check-crossing-catalogue.scm
+	@$(GUILE_TEST_DEV) -L module tools/lint/check-crossing-catalogue.scm
 
 .PHONY: lint-law
 lint-law:
-	@$(GUILE_TEST_DEV) -L module tools/lint-law-packs.scm
+	@$(GUILE_TEST_DEV) -L module tools/lint/lint-law-packs.scm
 
 # Every recipe in the tree as ValueFlows the planner can run: one store, every
 # seeder, (playnet knowledge dsl vf-lint) over it. Errors fail; warnings
-# and info print. tools/lint-recipes.scm.
+# and info print. tools/lint/lint-recipes.scm.
 .PHONY: lint-recipes
 lint-recipes:
-	@LC_ALL=C.UTF-8 guile --no-auto-compile -L module tools/lint-recipes.scm
+	@LC_ALL=C.UTF-8 guile --no-auto-compile -L module tools/lint/lint-recipes.scm
 
 # Every tracked mention of the core RID (read live via `rad inspect`) or a
 # satellite's (deploy/satellites.scm) — a transition checklist, not an
@@ -1107,7 +1107,7 @@ lint-recipes:
 # exception — those regenerate.
 .PHONY: check-rid-mentions
 check-rid-mentions:
-	@tools/check-rid-mentions.sh
+	@tools/lint/check-rid-mentions.sh
 
 # The RID token in LICENSE-ADDITIONAL-TERMS.md's attribution quote and the
 # bare token in both HTML footers, kept to knowledge/law/product.scm's
@@ -1115,9 +1115,9 @@ check-rid-mentions:
 # reads) — only the token, never the prose around it in each file.
 .PHONY: attribution-emit check-attribution-fresh
 attribution-emit:
-	@LC_ALL=C.UTF-8 guile --no-auto-compile -L module tools/emit-attribution-notices.scm write
+	@LC_ALL=C.UTF-8 guile --no-auto-compile -L module tools/emit/emit-attribution-notices.scm write
 check-attribution-fresh:
-	@LC_ALL=C.UTF-8 guile --no-auto-compile -L module tools/emit-attribution-notices.scm check
+	@LC_ALL=C.UTF-8 guile --no-auto-compile -L module tools/emit/emit-attribution-notices.scm check
 
 # The figures the terms and the privacy notice quote in running prose (the
 # version and date, the age floor, log rotation, the breach window, the speech
@@ -1126,79 +1126,79 @@ check-attribution-fresh:
 # `data-fact`. `make notice-facts-emit` rewrites them; the check is in test-fast.
 .PHONY: notice-facts-emit check-notice-facts-fresh
 notice-facts-emit:
-	@LC_ALL=C.UTF-8 guile --no-auto-compile -L module tools/emit-notice-facts.scm write
+	@LC_ALL=C.UTF-8 guile --no-auto-compile -L module tools/emit/emit-notice-facts.scm write
 check-notice-facts-fresh:
-	@LC_ALL=C.UTF-8 guile --no-auto-compile -L module tools/emit-notice-facts.scm check
+	@LC_ALL=C.UTF-8 guile --no-auto-compile -L module tools/emit/emit-notice-facts.scm check
 
 # Where each file of module/playnet/ is, what reaches it, and which imports point
-# up the layers (docs/planning/codebase-layout.md). tools/module-layout.scm is
-# the layout as data, naming the tree to come; tools/module-map.scm reads every
+# up the layers (docs/planning/codebase-layout.md). tools/lint/module-layout.scm is
+# the layout as data, naming the tree to come; tools/lint/module-map.scm reads every
 # .scm in the tree as forms and lints each file at the rank it will stand at.
 # `module-map` writes module/playnet/README.md; `lint-layers` lists the upward
 # imports and any file the layout does not name, and exits 1 for one that
-# tools/layers.baseline does not hold: the baseline is what the moves of the
-# layout's §9 have yet to resolve, `tools/module-map.scm --baseline` records a
+# tools/lint/layers.baseline does not hold: the baseline is what the moves of the
+# layout's §9 have yet to resolve, `tools/lint/module-map.scm --baseline` records a
 # shrunken one, and `make test` runs the lint. The map carries importer counts,
 # so `check-module-map-fresh` is for the reader, not the gate. The tool imports
 # no playnet module and reads 1,600 files, so it runs compiled, under its own cache.
 .PHONY: module-map check-module-map-fresh lint-layers
 module-map:
-	@LC_ALL=C.UTF-8 tools/own-ccache.sh guile tools/module-map.scm --write module/playnet/README.md
+	@LC_ALL=C.UTF-8 tools/test/own-ccache.sh guile tools/lint/module-map.scm --write module/playnet/README.md
 check-module-map-fresh:
-	@LC_ALL=C.UTF-8 EMIT_CMD="tools/own-ccache.sh guile" tools/check-emit-fresh.sh check-module-map-fresh module/playnet/README.md module-map tools/module-map.scm --write
+	@LC_ALL=C.UTF-8 EMIT_CMD="tools/test/own-ccache.sh guile" tools/lint/check-emit-fresh.sh check-module-map-fresh module/playnet/README.md module-map tools/lint/module-map.scm --write
 lint-layers:
-	@LC_ALL=C.UTF-8 tools/own-ccache.sh guile tools/module-map.scm --lint
+	@LC_ALL=C.UTF-8 tools/test/own-ccache.sh guile tools/lint/module-map.scm --lint
 
 # Sites that spell actions by hand instead of reading the action table
-# (tools/lint-verbs.scm, beyond-valueflows.md §6.2): the count per file only falls.
+# (tools/lint/lint-verbs.scm, beyond-valueflows.md §6.2): the count per file only falls.
 .PHONY: lint-verbs
 lint-verbs:
-	@LC_ALL=C.UTF-8 tools/own-ccache.sh guile tools/lint-verbs.scm
+	@LC_ALL=C.UTF-8 tools/test/own-ccache.sh guile tools/lint/lint-verbs.scm
 
 # Every live module compiled with the unbound-variable and arity warnings: a call that
 # cannot run (a name no import supplies, a wrong argument count) is refused before a test
-# has to reach it. tools/compile-warnings.sh explains what it counts and what it sets aside.
+# has to reach it. tools/lint/compile-warnings.sh explains what it counts and what it sets aside.
 .PHONY: lint-compile
 lint-compile:
-	@$(TEST_ENV) tools/compile-warnings.sh --check
+	@$(TEST_ENV) tools/lint/compile-warnings.sh --check
 
 # playnet's own development, planned by the planner: every open Radicle
 # issue is a want, its area a skill, its kind a recipe (module/playnet/
 # planner/dev/recipes.scm). Prints the week; writes nothing,
 # publishes nothing. DEV_PLAN_ARGS carries flags through, e.g.
-# `make dev-plan DEV_PLAN_ARGS="--for box"`. See tools/dev-plan.scm.
+# `make dev-plan DEV_PLAN_ARGS="--for box"`. See tools/dev/dev-plan.scm.
 .PHONY: dev-plan
 dev-plan:
-	@$(DEV_ENV) guile -q -L module tools/dev-plan.scm $(DEV_PLAN_ARGS)
+	@$(DEV_ENV) guile -q -L module tools/dev/dev-plan.scm $(DEV_PLAN_ARGS)
 
 # The development scope's world (an issue as a want, an area as a skill)
 # and its week's plan, on a fixture scope — no `rad` needed.
 test-dev-world:
-	$(GUILE_TEST_DEV) -L module -L tests tests/planner/test-dev-world.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/dev/test-dev-world.scm
 
 # The development scope's books: a plan row taken as a commitment, an
 # issue solved as the work and the deliverable it fulfils.
 test-dev-ledger:
-	$(GUILE_TEST_DEV) -L module -L tests tests/planner/test-dev-ledger.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/dev/test-dev-ledger.scm
 
 test-vf-lint:
-	$(GUILE_TEST_DEV) -L module -L tests tests/planner/test-vf-lint.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/scope/test-vf-lint.scm
 
 test-lint-records-door:
-	$(GUILE_TEST_DEV) -L module -L tests tests/planner/test-lint-records-door.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/doors/test-lint-records-door.scm
 
 test-issue-revoke-credential:
-	$(GUILE_TEST_DEV) -L module -L tests tests/governance/test-issue-revoke-credential.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/doors/test-issue-revoke-credential.scm
 
 # A federation admits a commune through a governor of its gateway.
 test-admit-commune-door:
-	$(GUILE_TEST_DEV) -L module -L tests tests/governance/test-admit-commune-door.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/doors/test-admit-commune-door.scm
 
 test-delegation-scope-arg:
-	$(GUILE_TEST_DEV) -L module -L tests tests/governance/test-delegation-scope-arg.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/doors/test-delegation-scope-arg.scm
 
 test-lobby-arg-split:
-	$(GUILE_TEST_DEV) -L module -L tests tests/gateway/test-lobby-arg-split.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/doors/test-lobby-arg-split.scm
 
 # A fragmented WebSocket message arrives whole (UPSTREAM-ISSUES #14): the
 # patched (web socket frame) in module/web/socket/frame.scm, over a socket pair.
@@ -1211,69 +1211,69 @@ test-websocket-masking:
 	$(GUILE_TEST_DEV) -L module -L tests tests/gateway/test-websocket-masking.scm
 
 test-declare-arg-split:
-	$(GUILE_TEST_DEV) -L module -L tests tests/planner/test-declare-arg-split.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/doors/test-declare-arg-split.scm
 
 test-offer-work-drift-door:
-	$(GUILE_TEST_DEV) -L module -L tests tests/planner/test-offer-work-drift-door.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/doors/test-offer-work-drift-door.scm
 
 test-plan-materialize-opts-door:
-	$(GUILE_TEST_DEV) -L module -L tests tests/planner/test-plan-materialize-opts-door.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/doors/test-plan-materialize-opts-door.scm
 
 # A count of a stock: the difference lands on the stock, with its technique,
 # place, instant and evidence; a planned count's record fulfils its commitment
 # (docs/observation/capture.md §3).
 test-count-stock:
-	$(GUILE_TEST_DEV) -L module tests/playnet/test-count-stock.scm
+	$(GUILE_TEST_DEV) -L module tests/doors/test-count-stock.scm
 
 test-wire-snapshot:
-	$(GUILE_TEST_DEV) -L module tests/playnet/test-wire-snapshot.scm
+	$(GUILE_TEST_DEV) -L module tests/doors/test-wire-snapshot.scm
 
 # The calendar email round-trip: an iCal invitation sent by real email
 # (a file-drop transport here), its METHOD:REPLY read back, the bookkeeping
 # row updated, and the real accept-invite door fired — no network needed.
 test-calendar-mail:
-	$(GUILE_TEST_DEV) -L module tests/playnet/test-calendar-mail.scm
+	$(GUILE_TEST_DEV) -L module tests/calendar/test-calendar-mail.scm
 
 test-demo-neighbourhood:
-	$(GUILE_TEST_DEV) -L module tests/planner/test-demo-neighbourhood.scm
+	$(GUILE_TEST_DEV) -L module tests/doors/test-demo-neighbourhood.scm
 
 test-count-anchor:
-	$(GUILE_TEST_DEV) -L module tests/playnet/test-count-anchor.scm
+	$(GUILE_TEST_DEV) -L module tests/doors/test-count-anchor.scm
 
 test-count-anchor-2:
-	$(GUILE_TEST_DEV) -L module tests/playnet/test-count-anchor-2.scm
+	$(GUILE_TEST_DEV) -L module tests/doors/test-count-anchor-2.scm
 
 test-count-expected:
-	$(GUILE_TEST_DEV) -L module tests/playnet/test-count-expected.scm
+	$(GUILE_TEST_DEV) -L module tests/doors/test-count-expected.scm
 
 # The picture a photo read was made from rides the observation credential as a
 # claim of its own: the golden SAIDs of a record with none, the tag grammar, and
 # the bridge's issue (governance/credentials.scm, observation/evidence.scm).
 test-observation-evidence:
-	$(GUILE_TEST_DEV) -L module tests/governance/test-observation-evidence.scm
+	$(GUILE_TEST_DEV) -L module tests/scope/test-observation-evidence.scm
 
 # The one constructor of a count's difference: the tolerance under which a
 # count agrees, and the raise or lower that lands otherwise
 # (planner/observation/adjustment.scm).
 test-adjustment:
-	$(GUILE_TEST_DEV) -L module tests/planner/test-adjustment.scm
+	$(GUILE_TEST_DEV) -L module tests/observation/test-adjustment.scm
 
 test-counts:
-	$(GUILE_TEST_DEV) -L module tests/planner/test-counts.scm
+	$(GUILE_TEST_DEV) -L module tests/doors/test-counts.scm
 
 # Places inside places, the code a thing is known by, a container that moves
 # with what is in it, and the lot's date (docs/observation/capture.md §6).
 test-labels-containers:
-	$(GUILE_TEST_DEV) -L module tests/playnet/test-labels-containers.scm
+	$(GUILE_TEST_DEV) -L module tests/doors/test-labels-containers.scm
 
 # The planned count's cadence, regime and process grammar (planner/formulas/counting.scm),
 # and the schedule, the offers, the accept and the count over the real service
 # (docs/observation/capture.md §4).
 test-counting:
-	$(GUILE_TEST_DEV) -L module tests/planner/test-counting.scm
+	$(GUILE_TEST_DEV) -L module tests/vf/test-counting.scm
 
 test-planned-counts:
-	$(GUILE_TEST_DEV) -L module tests/playnet/test-planned-counts.scm
+	$(GUILE_TEST_DEV) -L module tests/doors/test-planned-counts.scm
 
 # The week's unplanned photo reads, and a picture read at the seat: parts,
 # bounds, the allotment spent and given back, a planned count drawing on the
@@ -1282,18 +1282,18 @@ test-allotment:
 	$(GUILE_TEST_DEV) -L module tests/gateway/test-allotment.scm
 
 test-see-door:
-	$(GUILE_TEST_DEV) -L module tests/gateway/test-see-door.scm
+	$(GUILE_TEST_DEV) -L module tests/doors/test-see-door.scm
 
 # A count is contested the way work is, through the one door, and the whole
 # family of the count goes with a void: adjustment, record, hours and cascade
 # (doors/governance.scm contest-work, planner/formulas/counting.scm).
 test-contest-count:
-	$(GUILE_TEST_DEV) -L module tests/governance/test-contest-count.scm
+	$(GUILE_TEST_DEV) -L module tests/scope/test-contest-count.scm
 
 # A counter's picture, attached to the contest of their count in parts, checked
 # against its hash, held for the ballot's life and let go (gateway/evidence.scm).
 test-evidence-door:
-	$(GUILE_TEST_DEV) -L module tests/gateway/test-evidence-door.scm
+	$(GUILE_TEST_DEV) -L module tests/doors/test-evidence-door.scm
 
 # Guard against the real rot: a test nobody runs. Asserts every
 # tests/ux/*-ux.mjs has a reachable `make` target. Cheap (make -n), no browser,
@@ -1301,7 +1301,7 @@ test-evidence-door:
 # PATCH_CI_CMD in deploy/scripts/radicle-ci-hook.sh).
 .PHONY: check-test-wiring
 check-test-wiring:
-	@bash tools/check-test-wiring.sh
+	@bash tools/lint/check-test-wiring.sh
 
 # The sibling rot: a prerequisite nobody listed. Asserts each wasm entry's
 # import closure is covered by its *_WASM_DEPS list, so make cannot report a
@@ -1309,10 +1309,10 @@ check-test-wiring:
 # compile, no browser — so it rides in the same fast path.
 .PHONY: check-wasm-deps
 check-wasm-deps:
-	@bash tools/check-wasm-deps.sh hoot/repl.scm     "$(REPL_WASM_DEPS)"
-	@bash tools/check-wasm-deps.sh hoot/day-boot.scm "$(DAY_BOOT_WASM_DEPS)"
-	@bash tools/check-wasm-deps.sh hoot/family-worker.scm "$(FAMILY_WASM_DEPS)"
-	@bash tools/check-wasm-deps.sh hoot/scope-worker.scm "$(SCOPE_WASM_DEPS)"
+	@bash tools/lint/check-wasm-deps.sh hoot/repl.scm     "$(REPL_WASM_DEPS)"
+	@bash tools/lint/check-wasm-deps.sh hoot/day-boot.scm "$(DAY_BOOT_WASM_DEPS)"
+	@bash tools/lint/check-wasm-deps.sh hoot/family-worker.scm "$(FAMILY_WASM_DEPS)"
+	@bash tools/lint/check-wasm-deps.sh hoot/scope-worker.scm "$(SCOPE_WASM_DEPS)"
 
 # ── TypeScript: ui/ → browser/ ──────────────────────────────────────────────
 # Sources live OUTSIDE the document root (like hoot/ and rns-wasm/) and emit
@@ -1346,13 +1346,13 @@ ui-watch:
 # and the tree keeps serving the old code with nothing to say so. Recompiles to
 # a scratch dir and diffs, rather than trusting mtimes.
 check-ui-fresh:
-	@$(UI_ENV) bash tools/check-ui-fresh.sh
+	@$(UI_ENV) bash tools/lint/check-ui-fresh.sh
 
 # The same check asked of the COMMIT rather than the working tree — what the
 # pre-commit hook runs. Concurrent sessions share this checkout, so commits are
 # path-limited; a regenerated .js can sit correct on disk and never be staged.
 check-ui-staged:
-	@$(UI_ENV) bash tools/check-ui-fresh.sh --staged
+	@$(UI_ENV) bash tools/lint/check-ui-fresh.sh --staged
 
 # ── Browser test aggregates ─────────────────────────────────────────────────
 # test-browser: self-contained dial suites — chromium, no gateway (~2 min).
@@ -1431,13 +1431,13 @@ test-mesh-plan:
 # browser carries none. The list, its env spelling, and a source scan.
 .PHONY: test-ice-servers
 test-ice-servers:
-	$(GUILE_TEST_DEV) -L module tests/gateway/test-ice-servers.scm
+	$(GUILE_TEST_DEV) -L module tests/doors/test-ice-servers.scm
 
 # Unit conversion with and without GNU units on PATH (utils/units.scm): the box
 # has none, so the program is looked for once instead of a failed fork per call.
 .PHONY: test-units-fallback
 test-units-fallback:
-	$(GUILE_TEST_DEV) -L module tests/playnet/test-units-fallback.scm
+	$(GUILE_TEST_DEV) -L module tests/utils/test-units-fallback.scm
 
 # The utterance parser (app/utter.ts): one sentence → [locus-delta] [act],
 # ranked. Pure and context-injected, so node reads the same sentences the page
@@ -1538,7 +1538,7 @@ test-fuzzy:
 
 # The browser's ask-for-a-shape door (app/conform.ts): read → check → re-ask
 # with the reason → floor. Twin of (playnet ai conform), whose suite is
-# tests/planner/test-conform.scm under `make test`. Pure, no gateway.
+# tests/ai/test-conform.scm under `make test`. Pure, no gateway.
 test-conform-ui:
 	node tests/browser/conform-test.mjs
 
@@ -1676,18 +1676,18 @@ test-rns-identity:
 	node tests/browser/rns-identity-test.mjs
 
 # browser/sw.js against the tree: every PRECACHE path and notification icon is
-# a file (install is all-or-nothing over the list), and tools/sw-stamp.sh
+# a file (install is all-or-nothing over the list), and tools/emit/sw-stamp.sh
 # gives one tree one stamp.
 .PHONY: lint-sw
 lint-sw:
-	@node tools/lint-sw.mjs
+	@node tools/lint/lint-sw.mjs
 
 # The raster icons the manifest, the pages and the worker's notifications
 # name, drawn from browser/assets/icons/{icon,icon-maskable}.svg. Committed;
 # rerun after editing a source.
 .PHONY: icons
 icons:
-	guix shell --pure librsvg font-dejavu fontconfig bash coreutils -- bash tools/make-icons.sh
+	guix shell --pure librsvg font-dejavu fontconfig bash coreutils -- bash tools/emit/make-icons.sh
 
 # The offer field (browser/app/offers.js). The rim and the map show ONE set,
 # and this is why: both ask the same two questions of every offer. Pins the
@@ -1772,75 +1772,75 @@ test-bran-derivations:
 # Contact points on ^lobby-session — the path from an address to the
 # notification router, and the erasure path back off it.
 test-contact-binding:
-	$(GUILE_TEST_DEV) -L module -L tests tests/gateway/test-contact-binding.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/doors/test-contact-binding.scm
 
 # the body doors: declare, stewards, the k-of-n inception signed from the seat,
 # holdings, the read and admission — over a stub body service
 test-body-doors:
-	$(GUILE_TEST_DEV) -L module -L tests tests/gateway/test-body-doors.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/doors/test-body-doors.scm
 
 # Cards on ^lobby-session — how to reach one person, handed to another:
 # signed by the giver, sealed to the receiver, one per pair, erased on withdrawal.
 test-cards:
-	$(GUILE_TEST_DEV) -L module -L tests tests/gateway/test-cards.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/doors/test-cards.scm
 
 test-planner-facet:
-	$(GUILE_TEST_DEV) -L module -L tests tests/gateway/test-planner-facet.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/doors/test-planner-facet.scm
 
 test-declared-dispatch:
-	$(GUILE_TEST_DEV) -L module -L tests tests/gateway/test-declared-dispatch.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/doors/test-declared-dispatch.scm
 
 test-http-door:
-	$(GUILE_TEST_DEV) -L module -L tests tests/gateway/test-http-door.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/doors/test-http-door.scm
 
 test-mcp-door:
-	$(GUILE_TEST_DEV) -L module -L tests tests/gateway/test-mcp-door.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/doors/test-mcp-door.scm
 
 test-device-doors:
-	$(GUILE_TEST_DEV) -L module -L tests tests/gateway/test-device-doors.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/doors/test-device-doors.scm
 
 # The protocol declaration (module/playnet/doors/protocol.scm) names the same doors
 # the code answers, with the same args; its seam names are real day-boot
-# handlers; its anonymous planner doors are the facet. tools/protocol-lint.scm.
+# handlers; its anonymous planner doors are the facet. tools/lint/protocol-lint.scm.
 check-protocol:
-	$(GUILE_TEST_DEV) -L module tools/protocol-lint.scm
+	$(GUILE_TEST_DEV) -L module tools/lint/protocol-lint.scm
 
 # The emits of the declaration. browser/api/openapi.json is committed (the
 # box serves it at /api/openapi.json, Swagger UI at /api/docs/); a stale
 # copy is a refused push, the same gate the ui/→browser/ emit has.
 protocol-emit:
-	$(GUILE_TEST_DEV) -L module tools/protocol-emit.scm openapi browser/api/openapi.json
-	$(GUILE_TEST_DEV) -L module tools/protocol-emit.scm mcp browser/api/mcp-tools.json
-	$(GUILE_TEST_DEV) -L module tools/protocol-emit.scm seam ui/app/seam-wire.ts
+	$(GUILE_TEST_DEV) -L module tools/emit/protocol-emit.scm openapi browser/api/openapi.json
+	$(GUILE_TEST_DEV) -L module tools/emit/protocol-emit.scm mcp browser/api/mcp-tools.json
+	$(GUILE_TEST_DEV) -L module tools/emit/protocol-emit.scm seam ui/app/seam-wire.ts
 
 # The subsistence catalogue's tables, emitted for the browser. The catalogue
 # (module/playnet/knowledge/catalogues/subsistence.scm) states every
 # nutrient band once; ui/app/nutrition-catalogue.ts is its generated copy,
 # committed like seam-wire.ts, and a stale copy is refused the same way.
 nutrition-emit:
-	$(GUILE_TEST_DEV) -L module tools/nutrition-emit.scm ui/app/nutrition-catalogue.ts
+	$(GUILE_TEST_DEV) -L module tools/emit/nutrition-emit.scm ui/app/nutrition-catalogue.ts
 
 # The page's row types, generated from the wire tables (module/playnet/wire/
 # rows.scm registry): one interface per table, so the page's types are what
 # the server states. ui/app/wire-rows.ts is committed like seam-wire.ts and a
 # stale copy is refused the same way.
 wire-types-emit:
-	$(GUILE_TEST_DEV) -L module tools/wire-types-emit.scm ui/app/wire-rows.ts
+	$(GUILE_TEST_DEV) -L module tools/emit/wire-types-emit.scm ui/app/wire-rows.ts
 check-wire-types-fresh:
-	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/check-emit-fresh.sh check-wire-types-fresh ui/app/wire-rows.ts wire-types-emit tools/wire-types-emit.scm
+	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-wire-types-fresh ui/app/wire-rows.ts wire-types-emit tools/emit/wire-types-emit.scm
 
 check-nutrition-fresh:
-	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/check-emit-fresh.sh check-nutrition-fresh ui/app/nutrition-catalogue.ts nutrition-emit tools/nutrition-emit.scm
+	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-nutrition-fresh ui/app/nutrition-catalogue.ts nutrition-emit tools/emit/nutrition-emit.scm
 
 # The product's own law (knowledge/product-law.scm: its crossings, the features
 # that trip them, the consent version, licence line and attribution) is the
 # source; ui/app/legal-product.ts is the browser's generated copy.
 .PHONY: product-law-emit check-product-law-fresh
 product-law-emit:
-	$(GUILE_TEST_DEV) -L module tools/emit-product-law.scm ui/app/legal-product.ts
+	$(GUILE_TEST_DEV) -L module tools/emit/emit-product-law.scm ui/app/legal-product.ts
 
 check-product-law-fresh:
-	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/check-emit-fresh.sh check-product-law-fresh ui/app/legal-product.ts product-law-emit tools/emit-product-law.scm
+	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-product-law-fresh ui/app/legal-product.ts product-law-emit tools/emit/emit-product-law.scm
 
 # The law face's snapshot the same way: the legal fold (legal-registry.scm over
 # the packs in docs/legal/contexts/) is the source, browser/data/snapshots/
@@ -1848,42 +1848,42 @@ check-product-law-fresh:
 # live `legal-snapshot` — and a stale copy is refused.
 .PHONY: law-snapshot check-law-fresh de-pack check-de-fresh na-packs check-na-fresh
 law-snapshot:
-	$(GUILE_TEST_DEV) -L module tools/emit-law-snapshot.scm browser/data/snapshots/law-snapshot.json
+	$(GUILE_TEST_DEV) -L module tools/emit/emit-law-snapshot.scm browser/data/snapshots/law-snapshot.json
 
-# Germany's context pack is generated too (tools/emit-de-context.scm holds its
+# Germany's context pack is generated too (tools/emit/emit-de-context.scm holds its
 # places, rules and words for aspects); the snapshot above folds it, so the pack
 # is refreshed first when both moved.
 de-pack:
-	$(GUILE_TEST_DEV) -L module tools/emit-de-context.scm docs/legal/contexts/de.sexp
+	$(GUILE_TEST_DEV) -L module tools/emit/emit-de-context.scm docs/legal/contexts/de.sexp
 
 check-de-fresh:
-	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/check-emit-fresh.sh check-de-fresh docs/legal/contexts/de.sexp de-pack tools/emit-de-context.scm
+	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-de-fresh docs/legal/contexts/de.sexp de-pack tools/emit/emit-de-context.scm
 
-# The United States, Mexico and Canada the same way: tools/emit-na-context.scm
+# The United States, Mexico and Canada the same way: tools/emit/emit-na-context.scm
 # holds each nation's places, rules, protections and words for aspects, and
 # writes one pack a nation.
 NA_PACKS = us mexico canada
 na-packs:
 	@for n in $(NA_PACKS); do \
-	  $(GUILE_TEST_DEV) -L module tools/emit-na-context.scm $$n docs/legal/contexts/$$n.sexp || exit 1; done
+	  $(GUILE_TEST_DEV) -L module tools/emit/emit-na-context.scm $$n docs/legal/contexts/$$n.sexp || exit 1; done
 
 check-na-fresh:
 	@ok=1; for n in $(NA_PACKS); do \
-	  EMIT_CMD="$(GUILE_TEST_DEV)" tools/check-emit-fresh.sh check-na-fresh docs/legal/contexts/$$n.sexp na-packs tools/emit-na-context.scm $$n || ok=0; \
+	  EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-na-fresh docs/legal/contexts/$$n.sexp na-packs tools/emit/emit-na-context.scm $$n || ok=0; \
 	done; [ "$$ok" = 1 ]
 
 check-law-fresh:
-	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/check-emit-fresh.sh check-law-fresh browser/data/snapshots/law-snapshot.json law-snapshot tools/emit-law-snapshot.scm
+	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-law-fresh browser/data/snapshots/law-snapshot.json law-snapshot tools/emit/emit-law-snapshot.scm
 
 # The physics register the same way: knowledge/substances.scm declares the
 # conserved leaves, carriers, molecules and channels once; docs/observation/
 # physics-register.md is their generated reading, beside the prose of physics.md.
 .PHONY: physics-emit check-physics-fresh
 physics-emit:
-	$(GUILE_TEST_DEV) -L module tools/physics-emit.scm docs/observation/physics-register.md
+	$(GUILE_TEST_DEV) -L module tools/emit/physics-emit.scm docs/observation/physics-register.md
 
 check-physics-fresh:
-	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/check-emit-fresh.sh check-physics-fresh docs/observation/physics-register.md physics-emit tools/physics-emit.scm
+	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-physics-fresh docs/observation/physics-register.md physics-emit tools/emit/physics-emit.scm
 
 # The housing standard and closure the same way: knowledge/housing-catalogue.scm
 # + catalogues/housing-substance.scm state the rows and the type table once;
@@ -1909,10 +1909,10 @@ $(FDC_CACHE)/$(FDC_RELEASE)/food_nutrient.csv:
 	  echo "$(FDC_SHA256)  $(FDC_RELEASE).zip" | sha256sum -c - && \
 	  unzip -o -q $(FDC_RELEASE).zip
 fdc-snapshot: $(FDC_CACHE)/$(FDC_RELEASE)/food_nutrient.csv
-	$(GUILE_TEST_DEV) -L module tools/fdc-snapshot.scm $(FDC_CACHE)/$(FDC_RELEASE) $(FDC_SLICE)
+	$(GUILE_TEST_DEV) -L module tools/emit/fdc-snapshot.scm $(FDC_CACHE)/$(FDC_RELEASE) $(FDC_SLICE)
 check-fdc-fresh:
 	@if [ -f $(FDC_CACHE)/$(FDC_RELEASE)/food_nutrient.csv ]; then \
-	  EMIT_CMD="$(GUILE_TEST_DEV)" tools/check-emit-fresh.sh check-fdc-fresh $(FDC_SLICE) fdc-snapshot tools/fdc-snapshot.scm $(FDC_CACHE)/$(FDC_RELEASE); \
+	  EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-fdc-fresh $(FDC_SLICE) fdc-snapshot tools/emit/fdc-snapshot.scm $(FDC_CACHE)/$(FDC_RELEASE); \
 	else echo "check-fdc-fresh: no cached release at $(FDC_CACHE) — run: make fdc-snapshot (fetches 6 MB)"; fi
 
 .PHONY: test-housing-ui housing-emit check-housing-fresh
@@ -1920,10 +1920,10 @@ test-housing-ui:
 	node tests/browser/housing-test.mjs
 
 housing-emit:
-	$(GUILE_TEST_DEV) -L module tools/housing-emit.scm ui/app/housing-catalogue.ts
+	$(GUILE_TEST_DEV) -L module tools/emit/housing-emit.scm ui/app/housing-catalogue.ts
 
 check-housing-fresh:
-	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/check-emit-fresh.sh check-housing-fresh ui/app/housing-catalogue.ts housing-emit tools/housing-emit.scm
+	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-housing-fresh ui/app/housing-catalogue.ts housing-emit tools/emit/housing-emit.scm
 
 # The counting rules the page reads the same way: counting.scm (the process
 # grammar, the regimes, the techniques), labels.scm (the code's alphabet) and
@@ -1931,78 +1931,78 @@ check-housing-fresh:
 # the generated copy that count.ts and labels.ts import.
 .PHONY: count-emit check-count-fresh
 count-emit:
-	$(GUILE_TEST_DEV) -L module tools/count-emit.scm ui/app/count-catalogue.ts
+	$(GUILE_TEST_DEV) -L module tools/emit/count-emit.scm ui/app/count-catalogue.ts
 
 check-count-fresh:
-	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/check-emit-fresh.sh check-count-fresh ui/app/count-catalogue.ts count-emit tools/count-emit.scm
+	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-count-fresh ui/app/count-catalogue.ts count-emit tools/emit/count-emit.scm
 
 # The kinds a relationship is named by — a contact's tag, a vouch's type, a
 # lens, a group: social/relationship-kinds.scm states them once;
 # ui/app/rel-catalogue.ts is the generated copy the page reads.
 .PHONY: rel-emit check-rel-fresh
 rel-emit:
-	$(GUILE_TEST_DEV) -L module tools/rel-emit.scm ui/app/rel-catalogue.ts
+	$(GUILE_TEST_DEV) -L module tools/emit/rel-emit.scm ui/app/rel-catalogue.ts
 
 check-rel-fresh:
-	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/check-emit-fresh.sh check-rel-fresh ui/app/rel-catalogue.ts rel-emit tools/rel-emit.scm
+	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-rel-fresh ui/app/rel-catalogue.ts rel-emit tools/emit/rel-emit.scm
 
 .PHONY: limits-emit check-limits-fresh
 # The sizes the gateway refuses past (vf/facts/limits.scm): the page sizes what
 # it sends against the generated copy, ui/app/limits-catalogue.ts.
 limits-emit:
-	$(GUILE_TEST_DEV) -L module tools/limits-emit.scm ui/app/limits-catalogue.ts
+	$(GUILE_TEST_DEV) -L module tools/emit/limits-emit.scm ui/app/limits-catalogue.ts
 
 check-limits-fresh:
-	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/check-emit-fresh.sh check-limits-fresh ui/app/limits-catalogue.ts limits-emit tools/limits-emit.scm
+	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-limits-fresh ui/app/limits-catalogue.ts limits-emit tools/emit/limits-emit.scm
 
 # The kinds of way a person is reached — on their own list, told to a
 # commune, put on a card: identity/reach-kinds.scm states them once;
 # ui/app/reach-catalogue.ts is the generated copy the page reads.
 .PHONY: reach-emit check-reach-fresh
 reach-emit:
-	$(GUILE_TEST_DEV) -L module tools/reach-emit.scm ui/app/reach-catalogue.ts
+	$(GUILE_TEST_DEV) -L module tools/emit/reach-emit.scm ui/app/reach-catalogue.ts
 
 check-reach-fresh:
-	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/check-emit-fresh.sh check-reach-fresh ui/app/reach-catalogue.ts reach-emit tools/reach-emit.scm
+	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-reach-fresh ui/app/reach-catalogue.ts reach-emit tools/emit/reach-emit.scm
 
 # The units the planner writes and the questions it asks of one — utils/units.scm
 # states them once; ui/app/units-catalogue.ts is the generated copy the page reads.
 .PHONY: units-emit check-units-fresh
 units-emit:
-	$(GUILE_TEST_DEV) -L module tools/units-emit.scm ui/app/units-catalogue.ts
+	$(GUILE_TEST_DEV) -L module tools/emit/units-emit.scm ui/app/units-catalogue.ts
 
 check-units-fresh:
-	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/check-emit-fresh.sh check-units-fresh ui/app/units-catalogue.ts units-emit tools/units-emit.scm
+	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-units-fresh ui/app/units-catalogue.ts units-emit tools/emit/units-emit.scm
 
 # The demo recipes' standing is read off their runs by the functions a live
 # scope's is (planner/solve/recipe-response.scm, doors/record-rows.scm's recipe-response table), so
 # the page holds no copy of the reading. ui/app/recipe-demo-standing.ts is
 # the generated copy the demo reads.
 # The offline demo, as a recording of the demo neighbourhood standing in a real
-# scope (tools/demo-emit.scm): what the page plays where no gateway stands.
+# scope (tools/emit/demo-emit.scm): what the page plays where no gateway stands.
 .PHONY: demo-emit check-demo-fresh
 demo-emit:
-	$(GUILE_TEST_DEV) -L module tools/demo-emit.scm ui/app/demo/recording.ts
+	$(GUILE_TEST_DEV) -L module tools/emit/demo-emit.scm ui/app/demo/recording.ts
 check-demo-fresh:
-	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/check-emit-fresh.sh check-demo-fresh ui/app/demo/recording.ts demo-emit tools/demo-emit.scm
+	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-demo-fresh ui/app/demo/recording.ts demo-emit tools/emit/demo-emit.scm
 
 .PHONY: recipe-demo-emit check-recipe-demo-fresh
 recipe-demo-emit:
-	$(GUILE_TEST_DEV) -L module tools/recipe-demo-emit.scm ui/app/recipe-demo-standing.ts
+	$(GUILE_TEST_DEV) -L module tools/emit/recipe-demo-emit.scm ui/app/recipe-demo-standing.ts
 check-recipe-demo-fresh:
-	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/check-emit-fresh.sh check-recipe-demo-fresh ui/app/recipe-demo-standing.ts recipe-demo-emit tools/recipe-demo-emit.scm
+	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-recipe-demo-fresh ui/app/recipe-demo-standing.ts recipe-demo-emit tools/emit/recipe-demo-emit.scm
 
 check-protocol-fresh:
 	@ok=1; for pair in openapi:browser/api/openapi.json mcp:browser/api/mcp-tools.json seam:ui/app/seam-wire.ts; do \
-	  EMIT_CMD="$(GUILE_TEST_DEV)" tools/check-emit-fresh.sh check-protocol-fresh "$${pair#*:}" protocol-emit tools/protocol-emit.scm "$${pair%%:*}" || ok=0; \
+	  EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-protocol-fresh "$${pair#*:}" protocol-emit tools/emit/protocol-emit.scm "$${pair%%:*}" || ok=0; \
 	done; [ "$$ok" = 1 ]
 
 # Individual test conveniences — the full governance suite is run via
 # `make test-governance` (defined below, shells into the harness
-# script and picks up every tests/governance/test-*.scm automatically,
+# script, tools/test/governance-suite.sh, which names each suite by its file;
 # including the UC-kind + scope-graph tests added in this iteration).
 test-scope-graph:
-	$(GUILE_TEST_DEV) -L module -L tests tests/governance/test-scope-graph.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/federation/test-scope-graph.scm
 
 # The Guile-native WordPiece tokenizer (docs/planning/faces/corpus-guile-native.md
 # phase 1): every case is real ground truth from HF's own tokenizer on the
@@ -2043,16 +2043,16 @@ test-corpus-search:
 # it never reaches ^corpus-service.
 .PHONY: test-corpus-search-degrade
 test-corpus-search-degrade:
-	$(GUILE_TEST_DEV) -L module -L tests tests/gateway/test-corpus-search-degrade.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/doors/test-corpus-search-degrade.scm
 
 test-universal-commune-kind:
-	$(GUILE_TEST_DEV) -L module -L tests tests/governance/test-universal-commune-kind.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/federation/test-universal-commune-kind.scm
 
 test-gplay:
-	$(GUILE_TEST_DEV) -L module tests/playnet/test-gplay.scm
+	$(GUILE_TEST_DEV) -L module tests/org/test-gplay.scm
 
 test-knowledge:
-	$(GUILE_TEST_DEV) -L module tests/playnet/test-knowledge.scm
+	$(GUILE_TEST_DEV) -L module tests/lang/test-knowledge.scm
 
 # Provenance bridge: prose⇄computation graph. check-provenance fails on any
 # dangling tag (the graph is a proof obligation); test-provenance runs the
@@ -2061,7 +2061,7 @@ check-provenance:
 	$(GUILE_TEST_DEV) docs/_scripts/check-provenance.scm
 
 test-provenance:
-	$(GUILE_TEST_DEV) -L module tests/playnet/test-provenance.scm
+	$(GUILE_TEST_DEV) -L module tests/doors/test-provenance.scm
 
 extract-provenance:
 	$(GUILE_TEST_DEV) docs/_scripts/extract-provenance.scm --write
@@ -2078,147 +2078,147 @@ docs-epub:
 	deploy/scripts/build-docs-epub.sh "$(CURDIR)"
 
 test-kanren-goblins:
-	$(GUILE_TEST_DEV) -L module tests/playnet/test-kanren-goblins.scm
+	$(GUILE_TEST_DEV) -L module tests/deprecated/test-kanren-goblins.scm
 
 test-vat-federation:
-	$(GUILE_TEST_DEV) -L module tests/playnet/test-vat-federation.scm
+	$(GUILE_TEST_DEV) -L module tests/deprecated/test-vat-federation.scm
 
 test-federation-a:
-	$(GUILE_TEST_DEV) -L module tests/playnet/test-federation-a.scm
+	$(GUILE_TEST_DEV) -L module tests/deprecated/test-federation-a.scm
 
 test-federation-b:
-	$(GUILE_TEST_DEV) -L module tests/playnet/test-federation-b.scm
+	$(GUILE_TEST_DEV) -L module tests/deprecated/test-federation-b.scm
 
 test-plan-actor:
-	$(GUILE_TEST_DEV) -L module tests/planner/test-plan-actor.scm
+	$(GUILE_TEST_DEV) -L module tests/deprecated/test-plan-actor.scm
 
 test-federation-result:
-	$(GUILE_TEST_DEV) -L module tests/planner/test-federation-result.scm
+	$(GUILE_TEST_DEV) -L module tests/deprecated/test-federation-result.scm
 
 test-elegance-wins:
-	$(GUILE_TEST_DEV) -L module tests/planner/test-elegance-wins.scm
+	$(GUILE_TEST_DEV) -L module tests/deprecated/test-elegance-wins.scm
 
 test-resilient-federation:
-	$(GUILE_TEST_DEV) -L module tests/playnet/test-resilient-federation.scm
+	$(GUILE_TEST_DEV) -L module tests/deprecated/test-resilient-federation.scm
 
 test-federation-tree:
-	$(GUILE_TEST_DEV) -L module tests/planner/test-federation-tree.scm
+	$(GUILE_TEST_DEV) -L module tests/deprecated/test-federation-tree.scm
 
 test-federation-tree-async:
-	$(GUILE_TEST_DEV) -L module tests/planner/test-federation-tree-async.scm
+	$(GUILE_TEST_DEV) -L module tests/deprecated/test-federation-tree-async.scm
 
 test-federation-ocapn:
-	$(GUILE_TEST_DEV) -L module tests/playnet/test-federation-ocapn.scm
+	$(GUILE_TEST_DEV) -L module tests/deprecated/test-federation-ocapn.scm
 
 # The federated solve across a vat boundary (Rung 3 of FEDERATED-SOLVE.md):
 # the boundary oracle + signed ^commune-solver actors, in-process and across
 # two processes over a websocket sturdyref.
 test-federation-wire: $(KERNEL_SO)
-	$(GUILE_TEST_DEV) -L module tests/planner/test-federation-wire.scm
+	$(GUILE_TEST_DEV) -L module tests/federation/test-federation-wire.scm
 
 test-federation-wire-procs: $(KERNEL_SO)
-	$(GUILE_TEST_DEV) -L module tests/planner/test-federation-wire-procs.scm
+	$(GUILE_TEST_DEV) -L module tests/federation/test-federation-wire-procs.scm
 
 # The same solve with no coordinator and no rounds (federation/async.scm): peers
 # that message each other along the links, a simulated network that reorders,
 # loses and repeats, and a federation settled when it falls silent; then the
 # peers as signed actors in their own vats (federation/peer.scm).
 test-federation-async: $(KERNEL_SO)
-	$(GUILE_TEST_DEV) -L module tests/planner/test-federation-async.scm
+	$(GUILE_TEST_DEV) -L module tests/federation/test-federation-async.scm
 
 test-federation-peer: $(KERNEL_SO)
-	$(GUILE_TEST_DEV) -L module tests/planner/test-federation-peer.scm
+	$(GUILE_TEST_DEV) -L module tests/federation/test-federation-peer.scm
 
 test-federation-peer-procs: $(KERNEL_SO)
-	$(GUILE_TEST_DEV) -L module tests/planner/test-federation-peer-procs.scm
+	$(GUILE_TEST_DEV) -L module tests/federation/test-federation-peer-procs.scm
 
 # The planner service's record door: what a gateway's peer of the federated
 # solve is built over (federation/federate.scm).
 test-federation-scope-record: $(KERNEL_SO)
-	$(GUILE_TEST_DEV) -L module tests/planner/test-federation-scope-record.scm
+	$(GUILE_TEST_DEV) -L module tests/doors/test-federation-scope-record.scm
 
 # One column for a good that crosses either way (solver.scm `offset-column`,
 # `give-bound`, `detach-column`), and the direction a good crosses decided by
 # the solve: the stock moved, the twin economy, goods nobody can supply.
 test-crossing-column: $(KERNEL_SO)
-	$(GUILE_TEST_DEV) -L module tests/planner/test-crossing-column.scm
+	$(GUILE_TEST_DEV) -L module tests/solve/test-crossing-column.scm
 
 test-federation-direction: $(KERNEL_SO)
-	$(GUILE_TEST_DEV) -L module tests/planner/test-federation-direction.scm
+	$(GUILE_TEST_DEV) -L module tests/federation/test-federation-direction.scm
 
 # The communes of one solve partition the economy: a scope beside its own
 # member, or a body in two programs, is refused at the entry of federated-plan.
 test-one-citizen: $(KERNEL_SO)
-	$(GUILE_TEST_DEV) -L module tests/planner/test-one-citizen.scm
+	$(GUILE_TEST_DEV) -L module tests/doors/test-one-citizen.scm
 
 # Every planner door that takes a person is classed: it states their standing
 # (routed to the home) or acts at the scope the call names.
 test-person-doors: $(KERNEL_SO)
-	$(GUILE_TEST_DEV) -L module tests/planner/test-person-doors.scm
+	$(GUILE_TEST_DEV) -L module tests/doors/test-person-doors.scm
 
 # Who is there to witness work is the scope's community: its agents, the people
 # homed there and the people who took part in an event recorded there.
 test-witness-roster: $(KERNEL_SO)
-	$(GUILE_TEST_DEV) -L module tests/planner/test-witness-roster.scm
+	$(GUILE_TEST_DEV) -L module tests/doors/test-witness-roster.scm
 
 # Credit is earned anywhere and spent anywhere: the claim guard, the claim's reply
 # and the shop header read the roster's account stores, one reading.
 test-credit-spend: $(KERNEL_SO)
-	$(GUILE_TEST_DEV) -L module tests/planner/test-credit-spend.scm
+	$(GUILE_TEST_DEV) -L module tests/doors/test-credit-spend.scm
 
 # The audit of a ratified kind reads what a person took anywhere on the roster.
 test-audit-person: $(KERNEL_SO)
-	$(GUILE_TEST_DEV) -L module tests/planner/test-audit-person.scm
+	$(GUILE_TEST_DEV) -L module tests/doors/test-audit-person.scm
 
 # A person's practice is theirs wherever they worked: competence, conformance
 # hours and the profile read the join of every scope's work events by event id.
 test-practice-join: $(KERNEL_SO)
-	$(GUILE_TEST_DEV) -L module tests/planner/test-practice-join.scm
+	$(GUILE_TEST_DEV) -L module tests/doors/test-practice-join.scm
 
 # Live location is a consented lease: the mode is declared at the home, a fix
 # counts while fresh, off ends it and refuses the next.
 test-location-lease: $(KERNEL_SO)
-	$(GUILE_TEST_DEV) -L module tests/planner/test-location-lease.scm
+	$(GUILE_TEST_DEV) -L module tests/doors/test-location-lease.scm
 
 # A person's day is offered once in the solve as in the roster: overlapping
 # ranges are one stretch.
 test-window-union: $(KERNEL_SO)
-	$(GUILE_TEST_DEV) -L module tests/planner/test-window-union.scm
+	$(GUILE_TEST_DEV) -L module tests/solve/test-window-union.scm
 
 # Which goods cross is read off the records: at least two scopes deal in it.
 test-crossing-set: $(KERNEL_SO)
-	$(GUILE_TEST_DEV) -L module tests/planner/test-crossing-set.scm
+	$(GUILE_TEST_DEV) -L module tests/doors/test-crossing-set.scm
 
 # A body has one week: the pool counts a person once, deployment spends one budget
 # across their skills, and a day offered twice is offered once.
 test-labour-budget: $(KERNEL_SO)
-	$(GUILE_TEST_DEV) -L module tests/planner/test-labour-budget.scm
+	$(GUILE_TEST_DEV) -L module tests/federation/test-labour-budget.scm
 
 # The algebra the folds are summed under: join, sum, and which are idempotent.
 test-fold-laws: $(KERNEL_SO)
-	$(GUILE_TEST_DEV) -L module tests/planner/test-fold-laws.scm
+	$(GUILE_TEST_DEV) -L module tests/pools/test-fold-laws.scm
 
 # A settled crossing leaves a record: two legs per participant through the pool,
 # written by the party that receives each.
 test-crossing-custody: $(KERNEL_SO)
-	$(GUILE_TEST_DEV) -L module tests/planner/test-crossing-custody.scm
+	$(GUILE_TEST_DEV) -L module tests/federation/test-crossing-custody.scm
 
 # A scope's key rotates and the wire follows: its words carry its key log, and a
 # verifier reads the key in force off it.
 test-federation-rotation: $(KERNEL_SO)
-	$(GUILE_TEST_DEV) -L module tests/planner/test-federation-rotation.scm
+	$(GUILE_TEST_DEV) -L module tests/federation/test-federation-rotation.scm
 
 # The federation's spec, off its own store (federation/sturdyref-credential.scm).
 test-federation-spec: $(KERNEL_SO)
-	$(GUILE_TEST_DEV) -L module tests/planner/test-federation-spec.scm
+	$(GUILE_TEST_DEV) -L module tests/federation/test-federation-spec.scm
 
 # The federation's desk: what a federation answers for itself, and how far a
 # commune takes its word (federation/federate.scm `desk-word->spec`).
 test-federation-desk: $(KERNEL_SO)
-	$(GUILE_TEST_DEV) -L module tests/planner/test-federation-desk.scm
+	$(GUILE_TEST_DEV) -L module tests/federation/test-federation-desk.scm
 
 # The same two-process solve with commune B on another machine (FED_REMOTE an
-# ssh target holding module/ and tests/planner/ at FED_REMOTE_ROOT, with the
+# ssh target holding module/ and tests/federation/ at FED_REMOTE_ROOT, with the
 # KERI backend's libraries at FED_REMOTE_LIBS), both ends on the Goblins the
 # channel pin ships: here under time-machine, there its own profile.
 FED_REMOTE ?= playnet-server
@@ -2226,61 +2226,61 @@ FED_REMOTE_ROOT ?= /tmp/fed
 FED_REMOTE_LIBS ?=
 test-federation-peer-remote:
 	guix time-machine -C $(CHANNELS) -- shell -L deploy/guix -m deploy/manifests/dev-test-manifest.scm -- \
-	  bash tools/own-ccache.sh env LC_ALL=C.UTF-8 \
+	  bash tools/test/own-ccache.sh env LC_ALL=C.UTF-8 \
 	  PLAYNET_FED_REMOTE=$(FED_REMOTE) PLAYNET_FED_REMOTE_ROOT=$(FED_REMOTE_ROOT) PLAYNET_FED_REMOTE_LIBS=$(FED_REMOTE_LIBS) \
-	  guile -L module tests/planner/test-federation-peer-procs.scm
+	  guile -L module tests/federation/test-federation-peer-procs.scm
 
 # A good several scopes supply and several draw: one pull, settled between its
 # participants (crossing-step, ρ per good), held to the monolith's optimum.
 test-federation-crossing: $(KERNEL_SO)
-	$(GUILE_TEST_DEV) -L module tests/planner/test-federation-crossing.scm
+	$(GUILE_TEST_DEV) -L module tests/federation/test-federation-crossing.scm
 
 test-governed:
-	$(GUILE_TEST_DEV) -L module tests/playnet/test-governed-org.scm
+	$(GUILE_TEST_DEV) -L module tests/org/test-governed-org.scm
 
 test-signatures:
-	$(GUILE_TEST_DEV) -L module tests/playnet/test-history-signatures.scm
+	$(GUILE_TEST_DEV) -L module tests/org/test-history-signatures.scm
 
 test-wisp:
-	$(GUILE_TEST_DEV) -L module tests/playnet/test-wisp.scm
+	$(GUILE_TEST_DEV) -L module tests/lang/test-wisp.scm
 
 test-endorsement:
-	$(GUILE_TEST_DEV) -L module tests/playnet/test-endorsement.scm
+	$(GUILE_TEST_DEV) -L module tests/org/test-endorsement.scm
 
 test-output-cap:
-	$(GUILE_TEST_DEV) -L module tests/playnet/test-output-cap.scm
+	$(GUILE_TEST_DEV) -L module tests/org/test-output-cap.scm
 
 test-output-port:
-	$(GUILE_TEST_DEV) -L module tests/playnet/test-output-port.scm
+	$(GUILE_TEST_DEV) -L module tests/org/test-output-port.scm
 
 test-notify-registry:
-	$(GUILE_TEST_DEV) -L module tests/playnet/test-notify-registry.scm
+	$(GUILE_TEST_DEV) -L module tests/notify/test-notify-registry.scm
 
 test-notify-adapters:
-	$(GUILE_TEST_DEV) -L module tests/playnet/test-notify-adapters.scm
+	$(GUILE_TEST_DEV) -L module tests/notify/test-notify-adapters.scm
 
 # Web Push: the browser's subscription is kept parsed, a delivery addressed to
 # a device reaches that device, and an expired subscription is removed by it.
 test-push-adapter:
-	$(GUILE_TEST_DEV) -L module tests/playnet/test-push-adapter.scm
+	$(GUILE_TEST_DEV) -L module tests/push/test-push-adapter.scm
 
 test-recipient-registry:
-	$(GUILE_TEST_DEV) -L module tests/playnet/test-recipient-registry.scm
+	$(GUILE_TEST_DEV) -L module tests/notify/test-recipient-registry.scm
 
 # Where the email adapter's mail goes: msmtp to the box's relay, run against a
 # stand-in that records its arguments and its input.
 test-email-transport:
-	$(GUILE_TEST_DEV) -L module -L tests tests/playnet/test-email-transport.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/interface/test-email-transport.scm
 
 test-notify-router:
-	$(GUILE_TEST_DEV) -L module tests/playnet/test-notify-router.scm
+	$(GUILE_TEST_DEV) -L module tests/notify/test-notify-router.scm
 
 test-persistence:
-	$(GUILE_TEST_DEV) -L module tests/playnet/test-persistence.scm
+	$(GUILE_TEST_DEV) -L module tests/org/test-persistence.scm
 
 test-planner: $(KERNEL_SO)
 	$(TEST_ENV) \
-	  sh tests/planner/run-tests.sh
+	  sh tools/test/planner-suite.sh
 
 # Arc-time table: Valhalla priors ⊕ observed EWMA → the engine's *arc-hours*.
 # Pure folds, strict-parity lock, synthetic-table injection, and a guarded
@@ -2289,7 +2289,7 @@ test-arc-times:
 	@for t in ewma-fold arc-time-parity arc-time-injection arc-time-recipe arc-time-matrix valhalla-live; do \
 	  echo "=== $$t ==="; \
 	  $(TEST_ENV) \
-	    guile --no-auto-compile -L module tests/planner/test-$$t.scm || exit 1; \
+	    guile --no-auto-compile -L module tests/*/test-$$t.scm || exit 1; \
 	done
 
 # The federation fold and its dual, the descent: one aggregator up, one router
@@ -2301,14 +2301,14 @@ test-voice-field:
 	@for t in parts voice-field-solve; do \
 	  echo "=== $$t ==="; \
 	  $(TEST_ENV) \
-	    guile --no-auto-compile -q -L module tests/planner/test-$$t.scm || exit 1; \
+	    guile --no-auto-compile -q -L module tests/*/test-$$t.scm || exit 1; \
 	done
 
 test-fold-nodes:
 	@for t in fold-node unfold-node; do \
 	  echo "=== $$t ==="; \
 	  $(TEST_ENV) \
-	    guile --no-auto-compile -q -L module tests/planner/test-$$t.scm || exit 1; \
+	    guile --no-auto-compile -q -L module tests/*/test-$$t.scm || exit 1; \
 	done
 
 # The discrete layer: minimum batches and whole counts on §7's certified tree,
@@ -2318,7 +2318,7 @@ test-discrete:
 	@for t in whole-counts time-verification discrete-records doctor-rider-located; do \
 	  echo "=== $$t ==="; \
 	  $(TEST_ENV) \
-	    env PLANNER_INVARIANTS=1 guile --no-auto-compile -q -L module tests/planner/test-$$t.scm || exit 1; \
+	    env PLANNER_INVARIANTS=1 guile --no-auto-compile -q -L module tests/*/test-$$t.scm || exit 1; \
 	done
 
 # Provenance loop: re-run the generator on the vendored raw and confirm the
@@ -2359,7 +2359,7 @@ test-tensions: verify-derived
 	          bioregion-containment doon-shed scenario-shocks bioregion-boundary-wire cascadia; do \
 	  echo "=== $$t ==="; \
 	  out=$$(PLANNER_RAW_LINT=1 PLANNER_INVARIANTS=1 $(TEST_ENV) \
-	    guile --no-auto-compile -L module tests/planner/test-$$t.scm 2>&1) \
+	    guile --no-auto-compile -L module tests/*/test-$$t.scm 2>&1) \
 	    || { echo "$$out"; exit 1; }; \
 	  echo "$$out"; \
 	  if echo "$$out" | grep -q 'RAW-LINT.*starved'; then \
@@ -2377,41 +2377,41 @@ test-comms:
 	@for t in test-comms test-comms-recipes test-comms-ai test-comms-run test-demand-vf-action; do \
 	  echo "=== $$t ==="; \
 	  $(TEST_ENV) \
-	    guile --no-auto-compile -L module tests/planner/$$t.scm || exit 1; \
+	    guile --no-auto-compile -L module tests/*/$$t.scm || exit 1; \
 	done
 	@for t in test-bearer-endpoint test-platforms test-instagram test-comms-publish; do \
 	  echo "=== $$t ==="; \
 	  $(TEST_ENV) \
-	    guile --no-auto-compile -L module tests/playnet/$$t.scm || exit 1; \
+	    guile --no-auto-compile -L module tests/*/$$t.scm || exit 1; \
 	done
 	@for t in comms-fragility comms-metabolism comms-mandate; do \
 	  echo "=== $$t ==="; \
 	  $(TEST_ENV) \
-	    guile --no-auto-compile -L module tests/planner/test-$$t.scm || exit 1; \
+	    guile --no-auto-compile -L module tests/*/test-$$t.scm || exit 1; \
 	done
 
 test-governance: lint-discipline
 	$(TEST_ENV) \
-	  sh tests/governance/run-tests.sh
+	  sh tools/test/governance-suite.sh
 
 # Voice/CCF orthogonality + recomputability (Phase 5 of HARDENING.md).
 # Catches discipline violations at build time, before they slip past
 # review and into the system. Exit 1 on violations.
 lint-discipline:
 	$(TEST_ENV) \
-	  guile --no-auto-compile tools/lint-discipline.scm
+	  guile --no-auto-compile tools/lint/lint-discipline.scm
 
 test-relational:
-	$(GUILE_TEST_DEV) -L module tests/planner/relational-planner.scm
+	$(GUILE_TEST_DEV) -L module tests/deprecated/relational-planner.scm
 
 test-netlayer:
-	$(GUILE_TEST_DEV) -L module tests/playnet/test-netlayer-substitute.scm
+	$(GUILE_TEST_DEV) -L module tests/gateway/test-netlayer-substitute.scm
 
 # Pure-SXML calendar willingness UI (offer band + the detail panel's
 # three-way response: willing / commit / reject). Deterministic, no vat.
 .PHONY: test-calendar-willingness
 test-calendar-willingness:
-	$(GUILE_TEST_DEV) -L module -L tests tests/playnet/test-calendar-willingness.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/ui/test-calendar-willingness.scm
 
 test-browser: test-calendar-willingness
 	# Uses plain `guix shell -L deploy/guix -m ...` rather than
@@ -2630,26 +2630,26 @@ test-keri-signify-portable:
 	$(GUILE_TEST_DEV) -L module tests/keri/test-signify-portable.scm
 
 test-keri-signup-with-icp:
-	$(GUILE_TEST_DEV) -L module tests/keri/test-signup-with-icp.scm
+	$(GUILE_TEST_DEV) -L module tests/identity/test-signup-with-icp.scm
 
 # an identity brings its own KEL to a commune that never saw it
 test-keri-signup-with-kel:
-	$(GUILE_TEST_DEV) -L module tests/keri/test-signup-with-kel.scm
+	$(GUILE_TEST_DEV) -L module tests/identity/test-signup-with-kel.scm
 
 # a key proven is not a seat held: witnessed-only AIDs are refused a session
 test-keri-lobby-seat-gate:
-	$(GUILE_TEST_DEV) -L module tests/keri/test-lobby-seat-gate.scm
+	$(GUILE_TEST_DEV) -L module tests/doors/test-lobby-seat-gate.scm
 
 # PLAYNET_DISABLE_REAL_SIGNUP refuses signup/signup-with-icp/signup-with-kel/
 # join, leaves witness-kel/has-seat alone — see docs/legal/gdpr-analysis.md
 test-keri-signup-disabled-gate:
-	$(GUILE_TEST_DEV) -L module tests/keri/test-signup-disabled-gate.scm
+	$(GUILE_TEST_DEV) -L module tests/knowledge/test-signup-disabled-gate.scm
 
 # forget-me erases every store of the gateway's own keyed by an AID, the
 # AID→person link last, and leaves the key log — identity/forget.scm; a
 # rotation naming no next key retires the identity for good
 test-keri-forget:
-	$(GUILE_TEST_DEV) -L module tests/keri/test-forget.scm
+	$(GUILE_TEST_DEV) -L module tests/gateway/test-forget.scm
 
 # the key log in hand, as the browser keeps it — pure, so Guile pins it
 test-identity-kel:
@@ -2658,16 +2658,16 @@ test-identity-kel:
 # a body's AID is the k-of-n group of its stewards' dial AIDs: the ceremony,
 # the threshold reader, the rotation under the pre-rotation constraint
 test-identity-body-ceremony:
-	$(GUILE_TEST_DEV) -L module tests/identity/test-body-ceremony.scm
+	$(GUILE_TEST_DEV) -L module tests/personhood/test-body-ceremony.scm
 
 # the body-role credential: a projection the stewards sign k of n
 test-governance-body-role-credential:
-	$(GUILE_TEST_DEV) -L module tests/governance/test-body-role-credential.scm
+	$(GUILE_TEST_DEV) -L module tests/keri/test-body-role-credential.scm
 
 # losing your passcode is survivable when you gave pieces of it to people you
 # trust — and k-1 of them learn nothing
 test-recovery-share:
-	$(GUILE_TEST_DEV) -L module tests/crypto/test-recovery-share.scm
+	$(GUILE_TEST_DEV) -L module tests/keri/test-recovery-share.scm
 
 # AID ↔ mesh binding: advertised reticulum destination must derive from
 # the icp-anchored pubkey. Authoritative ring loads the rns-wasm pkg
@@ -2677,7 +2677,7 @@ test-keri-reticulum-binding:
 
 # Mesh mailbox: ciphertext custody for offline-persona deliveries.
 test-mesh-mailbox:
-	$(GUILE_TEST_DEV) -L module -L tests tests/keri/test-mesh-mailbox.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/gateway/test-mesh-mailbox.scm
 
 # LIVE mesh smoke: two rns-bridges over a local TCP hop — announce
 # propagation, routed mail packet, DELIVERY on the SUBSCRIBE stream.
@@ -2697,7 +2697,7 @@ test-keri-mesh-ux: browser/repl.wasm
 test-keri-oobi-replies:
 	guix shell -L deploy/guix -m deploy/manifests/keri-test-manifest.scm -- \
 	  $(OWN_CCACHE) guile --no-auto-compile -L module -L . -L tests \
-	  tests/keri/test-oobi-endpoint-replies.scm
+	  tests/identity/test-oobi-endpoint-replies.scm
 
 test-did-keri:
 	$(GUILE_TEST_DEV) -L module tests/keri/test-did-keri.scm
@@ -2721,37 +2721,37 @@ test-keri-witnesses:
 	$(GUILE_TEST_DEV) -L module tests/keri/test-keri-witnesses.scm
 
 test-keri-notifications:
-	$(GUILE_TEST_DEV) -L module tests/keri/test-keri-notifications.scm
+	$(GUILE_TEST_DEV) -L module tests/keys/test-keri-notifications.scm
 
 test-ipex-policy:
-	$(GUILE_TEST_DEV) -L module -L tests tests/keri/test-ipex-policy.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/keys/test-ipex-policy.scm
 
 test-ipex-grant-handler:
-	$(GUILE_TEST_DEV) -L module -L tests tests/keri/test-ipex-grant-handler.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/keys/test-ipex-grant-handler.scm
 
 test-ipex-pull-flow:
-	$(GUILE_TEST_DEV) -L module -L tests tests/keri/test-ipex-pull-flow.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/keys/test-ipex-pull-flow.scm
 
 test-scope-portability:
-	$(GUILE_TEST_DEV) -L module -L tests tests/governance/test-scope-portability.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/utils/test-scope-portability.scm
 
 test-scope-exchange:
-	$(GUILE_TEST_DEV) -L module -L tests tests/keri/test-scope-exchange.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/keys/test-scope-exchange.scm
 
 test-keria-store-pending:
-	$(GUILE_TEST_DEV) -L module -L tests tests/governance/test-keria-store-pending.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/keys/test-keria-store-pending.scm
 
 test-pending-grants:
-	$(GUILE_TEST_DEV) -L module -L tests tests/governance/test-pending-grants.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/keys/test-pending-grants.scm
 
 test-pending-grants-fiber-inheritance:
-	$(GUILE_TEST_DEV) -L module -L tests tests/governance/test-pending-grants-fiber-inheritance.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/keys/test-pending-grants-fiber-inheritance.scm
 
 test-observability-endpoints:
 	$(GUILE_TEST_DEV) -L module -L tests -L . tests/server/test-observability-endpoints.scm
 
 # The basemap's tile source: the PMTiles reader and the /tiles/osm routes,
-# against the committed fixture (tools/pmtiles-tiny.scm writes it).
+# against the committed fixture (tools/emit/pmtiles-tiny.scm writes it).
 test-pmtiles:
 	$(GUILE_TEST_DEV) -L module -L tests -L . tests/server/test-pmtiles.scm
 
@@ -2785,22 +2785,22 @@ test-dev-priorities:
 	$(GUILE_TEST_DEV) -L module -L tests tests/tools/test-dev-priorities.scm
 
 test-ratification-delivery:
-	$(GUILE_TEST_DEV) -L module -L tests tests/governance/test-ratification-delivery.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/federation/test-ratification-delivery.scm
 
 test-util-common:
-	$(GUILE_TEST_DEV) -L module -L tests tests/util/test-common.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/keys/test-common.scm
 
 test-util-keyed-id:
-	$(GUILE_TEST_DEV) -L module -L tests tests/util/test-keyed-id.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/utils/test-keyed-id.scm
 
 test-custodian-heartbeat:
-	$(GUILE_TEST_DEV) -L module -L tests tests/governance/test-custodian-heartbeat.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/keys/test-custodian-heartbeat.scm
 
 test-pending-recompositions:
-	$(GUILE_TEST_DEV) -L module -L tests tests/governance/test-pending-recompositions.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/federation/test-pending-recompositions.scm
 
 test-kel-anchoring:
-	$(GUILE_TEST_DEV) -L module -L tests tests/governance/test-kel-anchoring.scm
+	$(GUILE_TEST_DEV) -L module -L tests tests/scope/test-kel-anchoring.scm
 
 # Deploy-time interop smoke test (curl-driven, no Node deps).
 # Usage: make smoke-test GATEWAY=http://localhost:8080
@@ -2811,7 +2811,7 @@ test-keri-recovery:
 	$(GUILE_TEST_DEV) -L module tests/keri/test-keri-recovery.scm
 
 test-keri-lobby-auth:
-	$(GUILE_TEST_DEV) -L module tests/keri/test-keri-lobby-auth.scm
+	$(GUILE_TEST_DEV) -L module tests/doors/test-keri-lobby-auth.scm
 
 # ── ACDC role schemas ───────────────────────────────────────────────────────
 # The four playnet role-credential schemas live self-saidified in
@@ -2820,10 +2820,10 @@ test-keri-lobby-auth:
 # idempotency (CI guard against accidental edits without re-saidification).
 
 schemas:
-	$(GUILE_TEST_DEV) -L module tools/saidify-schemas.scm
+	$(GUILE_TEST_DEV) -L module tools/emit/saidify-schemas.scm
 
 test-schemas:
-	$(GUILE_TEST_DEV) -L module tools/saidify-schemas.scm --check
+	$(GUILE_TEST_DEV) -L module tools/emit/saidify-schemas.scm --check
 	$(GUILE_TEST_DEV) -L module tests/keri/test-schemas.scm
 
 test-keri: test-keri-blake3 test-keri-signify test-keri-signify-portable test-keri-oobi-replies test-keri-signify-integration test-keri-signup-with-icp test-keri-signup-with-kel test-keri-lobby-seat-gate test-keri-signup-disabled-gate test-keri-forget test-identity-kel test-identity-body-ceremony test-governance-body-role-credential test-recovery-share test-keri-reticulum-binding test-mesh-mailbox test-did-keri test-keri-bridge test-keri-bridge-extra test-keri-credentials test-keri-credentials-ipex test-ipex-policy test-ipex-grant-handler test-keri-witnesses test-keri-notifications test-keri-recovery test-keri-lobby-auth test-schemas
@@ -2852,24 +2852,24 @@ test-all: test-gplay test-knowledge test-kanren-goblins test-vat-federation test
 # CI can use it again. Don't delete because "nobody runs it" — that's the
 # point, it's the canary, not the daily target.
 test-all-pinned:
-	$(GUILE_TEST) -L module tests/playnet/test-gplay.scm
-	$(GUILE_TEST) -L module tests/playnet/test-knowledge.scm
-	$(GUILE_TEST) -L module tests/playnet/test-governed-org.scm
-	$(GUILE_TEST) -L module tests/playnet/test-history-signatures.scm
-	$(GUILE_TEST) -L module tests/playnet/test-wisp.scm
-	$(GUILE_TEST) -L module tests/playnet/test-endorsement.scm
-	$(GUILE_TEST) -L module tests/playnet/test-persistence.scm
-	$(GUILE_TEST) -L module tests/playnet/test-netlayer-substitute.scm
-	$(TIME_MACHINE) shell guile-next guile-goblins -- sh tests/planner/run-tests.sh
-	$(GUILE_TEST) -L module tests/planner/relational-planner.scm
+	$(GUILE_TEST) -L module tests/org/test-gplay.scm
+	$(GUILE_TEST) -L module tests/lang/test-knowledge.scm
+	$(GUILE_TEST) -L module tests/org/test-governed-org.scm
+	$(GUILE_TEST) -L module tests/org/test-history-signatures.scm
+	$(GUILE_TEST) -L module tests/lang/test-wisp.scm
+	$(GUILE_TEST) -L module tests/org/test-endorsement.scm
+	$(GUILE_TEST) -L module tests/org/test-persistence.scm
+	$(GUILE_TEST) -L module tests/gateway/test-netlayer-substitute.scm
+	$(TIME_MACHINE) shell guile-next guile-goblins -- sh tools/test/planner-suite.sh
+	$(GUILE_TEST) -L module tests/deprecated/relational-planner.scm
 	$(GUILE_TEST) -L module tests/keri/test-keri-bridge.scm
 	$(GUILE_TEST) -L module tests/keri/test-keri-bridge-extra.scm
 	$(GUILE_TEST) -L module tests/keri/test-keri-credentials.scm
 	$(GUILE_TEST) -L module tests/keri/test-keri-credentials-ipex.scm
 	$(GUILE_TEST) -L module tests/keri/test-keri-witnesses.scm
-	$(GUILE_TEST) -L module tests/keri/test-keri-notifications.scm
+	$(GUILE_TEST) -L module tests/keys/test-keri-notifications.scm
 	$(GUILE_TEST) -L module tests/keri/test-keri-recovery.scm
-	$(GUILE_TEST) -L module tests/keri/test-keri-lobby-auth.scm
+	$(GUILE_TEST) -L module tests/doors/test-keri-lobby-auth.scm
 
 # ── Real-KERIA integration tests ─────────────────────────────────────────────
 # Spins up a real `keria start` + `kli witness demo` (6 witnesses) in $TMPDIR
@@ -3002,13 +3002,13 @@ serve-dev: browser/.dev/repl.wasm
 #   make live-watch ARGS="server module/playnet"
 #
 # Pulls inotify-tools, bash AND guile-next through guix so the script
-# works from a clean checkout — the bash loop calls tools/live-reload.scm
+# works from a clean checkout — the bash loop calls tools/dev/live-reload.scm
 # which in turn calls /usr/bin/env guile, so guile must be on PATH inside
 # the shell. The bootstrap VPS provider VM gets the same packages via the live-watch
 # shepherd service.
 live-watch:
 	$(TIME_MACHINE) shell inotify-tools coreutils bash guile-next -- \
-	  ./tools/live-watch.sh $(ARGS)
+	  ./tools/dev/live-watch.sh $(ARGS)
 
 # ── Wisp editor tooling ─────────────────────────────────────────────────────
 # Syntax highlighting / indentation for .w (Wisp) files. Two targets, two
@@ -3051,7 +3051,7 @@ clean:
 # tiers, HTTP-only between them — live cross-gateway witness delivery.
 .PHONY: test-witness-two-box
 test-witness-two-box:
-	bash tests/governance/two-box/run-two-box.sh
+	bash tests/personhood/two-box/run-two-box.sh
 
 # The live first-citizen journey, against a RUNNING `make dev` gateway:
 # browser signup → dial Berlin → offer hours → declare a need → the solve's
@@ -3067,10 +3067,10 @@ test-truth-telling: $(KERNEL_SO)
 	@for t in emphasis externality audit family-money-harmony federated-repro eisenberg-gale; do \
 	  echo "=== $$t ==="; \
 	  $(TEST_ENV) \
-	    guile --no-auto-compile -L module -L tests tests/planner/test-$$t.scm || exit 1; \
+	    guile --no-auto-compile -L module -L tests tests/*/test-$$t.scm || exit 1; \
 	done
-	@for t in tests/governance/test-demand-fold.scm tests/planner/test-slots-service.scm \
-	          tests/planner/test-owned-delivery.scm tests/planner/test-credit-fold.scm; do \
+	@for t in tests/economy/test-demand-fold.scm tests/doors/test-slots-service.scm \
+	          tests/economy/test-owned-delivery.scm tests/doors/test-credit-fold.scm; do \
 	  echo "=== $$t ==="; \
 	  $(TEST_ENV) \
 	    guile --no-auto-compile -L module -L tests $$t || exit 1; \

@@ -16,7 +16,7 @@
 ;;;
 ;;; The clauses are the ones doors/lobby.scm held, moved verbatim; what each door
 ;;; does is documented on its declaration in (playnet doors protocol). The
-;;; protocol lint (tools/protocol-extract.scm) reads this file with
+;;; protocol lint (tools/lint/protocol-extract.scm) reads this file with
 ;;; doors/lobby.scm, so the declaration is held to the union.
 
 (define-module (playnet doors identity)
@@ -124,7 +124,7 @@
     ;; production sets it and dev does not. The doors it gates are the ones
     ;; declared `#:feature account-creation` in doors/protocol.scm — the same
     ;; declaration the product's law reads them off (`doors-of-feature`);
-    ;; tests/keri/test-signup-disabled-gate.scm holds the wrappers below to
+    ;; tests/knowledge/test-signup-disabled-gate.scm holds the wrappers below to
     ;; exactly that set, so neither can drift from the other.
     (define (real-signup-enabled?)
       (not (env-flag? "PLAYNET_DISABLE_REAL_SIGNUP")))

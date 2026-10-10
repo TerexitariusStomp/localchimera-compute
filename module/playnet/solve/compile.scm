@@ -125,7 +125,7 @@
                   ;; function cannot check it — a template is compiled before any
                   ;; catalogue is ingested, so only the flow is in scope here —
                   ;; while `defaultUnitOfResource` states the other half one phase
-                  ;; later. tests/planner/test-use-unit-lint.scm holds the two
+                  ;; later. tests/scope/test-use-unit-lint.scm holds the two
                   ;; together, and enforces the one pairing that fails to cancel:
                   ;; a spec counted in TIME drawn with no duration.
                   ;;

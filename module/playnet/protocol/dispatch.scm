@@ -6,7 +6,7 @@
 ;;; difference — a head the declaration lacks, a declared door the code
 ;;; lacks, an argument list that differs — stops the spawn with a message
 ;;; naming every difference. The gateway therefore refuses to boot on drift,
-;;; which is the property tools/protocol-lint.scm checks offline; here it
+;;; which is the property tools/lint/protocol-lint.scm checks offline; here it
 ;;; holds at run time too, on the box, with no tool in the loop.
 ;;;
 ;;;   (declared-methods lobby
@@ -83,7 +83,7 @@ declaration: a list of strings, empty when they agree."
 ;;                                               name it, else to the object's
 ;;                                               own clauses
 ;;
-;; tools/protocol-extract.scm reads both forms, so the offline lint sees the
+;; tools/lint/protocol-extract.scm reads both forms, so the offline lint sees the
 ;; same union the boot-time check does.
 (define-syntax declared-doors
   (syntax-rules ()

@@ -366,7 +366,7 @@
                                      (min 44 (string-length (assq-ref e 'evidence))))))
                 report)
       (format #t "~%  NOTHING is 'verified — a steward promotes after review (steward-verify).~%")
-      (format #t "  see tests/planner/test-scrape-extractor.scm for the full pipeline.~%"))))
+      (format #t "  see tests/knowledge/test-scrape-extractor.scm for the full pipeline.~%"))))
 
 (when (and (pair? (command-line))
            (string-suffix? "legal/scrape.scm" (car (command-line))))

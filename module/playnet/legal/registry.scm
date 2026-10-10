@@ -28,7 +28,7 @@
 ;;; its other registries and seeded from a rule-pack folder (load-rule-packs).
 ;;; legal/gate.scm folds it into every solve at the door (live.scm).
 ;;;
-;;; The worked example (five rules, three contexts) is tests/planner/legal-example-rules.scm.
+;;; The worked example (five rules, three contexts) is tests/observation/legal-example-rules.scm.
 
 ;; The whole file is the interface: everything it defines was already in scope
 ;; for every includer, so exporting the lot preserves what they saw. `vf-record-type`

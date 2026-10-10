@@ -5,7 +5,7 @@
 ;;; server)`) already runs the far end of it: pipe a form's printed text
 ;;; through `nc -U`, strip the connection banner and every
 ;;; `scheme@(...)>` prompt, keep what is left. One Scheme door here, so
-;;; `tools/dev-plan.scm`/`dev-signal-cycle.scm`/`dev-loop-close.scm` share
+;;; `tools/dev/dev-plan.scm`/`dev-signal-cycle.scm`/`dev-loop-close.scm` share
 ;;; it instead of three copies of shell plumbing.
 ;;;
 ;;; The form's text goes through a temp file, `cat`, then `nc` — never

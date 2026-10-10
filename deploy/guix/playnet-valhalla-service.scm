@@ -2,7 +2,7 @@
 ;;; self-hosted Valhalla routing engine (Tier-1, offline, no IP leak).
 ;;;
 ;;; Valhalla is not (yet) a Guix package — its tree is built from source under
-;;; a working directory (see tools/valhalla-local.sh; locally that's
+;;; a working directory (see tools/dev/valhalla-local.sh; locally that's
 ;;; .valhalla/). This service supervises the built `valhalla_service` binary.
 ;;;
 ;;; Runtime model: exec the binary DIRECTLY — no `guix shell` wrapper. The

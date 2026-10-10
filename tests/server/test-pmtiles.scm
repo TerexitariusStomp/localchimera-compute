@@ -5,7 +5,7 @@
 ;;; /tiles/osm/regions.json from the archives under PLAYNET_MAP_DIR.
 ;;;
 ;;; The fixture tests/fixtures/map/tiny.pmtiles is written by
-;;; tools/pmtiles-tiny.scm: tile 0/0/0 in the root directory, 1/0/0 and 1/0/1
+;;; tools/emit/pmtiles-tiny.scm: tile 0/0/0 in the root directory, 1/0/0 and 1/0/1
 ;;; as one run and 2/1/1 alone in a leaf, every other tile a hole; each body
 ;;; is the gzipped text "z/x/y". The browser-side reader test reads the same
 ;;; file.

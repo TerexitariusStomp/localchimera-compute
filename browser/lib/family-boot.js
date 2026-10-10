@@ -8,7 +8,7 @@
 // the one way a planner build for the page is booted.
 //
 // One module for the page's worker (browser/family-worker.js) and for the node
-// check (tools/check-family-worker.cjs): both boot the same way.
+// check (tools/test/check-family-worker.cjs): both boot the same way.
 
 import { bootHandlers } from "./wasm-boot.js";
 

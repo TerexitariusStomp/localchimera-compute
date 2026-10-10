@@ -384,7 +384,7 @@
   (format #t "  demand->spec-id  = demand-name (join key)~%")
   (format #t "  holding-status / reconcile / obligations read a LIVE ^observer.~%")
   (format #t "  make-legal-decorate/observer prunes on un-held entity permits — no planner edit.~%")
-  (format #t "  see tests/planner/test-compliance.scm for the real-store path.~%"))
+  (format #t "  see tests/observation/test-compliance.scm for the real-store path.~%"))
 
 ;; run as a program on a host; a page loads this as a library only
 (cond-expand

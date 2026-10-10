@@ -66,7 +66,7 @@
    (sha256 . "17vlczzf01hnjpl51swn7mfkjk8cqfa4z0az4c2lx7c32gs3j8ml")
    (lands  . "tooling"))
  ;; The KERI / ACDC / Signify library and the First Person (OpenVTC)
- ;; credentials over it. A cut OUT of the core — tools/publish-keri-lib.sh
+ ;; credentials over it. A cut OUT of the core — tools/dev/publish-keri-lib.sh
  ;; derives it from module/playnet/keri and their tests — so the box
  ;; serves, seeds and pins it for the KERI and OpenVTC communities and places
  ;; nothing: the core already holds those files.

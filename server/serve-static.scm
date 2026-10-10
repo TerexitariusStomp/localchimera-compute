@@ -365,7 +365,7 @@
 ;;; Same-origin endpoint so the browser never touches an external router (no IP
 ;;; leak; works on Tor / the mesh). A *thin proxy* to a local Valhalla HTTP
 ;;; service (default http://127.0.0.1:8002, built from an OSM extract — see
-;;; docs/valhalla/ and tools/valhalla-local.sh). Valhalla is multimodal:
+;;; docs/valhalla/ and tools/dev/valhalla-local.sh). Valhalla is multimodal:
 ;;; pedestrian / bicycle / auto / bus / multimodal-transit.
 ;;;
 ;;; The server stays dumb on purpose: it builds the Valhalla request, POSTs it,

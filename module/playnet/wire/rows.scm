@@ -4,10 +4,10 @@
 ;;; table over the record (or alist) it reads; the tables, their kinds and the reads
 ;;; and coercions under them are here, shared by the page's
 ;;; spine (hoot/day-boot.scm) and by whatever else speaks the same wire
-;;; natively (tools/demo-emit.scm). Plain Scheme. The tables over the planner's
+;;; natively (tools/emit/demo-emit.scm). Plain Scheme. The tables over the planner's
 ;;; records (a commitment, a member, a recipe, …) stand in planner/doors/record-rows.scm,
 ;;; the rest in wire/snapshot.scm and wire/replies.scm; the page's types are
-;;; generated from all of them (tools/wire-types-emit.scm).
+;;; generated from all of them (tools/emit/wire-types-emit.scm).
 
 (define-module (playnet wire rows)
   #:use-module ((playnet utils records) #:select (vf-record-type-fields vf-record-accessor))
@@ -71,7 +71,7 @@
 ;; `wire-table` makes a table and REGISTERS it under its name with the record type
 ;; it reads. A table naming a field its record type lacks is refused as it is made,
 ;; so a field renamed in the vocabulary cannot leave a row reading nothing. The
-;; registry is what the page's row types are generated from (tools/wire-types-emit.scm),
+;; registry is what the page's row types are generated from (tools/emit/wire-types-emit.scm),
 ;; so the page's types are what the server states.
 ;;
 ;; Plain procedures over lists and vectors: this file runs in the wasm bundles too,

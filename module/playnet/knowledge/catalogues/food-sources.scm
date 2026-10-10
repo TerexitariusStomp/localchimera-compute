@@ -3,7 +3,7 @@
 ;;; A food spec's nutrient composition is not authored here: it is read off
 ;;; USDA FoodData Central, SR Legacy release (public domain), one row per
 ;;; food, pinned by the release archive's sha256 and sliced into
-;;; knowledge/data/fdc-sr-legacy.scm by tools/fdc-snapshot.scm. What IS
+;;; knowledge/data/fdc-sr-legacy.scm by tools/emit/fdc-snapshot.scm. What IS
 ;;; authored here is the binding — which FDC food stands for which spec — and
 ;;; the map from the catalogue's nutrient ids to FDC's nutrient ids, which is
 ;;; where a catalogue row that FDC states as several (total n-3 = ALA + EPA +
