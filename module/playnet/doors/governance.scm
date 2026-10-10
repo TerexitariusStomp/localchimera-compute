@@ -55,13 +55,13 @@
   #:use-module (ice-9 format)
   #:use-module (goblins)
   #:use-module (srfi srfi-9)
-  #:use-module ((playnet protocol dispatch) #:select (compose-doors))
+  #:use-module ((playnet protocol dispatch) #:select (compose-doors declared-doors))
   #:export (fp-wire->cred ^governance-service spawn-governance-service
             governance-service-env plan-part-hands-of contrary-observations-of contrary-readings-of
             governance-fragments set-governance-fragments!
             make-governance-ctx governance-ctx? with-governance-ctx
-            governance-ctx-scope-roots governance-ctx-ballot-store governance-ctx-governor? governance-ctx-acdc-store governance-ctx-home-scope governance-ctx-scope-of governance-ctx-kel-landing governance-ctx-kel-of governance-ctx-voices governance-ctx-sealed?-of governance-ctx-delegations governance-ctx-scope-root-of governance-ctx-contest-settled governance-ctx-snapshot-saids governance-ctx-fp-trusted-issuers governance-ctx-fp-root-aid governance-ctx-fp-strict-root? governance-ctx-uc-proposals-ref governance-ctx-%preimage governance-ctx-%signed! governance-ctx-ensure-citizen governance-ctx-voice-data-snapshot governance-ctx-recorder-aid governance-ctx-sign-as-recorder governance-ctx-open-proposal! governance-ctx-contest-family governance-ctx-scope-root governance-ctx-scope-observer governance-ctx-scope-for governance-ctx-revoke-where!
-            set-governance-ctx-scope-roots! set-governance-ctx-ballot-store! set-governance-ctx-governor?! set-governance-ctx-acdc-store! set-governance-ctx-home-scope! set-governance-ctx-scope-of! set-governance-ctx-kel-landing! set-governance-ctx-kel-of! set-governance-ctx-voices! set-governance-ctx-sealed?-of! set-governance-ctx-delegations! set-governance-ctx-scope-root-of! set-governance-ctx-contest-settled! set-governance-ctx-snapshot-saids! set-governance-ctx-fp-trusted-issuers! set-governance-ctx-fp-root-aid! set-governance-ctx-fp-strict-root?! set-governance-ctx-uc-proposals-ref! set-governance-ctx-%preimage! set-governance-ctx-%signed!! set-governance-ctx-ensure-citizen! set-governance-ctx-voice-data-snapshot! set-governance-ctx-recorder-aid! set-governance-ctx-sign-as-recorder! set-governance-ctx-open-proposal!! set-governance-ctx-contest-family! set-governance-ctx-scope-root! set-governance-ctx-scope-observer! set-governance-ctx-scope-for! set-governance-ctx-revoke-where!!
+            governance-ctx-scope-roots governance-ctx-ballot-store governance-ctx-governor? governance-ctx-acdc-store governance-ctx-home-scope governance-ctx-scope-of governance-ctx-scope-root-of governance-ctx-kel-landing governance-ctx-kel-of governance-ctx-contest-settled governance-ctx-%preimage governance-ctx-%signed! governance-ctx-ensure-citizen governance-ctx-registry-snapshot governance-ctx-voice-data-snapshot governance-ctx-recorder-aid governance-ctx-sign-as-recorder governance-ctx-open-proposal! governance-ctx-contest-family governance-ctx-scope-root governance-ctx-scope-observer governance-ctx-scope-for governance-ctx-revoke-where!
+            set-governance-ctx-scope-roots! set-governance-ctx-ballot-store! set-governance-ctx-governor?! set-governance-ctx-acdc-store! set-governance-ctx-home-scope! set-governance-ctx-scope-of! set-governance-ctx-scope-root-of! set-governance-ctx-kel-landing! set-governance-ctx-kel-of! set-governance-ctx-contest-settled! set-governance-ctx-%preimage! set-governance-ctx-%signed!! set-governance-ctx-ensure-citizen! set-governance-ctx-registry-snapshot! set-governance-ctx-voice-data-snapshot! set-governance-ctx-recorder-aid! set-governance-ctx-sign-as-recorder! set-governance-ctx-open-proposal!! set-governance-ctx-contest-family! set-governance-ctx-scope-root! set-governance-ctx-scope-observer! set-governance-ctx-scope-for! set-governance-ctx-revoke-where!!
             ;; the store readers and folds the fragments share
             standing-part-hands standing-contrary-observations distribution->alist %sponsor-fanout-ok? %as-symbol))
 
@@ -210,40 +210,27 @@
 
 ;;; ── the context a fragment reads ─────────────────────────────────────────────
 ;;;
-;;; The actor's arguments, its mutable cells and the helpers more than one group
-;;; reads, as one record a fragment is handed. The cells:
-;;;   voices — (hashmap)
-;;;   sealed?-of — (hashmap)
-;;;   delegations — (hashmap)
-;;; scope-id → the commune's planner root, for per-scope voice (voice-in)
-;;;   scope-root-of — #f
-;;; ballot-id → (): told when a contest ballot has settled, so what the
-;;; gateway holds for it (a counter's picture) can be let go
-;;;   contest-settled — #f
-;;; Per-proposal snapshot SAIDs, recorded at 'open and retrieved
-;;; at 'cast / 'close so stance and tally-result ACDCs can carry
-;;; the §4.9 ballot-snapshot edge.
-;;;   snapshot-saids — (hashmap)
-;;; First-Person: commune AIDs whose PHCs we honour when PRESENTED by a
-;;; holder from another gateway (set by the gateway to the UC's members).
-;;;   fp-trusted-issuers — '()
-;;; First-Person: the trust-registry root AID (the Universal Commune's
-;;; group AID). When set, an ecosystem is a legitimate PHC issuer iff it
-;;; chains to root (holds a live authorized-issuer credential), making
-;;; `fp-trusted-issuers` a fallback rather than the sole source of trust.
-;;;   fp-root-aid — #f
-;;; First-Person: when #t, the flat `fp-trusted-issuers` whitelist is
-;;; DROPPED — trust derives only from chaining to root. Flip this once
-;;; the live root chain is populated (ecosystems blessed), so the
-;;; hand-maintained bypass no longer undermines the verifiable chain.
-;;;   fp-strict-root? — #f
-;;; Cross-gateway UC merge-proposal registry (^uc-merge-proposals), set
-;;; by the gateway once both are spawned, so the governance surface can
-;;; show collisions as scope-formation decisions.
-;;;   uc-proposals-ref — #f
+;;; The wiring every fragment shares and the helpers more than one group reads,
+;;; as one record a fragment is handed, each piece by name. The wiring:
+;;;   scope-roots     the federation universe voice and credit are read over
+;;;   ballot-store    where a proposal's record lives
+;;;   governor?       aid → bool: who may open and close
+;;;   acdc-store      the credential store; #f and nothing is issued
+;;;   home-scope      this gateway's governance identity, the ^scope that signs
+;;;                   and anchors; arrives after the spawn (set-home-scope!)
+;;;   scope-of        commune-aid → ^scope, for a commune's OWN acts
+;;;   scope-root-of   scope-id → the commune's planner root, for per-scope voice
+;;;   kel-landing     where a carried key log lands; kel-of reads it back
+;;;   contest-settled ballot-id → (): a contest ballot closed and settled, so
+;;;                   what the gateway holds for it can go; arrives after the
+;;;                   spawn (set-contest-settled!)
+;;; What one fragment alone reads and writes is that fragment's own: the
+;;; citizens the core has met (ensure-citizen), the voice fragment's snapshot
+;;; SAIDs, the personhood fragment's trust roots, the federation fragment's UC
+;;; merge-proposal registry.
 
 (define-record-type <governance-ctx>
-  (make-governance-ctx scope-roots ballot-store governor? acdc-store home-scope scope-of kel-landing kel-of voices sealed?-of delegations scope-root-of contest-settled snapshot-saids fp-trusted-issuers fp-root-aid fp-strict-root? uc-proposals-ref %preimage %signed! ensure-citizen voice-data-snapshot recorder-aid sign-as-recorder open-proposal! contest-family scope-root scope-observer scope-for revoke-where!)
+  (%make-governance-ctx scope-roots ballot-store governor? acdc-store home-scope scope-of scope-root-of kel-landing kel-of contest-settled %preimage %signed! ensure-citizen registry-snapshot voice-data-snapshot recorder-aid sign-as-recorder open-proposal! contest-family scope-root scope-observer scope-for revoke-where!)
   governance-ctx?
   (scope-roots governance-ctx-scope-roots set-governance-ctx-scope-roots!)
   (ballot-store governance-ctx-ballot-store set-governance-ctx-ballot-store!)
@@ -251,21 +238,14 @@
   (acdc-store governance-ctx-acdc-store set-governance-ctx-acdc-store!)
   (home-scope governance-ctx-home-scope set-governance-ctx-home-scope!)
   (scope-of governance-ctx-scope-of set-governance-ctx-scope-of!)
+  (scope-root-of governance-ctx-scope-root-of set-governance-ctx-scope-root-of!)
   (kel-landing governance-ctx-kel-landing set-governance-ctx-kel-landing!)
   (kel-of governance-ctx-kel-of set-governance-ctx-kel-of!)
-  (voices governance-ctx-voices set-governance-ctx-voices!)
-  (sealed?-of governance-ctx-sealed?-of set-governance-ctx-sealed?-of!)
-  (delegations governance-ctx-delegations set-governance-ctx-delegations!)
-  (scope-root-of governance-ctx-scope-root-of set-governance-ctx-scope-root-of!)
   (contest-settled governance-ctx-contest-settled set-governance-ctx-contest-settled!)
-  (snapshot-saids governance-ctx-snapshot-saids set-governance-ctx-snapshot-saids!)
-  (fp-trusted-issuers governance-ctx-fp-trusted-issuers set-governance-ctx-fp-trusted-issuers!)
-  (fp-root-aid governance-ctx-fp-root-aid set-governance-ctx-fp-root-aid!)
-  (fp-strict-root? governance-ctx-fp-strict-root? set-governance-ctx-fp-strict-root?!)
-  (uc-proposals-ref governance-ctx-uc-proposals-ref set-governance-ctx-uc-proposals-ref!)
   (%preimage governance-ctx-%preimage set-governance-ctx-%preimage!)
   (%signed! governance-ctx-%signed! set-governance-ctx-%signed!!)
   (ensure-citizen governance-ctx-ensure-citizen set-governance-ctx-ensure-citizen!)
+  (registry-snapshot governance-ctx-registry-snapshot set-governance-ctx-registry-snapshot!)
   (voice-data-snapshot governance-ctx-voice-data-snapshot set-governance-ctx-voice-data-snapshot!)
   (recorder-aid governance-ctx-recorder-aid set-governance-ctx-recorder-aid!)
   (sign-as-recorder governance-ctx-sign-as-recorder set-governance-ctx-sign-as-recorder!)
@@ -276,25 +256,35 @@
   (scope-for governance-ctx-scope-for set-governance-ctx-scope-for!)
   (revoke-where! governance-ctx-revoke-where! set-governance-ctx-revoke-where!!))
 
-;; the arguments and the cells: what the actor's own helpers read and write
+(define* (make-governance-ctx #:key scope-roots ballot-store
+                              (governor? (lambda (_aid) #t))
+                              (acdc-store #f) (home-scope #f) (scope-of #f)
+                              (scope-root-of #f) (kel-landing #f) (kel-of #f)
+                              (contest-settled #f))
+  "The wiring every fragment shares, each piece by name; the helpers are
+handed over once the actor has them."
+  (%make-governance-ctx scope-roots ballot-store governor? acdc-store home-scope scope-of scope-root-of kel-landing kel-of contest-settled
+                        #f #f #f #f #f #f #f #f #f #f #f #f #f))
+
+;; the wiring: what the actor's own helpers read and write
 (define-syntax with-governance-state
   (lambda (x)
     (syntax-case x ()
       ((_ ctx body ...)
-       (with-syntax (((name ...) (map (lambda (n) (datum->syntax x n)) '(scope-roots ballot-store governor? acdc-store home-scope scope-of kel-landing kel-of voices sealed?-of delegations scope-root-of contest-settled snapshot-saids fp-trusted-issuers fp-root-aid fp-strict-root? uc-proposals-ref)))
-                     ((ref ...) (map (lambda (n) (datum->syntax x (symbol-append 'governance-ctx- n))) '(scope-roots ballot-store governor? acdc-store home-scope scope-of kel-landing kel-of voices sealed?-of delegations scope-root-of contest-settled snapshot-saids fp-trusted-issuers fp-root-aid fp-strict-root? uc-proposals-ref)))
-                     ((setr ...) (map (lambda (n) (datum->syntax x (symbol-append 'set-governance-ctx- n '!))) '(scope-roots ballot-store governor? acdc-store home-scope scope-of kel-landing kel-of voices sealed?-of delegations scope-root-of contest-settled snapshot-saids fp-trusted-issuers fp-root-aid fp-strict-root? uc-proposals-ref))))
+       (with-syntax (((name ...) (map (lambda (n) (datum->syntax x n)) '(scope-roots ballot-store governor? acdc-store home-scope scope-of scope-root-of kel-landing kel-of contest-settled)))
+                     ((ref ...) (map (lambda (n) (datum->syntax x (symbol-append 'governance-ctx- n))) '(scope-roots ballot-store governor? acdc-store home-scope scope-of scope-root-of kel-landing kel-of contest-settled)))
+                     ((setr ...) (map (lambda (n) (datum->syntax x (symbol-append 'set-governance-ctx- n '!))) '(scope-roots ballot-store governor? acdc-store home-scope scope-of scope-root-of kel-landing kel-of contest-settled))))
          #'(let-syntax ((name (identifier-syntax (_ (ref ctx)) ((set! _ v) (setr ctx v)))) ...)
              body ...))))))
 
-;; the whole context: what a fragment reads and writes
+;; the whole context: the wiring and the helpers, what a fragment reads and writes
 (define-syntax with-governance-ctx
   (lambda (x)
     (syntax-case x ()
       ((_ ctx body ...)
-       (with-syntax (((name ...) (map (lambda (n) (datum->syntax x n)) '(scope-roots ballot-store governor? acdc-store home-scope scope-of kel-landing kel-of voices sealed?-of delegations scope-root-of contest-settled snapshot-saids fp-trusted-issuers fp-root-aid fp-strict-root? uc-proposals-ref %preimage %signed! ensure-citizen voice-data-snapshot recorder-aid sign-as-recorder open-proposal! contest-family scope-root scope-observer scope-for revoke-where!)))
-                     ((ref ...) (map (lambda (n) (datum->syntax x (symbol-append 'governance-ctx- n))) '(scope-roots ballot-store governor? acdc-store home-scope scope-of kel-landing kel-of voices sealed?-of delegations scope-root-of contest-settled snapshot-saids fp-trusted-issuers fp-root-aid fp-strict-root? uc-proposals-ref %preimage %signed! ensure-citizen voice-data-snapshot recorder-aid sign-as-recorder open-proposal! contest-family scope-root scope-observer scope-for revoke-where!)))
-                     ((setr ...) (map (lambda (n) (datum->syntax x (symbol-append 'set-governance-ctx- n '!))) '(scope-roots ballot-store governor? acdc-store home-scope scope-of kel-landing kel-of voices sealed?-of delegations scope-root-of contest-settled snapshot-saids fp-trusted-issuers fp-root-aid fp-strict-root? uc-proposals-ref %preimage %signed! ensure-citizen voice-data-snapshot recorder-aid sign-as-recorder open-proposal! contest-family scope-root scope-observer scope-for revoke-where!))))
+       (with-syntax (((name ...) (map (lambda (n) (datum->syntax x n)) '(scope-roots ballot-store governor? acdc-store home-scope scope-of scope-root-of kel-landing kel-of contest-settled %preimage %signed! ensure-citizen registry-snapshot voice-data-snapshot recorder-aid sign-as-recorder open-proposal! contest-family scope-root scope-observer scope-for revoke-where!)))
+                     ((ref ...) (map (lambda (n) (datum->syntax x (symbol-append 'governance-ctx- n))) '(scope-roots ballot-store governor? acdc-store home-scope scope-of scope-root-of kel-landing kel-of contest-settled %preimage %signed! ensure-citizen registry-snapshot voice-data-snapshot recorder-aid sign-as-recorder open-proposal! contest-family scope-root scope-observer scope-for revoke-where!)))
+                     ((setr ...) (map (lambda (n) (datum->syntax x (symbol-append 'set-governance-ctx- n '!))) '(scope-roots ballot-store governor? acdc-store home-scope scope-of scope-root-of kel-landing kel-of contest-settled %preimage %signed! ensure-citizen registry-snapshot voice-data-snapshot recorder-aid sign-as-recorder open-proposal! contest-family scope-root scope-observer scope-for revoke-where!))))
          #'(let-syntax ((name (identifier-syntax (_ (ref ctx)) ((set! _ v) (setr ctx v)))) ...)
              body ...))))))
 
@@ -309,16 +299,25 @@
   "MAKERS: procedures from a <governance-ctx> to a fragment, in dispatch order."
   (set! *governance-fragments* makers))
 
-(define* (^governance-service bcom scope-roots ballot-store
-                              governor? ;; (lambda (aid) bool) — e.g. founders-list membership
-                              acdc-store ;; ^acdc-store or ^keria-acdc-store ref, or #f
-                              #:optional [home-scope #f]  ;; ^scope ref for KEL anchoring (§4.6)
-                                        [scope-of #f]     ;; commune-aid → ^scope, for a commune's OWN acts
-                                        [kel-landing #f]  ;; (aid icp sigs rotations) → #t | error string: land a carried KEL
-                                        [kel-of #f])
-  (let ((ctx (make-governance-ctx scope-roots ballot-store governor? acdc-store home-scope scope-of kel-landing kel-of
-                                  (hashmap) (hashmap) (hashmap) #f #f (hashmap) '() #f #f #f
-                                  #f #f #f #f #f #f #f #f #f #f #f #f)))
+(define* (^governance-service bcom #:key scope-roots ballot-store
+                              (governor? (lambda (_aid) #t)) ;; aid → bool: who may open and close
+                              (acdc-store #f)   ;; ^acdc-store or ^keria-acdc-store ref
+                              (home-scope #f)   ;; ^scope ref for KEL anchoring (§4.6)
+                              (scope-of #f)     ;; commune-aid → ^scope, for a commune's OWN acts
+                              (scope-root-of #f) ;; scope-id → its planner root, for per-scope voice
+                              (kel-landing #f)  ;; (aid icp sigs rotations) → #t | error string: land a carried KEL
+                              (kel-of #f)       ;; aid → the key log this gateway holds, wire-shaped
+                              (contest-settled #f)) ;; ballot-id → #t: a contest ballot closed, settled
+  (let ((ctx (make-governance-ctx #:scope-roots scope-roots #:ballot-store ballot-store
+                                  #:governor? governor? #:acdc-store acdc-store
+                                  #:home-scope home-scope #:scope-of scope-of
+                                  #:scope-root-of scope-root-of
+                                  #:kel-landing kel-landing #:kel-of kel-of
+                                  #:contest-settled contest-settled))
+        ;; the citizens this service has met: aid → ^voice-signer, → its
+        ;; sealed? reader, → its ^delegation-map. Read through ensure-citizen,
+        ;; registry-snapshot and voice-data-snapshot, nowhere else.
+        (voices (hashmap)) (sealed?-of (hashmap)) (delegations (hashmap)))
     (with-governance-state ctx
 
       ;; The client-signed leg's one success path: verify the caller's signature
@@ -430,94 +429,6 @@
       (define (sign-as-recorder cred)
         (cred-signed-by-scope cred home-scope))
 
-      ;; The one way a proposal opens: snapshot the franchise's voice, spawn the
-      ;; ballot or expression, record its meta, anchor a snapshot credential.
-      ;; CITIZEN-DATA, when given, is the franchise already built (a contest's:
-      ;; the event's scope, the worker left out); META rides with the record.
-      (define* (open-proposal! kind domain id description franchise rest
-                               #:key (citizen-data #f) (meta '()))
-            (let* ((citizen-data (or citizen-data
-                                     (build-voice-snapshot (voice-data-snapshot) scope-roots)))
-                   (registry     (registry-snapshot))
-                   (event
-                    (case kind
-                      ((ballot)
-                       (open-ballot domain id franchise description
-                                    registry citizen-data))
-                      ((expression)
-                       (let ((target-ids (and (pair? rest) (car rest))))
-                         (unless target-ids
-                           (error "open: 'expression requires target-ids" id))
-                         (open-expression domain id franchise description
-                                          target-ids registry citizen-data)))
-                      (else (error "open: unknown kind" kind)))))
-              ;; The proposal's meta rides with the registry: when it opened,
-              ;; and what it is about. A ballot's rest is (subject); an
-              ;; expression's is (target-ids [subject]). SUBJECT is a
-              ;; "kind:id" string the forum resolves against what it knows.
-              (let ((subject (case kind
-                               ((ballot) (and (pair? rest) (string? (car rest)) (car rest)))
-                               (else (and (pair? rest) (pair? (cdr rest)) (string? (cadr rest)) (cadr rest))))))
-                ($ ballot-store 'record id event
-                   (append (list (cons 'opened-at   (current-time))
-                                 (cons 'kind        kind)
-                                 (cons 'domain      domain)
-                                 (cons 'description description)
-                                 (cons 'franchise   franchise))
-                           (if subject (list (cons 'subject subject)) '())
-                           meta)))
-              ;; Anchor a snapshot ACDC for ballots (rich enough to recover).
-              ;; Expressions don't carry a separate snapshot ACDC today.
-              (when (and acdc-store (eq? kind 'ballot))
-                (let* ((entries
-                        (hashmap-fold
-                          (lambda (cid pair acc)
-                            (let* ((voice-share (car pair))
-                                   (dm-ref      (cdr pair))
-                                   (resolved    (if dm-ref
-                                                    ($ dm-ref 'resolve-for franchise)
-                                                    (hashmap)))
-                                   (entry-list
-                                    (hashmap-fold
-                                      (lambda (delegate-aid entry sub-acc)
-                                        (cons (list delegate-aid
-                                                    (entry-fraction entry)
-                                                    (let ((m (entry-mandate entry)))
-                                                      (and m (mandate-spec-of m))))
-                                              sub-acc))
-                                      '() resolved)))
-                              (cons (list cid voice-share entry-list) acc)))
-                          '() citizen-data))
-                       (registry-aids
-                        (hashmap-fold (lambda (cid _v acc) (cons cid acc))
-                                      '() registry))
-                       (snap-issuer (recorder-aid))
-                       (snapshot-said
-                        (compute-said snap-issuer snap-issuer
-                                      *schema-playnet-ballot-snapshot*
-                                      (list (cons 'domain      domain)
-                                            (cons 'proposal-id id)
-                                            (cons 'entries entries)))))
-                  ($ acdc-store 'issue
-                     (sign-as-recorder
-                      (make-ballot-snapshot-credential
-                       snap-issuer domain id franchise
-                       snapshot-said (current-time)
-                       #:description description
-                       #:voice-snapshot-entries entries
-                       #:citizen-registry-aids registry-aids)))
-                  ;; §4.9 + §4.6: remember the snapshot SAID for stance
-                  ;; / tally edges, and anchor it in the home scope's KEL
-                  ;; via an interaction event so verifiers see the ballot
-                  ;; in chain order.
-                  (set! snapshot-saids
-                        (hashmap-set snapshot-saids id snapshot-said))
-                  (when (and home-scope ($ home-scope 'has-keypair?))
-                    (catch #t
-                      (lambda () ($ home-scope 'anchor-acdc snapshot-said))
-                      (lambda _ #f)))))
-              (list 'ok id)))
-
       ;; The events a contest settles. A work event stands alone. A count is a
       ;; family: the adjustment, its record and the counter's hours, all named
       ;; from the adjustment's id (planner/formulas/counting.scm), and a contest of any
@@ -573,19 +484,27 @@
       (set-governance-ctx-%preimage! ctx %preimage)
       (set-governance-ctx-%signed!! ctx %signed!)
       (set-governance-ctx-ensure-citizen! ctx ensure-citizen)
+      (set-governance-ctx-registry-snapshot! ctx registry-snapshot)
       (set-governance-ctx-voice-data-snapshot! ctx voice-data-snapshot)
       (set-governance-ctx-recorder-aid! ctx recorder-aid)
       (set-governance-ctx-sign-as-recorder! ctx sign-as-recorder)
-      (set-governance-ctx-open-proposal!! ctx open-proposal!)
       (set-governance-ctx-contest-family! ctx contest-family)
       (set-governance-ctx-scope-root! ctx scope-root)
       (set-governance-ctx-scope-observer! ctx scope-observer)
       (set-governance-ctx-scope-for! ctx scope-for)
       (set-governance-ctx-revoke-where!! ctx revoke-where!)
 
+      ;; the wiring that arrives after the spawn: the founding commune's
+      ;; ^scope once it stands (boot/communes), the contest settler once the
+      ;; witness door is installed (boot/personhood)
+      (define core-doors
+        (declared-doors governance
+          ((set-home-scope! s) (set! home-scope s) 'ok)
+          ((set-contest-settled! f) (set! contest-settled f) 'ok)))
+
       (finishing
         (compose-doors
-         (map (lambda (make) (make ctx)) (governance-fragments))
+         (cons core-doors (map (lambda (make) (make ctx)) (governance-fragments)))
          (lambda (door . _) (error "governance-service: no such door" door)))))))
 
 
@@ -623,10 +542,11 @@
    it (the gateway hands the scope graph's find-ref, cached). home-scope
    answers only for the commune it is; without scope-of, that is the one
    commune this service can act for."
-  (let ((svc (spawn ^governance-service scope-roots ballot-store
-                    governor? acdc-store home-scope scope-of kel-landing kel-of)))
-    (when scope-root-of ($ svc 'set-scope-root-of! scope-root-of))
-    svc))
+  (spawn ^governance-service
+         #:scope-roots scope-roots #:ballot-store ballot-store
+         #:governor? governor? #:acdc-store acdc-store #:home-scope home-scope
+         #:scope-of scope-of #:scope-root-of scope-root-of
+         #:kel-landing kel-landing #:kel-of kel-of))
 
 
 (define governance-service-env

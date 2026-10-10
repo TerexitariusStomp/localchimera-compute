@@ -67,8 +67,6 @@
 
     (declared-doors governance
 
-      ((set-contest-settled! f) (set! contest-settled f) 'ok)
-
       ;; The contests open in SCOPE-ID, as they stand to IDENTITY-KEY: each with
       ;; the event it names, the member who contested and why, whose act it is,
       ;; and what IDENTITY-KEY may do about it — `attach` a picture when the act

@@ -30,6 +30,13 @@
 
 (define (governance-personhood-doors ctx)
   (with-governance-ctx ctx
+    ;; whose personhood this gateway honours: the trust-registry root (one AID
+    ;; or a list of recognised roots), the issuers trusted by name until the
+    ;; root chain is live, and whether the whitelist still stands
+    (define fp-root-aid #f)
+    (define fp-trusted-issuers '())
+    (define fp-strict-root? #f)
+
     ;; scope-for says WHICH commune's key an act uses; WHO may ask it to
     ;; commit that commune's money or custody is ^scope's own mint-gov-cap
     ;; concern now (governance/scope.scm's may-govern?) — self-governed the
@@ -516,8 +523,6 @@
                      "[governance-svc] fp-open-ceremony failed: ~a ~a~%"
                      key args)
              (cons 'error "ceremony open failed")))))))
-
-      ((set-home-scope! s) (set! home-scope s) 'ok)
 
       ;; after boot, once the scopes and the root are wired: every open ask
       ;; comes back from its record with its vouches — the gateway calls

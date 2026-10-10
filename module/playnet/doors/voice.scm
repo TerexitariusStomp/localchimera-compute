@@ -14,6 +14,11 @@
   #:use-module ((playnet vf facts parts) #:select (validate-hand))
   #:use-module ((playnet observation observer) #:select (void-event))
   #:use-module (playnet keri said-portable)
+  #:use-module ((playnet voice snapshot) #:select (build-voice-snapshot))
+  #:use-module ((playnet voice ballot) #:select (open-ballot))
+  #:use-module ((playnet voice expression) #:select (open-expression))
+  #:use-module ((playnet voice delegation-map) #:select (entry-fraction entry-mandate))
+  #:use-module ((playnet credentials commitments) #:select (mandate-spec-of))
   #:use-module (playnet pools credit-fold)
   #:use-module (playnet vf schemas)
   #:use-module ((playnet utils clock) #:select (instant->civil (now . clock-now)))
@@ -30,6 +35,100 @@
 
 (define (governance-voice-doors ctx)
   (with-governance-ctx ctx
+    ;; proposal-id → the SAID of its snapshot credential, for the stance and
+    ;; tally edges; freed when the ballot closes
+    (define snapshot-saids (hashmap))
+
+    ;; The one way a proposal opens: snapshot the franchise's voice, spawn the
+    ;; ballot or expression, record its meta, anchor a snapshot credential.
+    ;; CITIZEN-DATA, when given, is the franchise already built (a contest's:
+    ;; the event's scope, the worker left out); META rides with the record.
+    (define* (open-proposal! kind domain id description franchise rest
+                             #:key (citizen-data #f) (meta '()))
+          (let* ((citizen-data (or citizen-data
+                                   (build-voice-snapshot (voice-data-snapshot) scope-roots)))
+                 (registry     (registry-snapshot))
+                 (event
+                  (case kind
+                    ((ballot)
+                     (open-ballot domain id franchise description
+                                  registry citizen-data))
+                    ((expression)
+                     (let ((target-ids (and (pair? rest) (car rest))))
+                       (unless target-ids
+                         (error "open: 'expression requires target-ids" id))
+                       (open-expression domain id franchise description
+                                        target-ids registry citizen-data)))
+                    (else (error "open: unknown kind" kind)))))
+            ;; The proposal's meta rides with the registry: when it opened,
+            ;; and what it is about. A ballot's rest is (subject); an
+            ;; expression's is (target-ids [subject]). SUBJECT is a
+            ;; "kind:id" string the forum resolves against what it knows.
+            (let ((subject (case kind
+                             ((ballot) (and (pair? rest) (string? (car rest)) (car rest)))
+                             (else (and (pair? rest) (pair? (cdr rest)) (string? (cadr rest)) (cadr rest))))))
+              ($ ballot-store 'record id event
+                 (append (list (cons 'opened-at   (current-time))
+                               (cons 'kind        kind)
+                               (cons 'domain      domain)
+                               (cons 'description description)
+                               (cons 'franchise   franchise))
+                         (if subject (list (cons 'subject subject)) '())
+                         meta)))
+            ;; Anchor a snapshot ACDC for ballots (rich enough to recover).
+            ;; Expressions don't carry a separate snapshot ACDC today.
+            (when (and acdc-store (eq? kind 'ballot))
+              (let* ((entries
+                      (hashmap-fold
+                        (lambda (cid pair acc)
+                          (let* ((voice-share (car pair))
+                                 (dm-ref      (cdr pair))
+                                 (resolved    (if dm-ref
+                                                  ($ dm-ref 'resolve-for franchise)
+                                                  (hashmap)))
+                                 (entry-list
+                                  (hashmap-fold
+                                    (lambda (delegate-aid entry sub-acc)
+                                      (cons (list delegate-aid
+                                                  (entry-fraction entry)
+                                                  (let ((m (entry-mandate entry)))
+                                                    (and m (mandate-spec-of m))))
+                                            sub-acc))
+                                    '() resolved)))
+                            (cons (list cid voice-share entry-list) acc)))
+                        '() citizen-data))
+                     (registry-aids
+                      (hashmap-fold (lambda (cid _v acc) (cons cid acc))
+                                    '() registry))
+                     (snap-issuer (recorder-aid))
+                     (snapshot-said
+                      (compute-said snap-issuer snap-issuer
+                                    *schema-playnet-ballot-snapshot*
+                                    (list (cons 'domain      domain)
+                                          (cons 'proposal-id id)
+                                          (cons 'entries entries)))))
+                ($ acdc-store 'issue
+                   (sign-as-recorder
+                    (make-ballot-snapshot-credential
+                     snap-issuer domain id franchise
+                     snapshot-said (current-time)
+                     #:description description
+                     #:voice-snapshot-entries entries
+                     #:citizen-registry-aids registry-aids)))
+                ;; §4.9 + §4.6: remember the snapshot SAID for stance
+                ;; / tally edges, and anchor it in the home scope's KEL
+                ;; via an interaction event so verifiers see the ballot
+                ;; in chain order.
+                (set! snapshot-saids
+                      (hashmap-set snapshot-saids id snapshot-said))
+                (when (and home-scope ($ home-scope 'has-keypair?))
+                  (catch #t
+                    (lambda () ($ home-scope 'anchor-acdc snapshot-said))
+                    (lambda _ #f)))))
+            (list 'ok id)))
+
+    (set-governance-ctx-open-proposal!! ctx open-proposal!)
+
     ;; A closed contest ballot (contest-work below): `void` at half the
     ;; franchise's voice or more, and the work is corrected to nothing through
     ;; the scope's own observer — the kernel's correction, so hours, credit,
@@ -87,8 +186,6 @@
       ;; a ballot under that scope's franchise gives you. Reads the commune's
       ;; own root (a list of one, for account.scm's global reads); a commune
       ;; the gateway cannot name answers 0.
-      ((set-scope-root-of! f) (set! scope-root-of f) 'ok)
-
       ((voice-in identity-key scope-id)
        (catch #t
          (lambda ()

@@ -22,6 +22,10 @@
 
 (define (governance-federation-doors ctx)
   (with-governance-ctx ctx
+    ;; the cross-gateway UC merge-proposal registry, set by the gateway once
+    ;; both stand (set-uc-proposals!)
+    (define uc-proposals-ref #f)
+
     ;; aid → the KEL this gateway holds for it, wire-shaped, or #f
     ;; a scope's self-declaration, minted for it by a governor (MAKE : → cred)
     (define (%scope-declare! identity-key make)
