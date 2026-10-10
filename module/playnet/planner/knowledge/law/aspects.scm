@@ -67,6 +67,11 @@
    ;; "food-handler-trained", a Mexican "manejo-higienico" — registers the word
    ;; as a clause for the aspect (`register-clause-aspect!`, below).
    (aspect "hygiene-training"      "Food-handler hygiene training" #:control? #f)
+   ;; insurance the law makes a condition of the act: a promise to pay a third
+   ;; party, or an injured worker. Not an inspection point: the reserve is the
+   ;; federation's own answer, and a policy is what a door demands instead.
+   (aspect "third-party-liability" "Third-party liability cover" #:control? #f)
+   (aspect "injury-cover"          "Cover for injury at work" #:control? #f)
    ;; ── genuine housing functions ──
    (aspect "building-code"         "Building-code compliance")
    (aspect "fire-safety"           "Fire-safety / egress")

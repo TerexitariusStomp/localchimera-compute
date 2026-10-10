@@ -1,5 +1,6 @@
 ;;; fr-national.sexp — what France asks of ACQUIRING and TRANSFERRING real
-;;; property. Hand-authored from cited statute, unlike a commune pack, which the
+;;; property, and the two insurances the statute makes a condition of an act.
+;;; Hand-authored from cited statute, unlike a commune pack, which the
 ;;; adapter generates: this is code, not a dataset, and no open service publishes
 ;;; it as rules.
 ;;;
@@ -65,7 +66,33 @@
       (direction . #f) (retain . #f) (renew . #f))))
    "fr/safer-preemption"
    "Code rural et de la pêche maritime, art. L143-1 et s."
-   "20240101" reported "france"))
+   "20240101" reported "france")
+
+  ;; INSURANCE. Two covers are mandatory for any body in France; the rest
+  ;; (responsabilité civile outside sport, minors and package travel,
+  ;; individuelle accident, protection juridique, auto-mission) is contractual
+  ;; and stays out of the law (docs/legal/insurance/README.md). Both verified
+  ;; against the statute. A titled vehicle on public ways: third-party motor
+  ;; liability, one policy a vehicle, renewed yearly.
+  ((all-of (in-jurisdiction "france") (on-crossing public-vehicle))
+   ((obtain "Assurance de responsabilité civile automobile" entity
+     (responsabilite-civile)
+     ((issuer . "assureur") (per . each-vehicle) (direction . #f)
+      (retain . #f) (renew . (every . year)))))
+   "fr/rc-auto"
+   "Code des assurances, art. L211-1"
+   "20260101" verified "france")
+
+  ;; Wage labour: the employee is insured for accidents at work by the régime
+  ;; général from the first hire, and the employer alone pays the contribution
+  ;; to the URSSAF — a levy, not a policy to buy. The RATE is set per
+  ;; establishment and is deliberately absent.
+  ((all-of (in-jurisdiction "france") (on-crossing wage-labour))
+   ((pay "Cotisation accidents du travail / maladies professionnelles (URSSAF)" entity #f
+     ((base . payroll) (rate . #f) (direction . #f))))
+   "fr/at-mp"
+   "Code de la sécurité sociale, art. L311-2 et L411-1"
+   "20260101" verified "france"))
  ;; France's words for federation aspects (law/aspects.scm `clause-aspect`).
  ;; The communal packs the adapter generates state a PLU's articles as clauses;
  ;; the ones with a plain equivalent are mapped here, once, for every commune.
@@ -78,4 +105,6 @@
   (emprise . density)
   (implantation . setbacks)
   (cavite . building-code)
-  (fondations . building-code)))
+  (fondations . building-code)
+  (responsabilite-civile . third-party-liability)   ; Code des assurances L211-1
+  (accidents-du-travail . injury-cover)))           ; CSS L411-1

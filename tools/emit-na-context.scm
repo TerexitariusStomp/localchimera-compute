@@ -292,7 +292,41 @@
 (define %us-aspects
   '((food-handler-trained   . hygiene-training)      ; Houston
     (food-handler-training  . hygiene-training)      ; the cottage-food acts
-    (food-protection-course . hygiene-training)))    ; NYC, the supervisor's course
+    (food-protection-course . hygiene-training)      ; NYC, the supervisor's course
+    (auto-liability         . third-party-liability)
+    (workers-compensation   . injury-cover)))
+
+;;; ─── insurance : the two covers state law makes a condition of the act ─────
+;;; Everything else a nonprofit buys (general liability, volunteer accident,
+;;; hired and non-owned auto, D&O) is contractual and stays out of the law
+;;; (docs/legal/insurance/README.md). Both rules are national with the states
+;;; that stand apart written as `negate`, the share-baseline pattern above.
+(define %us-insurance-rules
+  (list
+   ;; A titled vehicle on public ways: third-party motor liability, in 49 states
+   ;; and DC. New Hampshire asks only proof of financial responsibility after
+   ;; an accident, so it is carved out.
+   (rule (all-of (in-jurisdiction "us") (on-crossing 'public-vehicle)
+                 (negate (in-jurisdiction "us-33")))
+         (list (obtain #:rides 'entity #:name "Third-party motor liability policy"
+                       #:issuer "licensed insurer" #:per 'each-vehicle
+                       #:spec '(auto-liability) #:renew '(every . year)))
+         #:label "us/auto-liability"
+         #:source "state compulsory motor-insurance / financial-responsibility statutes, 49 states + DC; New Hampshire excepted (RSA 264)"
+         #:as-of "2026-01-01" #:confidence 'verified #:steward "scope:ffd.us")
+   ;; Wage labour: a workers' compensation policy from an insurer (or approved
+   ;; self-insurance), by state act. Texas makes it elective and is carved out.
+   ;; Several states exempt employers below a head-count (AL/MS/MO/TN 5+,
+   ;; FL/SC 4+, AR/GA/NM/NC/VA 3+), a fact no guard can read, so the rule is
+   ;; `uncertain`: it prices and warns, and prunes nothing.
+   (rule (all-of (in-jurisdiction "us") (on-crossing 'wage-labour)
+                 (negate (in-jurisdiction "us-48")))
+         (list (obtain #:rides 'entity #:name "Workers' compensation policy"
+                       #:issuer "licensed insurer or state fund" #:per 'one-time
+                       #:spec '(workers-compensation) #:renew '(every . year)))
+         #:label "us/workers-comp"
+         #:source "state workers' compensation acts (mandatory from the first employee in 33 states + DC; Texas elective, Tex. Labor Code §406.002; head-count thresholds AL/MS/MO/TN 5+, FL/SC 4+, AR/GA/NM/NC/VA 3+)"
+         #:as-of "2026-01-01" #:confidence 'uncertain #:steward "scope:ffd.us")))
 
 ;;; ─── protections : shields, NOT demands ───────────────────────────────────
 ;;; A shield removes risk; it is not a thing the activity must DO, so it stays
@@ -371,7 +405,8 @@
                  (append (map food-freedom-rule *ffd-food-freedom*)   ; the food-freedom belt (tier 1)
                          (map cottage-food-rule *ffd-cottage-food*)   ; the cottage-food belt  (tier 2)
                          %us-food-rules
-                         *housing-rules*)
+                         *housing-rules*
+                         %us-insurance-rules)
                  %us-aspects %us-protections))
         ((equal? nation "mexico") (values (place-mexico!) %mexico-rules %mexico-aspects '()))
         ((equal? nation "canada") (values (place-canada!) %canada-rules '() '()))

@@ -63,7 +63,8 @@
     (dangerous-thing mirrored   "handles a dangerous or controlled thing")
     (eco-draw        mirrored   "draws on / emits into the shared environment")
     (food-vending    avoidable  "sells or serves food to the public" handover)
-    (data-processing mirrored   "processes other people's personal data")))
+    (data-processing mirrored   "processes other people's personal data")
+    (pool-risk       mirrored   "insures or pools risk for others" handover)))
 
 ;;; jurisdiction-registered extensions (mutable; in the live engine this is the
 ;;; governance actor's state — see legal/registry.scm's actor sketch).

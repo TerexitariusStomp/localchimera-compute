@@ -195,6 +195,28 @@
             "berlin/verteilstation-rueckrufe"
             "VZ Berlin Leitfaden 2023 §13 (lebensmittelwarnung.de bzw. Verteiler der Berliner Tafel)")
 
+   ;; ── INSURANCE the statute makes a condition of the act. Two covers, and
+   ;;    only two, are mandatory for any body in Germany; every other cover an
+   ;;    e.V. buys (Vereinshaftpflicht, Gruppen-Unfall, D&O) is contractual and
+   ;;    stays out of the law (docs/legal/insurance/README.md). Verified against
+   ;;    the statute, so these two carry `verified`, not the pack's default.
+   ;;    A titled vehicle on public ways: third-party motor liability, one policy
+   ;;    a vehicle, renewed yearly.
+   (rule (all-of (in-jurisdiction "germany") (on-crossing 'public-vehicle))
+         (list (obtain #:rides 'entity #:name "Kfz-Haftpflichtversicherung"
+                       #:issuer "Versicherer" #:per 'each-vehicle
+                       #:spec '(kfz-haftpflicht) #:renew '(every . year)))
+         #:label "de/kfz-haftpflicht" #:source "§ 1 Pflichtversicherungsgesetz (PflVG)"
+         #:as-of %as-of #:confidence 'verified #:steward "scope:ffd.de")
+   ;;    Wage labour: the employer alone pays the Berufsgenossenschaft, which
+   ;;    insures the employee by law — a levy, not a policy to buy.
+   (rule (all-of (in-jurisdiction "germany") (on-crossing 'wage-labour))
+         (list (pay #:name "Beitrag zur gesetzlichen Unfallversicherung (Berufsgenossenschaft)"
+                    #:base 'payroll #:rate #f))
+         #:label "de/bg-beitrag"
+         #:source "SGB VII § 2 Abs. 1 Nr. 1, §§ 121 ff., § 150 Abs. 1"
+         #:as-of %as-of #:confidence 'verified #:steward "scope:ffd.de")
+
    ;; ── THE CHANNEL MATRIX : what may not go down a NON-PERSONAL channel ─────
    ;;    The Leitfaden's Stage 1 and foodsharing's own Stage 1 agree almost item
    ;;    for item: into a Fairteiler — a cabinet anyone may open, with nobody
@@ -281,7 +303,9 @@
     (datum . traceability) (menge . traceability)
     (reinigung . sanitation) (hygiene . sanitation) (hygieneprotokoll . sanitation)
     (getrennte-lagerung . safe-food-handling)
-    (reinigungs-und-temperaturkontrolle . temperature-control)))
+    (reinigungs-und-temperaturkontrolle . temperature-control)
+    (kfz-haftpflicht . third-party-liability)   ; § 1 PflVG
+    (unfallversicherung . injury-cover)))       ; SGB VII
 
 ;;; ─── write the pack ───────────────────────────────────────────────────────
 (define pack-path (if (> (length (command-line)) 1)
