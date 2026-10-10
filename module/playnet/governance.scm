@@ -12,10 +12,10 @@
 (define-module (playnet governance)
   #:use-module (playnet governance auditor)
   #:use-module (playnet governance structural-invariants)
-  #:use-module (playnet governance federation)
-  #:use-module (playnet governance commune)
+  #:use-module (playnet boot scope)
   #:use-module (playnet governance service)
-  #:use-module (playnet governance scope)
+  #:use-module (playnet federation communes)
+  #:use-module (playnet voice scope-ballots)
   #:use-module (playnet keri first-person sybil-detect)
   #:use-module (playnet governance recovery)
   #:use-module (playnet governance expression)
@@ -246,17 +246,15 @@
               ;; from (playnet keri first-person sybil-detect)
               detect-suspicious-subgraphs sponsor-fanout-counts suspicious-clusters
               suspicious-sponsors vrc-edges
-              ;; from (playnet governance scope)
+              ;; from (playnet boot scope)
               ^scope clear-spec-generalizations! federation-memberships-of-holder
               may-govern? open-recomposition-ballot ratification-edges
               register-spec-generalization! resolve-merge-ratifier scope-env spawn-scope kel-identifier register-rotation-keypair-fn! rotation-keypair-fn
               split-scope-with-aids stale-membership-edges verify-parent-ratification!
               ;; from (playnet governance service)
               ^governance-service governance-service-env spawn-governance-service plan-part-hands-of contrary-observations-of contrary-readings-of
-              ;; from (playnet governance commune)
-              ^commune commune-env spawn-commune
-              ;; from (playnet governance federation)
-              ^federation federation-env spawn-federation
+              ;; from (playnet boot scope)
+              spawn-commune spawn-federation
               ;; from (playnet governance structural-invariants)
               compile-threshold-spec compose-federation-admitting federation-aid-paths
               federation-double-counted-members federation-leaves

@@ -122,7 +122,7 @@
              (playnet utils paths)
              (playnet governance recipe-standing)
              (playnet governance recovery)
-             (playnet governance scope)
+             (playnet boot scope)
              (playnet governance service)
              (playnet governance socialization)
              (playnet keri acdc)
@@ -136,7 +136,7 @@
              ;; compiles without them; they are here for the operator, not for the code.
              (playnet planner)
              (playnet governance)
-             (playnet governance scope-recovery)
+             (playnet scope recovery)
              (playnet governance scope-graph)
              (playnet keys pending-grants)
              ((playnet governance pending-recompositions)

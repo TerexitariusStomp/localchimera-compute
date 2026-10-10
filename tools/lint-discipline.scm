@@ -127,7 +127,7 @@
     "module/playnet/governance/scope-graph.scm"
     "module/playnet/governance/scope.scm"
     "module/playnet/keys/scope-witness.scm"
-    "module/playnet/governance/scope-recovery.scm"))
+    "module/playnet/scope/recovery.scm"))
 (define %containment-idents
   (make-regexp "(spatial-thing-contained-in|economic-resource-contained-in|containment-chain|containment-first)"))
 (define (lint-membership-containment)

@@ -1021,7 +1021,7 @@ list and the offline-pack chooser."
 ;;; scope is admitted/removed.
 
 (define (list-known-scopes-inline)
-  "Mirror of (playnet governance scope-recovery)'s list-known-scopes
+  "Mirror of (playnet scope recovery)'s list-known-scopes
    — inlined here to keep serve-static's import surface minimal (no
    libsodium dependency chain)."
   (let ((dir (string-append (playnet-state-dir) "/scopes")))

@@ -2,7 +2,7 @@
 ;;; UC promoted to a first-class 'universal-commune kind.
 
 (use-modules (playnet test harness)
-             (playnet governance scope) (playnet governance scope-graph)
+             (playnet boot scope) (playnet governance scope-graph)
              (playnet governance scope-graph)
              (playnet governance universal-commune)
              (playnet governance uc-curator)

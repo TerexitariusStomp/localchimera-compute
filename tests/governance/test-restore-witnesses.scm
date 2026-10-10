@@ -11,9 +11,9 @@
 ;;; Run: guile -L module tests/governance/test-restore-witnesses.scm
 
 (use-modules (playnet test harness)
-             (playnet keys kel-store) (playnet identity oobi-host-mirror) (playnet utils paths) (playnet governance scope)
+             (playnet keys kel-store) (playnet identity oobi-host-mirror) (playnet utils paths) (playnet boot scope)
              (playnet keys keri-backend live)
-             (playnet governance scope-recovery)
+             (playnet scope recovery)
              (playnet keys kel-store)
              (playnet identity oobi-host)
              (playnet keri signify)

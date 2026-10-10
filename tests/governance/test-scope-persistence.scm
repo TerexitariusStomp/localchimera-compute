@@ -10,9 +10,9 @@
 
 (use-modules (playnet test harness))
 (use-modules )
-(use-modules (playnet credentials keys) (playnet keri acdc) (playnet utils paths) (playnet governance scope) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig))
+(use-modules (playnet credentials keys) (playnet keri acdc) (playnet utils paths) (playnet boot scope) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig))
 (use-modules (playnet keys keri-backend live))
-(use-modules (playnet governance scope-recovery))
+(use-modules (playnet scope recovery))
 (use-modules (playnet keri signify))   ;; install crypto backend
 (use-modules (rnrs bytevectors))
 (use-modules (goblins) (goblins vat))

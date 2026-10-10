@@ -13,7 +13,7 @@
 
 (use-modules (playnet test harness))
 (use-modules (playnet scope root))
-(use-modules (playnet credentials commitments) (playnet credentials voting) (playnet keri acdc) (playnet governance scope) (playnet governance socialization) (playnet keri acdc) (playnet keri acdc-store))
+(use-modules (playnet credentials commitments) (playnet credentials voting) (playnet keri acdc) (playnet boot scope) (playnet governance socialization) (playnet keri acdc) (playnet keri acdc-store))
 (use-modules (goblins) (goblins vat))
 
 (define vat (spawn-vat))

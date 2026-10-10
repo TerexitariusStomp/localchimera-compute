@@ -19,7 +19,7 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness))
-(use-modules (playnet scope root) (playnet vf schemas) (playnet observation states) (playnet doors service) (playnet governance debts) (playnet governance scope) (playnet governance socialization) (playnet keri acdc) (playnet keri acdc-store)
+(use-modules (playnet scope root) (playnet vf schemas) (playnet observation states) (playnet doors service) (playnet governance debts) (playnet boot scope) (playnet governance socialization) (playnet keri acdc) (playnet keri acdc-store)
              (playnet monero specs) (playnet monero payout))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1) (srfi srfi-13))
 

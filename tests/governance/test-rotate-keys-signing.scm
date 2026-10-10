@@ -12,7 +12,7 @@
 ;;; Run: guile -L module -L tests tests/governance/test-rotate-keys-signing.scm
 
 (use-modules (playnet test harness)
-             (playnet keys kel-store) (playnet governance scope) (playnet keri citizen-sig)
+             (playnet keys kel-store) (playnet boot scope) (playnet keri citizen-sig)
              ((playnet keys kel-store)
               #:select (spawn-kel-store kel-event-said kel-event-seq))
              ((playnet keri citizen-sig)

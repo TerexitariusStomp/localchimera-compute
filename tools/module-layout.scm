@@ -106,11 +106,7 @@
  (file "utils/repl-client" #f)            ; a tool: tools/ of the repository
  (file "utils/ts-emit" #f)                ; a tool: tools/ of the repository
  ;; governance, by what each file is
- (file "governance/scope" "scope")
- (file "governance/scope-recovery" "scope")
  (file "governance/recovery" "federation")
- (file "governance/commune" #f)           ; an alias of ^scope
- (file "governance/federation" #f)        ; an alias of ^scope
  (file "governance/scope-graph" "federation")
  (file "governance/root-lineage" "federation")
  (file "governance/structural-invariants" "federation")

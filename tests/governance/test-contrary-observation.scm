@@ -24,7 +24,7 @@
 (use-modules (playnet scope root) (playnet vf schemas) (playnet vf beyond scenario) (srfi srfi-1))
 (use-modules (playnet doors service))
 (use-modules ((playnet solve engine) #:select (observed-shocks scenario-with-shocks)))
-(use-modules (playnet governance recipe-standing) (playnet governance scope) (playnet governance service) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri said-portable))
+(use-modules (playnet governance recipe-standing) (playnet boot scope) (playnet governance service) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri said-portable))
 (use-modules ((playnet governance recipe-standing) #:select (scope-standing)))
 (use-modules ((playnet keri citizen-sig)
               #:select (make-keri-identity keri-identity-keypair keri-identity-aid sign-said))

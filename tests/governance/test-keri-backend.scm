@@ -7,7 +7,7 @@
 
 (use-modules (playnet test harness))
 (use-modules (playnet scope root) (srfi srfi-1))
-(use-modules (playnet governance scope) (playnet keri acdc-store))
+(use-modules (playnet federation communes) (playnet boot scope) (playnet keri acdc-store))
 (use-modules (playnet keys keri-backend))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))

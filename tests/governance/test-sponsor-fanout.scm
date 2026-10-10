@@ -9,7 +9,7 @@
 
 (use-modules (playnet test harness))
 (use-modules (playnet scope root))
-(use-modules (playnet governance scope) (playnet keri acdc) (playnet keri acdc-store) (playnet keri first-person credentials) (playnet keri first-person predicates))
+(use-modules (playnet boot scope) (playnet keri acdc) (playnet keri acdc-store) (playnet keri first-person credentials) (playnet keri first-person predicates))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap)
              (rnrs bytevectors) (srfi srfi-1))
 

@@ -33,8 +33,8 @@
   #:use-module (playnet keri acdc)
   #:use-module (playnet governance scope-graph)
   #:use-module (playnet governance sturdyref-credential)
-  #:use-module (playnet keri acdc)
-  #:use-module (playnet governance scope-graph)
+  #:use-module ((playnet keri first-person credentials)
+                #:select (*schema-playnet-body* *schema-playnet-body-role*))
   #:use-module ((playnet governance pending-recompositions)
                 #:select (current-pending-recompositions))
   #:use-module ((playnet keri bridge) #:select (keri-get-keystate))
@@ -52,8 +52,11 @@
             %grant-policy-table
             install-default-grant-policies!
             issuer-has-resolvable-kel?
+            body-issuer-ok?
+            body-role-issuer-ok?
             current-credential-finder
-            current-credential-finder-by-said))
+            current-credential-finder-by-said
+            current-root-chain-check))
 
 ;; ─────────────────────────────────────────────────────────────────────────
 ;; Policy record
@@ -124,6 +127,30 @@
 ;; local lookup keyed by SAID. Unbound → the agree handler is
 ;; KERIA-export-only, the pre-existing behaviour.
 (define current-credential-finder-by-said (make-boot-cell))
+
+;; The root check for inbound body credentials: (lambda (issuer-aid) → bool),
+;; bound by the gateway to `ecosystem-chains-to-any-root?` over its
+;; governance store and FP root. A boot cell for the reason the finders
+;; above are. Unbound → an issuer must be a scope this gateway hosts.
+(define current-root-chain-check (make-boot-cell))
+
+(define (body-issuer-ok? issuer _issuee _claims)
+  "A body credential's issuer is the scope that admitted the body: any AID
+   that chains to a root (the bound check), else a scope hosted here."
+  (let ((chains? (current-root-chain-check)))
+    (if chains?
+        (and (catch #t (lambda () (chains? issuer)) (lambda _ #f)) #t)
+        (issuer-is-known-scope? issuer #f #f))))
+
+(define (body-role-issuer-ok? issuer _issuee _claims)
+  "A body-role credential's issuer is the body: the holder of a body
+   credential held in a local store (the bound credential finder, which
+   answers by schema and holder). Unbound → refused."
+  (let ((finder (current-credential-finder)))
+    (and finder
+         (let ((body (catch #t (lambda () (finder *schema-playnet-body* issuer))
+                       (lambda _ #f))))
+           (and body (equal? issuer (cred-holder body)) #t)))))
 
 (define (issuer-is-known-scope? issuer _issuee _claims)
   "The issuer must be a scope this gateway already knows about (any kind).
@@ -209,6 +236,16 @@
                                  ratification-arrived-hook))
         (cons *schema-playnet-federation-sturdyref*
               (make-grant-policy issuer-is-known-scope?
+                                 resolve-scope-store
+                                 #f))
+        ;; bodies: the admitting scope chains to a root; a role is the
+        ;; word of a body whose credential is held here
+        (cons *schema-playnet-body*
+              (make-grant-policy body-issuer-ok?
+                                 resolve-scope-store
+                                 #f))
+        (cons *schema-playnet-body-role*
+              (make-grant-policy body-role-issuer-ok?
                                  resolve-scope-store
                                  #f))))
 

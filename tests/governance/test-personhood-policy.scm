@@ -8,7 +8,7 @@
 
 (use-modules (playnet test harness)
              (playnet scope root) (playnet doors service)
-             (playnet governance scope) (playnet keri acdc-store) (playnet keri first-person personhood-policy)
+             (playnet boot scope) (playnet keri acdc-store) (playnet keri first-person personhood-policy)
              (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1))
 
 (display "\n── the writer: gov-cap gated, partial, read fresh ──\n")

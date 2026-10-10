@@ -36,7 +36,7 @@
   #:use-module (playnet credentials work)
   #:use-module (playnet keri acdc)
   #:use-module (playnet keri acdc-store)
-  #:use-module (playnet governance scope)
+  #:use-module (playnet scope actor)
   #:use-module (ice-9 match)
   #:use-module (playnet vf facts partition)
   #:use-module ((playnet governance socialization) #:select (ownership-ok?))

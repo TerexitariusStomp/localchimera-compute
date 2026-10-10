@@ -24,7 +24,7 @@
              ((playnet test planner federation-wire-fixture) #:select (fx-identity))
              (playnet federation crossing-custody)
              (playnet gateway federate)
-             (playnet governance scope) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig)
+             (playnet boot scope) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig)
              ((playnet keri citizen-sig) #:select (make-keri-identity keri-identity-aid keri-identity-keypair))
              (goblins) (goblins vat)
              (rnrs bytevectors) (srfi srfi-1))

@@ -1,4 +1,4 @@
-;;; module/playnet/governance/scope-recovery.scm — restart hook for
+;;; module/playnet/scope/recovery.scm — restart hook for
 ;;; durable autonomous-signer scopes.
 ;;;
 ;;; A durable scope persists three things on disk under
@@ -22,7 +22,7 @@
 ;;; with on-disk state. Designed to be called from the gateway boot
 ;;; path right after gateway-controller-init!.
 
-(define-module (playnet governance scope-recovery)
+(define-module (playnet scope recovery)
   #:use-module ((playnet keri key-state) #:select (rotation-count))
   #:use-module (goblins)
   #:use-module (goblins utils hashmap)
@@ -32,7 +32,7 @@
   #:use-module (srfi srfi-1)
   ;; read-scope-kind / write-scope-kind! live in (playnet utils paths)
   ;; so that scope.scm (included into (playnet governance)) can call them
-  ;; without creating a circular dep through (playnet governance scope-recovery).
+  ;; without creating a circular dep through (playnet scope recovery).
   #:use-module ((playnet utils paths)
                 #:select (read-scope-kind write-scope-kind!))
   #:use-module ((playnet keri signify-portable)
@@ -42,7 +42,7 @@
   #:use-module (playnet keys bran-custody)
   #:use-module (playnet keys kel-store)
   #:use-module (playnet utils paths)
-  #:use-module (playnet governance scope)
+  #:use-module (playnet scope actor)
   #:use-module (playnet keri acdc-store)
   #:use-module (playnet keri witness-publisher)
   #:export (scope-state-on-disk?

@@ -52,6 +52,7 @@
             %schema-commitment-acdc %schema-claim
             %schema-ownership-attestation
             %schema-personhood %schema-membership %schema-authorized-issuer
+            %schema-body %schema-body-role
             governance-schema->keria-said
             keria-said->governance-schema
 
@@ -138,6 +139,9 @@
 (define %schema-personhood        (schema-said "personhood.json"))
 (define %schema-membership        (schema-said "membership.json"))
 (define %schema-authorized-issuer (schema-said "authorized-issuer.json"))
+;; bodies: the admission credential and the roles chained to it
+(define %schema-body              (schema-said "body.json"))
+(define %schema-body-role         (schema-said "body-role.json"))
 
 ;; The reconciliation: governance version-string schema → KERIA SAID-schema.
 ;; ^keria-acdc-store maps (cred-schema cred) — and each edge's `s` — through
@@ -157,7 +161,9 @@
     ("playnet-claim/v1"             . ,%schema-claim)
     ("playnet-personhood/v1"        . ,%schema-personhood)
     ("playnet-membership/v1"        . ,%schema-membership)
-    ("playnet-authorized-issuer/v1" . ,%schema-authorized-issuer)))
+    ("playnet-authorized-issuer/v1" . ,%schema-authorized-issuer)
+    ("playnet-body/v1"              . ,%schema-body)
+    ("playnet-body-role/v1"         . ,%schema-body-role)))
 
 (define (governance-schema->keria-said version-string)
   "Map a governance version-string schema to its saidified KERIA schema SAID, or

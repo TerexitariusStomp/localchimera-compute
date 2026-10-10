@@ -60,7 +60,9 @@
     ("ownership-attestation.json" ,%schema-ownership-attestation)
     ("personhood.json"        ,%schema-personhood)
     ("membership.json"        ,%schema-membership)
-    ("authorized-issuer.json" ,%schema-authorized-issuer)))
+    ("authorized-issuer.json" ,%schema-authorized-issuer)
+    ("body.json"              ,%schema-body)
+    ("body-role.json"         ,%schema-body-role)))
 
 (format #t "=== ACDC role schemas ===~%")
 

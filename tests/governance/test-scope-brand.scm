@@ -10,7 +10,7 @@
 (use-modules (playnet test harness))
 (use-modules (playnet org endorsement))
 (use-modules (playnet scope root))
-(use-modules (playnet governance scope))
+(use-modules (playnet boot scope))
 (use-modules (goblins) (goblins vat) (goblins actor-lib methods)
              (fibers) (fibers conditions) (ice-9 atomic))
 

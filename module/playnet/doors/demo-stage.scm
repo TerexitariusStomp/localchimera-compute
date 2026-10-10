@@ -11,7 +11,7 @@
   #:use-module (goblins utils hashmap)
   #:use-module (playnet scope root)
   #:use-module (playnet doors service)
-  #:use-module (playnet governance scope)
+  #:use-module (playnet scope actor)
   #:use-module (playnet governance service)
   #:use-module (playnet keri acdc-store)
   #:use-module (playnet keri citizen-sig)

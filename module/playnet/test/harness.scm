@@ -19,6 +19,7 @@
 ;;;   (test-summary!)  ;; prints results, exits 0 or 1
 
 (define-module (playnet test harness)
+  #:use-module (playnet boot scope)   ;; load: a suite that reaches a scope finds it composed from its fragments
   #:use-module (web server)
   #:use-module (web request)
   #:use-module (web response)

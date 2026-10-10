@@ -455,7 +455,7 @@
   "Build a KERI interaction (ixn) event. Returns (values json-string said alist).
 
    An interaction event anchors data into the KEL without rotating
-   keys. Used by `(playnet governance scope)` to commit ballot opens,
+   keys. Used by `(playnet scope keys)` to commit ballot opens,
    tally closes, and other ACDC issuance into a scope's KEL — see
    democracy-on-keri.md §4.6.
 

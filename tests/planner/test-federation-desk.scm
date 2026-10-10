@@ -20,7 +20,7 @@
 
 (use-modules (playnet test harness)
              ((playnet test planner federation-wire-fixture) #:select (fx-identity))
-             (playnet governance scope) (playnet keri acdc-store) (playnet keri citizen-sig)
+             (playnet boot scope) (playnet keri acdc-store) (playnet keri citizen-sig)
              (playnet gateway federate)
              ((playnet governance sturdyref-credential) #:select (verified-spec spec-ready?))
              ((playnet federation peer) #:select (^attestation-fold wait-vow call-from-thread))

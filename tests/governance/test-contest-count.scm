@@ -29,7 +29,7 @@
 (use-modules ((playnet wire rows) #:select (plain-reply)))   ; a door's rows, read back as alists
 (use-modules (playnet test harness)
              (playnet scope root) (playnet vf schemas) (srfi srfi-1)
-             (playnet governance scope) (playnet governance service) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri said-portable)
+             (playnet boot scope) (playnet governance service) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri said-portable)
              ((playnet observation evidence) #:select (evidence-tag))
              ((playnet keri citizen-sig)
               #:select (make-keri-identity keri-identity-keypair keri-identity-aid sign-said))

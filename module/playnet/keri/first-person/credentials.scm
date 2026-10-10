@@ -25,15 +25,17 @@
             *contact-point-kinds* contact-point-kind? contact-point-identifying?
             make-contact-point-credential contact-point-binding-fields
             contact-point-acceptable?
+            *schema-playnet-body* %usage-disclaimer %issuance-disclaimer
+            make-body-credential
             *schema-playnet-body-role* *body-roles*
-            make-body-role-credential body-role-credential-with-block
-            body-role-credential-valid?))
+            make-body-role-credential body-role-credential-with-block))
 
 (define *schema-playnet-personhood*              "playnet-personhood/v1")
 (define *schema-playnet-relationship*            "playnet-relationship/v1")
 (define *schema-playnet-contact-point*           "playnet-contact-point/v1")
 (define *schema-playnet-authorized-issuer*       "playnet-authorized-issuer/v1")
 (define *schema-playnet-device-authorization*    "playnet-device-authorization/v1")
+(define *schema-playnet-body*                    "playnet-body/v1")
 (define *schema-playnet-body-role*               "playnet-body-role/v1")
 
 ;; =========================================================================
@@ -332,6 +334,66 @@
    (,*schema-playnet-relationship* ()                          issued-at)))
 
 ;; =========================================================================
+;; Body: a scope admits a body — the Legal Entity credential's shape
+;; =========================================================================
+;;
+;; The chain is the vLEI's (EGF v4.0): root AID → authorized issuer → the
+;; entity's own credential, issued to its self-managed multisig AID → the
+;; roles the entity issues to people. Here: root → AIC → BODY credential →
+;; body-role credential. The body credential is issued by the scope that
+;; admitted the body (its AID, signed with its keypair) to the body's k-of-n
+;; group AID (identity/personhood/body-ceremony.scm), and chains to the
+;; scope's AIC by the same `issuer-authz` I2I edge a personhood credential
+;; carries, so a verifier anywhere walks body → AIC → root with SAID
+;; resolution alone. `legal-ids` carries the body's registry identifiers
+;; (`((lei . "…") (siren . "…"))`), the join key to a real LE vLEI the body
+;; may present beside this one.
+;;
+;; The two rule texts a vLEI reader expects ride as claims; ACDC's `r`
+;; section is their home once the compact-form migration happens.
+
+(define %usage-disclaimer
+  "This credential states that the named body was admitted by the issuing scope. It does not assert that the body is trustworthy, honest, reputable, solvent or compliant with any law, and reliance on it is at the relier's own judgement.")
+
+(define %issuance-disclaimer
+  "The issuing scope issued this credential to the named holder with reasonable care, following its own admission ceremony, and the facts it carries were accurate at the time of issuance. A later change in the body's standing is read from revocation, not from this text.")
+
+(define* (make-body-credential ecosystem-aid body-aid admitted-at
+                               #:key (kind #f) (jurisdiction #f) (legal-ids #f)
+                                     (quorum #f) (expires-at #f)
+                                     (issuer-authz-said #f) (u 'auto)
+                                     (signing-keypair #f) (multisig-signers #f))
+  "The body credential: ECOSYSTEM-AID (the admitting scope, the issuer) says
+   BODY-AID (the body's group AID, the holder) is a body it admitted at
+   ADMITTED-AT (ISO-8601 or epoch seconds). KIND (a symbol, the body class),
+   JURISDICTION (a string), LEGAL-IDS (an alist scheme → id), QUORUM (the
+   body's k) and EXPIRES-AT are emitted when given. ISSUER-AUTHZ-SAID, when
+   given, is the SAID of the scope's Authorized-Issuer Credential, attached
+   as the I2I edge `issuer-authz` — this credential's issuer must be that
+   AIC's holder. U is the blinding nonce, minted by default. The usage and
+   issuance disclaimers ride as claims on every body credential."
+  (make-credential *schema-playnet-body*
+                   ecosystem-aid body-aid
+                   (append
+                    (u-claim u)
+                    (if kind (list (cons 'kind kind)) '())
+                    (if jurisdiction (list (cons 'jurisdiction jurisdiction)) '())
+                    (if legal-ids (list (cons 'legal-ids legal-ids)) '())
+                    (if quorum (list (cons 'quorum quorum)) '())
+                    (list (cons 'admitted-at admitted-at))
+                    (if expires-at (list (cons 'expires-at expires-at)) '())
+                    (list (cons 'usage-disclaimer %usage-disclaimer)
+                          (cons 'issuance-disclaimer %issuance-disclaimer)))
+                   (if issuer-authz-said
+                       (list (cons 'issuer-authz
+                                   (make-edge issuer-authz-said
+                                              #:operator 'I2I
+                                              #:schema *schema-playnet-authorized-issuer*)))
+                       '())
+                   #:signing-keypair signing-keypair
+                   #:multisig-signers multisig-signers))
+
+;; =========================================================================
 ;; Body role: a body says who holds a role in it
 ;; =========================================================================
 ;;
@@ -344,18 +406,24 @@
 ;; attached after the fact with `body-role-credential-with-block`; the
 ;; constructor builds the credential unsigned and `make-credential`'s
 ;; server-keypair `#:multisig-signers` path stays what it is, since no
-;; server holds a steward's key. A verifier reads the body's stewards and
-;; quorum (its KEL's `k` and `kt`, or the body record) and asks
-;; `body-role-credential-valid?`.
+;; server holds a steward's key. The role chains to the body credential by
+;; the I2I edge `body` — the ECR's `le` edge: the role's issuer is the body
+;; credential's holder. A verifier reads the body's stewards and quorum (its
+;; KEL's `k` and `kt`, or the body record) and asks
+;; `body-role-credential-valid?` (playnet keri first-person predicates),
+;; which also walks the chain. `officer` is the official role the law names
+;; (the OOR analogue); `steward` and `member` are the ECR analogue.
 
 (define *body-roles* '(steward member officer))
 
 (define* (make-body-role-credential body-aid holder-aid role since
-                                    #:key (until #f) (quorum #f) (u 'auto))
+                                    #:key (until #f) (quorum #f) (u 'auto)
+                                          (body-cred-said #f))
   "The unsigned role credential: BODY-AID says HOLDER-AID holds ROLE (one of
    *body-roles*, a symbol) since SINCE (ISO-8601 or epoch seconds). UNTIL
    and QUORUM (the body's k) are emitted when given. U is the blinding
-   nonce, minted by default."
+   nonce, minted by default. BODY-CRED-SAID, when given, is the SAID of the
+   body's own credential, attached as the I2I edge `body`."
   (make-credential *schema-playnet-body-role*
                    body-aid holder-aid
                    (append
@@ -364,18 +432,17 @@
                           (cons 'since since))
                     (if until (list (cons 'until until)) '())
                     (if quorum (list (cons 'quorum quorum)) '()))
-                   '()))
+                   (if body-cred-said
+                       (list (cons 'body
+                                   (make-edge body-cred-said
+                                              #:operator 'I2I
+                                              #:schema *schema-playnet-body*)))
+                       '())))
 
 (define (body-role-credential-with-block cred sig-block)
   "CRED carrying SIG-BLOCK, the stewards' signatures over its SAID."
   (cred-with-signature cred sig-block))
 
-(define (body-role-credential-valid? cred steward-aids k)
-  "#t when CRED is a body-role credential whose SAID commits to its content
-   and whose block carries K valid signatures from distinct members of
-   STEWARD-AIDS."
-  (let ((sig (cred-signature cred)))
-    (and (equal? (cred-schema cred) *schema-playnet-body-role*)
-         (pair? sig)
-         (cred-said-consistent? cred)
-         (verify-said-multisig (cred-said cred) sig steward-aids k))))
+(register-schema-claims!
+ `((,*schema-playnet-body*      () admitted-at)
+   (,*schema-playnet-body-role* () since)))

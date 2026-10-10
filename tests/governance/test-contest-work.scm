@@ -13,7 +13,7 @@
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet scope root) (playnet vf schemas))
-(use-modules (playnet observation credentials) (playnet governance scope) (playnet governance service) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri said-portable))
+(use-modules (playnet observation credentials) (playnet boot scope) (playnet governance service) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri said-portable))
 (use-modules ((playnet observation credentials)
               #:select (make-credentialing-on-event skill-attestation-standing)))
 (use-modules ((playnet keri citizen-sig)

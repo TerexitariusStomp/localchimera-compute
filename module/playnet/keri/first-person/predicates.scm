@@ -37,7 +37,8 @@
             phc-issuer-authz-edge phc-chains-to-root? vrc-from-to mutual-vrcs
             vrc-issuer-phc-edge cred-signature-valid? client-signature-ok?
             cred-multisig-valid? ecosystem-chains-to-any-root? trust-triangle-holds?
-            multi-ecosystem-triangle-holds?))
+            multi-ecosystem-triangle-holds?
+            body-credential-valid? body-role-credential-valid?))
 
 ;; =========================================================================
 ;; PHC queries
@@ -291,6 +292,66 @@
                     (aic-valid-by-root? aic roots
                                         #:require-signature? require-signature?))))
          #t)))
+
+;; =========================================================================
+;; Bodies: the body credential and the roles chained to it
+;; =========================================================================
+;;
+;; Chained validity, the vLEI verifier's rule (EGF v4.0): a body credential
+;; stands when it chains to a root through the admitting scope's AIC; a
+;; role stands when its stewards' block meets the quorum AND the body
+;; credential it names stands. A revoked body credential fails every role
+;; below it — read at verification, never cascaded through the store.
+
+(define* (body-credential-valid? cred #:key (roots #f) (store #f)
+                                 (require-signature? #t))
+  "#t when CRED is a body credential whose SAID commits to its content,
+   whose issuer's signature verifies, which is live now, and — when ROOTS
+   (a root AID or a list of them) is given — whose `issuer-authz` edge
+   resolves through STORE to an AIC the I2I operator binds (the AIC's
+   holder is this credential's issuer) and `aic-valid-by-root?` accepts; a
+   body admitted by a root itself needs no edge. Without ROOTS the chain is
+   not asked."
+  (and cred
+       (equal? (cred-schema cred) *schema-playnet-body*)
+       (cred-said-consistent? cred)
+       (or (not require-signature?) (cred-signature-valid? cred))
+       (cred-live-at? cred (instant->unix (clock-now)))
+       (or (not roots)
+           (let ((closure (append-map (lambda (r) (root-lineage-closure store r))
+                                      (if (pair? roots) roots (list roots)))))
+             (or (and (member (cred-issuer cred) closure) #t)
+                 (let* ((edge (cred-edge cred 'issuer-authz))
+                        (aic  (and edge store (equal? (edge-operator edge) 'I2I)
+                                   ($ store 'get (edge-target edge)))))
+                   (and (edge-i2i-holds? edge cred aic)
+                        (aic-valid-by-root? aic closure
+                                            #:require-signature? require-signature?))))))))
+
+(define* (body-role-credential-valid? cred steward-aids k
+                                      #:key (body-cred #f) (roots #f) (store #f))
+  "#t when CRED is a body-role credential whose SAID commits to its content
+   and whose block carries K valid signatures from distinct members of
+   STEWARD-AIDS — and, when CRED carries the `body` edge, when that edge
+   names BODY-CRED (looked up in STORE when BODY-CRED is not given), the I2I
+   operator binds (the role's issuer is the body credential's holder) and
+   `body-credential-valid?` accepts BODY-CRED under ROOTS and STORE. A role
+   without the edge and without BODY-CRED is the stewards' word alone."
+  (let ((sig  (cred-signature cred))
+        (edge (cred-edge cred 'body)))
+    (and (equal? (cred-schema cred) *schema-playnet-body-role*)
+         (pair? sig)
+         (cred-said-consistent? cred)
+         (verify-said-multisig (cred-said cred) sig steward-aids k)
+         (cond
+          ((and (not edge) (not body-cred)) #t)
+          ((not edge) #f)
+          (else
+           (let ((body (or body-cred (and store ($ store 'get (edge-target edge))))))
+             (and body
+                  (equal? (edge-operator edge) 'I2I)
+                  (edge-i2i-holds? edge cred body)
+                  (body-credential-valid? body #:roots roots #:store store))))))))
 
 ;; =========================================================================
 ;; VRC queries

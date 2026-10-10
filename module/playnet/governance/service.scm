@@ -45,6 +45,7 @@
   #:use-module ((playnet observation adjustment) #:select (count-event? count-event-of))
   #:use-module ((playnet vf formulas counting) #:select (count-base-id count-family-id? contest-ballot-id))
   #:use-module ((playnet keri acdc-store) #:select (non-revoked-by-schema))
+  #:use-module ((playnet keri citizen-sig) #:select (aid-signer-keys-resolver verify-said-multisig))
   #:use-module (playnet governance snapshot)
   #:use-module (playnet keri said-portable)
   #:use-module (playnet pools credit-fold)
@@ -142,9 +143,15 @@
   (define symbol-claims
     (let ((schema (wref "s")))
       (cond ((equal? schema *schema-playnet-relationship*) '(relationship-type))
+            ((equal? schema *schema-playnet-body-role*) '(role))
+            ((equal? schema *schema-playnet-body*) '(kind))
             (else '()))))
   (define (claim-value k v)
-    (if (and (memq k symbol-claims) (string? v)) (string->symbol v) v))
+    (cond ((and (memq k symbol-claims) (string? v)) (string->symbol v))
+          ;; the body's registry identifiers: an alist keyed by scheme symbol
+          ((and (eq? k 'legal-ids) (pair? v))
+           (map (lambda (p) (cons (s->sym (car p)) (cdr p))) v))
+          (else v)))
   (let* ((a      (or (wref "a") '()))
          (claims (let loop ((ps a) (acc '()))
                    (cond ((null? ps) (reverse acc))
@@ -728,13 +735,52 @@
              (aics  (of *schema-playnet-authorized-issuer*))
              (phcs  (of *schema-playnet-personhood*))
              (vrcs  (of *schema-playnet-relationship*))
+             (bodies (of *schema-playnet-body*))
+             (roles  (of *schema-playnet-body-role*))
              (now   (current-time))
              (sound? (lambda (c) (and (cred-said-consistent? c) (cred-signature-valid? c)
                                       (cred-live-at? c now))))
-             (landed (land-kels! kels)))
+             (landed (land-kels! kels))
+             ;; a body's signing keys: the whole `k` of the latest
+             ;; establishment event in the key log the bundle carries (landed
+             ;; above, so verified), else what the bound resolver names
+             (->list (lambda (x) (cond ((vector? x) (vector->list x)) ((list? x) x) (else '()))))
+             (resolved-keys (lambda (aid)
+                              (let* ((resolve (aid-signer-keys-resolver))
+                                     (ks (and resolve (catch #t (lambda () (resolve aid #f))
+                                                        (lambda _ '())))))
+                                (if (list? ks) ks '()))))
+             (body-keys-of (lambda (body-aid)
+                             (let* ((kel (assoc-ref kels body-aid))
+                                    (from-kel
+                                     (and kel
+                                          (let* ((rots (->list (assoc-ref kel "rotations")))
+                                                 (ev (if (pair? rots)
+                                                         (assoc-ref (last rots) "rot")
+                                                         (assoc-ref kel "icp"))))
+                                            (and ev (->list (assoc-ref ev "k")))))))
+                               (if (pair? from-kel) from-kel (resolved-keys body-aid)))))
+             ;; the role's block: K distinct stewards — signers whose key is
+             ;; one of the body's — over the SAID; K is the body credential's
+             ;; quorum, else the role's own, else one
+             (role-block-ok?
+              (lambda (role body)
+                (let* ((block (cred-signature role))
+                       (keys (body-keys-of (cred-issuer role)))
+                       (q (or (cred-claim body 'quorum) (cred-claim role 'quorum)))
+                       (k (if (and (number? q) (> q 0)) q 1))
+                       (steward? (lambda (aid)
+                                   (and (string? aid)
+                                        (any (lambda (x) (member x keys))
+                                             (cons aid (resolved-keys aid))))))
+                       (stewards (filter steward? (map (lambda (e) (and (pair? e) (car e)))
+                                                       (if (list? block) block '())))))
+                  (and (pair? keys) (pair? block)
+                       (verify-said-multisig (cred-said role) block stewards k))))))
         (cond
          ((not (eq? landed #t)) (cons 'error landed))
-         ((not (= (length creds) (+ (length aics) (length phcs) (length vrcs))))
+         ((not (= (length creds) (+ (length aics) (length phcs) (length vrcs)
+                                    (length bodies) (length roles))))
           (cons 'error "the bundle carries a credential of a kind this gateway does not present"))
          ;; the root's blessings: only a root's own word
          ((not (every (lambda (a) (and (sound? a)
@@ -742,6 +788,10 @@
                                        (ecosystem-chains-to-any-root? acdc-store fp-root-aid (cred-issuer a))))
                       aics))
           (cons 'error "a carried issuer blessing is not the root's"))
+         ;; a body's admission: a scope that chains to a root admitted it —
+         ;; the same gate an AIC's ecosystem passes — signed, live, consistent
+         ((not (every (lambda (b) (and (sound? b) (trusted-ecosystem? (cred-issuer b) aics))) bodies))
+          (cons 'error "a carried body credential was not issued by a scope that chains to a root"))
          (else
           (let* ((anchor-of (lambda (v) (let ((e (cred-edge v 'issuer-phc))) (and e (edge-target e)))))
                  (anchors (filter-map anchor-of vrcs))
@@ -784,11 +834,41 @@
                                      "a carried vouch's personhood belongs to someone else")
                                     (else #t)))))
                        (vrc-verdicts (map vrc-ok vrcs))
-                       (bad-vrc (find string? vrc-verdicts)))
-                  (if bad-vrc (cons 'error bad-vrc)
-                      (let ((n ($ acdc-store 'import
-                                  (map (lambda (c) (cons c #f)) (append aics phcs vrcs)))))
-                        (cons 'ok (if (number? n) n 0)))))))))))
+                       (bad-vrc (find string? vrc-verdicts))
+                       ;; a role's body: the body credential its `body` edge
+                       ;; names, in this bundle or already held here, live
+                       (body-of (lambda (r)
+                                  (let* ((e (cred-edge r 'body)) (said (and e (edge-target e))))
+                                    (and said
+                                         (or (find (lambda (b) (equal? said (cred-said b))) bodies)
+                                             (let ((c ($ acdc-store 'get said)))
+                                               (and c (equal? *schema-playnet-body* (cred-schema c))
+                                                    (cred-live-at? c now) c)))))))
+                       (role-ok (lambda (r)
+                                  (let ((e (cred-edge r 'body)) (b (body-of r)))
+                                    (cond
+                                     ((not (equal? (cred-holder r) identity-key))
+                                      "a carried body role is not yours")
+                                     ((not (cred-said-consistent? r))
+                                      "a carried body role's digest does not commit to its contents")
+                                     ((not (cred-live-at? r now)) "a carried body role is not live")
+                                     ((not e) "a carried body role names no body credential")
+                                     ((not b) "a carried body role's body is not admitted here")
+                                     ((not (edge-i2i-holds? e r b))
+                                      "a carried body role is not the named body's word")
+                                     ((not (role-block-ok? r b))
+                                      "a carried body role's stewards do not meet the body's quorum")
+                                     (else #t)))))
+                       (role-verdicts (map role-ok roles))
+                       (bad-role (find string? role-verdicts)))
+                  (cond
+                   (bad-vrc (cons 'error bad-vrc))
+                   (bad-role (cons 'error bad-role))
+                   (else
+                    (let ((n ($ acdc-store 'import
+                                (map (lambda (c) (cons c #f))
+                                     (append aics phcs vrcs bodies roles)))))
+                      (cons 'ok (if (number? n) n 0))))))))))))
     (define (card c) (append (governance-cred->wire c) (list (cons "sig" (or (cred-signature c) "")))))
     (define (my-bundle identity-key)
       ;; what IDENTITY-KEY carries: their personhood; every live vouch for

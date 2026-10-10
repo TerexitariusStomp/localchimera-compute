@@ -30,7 +30,7 @@
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet scope root) (playnet vf schemas) (srfi srfi-1))
-(use-modules (playnet observation credentials) (playnet governance scope) (playnet keri acdc) (playnet keri acdc-store) (playnet keri first-person predicates))
+(use-modules (playnet observation credentials) (playnet boot scope) (playnet keri acdc) (playnet keri acdc-store) (playnet keri first-person predicates))
 (use-modules (playnet keys keri-backend live))
 (use-modules (playnet keri signify))   ;; install crypto backend
 (use-modules (goblins) (goblins vat) (srfi srfi-1))

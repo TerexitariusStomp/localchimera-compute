@@ -49,7 +49,10 @@
     ;; First-Person Project personhood substrate (founder seed / enrollment)
     ("personhood.json"        . "PLAYNET_SCHEMA_PERSONHOOD")
     ("membership.json"        . "PLAYNET_SCHEMA_MEMBERSHIP")
-    ("authorized-issuer.json" . "PLAYNET_SCHEMA_AUTHORIZED_ISSUER")))
+    ("authorized-issuer.json" . "PLAYNET_SCHEMA_AUTHORIZED_ISSUER")
+    ;; bodies: the admission credential and the roles chained to it
+    ("body.json"              . "PLAYNET_SCHEMA_BODY")
+    ("body-role.json"         . "PLAYNET_SCHEMA_BODY_ROLE")))
 
 (define (schema-path filename)
   "Absolute path of playnet/keri/schemas/FILENAME, searched on

@@ -17,7 +17,7 @@
 
 (use-modules (playnet test harness))
 (use-modules (playnet scope root) (srfi srfi-1))
-(use-modules (playnet credentials membership) (playnet credentials recomposition) (playnet keri acdc) (playnet governance scope) (playnet keri acdc) (playnet keri acdc-store))
+(use-modules (playnet credentials membership) (playnet credentials recomposition) (playnet keri acdc) (playnet boot scope) (playnet keri acdc) (playnet keri acdc-store))
 (use-modules (playnet governance universal-commune))
 (use-modules (playnet keys keri-backend))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap))

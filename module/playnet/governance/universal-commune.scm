@@ -30,7 +30,7 @@
   #:use-module (playnet credentials voting)
   #:use-module (playnet keri acdc)
   #:use-module (playnet utils paths)
-  #:use-module (playnet governance scope)
+  #:use-module (playnet scope actor)
   #:use-module (playnet keri acdc)
   #:use-module (playnet keri inception)
   #:use-module (playnet keri first-person predicates)
