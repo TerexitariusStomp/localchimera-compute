@@ -1,22 +1,35 @@
 ;;; credentials/registry.scm — the catalogue of playnet schemas, the claim-index and timestamp registries, the plan SAID, and a scope's signature over a credential.
 ;;;
-;;; One family of the playnet credential catalogue (docs/planning/codebase-layout.md
-;;; §6). A constructor returns the ACDC bundle as an alist — said, schema, issuer,
-;;; holder, claims, edges, revoked? — with its SAID computed over the whole; the
-;;; edge block follows ACDC §8 (`make-edge` in (playnet keri acdc)).
+;;; The playnet credential catalogue stands in this directory by family
+;;; (docs/planning/codebase-layout.md §6), and this module holds what every
+;;; family shares. Each `make-*-credential` is a pure-data constructor returning
+;;; the ACDC bundle as an alist:
+;;;
+;;;   ((said       . string)        ; deterministic blake3 SAID (CESR "E")
+;;;    (schema     . string)        ; one of *playnet-schemas*
+;;;    (issuer     . string)        ; AID of issuer
+;;;    (holder     . string)        ; AID of holder (subject)
+;;;    (claims     . alist)         ; schema-specific (ACDC `a` block)
+;;;    (edges      . alist)         ; ACDC `e` block — see `make-edge`
+;;;    (revoked?   . boolean))      ; live-mutable in ^acdc-store
+;;;
+;;; Edges follow ACDC §8: a chained reference from this credential to another
+;;; by SAID, with an optional operator constraining the chain, as an alist of
+;;; (edge-name . edge-spec) where edge-spec is an alist with keys n (the target
+;;; SAID, required), o (the operator: 'I2I, 'NI2I or #f) and s (the target
+;;; schema, informational). The SAID folds the edge block in, so any edge change
+;;; changes the SAID — ACDC's invariant that `e` is SAID-covered.
+;;;
+;;; A family registers what the store knows of its schemas at its own load
+;;; (`register-schema-claims!` in (playnet keri acdc)), so a module that imports
+;;; one family finds its credentials indexed.
 
 (define-module (playnet credentials registry)
   #:use-module (playnet keri acdc)
   #:use-module (playnet keri first-person credentials)
-  #:use-module (playnet keri cesr)
   #:use-module (playnet keri said-portable)
-  #:use-module (goblins utils hashmap)
-  #:use-module (playnet utils clock)
-  #:use-module (playnet planner vf schemas)
   #:use-module (srfi srfi-1)
-  #:use-module (playnet keri crypto-primitives)
   #:use-module (playnet keri citizen-sig)
-  #:use-module (ice-9 format)
   #:use-module (goblins)
   #:use-module ((playnet credentials audit) #:select (*schema-playnet-audit-pass* *schema-playnet-derived-state-snapshot* *schema-playnet-incoherence-alert*))
   #:use-module ((playnet credentials commitments) #:select (*schema-playnet-agreement* *schema-playnet-commitment* *schema-playnet-commitment-fulfillment* *schema-playnet-intent* *schema-playnet-redistribution-mandate*))

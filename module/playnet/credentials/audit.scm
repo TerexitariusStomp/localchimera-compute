@@ -1,23 +1,11 @@
 ;;; credentials/audit.scm — what an auditor writes: the audit pass, the incoherence alert, the derived-state snapshot.
 ;;;
 ;;; One family of the playnet credential catalogue (docs/planning/codebase-layout.md
-;;; §6). A constructor returns the ACDC bundle as an alist — said, schema, issuer,
-;;; holder, claims, edges, revoked? — with its SAID computed over the whole; the
-;;; edge block follows ACDC §8 (`make-edge` in (playnet keri acdc)).
+;;; §6); the bundle a constructor returns is described once, in credentials/registry.scm.
 
 (define-module (playnet credentials audit)
   #:use-module (playnet keri acdc)
-  #:use-module (playnet keri first-person credentials)
-  #:use-module (playnet keri cesr)
-  #:use-module (playnet keri said-portable)
-  #:use-module (goblins utils hashmap)
-  #:use-module (playnet utils clock)
-  #:use-module (playnet planner vf schemas)
   #:use-module (srfi srfi-1)
-  #:use-module (playnet keri crypto-primitives)
-  #:use-module (playnet keri citizen-sig)
-  #:use-module (ice-9 format)
-  #:use-module (goblins)
   #:export (*schema-playnet-audit-pass*
             *schema-playnet-derived-state-snapshot*
             *schema-playnet-incoherence-alert*

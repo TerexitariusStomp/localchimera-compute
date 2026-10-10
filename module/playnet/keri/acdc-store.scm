@@ -2,7 +2,7 @@
 ;;;
 ;;; In-memory hashmap SAID → credential, plus typed claim indexes for
 ;;; O(1) hot-path lookups. Each schema layer declares which claims to index
-;;; through register-claim-indexes! in (playnet keri acdc).
+;;; through register-schema-claims! in (playnet keri acdc).
 ;;;
 ;;; The KERIA-backed variant (^keria-acdc-store) implements the same
 ;;; method interface — actors talk to whichever is wired in.

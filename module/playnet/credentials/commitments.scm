@@ -1,23 +1,22 @@
 ;;; credentials/commitments.scm — what is promised: commitment, fulfillment, intent, agreement, the redistribution mandate and its predicate DSL.
 ;;;
 ;;; One family of the playnet credential catalogue (docs/planning/codebase-layout.md
-;;; §6). A constructor returns the ACDC bundle as an alist — said, schema, issuer,
-;;; holder, claims, edges, revoked? — with its SAID computed over the whole; the
-;;; edge block follows ACDC §8 (`make-edge` in (playnet keri acdc)).
+;;; §6); the bundle a constructor returns is described once, in credentials/registry.scm.
+;;;
+;;; Mandate serialization: a predicate is not portable, so a mandate is compiled
+;;; from a small DSL of specs:
+;;;
+;;;   (equal-position SYMBOL)         → #t iff the stance's position is SYMBOL
+;;;   (any-of-position (SYMBOL …))    → #t iff the position is one of them
+;;;   (min-distribution PLAN-ID FRAC) → #t iff distribution[PLAN-ID] ≥ FRAC
+;;;   opaque                          → a predicate that could not be introspected;
+;;;                                     recovers as #f (liquid) with a warning
 
 (define-module (playnet credentials commitments)
   #:use-module (playnet keri acdc)
-  #:use-module (playnet keri first-person credentials)
-  #:use-module (playnet keri cesr)
-  #:use-module (playnet keri said-portable)
   #:use-module (goblins utils hashmap)
-  #:use-module (playnet utils clock)
   #:use-module (playnet planner vf schemas)
   #:use-module (srfi srfi-1)
-  #:use-module (playnet keri crypto-primitives)
-  #:use-module (playnet keri citizen-sig)
-  #:use-module (ice-9 format)
-  #:use-module (goblins)
   #:export (*predicate-spec-registry*
             *schema-playnet-agreement*
             *schema-playnet-commitment*
@@ -325,14 +324,10 @@
       (register-mandate-predicate pred spec))
     pred))
 
-;; The claims the store indexes for this family, for O(1) lookup; registered
+;; What the store knows of this family's schemas: the claims it indexes for
+;; O(1) lookup, and the claim the observation time stands under. Registered
 ;; here at load, so a module that imports one family finds its credentials.
-(register-claim-indexes!
- `((,*schema-playnet-commitment* . (commitment-id))
-   (,*schema-playnet-intent* . (intent-id))
-   (,*schema-playnet-agreement* . (agreement-id proposal-id))))
-
-;; The claim each schema keeps its observation time under (the default is
-;; `timestamp`), for the store's time-range queries.
-(register-timestamp-claims!
- `((,*schema-playnet-agreement* . accepted-at)))
+(register-schema-claims!
+ `((,*schema-playnet-commitment* (commitment-id))
+   (,*schema-playnet-intent*     (intent-id))
+   (,*schema-playnet-agreement*  (agreement-id proposal-id) accepted-at)))

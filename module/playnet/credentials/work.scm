@@ -1,23 +1,12 @@
 ;;; credentials/work.scm — work and what was seen: the work event, the observation event, the contrary observation, a skill, a claim, an external index observation.
 ;;;
 ;;; One family of the playnet credential catalogue (docs/planning/codebase-layout.md
-;;; §6). A constructor returns the ACDC bundle as an alist — said, schema, issuer,
-;;; holder, claims, edges, revoked? — with its SAID computed over the whole; the
-;;; edge block follows ACDC §8 (`make-edge` in (playnet keri acdc)).
+;;; §6); the bundle a constructor returns is described once, in credentials/registry.scm.
 
 (define-module (playnet credentials work)
   #:use-module (playnet keri acdc)
-  #:use-module (playnet keri first-person credentials)
-  #:use-module (playnet keri cesr)
-  #:use-module (playnet keri said-portable)
-  #:use-module (goblins utils hashmap)
-  #:use-module (playnet utils clock)
   #:use-module (playnet planner vf schemas)
   #:use-module (srfi srfi-1)
-  #:use-module (playnet keri crypto-primitives)
-  #:use-module (playnet keri citizen-sig)
-  #:use-module (ice-9 format)
-  #:use-module (goblins)
   #:use-module ((playnet credentials commitments) #:select (*schema-playnet-commitment* *schema-playnet-intent*))
   #:export (*schema-playnet-claim*
             *schema-playnet-contrary-observation*
@@ -271,19 +260,13 @@
                    #:signing-keypair signing-keypair
                    #:multisig-signers multisig-signers))
 
-;; The claims the store indexes for this family, for O(1) lookup; registered
+;; What the store knows of this family's schemas: the claims it indexes for
+;; O(1) lookup, and the claim the observation time stands under. Registered
 ;; here at load, so a module that imports one family finds its credentials.
-(register-claim-indexes!
- `((,*schema-playnet-work-event* . (event-id fulfills))
-   (,*schema-playnet-observation-event* . (event-id fulfills))
-   (,*schema-playnet-contrary-observation* . (scope-id process action))
-   (,*schema-playnet-external-index-observation* . (index-uri))
-   (,*schema-playnet-skill* . (skill))
-   (,*schema-playnet-claim* . (event-id))))
-
-;; The claim each schema keeps its observation time under (the default is
-;; `timestamp`), for the store's time-range queries.
-(register-timestamp-claims!
- `((,*schema-playnet-work-event* . timestamp)
-   (,*schema-playnet-external-index-observation* . observed-at)
-   (,*schema-playnet-contrary-observation* . observed-at)))
+(register-schema-claims!
+ `((,*schema-playnet-work-event*                 (event-id fulfills)       timestamp)
+   (,*schema-playnet-observation-event*          (event-id fulfills))
+   (,*schema-playnet-external-index-observation* (index-uri)               observed-at)
+   (,*schema-playnet-contrary-observation*       (scope-id process action) observed-at)
+   (,*schema-playnet-skill*                      (skill))
+   (,*schema-playnet-claim*                      (event-id))))

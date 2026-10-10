@@ -1,23 +1,11 @@
 ;;; credentials/recomposition.scm — scopes recomposed: merger, split, rejoin, conflict resolution.
 ;;;
 ;;; One family of the playnet credential catalogue (docs/planning/codebase-layout.md
-;;; §6). A constructor returns the ACDC bundle as an alist — said, schema, issuer,
-;;; holder, claims, edges, revoked? — with its SAID computed over the whole; the
-;;; edge block follows ACDC §8 (`make-edge` in (playnet keri acdc)).
+;;; §6); the bundle a constructor returns is described once, in credentials/registry.scm.
 
 (define-module (playnet credentials recomposition)
   #:use-module (playnet keri acdc)
-  #:use-module (playnet keri first-person credentials)
-  #:use-module (playnet keri cesr)
-  #:use-module (playnet keri said-portable)
-  #:use-module (goblins utils hashmap)
-  #:use-module (playnet utils clock)
-  #:use-module (playnet planner vf schemas)
   #:use-module (srfi srfi-1)
-  #:use-module (playnet keri crypto-primitives)
-  #:use-module (playnet keri citizen-sig)
-  #:use-module (ice-9 format)
-  #:use-module (goblins)
   #:export (*schema-playnet-conflict-resolution*
             *schema-playnet-scope-merger*
             *schema-playnet-scope-rejoin*
@@ -127,18 +115,11 @@
                    #:signing-keypair signing-keypair
                    #:multisig-signers multisig-signers))
 
-;; The claims the store indexes for this family, for O(1) lookup; registered
+;; What the store knows of this family's schemas: the claims it indexes for
+;; O(1) lookup, and the claim the observation time stands under. Registered
 ;; here at load, so a module that imports one family finds its credentials.
-(register-claim-indexes!
- `((,*schema-playnet-scope-merger* . (new-scope-aid))
-   (,*schema-playnet-scope-split* . (parent-scope-aid))
-   (,*schema-playnet-scope-rejoin* . (scope-aid))
-   (,*schema-playnet-conflict-resolution* . (resource-id))))
-
-;; The claim each schema keeps its observation time under (the default is
-;; `timestamp`), for the store's time-range queries.
-(register-timestamp-claims!
- `((,*schema-playnet-scope-merger* . merged-at)
-   (,*schema-playnet-scope-split* . split-at)
-   (,*schema-playnet-scope-rejoin* . rejoined-at)
-   (,*schema-playnet-conflict-resolution* . resolved-at)))
+(register-schema-claims!
+ `((,*schema-playnet-scope-merger*        (new-scope-aid)    merged-at)
+   (,*schema-playnet-scope-split*         (parent-scope-aid) split-at)
+   (,*schema-playnet-scope-rejoin*        (scope-aid)        rejoined-at)
+   (,*schema-playnet-conflict-resolution* (resource-id)      resolved-at)))

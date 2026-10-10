@@ -1,23 +1,11 @@
 ;;; credentials/delegation.scm — the delegation credential: a franchise handed from one person to another.
 ;;;
 ;;; One family of the playnet credential catalogue (docs/planning/codebase-layout.md
-;;; §6). A constructor returns the ACDC bundle as an alist — said, schema, issuer,
-;;; holder, claims, edges, revoked? — with its SAID computed over the whole; the
-;;; edge block follows ACDC §8 (`make-edge` in (playnet keri acdc)).
+;;; §6); the bundle a constructor returns is described once, in credentials/registry.scm.
 
 (define-module (playnet credentials delegation)
   #:use-module (playnet keri acdc)
-  #:use-module (playnet keri first-person credentials)
-  #:use-module (playnet keri cesr)
-  #:use-module (playnet keri said-portable)
-  #:use-module (goblins utils hashmap)
-  #:use-module (playnet utils clock)
-  #:use-module (playnet planner vf schemas)
   #:use-module (srfi srfi-1)
-  #:use-module (playnet keri crypto-primitives)
-  #:use-module (playnet keri citizen-sig)
-  #:use-module (ice-9 format)
-  #:use-module (goblins)
   #:use-module ((playnet credentials commitments) #:select (mandate))
   #:export (*schema-playnet-delegation*
             make-delegation-credential))

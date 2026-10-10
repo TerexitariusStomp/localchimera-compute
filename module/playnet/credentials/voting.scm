@@ -1,23 +1,12 @@
 ;;; credentials/voting.scm — a voice recorded: stance, expression stance, ballot snapshot, tally result, recomposition ratification.
 ;;;
 ;;; One family of the playnet credential catalogue (docs/planning/codebase-layout.md
-;;; §6). A constructor returns the ACDC bundle as an alist — said, schema, issuer,
-;;; holder, claims, edges, revoked? — with its SAID computed over the whole; the
-;;; edge block follows ACDC §8 (`make-edge` in (playnet keri acdc)).
+;;; §6); the bundle a constructor returns is described once, in credentials/registry.scm.
 
 (define-module (playnet credentials voting)
   #:use-module (playnet keri acdc)
-  #:use-module (playnet keri first-person credentials)
-  #:use-module (playnet keri cesr)
-  #:use-module (playnet keri said-portable)
-  #:use-module (goblins utils hashmap)
-  #:use-module (playnet utils clock)
   #:use-module (playnet planner vf schemas)
   #:use-module (srfi srfi-1)
-  #:use-module (playnet keri crypto-primitives)
-  #:use-module (playnet keri citizen-sig)
-  #:use-module (ice-9 format)
-  #:use-module (goblins)
   #:export (*schema-playnet-ballot-snapshot*
             *schema-playnet-expression-stance*
             *schema-playnet-recomposition-ratification*
@@ -229,20 +218,12 @@
                      edges
                      #:signing-keypair signing-keypair)))
 
-;; The claims the store indexes for this family, for O(1) lookup; registered
+;; What the store knows of this family's schemas: the claims it indexes for
+;; O(1) lookup, and the claim the observation time stands under. Registered
 ;; here at load, so a module that imports one family finds its credentials.
-(register-claim-indexes!
- `((,*schema-playnet-stance* . (domain proposal-id))
-   (,*schema-playnet-expression-stance* . (domain expression-id))
-   (,*schema-playnet-ballot-snapshot* . (domain proposal-id))
-   (,*schema-playnet-tally-result* . (domain proposal-id))
-   (,*schema-playnet-recomposition-ratification* . (proposal-type proposal-spec))))
-
-;; The claim each schema keeps its observation time under (the default is
-;; `timestamp`), for the store's time-range queries.
-(register-timestamp-claims!
- `((,*schema-playnet-stance* . timestamp)
-   (,*schema-playnet-expression-stance* . timestamp)
-   (,*schema-playnet-tally-result* . closed-at)
-   (,*schema-playnet-ballot-snapshot* . opened-at)
-   (,*schema-playnet-recomposition-ratification* . ratified-at)))
+(register-schema-claims!
+ `((,*schema-playnet-stance*                     (domain proposal-id)          timestamp)
+   (,*schema-playnet-expression-stance*          (domain expression-id)        timestamp)
+   (,*schema-playnet-ballot-snapshot*            (domain proposal-id)          opened-at)
+   (,*schema-playnet-tally-result*               (domain proposal-id)          closed-at)
+   (,*schema-playnet-recomposition-ratification* (proposal-type proposal-spec) ratified-at)))

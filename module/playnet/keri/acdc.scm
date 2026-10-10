@@ -24,6 +24,7 @@
 ;;; OpenVTC credentials, (playnet credentials …) for playnet's own.
 
 (define-module (playnet keri acdc)
+  #:use-module (ice-9 match)
   #:use-module (playnet keri cesr)
   #:use-module (playnet keri said)
   #:use-module (playnet keri crypto-primitives)
@@ -36,8 +37,8 @@
             cred-with-revoked cred-recompute-said cred-said-consistent?
             make-edge edge-target edge-operator edge-schema edge-i2i-holds?
             blinding-nonce u-claim iso-utc-now
-            register-timestamp-claims! timestamp-claim-for
-            register-claim-indexes! indexed-claims-for
+            timestamp-claim-for
+            register-schema-claims! indexed-claims-for
             parse-time-value cred-timestamp
             cred-live?))
 
@@ -257,13 +258,11 @@
 ;;
 ;; Schemas carry their observation time under different claim keys
 ;; (`enrolled-at`, `issued-at`, `closed-at`, …). Each schema layer registers
-;; its own keys at load; an unregistered schema reads the `timestamp` claim.
+;; its own at load (`register-schema-claims!`); an unregistered schema reads the
+;; `timestamp` claim.
 
 (define %timestamp-claims (make-hash-table))
 
-(define (register-timestamp-claims! alist)
-  "Register ALIST of (schema-string . claim-key-symbol). Idempotent."
-  (for-each (lambda (p) (hash-set! %timestamp-claims (car p) (cdr p))) alist))
 
 (define (timestamp-claim-for schema)
   "The claim-key symbol under which SCHEMA stores its timestamp,
@@ -299,9 +298,16 @@
 
 (define %claim-indexes (make-hash-table))
 
-(define (register-claim-indexes! alist)
-  "Register ALIST of (schema-string . (claim-key-symbol …)). Idempotent."
-  (for-each (lambda (p) (hash-set! %claim-indexes (car p) (cdr p))) alist))
+(define (register-schema-claims! rows)
+  "Register ROWS of (schema-string (claim-key-symbol …) [timestamp-claim-symbol]):
+   the claims the store indexes for the schema, and the claim its observation
+   time stands under (`timestamp` when the row leaves it out). One row states
+   what the store knows of a schema; a schema family registers its own at load.
+   Idempotent."
+  (for-each (match-lambda
+              ((schema keys) (hash-set! %claim-indexes schema keys))
+              ((schema keys time) (hash-set! %claim-indexes schema keys) (hash-set! %timestamp-claims schema time)))
+            rows))
 
 (define (indexed-claims-for schema)
   "The claim-key symbols to index for SCHEMA, or '() when none."

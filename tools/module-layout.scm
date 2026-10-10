@@ -16,7 +16,8 @@
 ;;;       stands at its own rank; otherwise a file's rank is its first
 ;;;       directory's.
 ;;;   (from OLD NEW)   every file under module/playnet/OLD/ today belongs under
-;;;       NEW, at the same relative path.
+;;;       NEW, at the same relative path; NEW "" drops the prefix. The longest
+;;;       OLD that holds the file wins.
 ;;;   (file PATH NEW)   the one file module/playnet/PATH.scm belongs in NEW.
 ;;;       NEW #f: the file goes (a shim, an alias, a tool), and is not linted.
 ;;;   (tier PATH RANK WHAT)   the file stands in its directory at a rank of its
@@ -24,7 +25,7 @@
 ;;;       machinery that reads higher ones.
 ;;;
 ;;; A file in a directory no form names is reported by `make lint-layers`. A
-;;; `file` form wins over a `from` form; the longest `from` wins over a shorter.
+;;; `file` form wins over a `from` form.
 
 (layout
 
@@ -101,31 +102,13 @@
  (stays "deprecated" #f "retired code")
 
  ;; ── where today's files belong (codebase-layout.md §3–§4, §7) ──
- ;; the planner, shifted
+ ;; the planner, shifted: every directory one level up, the vocabulary under vf/
+ (from "planner" "")
  (from "planner/vf" "vf")
  (from "planner/facts" "vf/facts")
  (from "planner/formulas" "vf/formulas")
  (from "planner/beyond" "vf/beyond")
  (from "planner/aggregation" "vf/aggregation")
- (from "planner/algorithms" "algorithms")
- (from "planner/legal" "legal")
- (from "planner/knowledge" "knowledge")
- (from "planner/solve" "solve")
- (from "planner/plan" "plan")
- (from "planner/observation" "observation")
- (from "planner/scope" "scope")
- (from "planner/matching" "matching")
- (from "planner/folksonomy" "folksonomy")
- (from "planner/indexes" "indexes")
- (from "planner/execution" "execution")
- (from "planner/ddmrp" "ddmrp")
- (from "planner/pools" "pools")
- (from "planner/federation" "federation")
- (from "planner/doors" "doors")
- (from "planner/comms" "comms")
- (from "planner/bridge" "bridge")
- (from "planner/dev" "dev")
- (from "planner/bench" "bench")
  ;; the substrate
  (file "utils/repl-client" #f)            ; a tool: tools/ of the repository
  (file "utils/ts-emit" #f)                ; a tool: tools/ of the repository

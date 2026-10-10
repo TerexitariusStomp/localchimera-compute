@@ -277,7 +277,8 @@
 #f when the file goes, or 'unassigned when no form names it."
   (cond ((hash-ref *file* rel) => car)
         ((longest (lambda (old) (string-prefix? (string-append old "/") rel)) *from*)
-         => (lambda (e) (let ((moved (string-append (cdr e) (substring rel (string-length (car e))))))
+         => (lambda (e) (let ((moved (let ((rest (substring rel (+ 1 (string-length (car e))))))
+                                       (if (string-null? (cdr e)) rest (string-append (cdr e) "/" rest)))))
                           (let ((i (string-rindex moved #\/))) (if i (substring moved 0 i) 'unassigned)))))
         (else (let ((i (string-rindex rel #\/))) (if i (substring rel 0 i) 'unassigned)))))
 

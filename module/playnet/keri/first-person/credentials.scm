@@ -327,14 +327,9 @@
     "contact point has expired")
    (else #t)))
 
-(register-timestamp-claims!
- `((,*schema-playnet-personhood*   . enrolled-at)
-   (,*schema-playnet-relationship* . issued-at)))
-
-;; PHCs are reached by ecosystem and by sponsor — `holds-live-phc?` and the
-;; sponsor fan-out window are O(1) given the key.
-(register-claim-indexes!
- `((,*schema-playnet-personhood* . (ecosystem-aid sponsor-aid))))
+(register-schema-claims!
+ `((,*schema-playnet-personhood*   (ecosystem-aid sponsor-aid) enrolled-at)
+   (,*schema-playnet-relationship* ()                          issued-at)))
 
 ;; =========================================================================
 ;; Body role: a body says who holds a role in it
