@@ -14,6 +14,20 @@
 (define-module (playnet boot prelude)
   #:use-module (playnet solve compile)
   #:use-module (playnet legal crossings)
+  #:use-module (playnet legal registry)
+  #:use-module (playnet legal policy)
+  #:use-module (playnet legal reform)
+  #:use-module (playnet vf facts places)
+  #:use-module (playnet knowledge law context-pack)
+  #:use-module (playnet knowledge law incumbent-readings)
+  #:use-module (playnet knowledge law protections)
+  #:use-module (playnet knowledge law aspects)
+  #:use-module (playnet knowledge law activities)
+  #:use-module (playnet knowledge law product)
+  #:use-module (playnet legal compliance)
+  #:use-module (playnet legal filings)
+  #:use-module (playnet legal adapters)
+  #:use-module (playnet legal bodies)
   #:use-module (playnet knowledge catalogues eco)
   #:use-module (playnet vf formulas stocks)
   #:use-module (playnet solve recipe-response)
@@ -185,6 +199,9 @@
                                         iota first second third fourth any every count reduce))
   #:use-module ((srfi srfi-11) #:select (let-values let*-values))
   #:use-module ((ice-9 match) #:select (match match-lambda match-lambda*))
+  ;; the legal registry shadows core's `rule' and `negate' on purpose; the
+  ;; prelude hands that on, so an operator meets the legal ones without a warning
+  #:re-export-and-replace (rule negate)
   #:re-export (book-issue-done! booked?)
   #:re-export (*spec-names* seed-federation-specs seed-federation-recipes
                seed-federation-inventory let-values let*-values fold filter
@@ -954,3 +971,32 @@
                ^audit-scheduler spawn-audit-scheduler ^http-witness-publisher
                spawn-http-witness-publisher witness-push-urls
                keri-publish-event! keri-fetch-kel-from-witness))
+
+;; The legal layer, whole: vocabulary (legal/crossings, legal/registry, the
+;; places), the law in force (knowledge/law/context-pack and its readings), the
+;; solve's reading of it (legal/policy, legal/reform), custody and filings,
+;; the bodies. Each interface is re-exported by name, so a tool that asks what
+;; the prelude publishes (tools/edit/sexp.scm `publishes') reads the layer.
+;; `rule' and `negate' are re-exported above, as replacements.
+(for-each
+ (lambda (name)
+   (let ((names '()))
+     (module-for-each (lambda (sym var) (set! names (cons sym names)))
+                      (resolve-interface name))
+     (module-re-export! (resolve-module '(playnet boot prelude))
+                        (filter (lambda (s) (not (memq s '(rule negate)))) names))))
+ '((playnet legal crossings)
+   (playnet legal registry)
+   (playnet legal policy)
+   (playnet legal reform)
+   (playnet vf facts places)
+   (playnet knowledge law context-pack)
+   (playnet knowledge law incumbent-readings)
+   (playnet knowledge law protections)
+   (playnet knowledge law aspects)
+   (playnet knowledge law activities)
+   (playnet knowledge law product)
+   (playnet legal compliance)
+   (playnet legal filings)
+   (playnet legal adapters)
+   (playnet legal bodies)))

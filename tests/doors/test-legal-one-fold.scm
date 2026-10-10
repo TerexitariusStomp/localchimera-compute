@@ -12,7 +12,7 @@
 ;;; Run: guile -L module tests/doors/test-legal-one-fold.scm
 
 (use-modules (ice-9 regex) (playnet test harness)
-             (playnet doors legal)
+             (playnet knowledge law activities) (playnet knowledge law aspects) (playnet knowledge law context-pack) (playnet knowledge law incumbent-readings) (playnet knowledge law pack-dir) (playnet knowledge law product) (playnet legal adapters) (playnet legal compliance) (playnet legal crossings) (playnet legal policy) (playnet legal reform) (playnet legal registry) (playnet observation observer) (playnet plan store) (playnet scope spatial-things) (playnet vf facts places) (playnet vf schemas) (srfi srfi-1)
              (playnet legal gate)
              (playnet legal registry-actor)
              (playnet knowledge worlds free-food-distribution)

@@ -146,6 +146,7 @@
   #:use-module ((playnet knowledge catalogues housing-substance) #:select (scope-housing resource->dwelling-unit))
   #:use-module ((playnet knowledge catalogues housing) #:select (season-of outdoor-degc))
   #:use-module ((playnet algorithms rollup) #:select (crystallized-snlt-for-spec))   ; the claim's price
+  #:use-module ((playnet algorithms option-composition) #:select (price-leverage)) ; the leverage a plan creates
   #:use-module ((playnet vf facts rail) #:select (publish-rails! rails-of publish-social-portion!
                                                set-rails! set-social-portions!))
   #:use-module ((playnet utils catch) #:select (catch* throw* with-throw-handler*)))
@@ -2060,9 +2061,11 @@
     ;; solve from it (#:warm-x, shape-guarded in engine/robust.scm); the service's
     ;; cache door pops it before anything is stored or crosses a wire
     (acons 'x x
+           ;; the leverage the composition creates, priced (algorithms/option-composition)
+           (acons 'leverage (price-leverage material)
            (acons 'substitutes (demand-substitutes scope-root (let ((m (memq #:demand args))) (if (and m (pair? (cdr m))) (cadr m) '())))
                   (plan-results->alist intents commitments material fill ntot report
-                                       #:candidates? #t #:rota? #t #:scope-root scope-root))))
+                                       #:candidates? #t #:rota? #t #:scope-root scope-root)))))
   ;; THE LANDING EXTENDS THROUGH HERE: plan-scope's #:solve-in receives a
   ;; continuation, and this door composes its own serialization onto it —
   ;; so an off-vat solve (service.scm plan-fn*) resolves to the alist, and

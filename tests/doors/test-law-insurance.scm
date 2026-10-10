@@ -15,7 +15,7 @@
 ;;; Run: guile -L module tests/doors/test-law-insurance.scm
 
 (use-modules (playnet test harness)
-             (playnet doors legal)
+             (playnet knowledge law aspects) (playnet knowledge law context-pack) (playnet knowledge law pack-dir) (playnet legal registry) (srfi srfi-1)
              (playnet legal registry)
              (playnet knowledge law context-pack)
              (playnet knowledge law aspects)

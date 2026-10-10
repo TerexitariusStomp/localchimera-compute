@@ -130,7 +130,7 @@ RETICULUM? (or RETICULUM_BRIDGE_SOCKET). Holds the process open."
         (write-federation-status! auditors watchers)
         ;; how a person is reached
         (define notify
-          (spawn-notifications! #:gateway-vat gateway-vat #:planner-vat planner-vat #:meeting-scope meeting-scope))
+          (spawn-notifications! #:gateway-vat gateway-vat #:planner-vat planner-vat #:meeting-scope meeting-scope #:earth earth))
         (announce-enrollments! store (notify-router notify))
         (define mailbox-mgr (spawn-mailbox! registry))
         (define-values (ai-svc corpus-svc) (spawn-ai-services! gateway-vat pool-vat key-pool))

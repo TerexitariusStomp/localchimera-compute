@@ -11,7 +11,7 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness) (playnet knowledge recipes store) (playnet knowledge recipes dwelling) (playnet knowledge recipes food-surplus) (playnet knowledge recipes household) (playnet scope spatial-things) (playnet legal crossings) (playnet observation observer) (playnet vf schemas) (playnet vf formulas actions) (srfi srfi-1)
-             (playnet legal crossings) (playnet doors legal)
+             (playnet legal crossings) (playnet knowledge law activities) (playnet knowledge law context-pack) (playnet knowledge recipes dwelling) (playnet knowledge recipes food-surplus) (playnet knowledge recipes household) (playnet knowledge recipes store) (playnet legal crossings) (playnet legal registry) (playnet observation observer) (playnet scope spatial-things) (playnet vf facts places) (playnet vf schemas) (srfi srfi-1)
              ((playnet vf schemas) #:select (*action-definitions* action-definition-accountable-effect)) ((playnet vf formulas actions) #:select (*rights-moving-actions*))
              (playnet legal gate) (playnet legal registry-actor)
              (playnet knowledge law lint) (playnet knowledge dsl findings)

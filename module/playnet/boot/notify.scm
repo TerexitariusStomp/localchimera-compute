@@ -14,6 +14,7 @@
   #:use-module ((playnet identity contact-points) #:select (make-contact-point-desk))
   #:use-module ((playnet interface adapters browser) #:select (^browser-adapter))
   #:use-module ((playnet interface adapters email) #:select (^email-adapter email-transport?))
+  #:use-module ((playnet interface backends router) #:select (make-scope-router))
   #:use-module ((playnet interface backends scope) #:select (make-scope-handler))
   #:use-module ((playnet interface org-stub) #:select (^org-stub))
   #:use-module ((playnet keri cesr) #:select (b64url-encode))
@@ -29,6 +30,7 @@
   #:use-module ((goblins utils hashmap) #:select (hashmap))
   #:use-module (goblins vat)
   #:use-module (goblins)
+  #:use-module ((srfi srfi-1) #:select (filter-map))
   #:use-module ((srfi srfi-11) #:select (let-values))
   #:use-module ((srfi srfi-9) #:select (define-record-type))
   #:export (<notify> notify? notify-vapid-key notify-vapid-public-b64 notify-push-store
@@ -53,10 +55,11 @@
   (router             notify-router)             ; ^notify-router over the adapters
   (contact-desk       notify-contact-desk))      ; where a presented contact point waits for its code
 
-(define* (spawn-notifications! #:key gateway-vat planner-vat meeting-scope)
-  "The notification layer: the adapters in GATEWAY-VAT, the scope handler and
-its sink in PLANNER-VAT off MEETING-SCOPE, the IPEX callback routed through
-it. The <notify> record of what the lobby and the sessions reach."
+(define* (spawn-notifications! #:key gateway-vat planner-vat meeting-scope earth)
+  "The notification layer: the adapters in GATEWAY-VAT, a scope handler per
+commune under EARTH in PLANNER-VAT behind one router, the founding commune's
+(MEETING-SCOPE) sink the presence actor reads, the IPEX callback routed
+through it. The <notify> record of what the lobby and the sessions reach."
   ;; ── VAPID key for Web Push ──────────────────────────────────────────
   (define vapid-key (load-or-generate-vapid-key! (playnet-data-dir)))
   (define vapid-public-b64
@@ -77,18 +80,36 @@ it. The <notify> record of what the lobby and the sessions reach."
      notification-formatter); the push adapter puts it on the wire."
     (<-np push-adapter 'deliver #f rendered))
 
+  ;; A scope handler and its sink over one commune's root. The sink is the
+  ;; ONE render point for this channel: event alist -> a rendered `terse'
+  ;; notification. Every downstream adapter (browser transport + push
+  ;; doorbell) is dumb from here on.
+  (define (scope-handler root)
+    (let-values (((handler sink) (make-scope-handler root (spawn ^org-stub))))
+      ($ sink 'set-formatter (notification-formatter 'terse))
+      ($ sink 'set-doorbell push-doorbell)
+      (values handler sink)))
+  (define (scope-name root) (string->symbol ($ root 'name)))
+
+  ;; The chat bridge reaches every commune under earth through one router
+  ;; (interface/backends/router): a leading `@name' addresses a commune by
+  ;; its name, an unaddressed command reaches the founding commune. The
+  ;; founding commune's sink is the one presence reads.
   (define-values (telegram-backend alert-sink)
     (with-vat planner-vat
-      (let-values (((handler sink) (make-scope-handler meeting-scope
-                                                       (spawn ^org-stub))))
-        ;; The ONE render point for this channel: event alist -> a
-        ;; rendered `terse' notification. Every downstream adapter
-        ;; (browser transport + push doorbell) is dumb from here on.
-        ($ sink 'set-formatter (notification-formatter 'terse))
-        ($ sink 'set-doorbell push-doorbell)
-        (values handler sink))))
+      (let-values (((founding-handler founding-sink) (scope-handler meeting-scope)))
+        (let ((others (filter-map
+                       (lambda (ac)
+                         (and (not (eq? (cdr ac) meeting-scope))
+                              (cons (scope-name (cdr ac))
+                                    (call-with-values (lambda () (scope-handler (cdr ac)))
+                                      (lambda (handler sink) handler)))))
+                       (if earth ($ earth 'all-communes) '()))))
+          (values (make-scope-router (scope-name meeting-scope)
+                                     (cons (cons (scope-name meeting-scope) founding-handler) others))
+                  founding-sink)))))
 
-  (log! "  [gateway] telegram-backend + alert-sink spawned~%")
+  (log! "  [gateway] scope router + alert-sink spawned~%")
 
   (define browser-adapter
     (with-vat gateway-vat (spawn ^browser-adapter)))
