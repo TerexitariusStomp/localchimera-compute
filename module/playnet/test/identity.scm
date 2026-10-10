@@ -21,7 +21,7 @@
   #:use-module (playnet keri signify-portable)
   #:use-module (playnet identity seat)
   #:use-module (playnet identity oobi-host)
-  #:use-module (playnet gateway lobby)
+  #:use-module (playnet doors lobby)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
   #:use-module (goblins utils hashmap)

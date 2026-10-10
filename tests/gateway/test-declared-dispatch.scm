@@ -10,7 +10,7 @@
 ;;; Run: guile -L module -L tests tests/gateway/test-declared-dispatch.scm
 
 (use-modules (playnet test harness)
-             (playnet protocol)
+             (playnet doors protocol)
              (playnet protocol dispatch)
              (goblins) (goblins vat)
              (srfi srfi-1))

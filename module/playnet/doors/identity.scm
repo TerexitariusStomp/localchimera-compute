@@ -1,4 +1,4 @@
-;;; module/playnet/identity/doors.scm — the identity doors of the lobby and the session
+;;; module/playnet/doors/identity.scm — the identity doors of the lobby and the session
 ;;;
 ;;; Who is this, what may they sign, how are they reached: the doors that
 ;;; are identity's, written here as two FRAGMENTS the gateway's objects
@@ -12,16 +12,15 @@
 ;;;       a seated AID's: contact points, cards, the profile, personhood and
 ;;;       vouches, credential backups and watches, recovery shares, devices,
 ;;;       rotation, erasure — over a <session-identity> that names what the
-;;;       session's closure gave them (gateway/lobby.scm ^lobby-session)
+;;;       session's closure gave them (doors/lobby.scm ^lobby-session)
 ;;;
-;;; The clauses are the ones lobby.scm held, moved verbatim; what each door
-;;; does is documented on its declaration in (playnet protocol). The
+;;; The clauses are the ones doors/lobby.scm held, moved verbatim; what each door
+;;; does is documented on its declaration in (playnet doors protocol). The
 ;;; protocol lint (tools/protocol-extract.scm) reads this file with
-;;; lobby.scm, so the declaration is held to the union.
+;;; doors/lobby.scm, so the declaration is held to the union.
 
-(define-module (playnet identity doors)
+(define-module (playnet doors identity)
   #:use-module (goblins)
-  #:use-module (goblins actor-lib methods)
   #:use-module ((goblins utils hashmap) #:select (hashmap hashmap-ref hashmap-set hashmap-remove))
   #:use-module ((playnet protocol dispatch) #:select (declared-doors))
   #:use-module ((srfi srfi-1) #:select (filter-map))
@@ -112,8 +111,7 @@
 ;;; ── the lobby's identity doors ───────────────────────────────────────────
 
 (define (identity-lobby-doors signup-agent oobi-host spawn-session)
-  "The anonymous lobby's identity doors (declared `lobby` in (playnet
-   protocol)): a declared-doors fragment. SPAWN-SESSION (aid-prefix tier
+  "The anonymous lobby's identity doors (declared `lobby` in (playnet doors protocol)): a declared-doors fragment. SPAWN-SESSION (aid-prefix tier
    doors) is the lobby's own — the session it hands a proven seat."
   ;; pending-challenges: hashmap of nonce → (aid-prefix . timestamp),
   ;; checked on keri-authenticate, expired entries pruned lazily
@@ -124,7 +122,7 @@
     ;; deploy before this flag existed. See docs/legal/gdpr-
     ;; analysis.md and deploy/os.scm's gateway-service environment for why
     ;; production sets it and dev does not. The doors it gates are the ones
-    ;; declared `#:feature account-creation` in protocol.scm — the same
+    ;; declared `#:feature account-creation` in doors/protocol.scm — the same
     ;; declaration the product's law reads them off (`doors-of-feature`);
     ;; tests/keri/test-signup-disabled-gate.scm holds the wrappers below to
     ;; exactly that set, so neither can drift from the other.
@@ -392,7 +390,7 @@
 ;;; ── the session's identity doors ────────────────────────────────────────
 
 (define (identity-session-doors ctx)
-  "A seated AID's identity doors (declared `session` in (playnet protocol)):
+  "A seated AID's identity doors (declared `session` in (playnet doors protocol)):
    a declared-doors fragment over CTX, a <session-identity>."
   (let ((aid-prefix (si-aid-prefix ctx)) (tier (si-tier ctx))
         (signup-agent (si-signup-agent ctx)) (oobi-host (si-oobi-host ctx))
@@ -740,7 +738,7 @@
         '()))
 
    ;; Issue an ACDC. The full credential alist is constructed + signed by
-   ;; the browser (browser has the signing keypair). What lobby.scm can
+   ;; the browser (browser has the signing keypair). What doors/lobby.scm can
    ;; check WITHOUT a round trip it checks here — the credential's own
    ;; `issuer` field must match this session's AID, so a caller can never
    ;; attribute issuance to someone else. Governor standing and the actual

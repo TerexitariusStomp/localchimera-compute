@@ -14,7 +14,7 @@
 ;;;                presented point waits at the desk while a code travels to
 ;;;                the address itself; the code, said back, is what binds it.
 ;;;
-;;; The session's doors (gateway/lobby.scm present-, confirm-, withdraw-
+;;; The session's doors (doors/lobby.scm present-, confirm-, withdraw-
 ;;; contact-point, my-contact-points) are thin over these.
 
 (define-module (playnet identity contact-points)

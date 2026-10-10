@@ -12,7 +12,7 @@
 ;;; and the confirmation each new registration asks of the scope.
 ;;;
 ;;; The standing of one person is two integers, the week and what that week
-;;; has spent, kept in the person's own file (lobby.scm). This module is the
+;;; has spent, kept in the person's own file (doors/lobby.scm). This module is the
 ;;; arithmetic, pure over those integers and a clock reading.
 
 (define-module (playnet gateway allotment)

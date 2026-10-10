@@ -31,7 +31,7 @@ export function flowChip(f, move = null) {
         + (qty ? `<span class="rc-q">${qty}</span>` : "")
         + `<span class="rc-spec">${esc(f.spec || "")}</span></span>`;
 }
-// ── standing: a recipe's response, read off its runs (governance/recipe-standing.scm) ──
+// ── standing: a recipe's response, read off its runs (economy/recipe-standing.scm) ──
 export const POSITION_LABEL = {
     "experimental": "🧪 experimental — every run so far was calm",
     "observed": "✓ observed — it has run under stress",

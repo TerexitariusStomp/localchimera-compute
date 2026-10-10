@@ -31,7 +31,7 @@
              ((playnet identity user-files) #:select (%user-file %user-file-kinds))
              (playnet gateway presence)
              (playnet gateway mailbox)
-             (playnet gateway lobby)
+             (playnet doors lobby)
              (playnet push store)
              (playnet notify recipient)
              ((playnet identity contact-points) #:select (make-contact-point-desk))

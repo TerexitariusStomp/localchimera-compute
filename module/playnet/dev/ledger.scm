@@ -41,7 +41,7 @@
 ;;; self-reported `spent:` claim — carries none, and lands through the SAME
 ;;; door every other self-reported work event in this codebase already
 ;;; falls through: the observer's own 7-day silence/contest rail
-;;; (observer.scm %validation-window, governance/service.scm contest-work)
+;;; (observer.scm %validation-window, doors/governance.scm contest-work)
 ;;; — no new machinery. Radicle's own merge signature was investigated and
 ;;; is not this door: every merge is fast-forwarded and signed by ONE fixed
 ;;; delegate (deploy/scripts/promote.sh), never attributed to whoever

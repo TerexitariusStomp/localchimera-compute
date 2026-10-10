@@ -14,7 +14,7 @@
 (use-modules (playnet test harness))
 (use-modules (playnet voice ballot-store) (playnet utils store-utils) (srfi srfi-1))
 (use-modules (playnet org endorsement))
-(use-modules (playnet voice ballot-store) (playnet governance service))
+(use-modules (playnet voice ballot-store) (playnet boot governance))
 (use-modules (playnet voice ballot-store))
 (use-modules (goblins)
              (goblins actor-lib methods)

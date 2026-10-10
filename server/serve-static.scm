@@ -20,7 +20,7 @@
   #:use-module (srfi srfi-9)
   #:use-module ((playnet utils operator) #:select (operator-config contact-uri))
   #:use-module (playnet utils paths)
-  #:use-module ((playnet gateway limits) #:select (%feedback-max-bytes %report-max-bytes))
+  #:use-module ((playnet vf facts limits) #:select (%feedback-max-bytes %report-max-bytes))
   #:use-module (ice-9 match)
   #:use-module (ice-9 textual-ports)
   #:use-module (ice-9 binary-ports)
@@ -1522,7 +1522,7 @@ list and the offline-pack chooser."
   (label pool-label)            ; "feedback" | "report" — the word the errors use
   (file pool-file-name)         ; under the state dir
   (token-file pool-token-file)  ; first line = the X-Playnet-Admin token
-  (max-body pool-max-body)      ; bytes (gateway/limits.scm)
+  (max-body pool-max-body)      ; bytes (vf/facts/limits.scm)
   (keep-ua? pool-keep-ua?))     ; store the transport-observed User-Agent?
 
 (define %feedback-pool

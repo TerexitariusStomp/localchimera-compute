@@ -1,4 +1,4 @@
-;;; module/playnet/protocol.scm — the doors the browser may call, declared once
+;;; module/playnet/doors/protocol.scm — the doors the browser may call, declared once
 ;;;
 ;;; One entry per method on the three objects a client reaches: the anonymous
 ;;; `lobby` (the sturdyref), the per-person `session` `keri-authenticate*`
@@ -27,11 +27,11 @@
 ;;;   doc     one sentence: what the door does and what it replies
 ;;;
 ;;; Emits read this table: seam-wire.ts, the OpenAPI document, the MCP tool
-;;; list (also served live at POST /api/mcp by (playnet gateway mcp-door)).
+;;; list (also served live at POST /api/mcp by (playnet doors mcp)).
 ;;; The lobby derives its planner facet allowlist from it. Plan:
 ;;; docs/planning/identity/repo-split-and-protocol-doors.md §B1.
 
-(define-module (playnet protocol)
+(define-module (playnet doors protocol)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-9)
   #:use-module ((playnet protocol seam) #:select (%handlers handler-name handler-doors))
@@ -115,7 +115,7 @@ or #f when no handler sends it."
 ;; WHERE A DOOR'S ACT IS DONE, declared on the door: a session door either
 ;; acts in the session itself (`self`) or forwards, with this session's AID
 ;; as the agent, to the planner service or the governance service. The
-;; lobby's forwarding shape is one helper (lobby.scm planner!); the lint
+;; lobby's forwarding shape is one helper (doors/lobby.scm planner!); the lint
 ;; (tools/protocol-lint.scm) refuses a door whose code sends elsewhere than
 ;; its declaration says.
 (define %targets '(self planner governance))
@@ -144,7 +144,7 @@ or #f when no handler sends it."
 
 (define (doors-of object) (filter (lambda (d) (eq? (door-object d) object)) %doors))
 (define (doors-of-feature feature) (filter (lambda (d) (eq? (door-feature d) feature)) %doors))
-;; door-ref fires on every HTTP and MCP dispatch (gateway/http-door.scm,
+;; door-ref fires on every HTTP and MCP dispatch (doors/http.scm,
 ;; protocol/mcp.scm); %door-index (below %doors) turns its `find` over every
 ;; declared door — a few hundred, static, never mutated after load — into an
 ;; O(1) lookup, same result.
@@ -381,13 +381,13 @@ or #f when no handler sends it."
           #:auth device #:topic identity #:reply ok-or-error #:kind performative #:to governance
           #:doc "A recognised person introduces CANDIDATE-AID by opening their enrollment ceremony at the ecosystem's quorum with this AID as sponsor (K is ignored); replies (ok . #t) or an error.")
     (door session my-phc ()
-          #:auth device #:topic identity #:reply ok-or-error #:kind read #:to self
+          #:auth device #:topic identity #:reply ok-or-error #:kind read #:to governance
           #:doc "Replies (ok . wire), this AID's live personhood credential as a portable card with the issuer's signature, or (ok . #f) when the AID holds none.")
     (door session present-phc (wire)
           #:auth device #:topic identity #:reply ok-or-error #:kind performative #:to governance
           #:doc "Verifies a personhood credential WIRE from another gateway (holder is this AID, issuer signature, trusted issuer) and imports it; replies (ok . #t) or an error. present-bundle takes a whole bundle.")
     (door session my-vouches ()
-          #:auth device #:topic identity #:reply ok-or-error #:kind read #:to self
+          #:auth device #:topic identity #:reply ok-or-error #:kind read #:to governance
           #:doc "Replies (ok . json), the portable bundle this AID carries to another gateway: personhoods, vouches, issuer blessings and key logs, or \"\" when there is nothing to carry.")
     (door session present-bundle (wire)
           #:auth device #:topic identity #:reply ok-or-error #:kind performative #:to governance
@@ -548,7 +548,7 @@ or #f when no handler sends it."
           #:auth device #:topic slots #:reply ok-or-error #:kind read #:to planner
           #:doc "Replies (ok (skills . ids)), the skills this AID currently holds in SCOPE-ID.")
     (door session my-skill-standing (scope-id)
-          #:auth device #:topic slots #:reply ok-or-error #:kind read #:to self
+          #:auth device #:topic slots #:reply ok-or-error #:kind read #:to planner
           #:doc "Replies (ok (standing . rows)), one row per skill this AID holds or has practiced in SCOPE-ID, in hours: validated hours, where the skill's competence stands today under its own law, work events, how many reached a witness quorum, distinct co-signers, witnessed hours, and ceremonies still collecting.")
     (door session observe-contrary-preimage (scope-id process action spec nominal reading witness at)
           #:auth device #:topic slots #:reply ok-or-error #:kind read #:to governance
@@ -779,7 +779,7 @@ or #f when no handler sends it."
           #:feature health-profile
           #:doc "Upserts this AID's profile tags in SCOPE-ID from a JSON array, replacing prior profile tags and keeping other classifications; replies (ok . tags).")
     ;; ── bodies: a legal body declared, stewarded, incepted k-of-n, read by the law
-    ;;    (identity/body-doors.scm; every structure is a JSON string, every reply (ok . x) | (error . msg))
+    ;;    (doors/body.scm; every structure is a JSON string, every reply (ok . x) | (error . msg))
     (door session declare-body (scope-id json)
           #:auth device #:topic law #:reply ok-or-error #:kind performative #:to self
           #:feature bodies
@@ -813,7 +813,7 @@ or #f when no handler sends it."
           #:feature bodies
           #:doc "A steward presents what body ID holds from JSON {kind, name, issuer, validUntil, ref} — a permit, a policy, a registration — as a resource the law reads against the bill; replies (ok . resource-id).")
     (door session body-admit (scope-id id)
-          #:auth device #:topic law #:reply promise:ok-or-error #:kind performative #:to self
+          #:auth device #:topic law #:reply promise:ok-or-error #:kind performative #:to governance
           #:feature bodies
           #:doc "A governor admits body ID to SCOPE-ID; replies (ok . findings), the eight admission tests as findings, or refuses a caller without governor standing.")
     (door session set-availability-ranges (scope-id json)

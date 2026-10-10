@@ -13,7 +13,7 @@
   #:use-module (playnet federation auditor)
   #:use-module (playnet federation structural-invariants)
   #:use-module (playnet boot scope)
-  #:use-module (playnet governance service)
+  #:use-module (playnet boot governance)
   #:use-module (playnet federation communes)
   #:use-module (playnet voice scope-ballots)
   #:use-module (playnet keri first-person sybil-detect)
@@ -251,7 +251,7 @@
               may-govern? open-recomposition-ballot ratification-edges
               register-spec-generalization! resolve-merge-ratifier scope-env spawn-scope kel-identifier register-rotation-keypair-fn! rotation-keypair-fn
               split-scope-with-aids stale-membership-edges verify-parent-ratification!
-              ;; from (playnet governance service)
+              ;; from (playnet boot governance)
               ^governance-service governance-service-env spawn-governance-service plan-part-hands-of contrary-observations-of contrary-readings-of
               ;; from (playnet boot scope)
               spawn-commune spawn-federation

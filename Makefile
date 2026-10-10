@@ -1286,7 +1286,7 @@ test-see-door:
 
 # A count is contested the way work is, through the one door, and the whole
 # family of the count goes with a void: adjustment, record, hours and cascade
-# (governance/service.scm contest-work, planner/formulas/counting.scm).
+# (doors/governance.scm contest-work, planner/formulas/counting.scm).
 test-contest-count:
 	$(GUILE_TEST_DEV) -L module tests/governance/test-contest-count.scm
 
@@ -1799,7 +1799,7 @@ test-mcp-door:
 test-device-doors:
 	$(GUILE_TEST_DEV) -L module -L tests tests/gateway/test-device-doors.scm
 
-# The protocol declaration (module/playnet/protocol.scm) names the same doors
+# The protocol declaration (module/playnet/doors/protocol.scm) names the same doors
 # the code answers, with the same args; its seam names are real day-boot
 # handlers; its anonymous planner doors are the facet. tools/protocol-lint.scm.
 check-protocol:
@@ -1947,7 +1947,7 @@ check-rel-fresh:
 	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/check-emit-fresh.sh check-rel-fresh ui/app/rel-catalogue.ts rel-emit tools/rel-emit.scm
 
 .PHONY: limits-emit check-limits-fresh
-# The sizes the gateway refuses past (gateway/limits.scm): the page sizes what
+# The sizes the gateway refuses past (vf/facts/limits.scm): the page sizes what
 # it sends against the generated copy, ui/app/limits-catalogue.ts.
 limits-emit:
 	$(GUILE_TEST_DEV) -L module tools/limits-emit.scm ui/app/limits-catalogue.ts

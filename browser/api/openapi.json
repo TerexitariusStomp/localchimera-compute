@@ -3,7 +3,7 @@
   "info": {
     "title": "playnet gateway doors",
     "version": "1",
-    "description": "Every door the browser may call, declared once in module/playnet/protocol.scm and emitted here, grouped by topic. The HTTP door (POST /api/{object}/{name}) carries the same doors CapTP does; a call is signed with an enrolled device key (RFC 9421) unless the door is anonymous. The same doors are MCP tools: POST /api/mcp speaks JSON-RPC (initialize, tools/list, tools/call), and browser/api/mcp-tools.json is the committed tool list. Doors a client cannot reach (root tier, operator) are listed under x-playnet-doors."
+    "description": "Every door the browser may call, declared once in module/playnet/doors/protocol.scm and emitted here, grouped by topic. The HTTP door (POST /api/{object}/{name}) carries the same doors CapTP does; a call is signed with an enrolled device key (RFC 9421) unless the door is anonymous. The same doors are MCP tools: POST /api/mcp speaks JSON-RPC (initialize, tools/list, tools/call), and browser/api/mcp-tools.json is the committed tool list. Doors a client cannot reach (root tier, operator) are listed under x-playnet-doors."
   },
   "servers": [
     {
@@ -5534,7 +5534,7 @@
         ],
         "x-playnet-auth": "device",
         "x-playnet-kind": "read",
-        "x-playnet-to": "self",
+        "x-playnet-to": "governance",
         "x-playnet-object": "session",
         "x-playnet-seam": "fpMyPhc",
         "security": [
@@ -5720,7 +5720,7 @@
         ],
         "x-playnet-auth": "device",
         "x-playnet-kind": "read",
-        "x-playnet-to": "self",
+        "x-playnet-to": "governance",
         "x-playnet-object": "session",
         "x-playnet-seam": "fpMyVouches",
         "security": [
@@ -10509,7 +10509,7 @@
         ],
         "x-playnet-auth": "device",
         "x-playnet-kind": "read",
-        "x-playnet-to": "self",
+        "x-playnet-to": "planner",
         "x-playnet-object": "session",
         "x-playnet-seam": "mySkillStanding",
         "security": [
@@ -18964,7 +18964,7 @@
         ],
         "x-playnet-auth": "device",
         "x-playnet-kind": "performative",
-        "x-playnet-to": "self",
+        "x-playnet-to": "governance",
         "x-playnet-object": "session",
         "x-playnet-seam": "bodyAdmit",
         "security": [
@@ -21117,7 +21117,7 @@
       "auth": "operator",
       "topic": "planning",
       "x-playnet-transport": "none",
-      "summary": "The scope's record for a solve across scopes — its projected view, standing caps and spans, processes, flows and standing labour — with one crossing column per good of GOODS, measured from the most the scope can give: what a peer of the federated solve (gateway/federate.scm) is built over. DEMAND a (good . qty) or #f; OPTS as federated-plan's."
+      "summary": "The scope's record for a solve across scopes — its projected view, standing caps and spans, processes, flows and standing labour — with one crossing column per good of GOODS, measured from the most the scope can give: what a peer of the federated solve (federation/federate.scm) is built over. DEMAND a (good . qty) or #f; OPTS as federated-plan's."
     },
     {
       "object": "planner",

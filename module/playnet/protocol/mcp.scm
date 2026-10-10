@@ -5,11 +5,11 @@
 ;;; same object the OpenAPI operation carries, built here so the two cannot
 ;;; disagree), and the description is the door's doc line with its topic and
 ;;; audience. Two readers: tools/protocol-emit.scm writes the committed
-;;; browser/api/mcp-tools.json, and (playnet gateway mcp-door) answers
+;;; browser/api/mcp-tools.json, and (playnet doors mcp) answers
 ;;; `tools/list` with the same vector live.
 
 (define-module (playnet protocol mcp)
-  #:use-module (playnet protocol)
+  #:use-module (playnet doors protocol)
   #:use-module (playnet protocol shapes)
   #:use-module (ice-9 format)
   #:use-module (srfi srfi-1)

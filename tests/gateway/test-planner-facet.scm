@@ -13,7 +13,7 @@
 ;;; Run: guile -L module -L tests tests/gateway/test-planner-facet.scm
 
 (use-modules (playnet test harness)
-             (playnet gateway lobby)
+             (playnet doors lobby)
              (goblins)
              (goblins vat)
              (goblins actor-lib methods)

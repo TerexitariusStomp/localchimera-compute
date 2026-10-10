@@ -15,7 +15,7 @@
 ;;; Run: guile -L module -L tests tests/gateway/test-cards.scm
 
 (use-modules (playnet test harness)
-             (playnet gateway lobby)
+             (playnet doors lobby)
              (playnet identity cards)
              ((playnet keri citizen-sig)
               #:select (make-keri-identity keri-identity-keypair keri-identity-aid sign-said))

@@ -27,7 +27,7 @@
 ;;; Run: guile -L module -L tests tests/gateway/test-contact-binding.scm
 
 (use-modules (playnet test harness)
-             (playnet gateway lobby)
+             (playnet doors lobby)
              (playnet identity contact-points)
              ((playnet notify recipient)
               #:select (^recipient-registry binding-kind binding-ctx binding-style

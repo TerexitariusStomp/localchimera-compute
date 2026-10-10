@@ -4,7 +4,7 @@
 ;;; the contact book, the captain's log, the sealed credential backup, the
 ;;; pin book, the taxonomy cut, the week's allotment reads, the recovery
 ;;; shares. One file per kind per AID, `<data-dir>/<kind>-<aid16>.scm`, read
-;;; by the session's sync doors (gateway/lobby.scm) and by nothing the
+;;; by the session's sync doors (doors/lobby.scm) and by nothing the
 ;;; planner or observer folds history from: the pin and taxonomy files are
 ;;; re-folded at boot into the scope's live aggregates (`%seed-user-docs!`),
 ;;; the contact book is read for whom a person knows NOW (server/gateway.scm
@@ -13,7 +13,7 @@
 ;;; here, so a new kind is a one-line addition that the forget follows.
 
 (define-module (playnet identity user-files)
-  #:use-module ((playnet gateway limits) #:select (%max-user-data-bytes))
+  #:use-module ((playnet vf facts limits) #:select (%max-user-data-bytes))
   #:use-module ((ice-9 ftw) #:select (scandir))
   #:use-module ((rnrs bytevectors) #:select (bytevector? bytevector-length string->utf8))
   #:use-module ((srfi srfi-1) #:select (count))
@@ -44,7 +44,7 @@
          %user-file-kinds))
 
 ;; Per-AID sync payloads funnel through %write-user-data!, which holds each to
-;; %max-user-data-bytes (gateway/limits.scm).
+;; %max-user-data-bytes (vf/facts/limits.scm).
 
 (define (%user-data-size data)
   "Byte size of a sync payload: the bytevector length for an encrypted blob,
@@ -67,7 +67,7 @@
 (define (%read-user-data file)
   (if (file-exists? file) (call-with-input-file file read) '()))
 
-;; the one scanner the boot seeds share (lobby.scm seed-pins!,
+;; the one scanner the boot seeds share (doors/lobby.scm seed-pins!,
 ;; seed-taxonomy-docs!): every aid-wrapped PREFIX file in the data dir,
 ;; handed to CONTRIBUTE! as (aid doc); a bad file is skipped
 (define (%seed-user-docs! prefix contribute!)

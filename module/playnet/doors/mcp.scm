@@ -1,4 +1,4 @@
-;;; module/playnet/gateway/mcp-door.scm — the doors as an MCP server
+;;; module/playnet/doors/mcp.scm — the doors as an MCP server
 ;;;
 ;;; POST /api/mcp speaks the Model Context Protocol over its HTTP transport:
 ;;; one JSON-RPC 2.0 request per POST, one JSON-RPC response per reply. The
@@ -15,11 +15,11 @@
 ;;; is a tool result with isError, as the protocol asks, so an agent reads
 ;;; the reason instead of a transport failure.
 
-(define-module (playnet gateway mcp-door)
-  #:use-module (playnet protocol)
+(define-module (playnet doors mcp)
+  #:use-module (playnet doors protocol)
   #:use-module (playnet protocol shapes)
   #:use-module (playnet protocol mcp)
-  #:use-module ((playnet gateway http-door)
+  #:use-module ((playnet doors http)
                 #:select (admit-and-call parse-json-object value->json))
   #:use-module (web request)
   #:use-module (web response)

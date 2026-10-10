@@ -20,6 +20,7 @@
 
 (define-module (playnet test harness)
   #:use-module (playnet boot scope)   ;; load: a suite that reaches a scope finds it composed from its fragments
+  #:use-module (playnet boot governance)   ;; load: and the governance service likewise
   #:use-module (web server)
   #:use-module (web request)
   #:use-module (web response)

@@ -2,10 +2,10 @@
 !#
 ;;; tools/protocol-extract.scm — the door heads of the three protocol objects
 ;;;
-;;; Reads module/playnet/gateway/lobby.scm and module/playnet/doors/service.scm
+;;; Reads module/playnet/doors/lobby.scm and module/playnet/doors/service.scm
 ;;; as data, finds every Goblins `(methods ((name . args) …) …)` form, and
 ;;; prints one line per door: object, name, argument list as written. The
-;;; Phase B1 declaration (playnet protocol) starts from this output, and the
+;;; Phase B1 declaration (playnet doors protocol) starts from this output, and the
 ;;; linter that keeps declaration and code in step reuses `door-heads`.
 ;;;
 ;;;   protocol-extract.scm            all three objects, TSV
@@ -68,16 +68,36 @@ object, plus — for a bare `methods` form — the one whose first door marks it
   (append-map door-heads (object-forms files object-name)))
 
 (define (clause-target name clause)
-  "Where a session clause sends its own act: planner (planner! or a send to
-planner-service naming NAME), governance (a send to governance-svc naming
-NAME), else self."
-  (let walk ((t clause) (found 'self))
+  "Where a session clause sends its own act: planner, governance, or self. A
+send is `(<- ref 'door …)` or `(apply <- ref 'door …)`, planner! a send to the
+planner. The act is the send naming the clause's own door (cast-part-signed
+sends cast-part-signed, then tells the planner); failing one, the clause's
+first send — to a target by its own name, or to anything else, which is the
+session's own act (`see` reads the vision model; `my-phc` sends fp-my-phc)."
+  (define (target-of ref)
+    (case ref ((planner-service) 'planner) ((governance-svc) 'governance) (else 'self)))
+  (define (send t)
+    "(ref . door) when T is a send, else #f."
     (cond
-     ((not (pair? t)) found)
-     ((and (eq? (car t) 'planner!) (pair? (cdr t)) (equal? (cadr t) (list 'quote name))) 'planner)
-     ((and (eq? (car t) '<-) (pair? (cdr t)) (pair? (cddr t)) (equal? (caddr t) (list 'quote name)))
-      (case (cadr t) ((planner-service) 'planner) ((governance-svc) 'governance) (else found)))
-     (else (walk (cdr t) (walk (car t) found))))))
+     ((not (pair? t)) #f)
+     ((and (eq? (car t) 'planner!) (pair? (cdr t)) (pair? (cadr t)) (eq? (caadr t) 'quote))
+      (cons 'planner-service (cadadr t)))
+     ((and (eq? (car t) '<-) (pair? (cdr t)) (pair? (cddr t)) (pair? (caddr t)) (eq? (caaddr t) 'quote))
+      (cons (cadr t) (cadr (caddr t))))
+     ((and (eq? (car t) 'apply) (pair? (cdr t)) (eq? (cadr t) '<-) (pair? (cddr t)) (pair? (cdddr t))
+           (pair? (cadddr t)) (eq? (car (cadddr t)) 'quote))
+      (cons (caddr t) (cadr (cadddr t))))
+     (else #f)))
+  (let ((sends (let walk ((t clause) (acc '()))
+                 (cond
+                  ((not (pair? t)) acc)
+                  ((send t) => (lambda (s) (walk (cdr t) (cons s acc))))
+                  (else (walk (cdr t) (walk (car t) acc)))))))
+    (let* ((sends (reverse sends))
+           (own (find (lambda (s) (eq? (cdr s) name)) sends)))
+      (cond (own (target-of (car own)))
+            ((pair? sends) (target-of (car (car sends))))
+            (else 'self)))))
 
 (define (session-targets)
   "((name . target) …) for every session door, read off its clause body."
@@ -90,12 +110,12 @@ NAME), else self."
               (object-forms (assq-ref %objects 'session) 'session)))
 
 ;; An object's doors may be written in more than one file: the object's own
-;; module, and the fragments it composes (declared-doors, identity/doors.scm,
-;; identity/body-doors.scm).
+;; module, and the fragments it composes (declared-doors, doors/identity.scm,
+;; doors/body.scm).
 (define %objects
-  `((lobby   "module/playnet/gateway/lobby.scm" "module/playnet/identity/doors.scm")
-    (session "module/playnet/gateway/lobby.scm" "module/playnet/identity/doors.scm"
-             "module/playnet/identity/body-doors.scm")
+  `((lobby   "module/playnet/doors/lobby.scm" "module/playnet/doors/identity.scm")
+    (session "module/playnet/doors/lobby.scm" "module/playnet/doors/identity.scm"
+             "module/playnet/doors/body.scm")
     (planner "module/playnet/doors/service.scm")))
 
 (define (all-doors)

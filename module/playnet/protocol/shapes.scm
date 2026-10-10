@@ -1,6 +1,6 @@
 ;;; module/playnet/protocol/shapes.scm — what each door argument is
 ;;;
-;;; (playnet protocol) declares every door's arguments as written in its
+;;; (playnet doors protocol) declares every door's arguments as written in its
 ;;; method head. This table says what those names carry, once per NAME:
 ;;; the same name means the same thing on every door (`scope-id` is always a
 ;;; scope id, `qty` always a number), so the shape lives with the name and a
@@ -20,7 +20,7 @@
 ;;; know, so a new door either follows a known name or adds one here.
 
 (define-module (playnet protocol shapes)
-  #:use-module (playnet protocol)
+  #:use-module (playnet doors protocol)
   #:use-module (srfi srfi-1)
   #:export (%shapes %arg-shapes %door-arg-overrides %reply-shapes %arg-docs
             shape-schema shape-ts arg-shape arg-doc door-arg-shapes door-http?

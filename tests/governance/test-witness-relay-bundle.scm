@@ -11,7 +11,7 @@
 
 (use-modules (playnet test harness)
              (playnet scope root)
-             (playnet personhood attestation-ceremony) (playnet personhood enrollment) (playnet utils paths) (playnet governance service) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri first-person credentials) (playnet keri first-person predicates)
+             (playnet personhood attestation-ceremony) (playnet personhood enrollment) (playnet utils paths) (playnet boot governance) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri first-person credentials) (playnet keri first-person predicates)
              ((playnet utils paths) #:select (current-playnet-state-dir-override))
              ((playnet personhood witness-relay)
               #:select (publish-witness-attest! land-remote-attests!))

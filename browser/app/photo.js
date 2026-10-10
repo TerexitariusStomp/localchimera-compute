@@ -20,7 +20,7 @@ export const PHOTO_EDGE = 1280;
 /** The bytes one picture of a read may take: four of them, as base64, fit PICTURE_MAX_CHARS (limits-catalogue.ts; held by photo-test). */
 export const PHOTO_BYTES = 200_000;
 /**
- * The shots of one scene a read takes: lobby.scm `see-part` accepts pictures 0 to
+ * The shots of one scene a read takes: doors/lobby.scm `see-part` accepts pictures 0 to
  * 3, and four of PHOTO_BYTES (as base64, a third larger) stay within its
  * %picture-max-chars of 1200 KiB.
  */

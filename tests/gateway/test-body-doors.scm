@@ -3,7 +3,7 @@
 ;;; A legal body is declared by a recognised person, stewarded by the people
 ;;; it names, incepted by k of them signing from their own seats, read whole
 ;;; by its stewards and members, and admitted by a governor
-;;; (identity/body-doors.scm). The backend is a stub body service that
+;;; (doors/body.scm). The backend is a stub body service that
 ;;; records every call, so what this pins is the DOORS' own conduct:
 ;;;   • a person without a live personhood credential cannot declare;
 ;;;   • a declaration makes its caller the first steward, under a provisional id;
@@ -17,8 +17,8 @@
 ;;; Run: guile -L module -L tests tests/gateway/test-body-doors.scm
 
 (use-modules (playnet test harness)
-             (playnet gateway lobby)
-             ((playnet identity body-doors) #:select (current-body-service provisional-body-id))
+             (playnet doors lobby)
+             ((playnet doors body) #:select (current-body-service provisional-body-id))
              ((playnet vf schemas) #:select (make-agent agent-id agent-name agent-classified-as))
              ((playnet keri first-person credentials) #:select (make-personhood-credential))
              ((playnet keri citizen-sig)

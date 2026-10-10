@@ -16,7 +16,7 @@
 ;;;            withdrawn is a card erased.
 ;;;
 ;;; The wire is {"from","to","at","sealed","said","sig"}; the session's doors
-;;; (gateway/lobby.scm give-card, withdraw-card, cards) are thin over this.
+;;; (doors/lobby.scm give-card, withdraw-card, cards) are thin over this.
 
 (define-module (playnet identity cards)
   #:use-module (srfi srfi-1)

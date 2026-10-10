@@ -2,7 +2,7 @@
 ;;; refuses identity-creating doors, leaves witnessing/seat-checking alone.
 ;;;
 ;;; A GDPR-deferral switch (see docs/legal/gdpr-analysis.md), checked
-;;; by gateway/lobby.scm's real-signup-enabled?. The var is set here, once,
+;;; by doors/lobby.scm's real-signup-enabled?. The var is set here, once,
 ;;; before any vat is spawned — mutating the process environment once vat
 ;;; threads are running is unspecified behavior in Guile, so this lives in its
 ;;; own file rather than toggling mid-test in test-lobby-seat-gate.scm.
@@ -53,8 +53,8 @@
 
 (format #t "~%=== the gate and the declaration name the same doors ===~%")
 
-;; The four wrappers in lobby.scm and the four `#:feature account-creation`
-;; declarations in protocol.scm are the same set, held here so neither can
+;; The four wrappers in doors/lobby.scm and the four `#:feature account-creation`
+;; declarations in doors/protocol.scm are the same set, held here so neither can
 ;; drift: a fifth identity-creating door declared without a wrapper, or a
 ;; wrapper on a door the product's law does not list, fails this.
 (check "the product feature account-creation reads off exactly the doors this file proves refused"

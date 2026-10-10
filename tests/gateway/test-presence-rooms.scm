@@ -19,7 +19,7 @@
              (goblins actor-lib methods)
              (goblins utils hashmap)
              (playnet gateway presence)
-             ((playnet gateway lobby) #:select (^lobby-session))
+             ((playnet doors lobby) #:select (^lobby-session))
              (srfi srfi-1))
 
 (define vat (spawn-vat))

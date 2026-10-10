@@ -4,7 +4,7 @@
 ;;;
 ;;; Three properties, each a refusal on its own:
 ;;;   1. every (object name args) head in the code (tools/protocol-extract.scm)
-;;;      is declared in (playnet protocol) with the same args, and vice versa;
+;;;      is declared in (playnet doors protocol) with the same args, and vice versa;
 ;;;   2. (gone: a door's seam is derived from the seam table, property 5)
 ;;;   3. no planner door is declared behind a session gate the planner does
 ;;;      not have (the lobby's facet allowlist is derived from the
@@ -16,10 +16,10 @@
 ;;;
 ;;; Run: guile -L module tools/protocol-lint.scm   (make check-protocol)
 
-(use-modules (playnet protocol)
+(use-modules (playnet doors protocol)
              (playnet protocol shapes)
              (playnet protocol seam)
-             ((playnet gateway lobby) #:select (%planner-public-doors))
+             ((playnet doors lobby) #:select (%planner-public-doors))
              (ice-9 popen) (ice-9 rdelim) (ice-9 regex) (ice-9 format)
              (srfi srfi-1))
 

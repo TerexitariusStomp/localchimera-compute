@@ -178,7 +178,7 @@
 ;; This mirrors what the browser does after unlock: lobby gives a
 ;; nonce, browser signs with the in-memory kp, lobby resolves the
 ;; current key from oobi-host and verifies under it. We exercise both
-;; halves here without involving lobby.scm to keep the test pure.
+;; halves here without involving doors/lobby.scm to keep the test pure.
 
 (format #t "~%=== Authenticate round-trip ===~%")
 

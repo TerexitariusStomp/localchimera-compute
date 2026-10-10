@@ -18,7 +18,7 @@
   #:use-module (gcrypt hash)
   #:use-module (gcrypt base16)
   #:use-module (gcrypt base64)
-  #:use-module ((playnet gateway limits) #:select (%evidence-max-chars))
+  #:use-module ((playnet vf facts limits) #:select (%evidence-max-chars))
   #:re-export (%evidence-max-chars)
   #:export (%part-chars %evidence-max-parts %pictures-per-read
             picture-hash evidence-parts-total evidence-part-of take-part
@@ -31,7 +31,7 @@
 ;; alike (the bridge sends a round figure beneath it, hoot/day-boot.scm)
 (define %part-chars (* 16 1024))
 ;; the whole is bounded as a read's pictures are: one reduced picture
-;; (%evidence-max-chars, gateway/limits.scm)
+;; (%evidence-max-chars, vf/facts/limits.scm)
 ;; the shots of one scene a read takes (ui/app/photo.ts SHOTS_PER_READ, pinned by test-see-door)
 (define %pictures-per-read 4)
 ;; …which is this many parts of at most %part-chars

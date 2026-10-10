@@ -2,7 +2,7 @@
 ;;;
 ;;; `declared-methods` is Goblins' `methods` with one addition: the first time
 ;;; an object of that kind is spawned, the heads written in the code are
-;;; compared with the doors (playnet protocol) declares for it, and any
+;;; compared with the doors (playnet doors protocol) declares for it, and any
 ;;; difference — a head the declaration lacks, a declared door the code
 ;;; lacks, an argument list that differs — stops the spawn with a message
 ;;; naming every difference. The gateway therefore refuses to boot on drift,
@@ -17,7 +17,7 @@
 ;;; nowhere else. What no longer exists is a second, unchecked copy of them.
 
 (define-module (playnet protocol dispatch)
-  #:use-module (playnet protocol)
+  #:use-module (playnet doors protocol)
   #:use-module (goblins actor-lib methods)
   #:use-module (srfi srfi-1)
   #:use-module (ice-9 format)
@@ -54,7 +54,7 @@ declaration: a list of strings, empty when they agree."
   (unless (memq object %checked)
     (let ((drift (heads-drift object heads)))
       (unless (null? drift)
-        (error (string-append "protocol: the code's doors drift from (playnet protocol):\n  "
+        (error (string-append "protocol: the code's doors drift from (playnet doors protocol):\n  "
                               (string-join drift "\n  ")))))
     (set! %checked (cons object %checked))))
 
@@ -69,7 +69,7 @@ declaration: a list of strings, empty when they agree."
        (methods ((name . args) body ...) ...)))))
 
 ;; An object's doors may be written in more than one module: the identity
-;; doors of the lobby and the session live in (playnet identity doors) as
+;; doors of the lobby and the session live in (playnet doors identity) as
 ;; FRAGMENTS, and the object composes them with its own clauses.
 ;;
 ;;   (declared-doors OBJECT clause …)            a fragment: its heads, with

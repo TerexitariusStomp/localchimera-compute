@@ -8,7 +8,7 @@
 ;;; a contact and names the kind a vouch carries (ui/app/book.ts,
 ;;; ui/app/tabs/contacts.ts), and the gateway reads it as a lens, a group and a
 ;;; relationship credential's type (social/lens.scm, matching/filter-rule.scm,
-;;; governance/service.scm). (playnet social relationship-kinds) states the
+;;; doors/governance.scm). (playnet social relationship-kinds) states the
 ;;; kinds once; this emit is how the page gets them. `make check-rel-fresh`
 ;;; regenerates and diffs the committed copy.
 

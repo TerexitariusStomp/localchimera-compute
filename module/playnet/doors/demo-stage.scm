@@ -12,7 +12,7 @@
   #:use-module (playnet scope root)
   #:use-module (playnet doors service)
   #:use-module (playnet scope actor)
-  #:use-module (playnet governance service)
+  #:use-module (playnet doors governance)
   #:use-module (playnet keri acdc-store)
   #:use-module (playnet keri citizen-sig)
   #:use-module ((playnet keri citizen-sig)

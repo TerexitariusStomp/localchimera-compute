@@ -1,4 +1,4 @@
-;;; gateway/limits.scm — the sizes the gateway refuses past.
+;;; vf/facts/limits.scm — the sizes the gateway refuses past.
 ;;;
 ;;; Each is a bound a client has to stay within BEFORE it sends: a document or
 ;;; a picture over its bound is refused whole. So the page reads these same
@@ -10,7 +10,7 @@
 ;;; The module holds numbers and imports nothing, so the emit, the lobby, the
 ;;; evidence store and the static server all load it.
 
-(define-module (playnet gateway limits)
+(define-module (playnet vf facts limits)
   #:export (%max-user-data-bytes %picture-max-chars %evidence-max-chars
             %feedback-max-bytes
             %report-max-bytes))

@@ -31,7 +31,7 @@
   (setenv "API_VISION_MODEL" "TEE/test-vision"))
 
 (use-modules (playnet test harness)
-             (playnet gateway lobby)
+             (playnet doors lobby)
              (playnet gateway evidence)
              (playnet gateway services)
              (playnet gateway allotment)

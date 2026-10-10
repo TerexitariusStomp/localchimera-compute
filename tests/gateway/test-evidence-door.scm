@@ -21,7 +21,7 @@
 (setenv "PLAYNET_DATA_DIR" %dir)
 
 (use-modules (playnet test harness)
-             (playnet gateway lobby)
+             (playnet doors lobby)
              (playnet gateway evidence)
              (gcrypt base64) (rnrs bytevectors)
              (goblins) (goblins vat) (goblins actor-lib methods)

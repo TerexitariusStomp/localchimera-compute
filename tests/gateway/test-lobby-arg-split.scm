@@ -1,9 +1,9 @@
-;;; test-lobby-arg-split.scm — lobby.scm's own boundary translation for the
+;;; test-lobby-arg-split.scm — doors/lobby.scm's own boundary translation for the
 ;;; doors split from a bare variadic tail into real named arguments
 ;;;
 ;;; The delegation family (test-delegation-scope-arg.scm) already proved this
 ;;; pattern once. This covers the rest of the doors whose translation logic
-;;; lives in lobby.scm itself, where nothing tested it before: `open`'s
+;;; lives in doors/lobby.scm itself, where nothing tested it before: `open`'s
 ;;; target-ids/subject are a DIFFERENT positional encoding depending on KIND
 ;;; (the same slot means target-ids for an expression, subject for a
 ;;; ballot) — the riskiest of this whole batch — and cast-signed's `u`
@@ -11,14 +11,14 @@
 ;;; argument, with vkey now never a caller argument at all.
 ;;;
 ;;; A stand-in governance-svc RECORDS what it was sent rather than acting on
-;;; it — this is about lobby.scm's OWN translation, which governance-svc's
-;;; existing tests (spawned directly, bypassing lobby.scm) never exercised.
+;;; it — this is about doors/lobby.scm's OWN translation, which governance-svc's
+;;; existing tests (spawned directly, bypassing doors/lobby.scm) never exercised.
 ;;;
 ;;; Run: guile -L module -L tests tests/gateway/test-lobby-arg-split.scm
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness)
-             (playnet gateway lobby)
+             (playnet doors lobby)
              (goblins) (goblins vat) (goblins actor-lib methods))
 
 (define vat (spawn-vat))

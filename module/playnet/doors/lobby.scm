@@ -1,4 +1,4 @@
-;;; module/playnet/gateway/lobby.scm — OCapN gateway entry point
+;;; module/playnet/doors/lobby.scm — OCapN gateway entry point
 ;;;
 ;;; The lobby is the single actor whose sturdyref is published.
 ;;; Clients enliven it and call methods to access services.
@@ -12,20 +12,17 @@
 ;;;   Successful auth returns the AID as the session identity-key,
 ;;;   which can then be used for open-terminal / get-mailbox.
 
-(define-module (playnet gateway lobby)
+(define-module (playnet doors lobby)
   #:use-module ((playnet utils common) #:select (string-or-false env-flag?))
   #:use-module (playnet gateway evidence)
-  #:use-module ((playnet gateway limits) #:select (%picture-max-chars))
+  #:use-module ((playnet vf facts limits) #:select (%picture-max-chars))
   #:use-module ((playnet vf formulas counting) #:select (%contest-prefix))
   #:use-module ((playnet observation evidence) #:select (evidence-hash?))
   #:use-module (goblins)
-  #:use-module ((playnet protocol) #:select (%doors door-name door-object door-auth))
+  #:use-module ((playnet doors protocol) #:select (%doors door-name door-object door-auth))
   #:use-module ((playnet protocol dispatch) #:select (declared-methods declared-methods*))
   #:use-module ((playnet utils clock) #:select (instant->unix (now . clock-now)))   ; the one clock: instants inside, civil at the boundary
-  #:use-module (goblins actor-lib methods)
-  #:use-module (goblins utils hashmap)
   #:use-module ((playnet utils boot-cell) #:select (make-boot-cell))
-  #:use-module (rnrs bytevectors)
   #:use-module ((playnet keri first-person predicates)
                 #:select (holds-any-live-phc?))
   #:use-module ((playnet identity seat) #:select (aid-tag))
@@ -38,13 +35,13 @@
   #:use-module ((playnet keri acdc) #:select (cred-holder))
   ;; every session's dispatch passes the forgotten gate
   #:use-module ((playnet identity forget) #:select (forgotten-gated unmark-forgotten!))
-  ;; the identity doors of both objects live in (playnet identity doors) as
+  ;; the identity doors of both objects live in (playnet doors identity) as
   ;; fragments; each object composes its own with them (declared-methods*)
-  #:use-module ((playnet identity doors)
+  #:use-module ((playnet doors identity)
                 #:select (identity-lobby-doors identity-session-doors make-session-identity))
   ;; the body doors — a legal body declared, stewarded, incepted k-of-n and
-  ;; read by the law — are a fragment too (playnet identity body-doors)
-  #:use-module ((playnet identity body-doors) #:select (body-session-doors))
+  ;; read by the law — are a fragment too (playnet doors body)
+  #:use-module ((playnet doors body) #:select (body-session-doors))
   ;; the per-AID files a member's sync doors keep (one module lists the kinds)
   #:use-module ((playnet identity user-files)
                 #:select (%data-dir %user-file %read-user-data %write-user-data!
@@ -110,7 +107,7 @@
 (define (allotment-file-for aid-prefix) (%user-file "allotment" aid-prefix))
 
 ;; A picture crosses in parts and the session joins them; the whole is bounded
-;; by %picture-max-chars (gateway/limits.scm).
+;; by %picture-max-chars (vf/facts/limits.scm).
 
 ;; the dial's pin book arrives as JSON ({lists:[{id,name,emoji,shared}],
 ;; pins:[{list,subject,note}]}); the fold reads the alist doc pins.scm names.
@@ -207,7 +204,7 @@
   ;; THE FORWARD, STATED ONCE: a session door whose act is the planner's
   ;; sends it there with this session's AID as the agent; absent a planner
   ;; (a gateway without one) the door answers the absence. The door's
-  ;; declaration names the target (protocol.scm #:to), and the lint holds
+  ;; declaration names the target (doors/protocol.scm #:to), and the lint holds
   ;; the two together.
   ;; A session is spawned only once has-seat? held: a seat proven afresh is
   ;; a person who is a member again, so any forgotten mark on the AID lifts
@@ -1047,7 +1044,7 @@
    ((purchase-claim-signed commune-aid spec qty unit due res ref trig signature)
     (<- governance-svc 'purchase-claim-signed aid-prefix commune-aid spec qty unit due res ref trig signature))
    ;; ── accepting a grant or a reimbursement — the commune's own word.
-   ;; See governance/service.scm's own accept-socialization/accept-reimbursement
+   ;; See doors/governance.scm's own accept-socialization/accept-reimbursement
    ;; for the real, stated security gap: no governor-role gate exists live
    ;; anywhere yet, so this is open to any authenticated member, not just
    ;; governors — self-accepting one's own reimbursement is the one thing
@@ -1202,7 +1199,7 @@
 ;;; solve vat. The facet is the allowlist; the Phase B1 declaration turns it
 ;;; into a per-door auth level.
 ;;;
-;;; The list is the declaration's: every planner door (playnet protocol)
+;;; The list is the declaration's: every planner door (playnet doors protocol)
 ;;; marks `anonymous`. Opening a door to the browser is one edit there, and
 ;;; tools/protocol-lint.scm keeps the declaration and the code's heads in
 ;;; step.
@@ -1264,7 +1261,7 @@
     ;; A seat, proven: the session an authenticated AID is handed, at TIER
     ;; ('root — the KEL key; 'device — an authorized device key) and under
     ;; DOORS (#f, or a device's allowlist). The identity doors spawn it
-    ;; (identity/doors.scm keri-authenticate, keri-authenticate-device).
+    ;; (doors/identity.scm keri-authenticate, keri-authenticate-device).
     (define (spawn-session aid-prefix tier doors)
       (spawn ^lobby-session aid-prefix
              terminal-svc mailbox-mgr governance-svc signup-agent

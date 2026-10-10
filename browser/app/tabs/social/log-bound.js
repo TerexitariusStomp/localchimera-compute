@@ -1,7 +1,7 @@
 // app/tabs/social/log-bound.ts — how much of the captain's log is kept where.
 //
 // Two stores hold the log and each has a size it refuses past. The gateway's
-// per-person backup takes at most SYNC_MAX_BYTES (gateway/limits.scm
+// per-person backup takes at most SYNC_MAX_BYTES (vf/facts/limits.scm
 // %max-user-data-bytes) and rejects a larger document whole. The device's
 // localStorage holds about 5 MB for the entire origin, and a log that fills
 // it takes every other write down with it. So each store is handed the
@@ -12,7 +12,7 @@
 import { USER_DATA_MAX_BYTES } from "../../limits-catalogue.js";
 /** The backup's row count. */
 export const SYNC_MAX_ENTRIES = 400;
-/** The gateway's cap on one person's synced document (generated from gateway/limits.scm). */
+/** The gateway's cap on one person's synced document (generated from vf/facts/limits.scm). */
 export const SYNC_MAX_BYTES = USER_DATA_MAX_BYTES;
 /** The device's budget for the log: well inside localStorage's ~5 MB for the origin. */
 export const LOCAL_MAX_BYTES = 2 * 1024 * 1024;

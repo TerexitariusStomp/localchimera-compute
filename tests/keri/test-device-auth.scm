@@ -20,7 +20,7 @@
              (playnet identity devices)
              (playnet identity seat)
              (playnet identity oobi-host)
-             (playnet gateway lobby)
+             (playnet doors lobby)
              (goblins)
              (goblins actor-lib methods)
              (goblins utils hashmap)

@@ -20,7 +20,7 @@
 
 (use-modules (playnet test harness))
 (use-modules (goblins) (goblins vat))
-(use-modules (playnet gateway lobby))
+(use-modules (playnet doors lobby))
 
 (define vat (spawn-vat))
 

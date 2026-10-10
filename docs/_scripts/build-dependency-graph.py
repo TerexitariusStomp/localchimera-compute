@@ -129,7 +129,7 @@ def classify_scheme_kind(rel_path, text):
         return "utility"
     if 'config' in fname:
         return "config"
-    if fname in ('gateway.scm', 'lobby.scm', 'server.scm') or 'gateway' in fname or 'lobby' in fname:
+    if fname in ('gateway.scm', 'doors/lobby.scm', 'server.scm') or 'gateway' in fname or 'lobby' in fname:
         return "service"
     if 'adapter' in fname or 'transport' in fname or 'protocol' in fname:
         return "adapter"

@@ -4,11 +4,11 @@
 ;;; removed-gate error: the role-credential ceremony they gated on was deleted
 ;;; 2026-08-19, never having bootstrapped for anyone. This is the replacement,
 ;;; wired to the SAME founders.txt-based `governor?` every other admin door in
-;;; (playnet governance service) already gates on — no new authority concept,
+;;; (playnet boot governance) already gates on — no new authority concept,
 ;;; the one that runs the system today.
 ;;;
 ;;; What this pins:
-;;;   • lobby.scm's own check runs first, with no round trip: a credential whose
+;;;   • doors/lobby.scm's own check runs first, with no round trip: a credential whose
 ;;;     `issuer` field does not match the caller's own AID is refused locally,
 ;;;     even for a governor, and never reaches governance-svc or the store;
 ;;;   • a non-governor issuing their OWN credential is refused by governance-svc's
@@ -22,8 +22,8 @@
 ;;; Run: guile -L module -L tests tests/governance/test-issue-revoke-credential.scm
 
 (use-modules (playnet test harness)
-             (playnet gateway lobby)
-             (playnet governance service) (playnet keri acdc) (playnet keri acdc-store) (playnet keri said-portable)
+             (playnet doors lobby)
+             (playnet boot governance) (playnet keri acdc) (playnet keri acdc-store) (playnet keri said-portable)
              (goblins) (goblins vat))
 
 (define vat (spawn-vat))
@@ -38,7 +38,7 @@
 (define gov-session (session GOV))
 (define byst-session (session BYST))
 
-;; a delegated door's reply is a promise (lobby.scm's own arm just returns the
+;; a delegated door's reply is a promise (doors/lobby.scm's own arm just returns the
 ;; `<-` it sent) — settle it the way tests/keri/test-device-auth.scm does.
 (define (settle p)
   (let ((box #f) (done #f))

@@ -14,7 +14,7 @@
 ;;; Run: guile -L module -L tests tests/gateway/test-http-door.scm
 
 (use-modules (playnet test harness)
-             (playnet gateway http-door)
+             (playnet doors http)
              ((playnet vf schemas) #:select (make-measure))
              (playnet identity devices)
              ((playnet keri signify-portable)
@@ -163,7 +163,7 @@
 
 (display "\n── 4. a skipped optional is filled, never omitted ──\n")
 ;; family-split's declared #:optional (members-json "[]") (per-citizen-hours
-;; 40.0) matches lobby.scm's own Scheme #:optional list verbatim (both read
+;; 40.0) matches doors/lobby.scm's own Scheme #:optional list verbatim (both read
 ;; positionally). Omitting a skipped optional from the JSON body used to
 ;; OMIT it from the argument list too — fine when every trailing optional is
 ;; skipped (Guile's own #:optional then supplies its default), wrong the

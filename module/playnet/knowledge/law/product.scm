@@ -22,7 +22,7 @@
 
 (define-module (playnet knowledge law product)
   #:use-module (srfi srfi-1)
-  #:use-module ((playnet protocol) #:select (doors-of-feature door-object door-name))
+  #:use-module ((playnet doors protocol) #:select (doors-of-feature door-object door-name))
   #:use-module (playnet legal crossings)
   #:use-module (playnet legal registry)
   #:use-module (playnet knowledge law context-pack)
@@ -48,7 +48,7 @@
 ;;; (id name crossings section)
 ;;;   section : where it sits in the face, as face/part
 ;;; The doors that ARE a feature are declared on the doors (`#:feature`,
-;;; protocol.scm) and read from there, so a feature's calls are stated once.
+;;; doors/protocol.scm) and read from there, so a feature's calls are stated once.
 (define *product-features*
   '((account-creation "Account creation"               (data-processing)                "social/id")
     (erasure        "Erasure (forget me)"              (data-processing)                "social/id")

@@ -52,7 +52,7 @@ interface Draft {
 }
 
 const DRAFT_KEY = K.feedbackDraft;   // anonymous pool → un-scoped key
-const MAX_BODY = FEEDBACK_MAX_BYTES;     // the server's cap (generated from gateway/limits.scm)
+const MAX_BODY = FEEDBACK_MAX_BYTES;     // the server's cap (generated from vf/facts/limits.scm)
 const SHOT_EDGE = 800;                   // longest screenshot edge after downscale
 const DIAG_BYTES = 16384;                // the diagnostic's share of the body
 

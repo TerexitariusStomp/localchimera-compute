@@ -10,7 +10,7 @@
 ;;; Run: guile -L module -L tests tests/gateway/test-device-doors.scm
 
 (use-modules (playnet test harness)
-             (playnet gateway lobby)
+             (playnet doors lobby)
              (playnet identity devices)
              ((playnet keri signify-portable)
               #:select (bran->signing-keypair public-key->aid-prefix seed->ed25519-keypair))

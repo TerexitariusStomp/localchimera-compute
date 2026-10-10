@@ -362,12 +362,12 @@
    ;; WebSocket → OCapN gateway. Separate from the catch-all because
    ;; nginx WebSocket upgrade requires its own Upgrade/Connection
    ;; header dance.
-   ;; The HTTP door (module/playnet/gateway/http-door.scm): POST
+   ;; The HTTP door (module/playnet/doors/http.scm): POST
    ;; /api/{lobby,session,planner}/<name>, signed by an enrolled device key,
    ;; answered by the gateway process on loopback :9091. Prefix matches, so
    ;; /api/docs/, /api/openapi.json, /api/mcp-tools.json stay static files
    ;; and /api/v1 stays the Radicle http-api below. /api/mcp is the same
-   ;; doors as MCP tools (module/playnet/gateway/mcp-door.scm), JSON-RPC.
+   ;; doors as MCP tools (module/playnet/doors/mcp.scm), JSON-RPC.
    (nginx-location-configuration
     (uri "= /api/mcp")
     (body '("proxy_pass http://127.0.0.1:9091;"
@@ -1236,9 +1236,9 @@
                    ;; docs/legal/gdpr-analysis.md. Closed here until
                    ;; that plan's consent/erasure/portability work (also in that
                    ;; doc) is far enough along to carry the obligation. Checked
-                   ;; in gateway/lobby.scm's real-signup-enabled?; gates the
+                   ;; in doors/lobby.scm's real-signup-enabled?; gates the
                    ;; doors declared `#:feature account-creation` in
-                   ;; protocol.scm and nothing else.
+                   ;; doors/protocol.scm and nothing else.
                    ;; tools/dev.sh does not set this — local dev keeps signing up
                    ;; real AIDs as it always has, which is the developer's own
                    ;; test data, not a third party's.

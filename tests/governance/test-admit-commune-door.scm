@@ -12,8 +12,8 @@
 
 (use-modules (playnet test harness)
              ((playnet test planner federation-wire-fixture) #:select (fx-identity))
-             (playnet gateway lobby)
-             (playnet boot scope) (playnet governance service) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri first-person credentials)
+             (playnet doors lobby)
+             (playnet boot scope) (playnet boot governance) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri first-person credentials)
              (playnet scope root)
              ((playnet keri citizen-sig) #:select (make-keri-identity keri-identity-aid keri-identity-keypair))
              (goblins) (goblins vat) (goblins actor-lib on)

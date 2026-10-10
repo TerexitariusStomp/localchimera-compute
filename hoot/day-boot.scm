@@ -838,7 +838,7 @@
 
 ;;; ── Contacts: the client-synced contact book, to the dial ────────────────
 ;; `list-contacts`/`sync-contacts` on the AID-bound session read/write a
-;; per-AID file (lobby.scm). A row is {alias, aid, rel, online} and what
+;; per-AID file (doors/lobby.scm). A row is {alias, aid, rel, online} and what
 ;; stands between the two people: `rel` is the kind the person tags the
 ;; contact with (their own label, one vocabulary — relationship-kinds.scm);
 ;; `online` is best-effort presence; `recognised`, `mine`, `theirs` and `ask`
@@ -2031,7 +2031,7 @@
 
 ;;; ── bodies: a legal body declared, stewarded, incepted k-of-n ───────────
 ;; docs/legal/bodies.md. Each handler is one session door (identity/
-;; body-doors.scm); a structure crosses as the JSON string it is, and a reply
+;; doors/body.scm); a structure crosses as the JSON string it is, and a reply
 ;; with a body in it comes back as JSON. The one act done HERE is the
 ;; signature: the statement is fetched, signed with this seat's own key
 ;; (sign-said-as-self!, the witness-attest shape), and handed back.

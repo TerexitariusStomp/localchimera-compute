@@ -19,7 +19,7 @@
 ;;; Run: guile -L module -L tests tests/governance/test-open-terminal-mailbox-gate.scm
 
 (use-modules (playnet test harness)
-             (playnet gateway lobby)
+             (playnet doors lobby)
              (playnet gateway mailbox)
              (playnet keri acdc-store) (playnet keri first-person credentials)
              (goblins) (goblins vat) (goblins actor-lib methods) (goblins utils hashmap))

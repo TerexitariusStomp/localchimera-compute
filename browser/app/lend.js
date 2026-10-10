@@ -4,7 +4,7 @@
 // the LEND says for how long the commons may use it, and who may be assigned to
 // work on it. Custody moves, the right stays. This module is the second half,
 // whole: `lend` and `recall` are the doors to the grant (a custody-attestation
-// ACDC signed by the owner's own key — governance/socialization.scm), `grants`
+// ACDC signed by the owner's own key — economy/socialization.scm), `grants`
 // is the list in force, and `lendControl` is the element any face mounts to
 // compose, read and recall a lend — the offer card, the Resources card, and
 // whatever else holds a thing of yours.

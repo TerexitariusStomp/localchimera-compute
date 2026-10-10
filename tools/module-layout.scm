@@ -106,17 +106,9 @@
  (file "utils/repl-client" #f)            ; a tool: tools/ of the repository
  (file "utils/ts-emit" #f)                ; a tool: tools/ of the repository
  ;; governance, by what each file is
- (file "governance/service" "doors")
  ;; identity, less its doors and ceremonies
- (file "identity/doors" "doors")
- (file "identity/body-doors" "doors")
  ;; the gateway, less the doors and the peer
- (file "gateway/lobby" "doors")
- (file "gateway/http-door" "doors")
- (file "gateway/mcp-door" "doors")
- (file "gateway/limits" "vf/facts")       ; one constant, to vf/facts/limits
  ;; the root files
- (file "protocol" "doors")
  (file "org" "org")
  (file "planner" "boot")
  (file "governance" "boot"))

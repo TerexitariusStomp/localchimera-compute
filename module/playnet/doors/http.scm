@@ -1,4 +1,4 @@
-;;; module/playnet/gateway/http-door.scm — the doors over HTTP, signed by a device key
+;;; module/playnet/doors/http.scm — the doors over HTTP, signed by a device key
 ;;;
 ;;; POST /api/<object>/<name> with a JSON object body keyed by the door's
 ;;; argument names (browser/api/openapi.json says which) reaches the same
@@ -30,9 +30,9 @@
 ;;; (call object-ref name args) → the reply, so tests run it synchronously
 ;;; and the gateway runs it through its vat and settles the promise.
 
-(define-module (playnet gateway http-door)
+(define-module (playnet doors http)
   #:use-module ((playnet utils records) #:select (vf-record?))
-  #:use-module (playnet protocol)
+  #:use-module (playnet doors protocol)
   #:use-module (playnet protocol shapes)
   #:use-module ((playnet identity devices) #:select (device-owner-of device-entry-doors))
   #:use-module ((playnet keri citizen-sig) #:select (aid-prefix->pubkey))
@@ -47,7 +47,6 @@
   #:use-module (web uri)
   #:use-module (rnrs bytevectors)
   #:use-module (json)
-  #:use-module (ice-9 match)
   #:use-module (ice-9 regex)
   #:use-module (ice-9 format)
   #:use-module (srfi srfi-1)

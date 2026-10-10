@@ -12,7 +12,7 @@
 ;;; Run: guile -L module -L tests tests/gateway/test-ai-doors.scm
 
 (use-modules (playnet test harness)
-             (playnet gateway lobby)
+             (playnet doors lobby)
              (playnet gateway services)
              (playnet ai llm)
              (goblins) (goblins vat) (goblins actor-lib methods)

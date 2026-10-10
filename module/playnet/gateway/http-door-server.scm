@@ -1,6 +1,6 @@
 ;;; module/playnet/gateway/http-door-server.scm — the HTTP door's listener
 ;;;
-;;; Runs (playnet gateway http-door)'s handler on a loopback port inside the
+;;; Runs (playnet doors http)'s handler on a loopback port inside the
 ;;; gateway process, where the lobby lives; nginx proxies /api/lobby/,
 ;;; /api/session/ and /api/planner/ to it (deploy/os.scm). The handler runs
 ;;; on the listener's own thread; every touch of a Goblins object goes
@@ -23,8 +23,8 @@
 ;;; polling: a reply is a message on a channel, waited for with a timeout.
 
 (define-module (playnet gateway http-door-server)
-  #:use-module (playnet gateway http-door)
-  #:use-module ((playnet gateway mcp-door) #:select (%mcp-path handle-mcp-request))
+  #:use-module (playnet doors http)
+  #:use-module ((playnet doors mcp) #:select (%mcp-path handle-mcp-request))
   #:use-module ((playnet utils clock) #:select (instant->unix (now . clock-now)))
   #:use-module (goblins)
   #:use-module (goblins vat)

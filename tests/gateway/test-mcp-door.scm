@@ -18,10 +18,10 @@
 ;;; Run: guile -L module -L tests tests/gateway/test-mcp-door.scm
 
 (use-modules (playnet test harness)
-             (playnet gateway mcp-door)
-             (playnet gateway http-door)
+             (playnet doors mcp)
+             (playnet doors http)
              (playnet identity devices)
-             (playnet protocol) (playnet protocol shapes) (playnet protocol mcp)
+             (playnet doors protocol) (playnet protocol shapes) (playnet protocol mcp)
              ((playnet keri signify-portable)
               #:select (bran->signing-keypair bran->rotation-keypair public-key->aid-prefix
                         build-icp next-key-digest seed->ed25519-keypair))

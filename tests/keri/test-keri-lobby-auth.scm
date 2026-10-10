@@ -13,7 +13,7 @@
 
 (use-modules (playnet test harness)
              (playnet keri bridge)
-             (playnet gateway lobby)
+             (playnet doors lobby)
              (goblins)
              (goblins vat)
              (goblins actor-lib methods)

@@ -4,7 +4,7 @@
 ;;; set-delegation, delegation-mandated-preimage/set-delegation-mandated-signed,
 ;;; revoke-delegation) used to take a bare `. rest` tail whose ONLY real
 ;;; content is a franchise tag — `()` for federation-wide, `('scope SID)`
-;;; for one commune. lobby.scm now declares one named, optional `scope-id`
+;;; for one commune. doors/lobby.scm now declares one named, optional `scope-id`
 ;;; and builds that internal tag at the door boundary; governance-svc's own
 ;;; arms (and delegation-map's) are UNCHANGED — this pins the translation.
 ;;;
@@ -21,8 +21,8 @@
 ;;; Run: guile -L module -L tests tests/governance/test-delegation-scope-arg.scm
 
 (use-modules (playnet test harness)
-             (playnet gateway lobby)
-             (playnet governance service) (playnet keri acdc-store)
+             (playnet doors lobby)
+             (playnet boot governance) (playnet keri acdc-store)
              (goblins) (goblins vat) (goblins utils hashmap))
 
 (define vat (spawn-vat))

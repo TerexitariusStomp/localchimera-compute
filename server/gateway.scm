@@ -55,7 +55,7 @@
              (ice-9 rdelim)              ; read-line (mosquitto pw-file read below)
              (ice-9 threads)
              ((srfi srfi-1) #:select (partition))
-             (playnet gateway lobby)
+             (playnet doors lobby)
              (playnet federation federate)
              ((playnet federation wire) #:select (signer-of signer-aid))
              ((playnet federation sturdyref-credential) #:select (spec-goods))
@@ -123,7 +123,7 @@
              (playnet economy recipe-standing)
              (playnet federation rebuild)
              (playnet boot scope)
-             (playnet governance service)
+             (playnet boot governance)
              (playnet economy socialization)
              (playnet keri acdc)
              (playnet keri acdc-store)
@@ -167,7 +167,7 @@
              ((playnet notify rendered) #:select (rendered-notification))
              ((playnet interface adapters email) #:select (^email-adapter email-transport?))
              ((playnet identity contact-points) #:select (make-contact-point-desk))
-             ((playnet identity body-doors) #:select (current-body-service))
+             ((playnet doors body) #:select (current-body-service))
              ((playnet personhood body-desk) #:select (^body-ceremony-desk))
              ((playnet doors bodies) #:select (^body-service))
              ((playnet notify router) #:select (^notify-router))
@@ -2613,7 +2613,7 @@ failed (~a ~a); synthetic~%" k a)
                              "  warning: could not write sref file: ~a~%"
                              args)))))))
 
-       ;; The HTTP door (module/playnet/gateway/http-door.scm): the same doors
+       ;; The HTTP door (module/playnet/doors/http.scm): the same doors
        ;; over POST /api/<object>/<name>, signed by an enrolled device key,
        ;; on loopback — nginx proxies the three /api/ prefixes here. A
        ;; person's HTTP session is the device-tier ^lobby-session

@@ -13,7 +13,7 @@
 
 (use-modules (playnet test harness)
              (playnet scope root) (srfi srfi-1) (playnet doors service)
-             (playnet personhood attestation-ceremony) (playnet personhood enrollment) (playnet boot scope) (playnet governance service) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri first-person credentials) (playnet keri first-person predicates)
+             (playnet personhood attestation-ceremony) (playnet personhood enrollment) (playnet boot scope) (playnet boot governance) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri first-person credentials) (playnet keri first-person predicates)
              ((playnet personhood attestation-ceremony) #:select (*attestation-ceremonies* land-witness-attestation!))
              ((playnet keri citizen-sig)
               #:select (make-keri-identity keri-identity-keypair keri-identity-aid sign-said))

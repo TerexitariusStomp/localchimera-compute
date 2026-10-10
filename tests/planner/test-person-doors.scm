@@ -10,7 +10,7 @@
 ;;; Run:  guile --no-auto-compile -q -L module tests/planner/test-person-doors.scm
 
 (use-modules (playnet test harness)
-             (playnet protocol)
+             (playnet doors protocol)
              (playnet vf facts person-facts)
              (srfi srfi-1))
 

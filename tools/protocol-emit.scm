@@ -1,6 +1,6 @@
 #!/usr/bin/env -S guile -L module
 !#
-;;; tools/protocol-emit.scm — emits read from (playnet protocol)
+;;; tools/protocol-emit.scm — emits read from (playnet doors protocol)
 ;;;
 ;;;   protocol-emit.scm openapi [out]    OpenAPI 3.1 document for the HTTP door
 ;;;   protocol-emit.scm mcp [out]        MCP tool manifest: one tool per HTTP door
@@ -22,7 +22,7 @@
 ;;; The committed copy is browser/api/openapi.json; `make check-protocol-fresh`
 ;;; regenerates and diffs it.
 
-(use-modules (playnet protocol) (playnet protocol shapes) (playnet protocol seam)
+(use-modules (playnet doors protocol) (playnet protocol shapes) (playnet protocol seam)
              (playnet protocol mcp)
              (json) (ice-9 match) (ice-9 format) (srfi srfi-1))
 
@@ -54,7 +54,7 @@
     `((openapi . "3.1.0")
       (info . ((title . "playnet gateway doors")
                (version . ,(number->string %protocol-version))
-               (description . "Every door the browser may call, declared once in module/playnet/protocol.scm and emitted here, grouped by topic. The HTTP door (POST /api/{object}/{name}) carries the same doors CapTP does; a call is signed with an enrolled device key (RFC 9421) unless the door is anonymous. The same doors are MCP tools: POST /api/mcp speaks JSON-RPC (initialize, tools/list, tools/call), and browser/api/mcp-tools.json is the committed tool list. Doors a client cannot reach (root tier, operator) are listed under x-playnet-doors.")))
+               (description . "Every door the browser may call, declared once in module/playnet/doors/protocol.scm and emitted here, grouped by topic. The HTTP door (POST /api/{object}/{name}) carries the same doors CapTP does; a call is signed with an enrolled device key (RFC 9421) unless the door is anonymous. The same doors are MCP tools: POST /api/mcp speaks JSON-RPC (initialize, tools/list, tools/call), and browser/api/mcp-tools.json is the committed tool list. Doors a client cannot reach (root tier, operator) are listed under x-playnet-doors.")))
       (servers . ,(vector '((url . "/"))))
       (tags . ,(list->vector (map (lambda (t) `((name . ,(symbol->string (car t))) (description . ,(cdr t)))) %topics)))
       (components . ((securitySchemes . ((deviceSignature . ((type . "http") (scheme . "signature")

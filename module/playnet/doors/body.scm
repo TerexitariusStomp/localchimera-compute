@@ -1,18 +1,18 @@
-;;; module/playnet/identity/body-doors.scm — the body doors of the session
+;;; module/playnet/doors/body.scm — the body doors of the session
 ;;;
 ;;; A legal body — an association, a cooperative, the operator — is declared
 ;;; in a scope by a recognised person, stewarded by the people it names, and
 ;;; given its identifier by a k-of-n inception the stewards sign from their
 ;;; own browsers (docs/legal/bodies.md). These are the session doors of that
-;;; arc, written as ONE FRAGMENT the session composes (gateway/lobby.scm
+;;; arc, written as ONE FRAGMENT the session composes (doors/lobby.scm
 ;;; ^lobby-session, protocol/dispatch.scm declared-doors), beside the identity
-;;; doors of (playnet identity doors):
+;;; doors of (playnet doors identity):
 ;;;
 ;;;   (body-session-doors #:aid-prefix #:acdc-store #:governance-svc #:body-service)
 ;;;
 ;;; Every door takes JSON strings where it takes a structure, replies
 ;;; (ok . x) or (error . msg) — as a value or as a promise of one — and is
-;;; declared `device` in (playnet protocol). The gates a session reads for
+;;; declared `device` in (playnet doors protocol). The gates a session reads for
 ;;; itself stand here: a live personhood credential to declare, governor
 ;;; standing to admit. The stewardship gate is read on the records, by the
 ;;; service, with this session's AID first in every message.
@@ -36,7 +36,7 @@
 ;;; A body's id before inception is provisional: "body:<hex>", the SHA-256
 ;;; of its name, scope and initiator — so declaring twice names one body.
 
-(define-module (playnet identity body-doors)
+(define-module (playnet doors body)
   #:use-module (goblins)
   #:use-module ((playnet utils wire-shapes) #:select (sym->str))
   #:use-module ((playnet protocol dispatch) #:select (declared-doors))
@@ -180,7 +180,7 @@
 
 (define* (body-session-doors #:key aid-prefix (acdc-store #f) (governance-svc #f)
                              (body-service (current-body-service)))
-  "The session's body doors (declared `session` in (playnet protocol)) as a
+  "The session's body doors (declared `session` in (playnet doors protocol)) as a
    declared-doors fragment, over this session's AID-PREFIX, the commune's
    ACDC-STORE (the personhood gate), its GOVERNANCE-SVC (the governor gate)
    and the BODY-SERVICE — the boot cell's by default."

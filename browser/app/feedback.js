@@ -35,7 +35,7 @@ import { downscale, pickPhoto, toBase64 } from "./photo.js";
 import { FEEDBACK_MAX_BYTES } from "./limits-catalogue.js";
 import { K } from "./keys.js";
 const DRAFT_KEY = K.feedbackDraft; // anonymous pool → un-scoped key
-const MAX_BODY = FEEDBACK_MAX_BYTES; // the server's cap (generated from gateway/limits.scm)
+const MAX_BODY = FEEDBACK_MAX_BYTES; // the server's cap (generated from vf/facts/limits.scm)
 const SHOT_EDGE = 800; // longest screenshot edge after downscale
 const DIAG_BYTES = 16384; // the diagnostic's share of the body
 /** Open/closed is state, so it is a signal and the panel is drawn from it. */
