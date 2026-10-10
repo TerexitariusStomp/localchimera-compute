@@ -1012,7 +1012,7 @@ or #f when no handler sends it."
           #:doc "The goods the scope deals in, read off its records: what it holds, what its recipes make and consume, what DEMAND (a (good . qty) or #f) asks. A good at least two scopes deal in crosses between them; labour and the capacity a use flow draws on are left out.")
     (door planner scope-record (scope-id goods #:optional (demand #f) (opts '()))
           #:auth operator #:topic planning #:reply ok-or-error #:kind read
-          #:doc "The scope's record for a solve across scopes — its projected view, standing caps and spans, processes, flows and standing labour — with one crossing column per good of GOODS, measured from the most the scope can give: what a peer of the federated solve (gateway/federate.scm) is built over. DEMAND a (good . qty) or #f; OPTS as federated-plan's.")
+          #:doc "The scope's record for a solve across scopes — its projected view, standing caps and spans, processes, flows and standing labour — with one crossing column per good of GOODS, measured from the most the scope can give: what a peer of the federated solve (federation/federate.scm) is built over. DEMAND a (good . qty) or #f; OPTS as federated-plan's.")
     (door planner means-plan (spec total communes ceilings)
           #:auth operator #:topic custody #:reply ok-or-error #:kind performative
           #:doc "Allocates SPEC across communes by consensus under the given ceilings (total 'auto reads the means fold) and lands standing eco-caps; replies allocations, duals and rounds.")

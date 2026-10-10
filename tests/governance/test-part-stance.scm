@@ -15,10 +15,10 @@
 ;;;
 ;;; Run:  guile -q -L module tests/governance/test-part-stance.scm
 
-(use-modules (playnet governance expression) (playnet boot scope) (playnet governance service) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri said-portable) (playnet scope root) (srfi srfi-1) (playnet test harness)
+(use-modules (playnet voice expression) (playnet boot scope) (playnet governance service) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri said-portable) (playnet scope root) (srfi srfi-1) (playnet test harness)
              ((playnet keri citizen-sig)
               #:select (make-keri-identity keri-identity-keypair keri-identity-aid sign-said))
-             ((playnet governance expression) #:select (validate-distribution))
+             ((playnet voice expression) #:select (validate-distribution))
              (playnet vf facts parts)
              (goblins) (goblins utils hashmap) (srfi srfi-1))
 

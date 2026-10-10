@@ -48,8 +48,8 @@
 ;; ── Voice/CCF discipline ────────────────────────────────────────────────────
 
 (define *voice-paths*
-  '("module/playnet/governance/async.scm"
-    "module/playnet/governance/snapshot.scm"
+  '("module/playnet/federation/vows.scm"
+    "module/playnet/voice/snapshot.scm"
     "module/playnet/governance/rules.scm"))
 
 ;; Forbidden in voice paths. set-ccf is the canonical violation;
@@ -124,7 +124,7 @@
 ;;    to become an ownership proxy.
 (define %membership-files
   '("module/playnet/vf/aggregation/scope-tree.scm"
-    "module/playnet/governance/scope-graph.scm"
+    "module/playnet/federation/scope-graph.scm"
     "module/playnet/governance/scope.scm"
     "module/playnet/keys/scope-witness.scm"
     "module/playnet/scope/recovery.scm"))

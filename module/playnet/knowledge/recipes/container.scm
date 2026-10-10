@@ -28,7 +28,7 @@
 ;;; itself is another recipe, in which the warehouse is the cargo." The box's
 ;;; CUSTODY, separately, moves scope-to-scope through the ordinary
 ;;; `transfer-custody` action (governance/scope.scm) or a socialization
-;;; grant's `movable?` (governance/socialization.scm) — unrelated to which
+;;; grant's `movable?` (economy/socialization.scm) — unrelated to which
 ;;; arc the planner routes it along.
 ;;;
 ;;; NO RECIPE IS DEFINED HERE — docs/playnet.typ, "Transport and storage are

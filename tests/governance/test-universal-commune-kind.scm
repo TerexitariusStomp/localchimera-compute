@@ -2,10 +2,10 @@
 ;;; UC promoted to a first-class 'universal-commune kind.
 
 (use-modules (playnet test harness)
-             (playnet boot scope) (playnet governance scope-graph)
-             (playnet governance scope-graph)
-             (playnet governance universal-commune)
-             (playnet governance uc-curator)
+             (playnet boot scope) (playnet federation scope-graph)
+             (playnet federation scope-graph)
+             (playnet federation universal-commune)
+             (playnet federation uc-curator)
              (goblins) (goblins utils hashmap)
              ((srfi srfi-13) #:select (string-contains)))
 

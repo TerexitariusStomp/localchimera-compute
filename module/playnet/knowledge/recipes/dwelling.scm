@@ -59,7 +59,7 @@
 ;;; Nothing here is storable (a service and two durables); the durables are held
 ;;; resources — a citizen's `declare-means` of spec-bed qty N is the ownership
 ;;; a socialization grant projects Svc capacity from (service.scm declare-means,
-;;; governance/socialization.scm commune-socialized-caps). spec-dwelling is
+;;; economy/socialization.scm commune-socialized-caps). spec-dwelling is
 ;;; keep-in-place; spec-bed is not declared movable — fail-closed, a bed
 ;;; moves only if a scope says so.
 ;;;

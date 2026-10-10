@@ -20,7 +20,7 @@
              (playnet doors service)
              (playnet federation plan-bundle)
              (playnet vf facts availability)
-             ((playnet governance scope-graph) #:select (^scope-graph))
+             ((playnet federation scope-graph) #:select (^scope-graph))
              (goblins)
              (goblins utils hashmap)
              (srfi srfi-1))

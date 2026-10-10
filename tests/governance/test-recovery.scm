@@ -8,7 +8,7 @@
 (use-modules (playnet test harness))
 (use-modules (playnet scope root) (playnet vf schemas) (playnet observation states))
 (use-modules (playnet org endorsement))
-(use-modules (playnet governance ballot) (playnet boot scope) (playnet credentials commitments) (playnet credentials membership) (playnet credentials voting) (playnet credentials work) (playnet keri acdc) (playnet governance delegation-map) (playnet boot scope) (playnet governance recovery) (playnet governance voice-signer) (playnet keri acdc) (playnet keri acdc-store) (playnet keri said-portable))
+(use-modules (playnet voice ballot) (playnet boot scope) (playnet credentials commitments) (playnet credentials membership) (playnet credentials voting) (playnet credentials work) (playnet keri acdc) (playnet voice delegation-map) (playnet boot scope) (playnet federation rebuild) (playnet voice voice-signer) (playnet keri acdc) (playnet keri acdc-store) (playnet keri said-portable))
 (use-modules (goblins) (goblins utils hashmap) (srfi srfi-1))
 
 

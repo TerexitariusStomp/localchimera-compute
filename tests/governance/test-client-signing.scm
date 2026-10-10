@@ -16,7 +16,7 @@
 ;;;     lets boot-time recovery (empty sealer registry, zero clients online)
 ;;;     reconstruct castable ballots. See test-recovery.scm for the replay side.
 
-(use-modules (playnet governance ballot) (playnet credentials commitments) (playnet credentials delegation) (playnet credentials voting) (playnet keri acdc) (playnet governance delegation-map) (playnet governance recovery) (playnet boot scope) (playnet governance service) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri said-portable) (playnet scope root) (srfi srfi-1) (playnet test harness)
+(use-modules (playnet voice ballot) (playnet credentials commitments) (playnet credentials delegation) (playnet credentials voting) (playnet keri acdc) (playnet voice delegation-map) (playnet federation rebuild) (playnet boot scope) (playnet governance service) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri said-portable) (playnet scope root) (srfi srfi-1) (playnet test harness)
              ((playnet keri citizen-sig)
               #:select (make-keri-identity keri-identity-keypair keri-identity-aid
                         sign-said verify-said-signature))

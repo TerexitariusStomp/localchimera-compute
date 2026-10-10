@@ -11,7 +11,7 @@
 ;;;
 ;;; TRACTABILITY CONTRACT. The externality of a row is computed only in the
 ;;; scope that owns the row; wider scopes read aggregates, never persons
-;;; (governance/demand-fold.scm strips the AID at every fold, so above the
+;;; (economy/demand-fold.scm strips the AID at every fold, so above the
 ;;; owning scope the row does not even exist). Within a scope:
 ;;;   compute  `withdrawal-displacement` is one warm re-solve per row read — linear
 ;;;            in rows, embarrassingly parallel; `marginal-displacement` is free.

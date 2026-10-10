@@ -14,7 +14,7 @@
 (use-modules (playnet test harness))
 (use-modules (playnet observation observer) (playnet scope root) (playnet solve recipe-response) (playnet vf schemas) (playnet vf beyond scenario) (srfi srfi-1))
 (use-modules ((playnet scope live) #:select (gather-recipes)))
-(use-modules (playnet credentials declarations) (playnet governance recipe-standing) (playnet keri acdc-store) (playnet solve recipe-response))
+(use-modules (playnet credentials declarations) (playnet economy recipe-standing) (playnet keri acdc-store) (playnet solve recipe-response))
 (use-modules ((playnet solve recipe-response) #:select (capture-at response-shocks response-margin margin-shocks curve-reach
                                                           recipe-response-report standing-position)))
 (use-modules ((playnet vf formulas shocks) #:select (scenario-factor-on normalize-shocks flows-stress flows-factor scenario-shocks)))

@@ -12,13 +12,13 @@
 (use-modules (playnet test harness))
 (use-modules (playnet plan store) (playnet vf schemas) (srfi srfi-1))
 (use-modules (playnet scope live))       ; set-daily-horizon! — periods ↔ days
-(use-modules (playnet governance demand-fold))
+(use-modules (playnet economy demand-fold))
 (use-modules (playnet vf aggregation fold-node))   ; fold-node-reparent!, coalescer
 (use-modules (goblins))
 (use-modules (goblins utils hashmap))
 (use-modules (srfi srfi-1))
 (use-modules ((playnet vf facts tension-terms) #:select (with-tension-terms)))
-(use-modules ((playnet governance demand-fold) #:select (demand-terms-for name-own-rows)))
+(use-modules ((playnet economy demand-fold) #:select (demand-terms-for name-own-rows)))
 (use-modules ((playnet solve engine) #:select (*desire-w0*)))
 
 (define vat (spawn-vat))

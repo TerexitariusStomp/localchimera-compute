@@ -915,7 +915,7 @@
    ;; then owes is minted as a debt through governance's own
    ;; accept-reimbursement (governance/scope.scm, a ^scope method — the
    ;; commune's own word, not this session's) and read back via my-payouts'
-   ;; `owed` field (governance/debts.scm), paid as a payout.
+   ;; `owed` field (economy/debts.scm), paid as a payout.
    ((record-purchase scope-id spec qty unit money-spec cost where note receipt donation?)
     (planner! 'record-purchase scope-id aid-prefix spec qty unit money-spec cost where note receipt donation?))
    ;; ── skills: the citizen's own labour-power, self-declared ──

@@ -1,6 +1,6 @@
 /// tests/ux/withholding-ux.mjs — the withheld-service sector on the fragility
 /// wheel: push a fragility snapshot carrying a `withholding` array (the shape
-/// withholding-snapshot emits, governance/means-fold.scm) through the live seam
+/// withholding-snapshot emits, economy/means-fold.scm) through the live seam
 /// the "fragility" topic, and read the wheel back — the kind:withheld sector
 /// renders in its own hue, the legend names it, and the detail card carries the
 /// figure (unit-hours/day withheld) with span→reach. A snapshot WITHOUT the

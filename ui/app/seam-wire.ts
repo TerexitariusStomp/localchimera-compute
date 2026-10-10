@@ -304,7 +304,7 @@ export interface SeamHandlers {
   /** The scope's needs and offers, scored against each other, as JSON. */
   // doors: session/match-slots, lobby/who
   matchSlots?(): Promise<unknown>;
-  /** → JSON {available: number, payouts: Payout[], owed: Debt[]} — `owed` is every open debt the commons carries to you for a purchase you fronted and it has accepted (governance/debts.scm). */
+  /** → JSON {available: number, payouts: Payout[], owed: Debt[]} — `owed` is every open debt the commons carries to you for a purchase you fronted and it has accepted (economy/debts.scm). */
   // doors: session/my-payouts
   myPayouts?(): Promise<unknown>;
   /** → JSON {rows: ReadingRow[], drift: {n, meanAbs, net}, latest} — what every source says of SPEC at this scope: one row per technique, act and source with its count, sum, extrema and freshest reading; the drift between counts and the ledger. The inventory face's counts line (docs/observation/readings-are-counts.md). */

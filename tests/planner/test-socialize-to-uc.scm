@@ -28,7 +28,7 @@
 (use-modules (playnet test harness)
              (playnet vf schemas)
              (playnet scope live)
-             (playnet governance socialization) (playnet keri acdc-store)
+             (playnet economy socialization) (playnet keri acdc-store)
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
 

@@ -20,7 +20,7 @@
 (use-modules (playnet test harness)
              (playnet vf schemas)
              (playnet doors service)          ; ^planner-service
-             (playnet governance socialization) (playnet keri acdc-store)               ; socialize-private-resource, socialized-plan-fn
+             (playnet economy socialization) (playnet keri acdc-store)               ; socialize-private-resource, socialized-plan-fn
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
 

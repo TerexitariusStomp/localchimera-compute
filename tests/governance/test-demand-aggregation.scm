@@ -6,12 +6,12 @@
 ;;; equivalent promoted intents into one line item for the planner.
 
 (use-modules (playnet test harness)
-             (playnet governance demand-registry) (playnet pools credit-fold) (playnet scope root) (playnet vf schemas) (srfi srfi-1)
+             (playnet voice demand-registry) (playnet pools credit-fold) (playnet scope root) (playnet vf schemas) (srfi srfi-1)
              (playnet org endorsement)
-             (playnet governance delegation-map) (playnet governance expression) (playnet governance voice-signer) (playnet keri acdc-store) (playnet keri first-person credentials)
-             (playnet governance demand-registry)
-             (playnet governance demand-bridge)
-             (playnet governance demand-aggregation)
+             (playnet voice delegation-map) (playnet voice expression) (playnet voice voice-signer) (playnet keri acdc-store) (playnet keri first-person credentials)
+             (playnet voice demand-registry)
+             (playnet voice demand-bridge)
+             (playnet voice demand-aggregation)
              (goblins)
              (goblins utils hashmap)
              (srfi srfi-1))

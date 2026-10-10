@@ -389,7 +389,7 @@
 
 ;;; ── a recipe ────────────────────────────────────────────────────────────
 ;; What a recipe is (the recipe-store's) and how it has stood (the scope's
-;; standing as its solve takes it, governance/recipe-standing.scm scope-standing:
+;; standing as its solve takes it, economy/recipe-standing.scm scope-standing:
 ;; one record per recipe, the ctx's `responses`). The face and the solve read the
 ;; one record:
 ;;   standing  "experimental" while every run was calm, "observed" once some

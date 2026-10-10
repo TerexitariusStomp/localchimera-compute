@@ -1190,7 +1190,7 @@
 (define (handle-request-payout address xmr due note cb)
   (scoped-call cb (<- *session* 'request-payout *scope* address (arg-num xmr) due note)
     (lambda (_) (reply! cb "ok"))))
-;; debt->wire: one open debt (governance/debts.scm debt->alist shape) — what
+;; debt->wire: one open debt (economy/debts.scm debt->alist shape) — what
 ;; the commons owes back for a purchase a member fronted, once accepted.
 (define (debt->wire k)
   `(("id"        . ,(alist-ref k 'id))

@@ -9,7 +9,7 @@
 
 (use-modules (playnet test harness))
 (use-modules (playnet credentials recomposition) (playnet keri acdc-store))
-(use-modules (playnet governance universal-commune))
+(use-modules (playnet federation universal-commune))
 (use-modules (goblins) (goblins vat))
 
 

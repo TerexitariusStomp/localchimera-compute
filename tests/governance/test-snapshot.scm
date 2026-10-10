@@ -8,7 +8,7 @@
 (use-modules (playnet test harness))
 (use-modules (playnet utils store-utils))
 (use-modules (playnet org endorsement))
-(use-modules (playnet governance ballot) (playnet governance delegation-map) (playnet governance snapshot) (playnet governance voice-signer))
+(use-modules (playnet voice ballot) (playnet voice delegation-map) (playnet voice snapshot) (playnet voice voice-signer))
 (use-modules (goblins)
              (goblins actor-lib methods)
              (goblins utils hashmap))

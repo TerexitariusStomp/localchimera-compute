@@ -31,11 +31,11 @@
   #:use-module (playnet credentials registry)
   #:use-module (playnet credentials voting)
   #:use-module (playnet keri acdc)
-  #:use-module (playnet governance scope-graph)
-  #:use-module (playnet governance sturdyref-credential)
+  #:use-module (playnet federation scope-graph)
+  #:use-module (playnet federation sturdyref-credential)
   #:use-module ((playnet keri first-person credentials)
                 #:select (*schema-playnet-body* *schema-playnet-body-role*))
-  #:use-module ((playnet governance pending-recompositions)
+  #:use-module ((playnet federation pending-recompositions)
                 #:select (current-pending-recompositions))
   #:use-module ((playnet keri bridge) #:select (keri-get-keystate))
   #:use-module (playnet utils boot-cell)
@@ -93,7 +93,7 @@
 ;; ─────────────────────────────────────────────────────────────────────────
 ;;
 ;; The vat plumbing — current-graph-vat / in-graph-vat — lives next to
-;; current-scope-graph in (playnet governance scope-graph) and is
+;; current-scope-graph in (playnet federation scope-graph) and is
 ;; re-exported here for handlers that consume both.
 
 (define (always-accept _i _e _c) #t)

@@ -80,7 +80,7 @@
 ;;; Nothing here is storable. A lent key travels when its grant says it may
 ;;; (`socialize-private-resource #:movable?`): the commune's view then holds
 ;;; the key itself, and a key lent in place is drawn where it lies
-;;; (governance/socialization.scm `project-socialized-custody`).
+;;; (economy/socialization.scm `project-socialized-custody`).
 
 (define-module (playnet knowledge recipes flat-key)
   #:use-module ((playnet utils units) #:select (%count-unit %effort-unit))

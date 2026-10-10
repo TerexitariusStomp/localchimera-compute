@@ -10,35 +10,35 @@
 ;;; Goblins for actor infrastructure.
 
 (define-module (playnet governance)
-  #:use-module (playnet governance auditor)
-  #:use-module (playnet governance structural-invariants)
+  #:use-module (playnet federation auditor)
+  #:use-module (playnet federation structural-invariants)
   #:use-module (playnet boot scope)
   #:use-module (playnet governance service)
   #:use-module (playnet federation communes)
   #:use-module (playnet voice scope-ballots)
   #:use-module (playnet keri first-person sybil-detect)
-  #:use-module (playnet governance recovery)
-  #:use-module (playnet governance expression)
+  #:use-module (playnet federation rebuild)
+  #:use-module (playnet voice expression)
   #:use-module (playnet personhood enrollment)
   #:use-module (playnet keri first-person personhood-policy)
-  #:use-module (playnet governance async)
-  #:use-module (playnet governance recipe-standing)
-  #:use-module (playnet governance means-fold)
+  #:use-module (playnet federation vows)
+  #:use-module (playnet economy recipe-standing)
+  #:use-module (playnet economy means-fold)
   #:use-module (playnet keri first-person predicates)
-  #:use-module (playnet governance root-lineage)   ; installs the recomposition walk as the root lineage
-  #:use-module (playnet governance ballot)
-  #:use-module (playnet governance socialization)
-  #:use-module (playnet governance debts)
-  #:use-module (playnet governance index-oracle)
-  #:use-module (playnet governance delegation-map)
+  #:use-module (playnet federation root-lineage)   ; installs the recomposition walk as the root lineage
+  #:use-module (playnet voice ballot)
+  #:use-module (playnet economy socialization)
+  #:use-module (playnet economy debts)
+  #:use-module (playnet voice index-oracle)
+  #:use-module (playnet voice delegation-map)
   #:use-module (playnet keys bran-custody)
-  #:use-module (playnet governance bootstrap)
+  #:use-module (playnet federation bootstrap)
   #:use-module (playnet keri acdc-store)
   #:use-module (playnet observation credentials)
-  #:use-module (playnet governance voice-signer)
-  #:use-module (playnet governance snapshot)
-  #:use-module (playnet governance guardianship)
-  #:use-module (playnet governance demand-fold)
+  #:use-module (playnet voice voice-signer)
+  #:use-module (playnet voice snapshot)
+  #:use-module (playnet economy guardianship)
+  #:use-module (playnet economy demand-fold)
   #:use-module (playnet credentials audit)
   #:use-module (playnet credentials commitments)
   #:use-module (playnet credentials custody)
@@ -53,7 +53,7 @@
   #:use-module (playnet keri acdc)
   #:use-module (playnet keri first-person credentials)
   #:use-module (playnet personhood attestation-ceremony)
-  #:use-module (playnet governance affected-interest)
+  #:use-module (playnet voice affected-interest)
   #:use-module (playnet utils clock)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
@@ -79,7 +79,7 @@
   #:use-module (playnet keri said-portable)
   #:re-export (canonical-string compute-said said-sort-pairs
                install-said-blake3!
-              ;; from (playnet governance affected-interest)
+              ;; from (playnet voice affected-interest)
               ^affected-interest-voice affected-interest-env
               spawn-affected-interest-voice
               ;; from (playnet personhood attestation-ceremony)
@@ -143,16 +143,16 @@
               mandate-spec-of parse-time-value predicate->spec
               register-mandate-predicate timestamp-claim-for
               witness-assignments-for-federation
-              ;; from (playnet governance demand-fold)
+              ;; from (playnet economy demand-fold)
               ^demand-node cells->horizon demand-cells-of demand-for demand-monoid
               demand-of demand-scope-horizon federation-home-of merge-demand
               scope-own-demand scope-subtree-demand wire-demand-node!
-              ;; from (playnet governance guardianship)
+              ;; from (playnet economy guardianship)
               ^guardianship guardianship-env spawn-guardianship
-              ;; from (playnet governance snapshot)
+              ;; from (playnet voice snapshot)
               build-citizen-registry build-voice-snapshot citizen-record-delegation-map
               citizen-record-id citizen-record-keri-aid
-              ;; from (playnet governance voice-signer)
+              ;; from (playnet voice voice-signer)
               ^voice-signer spawn-keri-voice-signer spawn-voice-signer voice-signer-env
               ;; from (playnet observation credentials)
               ^work-witness attest-contribution! event-log-reconcile!
@@ -168,7 +168,7 @@
               spawn-witnessed-work-ceremony witness-quorum work-events-for-skill
               ;; from (playnet governance acdc-store)
               ^acdc-store non-revoked-by-schema spawn-acdc-store
-              ;; from (playnet governance bootstrap)
+              ;; from (playnet federation bootstrap)
               ^bootstrap-ceremony bootstrap-ceremony! spawn-bootstrap-ceremony
               ;; from (playnet keys bran-custody)
               ^bran-custodian host-vault-key read-vault-bran read-vault-secret
@@ -176,14 +176,14 @@
               restore-bran-custodian spawn-bran-custodian split-and-issue-bran-shares!
               split-and-spawn-custodians! with-host-vault-key
               write-vault-bran! write-vault-secret!
-              ;; from (playnet governance delegation-map)
+              ;; from (playnet voice delegation-map)
               ^delegation-map delegation-map-env delegation-sum entry-fraction
               entry-mandate make-entry mandate-satisfied? merge-overrides
               resolve-delegation spawn-delegation-map
-              ;; from (playnet governance index-oracle)
+              ;; from (playnet voice index-oracle)
               ^index-oracle credential-stream->pairs-fn observation-value
               spawn-index-oracle
-              ;; from (playnet governance socialization)
+              ;; from (playnet economy socialization)
               commune-care-breaches commune-resource-view labour-specs-of verb-specs-of commune-socialized-caps
               consented-span-of
               desocialize-private-resource! federation-resource-resolver live-span-of
@@ -195,10 +195,10 @@
               grant-steward-rule commune-steward-rules make-may-steward make-knows vrc-groups-of
               ownership-credential ownership-ok? title-permits?
               %live-ownership-attestations %grant-over? member-consume-grant-total member-consume-grant-over
-              ;; from (playnet governance debts)
+              ;; from (playnet economy debts)
               money-rate debt-commitment purchase-claim open-debts debt-remaining debt->alist
               open-debts-alist debts-owed-in-xmr settle-debts! %payout-spec
-              ;; from (playnet governance ballot)
+              ;; from (playnet voice ballot)
               ^ballot ballot-env make-citizen-verifier make-sealer-verifier open-ballot
               tally-snapshot voice-snap voice-snap-delegation voice-snap-share
               ;; from (playnet keri first-person predicates)
@@ -211,15 +211,15 @@
               phc-issuer-authz-edge phc-live? phcs-by-ecosystem phcs-in-ecosystem
               root-lineage-closure sponsor-recent-invites trust-triangle-holds?
               vrc-from-to
-              ;; from (playnet governance means-fold)
+              ;; from (playnet economy means-fold)
               ^means-pool capacity-bars capacity-cells capacity-facts
               common-span-defaults means-monoid means-refold-listener means-withholding
               scope-own-capacity scope-subtree-capacity wire-means-node!
               withholding-snapshot
-              ;; from (playnet governance recipe-standing)
+              ;; from (playnet economy recipe-standing)
               live-regime-of observer-runs standing-position
               realized-scenario scope-standing
-              ;; from (playnet governance async)
+              ;; from (playnet federation vows)
               async-sum-over-scopes commune-weight-async global-citizen-claimed-async
               global-citizen-gross-async global-citizen-unmet-async
               global-effective-balance-async global-embodied-labor-in-pool-async
@@ -234,10 +234,10 @@
               rehydrate-enrollment-ceremonies! current-enroll-announcer *self-request-evidence*
               ;; from (playnet keri first-person personhood-policy)
               personhood-policy *personhood-policy-defaults* effective-k
-              ;; from (playnet governance expression)
+              ;; from (playnet voice expression)
               ^expression distribution-sum express expression-env open-expression
               tally-expression-snapshot validate-distribution
-              ;; from (playnet governance recovery)
+              ;; from (playnet federation rebuild)
               latest-by-claim recover-ballot-state recover-ballots-into-scope!
               recover-commitments recover-commune-state recover-delegation-map
               recover-economic-state recover-federation-state
@@ -255,7 +255,7 @@
               ^governance-service governance-service-env spawn-governance-service plan-part-hands-of contrary-observations-of contrary-readings-of
               ;; from (playnet boot scope)
               spawn-commune spawn-federation
-              ;; from (playnet governance structural-invariants)
+              ;; from (playnet federation structural-invariants)
               compile-threshold-spec compose-federation-admitting federation-aid-paths
               federation-double-counted-members federation-leaves
               federation-members-attested? federation-membership-paths-unique?
@@ -267,7 +267,7 @@
               tree-credentials-of-schema tree-work-events unratified-recomposition-acdcs
               verify-kind-from-lineage ownership-coherent? ownership-violations
               records-held-once? records-held-twice
-              ;; from (playnet governance auditor)
+              ;; from (playnet federation auditor)
               *auditor-methods-readonly* ^custody-half-life-watcher ^federation-auditor
               spawn-auditor-facet spawn-custody-half-life-watcher
               spawn-federation-auditor)
@@ -299,7 +299,7 @@
                scope-inception-signed-icp)
   #:use-module (playnet org endorsement)
   #:use-module (ice-9 match)
-  #:use-module (playnet governance ballot-store)
+  #:use-module (playnet voice ballot-store)
   #:use-module ((playnet scope live)         ; governance→planner, one direction —
                 ;; holding-capacity deliberately NOT selected: the umbrella
                 ;; supplies the one conversion, so the two never collide
@@ -336,9 +336,9 @@
                scope-witness-mirror! scope-witness-kel-for)
   #:use-module (playnet identity oobi-host-mirror)
   #:re-export (^oobi-host-mirror spawn-oobi-host-mirror)
-  #:use-module (playnet governance scope-graph)
+  #:use-module (playnet federation scope-graph)
   #:re-export (^scope-graph current-scope-graph)
-  #:use-module (playnet governance audit-scheduler)
+  #:use-module (playnet federation audit-scheduler)
   #:re-export (^audit-scheduler spawn-audit-scheduler)
   #:use-module (playnet keys http-witness-publisher)
   #:re-export (^http-witness-publisher spawn-http-witness-publisher)
@@ -350,7 +350,7 @@
   #:use-module ((playnet keys exchange) #:select (scope-deliver-grant! governance-cred->wire))
   #:use-module (json)
   #:use-module (goblins ocapn ids)
-  #:use-module (playnet governance ballot-store)
+  #:use-module (playnet voice ballot-store)
   #:re-export (^ballot-store spawn-ballot-store ballot-store-env)
   #:export (;; ACDC layer (Phase-1 in-memory; Phase-2 swaps in KERIA)
             ;; Federation-member witness operation

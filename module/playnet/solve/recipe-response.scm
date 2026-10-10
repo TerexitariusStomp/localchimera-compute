@@ -89,7 +89,7 @@
 ;;;
 ;;; Pure — no observer reference, no vat: the live adapter that assembles runs
 ;;; from `events-for-process` + fulfillment links is
-;;; governance/recipe-standing.scm.
+;;; economy/recipe-standing.scm.
 
 (define-module (playnet solve recipe-response)
   #:use-module (srfi srfi-1)

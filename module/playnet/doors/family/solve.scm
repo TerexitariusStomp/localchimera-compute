@@ -2,7 +2,7 @@
 ;;;
 ;;; The family is the smallest scope where the person is still known, so its
 ;;; needs are keyed PER MEMBER (`need|person`) and the AID never leaves this
-;;; solve (governance/demand-fold.scm: a person is resolved where they are
+;;; solve (economy/demand-fold.scm: a person is resolved where they are
 ;;; known, a total is what crosses a fold). Every need is an acquisition recipe
 ;;; — euros consumed, one need-good produced, an errand's labour — built with
 ;;; the household file's own flow helpers; the purse is a finite stock of

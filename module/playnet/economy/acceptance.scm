@@ -12,8 +12,8 @@
   #:use-module (playnet credentials commitments)
   #:use-module (playnet credentials custody)
   #:use-module (playnet keri acdc)
-  #:use-module ((playnet governance debts) #:select (debt-commitment))
-  #:use-module ((playnet governance socialization) #:select (member-consume-grant-total member-consume-grant-over))
+  #:use-module ((playnet economy debts) #:select (debt-commitment))
+  #:use-module ((playnet economy socialization) #:select (member-consume-grant-total member-consume-grant-over))
   #:use-module (srfi srfi-1)
   #:use-module (goblins)
   #:use-module (playnet scope actor)
@@ -50,7 +50,7 @@
      ;; optional evidence admit-commune/merge-with/split accept. Optional
      ;; unless this scope's own governance-policy has set
      ;; require-ratification, in which case require-ratification! refuses
-     ;; the act without one — see governance-policy.scm.
+     ;; the act without one — see voice/quorum.scm.
      (require-gov-cap! gov-sealed? gov-cap "accept-socialization" name)
      (require-store!   acdc-store    "accept-socialization" name)
      (require-ratification! scope-root-ref acdc-store scope-aid
@@ -100,7 +100,7 @@
     ((accept-reimbursement gov-cap claim-said . opts)
      ;; The reimbursement acceptance, in the VF Claim shape (docs/valueflows
      ;; examples, "Claim for income"): the member's own signed purchase-claim
-     ;; (governance/debts.scm purchase-claim, client-signed via the same
+     ;; (economy/debts.scm purchase-claim, client-signed via the same
      ;; ceremony socialize-preimage/-signed uses) attests a PAST fact — "I
      ;; gave the commons this" — so the commune's reciprocal debt is
      ;; TRIGGERED BY it (the debt carries `triggered-by` = the claim's SAID)

@@ -13,7 +13,7 @@
 ;;;
 ;;; Run:  guile -L module -L tests tests/governance/test-delegation-recovery-law.scm
 
-(use-modules (playnet governance delegation-map) (playnet governance recovery) (playnet keri acdc) (playnet keri acdc-store) (playnet test harness)
+(use-modules (playnet voice delegation-map) (playnet federation rebuild) (playnet keri acdc) (playnet keri acdc-store) (playnet test harness)
              (goblins) (goblins utils hashmap) (srfi srfi-1))
 
 (define (fed-fractions dm)

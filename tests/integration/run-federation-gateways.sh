@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # tests/integration/run-federation-gateways.sh
 #
-# Two gateways federated on the wire, end to end through gateway/federate.scm:
+# Two gateways federated on the wire, end to end through federation/federate.scm:
 #
 #   1. Gateway A boots as the federation's Granary, gateway B as its Table
 #      (PLAYNET_SEED_FED), with durable scopes in its own state directory so

@@ -2,7 +2,7 @@
 ;;; ^scope-graph reactive topology view: orphans, parent links, decompose.
 
 (use-modules (playnet test harness)
-             (playnet governance scope-graph)
+             (playnet federation scope-graph)
              (goblins) (goblins utils hashmap))
 
 (define vat (spawn-vat))

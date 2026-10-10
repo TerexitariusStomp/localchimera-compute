@@ -4,7 +4,7 @@
 ;;; it: the flour is RAISED into the commons (planner/doors/service.scm
 ;;; record-purchase). What the commons then owes her back is restitution,
 ;;; not credit: Alice signs her OWN purchase-claim ("I gave the commons
-;;; this" — governance/debts.scm purchase-claim, the exact twin of a
+;;; this" — economy/debts.scm purchase-claim, the exact twin of a
 ;;; socialization grant), and governance's own accept-reimbursement
 ;;; (governance/scope.scm) binds it as the primary to a reciprocal DEBT in
 ;;; an Agreement — the same shape accept-socialization already uses for a
@@ -19,7 +19,7 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness))
-(use-modules (playnet scope root) (playnet vf schemas) (playnet observation states) (playnet doors service) (playnet governance debts) (playnet boot scope) (playnet governance socialization) (playnet keri acdc) (playnet keri acdc-store)
+(use-modules (playnet scope root) (playnet vf schemas) (playnet observation states) (playnet doors service) (playnet economy debts) (playnet boot scope) (playnet economy socialization) (playnet keri acdc) (playnet keri acdc-store)
              (playnet monero specs) (playnet monero payout))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1) (srfi srfi-13))
 

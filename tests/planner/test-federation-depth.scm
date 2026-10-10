@@ -14,7 +14,7 @@
 (use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness)
              (playnet vf schemas) (srfi srfi-1)
-             (playnet credentials custody) (playnet governance socialization)
+             (playnet credentials custody) (playnet economy socialization)
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
 

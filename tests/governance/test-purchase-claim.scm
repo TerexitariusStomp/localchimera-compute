@@ -11,7 +11,7 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/governance/test-purchase-claim.scm
 
-(use-modules (playnet credentials commitments) (playnet keri acdc) (playnet governance debts) (playnet boot scope) (playnet governance service) (playnet governance socialization) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri said-portable) (playnet scope root) (srfi srfi-1) (playnet test harness)
+(use-modules (playnet credentials commitments) (playnet keri acdc) (playnet economy debts) (playnet boot scope) (playnet governance service) (playnet economy socialization) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri said-portable) (playnet scope root) (srfi srfi-1) (playnet test harness)
              ((playnet keri citizen-sig)
               #:select (make-keri-identity keri-identity-keypair keri-identity-aid
                         sign-said verify-said-signature))
@@ -85,7 +85,7 @@
         (check-pred "no Agreement is minted — a past fact triggers, promises agree"
                     (not (find (lambda (c) (equal? *schema-playnet-agreement* (cred-schema c)))
                                ($ store 'all))))
-        (check "settlement reads it like any other debt (governance/debts.scm, unchanged)"
+        (check "settlement reads it like any other debt (economy/debts.scm, unchanged)"
                (length (open-debts store commune-aid alice)) 1)
 
         (display "\n── re-accepting the same claim is idempotent, not a duplicate ──\n")

@@ -155,7 +155,7 @@
 (define (run granted?)
   ;; The commune's solve sees the box and the people either way. What Ada left is
   ;; there only when custody of it has been granted — which is exactly what
-  ;; `project-socialized-custody` (governance/socialization.scm) produces from a
+  ;; `project-socialized-custody` (economy/socialization.scm) produces from a
   ;; live custody attestation naming that resource.
   (let ((resources (if granted? (list the-box loaves) (list the-box))))
     (call-with-values

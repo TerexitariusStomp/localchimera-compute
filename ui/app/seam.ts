@@ -353,7 +353,7 @@ export interface ClaimRow {
 export type Payout = W.WirePayout;
 
 /** One open debt the commons carries to you — what it owes back for a
- *  purchase you fronted, once accepted (governance/debts.scm). Face AMOUNT
+ *  purchase you fronted, once accepted (economy/debts.scm). Face AMOUNT
  *  never changes; REMAINING is what is still open after any part-payments. */
 export interface Debt {
   id: string;

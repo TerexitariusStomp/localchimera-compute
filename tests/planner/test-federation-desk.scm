@@ -2,7 +2,7 @@
 ;;; takes its word only as far as it checks.
 ;;;
 ;;; A federation scope admits communes; each tells its DESK
-;;; (gateway/federate.scm) what it deals in, a census it signs. The desk hands
+;;; (federation/federate.scm) what it deals in, a census it signs. The desk hands
 ;;; whoever asks the credentials that stand — the sturdyrefs and the censuses —
 ;;; signed under the federation's AID with the asker's nonce, and the fold
 ;;; its members tell. The commune reads the answer with `desk-word->spec`:
@@ -21,8 +21,8 @@
 (use-modules (playnet test harness)
              ((playnet test planner federation-wire-fixture) #:select (fx-identity))
              (playnet boot scope) (playnet keri acdc-store) (playnet keri citizen-sig)
-             (playnet gateway federate)
-             ((playnet governance sturdyref-credential) #:select (verified-spec spec-ready?))
+             (playnet federation federate)
+             ((playnet federation sturdyref-credential) #:select (verified-spec spec-ready?))
              ((playnet federation peer) #:select (^attestation-fold wait-vow call-from-thread))
              ((playnet federation wire) #:select (signed-reply))
              ((playnet keri citizen-sig) #:select (make-keri-identity keri-identity-aid keri-identity-keypair))

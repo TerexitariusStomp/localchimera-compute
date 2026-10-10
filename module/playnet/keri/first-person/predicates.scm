@@ -211,7 +211,7 @@
 ;; recomposes (rotates into a new group AID, merges, splits) supplies the walk
 ;; from the current root back over its predecessor AIDs, so a blessing signed
 ;; before the recomposition still chains. The library's own reading is the
-;; root alone; (playnet governance root-lineage) installs playnet's walk over
+;; root alone; (playnet federation root-lineage) installs playnet's walk over
 ;; ratified scope-merger / scope-split credentials.
 (define %root-lineage (lambda (acdc-store root-aid) (list root-aid)))
 

@@ -1,10 +1,8 @@
 # The upward imports the moves of docs/planning/codebase-layout.md §9 have yet to
 # resolve, one per line as the two files' directories to come; `make lint-layers` fails on one not listed
 # here, `tools/module-map.scm --baseline` records a shrunken set. Empty, it goes.
-voice/voice-signer → org/endorsement
 identity/forget → interface/adapters/email
 keys/ipex-policy → federation/pending-recompositions
-keys/ipex-policy → federation/scope-graph
 keys/ipex-policy → federation/sturdyref-credential
 keys/ipex-policy → federation/scope-graph
 keys/notifications → federation/scope-graph
@@ -18,9 +16,10 @@ observation/credentials → personhood/attestation-ceremony
 protocol/dispatch → doors/protocol
 protocol/mcp → doors/protocol
 protocol/shapes → doors/protocol
-scope/actor → voice/governance-policy
+scope/actor → voice/quorum
 scope/actor → org/endorsement
 scope/actor → federation/scope-graph
 scope/actor → federation/sturdyref-credential
 scope/root → voice/demand-registry
 scope/root → voice/ballot-store
+voice/voice-signer → org/endorsement

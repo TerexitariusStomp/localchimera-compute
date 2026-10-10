@@ -7,7 +7,7 @@
 (use-modules (playnet test harness))
 (use-modules (playnet scope root))
 (use-modules (playnet org endorsement))
-(use-modules (playnet governance async) (playnet boot scope) (playnet boot scope) (playnet governance sturdyref-credential) (playnet keri acdc-store))
+(use-modules (playnet federation vows) (playnet boot scope) (playnet boot scope) (playnet federation sturdyref-credential) (playnet keri acdc-store))
 (use-modules (goblins)
              (goblins vat)
              (goblins utils hashmap)

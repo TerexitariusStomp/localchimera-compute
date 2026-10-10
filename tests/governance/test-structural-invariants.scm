@@ -3,7 +3,7 @@
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet scope root))
-(use-modules (playnet credentials recomposition) (playnet credentials voting) (playnet credentials work) (playnet keri acdc) (playnet boot scope) (playnet governance structural-invariants) (playnet keri acdc) (playnet keri acdc-store))
+(use-modules (playnet credentials recomposition) (playnet credentials voting) (playnet credentials work) (playnet keri acdc) (playnet boot scope) (playnet federation structural-invariants) (playnet keri acdc) (playnet keri acdc-store))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap)
              (ice-9 rdelim)
              (srfi srfi-1) (srfi srfi-13))
@@ -363,12 +363,12 @@
 ;;; (Skipped here because voice-share-async pulls scope-roots and
 ;;;  account-store wiring; the orthogonality is documented in
 ;;;  LEAVES-ARE-REAL.md and verified by `grep ccf module/playnet/
-;;;  governance/async.scm` returning no hits in the voice path.)
+;;;  federation/vows.scm` returning no hits in the voice path.)
 
 (display "\n── 14. Voice/CCF orthogonality (structural) ──\n")
 
 (check-pred "set-ccf does not appear in async.scm voice path"
-            (let* ((path "module/playnet/governance/async.scm")
+            (let* ((path "module/playnet/federation/vows.scm")
                    (port (open-input-file path))
                    (text (let loop ((acc ""))
                            (let ((line (read-line port)))

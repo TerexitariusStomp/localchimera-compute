@@ -1,4 +1,4 @@
-;;; test-governance-policy.scm — require-ratification closes the "any
+;;; test-voice/quorum.scm — require-ratification closes the "any
 ;;; member can accept" gap, opt-in per scope.
 ;;;
 ;;; docs/playnet.typ: "Plan acceptance is a production-governance act —
@@ -6,14 +6,14 @@
 ;;; reimbursement (and admit-commune/merge-with/split/rejoin-federation)
 ;;; accept an OPTIONAL 'ratification SAID; a bare gov-cap — self-mintable
 ;;; by any member — is enough unless a scope has opted into
-;;; require-ratification (governance-policy.scm). This proves both
+;;; require-ratification (voice/quorum.scm). This proves both
 ;;; halves: default-off leaves today's behaviour untouched, and opting in
 ;;; actually refuses an unratified accept while a correctly-ratified one
 ;;; still goes through.
 
 (use-modules (playnet test harness))
 (use-modules (playnet scope root))
-(use-modules (playnet credentials commitments) (playnet credentials voting) (playnet keri acdc) (playnet boot scope) (playnet governance socialization) (playnet keri acdc) (playnet keri acdc-store))
+(use-modules (playnet credentials commitments) (playnet credentials voting) (playnet keri acdc) (playnet boot scope) (playnet economy socialization) (playnet keri acdc) (playnet keri acdc-store))
 (use-modules (goblins) (goblins vat))
 
 (define vat (spawn-vat))
@@ -90,7 +90,7 @@
 (display "\n── the one registry of governed numbers ──\n")
 ;; every dial the engine reads at solve time has one default here, equal to
 ;; the engine's own, so a scope with no policy row solves as the engine does
-(use-modules ((playnet governance governance-policy) #:select (*governed-dials* policy-dials governance-policy))
+(use-modules ((playnet voice quorum) #:select (*governed-dials* policy-dials governance-policy))
              ((playnet solve engine) #:select (*pref-bound* want-as-cap?))
              ((playnet solve solver) #:select (*kappa*)))
 (check "the registry names the voice bound, β, ρ, κ, the cap shape and the draw weight"

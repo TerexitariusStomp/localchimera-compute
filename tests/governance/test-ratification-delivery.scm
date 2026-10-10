@@ -24,7 +24,7 @@
 (use-modules (playnet test harness)
              (srfi srfi-1)
              (playnet credentials voting) (playnet keri acdc) (playnet boot scope) (playnet keri acdc) (playnet keri acdc-store)
-             (playnet governance universal-commune)
+             (playnet federation universal-commune)
              (goblins)
              (srfi srfi-1))
 

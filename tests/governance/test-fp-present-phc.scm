@@ -20,12 +20,12 @@
 ;;; survives a JSON round trip (which reorders object keys) yet a tampered
 ;;; one still fails re-derivation.
 
-;; loading (playnet governance root-lineage) installs the recomposition walk as the root lineage
-(use-modules ((playnet governance root-lineage) #:select ()))
+;; loading (playnet federation root-lineage) installs the recomposition walk as the root lineage
+(use-modules ((playnet federation root-lineage) #:select ()))
 (use-modules (playnet test scope)) ; mock-scope-root
 (use-modules (playnet test harness))
-(use-modules (playnet governance ballot-store) (playnet credentials membership) (playnet credentials recomposition) (playnet keri acdc) (playnet keri first-person credentials) (playnet governance service) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri said-portable) (playnet keri first-person credentials) (playnet keri first-person predicates))
-(use-modules (playnet governance ballot-store))
+(use-modules (playnet voice ballot-store) (playnet credentials membership) (playnet credentials recomposition) (playnet keri acdc) (playnet keri first-person credentials) (playnet governance service) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri said-portable) (playnet keri first-person credentials) (playnet keri first-person predicates))
+(use-modules (playnet voice ballot-store))
 (use-modules ((playnet keys exchange) #:select (governance-cred->wire)))
 (use-modules (goblins) (goblins vat) (goblins actor-lib methods)
              (goblins utils hashmap)

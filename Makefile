@@ -197,8 +197,8 @@ check-family-worker: browser/family.wasm
 # Transitive (playnet …) import closure of hoot/scope-worker.scm; see
 # `make check-wasm-deps`.
 SCOPE_WASM_DEPS = \
-                   module/playnet/governance/ballot-store.scm \
-                   module/playnet/governance/demand-registry.scm \
+                   module/playnet/voice/ballot-store.scm \
+                   module/playnet/voice/demand-registry.scm \
                    module/playnet/keri/acdc.scm \
                    module/playnet/keri/cesr.scm \
                    module/playnet/keri/crypto-primitives.scm \
@@ -2133,7 +2133,7 @@ test-federation-peer-procs: $(KERNEL_SO)
 	$(GUILE_TEST_DEV) -L module tests/planner/test-federation-peer-procs.scm
 
 # The planner service's record door: what a gateway's peer of the federated
-# solve is built over (gateway/federate.scm).
+# solve is built over (federation/federate.scm).
 test-federation-scope-record: $(KERNEL_SO)
 	$(GUILE_TEST_DEV) -L module tests/planner/test-federation-scope-record.scm
 
@@ -2208,12 +2208,12 @@ test-crossing-custody: $(KERNEL_SO)
 test-federation-rotation: $(KERNEL_SO)
 	$(GUILE_TEST_DEV) -L module tests/planner/test-federation-rotation.scm
 
-# The federation's spec, off its own store (governance/sturdyref-credential.scm).
+# The federation's spec, off its own store (federation/sturdyref-credential.scm).
 test-federation-spec: $(KERNEL_SO)
 	$(GUILE_TEST_DEV) -L module tests/planner/test-federation-spec.scm
 
 # The federation's desk: what a federation answers for itself, and how far a
-# commune takes its word (gateway/federate.scm `desk-word->spec`).
+# commune takes its word (federation/federate.scm `desk-word->spec`).
 test-federation-desk: $(KERNEL_SO)
 	$(GUILE_TEST_DEV) -L module tests/planner/test-federation-desk.scm
 
@@ -2906,7 +2906,7 @@ test-multi-gateway:
 # berth; a third process admits both into a signed federation scope, serves
 # the federation's desk and fold, and hands each gateway the federation's AID
 # and desk; the gateways boot again on the same state, ask, join and settle;
-# one restarts once federated. gateway/federate.scm, end to end.
+# one restarts once federated. federation/federate.scm, end to end.
 # FED_KEYS=dev: scopes without a key, signing under dev identities.
 test-federation-gateways:
 	guix shell -L deploy/guix -m deploy/manifests/keri-test-manifest.scm -- \

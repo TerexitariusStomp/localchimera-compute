@@ -17,8 +17,8 @@
              ((playnet test planner federation-wire-fixture) #:select (fx-identity))
              (playnet boot scope) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig)
              ((playnet federation host) #:select (roster-ends))
-             ((playnet governance sturdyref-credential) #:select (sturdyref-credential-end spec-ready? verified-spec))
-             ((playnet gateway federate) #:select (census-credential))
+             ((playnet federation sturdyref-credential) #:select (sturdyref-credential-end spec-ready? verified-spec))
+             ((playnet federation federate) #:select (census-credential))
              ((playnet keri acdc) #:select (cred-said cred-schema cred-issuer cred-holder cred-signature
                                             make-credential cred-with-signature))
              ((playnet keri citizen-sig) #:select (make-keri-identity keri-identity-aid keri-identity-keypair))

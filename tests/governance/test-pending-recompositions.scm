@@ -7,7 +7,7 @@
 
 (use-modules (playnet test harness)
              (playnet credentials voting) (playnet keri acdc) (playnet keri acdc)
-             (playnet governance pending-recompositions)
+             (playnet federation pending-recompositions)
              (goblins)
              (srfi srfi-1))
 

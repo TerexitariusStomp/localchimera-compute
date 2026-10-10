@@ -19,8 +19,8 @@
              (playnet doors offers)
              (playnet federation plan-bundle)
              (playnet vf facts availability)
-             (playnet governance socialization) (playnet keri acdc) (playnet keri acdc-store) (playnet keri first-person credentials)
-             ((playnet governance socialization) #:select (lent-to))
+             (playnet economy socialization) (playnet keri acdc) (playnet keri acdc-store) (playnet keri first-person credentials)
+             ((playnet economy socialization) #:select (lent-to))
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
 (use-modules ((playnet wire rows) #:select (plain-reply)))   ; a door's rows, read back as alists

@@ -52,7 +52,7 @@
   #:use-module (goblins utils crypto)
   #:use-module (srfi srfi-1)
   #:use-module ((playnet federation peer) #:select (now-seconds))
-  #:use-module ((playnet governance sturdyref-credential) #:select (sturdyref-credential-end))
+  #:use-module ((playnet federation sturdyref-credential) #:select (sturdyref-credential-end))
   #:export (keep! read-kept file-keeper mkdir-p
             make-berth berth-swiss! berth-sturdyref berth-register! moor!
             wire-handshake

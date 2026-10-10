@@ -1,4 +1,4 @@
-;;; test-debts.scm — governance/debts.scm's own surface: what the commons
+;;; test-debts.scm — economy/debts.scm's own surface: what the commons
 ;;; owes a member back for a purchase they fronted, minted through
 ;;; accept-reimbursement (see that module's header). This test mints debts
 ;;; directly with debt-commitment, the way accept-reimbursement does, and
@@ -7,7 +7,7 @@
 ;;; Run: guile -L module -L tests tests/governance/test-debts.scm
 
 (use-modules (playnet test harness)
-             (playnet credentials commitments) (playnet keri acdc) (playnet governance debts) (playnet keri acdc) (playnet keri acdc-store)
+             (playnet credentials commitments) (playnet keri acdc) (playnet economy debts) (playnet keri acdc) (playnet keri acdc-store)
              (playnet scope root) (srfi srfi-1)
              ((playnet monero specs) #:select (bootstrap-monero-resource! bootstrap-external-asset!))
              (srfi srfi-1)

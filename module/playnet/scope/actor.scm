@@ -41,10 +41,10 @@
   #:use-module (playnet credentials voting)
   #:use-module (playnet keri acdc)
   #:use-module (playnet keri first-person credentials)
-  #:use-module ((playnet governance sturdyref-credential) #:select (sturdyref-credentials->spec census-credential-goods census-key-state *schema-playnet-federation-census* *schema-playnet-federation-sturdyref*))
+  #:use-module ((playnet federation sturdyref-credential) #:select (sturdyref-credentials->spec census-credential-goods census-key-state *schema-playnet-federation-census* *schema-playnet-federation-sturdyref*))
   #:use-module (playnet keri signify-portable)
   #:use-module ((playnet utils hex) #:select (bv->hex))
-  #:use-module (playnet governance scope-graph)
+  #:use-module (playnet federation scope-graph)
   #:use-module (playnet utils paths)
   #:use-module (playnet vf facts validity)
   #:use-module (playnet vf schemas)
@@ -56,7 +56,7 @@
   #:use-module (playnet keys peers)
   #:use-module (playnet org endorsement)
   #:use-module (playnet keri acdc-store)
-  #:use-module (playnet governance governance-policy)
+  #:use-module (playnet voice quorum)
   #:use-module (playnet keys exchange)
   #:use-module (playnet keys kel-store)
   #:use-module (playnet keys bran-custody)
@@ -249,7 +249,7 @@
    calls in place of a bare `(when ratification-said (verify-ratification!
    ...))`. When RATIFICATION-SAID is supplied it is verified exactly as
    before. When it is absent, the act is refused if THIS scope's own
-   governance-policy (governance-policy.scm) has set `require-ratification`
+   governance-policy (voice/quorum.scm) has set `require-ratification`
    — read fresh off SCOPE-ROOT-REF's plan-store, defaulting to #f (today's
    behaviour) when the scope has no economic root or has never opted in."
   (cond
@@ -839,7 +839,7 @@
               member-sturdyrefs ref acdc-store lineage)))
 
     ;; --- Recovery hook: register an already-reconstructed ballot ---
-    ;; recover-ballot-state (governance/recovery.scm) rebuilds a ^ballot
+    ;; recover-ballot-state (federation/rebuild.scm) rebuilds a ^ballot
     ;; from its snapshot+stance ACDCs and records it in the shared
     ;; ballot-store, but has no way to also register it back into a
     ;; specific scope's OWN ballots index — open-direct-ballot/

@@ -12,7 +12,7 @@
 ;;; witnessed, and signed by that party; the giver's side stands in its own
 ;;; signed final attestation. This module is the pure half — the legs a set of
 ;;; final attestations leaves, with deterministic ids; the credentials they
-;;; become are made where governance is in reach (gateway/federate.scm).
+;;; become are made where governance is in reach (federation/federate.scm).
 ;;;
 ;;; A leg appears only for a commune whose peer is FINAL, and its quantity is
 ;;; the commune's own signed flow at the final plan, rounded to the quantum

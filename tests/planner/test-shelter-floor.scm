@@ -20,7 +20,7 @@
 (use-modules (playnet test harness)
              (playnet knowledge recipes dwelling) (playnet scope root) (playnet vf schemas) (playnet vf beyond schedules) (srfi srfi-1)
              (playnet doors service)
-             (playnet governance socialization) (playnet keri acdc-store)
+             (playnet economy socialization) (playnet keri acdc-store)
              (goblins) (goblins persistence-store memory)
              (goblins utils hashmap)
              (srfi srfi-1))

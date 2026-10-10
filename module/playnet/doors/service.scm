@@ -48,12 +48,12 @@
                           node-readings-reply readings-between-reply))  ; the ninth: readings, every source kept apart, and their history
   #:use-module ((playnet knowledge catalogues thermal) #:select (declare-thermal-form!))   ; a state is a form: the scope declares it
   #:use-module ((playnet vf facts parts) #:select (validate-hand part->string))
-  #:use-module ((playnet governance governance-policy) #:select (governance-policy policy-dials))   ; the governed dials, one registry
+  #:use-module ((playnet voice quorum) #:select (governance-policy policy-dials))   ; the governed dials, one registry
   #:use-module ((playnet pools slack-fold)
                 #:select (^slack-node))                    ; the seventh: desire, per place
-  #:use-module ((playnet governance means-fold)
+  #:use-module ((playnet economy means-fold)
                 #:select (^means-pool wire-means-node! capacity-cells))
-  #:use-module ((playnet governance demand-fold)
+  #:use-module ((playnet economy demand-fold)
                 #:select (^demand-node wire-demand-node! federation-home-of federation-voice-of
                           %demand-key-parts %need-cells %needs-of-plan-store))
   #:use-module ((playnet vf aggregation fold-node) #:select (sum-cells))
@@ -218,7 +218,7 @@
         (lambda (a b) (string<? (intent-id a) (intent-id b)))))
 (define* (payout-available obs ps aid #:key (owed 0.0))
   "What AID may still ask to send: their claimed XMR on hand, plus OWED (what
-   the commons owes them, already priced in XMR — governance/debts.scm
+   the commons owes them, already priced in XMR — economy/debts.scm
    debts-owed-in-xmr, injected as owed-of; see the ^planner-service header),
    less every payout of theirs still OPEN — pending, sending, or unsettled
    (a transfer the gateway lost sight of reserves the claim until an
@@ -2134,14 +2134,14 @@ service does not know the scope (nothing to filter by)."
   ;;            (test-means-gateway), which is what keeps the two reads
   ;;   steward  (sid agent spec skills) → may this agent be assigned to work on a lent means
   ;;   knows    (owner agent) → how the owner knows them: recognition, groups, vouched (make-knows)
-  ;;   debts owed settle — governance's one debt representation (governance/debts.scm)
+  ;;   debts owed settle — governance's one debt representation (economy/debts.scm)
   ;; PLAN-FN is the plain solve, (root sid . kw) → alist; every solve at a
   ;; scope goes through live.scm solve-with-readers with these readers.
   ;; Absent readers, the raw observer, the caller's demand, no stamp.
   (define (reader name) (assq-ref readers name))
   (define debts-of (reader 'debts)) (define owed-of (reader 'owed)) (define settle-of (reader 'settle))
   (define standing-of (reader 'standing)) (define may-steward-of (reader 'steward))
-  (define lent-of (reader 'lent))           ; sid → what the commune is lent (governance/socialization.scm `lent-to`)
+  (define lent-of (reader 'lent))           ; sid → what the commune is lent (economy/socialization.scm `lent-to`)
   (define knows-of (reader 'knows))
   (define pool-of (reader 'pool)) (define hands-of (reader 'hands)) (define world-of (reader 'world))
   (define contrary-of (reader 'observed))   ; sid → the rail's standing contrary readings, for the reading fold (not audit.scm's `observed-of`, which reads a person's events)
@@ -2217,7 +2217,7 @@ service does not know the scope (nothing to filter by)."
   ;; the scope's standing pushes and hours reader off its voice node, and the
   ;; path of scopes the solve stands in (leaf first) for a part naming a scope.
   ;; the governed dials, every row read fresh from the one registry
-  ;; (governance-policy.scm): τ and the rest go to the engine as keywords;
+  ;; (voice/quorum.scm): τ and the rest go to the engine as keywords;
   ;; with τ > 0 the scope's voice fold hands the field its pushes and hours
   ;; the scope roots a person's credit is read over: the roster's, walked live.
   ;; Credit is earned anywhere and spent anywhere (account.scm `claim`), and a
@@ -5216,7 +5216,7 @@ service does not know the scope (nothing to filter by)."
                       (m    (intent-resource-quantity i))
                       (xmr  (measure-has-numerical-value m))
                       ;; what the commons OWED is paid first, via the
-                      ;; injected settle-of (governance/debts.scm settle-debts!,
+                      ;; injected settle-of (economy/debts.scm settle-debts!,
                       ;; which records its own "debt-paid:" events per debt
                       ;; and revokes any fully-paid ones); the claim bears
                       ;; the rest — the ledger then shows the coins leaving
@@ -5312,7 +5312,7 @@ service does not know the scope (nothing to filter by)."
     ;; A member buys a thing the commons wanted with their own money and
     ;; records it: the good is RAISED into the commons (provider = the member,
     ;; the receipt on the event). What the commons then owes them back is a
-    ;; DEBT (governance/debts.scm) — minted through governance's own
+    ;; DEBT (economy/debts.scm) — minted through governance's own
     ;; accept-reimbursement (governance/scope.scm),
     ;; a ^scope method, because minting a debt needs the scope's own signature;
     ;; this service only states whether the purchase fulfils a plan the commons

@@ -37,7 +37,7 @@
              (playnet knowledge dsl shorthand)
              (playnet knowledge dsl world)
              ((playnet knowledge recipes transport) #:select (mode-recipe))
-             (playnet governance socialization) (playnet keri acdc) (playnet keri acdc-store)
+             (playnet economy socialization) (playnet keri acdc) (playnet keri acdc-store)
              (playnet test events)
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))

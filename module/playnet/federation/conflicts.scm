@@ -14,7 +14,7 @@
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-11)
   #:use-module (goblins utils hashmap)
-  #:use-module (playnet governance async)
+  #:use-module (playnet federation vows)
   #:use-module (srfi srfi-11)
   #:use-module (goblins)
   #:use-module (playnet scope actor)

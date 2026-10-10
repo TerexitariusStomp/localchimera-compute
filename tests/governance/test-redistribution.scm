@@ -2,7 +2,7 @@
 
 (use-modules (playnet test harness))
 (use-modules (playnet scope root))
-(use-modules (playnet governance auditor) (playnet credentials audit) (playnet credentials commitments) (playnet keri acdc) (playnet boot scope) (playnet governance structural-invariants) (playnet keri acdc) (playnet keri acdc-store))
+(use-modules (playnet federation auditor) (playnet credentials audit) (playnet credentials commitments) (playnet keri acdc) (playnet boot scope) (playnet federation structural-invariants) (playnet keri acdc) (playnet keri acdc-store))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
 

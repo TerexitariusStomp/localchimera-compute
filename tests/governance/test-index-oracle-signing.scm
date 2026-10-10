@@ -9,7 +9,7 @@
 
 ;; the host crypto backend: loading (playnet keri signify) installs it
 (use-modules ((playnet keri signify) #:select ()))
-(use-modules (playnet governance index-oracle) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet test harness)
+(use-modules (playnet voice index-oracle) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet test harness)
              ((playnet keri citizen-sig)
               #:select (make-keri-identity keri-identity-keypair keri-identity-aid
                         verify-said-signature))

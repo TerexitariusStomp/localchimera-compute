@@ -56,7 +56,7 @@ interface EcoWire {
   tippingElements?: unknown[];
   /**
    * Withheld service — hours that could serve within reach but pool narrower
-   * (governance/means-fold.scm). Folded into `controls` on arrival; older
+   * (economy/means-fold.scm). Folded into `controls` on arrival; older
    * snapshots simply lack the field.
    */
   withholding?: EcoControl[];

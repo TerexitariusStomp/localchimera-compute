@@ -56,9 +56,9 @@
              (ice-9 threads)
              ((srfi srfi-1) #:select (partition))
              (playnet gateway lobby)
-             (playnet gateway federate)
+             (playnet federation federate)
              ((playnet federation wire) #:select (signer-of signer-aid))
-             ((playnet governance sturdyref-credential) #:select (spec-goods))
+             ((playnet federation sturdyref-credential) #:select (spec-goods))
              ((playnet vf schemas) #:select (resource-specification-default-unit-of-resource))
              ((playnet federation host) #:select (read-kept keep! berth-swiss! berth-sturdyref wire-handshake))
              ((playnet gateway http-door-server) #:select (start-http-door!))
@@ -113,18 +113,18 @@
              ;; …and of (playnet governance)
              (playnet observation credentials)
              (playnet personhood attestation-ceremony)
-             (playnet governance auditor)
+             (playnet federation auditor)
              (playnet credentials registry) (playnet keri acdc) (playnet keri first-person credentials)
-             (playnet governance debts)
+             (playnet economy debts)
              (playnet personhood enrollment)
              (playnet keys http-witness-publisher)
              (playnet identity oobi-host-mirror)
              (playnet utils paths)
-             (playnet governance recipe-standing)
-             (playnet governance recovery)
+             (playnet economy recipe-standing)
+             (playnet federation rebuild)
              (playnet boot scope)
              (playnet governance service)
-             (playnet governance socialization)
+             (playnet economy socialization)
              (playnet keri acdc)
              (playnet keri acdc-store)
              (playnet keri first-person credentials)
@@ -137,18 +137,18 @@
              (playnet planner)
              (playnet governance)
              (playnet scope recovery)
-             (playnet governance scope-graph)
+             (playnet federation scope-graph)
              (playnet keys pending-grants)
-             ((playnet governance pending-recompositions)
+             ((playnet federation pending-recompositions)
               #:select (current-pending-recompositions
                         spawn-pending-recompositions))
              ((playnet utils common) #:select (env-int env-flag?))
              ((playnet keys exchange) #:select (current-pending-grants))
              ((playnet keys ipex-policy) #:select (current-credential-finder
                                                    current-credential-finder-by-said))
-             (playnet governance universal-commune)
-             (playnet governance uc-curator)
-             (playnet governance remote-scope-poller)
+             (playnet federation universal-commune)
+             (playnet federation uc-curator)
+             (playnet federation remote-scope-poller)
              (playnet personhood witness-relay)
              (playnet keys keri-backend live)
              (playnet identity seat)
@@ -757,7 +757,7 @@
        ;; comes back with empty `excluded`/`members`/`lineage`, even
        ;; though the ACDCs proving exclusions, CCF assessments, and
        ;; federation memberships are sitting right there in the
-       ;; just-restored acdc-store. (playnet governance recovery) exists
+       ;; just-restored acdc-store. (playnet federation rebuild) exists
        ;; precisely for this — replaying non-revoked ACDCs back into live
        ;; actor state — and is exercised by tests/governance/test-recovery.scm,
        ;; but wasn't called from anywhere in the boot path until now. Runs
@@ -989,7 +989,7 @@
        ;; #:durable-dir. The portrait is the primary and is complete on an
        ;; ordinary restart, so this reconcile is then an idempotent no-op —
        ;; recover-economic-state skips every commitment / intent / work-event
-       ;; already present (by id — see governance/recovery.scm). Its real job
+       ;; already present (by id — see federation/rebuild.scm). Its real job
        ;; is the disaster case: if planner.syrup was lost or corrupted while
        ;; the durable acdc-store survived, it rebuilds the planner from the
        ;; credential record. No gate — idempotency makes it correct on every
@@ -1284,7 +1284,7 @@
              (length %auditors) (length %watchers))
 
        ;; Every federation this gateway holds answers for itself on the wire
-       ;; (gateway/federate.scm `serve-federation!`): a desk that hands a
+       ;; (federation/federate.scm `serve-federation!`): a desk that hands a
        ;; member the spec — the credentials that stand, signed under the
        ;; federation's AID — and the fold its members tell, each at a
        ;; sturdyref that stands across restarts. The desk's sturdyref is kept
@@ -2106,7 +2106,7 @@ failed (~a ~a); synthetic~%" k a)
                            (when fc-scope
                              ($ governance-svc 'set-home-scope! fc-scope)
                              (log! "  [gateway] governance home-scope -> founding commune~%")))
-                         ;; the commune on the wire (gateway/federate.scm): a
+                         ;; the commune on the wire (federation/federate.scm): a
                          ;; peer of the federated solve, when the data directory
                          ;; holds federation.scm — the commune's demand, and the
                          ;; federation it answers to: `federation` its AID with

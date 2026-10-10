@@ -52,7 +52,7 @@
 ;;; Given N vows, return one vow that resolves to the list of their
 ;;; values in the original order. Handlers register immediately for all
 ;;; N — total latency is max(vow), not sum(vow). The existing
-;;; vow-fold-async in governance/async.scm is sequential; we need this
+;;; vow-fold-async in federation/vows.scm is sequential; we need this
 ;;; parallel variant so slow peers don't block others in federation.
 
 ;;; `all-of*` from `(goblins actor-lib joiners)` is exactly the

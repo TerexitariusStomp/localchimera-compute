@@ -13,15 +13,15 @@
   #:use-module (playnet credentials membership)
   #:use-module (playnet credentials recomposition)
   #:use-module (playnet keri acdc)
-  #:use-module ((playnet governance sturdyref-credential) #:select (sturdyref-credentials->spec census-credential-goods census-key-state *schema-playnet-federation-census* *schema-playnet-federation-sturdyref*))
+  #:use-module ((playnet federation sturdyref-credential) #:select (sturdyref-credentials->spec census-credential-goods census-key-state *schema-playnet-federation-census* *schema-playnet-federation-sturdyref*))
   #:use-module ((playnet keri key-state) #:select (state-sn state-said rotation-count))
-  #:use-module (playnet governance scope-graph)
+  #:use-module (playnet federation scope-graph)
   #:use-module (playnet vf schemas)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-11)
   #:use-module (goblins utils hashmap)
   #:use-module (playnet keri inception)
-  #:use-module (playnet governance async)
+  #:use-module (playnet federation vows)
   #:use-module (playnet keys exchange)
   #:use-module (goblins ocapn ids)
   #:use-module (srfi srfi-11)
@@ -187,7 +187,7 @@
     ;; The federation on the wire, read off its own store: every member's
     ;; sturdyref credential that stands (issued here, not revoked), and the
     ;; roster they make — ((good aid …) …), the members each good crosses
-    ;; for. What a member's peer is built with (gateway/federate.scm),
+    ;; for. What a member's peer is built with (federation/federate.scm),
     ;; nothing typed.
     ((federation-spec)
      (sturdyref-credentials->spec

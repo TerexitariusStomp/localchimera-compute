@@ -244,7 +244,7 @@
 ;; that subtree, so the same citizen speaks twice as loudly or half as loudly
 ;; by where they are asked.
 (display "\n── voice: the same citizen, the same voice, wherever the need sits ──\n")
-(use-modules ((playnet governance demand-fold) #:select (federation-voice-of)))
+(use-modules ((playnet economy demand-fold) #:select (federation-voice-of)))
 (with-vat vat
   (let ((at-a (federation-voice-of %a %uc))
         (at-b (federation-voice-of b-root %uc))

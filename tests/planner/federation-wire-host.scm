@@ -5,7 +5,7 @@
 ;;; The other half of test-federation-wire-procs.scm (a ^commune-solver the
 ;;; coordinator questions) and of test-federation-peer-procs.scm (with `peer`:
 ;;; the commune as a peer of the coordinator-free solve, through the gateway's
-;;; door — gateway/federate.scm — exactly as a gateway puts its founding
+;;; door — federation/federate.scm — exactly as a gateway puts its founding
 ;;; commune on the wire). The commune this process holds never sees the
 ;;; other commune's records.
 ;;;
@@ -22,7 +22,7 @@
 (use-modules (playnet test harness)
              (playnet federation wire)
              (playnet federation host)
-             (playnet gateway federate)
+             (playnet federation federate)
              ((playnet solve engine) #:select (make-boundary-oracle))
              ((playnet keri citizen-sig) #:select (make-keri-identity keri-identity-aid))
              (goblins) (goblins vat)

@@ -23,7 +23,7 @@
              (playnet keri crypto-primitives)
              (playnet keys ipex-policy)
              (playnet credentials membership)
-             (playnet governance scope-graph)
+             (playnet federation scope-graph)
              (playnet keys pending-grants)
              (playnet keys keria-store)
              (playnet utils hex)

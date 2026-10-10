@@ -8,7 +8,7 @@
 
 (use-modules (playnet test harness))
 (use-modules (playnet scope root) (playnet vf schemas))
-(use-modules (playnet credentials commitments) (playnet keri acdc) (playnet governance recovery) (playnet keri acdc) (playnet keri acdc-store))
+(use-modules (playnet credentials commitments) (playnet keri acdc) (playnet federation rebuild) (playnet keri acdc) (playnet keri acdc-store))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
 

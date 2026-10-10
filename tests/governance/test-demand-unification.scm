@@ -5,7 +5,7 @@
 ;;; knowledge fragments become a stronger one via unification.
 
 (use-modules (playnet test harness)
-             (playnet governance demand-registry)
+             (playnet voice demand-registry)
              (playnet deprecated governance demand-unify)
              (srfi srfi-1))
 

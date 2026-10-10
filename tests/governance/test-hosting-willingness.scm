@@ -8,7 +8,7 @@
 
 (use-modules (playnet test harness))
 (use-modules )
-(use-modules (playnet credentials declarations) (playnet keri acdc) (playnet governance socialization) (playnet keri acdc) (playnet keri acdc-store))
+(use-modules (playnet credentials declarations) (playnet keri acdc) (playnet economy socialization) (playnet keri acdc) (playnet keri acdc-store))
 (use-modules (goblins))
 (use-modules (srfi srfi-1))
 

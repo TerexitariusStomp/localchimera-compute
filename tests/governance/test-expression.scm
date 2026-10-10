@@ -3,7 +3,7 @@
 (use-modules (playnet test harness))
 (use-modules (playnet pools credit-fold) (srfi srfi-1))
 (use-modules (playnet org endorsement))
-(use-modules (playnet governance delegation-map) (playnet governance expression) (playnet governance voice-signer))
+(use-modules (playnet voice delegation-map) (playnet voice expression) (playnet voice voice-signer))
 (use-modules (goblins) (goblins utils hashmap) (srfi srfi-1))
 
 

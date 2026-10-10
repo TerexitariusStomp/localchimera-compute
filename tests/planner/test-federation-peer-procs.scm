@@ -1,6 +1,6 @@
 ;;; test-federation-peer-procs.scm — the coordinator-free federated solve across
 ;;; TWO PROCESSES, each commune put on the wire through the gateway's door
-;;; (gateway/federate.scm), joined from credentials, and one of them restarted.
+;;; (federation/federate.scm), joined from credentials, and one of them restarted.
 ;;;
 ;;; Commune B is hosted by a child process (federation-wire-host.scm … peer);
 ;;; commune A lives here. Each has a netlayer and a mycapn as a gateway has
@@ -31,11 +31,11 @@
 (use-modules (playnet test harness)
              (playnet federation peer)
              (playnet federation host)
-             (playnet gateway federate)
+             (playnet federation federate)
              ((playnet solve engine) #:select (make-boundary-oracle solve-consensus))
              ((playnet keri citizen-sig) #:select (make-keri-identity keri-identity-aid keri-identity-keypair))
              ((playnet credentials membership) #:select (make-federation-sturdyref-credential))
-             ((playnet governance sturdyref-credential) #:select (sturdyref-credential-end))
+             ((playnet federation sturdyref-credential) #:select (sturdyref-credential-end))
              (goblins actor-lib joiners) (goblins actor-lib timers)
              (goblins) (goblins vat)
              (goblins actor-lib on)

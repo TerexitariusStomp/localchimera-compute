@@ -503,7 +503,7 @@
              ""
              "Promise<unknown>"
              ((session . my-payouts))
-             "→ JSON {available: number, payouts: Payout[], owed: Debt[]} — `owed` is every open debt the commons carries to you for a purchase you fronted and it has accepted (governance/debts.scm).")
+             "→ JSON {available: number, payouts: Payout[], owed: Debt[]} — `owed` is every open debt the commons carries to you for a purchase you fronted and it has accepted (economy/debts.scm).")
     (handler "scopeReadings"
              "spec: string"
              "Promise<unknown>"

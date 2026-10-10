@@ -10,7 +10,7 @@
 
 (define-module (playnet boot scope)
   #:use-module (playnet scope actor)
-  #:use-module (playnet governance root-lineage)   ;; load: a scope recomposes; the lineage walk installs with the composition
+  #:use-module (playnet federation root-lineage)   ;; load: a scope recomposes; the lineage walk installs with the composition
   #:use-module ((playnet scope keys) #:select (scope-keys-doors))
   #:use-module ((playnet scope capabilities) #:select (scope-capabilities-doors))
   #:use-module ((playnet scope membership) #:select (scope-membership-doors))

@@ -59,7 +59,7 @@ export function flowChip(f: ScopeFlow, move: Move | null = null): string {
 export type Pt = { s: number; c: number };
 export type Bend = { kind: string; gap: number; from: number; at: number; to: number };
 
-// ── standing: a recipe's response, read off its runs (governance/recipe-standing.scm) ──
+// ── standing: a recipe's response, read off its runs (economy/recipe-standing.scm) ──
 export const POSITION_LABEL: Record<string, string> = {
   "experimental": "🧪 experimental — every run so far was calm",
   "observed":     "✓ observed — it has run under stress",

@@ -15,7 +15,7 @@
 
 (use-modules (playnet test harness))
 (use-modules (playnet algorithms correlation) (playnet ddmrp buffers) (playnet algorithms option-premium) (playnet algorithms rollover-scheduler) (playnet vf schemas) (playnet ddmrp records)
-             (playnet credentials work) (playnet keri acdc) (playnet governance index-oracle) (playnet keri acdc) (playnet keri acdc-store)
+             (playnet credentials work) (playnet keri acdc) (playnet voice index-oracle) (playnet keri acdc) (playnet keri acdc-store)
              (goblins)
              (srfi srfi-1))
 

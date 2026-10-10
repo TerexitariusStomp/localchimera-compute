@@ -5,7 +5,7 @@
 ;;; Uses (goblins utils crypto) for Ed25519 ops (same lib as OCapN CapTP).
 
 (use-modules (playnet test harness))
-(use-modules (playnet governance ballot) (playnet governance voice-signer) (playnet keri said-portable))
+(use-modules (playnet voice ballot) (playnet voice voice-signer) (playnet keri said-portable))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap)
              (goblins utils crypto)
              (rnrs bytevectors) (srfi srfi-1)

@@ -116,7 +116,7 @@
 ;; the observer log behind the cooking flow: five days, each a (day capture
 ;; stresses tuples) row, STRESSES the ((channel . stress) …) the run is filed
 ;; under, a channel one of the recipe's own flows — the shape
-;; governance/recipe-standing.scm scope-standing leaves under `runs`.
+;; economy/recipe-standing.scm scope-standing leaves under `runs`.
 (define stove-runs
   (list (list "2026-03-01" 90.0 '(((work . "skill-cook") . 2)) '((work "skill-cook" 10.0 9.0)))
         (list "2026-03-02" 60.0 '(((work . "skill-cook") . 4)) '((work "skill-cook" 10.0 6.0)))

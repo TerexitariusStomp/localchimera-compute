@@ -79,7 +79,7 @@
 (define* (fx-federation! aid-a sref-a aid-b sref-b #:key (seed 3) (census '()))
   "In a turn. → (values federation-scope spec)."
   (let* ((gov (resolve-interface '(playnet governance)))
-         (door (resolve-interface '(playnet gateway federate)))
+         (door (resolve-interface '(playnet federation federate)))
          (spawn-scope (module-ref gov 'spawn-scope))
          (spawn-acdc-store (module-ref gov 'spawn-acdc-store))
          (id-f (fx-identity seed))
@@ -100,7 +100,7 @@
    and its fold behind MYCAPN, kept at STATE-DIR (the gateway's
    `serve-federation!`), signing through FED's own key. → a vow of its alist:
    `desk`, `fold`, `sturdyref`, `tell`."
-  (let ((door (resolve-interface '(playnet gateway federate))))
+  (let ((door (resolve-interface '(playnet federation federate))))
     ((module-ref door 'serve-federation!)
      fed ((module-ref door 'scope-signer) (keri-identity-aid (fx-identity seed)) fed)
      mycapn netlayer state-dir)))

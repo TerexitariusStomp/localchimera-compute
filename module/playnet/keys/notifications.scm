@@ -34,7 +34,7 @@
                 #:select (current-pending-grants governance-cred->wire))
   #:use-module ((playnet keri signify)
                 #:select (saidify-block %saidplaceholder))
-  #:use-module (playnet governance scope-graph)
+  #:use-module (playnet federation scope-graph)
   #:use-module (playnet keys keria-store)
   ;; cred-said accessor for the governance-cred alist returned by
   ;; acdc-store queries (different from acdc-said which reads the

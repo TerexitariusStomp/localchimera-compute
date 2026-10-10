@@ -202,13 +202,13 @@ nutrient pool.
 `standing-settings` (doors/service.scm:2196) reads `admit?` and `proc-frag` off
 `(standing root sid)`; `gather` (2162) reads `admit?` the same way, and two more sites read
 `proc-frag` (3249, 3996). The
-standing the gateway injects is `scope-standing` (governance/recipe-standing.scm), which
+standing the gateway injects is `scope-standing` (economy/recipe-standing.scm), which
 returns `responses` and `observed` and nothing else. No other reader in the repository
 produces either key:
 
 ```
 $ grep -rn "(cons 'admit?\|'admit? \.\|(admit? \. " module server --include=*.scm
-$ grep -n "admit?\|proc-frag" module/playnet/governance/recipe-standing.scm
+$ grep -n "admit?\|proc-frag" module/playnet/economy/recipe-standing.scm
 ```
 
 (both print nothing). The three reads are dead in production: the recipe-admission gate and the

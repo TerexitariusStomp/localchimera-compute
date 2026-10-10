@@ -15,7 +15,7 @@
 //
 // The family is the scope where the person is still known, so the rows come
 // back keyed per member — the one place a per-person reading of harmony is
-// legitimate (governance/demand-fold.scm: a person is resolved where they are
+// legitimate (economy/demand-fold.scm: a person is resolved where they are
 // known; a total is what crosses a fold).
 //
 // The solve runs on the device (family-local.ts: the planner compiled for the

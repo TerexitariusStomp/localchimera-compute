@@ -11,7 +11,7 @@
 
 (use-modules (playnet test harness)
              (playnet scope root) (playnet vf schemas)
-             (playnet boot scope) (playnet governance socialization)
+             (playnet boot scope) (playnet economy socialization)
              (playnet credentials commitments) (playnet credentials custody)
              (playnet keri acdc) (playnet keri acdc-store)
              (goblins) (goblins vat) (srfi srfi-1))

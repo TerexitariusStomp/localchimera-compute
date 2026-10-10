@@ -4,7 +4,7 @@
 ;;; custody to the federation, a scope that draws receives it from the
 ;;; federation — two legs per participant, never a pairing of supplier and
 ;;; drawer (planner/federation/crossing-custody.scm). Each leg is written by the party that
-;;; RECEIVES it, as the occurrence it witnessed (gateway/federate.scm), and
+;;; RECEIVES it, as the occurrence it witnessed (federation/federate.scm), and
 ;;; signed by that party:
 ;;;
 ;;;   • the legs are a function of the final attestations: a supplier's flow is a
@@ -23,7 +23,7 @@
 (use-modules (playnet test harness)
              ((playnet test planner federation-wire-fixture) #:select (fx-identity))
              (playnet federation crossing-custody)
-             (playnet gateway federate)
+             (playnet federation federate)
              (playnet boot scope) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig)
              ((playnet keri citizen-sig) #:select (make-keri-identity keri-identity-aid keri-identity-keypair))
              (goblins) (goblins vat)

@@ -40,7 +40,7 @@
     ;; This scope's own word on whether its governance acts (admit-commune,
     ;; merge-with, split, rejoin-federation, accept-socialization,
     ;; accept-reimbursement) require a passing `^ballot` ratification, or
-    ;; accept a bare gov-cap alone (governance-policy.scm). Same shape as
+    ;; accept a bare gov-cap alone (voice/quorum.scm). Same shape as
     ;; set-personhood-policy! above: gov-cap gated, partial-alist merge,
     ;; read fresh by require-ratification! on every act.
     ((set-governance-policy! gov-cap changes)

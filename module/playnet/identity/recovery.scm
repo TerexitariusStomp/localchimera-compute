@@ -5,7 +5,7 @@
 ;;; each VRC read for a signature (verified at its own time —
 ;;; keri/first-person/predicates.scm cred-signature-valid?), a live issuer PHC and
 ;;; an I2I edge that holds. Pure: it never mutates the store; callers decide
-;;; whether to revoke. Moved from governance/recovery.scm, which re-exports
+;;; whether to revoke. Moved from federation/rebuild.scm, which re-exports
 ;;; it (identity centralization, step 6).
 
 (define-module (playnet identity recovery)

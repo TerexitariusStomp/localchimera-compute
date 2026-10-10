@@ -14,7 +14,7 @@
   #:use-module (playnet vf schemas)
   #:use-module (srfi srfi-1)
   #:use-module (goblins utils hashmap)
-  #:use-module (playnet governance ballot)
+  #:use-module (playnet voice ballot)
   #:use-module ((playnet personhood attestation-ceremony) #:select (^attestation-ceremony register-attestation-ceremony!))
   #:use-module (goblins)
   #:use-module (playnet scope actor)
