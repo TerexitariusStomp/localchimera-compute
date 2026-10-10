@@ -55,7 +55,11 @@
             recover-federation-state recover-federation-state-remote
             recover-ballot-state recover-ballots-into-scope! recover-commitments
             recover-work-events recover-intents recover-lineage
-            recover-personhood-state recover-economic-state))
+            recover-economic-state)
+  ;; the personhood audit is identity's (identity/recovery.scm); still
+  ;; reachable by this module's name and the governance umbrella's
+  #:use-module ((playnet identity recovery) #:select (recover-personhood-state))
+  #:re-export (recover-personhood-state))
 
 ;; =========================================================================
 ;; Pure helpers — pick latest, group, etc.
@@ -585,57 +589,6 @@
 ;; or cryptographic problems a foreign verifier would notice. Useful
 ;; after `'import` from a peer or a `#:durable-dir` reload to surface
 ;; "this credential set has issues" before relying on it.
-
-(define (recover-personhood-state acdc-store ecosystem-aid)
-  "Audit ECOSYSTEM-AID's personhood corpus. Returns alist:
-     ((phc-count . N)
-      (vrc-count . M)
-      (live-triangles . list-of-(a . b))
-      (issues . list-of-(symbol . SAID)))
-   Issue symbols:
-     - 'unsigned-vrc      — VRC has no Ed25519 signature
-     - 'invalid-vrc-sig   — sig doesn't verify against issuer AID
-     - 'orphan-vrc        — issuer-phc edge doesn't resolve to a live PHC
-     - 'broken-i2i        — issuer-phc edge fails I2I
-   Pure: never mutates the store; callers decide whether to revoke."
-  (define (vrc-issue vrc)
-    (let* ((edge     (cred-edge vrc 'issuer-phc))
-           (target-c (and edge ($ acdc-store 'get (edge-target edge)))))
-      (cond
-        ((not (cred-signature vrc))                'unsigned-vrc)
-        ((not (cred-signature-valid? vrc))         'invalid-vrc-sig)
-        ((or (not target-c) (not (phc-live? target-c))) 'orphan-vrc)
-        ((not (edge-i2i-holds? edge vrc target-c)) 'broken-i2i)
-        (else                                      #f))))
-
-  (let* ((phcs (phcs-in-ecosystem acdc-store ecosystem-aid))
-         (vrcs (filter (lambda (c) (not (cred-revoked? c)))
-                       ($ acdc-store 'by-schema
-                          *schema-playnet-relationship*)))
-         (issues
-           (filter-map
-             (lambda (v)
-               (let ((sym (vrc-issue v)))
-                 (and sym (cons sym (cred-said v)))))
-             vrcs))
-         (triangles
-           (append-map
-             (lambda (a)
-               (filter-map
-                 (lambda (b)
-                   (and (string<? (cred-holder a) (cred-holder b))
-                        (trust-triangle-holds? acdc-store
-                                               (cred-holder a)
-                                               (cred-holder b)
-                                               ecosystem-aid)
-                        (cons (cred-holder a) (cred-holder b))))
-                 phcs))
-             phcs)))
-    `((phc-count      . ,(length phcs))
-      (vrc-count      . ,(length vrcs))
-      (live-triangles . ,triangles)
-      (issues         . ,issues))))
-
 
 (define (recover-economic-state scope-root acdc-store)
   "Recover commitments, intents, and work events for SCOPE-ROOT from
