@@ -12,6 +12,8 @@
 ;;; browser projection layer can consume them unchanged.
 
 (define-module (playnet doors service)
+  #:use-module (playnet doors planner ctx)
+  #:use-module (playnet doors planner solve-cache)
   #:use-module ((playnet economy debts) #:select (%payout-spec))
   #:use-module ((playnet doors assignments) #:select (do-accept-assignment do-decline-assignment do-express-willingness willing-predicate))
   #:use-module ((playnet doors effort) #:select (do-drop-event do-record-effort finite-positive?))
@@ -76,7 +78,7 @@
   #:use-module (goblins)
   #:use-module (ice-9 threads)               ; the solve's own thread (plan-fn*)
   #:use-module (goblins actor-lib methods)
-  #:use-module ((playnet protocol dispatch) #:select (declared-methods))
+  #:use-module ((playnet protocol dispatch) #:select (declared-methods*))
   #:use-module (goblins utils hashmap)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-9)             ; <scope-nodes>
@@ -147,7 +149,7 @@
                 #:select (marginal-displacement marginal-rows note-solve moved-summary voice-displacement))
   #:export (plain-plan-fn ^planner-service
             standing-demand-node-of standing-credit-uc scope-of-place spec-of-resource
-            materialize-composition! plan-claims!)
+            materialize-composition!)
   #:re-export (scope-composition recipe-derived-contains)
   #:use-module ((playnet scope snapshot) #:select (scope-locations->wire dedup-locations))
   #:use-module (playnet doors slots)
@@ -189,145 +191,7 @@
 ;; the fragility catalogue (the registry's source of truth) — for the fragility
 ;; face wire. Loaded here because the planner core loads only tension-kinds.
 (use-modules (playnet knowledge catalogues eco))
-(use-modules (playnet knowledge worlds bioregions))    ; set-spatial-boundary!, the boundary seeding load-boundaries! runs at load
-
-;; THE LAST SOLVE, per scope: (cons demand solve-alist). A solve / plan /
-;; materialize lands it; build-snapshot reads it so the dial shows the REAL
-;; coverage of the most recent solve. It lives in the scope's OWN plan-store
-;; (a "solve:last" meta row — persisted, so a restart draws the last plan),
-;; reached through a door the service sets at construction: a scope's result
-;; is written by its own descent leaf into its own store and read from
-;; there, so "each scope touches only its slice" holds down to storage, not
-;; only in the routing. Outside a service (unit worlds with no roster) the
-;; same door falls back to a process table.
-(define (%solve-store-of scope-id) (%standing 'solve-store scope-id))   ; the live service's plan-store for a scope, or #f
-(define %last-solve-fallback (make-hash-table))
-;; a store that cannot hold the row (a mock, a minimal root) falls back to
-;; the process table — the same grace every other door here extends to mocks
-;; The store holds a plan's flows as the records they are, in the serialized form
-;; every stored VF record takes (vf/serdes.scm); a row written before the flows
-;; were records reads back as the row it is. The read is kept per stored value, so
-;; a plan read twice is one plan.
-(define %solve-read (make-hash-table))            ; scope-id → (stored . plan)
-(define (solve->stored v)
-  (cons (car v) (plan-map-flows (lambda (part f) (vf-serialize f)) (cdr v))))
-(define (stored->solve scope-id stored)
-  (let ((seen (hash-ref %solve-read scope-id #f)))
-    (if (and seen (eq? (car seen) stored)) (cdr seen)
-        (let ((v (cons (car stored) (plan-map-flows (lambda (part f) (vf-deserialize f)) (cdr stored)))))
-          (hash-set! %solve-read scope-id (cons stored v))
-          v))))
-(define (last-solve-ref scope-id)
-  (let ((ps (and %solve-store-of scope-id (%solve-store-of scope-id))))
-    (or (and ps
-             (false-if-exception
-              (let* ((row ($ ps 'get-meta "solve:last"))
-                     (stored (and row (assq-ref row 'solve))))
-                (and (pair? stored) (stored->solve scope-id stored)))))
-        (hash-ref %last-solve-fallback scope-id #f))))
-;; the solve's OWN unix-seconds rides in the same durable row as the plan,
-;; so a restart can tell a durable plan is FRESH without re-solving to find
-;; out — %solve-at (below) is in-process only, and reading #f from it after
-;; every restart used to read as "never solved", sweeping the whole roster
-;; on every boot even when the durable plan was minutes old (found live).
-(define (last-solve-at-ref scope-id)
-  (let ((ps (and %solve-store-of scope-id (%solve-store-of scope-id))))
-    (and ps (false-if-exception
-             (let ((row ($ ps 'get-meta "solve:last")))
-               (and row (assq-ref row 'at)))))))
-(define (last-solve-set! scope-id v at)
-  (let ((ps (and %solve-store-of (%solve-store-of scope-id))))
-    (unless (and ps (false-if-exception
-                     (begin ($ ps 'set-meta "solve:last"
-                                (list (cons 'solve (solve->stored v)) (cons 'at at)))
-                            #t)))
-      (hash-set! %last-solve-fallback scope-id v))))
-
-;; ── the burn-meter: the externality display, persisted per solve ───────────
-;; The same door discipline as the solve cache one screen up: the scope's own
-;; plan-store meta when it can hold the row, the process table when it cannot
-;; (mocks, minimal roots). What accumulates is stage 0's data — the moved-
-;; distribution that sizes a voice budget, and the scope's measured VCG bill
-;; (solve/externality.scm, truth-telling.md).
-(define %externality-fallback (make-hash-table))
-(define (externality-history-ref scope-id)
-  (let ((ps (and %solve-store-of scope-id (%solve-store-of scope-id))))
-    (or (and ps (false-if-exception
-                 (let ((row ($ ps 'get-meta "externality:history")))
-                   (and row (assq-ref row 'history)))))
-        (hash-ref %externality-fallback scope-id '()))))
-(define (externality-history-set! scope-id hist)
-  (let ((ps (and %solve-store-of (%solve-store-of scope-id))))
-    (unless (and ps (false-if-exception
-                     (begin ($ ps 'set-meta "externality:history"
-                               (list (cons 'history hist))) #t)))
-      (hash-set! %externality-fallback scope-id hist))))
-(define (note-externalities! scope-id alist)
-  "One solve landed: price the demand it RAN ON at its own duals and keep
-   the display. Both come off the alist — `demand`, the fold's wants keyed
-   \"spec#place@t\" (plan-commune-scope), and the duals — so a landing that
-   carries no prices (the federated descent) notes nothing. The display's
-   unit is the SPEC, so asks sum per spec across places and periods. Never
-   the reason a solve fails — a noting error is reported and dropped."
-  (catch #t
-    (lambda ()
-      (let ((asks '()))
-        (for-each (lambda (d)
-                    ;; the display's unit is the SCOPE's spec: a citizen's
-                    ;; own good ("spec~aid") folds onto it
-                    (let ((spec (spec-base (key-spec (car d)))) (q (cdr d)))
-                      (when (number? q)
-                        (let ((row (assoc spec asks)))
-                          (if row (set-cdr! row (+ (cdr row) q))
-                              (set! asks (cons (cons spec q) asks)))))))
-                  (or (assq-ref alist 'demand) '()))
-        (let ((rows (marginal-rows asks (make-pull-of alist))))
-          (when (pair? rows)
-            (externality-history-set!
-             scope-id
-             (note-solve (externality-history-ref scope-id) rows #:at (iso-now)))))))
-    (lambda (key . args)
-      (format (current-error-port) "note-externalities! ~a: ~a ~a~%" scope-id key args))))
-
-
-
-
-;; how MET a spec is, as of the scope's last solve: produced/target from the
-;; cached plan (0..1), or #f when no solve has run — the communal tier of a
-;; need's "how it's met", on the row itself so the drawer needs no second read
-(define *met-memo* (make-hash-table))   ; scope-root → (cached-solve . its dial plan)
-
-;; a need's row reads how far it is met through this: the last solve of SCOPE-ID
-(define (met-of-scope scope-root scope-id)
-  (lambda (spec) (spec-met scope-root scope-id spec)))
-
-(define (spec-met scope-root scope-id spec)
-  ;; keyed by the scope's own root object, not its id string: two different
-  ;; ^planner-service instances can name a scope the same thing (every test's
-  ;; "Granary"), and a bare scope-id key would let one instance's cached plan
-  ;; answer another's spec-met before it has ever solved
-  (let* ((cached (and scope-id (last-solve-ref scope-id)))
-         (memo (and cached (hash-ref *met-memo* scope-root #f)))
-         ;; the projection once per solve, not once per row
-         (plan (and cached
-                    (if (and memo (eq? (car memo) cached)) (cdr memo)
-                        (let ((p (plan-results->dial-plan scope-root (car cached) (cdr cached))))
-                          (hash-set! *met-memo* scope-root (cons cached p))
-                          p))))
-         (row (and plan (find (lambda (n) (equal? (assq-ref n 'id) spec))
-                              (or (assq-ref plan 'needs) '())))))
-    (and row (assq-ref row 'met))))
-
-;; The UC means allocations, landed: scope-root → ((spec . (located-good . cap)) …),
-;; written by the `means-plan` verb (the consensus row run live) and MERGED into
-;; every subsequent solve's #:eco-caps — so a scope's next plan is bounded by
-;; what the federation allocated it, warm-started from what it held before.
-;; Keyed by the scope's own root, not its id string — same reason as
-;; *slot-criteria*/*met-memo* above: two ^planner-service instances can both
-;; have a "Granary".
-(define *means-caps* (make-hash-table))
-(define (means-caps-of root)
-  (map cdr (hash-ref *means-caps* root '())))
+(use-modules (playnet knowledge worlds bioregions))
 ;; ── the process-wide door to the live service's standing demand nodes ──────
 ;; A solve turn (planner-vat) needs "aid → this scope's ^demand-node" without
 ;; crossing a vat and without the service $-ing itself mid-turn, so the
@@ -373,161 +237,6 @@ citizen's voice is read against."
 demand-of / demand-cells-of read such a node directly — the drop-in for a
 scope walk wherever a solve wants the scope's declared needs."
   (%standing 'demand-node aid))
-
-(define (set-means-cap! root spec cap-pair)
-  (hash-set! *means-caps* root
-             (cons (cons spec cap-pair)
-                   (filter (lambda (e) (not (equal? spec (car e))))
-                           (hash-ref *means-caps* root '())))))
-;; ── warm starts and freshness, beside the cache they qualify ───────────────
-;; The solution vector is the NEXT solve's warm start and nothing else: popped
-;; off the alist here into an in-process table (a restart cold-starts, which
-;; is the honest default), so what the callers see, the wire carries and the
-;; plan-store persists stays lean. The stale mark is the snapshot's
-;; while-revalidating answer: an accept re-solves on a LATER vat turn, and
-;; until that solve lands the cached plan describes the world before the
-;; decision — the wire says so instead of showing it as current. The
-;; timestamp is what the time tick reads.
-(define %warm-x       (make-hash-table))   ; scope-id → the last solve's x
-(define %stale-solves (make-hash-table))   ; scope-id → #t while a re-solve is due
-(define %solve-at     (make-hash-table))   ; scope-id → unix seconds, hydrated from the durable row on first ask
-(define %solve-vocab  (make-hash-table))   ; scope-id → the goods the last solve read stock against (engine stock-vocabulary)
-(define (solve-vocabulary-of scope-id)
-  "The vocabulary the scope's last plan was solved with: a confirmation reads a holding
-   as that plan did. A scope not solved in this process reads the standing recipes'."
-  (or (hash-ref %solve-vocab scope-id #f) (stock-vocabulary)))
-;; %solve-at IN-PROCESS, but its answer for a restored scope is the durable
-;; timestamp beside the durable plan — hydrated once, then cached like any
-;; other read. A cold #f here used to read as "never solved" and swept the
-;; whole roster on every boot; the durable row already knew better.
-(define (solve-at-of scope-id)
-  (or (hash-ref %solve-at scope-id #f)
-      (let ((at (last-solve-at-ref scope-id)))
-        (when at (hash-set! %solve-at scope-id at))
-        at)))
-(define (warm-x-of scope-id) (hash-ref %warm-x scope-id #f))
-(define (mark-solve-stale! scope-id) (hash-set! %stale-solves scope-id #t))
-(define (planned-material scope-id)
-  "The material rows of the scope's last plan: every produce, consume, pickup, dropoff
-   and use it expects, each a Commitment, or none before a first solve."
-  (solve-part (last-solve-ref scope-id) 'material))
-(define (planned-runs scope-id)
-  "The runs the scope's last plan names: ((run . recipe-process) …), each run a Process of
-   its own that its relocation rows are the inputs and outputs of."
-  (solve-part (last-solve-ref scope-id) 'runs))
-(define (planned-rows scope-id action spec place when-iso proc)
-  "The material rows of the scope's last plan that are the row ACTION SPEC at PLACE
-   of PROC (at WHEN-ISO when one is named). What a confirmation may record is what
-   the plan states."
-  (filter (lambda (m)
-            (and (equal? (format #f "~a" (row-action m)) action)
-                 (equal? (row-spec m) spec)
-                 (equal? (or (row-place m) "") (or place ""))       ; the wire spells an absent value ""
-                 (equal? (or (row-run m) "") (or proc ""))
-                 (or (not when-iso) (equal? when-iso "") (equal? (format #f "~a" (row-when m)) when-iso))))
-          (planned-material scope-id)))
-(define (hold-row! obs scope-id m)
-  "Register the plan's row M as the commitment it is, under the plan's own row id: a
-   row the plan states again moves its target and keeps what was confirmed."
-  ($ obs 'register-commitment (held-commitment m scope-id)))
-;; the record-flow door names one of its arguments `row-id` (the protocol declares it);
-;; under that name the door reads a row's id by this one
-(define planned-row-id row-id)
-(define (row-left obs m)
-  "What the events fulfilling plan row M have not yet met of it."
-  (fulfillment-remaining ($ obs 'get-fulfillment (row-id m))))
-(define (cache-solve! scope-id demand alist)
-  (let* ((xrow  (assq 'x alist))
-         (alist (if xrow (assq-remove! (list-copy alist) 'x) alist)))
-    (when (and scope-id (list? demand))
-      ;; a plan that is NOT a plan warms nothing: a certificate that refused
-      ;; the point (feasible? #f — phase-I's exterior start handed back) would
-      ;; start the next solve where this one could not get in, and it
-      ;; stayed out (found live: steps=0, the same program solving cold in
-      ;; 25 steps). The standing warm start stands until a plan replaces it.
-      (when (and xrow
-                 (let ((c (assq-ref alist 'certificate)))
-                   (not (and (list? c) (eq? #f (assq-ref c 'feasible?))))))
-        (hash-set! %warm-x scope-id (cdr xrow)))
-      (let ((now (instant->unix (clock-now))))
-        (hash-set! %solve-at scope-id now)
-        (hash-set! %solve-vocab scope-id (stock-vocabulary))
-        (hash-remove! %stale-solves scope-id)
-        (last-solve-set! scope-id (cons demand alist) now))
-      (plan-claims! scope-id alist)          ; the plan's claims stand as the commitments a claim fulfils
-      (note-externalities! scope-id alist)   ; the burn-meter hears it too
-      ;; the slack fold hears every solve that lands (set by the service)
-      (when %on-solve-cached (%on-solve-cached scope-id)))
-    ;; what a door replies with: the plan as it leaves the process
-    (plan->rows alist)))
-(define %on-solve-cached #f)
-
-
-;; ── the plan's claims, minted as the commitments a claim fulfils ────────────
-;; Each `claims` row of a landed plan (claimant, spec, quantity, place, period)
-;; is registered on the scope's observer as a `transfer` commitment
-;; (account.scm claim-commitment); the ledger records a claim event only against
-;; one, for no more than remains on it. Rows the new plan no longer states are
-;; retired while still open, so a stale plan's word admits nothing; a partly
-;; confirmed row the plan restates keeps what was confirmed (the observer reads
-;; fulfilment off the events, so a row stated again moves its target only). Outside a service (mocks, unit worlds) there is
-;; no observer to mint on, and the plan's rows are read from the alist alone.
-;; A row's silence is not a statement: a solve that carries no `claims` key
-;; (a federated row states materials and crossings only) says nothing about
-;; claims, so the standing commitments stay; a plan that states `claims '()`
-;; retires them.
-(define (plan-claims! scope-id alist)
-  (let ((obs (%standing 'observer scope-id)))
-    (when (and obs (assq 'claims alist))
-      (let* ((rows (or (assq-ref alist 'claims) '()))
-             (fresh (map (lambda (r)
-                           (claim-commitment (row-spec r) (assq-ref r 'claimant)
-                                             (row-quantity r) scope-id
-                                             #:place (row-place r)
-                                             #:when-iso (let ((p (assq-ref r 'period))) (and p (format #f "~a" p)))))
-                         rows))
-             (keep  (map commitment-id fresh)))
-        (for-each (lambda (fs)
-                    (let ((cid (fulfillment-state-commitment-id fs)))
-                      (when (and (claim-cid-terms cid) (not (member cid keep)))
-                        ($ obs 'retire-commitment cid))))
-                  ($ obs 'open-fulfillments))
-        ;; every row the plan states is registered: a row it restates moves the
-        ;; commitment's target, and what was confirmed is read off the events, so a
-        ;; restated or withdrawn-and-restated row keeps its confirmations
-        (for-each (lambda (c) ($ obs 'register-commitment c)) fresh)))))
-
-;; one scope's OWN slack cells off its cached solve — (want . place) and
-;; (met . place), the per-place sums location-slacks takes the ratio of. Own
-;; means the places the scope's own store holds: a scope's solve answers for
-;; the demand of its whole subtree, so its cached rows also name its members'
-;; places, and those places' cells are the members' to state (the parent adds
-;; what its children climb with, and would otherwise hold them twice).
-(define (scope-own-place-ids scope-id)
-  "The ids of the places SCOPE-ID's own spatial store holds, or #f when the
-service does not know the scope (nothing to filter by)."
-  (let ((e (assoc scope-id (or (%standing 'roster) '()))))
-    (and e (false-if-exception
-            (map spatial-thing-id ($ ($ (cdr e) 'spatial-thing-store) 'all-locations))))))
-(define (scope-own-slack scope-id)
-  (let ((cached (last-solve-ref scope-id))
-        (own (scope-own-place-ids scope-id)))
-    (define (own? place) (or (not own) (member place own)))
-    (if (not cached) '()
-        (let ((want (make-hash-table)) (met (make-hash-table)))
-          (for-each (lambda (d)
-                      (when (and (list? d) (>= (length d) 4) (string? (list-ref d 1)) (own? (list-ref d 1)))
-                        (let ((place (list-ref d 1)) (q (or (list-ref d 3) 0)))
-                          (hash-set! want place (+ (hash-ref want place 0) q)))))
-                    (car cached))
-          (for-each (lambda (m)
-                      (when (memq (row-action m) creating-actions)
-                        (let ((place (row-place m)) (q (or (row-quantity m) 0)))
-                          (when (and (string? place) (own? place))
-                            (hash-set! met place (+ (hash-ref met place 0) q))))))
-                    (solve-part cached 'material))
-          (append (hash-map->list (lambda (p q) (cons (cons 'want p) q)) want)
-                  (hash-map->list (lambda (p q) (cons (cons 'met p) q)) met))))))
 
 ;;; ── the bridge: a produced batch CARRIES its derived composition ────────────
 ;; The three rungs of the substance ladder joined into one path. The recipe-
@@ -624,11 +333,32 @@ service does not know the scope (nothing to filter by)."
 ;; a door whose reply has a table answers the page's rows, at this one site.
 (define-syntax home-routed
   (syntax-rules ()
-    ((_ object route clause ...)
-     (let ((dispatch (declared-methods object clause ...)))
+    ((_ object route (fragment ...) clause ...)
+     (let ((dispatch (declared-methods* object (fragment ...) clause ...)))
        (lambda (msg . args) (finished msg (apply dispatch msg (route msg args))))))))
 
 (define-actor (^planner-service bcom scopes-hm #:optional (plan-fn plain-plan-fn) (earth #f) (readers '()))
+  ;; THE CONTEXT: what the door fragments share, by name (doors/planner/ctx.scm);
+  ;; the cells a setter door writes start at their defaults, the helpers are
+  ;; handed over below once they exist. THE CACHE: this service's last plan per
+  ;; scope and what warms and qualifies it (doors/planner/solve-cache.scm),
+  ;; reading each scope's own stores through the roster.
+  (define ctx (make-planner-ctx #:plan-fn plan-fn #:readers readers #:earth earth))
+  ;; define-actor wraps its last form as an expression, so the dispatcher is
+  ;; bound by name and handed over last
+  (define dispatch
+   (with-planner-state ctx
+  (define cache
+     (make-solve-cache
+       #:store-of      (lambda (sid) (and=> (roster-ref sid) (lambda (root) ($ root 'plan-store))))
+       #:observer-of   (lambda (sid) (and=> (roster-ref sid) (lambda (root) ($ root 'observer))))
+       ;; the ids of the places a scope's own spatial store holds, or #f when
+       ;; the roster does not know it (nothing to filter by)
+       #:own-places-of (lambda (sid)
+                         (and=> (roster-ref sid)
+                                (lambda (root)
+                                  (false-if-exception
+                                   (map spatial-thing-id ($ ($ root 'spatial-thing-store) 'all-locations))))))))
   ;; a person's own scope-footprint, warmed by the write paths themselves —
   ;; never scanned to build. A reader with a warm answer here costs O(the
   ;; scopes this one person touched); a cold miss costs today's full roster
@@ -712,12 +442,12 @@ service does not know the scope (nothing to filter by)."
   ;; where the scope stood (engine/robust.scm ignores an x whose shape no longer fits).
   ;; the world a solve at SID sees (WORLD-OF, else the raw observer): the
   ;; view, the socialized caps and the spans, with the UC allocation
-  ;; (means-caps-of) merged under the caps — one reading for every solve
+  ;; (means-caps-of cache) merged under the caps — one reading for every solve
   (define (world-of* root sid . kw)
     (let ((w (if world-of
                  (apply world-of root sid kw)
                  `((view . ,($ ($ root 'observer) 'all-resources)) (caps . ()) (span . ())))))
-      (cons (cons 'caps (append (means-caps-of root) (assq-ref w 'caps)))
+      (cons (cons 'caps (append (means-caps-of cache root) (assq-ref w 'caps)))
             (alist-delete 'caps w))))
   ;; THE SETTINGS OF A SOLVE, AS ONE ALIST MERGED BY KEY. What the scope
   ;; stands on (its standing, its warm start, the governed dials, the voice
@@ -745,10 +475,10 @@ service does not know the scope (nothing to filter by)."
                      (observed . ,(let* ((n (node-of sid nodes-reading))
                                          (r (or (and n (false-if-exception ($ n 'contrary))) (assq-ref st 'observed))))
                                     (and (pair? r) r)))
-                     (warm-x . ,(warm-x-of sid))
+                     (warm-x . ,(warm-x-of cache sid))
                      ;; the previous plan's rows: what it lands is where stock on the way counts
-                     (arriving . ,(let ((r (planned-material sid))) (and (pair? r) r)))))
-       `((eco-caps . ,(means-caps-of root)))
+                     (arriving . ,(let ((r (planned-material cache sid))) (and (pair? r) r)))))
+       `((eco-caps . ,(means-caps-of cache root)))
        (kw->alist (policy-kw root sid)))))
   (define (standing-kw root sid kw)
     (alist->kw (merge-settings (standing-settings root sid) (kw->alist kw))))
@@ -840,7 +570,6 @@ service does not know the scope (nothing to filter by)."
   ;; lands while a seven-minute program runs. The answer is a PROMISE of the
   ;; plan alist; on-plan continues into it. Without a vat (every test, a
   ;; REPL) the same door runs inline and answers the alist itself.
-  (define %solve-vat #f)
   (define %solve-queue '())            ; ((gather-thunk . resolver) …), FIFO
   (define %solve-busy? #f)
   (define %solve-inflight (make-hash-table))   ; scope-id → #t from queue to landing
@@ -867,7 +596,7 @@ service does not know the scope (nothing to filter by)."
             (let ((res (parameterize (((@@ (goblins core) current-syscaller) #f))
                          (%guarded thunk))))
               (parameterize (((@@ (goblins core) current-syscaller) #f))
-                (call-with-vat %solve-vat
+                (call-with-vat solve-vat
                   (lambda ()
                     (with-exception-handler
                       (lambda (e) ($ r 'break e))
@@ -891,7 +620,7 @@ service does not know the scope (nothing to filter by)."
                        #:catch (lambda (e) (done) ($ r 'break e))))
                   (else (done) ($ r 'fulfill (cdr v)))))))))
   (define (plan-fn* root sid . kw)
-    (if (not %solve-vat)
+    (if (not solve-vat)
         (apply solve-with-readers plan-fn readers root sid (standing-kw root sid kw))
         (call-with-values spawn-promise-values
           (lambda (p r)
@@ -930,7 +659,7 @@ service does not know the scope (nothing to filter by)."
   ;; under a rule, read off the cached solve's steward-rules — the grant is the
   ;; rule's durable home, the in-memory sidecar its editing surface
   (define (steward-criteria sid r)
-    (let* ((cached (last-solve-ref sid))
+    (let* ((cached (last-solve-ref cache sid))
            (rules (and cached (assq-ref (cdr cached) 'steward-rules)))
            (row (and (pair? rules)
                      (find (lambda (x)
@@ -1228,7 +957,7 @@ service does not know the scope (nothing to filter by)."
   ;; fold nodes (wire-scope-labour!) and the fresh check for never-held
   ;; accepts (commitment-horizon.md) — installed here because the checker
   ;; needs both the scope root (for the trial solve) and the last solve's
-  ;; demand (last-solve-ref), neither of which scope-root's own rewire can
+  ;; demand (last-solve-ref cache), neither of which scope-root's own rewire can
   ;; reach. A root without a plan-store skips that wire.
   (define (wire-scope-folds! id root)
     (wire-scope-labour! id root)
@@ -1249,7 +978,7 @@ service does not know the scope (nothing to filter by)."
               #:solve (lambda kw (apply plan-fn* root id kw))   ; the readers' door, as every solve here
               #:solve-opts-thunk
               (lambda ()
-                (let ((cached (last-solve-ref id)))
+                (let ((cached (last-solve-ref cache id)))
                   (if cached (list #:demand (car cached)) '()))))))))
     ;; ONE REPORTER over the silent-fact class — a fact standing in one layer
     ;; that another layer doesn't read stops being silent at the wiring door
@@ -1343,7 +1072,7 @@ service does not know the scope (nothing to filter by)."
   ;; the federated-solve descent: each commune's post-ADMM plan walks the
   ;; same tree as rows (scope-id demand solve-alist) routed by scope-id —
   ;; the third unfold instance; each scope's leaf lands ITS row where the
-  ;; overlay reads it (cache-solve!), never another scope's
+  ;; overlay reads it (cache-solve! cache), never another scope's
   (define %uc-solve
     (spawn-unfold-node allocation-split #:id "uc"
                        #:reads `((solves . ,(lambda (own) own)))))
@@ -1378,6 +1107,7 @@ service does not know the scope (nothing to filter by)."
           (case what
             ((demand-node) (node-of (car args) nodes-demand))
             ((credit-uc) %uc-credit-pool)
+            ((cache) cache)
             ((solve-store) (and=> (roster-ref (car args)) (lambda (root) ($ root 'plan-store))))
             ((observer)    (and=> (roster-ref (car args)) (lambda (root) ($ root 'observer))))
             ((roster) (roster-entries))
@@ -1412,7 +1142,7 @@ service does not know the scope (nothing to filter by)."
     ($ (node-of id nodes-voice) 'voice-changed (roster-ref id) (lambda (r) (rail-hands id)))
     (length (rail-hands id)))
   ;; the slack fold — desire per place as a standing total: every solve that
-  ;; lands (cache-solve!) refolds its scope's cells, the ratio and the
+  ;; lands (cache-solve! cache) refolds its scope's cells, the ratio and the
   ;; geomean are reads at any node, and the overlay draws instead of folding
   (define %uc-slack (spawn ^slack-node '() '() "uc"))
   ;; the reading fold: every scope's readings rise keyed by scope, technique
@@ -1428,7 +1158,7 @@ service does not know the scope (nothing to filter by)."
   ;; the slack fold hears the solve: this scope's node refolds its cells
   (define (refold-slack! sid)
     (let ((n (node-of sid nodes-slack)))
-      (when n (<-np n 'slack-changed (scope-own-slack sid)))))
+      (when n (<-np n 'slack-changed (scope-own-slack cache sid)))))
   ;; the presentation caller (commitment-horizon.md, the flow's step 2):
   ;; the solve's suggestions become directed offers, nearest-forcing-first,
   ;; carried to each person by the snapshot's proposed-to filter. Refusals
@@ -1458,7 +1188,7 @@ service does not know the scope (nothing to filter by)."
                  #:agent-position (agent-position-predicate root)
                  #:horizon (demand-horizon '() '())
                  #:backend 'native-c)
-               (lambda (al) (landed) (cache-solve! scope-id '() al))
+               (lambda (al) (landed) (cache-solve! cache scope-id '() al))
                #:catch (lambda (e)
                          (landed)
                          (format (current-error-port) "  [solve ~a] ~a~%" scope-id e)
@@ -1479,7 +1209,6 @@ service does not know the scope (nothing to filter by)."
   ;; the first orb. Every piece runs guarded (solve-effect!): one hook's
   ;; or one scope's failure is its own. Returns how many scopes it
   ;; re-solved.
-  (define %re-stand '())                  ; thunks that re-lay standing terms
   ;; ONE due scope per call — the vat-turn granularity that keeps the tick
   ;; from starving every other read. A sweep of heavy scopes in one turn
   ;; held the vat for minutes and the browser's scope-snapshot RPCs queued
@@ -1493,12 +1222,12 @@ service does not know the scope (nothing to filter by)."
   ;; run once, at the sweep's head (SEEN empty).
   (define (resolve-one-stale! max-age seen)
     (when (null? seen)
-      (for-each (lambda (h) (solve-effect! 'standing-terms 're-stand h)) %re-stand))
+      (for-each (lambda (h) (solve-effect! 'standing-terms 're-stand h)) re-stand))
     (let ((due (find (lambda (entry)
                        (and (not (member (car entry) seen))
                             (not (hash-ref %solve-inflight (car entry) #f))   ; queued or running: its landing is coming
-                            (let ((at     (solve-at-of (car entry)))
-                                  (cached (last-solve-ref (car entry))))
+                            (let ((at     (solve-at-of cache (car entry)))
+                                  (cached (last-solve-ref cache (car entry))))
                               (or (not cached)
                                   (not at) (>= (- (instant->unix (clock-now)) at) max-age)))))
                      (roster-entries))))
@@ -1519,7 +1248,7 @@ service does not know the scope (nothing to filter by)."
   (define (resolve-scope! scope-id root)
     ;; the cached plan is old from THIS instant — the wire says so until the
     ;; deferred solve below lands and cache-solve! clears the mark
-    (mark-solve-stale! scope-id)
+    (mark-solve-stale! cache scope-id)
     ;; DEFERRED ONE TURN: the accept's bcom lands at the end of the
     ;; store's turn, and a same-turn read would re-solve the world as if
     ;; the accept had not happened (standing-accepts answered () right
@@ -1532,11 +1261,11 @@ service does not know the scope (nothing to filter by)."
         #:catch (lambda (e)
                   (format (current-error-port)
                           "  [accept-resolve ~a] deferred read failed: ~a~%" scope-id e))))
-  (set! %on-solve-cached
+  (set-solve-cache-on-cached! cache
         (lambda (sid)
           (refold-slack! sid)
           (let ((root (roster-ref sid))
-                (cached (last-solve-ref sid)))
+                (cached (last-solve-ref cache sid)))
             (when (and root cached)
               (solve-effect! sid 'open-shifts
                 (lambda () (persist-open-shifts! root cached)))
@@ -1647,7 +1376,7 @@ service does not know the scope (nothing to filter by)."
        (cons nodes-slack
              (lambda (parent)
                (let ((sl (spawn ^slack-node '() '() id)))
-                 ($ sl 'slack-changed (scope-own-slack id))
+                 ($ sl 'slack-changed (scope-own-slack cache id))
                  (wire-fold-parent! sl parent id) sl)))
        ;; the voice fold: refolds on every recorded event, reading the rail's
        ;; standing hands each time — a restart and a fresh scope alike stand on
@@ -1690,7 +1419,7 @@ service does not know the scope (nothing to filter by)."
                           (lambda (rows)
                             (for-each (lambda (r)
                                         (let ((rt (roster-ref (car r))))
-                                          (when rt (set-means-cap! rt (cadr r) (caddr r)))))
+                                          (when rt (set-means-cap! cache rt (cadr r) (caddr r)))))
                                       rows)))
                         parent)))
        ;; the solve descent: each scope's federated row lands in its own cache
@@ -1701,7 +1430,7 @@ service does not know the scope (nothing to filter by)."
                           (lambda (rows)
                             (for-each (lambda (r)
                                         (when (equal? (car r) id)      ; own part only
-                                          (cache-solve! (car r) (cadr r) (caddr r))))
+                                          (cache-solve! cache (car r) (cadr r) (caddr r))))
                                       rows)))
                         parent))))))
   (define (wire-scope-labour! id root)
@@ -1820,14 +1549,13 @@ service does not know the scope (nothing to filter by)."
                 (if (equal? sid scope-id) acc
                     (let ((sib-locs (or (false-if-exception ($ ($ sib 'spatial-thing-store) 'all-locations)) '())))
                       (if (any (lambda (s) (member (spatial-thing-id s) root-ids)) sib-locs)
-                          (append (scope-locations->wire sib (location-slacks (last-solve-ref sid))) acc)
+                          (append (scope-locations->wire sib (location-slacks (last-solve-ref cache sid))) acc)
                           acc)))))
             '() (roster-entries)))))
 
   ;; First-Person gate — the gateway installs a PORTABLE personhood check
   ;; (holds a live PHC in any ecosystem) once the credential store exists.
   ;; Until then, allow, so the dial works before the store is wired.
-  (define ph-ok? (lambda (_aid) #t))
   ;; WITH-SCOPE for a door only a person may use: PROC runs on the scope's root
   ;; when AID holds a personhood credential, else the door answers needs-personhood.
   (define (with-person scope-id aid proc)
@@ -1842,7 +1570,6 @@ service does not know the scope (nothing to filter by)."
   ;;   (standing scope-aid aid)      → per-skill witnessed-work evidence
   ;;   (outbox aid)                  → ceremonies collecting over aid's own work
   ;;   (attest said aid sig)         → 'attested | 'finalized | #f
-  (define witness-door #f)
   ;; a read through the door: the key's answer, or nothing — when no door is
   ;; wired, the key is absent, or the read fails
   (define (door-read key . args)
@@ -1850,7 +1577,24 @@ service does not know the scope (nothing to filter by)."
              (false-if-exception (apply (assq-ref witness-door key) args)))
         '()))
 
-  (home-routed planner route-home
+  (planner-ctx-install! ctx
+    cache roster-ref roster-entries roster-add! roster-forget! ensure-scope-wired!
+    with-scope with-person scoped door-read
+    home-scope-of adopt-home! set-home-row! homed-at home-root home-agent-of person-events person-observers touched-scopes
+    standing world-of* gather standing-settings standing-kw policy-kw
+    plan-fn* on-plan solve-current! resolve-scope! resolve-one-stale! resolve-stale-scopes! solve-effect!
+    nodes-of node-of labour-pool-of rehang-scope! scope-geo-path round-robin
+    slots-changed! slots-watch! slots-unwatch! means-changed! means-rebuild! means-fold-total
+    steward-admit steward-ok? means-criteria chat-reg
+    lent-means-of migrate-person! consolidate-person!
+    scope-community scope-ancestry communes-overlap scope-census scope-record-of federation-sibling-locations
+    credit-roots refold-voice! refold-readings! rail-hands
+    debts-of owed-of settle-of may-steward-of lent-of knows-of pool-of hands-of world-of contrary-of standing-of)
+  (set-planner-ctx-uc! ctx %uc)
+  (set-planner-ctx-declared-parent! ctx %declared-parent)
+  (set-planner-ctx-deployment-table! ctx %deployment-table)
+
+  (home-routed planner route-home ()
 
     ((set-personhood-checker! p) (set! ph-ok? p) 'ok)
     ((set-witness-door! d) (set! witness-door d) 'ok)
@@ -1909,7 +1653,7 @@ service does not know the scope (nothing to filter by)."
     ;; the vat the solve queue lands on — the gateway's own planner vat.
     ;; Handed in once at boot; from then on every solve door answers a
     ;; promise and the vat stays free while a program runs.
-    ((set-solve-vat! vat) (set! %solve-vat vat) #t)
+    ((set-solve-vat! vat) (set! solve-vat vat) #t)
     ((resolve-stale! #:optional (max-age 3600))
      (resolve-stale-scopes! max-age))
     ;; the paced spelling: ONE due scope per turn — the scope id it solved,
@@ -1919,7 +1663,7 @@ service does not know the scope (nothing to filter by)."
     ((resolve-one-stale! max-age seen) (resolve-one-stale! max-age (if (list? seen) seen '())))
     ;; a declaration owner's door onto the tick: THUNK re-lays its standing
     ;; terms (idempotent), and every resolve-stale! runs it before the walk
-    ((re-stand! thunk) (set! %re-stand (cons thunk %re-stand)) 'ok)
+    ((re-stand! thunk) (set! re-stand (cons thunk re-stand)) 'ok)
 
     ;; ── refederation: one verb, two exact messages per aggregate ──
     ;; Move scope ID under NEW-PARENT (a scope-id, or #f for directly under
@@ -2133,8 +1877,8 @@ service does not know the scope (nothing to filter by)."
          ;; face shows the very record the plan reads
          (let ((st (standing root scope-id)))
             (build-snapshot root scope-id plan-id acting-aid
-                            #:cached (last-solve-ref scope-id)
-                            #:stale? (hash-ref %stale-solves scope-id #f)
+                            #:cached (last-solve-ref cache scope-id)
+                            #:stale? (solve-stale? cache scope-id)
                             #:extra-locations (federation-sibling-locations scope-id root)
                             #:recipe-responses (or (assq-ref st 'responses) '())
                             #:credit-roots (credit-roots acting-aid))))))
@@ -2387,7 +2131,7 @@ service does not know the scope (nothing to filter by)."
                    ;; OUT with (reproduce . #f), not in.
                    #:reproduce? (not (eq? (assq-ref o 'reproduce) #f))
                    #:backend 'native-c)
-                 (lambda (al) (success (cache-solve! scope-id demand al)))
+                 (lambda (al) (success (cache-solve! cache scope-id demand al)))
                  #:catch (lambda (e) (failure (format #f "~a" e))))))))))
 
     ;; FEDERATION ACROSS VATS — several communes' provisioning composed through
@@ -2545,7 +2289,7 @@ service does not know the scope (nothing to filter by)."
                       communes))
                 (prev (map (lambda (c)
                              (let ((rt (roster-ref (car c))))
-                               (and rt (and=> (assoc-ref (hash-ref *means-caps* rt '()) spec) cdr))))
+                               (and rt (and=> (assoc-ref (means-cap-rows cache rt) spec) cdr))))
                            communes))
                 (init (and (every number? prev) prev)))
            (call-with-values
@@ -2598,7 +2342,7 @@ service does not know the scope (nothing to filter by)."
                    #:agent-position (agent-position-predicate root)
                    #:horizon    (demand-horizon (or (assq-ref o 'demand) '()) o)
                    #:backend 'native-c)
-                 (lambda (al) (success (cache-solve! scope-id (or (assq-ref o 'demand) '()) al)))
+                 (lambda (al) (success (cache-solve! cache scope-id (or (assq-ref o 'demand) '()) al)))
                  #:catch (lambda (e) (failure (format #f "~a" e))))))))))
 
     ;; NON-BINDING provenance read: trace a prose CLAIM to what this scope's convex
@@ -2654,7 +2398,7 @@ service does not know the scope (nothing to filter by)."
                    ;; snapshot's plan/schedule wires serve, so it lands in the
                    ;; same cache the `solve` verb fills. A what-if stays unstored.
                    (unless (pair? (or (assq-ref o 'demand) '()))
-                     (cache-solve! scope-id '() full))
+                     (cache-solve! cache scope-id '() full))
                    (success (plan-brief->string full)))
                  #:catch (lambda (e) (failure (format #f "~a" e))))))))))
 
@@ -2683,7 +2427,7 @@ service does not know the scope (nothing to filter by)."
                  (lambda (al)
                    (let ((n (persist-materialized! root (assq-ref al 'work)
                                                    #:plan-id (or (assq-ref o 'plan-id) "plan-materialized"))))
-                     (success (cons (cons 'materialized n) (cache-solve! scope-id demand al)))))
+                     (success (cons (cons 'materialized n) (cache-solve! cache scope-id demand al)))))
                  #:catch (lambda (e) (failure (format #f "~a" e))))))))))
 
     ;; The confirmation mile: a person sees a prefilled commitment (from `plan`)
@@ -2708,14 +2452,14 @@ service does not know the scope (nothing to filter by)."
              ;; the rows enacted are the plan's own, found by id: a row the last plan
              ;; does not state waits unrecorded, and its quantity is the plan's, not the client's
              (let* ((stated  (let ((h (make-hash-table)))
-                               (for-each (lambda (m) (hash-set! h (row-id m) m)) (planned-material scope-id))
+                               (for-each (lambda (m) (hash-set! h (row-id m) m)) (planned-material cache scope-id))
                                h))
                     (asked   (or (assq-ref plan 'material) '()))
                     (mine    (filter-map (lambda (m) (hash-ref stated (row-id m) #f)) asked))
                     (strange (filter (lambda (m) (not (hash-ref stated (row-id m) #f))) asked))
                     (r       (begin (for-each (lambda (m) (hold-row! ($ root 'observer) scope-id m)) mine)
-                                    (enact-rows root mine #:vocabulary (solve-vocabulary-of scope-id)
-                                                #:runs (planned-runs scope-id)))))
+                                    (enact-rows root mine #:vocabulary (solve-vocabulary-of cache scope-id)
+                                                #:runs (planned-runs cache scope-id)))))
                (success `((events . ,(car r))
                           (unmet . ,(append (map (lambda (m) (cons (row-id m) "the plan states no such row")) strange)
                                             (map (lambda (u) (cons (car u) (format #f "~a" (cdr u)))) (cdr r))))))))))))
@@ -2748,8 +2492,8 @@ service does not know the scope (nothing to filter by)."
                  (failure (string-append "unknown flow action: " action))
                  (let* ((obs  ($ root 'observer))
                         (rows (if (and (string? row-id) (not (string-null? row-id)))
-                                  (filter (lambda (m) (equal? (planned-row-id m) row-id)) (planned-material scope-id))
-                                  (planned-rows scope-id action spec place when-iso proc))))
+                                  (filter (lambda (m) (equal? (planned-row-id m) row-id)) (planned-material cache scope-id))
+                                  (planned-rows cache scope-id action spec place when-iso proc))))
                    (when (null? rows)
                      (error "the plan holds no such row; confirm what the plan states" action spec place))
                    (for-each (lambda (m) (hold-row! obs scope-id m)) rows)
@@ -2770,13 +2514,13 @@ service does not know the scope (nothing to filter by)."
                                                          (number->string (length (or ($ obs 'fulfilled-by cid) '()))))))
                                (record-flow-done root m
                                                  #:quantity take #:event-id evid
-                                                 #:vocabulary (solve-vocabulary-of scope-id)
-                                                 #:runs (planned-runs scope-id))
+                                                 #:vocabulary (solve-vocabulary-of cache scope-id)
+                                                 #:runs (planned-runs cache scope-id))
                                (spend (cdr ms) (- need take) (or first evid)))))))))))))))
 
     ;; ONE planned CLAIM confirmed — the citizen took their good. The plan
     ;; registered its `claims` row as a `transfer` commitment when it landed
-    ;; (plan-claims!), and this door only ever fulfils one: the open commitment
+    ;; (plan-claims! cache), and this door only ever fulfils one: the open commitment
     ;; of SPEC for CLAIMANT at PLACE (when named) with QTY still remaining. Each
     ;; call records QTY more as the account store's claim — the transfer event
     ;; that moves custody and draws the certificate — carrying `fulfills` so
@@ -2829,7 +2573,7 @@ service does not know the scope (nothing to filter by)."
     ((inventory-snapshot scope-id plan-id)
      (with-scope scope-id
        (lambda (root)
-         (with-expected root (planned-material scope-id)
+         (with-expected root (planned-material cache scope-id)
                         (build-inventory-snapshot root scope-id plan-id)
                         (clock-now)))))
 
@@ -3092,7 +2836,7 @@ service does not know the scope (nothing to filter by)."
                    (error (format #f "the wallet can pay out ~a right now; ~a asked" avail qty)))
                  ;; THE PLAN'S WORD: the shop's "get" confirms what the plan holds
                  ;; for this citizen — the open claim commitment of the good's spec
-                 ;; for them (plan-claims!) with QTY still remaining. A good the
+                 ;; for them (plan-claims! cache) with QTY still remaining. A good the
                  ;; plan did not set aside for them is refused; the want is stated
                  ;; and the next plan answers. WHERE is where the good is to reach
                  ;; them, recorded on the transfer; the row is found by spec alone.
@@ -3158,11 +2902,11 @@ service does not know the scope (nothing to filter by)."
                                        #:technique (string-or-false technique) #:place (string-or-false place)
                                        #:when-iso (string-or-false when-iso) #:fulfills (string-or-false fulfills)
                                        #:evidence (string-or-false evidence) #:note (string-or-false note)
-                                       #:rows (planned-material scope-id))))
+                                       #:rows (planned-material cache scope-id))))
            (when (and (pair? landed) (eq? (car landed) 'ok)
                       (let ((delta (assq-ref (cdr landed) 'delta)))
                         (and (number? delta) (not (zero? delta)))))
-             (mark-solve-stale! scope-id))
+             (mark-solve-stale! cache scope-id))
            landed))))
 
     ;; the member's id arrives as `aid` — naming it agent-id would shadow the
@@ -3423,7 +3167,7 @@ service does not know the scope (nothing to filter by)."
     ((present-offers scope-id)
      (scoped scope-id
        (lambda (root)
-         (let ((cached (last-solve-ref scope-id)))
+         (let ((cached (last-solve-ref cache scope-id)))
            (unless cached
              (error "present-offers: no solve stands for this scope — plan first"))
            `((proposals . ,(present-offers root (cdr cached))))))))
@@ -3446,7 +3190,7 @@ service does not know the scope (nothing to filter by)."
        (lambda (root)
          ;; the standing solve's demand when one stands, else the scope's own
          ;; declared demand (the base of the pair is a solve either way)
-         (accept-regret root #:demand (let ((cached (last-solve-ref scope-id))) (if cached (car cached) '()))
+         (accept-regret root #:demand (let ((cached (last-solve-ref cache scope-id))) (if cached (car cached) '()))
                         #:solve (lambda kw (apply plan-fn* root scope-id kw))))))
 
     ;; what voice displaces, as a total (externality voice-displacement): the standing
@@ -3456,7 +3200,7 @@ service does not know the scope (nothing to filter by)."
     ((voice-displacement scope-id)
      (scoped scope-id
        (lambda (root)
-         (let ((cached (last-solve-ref scope-id)))
+         (let ((cached (last-solve-ref cache scope-id)))
            (let* ((tau (governance-policy ($ root 'plan-store) 'voice-tau))
                   (solve-at (settled-solves (lambda kw (apply plan-fn* root scope-id kw))
                                             (list #:demand (if cached (car cached) '()))
@@ -3980,7 +3724,7 @@ service does not know the scope (nothing to filter by)."
     ((need-displacement scope-id spec qty)
      (catch-as-failure
        (lambda ()
-         (let* ((cached   (last-solve-ref scope-id))
+         (let* ((cached   (last-solve-ref cache scope-id))
                 (pull-of (and cached (make-pull-of (cdr cached))))
                 (mu       (and pull-of (pull-of spec)))
                 (q        (if (and (number? qty) (> qty 0)) (exact->inexact qty) 1.0))
@@ -3989,7 +3733,7 @@ service does not know the scope (nothing to filter by)."
                 ;; moved — the "lately" beside the live read
                 (lately (and mu
                              (let ((s (find (lambda (r) (equal? (assq-ref r 'spec) spec))
-                                            (assq-ref (moved-summary (externality-history-ref scope-id))
+                                            (assq-ref (moved-summary (externality-history-ref cache scope-id))
                                                       'specs))))
                                (and s `((solves . ,(assq-ref s 'solves))
                                         (mean-moved . ,(assq-ref s 'mean-moved))))))))
@@ -4043,7 +3787,7 @@ service does not know the scope (nothing to filter by)."
     ((externality-history scope-id)
      (catch-as-failure
        (lambda ()
-         (success (moved-summary (externality-history-ref scope-id))))))
+         (success (moved-summary (externality-history-ref cache scope-id))))))
 
     ;; the scope ratifies SPEC as KIND — "floor" (a right), "held" (a need
     ;; never zeroed) — recorded with the ratifier's AID; "des" withdraws the
@@ -4085,7 +3829,7 @@ service does not know the scope (nothing to filter by)."
                     (obs    ($ root 'observer))
                     (ps     ($ root 'plan-store))
                     (grants (ratified-kinds-ref root))
-                    (moved  (assq-ref (moved-summary (externality-history-ref scope-id)) 'specs))
+                    (moved  (assq-ref (moved-summary (externality-history-ref cache scope-id)) 'specs))
                     (gain-of (lambda (spec)
                                (let ((r (find (lambda (r) (equal? (assq-ref r 'spec) spec)) moved)))
                                  (and r (assq-ref r 'mean-moved)))))
@@ -4125,7 +3869,7 @@ service does not know the scope (nothing to filter by)."
                ;; the same solve the burn-meter prices and the same events the
                ;; kinds' pass reads; recorded, never acted on mechanically —
                ;; a conduit is the table's conversation, not a withdrawal.
-               (let* ((cached (last-solve-ref scope-id))
+               (let* ((cached (last-solve-ref cache scope-id))
                       (mat    (and cached (solve-part cached 'material)))
                       (conduits
                        (if (not (pair? mat)) '()
@@ -4193,7 +3937,7 @@ service does not know the scope (nothing to filter by)."
      (with-scope scope-id
        (lambda (root)
          (my-slots-reply root agent-id
-                         #:met-of (met-of-scope root scope-id)
+                         #:met-of (met-of-scope cache root scope-id)
                          #:criteria-of (lambda (r) (means-criteria scope-id root r))))))
 
     ;; ── Our: the fold's reading at a scope ─────────────────────────────────
@@ -4290,9 +4034,9 @@ service does not know the scope (nothing to filter by)."
     ((slots-at scope-id)
      (with-scope scope-id
        (lambda (root)
-         (let ((cached (last-solve-ref scope-id)))
+         (let ((cached (last-solve-ref cache scope-id)))
            (slots-at-reply root
-                           #:met-of (met-of-scope root scope-id)
+                           #:met-of (met-of-scope cache root scope-id)
                            #:solved (or (and cached (assq-ref (cdr cached) 'socialized-slots)) '())
                            #:pool (and pool-of (pool-of root scope-id)))))))
 
@@ -4379,7 +4123,7 @@ service does not know the scope (nothing to filter by)."
                                (cons (cons 'cats
                                            (row-cats (without-tension-terms (intent-resource-classified-as i))
                                                      (intent-resource-conforms-to i)))
-                                     (need-slot-row i root #:met-of (met-of-scope root scope-id))))))
+                                     (need-slot-row i root #:met-of (met-of-scope cache root scope-id))))))
                       ($ ps 'all-intents)))
                     (means
                      (filter-map
@@ -4481,4 +4225,5 @@ service does not know the scope (nothing to filter by)."
                                                    (append (time-score n c) (eligible n c))))))
                (success `((needs . ,needs)
                           (means . ,means)
-                          (matches . ,matches)))))))))))
+                          (matches . ,matches))))))))))))
+  dispatch)

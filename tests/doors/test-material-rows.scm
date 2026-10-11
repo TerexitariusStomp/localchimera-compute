@@ -59,13 +59,12 @@
          '(id action conforms-to quantity unit effort output-of input-of classified-as at-location when note)))
 
 (display "\n── THE PLAN AT ITS EDGES: records inside, rows on the wire, serialized in the store ──\n")
-(define S (resolve-module '(playnet doors service)))
-(define solve->stored (module-ref S 'solve->stored))
-(define stored->solve (module-ref S 'stored->solve))
+(use-modules ((playnet doors planner solve-cache) #:select (make-solve-cache solve->stored stored->solve)))
+(define cache (make-solve-cache))   ; a cache over no roster: the read alone
 (let* ((plan   `((met . 1.0) (work . ()) (material . (,stated)) (runs . ())))
        (rows   (plan->rows plan))
        (stored (solve->stored (cons '() plan)))
-       (back   (stored->solve "scope-1" stored)))
+       (back   (stored->solve cache "scope-1" stored)))
   (check "a plan leaving the process carries each flow as its row"
          (map pair? (assq-ref rows 'material)) '(#t))
   (check "…and what is no flow as it stood" (assq-ref rows 'met) 1.0)
@@ -74,10 +73,10 @@
          (car (car (assq-ref (cdr stored) 'material))) '@vf)
   (check "a plan read back holds the commitment it stored"
          (fields (car (assq-ref (cdr back) 'material))) (fields stated))
-  (check "a plan read twice is one plan" (eq? back (stored->solve "scope-1" stored)) #t)
+  (check "a plan read twice is one plan" (eq? back (stored->solve cache "scope-1" stored)) #t)
   ;; a plan stored before its flows were records holds rows; it reads as the same flows
   (let* ((earlier (cons '() rows))
-         (read    (stored->solve "scope-2" earlier))
+         (read    (stored->solve cache "scope-2" earlier))
          (m       (car (assq-ref (cdr read) 'material))))
     (check "a plan stored as rows reads back, each row answering the readers"
            (list (row-id m) (row-action m) (row-spec m) (row-quantity m))

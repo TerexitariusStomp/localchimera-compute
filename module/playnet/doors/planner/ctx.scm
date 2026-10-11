@@ -1,0 +1,249 @@
+;;; module/playnet/doors/planner/ctx.scm — the planner service's context: what its door fragments share.
+;;;
+;;; ^planner-service (doors/service.scm) is composed of fragments, each a procedure
+;;; from this context to a declared-doors value (docs/planning/codebase-layout.md
+;;; §12), as the governance service is of its <governance-ctx>. The context holds
+;;; three kinds of thing, each a field by name:
+;;;
+;;;   the cells a door writes   ph-ok?, witness-door, solve-vat, re-stand: wiring
+;;;                             that arrives after the spawn through a setter door
+;;;   the helpers the core      the roster, the scope and person gates, the home,
+;;;   hands over once it has    the standing terms, the solve queue, the folds and
+;;;   them                      descents, the slot and means notices, the steward
+;;;                             gate, the readers governance injects
+;;;   the solve cache           one <solve-cache> per service (doors/planner/solve-cache)
+;;;
+;;; `with-planner-ctx` binds every field under its own name, reading through the
+;;; accessor on each use and writing through the setter on `set!`, so a fragment's
+;;; clause reads as it did inside the actor and a cell it sets is set for every
+;;; other fragment. `with-planner-state` binds the cells alone, for the core's own
+;;; helpers, which are defined before the context is filled. `planner-ctx-install!`
+;;; hands the helpers over by name.
+;;;
+;;; What one fragment alone reads and writes is that fragment's own, defined inside
+;;; it above its declared-doors.
+
+(define-module (playnet doors planner ctx)
+  #:use-module (srfi srfi-9)
+  #:export (make-planner-ctx planner-ctx? with-planner-ctx with-planner-state planner-ctx-install!
+            planner-ctx-fields
+            planner-ctx-ph-ok? planner-ctx-witness-door planner-ctx-solve-vat
+            planner-ctx-re-stand planner-ctx-cache planner-ctx-roster-ref
+            planner-ctx-roster-entries planner-ctx-roster-add! planner-ctx-roster-forget!
+            planner-ctx-ensure-scope-wired! planner-ctx-with-scope
+            planner-ctx-with-person planner-ctx-scoped planner-ctx-door-read
+            planner-ctx-home-scope-of planner-ctx-adopt-home! planner-ctx-set-home-row!
+            planner-ctx-homed-at planner-ctx-home-root planner-ctx-home-agent-of
+            planner-ctx-person-events planner-ctx-person-observers
+            planner-ctx-touched-scopes planner-ctx-standing planner-ctx-world-of*
+            planner-ctx-gather planner-ctx-standing-settings planner-ctx-standing-kw
+            planner-ctx-policy-kw planner-ctx-plan-fn* planner-ctx-on-plan
+            planner-ctx-solve-current! planner-ctx-resolve-scope!
+            planner-ctx-resolve-one-stale! planner-ctx-resolve-stale-scopes!
+            planner-ctx-solve-effect! planner-ctx-nodes-of planner-ctx-node-of
+            planner-ctx-labour-pool-of planner-ctx-uc planner-ctx-rehang-scope!
+            planner-ctx-scope-geo-path planner-ctx-declared-parent
+            planner-ctx-deployment-table planner-ctx-round-robin
+            planner-ctx-slots-changed! planner-ctx-slots-watch!
+            planner-ctx-slots-unwatch! planner-ctx-means-changed!
+            planner-ctx-means-rebuild! planner-ctx-means-fold-total
+            planner-ctx-steward-admit planner-ctx-steward-ok? planner-ctx-means-criteria
+            planner-ctx-chat-reg planner-ctx-lent-means-of planner-ctx-migrate-person!
+            planner-ctx-consolidate-person! planner-ctx-scope-community
+            planner-ctx-scope-ancestry planner-ctx-communes-overlap
+            planner-ctx-scope-census planner-ctx-scope-record-of
+            planner-ctx-federation-sibling-locations planner-ctx-credit-roots
+            planner-ctx-refold-voice! planner-ctx-refold-readings! planner-ctx-rail-hands
+            planner-ctx-debts-of planner-ctx-owed-of planner-ctx-settle-of
+            planner-ctx-may-steward-of planner-ctx-lent-of planner-ctx-knows-of
+            planner-ctx-pool-of planner-ctx-hands-of planner-ctx-world-of
+            planner-ctx-contrary-of planner-ctx-standing-of planner-ctx-plan-fn
+            planner-ctx-readers planner-ctx-earth
+            set-planner-ctx-ph-ok?! set-planner-ctx-witness-door!
+            set-planner-ctx-solve-vat! set-planner-ctx-re-stand! set-planner-ctx-cache!
+            set-planner-ctx-roster-ref! set-planner-ctx-roster-entries!
+            set-planner-ctx-roster-add!! set-planner-ctx-roster-forget!!
+            set-planner-ctx-ensure-scope-wired!! set-planner-ctx-with-scope!
+            set-planner-ctx-with-person! set-planner-ctx-scoped!
+            set-planner-ctx-door-read! set-planner-ctx-home-scope-of!
+            set-planner-ctx-adopt-home!! set-planner-ctx-set-home-row!!
+            set-planner-ctx-homed-at! set-planner-ctx-home-root!
+            set-planner-ctx-home-agent-of! set-planner-ctx-person-events!
+            set-planner-ctx-person-observers! set-planner-ctx-touched-scopes!
+            set-planner-ctx-standing! set-planner-ctx-world-of*! set-planner-ctx-gather!
+            set-planner-ctx-standing-settings! set-planner-ctx-standing-kw!
+            set-planner-ctx-policy-kw! set-planner-ctx-plan-fn*! set-planner-ctx-on-plan!
+            set-planner-ctx-solve-current!! set-planner-ctx-resolve-scope!!
+            set-planner-ctx-resolve-one-stale!! set-planner-ctx-resolve-stale-scopes!!
+            set-planner-ctx-solve-effect!! set-planner-ctx-nodes-of!
+            set-planner-ctx-node-of! set-planner-ctx-labour-pool-of! set-planner-ctx-uc!
+            set-planner-ctx-rehang-scope!! set-planner-ctx-scope-geo-path!
+            set-planner-ctx-declared-parent! set-planner-ctx-deployment-table!
+            set-planner-ctx-round-robin! set-planner-ctx-slots-changed!!
+            set-planner-ctx-slots-watch!! set-planner-ctx-slots-unwatch!!
+            set-planner-ctx-means-changed!! set-planner-ctx-means-rebuild!!
+            set-planner-ctx-means-fold-total! set-planner-ctx-steward-admit!
+            set-planner-ctx-steward-ok?! set-planner-ctx-means-criteria!
+            set-planner-ctx-chat-reg! set-planner-ctx-lent-means-of!
+            set-planner-ctx-migrate-person!! set-planner-ctx-consolidate-person!!
+            set-planner-ctx-scope-community! set-planner-ctx-scope-ancestry!
+            set-planner-ctx-communes-overlap! set-planner-ctx-scope-census!
+            set-planner-ctx-scope-record-of!
+            set-planner-ctx-federation-sibling-locations! set-planner-ctx-credit-roots!
+            set-planner-ctx-refold-voice!! set-planner-ctx-refold-readings!!
+            set-planner-ctx-rail-hands! set-planner-ctx-debts-of!
+            set-planner-ctx-owed-of! set-planner-ctx-settle-of!
+            set-planner-ctx-may-steward-of! set-planner-ctx-lent-of!
+            set-planner-ctx-knows-of! set-planner-ctx-pool-of! set-planner-ctx-hands-of!
+            set-planner-ctx-world-of! set-planner-ctx-contrary-of!
+            set-planner-ctx-standing-of! set-planner-ctx-plan-fn!
+            set-planner-ctx-readers! set-planner-ctx-earth!))
+
+(eval-when (expand load eval)
+(define planner-ctx-fields '(ph-ok? witness-door solve-vat re-stand cache roster-ref
+                             roster-entries roster-add! roster-forget!
+                             ensure-scope-wired! with-scope with-person scoped door-read
+                             home-scope-of adopt-home! set-home-row! homed-at home-root
+                             home-agent-of person-events person-observers touched-scopes
+                             standing world-of* gather standing-settings standing-kw
+                             policy-kw plan-fn* on-plan solve-current! resolve-scope!
+                             resolve-one-stale! resolve-stale-scopes! solve-effect!
+                             nodes-of node-of labour-pool-of uc rehang-scope!
+                             scope-geo-path declared-parent deployment-table round-robin
+                             slots-changed! slots-watch! slots-unwatch! means-changed!
+                             means-rebuild! means-fold-total steward-admit steward-ok?
+                             means-criteria chat-reg lent-means-of migrate-person!
+                             consolidate-person! scope-community scope-ancestry
+                             communes-overlap scope-census scope-record-of
+                             federation-sibling-locations credit-roots refold-voice!
+                             refold-readings! rail-hands debts-of owed-of settle-of
+                             may-steward-of lent-of knows-of pool-of hands-of world-of
+                             contrary-of standing-of plan-fn readers earth)))
+
+(define-record-type <planner-ctx>
+  (%make-planner-ctx ph-ok? witness-door solve-vat re-stand cache roster-ref roster-entries roster-add! roster-forget! ensure-scope-wired! with-scope with-person scoped door-read home-scope-of adopt-home! set-home-row! homed-at home-root home-agent-of person-events person-observers touched-scopes standing world-of* gather standing-settings standing-kw policy-kw plan-fn* on-plan solve-current! resolve-scope! resolve-one-stale! resolve-stale-scopes! solve-effect! nodes-of node-of labour-pool-of uc rehang-scope! scope-geo-path declared-parent deployment-table round-robin slots-changed! slots-watch! slots-unwatch! means-changed! means-rebuild! means-fold-total steward-admit steward-ok? means-criteria chat-reg lent-means-of migrate-person! consolidate-person! scope-community scope-ancestry communes-overlap scope-census scope-record-of federation-sibling-locations credit-roots refold-voice! refold-readings! rail-hands debts-of owed-of settle-of may-steward-of lent-of knows-of pool-of hands-of world-of contrary-of standing-of plan-fn readers earth)
+  planner-ctx?
+  (ph-ok? planner-ctx-ph-ok? set-planner-ctx-ph-ok?!)
+  (witness-door planner-ctx-witness-door set-planner-ctx-witness-door!)
+  (solve-vat planner-ctx-solve-vat set-planner-ctx-solve-vat!)
+  (re-stand planner-ctx-re-stand set-planner-ctx-re-stand!)
+  (cache planner-ctx-cache set-planner-ctx-cache!)
+  (roster-ref planner-ctx-roster-ref set-planner-ctx-roster-ref!)
+  (roster-entries planner-ctx-roster-entries set-planner-ctx-roster-entries!)
+  (roster-add! planner-ctx-roster-add! set-planner-ctx-roster-add!!)
+  (roster-forget! planner-ctx-roster-forget! set-planner-ctx-roster-forget!!)
+  (ensure-scope-wired! planner-ctx-ensure-scope-wired! set-planner-ctx-ensure-scope-wired!!)
+  (with-scope planner-ctx-with-scope set-planner-ctx-with-scope!)
+  (with-person planner-ctx-with-person set-planner-ctx-with-person!)
+  (scoped planner-ctx-scoped set-planner-ctx-scoped!)
+  (door-read planner-ctx-door-read set-planner-ctx-door-read!)
+  (home-scope-of planner-ctx-home-scope-of set-planner-ctx-home-scope-of!)
+  (adopt-home! planner-ctx-adopt-home! set-planner-ctx-adopt-home!!)
+  (set-home-row! planner-ctx-set-home-row! set-planner-ctx-set-home-row!!)
+  (homed-at planner-ctx-homed-at set-planner-ctx-homed-at!)
+  (home-root planner-ctx-home-root set-planner-ctx-home-root!)
+  (home-agent-of planner-ctx-home-agent-of set-planner-ctx-home-agent-of!)
+  (person-events planner-ctx-person-events set-planner-ctx-person-events!)
+  (person-observers planner-ctx-person-observers set-planner-ctx-person-observers!)
+  (touched-scopes planner-ctx-touched-scopes set-planner-ctx-touched-scopes!)
+  (standing planner-ctx-standing set-planner-ctx-standing!)
+  (world-of* planner-ctx-world-of* set-planner-ctx-world-of*!)
+  (gather planner-ctx-gather set-planner-ctx-gather!)
+  (standing-settings planner-ctx-standing-settings set-planner-ctx-standing-settings!)
+  (standing-kw planner-ctx-standing-kw set-planner-ctx-standing-kw!)
+  (policy-kw planner-ctx-policy-kw set-planner-ctx-policy-kw!)
+  (plan-fn* planner-ctx-plan-fn* set-planner-ctx-plan-fn*!)
+  (on-plan planner-ctx-on-plan set-planner-ctx-on-plan!)
+  (solve-current! planner-ctx-solve-current! set-planner-ctx-solve-current!!)
+  (resolve-scope! planner-ctx-resolve-scope! set-planner-ctx-resolve-scope!!)
+  (resolve-one-stale! planner-ctx-resolve-one-stale! set-planner-ctx-resolve-one-stale!!)
+  (resolve-stale-scopes! planner-ctx-resolve-stale-scopes! set-planner-ctx-resolve-stale-scopes!!)
+  (solve-effect! planner-ctx-solve-effect! set-planner-ctx-solve-effect!!)
+  (nodes-of planner-ctx-nodes-of set-planner-ctx-nodes-of!)
+  (node-of planner-ctx-node-of set-planner-ctx-node-of!)
+  (labour-pool-of planner-ctx-labour-pool-of set-planner-ctx-labour-pool-of!)
+  (uc planner-ctx-uc set-planner-ctx-uc!)
+  (rehang-scope! planner-ctx-rehang-scope! set-planner-ctx-rehang-scope!!)
+  (scope-geo-path planner-ctx-scope-geo-path set-planner-ctx-scope-geo-path!)
+  (declared-parent planner-ctx-declared-parent set-planner-ctx-declared-parent!)
+  (deployment-table planner-ctx-deployment-table set-planner-ctx-deployment-table!)
+  (round-robin planner-ctx-round-robin set-planner-ctx-round-robin!)
+  (slots-changed! planner-ctx-slots-changed! set-planner-ctx-slots-changed!!)
+  (slots-watch! planner-ctx-slots-watch! set-planner-ctx-slots-watch!!)
+  (slots-unwatch! planner-ctx-slots-unwatch! set-planner-ctx-slots-unwatch!!)
+  (means-changed! planner-ctx-means-changed! set-planner-ctx-means-changed!!)
+  (means-rebuild! planner-ctx-means-rebuild! set-planner-ctx-means-rebuild!!)
+  (means-fold-total planner-ctx-means-fold-total set-planner-ctx-means-fold-total!)
+  (steward-admit planner-ctx-steward-admit set-planner-ctx-steward-admit!)
+  (steward-ok? planner-ctx-steward-ok? set-planner-ctx-steward-ok?!)
+  (means-criteria planner-ctx-means-criteria set-planner-ctx-means-criteria!)
+  (chat-reg planner-ctx-chat-reg set-planner-ctx-chat-reg!)
+  (lent-means-of planner-ctx-lent-means-of set-planner-ctx-lent-means-of!)
+  (migrate-person! planner-ctx-migrate-person! set-planner-ctx-migrate-person!!)
+  (consolidate-person! planner-ctx-consolidate-person! set-planner-ctx-consolidate-person!!)
+  (scope-community planner-ctx-scope-community set-planner-ctx-scope-community!)
+  (scope-ancestry planner-ctx-scope-ancestry set-planner-ctx-scope-ancestry!)
+  (communes-overlap planner-ctx-communes-overlap set-planner-ctx-communes-overlap!)
+  (scope-census planner-ctx-scope-census set-planner-ctx-scope-census!)
+  (scope-record-of planner-ctx-scope-record-of set-planner-ctx-scope-record-of!)
+  (federation-sibling-locations planner-ctx-federation-sibling-locations set-planner-ctx-federation-sibling-locations!)
+  (credit-roots planner-ctx-credit-roots set-planner-ctx-credit-roots!)
+  (refold-voice! planner-ctx-refold-voice! set-planner-ctx-refold-voice!!)
+  (refold-readings! planner-ctx-refold-readings! set-planner-ctx-refold-readings!!)
+  (rail-hands planner-ctx-rail-hands set-planner-ctx-rail-hands!)
+  (debts-of planner-ctx-debts-of set-planner-ctx-debts-of!)
+  (owed-of planner-ctx-owed-of set-planner-ctx-owed-of!)
+  (settle-of planner-ctx-settle-of set-planner-ctx-settle-of!)
+  (may-steward-of planner-ctx-may-steward-of set-planner-ctx-may-steward-of!)
+  (lent-of planner-ctx-lent-of set-planner-ctx-lent-of!)
+  (knows-of planner-ctx-knows-of set-planner-ctx-knows-of!)
+  (pool-of planner-ctx-pool-of set-planner-ctx-pool-of!)
+  (hands-of planner-ctx-hands-of set-planner-ctx-hands-of!)
+  (world-of planner-ctx-world-of set-planner-ctx-world-of!)
+  (contrary-of planner-ctx-contrary-of set-planner-ctx-contrary-of!)
+  (standing-of planner-ctx-standing-of set-planner-ctx-standing-of!)
+  (plan-fn planner-ctx-plan-fn set-planner-ctx-plan-fn!)
+  (readers planner-ctx-readers set-planner-ctx-readers!)
+  (earth planner-ctx-earth set-planner-ctx-earth!))
+
+(define* (make-planner-ctx #:key (ph-ok? (lambda (_aid) #t)) (witness-door #f) (solve-vat #f) (re-stand '())
+                           plan-fn (readers '()) (earth #f))
+  "The cells at their defaults: everyone holds personhood until the gateway installs
+   its checker, no witness door, no solve vat, nothing to re-stand. PLAN-FN, READERS
+   and EARTH are the spawn's own arguments. The helpers are handed over by
+   `planner-ctx-install!` once the actor has them."
+  (%make-planner-ctx ph-ok? witness-door solve-vat re-stand
+                     #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f
+                     plan-fn readers earth))
+
+;; (with-planner-state ctx body …) — the cells under their own names, read and
+;; written through the context. The body is a body: it may define, and its last
+;; form is the value, wherever the form stands
+(define-syntax with-planner-state
+  (lambda (x)
+    (syntax-case x ()
+      ((_ ctx body ...)
+       (with-syntax (((name ...) (map (lambda (n) (datum->syntax x n)) '(ph-ok? witness-door solve-vat re-stand)))
+                     ((ref ...)  (map (lambda (n) (datum->syntax x (symbol-append 'planner-ctx- n))) '(ph-ok? witness-door solve-vat re-stand)))
+                     ((setr ...) (map (lambda (n) (datum->syntax x (symbol-append 'set-planner-ctx- n '!))) '(ph-ok? witness-door solve-vat re-stand))))
+         #'(let-syntax ((name (identifier-syntax (_ (ref ctx)) ((set! _ v) (setr ctx v)))) ...)
+             (let () body ...)))))))
+
+;; (with-planner-ctx ctx body …) — every field under its own name
+(define-syntax with-planner-ctx
+  (lambda (x)
+    (syntax-case x ()
+      ((_ ctx body ...)
+       (with-syntax (((name ...) (map (lambda (n) (datum->syntax x n)) planner-ctx-fields))
+                     ((ref ...)  (map (lambda (n) (datum->syntax x (symbol-append 'planner-ctx- n))) planner-ctx-fields))
+                     ((setr ...) (map (lambda (n) (datum->syntax x (symbol-append 'set-planner-ctx- n '!))) planner-ctx-fields)))
+         #'(let-syntax ((name (identifier-syntax (_ (ref ctx)) ((set! _ v) (setr ctx v)))) ...)
+             (let () body ...)))))))
+
+;; (planner-ctx-install! ctx name …) — each NAME's value into the field of that name
+(define-syntax planner-ctx-install!
+  (lambda (x)
+    (syntax-case x ()
+      ((_ ctx name ...)
+       (with-syntax (((setr ...) (map (lambda (n) (datum->syntax x (symbol-append 'set-planner-ctx- (syntax->datum n) '!))) #'(name ...))))
+         #'(begin (setr ctx name) ...))))))

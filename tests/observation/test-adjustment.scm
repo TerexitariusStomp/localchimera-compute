@@ -85,8 +85,9 @@
                                 "module/playnet/doors/slots.scm")))
                 4))
 (check-pred "no place builds a raise or lower by hand any more"
-            (not (any (lambda (f) (string-contains (source-of f) "(if (> delta 0) 'raise 'lower)"))
-                      '("module/playnet/doors/service.scm" "module/playnet/doors/skills.scm" "module/playnet/doors/effort.scm"))))
+            (not (or (string-contains (source-of "module/playnet/doors/service.scm") "(if (> delta 0) 'raise 'lower)")
+                     (string-contains (source-of "module/playnet/doors/skills.scm") "(if (> delta 0) 'raise 'lower)")
+                     (string-contains (source-of "module/playnet/doors/effort.scm") "(if (> delta 0) 'raise 'lower)"))))
 
 (use-modules ((playnet vf formulas counting) #:select (count-figure))
              (srfi srfi-1))

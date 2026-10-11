@@ -8,7 +8,7 @@
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet scope root) (playnet vf schemas) (playnet observation states) (srfi srfi-1))
-(use-modules (playnet doors service))
+(use-modules (playnet doors service) (playnet doors planner solve-cache))
 (use-modules ((playnet observation account) #:select (declare-claimable!)))
 (use-modules ((playnet test scope) #:select (plan-claim!)))   ; the plan's row, stood by the fixture
 (use-modules (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1))
@@ -88,7 +88,8 @@
 (define (row spec who q place)
   `((conforms-to . ,spec) (claimant . ,who) (quantity . ,q) (at-location . ,place) (period . #f)))
 (with-vat vat (work! obs-ref "alice" "spec-labor" 30 "ev-more" "in-more"))   ; credit for the rows below
-(define (landed! . rows) (with-vat vat (plan-claims! "s1" `((claims . ,rows)))))
+(define %standing (@@ (playnet doors service) %standing))   ; the live service's reads
+(define (landed! . rows) (with-vat vat (plan-claims! (%standing 'cache) "s1" `((claims . ,rows)))))
 (define (confirm! q place)
   (with-vat vat ($ svc-ref 'record-claim "s1" "alice" "spec-bread" q 99 place #f)))
 (define (remaining place)

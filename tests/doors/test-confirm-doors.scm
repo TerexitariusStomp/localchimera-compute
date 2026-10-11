@@ -31,7 +31,9 @@
              (goblins) (goblins vat) (goblins persistence-store memory) (goblins utils hashmap)
              (srfi srfi-1) (srfi srfi-13))
 
-(define cache-solve! (@@ (playnet doors service) cache-solve!))
+(define %standing (@@ (playnet doors service) %standing))   ; the live service's reads
+(define (cache-solve! sid demand alist)   ; a plan landed for the live service's SID
+  ((@ (playnet doors planner solve-cache) cache-solve!) (%standing 'cache) sid demand alist))
 (define* (row id act spec qty place #:key in out note)
   `((id . ,id) (action . ,act) (conforms-to . ,spec) (quantity . ,qty) (at-location . ,place)
     (input-of . ,in) (output-of . ,out) (when . "2026-10-02") (note . ,note)))

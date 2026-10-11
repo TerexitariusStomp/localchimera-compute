@@ -19,7 +19,9 @@
              (srfi srfi-1))
 (use-modules ((playnet wire rows) #:select (plain-reply)))   ; a door's rows, read back as alists
 
-(define cache-solve! (@@ (playnet doors service) cache-solve!))
+(define %standing (@@ (playnet doors service) %standing))   ; the live service's reads
+(define (cache-solve! sid demand alist)   ; a plan landed for the live service's SID
+  ((@ (playnet doors planner solve-cache) cache-solve!) (%standing 'cache) sid demand alist))
 
 (define store (make-memory-store))
 (define-values (vat scope)
@@ -175,8 +177,7 @@
 (check-pred "past the range, the excess is what the ledger was off by" (near? (mean-abs "cumin") 3.0))
 ;;; ── 9. a count that moves a stock marks the plan stale ───────────────────
 (display "\n── 9. a count that moves the stock marks the plan stale ──\n")
-(define %stale (@@ (playnet doors service) %stale-solves))
-(define (stale?) (hash-ref %stale "org:commune" #f))
+(define (stale?) ((@ (playnet doors planner solve-cache) solve-stale?) (%standing 'cache) "org:commune"))
 (seed! "pantry/thyme" "thyme" 10.0 "org:commune" "place:pantry")
 (plan! '())                                   ; a solve lands: the plan is fresh
 (check "a fresh plan is not stale" (stale?) #f)

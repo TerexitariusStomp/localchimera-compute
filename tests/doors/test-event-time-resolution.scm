@@ -26,7 +26,9 @@
              (goblins) (goblins vat) (goblins persistence-store memory) (goblins utils hashmap)
              (srfi srfi-1))
 
-(define cache-solve! (@@ (playnet doors service) cache-solve!))
+(define %standing (@@ (playnet doors service) %standing))   ; the live service's reads
+(define (cache-solve! sid demand alist)   ; a plan landed for the live service's SID
+  ((@ (playnet doors planner solve-cache) cache-solve!) (%standing 'cache) sid demand alist))
 
 (display "\n── NAME: the resource is the one the books hold at the flow's place ──\n")
 (let-values (((vat scope) (fresh-scope)))
