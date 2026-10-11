@@ -1,4 +1,4 @@
-;;; engine/federation-oracle.scm — a commune's BOUNDARY ORACLE, and the consensus loop
+;;; module/playnet/solve/federation-oracle.scm — a commune's BOUNDARY ORACLE, and the consensus loop
 ;;; over oracles that answer from anywhere.
 ;;;
 ;;; solve-decomposed (engine §10) holds every scope's LP in one process and runs
@@ -32,63 +32,18 @@
 ;;;                         oracles; over the wire it fans out messages and
 ;;;                         waits. The loop does not know which.
 ;;;
-;;; Engine mixin: loaded by engine.scm after engine/federation-solve.scm, defining into
-;;; the engine module; assumes its bindings (admm-kernel-rec, k-solvemany via
-;;; admm-kernel-batch, kkt-report, solve-native-c, …).
+;;; A module above the engine's §10: it reads the kernel records, the
+;;; crossings and the exact local solve (`refine-plan`) from (playnet solve
+;;; engine) and the exchange from solve/admm-link.
 
-;; ── the exact local solve at the settled pulls ───────────────────────────────
-;; ADMM minimises each scope INEXACTLY on purpose; once the pulls have settled,
-;; each scope's problem is min f_s(x_s) + λᵀy_s with nothing left to
-;; coordinate, and it is solved to full accuracy from the ADMM iterate. The
-;; pull folds into `labform`, whose entries contribute κ·coeff to the
-;; gradient, so a pull λ on a column that carries the flow with sign s enters
-;; as (c . s·λ/κ). The prox stays centred on the agreed flow z: against the
-;; bare program a scope with plenty of the good is indifferent and supplies
-;; what nobody draws (287 kg against a 40 kg need, measured); at convergence
-;; the augmented minimiser IS the constrained one. A qc form costs
-;; w·(const + Σv·x)², so the centre enters NEGATED, as admm-write-prox!
-;; stores it. The solve selects WITHOUT the dual fit (the outer certificate
-;; reports with it, solver.scm *kkt-dual-fit?*) and at the floor the plan was
-;; made at (`call-at-settled-floor`): a polish, not a program of its own. The
-;; monolith's finish and the boundary oracle's `refine!` are this one solve.
-;; A crossing-keyed alist (pulls, z, rho, centres, caps) is hashed ONCE per
-;; call, not re-scanned with assoc once per crossing inside the maps over
-;; BND below — the alist and bnd are both sized to the scope's own boundary
-;; B, so an assoc-per-element there is O(B²) per round, repeated every ADMM
-;; iteration (up to *leap-budget* of them).
-(define (crossing-alist->hash alist)
-  (let ((h (make-hash-table)))
-    (for-each (lambda (p) (hash-set! h (car p) (cdr p))) alist)
-    h))
-(define (refine-plan rec x0 z pulls rho)
-  "REC a scope record (forms labform crossings); X0 the plan to start from; Z
-   and PULLS ((good . value) …) the signed flow agreed for this scope and the
-   pull on each good; RHO a number or ((good . ρ) …).
-   → (x . labform*) — X #f when the solve fails — or #f when the record has no forms."
-  (let* ((get (lambda (k) (let ((a (assq k rec))) (and a (cdr a)))))
-         (f0 (get 'forms))
-         (bnd (record-crossings rec))
-         (pulls-h (crossing-alist->hash pulls))
-         (z-h (crossing-alist->hash z))
-         (rho-h (and (pair? rho) (crossing-alist->hash rho)))
-         (of (lambda (h b) (exact->inexact (or (hash-ref h (crossing-key b) #f) 0.0))))
-         (rho-of (lambda (b) (if rho-h (exact->inexact (hash-ref rho-h (crossing-key b))) rho)))
-         (kp (if (> (abs *kappa*) 1e-300) *kappa* 1.0))
-         (lab* (append (or (get 'labform) '())
-                       (map (lambda (b) (cons (crossing-col b) (/ (* (crossing-sign b) (of pulls-h b)) kp))) bnd)))
-         (prox-z (map (lambda (b) (mk-method (mk-qc (- (crossing-column b (of z-h b)))
-                                                    (list (cons (crossing-col b) 1.0))
-                                                    (/ (rho-of b) 2.0))))
-                      bnd)))
-    (and f0
-         (cons (false-if-exception
-                (call-without-dual-fit
-                 (lambda ()
-                   (call-at-settled-floor
-                    (lambda ()
-                      (call-with-values (lambda () (solve-exact (append prox-z f0) lab* x0))
-                        (lambda (x . _) x)))))))
-               lab*))))
+(define-module (playnet solve federation-oracle)
+  #:use-module (srfi srfi-1)
+  #:use-module (rnrs bytevectors)
+  #:use-module ((playnet solve voice-field) #:select (voice-labform voice-report))
+  #:use-module (playnet solve admm-link)
+  #:use-module (playnet solve solver)
+  #:use-module (playnet solve engine)
+  #:export (make-boundary-oracle solve-consensus consensus-of flow-of signed-flows))
 
 ;; ── the oracle ───────────────────────────────────────────────────────────────
 (define* (make-boundary-oracle rec #:key (rho 4.0))

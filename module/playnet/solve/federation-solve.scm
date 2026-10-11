@@ -1,4 +1,4 @@
-;;; engine/federation-solve.scm — the records→scope-record bridge + a federated solve.
+;;; module/playnet/solve/federation-solve.scm — the records→scope-record bridge + a federated solve.
 ;;;
 ;;; Turns sovereign communes (each a bag of VF records) into a cross-vat
 ;;; decomposition: build each commune's OWN located LP with the shared prelude
@@ -23,8 +23,27 @@
 ;;;     dual diverges).
 ;;;   • mark the good #:never-raw so it is not a free raw.
 ;;;
-;;; Included by planner.scm; assumes its bindings (ingest-records!, build-located,
-;;; located-warm, solve-decomposed, compile-recipe, rp, make-recipe-flow, …).
+;;; A module above the engine: it reads the world by name (solve/world) and
+;;; the engine's prelude (ingest-records!, build-located, located-warm), its
+;;; crossings and solve-decomposed; the compiler's rp and make-recipe-flow.
+
+(define-module (playnet solve federation-solve)
+  #:use-module (playnet vf formulas flows)
+  #:use-module (playnet solve world)
+  #:use-module (srfi srfi-1)
+  #:use-module (playnet vf schemas)
+  #:use-module (playnet vf formulas actions)
+  #:use-module (playnet vf facts located)
+  #:use-module ((playnet solve externality) #:select (withdrawal-displacement paired-difference))
+  #:use-module (playnet solve admm-link)
+  #:use-module (playnet solve solver)
+  #:use-module (playnet solve compile)
+  #:use-module (playnet solve engine)
+  #:export (allocate-means-consensus boundary-bounds close-stranded-links commune->scope-record
+            crossing-recipe eisenberg-gale-split federated-delivered federated-dilemma federated-flows
+            federated-materials federated-per-scope federated-relaxed-scopes federated-result
+            federated-scope-pulls federated-solve federated-withdrawal-displacement loose-gives
+            records-means-world warm-boundary-flows))
 
 ;; the crossing column, as a trivial recipe (process + one flow): the good
 ;; entering the commune from the crossing, a unit a unit

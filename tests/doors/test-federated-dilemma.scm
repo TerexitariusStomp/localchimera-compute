@@ -13,6 +13,7 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module -L tests tests/doors/test-federated-dilemma.scm
 
+(use-modules (playnet solve federation-solve))
 (use-modules (playnet test harness) (playnet knowledge recipes federation-demo) (playnet scope root) (playnet vf schemas) (playnet scope live)
              (playnet doors service)
              (playnet knowledge recipes federation-demo)

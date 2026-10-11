@@ -26,9 +26,7 @@
 (use-modules (playnet test harness)
              (playnet federation async)
              (playnet solve admm-link)
-             ((playnet solve engine)
-              #:select (commune->scope-record make-boundary-oracle solve-consensus federated-solve federated-flows loose-gives
-                        federated-dilemma close-stranded-links lg cell))
+             ((playnet solve engine) #:select (lg cell)) ((playnet solve federation-oracle) #:select (make-boundary-oracle solve-consensus)) ((playnet solve federation-solve) #:select (commune->scope-record federated-solve federated-flows loose-gives federated-dilemma close-stranded-links))
              (playnet solve solver)
              (playnet vf schemas)
              (playnet test planner federation-wire-fixture)

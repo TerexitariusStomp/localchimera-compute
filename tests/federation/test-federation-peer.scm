@@ -19,11 +19,12 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/federation/test-federation-peer.scm
 
+(use-modules (playnet solve federation-solve))
 (use-modules (playnet test harness)
              (playnet federation peer)
              (playnet federation async)
              ((playnet federation wire) #:select (signed-reply))
-             ((playnet solve engine) #:select (make-boundary-oracle solve-consensus))
+             ((playnet solve federation-oracle) #:select (make-boundary-oracle solve-consensus))
              (playnet solve solver)
              ((playnet keri citizen-sig) #:select (make-keri-identity keri-identity-aid))
              (goblins) (goblins actor-lib methods)

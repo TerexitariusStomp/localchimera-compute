@@ -138,8 +138,8 @@ FAMILY_WASM_DEPS = \
                     module/playnet/doors/family/local.scm \
                     module/playnet/doors/family/wire.scm \
                     module/playnet/doors/family/solve.scm \
-                    module/playnet/solve/engine/federation-oracle.scm \
-                    module/playnet/solve/engine/federation-solve.scm \
+                    module/playnet/solve/federation-oracle.scm \
+                    module/playnet/solve/federation-solve.scm \
                     module/playnet/solve/engine/fragility.scm \
                     module/playnet/knowledge/data/fdc-sr-legacy.scm \
                     module/playnet/knowledge/catalogues/food-sources.scm \
@@ -245,8 +245,8 @@ SCOPE_WASM_DEPS = \
                    module/playnet/utils/envelope.scm \
                    module/playnet/execution/alerts.scm \
                    module/playnet/solve/externality.scm \
-                   module/playnet/solve/engine/federation-oracle.scm \
-                   module/playnet/solve/engine/federation-solve.scm \
+                   module/playnet/solve/federation-oracle.scm \
+                   module/playnet/solve/federation-solve.scm \
                    module/playnet/solve/engine/fragility.scm \
                    module/playnet/plan/horizon-gate.scm \
                    module/playnet/solve/inspection.scm \

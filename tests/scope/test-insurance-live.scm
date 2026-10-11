@@ -28,6 +28,7 @@
 ;;; Pure solver (no ACDCs) ⇒ no blake3.
 ;;; Run: guile -L module tests/scope/test-insurance-live.scm
 
+(use-modules (playnet solve federation-solve))
 (use-modules (playnet test harness) (playnet test scope)
              (playnet vf schemas) (srfi srfi-1)
              (playnet scope live)

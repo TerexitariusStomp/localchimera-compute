@@ -11,7 +11,7 @@
 
 (use-modules (playnet test harness)
              (playnet federation wire)
-             ((playnet solve engine) #:select (make-boundary-oracle))
+             ((playnet solve federation-oracle) #:select (make-boundary-oracle))
              ((playnet keri citizen-sig) #:select (make-keri-identity keri-identity-aid))
              (goblins) (goblins vat)
              (goblins actor-lib on)

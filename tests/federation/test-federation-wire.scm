@@ -14,7 +14,7 @@
 
 (use-modules (playnet test harness)
              (playnet federation wire)
-             ((playnet solve engine) #:select (solve-decomposed make-boundary-oracle solve-consensus))
+             ((playnet solve engine) #:select (solve-decomposed)) ((playnet solve federation-oracle) #:select (make-boundary-oracle solve-consensus))
              ((playnet keri citizen-sig) #:select (make-keri-identity keri-identity-aid))
              (goblins) (goblins actor-lib methods)
              (srfi srfi-1) (ice-9 format))

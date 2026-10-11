@@ -8,6 +8,7 @@
 ;;; writes is defined here, above its doors.
 
 (define-module (playnet doors planner solving)
+  #:use-module (playnet solve federation-solve)
   #:use-module ((goblins) #:select ($))
   #:use-module ((playnet doors assignments) #:select (willing-predicate))
   #:use-module ((playnet doors inventory) #:select (recipes-conforming))

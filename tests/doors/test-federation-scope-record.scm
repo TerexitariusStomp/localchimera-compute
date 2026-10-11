@@ -9,11 +9,12 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/doors/test-federation-scope-record.scm
 
+(use-modules (playnet solve federation-solve))
 (use-modules (playnet test harness)
              (playnet knowledge recipes federation-demo) (playnet federation store-registry) (playnet scope root)
              (playnet scope live)
              (playnet doors service)
-             ((playnet solve engine) #:select (make-boundary-oracle))
+             ((playnet solve federation-oracle) #:select (make-boundary-oracle))
              (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)

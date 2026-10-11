@@ -68,7 +68,7 @@
   #:use-module ((playnet federation wire)
                 #:select (make-signer signer-aid signer-sign signer-of signed-reply verify-signed
                           make-key-ledger signer-rotated-kel))
-  #:use-module ((playnet solve engine) #:select (make-boundary-oracle))
+  #:use-module ((playnet solve federation-oracle) #:select (make-boundary-oracle))
   #:use-module ((playnet federation sturdyref-credential) #:select (verified-spec spec-ready?))
   #:use-module ((playnet credentials membership) #:select (make-federation-census-credential))
   #:use-module ((playnet credentials registry) #:select (cred-signed-by-scope))

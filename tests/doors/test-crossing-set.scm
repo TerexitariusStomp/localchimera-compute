@@ -11,7 +11,7 @@
 
 (use-modules (playnet test harness)
              (playnet knowledge recipes federation-demo) (playnet scope root) (playnet vf schemas)
-             ((playnet solve engine) #:select (commune->scope-record))
+             ((playnet solve federation-solve) #:select (commune->scope-record))
              (playnet doors service)
              (playnet federation crossing-set)
              ((playnet solve compile) #:select (rp out in wrk))

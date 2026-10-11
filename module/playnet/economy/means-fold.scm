@@ -45,6 +45,7 @@
 ;; demand-fold earns its keep by carrying a 4-part window; a 2-part key does
 ;; not). One day of standing service is the normalisation every rate sums in.
 (define-module (playnet economy means-fold)
+  #:use-module (playnet solve federation-solve)
   #:use-module (srfi srfi-1)
   #:use-module (playnet economy socialization)
   #:use-module (playnet vf aggregation containment)

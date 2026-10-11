@@ -40,7 +40,7 @@
   #:use-module (ice-9 format)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-9)
-  #:use-module ((playnet solve engine) #:select (make-boundary-oracle solve-consensus))
+  #:use-module ((playnet solve federation-oracle) #:select (make-boundary-oracle solve-consensus))
   #:use-module ((playnet keri citizen-sig)
                 #:select (keri-identity-aid keri-identity-keypair
                           sign-bytes-under-aid verify-bytes-under-aid verify-said-signature-under-key))

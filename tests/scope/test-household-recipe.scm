@@ -5,6 +5,7 @@
 ;;;   guile --no-auto-compile -q -L module \
 ;;;     tests/scope/test-household-recipe.scm
 
+(use-modules (playnet solve federation-solve))
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet knowledge recipes household) (playnet scope root) (playnet vf schemas) (srfi srfi-1))

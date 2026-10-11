@@ -14,6 +14,7 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/federation/test-federation-live.scm
 
+(use-modules (playnet solve federation-solve))
 (use-modules (playnet knowledge recipes federation-demo) (playnet federation store-registry) (playnet scope root)
              (playnet scope live)
              (goblins)

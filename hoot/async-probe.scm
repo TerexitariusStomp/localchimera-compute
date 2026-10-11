@@ -10,7 +10,7 @@
 ;;;
 ;;; Run:  make hoot-probe-async
 
-(use-modules (hoot ffi) (playnet solve engine) (playnet solve solver)
+(use-modules (hoot ffi) (playnet solve engine) (playnet solve federation-oracle) (playnet solve solver)
              (playnet federation async))
 (include-from-path "playnet/test/planner/federated-fixtures.scm")
 

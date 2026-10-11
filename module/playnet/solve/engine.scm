@@ -49,8 +49,7 @@
 ;; What is written onto a standing world afterwards is a layering, and goes
 ;; through its door: set-templates!, set-dial!, adopt-container-pools!,
 ;; workers->riders!, absorb-specs!, the manners bag.
-;; The satellites the body loads (fragility, federation-solve, federation-oracle)
-;; define into THIS module, so their names are in this list.
+;; The one fragment the body still loads (fragility) defines into THIS module.
 ;; This module is the ONE door: (use-modules (playnet solve engine)) is how a
 ;; test, a bench or the live planner reaches the world, and each states beside
 ;; it the layers it reads (compile, solver, schemas, …) — the layers are
@@ -122,19 +121,19 @@
                calibrate-shocks observed-shocks scenario-with-shocks certainty-equivalent-scenario)
   #:use-module ((playnet utils records) #:select (vf-record-type vf-record-constructor vf-record-predicate vf-record-accessor vf-record-modifier vf-record-type-name vf-record-type-fields))
   #:use-module (playnet vf aggregation containment)
-  #:export (key-spec owned-spec spec-owner spec-base unowned-demand want-as-cap? set-cap-scale! cap-scale-of *desire-w0*  *default-agent-hours* absorb-specs! add-trainable! adopt-container-pools! agent-window-hours allocate-means-consensus
+  #:export (key-spec owned-spec spec-owner spec-base unowned-demand want-as-cap? set-cap-scale! cap-scale-of *desire-w0*  *default-agent-hours* absorb-specs! add-trainable! adopt-container-pools! agent-window-hours
              arc-hours arc-net-km
             batch-keys *bnb-nodes* build-columns build-located
                tier-shape acquire-bill bill-net located-bill   chain-duration-gaps close-elements! template-creates template-at-edge? col-flows col-key col-labour
             column-terms build-terms
                  column-labour-hours svc-spec
-            col-value commune->scope-record
+            col-value
             cost-of-config dates-through declared-clock-boundaries declared-partition  declare-whole! declare-proc-frag!   legal-frag-forms
              why-not why-not-tally
              requirements unmet req-kind req-name req-met? requirements->wire
             declare-workers! declare-world!   discrete-declared?   coupling-table register-coupling! element-closure-on? *climb-per-km* arc-climb-m arc-climb-km
-             *emp-rho* federated-materials federated-per-scope federated-relaxed-scopes federated-solve federated-flows loose-gives close-stranded-links federated-scope-pulls federated-delivered federated-withdrawal-displacement federated-result eisenberg-gale-split warm-boundary-flows boundary-bounds federated-dilemma
-            crossing-recipe record-crossings record-plan
+             *emp-rho*
+             record-crossings record-plan
 
             frag-tip   good-labour-content good-level good-pulls  ingest-located!
             ingest-records! ingest-stock! make-stock-key stock-vocabulary person-set refused-stock ingest-travel-times!   km labour-pulls
@@ -142,17 +141,20 @@
                  node-fractional
             node-solve   period-dates
                   plan->material plan-runs
-            plan->work    records-means-world refine-spans
+            plan->work     refine-spans
             relaxed-bound report-discrete report-located reset! resource-place resource-resolver resource-window-hours
              mrec-name mrec-rp mrec-flows mrec-skill mrec-manner mrec-pace means-ride? rider-hours  route-fragility!
             set-dial!   set-skill-spec! set-competence! apply-skill-dynamics!
               set-worker-pref! *pref-bound* skilled-worker-at?
-            solve* solve-decomposed make-boundary-oracle solve-consensus solve-discrete solve-located solve-report   spec-skips-balance?
+            solve* solve-decomposed   solve-discrete solve-located solve-report   spec-skips-balance?
             spec-stationary?  stock->flow store-recipe  svc-held? svc-hours-factor
              temporal-target tension-duals  Tkey topo-order vf-agent-skills whole-atoms-of
             whole-col?   window-hours with-col-bounds! with-col-fixed! apply-repro-bands! set-promote! set-willing! set-legal-decorate! set-acquire! repro-bands worker-ledger   inert-caps
             ;; read by the robust assembly and the plan door (solve/robust, solve/plan)
-            *discrete-key?* *discrete-program* *metabolism-tstart* apply-solve-settings! col-cell col-fixed decided-state discrete-certificate mbq-floor restore-search-state! search-state social-ledger solution-cost substitute-fixed))
+            *discrete-key?* *discrete-program* *metabolism-tstart* apply-solve-settings! col-cell col-fixed decided-state discrete-certificate mbq-floor restore-search-state! search-state social-ledger solution-cost substitute-fixed
+            ;; read by the federated solve and the boundary oracle (solve/federation-solve, solve/federation-oracle)
+            refine-plan crossing-alist->hash crossing-col crossing-key crossing-offset crossing-sign crossing-column
+            crossing-flow crossing-side admm-kernel-rec admm-kernel-batch admm-scope-met admm-write-prox!))
 
 ;; the batched kernel solve below crosses the FFI; Hoot has none (see the cond-expand there)
 (cond-expand (guile (use-modules (system foreign))) (else))
@@ -6358,6 +6360,60 @@
 (define (admm-kernel-batch krs) ((if (kern-available?) admm-c-batch admm-scheme-batch) krs))
 (define (admm-scope-met kr)     ((if (kern-available?) admm-c-met admm-scheme-met) kr))
 
+;; ── the exact local solve at the settled pulls ───────────────────────────────
+;; ADMM minimises each scope INEXACTLY on purpose; once the pulls have settled,
+;; each scope's problem is min f_s(x_s) + λᵀy_s with nothing left to
+;; coordinate, and it is solved to full accuracy from the ADMM iterate. The
+;; pull folds into `labform`, whose entries contribute κ·coeff to the
+;; gradient, so a pull λ on a column that carries the flow with sign s enters
+;; as (c . s·λ/κ). The prox stays centred on the agreed flow z: against the
+;; bare program a scope with plenty of the good is indifferent and supplies
+;; what nobody draws (287 kg against a 40 kg need, measured); at convergence
+;; the augmented minimiser IS the constrained one. A qc form costs
+;; w·(const + Σv·x)², so the centre enters NEGATED, as admm-write-prox!
+;; stores it. The solve selects WITHOUT the dual fit (the outer certificate
+;; reports with it, solver.scm *kkt-dual-fit?*) and at the floor the plan was
+;; made at (`call-at-settled-floor`): a polish, not a program of its own. The
+;; monolith's finish and the boundary oracle's `refine!` are this one solve.
+;; A crossing-keyed alist (pulls, z, rho, centres, caps) is hashed ONCE per
+;; call, not re-scanned with assoc once per crossing inside the maps over
+;; BND below — the alist and bnd are both sized to the scope's own boundary
+;; B, so an assoc-per-element there is O(B²) per round, repeated every ADMM
+;; iteration (up to *leap-budget* of them).
+(define (crossing-alist->hash alist)
+  (let ((h (make-hash-table)))
+    (for-each (lambda (p) (hash-set! h (car p) (cdr p))) alist)
+    h))
+(define (refine-plan rec x0 z pulls rho)
+  "REC a scope record (forms labform crossings); X0 the plan to start from; Z
+   and PULLS ((good . value) …) the signed flow agreed for this scope and the
+   pull on each good; RHO a number or ((good . ρ) …).
+   → (x . labform*) — X #f when the solve fails — or #f when the record has no forms."
+  (let* ((get (lambda (k) (let ((a (assq k rec))) (and a (cdr a)))))
+         (f0 (get 'forms))
+         (bnd (record-crossings rec))
+         (pulls-h (crossing-alist->hash pulls))
+         (z-h (crossing-alist->hash z))
+         (rho-h (and (pair? rho) (crossing-alist->hash rho)))
+         (of (lambda (h b) (exact->inexact (or (hash-ref h (crossing-key b) #f) 0.0))))
+         (rho-of (lambda (b) (if rho-h (exact->inexact (hash-ref rho-h (crossing-key b))) rho)))
+         (kp (if (> (abs *kappa*) 1e-300) *kappa* 1.0))
+         (lab* (append (or (get 'labform) '())
+                       (map (lambda (b) (cons (crossing-col b) (/ (* (crossing-sign b) (of pulls-h b)) kp))) bnd)))
+         (prox-z (map (lambda (b) (mk-method (mk-qc (- (crossing-column b (of z-h b)))
+                                                    (list (cons (crossing-col b) 1.0))
+                                                    (/ (rho-of b) 2.0))))
+                      bnd)))
+    (and f0
+         (cons (false-if-exception
+                (call-without-dual-fit
+                 (lambda ()
+                   (call-at-settled-floor
+                    (lambda ()
+                      (call-with-values (lambda () (solve-exact (append prox-z f0) lab* x0))
+                        (lambda (x . _) x)))))))
+               lab*))))
+
 (define* (solve-decomposed scope-list #:key (rho 4.0) (iters 120) (tol 1e-4) (alpha 1.6)
                            (accel #t) (mmax 8) (met-eps 0.05) (met-stall 3)
                            (reconcile? #t) (refine? #t)
@@ -6920,18 +6976,6 @@
                                        (if (= sx S) a (lp (+ sx 1) (+ a (scope-met sx)))))
                                      (max 1 S))))
                       (values plans met rounds pulls))))))
-
-;; The federation bridge: records → scope-record → solve-decomposed (pull ADMM).
-;; Last, because it needs every engine binding above. This is a LOAD, not an
-;; include: it defines into whichever module primitive-load'ed the engine, which
-;; is the same contract the rest of this file keeps.
-;; the federation bridge: records → scope-record → solve-decomposed (pull ADMM).
-;; Loaded here so anyone who loads the engine gets commune->scope-record /
-;; federated-solve; it needs the engine bindings defined above.
-(include-from-path "playnet/solve/engine/federation-solve.scm")
-;; the boundary oracle + the consensus loop over oracles that answer from
-;; anywhere (Rung 3): the scope's half of solve-decomposed behind a message
-(include-from-path "playnet/solve/engine/federation-oracle.scm")
 
 ;; The library's default backend is the READABLE reference — `native`, the Scheme
 ;; interior-point the C kernel is checked against. It had been set here by the

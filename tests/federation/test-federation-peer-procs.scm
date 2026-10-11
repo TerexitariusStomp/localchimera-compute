@@ -28,11 +28,12 @@
 ;;; a checkout there, the crypto libraries on its path, one ssh session
 ;;; carrying the wire both ways), and the round trips are that network's.
 
+(use-modules (playnet solve federation-solve))
 (use-modules (playnet test harness)
              (playnet federation peer)
              (playnet federation host)
              (playnet federation federate)
-             ((playnet solve engine) #:select (make-boundary-oracle solve-consensus))
+             ((playnet solve federation-oracle) #:select (make-boundary-oracle solve-consensus))
              ((playnet keri citizen-sig) #:select (make-keri-identity keri-identity-aid keri-identity-keypair))
              ((playnet credentials membership) #:select (make-federation-sturdyref-credential))
              ((playnet federation sturdyref-credential) #:select (sturdyref-credential-end))

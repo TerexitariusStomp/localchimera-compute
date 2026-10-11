@@ -19,11 +19,12 @@
 ;;; Usage: guile --no-auto-compile -q -L module tests/federation/federation-wire-host.scm \
 ;;;          A|B <sref-file> <seed-byte> [peer <state-dir> <spec-file>]
 
+(use-modules (playnet solve federation-solve))
 (use-modules (playnet test harness)
              (playnet federation wire)
              (playnet federation host)
              (playnet federation federate)
-             ((playnet solve engine) #:select (make-boundary-oracle))
+             ((playnet solve federation-oracle) #:select (make-boundary-oracle))
              ((playnet keri citizen-sig) #:select (make-keri-identity keri-identity-aid))
              (goblins) (goblins vat)
              (fibers)

@@ -96,6 +96,7 @@
   ;; this replaces defined these names into this module, which is why they
   ;; used to sit in #:export.
   #:use-module (playnet solve engine)
+  #:use-module (playnet solve federation-solve)
   #:use-module (playnet solve plan)
   #:use-module (playnet solve solver)
   #:use-module (playnet knowledge worlds bioregions)

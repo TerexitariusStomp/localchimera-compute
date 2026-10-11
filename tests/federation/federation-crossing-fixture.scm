@@ -11,7 +11,7 @@
 ;;; `load`ed by the tests (a file, not a module: it defines into the test's own
 ;;; top level, where the solver's DSL is in scope).
 
-(use-modules ((playnet solve engine) #:select (make-boundary-oracle))
+(use-modules ((playnet solve federation-oracle) #:select (make-boundary-oracle))
              (playnet solve solver))
 
 ;; ── the economy ─────────────────────────────────────────────────────────────

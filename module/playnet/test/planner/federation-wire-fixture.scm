@@ -15,7 +15,9 @@
 ;;; and what it needs — the engine's DSL, the host's keeping — it names.
 
 (define-module (playnet test planner federation-wire-fixture)
-  #:use-module ((playnet solve engine) #:select (commune->scope-record lg cell make-boundary-oracle solve-consensus))
+  #:use-module ((playnet solve engine) #:select (lg cell))
+  #:use-module ((playnet solve federation-oracle) #:select (make-boundary-oracle solve-consensus))
+  #:use-module ((playnet solve federation-solve) #:select (commune->scope-record))
   #:use-module ((playnet solve compile) #:select (rp out in wrk))
   #:use-module (playnet vf schemas)
   #:use-module ((playnet federation host) #:select (read-kept keep! wire-handshake))
