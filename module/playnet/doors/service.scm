@@ -329,10 +329,7 @@ scope walk wherever a solve wants the scope's declared needs."
   ;; scope and what warms and qualifies it (doors/planner/solve-cache.scm),
   ;; reading each scope's own stores through the roster.
   (define ctx (make-planner-ctx))
-  ;; define-actor wraps its last form as an expression, so the dispatcher is
-  ;; bound by name and handed over last
-  (define dispatch
-   (with-planner-state ctx
+  (with-planner-ctx ctx
   (define cache
      (make-solve-cache
        #:store-of      (lambda (sid) (and=> (roster-ref sid) (lambda (root) ($ root 'plan-store))))
@@ -1420,4 +1417,3 @@ scope walk wherever a solve wants the scope's declared needs."
                      (planner-slots-doors ctx) (planner-work-doors ctx) (planner-records-doors ctx)
                      (planner-standing-doors ctx) (planner-solving-doors ctx)))))
     (lambda (msg . args) (finished msg (apply dispatch msg args))))))
-  dispatch)

@@ -13,19 +13,21 @@
 ;;;                             gate, the readers governance injects
 ;;;   the solve cache           one <solve-cache> per service (doors/planner/solve-cache)
 ;;;
-;;; `with-planner-ctx` binds every field under its own name, reading through the
-;;; accessor on each use and writing through the setter on `set!`, so a fragment's
-;;; clause reads as it did inside the actor and a cell it sets is set for every
-;;; other fragment. `with-planner-state` binds the cells alone, for the core's own
-;;; helpers, which are defined before the context is filled. `planner-ctx-install!`
-;;; hands the helpers over by name.
+;;; ONE form binds the context: `(with-planner-ctx ctx body …)` binds every field
+;;; under its own name, reading through the accessor on each use and writing
+;;; through the setter on `set!`, so a fragment's clause reads as it did inside the
+;;; actor and a cell it sets is set for every other fragment. The body is a body:
+;;; it may define, a define of a field's name shadows the field (the core defines
+;;; its helpers this way, then hands them over with `planner-ctx-install!`, the
+;;; core's one other form), and the whole stands wherever an expression may,
+;;; including as an actor's last form.
 ;;;
 ;;; What one fragment alone reads and writes is that fragment's own, defined inside
 ;;; it above its declared-doors.
 
 (define-module (playnet doors planner ctx)
   #:use-module (srfi srfi-9)
-  #:export (make-planner-ctx planner-ctx? with-planner-ctx with-planner-state planner-ctx-install!
+  #:export (make-planner-ctx planner-ctx? with-planner-ctx planner-ctx-install!
             make-scope-nodes scope-nodes? nodes-labour nodes-means nodes-demand nodes-folksonomy nodes-credit nodes-slack
             nodes-voice nodes-reading nodes-deployment nodes-allocation nodes-solve %fold-kinds %descent-kinds
             planner-ctx-fields
@@ -166,20 +168,8 @@
   (%make-planner-ctx ph-ok? witness-door solve-vat re-stand
                      #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f))
 
-;; (with-planner-state ctx body …) — the cells under their own names, read and
-;; written through the context. The body is a body: it may define, and its last
-;; form is the value, wherever the form stands
-(define-syntax with-planner-state
-  (lambda (x)
-    (syntax-case x ()
-      ((_ ctx body ...)
-       (with-syntax (((name ...) (map (lambda (n) (datum->syntax x n)) '(ph-ok? witness-door solve-vat re-stand)))
-                     ((ref ...)  (map (lambda (n) (datum->syntax x (symbol-append 'planner-ctx- n))) '(ph-ok? witness-door solve-vat re-stand)))
-                     ((setr ...) (map (lambda (n) (datum->syntax x (symbol-append 'set-planner-ctx- n '!))) '(ph-ok? witness-door solve-vat re-stand))))
-         #'(let-syntax ((name (identifier-syntax (_ (ref ctx)) ((set! _ v) (setr ctx v)))) ...)
-             (let () body ...)))))))
-
-;; (with-planner-ctx ctx body …) — every field under its own name
+;; (with-planner-ctx ctx body …) — every field under its own name, read and
+;; written through the context; the body's last form is the value
 (define-syntax with-planner-ctx
   (lambda (x)
     (syntax-case x ()

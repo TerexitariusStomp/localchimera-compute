@@ -1156,9 +1156,12 @@ lint-verbs:
 # Every live module compiled with the unbound-variable and arity warnings: a call that
 # cannot run (a name no import supplies, a wrong argument count) is refused before a test
 # has to reach it. tools/lint/compile-warnings.sh explains what it counts and what it sets aside.
+# One such call the compiler cannot see: `(spawn …)` in a Goblins module that takes
+# `spawn` from no import reaches Guile's process spawn (tools/lint/check-goblins-spawn.scm).
 .PHONY: lint-compile
 lint-compile:
 	@$(TEST_ENV) tools/lint/compile-warnings.sh --check
+	@$(TEST_ENV) guile --no-auto-compile tools/lint/check-goblins-spawn.scm
 
 # playnet's own development, planned by the planner: every open Radicle
 # issue is a want, its area a skill, its kind a recipe (module/playnet/
