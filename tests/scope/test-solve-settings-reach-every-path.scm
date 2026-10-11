@@ -11,7 +11,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/scope/test-solve-settings-reach-every-path.scm
 
-(use-modules (playnet solve world) (playnet solve robust) ((playnet utils units) #:select (%effort-unit)))
+(use-modules (playnet solve world) (playnet solve robust) (playnet solve records) ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness) (playnet test scope)
              (playnet vf schemas) (playnet scope live)
              (goblins) (goblins utils hashmap)

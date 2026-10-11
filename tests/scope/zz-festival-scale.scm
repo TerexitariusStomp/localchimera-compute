@@ -31,6 +31,7 @@
 ;;;
 ;;; Run: guile -L module tests/scope/test-festival-reproduction.scm
 
+(use-modules (playnet solve records))
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test scope)) ; mock-scope-root
 (use-modules (playnet test harness) (playnet knowledge recipes store) (playnet scope spatial-things) (playnet observation observer) (playnet solve compile) (playnet vf schemas) (srfi srfi-1) (playnet scope live)

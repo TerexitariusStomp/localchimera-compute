@@ -11,6 +11,7 @@
 ;;; declared skill through socialized-plan-fn. Now the recipes say what
 ;;; labour is (labour-specs-of: every spec a `work` flow conforms to), and
 ;;; the view lets it through tenure; consent for labour is the accept.
+(use-modules (playnet solve records))
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test scope))
 (use-modules (playnet test harness)

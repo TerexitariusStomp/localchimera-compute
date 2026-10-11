@@ -115,7 +115,9 @@ def add_import(text, mod, old, names=()):
     if m:
         return text[:m.end()] + '\n  #:use-module ' + mod + text[m.end():]
     if old:
-        m = re.search(r'(?<![#:\w(-])' + re.escape(old) + r'(?!\s*#:)', text)
+        # beside OLD inside an import form only: the same name quoted in a
+        # `resolve-module` or an `(@ …)` is a reference, not an import
+        m = re.search(r'^[ \t]*\((?:use-modules|define-module)\b[^\n]*?' + re.escape(old) + r'(?!\s*#:)', text, re.M)
         if m:
             return text[:m.end()] + ' ' + mod + text[m.end():]
     m = re.search(r'^\(use-modules', text, re.M)

@@ -19,7 +19,7 @@
 ;;;         tests/solve/test-robust-forwards-world.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve robust) (playnet solve plan) (playnet solve world)
+(use-modules (playnet solve engine) (playnet solve records) (playnet solve robust) (playnet solve plan) (playnet solve world)
              (playnet vf schemas) (playnet vf beyond scenario)
              (playnet knowledge dsl shorthand)
              ((playnet knowledge recipes transport) #:select (mode-recipe)))

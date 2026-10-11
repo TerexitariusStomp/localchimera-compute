@@ -23,7 +23,8 @@
   #:use-module (playnet solve compile)
   #:use-module (playnet vf formulas shocks)
   #:use-module (playnet solve engine)
-  #:export (%world-keywords %held-back-world-keywords carried-forward first-stage-activity
+  #:use-module (playnet solve records)
+  #:export (carried-forward first-stage-activity
             first-stage-plan plan-robust-from-records robust-plan-report robust-assemble branch-costs))
 
 ;; ── the SHOCK ALGEBRA is its own module ─────────────────────────────────────
@@ -42,41 +43,6 @@
 (define (restore-pristine! p)
   (define (put! h c) (hash-clear! h) (hash-for-each (lambda (k v) (hash-set! h k v)) c))
   (put! *init* (car p)) (put! *stretch-floor* (cadr p)) (put! *band* (caddr p)))
-
-;; ── the WORLD a scenario ingests ────────────────────────────────────────────
-;; A scenario block differs from the base solve in its SHOCKS and in nothing else,
-;; so every option that DESCRIBES THE WORLD has to reach it. Re-listing those
-;; options by hand at each layer is what silently lost #:manners and #:arc-table:
-;; a scope placed in a bioregion takes the robust branch, so for every shed the
-;; mode vocabulary reached nothing and travel time fell back to rate×haversine no
-;; matter what the routing table had learned. The three robust layers now forward
-;; their whole keyword list verbatim, and this is the ONE place that says which of
-;; those keywords ingest-records! understands.
-(define %world-keywords
-  '(#:periods #:movable #:storable #:tau #:hold #:demand #:eco-caps #:reserve
-    #:backend #:eco-frag #:eco-spec-frag #:eco-budget #:eco-container #:eco-couple
-    #:couplings
-    #:eco-prior #:stock-frag #:stock-prices #:agent-hours #:agent-skills #:agent-position
-    #:horizon #:period-spans #:willing? #:legal-forbids? #:legal-decorate #:per-agent?
-    #:desire-weights #:arc-table #:arc-topology? #:manners #:never-raw #:raws
-    #:resource-suppliers #:specs #:span-of #:whole #:proc-frag
-    #:certificates                   ; each citizen's drawable credit — a fact about the world, the bar over their claims
-    #:live-avail                     ; the registry's reservations: a registered resource ingests at what is free of them
-    #:refine-periods?))              ; whether the partition refines at the roster's clock boundaries
-
-;; ingest-records! reads two world keywords a scenario does not take. Each switches on an
-;; engine mode the live solve has never run, and each moves plans that stand today, so
-;; each waits on a decision of its own. Measured 2026-10-09, each forwarded alone, after
-;; the skill reading became the worked spec's (formulas/actions labour-specs):
-;;   #:skill-dynamics  practice laws that make a skill's competence a state carried from
-;;                     period to period — test-dev-world: the heavy want and 38 of 40
-;;                     hours go unplanned; test-dev-ledger: the issue's lead changes
-;;                     (ann → box); the other two suites stand;
-;;   #:composition     the chemistry's element rows — reaction-network-test: demand met
-;;                     falls from 1.0 and R1 no longer makes the CO that R2 consumes;
-;;                     test-bread-seed: the work per process differs; the other two stand.
-;; The test holds this list and %world-keywords to every keyword ingest-records! reads.
-(define %held-back-world-keywords '(#:skill-dynamics #:composition))
 
 (define (world-opts opts)
   "The keyword pairs in OPTS that describe the world, ready to `apply` onto

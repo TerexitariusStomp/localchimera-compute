@@ -7,6 +7,7 @@
 ;;;   4. Transactional: reserve + record-event in one vat turn
 ;;;   5. Persistence round-trip
 
+(use-modules (playnet solve records))
 (use-modules (playnet solve world))
 (use-modules (playnet test harness))
 (use-modules (playnet observation live-registry) (playnet observation live-resource) (playnet scope root) (playnet vf schemas))

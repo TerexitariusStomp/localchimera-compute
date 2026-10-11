@@ -27,7 +27,7 @@
 ;;; Run: guile tests/solve/… (discovered by tools/test/run-scm-tests.sh)
 
 (use-modules (playnet test planner prelude)
-             (playnet solve engine) (playnet solve world)
+             (playnet solve engine) (playnet solve records) (playnet solve world)
              (playnet solve compile)
              (playnet solve solver)
              (playnet vf schemas)

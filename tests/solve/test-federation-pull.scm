@@ -22,7 +22,7 @@
 ;;;
 ;;; Run:  guile -L module/playnet/planner tests/solve/test-federation-pull.scm
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine)
+(use-modules (playnet solve engine) (playnet solve records)
              (playnet solve compile)
              (playnet vf schemas)
              (playnet knowledge dsl shorthand))

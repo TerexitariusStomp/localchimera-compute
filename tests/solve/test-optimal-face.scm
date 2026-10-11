@@ -33,7 +33,7 @@
 ;;; Run: guile --no-auto-compile -q -L module tests/solve/test-optimal-face.scm
 
 (use-modules (playnet test planner prelude)
-             (playnet solve engine)
+             (playnet solve engine) (playnet solve records)
              (playnet solve compile)
              (playnet solve solver)
              (playnet vf schemas)

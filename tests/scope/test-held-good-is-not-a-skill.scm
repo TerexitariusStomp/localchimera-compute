@@ -9,6 +9,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/scope/test-held-good-is-not-a-skill.scm
 
+(use-modules (playnet solve records))
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness) (playnet test scope)
              (playnet vf schemas) (playnet scope live)

@@ -160,6 +160,7 @@ FAMILY_WASM_DEPS = \
                     module/playnet/solve/recipe-response.scm \
                     module/playnet/solve/robust.scm \
                     module/playnet/solve/plan.scm \
+                    module/playnet/solve/records.scm \
                     module/playnet/vf/schemas.scm \
                     module/playnet/vf/formulas/shocks.scm \
                     module/playnet/solve/solver.scm \
@@ -324,6 +325,7 @@ SCOPE_WASM_DEPS = \
                    module/playnet/scope/replica.scm \
                    module/playnet/solve/robust.scm \
                    module/playnet/solve/plan.scm \
+                   module/playnet/solve/records.scm \
                    module/playnet/solve/routing.scm \
                    module/playnet/vf/schemas.scm \
                    module/playnet/scope/root.scm \
