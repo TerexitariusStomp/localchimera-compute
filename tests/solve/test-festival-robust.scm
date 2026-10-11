@@ -13,7 +13,7 @@
 ;;;      expected yield) — and STARVES the crowd if blight hits.
 ;;;   ROBUST (plan good-year AND blight together): diversifies into beans, so the
 ;;;      floor holds even under blight. Diversity is DERIVED from the floor +
-;;;      uncertainty — no new solver, just a scenario-aware assembly (engine/robust.scm).
+;;;      uncertainty — no new solver, just a scenario-aware assembly (solve/robust.scm).
 ;;;
 ;;; Uses the flat prelude bootstrap (like robust-records-test) so plan-from-records,
 ;;; robust-plan-report and the <planning-scenario> accessors share one namespace.

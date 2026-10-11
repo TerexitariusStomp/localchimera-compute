@@ -2,7 +2,7 @@
 ;;; the section law: what the container counts is exactly the sum of what its
 ;;; leaves draw, and the pool is ONE pool — fungible across the leaves.
 ;;;
-;;; This is the fold on the CONTAINMENT tree (engine/fragility.scm places-within:
+;;; This is the fold on the CONTAINMENT tree (solve/ingest.scm places-within:
 ;;; the upward walk read from the other end), computed per solve from static
 ;;; declarations — so it needs no standing node, only its law stated:
 ;;;

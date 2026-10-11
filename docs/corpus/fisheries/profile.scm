@@ -52,7 +52,7 @@ different planner construct, and the mapping is worth arguing explicitly.")
   ;; ── The envelope: what may be taken given what comes back ────────────────
   (target
     (name "envelope")
-    (construct "pooled-budget (engine/fragility.scm) + regenerating-stock (stocks.scm)")
+    (construct "pooled-budget (solve/ingest.scm) + regenerating-stock (stocks.scm)")
     (description "The core construct of this domain. A fishery is a LEVEL drawn \
 by many scopes and rebuilt by recruitment and growth. Prize anything stating a \
 sustainable yield as a rate, a biomass as a level, or a reference point as a \

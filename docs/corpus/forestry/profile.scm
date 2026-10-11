@@ -98,7 +98,7 @@ Prize anything stated per acre, per tree or per cubic metre.")
   ;; ── The stand as a regenerating stock: the level, and its two terms ───────
   (target
     (name "stock-level")
-    (construct "regenerating-stock (stocks.scm) + pooled-budget (engine/fragility.scm)")
+    (construct "regenerating-stock (stocks.scm) + pooled-budget (solve/ingest.scm)")
     (description "Standing volume and carbon as a carried LEVEL, with a draw \
 term (the cut) and a restore term (growth). This is what stocks.scm's \
 S[t+1] = S[t] − draw + restore needs real coefficients for, and what a \

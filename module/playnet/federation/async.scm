@@ -2,7 +2,7 @@
 ;;; rounds: every scope a PEER, every good settled between the scopes that
 ;;; share it, convergence a silence.
 ;;;
-;;; solve-consensus (engine/federation-oracle.scm) runs the ADMM as rounds a
+;;; solve-consensus (solve/federation-oracle.scm) runs the ADMM as rounds a
 ;;; coordinator conducts. But the step on one good (solve/admm-link.scm) needs only
 ;;; the flows its participants put on it, so the coordinator's work splits
 ;;; along the goods:

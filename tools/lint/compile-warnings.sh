@@ -15,7 +15,7 @@
 #   arity     a call with the wrong number of arguments (the DEFINITE ones)
 #   unbound   a name no import supplies, in a file that is a module
 # A file with no define-module is an include-fragment read inside another module's
-# namespace (engine/robust.scm, comms/*.scm …): its names are bound there, so its
+# namespace (solve/robust.scm, comms/*.scm …): its names are bound there, so its
 # "possibly unbound" warnings are listed apart and are no finding.
 # Files that do not compile at all (a missing shared library, a Hoot-only import) are
 # listed last, since their warnings were never reached.

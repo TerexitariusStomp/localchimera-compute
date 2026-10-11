@@ -285,7 +285,7 @@
 
 ;; ── The fold feeds the consensus row (the glue the two builds share) ─────────
 ;;
-;; allocate-means-consensus (engine/federation-solve.scm) takes one TOTAL per
+;; allocate-means-consensus (solve/federation-solve.scm) takes one TOTAL per
 ;; means-spec — the commons' bar. That total is exactly what the means fold
 ;; already carries: a node's capacity-facts, summed over places. So the bar the
 ;; federation allocates is the bar the scopes' own standing declarations

@@ -103,7 +103,7 @@
 
 (define ins (plan))                       ; the floor next season, held in every future
 (define res (plan #:shape 'reserve))
-(define ce-scenario (certainty-equivalent-scenario futures))       ; the record collapsed to one mean world (engine/robust.scm)
+(define ce-scenario (certainty-equivalent-scenario futures))       ; the record collapsed to one mean world (solve/robust.scm)
 (define ce  (plan #:scenarios (list ce-scenario)))
 
 (define (bank-of p) (car p)) (define (grow0-of p) (cadr p)) (define (branches-of p) (caddr p)) (define (nstore p) (cadddr p))

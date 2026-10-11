@@ -423,7 +423,7 @@ scope walk wherever a solve wants the scope's declared needs."
   ;; have seen it, laid over every future), and the last solve's x, each a
   ;; per-scope fact a caller's own keyword wins over.
   ;; Warm-starting rides here so EVERY solve the service runs re-centres from
-  ;; where the scope stood (engine/robust.scm ignores an x whose shape no longer fits).
+  ;; where the scope stood (solve/robust.scm ignores an x whose shape no longer fits).
   ;; the world a solve at SID sees (WORLD-OF, else the raw observer): the
   ;; view, the socialized caps and the spans, with the UC allocation
   ;; (means-caps-of cache) merged under the caps — one reading for every solve

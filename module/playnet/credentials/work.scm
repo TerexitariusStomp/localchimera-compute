@@ -29,7 +29,7 @@
 ;; (docs/planning/voice/feasibility-follows-the-map.md). Issued and held by
 ;; the observer, in their own name, on the witness of a work event of theirs
 ;; on that process; the solve reads it as the world as observed, in every
-;; future (planner/solve/engine/robust.scm observed-shocks).
+;; future (planner/solve/robust.scm observed-shocks).
 (define *schema-playnet-contrary-observation*
   "playnet-contrary-observation/v1")
 
@@ -102,7 +102,7 @@
    revocable by them alone. One live statement per (observer, scope,
    process, action) — a restatement supersedes (doors/governance.scm). Who
    may speak — the worker the witness names — is a fact the service reads
-   off the observer; what the solve makes of it is planner/solve/engine/robust.scm
+   off the observer; what the solve makes of it is planner/solve/robust.scm
    observed-shocks: the read moves in the cautious direction only."
   *schema-playnet-contrary-observation*
   #:signed (keypair)

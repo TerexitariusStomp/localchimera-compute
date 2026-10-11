@@ -47,7 +47,7 @@
   (list (make-planning-scenario "normal"  "sc-normal"  0.7 '(("growA" . 4.0) ("growB" . 1.3)) "normal year")
         (make-planning-scenario "drought" "sc-drought" 0.3 '(("growA" . 0.0) ("growB" . 1.2)) "drought year")))
 
-;; first-stage activity of a proc (Σ x over its shared grow columns) — engine/robust.scm helper
+;; first-stage activity of a proc (Σ x over its shared grow columns) — solve/robust.scm helper
 (define (solve-plan scenarios)
   (call-with-values
     (lambda () (plan-robust-from-records resources '() spatials procs flows

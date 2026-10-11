@@ -2,7 +2,7 @@
 ;;;
 ;;; A contrary observation reaches a scope's solve as `#:observed` rows
 ;;; ((process action nominal reading) …), laid over EVERY scenario of the solve
-;;; (planner/scope/live.scm plan-scope, engine/robust.scm observed-shocks). Pinned here on
+;;; (planner/scope/live.scm plan-scope, solve/robust.scm observed-shocks). Pinned here on
 ;;; the bread town: an oven observed at half its mapped yield makes the plan
 ;;; stop claiming the want is met (the labour on hand cannot double the runs),
 ;;; a run observed at twice its mapped labour doubles the bake hours, and a

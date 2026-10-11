@@ -21,7 +21,7 @@
 ;;;
 ;;; Each period uses its OWN growing process (grow-0/1/2) so a scenario's yield
 ;;; shock on one period's process cannot leak into another's — the shock DSL
-;;; (engine/robust.scm) has no period axis of its own, so this is how a period-specific
+;;; (solve/robust.scm) has no period axis of its own, so this is how a period-specific
 ;;; weather draw is built from it honestly, without inventing one.
 ;;;
 ;;; A period-1 decision must be IDENTICAL for ww/wd (both still only know "wet
@@ -37,7 +37,7 @@
 (use-modules (playnet solve engine) (playnet solve robust)
              (playnet vf schemas) (playnet vf beyond scenario)
              (playnet knowledge dsl shorthand))
-;; engine/robust.scm arrives with the engine — (playnet solve engine) loads it into
+;; solve/robust.scm arrives with the engine — (playnet solve engine) loads it into
 ;; itself and exports its names, so the load that stood here was a second copy
 ;; of the same text into this module (retired with the engine-as-module arc).
 

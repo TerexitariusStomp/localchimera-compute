@@ -42,7 +42,7 @@
     ;; on the very process the figure sits on — read off the observer, never
     ;; asserted. One live statement per (observer, scope, process, action); a
     ;; restatement supersedes. What it does to the solve is the planner's
-    ;; law (engine/robust.scm observed-shocks): the cautious direction only.
+    ;; law (solve/robust.scm observed-shocks): the cautious direction only.
     (define (build-contrary-observation identity-key scope-id process action spec nominal reading witness at)
       (let* ((obs (scope-observer scope-id))
              (act (and (or (symbol? action) (string? action)) (string->symbol (format #f "~a" action))))

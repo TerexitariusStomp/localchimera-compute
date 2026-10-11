@@ -9,7 +9,7 @@
 ;;; layer had learned. Nothing failed; the world was simply quieter.
 ;;;
 ;;; The fix was structural — the robust layers forward their whole keyword list
-;;; verbatim, and engine/robust.scm's `%world-keywords` is the single place that says
+;;; verbatim, and solve/robust.scm's `%world-keywords` is the single place that says
 ;;; which of those keywords `ingest-records!` understands. This test is the guard
 ;;; on that: it asserts the property (a robust solve ingests the world) rather
 ;;; than any one keyword, so the next option added to `ingest-records!` and
@@ -23,7 +23,7 @@
              (playnet vf schemas) (playnet vf beyond scenario)
              (playnet knowledge dsl shorthand)
              ((playnet knowledge recipes transport) #:select (mode-recipe)))
-;; engine/robust.scm arrives with the engine — (playnet solve engine) loads it into
+;; solve/robust.scm arrives with the engine — (playnet solve engine) loads it into
 ;; itself and exports its names, so the load that stood here was a second copy
 ;; of the same text into this module (retired with the engine-as-module arc).
 

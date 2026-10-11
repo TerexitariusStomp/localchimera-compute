@@ -1,4 +1,4 @@
-;;; engine/fragility.scm — one form for every limit, read at a different scale.
+;;; solve/ingest.scm — one form for every limit, read at a different scale.
 ;;;
 ;;; playnet.typ §"Worker, soil, and tool: one field": the labour pool's burnout
 ;;; ratio, the ecological agent's regenerative envelope, the engineered system

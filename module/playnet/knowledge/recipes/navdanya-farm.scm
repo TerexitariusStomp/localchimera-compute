@@ -3,7 +3,7 @@
 ;;; is W1 (inscribe a real in-natura scope) made concrete, standing on the real
 ;;; data in knowledge/doon-valley.scm + docs/planning/food/agroecology-bring-over.md.
 ;;;
-;;; Loaded after planner.scm + engine/robust.scm + worlds/doon-valley.scm. Provides
+;;; Loaded after planner.scm + solve/robust.scm + worlds/doon-valley.scm. Provides
 ;;;   (navdanya-farm-records #:land-ha … #:household …)  → (values resources procs flows)
 ;;;   *navdanya-biofertilizers*  — the real on-farm input recipes (§3), as data.
 ;;;   navdanya-food-floor        — a household's seasonal subsistence grain floor.

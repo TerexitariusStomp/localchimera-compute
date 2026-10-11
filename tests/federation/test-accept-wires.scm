@@ -4,7 +4,7 @@
 ;;;   A. accepts->pins (live.scm) — the VF-terms compile: the plan-store's
 ;;;      in-window work accepts become ((col-key . runs) …), hours divided by
 ;;;      the process's work coefficient, accepts on one column summing.
-;;;   B. #:holds (engine/robust.scm) — the bounded rung: an offer under live
+;;;   B. #:holds (solve/robust.scm) — the bounded rung: an offer under live
 ;;;      consideration held as a wall x ≥ v; a hold the program cannot honor
 ;;;      raises (the feasibility-lapse signal).
 ;;;   C. seed-deployment / greedy-deploy #:seed #:tentative (uc-matching) —

@@ -35,7 +35,7 @@
 ;;;            drift — spec → (n mean-abs net) over the adjustment cells: how
 ;;;              far counts have found the ledger off, and which way
 ;;;            contrary — ((process action nominal reading) …), what the solve
-;;;              takes (engine/robust.scm observed-shocks), one row per cell at its
+;;;              takes (solve/robust.scm observed-shocks), one row per cell at its
 ;;;              mean: the fold's cautious readings averaged
 ;;;            sources — spec → how many scopes have read it
 ;;;   history  readings-between: what every source reported of a spec between two
@@ -246,7 +246,7 @@
 
 (define (contrary-of cells)
   "((process action nominal reading) …): every cell read against a nominal,
-   at its mean cautious reading — the rows engine/robust.scm observed-shocks takes."
+   at its mean cautious reading — the rows solve/robust.scm observed-shocks takes."
   (filter-map (lambda (c)
                 (let ((k (car c)) (v (cdr c)))
                   (and (list-ref k 4)

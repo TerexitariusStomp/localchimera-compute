@@ -2,7 +2,7 @@
 ;;;
 ;;; docs/planning/solve/scenario-tree.md flagged a real gap: test-scenario-tree.scm's tree
 ;;; needed a DISTINCT recipe process per period (grow-0/grow-1/grow-2), because a
-;;; scenario shock in engine/robust.scm hit a named PROCESS, with no period axis of its own
+;;; scenario shock in solve/robust.scm hit a named PROCESS, with no period axis of its own
 ;;; — the same process at every period got the same shock, so the only way to keep
 ;;; period 1's weather from leaking into period 2's was to give them different
 ;;; processes. That is a workaround, not the Doon-style case this was written for:
@@ -25,7 +25,7 @@
 (use-modules (playnet solve engine) (playnet solve robust)
              (playnet vf schemas) (playnet vf beyond scenario)
              (playnet knowledge dsl shorthand))
-;; engine/robust.scm arrives with the engine — (playnet solve engine) loads it into
+;; solve/robust.scm arrives with the engine — (playnet solve engine) loads it into
 ;; itself and exports its names, so the load that stood here was a second copy
 ;; of the same text into this module (retired with the engine-as-module arc).
 

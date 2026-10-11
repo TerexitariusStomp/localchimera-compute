@@ -80,7 +80,7 @@
       ;; lacks another supplies. Each commune keeps its own records in its own
       ;; scope; only flows and the pull cross. `boundary-good` is the INTERMEDIATE
       ;; that crosses (the input moves, each commune bakes locally — see
-      ;; engine/federation-solve.scm). `communes` = ((scope-id (demand-good . qty)) …);
+      ;; solve/federation-solve.scm). `communes` = ((scope-id (demand-good . qty)) …);
       ;; every commune named crosses the good, and which of them supplies and
       ;; which draws is the solve's answer, read off the sign of its flow.
       ;; Returns the met and rounds the crossing settled at and the good's pull λ.

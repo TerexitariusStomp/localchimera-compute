@@ -121,7 +121,7 @@
        (standing-contrary-observations store scope-id #f)))
 
 (define (contrary-observations-of store scope-id)
-  "The same readings as the solve takes them (planner/solve/engine/robust.scm
+  "The same readings as the solve takes them (planner/solve/robust.scm
    observed-shocks): ((process action nominal reading) …)."
   (map (lambda (r) (list (cadr r) (caddr r) (cadddr r) (list-ref r 4)))
        (contrary-readings-of store scope-id)))

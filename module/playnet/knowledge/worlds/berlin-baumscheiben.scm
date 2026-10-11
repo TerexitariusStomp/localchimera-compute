@@ -92,7 +92,7 @@
 
 ;; Each Bezirk's pits carry their OWN resource-spec, not a shared "land". This is
 ;; what lets a scenario revoke ONE district's permission — the robust `avail` shock
-;; keys on a spec (engine/robust.scm:32), so a shared spec could only ever revoke the whole
+;; keys on a spec (solve/robust.scm:32), so a shared spec could only ever revoke the whole
 ;; city at once. Twelve specs = twelve independently revocable grants, which is the
 ;; real administrative shape: twelve Grünflächenämter, twelve sets of rules.
 (define (bs-spec b) (string-append "pit-" (bs-place b)))

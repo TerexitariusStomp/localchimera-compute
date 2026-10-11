@@ -6,7 +6,7 @@
 ;;; the farm inherits its weather and its ecological limits from WHERE IT SITS, not from
 ;;; per-farm wiring (bioregions.scm containment).
 ;;;
-;;; Loaded after planner.scm + engine/robust.scm + knowledge/berlin.scm. Provides
+;;; Loaded after planner.scm + solve/robust.scm + knowledge/berlin.scm. Provides
 ;;;   (brandenburg-farm-records #:land-ha … #:place … #:reserve …) → (values res procs flows)
 ;;;   (plan-brandenburg-farm    #:land-ha #:household #:scenarios …) → the report alist.
 ;;;

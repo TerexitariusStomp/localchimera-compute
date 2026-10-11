@@ -2,7 +2,7 @@
 ;;; kept for exactly this.
 ;;;
 ;;; In a scenario tree the reserve yields to the p=0 tail by construction
-;;; (engine/robust.scm reserve-yields-to; test-granary-under-uncertainty G7). In ONE world
+;;; (solve/robust.scm reserve-yields-to; test-granary-under-uncertainty G7). In ONE world
 ;;; there is no tail to name: a shock now — a season's labour collapsing to a few
 ;;; hours — shows up as a program with no answer, the subsistence floor and the
 ;;; reserve both hard against a supply that cannot carry both. reserve-dilemma

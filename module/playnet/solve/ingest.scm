@@ -1290,7 +1290,7 @@
     (and (>= days 1.0) (agent-disposable-hours a days))))
 
 ;; The band pour — the ONE place a reproduction band enters a solve, called by
-;; every path (plan-from-records, engine/robust.scm's per-scenario block, federation-
+;; every path (plan-from-records, solve/robust.scm's per-scenario block, federation-
 ;; solve's commune record) AFTER ingest (which reset!s) and BEFORE build-located.
 ;; A bare floor becomes a deficit on the good's on-hand here (its ≥0 balance is
 ;; the barrier); a margin floor and a ceiling are stored for build-located to

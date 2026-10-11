@@ -62,9 +62,9 @@
   #:export (solve-with-readers plan-scope practice-view-of plan-scope->alist plan-scope->plan scope-bills scope-consumption scope-food-specs agent->subsistence-ctx profile-tag? scope-composition recipe-derived-contains persist-materialized! materialize-willing! gather-recipes scope-labour? scope-resource-specs
             work-intent clear-intents-by-prefix! lot-of? scope-persons spec-unit planned-row plan->rows plan-map-flows held-commitment met-quantity arriving-lots
             find-recipe-process-for-spec mode-process-for-manner trip-manner-of scope-manners
-             ;; the cross-vat federation bridge (engine + engine/federation-solve.scm), re-exported
+             ;; the cross-vat federation bridge (engine + solve/federation-solve.scm), re-exported
              ;; so (playnet doors service)'s federated-plan and callers can reach it:
-             ;; the means consensus row (engine/federation-solve.scm): the bar across
+             ;; the means consensus row (solve/federation-solve.scm): the bar across
              ;; sovereign solves, and the records-shaped world it takes
             agent->subsistence-ctx
             willing-tuples refresh-scope-priors!
@@ -1170,7 +1170,7 @@
                                       (scenarios '()) (first-stage-procs '())
                                       ;; contrary observations ((process action nominal reading) …):
                                       ;; the world as workers have seen it, laid over EVERY
-                                      ;; future (engine/robust.scm observed-shocks); the scope's
+                                      ;; future (solve/robust.scm observed-shocks); the scope's
                                       ;; standing supplies them (service standing-kw)
                                       (observed '())
                                       ;; each recipe's RESPONSE, off its own runs
@@ -1538,7 +1538,7 @@
         ;; is in hand (the stock half needs the consume/use roles), and shadows
         ;; eco-caps + resources with the reduced sets.
         (call-with-values (lambda ()
-          ;; the bare specs the fragilities concern — read through engine/fragility.scm,
+          ;; the bare specs the fragilities concern — read through solve/ingest.scm,
           ;; since the list may hold (spec . profile) pairs OR <fragility> records
           ;; and each extent names its specs differently. `car` read only the
           ;; first shape and errors on the second.
@@ -2074,7 +2074,7 @@
     (shape (->plan intents commitments material fill x ntot report)))
   (define (->plan intents commitments material fill x ntot report)
     ;; the solution vector rides the alist so a caller can warm the next
-    ;; solve from it (#:warm-x, shape-guarded in engine/robust.scm); the service's
+    ;; solve from it (#:warm-x, shape-guarded in solve/robust.scm); the service's
     ;; cache door pops it before anything is stored or crosses a wire
     (acons 'x x
            ;; the leverage the composition creates, priced (algorithms/option-composition)
@@ -2108,7 +2108,7 @@
 ;; federation with nothing to act on.
 ;;
 ;; What it can act on is the PRICE OF EACH HORN, and both are ordinary solves of
-;; the program already built — no new solver, the same move engine/robust.scm makes:
+;; the program already built — no new solver, the same move solve/robust.scm makes:
 ;;
 ;;   HORN A — hold the floor. Each contested profile keeps its shape, with its tip
 ;;     pushed beyond reach: the draw stays ACCOUNTED (deleting the profile would
@@ -2197,7 +2197,7 @@
                                           repro-floors)))))))))
 
 ;; ── the RESERVE'S dilemma: bare need vs the calamity stock ──────────────────
-;; The deterministic twin of engine/robust.scm's `reserve-yields-to`. In a scenario tree
+;; The deterministic twin of solve/robust.scm's `reserve-yields-to`. In a scenario tree
 ;; the reserve yields to the p=0 tail by construction; in ONE world there is no
 ;; tail to name — a calamity arriving now shows up as a program with no answer,
 ;; the subsistence floor and the reserve both hard against a supply that cannot

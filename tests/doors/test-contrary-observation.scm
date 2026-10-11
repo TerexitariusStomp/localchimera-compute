@@ -9,7 +9,7 @@
 ;;;     it is the speaker's own, and it is a run of the very process;
 ;;;   • one live statement per (observer, scope, process, action): a
 ;;;     restatement supersedes;
-;;;   • the law (planner/solve/engine/robust.scm observed-shocks) moves the read in the
+;;;   • the law (planner/solve/robust.scm observed-shocks) moves the read in the
 ;;;     cautious direction only — an output falls to the reading, an input
 ;;;     rises to it, a flattering reading leaves the map where it stands;
 ;;;   • witnesses are equal: two readings of one figure read as their mean,

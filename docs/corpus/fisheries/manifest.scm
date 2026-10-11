@@ -7,7 +7,7 @@
 ;;; directly — "a fishing scope stewards its fishery", and a coastal scope
 ;;; stewarding fishery, estuary and mangrove together.
 ;;;
-;;; It is also the first real user of `pooled-budget` (engine/fragility.scm:136): one
+;;; It is also the first real user of `pooled-budget` (solve/ingest.scm:136): one
 ;;; ecological agent, many scopes debited against one measured level. Today that
 ;;; machinery is exercised only by a synthetic "shed"/"water" case in
 ;;; test-fragility-scales.scm.

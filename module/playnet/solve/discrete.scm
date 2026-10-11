@@ -267,7 +267,7 @@
 ;;   *discrete-program*  thunk → (values x forms labform idx): build the current
 ;;                       program under the search's tables (config, relaxed
 ;;                       floors, cuts, fixings), substitute the decided columns
-;;                       out, solve. `located-solve` for one world; engine/robust.scm
+;;                       out, solve. `located-solve` for one world; solve/robust.scm
 ;;                       supplies the extensive form.
 (define *discrete-key?* (make-parameter (lambda (k) #t)))
 (define *discrete-program* (make-parameter (lambda () (located-solve))))

@@ -315,7 +315,7 @@
 ;;
 ;; This scope sits in a bioregion, so it inherits Berlin's futures and the solve
 ;; takes the ROBUST branch. That branch forwards the whole world it was given
-;; (engine/robust.scm's %world-keywords) — assert the engine's own state afterwards, not
+;; (solve/robust.scm's %world-keywords) — assert the engine's own state afterwards, not
 ;; merely that a plan came back, because a branch that quietly dropped these
 ;; keywords is exactly the failure this guards.
 (define %engine (resolve-module '(playnet scope live)))

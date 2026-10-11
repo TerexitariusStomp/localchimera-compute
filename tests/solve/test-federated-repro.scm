@@ -4,7 +4,7 @@
 ;;; A city is many scopes, and the people who need feeding are rarely in the scope
 ;;; that grows the food. Until now the per-person subsistence floors
 ;;; (live.scm `scope-consumption`, knowledge/subsistence-catalogue.scm) worked only
-;;; INSIDE a scope: `engine/federation-solve.scm` carried no floors at all, so a federated
+;;; INSIDE a scope: `solve/federation-solve.scm` carried no floors at all, so a federated
 ;;; solve could not express "this commune's people are hungry".
 ;;;
 ;;; It carries them now (`commune->scope-record #:repro-floors`), and this test
@@ -58,7 +58,7 @@
     ("cleo" . ((sex . "F") (age . 30) (region . "temperate") (labour-hours . 3)
                (pregnant . #t)))))
 
-;; THE INTERMEDIATE CROSSES, NOT THE FINISHED GOOD. engine/federation-solve.scm's design
+;; THE INTERMEDIATE CROSSES, NOT THE FINISHED GOOD. solve/federation-solve.scm's design
 ;; notes say it in as many words: drawing the good the barrier directly wants is
 ;; a free source the barrier grabs regardless, and the dual diverges. A first draft
 ;; of this test had `food` cross — the very good EAT consumes — and λ ran to 5e16

@@ -153,7 +153,7 @@
 ;; A WANT'S ASK, whichever shape the want took: a des form's D, or the wall a
 ;; citizen's own want rides on as a cap form (stamped as its fifth element by
 ;; build-located, docs/planning/solve/quantity-as-a-cap.md); #f for any other form.
-;; THE reading of "how much was asked" — the maximin epigraph (engine/robust.scm) and
+;; THE reading of "how much was asked" — the maximin epigraph (solve/robust.scm) and
 ;; the fill report (mean-fill, mean-overfill) both take it from here, so a want
 ;; counts as a want in the report exactly when it counts in the objective.
 ;; Measured: with every want a citizen's own, the report read kind-1 terms
@@ -2101,7 +2101,7 @@
           ;; throughput, so the same physical program admits the same plan whether its goods are
           ;; counted in kilograms or grams — and a stock overdrawn many times over is caught at every
           ;; scale, rather than passing as noise wherever the unit happens to make one absolute unit
-          ;; of slack look small. (The scenario path has read it this way since engine/robust.scm:244.)
+          ;; of slack look small. (The scenario path has read it this way since solve/robust.scm:244.)
           (cond ((not (plan-grossly-infeasible? C x)) (apply values x rest))   ; feasible (incl. binding/noisy) ⇒ done
                 ((= tries 0) (retry (make-vector (vector-length x0) 0.05) 1))            ; grossly infeasible (far-start stall) ⇒ retry from a tiny start
                 (else (raise-starvation "solve-native: no strictly-feasible point (problem infeasible, or caps unsatisfiable)"))))))))))
@@ -2765,7 +2765,7 @@ against a deliberately wrong object rather than only against a right one."
   ;; Now both decide by the same argument and publish the same object: the
   ;; violation s*, how many limits are breached, and which are worst. No
   ;; exception is raised on this path — callers here expect a plan back and
-  ;; several of them (live.scm, engine/robust.scm) read the certificate — but the
+  ;; several of them (live.scm, solve/robust.scm) read the certificate — but the
   ;; verdict is no longer something only one backend can express.
   (let* ((C   (flatten forms))
          ;; Phase-I, then a CONFIRMING pass from a strictly-interior start before

@@ -22,23 +22,28 @@
 ;;;
 ;;;   guile -L module module/playnet/deprecated/planner/attic/demo.scm                (self-tests)
 ;;;
-;;; §0 utilities  §1 forms (the backend-neutral problem)  §2 native backend
-;;; §3 OSQP backend (QP reduction + FFI)  §4 dispatcher + parity self-test
-;;; §5 VF compiler  §6 located/spacetime model  §7 discrete layer
-;;; §8 reserve tranche + EMP labour        (§9 scenarios → demo.scm)
+;;; What stands here: the world's vocabulary (§6, the located key and its
+;;; owners, stretches, the dates a period covers), the program built from
+;;; the world (templates tiled over cells, moves as columns, the legal and
+;;; ecological walls, the supplier bundles), `build-located`, `solve-located`
+;;; and the world door `declare-world!`. What stood here once has a module of
+;;; its own in solve/: world (the tables, one context), ingest (records to
+;;; world), report (the point read as VF rows), discrete (§7), decomposed
+;;; (§10), records, robust, plan (the one door from records to a plan),
+;;; federation-solve and federation-oracle. The convex solver is solver.scm,
+;;; the VF compiler compile.scm; the self-tests and scale benchmarks are
+;;; module/playnet/deprecated/planner/attic/demo.scm.
 
-;; The engine is a MODULE (phase 3 of the engine-as-module arc). Its mutable
-;; world — the tables `reset!` clears — is ONE context in solve/world.scm, held
-;; in a cell and read and written by name from here and from every module that
-;; imports a name; what `reset!` leaves standing (the dials, the memos, the
-;; tolerances) is the engine's own. The export list is the
-;; MEASURED interface: every top-level name some file outside the engine family
-;; references — every test, bench and demo imports this module by name — plus
-;; set-dial! kept deliberately. The tests' double-loads of engine/robust.scm are
-;; retired (the engine loads it into itself), so the satellites' free names no
-;; longer need exporting for a second copy of their text. The remaining
-;; top-level names are internal machinery; exporting one later is one line
-;; here.
+;; The engine is a MODULE. Its mutable world, the tables `reset!` clears, is
+;; ONE context in solve/world.scm, held in a cell and read and written by name
+;; from here and from every module that imports a name; what `reset!` leaves
+;; standing (the dials, the memos, the tolerances) is the engine's own. The
+;; export list is the MEASURED interface: every top-level name some file
+;; outside this one references, plus set-dial! kept deliberately; the modules
+;; above it (ingest, report, discrete, decomposed, records, robust, plan, the
+;; federation pair) read their engine internals through it, each group named.
+;; A remaining top-level name is internal machinery; exporting one later is
+;; one line here.
 ;; A world is DECLARED, not assembled: declare-world! (beside reset!/mkcells!)
 ;; is the door every world comes through — a test's or bench's fixture, the
 ;; worked example's setup-*, and the records: ingest-located! derives its
@@ -49,10 +54,10 @@
 ;; What is written onto a standing world afterwards is a layering, and goes
 ;; through its door: set-templates!, set-dial!, adopt-container-pools!,
 ;; workers->riders!, absorb-specs!, the manners bag.
-;; This module is the ONE door: (use-modules (playnet solve engine)) is how a
-;; test, a bench or the live planner reaches the world, and each states beside
-;; it the layers it reads (compile, solver, schemas, …) — the layers are
-;; disjoint interfaces, so there is nothing to stack in a particular order.
+;; (use-modules (playnet solve engine)) is how a test, a bench or the live
+;; planner reaches the program, beside the solve modules it reads (world,
+;; ingest, plan, report, …) and the layers (compile, solver, schemas, …); the
+;; interfaces are disjoint, so there is nothing to stack in a particular order.
 ;; #:declarative? #f — callers set! these globals (interpreted), and the module
 ;; system must keep them as real boxes. Declarative would be WORSE than a
 ;; redefinition hazard: Guile then inlines the compile-time value of every
@@ -184,7 +189,7 @@
 ;; only approximately: it probed ONE name and inferred the presence of 639.
 
    ; the one value rollup
-   ; stage 4: the same three lines one level up (engine/federation-solve.scm)
+   ; stage 4: the same three lines one level up (solve/federation-solve.scm)
    ; the (I-C)^-1 cascade — eco coupling's own math, extracted
 
 ;; Per-kind term math (value φ / gradient-coeff φ′ / curvature φ″) — the SINGLE
@@ -233,7 +238,7 @@
 ;; in unit-periods, so such a draw is divided by the period's own length at
 ;; build time — the only place the period, and therefore its length, is known.
 ;; Kept apart from *flow-period-factor*: that hook is a scenario perturbation
-;; engine/robust.scm owns and replaces wholesale, while this is structural and always
+;; solve/robust.scm owns and replaces wholesale, while this is structural and always
 ;; true. Sharing one slot would let whichever ran last erase the other.
 (define (stock->flow qty t)
   "A stated STOCK read as the capacity it renders over period T. Capacity is a
@@ -325,7 +330,7 @@
 ;; A nutrient band (rda ul w) is one entry; an insurance reserve is a floor-with-margin and no ceiling; an eco-style ceiling on a produced good is a ceiling
 ;; alone. One table, one emission (build-located "REPRODUCTION BAND"), one pour (apply-repro-bands!) shared by every solve path. Fed by plan-from-records
 ;; #:bands, with #:repro-floors / #:repro-caps / #:insurance as spellings of one edge each, and by a <fragility> record whose extent is a good and whose
-;; side is 'floor (engine/fragility.scm).
+;; side is 'floor (solve/ingest.scm).
 (define (band-floor b) (car b)) (define (band-ceiling b) (cadr b)) (define (band-w b) (caddr b))
 (define* (make-band #:key (floor #f) (ceiling #f) (w 1.0)) (list floor ceiling w))
 (define (hash-add! tbl key delta) (hash-set! tbl key (+ (hash-ref tbl key 0.0) delta)))   ; accumulate: tbl[key] += delta (0 default)
@@ -2444,7 +2449,7 @@
          (and (> cost 1e-12) (cons (hash-ref idx (col-key c)) cost))))
      cols nets)))
 (define (acq-col? c) (equal? (key-prefix (col-key c)) "acq"))
-(define (crossing-col? c) (string-prefix? "p|cross-" (col-key c)))   ; engine/federation-solve.scm `crossing-recipe`
+(define (crossing-col? c) (string-prefix? "p|cross-" (col-key c)))   ; solve/federation-solve.scm `crossing-recipe`
 (define (acquire-price spec labour?)
   "The hours one unit of SPEC costs to bring in, by *acquire*: a selector names the
    spec, the spec without its Svc| prefix, \"labour\" for any labour row, or #t for all. #f when nothing sells it."
@@ -3055,7 +3060,7 @@
                                  (begin
                                    ;; the ask rides on the cap form as a fifth element: the
                                    ;; solver reads the first four (kind const coeffs Dw); the
-                                   ;; maximin reading (engine/robust.scm maximin-extend) takes the
+                                   ;; maximin reading (solve/robust.scm maximin-extend) takes the
                                    ;; want's captured value as delivered over ASKED, so the
                                    ;; pair — pull and wall — stays one object where it is read
                                    (set! forms (cons (append (mk-cap form w (cap-scale-of g)) (list D)) forms))

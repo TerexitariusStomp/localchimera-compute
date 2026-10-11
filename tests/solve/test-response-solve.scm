@@ -6,7 +6,7 @@
 ;;; capturing less of that share the harder the drought presses. The record
 ;;; reaches the solve as a shock on `quick`'s act in each future, read off its
 ;;; curve at that future's stress (solve/recipe-response.scm response-shocks), and
-;;; the floor is held in every future (engine/robust.scm).
+;;; the floor is held in every future (solve/robust.scm).
 ;;;
 ;;; The plan leans on `quick` by what its record says it delivers, and the lean
 ;;; moves with the record.

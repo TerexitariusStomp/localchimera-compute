@@ -3,7 +3,7 @@
 ;;; playnet.typ §"Worker, soil, and tool: one field" holds that the burnout
 ;;; ratio, the regenerative envelope and the design limit are ONE form — "the
 ;;; same convex possibility-tension φ(s) = −w log s, READ AT A DIFFERENT SCALE."
-;;; engine/fragility.scm makes the scale sayable, as two orthogonal fields:
+;;; solve/ingest.scm makes the scale sayable, as two orthogonal fields:
 ;;;
 ;;;     EXTENT  which draws are measured (good | spec | contained | within)
 ;;;     WINDOW  over what they are summed ('rate per period | 'horizon in total)

@@ -112,7 +112,7 @@
 ;; ── ONE SCOPE'S KERNEL RECORD — the unit a scope can solve ALONE ────────────
 ;; The ADMM's per-scope state, lifted out of solve-decomposed so the same
 ;; construction serves a scope solving its own subproblem in its own vat
-;; (engine/federation-oracle.scm): forms+prox flattened to CSR once, the Scheme forms
+;; (solve/federation-oracle.scm): forms+prox flattened to CSR once, the Scheme forms
 ;; freed (direct-CSR), the prox columns FIRST so their centres are slots
 ;; 0..nbnd−1 of cnst/w and a round rewrites exactly those. Slots:
 ;;   0 nt · 1 n · 2 nlab · 3 ncross · 4 the crossings (record-crossings, in order)

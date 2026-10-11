@@ -14,7 +14,7 @@
 ;;;     the ledger's drift, and `latest` reads flows alone;
 ;;;   • anonymity: no cell names a person, and the scope is the source;
 ;;;   • the contrary observation folds at its cautious reading, so the node's
-;;;     `contrary` rows give engine/robust.scm observed-shocks the same shocks as the
+;;;     `contrary` rows give solve/robust.scm observed-shocks the same shocks as the
 ;;;     governance reader's rows, and a flattering reading moves nothing;
 ;;;   • two scopes under the UC: the parent keeps both apart, and a departing
 ;;;     scope's readings leave exactly.

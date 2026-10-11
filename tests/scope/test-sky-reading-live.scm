@@ -3,7 +3,7 @@
 ;;; The shine states the light a hectare receives as an ESTIMATE (catalogues/substances.scm
 ;;; insolation-kwh-per-m2-day). A scope that measures its own sun logs a reading
 ;;; of the shine's produce, and the solve takes it as it takes every reading of a
-;;; process against its nominal (engine/robust.scm observed-shocks: an output reads no
+;;; process against its nominal (solve/robust.scm observed-shocks: an output reads no
 ;;; better than the map): the light bound tightens to what was seen, and a hectare
 ;;; grows less. Nothing new is built for it — the estimate is the nominal, and a
 ;;; reading is a contrary observation (docs/observation/physics.md §6).

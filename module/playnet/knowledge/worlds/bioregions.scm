@@ -15,7 +15,7 @@
 ;;; place it inside, and its weather and its ecological caps both follow. No
 ;;; per-region code — the containment relation IS the index.
 ;;;
-;;; Loaded from planner.scm core (beside engine/robust.scm) — generic MECHANISM, no data.
+;;; Loaded from planner.scm core (beside solve/robust.scm) — generic MECHANISM, no data.
 ;;; Knowledge/data files `register-bioregion!` a real shed; plan-scope then resolves
 ;;; both channels from the shed a scope sits in. The registry is seeded config (like
 ;;; the SpatialThing tree), NOT per-solve state — reset! deliberately leaves it.

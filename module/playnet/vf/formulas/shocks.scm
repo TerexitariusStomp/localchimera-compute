@@ -14,7 +14,7 @@
 ;;; (proc-or-spec . place): one district's harvest, at that district's column.
 ;;;
 ;;; Pure — records in, shocks and factors out, no world read. Three readers:
-;;;   engine/robust.scm      binds a branch's factors to the build (the weather seam);
+;;;   solve/robust.scm      binds a branch's factors to the build (the weather seam);
 ;;;   bioregions.scm  lays a shed's tail over its record (tail-beyond-record);
 ;;;   reading-fold    takes the cautious direction of a witnessed reading.
 ;;;
@@ -275,7 +275,7 @@
 ;; ── the future a floor is defended in without a forecast ─────────────────────
 ;; A scenario of probability zero carries no weight in the expectation and
 ;; every wall: the tail, beyond the record. The reserve yields to it
-;; (engine/robust.scm) and the margin is laid in it (solve/recipe-response.scm).
+;; (solve/robust.scm) and the margin is laid in it (solve/recipe-response.scm).
 (define (tail-scenario? s) (<= (planning-scenario-probability s) 0.0))
 
 ;; ── THE TAIL STANDS BEYOND THE RECORD ────────────────────────────────────────

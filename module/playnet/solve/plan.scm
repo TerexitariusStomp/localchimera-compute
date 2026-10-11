@@ -68,7 +68,7 @@
                                   ;; it. No new tension kind. See reproduction-diet-test.
                                   (repro-floors '())
                                   (budgeted-floors '())     ; ((g F Γ) …) — a floor held against ANY Γ sources lost (lay-budgeted-floors)
-                                  (maximin? #f)             ; wants judged by the least fraction of a future's achievable value (engine/robust.scm maximin-extend)
+                                  (maximin? #f)             ; wants judged by the least fraction of a future's achievable value (solve/robust.scm maximin-extend)
                                   ;; reproduction CEILINGS: ((located-good . (cap . w)) …) — the
                                   ;; toxicity edge (UL) of a band, the twin of #:repro-floors on
                                   ;; the other side. Held by a fixed-weight `frag` on the good's
@@ -97,7 +97,7 @@
                                   ;; assembly; first-stage-procs = proc-ids committed before the
                                   ;; uncertainty resolves (shared across scenarios); pins = accepted
                                   ;; commitments as hand-decided first-stage columns; holds = offers
-                                  ;; under live consideration, kept available as walls. See engine/robust.scm.
+                                  ;; under live consideration, kept available as walls. See solve/robust.scm.
                                   (scenarios '()) (first-stage-procs '()) (pins '()) (holds '())
                                   (arc-table '()) (arc-topology? #f) (manners '()) (never-raw '()) (raws '())
                                   (resource-suppliers '())

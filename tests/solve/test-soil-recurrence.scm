@@ -28,7 +28,7 @@
              (playnet vf formulas stocks)
              (playnet knowledge worlds bioregions)
              (playnet knowledge dsl shorthand))
-;; engine/robust.scm arrives with the engine — (playnet solve engine) loads it into
+;; solve/robust.scm arrives with the engine — (playnet solve engine) loads it into
 ;; itself and exports its names, so the load that stood here was a second copy
 ;; of the same text into this module (retired with the engine-as-module arc).
 (use-modules (playnet knowledge worlds doon-valley))

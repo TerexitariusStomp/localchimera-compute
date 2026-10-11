@@ -1,7 +1,7 @@
 ;;; test-federation-direction.scm — which way a good crosses is the solve's to say.
 ;;;
 ;;; A commune shares a good through one column, its draw on the crossing
-;;; measured from what it can give (engine/federation-solve.scm
+;;; measured from what it can give (solve/federation-solve.scm
 ;;; `commune->scope-record`, solver.scm `give-bound` / `offset-column`). Its
 ;;; flow on the good is signed — above nothing it supplies, below it draws —
 ;;; and nobody states which. Held here:

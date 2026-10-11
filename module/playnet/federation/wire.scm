@@ -4,7 +4,7 @@
 ;;; far, verifying every reply.
 ;;;
 ;;; Rung 3 of docs/planning/federation/FEDERATED-SOLVE.md. The economics are the engine's
-;;; (engine/federation-oracle.scm: `make-boundary-oracle`, `solve-consensus`); this
+;;; (solve/federation-oracle.scm: `make-boundary-oracle`, `solve-consensus`); this
 ;;; module is the wire — Goblins messages and KERI signatures, nothing else.
 ;;;
 ;;; WHAT CROSSES. Into a commune, per round: a prox centre per crossing good (the

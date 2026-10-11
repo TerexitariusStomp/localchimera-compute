@@ -21,7 +21,7 @@
              (playnet vf schemas)
              (playnet knowledge dsl shorthand)
              (playnet vf formulas stocks))
-;; engine/robust.scm arrives with the engine — (playnet solve engine) loads it into
+;; solve/robust.scm arrives with the engine — (playnet solve engine) loads it into
 ;; itself and exports its names, so the load that stood here was a second copy
 ;; of the same text into this module (retired with the engine-as-module arc).
 (define *pass* 0) (define *fail* 0)

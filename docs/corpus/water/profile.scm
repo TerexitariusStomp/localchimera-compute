@@ -95,7 +95,7 @@ marked JUDGMENT.")
   ;; ── The envelope: the catchment as a governed level ──────────────────────
   (target
     (name "catchment-envelope")
-    (construct "pooled-budget (engine/fragility.scm) over a shed")
+    (construct "pooled-budget (solve/ingest.scm) over a shed")
     (description "What the catchment yields and what may be drawn without \
 lowering it — the watershed specification playnet.typ promises. Aquifer level is \
 the motivating example in pooled-budget's own docstring, so this is the target \

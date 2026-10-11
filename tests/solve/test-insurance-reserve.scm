@@ -20,8 +20,8 @@
 ;;;   I3  the soft buffer (#:reserve) is shed under the same scarcity — below `lo`
 ;;;   I4  the ceiling of the band, when given, is respected alongside (a two-sided
 ;;;       stock band: hold ≥ lo, and ≤ cap — the granary that must not overflow)
-;;;   I5  the same reserve as a floor-sided <fragility> record (engine/fragility.scm SIDE)
-;;; Part 2 — the same reserve under two futures (engine/robust.scm), held PER SCENARIO:
+;;;   I5  the same reserve as a floor-sided <fragility> record (solve/ingest.scm SIDE)
+;;; Part 2 — the same reserve under two futures (solve/robust.scm), held PER SCENARIO:
 ;;;   R1  the drought year keeps `lo` intact where the soft buffer starves
 ;;;   R2  the nominal year holds more than the drought year (the margin is what erodes)
 ;;;
@@ -85,7 +85,7 @@
        (< (caddr binding) (- LO 1.0)))
 (define capped (bread 1000.0 #:shape 'insurance #:cap 128.0))
 ;; the same reserve said as a <fragility> whose SIDE is 'floor — one record, the
-;; ecological envelope's own, read from the other side (engine/fragility.scm)
+;; ecological envelope's own, read from the other side (solve/ingest.scm)
 (define via-record
   (call-with-values
     (lambda ()

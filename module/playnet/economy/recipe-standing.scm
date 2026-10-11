@@ -117,7 +117,7 @@
 ;; ── The realized scenario falls out of the observer ─────────────────────────
 ;;
 ;; A scenario is "a forecast of FULFILLMENT RATIOS, per (action, spec) intent
-;; — the same unit the Observer measures ex-post" (engine/robust.scm). So the weather
+;; — the same unit the Observer measures ex-post" (solve/robust.scm). So the weather
 ;; a period actually delivered is not a record anyone has to write: it is the
 ;; period's fulfilling events read as ratios, as a scenario — and
 ;; `flows-factor` (shocks.scm) reads it exactly as it reads a forecast.

@@ -23,7 +23,7 @@
 ;;;   L11 the tab as the wheel reads it (reserve-controls): a reserve wedge whose
 ;;;       slack is the room above the calamity stock — 1 at the target, ~0.4 when
 ;;;       scarcity ate most of the want, the stock intact
-;;;   L10 federation parity: a commune's scope record (engine/federation-solve.scm) carries
+;;;   L10 federation parity: a commune's scope record (solve/federation-solve.scm) carries
 ;;;       #:insurance the same way — a `held` among its forms
 ;;; Pure solver (no ACDCs) ⇒ no blake3.
 ;;; Run: guile -L module tests/scope/test-insurance-live.scm

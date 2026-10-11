@@ -10,7 +10,7 @@
 ;;;   hold the wall  → the household is short by how much
 ;;;
 ;;; `plan-dilemma` runs both as ordinary solves of the same program (the move
-;;; engine/robust.scm makes for scenarios) and reports the two costs. It does not
+;;; solve/robust.scm makes for scenarios) and reports the two costs. It does not
 ;;; choose: which horn to take is a governance question about whose reproduction
 ;;; and which boundary, and the planner's job is to put the number in front of it.
 ;;;

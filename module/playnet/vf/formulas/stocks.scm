@@ -22,7 +22,7 @@
 ;;; that must keep producing is driven to hold the stock up — so crop rotation and
 ;;; soil-building EMERGE as the cheapest way to stay feasible across deep time.
 ;;;
-;;; Loaded from planner.scm core (beside engine/robust.scm/bioregions.scm) — generic
+;;; Loaded from planner.scm core (beside solve/robust.scm/bioregions.scm) — generic
 ;;; MECHANISM, no data. Knowledge files `register-regenerating-stock!` a real one
 ;;; (soil fertility from SoilGrids, a machine's condition, a basin's water table).
 

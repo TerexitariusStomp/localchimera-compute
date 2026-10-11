@@ -44,7 +44,7 @@
 (define-context world #:cell %world
   ;; ── the shape: places, periods, cells; what moves, what stays, what it costs ──
 
-  ;; the per-flow factor a branch (engine/robust.scm) or a site puts on a column's
+  ;; the per-flow factor a branch (solve/robust.scm) or a site puts on a column's
   ;; flows, consulted as (action proc-id spec t place): the PLACE is the tiled
   ;; column's own, so a shock may name a located act — one district's harvest
   ;; lost — while the recipe stays the one location-agnostic template VF means

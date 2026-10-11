@@ -3,7 +3,7 @@
 ;;;
 ;;; Across scopes the convex layer is coupled by pull, never folded: each
 ;;; commune solves its own program and a scalar λ on the crossing good is all
-;;; that crosses (engine/federation-solve.scm). What the ADMM drives λ to is exactly
+;;; that crosses (solve/federation-solve.scm). What the ADMM drives λ to is exactly
 ;;; the condition a fold over both communes would state directly —
 ;;;
 ;;;     Σ supplied  =  Σ drawn  =  the deficit of the commune that lacks the good

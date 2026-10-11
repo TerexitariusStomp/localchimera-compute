@@ -20,7 +20,7 @@ Everything below reproduces from the repository: the sweep is `tools/lint/compil
 
 Compiling every module outside `deprecated/` with `-Wunbound-variable -Warity-mismatch
 -Wformat` reported 281 "possibly unbound" names and 4 wrong-argument-count calls. Most
-unbound names sit in include-fragments (`solve/engine/robust.scm`, `comms/*.scm`, the
+unbound names sit in include-fragments (`solve/robust.scm`, `comms/*.scm`, the
 farm seeders): a file with no `define-module` is read inside another module's namespace,
 where its names are bound, so it is no finding. The rest were calls that raise on first
 use. A suite reached none of them.
