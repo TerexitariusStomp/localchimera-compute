@@ -2,8 +2,11 @@
 ;;;
 ;;; ^planner-service (doors/service.scm) is composed of fragments, each a procedure
 ;;; from this context to a declared-doors value (docs/planning/codebase-layout.md
-;;; §12), as the governance service is of its <governance-ctx>. The context holds
-;;; three kinds of thing, each a field by name:
+;;; §12), as the governance service is of its context and the scope of its own.
+;;; The context is one `define-context` (playnet protocol context): the field
+;;; list below is the one statement, and the record, `make-planner-ctx`,
+;;; `with-planner-ctx` and `planner-ctx-install!` are read off it. It holds three
+;;; kinds of thing, each a field by name:
 ;;;
 ;;;   the cells a door writes   ph-ok?, witness-door, solve-vat, re-stand: wiring
 ;;;                             that arrives after the spawn through a setter door
@@ -13,24 +16,23 @@
 ;;;                             gate, the readers governance injects
 ;;;   the solve cache           one <solve-cache> per service (doors/planner/solve-cache)
 ;;;
-;;; ONE form binds the context: `(with-planner-ctx ctx body …)` binds every field
-;;; under its own name, reading through the accessor on each use and writing
-;;; through the setter on `set!`, so a fragment's clause reads as it did inside the
-;;; actor and a cell it sets is set for every other fragment. The body is a body:
-;;; it may define, a define of a field's name shadows the field (the core defines
-;;; its helpers this way, then hands them over with `planner-ctx-install!`, the
-;;; core's one other form), and the whole stands wherever an expression may,
-;;; including as an actor's last form.
+;;; `(with-planner-ctx ctx body …)` binds every field under its own name, reading
+;;; through the accessor on each use and writing through the setter on `set!`, so
+;;; a fragment's clause reads as it did inside the actor and a cell it sets is set
+;;; for every other fragment. The body is a body: it may define, a define of a
+;;; field's name shadows the field (the core defines its helpers this way, then
+;;; hands them over with `planner-ctx-install!`), and the whole stands wherever an
+;;; expression may, including as an actor's last form.
 ;;;
 ;;; What one fragment alone reads and writes is that fragment's own, defined inside
 ;;; it above its declared-doors.
 
 (define-module (playnet doors planner ctx)
   #:use-module (srfi srfi-9)
+  #:use-module (playnet protocol context)
   #:export (make-planner-ctx planner-ctx? with-planner-ctx planner-ctx-install!
             make-scope-nodes scope-nodes? nodes-labour nodes-means nodes-demand nodes-folksonomy nodes-credit nodes-slack
             nodes-voice nodes-reading nodes-deployment nodes-allocation nodes-solve %fold-kinds %descent-kinds
-            planner-ctx-fields
             planner-ctx-ph-ok? planner-ctx-witness-door planner-ctx-solve-vat
             planner-ctx-re-stand planner-ctx-cache planner-ctx-roster-ref
             planner-ctx-roster-entries planner-ctx-roster-add! planner-ctx-roster-forget!
@@ -83,110 +85,20 @@
             set-planner-ctx-knows-of! set-planner-ctx-pool-of!
             set-planner-ctx-contrary-of!))
 
-(eval-when (expand load eval)
-(define planner-ctx-fields '(ph-ok? witness-door solve-vat re-stand cache roster-ref
-                             roster-entries roster-add! roster-forget! with-scope
-                             with-person scoped door-read home-scope-of adopt-home!
-                             set-home-row! person-events person-observers standing
-                             world-of* gather plan-fn* on-plan resolve-scope!
-                             resolve-one-stale! resolve-stale-scopes! node-of
-                             labour-pool-of uc rehang-scope! declared-parent
-                             deployment-table slots-changed! slots-watch! slots-unwatch!
-                             means-changed! means-rebuild! means-fold-total steward-admit
-                             steward-ok? means-criteria scope-community communes-overlap
-                             scope-census scope-record-of federation-sibling-locations
-                             credit-roots refold-voice! refold-readings! rail-hands
-                             debts-of owed-of settle-of may-steward-of lent-of knows-of
-                             pool-of contrary-of)))
-
-(define-record-type <planner-ctx>
-  (%make-planner-ctx ph-ok? witness-door solve-vat re-stand cache roster-ref roster-entries roster-add! roster-forget! with-scope with-person scoped door-read home-scope-of adopt-home! set-home-row! person-events person-observers standing world-of* gather plan-fn* on-plan resolve-scope! resolve-one-stale! resolve-stale-scopes! node-of labour-pool-of uc rehang-scope! declared-parent deployment-table slots-changed! slots-watch! slots-unwatch! means-changed! means-rebuild! means-fold-total steward-admit steward-ok? means-criteria scope-community communes-overlap scope-census scope-record-of federation-sibling-locations credit-roots refold-voice! refold-readings! rail-hands debts-of owed-of settle-of may-steward-of lent-of knows-of pool-of contrary-of)
-  planner-ctx?
-  (ph-ok? planner-ctx-ph-ok? set-planner-ctx-ph-ok?!)
-  (witness-door planner-ctx-witness-door set-planner-ctx-witness-door!)
-  (solve-vat planner-ctx-solve-vat set-planner-ctx-solve-vat!)
-  (re-stand planner-ctx-re-stand set-planner-ctx-re-stand!)
-  (cache planner-ctx-cache set-planner-ctx-cache!)
-  (roster-ref planner-ctx-roster-ref set-planner-ctx-roster-ref!)
-  (roster-entries planner-ctx-roster-entries set-planner-ctx-roster-entries!)
-  (roster-add! planner-ctx-roster-add! set-planner-ctx-roster-add!!)
-  (roster-forget! planner-ctx-roster-forget! set-planner-ctx-roster-forget!!)
-  (with-scope planner-ctx-with-scope set-planner-ctx-with-scope!)
-  (with-person planner-ctx-with-person set-planner-ctx-with-person!)
-  (scoped planner-ctx-scoped set-planner-ctx-scoped!)
-  (door-read planner-ctx-door-read set-planner-ctx-door-read!)
-  (home-scope-of planner-ctx-home-scope-of set-planner-ctx-home-scope-of!)
-  (adopt-home! planner-ctx-adopt-home! set-planner-ctx-adopt-home!!)
-  (set-home-row! planner-ctx-set-home-row! set-planner-ctx-set-home-row!!)
-  (person-events planner-ctx-person-events set-planner-ctx-person-events!)
-  (person-observers planner-ctx-person-observers set-planner-ctx-person-observers!)
-  (standing planner-ctx-standing set-planner-ctx-standing!)
-  (world-of* planner-ctx-world-of* set-planner-ctx-world-of*!)
-  (gather planner-ctx-gather set-planner-ctx-gather!)
-  (plan-fn* planner-ctx-plan-fn* set-planner-ctx-plan-fn*!)
-  (on-plan planner-ctx-on-plan set-planner-ctx-on-plan!)
-  (resolve-scope! planner-ctx-resolve-scope! set-planner-ctx-resolve-scope!!)
-  (resolve-one-stale! planner-ctx-resolve-one-stale! set-planner-ctx-resolve-one-stale!!)
-  (resolve-stale-scopes! planner-ctx-resolve-stale-scopes! set-planner-ctx-resolve-stale-scopes!!)
-  (node-of planner-ctx-node-of set-planner-ctx-node-of!)
-  (labour-pool-of planner-ctx-labour-pool-of set-planner-ctx-labour-pool-of!)
-  (uc planner-ctx-uc set-planner-ctx-uc!)
-  (rehang-scope! planner-ctx-rehang-scope! set-planner-ctx-rehang-scope!!)
-  (declared-parent planner-ctx-declared-parent set-planner-ctx-declared-parent!)
-  (deployment-table planner-ctx-deployment-table set-planner-ctx-deployment-table!)
-  (slots-changed! planner-ctx-slots-changed! set-planner-ctx-slots-changed!!)
-  (slots-watch! planner-ctx-slots-watch! set-planner-ctx-slots-watch!!)
-  (slots-unwatch! planner-ctx-slots-unwatch! set-planner-ctx-slots-unwatch!!)
-  (means-changed! planner-ctx-means-changed! set-planner-ctx-means-changed!!)
-  (means-rebuild! planner-ctx-means-rebuild! set-planner-ctx-means-rebuild!!)
-  (means-fold-total planner-ctx-means-fold-total set-planner-ctx-means-fold-total!)
-  (steward-admit planner-ctx-steward-admit set-planner-ctx-steward-admit!)
-  (steward-ok? planner-ctx-steward-ok? set-planner-ctx-steward-ok?!)
-  (means-criteria planner-ctx-means-criteria set-planner-ctx-means-criteria!)
-  (scope-community planner-ctx-scope-community set-planner-ctx-scope-community!)
-  (communes-overlap planner-ctx-communes-overlap set-planner-ctx-communes-overlap!)
-  (scope-census planner-ctx-scope-census set-planner-ctx-scope-census!)
-  (scope-record-of planner-ctx-scope-record-of set-planner-ctx-scope-record-of!)
-  (federation-sibling-locations planner-ctx-federation-sibling-locations set-planner-ctx-federation-sibling-locations!)
-  (credit-roots planner-ctx-credit-roots set-planner-ctx-credit-roots!)
-  (refold-voice! planner-ctx-refold-voice! set-planner-ctx-refold-voice!!)
-  (refold-readings! planner-ctx-refold-readings! set-planner-ctx-refold-readings!!)
-  (rail-hands planner-ctx-rail-hands set-planner-ctx-rail-hands!)
-  (debts-of planner-ctx-debts-of set-planner-ctx-debts-of!)
-  (owed-of planner-ctx-owed-of set-planner-ctx-owed-of!)
-  (settle-of planner-ctx-settle-of set-planner-ctx-settle-of!)
-  (may-steward-of planner-ctx-may-steward-of set-planner-ctx-may-steward-of!)
-  (lent-of planner-ctx-lent-of set-planner-ctx-lent-of!)
-  (knows-of planner-ctx-knows-of set-planner-ctx-knows-of!)
-  (pool-of planner-ctx-pool-of set-planner-ctx-pool-of!)
-  (contrary-of planner-ctx-contrary-of set-planner-ctx-contrary-of!))
-
-(define* (make-planner-ctx #:key (ph-ok? (lambda (_aid) #t)) (witness-door #f) (solve-vat #f) (re-stand '()))
-  "The cells at their defaults: everyone holds personhood until the gateway installs
-   its checker, no witness door, no solve vat, nothing to re-stand. The helpers are
-   handed over by `planner-ctx-install!` once the actor has them."
-  (%make-planner-ctx ph-ok? witness-door solve-vat re-stand
-                     #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f))
-
-;; (with-planner-ctx ctx body …) — every field under its own name, read and
-;; written through the context; the body's last form is the value
-(define-syntax with-planner-ctx
-  (lambda (x)
-    (syntax-case x ()
-      ((_ ctx body ...)
-       (with-syntax (((name ...) (map (lambda (n) (datum->syntax x n)) planner-ctx-fields))
-                     ((ref ...)  (map (lambda (n) (datum->syntax x (symbol-append 'planner-ctx- n))) planner-ctx-fields))
-                     ((setr ...) (map (lambda (n) (datum->syntax x (symbol-append 'set-planner-ctx- n '!))) planner-ctx-fields)))
-         #'(let-syntax ((name (identifier-syntax (_ (ref ctx)) ((set! _ v) (setr ctx v)))) ...)
-             (let () body ...)))))))
-
-;; (planner-ctx-install! ctx name …) — each NAME's value into the field of that name
-(define-syntax planner-ctx-install!
-  (lambda (x)
-    (syntax-case x ()
-      ((_ ctx name ...)
-       (with-syntax (((setr ...) (map (lambda (n) (datum->syntax x (symbol-append 'set-planner-ctx- (syntax->datum n) '!))) #'(name ...))))
-         #'(begin (setr ctx name) ...))))))
+(define-context planner-ctx
+  ;; the cells at their defaults: everyone holds personhood until the gateway
+  ;; installs its checker, no witness door, no solve vat, nothing to re-stand;
+  ;; the helpers are handed over by `planner-ctx-install!` once the actor has them
+  (ph-ok? (lambda (_aid) #t)) witness-door solve-vat (re-stand '()) cache
+  roster-ref roster-entries roster-add! roster-forget! with-scope with-person scoped
+  door-read home-scope-of adopt-home! set-home-row! person-events person-observers
+  standing world-of* gather plan-fn* on-plan resolve-scope! resolve-one-stale!
+  resolve-stale-scopes! node-of labour-pool-of uc rehang-scope! declared-parent
+  deployment-table slots-changed! slots-watch! slots-unwatch! means-changed!
+  means-rebuild! means-fold-total steward-admit steward-ok? means-criteria
+  scope-community communes-overlap scope-census scope-record-of
+  federation-sibling-locations credit-roots refold-voice! refold-readings! rail-hands
+  debts-of owed-of settle-of may-steward-of lent-of knows-of pool-of contrary-of)
 
 ;; ── every node a scope stands up, as one record ────────────────────────────
 ;; Eight folds and three descents; a scope has all eleven from the moment it is

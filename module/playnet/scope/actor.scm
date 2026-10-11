@@ -62,7 +62,7 @@
   #:use-module (srfi srfi-11)
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
-  #:use-module (srfi srfi-9)
+  #:use-module (playnet protocol context)
   #:use-module ((playnet protocol dispatch) #:select (compose-doors))
   #:export (any-cred-by-said
             verify-ratification!
@@ -545,59 +545,19 @@
 ;;; ── the context a fragment reads ─────────────────────────────────────────────
 ;;;
 ;;; The actor's fields and its internal helpers, as one record a fragment is
-;;; handed; `with-scope-ctx` binds each under the name the clauses were written
-;;; with, so a fragment's clauses read as they did inside the actor. `bcom` and
-;;; `rebuild` are among them: a clause that changes a field returns
-;;; (bcom (rebuild …)) as before.
+;;; handed, stated once by `define-context` (playnet protocol context);
+;;; `with-scope-ctx` binds each under the name the clauses were written with,
+;;; reading and writing through the record, so a fragment's clauses read as they
+;;; did inside the actor. `bcom` and `rebuild` are among them: a clause that
+;;; changes a field returns (bcom (rebuild …)) as before.
 
-(define-record-type <scope-ctx>
-  (%make-scope-ctx bcom name kind scope-aid members member-sturdyrefs excluded ballots commune-stances gov-seal gov-sealed? planning-seal planning-sealed? delegate-seal delegate-sealed? member-seal member-sealed? acdc-store mycapn-ref scope-root-ref lineage keri-backend keypair next-keypair kel-store rebuild scope-own-aic-said maybe-authorize-issuer! live-custody-attestations custody-attestation-for commitment-fulfilled? spec-matches? outstanding-commitments-of-spec)
-  scope-ctx?
-  (bcom scope-ctx-bcom)
-  (name scope-ctx-name)
-  (kind scope-ctx-kind)
-  (scope-aid scope-ctx-scope-aid)
-  (members scope-ctx-members)
-  (member-sturdyrefs scope-ctx-member-sturdyrefs)
-  (excluded scope-ctx-excluded)
-  (ballots scope-ctx-ballots)
-  (commune-stances scope-ctx-commune-stances)
-  (gov-seal scope-ctx-gov-seal)
-  (gov-sealed? scope-ctx-gov-sealed?)
-  (planning-seal scope-ctx-planning-seal)
-  (planning-sealed? scope-ctx-planning-sealed?)
-  (delegate-seal scope-ctx-delegate-seal)
-  (delegate-sealed? scope-ctx-delegate-sealed?)
-  (member-seal scope-ctx-member-seal)
-  (member-sealed? scope-ctx-member-sealed?)
-  (acdc-store scope-ctx-acdc-store)
-  (mycapn-ref scope-ctx-mycapn-ref)
-  (scope-root-ref scope-ctx-scope-root-ref)
-  (lineage scope-ctx-lineage)
-  (keri-backend scope-ctx-keri-backend)
-  (keypair scope-ctx-keypair)
-  (next-keypair scope-ctx-next-keypair)
-  (kel-store scope-ctx-kel-store)
-  (rebuild scope-ctx-rebuild)
-  (scope-own-aic-said scope-ctx-scope-own-aic-said)
-  (maybe-authorize-issuer! scope-ctx-maybe-authorize-issuer!)
-  (live-custody-attestations scope-ctx-live-custody-attestations)
-  (custody-attestation-for scope-ctx-custody-attestation-for)
-  (commitment-fulfilled? scope-ctx-commitment-fulfilled?)
-  (spec-matches? scope-ctx-spec-matches?)
-  (outstanding-commitments-of-spec scope-ctx-outstanding-commitments-of-spec))
-
-(define* (make-scope-ctx #:key bcom name kind scope-aid members member-sturdyrefs excluded ballots commune-stances gov-seal gov-sealed? planning-seal planning-sealed? delegate-seal delegate-sealed? member-seal member-sealed? acdc-store mycapn-ref scope-root-ref lineage keri-backend keypair next-keypair kel-store rebuild scope-own-aic-said maybe-authorize-issuer! live-custody-attestations custody-attestation-for commitment-fulfilled? spec-matches? outstanding-commitments-of-spec)
-  "The actor's fields and helpers, each by name."
-  (%make-scope-ctx bcom name kind scope-aid members member-sturdyrefs excluded ballots commune-stances gov-seal gov-sealed? planning-seal planning-sealed? delegate-seal delegate-sealed? member-seal member-sealed? acdc-store mycapn-ref scope-root-ref lineage keri-backend keypair next-keypair kel-store rebuild scope-own-aic-said maybe-authorize-issuer! live-custody-attestations custody-attestation-for commitment-fulfilled? spec-matches? outstanding-commitments-of-spec))
-
-(define-syntax with-scope-ctx
-  (lambda (x)
-    (syntax-case x ()
-      ((_ ctx body ...)
-       (with-syntax (((name ...) (map (lambda (n) (datum->syntax x n)) '(bcom name kind scope-aid members member-sturdyrefs excluded ballots commune-stances gov-seal gov-sealed? planning-seal planning-sealed? delegate-seal delegate-sealed? member-seal member-sealed? acdc-store mycapn-ref scope-root-ref lineage keri-backend keypair next-keypair kel-store rebuild scope-own-aic-said maybe-authorize-issuer! live-custody-attestations custody-attestation-for commitment-fulfilled? spec-matches? outstanding-commitments-of-spec)))
-                     ((ref ...) (map (lambda (n) (datum->syntax x (string->symbol (string-append "scope-ctx-" (symbol->string n))))) '(bcom name kind scope-aid members member-sturdyrefs excluded ballots commune-stances gov-seal gov-sealed? planning-seal planning-sealed? delegate-seal delegate-sealed? member-seal member-sealed? acdc-store mycapn-ref scope-root-ref lineage keri-backend keypair next-keypair kel-store rebuild scope-own-aic-said maybe-authorize-issuer! live-custody-attestations custody-attestation-for commitment-fulfilled? spec-matches? outstanding-commitments-of-spec))))
-         #'(let ((name (ref ctx)) ...) body ...))))))
+(define-context scope-ctx
+  bcom name kind scope-aid members member-sturdyrefs excluded ballots commune-stances
+  gov-seal gov-sealed? planning-seal planning-sealed? delegate-seal delegate-sealed?
+  member-seal member-sealed? acdc-store mycapn-ref scope-root-ref lineage keri-backend
+  keypair next-keypair kel-store rebuild scope-own-aic-said maybe-authorize-issuer!
+  live-custody-attestations custody-attestation-for commitment-fulfilled? spec-matches?
+  outstanding-commitments-of-spec)
 
 ;;; ── the fragments ────────────────────────────────────────────────────────────
 ;;;
