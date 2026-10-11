@@ -1,18 +1,28 @@
-;;; engine/worked-example.scm — the bread chain, and the fixtures built on it.
+;;; module/playnet/test/planner/worked-example.scm — the bread chain, and the fixtures built on it.
 ;;;
 ;;; A three-stage chain (grow → mill → bake) with two rival mills: a cassava mill
 ;;; that makes the matrix rectangular, so recipe CHOICE falls out of one solve,
 ;;; and a batch mill that only runs in lots of eighty, so the discrete layer has
 ;;; something to decide. Between them they exercise every shape the engine has.
 ;;;
-;;; This is data ABOUT a plan, not machinery for making one — which is why it
-;;; lives beside planner.scm rather than inside it. It is not a demo, though:
-;;; eleven bench and test files build on `*base-templates*` and the `setup-*`
-;;; scenarios, so this is a shared fixture library and changing a number here
-;;; moves their numbers too.
-;;;
-;;; Loaded into the engine module, which it needs — compile-recipe runs at load,
-;;; and each setup-* declares its world through declare-world! when invoked.
+;;; This is data ABOUT a plan, not machinery for making one, which is why it
+;;; stands in the test harness rather than in the engine. It is not a demo,
+;;; though: the benches and tests that build on `*base-templates*` and the
+;;; `setup-*` scenarios share this one fixture library, and changing a number
+;;; here moves their numbers too. Each setup-* declares its world through
+;;; declare-world! and lays its demand, caps and labour onto the world's tables
+;;; (solve/world); compile-recipe runs at load. `parity-assert` runs the
+;;; scenarios under both backends and refuses a divergence: the seam's contract.
+
+(define-module (playnet test planner worked-example)
+  #:use-module (ice-9 format)
+  #:use-module (playnet solve world)
+  #:use-module ((playnet solve engine) #:select (declare-world! lg solve-located))
+  #:use-module ((playnet solve compile) #:select (compile-recipe rp in out wrk))
+  #:use-module ((playnet solve solver) #:select (mean-fill flatten set-backend! osqp-available?))
+  #:export (*procs* *flows* *base-templates* *millc-template* *millb-template*
+            setup-space setup-time setup-recipe setup-batch setup-reserve
+            mean-fill-located parity-assert))
 
 (define *procs* (list (rp "grow" "Grow") (rp "mill" "Mill") (rp "bake" "Bake")))
 (define *flows*
@@ -65,3 +75,22 @@
   (hash-set! *demand* (lg "bread" "town@0") 100.0)
   (hash-set! *reserve* (lg "bread" "town@0") (cons 40.0 80.0))  ; want +40 buffer, low priority
   (hash-set! *cap* (lg "soil" "town@0") 1e6) (hash-set! *A* "town@0" labour))
+
+(define (mean-fill-located)
+  (call-with-values solve-located
+    (lambda (x forms labform cols goods raws idx) (mean-fill (flatten forms) x))))
+(define (parity-assert tol)
+  (format #t "~%==== PARITY LOCK: native vs OSQP agree on delivered (tol ~a) ====~%" tol)
+  (if (not (osqp-available?))
+      (format #t "   (OSQP unavailable — native-only; parity not checked)~%")
+      (for-each (lambda (named)
+        ((cdr named))                                         ; run the setup
+        (set-backend! 'native) (let ((fn (mean-fill-located)))
+          (set-backend! 'osqp) (let ((fo (mean-fill-located)))
+            (let ((ok (< (abs (- fn fo)) tol)))
+              (format #t "   ~12a native ~,3f  osqp ~,3f  ~a~%" (car named) fn fo (if ok "OK" "DIVERGE"))
+              (unless ok (error "parity violation" (car named) fn fo))))))
+        (list (cons "space-cheap" (lambda () (setup-space 0.002)))
+              (cons "space-dear"  (lambda () (setup-space 0.04)))
+              (cons "time-valley" (lambda () (setup-time 40.0 0.01 #t)))
+              (cons "recipe-mix"  (lambda () (setup-recipe 60.0)))))))

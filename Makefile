@@ -169,7 +169,6 @@ FAMILY_WASM_DEPS = \
                     module/playnet/vf/serdes.scm \
                     module/playnet/vf/facts/tension-terms.scm \
                     module/playnet/solve/voice-field.scm \
-                    module/playnet/solve/engine/worked-example.scm \
                     module/playnet/utils/alist.scm \
                     module/playnet/utils/catch.scm \
                     module/playnet/utils/clock.scm \
@@ -338,7 +337,6 @@ SCOPE_WASM_DEPS = \
                    module/playnet/vf/serdes.scm \
                    module/playnet/vf/facts/tension-terms.scm \
                    module/playnet/solve/voice-field.scm \
-                   module/playnet/solve/engine/worked-example.scm \
                    module/playnet/utils/alist.scm \
                    module/playnet/utils/catch.scm \
                    module/playnet/utils/clock.scm \

@@ -7,7 +7,7 @@
 (use-modules (playnet test harness) (srfi srfi-1))
 ;; load the engine directly (it provides the VF records via its schema-load).
 ;; The engine is a library and prints nothing; its demos live in demo.scm.
-(use-modules (playnet solve engine) (playnet solve world)
+(use-modules (playnet solve engine) (playnet test planner worked-example) (playnet solve world)
              (playnet solve solver))
 (set! *backend* 'native-c)
 

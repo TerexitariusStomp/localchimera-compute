@@ -28,7 +28,7 @@
 ;;; Run:  guile --no-auto-compile -q -L module tests/solve/test-greg-degeneracy.scm
 
 (use-modules (playnet test planner prelude)
-             (playnet solve engine)
+             (playnet solve engine) (playnet test planner worked-example)
              (playnet solve solver)
              (srfi srfi-1)
              (ice-9 format))

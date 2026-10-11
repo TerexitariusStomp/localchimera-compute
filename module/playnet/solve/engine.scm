@@ -49,8 +49,8 @@
 ;; What is written onto a standing world afterwards is a layering, and goes
 ;; through its door: set-templates!, set-dial!, adopt-container-pools!,
 ;; workers->riders!, absorb-specs!, the manners bag.
-;; The satellites the body loads (worked-example, robust, fragility,
-;; federation-solve) define into THIS module, so their names are in this list.
+;; The satellites the body loads (robust, fragility, federation-solve,
+;; federation-oracle) define into THIS module, so their names are in this list.
 ;; This module is the ONE door: (use-modules (playnet solve engine)) is how a
 ;; test, a bench or the live planner reaches the world, and each states beside
 ;; it the layers it reads (compile, solver, schemas, …) — the layers are
@@ -123,7 +123,7 @@
   #:use-module ((playnet utils records) #:select (vf-record-type vf-record-constructor vf-record-predicate vf-record-accessor vf-record-modifier vf-record-type-name vf-record-type-fields))
   #:use-module (playnet vf aggregation containment)
   #:export (key-spec owned-spec spec-owner spec-base unowned-demand want-as-cap? set-cap-scale! cap-scale-of *desire-w0*  *default-agent-hours* absorb-specs! add-trainable! adopt-container-pools! agent-window-hours allocate-means-consensus
-             arc-hours arc-net-km    *base-templates*
+             arc-hours arc-net-km
             batch-keys *bnb-nodes* build-columns build-located  carried-forward
              plan-bills bills-fold tier-shape acquire-bill bill-net located-bill   chain-duration-gaps close-elements! template-creates template-at-edge? col-flows col-key col-labour
             column-terms build-terms
@@ -134,20 +134,19 @@
              requirements unmet req-kind req-name req-met? requirements->wire
             declare-workers! declare-world!   discrete-declared?   coupling-table register-coupling! element-closure-on? *climb-per-km* arc-climb-m arc-climb-km
              *emp-rho* federated-materials federated-per-scope federated-relaxed-scopes federated-solve federated-flows loose-gives close-stranded-links federated-scope-pulls federated-delivered federated-withdrawal-displacement federated-result eisenberg-gale-split warm-boundary-flows boundary-bounds federated-dilemma
-            crossing-recipe record-crossings record-plan first-stage-activity  *flows*
-
+            crossing-recipe record-crossings record-plan first-stage-activity
 
             frag-tip   good-labour-content good-level good-pulls  ingest-located!
             ingest-records! ingest-stock! make-stock-key stock-vocabulary person-set refused-stock ingest-travel-times!   km labour-pulls
             *legal-decorate*  located-solve located-warm make-band
-              *millb-template*   node-fractional
-            node-solve parity-assert  period-dates
+                 node-fractional
+            node-solve   period-dates
                  plan-from-records plan->material plan-runs plan-robust-from-records
             plan->work    records-means-world refine-spans
             relaxed-bound report-discrete report-located reset! resource-place resource-resolver resource-window-hours
              mrec-name mrec-rp mrec-flows mrec-skill mrec-manner mrec-pace means-ride? rider-hours  route-fragility!
-            set-dial!   set-skill-spec! set-competence! apply-skill-dynamics! setup-batch setup-recipe setup-reserve
-            setup-space setup-time set-worker-pref! *pref-bound* skilled-worker-at?
+            set-dial!   set-skill-spec! set-competence! apply-skill-dynamics!
+              set-worker-pref! *pref-bound* skilled-worker-at?
             solve* solve-decomposed make-boundary-oracle solve-consensus solve-discrete solve-located solve-report   spec-skips-balance?
             spec-stationary?  stock->flow store-recipe  svc-held? svc-hours-factor
              temporal-target tension-duals  Tkey topo-order vf-agent-skills whole-atoms-of
@@ -212,14 +211,6 @@
 ;; which meant two copies of *templates* and a caller's choice of loader
 ;; deciding which one it got. A module ends that: one variable, both loaders,
 ;; each importing it the way its own mechanism allows.
-
-;; THE WORKED EXAMPLE, and the fixtures built on it. A bread chain and two rival
-;; mills: the specimen this engine was written against, and still the shared
-;; fixture for eleven bench and test files. A primitive-load, not an import,
-;; because its setup-* procedures assign the engine's own globals — it has to
-;; land in the module that loaded the engine. Guarded, so loading twice is a
-;; no-op.
-(include-from-path "playnet/solve/engine/worked-example.scm")
 
 ;; ════════════════════════════════════════════════════════════════════════════
 ;; §6 — THE LOCATED PROGRAM: tile templates over cells; moves are columns
@@ -5860,25 +5851,6 @@
 ;; into whichever module primitive-load'ed it. Unconditional — an import is
 ;; all-or-nothing, and a guard on one name being visible would skip the rest
 ;; on the strength of that one.
-
-(define (mean-fill-located)
-  (call-with-values solve-located
-    (lambda (x forms labform cols goods raws idx) (mean-fill (flatten forms) x))))
-(define (parity-assert tol)
-  (format #t "~%==== PARITY LOCK: native vs OSQP agree on delivered (tol ~a) ====~%" tol)
-  (if (not (osqp-available?))
-      (format #t "   (OSQP unavailable — native-only; parity not checked)~%")
-      (for-each (lambda (named)
-        ((cdr named))                                         ; run the setup
-        (set-backend! 'native) (let ((fn (mean-fill-located)))
-          (set-backend! 'osqp) (let ((fo (mean-fill-located)))
-            (let ((ok (< (abs (- fn fo)) tol)))
-              (format #t "   ~12a native ~,3f  osqp ~,3f  ~a~%" (car named) fn fo (if ok "OK" "DIVERGE"))
-              (unless ok (error "parity violation" (car named) fn fo))))))
-        (list (cons "space-cheap" (lambda () (setup-space 0.002)))
-              (cons "space-dear"  (lambda () (setup-space 0.04)))
-              (cons "time-valley" (lambda () (setup-time 40.0 0.01 #t)))
-              (cons "recipe-mix"  (lambda () (setup-recipe 60.0)))))))
 
 ;; ════════════════════════════════════════════════════════════════════════════
 ;; §7 — THE DISCRETE LAYER: minimum-batch processes (run at ≥MBQ or not at all)

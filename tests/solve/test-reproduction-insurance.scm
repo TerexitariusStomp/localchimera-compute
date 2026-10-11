@@ -35,7 +35,7 @@
 ;;; Run: guile --no-auto-compile -q -L module tests/solve/test-reproduction-insurance.scm
 
 (use-modules (playnet test planner prelude)
-             (playnet solve engine) (playnet solve world)
+             (playnet solve engine) (playnet test planner worked-example) (playnet solve world)
              (playnet solve solver)
              (srfi srfi-1)
              (ice-9 format))
