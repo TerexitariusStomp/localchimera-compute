@@ -8,7 +8,7 @@
 ;;; the commune holds under someone else's rights reaches the frag wheel's rented
 ;;; sector by the SAME custody/rights test a rented platform account does.
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
+(use-modules (playnet solve world) ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet knowledge recipes store) (playnet knowledge recipes berlin-commune-seed) (playnet knowledge recipes berlin-transit) (playnet knowledge recipes transit-shed) (playnet knowledge recipes transport) (playnet vf formulas capacity) (playnet scope root) (playnet vf schemas) (srfi srfi-1))
 (use-modules (playnet doors service))
@@ -268,8 +268,7 @@
   (with-vat cvat
     (plan-scope->alist croot #:manners manners
       #:demand (list (cons "food#berlin-commune-farm@0" 5000.0))))
-  (let ((m (resolve-module '(playnet scope live))))
-    (list (module-ref m '*workers*) (module-ref m '*riders*))))
+  (list *workers* *riders*))   ; the world's tables, read where the solve left them (solve/world)
 (define pinned (engine-after-solve berlin-transit-manners))
 (define mobile (engine-after-solve (cons '(mobile-people . #t) berlin-transit-manners)))
 (check-pred "modes alone leave the roster pinned — mobility is asked for, not implied"
@@ -332,12 +331,12 @@
 (check-pred "the commune plans with its transport arm seeded and its modes installed"
             (> (or (assq-ref plan 'met) 0) 0.0))
 (check-pred "…and the shed's seven modes and the baseline car really are in the engine after the solve"
-            (= 8 (length (engine '*mode-recipes*))))
+            (= 8 (length *mode-recipes*)))
 (check-pred "…with every mode's Valhalla costing"
             (every (lambda (m) (member (mrec-manner m) '("pedestrian" "bicycle" "bus" "multimodal" "auto")))
-                   (engine '*mode-recipes*)))
+                   *mode-recipes*))
 (check-pred "…and the arc table survived the robust branch, so routing beats geometry"
-            (equal? 0.25 (hash-ref (engine '*arc-hours*) probe-arc #f)))
+            (equal? 0.25 (hash-ref *arc-hours* probe-arc #f)))
 ;; the band dial reaches the live solve the same way: a day declared as three
 ;; bands (08–11, 11–13, 13–16) is three periods, each its own hours — what lets
 ;; a mover make two hops in one day (discrete-records-test §7b)
@@ -350,7 +349,7 @@
                        ("2026-08-17T13:00" . "2026-08-17T16:00"))
       #:demand (list (cons "food#berlin-commune-farm@0" 20000.0)))))
 (check-pred "a declared partition of bands is the live solve's periods"
-            (and (assq 'met banded) (equal? '(0 1 2) (engine '*periods*))))
+            (and (assq 'met banded) (equal? '(0 1 2) *periods*)))
 (check-pred "…each band its own hours: the midday band is two"
             (and (= 3.0 ((engine 'period-hours) 0)) (= 2.0 ((engine 'period-hours) 1)) (= 3.0 ((engine 'period-hours) 2))))
 

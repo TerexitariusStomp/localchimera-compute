@@ -7,10 +7,11 @@
 ;;;   4. Transactional: reserve + record-event in one vat turn
 ;;;   5. Persistence round-trip
 
+(use-modules (playnet solve world))
 (use-modules (playnet test harness))
 (use-modules (playnet observation live-registry) (playnet observation live-resource) (playnet scope root) (playnet vf schemas))
 (use-modules ((playnet solve engine)          ; the ingest door, for the
-              #:select (declare-world! ingest-stock! *cap* lg cell))  ; live-avail composition check
+              #:select (declare-world! ingest-stock! lg cell))  ; live-avail composition check
              ((playnet solve compile) #:select (svc-good)))
 (use-modules (goblins)
              (goblins persistence-store memory)

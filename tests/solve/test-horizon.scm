@@ -12,7 +12,7 @@
 ;;; Run:  tools/test/run-suite.sh tests/solve/test-horizon.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine)
+(use-modules (playnet solve engine) (playnet solve world)
              (playnet vf schemas)
              (playnet knowledge dsl shorthand))
 

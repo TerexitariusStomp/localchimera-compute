@@ -26,7 +26,7 @@
 ;;;        tests/solve/test-foodsharing-credential.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine))
+(use-modules (playnet solve engine) (playnet solve world))
 (use-modules (playnet knowledge recipes foodsharing-kit))
 
 (define *pass* 0) (define *fail* 0)

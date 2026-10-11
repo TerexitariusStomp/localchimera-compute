@@ -11,7 +11,7 @@
 ;;;
 ;;; Run: guile -L module tests/knowledge/test-comms-recipes.scm
 
-(use-modules (playnet test harness) (playnet knowledge recipes store) (playnet vf schemas)
+(use-modules (playnet solve world) (playnet test harness) (playnet knowledge recipes store) (playnet vf schemas)
              (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1) (ice-9 format))
 
 (define here (dirname (current-filename)))

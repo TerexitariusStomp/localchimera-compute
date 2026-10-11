@@ -16,7 +16,7 @@
              (playnet test books)
              (playnet vf schemas) (srfi srfi-1) (srfi srfi-11)
              (playnet scope live)
-             (playnet solve engine) (playnet solve compile) (playnet solve solver)
+             (playnet solve engine) (playnet solve world) (playnet solve compile) (playnet solve solver)
              (goblins) (goblins vat) (goblins persistence-store memory) (goblins utils hashmap)
              (srfi srfi-1))
 

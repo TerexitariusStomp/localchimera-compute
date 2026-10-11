@@ -20,7 +20,7 @@
 
 (use-modules (playnet test harness)
              (playnet knowledge dsl shorthand)
-             (playnet solve engine)
+             (playnet solve engine) (playnet solve world)
              (playnet solve compile)
              (playnet vf schemas)
              (srfi srfi-1))

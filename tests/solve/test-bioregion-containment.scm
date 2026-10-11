@@ -19,7 +19,7 @@
 
 (use-modules (playnet knowledge dsl shorthand))
 (use-modules (playnet test planner prelude)
-             (playnet solve engine)
+             (playnet solve engine) (playnet solve world)
              (playnet solve compile)
              (playnet vf schemas)
              (playnet knowledge worlds bioregions)

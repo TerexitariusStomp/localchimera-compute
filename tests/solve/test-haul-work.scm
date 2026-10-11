@@ -21,7 +21,7 @@
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness)
              (playnet knowledge recipes transport) (playnet solve compile) (playnet vf schemas) (srfi srfi-1)
-             (playnet solve engine)
+             (playnet solve engine) (playnet solve world)
              (playnet solve compile)
              (playnet solve solver)
              (playnet vf schemas)

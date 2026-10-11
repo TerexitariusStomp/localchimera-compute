@@ -15,7 +15,7 @@
 ;;; Run:  tools/test/run-suite.sh tests/solve/test-commute-located.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine))
+(use-modules (playnet solve engine) (playnet solve world))
 
 (define (run tau)
   (declare-world! #:places '(("A" 0.0 0.0) ("B" 0.0 0.9))   ; ~100 km east of A

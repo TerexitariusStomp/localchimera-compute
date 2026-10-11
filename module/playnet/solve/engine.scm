@@ -28,8 +28,10 @@
 ;;; §8 reserve tranche + EMP labour        (§9 scenarios → demo.scm)
 
 ;; The engine is a MODULE (phase 3 of the engine-as-module arc). Its mutable
-;; world — the 71 globals — stays inside, boxed by the engine's own assignments
-;; (plus set-dial! for the governed dials). The export list is the
+;; world — the tables `reset!` clears — is ONE context in solve/world.scm, held
+;; in a cell and read and written by name from here and from every module that
+;; imports a name; what `reset!` leaves standing (the dials, the memos, the
+;; tolerances) is the engine's own. The export list is the
 ;; MEASURED interface: every top-level name some file outside the engine family
 ;; references — every test, bench and demo imports this module by name — plus
 ;; set-dial! kept deliberately. The tests' double-loads of engine/robust.scm are
@@ -41,9 +43,9 @@
 ;; is the door every world comes through — a test's or bench's fixture, the
 ;; worked example's setup-*, and the records: ingest-located! derives its
 ;; declaration from the resources, agents and spatial things and calls it. So
-;; the globals it fills (*places*, *periods*, *cells*, *latlon*, *movable*,
-;; *storable*, …) are assigned in that one place — world-door-test reads the
-;; source and says so — and a global still exported is one some caller READS.
+;; the world's fields it fills (*places*, *periods*, *cells*, *latlon*,
+;; *movable*, *storable*, …) are assigned in that one place — world-door-test
+;; reads the source and says so.
 ;; What is written onto a standing world afterwards is a layering, and goes
 ;; through its door: set-templates!, set-dial!, adopt-container-pools!,
 ;; workers->riders!, absorb-specs!, the manners bag.
@@ -69,6 +71,7 @@
 (define-module (playnet solve engine)
   #:re-export (svc-good? lab-good svc-good)   ; the bar-key grammar's, read here and by the engine's importers (facts/located)
   #:use-module (playnet vf formulas flows)
+  #:use-module (playnet solve world)
   #:declarative? #f
   #:use-module (srfi srfi-1)
   #:use-module ((playnet utils alist) #:select (assv-replace assoc-replace))
@@ -119,37 +122,36 @@
                calibrate-shocks observed-shocks scenario-with-shocks certainty-equivalent-scenario)
   #:use-module ((playnet utils records) #:select (vf-record-type vf-record-constructor vf-record-predicate vf-record-accessor vf-record-modifier vf-record-type-name vf-record-type-fields))
   #:use-module (playnet vf aggregation containment)
-  #:export (key-spec owned-spec spec-owner spec-base unowned-demand want-as-cap? set-cap-scale! cap-scale-of *desire-w0* *A* *default-agent-hours* absorb-specs! add-trainable! adopt-container-pools! agent-window-hours allocate-means-consensus
-            *arc-hours* arc-hours arc-net-km   *band* *base-templates*
-            batch-keys *bnb-nodes* build-columns build-located *cap* carried-forward
-            *budgeted-floors* plan-bills bills-fold tier-shape acquire-bill bill-net located-bill *acquire* *promote* chain-duration-gaps close-elements! template-creates template-at-edge? col-flows col-key col-labour
-            column-terms build-terms *col-terms* *scope-path*
-            *voice-tau* *voice-pushes* *voice-hours* *voice-stances* *col-ell* column-labour-hours svc-spec
-            col-value commune->scope-record *commute-hours* *commute-manner* *composition* *contained* *container-pools*
-            cost-of-config dates-through declared-clock-boundaries declared-partition  declare-whole! declare-proc-frag! *proc-frag* *legal-frag* legal-frag-forms
-            *why-not* why-not why-not-tally *avail-factor*
-            *requires* requirements unmet req-kind req-name req-met? requirements->wire
-            declare-workers! declare-world! *demand* *desire-weight* discrete-declared? *eco-couple* *couplings* coupling-table register-coupling! element-closure-on? *climb-per-km* arc-climb-m arc-climb-km
-            *emp-mode* *emp-rho* federated-materials federated-per-scope federated-relaxed-scopes federated-solve federated-flows loose-gives close-stranded-links federated-scope-pulls federated-delivered federated-withdrawal-displacement federated-result eisenberg-gale-split warm-boundary-flows boundary-bounds federated-dilemma
+  #:export (key-spec owned-spec spec-owner spec-base unowned-demand want-as-cap? set-cap-scale! cap-scale-of *desire-w0*  *default-agent-hours* absorb-specs! add-trainable! adopt-container-pools! agent-window-hours allocate-means-consensus
+             arc-hours arc-net-km    *base-templates*
+            batch-keys *bnb-nodes* build-columns build-located  carried-forward
+             plan-bills bills-fold tier-shape acquire-bill bill-net located-bill   chain-duration-gaps close-elements! template-creates template-at-edge? col-flows col-key col-labour
+            column-terms build-terms
+                 column-labour-hours svc-spec
+            col-value commune->scope-record
+            cost-of-config dates-through declared-clock-boundaries declared-partition  declare-whole! declare-proc-frag!   legal-frag-forms
+             why-not why-not-tally
+             requirements unmet req-kind req-name req-met? requirements->wire
+            declare-workers! declare-world!   discrete-declared?   coupling-table register-coupling! element-closure-on? *climb-per-km* arc-climb-m arc-climb-km
+             *emp-rho* federated-materials federated-per-scope federated-relaxed-scopes federated-solve federated-flows loose-gives close-stranded-links federated-scope-pulls federated-delivered federated-withdrawal-displacement federated-result eisenberg-gale-split warm-boundary-flows boundary-bounds federated-dilemma
             crossing-recipe record-crossings record-plan first-stage-activity  *flows*
-            *frag-budget*  *frag-cap*  *frag-container*
 
-               *frag-prior*  *frag-spec*
-            frag-tip *frag-within*  good-labour-content good-level good-pulls  ingest-located!
-            ingest-records! ingest-stock! make-stock-key stock-vocabulary person-set refused-stock ingest-travel-times! *init*  km labour-pulls
-            *legal-decorate*  located-solve located-warm make-band  *manner-pace*
-            *material-manner* *mbq-procs* *millb-template* *mobile-people?* *neighbours* node-fractional
-            node-solve parity-assert *period-class-of* period-dates
-             *periods*   *places* plan-from-records plan->material plan-runs plan-robust-from-records
-            plan->work  *proc-skill* *raws* records-means-world refine-spans
+
+            frag-tip   good-labour-content good-level good-pulls  ingest-located!
+            ingest-records! ingest-stock! make-stock-key stock-vocabulary person-set refused-stock ingest-travel-times!   km labour-pulls
+            *legal-decorate*  located-solve located-warm make-band
+              *millb-template*   node-fractional
+            node-solve parity-assert  period-dates
+                 plan-from-records plan->material plan-runs plan-robust-from-records
+            plan->work    records-means-world refine-spans
             relaxed-bound report-discrete report-located reset! resource-place resource-resolver resource-window-hours
-            *mode-recipes* mrec-name mrec-rp mrec-flows mrec-skill mrec-manner mrec-pace means-ride? rider-hours *riders* route-fragility!
+             mrec-name mrec-rp mrec-flows mrec-skill mrec-manner mrec-pace means-ride? rider-hours  route-fragility!
             set-dial!   set-skill-spec! set-competence! apply-skill-dynamics! setup-batch setup-recipe setup-reserve
             setup-space setup-time set-worker-pref! *pref-bound* skilled-worker-at?
-            solve* solve-decomposed make-boundary-oracle solve-consensus solve-discrete solve-located solve-report *span-of*  spec-skips-balance?
-            spec-stationary? *stationary* stock->flow store-recipe *supplier-bundles* svc-held? svc-hours-factor
-            *tau-commute* temporal-target tension-duals  Tkey topo-order vf-agent-skills whole-atoms-of
-            whole-col? *whole-procs* *willing?* window-hours with-col-bounds! with-col-fixed! apply-repro-bands! set-promote! set-willing! set-legal-decorate! set-acquire! repro-bands worker-ledger *workers* %world-keywords inert-caps))
+            solve* solve-decomposed make-boundary-oracle solve-consensus solve-discrete solve-located solve-report   spec-skips-balance?
+            spec-stationary?  stock->flow store-recipe  svc-held? svc-hours-factor
+             temporal-target tension-duals  Tkey topo-order vf-agent-skills whole-atoms-of
+            whole-col?   window-hours with-col-bounds! with-col-fixed! apply-repro-bands! set-promote! set-willing! set-legal-decorate! set-acquire! repro-bands worker-ledger  %world-keywords inert-caps))
 
 ;; the batched kernel solve below crosses the FFI; Hoot has none (see the cond-expand there)
 (cond-expand (guile (use-modules (system foreign))) (else))
@@ -165,7 +167,6 @@
         (cond ((> (+ i m) n) #f)
               ((string=? (substring s i (+ i m)) pat) i)
               (else (loop (+ i 1)))))))))   ; a page has no process environment; the PLANNER_* switches read as unset
-
 
 ;; The VF records. They MUST be the same record types the observer uses — this
 ;; engine gets loaded into modules that already import (playnet boot prelude) (live.scm
@@ -188,7 +189,6 @@
 ;; tension-registry actor. One definition, not the same formulas hand-copied
 ;; across term-coeffs / csr-grad / obj-value (and their kernel.c twins).
 
-
 ;; ════════════════════════════════════════════════════════════════════════════
 ;; §0–§4 — THE CONVEX SOLVER
 ;; ════════════════════════════════════════════════════════════════════════════
@@ -207,13 +207,11 @@
 ;; an interface. Unconditional: an import is all-or-nothing, and the old
 ;; (unless (defined? 'solve-native) …) guard probed one name for 181.
 
-
 ;; §5 — THE VF COMPILER. It lived in a fragment because BOTH this engine and the
 ;; umbrella needed it and neither could import it — "same text, both loaders",
 ;; which meant two copies of *templates* and a caller's choice of loader
 ;; deciding which one it got. A module ends that: one variable, both loaders,
 ;; each importing it the way its own mechanism allows.
-
 
 ;; THE WORKED EXAMPLE, and the fixtures built on it. A bread chain and two rival
 ;; mills: the specimen this engine was written against, and still the shared
@@ -286,43 +284,7 @@
            (not (member (svc-spec good) (proc-timed-svc tpl))))
       (period-hours t)
       1.0))
-;; the per-flow factor a branch (engine/robust.scm) or a site puts on a column's
-;; flows, consulted as (action proc-id spec t place): the PLACE is the tiled
-;; column's own, so a shock may name a located act — one district's harvest
-;; lost — while the recipe stays the one location-agnostic template VF means
-;; it to be. Identity outside a branch.
-(define *flow-period-factor* (lambda (action proc-id spec t place) 1.0))
-;; a branch's RAW-SUPPLY view, the same seam one level down: consulted only
-;; where a cap becomes a form CONSTANT (build-located), never where pruning
-;; reads reachability — so an avail shock reshapes what a branch may draw
-;; without ever reshaping which columns exist. Identity outside a branch.
-(define *avail-factor* (lambda (located-good) 1.0))
-(define *places* '()) (define *periods* '(0)) (define *cells* '())
-(define *spatial-things* '())   ; the containment tree, as ingested — read by `within` fragilities
-(define *movable* '()) (define *storable* '()) (define *tau* 0.0) (define *hold* 0.0)   ; τ = 0 by default: a declared-movable good carries free between neighbours, logistics abstracted by choice; a scope that wants the haul felt sets τ (hours per unit per km)
-(define *neighbours* (make-hash-table))   ; place -> (adjacent-place …): the transport NETWORK. Spatial moves run only along declared edges, so transport is O(P·degree) not O(P²). A place with NO entry is connected to ALL (the default — legacy fully-connected behaviour with nothing declared).
-(define *stationary* '())   ; specs whose ResourceSpecification.keepInPlace is set (warehouse/silo/shelf …) — an explicit FIELD, not a classifiedAs tag, and NOT an absolute "unmovable". It only says: USING this thing as a container keeps its contents in place (a through-TIME move = storage), whereas using a vehicle moves them through SPACE. Nothing is truly immovable — relocating the warehouse ITSELF is just a different recipe in which the warehouse is the cargo. Default: every spec is mobile; the arc (space vs time) is DERIVED from the container the recipe uses, never marked on the recipe.
-(define *demand* (make-hash-table)) (define *A* (make-hash-table))
 ;; ── THE PLAN ASKED BACKWARDS: what it would take ─────────────────────────────
-;; *acquire* names what the plan MAY bring in from outside the scope, and its
-;; price in hours per unit: ((selector . hours) …). A selector is a spec, a
-;; skill, "labour" (every labour row), or #t (every drawn row). Each drawn row
-;; something sells gets one ACQUIRE column — +1 on the row, priced in the
-;; labour form — so the solve buys exactly what the walls it holds require and
-;; nothing else. *promote* names the tier held as a wall — 'rights (the floors
-;; alone; held margins and wants dropped), 'needs (held margins at their ease
-;; as walls too; wants dropped), 'wants (every want at its ask as a wall too) —
-;; so a tier's bill is exactly that tier, and a cheap want is never bought under
-;; the rights bill. 'none holds nothing at all — no floor poured, no margin, no
-;; want — and is the RESIDUE the bills are read against: a barrier solve sits a
-;; little inside every wall, so even a program with nothing to hold buys a
-;; little; what the walls made it buy is the difference (bill-net).
-;; #f is the ordinary solve: floors hard, the rest soft.
-;; The report reads the acquire columns back as a BILL,
-;; and `plan-bills` runs the three tiers. Ecological walls take no acquire
-;; column unless named: what nature bounds is what the bill cannot buy.
-(define *acquire* '())
-(define *promote* #f)
 ;; THE TIER TABLE: what shape each tension takes under the tier held. A floor is
 ;; a wall in every tier and poured in none of 'none; a held margin is a wall at
 ;; its ease from 'needs up; a want a wall at its ask under 'wants alone; the
@@ -339,11 +301,6 @@
       (list-ref (assq-ref %tier-shapes kind)
                 (case *promote* ((none) 0) ((rights) 1) ((needs) 2) ((wants) 3)
                   (else (error "tier-shape: no such tier" *promote*))))))
-(define *acquire-cost-of* (make-hash-table))   ; acquire column key → hours per unit
-(define *acquired-keys* (make-hash-table))     ; located row → #t when an acquire column feeds it
-(define *cap* (make-hash-table)) (define *init* (make-hash-table)) (define *latlon* (make-hash-table))
-(define *alt* (make-hash-table))          ; place → altitude, metres, from the SpatialThing that states one
-(define *frag-cap* (make-hash-table))   ; located-good -> (lo hi alpha w): a FRAGILITY barrier (frag) instead of a hard cap — tip placed precautionarily inside the science range [lo,hi] at quantile_alpha, felt before the limit (fixed weight w), never crossed. See docs/planning/solve/possibility-tensions-unified.md.
 (define (quantile alpha lo hi) (+ lo (* alpha (- hi lo))))   ; place the tip in the science range: alpha=0 ⇒ lo (most precautious), 0.5 ⇒ central
 (define (frag-tip fc) (apply (lambda (lo hi alpha w) (quantile alpha lo hi)) fc))   ; s_tip — the barrier's divergence point, and the raw's draw ceiling for reachability
 (define (frag-w fc)   (apply (lambda (lo hi alpha w) w) fc))                         ; the fixed governance weight of a fragility profile
@@ -351,16 +308,6 @@
   (- (frag-tip profile) (hash-ref *frag-prior* key 0.0)))
 (define (frag-barrier profile coeffs key)                                            ; a frag barrier at the remaining headroom over a pressure vector: slack = headroom + Σ coeffs·x = headroom − incremental draw
   (mk-frag (frag-headroom profile key) coeffs (frag-w profile)))
-(define *frag-budget* (make-hash-table))   ; bare spec -> (lo hi alpha w): a CUMULATIVE fragility budget — ONE barrier on the spec's TOTAL draw summed across periods/places (the Time coordinate, "max is a no-op" case). vs *frag-cap*, which is per-period.
-(define *eco-couple* (make-hash-table))    ; k-spec -> ((j-spec . c) …): the cascade matrix C (drawing agent j stresses agent k by c). A frag-capped agent reads its EFFECTIVE pressure p = (I−C)^{-1}·draw (the Space coordinate). ρ(C) < 1. Kept its own global (not in *couplings* below): a barrier-bounded spec is EXEMPT from the ordinary ≥0 balance entirely (barrier-bounded?, emit-frag!), a role no other coupling carries — folding it into the generic registry would either give every future coupling that exemption by accident or need an exception rule forever.
-;; *couplings*: name (a symbol) -> a coupling hash (k-good -> ((j-good . c) …)), the
-;; SAME cascade as *eco-couple* for goods whose balance stays ORDINARY — a coupled
-;; good still gets its usual mk-bar/mk-frag, only the COEFFICIENTS feeding it are
-;; propagated first. One registry for however many such couplings a solve carries;
-;; register-coupling! is the one door in, coupled-coeffs (build-located) the one
-;; door out. Two today (nutrient bioavailability, skill cross-training); a third
-;; costs this registry a new NAME, never new engine code.
-(define *couplings* (make-hash-table))
 (define (coupling-table name)                      ; NAME's own hash, creating it empty on first touch
   (or (hash-ref *couplings* name #f)
       (let ((h (make-hash-table))) (hash-set! *couplings* name h) h)))
@@ -370,14 +317,6 @@
 (define (register-coupling! name triples)
   (let ((h (coupling-table name)))
     (for-each (lambda (e) (hash-set! h (car e) (cons (cons (cadr e) (caddr e)) (hash-ref h (car e) '())))) triples)))
-(define *stock-frag-w* (make-hash-table))   ; spec -> w: a limit carried as a STOCK whose ≥0 balance is a
-;; FRAGILITY rather than an ordinary bar. The two differ only in weight (see §1: frag is "like bar but
-;; FELT AT THE OPTIMUM"), and a limit needs BOTH properties at once — a level that falls and rises, and a
-;; fixed governance weight so the plan eases off before the wall. Carrying it as a stock alone would
-;; silently swap the fixed weight for the swept one and ride the boundary to its edge.
-(define *frag-prior* (make-hash-table))    ; located-good | spec -> the OBSERVED draw already committed toward the tip (the Time "memory", read from the observer each solve). The barrier baseline becomes s_tip − prior, so the plan's draw is INCREMENTAL from where we already are; past degradation is already baked in. Default 0 (fresh).
-(define *frag-spec* (make-hash-table))      ; bare spec -> (lo hi alpha w): a per-period fragility applied at EVERY cell the spec is drawn (a planetary-boundary RATE — vs *frag-cap*, one located-good, and *frag-budget*, the horizon sum).
-(define *band* (make-hash-table))   ; located-good -> (floor ceiling w): a REPRODUCTION BAND — the two walls a good's level is held between, and the weight the walls are felt at. Walls are read on the level AS IT STANDS after the pour (apply-repro-bands! takes every floor's need off the on-hand first, so a want counts above it).
 ;;   floor    #f | lo | (lo hi alpha)  bare need. A number is a HARD floor at lo: a deficit on the good's on-hand, held by the ≥0 balance every good carries (no
 ;;                                     extra term). A profile (lo hi alpha) is a floor WITH A MARGIN — the calamity reserve q_r^"res" of playnet.typ §Reproduction
 ;;                                     labour: `held`, divergent at lo so nothing crosses it, satiating at quantile_alpha of [lo,hi] so nothing is over-made for it.
@@ -394,48 +333,7 @@
 ;; side is 'floor (engine/fragility.scm).
 (define (band-floor b) (car b)) (define (band-ceiling b) (cadr b)) (define (band-w b) (caddr b))
 (define* (make-band #:key (floor #f) (ceiling #f) (w 1.0)) (list floor ceiling w))
-(define *frag-container* (make-hash-table))  ; container -> (lo hi alpha w): a fragility on an ECOLOGICAL CONTAINER (Amazon, a watershed) — its barrier reads draws on everything contained-in it. The containment hierarchy IS the cascade, for free.
-;; The COMMONS scale: named specs summed over every cell AT OR UNDER a place in
-;; the containment tree. `*frag-container*` reads its contents at the container's
-;; OWN cell, so two farms inside one watershed drawing `water#farm-a@t` and
-;; `water#farm-b@t` are invisible to a barrier on the shed — measured, not
-;; supposed. This table is what lets the shed feel the sum, which is what
-;; playnet.typ §bioregion asks of custody: the over-draw is felt by exactly the
-;; scope that can ease it. Keyed container -> (profile specs window).
-(define *frag-within* (make-hash-table))
-(define *container-pools* '())  ; suppliers ingest DERIVED from containment: a means held at a
-;; container place serves everywhere under it, out of ONE pool per period. Collected during
-;; ingest-stock! and appended to *resource-suppliers* after the caller's own (ingest-located!),
-;; because a shared bar is the only form that says "spendable here OR there, bounded in total" —
-;; a per-cell *cap* can only repeat the number at each place, which is that much capacity again.
-(define *contained* (make-hash-table))       ; container -> (spec …): which specs are contained-in each container (built at ingest from EconomicResource.contained-in). A contained resource's PLACE is where the chain finally says it is (resource-place walks it).
-;; SPAN is governed, LOCATION is fact (docs/planning/federation/patchwork-scopes-containment.md
-;; §2.3): where a means sits is the world's answer; how far its service pools is an
-;; allocation decision. *span-of* carries that decision — resource-id → the place its
-;; pool is constituted at — and the pool-builder reads it in place of the holding
-;; place. Absent ⇒ the holding place, the exact behaviour spans always had. The
-;; resource's own location is never touched: a lathe can sit in the workshop and
-;; serve the town, and reach − span stays a readable withholding figure. Governance
-;; fills this from scope-signed span declarations; the planner only reads it.
-(define *span-of* (make-hash-table))         ; resource-id -> place-id: the declared span of its service pool
 (define (hash-add! tbl key delta) (hash-set! tbl key (+ (hash-ref tbl key 0.0) delta)))   ; accumulate: tbl[key] += delta (0 default)
-(define *never-raw* (make-hash-table))   ; specs that are ALWAYS goods (money, credit) — never a FREE raw: with no producer and no stock their balance is 0, so the chain dies cleanly (no eco-cap workaround)
-;; FAIL-CLOSED default: a good is a GOOD (balanced ≥0 — must be produced or in
-;; stock) UNLESS it is a STRUCTURAL pool (Lab|/Svc|, generated by the planner) or
-;; the scope explicitly lists its spec in *raws* as a genuine ambient/imported
-;; leaf. So an unmodelled input no longer conjures itself for free — it dies,
-;; loudly, like a missing recipe. A stocked leaf is bounded either way (its stock
-;; routes to *init* as a good, or to *cap* as a raw); only an UNstocked, unproduced,
-;; unlisted spec changes behaviour (free → dead), which is exactly the footgun.
-;; *raws* is NOT a grab-bag of "things we don't model". A free raw is an
-;; EXTERNALITY — a good drawn with no producer, no stock, no labour, no barrier:
-;; the free appropriation of nature the metabolic-rift accounting exists to CLOSE.
-;; So it is reserved for genuinely BOUNDLESS ambient flows (sunlight, rainfall) that
-;; no reproduction bounds. Anything finite — soil, forest, an aquifer, a CO₂ sink —
-;; is NOT a raw: it is a stock (drawn + regenerated, stocks.scm) or a barrier-bounded
-;; draw (a fragility), both of which the plan accounts for. Kept rare, and surfaced
-;; by RAW-LINT so every externality is a conscious choice, never a silent default.
-(define *raws* (make-hash-table))        ; spec -> #t : the boundless-ambient-flow allow-list
 ;; the two boundless ambient flows the paragraph above names, a raw in every world by
 ;; construction: sunlight, the low-entropy source every leaf runs on, and the
 ;; surroundings' heat at T₀ that a heat pump draws and a cooling form sheds. The
@@ -542,43 +440,8 @@
        (not (hash-ref *never-raw* spec #f))
        (or (structural-raw? spec) (svc-held? spec) (barrier-bounded? spec) (hash-ref *raws* spec #f))
        #t))
-;; (material loss is no longer a per-good rail: transit-loss / spoilage are a `consume` on the HAUL /
-;;  STORE recipe — sized by the recipe, like wear is a consume of a durable's condition. See store-recipe.)
-;; WEAR → MAINTENANCE needs no special state.  A durable's CONDITION is a stock GOOD (Cond|durable):
-;; per-recipe wear is a `consume` flow (its quantity = the manner — high for a searing bake, low for a
-;; gentle one), maintenance a `produce` flow.  `Cond|durable` made *storable* carries the health forward;
-;; its onhand (a `use`d durable's level bounds the labour drawn) is just the good's starting *init*.
-(define *mbq-procs* (make-hash-table)) (define *config* 'all)
-(define *reserve* (make-hash-table))  ; located-good -> (extra-target . weight): the low-priority tranche
-;; PRIORITY of a desire — its weight w_d in the harmony objective Σ w_d g_d² (the
-;; squared-gap penalty). A higher weight is filled first and shed last: this is what
-;; lets the plan "under-serve cake to serve medicine". *desire-weight* maps a located
-;; good → its w_d; build-located reads it, defaulting to the standard *desire-w0* when a
-;; good is absent (so an unprioritised plan is uniform — every want equally loud). The
-;; canonical level→weight policy is geometric: w_d = β^ℓ_d with β⁹ ≈ 1000, so a level-9
-;; want weighs ~1000× a level-0 one. The engine only consumes the WEIGHTS; producing
-;; them from governed priority LEVELS (the eventual UI/governance feed) is the caller's
-;; job — priority-weight (tension-kinds.scm) is the one place that mapping lives.
-(define *desire-weight* (make-hash-table))   ; located-good -> w_d (absent ⇒ *desire-w0*)
 (define *desire-w0* 1000.0)                   ; one citizen's whole emphasis (solve/emphasis.scm) — and the weight of a want nobody has weighted at all
 ;; ── PER-AGENT LABOUR (the §8 fold): an agent's time is a located-dated good ─────
-;; When *workers* is set, labour stops being a fungible per-cell cap and becomes a
-;; GOOD `Lab|skill|cell`: each worker SUPPLIES it (a column producing it, capped by
-;; their hours, with a convex EMP congestion cost ρ·(util²) — utilization-normalised
-;; so it equalises the FRACTION of offered time each worker gives, scale-free and
-;; bounded by ρ, never trading against demand; see build-located); each process
-;; CONSUMES it for its skill. Skill = the incidence
-;; (a process runs at a cell only where a worker of its skill is present); EMP =
-;; the qc term; "who works which slot" = the worker-column levels. Empty ⇒ the
-;; aggregate *A* path (the demos) is unchanged.
-;; *workers* entry = (id skills cell hours): an agent holding (possibly several)
-;; skill ERs — VF: a skill is an EconomicResource conformsTo a skill ResourceSpec,
-;; primaryAccountable = the agent (observer 'skills-of). A MULTI-skilled agent has
-;; ONE time budget deployed across whichever skill they work, so each skill gets a
-;; supply column but they all draw on one shared hours cap, and EMP is on the
-;; agent's TOTAL load.
-(define *workers* '())
-(define *proc-skill* (make-hash-table)) ; proc-id -> skill: OPTIONAL override of the recipe's work-flow resourceConformsTo
 (define *emp-rho* 0.05)               ; EMP congestion weight (small ⇒ equalize among equals); applied as ρ/(h_w·H) per worker so the term is ρ·util² — scale-free
 ;; THE GOVERNED DIALS, ONE WRITE: every dial scope/policy.scm registers
 ;; is set here by its registry key — by `plan-from-records` from the solve's
@@ -592,7 +455,6 @@
     ((stock-draw-hours) (set! *stock-draw-hours* v))
     ((kappa) (set-kappa! v))
     (else (error "set-dial!: no such governed dial" key))))
-(define *emp-mode* 'total)
 ;; quantity as a cap (docs/planning/solve/quantity-as-a-cap.md): a citizen's own
 ;; want (an owned good, spec-owner) is emitted as a `cap` term — pulled by
 ;; its emphasis mass alone — beside a wall at its ask, in place of the
@@ -612,7 +474,6 @@
 (define *cap-scale* (make-hash-table))   ; stands across reset!: a catalogue fact a caller states (set-cap-scale!), as *willing?* does; never a solve's own
 (define (set-cap-scale! spec c) (if (and (number? c) (> c 0)) (hash-set! *cap-scale* spec c) (hash-remove! *cap-scale* spec)))
 (define (cap-scale-of g) (hash-ref *cap-scale* (spec-base (key-spec g)) 1.0))            ; 'total ⇒ equal TOTAL burden per worker | 'pool ⇒ uniform WITHIN each skill pool
-(define *worker-pref* (make-hash-table)) ; (worker-id . skill) -> π̂ : skill-time preference (− eager, + reluctant, 0 neutral)
 (define (set-worker-pref! worker skill pref) (hash-set! *worker-pref* (cons worker skill) pref))
 ;; The who rail's bound (voice-follows-work.md open item 6, the egalitarian
 ;; matching principle): a private preference is EQUAL and BOUNDED. π̂ is read
@@ -647,13 +508,6 @@
                 (mean (if (null? skills) 0.0 (/ (fold + 0.0 (map hat skills)) (length skills)))))
            (cons (car w) (map (lambda (s) (cons s (- (hat s) mean))) skills))))
        (filter (lambda (b) (list-ref b 4)) *supplier-bundles*)))
-;; WILLINGNESS GATE: (worker-id skill cell) -> bool. Default #t (every reachable worker is a
-;; candidate — today's behaviour). The solver-offers-first loop runs TWO solves of the SAME
-;; program: an UNGATED one (this returns #t everywhere) yields the EMP-fair candidate FIELD = the
-;; offer; a GATED one (only status=willing) yields the budget-bounded MATERIALIZED assignment.
-;; It only decides which w|id|skill|cell columns may carry flow — the single bundle hour-cap then
-;; bounds materialization, EMP spreads it fairly, *worker-pref* tilts within the willing set.
-(define *willing?* (lambda (worker skill cell) #t))
 ;; LEGAL gate (§6 legal-crossings.md): a derived `forbid` (or unmet credential)
 ;; prunes the activity's column — the same mechanism that prunes a recipe with
 ;; no skilled worker. (process-id, cell) → #t ⇒ forbidden here. Default no-op,
@@ -671,20 +525,7 @@
 (define (set-willing! f) (set! *willing?* f))
 (define (set-legal-decorate! f) (set! *legal-decorate* f))
 (define (set-acquire! v) (set! *acquire* v))
-(define *commute-km* 0.0)             ; how far a worker may COMMUTE to work (0 ⇒ home cell only)
-(define *tau-commute* 0.0)            ; commute cost per km (penalises distant work in the free-time term)
 ;; ── ARC-TIME TABLE: real network travel time, when known ─────────────────────
-;; "from-place|to-place|manner" → HOURS, poured by ingest-travel-times! from the
-;; merged table (Valhalla matrix priors ⊕ observed-trip EWMA — see solve/routing.scm).
-;; Every spatial call site reads it through `arc-hours`, falling back to its
-;; existing rate×haversine when the key is absent — so an EMPTY table reproduces
-;; today's numbers exactly, and a populated one swaps geometry for the road
-;; network without touching any other coefficient. Manners are Valhalla
-;; costings ("pedestrian" "bicycle" "auto" "bus" "multimodal").
-(define *arc-hours* (make-hash-table))
-(define *commute-manner* "pedestrian")  ; manner of the worker commute (sites: reachability, hrs-coeff)
-(define *material-manner* "auto")       ; manner of bare τ·km material moves
-(define *commute-hours* #f)             ; opt-in TIME reachability gate (#f ⇒ the km gate, today's behaviour)
 ;; THE CLIMB. An arc a→b rises what b stands above a (the places' stated altitudes,
 ;; *alt*), and lifting a load costs m·g·h beyond the road. Each manner states how
 ;; many metres of climb cost what a kilometre of level road does — the reciprocal
@@ -700,109 +541,18 @@
     (if (and za zb) (max 0.0 (- zb za)) 0.0)))
 (define (arc-climb-km a b manner)         ; the climb as the kilometres of level road it costs
   (/ (arc-climb-m a b) (or (assoc-ref *climb-per-km* manner) (assoc-ref *climb-per-km* "auto"))))
-;; The runs a plan's relocations are: run id → the recipe process (or mode) it is an instance of,
-;; #f when no recipe stands behind it. A plan's material rows name a run as their process, and a
-;; confirmation reads what the run is an instance of from here. Filled by plan->material.
-(define *runs* (make-hash-table))
 (define (run-id of org dst)             ; a run of OF (a recipe's process, or the good a bare carry moves) between two cells
   (keyed-id "run" of org dst))
 (define (plan-runs)
   (sort (hash-map->list cons *runs*) (lambda (a b) (string<? (car a) (car b)))))
-(define *manner-pace* '())              ; manner → typical hours/km, the median of the table's (hours . km)
-                                        ; entries (ingest-travel-times!), for GENERIC transport recipes'
-                                        ; time-like flows (a travel mode states its own pace — mrec-pace);
-                                        ; empty ⇒ those recipes stay geometric (parity)
-(define *period-class-of* (lambda (t) #f))  ; period → period-class ("wd-am"…) or #f. When a class
-                                        ; names the departure period, classed table keys
-                                        ; ("from|to|manner|class": rush-hour transit ≠ 3am) are
-                                        ; preferred over the manner-wide entry. Default #f ⇒ the
-                                        ; 4th key segment stays dormant — parity.
-(define *supplier-bundles* '())         ; per SUPPLIER: (id budget place ((col-key cell coeff) …) labour?) — built in build-columns; a supplier is a worker (labour? #t, budget = hours) OR a means (labour? #f, budget = the service it renders)
-;; `budget` is a BUDGET in the exact sense (utils/capacity.scm): one Σ bar over every
-;; entry, so it is fungible across whatever cells they cover. With entries in one cell
-;; that is indistinguishable from a ceiling there; with entries spanning cells it is
-;; the thing a plain `*cap*` cannot express — spendable HERE or THERE, bounded in total.
-;; A substitutable MEANS as a supplier: (id closure-specs cell|cells capacity durable?).  It
-;; offers the CONFORMANCE CLOSURE of its spec (already closed live-side, exactly as a
-;; worker's `skills` field is), capped by ONE shared capacity — the instrument twin of
-;; the worker bundle.  durable? routes the good: a durable is `use`d and supplies the
-;; per-period SERVICE `Svc|spec`; a stock is `consume`d and supplies the bare `spec`.
-;; A non-substitutable means has a singleton closure ⇒ one supply column ⇒ the solve is
-;; byte-identical to a plain eco-cap; only declared substitutes change anything.
-(define *resource-suppliers* '())
 (define (workers?) (pair? *workers*))
 ;; lab-good, svc-good?, pres-good, credit-good? and the rest of the bar-key grammar:
 ;; (playnet vf facts located), the one builder and reader of every key
 (define (svc-spec g) (bar-spec g))
 ;; ── WORKER-AS-RIDER: a mobile worker present where the plan puts them ────────────
-;; A rider's PRESENCE is a unit good Pres|w, init=1 at their base at the FIRST period;
-;; it CARRIES forward by free "stay" columns (so relocate-AND-stay falls out) and is
-;; relocated spatially by a RIDE. Labour is supplied where present (supply ≤
-;; hours·presence, gate); presence ≥ 0 ("can't send out more than you have") is auto
-;; from the goods machinery. A ride picks a travel MODE — walking, biking, a car-ride —
-;; each a transport recipe with its own vehicle (a `use`), driver (a `work`) and
-;; transit time, and each ASKING A SKILL of the mover (walking needs "walk"; someone who
-;; cannot walk simply lacks it, so the plan must route them a vehicle). Guarded by *riders*+*mode-recipes*.
-(define *riders* '())      ; (id base (skill …) hours [kind]) — mobile, presence-gated workers; the 3rd element is ONE list — the skills they work with and the skills their travel modes ask (e.g. "walk") share it, read by the SAME bare-membership rule (skilled-worker-at?, mode-ok?); hours = a number or ((period . hours) …), see rider-hours; kind = 'means marks a mobile means (mover-kind), omitted for a person/cargo rider
-;; Does this shed read its PEOPLE as movers? Off by default: handing every
-;; person's location to the optimiser is a real modelling choice, not a detail of
-;; declaring travel modes, and a scope may want modes for its FREIGHT recipes
-;; while keeping its roster where it stands. Set through the manners bag,
-;; (mobile-people . #t), beside the modes it needs.
-;;
-;; PRESENCE IS DECIDED, NOT ROUNDED. `Pres|w` is a unit good in a convex program,
-;; so its relaxation is "she is spread": measured on two places, one courier and a
-;; haul needing her skill, the relaxation put her half in each place and the two
-;; directions of the haul cancelled in the delivery balance — net delivered 0.00 at
-;; every walking pace, because the wash is symmetric in cost too. Price does not
-;; fix a wash; integrality does, and the engine states it in three physical facts:
-;;
-;;   · a mover's RIDES ARE WHOLE — `ride.<id>.<mode>` compiles as a whole-count act
-;;     (mover-ride-templates), so the discrete layer decides each move on its tree,
-;;     with the certificate that licenses it (§7);
-;;   · a mover LEAVES A CELL ONLY FROM THE PRESENCE THE BAND FOUND THERE — what it
-;;     started with, stayed into, or arrived from an earlier band (rider-forms,
-;;     departures ≤ presence-before). This closes the same-band circulation, a flat
-;;     direction the barrier would otherwise wander along; a longer journey spans
-;;     bands (the band dial);
-;;   · a mover IS ALWAYS SOMEWHERE — its presence over the cells of a band is at
-;;     least one, from the second band on (the first holds it by construction), so
-;;     no fraction of a person lapses or lingers between bands.
-;;
-;; The gate and that count read presence DURING the band — the level before its
-;; end-of-band stay-out (pres-during-coeffs) — since a person at a cell all day and
-;; there again tomorrow is fully present today. What remains a modelling choice is
-;; the scope's: reading its people as movers at all (mobile-people), and its
-;; means (a durable classified "mobile" — means->movers!). Both are bounded by
-;; movers × cells, which is small for a commune and is the honest scope limit:
-;; this is mobility for a scope with a roster, not for a national plan.
-(define *mobile-people?* #f)
-;; The travel modes of a scope: each an ordinary TRANSPORT RECIPE, held as
-;; (recipe-process flows). A recipe is a mode by its shape — it carries a
-;; `work` flow resolved from its own pickup flow: the work of the one being
-;; moved. That flow says who may travel this way (its skill, which the mover
-;; bears; the moved spec itself when anyone may) and how fast (its hours per
-;; km, the mover's own time on the way). The vehicle and a driver are plain
-;; `use` and `work` flows with per-km quantities, and the router's costing is
-;; the process's "manner:<costing>" classification. ingest-records! finds the
-;; modes among the scope's recipes; a bare fixture hands them to
-;; declare-world! (recipes/transport.scm's mode-recipe builds one).
-(define *mode-recipes* '())
 (define (riders?) (and (pair? *riders*) (pair? *mode-recipes*)))
-;; THE WORLD IS PEOPLED — somebody stands somewhere in it (declare-workers!), so
-;; its labour is theirs, however many of them have hours. Set even when the
-;; roster of hours comes out EMPTY, and that is the point: with labour routed through Lab|skill|cell GOODS, a skill nobody
-;; supplies is an unsourced input, and the prune removes every column that
-;; needs it — the one rule that already stops a recipe whose soil nobody has.
-;; Read off the roster's length instead, an empty roster (a Mon–Fri crew planned
-;; on a Saturday) fell back to the aggregate per-cell
-;; cap, where a cell with no entry carries no bar at all: a day's bread baked
-;; with nobody at work, and no work emitted to show for it.
-(define *roster-labour?* #f)
-(define *inert-caps* '())    ; the last ingest's caps that name a good no recipe touches (ingest-located!)
 (define (inert-caps) *inert-caps*)
 (define (skilled?) (or *roster-labour?* (workers?) (riders?)))          ; labour routes through Lab|skill goods (not aggregate) when EITHER is present
-(define *borne-hours* (make-hash-table))  ; (mover-id . Svc|spec) → ((period . hours) …): the capacity of what a mover BEARS — the saw in a carried toolbox
 ;; A rider's HOURS in a period: one number holds for every period; an alist
 ;; ((period . hours) …) reads each period its own — a person whose roster entries
 ;; differ by day, a means whose availability window does — and a period the alist
@@ -950,17 +700,6 @@
                          (hash-map->list (lambda (k v) v) by-id))))
       (set! *workers* (reverse stay)))))
 ;; ── SKILL DYNAMICS: a skill is labour-power, its lifecycle on the ResourceSpec ─
-;; A skill is borne by a PERSON, not stored as a good. Its lifecycle parameters
-;; live on the skill's ResourceSpecification: it DECAYS if unused, REGENERATES by
-;; participation (practising it in a work intent), and is GROWN by explicit
-;; training (labour-power development). Per (worker w, skill d, period t) we carry
-;; a competence level L_{w,d,t}; the worker may DELIVER at most L hours of d, and
-;;     L_t ≤ (1−decay)·L_{t−1} + regen·practice_{t−1} + yield·Σ train_{→t}
-;; with L_0 ≤ endowment. Training consumes a MENTOR's hours of the skill (it
-;; competes in the Lab|skill balance) plus the trainee's time. So the pull λ on a
-;; scarce skill funds its own training; because L persists in the person, one
-;; training serves every later period, idle periods decay it, practice renews it.
-(define *skill-spec* (make-hash-table))      ; skill -> #(decay regen yield lag teacher trainee endow refresh)
 (define* (set-skill-spec! skill #:key (decay 0.0) (regen 0.0) (yield 1.0) (lag 1)
                           (teacher 0.0) (trainee 0.0) (endow 0.0) (refresh 0.0))
   ;; refresh = the maintenance YIELD of a DEDICATED refresher activity: regen per hour a worker spends
@@ -973,13 +712,8 @@
 (define (sk-lag s)(vector-ref s 3)) (define (sk-teacher s)(vector-ref s 4)) (define (sk-trainee s)(vector-ref s 5))
 (define (sk-endow s)(vector-ref s 6)) (define (sk-refresh s)(vector-ref s 7))
 (define (skill-refreshes? skill) (let ((sp (skill-spec skill))) (and sp (> (sk-refresh sp) 0.0))))   ; has a dedicated refresher channel
-(define *trainable* '())                      ; (worker skill from-period mentor-skill) … who may be trained
 (define* (add-trainable! w skill from #:optional (mentor skill))
   (set! *trainable* (cons (list w skill from mentor) *trainable*)))
-;; Where a worker's competence STANDS as the horizon opens — the record's own
-;; figure (the observer's practice folded through this same law, live.scm), in
-;; place of the skill's endowment. Per (worker, skill); cleared by reset!.
-(define *competence-p0* (make-hash-table))
 (define (set-competence! w skill c) (hash-set! *competence-p0* (cons w skill) (exact->inexact c)))
 (define (competence-p0 w skill) (hash-ref *competence-p0* (cons w skill) #f))
 ;; The records door's one way to declare skill dynamics: ENTRIES ((worker skill
@@ -1231,29 +965,6 @@
 ;; stock — how much soil nitrogen exists is a different question from whether the
 ;; nitrogen leaving in products was drawn from somewhere. Two constraints, both true.
 ;; ── COMPOSITION IS PER RECIPE, and a spec-level row is the default ───────────
-;; social-material.typ: "Two ways of growing the same crop are two recipes, hence two
-;; compositions: the variable-composition problem is met at the recipe level, each
-;; recipe carrying its own composition." So a key may name a spec, or a spec IN a
-;; process — one table, one accessor, the narrower key winning:
-;;
-;;   "carrot"                    what a carrot is, by default
-;;   ("rp-grow" . "carrot")      what a carrot GROWN THIS WAY is
-;;
-;; WHICH KEY APPLIES WHERE is the whole of the mixture question, and the rule is
-;; asymmetric on purpose:
-;;
-;;   a process's OWN OUTPUTS read its per-recipe row. This recipe made this batch, so
-;;   this recipe says what the batch is.
-;;
-;;   its INPUTS read the spec-level row. A consumer draws from a POOL that may hold
-;;   output from several recipes, and the pool's per-unit composition is a ratio of
-;;   the plan's own levels — bilinear, and the pooling problem, which is not convex.
-;;   Reading inputs at the spec level is the sound RELAXATION of it: element totals
-;;   still balance, so matter is never conjured, and what is given up is per-unit
-;;   exactness about a mixture. Where that exactness matters, separate the batches
-;;   (`qualified-good` stage/state, or a lot) and each becomes its own spec with its
-;;   own row — the exact answer, in the machinery that already exists.
-(define *composition* (make-hash-table))   ; spec | (proc . spec) -> ((element . mass-fraction) …), passed in as POLICY: the engine holds no chemistry, and the recursive closure through `contains` is taken caller-side (catalogues/substances.scm `closed-composition`). Empty ⇒ element closure is off and the solve is byte-identical.
 (define (element-closure-on?) (> (hash-count (const #t) *composition*) 0))
 (define* (spec-element-fraction spec element #:optional (proc #f))
   "How much of ELEMENT a unit of SPEC carries. PROC, when given, prefers that
@@ -1353,8 +1064,6 @@
                                               els))))
                     (append (list (proc-id tpl) (append outs rows)) (cddr tpl))))))
           *templates*)))))
-;; The unit each spec counts in, ((spec . unit)) as a table: a material row states its quantity in it.
-(define *spec-units* (make-hash-table))
 (define (absorb-specs! specs)
   (for-each (lambda (s)
     (when (resource-spec-keep-in-place? s)
@@ -1389,12 +1098,6 @@
         (if (and p (> p 0.0))
             (/ (arc-hours a b (tpl-manner tpl) p) p)
             (km a b)))))
-;; MBQ is stored PER PROCESS, but branch-and-bound decides PER COLUMN — one mill
-;; may run in one cell and not another. `*mbq-relaxed*` holds the column keys
-;; whose floor is currently dropped (a FREE node in the search): `mbq-of` then
-;; reads #f for them, which `col-on?` already treats as "present, unconstrained".
-;; So one hash gives the third state the search needs without touching either.
-(define *mbq-relaxed* (make-hash-table))
 (define (mbq-of key) (and (not (hash-ref *mbq-relaxed* key #f))
                           (hash-ref *mbq-procs* (key-process key) #f)))
 (define (mbq-floor key)                  ; the floor IGNORING relaxation — the real L
@@ -1402,24 +1105,6 @@
 (define (col-on? key) (or (eq? *config* 'all) (not (mbq-of key)) (member key *config*)))
 
 ;; ── WHOLE COUNTS: acts that happen a whole number of times ───────────────────
-;; The relaxation may run 0.5 of an act. At population scale that is the right
-;; object — a district performs 12.5 appendectomies a week and the fraction is a
-;; RATE — and it stops meaning anything when a period holds about one unit. So
-;; refining periods makes fractionality more acute, and the two pull against each
-;; other; this is the answer for the few acts that are genuinely countable.
-;;
-;; Declared per PROCESS and decided per COLUMN, exactly as MBQ is: one theatre
-;; may run three times in one cell and twice in another.
-;;
-;; This is the SECOND kind of discreteness in the engine, not a second engine.
-;; MBQ splits a column 0 | ≥L; a whole count splits it ≤⌊v⌋ | ≥⌈v⌉ and may split
-;; the same column again. One tree, one certificate, two kinds of cut.
-(define *whole-procs* (make-hash-table))
-;; the folksonomy tags each act carries (processClassifiedAs, compile.scm
-;; proc-tags): read onto its columns as the `tag` term, so a part naming a
-;; tag covers every column of every act under it — a chain of recipes named
-;; as one way (voice-follows-work.md "A chain of recipes is a mapped way").
-(define *proc-tags* (make-hash-table))
 (define (whole-col? key)
   (and (hash-ref *whole-procs* (key-process key) #f) #t))
 (define (declare-whole! . procs)
@@ -1427,79 +1112,22 @@
   (for-each (lambda (p) (hash-set! *whole-procs* p #t)) procs))
 
 ;; ── PROCESS FRAGILITY: a barrier on an ACT'S OWN LEVEL ───────────────────────
-;; Every fragility above is read on a GOOD (a cell, a spec, a container, a
-;; place), and a good that some column PRODUCES is never barriered — its ≥0
-;; balance is its accounting (good-index: `made` ⇒ good, never raw). So nothing
-;; in the good-keyed grid can price how much a RECIPE runs: its output is made
-;; by it, its labour is made by the worker's supply column, and both fall on
-;; the `made` side of that split by construction. This is the extent the grid
-;; lacks — the act itself — and it is read where `*whole-procs*` and
-;; `*mbq-procs*` already read per-act declarations: off the `p|proc|…` column
-;; keys. The form is the SAME `frag` every other wall is: per period, with
-;; x_p the activity of every column of the act in that period,
-;;
-;;     s = tip − Σ x_p,   φ(s) = −w·log s        (mk-frag tip ((ci . −1) …) w)
-;;
-;; tip = quantile_α[lo,hi] of the profile, w its fixed governance weight —
-;; `(lo hi alpha w)`, the one profile shape: a caller that holds an act
-;; near a wall hands its profile in (plan-scope #:proc-frag), and the act
-;; commands less of the commons as it nears the wall, continuously.
-(define *proc-frag* (make-hash-table))   ; proc-id -> (lo hi alpha w): a per-period fragility on the act's own level
 (define (declare-proc-frag! alist)
   "((proc-id . (lo hi alpha w)) …): the acts whose level is a fragility."
   (for-each (lambda (kv) (hash-set! *proc-frag* (car kv) (cdr kv))) alist))
 ;;; ─── an UNCERTAIN prohibition is a tension, not a price ───────────────────
-;;; A prohibition the law is sure of removes the column: an impossibility, not
-;;; something to trade off. One the pack is only UNCERTAIN of is different — it
-;;; is a possibility-tension, and `frag` is already its shape: the log barrier
-;;; that diverges at a tip never crossed and PERSISTS at the optimum, so the
-;;; federation eases off before the limit rather than pricing its way through.
-;;;
-;;; It is also the truer model. Legal exposure is convex, not linear: one small
-;;; unpermitted structure is unlikely to be noticed, a hundred is certain, and a
-;;; flat per-unit cost says the hundredth is no worse than the first.
-;;;
-;;; Keyed by COLUMN, because a prohibition is per (act, cell) — zone N forbids
-;;; building THERE. `*proc-frag*` groups an act's columns by period and sums over
-;;; places, which would cap the act commune-wide instead.
-;;; WHAT AN ACT NEEDS, here. The requirements and the absences are ONE object at
-;;; two bindings, and building the second without the first was backwards: a card
-;;; that can only say "you cannot do this" is less use than one that says what the
-;;; work is made of and marks what you are missing inside it.
-;;;
-;;;   requirement : (kind name qty unit met?)
-;;;     consume  a material it uses up      use   a means it occupies
-;;;     work     labour, and the competence it must be done by
-;;;     obtain-entity / obtain-person / pay / tell   what the law asks HERE
-;;;
-;;; The material half comes off the recipe and is place-free — twenty cubic
-;;; metres of timber is twenty anywhere. The legal half is place-BOUND, which is
-;;; why this is keyed by column and not by process: what you must hold to do a
-;;; thing depends entirely on where you stand, and a recipe cannot know it.
-;;;
-;;; met? is #t, #f, or 'unknown — never guessed. The engine knows about
-;;; competences and licences (`skilled-worker-at?`) and about a permit's custody
-;;; (the bill's `unheld`); a material's reachability it knows only per template,
-;;; so every material of an unreachable one is marked #f together and no finer.
-(define *requires* (make-hash-table))
 (define (requirements key) (hash-ref *requires* key '()))
 (define (req-kind r) (list-ref r 0))
 (define (req-name r) (list-ref r 1))
 (define (req-met? r) (list-ref r 4))
 (define (unmet key) (filter (lambda (r) (eq? #f (req-met? r))) (requirements key)))
 
-;;; WHY a column is not there. Keyed by column, valued (reason . detail) —
-;;; `(licence-not-held "Permis de conduire")`, `(raw-unreachable)`. The card's
-;;; question "why can I not do this?" is then a lookup rather than seven
-;;; re-derivations, and a licence is one entry rather than a special path.
-(define *why-not* (make-hash-table))
 (define (why-not key) (hash-ref *why-not* key #f))
 (define (why-not-tally)
   "((reason . count) …) — what stopped the columns that are not here."
   (let ((t (make-hash-table)))
     (hash-for-each (lambda (k v) (hash-set! t (car v) (+ 1 (hash-ref t (car v) 0)))) *why-not*)
     (sort (hash-map->list cons t) (lambda (a b) (> (cdr a) (cdr b))))))
-
 
 ;;; The two tables as WIRE, for a reader that has never heard of a column.
 ;;;
@@ -1547,7 +1175,6 @@
                                  (requirements k))))))))
    (hash-map->list (lambda (k v) k) *requires*)))
 
-(define *legal-frag* (make-hash-table))   ; column key -> (lo hi alpha w)
 (define (legal-frag-forms idx cols)
   "One frag per column the legal layer marked: tip − that column's own level."
   (filter-map
@@ -1591,32 +1218,12 @@
                          by-t)))
      (hash-map->list cons *proc-frag*))))
 
-;; The search's own bounds on a column: key -> (lo . hi), either end #f for open.
-;; These are TENSIONS OF THE METHOD — scaffolding the search erected to cut off a
-;; fractional value — so they are emitted through `mk-method` and never reach a
-;; certificate. A branch is not a limit the world has.
-(define *col-bounds* (make-hash-table))
 (define (col-bound key) (hash-ref *col-bounds* key '(#f . #f)))
 (define (with-col-bounds! alist)
   (hash-clear! *col-bounds*)
   (for-each (lambda (kv) (hash-set! *col-bounds* (car kv) (cdr kv))) alist))
 
 ;; ── A DECIDED COUNT IS NOT A VARIABLE ────────────────────────────────────────
-;; A bound can only be APPROACHED: `−t·log(s)` diverges at s = 0, so the iterate
-;; is pushed off the very bound it should rest on — asked for x ≥ 3 on a program
-;; whose relaxed optimum is 2.4999, the solve returns 3.2938, and the box [3,3]
-;; has no interior at all and reads as infeasible. No barrier will ever hold an
-;; integer.
-;;
-;; So a decided count stops being a variable. It becomes a FACT, and facts live
-;; in `const`: the column leaves the program and every form it touched keeps its
-;; contribution as coeff·n. There is nothing left to sit on, which is the point —
-;; a bound is approached, a constant simply IS.
-;;
-;; This is the engine's own idiom, not a new one. §7 already substitutes at zero:
-;; "ON keeps its floor, FREE drops it, rest ABSENT" — an off column is not
-;; constrained to zero, it is gone. This says the same thing at n.
-(define *col-fixed* (make-hash-table))
 (define (col-fixed key) (hash-ref *col-fixed* key #f))
 (define (with-col-fixed! alist)
   (hash-clear! *col-fixed*)
@@ -1764,13 +1371,6 @@
 (define (mover-ride-flow id action spec rq eff proc-in proc-out)
   (make-recipe-flow #:id id #:action action #:resource-conforms-to spec #:resource-quantity (and rq (make-measure rq %count-unit)) #:effort-quantity (and eff (make-measure eff %effort-unit))
                     #:recipe-input-of proc-in #:recipe-output-of proc-out))
-;; Every instantiated ride's origin — pid → (mode . rider) — recorded at the
-;; moment the template is born, so the tiling (tpl-manner, tpl-pace), the
-;; budget (rides-in) and the key test (ride-key?) read the MODE ITSELF through
-;; its own accessors. Cleared by reset!, filled again wherever the templates
-;; are built (build-columns per build; the ingest pass that registers
-;; whole-procs).
-(define *ride-info* (make-hash-table))
 ;; Re-home one of the mode recipe's flows under THIS rider's process id. The
 ;; pickup/dropoff pair swaps the generic mover spec for the rider's own good
 ;; (Pres|id, or the cargo itself); every other flow keeps its spec and its
@@ -2007,11 +1607,6 @@
 (define (ride-key? kt)                   ; an arc-transport column born of a ride template — the instantiator's own record (*ride-info*), never the id's spelling
   (let ((pr (assq-ref kt 'process))) (and pr (hash-ref *ride-info* pr) #t)))
 
-;; The path of scopes the solve stands in (leaf first), set by the door that
-;; solves for a scope; #f for a bare engine run. A part naming a scope covers a
-;; column when that scope is on the path — the column belongs to the solving
-;; scope and to every scope containing it.
-(define *scope-path* #f)
 (define (column-terms c)
   "The key's terms, plus what the flows say: the skills it draws (Lab|), the
    means it uses (Svc|), the goods it delivers (positive flows, bare spec), the
@@ -2038,8 +1633,6 @@
               (if window (list (cons 'window window)) '())
               (if tags (list (cons 'tag tags)) '())
               (if *scope-path* (list (cons 'scope *scope-path*)) '())))))
-(define *col-terms* #f)                  ; vector, index = column index, built once per assembly
-(define *col-ell*   #f)                  ; vector, ℓ_j: hours of labour per unit of column j, whichever path carries it
 (define (build-terms cols) (list->vector (map column-terms cols)))
 (define (column-labour-hours c)
   (if (> (col-labour c) 0.0)
@@ -2047,14 +1640,6 @@
       (fold (lambda (fc a) (if (and (lab-good? (car fc)) (< (cdr fc) 0.0)) (- a (cdr fc)) a)) 0.0 (col-flows c))))
 
 ;; ── the voice field's inputs for THIS solve ─────────────────────────────────
-;; Set by the door that solves for a scope (plan-from-records #:voice-tau
-;; #:voice-pushes #:voice-hours), cleared by reset!. τ = 0 is today: the field
-;; adds nothing and labform is the identical list. Distinct from *tau*, the
-;; transport cost per km, and *tau-commute*.
-(define *voice-tau* 0.0)                 ; 0 ≤ τ < 1, governed: how far a stance may re-weigh an hour
-(define *voice-pushes* '())              ; ((part . push) …), push ∈ [−1, 1], the scope fold's one number per part
-(define *voice-hours* #f)                ; part → validated hours in its cell (the fold's reader), or #f
-(define *voice-stances* #f)              ; vector of the stances the last assembly read, for the report
 ;; the LEVEL a solved plan leaves of a located good — its starting on-hand plus the
 ;; net every column delivers to it (produce − consume ± carry) at the solution x.
 ;; The one reader for "how much of g stands at this cell": what a reserve's tab
@@ -2702,27 +2287,6 @@
 ;; band, where no meal can yet be, and a reproduction floor beside them was
 ;; refused for the pins.
 ;; ── A BUDGETED FLOOR (Bertsimas–Sim): a wall that survives any Γ sources lost ──
-;; A floor F on a located good g, held against the loss of ANY Γ of the places
-;; that supply it, without a future per place and without a probability for
-;; one. The robust counterpart (Bertsimas & Sim 2004):
-;;   Σ_d y_d − Γ·z − Σ_d p_d ≥ F,   z + p_d ≥ y_d  (∀ d),   z, p_d ≥ 0
-;; whose dual is the max over |S| ≤ Γ of the supply lost, so the wall holds
-;; under the worst Γ-set. y_d is what place d ITSELF contributes to g's cell:
-;; bounded by the inflow that arrives from d AND by what d produces or holds
-;; of the good by then — a unit hauled through d was not d's, and a wall that
-;; counted it would be met by circulating one harvest (measured on the two-
-;; field fixture: 242 kg of hauls from 1 kg of land, and a floor no place
-;; could carry read as held). Laid entirely in the column/good machinery —
-;; the balance rows the engine emits for any good ARE the constraint
-;; families — with synthetic goods per floor and per source:
-;;   bud|g          the budget, opening at −F; fed by every y_d, drawn by z (Γ) and each p_d
-;;   cov|g|d        the cover: z + p_d − y_d ≥ 0
-;;   in|g|d         the inflow from d: fed by every column bringing g to the cell from d, drawn by y_d
-;;   own|g|d        d's own supply: fed by g's producers at d up to the floor's period, plus d's stock; drawn by y_d
-;; and the columns y_d, z, p_d as zero-labour columns. The good's own
-;; conservation stays a plain ≥ 0: F lives in the budget row, whose dual is
-;; the price of the budget.
-(define *budgeted-floors* '())               ; ((located-good F Γ) …), as #:budgeted-floors gave them (located at build via *locate-key*)
 (define (col-arc c) (key-arc (col-key c)))   ; (from . to) for an arc column — a haul or a hold — else #f
 (define (col-origin-place c)                 ; the PLACE a column's delivery originates at: an arc's from-cell, else its own cell
   (place-of (let ((a (col-arc c))) (if a (car a) (col-cell c)))))
@@ -2842,27 +2406,6 @@
       (let ((m (hash-count (const #t) p)))
         (if (= m n) p (grow m))))))
 ;; ── A STOCK DRAWN DOWN IS FELT ───────────────────────────────────────────────
-;; κ·labour prunes wasted work, and a unit of anything weighs the labour congealed
-;; in it. Where the plan MAKES the good, the column that makes it carries that
-;; labour. Where the plan only DRAWS it — a purse, a soil bank, a stock nothing
-;; here remakes — the drawing column carries it, in the same labour form, at the
-;; good's crystallized SNLT (*stock-price*, hours per unit: the value rollup over
-;; the recipe that acquires it — playnet.typ "Credits and external liquidity": a
-;; euro's one internal price is the social cost of its acquisition). So the solve
-;; rents exactly the nights the free beds leave unhoused, and makes what is
-;; asked; a costless draw is a direction the objective cannot feel, and the
-;; barrier method settles it mid-face.
-;;
-;; A stock NO recipe anywhere acquires has no labour basis (the rollup answers
-;; +inf: unreachable). Its draw weighs its SHARE of the standing stock, a whole
-;; stock drawn down weighing *stock-draw-hours* — a governed number that orders
-;; the plan where the rollup is silent. The barrier's residue past what is asked
-;; runs as t/(κ·cost), t the path floor (solver.scm *kern-tmin*).
-;;
-;; Read by NET spec: a carry or a move (−1 here, +1 there) weighs nothing, a lossy
-;; one weighs its loss. A barrier-bounded draw is weighed by its fragility, once;
-;; a structural pool (Lab|, Svc|, credit|) renews and weighs nothing.
-(define *stock-price* (make-hash-table))      ; spec → crystallized SNLT, hours per unit
 (define *stock-draw-hours* 1.0)               ; a governed dial, stated per solve (#:stock-draw-hours)
 
 ;; THE SETTINGS A SOLVE IS GIVEN, ONE WRITE: the voice field and the governed dials
@@ -3836,19 +3379,9 @@
 ;;
 ;; A global that is neither reset nor deliberately kept is a leak between solves,
 ;; and it shows up as a test that passes alone and fails in a suite.
-(define (reset!) (set! *budgeted-floors* '()) (set! *acquire* '()) (set! *promote* #f) (hash-clear! *acquire-cost-of*) (hash-clear! *acquired-keys*) (set! *flow-period-factor* (lambda (action proc-id spec t place) 1.0))
-  (set! *avail-factor* (lambda (located-good) 1.0))
-  (set! *disposable-total* 0.0)
-  (set! *spatial-things* '())
-  (set! *places* '()) (set! *periods* '(0)) (set! *cells* '())
-  (set! *movable* '()) (set! *storable* '()) (set! *stationary* '()) (set! *container-pools* '()) (hash-clear! *composition*) (hash-clear! *neighbours*) (set! *tau* 0.0) (set! *hold* 0.0)
-  (set! *config* 'all) (set! *workers* '()) (set! *roster-labour?* #f) (set! *inert-caps* '()) (hash-clear! *stock-price*) (set! *resource-suppliers* '()) (set! *supplier-bundles* '()) (set! *willing?* (lambda (w s c) #t))
-  (set! *commute-km* 0.0) (set! *tau-commute* 0.0) (set! *emp-mode* 'total) (hash-clear! *mbq-procs*) (hash-clear! *whole-procs*) (hash-clear! *proc-tags*) (hash-clear! *proc-frag*) (hash-clear! *legal-frag*) (hash-clear! *why-not*) (hash-clear! *requires*) (hash-clear! *spec-units*) (hash-clear! *col-bounds*) (hash-clear! *col-fixed*) (hash-clear! *stretch*) (hash-clear! *stretch-floor*) (set! *locate-key* (lambda (k) k)) (hash-clear! *mbq-relaxed*) (set! *trainable* '()) (hash-clear! *competence-p0*) (set! *col-terms* #f) (set! *col-ell* #f) (set! *scope-path* #f) (set! *voice-tau* 0.0) (set! *voice-pushes* '()) (set! *voice-hours* #f) (set! *voice-stances* #f)
-  (set! *riders* '()) (set! *mode-recipes* '()) (hash-clear! *ride-info*) (set! *mobile-people?* #f) (set! *mobile-means* '()) (hash-clear! *means-lot*) (set! *contents* '()) (hash-clear! *stands-in*) (hash-clear! *borne-hours*)
-  (set! *commute-manner* "pedestrian") (set! *material-manner* "auto")
-  (set! *commute-hours* #f) (set! *manner-pace* '()) (hash-clear! *runs*)
-  (set! *period-class-of* (lambda (t) #f))
-  (for-each hash-clear! (list *demand* *A* *cap* *frag-cap* *frag-budget* *frag-spec* *band* *frag-container* *frag-within* *contained* *span-of* *eco-couple* *couplings* *frag-prior* *stock-frag-w* *init* *latlon* *alt* *never-raw* *raws* *reserve* *desire-weight* *proc-skill* *period-days* *period-spans* *worker-pref* *skill-spec* *arc-hours*)))
+(define (reset!)
+  (reset-world!)                         ; the world: a fresh instance, every table a new table (solve/world.scm)
+  (hash-clear! *period-days*) (hash-clear! *period-spans*))   ; the calendar's tables (vf/formulas/periods), laid again by the door
 (define (mkcells!) (set! *cells* (append-map (lambda (p) (map (lambda (t) (cell p t)) *periods*)) *places*)))
 ;; the roster, layered onto a standing world — ingest-located! computes each
 ;; agent's located hours AFTER the declaration (the availability windows are
@@ -4151,29 +3684,7 @@
          dates (iota n)))))
 
 ;; ── A STATEMENT ABOUT A STRETCH STAYS ONE STATEMENT ──────────────────────────
-;; Located inputs are keyed `good#place@t`, and refining moves every position: a
-;; caller's "@2" meaning day 2 lands in the middle of day 1. Re-pointing it at
-;; one of the new pieces is not a translation — "400 units on day 2" says nothing
-;; about WHEN inside day 2, so any choice of piece, or any split across pieces,
-;; answers a question nobody asked.
-;;
-;; What the caller said is about the STRETCH, so it stays one form over the
-;; stretch: the balance summed across its pieces. That is not an approximation of
-;; the coarse reading, it IS the coarse reading — the temporal arcs INSIDE the
-;; stretch appear once negative and once positive and cancel, leaving exactly
-;; what carried in, what was made, what was drawn, and what carried out. Refining
-;; then adds resolution where it belongs, on the supply side, and changes nothing
-;; about what was asked for.
-(define *stretch* (make-hash-table))     ; located-good → the goods its stretch spans
 (define (stretch-of g) (hash-ref *stretch* g (list g)))
-;; a bare reproduction floor on a STRETCH (a floor stated for a day the clock
-;; refined into bands) lives here, not in *init*: the day's balance must reach
-;; it, while each band's own stock conservation stays untouched. A span-less
-;; or unrefined world never fills this table — its floors pour into *init* as
-;; they always did.
-(define *stretch-floor* (make-hash-table))  ; located-good (stretch representative) → floor
-;; see ingest-located!'s tail — set per ingest, identity until then
-(define *locate-key* (lambda (k) k))
 ;; the stretch's balance: what carried in, was made, was drawn, carried out —
 ;; less the floor the stretch must hold
 (define (stretch-init g)
@@ -4243,7 +3754,6 @@
                   (let ((k* (key-retime k (car ts))))
                     (loop (cdr in) (cons (cons k* (cdr kv)) out)
                           (cons (cons k* ts) regs))))))))))
-
 
 (define (refine-spans spans cuts)
   "Split each span at every declared boundary falling strictly inside it.
@@ -4699,10 +4209,6 @@
     (hash-for-each (lambda (k v) (when (> v 0.0) (hash-add! (if (eq? (car k) 'init) *init* *cap*) (cdr k) v)))
                    counted)))
 ;; ── the mobile means, remembered by ingest-stock! for means->movers! ──────────
-(define *mobile-means* '())               ; ((resource spec place q measure serves?) …)
-(define *contents* '())                   ; ((resource spec place q measure) …): the means standing IN something, at its place
-(define *stands-in* (make-hash-table))    ; resource id → the id of what it stands in
-(define *means-lot* (make-hash-table))    ; mover id → (spec . count): the lot a means mover is
 (define (means->movers!)
   "Turn every durable that TRAVELS into a MOVER: one classified \"mobile\", or one
    a mode of the scope names as its mover (means-carried?). Its per-period
@@ -5722,7 +5228,6 @@
 (define (period-disposable-hours a t)
   (let ((days (/ (period-hours t) 24.0)))
     (and (>= days 1.0) (agent-disposable-hours a days))))
-(define *disposable-total* 0.0)             ; Σ every person's disposable time, set once per build
 (define (worker-available)                  ; N·T: the people's disposable time when rest is reserved, else Σ each agent's offered hours, once
   (if (> *disposable-total* 1e-9)
       *disposable-total*
@@ -6330,7 +5835,6 @@
 ;; so a (defined? 'scope-bioregion-scenarios) probe would skip the rest of the interface
 ;; on the strength of that one name being visible.
 
-
 ;; One form for every limit, read at a different scale (playnet.typ §"Worker,
 ;; soil, and tool: one field"). A fragility record names its EXTENT (which draws
 ;; it measures) and its WINDOW (per period, or the whole horizon) instead of
@@ -6347,7 +5851,6 @@
 ;; so a (defined? 'register-regenerating-stock!) probe would skip the rest of the interface
 ;; on the strength of that one name being visible.
 
-
 ;; The comparator (docs/planning/solve/recipe-metabolism-barbell.md): a recipe's
 ;; response — per flow of its own, the curve of what its runs captured at each
 ;; stress delivered — read from its runs, never stored. Pure; the observer
@@ -6357,7 +5860,6 @@
 ;; into whichever module primitive-load'ed it. Unconditional — an import is
 ;; all-or-nothing, and a guard on one name being visible would skip the rest
 ;; on the strength of that one.
-
 
 (define (mean-fill-located)
   (call-with-values solve-located

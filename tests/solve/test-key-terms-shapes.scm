@@ -12,7 +12,7 @@
 
 (use-modules (playnet test harness)
              (playnet vf facts located)
-             (playnet solve engine) (playnet solve compile)
+             (playnet solve engine) (playnet solve world) (playnet solve compile)
              (srfi srfi-1) (ice-9 format))
 
 (display "\n── the two shapes that went unread ──\n")

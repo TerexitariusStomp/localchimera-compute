@@ -82,7 +82,7 @@
 ;; The engine's own located solve carries 100 L from A to B (stock at A, demand at B);
 ;; plan->material emits the pickup and dropoff rows, and enacting them against an observer that
 ;; holds the same crate must conserve the spec and land the water at B.
-(use-modules (playnet solve engine) (playnet solve compile) (playnet solve solver))
+(use-modules (playnet solve engine) (playnet solve world) (playnet solve compile) (playnet solve solver))
 (define E (resolve-module '(playnet solve engine)))
 (declare-world! #:places '(("A" 0.0 0.0) ("B" 0.0 0.05)) #:templates '() #:movable '("water"))
 (hash-set! *init* (lg "water" (cell "A" 0)) 100.0)

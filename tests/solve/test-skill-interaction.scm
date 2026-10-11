@@ -11,7 +11,7 @@
 ;;; Run:  guile --no-auto-compile -q -L module tests/solve/test-skill-interaction.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve compile) (playnet solve solver) (playnet vf schemas)
+(use-modules (playnet solve engine) (playnet solve world) (playnet solve compile) (playnet solve solver) (playnet vf schemas)
              (playnet knowledge dsl shorthand))
 (use-modules (playnet knowledge catalogues skill-interaction))
 

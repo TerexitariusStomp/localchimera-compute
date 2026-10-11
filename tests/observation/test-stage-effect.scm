@@ -13,7 +13,7 @@
 (use-modules (playnet test harness)
              (playnet test events)
              (playnet observation observer) (playnet vf schemas) (playnet utils store-utils) (srfi srfi-1)
-             (playnet solve engine)
+             (playnet solve engine) (playnet solve world)
              (playnet solve compile)
              (playnet observation observer)
              (goblins) (goblins vat) (goblins utils hashmap)

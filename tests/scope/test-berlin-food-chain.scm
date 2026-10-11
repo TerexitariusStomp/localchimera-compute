@@ -24,7 +24,7 @@
 ;;;
 ;;; Run: guile -L module tests/scope/test-berlin-food-chain.scm
 
-(use-modules (playnet test harness) (playnet knowledge recipes store) (playnet knowledge recipes berlin-food-seed) (playnet scope root) (playnet vf schemas) (srfi srfi-1) (playnet scope live)
+(use-modules (playnet solve world) (playnet test harness) (playnet knowledge recipes store) (playnet knowledge recipes berlin-food-seed) (playnet scope root) (playnet vf schemas) (srfi srfi-1) (playnet scope live)
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1) (ice-9 format))
 
@@ -46,7 +46,7 @@
 
 ;; the engine's container table, read the way test-berlin-live-scope reads live
 ;; internals — it lives in the engine, which is loaded into (playnet scope live).
-(define (live-stationary) (@@ (playnet scope live) *stationary*))
+(define (live-stationary) *stationary*)
 
 (define (empty-recipe-store)
   (spawn ^recipe-store (hashmap) (hashmap) (hashmap) (hashmap) (hashmap)

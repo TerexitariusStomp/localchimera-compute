@@ -14,7 +14,7 @@
 ;;; Run: guile --no-auto-compile -L module tests/scope/test-bills.scm
 
 (use-modules (playnet test harness) (playnet knowledge recipes berlin-food-seed) (playnet scope root) (playnet solve compile) (srfi srfi-1) (playnet scope live)
-             (playnet solve engine) (playnet solve compile) (playnet solve solver)
+             (playnet solve engine) (playnet solve world) (playnet solve compile) (playnet solve solver)
              (goblins) (goblins vat)
              (srfi srfi-1) (ice-9 format))
 (use-modules (playnet knowledge recipes berlin-food-seed))

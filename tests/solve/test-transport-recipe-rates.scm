@@ -16,7 +16,7 @@
 ;;;         tests/solve/test-transport-recipe-rates.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine)
+(use-modules (playnet solve engine) (playnet solve world)
              (playnet solve compile))
 ;; transport.scm is a module now — use-modules, not primitive-load. A
 ;; define-module inside a primitive-loaded file switches current-module for

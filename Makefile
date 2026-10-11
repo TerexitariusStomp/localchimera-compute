@@ -133,6 +133,7 @@ FAMILY_WASM_DEPS = \
                     module/playnet/solve/compile.scm \
                     module/playnet/solve/emphasis.scm \
                     module/playnet/solve/engine.scm \
+                    module/playnet/solve/world.scm \
                     module/playnet/solve/externality.scm \
                     module/playnet/doors/family/local.scm \
                     module/playnet/doors/family/wire.scm \
@@ -240,6 +241,7 @@ SCOPE_WASM_DEPS = \
                    module/playnet/legal/crossings.scm \
                    module/playnet/knowledge/catalogues/eco.scm \
                    module/playnet/solve/engine.scm \
+                   module/playnet/solve/world.scm \
                    module/playnet/utils/envelope.scm \
                    module/playnet/execution/alerts.scm \
                    module/playnet/solve/externality.scm \
@@ -1158,10 +1160,13 @@ lint-verbs:
 # has to reach it. tools/lint/compile-warnings.sh explains what it counts and what it sets aside.
 # One such call the compiler cannot see: `(spawn …)` in a Goblins module that takes
 # `spawn` from no import reaches Guile's process spawn (tools/lint/check-goblins-spawn.scm).
+# And one write it accepts that Hoot refuses: a `set!` of a binding the module imported
+# (tools/lint/check-imported-set.scm), which a context cell (protocol/context.scm) replaces.
 .PHONY: lint-compile
 lint-compile:
 	@$(TEST_ENV) tools/lint/compile-warnings.sh --check
 	@$(TEST_ENV) guile --no-auto-compile tools/lint/check-goblins-spawn.scm
+	@$(TEST_ENV) guile --no-auto-compile -L module tools/lint/check-imported-set.scm
 
 # playnet's own development, planned by the planner: every open Radicle
 # issue is a want, its area a skill, its kind a recipe (module/playnet/

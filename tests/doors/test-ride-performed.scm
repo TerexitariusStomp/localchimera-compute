@@ -25,7 +25,7 @@
              (playnet knowledge recipes berlin-commune-seed) (playnet knowledge recipes berlin-transit) (playnet knowledge recipes transport) (playnet solve compile) (playnet vf schemas) (srfi srfi-1) (srfi srfi-11)
              (playnet scope live)
              (playnet doors service) (playnet doors position)
-             (playnet solve engine)
+             (playnet solve engine) (playnet solve world)
              (playnet solve compile)
              (playnet solve solver)
              (playnet vf schemas)
@@ -138,7 +138,7 @@
             (lambda ()
               (plan-scope->alist scope #:manners berlin-transit-manners
                                  #:demand (list (cons "food#berlin-commune-farm@0" 20000.0)))
-              (hash-ref (@@ (playnet solve engine) *arc-hours*) arc #f))))
+              (hash-ref *arc-hours* arc #f))))
       (check "with no trip performed, the table holds no measurement of the arc" (assoc-ref (table) arc) #f)
       (check "…and the solve reads none" (arc-hours-after-solve) #f)
       (let* ((began ($ svc 'journey-begin "org:t" "agent-ana" "berlin-commune-farm" "berlin-markthalle" "pedestrian"))

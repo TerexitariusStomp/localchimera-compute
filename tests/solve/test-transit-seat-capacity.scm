@@ -19,7 +19,7 @@
 ;;;         tests/solve/test-transit-seat-capacity.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine)
+(use-modules (playnet solve engine) (playnet solve world)
              (playnet solve compile)
              (playnet solve solver)
              (playnet vf schemas)

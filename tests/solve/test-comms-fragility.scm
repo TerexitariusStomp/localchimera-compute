@@ -11,7 +11,7 @@
 ;;;         tests/solve/test-comms-fragility.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine)
+(use-modules (playnet solve engine) (playnet solve world)
              (playnet solve solver)
              (playnet vf schemas))
 ;; comms/fragility.scm is a fragment over the engine's world: it loads into

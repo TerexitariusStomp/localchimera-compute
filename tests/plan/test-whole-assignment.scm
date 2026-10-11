@@ -32,7 +32,7 @@
              (playnet algorithms deferred-acceptance)
              (playnet plan assignment)
              (srfi srfi-1))
-(use-modules (playnet solve engine)
+(use-modules (playnet solve engine) (playnet solve world)
              (playnet solve solver)
              (playnet vf schemas)
              (ice-9 format))

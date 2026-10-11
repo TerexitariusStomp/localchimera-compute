@@ -26,7 +26,7 @@
              (playnet knowledge recipes berlin-commune-seed) (playnet knowledge recipes berlin-transit) (playnet knowledge recipes transport) (playnet vf formulas capacity) (playnet scope root) (playnet solve compile) (playnet vf schemas) (srfi srfi-1) (srfi srfi-11)
              (playnet scope live)
              (playnet doors service)
-             (playnet solve engine)
+             (playnet solve engine) (playnet solve world)
              (playnet solve compile)
              (playnet solve solver)
              (playnet vf schemas)

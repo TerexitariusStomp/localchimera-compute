@@ -15,7 +15,7 @@
 ;;; Run:  guile --no-auto-compile -L module/playnet/planner tests/solve/test-skill-refresher.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine))
+(use-modules (playnet solve engine) (playnet solve world))
 (define PER '(0 1 2 3))
 
 (define (setup refresh?)

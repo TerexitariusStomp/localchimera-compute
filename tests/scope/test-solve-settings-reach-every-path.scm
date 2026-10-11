@@ -11,7 +11,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/scope/test-solve-settings-reach-every-path.scm
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
+(use-modules (playnet solve world) ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness) (playnet test scope)
              (playnet vf schemas) (playnet scope live)
              (goblins) (goblins utils hashmap)
@@ -56,8 +56,8 @@
 (check "emp-rho is the value the solve was given" (engine-var *emp-rho*) 0.11)
 (check "want-as-cap is the value the solve was given" (engine-var *want-as-cap?*) #f)
 (check "stock-draw-hours is the value the solve was given" (engine-var *stock-draw-hours*) 3.0)
-(check "the voice field's tau is the value the solve was given" (engine-var *voice-tau*) 0.4)
-(check "…and its scope path (here empty: no scope stands behind the push)" (engine-var *scope-path*) '())
+(check "the voice field's tau is the value the solve was given" *voice-tau* 0.4)
+(check "…and its scope path (here empty: no scope stands behind the push)" *scope-path* '())
 
 (display "\n── the world a scenario ingests is the world ingest-records! reads ──\n")
 (define world-kws (@@ (playnet solve engine) %world-keywords))

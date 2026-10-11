@@ -11,7 +11,7 @@
 ;;;
 ;;; Run: guile -L module tests/vf/test-rented-fragility.scm
 
-(use-modules (playnet test harness) (playnet vf schemas) (srfi srfi-1))
+(use-modules (playnet solve world) (playnet test harness) (playnet vf schemas) (srfi srfi-1))
 
 ;; tests run from the repository root (each file's own Run: line); the root is
 ;; resolved by its marker rather than by current-filename, which is #f or

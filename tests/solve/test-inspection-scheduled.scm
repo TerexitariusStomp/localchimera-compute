@@ -29,7 +29,7 @@
 ;;;         tests/solve/test-inspection-scheduled.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine))
+(use-modules (playnet solve engine) (playnet solve world))
 (define PER '(0 1 2 3))
 (define FRESH "Verif|ovenconf")
 

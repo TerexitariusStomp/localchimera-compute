@@ -53,7 +53,7 @@
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet knowledge dsl shorthand))
 (use-modules (playnet test planner prelude)
-             (playnet solve engine)
+             (playnet solve engine) (playnet solve world)
              (playnet solve compile)
              (playnet vf schemas))
 

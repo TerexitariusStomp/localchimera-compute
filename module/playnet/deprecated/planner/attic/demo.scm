@@ -13,7 +13,7 @@
 ;;; every module that primitive-load'ed the engine silently acquired a `store`
 ;;; bound to a mock, and a `$` shim beside it.
 
-(use-modules (playnet solve engine)
+(use-modules (playnet solve engine) (playnet solve world)
              (playnet solve compile)
              (playnet solve solver)
              (playnet vf schemas)

@@ -19,7 +19,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/doors/test-confirm-doors.scm
 
-(use-modules (playnet test harness)
+(use-modules (playnet solve world) (playnet test harness)
              (playnet test books)
              (playnet vf schemas) (srfi srfi-11)
              (playnet scope live)
@@ -131,8 +131,8 @@
 
 (display "\n── AMBIENT: a good with stock behind it is drawn from the stock ──\n")
 (let ((ambient? (@@ (playnet solve engine) ambient-spec?))
-      (raws (@@ (playnet solve engine) *raws*))
-      (cap  (@@ (playnet solve engine) *cap*)))
+      (raws *raws*)
+      (cap  *cap*))
   (hash-clear! raws) (hash-clear! cap)
   (hash-set! raws "sunlight" #t) (hash-set! raws "salt" #t)
   (hash-set! cap (lg "salt" (cell "A" 0)) 40.0)

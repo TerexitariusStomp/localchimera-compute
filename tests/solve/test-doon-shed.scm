@@ -11,7 +11,7 @@
 ;;; Run:  guile --no-auto-compile -L module/playnet/planner tests/solve/test-doon-shed.scm
 
 (use-modules (playnet test planner prelude)
-             (playnet solve engine)
+             (playnet solve engine) (playnet solve world)
              (playnet solve compile)
              (playnet vf schemas)
              (playnet knowledge worlds bioregions)
