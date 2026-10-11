@@ -13,7 +13,7 @@
 ;;; Run: guile --no-auto-compile -L module tests/solve/test-whole-counts.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve ingest) (playnet solve world)
+(use-modules (playnet solve engine) (playnet solve discrete) (playnet solve ingest) (playnet solve world)
              (playnet solve compile)
              (playnet solve solver)
              (playnet vf schemas)

@@ -27,6 +27,7 @@
   #:use-module (playnet solve solver)
   #:use-module (playnet solve compile)
   #:use-module (playnet solve engine)
+  #:use-module (playnet solve discrete)
   #:export (report-located report-discrete solve-report plan->work plan->material tension-duals
             labour-pulls good-pulls good-labour-content worker-ledger social-ledger legal-exposure
             claim-tally topo-order whole-atoms-of ambient-spec? mk-mat-commitment))

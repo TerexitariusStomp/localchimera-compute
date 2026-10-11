@@ -31,6 +31,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/solve/test-branch-and-bound.scm
 
+(use-modules (playnet solve discrete))
 (use-modules (playnet test planner prelude)
              (playnet solve engine) (playnet test planner worked-example) (playnet solve world)
              (playnet solve solver)

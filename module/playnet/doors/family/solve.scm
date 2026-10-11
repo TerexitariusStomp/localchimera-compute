@@ -58,6 +58,7 @@
   #:use-module ((playnet utils catch) #:select (catch* throw*))
   #:use-module (srfi srfi-1)
   #:use-module (playnet solve engine)
+  #:use-module (playnet solve discrete)
   #:use-module (playnet solve ingest)
   #:use-module (playnet solve plan)
   #:use-module (playnet solve world)

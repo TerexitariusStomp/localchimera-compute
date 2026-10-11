@@ -39,6 +39,7 @@
   #:use-module (playnet solve solver)
   #:use-module (playnet solve compile)
   #:use-module (playnet solve engine)
+  #:use-module (playnet solve discrete)
   #:use-module (playnet solve decomposed)
   #:use-module (playnet solve ingest)
   #:use-module (playnet solve report)

@@ -163,6 +163,7 @@ FAMILY_WASM_DEPS = \
                     module/playnet/solve/records.scm \
                     module/playnet/solve/report.scm \
                     module/playnet/solve/decomposed.scm \
+                    module/playnet/solve/discrete.scm \
                     module/playnet/vf/schemas.scm \
                     module/playnet/vf/formulas/shocks.scm \
                     module/playnet/solve/solver.scm \
@@ -330,6 +331,7 @@ SCOPE_WASM_DEPS = \
                    module/playnet/solve/records.scm \
                    module/playnet/solve/report.scm \
                    module/playnet/solve/decomposed.scm \
+                   module/playnet/solve/discrete.scm \
                    module/playnet/solve/routing.scm \
                    module/playnet/vf/schemas.scm \
                    module/playnet/scope/root.scm \
