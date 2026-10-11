@@ -43,6 +43,7 @@
   #:use-module (playnet solve admm-link)
   #:use-module (playnet solve solver)
   #:use-module (playnet solve engine)
+  #:use-module (playnet solve decomposed)
   #:export (make-boundary-oracle solve-consensus consensus-of flow-of signed-flows))
 
 ;; ── the oracle ───────────────────────────────────────────────────────────────

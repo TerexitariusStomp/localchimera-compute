@@ -21,7 +21,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/solve/test-box-propagation.scm
 
-(use-modules (playnet test planner prelude)
+(use-modules (playnet solve decomposed) (playnet test planner prelude)
              (playnet solve engine) (playnet solve world)
              (playnet solve compile)
              (playnet solve solver)

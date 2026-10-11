@@ -30,6 +30,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/solve/test-refine-gate.scm
 
+(use-modules (playnet solve decomposed))
 (use-modules (playnet test planner prelude)
              (playnet solve engine)
              (playnet solve solver)

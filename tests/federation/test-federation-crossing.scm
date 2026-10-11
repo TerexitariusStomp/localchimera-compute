@@ -28,7 +28,7 @@
 (use-modules (playnet test harness)
              (playnet federation async)
              (playnet solve admm-link)
-             ((playnet solve engine) #:select (solve-decomposed)) ((playnet solve federation-oracle) #:select (make-boundary-oracle solve-consensus))
+             ((playnet solve decomposed) #:select (solve-decomposed)) ((playnet solve federation-oracle) #:select (make-boundary-oracle solve-consensus))
              (playnet solve solver)
              (srfi srfi-1) (ice-9 format))
 

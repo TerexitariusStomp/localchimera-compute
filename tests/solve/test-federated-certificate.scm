@@ -38,6 +38,7 @@
 ;;;
 ;;; Run: guile tests/solve/test-federated-certificate.scm
 
+(use-modules (playnet solve decomposed))
 (use-modules (playnet test planner prelude)
              (playnet solve engine)
              (playnet solve solver)

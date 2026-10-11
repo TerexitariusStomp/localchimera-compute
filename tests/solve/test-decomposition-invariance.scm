@@ -31,6 +31,7 @@
 ;;;
 ;;; Run: guile tests/solve/test-decomposition-invariance.scm
 
+(use-modules (playnet solve decomposed))
 (use-modules (playnet test planner prelude)
              (playnet solve engine) (playnet solve records)
              (playnet solve compile)
