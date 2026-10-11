@@ -23,7 +23,7 @@
 
 (define-module (playnet solve world)
   #:use-module (playnet protocol context)
-  #:export (%world make-world world? reset-world!
+  #:export (%world make-world world? reset-world! *certificates*
             *flow-period-factor* *avail-factor* *places* *periods* *cells* *spatial-things*
             *movable* *storable* *tau* *hold* *neighbours* *stationary*
             *demand* *A* *acquire* *promote* *acquire-cost-of* *acquired-keys*
@@ -638,6 +638,17 @@
   (*stands-in* (make-hash-table))    ; resource id → the id of what it stands in
 
   (*means-lot* (make-hash-table))    ; mover id → (spec . count): the lot a means mover is
+
+  ;; THE CERTIFICATE AS A STOCK THE SOLVE RESPECTS: ((aid . hours) …), each
+  ;; citizen's drawable credit this solve (#:certificates). Every claim column
+  ;; draws credit|aid; the bundle laid over them (build-columns, beside the
+  ;; workers' hour budgets) bounds the sum at the hours — so a plan's claims are
+  ;; affordable by construction, and the ledger's balance check at the event is
+  ;; a race guard, never the rule. A need never meets this wall: reproduction
+  ;; draws the commons' food directly (live.scm eat), the common satisfaction of
+  ;; needs, and a claim column stands only where a want is stated. Unstated ⇒
+  ;; no bundle, credit drawn and tallied as before.
+  (*certificates* '())
 
   (*disposable-total* 0.0)             ; Σ every person's disposable time, set once per build
 )

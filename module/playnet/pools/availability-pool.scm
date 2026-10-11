@@ -29,7 +29,7 @@
   #:use-module (playnet matching spatial)
   #:use-module (playnet vf facts availability)
   #:use-module ((playnet vf facts agent-time) #:select (agent-schedulable-window agent-away-dates away-count reserve-hours))
-  #:use-module ((playnet solve engine) #:select (*default-agent-hours*))
+  #:use-module ((playnet solve ingest) #:select (*default-agent-hours*))
   #:export (make-labour-pool labour-pool?
             pool-entries pool-by-agent
             pool-add pool-remove pool-merge

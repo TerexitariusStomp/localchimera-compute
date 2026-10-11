@@ -14,7 +14,7 @@
 ;;; Run:  tools/test/run-suite.sh tests/solve/test-arc-time-recipe.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve world))
+(use-modules (playnet solve engine) (playnet solve ingest) (playnet solve world))
 (use-modules ((playnet knowledge recipes transport) #:select (mode-recipe)))
 
 (define VPK 0.01)   ; van-hours per km

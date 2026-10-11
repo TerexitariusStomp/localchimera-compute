@@ -91,8 +91,8 @@
   #:use-module (srfi srfi-1)
   #:use-module ((playnet observation account) #:select (set-person-substrate!))
   #:use-module ((playnet keri first-person predicates) #:select (holds-any-live-phc? personhood-bootstrapped?))
-  #:use-module ((playnet solve engine) #:select (key-spec       ; "spec#place@t" → spec, the one split
-                                                   declared-partition set-period-span!))   ; the standing partition, laid before the caps
+  #:use-module ((playnet solve engine) #:select (key-spec set-period-span!))   ; "spec#place@t" → spec, the one split
+  #:use-module ((playnet solve ingest) #:select (declared-partition))   ; the standing partition, laid before the caps
   #:use-module (playnet scope live)
   #:use-module (playnet vf aggregation scope-tree)
   #:use-module ((playnet matching filter-rule)

@@ -25,7 +25,7 @@
              (playnet vf schemas) (srfi srfi-11)
              (playnet scope live)
              (playnet doors service)
-             ((playnet solve engine) #:select (declare-world! stock-vocabulary))
+             ((playnet solve engine) #:select (declare-world!)) ((playnet solve ingest) #:select (stock-vocabulary))
              ((playnet observation observer) #:select (event-interval))
              ((playnet utils clock) #:select (now civil->instant))
              (playnet knowledge dsl shorthand)

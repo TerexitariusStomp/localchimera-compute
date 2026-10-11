@@ -24,7 +24,7 @@
              (playnet vf facts agent-time)
              (playnet knowledge dsl shorthand)
              (playnet pools availability-pool)
-             ((playnet solve engine) #:select (declare-world! agent-window-hours)))
+             ((playnet solve engine) #:select (declare-world!)) ((playnet solve ingest) #:select (agent-window-hours)))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

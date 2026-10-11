@@ -20,6 +20,7 @@
   #:use-module (playnet solve solver)
   #:use-module (playnet solve compile)
   #:use-module (playnet solve engine)
+  #:use-module (playnet solve ingest)
   #:export (ingest-records! vf-agent-skills *metabolism-tstart* %world-keywords %held-back-world-keywords))
 
 ;; ── END-TO-END: real records → plan → VF work Commitments (Goblins-free) ─────

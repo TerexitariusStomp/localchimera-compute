@@ -10,6 +10,7 @@
 ;;; Run:  guile --no-auto-compile -q -L module \
 ;;;         -l tests/solve/test-cap-combine.scm
 
+(use-modules (playnet solve ingest))
 (use-modules (playnet knowledge dsl shorthand))
 (use-modules (playnet test harness)
              (playnet solve engine) (playnet solve world)

@@ -11,8 +11,8 @@
 (use-modules (playnet solve world))
 (use-modules (playnet test harness))
 (use-modules (playnet observation live-registry) (playnet observation live-resource) (playnet scope root) (playnet vf schemas))
-(use-modules ((playnet solve engine)          ; the ingest door, for the
-              #:select (declare-world! ingest-stock! lg cell))  ; live-avail composition check
+(use-modules ((playnet solve engine) #:select (declare-world! lg cell))   ; the door, for the live-avail composition check
+             ((playnet solve ingest) #:select (ingest-stock!))
              ((playnet solve compile) #:select (svc-good)))
 (use-modules (goblins)
              (goblins persistence-store memory)

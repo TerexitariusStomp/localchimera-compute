@@ -13,6 +13,7 @@
 ;;; Run:  guile --no-auto-compile -q -L module \
 ;;;         -l tests/solve/test-frag-budget-section-law.scm
 
+(use-modules (playnet solve ingest))
 (use-modules (playnet test harness) (srfi srfi-1)
              (playnet solve engine) (playnet solve world) (playnet solve compile)
              (playnet solve solver) (playnet vf schemas)

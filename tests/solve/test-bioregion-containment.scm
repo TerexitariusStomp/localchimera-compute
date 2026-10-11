@@ -17,6 +17,7 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -L module/playnet/planner tests/solve/test-bioregion-containment.scm
 
+(use-modules (playnet solve ingest))
 (use-modules (playnet knowledge dsl shorthand))
 (use-modules (playnet test planner prelude)
              (playnet solve engine) (playnet solve world)

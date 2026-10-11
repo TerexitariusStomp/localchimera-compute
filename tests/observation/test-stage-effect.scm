@@ -10,6 +10,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/observation/test-stage-effect.scm
 
+(use-modules (playnet solve ingest))
 (use-modules (playnet test harness)
              (playnet test events)
              (playnet observation observer) (playnet vf schemas) (playnet utils store-utils) (srfi srfi-1)

@@ -19,6 +19,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/doors/test-relocation-rows.scm
 
+(use-modules (playnet solve ingest))
 (use-modules (playnet solve report))
 (use-modules ((playnet vf formulas flows) #:select (row-figure))
              (playnet test harness)

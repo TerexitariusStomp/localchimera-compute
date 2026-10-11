@@ -11,7 +11,7 @@
 
 (use-modules (playnet test harness)
              (playnet vf schemas) (playnet vf beyond schedules)
-             ((playnet solve engine) #:select (window-hours agent-window-hours set-period-span!))
+             ((playnet solve engine) #:select (set-period-span!)) ((playnet solve ingest) #:select (window-hours agent-window-hours))
              ((playnet vf facts availability)
               #:select (window-weekly-hours window-hours-on-dates make-dated-week))
              (srfi srfi-1))

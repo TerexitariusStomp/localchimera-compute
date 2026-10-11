@@ -118,7 +118,8 @@
   #:use-module (srfi srfi-1)
   #:use-module ((playnet observation observer) #:select (target-passed? reach-slack))
   #:use-module ((playnet solve compile) #:select (bare-spec))
-  #:use-module ((playnet solve engine) #:select (key-spec owned-spec spec-owner spec-base *desire-w0* want-as-cap? cap-scale-of stock-vocabulary))   ; the one key split; a citizen's own good; one whole hand; the shipped shape + its per-spec reference scale
+  #:use-module ((playnet solve engine) #:select (key-spec spec-owner spec-base *desire-w0* want-as-cap? cap-scale-of))
+  #:use-module ((playnet solve ingest) #:select (owned-spec stock-vocabulary resource-window-hours))   ; the one key split; a citizen's own good; one whole hand; the shipped shape + its per-spec reference scale
   #:use-module (playnet scope live)   ; plan-scope->alist (the convex planner over the live scope)
   #:use-module ((playnet knowledge catalogues subsistence) #:select (sub-spec subsistence-species-base))   ; the floors a substitute is read against
   #:use-module ((playnet utils common) #:select (string-or-false take-up-to))

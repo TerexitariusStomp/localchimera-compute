@@ -33,7 +33,7 @@
   #:use-module ((playnet observation adjustment) #:select (adjustment-event count-difference))
   #:use-module ((playnet doors counts) #:select (fresh-label))
   #:use-module ((playnet utils store-utils) #:select (generate-id))
-  #:use-module ((playnet solve engine) #:select (owned-spec))
+  #:use-module ((playnet solve ingest) #:select (owned-spec))
   #:export (cat-terms
             arcs-json->window cats-json->list window->arcs arc-dates dated-arc?
             ratified-kinds-ref ratified-kinds-set! kind-ratified? *service-units*

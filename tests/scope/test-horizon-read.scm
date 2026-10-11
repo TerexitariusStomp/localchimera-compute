@@ -11,7 +11,7 @@
              (playnet plan accepts)
              (playnet plan store)
              (playnet test planner bread)
-             ((playnet solve engine) #:select (declared-partition set-period-span! time->period))
+             ((playnet solve engine) #:select (set-period-span! time->period)) ((playnet solve ingest) #:select (declared-partition))
              ((playnet utils clock) #:select (now instant->unix instant->civil))
              (goblins) (goblins vat)
              (srfi srfi-1))

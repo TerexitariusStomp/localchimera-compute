@@ -81,7 +81,8 @@ def split_selects(text, old, of):
     rx = re.compile(r'(#:use-module\s+)?\(' + re.escape(old) + r'\s+#:select\s+\(([^()]*)\)\)')
 
     def rep(m):
-        names = m.group(2).split()
+        # a comment inside the list ends at its line, not at the list's close
+        names = re.sub(r';[^\n]*', '', m.group(2)).split()
         if not any(n in of for n in names):
             return m.group(0)
         by = {}

@@ -18,6 +18,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/solve/test-stock-ingest.scm
 
+(use-modules (playnet solve ingest))
 (use-modules (playnet test harness)
              (playnet knowledge dsl shorthand)
              (playnet solve engine) (playnet solve world)

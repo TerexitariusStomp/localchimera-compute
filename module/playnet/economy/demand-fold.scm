@@ -52,7 +52,8 @@
   #:use-module ((playnet pools credit-fold) #:select (consumer-voices))   ; every holder's voice off one reading
   #:use-module (playnet vf facts tension-terms)
   #:use-module ((playnet solve emphasis) #:select (emphasis-masses fill-default))  ; the spec's law: shares × voice
-  #:use-module ((playnet solve engine) #:select (*desire-w0* owned-spec))         ; one citizen's whole emphasis; the citizen's own good
+  #:use-module ((playnet solve engine) #:select (*desire-w0*))
+  #:use-module ((playnet solve ingest) #:select (owned-spec resource-window-hours))         ; one citizen's whole emphasis; the citizen's own good
   #:use-module (goblins)
   #:export (%cell-sep %demand-key %demand-key-parts %need-cells %need-cell %declared-need?
             %needs-of-plan-store scope-own-demand demand-monoid %live-in-period?

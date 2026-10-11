@@ -10,6 +10,7 @@
 ;;; personhood gate.
 
 (define-module (playnet doors count-door)
+  #:use-module (playnet solve ingest)
   #:use-module ((playnet utils units) #:select (%count-unit %intensive-units))
   #:use-module ((playnet knowledge catalogues substances) #:select (thermal-base thermal-form-id %ambient-kelvin))
   #:use-module ((playnet vf formulas actions) #:select (onhand-sign))

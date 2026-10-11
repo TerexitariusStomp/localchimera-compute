@@ -37,7 +37,7 @@
   #:use-module ((playnet vf facts agent-time) #:select (agent-schedulable-window agent-away-dates reserve-hours))
   #:use-module (playnet pools availability-pool)
   #:use-module (playnet vf aggregation fold-node)
-  #:use-module ((playnet solve engine) #:select (*default-agent-hours*))
+  #:use-module ((playnet solve ingest) #:select (*default-agent-hours*))
   #:export (^labour-pool labour-monoid wire-labour-pool!
             skill-specs-for-agent skill-resources-for-agent
             skill-onhand-delta skill-count-deltas))

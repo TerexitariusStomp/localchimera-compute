@@ -80,7 +80,8 @@
               (forms-of path)))
 
 (define engine "module/playnet/solve/engine.scm")
-(define satellites '("module/playnet/solve/robust.scm" "module/playnet/solve/plan.scm" "module/playnet/solve/records.scm" "module/playnet/solve/report.scm" "module/playnet/solve/engine/fragility.scm"
+(define ingest "module/playnet/solve/ingest.scm")   ; the records' side of the door: declares through it, layers through named doors
+(define satellites '("module/playnet/solve/robust.scm" "module/playnet/solve/plan.scm" "module/playnet/solve/records.scm" "module/playnet/solve/report.scm" 
                      "module/playnet/solve/federation-solve.scm" "module/playnet/solve/federation-oracle.scm" "module/playnet/test/planner/worked-example.scm"))
 (define (scm-files-under dir)
   (let ((acc '()))
@@ -98,13 +99,13 @@
 
 ;; 1. in the engine: every set! of a door global sits in declare-world!, reset!,
 ;;    or a named layering door layering its own global
-(let* ((w (writers engine))
+(let* ((w (append (writers engine) (writers ingest)))
        (stray (filter (lambda (s)
                         (let ((g (car s)) (in (cadr s)))
                           (not (or (memq in '(declare-world! reset!))
                                    (let ((l (assq in layerings))) (and l (memq g (cdr l))))))))
                       w)))
-  (check "engine.scm: a door global is assigned in declare-world!/reset!, or by its named layering door (ingest-located! declares through the door)"
+  (check "engine.scm and ingest.scm: a door global is assigned in declare-world!/reset!, or by its named layering door (ingest-located! declares through the door)"
          (null? stray) stray)
   (check "…and every layering door named here still exists and still writes its global"
          (every (lambda (l) (any (lambda (s) (and (eq? (cadr s) (car l)) (memq (car s) (cdr l)))) w))

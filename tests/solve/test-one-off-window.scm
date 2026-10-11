@@ -13,7 +13,7 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine)
+(use-modules (playnet solve engine) (playnet solve ingest)
              (playnet vf schemas) (playnet vf beyond schedules)
              ((playnet knowledge dsl shorthand) #:select (er all-week-window)))
 
