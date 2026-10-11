@@ -13,9 +13,9 @@
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
 
-(define nearest-place (@@ (playnet doors service) nearest-place))
-(define snap-km       (@@ (playnet doors service) snap-km))
-(define label-km      (@@ (playnet doors service) label-km))
+(define nearest-place (@@ (playnet doors position) nearest-place))
+(define snap-km       (@@ (playnet doors position) snap-km))
+(define label-km      (@@ (playnet doors position) label-km))
 
 (define (place id name lat lon) (make-spatial-thing #:id id #:name name #:lat lat #:long lon))
 (define granary   (place "commune-granary" "Granary" 42.70 23.32))

@@ -9,7 +9,7 @@
 ;;;     guile --no-auto-compile -q -L module tools/emit/emit-matter-snapshot.scm
 
 (use-modules (playnet scope root) (playnet vf schemas)
-             (playnet doors service)
+             (playnet doors service) (playnet doors plan-wire)
              (playnet knowledge catalogues substances)
              (goblins)
              (goblins persistence-store memory)

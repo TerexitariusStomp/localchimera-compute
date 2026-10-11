@@ -10,7 +10,7 @@
 
 (use-modules (playnet test harness)
              (playnet scope root) (playnet vf schemas) (srfi srfi-1)
-             (playnet doors service)
+             (playnet doors service) (playnet doors plan-wire)
              (playnet knowledge catalogues substances)
              (goblins)
              (goblins persistence-store memory)

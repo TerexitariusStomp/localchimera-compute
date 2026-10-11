@@ -10,7 +10,7 @@
 
 (use-modules (playnet test harness)
              (playnet vf schemas)              ; make-commitment
-             (playnet doors service)      ; agent-position-predicate
+             (playnet doors service) (playnet doors position)      ; agent-position-predicate
              (playnet scope live)         ; set-period-span! (period ↔ wall-clock)
              ((playnet utils clock) #:select (now))
              ((playnet vf facts person-facts) #:select (fix-lease-seconds))

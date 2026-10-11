@@ -15,6 +15,9 @@
 ;;; events that fulfill commitments in that plan.
 
 (define-module (playnet doors inventory)
+  #:use-module ((playnet doors record-rows) #:select (lookup-spec-name))
+  #:use-module ((playnet scope live) #:select (find-recipe-process-for-spec))
+  #:use-module ((playnet vf formulas actions) #:select (input-action? occupying-actions relocating-actions))
   #:use-module (srfi srfi-1)
   #:use-module (goblins)
   #:use-module (playnet vf schemas)
@@ -22,7 +25,8 @@
   #:use-module ((playnet vf aggregation containment) #:select (containment-first))
   #:use-module ((playnet vf facts rail) #:select (spec-rail))
   #:use-module ((playnet algorithms rollup) #:select (crystallized-snlt-for-spec))
-  #:export (scope-inventory-wire measure->qty measure->unit resource->inv-alist spec->inv-alist
+  #:export (recipe-flow->flow-alist recipes-conforming resolve-recipe-process proc-use-specs build-process-context
+            scope-inventory-wire measure->qty measure->unit resource->inv-alist spec->inv-alist
             build-inventory-snapshot build-resource-detail))
 
 (define (measure->qty m)
@@ -298,3 +302,80 @@
                                 (cons (cons 'container? (container? r))
                                       (resource->inv-alist r obs as specs)))
                               rs))))))
+
+;;; ── Process context (detail panel) ───────────────────────────────────
+
+(define (recipe-flow->flow-alist f rs is-input?)
+  (let* ((spec (recipe-flow-resource-conforms-to f))
+         (rq   (recipe-flow-resource-quantity f))
+         (eq   (recipe-flow-effort-quantity f))
+         (m    (or rq eq)))
+    `((spec . ,spec)
+      (spec-name . ,(or (lookup-spec-name rs spec) spec ""))
+      (qty . ,(or (measure->qty m) 1))
+      (unit . ,(or (measure->unit m) ""))
+      (action . ,(recipe-flow-action f))
+      (is-input . ,is-input?))))
+
+(define (recipes-conforming rs aspect-id)
+  "All recipe ids that PERFORM ASPECT-ID — any recipe-process whose
+   process-conforms-to matches. The structural gate a legal aspect (or spec) opens:
+   which recipes it enables. Generalizes find-recipe-process-for-spec to every hit.
+   Injected into (explain-claim …) as #:gated-by, keeping the provenance bridge
+   decoupled from the planner."
+  (if (not aspect-id) '()
+      (let ((want (if (symbol? aspect-id) (symbol->string aspect-id) aspect-id)))
+        (filter-map
+         (lambda (r)
+           (let ((rps ($ rs 'processes-for-recipe (recipe-id r))))
+             (and (any (lambda (rp)
+                         (equal? (recipe-process-process-conforms-to rp) want))
+                       rps)
+                  (recipe-id r))))
+         ($ rs 'all-recipes)))))
+
+;; The <recipe-process> PROCESS-ID stands for: a recipe-process id (e.g.
+;; 'rp-meeting') directly, else a dynamic id (a performed trip, dependent demand)
+;; through the <process> record the books or the registry hold and its based-on spec.
+(define (resolve-recipe-process scope-root process-id)
+  (let ((rs   ($ scope-root 'recipe-store))
+        (obs  ($ scope-root 'observer))
+        (preg ($ scope-root 'process-registry)))
+    (or ($ rs 'get-recipe-process process-id)
+        (let ((p (or ($ obs 'get-process process-id) ($ preg 'get process-id))))
+          (and p (find-recipe-process-for-spec rs (process-based-on p)))))))
+
+;; The specs PROCESS-ID engages without consuming — its `use` flows, the Svc|
+;; capacities a socialized means lends — what the steward gate asks about.
+(define (proc-use-specs scope-root process-id)
+  (let ((rp (false-if-exception (resolve-recipe-process scope-root process-id))))
+    (if (not rp) '()
+        ;; the means a process puts in someone's hands: what it uses, and
+        ;; what it carries (a pickup — the key a carrier walks to the door)
+        (filter-map (lambda (f) (and (memq (recipe-flow-action f) (append occupying-actions (filter input-action? relocating-actions)))
+                                     (recipe-flow-resource-conforms-to f)))
+                    (car ($ ($ scope-root 'recipe-store) 'flows-for-process
+                            (recipe-process-id rp)))))))
+
+(define (build-process-context scope-root process-id)
+  (let* ((rs ($ scope-root 'recipe-store))
+         (rp (resolve-recipe-process scope-root process-id)))
+    (cond
+      ((not rp)
+       `((proc . ,process-id)
+         (proc-name . #f)
+         (inputs . ())
+         (outputs . ())
+         (upstream . ())
+         (downstream . ())))
+      (else
+       (let* ((rp-id (recipe-process-id rp))
+              (flows-pair ($ rs 'flows-for-process rp-id))
+              (in-flows  (car flows-pair))
+              (out-flows (cdr flows-pair)))
+         `((proc . ,process-id)
+           (proc-name . ,(or (recipe-process-name rp) process-id))
+           (inputs . ,(map (lambda (f) (recipe-flow->flow-alist f rs #t)) in-flows))
+           (outputs . ,(map (lambda (f) (recipe-flow->flow-alist f rs #f)) out-flows))
+           (upstream . ())
+           (downstream . ())))))))

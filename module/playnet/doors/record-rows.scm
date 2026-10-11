@@ -30,7 +30,7 @@
   #:use-module ((playnet solve recipe-response) #:select (response-margin curve-reach capture-at standing-position))
   #:use-module ((playnet vf formulas shocks) #:select (%stress-band))
   #:use-module (playnet wire rows)
-  #:export (record-context agent-skills
+  #:export (payout->alist record-context agent-skills
             planner-time->date-string planner-time->hour-min numeric-string? iso-date-from-epoch
             lookup-spec-name lookup-process-name intent-cell
             %commitment-wire %intent-wire %event-wire %proposal-wire
@@ -530,3 +530,8 @@
                                          (or (recipe-process-sequence-group b) 0)))))
        (rows recipe-step))
       ,@(response-entries own-response))))
+
+(define (payout->alist i)
+  "A payout intent as the plain alist its readers (the runner, the member's list) hold:
+   the payout table's row, read back."
+  (wire->plain (wire-row* %payout-wire i)))

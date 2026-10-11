@@ -13,6 +13,7 @@
 ;;; its steward set them, the pool of lent means, and who is to hear a change.
 
 (define-module (playnet doors slots)
+  #:use-module ((playnet folksonomy graph) #:select (category-term?))
   #:use-module (srfi srfi-1)
   #:use-module (ice-9 format)
   #:use-module (goblins)
@@ -33,7 +34,8 @@
   #:use-module ((playnet doors counts) #:select (fresh-label))
   #:use-module ((playnet utils store-utils) #:select (generate-id))
   #:use-module ((playnet solve engine) #:select (owned-spec))
-  #:export (arcs-json->window cats-json->list window->arcs arc-dates dated-arc?
+  #:export (cat-terms
+            arcs-json->window cats-json->list window->arcs arc-dates dated-arc?
             ratified-kinds-ref ratified-kinds-set! kind-ratified? *service-units*
             slot-criteria slot-criteria-set! move-slot-criteria!
             need-slot-row
@@ -486,3 +488,22 @@
                        (map (lambda (row) (cons (cons 'drawn (drawn-of row)) row)) pool)
                        solved)))
        (success `((needs . ,needs) (means . ,means)))))))
+
+;; make-work-event lives in live.scm: the ONE constructor of a work event, shared
+;; with record-work-done, so every door records the same terms on the same fields.
+
+;;; ── Member projection ────────────────────────────────────────────────
+
+(define (cat-terms . category-lists)
+  "Flatten classification strings into folksonomy term-ids: genuine
+   categories only (category-term?), legacy slash-paths expanded into their
+   segments — the same expansion categories->seed-doc used to seed the
+   commons' cut, so a spec's tags and the template's terms meet by id. The
+   segments of one path are the specific-to-general ladder a match needs."
+  (delete-duplicates
+   (append-map
+    (lambda (c)
+      (if (category-term? c)
+          (filter (lambda (s) (not (string-null? s))) (string-split c #\/))
+          '()))
+    (apply append (map (lambda (l) (if (list? l) l '())) category-lists)))))

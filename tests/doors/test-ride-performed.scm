@@ -24,7 +24,7 @@
              (playnet test books)
              (playnet knowledge recipes berlin-commune-seed) (playnet knowledge recipes berlin-transit) (playnet knowledge recipes transport) (playnet solve compile) (playnet vf schemas) (srfi srfi-1) (srfi srfi-11)
              (playnet scope live)
-             (playnet doors service)
+             (playnet doors service) (playnet doors position)
              (playnet solve engine)
              (playnet solve compile)
              (playnet solve solver)

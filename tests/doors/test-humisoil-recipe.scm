@@ -6,7 +6,7 @@
 
 (use-modules (playnet test harness))
 (use-modules (playnet knowledge recipes humisoil) (playnet scope root) (playnet vf schemas) (srfi srfi-1))
-(use-modules (playnet doors service))
+(use-modules (playnet doors service) (playnet doors plan-wire))
 (use-modules (playnet knowledge catalogues substances))
 (use-modules (goblins)
              (goblins persistence-store memory)

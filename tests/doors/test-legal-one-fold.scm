@@ -491,7 +491,7 @@
 (check "open sea stands in no jurisdiction" (jurisdiction-at 30.0 -40.0) #f)
 (register-jurisdiction-outline! here square)
 (check "an outline a scope registers is read the same way" (jurisdiction-at 10.5 10.5) here)
-(define standing-in (@@ (playnet doors service) standing-in))
+(define standing-in (@@ (playnet doors position) standing-in))
 (define (spot id lat lon up) (make-spatial-thing #:id id #:name id #:lat lat #:long lon
                                                  #:contained-in up))
 (check "a fix stands in the nearby place of its scope when that place is under the outline"

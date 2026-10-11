@@ -80,12 +80,13 @@
                                 (let loop ((s (source-of file)) (n 0))
                                   (let ((i (string-contains s "(adjustment-event")))
                                     (if i (loop (substring s (+ i 1)) (+ n 1)) n))))
-                              '("module/playnet/doors/service.scm"
+                              '("module/playnet/doors/skills.scm"
                                 "module/playnet/doors/count-door.scm"
                                 "module/playnet/doors/slots.scm")))
                 4))
 (check-pred "no place builds a raise or lower by hand any more"
-            (not (string-contains (source-of "module/playnet/doors/service.scm") "(if (> delta 0) 'raise 'lower)")))
+            (not (any (lambda (f) (string-contains (source-of f) "(if (> delta 0) 'raise 'lower)"))
+                      '("module/playnet/doors/service.scm" "module/playnet/doors/skills.scm" "module/playnet/doors/effort.scm"))))
 
 (use-modules ((playnet vf formulas counting) #:select (count-figure))
              (srfi srfi-1))

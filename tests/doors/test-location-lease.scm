@@ -12,7 +12,7 @@
 
 (use-modules (playnet test harness)
              (playnet knowledge recipes federation-demo) (playnet scope root)
-             (playnet doors service)
+             (playnet doors service) (playnet doors position)
              (playnet knowledge recipes federation-demo)
              ((playnet utils clock) #:select (now))
              (goblins) (goblins utils hashmap)
