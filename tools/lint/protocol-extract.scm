@@ -116,7 +116,12 @@ session's own act (`see` reads the vision model; `my-phc` sends fp-my-phc)."
   `((lobby   "module/playnet/doors/lobby.scm" "module/playnet/doors/identity.scm")
     (session "module/playnet/doors/lobby.scm" "module/playnet/doors/identity.scm"
              "module/playnet/doors/body.scm")
-    (planner "module/playnet/doors/service.scm")))
+    (planner "module/playnet/doors/service.scm"
+             "module/playnet/doors/planner/person.scm" "module/playnet/doors/planner/chat.scm"
+             "module/playnet/doors/planner/money.scm" "module/playnet/doors/planner/roster.scm"
+             "module/playnet/doors/planner/slots.scm" "module/playnet/doors/planner/work.scm"
+             "module/playnet/doors/planner/records.scm" "module/playnet/doors/planner/standing.scm"
+             "module/playnet/doors/planner/solving.scm")))
 
 (define (all-doors)
   (append-map (lambda (o) (map (lambda (d) (cons (car o) d)) (object-doors (cdr o) (car o))))

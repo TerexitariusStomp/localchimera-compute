@@ -45,4 +45,19 @@
                (append person-write-doors person-read-doors))
        '())
 
+;; ── the person fragment IS the two lists ─────────────────────────────────
+;; doors/planner/person.scm holds a person's own doors and nothing else, and
+;; only that fragment is routed to the home (doors/service.scm). The lists here
+;; and the fragment's heads are one set: the service refuses to spawn when they
+;; differ, and this check says so without a spawn.
+(use-modules ((playnet doors planner ctx) #:select (make-planner-ctx))
+             ((playnet doors planner person) #:select (planner-person-doors))
+             ((playnet protocol dispatch) #:select (fragment-heads)))
+(let ((heads (map car (fragment-heads (planner-person-doors (make-planner-ctx)))))
+      (listed (append person-write-doors person-read-doors)))
+  (check "every door of the person fragment is a person's own"
+         (filter (lambda (h) (not (memq h listed))) heads) '())
+  (check "every person door is in the person fragment"
+         (filter (lambda (l) (not (memq l heads))) listed) '()))
+
 (test-summary!)

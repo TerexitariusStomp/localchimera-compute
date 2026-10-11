@@ -1,4 +1,11 @@
-;;; module/playnet/doors/service/chat.scm — topic chats, stratum-stamped. GENERIC.
+;;; module/playnet/doors/planner/chat.scm — topic chats: what is said under a scope, stratum-stamped, and the wake over many topics
+;;;
+;;; A fragment of the planner service (playnet doors service): a procedure from
+;;; the service's context to the doors it serves, composed into every service by
+;;; doors/service.scm. `with-planner-ctx` binds the context's fields under their
+;;; own names, so each clause reads as it did inside the actor
+;;; (docs/planning/codebase-layout.md §12). What this fragment alone reads and
+;;; writes is defined here, above its doors: the chat registry, one per service.
 ;;;
 ;;; A chat hangs off a TOPIC — any string a host cares to name: an Intent or
 ;;; Commitment id, a place, a recipe, a scope-wide walkie channel. The
@@ -7,17 +14,13 @@
 ;;; standing toward the topic at the moment of speaking — but resolving that
 ;;; standing is the CALLER's domain knowledge, passed in already-resolved.
 ;;; History thus preserves what the author WAS when they spoke, and filters
-;;; are pure read-side selection.
-;;;
-;;; The first resolver (and first use case) lives below: `relation-of` reads
-;;; a plannable thing's ladder straight from the plan —
+;;; are pure read-side selection. `relation-of` reads a plannable thing's
+;;; ladder straight from the plan —
 ;;;
 ;;;   public     anyone in the scope
 ;;;   willing    willingness expressed for the intent's (skill, cell)
 ;;;   committed  holds a Commitment (by id, or satisfying the intent)
 ;;;   satisfied  one of the author's events fulfills that commitment
-;;;
-;;; Other hosts bring their own resolvers (or `(const 'public)`).
 ;;;
 ;;; Storage is the gateway's house style for durable queues (pending-grants,
 ;;; oobi-host): append-only sexp files, one message per sexp, under
@@ -25,18 +28,21 @@
 ;;; persistence-registry coupling. Watchers are session-lived OCapN
 ;;; callbacks, notified on every post.
 
-(define-module (playnet doors service chat)
-  #:use-module (goblins)
-  #:use-module ((playnet utils clock) #:select (instant->unix (now . clock-now)))   ; the one clock: instants inside, civil at the boundary
-  #:use-module (goblins actor-lib methods)
-  #:use-module (srfi srfi-1)
-  #:use-module (ice-9 textual-ports)
-  #:use-module (playnet vf schemas)
-  #:use-module (playnet vf formulas actions)
+(define-module (playnet doors planner chat)
+  #:use-module ((goblins actor-lib methods) #:select (methods))
+  #:use-module ((goblins) #:select ($ <-np define-actor spawn))   ; spawn: the actor's, not the core's process spawn
+  #:use-module ((ice-9 textual-ports) #:select (get-string-all))
+  #:use-module ((playnet scope live) #:select (time->period willing-tuples))
+  #:use-module ((playnet utils clock) #:select ((now . clock-now) instant->unix))
+  #:use-module ((playnet utils envelope) #:select (catch-as-failure success))
+  #:use-module ((playnet utils paths) #:select (playnet-data-dir))
+  #:use-module ((playnet vf formulas actions) #:select (relocating-action?))
   #:use-module ((playnet vf formulas flows) #:select (row-satisfies?))
-  #:use-module (srfi srfi-1)
-  #:use-module ((playnet scope live) #:select (willing-tuples time->period))
-  #:export (^chat-registry relation-of))
+  #:use-module ((playnet vf schemas) #:select (commitment-action commitment-id commitment-input-of commitment-output-of commitment-provider economic-event-fulfills economic-event-has-end economic-event-has-point-in-time intent-at-location intent-has-beginning intent-id intent-resource-conforms-to))
+  #:use-module ((srfi srfi-1) #:select (alist-delete any filter-map find first last second third))
+  #:use-module (playnet doors planner ctx)
+  #:use-module ((playnet protocol dispatch) #:select (declared-doors))
+  #:export (planner-chat-doors ^chat-registry relation-of))
 
 ;;; ── the generic registry ─────────────────────────────────────────────
 
@@ -184,3 +190,78 @@
                   (willing-tuples ps))))
       'willing)
      (else 'public))))
+
+(define (planner-chat-doors ctx)
+  (with-planner-ctx ctx
+    ;; event chats ride beside the scopes: append-only files under the same
+    ;; data dir the gateway runs in; strata resolved from the plan at post time
+    (define chat-reg
+      ;; #:default keeps a bare `guile -L module` run writing to ./data — no
+      ;; root, no /var/lib. A deployment exports PLAYNET_DATA_DIR and lands
+      ;; in the same directory as every other component.
+      (spawn ^chat-registry (playnet-data-dir #:default "data") '()))
+    (declared-doors planner
+
+      ;; ── Topic chats: generic store, plan-resolved strata ──────────────────
+      ;; A topic is ANY string under the scope (an Intent/Commitment id is the
+      ;; first use case; places, recipes, a walkie channel ride the same rail).
+      ;; The author's stratum is resolved HERE — relation-of reads the plan when
+      ;; the topic IS a plannable thing, and honestly says `public` otherwise —
+      ;; then stamped; filtering is the client's read-side choice.
+
+      ((chat-post scope-id topic aid body #:optional (message-kind #f))
+       (with-scope scope-id
+         (lambda (root)
+           (catch-as-failure
+             (lambda ()
+               (success ($ chat-reg 'post
+                           (string-append scope-id "/" topic) aid body
+                           (or message-kind "text")
+                           (relation-of root topic aid))))))))
+
+      ((chat-history scope-id topic #:optional (since 0))
+       (with-scope scope-id
+         (lambda (root)
+           (catch-as-failure
+             (lambda ()
+               (success (list->vector
+                         ($ chat-reg 'history
+                            (string-append scope-id "/" topic)
+                            since))))))))
+
+      ;; THE WAKE (docs/planning/faces/meeting-station.md, Layer 2): the last line of
+      ;; each of MANY topics, in one call. The wake is an index over every live
+      ;; room at once, so a round trip per room is the thing to avoid — that cost
+      ;; is what would make "all rooms legible at all times" impractical.
+      ;; Returns an alist topic → (author body kind t); topics with nothing said
+      ;; are simply absent.
+      ((chat-last scope-id topics)
+       (with-scope scope-id
+         (lambda (root)
+           (catch-as-failure
+             (lambda ()
+               (success
+                (filter-map
+                 (lambda (topic)
+                   ;; `last` reads the file's tail; the registry owns the format,
+                   ;; so the wake never parses a conversation to see its newest
+                   ;; line — the cost stays flat as a meeting transcribes itself.
+                   (let ((last ($ chat-reg 'last (string-append scope-id "/" topic))))
+                     (and last
+                          (cons topic
+                                (list (or (assq-ref last 'author) "")
+                                      (or (assq-ref last 'body) "")
+                                      (or (assq-ref last 'kind) "text")
+                                      (or (assq-ref last 't) 0))))))
+                 ;; the wire may hand us a vector or a list
+                 (cond ((vector? topics) (vector->list topics))
+                       ((list? topics) topics)
+                       (else '())))))))))
+
+      ((chat-watch scope-id topic cb)
+       (with-scope scope-id
+         (lambda (root)
+           (catch-as-failure
+             (lambda ()
+               ($ chat-reg 'watch (string-append scope-id "/" topic) cb)
+               (success #t)))))))))
