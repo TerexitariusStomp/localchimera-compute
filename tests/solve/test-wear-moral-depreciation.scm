@@ -21,7 +21,7 @@
 ;;; Run:  tools/test/run-suite.sh tests/solve/test-wear-moral-depreciation.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine)
+(use-modules (playnet solve engine) (playnet solve report)
              (playnet solve compile))
 
 ;; bake wears the oven; condition has two components with their own suppliers:

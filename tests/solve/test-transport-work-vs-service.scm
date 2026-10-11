@@ -18,7 +18,7 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve world)
+(use-modules (playnet solve engine) (playnet solve report) (playnet solve world)
              (playnet solve compile)
              (playnet solve solver)
              (playnet vf schemas)

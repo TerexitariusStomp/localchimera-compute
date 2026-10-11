@@ -39,6 +39,7 @@
   #:use-module (playnet solve solver)
   #:use-module (playnet solve compile)
   #:use-module (playnet solve engine)
+  #:use-module (playnet solve report)
   #:use-module (playnet solve records)
   #:export (allocate-means-consensus boundary-bounds close-stranded-links commune->scope-record
             crossing-recipe eisenberg-gale-split federated-delivered federated-dilemma federated-flows

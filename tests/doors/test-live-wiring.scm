@@ -7,6 +7,7 @@
 ;;; conformsTo=skill, effort=hours, inputOf=process). Skills are resolved from each
 ;;; agent's skill ERs (held resources), hours from their availabilityWindow.
 
+(use-modules (playnet solve report))
 (use-modules (playnet test scope)) ; mock-scope-root
 (use-modules (playnet test harness)
              (playnet vf schemas) (srfi srfi-1)

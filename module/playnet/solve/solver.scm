@@ -26,6 +26,7 @@
 ;; *demos?* now because it is the only thing left that reads it.
 ;; ════════════════════════════════════════════════════════════════════════════
 (define-module (playnet solve solver)
+  #:use-module (playnet protocol context)
   #:use-module ((playnet utils catch) #:select (throw*))
   #:use-module (srfi srfi-1)
   #:use-module (ice-9 format)
@@ -1554,7 +1555,10 @@
 ;;
 ;; Read immediately after a solve; not safe across concurrent solves.
 ;; Regression: tests/solve/test-certificate.scm.
-(define *last-certificate* '((feasible? . #f) (optimal? . #f)))
+;; the last solve's certificate: ONE context cell (playnet protocol context),
+;; so a compiled importer reads the cell's field and never a folded initial value
+(define-context certificate #:cell %certificate
+  (*last-certificate* '((feasible? . #f) (optimal? . #f))))
 (define (certificate-of-last-solve) *last-certificate*)
 (define (set-last-certificate! c) (set! *last-certificate* c))   ; the door for a caller that resets it — an importer's own set! writes a box this module never reads once compiled
 (define* (set-certificate-from-kkt! k #:optional measured-mu)

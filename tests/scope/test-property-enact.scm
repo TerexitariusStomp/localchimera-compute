@@ -15,6 +15,7 @@
 ;;; under workers and the solve circulated tens of thousands of units the books refused.
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/scope/test-property-enact.scm
+(use-modules (playnet solve report))
 (use-modules ((playnet vf formulas flows) #:select (row-figure))
              (playnet test harness) (playnet test books)
              (playnet vf schemas) (srfi srfi-1) (srfi srfi-11)
@@ -63,7 +64,7 @@
               (lambda (forms labform ncol cols goods raws idx)
                 (let* ((x0 ((module-ref E 'located-warm) cols ncol idx))
                        (x (call-with-values (lambda () (solve-native forms labform x0)) (lambda (x . _) x))))
-                  ((module-ref E 'plan->material) x cols idx)))))
+                  ((@ (playnet solve report) plan->material) x cols idx)))))
            (rows (map (lambda (m)
                         `((id . ,(commitment-id m)) (action . ,(commitment-action m))
                           (conforms-to . ,(commitment-resource-conforms-to m))

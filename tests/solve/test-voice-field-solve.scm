@@ -15,6 +15,7 @@
 ;;;
 ;;; Run:  guile -q -L module tests/solve/test-voice-field-solve.scm
 
+(use-modules (playnet solve report))
 (use-modules (playnet test planner prelude)
              (playnet solve engine) (playnet solve world) (playnet solve compile) (playnet solve solver)
              (playnet vf facts parts) (playnet solve voice-field)

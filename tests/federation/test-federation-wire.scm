@@ -12,7 +12,7 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/federation/test-federation-wire.scm
 
-(use-modules (playnet test harness)
+(use-modules ((playnet solve solver) #:select (*last-certificate*)) (playnet test harness)
              (playnet federation wire)
              ((playnet solve engine) #:select (solve-decomposed)) ((playnet solve federation-oracle) #:select (make-boundary-oracle solve-consensus))
              ((playnet keri citizen-sig) #:select (make-keri-identity keri-identity-aid))
@@ -21,8 +21,7 @@
 
 (use-modules (playnet test planner federation-wire-fixture))
 
-(define *last-certificate*
-  (lambda () (module-ref (resolve-module '(playnet solve engine)) '*last-certificate*)))
+(define (last-certificate) *last-certificate*)   ; the solver's cell, read late
 
 ;; ── 1. parity: the oracle IS the scope's half of solve-decomposed ────────────
 ;; The consensus loop runs FIRST: solve-decomposed's finish settles the
@@ -43,7 +42,7 @@
   (call-with-values (lambda () (solve-decomposed (list (fx-commune-a) (fx-commune-b))
                                                  #:reconcile? #f #:refine? #f))
     (lambda (plans met rounds pulls)
-      (values (assq-ref (*last-certificate*) 'met) rounds (hash-ref pulls "flour" 0.0)))))
+      (values (assq-ref (last-certificate) 'met) rounds (hash-ref pulls "flour" 0.0)))))
 (format #t "   decomposed: met ~,2f rounds ~a λ ~,6f~%" met-d rounds-d pull-d)
 (format #t "   consensus : met ~,2f rounds ~a λ ~,6f~%" met-c rounds-c pull-c)
 (check "A and B share flour, and say no more of it than that"
@@ -85,7 +84,7 @@
   (check (string-append label ": the wire solve completed") (not (eq? (car r) 'error)))
   (when (not (eq? (car r) 'error))
     (let ((met (list-ref r 0)) (rounds (list-ref r 1)) (pull (list-ref r 2)) (reports (list-ref r 3))
-          (cert (*last-certificate*)))
+          (cert (last-certificate)))
       (format #t "   ~a: met ~,2f rounds ~a λ(flour) ~,6f   (in-process: met ~,2f rounds ~a λ ~,6f)~%"
               label met rounds pull (car ref) (cadr ref) (caddr ref))
       (format #t "   certificate: ~s~%" cert)
@@ -184,7 +183,7 @@
                  opts))
       (lambda (reports met rounds pulls) (list met rounds (hash-ref pulls "flour" 0.0))))))
 (define r4 (flaky-consensus (lambda (r) (memv r '(3 4)))))
-(define cert-4 (*last-certificate*))
+(define cert-4 (last-certificate))
 (format #t "   flaky: met ~,2f rounds ~a λ ~,6f  stale-rounds ~a~%"
         (car r4) (cadr r4) (caddr r4) (assq-ref cert-4 'stale-rounds))
 (check "two missed rounds are counted" (assq-ref cert-4 'stale-rounds) 2)
@@ -195,8 +194,8 @@
 ;; residual nor drifts, so the pull the solve lands on is the same one
 (define r4l (flaky-consensus (lambda (r) (<= 3 r 7))))
 (format #t "   five missed: met ~,2f rounds ~a λ ~,6f  stale-rounds ~a~%"
-        (car r4l) (cadr r4l) (caddr r4l) (assq-ref (*last-certificate*) 'stale-rounds))
-(check "five missed rounds in a row are counted" (assq-ref (*last-certificate*) 'stale-rounds) 5)
+        (car r4l) (cadr r4l) (caddr r4l) (assq-ref (last-certificate) 'stale-rounds))
+(check "five missed rounds in a row are counted" (assq-ref (last-certificate) 'stale-rounds) 5)
 (check "and the pull is still the full run's" (< (abs (- (caddr r4l) pull-c)) 0.05))
 ;; where the pull is not ~0: the scarce economy's λ ≈ −30.8 is a number a
 ;; drifting dual would visibly miss
@@ -231,7 +230,7 @@
 (define r4w (run-wire (mute-b 3 4) #f #:deadline 0.5))
 (check "the wire solve completes past two missed deadlines" (not (eq? (car r4w) 'error)))
 (when (not (eq? (car r4w) 'error))
-  (check "the certificate counts the stale rounds" (assq-ref (*last-certificate*) 'stale-rounds) 2)
+  (check "the certificate counts the stale rounds" (assq-ref (last-certificate) 'stale-rounds) 2)
   (check "demand is met" (> (car r4w) 98.0)))
 (define r4x (run-wire (mute-b 3 1000) #f #:deadline 0.2 #:max-stale 3))
 (check "a commune that never answers again is given up on" (eq? (car r4x) 'error))

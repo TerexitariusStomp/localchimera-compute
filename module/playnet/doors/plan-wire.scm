@@ -4,6 +4,7 @@
 ;;; verb takes the scope root and the arguments; the door is the gate and one call.
 
 (define-module (playnet doors plan-wire)
+  #:use-module (playnet solve report)
   #:use-module ((goblins) #:select ($))
   #:use-module ((playnet algorithms elastic) #:select (current-social-free-time))
   #:use-module ((playnet doors counts) #:select (count-readable?))

@@ -19,6 +19,7 @@
   #:use-module (playnet vf formulas periods)   ; what a period is in wall-clock time
   #:use-module (playnet solve solver)
   #:use-module (playnet solve engine)
+  #:use-module (playnet solve report)
   #:use-module (playnet solve records)
   #:use-module (playnet solve robust)
   #:export (plan-from-records %plan-from-records plan-bills bills-fold))

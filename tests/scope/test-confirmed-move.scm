@@ -82,7 +82,7 @@
 ;; The engine's own located solve carries 100 L from A to B (stock at A, demand at B);
 ;; plan->material emits the pickup and dropoff rows, and enacting them against an observer that
 ;; holds the same crate must conserve the spec and land the water at B.
-(use-modules (playnet solve engine) (playnet solve world) (playnet solve compile) (playnet solve solver))
+(use-modules (playnet solve engine) (playnet solve report) (playnet solve world) (playnet solve compile) (playnet solve solver))
 (define E (resolve-module '(playnet solve engine)))
 (declare-world! #:places '(("A" 0.0 0.0) ("B" 0.0 0.05)) #:templates '() #:movable '("water"))
 (hash-set! *init* (lg "water" (cell "A" 0)) 100.0)
@@ -91,7 +91,7 @@
   (call-with-values build-located
     (lambda (forms labform ncol cols goods raws idx)
       (let ((x (car (call-with-values (lambda () (solve-osqp forms labform ncol)) list))))
-        ((module-ref E 'plan->material) x cols idx)))))
+        ((@ (playnet solve report) plan->material) x cols idx)))))
 (define (carry? m) (memq (commitment-action m) '(pickup dropoff)))
 (define moves (filter carry? planned-mat))
 (display "\n── a planned carry, enacted ──\n")
@@ -121,7 +121,7 @@
           (call-with-values build-located
             (lambda (forms labform ncol cols goods raws idx)
               (let ((x (car (call-with-values (lambda () (solve-osqp forms labform ncol)) list))))
-                ((module-ref E 'plan->material) x cols idx))))))
+                ((@ (playnet solve report) plan->material) x cols idx))))))
 (define moves-a (solve-moves 30.0))
 (define moves-b (solve-moves 30.0))
 (display "\n── ids name the flow ──\n")

@@ -6,6 +6,7 @@
 ;;;
 ;;; Run:  guile -L module tests/doors/test-solve-brief.scm
 
+(use-modules (playnet solve report))
 (use-modules (playnet test harness)
              (playnet doors service brief)
              (srfi srfi-13))          ; string-contains

@@ -28,6 +28,7 @@
 ;; SKILL is read straight off the recipe here (not bolted on). effortQuantity is
 ;; the hours (a time-based action; it affects no economic resource).
 (define-module (playnet solve compile)
+  #:use-module (playnet protocol context)
   #:use-module ((playnet vf facts agent-tags) #:select (tag-value))
   #:use-module ((playnet vf facts located) #:select (svc-good svc-good? bar-spec lg cell))
   #:re-export (svc-good %ambient-tag)   ; the Svc| namer is the key grammar's (facts/located); re-exported for the two loaders that read it here
@@ -360,15 +361,16 @@
 
 ;; the compiled recipes of the problem in hand — supplied per solve
 ;; (ingest-records!, or a caller's own compile-recipe), cleared by reset!.
-(define *templates* '())
-;; 78 sites outside this file assign *templates* directly — `(set! *templates*
-;; (compile-recipe …))` is the engine's, the studies' and the benches' shared
-;; idiom, and it keeps working through an import. But only while this file also
-;; assigns it: a module that never writes its own global lets the compiler
-;; resolve its reads directly, so an importer's set! writes a box the module no
-;; longer consults. Interpreted that is invisible; compiled, the two views
-;; diverge in silence. This setter keeps the variable boxed — and names the
-;; mutable surface, which is the honest version of what those 78 sites do.
+;; ONE context cell (playnet protocol context): `*templates*` is a top-level
+;; name over the cell, so a read anywhere is the cell's field and a write
+;; anywhere its setter. 78 sites outside this file assign *templates* directly;
+;; `set-templates!` names that mutable surface as a door. Stated as a plain
+;; variable, a compiled importer of this declarative module folded the initial
+;; '() into its own code and read no template the solve had laid (the report's
+;; labour content came back empty, measured), while an interpreted reader saw
+;; them all: the two views diverged in silence.
+(define-context compiled #:cell %compiled
+  (*templates* '()))
 (define (set-templates! ts) (set! *templates* ts))
 ;; THE WORKED EXAMPLE used to be loaded here. It cannot be: `setup-space` and
 ;; its four siblings assign twelve of the ENGINE's globals (*places*, *periods*,

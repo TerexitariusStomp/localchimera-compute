@@ -8,6 +8,7 @@
 ;;; retire-need withdraws. NO new schema fields anywhere.
 ;;; Run: guile -L module tests/doors/test-slots-service.scm
 
+(use-modules (playnet solve report))
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet scope root) (playnet vf schemas) (srfi srfi-1))

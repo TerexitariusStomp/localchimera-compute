@@ -15,7 +15,7 @@
 ;;; Run:  tools/test/run-suite.sh tests/solve/test-coherence.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet test planner worked-example) (playnet solve world)
+(use-modules (playnet solve engine) (playnet solve report) (playnet test planner worked-example) (playnet solve world)
              (playnet solve solver)
              (playnet vf schemas))
 

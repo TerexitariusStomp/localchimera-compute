@@ -19,6 +19,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/doors/test-relocation-rows.scm
 
+(use-modules (playnet solve report))
 (use-modules ((playnet vf formulas flows) #:select (row-figure))
              (playnet test harness)
              (playnet test books)
@@ -54,7 +55,7 @@
     (lambda (forms labform ncol cols goods raws idx)
       (let* ((x0 ((module-ref E 'located-warm) cols ncol idx))
              (x (call-with-values (lambda () (solve-native forms labform x0)) (lambda (x . _) x))))
-        (map row ((module-ref E 'plan->material) x cols idx))))))
+        (map row ((@ (playnet solve report) plan->material) x cols idx))))))
 (define (acts rows) (map (lambda (r) (assq-ref r 'action)) rows))
 (check "no row of the plan is a move" (filter (lambda (a) (eq? a 'move)) (acts bare-rows)) '())
 (check "no row carries a destination in its note" (filter (lambda (r) (assq-ref r 'note)) bare-rows) '())
@@ -219,7 +220,7 @@
     (lambda (forms labform ncol cols goods raws idx)
       (let* ((x0 ((module-ref E 'located-warm) cols ncol idx))
              (x (call-with-values (lambda () (solve-native forms labform x0)) (lambda (x . _) x))))
-        (map row ((module-ref E 'plan->material) x cols idx))))))
+        (map row ((@ (playnet solve report) plan->material) x cols idx))))))
 (define (hauled rows)                  ; the quantity the plan picks up at A
   (fold + 0.0 (map (lambda (r) (assq-ref r 'quantity))
                    (filter (lambda (r) (and (eq? 'pickup (assq-ref r 'action)) (equal? "A" (assq-ref r 'at-location)))) rows))))

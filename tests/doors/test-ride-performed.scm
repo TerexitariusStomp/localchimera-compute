@@ -19,6 +19,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/doors/test-ride-performed.scm
 
+(use-modules (playnet solve report))
 (use-modules ((playnet vf formulas flows) #:select (row-figure))
              (playnet test harness)
              (playnet test books)
@@ -53,7 +54,7 @@
     (lambda (forms labform ncol cols goods raws idx)
       (let* ((x0 ((module-ref E 'located-warm) cols ncol idx))
              (x (call-with-values (lambda () (solve-native forms labform x0)) (lambda (x . _) x))))
-        ((module-ref E 'plan->material) x cols idx)))))
+        ((@ (playnet solve report) plan->material) x cols idx)))))
 (define (row m)
   `((id . ,(commitment-id m)) (action . ,(commitment-action m)) (conforms-to . ,(commitment-resource-conforms-to m))
     (quantity . ,(row-figure m))
@@ -78,7 +79,7 @@
     (lambda (forms labform ncol cols goods raws idx)
       (let* ((x0 ((module-ref E 'located-warm) cols ncol idx))
              (x (call-with-values (lambda () (solve-native forms labform x0)) (lambda (x . _) x))))
-        (call-with-values (lambda () ((module-ref E 'plan->work) x cols idx))
+        (call-with-values (lambda () ((@ (playnet solve report) plan->work) x cols idx))
           (lambda (ints coms . rest)
             (filter (lambda (c) (string-prefix? "ride.Dana." (or (commitment-input-of c) ""))) coms)))))))
 (check-pred "the plan commits the rider's hours on a ride to her"

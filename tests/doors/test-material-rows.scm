@@ -17,6 +17,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/doors/test-material-rows.scm
 
+(use-modules (playnet solve report))
 (use-modules (playnet test harness)
              (playnet vf schemas)
              (playnet solve engine)
@@ -26,7 +27,7 @@
              (srfi srfi-1))
 
 (define E (resolve-module '(playnet solve engine)))
-(define mk-mat-commitment (module-ref E 'mk-mat-commitment))
+(define mk-mat-commitment (@ (playnet solve report) mk-mat-commitment))
 (define run-id (module-ref E (quote run-id)))
 (define (never-ambient spec) #f)   ; the engine's ambient test: a spec drawn from the ambient world
 

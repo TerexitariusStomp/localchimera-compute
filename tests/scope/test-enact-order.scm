@@ -11,6 +11,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/scope/test-enact-order.scm
 
+(use-modules (playnet solve report))
 (use-modules ((playnet vf formulas flows) #:select (row-figure))
              (playnet test harness)
              (playnet test books)
@@ -40,7 +41,7 @@
     (lambda (forms labform ncol cols goods raws idx)
       (let* ((x0 ((module-ref E 'located-warm) cols ncol idx))
              (x (call-with-values (lambda () (solve-native forms labform x0)) (lambda (x . _) x))))
-        ((module-ref E 'plan->material) x cols idx)))))
+        ((@ (playnet solve report) plan->material) x cols idx)))))
 (define (row m)
   `((id . ,(commitment-id m)) (action . ,(commitment-action m)) (conforms-to . ,(commitment-resource-conforms-to m))
     (quantity . ,(row-figure m))

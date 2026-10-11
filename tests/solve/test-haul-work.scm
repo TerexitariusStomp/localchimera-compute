@@ -18,6 +18,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/solve/test-haul-work.scm
 
+(use-modules (playnet solve report))
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness)
              (playnet knowledge recipes transport) (playnet solve compile) (playnet vf schemas) (srfi srfi-1)

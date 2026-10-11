@@ -23,6 +23,7 @@
   #:use-module (playnet solve compile)
   #:use-module (playnet vf formulas shocks)
   #:use-module (playnet solve engine)
+  #:use-module (playnet solve report)
   #:use-module (playnet solve records)
   #:export (carried-forward first-stage-activity
             first-stage-plan plan-robust-from-records robust-plan-report robust-assemble branch-costs))

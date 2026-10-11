@@ -10,6 +10,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/solve/test-key-terms-shapes.scm
 
+(use-modules (playnet solve report))
 (use-modules (playnet test harness)
              (playnet vf facts located)
              (playnet solve engine) (playnet solve world) (playnet solve compile)

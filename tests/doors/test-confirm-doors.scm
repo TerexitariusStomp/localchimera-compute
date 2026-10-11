@@ -19,6 +19,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/doors/test-confirm-doors.scm
 
+(use-modules (playnet solve report))
 (use-modules (playnet solve world) (playnet test harness)
              (playnet test books)
              (playnet vf schemas) (srfi srfi-11)
@@ -130,7 +131,7 @@
   (check "a raw a person holds is the scope's capacity" (list (lot-of? water "water" persons) (lot-of? water "water~ana" persons)) '(#t #f)))
 
 (display "\n── AMBIENT: a good with stock behind it is drawn from the stock ──\n")
-(let ((ambient? (@@ (playnet solve engine) ambient-spec?))
+(let ((ambient? (@@ (playnet solve report) ambient-spec?))
       (raws *raws*)
       (cap  *cap*))
   (hash-clear! raws) (hash-clear! cap)
