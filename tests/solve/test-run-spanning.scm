@@ -34,7 +34,7 @@
 (use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules ((playnet vf formulas flows) #:select (row-figure))
              (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine)
+(use-modules (playnet solve engine) (playnet solve plan)
              (playnet vf schemas)
              (playnet knowledge dsl shorthand))
 

@@ -17,7 +17,7 @@
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet knowledge dsl shorthand)
              ((playnet knowledge recipes transport) #:select (mode-recipe))
-             (playnet solve engine)
+             (playnet solve engine) (playnet solve plan)
              (playnet vf schemas))
 
 (define *pass* 0) (define *fail* 0)

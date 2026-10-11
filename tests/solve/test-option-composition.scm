@@ -22,7 +22,7 @@
 (use-modules (playnet test scope))
 (use-modules (srfi srfi-1) (ice-9 format))
 
-(use-modules (playnet solve engine)
+(use-modules (playnet solve engine) (playnet solve plan)
              (playnet solve solver)
              (playnet vf schemas))
 ;; option-premium is a module; option-composition is still a fragment and

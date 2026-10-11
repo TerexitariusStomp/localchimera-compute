@@ -14,7 +14,7 @@
 
 (use-modules (playnet test harness)
              ((playnet test planner prelude) #:select ())
-             (playnet solve engine)
+             (playnet solve engine) (playnet solve plan)
              (playnet vf schemas)
              (playnet knowledge dsl shorthand)
              (playnet knowledge recipes bread-commune-seed)

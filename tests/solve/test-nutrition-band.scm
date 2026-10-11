@@ -26,7 +26,7 @@
 ;;; Run: guile --no-auto-compile -q -L module tests/solve/test-nutrition-band.scm
 
 (use-modules (playnet test planner prelude)
-             (playnet solve engine)
+             (playnet solve engine) (playnet solve plan)
              (playnet vf schemas)
              (srfi srfi-1)
              (ice-9 format))

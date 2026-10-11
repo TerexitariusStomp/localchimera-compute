@@ -23,7 +23,7 @@
 (define (sibling f) (or (find file-exists? (filter-map (lambda (p) (and (string? p) (string-append (dirname p) "/" f)))
                                                        (cons (current-filename) (command-line))))
                         (error "sibling not found" f)))
-(use-modules (playnet solve engine)
+(use-modules (playnet solve engine) (playnet solve plan)
              (playnet vf schemas)
              (playnet vf formulas stocks)
              (playnet knowledge worlds bioregions)

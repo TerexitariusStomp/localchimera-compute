@@ -26,7 +26,7 @@
   (when self (add-to-load-path (string-append (dirname self) "/../../module"))))
 (use-modules (playnet test harness)
              (playnet knowledge catalogues substances)   ; nutrient-content · menu-carries · menu-starves
-             (playnet solve engine)
+             (playnet solve engine) (playnet solve plan)
              (playnet vf schemas)
              (playnet knowledge dsl shorthand)
              (playnet knowledge dsl world)

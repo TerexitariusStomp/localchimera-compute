@@ -32,7 +32,7 @@
 ;; actors nor the stores does not ask for it.)
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve world)
+(use-modules (playnet solve engine) (playnet solve plan) (playnet solve world)
              (playnet solve compile)
              (playnet vf schemas)
              (playnet knowledge dsl shorthand))

@@ -27,7 +27,7 @@
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness) (playnet vf formulas skill-law) (playnet vf schemas) (srfi srfi-1) (playnet scope live) (playnet test scope)
-             ((playnet solve engine) #:select (plan-from-records))
+             ((playnet solve plan) #:select (plan-from-records))
              ((playnet vf formulas skill-law) #:select (effective-skills))
              (goblins) (goblins vat) (srfi srfi-1) (ice-9 format))
 

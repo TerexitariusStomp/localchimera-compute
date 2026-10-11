@@ -10,7 +10,7 @@
 ;;; Run:  guile --no-auto-compile -q -L module tests/solve/test-rest-reserve.scm
 
 (use-modules (playnet solve world) (playnet test planner prelude)
-             (playnet solve engine)
+             (playnet solve engine) (playnet solve plan)
              (playnet vf facts availability)
              (playnet vf facts agent-time)
              (playnet vf schemas)

@@ -1,24 +1,30 @@
-;;; engine/robust.scm — robust multi-scenario planning over the located solver.
+;;; module/playnet/solve/robust.scm — robust multi-scenario planning over the located solver.
 ;;;
 ;;; Design: docs/planning/solve/robust-multiscenario.md. Phase-1 (raw forms) proved the
 ;;; mechanism; this is Phase-2: the SAME idea driven through the records pipeline,
-;;; keyed by the VF-aligned <planning-scenario> record (schemas.scm).
+;;; keyed by the VF-aligned <planning-scenario> record (vf/beyond/scenario).
 ;;;
-;;; A two-stage stochastic program is NOT a new solver — it is a different
-;;; ASSEMBLY of the forms `build-located` already emits:
-;;;   • each scenario is built by `build-located` with its yields scaled → its own
-;;;     forms over the SAME (structural, coefficient-independent) column layout;
-;;;   • FIRST-STAGE columns (planting/allocation, named in #:first-stage-procs) are
-;;;     SHARED — one global slot referenced by every scenario ⇒ non-anticipativity
-;;;     is free (sharing the index IS the equality x⁽ˢ⁾ = x);
-;;;   • RECOURSE columns get a private per-scenario slot;
-;;;   • every wall — reproduction `bar` floors, eco `frag` barriers, `held`
-;;;     margins — is kept per-scenario (ROBUST — hold in every future); `des`
-;;;     desire + free-time are p-weighted (EXPECTED objective).
-;;; The result is one larger — still convex — program, solved by `solve` unchanged.
-;;;
-;;; Loaded into the engine (uses build-located, ingest-records!, col-key,
-;;; f-kind/f-const/f-coeffs/f-Dw, solve, and the schemas records).
+;;; A two-stage stochastic program is NOT a new solver: it is a different
+;;; ASSEMBLY of the forms `build-located` already emits, one branch per
+;;; scenario over one pristine world, the first stage shared. A module above
+;;; the engine: it reads the world's tables by name (solve/world) and the
+;;; engine's builders, search and report; `plan-from-records #:scenarios …`
+;;; (solve/plan) delegates to `robust-plan-report` here.
+
+(define-module (playnet solve robust)
+  #:use-module (playnet solve world)
+  #:use-module (srfi srfi-1)
+  #:use-module ((playnet utils alist) #:select (assv-replace assoc-replace))
+  #:use-module ((playnet utils catch) #:select (catch* throw* with-throw-handler*))
+  #:use-module (ice-9 format)
+  #:use-module (playnet vf beyond scenario)
+  #:use-module (playnet vf facts located)
+  #:use-module (playnet solve solver)
+  #:use-module (playnet solve compile)
+  #:use-module (playnet vf formulas shocks)
+  #:use-module (playnet solve engine)
+  #:export (%world-keywords %held-back-world-keywords carried-forward first-stage-activity
+            first-stage-plan plan-robust-from-records robust-plan-report robust-assemble branch-costs))
 
 ;; ── the SHOCK ALGEBRA is its own module ─────────────────────────────────────
 ;; (playnet vf formulas shocks): the DSL's normal form, the one matcher a branch

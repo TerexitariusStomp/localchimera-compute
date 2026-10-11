@@ -15,7 +15,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/solve/test-taleb-tail.scm
 
-(use-modules (srfi srfi-1) (ice-9 format))
+(use-modules (playnet solve plan) (srfi srfi-1) (ice-9 format))
 (define (sibling f) (or (find file-exists? (filter-map (lambda (p) (and (string? p) (string-append (dirname p) "/" f)))
                                                        (cons (current-filename) (command-line))))
                         f))

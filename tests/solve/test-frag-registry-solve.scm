@@ -13,7 +13,7 @@
 
 (use-modules (srfi srfi-1) (ice-9 format)
              (goblins) (goblins actor-lib methods) (goblins actor-lib facet))
-(use-modules (playnet solve engine)
+(use-modules (playnet solve engine) (playnet solve plan)
              (playnet vf schemas)
              (playnet knowledge dsl shorthand))
 (use-modules (playnet knowledge catalogues tension-registry)    ; brings goblins + ^tension-registry

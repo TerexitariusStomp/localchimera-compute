@@ -29,7 +29,7 @@
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test planner prelude)
-             (playnet solve engine)
+             (playnet solve engine) (playnet solve robust) (playnet solve plan)
              (playnet vf schemas) (playnet vf beyond scenario)
              (srfi srfi-1)
              (ice-9 format))

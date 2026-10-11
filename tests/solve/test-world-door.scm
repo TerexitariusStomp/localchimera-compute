@@ -80,7 +80,7 @@
               (forms-of path)))
 
 (define engine "module/playnet/solve/engine.scm")
-(define satellites '("module/playnet/solve/engine/robust.scm" "module/playnet/solve/engine/fragility.scm"
+(define satellites '("module/playnet/solve/robust.scm" "module/playnet/solve/plan.scm" "module/playnet/solve/engine/fragility.scm"
                      "module/playnet/solve/engine/federation-solve.scm" "module/playnet/test/planner/worked-example.scm"))
 (define (scm-files-under dir)
   (let ((acc '()))

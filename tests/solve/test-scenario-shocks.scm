@@ -11,7 +11,7 @@
 ;;; Run: guile --no-auto-compile -L module tests/solve/test-scenario-shocks.scm
 
 (use-modules (playnet test planner prelude)
-             (playnet solve engine)
+             (playnet solve engine) (playnet solve robust)
              (playnet vf formulas shocks)
              (playnet vf schemas) (playnet vf beyond scenario)
              (playnet knowledge dsl shorthand)

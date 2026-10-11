@@ -31,8 +31,8 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/solve/test-granary-under-uncertainty.scm
 
-(use-modules (playnet test planner prelude)
-             (playnet solve engine)
+(use-modules (playnet solve plan) (playnet test planner prelude)
+             (playnet solve engine) (playnet solve robust)
              (playnet vf schemas) (playnet vf beyond scenario)
              (playnet knowledge worlds bioregions)
              (srfi srfi-1)

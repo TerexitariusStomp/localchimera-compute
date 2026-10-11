@@ -47,7 +47,7 @@
 ;;; Run: guile -L module tests/solve/test-berlin-kleingaerten.scm
 
 (use-modules (playnet test planner prelude)
-             (playnet solve engine)
+             (playnet solve engine) (playnet solve plan)
              (playnet vf schemas) (playnet vf beyond scenario)
              (srfi srfi-1)
              (ice-9 format))

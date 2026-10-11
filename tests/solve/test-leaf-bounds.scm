@@ -23,7 +23,7 @@
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (srfi srfi-1) (ice-9 format)
-             (playnet solve engine) (playnet vf schemas) (playnet vf facts located)
+             (playnet solve engine) (playnet solve plan) (playnet vf schemas) (playnet vf facts located)
              (playnet knowledge dsl shorthand) (playnet knowledge dsl world)
              ((playnet knowledge catalogues thermal) #:select (relaxation-records))
              ((playnet knowledge recipes farm-commune-seed) #:select ((farm-world . commune-farm-world)))   ; the suite's own farm-world is the hectare below

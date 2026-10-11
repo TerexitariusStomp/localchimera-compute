@@ -14,7 +14,7 @@
 
 (use-modules (playnet test harness)
              ((playnet test planner prelude) #:select ())   ; load-time setup only — the harness's `check` counts
-             (playnet solve engine)
+             (playnet solve engine) (playnet solve robust) (playnet solve plan)
              (playnet vf schemas) (playnet vf beyond scenario)
              (playnet knowledge dsl shorthand)
              (srfi srfi-1)

@@ -19,7 +19,7 @@
 ;;; Run: guile -L module tests/solve/test-response-solve.scm
 
 (use-modules (playnet test planner prelude)
-             (playnet solve engine)
+             (playnet solve engine) (playnet solve robust)
              (playnet vf schemas) (playnet vf beyond scenario)
              (playnet vf formulas shocks)
              (playnet solve recipe-response)

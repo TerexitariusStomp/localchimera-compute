@@ -13,7 +13,7 @@
 ;;; Run:  tools/test/run-suite.sh tests/solve/test-multiperiod-binding.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve world)
+(use-modules (playnet solve engine) (playnet solve plan) (playnet solve world)
              (playnet vf schemas)
              (playnet knowledge dsl shorthand))
 

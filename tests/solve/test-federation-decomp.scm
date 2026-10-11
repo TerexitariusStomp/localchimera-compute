@@ -17,7 +17,7 @@
 ;;; Run:  guile -L module/playnet/planner tests/solve/test-federation-decomp.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine)
+(use-modules (playnet solve engine) (playnet solve plan)
              (playnet solve compile)
              (playnet vf schemas)
              (playnet knowledge dsl shorthand))

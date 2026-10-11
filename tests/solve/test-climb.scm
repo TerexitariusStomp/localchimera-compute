@@ -12,7 +12,7 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
 (use-modules (srfi srfi-1) (ice-9 format)
-             (playnet solve engine) (playnet vf schemas)
+             (playnet solve engine) (playnet solve plan) (playnet vf schemas)
              (playnet knowledge dsl shorthand)
              ((playnet knowledge recipes transport) #:select (pickup-flow dropoff-flow)))
 

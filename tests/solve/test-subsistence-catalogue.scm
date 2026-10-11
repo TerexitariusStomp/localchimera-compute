@@ -9,7 +9,7 @@
 ;;; Run:  guile --no-auto-compile -L module tests/solve/test-subsistence-catalogue.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine)
+(use-modules (playnet solve engine) (playnet solve plan)
              (playnet vf schemas)
              (playnet knowledge dsl shorthand))
 (use-modules (playnet knowledge catalogues subsistence))

@@ -19,7 +19,7 @@
 (use-modules (playnet knowledge dsl shorthand))
 (use-modules (playnet test harness)
              ((playnet test planner prelude) #:select ())
-             (playnet solve engine)
+             (playnet solve engine) (playnet solve robust) (playnet solve plan)
              (playnet vf schemas) (playnet vf beyond scenario)
              ((playnet plan accepts) #:select (accepts->pins))
              (playnet federation uc-matching)

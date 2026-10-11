@@ -44,7 +44,7 @@
 (use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test scope))
 (use-modules (playnet test planner prelude)
-             (playnet solve engine)
+             (playnet solve engine) (playnet solve plan)
              (playnet vf schemas) (playnet vf beyond schedules)
              (srfi srfi-1)
              (ice-9 format))

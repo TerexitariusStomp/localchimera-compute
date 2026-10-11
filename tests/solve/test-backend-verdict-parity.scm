@@ -22,7 +22,7 @@
 
 (use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet knowledge dsl shorthand))
-(use-modules (playnet solve engine)
+(use-modules (playnet solve engine) (playnet solve plan)
              (playnet vf schemas))
 ;; A period here is a WEEK: the roster's Monday 00:00–12:00 is twelve hours a period, on any date.
 (set-period-length! 1.0 "week")
