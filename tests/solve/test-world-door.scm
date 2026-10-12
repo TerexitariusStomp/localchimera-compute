@@ -88,8 +88,7 @@
     (ftw dir (lambda (f st flag) (when (and (eq? flag 'regular) (string-suffix? ".scm" f)) (set! acc (cons f acc))) #t))
     acc))
 (define outside (append (scm-files-under "module/playnet/bench")
-                        (scm-files-under "tests")
-                        '("module/playnet/deprecated/planner/attic/demo.scm")))
+                        (scm-files-under "tests")))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok . detail)
@@ -112,9 +111,9 @@
                 layerings)
          (filter (lambda (l) (not (any (lambda (s) (eq? (cadr s) (car l))) w))) layerings)))
 
-;; 2. the satellites, tests, benches and demo assign none of them
+;; 2. the satellites, tests and benches assign none of them
 (let ((stray (append-map writers (append satellites outside))))
-  (check "no satellite, test, bench or demo assigns a door global (they declare, or layer through a door)"
+  (check "no satellite, test or bench assigns a door global (they declare, or layer through a door)"
          (null? stray) (delete-duplicates (map (lambda (s) (list (car s) (caddr s))) stray))))
 
 ;; 3. mkcells! has one caller; reset! two — in module/

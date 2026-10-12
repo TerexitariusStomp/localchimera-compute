@@ -138,7 +138,7 @@
              (string-suffix? "-test.scm" f))             ; a runnable check kept beside what it checks
          'test)
         ((string-contains f "/bench/") 'bench)
-        ((or (string-contains f "/deprecated/") (string-contains f "/attic/")) 'retired)
+        ((string-contains f "/attic/") 'retired)
         ((string-prefix? "module/" f) 'lib)
         (else 'entry)))
 
@@ -396,7 +396,7 @@
         (format port "~%## `~a/`~a~%~%~a.~%"
                 name (if rank (format #f " (rank ~a)" rank) "") what)
         (cond ((null? fs) #t)
-              ((member name '("bench" "deprecated"))
+              ((member name '("bench"))
                (format port "~%~a files.~%" (length fs)))
               (else
                (format port "~%| Today | What it is | Reached | Library importers | Test importers |~%|---|---|---|---|---|~%")
@@ -433,7 +433,6 @@
 (define (placement-rank m)
   (match m
     (('playnet (or 'boot 'test) . _) #f)
-    (('playnet 'deprecated . _) 1/2)
     (('playnet d . rest)
      (let ((r (rank-of (string-append (symbol->string d)
                                       (if (pair? rest) (string-append "/" (symbol->string (car rest))) "")))))

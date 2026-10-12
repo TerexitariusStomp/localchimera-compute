@@ -113,12 +113,12 @@
 ;; `work`, the skill as resourceConformsTo, the hours as effortQuantity.
 (define* (make-work-intent #:key id name provider skill hours (unit %effort-unit) input-of
                                  (offered? #f) at-location has-beginning has-end
-                                 (has-point-in-time has-beginning) planned-within)
+                                 (has-point-in-time has-beginning) due planned-within)
   (make-intent #:id id #:action 'work #:name name #:input-of input-of #:resource-conforms-to skill
                #:effort-quantity (make-measure hours unit)
                #:available-quantity (and offered? (make-measure hours unit))
                #:provider provider
-               #:has-beginning has-beginning #:has-end has-end #:has-point-in-time has-point-in-time
+               #:has-beginning has-beginning #:has-end has-end #:has-point-in-time has-point-in-time #:due due
                #:at-location at-location #:planned-within planned-within))
 
 ;; ── the ONE constructor of a work Commitment ────────────────────────────────

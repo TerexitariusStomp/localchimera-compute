@@ -4,7 +4,7 @@
 ;;; alongside buffer-zone math but were always generic list-of-pairs
 ;;; helpers with no DDMRP-specific meaning. UI modules that only need
 ;;; alist plumbing (not zone classification) should use this instead of
-;;; reaching into (playnet deprecated ddmrp).
+;;; reaching into the retired buffer planner.
 ;;;
 ;;; Hoot/WASM compatible.
 

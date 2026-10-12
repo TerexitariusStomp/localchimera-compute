@@ -8,9 +8,7 @@
 # fragile summary-string parsing.
 #
 # Exclusions are EXPLICIT and REASONED, never silent:
-#   • attic/ and module/playnet/deprecated/ — retired code, not the live suite;
-#     tests/deprecated/ (the suites that reach only retired code) still runs,
-#     so no suite drops out by a move alone (tests/QUARANTINE says why).
+#   • attic/ — retired code, not the live suite.
 #   • tests/QUARANTINE — one path per line, each with a `# reason` (env-dependent
 #     like needs-keria / needs-network / needs-valhalla / needs-wasm, or
 #     broken:<note> for tracked debt). Blank lines and #-comments ignored.
@@ -64,7 +62,7 @@ fi
 
 mapfile -t ALL < <(find tests module -name '*.scm' \
   \( -path 'tests/*' -o -path '*/tests/*' \) \
-  ! -path '*/attic/*' ! -path 'module/playnet/deprecated/*' | sort)
+  ! -path '*/attic/*' | sort)
 
 # DISCOVERING NOTHING IS A FAILURE, NOT A PASS. This runner counted what it ran
 # and reported the count, so when `find` itself was missing from the environment

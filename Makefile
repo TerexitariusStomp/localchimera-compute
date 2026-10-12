@@ -804,7 +804,6 @@ REPL_WASM_DEPS = \
                  module/playnet/crypto/shamir.scm \
                  module/playnet/utils/records.scm \
                  module/playnet/wire/rows.scm \
-                 module/playnet/deprecated/ddmrp.scm \
                  module/playnet/keri/cesr.scm \
                  module/playnet/keri/crypto-primitives-browser.scm \
                  module/playnet/keri/crypto-primitives.scm \
@@ -2083,38 +2082,16 @@ render-provenance:
 docs-epub:
 	deploy/scripts/build-docs-epub.sh "$(CURDIR)"
 
-test-kanren-goblins:
-	$(GUILE_TEST_DEV) -L module tests/deprecated/test-kanren-goblins.scm
 
-test-vat-federation:
-	$(GUILE_TEST_DEV) -L module tests/deprecated/test-vat-federation.scm
 
-test-federation-a:
-	$(GUILE_TEST_DEV) -L module tests/deprecated/test-federation-a.scm
 
-test-federation-b:
-	$(GUILE_TEST_DEV) -L module tests/deprecated/test-federation-b.scm
 
-test-plan-actor:
-	$(GUILE_TEST_DEV) -L module tests/deprecated/test-plan-actor.scm
 
-test-federation-result:
-	$(GUILE_TEST_DEV) -L module tests/deprecated/test-federation-result.scm
 
-test-elegance-wins:
-	$(GUILE_TEST_DEV) -L module tests/deprecated/test-elegance-wins.scm
 
-test-resilient-federation:
-	$(GUILE_TEST_DEV) -L module tests/deprecated/test-resilient-federation.scm
 
-test-federation-tree:
-	$(GUILE_TEST_DEV) -L module tests/deprecated/test-federation-tree.scm
 
-test-federation-tree-async:
-	$(GUILE_TEST_DEV) -L module tests/deprecated/test-federation-tree-async.scm
 
-test-federation-ocapn:
-	$(GUILE_TEST_DEV) -L module tests/deprecated/test-federation-ocapn.scm
 
 # The federated solve across a vat boundary (Rung 3 of FEDERATED-SOLVE.md):
 # the boundary oracle + signed ^commune-solver actors, in-process and across
@@ -2407,8 +2384,6 @@ lint-discipline:
 	$(TEST_ENV) \
 	  guile --no-auto-compile tools/lint/lint-discipline.scm
 
-test-relational:
-	$(GUILE_TEST_DEV) -L module tests/deprecated/relational-planner.scm
 
 test-netlayer:
 	$(GUILE_TEST_DEV) -L module tests/gateway/test-netlayer-substitute.scm
@@ -2867,7 +2842,6 @@ test-all-pinned:
 	$(GUILE_TEST) -L module tests/org/test-persistence.scm
 	$(GUILE_TEST) -L module tests/gateway/test-netlayer-substitute.scm
 	$(TIME_MACHINE) shell guile-next guile-goblins -- sh tools/test/planner-suite.sh
-	$(GUILE_TEST) -L module tests/deprecated/relational-planner.scm
 	$(GUILE_TEST) -L module tests/keri/test-keri-bridge.scm
 	$(GUILE_TEST) -L module tests/keri/test-keri-bridge-extra.scm
 	$(GUILE_TEST) -L module tests/keri/test-keri-credentials.scm

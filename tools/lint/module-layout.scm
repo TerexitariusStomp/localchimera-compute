@@ -102,7 +102,6 @@
  ;; ── unranked ──
  (stays "bench" #f "benchmarks")
  (stays "test" #f "the harness library")
- (stays "deprecated" #f "retired code")
 
  ;; ── not library modules ──
  (file "utils/repl-client" #f)            ; a tool: tools/ of the repository

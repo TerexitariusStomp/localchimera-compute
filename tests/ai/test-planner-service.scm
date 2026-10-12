@@ -22,12 +22,12 @@
 (use-modules (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)
-             (playnet deprecated ddmrp)        ; alist-ref
+             (playnet utils alist)        ; alist-ref
              (playnet ai key-pool)
-             (playnet deprecated planner)
+             (playnet boot prelude)
              (playnet doors service)
              (playnet scope live)         ; persist-materialized! (the bridge)
-             (playnet deprecated planner seed-meeting-scope)
+             (playnet test meeting-scope)     ; seed-meeting-scope!
              (srfi srfi-1))
 ;;; ── Harness ────────────────────────────────────────────────────────────────
 

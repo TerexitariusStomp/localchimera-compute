@@ -69,7 +69,7 @@
              (and (regexp-exec %eq1-rx code) #t)))))
 
 (define (skip? path)
-  (or (string-contains path "/deprecated/") (string-contains path "/tests/")
+  (or (string-contains path "/tests/")
       (string-suffix? "vf/schemas.scm" path) (string-suffix? "vf/formulas/actions.scm" path)))
 
 (define (scm-files root)

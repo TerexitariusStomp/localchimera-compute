@@ -46,26 +46,15 @@ tests/federation/federation-wire-host.scm              # helper process, not a u
 tests/personhood/two-box/box1.scm                   # helper process, not a unit test — needs the PLAYNET_* env run-two-box.sh sets (`make test-witness-two-box`)
 tests/personhood/two-box/box2.scm                   # helper process, not a unit test — same harness as box1
 
-# ── benchmarks / long solves: not pass/fail units ────────────────────────────
-tests/deprecated/bench-relational.scm                  # bench-slow (>120s by design)
-
 # ── REAL red, self-contained, tracked debt — the work-list ───────────────────
 # EMPTY, as of the 2026-08-14 audit. The one entry here —
 # tests/ai/test-planner-service.scm, filed for a ResourceSpecification
 # record-identity clash between the deprecated seed and the live service — now
 # runs 65 checks green and has rejoined the baseline.
 
-# ── tests OF deprecated code — RETIRED 2026-08-04 ────────────────────────────
-# test-control, test-grammar2 and test-federation-a-planning imported nothing
-# but (playnet deprecated …) and the harness. A quarantine line kept them
-# nominally alive while guaranteeing they never ran, which reads as "might come
-# back" — they were not coming back. Deleted rather than listed.
-#
-# NOTE, still open: tests/deprecated/ holds the suites that reach retired code
-# and nothing above the substrate (test-grammar and test-federation-a among
-# them), and they GATE the baseline today, green. Whether the live suite should
-# gate on retired code is a call worth making deliberately rather than by
-# omission — they are left running until it is made.
+# ── retired code ─────────────────────────────────────────────────────────────
+# module/playnet/deprecated/ and tests/deprecated/ left the tree on 2026-10-12;
+# the history before that commit holds them whole.
 
 
 # bench-kleingaerten: Berlin's whole allotment register — 1,065 sites, 71,382

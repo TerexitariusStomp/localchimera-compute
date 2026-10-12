@@ -78,10 +78,7 @@
 ;; ── Recomputability discipline ──────────────────────────────────────────────
 
 (define *federation-paths*
-  '("module/playnet/deprecated/planner/relational/federation-result.scm"
-    "module/playnet/deprecated/planner/relational/federation.scm"
-    "module/playnet/deprecated/planner/relational/plan-actor.scm"
-    "module/playnet/scope/actor.scm"))
+  '("module/playnet/scope/actor.scm"))
 
 ;; Pattern: a stored-aggregate field name. We're conservative and
 ;; only flag specific shapes; whitelist any legitimate uses.
