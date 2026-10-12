@@ -13,7 +13,9 @@
 ;;; with W in hand and leaves the caller's world standing, `reset-world!` puts
 ;;; a fresh instance in hand, every default evaluated again, so a table is a
 ;;; new table, the initial values written once. A solve that runs in its own extent leaves no
-;;; world behind, and a holder of one world may run another inside it.
+;;; world behind, and a holder of one world may run another inside it; `copy-world`
+;;; is a value of its own, every table copied, so a holder may ingest once and
+;;; solve a variation inside a copy (federation-solve `records-means-world`).
 ;;;
 ;;; Stated this way, a module that writes a world table never assigns a binding
 ;;; it imported, which Hoot refuses (the browser's family and scope workers
@@ -26,7 +28,7 @@
 
 (define-module (playnet solve world)
   #:use-module (playnet protocol context)
-  #:export (%world make-world world? reset-world! current-world call-with-world *certificates* *templates*
+  #:export (%world make-world copy-world world? reset-world! current-world call-with-world *certificates* *templates*
             *flow-period-factor* *avail-factor* *places* *periods* *cells* *period-days* *period-spans* *spatial-things*
             *movable* *storable* *tau* *hold* *neighbours* *stationary*
             *demand* *A* *acquire* *promote* *acquire-cost-of* *acquired-keys*

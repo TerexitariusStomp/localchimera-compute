@@ -508,18 +508,39 @@
   ;; allocations, the socialized pools); a standing cap on the good under
   ;; consensus is left out — this run decides it. The allocation is laid
   ;; period-free, `Svc|spec#place`, so it bounds every period the world lays.
-  (let ((key (lg (svc-good spec) place)))
+  ;; The records are read ONCE, into a world of this closure's own, with the
+  ;; first allocation laid as the cap the way every eco-cap is (ingest-located!
+  ;; resolves it, retimes it to the refined spans, lays it at every period).
+  ;; Each round solves inside a COPY of that world (a build writes its own
+  ;; products into the world it reads: *requires*, *col-terms*, *col-ell*)
+  ;; with those same cells set to the round's allocation, so the program's
+  ;; shape is the ingest's and only the bound moves. The world is one whole
+  ;; value, templates included, so a scope's world is a value held across
+  ;; the rounds and the ingest is paid once per scope.
+  (let ((key (lg (svc-good spec) place))
+        (world #f)
+        (cells '()))
     (lambda (alloc)
-      (ingest-records! resources agents spatials procs flows
-        #:demand demand #:never-raw never-raw #:raws raws #:per-agent? #f #:proc-frag proc-frag
-        #:span-of span-of
-        #:eco-caps (cons (cons key alloc)
-                         (filter (lambda (c) (not (string-prefix? key (car c)))) eco-caps)))
-      (call-with-values build-located
-        (lambda (forms lf ncol cols goods raws idx)
-          (values (car (call-with-values
-                           (lambda () (solve-native forms lf (located-warm cols ncol idx))) list))
-                  cols idx))))))
+      (unless world
+        (set! world
+              (call-with-world (make-world)
+                (lambda ()
+                  (ingest-records! resources agents spatials procs flows
+                    #:demand demand #:never-raw never-raw #:raws raws #:per-agent? #f #:proc-frag proc-frag
+                    #:span-of span-of
+                    #:eco-caps (cons (cons key alloc)
+                                     (filter (lambda (c) (not (string-prefix? key (car c)))) eco-caps)))
+                  (set! cells (filter (lambda (k) (string-prefix? key k))
+                                      (hash-map->list (lambda (k _) k) *cap*)))
+                  (current-world)))))
+      (call-with-world (copy-world world)
+        (lambda ()
+          (for-each (lambda (k) (hash-set! *cap* k alloc)) cells)
+          (call-with-values build-located
+            (lambda (forms lf ncol cols goods raws idx)
+              (values (car (call-with-values
+                               (lambda () (solve-native forms lf (located-warm cols ncol idx))) list))
+                      cols idx))))))))
 
 (define* (allocate-means-consensus scopes spec total
                                    #:key (rounds 40) (gamma 0.5)

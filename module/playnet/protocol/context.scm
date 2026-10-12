@@ -13,6 +13,8 @@
 ;;;   (make-planner-ctx #:FIELD value …)       every field a keyword; a field
 ;;;                                            written (FIELD default) takes that
 ;;;                                            default, any other #f
+;;;   (copy-planner-ctx ctx)                   a value of its own: each table
+;;;                                            copied, each other field shared
 ;;;   (with-planner-ctx ctx body …)            every field under its own name,
 ;;;                                            read through the accessor on each
 ;;;                                            use and written through the setter
@@ -51,6 +53,18 @@
 ;; the names derived from a context's, spelled once; `symbol-append` is Guile's
 ;; alone, and these run at expand time under Hoot too
 (define (symbol-append . syms) (string->symbol (apply string-append (map symbol->string syms))))
+
+(define (copy-table v)
+  "V itself, or a new table (or vector) holding V's entries when V is one; a
+table held as an entry is copied in turn, so a copy shares no table at any depth."
+  (cond ((hash-table? v) (let ((n (make-hash-table)))
+                           (hash-for-each (lambda (k x) (hash-set! n k (copy-table x))) v)
+                           n))
+        ((vector? v) (let* ((n (vector-copy v)) (len (vector-length n)))
+                       (let lp ((i 0))
+                         (when (< i len) (vector-set! n i (copy-table (vector-ref n i))) (lp (+ i 1))))
+                       n))
+        (else v)))
 
 (define (context-bind use ctx body home fields)
   "The `with-…` expansion for USE: every symbol of FIELDS bound at the use site
@@ -95,6 +109,7 @@ that name of CTX, through the setter named after HOME."
                        (%raw         (id (symbol-append '%raw- sym)))
                        (%fields      (id (symbol-append '% sym '-fields)))
                        (make         (id (symbol-append 'make- sym)))
+                       (copy         (id (symbol-append 'copy- sym)))
                        (pred         (id (symbol-append sym '?)))
                        (with-name    (id (symbol-append 'with- sym)))
                        (install-name (id (symbol-append sym '-install!)))
@@ -116,6 +131,14 @@ that name of CTX, through the setter named after HOME."
                (define (setr c v) (vector-set! (%fields c) idx v)) ...
                (define* (make #:key (field default) ...)
                  (%make field ...))
+               ;; a value of its own: every table (and vector) a new one holding
+               ;; the same entries, to any depth; every other field the same
+               ;; value. A holder writes the copy and leaves the original standing.
+               (define (copy c)
+                 (let* ((v (vector-copy (%fields c))) (n (vector-length v)))
+                   (let lp ((i 0))
+                     (when (< i n) (vector-set! v i (copy-table (vector-ref v i))) (lp (+ i 1))))
+                   (%raw v)))
                (define-syntax with-name
                  (lambda (y)
                    (syntax-case y ()
