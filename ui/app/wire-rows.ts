@@ -602,9 +602,27 @@ export interface WirePlan {
   labourH: number | null;
   produced: readonly WirePlanYield[];
   needs: readonly WirePlanNeed[];
+  kept: readonly WirePlanKept[];
+  discrete?: WirePlanDiscrete | null;
+  placement?: Record<string, Record<string, number | null>>;
   flow: readonly WireFlowProd[] | false;
   requires: readonly WireActRequires[];
   schedule: WireSchedule | false;
+}
+
+export interface WirePlanDiscrete {
+  keys: number;
+  nodes: number;
+  budget: number;
+  certified: string;
+  gap: number | null;
+  recourseRelaxed: readonly (string)[];
+}
+
+export interface WirePlanKept {
+  spec: string;
+  name: string;
+  q: number | null;
 }
 
 export interface WirePlanNeed {
@@ -741,20 +759,27 @@ export interface WireSchedMat {
   specId: string;
   spec: string;
   qty: number | null;
+  unit: string | null;
   place: string;
   when: string;
+  until: string;
   proc: string;
+  to: string | null;
   note: string;
 }
 
 export interface WireSchedWork {
+  id: string;
   who: string;
+  whoName: string;
+  skillId: string;
   skill: string;
   effort: number | null;
   place: string;
   when: string;
   until: string;
   proc: string;
+  scope: string;
 }
 
 export interface WireSchedule {

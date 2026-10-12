@@ -16,9 +16,6 @@
             plan-need->wire
             flow-in->wire
             flow-prod->wire
-            sched-work->wire
-            sched-mat->wire
-            sched->wire
             plan->wire
             %inv-resource-wire
             expected->wire
@@ -102,46 +99,16 @@
       ("q" ,(keyed 'q 0) num) ("u" u str) ("period" period str)
       ("in" in (rows flow-in)))))
 (define (flow-prod->wire p) (wire-row* %flow-prod-wire p))
-;; one work row of the schedule — who works what skill where, on which clock span
-(define %sched-work-wire
-  (wire-table 'sched-work #f
-    '(("who" who str) ("skill" skill str) ("effort" effort num) ("place" place str)
-      ("when" when str) ("until" until str) ("proc" proc str))))
-(define (sched-work->wire w) (wire-row* %sched-work-wire w))
-
-;; one material row — the produce/consume/pickup/dropoff/use that realises the plan at its cell
-(define %sched-mat-wire
-  (wire-table 'sched-mat #f
-    '(("action" action str) ("id" id str) ("specId" spec-id str) ("spec" spec str)
-      ("qty" qty num) ("place" place str) ("when" when str) ("proc" proc str)
-      ("note" note str))))
-(define (sched-mat->wire m) (wire-row* %sched-mat-wire m))
-
-;; the whole schedule, or #f while no solve has run
-(define %sched-wire
-  (wire-table 'schedule #f
-    '(("work" work (rows sched-work)) ("material" material (rows sched-mat)))))
-(define (sched->wire sch) (wire-value '(some-row schedule) sch #f))
-
-(define %plan-yield-wire (wire-table 'plan-yield #f '(("spec" spec str) ("q" q num))));; what an act needs HERE, keyed by the same (proc, place, when) its schedule rows
-;; carry (service.scm requires): its material and labour flows, each met or
-;; not or unknown, and, for an act the solve left out, why
-(define %act-need-wire
-  (wire-table 'act-need #f
-    `(("kind" kind str) ("name" name str) ("label" label str)
-      ("qty" qty num) ("unit" unit opt-str)
-      ;; held, missing, or the word the solve left (unknown: nobody checked)
-      ("met" ,(lambda (x ctx) (let ((m (alist-ref x 'met))) (cond ((symbol? m) m) (m 'held) (else 'missing)))) str))))
-(define %act-why-wire
-  (wire-table 'act-why #f
-    `(("reason" reason str)
-      ("detail" detail (list str)))))
-(define %act-requires-wire
-  (wire-table 'act-requires #f
-    `(("proc" proc str) ("place" place str) ("when" when str) ("until" until str)
-      ("why" why (omit-false (row act-why)))
-      ("needs" needs (rows act-need)))))
-(define %plan-wire
+;; the schedule's rows and what each act needs are tables over the plan's own
+;; records and the engine's requirement rows, joining through the scope's stores
+;; (doors/record-rows.scm sched-work, sched-mat, act-requires); the plan table
+;; below names them
+(define %plan-yield-wire (wire-table 'plan-yield #f '(("spec" spec str) ("q" q num))))
+(define %plan-kept-wire (wire-table 'plan-kept #f '(("spec" spec str) ("name" name str) ("q" q num))))
+(define %plan-discrete-wire
+  (wire-table 'plan-discrete #f
+    '(("keys" keys int) ("nodes" nodes int) ("budget" budget int)
+      ("certified" certified str) ("gap" gap num) ("recourseRelaxed" recourseRelaxed (list str)))))(define %plan-wire
   (wire-table 'plan #f
     `(("scope" scope str) ("coverage" coverage num)
       ;; "yes" | "no" | "unknown" — whether the solve respected every limit it was
@@ -154,6 +121,12 @@
       ("labourH" labourH num)
       ("produced" produced (rows plan-yield))
       ("needs" needs (rows plan-need))
+      ;; the portion kept back per good (rail.scm social-portion): the scope's own
+      ;; processes' draw this horizon plus the reserve, before anything is shared out
+      ("kept" kept (rows plan-kept))
+      ;; the discrete layer's verdict, when a search ran; where each mover stands
+      ("discrete" discrete (omit-false (row plan-discrete)))
+      ("placement" placement (omit-false (map (map num))))
       ;; the solve's real production decomposition; #f (⇒ the browser reconstructs from
       ;; recipe topology) until a solve has run and produced flows.
       ("flow" flow (some-rows flow-prod))
@@ -165,7 +138,7 @@
       ;; face's schedule board read it (ingest.ts ingestSchedule); the aggregate
       ;; views above sum these away, so it rides beside them, as it is.
       ("schedule" schedule (some-row schedule)))))
-(define (plan->wire p) (wire-row* %plan-wire p))
+(define* (plan->wire p #:optional (ctx '())) (wire-row* %plan-wire p ctx))
 
 ;; the inventory: the scope's real economic resources by rail (shop +
 ;; inventory faces). Specs carry the folksonomy join (categories) and the

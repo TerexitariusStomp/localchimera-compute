@@ -26,7 +26,6 @@ import { replaceDay, offered } from './events.js';
 import { hereOfInstant, resolveHere } from './gohere.js';
 import { seam } from './seam.js';
 import { desireFromNeeds } from './spine.js';
-import { dropoffIndex } from './relocation.js';
 import { stage } from './stage.js';
 import { setRecipes } from './recipe-graph.js';
 import { drawPlanList } from './plan-column.js';
@@ -112,7 +111,8 @@ function ingestPlan(snap) {
             material: (plan.schedule.material || []).map(m => ({
                 id: str(m.id), specId: str(m.specId),
                 action: str(m.action), spec: str(m.spec), qty: n(m.qty),
-                place: str(m.place), when: str(m.when), proc: str(m.proc), note: str(m.note),
+                place: str(m.place), when: str(m.when), until: str(m.until), to: m.to ? str(m.to) : "",
+                proc: str(m.proc), note: str(m.note),
             })),
         } : null,
         needs: plan.needs.map(nd => ({
@@ -196,10 +196,12 @@ function ingestSchedule(snap) {
             continue;
         const t0 = h0.t0 ?? 9;
         const action = str(m.action, "produce");
-        // a pickup is carried to the place its dropoff names: the pair shares one run (a Process)
-        const mi = action === "pickup" ? dropoffIndex(s.material || [], m) : -1;
-        const dest = mi >= 0 ? locOf(str((s.material || [])[mi].place)) : null;
-        rows.push({ label: `${action} ${str(m.spec)}`, doy: h0.doy, t0, t1: t0 + 0.5,
+        // a pickup's destination rides on its row (sched-mat `to`: the place its dropoff lands it)
+        const dest = m.to ? locOf(str(m.to)) : null;
+        // the row's own end, where it states one; else a half hour on the board
+        const h1 = hereOfInstant(str(m.until));
+        const t1 = (h1.doy === h0.doy && h1.t0 != null && h1.t0 > t0) ? h1.t0 : t0 + 0.5;
+        rows.push({ label: `${action} ${str(m.spec)}`, doy: h0.doy, t0, t1,
             ...(h0.t0 == null ? { unclocked: true } : {}),
             kind: "work", action, lane: 0, status: "committed",
             spec: str(m.spec), specId: str(m.specId), rowId: str(m.id),

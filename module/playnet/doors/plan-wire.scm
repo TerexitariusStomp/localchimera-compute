@@ -310,48 +310,12 @@
         ;; Rows for acts that never ran carry `why` and appear in no schedule —
         ;; that is the point of them, and a reader must treat a MISSING row as
         ;; "not published for this act" rather than as "this act needs nothing".
-        (requires .
-          ,(map (lambda (r)
-                  `((proc  . ,(assq-ref r 'process))
-                    (place . ,(assq-ref r 'place))
-                    (when  . ,(assq-ref r 'begin))
-                    (until . ,(row-until r))
-                    ,@(let ((w (assq-ref r 'why))) (if w `((why . ,w)) '()))
-                    (needs . ,(map (lambda (n)
-                                     (let ((nm (assq-ref n 'name)))
-                                       `((kind  . ,(assq-ref n 'kind))
-                                         (name  . ,nm)                    ; the id, kept: labels are not join keys
-                                         (label . ,(or (lookup-spec-name rs nm) nm))
-                                         (qty   . ,(assq-ref n 'qty))
-                                         (unit  . ,(assq-ref n 'unit))
-                                         (met   . ,(assq-ref n 'met)))))
-                                   (or (assq-ref r 'needs) '())))))
-                (or (assq-ref alist 'requires) '())))
-        ;; aggregate views above sum these away; the schedule board reads them
-        ;; as they are. Rows are slimmed for the wire and labels resolved.
-        (schedule .
-          ((work . ,(map (lambda (w)
-                           `((who    . ,(or (row-provider w) ""))
-                             (skill  . ,(let ((sk (row-spec w)))
-                                          (or (lookup-spec-name rs sk) sk "")))
-                             (effort . ,(or (row-effort w) 0))
-                             (place  . ,(or (row-place w) ""))
-                             (when   . ,(or (row-when w) ""))
-                             (until  . ,(or (row-until w) ""))
-                             (proc   . ,(or (row-input-of w) ""))))
-                         work))
-           (material . ,(map (lambda (m)
-                               `((id      . ,(or (row-id m) ""))          ; the plan's own row id: what a confirmation names
-                                 (action . ,(row-action m))
-                                 (spec-id . ,(or (row-spec m) ""))
-                                 (spec   . ,(let ((sp (row-spec m)))
-                                              (or (lookup-spec-name rs sp) sp "")))
-                                 (qty    . ,(or (row-figure m) 0))   ; a use row's figure is its hours
-                                 (place  . ,(or (row-place m) ""))
-                                 (when   . ,(or (row-when m) ""))
-                                 (proc   . ,(or (row-run m) ""))
-                                 (note   . ,(or (row-note m) ""))))
-                             material))))))))
+        (requires . ,(or (assq-ref alist 'requires) '()))
+        ;; THE SCHEDULE: the same commitments with their SPACE-TIME coordinates
+        ;; kept — the records themselves; the sched-work and sched-mat tables
+        ;; (doors/record-rows.scm) write each at its own cell, a haul's pickup
+        ;; with the place its dropoff lands it
+        (schedule . ((work . ,work) (material . ,material)))))))
 ;; one part of a cached solve ((demand . plan), the service's last-solve-ref): the plan's KEY, or none
 (define (solve-part cached key)
   (or (and cached (assq-ref (cdr cached) key)) '()))
@@ -652,7 +616,8 @@
          (pulls   (or (and cached (pair? cached) (assq-ref (cdr cached) 'labour-pulls)) '()))
          ;; what the record rows join through (record-rows.scm): the reply carries it
          (ctx     (record-context scope-id rs as obs ps preg #:holders holders #:willing willing #:pulls pulls
-                                  #:member-ids member-ids #:responses recipe-responses)))
+                                  #:member-ids member-ids #:responses recipe-responses
+                                  #:material (solve-part cached 'material))))
     (with-context
     `((scope-id . ,scope-id)
       (scope-name . ,($ scope-root 'name))

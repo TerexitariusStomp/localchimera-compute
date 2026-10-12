@@ -112,7 +112,7 @@
 
 (define* (record-context scope-id rs as obs ps preg
                          #:key (holders (make-hash-table)) (willing (make-hash-table)) (pulls '())
-                               (member-ids '()) (responses '()))
+                               (member-ids '()) (responses '()) (material '()))
   "What the record rows join through: the scope and its stores, the skill
    holders (spec → agent ids), the willing race ((spec . cell) → ((aid . status) …)),
    the standing solve's labour pulls ((skill@place@period . λ) …), the scope's
@@ -120,7 +120,9 @@
    recipes' standing (scope-standing's records, one per recipe)."
   `((scope-id . ,scope-id) (rs . ,rs) (as . ,as) (obs . ,obs) (ps . ,ps) (preg . ,preg)
     (holders . ,holders) (willing . ,willing) (pulls . ,pulls)
-    (member-ids . ,member-ids) (responses . ,responses) (now . ,(instant->unix (clock-now)))))
+    (member-ids . ,member-ids) (responses . ,responses) (now . ,(instant->unix (clock-now)))
+    ;; the standing plan's material rows: a pickup's destination is its dropoff's place
+    (material . ,material)))
 
 (define (ctx-ref ctx key) (alist-ref ctx key))
 (define (of key) (lambda (rec ctx) (ctx-ref ctx key)))
@@ -260,6 +262,76 @@
     ;; the record's recurrence, in the same arcs wire the slots speak
     ("arcs" ,(lambda (rec ctx) (window->arcs (if (intent? rec) (intent-availability-window rec) (commitment-availability-window rec)))) (rows arc))
     ("source" ,(lambda (rec ctx) (if intent-table? "intent" "commitment")) str)))
+
+;; ── the schedule: the plan's own commitments at their space-time coordinates ──
+;; Each row reads the commitment through the row readers (vf/formulas/flows.scm),
+;; so a record and a stored row are read alike and the vocabulary is the record's.
+;; The label is the scope's name for the spec; the id is the plan's own row id,
+;; what a confirmation names.
+(define (spec-label rec ctx)
+  (let ((sp (row-spec rec)) (rs (ctx-ref ctx 'rs))) (or (and sp rs (lookup-spec-name rs sp)) sp "")))
+(define (row-scope-first rec ctx)
+  (let ((s (row-scope rec))) (cond ((pair? s) (car s)) ((string? s) s) (else ""))))
+(define (dropoff-place-of rec ctx)
+  "Where a pickup's cargo lands: the dropoff of the same run and spec among the plan's
+   material rows (the pair shares one run, a Process of its own)."
+  (and (eq? (row-action rec) 'pickup)
+       (let ((run (row-run rec)) (spec (row-spec rec)))
+         (and=> (find (lambda (m) (and (eq? (row-action m) 'dropoff)
+                                       (equal? (row-run m) run) (equal? (row-spec m) spec)))
+                      (ctx-ref ctx 'material))
+                row-place))))
+(define %sched-work-wire
+  (wire-table 'sched-work #f
+    `(("id" ,(lambda (w ctx) (row-id w)) str)
+      ("who" ,(lambda (w ctx) (row-provider w)) str)
+      ("whoName" ,(lambda (w ctx) (and (ctx-ref ctx 'as) (agent-name-of ctx (row-provider w)))) str)
+      ("skillId" ,(lambda (w ctx) (row-spec w)) str)
+      ("skill" ,spec-label str)
+      ("effort" ,(lambda (w ctx) (or (row-effort w) 0)) num)
+      ("place" ,(lambda (w ctx) (row-place w)) str)
+      ("when" ,(lambda (w ctx) (row-when w)) str)
+      ("until" ,(lambda (w ctx) (row-until w)) str)
+      ("proc" ,(lambda (w ctx) (row-input-of w)) str)
+      ("scope" ,row-scope-first str))))
+(define %sched-mat-wire
+  (wire-table 'sched-mat #f
+    `(("action" ,(lambda (m ctx) (row-action m)) str)
+      ("id" ,(lambda (m ctx) (row-id m)) str)
+      ("specId" ,(lambda (m ctx) (row-spec m)) str)
+      ("spec" ,spec-label str)
+      ("qty" ,(lambda (m ctx) (or (row-figure m) 0)) num)   ; a use row's figure is its hours
+      ("unit" ,(lambda (m ctx) (row-unit m)) opt-str)
+      ("place" ,(lambda (m ctx) (row-place m)) str)
+      ("when" ,(lambda (m ctx) (row-when m)) str)
+      ("until" ,(lambda (m ctx) (row-until m)) str)
+      ("proc" ,(lambda (m ctx) (row-run m)) str)
+      ("to" ,dropoff-place-of opt-str)                      ; a pickup's destination: its dropoff's place
+      ("note" ,(lambda (m ctx) (row-note m)) str))))
+(define %sched-wire
+  (wire-table 'schedule #f
+    '(("work" work (rows sched-work)) ("material" material (rows sched-mat)))))
+
+;; ── what an act needs HERE: the engine's requirement rows as they are ──
+;; keyed by the same (proc, place, when) its schedule rows carry: the engine's
+;; `process` and `begin` are read under the names the schedule uses, so the join
+;; a reader writes is equality on identically-named fields
+(define %act-need-wire
+  (wire-table 'act-need #f
+    `(("kind" kind str) ("name" name str)
+      ("label" ,(lambda (n ctx) (let ((nm (alist-ref n 'name)) (rs (ctx-ref ctx 'rs))) (or (and nm rs (lookup-spec-name rs nm)) nm ""))) str)
+      ("qty" qty num) ("unit" unit opt-str)
+      ;; held, missing, or the word the solve left (unknown: nobody checked)
+      ("met" ,(lambda (x ctx) (let ((m (alist-ref x 'met))) (cond ((symbol? m) m) (m 'held) (else 'missing)))) str))))
+(define %act-why-wire
+  (wire-table 'act-why #f
+    `(("reason" reason str)
+      ("detail" detail (list str)))))
+(define %act-requires-wire
+  (wire-table 'act-requires #f
+    `(("proc" process str) ("place" place str) ("when" begin str) ("until" until str)
+      ("why" why (omit-false (row act-why)))
+      ("needs" needs (rows act-need)))))
 
 (define %commitment-wire (wire-table 'commitment-record <commitment> (record-entries #f)))
 (define %intent-wire (wire-table 'intent-record <intent> (record-entries #t)))
