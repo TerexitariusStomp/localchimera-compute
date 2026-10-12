@@ -1,15 +1,20 @@
-;;; module/playnet/solve/world.scm — the world the solve is given: one context, one instance.
+;;; module/playnet/solve/world.scm — the world the solve is given: one context, a value in hand.
 ;;;
 ;;; Every table the engine reads while it builds a program is a field of ONE
-;;; `define-context` (playnet protocol context), held in the cell `%world`, and
-;;; each field stands at top level under its own name: `*places*` reads the
-;;; cell's field, `(set! *places* …)` writes it, in this module and in every
-;;; module that imports the name. The engine (solve/engine.scm) fills the fields
-;;; through its door, `declare-world!`, and the ingest reads records into them;
-;;; the solve reads them. `reset-world!` makes the cell a fresh instance, every
-;;; default evaluated again, so a table is a new table: that one line is what
-;;; the engine's `reset!` was, with the initial values written once instead of
-;;; twice.
+;;; `define-context` (playnet protocol context), and each field stands at top
+;;; level under its own name: `*places*` reads the world in hand, `(set!
+;;; *places* …)` writes it, in this module and in every module that imports
+;;; the name. The engine (solve/engine.scm) fills the fields through its door,
+;;; `declare-world!`, which answers the world it declared; the ingest reads
+;;; records into it; the solve reads it.
+;;;
+;;; The world in hand is the dynamic extent's, held in the fluid `%world`:
+;;; `(current-world)` is the value, `(call-with-world w thunk)` runs the thunk
+;;; with W in hand and leaves the caller's world standing, `reset-world!` puts
+;;; a fresh instance in hand, every default evaluated again, so a table is a
+;;; new table. That one line is what the engine's `reset!` was, with the
+;;; initial values written once. A solve that runs in its own extent leaves no
+;;; world behind, and a holder of one world may run another inside it.
 ;;;
 ;;; Stated this way, a module that writes a world table never assigns a binding
 ;;; it imported, which Hoot refuses (the browser's family and scope workers
@@ -23,7 +28,7 @@
 
 (define-module (playnet solve world)
   #:use-module (playnet protocol context)
-  #:export (%world make-world world? reset-world! *certificates*
+  #:export (%world make-world world? reset-world! current-world call-with-world *certificates*
             *flow-period-factor* *avail-factor* *places* *periods* *cells* *spatial-things*
             *movable* *storable* *tau* *hold* *neighbours* *stationary*
             *demand* *A* *acquire* *promote* *acquire-cost-of* *acquired-keys*
@@ -41,7 +46,7 @@
             *voice-stances* *budgeted-floors* *stock-price* *stretch* *stretch-floor* *locate-key*
             *mobile-means* *contents* *stands-in* *means-lot* *disposable-total*))
 
-(define-context world #:cell %world
+(define-context world #:fluid %world
   ;; ── the shape: places, periods, cells; what moves, what stays, what it costs ──
 
   ;; the per-flow factor a branch (solve/robust.scm) or a site puts on a column's

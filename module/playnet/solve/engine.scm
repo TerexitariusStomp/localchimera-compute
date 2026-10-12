@@ -35,7 +35,7 @@
 ;;; module/playnet/deprecated/planner/attic/demo.scm.
 
 ;; The engine is a MODULE. Its mutable world, the tables `reset!` clears, is
-;; ONE context in solve/world.scm, held in a cell and read and written by name
+;; ONE context in solve/world.scm, the value in hand, read and written by name
 ;; from here and from every module that imports a name; what `reset!` leaves
 ;; standing (the dials, the memos, the tolerances) is the engine's own. The
 ;; export list is the MEASURED interface: every top-level name some file

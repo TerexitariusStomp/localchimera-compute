@@ -109,7 +109,7 @@
 (with-vat cvat
   (plan-scope->alist croot #:manners berlin-transit-manners
                      #:demand (list (cons "food#berlin-commune-farm@0" 20000.0))))
-(define cap *cap*)
+(define cap (with-vat cvat *cap*))   ; the world is the vat's: read where the solve ran (solve/world)
 (define (capped? spec)
   (hash-fold (lambda (k v found) (or found (and (> v 0.0) (string-prefix? (string-append "Svc|" spec "#") k) #t)))
              #f cap))

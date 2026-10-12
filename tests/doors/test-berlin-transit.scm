@@ -267,8 +267,8 @@
 (define (engine-after-solve manners)
   (with-vat cvat
     (plan-scope->alist croot #:manners manners
-      #:demand (list (cons "food#berlin-commune-farm@0" 5000.0))))
-  (list *workers* *riders*))   ; the world's tables, read where the solve left them (solve/world)
+      #:demand (list (cons "food#berlin-commune-farm@0" 5000.0)))
+    (list *workers* *riders*)))   ; the world's tables, read in the vat the solve ran in (solve/world)
 (define pinned (engine-after-solve berlin-transit-manners))
 (define mobile (engine-after-solve (cons '(mobile-people . #t) berlin-transit-manners)))
 (check-pred "modes alone leave the roster pinned — mobility is asked for, not implied"
@@ -330,13 +330,14 @@
       #:demand (list (cons "food#berlin-commune-farm@0" 20000.0)))))
 (check-pred "the commune plans with its transport arm seeded and its modes installed"
             (> (or (assq-ref plan 'met) 0) 0.0))
+;; the world's tables are the vat's: read where the solve ran (solve/world)
 (check-pred "…and the shed's seven modes and the baseline car really are in the engine after the solve"
-            (= 8 (length *mode-recipes*)))
+            (= 8 (length (with-vat cvat *mode-recipes*))))
 (check-pred "…with every mode's Valhalla costing"
             (every (lambda (m) (member (mrec-manner m) '("pedestrian" "bicycle" "bus" "multimodal" "auto")))
-                   *mode-recipes*))
+                   (with-vat cvat *mode-recipes*)))
 (check-pred "…and the arc table survived the robust branch, so routing beats geometry"
-            (equal? 0.25 (hash-ref *arc-hours* probe-arc #f)))
+            (equal? 0.25 (with-vat cvat (hash-ref *arc-hours* probe-arc #f))))
 ;; the band dial reaches the live solve the same way: a day declared as three
 ;; bands (08–11, 11–13, 13–16) is three periods, each its own hours — what lets
 ;; a mover make two hops in one day (discrete-records-test §7b)
@@ -349,7 +350,7 @@
                        ("2026-08-17T13:00" . "2026-08-17T16:00"))
       #:demand (list (cons "food#berlin-commune-farm@0" 20000.0)))))
 (check-pred "a declared partition of bands is the live solve's periods"
-            (and (assq 'met banded) (equal? '(0 1 2) *periods*)))
+            (and (assq 'met banded) (equal? '(0 1 2) (with-vat cvat *periods*))))
 (check-pred "…each band its own hours: the midday band is two"
             (and (= 3.0 ((engine 'period-hours) 0)) (= 2.0 ((engine 'period-hours) 1)) (= 3.0 ((engine 'period-hours) 2))))
 

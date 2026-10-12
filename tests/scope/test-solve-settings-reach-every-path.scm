@@ -58,8 +58,9 @@
 (check "emp-rho is the value the solve was given" (engine-var *emp-rho*) 0.11)
 (check "want-as-cap is the value the solve was given" (engine-var *want-as-cap?*) #f)
 (check "stock-draw-hours is the value the solve was given" (engine-var *stock-draw-hours*) 3.0)
-(check "the voice field's tau is the value the solve was given" *voice-tau* 0.4)
-(check "…and its scope path (here empty: no scope stands behind the push)" *scope-path* '())
+;; the world is the vat's: the solve ran there, so the voice field is read there (solve/world)
+(check "the voice field's tau is the value the solve was given" (with-vat vat *voice-tau*) 0.4)
+(check "…and its scope path (here empty: no scope stands behind the push)" (with-vat vat *scope-path*) '())
 
 (display "\n── the world a scenario ingests is the world ingest-records! reads ──\n")
 (define world-kws %world-keywords)

@@ -29,13 +29,20 @@
 ;;; A fragment imports the `with-…` form alone: the accessors it expands to
 ;;; resolve in the module that defined the context, by hygiene.
 ;;;
-;;; A context a MODULE holds, rather than an actor: `(define-context world
-;;; #:cell %world spec …)` adds the cell, holding one instance from load, each
-;;; field as a top-level name over that cell (the solve's `*places*` reads
-;;; `(world-*places* %world)` and `(set! *places* v)` writes it), and
-;;; `reset-world!`, a fresh instance. An importer of such a name reads and
+;;; A context a MODULE holds, rather than an actor: `(define-context settings
+;;; #:cell %settings spec …)` adds the cell, holding one instance from load, each
+;;; field as a top-level name over that cell (the engine's `*emp-rho*` reads
+;;; `(settings-*emp-rho* %settings)` and `(set! *emp-rho* v)` writes it), and
+;;; `reset-settings!`, a fresh instance. An importer of such a name reads and
 ;;; writes the one instance without assigning an imported binding, which Hoot
 ;;; refuses and Guile would let diverge.
+;;;
+;;; A context a module holds PER DYNAMIC EXTENT: `(define-context world #:fluid
+;;; %world spec …)` is the same surface over a fluid. The instance is a value:
+;;; `(current-world)` is the one in hand, `(call-with-world w thunk)` runs the
+;;; thunk with W as the world and leaves the caller's standing, and
+;;; `reset-world!` puts a fresh one in hand. Two solves in two extents hold
+;;; two worlds; a test that holds one across another's is holding a value.
 
 (define-module (playnet protocol context)
   #:use-module (srfi srfi-9)
@@ -70,6 +77,10 @@ that name of CTX, through the setter named after HOME."
        #'(begin
            (define-context ctx-name spec ...)
            (context-cell ctx-name cell spec ...)))
+      ((_ ctx-name #:fluid cell spec ...)
+       #'(begin
+           (define-context ctx-name spec ...)
+           (context-cell ctx-name #:fluid cell spec ...)))
       ((_ ctx-name spec ...)
        (let* ((specs  (map (lambda (s) (let ((d (syntax->datum s))) (if (pair? d) d (list d #f)))) #'(spec ...)))
               (fields (map car specs))
@@ -112,19 +123,41 @@ that name of CTX, through the setter named after HOME."
 ;; (hoot/library-group.scm: "set! to imported binding") and Guile lets through
 ;; in silence. `reset-NAME!` makes the cell a fresh instance: every default
 ;; evaluated again, so a table is a new table.
+;;
+;; `(define-context NAME #:fluid CELL spec …)`: the same names over a fluid, so
+;; the instance in hand is the dynamic extent's. `(current-NAME)` answers it,
+;; `(call-with-NAME v thunk)` runs THUNK with V in hand and the caller's instance
+;; standing after, and `reset-NAME!` puts a fresh instance in hand. A fluid
+;; stands in Guile and in Hoot alike; a fiber or a thread starts from a snapshot
+;; of its parent's, so an instance declared in one is the one its own extent
+;; reads.
 (define-syntax context-cell
   (lambda (x)
+    (define (names ctx-name specs)
+      (let* ((fields (map (lambda (s) (let ((d (syntax->datum s))) (if (pair? d) (car d) d))) specs))
+             (sym    (syntax->datum ctx-name))
+             (id     (lambda (s) (datum->syntax ctx-name s))))
+        (list (id (symbol-append 'make- sym))
+              (id (symbol-append 'reset- sym '!))
+              (id (symbol-append 'current- sym))
+              (id (symbol-append 'call-with- sym))
+              (map id fields)
+              (map (lambda (f) (id (symbol-append sym '- f))) fields)
+              (map (lambda (f) (id (symbol-append 'set- sym '- f '!))) fields))))
     (syntax-case x ()
+      ((_ ctx-name #:fluid cell spec ...)
+       (with-syntax (((make reset-name current-name call-with-name (field ...) (ref ...) (setr ...))
+                      (names #'ctx-name #'(spec ...))))
+         #'(begin
+             (define cell (make-fluid (make)))
+             (define-syntax field (identifier-syntax (_ (ref (fluid-ref cell))) ((set! _ v) (setr (fluid-ref cell) v)))) ...
+             (define (current-name) (fluid-ref cell))
+             (define (call-with-name v thunk) (with-fluid* cell v thunk))
+             (define (reset-name) (fluid-set! cell (make))))))
       ((_ ctx-name cell spec ...)
-       (let* ((fields (map (lambda (s) (let ((d (syntax->datum s))) (if (pair? d) (car d) d))) #'(spec ...)))
-              (sym    (syntax->datum #'ctx-name))
-              (id     (lambda (s) (datum->syntax #'ctx-name s))))
-         (with-syntax ((make       (id (symbol-append 'make- sym)))
-                       (reset-name (id (symbol-append 'reset- sym '!)))
-                       ((field ...) (map id fields))
-                       ((ref ...)   (map (lambda (f) (id (symbol-append sym '- f))) fields))
-                       ((setr ...)  (map (lambda (f) (id (symbol-append 'set- sym '- f '!))) fields)))
-           #'(begin
-               (define cell (make))
-               (define-syntax field (identifier-syntax (_ (ref cell)) ((set! _ v) (setr cell v)))) ...
-               (define (reset-name) (set! cell (make))))))))))
+       (with-syntax (((make reset-name current-name call-with-name (field ...) (ref ...) (setr ...))
+                      (names #'ctx-name #'(spec ...))))
+         #'(begin
+             (define cell (make))
+             (define-syntax field (identifier-syntax (_ (ref cell)) ((set! _ v) (setr cell v)))) ...
+             (define (reset-name) (set! cell (make)))))))))
