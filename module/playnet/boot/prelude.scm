@@ -101,7 +101,6 @@
   #:use-module (playnet algorithms signals)
   #:use-module (playnet algorithms skill-matcher)
   #:use-module (playnet algorithms critical-path)
-  #:use-module (playnet algorithms custody)
   #:use-module (playnet ddmrp otif)
   #:use-module (playnet algorithms track-trace)
   #:use-module (playnet algorithms resource-flows)
@@ -148,7 +147,7 @@
   #:use-module (playnet federation bootstrap)
   #:use-module ((playnet keri acdc-store) #:hide (hashmap-count))   ; the store's count; utils/store-utils' hashmap-count is the one the planner reads
   #:use-module (playnet personhood witnessed-work)
-  #:use-module ((playnet observation credentials) #:hide (held-by))   ; algorithms/custody's held-by is the planner's
+  #:use-module (playnet observation credentials)
   #:use-module (playnet voice voice-signer)
   #:use-module (playnet voice snapshot)
   #:use-module (playnet economy guardianship)
@@ -526,11 +525,7 @@
                resource-specification->list seed-spec-rows! spec-row-classes
                spec-row-id spec-row-name spec-row-unit build-membership-index
                citizen-share commune-share cash-flow-report trace track
-               compute-otif apply-penalty apply-transfer-custody
-               build-custody-ledger current-custodian custody-level
-               entrustment-limit held-by incentive-compatible ledger-by-agent
-               ledger-records make-custody-ledger penalty-svc
-               scope-entrustment-capacity settle-custody tranche-coverage
+               compute-otif
                critical-path match-work-flows *plan-tags* intent->signal
                plan-tag signal->intent *non-consuming-actions-sne*
                build-sne-index/actor compute-recipe-sne/actor

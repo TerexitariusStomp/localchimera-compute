@@ -792,18 +792,8 @@
          (ctx (apply-direction-effects ctx event to-def
                 (economic-event-to-resource-inventoried-as event) 'to))
          ;; Post-apply: container location inheritance for separate
-         (ctx (apply-container-location ctx event container-loc))
-         ;; Split-custody: clear custodianScope on from-resource
-         (ctx (if is-split
-                  (let* ((from-id (economic-event-resource-inventoried-as event))
-                         (st (ctx-state ctx))
-                         (resource (and from-id (hashmap-ref (os-resources st) from-id #f))))
-                    (if resource
-                        (let* ((updated (economic-resource-set-custodian-scope resource #f))
-                               (new-st (put-resource st from-id updated)))
-                          (make-fold-ctx new-st (ctx-affected ctx)))
-                        ctx))
-                  ctx)))
+         (ctx (apply-container-location ctx event container-loc)))
+    ;; who holds custody after the act is phase 4's one word (phase-implied-transfer)
     ctx))
 
 
@@ -812,27 +802,35 @@
 ;; ═════════════════════════════════════════════════════════════════════════
 
 (define (phase-implied-transfer ctx event def)
-  (let ((from-id (economic-event-resource-inventoried-as event))
-        (transfer-type (action-definition-implies-transfer def))
-        (provider (economic-event-provider event))
-        (receiver (economic-event-receiver event)))
-    (if (and transfer-type from-id provider receiver
+  (let* ((from-id (economic-event-resource-inventoried-as event))
+         (to-id (economic-event-to-resource-inventoried-as event))
+         (transfer-type (action-definition-implies-transfer def))
+         (provider (economic-event-provider event))
+         (receiver (economic-event-receiver event))
+         ;; custody lands on the resource that HOLDS the goods after the act:
+         ;; the carrier's lot when custody split through one phase 3 stood up
+         ;; (custody-defs: the stock stays with its keeper, the lot travels),
+         ;; the stock itself otherwise. Rights stay with the stock the event names.
+         (held-id (if (and (eq? transfer-type 'custody) to-id (split-custody? event)
+                           (hashmap-ref (os-resources (ctx-state ctx)) to-id #f))
+                      to-id from-id)))
+    (if (and transfer-type held-id provider receiver
              (not (equal? provider receiver)))
-        (let ((r (hashmap-ref (os-resources (ctx-state ctx)) from-id #f)))
+        (let ((r (hashmap-ref (os-resources (ctx-state ctx)) held-id #f)))
           (if (not r) ctx
               (let ((updated
                       (cond
                         ;; All-rights: transfer primary-accountable to receiver
                         ((eq? transfer-type 'all-rights)
                          (copy-economic-resource r #:primary-accountable receiver))
-                        ;; Custody: transfer custodian-scope to receiver
+                        ;; Custody: the holder's custodian-scope is the receiver
                         ((eq? transfer-type 'custody)
                          (economic-resource-set-custodian-scope r receiver))
                         (else r))))
                 (if (eq? updated r) ctx
                     (ctx-update-state ctx
                       (lambda (st)
-                        (put-resource st from-id updated)))))))
+                        (put-resource st held-id updated)))))))
         ctx)))
 
 

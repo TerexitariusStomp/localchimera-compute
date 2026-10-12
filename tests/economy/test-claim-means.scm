@@ -14,7 +14,7 @@
              ((playnet legal crossings) #:select (rail-channel))
              ((playnet vf formulas actions) #:select (relocating-actions)))
 (use-modules (playnet test harness)
-             (playnet algorithms custody) (playnet legal crossings) (playnet vf facts rail) (playnet vf schemas) (srfi srfi-1)
+             (playnet legal crossings) (playnet vf facts rail) (playnet vf schemas) (srfi srfi-1)
              (playnet scope live)
              (playnet economy socialization) (playnet keri acdc-store)
              (goblins) (goblins vat) (goblins utils hashmap)

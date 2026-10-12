@@ -223,7 +223,9 @@
                                     (ev-with e (list 'R T) '(T #f)) spec-of)
                           (ref-core (ref-core rs (ev-with e '(T #f)) spec-of) tr spec-of))
                       (ref-core rs e spec-of))))
-        (let* ((rs3 (set-field rs2 (list R) 'custodian rcv))
+        ;; custody lands on the resource that HOLDS the goods after the act:
+        ;; the carrier's T when custody split through one, the stock itself otherwise
+        (let* ((rs3 (set-field rs2 (list (or T R)) 'custodian rcv))
                ;; an input with a T: whether the action's own location/state update
                ;; lands on R or on T (where the explicit-transfer reading puts it)
                ;; is not fixed by the example, so R's two fields are left undefined.
@@ -532,7 +534,7 @@
   '("R1" onhand 7) '("R1" state "s0") '("R1" stage #f))
 (ref-expect "implied custody, input: pickup R->T between agents (transferred in, then picked up out of T)" (list R1)
   (list (mk "e" 'pickup #:R "R1" #:T "Tn" #:provider "a0" #:receiver "a2" #:q 4 #:in "p1"))
-  '("R1" onhand 3) '("R1" acct 10) '("Tn" exists #t) '("Tn" onhand 0) '("Tn" acct 0) '("Tn" acctable #f) '("R1" custodian "a2"))
+  '("R1" onhand 3) '("R1" acct 10) '("Tn" exists #t) '("Tn" onhand 0) '("Tn" acct 0) '("Tn" acctable #f) '("Tn" custodian "a2") '("R1" custodian #f))
 (ref-expect "implied custody, output: dropoff R->T between agents (put out on R, then transferred to T)" (list R1)
   (list (mk "e" 'dropoff #:R "R1" #:T "Tn" #:provider "a0" #:receiver "a2" #:q 4 #:out "p1" #:toloc "L9" #:state "sx"))
   '("R1" onhand 7) '("R1" acct 10) '("Tn" onhand 4) '("Tn" acct 0) '("Tn" loc "L9") '("Tn" state "sx")
@@ -1209,7 +1211,7 @@
 ;; E-custodian — custody has no resource field in VF; the observer carries custodian-scope
 (let* ((e (mk "k" 'pickup #:R "R1" #:provider "a0" #:receiver "a2" #:q 1 #:in "p1"))
        (st (fold-observer (list R1) (list e))))
-  (xfail "E-custodian" "an implied custody transfer sets custodian-scope (a playnet field) on the inventoried resource; VF has custody only as the onhandQuantity of the custodian's resource"
+  (xfail "E-custodian" "an implied custody transfer sets custodian-scope (a playnet field) on the resource that holds the goods — the inventoried one here, the carrier's when custody splits through one; VF has custody only as the onhandQuantity of the custodian's resource"
          (equal? (rget (obs-res st "R1") 'custodian) "a2")))
 
 ;; E-unit — a resource keeps its own unit; a quantity in another unit of the same

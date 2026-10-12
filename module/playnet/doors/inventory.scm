@@ -33,8 +33,9 @@
    human-readable agent name; RS (the scope's own recipe-store) scopes the
    rail read so it can never be a different scope's (rail.scm spec-rail)."
   (let* ((rid       (economic-resource-id r))
-         (cust      (or (economic-resource-primary-accountable r)
-                        (economic-resource-custodian-scope r)))
+         ;; who HOLDS it (the observer's one word, custodian-scope), else who owns it
+         (cust      (or (economic-resource-custodian-scope r)
+                        (economic-resource-primary-accountable r)))
          (cust-rec  (and cust ($ as 'get-agent cust)))
          (cust-name (or (and cust-rec (agent-name cust-rec))
                         cust ""))
@@ -248,16 +249,12 @@
               (history (map (lambda (e) (event->custody-step e as)) events))
               (kids    (or ($ obs 'resources-contained-in resource-id) '()))
               (children (map (lambda (c) (resource->inv-alist c obs as rs)) kids))
-              ;; Current custodian: trailing event step wins; otherwise
-              ;; fall back to the resource's recorded custodian fields.
-              (last-step (and (pair? history) (car (reverse history))))
-              (cust (cond
-                      (last-step (assq-ref last-step 'agent))
-                      (else (or (economic-resource-primary-accountable r)
-                                (economic-resource-custodian-scope r)))))
+              ;; Current custodian: the observer's one word (custodian-scope,
+              ;; written by its implied-transfer phase), else the owner
+              (cust (or (economic-resource-custodian-scope r)
+                        (economic-resource-primary-accountable r)))
               (cust-name
                 (cond
-                  (last-step (assq-ref last-step 'agent-name))
                   (cust (let ((a ($ as 'get-agent cust)))
                           (if a (agent-name a) cust)))
                   (else ""))))
