@@ -1986,7 +1986,9 @@
 ;;
 ;; These setters are the fix and the documentation at once: they keep the
 ;; variable boxed, and they name this module's mutable surface.
-(define (set-backend! b)          (set! *backend* b))
+;; A caller names the backend it wants; the browser build has one, the reference
+;; core, so under Hoot every name resolves to it here and nowhere else.
+(define (set-backend! b)          (set! *backend* (cond-expand (guile b) (else 'native))))
 (define (set-kappa! x)            (set! *kappa* x))
 (define (set-kern-mettol! x)      (set! *kern-mettol* x))
 (define (set-kern-newton-final! n) (set! *kern-newton-final* n))

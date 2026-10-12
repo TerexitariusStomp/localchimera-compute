@@ -34,6 +34,7 @@
   #:use-module ((playnet keri signify-portable)
                 #:select (cesr-stream-parse))
   #:use-module ((playnet utils hex) #:select (bv->hex hex->bv))
+  #:use-module ((playnet utils host) #:select (string-contains))   ; Hoot has no srfi-13; one shim for both builds
   #:export (reticulum-identity-hash
             reticulum-destination-hash
             event-reticulum-pub
@@ -111,19 +112,6 @@
     (bv->hex (%truncate (keri-crypto-sha256 (%bv-append name-hash ih)) 16))))
 
 ;;; ── Targeted JSON field reads (own canonical emission only) ─────────────────
-
-;; Local string-contains: Guile's lives in SRFI-13, which Hoot doesn't
-;; ship — this module compiles into browser/repl.wasm. Same contract:
-;; index of NEEDLE in HAYSTACK, or #f. (Same pattern as cesr.scm's
-;; local string-index.)
-(define (string-contains haystack needle)
-  (let* ((hl (string-length haystack))
-         (nl (string-length needle))
-         (end (- hl nl)))
-    (let loop ((i 0))
-      (cond ((> i end) #f)
-            ((string=? (substring haystack i (+ i nl)) needle) i)
-            (else (loop (+ i 1)))))))
 
 ;; Local string-index (char, from START) — same Hoot-absence reason.
 (define (string-index s ch start)

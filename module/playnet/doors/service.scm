@@ -13,6 +13,7 @@
 
 (define-module (playnet doors service)
   #:use-module (playnet solve federation-solve)
+  #:use-module ((playnet utils host) #:select (hash-get-handle))
   #:use-module (playnet doors planner records)
   #:use-module (playnet doors planner solving)
   #:use-module (playnet doors planner standing)

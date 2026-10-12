@@ -21,6 +21,7 @@ DAY_BOOT_WASM_DEPS = \
                      module/playnet/utils/records.scm \
                      module/playnet/social/relationship-kinds.scm \
                      module/playnet/keri/reticulum-binding.scm \
+                     module/playnet/utils/host.scm \
                      module/playnet/utils/hex.scm \
                      module/playnet/crypto/recovery-share.scm \
                      module/playnet/crypto/shamir.scm \
@@ -825,6 +826,7 @@ REPL_WASM_DEPS = \
                  module/playnet/keri/crypto-primitives.scm \
                  module/playnet/keri/did.scm \
                  module/playnet/keri/reticulum-binding.scm \
+                 module/playnet/utils/host.scm \
                  module/playnet/keri/signify-portable.scm \
                  module/playnet/lang/autocomplete.scm \
                  module/playnet/lang/kanren.scm \

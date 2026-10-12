@@ -290,7 +290,7 @@
               needs)
     (set-willing! (lambda (w s c) #t))
     (set-legal-decorate! (lambda (p c) (values #f 0.0 '())))
-    (set-backend! (cond-expand (guile 'native-c) (else 'native)))
+    (set-backend! 'native-c)                 ; the reference core where the build has no kernel (set-backend!)
     masses*))
 
 ;;; ── the week asked backwards: the three bills ───────────────────────────────

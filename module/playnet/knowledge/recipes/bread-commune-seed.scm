@@ -39,6 +39,7 @@
 
 (define-module (playnet knowledge recipes bread-commune-seed)
   #:use-module ((playnet utils units) #:select (%count-unit %effort-unit))
+  #:use-module ((playnet utils host) #:select (define-lazy))
   #:use-module (playnet vf schemas)
   #:use-module (playnet knowledge dsl shorthand)
   #:use-module (playnet knowledge dsl world)
@@ -166,9 +167,11 @@
                     #:availability-window bread-window)))
 (define bread-spatials (list (make-spatial-thing #:id "town" #:lat 40.0 #:long -74.0)))
 
-(define bread-world
+(define-lazy bread-world
   ;; under the sky: each grow states the light its crop stores, the water it transpires
-  ;; and the air it fixes its carbon from (world.scm world-sky)
+  ;; and the air it fixes its carbon from (world.scm world-sky). Built on first
+  ;; reach, not at load: the sky stands on today's month, read off the clock,
+  ;; which the browser build's compiler has no clock to read (utils/host.scm)
   (world-sky
    (world #:specs bread-specs #:procs bread-procs #:flows bread-flows #:recipes bread-recipes
           #:spatials bread-spatials #:agents bread-agents #:resources bread-resources)))
@@ -189,7 +192,7 @@
         (make-agent #:id "b" #:type 'person #:primary-location "town" #:classified-as '())))
 (define (bread-world-at soil)
   (world-with bread-world #:agents bread-plain-agents #:resources (bread-resources-at soil)))
-(define bread-plain-world (bread-world-at 1000.0))
+(define-lazy bread-plain-world (bread-world-at 1000.0))
 
 (define (seed-bread-recipes! rs)
   "The chain into RS: its specs, processes, flows and the one recipe."

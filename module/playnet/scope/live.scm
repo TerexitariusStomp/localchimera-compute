@@ -13,7 +13,7 @@
 ;;; boundary intact. Lives in a Goblins module but the engine inside stays pure.
 
 (define-module (playnet scope live)
-  #:use-module ((playnet utils host) #:select (getenv))
+  #:use-module ((playnet utils host) #:select (getenv hash-get-handle))
   #:use-module ((playnet vf facts located) #:select (credit-good bar-field))
   #:re-export (make-work-event)
   #:use-module (playnet vf formulas flows)
@@ -157,13 +157,6 @@
   #:use-module ((playnet vf facts rail) #:select (publish-rails! rails-of publish-social-portion!
                                                set-rails! set-social-portions!))
   #:use-module ((playnet utils catch) #:select (catch* throw* with-throw-handler*)))
-
-(cond-expand (guile) (else
-  (define %no-entry (list 'no-entry))
-  (define (hash-get-handle h key)          ; the (key . value) pair of KEY in H, or #f (Hoot has no handles)
-    (let ((v (hash-ref h key %no-entry)))
-      (and (not (eq? v %no-entry)) (cons key v))))))
-
 
 ;; the convex engine arrives through the (playnet solve engine) import in the
 ;; define-module above — the same door every test opens.

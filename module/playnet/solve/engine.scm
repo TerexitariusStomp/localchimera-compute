@@ -68,7 +68,7 @@
 ;; setter call, in both builds. tools/lint/check-imported-set.scm refuses the
 ;; one write left over, a `set!` of a binding a module imported.
 (define-module (playnet solve engine)
-  #:use-module ((playnet utils host) #:select (getenv string-contains))
+  #:use-module ((playnet utils host) #:select (getenv string-contains hash-get-handle))
   #:re-export (svc-good? lab-good svc-good)   ; the bar-key grammar's, read here and by the engine's importers (facts/located)
   #:use-module (playnet vf formulas flows)
   #:use-module (playnet solve world)

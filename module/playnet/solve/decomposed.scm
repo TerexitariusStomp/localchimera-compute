@@ -28,9 +28,6 @@
 
 ;; the batched kernel solve crosses the FFI; Hoot has none (see the cond-expand at the batch)
 (cond-expand (guile (use-modules (system foreign))) (else))
-(cond-expand (guile) (else
-  (define (get-internal-real-time) (current-time))   ; the report line's seconds: whole seconds is what a page has
-  (define internal-time-units-per-second 1)))
 
 ;;       coordinated by the pulls on goods they provision across their boundaries
 ;; ════════════════════════════════════════════════════════════════════════════

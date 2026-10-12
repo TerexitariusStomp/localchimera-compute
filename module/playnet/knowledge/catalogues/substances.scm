@@ -24,6 +24,7 @@
 
 (define-module (playnet knowledge catalogues substances)
   #:use-module ((playnet knowledge dsl shorthand) #:select (flow*))
+  #:use-module ((playnet utils host) #:select (hash-get-handle))   ; Hoot has no handles; one shim for both builds
   #:use-module (playnet vf formulas actions)
   #:use-module (playnet knowledge catalogues food-sources)        ; *food-sources* *fdc-nutrients* *food-nutrition-hand*
   #:use-module (playnet knowledge data fdc-sr-legacy)  ; %fdc-slice — the pinned USDA rows
