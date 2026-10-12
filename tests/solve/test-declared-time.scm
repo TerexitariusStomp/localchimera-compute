@@ -57,7 +57,7 @@
 (check "a whole-date period is a whole day"
        (begin (set-period-span! 9 "2026-03-03" "2026-03-03") (near? (period-hours 9) 24.0 0.001)))
 (check "a stated length answers when no span does"
-       (begin (reset!) (set-period-length! 1.0 "week") (near? (period-hours 0) 168.0 0.001)))
+       (begin (reset-world!) (set-period-length! 1.0 "week") (near? (period-hours 0) 168.0 0.001)))
 (set-period-length! 1.0 "day")
 
 ;;; ════════════════════════════════════════════════════════════════════════════

@@ -48,7 +48,7 @@
     (and c (col-flows c))))
 
 (format #t "~%── §1 the dial: eight six-hour bands, each a clock interval ──~%")
-(reset!)
+(reset-world!)
 (let ((ps (set-clock-horizon! "2026-03-03" 8 6.0)))
   (check "eight bands laid out" (equal? ps '(0 1 2 3 4 5 6 7)))
   (check "a band is six hours long" (near? (period-hours 0) 6.0))

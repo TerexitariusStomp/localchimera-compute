@@ -12,8 +12,7 @@
 ;;; `(current-world)` is the value, `(call-with-world w thunk)` runs the thunk
 ;;; with W in hand and leaves the caller's world standing, `reset-world!` puts
 ;;; a fresh instance in hand, every default evaluated again, so a table is a
-;;; new table. That one line is what the engine's `reset!` was, with the
-;;; initial values written once. A solve that runs in its own extent leaves no
+;;; new table, the initial values written once. A solve that runs in its own extent leaves no
 ;;; world behind, and a holder of one world may run another inside it.
 ;;;
 ;;; Stated this way, a module that writes a world table never assigns a binding
@@ -22,14 +21,13 @@
 ;;; `tools/lint/check-imported-set.scm` holds that line for both builds.
 ;;;
 ;;; What is NOT here: the engine's settings and memos (`*emp-rho*`, the
-;;; tolerances, the `%…-index` memos, the parameters), which `reset!` leaves
-;;; standing, and the calendar's two tables (vf/formulas/periods), which the
-;;; engine's `reset!` clears beside this.
+;;; tolerances, the `%…-index` memos, the parameters), which a fresh world
+;;; leaves standing.
 
 (define-module (playnet solve world)
   #:use-module (playnet protocol context)
   #:export (%world make-world world? reset-world! current-world call-with-world *certificates*
-            *flow-period-factor* *avail-factor* *places* *periods* *cells* *spatial-things*
+            *flow-period-factor* *avail-factor* *places* *periods* *cells* *period-days* *period-spans* *spatial-things*
             *movable* *storable* *tau* *hold* *neighbours* *stationary*
             *demand* *A* *acquire* *promote* *acquire-cost-of* *acquired-keys*
             *cap* *init* *latlon* *alt* *frag-cap* *frag-budget*
@@ -63,6 +61,9 @@
   (*avail-factor* (lambda (located-good) 1.0))
 
   (*places* '()) (*periods* '(0)) (*cells* '())
+  ;; the calendar: what a period is on the clock (solve/periods.scm reads and
+  ;; lays these) — period → weekday symbols, period → (start-iso . end-iso)
+  (*period-days* (make-hash-table)) (*period-spans* (make-hash-table))
 
   (*spatial-things* '())   ; the containment tree, as ingested — read by `within` fragilities
 
@@ -381,7 +382,7 @@
 
   ;; Where a worker's competence STANDS as the horizon opens — the record's own
   ;; figure (the observer's practice folded through this same law, live.scm), in
-  ;; place of the skill's endowment. Per (worker, skill); cleared by reset!.
+  ;; place of the skill's endowment. Per (worker, skill); a fresh world holds none.
   (*competence-p0* (make-hash-table))
 
   ;; ── composition and units ─────────────────────────────────────────────────
@@ -534,7 +535,7 @@
   ;; Every instantiated ride's origin — pid → (mode . rider) — recorded at the
   ;; moment the template is born, so the tiling (tpl-manner, tpl-pace), the
   ;; budget (rides-in) and the key test (ride-key?) read the MODE ITSELF through
-  ;; its own accessors. Cleared by reset!, filled again wherever the templates
+  ;; its own accessors. Empty in a fresh world, filled again wherever the templates
   ;; are built (build-columns per build; the ingest pass that registers
   ;; whole-procs).
   (*ride-info* (make-hash-table))
@@ -552,7 +553,7 @@
   ;; ── voice ─────────────────────────────────────────────────────────────────
 
   ;; Set by the door that solves for a scope (plan-from-records #:voice-tau
-  ;; #:voice-pushes #:voice-hours), cleared by reset!. τ = 0 is today: the field
+  ;; #:voice-pushes #:voice-hours), empty in a fresh world. τ = 0 is today: the field
   ;; adds nothing and labform is the identical list. Distinct from *tau*, the
   ;; transport cost per km, and *tau-commute*.
   (*voice-tau* 0.0)                 ; 0 ≤ τ < 1, governed: how far a stance may re-weigh an hour

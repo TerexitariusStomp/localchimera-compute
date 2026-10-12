@@ -84,7 +84,7 @@
                                       ;; the reserve stands in every future (Taleb-strict).
                                       (reserve-yields-to 'tail)
                                       ;; the discrete search's tables (search-state), put back
-                                      ;; after ingest's reset! so this block is built under the
+                                      ;; after ingest's fresh world so this block is built under the
                                       ;; node's config, cuts and fixings; and the RECOURSE batch
                                       ;; columns, whose floors stay relaxed in every future
                                       (search-state #f) (relax-keys '())

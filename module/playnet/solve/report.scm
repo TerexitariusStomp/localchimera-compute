@@ -23,7 +23,7 @@
   #:use-module (playnet vf formulas actions)
   #:use-module ((playnet utils keyed-id) #:select (keyed-id))
   #:use-module (playnet vf facts located)
-  #:use-module (playnet vf formulas periods)   ; what a period is in wall-clock time
+  #:use-module (playnet solve periods)   ; what a period is in wall-clock time
   #:use-module (playnet solve solver)
   #:use-module (playnet solve compile)
   #:use-module (playnet solve engine)

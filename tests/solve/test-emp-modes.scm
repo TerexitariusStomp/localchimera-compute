@@ -54,7 +54,7 @@
        (and (< (abs (- (car all-reluctant) (car tot))) 1e-6) (< (abs (- (cdr all-reluctant) (cdr tot))) 1e-6)))
 (check "a single-skilled person's preference is centred away: it says nothing about how much they work"
        (and (< (abs (- (car bob-alone) (car tot))) 1e-6) (< (abs (- (cdr bob-alone) (cdr tot))) 1e-6)))
-(check "default emp-mode is 'total (set by reset!)"
-       (begin (reset!) (eq? *emp-mode* 'total)))
+(check "default emp-mode is 'total (a fresh world's)"
+       (begin (reset-world!) (eq? *emp-mode* 'total)))
 
 (test-summary!)

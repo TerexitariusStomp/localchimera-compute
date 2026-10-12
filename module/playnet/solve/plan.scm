@@ -17,7 +17,7 @@
   #:use-module (playnet vf schemas)
   #:use-module (playnet utils keywords)
   #:use-module ((playnet solve externality) #:select (withdrawal-displacement paired-difference))
-  #:use-module (playnet vf formulas periods)   ; what a period is in wall-clock time
+  #:use-module (playnet solve periods)   ; what a period is in wall-clock time
   #:use-module (playnet solve solver)
   #:use-module (playnet solve engine)
   #:use-module (playnet solve discrete)

@@ -9,16 +9,16 @@
 ;;; a keyword every world gets is a fact about WHERE the globals are assigned,
 ;;; and that is what this file reads — the source, not a solve:
 ;;;
-;;;   · a door global is `set!` inside declare-world! or reset!, and nowhere else
+;;;   · a door global is `set!` inside declare-world!, and nowhere else
 ;;;     in the engine family (engine.scm and the satellites it loads), nor in any
 ;;;     test, bench or the demo — the layering doors (workers->riders!,
 ;;;     absorb-specs!, adopt-container-pools!, means-as-riders, the manners bag)
 ;;;     are named here as the exceptions they are, each with the one global it
 ;;;     layers onto;
 ;;;   · mkcells! has one caller, declare-world!;
-;;;   · reset! has one caller, declare-world! — ingest-located! derives its
-;;;     partition, resolved keys and stretch registrations as pure list math
-;;;     and lets the door reset.
+;;;   · reset-world! (solve/world.scm, a fresh world) has one caller in module/,
+;;;     declare-world! — ingest-located! derives its partition, resolved keys
+;;;     and stretch registrations as pure list math and lets the door reset.
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/solve/test-world-door.scm
 
@@ -96,15 +96,15 @@
       (begin (set! *fail* (1+ *fail*)) (format #t "  ✗ ~a~%" name)
              (for-each (lambda (d) (format #t "      ~s~%" d)) detail))))
 
-;; 1. in the engine: every set! of a door global sits in declare-world!, reset!,
+;; 1. in the engine: every set! of a door global sits in declare-world!,
 ;;    or a named layering door layering its own global
 (let* ((w (append (writers engine) (writers ingest)))
        (stray (filter (lambda (s)
                         (let ((g (car s)) (in (cadr s)))
-                          (not (or (memq in '(declare-world! reset!))
+                          (not (or (memq in '(declare-world!))
                                    (let ((l (assq in layerings))) (and l (memq g (cdr l))))))))
                       w)))
-  (check "engine.scm and ingest.scm: a door global is assigned in declare-world!/reset!, or by its named layering door (ingest-located! declares through the door)"
+  (check "engine.scm and ingest.scm: a door global is assigned in declare-world!, or by its named layering door (ingest-located! declares through the door)"
          (null? stray) stray)
   (check "…and every layering door named here still exists and still writes its global"
          (every (lambda (l) (any (lambda (s) (and (eq? (cadr s) (car l)) (memq (car s) (cdr l)))) w))
@@ -116,7 +116,7 @@
   (check "no satellite, test or bench assigns a door global (they declare, or layer through a door)"
          (null? stray) (delete-duplicates (map (lambda (s) (list (car s) (caddr s))) stray))))
 
-;; 3. mkcells! has one caller; reset! two — in module/
+;; 3. mkcells! and reset-world! have one caller each — in module/
 (let* ((module-files (append (list engine) satellites
                              (filter (lambda (f) (not (or (string-contains f "/tests/")
                                                           (string-contains f "/attic/"))))   ; the retired prototypes
@@ -133,8 +133,8 @@
                                              (forms-of path)))
                                module-files)))))
   (check "mkcells! is called by declare-world! alone" (equal? (callers 'mkcells!) '(declare-world!)) (callers 'mkcells!))
-  (check "reset! has ONE caller: declare-world! (a declaration IS a fresh world)"
-         (equal? (callers 'reset!) '(declare-world!)) (callers 'reset!)))
+  (check "reset-world! has ONE caller: declare-world! (a declaration IS a fresh world)"
+         (equal? (callers 'reset-world!) '(declare-world!)) (callers 'reset-world!)))
 
 (format #t "~%~a passed, ~a failed~%" *pass* *fail*)
 (exit (if (= *fail* 0) 0 1))

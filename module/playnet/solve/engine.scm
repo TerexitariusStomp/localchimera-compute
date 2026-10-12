@@ -34,17 +34,17 @@
 ;;; the VF compiler compile.scm; the self-tests and scale benchmarks are
 ;;; module/playnet/deprecated/planner/attic/demo.scm.
 
-;; The engine is a MODULE. Its mutable world, the tables `reset!` clears, is
-;; ONE context in solve/world.scm, the value in hand, read and written by name
-;; from here and from every module that imports a name; what `reset!` leaves
-;; standing (the dials, the memos, the tolerances) is the engine's own. The
+;; The engine is a MODULE. Its mutable world is ONE context in solve/world.scm,
+;; the value in hand, read and written by name from here and from every module
+;; that imports a name; what a fresh world leaves standing (the dials, the
+;; memos, the tolerances) is the engine's own. The
 ;; export list is the MEASURED interface: every top-level name some file
 ;; outside this one references, plus set-dial! kept deliberately; the modules
 ;; above it (ingest, report, discrete, decomposed, records, robust, plan, the
 ;; federation pair) read their engine internals through it, each group named.
 ;; A remaining top-level name is internal machinery; exporting one later is
 ;; one line here.
-;; A world is DECLARED, not assembled: declare-world! (beside reset!/mkcells!)
+;; A world is DECLARED, not assembled: declare-world! (beside mkcells!)
 ;; is the door every world comes through — a test's or bench's fixture, the
 ;; worked example's setup-*, and the records: ingest-located! derives its
 ;; declaration from the resources, agents and spatial things and calls it. So
@@ -96,7 +96,7 @@
   #:use-module ((playnet solve externality) #:select (withdrawal-displacement paired-difference))
   #:use-module ((playnet vf formulas propagate) #:select (propagate propagate-agents))
   #:use-module (playnet vf formulas tension-kinds)
-  #:use-module (playnet vf formulas periods)   ; what a period is in wall-clock time
+  #:use-module (playnet solve periods)   ; what a period is in wall-clock time
   #:use-module (playnet vf facts boundary)   ; the flows nothing makes
   #:use-module (playnet vf formulas fragility)   ; a limit as a record: one form for every scale
   #:re-export (<fragility> fragility? fragility-profile fragility-extent fragility-window fragility-specs
@@ -142,7 +142,6 @@
                period-dates
                    plan-runs
 
-               reset!
              mrec-name mrec-rp mrec-flows mrec-skill mrec-manner mrec-pace means-ride? rider-hours
             set-dial!   set-skill-spec! set-competence! apply-skill-dynamics!
               set-worker-pref! *pref-bound* skilled-worker-at?
@@ -425,7 +424,7 @@
        (not (hash-ref *never-raw* spec #f))
        (or (structural-raw? spec) (svc-held? spec) (barrier-bounded? spec) (hash-ref *raws* spec #f))
        #t))
-;; ── THE SETTINGS: what a caller states and `reset!` leaves standing ──────────
+;; ── THE SETTINGS: what a caller states and a fresh world leaves standing ────
 ;; One context (playnet protocol context) in the cell `%settings`, each dial a
 ;; top-level name over it, as the world's tables are over `%world`: a test's
 ;; `(set! *emp-rho* …)`, `set-dial!` and `set-legal-decorate!` all write the
@@ -3348,21 +3347,19 @@
           (lambda (x t . _) (values x forms labform cols goods raws idx)))))))
 
 ;; ── world setup (the scenarios) ──────────────────────────────────────────────
-;; WHAT A RESET CLEARS is everything a previous solve DECIDED, and nothing a
-;; caller told the engine before starting one. The line runs between them:
-;; *spatial-things* arrives WITH a problem — ingest-located! resets and then fills
-;; it from its own argument — while *templates*, *base-templates* and *fed-procs*
-;; are handed over BEFORE the reset that begins the run they belong to. Clearing
-;; those erases the question along with the answer: ingest-located! resets as its
-;; first act, so a caller who compiled recipes and then ingested would find them
-;; gone. Tuning (*kern-*, *osqp-*, the tolerances) is configuration and
-;; outlives every solve by design.
+;; WHAT A FRESH WORLD CLEARS is everything a previous solve DECIDED, and nothing
+;; a caller told the engine before starting one. The line runs between them:
+;; *spatial-things* arrives WITH a problem — declare-world! makes a fresh world
+;; (reset-world!, solve/world.scm) and fills it from its own arguments — while
+;; *templates*, *base-templates* and *fed-procs* are handed over BEFORE the
+;; declaration that begins the run they belong to. Clearing those would erase
+;; the question along with the answer: a caller who compiled recipes and then
+;; ingested would find them gone. Tuning (*kern-*, *osqp-*, the tolerances) is
+;; configuration and outlives every solve by design.
 ;;
-;; A global that is neither reset nor deliberately kept is a leak between solves,
-;; and it shows up as a test that passes alone and fails in a suite.
-(define (reset!)
-  (reset-world!)                         ; the world: a fresh instance, every table a new table (solve/world.scm)
-  (hash-clear! *period-days*) (hash-clear! *period-spans*))   ; the calendar's tables (vf/formulas/periods), laid again by the door
+;; A global that is neither a world field nor deliberately kept is a leak
+;; between solves, and it shows up as a test that passes alone and fails in a
+;; suite.
 (define (mkcells!) (set! *cells* (append-map (lambda (p) (map (lambda (t) (cell p t)) *periods*)) *places*)))
 ;; the roster, layered onto a standing world — ingest-located! computes each
 ;; agent's located hours AFTER the declaration (the availability windows are
@@ -3380,7 +3377,7 @@
 ;; what. The door resets first (a declaration IS a fresh world; #:reset? #f
 ;; layers onto the world already standing), lays the cells, and applies the
 ;; declared spans — the exact sequence every fixture wrote by hand as
-;; `(reset!) (set! *places* …) (set! *periods* …) (mkcells!) …`, ~130 times.
+;; `(reset-world!) (set! *places* …) (set! *periods* …) (mkcells!) …`, ~130 times.
 ;;
 ;; A place is a name, or (name lat lon) when it has coordinates: the *latlon*
 ;; entry is a fact about the place, so it is declared with the place. Anything
@@ -3426,7 +3423,7 @@
    (name lat lon) place does. Resets first unless RESET? is #f — ingest-located!
    passes #f, having reset before the pours its declaration is derived from
    (the partition the wall-clock keys resolve against). Returns the cells."
-  (when reset? (reset!))
+  (when reset? (reset-world!))
   (set! *places* (map (lambda (p) (if (pair? p) (car p) p)) places))
   (for-each (lambda (p) (when (pair? p) (hash-set! *latlon* (car p) (cons (cadr p) (caddr p))))) places)
   (for-each (lambda (n) (hash-set! *neighbours* (car n) (cdr n))) neighbours)

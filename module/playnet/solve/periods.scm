@@ -1,32 +1,31 @@
-;;; periods.scm — what a period is in wall-clock time, as a scope states it.
+;;; solve/periods.scm — what a period is in wall-clock time, as a scope states it.
 ;;;
 ;;; The lattice period is an integer. A scope gives it a place on the clock (a
 ;;; SPAN of dates, or of clock moments for a sub-day band), and a stated LENGTH
 ;;; for a period that carries none. From those two every reader takes the same
 ;;; answers: which weekdays a period covers, how many hours it holds, which
 ;;; period a moment falls in. The horizons (`set-daily-horizon!`,
-;;; `set-clock-horizon!`, `standing-partition`) lay spans; the engine's reset!
-;;; clears the two tables.
+;;; `set-clock-horizon!`, `standing-partition`) lay spans. The two tables are
+;;; fields of the world (solve/world.scm): a fresh world is an empty calendar,
+;;; and a world held as a value carries its calendar with it.
 ;;;
-;;; The plan compiles over these and the books date events by them, so they
-;;; stand below both.
+;;; The plan compiles over these and the books date events by them.
 
-(define-module (playnet vf formulas periods)
+(define-module (playnet solve periods)
   #:use-module (srfi srfi-1)
+  #:use-module ((playnet solve world) #:select (*period-days* *period-spans*))
   #:use-module ((playnet utils clock) #:select (iso->epoch instant->civil instant->weekday now hhmm->minutes))
   #:use-module ((playnet utils units) #:select (unit-known? convert-unit/strict))
-  #:export (*all-days* *period-days* period-days *period-spans* *weekday-syms* iso-time-of
+  #:export (*all-days* period-days *weekday-syms* iso-time-of
             iso->epoch/time span-timed? span->days set-period-span! period-span *period-length*
             set-period-length! declared-period-hours period-hours period-contains? time->period
             epoch->iso set-daily-horizon! standing-partition set-clock-horizon!))
 
 (define *all-days* '(monday tuesday wednesday thursday friday saturday sunday))
-(define *period-days* (make-hash-table))    ; period -> day-symbol list (default: all-days)
 (define (period-days t) (hash-ref *period-days* t *all-days*))
 ;; ── period ↔ wall-clock: tie an abstract period to a concrete date span ──────
 ;; The lattice period is an integer; give it a real interval and (a) availabilityWindow
 ;; hours land on the right weekdays, (b) emitted commitments carry hasBeginning/hasEnd.
-(define *period-spans* (make-hash-table))   ; period -> (start-iso . end-iso)
 (define *weekday-syms* #(sunday monday tuesday wednesday thursday friday saturday))  ; tm:wday 0=Sun
 ;; A period boundary may carry a TIME of day — "2026-03-03T09:00" — because a
 ;; boundary somebody declared ("mornings") is a moment inside a day, not a date.
@@ -124,8 +123,8 @@
 ;; each period's span (and thus its weekday, for availability) and returns the
 ;; period list (0 … N-1). This is what turns the dormant period↔wall-clock bridge
 ;; on: with spans set, agent hours land on the right days and emitted
-;; commitments carry real hasBeginning/hasEnd. Call AFTER reset! (which clears
-;; spans). With no horizon the planner stays single-period (period 0, no span).
+;; commitments carry real hasBeginning/hasEnd. declare-world! lays it on the
+;; fresh world it makes. With no horizon the planner stays single-period (period 0, no span).
 (define (set-daily-horizon! start n)
   (let ((s (iso->epoch start)))
     (let loop ((t 0) (acc '()))

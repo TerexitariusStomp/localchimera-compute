@@ -22,7 +22,7 @@
   #:use-module (playnet vf schemas)            ; the VF records
   #:use-module (playnet vf formulas actions)
   #:use-module (playnet vf beyond scenario)
-  #:use-module ((playnet vf formulas periods) #:select (time->period period-span set-period-span! period-contains?))
+  #:use-module ((playnet solve periods) #:select (time->period period-span set-period-span! period-contains?))
   #:use-module ((playnet vf facts located) #:select (good-spec period-of key-terms))
   #:use-module ((playnet vf formulas shocks) #:select (scenario-shocks shock-action shock-key shock-factor))
   #:use-module ((playnet vf facts agent-time) #:select (agent-away-dates))

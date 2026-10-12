@@ -61,7 +61,7 @@
 ;; POPULATE the located globals from records and STOP — the shared prelude of
 ;; plan-from-records, factored out so a caller that wants the built LP (not a
 ;; solve) can reuse the exact same setup: compile recipes, ingest stock/agents/
-;; demand, restore willing?/legal/manners past reset!, pour the travel table.
+;; demand, restore willing?/legal/manners onto the fresh world, pour the travel table.
 ;; After this, `build-located` yields the scope's forms/cols/idx. Used by
 ;; plan-from-records (which then solves) and by the federation scope-record
 ;; builder (which hands the forms to solve-decomposed). Keep the keyword set in
@@ -94,7 +94,7 @@
                                 (composition '())        ; the chemistry → element rows (element closure)
                                 ;; the scope's ResourceSpecifications. Their keep-in-place flag is
                                 ;; what makes a container a container, so a STORE recipe tiles
-                                ;; along the time edge. Declared AFTER ingest, which reset!s.
+                                ;; along the time edge. Declared AFTER ingest, which declares a fresh world.
                                 (specs '()))
   (define-values (mode-entries plain-procs) (part-mode-recipes recipe-procs recipe-flows))
   (set-templates! (compile-recipe plain-procs recipe-flows))
@@ -160,7 +160,10 @@
     (for-each (lambda (tpl) (when (proc-whole? tpl) (hash-set! *whole-procs* (proc-id tpl) #t)))
               (mover-ride-templates)))
   (ingest-travel-times! arc-table #:derive-topology? arc-topology?)
-  (set-backend! backend))
+  (set-backend! backend)
+  ;; the world the records became, in hand now and a value a holder may keep
+  ;; and run another solve inside later (call-with-world)
+  (current-world))
 
 ;; ── the WORLD a scenario ingests ────────────────────────────────────────────
 ;; A scenario block differs from the base solve in its SHOCKS and in nothing else,

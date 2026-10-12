@@ -27,7 +27,7 @@
   #:use-module (playnet vf schemas)
   #:use-module (playnet vf beyond schedules)
   #:use-module (playnet vf facts located)
-  #:use-module (playnet vf formulas periods)   ; what a period is in wall-clock time
+  #:use-module (playnet solve periods)   ; what a period is in wall-clock time
   #:use-module (playnet vf facts boundary)   ; the flows nothing makes
   #:use-module (playnet vf formulas fragility)   ; a limit as a record: one form for every scale
   #:use-module (playnet solve compile)
@@ -77,7 +77,7 @@
 ;; math is local); it's the same window-flatten (month>week>day>ranges priority).
 ;; ── period ↔ wall-clock ───────────────────────────────────────────────────────
 ;; What a period is on the clock (its span, its weekdays, its stated length, the
-;; horizons that lay it) is periods.scm; reset! below clears its two tables.
+;; horizons that lay it) is solve/periods.scm, over two fields of the world.
 (define (nepair? x) (and (pair? x)))
 
 (define (window->day-schedules w)           ; flatten <availability-window> to day-schedules (VF priority)
@@ -1053,7 +1053,7 @@
   ;; Discreteness arrives the SAME way storability does — as data. Two doors, one
   ;; table each: the RECIPE states it (a minimumBatchQuantity, a "whole-count"
   ;; classification — compile-recipe carries both in the template, which is what
-  ;; outlives the reset! above), and the SCOPE may add to it through the keyword.
+  ;; outlives the fresh world declare-world! makes), and the SCOPE may add to it through the keyword.
   ;; The knowledge layer cannot call `declare-whole!`: that lives in the engine,
   ;; which is primitive-loaded, while a recipe reaches the planner as a MODULE.
   ;; So a scope states what is true of its acts and the solve reads it, which is
@@ -1232,7 +1232,7 @@
 ;; Pour a merged arc-time table into *arc-hours*. TABLE is the alist solve/routing.scm
 ;; produces — ("from|to|manner" . hours | (hours . net-km)) — Valhalla matrix
 ;; priors (pairs) ⊕ observed EWMA (bare hours). Must run AFTER ingest-located!
-;; (which reset!s, clearing *arc-hours* — same ordering contract as *willing?*).
+;; (which declares a fresh world, so *arc-hours* is empty — same ordering contract as *willing?*).
 ;; Empty/absent table ⇒ the hash stays empty ⇒ every arc call falls back to
 ;; rate×haversine: strict parity.
 ;;
@@ -1292,7 +1292,7 @@
 
 ;; The band pour — the ONE place a reproduction band enters a solve, called by
 ;; every path (plan-from-records, solve/robust.scm's per-scenario block, federation-
-;; solve's commune record) AFTER ingest (which reset!s) and BEFORE build-located.
+;; solve's commune record) AFTER ingest (which declares a fresh world) and BEFORE build-located.
 ;; A bare floor becomes a deficit on the good's on-hand here (its ≥0 balance is
 ;; the barrier); a margin floor and a ceiling are stored for build-located to
 ;; emit. `repro-bands` folds the four spellings into one list of

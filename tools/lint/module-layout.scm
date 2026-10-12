@@ -68,6 +68,8 @@
  (stays "execution" 5 "execution alerts, the scope's reactive execution, and capacity-managed execution")
  (stays "ddmrp" 5 "the buffer planner (DDMRP), a family beside the ValueFlows core: its records, buffer algorithms, the three buffer stores and the execution monitors")
  (tier "ddmrp/records" 1 "the family's vocabulary: nine record types a recipe or a specification may state")
+ (tier "solve/world" 3 "the world the solve is given, one context held as a value: the lattice, its tables and its calendar; the plan lands its accepted commitments on the same lattice")
+ (tier "solve/periods" 3 "what a period of the world is in wall-clock time, over the world's calendar: read by the solve and by the plan that pins into it")
  (tier "doors/protocol" 1 "the door declarations: what a caller reaches, as data every rank reads, from the dispatch check an actor runs at spawn to the lints and the emitters")
  (tier "knowledge/dsl/findings" 1 "what a lint says, in one shape: spoken by the law lint, the ValueFlows lint and a body's standing, read by a report, a gate, a door")
  (tier "ai/conform" 1 "the conform loop over any completion: a reply read, checked and asked again with its faults; the model is passed in")

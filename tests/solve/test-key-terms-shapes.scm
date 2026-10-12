@@ -36,7 +36,7 @@
 (define pn (map car places))
 (define templates
   (map (lambda (k) (list (format #f "t~a" k) (list (cons (spec (+ k 1)) 1.0)) (list (cons (spec k) 1.0)) 0.1)) '(0 1 2)))
-(reset!)
+(reset-world!)
 (declare-world! #:places places #:templates templates
                 #:workers (map (lambda (p) (list (format #f "w~a" p) '("sk") (cell p 0) 100.0)) pn)
                 #:movable (list (spec 1)) #:tau 0.5

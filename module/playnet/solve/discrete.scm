@@ -278,8 +278,8 @@
   (filter-map (lambda (c) (and (mbq-of (col-key c)) ((*discrete-key?*) (col-key c)) (col-key c))) (build-columns)))
 (define (whole-keys)                       ; the columns a whole count decides, in THIS build
   (filter-map (lambda (c) (and (whole-col? (col-key c)) ((*discrete-key?*) (col-key c)) (col-key c))) (build-columns)))
-;; The search's tables, as one value — so an assembly that must `reset!` while
-;; building (one block per scenario) can put them back before it builds.
+;; The search's tables, as one value — so an assembly that declares a fresh world
+;; while building (one block per scenario) can put them back before it builds.
 (define (search-state)
   (list *config* (hash-map->list cons *mbq-relaxed*) (hash-map->list cons *col-bounds*) (hash-map->list cons *col-fixed*)))
 (define (restore-search-state! st)

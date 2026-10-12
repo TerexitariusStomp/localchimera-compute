@@ -148,7 +148,7 @@ FAMILY_WASM_DEPS = \
                     module/playnet/observation/account.scm \
                     module/playnet/algorithms/elastic.scm \
                     module/playnet/vf/facts/parts.scm \
-                    module/playnet/vf/formulas/periods.scm \
+                    module/playnet/solve/periods.scm \
                     module/playnet/vf/formulas/propagate.scm \
                     module/playnet/vf/facts/rail.scm \
                     module/playnet/vf/facts/barred-specs.scm \
@@ -324,7 +324,7 @@ SCOPE_WASM_DEPS = \
                    module/playnet/doors/offers.scm \
                    module/playnet/doors/page-scope.scm \
                    module/playnet/vf/facts/parts.scm \
-                   module/playnet/vf/formulas/periods.scm \
+                   module/playnet/solve/periods.scm \
                    module/playnet/vf/facts/person-facts.scm \
                    module/playnet/plan/store.scm \
                    module/playnet/observation/practice.scm \

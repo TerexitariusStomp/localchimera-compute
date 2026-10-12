@@ -351,8 +351,9 @@
       #:demand (list (cons "food#berlin-commune-farm@0" 20000.0)))))
 (check-pred "a declared partition of bands is the live solve's periods"
             (and (assq 'met banded) (equal? '(0 1 2) (with-vat cvat *periods*))))
-(check-pred "…each band its own hours: the midday band is two"
-            (and (= 3.0 ((engine 'period-hours) 0)) (= 2.0 ((engine 'period-hours) 1)) (= 3.0 ((engine 'period-hours) 2))))
+(check-pred "…each band its own hours: the midday band is two"   ; the calendar is the vat's world's too
+            (with-vat cvat
+              (and (= 3.0 ((engine 'period-hours) 0)) (= 2.0 ((engine 'period-hours) 1)) (= 3.0 ((engine 'period-hours) 2)))))
 
 ;; …and the crates actually reach the market, in a quantity the seat pool governs.
 ;; ONE seeded commune serves every probe below: plan-scope reads the scope's stores

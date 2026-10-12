@@ -13,7 +13,7 @@
 
 (use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve ingest)
+(use-modules (playnet solve engine) (playnet solve ingest) (playnet solve world)
              (playnet vf schemas) (playnet vf beyond schedules)
              ((playnet knowledge dsl shorthand) #:select (er all-week-window)))
 
@@ -42,7 +42,7 @@
 (check "a whole-date period covers that one date"
        (equal? '("2026-03-14") (period-dates 2)))
 (check "a period with no span covers none"
-       (begin (reset!) (null? (period-dates 0))))
+       (begin (reset-world!) (null? (period-dates 0))))
 
 (whole-days!)
 (set-period-span! 0 "2026-03-12T09:00" "2026-03-12T17:00")
