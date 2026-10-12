@@ -45,6 +45,7 @@
 ;;; to "playnet-governance".
 
 (define-module (playnet keri inception)
+  #:use-module ((playnet utils host) #:select (string-contains))
   #:use-module (srfi srfi-9)
   #:use-module (srfi srfi-11)
   #:use-module (playnet keri bridge)
@@ -66,7 +67,6 @@
   #:use-module ((goblins) #:select ($))   ; the kel-store is an actor: ($ kel-store 'append body)
   #:use-module (rnrs bytevectors)
   #:use-module ((srfi srfi-1) #:select (filter-map))
-  #:use-module ((srfi srfi-13) #:select (string-contains))
   #:use-module ((playnet utils common)
                 #:select (parse-csv-env for-each-catching))
   #:re-export (parse-csv-env)  ; existing callers import it from here

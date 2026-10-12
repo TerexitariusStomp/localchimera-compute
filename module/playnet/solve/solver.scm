@@ -26,6 +26,7 @@
 ;; *demos?* now because it is the only thing left that reads it.
 ;; ════════════════════════════════════════════════════════════════════════════
 (define-module (playnet solve solver)
+  #:use-module ((playnet utils host) #:select (getenv))
   #:use-module (playnet protocol context)
   #:use-module ((playnet utils catch) #:select (throw*))
   #:use-module (srfi srfi-1)
@@ -72,8 +73,7 @@
             self-test))
 
 ;; the compiled kernel and OSQP cross the FFI; Hoot has none (see the cond-expand at §5b)
-(cond-expand (guile (use-modules (system foreign)))
-             (else (define (getenv name) #f)))   ; the PLANNER_* debug switches read the process environment; a page has none
+(cond-expand (guile (use-modules (system foreign))) (else))
 
 (define (vdot a b) (let ((s 0.0) (n (vector-length a))) (do ((i 0 (+ i 1))) ((= i n) s) (set! s (+ s (* (vector-ref a i) (vector-ref b i)))))))
 (define (vcopy a) (let* ((n (vector-length a)) (r (make-vector n))) (do ((i 0 (+ i 1))) ((= i n) r) (vector-set! r i (vector-ref a i)))))

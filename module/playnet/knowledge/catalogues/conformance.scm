@@ -30,6 +30,7 @@
 ;;; Run:  guile -L module module/playnet/knowledge/catalogues/conformance.scm
 
 (define-module (playnet knowledge catalogues conformance)
+  #:use-module ((playnet utils host) #:select (getenv))
   #:use-module (srfi srfi-1)
   #:export (*conformance-catalogue* conformance-frag-weight))
 

@@ -52,7 +52,10 @@
             scope-bioregion-fragilities
             bioregion-scenarios-for
             bioregion-of
-            assemble-scenarios))
+            assemble-scenarios
+            ;; the record declarations below define these (define-vf-record; check-record-exports holds the list)
+            <bioregion> bioregion? bioregion-id bioregion-name bioregion-lat bioregion-lon
+            bioregion-parent bioregion-scenarios bioregion-fragilities bioregion-boundary))
 
 
 ;; a type is its name — the same object on both sides of the load seam

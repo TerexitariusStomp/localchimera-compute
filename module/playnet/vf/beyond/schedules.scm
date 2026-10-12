@@ -23,7 +23,13 @@
             make-month-schedule
             make-availability-window
             make-specific-date-window
-            temporal-expression?))
+            temporal-expression?
+            ;; the record declarations below define these (define-vf-record; check-record-exports holds the list)
+            <time-range> time-range? time-range-start-time time-range-end-time <day-schedule> day-schedule?
+            day-schedule-days day-schedule-time-ranges <week-schedule> week-schedule? week-schedule-weeks week-schedule-day-schedules
+            <month-schedule> month-schedule? month-schedule-month month-schedule-week-schedules month-schedule-day-schedules month-schedule-time-ranges
+            <availability-window> availability-window? availability-window-month-schedules availability-window-week-schedules availability-window-day-schedules availability-window-time-ranges
+            <specific-date-window> specific-date-window? specific-date-window-specific-dates specific-date-window-time-ranges))
 
 ;; ═══════════════════════════════════════════════════════════════════════
 ;; TEMPORAL (from utils/time.ts)

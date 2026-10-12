@@ -45,7 +45,6 @@
   #:use-module (ice-9 ftw)
   #:use-module (srfi srfi-1)
   #:use-module ((playnet utils store-utils) #:select (hashmap-count))
-  #:use-module ((srfi srfi-13) #:select (string-suffix?))
   #:use-module ((playnet keri signify-portable)
                 #:select (event-first-key event-first-next-digest))
   #:export (^oobi-host

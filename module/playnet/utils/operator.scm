@@ -28,8 +28,8 @@
 ;;;   PLAYNET_OPERATOR_DOCS            the live API docs, likewise
 
 (define-module (playnet utils operator)
+  #:use-module ((playnet utils host) #:select (getenv))
   #:use-module ((srfi srfi-1) #:select (filter-map))
-  #:use-module ((srfi srfi-13) #:select (string-trim-both string-null? string-index))
   #:export (%operator-fields operator-config operator-ref contact-uri
             operator-email))
 

@@ -21,6 +21,7 @@
 ;;;   (unit-measurable-substance unit)    → the substance a known unit adds up in | #f
 
 (define-module (playnet utils units)
+  #:use-module ((playnet utils host) #:select (getenv))
   #:use-module (srfi srfi-1)
   #:export (unit->substance
             substance-base-unit

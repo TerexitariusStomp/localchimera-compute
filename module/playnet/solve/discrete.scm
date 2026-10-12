@@ -13,6 +13,7 @@
 ;;; `report-discrete` (solve/report).
 
 (define-module (playnet solve discrete)
+  #:use-module ((playnet utils host) #:select (getenv))
   #:use-module (playnet solve world)
   #:use-module (srfi srfi-1)
   #:use-module ((playnet utils catch) #:select (catch* throw* with-throw-handler*))

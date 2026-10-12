@@ -68,6 +68,7 @@
 ;; setter call, in both builds. tools/lint/check-imported-set.scm refuses the
 ;; one write left over, a `set!` of a binding a module imported.
 (define-module (playnet solve engine)
+  #:use-module ((playnet utils host) #:select (getenv string-contains))
   #:re-export (svc-good? lab-good svc-good)   ; the bar-key grammar's, read here and by the engine's importers (facts/located)
   #:use-module (playnet vf formulas flows)
   #:use-module (playnet solve world)
@@ -159,18 +160,6 @@
             mbq-of
             ;; read by the observer ingest (solve/ingest)
             band-floor band-ceiling band-w mobility-skills %owner-sep produced-spec-set span-dates stretch-of hash-add! means-carried?))
-
-(cond-expand (guile) (else (define (getenv name) #f)))
-(cond-expand (guile) (else
-  (define (get-internal-real-time) (current-time))   ; the report line's seconds: whole seconds is what a page has
-  (define internal-time-units-per-second 1)))
-(cond-expand (guile) (else
-  (define (string-contains s pat)          ; the first index of PAT in S, or #f (Hoot has no srfi-13)
-    (let ((n (string-length s)) (m (string-length pat)))
-      (let loop ((i 0))
-        (cond ((> (+ i m) n) #f)
-              ((string=? (substring s i (+ i m)) pat) i)
-              (else (loop (+ i 1)))))))))   ; a page has no process environment; the PLANNER_* switches read as unset
 
 ;; The VF records. They MUST be the same record types the observer uses — this
 ;; engine gets loaded into modules that already import (playnet boot prelude) (live.scm

@@ -13,6 +13,7 @@
 ;;; (solve/federation-solve) builds the records it is given.
 
 (define-module (playnet solve decomposed)
+  #:use-module ((playnet utils host) #:select (getenv get-internal-real-time internal-time-units-per-second))
   #:use-module (srfi srfi-1)
   #:use-module (ice-9 format)
   #:use-module (rnrs bytevectors)
@@ -27,7 +28,6 @@
 
 ;; the batched kernel solve crosses the FFI; Hoot has none (see the cond-expand at the batch)
 (cond-expand (guile (use-modules (system foreign))) (else))
-(cond-expand (guile) (else (define (getenv name) #f)))   ; a page has no process environment
 (cond-expand (guile) (else
   (define (get-internal-real-time) (current-time))   ; the report line's seconds: whole seconds is what a page has
   (define internal-time-units-per-second 1)))

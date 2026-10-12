@@ -16,6 +16,7 @@
 ;;; beside the engine to hold that.
 
 (define-module (playnet solve ingest)
+  #:use-module ((playnet utils host) #:select (getenv))
   #:use-module (playnet solve world)
   #:use-module (srfi srfi-1)
   #:use-module (ice-9 format)

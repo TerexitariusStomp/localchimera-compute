@@ -46,7 +46,30 @@
             *target-zones*
             target-zone?
             make-demand-adjustment-factor
-            make-buffer-snapshot))
+            make-buffer-snapshot
+            ;; the record declarations below define these (define-vf-record; check-record-exports holds the list)
+            <positioning-analysis> positioning-analysis? positioning-analysis-customer-tolerance-time-days positioning-analysis-market-potential-lead-time-days positioning-analysis-sales-order-visibility-horizon-days positioning-analysis-inventory-leverage-flexibility
+            positioning-analysis-vrd positioning-analysis-vrs positioning-analysis-critical-operation-protection positioning-analysis-decoupling-recommended positioning-analysis-note <decoupling-test-entry>
+            decoupling-test-entry? decoupling-test-entry-test decoupling-test-entry-passed decoupling-test-entry-note <decoupling-test-result> decoupling-test-result?
+            decoupling-test-result-spec-id decoupling-test-result-results decoupling-test-result-approved-at decoupling-test-result-approved-by <capacity-buffer> capacity-buffer?
+            capacity-buffer-id capacity-buffer-process-spec-id capacity-buffer-total-capacity-hours capacity-buffer-period-days capacity-buffer-current-load-hours capacity-buffer-green-threshold
+            capacity-buffer-yellow-threshold capacity-buffer-note <buffer-profile> buffer-profile? buffer-profile-id buffer-profile-name
+            buffer-profile-item-type buffer-profile-lead-time-factor buffer-profile-vrd buffer-profile-vrs buffer-profile-variability-factor buffer-profile-order-cycle-days
+            buffer-profile-ost-multiplier buffer-profile-recalculation-cadence buffer-profile-lead-time-category buffer-profile-variability-category buffer-profile-code buffer-profile-note
+            <buffer-zone> buffer-zone? buffer-zone-id buffer-zone-spec-id buffer-zone-profile-id buffer-zone-buffer-classification
+            buffer-zone-at-location buffer-zone-upstream-location-id buffer-zone-replenishment-recipe-id buffer-zone-upstream-stage-id buffer-zone-downstream-stage-id buffer-zone-adu
+            buffer-zone-adu-unit buffer-zone-adu-blend-ratio buffer-zone-adu-window-days buffer-zone-adu-computed-from buffer-zone-adu-alert-high-pct buffer-zone-adu-alert-low-pct
+            buffer-zone-adu-alert-window-days buffer-zone-estimated-adu buffer-zone-bootstrap-days-accumulated buffer-zone-ost-horizon-days buffer-zone-dlt-days buffer-zone-moq
+            buffer-zone-moq-unit buffer-zone-order-cycle-days buffer-zone-override-reason buffer-zone-override-note buffer-zone-transport-days buffer-zone-staging-days
+            buffer-zone-tor buffer-zone-toy buffer-zone-tog buffer-zone-tipping-point buffer-zone-red-base buffer-zone-red-safety
+            buffer-zone-demand-adj-factor buffer-zone-zone-adj-factor buffer-zone-lead-time-adj-factor buffer-zone-supply-offset-days buffer-zone-active-adjustment-ids buffer-zone-last-computed-at
+            <replenishment-signal> replenishment-signal? replenishment-signal-id replenishment-signal-spec-id replenishment-signal-at-location replenishment-signal-buffer-zone-id
+            replenishment-signal-onhand replenishment-signal-onorder replenishment-signal-qualified-demand replenishment-signal-nfp replenishment-signal-priority replenishment-signal-zone
+            replenishment-signal-recommended-qty replenishment-signal-due-date replenishment-signal-status replenishment-signal-approved-commitment-id replenishment-signal-created-at <demand-adjustment-factor>
+            demand-adjustment-factor? demand-adjustment-factor-id demand-adjustment-factor-spec-id demand-adjustment-factor-at-location demand-adjustment-factor-type demand-adjustment-factor-target-zone
+            demand-adjustment-factor-factor demand-adjustment-factor-valid-from demand-adjustment-factor-valid-to demand-adjustment-factor-supply-offset-days demand-adjustment-factor-note demand-adjustment-factor-is-active
+            <buffer-snapshot> buffer-snapshot? buffer-snapshot-spec-id buffer-snapshot-date buffer-snapshot-onhand buffer-snapshot-tor
+            buffer-snapshot-toy buffer-snapshot-tog buffer-snapshot-zone))
 
 ;;; PositioningAnalysis — DDMRP Ch 6 strategic positioning factors.
 ;;; All fields optional.

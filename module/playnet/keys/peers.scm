@@ -6,10 +6,10 @@
 ;;; library's bridge — (playnet keri inception) holds the AID inception itself.
 
 (define-module (playnet keys peers)
+  #:use-module ((playnet utils host) #:select (string-contains))
   #:use-module ((playnet keri bridge) #:select (keri-wait-operation keri-resolve-oobi))
   #:use-module ((playnet utils common) #:select (parse-csv-env for-each-catching))
   #:use-module ((srfi srfi-1) #:select (filter-map))
-  #:use-module ((srfi srfi-13) #:select (string-contains))
   #:use-module (ice-9 format)
   #:export (resolve-peer-oobis! known-uc-aid set-known-uc-aid! peer-base-urls))
 

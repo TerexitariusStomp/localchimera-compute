@@ -51,6 +51,7 @@
 ;; Record: (name control-variable boundary risk-upper current unit transgressed? source)
 ;; ─────────────────────────────────────────────────────────────────────────────────────────────────
 (define-module (playnet knowledge catalogues eco)
+  #:use-module ((playnet utils host) #:select (string-contains))
   #:use-module (srfi srfi-1)
   #:use-module (playnet vf schemas)
   #:use-module (playnet vf formulas stocks)
@@ -85,17 +86,11 @@
             migrated->stock-frag
             migrated->caps
             limit-monitoring-cadence
-            monitored-alpha)
+            monitored-alpha
+            ;; the record declarations below define these (define-vf-record; check-record-exports holds the list)
+            <migrated-limit> migrated-limit? migrated-spec migrated-place migrated-stock migrated-rate
+            migrated-weight)
   #:use-module ((playnet utils records) #:select (define-vf-record vf-record-accessor vf-record-constructor vf-record-predicate vf-record-type)))
-
-(cond-expand (guile) (else
-  (define (string-contains s pat)          ; the first index of PAT in S, or #f (Hoot has no srfi-13)
-    (let ((n (string-length s)) (m (string-length pat)))
-      (let loop ((i 0))
-        (cond ((> (+ i m) n) #f)
-              ((string=? (substring s i (+ i m)) pat) i)
-              (else (loop (+ i 1)))))))))
-
 
 ;; a type is its name — the same object on both sides of the load seam
 

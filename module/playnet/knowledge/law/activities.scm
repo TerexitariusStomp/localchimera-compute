@@ -15,7 +15,6 @@
 ;;; them per jurisdiction.
 (define-module (playnet knowledge law activities)
   #:use-module (srfi srfi-1)
-  #:use-module (srfi srfi-13)
   #:use-module (ice-9 format)
   #:use-module (playnet vf schemas)
   #:use-module (playnet legal crossings)

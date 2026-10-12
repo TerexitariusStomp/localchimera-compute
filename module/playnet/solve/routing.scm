@@ -24,6 +24,7 @@
 ;;; of (web client)/(json) — the solve path never touches either.
 
 (define-module (playnet solve routing)
+  #:use-module ((playnet utils host) #:select (getenv))
   #:use-module (ice-9 format)
   #:export (trip-key ewma-fold %period-classes epoch->period-class
             period-class-date-times arc-table-merge routing-save-priors!

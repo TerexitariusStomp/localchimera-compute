@@ -33,7 +33,6 @@
 ;;; (symbol          kind       gloss  [what the records lack, when a tag must say it])
 (define-module (playnet knowledge worlds free-food-distribution)
   #:use-module (srfi srfi-1)
-  #:use-module (srfi srfi-13)
   #:use-module (ice-9 format)
   #:use-module (playnet vf schemas)
   #:use-module (playnet legal crossings)

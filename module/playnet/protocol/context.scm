@@ -48,6 +48,10 @@
   #:use-module (srfi srfi-9)
   #:export (define-context context-cell context-bind context-install))
 
+;; the names derived from a context's, spelled once; `symbol-append` is Guile's
+;; alone, and these run at expand time under Hoot too
+(define (symbol-append . syms) (string->symbol (apply string-append (map symbol->string syms))))
+
 (define (context-bind use ctx body home fields)
   "The `with-…` expansion for USE: every symbol of FIELDS bound at the use site
 to the accessor and setter named after HOME, the context's name, over CTX; BODY a
@@ -88,19 +92,28 @@ that name of CTX, through the setter named after HOME."
               (id     (lambda (s) (datum->syntax #'ctx-name s))))
          (with-syntax ((rtd          (id (symbol-append '< sym '>)))
                        (%make        (id (symbol-append '%make- sym)))
+                       (%raw         (id (symbol-append '%raw- sym)))
+                       (%fields      (id (symbol-append '% sym '-fields)))
                        (make         (id (symbol-append 'make- sym)))
                        (pred         (id (symbol-append sym '?)))
                        (with-name    (id (symbol-append 'with- sym)))
                        (install-name (id (symbol-append sym '-install!)))
                        ((field ...)   (map id fields))
+                       ((idx ...)     (iota (length fields)))
                        ((default ...) (map (lambda (s) (datum->syntax x (cadr s))) specs))
                        ((ref ...)     (map (lambda (f) (id (symbol-append sym '- f))) fields))
                        ((setr ...)    (map (lambda (f) (id (symbol-append 'set- sym '- f '!))) fields)))
            #'(begin
+               ;; the fields in ONE vector behind a one-field record: a context of
+               ;; many fields stays one type deep (Hoot types a struct of N fields
+               ;; as a subtype of the N-1 struct, and wasm engines cap that depth)
                (define-record-type rtd
-                 (%make field ...)
+                 (%raw %fields)
                  pred
-                 (field ref setr) ...)
+                 (%fields %fields))
+               (define (%make field ...) (%raw (vector field ...)))
+               (define (ref c) (vector-ref (%fields c) idx)) ...
+               (define (setr c v) (vector-set! (%fields c) idx v)) ...
                (define* (make #:key (field default) ...)
                  (%make field ...))
                (define-syntax with-name

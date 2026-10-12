@@ -52,7 +52,6 @@
   #:use-module (ice-9 ftw)
   #:use-module ((playnet utils common) #:select (string-or-false env-flag?))
   #:use-module ((ice-9 rdelim) #:select (read-line))
-  #:use-module ((srfi srfi-13) #:select (string-trim-both string-null?))
   #:export (playnet-data-dir
             state-file
             current-playnet-state-dir-override

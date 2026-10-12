@@ -45,7 +45,6 @@
 
 (define-module (playnet plan rotation)
   #:use-module (srfi srfi-1)
-  #:use-module (srfi srfi-13)
   #:use-module ((playnet vf facts located) #:select (bar-field))
   #:export (rotation-tilt task-of-need rotation-shares burden-from-prefs))
 

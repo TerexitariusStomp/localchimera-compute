@@ -132,7 +132,13 @@
             bill-unread
             %stances
             bill-stance
-            stance-forbids?))
+            stance-forbids?
+            ;; the record declarations below define these (define-vf-record; check-record-exports holds the list)
+            <demand> demand? demand-kind demand-name demand-rides demand-spec
+            demand-detail <legal-context> legal-context? ctx-crossings ctx-place-path ctx-agents
+            ctx-assets ctx-act ctx-endpoints ctx-channel ctx-actor ctx-measures
+            <legal-rule> legal-rule? legal-rule-guard legal-rule-guard-form legal-rule-demands legal-rule-label
+            legal-rule-source legal-rule-as-of legal-rule-confidence legal-rule-steward legal-rule-until legal-rule-cancels))
 
 ;;; The rules a fold reads when its caller names none. A parameter: a caller with
 ;;; law of its own — a live planner, whose scopes carry their own registries —

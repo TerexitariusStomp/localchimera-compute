@@ -12,6 +12,7 @@
 ;;; (solve/plan) delegates to `robust-plan-report` here.
 
 (define-module (playnet solve robust)
+  #:use-module ((playnet utils host) #:select (getenv))
   #:use-module (playnet solve world)
   #:use-module (srfi srfi-1)
   #:use-module ((playnet utils alist) #:select (assv-replace assoc-replace))

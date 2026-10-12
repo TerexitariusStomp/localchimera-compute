@@ -45,7 +45,10 @@
             regenerating-stock-resources
             regenerating-stock-storables
             stock-draw-flow
-            stock-restore-flow))
+            stock-restore-flow
+            ;; the record declarations below define these (define-vf-record; check-record-exports holds the list)
+            <regenerating-stock> regenerating-stock? rstock-spec rstock-name rstock-place rstock-init
+            rstock-unit))
 
 
 ;; a type is its name — the same object on both sides of the load seam

@@ -8,7 +8,7 @@
   #:use-module ((goblins) #:select ($))
   #:use-module ((playnet algorithms elastic) #:select (current-social-free-time))
   #:use-module ((playnet doors counts) #:select (count-readable?))
-  #:use-module ((playnet doors inventory) #:select (measure->qty scope-inventory-wire))
+  #:use-module ((playnet doors inventory) #:select (scope-inventory-wire))
   #:use-module ((playnet doors record-rows) #:select (lookup-spec-name record-context))
   #:use-module ((playnet economy payouts) #:select (intent-private? commitment-private?))
   #:use-module ((playnet knowledge catalogues compiler) #:select (catalogue->wire))
@@ -24,7 +24,7 @@
   #:use-module ((playnet vf facts rail) #:select (social-portions))
   #:use-module ((playnet vf formulas actions) #:select (creating-actions using-up-actions))
   #:use-module ((playnet vf formulas flows) #:select (committed-by-spec row-action row-effort row-figure row-id row-input-of row-note row-output-of row-place row-provider row-quantity row-run row-spec row-until row-when))
-  #:use-module ((playnet vf schemas) #:select (agent-id agent-name agent-relationship-subject agent-type economic-resource-conforms-to economic-resource-onhand-quantity economic-resource-primary-accountable intent-finished intent-id measure-has-numerical-value measure-has-unit proposal-proposed-to recipe-flow-action recipe-flow-is-primary recipe-flow-resource-conforms-to recipe-flow-resource-quantity recipe-id recipe-primary-output recipe-process-id recipe-process-name recipe-process-sequence-group rented-frag-profile rented-frag-tip rented-goods))
+  #:use-module ((playnet vf schemas) #:select (agent-id agent-name agent-relationship-subject agent-type economic-resource-conforms-to economic-resource-onhand-quantity economic-resource-primary-accountable intent-finished intent-id measure-has-numerical-value measure-has-unit proposal-proposed-to recipe-flow-action recipe-flow-is-primary recipe-flow-resource-conforms-to recipe-flow-resource-quantity recipe-id recipe-primary-output recipe-process-id recipe-process-name recipe-process-sequence-group rented-frag-profile rented-frag-tip rented-goods measure->qty measure->unit))
   #:use-module ((playnet wire rows) #:select (with-context))
   #:use-module ((srfi srfi-1) #:select (delete-duplicates filter-map find last remove))
   #:export (scope-member-ids scope-members skill-holders willing-by-key process-output-spec

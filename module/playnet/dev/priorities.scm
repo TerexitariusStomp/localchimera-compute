@@ -21,7 +21,6 @@
 
 (define-module (playnet dev priorities)
   #:use-module (srfi srfi-1)
-  #:use-module ((srfi srfi-13) #:select (string-prefix? string-trim-both string-null?))
   #:export (issue-prio-rank
             issue-oid-entries
             sort-issue-entries

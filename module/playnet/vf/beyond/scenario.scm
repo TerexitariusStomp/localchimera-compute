@@ -14,7 +14,10 @@
   #:use-module ((playnet utils records) #:select (define-vf-record vf-record-type vf-record-constructor vf-record-predicate vf-record-accessor vf-record-modifier vf-record-type-name vf-record-type-fields vf-record-copier))
   #:use-module ((playnet vf serdes) #:select (register-vf-records! register-vf-record!))
   #:export (%make-planning-scenario
-            make-planning-scenario))
+            make-planning-scenario
+            ;; the record declarations below define these (define-vf-record; check-record-exports holds the list)
+            <planning-scenario> planning-scenario? planning-scenario-id planning-scenario-scenario planning-scenario-probability planning-scenario-yield-multipliers
+            planning-scenario-note planning-scenario-path))
 
 ;;; PlanningScenario — a STOCHASTIC decoration of a vf:Scenario for robust
 ;;; planning. vf:Scenario is deliberately loose ("a grouping mechanism for

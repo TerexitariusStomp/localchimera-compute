@@ -42,7 +42,6 @@
 
 (define-module (playnet legal bodies)
   #:use-module (srfi srfi-1)
-  #:use-module (srfi srfi-13)
   #:use-module (ice-9 format)
   #:use-module (goblins)
   #:use-module (playnet vf schemas)
@@ -53,11 +52,11 @@
   #:use-module ((playnet legal crossings)
                 #:select (classification-crossings asset-crossings record-crossings spec-kinds))
   #:use-module ((playnet legal gate) #:select (legal-asset-fields legal-agent-fields))
-  #:use-module ((playnet legal adapters) #:select (mask-subject-of))
   #:use-module ((playnet legal registry) #:select (demand-name))
   #:use-module ((playnet vf beyond lot) #:select (make-batch-lot-record))
   #:use-module (playnet knowledge dsl findings)
   #:export (body-class %body-kinds make-body body? body-kind body-roles body-jurisdiction
+            masks-subject-of
             body-asset-lock? body-register-inspectable? body-quorum body-door
             body-sells body-operator? body-has-role? body-legal-ids body-lei
             scope-bodies all-bodies body-stewards body-members body-officers
@@ -459,6 +458,19 @@
   (values (legal-agent-fields body)
           (body-measures as observer body #:resolve-spec resolve-spec #:since since)))
 
+
+;; a `subject-of` for compliance.scm `reconcile`, built over MASKS: a demand of
+;; kind obtain-person names a person (PERSON-OF); any other names the mask that
+;; COVERS? its demand, read by ID-OF, or FALLBACK where none does. The adapters
+;; (legal/adapters.scm mask-subject-of) and the bodies below are the two readings.
+(define* (masks-subject-of masks #:key (person-of (lambda (d) 'person)) (fallback 'scope)
+                           covers? id-of)
+  (lambda (d kind)
+    (if (eq? kind 'obtain-person)
+        (person-of d)                             ; competence rides a named person
+        (let ((m (find (lambda (m) (covers? m (demand-name d))) masks)))   ; entity door → its mask
+          (if m (id-of m) fallback)))))
+
 (define (body-holds-spec? observer)
   "(body spec) → does BODY hold a resource conforming to SPEC?"
   (lambda (b spec)
@@ -468,5 +480,5 @@
 (define* (body-reconcile-subject as observer bodies #:key (person-of (lambda (d) 'person)) (fallback 'scope))
   "A `subject-of` for compliance.scm `reconcile`: the one `mask-subject-of`
    makes (legal/adapters.scm), a body covering a demand by holding its spec."
-  (mask-subject-of bodies #:covers? (body-holds-spec? observer) #:id-of agent-id
+  (masks-subject-of bodies #:covers? (body-holds-spec? observer) #:id-of agent-id
                    #:person-of person-of #:fallback fallback))

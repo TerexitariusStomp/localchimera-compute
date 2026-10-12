@@ -36,7 +36,10 @@
             reform-entry
             reform-move
             move-rank
-            reform-program))
+            reform-program
+            ;; the record declarations below define these (define-vf-record; check-record-exports holds the list)
+            <spec-mirror> spec-mirror? spec-mirror-name spec-mirror-kind spec-mirror-legal spec-mirror-internal
+            spec-mirror-desired))
 
 ;;; ─── SpecMirror : a legal spec beside the federation's internal & desired ─
 ;;; kind ∈ permit | licence (spec-bearing) | levy | disclosure (non-spec)

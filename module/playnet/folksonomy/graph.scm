@@ -21,7 +21,6 @@
 (define-module (playnet folksonomy graph)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-9)
-  #:use-module (srfi srfi-13)
   #:use-module (goblins utils hashmap)
   #:export (make-folksonomy folksonomy?
             folksonomy-edges folksonomy-by-aid folksonomy-terms

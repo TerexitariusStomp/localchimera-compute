@@ -16,7 +16,6 @@
 
 (define-module (playnet social lens)
   #:use-module (srfi srfi-1)
-  #:use-module (srfi srfi-13)
   #:use-module ((playnet social relationship-kinds) #:select (normalize-rel rel=?))
   #:export (resolve-lens lens-predicate %lens-everyone
             contact-aid contact-rel))

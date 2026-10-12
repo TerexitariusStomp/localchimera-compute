@@ -13,6 +13,7 @@
 ;;; boundary intact. Lives in a Goblins module but the engine inside stays pure.
 
 (define-module (playnet scope live)
+  #:use-module ((playnet utils host) #:select (getenv))
   #:use-module ((playnet vf facts located) #:select (credit-good bar-field))
   #:re-export (make-work-event)
   #:use-module (playnet vf formulas flows)
@@ -158,7 +159,6 @@
   #:use-module ((playnet utils catch) #:select (catch* throw* with-throw-handler*)))
 
 (cond-expand (guile) (else
-  (define (getenv name) #f)                ; a page has no process environment; the PLANNER_* switches read as unset
   (define %no-entry (list 'no-entry))
   (define (hash-get-handle h key)          ; the (key . value) pair of KEY in H, or #f (Hoot has no handles)
     (let ((v (hash-ref h key %no-entry)))

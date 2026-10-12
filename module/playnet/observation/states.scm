@@ -22,7 +22,13 @@
             make-satisfaction-state
             copy-satisfaction-state
             make-claim-state
-            make-account))
+            make-account
+            ;; the record declarations below define these (define-vf-record; check-record-exports holds the list)
+            <fulfillment-state> fulfillment-state? fulfillment-state-commitment-id fulfillment-state-total-committed fulfillment-state-total-fulfilled fulfillment-state-fulfilling-events
+            fulfillment-state-finished fulfillment-state-over-fulfilled <satisfaction-state> satisfaction-state? satisfaction-state-intent-id satisfaction-state-total-desired
+            satisfaction-state-total-satisfied satisfaction-state-satisfying-events satisfaction-state-satisfying-commitments satisfaction-state-finished satisfaction-state-plan-id <claim-state>
+            claim-state? claim-state-claim-id claim-state-total-claimed claim-state-total-settled claim-state-settling-events claim-state-finished
+            <account> account? account-agent-id account-contribution-capacity-factor))
 
 ;; ═══════════════════════════════════════════════════════════════════════
 ;; OBSERVER TRACKING STATE

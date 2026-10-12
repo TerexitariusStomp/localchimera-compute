@@ -18,7 +18,6 @@
   #:use-module (srfi srfi-1)
   #:use-module (playnet vf schemas)
   #:use-module (playnet vf formulas flows)
-  #:use-module ((playnet doors inventory) #:select (measure->qty measure->unit))
   #:use-module ((playnet doors slots) #:select (window->arcs))
   #:use-module ((playnet doors counts) #:select (count-process-name))
   #:use-module ((playnet observation states) #:select (fulfillment-state-total-fulfilled))
@@ -72,8 +71,8 @@
     ((numeric-string? s)
      (let ((n (string->number s)))
        (if n
-           (let* ((tm (gmtime (instant->unix n))))
-             (cons (tm:hour tm) (tm:min tm)))
+           (let ((day (modulo (instant->unix n) 86400)))   ; UTC, by arithmetic: a page has no gmtime
+             (cons (quotient day 3600) (quotient (modulo day 3600) 60)))
            (cons default-hour 0))))
     ((>= (string-length s) 16)
      (let ((h (string->number (substring s 11 13)))

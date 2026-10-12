@@ -162,7 +162,10 @@
 ;; defines the type (vf-record-type, so it keeps its identity across the load
 ;; seam), the predicate `agent?` and one accessor `agent-<field>` per field —
 ;; the names the hand-written blocks spelled, now read off the type name and
-;; the field list — and exports every one of them. With #:register, the
+;; the field list. The declaring module names them in its define-module's
+;; #:export (Hoot reads exports there alone and has no run-time `export`), and
+;; tools/lint/check-record-exports.scm holds that list to the declarations.
+;; With #:register, the
 ;; type is handed to that procedure as it is defined (the serdes registry),
 ;; so a record type is persistable by being declared. The keyword maker, a
 ;; positional constructor and a copier stay one-liners beside the form,
@@ -200,10 +203,8 @@
                    (define type (vf-record-type 'name '((immutable field) ...)))
                    (define pred (vf-record-predicate type))
                    (define acc (vf-record-accessor type 'field)) ...
-                   (register type)
-                   (export type pred acc ...))
+                   (register type))
                #'(begin
                    (define type (vf-record-type 'name '((immutable field) ...)))
                    (define pred (vf-record-predicate type))
-                   (define acc (vf-record-accessor type 'field)) ...
-                   (export type pred acc ...)))))))))
+                   (define acc (vf-record-accessor type 'field)) ...))))))))

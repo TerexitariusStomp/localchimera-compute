@@ -26,6 +26,7 @@
 ;;; browser personas stay toad=0 by design.
 
 (define-module (playnet keri receiptor)
+  #:use-module ((playnet utils host) #:select (string-contains))
   #:use-module (web client)
   #:use-module (web response)
   #:use-module (web uri)
@@ -33,8 +34,6 @@
   #:use-module (ice-9 format)
   #:use-module ((ice-9 binary-ports) #:select (put-bytevector get-bytevector-all))
   #:use-module ((srfi srfi-1)  #:select (filter-map))
-  #:use-module ((srfi srfi-13) #:select (string-trim-both string-null?
-                                         string-contains string-index))
   #:use-module ((playnet keri signify-portable)
                 #:select (cesr-idx-sigs-group))
   #:export (witness-base-url

@@ -28,6 +28,7 @@
 ;;; Run the demo:  guile -L module module/playnet/legal/adapters.scm
 
 (define-module (playnet legal adapters)
+  #:use-module ((playnet legal bodies) #:select (masks-subject-of))
   #:use-module ((playnet vf facts agent-tags) #:select (agent-tag-value))
   #:use-module (playnet legal registry)
   #:use-module (playnet vf schemas)
@@ -41,7 +42,7 @@
             retire-adapter rotate-adapter adapter-exposure mask-jurisdiction
             adapter-covers? resolve-mask mask-subject-of adapters-demo))
 
-(use-modules (srfi srfi-1) (srfi srfi-13) (ice-9 format))
+(use-modules (srfi srfi-1) (ice-9 format))
 (use-modules (playnet legal filings))
 (use-modules (playnet legal compliance))
 
@@ -196,11 +197,10 @@
 (define* (mask-subject-of masks #:key (person-of (lambda (d) 'person)) (fallback 'scope)
                           (covers? adapter-covers?)
                           (id-of (lambda (m) (agent-id (adapter-spawn-agent m)))))
-  (lambda (d kind)
-    (if (eq? kind 'obtain-person)
-        (person-of d)                             ; competence rides a named person
-        (let ((m (find (lambda (m) (covers? m (demand-name d))) masks)))   ; entity door → its mask
-          (if m (id-of m) fallback)))))
+  "A `subject-of` over the adapters MASKS: the generic builder (legal/bodies.scm
+   masks-subject-of) with an adapter's own reading of what a mask covers and
+   whose agent it is."
+  (masks-subject-of masks #:person-of person-of #:fallback fallback #:covers? covers? #:id-of id-of))
 
 ;;; ─── demo (only when run as a script) ────────────────────────────────────
 (define (adapters-demo)

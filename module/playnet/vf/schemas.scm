@@ -47,6 +47,7 @@
   #:use-module ((playnet utils records) #:select (define-vf-record vf-record-type vf-record-constructor vf-record-predicate vf-record-accessor vf-record-modifier vf-record-type-name vf-record-type-fields vf-record-copier vf-record-maker))
   #:use-module ((playnet vf serdes) #:select (register-vf-record!))
   #:export (copy-agent copy-recipe-process copy-process
+            measure->qty measure->unit
             make-measure
             make-duration
             make-unit
@@ -111,7 +112,66 @@
             make-agreement
             make-agreement-bundle
             make-proposal
-            make-proposal-list))
+            make-proposal-list
+            ;; the record declarations below define these (define-vf-record; check-record-exports holds the list)
+            <measure> measure? measure-has-numerical-value measure-has-unit <duration> duration?
+            duration-has-numerical-value duration-has-unit <unit> unit? unit-id unit-label
+            unit-symbol unit-classified-as <spatial-thing> spatial-thing? spatial-thing-id spatial-thing-name
+            spatial-thing-note spatial-thing-lat spatial-thing-long spatial-thing-alt spatial-thing-mappable-address spatial-thing-contained-in
+            spatial-thing-boundary <action-definition> action-definition? action-definition-event-quantity action-definition-input-output action-definition-pairs-with
+            action-definition-create-resource action-definition-accounting-effect action-definition-onhand-effect action-definition-location-effect action-definition-contained-effect action-definition-accountable-effect
+            action-definition-stage-effect action-definition-state-effect action-definition-implies-transfer action-definition-eligible-for-exchange <agent> agent?
+            agent-id agent-type agent-name agent-note agent-image agent-primary-location
+            agent-classified-as agent-availability-window <agent-relationship-role> agent-relationship-role? agent-relationship-role-id agent-relationship-role-label
+            agent-relationship-role-inverse-label agent-relationship-role-note agent-relationship-role-classified-as <agent-relationship> agent-relationship? agent-relationship-id
+            agent-relationship-subject agent-relationship-object agent-relationship-relationship agent-relationship-in-scope-of agent-relationship-note <resource-specification>
+            resource-specification? resource-specification-id resource-specification-name resource-specification-note resource-specification-image resource-specification-resource-classified-as
+            resource-specification-default-unit-of-resource resource-specification-default-unit-of-effort resource-specification-substitutable resource-specification-medium-of-exchange resource-specification-buffer-profile-id resource-specification-positioning-analysis
+            resource-specification-satisfied-by resource-specification-keep-in-place resource-specification-composition <process-specification> process-specification? process-specification-id
+            process-specification-name process-specification-note process-specification-image process-specification-is-decoupling-point process-specification-is-control-point process-specification-buffer-type
+            process-specification-is-divergent-point process-specification-is-convergent-point <recipe-flow> recipe-flow? recipe-flow-id recipe-flow-action
+            recipe-flow-resource-conforms-to recipe-flow-resource-classified-as recipe-flow-resource-quantity recipe-flow-effort-quantity recipe-flow-recipe-input-of recipe-flow-recipe-output-of
+            recipe-flow-recipe-clause-of recipe-flow-stage recipe-flow-state recipe-flow-note recipe-flow-is-primary recipe-flow-resolve-from-flow
+            <recipe-process> recipe-process? recipe-process-id recipe-process-name recipe-process-note recipe-process-image
+            recipe-process-process-conforms-to recipe-process-process-classified-as recipe-process-has-duration recipe-process-sequence-group recipe-process-minimum-batch-quantity <recipe-exchange>
+            recipe-exchange? recipe-exchange-id recipe-exchange-name recipe-exchange-note <recipe> recipe?
+            recipe-id recipe-name recipe-note recipe-based-on recipe-primary-output recipe-recipe-processes
+            recipe-recipe-exchanges <recipe-group> recipe-group? recipe-group-id recipe-group-name recipe-group-note
+            recipe-group-recipes <economic-resource> economic-resource? economic-resource-id economic-resource-name economic-resource-note
+            economic-resource-image economic-resource-tracking-identifier economic-resource-conforms-to economic-resource-classified-as economic-resource-accounting-quantity economic-resource-onhand-quantity
+            economic-resource-current-location economic-resource-current-virtual-location economic-resource-primary-accountable economic-resource-custodian-scope economic-resource-stage economic-resource-state
+            economic-resource-contained-in economic-resource-unit-of-effort economic-resource-lot economic-resource-previous-event economic-resource-availability-window economic-resource-distribution-mode
+            <economic-event> economic-event? economic-event-id economic-event-action economic-event-input-of economic-event-output-of
+            economic-event-resource-inventoried-as economic-event-to-resource-inventoried-as economic-event-resource-conforms-to economic-event-resource-classified-as economic-event-provider economic-event-receiver
+            economic-event-resource-quantity economic-event-effort-quantity economic-event-has-beginning economic-event-has-end economic-event-has-point-in-time economic-event-created
+            economic-event-at-location economic-event-to-location economic-event-state economic-event-fulfills economic-event-satisfies economic-event-corrects
+            economic-event-realization-of economic-event-settles economic-event-note economic-event-in-scope-of economic-event-previous-event economic-event-distribution-mode
+            <process> process? process-id process-name process-note process-based-on
+            process-classified-as process-planned-within process-nested-in process-in-scope-of process-has-beginning process-has-end
+            process-finished <intent> intent? intent-id intent-action intent-name
+            intent-note intent-image intent-input-of intent-output-of intent-resource-inventoried-as intent-resource-conforms-to
+            intent-resource-classified-as intent-resource-quantity intent-effort-quantity intent-available-quantity intent-minimum-quantity intent-provider
+            intent-receiver intent-has-beginning intent-has-end intent-has-point-in-time intent-due intent-at-location
+            intent-stage intent-state intent-planned-within intent-satisfies intent-in-scope-of intent-finished
+            intent-availability-window <commitment> commitment? commitment-id commitment-action commitment-note
+            commitment-input-of commitment-output-of commitment-resource-inventoried-as commitment-resource-conforms-to commitment-resource-classified-as commitment-resource-quantity
+            commitment-effort-quantity commitment-provider commitment-receiver commitment-has-beginning commitment-has-end commitment-has-point-in-time
+            commitment-due commitment-created commitment-at-location commitment-in-scope-of commitment-stage commitment-state
+            commitment-satisfies commitment-clause-of commitment-independent-demand-of commitment-planned-within commitment-finished commitment-availability-window
+            <claim> claim? claim-id claim-action claim-provider claim-receiver
+            claim-triggered-by claim-resource-quantity claim-effort-quantity claim-resource-conforms-to claim-resource-classified-as claim-due
+            claim-created claim-note claim-finished <plan> plan? plan-id
+            plan-name plan-note plan-due plan-created plan-has-independent-demand plan-refinement-of
+            plan-classified-as <scenario-definition> scenario-definition? scenario-definition-id scenario-definition-name scenario-definition-note
+            scenario-definition-has-duration scenario-definition-in-scope-of <scenario> scenario? scenario-id scenario-name
+            scenario-note scenario-defined-as scenario-refinement-of scenario-has-beginning scenario-has-end scenario-in-scope-of
+            <agreement> agreement? agreement-id agreement-name agreement-note agreement-created
+            agreement-stipulates agreement-stipulates-reciprocal <agreement-bundle> agreement-bundle? agreement-bundle-id agreement-bundle-name
+            agreement-bundle-note agreement-bundle-created agreement-bundle-bundles <proposal> proposal? proposal-id
+            proposal-name proposal-note proposal-has-beginning proposal-has-end proposal-unit-based proposal-created
+            proposal-purpose proposal-eligible-location proposal-in-scope-of proposal-publishes proposal-reciprocal proposal-proposed-to
+            <proposal-list> proposal-list? proposal-list-id proposal-list-name proposal-list-note proposal-list-created
+            proposal-list-lists))
 
 ;; ═══════════════════════════════════════════════════════════════════════
 ;; PRIMITIVES
@@ -124,6 +184,9 @@
   #:register register-vf-record!)
 
 (define make-measure                   (vf-record-constructor <measure>))
+;; a measure's number and its unit, where there is a measure at all
+(define (measure->qty m)  (and m (measure-has-numerical-value m)))
+(define (measure->unit m) (and m (measure-has-unit m)))
 
 
 ;;; Duration — time span for processes and recipes.

@@ -81,7 +81,10 @@
             as-fragility
             as-fragilities
             fragility-spec-names
-            fragility-specs-of))
+            fragility-specs-of
+            ;; the record declarations below define these (define-vf-record; check-record-exports holds the list)
+            <fragility> fragility? fragility-profile fragility-extent fragility-window fragility-specs
+            fragility-level fragility-note fragility-side))
 
 ;; ── the record ─────────────────────────────────────────────────────────────
 (define-vf-record <fragility> Fragility

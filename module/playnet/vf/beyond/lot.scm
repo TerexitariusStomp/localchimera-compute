@@ -13,7 +13,9 @@
   #:use-module (srfi srfi-1)
   #:use-module ((playnet utils records) #:select (define-vf-record vf-record-type vf-record-constructor vf-record-predicate vf-record-accessor vf-record-modifier vf-record-type-name vf-record-type-fields vf-record-copier))
   #:use-module ((playnet vf serdes) #:select (register-vf-records! register-vf-record!))
-  #:export (make-batch-lot-record))
+  #:export (make-batch-lot-record
+            ;; the record declarations below define these (define-vf-record; check-record-exports holds the list)
+            <batch-lot-record> batch-lot-record? batch-lot-record-id batch-lot-record-batch-lot-code batch-lot-record-expiration-date batch-lot-record-expiration-kind))
 
 ;;; BatchLotRecord — tracking for serialized/lot-controlled resources.
 ;;; Fields: id (string), batch-lot-code? (string), expiration-date? (ISO datetime string),

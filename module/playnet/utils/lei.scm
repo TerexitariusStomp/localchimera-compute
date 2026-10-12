@@ -9,7 +9,6 @@
 
 (define-module (playnet utils lei)
   #:use-module (srfi srfi-1)
-  #:use-module (srfi srfi-13)
   #:export (lei-valid? lei-normalize))
 
 (define (lei-normalize s)

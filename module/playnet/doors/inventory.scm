@@ -25,15 +25,7 @@
   #:use-module ((playnet vf aggregation containment) #:select (containment-first))
   #:use-module ((playnet vf facts rail) #:select (spec-rail))
   #:use-module ((playnet algorithms rollup) #:select (crystallized-snlt-for-spec))
-  #:export (recipe-flow->flow-alist recipes-conforming resolve-recipe-process proc-use-specs build-process-context
-            scope-inventory-wire measure->qty measure->unit resource->inv-alist spec->inv-alist
-            build-inventory-snapshot build-resource-detail))
-
-(define (measure->qty m)
-  (and m (measure-has-numerical-value m)))
-
-(define (measure->unit m)
-  (and m (measure-has-unit m)))
+  #:export (recipe-flow->flow-alist recipes-conforming resolve-recipe-process proc-use-specs build-process-context scope-inventory-wire resource->inv-alist spec->inv-alist build-inventory-snapshot build-resource-detail))
 
 (define* (resource->inv-alist r obs as #:optional (rs #f))
   "Project an <economic-resource> into the inventory wire format.

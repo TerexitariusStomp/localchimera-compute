@@ -25,12 +25,15 @@
             clear-submission-drivers! submit-filing minimize-disclosure
             template-disclose filing-template->sexp sexp->filing-template
             *retention-years* retention-years iso-add-years retain-until
-            artifact-expired? drop-event retention-sweep filings-demo))
+            artifact-expired? drop-event retention-sweep filings-demo
+            ;; the record declarations below define these (define-vf-record; check-record-exports holds the list)
+            <filing-template> filing-template? filing-template-name filing-template-jurisdiction filing-template-demand-name filing-template-version
+            filing-template-render filing-template-fields filing-template-source filing-template-as-of filing-template-confidence filing-template-steward))
 
 (use-modules ((playnet utils records) #:select (define-vf-record vf-record-type vf-record-predicate vf-record-accessor vf-record-constructor vf-record-type-fields)))
 ;; a type is its name — the same object on both sides of the load seam
 
-(use-modules (srfi srfi-1) (srfi srfi-13) (ice-9 format))
+(use-modules (srfi srfi-1) (ice-9 format))
 
 (define %fl-dir (or (and=> (current-filename) (lambda (f) (dirname (dirname f)))) "module/playnet"))
 (use-modules (playnet vf schemas))

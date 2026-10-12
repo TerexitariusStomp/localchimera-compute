@@ -9,6 +9,7 @@
 ;;; with the record lists gathered from the scope-root actors.
 
 (define-module (playnet solve plan)
+  #:use-module ((playnet utils host) #:select (getenv get-internal-real-time internal-time-units-per-second string-contains))
   #:use-module (playnet solve world)
   #:use-module (srfi srfi-1)
   #:use-module ((playnet utils catch) #:select (catch* throw* with-throw-handler*))

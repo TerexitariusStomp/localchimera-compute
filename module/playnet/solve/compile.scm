@@ -28,6 +28,7 @@
 ;; SKILL is read straight off the recipe here (not bolted on). effortQuantity is
 ;; the hours (a time-based action; it affects no economic resource).
 (define-module (playnet solve compile)
+  #:use-module ((playnet utils host) #:select (getenv))
   #:use-module (playnet protocol context)
   #:use-module ((playnet vf facts agent-tags) #:select (tag-value))
   #:use-module ((playnet vf facts located) #:select (svc-good svc-good? bar-spec lg cell))
@@ -47,7 +48,6 @@
             *use-unit-gaps* use-unit-gaps clear-use-unit-gaps!
             *batch-unit-gaps* batch-unit-gaps clear-batch-unit-gaps!))
 
-(cond-expand (guile) (else (define (getenv name) #f)))   ; a page has no process environment; the PLANNER_* switches read as unset
 
 (define (mqty m) (if m (measure-has-numerical-value m) 0.0))
 (define (action-def a) (let ((p (assq a *action-definitions*))) (and p (cdr p))))

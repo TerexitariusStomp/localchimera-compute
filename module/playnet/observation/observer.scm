@@ -20,6 +20,7 @@
 ;;; is one fold iteration; bcom commits the new accumulator.
 
 (define-module (playnet observation observer)
+  #:use-module ((playnet utils host) #:select (string-contains))
   #:use-module (playnet vf serdes)
   #:use-module (playnet vf schemas)
   #:use-module (playnet vf formulas actions)
@@ -81,16 +82,6 @@
   #:use-module (srfi srfi-9)
   #:use-module (ice-9 match)
   #:use-module ((playnet utils catch) #:select (catch* throw* with-throw-handler*)))
-
-(cond-expand (guile) (else
-  (define (string-contains s pat)          ; the first index of PAT in S, or #f (Hoot has no srfi-13)
-    (let ((n (string-length s)) (m (string-length pat)))
-      (let loop ((i 0))
-        (cond ((> (+ i m) n) #f)
-              ((string=? (substring s i (+ i m)) pat) i)
-              (else (loop (+ i 1)))))))))
-
-
 
 ;; Assumes schemas.scm and store-utils.scm are loaded.
 

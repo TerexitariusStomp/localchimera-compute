@@ -102,6 +102,8 @@ hoot-probe-async:
 # Transitive (playnet …) import closure of hoot/family-worker.scm; see
 # `make check-wasm-deps`.
 FAMILY_WASM_DEPS = \
+                 module/playnet/protocol/context.scm \
+                 module/playnet/utils/host.scm \
                     module/playnet/vf/beyond/scenario.scm \
                     module/playnet/vf/beyond/schedules.scm \
                     module/playnet/vf/formulas/actions.scm \
@@ -194,6 +196,20 @@ check-family-worker: browser/family.wasm
 # Transitive (playnet …) import closure of hoot/scope-worker.scm; see
 # `make check-wasm-deps`.
 SCOPE_WASM_DEPS = \
+                 module/playnet/legal/body-roles.scm \
+                 module/playnet/plan/rotation.scm \
+                 module/playnet/utils/lei.scm \
+                 module/playnet/utils/operator.scm \
+                 module/playnet/algorithms/correlation.scm \
+                 module/playnet/algorithms/option-composition.scm \
+                 module/playnet/algorithms/option-premium.scm \
+                 module/playnet/doors/record-rows.scm \
+                 module/playnet/folksonomy/graph.scm \
+                 module/playnet/knowledge/dsl/findings.scm \
+                 module/playnet/legal/adapters.scm \
+                 module/playnet/legal/bodies.scm \
+                 module/playnet/protocol/context.scm \
+                 module/playnet/utils/host.scm \
                    module/playnet/scope/ballot-store.scm \
                    module/playnet/scope/demand-registry.scm \
                    module/playnet/keri/acdc.scm \
@@ -1166,6 +1182,7 @@ lint-compile:
 	@$(TEST_ENV) tools/lint/compile-warnings.sh --check
 	@$(TEST_ENV) guile --no-auto-compile tools/lint/check-goblins-spawn.scm
 	@$(TEST_ENV) guile --no-auto-compile -L module tools/lint/check-imported-set.scm
+	@$(TEST_ENV) guile --no-auto-compile tools/lint/check-record-exports.scm
 
 # playnet's own development, planned by the planner: every open Radicle
 # issue is a want, its area a skill, its kind a recipe (module/playnet/

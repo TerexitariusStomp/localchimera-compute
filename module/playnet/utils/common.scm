@@ -46,6 +46,7 @@
 ;;;                                    empties dropped.
 
 (define-module (playnet utils common)
+  #:use-module ((playnet utils host) #:select (getenv))
   #:use-module (ice-9 format)
   #:export (safe-call
             for-each-catching
@@ -78,7 +79,6 @@
       (substring s a b)))))
 
 
-(cond-expand (guile) (else (define (getenv name) #f)))   ; a page has no process environment: every switch reads as unset
 
 
 (define (string-or-false x)
