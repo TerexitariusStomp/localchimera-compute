@@ -41,7 +41,7 @@
       (for-each (lambda (c) (when (and (key-process (col-key c)) (> (lref c) 0.05))
                   (format #t "     ~22a ~6,1f~%" (col-key c) (lref c)))) cols)
       (let ((any #f))
-        (for-each (lambda (c) (when (and (equal? (key-prefix (col-key c)) "m") (> (lref c) 0.5))
+        (for-each (lambda (c) (when (and (carry-col? (col-key c)) (> (lref c) 0.5))
                     (unless any (format #t "   moves:~%") (set! any #t))
                     (let ((kt (key-terms (col-key c))))
                       (format #t "     ~6a ~a -> ~a  ~6,1f~%" (assq-ref kt 'good) (car (assq-ref kt 'arc)) (cdr (assq-ref kt 'arc)) (lref c)))))
@@ -139,10 +139,10 @@
     (for-each (lambda (c)
       (let ((v (col-value x idx (col-key c))) (kt (key-terms (col-key c))))
         (when (> v 1e-4)
-          (cond ((equal? (assq-ref kt 'prefix) "w")    ; w|id|skill|cell → supplies Lab|skill|cell
+          (cond ((worker-col? (col-key c))    ; w|id|skill|cell → supplies Lab|skill|cell
                  (let ((g (caar (col-flows c))))
                    (hash-set! supply g (cons (cons (assq-ref kt 'worker) v) (hash-ref supply g '())))))
-                ((equal? (assq-ref kt 'prefix) "p")     ; p|proc|cell → consumes Lab|skill|cell at coeff −ℓ
+                ((process-col? (col-key c))     ; p|proc|cell → consumes Lab|skill|cell at coeff −ℓ
                  (for-each (lambda (fc)
                    (when (lab-good? (car fc))
                      ;; a ride is a run of its mode: the work it asks (a driver, a carrier) is that mode's need
@@ -241,7 +241,7 @@
 ;; the VF action an item is committed as: a relocation's cargo rows are consumed and
 ;; produced as far as the ordering goes, and a pickup and a dropoff as far as the books go
 (define (mi-vf i) (or (and (> (vector-length i) 10) (vector-ref i 10)) (vector-ref i 0)))
-(define (lgk spec cell) (and cell (string-append spec "#" cell)))   ; located-good key
+(define (lgk spec cell) (and cell (lg spec cell)))   ; located-good key, where a cell stands
 (define (topo-order items)            ; Kahn's algorithm; a cycle releases its first row left, so every row is placed
   ;; "a precedes b in enaction" is a JOIN: a produces the located good b consumes
   ;; (availability), or a consume precedes its own process's produce — so the graph
@@ -284,13 +284,11 @@
           (set! q (list (let find ((i 0)) (if (vector-ref done i) (find (+ i 1)) i))))
           (loop))))
       (reverse out))))
-;; the key is m|<spec>|<from>|<to>, and a spec may itself carry a `|` (Pres|w,
-;; Cond|durable, Svc|spec): the cells are the LAST two segments, the spec is
-;; everything between
+;; (spec from to) of a carry column, read off the one grammar (located.scm key-terms:
+;; the cells are the last two fields, the spec everything between)
 (define (carry-key-parts key)
-  (let* ((parts (string-split key #\|)) (n (length parts)))
-    (values (string-join (list-head (cdr parts) (- n 3)) "|")
-            (list-ref parts (- n 2)) (list-ref parts (- n 1)))))
+  (let ((kt (key-terms key)))
+    (values (assq-ref kt 'good) (car (assq-ref kt 'arc)) (cdr (assq-ref kt 'arc)))))
 ;; A carry and its mirror — q of one good a→b and q' back b→a in one plan —
 ;; cancel: what moves is the net, in the net's direction (merge-coeffs reads an
 ;; arc and its mirror the same way). The books hold a dropoff to its pickup, so
@@ -299,13 +297,13 @@
 (define (net-carries x cols idx)
   (let ((raw (make-hash-table)) (net (make-hash-table)))
     (for-each (lambda (c)
-                (when (equal? (assq-ref (key-terms (col-key c)) 'prefix) "m")
+                (when (carry-col? (col-key c))
                   (hash-set! raw (col-key c) (col-value x idx (col-key c)))))
               cols)
     (hash-for-each (lambda (key vv)
                      (call-with-values (lambda () (carry-key-parts key))
                        (lambda (spec from to)
-                         (hash-set! net key (max 0.0 (- vv (hash-ref raw (string-append "m|" spec "|" to "|" from) 0.0)))))))
+                         (hash-set! net key (max 0.0 (- vv (hash-ref raw (carry-col spec to from) 0.0)))))))
                    raw)
     net))
 (define (plan->material x cols idx)
@@ -390,7 +388,7 @@
                                     (let* ((sp (period-span (period-of org))))
                                       (set! items (cons (vector 'consume spec qty proc (place-of org) #f (car sp) (cdr sp) org #f) items))))))
                               net)))
-            ((equal? (assq-ref kt 'prefix) "m")       ; move: transport/storage from→to (consumes@from, produces@to)
+            ((carry-col? (col-key c))       ; move: transport/storage from→to (consumes@from, produces@to)
              ;; the key is m|<spec>|<from>|<to>, and a spec may itself carry a `|`
              ;; (Pres|w, Cond|durable, Svc|spec): the cells are the LAST two segments,
              ;; the spec is everything between. A presence carried forward is a
@@ -467,8 +465,8 @@
                     slack)))
 (define (labour-pulls duals)               ; ((skill@cell . λ) …): the Σℓλ side — located labour pulls
   (filter-map (lambda (nd) (and (lab-good? (car nd))
-                  (let ((p (string-split (car nd) #\|)))            ; Lab|skill|cell
-                    (cons (string-append (cadr p) "@" (caddr p)) (cdr nd))))) duals))
+                                (cons (string-append (lab-good-skill (car nd)) "@" (lab-good-cell (car nd))) (cdr nd))))
+              duals))
 (define (good-pulls duals)                 ; ((located-good . μ) …): the Σdμ side — the pulls of material & ecological scarcity
   (filter (lambda (nd) (not (lab-good? (car nd)))) duals))
 (define (good-labour-content)               ; ((spec . ℓ̂-hours) …): crystallized SNLT per unit, off the recipe graph
@@ -485,7 +483,7 @@
                               (filter (lambda (oq) (not (el-good? (car oq)))) (proc-outputs tpl))))
                       *templates*))))
 (define (worker-total x cols idx)           ; L: living labour actually worked (Σ worker supply)
-  (fold (lambda (c a) (if (equal? (key-prefix (col-key c)) "w") (+ a (vector-ref x (hash-ref idx (col-key c)))) a)) 0.0 cols))
+  (fold (lambda (c a) (if (worker-col? (col-key c)) (+ a (vector-ref x (hash-ref idx (col-key c)))) a)) 0.0 cols))
 
 ;; three ledgers off the people's hours bundles: (direct transport training). EVERY hour a
 ;; person commits to the plan is real social labour — none of it is "false". The split only
@@ -500,8 +498,8 @@
     (for-each (lambda (b)
       (for-each (lambda (e)
         (let* ((key (car e)) (hc (caddr e)) (i (hash-ref idx key #f)) (xv (if i (vector-ref x i) 0.0)))
-          (cond ((equal? (key-prefix key) "w") (set! direct (+ direct xv)) (set! transport (+ transport (* (- hc 1.0) xv))))
-                ((equal? (key-prefix key) "T") (set! train (+ train (* hc xv)))))))
+          (cond ((worker-col? key) (set! direct (+ direct xv)) (set! transport (+ transport (* (- hc 1.0) xv))))
+                ((train-col? key) (set! train (+ train (* hc xv)))))))
         (cadddr b)))
       *supplier-bundles*)
     (list direct transport train)))

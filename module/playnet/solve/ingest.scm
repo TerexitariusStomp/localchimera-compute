@@ -659,7 +659,7 @@
                                       *periods*)))
                           (when (pair? cells)
                             (set! *container-pools*
-                                  (cons (list (string-append "bg|" (economic-resource-id r))
+                                  (cons (list (pool-id "bg" (economic-resource-id r))
                                               (list spec) cells q #t)
                                         *container-pools*)))))
                        ((> (length under) 1)
@@ -670,8 +670,7 @@
                              (let ((cap (holding-capacity q m r (resource-window-hours r t))))
                                (when (> cap 0.0)
                                  (set! *container-pools*
-                                       (cons (list (string-append "cp|" (economic-resource-id r)
-                                                                  "|" (number->string t))
+                                       (cons (list (pool-id "cp" (economic-resource-id r) t)
                                                    (list spec)
                                                    (map (lambda (p) (cell p t)) under)
                                                    cap #t)
@@ -1158,7 +1157,7 @@
         (eco-caps (append-map (lambda (ec)
                                 (let ((k (car ec)))
                                   (if (and (string? k) (string-index k #\#) (not (key-period k)))
-                                      (map (lambda (t) (cons (string-append k "@" (number->string t)) (cdr ec))) *periods*)
+                                      (map (lambda (t) (cons (key-dated k t) (cdr ec))) *periods*)
                                       (list ec))))
                               eco-caps)))
     (for-each (lambda (ec)
@@ -1261,7 +1260,7 @@
       (for-each (lambda (kv)
                   (let ((v (cdr kv)))
                     (when (and (pair? v) (> (cdr v) 0.0))
-                      (let ((manner (caddr (string-split (car kv) #\|))))
+                      (let ((manner (caddr (arc-key-parts (car kv)))))
                         (hash-set! paces manner
                                    (cons (/ (car v) (cdr v))
                                          (hash-ref paces manner '())))))))
@@ -1276,7 +1275,7 @@
     (when (and derive-topology?
                (zero? (hash-count (const #t) *neighbours*)))
       (for-each (lambda (kv)
-                  (let* ((p (string-split (car kv) #\|))
+                  (let* ((p (arc-key-parts (car kv)))
                          (a (car p)) (b (cadr p))
                          (cur (hash-ref *neighbours* a '())))
                     (unless (member b cur)

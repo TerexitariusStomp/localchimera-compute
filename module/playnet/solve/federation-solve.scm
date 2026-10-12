@@ -165,9 +165,9 @@
         ;; from nowhere.
         (let* ((keys (hash-map->list (lambda (k i) k) idx))
                (columns-of (lambda (good)
-                             (let ((pfx (string-append "p|cross-" good "|")))
+                             (let ((proc (string-append "cross-" good)))
                                (map (lambda (k) (hash-ref idx k))
-                                    (sort (filter (lambda (k) (string-prefix? pfx k)) keys) string<?)))))
+                                    (sort (filter (lambda (k) (equal? (key-process k) proc)) keys) string<?)))))
                (held (filter-map (lambda (good)
                                    (let ((cs (columns-of good)))
                                      (and (pair? cs) (cons good cs))))

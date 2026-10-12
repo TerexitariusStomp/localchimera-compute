@@ -533,7 +533,7 @@
 (define (workers?) (pair? *workers*))
 ;; lab-good, svc-good?, pres-good, credit-good? and the rest of the bar-key grammar:
 ;; (playnet vf facts located), the one builder and reader of every key
-(define (svc-spec g) (bar-spec g))
+(define (svc-spec g) (bar-spec g))   ; the engine's name for the one reader
 ;; ── WORKER-AS-RIDER: a mobile worker present where the plan puts them ────────────
 (define (riders?) (and (pair? *riders*) (pair? *mode-recipes*)))
 (define (inert-caps) *inert-caps*)
@@ -776,8 +776,7 @@
 ;; and in particular an empty table — yields exactly rate·km(a,b): strict parity
 ;; with the geometric planner by construction, not by tuning. The same-place
 ;; guard comes FIRST so a stray self-arc key can never perturb it.
-(define (arc-key a b manner)
-  (string-append (place-of a) "|" (place-of b) "|" manner))
+(define (arc-key a b manner) (arc-table-key (place-of a) (place-of b) manner))   ; of two cells: their places
 ;; A table value is HOURS, or (HOURS . NET-KM) when matrix-sourced — the
 ;; routing engine reports real road distance alongside time, so a tabled arc
 ;; can answer BOTH "how long does it take" (arc-hours) and "how far is the
@@ -1229,7 +1228,7 @@
       (set! %worker-cell-index (list *workers* h))))
   (cadr %worker-cell-index))
 (define (worker-cell w t) (hash-ref (worker-cell-index) (cons w t) #f))
-(define (Tkey w d t) (string-append "T|" w "|" d "@" (number->string t)))
+(define (Tkey w d t) (train-col w d t))
 (define (skill-dyn-specs)                     ; (spec w skill from mentor) for each declared trainable with a spec
   (filter-map (lambda (tr) (let ((sp (skill-spec (cadr tr)))) (and sp (cons sp tr)))) *trainable*))
 ;; new COLUMNS: training activities only.  A training column consumes the MENTOR's
@@ -1285,8 +1284,8 @@
 (define (skill-dyn-forms idx cols)
   (let ((forms '()))
     (define (I k) (hash-ref idx k #f))
-    (define (prac-of w d t) (let ((c (worker-cell w t))) (and c (I (string-append "w|" w "|" d "|" c)))))
-    (define (refresh-of w d t) (let ((c (worker-cell w t))) (and c (I (string-append "wr|" w "|" d "|" c)))))   ; dedicated refresher hours
+    (define (prac-of w d t) (let ((c (worker-cell w t))) (and c (I (worker-col w d c)))))
+    (define (refresh-of w d t) (let ((c (worker-cell w t))) (and c (I (refresh-col w d c)))))   ; dedicated refresher hours
     (for-each (lambda (st)
       (let* ((sp (car st)) (w (cadr st)) (d (caddr st)) (from (cadddr st))
              (ret (- 1.0 (sk-decay sp))) (yld (sk-yield sp)) (rgn (sk-regen sp)) (lag (sk-lag sp)))
@@ -1336,10 +1335,10 @@
         ((pair? (caddr rd)) 'person)
         (else 'cargo)))
 (define (mover-presence? rd) (and (memq (mover-kind rd) '(person means)) #t))
-(define (mover-supply-prefix rd) (if (eq? (mover-kind rd) 'means) "mv|" "w|"))
+(define (mover-supply-col rd) (if (eq? (mover-kind rd) 'means) means-col worker-col))   ; a means supplies services, a person skills
 (define (mover-supplies rd)              ; what the mover renders where it stands: a person their skills, a means its services (a travel tag is no supply)
   (if (eq? (mover-kind rd) 'means) (filter svc-good? (caddr rd)) (caddr rd)))
-(define (mover-supply-key rd skill c) (string-append (mover-supply-prefix rd) (car rd) "|" skill "|" c))
+(define (mover-supply-key rd skill c) ((mover-supply-col rd) (car rd) skill c))
 (define (mover-supply-good rd skill c) (if (svc-good? skill) (lg skill c) (lab-good skill c)))   ; a means supplies the service good itself; a person the labour pool
 (define (rider-good rd) (if (mover-presence? rd) (pres-good (car rd)) (car rd)))   ; presence (person, means) or the cargo good
 ;; A ride is JUST A TRANSPORT RECIPE — so we BUILD one (pickup/dropoff the mover's good,
@@ -1406,7 +1405,7 @@
           (for-each (lambda (c)
             (set! cols (cons (list (mover-supply-key rd skill c) (list (cons (mover-supply-good rd skill c) 1.0)) 0.0 c) cols))
             (when (and (eq? (mover-kind rd) 'person) (skill-refreshes? skill))     ; a dedicated self-maintenance channel: pure hours, NO output good
-              (set! cols (cons (list (string-append "wr|" w "|" skill "|" c) '() 0.0 c) cols))))
+              (set! cols (cons (list (refresh-col w skill c) '() 0.0 c) cols))))
             *cells*))
           skills)))
       *riders*)
@@ -1451,7 +1450,7 @@
     (define (skill-col-keys rd skill c)  ; a mover's supply columns for (skill,cell): supply + a person's optional refresher channel
       (cons (mover-supply-key rd skill c)
             (if (and (eq? (mover-kind rd) 'person) (skill-refreshes? skill))
-                (list (string-append "wr|" (car rd) "|" skill "|" c)) '())))
+                (list (refresh-col (car rd) skill c)) '())))
     (define (pres-coeffs w c)                                                       ; ride+stay columns' coeffs on presence@c
       (filter-map (lambda (cc) (and (I (col-key (car cc))) (cons (I (col-key (car cc))) (cdr cc))))
                   (presence-touches pidx (pres-good w) c)))
@@ -1464,7 +1463,7 @@
     (define (pres-during-coeffs w c)
       (filter (lambda (ic)
                 (let ((key (hash-ref rev-idx (car ic) #f)))
-                  (not (and key (< (cdr ic) 0.0) (equal? (key-prefix key) "m")))))   ; drop this cell's stay-out
+                  (not (and key (< (cdr ic) 0.0) (carry-col? key)))))   ; drop this cell's stay-out
               (pres-coeffs w c)))
     ;; ONE MOVE PER BAND, FROM WHERE THE BAND FOUND YOU. A presence is a unit good,
     ;; and its balance is NET: within one band a ride out and a ride back cancel,
@@ -1639,7 +1638,7 @@
   (define (presence-during g c)              ; the level before the band's stay-out (rider-forms: pres-during-coeffs)
     (fold (lambda (cc acc)
             (let ((col (car cc)) (q (cdr cc)))
-              (if (not (and (< q 0.0) (equal? (key-prefix (col-key col)) "m")))
+              (if (not (and (< q 0.0) (carry-col? (col-key col))))
                   (+ acc (* q (col-value x idx (col-key col))))
                   acc)))
           (hash-ref *init* (lg g c) 0.0) (presence-touches pidx g c)))
@@ -1928,7 +1927,7 @@
                                (let ((b (temporal-target a))) (if b (list b) '()))
                                (spatial-targets a))))
               (for-each (lambda (b)
-                (when (and (col-on? (string-append "p|" (proc-id tpl) "|" a "|" b))
+                (when (and (col-on? (arc-col (proc-id tpl) a b))
                            ;; …and the recipe's own inputs must be sourceable at the
                            ;; ORIGIN, exactly as a production column requires at its
                            ;; cell. A haul draws its vehicle, its fuel and its
@@ -1961,7 +1960,7 @@
                     ;; a trip that reaches past the horizon does not land, so there
                     ;; is no column for it — the good would arrive after the plan ends
                     (when reloc
-                      (set! cols (cons (list (string-append "p|" (proc-id tpl) "|" a "|" b)
+                      (set! cols (cons (list (arc-col (proc-id tpl) a b)
                                              (append drv reloc ins) (if (skilled?) 0.0 (* (proc-labour tpl) dt)) a) cols))))))
                 targets)))
             *cells*)
@@ -1969,7 +1968,7 @@
           (for-each (lambda (c)
             (call-with-values (lambda () (legal-decorate-of (proc-id tpl) c))
              (lambda (legal-prune? legal-cost legal-skills legal-frag legal-bill) ; the bill, as planner inputs (§6)
-              (let* ((key (string-append "p|" (proc-id tpl) "|" c)) (lab (proc-labour tpl))
+              (let* ((key (process-col (proc-id tpl) c)) (lab (proc-labour tpl))
                      ;; an uncertain prohibition rides THIS column
                      (_lf (when legal-frag (hash-set! *legal-frag* key legal-frag)))
                      (sklabs (proc-skill-labours-of tpl))      ; ((skill . hours) …) it needs
@@ -2027,7 +2026,7 @@
                        (map (lambda (iq)
                               (let ((g (car iq)))
                                 (if (svc-good? g)
-                                    (list 'use (substring g 4) (cdr iq) #f raw-ok?)
+                                    (list 'use (bar-spec g) (cdr iq) #f raw-ok?)
                                     (list 'consume g (cdr iq) #f raw-ok?))))
                             (proc-inputs tpl))
                        (map (lambda (sl) (list 'work (car sl) (cdr sl) %effort-unit
@@ -2093,7 +2092,7 @@
                                                 ;; each band's covered hours
                                                 (spread (lambda (cl) (lg g cl))
                                                         (* (cdr iq) (*flow-period-factor* 'consume (proc-id tpl) g t (place-of c)))
-                                                        (if (member (substring g 4) (proc-timed-svc tpl)) pro-rata cdr))
+                                                        (if (member (bar-spec g) (proc-timed-svc tpl)) pro-rata cdr))
                                                 (list (cons (lg g c) (- (* (cdr iq) (svc-hours-factor g tpl t) (*flow-period-factor* 'consume (proc-id tpl) g t (place-of c)))))))))
                                         (proc-inputs tpl))))
                          (flows (if (skilled?)
@@ -2122,11 +2121,11 @@
               (when (and (worker-reaches? w c)           ; same period, ≤ *commute-km*
                          (*willing?* id skill c))        ; … and willing here (default #t ⇒ unchanged)
                 (let ((hrs (+ 1.0 (arc-hours home c *commute-manner* *tau-commute*)))   ; hrs-coeff: 1 worked hr + transport hours to get there
-                      (key (string-append "w|" id "|" skill "|" c)))
+                      (key (worker-col id skill c)))
                   (set! entries (cons (list key c hrs) entries))
                   (set! cols (cons (list key (list (cons (lab-good skill c) 1.0)) 0.0 c) cols))
                   (when (skill-refreshes? skill)         ; dedicated self-maintenance channel: same hour budget, NO output good
-                    (let ((rk (string-append "wr|" id "|" skill "|" c)))
+                    (let ((rk (refresh-col id skill c)))
                       (set! entries (cons (list rk c hrs) entries))
                       (set! cols (cons (list rk '() 0.0 c) cols)))))))
               *cells*))
@@ -2146,7 +2145,7 @@
                (entries '()))
           (for-each (lambda (cl)
             (for-each (lambda (s)                        ; a draw on each spec the closure covers (held spec + everything it substitutes for)
-              (let ((key  (string-append "r|" id "|" s "|" cl))
+              (let ((key  (supply-col id s cl))
                     (good (if durable? (lg (svc-good s) cl) (lg s cl))))  ; durable ⇒ per-period Svc|; stock ⇒ bare consumable
                 (set! entries (cons (list key cl 1.0) entries))
                 (set! cols (cons (list key (list (cons good 1.0)) 0.0 cl) cols))))
@@ -2192,14 +2191,14 @@
          (when (or (hash-ref made g #f) (raw-here? g a))  ; carry a RAW only from a cell it can be SOURCED at — no phantom carry of stock that isn't there (produced goods are balanced everywhere ⇒ always ok)
           (when mv?                                    ; SPATIAL transport, along network edges (either direction)
             (for-each (lambda (b)
-              (set! cols (cons (list (string-append "m|" g "|" a "|" b)
+              (set! cols (cons (list (carry-col g a b)
                                      (list (cons (lg g a) -1.0) (cons (lg g b) 1.0))
                                      (arc-hours a b *material-manner* *tau*) a) cols)))
               (spatial-targets a)))
           (let ((b (temporal-target a)))             ; TEMPORAL: storage one period forward (free for a person),
             (when (and b                             ; or the free carry between two bands of ONE day
                        (or st? (and intra? (same-day-bands? (period-of a) (period-of b)))))
-              (set! cols (cons (list (string-append "m|" g "|" a "|" b)
+              (set! cols (cons (list (carry-col g a b)
                                      (list (cons (lg g a) -1.0) (cons (lg g b) 1.0))
                                      (if (or (member g pres-goods)   ; a day's own bands: no hold charged
                                              (same-day-bands? (period-of a) (period-of b)))
@@ -2287,7 +2286,7 @@
                   (keys (stretch-of g))
                   (spec (key-spec g)) (cell (located-cell g))
                   (t (apply max (map (lambda (k) (period-of (located-cell k))) keys)))
-                  (tag (lambda (kind . more) (string-append kind "|" spec (apply string-append (map (lambda (m) (string-append "|" m)) more)) "#" cell)))
+                  (tag (lambda (kind . more) (apply floor-col kind spec cell more)))
                   (inflow-of (lambda (c) (fold + 0.0 (map (lambda (k) (let ((fl (assoc k (col-flows c)))) (if (and fl (> (cdr fl) 0.0)) (cdr fl) 0.0))) keys))))
                   (draws? (lambda (c) (any (lambda (k) (let ((fl (assoc k (col-flows c)))) (and fl (< (cdr fl) 0.0)))) keys)))
                   (inflows (filter (lambda (c) (and (> (inflow-of c) 0.0) (not (draws? c)))) cols))   ; a move within the day feeds and draws the stretch: not a source
@@ -2417,7 +2416,7 @@
     ;; recipe the prune removed makes nothing, and the purse is drawn all the same
     ;; …and a good that comes across the scope's boundary is drawn, where it
     ;; stands in the scope, as the stock it is: the crossing makes none of it
-    (for-each (lambda (c net) (unless (or (acq-col? c) (crossing-col? c))
+    (for-each (lambda (c net) (unless (or (acq-col? c) (crossing-column? c))
                                 (hash-for-each (lambda (sp v) (when (> v 1e-12) (hash-set! made sp #t))) net)))
               cols nets)
     ;; a standing stock is a STARTING BALANCE (*init*): what is left of it is carried.
@@ -2442,8 +2441,8 @@
                     0.0 net)))
          (and (> cost 1e-12) (cons (hash-ref idx (col-key c)) cost))))
      cols nets)))
-(define (acq-col? c) (equal? (key-prefix (col-key c)) "acq"))
-(define (crossing-col? c) (string-prefix? "p|cross-" (col-key c)))   ; solve/federation-solve.scm `crossing-recipe`
+(define (acq-col? c) (acquire-col? (col-key c)))
+(define (crossing-column? c) (crossing-col? (col-key c)))   ; solve/federation-solve.scm `crossing-recipe`
 (define (acquire-price spec labour?)
   "The hours one unit of SPEC costs to bring in, by *acquire*: a selector names the
    spec, the spec without its Svc| prefix, \"labour\" for any labour row, or #t for all. #f when nothing sells it."
@@ -2476,7 +2475,7 @@
                                     (let ((cost (acquire-cost row)))
                                       (when cost
                                         (hash-set! *acquired-keys* row #t)
-                                        (add! (string-append "acq|" row) (list (cons row 1.0)) 0.0
+                                        (add! (acquire-col row) (list (cons row 1.0)) 0.0
                                               (if (lab-good? row) (bar-field row 2) (col-cell c))
                                               cost))))))
                               (col-flows c)))
@@ -2484,7 +2483,7 @@
         (unless (skilled?)
           (let ((cost (acquire-price "labour" #t)))
             (when cost
-              (for-each (lambda (cl) (when (hash-ref *A* cl #f) (add! (string-append "acq|Lab|" cl) '() -1.0 cl cost)))
+              (for-each (lambda (cl) (when (hash-ref *A* cl #f) (add! (acquire-col (lab-good "" cl)) '() -1.0 cl cost)))
                         *cells*))))
         (reverse acc))))
 (define (bill-net bill base)
@@ -3127,7 +3126,7 @@
           ;; out and q back, and lands on any q (test-property-enact pins it)
           (define carry-terms
             (append-map (lambda (c)
-                          (if (and (> (col-labour c) 0.0) (equal? (assq-ref (key-terms (col-key c)) 'prefix) "m"))
+                          (if (and (> (col-labour c) 0.0) (carry-col? (col-key c)))
                               (list (cons (hash-ref idx (col-key c)) (col-labour c)))
                               '()))
                         cols))
