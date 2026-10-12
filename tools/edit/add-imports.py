@@ -76,26 +76,67 @@ def compile_one(f):
     return f, unbound, error
 
 
+def list_end(text, i):
+    """The index just past the `)` closing the list that opens at TEXT[I], read as
+    the reader reads it: a `;` comment runs to its line's end and a string to its
+    close, whatever parens they hold."""
+    depth = 0
+    while i < len(text):
+        c = text[i]
+        if c == ';':
+            i = text.find('\n', i)
+            if i < 0:
+                break
+        elif c == '"':
+            i = text.find('"', i + 1)
+            while i > 0 and text[i - 1] == '\\':
+                i = text.find('"', i + 1)
+            if i < 0:
+                break
+        elif c == '(':
+            depth += 1
+        elif c == ')':
+            depth -= 1
+            if depth == 0:
+                return i + 1
+        i += 1
+    raise ValueError('unbalanced list at ' + repr(text[i:i + 40]))
+
+
+def selects(text, mod):
+    """Each `(MOD #:select (…))` in TEXT, innermost first: (start, names start, names
+    end, end) with the names between the list's parens."""
+    out = []
+    for m in re.finditer(r'\(' + re.escape(mod) + r'\s+#:select\s+\(', text):
+        names_end = list_end(text, m.end() - 1) - 1
+        out.append((m.start(), m.end(), names_end, list_end(text, m.start())))
+    return out
+
+
+def names_in(text):
+    return re.sub(r';[^\n]*', '', text).split()
+
+
 def split_selects(text, old, of):
     """An import of OLD selecting moved names keeps its own; the moved go to their modules."""
-    rx = re.compile(r'(#:use-module\s+)?\(' + re.escape(old) + r'\s+#:select\s+\(([^()]*)\)\)')
-
-    def rep(m):
-        # a comment inside the list ends at its line, not at the list's close
-        names = re.sub(r';[^\n]*', '', m.group(2)).split()
+    for start, ns, ne, end in reversed(selects(text, old)):
+        names = names_in(text[ns:ne])
         if not any(n in of for n in names):
-            return m.group(0)
+            continue
         by = {}
         for n in names:
             by.setdefault(of.get(n, old), []).append(n)
-        specs = ['(' + mod + ' #:select (' + ' '.join(ns) + '))'
-                 for mod, ns in sorted(by.items(), key=lambda kv: (kv[0] != old, kv[0]))]
-        if m.group(1):
-            line = text.rfind('\n', 0, m.start()) + 1
+        specs = ['(' + mod + ' #:select (' + ' '.join(ns_) + '))'
+                 for mod, ns_ in sorted(by.items(), key=lambda kv: (kv[0] != old, kv[0]))]
+        clause = re.search(r'#:use-module\s+$', text[:start])
+        if clause:
+            line = text.rfind('\n', 0, clause.start()) + 1
             indent = re.match(r'[ \t]*', text[line:]).group(0)
-            return ('\n' + indent).join('#:use-module ' + s for s in specs)
-        return ' '.join(specs)
-    return rx.sub(rep, text)
+            new = ('\n' + indent).join('#:use-module ' + s for s in specs)
+            text = text[:clause.start()] + new + text[end:]
+        else:
+            text = text[:start] + ' '.join(specs) + text[end:]
+    return text
 
 
 def add_import(text, mod, old, names=()):
@@ -103,11 +144,12 @@ def add_import(text, mod, old, names=()):
     file that imports MOD by `#:select` gains NAMES in that list."""
     if re.search(re.escape(mod) + r'(?!\s*#:select)', text):
         return text
-    sel = re.search(r'\(' + re.escape(mod) + r'\s+#:select\s+\(([^()]*)\)\)', text)
+    sel = selects(text, mod)
     if sel and names:
-        have = sel.group(1).split()
+        _, ns, ne, _ = sel[0]
+        have = names_in(text[ns:ne])
         more = [n for n in names if n not in have]
-        return text[:sel.start(1)] + ' '.join(have + more) + text[sel.end(1):]
+        return text[:ne] + ''.join(' ' + n for n in more) + text[ne:]
     if old:
         m = re.search(r'^([ \t]*)#:use-module ' + re.escape(old) + r'[ \t]*(;[^\n]*)?$', text, re.M)
         if m:
