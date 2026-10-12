@@ -664,13 +664,15 @@
         (reply! cb "ok"))))))
 
 ;; the invitee accepts a social invite → accept-proposal (whitelist-validated);
-;; the event becomes a commitment for both and the snapshot refreshes.
-(define (handle-accept-invite proposal-id cb)
+;; the event becomes a commitment for both and the snapshot refreshes. The
+;; seam's two arguments, the scope and the proposal, as every accept takes them.
+(define (handle-accept-invite scope-id proposal-id cb)
   (cond
    ((not *planner*) (reply! cb "err:sign in first"))
-   ((not *scope*)   (reply! cb "err:no scope yet"))
+   ((or (not (string? proposal-id)) (string=? proposal-id ""))
+    (reply! cb "err:this invite has no planner id"))
    (else
-    (planner-call cb (<- *session* 'accept-invite *scope* proposal-id)
+    (planner-call cb (<- *session* 'accept-invite scope-id proposal-id)
       (lambda (_) (fetch-snapshot!) (reply! cb "ok"))))))
 
 ;; a journey on the dial is a journey IN THE PLAN: begin mints a Commitment

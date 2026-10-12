@@ -1249,7 +1249,11 @@
          (lim-procs     (migrated->procs      limits))
          (lim-flows     (migrated->flows      limits))
          (lim-weights   (migrated->stock-frag limits))
-         (resources (append (resource-view (arriving-lots obs arriving ($ obs 'all-resources))) lim-resources))
+         ;; the custody view first (a reader's view may stand on its own, ignoring
+         ;; what it is handed, as the commune's does), then the lots on their way
+         ;; placed where the last plan lands them: read once, read here
+         (seen      (arriving-lots obs arriving (resource-view ($ obs 'all-resources))))
+         (resources (append seen lim-resources))
          (storable  (append storable lim-storables))
          (eco-caps  (append eco-caps lim-caps))
          ;; MONEY is never a free raw: every spec the scope's knowledge marks
@@ -1345,7 +1349,7 @@
     (call-with-values (lambda () (call-with-values (lambda () (gather-recipes rs #:admit? admit?))
                                    (lambda (ps fs)
                                      (let ((specs (scope-resource-specs rs)))
-                                       (call-with-values (lambda () (keeping-processes specs (resource-view (arriving-lots obs arriving ($ obs 'all-resources)))))
+                                       (call-with-values (lambda () (keeping-processes specs seen))
                                          (lambda (kp kf) (expand-cargo-classes (append ps kp) (append fs kf) specs)))))))
       (lambda (procs00 flows00)
        (let* ((supplied (let ((h (make-hash-table)))          ; the goods this scope can hand a citizen

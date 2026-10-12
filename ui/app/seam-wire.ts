@@ -211,7 +211,7 @@ export interface SeamHandlers {
   // doors: session/enroll-device
   enrollDevice?(label: string, tier: string): Promise<unknown>;
   // doors: session/externality-history
-  externalityHistory?(...args: unknown[]): Promise<unknown>;
+  externalityHistory?(): Promise<unknown>;
   /** The same week asked backwards: euros and hours beyond the purse for rights, then needs, then wants held as walls; a euro priced at 1/eurPerHour hours. Same MEMBERS-JSON as familySplit. */
   // doors: session/family-bills
   familyBills?(needsJson: string, purse: number, labourH: number, weighted: boolean, eurPerHour: number, membersJson: string, perCitizenHours: number, reply: (r: unknown) => void): void;
@@ -297,7 +297,7 @@ export interface SeamHandlers {
   log?(op: string, payload: string): Promise<string>;
   /** Promote a lived day to a ledger fact. */
   // doors: session/log-observe
-  logObserve?(...args: unknown[]): Promise<unknown>;
+  logObserve?(action: string, spec: string, qty: number, unit: string, note: string, when: string): Promise<unknown>;
   /** → JSON {event, record, delta, onhand} | "err:…" — a count of a stock the books hold: a count that finds the ledger off lands a raise or lower of the difference on that stock, one that agrees lands none (`event` is then ""). `technique` is stated, label or photo; `place` a place id, by default the stock's own; `fulfills` the counter's commitment of a planned count, whose `record` lands as a produce; `evidence` the hash of the picture, which stays on the device (docs/observation/capture.md). */
   // doors: session/count-stock
   countStock?(resource: string, counted: number, unit?: string, technique?: string, place?: string, whenIso?: string, fulfills?: string, evidence?: string, note?: string): Promise<unknown>;
@@ -358,7 +358,7 @@ export interface SeamHandlers {
   // doors: session/desocialize
   recall?(said: string): Promise<unknown>;
   // local: no door
-  reconnect?(...args: unknown[]): Promise<unknown>;
+  reconnect?(): Promise<unknown>;
   /** The confirmation mile, work half: record QTY of a committed block's effort as a work event FULFILLING it — partials accumulate in its FulfillmentState. Replies "ok:<event-id>". */
   // doors: session/record-effort
   recordEffort?(scope: string, cid: string, qty: string, unit: string): Promise<string>;

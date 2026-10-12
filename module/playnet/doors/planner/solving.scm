@@ -16,7 +16,7 @@
   #:use-module ((playnet doors service brief) #:select (parse-overrides plan-brief->string))
   #:use-module ((playnet doors service provenance-trace) #:select (explain-claim make-pull-of))
   #:use-module ((playnet federation crossing-set) #:select (crossing-goods))
-  #:use-module ((playnet scope live) #:select (allocate-means-consensus federated-dilemma federated-per-scope federated-relaxed-scopes federated-result federated-scope-pulls federated-solve federated-withdrawal-displacement lg loose-gives records-means-world svc-good warm-boundary-flows))
+  #:use-module ((playnet scope live) #:select (allocate-means-consensus federated-dilemma federated-per-scope federated-relaxed-scopes federated-result federated-scope-pulls federated-solve federated-withdrawal-displacement lg loose-gives plan->rows records-means-world svc-good warm-boundary-flows))
   #:use-module ((playnet solve engine) #:select (*desire-w0* cap-scale-of want-as-cap?))
   #:use-module ((playnet solve externality) #:select (marginal-displacement moved-summary))
   #:use-module ((playnet utils envelope) #:select (catch-as-failure failure success))
@@ -24,6 +24,17 @@
   #:use-module (playnet doors planner ctx)
   #:use-module ((playnet protocol dispatch) #:select (declared-doors))
   #:export (planner-solving-doors))
+
+;; Two doors, two words. `solve` LANDS what it answers: its demand is the plan's
+;; demand (the e2e snapshot lays a plan this way), and the snapshot, the warm
+;; start and the next solve's arrivals read it. `solve-brief` is the orb's
+;; question: with no demand it asked for the CURRENT plan, which is exactly what
+;; the snapshot serves, so it lands in the same cache; with a demand it is a
+;; what-if, answered and left unstored, so a question never replaces the plan.
+(define (land-unless-what-if! cache scope-id overrides plan)
+  (if (pair? (or (assq-ref overrides 'demand) '()))
+      (plan->rows plan)
+      (cache-solve! cache scope-id '() plan)))
 
 (define (planner-solving-doors ctx)
   (with-planner-ctx ctx
@@ -296,12 +307,7 @@
                (let ((o (parse-overrides overrides)))
                  (on-plan (apply plan-fn* root scope-id (solve-keywords root o))
                    (lambda (full)
-                     ;; No demand override means the orb asked for the CURRENT plan,
-                     ;; not a what-if — and the current plan is exactly what the
-                     ;; snapshot's plan/schedule wires serve, so it lands in the
-                     ;; same cache the `solve` verb fills. A what-if stays unstored.
-                     (unless (pair? (or (assq-ref o 'demand) '()))
-                       (cache-solve! cache scope-id '() full))
+                     (land-unless-what-if! cache scope-id o full)
                      (success (plan-brief->string full)))
                    #:catch (lambda (e) (failure (format #f "~a" e))))))))))
 

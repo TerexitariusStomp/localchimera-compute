@@ -7,6 +7,7 @@
 ;;; max-age — and leaves fresh caches alone.
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/doors/test-solve-freshness.scm
+(use-modules ((playnet wire rows) #:select (wire->plain)))
 (use-modules (playnet scope root) (playnet vf schemas)
              (playnet doors service)
              ((playnet vf facts tension-terms) #:select (with-tension-terms))
@@ -21,7 +22,8 @@
   (let loop ((l kws)) (cond ((null? l) #f) ((eq? (car l) k) (cadr l)) (else (loop (cdr l))))))
 (define (stub-plan-fn root sid . kw)
   (set! calls (cons kw calls))
-  `((met . 1.0) (feasible . #t) (x . #(1.0 2.0 3.0)) (intend) (work) (material)))
+  ;; a what-if (a demand named by the caller) answers a different plan
+  `((met . ,(if (pair? (kw-ref kw #:demand)) 0.5 1.0)) (feasible . #t) (x . #(1.0 2.0 3.0)) (intend) (work) (material)))
 (define vat (spawn-vat #:name "freshness"))
 (with-vat vat
   (let* ((svc  (spawn ^planner-service (hashmap) stub-plan-fn))
@@ -59,6 +61,13 @@
       (check "…and its alist carries no solution vector" (not (assq 'x (cdr r))))
       (check "…while the door itself was warm-started"
              (equal? #(1.0 2.0 3.0) (kw-ref (car calls) #:warm-x))))
+    ;; the orb's what-if (solve-brief with a demand) is answered and stays
+    ;; unstored: the plan the snapshot serves, the warm start and the next
+    ;; solve's arrivals are the standing plan's
+    (let ((r ($ svc 'solve-brief "S" '((demand . (("soup" "town" 0 5.0)))))))
+      (check "a what-if brief answers ok" (eq? 'ok (car r)))
+      (check "…and the standing plan is still the one served"
+             (equal? (assq-ref (assq-ref (wire->plain ($ svc 'scope-snapshot "S" #f)) 'plan) 'coverage) 1.0)))
 
     ;; ── the restart: a SECOND service over the SAME durable stores ────────
     ;; %solve-at is in-process and starts empty in svc2 — the only question

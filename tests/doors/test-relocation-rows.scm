@@ -250,6 +250,31 @@
         (let ((blind (replan (arriving-lots obs '() ($ obs 'all-resources)) 30.0))
               (seen  (replan (arriving-lots obs plan1 ($ obs 'all-resources)) 30.0)))
           (check-pred "a solve that sees only places hauls the on-the-way bread again" (> (hauled blind) 20.0))
+          ;; THE LIVE SHAPE: plan-scope under a world READER whose custody view stands on
+          ;; its own (the commune's ignores what it is handed): the arrivals must land on
+          ;; that view, or cargo on its way is invisible in production (measured
+          ;; 2026-10-12: the view discarded them, and the bread on its way was hauled
+          ;; again). The view holds the books as they stand, the bread on its way at no
+          ;; place among them; told the plan's open dropoff, the solve finds it landing
+          ;; at B and hauls that much less.
+          (let* ((rs ($ scope 'recipe-store))
+                 (raw ($ obs 'all-resources))
+                 (through (lambda (arriving)
+                            (call-with-values
+                                (lambda () (plan-scope scope #:demand (list (cons (lg "bread" (cell "B" 0)) 30.0))
+                                                       #:periods '(0) #:movable '("bread")
+                                                       #:resource-view (lambda (_) raw) #:arriving arriving))
+                              (lambda (ints coms material . _) (hauled (map row material)))))))
+            ;; a recipe that MAKES bread, so a lot of it is stock the plan may draw on
+            ;; (a good no recipe makes is a raw, drawn by a process alone); it draws a
+            ;; flour nobody holds, so baking is never the answer
+            ($ rs 'add-recipe (make-recipe #:id "r-bread" #:name "Bread" #:primary-output "bread" #:recipe-processes (list "bake")))
+            ($ rs 'add-recipe-process (rp "bake" "Bake"))
+            ($ rs 'add-recipe-flow (out "b1" "bread" 1.0 "bake"))
+            ($ rs 'add-recipe-flow (in "b0" "flour" 1.0 "bake"))
+            (let ((blind* (through '())) (seen* (through plan1)))
+              (check-pred "under a reader, the plan's arrivals land on the view it stands on: far less is hauled"
+                          (< seen* (- blind* 10.0)))))
           (check-pred "a solve told what the plan lands plans as if it had landed"
                       (begin (enact-rows scope (list do-row))
                              (< (abs (- (hauled seen) (hauled (replan ($ obs 'all-resources) 30.0)))) 1e-6)))

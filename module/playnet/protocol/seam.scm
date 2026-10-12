@@ -340,7 +340,7 @@
              ((session . enroll-device))
              "make this device's key at tier (\"hardware\" | \"software\") and have the root (a passcode session) authorize it; replies \"ok\"")
     (handler "externalityHistory"
-             "...args: unknown[]"
+             ""
              "Promise<unknown>"
              ((session . externality-history))
              "")
@@ -485,7 +485,7 @@
              ((session . sync-log) (session . list-log))
              "The captain's log's own backup: (\"sync\"|\"list\", payload) → JSON.")
     (handler "logObserve"
-             "...args: unknown[]"
+             "action: string, spec: string, qty: number, unit: string, note: string, when: string"
              "Promise<unknown>"
              ((session . log-observe))
              "Promote a lived day to a ledger fact.")
@@ -595,7 +595,7 @@
              ((session . desocialize))
              "End a grant early, by its custody attestation's SAID.")
     (handler "reconnect"
-             "...args: unknown[]"
+             ""
              "Promise<unknown>"
              ()
              "")

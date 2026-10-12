@@ -1828,6 +1828,7 @@ test-device-doors:
 # handlers; its anonymous planner doors are the facet. tools/lint/protocol-lint.scm.
 check-protocol:
 	$(GUILE_TEST_DEV) -L module tools/lint/protocol-lint.scm
+	$(GUILE_TEST_DEV) -L module tools/lint/check-bridge-arity.scm
 
 # The emits of the declaration. browser/api/openapi.json is committed (the
 # box serves it at /api/openapi.json, Swagger UI at /api/docs/); a stale

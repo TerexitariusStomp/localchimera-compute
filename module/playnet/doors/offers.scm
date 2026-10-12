@@ -150,40 +150,35 @@
       (let ((accepted (map commitment-input-of (standing-accepts ps)))
             (nowu (instant->unix (now)))
             (laid 0) (closed 0))
+        ;; the plan's own NEED intents (plan->work: one per process, skill and
+        ;; cell, the hours summed over the workers it placed), laid as they are:
+        ;; the receiver side of the deployment, which a willing worker races onto
         (for-each
-         (lambda (w)
-           (let* ((proc  (row-input-of w))
-                  (skill (or (row-spec w) "labour"))
-                  (place (row-place w))
-                  (eff   (row-effort w))
-                  (when* (row-when w))
-                  (until (row-until w))
-                  (cell  (string-append (or place "") "@"
-                                        (number->string (time->period when*)))))
-             ;; a CLOSED window is never an open shift — offer-work's own
-             ;; law at this tier: laying it would invite an accept the
-             ;; expiry sweep must immediately unmake (measured: an evening
-             ;; accept of a 09:00–17:00 shift self-expired one turn later)
-             (when (and proc (number? eff) (> eff 1e-6) (not (member proc accepted))
-                        until (let ((u (window-closes-at until))) (and u (<= u nowu))))
-               (set! closed (+ closed 1)))
-             (when (and proc (number? eff) (> eff 1e-6)
-                        (not (member proc accepted))
-                        (or (not until)
-                            (let ((u (window-closes-at until)))
-                              (or (not u) (> u nowu)))))
-               (set! laid (+ laid 1))
-               ($ ps 'add-intent
-                  (work-intent (string-append "ni|" proc "|" skill "|" cell)
-                               #:name (assq-ref w 'name)
-                               #:proc proc #:skill skill #:hours eff
-                               #:from when* #:until until #:point when*
-                               #:place place)))))
-         (or (assq-ref (cdr cached) 'work) '()))
+         (lambda (i)
+           (let ((proc  (row-input-of i))
+                 (eff   (row-effort i))
+                 (until (row-until i)))
+             (when (and proc (number? eff) (> eff 1e-6) (not (member proc accepted)))
+               ;; a CLOSED window is never an open shift — offer-work's own
+               ;; law at this tier: laying it would invite an accept the
+               ;; expiry sweep must immediately unmake (measured: an evening
+               ;; accept of a 09:00–17:00 shift self-expired one turn later)
+               (let ((u (and until (window-closes-at until))))
+                 (if (and u (<= u nowu))
+                     (set! closed (+ closed 1))
+                     (begin
+                       (set! laid (+ laid 1))
+                       ($ ps 'add-intent
+                          (if (intent? i) i
+                              (work-intent (row-id i) #:proc proc #:skill (row-spec i) #:hours eff
+                                           #:from (row-when i) #:until until #:point (row-when i)
+                                           #:place (row-place i))))))))))
+         (filter (lambda (i) (not (row-provider i)))          ; a need: the process asks, nobody offers
+                 (or (assq-ref (cdr cached) 'intend) '())))
         ;; what the landing laid, on the log: the number a reader of the
         ;; grid compares against, beside the windows already closed
-        (format (current-error-port) "  [open-shifts] laid ~a open shift(s), ~a window(s) already closed, ~a work row(s)~%"
-                laid closed (length (or (assq-ref (cdr cached) 'work) '())))))))
+        (format (current-error-port) "  [open-shifts] laid ~a open shift(s), ~a window(s) already closed, ~a need(s)~%"
+                laid closed (length (or (assq-ref (cdr cached) 'intend) '())))))))
 ;; ── the presentation caller: a solve's suggestions become offers ─────────────
 ;; The default presentation policy, with the ranking PLUGGABLE. The solve
 ;; already chose who works which slot (the deployment's provider on each

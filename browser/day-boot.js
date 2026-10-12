@@ -1124,7 +1124,7 @@ function boot() {
     // <intent> (declareNeed). Both carry quantity, unit, place, the recurring
     // arcs, note and emoji; a need adds its [from, until] bounds. mySlots
     // reads both back, retireNeed withdraws a standing order.
-    HANDLERS.declareMeans = bridge("declareMeans", 11);  // scope spec qty unit loc arcs note emoji name catsJson criteriaJson
+    HANDLERS.declareMeans = bridge("declareMeans", 10);  // spec qty unit loc arcs note emoji name catsJson criteriaJson
     HANDLERS.declareNeed  = bridge("declareNeed", 14);   // spec qty unit loc arcs note emoji from until name catsJson criteriaJson tension voice
     HANDLERS.retireNeed   = bridge("retireNeed", 1);     // spec
     HANDLERS.retireMeans   = bridge("retireMeans", 1);   // spec — the offer side's own withdrawal
@@ -1191,7 +1191,7 @@ function boot() {
     // absence as offline — so each one MUST be bridged here to work live.
     HANDLERS.setAvailability = bridge("setAvailability", 1);  // arcs JSON
     HANDLERS.invite          = bridge("invite", 4);           // aid label t0-iso t1-iso
-    HANDLERS.acceptInvite    = bridge("acceptInvite", 1);     // proposal-id
+    HANDLERS.acceptInvite    = bridge("acceptInvite", 2);     // scope, proposal-id
     HANDLERS.recordEffort    = bridge("recordEffort", 4);     // scope cid qty unit
     HANDLERS.recordFlow      = bridge("recordFlow", 10);      // scope action spec qty total place when proc note rowId
     HANDLERS.witnessOpen     = bridge("witnessOpen", 2);      // scope event-id
