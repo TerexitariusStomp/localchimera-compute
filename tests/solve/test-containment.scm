@@ -14,7 +14,7 @@
 ;;; Run:  tools/test/run-suite.sh tests/solve/test-containment.scm
 
 (use-modules ((playnet utils units) #:select (%count-unit)))
-(use-modules (srfi srfi-1) (ice-9 format))
+(use-modules (srfi srfi-1) (ice-9 format) ((playnet solve world) #:select (*templates*)))
 (use-modules (playnet solve engine)
              (playnet solve compile)
              (playnet vf schemas))

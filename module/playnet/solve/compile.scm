@@ -29,7 +29,7 @@
 ;; the hours (a time-based action; it affects no economic resource).
 (define-module (playnet solve compile)
   #:use-module ((playnet utils host) #:select (getenv))
-  #:use-module (playnet protocol context)
+  #:use-module (playnet solve world)
   #:use-module ((playnet vf facts agent-tags) #:select (tag-value))
   #:use-module ((playnet vf facts located) #:select (svc-good svc-good? bar-spec lg cell))
   #:re-export (svc-good %ambient-tag)   ; the Svc| namer is the key grammar's (facts/located); re-exported for the two loaders that read it here
@@ -44,7 +44,7 @@
   #:export (mqty action-def alist-add compile-process proc-id proc-outputs
             proc-inputs proc-labour proc-skill-labours proc-moved proc-relocated
             proc-timed-svc proc-duration proc-batch proc-whole? proc-tags proc-output-good compile-recipe recipe-manner manner-of-tags
-            qualified-good good-names bare-spec *templates* set-templates!
+            qualified-good good-names bare-spec set-templates!
             *use-unit-gaps* use-unit-gaps clear-use-unit-gaps!
             *batch-unit-gaps* batch-unit-gaps clear-batch-unit-gaps!))
 
@@ -360,17 +360,15 @@
             (else (loop (+ i 1)))))))
 
 ;; the compiled recipes of the problem in hand — supplied per solve
-;; (ingest-records!, or a caller's own compile-recipe), cleared by reset!.
-;; ONE context cell (playnet protocol context): `*templates*` is a top-level
-;; name over the cell, so a read anywhere is the cell's field and a write
-;; anywhere its setter. 78 sites outside this file assign *templates* directly;
-;; `set-templates!` names that mutable surface as a door. Stated as a plain
-;; variable, a compiled importer of this declarative module folded the initial
-;; '() into its own code and read no template the solve had laid (the report's
-;; labour content came back empty, measured), while an interpreted reader saw
-;; them all: the two views diverged in silence.
-(define-context compiled #:cell %compiled
-  (*templates* '()))
+;; (ingest-records!, or a caller's own compile-recipe) — are a field of the
+;; WORLD (solve/world.scm `*templates*`): a world is one whole value, so the
+;; recipes it was declared with ride with it, a fresh world holds none, and two
+;; worlds in hand hold each their own. They stood in a cell of this module
+;; once, one per process, so a world declared without templates read the last
+;; solve's and a second scope's ingest overwrote the first's (measured
+;; 2026-10-12: the means consensus, one world per scope, built an empty
+;; program for the first scope after the second had ingested). `set-templates!`
+;; names the write as a door for the engine's element closure.
 (define (set-templates! ts) (set! *templates* ts))
 ;; THE WORKED EXAMPLE used to be loaded here. It cannot be: `setup-space` and
 ;; its four siblings assign twelve of the ENGINE's globals (*places*, *periods*,

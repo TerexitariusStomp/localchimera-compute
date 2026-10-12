@@ -782,7 +782,8 @@
 ;; populate the whole located model from real records. templates/demand/eco-caps
 ;; are POLICY (recipes from the recipe store, desires from Intents, caps from
 ;; ecological limits) — passed in, not read from stock. Stock/labour/coordinates
-;; are read from the records. Leaves *templates* untouched (set via compile-recipe).
+;; are read from the records. The templates in hand at the call (set via
+;; compile-recipe / set-templates!) are laid into the world it declares.
 (define* (adopt-container-pools! #:optional (own *resource-suppliers*))
   "The pools ingest-stock! derived from containment become suppliers, after the
    caller's OWN (the order build-columns reads them in). ingest-located! does
@@ -964,7 +965,11 @@
                     #:movable movable #:storable storable
                     #:tau tau #:hold hold
                     #:mode-recipes mode-recipes
-                    #:spatial-things spatial-things)
+                    #:spatial-things spatial-things
+                    ;; the templates in hand at the call (compile-recipe laid them,
+                    ;; by set-templates!, before this ingest): read before the
+                    ;; declaration makes the world afresh, laid into it
+                    #:templates *templates*)
     ;; the world's own key addressing for statements poured AFTER ingest — the
     ;; reproduction bands: a date key resolves against the declared partition
     ;; and a coarse period retimes to its stretch's first piece, registering

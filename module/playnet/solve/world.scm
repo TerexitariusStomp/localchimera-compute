@@ -26,7 +26,7 @@
 
 (define-module (playnet solve world)
   #:use-module (playnet protocol context)
-  #:export (%world make-world world? reset-world! current-world call-with-world *certificates*
+  #:export (%world make-world world? reset-world! current-world call-with-world *certificates* *templates*
             *flow-period-factor* *avail-factor* *places* *periods* *cells* *period-days* *period-spans* *spatial-things*
             *movable* *storable* *tau* *hold* *neighbours* *stationary*
             *demand* *A* *acquire* *promote* *acquire-cost-of* *acquired-keys*
@@ -45,6 +45,14 @@
             *mobile-means* *contents* *stands-in* *means-lot* *disposable-total*))
 
 (define-context world #:fluid %world
+  ;; ── the recipes: what this world can do ──
+  ;; the compiled recipes of the problem in hand (solve/compile.scm compile-recipe;
+  ;; ingest-records! lays them, declare-world! takes them by #:templates), the
+  ;; templates the located program tiles over the cells. A field, so a fresh world
+  ;; holds none and a world in hand holds its own: declared without them, a world
+  ;; reads NO template rather than the last solve's.
+  (*templates* '())
+
   ;; ── the shape: places, periods, cells; what moves, what stays, what it costs ──
 
   ;; the per-flow factor a branch (solve/robust.scm) or a site puts on a column's

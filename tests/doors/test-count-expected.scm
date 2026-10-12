@@ -124,10 +124,12 @@
 
 (with-vat vat ($ ($ scope 'agent-store) 'add-agent (make-agent #:id "ada" #:type 'person
                                                                #:name "ada" #:classified-as '())))
-;; the plan's vocabulary: a recipe makes jam and none uses it, so a kept jar is its keeper's own
-((@ (playnet solve engine) declare-world!)
- #:spans '((0 "2026-09-28" "2026-09-28"))
- #:templates (list (list "preserve" '(("jam" . 1.0)) '() 0.0 '() '() '() '() '())))
+;; the plan's vocabulary: a recipe makes jam and none uses it, so a kept jar is its keeper's own.
+;; The world is the vat's (one whole value, templates included), so it is declared there.
+(with-vat vat
+  ((@ (playnet solve engine) declare-world!)
+   #:spans '((0 "2026-09-28" "2026-09-28"))
+   #:templates (list (list "preserve" '(("jam" . 1.0)) '() 0.0 '() '() '() '() '()))))
 (display "\n── 6. a person's stock is a lot of the good they own ──\n")
 (seed! "ada/jam" "jam" 6.0 "ada" "place:pantry")
 (plan! (list (row "eat-jam" 'consume "jam~ada" 2.0 "place:pantry" "2026-09-28T08:00:00Z" "supper")
