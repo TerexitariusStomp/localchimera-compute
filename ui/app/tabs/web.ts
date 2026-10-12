@@ -53,6 +53,7 @@
 // (tabs/web-draft.ts) draw beside the real recipes while they are written, and
 // a step armed for its flows turns a tap on a good into a flow of it.
 
+import { isLabour, isMaking, isOccupying, isUsingUp } from "../actions-catalogue.js";
 import { esc } from '../template.js';
 import type { ScopeRecipe, ScopeRecipeStep, ScopeFlow, Plan } from '../seam.js';
 import { on } from '../bus.js';
@@ -155,7 +156,7 @@ const n1 = (x: number): string => (x % 1 ? x.toFixed(1) : String(x));
 const good = (spec: string): string => `g:${spec}`;
 /** A link end's id — the string it starts as, or the node d3 swaps in once the layout runs. */
 const endId = (e: WNode | string | number): string => (typeof e === "object" ? e.id : String(e));
-const isProduce = (f: ScopeFlow): boolean => !f.action || f.action === "produce";
+const isProduce = (f: ScopeFlow): boolean => !f.action || isMaking(f.action);
 
 /** The specs the plan's needs pull on — the finals — expressed against the recipe library. */
 function finalSpecs(p: Plan): Set<string> {
@@ -283,12 +284,12 @@ function buildFull(rs: ScopeRecipe[], p: Plan, cut: Cut): Graph {
       if (s.balance === "closed" || s.balance === "open") proc.balance = s.balance;
       nodes.set(pid, proc);
       (s.in || []).forEach(f => {
-        if (f.action === "work") { if (!s.hours) proc.hours += num(f.q); return; }
+        if (isLabour(f.action)) { if (!s.hours) proc.hours += num(f.q); return; }
         if (!f.spec) return;
         const g = goodNode(f, sector);
-        const kind: LinkKind = f.action === "use" ? "use" : "consume";
+        const kind: LinkKind = isOccupying(f.action) ? "use" : "consume";
         links.push({ id: `${g.id}>${pid}:${kind}`, source: g.id, target: pid, kind, q: num(f.q), u: f.u || "" });
-        if (kind === "consume") { add(outflow, g.id, num(f.q)); (consumers.get(g.id) || consumers.set(g.id, []).get(g.id)!).push(pid); }
+        if (kind === "consume") { add(outflow, g.id, num(f.q)); (consumers.get(g.id) || consumers.set(g.id, []).get(g.id)!).push(pid); }   // verb-meant: the link's kind
       });
       (s.out || []).forEach(f => {
         if (!f.spec || !isProduce(f)) return;
@@ -307,7 +308,7 @@ function buildFull(rs: ScopeRecipe[], p: Plan, cut: Cut): Graph {
   (p.flow || []).forEach(pr => {
     const gid = good(pr.specId);
     if (nodes.has(gid)) add(inflow, gid, num(pr.q));
-    (pr.in || []).forEach(f => { if (f.action === "consume" && nodes.has(good(f.id))) add(outflow, good(f.id), num(f.q)); });
+    (pr.in || []).forEach(f => { if (isUsingUp(f.action) && nodes.has(good(f.id))) add(outflow, good(f.id), num(f.q)); });
   });
 
   const finals = finalSpecs(p);
@@ -322,7 +323,7 @@ function buildFull(rs: ScopeRecipe[], p: Plan, cut: Cut): Graph {
     else if (!taken && !n.final) n.hole = "sink";
     n.r = 12 + Math.min(10, Math.sqrt(n.flow));
   });
-  all.forEach(n => { if (n.kind === "proc") n.flow = links.filter(l => l.target === n.id && l.kind === "consume").reduce((a, l) => a + l.q, 0); });
+  all.forEach(n => { if (n.kind === "proc") n.flow = links.filter(l => l.target === n.id && l.kind === "consume").reduce((a, l) => a + l.q, 0); });   // verb-meant: the link's kind
 
   const { loop, loops } = loopsOf(all, links);
   all.forEach(n => { n.loop = loop.has(n.id); });

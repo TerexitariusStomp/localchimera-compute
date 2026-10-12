@@ -18,24 +18,30 @@
 // as itself, off the dial, where its linearity is legible.
 //
 // The graph it walks is app/recipe-graph.js. This file draws.
+import { isOutput } from "./actions-catalogue.js";
 import { PLAN } from './core.js';
 import { effect } from './reactive.js';
 import { primOut, recipeForSpec, recipeById, active, setActive, pushRecipe, popRecipe, trail, canGoBack, } from './recipe-graph.js';
 import { metCol, CREDIT, STATUS } from './palette.js';
 import { on, emit } from './bus.js';
 import { isCountUnit } from "./units-catalogue.js";
-const VERB = {
-    consume: { dir: -1, col: CREDIT, word: "consume" }, // drawn down (credit rail)
-    use: { dir: -1, col: "#6a8aaa", word: "use" }, // occupied, not spent
-    work: { dir: -1, col: "#1581a8", word: "work" }, // labour (skill rail)
-    pickup: { dir: -1, col: "#7a6a8a", word: "pickup" },
-    cite: { dir: -1, col: "#999", word: "cite" },
-    produce: { dir: 1, col: "#2e7d32", word: "produce" }, // brought into being
-    dropoff: { dir: 1, col: "#2e7d32", word: "dropoff" },
-    modify: { dir: 1, col: "#3f8f6a", word: "modify" },
-    "deliver-service": { dir: 1, col: "#2e7d32", word: "deliver" }, // produced & delivered, never held
+// the colour and the word are the page's own; which side of a process the act
+// stands on is the table's (actions-catalogue: an input is drawn, an output lands)
+const LOOK = {
+    consume: { col: CREDIT, word: "consume" }, // drawn down (credit rail)
+    use: { col: "#6a8aaa", word: "use" }, // occupied, not spent
+    work: { col: "#1581a8", word: "work" }, // labour (skill rail)
+    pickup: { col: "#7a6a8a", word: "pickup" },
+    cite: { col: "#999", word: "cite" },
+    produce: { col: "#2e7d32", word: "produce" }, // brought into being
+    dropoff: { col: "#2e7d32", word: "dropoff" },
+    modify: { col: "#3f8f6a", word: "modify" },
+    "deliver-service": { col: "#2e7d32", word: "deliver" }, // produced & delivered, never held
 };
-const verbOf = (action) => VERB[action || ""] || {};
+const verbOf = (action) => {
+    const look = LOOK[action || ""];
+    return look ? { ...look, dir: isOutput(action) ? 1 : -1 } : {};
+};
 const fmtQ = (f) => `${f.q}${f.u && !isCountUnit(f.u) ? " " + f.u : ""}`.trim();
 /**
  * A flow's label: its emoji where it has one (the demo recipes), else its spec

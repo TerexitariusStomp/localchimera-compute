@@ -15,6 +15,7 @@
 // Either way modelFromFlow() turns productions → the render model: topological stages (a good
 // can't be made until its inputs exist), independent-supply lanes, and dependent-supply
 // fold-back. Scope-reactive: the "plan" push → "planRender" re-renders on a switch.
+import { isCreating, isLabour, isOccupying, isUsingUp, onhandSign } from "../actions-catalogue.js";
 import { esc } from '../template.js';
 import { EXT } from '../core.js';
 import { goToMapPlace, goToCalendarTime, hereOfInstant } from '../gohere.js';
@@ -100,7 +101,7 @@ function specEmojiMap() {
 // ── OFFLINE: reconstruct the productions array from recipe topology ──
 // spec → the step that makes it; a step that TRANSFORMS a consumed input beats an
 // acquisition stub (a step with no consumed input), so the real production chain wins.
-const consumesGood = (s) => (s.in || []).some(f => f.action !== "use" && f.action !== "work");
+const consumesGood = (s) => (s.in || []).some(f => !isOccupying(f.action) && !isLabour(f.action));
 function buildStepIndex(recipes) {
     const idx = {};
     recipes.forEach(r => (r.steps || []).forEach(s => {
@@ -123,10 +124,10 @@ function reconstructFlow(needs, recipes) {
         const prov = idx[spec], g2 = new Set(guard);
         g2.add(spec);
         const ins = (prov.step.in || []).map(f => {
-            const action = f.action === "work" ? "work" : f.action === "use" ? "use" : "consume";
+            const action = isLabour(f.action) ? "work" : isOccupying(f.action) ? "use" : "consume";
             const fs = f.spec || "";
             if (action === "consume" && idx[fs])
-                visit(fs, g2);
+                visit(fs, g2); // verb-meant: the lane this input was just sorted into
             return { spec: fs, id: fs, q: Number(f.q) || 0, action };
         });
         prods.push({ id: spec, spec, specId: spec, name: prov.step.name || prov.recipe.name, q: 0, u: "", period: "", in: ins });
@@ -168,7 +169,7 @@ function modelFromFlow(prods, p, needs, demandSpecs, live) {
         g2.add(pr.id);
         let mx = 0;
         (pr.in || []).forEach(f => {
-            if (f.action === "consume" && producedSet.has(f.id)) {
+            if (isUsingUp(f.action) && producedSet.has(f.id)) {
                 const s = stageSpec(f.id, g2);
                 if (s > mx)
                     mx = s;
@@ -181,13 +182,13 @@ function modelFromFlow(prods, p, needs, demandSpecs, live) {
     const raw = {}, means = {};
     let labourTotal = 0;
     prods.forEach(pr => (pr.in || []).forEach(f => {
-        if (f.action === "work")
+        if (isLabour(f.action))
             labourTotal += Number(f.q) || 0;
-        else if (f.action === "use") {
+        else if (isOccupying(f.action)) {
             if (!means[f.id])
                 means[f.id] = { spec: f.spec, emoji: emoji(f.id) };
         }
-        else if (f.action === "consume" && !producedSet.has(f.id)) {
+        else if (isUsingUp(f.action) && !producedSet.has(f.id)) {
             const e = raw[f.id] || { spec: f.spec, emoji: emoji(f.id), q: 0 };
             e.q += Number(f.q) || 0;
             raw[f.id] = e;
@@ -198,8 +199,8 @@ function modelFromFlow(prods, p, needs, demandSpecs, live) {
         stage: prodStage[pr.id] || 1, period: pr.period || "", final: demandSpecs.has(pr.specId),
         q: Number(pr.q) || 0, u: pr.u || "",
         inputs: (pr.in || []).map((f) => ({
-            kind: f.action === "work" ? "work" : f.action === "use" ? "use" : producedSet.has(f.id) ? "dep" : "raw",
-            spec: f.spec, emoji: f.action === "work" ? "🧑‍🏭" : emoji(f.id), q: Number(f.q) || 0,
+            kind: isLabour(f.action) ? "work" : isOccupying(f.action) ? "use" : producedSet.has(f.id) ? "dep" : "raw",
+            spec: f.spec, emoji: isLabour(f.action) ? "🧑‍🏭" : emoji(f.id), q: Number(f.q) || 0,
         })),
     }));
     const maxStage = Math.max(1, ...nodes.map(n => n.stage));
@@ -392,8 +393,8 @@ function scheduleBoard(sched) {
             }
         }
         used.add(i);
-        const arrives = m.action === "produce" || m.action === "dropoff";
-        const lands = m.action === "produce" && m.proc && procDay[m.proc] && procDay[m.proc] < d;
+        const arrives = onhandSign(m.action) === 1;
+        const lands = isCreating(m.action) && m.proc && procDay[m.proc] && procDay[m.proc] < d;
         const boarded = m.proc ? procDay[m.proc] : "";
         rows.push({ day: d, place: m.place, kind: m.action,
             html: `${arrives ? "▲" : "▼"} <b>${n1(m.qty)}</b> ${esc(m.spec)}`

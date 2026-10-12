@@ -32,6 +32,7 @@
 // shares with the gateway's (playnet ai conform): a reply that fails a pass's
 // `check` is asked again with the reason quoted back, once; then `sanitize`
 // salvages what it can of the last reply — the floor.
+import { LOG_ACTIONS as CATALOGUE_LOG_ACTIONS } from "../actions-catalogue.js";
 import { conform, readFirstJSONObject } from "../conform.js";
 import { recipes } from "../recipe-graph.js";
 import { seam } from "../seam.js";
@@ -74,7 +75,7 @@ export function scanContacts(text, book) {
         .map(c => ({ alias: c.alias, why: "named in the entry" }));
 }
 // ── the passes ──────────────────────────────────────────────────────────────
-export const LOG_ACTIONS = ["work", "produce", "consume", "use", "raise", "lower"];
+export const LOG_ACTIONS = CATALOGUE_LOG_ACTIONS;
 const sift = (field, v, fault) => {
     const faults = Array.isArray(v) ? [] : [`"${field}" must be an array`];
     const kept = [];

@@ -1,3 +1,18 @@
+// app/tabs/calendar.ts — the CALENDAR face: the same day, unrolled into a week
+// grid.
+//
+// A second way of working with the same time. The clock dial (main.js) and this
+// week grid read ONE source — the shared `evs` / `proposals` / `eligible` arrays
+// plus the editable personal-event / availability rings — and share the SAME
+// response handlers (commit / decline / willing / release). So accepting a
+// proposal here moves the dial too, and a fresh planner snapshot (ingest →
+// markDayChanged) re-renders both: they never drift.
+//
+// This is the JS port of module/playnet/ui/calendar.scm's layout — kept there as
+// the canonical version for the repl app; ported here because app.html renders
+// entirely in JS/d3 (day-boot does "no SXML, no rendering"). Reads dial state at
+// call time, so the main.js <-> calendar.js import cycle is benign.
+import { CREATING_ACTIONS } from "../actions-catalogue.js";
 import { dropRecurringDay, av_setDays, av_daysLabel } from '../ring.js';
 import { stage } from '../stage.js';
 import { signal, effect } from '../reactive.js';
@@ -693,8 +708,8 @@ const GERUND = {
     pay: "paying", tell: "telling",
 };
 const gerund = (a) => GERUND[a] || a;
-/** The actions that are the act's OUTPUT — what it leaves behind. */
-const OUTPUT = new Set(["produce", "deliver-service"]);
+/** The actions that are the act's OUTPUT — what comes newly into being (the table's word). */
+const OUTPUT = new Set(CREATING_ACTIONS);
 const VERB_EMOJI = {
     use: "🔧", work: "💪", consume: "📦", cite: "📎", produce: "🌱", "deliver-service": "🤝",
     "obtain-entity": "📜", "obtain-person": "🆔", pay: "💶", tell: "📣",

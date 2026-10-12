@@ -5,10 +5,11 @@
 // standing badges read the same wherever a recipe is drawn — a face that skips
 // importing these would have to reinvent them to differ, rather than drift by
 // accident.
+import { isLabour, isRelocating } from "../actions-catalogue.js";
 import { esc } from '../template.js';
 import { STRESS_BAND } from '../recipe-demo-standing.js'; // the stress axis, as the engine states it
 export const n1 = (x) => (x % 1 ? x.toFixed(1) : String(x));
-export const isMove = (f) => f.action === "pickup" || f.action === "dropoff";
+export const isMove = (f) => isRelocating(f.action);
 export function relocationOf(s) {
     const all = [...(s.in || []), ...(s.out || [])];
     const pu = all.find(f => f.action === "pickup") || all.find(isMove);
@@ -24,7 +25,7 @@ export function flowChip(f, move = null) {
     // undefined a flow without a quantity actually carries.
     const perKm = !!move && !isMove(f);
     const q = perKm ? trim((Number(f.q) || 0) * move.payload) : (Number(f.q) || 0), u = f.u ? esc(f.u) : "";
-    const base = f.action === "work" ? `${q}${u || "h"}` : (q ? `${q}${u ? " " + u : ""}` : "");
+    const base = isLabour(f.action) ? `${q}${u || "h"}` : (q ? `${q}${u ? " " + u : ""}` : "");
     const qty = base && perKm ? `${base}<span class="rc-perkm">/km</span>` : base;
     return `<span class="rc-flow rc-${esc(f.action || "consume")}">`
         + `<span class="rc-emoji">${f.emoji || "•"}</span>`

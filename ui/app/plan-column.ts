@@ -19,6 +19,7 @@
 //
 // The graph it walks is app/recipe-graph.js. This file draws.
 
+import { isOutput } from "./actions-catalogue.js";
 import { PLAN } from './core.js';
 import { effect } from './reactive.js';
 import {
@@ -40,18 +41,23 @@ interface Verb {
   col: string;
   word: string;
 }
-const VERB: Record<string, Verb> = {
-  consume: { dir: -1, col: CREDIT,   word: "consume" },  // drawn down (credit rail)
-  use:     { dir: -1, col: "#6a8aaa", word: "use"     },  // occupied, not spent
-  work:    { dir: -1, col: "#1581a8", word: "work"    },  // labour (skill rail)
-  pickup:  { dir: -1, col: "#7a6a8a", word: "pickup"  },
-  cite:    { dir: -1, col: "#999",    word: "cite"    },
-  produce: { dir:  1, col: "#2e7d32", word: "produce" },  // brought into being
-  dropoff: { dir:  1, col: "#2e7d32", word: "dropoff" },
-  modify:  { dir:  1, col: "#3f8f6a", word: "modify"  },
-  "deliver-service": { dir: 1, col: "#2e7d32", word: "deliver" },  // produced & delivered, never held
+// the colour and the word are the page's own; which side of a process the act
+// stands on is the table's (actions-catalogue: an input is drawn, an output lands)
+const LOOK: Record<string, { col: string; word: string }> = {
+  consume: { col: CREDIT,   word: "consume" },  // drawn down (credit rail)
+  use:     { col: "#6a8aaa", word: "use"     },  // occupied, not spent
+  work:    { col: "#1581a8", word: "work"    },  // labour (skill rail)
+  pickup:  { col: "#7a6a8a", word: "pickup"  },
+  cite:    { col: "#999",    word: "cite"    },
+  produce: { col: "#2e7d32", word: "produce" },  // brought into being
+  dropoff: { col: "#2e7d32", word: "dropoff" },
+  modify:  { col: "#3f8f6a", word: "modify"  },
+  "deliver-service": { col: "#2e7d32", word: "deliver" },  // produced & delivered, never held
 };
-const verbOf = (action: string | undefined): Partial<Verb> => VERB[action || ""] || {};
+const verbOf = (action: string | undefined): Partial<Verb> => {
+  const look = LOOK[action || ""];
+  return look ? { ...look, dir: isOutput(action) ? 1 : -1 } : {};
+};
 
 const fmtQ = (f: ScopeFlow): string =>
   `${f.q}${f.u && !isCountUnit(f.u) ? " " + f.u : ""}`.trim();

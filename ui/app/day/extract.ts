@@ -33,6 +33,7 @@
 // `check` is asked again with the reason quoted back, once; then `sanitize`
 // salvages what it can of the last reply — the floor.
 
+import { LOG_ACTIONS as CATALOGUE_LOG_ACTIONS } from "../actions-catalogue.js";
 import { conform, readFirstJSONObject } from "../conform.js";
 
 import { recipes } from "../recipe-graph.js";
@@ -212,7 +213,7 @@ export function scanContacts(text: string, book: ContactRef[]): ExtractedContact
 }
 
 // ── the passes ──────────────────────────────────────────────────────────────
-export const LOG_ACTIONS: LogAction[] = ["work", "produce", "consume", "use", "raise", "lower"];
+export const LOG_ACTIONS = CATALOGUE_LOG_ACTIONS as readonly LogAction[];
 
 /**
  * A pass, declaratively. The model's reply is untrusted, so `sanitize` takes

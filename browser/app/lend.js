@@ -112,7 +112,7 @@ export function lendControl(t, opts = {}) {
     // ALREADY LENT — the grant in force, and the one power that ends it early
     if (g) {
         drafts.delete(t.spec);
-        box.appendChild(el("div", "sl-soc-live", `🤲 ${g.kind === "consume" ? "in the commons' purse" : "lent to the commons"} — ${grantLine(g, t)}`));
+        box.appendChild(el("div", "sl-soc-live", `🤲 ${g.kind === "consume" ? "in the commons' purse" : "lent to the commons"} — ${grantLine(g, t)}`)); // verb-meant: a grant's kind, not an act
         const rec = el("a", "sl-soc-recall");
         armTwice(rec, { rest: "recall", armed: "sure? this strands what the plan met through it",
             onConfirm: () => { recall(g).then(r => hint(r.says, r.ok ? "success" : "error")); } });

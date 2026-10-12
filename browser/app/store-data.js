@@ -6,6 +6,7 @@
 // of each spec, the schedule of counts and the offering of those that are due,
 // the contests of this person's counts, and the prints. A face draws; this holds
 // and fetches. Nothing here draws a row.
+import { isAdjustment } from "./actions-catalogue.js";
 import { MODES, HANDLERS } from './core.js';
 import { signal } from './reactive.js';
 import { openCapture } from './capture.js';
@@ -111,7 +112,7 @@ export function historyLine(spec) {
         return "";
     const shown = rows.slice(-HISTORY_SHOWN);
     const one = (r) => {
-        const count = r.action === "raise" || r.action === "lower";
+        const count = isAdjustment(r.action);
         const q = count ? `${r.latest > 0 ? "+" : ""}${r.latest.toFixed(1)}` : `${r.latest.toFixed(1)}${r.unit ? " " + r.unit : ""}`;
         return `${r.technique ? r.technique + " " : ""}${q}`;
     };

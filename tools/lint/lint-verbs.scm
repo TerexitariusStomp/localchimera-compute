@@ -72,6 +72,40 @@
   (or (string-contains path "/tests/")
       (string-suffix? "vf/schemas.scm" path) (string-suffix? "vf/formulas/actions.scm" path)))
 
+;; ── the page (ui/app/*.ts) ──────────────────────────────────────────────────
+;; The same count over the browser's sources: a line holding an array literal of two
+;; or more verbs as strings (`["consume", "use", "work"]`, a set the generated
+;; ui/app/actions-catalogue.ts gives), or a test against the literal `"produce"` or
+;; `"consume"`. The catalogue itself, the generated row types and the demo's fixtures
+;; are no sites; a line that says why its literal is meant (`// verb-meant: …`) leaves
+;; the count, as in Scheme.
+(define %ts-list-rx (make-regexp "\\[(\"[a-z-]+\"(, *\"[a-z-]+\")+)\\]"))
+(define %ts-eq1-rx  (make-regexp "[!=]== *\"(produce|consume)\""))
+(define (ts-site? line)
+  (and (not (meant? line))
+       (not (string-contains line "verb-meant:"))
+       (let ((code (let ((i (string-contains line "//"))) (if i (substring line 0 i) line))))
+         (or (any (lambda (m) (>= (verbs-in (match:substring m 1)) 2)) (list-matches %ts-list-rx code))
+             (and (regexp-exec %ts-eq1-rx code) #t)))))
+(define (ts-skip? path)
+  (or (string-suffix? "actions-catalogue.ts" path) (string-suffix? "wire-rows.ts" path)
+      (string-contains path "/demo") (string-suffix? ".d.ts" path)))
+(define (ts-files root)
+  (if (not (file-exists? root)) '()
+      (file-system-fold
+       (lambda (path stat result) (not (string-contains path "/.")))
+       (lambda (path stat result) (if (and (string-suffix? ".ts" path) (not (ts-skip? path))) (cons path result) result))
+       (lambda (path stat result) result) (lambda (path stat result) result) (lambda (path stat result) result)
+       (lambda (path stat errno result) result) '() root)))
+(define (ts-sites-of path)
+  (call-with-input-file path
+    (lambda (port)
+      (let loop ((n 1) (acc '()))
+        (let ((line (read-line port)))
+          (cond ((eof-object? line) (reverse acc))
+                ((ts-site? line) (loop (+ n 1) (cons (cons n line) acc)))
+                (else (loop (+ n 1) acc))))))))
+
 (define (scm-files root)
   (if (not (file-exists? root)) '()
       (file-system-fold
@@ -92,8 +126,10 @@
 (define %baseline-file "tools/lint/verb-sites.baseline")
 (define (counts)
   (sort (filter (lambda (p) (> (cdr p) 0))
-                (map (lambda (f) (cons f (length (sites-of f))))
-                     (append-map scm-files '("module" "server" "tools"))))
+                (append (map (lambda (f) (cons f (length (sites-of f))))
+                             (append-map scm-files '("module" "server" "tools")))
+                        (map (lambda (f) (cons f (length (ts-sites-of f))))
+                             (ts-files "ui/app"))))
         (lambda (a b) (string<? (car a) (car b)))))
 
 (define (read-baseline)
@@ -114,7 +150,7 @@
     (cond
      ((member "--list" args)
       (for-each (lambda (p) (for-each (lambda (s) (format #t "~a:~a: ~a~%" (car p) (car s) (string-trim (cdr s))))
-                                      (sites-of (car p))))
+                                      (if (string-suffix? ".ts" (car p)) (ts-sites-of (car p)) (sites-of (car p)))))
                 now))
      ;; --write keeps a gain and never a loss: a file that holds more than its baseline
      ;; is named and nothing is written. --redefine records the counts as they are, for

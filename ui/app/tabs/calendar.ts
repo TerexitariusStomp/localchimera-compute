@@ -12,6 +12,7 @@
 // the canonical version for the repl app; ported here because app.html renders
 // entirely in JS/d3 (day-boot does "no SXML, no rendering"). Reads dial state at
 // call time, so the main.js <-> calendar.js import cycle is benign.
+import { CREATING_ACTIONS } from "../actions-catalogue.js";
 import type { DayEvent } from '../seam.js';
 import type { RingItem } from '../ring.js';
 import { dropRecurringDay, av_setDays, av_daysLabel } from '../ring.js';
@@ -726,8 +727,8 @@ const GERUND: Record<string, string> = {
   pay: "paying", tell: "telling",
 };
 const gerund = (a: string): string => GERUND[a] || a;
-/** The actions that are the act's OUTPUT — what it leaves behind. */
-const OUTPUT = new Set(["produce", "deliver-service"]);
+/** The actions that are the act's OUTPUT — what comes newly into being (the table's word). */
+const OUTPUT = new Set(CREATING_ACTIONS);
 const VERB_EMOJI: Record<string, string> = {
   use: "🔧", work: "💪", consume: "📦", cite: "📎", produce: "🌱", "deliver-service": "🤝",
   "obtain-entity": "📜", "obtain-person": "🆔", pay: "💶", tell: "📣",

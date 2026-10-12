@@ -22,6 +22,7 @@
 // plus the recipe itself as JSON — so the proposal carries the recipe whole,
 // and adoption on a yes is the seeding of exactly what was voted on.
 
+import { LOG_ACTIONS, isAdjustment, isInput, isOutput } from "../actions-catalogue.js";
 import { esc } from '../template.js';
 import { readJSON, writeJSON } from '../store.js';
 import type { ScopeRecipe, ScopeRecipeStep, ScopeFlow } from '../seam.js';
@@ -123,10 +124,12 @@ export interface BuilderHost {
   onChange: () => void;
 }
 
-const ACTIONS = ["consume", "use", "work", "produce"];
+// what a drafted step may narrate: the log's verbs, less a count's adjustments;
+// which side each stands on is the table's
+const ACTIONS = LOG_ACTIONS.filter(a => !isAdjustment(a));
 
 function flowRow(si: number, side: "in" | "out", fi: number, f: ScopeFlow): string {
-  const acts = side === "in" ? ACTIONS.filter(a => a !== "produce") : ["produce"];
+  const acts = side === "in" ? ACTIONS.filter(isInput) : ACTIONS.filter(isOutput);
   return `<div class="wd-flow" data-step="${si}" data-side="${side}" data-flow="${fi}">`
     + `<select class="wd-act" title="what the flow does">${acts.map(a => `<option${(f.action || (side === "in" ? "consume" : "produce")) === a ? " selected" : ""}>${a}</option>`).join("")}</select>`
     + `<input class="wd-q" type="number" step="any" min="0" value="${esc(String(f.q ?? ""))}" title="quantity">`

@@ -26,6 +26,7 @@
 // solve, when it can be had, is labelled ground truth and preferred over the
 // snapshot for any planning claim.
 
+import { isUsingUp } from "../actions-catalogue.js";
 import { S } from '../state.js';
 import { havKm } from '../geom.js';
 import { EXT, HANDLERS, PLACES, PLAN, USER, pcoord } from '../core.js';
@@ -116,7 +117,7 @@ function orbContext(): Record<string, unknown> {
     recipes: host.recipes().map(r => ({ makes: r.produces || r.name,
       via: (r.steps || []).map(s => s.name),
       inputs: [...new Set((r.steps || []).flatMap(s =>
-        (s.in || []).filter(f => f.action === "consume").map(f => f.spec)))] })),
+        (s.in || []).filter(f => isUsingUp(f.action)).map(f => f.spec)))] })),
     // `alias` is the field a contact actually carries (the KERI contact book's
     // own name for it); this read `c.name` and so handed the orb a list of
     // relationships with no one in them, since JSON.stringify drops the
