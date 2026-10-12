@@ -85,7 +85,7 @@
     (let ((alice ($ as 'get-account "alice")))
       (check-pred "alice exists" (account? alice))
       (check "alice agent-id" (account-agent-id alice) "alice")
-      (check "alice claimed = 0" (account-claimed-capacity alice) 0)
+      (check "alice claimed = 0 (read off the claim events)" ($ as 'citizen-claimed "alice") 0)
       (check "alice CCF = 1" (account-contribution-capacity-factor alice) 1))))
 
 ;;; ════════════════════════════════════════════════════════════════════════════

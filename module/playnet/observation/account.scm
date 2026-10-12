@@ -18,10 +18,9 @@
 ;;;       balance = sum(work provider=aid effort)
 ;;;               - sum(transfer receiver=aid, classified individually-claimable, effort)
 ;;;
-;;;   - The account record still caches `gross-contribution-credited`
-;;;     (eagerly updated by credit-from-event) and `claimed-capacity`
-;;;     (unused for balance; retained for schema stability). The
-;;;     authoritative values come from the observer's event log.
+;;;   - The account record holds the contribution-capacity factor alone.
+;;;     Gross and claimed are readings of the observer's event log
+;;;     (validated-gross, claim-effort); nothing here caches them.
 ;;;
 ;;; STATE: observer-ref (near actor) + accounts hashmap (agent-id -> <account>).
 ;;; No pool hashmap — pool is a derived query over observer resources.
@@ -226,22 +225,24 @@
   (lambda () (list observer-ref recipe-store-ref
                    (serialize-hashmap accounts account->list)))
 
-  #:version 5
+  #:version 6
 
   #:restore
   (lambda (version obs rs sa)
     ;; on-work isn't serializable; restore with #f, gateway re-binds via
     ;; set-on-work after recovery (mirrors plan-store.set-on-commitment).
-    ;; v5 dropped the gross-contribution-credited cache field — gross is
-    ;; now derived from the observer via the Validation Gate (§III.1).
-    ;; Legacy portraits (v3/v4) are migrated by dropping that 2nd field.
+    ;; v5 dropped the gross-contribution-credited cache field; v6 the
+    ;; claimed-capacity cache: each is a reading of the observer's events now
+    ;; (validated-gross, claim-effort). An older portrait is read by dropping
+    ;; the cached fields.
     (define (legacy->account lst)
       (match lst
-        ((aid _gross claimed ccf) (make-account aid claimed ccf))))
+        ((aid _gross _claimed ccf) (make-account aid ccf))
+        ((aid _claimed ccf) (make-account aid ccf))))
     (case version
-      ((3 4) (spawn ^account-store obs rs
-                    (deserialize-hashmap sa legacy->account) #f))
-      ((5)   (spawn ^account-store obs rs
+      ((3 4 5) (spawn ^account-store obs rs
+                      (deserialize-hashmap sa legacy->account) #f))
+      ((6)   (spawn ^account-store obs rs
                     (deserialize-hashmap sa list->account) #f))
       (else (error "Unknown ^account-store version" version))))
 
@@ -252,7 +253,7 @@
     ((ensure-account agent-id)
      (if (hashmap-ref accounts agent-id #f)
          agent-id
-         (let ((acct (make-account agent-id 0 1)))
+         (let ((acct (make-account agent-id 1)))
            (bcom (^account-store bcom observer-ref recipe-store-ref
                    (hashmap-set accounts agent-id acct) on-work listeners)
                  agent-id))))
@@ -284,7 +285,7 @@
                 (existing (hashmap-ref accounts agent-id #f))
                 (new-accounts (if existing accounts
                                   (hashmap-set accounts agent-id
-                                    (make-account agent-id 0 1)))))
+                                    (make-account agent-id 1)))))
            (when on-work (on-work event))
            (fire-listeners! listeners)
            (bcom (^account-store bcom observer-ref recipe-store-ref
@@ -304,7 +305,7 @@
                 (existing (hashmap-ref accounts agent-id #f))
                 (new-accounts (if existing accounts
                                   (hashmap-set accounts agent-id
-                                    (make-account agent-id 0 1)))))
+                                    (make-account agent-id 1)))))
            (bcom (^account-store bcom observer-ref recipe-store-ref
                    new-accounts on-work listeners)
                  qty))))
@@ -340,7 +341,7 @@
          (bcom (^account-store bcom observer-ref recipe-store-ref
                  (if existing accounts
                      (hashmap-set accounts agent-id
-                       (make-account agent-id 0 1)))
+                       (make-account agent-id 1)))
                  on-work listeners)))))
 
     ((set-ccf agent-id new-ccf)
@@ -350,10 +351,8 @@
      (when (or (< new-ccf 0) (> new-ccf 1))
        (error "CCF must be in [0, 1]" agent-id new-ccf))
      (let* ((existing (hashmap-ref accounts agent-id #f))
-            (acct (or existing (make-account agent-id 0 1)))
-            (updated (make-account agent-id
-                                   (account-claimed-capacity acct)
-                                   new-ccf)))
+            (acct (or existing (make-account agent-id 1)))
+            (updated (make-account agent-id new-ccf)))
        (fire-listeners! listeners)
        (bcom (^account-store bcom observer-ref recipe-store-ref
                (hashmap-set accounts agent-id updated) on-work listeners))))
@@ -422,7 +421,7 @@
                  (claimant (cadr terms))
                  (eff-balance (effective-balance (credit-cells scope-roots) claimant (current-social-free-time) level))
                  (acct (or (hashmap-ref accounts claimant #f)
-                           (make-account claimant 0 1))))
+                           (make-account claimant 1))))
             (unless (equal? (car terms) (economic-resource-conforms-to resource))
               (error "the plan's claim names another good"
                      fulfills (economic-resource-conforms-to resource)))
@@ -461,15 +460,13 @@
                        ;; ledger-claimed and the claim ACDC read it back
                        #:distribution-mode 'individual-claimable)))
               ($ observer-ref 'record-event event)
-              (let* ((updated (make-account
-                                claimant
-                                (+ (account-claimed-capacity acct) labor-cost)
-                                (account-contribution-capacity-factor acct))))
-                (fire-listeners! listeners)
-                (bcom (^account-store bcom observer-ref recipe-store-ref
-                        (hashmap-set accounts claimant updated) on-work
-                        listeners)
-                      #t))))))))
+              ;; what the claimant has claimed is the events' sum (claim-effort);
+              ;; the account stands so the fold reads them as a citizen
+              (fire-listeners! listeners)
+              (bcom (^account-store bcom observer-ref recipe-store-ref
+                      (hashmap-set accounts claimant acct) on-work
+                      listeners)
+                    #t)))))))
 
     ;; --- Derived queries (event-sourced + elastic) ---
 
@@ -564,9 +561,9 @@
        ($ observer-ref 'validated-gross agent-id level)))
 
     ((citizen-claimed agent-id)
-     ;; Claimed-capacity for aid in THIS scope (0 if no account).
-     (let ((a (hashmap-ref accounts agent-id #f)))
-       (if a (account-claimed-capacity a) 0)))
+     ;; What aid has claimed in THIS scope: the sum of their individually-
+     ;; claimable receipts, read off the observer's events.
+     ($ observer-ref 'claim-effort agent-id))
 
     ((citizen-unmet agent-id)
      ;; (1 - CCF) for aid in THIS scope (0 if no account).
@@ -639,7 +636,7 @@
             (if (person-aid? aid) (list (cons (cons 'citizen aid) 1)) '())
             (if a
                 (let ((ccf (account-contribution-capacity-factor a)))
-                  (list (cons (cons 'claimed aid) (account-claimed-capacity a))
+                  (list (cons (cons 'claimed aid) ($ observer-ref 'claim-effort aid))
                         (cons (cons 'ccf aid) ccf)
                         (cons (cons 'unmet aid) (- 1 ccf))))
                 '()))))

@@ -71,17 +71,16 @@
 ;; COMMUNE ACCOUNT (labor-credit system)
 ;; ═══════════════════════════════════════════════════════════════════════
 
-;;; Account — per-agent claim-capacity and capacity-factor tracker.
-;;; Gross social labor is NOT stored here — it's derived from observer
-;;; events via the Validation Gate (§III.1), so there's no cache to
-;;; drift. The account record only holds what is genuinely per-agent
-;;; persistent state: how much of the pool this agent has already
-;;; claimed, and their Contribution Capacity Factor.
+;;; Account — a person's Contribution Capacity Factor, and nothing else.
+;;; Gross social labour is derived from the observer's work events through
+;;; the Validation Gate (§III.1), and what the person has claimed from the
+;;; pool from the observer's claim events (`claim-effort`): each a reading,
+;;; so there is no cache to drift. The record holds the one fact that is
+;;; stated rather than read: the factor.
 ;;; Fields: agent-id (string),
-;;;         claimed-capacity (number, running total claimed from pool),
 ;;;         contribution-capacity-factor (number 0-1, ability to contribute).
 (define-vf-record <account> Account
-  (agent-id claimed-capacity contribution-capacity-factor)
+  (agent-id contribution-capacity-factor)
   #:register register-vf-record!)
 
 (define make-account                              (vf-record-constructor <account>))

@@ -229,7 +229,7 @@
                <resource-specification> <satisfaction-state>
                <scenario-definition> <scenario> <spatial-thing>
                <specific-date-window> <time-range> <unit> <week-schedule>
-               account-agent-id account-claimed-capacity
+               account-agent-id
                account-contribution-capacity-factor account?
                action-definition-accountable-effect
                action-definition-accounting-effect
