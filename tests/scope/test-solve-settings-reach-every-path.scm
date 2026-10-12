@@ -12,6 +12,7 @@
 ;;; Run: guile --no-auto-compile -q -L module tests/scope/test-solve-settings-reach-every-path.scm
 
 (use-modules (playnet solve world) (playnet solve robust) (playnet solve records) ((playnet utils units) #:select (%effort-unit)))
+(use-modules (playnet solve keywords) ((playnet solve plan) #:select (%plan-from-records)) ((playnet solve engine) #:select (apply-solve-settings!)) (srfi srfi-1) ((ice-9 session) #:select (procedure-arguments)))
 (use-modules (playnet test harness) (playnet test scope)
              (playnet vf schemas) (playnet scope live)
              (goblins) (goblins utils hashmap)
@@ -63,17 +64,18 @@
 (check "…and its scope path (here empty: no scope stands behind the push)" (with-vat vat *scope-path*) '())
 
 (display "\n── the world a scenario ingests is the world ingest-records! reads ──\n")
-(define world-kws %world-keywords)
-(define ingest-kws
-  '(#:periods #:movable #:storable #:whole #:proc-frag #:tau #:hold #:demand #:eco-caps #:reserve #:backend
-    #:eco-frag #:eco-spec-frag #:eco-budget #:eco-container #:eco-couple #:couplings #:eco-prior #:stock-frag
-    #:stock-prices #:agent-hours #:agent-skills #:skill-dynamics #:agent-position #:horizon #:period-spans
-    #:refine-periods? #:willing? #:legal-forbids? #:legal-decorate #:per-agent? #:desire-weights #:certificates
-    #:arc-table #:arc-topology? #:manners #:never-raw #:raws #:resource-suppliers #:span-of #:live-avail #:composition))
-(define held-back %held-back-world-keywords)
-(check "every keyword ingest-records! reads reaches a scenario's world, or is held back by name"
-       (remove (lambda (k) (or (memq k world-kws) (memq k held-back))) ingest-kws) '())
-(check "a held-back keyword is one ingest-records! reads and a scenario does not take"
-       (every (lambda (k) (and (memq k ingest-kws) (not (memq k world-kws)))) held-back) #t)
+;; the one table (solve/keywords.scm) against the doors' OWN arguments, read off
+;; each procedure: no private copy of any list stands here
+(define (keywords-taken proc)
+  (map car (or (assq-ref (procedure-arguments proc) 'keyword) '())))
+(define (set= a b) (and (lset<= eq? a b) (lset<= eq? b a)))
+(check "ingest-records! reads exactly the world and the held keywords"
+       (set= (keywords-taken ingest-records!) (append (solve-keywords-of 'world) (solve-keywords-of 'held))) #t)
+(check "apply-solve-settings! writes exactly the settings"
+       (set= (keywords-taken apply-solve-settings!) (solve-keywords-of 'setting)) #t)
+(check "plan-from-records takes every keyword of the table, and no other"
+       (set= (keywords-taken %plan-from-records) (map car %solve-keywords)) #t)
+(check "%world-keywords is the table's world kind" (equal? %world-keywords (solve-keywords-of 'world)) #t)
+(check "the held-back keywords are the table's held kind" (equal? %held-back-world-keywords (solve-keywords-of 'held)) #t)
 
 (test-summary!)

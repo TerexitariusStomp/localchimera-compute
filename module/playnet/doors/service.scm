@@ -417,7 +417,7 @@ scope walk wherever a solve wants the scope's declared needs."
             (when memo (hash-set! memo sid st))
             st))))
   (define (gather rs root sid)             ; THE door: recipes, gated by standing, holes yielding once mapped
-    (gather-recipes rs #:admit? (compose-admit (assq-ref (standing root sid) 'admit?) (hole-admit rs))))
+    (gather-recipes rs #:admit? (compose-admit (solve-standing-admit? (solve-standing-of root sid)) (hole-admit rs))))
   ;; the scope's STANDING onto a plan-fn call — each recipe's response (the
   ;; curve of its own runs, read by every future at that future's stress),
   ;; the contrary observations against its map (the world as its workers
@@ -432,7 +432,10 @@ scope walk wherever a solve wants the scope's declared needs."
     (let ((w (if world-of
                  (apply world-of root sid kw)
                  `((view . ,($ ($ root 'observer) 'all-resources)) (caps . ()) (span . ())))))
-      (cons (cons 'caps (append (means-caps-of cache root) (assq-ref w 'caps)))
+      (cons (cons 'caps (let ((own (assq-ref w 'caps)))
+                          ;; the allocation stands under the world's own caps: a located
+                          ;; good both name is the world's (two caps on one good add at ingest)
+                          (append own (filter (lambda (c) (not (assoc (car c) own))) (means-caps-of cache root)))))
             (alist-delete 'caps w))))
   ;; THE SETTINGS OF A SOLVE, AS ONE ALIST MERGED BY KEY. What the scope
   ;; stands on (its standing, its warm start, the governed dials, the voice
@@ -448,23 +451,47 @@ scope walk wherever a solve wants the scope's declared needs."
       (cons (cons 'eco-caps caps)
             (append (filter (lambda (kv) (not (eq? (car kv) 'eco-caps))) over)
                     (filter (lambda (kv) (and (not (eq? (car kv) 'eco-caps)) (not (assq (car kv) over)))) standing)))))
-  (define (standing-settings root sid)
-    (let ((st (standing root sid)))
-      (append
-       (filter cdr `((admit? . ,(assq-ref st 'admit?))
-                     (proc-frag . ,(let ((r (assq-ref st 'proc-frag))) (and (pair? r) r)))
-                     (responses . ,(let ((r (assq-ref st 'responses))) (and (pair? r) r)))
-                     ;; what has been seen of the map: the reading fold's `contrary` read
-                     ;; (the rail's standing observations at their cautious reading, folded
-                     ;; with every other reading), the standing's own rows where no node stands
-                     (observed . ,(let* ((n (node-of sid nodes-reading))
+  ;; THE STANDING A SOLVE IS GIVEN, read once per request (the standing memo's
+  ;; extent) into one record (doors/planner/ctx.scm solve-standing): the scope's
+  ;; standing, what has been seen of the map, the last solve's x and rows, the UC
+  ;; allocation as caps, the governed dials, the voice field, the roster's readers.
+  ;; The plain solve lays it under the caller's keywords (standing->settings,
+  ;; merge-settings); the federated record and the means consensus read the
+  ;; fields they take; the gate reads its admit?. One reading for every path.
+  (define (solve-standing-of root sid)
+    (let* ((memo (standing-memo))
+           (key (cons 'solve-standing sid))
+           (held (and memo (hash-get-handle memo key))))
+      (if held
+          (cdr held)
+          (let* ((st (standing root sid))
+                 (dials (policy-dials ($ root 'plan-store)))   ; a root answers its plan-store; #f reads the defaults
+                 (tau (let ((t (memq #:voice-tau dials))) (if (and t (number? (cadr t))) (cadr t) 0.0)))
+                 (vn (node-of sid nodes-voice))
+                 (voice? (and vn (> tau 0.0)))
+                 (rec (make-solve-standing
+                       #:admit? (assq-ref st 'admit?)
+                       #:proc-frag (let ((r (assq-ref st 'proc-frag))) (if (pair? r) r '()))
+                       #:responses (let ((r (assq-ref st 'responses))) (if (pair? r) r '()))
+                       ;; what has been seen of the map: the reading fold's `contrary` read
+                       ;; (the rail's standing observations at their cautious reading, folded
+                       ;; with every other reading), the standing's own rows where no node stands
+                       #:observed (let* ((n (node-of sid nodes-reading))
                                          (r (or (and n (false-if-exception ($ n 'contrary))) (assq-ref st 'observed))))
-                                    (and (pair? r) r)))
-                     (warm-x . ,(warm-x-of cache sid))
-                     ;; the previous plan's rows: what it lands is where stock on the way counts
-                     (arriving . ,(let ((r (planned-material cache sid))) (and (pair? r) r)))))
-       `((eco-caps . ,(means-caps-of cache root)))
-       (kw->alist (policy-kw root sid)))))
+                                    (if (pair? r) r '()))
+                       #:warm-x (warm-x-of cache sid)
+                       ;; the previous plan's rows: what it lands is where stock on the way counts
+                       #:arriving (or (planned-material cache sid) '())
+                       #:eco-caps (means-caps-of cache root)
+                       #:dials dials
+                       #:voice-pushes (and voice? ($ vn 'pushes))
+                       #:voice-hours (and voice? ($ vn 'hours-of))
+                       #:scope-path (scope-ancestry sid)
+                       #:practice-peers practice-observers
+                       #:agent-of home-agent-of)))
+            (when memo (hash-set! memo key rec))
+            rec))))
+  (define (standing-settings root sid) (standing->settings (solve-standing-of root sid)))
   (define (standing-kw root sid kw)
     (alist->kw (merge-settings (standing-settings root sid) (kw->alist kw))))
   ;; the voice field's inputs, a fact about the scope like the rest: τ from the
@@ -533,16 +560,7 @@ scope walk wherever a solve wants the scope's declared needs."
     (let loop ((s sid) (acc '()))
       (if (or (not s) (member s acc)) (reverse acc)
           (loop (hash-ref %scope-parent s #f) (cons s acc)))))
-  (define (policy-kw root sid)
-    (let* ((dials (policy-dials ($ root 'plan-store)))   ; a root answers its plan-store; #f reads the defaults
-           (tau (let ((t (memq #:voice-tau dials))) (if (and t (number? (cadr t))) (cadr t) 0.0)))
-           (vn (node-of sid nodes-voice))
-           (path (scope-ancestry sid)))
-      (append dials
-              (list #:practice-peers practice-observers #:agent-of home-agent-of)
-              (if (and vn (> tau 0.0))
-                  (list #:voice-pushes ($ vn 'pushes) #:voice-hours ($ vn 'hours-of) #:scope-path path)
-                  (list #:scope-path path)))))
+
   ;; ── THE SOLVE, OFF THE VAT ──────────────────────────────────────────────
   ;; plan-fn* is the one door every solve crosses. With a vat in hand
   ;; (set-solve-vat!, the gateway's) it is a QUEUE: each call is a job — the
@@ -1330,7 +1348,7 @@ scope walk wherever a solve wants the scope's declared needs."
                 #:horizon hz
                 #:labour-entries (and=> (labour-pool-of sid)
                                          (lambda (p) (pool-entries ($ p 'fold-own))))
-                #:proc-frag (or (assq-ref (standing root sid) 'proc-frag) '()))))))))
+                #:proc-frag (solve-standing-proc-frag (solve-standing-of root sid)))))))))
   ;; a door over one scope that answers (ok . x) or (error . msg): the shape
   ;; every commitment-arc door has — the root handed to BODY, any raise a
   ;; failure, BODY's value the success
@@ -1389,7 +1407,7 @@ scope walk wherever a solve wants the scope's declared needs."
   (planner-ctx-install! ctx
     cache roster-ref roster-entries roster-add! roster-forget! with-scope with-person
     scoped door-read home-scope-of adopt-home! set-home-row! person-events
-    person-observers standing world-of* gather plan-fn* on-plan resolve-scope!
+    person-observers standing solve-standing-of world-of* gather plan-fn* on-plan resolve-scope!
     resolve-one-stale! resolve-stale-scopes! node-of labour-pool-of rehang-scope!
     slots-changed! slots-watch! slots-unwatch! means-changed! means-rebuild!
     means-fold-total steward-admit steward-ok? means-criteria scope-community

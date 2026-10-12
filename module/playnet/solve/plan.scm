@@ -11,6 +11,7 @@
 (define-module (playnet solve plan)
   #:use-module ((playnet utils host) #:select (getenv get-internal-real-time internal-time-units-per-second string-contains))
   #:use-module (playnet solve world)
+  #:use-module ((playnet solve keywords) #:select (pick-keywords))
   #:use-module (srfi srfi-1)
   #:use-module ((playnet utils catch) #:select (catch* throw* with-throw-handler*))
   #:use-module (ice-9 format)
@@ -41,6 +42,7 @@
                                   (acquire '()) (promote #f)
                                   (agent-hours agent-window-hours) (agent-skills #f) (skill-dynamics #f)
                                   (agent-position (lambda (id t) #f)) (horizon #f) (period-spans #f)
+                                  (refine-periods? #t)      ; the partition refines at the roster's clock boundaries (ingest-located!)
                                   (node-budget #f)          ; the search's node budget for THIS solve (else *bnb-nodes*)
                                   (warm-x #f) (tstart #f) (willing? #f)
                                   ;; the standing plan's DECIDED discrete state (report key
@@ -130,27 +132,20 @@
   (if (pair? scenarios)
       (apply robust-plan-report resources agents spatials recipe-procs recipe-flows opts)
       (begin
-  (ingest-records! resources agents spatials recipe-procs recipe-flows
-    #:periods periods #:movable movable #:storable storable #:whole whole #:proc-frag proc-frag #:tau tau #:hold hold #:specs specs
-    #:demand demand #:eco-caps eco-caps #:reserve reserve #:backend backend
-    #:eco-frag eco-frag #:eco-spec-frag eco-spec-frag #:eco-budget eco-budget
-    #:eco-container eco-container #:eco-couple eco-couple #:couplings couplings #:eco-prior eco-prior #:stock-frag stock-frag #:stock-prices stock-prices
-    #:agent-hours agent-hours #:agent-skills agent-skills #:agent-position agent-position
-    #:skill-dynamics skill-dynamics
-    #:horizon horizon #:period-spans period-spans #:willing? willing? #:legal-forbids? legal-forbids?
-    #:legal-decorate legal-decorate #:per-agent? per-agent? #:desire-weights desire-weights #:certificates certificates
-    #:arc-table arc-table #:arc-topology? arc-topology? #:manners manners #:never-raw never-raw #:raws raws
-    #:resource-suppliers resource-suppliers #:composition composition #:span-of span-of
-    #:live-avail live-avail)
+  ;; the world and the two held keywords, forwarded by KIND off the keyword
+  ;; list this call was given (solve/keywords.scm): what the caller stated
+  ;; reaches the ingest, what it left unstated takes the ingest's own default,
+  ;; the same defaults this door declares
+  (apply ingest-records! resources agents spatials recipe-procs recipe-flows
+         (pick-keywords opts '(world held)))
   ;; reproduction bands — poured AFTER ingest seeds *init* from resources, BEFORE
   ;; build-located reads it (a bare floor subtracts from the good's on-hand, so the
   ;; plan must produce ≥ floor to keep its balance non-negative — the reproduction
   ;; of labour-power defended by the barrier every good has).
   (set! *budgeted-floors* budgeted-floors)
-  ;; the voice field's inputs and the governed dials, after ingest's reset
-  (apply-solve-settings! #:voice-tau voice-tau #:voice-pushes voice-pushes #:voice-hours voice-hours #:scope-path scope-path
-                         #:pref-bound pref-bound #:emp-rho emp-rho #:kappa kappa #:want-as-cap want-as-cap
-                         #:stock-draw-hours stock-draw-hours)
+  ;; the voice field's inputs and the governed dials, after ingest's reset —
+  ;; the settings kind, as the robust assembly applies them
+  (apply apply-solve-settings! (pick-keywords opts '(setting)))
   (set! *acquire* acquire) (set! *promote* promote)   ; before the pour: the tier table decides what is poured
   (when (and (getenv "PLANNER_PD_DEBUG") (pair? budgeted-floors)) (format (current-error-port) "  [budget] laid ~s~%" budgeted-floors))
   (apply-repro-bands! (repro-bands #:floors repro-floors #:caps repro-caps

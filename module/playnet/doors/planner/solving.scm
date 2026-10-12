@@ -219,7 +219,7 @@
                                               ($ sts 'all-locations) procs flows spec place
                                               #:demand dem
                                               #:eco-caps (assq-ref world 'caps) #:span-of (assq-ref world 'span)
-                                              #:proc-frag (or (assq-ref (standing root sid) 'proc-frag) '()))))))))))
+                                              #:proc-frag (solve-standing-proc-frag (solve-standing-of root sid)))))))))))
                         communes))
                   (prev (map (lambda (c)
                                (let ((rt (roster-ref (car c))))

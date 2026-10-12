@@ -28,6 +28,8 @@
 ;;; it above its declared-doors.
 
 (define-module (playnet doors planner ctx)
+  #:use-module ((playnet utils keywords) #:select (kw->alist))
+  #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-9)
   #:use-module (playnet protocol context)
   #:export (make-planner-ctx planner-ctx? with-planner-ctx planner-ctx-install!
@@ -83,7 +85,64 @@
             set-planner-ctx-owed-of! set-planner-ctx-settle-of!
             set-planner-ctx-may-steward-of! set-planner-ctx-lent-of!
             set-planner-ctx-knows-of! set-planner-ctx-pool-of!
-            set-planner-ctx-contrary-of!))
+            set-planner-ctx-contrary-of!
+            ;; the standing a solve is given (define-context solve-standing below)
+            <solve-standing> make-solve-standing solve-standing? with-solve-standing solve-standing-install!
+            solve-standing-admit? solve-standing-proc-frag solve-standing-responses solve-standing-observed
+            solve-standing-warm-x solve-standing-arriving solve-standing-eco-caps solve-standing-dials
+            solve-standing-voice-pushes solve-standing-voice-hours solve-standing-scope-path
+            solve-standing-practice-peers solve-standing-agent-of
+            standing->settings))
+
+;; ── THE STANDING A SOLVE IS GIVEN, AS ONE RECORD ──────────────────────────
+;; What a scope stands on when it solves, read once per request by the
+;; service (solve-standing-of) and handed to every path that solves for the
+;; scope: the plain solve lays it under the caller's keywords (standing->kw),
+;; the federated record and the means consensus read the fields they take.
+;; One reading, one encoding per fact; a path that takes a fact reads it here
+;; and nowhere else.
+(define-context solve-standing
+  ;; the scope's standing (economy/recipe-standing.scm, the standing-of reader)
+  admit?          ; recipe → bool, the admission gate; #f admits every recipe
+  (proc-frag '()) ; ((proc-id lo hi α w) …): a near-fragile recipe's acts, held in every solve
+  (responses '()) ; each recipe's response record: its curve read by every future
+  (observed '())  ; the contrary observations against the map: ((proc action nominal reading) …)
+  ;; the last solve's
+  warm-x          ; the previous x, or #f
+  (arriving '())  ; the previous plan's material rows: where stock on the way counts
+  ;; the UC allocation, as caps under the caller's
+  (eco-caps '())  ; ((located-good . cap) …)
+  ;; the governed dials, every row read fresh (scope/policy.scm), as the engine's keywords
+  (dials '())
+  ;; the voice field: the scope's pushes and hours reader (τ > 0), the path of scopes (leaf first)
+  voice-pushes voice-hours (scope-path '())
+  ;; the roster's readers a solve consults
+  practice-peers agent-of)
+
+;; the settings alist the plain solve lays under the caller's keywords, from the
+;; record: one table, each row a key and the field it reads; a field standing
+;; empty (#f, '()) lays no key, so the engine's own default stands
+(define %standing-settings
+  `((admit?    . ,solve-standing-admit?)
+    (proc-frag . ,solve-standing-proc-frag)
+    (responses . ,solve-standing-responses)
+    (observed  . ,solve-standing-observed)
+    (warm-x    . ,solve-standing-warm-x)
+    (arriving  . ,solve-standing-arriving)
+    (eco-caps  . ,solve-standing-eco-caps)))
+(define (standing->settings st)
+  "The plain solve's standing as a symbol alist (merge-settings lays the caller's over it)."
+  (append
+   (filter-map (lambda (row) (let ((v ((cdr row) st))) (and v (not (null? v)) (cons (car row) v)))) %standing-settings)
+   ;; the UC allocation always stands, empty or not: the key the merge dedups caps under
+   (if (assq 'eco-caps (filter-map (lambda (row) (let ((v ((cdr row) st))) (and v (not (null? v)) row))) %standing-settings)) '()
+       `((eco-caps . ())))
+   (kw->alist (solve-standing-dials st))
+   `((practice-peers . ,(solve-standing-practice-peers st)) (agent-of . ,(solve-standing-agent-of st)))
+   (if (solve-standing-voice-pushes st)
+       `((voice-pushes . ,(solve-standing-voice-pushes st)) (voice-hours . ,(solve-standing-voice-hours st)))
+       '())
+   `((scope-path . ,(solve-standing-scope-path st)))))
 
 (define-context planner-ctx
   ;; the cells at their defaults: everyone holds personhood until the gateway
@@ -92,7 +151,7 @@
   (ph-ok? (lambda (_aid) #t)) witness-door solve-vat (re-stand '()) cache
   roster-ref roster-entries roster-add! roster-forget! with-scope with-person scoped
   door-read home-scope-of adopt-home! set-home-row! person-events person-observers
-  standing world-of* gather plan-fn* on-plan resolve-scope! resolve-one-stale!
+  standing solve-standing-of world-of* gather plan-fn* on-plan resolve-scope! resolve-one-stale!
   resolve-stale-scopes! node-of labour-pool-of uc rehang-scope! declared-parent
   deployment-table slots-changed! slots-watch! slots-unwatch! means-changed!
   means-rebuild! means-fold-total steward-admit steward-ok? means-criteria

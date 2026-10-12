@@ -14,6 +14,7 @@
 (define-module (playnet solve robust)
   #:use-module ((playnet utils host) #:select (getenv hash-get-handle))
   #:use-module (playnet solve world)
+  #:use-module ((playnet solve keywords) #:select (pick-keywords))
   #:use-module (srfi srfi-1)
   #:use-module ((playnet utils alist) #:select (assv-replace assoc-replace))
   #:use-module ((playnet utils catch) #:select (catch* throw* with-throw-handler*))
@@ -55,11 +56,7 @@
    warm start. Defaults are left to ingest-records!, whose own defaults for these
    keywords are the same ones plan-from-records declares — so forwarding only
    what a caller actually passed reproduces today's numbers exactly."
-  (let loop ((o opts) (out '()))
-    (cond ((or (null? o) (null? (cdr o))) (reverse out))
-          ((memq (car o) %world-keywords)
-           (loop (cddr o) (cons (cadr o) (cons (car o) out))))
-          (else (loop (cddr o) out)))))
+  (pick-keywords opts '(world)))
 
 ;; does the reserve yield to this future? 'tail ⇒ p = 0 (beyond the record); a list ⇒ named
 (define (reserve-yields? s yields-to)

@@ -2733,7 +2733,9 @@
          (kw* (append
                (if w (list #:resource-view (let ((v (assq-ref w 'view))) (lambda (_) v))
                            #:eco-caps (rows #:eco-caps (assq-ref w 'caps))
-                           #:span-of (rows #:span-of (assq-ref w 'span)))
+                           ;; the reader took the caller's #:span-of and laid it in its
+                           ;; span (commune-world), so the world's span is the whole of it
+                           #:span-of (assq-ref w 'span))
                    '())
                (list #:demand dem #:horizon horizon #:periods periods)
                (if d (list #:desire-weights (rows #:desire-weights (assq-ref d 'desire-weights))
