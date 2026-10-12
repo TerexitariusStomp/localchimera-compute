@@ -13,6 +13,7 @@
   #:use-module ((playnet utils envelope) #:select (success failure catch-as-failure))
   #:use-module ((playnet utils store-utils) #:select (generate-id))
   #:use-module ((playnet utils clock) #:select (iso-now))
+  #:use-module ((playnet vf formulas flows) #:select (make-work-event))
   #:export (%log-actions do-log-observe))
 
 (define %log-actions
@@ -49,16 +50,22 @@
                 (rid (and (memq action '(produce raise))   ; verb-meant: the two acts a spoken log makes a resource by
                           (string-append "log/" eid))))
            ($ obs 'record-event
+              (if (eq? action 'work)
+                  ;; labour has its one constructor (vf/formulas/flows)
+                  (make-work-event
+                   #:id eid #:resource-spec spec #:provider agent #:receiver agent
+                   #:effort-qty (measure-has-numerical-value m) #:effort-unit (measure-has-unit m)
+                   #:timestamp (or when-iso (iso-now)) #:created (iso-now)
+                   #:note (or note "captain's log") #:in-scope-of (list scope-id))
               (make-economic-event
                #:id eid #:action action
                #:resource-inventoried-as rid                              ; 5-6 the thing, when minted
                #:resource-conforms-to spec                             ; 7-8 conforms-to, classified-as
                #:provider agent #:receiver agent                         ; 9-10 self-scoped
-               #:resource-quantity (if (eq? action 'work) #f m)        ; 11 resource-quantity
-               #:effort-quantity (if (eq? action 'work) m #f)        ; 12 effort-quantity
-                               ; 13-14 has-beginning, has-end
+               #:resource-quantity m                                   ; 11 resource-quantity
+                               ; 12-14 effort-quantity, has-beginning, has-end
                #:has-point-in-time (or when-iso (iso-now)) #:created (iso-now)   ; 15-16 point-in-time, created
              ; 17-24
                #:note (or note "captain's log") #:in-scope-of (list scope-id)  ; 25-26 note, in-scope-of
-))                          ; 27-29
+)))                          ; 27-29
            (success `((event . ,eid) (resource . ,(or rid "")))))))))))

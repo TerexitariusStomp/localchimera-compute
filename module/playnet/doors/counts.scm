@@ -21,7 +21,7 @@
   #:use-module ((playnet observation adjustment)
                 #:select (count-event? count-event-of))
   #:use-module ((playnet observation observer)
-                #:select (measure-qty event-instant event-onhand-delta latest-anchor
+                #:select (measure-qty event-instant event-stamps latest-anchor
                           economic-resource-set-tracking-identifier))
   #:use-module ((playnet observation evidence) #:select (tags-evidence))
   #:use-module ((playnet vf facts labels) #:select (label-normal draw-label))
@@ -57,12 +57,8 @@
 
 (define (count-overlaps obs resource-id)
   "RESOURCE-ID and what contains it, as resource ids: the stocks whose counts
-   speak for RESOURCE-ID."
-  (let up ((id (let ((r ($ obs 'get-resource resource-id)))
-                 (and r (economic-resource-contained-in r))))
-           (acc (list resource-id)))
-    (let ((r (and id (not (member id acc)) ($ obs 'get-resource id))))
-      (if r (up (economic-resource-contained-in r) (cons id acc)) acc))))
+   speak for RESOURCE-ID (the observer's containers-of, nearest first)."
+  (cons resource-id ($ obs 'containers-of resource-id)))
 
 (define (count-latest? obs resource-id instant)
   "No count of a stock that speaks for RESOURCE-ID (count-overlaps) is of a later
@@ -139,7 +135,7 @@
       `((id . ,(economic-event-id e))
         ;; the ballot a contest of this count is, whichever part names it
         (ballot . ,(contest-ballot-id (economic-event-id e) #t))
-        (at . ,(or (economic-event-has-point-in-time e) (economic-event-created e) ""))
+        (at . ,(or (and=> (event-stamps e) cdr) ""))   ; the observer's one reading of when
         (delta . ,(if q
                       (* (or (onhand-sign (economic-event-action e)) 0)
                          (exact->inexact (measure-qty q)))

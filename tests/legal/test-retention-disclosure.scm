@@ -115,9 +115,9 @@
        (swept sweep-2024) '("E-permit"))
 (check "as-of 2028, every window (2027/2023/2027) has passed — all three drop"
        (sort (swept sweep-2028) string<?) '("E-permit" "E-tax" "E-vendor"))
-(check-pred "the drop is a `retract` EconomicEvent classed \"dropped\" (auditable deletion)"
+(check-pred "the drop is a `lower` EconomicEvent classed \"dropped\" (auditable deletion)"
             (let ((ev (assq-ref (car sweep-2024) 'drop)))
-              (and (eq? (economic-event-action ev) 'retract)
+              (and (eq? (economic-event-action ev) 'lower)
                    (member "dropped" (economic-event-resource-classified-as ev)))))
 (check "the tax return is retained the full 7 years, not dropped early"
        (retain-until "2020-03-01" "Sales Tax Return") "2027-03-01")

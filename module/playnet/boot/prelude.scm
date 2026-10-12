@@ -594,7 +594,7 @@
                <observer-state> ^observer append-index
                apply-container-location apply-direction-effects
                apply-quantity-effect apply-resource-effects
-               capture-container-location check-process-completion
+               capture-container-location
                create-batch-for-produce ctx-affected ctx-state
                ctx-update-state deserialize-observer-state
                economic-event->list economic-resource->list

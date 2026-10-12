@@ -44,6 +44,7 @@
   #:use-module (playnet vf schemas)
   #:use-module ((playnet vf formulas flows) #:select (make-work-intent make-work-event))
   #:use-module (playnet observation states)
+  #:use-module ((playnet observation observer) #:select (target-reached? target-passed?))
   #:use-module (goblins)
   #:use-module (srfi srfi-1)
   #:use-module (playnet utils store-utils)
@@ -128,7 +129,7 @@
           (let ((t (claim-cid-terms (fulfillment-state-commitment-id fs))))
             (and t (equal? (car t) spec) (equal? (cadr t) claimant)
                  (or (not place) (equal? (caddr t) place))
-                 (>= (fulfillment-remaining fs) (- at-least 1e-9)))))
+                 (target-reached? (fulfillment-remaining fs) at-least))))
         ($ observer-ref 'open-fulfillments)))
 
 
@@ -403,7 +404,7 @@
                      fulfills (economic-resource-conforms-to resource)))
             (unless (equal? claimant claimant-aid)
               (error "the plan's claim names another citizen" fulfills claimant claimant-aid))
-            (when (> qty (+ (fulfillment-remaining fs) 1e-9))
+            (when (target-passed? qty (fulfillment-remaining fs))
               (error "the plan's claim has less remaining than asked"
                      fulfills (fulfillment-remaining fs) qty))
             (when (< eff-balance labor-cost)

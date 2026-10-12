@@ -294,11 +294,12 @@
 (define (retain-until close-date demand-name) (iso-add-years close-date (retention-years demand-name)))
 (define (artifact-expired? retain-until as-of) (string>? as-of retain-until))
 
-;; drop-event : the artifact leaves custody once its horizon passes (a `retract`,
-;; classed "dropped" with the reason) — minimization made auditable.
+;; drop-event : the artifact leaves the books once its horizon passes — a `lower`
+;; of the one document (the table's own word for a stock taken off the books by
+;; no process), classed "dropped" with the reason — minimization made auditable.
 (define* (drop-event id filing-said filer stamp #:optional (reason "retention-horizon"))
   (make-economic-event
-    #:id id #:action 'retract #:resource-inventoried-as filing-said #:resource-conforms-to "filing" #:resource-classified-as (list "dropped" reason) #:provider filer
+    #:id id #:action 'lower #:resource-inventoried-as filing-said #:resource-conforms-to "filing" #:resource-classified-as (list "dropped" reason) #:provider filer
     #:resource-quantity (make-measure 1 "document") #:has-point-in-time stamp))
 
 ;; retention-sweep : given held filings — each ((said . …)(demand . …)(closed . iso)) —

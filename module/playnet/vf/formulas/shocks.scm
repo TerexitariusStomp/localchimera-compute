@@ -84,6 +84,12 @@
     (fold (lambda (sh acc) (if (same-shock? sh id) (* acc (shock-factor sh)) acc))
           1.0 shocks)))
 
+;; A shock names its CHANNEL in the first place of its row: an action of the
+;; table (produce · consume · use · work: the flow it scales) or one of the two
+;; words of this table's own, `avail` (a raw's supply) and `duration` (how long a
+;; run takes, read by plan/accepts and plan/horizon-gate). The two are channels,
+;; not actions: no event carries them and the action table has no row for them.
+
 ;; ── the adverse direction ────────────────────────────────────────────────────
 ;; An output's yield and a raw's supply are worse LOWER; an input's intensity
 ;; and a work's hours are worse HIGHER. Every cautious read in the planner

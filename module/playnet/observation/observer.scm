@@ -51,7 +51,7 @@
             apply-direction-effects economic-resource-set-lot
             economic-resource-set-location economic-resource-set-custodian-scope economic-resource-set-onhand-quantity
             scale-measure economic-resource-scale-quantities split-custody?
-            create-batch-for-produce capture-container-location
+            create-batch-for-produce capture-container-location target-reached? target-passed?
             apply-container-location economic-resource-set-previous-event
             make-cascade-event cascade-emit phase-containment-cascade
             cascade-parent-id event-onhand-delta onhand-as-of
@@ -69,7 +69,7 @@
             ledger-claimed skill-hours-of work-practice earned-skills practiced-hours
             event-stamps event-interval event-process arc-observations
             fraction-for-process  observer-record-event
-            check-process-completion economic-event->list list->economic-event
+            economic-event->list list->economic-event
             economic-resource->list list->economic-resource
             serialize-observer-state
             deserialize-observer-state %hm-tag state->portable portable->state
@@ -1900,31 +1900,6 @@
 
 
 ;; ═════════════════════════════════════════════════════════════════════════
-;; Process completion detection (standalone — called after record-event)
-;; ═════════════════════════════════════════════════════════════════════════
-
-(define (check-process-completion st event process-registry)
-  "Check if a process is complete after an event is recorded.
-   A process is complete when every output commitment linked to it
-   has been fully fulfilled. Called when event has outputOf set.
-   process-registry: actor ref with 'mark-finished method."
-  (let ((process-id (economic-event-output-of event)))
-    (when (and process-id process-registry)
-      ;; Find all fulfillment states whose fulfilling events are outputs of this process
-      (let* ((all-fs (fulfillments-of st))
-             (output-fs
-               (filter (lambda (fs)
-                         (any (lambda (eid)
-                                (let ((e (event-ref st eid)))
-                                  (and e (equal? (economic-event-output-of e) process-id))))
-                              (fulfillment-state-fulfilling-events fs)))
-                       all-fs)))
-        (when (and (pair? output-fs)
-                   (every fulfillment-state-finished output-fs))
-          ($ process-registry 'mark-finished process-id))))))
-
-
-;; ═════════════════════════════════════════════════════════════════════════
 ;; Record <-> list serialization for persistence
 ;; ═════════════════════════════════════════════════════════════════════════
 ;;
@@ -2305,12 +2280,6 @@
                        #:intent-validations (hashmap-set (os-intent-validations st) iid next))
                      callbacks))))))
 
-    ((intent-validated-at iid)
-     (or (hashmap-ref (os-intent-validations st) iid #f) '()))
-
-    ((intent-plan-id iid)
-     (let ((stated (hashmap-ref (os-intent-targets st) iid #f)))
-       (and stated (cdr stated))))
 
     ((register-claim claim)
      (let* ((cid (claim-id claim))
@@ -2352,7 +2321,7 @@
     ;; RID's on-hand figure as the ledger stood at INSTANT
     ((onhand-as-of rid instant) (onhand-as-of st rid instant))
     ((standing-anchors rid) (standing-anchors st rid))
-    ((anchored-onhand rid) (anchored-onhand st rid))
+    ((containers-of rid) (containers-of st rid))   ; the stocks RID sits in, nearest first
     ((get-resource id)   (hashmap-ref (os-resources st) id #f))
     ((get-process id)    (hashmap-ref (os-processes st) id #f))
     ((process-spec id)   (process-spec-of st id))
@@ -2367,20 +2336,6 @@
 
     ((events-for-agent aid)
      (events-named st (hashmap-ref (os-idx-by-agent st) aid '())))
-    ;; the coworkers of AID — the providers of standing work on the processes
-    ;; AID's own standing work belongs to, AID aside — in ONE pass over what
-    ;; stands: the fact governance reads for who may speak of whom
-    ((coworkers-of aid)
-     (let* ((work  (standing-events st 'work))
-            (pid   (lambda (ev) (or (economic-event-input-of ev) (economic-event-output-of ev))))
-            (mine  (delete-duplicates
-                    (filter-map (lambda (ev) (and (equal? aid (economic-event-provider ev)) (pid ev)))
-                                work))))
-       (delete-duplicates
-        (filter-map (lambda (ev)
-                      (let ((who (economic-event-provider ev)))
-                        (and who (not (equal? who aid)) (member (pid ev) mine) who)))
-                    work))))
 
     ((events-with-action action)
      (events-named st (hashmap-ref (os-idx-by-action st) action '())))
@@ -2413,7 +2368,6 @@
                  #t)
            #f)))
     ((get-satisfaction iid) (satisfaction-of st iid))
-    ((all-satisfactions)    (satisfactions-of st))   ; comms Stage 0 reads these
     ((get-claim-state cid)  (claim-state-of st cid))
 
     ;; --- Validation Gate (§III.1) ---
@@ -2627,13 +2581,6 @@
                  (hashmap-ref (os-resource-batches st) resource-id '())))
 
     ;; --- Agreement storage ---
-
-    ((register-agreement agreement)
-     (let ((aid (if (pair? agreement) (assq-ref agreement 'id)
-                    (agreement-id agreement))))
-       (bcom (^observer bcom
-               (os-rebuild st #:agreements
-                 (hashmap-set (os-agreements st) aid agreement)) callbacks))))
 
     ((get-agreement id)
      (hashmap-ref (os-agreements st) id #f))

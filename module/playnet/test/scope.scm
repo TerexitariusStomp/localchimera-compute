@@ -27,7 +27,7 @@
                weekday-window all-week-window hours-of)
   #:use-module ((playnet vf facts parts) #:select (part->string))
   #:use-module ((playnet observation account) #:select (claim-commitment))
-  #:use-module ((playnet vf formulas flows) #:select (make-work-intent))
+  #:use-module ((playnet vf formulas flows) #:select (make-work-intent make-work-event))
   #:export (mock-scope mock-scope-root mock-world record-work! push-on plan-claim! account!))
 
 ;; ── the plan's claim, stated by a fixture ───────────────────────────────────
@@ -54,11 +54,10 @@
      (make-work-intent #:id intent-id #:skill skill #:hours hours #:unit unit
                        #:provider aid #:planned-within plan-id))
   ($ obs 'record-event
-     (make-economic-event
-       #:id event-id #:action 'work #:input-of process #:resource-conforms-to skill
-       #:provider aid #:effort-quantity (make-measure hours unit)
-       #:has-beginning when #:has-point-in-time when #:at-location place
-       #:satisfies intent-id #:in-scope-of (and scope (list scope)))))
+     (make-work-event #:id event-id #:input-of process #:resource-spec skill
+                      #:provider aid #:effort-qty hours #:effort-unit unit
+                      #:has-beginning when #:timestamp when #:at-location place
+                      #:satisfies intent-id #:in-scope-of (and scope (list scope)))))
 
 ;; the push a fold or the arithmetic reports on one part, 0 when it names none
 (define (push-on pushes π)
