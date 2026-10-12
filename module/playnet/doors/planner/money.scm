@@ -8,6 +8,8 @@
 ;;; writes is defined here, above its doors.
 
 (define-module (playnet doors planner money)
+  #:use-module ((playnet vf formulas flows) #:select (make-transfer-event))
+  #:use-module ((playnet observation adjustment) #:select (adjustment-event))
   #:use-module ((goblins) #:select ($))
   #:use-module ((playnet doors counts) #:select (fresh-label))
   #:use-module ((playnet doors plan-wire) #:select (wire-number))
@@ -43,12 +45,11 @@
              (left (if (and settle-of store) (settle-of rs obs store scope-id aid xmr) xmr))
              (transfer (lambda (id from provider qty note)
                          ($ obs 'record-event
-                            (make-economic-event
-                             #:id id #:action 'transfer
-                             #:resource-inventoried-as from #:to-resource-inventoried-as "res-xmr-chain"
-                             #:resource-conforms-to %payout-spec #:resource-classified-as '("currency" "external")
+                            (make-transfer-event
+                             #:id id #:from from #:to "res-xmr-chain"
+                             #:spec %payout-spec #:tags '("currency" "external")
                              #:provider provider #:receiver "monero-chain"
-                             #:resource-quantity (make-measure qty "XMR") #:has-point-in-time (iso-now) #:created (iso-now)
+                             #:qty qty #:unit "XMR" #:when (iso-now)
                              #:fulfills (string-append "sending:" (intent-id i))   ; the commons' commitment to send it (economy/payouts.scm)
                              #:note (string-append note txid))))))
         (when (> (- xmr left) 1e-12)
@@ -265,15 +266,15 @@
                     (make-economic-resource #:id rid #:name (or (string-or-false note) spec) #:note (string-or-false note) #:tracking-identifier (fresh-label obs)
                                             #:conforms-to spec #:classified-as '("bought") #:accounting-quantity (make-measure 0 u) #:onhand-quantity (make-measure 0 u)
                                             #:current-location loc #:primary-accountable scope-id))
+                 ;; the good enters the books by no process: a `raise`, the table's word
                  ($ obs 'record-event
-                    (make-economic-event
-                     #:id eid #:action 'raise #:resource-inventoried-as rid #:resource-conforms-to spec #:resource-classified-as '("bought")
-                     #:provider agent-id #:receiver scope-id
-                     #:resource-quantity (make-measure q u) #:has-point-in-time stamp #:created stamp #:to-location loc
-                     #:fulfills (and planned-c (commitment-id planned-c))
-                     #:satisfies (and need-i (intent-id need-i))
-                     #:note (string-append (if donation? "donated" "bought")
-                                    (if (string-or-false receipt) (string-append " · receipt " receipt) ""))))
+                    (adjustment-event eid rid spec q u #:classified-as '("bought")
+                                      #:provider agent-id #:receiver scope-id
+                                      #:when stamp #:created stamp #:to loc
+                                      #:fulfills (and planned-c (commitment-id planned-c))
+                                      #:satisfies (and need-i (intent-id need-i))
+                                      #:note (string-append (if donation? "donated" "bought")
+                                                            (if (string-or-false receipt) (string-append " · receipt " receipt) ""))))
                  ;; whether the commons owes — unless it was a gift
                  (if donation?
                      (success `((resource . ,rid) (event . ,eid) (owed . #f)))

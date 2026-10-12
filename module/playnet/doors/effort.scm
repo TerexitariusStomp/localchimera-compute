@@ -15,7 +15,7 @@
   #:use-module ((playnet utils store-utils) #:select (generate-id))
   #:use-module ((playnet utils units) #:select (%count-unit %effort-unit hours-in time-unit?))
   #:use-module ((playnet vf formulas actions) #:select (relocating-action?))
-  #:use-module ((playnet vf formulas flows) #:select (make-work-event))
+  #:use-module ((playnet vf formulas flows) #:select (make-work-event make-relocation-event))
   #:use-module ((playnet vf schemas) #:select (commitment-at-location commitment-effort-quantity commitment-finished commitment-has-beginning commitment-has-end commitment-id commitment-in-scope-of commitment-input-of commitment-provider commitment-resource-conforms-to economic-resource-conforms-to economic-resource-current-location economic-resource-onhand-quantity make-economic-event make-economic-resource make-measure measure-has-numerical-value measure-qty resource-spec-keep-in-place?))
   #:export (finite-positive? effort-remaining do-record-effort %container-resource? do-drop-event))
 
@@ -185,17 +185,13 @@
              ;; for. So: the commons holds what is in its boxes, and taking
              ;; something out is what moves custody to you.
              ($ obs 'record-event
-                (make-economic-event
-                 #:id eid #:action action
-                 #:resource-inventoried-as rid                              ; 5-6 the thing moved
-                 #:resource-conforms-to spec                             ; 7-8 conforms-to, classified-as
-                 #:provider (if taking? scope agent)            ; 9  provider
-                 #:receiver (if taking? agent scope)            ; 10 receiver
-                 #:resource-quantity (make-measure (exact->inexact qty) unit) #:has-point-in-time (iso-now) #:created (iso-now)           ; 13-16
-                 #:at-location place #:to-location (and (not taking?) place)     ; 17-18 at-location, to-location
-                   ; 19-24
-                 #:note (or note "") #:in-scope-of (list scope)           ; 25-26 note, in-scope-of (a list, as VF has it)
-))                          ; 27-29
+                (make-relocation-event
+                 #:id eid #:action action #:resource rid #:spec spec
+                 #:qty (exact->inexact qty) #:unit unit
+                 #:provider (if taking? scope agent) #:receiver (if taking? agent scope)
+                 #:when (iso-now)
+                 #:from place #:to (and (not taking?) place)
+                 #:note (or note "") #:in-scope-of scope))
              ;; …and the CONTAINMENT act: it is now inside the box, or out of it.
              ;; A take that leaves some behind does NOT empty the box — what is
              ;; left is still in there — so the separate waits for the last of it.
@@ -223,5 +219,5 @@
                  #:resource-quantity (make-measure 0.0 unit)            ; 11-12 containment only
  #:has-point-in-time (iso-now) #:created (iso-now)
                  #:at-location place #:to-location place
-                 #:note "" #:in-scope-of scope)))
+                 #:note "" #:in-scope-of (list scope))))   ; a list, as VF has it
              (success rid))))))))))

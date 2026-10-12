@@ -13,6 +13,7 @@
 ;;; boundary intact. Lives in a Goblins module but the engine inside stays pure.
 
 (define-module (playnet scope live)
+  #:use-module ((playnet observation states) #:select (fulfillment-state-finished fulfillment-state-total-fulfilled))
   #:use-module ((playnet utils host) #:select (getenv hash-get-handle))
   #:use-module ((playnet vf facts located) #:select (credit-good bar-field))
   #:re-export (make-work-event)
@@ -2388,11 +2389,14 @@
 (define* (record-work-done scope-root wc #:key (effort #f) (when-iso #f))
   (let* ((obs   ($ scope-root 'observer))
          (cid   (row-id wc))
-         (evid  (string-append "ev-" cid))
+         ;; one event per confirmation: the k-th hours recorded against the row
+         ;; (a second confirmation is not a conflicting id)
+         (k     (length (or (false-if-exception ($ obs 'fulfilled-by cid)) '())))   ; a bare mock holds no books
+         (evid  (if (= k 0) (string-append "ev-" cid) (string-append "ev-" cid "." (number->string k))))
          (hours (or effort (row-effort wc)))
          (t     (or when-iso (row-when wc)))
          (event (make-work-event
-                  #:id evid #:provider (row-provider wc) #:receiver #f
+                  #:id evid #:provider (row-provider wc)
                   #:effort-qty hours #:fulfills cid
                   #:input-of (row-input-of wc) #:resource-spec (row-spec wc)
                   #:at-location (row-place wc)
@@ -2400,7 +2404,12 @@
                   #:in-scope-of (row-scope wc)
                   #:timestamp t #:created (instant->civil (now)) #:note #f)))
     ($ obs 'record-event event)
-    (end-fulfilled! scope-root cid)
+    ;; the commitment ends fulfilled when its hours are all in (the observer's
+    ;; word), the rule the effort door keeps; a row the books hold no target
+    ;; for ends at its one confirmation, as before
+    (let ((fs (false-if-exception ($ obs 'get-fulfillment cid))))
+      (when (or (not fs) (fulfillment-state-finished fs))
+        (end-fulfilled! scope-root cid)))
     evid))
 
 ;; ── the MATERIAL confirmation: a produce/consume/pickup/dropoff/use commitment → its event ──
@@ -2427,10 +2436,14 @@
   (equal? (car ((make-stock-key (list r) persons #:vocabulary vocabulary) r)) good))
 (define (lot-onhand r) (mqty (economic-resource-onhand-quantity r)))
 (define (met-quantity obs id)
-  "What the events fulfilling row ID have met of it: the sum of their quantities, whether or
-   not the row is registered as a commitment."
-  (fold + 0 (map (lambda (e) (mqty (economic-event-resource-quantity e)))
-                 (or ($ obs 'fulfilled-by id) '()))))
+  "What the events fulfilling row ID have met of it: the observer's fulfilment
+   reading where the row is registered (units converted, the terms filtered), else
+   the sum of the fulfilling events' quantities."
+  (let ((fs (false-if-exception ($ obs 'get-fulfillment id))))
+    (if fs
+        (mqty (fulfillment-state-total-fulfilled fs))
+        (fold + 0 (map (lambda (e) (mqty (economic-event-resource-quantity e)))
+                       (or ($ obs 'fulfilled-by id) '()))))))
 (define (arriving-lots obs rows resources)
   "RESOURCES as a solve should read them. The books keep a relocation's cargo at no place
    until its dropoff says it has arrived, and a solve reads stock by place, so cargo on the

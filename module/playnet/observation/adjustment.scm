@@ -44,8 +44,9 @@
     (and (pair? tags) tags)))
 
 (define* (adjustment-event id resource-id spec delta unit
-                           #:key provider receiver process at when created
-                                 note in-scope-of (classified-as '()) counted)
+                           #:key provider receiver process at to when created
+                                 note in-scope-of (classified-as '()) counted
+                                 fulfills satisfies)
   "The `raise` (DELTA above nothing) or `lower` (below) of |DELTA| UNIT on
    RESOURCE-ID, or #f when DELTA is nothing: an agreeing count lands no
    adjustment. COUNTED is the figure the count found, stated on the event.
@@ -60,8 +61,8 @@
         #:provider provider #:receiver receiver                          ; 9-10
         #:resource-quantity (make-measure (abs delta) unit)         ; 11-12 resource-quantity, effort
  #:has-point-in-time when #:created created                         ; 13-16 beginning, end, point, created
-        #:at-location at                                   ; 17-19 at-location, to-location, state
-                                      ; 20-21 fulfills, satisfies
+        #:at-location at #:to-location to                  ; 17-19 at-location, to-location, state
+        #:fulfills fulfills #:satisfies satisfies          ; 20-21 the planned purchase, the need it answers
                                    ; 22-24 corrects, realization-of, settles
         #:note note #:in-scope-of in-scope-of                           ; 25-26
 )))                                ; 27 previous-event

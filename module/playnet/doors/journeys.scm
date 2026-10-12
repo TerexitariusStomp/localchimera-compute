@@ -8,7 +8,8 @@
   #:use-module ((playnet utils clock) #:select (iso-now))
   #:use-module ((playnet utils keyed-id) #:select (keyed-id))
   #:use-module ((playnet utils units) #:select (%count-unit))
-  #:use-module ((playnet vf schemas) #:select (make-economic-event make-measure make-spatial-thing recipe-flow-action recipe-flow-resource-conforms-to recipe-process-id))
+  #:use-module ((playnet vf schemas) #:select (make-spatial-thing recipe-flow-action recipe-flow-resource-conforms-to recipe-process-id))
+  #:use-module ((playnet vf formulas flows) #:select (make-relocation-event))
   #:use-module ((srfi srfi-1) #:select (find))
   #:export (trip-ids trip-good ensure-place! make-trip-event))
 
@@ -49,11 +50,10 @@
    INPUT-OF (the pickup) or OUTPUT-OF (the dropoff), one SPEC moved (the mode's pickup
    flow's, a rider), the departure BEG or the arrival END and the instant POINT, the
    origin FROM and, for the dropoff, the destination TO, FULFILLING the commitment of
-   its own end. The observer pairs the two by the process."
-  (make-economic-event
-    #:id id #:action action #:input-of input-of #:output-of output-of #:resource-conforms-to spec
-    #:provider agent #:receiver agent #:resource-quantity (and spec (make-measure 1 %count-unit))
-    #:has-beginning beg #:has-end end #:has-point-in-time point #:created (iso-now)
-    #:at-location from #:to-location to
-    #:fulfills fulfills
-    #:note note #:in-scope-of (list scope)))
+   its own end. The observer pairs the two by the process. The one relocation
+   constructor (vf/formulas/flows.scm), with the journey's words."
+  (make-relocation-event
+    #:id id #:action action #:input-of input-of #:output-of output-of #:spec spec
+    #:qty (and spec 1) #:provider agent
+    #:beg beg #:end end #:when point #:created (iso-now)
+    #:from from #:to to #:fulfills fulfills #:note note #:in-scope-of scope))

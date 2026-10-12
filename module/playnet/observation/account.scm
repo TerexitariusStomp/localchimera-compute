@@ -42,7 +42,7 @@
   #:use-module (ice-9 match)
   #:use-module (playnet vf serdes)
   #:use-module (playnet vf schemas)
-  #:use-module ((playnet vf formulas flows) #:select (make-work-intent make-work-event))
+  #:use-module ((playnet vf formulas flows) #:select (make-work-intent make-work-event make-transfer-event))
   #:use-module (playnet observation states)
   #:use-module ((playnet observation observer) #:select (target-reached? target-passed?))
   #:use-module (goblins)
@@ -418,24 +418,21 @@
                    (to-resource-id
                      (string-append resource-id "-" claimant))
                    (event
-                     (make-economic-event
+                     (make-transfer-event
                        #:id (generate-id "claim-")
-                       #:action 'transfer
-                       #:resource-inventoried-as resource-id
+                       #:from resource-id
                        ;; the claimant's share lands in a resource made to hold it
-                       #:to-resource-inventoried-as to-resource-id
-                       #:resource-conforms-to (economic-resource-conforms-to resource)
-                       #:resource-classified-as (economic-resource-classified-as resource)
+                       #:to to-resource-id
+                       #:spec (economic-resource-conforms-to resource)
+                       #:tags (economic-resource-classified-as resource)
                        #:provider provider #:receiver claimant-aid
-                       #:resource-quantity (make-measure qty unit)
-                       #:effort-quantity (make-measure labor-cost %effort-unit)
-                       #:has-point-in-time (or when* #f)   ; WHEN wanted
+                       #:qty qty #:unit unit #:hours labor-cost
+                       #:when (or when* #f)                ; WHEN wanted
                        #:to-location (or at-loc #f)        ; WHERE to
                        #:fulfills fulfills                  ; the planned claim
-                       #:in-scope-of '()
                        ;; the rail this transfer ran on, as provenance on the event:
                        ;; ledger-claimed and the claim ACDC read it back
-                       #:distribution-mode 'individual-claimable)))
+                       #:distribution 'individual-claimable)))
               ($ observer-ref 'record-event event)
               ;; what the claimant has claimed is the events' sum (claim-effort),
               ;; and the event makes them a holder here (account-holders)

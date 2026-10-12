@@ -32,6 +32,7 @@
 ;;;   (stop)
 
 (define-module (playnet monero poller)
+  #:use-module ((playnet observation adjustment) #:select (adjustment-event))
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
   #:use-module (playnet vf schemas)
@@ -168,30 +169,13 @@ A txid is recorded once however often the wallet reports it."
 
 (define (transfer->donation-event t)
   "The EconomicEvent an incoming transfer T is recorded as."
+  ;; a donation enters the books by no process: a `raise` (the one constructor
+  ;; of an adjustment, observation/adjustment.scm)
   (let ((amount (transfer-amount t)))
-    (make-economic-event
-     #:id (donation-event-id (transfer-txid t))
-     #:action 'raise                        ; action
-                         ; input-of, output-of
-     #:resource-inventoried-as %xmr-resource-id              ; resource-inventoried-as
-                            ; to-resource-inventoried-as
-     #:resource-conforms-to "spec-xmr"                    ; resource-conforms-to
-     #:resource-classified-as '("donation")                 ; resource-classified-as
-                            ; provider
-     #:receiver "agent-playnet"               ; receiver
-     #:resource-quantity (make-measure (exact->inexact (atomic->xmr amount)) "XMR") ; resource-quantity
-                            ; effort-quantity
-                         ; has-beginning, has-end
-                            ; has-point-in-time
-                            ; created
-                         ; at-location, to-location
-                            ; state
-                         ; fulfills, satisfies
-                            ; corrects
-                            ; realization-of
-                            ; settles
-     #:note (donation-note amount (transfer-subaddr t))                            ; in-scope-of
-)))                            ; previous-event
+    (adjustment-event (donation-event-id (transfer-txid t)) %xmr-resource-id "spec-xmr"
+                      (exact->inexact (atomic->xmr amount)) "XMR"
+                      #:classified-as '("donation") #:receiver "agent-playnet"
+                      #:note (donation-note amount (transfer-subaddr t)))))
 
 (define* (tick-monero-poller #:key
                              wallet-vat wallet

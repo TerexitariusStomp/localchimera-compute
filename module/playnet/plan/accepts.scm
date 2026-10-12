@@ -269,6 +269,13 @@
          (and ag (eq? (agent-type ag) 'person) beg
               (member (substring beg 0 10) (agent-away-dates ag))))))
 
+;; the hours the books hold fulfilled against commitment C: the observer's
+;; reading where the root has one and the commitment is registered, else 0
+(define (fulfilled-hours scope-root c)
+  (let* ((obs (and scope-root (false-if-exception ($ scope-root 'observer))))
+         (evs (or (and obs (false-if-exception ($ obs 'fulfilled-by (commitment-id c)))) '())))
+    (fold + 0 (map (lambda (e) (or (and=> (economic-event-effort-quantity e) measure-has-numerical-value) 0)) evs))))
+
 (define* (accepts->pins commitments recipe-flows #:key (now #f) (scope-root #f) (agent-of #f))
   (define coeffs  (work-coeffs recipe-flows))
   (define pcoeffs (produce-coeffs recipe-flows))
@@ -295,10 +302,11 @@
            (not (hauls-work? hauling c))
            (not (provider-away? scope-root c agent-of))
            (case (commitment-action c)
-             ;; a WORK accept: hours ÷ the work flow's hours-per-run
+             ;; a WORK accept: hours ÷ the work flow's hours-per-run — the hours
+             ;; still to do, less what the books hold fulfilled against it
              ((work)
-              (let ((hours (and=> (commitment-effort-quantity c)
-                                  measure-has-numerical-value)))
+              (let ((hours (and=> (and=> (commitment-effort-quantity c) measure-has-numerical-value)
+                                  (lambda (h) (- h (fulfilled-hours scope-root c))))))
                 (and hours (> hours *pin-tolerance*)
                      (work-term->pin coeffs (commitment-id c) (commitment-input-of c)
                                      (commitment-resource-conforms-to c)

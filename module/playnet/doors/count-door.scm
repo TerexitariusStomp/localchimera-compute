@@ -478,13 +478,10 @@
                    gone
                    (begin
                      ($ obs 'record-event
-                        (make-economic-event
-                         #:id eid #:action 'raise #:output-of "count:reading"
-                         #:resource-inventoried-as trid #:resource-conforms-to target
-                         #:resource-quantity (make-measure q u)
-                         #:has-point-in-time (instant->civil (or then now))
-                         #:provider agent #:receiver agent
-                         #:note said #:in-scope-of (list scope-id)))
+                        (adjustment-event eid trid target q u #:process "count:reading"
+                                          #:when (instant->civil (or then now))
+                                          #:provider agent #:receiver agent
+                                          #:note said #:in-scope-of (list scope-id)))
                      (success `((form . ,target) (was . ,spec) (reading . ,v) (ambient . ,amb)
                                 (moved . ,q) (unit . ,u)
                                 (from-stock . ,resource-id) (to-stock . ,trid)

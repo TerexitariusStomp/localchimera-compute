@@ -16,19 +16,20 @@
 ;;; same readers take it, so a stored plan reads as it did.
 
 (define-module (playnet vf formulas flows)
-  #:use-module ((playnet utils units) #:select (%effort-unit))
   #:use-module (playnet vf schemas)
   #:use-module ((playnet utils keyed-id) #:select (keyed-id))
   #:use-module ((playnet utils records) #:select (vf-record-accessor))
   #:use-module ((playnet vf formulas actions) #:select (input-action? output-action? occupying-actions))
   #:use-module ((playnet utils clock) #:select (now instant->civil))
+  #:use-module ((playnet utils units) #:select (%count-unit %effort-unit))
   #:export (row-id row-action row-spec row-quantity row-unit row-effort
             row-provider row-input-of row-output-of row-run row-place
             row-when row-until row-note row-tags row-scope row-satisfies
             row-finished row-ambient? carried-lot-id %ambient-tag
             row-scopes row-satisfies? scopes-of row-figure
             committed-by-spec committed-quantity
-            make-work-intent make-work-commitment make-work-event make-flow-commitment))
+            make-work-intent make-work-commitment make-work-event make-flow-commitment
+            make-transfer-event make-relocation-event))
 
 (define %ambient-tag "ambient")   ; resourceClassifiedAs of a flow with no stock behind it: the world's own, a means in use
 
@@ -170,6 +171,52 @@
                         ; 22-24 corrects, realization-of, settles
     #:note note                               ; 25 note
     #:in-scope-of (let ((l (scopes-of in-scope-of))) (and (pair? l) l))))   ; 26-27 in-scope-of, prev-event
+
+;; ── the ONE constructor of a hand-off: a `transfer` EconomicEvent ────────────
+;; Rights (and custody) of QTY UNIT of SPEC pass from PROVIDER to RECEIVER: a
+;; claim from the pool, a payout sent on-chain, a permit granted into a filer's
+;; hands. FROM is the lot the goods leave, TO the lot they land in (made by the
+;; observer when absent, as the receiver's). FULFILLS names the planned transfer
+;; the event realises; DISTRIBUTION the rail it ran on (the claim's provenance).
+(define* (make-transfer-event #:key id spec qty (unit %count-unit) (hours #f)
+                                    from to provider receiver
+                                    (when (instant->civil (now))) (created when) to-location
+                                    fulfills note tags in-scope-of distribution)
+  (make-economic-event
+    #:id id #:action 'transfer
+    #:resource-inventoried-as from #:to-resource-inventoried-as to              ; 5-6 the lot it leaves, the lot it lands in
+    #:resource-conforms-to spec #:resource-classified-as tags                    ; 7-8
+    #:provider provider #:receiver receiver                                      ; 9-10
+    #:resource-quantity (and qty (make-measure qty unit))                        ; 11 what moves
+    #:effort-quantity (and hours (make-measure hours %effort-unit))              ; 12 what it cost in labour, where the books price it
+    #:has-point-in-time when #:created created                                   ; 15-16
+    #:to-location to-location                                                    ; 18
+    #:fulfills fulfills                                                          ; 20
+    #:note note #:in-scope-of (let ((l (scopes-of in-scope-of))) (and (pair? l) l))   ; 25-26
+    #:distribution-mode distribution))
+
+;; ── the ONE constructor of a relocation: a `pickup` or `dropoff` EconomicEvent ──
+;; A thing moves: picked up at FROM by its run (INPUT-OF), dropped off at TO by
+;; the same run (OUTPUT-OF). RESOURCE is the lot it leaves, TO-RESOURCE the lot
+;; it lands in (a carry's own lot on the way, a box's contents); a journey with
+;; no cargo names none and carries QTY of SPEC as the rider. PROVIDER and
+;; RECEIVER differ where custody passes (a box's keeper and the taker: the
+;; observer reads the implied transfer); one agent where it does not. FULFILLS
+;; names the plan's own row.
+(define* (make-relocation-event #:key id action input-of output-of spec qty (unit %count-unit)
+                                      resource to-resource provider (receiver provider)
+                                      from to (beg #f) (end #f) (when (instant->civil (now))) (created when)
+                                      fulfills note tags in-scope-of)
+  (make-economic-event
+    #:id id #:action action #:input-of input-of #:output-of output-of           ; 2-4
+    #:resource-inventoried-as resource #:to-resource-inventoried-as to-resource ; 5-6
+    #:resource-conforms-to spec #:resource-classified-as tags                   ; 7-8
+    #:provider provider #:receiver receiver                                     ; 9-10
+    #:resource-quantity (and qty (make-measure qty unit))                       ; 11
+    #:has-beginning beg #:has-end end #:has-point-in-time when #:created created ; 13-16
+    #:at-location from #:to-location to                                         ; 17-18
+    #:fulfills fulfills                                                         ; 20
+    #:note note #:in-scope-of (let ((l (scopes-of in-scope-of))) (and (pair? l) l))))   ; 25-26
 
 ;; ── the ONE constructor of a material Commitment ────────────────────────────
 ;; The solve's rows (engine plan->material), a row the scope holds back

@@ -28,6 +28,17 @@
   #:use-module ((playnet protocol dispatch) #:select (declared-doors))
   #:export (planner-work-doors))
 
+;; an accepted proposal's commitments are registered with the observer the
+;; moment they are made, as an accepted assignment's is (doors/assignments.scm):
+;; the books arm their fulfilment, so effort recorded against them is counted
+(define (register-accepted! root result)
+  (let ((obs ($ root 'observer)) (ps ($ root 'plan-store)))
+    (for-each (lambda (cid)
+                (let ((c ($ ps 'get-commitment cid)))
+                  (when c ($ obs 'register-commitment c))))
+              (or (and (pair? result) (assq-ref result 'commitments)) '()))
+    result))
+
 (define (planner-work-doors ctx)
   (with-planner-ctx ctx
     ;; one proposal from each scope, then one more from each — the order the
@@ -222,9 +233,10 @@
          (lambda (root)
 ;; counterparty fills the intent's open receiver slot with the
                ;; accepting agent → the event becomes a commitment inviter→invitee.
-               ($ ($ root 'plan-store) 'accept-proposal proposal-id
-                  (list (cons 'receiver agent-id))
-                  (list (cons 'accepting-agent-id agent-id)))
+               (register-accepted! root
+                 ($ ($ root 'plan-store) 'accept-proposal proposal-id
+                    (list (cons 'receiver agent-id))
+                    (list (cons 'accepting-agent-id agent-id))))
                `((accepted . ,proposal-id)))))
 
       ;; ── the offer loop's two doors (commitment-horizon.md: the bounded rung) ──
@@ -302,9 +314,10 @@
       ((accept-work-offer scope-id agent-id proposal-id)
        (scoped scope-id
          (lambda (root)
-           ($ ($ root 'plan-store) 'accept-proposal proposal-id
-              (list (cons 'provider agent-id) (cons 'receiver scope-id))
-              (list (cons 'accepting-agent-id agent-id)))
+           (register-accepted! root
+             ($ ($ root 'plan-store) 'accept-proposal proposal-id
+                (list (cons 'provider agent-id) (cons 'receiver scope-id))
+                (list (cons 'accepting-agent-id agent-id))))
            (resolve-scope! scope-id root)             ; the accept re-plans the scope
            `((accepted . ,proposal-id)))))
 

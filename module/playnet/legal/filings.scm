@@ -17,6 +17,7 @@
 ;;; Run the demo:  guile -L module module/playnet/legal/filings.scm
 
 (define-module (playnet legal filings)
+  #:use-module ((playnet vf formulas flows) #:select (make-transfer-event))
   #:use-module (ice-9 format)
   #:export (%fl-dir %canon %fnv1a filing-said render-fields
             %make-filing-template filing-template filing-provenance filing-submittable?
@@ -191,9 +192,8 @@
 ;;; `permit-spec` is the demand-name (compliance.scm demand->spec-id); the new
 ;;; resource is what holding-status will find as satisfied.
 (define* (grant-event id permit-resource-id permit-spec authority filer stamp)
-  (make-economic-event
-    #:id id #:action 'transfer #:resource-inventoried-as permit-resource-id #:resource-conforms-to permit-spec #:provider authority #:receiver filer
-    #:resource-quantity (make-measure 1 "cert") #:has-point-in-time stamp))
+  (make-transfer-event #:id id #:from permit-resource-id #:spec permit-spec #:provider authority #:receiver filer
+                       #:qty 1 #:unit "cert" #:when stamp))
 
 ;;; ─── submission drivers : manual by default, automated where an API exists ─
 ;;; The `submitted` event is ALWAYS the boundary — prepare + record, never

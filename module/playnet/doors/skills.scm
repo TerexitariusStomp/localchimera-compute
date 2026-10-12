@@ -43,12 +43,12 @@
   (let ((q (measure-has-numerical-value (economic-resource-onhand-quantity r)))
         (now (iso-now)))
     (when (> q 0)
+      ;; a `lower` by no process: the one constructor of an adjustment
       ($ obs 'record-event
-         (make-economic-event
-          #:id (generate-id (string-append "retire:" (economic-resource-id r) ":" now ":")) #:action 'lower #:resource-inventoried-as (economic-resource-id r) #:resource-conforms-to (economic-resource-conforms-to r)
-          #:provider agent-id #:receiver agent-id
-          #:resource-quantity (make-measure q (measure-has-unit (economic-resource-onhand-quantity r))) #:has-point-in-time now #:created now
-          #:note note)))))
+         (adjustment-event (generate-id (string-append "retire:" (economic-resource-id r) ":" now ":"))
+                           (economic-resource-id r) (economic-resource-conforms-to r)
+                           (- q) (measure-has-unit (economic-resource-onhand-quantity r))
+                           #:provider agent-id #:receiver agent-id #:when now #:created now #:note note)))))
 (define (declare-skill! root agent-id skill-spec-id)
   "AGENT-ID holds the skill SKILL-SPEC-ID at ROOT: the resource raised to held,
    and the spec declared as worked where the store has none of that id — what
