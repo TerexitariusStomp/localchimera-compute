@@ -7,9 +7,14 @@
 ;;; ranges, the availability window they add up to, and the window of specific
 ;;; dates. An agent and a resource hold one as a field value.
 ;;;
-;;; Route into the core (docs/planning/codebase-organization.md §7): one dated
-;;; Intent per concrete interval over the horizon, against keeping the pattern as
-;;; the one recurrence extension (valueflows-native-inventory.md Part D step 9).
+;;; This is the ONE recurrence extension, settled 2026-10-12 (beyond-valueflows.md
+;;; §6.6): the pattern is the fact a person states; the intervals it covers over
+;;; a horizon are a reading of it that depends on today and on the horizon
+;;; asked, derived where they are needed (the engine's standing partition at
+;;; ingest, plan/recurrence.scm's occurrences, matching/temporal-index's
+;;; overlap) and never stored. The dated shape appears where the pattern is
+;;; realized: a shift accepted is a commitment with hasBeginning and hasEnd,
+;;; which is core ValueFlows already.
 
 (define-module (playnet vf beyond schedules)
   #:use-module (srfi srfi-1)
