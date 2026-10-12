@@ -18,12 +18,20 @@
 ;;;       balance = sum(work provider=aid effort)
 ;;;               - sum(transfer receiver=aid, classified individually-claimable, effort)
 ;;;
-;;;   - The account record holds the contribution-capacity factor alone.
-;;;     Gross and claimed are readings of the observer's event log
-;;;     (validated-gross, claim-effort); nothing here caches them.
+;;;   - The store holds no account. Who holds an account here is a reading:
+;;;     the commune's members (its live membership credentials), the
+;;;     claimants (the observer's claim events) and the workers (its work
+;;;     events). A person's contribution-capacity factor is the commune's
+;;;     latest assessment credential for them, else 1. Gross and claimed are
+;;;     readings of the observer's event log (validated-gross, claim-effort).
+;;;     Nothing here caches any of it: the credentials and the events are the
+;;;     books, and this store is the arithmetic over them.
 ;;;
-;;; STATE: observer-ref (near actor) + accounts hashmap (agent-id -> <account>).
-;;; No pool hashmap — pool is a derived query over observer resources.
+;;; STATE: observer-ref (near actor), recipe-store-ref, and the STANDING the
+;;; scope hands over once it has an acdc-store (`set-standing`: a thunk
+;;; answering the members, a procedure answering a person's factor), not
+;;; serialized, re-bound after restore like on-work. No pool hashmap — pool
+;;; is a derived query over observer resources.
 
 (define-module (playnet observation account)
   #:use-module (goblins)
@@ -47,8 +55,8 @@
                publish-social-portion! declare-social-portion! spec-social-portion)
   #:export (*individually-claimable* resource-individually-claimable?
             claim-cid claim-commitment claim-cid-terms open-claim-for fulfillment-remaining
-            event-classified-individually-claimable? account->list list->account
-            resource-in-pool? compute-pool-value
+            event-classified-individually-claimable?
+            resource-in-pool? compute-pool-value account-holders
             with-elastic ^account-store sum-across-scopes
             household-social-free-time household-consumer-voice
             universal-credit-balance account-store-env
@@ -125,14 +133,6 @@
 
 
 ;; =========================================================================
-;; Record <-> list serialization
-;; =========================================================================
-
-(define (account->list a) (vf-serialize a))
-(define (list->account lst) (vf-deserialize lst))
-
-
-;; =========================================================================
 ;; Derived property computations (pure functions on state)
 ;; =========================================================================
 
@@ -154,17 +154,34 @@
 ;; Elastic pool-value — derived from observer resources via SNLT lookup
 ;; =========================================================================
 
-(define* (resource-in-pool? resource accounts #:optional (store #f))
+;; ── who holds an account here: a reading ─────────────────────────────────────
+;; The STANDING is what the scope hands the store once its credentials are
+;; in reach: (members-of . ccf-of), a thunk answering the commune's members
+;; and a procedure answering a person's assessed factor (credentials/
+;; membership.scm `membership-holders`, `ccf-assessed`). Absent — a unit
+;; test, a root with no scope above it — nobody is a member and every factor
+;; is 1, which is the reading this file always gave an account it made itself.
+(define (standing-members standing) (if standing ((car standing)) '()))
+(define (standing-ccf standing aid) (if standing ((cdr standing) aid) 1))
+
+(define (account-holders observer-ref standing)
+  "The agents who hold an account here: the members, everyone who has
+   claimed from the pool, and everyone whose work the observer holds."
+  (delete-duplicates
+   (append (standing-members standing)
+           (or (false-if-exception ($ observer-ref 'claimants)) '())
+           (map car (or (false-if-exception ($ observer-ref 'hours-by economic-event-provider)) '())))))
+
+(define* (resource-in-pool? resource holder? #:optional (store #f))
   "A resource is in the claimable pool iff it is individually-claimable
    AND its primary-accountable is NOT a citizen with an account in this
-   scope. Once a citizen claims a resource, primary-accountable moves to
-   them and the resource exits the pool — it is personal holding now."
+   scope (HOLDER? : aid → bool). Once a citizen claims a resource,
+   primary-accountable moves to them and the resource exits the pool — it
+   is personal holding now."
   (and (resource-individually-claimable? resource store)
-       (not (hashmap-ref accounts
-                         (economic-resource-primary-accountable resource)
-                         #f))))
+       (not (holder? (economic-resource-primary-accountable resource)))))
 
-(define (compute-pool-value observer-ref recipe-store-ref accounts)
+(define (compute-pool-value observer-ref recipe-store-ref holder?)
   "K = Σ qty × SNLT_crystallized over resources currently in the pool
    (playnet.typ [pool size]: a claim should cost what the good cost
    society, so the pool is valued in the same crystallized measure claims
@@ -178,7 +195,7 @@
                 (let ((spec (economic-resource-conforms-to r))
                       (qty  (measure-has-numerical-value (economic-resource-accounting-quantity r))))
                   (hash-set! per-spec spec (+ qty (hash-ref per-spec spec 0)))))
-              (filter (lambda (r) (resource-in-pool? r accounts recipe-store-ref))
+              (filter (lambda (r) (resource-in-pool? r holder? recipe-store-ref))
                       ($ observer-ref 'inventory)))
     (hash-fold (lambda (spec qty acc)
                  (let ((snlt (crystallized-snlt-for-spec recipe-store-ref spec))
@@ -186,11 +203,12 @@
                    (if (= snlt +inf.0) acc (+ acc (* left snlt)))))
                0 per-spec)))
 
-(define* (with-elastic observer-ref recipe-store-ref accounts aid level k)
+(define* (with-elastic observer-ref recipe-store-ref standing aid level k)
   "Call K on this store's own cells for AID at federation LEVEL (#f:
    scope-local). 0 when AID holds no account here."
-  (if (not (hashmap-ref accounts aid #f)) 0
-      (k (own-credit-cells observer-ref recipe-store-ref accounts) aid level)))
+  (let ((holders (account-holders observer-ref standing)))
+    (if (not (member aid holders)) 0
+        (k (own-credit-cells observer-ref recipe-store-ref standing holders) aid level))))
 
 
 ;; =========================================================================
@@ -207,11 +225,13 @@
                           "account listener error: ~a~%" args))))
             listeners))
 
-(define-actor (^account-store bcom observer-ref recipe-store-ref accounts on-work
-                              #:optional (listeners '()))
+(define-actor (^account-store bcom observer-ref recipe-store-ref on-work
+                              #:optional (listeners '()) (standing #f))
   ;; observer-ref:      near ref to this scope's ^observer (same vat)
   ;; recipe-store-ref:  near ref to this scope's ^recipe-store (for SNLT)
-  ;; accounts:          hashmap of agent-id -> <account>
+  ;; standing:          (members-of . ccf-of) from the scope's credentials,
+  ;;                    or #f (account-holders above); not serialized,
+  ;;                    re-bound by the scope after restore like on-work
   ;; on-work:           (lambda (event) → unit) or #f
   ;;                    Called after a work event is credited.
   ;;                    The closure encapsulates ACDC emission — planner
@@ -222,49 +242,42 @@
   ;;                    after restore, like on-work.
 
   #:portrait
-  (lambda () (list observer-ref recipe-store-ref
-                   (serialize-hashmap accounts account->list)))
+  (lambda () (list observer-ref recipe-store-ref))
 
-  #:version 6
+  #:version 7
 
   #:restore
-  (lambda (version obs rs sa)
-    ;; on-work isn't serializable; restore with #f, gateway re-binds via
-    ;; set-on-work after recovery (mirrors plan-store.set-on-commitment).
-    ;; v5 dropped the gross-contribution-credited cache field; v6 the
-    ;; claimed-capacity cache: each is a reading of the observer's events now
-    ;; (validated-gross, claim-effort). An older portrait is read by dropping
-    ;; the cached fields.
-    (define (legacy->account lst)
-      (match lst
-        ((aid _gross _claimed ccf) (make-account aid ccf))
-        ((aid _claimed ccf) (make-account aid ccf))))
+  (lambda (version obs rs . rest)
+    ;; on-work and the standing aren't serializable; restore with neither,
+    ;; the scope re-binds both (set-on-work, set-standing). v5 dropped the
+    ;; gross-contribution-credited cache field, v6 the claimed-capacity
+    ;; cache, v7 the accounts themselves: each is a reading now (the
+    ;; observer's events, the scope's credentials). An older portrait is
+    ;; read by dropping what it cached.
     (case version
-      ((3 4 5) (spawn ^account-store obs rs
-                      (deserialize-hashmap sa legacy->account) #f))
-      ((6)   (spawn ^account-store obs rs
-                    (deserialize-hashmap sa list->account) #f))
+      ((3 4 5 6 7) (spawn ^account-store obs rs #f))
       (else (error "Unknown ^account-store version" version))))
 
   (methods
 
-    ;; --- Account management ---
+    ;; --- The standing: the scope's credentials, read, never copied ---
 
-    ((ensure-account agent-id)
-     (if (hashmap-ref accounts agent-id #f)
-         agent-id
-         (let ((acct (make-account agent-id 1)))
-           (bcom (^account-store bcom observer-ref recipe-store-ref
-                   (hashmap-set accounts agent-id acct) on-work listeners)
-                 agent-id))))
+    ((set-standing members-of ccf-of)
+     ;; MEMBERS-OF: thunk → the commune's member aids; CCF-OF: aid → factor.
+     ;; The scope hands these over once its acdc-store is in reach, and
+     ;; again after a restore; a test hands over a fixed roster.
+     (fire-listeners! listeners)
+     (bcom (^account-store bcom observer-ref recipe-store-ref on-work listeners
+                           (cons members-of ccf-of))))
+    ;; the scope's credentials changed under the standing (a member admitted,
+    ;; a factor assessed): the fold's listeners hear it
+    ((standing-changed) (fire-listeners! listeners))
 
-    ((get-account agent-id)
-     (hashmap-ref accounts agent-id #f))
-
-    ((all-accounts)
-     (hashmap-values accounts))
+    ((holders) (account-holders observer-ref standing))
+    ((holder? agent-id) (and (member agent-id (account-holders observer-ref standing)) #t))
+    ((ccf-of agent-id) (standing-ccf standing agent-id))
     ;; this scope's credit cells, stated by the store (own-credit-cells)
-    ((credit-cells) (own-credit-cells observer-ref recipe-store-ref accounts))
+    ((credit-cells) (own-credit-cells observer-ref recipe-store-ref standing))
 
     ;; --- Contributions ---
 
@@ -277,48 +290,30 @@
      ;; use by callers) or #f if not a work event.
      (if (not (eq? (economic-event-action event) 'work))
          #f
-         (let* ((agent-id (or (economic-event-provider event)
-                              (economic-event-receiver event)))
-                (qty (and (economic-event-effort-quantity event)
-                          (measure-has-numerical-value
-                            (economic-event-effort-quantity event))))
-                (existing (hashmap-ref accounts agent-id #f))
-                (new-accounts (if existing accounts
-                                  (hashmap-set accounts agent-id
-                                    (make-account agent-id 1)))))
+         (let ((qty (and (economic-event-effort-quantity event)
+                         (measure-has-numerical-value
+                           (economic-event-effort-quantity event)))))
            (when on-work (on-work event))
            (fire-listeners! listeners)
-           (bcom (^account-store bcom observer-ref recipe-store-ref
-                   new-accounts on-work listeners)
-                 qty))))
+           qty)))
 
     ((credit-from-event-silent event)
      ;; Recovery path: identical to credit-from-event but skips the
      ;; on-work callback (avoids ACDC re-emission during replay).
      (if (not (eq? (economic-event-action event) 'work))
          #f
-         (let* ((agent-id (or (economic-event-provider event)
-                              (economic-event-receiver event)))
-                (qty (and (economic-event-effort-quantity event)
-                          (measure-has-numerical-value
-                            (economic-event-effort-quantity event))))
-                (existing (hashmap-ref accounts agent-id #f))
-                (new-accounts (if existing accounts
-                                  (hashmap-set accounts agent-id
-                                    (make-account agent-id 1)))))
-           (bcom (^account-store bcom observer-ref recipe-store-ref
-                   new-accounts on-work listeners)
-                 qty))))
+         (and (economic-event-effort-quantity event)
+              (measure-has-numerical-value (economic-event-effort-quantity event)))))
 
     ((set-on-work proc)
      ;; Late-bind the emission callback (post-recovery, post-restore).
-     (bcom (^account-store bcom observer-ref recipe-store-ref accounts proc
-                           listeners)))
+     (bcom (^account-store bcom observer-ref recipe-store-ref proc
+                           listeners standing)))
 
     ;; additive: a listener joins, nothing it was beside is displaced
     ((add-change-listener proc)
-     (bcom (^account-store bcom observer-ref recipe-store-ref accounts on-work
-                           (cons proc listeners))))
+     (bcom (^account-store bcom observer-ref recipe-store-ref on-work
+                           (cons proc listeners) standing)))
 
     ((add-contribution agent-id svc-amount)
      ;; Bootstrap / test hook: credit SVC without a real production
@@ -337,25 +332,8 @@
           (make-work-event #:id evid #:resource-spec "spec-labor" #:provider agent-id
                            #:effort-qty svc-amount #:effort-unit %effort-unit #:satisfies iid
                            #:timestamp #f #:note #f))
-       (let ((existing (hashmap-ref accounts agent-id #f)))
-         (bcom (^account-store bcom observer-ref recipe-store-ref
-                 (if existing accounts
-                     (hashmap-set accounts agent-id
-                       (make-account agent-id 1)))
-                 on-work listeners)))))
-
-    ((set-ccf agent-id new-ccf)
-     ;; Set the contribution-capacity-factor for an agent.
-     ;; Governance layer is responsible for authorizing this call
-     ;; (typically gated by a capability held behind the gov-seal).
-     (when (or (< new-ccf 0) (> new-ccf 1))
-       (error "CCF must be in [0, 1]" agent-id new-ccf))
-     (let* ((existing (hashmap-ref accounts agent-id #f))
-            (acct (or existing (make-account agent-id 1)))
-            (updated (make-account agent-id new-ccf)))
        (fire-listeners! listeners)
-       (bcom (^account-store bcom observer-ref recipe-store-ref
-               (hashmap-set accounts agent-id updated) on-work listeners))))
+       #t))
 
     ;; --- Claim (VF transfer from scope to citizen) ---
 
@@ -419,9 +397,7 @@
                  ;; are all the one name the claim id carries. CLAIMANT-AID is the
                  ;; caller's confirmation of who it speaks for.
                  (claimant (cadr terms))
-                 (eff-balance (effective-balance (credit-cells scope-roots) claimant (current-social-free-time) level))
-                 (acct (or (hashmap-ref accounts claimant #f)
-                           (make-account claimant 1))))
+                 (eff-balance (effective-balance (credit-cells scope-roots) claimant (current-social-free-time) level)))
             (unless (equal? (car terms) (economic-resource-conforms-to resource))
               (error "the plan's claim names another good"
                      fulfills (economic-resource-conforms-to resource)))
@@ -460,13 +436,10 @@
                        ;; ledger-claimed and the claim ACDC read it back
                        #:distribution-mode 'individual-claimable)))
               ($ observer-ref 'record-event event)
-              ;; what the claimant has claimed is the events' sum (claim-effort);
-              ;; the account stands so the fold reads them as a citizen
+              ;; what the claimant has claimed is the events' sum (claim-effort),
+              ;; and the event makes them a holder here (account-holders)
               (fire-listeners! listeners)
-              (bcom (^account-store bcom observer-ref recipe-store-ref
-                      (hashmap-set accounts claimant acct) on-work
-                      listeners)
-                    #t)))))))
+              #t))))))
 
     ;; --- Derived queries (event-sourced + elastic) ---
 
@@ -480,13 +453,15 @@
      ;; Individually-claimable resources still held by the scope (not
      ;; yet claimed by a citizen). Returns a list of <economic-resource>
      ;; records.
-     (filter (lambda (r) (resource-in-pool? r accounts recipe-store-ref))
-             ($ observer-ref 'inventory)))
+     (let ((holders (account-holders observer-ref standing)))
+       (filter (lambda (r) (resource-in-pool? r (lambda (a) (and (member a holders) #t)) recipe-store-ref))
+               ($ observer-ref 'inventory))))
 
     ((embodied-labor-in-pool)
      ;; Total embodied labor in pool resources (hours). Excludes
      ;; resources already claimed by citizens.
-     (compute-pool-value observer-ref recipe-store-ref accounts))
+     (let ((holders (account-holders observer-ref standing)))
+       (compute-pool-value observer-ref recipe-store-ref (lambda (a) (and (member a holders) #t)))))
 
     ((total-claim-capacity agent-id . maybe-level)
      ;; Contribution by ability over this scope's own pool (no subtraction
@@ -494,7 +469,7 @@
      ;; local read is the base model, f = 0). Optional LEVEL filters to
      ;; credits in plans confirmed at LEVEL. 0 if agent has no account.
      (let ((level (and (pair? maybe-level) (car maybe-level))))
-       (with-elastic observer-ref recipe-store-ref accounts agent-id level
+       (with-elastic observer-ref recipe-store-ref standing agent-id level
                      (lambda (cells aid lv) (total-claim-capacity cells aid 0 lv)))))
 
     ((effective-balance agent-id . maybe-level)
@@ -504,19 +479,19 @@
      ;; (default) is scope-local. At parent scopes the answer is
      ;; informational — actual claims still execute against leaves.
      (let ((level (and (pair? maybe-level) (car maybe-level))))
-       (with-elastic observer-ref recipe-store-ref accounts agent-id level
+       (with-elastic observer-ref recipe-store-ref standing agent-id level
                      (lambda (cells aid lv) (effective-balance cells aid 0 lv)))))
 
     ((citizen-ability agent-id . maybe-level)
      ;; r_p: validated hours scaled to full capacity (elastic.scm) — the
      ;; per-scope term the async federation sum reads
      (let ((level (and (pair? maybe-level) (car maybe-level))))
-       (with-elastic observer-ref recipe-store-ref accounts agent-id level ability-contribution)))
+       (with-elastic observer-ref recipe-store-ref standing agent-id level ability-contribution)))
 
     ((ability-norm . maybe-level)
      ;; Σ r over this scope's account holders
      (let ((level (and (pair? maybe-level) (car maybe-level))))
-       (ability-norm (own-credit-cells observer-ref recipe-store-ref accounts) level)))
+       (ability-norm (own-credit-cells observer-ref recipe-store-ref standing) level)))
 
     ((effective-price spec-id qty . maybe-level)
      ;; Display-only elastic price (Option B). Returns qty × SNLT ×
@@ -525,7 +500,8 @@
      ;; UI signal for congestion, not a validation cost.
      ;; Returns +inf.0 if pool is empty or spec has no recipe.
      (let* ((level     (and (pair? maybe-level) (car maybe-level)))
-            (pool      (compute-pool-value observer-ref recipe-store-ref accounts))
+            (pool      (let ((holders (account-holders observer-ref standing)))
+                         (compute-pool-value observer-ref recipe-store-ref (lambda (a) (and (member a holders) #t)))))
             (total-svc ($ observer-ref 'validated-gross #f level))
             ;; same crystallized measure as the pool and the claim itself,
             ;; so the congestion ratio is dimensionally honest
@@ -543,11 +519,11 @@
     ;; These expose per-scope contributions that top-level global-*
     ;; functions sum across scope-roots.
 
-    ((sum-met-capacity)                 ; Σ CCF over this scope's accounts — a fact about capacity, no rule reads it
-     (hashmap-fold (lambda (_k a acc) (+ acc (account-contribution-capacity-factor a))) 0 accounts))
+    ((sum-met-capacity)                 ; Σ CCF over this scope's account holders — a fact about capacity, no rule reads it
+     (fold (lambda (a acc) (+ acc (standing-ccf standing a))) 0 (account-holders observer-ref standing)))
 
     ((sum-unmet-capacity)               ; Σ (1 − CCF)
-     (hashmap-fold (lambda (_k a acc) (+ acc (- 1 (account-contribution-capacity-factor a)))) 0 accounts))
+     (fold (lambda (a acc) (+ acc (- 1 (standing-ccf standing a)))) 0 (account-holders observer-ref standing)))
 
     ;; the levels this scope's gate knows — the credit fold's stratified
     ;; cells are one per (citizen, level); read here so a walk over roots
@@ -569,8 +545,9 @@
      ;; (1 - CCF) for aid in THIS scope (0 if no account).
      ;; For global sum-unmet, citizens active in N scopes contribute
      ;; N times — multi-counting is the Phase-2 pragmatic aggregation.
-     (let ((a (hashmap-ref accounts agent-id #f)))
-       (if a (- 1 (account-contribution-capacity-factor a)) 0)))))
+     (if (member agent-id (account-holders observer-ref standing))
+         (- 1 (standing-ccf standing agent-id))
+         0))))
 
 
 ;; =========================================================================
@@ -614,35 +591,31 @@
 ;; computes from: one gross cell per WORKER (every provider of validated
 ;; work, account or none — so voice reads the same for a hand that holds no
 ;; account), stratified per level the observer's gate knows; claims,
-;; capacity and unmet per ACCOUNT; a citizen cell per account holder who is
-;; a person; the pool and the scope's total once.
-(define (own-credit-cells observer-ref recipe-store-ref accounts)
-  (let* ((accts (hashmap-values accounts))
-         (levels (or (false-if-exception ($ observer-ref 'validation-levels)) '()))
-         (workers (map car (or (false-if-exception ($ observer-ref 'hours-by economic-event-provider)) '())))
-         (aids (delete-duplicates (append (map account-agent-id accts) workers)))
+;; capacity and unmet per ACCOUNT HOLDER (account-holders above); a citizen
+;; cell per holder who is a person; the pool and the scope's total once.
+(define* (own-credit-cells observer-ref recipe-store-ref standing
+                           #:optional (aids (account-holders observer-ref standing)))
+  (let* ((levels (or (false-if-exception ($ observer-ref 'validation-levels)) '()))
+         (holder? (lambda (a) (and (member a aids) #t)))
          (gross (lambda (aid . l) ($ observer-ref 'validated-gross aid (and (pair? l) (car l))))))
     (credit-combine
      '()
      (append
       (append-map
        (lambda (aid)
-         (let ((a (hashmap-ref accounts aid #f)))
+         (let ((ccf (standing-ccf standing aid)))
            (append
             (list (cons (cons 'gross aid) (gross aid)))
             (map (lambda (l) (cons (cons 'gross-at (cons aid l)) (gross aid l))) levels)
             ;; a citizen is a witnessed person, account or none — a worker who
             ;; has never claimed is one; contribution by ability reads on citizens
             (if (person-aid? aid) (list (cons (cons 'citizen aid) 1)) '())
-            (if a
-                (let ((ccf (account-contribution-capacity-factor a)))
-                  (list (cons (cons 'claimed aid) ($ observer-ref 'claim-effort aid))
-                        (cons (cons 'ccf aid) ccf)
-                        (cons (cons 'unmet aid) (- 1 ccf))))
-                '()))))
+            (list (cons (cons 'claimed aid) ($ observer-ref 'claim-effort aid))
+                  (cons (cons 'ccf aid) ccf)
+                  (cons (cons 'unmet aid) (- 1 ccf))))))
        aids)
       (map (lambda (l) (cons (cons 'svc-at l) ($ observer-ref 'validated-gross #f l))) levels)
-      (list (cons '(pool . *) (compute-pool-value observer-ref recipe-store-ref accounts))
+      (list (cons '(pool . *) (compute-pool-value observer-ref recipe-store-ref holder?))
             (cons '(svc . *) ($ observer-ref 'validated-gross #f)))))))
 
 ;; --- Household consumer voice: the same law, no scope tree ---

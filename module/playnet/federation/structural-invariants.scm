@@ -95,13 +95,7 @@
    this — it rides on work-events. This is consumption-side."
   (let ((store ($ leaf 'acdc-store))
         (aid   ($ leaf 'scope-aid)))
-    (if store
-        (delete-duplicates
-         (map cred-holder
-              (filter (lambda (c) (equal? aid (cred-issuer c)))
-                      (non-revoked-by-schema
-                       store *schema-playnet-membership*))))
-        '())))
+    (if store (membership-holders ($ store 'all) aid) '())))
 
 (define (federation-aid-paths scope-ref)
   "Return an alist (person-aid . leaf-aid-list) — for each member-aid

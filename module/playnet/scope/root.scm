@@ -167,7 +167,7 @@
          (obs (spawn ^observer (empty-observer-state) '()))
          (ps  (spawn ^plan-store (empty-plan-store-state) '()))
          (bzs (spawn ^buffer-zone-store (hashmap)))
-         (acs (spawn ^account-store obs rs (hashmap) #f))
+         (acs (spawn ^account-store obs rs #f))
          (cbs (spawn ^capacity-buffer-store (hashmap)))
          (sts (spawn ^spatial-thing-store (hashmap)))
          (sns (spawn ^snapshot-store '()))

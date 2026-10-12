@@ -1121,6 +1121,18 @@
                         ;; the scope graph listens (federation/scope-graph.scm)
                         (let ((told (scope-spawned)))
                           (when told (told effective-aid kind new-ref scope-name))))
+                      ;; The account store reads who holds an account here and a
+                      ;; person's capacity off this scope's credentials, as they
+                      ;; stand at each read (so a store bound later by
+                      ;; set-acdc-store is the one read): the standing is a
+                      ;; reading, and the scope hands the store the two readers.
+                      (when (and scope-root-ref (eq? kind 'commune))
+                        (let ((creds (lambda ()
+                                       (let ((st ($ new-ref 'acdc-store)))
+                                         (if st ($ st 'all) '())))))
+                          ($ ($ scope-root-ref 'account-store) 'set-standing
+                             (lambda () (membership-holders (creds) effective-aid))
+                             (lambda (aid) (ccf-assessed (creds) effective-aid aid)))))
                       ;; Turn ON the credential substrate: when this scope has both
                       ;; an economic substrate and a store, planner events mint the
                       ;; work/skill/intent/commitment/claim ACDCs. Idempotent, and

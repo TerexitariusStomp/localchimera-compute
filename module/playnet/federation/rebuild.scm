@@ -152,43 +152,16 @@
 ;; =========================================================================
 
 (define (recover-commune-state commune acdc-store)
-  "Apply all non-revoked exclusion + ccf-assessment + membership
-   credentials scoped to commune's name. The COMMUNE must be a live
-   ^commune already wired to ACDC-STORE (otherwise mutations would
-   re-emit credentials and infinite-loop on round-trip)."
+  "Apply all non-revoked exclusion credentials scoped to commune's name.
+   Membership and the capacity assessments need no replay: the account
+   store reads them off the credentials as they stand (observation/
+   account.scm `account-holders`, credentials/membership.scm
+   `ccf-assessed`). The COMMUNE must be a live ^commune already wired to
+   ACDC-STORE."
   (let* ((name ($ commune 'name))
          (commune-aid ($ commune 'commune-aid))
          (gov-cap     ($ commune 'mint-gov-cap "recovery-bot"))
          (all-creds   ($ acdc-store 'by-issuer commune-aid)))
-
-    ;; --- Membership: ensure-account for each member of THIS commune ---
-    (for-each
-      (lambda (c)
-        (when (and (equal? (cred-schema c) *schema-playnet-membership*)
-                   (not (cred-revoked? c))
-                   (equal? (cred-claim c 'commune) name))
-          ($ ($ ($ commune 'scope-root) 'account-store)
-             'ensure-account (cred-holder c))))
-      all-creds)
-
-    ;; --- CCF: latest non-revoked per holder wins ---
-    (let* ((ccf-creds (filter
-                        (lambda (c)
-                          (and (equal? (cred-schema c) *schema-playnet-ccf-assessment*)
-                               (not (cred-revoked? c))
-                               (equal? (cred-claim c 'commune) name)))
-                        all-creds))
-           (latest (latest-by-claim ccf-creds 'assessed-at)))
-      (hashmap-fold
-        (lambda (holder c _)
-          (let ((ccf (cred-claim c 'ccf)))
-            ;; set-ccf will re-emit a new ACDC since acdc-store is wired.
-            ;; That's intentional: the recovered ACDC carries the new
-            ;; SAID so the round-trip is observable. Tests that want
-            ;; pristine round-trip can compare CCF VALUES, not ACDC
-            ;; contents.
-            ($ commune 'set-ccf gov-cap holder ccf)))
-        #f latest))
 
     ;; --- Exclusions: each non-revoked exclusion is reapplied ---
     (for-each

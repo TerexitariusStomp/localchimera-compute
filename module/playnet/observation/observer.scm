@@ -1575,6 +1575,14 @@
    widest part, the scope itself."
   (hours-on st (make-part) #:owner aid #:level level))
 
+(define (ledger-claimants st)
+  "Everyone who has received an individually-claimable transfer: the claimants."
+  (delete-duplicates
+   (filter-map (lambda (ev)
+                 (and (eq? (event-distribution-mode ev) 'individual-claimable)
+                      (economic-event-receiver ev)))
+               (standing-events st 'transfer))))
+
 (define (ledger-claimed st aid)
   "Sum of effort-hours on individually-claimable transfers received by AID."
   (fold (lambda (ev acc)
@@ -2440,6 +2448,7 @@
     ((claim-effort aid)
      ;; Debit side of the ledger (individually-claimable receipts).
      (ledger-claimed st aid))
+    ((claimants) (ledger-claimants st))   ; who has claimed here: an account holder (account.scm)
 
     ;; the LEVELS this scope's gate knows: every scope-id that recognizes a
     ;; plan or an intent here (both rails of intent-counts-at?). Finite and

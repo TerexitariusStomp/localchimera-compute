@@ -60,8 +60,8 @@
      (let ((assessed-at (if (pair? rest) (car rest) (current-time)))
            (reason      (if (and (pair? rest) (pair? (cdr rest)))
                             (cadr rest) #f)))
-       (when scope-root-ref
-         ($ ($ scope-root-ref 'account-store) 'set-ccf aid new-ccf))
+       ;; the credential IS the factor (account.scm reads it through the
+       ;; standing); the store hears that the standing moved
        (when acdc-store
          ($ acdc-store 'issue
             (make-ccf-credential #:issuer-group-aid scope-aid
@@ -71,6 +71,8 @@
                                  #:assessed-at assessed-at
                                  #:reason reason
                                  #:signing-keypair keypair)))
+       (when scope-root-ref
+         ($ ($ scope-root-ref 'account-store) 'standing-changed))
        'ok))
 
     ((exclude-member gov-cap aid . rest)
@@ -112,8 +114,7 @@
      (unless ($ gov-sealed? gov-cap)
        (error "admit-member requires gov-authority" name aid))
      (let ((admitted-at (if (pair? rest) (car rest) (current-time))))
-       (when scope-root-ref
-         ($ ($ scope-root-ref 'account-store) 'ensure-account aid))
+       ;; the credential IS the membership (account.scm `account-holders`)
        (when acdc-store
          ($ acdc-store 'issue
             (make-membership-credential #:issuer-group-aid scope-aid
@@ -121,4 +122,6 @@
                                         #:commune name
                                         #:admitted-at admitted-at
                                         #:signing-keypair keypair)))
+       (when scope-root-ref
+         ($ ($ scope-root-ref 'account-store) 'standing-changed))
        'ok)))))

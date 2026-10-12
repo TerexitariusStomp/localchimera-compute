@@ -3,7 +3,7 @@
 (use-modules (playnet test harness))
 (use-modules (playnet scope root) (playnet vf schemas) (playnet observation states))
 (use-modules (playnet utils endorsement))
-(use-modules (playnet boot scope))
+(use-modules (playnet boot scope) ((playnet keri acdc-store) #:select (spawn-acdc-store)))
 (use-modules (goblins) (goblins utils hashmap))
 
 
@@ -18,7 +18,8 @@
 (define commune
   (with-vat vat
     (let ((scope (spawn-scope-root "Watershed")))
-      (spawn-commune "Watershed" scope))))
+      ;; the assessment IS a credential, so the commune carries a store
+      (spawn-commune "Watershed" scope #:acdc-store (spawn-acdc-store)))))
 
 (with-vat vat
   (check-pred "commune name" (equal? "Watershed" ($ commune 'name)))
@@ -36,9 +37,8 @@
 (display "\n── 2. set-ccf gating ──\n")
 
 (with-vat vat
-  ;; Create an account in the wrapped scope first.
-  (let ((as ($ ($ commune 'scope-root) 'account-store)))
-    ($ as 'ensure-account "grandma"))
+  ;; grandma's factor is the commune's assessment credential, read by the
+  ;; store through the standing the commune handed it; nothing is pre-stated
 
   (check-pred "set-ccf without gov-cap is rejected"
               (catch #t
@@ -58,9 +58,8 @@
                   (lambda _ #f))))
 
   (let ((acct ($ ($ ($ commune 'scope-root) 'account-store)
-                 'get-account "grandma")))
-    (check "grandma CCF = 0 after set"
-           (account-contribution-capacity-factor acct) 0)))
+                 'ccf-of "grandma")))
+    (check "grandma CCF = 0 after set" acct 0)))
 
 
 ;;; ════════════════════════════════════════════════════════════════════════════

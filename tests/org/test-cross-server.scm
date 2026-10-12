@@ -4,6 +4,7 @@
 ;;; the federation. The federation enlivens server-A's scope via sturdyref
 ;;; across the fake OCapN network.
 
+(use-modules ((playnet test scope) #:select (account!)))
 (use-modules (playnet test harness))
 (use-modules (playnet scope root))
 (use-modules (playnet utils endorsement))
@@ -121,9 +122,9 @@
             (commune (spawn-commune "Watershed" scope
                                     #:commune-aid "E_watershed_aid")))
        (<-np fake-net 'register "sa2" ch)
-       ($ ($ scope 'account-store) 'ensure-account "alice")
+       (account! ($ scope 'account-store) "alice")
        ($ ($ scope 'account-store) 'add-contribution "alice" 60)
-       ($ ($ scope 'account-store) 'ensure-account "bob")
+       (account! ($ scope 'account-store) "bob")
        ($ ($ scope 'account-store) 'add-contribution "bob" 40)
        ;; Register the COMMUNE (not bare scope) — it has scope-root method
        (on (<- mycapn 'register commune 'fake)
@@ -147,7 +148,7 @@
                                             #:mycapn-ref mycapn))
               (gov-cap ($ fed 'mint-gov-cap "bootstrap")))
          (<-np fake-net 'register "sb2" ch)
-         ($ ($ local-scope 'account-store) 'ensure-account "carol")
+         (account! ($ local-scope 'account-store) "carol")
          ($ ($ local-scope 'account-store) 'add-contribution "carol" 100)
          ;; Admit local commune (near ref — commune wraps scope-root)
          (let ((local-commune (spawn-commune "Bakery" local-scope

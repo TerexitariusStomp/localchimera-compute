@@ -20,7 +20,7 @@
 
 
 (use-modules ((playnet observation account) #:select (declare-claimable!)))
-(use-modules ((playnet test scope) #:select (record-work!)))
+(use-modules ((playnet test scope) #:select (record-work! account!)))
 ;; the rail is read off the recipes: this fixture stands in for the plan and
 ;; declares that a claim recipe stands for spec-bread (account.scm spec-claimable?)
 (declare-claimable! "spec-bread")
@@ -67,7 +67,7 @@
     ($ asb 'credit-from-event ($ ob 'get-event "ea2"))
     ($ asb 'credit-from-event ($ ob 'get-event "ec1"))
     (bread-pool! b 4)
-    ($ asb 'set-ccf "cy" 1/2)
+    (account! asb "cy" 1/2)
 
     ($ svc 'add-scope! "A" a)
     ($ svc 'add-scope! "B" b)
@@ -123,7 +123,7 @@
     (display "\n── the fold hears its writers: no list threaded ──\n")
     ;; the refold is an eventual send (it must see the store AFTER its
     ;; turn), so the writes land here and the reads take the next turn
-    ($ asb 'set-ccf "cy" 1/4)
+    (account! asb "cy" 1/4)
     (work! ob "cy" 5 "ec2" "ic2")
     (set! %svc svc) (set! %uc uc) (set! %a a) (set! b-root b)))
 

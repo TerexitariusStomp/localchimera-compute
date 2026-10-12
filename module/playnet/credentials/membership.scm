@@ -17,7 +17,8 @@
             make-federation-census-credential
             make-federation-membership-credential
             make-federation-sturdyref-credential
-            make-membership-credential))
+            make-membership-credential
+            membership-holders ccf-assessed))
 (define *schema-playnet-federation-sturdyref* "playnet-federation-sturdyref/v1")
 (define *schema-playnet-federation-census* "playnet-federation-census/v1")
 
@@ -108,3 +109,30 @@
 ;; here at load, so a module that imports one family finds its credentials.
 (register-schema-claims!
  `((,*schema-playnet-federation-census* () told-at)))
+
+;; ── the roster and the capacity, read off the credentials ───────────────────
+;; A commune's citizens are the holders of its live membership credentials, and
+;; a citizen's contribution-capacity factor is the latest live assessment the
+;; commune issued for them, else 1: both are readings of CREDS, the credentials
+;; a store answers to 'all, never a second copy held beside them.
+
+(define (%live-of creds issuer schema)
+  (filter (lambda (c) (and (equal? (cred-schema c) schema)
+                           (equal? (cred-issuer c) issuer)
+                           (not (cred-revoked? c))))
+          creds))
+
+(define (membership-holders creds issuer)
+  "The distinct holders of ISSUER's live membership credentials among CREDS."
+  (delete-duplicates (map cred-holder (%live-of creds issuer *schema-playnet-membership*))))
+
+(define (ccf-assessed creds issuer aid)
+  "AID's contribution-capacity factor as ISSUER last assessed it among CREDS
+   (the live assessment with the latest `assessed-at`), else 1."
+  (let loop ((cs (%live-of creds issuer *schema-playnet-ccf-assessment*)) (best #f) (at #f))
+    (cond ((null? cs) (if best (cred-claim best 'ccf) 1))
+          ((not (equal? (cred-holder (car cs)) aid)) (loop (cdr cs) best at))
+          (else (let ((t (cred-claim (car cs) 'assessed-at)))
+                  (if (or (not at) (and (number? t) (number? at) (> t at)))
+                      (loop (cdr cs) (car cs) t)
+                      (loop (cdr cs) best at)))))))

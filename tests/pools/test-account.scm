@@ -22,7 +22,7 @@
 
 (use-modules ((playnet observation account) #:select (declare-claimable!)))
 (use-modules ((playnet test scope) #:select (plan-claim!)))   ; the plan's row, stood by the fixture
-(use-modules ((playnet test scope) #:select (record-work!)))
+(use-modules ((playnet test scope) #:select (record-work! account!)))
 ;; the rail is read off the recipes: this fixture stands in for the plan and
 ;; declares that a claim recipe stands for spec-bread (account.scm spec-claimable?)
 (declare-claimable! "spec-bread")
@@ -68,7 +68,7 @@
 (with-vat vat
   (let ((as ($ scope 'account-store)))
     (check "ability norm = 0 (no accounts)" ($ as 'ability-norm) 0)
-    (check "all-accounts empty" (length ($ as 'all-accounts)) 0)
+    (check "no holders" (length ($ as 'holders)) 0)
     (check "pool-resources empty" (length ($ as 'pool-resources)) 0)))
 
 ;;; ════════════════════════════════════════════════════════════════════════════
@@ -79,14 +79,12 @@
 
 (with-vat vat
   (let ((as ($ scope 'account-store)))
-    ($ as 'ensure-account "alice")
-    ($ as 'ensure-account "bob")
-    (check "all-accounts = 2" (length ($ as 'all-accounts)) 2)
-    (let ((alice ($ as 'get-account "alice")))
-      (check-pred "alice exists" (account? alice))
-      (check "alice agent-id" (account-agent-id alice) "alice")
-      (check "alice claimed = 0 (read off the claim events)" ($ as 'citizen-claimed "alice") 0)
-      (check "alice CCF = 1" (account-contribution-capacity-factor alice) 1))))
+    (account! as "alice")
+    (account! as "bob")
+    (check "holders = 2" (length ($ as 'holders)) 2)
+    (check-pred "alice holds an account" ($ as 'holder? "alice"))
+    (check "alice claimed = 0 (read off the claim events)" ($ as 'citizen-claimed "alice") 0)
+    (check "alice CCF = 1" ($ as 'ccf-of "alice") 1)))
 
 ;;; ════════════════════════════════════════════════════════════════════════════
 ;;; 3. set-ccf: governance-mutable capacity factor
@@ -96,12 +94,10 @@
 
 (with-vat vat
   (let ((as ($ scope 'account-store)))
-    ($ as 'set-ccf "alice" 0.5)
-    (check "alice CCF = 0.5"
-           (account-contribution-capacity-factor ($ as 'get-account "alice"))
-           0.5)
+    (account! as "alice" 0.5)
+    (check "alice CCF = 0.5" ($ as 'ccf-of "alice") 0.5)
     ;; Restore to 1 for downstream tests
-    ($ as 'set-ccf "alice" 1)))
+    (account! as "alice" 1)))
 
 ;;; ════════════════════════════════════════════════════════════════════════════
 ;;; 4. Credit balance DERIVED from observer events
@@ -416,18 +412,18 @@
 
 (with-vat vat-w
   (let ((as ($ scope-w 'account-store)))
-    ($ as 'ensure-account "alice")
-    ($ as 'ensure-account "bob")
+    (account! as "alice")
+    (account! as "bob")
     ;; contribution BY ABILITY: nobody has worked, so every r is 0
     (check "all CCF=1, no hours → ability norm 0" ($ as 'ability-norm) 0)
 
     ;; Bob fully incapacitated: he has given all he could — the standard, the
     ;; mean of those who can (alice: 0 h) — so still 0
-    ($ as 'set-ccf "bob" 0)
+    (account! as "bob" 0)
     (check "bob at CCF 0 reads as the standard: alice's 0" ($ as 'citizen-ability "bob") 0)
 
     ;; Both fully incapacitated: nobody can, so each is one — an equal share
-    ($ as 'set-ccf "alice" 0)
+    (account! as "alice" 0)
     (check "all CCF=0 → each reads 1, norm 2" ($ as 'ability-norm) 2)))
 
 ;;; ════════════════════════════════════════════════════════════════════════════
@@ -464,8 +460,8 @@
     ;; Grandma has CCF=0 (cannot work), 0 raw hours.
     (record-satisfying-work! obs "alice" 10 "ev-alice-work" "int-alice-10h")
     ($ as 'credit-from-event ($ obs 'get-event "ev-alice-work"))
-    ($ as 'ensure-account "grandma")
-    ($ as 'set-ccf "grandma" 0)
+    (account! as "grandma")
+    (account! as "grandma" 0)
 
     ;; Pool: 4 loaves × 3 = 12 hr embodied labor.
     ($ obs 'record-event
@@ -561,8 +557,8 @@
     ($ as 'credit-from-event ($ obs 'get-event "ev-a"))
     (record-satisfying-work! obs "bob"   30 "ev-b" "int-b-30h")
     ($ as 'credit-from-event ($ obs 'get-event "ev-b"))
-    ($ as 'ensure-account "grandma")
-    ($ as 'set-ccf "grandma" 0)
+    (account! as "grandma")
+    (account! as "grandma" 0)
 
     (let ((scopes (list scope-v)))
       ;; voice-share = gross / total_svc, nothing else

@@ -214,7 +214,7 @@
                *buffer-classifications* *buffer-item-types*
                *buffer-zones-enum* *days-of-week* *decoupling-tests*
                *override-reasons* *property-effects* *quantity-effects*
-               *replenishment-statuses* *target-zones* *vf-actions* <account>
+               *replenishment-statuses* *target-zones* *vf-actions*
                <action-definition> <agent-relationship-role>
                <agent-relationship> <agent> <agreement-bundle> <agreement>
                <availability-window> <batch-lot-record> <buffer-profile>
@@ -229,8 +229,7 @@
                <resource-specification> <satisfaction-state>
                <scenario-definition> <scenario> <spatial-thing>
                <specific-date-window> <time-range> <unit> <week-schedule>
-               account-agent-id
-               account-contribution-capacity-factor account?
+
                action-definition-accountable-effect
                action-definition-accounting-effect
                action-definition-contained-effect
@@ -387,7 +386,7 @@
                intent-provider intent-receiver intent-resource-classified-as
                intent-resource-conforms-to intent-resource-inventoried-as
                intent-resource-quantity intent-satisfies intent-stage
-               intent-state intent? make-account make-action-definition
+               intent-state intent? make-action-definition
                make-agent make-agent-relationship make-agent-relationship-role
                make-agreement make-agreement-bundle make-availability-window
                make-batch-lot-record make-buffer-profile make-buffer-snapshot
@@ -670,7 +669,7 @@
                rollup-relative-snlt rollup-relative-snlt-for cost-variance
                crystallized-snlt-for-spec recipe-unit-snlt rollup-actual-cost
                rollup-producers-of rollup-standard-cost ^account-store
-               account->list account-store-env consumer-voice
+               account-store-env consumer-voice
                current-social-free-time global-citizen-claimed
                global-citizen-count global-citizen-gross global-citizen-unmet
                global-citizenship-share set-person-substrate! person-aid?
@@ -679,7 +678,7 @@
                global-elastic-context global-embodied-labor-in-pool
                global-social-free-time global-sum-met-capacity
                global-sum-unmet-capacity global-total-claim-capacity
-               global-total-social-svc list->account set-social-free-time!
+               global-total-social-svc set-social-free-time!
                universal-credit-balance voice-share claimable-specs
                spec-claimable? spec-rail ^live-registry live-registry-env
                live-availability *consuming-actions* *epsilon* *ltf-ranges*

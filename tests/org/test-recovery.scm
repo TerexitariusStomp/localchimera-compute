@@ -4,6 +4,7 @@
 ;;; reconstruct everything from the ACDCs alone, assert behavioral
 ;;; equivalence on the recovered actor graph.
 
+(use-modules ((playnet test scope) #:select (account!)))
 (use-modules ((playnet utils units) #:select (%effort-unit)))
 (use-modules (playnet test harness))
 (use-modules (playnet scope root) (playnet vf schemas) (playnet observation states))
@@ -151,18 +152,16 @@
 
   ;; Verify membership: alice/bob/grandma have accounts in scope2
   (let ((as ($ scope2 'account-store)))
-    (check-pred "alice account exists"  ($ as 'get-account "alice"))
-    (check-pred "bob account exists"    ($ as 'get-account "bob"))
-    (check-pred "grandma account exists" ($ as 'get-account "grandma")))
+    (check-pred "alice account exists"  ($ as 'holder? "alice"))
+    (check-pred "bob account exists"    ($ as 'holder? "bob"))
+    (check-pred "grandma account exists" ($ as 'holder? "grandma")))
 
   ;; CCFs recovered
   (let ((as ($ scope2 'account-store)))
     (check-pred "alice CCF = 1"
-                (= 1 (account-contribution-capacity-factor
-                      ($ as 'get-account "alice"))))
+                (= 1 ($ as 'ccf-of "alice")))
     (check-pred "grandma CCF = 0"
-                (= 0 (account-contribution-capacity-factor
-                      ($ as 'get-account "grandma")))))
+                (= 0 ($ as 'ccf-of "grandma"))))
 
   ;; Exclusion recovered
   (check-pred "outlaw is excluded" ($ commune2 'excluded-aid? "outlaw"))
@@ -454,7 +453,7 @@
       (check-pred "fresh plan-store empty"
                   (not ($ fresh-plan 'get-commitment "C-recover")))
       (check-pred "fresh account-store empty"
-                  (not ($ fresh-account 'get-account "E_alice")))
+                  (not ($ fresh-account 'holder? "E_alice")))
 
       ;; Recover from ACDCs (reads same store, replays into fresh scope)
       (recover-economic-state fresh-scope store)

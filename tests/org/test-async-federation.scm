@@ -8,6 +8,7 @@
 
 (setvbuf (current-output-port) 'line)
 
+(use-modules ((playnet test scope) #:select (account!)))
 (use-modules (playnet test harness))
 (use-modules (playnet scope root) (srfi srfi-11))
 (use-modules (playnet utils endorsement))
@@ -132,12 +133,12 @@
           ;; Scope-roots with labor contributions
           (scope-A (with-vat vat-A
                      (let ((s (spawn-scope-root "Watershed")))
-                       ($ ($ s 'account-store) 'ensure-account "alice")
+                       (account! ($ s 'account-store) "alice")
                        ($ ($ s 'account-store) 'add-contribution "alice" 30)
                        s)))
           (scope-B (with-vat vat-B
                      (let ((s (spawn-scope-root "Bakery")))
-                       ($ ($ s 'account-store) 'ensure-account "bob")
+                       (account! ($ s 'account-store) "bob")
                        ($ ($ s 'account-store) 'add-contribution "bob" 50)
                        s)))
 

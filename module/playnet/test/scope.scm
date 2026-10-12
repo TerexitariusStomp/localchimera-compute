@@ -28,7 +28,7 @@
   #:use-module ((playnet vf facts parts) #:select (part->string))
   #:use-module ((playnet observation account) #:select (claim-commitment))
   #:use-module ((playnet vf formulas flows) #:select (make-work-intent))
-  #:export (mock-scope mock-scope-root mock-world record-work! push-on plan-claim!))
+  #:export (mock-scope mock-scope-root mock-world record-work! push-on plan-claim! account!))
 
 ;; ── the plan's claim, stated by a fixture ───────────────────────────────────
 ;; A claim event fulfils a commitment the plan minted (service.scm plan-claims!,
@@ -144,3 +144,21 @@
                 (plan-store . ,plan-store) (alert-store . ,alert-store)
                 (account-store . ,account-store)
                 (legal-registry . ,legal-registry))))))
+
+;; ── a roster a fixture states ───────────────────────────────────────────────
+;; Who holds an account and a person's contribution-capacity factor are
+;; readings of a commune's credentials (observation/account.scm
+;; `account-holders`, `set-standing`); a suite with no credential store
+;; states them here, one call per fact, the way a commune's admit-member and
+;; set-ccf would have the store read them: (account! store aid [ccf]).
+(define %stated (make-hash-table))   ; store → (members . ((aid . ccf) …))
+(define* (account! store aid #:optional (ccf #f))
+  (let* ((row (or (hashq-ref %stated store) (cons '() '())))
+         (members (if (member aid (car row)) (car row) (cons aid (car row))))
+         (ccfs (if ccf (cons (cons aid ccf) (alist-delete aid (cdr row))) (cdr row)))
+         (row* (cons members ccfs)))
+    (hashq-set! %stated store row*)
+    ($ store 'set-standing
+       (lambda () (car (hashq-ref %stated store)))
+       (lambda (a) (let ((p (assoc a (cdr (hashq-ref %stated store))))) (if p (cdr p) 1))))
+    aid))

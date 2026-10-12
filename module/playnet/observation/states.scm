@@ -1,18 +1,20 @@
 ;;; observation/states.scm — the states the books hold as records.
 ;;;
-;;; Three shapes of a reading and one stored record. The readings: how much of a
-;;; commitment is fulfilled, how much of an intent is satisfied, how much of a
-;;; claim is settled. The observer builds each from the events when it is asked
-;;; (fulfillment-of, satisfaction-of, claim-state-of) and stores none: it holds the
-;;; registered target, which the Commitment, Intent or Claim states. The record: a
-;;; person's credit account (claimed capacity and the contribution-capacity factor). ValueFlows defines none of them as a class:
-;;; `fulfills`, `satisfies` and `settles` are relations on events, and the states
-;;; are what following them yields.
+;;; Three shapes of a reading: how much of a commitment is fulfilled, how much
+;;; of an intent is satisfied, how much of a claim is settled. The observer
+;;; builds each from the events when it is asked (fulfillment-of,
+;;; satisfaction-of, claim-state-of) and stores none: it holds the registered
+;;; target, which the Commitment, Intent or Claim states. ValueFlows defines
+;;; none of them as a class: `fulfills`, `satisfies` and `settles` are relations
+;;; on events, and the states are what following them yields.
 ;;;
 ;;; Route into the core (docs/planning/codebase-organization.md §7): the three
 ;;; tracking states are derived from the events and stored nowhere, so they are
-;;; already what VF says they are; and an account is an EconomicResource of a credit
-;;; specification moved by events (valueflows-accounting-rules.md Q11).
+;;; already what VF says they are. The account that once stood beside them is a
+;;; reading too (observation/account.scm `account-holders`): who holds one is the
+;;; commune's membership credentials, its claim events and its work events, and
+;;; a person's contribution-capacity factor is the commune's assessment
+;;; credential (credentials/membership.scm `ccf-assessed`).
 
 (define-module (playnet observation states)
   #:use-module (srfi srfi-1)
@@ -22,13 +24,11 @@
             make-satisfaction-state
             copy-satisfaction-state
             make-claim-state
-            make-account
             ;; the record declarations below define these (define-vf-record; check-record-exports holds the list)
             <fulfillment-state> fulfillment-state? fulfillment-state-commitment-id fulfillment-state-total-committed fulfillment-state-total-fulfilled fulfillment-state-fulfilling-events
             fulfillment-state-finished fulfillment-state-over-fulfilled <satisfaction-state> satisfaction-state? satisfaction-state-intent-id satisfaction-state-total-desired
             satisfaction-state-total-satisfied satisfaction-state-satisfying-events satisfaction-state-satisfying-commitments satisfaction-state-finished satisfaction-state-plan-id <claim-state>
-            claim-state? claim-state-claim-id claim-state-total-claimed claim-state-total-settled claim-state-settling-events claim-state-finished
-            <account> account? account-agent-id account-contribution-capacity-factor))
+            claim-state? claim-state-claim-id claim-state-total-claimed claim-state-total-settled claim-state-settling-events claim-state-finished))
 
 ;; ═══════════════════════════════════════════════════════════════════════
 ;; OBSERVER TRACKING STATE
@@ -76,20 +76,6 @@
 ;; ═══════════════════════════════════════════════════════════════════════
 ;; COMMUNE ACCOUNT (labor-credit system)
 ;; ═══════════════════════════════════════════════════════════════════════
-
-;;; Account — a person's Contribution Capacity Factor, and nothing else.
-;;; Gross social labour is derived from the observer's work events through
-;;; the Validation Gate (§III.1), and what the person has claimed from the
-;;; pool from the observer's claim events (`claim-effort`): each a reading,
-;;; so there is no cache to drift. The record holds the one fact that is
-;;; stated rather than read: the factor.
-;;; Fields: agent-id (string),
-;;;         contribution-capacity-factor (number 0-1, ability to contribute).
-(define-vf-record <account> Account
-  (agent-id contribution-capacity-factor)
-  #:register register-vf-record!)
-
-(define make-account                              (vf-record-constructor <account>))
 
 ;; ── persistence: these records register their own types ─────────────────────
 ;; each type registers itself as it is declared (define-vf-record #:register)

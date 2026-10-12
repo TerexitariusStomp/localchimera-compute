@@ -40,7 +40,7 @@
                     (let ((h (+ 5 (rnd st 36))))
                       (record-work! obs aid h (format #f "e~a" i) (format #f "i~a" i))
                       ($ as 'credit-from-event ($ obs 'get-event (format #f "e~a" i)))
-                      (when (= 0 (rnd st 3)) ($ as 'set-ccf aid (list-ref '(1/2 3/4) (rnd st 2))))))
+                      (when (= 0 (rnd st 3)) (account! as aid (list-ref '(1/2 3/4) (rnd st 2))))))
                   aids (iota n))
         ($ rs 'add-recipe-process (make-recipe-process #:id "rp-bake" #:name "Bake" #:process-conforms-to "pspec-bake" #:has-duration (make-duration 3 %effort-unit)))
         ($ rs 'add-recipe-flow (make-recipe-flow #:id "rf-w" #:action 'work #:resource-conforms-to "spec-labor" #:effort-quantity (make-measure 3 %effort-unit) #:recipe-input-of "rp-bake"))
