@@ -11,7 +11,6 @@
 
 (define-module (playnet vf facts located)
   #:use-module (srfi srfi-1)
-  #:use-module (srfi srfi-13)
   #:export (lg cell good-spec located-cell place-of period-of
             key-period key-date key-retime parse-located-good
             bar-fields bar-field key-prefix

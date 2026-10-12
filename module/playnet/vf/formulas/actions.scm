@@ -22,7 +22,6 @@
 (define-module (playnet vf formulas actions)
   #:use-module (srfi srfi-1)
   #:use-module (playnet vf schemas)
-  #:use-module ((playnet vf formulas flows) #:select (row-action row-spec row-quantity))
   #:export (actions-where action-input-output
             ;; a process's sides
             process-input-actions process-output-actions input-action? output-action?
@@ -31,7 +30,6 @@
             *stock-moving-actions* *adjustment-actions* *flow-actions* *rights-moving-actions*
             ;; what a recipe makes
             making-actions output-flow? upstream-closure creating-actions using-up-actions
-            committed-by-spec committed-quantity
             ;; playnet's own columns
             relocating-actions relocating-action? relocating-side same-flow?
             ;; the sets the doors and the algorithms ask for
@@ -203,25 +201,6 @@
 ;; a pickup take a thing off hand that comes back.
 (define using-up-actions
   (actions-where (lambda (d) (and (eq? (%role d) 'input) (eq? (%accounting d) 'decrement)))))
-
-(define (committed-by-spec commitments actions)
-  "What the COMMITMENTS whose action is in ACTIONS commit of each specification,
-   ((spec . quantity) …) in the order the specifications are first met: with
-   `creating-actions` what a plan newly makes, with `using-up-actions` what it
-   uses up. A row is a commitment, an intent or a stored plan row, read by the
-   flow readers. The one tally every reading of a plan's material is written with."
-  (let ((sum (make-hash-table)) (order '()))
-    (for-each (lambda (c)
-                (let ((spec (row-spec c)) (q (row-quantity c)))
-                  (when (and spec q (memq (row-action c) actions))
-                    (unless (hash-ref sum spec) (set! order (cons spec order)))
-                    (hash-set! sum spec (+ q (hash-ref sum spec 0.0))))))
-              commitments)
-    (map (lambda (spec) (cons spec (hash-ref sum spec))) (reverse order))))
-(define (committed-quantity commitments spec actions)
-  "How much of SPEC the COMMITMENTS whose action is in ACTIONS commit, as a number;
-   0.0 where they commit none of it."
-  (or (assoc-ref (committed-by-spec commitments actions) spec) 0.0))
 
 (define* (upstream-closure flows specs #:key (inputs '(consume)))
   "The upstream of SPECS in the recipe FLOWS: the least set of specs, and the

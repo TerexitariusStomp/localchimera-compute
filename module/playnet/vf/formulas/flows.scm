@@ -27,6 +27,7 @@
             row-when row-until row-note row-tags row-scope row-satisfies
             row-finished row-ambient? carried-lot-id %ambient-tag
             row-scopes row-satisfies? scopes-of row-figure
+            committed-by-spec committed-quantity
             make-work-commitment make-work-event make-flow-commitment))
 
 (define %ambient-tag "ambient")   ; resourceClassifiedAs of a flow with no stock behind it: the world's own, a means in use
@@ -176,3 +177,23 @@
                    #:has-beginning has-beginning #:has-end has-end #:has-point-in-time has-point-in-time
                    #:at-location place #:note note
                    #:in-scope-of (let ((l (scopes-of in-scope-of))) (and (pair? l) l))))
+
+;; ── the one tally of what rows commit per specification ─────────────────────
+(define (committed-by-spec commitments actions)
+  "What the COMMITMENTS whose action is in ACTIONS commit of each specification,
+   ((spec . quantity) …) in the order the specifications are first met: with
+   `creating-actions` what a plan newly makes, with `using-up-actions` what it
+   uses up. A row is a commitment, an intent or a stored plan row, read by the
+   flow readers. The one tally every reading of a plan's material is written with."
+  (let ((sum (make-hash-table)) (order '()))
+    (for-each (lambda (c)
+                (let ((spec (row-spec c)) (q (row-quantity c)))
+                  (when (and spec q (memq (row-action c) actions))
+                    (unless (hash-ref sum spec) (set! order (cons spec order)))
+                    (hash-set! sum spec (+ q (hash-ref sum spec 0.0))))))
+              commitments)
+    (map (lambda (spec) (cons spec (hash-ref sum spec))) (reverse order))))
+(define (committed-quantity commitments spec actions)
+  "How much of SPEC the COMMITMENTS whose action is in ACTIONS commit, as a number;
+   0.0 where they commit none of it."
+  (or (assoc-ref (committed-by-spec commitments actions) spec) 0.0))

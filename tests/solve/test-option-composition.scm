@@ -29,7 +29,8 @@
 ;; reads its names out of the current module, so import before loading it.
 (use-modules (playnet algorithms option-premium))
 (use-modules (playnet algorithms option-composition))
-(use-modules ((playnet vf formulas actions) #:select (committed-by-spec creating-actions)))
+(use-modules ((playnet vf formulas actions) #:select (creating-actions))
+             ((playnet vf formulas flows) #:select (committed-by-spec)))
 
 (define *pass* 0) (define *fail* 0)
 (define (ok? name cond)

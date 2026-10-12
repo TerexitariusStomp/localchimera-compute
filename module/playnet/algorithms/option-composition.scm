@@ -44,6 +44,7 @@
 ;;; consumed quantity of one spec across the plan.
 (define-module (playnet algorithms option-composition)
   #:use-module (playnet vf formulas actions)
+  #:use-module ((playnet vf formulas flows) #:select (committed-quantity))
   #:use-module (playnet vf schemas)
   #:use-module (goblins)
   #:use-module (srfi srfi-1)
