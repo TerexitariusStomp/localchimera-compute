@@ -33,6 +33,9 @@
   (let ((p (member flag args)))
     (if (and p (pair? (cdr p))) (cadr p) default)))
 
+;; the run, only when this file IS the program (`guile …/refresh-priors.scm`):
+;; loaded as a module, by a lint or a REPL, it defines and does nothing
+(when (string-suffix? "refresh-priors.scm" (car (command-line)))
 (let* ((args     (cdr (command-line)))
        (path     (opt-value args "--path" "data/routing/priors.sexp"))
        (manners  (string-split (opt-value args "--manners" "pedestrian,bicycle,auto") #\,))
@@ -48,4 +51,4 @@
    (else
     (refresh-priors! (map car latlon) latlon manners #:path path
                      #:period-classes (period-class-date-times))
-    (exit 0))))
+    (exit 0)))))

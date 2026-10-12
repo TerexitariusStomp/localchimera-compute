@@ -23,6 +23,7 @@
   #:use-module (ice-9 binary-ports)
   #:use-module (json)
   #:use-module ((playnet utils operator) #:select (operator-ref contact-uri))
+  #:use-module ((gcrypt package-config) #:select (%libgcrypt))
   #:export (generate-vapid-keypair
             vapid-public-key-bytes
             vapid-sign-jwt
@@ -30,7 +31,10 @@
 
 ;;; ── libgcrypt FFI ──────────────────────────────────────────────────────
 
-(define gcrypt-lib (load-foreign-library "libgcrypt"))
+;; the libgcrypt guile-gcrypt was built against (gcrypt package-config), by its
+;; path: the bare name resolved only once some (gcrypt …) module had loaded the
+;; library first, so whether this module loaded depended on import order
+(define gcrypt-lib (load-foreign-library %libgcrypt))
 
 (define gcry-cipher-open
   (foreign-library-function gcrypt-lib "gcry_cipher_open"
