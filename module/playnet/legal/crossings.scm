@@ -360,7 +360,7 @@
                                                   (not (fact-ref r 'triggered-action)))))
     ;; money claimed because a thing was used: paid by the use, a lease
     (metered-use         record ,(lambda (r) (and (fact-kind? r 'money)
-                                                  (memq (fact-ref r 'triggered-action) '(use consume)) #t)))))
+                                                  (memq (fact-ref r 'triggered-action) drawing-actions) #t)))))
 
 (define (patterns-at level)
   (filter (lambda (row) (eq? level (cadr row))) *crossing-patterns*))

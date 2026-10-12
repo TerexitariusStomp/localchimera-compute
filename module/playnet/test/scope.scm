@@ -27,6 +27,7 @@
                weekday-window all-week-window hours-of)
   #:use-module ((playnet vf facts parts) #:select (part->string))
   #:use-module ((playnet observation account) #:select (claim-commitment))
+  #:use-module ((playnet vf formulas flows) #:select (make-work-intent))
   #:export (mock-scope mock-scope-root mock-world record-work! push-on plan-claim!))
 
 ;; ── the plan's claim, stated by a fixture ───────────────────────────────────
@@ -50,8 +51,8 @@
                        #:key (skill "spec-labor") process place scope plan-id
                              (when "2026-03-01T08:00:00Z") (unit "hour"))
   ($ obs 'register-intent
-     (make-intent #:id intent-id #:action 'work #:resource-conforms-to skill #:effort-quantity (make-measure hours unit)
-                  #:provider aid #:planned-within plan-id))
+     (make-work-intent #:id intent-id #:skill skill #:hours hours #:unit unit
+                       #:provider aid #:planned-within plan-id))
   ($ obs 'record-event
      (make-economic-event
        #:id event-id #:action 'work #:input-of process #:resource-conforms-to skill

@@ -50,7 +50,7 @@
             apply-direction-effects economic-resource-set-lot
             economic-resource-set-location economic-resource-set-custodian-scope economic-resource-set-onhand-quantity
             scale-measure economic-resource-scale-quantities split-custody?
-            override-action-def create-batch-for-produce capture-container-location
+            create-batch-for-produce capture-container-location
             apply-container-location economic-resource-set-previous-event
             make-cascade-event cascade-emit phase-containment-cascade
             cascade-parent-id event-onhand-delta onhand-as-of
@@ -529,30 +529,6 @@
        (not (equal? (economic-event-provider event)
                     (economic-event-receiver event)))))
 
-(define (override-action-def def overrides)
-  "Create a copy of action-def with specific fields overridden.
-   overrides: alist of (field . value), any field of <action-definition>.
-   A field whose override value is #f is still applied — presence in the alist
-   decides, not truthiness, so 'no-effect and #f are both sayable."
-  (define (field name accessor)
-    (let ((cell (assq name overrides)))
-      (if cell (cdr cell) (accessor def))))
-  ;; argument order IS the record's field order (schemas.scm <action-definition>)
-  (make-action-definition
-    #:event-quantity (field 'event-quantity        action-definition-event-quantity)
-    #:input-output (field 'input-output          action-definition-input-output)
-    #:pairs-with (field 'pairs-with            action-definition-pairs-with)
-    #:create-resource (field 'create-resource       action-definition-create-resource)
-    #:accounting-effect (field 'accounting-effect     action-definition-accounting-effect)
-    #:onhand-effect (field 'onhand-effect         action-definition-onhand-effect)
-    #:location-effect (field 'location-effect       action-definition-location-effect)
-    #:contained-effect (field 'contained-effect      action-definition-contained-effect)
-    #:accountable-effect (field 'accountable-effect    action-definition-accountable-effect)
-    #:stage-effect (field 'stage-effect          action-definition-stage-effect)
-    #:state-effect (field 'state-effect          action-definition-state-effect)
-    #:implies-transfer (field 'implies-transfer      action-definition-implies-transfer)
-    #:eligible-for-exchange (field 'eligible-for-exchange action-definition-eligible-for-exchange)))
-
 ;; ── Batch creation on produce ───────────────────────────────────────
 
 (define (create-batch-for-produce ctx event resource-id)
@@ -802,50 +778,11 @@
 
 ;; ── Phase 3 main: apply effects with split-custody + container ──────
 
-(define (custody-defs event def)
-  "(FROM-DEF . TO-DEF): DEF's effects on the stock EVENT names and on the one it
-   moves into. The implied custody transfer (provider ≠ receiver) composes with the
-   action's own effect so that each quantity moves once (the spec's transport
-   example, ex-complex.md: Alice 230 → 200, Claudia 0 → 0, Bob 0 → 30):
-     an INPUT (pickup, accept) takes the goods out of the provider's resource R;
-       custody passes through the carrier's resource T on the way in, so T nets 0;
-     an OUTPUT (dropoff, modify) puts the goods out on R and hands them to T,
-       so R nets 0 and T gains them.
-   T is where custody lands: created if absent, placed and stated by the event.
-   One agent carrying its own cargo passes no custody, but the cargo is still a thing
-   of its own on the way: a pickup that names a lot moves the quantity from the lot it
-   leaves into that one (made when absent, at no place: it is on the way), and a
-   dropoff moves it from the carried lot into the lot it lands in, so the spec's total
-   holds at every instant, as the quantities of a `move` do.
-   The fold applies these effects and the ledger as of an instant takes them back."
-  (let* ((is-split (split-custody? event))
-         (carried? (and (not is-split) (carried-lot? event)))
-         (input?   (eq? (action-definition-input-output def) 'input)))   ;; read where split: pickup, accept
-    (cons (cond (carried? (override-action-def def '((accounting-effect . decrement-increment)
-                                                     (onhand-effect . decrement-increment))))
-                ((not is-split) def)
-                (input?  (override-action-def def '((location-effect . no-effect))))
-                (else    (override-action-def def '((accounting-effect . no-effect)
-                                                    (onhand-effect . no-effect)))))
-          (cond (carried?
-                 (override-action-def def '((accounting-effect . decrement-increment)
-                                            (onhand-effect . decrement-increment)
-                                            (location-effect . no-effect)
-                                            (create-resource . optional-to))))   ;; the cargo's lot, made when absent
-                (is-split
-                 (override-action-def def
-                   `((accounting-effect . no-effect)
-                     (onhand-effect . ,(if input? 'no-effect 'increment-to))
-                     (location-effect . update-to)
-                     (state-effect . update-to)
-                     (create-resource . optional))))   ;; custody lands on T: create it when absent
-                (else def)))))
-
 (define (phase-apply-effects ctx event def)
   (let* ((is-split (split-custody? event))
          ;; Pre-capture container location for separate
          (container-loc (capture-container-location (ctx-state ctx) event))
-         (defs     (custody-defs event def))
+         (defs     (custody-defs def #:split? is-split #:carried? (carried-lot? event)))
          (from-def (car defs))
          (to-def   (cdr defs))
          ;; Check if from-resource exists before apply (to detect auto-creation)
@@ -1202,7 +1139,7 @@
   "What EV did to RID's on-hand figure, signed: its effect as the stock it
    names plus its effect as the stock it moves into. RESOURCE, when given, is
    the stock itself: the quantity is then read in its unit."
-  (let* ((defs (custody-defs ev (get-action-def (economic-event-action ev))))
+  (let* ((defs (custody-defs (get-action-def (economic-event-action ev)) #:split? (split-custody? ev) #:carried? (carried-lot? ev)))
          ;; the quantity is read in the stock's unit only where the event moves stock,
          ;; as the fold applied it: a use measured in hours moves none
          (side (lambda (named effect direction)

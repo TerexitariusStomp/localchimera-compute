@@ -2279,10 +2279,9 @@
 ;; drift on a positional slot the way hand-laid copies can.
 (define* (work-intent id #:key (name #f) proc skill hours
                       (from #f) (until #f) (point #f) (place #f) (plan #f))
-  (make-intent #:id id #:action 'work #:name name
-               #:input-of proc #:resource-conforms-to skill #:effort-quantity (make-measure hours %effort-unit)
-               #:has-beginning from #:has-end until #:has-point-in-time point
-               #:at-location place #:planned-within plan))
+  (make-work-intent #:id id #:name name #:input-of proc #:skill skill #:hours hours
+                    #:has-beginning from #:has-end until #:has-point-in-time point
+                    #:at-location place #:planned-within plan))
 (define* (persist-materialized! scope-root work-alists #:key (plan-id "plan-materialized"))
   (let ((ps ($ scope-root 'plan-store)) (n 0))
     (clear-materialized-intents! ps)

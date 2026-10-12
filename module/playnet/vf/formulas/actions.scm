@@ -32,6 +32,7 @@
             making-actions output-flow? upstream-closure creating-actions using-up-actions
             ;; playnet's own columns
             relocating-actions relocating-action? relocating-side same-flow?
+            override-action-def custody-defs
             ;; the sets the doors and the algorithms ask for
             transferring-actions occupying-actions drawing-actions nonconsuming-input-actions
             onhand-sign
@@ -266,3 +267,72 @@
   (let ((t (make-hash-table)))
     (for-each (lambda (sp) (hash-set! t sp #t)) (labour-specs flows specs))
     (lambda (spec) (and spec (hash-ref t spec #f) #t))))
+
+;; ── a custody transfer, read off the columns ─────────────────────────────────
+;; VF transfers.md: a pickup, dropoff, accept or modify with a different provider
+;; and receiver implies a transfer of custody, and the goods move once. The
+;; observer states the two facts about the event (is the custody SPLIT, is the
+;; cargo a CARRIED lot) and reads here what the action does on each side.
+(define (override-action-def def overrides)
+  "DEF with the fields OVERRIDES names replaced: an alist of (field . value), any
+   field of <action-definition>. A field whose override value is #f is still
+   applied: presence in the alist decides, not truthiness, so 'no-effect and #f
+   are both sayable."
+  (define (field name accessor)
+    (let ((cell (assq name overrides)))
+      (if cell (cdr cell) (accessor def))))
+  ;; argument order IS the record's field order (schemas.scm <action-definition>)
+  (make-action-definition
+    #:event-quantity (field 'event-quantity        action-definition-event-quantity)
+    #:input-output (field 'input-output          action-definition-input-output)
+    #:pairs-with (field 'pairs-with            action-definition-pairs-with)
+    #:create-resource (field 'create-resource       action-definition-create-resource)
+    #:accounting-effect (field 'accounting-effect     action-definition-accounting-effect)
+    #:onhand-effect (field 'onhand-effect         action-definition-onhand-effect)
+    #:location-effect (field 'location-effect       action-definition-location-effect)
+    #:contained-effect (field 'contained-effect      action-definition-contained-effect)
+    #:accountable-effect (field 'accountable-effect    action-definition-accountable-effect)
+    #:stage-effect (field 'stage-effect          action-definition-stage-effect)
+    #:state-effect (field 'state-effect          action-definition-state-effect)
+    #:implies-transfer (field 'implies-transfer      action-definition-implies-transfer)
+    #:eligible-for-exchange (field 'eligible-for-exchange action-definition-eligible-for-exchange)))
+
+(define* (custody-defs def #:key (split? #f) (carried? #f))
+  "(FROM-DEF . TO-DEF): DEF's effects on the stock an event names and on the one
+   it moves into. SPLIT? says provider and receiver differ (the implied custody
+   transfer); CARRIED? that a pickup or dropoff names the lot the cargo moves into.
+   The implied transfer composes with the action's own effect so that each quantity
+   moves once (the spec's transport example, ex-complex.md: Alice 230 → 200,
+   Claudia 0 → 0, Bob 0 → 30):
+     an INPUT (pickup, accept) takes the goods out of the provider's resource R;
+       custody passes through the carrier's resource T on the way in, so T nets 0;
+     an OUTPUT (dropoff, modify) puts the goods out on R and hands them to T,
+       so R nets 0 and T gains them.
+   T is where custody lands: created if absent, placed and stated by the event.
+   One agent carrying its own cargo passes no custody, but the cargo is still a thing
+   of its own on the way: a pickup that names a lot moves the quantity from the lot it
+   leaves into that one (made when absent, at no place: it is on the way), and a
+   dropoff moves it from the carried lot into the lot it lands in, so the spec's total
+   holds at every instant, as the quantities of a `move` do.
+   The observer's fold applies these effects and the ledger as of an instant takes them back."
+  (let ((carried? (and carried? (not split?)))
+        (input?   (eq? (action-definition-input-output def) 'input)))   ;; read where split: pickup, accept
+    (cons (cond (carried? (override-action-def def '((accounting-effect . decrement-increment)
+                                                     (onhand-effect . decrement-increment))))
+                ((not split?) def)
+                (input?  (override-action-def def '((location-effect . no-effect))))
+                (else    (override-action-def def '((accounting-effect . no-effect)
+                                                    (onhand-effect . no-effect)))))
+          (cond (carried?
+                 (override-action-def def '((accounting-effect . decrement-increment)
+                                            (onhand-effect . decrement-increment)
+                                            (location-effect . no-effect)
+                                            (create-resource . optional-to))))   ;; the cargo's lot, made when absent
+                (split?
+                 (override-action-def def
+                   `((accounting-effect . no-effect)
+                     (onhand-effect . ,(if input? 'no-effect 'increment-to))
+                     (location-effect . update-to)
+                     (state-effect . update-to)
+                     (create-resource . optional))))   ;; custody lands on T: create it when absent
+                (else def)))))

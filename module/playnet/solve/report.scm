@@ -99,12 +99,11 @@
           (max 1 (inexact->exact (round (/ hours per))))
           0))))
 (define (mk-need-intent id skill effort proc place begin end)        ; receiver side: the process needs work
-  (make-intent #:id id #:action 'work #:input-of proc #:resource-conforms-to skill
-               #:effort-quantity (make-measure effort %effort-unit) #:has-beginning begin #:has-end end
-               #:has-point-in-time begin #:at-location place))   ; provider #f
+  (make-work-intent #:id id #:skill skill #:hours effort #:input-of proc
+                    #:has-beginning begin #:has-end end #:at-location place))   ; provider #f
 (define (mk-offer-intent id worker skill effort place begin end)     ; provider side: the worker offers work
-  (make-intent #:id id #:action 'work #:resource-conforms-to skill #:effort-quantity (make-measure effort %effort-unit)
-               #:available-quantity (make-measure effort %effort-unit) #:provider worker #:has-beginning begin #:has-end end #:has-point-in-time begin #:at-location place))  ; provider=worker, availableQuantity=H
+  (make-work-intent #:id id #:skill skill #:hours effort #:provider worker #:offered? #t
+                    #:has-beginning begin #:has-end end #:at-location place))  ; provider=worker, availableQuantity=H
 (define (mk-work-commitment id provider skill effort proc place begin end satisfies)
   ;; in-scope-of = the scope of the solve that placed the hour (the head of
   ;; *scope-path*, set by the door that solves for a scope): reach has its fact

@@ -828,7 +828,7 @@
             os-idx-by-action os-idx-by-agent os-idx-by-process os-idx-by-resource
             os-idx-by-spec os-rebuild os-resource-batches os-resources
             os-intent-targets os-satisfiers 
-            override-action-def phase-append-event
+            phase-append-event
             phase-apply-effects phase-breadcrumb-chain phase-implied-transfer
             phase-index-event serialize-observer-state split-custody?
             ;; from (playnet algorithms correlation)

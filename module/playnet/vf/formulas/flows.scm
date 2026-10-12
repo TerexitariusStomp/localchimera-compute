@@ -28,7 +28,7 @@
             row-finished row-ambient? carried-lot-id %ambient-tag
             row-scopes row-satisfies? scopes-of row-figure
             committed-by-spec committed-quantity
-            make-work-commitment make-work-event make-flow-commitment))
+            make-work-intent make-work-commitment make-work-event make-flow-commitment))
 
 (define %ambient-tag "ambient")   ; resourceClassifiedAs of a flow with no stock behind it: the world's own, a means in use
 
@@ -106,6 +106,20 @@
   (let ((s (row-satisfies r)))
     (and id (cond ((pair? s) (and (member id s) #t))
                   (else (equal? s id))))))
+
+;; ── the ONE constructor of a work Intent ────────────────────────────────────
+;; A need for hours (a process's side: INPUT-OF the process, no provider) or an
+;; offer of them (PROVIDER's, OFFERED? putting the same hours in availableQuantity):
+;; `work`, the skill as resourceConformsTo, the hours as effortQuantity.
+(define* (make-work-intent #:key id name provider skill hours (unit %effort-unit) input-of
+                                 (offered? #f) at-location has-beginning has-end
+                                 (has-point-in-time has-beginning) planned-within)
+  (make-intent #:id id #:action 'work #:name name #:input-of input-of #:resource-conforms-to skill
+               #:effort-quantity (make-measure hours unit)
+               #:available-quantity (and offered? (make-measure hours unit))
+               #:provider provider
+               #:has-beginning has-beginning #:has-end has-end #:has-point-in-time has-point-in-time
+               #:at-location at-location #:planned-within planned-within))
 
 ;; ── the ONE constructor of a work Commitment ────────────────────────────────
 ;; Every solve and door that commits hours builds the row here: `work`, the skill

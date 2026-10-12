@@ -35,7 +35,7 @@
   #:use-module (ice-9 match)
   #:use-module (playnet vf serdes)
   #:use-module (playnet vf schemas)
-  #:use-module ((playnet vf formulas flows) #:select (make-work-event))
+  #:use-module ((playnet vf formulas flows) #:select (make-work-intent make-work-event))
   #:use-module (playnet observation states)
   #:use-module (goblins)
   #:use-module (srfi srfi-1)
@@ -329,11 +329,9 @@
      ;; production credits flow through recorded work events whose
      ;; intents belong to a registered plan.
      (let* ((iid  (generate-id "boot-int-"))
-            (evid (generate-id "boot-ev-"))
-            (qty  (make-measure svc-amount %effort-unit)))
+            (evid (generate-id "boot-ev-")))
        ($ observer-ref 'register-intent
-          (make-intent #:id iid #:action 'work #:resource-conforms-to "spec-labor" #:effort-quantity qty
-                       #:provider agent-id))
+          (make-work-intent #:id iid #:skill "spec-labor" #:hours svc-amount #:provider agent-id))
        ($ observer-ref 'record-event
           (make-work-event #:id evid #:resource-spec "spec-labor" #:provider agent-id
                            #:effort-qty svc-amount #:effort-unit %effort-unit #:satisfies iid
