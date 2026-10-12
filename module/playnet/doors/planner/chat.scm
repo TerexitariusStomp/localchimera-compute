@@ -34,7 +34,6 @@
   #:use-module ((ice-9 textual-ports) #:select (get-string-all))
   #:use-module ((playnet scope live) #:select (time->period willing-tuples))
   #:use-module ((playnet utils clock) #:select ((now . clock-now) instant->unix))
-  #:use-module ((playnet utils envelope) #:select (catch-as-failure success))
   #:use-module ((playnet utils paths) #:select (playnet-data-dir))
   #:use-module ((playnet vf formulas actions) #:select (relocating-action?))
   #:use-module ((playnet vf formulas flows) #:select (row-satisfies?))
@@ -210,24 +209,20 @@
       ;; then stamped; filtering is the client's read-side choice.
 
       ((chat-post scope-id topic aid body #:optional (message-kind #f))
-       (with-scope scope-id
+       (scoped scope-id
          (lambda (root)
-           (catch-as-failure
-             (lambda ()
-               (success ($ chat-reg 'post
+($ chat-reg 'post
                            (string-append scope-id "/" topic) aid body
                            (or message-kind "text")
-                           (relation-of root topic aid))))))))
+                           (relation-of root topic aid)))))
 
       ((chat-history scope-id topic #:optional (since 0))
-       (with-scope scope-id
+       (scoped scope-id
          (lambda (root)
-           (catch-as-failure
-             (lambda ()
-               (success (list->vector
+(list->vector
                          ($ chat-reg 'history
                             (string-append scope-id "/" topic)
-                            since))))))))
+                            since)))))
 
       ;; THE WAKE (docs/planning/faces/meeting-station.md, Layer 2): the last line of
       ;; each of MANY topics, in one call. The wake is an index over every live
@@ -236,11 +231,8 @@
       ;; Returns an alist topic → (author body kind t); topics with nothing said
       ;; are simply absent.
       ((chat-last scope-id topics)
-       (with-scope scope-id
+       (scoped scope-id
          (lambda (root)
-           (catch-as-failure
-             (lambda ()
-               (success
                 (filter-map
                  (lambda (topic)
                    ;; `last` reads the file's tail; the registry owns the format,
@@ -256,12 +248,10 @@
                  ;; the wire may hand us a vector or a list
                  (cond ((vector? topics) (vector->list topics))
                        ((list? topics) topics)
-                       (else '())))))))))
+                       (else '()))))))
 
       ((chat-watch scope-id topic cb)
-       (with-scope scope-id
+       (scoped scope-id
          (lambda (root)
-           (catch-as-failure
-             (lambda ()
-               ($ chat-reg 'watch (string-append scope-id "/" topic) cb)
-               (success #t)))))))))
+($ chat-reg 'watch (string-append scope-id "/" topic) cb)
+               #t))))))

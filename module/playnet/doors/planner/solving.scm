@@ -10,10 +10,9 @@
 (define-module (playnet doors planner solving)
   #:use-module (playnet solve federation-solve)
   #:use-module ((goblins) #:select ($))
-  #:use-module ((playnet doors assignments) #:select (willing-predicate))
   #:use-module ((playnet doors inventory) #:select (recipes-conforming))
   #:use-module ((playnet doors planner solve-cache) #:select (cache-solve! externality-history-ref last-solve-ref means-cap-rows))
-  #:use-module ((playnet doors position) #:select (agent-position-predicate demand->keyed demand-horizon federated-horizon))
+  #:use-module ((playnet doors position) #:select (federated-horizon solve-keywords))
   #:use-module ((playnet doors service brief) #:select (parse-overrides plan-brief->string))
   #:use-module ((playnet doors service provenance-trace) #:select (explain-claim make-pull-of))
   #:use-module ((playnet federation crossing-set) #:select (crossing-goods))
@@ -43,37 +42,18 @@
       ;; Run the CONVEX planner over the scope's live state and return the implied
       ;; VF `work` commitments. demand = ((spec place period target) …); the engine
       ;; reads stock/labour/recipes/skills/hours from the observer + stores. opts is
-      ;; an alist that may carry (movable . (…)) (storable . (…)) (commute-km . n).
+      ;; an alist that may carry (movable . (…)) (storable . (…)) (commute-km . n),
+      ;; (willing-only . #t) for the materialization binding, (reproduce . #f) to
+      ;; leave labour-power unreproduced: the keys solve-keywords (doors/position)
+      ;; reads, the one unpack `plan`, `solve`, `solve-brief` and `materialize` share.
       ((plan scope-id demand #:optional (opts '()))
        (with-scope scope-id
          (lambda (root)
            (catch-as-failure
              (lambda ()
-               (let ((o opts))
-                 (on-plan
-                   (plan-fn* root scope-id
-                     #:demand (demand->keyed demand)       ; the UC allocation rides in through standing-kw
-                     #:movable (or (assq-ref o 'movable) '())
-                     #:storable (or (assq-ref o 'storable) '())
-                     #:whole (or (assq-ref o 'whole) '())
-                     #:tau (or (assq-ref o 'tau) 0.0)
-                     ;; (willing-only . #t) ⇒ the MATERIALIZATION binding: gate the
-                     ;; solve to those who marked status=willing (the bundle hour-cap
-                     ;; then bounds them). Default/off ⇒ the ungated candidate FIELD —
-                     ;; today's behaviour, the offer over all reachable workers.
-                     #:willing? (and (assq-ref o 'willing-only)
-                                     (willing-predicate root))
-                     #:agent-position (agent-position-predicate root)  ; live/expected positions
-                     #:horizon (demand-horizon demand o)   ; derive multi-period from the demand (explicit opt wins)
-                     ;; reproduction of labour-power: per-person nutrition floors + eat
-                     ;; recipes over the scope's foods (live.scm). STRUCTURAL — on by
-                     ;; default (a no-op unless the scope has people AND nutritious food),
-                     ;; so every real commune reproduces its members automatically. Opt
-                     ;; OUT with (reproduce . #f), not in.
-                     #:reproduce? (not (eq? (assq-ref o 'reproduce) #f))
-                     #:backend 'native-c)
-                   (lambda (al) (success (cache-solve! cache scope-id demand al)))
-                   #:catch (lambda (e) (failure (format #f "~a" e))))))))))
+               (on-plan (apply plan-fn* root scope-id (solve-keywords root opts #:demand demand))
+                 (lambda (al) (success (cache-solve! cache scope-id demand al)))
+                 #:catch (lambda (e) (failure (format #f "~a" e)))))))))
 
       ;; FEDERATION ACROSS VATS — several communes' provisioning composed through
       ;; one pull per crossing good (dual decomposition), so what one commune
@@ -272,19 +252,7 @@
            (catch-as-failure
              (lambda ()
                (let ((o (if (pair? overrides) overrides '())))
-                 (on-plan
-                   (plan-fn* root scope-id
-                     #:demand     (demand->keyed (or (assq-ref o 'demand) '()))
-                     #:eco-caps   (or (assq-ref o 'eco-caps) '())   ; the UC allocation stands under it (standing-kw)
-                     #:reserve    (or (assq-ref o 'reserve) '())
-                     #:movable    (or (assq-ref o 'movable) '())
-                     #:storable   (or (assq-ref o 'storable) '())
-                     #:whole      (or (assq-ref o 'whole) '())
-                     #:tau        (or (assq-ref o 'tau) 0.0)
-                     #:willing?   (and (assq-ref o 'willing-only) (willing-predicate root))
-                     #:agent-position (agent-position-predicate root)
-                     #:horizon    (demand-horizon (or (assq-ref o 'demand) '()) o)
-                     #:backend 'native-c)
+                 (on-plan (apply plan-fn* root scope-id (solve-keywords root o))
                    (lambda (al) (success (cache-solve! cache scope-id (or (assq-ref o 'demand) '()) al)))
                    #:catch (lambda (e) (failure (format #f "~a" e))))))))))
 
@@ -326,15 +294,7 @@
                ;; symbol-keyed plan-scope inputs. Parsing + prose live in (playnet
                ;; planner brief) — pure, so they unit-test without a vat/scope.
                (let ((o (parse-overrides overrides)))
-                 (on-plan
-                   (plan-fn* root scope-id
-                     #:demand     (demand->keyed (or (assq-ref o 'demand) '()))
-                     #:eco-caps   (or (assq-ref o 'eco-caps) '())
-                     #:reserve    (or (assq-ref o 'reserve) '())
-                     #:tau        (or (assq-ref o 'tau) 0.0)
-                     #:agent-position (agent-position-predicate root)
-                     #:horizon    (demand-horizon (or (assq-ref o 'demand) '()) o)
-                     #:backend 'native-c)
+                 (on-plan (apply plan-fn* root scope-id (solve-keywords root o))
                    (lambda (full)
                      ;; No demand override means the orb asked for the CURRENT plan,
                      ;; not a what-if — and the current plan is exactly what the

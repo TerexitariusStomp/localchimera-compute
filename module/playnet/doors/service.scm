@@ -740,10 +740,10 @@ scope walk wherever a solve wants the scope's declared needs."
       (unless (or (equal? old new-parent) (not mine))   ; unwired: the edge waits for the roots
         (for-each (lambda (kind)
                     (fold-node-reparent! (kind mine) id #:from (%node-at kind old) #:to (%node-at kind new-parent)))
-                  %fold-kinds)
+                  (map cdr %fold-kinds))
         (for-each (lambda (kind)
                     (unfold-node-reparent! (kind mine) id #:from (%node-at kind old) #:to (%node-at kind new-parent)))
-                  %descent-kinds))
+                  (map cdr %descent-kinds)))
       (hash-set! %scope-parent id new-parent)
       new-parent))
   ;; a parent registered after its children: every scope declared under ID

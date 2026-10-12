@@ -48,11 +48,9 @@
       ;; grant (a want needs none). Who may ratify is the scope's own rite; this
       ;; door names who did.
       ((ratify-kind scope-id agent-id spec kind)
-       (with-scope scope-id
+       (scoped scope-id
          (lambda (root)
-           (catch-as-failure
-             (lambda ()
-               (let* ((k (kind-string->symbol kind))
+(let* ((k (kind-string->symbol kind))
                       (rest (filter (lambda (g) (not (equal? (car g) spec)))
                                     (ratified-kinds-ref root))))
                  (ratified-kinds-set!
@@ -61,7 +59,7 @@
                       rest
                       (cons (cons spec `((kind . ,k) (by . ,agent-id) (at . ,(iso-now))))
                             rest)))
-                 (success `((spec . ,spec) (kind . ,(symbol->string k))))))))))
+                 `((spec . ,spec) (kind . ,(symbol->string k)))))))
 
       ;; ── stage 3: needs are facts — the audit of a ratified kind ────────────
       ;; A held or floor row is checkable ex post: what the observer saw its
@@ -73,11 +71,9 @@
       ;; the one ratification door; every verdict is recorded beside the
       ;; grants as plan-store meta "audits", the auditor named by AID.
       ((audit-kinds scope-id agent-id #:optional (options #f))
-       (with-scope scope-id
+       (scoped scope-id
          (lambda (root)
-           (catch-as-failure
-             (lambda ()
-               (let* ((o      (or options '()))
+(let* ((o      (or options '()))
                       (k      (let ((v (assq-ref o 'consequence-factor))) (if (and (number? v) (> v 0)) v 1)))
                       (tol    (let ((v (assq-ref o 'tolerance))) (if (number? v) v 0.25)))
                       (today  (substring (iso-now) 0 10))
@@ -148,31 +144,26 @@
                  ($ ps 'set-meta "audits"
                     (list (cons 'findings (append findings
                                                   (or (and=> ($ ps 'get-meta "audits") (lambda (r) (assq-ref r 'findings))) '())))))
-                 (success `((examined . ,(length findings))
+                 `((examined . ,(length findings))
                             (padded . ,(count (lambda (f) (equal? (assq-ref f 'verdict) "padded")) findings))
-                            (findings . ,findings)))))))))
+                            (findings . ,findings))))))
 
       ((audits scope-id)
-       (with-scope scope-id
+       (scoped scope-id
          (lambda (root)
-           (catch-as-failure
-             (lambda ()
-               (success `((findings . ,(or (and=> ($ ($ root 'plan-store) 'get-meta "audits")
+`((findings . ,(or (and=> ($ ($ root 'plan-store) 'get-meta "audits")
                                                   (lambda (r) (assq-ref r 'findings)))
-                                           '())))))))))
+                                           '()))))))
 
       ((ratified-kinds scope-id)
-       (with-scope scope-id
+       (scoped scope-id
          (lambda (root)
-           (catch-as-failure
-             (lambda ()
-               (success
                 `((grants . ,(map (lambda (g)
                                     `((spec . ,(car g))
                                       (kind . ,(symbol->string (assq-ref (cdr g) 'kind)))
                                       (by . ,(assq-ref (cdr g) 'by))
                                       (at . ,(assq-ref (cdr g) 'at))))
-                                  (ratified-kinds-ref root))))))))))
+                                  (ratified-kinds-ref root)))))))
 
       ;; ── Our: the fold's reading at a scope ─────────────────────────────────
       ;; A need is declared once, by a person (`need:AID:SPEC`). What a scope
@@ -184,11 +175,9 @@
       ;; leaf lives, so each cell carries `mine` — the asker's share of the sum
       ;; — while every other contribution stays folded.
       ((our-slots scope-id home-scope-id agent-id)
-       (with-scope scope-id
+       (scoped scope-id
          (lambda (root)
-           (catch-as-failure
-             (lambda ()
-               (let* ((dn    (node-of scope-id nodes-demand))
+(let* ((dn    (node-of scope-id nodes-demand))
                       (mn    (node-of scope-id nodes-means))
                       (cells (or (and dn (false-if-exception ($ dn 'cells))) '()))
                       (caps  (or (and mn (false-if-exception ($ mn 'cells))) '()))
@@ -242,7 +231,7 @@
                                 (unit  . "hours/day")
                                 (mine  . ,(or (assoc-ref mine-caps (car c)) 0))))
                             caps)))
-                 (success `((needs . ,needs) (means . ,means)))))))))
+                 `((needs . ,needs) (means . ,means))))))
 
       ;; the SCOPE's slot pool, for the map: every citizen's standing needs (the
       ;; need markers and hull tints), and the means the commune holds by grant
@@ -316,11 +305,9 @@
                                           #:per-citizen-hours per-citizen-hours)))))
 
       ((match-slots scope-id tree)
-       (with-scope scope-id
+       (scoped scope-id
          (lambda (root)
-           (catch-as-failure
-             (lambda ()
-               (let* ((ps  ($ root 'plan-store))
+(let* ((ps  ($ root 'plan-store))
                       (obs ($ root 'observer))
                       (rs  ($ root 'recipe-store))
                       (spec-cats
@@ -448,6 +435,6 @@
                                            #:threshold 0.5 #:limit 20
                                            #:extra (lambda (n c)
                                                      (append (time-score n c) (eligible n c))))))
-                 (success `((needs . ,needs)
+                 `((needs . ,needs)
                             (means . ,means)
-                            (matches . ,matches))))))))))))
+                            (matches . ,matches)))))))))

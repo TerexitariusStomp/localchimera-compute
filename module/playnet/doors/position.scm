@@ -5,6 +5,7 @@
 
 (define-module (playnet doors position)
   #:use-module ((goblins) #:select ($))
+  #:use-module ((playnet doors assignments) #:select (willing-predicate))
   #:use-module ((playnet doors record-rows) #:select (iso-date-from-epoch))
   #:use-module ((playnet knowledge law jurisdiction-at) #:select (jurisdiction-at))
   #:use-module ((playnet legal registry) #:select (place-chain))
@@ -16,7 +17,8 @@
   #:use-module ((srfi srfi-1) #:select (fold))
   #:export (snap-km label-km located? km-between nearest-place
             nearest-location standing-in own-position-place! location-mode sharing-refused?
-            do-set-position demand-horizon federated-horizon demand->keyed agent-position-predicate))
+            do-set-position demand-horizon federated-horizon demand->keyed agent-position-predicate
+            solve-keywords))
 
 ;; ── Live / expected POSITION — where an agent is, per period ─────────────────
 ;; All three sharing modes feed the SAME thing: a place per (agent, period) that
@@ -154,6 +156,29 @@
            (cons (string-append (list-ref d 0) "#" (list-ref d 1) "@" (number->string (list-ref d 2)))
                  (list-ref d 3))))
        (->l demand)))
+
+;; THE SOLVE'S KEYWORDS, read off a door's option alist once: `plan`, `solve`,
+;; `solve-brief` and `materialize` hand plan-fn* the same inputs from the same
+;; keys. DEMAND is the wire-form demand (the alist's own unless the door takes
+;; it apart); WILLING? the materialization binding when the door states it,
+;; else the alist's (willing-only . #t) gates the solve to those who marked
+;; willing and its absence leaves the ungated candidate field. Reproduction of
+;; labour-power (per-person nutrition floors + eat recipes over the scope's
+;; foods, live.scm) is STRUCTURAL, on unless the alist says (reproduce . #f).
+(define* (solve-keywords scope-root o #:key (demand (or (assq-ref o 'demand) '()))
+                         (willing? (and (assq-ref o 'willing-only) (willing-predicate scope-root))))
+  (list #:demand (demand->keyed demand)       ; the UC allocation rides in through standing-kw
+        #:eco-caps (or (assq-ref o 'eco-caps) '())
+        #:reserve (or (assq-ref o 'reserve) '())
+        #:movable (or (assq-ref o 'movable) '())
+        #:storable (or (assq-ref o 'storable) '())
+        #:whole (or (assq-ref o 'whole) '())
+        #:tau (or (assq-ref o 'tau) 0.0)
+        #:willing? willing?
+        #:agent-position (agent-position-predicate scope-root)   ; live/expected positions
+        #:horizon (demand-horizon demand o)   ; multi-period from the demand (an explicit opt wins)
+        #:reproduce? (not (eq? (assq-ref o 'reproduce) #f))
+        #:backend 'native-c))
 
 (define (agent-position-predicate scope-root)
   "Where each agent IS, per period, as one consistent TRAJECTORY — priority:

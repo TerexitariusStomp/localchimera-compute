@@ -37,6 +37,13 @@
       (let ((live (filter pair? lists)))
         (if (null? live) '()
             (append (map car live) (round-robin (map cdr live))))))
+    ;; the ceremony's three doors share one gate: the door must be wired on
+    ;; this gateway, and a citizen named must hold personhood; then BODY's
+    ;; answer, any raise a failure
+    (define (witnessed aid body)
+      (cond ((not witness-door) (failure "witnessing is not wired on this gateway"))
+            ((and aid (not (ph-ok? aid))) (failure "needs-personhood"))
+            (else (catch-as-failure body))))
     (declared-doors planner
 
       ;; ── the WITNESS ceremony: a work event asks its peers to co-sign ──────
@@ -48,39 +55,27 @@
       ((witness-open scope-id aid event-id)
        (with-scope scope-id
          (lambda (root)
-           (cond
-             ((not witness-door) (failure "witnessing is not wired on this gateway"))
-             ((not (ph-ok? aid)) (failure "needs-personhood"))
-             (else
-              (catch-as-failure
-                (lambda ()
-                  (let ((ev ($ ($ root 'observer) 'get-event event-id)))
-                    (if (not ev)
-                        (failure "event not found")
-                        (let* ((roster (scope-community scope-id))
-                               (said ((assq-ref witness-door 'open) scope-id ev roster)))
-                          (if said
-                              (success `((said . ,said)))
-                              (failure "nothing to witness — no attestable work, or no peers"))))))))))))
+           (witnessed aid
+             (lambda ()
+               (let ((ev ($ ($ root 'observer) 'get-event event-id)))
+                 (if (not ev)
+                     (failure "event not found")
+                     (let* ((roster (scope-community scope-id))
+                            (said ((assq-ref witness-door 'open) scope-id ev roster)))
+                       (if said
+                           (success `((said . ,said)))
+                           (failure "nothing to witness — no attestable work, or no peers"))))))))))
 
       ((witness-inbox scope-id aid)
-       (if (not witness-door)
-           (failure "witnessing is not wired on this gateway")
-           (catch-as-failure
-             (lambda ()
-               (success `((requests . ,((assq-ref witness-door 'inbox) aid))))))))
+       (witnessed #f (lambda () (success `((requests . ,((assq-ref witness-door 'inbox) aid)))))))
 
       ((witness-attest scope-id aid said sig)
-       (cond
-         ((not witness-door) (failure "witnessing is not wired on this gateway"))
-         ((not (ph-ok? aid)) (failure "needs-personhood"))
-         (else
-          (catch-as-failure
-            (lambda ()
-              (let ((r ((assq-ref witness-door 'attest) said aid sig)))
-                (if r
-                    (success `((status . ,(symbol->string r))))
-                    (failure "no ceremony collecting under that statement"))))))))
+       (witnessed aid
+         (lambda ()
+           (let ((r ((assq-ref witness-door 'attest) said aid sig)))
+             (if r
+                 (success `((status . ,(symbol->string r))))
+                 (failure "no ceremony collecting under that statement"))))))
 
       ;; ── UC matching over the standing roster, landed by the descent ──
       ;; Every scope's rising proposals (purpose 'request, plan-bundle.scm)
@@ -223,16 +218,14 @@
       ;; commitment for both. accepting-agent-id is whitelist-validated against the
       ;; proposal's proposed-to (validate-proposal-acceptance!).
       ((accept-invite scope-id agent-id proposal-id)
-       (with-scope scope-id
+       (scoped scope-id
          (lambda (root)
-           (catch-as-failure
-             (lambda ()
-               ;; counterparty fills the intent's open receiver slot with the
+;; counterparty fills the intent's open receiver slot with the
                ;; accepting agent → the event becomes a commitment inviter→invitee.
                ($ ($ root 'plan-store) 'accept-proposal proposal-id
                   (list (cons 'receiver agent-id))
                   (list (cons 'accepting-agent-id agent-id)))
-               (success `((accepted . ,proposal-id))))))))
+               `((accepted . ,proposal-id)))))
 
       ;; ── the offer loop's two doors (commitment-horizon.md: the bounded rung) ──
       ;; A work offer is a DIRECTED proposal with an acceptance window: the

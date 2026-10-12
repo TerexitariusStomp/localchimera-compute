@@ -13,7 +13,7 @@
   #:use-module ((playnet doors plan-wire) #:select (wire-number))
   #:use-module ((playnet doors record-rows) #:select (payout->alist))
   #:use-module ((playnet economy debts) #:select (%payout-spec))
-  #:use-module ((playnet economy payouts) #:select (monero-address-plausible? payout-available payout-open? payout-restate! payout-source-id payouts-of))
+  #:use-module ((playnet economy payouts) #:select (monero-address-plausible? payout-available payout-move! payout-pending? payout-sending? payout-source-id payout-txid payouts-of payouts-where))
   #:use-module ((playnet utils clock) #:select (iso-now))
   #:use-module ((playnet utils common) #:select (string-or-false))
   #:use-module ((playnet utils envelope) #:select (catch-as-failure success))
@@ -27,6 +27,36 @@
 
 (define (planner-money-doors ctx)
   (with-planner-ctx ctx
+    ;; the ledger's side of a settlement: what the commons OWED is paid first,
+    ;; via the injected settle-of (economy/debts.scm settle-debts!, which
+    ;; records its own "debt-paid:" events per debt and revokes any fully-paid
+    ;; ones); the claim bears the rest. The records say the coins LEFT — to
+    ;; the chain, as one opaque external holder — and never the address: the
+    ;; event, its destination record and the txid note reach every member's
+    ;; snapshot; the address stays on the private payout intent (my-payouts)
+    ;; and the chain itself.
+    (define (ledger-settled! root scope-id i txid store)
+      (let* ((obs  ($ root 'observer))
+             (rs   ($ root 'recipe-store))
+             (aid  (intent-provider i))
+             (xmr  (measure-has-numerical-value (intent-resource-quantity i)))
+             (left (if (and settle-of store) (settle-of rs obs store scope-id aid xmr) xmr))
+             (transfer (lambda (id from provider qty note)
+                         ($ obs 'record-event
+                            (make-economic-event
+                             #:id id #:action 'transfer
+                             #:resource-inventoried-as from #:to-resource-inventoried-as "res-xmr-chain"
+                             #:resource-conforms-to %payout-spec #:resource-classified-as '("currency" "external")
+                             #:provider provider #:receiver "monero-chain"
+                             #:resource-quantity (make-measure qty "XMR") #:has-point-in-time (iso-now) #:created (iso-now)
+                             #:note (string-append note txid))))))
+        (when (> (- xmr left) 1e-12)
+          (transfer (string-append "payout-owed:" txid) "res-xmr-main" scope-id (- xmr left) "reimbursement paid on-chain, txid "))
+        (when (> left 1e-12)
+          (transfer (string-append "payout-sent:" txid) (payout-source-id aid) aid left "sent on-chain, txid "))))
+    ;; the rows of everyone's payouts that KEEP? accepts, as the runner reads them
+    (define (payout-rows scope-id keep?)
+      (scoped scope-id (lambda (root) (map payout->alist (payouts-where ($ root 'plan-store) keep?)))))
 
     (declared-doors planner
 
@@ -34,11 +64,9 @@
       ;; minus claimed (individually-claimable draws). The UI shows it as purchasing
       ;; power; it equals reconstruct-credit-balance over the scope's ACDC set.
       ((credit-balance scope-id agent-id)
-       (with-scope scope-id
+       (scoped scope-id
          (lambda (root)
-           (catch-as-failure
-             (lambda ()
-               (success `((balance . ,(wire-number ($ ($ root 'observer) 'credit-balance agent-id))))))))))
+`((balance . ,(wire-number ($ ($ root 'observer) 'credit-balance agent-id)))))))
 
       ;; ── Payouts: "send N XMR of mine to ⟨address⟩" ───────────────────────
       ;; A member's monero is a CLAIM on the commons' wallet (the shop's claim
@@ -54,11 +82,9 @@
       ;; `settle-payout` (a VF transfer event out of the member's claim, txid
       ;; on the record) or `fail-payout` (the claim stays whole).
       ((request-payout scope-id agent-id store address xmr due note)
-       (with-scope scope-id
+       (scoped scope-id
          (lambda (root)
-           (catch-as-failure
-             (lambda ()
-               (let* ((ps   ($ root 'plan-store))
+(let* ((ps   ($ root 'plan-store))
                       (obs  ($ root 'observer))
                       (rs   ($ root 'recipe-store))
                       (addr (and (string? address) (string-trim-both address)))
@@ -87,165 +113,71 @@
                        ;; the member is the provider; the address rides as
                        ;; at-location, read back by payout->alist
                        #:at-location (string-append "xmr:" addr) #:state "pending" #:in-scope-of '()))
-                   (success `((id . ,iid) (available . ,(- avail q)))))))))))
+                   `((id . ,iid) (available . ,(- avail q))))))))
 
       ((my-payouts scope-id agent-id store)
-       (with-scope scope-id
+       (scoped scope-id
          (lambda (root)
-           (catch-as-failure
-             (lambda ()
-               (let* ((obs ($ root 'observer)) (rs ($ root 'recipe-store))
+(let* ((obs ($ root 'observer)) (rs ($ root 'recipe-store))
                       (owed-list (if (and debts-of store) (debts-of obs store scope-id agent-id) '())))
-                 (success
+                 
                   `((available . ,(payout-available obs ($ root 'plan-store) agent-id
                                     #:owed (if (and owed-of store) (owed-of rs obs store scope-id agent-id) 0.0)))
                     (owed . ,owed-list)
-                    (payouts . ,(map payout->alist (payouts-of ($ root 'plan-store) agent-id)))))))))))
+                    (payouts . ,(map payout->alist (payouts-of ($ root 'plan-store) agent-id))))))))
 
-      ;; only the requester, only while pending — a sent payout is history
+      ;; ── the lifecycle: five verbs, one table (economy/payouts.scm %payout-moves) ──
+      ;; RETIRE: only the requester, only while pending — a sent payout is history.
       ((retire-payout scope-id agent-id id)
-       (with-scope scope-id
-         (lambda (root)
-           (catch-as-failure
-             (lambda ()
-               (let* ((ps ($ root 'plan-store))
-                      (i  ($ ps 'get-intent id)))
-                 (unless (and i (string-prefix? "payout:" id)) (error "no such payout" id))
-                 (unless (equal? agent-id (intent-provider i)) (error "not your payout" id))
-                 (unless (equal? "pending" (intent-state i)) (error "already settled" id))
-                 ($ ps 'remove-intent id)
-                 (success `((id . ,id)))))))))
+       (scoped scope-id
+         (lambda (root) (payout-move! ($ root 'plan-store) id 'retire #:by agent-id) `((id . ,id)))))
 
-      ;; the runner's read: pending payouts whose due is unset or ≤ NOW-ISO
-      ((due-payouts scope-id now-iso)
-       (with-scope scope-id
-         (lambda (root)
-           (catch-as-failure
-             (lambda ()
-               (success
-                (filter-map
-                 (lambda (i)
-                   (and (equal? "pending" (intent-state i))
-                        (let ((due (intent-due i)))
-                          (or (not due) (string<=? due now-iso)))
-                        (payout->alist i)))
-                 (payouts-of ($ root 'plan-store) #f))))))))
-
-      ;; the runner's writes. SETTLE records the VF transfer out of the member's
-      ;; claim (the coins left the commons' wallet; the claim shrinks by exactly
-      ;; that), txid on the event and the intent. FAIL leaves the claim whole
-      ;; and parks the intent with the reason — the member may retire it and
-      ;; ask again.
-      ((settle-payout scope-id id txid store)
-       (with-scope scope-id
-         (lambda (root)
-           (catch-as-failure
-             (lambda ()
-               (let* ((ps  ($ root 'plan-store))
-                      (obs ($ root 'observer))
-                      (rs  ($ root 'recipe-store))
-                      (i   (or ($ ps 'get-intent id) (error "no such payout" id))))
-                 (unless (payout-open? (intent-state i)) (error "already settled" id))
-                 ;; The ledger records that the coins LEFT — to the chain, as
-                 ;; one opaque external holder — and never the address: the
-                 ;; event, its destination record and the txid note reach
-                 ;; every member's snapshot; the address stays on the private
-                 ;; payout intent (my-payouts) and the chain itself.
-                 (let* ((aid  (intent-provider i))
-                        (m    (intent-resource-quantity i))
-                        (xmr  (measure-has-numerical-value m))
-                        ;; what the commons OWED is paid first, via the
-                        ;; injected settle-of (economy/debts.scm settle-debts!,
-                        ;; which records its own "debt-paid:" events per debt
-                        ;; and revokes any fully-paid ones); the claim bears
-                        ;; the rest — the ledger then shows the coins leaving
-                        ;; the member's claim for the remainder
-                        (left (if (and settle-of store) (settle-of rs obs store scope-id aid xmr) xmr))
-                        (owed-part (- xmr left)))
-                   (when (> owed-part 1e-12)
-                     ($ obs 'record-event
-                        (make-economic-event
-                         #:id (string-append "payout-owed:" txid) #:action 'transfer
-                         #:resource-inventoried-as "res-xmr-main" #:to-resource-inventoried-as "res-xmr-chain"
-                         #:resource-conforms-to %payout-spec #:resource-classified-as '("currency" "external")
-                         #:provider scope-id #:receiver "monero-chain"
-                         #:resource-quantity (make-measure owed-part "XMR") #:has-point-in-time (iso-now) #:created (iso-now)
-                         #:note (string-append "reimbursement paid on-chain, txid " txid))))
-                   (when (> left 1e-12)
-                     ($ obs 'record-event
-                        (make-economic-event
-                         #:id (string-append "payout-sent:" txid) #:action 'transfer
-                         #:resource-inventoried-as (payout-source-id aid)
-                         #:to-resource-inventoried-as "res-xmr-chain"
-                         #:resource-conforms-to %payout-spec #:resource-classified-as '("currency" "external")
-                         #:provider aid #:receiver "monero-chain"
-                         #:resource-quantity (make-measure left "XMR") #:has-point-in-time (iso-now) #:created (iso-now)
-                         #:note (string-append "sent on-chain, txid " txid))))
-                   (payout-restate! ps i (string-append "sent:" txid) #t)
-                   (success `((id . ,id) (txid . ,txid))))))))))
-
-      ;; the runner's claim on a payout before the coins move: "pending" →
-      ;; "sending", so a second tick never sends it twice. Only a pending one.
+      ;; BEGIN: the runner's claim on a payout before the coins move, "pending"
+      ;; → "sending", so a second tick never sends it twice.
       ((begin-payout scope-id id)
-       (with-scope scope-id
-         (lambda (root)
-           (catch-as-failure
-             (lambda ()
-               (let* ((ps ($ root 'plan-store))
-                      (i  (or ($ ps 'get-intent id) (error "no such payout" id))))
-                 (unless (equal? "pending" (intent-state i)) (error "not pending" id))
-                 (payout-restate! ps i "sending" #f #:began (iso-now))
-                 (success `((id . ,id)))))))))
+       (scoped scope-id
+         (lambda (root) (payout-move! ($ root 'plan-store) id 'begin #:began (iso-now)) `((id . ,id)))))
 
-      ;; the reconciler's read: payouts that began moving and were never
-      ;; settled — a gateway that died mid-transfer leaves these
-      ((sending-payouts scope-id)
-       (with-scope scope-id
+      ;; SETTLE: the VF transfer out of the member's claim (the coins left the
+      ;; commons' wallet; the claim shrinks by exactly that), txid on the event
+      ;; and the intent.
+      ((settle-payout scope-id id txid store)
+       (scoped scope-id
          (lambda (root)
-           (catch-as-failure
-             (lambda ()
-               (success
-                (filter-map (lambda (i) (and (equal? "sending" (intent-state i)) (payout->alist i)))
-                            (payouts-of ($ root 'plan-store) #f))))))))
+           (payout-move! ($ root 'plan-store) id 'settle txid
+                         #:effect (lambda (i) (ledger-settled! root scope-id i txid store)))
+           `((id . ,id) (txid . ,txid)))))
+
+      ;; UNSETTLE: the reconciler found no matching outgoing transfer inside
+      ;; the grace window: parked, still reserving the claim, for an operator
+      ;; to settle (with the txid) or fail by hand. Never "failed" on its own:
+      ;; the coins may have moved.
+      ((unsettle-payout scope-id id reason)
+       (scoped scope-id
+         (lambda (root) (payout-move! ($ root 'plan-store) id 'unsettle reason) `((id . ,id)))))
+
+      ;; FAIL leaves the claim whole and parks the intent with the reason — the
+      ;; member may retire it and ask again.
+      ((fail-payout scope-id id reason)
+       (scoped scope-id
+         (lambda (root) (payout-move! ($ root 'plan-store) id 'fail reason) `((id . ,id)))))
+
+      ;; ── the runner's and the reconciler's reads, each one state of the table ──
+      ;; pending payouts whose due is unset or ≤ NOW-ISO
+      ((due-payouts scope-id now-iso)
+       (payout-rows scope-id (lambda (i) (and (payout-pending? (intent-state i))
+                                               (let ((due (intent-due i))) (or (not due) (string<=? due now-iso)))))))
+
+      ;; payouts that began moving and were never settled — a gateway that
+      ;; died mid-transfer leaves these
+      ((sending-payouts scope-id)
+       (payout-rows scope-id (lambda (i) (payout-sending? (intent-state i)))))
 
       ;; the transactions that have already settled a payout: a wallet row that
       ;; paid one payout is not evidence for another
       ((settled-payout-txids scope-id)
-       (with-scope scope-id
-         (lambda (root)
-           (catch-as-failure
-             (lambda ()
-               (success
-                (filter-map (lambda (i)
-                              (let ((st (intent-state i)))
-                                (and (string? st) (string-prefix? "sent:" st) (substring st 5))))
-                            (payouts-of ($ root 'plan-store) #f))))))))
-
-      ;; the reconciler found no matching outgoing transfer inside the grace
-      ;; window: park it as UNSETTLED — still reserving the claim — for an
-      ;; operator to settle (with the txid) or fail by hand. Never "failed" on
-      ;; its own: the coins may have moved.
-      ((unsettle-payout scope-id id reason)
-       (with-scope scope-id
-         (lambda (root)
-           (catch-as-failure
-             (lambda ()
-               (let* ((ps ($ root 'plan-store))
-                      (i  (or ($ ps 'get-intent id) (error "no such payout" id))))
-                 (unless (equal? "sending" (intent-state i)) (error "not sending" id))
-                 (payout-restate! ps i (string-append "unsettled:" (if (string? reason) reason "?")) #f)
-                 (success `((id . ,id)))))))))
-
-      ((fail-payout scope-id id reason)
-       (with-scope scope-id
-         (lambda (root)
-           (catch-as-failure
-             (lambda ()
-               (let* ((ps ($ root 'plan-store))
-                      (i  (or ($ ps 'get-intent id) (error "no such payout" id))))
-                 (unless (payout-open? (intent-state i)) (error "already settled" id))
-                 (payout-restate! ps i (string-append "failed:" (if (string? reason) reason "?")) #t)
-                 (success `((id . ,id)))))))))
+       (scoped scope-id
+         (lambda (root) (filter-map (lambda (i) (payout-txid (intent-state i))) (payouts-of ($ root 'plan-store) #f)))))
 
       ;; ── Purchases for the commons, and what the commons then owes ──────────
       ;; A member buys a thing the commons wanted with their own money and

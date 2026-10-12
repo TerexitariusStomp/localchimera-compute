@@ -18,7 +18,7 @@
   #:use-module ((playnet doors journeys) #:select (ensure-place! make-trip-event trip-good trip-ids))
   #:use-module ((playnet doors plan-wire) #:select (scope-members))
   #:use-module ((playnet doors planner solve-cache) #:select (cache-solve! hold-row! mark-solve-stale! planned-material planned-row-id planned-rows planned-runs row-left solve-vocabulary-of))
-  #:use-module ((playnet doors position) #:select (agent-position-predicate demand->keyed demand-horizon))
+  #:use-module ((playnet doors position) #:select (solve-keywords))
   #:use-module ((playnet knowledge catalogues thermal) #:select (declare-thermal-form!))
   #:use-module ((playnet knowledge dsl findings) #:select (findings->wire))
   #:use-module ((playnet knowledge dsl vf-lint) #:select (lint-records))
@@ -141,11 +141,9 @@
              (success `((commitment . ,cid) (arrival . ,dcid)))))))))
 
       ((journey-end scope-id agent-id commitment-id from-place to-place mode)
-       (with-scope scope-id
+       (scoped scope-id
          (lambda (root)
-           (catch-as-failure
-             (lambda ()
-               (let* ((obs ($ root 'observer))
+(let* ((obs ($ root 'observer))
                       (rs  ($ root 'recipe-store))
                       (mode (if (symbol? mode) (symbol->string mode) mode))
                       (ids (trip-ids commitment-id))
@@ -160,7 +158,7 @@
                      #:from to-place #:to to-place #:fulfills dcid
                      #:note (string-append "journey arrive by " mode)
                      #:scope scope-id))
-                 (success `((commitment . ,commitment-id) (arrival . ,dcid)))))))))
+                 `((commitment . ,commitment-id) (arrival . ,dcid))))))
 
       ;; Materialize: run the willing-only plan AND persist its assignments as
       ;; stored suggested intents (mi|worker|skill|cell + suggested-provider meta),
@@ -174,16 +172,9 @@
              (lambda ()
                (let ((o opts))
                  (on-plan
-                   (plan-fn* root scope-id
-                     #:demand (demand->keyed demand)
-                     #:movable (or (assq-ref o 'movable) '())
-                     #:storable (or (assq-ref o 'storable) '())
-                     #:whole (or (assq-ref o 'whole) '())
-                     #:tau (or (assq-ref o 'tau) 0.0)
-                     #:willing? (willing-predicate root)   ; always the materialization binding
-                     #:agent-position (agent-position-predicate root)
-                     #:horizon (demand-horizon demand o)
-                     #:backend 'native-c)
+                   (apply plan-fn* root scope-id
+                          (solve-keywords root o #:demand demand
+                                          #:willing? (willing-predicate root)))   ; always the materialization binding
                    (lambda (al)
                      (let ((n (persist-materialized! root (assq-ref al 'work)
                                                      #:plan-id (or (assq-ref o 'plan-id) "plan-materialized"))))
@@ -194,22 +185,18 @@
       ;; and says "this happened". wc = that commitment alist (optionally edited);
       ;; we record the fulfilling `work` EconomicEvent and the observer folds it.
       ((fulfill-work scope-id wc)
-       (with-scope scope-id
+       (scoped scope-id
          (lambda (root)
-           (catch-as-failure
-             (lambda ()
-               (success `((event-id . ,(record-work-done root wc))
-                          (fulfills . ,(row-id wc)))))))))
+`((event-id . ,(record-work-done root wc))
+                          (fulfills . ,(row-id wc))))))
 
       ;; Enact a plan's MATERIAL flows — "it all happened as planned": record the
       ;; produce/consume/pickup/dropoff/use events the observer folds, moving stock. plan is the
       ;; alist from `plan` (only its (material …) is used).
       ((enact scope-id plan)
-       (with-scope scope-id
+       (scoped scope-id
          (lambda (root)
-           (catch-as-failure
-             (lambda ()
-               ;; the rows enacted are the plan's own, found by id: a row the last plan
+;; the rows enacted are the plan's own, found by id: a row the last plan
                ;; does not state waits unrecorded, and its quantity is the plan's, not the client's
                (let* ((stated  (let ((h (make-hash-table)))
                                  (for-each (lambda (m) (hash-set! h (row-id m) m)) (planned-material cache scope-id))
@@ -220,9 +207,9 @@
                       (r       (begin (for-each (lambda (m) (hold-row! ($ root 'observer) scope-id m)) mine)
                                       (enact-rows root mine #:vocabulary (solve-vocabulary-of cache scope-id)
                                                   #:runs (planned-runs cache scope-id)))))
-                 (success `((events . ,(car r))
+                 `((events . ,(car r))
                             (unmet . ,(append (map (lambda (m) (cons (row-id m) "the plan states no such row")) strange)
-                                              (map (lambda (u) (cons (car u) (format #f "~a" (cdr u)))) (cdr r))))))))))))
+                                              (map (lambda (u) (cons (car u) (format #f "~a" (cdr u)))) (cdr r)))))))))
 
       ;; ONE material row observed — the per-row browser door onto the same
       ;; confirmation mile enact walks wholesale. The row is found among the rows
@@ -298,10 +285,9 @@
       ;; your acceptance". The browser calls this right after express-willingness,
       ;; so marking willing immediately materializes. Returns (materialized . N).
       ((materialize-willing scope-id)
-       (with-scope scope-id
+       (scoped scope-id
          (lambda (root)
-           (catch-as-failure
-             (lambda () (success `((materialized . ,(materialize-willing! root)))))))))
+`((materialized . ,(materialize-willing! root))))))
 
       ;; A NEW PLACE, named by a citizen — free-association's LocationEditor
       ;; "Specific" address, on VF: a <spatial-thing> in the scope's store,
@@ -313,12 +299,10 @@
       ;; (a keep-in-place spec) of conductance UA kW/K over MASS kg; the store gains
       ;; the form, its stated row, the base's zero, and the relaxation recipe
       ((thermal-form! scope-id base specific-heat delta-t enclosure #:optional (ua #f) (mass #f))
-       (with-scope scope-id
+       (scoped scope-id
          (lambda (root)
-           (catch-as-failure
-             (lambda ()
-               (success (declare-thermal-form! ($ root 'recipe-store) base specific-heat delta-t enclosure
-                                               #:ua ua #:mass mass)))))))
+(declare-thermal-form! ($ root 'recipe-store) base specific-heat delta-t enclosure
+                                               #:ua ua #:mass mass))))
 
       ;; Whether COMMITMENT-ID is a count the plan asked of AGENT-ID and still
       ;; stands: what a photo read draws on in place of the week's allotment.

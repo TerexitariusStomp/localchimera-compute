@@ -110,5 +110,9 @@
   (labour nodes-labour) (means nodes-means) (demand nodes-demand) (folksonomy nodes-folksonomy)
   (credit nodes-credit) (slack nodes-slack) (voice nodes-voice) (reading nodes-reading)
   (deployment nodes-deployment) (allocation nodes-allocation) (solve nodes-solve))
-(define %fold-kinds (list nodes-labour nodes-means nodes-demand nodes-folksonomy nodes-credit nodes-slack nodes-voice nodes-reading))
-(define %descent-kinds (list nodes-deployment nodes-allocation nodes-solve))
+;; each kind by its name, the name the fold's two doors carry (standing.scm:
+;; `credit-uc` reads the root, `credit` one scope's node)
+(define %fold-kinds `((labour . ,nodes-labour) (means . ,nodes-means) (demand . ,nodes-demand)
+                      (folksonomy . ,nodes-folksonomy) (credit . ,nodes-credit) (slack . ,nodes-slack)
+                      (voice . ,nodes-voice) (reading . ,nodes-reading)))
+(define %descent-kinds `((deployment . ,nodes-deployment) (allocation . ,nodes-allocation) (solve . ,nodes-solve)))

@@ -27,6 +27,10 @@
 
 (define (planner-standing-doors ctx)
   (with-planner-ctx ctx
+    ;; a fold's two ends, by the kind's name (%fold-kinds): the UC root, where
+    ;; every global read is a method, and one scope's node
+    (define (fold-root kind) ((assq-ref %fold-kinds kind) uc))
+    (define (fold-at kind scope-id) (node-of scope-id (assq-ref %fold-kinds kind)))
 
     (declared-doors planner
 
@@ -79,28 +83,30 @@
 
       ((slots-changed! scope-id)    (slots-changed! scope-id)     'ok)
 
-      ;; the folksonomy fold's two ends: the commons' aggregate (the lobby's
-      ;; contribution + template surface) and one scope's node
-      ((folksonomy-uc) (nodes-folksonomy uc))
+      ;; ── the folds, two doors each: the commons' aggregate and one scope's node ──
+      ;; folksonomy (the lobby's contribution + template surface), credit, voice
+      ;; (a cast refolds the scope; governance hands the hands reader through
+      ;; hands!), readings (a contrary cast refolds through observed!), slack
+      ;; (the commons' desire overlay)
+      ((folksonomy-uc) (fold-root 'folksonomy))
 
-      ((folksonomy scope-id) (node-of scope-id nodes-folksonomy))
+      ((folksonomy scope-id) (fold-at 'folksonomy scope-id))
 
-      ;; the credit fold's two ends: the UC root (every global-* read is a
-      ;; method on it) and one scope's node
-      ((credit-uc) (nodes-credit uc))
+      ((credit-uc) (fold-root 'credit))
 
-      ((credit scope-id) (node-of scope-id nodes-credit))
+      ((credit scope-id) (fold-at 'credit scope-id))
 
-      ;; the voice fold's two ends, and the door the governance side hands the
-      ;; hands reader through (the rail is its store); a cast refolds the scope
-      ((voice-uc) (nodes-voice uc))
+      ((voice-uc) (fold-root 'voice))
 
-      ((voice scope-id) (node-of scope-id nodes-voice))
+      ((voice scope-id) (fold-at 'voice scope-id))
 
-      ;; the reading fold's two ends, and the door a contrary cast refolds through
-      ((readings-uc) (nodes-reading uc))
+      ((readings-uc) (fold-root 'reading))
 
-      ((readings scope-id) (node-of scope-id nodes-reading))
+      ((readings scope-id) (fold-at 'reading scope-id))
+
+      ((slack-uc) (fold-root 'slack))
+
+      ((slack scope-id) (fold-at 'slack scope-id))
 
       ;; the face's read of the reading fold: SPEC's cells at this scope's node, every
       ;; technique, act and source apart, and the drift between counts and ledger —
@@ -116,13 +122,11 @@
       ;; instants, off the scope's own event-sourced observer and the rail's standing
       ;; contrary observations, and what the fold would say from those readings alone
       ((readings-between scope-id spec from until)
-       (with-scope scope-id
+       (scoped scope-id
          (lambda (root)
-           (catch-as-failure
-             (lambda ()
-               (success (readings-between-reply ($ ($ root 'observer) 'standing-log) scope-id spec
+(readings-between-reply ($ ($ root 'observer) 'standing-log) scope-id spec
                                                 (string-or-false from) (string-or-false until)
-                                                #:contrary (and contrary-of (contrary-of scope-id)))))))))
+                                                #:contrary (and contrary-of (contrary-of scope-id))))))
 
       ;; substitution as a reading: the scope's foods ranked by how far each covers
       ;; SPEC's leaves, against the floors a body states
@@ -146,11 +150,6 @@
       ((hands scope-id) (map (lambda (r) (list (car r) (part->string (cadr r)) (caddr r))) (rail-hands scope-id)))
 
       ((credit-read method . args) (apply $ (nodes-credit uc) method args))
-
-      ;; the slack fold: the commons' desire overlay as one read, or one scope's
-      ((slack-uc) (nodes-slack uc))
-
-      ((slack scope-id) (node-of scope-id nodes-slack))
 
       ((slack-read method . args) (apply $ (nodes-slack uc) method args))
 

@@ -40,6 +40,12 @@
 
 (define (planner-person-doors ctx)
   (with-planner-ctx ctx
+    ;; UPSERT: stating who you are, when you can work or where you live IS the
+    ;; moment you become a person here. The record is updated by UPDATE, or
+    ;; made by MAKE and then FRESH runs once, for what a new person comes with.
+    (define* (agent-upsert! as aid update make #:optional (fresh (lambda () #t)))
+      (or ($ as 'update-agent aid update)
+          (begin ($ as 'add-agent (make)) (fresh) #t)))
 
     (declared-doors planner
 
@@ -121,32 +127,29 @@
       ;; fix) or off. Stated once, at the home, so every device of theirs reads the
       ;; same; off ends the fix that stands.
       ((set-location-sharing scope-id aid mode)
-       (with-scope scope-id
+       (scoped scope-id
          (lambda (root)
-           (catch-as-failure
-             (lambda ()
-               (let ((m (and (string? mode) (string->symbol mode)))
+(let ((m (and (string? mode) (string->symbol mode)))
                      (ps ($ root 'plan-store)))
                  (unless (memq m location-modes)
                    (error "location sharing is live, here or off" mode))
                  ($ ps 'set-meta (location-share-key aid) `((mode . ,m) (at . ,(clock-now))))
                  (when (eq? m 'off) ($ ps 'set-meta (position-key aid 0) '()))
-                 (success m)))))))
+                 m))))
 
       ((location-sharing scope-id aid)
-       (with-scope scope-id
-         (lambda (root) (catch-as-failure (lambda () (success (or (location-mode root aid) 'undeclared)))))))
+       (scoped scope-id
+         (lambda (root)
+(or (location-mode root aid) 'undeclared))))
 
       ;; PARENT names the place this one is inside: a room in a site, a shelf in
       ;; a room. The child's id is its parent's with its own name after a slash,
       ;; so two rooms each have a "shelf 1", and a child that states no position
       ;; stands at its parent's.
       ((declare-place scope-id agent-id name lat lon #:optional (address #f) (parent #f))
-       (with-scope scope-id
+       (scoped scope-id
          (lambda (root)
-           (catch-as-failure
-             (lambda ()
-               (let* ((sts  ($ root 'spatial-thing-store))
+(let* ((sts  ($ root 'spatial-thing-store))
                       (slug (string-map (lambda (c) (if (or (char-alphabetic? c) (char-numeric? c)) (char-downcase c) #\-))
                                         (string-trim-both (or name ""))))
                       (pid  (string-or-false parent))
@@ -164,16 +167,14 @@
                                         #:long (if has? lon (and par (spatial-thing-long par)))
                                         #:mappable-address (or addr (and par (spatial-thing-mappable-address par)))
                                         #:contained-in pid))
-                 (success `((id . ,id)))))))))
+                 `((id . ,id))))))
 
       ;; its own claim). OPTS: (at-location [when]) — where the good should
       ;; reach the citizen and when they want it, recorded on the transfer.
       ((claim scope-id resource-id qty claimant labor-cost #:optional (where #f) (deliver-at #f))
-       (with-scope scope-id
+       (scoped scope-id
          (lambda (root)
-           (catch-as-failure
-             (lambda ()
-               ;; the CLAIMANT states which good and how many; the price is the
+;; the CLAIMANT states which good and how many; the price is the
                ;; good's crystallized labour, derived here. LABOR-COST stays in the
                ;; door's signature for callers that still send it and is not read:
                ;; a cost the client states could be zero or negative.
@@ -222,9 +223,9 @@
                      ($ ($ root 'account-store) 'claim resource-id qty claimant cost (credit-roots claimant)
                         #f                                       ; level
                         where deliver-at (fulfillment-state-commitment-id fs))))
-                 (success `((claimed . ,cost)
+                 `((claimed . ,cost)
                             (balance . ,(wire-number ($ ($ root 'observer) 'credit-balance claimant)))
-                            (credit . ,(scope-credit->wire root claimant (credit-roots claimant)))))))))))
+                            (credit . ,(scope-credit->wire root claimant (credit-roots claimant))))))))
 
       ;; the member's id arrives as `aid` — naming it agent-id would shadow the
       ;; record accessor the updater calls (the silent-degrade class the live
@@ -251,20 +252,15 @@
                           (if (vector? v) (filter string? (vector->list v)) '())))
                   (as ($ root 'agent-store))
                   (with-tags (lambda (old) (append (remove profile-tag? (or old '())) tags))))
-             (or ($ as 'update-agent aid
-                    (lambda (old)
-                      (copy-agent old #:classified-as (with-tags (agent-classified-as old)))))
-                 (begin
-                   ($ as 'add-agent
-                      (make-agent #:id aid #:type 'person #:name aid #:classified-as (with-tags '())))
-                   ;; a new body starts with the same two everyone has — walking
-                   ;; and cycling — declared here exactly as declare-skill would
-                   ;; raise them on request, not assumed some other way: the one
-                   ;; default a fresh profile gets, same as every other skill a
-                   ;; member may later revoke if it doesn't hold for them.
-                   (declare-skill! root aid "walk")
-                   (declare-skill! root aid "cycle")
-                   #t))
+             (agent-upsert! as aid
+               (lambda (old) (copy-agent old #:classified-as (with-tags (agent-classified-as old))))
+               (lambda () (make-agent #:id aid #:type 'person #:name aid #:classified-as (with-tags '())))
+               ;; a new body starts with the same two everyone has — walking
+               ;; and cycling — declared here exactly as declare-skill would
+               ;; raise them on request, not assumed some other way: the one
+               ;; default a fresh profile gets, same as every other skill a
+               ;; member may later revoke if it doesn't hold for them.
+               (lambda () (declare-skill! root aid "walk") (declare-skill! root aid "cycle")))
              `(ok . ,tags)))))
 
       ;; the member's registered HOME — the agent record's primary-location, the
@@ -276,11 +272,9 @@
       ;; the member's id arrives as `aid`: naming it agent-id would shadow the
       ;; record accessor the updater calls (see set-availability)
       ((set-home scope-id aid place lat lon)
-       (with-scope scope-id
+       (scoped scope-id
          (lambda (root)
-           (catch-as-failure
-             (lambda ()
-               (let* ((sts ($ root 'spatial-thing-store))
+(let* ((sts ($ root 'spatial-thing-store))
                       (as ($ root 'agent-store))
                       (given (string-or-false place))
                       (has? (and (number? lat) (number? lon) (not (and (zero? lat) (zero? lon)))))
@@ -295,13 +289,10 @@
                                                           #:contained-in (standing-in lat lon ($ sts 'all-locations))))
                                    id))
                                 (else (error "a home needs a known place or coordinates")))))
-                 (or ($ as 'update-agent aid
-                        (lambda (old)
-                          (copy-agent old #:primary-location id)))
-                     ($ as 'add-agent
-                        (make-agent #:id aid #:type 'person #:name aid #:primary-location id
-                                    #:classified-as '())))
-                 (success `((place . ,id)))))))))
+                 (agent-upsert! as aid
+                   (lambda (old) (copy-agent old #:primary-location id))
+                   (lambda () (make-agent #:id aid #:type 'person #:name aid #:primary-location id #:classified-as '())))
+                 `((place . ,id))))))
 
       ;; declare-dwelling: the dwelling this AID lives in, as the housing closure
       ;; reads it (knowledge/housing-substance.scm resource->dwelling-unit): one
@@ -321,11 +312,9 @@
       ;; known to be a lease question. Re-declaring replaces the tags; a
       ;; measurement that is not a positive number is refused.
       ((declare-dwelling scope-id aid place area rooms warmth-winter warmth-summer beds attests-json certified rent tenure)
-       (with-scope scope-id
+       (scoped scope-id
          (lambda (root)
-           (catch-as-failure
-             (lambda ()
-               (let* ((obs  ($ root 'observer))
+(let* ((obs  ($ root 'observer))
                       (as   ($ root 'agent-store))
                       (sts  ($ root 'spatial-thing-store))
                       (given (string-or-false place))
@@ -359,7 +348,7 @@
                      #:primary-accountable (if rented? (string-append "landlord:" aid) aid)   ; primary-accountable: who can recall it
                      #:custodian-scope (if rented? aid #f)                                 ; custodian-scope: who holds it meanwhile
   ))
-                 (success `((resource . ,rid) (place . ,loc) (tags . ,tags)))))))))
+                 `((resource . ,rid) (place . ,loc) (tags . ,tags))))))
 
       ;; Dial availability: JSON is an array of {start:"HH:MM", end:"HH:MM",
       ;; days:[name…]} — one arc per object. Each becomes a day-schedule (its
@@ -372,33 +361,29 @@
          (lambda (root)
            (let* ((window (arcs-json->window json))
                   (as ($ root 'agent-store)))
-             ;; UPSERT: offering your time IS the moment you become an agent
-             ;; here — a browser-born AID has no prior record, and an update
-             ;; that returns #f for it would silently drop the offer (the
-             ;; solve then plans over 0 available hours forever).
-             (or ($ as 'update-agent aid
-                    (lambda (old)
-                      (copy-agent old #:availability-window window)))
-                 (begin
-                   ($ as 'add-agent
-                      (make-agent #:id aid #:type 'person #:name aid #:classified-as '()
-                                  #:availability-window window))
-                   ;; generic labour comes with the person: a skill is a
-                   ;; resource conforming to its spec (agents-with-skill groups
-                   ;; by primary-accountable), and spec-labor is the one every
-                   ;; person can work — without it a first citizen's offered
-                   ;; hours count for nothing the plan can schedule.
-                   ;; …and the spec says it is worked (its effort unit), which is
-                   ;; what makes the resource read as a skill at all
-                   ;; (declare-skill!'s own step, for the generic)
-                   (unless ($ ($ root 'recipe-store) 'get-resource-spec generic-labour-spec-id)
-                     ($ ($ root 'recipe-store) 'add-resource-spec generic-labour-spec))
-                   ($ ($ root 'observer) 'record-resource
-                      (make-economic-resource
-                       #:id (generic-skill-id aid)
-                       #:name (string-append aid " " generic-labour-spec-id)
-                       #:conforms-to generic-labour-spec-id
-                       #:accounting-quantity (make-measure 1 %count-unit) #:onhand-quantity (make-measure 1 %count-unit) #:primary-accountable aid))))
+             ;; a browser-born AID has no prior record, and an update that
+             ;; returned #f for it would silently drop the offer (the solve
+             ;; then plans over 0 available hours forever)
+             (agent-upsert! as aid
+               (lambda (old) (copy-agent old #:availability-window window))
+               (lambda () (make-agent #:id aid #:type 'person #:name aid #:classified-as '() #:availability-window window))
+               ;; generic labour comes with the person: a skill is a
+               ;; resource conforming to its spec (agents-with-skill groups
+               ;; by primary-accountable), and spec-labor is the one every
+               ;; person can work — without it a first citizen's offered
+               ;; hours count for nothing the plan can schedule.
+               ;; …and the spec says it is worked (its effort unit), which is
+               ;; what makes the resource read as a skill at all
+               ;; (declare-skill!'s own step, for the generic)
+               (lambda ()
+                 (unless ($ ($ root 'recipe-store) 'get-resource-spec generic-labour-spec-id)
+                   ($ ($ root 'recipe-store) 'add-resource-spec generic-labour-spec))
+                 ($ ($ root 'observer) 'record-resource
+                    (make-economic-resource
+                     #:id (generic-skill-id aid)
+                     #:name (string-append aid " " generic-labour-spec-id)
+                     #:conforms-to generic-labour-spec-id
+                     #:accounting-quantity (make-measure 1 %count-unit) #:onhand-quantity (make-measure 1 %count-unit) #:primary-accountable aid))))
              `(ok . ,aid)))))
 
       ;; ── skills: an EconomicResource per (agent, skill), moved by EVENTS ──
@@ -526,11 +511,9 @@
       ;; none, or the certificate could not carry it); the want stands, and the
       ;; next plan answers again.
       ((my-claims scope-id agent-id)
-       (with-scope scope-id
+       (scoped scope-id
          (lambda (root)
-           (catch-as-failure
-             (lambda ()
-               (let* ((obs ($ root 'observer)) (ps ($ root 'plan-store)) (rs ($ root 'recipe-store))
+(let* ((obs ($ root 'observer)) (ps ($ root 'plan-store)) (rs ($ root 'recipe-store))
                       (price (lambda (spec) (let ((p (false-if-exception (crystallized-snlt-for-spec rs spec))))
                                               (and (number? p) (finite? p) p))))
                       (mval (lambda (m) (if m (measure-has-numerical-value m) 0)))
@@ -561,7 +544,7 @@
                                          (total . ,(mval (intent-resource-quantity i))) (fulfilled . 0) (remaining . 0)
                                          (snlt . ,(price spec)) (state . "asked")))))
                               ($ ps 'all-intents))))
-                 (success `((rows . ,(append asked rows))))))))))
+                 `((rows . ,(append asked rows)))))))
 
       ;; retire-means: withdraw the offer — a `lower` to zero, the record and
       ;; its history standing (readers take on-hand > 0 as offered), the

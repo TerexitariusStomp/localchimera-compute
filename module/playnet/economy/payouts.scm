@@ -6,9 +6,11 @@
 (define-module (playnet economy payouts)
   #:use-module ((goblins) #:select ($))
   #:use-module ((playnet vf schemas) #:select (copy-intent economic-resource-onhand-quantity intent-has-beginning intent-id intent-provider intent-resource-quantity intent-state measure-has-numerical-value))
-  #:use-module ((srfi srfi-1) #:select (fold))
+  #:use-module ((srfi srfi-1) #:select (fold filter-map))
+  #:use-module ((ice-9 match) #:select (match))
   #:export (intent-private? payout-source-id monero-address-plausible? payouts-of payout-available
-            payout-open? payout-restate!))
+            payout-open? payout-restate! payout-pending? payout-sending? payout-txid
+            payouts-where payout-move!))
 
 (define (intent-private? i)
   "An intent that names something of one member's that no other reader is
@@ -56,6 +58,44 @@
 (define (payout-open? state)
   (or (member state '("pending" "sending"))
       (and (string? state) (string-prefix? "unsettled:" state))))
+(define (payout-pending? state) (equal? state "pending"))
+(define (payout-sending? state) (equal? state "sending"))
+(define (payout-txid state)
+  "The txid a settled state carries, else #f."
+  (and (string? state) (string-prefix? "sent:" state) (substring state 5)))
+(define (payouts-where ps keep?)
+  "Everyone's payout rows whose intent KEEP? accepts, oldest first."
+  (filter-map (lambda (i) (and (keep? i) i)) (payouts-of ps #f)))
+
+;; ── the lifecycle, as one table ──────────────────────────────────────────────
+;; A payout intent moves by these verbs and no other, each a row: the states
+;; it may leave from, the state it lands in (spelled from the verb's argument,
+;; a reason or a txid), and whether that state is final. `payout-move!` is the
+;; one step every verb takes: find the intent, refuse a state the row does not
+;; name, run the verb's own effect while the intent still stands as it was,
+;; then restate it. Retiring removes the intent instead, and only its
+;; requester may.
+(define %payout-moves
+  `((begin    ,payout-pending? ,(lambda (_) "sending")                      #f "not pending")
+    (unsettle ,payout-sending? ,(lambda (r) (string-append "unsettled:" (if (string? r) r "?"))) #f "not sending")
+    (fail     ,payout-open?    ,(lambda (r) (string-append "failed:" (if (string? r) r "?")))    #t "already settled")
+    (settle   ,payout-open?    ,(lambda (txid) (string-append "sent:" txid))                     #t "already settled")
+    (retire   ,payout-pending? #f                                            #f "already settled")))
+(define* (payout-move! ps id verb #:optional (arg #f) #:key (by #f) (began #f) (effect (lambda (i) #t)))
+  "The payout ID moved by VERB with ARG; BY names the caller where only the
+   requester may; BEGAN the instant the coins started moving; EFFECT runs on
+   the intent as it stood, before the move. Answers the intent as it stood."
+  (match (or (assq verb %payout-moves) (error "no such payout move" verb))
+    ((_ may? to final? refusal)
+     (let ((i ($ ps 'get-intent id)))
+       (unless (and i (string-prefix? "payout:" id)) (error "no such payout" id))
+       (when (and by (not (equal? by (intent-provider i)))) (error "not your payout" id))
+       (unless (may? (intent-state i)) (error refusal id))
+       (effect i)
+       (if to
+           (payout-restate! ps i (to arg) final? #:began (or began (intent-has-beginning i)))
+           ($ ps 'remove-intent id))
+       i))))
 (define* (payout-restate! ps i state finished? #:key (began (intent-has-beginning i)))
   "The intent with a new STATE (and finished flag), re-added silently —
    an intent is immutable, so a status change is remove + add of its twin.
