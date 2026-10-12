@@ -17,7 +17,9 @@
              (goblins) (goblins utils hashmap)
              (srfi srfi-1))
 
-(define-syntax-rule (engine-var name) (variable-ref (module-variable (resolve-module '(playnet solve engine)) 'name)))
+;; a dial is a settings field (engine.scm `define-context settings`): the name is
+;; read in the engine's module, as the engine reads it
+(define-syntax-rule (engine-var name) (eval 'name (resolve-module '(playnet solve engine))))
 
 (define COMMUNE "ECommune") (define PLACE "town")
 (define procs (list (make-recipe-process #:id "bake" #:name "Bake")))

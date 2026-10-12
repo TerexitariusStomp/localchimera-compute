@@ -58,24 +58,20 @@
 ;; planner reaches the program, beside the solve modules it reads (world,
 ;; ingest, plan, report, …) and the layers (compile, solver, schemas, …); the
 ;; interfaces are disjoint, so there is nothing to stack in a particular order.
-;; #:declarative? #f — callers set! these globals (interpreted), and the module
-;; system must keep them as real boxes. Declarative would be WORSE than a
-;; redefinition hazard: Guile then inlines the compile-time value of every
-;; imported global that is an immediate (compile.scm's `'()` for *templates*,
-;; solver.scm's 'auto for *backend*, every numeric dial), so a setter's write
-;; is never read by the engine again — measured: build-columns saw no templates.
-;; The browser build (Hoot) compiles a whole program and refuses a module that
-;; may be redefined, so it builds from a copy of this file with the flag turned
-;; on (the Makefile's .hoot-src rule) — where an imported global is a wasm global read
-;; each time. Every global a caller assigns has a setter (set-backend!,
-;; set-templates!, set-last-certificate!, set-promote!, set-willing!,
-;; set-legal-decorate!, set-acquire!, set-dial!) so neither build writes
-;; into an imported binding.
+;; The module is declarative, as Hoot requires of a whole program and as Guile
+;; compiles best. A declarative module's importer inlines the compile-time
+;; value of an imported global that is an immediate (measured once: a report
+;; read compile.scm's `*templates*` as '()), so every global a caller writes
+;; is a field of a context cell (the world's tables in solve/world.scm, the
+;; settings below, compile.scm's `compiled`, solver.scm's `certificate`): the
+;; name is an identifier-syntax, a read is an accessor call and a `set!` a
+;; setter call, in both builds. tools/lint/check-imported-set.scm refuses the
+;; one write left over, a `set!` of a binding a module imported.
 (define-module (playnet solve engine)
   #:re-export (svc-good? lab-good svc-good)   ; the bar-key grammar's, read here and by the engine's importers (facts/located)
   #:use-module (playnet vf formulas flows)
   #:use-module (playnet solve world)
-  #:declarative? #f
+  #:use-module (playnet protocol context)
   #:use-module (srfi srfi-1)
   #:use-module ((playnet utils alist) #:select (assv-replace assoc-replace))
   #:use-module ((playnet utils catch) #:select (catch* throw* with-throw-handler*))
@@ -440,9 +436,24 @@
        (not (hash-ref *never-raw* spec #f))
        (or (structural-raw? spec) (svc-held? spec) (barrier-bounded? spec) (hash-ref *raws* spec #f))
        #t))
-(define *desire-w0* 1000.0)                   ; one citizen's whole emphasis (solve/emphasis.scm) — and the weight of a want nobody has weighted at all
+;; ── THE SETTINGS: what a caller states and `reset!` leaves standing ──────────
+;; One context (playnet protocol context) in the cell `%settings`, each dial a
+;; top-level name over it, as the world's tables are over `%world`: a test's
+;; `(set! *emp-rho* …)`, `set-dial!` and `set-legal-decorate!` all write the
+;; one instance, in this module and in every module that imports the name, so
+;; the engine is declarative for Guile and for Hoot alike and no caller ever
+;; assigns a binding it imported. `reset!` does not touch it: a setting stands
+;; across worlds, as *willing?* and *cap-scale* do. The prose on each dial
+;; stands where the dial is read.
+(define-context settings #:cell %settings
+  (*desire-w0* 1000.0)       ; one citizen's whole emphasis (solve/emphasis.scm) — and the weight of a want nobody has weighted at all
+  (*emp-rho* 0.05)           ; EMP congestion weight (small ⇒ equalize among equals); applied as ρ/(h_w·H) per worker so the term is ρ·util² — scale-free
+  (*want-as-cap?* #t)        ; the DEFAULT: honesty by shape, the level voice-tilted; a governed dial, stated per solve (#:want-as-cap)
+  (*pref-bound* 1.0)         ; β, the who rail's bound; a governed dial, stated per solve (#:pref-bound)
+  (*stock-draw-hours* 1.0)   ; a governed dial, stated per solve (#:stock-draw-hours)
+  (*legal-decorate* (lambda (proc-id cell) (values #f 0.0 '())))   ; the legal gate, default no-op; set via plan-scope #:legal-decorate
+  (*climb-per-km* '(("pedestrian" . 120.0) ("bicycle" . 100.0) ("auto" . 15.0) ("truck" . 15.0) ("bus" . 15.0))))   ; metres of climb per level kilometre, by manner
 ;; ── PER-AGENT LABOUR (the §8 fold): an agent's time is a located-dated good ─────
-(define *emp-rho* 0.05)               ; EMP congestion weight (small ⇒ equalize among equals); applied as ρ/(h_w·H) per worker so the term is ρ·util² — scale-free
 ;; THE GOVERNED DIALS, ONE WRITE: every dial scope/policy.scm registers
 ;; is set here by its registry key — by `plan-from-records` from the solve's
 ;; keywords, or by a direct-assembly caller (a test laying a world by hand).
@@ -465,8 +476,7 @@
 ;; else. A scope preferring another member of the family (or the old
 ;; proportional des) states it by policy through this switch; a solve
 ;; reads it at build time.
-(define *want-as-cap?* #t)   ; the DEFAULT: honesty by shape, the level voice-tilted; a governed dial, stated per solve (#:want-as-cap)
-(define (want-as-cap?) *want-as-cap?*)   ; the reader — the honesty radius (service.scm) asks which shape is live before correcting for it
+(define (want-as-cap?) *want-as-cap?*)   ; the reader of the settings field — the honesty radius (service.scm) asks which shape is live before correcting for it
 ;; the cap kind's per-spec REFERENCE SCALE (one natural quantum of the good —
 ;; a loaf, a night), keyed by base spec; 1.0 unstated. Exogenous knowledge
 ;; (a catalogue fact), never a report: a scale a report could move would
@@ -484,8 +494,7 @@
 ;; 2β apart, the same for every citizen whatever their hours, and scale-free
 ;; as EMP is. Centring makes a tilt reorder a person's work and leave how
 ;; much they work to the hours they offer; equal reluctance all round
-;; cancels exactly. β is the governed number.
-(define *pref-bound* 1.0)                 ; a governed dial, stated per solve (#:pref-bound)
+;; cancels exactly. β is the governed number, *pref-bound*, a settings field.
 (define (offered-labour-hours)            ; H: total offered LABOUR hours (means capacity is not fairness-normalised)
   (fold (lambda (b a) (if (list-ref b 4) (+ a (cadr b)) a)) 0.0 *supplier-bundles*))
 (define (worker-tilts)
@@ -509,8 +518,7 @@
 ;;                  added to the column's labour, so the plan ROUTES AROUND it
 ;;     skill-reqs : `obtain`(person) licences — required skills, gated by the
 ;;                  SAME satisfied-by closure as any skill (a licence IS a skill)
-(define *legal-decorate* (lambda (proc-id cell) (values #f 0.0 '())))
-;; the doors a caller uses to state these — a set! on an imported binding is refused by a compiled build
+;; *legal-decorate* is a settings field. The doors a caller uses to state these:
 (define (set-promote! v) (set! *promote* v))
 (define (set-willing! f) (set! *willing?* f))
 (define (set-legal-decorate! f) (set! *legal-decorate* f))
@@ -523,9 +531,8 @@
 ;; with the drivetrain), a bicycle near 100, a walker 120 (Naismith's rule, 600 m
 ;; up for 5 km along). The DISTANCE-spent flows of a transport recipe (fuel, wear,
 ;; loss) then scale by the road plus the climb's equivalent, and a manner the
-;; table does not name climbs at the car's figure. Descent is free: the brake's
+;; table does not name climbs at the car's figure. The table is *climb-per-km*, a settings field. Descent is free: the brake's
 ;; heat is the surroundings' and the road already paid for.
-(define *climb-per-km* '(("pedestrian" . 120.0) ("bicycle" . 100.0) ("auto" . 15.0) ("truck" . 15.0) ("bus" . 15.0)))
 (define (arc-climb-m a b)                 ; metres b stands above a, never below zero
   (let ((za (hash-ref *alt* (place-of a) #f)) (zb (hash-ref *alt* (place-of b) #f)))
     (if (and za zb) (max 0.0 (- zb za)) 0.0)))
@@ -2391,8 +2398,7 @@
                 cols)
       (let ((m (hash-count (const #t) p)))
         (if (= m n) p (grow m))))))
-;; ── A STOCK DRAWN DOWN IS FELT ───────────────────────────────────────────────
-(define *stock-draw-hours* 1.0)               ; a governed dial, stated per solve (#:stock-draw-hours)
+;; ── A STOCK DRAWN DOWN IS FELT: *stock-draw-hours*, a settings field ──────────
 
 ;; THE SETTINGS A SOLVE IS GIVEN, ONE WRITE: the voice field and the governed dials
 ;; (scope/policy.scm). Both assemblies call this after they ingest — the single

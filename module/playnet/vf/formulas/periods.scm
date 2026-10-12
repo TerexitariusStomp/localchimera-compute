@@ -15,7 +15,6 @@
   #:use-module (srfi srfi-1)
   #:use-module ((playnet utils clock) #:select (iso->epoch instant->civil instant->weekday now hhmm->minutes))
   #:use-module ((playnet utils units) #:select (unit-known? convert-unit/strict))
-  #:declarative? #f   ; *period-length* is assigned (set-period-length!) and read from other modules
   #:export (*all-days* *period-days* period-days *period-spans* *weekday-syms* iso-time-of
             iso->epoch/time span-timed? span->days set-period-span! period-span *period-length*
             set-period-length! declared-period-hours period-hours period-contains? time->period

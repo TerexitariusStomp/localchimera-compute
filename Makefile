@@ -44,40 +44,30 @@ browser/day-boot.wasm: hoot/day-boot.scm $(DAY_BOOT_WASM_DEPS) $(HOOT_TOOLCHAIN_
 
 # ── The planner under Hoot ───────────────────────────────────────────────────
 # `guild compile-wasm` builds a whole program and refuses a module that may be
-# redefined from outside, so the engine — `#:declarative? #f` for Guile, where a
-# declarative engine would bake in the compile-time value of every global it
-# imports — is built from a copy with the flag turned on. The copy sits FIRST on
-# the load path (a later -L is searched first); everything else is the tree's own. (See the note above
-# define-module in module/playnet/solve/engine.scm.)
+# redefined from outside. The engine and the calendar are declarative, their
+# caller-written state in context cells (the note above define-module in
+# module/playnet/solve/engine.scm), so the household bundle builds from the
+# tree's own files; $(HOOT_SRC) holds the probe bundles.
 HOOT_SRC = .hoot-src
-$(HOOT_SRC)/playnet/solve/engine.scm: module/playnet/solve/engine.scm
-	@mkdir -p $(dir $@)
-	sed 's/^  #:declarative? #f$$/  #:declarative? #t/' $< > $@
-	@grep -q '^  #:declarative? #t$$' $@ || { echo "engine.scm: no '#:declarative? #f' line to turn on"; rm -f $@; exit 1; }
-# live.scm is the same case (it loads the engine at module init), and a whole scope
-# reaches it: its copy is built only for the scope's own targets, under a directory
-# of its own, so the household build above never reads it.
+# live.scm is `#:declarative? #f` (it loads the engine at module init), and a
+# whole scope reaches it: a copy with the flag turned on is built only for the
+# scope's own targets, under a directory of its own, searched first (a later
+# -L is searched first), so the household build never reads it.
 HOOT_SCOPE_SRC = .hoot-src/scope
 $(HOOT_SCOPE_SRC)/playnet/scope/live.scm: module/playnet/scope/live.scm
 	@mkdir -p $(dir $@)
 	sed 's/^  #:declarative? #f/  #:declarative? #t/' $< > $@
 	@grep -q '^  #:declarative? #t' $@ || { echo "live.scm: no '#:declarative? #f' line to turn on"; rm -f $@; exit 1; }
-# periods.scm is the same case again (*period-length* is assigned across
-# modules); a household's solve reaches it as a scope's does, so its copy
-# stands beside the engine's, read by every planner bundle
-$(HOOT_SRC)/playnet/vf/formulas/periods.scm: module/playnet/vf/formulas/periods.scm
-	@mkdir -p $(dir $@)
-	sed 's/^  #:declarative? #f/  #:declarative? #t/' $< > $@
-	@grep -q '^  #:declarative? #t' $@ || { echo "periods.scm: no '#:declarative? #f' line to turn on"; rm -f $@; exit 1; }
 
 # Goblins and fibers come from their own pinned prefixes: the toolchain
 # profile's whole site directory would also expose Hoot's host-side modules
 # (hoot/primitives.scm is `#:declarative? #f`), which the library-group linker
 # refuses to load as a wasm library.
-HOOT_PLANNER_ARGS = -L module -L $(GOBLINS_LOAD_PATH) -L $(FIBERS_LOAD_PATH) -L $(HOOT_SRC)
+HOOT_PLANNER_ARGS = -L module -L $(GOBLINS_LOAD_PATH) -L $(FIBERS_LOAD_PATH)
 
 .PHONY: check-hoot-planner hoot-probe-family hoot-probe-admm hoot-probe-async
-check-hoot-planner: $(HOOT_SRC)/playnet/solve/engine.scm $(HOOT_SRC)/playnet/vf/formulas/periods.scm
+check-hoot-planner:
+	@mkdir -p $(HOOT_SRC)
 	$(HOOT_BUILD_DEV) bash -c 'guild compile-wasm $(HOOT_PLANNER_ARGS) -o $(HOOT_SRC)/family-probe.wasm hoot/family-probe.scm'
 
 # runs the probe under node; the wasm imports goblins' crypto, which a solve never calls
@@ -88,18 +78,20 @@ hoot-probe-family: check-hoot-planner
 # Every module it reaches states its imports in its define-module
 # (tools/edit/hoist-use-modules.py --check) and keeps host-only calls behind cond-expand.
 .PHONY: check-hoot-scope hoot-probe-scope
-check-hoot-scope: $(HOOT_SRC)/playnet/solve/engine.scm $(HOOT_SRC)/playnet/vf/formulas/periods.scm $(HOOT_SCOPE_SRC)/playnet/scope/live.scm
+check-hoot-scope: $(HOOT_SCOPE_SRC)/playnet/scope/live.scm
 	$(HOOT_BUILD_DEV) bash -c 'guild compile-wasm $(HOOT_PLANNER_ARGS) -L $(HOOT_SCOPE_SRC) -o $(HOOT_SRC)/scope-probe.wasm hoot/scope-probe.scm'
 hoot-probe-scope: check-hoot-scope
 	node tools/test/run-wasm.cjs $(HOOT_SRC)/scope-probe.wasm
 
 # the federated solve (solve-decomposed) through the browser build: each scope on the reference core
-hoot-probe-admm: $(HOOT_SRC)/playnet/solve/engine.scm
+hoot-probe-admm:
+	@mkdir -p $(HOOT_SRC)
 	$(HOOT_BUILD_DEV) bash -c 'guild compile-wasm $(HOOT_PLANNER_ARGS) -o $(HOOT_SRC)/admm-probe.wasm hoot/admm-probe.scm'
 	node tools/test/run-wasm.cjs $(HOOT_SRC)/admm-probe.wasm
 
 # the coordinator-free solve: peers over a simulated network, each on the reference core
-hoot-probe-async: $(HOOT_SRC)/playnet/solve/engine.scm
+hoot-probe-async:
+	@mkdir -p $(HOOT_SRC)
 	$(HOOT_BUILD_DEV) bash -c 'guild compile-wasm $(HOOT_PLANNER_ARGS) -o $(HOOT_SRC)/async-probe.wasm hoot/async-probe.scm'
 	node tools/test/run-wasm.cjs $(HOOT_SRC)/async-probe.wasm
 
@@ -185,7 +177,7 @@ FAMILY_WASM_DEPS = \
                     module/playnet/utils/units.scm \
                     module/playnet/wire/rows.scm
 
-browser/family.wasm: hoot/family-worker.scm $(FAMILY_WASM_DEPS) $(HOOT_SRC)/playnet/solve/engine.scm $(HOOT_SRC)/playnet/vf/formulas/periods.scm $(HOOT_TOOLCHAIN_STAMP)
+browser/family.wasm: hoot/family-worker.scm $(FAMILY_WASM_DEPS) $(HOOT_TOOLCHAIN_STAMP)
 	$(HOOT_BUILD_DEV) bash -c 'guild compile-wasm $(HOOT_PLANNER_ARGS) -o browser/family.wasm hoot/family-worker.scm'
 
 # boots browser/family.wasm under node, through the page's own boot module, and
@@ -362,7 +354,7 @@ SCOPE_WASM_DEPS = \
                    module/playnet/wire/rows.scm \
                    module/playnet/wire/snapshot.scm
 
-browser/scope.wasm: hoot/scope-worker.scm $(SCOPE_WASM_DEPS) $(HOOT_SRC)/playnet/solve/engine.scm $(HOOT_SRC)/playnet/vf/formulas/periods.scm $(HOOT_SCOPE_SRC)/playnet/scope/live.scm $(HOOT_TOOLCHAIN_STAMP)
+browser/scope.wasm: hoot/scope-worker.scm $(SCOPE_WASM_DEPS) $(HOOT_SCOPE_SRC)/playnet/scope/live.scm $(HOOT_TOOLCHAIN_STAMP)
 	$(HOOT_BUILD_DEV) bash -c 'guild compile-wasm $(HOOT_PLANNER_ARGS) -L $(HOOT_SCOPE_SRC) -o browser/scope.wasm hoot/scope-worker.scm'
 # boots browser/scope.wasm under node, through the page's own boot module, and
 # asks its doors what the planner service answers of the same acts
