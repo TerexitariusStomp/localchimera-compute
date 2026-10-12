@@ -31,7 +31,7 @@
   #:use-module ((playnet doors plan-wire) #:select (build-snapshot location-slacks plan-results->dial-plan scope-credit->wire scope-members skill-holders solve-part wire-number))
   #:use-module ((playnet doors position) #:select (agent-position-predicate demand->keyed demand-horizon do-set-position federated-horizon location-mode nearest-location own-position-place! sharing-refused? standing-in))
   #:use-module ((playnet doors skills) #:select (declare-skill! lower-resource! revoke-skill!))
-  #:use-module ((playnet economy payouts) #:select (monero-address-plausible? payout-available payout-open? payout-restate! payout-source-id payouts-of))
+  #:use-module ((playnet economy payouts) #:select (payouts-upgrade!))
   #:use-module (playnet vf formulas flows)
   #:use-module (playnet doors record-rows)   ; a record as the page's row, with the snapshot's context
   #:use-module ((playnet knowledge catalogues housing) #:select (housing-gate?))
@@ -785,6 +785,8 @@ scope walk wherever a solve wants the scope's declared needs."
     (rehang-children! id)
     (let ((ps (false-if-exception ($ root 'plan-store))))
       (when ps
+        ;; a store written before the payout records: its words read into them once
+        (false-if-exception (payouts-upgrade! ps #:at (current-time)))
         (false-if-exception
          ($ ps 'set-fresh-check
             (make-fresh-check root

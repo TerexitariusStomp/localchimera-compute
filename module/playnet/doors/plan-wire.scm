@@ -10,7 +10,7 @@
   #:use-module ((playnet doors counts) #:select (count-readable?))
   #:use-module ((playnet doors inventory) #:select (measure->qty scope-inventory-wire))
   #:use-module ((playnet doors record-rows) #:select (lookup-spec-name record-context))
-  #:use-module ((playnet economy payouts) #:select (intent-private?))
+  #:use-module ((playnet economy payouts) #:select (intent-private? commitment-private?))
   #:use-module ((playnet knowledge catalogues compiler) #:select (catalogue->wire))
   #:use-module ((playnet knowledge catalogues eco) #:select (*planetary-catalogue*))
   #:use-module ((playnet knowledge catalogues substances) #:select (*contains* composition-in-force environment-spec? substance-content substances->wire))
@@ -630,9 +630,10 @@
                               (if plan-id
                                   ($ ps 'intents-for-plan plan-id)
                                   ($ ps 'all-intents))))
-         (cmts        (if plan-id
-                          ($ ps 'commitments-for-plan plan-id)
-                          ($ ps 'all-commitments)))
+         (cmts        (remove commitment-private?
+                              (if plan-id
+                                  ($ ps 'commitments-for-plan plan-id)
+                                  ($ ps 'all-commitments))))
          (nowu        (instant->unix (clock-now)))
          ;; standing by the record's own terms: unfinished AND its window —
          ;; where it names one — not wholly passed. Yesterday's laid shift is

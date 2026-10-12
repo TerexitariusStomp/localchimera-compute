@@ -613,7 +613,7 @@
           (lambda (cid kind at aid)
             (let ((c (hashmap-ref (pss-commitments st) cid #f)))
               (unless c (error "end-commitment: no such commitment" cid))
-              (unless (memq kind '(released fulfilled expired))
+              (unless (memq kind '(released fulfilled expired failed))   ; failed: the provider could not (economy/payouts.scm)
                 (error "end-commitment: an ending kind the store does not know" kind))
               (when (commitment-finished c)
                 (error "end-commitment: the commitment is already finished" cid))

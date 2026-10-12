@@ -13,13 +13,13 @@
   #:use-module ((playnet doors plan-wire) #:select (wire-number))
   #:use-module ((playnet doors record-rows) #:select (payout->alist))
   #:use-module ((playnet economy debts) #:select (%payout-spec))
-  #:use-module ((playnet economy payouts) #:select (monero-address-plausible? payout-available payout-move! payout-pending? payout-sending? payout-source-id payout-txid payouts-of payouts-where))
+  #:use-module ((playnet economy payouts) #:select (monero-address-plausible? payout-available payout-move! payout-pending? payout-sending? payout-source-id payout-row-context payout-txid payouts-of payouts-where))
   #:use-module ((playnet utils clock) #:select (iso-now))
   #:use-module ((playnet utils common) #:select (string-or-false))
   #:use-module ((playnet utils envelope) #:select (catch-as-failure success))
   #:use-module ((playnet utils units) #:select (%count-unit))
   #:use-module ((playnet vf formulas actions) #:select (same-flow? using-up-actions))
-  #:use-module ((playnet vf schemas) #:select (commitment-action commitment-finished commitment-id commitment-resource-conforms-to economic-resource-id intent-action intent-due intent-finished intent-id intent-provider intent-resource-conforms-to intent-resource-quantity intent-state make-economic-event make-economic-resource make-intent make-measure measure-has-numerical-value))
+  #:use-module ((playnet vf schemas) #:select (commitment-action commitment-finished commitment-id commitment-resource-conforms-to economic-resource-id intent-action intent-due intent-finished intent-id intent-provider intent-resource-conforms-to intent-resource-quantity make-economic-event make-economic-resource make-intent make-measure measure-has-numerical-value))
   #:use-module ((srfi srfi-1) #:select (filter-map find))
   #:use-module (playnet doors planner ctx)
   #:use-module ((playnet protocol dispatch) #:select (declared-doors))
@@ -49,6 +49,7 @@
                              #:resource-conforms-to %payout-spec #:resource-classified-as '("currency" "external")
                              #:provider provider #:receiver "monero-chain"
                              #:resource-quantity (make-measure qty "XMR") #:has-point-in-time (iso-now) #:created (iso-now)
+                             #:fulfills (string-append "sending:" (intent-id i))   ; the commons' commitment to send it (economy/payouts.scm)
                              #:note (string-append note txid))))))
         (when (> (- xmr left) 1e-12)
           (transfer (string-append "payout-owed:" txid) "res-xmr-main" scope-id (- xmr left) "reimbursement paid on-chain, txid "))
@@ -56,7 +57,9 @@
           (transfer (string-append "payout-sent:" txid) (payout-source-id aid) aid left "sent on-chain, txid "))))
     ;; the rows of everyone's payouts that KEEP? accepts, as the runner reads them
     (define (payout-rows scope-id keep?)
-      (scoped scope-id (lambda (root) (map payout->alist (payouts-where ($ root 'plan-store) keep?)))))
+      (scoped scope-id (lambda (root)
+                         (let ((ps ($ root 'plan-store)))
+                           (map (lambda (i) (payout->alist i (payout-row-context ps i))) (payouts-where ps keep?))))))
 
     (declared-doors planner
 
@@ -79,8 +82,9 @@
       ;; ever involved: the wallet is the commons' and its ^wallet-policy is
       ;; the only thing that spends. The runner (monero/payout.scm) reads
       ;; `due-payouts`, moves the coins under the policy, and calls
-      ;; `settle-payout` (a VF transfer event out of the member's claim, txid
-      ;; on the record) or `fail-payout` (the claim stays whole).
+      ;; `settle-payout` (a VF transfer event out of the member's claim, fulfilling
+      ;; the commons' commitment to send, txid on its ending) or `fail-payout`
+      ;; (the claim stays whole). economy/payouts.scm states the records.
       ((request-payout scope-id agent-id store address xmr due note)
        (scoped scope-id
          (lambda (root)
@@ -112,7 +116,7 @@
                        ;; intent names one side (VF: provider xor receiver), and
                        ;; the member is the provider; the address rides as
                        ;; at-location, read back by payout->alist
-                       #:at-location (string-append "xmr:" addr) #:state "pending" #:in-scope-of '()))
+                       #:at-location (string-append "xmr:" addr) #:in-scope-of '()))
                    `((id . ,iid) (available . ,(- avail q))))))))
 
       ((my-payouts scope-id agent-id store)
@@ -124,27 +128,29 @@
                   `((available . ,(payout-available obs ($ root 'plan-store) agent-id
                                     #:owed (if (and owed-of store) (owed-of rs obs store scope-id agent-id) 0.0)))
                     (owed . ,owed-list)
-                    (payouts . ,(map payout->alist (payouts-of ($ root 'plan-store) agent-id))))))))
+                    (payouts . ,(let ((ps ($ root 'plan-store)))
+                                  (map (lambda (i) (payout->alist i (payout-row-context ps i))) (payouts-of ps agent-id)))))))))
 
-      ;; ── the lifecycle: five verbs, one table (economy/payouts.scm %payout-moves) ──
+      ;; ── the lifecycle: five verbs, one table (economy/payouts.scm %payout-moves);
+      ;; each dated by the store's clock, unix seconds ──
       ;; RETIRE: only the requester, only while pending — a sent payout is history.
       ((retire-payout scope-id agent-id id)
        (scoped scope-id
-         (lambda (root) (payout-move! ($ root 'plan-store) id 'retire #:by agent-id) `((id . ,id)))))
+         (lambda (root) (payout-move! ($ root 'plan-store) id 'retire #:by agent-id #:at (current-time)) `((id . ,id)))))
 
       ;; BEGIN: the runner's claim on a payout before the coins move, "pending"
       ;; → "sending", so a second tick never sends it twice.
       ((begin-payout scope-id id)
        (scoped scope-id
-         (lambda (root) (payout-move! ($ root 'plan-store) id 'begin #:began (iso-now)) `((id . ,id)))))
+         (lambda (root) (payout-move! ($ root 'plan-store) id 'begin #:at (current-time) #:began (iso-now)) `((id . ,id)))))
 
       ;; SETTLE: the VF transfer out of the member's claim (the coins left the
       ;; commons' wallet; the claim shrinks by exactly that), txid on the event
-      ;; and the intent.
+      ;; and on the commitment's ending.
       ((settle-payout scope-id id txid store)
        (scoped scope-id
          (lambda (root)
-           (payout-move! ($ root 'plan-store) id 'settle txid
+           (payout-move! ($ root 'plan-store) id 'settle txid #:at (current-time)
                          #:effect (lambda (i) (ledger-settled! root scope-id i txid store)))
            `((id . ,id) (txid . ,txid)))))
 
@@ -154,30 +160,30 @@
       ;; the coins may have moved.
       ((unsettle-payout scope-id id reason)
        (scoped scope-id
-         (lambda (root) (payout-move! ($ root 'plan-store) id 'unsettle reason) `((id . ,id)))))
+         (lambda (root) (payout-move! ($ root 'plan-store) id 'unsettle reason #:at (current-time)) `((id . ,id)))))
 
       ;; FAIL leaves the claim whole and parks the intent with the reason — the
       ;; member may retire it and ask again.
       ((fail-payout scope-id id reason)
        (scoped scope-id
-         (lambda (root) (payout-move! ($ root 'plan-store) id 'fail reason) `((id . ,id)))))
+         (lambda (root) (payout-move! ($ root 'plan-store) id 'fail reason #:at (current-time)) `((id . ,id)))))
 
-      ;; ── the runner's and the reconciler's reads, each one state of the table ──
+      ;; ── the runner's and the reconciler's reads, each a predicate over the records ──
       ;; pending payouts whose due is unset or ≤ NOW-ISO
       ((due-payouts scope-id now-iso)
-       (payout-rows scope-id (lambda (i) (and (payout-pending? (intent-state i))
-                                               (let ((due (intent-due i))) (or (not due) (string<=? due now-iso)))))))
+       (payout-rows scope-id (lambda (ps i) (and (payout-pending? ps i)
+                                                  (let ((due (intent-due i))) (or (not due) (string<=? due now-iso)))))))
 
       ;; payouts that began moving and were never settled — a gateway that
       ;; died mid-transfer leaves these
       ((sending-payouts scope-id)
-       (payout-rows scope-id (lambda (i) (payout-sending? (intent-state i)))))
+       (payout-rows scope-id (lambda (ps i) (payout-sending? ps i))))
 
       ;; the transactions that have already settled a payout: a wallet row that
       ;; paid one payout is not evidence for another
       ((settled-payout-txids scope-id)
        (scoped scope-id
-         (lambda (root) (filter-map (lambda (i) (payout-txid (intent-state i))) (payouts-of ($ root 'plan-store) #f)))))
+         (lambda (root) (let ((ps ($ root 'plan-store))) (filter-map (lambda (i) (payout-txid ps i)) (payouts-of ps #f))))))
 
       ;; ── Purchases for the commons, and what the commons then owes ──────────
       ;; A member buys a thing the commons wanted with their own money and

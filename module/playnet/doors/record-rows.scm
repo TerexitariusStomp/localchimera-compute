@@ -384,8 +384,11 @@
                                     (if (and (string? r) (string-prefix? "xmr:" r)) (substring r 4) r)))
        str)
       ("xmr" ,(lambda (i ctx) (measure-has-numerical-value (intent-resource-quantity i))) num)
-      ("due" due str) ("note" note str) ("began" has-beginning str)
-      ("state" ,(lambda (i ctx) (or (intent-state i) "pending")) str))))
+      ("due" due str) ("note" note str)
+      ;; the row's context (economy/payouts.scm payout-row-context): where it stands,
+      ;; and when the coins started moving
+      ("began" ,(lambda (i ctx) (or (and ctx (assq-ref ctx 'began)) (intent-has-beginning i))) str)
+      ("state" ,(lambda (i ctx) (or (and ctx (assq-ref ctx 'word)) "pending")) str))))
 
 ;;; ── a recipe ────────────────────────────────────────────────────────────
 ;; What a recipe is (the recipe-store's) and how it has stood (the scope's
@@ -531,7 +534,7 @@
        (rows recipe-step))
       ,@(response-entries own-response))))
 
-(define (payout->alist i)
+(define* (payout->alist i #:optional (context #f))
   "A payout intent as the plain alist its readers (the runner, the member's list) hold:
-   the payout table's row, read back."
-  (wire->plain (wire-row* %payout-wire i)))
+   the payout table's row, read back; CONTEXT its word and its began (payout-row-context)."
+  (wire->plain (wire-row* %payout-wire i context)))
