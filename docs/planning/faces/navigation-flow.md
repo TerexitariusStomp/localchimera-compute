@@ -1,0 +1,271 @@
+# Navigation flow — directions, preview, turn-by-turn
+
+_Scoped 2026-10-13. Source: five Google Maps screens (bicycle preview, navigating, navigating with the drawer up, navigating with the drawer holding the step list) set against the playnet map face with its pull-up sheet. Companion to [transport-modes-and-observation](../books/transport-modes-and-observation.md), which owns what a journey means to the ledger; this document owns what a journey looks like and how it moves._
+
+A journey on the map has three postures — **preview**, **navigating**, and **navigating with the drawer up** — and one surface carries all three: the pull-up sheet that already rises over the map. Each posture reshapes the sheet, the map camera and the floating chrome together. This document lists every element of that flow, says which part is built, and sets the stages that build the rest.
+
+Words used throughout: **sheet** is `.share-sheet` (the bottom drawer); **bar** is the floating omnibar capsule; **banner** is the maneuver strip at the top of the map while navigating; **detent** is a height the sheet rests at.
+
+---
+
+## 1. What stands today
+
+### 1.1 The pieces
+
+| Piece | Home | State |
+|---|---|---|
+| Entry: `↦ directions` in the selected-place card | `ui/app/tabs/map/mapsearch.ts:184`, handler `:213` | calls `startNavTo(dest, name)` |
+| Entry: `↦ go` chip on the places list | `browser/app.html` `#gochip`, wired in `initNav` (`ui/app/nav.ts:339`) | toggles `startNav()` / `endNav()` |
+| Route request | `fetchRoute` (`nav.ts:125`) → `GET /route?from&to&profile` | one costing at a time, origin always `USER` |
+| Route proxy | `handle-route` (`server/serve-static.scm:472`), `valhalla-request-json` (`:416`) | relays Valhalla verbatim; `{}` on any failure; accepts `via=` and any costing name |
+| Route shape | `Route {coords, mans, km, s}` (`nav.ts:78`) | keeps `type`, `instruction`, `begin_shape_index`; drops street names, per-maneuver length/time, verbal instructions, roundabout exit, `travel_mode`, `transit_info` |
+| Route line | `drawNavLine` (`nav.ts:162`): source `nav`, layers `nav-casing` + `nav-line` | one line; dashed when the router answered nothing |
+| Progress | `navIdxNear` (`nav.ts:180`), linear remaining time `r.s·(1 − at/len)` | forward-biased vertex scan |
+| Turn card | `#navcard` (`browser/app.html:4656-4669`), `updateNavCard` (`nav.ts:191`) | glyph · instruction · `dist · N min · arrive HH:MM` · mode emoji |
+| Maneuver glyphs | `NAV_GLYPH` (`nav.ts`) keyed on Valhalla maneuver type | one arrow character per type |
+| GPS | `watchPosition` → `onNavPos` (`nav.ts:220`) → `USER`, `moveUserMarker` | no camera follow |
+| Heading | `ui/app/compass.ts` (`deviceHeading`, `needleTap`, 2° deadband) | rotates the map on touch devices only |
+| Sheet | `openSheetView / closeSheetView / sheetHeight / sheetHolds` (`ui/app/tabs/social/share.ts:476-506`), `wireSheet` (`:524`) | CSS-class detents (`browser/app.html:1870-1888`); the map's place card owns it as owner `"map"` |
+| Ledger | `journeyBegin` / `journeyEnd` (`nav.ts:269,278`) → the `journey` door | begin mints the commitment and pickup, end records the dropoff |
+| Mode set in the UI | `NAV_MODES = {pedestrian, bicycle, auto}` | cycled by tapping the mode glyph |
+| Mode set in the planner | pedestrian · bicycle · auto · bus · multimodal (`module/playnet/solve/routing.scm:17`) | the engine speaks all five |
+
+### 1.2 What the five screens show that the map face lacks
+
+1. A preview posture: a from/to card, mode tabs with an ETA each, alternatives with time pills, and a **Start** button. Today `↦ directions` starts the journey at once.
+2. The sheet changing character with the posture. Today the place card stays open under the route and `#navcard` floats behind the bar.
+3. A navigating camera: heading-up, tilted, offset so the road ahead has the room. Today the camera frames the route once and never moves again.
+4. A top banner with a *Then* chip, a bottom ETA bar, and a set of round buttons at the map's edge. Today one small card carries everything.
+5. A drawer in the navigating posture holding actions and the step list.
+6. A way to choose the origin. Today the origin is `USER`.
+
+### 1.3 Defects to settle first (stage R0)
+
+- **The card reads wrongly in the night theme.** `#navcard` paints a dark surface from `--t-0a101a-rgb` with `--t-ffffff` text. The theme layer (`ui/app/theme.ts`) remaps neutrals by lightness, so under `night` the surface becomes light and the text dark: the pale-blue, low-contrast box in the first screenshot. Navigation chrome states its own palette — a dark teal surface and white text that every theme leaves alone — the way the Google banner holds its colour in both of its themes.
+- **The card sits behind the bar.** `#navcard.overmap` is `bottom: 64px` at `z-index: 6`, under `#sharebar` (`z-index: 30`). The bar and sheet own the bottom edge; the ETA bar belongs *in* the sheet (§3.2).
+- **The mode glyph re-routes the wrong place.** The cycle handler (`nav.ts:344-348`) calls `startNav()`, which routes to `host.selectedPlace()`. A journey begun from the search panel has no selected place, so the tap routes nowhere. The retry belongs on `nav.dest`.
+- **A fallback line looks like a route.** When the engine answers `{}` the card says "no route data" and the stroke is dashed, which is the dotted blue line in the first screenshot. The fallback is a *bearing*, and the new flow draws it as a bearing: a thin arrow from you toward the place with the crow-flight distance, never a styled route, and the mode tabs read "no route" in place of an ETA.
+- **No engine runs in this checkout.** `.valhalla/` is absent and nothing listens on `:8002`, so every `/route` here answers `{}`. The first screenshot is therefore the fallback path. The route flow is developed against a stub (§7) and confirmed against a built engine.
+
+---
+
+## 2. The Google Maps flow, state by state
+
+Each table lists an element, where it sits, what it shows, and what it does. "Ours" names the home in this codebase; **built** / **new** says whether it exists.
+
+### 2.0 S0 · Place
+
+The map shows a place; the sheet shows its card (name, kinds, location, availability) and a row of actions. Ours: `mapsearch.ts` `drawMarker` — **built**. The `↦ directions` button there becomes the single entry to S1.
+
+### 2.1 S1 · Preview (screen: bicycle)
+
+| Element | Position and look | Behaviour |
+|---|---|---|
+| **From/to card** | Floating at the top, white rounded rectangle, two rows joined by a dotted vertical connector. Row 1: blue dot + "Your location" in blue. Row 2: red pin + the destination. | Each row is a text field. Tapping a row opens place search (the map's own search panel). Origin defaults to live location. |
+| ⋮ (card, right of row 1) | Overflow | Add stop, route options (later). |
+| ⇅ (card, right of row 2) | Swap | Exchanges origin and destination and re-routes. A "Your location" origin that swaps to the destination is a legal end: the new origin is the old place. |
+| Layers button | Round, under the card at the right edge | Map type and overlays: here a theme/basemap switch (later). |
+| **Route lines** | Selected route: deep blue, wide, white casing, origin dot and destination pin. Alternatives: pale blue, same width, drawn beneath. Part of a route that a mode treats specially is recoloured (green for a bike lane). | Tapping an alternative selects it; the sheet summary follows. |
+| **Time pills** | On each route, at its widest separation from the others. Selected: filled dark blue, `7 min` + `Best route`. Others: white, `9 min`, `7 min · More bike lanes`. | A pill is the route's tap target. |
+| Locate button | Round, bottom-right of the map, just above the sheet | Recentres on you. Ours: the GeolocateControl (**built**, `mapview.ts:329`), lifted by `--barh`. |
+| **Sheet header** | Grip, then a title row: mode name (`Bicycle`), tune button, share button, ✕. | ✕ returns to S0 and removes the route. Tune opens route options. |
+| **Mode tabs** | One horizontal strip: transit `27 min`, walk `30 min`, bicycle `7 min`, ride-share `6 min`, with an underline on the selected one. The strip scrolls; entries with no route show a dash. | Selecting a tab re-selects the route set. Each tab is its own request. |
+| Mode chips | Under the tabs: `Your bike`, `Voi`, `Lime` | Sub-modes of the selected tab (later). |
+| **Summary** | Large `7 min (2.2 km)`; one line of facts: `24% bike lanes · Mostly flat`. | Facts come from the route's own data (§4.3). |
+| **Actions** | Primary pill `▲ Start`; secondary pill `Add stops`. | Start enters S2. Add stops opens the `via` flow (later). |
+| **Camera** | The whole route fits between the top card and the sheet. | `fitBounds` with `padding {top: card height + 16, bottom: sheetHeight() + 16, left/right: 24}`. |
+
+### 2.2 S2 · Navigating (screen: navigating, map full)
+
+| Element | Position and look | Behaviour |
+|---|---|---|
+| **Banner** | Top edge, full width minus a margin, dark teal, rounded. Left: a large maneuver arrow. Right: distance to the maneuver in large type (`400 m`) and the street name (`Treptower Str.`) in larger type beneath. | Updates every fix. The distance counts down; the instruction advances at the maneuver. |
+| **Then chip** | Hangs from the banner's lower-left corner, same colour, narrower: `Then ↰`. | Shows the maneuver after next, only when it follows closely (about 150 m, or 10 s at current speed). |
+| **Camera** | Map rotated so travel points up; pitched about 55°; the user arrow sits in the lower third; zoom follows speed (closer when slow, wider when fast). | A fix eases the camera (about 1 s). A drag by the user pauses following. |
+| **User arrow** | Blue chevron with a soft halo; the halo grows when the fix is poor. | Replaces the pulsing dot while navigating. |
+| **Route line** | Saturated blue with white casing; the part behind you is hidden or dimmed. | Progress masks the line by `nav.at`. |
+| **Alternative pills** | `Similar ETA`, `2 min slower` on the alternatives | Tapping one offers to switch (later). |
+| **Map buttons** | Right edge, stacked round buttons, top to bottom: compass (recentre/orient), search along route, sound, route overview. | Compass: tap re-follows. Sound: cycles muted / alerts / all. Overview: zooms to the remaining route and returns after a few seconds. |
+| **Speed chip** | Bottom-left, round, `-- km/h` while there is no fix | Shows speed (limit data is not available; §2.5). |
+| **Report pill** | Bottom-right | Hands to the contest/capture door (later). |
+| **Status pill** | Centre, `Searching for GPS…` | Shown until the first fix, and again when fixes stop. |
+| **ETA bar** | The sheet at its lowest detent. Left ✕ (round, outlined); centre: grip, `7 min` (large, green when on time), `2.2 km · 17:05`; right: an assistant button. | ✕ ends the journey. The centre is a tap target that raises the sheet. |
+
+### 2.3 S3 · Navigating, drawer up (screen: actions)
+
+The sheet rises to about half the screen; the map keeps the top strip and the banner stays above it. The header (`✕ · 7 min / 2.2 km · 17:05 · assistant`) stays pinned.
+
+| Row | Behaviour |
+|---|---|
+| Add a report | Hands to the contest/capture door (later) |
+| Share trip progress | Shares a live link of the journey (later; ties to the ledger's `journey` door) |
+| Search along route | Opens place search biased to the route corridor (later) |
+| Directions | Expands the step list (S3b) |
+| Show satellite map | Toggle: basemap ↔ satellite (n/a until a satellite basemap exists; `project_basemap_osm_pmtiles`) |
+| Settings | Navigation settings: voice, units, avoid-lists (later) |
+
+### 2.4 S3b · Step list (screen: directions)
+
+The sheet at its tallest; the map shows as a thin strip under the banner. Header pinned.
+
+| Element | Behaviour |
+|---|---|
+| **Current step** | First row, larger: `In 400 meters` / `Turn right onto Treptower Str.`, arrow glyph at the left. |
+| **Distance dividers** | Between steps: a thin rule with the distance (`240 m`) at its left. |
+| **Step rows** | Arrow glyph · instruction; a warning chip when the step carries one (`Restricted usage road`). |
+| **Destination row** | Last row: destination glyph, name, address, and a note (`Destination will be on the right`). |
+| Tap a row | Re-centres the map on that maneuver for a moment (later). |
+
+### 2.5 Behaviours beyond the five screens
+
+Each is tagged **v1** (built by R5), **later**, or **n/a**.
+
+| Behaviour | Tag | Note |
+|---|---|---|
+| Off-route detection and reroute from the present position | v1 (R5) | Distance to the polyline beyond a threshold for N consecutive fixes → re-request from `USER`. The old line is replaced; the banner says `Rerouting…` while the request runs. |
+| Recentre after a pan | v1 (R3) | Following resumes after about 10 s of no touch, or on the compass button. |
+| Arrival | v1 (R3) | Within about 30 m of the destination: banner `You have arrived`, side of the street if known; ETA bar offers `Done`; `journeyEnd` fires. |
+| Live ETA | v1 (R3) | Remaining time = remaining route time × (recent speed ÷ route's modelled speed), clamped; arrival clock from `clockOf`. |
+| Screen wake-lock while navigating | v1 (R3) | `navigator.wakeLock`; released on end. |
+| Day/night map | v1 | Handled by the theme layer on `playnet:theme`; the banner holds its own palette (§1.3). |
+| Transit legs | v1 (R5) | Walk · ride · walk, with line badge, headsign, stops count, board/alight times from `transit_info`; arrival-time requests use `date_time`. |
+| Add stops / via | later | The proxy already takes `via=lat,lng;lat,lng`. |
+| Switch to an alternative mid-trip | later | Needs alternatives kept alive after Start. |
+| Voice guidance | later (R6) | On-device `speechSynthesis` first (`project_ai_at_the_seat`); mute control in the map buttons. |
+| Share trip progress | later | The journey commitment id is the natural share key. |
+| Report | later | Maps to the contest door; a map-pinned note rather than a crowd-sourced incident feed. |
+| Search along route | later | Corridor-biased place search. |
+| Speed limits, lane guidance, live traffic, incident feeds | n/a | No data source. The speed chip shows speed only. |
+| Offline routing | n/a here | The engine is self-hosted; offline tile packs exist for the basemap only. |
+
+---
+
+## 3. The map onto our system
+
+### 3.1 The state machine
+
+```
+idle ──pick place──▶ place ──directions──▶ preview ──start──▶ navigating ──arrive/✕──▶ idle
+                       ▲                      │                  │  ▲
+                       └──────────✕───────────┘                  ▼  │
+                                                          drawer: bar · actions · steps
+```
+
+One record holds it: `{posture, origin, dest, modes: Map<costing, Route[]>, mode, routeIx, at, follow, drawer}`. Postures are exclusive; the drawer is a sub-state of `navigating`. Today's `nav: Journey | null` (`nav.ts:153`) is the `navigating` row of this record; the new fields replace its globals (`navProfile`, `navWatch`, `navHome`).
+
+### 3.2 The sheet carries every posture
+
+The sheet is the drawer. It owns one view per posture and the route flow takes the owner name `"route"` (`openSheetView("route", el, gone, full, fit)`, `share.ts:476`).
+
+| Posture | Sheet content | Detent |
+|---|---|---|
+| place | the place card (owner `"map"`) | fit-to-content (`data-fit`), as today |
+| preview | header + mode tabs + summary + actions | fit-to-content |
+| navigating, bar | ETA bar only | **new**: *peek* — the grip plus one ETA row |
+| navigating, actions | ETA header + action rows | the existing view height (`min(56dvh, 580px)`) |
+| navigating, steps | ETA header + step list | `.full`, below the banner |
+
+Required sheet changes:
+- A **peek** detent: height of grip + ETA row, with the bar *hidden* during navigation (the bar's search chrome is not part of a drive; Google's bottom edge holds the ETA row alone). The sheet already floats above `--barh`; peek sets a data attribute that zeroes `--barh` for the duration.
+- `wireSheet` (`share.ts:524`) picks among *peek / mid / full* by drag distance and fling velocity (it already picks between content-height and full with `FLING = 0.45 px/ms`); the dismiss branch is disabled while navigating, because ✕ is the only exit.
+- The sheet publishes its height through `sheetHeight()`; the map pads its camera with it so the user arrow stays visible above the sheet at every detent.
+
+### 3.3 Chrome
+
+| Element | Home | Notes |
+|---|---|---|
+| From/to card, banner, Then chip | new elements inside the map container (`#maptab`), absolutely positioned, `z-index` 35 (above the share bar's 30, below the 40+ menus) | top inset `max(10px, env(safe-area-inset-top))`; the card and the banner are one slot, since they never show together |
+| Map buttons, speed chip, Report pill, status pill | the same container, `z-index` 8 | the map controls (zoom, compass, fullscreen, locate) hide while navigating: the compass moves into the button column |
+| Colours | banner: a fixed dark teal with white text (not theme tokens); from/to card and sheet: `--t-*` tokens like the rest of the sheet | see §1.3 |
+| Type | banner distance 28–32 px, street 22–26 px; ETA minutes 28 px | thumb-and-glance sizes; the existing `--sans` |
+
+### 3.4 Camera
+
+`ui/app/maplibre.d.ts` types only `{center, zoom, duration}` for `easeTo` and `{center, zoom}` for `jumpTo`; it needs `bearing`, `pitch` and `padding` on both, plus `setPitch`, `getPitch`, `getBearing`, `setPadding`, `rotateTo`. The vendored compass control already calls `easeTo({bearing: 0, pitch: 0})` (`browser/vendor/mapbox-controls.js:88`), so the engine supports them.
+
+- **Follow**: `easeTo({center: you, bearing: heading, pitch: 55, zoom: z(speed), padding: {bottom: sheetHeight() + 24, top: bannerHeight}, duration: 900})` per fix.
+- **Heading**: GPS `coords.heading` while moving (speed above about 1 m/s); `deviceHeading()` when still; the route bearing at `nav.at` when neither exists.
+- **Preview**: `fitBounds` of the selected route plus alternatives with the paddings in §2.1; pitch 0, bearing 0.
+- **Leaving**: ✕ / arrival eases to pitch 0, bearing 0 at the destination.
+- Unfollowing: `dragstart` / `rotatestart` sets `follow = false`; the compass button (or 10 s idle) sets it back.
+
+### 3.5 Mode tabs
+
+A tab per costing — `multimodal` (transit), `pedestrian`, `bicycle`, `auto` — each its own `/route` request issued in parallel when the preview opens, cached by `(origin, dest, costing, minute)`. A tab shows `…` while its request is in flight, a minute count when it answers, and a dash when it answers `{}`. The first tab to answer *and* match the last used mode is selected; a stored last-used mode lives with the other UI preferences. The `journey` door already takes the costing name, so the ledger sees whichever mode started.
+
+### 3.6 Reuse
+
+`decodePoly`, `NAV_GLYPH`, `navIdxNear`, `navKm`, `clockOf`, `havKm`, `bearingDeg`, `ARROW8` (the compass-bearing fallback), `openSheetView` / `sheetHeight`, `journeyBegin` / `journeyEnd`, the map's search panel as the place picker for either end, `moveUserMarker`, and `deviceHeading`.
+
+---
+
+## 4. Data and server
+
+### 4.1 The route request
+
+`handle-route` reads `from`, `to`, `via`, `profile`. It gains, each optional and each passed to Valhalla in the hand-built JSON (`valhalla-request-json` stays number-and-string-only):
+
+| Param | Valhalla field | Use |
+|---|---|---|
+| `alternates=N` | `alternates` | up to N extra routes; S1 draws them |
+| `depart=ISO` / `arrive=ISO` | `date_time {type 1 / 2, value}` | transit schedules; also "leave at" for other modes (later) |
+| `lang=xx` | `directions_options.language` | instruction language |
+| `units=` | `directions_options.units` | kilometres by default; miles on request |
+
+The costing sanitiser (`valhalla-costing`) already lets `multimodal` through.
+
+### 4.2 The route shape
+
+`Route` widens to carry what the screens show: per-maneuver `streets: string[]`, `length`, `time`, `verbal` (pre-transition and post-transition), `roundabout_exit`, `travel_mode`, `transit` (`{line, headsign, color, stops, departs, arrives}`), `sign` (exit info), `warnings` (e.g. restricted-usage). A trip carries `legs[]`; a route has `summary {length, time, has_toll, has_ferry}`; alternates arrive as `alternates[]` each with a `trip`. Everything is read defensively: a missing field renders as absent, never as zero.
+
+### 4.3 Route facts
+
+The summary line (`24% bike lanes · Mostly flat`) comes from the route itself: bike share from the edge `cycle_lane` attribute when `trace_attributes` is available (`/trace_route` already relays; a `trace_attributes` relay is the same shape), climb from `elevation` when the tiles carry heights. Where the engine cannot say, the line shows only distance and time. Facts are never invented.
+
+### 4.4 Transit
+
+Valhalla's transit comes from GTFS tiles. `tools/dev/valhalla-local.sh` currently ingests one feed (Sofia), so the SF and Berlin atlas answers `multimodal` with a pedestrian-only route. Transit tabs therefore appear only where the engine returns a transit leg: a request whose reply holds no `travel_mode: "transit"` shows a dash. Stage R5 adds the SF and Berlin feeds to the fetch step.
+
+### 4.5 Degradation
+
+| Engine answer | Tab | Map | Sheet |
+|---|---|---|---|
+| route | minutes | route line | summary + Start |
+| `{}` for the selected mode | dash | a bearing arrow and crow distance | `No route to here by <mode>`; Start disabled; the other tabs stay live |
+| `{}` for all modes | all dashes | bearing arrow | `Routing is unavailable here`; a compass-only **Go** that behaves like today's fallback card |
+
+---
+
+## 5. Stages
+
+Each stage ends with `make ui-check`, `make ui`, a UX probe, and `make shot`.
+
+- **R0 · Settle the present.** The banner-palette rule for `#navcard`; the mode-cycle re-routes `nav.dest`; the fallback is drawn as a bearing, not a route. Probe: `#navcard` contrast in `day` and `night`.
+- **R1 · Route data.** The widened `Route`; proxy params (`alternates`, `depart`, `arrive`, `lang`); parallel per-mode fetch with a cache; a `/route` stub for tests.
+- **R2 · Preview.** Owner `"route"` in the sheet; from/to card with origin = `USER`, either end editable through the search panel, swap; mode tabs with ETAs; alternatives and time pills; fit-route camera; Start. `↦ directions` and `#gochip` both call one `openRoutePreview(dest, name)`.
+- **R3 · Navigating.** Banner and Then chip; the peek detent and ETA bar; follow camera with pitch and bearing (the `.d.ts` widening); the user arrow; progress dimming; recentre; wake-lock; arrival; the map controls hide and the button column appears.
+- **R4 · Drawer.** Action rows; step list with dividers and live current-step highlight; sheet detents peek / mid / full.
+- **R5 · Reroute and transit.** Off-route detection and reroute; transit legs; SF and Berlin GTFS feeds in the engine's fetch step.
+- **R6 · Voice and extras (later).** Speech, mute, share trip progress, report, search along route, add stops, mid-trip alternate switching.
+
+---
+
+## 6. Open threads
+
+- **Where the origin field gets its places.** The map's search panel serves destinations; a second, origin-typed use of the same panel should not start a second search stack.
+- **Peek and the bar.** The bar hides while navigating (§3.2). Whether voice search stays reachable from the map buttons is a decision for R3.
+- **Transit in the demo.** Until feeds exist for the demo atlas, the transit tab shows a dash. R5 settles feeds.
+- **A simulated drive.** Desktop has no GPS; a dev mode that replays the decoded polyline as fake fixes (a `?simdrive=1` switch) is how R3 and R4 are exercised and screenshotted.
+
+## 7. Verification
+
+- A stub for `/route` (request interception in the UX harness) returning a recorded Valhalla trip, with alternates, for each of `pedestrian`, `bicycle`, `auto`, and a recorded `multimodal` trip.
+- `tests/ux/route-flow-ux.mjs`, after `tests/ux/share-sheet-ux.mjs`: from `↦ directions` to preview (tab ETAs, selected route, Start enabled) to navigating (banner text, Then chip, ETA bar, sheet at peek, map buttons present, bar hidden) to drawer up (action rows) to steps (row count equals maneuver count) to ✕ (map restored). Headless chromium has no WebGL, so the probe asserts DOM and camera *options* (via a recorded `easeTo` spy), not tiles.
+- Geolocation fed by puppeteer `setGeolocation` stepping along the stub's polyline; the banner distance must fall monotonically and the instruction advance at each maneuver.
+- Contrast probe on banner and ETA bar under `day`, `night`, `sepia`, `ink`.
+- `make check-ui-fresh` so the committed `browser/*.js` match the sources.
+- Against a built engine: `tools/dev/valhalla-local.sh route FROM TO <costing>`, then the same flow in a real browser.
+
+## 8. Non-goals
+
+Live traffic, lane guidance, speed limits and incident feeds have no data source here. The map face does not become a general-purpose navigation product: a journey is a commitment in the ledger (`journeyBegin` / `journeyEnd`) and navigation is how its walker is carried through it.
