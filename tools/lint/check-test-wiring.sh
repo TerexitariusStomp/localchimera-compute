@@ -52,4 +52,19 @@ fi
 
 echo "check-test-wiring: all $checked browser tests are reachable from make."
 
+# And every generated file's freshness check is in the gate: each `check-*-fresh`
+# target the Makefile defines is in FRESH_CHECKS (or FRESH_EXEMPT, with its reason
+# there), and each name in either exists. A generated file added without its check
+# in the list would be a file the gate never compares.
+declared="$(grep -oE '^check-[a-z0-9-]+-fresh:' Makefile | tr -d ':' | sort -u)"
+listed="$(make -s --no-print-directory print-fresh-checks | tr ' ' '\n' | grep . | sort -u)"
+unlisted="$(comm -23 <(echo "$declared") <(echo "$listed"))"
+unknown="$(comm -13 <(echo "$declared") <(echo "$listed"))"
+if [ -n "$unlisted" ] || [ -n "$unknown" ]; then
+    [ -n "$unlisted" ] && echo "$unlisted" | sed 's/^/  UNLISTED: /; s/$/ is in no gate list (FRESH_CHECKS or FRESH_EXEMPT)/'
+    [ -n "$unknown" ] && echo "$unknown" | sed 's/^/  UNKNOWN: /; s/$/ is listed but the Makefile defines no such target/'
+    exit 1
+fi
+echo "check-test-wiring: all $(echo "$declared" | wc -l) freshness checks are in the gate."
+
 guile --no-auto-compile tools/lint/module-map.scm --check-suites

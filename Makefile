@@ -1045,12 +1045,65 @@ $(KERNEL_SO): $(KERNEL_SRC) module/playnet/solve/kernel/Makefile
 	$(TEST_ENV) \
 	  make -C module/playnet/solve/kernel
 
+# The source lints every gate runs, and the one way the suite is run.
+LINTS = lint-parens lint-law lint-layers lint-verbs lint-compile
+SUITE = $(TEST_ENV) RED_BASELINE=$(RED_BASELINE) bash tools/test/run-scm-tests.sh
+
 .PHONY: test test-all test-fast
 # `make test RED_BASELINE=file` compares the red list by name with FILE (written on
 # the first run) and fails only on a test that is red and not named there.
-test test-all: lint-parens lint-law lint-layers lint-verbs lint-compile freshen-ccache $(KERNEL_SO) ci-env
-	$(TEST_ENV) RED_BASELINE=$(RED_BASELINE) \
-	  bash tools/test/run-scm-tests.sh
+test test-all: $(LINTS) freshen-ccache $(KERNEL_SO) ci-env
+	$(SUITE)
+
+# ── THE GATE: what a commit passes ───────────────────────────────────────────
+# One list, written once. `make gate` is the lints, the wiring and protocol
+# checks, every generated file's freshness, the wasm prerequisites, and the
+# suite (the same run as `make test`); `gate-hoot` adds the two wasm bundles, the
+# slow part. `gate-local` is what needs files ignored by path (the docs, the legal
+# contexts), so it runs where they are, in the shared tree. `make test` stays what
+# CI runs. tools/dev/commit-clean.py --gate runs `make emit-all gate gate-hoot`
+# in a clean worktree before it commits.
+#
+# FRESH_CHECKS and FRESH_LOCAL are every `check-*-fresh` target but the ones
+# FRESH_EXEMPT names; check-test-wiring fails when a new one is in none of the
+# three, so a generated file cannot be added without its check being in a gate.
+# EMITS regenerates the portable ones in dependency order (`ui` last: tsc reads the
+# .ts files the other emits write); `make emit-all` is for a clean worktree,
+# where it reads that tree alone.
+FRESH_CHECKS = check-protocol-fresh check-wire-types-fresh check-nutrition-fresh \
+  check-product-law-fresh check-attribution-fresh check-notice-facts-fresh \
+  check-de-fresh check-fdc-fresh \
+  check-housing-fresh check-count-fresh check-rel-fresh check-limits-fresh \
+  check-reach-fresh check-actions-fresh check-units-fresh check-rest-fresh \
+  check-matter-fresh check-fragility-fresh check-demo-fresh check-recipe-demo-fresh \
+  check-ui-fresh
+# these read files ignored by path (the legal contexts, the physics register): a clean
+# worktree has none, so they run where the files are, in `gate-local`
+FRESH_LOCAL = check-na-fresh check-law-fresh check-physics-fresh
+# for the reader, not the gate (see module-map)
+FRESH_EXEMPT = check-module-map-fresh
+# fdc-snapshot needs a 6 MB cache the repo does not carry; check-fdc-fresh skips without it
+EMITS = protocol-emit wire-types-emit nutrition-emit product-law-emit attribution-emit \
+  notice-facts-emit de-pack housing-emit count-emit \
+  rel-emit limits-emit reach-emit actions-emit units-emit rest-emit matter-snapshot \
+  fragility-snapshot demo-emit recipe-demo-emit ui
+# na-packs before law-snapshot: the snapshot reads the packs
+EMITS_LOCAL = na-packs law-snapshot physics-emit
+
+.PHONY: check-fresh check-fresh-local emit-all emit-local gate gate-static gate-hoot gate-local print-fresh-checks
+check-fresh: $(FRESH_CHECKS)
+check-fresh-local: $(FRESH_LOCAL)
+emit-all:
+	@for t in $(EMITS); do echo "emit-all: $$t"; $(MAKE) --no-print-directory $$t || exit 1; done
+emit-local:
+	@for t in $(EMITS_LOCAL); do echo "emit-local: $$t"; $(MAKE) --no-print-directory $$t || exit 1; done
+print-fresh-checks:
+	@echo $(FRESH_CHECKS) $(FRESH_LOCAL) $(FRESH_EXEMPT)
+gate-static: $(LINTS) check-test-wiring check-protocol check-fresh check-wasm-deps
+gate: gate-static freshen-ccache $(KERNEL_SO) ci-env
+	$(SUITE)
+gate-hoot: check-hoot-scope check-hoot-planner
+gate-local: lint-docs check-crossing-catalogue check-fresh-local
 
 # run-scm-tests.sh leaves auto-compile ON because "a stale .go is worse than a
 # slow run". That holds for imports and NOT for includes: an edited fragment
@@ -1066,6 +1119,9 @@ test-fast: lint-parens lint-law lint-docs check-wasm-deps check-ui-fresh test-gp
       test-recipient-registry test-notify-router test-email-transport check-provenance test-provenance \
       test-vault test-keystore test-handler-bridge test-capabilities test-pwa lint-sw test-rest test-bytes test-keys test-attention test-push test-rpc test-store test-idb test-log-bound test-rns-identity test-containment-fold test-reactive test-room-model test-mesh-plan test-ice-servers test-units-fallback test-utter test-count test-qr test-labels test-store-tree test-stock test-photo test-look test-lend test-contest test-store-view test-held test-demo-store test-demo-world test-symbols test-reach test-queue test-allotment-ui test-fuzzy test-route-data test-route-facts test-route-shape test-route-lines test-position test-route-nav test-route-steps test-route-request test-conform-ui test-caption-window test-refsel test-diag-redact test-offers test-ring test-sky test-runway test-partition test-regions test-nutrition test-housing-ui test-declarations test-bran-derivations \
       test-contact-binding test-body-doors test-cards test-planner-facet test-declared-dispatch test-http-door test-mcp-door test-device-doors test-vf-lint test-lint-records-door test-issue-revoke-credential test-admit-commune-door test-delegation-scope-arg test-lobby-arg-split test-websocket-fragments test-websocket-masking test-declare-arg-split test-offer-work-drift-door test-plan-materialize-opts-door test-count-stock test-count-anchor test-count-anchor-2 test-count-expected test-wire-snapshot test-observation-evidence test-labels-containers test-counting test-planned-counts test-allotment test-see-door test-contest-count test-evidence-door check-protocol check-protocol-fresh check-wire-types-fresh check-crossing-catalogue check-nutrition-fresh check-product-law-fresh check-attribution-fresh check-notice-facts-fresh check-rid-mentions test-calendar-mail check-de-fresh check-na-fresh check-law-fresh check-physics-fresh check-housing-fresh check-count-fresh check-rel-fresh check-reach-fresh check-units-fresh check-rest-fresh check-matter-fresh check-fragility-fresh check-actions-fresh check-limits-fresh check-recipe-demo-fresh check-demo-fresh test-demo-neighbourhood test-adjustment test-counts check-test-wiring
+
+# every generated file's freshness, from the gate's own list; and the committer's own test
+test-fast: check-fresh test-commit-clean
 
 # Every tracked .scm reads to EOF. ~3s over ~1070 files, so it can sit in
 # front of the whole suite rather than off to the side.
@@ -1325,10 +1381,15 @@ test-contest-count:
 test-evidence-door:
 	$(GUILE_TEST_DEV) -L module tests/doors/test-evidence-door.scm
 
+# tools/dev/commit-clean.py --gate: what it lands, merges, stops on and refuses, against
+# throwaway repositories (tests/tools/test-commit-clean.sh).
+.PHONY: test-commit-clean
+test-commit-clean:
+	bash tests/tools/test-commit-clean.sh
+
 # Guard against the real rot: a test nobody runs. Asserts every
 # tests/ux/*-ux.mjs has a reachable `make` target. Cheap (make -n), no browser,
-# so it stays in the fast path that CI already invokes (`make test`, via
-# PATCH_CI_CMD in deploy/scripts/radicle-ci-hook.sh).
+# so it is in `make gate` and `make test-fast` (CI runs `make test`, which is not).
 .PHONY: check-test-wiring
 check-test-wiring:
 	@bash tools/lint/check-test-wiring.sh
@@ -1336,7 +1397,7 @@ check-test-wiring:
 # The sibling rot: a prerequisite nobody listed. Asserts each wasm entry's
 # import closure is covered by its *_WASM_DEPS list, so make cannot report a
 # stale bundle as up to date. Same cost profile as check-test-wiring — no
-# compile, no browser — so it rides in the same fast path.
+# compile, no browser — so it rides in `make gate` and `make test-fast` with it.
 .PHONY: check-wasm-deps
 check-wasm-deps:
 	@bash tools/lint/check-wasm-deps.sh hoot/repl.scm     "$(REPL_WASM_DEPS)"
