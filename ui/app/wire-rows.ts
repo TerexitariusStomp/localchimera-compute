@@ -228,6 +228,14 @@ export interface WireCredit {
   pending: number | null;
 }
 
+export interface WireCreditHistoryRow {
+  id: string;
+  kind: string;
+  at: string;
+  hours: number | null;
+  what: string;
+}
+
 export interface WireCurvePoint {
   s: number | null;
   c: number | null;
@@ -590,6 +598,10 @@ export interface WireMember {
 
 export interface WireMyClaimsReply {
   rows: readonly WireClaimRow[];
+}
+
+export interface WireMyCreditHistoryReply {
+  rows: readonly WireCreditHistoryRow[];
 }
 
 export interface WireMyPayoutsReply {

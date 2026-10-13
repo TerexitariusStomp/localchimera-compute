@@ -111,7 +111,7 @@
     declare-need retire-need))
 
 ;; the same persons' standing read back: asked of the home, so the answer is whole
-(define person-read-doors '(my-skills my-slots skill-standing location-sharing my-claims))
+(define person-read-doors '(my-skills my-slots skill-standing location-sharing my-claims my-credit-history))
 
 ;; A person named, subject the call's scope: a commitment, an event or a word
 ;; made THERE (work, assignments, effort, journeys, purchases, counts, drops,

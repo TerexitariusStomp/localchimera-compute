@@ -3474,6 +3474,32 @@
       "x-playnet-http": "/api/session/my-claims"
     },
     {
+      "name": "session.my-credit-history",
+      "title": "stock: my-credit-history",
+      "description": "Replies this AID's credit as a dated account in SCOPE-ID, newest first: work earned, work waiting out its validation window, hours drawn by claims, and acts the log backed out — each with its hours, so earned less drawn is the certificate's balance. [stock; callable by an enrolled device]",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "scope-id": {
+            "type": "string",
+            "description": "a scope (commune) id",
+            "x-playnet-shape": "scope-id"
+          }
+        },
+        "required": [
+          "scope-id"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false
+      },
+      "x-playnet-auth": "device",
+      "x-playnet-topic": "stock",
+      "x-playnet-http": "/api/session/my-credit-history"
+    },
+    {
       "name": "session.retire-payout",
       "title": "stock: retire-payout",
       "description": "Cancels this AID's own pending payout intent ID in SCOPE-ID; replies (ok (id)) or an error when it is settled or belongs to someone else. [stock; callable by an enrolled device]",

@@ -80,7 +80,8 @@
           ("allotment" . ,(reply->wire 'allotment
                                        (let ((week (allotment-week %today)))
                                          (allotment-reply (allotment-doc week 4) week #t))))
-          ("myClaims" . ,(answer (call 'my-claims %demo-scope %demo-you))))))))
+          ("myClaims" . ,(answer (call 'my-claims %demo-scope %demo-you)))
+          ("myCreditHistory" . ,(answer (call 'my-credit-history %demo-scope %demo-you))))))))
 
 (define (recording-ts)
   (string-append

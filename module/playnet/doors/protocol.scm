@@ -560,6 +560,10 @@ or #f when no handler sends it."
           #:auth device #:topic stock #:reply ok-or-error #:kind read #:to planner
           #:feature credit
           #:doc "Replies this AID's order book in SCOPE-ID: each want as asked (no row yet), held (the plan's claim commitment, with what remains) or taken, priced at the good's crystallized SNLT.")
+    (door session my-credit-history (scope-id)
+          #:auth device #:topic stock #:reply ok-or-error #:kind read #:to planner
+          #:feature credit
+          #:doc "Replies this AID's credit as a dated account in SCOPE-ID, newest first: work earned, work waiting out its validation window, hours drawn by claims, and acts the log backed out — each with its hours, so earned less drawn is the certificate's balance.")
     (door session retire-payout (scope-id id)
           #:auth device #:topic stock #:reply ok-or-error #:kind performative #:to planner
           #:feature payouts
@@ -1216,6 +1220,9 @@ or #f when no handler sends it."
     (door planner my-claims (scope-id agent-id)
           #:auth operator #:topic stock #:reply ok-or-error #:kind read
           #:doc "Replies the member's order book: wants asked, claim rows the plan holds for them, rows taken.")
+    (door planner my-credit-history (scope-id agent-id)
+          #:auth operator #:topic stock #:reply ok-or-error #:kind read
+          #:doc "Replies the member's credit as a dated account: earned, waiting, drawn and voided rows, newest first.")
     (door planner retire-payout (scope-id agent-id id)
           #:auth operator #:topic stock #:reply ok-or-error #:kind performative
           #:doc "Removes the requester's own still-pending payout intent; replies its id.")

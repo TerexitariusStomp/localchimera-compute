@@ -545,6 +545,14 @@
                               ($ ps 'all-intents))))
                  `((rows . ,(append asked rows)))))))
 
+      ;; THE CITIZEN'S CREDIT, DATED — the account behind the certificate's
+      ;; figures: work earned, work waiting out its window, hours drawn, acts
+      ;; the log backed out (observer credit-history), newest first.
+      ((my-credit-history scope-id agent-id)
+       (scoped scope-id
+         (lambda (root)
+           `((rows . ,($ ($ root 'observer) 'credit-history agent-id))))))
+
       ;; retire-means: withdraw the offer — a `lower` to zero, the record and
       ;; its history standing (readers take on-hand > 0 as offered), the
       ;; mirror of retire-need at the resource layer.

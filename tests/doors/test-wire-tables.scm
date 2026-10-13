@@ -212,8 +212,8 @@
             '(count-schedule-reply count-history-reply contests-reply my-claims-reply my-slots-reply
               our-slots-reply slots-at-reply match-slots-reply scope-readings-reply
               readings-between-reply count-stock-reply allotment-reply label-stock-reply read-label-reply
-              my-payouts-reply))
-       (make-list 15 #t))
+              my-payouts-reply my-credit-history-reply))
+       (make-list 16 #t))
 (check "a means of the pool carries its owner, and how drawn it is where the solve says"
        (let ((m (vector-ref (assoc-ref (reply->wire 'slots-at '((means . (((id . "s") (owner . "bo") (drawn . 0.25))))))
                                        "means") 0)))

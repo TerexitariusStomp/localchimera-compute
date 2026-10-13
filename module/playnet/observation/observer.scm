@@ -66,7 +66,7 @@
             %validation-window event-instant window-lapsed? window-pending?
             pending-gross
             fold-by hours-by hours-on event-terms
-            ledger-claimed skill-hours-of work-practice earned-skills practiced-hours
+            ledger-claimed credit-history skill-hours-of work-practice earned-skills practiced-hours
             event-stamps event-interval event-process arc-observations
             fraction-for-process  observer-record-event
             economic-event->list list->economic-event
@@ -1685,6 +1685,52 @@
               acc))
         0 (standing-events st 'transfer)))
 
+(define (credit-history st aid)
+  "AID's credit as a dated account, newest first: rows ((id . ID) (kind . KIND)
+   (at . ISO-OR-\"\") (hours . H) (what . WHAT)) where KIND is
+     earned  — standing work the gate vests: H is what `ledger-gross` counts
+     waiting — standing work inside its open window: H is what `pending-gross` counts
+     drawn   — an individually-claimable transfer received: H is what `ledger-claimed` counts
+     voided  — an act of AID's the log backed out, at the hours it stated
+   Each kind reads the predicate its credit-block figure reads, over the same
+   standing events, so earned − drawn is the balance the certificate shows and
+   waiting is its pending. The log states no cancellation of a want, so none is listed."
+  (let* ((log      (reverse (os-events st)))
+         (standing (standing-of log))
+         (stands   (let ((h (make-hash-table)))
+                     (for-each (lambda (e) (hash-set! h (economic-event-id e) #t)) standing)
+                     h))
+         (hours    (lambda (ev) (let ((q (economic-event-effort-quantity ev))) (if q (effort-hours q) 0))))
+         (when-of  (lambda (ev) (let ((t (event-instant ev))) (if t (instant->civil t) ""))))
+         (what-of  (lambda (ev) (or (economic-event-resource-conforms-to ev) (economic-event-note ev) "")))
+         (mine-work?  (lambda (ev) (and (eq? (economic-event-action ev) 'work)
+                                        (equal? (economic-event-provider ev) aid)
+                                        (economic-event-effort-quantity ev))))
+         (mine-draw?  (lambda (ev) (and (eq? (economic-event-action ev) 'transfer)
+                                        (equal? (economic-event-receiver ev) aid)
+                                        (eq? (event-distribution-mode ev) 'individual-claimable)
+                                        (economic-event-effort-quantity ev)))))
+    (define (row* ev kind h)
+      `((id . ,(economic-event-id ev)) (kind . ,kind) (at . ,(when-of ev))
+        (hours . ,h) (what . ,(what-of ev))))
+    (let ((rows
+           (append
+            (filter-map (lambda (ev)
+                          (and (mine-work? ev)
+                               (cond ((window-pending? st ev) (row* ev "waiting" (hours ev)))
+                                     (else (let ((v (validated-effort st ev)))
+                                             (and (> v 0) (row* ev "earned" v)))))))
+                        standing)
+            (filter-map (lambda (ev) (and (mine-draw? ev) (row* ev "drawn" (hours ev)))) standing)
+            ;; backed out: in the log, an act, and no longer standing
+            (filter-map (lambda (ev)
+                          (and (not (correction? ev))
+                               (not (hash-ref stands (economic-event-id ev) #f))
+                               (or (mine-work? ev) (mine-draw? ev))
+                               (row* ev "voided" (hours ev))))
+                        log))))
+      (sort rows (lambda (x y) (string>? (assq-ref x 'at) (assq-ref y 'at)))))))
+
 ;; ── Skills as a DERIVED view over the work-event log ─────────────────────────
 ;; No stored skill state: a person's skills are the distinct resource-conforms-to
 ;; of their work events, and their hours in a skill is the validated-effort fold
@@ -2494,6 +2540,7 @@
     ((claim-effort aid)
      ;; Debit side of the ledger (individually-claimable receipts).
      (ledger-claimed st aid))
+    ((credit-history aid) (credit-history st aid))   ; the dated account behind the credit block's figures
     ((claimants) (ledger-claimants st))   ; who has claimed here: an account holder (account.scm)
 
     ;; the LEVELS this scope's gate knows: every scope-id that recognizes a

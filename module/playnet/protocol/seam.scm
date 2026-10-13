@@ -543,6 +543,11 @@
              (reply my-claims)
              ((session . my-claims))
              "→ JSON {rows: ClaimRow[]} — your order book: each want asked (no row yet), held (the plan's claim commitment, with what remains) or taken.")
+    (handler "myCreditHistory"
+             ""
+             (reply my-credit-history)
+             ((session . my-credit-history))
+             "→ JSON {rows: CreditHistoryRow[]} — your credit as a dated account, newest first: work earned, work waiting out its validation window, hours drawn, acts backed out.")
     (handler "mySkills"
              ""
              "Promise<string>"

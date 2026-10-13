@@ -906,6 +906,8 @@
     (planner! 'readings-between scope-id spec from until))
    ((my-claims scope-id)
     (planner! 'my-claims scope-id aid-prefix))
+   ((my-credit-history scope-id)
+    (planner! 'my-credit-history scope-id aid-prefix))
    ;; purchases for the commons — the member is the session AID; the raise
    ;; lands immediately, and whether it fulfils a plan the commons already
    ;; committed to comes back as PLANNED? (informational). What the commons

@@ -4659,6 +4659,9 @@ export const RECORDING = {
                     "state": "asked"
                 }
             ]
+        },
+        "myCreditHistory": {
+            "rows": []
         }
     }
 };

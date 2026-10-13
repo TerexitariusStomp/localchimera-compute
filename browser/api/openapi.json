@@ -9942,6 +9942,103 @@
         }
       }
     },
+    "/api/session/my-credit-history": {
+      "post": {
+        "operationId": "session.my-credit-history",
+        "summary": "Replies this AID's credit as a dated account in SCOPE-ID, newest first: work earned, work waiting out its validation window, hours drawn by claims, and acts the log backed out — each with its hours, so earned less drawn is the certificate's balance.",
+        "description": "Replies this AID's credit as a dated account in SCOPE-ID, newest first: work earned, work waiting out its validation window, hours drawn by claims, and acts the log backed out — each with its hours, so earned less drawn is the certificate's balance.\n\nObject: `session`. Callable by an enrolled device. Reply shape: `ok-or-error`.",
+        "tags": [
+          "stock"
+        ],
+        "x-playnet-auth": "device",
+        "x-playnet-kind": "read",
+        "x-playnet-to": "planner",
+        "x-playnet-object": "session",
+        "x-playnet-seam": "myCreditHistory",
+        "security": [
+          {
+            "deviceSignature": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "scope-id": {
+                    "type": "string",
+                    "description": "a scope (commune) id",
+                    "x-playnet-shape": "scope-id"
+                  }
+                },
+                "required": [
+                  "scope-id"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the door's reply (ok-or-error), as JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "const": "ok"
+                    },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "const": "ok"
+                        },
+                        {
+                          "description": "the value"
+                        }
+                      ],
+                      "description": "(ok . value)"
+                    },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "const": "error"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ],
+                      "description": "(error \"reason\")"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "error": {
+                          "type": "string"
+                        }
+                      },
+                      "description": "((error . \"reason\"))"
+                    }
+                  ],
+                  "x-playnet-reply": "ok-or-error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "no valid device signature (B4)"
+          },
+          "403": {
+            "description": "the door is outside this device's allowlist"
+          }
+        }
+      }
+    },
     "/api/session/retire-payout": {
       "post": {
         "operationId": "session.retire-payout",
@@ -21657,6 +21754,14 @@
       "topic": "stock",
       "x-playnet-transport": "none",
       "summary": "Replies the member's order book: wants asked, claim rows the plan holds for them, rows taken."
+    },
+    {
+      "object": "planner",
+      "name": "my-credit-history",
+      "auth": "operator",
+      "topic": "stock",
+      "x-playnet-transport": "none",
+      "summary": "Replies the member's credit as a dated account: earned, waiting, drawn and voided rows, newest first."
     },
     {
       "object": "planner",

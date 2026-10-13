@@ -52,6 +52,12 @@
     ("when" when str) ("total" total num) ("fulfilled" fulfilled num)
     ("remaining" remaining num) ("snlt" snlt num) ("state" state str))))
 
+;; the citizen's credit as a dated account (service my-credit-history): one row per
+;; act — earned, waiting, drawn or voided — with its hours and the instant it stood.
+(define %credit-history-row-wire
+  (wire-table 'credit-history-row #f
+  '(("id" id str) ("kind" kind str) ("at" at str) ("hours" hours num) ("what" what str))))
+
 ;; what every source says of a spec: the reading fold's rows and drift (service readings-of)
 (define %reading-row-wire
   (wire-table 'reading-row #f
@@ -128,6 +134,7 @@
 ;; the contests door answers its rows first
 (reply-table 'contests `(("rows" ,(lambda (v ctx) (and (pair? v) (car v))) (rows contest))))
 (reply-table 'my-claims '(("rows" rows (rows claim-row))))
+(reply-table 'my-credit-history '(("rows" rows (rows credit-history-row))))
 (reply-table 'my-slots  (needs-and-means 'slot 'slot))
 (reply-table 'our-slots (needs-and-means 'slot-cell 'slot-cell))
 ;; the scope's pool, as the map reads it

@@ -320,6 +320,9 @@ export interface SeamHandlers {
   /** → JSON {rows: ClaimRow[]} — your order book: each want asked (no row yet), held (the plan's claim commitment, with what remains) or taken. */
   // doors: session/my-claims
   myClaims?(): Promise<Json<W.WireMyClaimsReply>>;
+  /** → JSON {rows: CreditHistoryRow[]} — your credit as a dated account, newest first: work earned, work waiting out its validation window, hours drawn, acts backed out. */
+  // doors: session/my-credit-history
+  myCreditHistory?(): Promise<Json<W.WireMyCreditHistoryReply>>;
   // doors: session/my-skills
   mySkills?(): Promise<string>;
   /** → JSON [{skill, held, hours, competence, events, witnessed, attesters, witnessedHours, pending: [{count, quorum}]}] — each skill you hold or have practiced, and what the record shows for it, in hours: `hours` is recipient-validated work (the credit ledger's own gate), `competence` where the skill stands today under its own law (idle time wears it, satisfied practice renews it), `attesters` the distinct people who co-signed the work. */
