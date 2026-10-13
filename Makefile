@@ -5,6 +5,12 @@ all: browser/repl.wasm browser/day-boot.wasm
 # here, above every wasm rule.
 HOOT_TOOLCHAIN_STAMP = .hoot-toolchain
 
+# The wasm prerequisite lists. The import closures are GENERATED (tools/wasm-deps.mk,
+# `make wasm-deps-emit`, checked by check-wasm-deps-fresh); each bundle adds by hand,
+# in *_WASM_EXTRA, what a static walk cannot see. Prerequisites expand where a rule is
+# read, so the include stands above every wasm rule.
+include tools/wasm-deps.mk
+
 # ── The day dial ─────────────────────────────────────────────────────────────
 # A SEPARATE app, deliberately apart from the repl: browser/app.html is
 # CANONICAL — edited in place, served as-is, no build step, no coupling to
@@ -15,26 +21,9 @@ HOOT_TOOLCHAIN_STAMP = .hoot-toolchain
 # The dial's capability spine: a SLIM Hoot program — gateway CapTP,
 # KERI unlock/authenticate, lobby transcribe + ai-complete — loaded by
 # day-boot.js into the same page. No UI, no tabs: app.html is the shell.
-# Transitive (playnet …) import closure of hoot/day-boot.scm; see the
-# note on REPL_WASM_DEPS and `make check-wasm-deps`.
-DAY_BOOT_WASM_DEPS = \
-                     module/playnet/utils/records.scm \
-                     module/playnet/social/relationship-kinds.scm \
-                     module/playnet/keri/reticulum-binding.scm \
-                     module/playnet/utils/host.scm \
-                     module/playnet/utils/hex.scm \
-                     module/playnet/crypto/recovery-share.scm \
-                     module/playnet/crypto/shamir.scm \
-                     module/playnet/keri/cesr.scm \
-                     module/playnet/keri/crypto-primitives-browser.scm \
-                     module/playnet/keri/crypto-primitives.scm \
-                     module/playnet/keri/said-portable.scm \
-                     module/playnet/keri/signify-portable.scm \
-                     module/playnet/identity/kel.scm \
-                     module/playnet/doors/family/wire.scm \
-                     module/playnet/wire/rows.scm \
-                     module/playnet/wire/snapshot.scm \
-                     module/playnet/utils/json-portable.scm
+# Its prerequisites are the import closure of hoot/day-boot.scm (tools/wasm-deps.mk).
+DAY_BOOT_WASM_EXTRA =
+DAY_BOOT_WASM_DEPS = $(DAY_BOOT_WASM_CLOSURE) $(DAY_BOOT_WASM_EXTRA)
 
 browser/day-boot.wasm: hoot/day-boot.scm $(DAY_BOOT_WASM_DEPS) $(HOOT_TOOLCHAIN_STAMP)
 	$(HOOT_BUILD_DEV) \
@@ -100,90 +89,13 @@ hoot-probe-async:
 # browser/family.wasm is the planner's family solve for the browser, run in
 # browser/family-worker.js so the ledger never leaves the page. A gitignored
 # build product like day-boot.wasm; the box builds its own on deploy.
-# Transitive (playnet …) import closure of hoot/family-worker.scm; see
-# `make check-wasm-deps`.
-FAMILY_WASM_DEPS = \
-                 module/playnet/protocol/context.scm \
-                 module/playnet/utils/host.scm \
-                    module/playnet/vf/beyond/scenario.scm \
-                    module/playnet/vf/beyond/schedules.scm \
-                    module/playnet/vf/beyond/lot.scm \
-                    module/playnet/vf/facts/audit.scm \
-                    module/playnet/vf/formulas/actions.scm \
-                    module/playnet/vf/formulas/counting.scm \
-                    module/playnet/vf/formulas/flows.scm \
-                    module/playnet/observation/observer.scm \
-                    module/playnet/solve/keywords.scm \
-                    module/playnet/observation/states.scm \
-                    module/playnet/solve/admm-link.scm \
-                    module/playnet/vf/facts/agent-tags.scm \
-                    module/playnet/vf/facts/boundary.scm \
-                    module/playnet/vf/formulas/cadence.scm \
-                    module/playnet/vf/formulas/fragility.scm \
-                    module/playnet/vf/facts/agent-time.scm \
-                    module/playnet/vf/aggregation/containment.scm \
-                    module/playnet/vf/aggregation/fold-node.scm \
-                    module/playnet/vf/aggregation/scope-tree.scm \
-                    module/playnet/algorithms/propagation.scm \
-                    module/playnet/algorithms/rollup.scm \
-                    module/playnet/algorithms/rollup/common.scm \
-                    module/playnet/algorithms/rollup/fixpoint.scm \
-                    module/playnet/algorithms/rollup/relative-snlt.scm \
-                    module/playnet/knowledge/worlds/bioregions.scm \
-                    module/playnet/solve/compile.scm \
-                    module/playnet/solve/emphasis.scm \
-                    module/playnet/solve/engine.scm \
-                    module/playnet/solve/world.scm \
-                    module/playnet/solve/externality.scm \
-                    module/playnet/doors/family/local.scm \
-                    module/playnet/doors/family/wire.scm \
-                    module/playnet/doors/family/solve.scm \
-                    module/playnet/solve/federation-oracle.scm \
-                    module/playnet/solve/federation-solve.scm \
-                    module/playnet/solve/ingest.scm \
-                    module/playnet/knowledge/data/fdc-sr-legacy.scm \
-                    module/playnet/knowledge/catalogues/food-sources.scm \
-                    module/playnet/knowledge/catalogues/housing.scm \
-                    module/playnet/knowledge/recipes/household.scm \
-                    module/playnet/knowledge/dsl/shorthand.scm \
-                    module/playnet/knowledge/catalogues/subsistence.scm \
-                    module/playnet/knowledge/catalogues/substances.scm \
-                    module/playnet/vf/facts/located.scm \
-                    module/playnet/vf/facts/availability.scm \
-                    module/playnet/observation/account.scm \
-                    module/playnet/algorithms/elastic.scm \
-                    module/playnet/vf/facts/parts.scm \
-                    module/playnet/solve/periods.scm \
-                    module/playnet/vf/formulas/propagate.scm \
-                    module/playnet/vf/facts/rail.scm \
-                    module/playnet/vf/facts/barred-specs.scm \
-                    module/playnet/solve/recipe-response.scm \
-                    module/playnet/solve/robust.scm \
-                    module/playnet/solve/plan.scm \
-                    module/playnet/solve/records.scm \
-                    module/playnet/solve/report.scm \
-                    module/playnet/solve/decomposed.scm \
-                    module/playnet/solve/discrete.scm \
-                    module/playnet/vf/schemas.scm \
-                    module/playnet/vf/formulas/shocks.scm \
-                    module/playnet/solve/solver.scm \
-                    module/playnet/vf/formulas/stocks.scm \
-                    module/playnet/utils/store-utils.scm \
-                    module/playnet/vf/formulas/tension-kinds.scm \
-                    module/playnet/vf/formulas/capacity.scm \
-                    module/playnet/vf/serdes.scm \
-                    module/playnet/vf/facts/tension-terms.scm \
-                    module/playnet/solve/voice-field.scm \
-                    module/playnet/utils/alist.scm \
-                    module/playnet/utils/catch.scm \
-                    module/playnet/utils/clock.scm \
-                    module/playnet/utils/hashmap.scm \
-                    module/playnet/utils/json-portable.scm \
-                    module/playnet/utils/keywords.scm \
-                    module/playnet/utils/records.scm \
-                    module/playnet/utils/keyed-id.scm \
-                    module/playnet/utils/units.scm \
-                    module/playnet/wire/rows.scm
+# Its prerequisites are the import closure of hoot/family-worker.scm (tools/wasm-deps.mk).
+# declared by hand: the static walk does not reach these (check-wasm-deps notes them); kept as they stood
+FAMILY_WASM_EXTRA = \
+  module/playnet/solve/decomposed.scm \
+  module/playnet/solve/federation-oracle.scm \
+  module/playnet/solve/federation-solve.scm
+FAMILY_WASM_DEPS = $(FAMILY_WASM_CLOSURE) $(FAMILY_WASM_EXTRA)
 
 browser/family.wasm: hoot/family-worker.scm $(FAMILY_WASM_DEPS) $(HOOT_TOOLCHAIN_STAMP)
 	$(HOOT_BUILD_DEV) bash -c 'guild compile-wasm $(HOOT_PLANNER_ARGS) -o browser/family.wasm hoot/family-worker.scm'
@@ -199,183 +111,19 @@ check-family-worker: browser/family.wasm
 # (playnet doors page-scope)): the demo neighbourhood's books and a person's
 # own, answering the doors a gateway answers, run in browser/scope-worker.js. A
 # gitignored build product like family.wasm.
-# Transitive (playnet …) import closure of hoot/scope-worker.scm; see
-# `make check-wasm-deps`.
-SCOPE_WASM_DEPS = \
-                 module/playnet/legal/body-roles.scm \
-                 module/playnet/plan/rotation.scm \
-                 module/playnet/utils/lei.scm \
-                 module/playnet/utils/operator.scm \
-                 module/playnet/algorithms/correlation.scm \
-                 module/playnet/algorithms/option-composition.scm \
-                 module/playnet/algorithms/option-premium.scm \
-                 module/playnet/doors/record-rows.scm \
-                 module/playnet/folksonomy/graph.scm \
-                 module/playnet/knowledge/dsl/findings.scm \
-                 module/playnet/legal/adapters.scm \
-                 module/playnet/legal/bodies.scm \
-                 module/playnet/protocol/context.scm \
-                 module/playnet/utils/host.scm \
-                   module/playnet/scope/ballot-store.scm \
-                   module/playnet/scope/demand-registry.scm \
-                   module/playnet/keri/acdc.scm \
-                   module/playnet/keri/cesr.scm \
-                   module/playnet/keri/crypto-primitives.scm \
-                   module/playnet/keri/said-portable.scm \
-                   module/playnet/keri/said.scm \
-                   module/playnet/vf/beyond/lot.scm \
-                   module/playnet/vf/beyond/scenario.scm \
-                   module/playnet/vf/beyond/schedules.scm \
-                   module/playnet/vf/formulas/actions.scm \
-                   module/playnet/vf/formulas/flows.scm \
-                   module/playnet/observation/states.scm \
-                   module/playnet/plan/accepts.scm \
-                   module/playnet/solve/admm-link.scm \
-                   module/playnet/vf/facts/agent-tags.scm \
-                   module/playnet/vf/facts/boundary.scm \
-                   module/playnet/vf/formulas/cadence.scm \
-                   module/playnet/vf/formulas/fragility.scm \
-                   module/playnet/vf/facts/agent-time.scm \
-                   module/playnet/scope/agents.scm \
-                   module/playnet/vf/aggregation/containment.scm \
-                   module/playnet/vf/aggregation/fold-node.scm \
-                   module/playnet/vf/aggregation/scope-tree.scm \
-                   module/playnet/algorithms/propagation.scm \
-                   module/playnet/algorithms/rollup.scm \
-                   module/playnet/algorithms/rollup/common.scm \
-                   module/playnet/algorithms/rollup/fixpoint.scm \
-                   module/playnet/algorithms/rollup/relative-snlt.scm \
-                   module/playnet/algorithms/signals.scm \
-                   module/playnet/vf/facts/audit.scm \
-                   module/playnet/knowledge/worlds/bioregions.scm \
-                   module/playnet/knowledge/catalogues/compiler.scm \
-                   module/playnet/solve/compile.scm \
-                   module/playnet/legal/compliance.scm \
-                   module/playnet/knowledge/catalogues/conformance.scm \
-                   module/playnet/vf/facts/validity.scm \
-                   module/playnet/doors/count-door.scm \
-                   module/playnet/vf/formulas/counting.scm \
-                   module/playnet/doors/counts.scm \
-                   module/playnet/legal/crossings.scm \
-                   module/playnet/knowledge/catalogues/eco.scm \
-                   module/playnet/solve/engine.scm \
-                   module/playnet/solve/world.scm \
-                   module/playnet/utils/envelope.scm \
-                   module/playnet/execution/alerts.scm \
-                   module/playnet/solve/externality.scm \
-                   module/playnet/solve/federation-oracle.scm \
-                   module/playnet/solve/federation-solve.scm \
-                   module/playnet/solve/ingest.scm \
-                   module/playnet/plan/horizon-gate.scm \
-                   module/playnet/solve/inspection.scm \
-                   module/playnet/doors/inventory.scm \
-                   module/playnet/knowledge/worlds/bay-area-derived.scm \
-                   module/playnet/knowledge/worlds/bay-area.scm \
-                   module/playnet/knowledge/worlds/berlin-derived.scm \
-                   module/playnet/knowledge/worlds/berlin.scm \
-                   module/playnet/ddmrp/buffer-snapshots.scm \
-                   module/playnet/ddmrp/buffer-zones.scm \
-                   module/playnet/ddmrp/capacity-buffers.scm \
-                   module/playnet/ddmrp/records.scm \
-                   module/playnet/knowledge/worlds/cascadia-derived.scm \
-                   module/playnet/knowledge/worlds/cascadia.scm \
-                   module/playnet/knowledge/law/context-pack.scm \
-                   module/playnet/knowledge/law/pack-dir.scm \
-                   module/playnet/knowledge/data/fdc-sr-legacy.scm \
-                   module/playnet/knowledge/worlds/demo-neighbourhood.scm \
-                   module/playnet/knowledge/catalogues/diets.scm \
-                   module/playnet/knowledge/worlds/doon-derived.scm \
-                   module/playnet/knowledge/worlds/doon-shed.scm \
-                   module/playnet/knowledge/worlds/sheds.scm \
-                   module/playnet/knowledge/worlds/doon-valley.scm \
-                   module/playnet/knowledge/catalogues/food-sources.scm \
-                   module/playnet/knowledge/catalogues/housing.scm \
-                   module/playnet/knowledge/catalogues/housing-substance.scm \
-                   module/playnet/knowledge/law/incumbent-readings.scm \
-                   module/playnet/knowledge/catalogues/insurance.scm \
-                   module/playnet/knowledge/law/aspects.scm \
-                   module/playnet/vf/facts/places.scm \
-                   module/playnet/knowledge/law/protections.scm \
-                   module/playnet/knowledge/recipes/store.scm \
-                   module/playnet/knowledge/recipes/dwelling.scm \
-                   module/playnet/knowledge/recipes/transport.scm \
-                   module/playnet/knowledge/catalogues/rest.scm \
-                   module/playnet/knowledge/dsl/shorthand.scm \
-                   module/playnet/scope/spatial-things.scm \
-                   module/playnet/knowledge/catalogues/subsistence.scm \
-                   module/playnet/knowledge/catalogues/substances.scm \
-                   module/playnet/knowledge/catalogues/thermal.scm \
-                   module/playnet/knowledge/dsl/world.scm \
-                   module/playnet/vf/facts/labels.scm \
-                   module/playnet/algorithms/deferred-acceptance.scm \
-                   module/playnet/plan/assignment.scm \
-                   module/playnet/legal/gate.scm \
-                   module/playnet/legal/policy.scm \
-                   module/playnet/legal/registry-actor.scm \
-                   module/playnet/legal/registry.scm \
-                   module/playnet/scope/live.scm \
-                   module/playnet/vf/facts/located.scm \
-                   module/playnet/vf/facts/availability.scm \
-                   module/playnet/observation/account.scm \
-                   module/playnet/observation/adjustment.scm \
-                   module/playnet/observation/convert.scm \
-                   module/playnet/algorithms/elastic.scm \
-                   module/playnet/observation/evidence.scm \
-                   module/playnet/observation/live-registry.scm \
-                   module/playnet/observation/live-resource.scm \
-                   module/playnet/observation/log-observe.scm \
-                   module/playnet/observation/observer.scm \
-                   module/playnet/solve/keywords.scm \
-                   module/playnet/pools/reading-fold.scm \
-                   module/playnet/doors/offers.scm \
-                   module/playnet/doors/page-scope.scm \
-                   module/playnet/vf/facts/parts.scm \
-                   module/playnet/solve/periods.scm \
-                   module/playnet/vf/facts/person-facts.scm \
-                   module/playnet/plan/store.scm \
-                   module/playnet/observation/practice.scm \
-                   module/playnet/scope/process-registry.scm \
-                   module/playnet/vf/formulas/propagate.scm \
-                   module/playnet/vf/facts/rail.scm \
-                   module/playnet/vf/facts/barred-specs.scm \
-                   module/playnet/solve/recipe-response.scm \
-                   module/playnet/legal/reform.scm \
-                   module/playnet/scope/replica.scm \
-                   module/playnet/solve/robust.scm \
-                   module/playnet/solve/plan.scm \
-                   module/playnet/solve/records.scm \
-                   module/playnet/solve/report.scm \
-                   module/playnet/solve/decomposed.scm \
-                   module/playnet/solve/discrete.scm \
-                   module/playnet/solve/routing.scm \
-                   module/playnet/vf/schemas.scm \
-                   module/playnet/scope/root.scm \
-                   module/playnet/vf/formulas/shocks.scm \
-                   module/playnet/vf/formulas/skill-law.scm \
-                   module/playnet/doors/slots.scm \
-                   module/playnet/scope/snapshot.scm \
-                   module/playnet/solve/solver.scm \
-                   module/playnet/vf/formulas/stocks.scm \
-                   module/playnet/utils/store-utils.scm \
-                   module/playnet/vf/formulas/tension-kinds.scm \
-                   module/playnet/vf/formulas/capacity.scm \
-                   module/playnet/vf/serdes.scm \
-                   module/playnet/vf/facts/tension-terms.scm \
-                   module/playnet/solve/voice-field.scm \
-                   module/playnet/utils/alist.scm \
-                   module/playnet/utils/catch.scm \
-                   module/playnet/utils/clock.scm \
-                   module/playnet/utils/common.scm \
-                   module/playnet/utils/governed-row.scm \
-                   module/playnet/utils/hashmap.scm \
-                   module/playnet/utils/json-portable.scm \
-                   module/playnet/utils/keyed-id.scm \
-                   module/playnet/utils/keywords.scm \
-                   module/playnet/utils/records.scm \
-                   module/playnet/utils/units.scm \
-                   module/playnet/wire/replies.scm \
-                   module/playnet/wire/rows.scm \
-                   module/playnet/wire/snapshot.scm
+# Its prerequisites are the import closure of hoot/scope-worker.scm (tools/wasm-deps.mk).
+# declared by hand: the static walk does not reach these (check-wasm-deps notes them); kept as they stood
+SCOPE_WASM_EXTRA = \
+  module/playnet/keri/acdc.scm \
+  module/playnet/keri/cesr.scm \
+  module/playnet/keri/crypto-primitives.scm \
+  module/playnet/keri/said-portable.scm \
+  module/playnet/keri/said.scm \
+  module/playnet/legal/adapters.scm \
+  module/playnet/observation/convert.scm \
+  module/playnet/solve/federation-oracle.scm \
+  module/playnet/vf/facts/validity.scm
+SCOPE_WASM_DEPS = $(SCOPE_WASM_CLOSURE) $(SCOPE_WASM_EXTRA)
 
 browser/scope.wasm: hoot/scope-worker.scm $(SCOPE_WASM_DEPS) $(HOOT_SCOPE_SRC)/playnet/scope/live.scm $(HOOT_TOOLCHAIN_STAMP)
 	$(HOOT_BUILD_DEV) bash -c 'guild compile-wasm $(HOOT_PLANNER_ARGS) -L $(HOOT_SCOPE_SRC) -o browser/scope.wasm hoot/scope-worker.scm'
@@ -819,44 +567,14 @@ quick-repl:
 
 # ── Wasm builds ──────────────────────────────────────────────────────────────
 
-# Prerequisites are the transitive (playnet …) import closure of
-# hoot/repl.scm. `make check-wasm-deps` proves this list still covers
-# it — a MISSING entry is the dangerous direction, because make then
-# reports a stale wasm as up to date and a broken module never rebuilds.
-REPL_WASM_DEPS = \
-                 module/playnet/crypto/shamir.scm \
-                 module/playnet/utils/records.scm \
-                 module/playnet/wire/rows.scm \
-                 module/playnet/keri/cesr.scm \
-                 module/playnet/keri/crypto-primitives-browser.scm \
-                 module/playnet/keri/crypto-primitives.scm \
-                 module/playnet/keri/did.scm \
-                 module/playnet/keri/reticulum-binding.scm \
-                 module/playnet/utils/host.scm \
-                 module/playnet/keri/signify-portable.scm \
-                 module/playnet/lang/autocomplete.scm \
-                 module/playnet/lang/kanren.scm \
-                 module/playnet/lang/wisp.scm \
-                 module/playnet/utils/endorsement.scm \
-                 module/playnet/org/gplay.scm \
-                 module/playnet/ui/calendar.scm \
-                 module/playnet/calendar/ical.scm \
-                 module/playnet/ui/clock.scm \
-                 module/playnet/ui/components.scm \
-                 module/playnet/ui/contacts.scm \
-                 module/playnet/ui/federation-solver.scm \
-                 module/playnet/ui/federation.scm \
-                 module/playnet/ui/identity.scm \
-                 module/playnet/ui/inventory.scm \
-                 module/playnet/ui/map.scm \
-                 module/playnet/ui/network.scm \
-                 module/playnet/ui/priorities.scm \
-                 module/playnet/ui/recipes.scm \
-                 module/playnet/ui/treemap.scm \
-                 module/playnet/ui/zone-format.scm \
-                 module/playnet/utils/alist.scm \
-                 module/playnet/utils/hex.scm \
-                 module/playnet/utils/json-portable.scm
+# Prerequisites are the transitive (playnet …) import closure of hoot/repl.scm
+# (tools/wasm-deps.mk, generated: a MISSING entry is the dangerous direction,
+# because make then reports a stale wasm as up to date and a broken module never
+# rebuilds, so the list is written by the walker and not by hand).
+# declared by hand: the static walk does not reach these (check-wasm-deps notes them); kept as they stood
+REPL_WASM_EXTRA = \
+  module/playnet/keri/did.scm
+REPL_WASM_DEPS = $(REPL_WASM_CLOSURE) $(REPL_WASM_EXTRA)
 
 browser/repl.wasm: hoot/repl.scm $(REPL_WASM_DEPS) $(HOOT_TOOLCHAIN_STAMP)
 	$(HOOT_BUILD_DEV) \
@@ -1076,14 +794,14 @@ FRESH_CHECKS = check-protocol-fresh check-wire-types-fresh check-nutrition-fresh
   check-housing-fresh check-count-fresh check-rel-fresh check-limits-fresh \
   check-reach-fresh check-actions-fresh check-units-fresh check-rest-fresh \
   check-matter-fresh check-fragility-fresh check-demo-fresh check-recipe-demo-fresh \
-  check-ui-fresh
+  check-wasm-deps-fresh check-ui-fresh
 # these read files ignored by path (the legal contexts, the physics register): a clean
 # worktree has none, so they run where the files are, in `gate-local`
 FRESH_LOCAL = check-na-fresh check-law-fresh check-physics-fresh
 # for the reader, not the gate (see module-map)
 FRESH_EXEMPT = check-module-map-fresh
 # fdc-snapshot needs a 6 MB cache the repo does not carry; check-fdc-fresh skips without it
-EMITS = protocol-emit wire-types-emit nutrition-emit product-law-emit attribution-emit \
+EMITS = wasm-deps-emit protocol-emit wire-types-emit nutrition-emit product-law-emit attribution-emit \
   notice-facts-emit de-pack housing-emit count-emit \
   rel-emit limits-emit reach-emit actions-emit units-emit rest-emit matter-snapshot \
   fragility-snapshot demo-emit recipe-demo-emit ui
@@ -1396,8 +1114,15 @@ check-test-wiring:
 
 # The sibling rot: a prerequisite nobody listed. Asserts each wasm entry's
 # import closure is covered by its *_WASM_DEPS list, so make cannot report a
-# stale bundle as up to date. Same cost profile as check-test-wiring — no
+# stale bundle as up to date. The lists are now generated (wasm-deps-emit), so this
+# re-proves them against the walker and notes the hand EXTRA entries. Same cost profile as check-test-wiring — no
 # compile, no browser — so it rides in `make gate` and `make test-fast` with it.
+.PHONY: wasm-deps-emit check-wasm-deps-fresh
+wasm-deps-emit:
+	$(GUILE_TEST_DEV) -L module tools/emit/wasm-deps-emit.scm tools/wasm-deps.mk
+check-wasm-deps-fresh:
+	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-wasm-deps-fresh tools/wasm-deps.mk wasm-deps-emit tools/emit/wasm-deps-emit.scm
+
 .PHONY: check-wasm-deps
 check-wasm-deps:
 	@bash tools/lint/check-wasm-deps.sh hoot/repl.scm     "$(REPL_WASM_DEPS)"

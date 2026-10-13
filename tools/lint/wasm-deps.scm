@@ -210,4 +210,7 @@
      (format (current-error-port) "usage: wasm-deps.scm ENTRY.scm~%")
      (exit 2))))
 
-(main (command-line))
+;; run as a script (`guile tools/lint/wasm-deps.scm ENTRY`), not when another tool
+;; loads this file for `closure` (tools/emit/wasm-deps-emit.scm)
+(when (string-suffix? "wasm-deps.scm" (car (command-line)))
+  (main (command-line)))
