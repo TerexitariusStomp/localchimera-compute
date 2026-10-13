@@ -168,7 +168,7 @@
   #:use-module ((playnet scope replica) #:select (scope->replica replica->text))
   #:use-module ((playnet observation log-observe) #:select (%log-actions do-log-observe)))   ; an observation of one's own doing   ; a scope's books, copied to its member's device   ; what people ask for and offer: the slot doors' own bodies   ; a scope's places, as a snapshot carries them
 (use-modules ((playnet observation account) #:select (spec-claimable? resource-individually-claimable?   ; the rail, read off the recipes
-                                                              claim-commitment claim-cid-terms open-claim-for fulfillment-remaining))   ; the plan's claim, the one word a claim door honours
+                                                              claim-commitment open-claim-for fulfillment-remaining))   ; the plan's claim, the one word a claim door honours
              ((playnet vf facts rail) #:select (spec-rail)))   ; live in live.scm, at the solve door
 
 ;;; ── The legal layer (the `legal-snapshot` method below regenerates the

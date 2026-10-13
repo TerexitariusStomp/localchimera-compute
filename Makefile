@@ -107,8 +107,13 @@ FAMILY_WASM_DEPS = \
                  module/playnet/utils/host.scm \
                     module/playnet/vf/beyond/scenario.scm \
                     module/playnet/vf/beyond/schedules.scm \
+                    module/playnet/vf/beyond/lot.scm \
+                    module/playnet/vf/facts/audit.scm \
                     module/playnet/vf/formulas/actions.scm \
+                    module/playnet/vf/formulas/counting.scm \
                     module/playnet/vf/formulas/flows.scm \
+                    module/playnet/observation/observer.scm \
+                    module/playnet/solve/keywords.scm \
                     module/playnet/observation/states.scm \
                     module/playnet/solve/admm-link.scm \
                     module/playnet/vf/facts/agent-tags.scm \
@@ -320,6 +325,7 @@ SCOPE_WASM_DEPS = \
                    module/playnet/observation/live-resource.scm \
                    module/playnet/observation/log-observe.scm \
                    module/playnet/observation/observer.scm \
+                   module/playnet/solve/keywords.scm \
                    module/playnet/pools/reading-fold.scm \
                    module/playnet/doors/offers.scm \
                    module/playnet/doors/page-scope.scm \

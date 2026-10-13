@@ -41,6 +41,18 @@
       (let ((cid ($ ps 'promote-to-commitment "i-bake" '((provider . "ana") (receiver . "T")))))
         (check "a commitment promoted from an intent is armed" (armed? obs cid) #t)))))
 
+(display "\n── ARMED: a replenishment approved is armed like any other ──\n")
+(let-values (((vat scope) (fresh-scope)))
+  (with-vat vat
+    (let ((obs ($ scope 'observer)) (ps ($ scope 'plan-store)))
+      ($ ps 'add-intent (make-intent #:id "i-rep" #:action 'produce #:resource-conforms-to "flour"
+                                     #:resource-quantity (make-measure 5.0 "kg")
+                                     #:resource-classified-as '("tag:plan:replenishment")))
+      (let ((cid ($ ps 'approve-replenishment "i-rep" "ana" "T")))
+        (check "the approved replenishment is armed on the observer" (armed? obs cid) #t)
+        (check "…and the store finds it by its process and its spec"
+               (and (find (lambda (c) (equal? (commitment-id c) cid)) ($ ps 'commitments-for-spec "flour")) #t) #t)))))
+
 (display "\n── ENDED: partial leaves it open, the last confirmation ends it ──\n")
 (let-values (((vat scope) (fresh-scope)))
   (with-vat vat

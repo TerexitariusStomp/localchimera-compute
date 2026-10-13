@@ -56,7 +56,7 @@
 (define %mock-defaults
   '((set-on-agent . #t) (set-on-agent-removed . #t)
     (add-event-listener . #t) (add-intent-listener . #t) (add-change-listener . #t)
-    (skills-of . ()) (fold-by . ()) (open-fulfillments . ()) (hours-by . ()) (hours-on . 0)))
+    (skills-of . ()) (fold-by . ()) (open-fulfillments . ()) (fulfillments-for . ()) (hours-by . ()) (hours-on . 0)))
 
 (define (^mock bcom table)
   (lambda (msg . args)

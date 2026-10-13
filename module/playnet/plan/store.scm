@@ -117,8 +117,9 @@
 ;; =========================================================================
 
 (define (append-to-index idx key val)
-  "Append val to the list stored at key."
-  (hashmap-set idx key (cons val (hashmap-ref idx key '()))))
+  "Append val to the list stored at key, once: adding what is already there changes nothing."
+  (let ((held (hashmap-ref idx key '())))
+    (if (member val held) idx (hashmap-set idx key (cons val held)))))
 
 (define (remove-from-index idx key val)
   "Remove val from the list at key."
@@ -1057,13 +1058,13 @@
                                      (if (pair? old-meta) old-meta '())))
               ;; Build new state
               (new-intents (hashmap-set (pss-intents st) iid finished-intent))
-              (new-commitments (hashmap-set (pss-commitments st) cid commitment))
-              (new-cbs (index-commitment-spec (pss-commitments-by-spec st) commitment))
               (new-meta (hashmap-set (pss-meta st) iid new-meta-entry)))
-         (bcom (^plan-store bcom
-                 (pss-update st #:commitments new-commitments #:intents new-intents
-                             #:meta new-meta #:commitments-by-spec new-cbs) callbacks)
-               cid))))
+         ;; the commitment enters like any other: every index, and the observer told
+         (let-values (((new-st id) (pss-add-commitment
+                                    (pss-update st #:intents new-intents #:meta new-meta)
+                                    commitment)))
+           (added! (hashmap-ref (pss-commitments new-st) id #f))
+           (bcom (^plan-store bcom new-st callbacks) id)))))
 
     ((reject-replenishment iid)
      (let ((intent (hashmap-ref (pss-intents st) iid #f)))

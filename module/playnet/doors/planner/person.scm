@@ -20,7 +20,7 @@
   #:use-module ((playnet doors slots) #:select (arcs-json->window cats-json->list declare-means-reply declare-need-reply my-slots-reply))
   #:use-module ((playnet knowledge catalogues housing) #:select (housing-gate?))
   #:use-module ((playnet matching filter-rule) #:select (criteria-json->alist))
-  #:use-module ((playnet observation account) #:select (claim-cid-terms open-claim-for resource-individually-claimable?))
+  #:use-module ((playnet observation account) #:select (claim-fulfillments claim-terms open-claim-for resource-individually-claimable?))
   #:use-module ((playnet observation practice) #:select (practice-view-dated practice-view-hours))
   #:use-module ((playnet observation states) #:select (fulfillment-state-commitment-id fulfillment-state-finished fulfillment-state-total-committed fulfillment-state-total-fulfilled))
   #:use-module ((playnet pools labour-fold) #:select (skill-specs-for-agent))
@@ -71,12 +71,9 @@
                       (cid  (and fs (fulfillment-state-commitment-id fs)))
                       ;; the row stood and is confirmed in full: nothing open, a finished one on the books
                       (done (and (not fs)
-                                 (any (lambda (f)
-                                        (let ((t (claim-cid-terms (fulfillment-state-commitment-id f))))
-                                          (and t (fulfillment-state-finished f)
-                                               (equal? (car t) spec) (equal? (cadr t) claimant)
-                                               (or (not place) (equal? (caddr t) place)))))
-                                      ($ obs 'all-fulfillments)))))
+                                 (any fulfillment-state-finished
+                                      (claim-fulfillments obs #:spec spec #:receiver claimant #:place place
+                                                          #:open-only? #f)))))
                  (unless (or fs done)
                    (error (format #f "the plan holds no claim of ~a for ~a; state the want and the plan answers" spec claimant)))
                  (if done
@@ -519,17 +516,19 @@
                       (mval (lambda (m) (if m (measure-has-numerical-value m) 0)))
                       (rows (filter-map
                              (lambda (fs)
-                               (let ((t (claim-cid-terms (fulfillment-state-commitment-id fs))))
-                                 (and t (equal? (cadr t) agent-id)
+                               (let* ((cid (fulfillment-state-commitment-id fs))
+                                      (t   (claim-terms obs cid))
+                                      (spec (and t (assq-ref t 'spec))))
+                                 (and t
                                       (let ((total (mval (fulfillment-state-total-committed fs)))
                                             (done  (mval (fulfillment-state-total-fulfilled fs))))
-                                        `((id . ,(fulfillment-state-commitment-id fs))
-                                          (spec . ,(car t)) (name . ,(lookup-spec-name rs (car t)))
-                                          (place . ,(or (caddr t) "")) (when . ,(or (cadddr t) ""))
+                                        `((id . ,cid)
+                                          (spec . ,spec) (name . ,(lookup-spec-name rs spec))
+                                          (place . ,(or (assq-ref t 'place) "")) (when . ,(or (assq-ref t 'when) ""))
                                           (total . ,total) (fulfilled . ,done) (remaining . ,(max 0 (- total done)))
-                                          (snlt . ,(price (car t)))
+                                          (snlt . ,(price spec))
                                           (state . ,(if (fulfillment-state-finished fs) "taken" "held")))))))
-                             ($ obs 'all-fulfillments)))
+                             (claim-fulfillments obs #:receiver agent-id #:open-only? #f)))
                       (answered (map (lambda (r) (assq-ref r 'spec)) rows))
                       (prefix (need-prefix agent-id))
                       (asked (filter-map

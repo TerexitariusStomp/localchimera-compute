@@ -72,7 +72,8 @@
                                (fold-by . ,(lambda (actions key-of value-of combine) '()))
                                ;; cache-solve!'s claim-commitment reconciliation (service.scm):
                                ;; no claims stand here, so nothing is open
-                               (open-fulfillments . ,(lambda () '())))))
+                               (open-fulfillments . ,(lambda () '()))
+                               (fulfillments-for . ,(lambda _ '())))))
            (as  (spawn ^mock `((all-agents . ,(lambda () agents)) (set-on-agent . ,(lambda (f) #t)))))
            (acct (spawn ^mock `((credit-cells . ,(lambda () '())) (add-change-listener . ,(lambda (f) #t)))))
            (sts (spawn ^mock `((all-locations . ,(lambda () spatials)))))

@@ -14,7 +14,7 @@
   #:use-module ((goblins) #:select ($))
   #:use-module ((playnet doors plan-wire) #:select (plan-results->dial-plan solve-part))
   #:use-module ((playnet doors service provenance-trace) #:select (make-pull-of))
-  #:use-module ((playnet observation account) #:select (claim-cid-terms claim-commitment fulfillment-remaining))
+  #:use-module ((playnet observation account) #:select (claim-fulfillments claim-commitment fulfillment-remaining))
   #:use-module ((playnet observation states) #:select (fulfillment-state-commitment-id))
   #:use-module ((playnet scope live) #:select (held-commitment plan->rows plan-map-flows))
   #:use-module ((playnet solve engine) #:select (key-spec spec-base))
@@ -314,9 +314,8 @@
              (keep  (map commitment-id fresh)))
         (for-each (lambda (fs)
                     (let ((cid (fulfillment-state-commitment-id fs)))
-                      (when (and (claim-cid-terms cid) (not (member cid keep)))
-                        ($ obs 'retire-commitment cid))))
-                  ($ obs 'open-fulfillments))
+                      (unless (member cid keep) ($ obs 'retire-commitment cid))))
+                  (claim-fulfillments obs))
         ;; every row the plan states is registered: a row it restates moves the
         ;; commitment's target, and what was confirmed is read off the events, so a
         ;; restated or withdrawn-and-restated row keeps its confirmations

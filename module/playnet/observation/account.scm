@@ -55,7 +55,7 @@
   #:re-export (claimable-specs declare-claimable! spec-claimable? spec-rail publish-rails! declare-rail!
                publish-social-portion! declare-social-portion! spec-social-portion)
   #:export (*individually-claimable* resource-individually-claimable?
-            claim-cid claim-commitment claim-cid-terms open-claim-for fulfillment-remaining
+            claim-cid claim-commitment claim-terms claim-fulfillments open-claim-for fulfillment-remaining
             event-classified-individually-claimable?
             resource-in-pool? compute-pool-value account-holders
             with-elastic ^account-store sum-across-scopes
@@ -103,34 +103,38 @@
 (define (claim-cid spec claimant place when-iso)
   (keyed-id "claim" spec claimant place when-iso))
 
-(define (claim-cid-terms cid)
-  "(spec claimant place when) off a claim commitment id, or #f for any other id."
-  (let ((parts (string-split cid #\|)))
-    (and (= 5 (length parts)) (equal? "claim" (car parts))
-         (let ((p (list-ref parts 3)) (w (list-ref parts 4)))
-           (list (cadr parts) (caddr parts)
-                 (and (not (string-null? p)) p) (and (not (string-null? w)) w))))))
+(define %claim-tag "claim")   ; the kind a claim commitment carries: what the observer's terms answer to
 
 (define* (claim-commitment spec claimant qty scope-id #:key (place #f) (when-iso #f) (unit %placeholder-unit))
   "The plan's claim row as a `transfer` commitment: SPEC to CLAIMANT, QTY at PLACE, WHEN-ISO."
   (make-commitment
    #:id (claim-cid spec claimant place when-iso) #:action 'transfer #:resource-conforms-to spec
    #:resource-quantity (make-measure qty unit) #:receiver claimant #:has-point-in-time when-iso
+   #:resource-classified-as (list %claim-tag)
    #:at-location place #:in-scope-of (list scope-id)))
 
 (define (fulfillment-remaining fs)
   (- (measure-has-numerical-value (fulfillment-state-total-committed fs))
      (measure-has-numerical-value (fulfillment-state-total-fulfilled fs))))
 
+(define* (claim-fulfillments observer-ref #:key (spec #f) (receiver #f) (place #f) (open-only? #t))
+  "The fulfillment states of the plan's claim commitments, as the observer holds them
+   under the claim kind: of SPEC, for RECEIVER, at PLACE (a key left off matches any),
+   the open ones unless OPEN-ONLY? is #f."
+  ($ observer-ref 'fulfillments-for #:spec spec #:receiver receiver #:place place
+     #:tag %claim-tag #:open-only? open-only?))
+
 (define* (open-claim-for observer-ref spec claimant #:key (place #f) (at-least 0))
   "The plan's open claim commitment of SPEC for CLAIMANT with AT-LEAST remaining —
    at PLACE when one is named — as its fulfillment state, or #f."
-  (find (lambda (fs)
-          (let ((t (claim-cid-terms (fulfillment-state-commitment-id fs))))
-            (and t (equal? (car t) spec) (equal? (cadr t) claimant)
-                 (or (not place) (equal? (caddr t) place))
-                 (target-reached? (fulfillment-remaining fs) at-least))))
-        ($ observer-ref 'open-fulfillments)))
+  (find (lambda (fs) (target-reached? (fulfillment-remaining fs) at-least))
+        (claim-fulfillments observer-ref #:spec spec #:receiver claimant #:place place)))
+
+(define (claim-terms observer-ref cid)
+  "The terms a claim commitment CID stands on, as the observer holds them, or #f for
+   a commitment that is no claim (or none at all)."
+  (let ((t ($ observer-ref 'commitment-terms cid)))
+    (and t (member %claim-tag (assq-ref t 'tags)) t)))
 
 
 ;; =========================================================================
@@ -383,12 +387,12 @@
                  (fulfills (and (pair? opts) (>= (length opts) 4) (list-ref opts 3)))
                  (fs (and fulfills ($ observer-ref 'get-fulfillment fulfills)))
                  ;; the commitment is the PLAN's claim row: a held, count or work
-                 ;; commitment of ample quantity admits nothing (claim-cid-terms reads
-                 ;; a claim id alone). With plan-claims! the only minter of claim ids,
+                 ;; commitment of ample quantity admits nothing (a claim is the commitment
+                 ;; the observer holds under the claim kind). With plan-claims! the only minter of claims,
                  ;; and a claim recipe built only for a good on the individual rail
                  ;; (live.scm claim-recipes), "rights reach a person only through the
                  ;; plan's claim" holds by construction here.
-                 (terms (or (and fs (claim-cid-terms fulfills))
+                 (terms (or (and fs (claim-terms observer-ref fulfills))
                             (error (if fs
                                        "a claim fulfils the plan's claim commitment alone"
                                        "the plan holds no such claim; state the want and the plan answers")
@@ -397,9 +401,9 @@
                  ;; transfer's receiver, the lot it lands in and the account debited
                  ;; are all the one name the claim id carries. CLAIMANT-AID is the
                  ;; caller's confirmation of who it speaks for.
-                 (claimant (cadr terms))
+                 (claimant (assq-ref terms 'receiver))
                  (eff-balance (effective-balance (credit-cells scope-roots) claimant (current-social-free-time) level)))
-            (unless (equal? (car terms) (economic-resource-conforms-to resource))
+            (unless (equal? (assq-ref terms 'spec) (economic-resource-conforms-to resource))
               (error "the plan's claim names another good"
                      fulfills (economic-resource-conforms-to resource)))
             (unless (equal? claimant claimant-aid)

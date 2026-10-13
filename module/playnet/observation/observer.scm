@@ -950,6 +950,74 @@
               (hashmap-fold (lambda (cid terms acc) (link-satisfiers acc cid '() (caddr terms)))
                             (os-satisfiers st) (os-terms st))))
 
+;; ── THE TERMS A COMMITMENT IS REGISTERED UNDER ──────────────────────────────
+;; (action spec iids receiver place when tags): what counts toward it (action,
+;; spec), the intents it satisfies, and who it is for, where, when and of what
+;; kind. A caller asks the observer for a commitment's terms; none reads them
+;; back out of its id. The tuple grew a tail after the first three, which every
+;; reader of those three still reads; a tuple registered before the tail stands
+;; as three until `backfill-terms` lays it.
+(define (terms-tuple commitment iids)
+  (list (commitment-action commitment)
+        (commitment-resource-conforms-to commitment)
+        iids
+        (commitment-receiver commitment)
+        (commitment-at-location commitment)
+        (commitment-has-point-in-time commitment)
+        (or (commitment-resource-classified-as commitment) '())))
+
+(define (terms-at terms i) (and (> (length terms) i) (list-ref terms i)))
+
+(define (terms->alist terms)
+  `((action . ,(car terms)) (spec . ,(cadr terms)) (iids . ,(caddr terms))
+    (receiver . ,(terms-at terms 3)) (place . ,(terms-at terms 4)) (when . ,(terms-at terms 5))
+    (tags . ,(or (terms-at terms 6) '()))))
+
+(define (legacy-terms-tail cid)
+  "The tail a commitment registered before terms carried one would have had. The
+   one reading of a claim's id left: a claim commitment's id spells the claim
+   (claim|spec|claimant|place|when), and a snapshot taken before the tail knew
+   claims by nothing else. It runs once, as a snapshot loads."
+  (let ((parts (string-split cid #\|)))
+    (if (and (= 5 (length parts)) (equal? "claim" (car parts)))
+        (let ((p (list-ref parts 3)) (w (list-ref parts 4)))
+          (list (caddr parts) (and (not (string-null? p)) p) (and (not (string-null? w)) w) '("claim")))
+        (list #f #f #f '()))))
+
+(define (backfill-terms st)
+  "ST with every three-element terms tuple given its tail."
+  (os-rebuild st #:terms
+              (hashmap-fold (lambda (cid terms acc)
+                              (if (> (length terms) 3) acc
+                                  (hashmap-set acc cid (append terms (legacy-terms-tail cid)))))
+                            (os-terms st) (os-terms st))))
+
+(define (commitment-terms-of st cid)
+  "CID's terms as an alist while the books hold a target for it (a retired commitment
+   keeps its terms but is no longer anyone's to ask about), else #f."
+  (let ((terms (hashmap-ref (os-terms st) cid #f)))
+    (and terms (hashmap-ref (os-commitment-targets st) cid #f) (terms->alist terms))))
+
+(define* (fulfillments-for st #:key (spec #f) (receiver #f) (place #f) (tag #f) (open-only? #t))
+  "The <fulfillment-state> of every registered commitment whose terms match: SPEC
+   its spec, RECEIVER who it is for, PLACE where, TAG a kind it carries; a key left
+   off matches any. Only the open ones unless OPEN-ONLY? is #f. State is derived for
+   the matches alone."
+  (hashmap-fold
+   (lambda (cid _ acc)
+     (let ((terms (hashmap-ref (os-terms st) cid #f)))
+       (if (and terms
+                (or (not spec) (equal? spec (cadr terms)))
+                (or (not receiver) (equal? receiver (terms-at terms 3)))
+                (or (not place) (equal? place (terms-at terms 4)))
+                (or (not tag) (member tag (or (terms-at terms 6) '()))))
+           (let ((fs (fulfillment-of st cid)))
+             (if (and fs (or (not open-only?) (not (fulfillment-state-finished fs))))
+                 (cons fs acc)
+                 acc))
+           acc)))
+   '() (os-commitment-targets st)))
+
 (define (states-of st table state-of)
   "The derived state of every key of TABLE, as a list."
   (hashmap-fold (lambda (k _ acc) (cons (state-of st k) acc)) '() table))
@@ -1962,8 +2030,9 @@
                              (apply os-rebuild st (list (symbol->keyword (car kv)) (cdr kv)))))
                        (empty-observer-state) stated)))
     (rebuild-satisfiers
-     (fold (lambda (e s) (phase-index-event (phase-append-event s e) e))
-           told (reverse events)))))
+     (backfill-terms
+      (fold (lambda (e s) (phase-index-event (phase-append-event s e) e))
+            told (reverse events))))))
 
 ;; ── Snapshots in the earlier, positional form ────────────────────────────────
 ;; Before a snapshot named its parts it was a list by position: events, resources, a
@@ -2202,10 +2271,7 @@
        (bcom (^observer bcom
                (os-rebuild st
                  #:commitment-targets (hashmap-set (os-commitment-targets st) cid qty)
-                 #:terms (hashmap-set (os-terms st) cid
-                                      (list (commitment-action commitment)
-                                            (commitment-resource-conforms-to commitment)
-                                            iids))
+                 #:terms (hashmap-set (os-terms st) cid (terms-tuple commitment iids))
                  #:satisfiers (link-satisfiers (os-satisfiers st) cid was iids))
                callbacks))))
 
@@ -2351,6 +2417,8 @@
        (os-resources st)))
 
     ((get-fulfillment cid)  (fulfillment-of st cid))
+    ((commitment-terms cid) (commitment-terms-of st cid))           ; what it was registered as: action spec receiver place when tags
+    ((fulfillments-for . kw) (apply fulfillments-for st kw))          ; the states of the commitments whose terms match (#:spec #:receiver #:place #:tag #:open-only?)
     ((all-fulfillments)     (fulfillments-of st))
     ((open-fulfillments)    (filter (lambda (fs) (not (fulfillment-state-finished fs)))   ; every commitment still open
                                     (fulfillments-of st)))
