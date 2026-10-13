@@ -138,8 +138,10 @@
              (success `((commitment . ,cid) (arrival . ,dcid)))))))))
 
       ((journey-end scope-id agent-id commitment-id from-place to-place mode)
-       (scoped scope-id
+       (with-person scope-id agent-id
          (lambda (root)
+           (catch-as-failure
+            (lambda ()
 (let* ((obs ($ root 'observer))
                       (rs  ($ root 'recipe-store))
                       (mode (if (symbol? mode) (symbol->string mode) mode))
@@ -157,7 +159,7 @@
                        #:from to-place #:to to-place #:fulfills dcid
                        #:note (string-append "journey arrive by " mode)
                        #:in-scope-of scope-id)))
-                 `((commitment . ,commitment-id) (arrival . ,dcid))))))
+                 (success `((commitment . ,commitment-id) (arrival . ,dcid)))))))))
 
       ;; Materialize: run the willing-only plan AND persist its assignments as
       ;; stored suggested intents (mi|worker|skill|cell + suggested-provider meta),

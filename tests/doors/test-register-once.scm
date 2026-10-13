@@ -20,6 +20,7 @@
              ((playnet vf formulas flows) #:select (make-work-event make-work-commitment))
              ((playnet utils units) #:select (%effort-unit))
              (playnet doors service)
+             ((playnet knowledge recipes transport) #:select (seed-baseline-modes!))
              (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1) (srfi srfi-11))
 
 (define (armed? obs cid) (and ($ obs 'get-fulfillment cid) #t))
@@ -74,5 +75,19 @@
         (check "the purchase is recorded" (ok? r) #t)
         (check "it fulfils the planned commitment" (assq-ref (cdr r) 'fulfills) "c-flour")
         (check "and names no intent beside it" (assq-ref (cdr r) 'satisfies) #f)))))
+
+(display "\n── GATED: arriving is the person's own door, like departing ──\n")
+(let-values (((vat scope) (fresh-scope)))
+  (with-vat vat
+    (let ((svc (spawn ^planner-service (hashmap-set (hashmap) "org:t" scope))))
+      (seed-baseline-modes! ($ scope 'recipe-store))
+      (let* ((began ($ svc 'journey-begin "org:t" "Dana" "A" "B" "pedestrian"))
+             (cid (assq-ref (cdr began) 'commitment)))
+        ($ svc 'set-personhood-checker! (lambda (aid) #f))
+        (check "without personhood the arrival is refused"
+               ($ svc 'journey-end "org:t" "Dana" cid "A" "B" "pedestrian") '(error . "needs-personhood"))
+        ($ svc 'set-personhood-checker! (lambda (aid) #t))
+        (check "with it the arrival lands"
+               (car ($ svc 'journey-end "org:t" "Dana" cid "A" "B" "pedestrian")) 'ok)))))
 
 (test-summary!)

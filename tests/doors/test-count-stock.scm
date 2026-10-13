@@ -382,6 +382,7 @@
 (check "a technique nobody carries" (count-refusal oats 8.0 "kg" "guess" #f #:agent "ada" #:standing? #t) "not a counting technique")
 (check-pred "evidence that is no hash" (string? (count-refusal oats 8.0 "kg" "photo" "nope" #:agent "ada" #:standing? #t)))
 (check "a stock that is not the counter's to count" (count-refusal oats 8.0 "kg" "stated" #f #:agent "bob") "not yours to count")
+(check "a count whose commitment has ended" (refusal #:finished? #t) "that count has ended")
 (check "an instant before the books held the stock" (refusal #:predates? #t) "the books did not hold this stock yet")
 (check "another unit than the stock's" (count-refusal oats 8.0 %count-unit "stated" #f #:agent "ada" #:standing? #t) "count in the stock's unit: kg")
 (check "the technique alone is the process of a count no plan asked for" (count-run #f "photo") '(#f . "count:photo"))

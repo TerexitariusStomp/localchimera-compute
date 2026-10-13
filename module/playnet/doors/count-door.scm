@@ -193,18 +193,20 @@
               (string-append %count-technique-prefix tech)))))
 
 (define* (count-refusal r counted unit tech evidence
-                        #:key agent fulfills cmt standing? outside? predates?)
+                        #:key agent fulfills cmt standing? outside? predates? finished?)
   "Why the door refuses this count, in its own words, or #f when it lands. R is
    the stock (#f when the books hold none); CMT the commitment FULFILLS names
    (#f when the plan holds none); STANDING? says the counter may count the
    stock unasked, OUTSIDE? that CMT is a count of another stock, PREDATES? that
-   the count is of an instant before the books held the stock."
+   the count is of an instant before the books held the stock, FINISHED? that
+   CMT has ended (released, expired or done) and the count is not one already landed."
   (let* ((m0 (and r (economic-resource-onhand-quantity r)))
          (u0 (and m0 (measure-has-unit m0))))
     (cond
      ((not r) "no such stock")
      ((not (and (number? counted) (>= counted 0))) "a count is zero or more")
      ((and fulfills (not cmt)) "commitment not found")
+     (finished? "that count has ended")
      ((and cmt (commitment-provider cmt) (not (equal? (commitment-provider cmt) agent)))
       "that count is another's")
      ((not (member tech %count-techniques)) "not a counting technique")
@@ -355,6 +357,10 @@
                               #:agent agent #:fulfills fulfills #:cmt cmt
                               #:standing? (and r (count-standing? r scope-id agent))
                               #:outside? (and r cmt (count-outside-target? obs cmt resource-id))
+                              ;; a commitment that has ended takes no new count; a count already
+                              ;; landed (a device flushing its queue) is answered, not refused
+                              #:finished? (and cmt (commitment-finished cmt)
+                                               (not (and then ($ obs 'get-event (string-append eid "-record")))))
                               #:predates? (and r when-iso
                                                (count-predates-stock? obs resource-id (civil->instant when-iso))))))
     (cond
