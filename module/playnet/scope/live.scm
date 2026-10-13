@@ -63,7 +63,7 @@
   #:use-module ((playnet knowledge catalogues diets)    ; what a person will not eat: the eat recipe's one predicate
                 #:select (diet-tags eats?))
   #:declarative? #f                           ; we (primitive-)load the engine at module init
-  #:export (solve-with-readers scope-world scope-program? scope-program-resources scope-program-agents scope-program-spatials scope-program-procs scope-program-flows scope-program-world plan-scope practice-view-of plan-scope->alist plan-scope->plan scope-bills scope-consumption scope-food-specs agent->subsistence-ctx profile-tag? scope-composition recipe-derived-contains persist-materialized! materialize-willing! gather-recipes scope-labour? scope-resource-specs
+  #:export (solve-with-readers scope-world scope-program? scope-program-resources scope-program-agents scope-program-spatials scope-program-procs scope-program-flows scope-program-world plan-scope practice-view-of plan-scope->alist plan-scope->plan scope-bills publish-plan-free-time! scope-consumption scope-food-specs agent->subsistence-ctx profile-tag? scope-composition recipe-derived-contains persist-materialized! materialize-willing! gather-recipes scope-labour? scope-resource-specs
             work-intent clear-intents-by-prefix! lot-of? scope-persons spec-unit planned-row plan->rows plan-map-flows held-commitment met-quantity arriving-lots
             find-recipe-process-for-spec mode-process-for-manner trip-manner-of scope-manners
              ;; the cross-vat federation bridge (engine + solve/federation-solve.scm), re-exported
@@ -1840,14 +1840,20 @@
                            #:class-of (lambda (need) (or (let ((t (work-intent-id-terms need))) (and t (assq-ref t 'skill))) need)))))
       (lambda (worker need peers) 0.0)))
 
-(define* (plan-results->alist ints coms mat fill ntot report #:key candidates? rota? (scope-root #f))
-  ;; Publish the plan's social free time f so drawable credit + consumer voice
-  ;; fold in the CITIZENSHIP dividend by default (account.scm) — every real
-  ;; solve enables citizenship automatically; before any solve, f=0.
-  (let ((social (assq-ref report 'social)))
+(define (publish-plan-free-time! plan)
+  "Publish PLAN's social free time f, the one drawable credit and consumer voice
+   read by default (account.scm), so the citizenship dividend flows wherever a
+   plan stands; before any plan stands f=0. Called where a plan LANDS — the
+   service's root scopes, the live planner's standing plan — and nowhere a plan
+   is only asked for: a what-if, the three bills and a dilemma's horns answer
+   and leave f as the standing plan set it. A plan with no social block (a
+   federated row) says nothing of f."
+  (let ((social (assq-ref plan 'social)))
     (and (pair? social)
          (let ((f (assq-ref social 'free-time)))
-           (and (number? f) (set-social-free-time! f)))))
+           (and (number? f) (set-social-free-time! f))))))
+
+(define* (plan-results->alist ints coms mat fill ntot report #:key candidates? rota? (scope-root #f))
   ;; CONFORMANCE RECERT — read the load the plan routes through each conformance edge
   ;; off the solved commitments, and derive its recert interval: the
   ;; edge-reliance → reliance->valid-until chain (vf/formulas/cadence.scm), with the
@@ -2720,7 +2726,10 @@
     #:reproduce? (let ((p (assq 'reproduce? opts))) (if p (cdr p) #t))))
 (define* (lp-alist ints coms mat fill ntot report #:optional (scope-root #f))   ; internal metabolism path — no offer field
   ;; the actor's standing plan is held and handed out in rows: an actor's state and its replies are edges
-  (plan->rows (plan-results->alist ints coms mat fill ntot report #:scope-root scope-root)))
+  ;; and it is the standing plan, so it publishes f
+  (let ((plan (plan-results->alist ints coms mat fill ntot report #:scope-root scope-root)))
+    (publish-plan-free-time! plan)
+    (plan->rows plan)))
 
 (define-actor (^live-planner bcom scope-root opts plan x baseline)
   ;; plan: standing alist ; x: standing activity vector (warm start) ; baseline: snapshot

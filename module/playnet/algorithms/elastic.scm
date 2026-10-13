@@ -23,11 +23,14 @@
             consumer-voices-of current-social-free-time set-social-free-time!))
 
 
-;; The federation's current social free time f = 1 − L/(N·T), published by the
-;; live plan solve after each run (set-social-free-time!). Drawable credit and
+;; The federation's current social free time f = 1 − Λ/(N·T), Λ the hours the
+;; standing plan commits, published when a plan lands for a root scope and by
+;; the live planner's standing plan (scope/live.scm publish-plan-free-time!);
+;; a question — a what-if, the bills — publishes nothing. Drawable credit and
 ;; consumer voice read it BY DEFAULT, so the citizenship dividend flows
-;; automatically wherever a plan has run. 0 until the first solve (or in tests),
-;; which reduces exactly to contribution by ability. One cell behind a setter
+;; automatically wherever a plan has landed. 0 until the first plan (or in
+;; tests), which reduces exactly to contribution by ability. The cell is one
+;; for the process: scopes declared under nothing share it. One cell behind a setter
 ;; (not a parameter) so every vat/thread sees the latest published value, and
 ;; the module stays declarative: no importer can inline an initial value out
 ;; of a cell it reads through current-social-free-time.
@@ -146,8 +149,12 @@
   "Drawable credit: total claim capacity less what AID has claimed so far."
   (max 0 (- (total-claim-capacity cells aid f level) (cell-ref cells (cons 'claimed aid)))))
 (define (social-free-time-of cells per-citizen-hours)
-  "Social free time f = 1 − L/(N·T): L the validated labour, N the citizens,
-   T PER-CITIZEN-HOURS; 0 when N·T ≤ 0 or labour fills it."
+  "The REALIZED reading of social free time: 1 − L/(N·T), L the validated
+   labour the cells hold, N the citizens, T PER-CITIZEN-HOURS; 0 when N·T ≤ 0
+   or labour fills it. This is not the f that governs: credit and voice read the
+   plan's own f (`current-social-free-time`, published by each solve from the
+   hours the plan commits), and this reading stands only where a caller passes
+   a horizon (`social-free-time-for`)."
   (let* ((L (svc-at cells #f)) (n (length (%citizens cells))) (nt (* n per-citizen-hours)))
     (if (<= nt 0) 0 (max 0 (min 1 (- 1 (/ L nt)))))))
 (define (%holders cells)             ; every account holder, person or not

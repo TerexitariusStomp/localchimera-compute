@@ -1102,6 +1102,13 @@ scope walk wherever a solve wants the scope's declared needs."
           (let ((root (roster-ref sid))
                 (cached (last-solve-ref cache sid)))
             (when (and root cached)
+              ;; the plan that lands for a scope declared under nothing is the
+              ;; plan that stands: its f is the one credit and voice read. A
+              ;; child's plan covers its own roster alone, and a question
+              ;; (a what-if) never lands, so neither moves it.
+              (unless (hash-ref %scope-parent sid #f)
+                (solve-effect! sid 'free-time
+                  (lambda () (publish-plan-free-time! (cdr cached)))))
               (solve-effect! sid 'open-shifts
                 (lambda () (persist-open-shifts! root cached)))
               (solve-effect! sid 'present-offers
