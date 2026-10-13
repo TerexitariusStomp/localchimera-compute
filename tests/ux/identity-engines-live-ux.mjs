@@ -37,7 +37,7 @@ function probes(page) {
   const call = (name) => page.evaluate(`async () => {
     const { HANDLERS } = await import('/app/core.js');
     return HANDLERS[${q(name)}] ? String(await HANDLERS[${q(name)}]()) : '(no handler)'; }`);
-  const tick = () => page.evaluate(`() => { document.querySelectorAll('#idform input[type="checkbox"]').forEach(b => { if (!b.checked) b.click(); }); return true; }`);
+  const tick = () => page.evaluate(`() => { document.querySelectorAll('.idc input[type="checkbox"]:not([name="vote"])').forEach(b => { if (!b.checked) b.click(); }); return true; }`);
   const tap = (sel, text) => page.evaluate(`() => {
     const el = [...document.querySelectorAll(${q(sel)})].find(e => ${text ? `e.textContent.includes(${q(text)})` : 'true'});
     if (el) el.click(); return !!el; }`);
@@ -104,9 +104,9 @@ async function reloadLeg(name, page, p, c) {
   } else {
     h.rec(`${name}: a reload asks for the passcode`, (await p.waitDot('idle', 60000)) === 'idle', await p.dot());
     await page.evaluate(`async () => { (await import('/app/tabs/social/id.js')).openIdentityDoor(); return true; }`); await sleep(600);
-    await page.evaluate(`() => { document.querySelector('#idform input[name="password"]').value = ${q(bran)}; return true; }`);
+    await page.evaluate(`() => { document.querySelector('.idc input[name="password"]').value = ${q(bran)}; return true; }`);
     await p.tick();
-    await page.evaluate(`() => { document.querySelector('#idform form').requestSubmit(); return true; }`);
+    await page.evaluate(`() => { document.querySelector('.idc form').requestSubmit(); return true; }`);
     h.rec(`${name}: …and the passcode seats it`, (await p.waitDot('live', 90000)) === 'live', await p.dot());
   }
 }
@@ -114,13 +114,13 @@ async function reloadLeg(name, page, p, c) {
 await leg('firefox', () => launchFirefox(), async (page, p, c) => {
   await page.evaluate(`async () => { (await import('/app/tabs/social/id.js')).openIdentityDoor(); return true; }`); await sleep(600);
   await p.tick();
-  await p.tap('#idform button.go', 'create your identity');
-  await page.waitForSelector('#idform input[name="username"]', { timeout: 120000 });
-  aid = await page.evaluate(`() => document.querySelector('#idform input[name="username"]').value`);
-  bran = await page.evaluate(`() => document.querySelector('#idform input[name="password"]').value`);
+  await p.tap('.idc .ob-next', 'create my identity');
+  await page.waitForSelector('.idc input[name="username"]', { timeout: 120000 });
+  aid = await page.evaluate(`() => document.querySelector('.idc input[name="username"]').value`);
+  bran = await page.evaluate(`() => document.querySelector('.idc input[name="password"]').value`);
   h.rec('firefox: identity created', /^E[A-Za-z0-9_-]{43}$/.test(aid) && bran.length >= 21, aid);
   await p.tick();
-  await page.evaluate(`() => { document.querySelector('#idform form').requestSubmit(); return true; }`);
+  await page.evaluate(`() => { document.querySelector('.idc form').requestSubmit(); return true; }`);
   h.rec('firefox: seated', (await p.waitDot('live', 90000)) === 'live', await p.dot());
   await reloadLeg('firefox', page, p, c);
 });
@@ -128,13 +128,13 @@ await leg('firefox', () => launchFirefox(), async (page, p, c) => {
 await leg('webkit', () => launchWebKit(undefined, { direct: true }), async (page, p, c) => {
   if (!aid) { h.rec('webkit: an identity to sign in as', false, 'the firefox leg made none'); return; }
   await page.evaluate(`async () => { (await import('/app/tabs/social/id.js')).openIdentityDoor(); return true; }`); await sleep(600);
-  await p.tap('#idform .gen2', 'I already have an identity'); await sleep(500);
+  await p.tap('.idc .ob-chip', 'I already have an identity'); await sleep(500);
   await page.evaluate(`() => {
-    document.querySelector('#idform form input[name="username"]').value = ${q(aid)};
-    document.querySelector('#idform form input[name="password"]').value = ${q(bran)};
+    document.querySelector('.idc form input[name="username"]').value = ${q(aid)};
+    document.querySelector('.idc form input[name="password"]').value = ${q(bran)};
     return true; }`);
   await p.tick();
-  await page.evaluate(`() => { document.querySelector('#idform form').requestSubmit(); return true; }`);
+  await page.evaluate(`() => { document.querySelector('.idc form').requestSubmit(); return true; }`);
   h.rec('webkit: AID + passcode from another engine seats the identity', (await p.waitDot('live', 90000)) === 'live', await p.dot());
   h.rec('webkit: …as the same AID', ((await p.ls('pn.id.hint')) || '').startsWith(aid + '|'));
   await reloadLeg('webkit', page, p, c);

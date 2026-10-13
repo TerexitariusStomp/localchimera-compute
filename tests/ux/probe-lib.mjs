@@ -23,32 +23,66 @@ export async function connectDial(page, base) {
   return chip;
 }
 
-/** Create an identity through the consent gate. Records one gate on H
- *  (`"<who>: identity created"` when WHO is given). Returns the minted AID
- *  ("" on failure, with the form text + console tail logged for diagnosis). */
-export async function createIdentity(page, h, who = '') {
+/** The identity card, open: the person button's identity page (app/identity-view.ts). */
+export async function openIdentityCard(page) {
   await page.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor());
-  await sleep(600);
-  // the consent gate: creation stays inert until the terms box is ticked
-  await page.evaluate(() => {
-    const box = document.querySelector('#idform input[type="checkbox"]');
-    if (box && !box.checked) box.click();
-  });
+  await page.waitForSelector('.sheet-view .acct-card .idc', { timeout: 15000 });
   await sleep(300);
-  await page.click('#idform button.go:has-text("create your identity")');
-  await page.waitForSelector('#idform input[name="username"]', { timeout: 120000 })
+}
+
+/** Tick boxes on the card by name (consent, age, vote, saved) — each as a person's tap would. */
+export async function tickCard(page, ...names) {
+  await page.evaluate((ns) => {
+    for (const n of ns) {
+      const box = document.querySelector(`.idc input[name="${n}"]`);
+      if (box && !box.checked) box.click();
+    }
+  }, names);
+  await sleep(200);
+}
+
+/** Create an identity through the card's gates. Records one gate on H
+ *  (`"<who>: identity created"` when WHO is given). Returns the minted AID
+ *  ("" on failure, with the card's text + console tail logged for diagnosis).
+ *  The passcode is put away (saved, the sheet closed) unless KEEP: the
+ *  reveal face stays up so the caller can read it (`revealedPasscode`) and
+ *  call `savePasscode` itself. */
+export async function createIdentity(page, h, who = '', keep = false) {
+  await openIdentityCard(page);
+  await tickCard(page, 'consent', 'age');
+  await page.click('.idc .ob-next:has-text("create my identity")');
+  await page.waitForSelector('.idc[data-view="reveal"] input[name="username"]', { timeout: 120000 })
     .catch(() => {});
   const aid = await page.evaluate(() =>
-    document.querySelector('#idform input[name="username"]')?.value ?? '');
+    document.querySelector('.idc[data-view="reveal"] input[name="username"]')?.value ?? '');
   h.rec(`${who ? who + ': ' : ''}identity created`,
         /^E[A-Za-z0-9_-]{43}$/.test(aid), aid || '(none)');
   if (!aid) {
-    h.info('idform text: ' + JSON.stringify(
+    h.info('identity card text: ' + JSON.stringify(
       (await page.evaluate(() =>
-        document.querySelector('#idform')?.textContent ?? '(no form)')).slice(0, 300)));
+        document.querySelector('.idc')?.textContent ?? '(no card)')).slice(0, 300)));
     h.info('console tail: ' + JSON.stringify(h.logs.slice(-15)));
   }
+  if (aid && !keep) await putAway(page);
   return aid;
+}
+
+/** Save the passcode on the reveal face and close the sheet. */
+export async function putAway(page) {
+  await savePasscode(page);
+  await page.evaluate(async () => (await import('/app/account.js')).closeAccount());
+  await sleep(300);
+}
+
+/** The passcode the reveal face is showing ("" when it is not). */
+export const revealedPasscode = (page) => page.evaluate(() =>
+  document.querySelector('.idc[data-view="reveal"] input[name="password"]')?.value ?? '');
+
+/** Say the passcode is saved and press done: the card lands on its seated face. */
+export async function savePasscode(page) {
+  await tickCard(page, 'saved');
+  await page.click('.idc [type="submit"]:has-text("done")');
+  await sleep(500);
 }
 
 /** connectDial + createIdentity in one, for probes with no business in

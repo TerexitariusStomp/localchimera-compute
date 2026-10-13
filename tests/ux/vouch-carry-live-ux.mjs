@@ -17,6 +17,7 @@
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { harness, launch, newPage, sleep, summarize } from './ux-harness.mjs';
+import { openIdentityCard, tickCard } from './probe-lib.mjs';
 
 const BASE = process.argv[2] || 'http://localhost:8089';
 const BASE2 = process.env.UX_BASE2 || '';
@@ -47,10 +48,7 @@ async function waitDot(page, want, ms = 60000) {
   }
   return dot;
 }
-const tickConsent = (page) => page.evaluate(() => {
-  const box = document.querySelector('#idform input[type="checkbox"]');
-  if (box && !box.checked) box.click();
-});
+const tickConsent = (page) => tickCard(page, 'consent');
 async function until(fn, ms = 40000, step = 1000) {
   const dl = Date.now() + ms;
   while (Date.now() < dl) { const v = await fn(); if (v) return v; await sleep(step); }
@@ -65,15 +63,13 @@ async function citizen(label, base = BASE) {
   await page.waitForSelector('#idrow', { timeout: 60000 });
   const chip = await waitChip(page, /create your identity/i);
   h.rec(`${label}: dial connects`, /create your identity/i.test(chip), chip);
-  await page.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor());
-  await sleep(600);
-  await tickConsent(page);
-  await sleep(200);
-  await page.click('#idform button.go:has-text("create your identity")');
-  await page.waitForSelector('#idform input[name="username"]', { timeout: 120000 }).catch(() => {});
+  await openIdentityCard(page);
+  await tickCard(page, 'consent', 'age');
+  await page.click('.idc .ob-next:has-text("create my identity")');
+  await page.waitForSelector('.idc[data-view="reveal"] input[name="username"]', { timeout: 120000 }).catch(() => {});
   const creds = await page.evaluate(() => ({
-    aid: document.querySelector('#idform input[name="username"]')?.value ?? '',
-    bran: document.querySelector('#idform input[name="password"]')?.value ?? '',
+    aid: document.querySelector('.idc input[name="username"]')?.value ?? '',
+    bran: document.querySelector('.idc input[name="password"]')?.value ?? '',
   }));
   h.rec(`${label}: identity minted`, /^E[A-Za-z0-9_-]{43}$/.test(creds.aid), creds.aid || '(none)');
   await waitDot(page, 'live', 30000);
@@ -136,14 +132,15 @@ try {
   await b.waitForSelector('#idrow', { timeout: 60000 });
   await waitDot(b, 'idle', 120000);
   await b.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor()); await sleep(500);
-  await b.fill('#idform input[name="password"]', tia.bran);
+  await b.waitForSelector('.idc input[name="password"]', { timeout: 15000 });
+  await b.fill('.idc input[name="password"]', tia.bran);
   await tickConsent(b);
-  await b.click('#idform button[type="submit"]');
+  await b.click('.idc form [type="submit"]');
   const unreg = await waitDot(b, 'warn');
   h.rec('Tia unlocks at B, unregistered — offered to join', unreg === 'warn', `${unreg} · ${await titleOf(b)}`);
   await b.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor()); await sleep(500);
   await tickConsent(b);
-  await b.click('#idform button.go:has-text("join as")');
+  await b.click('.idc .ob-next:has-text("join as")');
   h.rec('Tia is seated at B', (await waitDot(b, 'live')) === 'live');
   // B learns A's root through the peer poll; the bundle stands the moment
   // it has — so the presentation is retried until it does

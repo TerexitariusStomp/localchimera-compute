@@ -383,7 +383,7 @@ function drawChip() {
             else
                 openIdentitySheet();
         });
-    locationDoor(authed, !authed && face.sheet ? () => { face.sheet(el, h); anchorSheet(el, chip); } : null);
+    locationDoor(authed, !authed && face.sheet ? openIdentityDoor : null);
     if (authed)
         locationResume();
     reattach();
@@ -2091,21 +2091,6 @@ async function renderSettings(el, h) {
     }
 }
 export { idHint };
-/**
- * Settings' own view of who this device is signed in as: the identifier,
- * whole and copiable, or the plain fact that nobody is.
- */
-export function identifierBlock(f) {
-    const draw = () => {
-        f.selectAll("*").remove();
-        const h = who();
-        if (h)
-            identifierRow(f, h.aid);
-        else
-            f.append("div").attr("class", "opt").text("nobody is signed in on this device.");
-    };
-    effect(draw);
-}
 // ── the start face's door ──────────────────────────────────────────────
 // The onboarding walk ends in an identity, and it makes one through the same
 // three acts the sheet does — generate the passcode, sign up, record the
@@ -2124,10 +2109,19 @@ export function openIdentitySheet() {
     face.sheet(el, who.peek());
     anchorSheet(el, chip);
 }
-export { openIdentitySheet as openIdentityDoor };
-/** The person button's door: app/account.ts registers the account sheet here. */
+/**
+ * The person button's two doors, registered by app/account.ts: the account
+ * sheet, and the account sheet on its identity page (make, open or read an
+ * identity). id.ts cannot import account.ts, so the sheet hands itself in.
+ */
 let accountDoor = null;
-export function onAccountDoor(fn) { accountDoor = fn; }
+let identityDoor = null;
+export function onAccountDoor(open, openIdentity) { accountDoor = open; identityDoor = openIdentity; }
+/** Open the identity card: sign in, unlock or create; once in, who you are. */
+export function openIdentityDoor() { if (identityDoor)
+    identityDoor();
+else
+    openIdentitySheet(); }
 /**
  * Create an identity in one act. The passcode is minted here and handed back
  * ONCE with the AID; the caller's screen shows it and gates on its being

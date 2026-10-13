@@ -17,6 +17,7 @@
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { harness, launch, newPage, sleep, summarize } from './ux-harness.mjs';
+import { openIdentityCard, tickCard, putAway } from './probe-lib.mjs';
 
 const BASE = process.argv[2] || 'http://localhost:8089';
 const DATA = process.env.PLAYNET_DATA_DIR || '.ux-e2e-data';
@@ -43,25 +44,15 @@ async function citizen(label) {
   await page.goto(`${BASE}/app.html`, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('#idrow', { timeout: 60000 });
   await until(async () => /create your identity/i.test(await chipOf(page)), 180000, 1000);
-  await page.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor());
-  await sleep(600);
-  await page.evaluate(() => {
-    const box = document.querySelector('#idform input[type="checkbox"]');
-    if (box && !box.checked) box.click();
-  });
-  await sleep(200);
-  await page.click('#idform button.go:has-text("create your identity")');
-  await page.waitForSelector('#idform input[name="username"]', { timeout: 120000 }).catch(() => {});
-  const aid = await page.evaluate(() => document.querySelector('#idform input[name="username"]')?.value ?? '');
+  await openIdentityCard(page);
+  await tickCard(page, 'consent', 'age');
+  await page.click('.idc .ob-next:has-text("create my identity")');
+  await page.waitForSelector('.idc[data-view="reveal"] input[name="username"]', { timeout: 120000 }).catch(() => {});
+  const aid = await page.evaluate(() => document.querySelector('.idc[data-view="reveal"] input[name="username"]')?.value ?? '');
   h.rec(`${label}: identity minted`, /^E[A-Za-z0-9_-]{43}$/.test(aid), aid || '(none)');
   await until(() => page.evaluate(() => document.querySelector('#idrow .dot')?.classList.contains('live')), 30000);
   // the held "save your passcode" sheet stands over the page: saved, then closed
-  await page.evaluate(() => {
-    const saved = [...document.querySelectorAll('#idform input[type="checkbox"]')].pop();
-    if (saved && !saved.checked) saved.click();
-    [...document.querySelectorAll('#idform button, #idform .vbtn')].find(b => /done|continue|close/i.test(b.textContent))?.click();
-  });
-  await sleep(400);
+  await putAway(page);
   return { page, aid };
 }
 
@@ -191,8 +182,7 @@ try {
         !!r && !!b && r.line === 'vouches for you' && b.line === 'you vouch for them');
 
   // ── how to reach you: your list, told to the commune by a confirmed code ──
-  await alice.page.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor()); await sleep(500);
-  await alice.page.evaluate(() => [...document.querySelectorAll('#idform .vbtn')].find(b => /your addresses/.test(b.textContent)).click());
+  await alice.page.evaluate(async () => (await import('/app/account.js')).openAccountPage('profile')); await sleep(500);
   await alice.page.waitForSelector('.reach .reach-add', { timeout: 15000 });
   const addPoint = async (kind, value) => {
     await alice.page.selectOption('.reach .reach-add select', kind);

@@ -242,7 +242,7 @@ function drawWitness(host) {
         const eligible = r.eligible !== false;
         const sign = mk("a", "cr-wsign" + (eligible ? "" : " off"), enroll ? "✍ witness" : "✍ co-sign");
         sign.title = !eligible
-            ? (enroll ? "only a recognised person may witness — tap your name (top-right) to request recognition"
+            ? (enroll ? "only a recognised person may witness — open keys and devices from the person button to request recognition"
                 : "only a recognised person may co-sign")
             : enroll
                 ? "sign that you have met this person — your signature becomes an edge on their personhood credential"

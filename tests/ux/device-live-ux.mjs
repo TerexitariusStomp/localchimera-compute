@@ -61,18 +61,17 @@ try {
     await page.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor());
     await sleep(600);
     await page.evaluate(() => {
-      const box = document.querySelector('#idform input[type="checkbox"]');
-      if (box && !box.checked) box.click();
+      for (const box of document.querySelectorAll('.idc input[type=\"checkbox\"]:not([name=\"vote\"])')) if (!box.checked) box.click();
     });
-    await page.click('#idform button.go:has-text("create your identity")');
-    await page.waitForSelector('#idform input[name="username"]', { timeout: 120000 }).catch(() => {});
+    await page.click('.idc .ob-next:has-text("create my identity")');
+    await page.waitForSelector('.idc input[name="username"]', { timeout: 120000 }).catch(() => {});
     const aid = await page.evaluate(() =>
-      document.querySelector('#idform input[name="username"]')?.value ?? '');
+      document.querySelector('.idc input[name="username"]')?.value ?? '');
     const bran = await page.evaluate(() =>
-      document.querySelector('#idform input[name="password"]')?.value ?? '');
+      document.querySelector('.idc input[name="password"]')?.value ?? '');
     const meshHashes = () => h.logs.filter(l => /mesh identity bound/.test(l)).map(l => l.slice(-32));
     h.rec('identity created', /^E[A-Za-z0-9_-]{43}$/.test(aid), aid || '(none)');
-    await page.evaluate(() => document.querySelector('#idform form')?.requestSubmit());
+    await page.evaluate(() => document.querySelector('.idc form')?.requestSubmit());
     h.rec('seated', (await waitDotIn(page, 'live', 90000)) === 'live');
     h.rec('the session is a ROOT session', (await tierIn(page)) === 'root');
 
@@ -144,12 +143,11 @@ try {
           JSON.stringify(listed).slice(0, 80));
 
     // ── the switch: stop staying signed in here ──
-    // the switch lives in settings ("keys and devices"); the identity sheet
-    // carries one button that opens it
-    await page.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor());
+    // the switch lives on the account sheet's "keys and devices" page
+    await page.evaluate(async () => (await import('/app/account.js')).openAccount());
     await sleep(600);
-    h.rec('the sheet offers the way to keys and devices', await present(page, '#idform .keysbtn'));
-    await page.click('#idform .keysbtn');
+    h.rec('the account sheet offers the way to keys and devices', await present(page, '.sheet-view .acct-card .acct-row:has-text("keys and devices")'));
+    await page.click('.sheet-view .acct-card .acct-row:has-text("keys and devices")');
     await sleep(800);
     h.rec('settings shows the switch', await present(page, '.devsec'));
     await page.click('.devsec .vbtn:has-text("stop staying signed in")');
@@ -177,12 +175,11 @@ try {
       hasUserVerification: true, isUserVerified: true, hasPrf: true } });
     await page.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor());
     await sleep(500);
-    await page.fill('#idform input[name="password"]', bran);
+    await page.fill('.idc input[name="password"]', bran);
     await page.evaluate(() => {
-      const box = document.querySelector('#idform input[type="checkbox"]');
-      if (box && !box.checked) box.click();
+      for (const box of document.querySelectorAll('.idc input[type=\"checkbox\"]:not([name=\"vote\"])')) if (!box.checked) box.click();
     });
-    await page.click('#idform button[type="submit"]');
+    await page.click('.idc form [type="submit"]');
     h.rec('the passcode seats a root session again', (await waitDotIn(page, 'live', 90000)) === 'live');
     await sleep(1500);
     h.rec('having declined once, nothing enrols on its own',
@@ -195,8 +192,8 @@ try {
     await sleep(3000);
     await page.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor());
     await sleep(500);
-    await page.fill('#idform input[name="password"]', bran);
-    await page.click('#idform button[type="submit"]');
+    await page.fill('.idc input[name="password"]', bran);
+    await page.click('.idc form [type="submit"]');
     h.rec('login with the passcode', (await waitDotIn(page, 'live', 90000)) === 'live');
     h.rec('a passcode LOGIN authorizes the device on its own',
           await waitFor(() => page.evaluate(() => !!localStorage.getItem('pn.device.wire'))));
@@ -204,9 +201,7 @@ try {
     await page.waitForSelector('#idrow', { timeout: 60000 });
     h.rec('…and the next refresh is signed in', (await waitDotIn(page, 'live', 60000)) === 'live');
     // back to the declined state for the passkey leg
-    await page.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor());
-    await sleep(600);
-    await page.click('#idform .keysbtn');
+    await page.evaluate(async () => (await import('/app/account.js')).openAccountPage('keys'));
     await sleep(800);
     await page.click('.devsec .vbtn:has-text("stop staying signed in")');
     await page.click('.devsec .vbtn.arm');
@@ -216,12 +211,10 @@ try {
     await sleep(3000);
     await page.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor());
     await sleep(500);
-    await page.fill('#idform input[name="password"]', bran);
-    await page.click('#idform button[type="submit"]');
+    await page.fill('.idc input[name="password"]', bran);
+    await page.click('.idc form [type="submit"]');
     await waitDotIn(page, 'live', 90000);
-    await page.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor());
-    await sleep(600);
-    await page.click('#idform .keysbtn');
+    await page.evaluate(async () => (await import('/app/account.js')).openAccountPage('keys'));
     await sleep(800);
     h.rec('settings offers the passkey tier', await present(page, '.devsec .vbtn:has-text("passkey")'));
     await page.click('.devsec .vbtn:has-text("passkey")');

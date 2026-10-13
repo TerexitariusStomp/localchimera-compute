@@ -11,7 +11,7 @@
 ///           guix shell -L deploy/guix -m deploy/manifests/browser-test-manifest.scm -- \
 ///             sh tests/ux/ux-run.sh tests/ux/flow-persist-probe.mjs
 import { harness, launch, newPage, sleep, summarize } from './ux-harness.mjs';
-import { connectDial, createIdentity, dialScope, offerHours, redial } from './probe-lib.mjs';
+import { connectDial, createIdentity, revealedPasscode, putAway, dialScope, offerHours, redial } from './probe-lib.mjs';
 
 const BASE = process.argv[2] || 'http://localhost:8089';
 const h = harness();
@@ -52,11 +52,11 @@ try {
   const s0 = await state();
   h.info('anonymous: ' + JSON.stringify({ evs: s0.evs, demo: s0.demo, scope: s0.scope }));
 
-  const aid = await createIdentity(page, h);
+  const aid = await createIdentity(page, h, '', true);
   // the reveal card shows the generated passcode exactly once — keep it for
   // the reload half
-  const passcode = await page.evaluate(() =>
-    document.querySelector('#idform input[name="password"]')?.value ?? '');
+  const passcode = await revealedPasscode(page);
+  await putAway(page);
   h.rec('passcode revealed (kept for re-unlock)', passcode.length >= 21,
         `${passcode.length} chars`);
   const k0 = await page.evaluate(() =>

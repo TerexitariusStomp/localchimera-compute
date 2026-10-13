@@ -15,6 +15,7 @@
 
 import { existsSync } from 'node:fs';
 import { harness, launch, newPage, present, sleep, summarize } from './ux-harness.mjs';
+import { openIdentityCard, tickCard } from './probe-lib.mjs';
 
 const BASE = process.argv[2] || 'http://localhost:8089';
 const BASE2 = process.env.UX_BASE2 || '';
@@ -45,10 +46,7 @@ const waitChip = async (page, re, ms = 90000) => {
   while (Date.now() < dl) { t = await chipOf(page); if (re.test(t)) return t; await sleep(500); }
   return t;
 };
-const tickConsent = (page) => page.evaluate(() => {
-  const box = document.querySelector('#idform input[type="checkbox"]');
-  if (box && !box.checked) box.click();
-});
+const tickConsent = (page) => tickCard(page, 'consent');
 
 try {
   h.rec('a second commune is configured (UX_BASE2)', !!BASE2, BASE2 || '(unset — run with SECOND_GATEWAY=1)');
@@ -61,12 +59,13 @@ try {
   h.rec('dial connects to commune A', /create your identity/i.test(chipA), chipA);
   await a.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor());
   await sleep(500);
-  await tickConsent(a);
-  await a.click('#idform button.go:has-text("create your identity")');
-  await a.waitForSelector('#idform input[name="username"]', { timeout: 120000 }).catch(() => {});
+  await a.waitForSelector('.idc', { timeout: 15000 });
+  await tickCard(a, 'consent', 'age');
+  await a.click('.idc .ob-next:has-text("create my identity")');
+  await a.waitForSelector('.idc[data-view="reveal"] input[name="username"]', { timeout: 120000 }).catch(() => {});
   const creds = await a.evaluate(() => ({
-    aid: document.querySelector('#idform input[name="username"]')?.value ?? '',
-    bran: document.querySelector('#idform input[name="password"]')?.value ?? '',
+    aid: document.querySelector('.idc input[name="username"]')?.value ?? '',
+    bran: document.querySelector('.idc input[name="password"]')?.value ?? '',
   }));
   h.rec('identity created at A', /^E[A-Za-z0-9_-]{43}$/.test(creds.aid), creds.aid || '(none)');
   const seatedA = await waitDot(a, 'live', 30000);
@@ -101,9 +100,10 @@ try {
     // afterwards — whether it has a seat — and it does not.
     await b.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor());
     await sleep(500);
-    await b.fill('#idform input[name="password"]', creds.bran);
+    await b.waitForSelector('.idc input[name="password"]', { timeout: 15000 });
+    await b.fill('.idc input[name="password"]', creds.bran);
     await tickConsent(b);
-    await b.click('#idform button[type="submit"]');
+    await b.click('.idc form [type="submit"]');
     const unreg = await waitDot(b, 'warn');
     h.rec('unlocked at B, reported unregistered — the chip offers to join',
           unreg === 'warn' && /join/i.test(await titleOf(b)), `${unreg} · ${await titleOf(b)}`);
@@ -112,9 +112,10 @@ try {
     await b.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor());
     await sleep(500);
     h.rec('the join sheet names the situation', await b.evaluate(() =>
-      /hasn.t met you/i.test(document.querySelector('#idform .lead')?.textContent || '')));
+      document.querySelector('.idc')?.dataset.view === 'join'
+      && /hasn.t met you/i.test(document.querySelector('.idc')?.textContent || '')));
     await tickConsent(b);
-    await b.click('#idform button.go:has-text("join as")');
+    await b.click('.idc .ob-next:has-text("join as")');
     const seatedB = await waitDot(b, 'live');
     h.rec('seated at B under the carried identity', seatedB === 'live', `${seatedB} · ${await chipOf(b)}`);
     let persisted = false;
@@ -136,8 +137,8 @@ try {
       await waitDot(b, 'idle');
       await b.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor());
       await sleep(500);
-      await b.fill('#idform input[name="password"]', creds.bran, { timeout: 15000 }).catch(() => {});
-      await b.click('#idform button[type="submit"]').catch(() => {});
+      await b.fill('.idc input[name="password"]', creds.bran, { timeout: 15000 }).catch(() => {});
+      await b.click('.idc form [type="submit"]').catch(() => {});
       again = await waitDot(b, 'live');
     }
     h.rec('a later reload at B seats directly — B knows the AID now', again === 'live', `${again} · ${await chipOf(b)}`);

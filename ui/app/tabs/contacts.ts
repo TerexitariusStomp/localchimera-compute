@@ -102,7 +102,7 @@ function report(r: unknown, done: string): void {
   if (gateHint(s)) return;
   // the commune is the judge of who may vouch; its refusal is said as the way forward
   if (/recognised person to vouch/.test(s)) {
-    hint("once you are recognised you can vouch — tap your name (top-right) to request recognition.", "warn");
+    hint("once you are recognised you can vouch — open keys and devices from the person button to request recognition.", "warn");
     return;
   }
   const ok = s === "ok" || s.startsWith("ok:");
@@ -333,7 +333,7 @@ function drawConnect(): void {
             </div>
             <p>Someone sent you theirs? Paste it into the bar above, then ➕.</p>
           </div>`
-        : html`<div class="cconnect-say"><p>Create your identity (tap your name, top-right) and you have a link of your own to show.
+        : html`<div class="cconnect-say"><p>Create your identity (the person button, bottom-left) and you have a link of your own to show.
                A link someone sent you goes into the bar above, then ➕.</p></div>`}
       </div>` : ""}`);
 }

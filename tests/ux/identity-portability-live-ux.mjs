@@ -53,7 +53,7 @@ const call = (pg, name, ...args) => pg.evaluate(async ([n, a]) => {
 }, [name, args]);
 const ls = (pg, key) => pg.evaluate(k => localStorage.getItem(k), key);
 const bodyText = (pg) => pg.evaluate(() => document.body.textContent || '');
-const tick = (pg, scope = '#idform') => pg.evaluate(s => {
+const tick = (pg, scope = '.idc') => pg.evaluate(s => {
   document.querySelectorAll(`${s} input[type="checkbox"]`).forEach(b => { if (!b.checked) b.click(); });
 }, scope);
 
@@ -78,22 +78,22 @@ const waitAnonymous = (pg) => waitFor(async () => /create your identity/i.test(a
 
 /** The sheet's third door: AID + passcode typed on a device that holds nothing. */
 async function signInWithAid(pg, aid, bran) {
-  if (!(await pg.evaluate(() => !!document.querySelector('#idform')))) { await pg.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor()); await sleep(500); }
-  if (!(await pg.evaluate(() => !!document.querySelector('#idform form input[name="username"]:not([readonly])')))) {
-    await pg.click('#idform .gen2:has-text("I already have an identity"), #idform .gen2:has-text("another way in")');
+  if (!(await pg.evaluate(() => !!document.querySelector('.idc')))) { await pg.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor()); await sleep(500); }
+  if (!(await pg.evaluate(() => !!document.querySelector('.idc form input[name="username"]:not([readonly])')))) {
+    await pg.click('.idc .ob-chip:has-text("I already have"), .idc .ob-chip:has-text("another way in")');
     await sleep(400);
   }
-  await pg.fill('#idform form input[name="username"]', aid);
-  await pg.fill('#idform form input[name="password"]', bran);
-  await tick(pg, '#idform form');
-  await pg.click('#idform form button[type="submit"]');
+  await pg.fill('.idc form input[name="username"]', aid);
+  await pg.fill('.idc form input[name="password"]', bran);
+  await tick(pg, '.idc form');
+  await pg.click('.idc form button[type="submit"]');
 }
 /** The unlock sheet of a device that remembers the identity. */
 async function unlockHere(pg, bran) {
   await pg.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor()); await sleep(500);
-  await pg.fill('#idform input[name="password"]', bran);
+  await pg.fill('.idc input[name="password"]', bran);
   await tick(pg);
-  await pg.click('#idform button[type="submit"]');
+  await pg.click('.idc form [type="submit"]');
 }
 const liveDevices = async (pg) => {
   try { return JSON.parse(await call(pg, 'devices')).filter(d => !d.revokedAt); } catch { return null; }
@@ -111,10 +111,10 @@ try {
   await A.setViewportSize({ width: 390, height: 844 });
   await A.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor()); await sleep(600);
   await tick(A);
-  await A.click('#idform button.go:has-text("create your identity")');
-  await A.waitForSelector('#idform input[name="username"]', { timeout: 120000 });
+  await A.click('.idc .ob-next:has-text("create my identity")');
+  await A.waitForSelector('.idc input[name="username"]', { timeout: 120000 });
   const sheet = await A.evaluate(() => {
-    const f = document.querySelector('#idform');
+    const f = document.querySelector('.idc');
     const inside = el => { const r = el.getBoundingClientRect(), b = f.getBoundingClientRect();
                            return r.width > 0 && r.left >= b.left - 1 && r.right <= b.right + 1; };
     const done = [...f.querySelectorAll('button')].find(b => /^done$/.test(b.textContent.trim()));
@@ -132,15 +132,15 @@ try {
   h.rec('A: …with its done button on it', sheet.done);
   h.rec('A: …and the identifier shown beside the passcode', sheet.identifierShown && /^E[A-Za-z0-9_-]{43}$/.test(sheet.identifier));
   await A.setViewportSize({ width: 1280, height: 720 });
-  const aid = await A.evaluate(() => document.querySelector('#idform input[name="username"]').value);
-  const bran = await A.evaluate(() => document.querySelector('#idform input[name="password"]').value);
+  const aid = await A.evaluate(() => document.querySelector('.idc input[name="username"]').value);
+  const bran = await A.evaluate(() => document.querySelector('.idc input[name="password"]').value);
   h.rec('A: identity created', /^E[A-Za-z0-9_-]{43}$/.test(aid) && bran.length >= 21, aid);
 
   // the name typed on the created sheet, at the pace of someone who reads the
   // sheet: straight away, before the seat report has come back
-  await A.fill('#idform input[name="nickname"]', 'ada');
+  await A.fill('.idc input[name="nickname"]', 'ada');
   await tick(A);
-  await A.evaluate(() => document.querySelector('#idform form').requestSubmit());
+  await A.evaluate(() => document.querySelector('.idc form').requestSubmit());
   h.rec('A: seated', (await waitDot(A, 'live', 90000)) === 'live');
   h.rec('A: the chip says the name', /ada/.test(await chipText(A)), await chipText(A));
   await sleep(3000);
@@ -179,19 +179,11 @@ try {
   await B.waitForSelector('#idrow', { timeout: 60000 });
   h.rec('B: a refresh stays signed in without the passcode', (await waitDot(B, 'live', 60000)) === 'live');
 
-  // the identity sheet opened from settings stands above settings
+  // settings carries the same identity card the account sheet shows
   await A.evaluate(async () => { (await import('/app/settings.js')).openSettings('identity'); });
-  await sleep(600);
-  await A.evaluate(() => [...document.querySelectorAll('#setface .vbtn, #setface button')].find(b => /open it/.test(b.textContent))?.click());
   await sleep(700);
-  h.rec('A: "open it" in settings shows the identity sheet above settings',
-        await A.evaluate(() => {
-          const f = document.querySelector('#idform'); if (!f) return false;
-          const r = f.getBoundingClientRect();
-          const top = document.elementFromPoint(r.left + r.width / 2, r.top + 24);
-          return !!top && f.contains(top);
-        }));
-  await A.evaluate(() => document.querySelector('#idform .idclose')?.click());
+  h.rec('A: settings › identity shows the identity card, seated',
+        await A.evaluate(() => document.querySelector('#setface .idc')?.dataset.view === 'held'));
   await A.evaluate(async () => { (await import('/app/settings.js')).closeSettings(); });
   await sleep(300);
 
@@ -222,19 +214,19 @@ try {
   await open(C);
   await waitAnonymous(C);
   await C.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor()); await sleep(500);
-  await C.click('#idform .gen2:has-text("I already have an identity")'); await sleep(400);
+  await C.click('.idc .ob-chip:has-text("I already have")'); await sleep(400);
   const tryPieces = async (lines) => {
-    await C.fill('#idform textarea', lines.join('\n'));
-    await C.click('#idform button.go:has-text("put my passcode back together")');
+    await C.fill('.idc textarea[name="pieces"]', lines.join('\n'));
+    await C.click('.idc .ob-chip:has-text("put my passcode back together")');
     await sleep(2500);
-    return C.evaluate(() => [...document.querySelectorAll('#idform .err')].map(e => e.textContent).join(' | '));
+    return C.evaluate(() => [...document.querySelectorAll('.idc .ob-err')].map(e => e.textContent).join(' | '));
   };
   const one = await tryPieces([split1[0]]);
   h.rec('C: one piece of two is refused', /1 of the 2/.test(one) && (await dotIn(C)) !== 'live', one);
   const mixed = await tryPieces([split1[0], split2[1]]);
   h.rec('C: pieces of two splittings are refused', /different splittings/.test(mixed) && (await dotIn(C)) !== 'live', mixed);
-  await C.fill('#idform textarea', [split1[2], split1[0]].join('\n'));
-  await C.click('#idform button.go:has-text("put my passcode back together")');
+  await C.fill('.idc textarea[name="pieces"]', [split1[2], split1[0]].join('\n'));
+  await C.click('.idc .ob-chip:has-text("put my passcode back together")');
   h.rec('C: two pieces open the identity on a new device', (await waitDot(C, 'live', 90000)) === 'live');
   h.rec('C: …as the same AID', ((await ls(C, 'pn.id.hint')) || '').startsWith(aid + '|'));
   await C.close();
@@ -344,8 +336,8 @@ try {
     // ── sign out ─────────────────────────────────────────────────────────
     await waitFor(async () => !!(await ls(E, 'pn.device.wire')));
     await E.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor()); await sleep(600);
-    await E.click('#idform .signout'); await sleep(300);
-    await E.click('#idform .signout.arm');
+    await E.click('.idc .ob-out'); await sleep(300);
+    await E.click('.idc .ob-out.arm');
     await sleep(3000);
     await E.waitForSelector('#idrow', { timeout: 60000 });
     h.rec('E: signing out leaves the device anonymous', await waitAnonymous(E), await chipText(E));

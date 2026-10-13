@@ -21,7 +21,7 @@ import { weekStart, setWeekStart, homeFace, setHomeFace, devMode, setDevMode } f
 import { CURRENCIES, currency, setCurrency, currencyInForce, currencyForHere, perHour, fmtMoney } from './money.js';
 import { tabCatalogue, tabShown, setTabShown, resetTabs } from './faces.js';
 import { locationMode, setLocationMode, homeName } from './tabs/social/location.js';
-import { devicesSection, passcodeSection, forgetSection, recoveryFriends, identifierBlock, identity, openIdentityDoor, idHint, voteConsentGiven, recordVoteConsent, forgetVoteConsent } from './tabs/social/id.js';
+import { devicesSection, passcodeSection, forgetSection, recoveryFriends, idHint, voteConsentGiven, recordVoteConsent, forgetVoteConsent } from './tabs/social/id.js';
 import { registerProfileSettings } from './profile.js';
 import { registerDwellingSettings } from './dwelling.js';
 import { dietPanel, bodyPanel, healthPanel, registerTimeSettings } from './attributes.js';
@@ -33,6 +33,7 @@ import { createAwayBlock } from './away.js';
 import { reachBlock } from './reach-view.js';
 import { bodiesBlock } from './bodies-view.js';
 import { whoBlock } from './who-view.js';
+import { identityCard } from './identity-view.js';
 import { recognitionBlock } from './recognition-view.js';
 import { render } from './template.js';
 import { effect } from './reactive.js';
@@ -216,12 +217,9 @@ export function registerAllSettings(): void {
     if (!passcodeEl) { passcodeEl = mount(passcodeSection)(); }
     return passcodeEl;
   };
-  // one element for the life of the page: its own effect follows who is signed in
-  let identifierEl: HTMLElement | null = null;
-  const identifierBlockSettings = (): HTMLElement => {
-    if (!identifierEl) { identifierEl = mount(identifierBlock)(); }
-    return identifierEl;
-  };
+  // one card for the life of the page: it follows the door on its own
+  let idCard: ReturnType<typeof identityCard> | null = null;
+  const identityCardSettings = (): HTMLElement => (idCard ??= identityCard()).el;
   registerSettings({
     id: "rest", title: "your rest", order: 33,
     sections: [
@@ -314,15 +312,9 @@ export function registerAllSettings(): void {
       { id: "identity", title: "identity",
         note: "Your identifier names you and is not secret; your passcode is the key, and it is "
             + "not stored on this device and never was. The keys that stand in for it are under "
-            + "\"keys and devices\". Your name, your standing and signing out are in the identity "
-            + "sheet — the person button at the left of the bottom bar opens your account, and the sheet from there.",
+            + "\"keys and devices\"; your name, and where you stand as a person, are under \"your profile\".",
         rows: () => [
-          { kind: "custom", build: identifierBlockSettings },
-          { kind: "button", label: "the identity sheet",
-            // rows() is read inside the pane's effect, so this follows who is signed in
-            note: identity() ? "profile, standing, vouching, sign out" : "sign in, or create your identity",
-            text: "open it",
-            action: () => openIdentityDoor() },
+          { kind: "custom", build: identityCardSettings },
         ] },
       ...(SHOW_SOURCE ? [{ id: "doors", title: "the gateway's doors",
         note: "Everything this app asks the gateway is a door, declared once and documented "

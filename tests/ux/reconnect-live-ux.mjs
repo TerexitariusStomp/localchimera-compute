@@ -8,6 +8,7 @@
 ///
 /// Run via:  make test-reconnect-live-ux
 import { harness, launch, newPage, sleep, summarize } from './ux-harness.mjs';
+import { tickCard, savePasscode } from './probe-lib.mjs';
 
 const BASE = process.argv[2] || 'http://localhost:8089';
 const h = harness();
@@ -24,10 +25,11 @@ try {
   while (Date.now() < dl && !/create your identity/i.test(await chipText())) await sleep(1000);
   h.rec('dial connects to the gateway', /create your identity/i.test(await chipText()));
   await page.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor()); await sleep(600);
-  await page.evaluate(() => { const b = document.querySelector('#idform input[type="checkbox"]'); if (b && !b.checked) b.click(); });
-  await page.click('#idform button.go:has-text("create your identity")');
-  await page.waitForSelector('#idform input[name="username"]', { timeout: 120000 }).catch(() => {});
-  await page.evaluate(() => document.querySelector('#idform form')?.requestSubmit());
+  await page.waitForSelector('.idc', { timeout: 15000 });
+  await tickCard(page, 'consent', 'age');
+  await page.click('.idc .ob-next:has-text("create my identity")');
+  await page.waitForSelector('.idc[data-view="reveal"] input[name="username"]', { timeout: 120000 }).catch(() => {});
+  await savePasscode(page);
   h.rec('seated', (await waitDot('live', 90000)) === 'live');
 
   const before = h.logs.length;

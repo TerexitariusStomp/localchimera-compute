@@ -71,25 +71,24 @@ try {
   if (connected) {
     await page.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor());
     await sleep(600);
-    h.rec('create form opens', await present(page, '#idform'));
+    h.rec('create form opens', await present(page, '.idc[data-view="create"]'));
 
     // The consent gate first: creation stays inert until the terms box is
     // ticked (legal-notices arc) — the same gate a real first citizen meets.
     await page.evaluate(() => {
-      const box = document.querySelector('#idform input[type="checkbox"]');
-      if (box && !box.checked) box.click();
+      for (const box of document.querySelectorAll('.idc input[type=\"checkbox\"]:not([name=\"vote\"])')) if (!box.checked) box.click();
     });
     await sleep(200);
     // One tap: the passcode is generated client-side and never leaves the
     // browser; the AID is minted from it and registered with the gateway.
-    await page.click('#idform button.go:has-text("create your identity")');
+    await page.click('.idc .ob-next:has-text("create my identity")');
 
     // The post-create screen is the only place the passcode is ever shown.
-    await page.waitForSelector('#idform input[name="username"]', { timeout: 120000 })
+    await page.waitForSelector('.idc input[name="username"]', { timeout: 120000 })
       .catch(() => {});
     const creds = await page.evaluate(() => {
-      const u = document.querySelector('#idform input[name="username"]');
-      const p = document.querySelector('#idform input[name="password"]');
+      const u = document.querySelector('.idc input[name="username"]');
+      const p = document.querySelector('.idc input[name="password"]');
       return { aid: u?.value ?? '', bran: p?.value ?? '' };
     });
     h.rec('identity created — AID revealed', /^E[A-Za-z0-9_-]{43}$/.test(creds.aid),
@@ -99,7 +98,7 @@ try {
     if (!creds.aid) {
       h.info('idform text: ' + JSON.stringify(
         (await page.evaluate(() =>
-          document.querySelector('#idform')?.textContent ?? '')).slice(0, 400)));
+          document.querySelector('.idc')?.textContent ?? '')).slice(0, 400)));
       h.info('console tail: ' + JSON.stringify(h.logs.slice(-15)));
     } else {
       const aid = creds.aid;
@@ -175,13 +174,12 @@ try {
       await off.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor());
       await sleep(500);
       h.rec('the away sheet offers the unlock form',
-            await off.evaluate(() => !!document.querySelector('#idform input[name="password"]')));
-      await off.fill('#idform input[name="password"]', creds.bran);
+            await off.evaluate(() => !!document.querySelector('.idc input[name="password"]')));
+      await off.fill('.idc input[name="password"]', creds.bran);
       await off.evaluate(() => {
-        const box = document.querySelector('#idform input[type="checkbox"]');
-        if (box && !box.checked) box.click();
+        for (const box of document.querySelectorAll('.idc input[type=\"checkbox\"]:not([name=\"vote\"])')) if (!box.checked) box.click();
       });
-      await off.click('#idform button[type="submit"]');
+      await off.click('.idc form [type="submit"]');
       const unlocked = await waitDotIn(off, 'warn');
       h.rec('the passcode unlocks against the local log with no gateway',
             unlocked === 'warn' && /unreachable/i.test(await titleIn(off)),
@@ -192,8 +190,8 @@ try {
       await sleep(2500);
       await off.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor());
       await sleep(500);
-      await off.fill('#idform input[name="password"]', 'wrong-passcode-of-21-chars-x');
-      await off.click('#idform button[type="submit"]');
+      await off.fill('.idc input[name="password"]', 'wrong-passcode-of-21-chars-x');
+      await off.click('.idc form [type="submit"]');
       await sleep(2500);
       const toast = await off.evaluate(() => document.body.textContent || '');
       h.rec('a wrong passcode is refused offline', /wrong passcode/i.test(toast));
@@ -219,11 +217,11 @@ try {
       });
       await fresh.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor());
       await sleep(400);
-      await fresh.click('#idform .gen2:has-text("I already have an identity")');
+      await fresh.click('.idc .ob-chip:has-text("I already have")');
       await sleep(400);
       h.rec('the other-sign-in sheet offers a recovery file',
-            await fresh.evaluate(() => !!document.querySelector('#idform input[type="file"]')));
-      await fresh.setInputFiles('#idform input[type="file"]',
+            await fresh.evaluate(() => !!document.querySelector('.idc input[type="file"]')));
+      await fresh.setInputFiles('.idc input[type="file"]',
         { name: 'playnet-identity.json', mimeType: 'application/json', buffer: Buffer.from(fileText) });
       const seated = await waitDotIn(fresh, 'live', 90000);
       h.rec('a recovery file seats the identity on a new device', seated === 'live', seated);
@@ -254,22 +252,21 @@ try {
       await sleep(500);
       h.rec('with no commune and no identity, the sheet offers to create one',
             await born.evaluate(() =>
-              [...document.querySelectorAll('#idform button.go')].some(b => /create your identity/i.test(b.textContent))));
+              [...document.querySelectorAll('.idc .ob-next')].some(b => /create my identity/i.test(b.textContent))));
       await born.evaluate(() => {
-        const box = document.querySelector('#idform input[type="checkbox"]');
-        if (box && !box.checked) box.click();
+        for (const box of document.querySelectorAll('.idc input[type=\"checkbox\"]:not([name=\"vote\"])')) if (!box.checked) box.click();
       });
-      await born.click('#idform button.go:has-text("create your identity")');
-      await born.waitForSelector('#idform input[name="username"]', { timeout: 60000 }).catch(() => {});
+      await born.click('.idc .ob-next:has-text("create my identity")');
+      await born.waitForSelector('.idc input[name="username"]', { timeout: 60000 }).catch(() => {});
       const offCreds = await born.evaluate(() => ({
-        aid: document.querySelector('#idform input[name="username"]')?.value ?? '',
-        bran: document.querySelector('#idform input[name="password"]')?.value ?? '',
+        aid: document.querySelector('.idc input[name="username"]')?.value ?? '',
+        bran: document.querySelector('.idc input[name="password"]')?.value ?? '',
       }));
       h.rec('identity created with no commune — AID minted in the browser',
             /^E[A-Za-z0-9_-]{43}$/.test(offCreds.aid), offCreds.aid || '(none)');
       const offKel = await born.evaluate(() => localStorage.getItem('pn.id.kel') || '');
       h.rec('…and its log is kept', offKel.includes(`"i":"${offCreds.aid}"`));
-      await born.evaluate(() => document.querySelector('#idform form')?.requestSubmit());
+      await born.evaluate(() => document.querySelector('.idc form')?.requestSubmit());
       await sleep(300);
       h.rec('the chip reports it unlocked, commune unreachable',
             (await dotIn(born)) === 'warn' && /unreachable/i.test(await titleIn(born)),
@@ -287,8 +284,8 @@ try {
       }
       await born.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor());
       await sleep(500);
-      await born.fill('#idform input[name="password"]', offCreds.bran);
-      await born.click('#idform button[type="submit"]');
+      await born.fill('.idc input[name="password"]', offCreds.bran);
+      await born.click('.idc form [type="submit"]');
       const unregistered = await waitDotIn(born, 'warn');
       h.rec('at the commune the chip offers to join',
             unregistered === 'warn' && /join/i.test(await titleIn(born)),
@@ -296,10 +293,9 @@ try {
       await born.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor());
       await sleep(500);
       await born.evaluate(() => {
-        const box = document.querySelector('#idform input[type="checkbox"]');
-        if (box && !box.checked) box.click();
+        for (const box of document.querySelectorAll('.idc input[type=\"checkbox\"]:not([name=\"vote\"])')) if (!box.checked) box.click();
       });
-      await born.click('#idform button.go:has-text("join as")');
+      await born.click('.idc .ob-next:has-text("join as")');
       const seatedBorn = await waitDotIn(born, 'live', 90000);
       h.rec('the identity made offline is seated', seatedBorn === 'live', seatedBorn);
       let landed = false;

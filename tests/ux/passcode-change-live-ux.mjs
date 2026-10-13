@@ -47,7 +47,7 @@ const call = (pg, name, ...args) => pg.evaluate(async ([n, a]) => {
 }, [name, args]);
 const ls = (pg, key) => pg.evaluate(k => localStorage.getItem(k), key);
 const bodyText = (pg) => pg.evaluate(() => document.body.textContent || '');
-const tick = (pg, scope = '#idform') => pg.evaluate(s => {
+const tick = (pg, scope = '.idc') => pg.evaluate(s => {
   document.querySelectorAll(`${s} input[type="checkbox"]`).forEach(b => { if (!b.checked) b.click(); });
 }, scope);
 const depthIn = (pg) => pg.evaluate(() => {
@@ -65,15 +65,15 @@ async function open(pg) {
 const waitAnonymous = (pg) => waitFor(async () => /create your identity/i.test(await chipText(pg)), 90000);
 /** The sign-in sheet on a device that holds nothing: passcode, identifier optional. */
 async function signIn(pg, aid, bran) {
-  if (!(await pg.evaluate(() => !!document.querySelector('#idform form input[name="username"]:not([readonly])')))) {
-    if (!(await pg.evaluate(() => !!document.querySelector('#idform')))) { await pg.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor()); await sleep(500); }
-    await pg.click('#idform .gen2:has-text("I already have an identity"), #idform .gen2:has-text("another way in")');
+  if (!(await pg.evaluate(() => !!document.querySelector('.idc form input[name="username"]:not([readonly])')))) {
+    if (!(await pg.evaluate(() => !!document.querySelector('.idc')))) { await pg.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor()); await sleep(500); }
+    await pg.click('.idc .ob-chip:has-text("I already have"), .idc .ob-chip:has-text("another way in")');
     await sleep(400);
   }
-  await pg.fill('#idform form input[name="username"]', aid);
-  await pg.fill('#idform form input[name="password"]', bran);
-  await tick(pg, '#idform form');
-  await pg.click('#idform form button[type="submit"]');
+  await pg.fill('.idc form input[name="username"]', aid);
+  await pg.fill('.idc form input[name="password"]', bran);
+  await tick(pg, '.idc form');
+  await pg.click('.idc form button[type="submit"]');
 }
 /** Settings → change your passcode, as a person walks it. Answers the new passcode, or the refusal. */
 async function changePasscode(pg, current) {
@@ -104,13 +104,13 @@ try {
   if (!connected) throw new Error('no gateway');
   await A.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor()); await sleep(600);
   await tick(A);
-  await A.click('#idform button.go:has-text("create your identity")');
-  await A.waitForSelector('#idform input[name="username"]', { timeout: 120000 });
-  const aid = await A.evaluate(() => document.querySelector('#idform input[name="username"]').value);
-  const first = await A.evaluate(() => document.querySelector('#idform input[name="password"]').value);
+  await A.click('.idc .ob-next:has-text("create my identity")');
+  await A.waitForSelector('.idc input[name="username"]', { timeout: 120000 });
+  const aid = await A.evaluate(() => document.querySelector('.idc input[name="username"]').value);
+  const first = await A.evaluate(() => document.querySelector('.idc input[name="password"]').value);
   await tick(A);
-  await A.fill('#idform input[name="nickname"]', 'ada');
-  await A.evaluate(() => document.querySelector('#idform form').requestSubmit());
+  await A.fill('.idc input[name="nickname"]', 'ada');
+  await A.evaluate(() => document.querySelector('.idc form').requestSubmit());
   h.rec('A: identity created and seated', /^E[A-Za-z0-9_-]{43}$/.test(aid) && (await waitDot(A, 'live', 90000)) === 'live', aid);
   await waitFor(async () => !!(await ls(A, 'pn.device.wire')));
   const k0Before = (await hintIn(A)).k0;
@@ -163,10 +163,10 @@ try {
   await B.waitForSelector('#idrow', { timeout: 60000 });
   h.rec('B: is signed out', await waitFor(async () => (await dotIn(B)) === 'idle' && !(await ls(B, 'pn.device.wire')), 45000), await dotIn(B));
   const unlockB = async (bran) => {
-    if (!(await B.evaluate(() => !!document.querySelector('#idform input[name="password"]')))) { await B.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor()); await sleep(500); }
-    await B.fill('#idform input[name="password"]', bran);
+    if (!(await B.evaluate(() => !!document.querySelector('.idc input[name="password"]')))) { await B.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor()); await sleep(500); }
+    await B.fill('.idc input[name="password"]', bran);
     await tick(B);
-    await B.click('#idform button[type="submit"]');
+    await B.click('.idc form [type="submit"]');
   };
   await unlockB(first);
   h.rec('B: the old passcode is told the passcode was changed',

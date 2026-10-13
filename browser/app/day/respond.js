@@ -50,7 +50,7 @@ import { EFFORT_UNIT } from '../units-catalogue.js';
 export function gateHint(r) {
     if (r !== "err:needs-personhood")
         return false;
-    hint("you're provisional — tap your name (top-right) to request recognition, " +
+    hint("you're provisional — open keys and devices from the person button to request recognition, " +
         "then you can take part.", "warn");
     return true;
 }

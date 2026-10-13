@@ -15,6 +15,7 @@
 ///           bash tests/ux/ux-full.sh tests/ux/skill-standing-live-ux.mjs
 
 import { harness, launch, newPage, sleep, summarize } from './ux-harness.mjs';
+import { openIdentityCard, tickCard, putAway } from './probe-lib.mjs';
 
 const BASE = process.argv[2] || 'http://localhost:8089';
 const h = harness();
@@ -70,24 +71,15 @@ try {
   }, 180000);
   h.rec('dial connects to the gateway', !!chip, chip || '(no chip)');
 
-  await page.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor());
-  await sleep(600);
-  await page.evaluate(() => {
-    const box = document.querySelector('#idform input[type="checkbox"]');
-    if (box && !box.checked) box.click();
-  });
-  await page.click('#idform button.go:has-text("create your identity")');
-  await page.waitForSelector('#idform input[name="username"]', { timeout: 120000 }).catch(() => {});
-  const aid = await page.evaluate(() => document.querySelector('#idform input[name="username"]')?.value ?? '');
+  await openIdentityCard(page);
+  await tickCard(page, 'consent', 'age');
+  await page.click('.idc .ob-next:has-text("create my identity")');
+  await page.waitForSelector('.idc[data-view="reveal"] input[name="username"]', { timeout: 120000 }).catch(() => {});
+  const aid = await page.evaluate(() => document.querySelector('.idc[data-view="reveal"] input[name="username"]')?.value ?? '');
   h.rec('identity minted in-browser', /^E[A-Za-z0-9_-]{43}$/.test(aid), aid || '(none)');
   // the passcode gate: the sheet stays until the citizen says they saved it
-  await page.evaluate(() => {
-    const box = document.querySelector('#idform .consent input[type="checkbox"]');
-    if (box && !box.checked) box.click();
-  });
-  await sleep(200);
-  await page.click('#idform button.go:has-text("done")');
-  await sleep(800);
+  await putAway(page);
+  await sleep(500);
 
   // ── the door answers, and the demo steps aside ──
   const first = await until(async () => { const r = await standing(page); return Array.isArray(r) ? r : null; }, 60000);

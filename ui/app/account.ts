@@ -4,7 +4,7 @@
 // you are and whether the commune can see you, your profile, keys and
 // devices, the commune's channel, settings, the look of the site, help and
 // the notices. Each row is a door to a place that already exists (the identity
-// sheet, a settings section, the channel room, the scroll); the sheet
+// card, a settings section, the channel room, the scroll); the sheet
 // itself keeps no state but its own openness.
 //
 // On a phone it is a bottom sheet over a dimmed page; on a wide screen it sits
@@ -13,10 +13,12 @@
 
 import { mk } from './dom.js';
 import { effect } from './reactive.js';
-import { identity, identityState, openIdentitySheet, onAccountDoor, signOutDevice } from './tabs/social/id.js';
+import { identity, identityState, onAccountDoor, signOutDevice } from './tabs/social/id.js';
+import { identityCard, identityCardTitle, showSignIn, showCreate } from './identity-view.js';
+import { passcodeUnsaved } from './passcode-held.js';
 import { openSettings, sectionPane } from './settings.js';
 import { openScroll } from './scroll.js';
-import { openSheetView, closeSheetView, sheetViewIs } from './tabs/social/share.js';
+import { openSheetView, closeSheetView, sheetViewIs, revealContacts } from './tabs/social/share.js';
 import { TERMS_HREF, PRIVACY_HREF, ACCESSIBILITY_HREF } from './legal-product.js';
 
 const SHORT = (aid: string): string => aid.length > 14 ? `${aid.slice(0, 8)}…${aid.slice(-4)}` : aid;
@@ -48,9 +50,11 @@ function row(r: RowSpec, close: () => void, wire = true, enter?: () => void): HT
   return b;
 }
 
-/** A nested page: a title, and the settings sections it shows, in order. */
-interface Page { title: string; sections: string[] }
+/** A nested page: a title, and the settings sections it shows, in order — or a body of its own (`build`), whose title may follow the state. */
+interface Page { title: string | (() => string); sections: string[]; build?: () => { el: HTMLElement; dispose: () => void } }
 const PAGES: Record<string, Page> = {
+  // the one place an identity is made, opened and read: the same card the onboarding checklist shows
+  identity: { title: identityCardTitle, sections: [], build: () => identityCard() },
   profile: { title: "your profile", sections: ["profile-who", "profile-where", "standing", "reach"] },
   bodies: { title: "legal bodies", sections: ["bodies"] },
   diet: { title: "diet", sections: ["diet"] },
@@ -80,7 +84,10 @@ function header(close: () => void): HTMLElement {
     const back = mk("button", "acct-back", "←");
     back.type = "button"; back.title = "back"; back.setAttribute("aria-label", "back");
     back.addEventListener("click", goBack);
-    head.append(back, mk("span", "acct-title", page.title));
+    const title = mk("span", "acct-title");
+    // a title that follows the state (the identity card's face) is read inside an effect
+    disposers.push(effect(() => { title.textContent = typeof page.title === "function" ? page.title() : page.title; }));
+    head.append(back, title);
   } else {
     const mark = mk("span", "acct-mark");
     for (const c of "playnet") mark.append(mk("span", "wm-" + c, c));
@@ -96,6 +103,14 @@ function header(close: () => void): HTMLElement {
 /** A page's body: each section's rows, under its own title when there are several. */
 function pageBody(page: Page): HTMLElement {
   const body = mk("div", "acct-page");
+  if (page.build) {
+    const built = page.build();
+    disposers.push(built.dispose);
+    const group = mk("div", "acct-group acct-sect");
+    group.append(built.el);
+    body.append(group);
+    return body;
+  }
   page.sections.forEach(id => {
     const pane = sectionPane(id);
     if (!pane) return;
@@ -114,8 +129,8 @@ function goBack(): void { stack.pop(); draw(); card?.scrollTo({ top: 0 }); }
 /** The menu's rows: some enter a page of their own, some open a place that is not settings. */
 function menu(close: () => void): HTMLElement[] {
   const door = (r: RowSpec): HTMLElement => row(r, close);
-  const into = (icon: string, label: string, sub: string, page: string): HTMLElement =>
-    row({ icon, label, sub, go: () => {} }, close, false, () => goTo(page));
+  const into = (icon: string, label: string, sub: string, page: string, before?: () => void, tone?: string): HTMLElement =>
+    row({ icon, label, sub, go: () => {}, tone }, close, false, () => { before?.(); goTo(page); });
   const me = identity();
   const g1 = mk("div", "acct-group");
   if (me) {
@@ -127,7 +142,7 @@ function menu(close: () => void): HTMLElement[] {
     tx.append(mk("span", "acct-l", me.name || "you"), mk("span", "acct-s", standing()),
               mk("span", "acct-s acct-aid", SHORT(me.aid)));
     who.append(av, tx);
-    who.addEventListener("click", () => { close(); openIdentitySheet(); });
+    who.addEventListener("click", () => goTo("identity"));
     g1.append(who);
     // signing out asks twice: it forgets this device's copy of your log
     const out = row({ icon: "↪", label: "sign out of this device", go: () => {} }, () => {}, false);
@@ -141,8 +156,8 @@ function menu(close: () => void): HTMLElement[] {
     });
     g1.append(out);
   } else {
-    g1.append(door({ icon: "＋", label: "create your identity", sub: "a passcode, made here — nothing to register", go: openIdentitySheet, tone: "primary" }),
-              door({ icon: "👤", label: "sign in", sub: "your passcode, a recovery file, or friends' pieces", go: openIdentitySheet }));
+    g1.append(into("＋", "create your identity", "a passcode, made here — nothing to register", "identity", showCreate, "primary"),
+              into("👤", "sign in", "your passcode, a recovery file, or friends' pieces", "identity", showSignIn));
   }
 
   const net = document.getElementById("netbtn");
@@ -151,11 +166,12 @@ function menu(close: () => void): HTMLElement[] {
             into("🥗", "diet", "what you eat, and what you refuse", "diet"),
             into("🧍", "body", "what your floors are read from", "body"),
             into("❤️", "health", "private — conditions, and days away", "health"),
-            into("🔑", "keys and devices", "stay signed in, change your passcode, recovery", "keys"),
+            into("🔑", "keys and devices", "stay signed in, change your passcode, recovery, recognition", "keys"),
             into("📍", "where you are", "your place, sharing it, places on the map, offline maps", "where"),
             into("🏠", "your housing", "your home, and what the night gives you", "housing"),
             into("🕰️", "your time", "hours a day, which days, what it earns", "time"),
             into("🏛", "legal bodies", "an association, a cooperative — declared, stewarded, signed", "bodies"),
+            ...(me ? [door({ icon: "🤝", label: "people you know", sub: "vouch, witness, introduce — your contacts", go: revealContacts })] : []),
             door({ icon: "📻", label: "the commune's channel",
                    sub: net?.classList.contains("live") ? "you are on air" : "chat, and live audio with whoever is in it",
                    live: !!net?.classList.contains("live"), go: () => net?.click() }));
@@ -210,7 +226,8 @@ function ensureOpen(): void {
 /** The account menu, in the sheet the inventory rises in; the person button again puts it away. */
 export function openAccount(): void {
   if (sheetViewIs(OWNER)) { closeAccount(); return; }
-  stack = [];
+  // a passcode shown once and not yet saved is where the sheet reopens: closing it never loses the key
+  stack = passcodeUnsaved.peek() ? ["identity"] : [];
   ensureOpen();
   draw();
   document.getElementById("idrow")?.querySelector(".who")?.setAttribute("aria-expanded", "true");
@@ -225,11 +242,14 @@ export function openAccountPage(id: string): void {
   document.getElementById("idrow")?.querySelector(".who")?.setAttribute("aria-expanded", "true");
 }
 
+/** The sheet on its identity page — make, open or read an identity. A second call leaves it there. */
+export function openAccountIdentity(): void { openAccountPage("identity"); }
+
 let wired = false;
 export function initAccount(): void {
   if (wired) return;
   wired = true;
-  onAccountDoor(openAccount);
+  onAccountDoor(openAccount, openAccountIdentity);
   // Esc steps back out of a page, then puts the sheet away
   document.addEventListener("keydown", e => {
     if (e.key !== "Escape" || !sheetViewIs(OWNER)) return;

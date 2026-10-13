@@ -1,11 +1,12 @@
-/// tests/ux/signup-ux.mjs — the create-identity chip: simulate a connected
-/// gateway, click "create your identity", and assert the create form popover
-/// appears with the passcode + create button. No gateway — pure client flow.
+/// tests/ux/signup-ux.mjs — the person button's identity card: simulate a
+/// connected gateway, open the card in the account sheet, and walk create,
+/// reveal, sign in, recovery friends, unlocked and join. No gateway — pure
+/// client flow.
 import { harness, launch, summarize, sleep } from './ux-harness.mjs';
 const openSettingsRoom = async (page) => {
   await page.evaluate(async () => { const a = await import('/app/account.js'); a.closeAccount(); a.openAccount(); });
   await sleep(250);
-  await page.evaluate(() => [...document.querySelectorAll('#acct .acct-row')].find(r => r.querySelector('.acct-l')?.textContent === 'settings').click());
+  await page.evaluate(() => [...document.querySelectorAll('.sheet-view .acct-card .acct-row')].find(r => r.querySelector('.acct-l')?.textContent === 'all settings').click());
 };
 import { serveBrowser } from './ux-serve.mjs';
 
@@ -69,118 +70,110 @@ try {
   const chip = await page.$eval('#idrow .who', el => el.textContent).catch(() => '');
   h.rec('chip shows create-identity', chip.includes('create your identity'));
 
-  // click the chip → the create form popover should appear
+  // the person button's identity door opens the account sheet on the identity card
   await page.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor());
   await sleep(300);
   const form = await page.evaluate(() => {
-    const f = document.querySelector('#idform');
-    if (!f) return { present: false };
-    const cs = getComputedStyle(f);
-    const r = f.getBoundingClientRect();
+    const c = document.querySelector('.sheet-view .acct-card .idc');
+    if (!c) return { present: false };
+    const cs = getComputedStyle(c);
+    const r = c.getBoundingClientRect();
     return {
       present: true,
+      view: c.dataset.view,
       visible: cs.display !== 'none' && cs.visibility !== 'hidden',
-      // the sheet is a fixed popover in the middle of the viewport, and all
-      // of it is within the viewport — present + display:block says neither
-      onScreen: r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth,
-      position: cs.position,
+      // the card sits whole across the viewport (the sheet scrolls, so only its width is bounded)
+      onScreen: r.left >= 0 && r.right <= innerWidth && r.width > 200,
       // one-tap flow: NO passcode field before create (it's generated internally
       // and revealed only AFTER create, once the gateway has minted the AID).
-      noPassField: !f.querySelector('input.pcode'),
-      hasCreate: [...f.querySelectorAll('button')].some(b => /create your identity/i.test(b.textContent)),
+      noPassField: !c.querySelector('input[type="password"]'),
+      hasCreate: [...c.querySelectorAll('button')].some(b => /create my identity/i.test(b.textContent)),
     };
   });
-  h.rec('create form popover appears', form.present === true);
-  h.rec('form is visible', form.visible === true);
-  h.rec('form is ON-SCREEN (a fixed sheet, whole within the viewport)',
-        form.onScreen === true && form.position === 'fixed');
+  h.rec('the identity card opens in the account sheet', form.present === true);
+  h.rec('…on the create face', form.view === 'create');
+  h.rec('the card is visible', form.visible === true);
+  h.rec('the card fits the viewport\'s width', form.onScreen === true);
   h.rec('one-tap: no passcode field shown before create', form.noPassField === true);
-  h.rec('form has a create button', form.hasCreate === true);
+  h.rec('the card has a create button', form.hasCreate === true);
 
   await page.screenshot({ path: 'tests/ux/_artifacts/day-signup.png' }).catch(() => {});
 
-  // the sheet (a modal on <body>) must SURVIVE a chip re-render — renderId fires on every
-  // personhood standing-check / 45s poll, and used to wipe the open #idform
-  // (the "it closes shortly after I click it" bug). The form is still open
-  // from above; a re-render must not destroy it.
-  await page.evaluate(() => window.__seam?.status && window.__seam.status('connected'));
-  await sleep(250);
-  const afterRerender = await page.evaluate(() => {
-    const f = document.querySelector('#idform');
-    return f
-      ? { present: true, childCount: f.childElementCount,
-          // the CONTENTS must survive, not just the shell — a naive wipe
-          // strips #idform's descendants and re-attaches an empty box. The
-          // one-tap create form has no input yet; its button must survive.
-          hasButton: !!f.querySelector('button') }
-      : { present: false };
+  // A status report must not wipe what the person has done on the card: the
+  // card redraws when its FACE changes, never on a report (the personhood
+  // check and the 45s poll both report while it is open).
+  await page.evaluate(() => {
+    const box = document.querySelector('.sheet-view .acct-card .idc input[name="consent"]');
+    box.checked = true; box.dispatchEvent(new Event('change', { bubbles: true }));
+    window.__seam?.status && window.__seam.status('connected');
   });
-  h.rec('popover survives a chip re-render — element present',
-        afterRerender.present === true);
-  h.rec('popover KEEPS ITS CONTENTS after re-render (not an empty shell)',
-        afterRerender.childCount > 1 && afterRerender.hasButton);
+  await sleep(250);
+  const afterReport = await page.evaluate(() => ({
+    view: document.querySelector('.sheet-view .acct-card .idc')?.dataset.view,
+    ticked: document.querySelector('.sheet-view .acct-card .idc input[name="consent"]')?.checked,
+    hasButton: !!document.querySelector('.sheet-view .acct-card .idc .ob-next') }));
+  h.rec('a status report keeps the card on its face, with its contents',
+        afterReport.view === 'create' && afterReport.hasButton === true);
+  h.rec('…and what was ticked stays ticked', afterReport.ticked === true);
 
-  // the sheet has three ways out besides the chip: the dimmed page, Esc, and its ✕
-  const sheetOpen = () => page.evaluate(() => !!document.querySelector('#idform'));
-  const reopen = async () => { if (!(await sheetOpen())) { await page.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor()); await sleep(300); } };
-  await page.mouse.click(5, 300); await sleep(200);
-  h.rec('tapping the dimmed page closes the sheet', !(await sheetOpen()));
-  await reopen();
+  // the sheet's ways out: Esc steps back from the card to the menu, then puts the sheet away; ✕ puts it away at once
+  const sheetOpen = () => page.evaluate(() => !!document.querySelector('.sheet-view .acct-card'));
+  const reopen = async () => { await page.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor()); await sleep(300); };
   await page.keyboard.press('Escape'); await sleep(200);
-  h.rec('Esc closes the sheet', !(await sheetOpen()));
+  h.rec('Esc steps back from the card to the menu', (await sheetOpen()) && !(await page.evaluate(() => !!document.querySelector('.sheet-view .acct-card .idc'))));
+  await page.keyboard.press('Escape'); await sleep(200);
+  h.rec('Esc again closes the sheet', !(await sheetOpen()));
   await reopen();
-  await page.click('#idform .idclose'); await sleep(200);
+  await page.click('.sheet-view .acct-card .acct-x'); await sleep(200);
   h.rec('the ✕ closes the sheet', !(await sheetOpen()));
   await reopen();
 
   // ── "sign in with a different identity" (founder key etc.) ──
-  // From the create form, the link opens an AID + passcode sub-form that calls
-  // unlock(bran, aid, "") — authenticating as the SUPPLIED AID, not a stored one.
+  // From the create face, the chip opens the sign-in face: an AID + passcode
+  // form that calls unlock(bran, aid, "") — authenticating as the SUPPLIED
+  // AID, not a stored one.
   await pinHandler('unlock', `((bran, aid, k0) => {
       window.__unlockArgs = [bran, aid, k0];
       return Promise.resolve('ok:' + aid + '|k0stub');
     })`);
   await page.evaluate(() => {
-    // click the "I already have an identity" link in the open create form
-    const link = [...document.querySelectorAll('#idform .gen2')]
-      .find(e => /already have an identity/i.test(e.textContent));
-    link && link.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    [...document.querySelectorAll('.sheet-view .acct-card .idc .ob-chip')]
+      .find(e => /already have/i.test(e.textContent))?.click();
   });
   await sleep(200);
   const other = await page.evaluate(() => {
-    const f = document.querySelector('#idform');
-    return { inputs: f ? f.querySelectorAll('input[name="username"], input[name="password"]').length : 0,
-             lead: f ? [...f.querySelectorAll('.lead')].map(l => l.textContent).join(' ') : '' };
+    const f = document.querySelector('.sheet-view .acct-card .idc');
+    return { view: f?.dataset.view,
+             inputs: f ? f.querySelectorAll('input[name="username"], input[name="password"]').length : 0,
+             text: f?.textContent || '' };
   });
-  h.rec('different-identity form has AID + passcode fields', other.inputs >= 2);
-  h.rec('different-identity form is labelled: sign in, recovery file, people you trusted',
-        /sign in/i.test(other.lead || '') && /recovery file/i.test(other.lead || '') && /people you trusted/i.test(other.lead || ''));
-  h.rec('different-identity form offers a recovery file',
-        await page.evaluate(() => !!document.querySelector('#idform input[type="file"]')));
-
+  h.rec('the sign-in face has AID + passcode fields', other.view === 'signin' && other.inputs >= 2);
+  h.rec('…and names the three doors: passcode, recovery file, people you trusted',
+        /passcode/i.test(other.text) && /recovery file/i.test(other.text) && /people you trusted/i.test(other.text));
+  h.rec('…and offers a recovery file',
+        await page.evaluate(() => !!document.querySelector('.sheet-view .acct-card .idc input[type="file"]')));
 
   // fill AID + passcode and submit WITHOUT consenting — the gate must refuse.
   // Signing in is the collection moment the notice is about, so this is a real
   // property and not merely a step on the way to the next assertion.
+  await page.evaluate(() => { const b = document.querySelector('.sheet-view .acct-card .idc input[name="consent"]'); if (b) b.checked = false, b.dispatchEvent(new Event('change', { bubbles: true })); });
   const submitLogin = () => page.evaluate(() => {
-    document.querySelector('#idform input[name="username"]').value = 'EFounderAidExample0000000000000000000000000';
-    document.querySelector('#idform input[name="password"]').value = 'test-passcode-twentyone+chars';
-    [...document.querySelectorAll('#idform button')]
-      .find(b => /sign in/i.test(b.textContent))
-      ?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    document.querySelector('.sheet-view .acct-card .idc input[name="username"]').value = 'EFounderAidExample0000000000000000000000000';
+    document.querySelector('.sheet-view .acct-card .idc input[name="password"]').value = 'test-passcode-twentyone+chars';
+    document.querySelector('.sheet-view .acct-card .idc form [type="submit"]').click();
   });
   await submitLogin();
   await sleep(250);
   const gated = await page.evaluate(() => ({
     args: window.__unlockArgs || null,
-    err: document.querySelector('#idform form .err')?.textContent || '',
+    err: document.querySelector('.sheet-view .acct-card .idc .ob-err')?.textContent || '',
   }));
   h.rec('sign-in is REFUSED until the terms are accepted',
         gated.args === null && /accept the terms/i.test(gated.err));
 
   // tick the consent box, then sign in → unlock(bran, aid, "")
   await page.evaluate(() => {
-    const box = document.querySelector('#idform input[type=checkbox]');
+    const box = document.querySelector('.sheet-view .acct-card .idc input[name="consent"]');
     if (box) { box.checked = true; box.dispatchEvent(new Event('change', { bubbles: true })); }
   });
   await submitLogin();
@@ -209,36 +202,39 @@ try {
       return Promise.resolve('ok:ECreatedAidExample00000000000000000000000|k0stub');
     })`);
   await sleep(300);
-  await page.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor());                      // open the create form
+  await page.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor());                      // open the create face
   await sleep(200);
+  // creating an identity IS the collection moment the notice is about, so the
+  // terms gate is forced on this path — tick it, exactly as a reader must; the
+  // age is a stated floor, an act of its own
   await page.evaluate(() => {
-    // creating an identity IS the collection moment the notice is about, so the
-    // gate is forced on this path — tick it, exactly as a reader must
-    const box = document.querySelector('#idform input[type=checkbox]');
-    if (box) { box.checked = true; box.dispatchEvent(new Event('change', { bubbles: true })); }
-    [...document.querySelectorAll('#idform button')]
-      .find(b => /create your identity/i.test(b.textContent))
-      ?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    for (const n of ['consent', 'age']) {
+      const box = document.querySelector(`.sheet-view .acct-card .idc input[name="${n}"]`);
+      box.checked = true; box.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    [...document.querySelectorAll('.sheet-view .acct-card .idc .ob-next')]
+      .find(b => /create my identity/i.test(b.textContent))?.click();
   });
-  await sleep(400);
+  await sleep(500);
   const created = await page.evaluate(() => {
-    const f = document.querySelector('#idform');
+    const f = document.querySelector('.sheet-view .acct-card .idc');
     if (!f) return {};
     const user = f.querySelector('input[autocomplete="username"]');
     const pass = f.querySelector('input[autocomplete="new-password"]');
     const done = [...f.querySelectorAll('button[type="submit"]')].pop();
     return {
+      view: f.dataset.view,
       isForm: !!f.querySelector('form'),
       // the identifier is the username a password manager keys the entry
       // by, and it is shown whole: with the passcode it is the way back
       aidPresent: !!user && user.value.startsWith('ECreatedAid'),
-      aidShown: !!user && user.readOnly === true && user.offsetWidth > 200
+      aidShown: !!user && user.readOnly === true && user.offsetWidth > 150
                 && user.scrollWidth <= user.clientWidth + 1,
       passShown: !!pass && pass.value === window.__signupBran && window.__signupBran.length >= 21,
       hasDownload: [...f.querySelectorAll('button')].some(b => /download recovery/i.test(b.textContent)),
       doneDisabled: !!done && done.disabled === true,
       // creating takes no name, and nothing else ever asks for one — so this
-      // sheet does, after the key material and never before it
+      // card does, after the key material and never before it
       nameField: !!f.querySelector('input[autocomplete="nickname"]'),
       nameAfterKey: (() => {
         const ins = [...f.querySelectorAll('input')];
@@ -247,6 +243,7 @@ try {
       })(),
     };
   });
+  h.rec('create lands on the reveal face', created.view === 'reveal');
   h.rec('post-create is a credential <form> for password managers', created.isForm === true);
   h.rec('post-create keeps the AID for the manager', created.aidPresent === true);
   h.rec('…shown whole beside the passcode, read-only', created.aidShown === true);
@@ -255,33 +252,40 @@ try {
   h.rec('post-create asks what to call you', created.nameField === true);
   h.rec('…and asks it AFTER the passcode, never before it', created.nameAfterKey === true);
 
-  // THE HOLD. The passcode is shown once; dismissing this sheet without it
-  // locks the person out of their own identity for good. So until they confirm
-  // they have saved it: done is dead, a stray Enter does nothing, and tapping
-  // the chip cannot close the sheet.
+  // THE HOLD. The passcode is shown once; leaving it unsaved locks the person
+  // out of their own identity for good. So until they confirm they have saved
+  // it: done is dead, a stray Enter does nothing, the page asks before it
+  // unloads, and a sheet put away comes back on the passcode.
   h.rec('done is dead until the passcode is confirmed saved', created.doneDisabled === true);
   await page.evaluate(() => {
-    document.querySelector('#idform input[autocomplete="nickname"]').value = 'rosa';
-    document.querySelector('#idform form')
+    document.querySelector('.sheet-view .acct-card .idc input[autocomplete="nickname"]').value = 'rosa';
+    document.querySelector('.sheet-view .acct-card .idc form')
       .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
   });
   await sleep(300);
-  h.rec('a stray Enter cannot dismiss it either',
-        await page.evaluate(() => !!document.querySelector('#idform')));
+  h.rec('a stray Enter cannot dismiss it',
+        await page.evaluate(() => document.querySelector('.sheet-view .acct-card .idc')?.dataset.view === 'reveal'));
+  h.rec('an unsaved passcode holds the page',
+        await page.evaluate(async () => (await import('/app/passcode-held.js')).passcodeUnsaved.peek()));
+  const shown = await page.evaluate(() => document.querySelector('.sheet-view .acct-card .idc input[autocomplete="new-password"]')?.value);
   await page.evaluate(() => document.querySelector('#idrow .who')
     .dispatchEvent(new MouseEvent('click', { bubbles: true })));
   await sleep(300);
-  h.rec('and tapping the chip cannot dismiss it',
-        await page.evaluate(() => !!document.querySelector('#idform input[autocomplete="new-password"]')));
+  h.rec('the person button puts the sheet away', !(await page.evaluate(() => !!document.querySelector('.sheet-view .acct-card'))));
+  await page.evaluate(() => document.querySelector('#idrow .who')
+    .dispatchEvent(new MouseEvent('click', { bubbles: true })));
+  await sleep(300);
+  h.rec('…and opens it again on the same passcode',
+        (await page.evaluate(() => document.querySelector('.sheet-view .acct-card .idc input[autocomplete="new-password"]')?.value)) === shown && !!shown);
 
   // Confirming releases it. Naming yourself writes the LOCAL hint first — that
   // is what the chip reads, and with no commune in reach it is the only copy
   // there is — then pushes to the commune's profile.
   await pinHandler('profileSet', `((n, e) => { window.__profileSet = [n, e]; return Promise.resolve('ok'); })`);
   await page.evaluate(() => {
-    const box = document.querySelector('#idform input[type="checkbox"]');
-    box.click();
-    document.querySelector('#idform form')
+    document.querySelector('.sheet-view .acct-card .idc input[autocomplete="nickname"]').value = 'rosa';
+    document.querySelector('.sheet-view .acct-card .idc input[name="saved"]').click();
+    document.querySelector('.sheet-view .acct-card .idc form')
       .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
   });
   await sleep(400);
@@ -289,12 +293,13 @@ try {
     sent: window.__profileSet,
     hint: localStorage.getItem('pn.id.hint') || '',
     chip: document.querySelector('#idrow .who')?.textContent || '',
-    sheetClosed: !document.querySelector('#idform'),
+    view: document.querySelector('.sheet-view .acct-card .idc')?.dataset.view,
   }));
   h.rec('confirming saved + done sends the name to the commune', !!named.sent && named.sent[0] === 'rosa');
   h.rec('…writes it to the local hint', /\|rosa\|/.test(named.hint), named.hint);
   h.rec('…and the chip says it', /rosa/.test(named.chip), named.chip);
-  h.rec('…and only THEN does the sheet close', named.sheetClosed === true);
+  h.rec('…and only THEN does the card move on, to the seated face', named.view === 'held');
+  h.rec('…and the page is released', !(await page.evaluate(async () => (await import('/app/passcode-held.js')).passcodeUnsaved.peek())));
 
   // ── recovery friends ──
   // The passcode cannot be reset, so losing it is answered by people: the
@@ -314,12 +319,11 @@ try {
       { alias: 'Ana', aid: 'EAna0', rel: 'friend' },
       { alias: 'Sam', aid: 'ESam0', rel: 'friend' },
       { alias: 'Priya', aid: 'EPriya', rel: 'friend' }];
-    document.querySelector('#idform')?.remove();
     window.__seam.__realStatus('ok:EUnlockedAid00000000000000000000000000000000|Dk0');
   });
   await sleep(300);
   // recovery friends live in the settings room (⚙ → keys and devices → if you lose your
-  // passcode), beside the device keys — the identity sheet only points there
+  // passcode), beside the device keys
   await openSettingsRoom(page); await sleep(500);
   await page.evaluate(() => [...document.querySelectorAll('.set-navi')]
     .find(x => x.textContent === 'if you lose your passcode')?.click());
@@ -372,19 +376,19 @@ try {
   await page.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor());
   await sleep(300);
   await page.evaluate(() => {
-    [...document.querySelectorAll('#idform .gen2')]
+    [...document.querySelectorAll('.sheet-view .acct-card .idc .ob-chip')]
       .find(e => /another way in/i.test(e.textContent))
-      ?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      ?.click();
   });
   await sleep(300);
-  h.rec('the sign-in sheet offers help from people you trusted',
+  h.rec('the sign-in face offers help from people you trusted',
         await page.evaluate(() => /people you trusted/i.test(
-          document.querySelector('#idform')?.innerText || '')));
+          document.querySelector('.sheet-view .acct-card .idc')?.innerText || '')));
   await page.evaluate(() => {
-    document.querySelector('#idform textarea').value =
+    document.querySelector('.sheet-view .acct-card .idc textarea[name="pieces"]').value =
       'pnr1.EUnlockedAid00000000000000000000000000000000.1.2.aGk\n' +
       'pnr1.EUnlockedAid00000000000000000000000000000000.2.2.aGl';
-    [...document.querySelectorAll('#idform button.go')]
+    [...document.querySelectorAll('.sheet-view .acct-card .idc .ob-chip')]
       .find(b => /put my passcode back together/i.test(b.textContent))?.click();
   });
   await sleep(400);
@@ -412,7 +416,6 @@ try {
   await page.waitForSelector('#idrow', { timeout: 30000 });
   await connect();
   await page.evaluate(() => {
-    document.querySelector('#idform')?.remove();
     window.__seam.__realStatus('local:EUnlockedAid00000000000000000000000000000000');
   });
   await sleep(200);
@@ -445,15 +448,15 @@ try {
   });
   await sleep(300);
   const join = await page.evaluate(() => {
-    const f = document.querySelector('#idform');
-    return { lead: f?.querySelector('.lead')?.textContent || '',
-             btn: [...(f?.querySelectorAll('button.go') || [])].map(b => b.textContent).join('|') };
+    const f = document.querySelector('.sheet-view .acct-card .idc');
+    return { view: f?.dataset.view, lead: f?.textContent || '',
+             btn: [...(f?.querySelectorAll('.ob-next') || [])].map(b => b.textContent).join('|') };
   });
-  h.rec('the unregistered sheet explains and offers to join', /hasn.t met you/i.test(join.lead) && /join as ada/i.test(join.btn));
+  h.rec('the unregistered face explains and offers to join', join.view === 'join' && /hasn.t met you/i.test(join.lead) && /join as ada/i.test(join.btn));
   await page.evaluate(() => {
-    const box = document.querySelector('#idform input[type="checkbox"]');
+    const box = document.querySelector('.sheet-view .acct-card .idc input[name="consent"]');
     if (box && !box.checked) box.click();
-    [...document.querySelectorAll('#idform button.go')].find(b => /join as/i.test(b.textContent))?.click();
+    [...document.querySelectorAll('.sheet-view .acct-card .idc .ob-next')].find(b => /join as/i.test(b.textContent))?.click();
   });
   await sleep(300);
   const joined = await page.evaluate(() => ({
@@ -469,5 +472,5 @@ try {
   closeServer();
 }
 
-summarize(h, ['chip shows create-identity', 'create form popover appears',
-              'form has a create button', 'no page errors during the flow']);
+summarize(h, ['chip shows create-identity', 'the identity card opens in the account sheet',
+              'the card has a create button', 'no page errors during the flow']);

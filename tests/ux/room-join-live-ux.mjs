@@ -10,6 +10,7 @@
 /// Run: make test-room-join-live-ux
 ///      bash tests/ux/ux-full.sh tests/ux/room-join-live-ux.mjs
 import { harness, launch, newPage, sleep, summarize, FAKE_MEDIA_ARGS } from './ux-harness.mjs';
+import { tickCard } from './probe-lib.mjs';
 
 const BASE = process.argv[2] || 'http://localhost:8089';
 const h = harness();
@@ -39,10 +40,10 @@ try {
 
   step = 'signup';
   await page.evaluate(async () => (await import('/app/tabs/social/id.js')).openIdentityDoor()); await sleep(600);
-  await page.evaluate(() => { const b = document.querySelector('#idform input[type="checkbox"]'); if (b && !b.checked) b.click(); });
-  await sleep(200);
-  await page.click('#idform button.go:has-text("create your identity")');
-  await page.waitForSelector('#idform input[name="username"]', { timeout: 120000 }).catch(() => {});
+  await page.waitForSelector('.idc', { timeout: 15000 });
+  await tickCard(page, 'consent', 'age');
+  await page.click('.idc .ob-next:has-text("create my identity")');
+  await page.waitForSelector('.idc[data-view="reveal"] input[name="username"]', { timeout: 120000 }).catch(() => {});
   await sleep(4000);
   h.rec('a first citizen is signed in', !/create your identity/i.test(await chip()), await chip());
 
