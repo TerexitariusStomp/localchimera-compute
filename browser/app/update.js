@@ -3,17 +3,18 @@
 //
 // A waiting build is announced on a card that stays until answered; a tap
 // moves the page onto it. A page left in the background moves by itself. An
-// open identity popover (#idform) holds an unsaved passcode or recovery file,
-// so the move waits for it to close.
+// unsaved passcode on screen (app/passcode-held.ts) holds the only key to a new
+// identity, so the move waits until it is saved.
 //
 // app.html loads this as a module of its own, ahead of the dial, so a build
 // that fails to boot can still be replaced by the next one.
 import { registerSW, applyUpdate, isDev } from "./pwa.js";
 import { toast } from "./toast.js";
 import { updateReady } from "./attention.js";
+import { passcodeUnsaved } from "./passcode-held.js";
 // hears the engine's install offer, which is raised once and early
 import "./install.js";
-const idle = () => !document.getElementById("idform");
+const idle = () => !document.getElementById("idform") && !passcodeUnsaved.peek();
 let watching = false;
 const whenHidden = () => {
     if (document.visibilityState === "hidden" && idle())

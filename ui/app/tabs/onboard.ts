@@ -30,6 +30,7 @@ import { openAccountPage } from '../account.js';
 import { installBlock } from '../install.js';
 import { chip } from '../chips.js';
 import { K } from "../keys.js";
+import { holdPasscode } from "../passcode-held.js";
 
 /** What the walk keeps on this device: whether it has been opened once before. */
 interface Walk { done: boolean; visited?: string[] }
@@ -154,8 +155,6 @@ const ageTick = signal(false);
 // the first real cast, so skipping it costs nothing but a later ask.
 const voteTick = signal(false);
 const idSaid = signal("");
-/** Leaving the page with an unsaved passcode destroys the only key: the browser's one hook. */
-const guard = (e: BeforeUnloadEvent): void => { e.preventDefault(); e.returnValue = ""; };
 
 async function create(): Promise<void> {
   if (!consentCurrent() && !consentTick.peek()) { idSaid.set("please read and accept the terms and the privacy notice first"); return; }
@@ -164,7 +163,7 @@ async function create(): Promise<void> {
   const r = await createIdentity();
   if ("err" in r) { idSaid.set(r.err); return; }
   if (voteTick.peek()) recordVoteConsent(r.aid);
-  window.addEventListener("beforeunload", guard);
+  holdPasscode(true);
   made.set({ ...r, saved: false, shown: false });
 }
 
@@ -186,7 +185,7 @@ const identityBody = (): Fragment => {
       <small>keep it with your passcode — or take the recovery file, which holds both.</small></div>
     <button class="ob-next ob-wide" onclick=${() => downloadIdentityFile(m.aid, m.bran)}>⬇ download recovery file</button>
     <small class="ob-hint">the file holds the passcode and the identifier together with your identity's own signed log — it opens this identity on any device, and seats it at a commune that has never met you.</small>
-    <label class="ob-tick"><input type="checkbox" ${m.saved ? "checked" : ""} onchange=${(e: Event) => { const on = (e.target as HTMLInputElement).checked; made.set({ ...m, saved: on }); if (on) window.removeEventListener("beforeunload", guard); else window.addEventListener("beforeunload", guard); }}><span>I've saved my passcode. I understand it cannot be shown again.</span></label>
+    <label class="ob-tick"><input type="checkbox" ${m.saved ? "checked" : ""} onchange=${(e: Event) => { const on = (e.target as HTMLInputElement).checked; made.set({ ...m, saved: on }); holdPasscode(!on); }}><span>I've saved my passcode. I understand it cannot be shown again.</span></label>
     <label class="ob-field"><span>what should people call you?</span>
       <input type="text" autocomplete="nickname" placeholder="a name — optional, and changeable any time" onchange=${(e: Event) => setMyName((e.target as HTMLInputElement).value.trim(), "")}></label>`;
   if (held && me) return html`
