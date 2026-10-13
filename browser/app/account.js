@@ -48,12 +48,12 @@ function row(r, close, wire = true, enter) {
     return b;
 }
 const PAGES = {
-    profile: { title: "your profile", sections: ["profile-where", "standing", "reach"] },
+    profile: { title: "your profile", sections: ["profile-who", "profile-where", "standing", "reach"] },
     bodies: { title: "legal bodies", sections: ["bodies"] },
     diet: { title: "diet", sections: ["diet"] },
     body: { title: "body", sections: ["body"] },
     health: { title: "health", sections: ["self", "away"] },
-    keys: { title: "keys and devices", sections: ["device", "passcode", "recovery", "forget"] },
+    keys: { title: "keys and devices", sections: ["device", "passcode", "recovery", "recognition", "forget"] },
     // the map one keeps for a place sits with the place
     where: { title: "where you are", sections: ["where", "places", "maps"] },
     housing: { title: "your housing", sections: ["housing"] },

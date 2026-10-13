@@ -51,12 +51,12 @@ function row(r: RowSpec, close: () => void, wire = true, enter?: () => void): HT
 /** A nested page: a title, and the settings sections it shows, in order. */
 interface Page { title: string; sections: string[] }
 const PAGES: Record<string, Page> = {
-  profile: { title: "your profile", sections: ["profile-where", "standing", "reach"] },
+  profile: { title: "your profile", sections: ["profile-who", "profile-where", "standing", "reach"] },
   bodies: { title: "legal bodies", sections: ["bodies"] },
   diet: { title: "diet", sections: ["diet"] },
   body: { title: "body", sections: ["body"] },
   health: { title: "health", sections: ["self", "away"] },
-  keys: { title: "keys and devices", sections: ["device", "passcode", "recovery", "forget"] },
+  keys: { title: "keys and devices", sections: ["device", "passcode", "recovery", "recognition", "forget"] },
   // the map one keeps for a place sits with the place
   where: { title: "where you are", sections: ["where", "places", "maps"] },
   housing: { title: "your housing", sections: ["housing"] },

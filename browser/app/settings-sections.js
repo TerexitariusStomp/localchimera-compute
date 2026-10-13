@@ -27,6 +27,8 @@ import { createSleepSpansBlock } from './sleep.js';
 import { createAwayBlock } from './away.js';
 import { reachBlock } from './reach-view.js';
 import { bodiesBlock } from './bodies-view.js';
+import { whoBlock } from './who-view.js';
+import { recognitionBlock } from './recognition-view.js';
 import { render } from './template.js';
 import { effect } from './reactive.js';
 import { storageRows } from './storage-view.js';
@@ -204,6 +206,8 @@ export function registerAllSettings() {
     const sleepSpansBlock = mountFragment(createSleepSpansBlock());
     const awayBlockSettings = mountFragment(createAwayBlock());
     const reachBlockSettings = mountFragment(reachBlock);
+    const whoBlockSettings = mountFragment(whoBlock);
+    const recognitionSettings = mountFragment(recognitionBlock);
     const mapPacksSettings = mountFragment(mapPacksBlock);
     // one element for the life of the page: a change in progress survives a
     // look at another section, and its own effect follows who is signed in
@@ -240,6 +244,10 @@ export function registerAllSettings() {
     registerSettings({
         id: "profile", title: "your profile", order: 29,
         sections: [
+            { id: "profile-who", title: "name and identifier",
+                note: "What people call you, and the identifier that names you. The name is optional "
+                    + "and is kept on this device first; neither is used to recover your identity.",
+                rows: () => [{ kind: "custom", build: whoBlockSettings }] },
             { id: "profile-where", title: "where you are",
                 note: "The place the commons holds for you, and the days you have declared ahead. "
                     + "Sharing itself is set under general → where you are, or from the 📍 location chip in the bottom bar.",
@@ -274,6 +282,10 @@ export function registerAllSettings() {
             { id: "recovery", title: "if you lose your passcode",
                 note: "It cannot be reset — but it can be split among people you trust.",
                 rows: () => [{ kind: "custom", build: mount(recoveryFriends) }] },
+            { id: "recognition", title: "recognised person",
+                note: "Where the commune says you stand as a person — provisional until enough recognised "
+                    + "people have signed that they have met you — and the newcomers asking you to.",
+                rows: () => [{ kind: "custom", build: recognitionSettings }] },
             { id: "forget", title: "forget me",
                 note: "Erase every record this commune holds about you, in one act, and optionally "
                     + "retire the identity for good. Your signed key log stays, as records about an "
