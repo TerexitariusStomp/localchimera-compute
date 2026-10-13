@@ -22,6 +22,7 @@
   #:use-module ((playnet scope live)
                 #:select (plan-scope->plan work-intent clear-intents-by-prefix!))
   #:use-module ((playnet solve engine) #:select (time->period))
+  #:use-module ((playnet solve report) #:select (intent-family? intent-family-prefix))   ; the work-intent id grammar
   #:use-module ((playnet plan accepts)
                 #:select (open-work-offers scope-part scope-horizon-ctx ->epoch *support-tolerance*))
   #:use-module ((playnet plan store)
@@ -122,7 +123,7 @@
 (define (window-closes-at until) (window-close-epoch until))
 
 (define (suggested-provider-rank ps)
-  (let ((mi (filter (lambda (i) (string-prefix? "mi|" (or (intent-id i) "")))
+  (let ((mi (filter (lambda (i) (intent-family? 'materialized (intent-id i)))
                     ($ ps 'all-intents))))
     (lambda (row)
       (or (row-provider row)
@@ -146,7 +147,7 @@
 (define (persist-open-shifts! root cached)
   (let* ((ps (false-if-exception ($ root 'plan-store))))
     (when (and ps (assq 'work (cdr cached)))
-      (clear-intents-by-prefix! ps "ni|")
+      (clear-intents-by-prefix! ps (intent-family-prefix 'need))
       (let ((accepted (map commitment-input-of (standing-accepts ps)))
             (nowu (instant->unix (now)))
             (laid 0) (closed 0))

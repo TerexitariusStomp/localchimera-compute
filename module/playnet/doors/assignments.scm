@@ -7,6 +7,7 @@
   #:use-module ((goblins) #:select ($))
   #:use-module ((playnet algorithms skill-matcher) #:select (match-work-flows))
   #:use-module ((playnet scope live) #:select (willing-tuples))
+  #:use-module ((playnet solve report) #:select (offer-intent-id))
   #:use-module ((playnet utils envelope) #:select (catch-as-failure failure success))
   #:use-module ((playnet vf formulas actions) #:select (drawing-actions))
   #:use-module ((playnet vf formulas flows) #:select (row-scopes))
@@ -57,7 +58,7 @@
 ;; an option, not a commitment; the single hours-budget bounds materialization later.
 ;; State lives as `status` meta on the DETERMINISTIC offer-intent id (oi|w|skill|cell),
 ;; so it persists across re-solves even though the intents are re-derived each plan.
-(define (willing-key worker skill cell) (string-append "oi|" worker "|" skill "|" cell))
+(define willing-key offer-intent-id)   ; a willingness is kept under its offer intent's id
 
 (define* (do-express-willingness scope-root worker skill cell willing? #:optional (hours #f))
   "Stamp WORKER's willingness for SKILL at CELL. willing? = #t marks status=willing

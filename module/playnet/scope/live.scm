@@ -2304,7 +2304,7 @@
               (let ((id (intent-id i)))
                 (when (and id (string-prefix? prefix id)) ($ ps 'remove-intent id))))
             ($ ps 'all-intents)))
-(define (clear-materialized-intents! ps) (clear-intents-by-prefix! ps "mi|"))
+(define (clear-materialized-intents! ps) (clear-intents-by-prefix! ps (intent-family-prefix 'materialized)))
 
 ;; THE work-intent constructor — the one place the 28-field positional
 ;; layout is written down. Four families build through it (mi| suggestions,
@@ -2329,7 +2329,7 @@
                (wend   (row-until w))
                (period (time->period wbeg))           ; the period the commitment is FOR (0 if no spans)
                (cell   (string-append (or place "") "@" (number->string period)))
-               (iid    (string-append "mi|" (or worker "?") "|" (or skill "?") "|" cell)))
+               (iid    (materialized-intent-id (or worker "?") (or skill "?") cell)))
           (when (and worker skill (number? eff) (> eff 1e-6))
             (set! n (+ n 1))
             ($ ps 'add-intent
@@ -2358,7 +2358,7 @@
                      (list (assq-ref (cdr kv) 'worker)
                            (assq-ref (cdr kv) 'skill)
                            (assq-ref (cdr kv) 'cell))))
-              (meta-rows-with-prefix ($ ps 'all-meta) "oi|")))
+              (meta-rows-with-prefix ($ ps 'all-meta) (intent-family-prefix 'offer))))
 
 (define (materialize-willing! scope-root)
   (let* ((ps    ($ scope-root 'plan-store))
@@ -2378,7 +2378,7 @@
                    ;; hygiene; this read is the truth)
                    (not (intent-window-passed? i (instant->unix (now))))
                    (intent-resource-conforms-to i)
-                   (not (string-prefix? "mi|" (or (intent-id i) ""))))
+                   (not (intent-family? 'materialized (intent-id i))))
           (let* ((skill (intent-resource-conforms-to i))
                  (place (intent-at-location i))
                  (cell  (string-append (or place "") "@" (number->string (time->period (intent-has-beginning i)))))
@@ -2387,7 +2387,7 @@
                  (plan  (intent-planned-within i)))     ; inherit the need's plan so it surfaces in-view
             (for-each
               (lambda (w)
-                (let ((iid (string-append "mi|" w "|" skill "|" cell)))
+                (let ((iid (materialized-intent-id w skill cell)))
                   (set! n (+ n 1))
                   ($ ps 'add-intent
                      (work-intent iid #:proc proc #:skill skill #:hours eff

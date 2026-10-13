@@ -28,7 +28,7 @@
   #:use-module (playnet solve compile)
   #:use-module (playnet solve engine)
   #:use-module (playnet solve discrete)
-  #:export (report-located report-discrete solve-report plan->work plan->material tension-duals
+  #:export (need-intent-id offer-intent-id materialized-intent-id intent-family-prefix intent-family? report-located report-discrete solve-report plan->work plan->material tension-duals
             labour-pulls good-pulls good-labour-content worker-ledger social-ledger legal-exposure
             claim-tally topo-order whole-atoms-of ambient-spec? mk-mat-commitment))
 
@@ -70,8 +70,22 @@
 ;; the COMMITMENT (provider=w, inputOf=P) `satisfies` the pair (need-id offer-id),
 ;; and is later `fulfilled` by an EconomicEvent the observer records. ids are
 ;; deterministic so the links reconstruct; all carry the period's wall-clock.
+;; THE ID GRAMMAR of the work-intent families, written once: ni| a need (open shift),
+;; oi| an offer (a worker's willingness, its status kept as meta under the id), mi| a
+;; materialized suggestion (a willing worker laid onto an open need). Constructors,
+;; the family's prefix and its membership test; no caller spells a prefix.
 (define (need-intent-id proc skill cl)   (string-append "ni|" proc "|" skill "|" cl))
 (define (offer-intent-id worker skill cl) (string-append "oi|" worker "|" skill "|" cl))
+(define (materialized-intent-id worker skill cl) (string-append "mi|" worker "|" skill "|" cl))
+(define (intent-family-prefix family)
+  "The prefix every id of FAMILY (need, offer, materialized) carries."
+  (case family ((need) "ni|") ((offer) "oi|") ((materialized) "mi|")
+    (else (error "intent-family-prefix: no such family" family))))
+(define (intent-family? family id)
+  "ID is an id of FAMILY."
+  (let ((p (intent-family-prefix family)))
+    (and (string? id) (>= (string-length id) (string-length p))
+         (string=? (substring id 0 (string-length p)) p))))
 ;; ── which needs are INDIVISIBLE, and into how many acts ─────────────────────
 ;; `plan/assignment.scm` turns the offer field into a rota and asks its
 ;; caller how many atomic acts a need is. The engine is the one that knows: a

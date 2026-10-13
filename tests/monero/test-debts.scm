@@ -8,7 +8,7 @@
 
 (use-modules (playnet test harness)
              (playnet credentials commitments) (playnet keri acdc) (playnet economy debts) (playnet keri acdc) (playnet keri acdc-store)
-             (playnet scope root) (srfi srfi-1)
+             (playnet scope root) (playnet vf schemas) (srfi srfi-1)
              ((playnet monero specs) #:select (bootstrap-monero-resource! bootstrap-external-asset!))
              (srfi srfi-1)
              (goblins) (goblins vat))
@@ -68,6 +68,22 @@
       (check "€120 settles both debts fully; 0.05 XMR (€50) left for the claim"
              (< (abs (- left 0.05)) 1e-9)))
     (check "both debts revoked — fully paid" (length (open-debts store COMMUNE ALICE)) 0)
+
+    (display "\n── a payment counts once, by the link it states or by the id it was recorded under ──\n")
+    (let* ((d4 (debt-commitment COMMUNE ALICE "debt:a:link" "spec-eur" 40 "EUR" FUTURE))
+           (said (cred-said d4))
+           (pay (lambda (id settles)
+                  ($ obs 'record-event
+                     (make-economic-event #:id id #:action 'transfer #:resource-conforms-to "spec-eur"
+                                          #:provider COMMUNE #:receiver ALICE
+                                          #:resource-quantity (make-measure 10 "EUR")
+                                          #:has-point-in-time "2026-08-21T01:00:00Z" #:settles settles)))))
+      ($ store 'issue-idempotent d4)
+      (pay (string-append "debt-paid:" said ":linked") said)   ; states the debt it settles
+      (pay (string-append "debt-paid:" said ":old") #f)         ; recorded before payments stated one
+      (check-pred "40 less a linked 10 and a legacy 10 is 20, each counted once"
+                  (< (abs (- 20 (debt-remaining obs d4))) 1e-9))
+      ($ store 'revoke said))
     (check "nothing left to price" (debts-owed-in-xmr rs obs store COMMUNE ALICE) 0.0)
 
     (display "\n── open-debts-alist: the injectable read my-payouts wants ──\n")

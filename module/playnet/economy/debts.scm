@@ -148,14 +148,20 @@
 (define (debt-remaining obs k)
   (let* ((face (cred-claim k 'resource-quantity))
          (amt  (and (pair? face) (car face)))
+         (said (cred-said k))
+         (qty  (lambda (e) (measure-has-numerical-value (economic-event-resource-quantity e))))
          (paid (if obs
-                   (fold + 0.0
-                         (filter-map
-                          (lambda (e)
-                            (and (string-prefix? (string-append "debt-paid:" (cred-said k) ":")
-                                                 (or (economic-event-id e) ""))
-                                 (measure-has-numerical-value (economic-event-resource-quantity e))))
-                          ($ obs 'all-events)))
+                   ;; the events that SETTLE the debt, by the link they state (the
+                   ;; observer's own index), and — for a payment recorded before it
+                   ;; stated one — the events whose id names it; each counted once
+                   (let* ((linked (or (false-if-exception ($ obs 'settled-by said)) '()))
+                          (known  (map economic-event-id linked))
+                          (legacy (filter (lambda (e)
+                                            (let ((id (or (economic-event-id e) "")))
+                                              (and (string-prefix? (string-append "debt-paid:" said ":") id)
+                                                   (not (member id known)))))
+                                          ($ obs 'all-events))))
+                     (fold + 0.0 (map qty (append linked legacy))))
                    0.0)))
     (max 0.0 (- (or amt 0) paid))))
 
@@ -220,6 +226,7 @@
                     #:action 'transfer #:resource-conforms-to spec #:resource-classified-as '("reimbursement")
                     #:provider commune-aid #:receiver aid
                     #:resource-quantity (make-measure paid-face unit) #:has-point-in-time stamp #:created stamp
+                    #:settles (cred-said k)                  ; the debt this payment pays: one link, read by debt-remaining
                     #:note "settled via payout"))
                 (when (>= (+ paid-face 1e-9) rem)
                   ($ store 'revoke (cred-said k)))
