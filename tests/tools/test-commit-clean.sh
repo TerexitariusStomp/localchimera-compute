@@ -10,6 +10,8 @@
 #   STOPS     the moved HEAD changed the same lines: the tool stops, main is where the other
 #             commit left it, and nothing of ours is committed
 #   REFUSES   a message carrying an attribution trailer; a tree whose gate fails
+#   WORKTREE  run from a worktree of the session's own (detached, based where its work began),
+#             --branch names where the commit lands: merged onto that branch's tip as it stands
 #
 # Run: bash tests/tools/test-commit-clean.sh
 set -uo pipefail
@@ -77,6 +79,21 @@ out="$(tool "$R/msg" a.txt --gate --gate-cmd "bash $R/gate.sh"; echo "exit=$?")"
 check "the tool exits non-zero" "$(echo "$out" | tail -1)" "exit=1"
 check "main is where the other commit left it" "$(git -C "$R" log -1 --format=%s)" "other session"
 check "a.txt there is theirs" "$(git -C "$R" show HEAD:a.txt | sed -n 2p)" "DEUX"
+
+echo; echo "── WORKTREE: a session's own worktree commits onto main, merged with what landed there ──"
+fresh_repo
+W="$R-mine"; git -C "$R" worktree add -q --detach "$W" main
+printf 'one\nTWO\nthree\n' > "$W/a.txt"
+# main moves on, in b.txt, after the worktree was made
+t=$(mktemp -d); git -C "$R" worktree add -q --detach "$t" main
+printf 'alpha\nbeta\nGAMMA\n' > "$t/b.txt"; git -C "$t" add b.txt; git -C "$t" commit -q -m "other session"
+git -C "$R" update-ref refs/heads/main "$(git -C "$t" rev-parse HEAD)"; git -C "$R" worktree remove --force "$t"
+echo "a: change" > "$R/msg"
+out="$(cd "$W" && python3 "$TOOL" "$R/msg" a.txt --gate --branch refs/heads/main --gate-wt "$R-gate" --emit-cmd true --boot-cmd true --gate-cmd true 2>&1; echo "exit=$?")"
+check "the tool exits 0" "$(echo "$out" | tail -1)" "exit=0"
+check "main holds both: ours on top of the other session's" "$(git -C "$R" log --format=%s -3 refs/heads/main | tr '\n' ',')" "a: change,other session,base,"
+check "b.txt keeps the other session's change" "$(git -C "$R" show refs/heads/main:b.txt | tail -1)" "GAMMA"
+check "a.txt carries ours" "$(git -C "$R" show refs/heads/main:a.txt | sed -n 2p)" "TWO"
 
 echo; echo "── REFUSES: a trailer in the message; a failing gate ──"
 fresh_repo

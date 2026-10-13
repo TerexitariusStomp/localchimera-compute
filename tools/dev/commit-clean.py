@@ -3,7 +3,7 @@
 
     tools/dev/commit-clean.py MSGFILE [PATH…] [--exclude REGEX]… [--untracked-ok] [--dry-run]
     tools/dev/commit-clean.py --gate MSGFILE PATH… [--emit] [--baseline FILE] [--gate-cmd CMD]
-                              [--emit-cmd CMD] [--boot-cmd CMD] [--gate-wt DIR]
+                              [--emit-cmd CMD] [--boot-cmd CMD] [--gate-wt DIR] [--branch REF]
 
 Several sessions work in one tree and one index, so `git add` and `git commit` here
 would sweep in files another session staged. This commits whole files instead: a
@@ -43,6 +43,10 @@ index is reset for the paths, and the result is verified: the commit holds the n
 files and the regenerated ones only, is signed, and carries no attribution trailer.
 The suite's known reds are named with --baseline FILE (`make test RED_BASELINE`).
 Limit: another session's UNCOMMITTED hunks in a file you name are committed with it.
+A session can therefore work in a worktree of its own and run this from there: the files
+it names are its own alone, HEAD there is where its work began, and --branch REF
+(default: the checked-out branch) names the branch the commit lands on, merged onto that
+branch's tip as it stands.
 """
 import os
 import re
@@ -172,7 +176,7 @@ def gated_commit(msg, paths, opts, left):
     msg_text = open(msg).read()
     if TRAILER.search(msg_text):
         sys.exit('commit-clean: the message carries an attribution trailer; the repository keeps them out (CLAUDE.md)')
-    branch = git('symbolic-ref', 'HEAD').strip()
+    branch = opts['branch'] or git('symbolic-ref', 'HEAD').strip()
     top = git('rev-parse', '--show-toplevel').strip()
     wt = gate_worktree(opts['gate_wt'])
     log = os.path.join(wt, '.commit-clean.log')
@@ -182,7 +186,7 @@ def gated_commit(msg, paths, opts, left):
     mine = commit_of(mytree, head0, 'snapshot')
     head = head0
     for round_ in range(1, MAX_ROUNDS + 1):
-        head_now = git('rev-parse', 'HEAD').strip()
+        head_now = git('rev-parse', branch).strip()
         tree, upstream = merged_tree(head0, head_now, mine, mytree)
         if upstream:
             meet = sorted(set(upstream) & set(paths))
@@ -210,7 +214,7 @@ def gated_commit(msg, paths, opts, left):
             if in_worktree(wt, cmd, log):
                 tail = subprocess.run(['tail', '-n', '25', log], capture_output=True, text=True).stdout
                 sys.exit(f'commit-clean: {label} failed; the tree is left at {wt}\n{tail}')
-        head = git('rev-parse', 'HEAD').strip()
+        head = git('rev-parse', branch).strip()
         if head == head_now:
             break
         print(f'commit-clean: HEAD moved while the gate ran ({head_now[:10]} → {head[:10]}); again')
@@ -262,6 +266,7 @@ def main(argv):
         'emit_cmd': take_option(args, '--emit-cmd', DEFAULT_EMIT),
         'boot_cmd': take_option(args, '--boot-cmd', DEFAULT_BOOT),
         'gate_wt': take_option(args, '--gate-wt', '~/.cache/playnet/gate-wt'),
+        'branch': take_option(args, '--branch'),
     }
     excludes = []
     while '--exclude' in args:
