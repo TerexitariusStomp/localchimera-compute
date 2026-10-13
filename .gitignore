@@ -472,6 +472,7 @@ docs/dev/todo.md
 docs/dev/variable-substitutions.md
 docs/dev/variables-map.md
 docs/dev/welfare-voice-scope.md
+docs/distribution.typ
 docs/enough-for-everyone.typ
 docs/essays/iiw-handout.md
 docs/essays/learning_ecological_harmony.md
@@ -513,6 +514,10 @@ docs/governance/VOICE-ACTOR.md
 docs/governance/democracy-on-keri.md
 docs/governance/governance-surface.md
 docs/governance/persistence-operations.md
+docs/governance/readings-choices-asks.md
+docs/governance/statement-census.md
+docs/governance/what-answers-to-what.md
+docs/governance/a-federation-into-dual-power.md
 docs/guile-hoot-docs/00-introduction.md
 docs/guile-hoot-docs/01-status.md
 docs/guile-hoot-docs/02-installation.md
