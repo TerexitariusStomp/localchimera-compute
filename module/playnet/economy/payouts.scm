@@ -29,7 +29,7 @@
   #:use-module ((playnet vf schemas) #:select (copy-intent economic-resource-onhand-quantity intent-finished intent-has-beginning intent-id intent-provider intent-resource-conforms-to intent-resource-quantity intent-state make-commitment commitment-id commitment-finished commitment-has-beginning commitment-has-end copy-commitment measure-has-numerical-value))
   #:use-module ((srfi srfi-1) #:select (fold filter-map))
   #:use-module ((ice-9 match) #:select (match))
-  #:export (intent-private? commitment-private? payout-source-id monero-address-plausible? payouts-of payout-available
+  #:export (sending-id intent-private? commitment-private? payout-source-id monero-address-plausible? payouts-of payout-available
             payout-open? payout-pending? payout-sending? payout-txid payout-word payout-row-context
             payouts-where payout-move! payouts-upgrade!))
 

@@ -61,7 +61,7 @@
 (define-module (playnet dev ledger)
   #:use-module (playnet scope root)
   #:use-module (playnet vf schemas)
-  #:use-module ((playnet vf formulas flows) #:select (make-work-commitment))
+  #:use-module ((playnet vf formulas flows) #:select (make-work-commitment work-done-event-id))
   #:use-module (srfi srfi-1)
   #:use-module (playnet vf schemas)
   #:use-module ((playnet scope live) #:select (make-work-event record-work-done record-flow-done))
@@ -136,7 +136,7 @@
 ;; the id record-work-done itself derives from a commitment (its "ev-" + id) —
 ;; named here too, so book-issue-done! can guard each write before making it,
 ;; the same way it guards the deliverable
-(define (commitment-event-id c) (string-append "ev-" (commitment-id c)))
+(define (commitment-event-id c) (work-done-event-id (commitment-id c)))
 
 (define (booked? scope oid)
   "Does the scope's observer hold issue OID's deliverable as produced?"

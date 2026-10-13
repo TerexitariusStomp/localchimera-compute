@@ -764,7 +764,7 @@ $(KERNEL_SO): $(KERNEL_SRC) module/playnet/solve/kernel/Makefile
 	  make -C module/playnet/solve/kernel
 
 # The source lints every gate runs, and the one way the suite is run.
-LINTS = lint-parens lint-law lint-layers lint-verbs lint-compile
+LINTS = lint-parens lint-law lint-layers lint-verbs lint-ids lint-compile
 SUITE = $(TEST_ENV) RED_BASELINE=$(RED_BASELINE) bash tools/test/run-scm-tests.sh
 
 .PHONY: test test-all test-fast
@@ -951,6 +951,12 @@ lint-layers:
 .PHONY: lint-verbs
 lint-verbs:
 	@LC_ALL=C.UTF-8 tools/test/own-ccache.sh guile tools/lint/lint-verbs.scm
+
+# Sites that build or test an id grammar's prefix by hand instead of through its owner
+# (located.scm, work-ids.scm, plan-bundle.scm, payouts.scm): tools/lint/lint-ids.sh.
+.PHONY: lint-ids
+lint-ids:
+	@bash tools/lint/lint-ids.sh
 
 # Every live module compiled with the unbound-variable and arity warnings: a call that
 # cannot run (a name no import supplies, a wrong argument count) is refused before a test

@@ -22,7 +22,7 @@
   #:use-module ((playnet vf formulas actions) #:select (input-action? output-action? occupying-actions))
   #:use-module ((playnet utils clock) #:select (now instant->civil))
   #:use-module ((playnet utils units) #:select (%count-unit %effort-unit))
-  #:export (row-id row-action row-spec row-quantity row-unit row-effort
+  #:export (work-done-event-id row-id row-action row-spec row-quantity row-unit row-effort
             row-provider row-receiver row-input-of row-output-of row-run row-place
             row-when row-until row-note row-tags row-scope row-satisfies
             row-finished row-ambient? carried-lot-id %ambient-tag
@@ -46,6 +46,13 @@
         (cond ((commitment? r) (of-commitment r))
               ((intent? r) (of-intent r))
               (else (let ((p (and (pair? r) (assq 'key r)))) (and p (cdr p)))))))))
+
+;; The id of the event that confirms commitment CID done: `ev-<cid>`, and `ev-<cid>.<k>` for the
+;; k-th confirmation of the same commitment (hours recorded in parts), so a second is no
+;; conflicting id. record-work-done, record-flow-done and the dev ledger's guards name the
+;; one event by this one function.
+(define* (work-done-event-id cid #:optional (k 0))
+  (if (= k 0) (string-append "ev-" cid) (string-append "ev-" cid "." (number->string k))))
 
 (define-row-reader row-id        id                     id)
 (define-row-reader row-spec      resource-conforms-to   conforms-to)

@@ -22,7 +22,7 @@
   #:use-module ((playnet scope live)
                 #:select (plan-scope->plan work-intent clear-intents-by-prefix!))
   #:use-module ((playnet solve engine) #:select (time->period))
-  #:use-module ((playnet solve report) #:select (intent-family? intent-family-prefix))   ; the work-intent id grammar
+  #:use-module ((playnet vf facts work-ids) #:select (bounded-offer-id intent-family? intent-family-prefix))   ; the work-intent id grammar
   #:use-module ((playnet plan accepts)
                 #:select (open-work-offers scope-part scope-horizon-ctx ->epoch *support-tolerance*))
   #:use-module ((playnet plan store)
@@ -59,8 +59,7 @@
          (open (open-work-offers scope-root)))
     (let* ((proc  (row-input-of wc))
            (hours (row-effort wc))
-           (iid   (string-append "offer:" agent-id ":" (or proc "?")
-                                 "@" (or (row-when wc) "")))
+           (iid   (bounded-offer-id agent-id (or proc "?") (or (row-when wc) "")))
            (pid   (string-append "prop-" iid))
            (fresh? (not (any (lambda (row) (equal? pid (proposal-id (car row)))) open)))
            (nowu  (instant->unix (now))))

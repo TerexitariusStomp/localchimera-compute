@@ -56,6 +56,7 @@
 (define-module (playnet doors family solve)
   #:use-module ((playnet utils units) #:select (%count-unit))
   #:use-module ((playnet utils catch) #:select (catch* throw*))
+  #:use-module ((playnet vf facts located) #:select (cell process-col))
   #:use-module (srfi srfi-1)
   #:use-module (playnet solve engine)
   #:use-module (playnet solve discrete)
@@ -270,7 +271,7 @@
   (set-promote! tier)
   (hash-set! *init* (lg "spec-eur" (cell "home" 0)) (exact->inexact purse))
   ;; one week of living is a FACT: pinned, it fills the crate once
-  (with-col-fixed! (list (cons "p|rp-hh-living|home@0" 1.0)))
+  (with-col-fixed! (list (cons (process-col "rp-hh-living" (cell "home" 0)) 1.0)))
   (hash-set! *A* (cell "home" 0) (exact->inexact labour-h))
   (let* ((masses* (or masses (family-masses needs weighted? #:members members #:per-citizen-hours per-citizen-hours)))
          (w (lambda (n) (or (any (lambda (m) (and (equal? (cadr m) (need-good n)) (caddr m))) masses*) 0.0))))
@@ -356,7 +357,7 @@
   ;; presolve RAISES on that (a decided count left a column no value) rather
   ;; than publishing feasible? #f; both read as "no plan" here.
   (define (result x idx feasible?)
-    (let* ((col (lambda (p) (if feasible? (col-value x idx (string-append "p|" p "|home@0")) 0.0)))
+    (let* ((col (lambda (p) (if feasible? (col-value x idx (process-col p (cell "home" 0))) 0.0)))
            (rows (map (lambda (n)
                         (let ((got (col (need-proc n))))
                           `((person . ,(need-person n)) (what . ,(need-what n))

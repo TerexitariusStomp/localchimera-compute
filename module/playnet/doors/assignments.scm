@@ -7,7 +7,7 @@
   #:use-module ((goblins) #:select ($))
   #:use-module ((playnet algorithms skill-matcher) #:select (match-work-flows))
   #:use-module ((playnet scope live) #:select (willing-tuples))
-  #:use-module ((playnet solve report) #:select (offer-intent-id))
+  #:use-module ((playnet vf facts work-ids) #:select (offer-intent-id))
   #:use-module ((playnet utils envelope) #:select (catch-as-failure failure success))
   #:use-module ((playnet vf formulas actions) #:select (drawing-actions))
   #:use-module ((playnet vf formulas flows) #:select (row-scopes))

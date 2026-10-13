@@ -14,7 +14,7 @@
   #:use-module (goblins)                 ; $ — the plan-store reads below
   #:use-module (playnet vf schemas)
   #:use-module (srfi srfi-1)
-  #:export (work-intent?
+  #:export (plan-proposal-name plan-proposal-plan-id work-intent?
             intent-hours
             intent-skill
 
@@ -43,12 +43,20 @@
 
 ;;; ── Rising proposals ────────────────────────────────────────────────────────
 
+;; A rising plan's proposal is named `plan:<plan-id>`: the name says which plan it carries, so the
+;; scopes' deployment table and the UC's matching read the plan back off the proposal.
+(define (plan-proposal-name plan-id) (string-append "plan:" plan-id))
+(define (plan-proposal-plan-id name)
+  "The plan id a proposal NAME carries, or #f for a proposal that is not a rising plan's."
+  (and (string? name) (> (string-length name) 5) (string=? (substring name 0 5) "plan:")
+       (substring name 5)))
+
 (define* (make-rising-proposal id plan-id scope-id work-intent-ids
                                 #:key (location #f) (beginning #f) (end #f))
   "Create a VF Proposal representing a rising plan. The leaf publishes
    its work-intents as a request for labour from the UC."
   (make-proposal #:id id
-                 #:name (string-append "plan:" plan-id)                       ;; note
+                 #:name (plan-proposal-name plan-id)                          ;; note
                  #:has-beginning beginning #:has-end end                       ;; unit-based
                        ;; created
                  #:purpose 'request                 ;; purpose

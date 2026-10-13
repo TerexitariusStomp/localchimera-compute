@@ -261,7 +261,7 @@
     (define (factor-on fl)
       (let* ((action (car fl)) (spec (caddr fl))
              ;; the build asks of a used service under its "Svc|spec" good
-             (asked (if (and (eq? action 'use) (string? spec) (not (string-prefix? "Svc|" spec)))
+             (asked (if (and (eq? action 'use) (string? spec) (not (svc-good? spec)))
                         (svc-good spec) spec)))
         (fold (lambda (w f) (farther f (factor action (cadr fl) asked (car w) (cdr w))))
               1.0 wheres)))

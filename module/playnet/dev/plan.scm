@@ -24,6 +24,7 @@
 (define-module (playnet dev plan)
   #:use-module (playnet vf formulas flows)
   #:use-module (playnet vf formulas actions)
+  #:use-module ((playnet vf facts located) #:select (cell process-col))
   #:use-module (playnet vf schemas)
   #:use-module ((playnet scope live) #:select (plan-scope->alist))
   #:use-module ((playnet solve engine) #:select (priority-weight))
@@ -232,7 +233,7 @@
    every whole-count process of the week fixed at the count it packed."
   `((config . all)
     (cuts)
-    (fixed . ,(map (lambda (pc) (cons (string-append "p|" (car pc) "|" %dev-place "@0") (exact->inexact (cdr pc))))
+    (fixed . ,(map (lambda (pc) (cons (process-col (car pc) (cell %dev-place 0)) (exact->inexact (cdr pc))))
                    (pack-week w all-facts people #:meeting? meeting?)))))
 
 (define* (plan-dev-week scope all-facts people

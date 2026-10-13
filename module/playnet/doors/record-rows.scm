@@ -24,6 +24,7 @@
   #:use-module ((playnet utils clock) #:select (instant->civil instant->unix window-close-epoch (now . clock-now)))
   #:use-module (playnet vf beyond schedules)
   #:use-module ((playnet vf facts availability) #:select (dated-week? dated-week-week dated-week-dated))
+  #:use-module ((playnet vf facts work-ids) #:select (intent-family? work-intent-id-terms))
   #:use-module ((playnet knowledge recipes store) #:select (recipe-deliverable))
   #:use-module ((playnet knowledge catalogues substances) #:select (conservation-reading boundary-process? balance-flows))
   #:use-module ((playnet solve recipe-response) #:select (response-margin curve-reach capture-at standing-position))
@@ -196,9 +197,9 @@
 ;; join is on the solve's own key: the dial orders one person's choices among
 ;; a shift's locations by what the plan GAINS from them there
 (define (shift-pull rec ctx)
-  (let ((parts (string-split (or (row-id rec) "") #\|)) (pulls (ctx-ref ctx 'pulls)))
-    (and (pair? pulls) (= (length parts) 4) (string=? (car parts) "ni")
-         (let ((lam (assoc-ref pulls (string-append (caddr parts) "@" (cadddr parts)))))
+  (let ((terms (work-intent-id-terms (or (row-id rec) ""))) (pulls (ctx-ref ctx 'pulls)))
+    (and (pair? pulls) terms (eq? (assq-ref terms 'family) 'need)
+         (let ((lam (assoc-ref pulls (string-append (assq-ref terms 'skill) "@" (assq-ref terms 'cell)))))
            (and (number? lam) lam)))))
 
 ;; an intent's suggested provider rides its plan-store meta
@@ -394,7 +395,7 @@
     (and (pair? pubs) ($ (ctx-ref ctx 'ps) 'get-intent (car pubs)))))
 (define (offer? p ctx)
   (let ((pubs (or (proposal-publishes p) '())))
-    (and (pair? pubs) (string? (car pubs)) (string-prefix? "offer:" (car pubs)) (published-intent p ctx) #t)))
+    (and (pair? pubs) (string? (car pubs)) (intent-family? 'bounded (car pubs)) (published-intent p ctx) #t)))
 (define (proposal-clock p ctx)
   (let ((it (published-intent p ctx)))
     (grid-clock (and it (intent-has-beginning it)) (and it (intent-has-end it)))))

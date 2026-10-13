@@ -5,6 +5,8 @@
 
 (define-module (playnet doors plan-wire)
   #:use-module (playnet solve report)
+  #:use-module ((playnet vf facts work-ids) #:select (intent-family? work-intent-id-terms))
+  #:use-module ((playnet vf facts located) #:select (bar-spec))
   #:use-module ((goblins) #:select ($))
   #:use-module ((playnet algorithms elastic) #:select (current-social-free-time))
   #:use-module ((playnet doors counts) #:select (count-readable?))
@@ -77,12 +79,12 @@
   (let ((tbl (make-hash-table)))
     (for-each
       (lambda (kv)
-        (let ((parts (string-split (car kv) #\|)))     ; oi | worker | skill | cell
-          (when (and (= (length parts) 4) (string=? (car parts) "oi"))
+        (let ((terms (work-intent-id-terms (car kv))))
+          (when (and terms (eq? (assq-ref terms 'family) 'offer))
             (let ((status (assq-ref (cdr kv) 'status)))
               (when status
-                (let ((k (cons (list-ref parts 2) (list-ref parts 3))))
-                  (hash-set! tbl k (cons (cons (list-ref parts 1) status)
+                (let ((k (cons (assq-ref terms 'skill) (assq-ref terms 'cell))))
+                  (hash-set! tbl k (cons (cons (assq-ref terms 'subject) status)
                                          (hash-ref tbl k '())))))))))
       ($ ps 'all-meta))
     tbl))
@@ -447,7 +449,7 @@
   ;; for most kinds, the steeper housing rows for the kinds whose recall is a
   ;; displacement — one table, read here and by the barrier alike.
   (map (lambda (good)                                ; "Svc|<spec>"
-         (let* ((spec (substring good 4))            ; the bare channel/durable spec
+         (let* ((spec (bar-spec good))               ; the bare channel/durable spec
                 (tip  (rented-frag-tip spec))
                 (w    (list-ref (rented-frag-profile spec) 3))
                 (draw (draw-of spec))
@@ -603,7 +605,7 @@
          ;; PROPOSALS arm's proposed-to filter, and riding the open-intents
          ;; arm too would surface every directed offer to the whole scope
          (offer-intent? (lambda (i)
-                          (string-prefix? "offer:" (or (intent-id i) ""))))
+                          (intent-family? 'bounded (intent-id i))))
          (intents-raw (remove (lambda (i) (or (intent-private? i)
                                               (offer-intent? i)))
                               (if plan-id

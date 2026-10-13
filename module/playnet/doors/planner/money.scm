@@ -15,7 +15,7 @@
   #:use-module ((playnet doors plan-wire) #:select (wire-number))
   #:use-module ((playnet doors record-rows) #:select (payout->alist))
   #:use-module ((playnet economy debts) #:select (%payout-spec))
-  #:use-module ((playnet economy payouts) #:select (monero-address-plausible? payout-available payout-move! payout-pending? payout-sending? payout-source-id payout-row-context payout-txid payouts-of payouts-where))
+  #:use-module ((playnet economy payouts) #:select (sending-id monero-address-plausible? payout-available payout-move! payout-pending? payout-sending? payout-source-id payout-row-context payout-txid payouts-of payouts-where))
   #:use-module ((playnet wire rows) #:select (with-context))
   #:use-module ((playnet utils clock) #:select (iso-now))
   #:use-module ((playnet utils common) #:select (string-or-false))
@@ -56,7 +56,7 @@
                              #:spec %payout-spec #:tags '("currency" "external")
                              #:provider provider #:receiver "monero-chain"
                              #:qty qty #:unit "XMR" #:when (iso-now)
-                             #:fulfills (string-append "sending:" (intent-id i))   ; the commons' commitment to send it (economy/payouts.scm)
+                             #:fulfills (sending-id (intent-id i))   ; the commons' commitment to send it (economy/payouts.scm)
                              #:note (string-append note txid))))))
         (when (> (- xmr left) 1e-12)
           (transfer (string-append "payout-owed:" txid) "res-xmr-main" scope-id (- xmr left) "reimbursement paid on-chain, txid "))

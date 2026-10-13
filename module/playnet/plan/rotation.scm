@@ -45,7 +45,7 @@
 
 (define-module (playnet plan rotation)
   #:use-module (srfi srfi-1)
-  #:use-module ((playnet vf facts located) #:select (bar-field))
+  #:use-module ((playnet vf facts work-ids) #:select (work-intent-id-terms))
   #:export (rotation-tilt task-of-need rotation-shares burden-from-prefs))
 
 ;;; ── WHAT COUNTS AS THE SAME WORK, AND WHAT A TURN COSTS ─────────────────────
@@ -79,7 +79,7 @@
 ;;; the same task. Callers whose ids are shaped otherwise pass their own.
 (define (task-of-need need)
   "The repeating task inside a located need id."
-  (or (bar-field need 1) need))
+  (or (let ((t (work-intent-id-terms need))) (and t (assq-ref t 'subject))) need))
 
 (define (alist-add al key amount)
   "AL with AMOUNT added to KEY's running total. Rebuilds rather than mutates:

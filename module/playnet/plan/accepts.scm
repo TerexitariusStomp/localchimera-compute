@@ -23,7 +23,7 @@
   #:use-module (playnet vf formulas actions)
   #:use-module (playnet vf beyond scenario)
   #:use-module ((playnet solve periods) #:select (time->period period-span set-period-span! period-contains?))
-  #:use-module ((playnet vf facts located) #:select (good-spec period-of key-terms))
+  #:use-module ((playnet vf facts located) #:select (cell good-spec period-of key-terms process-col))
   #:use-module ((playnet vf formulas shocks) #:select (scenario-shocks shock-action shock-key shock-factor))
   #:use-module ((playnet vf facts agent-time) #:select (agent-away-dates))
   #:use-module ((playnet vf formulas counting) #:select (count-process?))   ; a planned count has no column
@@ -155,7 +155,7 @@
          (in-span? (or (not beginning) (not (and (car s) (cdr s)))
                        (period-contains? p beginning))))
     (and in-span?
-         (cons (string-append "p|" proc "|" (or place "") "@" (number->string p))
+         (cons (process-col proc (cell (or place "") p))
                runs))))
 
 ;; ONE work term (an accept's, or a held offer's) → its pin cell, the

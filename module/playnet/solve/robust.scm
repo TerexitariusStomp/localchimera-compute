@@ -137,7 +137,7 @@
 ;; keeps storage as recourse) — the caller then has a per-branch question, not
 ;; a granary.
 (define (carried-forward x fs good place t)
-  (let ((i (hash-ref fs (format #f "m|~a|~a@~a|~a@~a" good place t place (+ t 1)) #f)))
+  (let ((i (hash-ref fs (carry-col good (cell place t) (cell place (+ t 1))) #f)))
     (and i (vector-ref x i))))
 
 ;; Robust multi-scenario plan over records. #:scenarios = list of <planning-scenario>

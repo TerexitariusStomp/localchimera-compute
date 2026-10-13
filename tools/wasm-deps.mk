@@ -121,6 +121,7 @@ FAMILY_WASM_CLOSURE = \
   module/playnet/vf/facts/parts.scm \
   module/playnet/vf/facts/rail.scm \
   module/playnet/vf/facts/tension-terms.scm \
+  module/playnet/vf/facts/work-ids.scm \
   module/playnet/vf/formulas/actions.scm \
   module/playnet/vf/formulas/cadence.scm \
   module/playnet/vf/formulas/capacity.scm \
@@ -286,6 +287,7 @@ SCOPE_WASM_CLOSURE = \
   module/playnet/vf/facts/places.scm \
   module/playnet/vf/facts/rail.scm \
   module/playnet/vf/facts/tension-terms.scm \
+  module/playnet/vf/facts/work-ids.scm \
   module/playnet/vf/formulas/actions.scm \
   module/playnet/vf/formulas/cadence.scm \
   module/playnet/vf/formulas/capacity.scm \

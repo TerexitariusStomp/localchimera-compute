@@ -53,9 +53,9 @@
 ;; the crossing column, as a trivial recipe (process + one flow): the good
 ;; entering the commune from the crossing, a unit a unit
 (define (crossing-recipe good)
-  (cons (rp (string-append "cross-" good) (string-append good " across the boundary"))
+  (cons (rp (crossing-process good) (string-append good " across the boundary"))
         (list (make-recipe-flow #:id (string-append "crossf-" good) #:action 'produce #:resource-conforms-to good
-                                #:resource-quantity (make-measure 1.0 "kg") #:recipe-output-of (string-append "cross-" good)))))
+                                #:resource-quantity (make-measure 1.0 "kg") #:recipe-output-of (crossing-process good)))))
 
 ;; records → a solve-decomposed scope-record. `crossing` is the goods that
 ;; cross this commune's boundary (the good name IS the link key here, so the
@@ -169,7 +169,7 @@
         ;; from nowhere.
         (let* ((keys (hash-map->list (lambda (k i) k) idx))
                (columns-of (lambda (good)
-                             (let ((proc (string-append "cross-" good)))
+                             (let ((proc (crossing-process good)))
                                (map (lambda (k) (hash-ref idx k))
                                     (sort (filter (lambda (k) (equal? (key-process k) proc)) keys) string<?)))))
                (held (filter-map (lambda (good)

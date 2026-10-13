@@ -58,6 +58,7 @@
 (define-module (playnet knowledge catalogues housing-substance)
   #:use-module ((playnet utils units) #:select (%effort-unit))
   #:use-module ((playnet vf facts agent-tags) #:select (tag-values))
+  #:use-module ((playnet vf facts located) #:select (cell process-col))
   #:use-module (srfi srfi-1)
   #:use-module (playnet vf schemas)
   #:use-module ((playnet knowledge catalogues substances) #:select (closure-rows closure-reduction closure-bands substance-content %delivered-heat))
@@ -285,7 +286,7 @@
   (define (pins-of rec here?)          ; REC's column at every cell: 1 where HERE? holds, else 0
     (append-map (lambda (t)
                   (map (lambda (place)
-                         (cons (string-append "p|" (recipe-process-id (car rec)) "|" place "@" (number->string t))
+                         (cons (process-col (recipe-process-id (car rec)) (cell place t))
                                (if (here? place t) 1.0 0.0)))
                        places))
                 periods))

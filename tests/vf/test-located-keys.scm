@@ -47,4 +47,11 @@
 (check "a period-less key dated gains its period, a dated one is retimed"
        (list (key-dated "Svc|van#a" 2) (key-dated "bread#a@0" 2)) '("Svc|van#a@2" "bread#a@2"))
 (check "a labour good reads its skill and cell" (list (lab-good-skill (lab-good "baker" "a@0")) (lab-good-cell (lab-good "baker" "a@0"))) '("baker" "a@0"))
+
+(display "\n── a claim's process and a crossing's process ──\n")
+(check "a claim process names its good, and reads it back" (list (claim-process "bread") (claim-process-good (claim-process "bread"))) '("claim~bread" "bread"))
+(check "only a claim process is one" (map claim-process? (list "claim~bread" "cross-bread" "bake" #f)) '(#t #f #f #f))
+(check "a claim process reads no good off another" (claim-process-good "cross-bread") #f)
+(check "a crossing process, and the column it draws" (list (crossing-process "flour") (crossing-col? (process-col (crossing-process "flour") "a@0")) (crossing-col? (process-col "bake" "a@0")))
+       '("cross-flour" #t #f))
 (test-summary!)

@@ -23,12 +23,14 @@
   #:use-module (playnet vf formulas actions)
   #:use-module ((playnet utils keyed-id) #:select (keyed-id))
   #:use-module (playnet vf facts located)
+  #:use-module (playnet vf facts work-ids)       ; the work-intent id grammar, re-exported below
   #:use-module (playnet solve periods)   ; what a period is in wall-clock time
   #:use-module (playnet solve solver)
   #:use-module (playnet solve compile)
   #:use-module (playnet solve engine)
   #:use-module (playnet solve discrete)
-  #:export (need-intent-id offer-intent-id materialized-intent-id intent-family-prefix intent-family? report-located report-discrete solve-report plan->work plan->material tension-duals
+  #:re-export (need-intent-id offer-intent-id materialized-intent-id intent-family-prefix intent-family?)
+  #:export (report-located report-discrete solve-report plan->work plan->material tension-duals
             labour-pulls good-pulls good-labour-content worker-ledger social-ledger legal-exposure
             claim-tally topo-order whole-atoms-of ambient-spec? mk-mat-commitment))
 
@@ -70,22 +72,6 @@
 ;; the COMMITMENT (provider=w, inputOf=P) `satisfies` the pair (need-id offer-id),
 ;; and is later `fulfilled` by an EconomicEvent the observer records. ids are
 ;; deterministic so the links reconstruct; all carry the period's wall-clock.
-;; THE ID GRAMMAR of the work-intent families, written once: ni| a need (open shift),
-;; oi| an offer (a worker's willingness, its status kept as meta under the id), mi| a
-;; materialized suggestion (a willing worker laid onto an open need). Constructors,
-;; the family's prefix and its membership test; no caller spells a prefix.
-(define (need-intent-id proc skill cl)   (string-append "ni|" proc "|" skill "|" cl))
-(define (offer-intent-id worker skill cl) (string-append "oi|" worker "|" skill "|" cl))
-(define (materialized-intent-id worker skill cl) (string-append "mi|" worker "|" skill "|" cl))
-(define (intent-family-prefix family)
-  "The prefix every id of FAMILY (need, offer, materialized) carries."
-  (case family ((need) "ni|") ((offer) "oi|") ((materialized) "mi|")
-    (else (error "intent-family-prefix: no such family" family))))
-(define (intent-family? family id)
-  "ID is an id of FAMILY."
-  (let ((p (intent-family-prefix family)))
-    (and (string? id) (>= (string-length id) (string-length p))
-         (string=? (substring id 0 (string-length p)) p))))
 ;; ── which needs are INDIVISIBLE, and into how many acts ─────────────────────
 ;; `plan/assignment.scm` turns the offer field into a rota and asks its
 ;; caller how many atomic acts a need is. The engine is the one that knows: a
@@ -103,9 +89,9 @@
 (define (whole-atoms-of)
   "→ (need hours) → how many indivisible acts that need is; 0 if it is divisible."
   (lambda (need hours)
-    (let* ((parts (bar-fields need))
-           (proc  (and (>= (length parts) 2) (list-ref parts 1)))
-           (skill (and (>= (length parts) 3) (list-ref parts 2)))
+    (let* ((terms (work-intent-id-terms need))
+           (proc  (and terms (assq-ref terms 'subject)))
+           (skill (and terms (assq-ref terms 'skill)))
            (tpl   (and proc (template-by-id proc)))
            (per   (and tpl (or (and skill (assoc-ref (proc-skill-labours tpl) skill))
                                (proc-labour tpl)))))
@@ -563,7 +549,7 @@
 ;; draws is the labour-certificate drawdown the spec calls "the running accounting
 ;; of how much of the citizen's drawable credit has been claimed" — read here, per
 ;; claim and per citizen, in hours.
-(define (claim-col? c) (let ((p (key-process (col-key c)))) (and p (string-prefix? "claim~" p))))
+(define (claim-col? c) (let ((p (key-process (col-key c)))) (and p (claim-process? p))))
 (define (claim-tally x cols idx)
   "((claims . ((aid spec units hours cell) …)) (credit-drawn . ((aid . hours) …)))"
   (let ((rows (filter-map
@@ -573,7 +559,7 @@
                         (and (> v 1e-6)
                              (let* ((kt    (key-terms (col-key c)))               ; p|claim~spec~aid|cell
                                     (proc  (assq-ref kt 'process))
-                                    (o     (spec-owner (substring proc 6)))
+                                    (o     (spec-owner (claim-process-good proc)))
                                     (hours (fold (lambda (fl a)
                                                    (if (and (credit-good? (good-spec (car fl))) (< (cdr fl) 0.0))
                                                        (- a (* v (cdr fl)))

@@ -15,7 +15,8 @@
 (define-module (playnet scope live)
   #:use-module ((playnet observation states) #:select (fulfillment-state-finished fulfillment-state-total-fulfilled))
   #:use-module ((playnet utils host) #:select (getenv hash-get-handle))
-  #:use-module ((playnet vf facts located) #:select (credit-good bar-field))
+  #:use-module ((playnet vf facts located) #:select (credit-good bar-field bar-spec claim-process claim-process?))
+  #:use-module ((playnet vf facts work-ids) #:select (work-intent-id-terms))
   #:re-export (make-work-event)
   #:use-module (playnet vf formulas flows)
   #:use-module ((playnet knowledge dsl shorthand) #:select (flow*))
@@ -360,7 +361,7 @@
                     (set! seen (cons g seen)))))
               goods)
     (let ((pairs (map (lambda (g)
-                        (let* ((o (spec-owner g)) (pid (string-append "claim~" g))
+                        (let* ((o (spec-owner g)) (pid (claim-process g))
                                (snlt (price (car o))) (unit (unit-of (car o))))
                           (cons (rp pid (string-append "claim " (car o) " for " (cdr o)))
                                 (append
@@ -990,7 +991,7 @@
   (partition-suppliers eco-caps
     (lambda (ec)
       (and (svc-good? (car ec))
-           (let* ((parts   (string-split (substring (car ec) 4) #\#))  ; Svc|spec#place@t → (spec place@t)
+           (let* ((parts   (string-split (bar-spec (car ec)) #\#))  ; Svc|spec#place@t → (spec place@t)
                   (closure (means-closure (car parts) catalogue)))
              (and (pair? (cdr closure))                                ; substitutes for something ⇒ durable? #t supplier
                   (list (car ec) closure (cadr parts) (cdr ec) #t)))))))
@@ -1836,7 +1837,7 @@
   (or (and scope-root
            (false-if-exception
             (rotation-tilt ($ ($ scope-root 'observer) 'rotation-history)
-                           #:class-of (lambda (need) (or (bar-field need 2) need)))))
+                           #:class-of (lambda (need) (or (let ((t (work-intent-id-terms need))) (and t (assq-ref t 'skill))) need)))))
       (lambda (worker need peers) 0.0)))
 
 (define* (plan-results->alist ints coms mat fill ntot report #:key candidates? rota? (scope-root #f))
@@ -1867,7 +1868,7 @@
     (define (social-draw? mc)
       (let ((sp (commitment-resource-conforms-to mc)) (by (commitment-input-of mc)))
         (and sp (not (spec-owner sp))
-             (not (and (string? by) (string-prefix? "claim~" by))))))
+             (not (claim-process? by)))))
     (for-each (lambda (p) (hash-set! kept (car p) (cdr p)))
               (committed-by-spec (filter social-draw? mat) using-up-actions))
     (for-each (lambda (row)
@@ -2433,7 +2434,7 @@
          ;; one event per confirmation: the k-th hours recorded against the row
          ;; (a second confirmation is not a conflicting id)
          (k     (length (or (false-if-exception ($ obs 'fulfilled-by cid)) '())))   ; a bare mock holds no books
-         (evid  (if (= k 0) (string-append "ev-" cid) (string-append "ev-" cid "." (number->string k))))
+         (evid  (work-done-event-id cid k))
          (hours (or effort (row-effort wc)))
          (t     (or when-iso (row-when wc)))
          (event (make-work-event
@@ -2581,7 +2582,7 @@
          (cid   (row-id mc))
          ;; EVENT-ID override: a partial confirmation records several events
          ;; against one commitment key, so the caller numbers them
-         (evid  (or event-id (string-append "ev-" cid)))
+         (evid  (or event-id (work-done-event-id cid)))
          ;; no stock behind it, so the event names none: the world's own, or a flow that
          ;; leaves the stock as it was
          (stockless (or (row-ambient? mc) (and (memq act inert-flow-actions) #t)))

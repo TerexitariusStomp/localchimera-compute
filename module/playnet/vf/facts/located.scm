@@ -20,6 +20,7 @@
             train-col acquire-col floor-col pool-id arc-table-key arc-key-parts
             process-col? carry-col? worker-col? refresh-col? means-col? supply-col?
             train-col? acquire-col? crossing-col? col-prefix? lab-good-skill lab-good-cell
+            claim-process claim-process? claim-process-good crossing-process crossing-process?
             bar-good bar-good? bar-spec
             svc-good svc-good? lab-good lab-good? pres-good pres-good?
             el-good el-good? credit-good credit-good?))
@@ -130,8 +131,16 @@
 (define (supply-col? key)  (col-prefix? key "r"))
 (define (train-col? key)   (col-prefix? key "T"))
 (define (acquire-col? key) (col-prefix? key "acq"))
+;; two PROCESS ids a column's process carries, each with its constructor and its readers:
+;;   claim~GOOD    a claim recipe's process (scope/live.scm claim-recipes): the good a citizen claims
+;;   cross-GOOD    a crossing's draw process (solve/federation-solve.scm): the good that crosses a boundary
+(define (claim-process good)      (string-append "claim~" good))
+(define (claim-process? proc)     (and (string? proc) (string-prefix? "claim~" proc)))
+(define (claim-process-good proc) (and (claim-process? proc) (substring proc (string-length "claim~"))))
+(define (crossing-process good)   (string-append "cross-" good))
+(define (crossing-process? proc)  (and (string? proc) (string-prefix? "cross-" proc)))
 (define (crossing-col? key)   ; a crossing's draw column: the process federation-solve lays as cross-<good>
-  (let ((pr (and (process-col? key) (key-process key)))) (and pr (string-prefix? "cross-" pr) #t)))
+  (let ((pr (and (process-col? key) (key-process key)))) (and pr (crossing-process? pr))))
 
 (define (bar-fields k) (string-split k #\|))
 (define (bar-field k i)
