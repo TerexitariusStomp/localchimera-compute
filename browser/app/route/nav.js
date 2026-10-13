@@ -4,7 +4,8 @@
 // (app/position.ts). This module keeps the journey's one record and orchestrates what reads it:
 //
 //   banner.ts   the turn, in words and a glyph — the card over the map, the disc's card elsewhere
-//   eta.ts      the sheet's lowest rest: ✕, minutes left, distance and arrival, Done
+//   sheet.ts    the journey's sheet: the ETA row, and the drawer that rises from it (menu, directions, modes)
+//   steps.ts    the way turn by turn, for the drawer
 //   follow.ts   the camera: heading-up, tipped, you low in the frame; recentre and overview
 //   lines.ts    the way drawn, what is behind you dimmed
 //   drive-sim   a rehearsed drive in place of the device (`?simdrive=<factor>`)
@@ -34,7 +35,8 @@ import { fmtDistance, fmtMinutes, arrivalClock } from './facts.js';
 import { snapToRoute, progress, courseAt } from './shape.js';
 import { paintLines, clearLines } from './lines.js';
 import { routeBanner, bearingBanner, drawBanner } from './banner.js';
-import { openEta } from './eta.js';
+import { openJourneySheet } from './sheet.js';
+import { stepRows } from './steps.js';
 import { startFollow } from './follow.js';
 import { startDrive } from './drive-sim.js';
 /** Within this many kilometres of the end of the way, you have arrived. */
@@ -52,7 +54,7 @@ let navProfile = "pedestrian";
 /** Ends the position watch the journey holds, while one is held. */
 let stopWatch = null;
 /** What a journey on the map face holds besides the card. */
-let eta = null;
+let jsheet = null;
 let follow = null;
 let drive = null;
 let wake = null;
@@ -82,7 +84,7 @@ function refresh(fix) {
     if (!j.route) { // the compass degradation
         const km = havKm(USER, j.dest);
         drawBanner(bearingBanner({ bearing: bearingDeg(USER, j.dest), heading: deviceHeading(), km, place: j.placeName }), mode);
-        eta?.update({ big: fmtDistance(km), sub: "as the crow flies · no route data", arrived: false });
+        jsheet?.update({ big: fmtDistance(km), sub: "as the crow flies · no route data", arrived: false, steps: [], mode: navProfile });
         return;
     }
     const r = j.route;
@@ -95,9 +97,10 @@ function refresh(fix) {
     }
     const arrive = arrivalClock(p.remS);
     drawBanner(routeBanner(r, p, { place: j.placeName, arrive, arrived: j.arrived }), mode);
-    eta?.update(j.arrived
-        ? { big: "You have arrived", sub: j.placeName, arrived: true }
-        : { big: fmtMinutes(p.remS), sub: `${fmtDistance(p.remKm, r.units)} · ${arrive}`, arrived: false });
+    const steps = stepRows(r, p, j.placeName);
+    jsheet?.update(j.arrived
+        ? { big: "You have arrived", sub: j.placeName, arrived: true, steps, mode: navProfile }
+        : { big: fmtMinutes(p.remS), sub: `${fmtDistance(p.remKm, r.units)} · ${arrive}`, arrived: false, steps, mode: navProfile });
     drawNavLine();
     const f = fix ?? { lat: USER.lat, lng: USER.lng, heading: null, speed: null, accuracy: null, t: Date.now() };
     follow?.onFix(f, courseAt(r, j.snap));
@@ -193,10 +196,11 @@ export async function startNavTo(dest, placeName, chosen) {
     const mapFace = onMapFace();
     if (mapFace) {
         document.getElementById(MAP_EL())?.classList.add("navigating");
-        eta = openEta({
+        jsheet = openJourneySheet({
             exit: () => endNav(), done: () => endNav(),
             gone: () => { if (!closing)
                 endNav(); },
+            overview: () => follow?.overview(), travelBy, bannerHeight,
         });
         if (route)
             follow = startFollow({
@@ -219,6 +223,14 @@ export async function startNavTo(dest, placeName, chosen) {
     if (route && sim !== null)
         drive = startDrive(route, { factor: Number(sim) || 10 });
 }
+/** Travel the rest of the way by another mode: the journey's own destination, routed again. */
+export function travelBy(costing) {
+    if (!nav)
+        return;
+    navProfile = costing;
+    const { dest, placeName } = nav;
+    void startNavTo(dest, placeName);
+}
 /** The ways to the selected place, when one is selected and a map is up. */
 function startNav() {
     const sel = host.selectedPlace();
@@ -236,8 +248,8 @@ export function endNav() {
     follow?.stop();
     follow = null;
     closing = true;
-    eta?.close();
-    eta = null;
+    jsheet?.close();
+    jsheet = null;
     closing = false;
     void wake?.release();
     wake = null;
@@ -263,11 +275,7 @@ export function initNav(h) {
         const t = e.target;
         if (t.classList.contains("mode") && nav) { // cycle 🚌→🚶→🚲→🚗
             const ms = ROUTE_MODES;
-            navProfile = ms[(ms.indexOf(navProfile) + 1) % ms.length];
-            // the journey's own destination, not the selected place: a journey begun
-            // from the search panel has no selected place to route to
-            const { dest, placeName } = nav;
-            startNavTo(dest, placeName);
+            travelBy(ms[(ms.indexOf(navProfile) + 1) % ms.length]);
         }
         else
             endNav();

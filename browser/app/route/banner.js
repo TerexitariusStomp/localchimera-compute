@@ -19,6 +19,8 @@ const NAV_GLYPH = {
 export const glyphOf = (type) => NAV_GLYPH[type] || "↑";
 /** The maneuver types that mean *you are there*. */
 const ARRIVAL = new Set([4, 5, 6]);
+/** Whether a maneuver is the arrival. */
+export const isArrival = (type) => ARRIVAL.has(type);
 /** Within this many metres of the next turn, the turn after it is shown too. */
 export const THEN_M = 150;
 /** The card for a journey along `r`, `p` of the way. `arrive` is the arrival clock, already formatted. */

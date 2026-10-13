@@ -41,12 +41,12 @@ function leg(pts, kmh, mode, streets, final = true) {
         B = { lat: pts[2][1], lng: pts[2][0] };
   const d1 = havKm(A, T), d2 = havKm(T, B);
   return { shape: encodePoly(pts), maneuvers: [
-    { type: 1, instruction: `Head north on ${streets[0]}.`, street_names: [streets[0]],
+    { ...(mode === "drive" ? { toll: true } : {}), type: 1, instruction: `Head north on ${streets[0]}.`, street_names: [streets[0]],
       length: d1, time: sec(d1, kmh), begin_shape_index: 0, end_shape_index: 1, travel_mode: mode,
       verbal_transition_alert_instruction: `Head north on ${streets[0]}.`,
       verbal_pre_transition_instruction: `Head north on ${streets[0]}.`,
       verbal_post_transition_instruction: `Continue for ${Math.round(d1 * 1000)} meters.` },
-    { type: 10, instruction: `Turn right onto ${streets[1]}.`, street_names: [streets[1]],
+    { ...(mode === "pedestrian" ? { gate: true } : {}), type: 10, instruction: `Turn right onto ${streets[1]}.`, street_names: [streets[1]],
       length: d2, time: sec(d2, kmh), begin_shape_index: 1, end_shape_index: 2, travel_mode: mode,
       verbal_transition_alert_instruction: `Turn right onto ${streets[1]}.`,
       verbal_pre_transition_instruction: `Turn right onto ${streets[1]}.`,
@@ -59,6 +59,7 @@ function leg(pts, kmh, mode, streets, final = true) {
 const trip = (legs, units = "kilometers") => {
   const ms = legs.flatMap(l => l.maneuvers);
   return { legs, units, language: "en-US", status: 0,
+           locations: [{ side_of_street: "none" }, { side_of_street: "right" }],
            summary: { length: ms.reduce((a, m) => a + m.length, 0), time: ms.reduce((a, m) => a + m.time, 0),
                       has_toll: false, has_ferry: false } };
 };

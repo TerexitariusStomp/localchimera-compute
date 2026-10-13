@@ -68,6 +68,18 @@ section("a transit trip");
   check("three legs make one shape", r.coords.length === 9, String(r.coords.length));
 }
 
+section("what a stretch passes through, and where the destination is");
+{
+  const [w] = readRoutes(routeReply(q({ profile: "pedestrian" })), "pedestrian");
+  check("a gate on the second stretch of a walk", w.mans[1].gate && !w.mans[0].gate && !w.mans[1].toll);
+  const [d] = readRoutes(routeReply(q({ profile: "auto" })), "auto");
+  check("a toll on the first stretch of a drive", d.mans[0].toll && !d.mans[1].toll);
+  check("no flag is false, not absent", w.mans[0].rough === false && w.mans[0].ferry === false);
+  check("the destination's side of the street", w.destSide === "right");
+  check("a reply that does not say is not a side", readRoutes({ trip: { legs: [{}], summary: {}, locations: [{}, { side_of_street: "none" }] } }, "x")[0].destSide === "");
+  check("nor one with no locations", readRoutes({ trip: { legs: [{}], summary: {} } }, "x")[0].destSide === "");
+}
+
 section("the modes");
 {
   check("four tabs: transit, walk, bicycle, drive, in that order", ROUTE_MODES.join() === "multimodal,pedestrian,bicycle,auto");

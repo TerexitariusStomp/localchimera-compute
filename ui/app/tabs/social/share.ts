@@ -473,6 +473,12 @@ let closePanelHook: (() => void) | null = null;   // set once the draft panel ex
  *  grip changes it from there. */
 let sheetEl: HTMLElement | null = null;
 const riseTo = (full: boolean): void => { sheetEl?.classList.toggle("full", full); };
+/** Raise the sheet to the whole height, or let it down to its own; answers whether it was whole before, so a view that raised it can give it back. */
+export function riseSheet(full: boolean): boolean {
+  const was = !!sheetEl?.classList.contains("full");
+  riseTo(full);
+  return was;
+}
 
 /** How a view sits in the sheet. */
 export interface SheetViewOpts {

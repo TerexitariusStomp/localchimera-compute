@@ -4579,22 +4579,46 @@
      the bar steps aside, and the map's own controls give way to the two that steer the camera */
   #sharebar:has(.sheet-view[data-stepped]) .sharebar-row { display: none; }
   #sharebar .sheet-view[data-stepped] { padding-bottom: max(10px, env(safe-area-inset-bottom, 0px)); }
-  .eb { display: flex; align-items: center; gap: 12px; max-width: 680px; margin: 0 auto; padding: 0 16px;
-    font-family: var(--sans); color: var(--t-2c3830); }
-  .eb-x { flex: 0 0 auto; width: 46px; height: 46px; border-radius: 50%; border: 1.5px solid var(--t-c9d2dd);
+  .jv { font-family: var(--sans); color: var(--t-2c3830); }
+  .jv-head { display: flex; align-items: center; gap: 12px; max-width: 680px; margin: 0 auto; padding: 0 16px;
+    box-sizing: border-box; background: var(--t-fbfaf5); }
+  .jv-x { flex: 0 0 auto; width: 46px; height: 46px; border-radius: 50%; border: 1.5px solid var(--t-c9d2dd);
     background: var(--t-ffffff); font-size: 18px; color: var(--t-444444); cursor: pointer; }
-  .eb-mid { flex: 1 1 auto; text-align: center; min-width: 0; }
-  .eb-big { font-size: 27px; font-weight: 600; line-height: 1.15; }
-  .eb-sub { font-size: 14px; color: var(--t-444444); margin-top: 1px; }
-  .eb.arrived .eb-big { color: rgb(30 130 70); }
-  .eb-done { flex: 0 0 auto; border: none; border-radius: 24px; padding: 12px 22px; background: var(--t-2c4a6e);
+  .jv-mid { flex: 1 1 auto; text-align: center; min-width: 0; }
+  .jv-big { font-size: 27px; font-weight: 600; line-height: 1.15; }
+  .jv-sub { font-size: 14px; color: var(--t-444444); margin-top: 1px; }
+  .jv.arrived .jv-big { color: rgb(30 130 70); }
+  .jv-done { flex: 0 0 auto; border: none; border-radius: 24px; padding: 12px 22px; background: var(--t-2c4a6e);
     color: var(--t-ffffff); font: inherit; font-size: 15.5px; font-weight: 600; cursor: pointer; }
-  .eb-done[hidden] { display: none; }
+  .jv-done[hidden] { display: none; }
+  /* the drawer: hidden at the lowest rest; at the whole height the sheet stands below the banner (--nb-h, set on the root
+     by app/route/sheet.ts), so the banner stays in view and the grip stays within reach */
+  .jv[data-rest="peek"] .jv-body { display: none; }
+  #sharebar .share-sheet.full:has(.jv) { height: calc(100% - var(--nb-h, 0px) - 6px); }
+  .jv[data-rest="full"] .jv-head { position: sticky; top: 0; z-index: 2; padding-bottom: 6px; }
+  .jv-body { max-width: 680px; margin: 0 auto; padding-top: 10px; }
+  .jv-pg { padding: 0 12px 6px; }
+  .jv-pagehead { display: flex; align-items: center; gap: 8px; padding: 2px 4px 8px; }
+  .jv-steps { list-style: none; margin: 0; padding: 0 4px 14px; }
+  .jv-step { display: flex; align-items: flex-start; gap: 14px; padding: 12px 10px; border-radius: 14px; }
+  .jv-step.next { background: var(--t-faf5e6); }
+  .jv-sg { flex: 0 0 auto; width: 34px; text-align: center; font-size: 26px; line-height: 1.1; }
+  .jv-sb { min-width: 0; }
+  .jv-lead { font-size: 13px; color: var(--t-444444); }
+  .jv-st { font-size: 16px; overflow-wrap: anywhere; }
+  .jv-step.next .jv-st { font-size: 18px; font-weight: 600; }
+  .jv-note { font-size: 13px; color: var(--t-444444); margin-top: 3px; }
+  .jv-warns { margin-top: 2px; }
+  .jv-warn { display: inline-block; margin: 4px 6px 0 0; padding: 2px 9px; border-radius: 11px; background: var(--t-faf5e6);
+    color: var(--t-b8791f); font-size: 12px; }
+  .jv-gap { display: flex; align-items: center; gap: 10px; margin-left: 58px; font-size: 12.5px; color: var(--t-999999); }
+  .jv-gap::after { content: ""; flex: 1 1 auto; border-top: 1px solid var(--t-e2ddcc); }
   #maptab.navigating .maplibregl-ctrl-bottom-right .maplibregl-ctrl:not(.maplibregl-ctrl-attrib) { display: none; }
   #navbtns { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); z-index: 34;
     display: flex; flex-direction: column; gap: 10px; }
   .nbtn { width: 46px; height: 46px; border-radius: 50%; border: none; background: var(--t-ffffff); font-size: 21px;
     box-shadow: 0 2px 8px rgb(0 0 0 / .3); cursor: pointer; }
+  body:has(.jv[data-rest="full"]) #navbtns { display: none; }   /* the list has the whole screen */
   .nbtn.loose { outline: 3px solid rgb(26 115 232); }   /* lit while the camera is off you: tap to bring it back */
 
   /* ── the route preview (app/route-preview.ts) ─────────────────────────────

@@ -68,6 +68,11 @@ function readTransit(t) {
         })),
     };
 }
+/** The side of the street the last location is on. */
+function sideOf(locs) {
+    const s = locs && locs.length ? locs[locs.length - 1].side_of_street : "";
+    return s === "left" || s === "right" ? s : "";
+}
 /** One trip, or null for anything that is not a route: no legs, or no summary. */
 function readTrip(trip, costing) {
     const legs = trip?.legs || [];
@@ -88,6 +93,7 @@ function readTrip(trip, costing) {
                     pre: m.verbal_pre_transition_instruction || "",
                     post: m.verbal_post_transition_instruction || "" },
                 roundaboutExit: m.roundabout_exit_count || 0,
+                toll: !!m.toll, gate: !!m.gate, rough: !!m.rough, ferry: !!m.ferry,
                 mode: m.travel_mode || "", transit: readTransit(m.transit_info),
             });
         }
@@ -96,7 +102,8 @@ function readTrip(trip, costing) {
     }
     return { coords, mans, km: trip.summary.length || 0, s: trip.summary.time || 0,
         units: trip.units === "miles" ? "miles" : "kilometers",
-        hasToll: !!trip.summary.has_toll, hasFerry: !!trip.summary.has_ferry, costing };
+        hasToll: !!trip.summary.has_toll, hasFerry: !!trip.summary.has_ferry,
+        destSide: sideOf(trip.locations), costing };
 }
 /** A whole reply: the engine's chosen way first, then each alternate. [] when it answered nothing. */
 export function readRoutes(js, costing) {

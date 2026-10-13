@@ -84,6 +84,11 @@ export interface Maneuver {
   verbal: { alert: string; pre: string; post: string };
   /** The spoke to leave a roundabout by; 0 when this is not one. */
   roundaboutExit: number;
+  /** What the stretch passes through: a toll, a gate, rough pavement, a ferry. */
+  toll: boolean;
+  gate: boolean;
+  rough: boolean;
+  ferry: boolean;
   /** "drive" · "pedestrian" · "bicycle" · "transit", or "" when the engine did not say. */
   mode: string;
   transit: TransitInfo | null;
@@ -100,6 +105,8 @@ export interface Route {
   units: "kilometers" | "miles";
   hasToll: boolean;
   hasFerry: boolean;
+  /** Which side of the street the destination is on, from the way in: "left", "right", or "" when not said. */
+  destSide: "left" | "right" | "";
   /** The costing this route was asked for. */
   costing: string;
 }
@@ -133,11 +140,13 @@ interface RawManeuver {
   verbal_pre_transition_instruction?: string;
   verbal_post_transition_instruction?: string;
   roundabout_exit_count?: number; travel_mode?: string;
+  toll?: boolean; gate?: boolean; rough?: boolean; ferry?: boolean;
   transit_info?: RawTransit;
 }
 interface RawLeg { shape?: string; maneuvers?: RawManeuver[] }
 interface RawTrip {
   legs?: RawLeg[];
+  locations?: { side_of_street?: string }[];
   summary?: { length?: number; time?: number; has_toll?: boolean; has_ferry?: boolean };
   units?: string;
 }
@@ -156,6 +165,12 @@ function readTransit(t: RawTransit | undefined): TransitInfo | null {
     stops: (t.transit_stops || []).map(s => ({
       name: s.name || "", arrives: s.arrival_date_time || "", departs: s.departure_date_time || "" })),
   };
+}
+
+/** The side of the street the last location is on. */
+function sideOf(locs: RawTrip["locations"]): "left" | "right" | "" {
+  const s = locs && locs.length ? locs[locs.length - 1].side_of_street : "";
+  return s === "left" || s === "right" ? s : "";
 }
 
 /** One trip, or null for anything that is not a route: no legs, or no summary. */
@@ -177,6 +192,7 @@ function readTrip(trip: RawTrip | undefined, costing: string): Route | null {
                   pre: m.verbal_pre_transition_instruction || "",
                   post: m.verbal_post_transition_instruction || "" },
         roundaboutExit: m.roundabout_exit_count || 0,
+        toll: !!m.toll, gate: !!m.gate, rough: !!m.rough, ferry: !!m.ferry,
         mode: m.travel_mode || "", transit: readTransit(m.transit_info),
       });
     }
@@ -184,7 +200,8 @@ function readTrip(trip: RawTrip | undefined, costing: string): Route | null {
   }
   return { coords, mans, km: trip.summary.length || 0, s: trip.summary.time || 0,
            units: trip.units === "miles" ? "miles" : "kilometers",
-           hasToll: !!trip.summary.has_toll, hasFerry: !!trip.summary.has_ferry, costing };
+           hasToll: !!trip.summary.has_toll, hasFerry: !!trip.summary.has_ferry,
+           destSide: sideOf(trip.locations), costing };
 }
 
 /** A whole reply: the engine's chosen way first, then each alternate. [] when it answered nothing. */

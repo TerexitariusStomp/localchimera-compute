@@ -39,8 +39,8 @@ const state = page => page.evaluate(async () => {
     card: vis('#navcard'), cardTop: r ? r.top - (nc.parentElement.getBoundingClientRect().top) : null, cardState: nc?.dataset.state,
     glyph: q('#navcard .glyph')?.textContent, dist: q('#navcard .dist')?.textContent, street: q('#navcard .street')?.textContent,
     thenShown: vis('#navcard .nb-then'), metaShown: vis('#navcard .meta'),
-    holds: sh.sheetHolds(), big: q('.eb-big')?.textContent, sub: q('.eb-sub')?.textContent,
-    arrived: !!q('.eb.arrived'), doneShown: vis('.eb-done'),
+    holds: sh.sheetHolds(), big: q('.jv-big')?.textContent, sub: q('.jv-sub')?.textContent,
+    arrived: !!q('.jv.arrived'), doneShown: vis('.jv-done'),
     barRow: vis('#sharebar .sharebar-row'), barh: getComputedStyle(document.documentElement).getPropertyValue('--barh').trim(),
     sheetH: sh.sheetHeight(), vh: innerHeight,
     ctrls: [...document.querySelectorAll('#maptab .maplibregl-ctrl-bottom-right .maplibregl-ctrl')].filter(e => !e.classList.contains('maplibregl-ctrl-attrib') && getComputedStyle(e).display !== 'none').length,
@@ -77,6 +77,59 @@ try {
   h.rec('and close in', s.zoom > 17, `zoom ${s.zoom}`);
   h.rec('heading-up: the way north is up, so the arrow is straight', near(norm(s.bearing), 0, 6) && (s.hdg === '0deg' || s.hdg === '0'), `bearing ${s.bearing} hdg ${s.hdg}`);
   await page.screenshot({ path: `${shot}/route-nav-start.png` });
+
+  // ── the drawer: the row rises to a menu, and to the way turn by turn ───────
+  const rest = () => page.evaluate(() => document.querySelector('.jv')?.dataset.rest);
+  const grip = () => page.evaluate(() => { const b = document.querySelector('#sharebar .sheet-grab').getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; });
+  const swipe = async dy => { const g = await grip(); await page.mouse.move(g.x, g.y); await page.mouse.down(); await page.mouse.move(g.x, g.y + dy / 2, { steps: 3 }); await page.mouse.move(g.x, g.y + dy, { steps: 3 }); await page.mouse.up(); await sleep(400); };
+  const rows = () => page.evaluate(() => [...document.querySelectorAll('.jv-pg .acct-row .acct-l')].map(e => e.textContent));
+  h.rec('the drawer starts at its lowest rest: the row alone', (await rest()) === 'peek' && !(await page.evaluate(() => getComputedStyle(document.querySelector('.jv-body')).display !== 'none')));
+  await page.mouse.click((await grip()).x, (await grip()).y); await sleep(500);
+  h.rec('a tap on the grip lifts it to the menu', (await rest()) === 'mid', await rest());
+  h.rec('the menu: directions, travel by, the whole way, end', (await rows()).join() === 'Directions,Travel by,Show the whole way,End navigation', (await rows()).join());
+  h.rec('the bar is still away, and the camera still on you', !(await state(page)).barRow && (await state(page)).loose === false);
+  await page.screenshot({ path: `${shot}/route-nav-menu.png` });
+  await page.click('.jv-pg .acct-row:first-child'); await sleep(600);
+  s = await state(page);
+  h.rec('Directions: the sheet rises to the whole height', (await rest()) === 'full' && s.sheetH > 500, `${await rest()} ${s.sheetH}px`);
+  const steps = await page.evaluate(() => ({
+    rows: [...document.querySelectorAll('.jv-step')].map(e => ({ cls: e.className.replace('jv-step ', ''), lead: e.querySelector('.jv-lead')?.textContent || '', st: e.querySelector('.jv-st').textContent, warns: [...e.querySelectorAll('.jv-warn')].map(w => w.textContent), note: e.querySelector('.jv-note')?.textContent || '' })),
+    gaps: [...document.querySelectorAll('.jv-gap')].map(e => e.textContent),
+    sheetTop: document.querySelector('.share-sheet').getBoundingClientRect().top, bannerBottom: document.getElementById('navcard').getBoundingClientRect().bottom,
+    bannerOnTop: (() => { const r = document.getElementById('navcard').getBoundingClientRect(); const e = document.elementFromPoint(r.left + r.width / 2, r.top + 10); return !!e?.closest('#navcard'); })(),
+    gripReachable: (() => { const g = document.querySelector('#sharebar .sheet-grab').getBoundingClientRect(); const e = document.elementFromPoint(g.left + g.width / 2, g.top + g.height / 2); return !!e?.closest('.sheet-grab'); })(),
+    navHeld: document.querySelector('.jv-big').textContent }));
+  h.rec('the turn ahead first, with how far off, then the door', steps.rows.length === 2 && steps.rows[0].cls === 'next' && /^In /.test(steps.rows[0].lead) && steps.rows[1].cls === 'destination', JSON.stringify(steps.rows.map(r => r.cls)));
+  h.rec('the engine\'s sentence for the turn, a chip for the gate', steps.rows[0].st === 'Turn right onto Oak Avenue.' && steps.rows[0].warns.join() === 'Gate');
+  h.rec('the distance to the next row between them', steps.gaps.length === 1 && /^\d+ m$|^\d\.\d km$/.test(steps.gaps[0]), steps.gaps.join());
+  h.rec('the door says which side of the street', steps.rows[1].note === 'Destination will be on the right', steps.rows[1].note);
+  h.rec('the minutes left stay in view above the list', /^\d+ min$/.test(steps.navHeld));
+  h.rec('the banner stays in view, and the sheet stands below it', steps.bannerOnTop && steps.sheetTop >= steps.bannerBottom - 2, `sheet ${steps.sheetTop} banner ${steps.bannerBottom}`);
+  h.rec('the grip is within reach at the whole height', steps.gripReachable);
+  await page.screenshot({ path: `${shot}/route-nav-steps.png` });
+  await feed(page, B.lat, A.lng + (B.lng - A.lng) * 0.25, 90); await sleep(900);
+  const after = await page.evaluate(() => [...document.querySelectorAll('.jv-step')].map(e => e.className.replace('jv-step ', '')));
+  h.rec('past the turn the list follows you: only the door is left', after.join() === 'destination', after.join());
+  await feed(page, A.lat, A.lng, 0); await sleep(900);
+  h.rec('and the other way: back at the start the turn returns', (await page.evaluate(() => document.querySelectorAll('.jv-step').length)) === 2);
+  await page.click('.jv-pagehead .acct-back'); await sleep(400);
+  h.rec('← steps back to the menu', (await rest()) === 'mid' && (await rows()).length === 4);
+  await page.keyboard.press('Escape'); await sleep(400);
+  h.rec('Esc steps down to the row', (await rest()) === 'peek');
+  await swipe(-70);
+  h.rec('a swipe up on the grip lifts it', (await rest()) === 'mid');
+  await swipe(-70);
+  h.rec('and again, to the way turn by turn', (await rest()) === 'full');
+  await swipe(70); await swipe(70);
+  h.rec('a swipe down, twice, puts it back to the row', (await rest()) === 'peek');
+  await page.mouse.click((await grip()).x, (await grip()).y); await sleep(400);
+  await page.mouse.click((await grip()).x, (await grip()).y); await sleep(400);
+  h.rec('a tap lifts, a tap lowers', (await rest()) === 'peek');
+  await page.mouse.click((await grip()).x, (await grip()).y); await sleep(400);
+  await page.click('.jv-pg .acct-row:nth-child(3)'); await sleep(1300);
+  s = await state(page);
+  h.rec('Show the whole way: the drawer lowers and the camera looks at what is left', (await rest()) === 'peek' && s.pitch < 5 && s.loose === true, `${await rest()} pitch ${s.pitch}`);
+  await page.click('.nb-recentre'); await sleep(1200);
 
   // ── along the first leg ───────────────────────────────────────────────────
   const d0 = (await state(page)).dist;
@@ -123,7 +176,7 @@ try {
   h.rec('the camera is given back: level again', s.pitch < 10, `pitch ${s.pitch}`);
   h.rec('the camera\'s buttons go with it', s.btns === 0 || s.btns === 2);
   await page.screenshot({ path: `${shot}/route-nav-arrived.png` });
-  await page.click('.eb-done'); await sleep(900);
+  await page.click('.jv-done'); await sleep(900);
   s = await state(page);
   h.rec('Done ends it all: card, bar, buttons, lines', !s.card && s.holds === null && s.btns === 0 && s.navigating === false && s.lines === '', JSON.stringify({ c: s.card, h: s.holds, b: s.btns, n: s.navigating, l: s.lines }));
   h.rec('the share bar comes back', s.barRow && s.barh !== '0px', `${s.barRow} ${s.barh}`);
@@ -136,7 +189,27 @@ try {
   await showSpot(page);
   await sleep(600); await page.click('.ms-nav'); await sleep(1500); await page.click('.rv-start'); await sleep(1200);
   h.rec('a second journey sets out', (await state(page)).holds === 'journey');
-  await page.click('.eb-x'); await sleep(800);
+  const callsBefore = stub.calls.length;
+  await page.mouse.click((await grip()).x, (await grip()).y); await sleep(500);
+  await page.click('.jv-pg .acct-row:nth-child(2)'); await sleep(500);
+  const modeRows = await page.evaluate(() => [...document.querySelectorAll('.jv-pg .acct-row')].map(e => ({ l: e.querySelector('.acct-l').textContent, here: e.classList.contains('here') })));
+  h.rec('Travel by: the four modes, the one in use marked', modeRows.map(m => m.l).join() === 'Transit,Walk,Bicycle,Drive' && modeRows.filter(m => m.here).map(m => m.l).join() === 'Walk', JSON.stringify(modeRows));
+  await page.click('.jv-pg .acct-row:nth-child(3)'); await sleep(2500);
+  s = await state(page);
+  h.rec('choosing bicycle routes the same destination again, by bicycle', stub.calls.slice(callsBefore).some(c => /profile=bicycle/.test(c)) && s.holds === 'journey' && s.card, stub.calls.slice(callsBefore).join(' | '));
+  h.rec('the journey goes on, on a new row at its lowest rest', (await rest()) === 'peek');
+  await page.mouse.click((await grip()).x, (await grip()).y); await sleep(500);
+  await page.click('.jv-pg .acct-row:nth-child(2)'); await sleep(400);
+  h.rec('and the mode in use is now bicycle', (await page.evaluate(() => document.querySelector('.jv-pg .acct-row.here .acct-l')?.textContent)) === 'Bicycle');
+  await page.click('.jv-pagehead .acct-back'); await sleep(300);
+  await page.click('.jv-pg .acct-row:last-child'); await sleep(900);
+  s = await state(page);
+  h.rec('End navigation in the menu ends it all', !s.card && s.holds === null && s.btns === 0 && s.barRow, JSON.stringify({ c: s.card, h: s.holds, b: s.btns, r: s.barRow }));
+  await device(page, true); await feed(page, A.lat, A.lng, 0);
+  await showSpot(page);
+  await sleep(600); await page.click('.ms-nav'); await sleep(1500); await page.click('.rv-start'); await sleep(1200);
+  h.rec('a third journey sets out', (await state(page)).holds === 'journey');
+  await page.click('.jv-x'); await sleep(800);
   s = await state(page);
   h.rec('✕ ends it mid-way: bar, card, buttons gone, share bar back', !s.card && s.holds === null && s.btns === 0 && s.barRow, JSON.stringify({ c: s.card, h: s.holds, b: s.btns, r: s.barRow }));
   h.rec('the map is level and north-up again', s.pitch < 10);
