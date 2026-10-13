@@ -291,9 +291,12 @@ export async function startNavTo(dest: LatLng, placeName: string): Promise<void>
   const route = await fetchRoute(USER, dest, navProfile);
   nav = { dest, placeName, route, at: 0 };
   drawNavLine();
-  // dashed for the compass degradation, solid for a real route — the card says
+  // A real route is a wide solid stroke on a casing. The compass degradation is
+  // a bearing, not a route: a thin dashed thread, no casing — the card says
   // "no route data" in words and the line says it in its stroke.
   map.setPaintProperty("nav-line", "line-dasharray", route ? [1, 0] : [0.5, 1.8]);
+  map.setPaintProperty("nav-line", "line-width", route ? 5 : 2);
+  map.setPaintProperty("nav-casing", "line-opacity", route ? .45 : 0);
   d3.select("#gochip").classed("on", true);
   d3.select("#navcard").style("display", "block");
   host.restage();
@@ -344,7 +347,10 @@ export function initNav(h: NavHost): void {
     if (t.classList.contains("mode") && nav) {   // cycle 🚶→🚲→🚗
       const ms = Object.keys(NAV_MODES);
       navProfile = ms[(ms.indexOf(navProfile) + 1) % ms.length];
-      startNav();
+      // the journey's own destination, not the selected place: a journey begun
+      // from the search panel has no selected place to route to
+      const { dest, placeName } = nav;
+      startNavTo(dest, placeName);
     } else endNav();
   });
 }

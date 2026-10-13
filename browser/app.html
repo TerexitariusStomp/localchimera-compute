@@ -4624,16 +4624,20 @@
   #navcard { display: none; max-width: none;
     margin: 0 0 12px;
     padding: 10px 18px 9px; border-radius: 16px; text-align: center;
-    background: rgb(var(--t-0a101a-rgb) / .88); color: var(--t-ffffff); backdrop-filter: blur(4px);
-    box-shadow: 0 4px 18px rgb(var(--t-000000-rgb) / .45); font-family: var(--sans);
+    /* navigation chrome states its own palette: literal colours, so no theme's
+       lightness map reaches it — a banner reads the same by day and by night */
+    background: rgb(9 78 78 / .96); color: rgb(255 255 255); backdrop-filter: blur(4px);
+    box-shadow: 0 4px 18px rgb(0 0 0 / .45); font-family: var(--sans);
     cursor: pointer; }
-  /* re-homed onto the MAP face: floated bottom-centre over the map, the way a
-     phone's nav apps speak — the sidebar (its usual home) stands aside there */
-  #navcard.overmap { position: absolute; left: 50%; bottom: 64px;
-    transform: translateX(-50%); z-index: 6; margin: 0; }
+  /* re-homed onto the MAP face: floated at the top of the map as the maneuver
+     banner, clear of the bar and sheet that own the bottom edge — the sidebar
+     (its usual home) stands aside there */
+  #navcard.overmap { position: absolute; left: 50%; top: max(10px, env(safe-area-inset-top, 0px));
+    width: min(calc(100% - 20px), 420px); box-sizing: border-box;
+    transform: translateX(-50%); z-index: 35; margin: 0; }
   #navcard .glyph { font-size: 36px; line-height: 1.05; }
-  #navcard .instr { font-size: 12.5px; font-weight: 600; margin-top: 3px; }
-  #navcard .meta  { font-size: 10.5px; color: var(--t-9fc1ff); margin-top: 3px; }
+  #navcard .instr { font-size: 15px; font-weight: 600; margin-top: 3px; }
+  #navcard .meta  { font-size: 11.5px; color: rgb(190 232 232); margin-top: 3px; }
   #navcard .mode  { font-size: 13px; margin-top: 2px; opacity: .85; }
   .user-marker { width: 14px; height: 14px; border-radius: 50%;
                  background: var(--t-e2a512); border: 2.5px solid var(--t-ffffff);
