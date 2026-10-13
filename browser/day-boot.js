@@ -1162,6 +1162,7 @@ function boot() {
     HANDLERS.requestPayout = bridge("requestPayout", 4);  // address xmr due note
     HANDLERS.myPayouts     = bridge("myPayouts", 0, "");  // → {available, payouts:[…], owed:[…]} JSON
     HANDLERS.myClaims      = bridge("myClaims", 0, "");   // → {rows:[ClaimRow…]} JSON: asked, held, taken
+    HANDLERS.myCreditHistory = bridge("myCreditHistory", 0, "");   // → {rows:[CreditHistoryRow…]} JSON: earned, waiting, drawn, voided, newest first
     // what every source says of a spec, and the history behind it: the reading
     // fold's rows and drift, then one row per reading between two instants
     // (spec) → {rows, drift, latest};  (spec, fromIso, untilIso) → {rows, fold}
