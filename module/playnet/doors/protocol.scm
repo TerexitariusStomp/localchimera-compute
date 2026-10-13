@@ -1031,9 +1031,6 @@ or #f when no handler sends it."
     (door planner materialize (scope-id demand #:optional (opts '()))
           #:auth operator #:topic commitments #:reply promise:ok-or-error #:kind performative
           #:doc "Runs the willing-only plan and persists its work rows as suggested intents awaiting acceptance; OPTS as `plan`'s (plus `plan-id`); replies the plan alist plus the materialized count.")
-    (door planner fulfill-work (scope-id wc)
-          #:auth operator #:topic commitments #:reply ok-or-error #:kind constative
-          #:doc "Records the work event that fulfills a prefilled commitment alist; replies the event id and the commitment id it fulfills.")
     (door planner enact (scope-id plan)
           #:auth operator #:topic stock #:reply ok-or-error #:kind performative
           #:doc "Records the material rows of PLAN that the scope's last plan states, as produce/consume/pickup/dropoff/use events, each once the books hold the stock it draws; replies the event ids and the rows still waiting, each with its reason.")

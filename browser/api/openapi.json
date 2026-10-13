@@ -21282,14 +21282,6 @@
     },
     {
       "object": "planner",
-      "name": "fulfill-work",
-      "auth": "operator",
-      "topic": "commitments",
-      "x-playnet-transport": "none",
-      "summary": "Records the work event that fulfills a prefilled commitment alist; replies the event id and the commitment id it fulfills."
-    },
-    {
-      "object": "planner",
       "name": "enact",
       "auth": "operator",
       "topic": "stock",

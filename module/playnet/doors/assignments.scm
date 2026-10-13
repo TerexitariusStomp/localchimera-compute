@@ -47,9 +47,7 @@
           (cond
             ((not cid) (failure "promote-to-commitment returned #f"))
             (else
-             ;; Register the commitment's target: its fulfilment is read off the
-             ;; events that name it.
-             ($ obs 'register-commitment ($ ps 'get-commitment cid))
+             ;; the store armed its target on the observer as it stood
              (success cid))))))))
 
 ;; ── Willingness: the solver-offers-first labour loop ─────────────────────────

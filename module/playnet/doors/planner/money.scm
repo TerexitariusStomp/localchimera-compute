@@ -263,12 +263,6 @@
                                     ($ ps 'all-intents))))
                  (unless (string-or-false spec) (error "what was bought?"))
                  (unless (or donation? (> c 0)) (error "what did it cost?"))
-                 ;; arm tracking BEFORE the event lands, so this raise advances
-                 ;; the states; guarded — registration resets a tracked state
-                 (when (and planned-c (not ($ obs 'get-fulfillment (commitment-id planned-c))))
-                   ($ obs 'register-commitment planned-c))
-                 (when (and need-i (not ($ obs 'get-satisfaction (intent-id need-i))))
-                   ($ obs 'register-intent need-i))
                  ;; the good, held by the commune from the moment it is recorded
                  ($ obs 'record-resource
                     (make-economic-resource #:id rid #:name (or (string-or-false note) spec) #:note (string-or-false note) #:tracking-identifier (fresh-label obs)
@@ -279,8 +273,11 @@
                     (adjustment-event eid rid spec q u #:classified-as '("bought")
                                       #:provider agent-id #:receiver scope-id
                                       #:when stamp #:created stamp #:to loc
+                                      ;; ONE edge: the commitment this corroborates (the intent it
+                                      ;; satisfies takes its satisfaction from the commitment's own
+                                      ;; edge), else the intent itself — the observer refuses both
                                       #:fulfills (and planned-c (commitment-id planned-c))
-                                      #:satisfies (and need-i (intent-id need-i))
+                                      #:satisfies (and (not planned-c) need-i (intent-id need-i))
                                       #:note (string-append (if donation? "donated" "bought")
                                                             (if (string-or-false receipt) (string-append " · receipt " receipt) ""))))
                  ;; whether the commons owes — unless it was a gift
@@ -290,4 +287,4 @@
                                 (cost . ,c) (money-spec . ,(or (string-or-false money-spec) "spec-eur"))
                                 (planned? . ,(and planned-c #t))
                                 (fulfills . ,(and planned-c (commitment-id planned-c)))
-                                (satisfies . ,(and need-i (intent-id need-i)))))))))))))))
+                                (satisfies . ,(and (not planned-c) need-i (intent-id need-i)))))))))))))))

@@ -5,13 +5,10 @@
 
 (define-module (playnet doors journeys)
   #:use-module ((goblins) #:select ($))
-  #:use-module ((playnet utils clock) #:select (iso-now))
   #:use-module ((playnet utils keyed-id) #:select (keyed-id))
-  #:use-module ((playnet utils units) #:select (%count-unit))
   #:use-module ((playnet vf schemas) #:select (make-spatial-thing recipe-flow-action recipe-flow-resource-conforms-to recipe-process-id))
-  #:use-module ((playnet vf formulas flows) #:select (make-relocation-event))
   #:use-module ((srfi srfi-1) #:select (find))
-  #:export (trip-ids trip-good ensure-place! make-trip-event))
+  #:export (trip-ids trip-good ensure-place!))
 
 ;;; ── A journey is a performed Process ─────────────────────────────────
 ;; The trip's process and the commitment for its arrival are named from the
@@ -39,21 +36,3 @@
            (lon (and lat (string->number (cadr parts)))))
       (when (and lat lon)
         ($ sts 'add-location (make-spatial-thing #:id place #:name place #:lat lat #:long lon))))))
-
-;;; ── EconomicEvent builder ────────────────────────────────────────────
-;;; Wraps the 29-positional-arg make-economic-event with keyword args.
-;;; Field defaults are #f, so callers only specify what they care about.
-
-(define* (make-trip-event #:key id action input-of output-of agent (beg #f) (end #f)
-                                point spec from to fulfills note scope)
-  "A journey's pickup or dropoff event, resource-less: the trip's process as
-   INPUT-OF (the pickup) or OUTPUT-OF (the dropoff), one SPEC moved (the mode's pickup
-   flow's, a rider), the departure BEG or the arrival END and the instant POINT, the
-   origin FROM and, for the dropoff, the destination TO, FULFILLING the commitment of
-   its own end. The observer pairs the two by the process. The one relocation
-   constructor (vf/formulas/flows.scm), with the journey's words."
-  (make-relocation-event
-    #:id id #:action action #:input-of input-of #:output-of output-of #:spec spec
-    #:qty (and spec 1) #:provider agent
-    #:beg beg #:end end #:when point #:created (iso-now)
-    #:from from #:to to #:fulfills fulfills #:note note #:in-scope-of scope))

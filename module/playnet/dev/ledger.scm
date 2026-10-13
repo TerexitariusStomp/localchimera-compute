@@ -119,10 +119,9 @@
                             #:has-beginning (and span (car span)) #:has-end (and span (cdr span))
                             #:due (and span (cdr span))
                             #:at-location %dev-place #:in-scope-of %scope-name)))
-                    ;; on the plan-store, where the scope keeps what it decided,
-                    ;; and with the observer, which tracks its fulfilment
-                    ($ ps 'add-commitment c)
-                    ($ ($ scope 'observer) 'register-commitment c)))
+                    ;; on the plan-store, where the scope keeps what it decided;
+                    ;; the store tells the observer, which tracks its fulfilment
+                    ($ ps 'add-commitment c)))
                 cid))))
      (row-ref row 'shares))))
 

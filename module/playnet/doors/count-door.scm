@@ -390,11 +390,6 @@
                                      #:latest? (or (not then) (count-latest? obs resource-id then))
                                      #:flows ((plan-reader root rows) r (or then now))
                                      #:place place)))
-             ;; a commitment the events fulfil is registered before they land
-             (for-each (lambda (c)
-                         (when (and c (not ($ obs 'get-fulfillment (commitment-id c))))
-                           ($ obs 'register-commitment c)))
-                       (list (and (eq? 'work (commitment-action* cmt)) cmt) rec-c))
              (for-each (lambda (ev) ($ obs 'record-event ev)) (assq-ref plan 'events))
              (success (assq-ref plan 'reply)))))))))
 

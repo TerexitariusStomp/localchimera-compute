@@ -23,13 +23,11 @@
 (define resources bread-resources) (define win bread-window)
 (define agents bread-agents) (define spatials bread-spatials)
 
-(define recorded-events '())     ; the mock observer captures record-event for the confirmation-mile check
 (define vat (spawn-vat #:name "live-test"))
 (define both
   (with-vat vat
     (let* ((obs (spawn ^mock `((all-resources . ,(lambda () resources))
-                               (hours-by . ,(lambda (key-of . _) '())) (hours-on . ,(lambda (part . _) 0))
-                               (record-event . ,(lambda (e) (set! recorded-events (cons e recorded-events)) "ok")))))
+                               (hours-by . ,(lambda (key-of . _) '())) (hours-on . ,(lambda (part . _) 0)))))
            (as  (spawn ^mock `((all-agents . ,(lambda () agents)))))
            (sts (spawn ^mock `((all-locations . ,(lambda () spatials)))))
            (rs  (spawn ^mock `((all-recipes . ,(lambda () recipes))
@@ -44,23 +42,11 @@
            ;; the real OCapN-facing service actor, holding this scope
            (svc (spawn ^planner-service (hashmap-set (hashmap) "s1" scope)))
            (svc-plan ($ svc 'plan "s1" '(("bread" "town" 0 8.0)) '())))
-      ;; confirmation mile: a person confirms the first commitment "happened"
-      (let ((wc (car (assq-ref (cdr svc-plan) 'work))))
-        (list (plan-scope->alist scope #:demand '(("bread#town@0" . 8.0)) #:backend 'native-c)
-              svc-plan
-              ($ svc 'fulfill-work "s1" wc)
-              wc
-              ;; the chain rule: a commitment CARRYING satisfies still confirms
-              ;; — the event takes only the fulfills edge, since the observer
-              ;; enforces fulfills⊕satisfies and the intent's satisfaction is
-              ;; the commitment's own edge
-              ($ svc 'fulfill-work "s1" (cons '(satisfies . "int-x") wc)))))))
+      (list (plan-scope->alist scope #:demand '(("bread#town@0" . 8.0)) #:backend 'native-c)
+            svc-plan))))
 
 (define result  (car both))      ; direct plan-scope->alist
 (define svc-env (cadr both))     ; (ok . alist) from ^planner-service.plan
-(define fulfill-env (caddr both)) ; (ok . alist) from ^planner-service.fulfill-work
-(define confirmed-wc (cadddr both)) ; the commitment that was confirmed
-(define fulfill-sat-env (car (cddddr both))) ; fulfill-work over a satisfies-carrying wc
 (define work (assq-ref result 'work))
 (define (provider-skills p) (sort (delete-duplicates (filter-map (lambda (w) (and (equal? (assq-ref w 'provider) p) (assq-ref w 'conforms-to))) work)) string<?))
 
@@ -123,20 +109,5 @@
 (check "service plan also substantially met" (> (assq-ref (cdr svc-env) 'met) 0.9))
 (check "service plan emits work commitments"
        (every (lambda (w) (eq? (assq-ref w 'action) 'work)) (assq-ref (cdr svc-env) 'work)))
-
-(display "\n── confirmation mile: commitment → fulfilling EconomicEvent ──\n")
-(check "fulfill-work returns ok"          (eq? (car fulfill-env) 'ok))
-(check "…and a satisfies-carrying wc still confirms (the event takes fulfills only)"
-       (eq? (car fulfill-sat-env) 'ok))
-(check "the observer recorded an event"   (pair? recorded-events))
-(let ((ev (car recorded-events)))
-  (check "recorded a `work` event"        (eq? (economic-event-action ev) 'work))
-  (check "the event FULFILLS the confirmed commitment"
-         (equal? (economic-event-fulfills ev) (assq-ref confirmed-wc 'id)))
-  (check "event provider = the assigned worker"
-         (equal? (economic-event-provider ev) (assq-ref confirmed-wc 'provider)))
-  (check "event carries the worked hours as effort"
-         (= (measure-has-numerical-value (economic-event-effort-quantity ev))
-            (assq-ref confirmed-wc 'effort))))
 
 (test-summary!)

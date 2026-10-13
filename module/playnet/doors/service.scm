@@ -28,7 +28,7 @@
   #:use-module ((playnet economy debts) #:select (%payout-spec))
   #:use-module ((playnet doors assignments) #:select (do-accept-assignment do-decline-assignment do-express-willingness willing-predicate))
   #:use-module ((playnet doors effort) #:select (do-drop-event do-record-effort finite-positive?))
-  #:use-module ((playnet doors journeys) #:select (ensure-place! make-trip-event trip-good trip-ids))
+  #:use-module ((playnet doors journeys) #:select (ensure-place! trip-good trip-ids))
   #:use-module ((playnet doors plan-wire) #:select (build-snapshot location-slacks plan-results->dial-plan scope-credit->wire scope-members skill-holders solve-part wire-number))
   #:use-module ((playnet doors position) #:select (agent-position-predicate demand->keyed demand-horizon do-set-position federated-horizon location-mode nearest-location own-position-place! sharing-refused? solve-keywords standing-in))
   #:use-module ((playnet doors skills) #:select (declare-skill! lower-resource! revoke-skill!))

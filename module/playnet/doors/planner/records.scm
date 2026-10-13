@@ -15,7 +15,7 @@
   #:use-module ((playnet doors count-door) #:select (count-history-reply count-schedule-reply do-count-stock do-read-condition label-stock-reply lay-counts read-label-reply with-expected))
   #:use-module ((playnet doors effort) #:select (do-drop-event))
   #:use-module ((playnet doors inventory) #:select (build-inventory-snapshot build-process-context build-resource-detail))
-  #:use-module ((playnet doors journeys) #:select (ensure-place! make-trip-event trip-good trip-ids))
+  #:use-module ((playnet doors journeys) #:select (ensure-place! trip-good trip-ids))
   #:use-module ((playnet doors plan-wire) #:select (scope-members))
   #:use-module ((playnet doors planner solve-cache) #:select (cache-solve! hold-row! mark-solve-stale! planned-material planned-row-id planned-rows planned-runs row-left solve-vocabulary-of))
   #:use-module ((playnet doors position) #:select (solve-keywords))
@@ -32,7 +32,7 @@
   #:use-module ((playnet utils units) #:select (%count-unit))
   #:use-module ((playnet vf formulas actions) #:select (*flow-actions* occupying-actions relocating-actions))
   #:use-module ((playnet vf formulas counting) #:select (count-process?))
-  #:use-module ((playnet vf formulas flows) #:select (row-id row-quantity))
+  #:use-module ((playnet vf formulas flows) #:select (make-relocation-event row-id row-quantity))
   #:use-module ((playnet vf schemas) #:select (commitment-finished commitment-id commitment-input-of commitment-provider make-commitment make-measure make-process recipe-process-process-conforms-to resource-specification-id specs->units))
   #:use-module ((srfi srfi-1) #:select (filter-map fold))
   #:use-module (playnet doors planner ctx)
@@ -124,20 +124,17 @@
              ;; plan-store (snapshots, calendars, chat strata all see them)…
              ($ ps 'add-commitment-silent pickup)
              ($ ps 'add-commitment-silent dropoff)
-             ;; …and fulfillment tracking is armed on the observer —
-             ;; guarded: registration RESETS a tracked state, so a replay
-             ;; of an existing cid must never wipe recorded progress
-             (for-each (lambda (c) (unless ($ obs 'get-fulfillment (commitment-id c))
-                                     ($ obs 'register-commitment c)))
-                       (list pickup dropoff))
+             ;; …and the store armed their fulfilment on the observer as they entered
              ($ obs 'record-event
-                (make-trip-event
+                ;; a journey's pickup: the trip's process as input-of, one rider of the mode's
+                ;; good, has-beginning = departure (it has not completed)
+                (make-relocation-event
                  #:id (string-append "ev-pu-" cid) #:action 'pickup
-                 #:input-of pid #:agent agent-id #:spec good
-                 #:beg now                       ; has-beginning = departure (it has not completed)
+                 #:input-of pid #:provider agent-id #:spec good #:qty (and good 1)
+                 #:beg now #:when #f #:created (iso-now)
                  #:from from-place #:fulfills cid
                  #:note (string-append "journey depart by " mode)
-                 #:scope scope-id))
+                 #:in-scope-of scope-id))
              (success `((commitment . ,cid) (arrival . ,dcid)))))))))
 
       ((journey-end scope-id agent-id commitment-id from-place to-place mode)
@@ -151,13 +148,15 @@
                       (rp  (let ((spec ($ obs 'process-spec pid))) (and spec (find-recipe-process-for-spec rs spec))))
                       (now (iso-now)))
                  ($ obs 'record-event
-                    (make-trip-event
-                     #:id (string-append "ev-do-" commitment-id) #:action 'dropoff
-                     #:output-of pid #:agent agent-id #:spec (trip-good rs rp)
-                     #:end now #:point now           ; has-end = arrival
-                     #:from to-place #:to to-place #:fulfills dcid
-                     #:note (string-append "journey arrive by " mode)
-                     #:scope scope-id))
+                    ;; a journey's dropoff: the trip's process as output-of, has-end = arrival
+                    (let ((good (trip-good rs rp)))
+                      (make-relocation-event
+                       #:id (string-append "ev-do-" commitment-id) #:action 'dropoff
+                       #:output-of pid #:provider agent-id #:spec good #:qty (and good 1)
+                       #:end now #:when now #:created now
+                       #:from to-place #:to to-place #:fulfills dcid
+                       #:note (string-append "journey arrive by " mode)
+                       #:in-scope-of scope-id)))
                  `((commitment . ,commitment-id) (arrival . ,dcid))))))
 
       ;; Materialize: run the willing-only plan AND persist its assignments as
@@ -180,15 +179,6 @@
                                                      #:plan-id (or (assq-ref o 'plan-id) "plan-materialized"))))
                        (success (cons (cons 'materialized n) (cache-solve! cache scope-id demand al)))))
                    #:catch (lambda (e) (failure (format #f "~a" e))))))))))
-
-      ;; The confirmation mile: a person sees a prefilled commitment (from `plan`)
-      ;; and says "this happened". wc = that commitment alist (optionally edited);
-      ;; we record the fulfilling `work` EconomicEvent and the observer folds it.
-      ((fulfill-work scope-id wc)
-       (scoped scope-id
-         (lambda (root)
-`((event-id . ,(record-work-done root wc))
-                          (fulfills . ,(row-id wc))))))
 
       ;; Enact a plan's MATERIAL flows — "it all happened as planned": record the
       ;; produce/consume/pickup/dropoff/use events the observer folds, moving stock. plan is the

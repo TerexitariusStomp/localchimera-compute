@@ -118,6 +118,13 @@
        ($ plan-store-ref 'set-on-intent
           (lambda (intent)
             ($ observer-ref 'register-intent intent)))
+       ;; every commitment that enters the store is armed on the observer: its target
+       ;; stands from the moment the commitment does, and its fulfilment is read off the
+       ;; events that name it (observer register-commitment: again states the target,
+       ;; progress stays where the log has it)
+       ($ plan-store-ref 'set-on-commitment-added
+          (lambda (commitment)
+            ($ observer-ref 'register-commitment commitment)))
        ($ plan-store-ref 'set-on-plan
           (lambda (plan)
             (let ((pid (plan-id plan)))

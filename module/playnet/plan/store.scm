@@ -579,6 +579,15 @@
   ;; without repeating the lookup. Re-evaluated each time the actor
   ;; respawns with an updated callbacks alist.
   (let* ((on-commitment (assq-ref callbacks 'on-commitment))
+         ;; THE BOOKS' MIRROR of what the store decides: told of EVERY commitment that
+         ;; enters the store (added, silently recovered, promoted from an intent,
+         ;; accepted in a proposal), so the observer holds each one's target from
+         ;; the moment it stands and no door has to remember to say so.
+         ;; `on-commitment` stays the credentialing channel, which a recovery
+         ;; skips; this one never skips. Told from inside the write, like the
+         ;; intent channel: the listener folds the record and reads no store.
+         (on-added      (assq-ref callbacks 'on-commitment-added))
+         (added!        (lambda (c) (when (and on-added c) (on-added c))))
          (on-plan       (assq-ref callbacks 'on-plan))
          (on-agreement  (assq-ref callbacks 'on-agreement))
          ;; Every listener on the intent channel, in registration order. The
@@ -736,6 +745,7 @@
 
     ((add-commitment commitment)
      (let-values (((new-st id) (pss-add-commitment st commitment)))
+       (added! (hashmap-ref (pss-commitments new-st) id #f))
        (when on-commitment
          (on-commitment (hashmap-ref (pss-commitments new-st) id)))
        (bcom (^plan-store bcom new-st callbacks) id)))
@@ -743,6 +753,7 @@
     ((add-commitment-silent commitment)
      ;; Recovery path: skip the on-commitment callback to avoid re-emission.
      (let-values (((new-st id) (pss-add-commitment st commitment)))
+       (added! (hashmap-ref (pss-commitments new-st) id #f))
        (bcom (^plan-store bcom new-st callbacks) id)))
 
     ;; Late-bind any emission callback (post-recovery). Prepends to
@@ -776,6 +787,10 @@
     ;; second one must not silence the first.
     ((add-intent-listener proc)
      (bcom (^plan-store bcom st (cons (cons 'on-intent-change proc) callbacks))))
+    ;; "Tell me of every commitment that enters the store" — the observer's mirror
+    ;; (scope/root.scm rewire-callbacks); one reader, so a rewire shadows.
+    ((set-on-commitment-added proc)
+     (bcom (^plan-store bcom st (cons (cons 'on-commitment-added proc) callbacks))))
     ((set-on-plan proc)
      (bcom (^plan-store bcom st
              (cons (cons 'on-plan proc) callbacks))))
@@ -802,6 +817,7 @@
      (let* ((c (make-commitment #:id (generate-id "c-") #:action action #:resource-conforms-to spec-id
                                 #:resource-quantity (make-measure qty unit) #:provider provider #:receiver receiver #:due due #:planned-within plan-id)))
        (let-values (((new-st id) (pss-add-commitment st c)))
+         (added! (hashmap-ref (pss-commitments new-st) id #f))
          (when on-commitment
            (on-commitment (hashmap-ref (pss-commitments new-st) id)))
          (bcom (^plan-store bcom new-st callbacks) id))))
@@ -814,6 +830,7 @@
      (gate-intents! (assq-ref callbacks 'gate-accept) (pss-intents st) (list iid))
      (fresh-check! callbacks st (list iid))
      (let-values (((new-st cid) (pss-promote-intent st iid counterparty)))
+       (when cid (added! (hashmap-ref (pss-commitments new-st) cid #f)))
        (when (and on-commitment cid)
          (on-commitment (hashmap-ref (pss-commitments new-st) cid)))
        (bcom (^plan-store bcom new-st callbacks) cid)))
@@ -1523,6 +1540,7 @@
                            (counterparty . ,counterparty)
                            (accepting-agent-id . ,accepting-aid)
                            (commitments  . ,all-cids))))
+             (for-each (lambda (cid) (added! (hashmap-ref (pss-commitments final-st) cid #f))) all-cids)
              (when on-agreement (on-agreement agr proposal result))
              (bcom (^plan-store bcom final-st callbacks)
                    result)))))))))

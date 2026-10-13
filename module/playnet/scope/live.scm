@@ -2414,12 +2414,18 @@
 ;; make-work-event lives in (playnet vf formulas flows) with its commitment twin; re-exported here.
 
 (define (end-fulfilled! scope-root cid)
-  "The commitment CID ended, fulfilled: one dated fact on the store's rail, beside a
-   release's and an expiry's, so the drift question reads how commitments end by kind
-   (end-commitment; an absent store has nothing to date)."
-  (let ((ps (false-if-exception ($ scope-root 'plan-store))))
-    (when ps (false-if-exception
-              ($ ps 'end-commitment cid 'fulfilled (instant->unix (now)))))))
+  "The commitment CID ends fulfilled when the books say its target is met (the observer's
+   FulfillmentState), or when they hold no target for it, as a row confirmed whole ends at
+   its one confirmation: one dated fact on the store's rail, beside a release's and an
+   expiry's, so the drift question reads how commitments end by kind (end-commitment; an
+   absent store has nothing to date). A partial confirmation leaves it open, and a
+   commitment already ended stays as it ended. The ONE ending rule every confirmation
+   door keeps."
+  (let ((ps (false-if-exception ($ scope-root 'plan-store)))
+        (fs (false-if-exception ($ ($ scope-root 'observer) 'get-fulfillment cid))))
+    (when (and ps (or (not fs) (fulfillment-state-finished fs)))
+      (false-if-exception
+        ($ ps 'end-commitment cid 'fulfilled (instant->unix (now)))))))
 
 (define* (record-work-done scope-root wc #:key (effort #f) (when-iso #f))
   (let* ((obs   ($ scope-root 'observer))
@@ -2439,12 +2445,7 @@
                   #:in-scope-of (row-scope wc)
                   #:timestamp t #:created (instant->civil (now)) #:note #f)))
     ($ obs 'record-event event)
-    ;; the commitment ends fulfilled when its hours are all in (the observer's
-    ;; word), the rule the effort door keeps; a row the books hold no target
-    ;; for ends at its one confirmation, as before
-    (let ((fs (false-if-exception ($ obs 'get-fulfillment cid))))
-      (when (or (not fs) (fulfillment-state-finished fs))
-        (end-fulfilled! scope-root cid)))
+    (end-fulfilled! scope-root cid)
     evid))
 
 ;; ── the MATERIAL confirmation: a produce/consume/pickup/dropoff/use commitment → its event ──

@@ -71,9 +71,7 @@
              ($ obs 'record-event evt)
              ;; the commitment ends fulfilled when its hours are all in, so a
              ;; finished block neither takes more hours nor reads as expired
-             (let ((fs ($ obs 'get-fulfillment cid)))
-               (when (and fs (fulfillment-state-finished fs))
-                 (end-fulfilled! scope-root cid)))
+             (end-fulfilled! scope-root cid)
              (success eid))))))))
 
 ;;; ── The captain's log observes (write path) ──────────────────────────
