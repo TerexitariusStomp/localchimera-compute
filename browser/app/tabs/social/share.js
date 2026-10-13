@@ -515,33 +515,49 @@ document.addEventListener("pointerdown", ev => {
  * The sheet's grip, the way a map's bottom sheet works: drag it and the sheet
  * follows the finger; let go and it settles — whole (`full`), at the height its
  * content wants, or away. A tap on the grip flips whole ⇄ content-height.
+ *
+ * The sheet answers the finger's speed as well as where it lands: a flick down
+ * puts it away, and so does a drag past a third of its height. A swipe down on
+ * the content itself pulls the sheet once the content is at its top (a touch
+ * gesture, so a list still scrolls first and the sheet follows when it has no
+ * more to scroll).
  */
 function wireSheet(sheet, grab, dismiss) {
     const fullH = () => Math.max(160, window.innerHeight
         - (parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--barh")) || 56));
+    const FLING = 0.45; // px/ms: a flick this fast carries the sheet to the next rest
+    const AHEAD = 180; // ms of the finger's speed added to where it was let go
     let y0 = 0, h0 = 0, moved = false, live = false;
-    grab.addEventListener("pointerdown", ev => {
+    let lastY = 0, lastT = 0, v = 0; // v: the finger's speed, px/ms, positive upward
+    const begin = (y) => {
         if (viewStepped)
             return; // a stepped view moves itself (wireStepped)
         live = true;
         moved = false;
-        y0 = ev.clientY;
+        y0 = y;
+        lastY = y;
+        lastT = performance.now();
+        v = 0;
         h0 = sheet.getBoundingClientRect().height;
-        grab.setPointerCapture(ev.pointerId);
         sheet.classList.add("dragging");
-    });
-    grab.addEventListener("pointermove", ev => {
+    };
+    const move = (y) => {
         if (!live)
             return;
-        if (Math.abs(ev.clientY - y0) > 4)
+        if (Math.abs(y - y0) > 4)
             moved = true;
         if (!moved)
             return;
-        const h = Math.max(0, Math.min(fullH(), h0 + (y0 - ev.clientY)));
+        const t = performance.now();
+        if (t > lastT)
+            v = (lastY - y) / (t - lastT);
+        lastY = y;
+        lastT = t;
+        const h = Math.max(0, Math.min(fullH(), h0 + (y0 - y)));
         sheet.style.height = h + "px";
         sheet.style.maxHeight = "none";
-    });
-    const settle = (ev) => {
+    };
+    const settle = (y, tap) => {
         if (!live)
             return;
         live = false;
@@ -550,18 +566,69 @@ function wireSheet(sheet, grab, dismiss) {
         sheet.style.height = "";
         sheet.style.maxHeight = "";
         if (!moved) {
-            sheet.classList.toggle("full");
+            if (tap)
+                sheet.classList.toggle("full");
             return;
         }
-        const was = sheet.classList.contains("full");
+        const speed = performance.now() - lastT > 100 ? 0 : v; // a finger that paused before letting go is not flicking
+        const reach = h + speed * AHEAD; // where the sheet is headed
         sheet.classList.remove("full");
         const rest = sheet.getBoundingClientRect().height; // the content's own height, capped
-        sheet.classList.toggle("full", h > (rest + fullH()) / 2);
-        if (h < Math.min(120, (was ? fullH() : rest) / 2) && ev.clientY > y0)
+        const whole = reach > (rest + fullH()) / 2;
+        sheet.classList.toggle("full", whole);
+        if (!whole && y > y0 && (speed < -FLING || reach < rest * 0.65))
             dismiss();
     };
-    grab.addEventListener("pointerup", settle);
-    grab.addEventListener("pointercancel", settle);
+    grab.addEventListener("pointerdown", ev => { begin(ev.clientY); grab.setPointerCapture(ev.pointerId); });
+    grab.addEventListener("pointermove", ev => move(ev.clientY));
+    grab.addEventListener("pointerup", ev => settle(ev.clientY, true));
+    grab.addEventListener("pointercancel", ev => settle(ev.clientY, true));
+    // the content: a touch that starts on a scroller at its top and goes down is the sheet's to pull
+    const scrollerOf = (el) => {
+        for (let n = el; n && n !== sheet; n = n.parentElement) {
+            const o = getComputedStyle(n).overflowY;
+            if ((o === "auto" || o === "scroll") && n.scrollHeight > n.clientHeight + 1)
+                return n;
+        }
+        return null;
+    };
+    let sx = 0, sy = 0, scroller = null, armed = false, pulling = false;
+    sheet.addEventListener("touchstart", ev => {
+        armed = false;
+        pulling = false;
+        const t = ev.target;
+        if (ev.touches.length !== 1 || grab.contains(t) || t.closest("input, textarea, select"))
+            return;
+        scroller = scrollerOf(t);
+        sx = ev.touches[0].clientX;
+        sy = ev.touches[0].clientY;
+        armed = true;
+    }, { passive: true });
+    sheet.addEventListener("touchmove", ev => {
+        if (!armed)
+            return;
+        const t = ev.touches[0], dy = t.clientY - sy, dx = t.clientX - sx;
+        if (!pulling) {
+            if (dy < -8) {
+                armed = false;
+                return;
+            } // up: the content scrolls
+            if (dy <= 8 || Math.abs(dx) > dy || (scroller && scroller.scrollTop > 0))
+                return;
+            pulling = true;
+            begin(t.clientY);
+        }
+        ev.preventDefault();
+        move(t.clientY);
+    }, { passive: false });
+    const letGo = (ev) => {
+        if (pulling)
+            settle(ev.changedTouches[0].clientY, false);
+        armed = false;
+        pulling = false;
+    };
+    sheet.addEventListener("touchend", letGo);
+    sheet.addEventListener("touchcancel", letGo);
 }
 /**
  * The grip of a stepped view: a swipe up or down, or a tap, is the view's to answer (`Stepped`); the sheet does not
@@ -1109,7 +1176,6 @@ function ensureScaffold(bar) {
         here: currentPlace,
         onNewPlace: newPlace,
         onChange: syncTogs,
-        canDeclare: () => drawerMode.peek() === "slots",
     });
     panelRef = panel;
     closePanelHook = () => panel.close();
@@ -1243,32 +1309,15 @@ function ensureScaffold(bar) {
     // after both popovers exist: it runs once immediately, synchronously,
     // reading timeMenuOpen/whereMenuOpen before either signal would exist.
     effect(() => { F.timeBy(); F.radiusKm(); timeMenuOpen(); whereMenuOpen(); syncTogs(); });
-    // the name doubles as the type search. The taxonomy is ONE strip above the
-    // bar (the panel's type tab, in flow): its first row is the top-level
-    // terms, each term tapped adds its row beneath, and the words typed sift
-    // every row. A tap on the field or a keystroke raises it; nothing else
-    // opens or closes it — it is a filter over the map and the sheet alike, so
-    // it stays through the backpack, a tile, a popover, and leaves on ✕, Esc or
-    // a tap on the page. Resources browses the same taxonomy — its goods ARE
-    // specs filed under it; picking only narrows the search (fields.set moves
-    // nameIn/F.query). A skill is a word, not a spec, so Skills stays
-    // search-only. A tap, not focus — submit() hands focus back to the name
-    // after every declare, and that hand-back must not raise the strip.
-    const typeBrowsable = () => drawerMode.peek() === "slots" || drawerMode.peek() === "resources";
-    const raiseType = () => { if (typeBrowsable() && panel.tab() === null)
-        panel.show("type"); };
-    nameIn.addEventListener("click", raiseType);
+    // the name doubles as the search. The folksonomy strip is OFF and shares no code with the panel
+    // (slots/type-strip.ts is not imported): the field only filters.
     nameIn.addEventListener("input", () => {
         panel.draft.spec = null;
         panel.draft.cats = [];
         F.query.set(nameIn.value); // the name doubles as the search
         lit = 0;
         renderPreview();
-        raiseType();
-        if (panel.tab() === "type")
-            panel.refresh(); // the words sift the strip
     });
-    closeOnOutsideTap(() => panel.tab() === "type", () => panel.close(), "#sharebar");
     emojiBtn.addEventListener("click", () => { dockNear(emojiBtn); panel.toggle("emoji"); });
     unitBtn.addEventListener("click", () => { dockNear(unitBtn); panel.toggle("unit"); });
     const restyle = () => {
@@ -1403,7 +1452,7 @@ function ensureScaffold(bar) {
     // the backpack closes the group, after the pill: on a phone the whole
     // expression wraps as one line and the handle wraps with it, never onto a
     // row of its own above
-    // (with the feedback 💬 beside it in dev mode: one trailing group, so the
+    // (with the feedback 💬 beside it when feedback is on: one trailing group, so the
     // two wrap together, right-aligned, rather than one stranded on its own row)
     const end = mk("div", "share-end");
     end.append(handle);
@@ -1534,9 +1583,7 @@ function ensureScaffold(bar) {
     const railRow = mk("div", "share-railrow");
     railRow.append(railSwitch(true, true, true));
     drawer.append(railRow, mk("div", "share-lists"), mk("div", "share-lent-col"));
-    // the panel sits right above the bar row: in flow it is the taxonomy strip
-    // (column-reverse puts it directly above the expression); the compact tabs
-    // are absolutely placed and dock wherever dockNear says
+    // the compact tabs are absolutely placed and dock wherever dockNear says
     bar.append(row, panel.el, preview, sheet);
     restyle();
 }

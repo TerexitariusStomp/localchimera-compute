@@ -13,7 +13,7 @@ import { SHOW_SOURCE } from './source.js';
 import { THEMES, theme, setTheme } from './theme.js';
 import { CALENDARS, calOn, setCalOn } from './calendars.js';
 import { zones, addZone, removeZone, labelZone, knownZones, zoneOffsetLabel } from './voice/worldclock.js';
-import { weekStart, setWeekStart, homeFace, setHomeFace, devMode, setDevMode } from './prefs.js';
+import { weekStart, setWeekStart, homeFace, setHomeFace, devMode, setDevMode, feedbackMode, setFeedbackMode } from './prefs.js';
 import { CURRENCIES, currency, setCurrency, currencyInForce, currencyForHere, perHour, fmtMoney } from './money.js';
 import { tabCatalogue, tabShown, setTabShown, resetTabs } from './faces.js';
 import { locationMode, setLocationMode, homeName } from './tabs/social/location.js';
@@ -115,10 +115,13 @@ export function registerAllSettings() {
                         get: () => locationMode(), set: v => setLocationMode(v) },
                     { kind: "note", text: homeName() ? `home: ${homeName()} — the place the plan falls back to when nothing is shared; the start face registers it` : "no home registered — the plan cannot place you until one is; the start face registers it" },
                 ] },
-            { id: "dev", title: "developer",
+            { id: "dev", title: "feedback and developer",
                 rows: () => [
-                    { kind: "toggle", label: "dev mode",
-                        note: "shows the maintainers' tools: the feedback 💬 in the bottom bar (a note about playnet itself) and the map's layer inspector",
+                    { kind: "toggle", label: "feedback and ideas",
+                        note: "adds a 💬 to the bottom bar: point at any part of the interface or the protocol, comment on it, and the note goes to the developers",
+                        get: () => feedbackMode(), set: v => setFeedbackMode(v) },
+                    { kind: "toggle", label: "map layer inspector",
+                        note: "a developer's tool: click the map to read which layers are drawn there",
                         get: () => devMode(), set: v => setDevMode(v) },
                 ] },
         ],

@@ -32,7 +32,7 @@ import { cWarm, cYea, inkFor, haloed, USER } from './core.js';
 import { evs, pending, spanOnDay, turnAnchor } from './events.js';
 import { pick } from './calendars.js';
 import { signal } from './reactive.js';
-import { stage } from './stage.js';
+import { stage, mapUp } from './stage.js';
 import { goToMapPlace, hereOfEvent } from './gohere.js';
 import { passesFacets } from './facets.js';
 import { absUnits } from './turn.js';
@@ -61,7 +61,7 @@ export function selectEvent(ev) {
     availRing.clearSel(); // ring editing and the card are exclusive
     selectedEv.set(ev);
     const m = theMap();
-    if (stage.mode === "earth" && m && ev?.at) // fly to where it happens
+    if (mapUp() && m && ev?.at) // fly to where it happens
         m.flyTo({ center: [USER.lng + ev.at.dLng, USER.lat + ev.at.dLat],
             zoom: 14, duration: 700 });
 }

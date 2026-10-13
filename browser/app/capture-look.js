@@ -25,7 +25,7 @@ import { lendControl, grants } from "./lend.js";
 import { effect } from "./reactive.js";
 import { idHint } from "./tabs/social/id.js";
 import { askReads, canRead, readsLine, whyNotRead } from "./allotment.js";
-import { canScan } from "./scan.js";
+import { canScan, readStill } from "./scan.js";
 import { classify, formatName } from "./symbols.js";
 import { boundTo } from "./barcodes.js";
 import { canStream } from "./camera.js";
@@ -75,6 +75,11 @@ async function shoot(source) {
         blobs = await pickPhotos(true, false);
     if (!blobs.length || lookTop() !== scr)
         return;
+    // a picture of a person's code or a label is read as the symbol it carries, as it would be held in view
+    if (!(source === "camera" && viewfinder?.live) && await readSymbolsIn(blobs))
+        return;
+    if (lookTop() !== scr)
+        return;
     sheet.set({ ...s0, busy: true, says: "preparing…" });
     const taken = [];
     let why = "";
@@ -94,6 +99,24 @@ async function shoot(source) {
     }
     const shots = [...scr.shots, ...taken];
     replaceTop({ ...now, shots }, why || (shots.length >= SHOTS_PER_READ ? `${shots.length} shots: the most one read takes` : `${shots.length} of ${SHOTS_PER_READ} shots`));
+}
+// the symbols in the pictures picked: a person's code or a label ends the picking (true); anything else is left to the photo
+async function readSymbolsIn(blobs) {
+    for (const blob of blobs) {
+        for (const sym of await readStill(blob)) {
+            const r = classify(sym);
+            if (r.kind === "label") {
+                find(r.code);
+                return true;
+            }
+            if (r.kind === "person") {
+                closeSheet();
+                propose(r.link);
+                return true;
+            }
+        }
+    }
+    return false;
 }
 function unshot(i) {
     const scr = lookTop();
@@ -402,7 +425,7 @@ function seen(sym) {
     say(`read ${formatName(r.format)} “${r.value.slice(0, 60)}”: not a playnet label or a product code`);
 }
 // …and while the camera waits for a shot
-const LOOK_PROMPT = canScan() ? "hold a label or a barcode in view, or take a photograph" : "take a photograph, or type a code";
+const LOOK_PROMPT = canScan() ? "hold a label, a barcode or a person's code in view, or take a photograph" : "take a photograph, or type a code";
 export const resetTyped = () => { typed = ""; };
 /** Keep the code being typed, as the mic heard it. */
 export const setTyped = (v) => { typed = v; };

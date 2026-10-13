@@ -26,7 +26,6 @@ import { currencyInForce } from '../money.js';
 import { dwelling, dwellingSummary } from '../dwelling.js';
 import { openAccountPage } from '../account.js';
 import { installBlock } from '../install.js';
-import { chip } from '../chips.js';
 import { K } from "../keys.js";
 const KEY = K.onboardWalk;
 const walk = signal({ done: false, ...readJSON(KEY, {}) });
@@ -168,14 +167,12 @@ function draw() {
       <div class="ob-intro">
         <h2 class="ob-brand">${wordmark()}</h2>
         <p>a plan for meeting each other's needs.</p>
-        <p class="ob-mode ${real ? "real" : "demo"}">${real
-        ? `playing for real${me.name ? ` as ${me.name}` : ""}`
-        : "demo — your answers stay on this device until you make an identity"}</p>
-        ${identity() ? "" : html `<div class="ob-opts">${chip(false, "I already have an identity — sign in", signInHere)}</div>`}
+        ${real ? html `<p class="ob-mode real">${`playing for real${me.name ? ` as ${me.name}` : ""}`}</p>` : ""}
       </div>      <div class="acct-group">${identityRow()}</div>
       <div class="acct-group">${TASKS.map(taskRow)}</div>
       ${installBlock()}
       <button class="ob-next ob-wide ob-play" onclick=${finish}>${real ? "let's play! 🌱" : "try the demo — let's play! 🎲"}</button>
+      ${real ? "" : html `<p class="ob-foot">demo — your answers stay on this device until you make an identity · <a class="ob-foot-link" role="button" tabindex="0" onclick=${signInHere}>I already have an identity — sign in</a></p>`}
     </div>`);
     const slot = stageEl.querySelector("[data-idc]");
     if (slot)

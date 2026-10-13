@@ -582,8 +582,10 @@ function buildAvailBand(colEl, item, avName, editing) {
     styleBand(el, item);
     // one press handler: what it does depends on where the press landed — a
     // grip resizes, the corners and the panel keep their own clicks, the body
-    // moves (or, read-only, only selects)
-    el.addEventListener("mousedown", (e) => {
+    // moves (or, read-only, only selects). Pointer events, so a finger drags
+    // exactly as a mouse does.
+    el.addEventListener("mousedown", (e) => e.stopPropagation());
+    el.addEventListener("pointerdown", (e) => {
         if (e.button !== 0)
             return;
         e.stopPropagation();
@@ -591,22 +593,37 @@ function buildAvailBand(colEl, item, avName, editing) {
         if (at.closest(".calav-corner, .calav-rec"))
             return;
         press(at.matches(".calav-grip.top") ? "top" : at.matches(".calav-grip.bot") ? "bot"
-            : active ? "move" : "tap", item, el, colEl, e);
+            : active ? "move" : "tap", item, el, colEl, avName, e);
     });
     return el;
 }
+/** The day column under a screen x, among the siblings of `colEl`. */
+function colAt(colEl, x) {
+    const cols = Array.from(colEl.parentElement?.querySelectorAll(".calcol[data-av]") ?? []);
+    return cols.find(c => { const r = c.getBoundingClientRect(); return x >= r.left && x < r.right; })
+        ?? (x < colEl.getBoundingClientRect().left ? cols[0] : cols[cols.length - 1]) ?? colEl;
+}
 /**
  * A press on a band, held until release. Moving edits the window live —
- * `top`/`bot` resize, `move` slides, `tap` moves nothing — and the release
- * persists what moved, or selects the band when nothing did. The column
- * rect, captured at the start, maps y → hour.
+ * `top`/`bot` resize, `move` slides up and down the day and left or right
+ * across the days, `tap` moves nothing — and the release persists what moved,
+ * or selects the band when nothing did. The column rect, captured at the
+ * start, maps y → hour; the columns map x → day.
+ *
+ * A window dropped on another day leaves its own day for that one. When it
+ * recurs on several days only THIS day's instance travels (it splits off as
+ * a window of its own); commitAvail's save then unifies it with whatever it
+ * lands on.
  */
-function press(mode, item, el, colEl, e) {
+function press(mode, item, el, colEl, avName, e) {
     const rect = colEl.getBoundingClientRect();
     const hourAt = (cy) => snap((cy - rect.top) / H);
     const span = item.t1 - item.t0, grab = mode === "move" ? hourAt(e.clientY) - item.t0 : 0;
-    let moved = false;
+    const t0 = item.t0, t1 = item.t1, x0 = e.clientX, y0 = e.clientY;
+    let moved = false, dropCol = colEl;
     const move = (ev) => {
+        if (!moved && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 4)
+            return; // a finger's jitter is not a drag
         moved = true;
         if (mode === "tap")
             return;
@@ -615,6 +632,11 @@ function press(mode, item, el, colEl, e) {
             const nt0 = Math.max(0, Math.min(24 - span, snap(h - grab)));
             item.t0 = nt0;
             item.t1 = nt0 + span;
+            const c = colAt(colEl, ev.clientX);
+            // the band stays where the finger holds it (re-parenting a touched node can end the
+            // touch's pointer stream); it is only drawn over the column it will land in
+            dropCol = c;
+            el.style.transform = `translateX(${c.getBoundingClientRect().left - rect.left}px)`;
         }
         else if (mode === "top")
             item.t0 = Math.min(h, item.t1 - 0.25);
@@ -623,34 +645,60 @@ function press(mode, item, el, colEl, e) {
         styleBand(el, item);
     };
     const up = () => {
-        document.removeEventListener("mousemove", move);
-        document.removeEventListener("mouseup", up);
-        if (moved) {
-            if (mode !== "tap")
-                commitAvail();
+        document.removeEventListener("pointermove", move);
+        document.removeEventListener("pointerup", up);
+        document.removeEventListener("pointercancel", up);
+        if (!moved) {
+            if (availRing.selId() !== item.id)
+                selectBand(item, null);
+            return;
         }
-        else if (availRing.selId() !== item.id)
-            selectBand(item, null);
+        if (mode === "tap")
+            return;
+        const to = dropCol.dataset.av;
+        if (mode === "move" && to && to !== avName)
+            relocate(item, avName, to, t0, t1);
+        commitAvail();
     };
-    document.addEventListener("mousemove", move);
-    document.addEventListener("mouseup", up);
+    document.addEventListener("pointermove", move);
+    document.addEventListener("pointerup", up);
+    document.addEventListener("pointercancel", up);
+}
+/** Carry `item`'s instance on day `from` to day `to`, at the times it was dragged to. */
+function relocate(item, from, to, t0, t1) {
+    const days = item.days || AV_DAYS;
+    if (days.length === 1) {
+        item.days = [to];
+        return;
+    }
+    const moved = { ...item, id: item.id + "_m" + Date.now(), days: [to] };
+    item.days = days.filter(d => d !== from);
+    item.t0 = t0;
+    item.t1 = t1;
+    availRing.items().push(moved);
+    if (availRing.selId() === item.id)
+        availRing.select(moved.id);
 }
 function startCreate(colEl, avName, e) {
     const rect = colEl.getBoundingClientRect();
     const hourAt = (cy) => snap((cy - rect.top) / H);
     const anchor = hourAt(e.clientY);
+    // a tap (no real drag) lays a window a thumb can grab: three hours on an
+    // empty day, one hour when the day already has a window
+    const tapSpan = pick("avail", availRing.items()).some(a => (a.days || AV_DAYS).includes(avName)) ? 1 : 3;
     const item = { id: "av" + Date.now() + "_" + Math.floor(Math.random() * 1e4),
         t0: anchor, t1: Math.min(24, anchor + 0.25), days: [avName] };
     availRing.items().push(item);
     const el = buildAvailBand(colEl, item, avName, true);
-    const move = (ev) => { const h = hourAt(ev.clientY); item.t0 = Math.min(anchor, h); item.t1 = Math.max(anchor, h); styleBand(el, item); };
+    let dragged = false;
+    const move = (ev) => { dragged = true; const h = hourAt(ev.clientY); item.t0 = Math.min(anchor, h); item.t1 = Math.max(anchor, h); styleBand(el, item); };
     const up = () => {
         document.removeEventListener("mousemove", move);
         document.removeEventListener("mouseup", up);
-        if (item.t1 - item.t0 < 0.25) {
-            const arr = availRing.items(), i = arr.indexOf(item);
-            if (i >= 0)
-                arr.splice(i, 1);
+        if (!dragged || item.t1 - item.t0 < 0.25) {
+            item.t1 = Math.min(24, anchor + tapSpan);
+            item.t0 = item.t1 - tapSpan;
+            styleBand(el, item);
         }
         commitAvail();
     };
@@ -941,7 +989,7 @@ function drawGrid(start, count, anchor) {
     // the day columns
     for (let i = 0; i < count; i++) {
         const doy = start + i, avName = avNameOf(doy);
-        const col = body.append("div").attr("class", "calcol" + (doy === todayDoy ? " today" : ""));
+        const col = body.append("div").attr("class", "calcol" + (doy === todayDoy ? " today" : "")).attr("data-av", avName);
         for (let hh = 0; hh < 24; hh++)
             col.append("div").attr("class", "calcell");
         // d3 just appended it, so the selection has a node.

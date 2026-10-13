@@ -27,7 +27,7 @@ import { claimVoice, type VoiceSink } from "./voice/sink.js";
 import { selectorFor, labelFor, withinFor } from "./refsel.js";
 import { diagText, diagFaults, diagLines, bootTrace, redact } from "./diag.js";
 import { signal, effect } from "./reactive.js";
-import { devMode } from "./prefs.js";
+import { feedbackMode } from "./prefs.js";
 import { html, render, list } from "./template.js";
 import { stage } from "./stage.js";
 import { toast } from "./toast.js";
@@ -293,6 +293,10 @@ export function initFeedback(): void {
   // The panel's markup in one expression — the chips and the screenshot are
   // drawn into their rows from the signals that hold them.
   render(panel, html`
+    <div class="fb-head">
+      <b>feedback and ideas</b>
+      <span>Point 👆 at any part of the interface — or of the protocol it shows — and say what works, what doesn't, or what you would try. It goes to the developers.</span>
+    </div>
     <textarea class="fb-text" rows="3"
       placeholder="what happened? what should be better? point 👆 at what you mean…"></textarea>
     <div class="fb-chips"></div>
@@ -306,7 +310,7 @@ export function initFeedback(): void {
         onclick=${() => { void pickPhoto(false).then(f => { if (f) void acceptImage(f); }); }}>🖼️</button>
       <button class="fb-send" type="button" onclick=${send}>send</button>
     </div>
-    <div class="fb-note">anonymous — lands in the maintainers' feedback pool,
+    <div class="fb-note">anonymous — lands in the developers' feedback pool,
       may become an issue on the board</div>`);
 
   ta = panel.querySelector<HTMLTextAreaElement>(".fb-text")!;   // just rendered
@@ -323,7 +327,8 @@ export function initFeedback(): void {
   btn.className = "fb-btn";
   btn.type = "button";
   btn.textContent = "💬";
-  btn.title = "leave feedback about playnet itself";
+  btn.title = "feedback and ideas — point at any part of the interface and comment; it goes to the developers";
+  btn.setAttribute("aria-label", "feedback and ideas");
   btn.addEventListener("click", () => open.set(!open()));
 
   // beside the backpack, inside the bar's one flex group, so it wraps with
@@ -343,11 +348,15 @@ export function initFeedback(): void {
     if (on) { releaseVoice ??= claimVoice(sink); ta!.focus(); }
     else { releaseVoice?.(); releaseVoice = null; }
   });
-  // dev mode (settings) is what shows the button; turning it off closes the lane
+  // the feedback switch (the account sheet, settings) is what shows the button; turning it off closes the lane,
+  // and turning it on says where it went and what to do with it
+  let first = true;
   effect(() => {
-    const dev = devMode();
-    btn.hidden = !dev;
-    if (!dev) open.set(false);
+    const on = feedbackMode();
+    btn.hidden = !on;
+    if (!on) open.set(false);
+    else if (!first) toast("feedback is on — the 💬 in the bottom bar opens it; 👆 points at the part you mean, and it goes to the developers", "notice");
+    first = false;
   });
   effect(drawRefs);
   effect(drawShot);

@@ -85,13 +85,30 @@ on("connectAsk", (aid, name) => {
     propose({ aid, origin: "", name: String(name || "").slice(0, 60) }, false, true);
     hint(`${name || "someone"} connected with you — connect back in Contacts.`, "notice");
 });
-/** Your own link, and its QR as SVG ("" when the link is longer than a symbol holds). Null while you have no identity here. */
-export function myLink() {
+/** Put LINK on the clipboard — yours, to send. */
+export function copyLink(link) {
+    if (!navigator.clipboard) {
+        hint("copy the link from the box.", "notice");
+        return;
+    }
+    navigator.clipboard.writeText(link).then(() => hint("link copied — send it to them.", "success"), () => hint("copy the link from the box.", "notice"));
+}
+/** Hand LINK to the phone's own share sheet where it has one, else copy it. */
+export function shareLink(link, name) {
+    if (!navigator.share) {
+        copyLink(link);
+        return;
+    }
+    navigator.share({ title: "playnet", text: name ? `${name} on playnet` : "playnet", url: link })
+        .catch(() => { });
+}
+/** Your own link, and its QR as SVG PX pixels a side ("" when the link is longer than a symbol holds). Null while you have no identity here. */
+export function myLink(px = 148) {
     const me = idHint();
     if (!me?.aid)
         return null;
     const base = location.origin + location.pathname;
     const named = connectLink(base, me.aid, me.name);
     const sym = encode(named) || encode(connectLink(base, me.aid));
-    return { link: named, qr: sym ? svg(sym, 148) : "" };
+    return { link: named, qr: sym ? svg(sym, px) : "" };
 }

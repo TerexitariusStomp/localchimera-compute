@@ -95,12 +95,14 @@ import { mountGlobe, drawGlobe, landReady, S0, sFinal } from './globe.js';
 // earth is lensed through, where the hand stands. Six modules read these, so
 // they are a shared record rather than six host members forwarding the same
 // four facts (app/stage.js).
-import { stage, onMapFace } from './stage.js';
+import { stage, onMapFace, mapUp } from './stage.js';
 // the bearing dial: pointer arcs to what the disc cannot show, and the walking
 // isochrones inside it (app/threads.js)
 import { initThreads, drawEarthArcs, drawThreads, bearingTo } from './threads.js';
 // the satellite fabric: the instance, its two framings, and the one observer
-import { initMapView, openMap, theMap as map, sizeEarthMap, mapR, fitMarkersAroundUser, mapRadiusPx, WALK_ZOOM, moveUserMarker } from './mapview.js';
+import { initMapView, openMap, theMap as map, sizeMap, fitMarkersAroundUser, WALK_ZOOM, moveUserMarker } from './mapview.js';
+// the circle that map takes when you zoom into a place from the dial
+import { disc, mapR, mapRadiusPx } from './disc.js';
 // the phone as a compass, and knowing where you are
 import { initCompass } from './compass.js';
 // the containment forest the overlay nests and tints (app/regions.js)
@@ -304,8 +306,8 @@ initWheel({ onLeaf: revealEarth });
 initRecipeGraph();
 initPlanColumn();
 // ── the rim and its marks → app/chrome.js ──────────────────────────────────
-initChrome({ afterResize: () => { if (stage.mode === "earth")
-        sizeEarthMap(); } });
+initChrome({ afterResize: () => { if (mapUp())
+        sizeMap(); } });
 // ── the hand → app/hand.js ─────────────────────────────────────────────────
 // The hand, the scrub that walks time with it, and the radian construction.
 // The dial answers only what follows the viewed instant without being it: the
@@ -385,9 +387,10 @@ initPriBar({
 // which is why the reveal reads as an uncovering rather than a transition.
 mountGlobe(L.globe, L.defs);
 // ── the satellite fabric → app/mapview.js ─────────────────────────────────
-// The map instance, where it sits, and the ONE observer that re-welds it. The
-// map TAB and the DISC own separate elements and never share one, which is why
-// a face switch rebuilds the instance and carries the camera across.
+// The map instance and the ONE observer that re-welds it. Where it sits is a
+// framing: the DISC (app/disc.js) and the map FACE's rectangle (app/mapface.js)
+// own separate elements and never share one, which is why a switch between
+// them rebuilds the instance and carries the camera across.
 initMapView({
     restage: () => drawThreads(),
     // a sidebar drag reshapes the stage without a window resize, so the live face
@@ -403,7 +406,7 @@ initMapView({
 //                offered; click to OFFER WILLINGNESS
 // coloured by kind (work = blue, free = gold). A separate marker array from
 // the leaf's places, so place selection indexing stays intact.
-// fitMarkersAroundUser — framing the disc around you — is in app/mapview.js
+// fitMarkersAroundUser — framing the map around you — is in app/mapview.js
 // which offers belong to this lens and this turn — the offer field the rim and
 // the map both read, in app/offers.js
 // ── Markers, clustered → app/markers.js ─────────────────────────────────
@@ -454,8 +457,8 @@ initPlaces({
         else
             fitMarkersAroundUser();
     },
-    restage: () => { if (stage.mode === "earth") {
-        sizeEarthMap();
+    restage: () => { if (mapUp()) {
+        sizeMap();
         drawThreads();
     } },
     quietCard: () => drawCal(),
@@ -470,8 +473,8 @@ initNav({
     mapRpx: () => mapRadiusPx(),
     // the card lives in flow under the dial, so showing or hiding it reshapes
     // the stage and the map disc must be re-welded to it
-    restage: () => { if (stage.mode === "earth") {
-        sizeEarthMap();
+    restage: () => { if (mapUp()) {
+        sizeMap();
         drawThreads();
     } },
     selectedPlace: () => stage.leaf ? placeAt(stage.leaf.id, selectedPlace()) : null,
@@ -502,13 +505,13 @@ initCompass({
     // generic re-fit silently wins the race and the camera lands somewhere the
     // reader never asked for.
     arrived: () => {
-        if (stage.mode !== "earth")
+        if (!mapUp())
             return;
         const m = map();
         if (m) {
             m.easeTo({ center: [USER.lng, USER.lat], zoom: WALK_ZOOM, duration: 1400 });
             moveUserMarker();
-            openMap();
+            openMap(); // the framing it already stands in
             reassert();
         }
         if (stage.leaf)
@@ -520,8 +523,8 @@ d3.select("#backchip").on("click", () => exitEarth());
 d3.select("#mapback").on("click", () => exitEarth());
 window.addEventListener("keydown", e => {
     // an Escape the bar's sheet already answered (closing a menu, the inventory, a result list) is spent
-    // On the map FACE the earth mode is the face itself, not a place to rise out of: leaving it tears the map
-    // down and the stage stays blank — so there Escape belongs to the sheet and nothing else.
+    // The map FACE has no dial to rise back to — the tab bar is the way out — so there Escape belongs to the
+    // sheet and nothing else.
     if (e.key === "Escape" && !e.defaultPrevented && !onMapFace()) {
         if (stage.mode === "earth")
             exitEarth();
@@ -566,7 +569,7 @@ initCrumb({
         const tax = [];
         for (let x = stage.focus; x && x !== S.root; x = x.parent)
             tax.unshift(x);
-        if (stage.mode === "earth" && stage.leaf)
+        if (mapUp() && stage.leaf)
             tax.push(stage.leaf);
         return tax.map((nd, i) => ({
             name: nd.name,
@@ -576,6 +579,10 @@ initCrumb({
                 if (stage.mode === "earth")
                     exitEarth(() => { if (nd !== stage.focus)
                         jumpTo(nd); });
+                else if (onMapFace()) {
+                    setFace("time");
+                    jumpTo(nd);
+                } // the dial is a face away
                 else
                     jumpTo(nd);
             },
@@ -718,7 +725,7 @@ initTurnScale();
                     for (const grp of [L.bands, L.seams, L.hand, L.centre, L.spiral])
                         grp.attr("opacity", 0);
                     drawGlobe(sFinal(), 0, 1, true);
-                    openMap();
+                    openMap(disc);
                     drawCrumb();
                     showPlacesPanel(hit);
                 });
@@ -755,7 +762,7 @@ initChat(); // starts the reactive #evchat effect
 effect(() => { day(); drawCal(); }); // reads selectedEv() through evCls
 // the map reflects the selection too — its own effect, so the dial's event code
 // no longer reaches across into map rendering to keep the markers honest.
-effect(() => { selectedEv(); if (stage.mode === "earth" && map())
+effect(() => { selectedEv(); if (mapUp() && map())
     renderMarkers(); });
 effect(() => { day(); selectedEv(); if (!stage.zooming && stage.mode === "dial")
     drawEvents(); });
@@ -868,7 +875,7 @@ initOrb({
     },
     // the leaf ONLY while the earth face is actually up: it decides both what
     // the orb calls the view and whether that leaf's places travel along
-    earthLeaf: () => stage.mode === "earth" ? stage.leaf : null,
+    earthLeaf: () => mapUp() ? stage.leaf : null,
     recipes: () => scopeRecipes(),
 });
 // ------------------------------------------- the projection, outward

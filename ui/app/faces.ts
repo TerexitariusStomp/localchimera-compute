@@ -23,12 +23,12 @@
 // than the dial's square one. Leaving the last flat face restores the square.
 //
 // ── THE MAP IS ITS OWN BRANCH ───────────────────────────────────────────────
-// It is the only face that is also a MODE. Entering it establishes the time
-// stage first (the map sizes itself against #dial), then puts the dial into
-// earth mode with the unlensed sentinel leaf so every place and offer shows —
-// reusing the same openMap the desire drill-down uses, rather than a second
-// path to the same view. Leaving it tears down instantly, with no rise
-// animation: a tab is not a journey.
+// It owns the stage as a rectangle (mapface.ts) and leaves the dial's mode
+// alone: the disc a desire drill-down lowers the same map into (disc.ts) is a
+// mode of the dial, the face is not. Entering it establishes the time stage
+// first, then hands the map its unlensed leaf so every place and offer shows.
+// Leaving it tears down instantly, with no rise animation: a tab is not a
+// journey.
 //
 // ── SHARE IS CHROME, NOT A FACE ─────────────────────────────────────────────
 // The share drawer opens over whatever face is showing, from its own button; it
@@ -36,16 +36,8 @@
 // links still land here and open it, which is the whole of what they ever meant.
 
 import { stage } from './stage.js';
-import { settle } from './wheel.js';
-import { MAP_ALL } from './offers.js';
-import { drawChrome } from './chrome.js';
-import { drawEvents } from './ribbons.js';
-import { clearMarkers } from './markers.js';
-import { askGeolocation, resetHeading } from './compass.js';
-import { endNav } from './route/nav.js';
-import { openMap, teardownMap } from './mapview.js';
-import { leaveSelectArea } from './tabs/map/select-area.js';
-import { L, threads, timeLayers } from './layers.js';
+import { enterMapFace, exitMapFace } from './mapface.js';
+import { L, timeLayers } from './layers.js';
 import { initShare } from './tabs/social/share.js';
 import { closeSettings, releaseRail } from './settings.js';
 import { settlePanelForFace } from './panel.js';
@@ -181,35 +173,6 @@ export const FACE_IDS = [...Object.keys(FACES), "map"];
 
 /** Was the last face flat? Leaving flat behind is what restores the square viewBox. */
 let flatWasOpen = false;
-
-// ── the map face ────────────────────────────────────────────────────────────
-
-/**
- * Enter the map: earth mode with the unlensed leaf, so every place shows.
- *
- * The caller establishes the time stage first, because openMap sizes itself
- * against #dial. The in-map "up to the dial" chip stays hidden — here the tab
- * bar is the way out, not a chip inside the disc.
- */
-function enterMapFace(): void {
-  stage.mode = "earth"; stage.leaf = MAP_ALL; stage.leafK = 0;
-  askGeolocation();
-  openMap();
-  d3.select("#mapback").style("display", "none");
-}
-
-/** Leave the map instantly — no rise animation, because a tab is not a journey. */
-function exitMapFace(): void {
-  leaveSelectArea();      // the area frame, if it was up, goes with the map
-  teardownMap();          // the same put-away the dial uses rising out of earth
-  endNav();
-  clearMarkers();
-  L.earth.selectAll("*").remove();
-  threads.selectAll("*").remove();
-  resetHeading();
-  stage.mode = "dial"; stage.leaf = null; stage.leafK = -1;
-  drawChrome(); drawEvents(); settle();
-}
 
 // ── switching ───────────────────────────────────────────────────────────────
 

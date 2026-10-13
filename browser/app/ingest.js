@@ -26,7 +26,7 @@ import { replaceDay, offered } from './events.js';
 import { hereOfInstant, resolveHere } from './gohere.js';
 import { seam } from './seam.js';
 import { desireFromNeeds } from './spine.js';
-import { stage } from './stage.js';
+import { stage, mapUp } from './stage.js';
 import { setRecipes } from './recipe-graph.js';
 import { drawPlanList } from './plan-column.js';
 import { widOf } from './willingness.js';
@@ -434,7 +434,7 @@ function ingestDay(snap) {
             else
                 offered.delete(wid);
         });
-    if (me && allIntents.length && stage.mode === "earth" && theMap())
+    if (me && allIntents.length && mapUp() && theMap())
         renderMarkers();
     return changed;
 }

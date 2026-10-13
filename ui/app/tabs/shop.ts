@@ -47,7 +47,7 @@ import type * as W from '../wire-rows.js';
 import { specOf } from '../slots/model.js';
 import type { Slot } from '../slots/model.js';
 import { on } from '../bus.js';
-import { creditNow, DEMO_CREDIT } from '../credit.js';
+import { creditNow, liveCredit, DEMO_CREDIT } from '../credit.js';
 import { scopeSig, scopeChain, goToScope } from '../scope.js';
 import type { Cell } from './social/share.js';
 import { F, declare, retire, myNeeds, myMeans, ourFold, refreshSocial } from './social/share.js';
@@ -122,6 +122,8 @@ const query = () => F.query();
 const whereSel = signal("");
 const whenSel = signal<string | null>(null);
 const offerMode = signal(false);                  // the open card's want/offer toggle
+const histRows = signal<W.WireCreditHistoryRow[] | null>(null);   // the credit's dated account (null = not read yet)
+const histOpen = signal(false);                   // the credit strip's history is unrolled
 
 // ── data assembly ──────────────────────────────────────────────────────────
 const liveInv = (): Inventory | null => {
@@ -188,6 +190,17 @@ function fetchRows(): void {
       const j = readJson(r);
       rows.set(j && Array.isArray(j.rows) ? j.rows as ClaimRow[] : []);
     } catch { rows.set([]); }
+  });
+}
+
+/** The credit's dated account, read off the observer's event log (door my-credit-history). */
+function fetchHistory(): void {
+  if (!HANDLERS.myCreditHistory || !scopeSig()) { histRows.set(null); return; }
+  HANDLERS.myCreditHistory().then(r => {
+    try {
+      const j = readJson(r);
+      histRows.set(j && Array.isArray(j.rows) ? j.rows as W.WireCreditHistoryRow[] : []);
+    } catch { histRows.set([]); }
   });
 }
 
@@ -404,8 +417,11 @@ function shortVerdict(g: Good): { cls: string; text: string } {
 
 /** A tile: the inventory's cell. The glyph, the name, the price, the thin
  *  bar, and a corner badge for what is yours. The whole
- *  tile is the tap; the full card opens across the row. */
-function goodHtml(g: Good): string {
+ *  tile is the tap; the full card opens across the row. The drawer's tile
+ *  (`compact`) keeps the glyph, name, price and verdict; the scope's
+ *  social · individual · asked reading rides in its tooltip and on the
+ *  good's own page. */
+function goodHtml(g: Good, compact = false): string {
   const v = shortVerdict(g);
   const col = goodTint(g.term);
   const open = openId() === g.spec && openAt() === "goods";
@@ -416,14 +432,15 @@ function goodHtml(g: Good): string {
               : t.length ? `<span class="sg-badge b-taken">✓</span>` : "";
   const max = Math.max(g.kept + g.left, g.kept + g.asked, 1e-9);
   const w = (q: number) => (100 * q / max).toFixed(1) + "%";
-  return `<div class="sg ${v.cls}${open ? " open" : ""}${h.length ? " has-held" : ""}" data-spec="${esc(g.spec)}" style="--tint:${col}">
-    <div class="sg-tile">
+  const reading = `${figure(g.kept)} social · ${figure(g.left)} individual · ${figure(g.asked)} asked`;
+  return `<div class="sg ${v.cls}${open ? " open" : ""}${h.length ? " has-held" : ""}${compact ? " sg-small" : ""}" data-spec="${esc(g.spec)}" style="--tint:${col}">
+    <div class="sg-tile"${compact ? ` title="${esc(reading)}"` : ""}>
       ${badge}
       <div class="sg-emoji">${g.emoji || emojiFor(g.name, g.term)}</div>
       <div class="sg-name">${esc(g.name)}${g.external ? ` <span class="shop-ext">⇄</span>` : ""}${heldGlyphs(g.spec)}</div>
-      <div class="sg-price">${g.snlt != null ? `${fmtH(g.snlt)} / ${esc(g.unit || "unit")}` : ""}</div>
+      <div class="sg-price">${g.snlt != null ? `${fmtH(g.snlt)} / ${esc(g.unit || "unit")}` : ""}</div>${compact ? "" : `
       <div class="sg-bar"><div class="sg-kept" style="width:${w(g.kept)}"></div><div class="sg-left" style="width:${w(g.left)}"></div><div class="sg-ask" style="left:${w(g.kept)}; width:${w(g.asked)}"></div></div>
-      <div class="sg-tri"><span class="n-kept" title="social: kept for production and the reserve">${figure(g.kept)}</span><span class="n-left" title="individual: shared out">${figure(g.left)}</span><span class="n-ask" title="asked">${figure(g.asked)}</span></div>
+      <div class="sg-tri"><span class="n-kept" title="social: kept for production and the reserve">${figure(g.kept)}</span><span class="n-left" title="individual: shared out">${figure(g.left)}</span><span class="n-ask" title="asked">${figure(g.asked)}</span></div>`}
       <div class="sg-verdict ${v.cls}">${v.text}</div>
     </div>
     ${open ? `<div class="sg-pop">
@@ -432,6 +449,38 @@ function goodHtml(g: Good): string {
       <div class="sg-mine${myLine(g) ? "" : " none"}"><div class="sg-mine-line">${myLine(g)}</div>${held(g).length > 1 || askd(g).length ? `<div class="sg-mine-act">${askd(g).length ? myButton(g) : ""}</div>` : ""}</div>
       ${inlineCard(g)}
     </div>` : ""}
+  </div>`;
+}
+
+// what the offline demo's certificate (DEMO_CREDIT) is made of, so its history adds up to the same figures
+const DEMO_HISTORY: W.WireCreditHistoryRow[] = [
+  { id: "demo-drawn-2", kind: "drawn", at: "2026-03-06T10:00:00Z", hours: 6, what: "salmon" },
+  { id: "demo-waiting", kind: "waiting", at: "2026-03-05T17:00:00Z", hours: 5, what: "kitchen shift" },
+  { id: "demo-earned-2", kind: "earned", at: "2026-03-04T16:00:00Z", hours: 16, what: "bike repair" },
+  { id: "demo-drawn-1", kind: "drawn", at: "2026-03-03T09:00:00Z", hours: 6.5, what: "bread" },
+  { id: "demo-earned-1", kind: "earned", at: "2026-03-01T16:00:00Z", hours: 30, what: "garden work" },
+];
+
+const HIST_LABEL: Record<string, string> = { earned: "earned", waiting: "waiting to be validated", drawn: "drawn", voided: "backed out" };
+const histDay = (iso: string): string => (iso || "").slice(0, 10);
+
+/** The credit's history, unrolled under the strip: the certificate's totals
+ *  (earned, drawn, spendable, waiting), then the dated acts behind them as the
+ *  gateway reads them off the event log — newest first. Offline, the demo's. */
+function creditHistory(K: ReturnType<typeof creditNow>): string {
+  const rows = (liveCredit() ? histRows() : DEMO_HISTORY) || [];
+  const total = (label: string, h: number, cls = ""): string =>
+    `<div class="rch-sum ${cls}"><b>${fmtH(h)}</b><span>${label}</span></div>`;
+  const line = (r: W.WireCreditHistoryRow): string => {
+    const h = num(r.hours), sign = r.kind === "drawn" ? "−" : r.kind === "earned" ? "+" : "";
+    return `<div class="rch-row ${esc(r.kind)}">
+      <span class="rch-what">${esc(HIST_LABEL[r.kind] || r.kind)}${r.what ? ` · ${esc(r.what)}` : ""}<small>${r.at ? ` · ${esc(histDay(r.at))}` : ""}</small></span>
+      <span class="rch-h">${h > 0 ? `${sign}${fmtH(h)}` : ""}</span></div>`;
+  };
+  return `<div class="shop-res-hist">
+    <div class="rch-sums">${total("earned", Number(K.gross))}${total("drawn", Number(K.claimed))}${total("spendable", Number(K.drawable), "on")}${total("waiting to be validated", Number(K.pending))}</div>
+    <div class="rch-list">${rows.map(line).join("")
+      || `<div class="rch-none">${liveCredit() && histRows() === null ? "reading the account…" : "nothing on the account yet — work validated, hours drawn and acts backed out appear here"}</div>`}</div>
   </div>`;
 }
 
@@ -465,19 +514,25 @@ function drawStage(container: HTMLElement, opts: StageOpts = {}): void {
   // the drawer's own compact reading of the certificate — once worn small on
   // the express bar's lip, now the top of Resources instead: the number and
   // the bar alone, no explainer text (that stayed the lip's own tap-to-read)
+  // the bar reads what can still move: the spendable hours, then those waiting
+  // to be validated; what was spent is the history's to tell
   const creditStrip = (): string => {
     const K = creditNow();
-    const cap = Number(K.capacity) || 0, pend = Number(K.pending) || 0;
-    const tot = cap + pend || 1;
-    const cw = (q: number) => (100 * Math.max(0, Math.min(q, tot)) / tot).toFixed(1) + "%";
+    const spendable = Math.max(0, Number(K.drawable) || 0), pend = Math.max(0, Number(K.pending) || 0);
+    const tot = spendable + pend || 1;
+    const cw = (q: number) => (100 * q / tot).toFixed(1) + "%";
     return `<div class="shop-res-cred">
       <div class="shop-res-cred-head">
-        <span class="shop-res-cred-big">⬡ ${fmtH(Number(K.drawable))}</span>
-        <span class="shop-res-cred-cap">to draw · ${fmtH(pend)} in the window · taken ${fmtH(Number(K.claimed))} of ${fmtH(cap)}
+        <span class="shop-res-cred-big">⬡ ${fmtH(spendable)}</span>
+        <span class="shop-res-cred-cap">spendable${pend > 0 ? ` · ${fmtH(pend)} waiting to be validated` : ""}
           · voice ${(Number(K.voice) * 100).toFixed(1)}% · free time ${(Number(K.freeTime) * 100).toFixed(0)}%</span>
       </div>
-      <div class="shop-res-cred-bar"><i class="shop-res-cred-fill" style="width:${cw(Number(K.drawable))}"></i>${
-        pend > 0 ? `<i class="shop-res-cred-pend" style="left:${cw(cap)}; width:${cw(pend)}"></i>` : ""}</div>
+      <div class="shop-res-cred-row">
+        <div class="shop-res-cred-bar"><i class="shop-res-cred-fill" style="width:${cw(spendable)}"></i>${
+          pend > 0 ? `<i class="shop-res-cred-pend" style="left:${cw(spendable)}; width:${cw(pend)}"></i>` : ""}</div>
+        <button class="shop-res-cred-hist${histOpen() ? " on" : ""}" title="every hour earned, drawn and waiting" aria-expanded="${histOpen()}">history</button>
+      </div>
+      ${histOpen() ? creditHistory(K) : ""}
     </div>`;
   };
 
@@ -499,39 +554,37 @@ function drawStage(container: HTMLElement, opts: StageOpts = {}): void {
           ${held(g).length && !yoursOpen(g) ? `<button class="sg-take sy-take" data-spec="${esc(g.spec)}" data-id="${esc(held(g)[0].id)}">take</button>` : ""}
         </div>
         ${yoursOpen(g) ? yoursCard(g) : ""}</div>`).join("")}
-        <div class="sy sy-add"><input class="sy-add-in" placeholder="add something you have…"><button class="sy-add-go" title="add it to yours">＋</button></div>
+        <div class="sy sy-add"><input class="sy-add-in" placeholder="add yours…"><button class="sy-add-go" title="add something you have to yours">＋</button></div>
       </div>
     </div>`;
 
   const goodsBlock = opts.compact
     ? `<div class="shop-sec">
         <div class="shop-sec-head"><span class="shop-h">the goods</span></div>
-        <div class="sg-list">${shown.map(goodHtml).join("") || empty}</div>
+        <div class="sg-list">${shown.map(g => goodHtml(g, true)).join("") || empty}</div>
       </div>`
     : `      <div class="shop-sec">
         <div class="shop-sec-head"><span class="shop-h">the goods</span>
           ${sub("the individual portion, by the hours each good cost. One part of the product is social, another individual. The scope's reading beside yours; say what you want, and the next plan answers")}</div>
         ${legend}
-        <div class="sg-list">${shown.map(goodHtml).join("") || empty}</div>
+        <div class="sg-list">${shown.map(g => goodHtml(g)).join("") || empty}</div>
       </div>`;
 
   // the drawer shows one good at a time: opened, it is a page of its own (hero, the scope's reading, yours,
   // then the act that applies) in place of the lists, with a way back — the lists return when it is shut
   const pageOf = (g: Good): string => {
     const v = shortVerdict(g);
+    // one card: the way back, the good, its price, and the scope's reading as one line. The verdict joins it
+    // only when it says more than the numbers do ("none individual" restates a zero)
+    const num1 = (cls: string, n: number, word: string): string =>
+      `<span class="rs-num${n > 0 ? "" : " zero"}"><b class="${cls}">${figure(n)}</b> ${word}</span>`;
     return `<div class="shop-one rs-detail">
-      <a class="sg-close rs-back">← resources</a>
       <div class="rs-hero" style="--tint:${goodTint(g.term)}">
+        <a class="sg-close rs-back" title="back to resources" aria-label="back to resources">←</a>
         <div class="rs-emoji">${g.emoji || emojiFor(g.name, g.term)}</div>
         <div class="rs-hero-text"><div class="rs-name">${esc(g.name)}${g.external ? ` <span class="shop-ext">⇄</span>` : ""}</div>
-          <div class="rs-sub">${g.snlt != null ? `${fmtH(g.snlt)} / ${esc(g.unit || "unit")}` : "&nbsp;"}</div></div>
-        <span class="rs-verdict ${v.cls}">${v.text}</span>
-      </div>
-      <div class="rs-nums">
-        <div class="rs-num"><b class="n-kept">${figure(g.kept)}</b><span>social</span></div>
-        <div class="rs-num"><b class="n-left">${figure(g.left)}</b><span>individual</span></div>
-        <div class="rs-num"><b class="n-ask">${figure(g.asked)}</b><span>asked</span></div>
-        ${g.offered > 0 ? `<div class="rs-num"><b class="n-offer">${figure(g.offered)}</b><span>offered</span></div>` : ""}
+          ${g.snlt != null ? `<div class="rs-sub">${fmtH(g.snlt)} / ${esc(g.unit || "unit")}</div>` : ""}</div>
+        <div class="rs-nums">${num1("n-kept", g.kept, "social")}${num1("n-left", g.left, "individual")}${num1("n-ask", g.asked, "asked")}${g.offered > 0 ? num1("n-offer", g.offered, "offered") : ""}${v.cls === "st-kept" ? "" : `<span class="rs-verdict ${v.cls}">${v.text}</span>`}</div>
       </div>
       ${myLine(g) ? `<div class="rs-mine"><div class="sg-mine-line">${myLine(g)}</div>${held(g).length > 1 || askd(g).length ? `<div class="sg-mine-act">${askd(g).length ? myButton(g) : ""}</div>` : ""}</div>` : ""}
       <div class="rs-act">${inlineCard(g)}${askd(g).length ? `<a class="sg-withdraw" data-spec="${esc(g.spec)}">never mind the ask</a>` : ""}</div>
@@ -548,7 +601,6 @@ function drawStage(container: HTMLElement, opts: StageOpts = {}): void {
 
     ${opts.compact ? creditStrip() : ""}
     ${yoursBlock}
-    ${opts.compact ? legend : ""}
     ${goodsBlock}
 
     ${(() => { const cells = `
@@ -568,6 +620,10 @@ function drawStage(container: HTMLElement, opts: StageOpts = {}): void {
   </div>`;
 
   // wiring
+  stage.querySelector<HTMLElement>(".shop-res-cred-hist")?.addEventListener("click", () => {
+    if (!histOpen()) fetchHistory();
+    histOpen.update(o => !o);
+  });
   stage.querySelectorAll<HTMLElement>(".shop-crumb").forEach(a => a.addEventListener("click", () => goToScope(a.dataset.root ? null : (a.dataset.scope || null))));
   // a good's card opens on what you hold of it: the take when something waits,
   // the have when that is all you hold here, else the ask
@@ -864,14 +920,14 @@ function ensureWired(): void {
   const stage = document.getElementById("shopstage");
   if (stage) stageHosts.set(stage, () => ({}));    // the full face: host #1, no opts
   on("inventory", () => { bump.update(n => n + 1); fetchPayouts(); fetchRows(); });
-  on("credit",    () => { bump.update(n => n + 1); fetchPayouts(); fetchRows(); });
+  on("credit",    () => { bump.update(n => n + 1); fetchPayouts(); fetchRows(); if (histOpen()) fetchHistory(); });
   on("plan",      () => { fetchRows(); refreshSocial(); });      // a landed solve re-answers every want
   on("slotsChanged", () => { fetchRows(); refreshSocial(); });
   // your own declarations move the book: an ask or a withdrawal lands as a slot change
   effect(() => { myNeeds(); fetchRows(); });
   effect(() => {
     bump(); rows(); scopeSig(); focusId(); query(); openId(); openRow();
-    qty(); note(); busy(); whereSel(); whenSel(); offerMode(); countMode(); openAt();
+    qty(); note(); busy(); whereSel(); whenSel(); offerMode(); countMode(); openAt(); histOpen(); histRows();
     redrawStages();
   });
   effect(drawPanel);

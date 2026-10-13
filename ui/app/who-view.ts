@@ -14,18 +14,22 @@ import { TERMS_HREF, PRIVACY_HREF } from './legal-product.js';
 /** The save in flight: the block says so and keeps its field. */
 const saving = signal(false);
 
-async function save(e: Event): Promise<void> {
-  const row = (e.currentTarget as HTMLElement).closest(".who-name")!;
-  const name = row.querySelector<HTMLInputElement>("input[name=name]")!.value.trim();
+/** Tell the commune what people call you (kept on this device first, and said at the next seat); the outcome is said in a hint. */
+export async function saveMyName(name: string): Promise<void> {
   saving.set(true);
   try {
     // the email the member record holds stays as it is
-    const r = await setMyName(name, identity.peek()?.email || "");
-    if (r === "ok") hint(name ? `called ${name}` : "no name set", "success");
+    const r = await setMyName(name.trim(), identity.peek()?.email || "");
+    if (r === "ok") hint(name.trim() ? `called ${name.trim()}` : "no name set", "success");
     // a name set with no seat is kept here and goes to the commune at the next one
     else if (identityState.peek() !== "authed") hint("kept on this device — the commune hears it at your next seat", "notice");
     else hint(r.replace(/^err:/, ""), "error");
   } finally { saving.set(false); }
+}
+
+function save(e: Event): Promise<void> {
+  const row = (e.currentTarget as HTMLElement).closest(".who-name")!;
+  return saveMyName(row.querySelector<HTMLInputElement>("input[name=name]")!.value);
 }
 
 /** The settings block: a Fragment over signals. Mount it once (settings-sections.ts mountFragment). */

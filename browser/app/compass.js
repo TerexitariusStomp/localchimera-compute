@@ -18,7 +18,7 @@
 //                GLIDES rather than jumping, because a hard jump reads as a
 //                teleport.
 import { locateOnce } from './position.js';
-import { onEarth } from './stage.js';
+import { mapUp } from './stage.js';
 let host;
 /** Device heading, degrees clockwise from north. Zero when the compass is off. */
 let heading = 0;
@@ -43,7 +43,7 @@ function onOrient(e) {
         return;
     lastHeading = h;
     heading = h;
-    if (!onEarth())
+    if (!mapUp())
         return;
     host.setBearing(heading); // the satellite turns with you
     host.redrawBearings(); // arcs, threads, events and chrome follow
@@ -95,7 +95,7 @@ async function toggleCompass() {
         compassOn = false;
         heading = 0;
         host.setBearing(0);
-        if (onEarth())
+        if (mapUp())
             host.redrawBearings();
     }
     syncCompassUi();

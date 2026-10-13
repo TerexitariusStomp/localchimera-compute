@@ -19,7 +19,7 @@
 //                teleport.
 
 import { locateOnce } from './position.js';
-import { onEarth } from './stage.js';
+import { mapUp } from './stage.js';
 
 /** What the compass turns when the heading changes. */
 export interface CompassHost {
@@ -65,7 +65,7 @@ function onOrient(e: Event): void {
   // without it the whole bearing chrome redraws on sensor noise.
   if (Math.abs(h - lastHeading) < 2) return;
   lastHeading = h; heading = h;
-  if (!onEarth()) return;
+  if (!mapUp()) return;
   host.setBearing(heading);      // the satellite turns with you
   host.redrawBearings();         // arcs, threads, events and chrome follow
 }
@@ -119,7 +119,7 @@ async function toggleCompass(): Promise<void> {
     window.removeEventListener("deviceorientation", onOrient, true);
     compassOn = false; heading = 0;
     host.setBearing(0);
-    if (onEarth()) host.redrawBearings();
+    if (mapUp()) host.redrawBearings();
   }
   syncCompassUi();
 }

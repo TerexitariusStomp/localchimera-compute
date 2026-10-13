@@ -1,7 +1,7 @@
 // app/account.ts — the account sheet: what the person button opens.
 //
 // One sheet holds everything that belongs to YOU rather than to a face: who
-// you are and whether the commune can see you, your profile, keys and
+// you are and whether the commune can see you, your code and ways to be reached, keys and
 // devices, the commune's channel, settings, the look of the site, help and
 // the notices. Each row is a door to a place that already exists (the identity
 // card, a settings section, the channel room, the scroll); the sheet
@@ -17,6 +17,8 @@ import { identity, identityState, onAccountDoor, signOutDevice } from './tabs/so
 import { identityCard, identityCardTitle, showSignIn, showCreate } from './identity-view.js';
 import { passcodeUnsaved } from './passcode-held.js';
 import { openSettings, sectionPane } from './settings.js';
+import { feedbackMode, setFeedbackMode } from './prefs.js';
+import { meView } from './me-view.js';
 import { openScroll } from './scroll.js';
 import { openSheetView, closeSheetView, sheetViewIs, revealContacts } from './tabs/social/share.js';
 import { TERMS_HREF, PRIVACY_HREF, ACCESSIBILITY_HREF } from './legal-product.js';
@@ -31,10 +33,32 @@ function standing() {
         default: return "on this device";
     }
 }
+/** A row that is a switch: its words say what it does while it is off, and where to find it once it is on. */
+function switchRow(r) {
+    const b = mk("button", "acct-row");
+    b.type = "button";
+    b.setAttribute("role", "switch");
+    const sub = mk("span", "acct-s");
+    const text = mk("span", "acct-tx");
+    text.append(mk("span", "acct-l", r.label), sub);
+    const knob = mk("span", "acct-switch");
+    knob.append(mk("i"));
+    b.append(mk("span", "acct-ic", r.icon), text, knob);
+    const paint = () => {
+        const on = r.get();
+        b.setAttribute("aria-checked", String(on));
+        knob.classList.toggle("on", on);
+        sub.textContent = on ? r.on : r.off;
+    };
+    b.addEventListener("click", () => { r.set(!r.get()); paint(); });
+    paint();
+    return b;
+}
 const PAGES = {
     // the one place an identity is made, opened and read: the same card the onboarding checklist shows
     identity: { title: identityCardTitle, sections: [], build: () => identityCard() },
-    profile: { title: "your profile", sections: ["profile-who", "reach"] },
+    // you: the code someone scans to add you, your name and identifier, the ways to reach you — one page, here and in Contacts
+    me: { title: "you", sections: [], build: () => meView({ start: "code", profile: true, onDone: closeAccount }) },
     bodies: { title: "legal bodies", sections: ["bodies"] },
     diet: { title: "diet", sections: ["diet"] },
     body: { title: "body", sections: ["body"] },
@@ -113,7 +137,12 @@ function menu(close) {
         const tx = mk("span", "acct-tx");
         tx.append(mk("span", "acct-l", me.name || "you"), mk("span", "acct-s", standing()), mk("span", "acct-s acct-aid", SHORT(me.aid)));
         who.append(av, tx);
-        who.addEventListener("click", () => goTo("identity"));
+        // held and seated, the row opens YOU: the code, the name and identifier to change, the ways to be reached — the
+        // page the Contacts view shows too. Not yet seated, it opens the identity card, where joining or unlocking is done.
+        const seated = identityState() === "authed";
+        if (seated)
+            who.append(mk("span", "acct-qrhint", "▦"));
+        who.addEventListener("click", () => goTo(seated ? "me" : "identity"));
         g1.append(who);
         // signing out asks twice: it forgets this device's copy of your log
         const out = row({ icon: "↪", label: "sign out of this device", go: () => { } }, () => { }, false);
@@ -135,11 +164,14 @@ function menu(close) {
     }
     const net = document.getElementById("netbtn");
     const g2 = mk("div", "acct-group");
-    g2.append(into("✎", "your profile", "your name, how to reach you", "profile"), into("🥗", "diet", "what you eat, and what you refuse", "diet"), into("🧍", "body", "what your floors are read from", "body"), into("❤️", "health", "private — conditions, and days away", "health"), into("🔑", "keys and devices", "stay signed in, change your passcode, recovery, recognition", "keys"), into("📍", "where you are", "your place, sharing it, places on the map, offline maps", "where"), into("🏠", "your housing", "your home, and what the night gives you", "housing"), into("🕰️", "your time", "hours a day, which days, what it earns", "time"), into("🏛", "legal bodies", "an association, a cooperative — declared, stewarded, signed", "bodies"), ...(me ? [door({ icon: "🤝", label: "people you know", sub: "vouch, witness, introduce — your contacts", go: revealContacts })] : []), door({ icon: "📻", label: "the commune's channel",
+    g2.append(into("🥗", "diet", "what you eat, and what you refuse", "diet"), into("🧍", "body", "what your floors are read from", "body"), into("❤️", "health", "private — conditions, and days away", "health"), into("🔑", "keys and devices", "stay signed in, change your passcode, recovery, recognition", "keys"), into("📍", "where you are", "your place, sharing it, places on the map, offline maps", "where"), into("🏠", "your housing", "your home, and what the night gives you", "housing"), into("🕰️", "your time", "hours a day, which days, what it earns", "time"), into("🏛", "legal bodies", "an association, a cooperative — declared, stewarded, signed", "bodies"), ...(me ? [door({ icon: "🤝", label: "people you know", sub: "vouch, witness, introduce — your contacts", go: revealContacts })] : []), door({ icon: "📻", label: "the commune's channel",
         sub: net?.classList.contains("live") ? "you are on air" : "chat, and live audio with whoever is in it",
         live: !!net?.classList.contains("live"), go: () => net?.click() }));
     const g3 = mk("div", "acct-group");
-    g3.append(into("🎨", "look and feel", "theme, ambient sound, the week, credit", "look"), into("🗓", "calendars and clocks", "which calendars show, and the world clock", "clocks"), into("🧭", "faces", "which faces show in the bar", "faces"), into("🛡", "your data and the notices", "what is kept, the terms, and forget me", "notices"), into("🚩", "report a concern", "unlawful or harmful content, a child at risk", "report"), door({ icon: "⚙", label: "all settings", sub: "dial views, the gateway's doors, developer", go: () => openSettings() }), door({ icon: "?", label: "help and about", sub: "what playnet is, the code, the chat, keeping it running", go: openScroll }));
+    g3.append(switchRow({ icon: "💬", label: "feedback and ideas",
+        off: "point at any part of the interface or the protocol, comment on it, and the note goes to the developers",
+        on: "on — the 💬 in the bottom bar opens it; 👆 points at the part you mean",
+        get: feedbackMode, set: setFeedbackMode }), into("🎨", "look and feel", "theme, ambient sound, the week, credit", "look"), into("🗓", "calendars and clocks", "which calendars show, and the world clock", "clocks"), into("🧭", "faces", "which faces show in the bar", "faces"), into("🛡", "your data and the notices", "what is kept, the terms, and forget me", "notices"), into("🚩", "report a concern", "unlawful or harmful content, a child at risk", "report"), door({ icon: "⚙", label: "all settings", sub: "dial views, the gateway's doors, developer", go: () => openSettings() }), door({ icon: "?", label: "help and about", sub: "what playnet is, the code, the chat, keeping it running", go: openScroll }));
     const foot = mk("div", "acct-foot");
     for (const [text, href] of [["Privacy Policy", PRIVACY_HREF], ["Terms of Service", TERMS_HREF], ["Accessibility Statement", ACCESSIBILITY_HREF]]) {
         const a = mk("a", null, text);

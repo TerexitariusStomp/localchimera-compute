@@ -9,42 +9,58 @@
 // instance rather than moving it: the instance binds to its owner's element,
 // and the camera rides across in lastCam.
 //
-// ── TWO GEOMETRIES, ONE MAP ─────────────────────────────────────────────────
-// On the MAP face the satellite is a plain RECTANGLE filling the stage: no
-// dial, no circle, and the disc-geometry overlays (threads, isochrones, the
-// bearing annulus) mean nothing there, so they are skipped rather than hidden.
-// Reached by zooming INTO a place from the time dial it is a circular disc
-// welded to the dial's centre — same instance, same tiles, different framing.
-// `dialFace === "map"` is the whole of the difference.
+// ── TWO FRAMINGS, ONE MAP ───────────────────────────────────────────────────
+// This module is the map and nothing about where it sits. On the MAP face the
+// satellite is a plain RECTANGLE filling the stage (mapface.ts); reached by
+// zooming INTO a place from the time dial it is a circular DISC welded to the
+// dial's centre (disc.ts) — same instance, same tiles, different framing. A
+// framing is handed to `openMap`, and is the whole of the difference: which
+// element the map binds to, how that element is sized, what chrome rides it, and
+// what is mounted once the map is up. Nothing here asks which face it is on.
 
-import { S } from './state.js';
 import { effect } from './reactive.js';
 import { devMode } from './prefs.js';
-import { R, U } from './geom.js';
 import { USER, PLACES } from './core.js';
 import { report, fixOf, observeFixes } from './position.js';
 import { mapStyle, rethemeBasemap } from './basemap.js';
 import { installOsmProtocol } from './map-packs.js';
 import { clearMarkers } from './markers.js';
 import { relevantOffers, MAP_ALL_ID } from './offers.js';
-import { stage, onEarth, onMapFace } from './stage.js';
-import { L } from './layers.js';
+import { stage, mapUp } from './stage.js';
 import { renderMarkers } from './markers.js';
 import { mountJourneys } from './journeys.js';
 import { mountLabels, rethemeLabels } from './tabs/map/labels.js';
 import { refreshContainers } from './regions.js';
-import { drawChrome } from './chrome.js';
-import { drawEvents } from './ribbons.js';
-import { drawEarthArcs, drawThreads } from './threads.js';
 import { compassLive, compassCapable, deviceHeading, needleTap, syncCompassUi } from './compass.js';
 import { initMiniMonth } from './tabs/calrail.js';
 import * as containers from './tabs/map/containers.js';
-import * as dropoff from './tabs/map/dropoff.js';
-import * as pool from './tabs/map/pool.js';
-import * as mapsearch from './tabs/map/mapsearch.js';
-import { placeAt } from './tabs/map/osm-places.js';
 import { bakeMapAnchor, MAP_ANCHOR } from './tabs/map/atlas.js';
 import { mountDeck } from './tabs/map/deck.js';
+
+/**
+ * Where the map sits: the one thing a disc and a rectangle disagree about.
+ *
+ * Each framing owns ONE element and writes only that one, so a stale call fired
+ * mid-transition lands on a hidden container and corrupts nothing. Everything
+ * else the map does is the same in both.
+ */
+export interface Framing {
+  /** The id of the container this framing binds the map to. */
+  element: string;
+  /** Place the element, and the chrome that rides it, against the stage as it stands. */
+  size(): void;
+  /** Before the map is built — the surfaces that are about data, not tiles. */
+  open(): void;
+  /** No map could be built (no WebGL, no maplibre): what the framing shows instead. */
+  offline(): void;
+  /** The map is up and its own layers are mounted: this framing's chrome and gestures. */
+  ready(m: maplibregl.Map): void;
+  /** Put this framing's own chrome away. */
+  close(): void;
+}
+
+/** The framing the map was last opened in — null before the first open. */
+let framing: Framing | null = null;
 
 /**
  * What the map needs the DIAL to do — not what it needs to know. The four facts
@@ -71,29 +87,14 @@ let fullscreenBtn: HTMLButtonElement | null = null;
 /** The camera, carried across a face switch's rebuild. */
 let lastCam: { center: maplibregl.LngLat; zoom: number } | null = null;
 
-/**
- * The satellite fills the whole circle, as the bands did — so the disc's radius
- * IS the dial's. Exported because the threads clip and measure against it, and
- * two constants that must agree are one constant.
- */
-const mapFrac = 1.0;
-export const mapR = (): number => R * mapFrac;
-
-/** Set by sizeEarthMap: the live pixels-per-dial-unit, and the disc's radius. */
-let pxPerUnit = 1, mapRpx = 1;
-
 let mapFullscreen = false;
 
-/** The element THIS face owns. Never the other one's. */
-export const MAP_EL = (): string => onMapFace() ? "maptab" : "earthmap";
+/** The element THIS framing owns. Never the other one's. */
+export const MAP_EL = (): string => framing ? framing.element : "earthmap";
 const mapSel = (): d3.Selection => d3.select("#" + MAP_EL());
 
 /** The map instance, or null before one is built (and offline, where none is). */
 export const theMap = (): maplibregl.Map | null => map;
-/** The disc's radius in pixels — what the route framing pads by. */
-export const mapRadiusPx = (): number => mapRpx;
-/** Screen pixels per dial unit, for anything measured on the map and drawn on the dial. */
-export const pxPerDialUnit = (): number => pxPerUnit;
 /** Whether the satellite has left the disc and filled the viewport. */
 export const isFullscreen = (): boolean => mapFullscreen;
 
@@ -105,57 +106,8 @@ export const moveUserMarker = (): void => {
   if (userMarker) userMarker.setLngLat([USER.lng, USER.lat]);
 };
 
-/**
- * Map pixels → dial viewBox coordinates. The disc's top-left sits at
- * (w∕2 − mapRpx, h∕2 − mapRpx) of the stage, and the dial's origin at its
- * centre — so a marker's screen position becomes a point the annulus can reach.
- */
-export const mapToDial = (px: { x: number; y: number }): [number, number] =>
-  [(px.x - mapRpx) / pxPerUnit, (px.y - mapRpx) / pxPerUnit];
-
-/** Re-measure and re-place the map and the chrome that rides its rim. */
-export function sizeEarthMap(): void {
-  const wrap = document.getElementById("orbwrap");
-  if (!wrap) return;
-  const wr = wrap.getBoundingClientRect();
-  // THE MAP TAB fills the whole stage as a RECTANGLE — no dial, no circle.
-  if (onMapFace()) {
-    d3.select("#maptab")
-      .style("left", "0px").style("top", "0px")
-      .style("width", `${wr.width}px`).style("height", `${wr.height}px`);
-    d3.select("#threads").style("left", "0px").style("top", "0px")
-      .attr("width", wr.width).attr("height", wr.height);
-    d3.select("#gochip").style("left", "16px").style("transform", "none").style("bottom", "16px");
-    // no dial to go "up" to — the tab bar is the way out
-    d3.select("#mapback").style("display", "none");
-    if (map) map.resize();
-    return;
-  }
-  const sv = document.getElementById("dial");
-  if (!sv) return;
-  const sr = sv.getBoundingClientRect();
-  const x0 = sr.left - wr.left, y0 = sr.top - wr.top;   // svg offset in wrap
-  const w = sr.width, h = sr.height;
-  pxPerUnit = Math.min(w, h) / (2 * S.VE * U);   // track the live viewBox extent
-  mapRpx = mapR() * U * pxPerUnit;
-  d3.select("#earthmap")
-    .style("left", `${x0 + w / 2 - mapRpx}px`).style("top", `${y0 + h / 2 - mapRpx}px`)
-    .style("width", `${2 * mapRpx}px`).style("height", `${2 * mapRpx}px`);
-  d3.select("#threads")
-    .style("left", `${x0}px`).style("top", `${y0}px`)
-    .attr("width", w).attr("height", h);
-  // back + go ride the disc's lower edge, centred
-  d3.select("#backchip").style("bottom", `${wr.height - (y0 + h / 2 + mapRpx) + 12}px`);
-  d3.select("#gochip").style("bottom", `${wr.height - (y0 + h / 2 + mapRpx) + 44}px`);
-  // the way-up button rides just inside the map's top rim, centred
-  d3.select("#mapback")
-    .style("left", `${x0 + w / 2}px`)
-    .style("top", `${y0 + h / 2 - mapRpx + 12}px`);
-  // (the fullscreen toggle and the compass are not here: both live in the
-  // native maplibre control stack, which rides the map's own container corner
-  // regardless of which face put the map up)
-  if (map) map.resize();
-}
+/** Re-measure and re-place the map, in whichever framing it stands. */
+export const sizeMap = (): void => { framing?.size(); };
 
 /** The map opens at walking distance: a few blocks around you, street names readable. */
 export const WALK_ZOOM = 16;
@@ -237,28 +189,28 @@ export function fitMarkersAroundUser(): void {
 }
 
 /**
- * The satellite leaves the disc and fills the viewport.
+ * The satellite leaves its framing and fills the viewport.
  *
  * The disc's own overlay chrome — arcs, threads — belongs to the circular
  * framing, so it steps aside while the map stands alone and returns on the way
- * back. Refused unless there is a map and the earth is up: there is nothing to
- * make fullscreen otherwise.
+ * back. Refused unless there is a map up: there is nothing to make fullscreen
+ * otherwise.
  */
 export function setMapFull(on: boolean): void {
-  if (on && (!map || !onEarth())) return;
+  if (on && (!map || !mapUp())) return;
   mapFullscreen = on;
   d3.select("#orbwrap").classed("mapfull", on);
   mapSel().classed("full", on);
   fullscreenBtn?.classList.toggle("on", on);
   d3.select("#dial").style("display", on ? "none" : null);
   d3.select("#threads").style("display", on ? "none" : null);
-  // sizeEarthMap() ends with its own map.resize() (both its branches do) —
-  // calling resize() again right after was a second, redundant WebGL
-  // viewport reallocation on every EXIT, which is what read as a glitch/
-  // flash rather than a clean single resize. Only the ENTER path still
-  // needs its own explicit resize: sizeEarthMap() doesn't run there at all
-  // (the disc's own geometry is irrelevant once the map fills the screen).
-  if (!on) { sizeEarthMap(); host.restage(); }
+  // a framing's size() ends with its own map.resize() — calling resize() again
+  // right after was a second, redundant WebGL viewport reallocation on every
+  // EXIT, which is what read as a glitch/flash rather than a clean single
+  // resize. Only the ENTER path still needs its own explicit resize: size()
+  // doesn't run there at all (the framing's own geometry is irrelevant once
+  // the map fills the screen).
+  if (!on) { sizeMap(); host.restage(); }
   else if (map) map.resize();
 }
 
@@ -280,15 +232,15 @@ export function initMapView(h: MapViewHost): void {
   if (wrap && window.ResizeObserver) {
     let rq = 0;
     new ResizeObserver(() => {
-      if (onEarth()) {
+      if (mapUp()) {
         if (mapFullscreen) return;   // it owns the viewport; nothing to re-weld
         cancelAnimationFrame(rq);
-        rq = requestAnimationFrame(() => { sizeEarthMap(); host.restage(); });
+        rq = requestAnimationFrame(() => { sizeMap(); host.restage(); });
       } else host.otherFaceReflow();
     }).observe(wrap);
   }
   window.addEventListener("resize", () => {
-    if (onEarth()) { sizeEarthMap(); host.restage(); }
+    if (mapUp()) { sizeMap(); host.restage(); }
   });
 }
 
@@ -333,22 +285,24 @@ class FullscreenControl implements maplibregl.IControl {
   }
 }
 
-export function openMap(): void {
-  sizeEarthMap();
-  d3.select("#mapback").style("display", "block");     // the in-map way up
+/**
+ * Bring the map up in `f`, at whatever leaf the stage names. Without one, the
+ * map comes up again where it already stands — a re-fit after a GPS fix.
+ */
+export function openMap(f: Framing | null = framing): void {
+  if (!f) return;
+  if (framing && framing !== f) framing.close();
+  framing = f;
+  f.size();
   d3.select("#mapcal").style("display", "block");
   // moving the viewed day re-filters every time-clipped marker — offers by the
   // turn window, pool slots by their own — so the picker hands back a re-render
   initMiniMonth(document.getElementById("mapcal")!,
-                () => { if (map && onEarth()) renderMarkers(); });
-  if (onMapFace()) {
-    mapsearch.mountMapSearch();
-    mapsearch.bindFilter(() => { if (map && onEarth()) renderMarkers(); });
-  }
+                () => { if (map && mapUp()) renderMarkers(); });
+  f.open();
   initMap();
-  if (!map) {                     // offline: the dark map surface, not a void
-    if (onMapFace()) showMapSurface();
-    d3.select("#backchip").style("display", "none");   // the stack handles back
+  if (!map) {                     // offline: the framing shows what it shows instead of tiles
+    f.offline();
     return;
   }
   const m = map;
@@ -364,7 +318,7 @@ export function openMap(): void {
   // zoom/compass/inspect (vendor/mapbox-controls.js) + the fullscreen toggle
   // (this file's own FullscreenControl) + the deck.gl mount point
   // (app/tabs/map/deck.ts) — once per map instance, the same discipline as
-  // _markersBound/_threadsBound above.
+  // _markersBound above.
   if (!m._controlsBound) {
     m._controlsBound = true;
     // The whole stack rides the map's bottom-right, clear of the search
@@ -385,7 +339,7 @@ export function openMap(): void {
     });
     m.addControl(new FullscreenControl(), CORNER);
     // the layer inspector is a debugging tool: it stays out of sight until
-    // dev mode (settings → developer) asks for it, and stops listening when
+    // dev mode (settings → feedback and developer) asks for it, and stops listening when
     // dev mode goes off again
     const inspect = new MapboxControls.InspectControl();
     m.addControl(inspect, CORNER);
@@ -412,23 +366,15 @@ export function openMap(): void {
   mountJourneys(m);         // the move arcs, derived from the same offer set
   mountLabels(m);           // the markers' names, drawn by the map in the ground's register
   refreshContainers();
-  if (onMapFace()) {
-    // the drop points ride the same markers, so their card hands back a restyle
-    dropoff.mountDrops({ map: m, refresh: renderMarkers, select: containers.setSelected });
-    pool.mountPool({ refresh: renderMarkers });
-  }
   showMapSurface();
-  d3.select("#backchip").style("display", "none");
-  L.rings.transition().duration(600).attr("opacity", 0)
-    .on("end", () => { if (onEarth()) L.rings.attr("pointer-events", "none"); });
   if (compassLive()) m.setBearing(deviceHeading());
-  drawChrome();
-  drawEvents();
-  drawEarthArcs();
+  f.ready(m);
 }
 
 /**
- * The chrome the map raises: chips inside the disc, and the panels beside it.
+ * The chrome every framing of the map shares: the go chip, the places panel and
+ * the mini-month. What belongs to one framing alone (the disc's ⌃, the face's
+ * search and pool) is that framing's `close`.
  *
  * A SET, named once, because it was being written out three times — twice as a
  * hide list and once as a loop over ids — and the three had already drifted
@@ -436,22 +382,19 @@ export function openMap(): void {
  * that owns it: the places panel, the go chip), so the list to put away is the
  * list to bring up, and it lives beside it.
  */
-const MAP_CHROME = ["#mapback", "#gochip",
-                    "#backchip", "#placesSec", "#mapcal"];
+const MAP_CHROME = ["#gochip", "#placesSec", "#mapcal"];
 
 /**
  * Put the map's own chrome away, and unmount the surfaces that ride on it.
  *
  * Both ways out of the map end here — the tab bar leaving the map FACE, and the
  * dial rising back out of earth mode — so they cannot disagree about what the
- * map left behind. Each unmounted surface belongs to whoever put it up, so this
- * asks them all rather than reaching into any of them.
+ * map left behind. The framing puts away what it raised itself.
  */
 export function teardownMap(): void {
-  if (isFullscreen()) setMapFull(false);   // collapse the screen back into the disc
-  dropoff.unmountDrops();
-  pool.unmountPool();
-  mapsearch.unmountMapSearch();
+  if (isFullscreen()) setMapFull(false);   // collapse the screen back into its framing
+  framing?.close();
+  framing = null;
   containers.setSelected(null);
   for (const sel of MAP_CHROME) d3.select(sel).style("display", "none");
   d3.select("#earthmap").classed("on", false);
@@ -459,28 +402,13 @@ export function teardownMap(): void {
 }
 
 /**
- * Bind the map's two re-render triggers, once per instance.
+ * Bind the map's re-render triggers, once per instance.
  *
  * NOTHING re-renders during a gesture. A pan moves the existing markers —
  * maplibre's own job, free and perfectly smooth — and the grouping is
  * world-anchored, so only a ZOOM can change it. Regrouped exactly once, when
- * the gesture settles. The threads are the exception: they are welded to the
- * disc rather than to the world, so they follow every frame of a move.
+ * the gesture settles.
  */
-function bindMapMarkers(m: maplibregl.Map & { _markersBound?: boolean; _threadsBound?: boolean; _spotBound?: boolean; _placesBound?: boolean }): void {
+function bindMapMarkers(m: maplibregl.Map): void {
   if (!m._markersBound) { m.on("zoomend", renderMarkers); m._markersBound = true; }
-  // a tap on one of OpenStreetMap's places (the basemap's own labels) opens
-  // it in the panel as a row of the map's own — the dial's markers stop their
-  // click before the map sees it, so this fires only on the ground
-  if (!m._placesBound) {
-    m.on("click", e => { if (!onMapFace()) return; const r = placeAt(m, e.point); if (r) mapsearch.showOnPanel(r); });
-    m._placesBound = true;
-  }
-  // a dropped pin: right-click, or press-and-hold on touch (maplibre raises
-  // contextmenu for both) — a bare spot opens in the panel, ready to save
-  if (!m._spotBound) {
-    m.on("contextmenu", e => { if (onMapFace()) mapsearch.showSpot(e.lngLat.lat, e.lngLat.lng); });
-    m._spotBound = true;
-  }
-  if (!m._threadsBound) { m.on("move", drawThreads); m._threadsBound = true; }
 }

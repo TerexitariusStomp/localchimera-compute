@@ -21,8 +21,8 @@ const { base: BASE, close: closeServer } = await serveBrowser();
 const h = harness();
 const browser = await launch();
 const page = await browser.newPage();
-// the 💬 button shows in dev mode only (settings → developer)
-await page.addInitScript(() => localStorage.setItem('pn.prefs', JSON.stringify({ devMode: true })));
+// the 💬 button shows once feedback is switched on (account sheet, settings → feedback and developer)
+await page.addInitScript(() => localStorage.setItem('pn.prefs', JSON.stringify({ feedbackMode: true })));
 page.on('pageerror', e => h.errs.push(String(e).slice(0, 160)));
 
 // Catch the submit without a server: the route never reaches ux-serve.

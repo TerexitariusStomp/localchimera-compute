@@ -24,10 +24,15 @@ function pref(name, dflt) {
 // rail's mini-month and the week grid's own window — so they can never disagree
 // about which column a day belongs in.
 export const [weekStart, setWeekStart] = pref("weekStart", 1);
-// Dev mode: the maintainers' tools stay out of the way until asked for. It
-// reveals the feedback 💬 in the share bar (app/feedback.ts) — the bar's row is
-// the one place every face shares, and a visitor who never opens settings never
-// has to make room for it.
+// Feedback and ideas: anyone may point at a part of the interface (or of the
+// protocol it shows) and say what they think; it goes to the developers. The
+// 💬 in the share bar (app/feedback.ts) is the way in, and stays out of the way
+// until this is on — the bar's row is the one place every face shares, and a
+// visitor who never wants it never has to make room for it. It is one switch in
+// the account sheet and in settings.
+export const [feedbackMode, setFeedbackMode] = pref("feedbackMode", false);
+// Dev mode: the maintainers' own tools (the map's layer inspector). Apart from
+// feedback, which is for everyone: this one is for reading the map's layers.
 export const [devMode, setDevMode] = pref("devMode", false);
 // Which faces the nav strip NAMES. The strip starts small — the map, the
 // calendar and the forum — and every other face is a toggle in settings: a

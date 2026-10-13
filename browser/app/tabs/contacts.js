@@ -18,23 +18,25 @@ import { eventRing } from '../day/mytime.js';
 import { paleCol } from '../geom.js';
 import { dateOf } from '../timefmt.js';
 import { signal, effect } from '../reactive.js';
-import { html, list, raw, render } from '../template.js';
+import { html, list, render } from '../template.js';
 import { STATUS } from '../palette.js';
 import { gateHint } from '../day/respond.js';
 import { book, bookIsDemo, kindOf, setRel, invite, recoveryPicks, toggleRecoveryPick } from '../contact-book.js';
 import { REL_KINDS, DEFAULT_REL } from '../rel-catalogue.js';
 import { recognised, rereadStanding } from './social/id.js';
-import { proposal, accept, decline, myLink } from '../connect.js';
-import { canScan } from '../scan.js';
-import { openCaptureLook } from '../capture.js';
+import { proposal, accept, decline } from '../connect.js';
+import { meView } from '../me-view.js';
+import { identity, identityState, openIdentityDoor } from './social/id.js';
+import { riseSheet } from './social/share.js';
 import { armer } from '../arm.js';
 import { reach, kindOfReach, linkOf, cardText, readCard } from '../reach.js';
-import { openAccountPage } from '../account.js';
 import { idHint } from './social/id.js';
 // ── the view's own state ────────────────────────────────────────────────────
 const contactFilter = signal("all");
 /** The AID of the one open row. */
 const openRow = signal(null);
+/** Your own page (code ⇄ scan, and how to reach you), while it is open, and the mode it is in. */
+const meOpen = signal(null);
 /** The two-tap acts: "<aid>|withdraw", "<aid>|uncard", "<aid>|forget". */
 const { armed, arm } = armer();
 /** The AID whose card is being put together, and the points left off it. */
@@ -190,7 +192,7 @@ function cardPicker(c) {
         return html `<div class="crow-card">
       <p class="crow-story">Your list of ways to be reached is empty. A card is a selection of it.</p>
       <div class="crow-acts">
-        ${act("add ways to reach you", "your addresses, handles and numbers, kept on this device", () => openAccountPage("profile"))}
+        ${act("add ways to reach you", "your addresses, handles and numbers, kept on this device", () => meOpen.set("code"))}
         ${act("not now", "put this down", () => carding.set(null))}
       </div></div>`;
     const off = leftOff();
@@ -267,18 +269,10 @@ function rowOf(c) {
       </button>
     </li>`;
 }
-// ── connect: your own link to show, theirs to read, and the card that asks ──
-const connectOpen = signal(false);
+// ── connect: the card that asks about a person, and the way to one ──
 /** The name the card's field holds; kept outside the signals so typing redraws nothing. */
 let aliasDraft = "";
 let draftFor = "";
-function copyLink(link) {
-    if (!navigator.clipboard) {
-        hint("copy the link from the box.", "notice");
-        return;
-    }
-    navigator.clipboard.writeText(link).then(() => hint("link copied — send it to them.", "success"), () => hint("copy the link from the box.", "notice"));
-}
 function drawConnect() {
     if (!connectEl)
         return;
@@ -289,8 +283,6 @@ function drawConnect() {
     }
     if (!p)
         draftFor = "";
-    const open = connectOpen();
-    const mine = open ? myLink() : null;
     render(connectEl, html `
     ${p ? html `
       <div class="cask" role="group" aria-label="connect with someone">
@@ -308,25 +300,60 @@ function drawConnect() {
         </div>
       </div>` : ""}
     <div class="crow-acts">
-      ${act(open ? "＋ connect ▾" : "＋ connect", "your own link to show, or theirs to read", () => connectOpen.set(!open), open ? " on" : "")}
-    </div>
-    ${open ? html `
-      <div class="cconnect">
-        ${mine ? html `
-          ${mine.qr ? html `<div class="cqr" role="img" aria-label="your link as a QR code">${raw(mine.qr)}</div>` : ""}
-          <div class="cconnect-say">
-            <p>Show this to someone, or send them your link. They scan it, or paste it into the bar.</p>
-            <input class="cask-name" type="text" readonly aria-label="your link" value="${mine.link}"
-                   onfocus=${(e) => e.currentTarget.select()}>
-            <div class="crow-acts">
-              ${act("copy my link", "copy your link to send", () => copyLink(mine.link))}
-              ${canScan() ? act("📷 scan theirs", "read someone's QR with the camera", openCaptureLook) : ""}
-            </div>
-            <p>Someone sent you theirs? Paste it into the bar above, then ➕.</p>
-          </div>`
-        : html `<div class="cconnect-say"><p>Create your identity (the person button, bottom-left) and you have a link of your own to show.
-               A link someone sent you goes into the bar above, then ➕.</p></div>`}
-      </div>` : ""}`);
+      ${act("＋ connect", "scan someone's code, or paste their link — your own code is one tap away", () => meOpen.set("scan"))}
+    </div>`);
+}
+// you, as the first of your contacts: not a row of the book (nothing is kept of you there), but a tile
+// that stands in front of it and opens your own page
+function youTile() {
+    const me = identity();
+    const name = me?.name || "you";
+    const live = identityState() === "authed";
+    const open = () => { if (me)
+        meOpen.set("code");
+    else
+        openIdentityDoor(); };
+    return html `
+    <li class="crow crow-you">
+      <button type="button" class="crow-head" title="${me ? "your code, and how people reach you" : "make an identity"}" onclick=${open}>
+        <span class="cav" style="background:${paleCol(YOU_COLOUR, 0.78)}; color:${YOU_COLOUR}">${me ? name.trim().charAt(0).toUpperCase() || "·" : "＋"}<span class="cdot" style="background:${live ? STATUS.sound : "#cfcfcf"}"></span></span>
+        <span class="ctext">
+          <span class="cnameline"><span class="calias">${me ? name : "make an identity"}</span></span>
+          <span class="cline">${me ? "your code · how to reach you" : "to have a code of your own"}</span>
+        </span>
+        <span class="crel" style="background:${paleCol(YOU_COLOUR, 0.78)}; color:${YOU_COLOUR}">you</span>
+      </button>
+    </li>`;
+}
+const YOU_COLOUR = "#2c4a6e";
+// your page is built once per opening and kept while the book changes under it, so a camera or a half-typed
+// name is not lost to a push; leaving it lets the camera go
+let me = null;
+/** Whether the sheet was whole when your page raised it; null while your page is not up. */
+let sheetWas = null;
+function drawMe(start) {
+    if (!detailEl || me)
+        return;
+    sheetWas = riseSheet(true); // your page is read whole, not through a slit
+    const closed = () => { meOpen.set(null); };
+    me = meView({ start, profile: true, onDone: closed });
+    const back = document.createElement("button");
+    back.type = "button";
+    back.className = "cback";
+    back.textContent = "← contacts";
+    back.addEventListener("click", closed);
+    const page = document.createElement("div");
+    page.className = "cdetail cdetail-me";
+    page.append(back, me.el);
+    detailEl.replaceChildren(page);
+}
+function leaveMe() {
+    me?.dispose();
+    me = null;
+    if (sheetWas !== null) {
+        riseSheet(sheetWas);
+        sheetWas = null;
+    }
 }
 /** One person's own page: a hero (face, name, kind, standing) over the acts — in place of the book while it is open. */
 function drawDetail(c) {
@@ -353,6 +380,14 @@ function drawDetail(c) {
 function drawContacts() {
     if (!filtersEl || !rowsEl || !demoEl)
         return;
+    // your own page replaces the book until you go back; it is read before the book, so a push leaves it alone
+    const meMode = meOpen();
+    panelEl?.classList.toggle("has-detail", !!meMode);
+    if (meMode) {
+        drawMe(meMode);
+        return;
+    }
+    leaveMe();
     const all = book();
     // a person opened: their page replaces the book until you go back
     const openId = openRow();
@@ -384,7 +419,11 @@ function drawContacts() {
                     (c.rel || DEFAULT_REL) === filter))
         // an open ask first, then who is here, then by name
         .sort((x, y) => (+!!y.ask - +!!x.ask) || (+y.online - +x.online) || x.alias.localeCompare(y.alias));
-    list(rowsEl, shown.length ? shown : [{ empty: all.length ? "no one here" : "no contacts yet" }], c => c.empty ? "·empty" : (c.aid || c.alias), c => c.empty ? html `<li class="empty">${c.empty}</li>` : rowOf(c));
+    // yourself first, unless the bar's words name someone else
+    const mine = identity()?.name || "you";
+    const you = !q || mine.toLowerCase().includes(q) || "you".includes(q) ? [{ you: true }] : [];
+    const rows = [...you, ...(shown.length ? shown : [{ empty: all.length ? "no one here" : "no contacts yet" }])];
+    list(rowsEl, rows, c => c.you ? "·you" : c.empty ? "·empty" : (c.aid || c.alias), c => c.you ? youTile() : c.empty ? html `<li class="empty">${c.empty}</li>` : rowOf(c));
     demoEl.style.display = bookIsDemo() ? "" : "none";
 }
 // the drawer's Contacts view: built once, cached, with its own effect keeping

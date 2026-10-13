@@ -77,7 +77,7 @@ export const K = {
   chatSeen:       k("pn.chat.seen", "per topic, when it was last read"),
 
   // ── how the app is set ───────────────────────────────────────────────────
-  prefs:          k("pn.prefs", "preferences: week start, dev mode, tabs, home face, currency", "playnet-prefs"),
+  prefs:          k("pn.prefs", "preferences: week start, feedback, dev mode, tabs, home face, currency", "playnet-prefs"),
   theme:          k("pn.theme", "the theme's id (read before first paint by app.html)"),
   themeBg:        k("pn.theme.bg", "the theme's ground colour (read before first paint)"),
   themeCss:       k("pn.theme.css", "the theme's rendered CSS (read before first paint)"),

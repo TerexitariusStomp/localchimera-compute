@@ -269,7 +269,17 @@ if (bar) {
     // --barh: the capsule's reach from the bottom of the page (its height plus the margin under it) — the drawer
     // stops there, the sheet reserves it for its content, and the map's controls sit above it
     const root = document.documentElement;
+    // --kb: how far the on-screen keyboard (or any browser chrome) covers the page's floor. A phone keyboard
+    // shrinks the VISUAL viewport and leaves the layout one alone, so a bar pinned to the layout's bottom edge
+    // ends up behind the keys; the capsule rises by this much, and --barh below follows it. A browser that
+    // resizes the layout viewport itself (innerHeight shrinks with the keys) reports 0 here, so nothing counts twice.
+    const vv = window.visualViewport;
+    const setKb = () => {
+        const kb = vv ? Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)) : 0;
+        root.style.setProperty("--kb", kb + "px");
+    };
     const setBarH = () => {
+        setKb();
         const row = bar.querySelector(".sharebar-row");
         // a capsule that is not drawn (the sheet's lowest rest stands in its place) reaches nothing
         const drawn = row && row.getClientRects().length > 0;
@@ -288,6 +298,10 @@ if (bar) {
         setBarH();
     };
     ro.observe(bar);
+    if (vv) {
+        vv.addEventListener("resize", setBarH);
+        vv.addEventListener("scroll", setBarH);
+    }
     new MutationObserver(watch).observe(bar, { childList: true }); // the capsule is built after this runs
     watch();
 }

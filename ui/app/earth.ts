@@ -40,6 +40,7 @@ import { clearMarkers } from './markers.js';
 import { askGeolocation, resetHeading } from './compass.js';
 import { endNav } from './route/nav.js';
 import { openMap, teardownMap } from './mapview.js';
+import { disc } from './disc.js';
 import { drawBandsRaw, drawBands2, settle } from './wheel.js';
 import { L, threads } from './layers.js';
 import type { DesireNode } from './desire.js';
@@ -107,7 +108,7 @@ export function revealEarth(d: DesireNode, k: number): void {
       })
       .on("end", () => {
         drawGlobe(sFinal(), 0, 1, true);   // the standing frame, fine coastline
-        openMap();
+        openMap(disc);
         stage.zooming = false;
         drawPriorityBar(0);                // collapse the bar to this leaf
       });

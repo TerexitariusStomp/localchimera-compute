@@ -38,6 +38,19 @@ for (const [q,want] of CASES) {
   h.rec('(no route, identity remembered) → the home face', home === 'cal', String(home));
   await remembered.close();
 }
+// the map face is a rectangle with no dial behind it: it never takes the dial's earth mode, and
+// the disc's way-up (⌃) stays away — even when the map is raised again, as a GPS fix does
+await page.goto(`${BASE}/app.html?face=map&_=mapface`,{waitUntil:'networkidle'}); await sleep(1100);
+const mf = await page.evaluate(async () => {
+  const { stage } = await import('/app/stage.js');
+  const { openMap } = await import('/app/mapview.js');
+  const shown = id => getComputedStyle(document.getElementById(id)).display !== 'none';
+  const before = { back: shown('mapback'), chip: shown('backchip') };
+  openMap();                                  // the re-fit a GPS fix asks for
+  return { mode: stage.mode, face: stage.face, before, back: shown('mapback'), chip: shown('backchip') };
+});
+h.rec('the map face leaves the dial\'s mode alone', mf.mode === 'dial' && mf.face === 'map', JSON.stringify(mf));
+h.rec('the map face has no way up to a dial', !mf.before.back && !mf.before.chip && !mf.back && !mf.chip, JSON.stringify(mf));
 // share is chrome: it opens the drawer and leaves the face alone
 await page.goto(`${BASE}/app.html?face=share`,{waitUntil:'networkidle'}); await sleep(1100);
 const sh = await page.evaluate(()=>({face:document.getElementById('main').getAttribute('data-face'),

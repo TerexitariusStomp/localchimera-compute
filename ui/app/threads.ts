@@ -31,7 +31,8 @@
 import { R, U, PT, TAU, xy, bearingDeg } from './geom.js';
 import { USER, PLACES, ISO, pcoord } from './core.js';
 import { deviceHeading } from './compass.js';
-import { theMap, mapToDial, pxPerDialUnit } from './mapview.js';
+import { theMap } from './mapview.js';
+import { mapToDial, pxPerDialUnit } from './disc.js';
 import { placeElAt } from './markers.js';
 import { isOpenAt, WALK_KMH, selectPlace, selectedPlace } from './places.js';
 import { stage, onEarth, onMapFace } from './stage.js';

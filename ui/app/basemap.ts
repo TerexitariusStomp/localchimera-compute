@@ -41,9 +41,10 @@ const lang = (): string => (navigator.language || "en").slice(0, 2);
 // of restaurants is noise over the dial's own pins. The kinds fall into
 // families a person switches on and off; the choice persists per device and
 // applies as a FILTER on that one layer — no style reload. What starts on is
-// the commons' side of the street: nature, ways to get around, culture, and
-// what is free to use — care, play, the commons' benches, toilets and water.
-// Food, shops and institutions start off; a device turns them on. The tiles
+// the commons' side of the street, in this order: the commons' benches,
+// toilets and water, parks and nature, care and help, play and sport, and
+// ways to get around. Institutions, culture, food and shops start off —
+// culture and sights lean toward the paid; a device turns any on. The tiles
 // carry more kinds than the style draws: a kind with no sprite of its own is
 // drawn as the style's plain dot, its name beside it.
 
@@ -70,20 +71,20 @@ export const familyFaces = (f: PoiFamily): string => [...new Set(f.kinds.map(k =
 export interface PoiFamily { id: string; label: string; kinds: string[]; on: boolean; }
 
 export const POI_FAMILIES: PoiFamily[] = [
+  { id: "commons", label: "the commons",          on: true,
+    kinds: ["library", "allotments", "recycling", "drinking_water", "toilets", "bench", "information"] },
   { id: "nature",  label: "parks and nature",     on: true,
     kinds: ["park", "garden", "forest", "beach", "peak", "viewpoint", "marina", "zoo", "animal"] },
-  { id: "transit", label: "getting around",       on: true,
-    kinds: ["station", "subway", "tram_stop", "bus_stop", "bus_station", "ferry_terminal", "aerodrome", "bicycle_parking"] },
   { id: "care",    label: "care and help",        on: true,
     kinds: ["hospital", "clinic", "doctors", "dentist", "pharmacy", "social_facility", "childcare",
             "kindergarten", "community_centre", "veterinary", "shelter"] },
   { id: "play",    label: "play and sport",       on: true,
     kinds: ["playground", "pitch", "sports_centre", "swimming_pool", "dog_park", "picnic_site"] },
-  { id: "commons", label: "the commons",          on: true,
-    kinds: ["library", "allotments", "recycling", "drinking_water", "toilets", "bench", "information"] },
+  { id: "transit", label: "getting around",       on: true,
+    kinds: ["station", "subway", "tram_stop", "bus_stop", "bus_station", "ferry_terminal", "aerodrome", "bicycle_parking"] },
   { id: "civic",   label: "schools and civic",    on: false,
     kinds: ["school", "university", "townhall", "post_office", "building", "courthouse", "police", "fire_station"] },
-  { id: "culture", label: "culture and sights",   on: true,
+  { id: "culture", label: "culture and sights",   on: false,
     kinds: ["museum", "theatre", "attraction", "artwork", "memorial"] },
   { id: "food",    label: "food and drink",       on: false,
     kinds: ["restaurant", "cafe", "bar", "fast_food"] },

@@ -117,18 +117,25 @@ export const stage: StageState = {
   zooming: false,
 };
 
-/** Whether the earth is up — the angle means a bearing. */
+/** Whether the earth is up — the DISC is open and its angle means a bearing. */
 export const onEarth = (): boolean => stage.mode === "earth";
 
 /**
  * Whether the MAP face owns the stage.
  *
- * Distinct from onEarth, and the distinction is load-bearing: the map face is a
- * RECTANGLE with no disc geometry, while the earth reached by drilling a desire
- * band is a circular disc welded to the dial. Both are `mode === "earth"`; only
- * one of them has a dial around it.
+ * The map face is a RECTANGLE with no dial around it; the earth reached by
+ * drilling a desire band is a circular disc welded to the dial. They are two
+ * framings of one map, and only the disc is a `mode` of the dial — the face is
+ * a face, and leaves `stage.mode` alone.
  */
 export const onMapFace = (): boolean => onFace("map");
+
+/**
+ * Whether a map is showing, in either framing — the question the map's own
+ * surfaces ask (markers, the camera, the sizer). What belongs to the dial's
+ * bearing reading asks `onEarth` instead.
+ */
+export const mapUp = (): boolean => onEarth() || onMapFace();
 
 /**
  * Whether `id` is the face that owns the stage.

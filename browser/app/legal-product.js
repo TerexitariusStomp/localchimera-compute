@@ -36,7 +36,7 @@ export const PRODUCT_FEATURES = [
     { id: "account-creation", name: "Account creation", crossings: ["data-processing"], doors: ["lobby/signup", "lobby/signup-with-icp", "lobby/signup-with-kel", "lobby/join"], section: "social/id" },
     { id: "erasure", name: "Erasure (forget me)", crossings: ["data-processing"], doors: ["session/forget-me"], section: "social/id" },
     { id: "payouts", name: "Payouts in XMR", crossings: ["hold-funds"], doors: ["session/request-payout", "session/my-payouts", "session/retire-payout"], section: "shop/payouts" },
-    { id: "credit", name: "Credit for contribution", crossings: ["credit-contribution"], doors: ["session/my-claims", "session/claim"], section: "shop/claims" },
+    { id: "credit", name: "Credit for contribution", crossings: ["credit-contribution"], doors: ["session/my-claims", "session/my-credit-history", "session/claim"], section: "shop/claims" },
     { id: "health-profile", name: "Conditions stated in the profile", crossings: ["data-processing", "health-data"], doors: ["session/set-profile"], section: "share/attributes" },
     { id: "location", name: "Position and home", crossings: ["data-processing", "location-data"], doors: ["session/set-position", "session/set-position-latlon", "session/set-home"], section: "location" },
     { id: "contact-points", name: "Contact points", crossings: ["data-processing", "communications"], doors: ["session/present-contact-point", "session/confirm-contact-point", "session/withdraw-contact-point", "session/my-contact-points"], section: "social/contacts" },

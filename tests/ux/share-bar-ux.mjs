@@ -290,9 +290,14 @@ try {
   // connect: the strip opens on your link; a person's link in the bar and ↵ opens the card
   h.rec('the bar carries no ➕ button — ↵ is the one way to commit', await page.evaluate(() => !document.querySelector('#sharebar .share-add')));
   await page.evaluate(() => [...document.querySelectorAll('#sharebar .cconnect-strip .slot-btn')].find(b => /connect/.test(b.textContent)).click());
+  await sleep(300);
+  h.rec('＋ connect opens your page on the scanner — a way to paste a link in it, the toggle to your own code, and no camera held when none is here',
+        await page.$$eval('#sharebar .me-view.me-scanning .me-paste', xs => xs.length === 1)
+        && await page.$$eval('#sharebar .me-view .share-seg', xs => xs.map(x => x.textContent.trim()).join('|') === 'My code|Scan'));
+  await page.evaluate(() => document.querySelector('#sharebar .cdetail-me .cback').click());
   await sleep(200);
-  h.rec('＋ connect opens the block that says how (with no identity here, how to get a link)',
-        await page.$$eval('#sharebar .cconnect .cconnect-say p', ps => ps.length > 0 && /bar above/.test(ps[ps.length - 1].textContent)));
+  h.rec('yourself is the first tile of your contacts',
+        await page.$eval('#sharebar .share-contacts .contacts .crow', li => li.classList.contains('crow-you')));
   const someone = 'E' + 'a1B2-c3D4_'.repeat(5).slice(0, 43);
   await page.fill('#sharebar .share-name', `https://playnet.example/app.html?connect=${someone}&name=Tia`);
   await sleep(250);
@@ -530,10 +535,8 @@ try {
         unread.badge === '2' && unread.unreadOf === 2, JSON.stringify(unread));
 
   // ── the expanded draft panel: BELOW the toolbar row, not above ───────────
-  // The pill's name input doubles as the TYPE search: focus opens the picker
-  // over the folksonomy spine — a full-width DRILL-DOWN, one bar per level,
-  // when there's no query; a flat search when there is. A pick fills name +
-  // emoji and seeds the slot's cats with the term's chain.
+  // The pill's name input doubles as the search; the panel's tabs are
+  // when · where · unit · emoji (the folksonomy "type" tab is off).
   const panelState = () => page.evaluate(() => {
     const bar = document.getElementById('sharebar');
     const panel = bar.querySelector('.share-panel');
@@ -552,69 +555,15 @@ try {
     };
   });
   h.rec('the panel is closed until asked', !(await panelState()).on);
+  // the folksonomy is OFF and isolated from the panel: tapping or typing in the
+  // name raises no strip, and the name stays a plain search
   await page.click('#sharebar .share-name'); await sleep(200);
   let ps = await panelState();
-  h.rec('tapping the name opens the TYPE picker as one full-width bar of top-level branches',
-        ps.on && /type/i.test(ps.tab || '') && ps.segs.length === 1 && ps.segs[0].length >= 5,
-        `${ps.tab} · ${JSON.stringify(ps.segs)}`);
-  h.rec('…and the panel sits BELOW the toolbar row, not floating above it', ps.below);
-
-  // ── drilling: a branch's children appear as the next bar, the branch stays
-  // lit; a leaf with a real spec filed under it (cooking → the demo plan's
-  // "fresh veg" need) shows the SPEC's own name, not the category; a sibling
-  // leaf with nothing filed (tea & snacks) offers to commit itself instead ──
-  await page.evaluate(() => [...document.querySelectorAll('#sharebar .sp-seg')]
-    .find(s => /nourishment/i.test(s.textContent)).click());
-  await sleep(200);
-  ps = await panelState();
-  h.rec('drilling into a branch reveals its children as the next bar, the branch stays lit',
-        ps.segs.length === 2 && ps.segs[1].join('|').includes('meals') && ps.segs[1].join('|').includes('cooking'),
-        JSON.stringify(ps.segs));
-  await page.evaluate(() => {
-    const rows = [...document.querySelectorAll('#sharebar .sp-segrow')];
-    [...rows[1].querySelectorAll('.sp-seg')].find(s => /^tea/.test(s.textContent.trim())).click();
-  });
-  await sleep(200);
-  const bare = await page.evaluate(() => ({
-    specRow: !!document.querySelector('#sharebar .sp-segrow-specs'),
-    commit: document.querySelector('#sharebar .sp-seg-commit')?.textContent,
-  }));
-  h.rec('a leaf with nothing filed offers to commit the bare term, not a fake spec',
-        !bare.specRow && /new spec/.test(bare.commit || ''), JSON.stringify(bare));
-  await page.evaluate(() => {
-    const rows = [...document.querySelectorAll('#sharebar .sp-segrow')];
-    [...rows[1].querySelectorAll('.sp-seg')].find(s => /cooking/.test(s.textContent)).click();
-  });
-  await sleep(200);
-  const withSpec = await page.evaluate(() =>
-    [...document.querySelectorAll('#sharebar .sp-segrow-specs .sp-seg')].map(s => s.textContent.trim()));
-  h.rec('a leaf with a real spec filed under it shows the SPEC\'s own name, not the category',
-        withSpec.some(t => /fresh veg/.test(t)) && !withSpec.some(t => /^cooking$/i.test(t)),
-        withSpec.join('|'));
-  await page.evaluate(() => document.querySelector('#sharebar .sp-segrow-specs .sp-seg').click());
-  await sleep(200);
-  ps = await panelState();
-  h.rec('picking the spec fills the pill with its own name and closes the picker',
-        !ps.on && ps.name === 'fresh veg', ps.name);
-
-  // typing FILTERS the same drill-down bars — it doesn't swap to a flat view.
-  // "fresh" only lives under nourishment › cooking (the "fresh veg" spec), so
-  // typing it should narrow every level down to just that branch, auto-baring
-  // the matching spec row, with no other top-level branch surviving.
-  await page.click('#sharebar .share-name');
-  await page.evaluate(() => { const n = document.querySelector('#sharebar .share-name'); n.value = ''; n.dispatchEvent(new Event('input', { bubbles: true })); });
-  await sleep(200);
+  h.rec('tapping the name opens no panel and no taxonomy strip', !ps.on && ps.segs.length === 0, JSON.stringify(ps.segs));
   await page.type('#sharebar .share-name', 'fresh'); await sleep(200);
   ps = await panelState();
-  h.rec('typing narrows the SAME segmented bars, no flat grid appears',
-        ps.segs.length > 0 && ps.segs.flat().every(t => /nourishment|meals|cooking|veg/i.test(t)),
-        JSON.stringify(ps.segs));
-  h.rec('the matching spec surfaces in its own row once the query pins the leaf',
-        ps.segs.some(row => row.some(t => /fresh veg/i.test(t))), JSON.stringify(ps.segs));
-  await page.evaluate(() => document.querySelector('#sharebar .sp-segrow-specs .sp-seg')?.click()); await sleep(200);
-  ps = await panelState();
-  h.rec('picking a filtered spec fills the pill and closes the picker',
-        !ps.on && ps.name.length > 0 && ps.name !== 'fresh', ps.name);
+  h.rec('typing in the name keeps the panel shut and the name as typed',
+        !ps.on && ps.segs.length === 0 && ps.name === 'fresh', `${ps.on} · ${ps.name}`);
 
   // ── the dialled rhythm and place narrow the list LIVE, before any ↵ ──────
   // bread's own arc is mon/wed/fri 17:00–19:00; childcare's is tue/thu
