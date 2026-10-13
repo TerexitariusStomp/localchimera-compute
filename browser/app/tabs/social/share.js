@@ -450,6 +450,7 @@ let viewOwner = null;
 let viewGone = null;
 let viewSticky = false;
 let viewStepped = null;
+let viewEsc = null;
 let closePanelHook = null; // set once the draft panel exists
 /** The sheet rises to a height that depends on what opened it: the inventory and the type picker at about
  *  half the page, a view at the height it asks for (`full`: the whole page, under the header). A drag on the
@@ -478,6 +479,7 @@ export function openSheetView(owner, el, gone, o = {}) {
     viewGone = gone;
     viewSticky = !!o.sticky;
     viewStepped = o.stepped ?? null;
+    viewEsc = o.esc ?? null;
 }
 /** Put the view away — only `owner`'s, when one is named. */
 export function closeSheetView(owner) {
@@ -488,6 +490,7 @@ export function closeSheetView(owner) {
     viewGone = null;
     viewSticky = false;
     viewStepped = null;
+    viewEsc = null;
     viewHost.classList.remove("on");
     viewHost.removeAttribute("data-stepped"); // the bar returns with the stepped view gone
     viewHost.replaceChildren();
@@ -1113,8 +1116,13 @@ function ensureScaffold(bar) {
     // Esc puts away what is up: the inventory first, else an open picker or popover (the account and faces
     // menus answer Esc themselves, the account stepping back out of a page before it closes)
     document.addEventListener("keydown", ev => {
-        if (ev.key !== "Escape" || viewOwner)
+        if (ev.key !== "Escape")
             return;
+        if (viewOwner) {
+            if (viewEsc?.())
+                ev.preventDefault();
+            return;
+        } // a view answers its own Esc, if it has one
         if (open.peek()) {
             ev.preventDefault();
             open.set(false);

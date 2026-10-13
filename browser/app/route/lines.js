@@ -76,13 +76,21 @@ const LAYERS = [
 const empty = () => ({ type: "FeatureCollection", features: [] });
 /** The latest ask, so a style that is not ready yet draws what is wanted when it is, not what was. */
 let want = null;
+/** What each map was last given, so what is drawn can be read back without reaching into the library. */
+const drawn = new WeakMap();
 function apply(map, spec) {
     if (!map.getSource(SRC)) { // a rebuilt map instance has none: mount again
         map.addSource(SRC, { type: "geojson", data: empty() });
         for (const l of LAYERS)
             map.addLayer(l);
     }
-    map.getSource(SRC).setData({ type: "FeatureCollection", features: lineFeatures(spec) });
+    const features = lineFeatures(spec);
+    drawn.set(map, features);
+    map.getSource(SRC).setData({ type: "FeatureCollection", features });
+}
+/** The lines last drawn on `map`, by kind and shape, in the order drawn. */
+export function drawnLines(map) {
+    return (drawn.get(map) ?? []).map(f => ({ kind: String(f.properties.kind), coords: f.geometry.coordinates }));
 }
 /** Draw `spec` on `map` — now, or the moment its style can take it. Replaces whatever was drawn. */
 export function paintLines(map, spec) {

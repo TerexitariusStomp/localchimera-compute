@@ -94,12 +94,22 @@ const empty = (): maplibregl.FeatureCollection => ({ type: "FeatureCollection", 
 /** The latest ask, so a style that is not ready yet draws what is wanted when it is, not what was. */
 let want: { map: maplibregl.Map; spec: LineSpec } | null = null;
 
+/** What each map was last given, so what is drawn can be read back without reaching into the library. */
+const drawn = new WeakMap<maplibregl.Map, maplibregl.Feature[]>();
+
 function apply(map: maplibregl.Map, spec: LineSpec): void {
   if (!map.getSource(SRC)) {                       // a rebuilt map instance has none: mount again
     map.addSource(SRC, { type: "geojson", data: empty() });
     for (const l of LAYERS) map.addLayer(l);
   }
-  map.getSource(SRC)!.setData({ type: "FeatureCollection", features: lineFeatures(spec) });
+  const features = lineFeatures(spec);
+  drawn.set(map, features);
+  map.getSource(SRC)!.setData({ type: "FeatureCollection", features });
+}
+
+/** The lines last drawn on `map`, by kind and shape, in the order drawn. */
+export function drawnLines(map: maplibregl.Map): { kind: string; coords: Point[] }[] {
+  return (drawn.get(map) ?? []).map(f => ({ kind: String(f.properties.kind), coords: (f.geometry as unknown as { coordinates: Point[] }).coordinates }));
 }
 
 /** Draw `spec` on `map` — now, or the moment its style can take it. Replaces whatever was drawn. */

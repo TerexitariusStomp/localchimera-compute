@@ -12,18 +12,25 @@ Words used throughout: **sheet** is `.share-sheet` (the bottom drawer); **bar** 
 
 ### 1.1 Where it lives
 
-The route code is one family in `ui/app/route/`, each module with one job, and one device-position source beside it. The rest is what the family stands on.
+The route code is one family in `ui/app/route/`, each module with one job, and one device-position source beside it. A journey is one record that owns what it takes up (`nav.ts`), so setting out and ending cannot drift apart. The rest is what the family stands on.
 
 | Module | Job |
 |---|---|
-| `ui/app/route/data.ts` | The one reader of `/route`'s reply: the polyline, a trip as `Route`s (the chosen way and its alternatives, with street names, spoken forms, transit legs), the request a mode asks with, a short-lived shared cache. Also THE table of modes — costing, label, glyph — and the UI-word → costing boundary (`costingOf`). |
-| `ui/app/route/facts.ts` | What a route says, in words, pure: durations and distances (`fmtMinutes`, `fmtDistance`), the headline, the lines a transit route rides, the arrival clock (`arrivalClock`), ⇅ (`swapEnds`), and the trip the REPL page's Scheme side takes (`replTrip`). |
-| `ui/app/route/lines.ts` | A route on the map: the one place its lines are drawn — the chosen way, its alternatives, what is behind you, a ride's dotted walks, the bearing thread. One source, one set of layers, mounted style-ready like `journeys.ts`. |
-| `ui/app/route/preview.ts` | The ways to a place before you set out: the from/to card, the sheet view (owner `"route"`), the mode tabs, the time pills, the camera frame, Start. |
-| `ui/app/route/nav.ts` | The wayfinder: a journey under way — its record, the ledger's `journeyBegin` / `journeyEnd`, and the orchestration of what reads it. |
-| `ui/app/route/shape.ts` | The geometry of a route's shape, pure: its runs by mode, where you are ON it (`snapToRoute`, `progress`), a point along it, the box that holds every way, where a time pill sits. |
-| `ui/app/route/banner.ts`, `sheet.ts`, `steps.ts`, `follow.ts`, `drive-sim.ts` | The journey's face: the card's words, the sheet with its drawer, the turn-by-turn list, the camera, the rehearsed drive. |
-| `ui/app/position.ts` | Where you are, from ONE source: a watch, a one-shot ask, the map's locate button or a rehearsed drive all end in `report`, which moves `USER` and tells every observer (the you-marker among them). |
+| `modes.ts` | THE table of modes — costing, label, glyph — and the words around it: `modeInfo`, `travelIcon`, `costingOf` (UI words → costing), `DEFAULT_COSTING`. |
+| `data.ts` | The one reader of `/route`'s reply: the polyline, a trip as `Route`s (the chosen way and its alternatives, with street names, spoken forms, per-stretch flags, transit legs, the destination's side of the street), the request a mode asks with, a short-lived shared cache. |
+| `facts.ts` | What a route says, in words, pure: durations and distances (`fmtMinutes`, `fmtDistance`), the headline, a ride's line and times (`rideLine`, `rideTimes`, `legsOf`), `isoClock`, the arrival clock, ⇅ (`swapEnds`), and the trip the REPL page's Scheme side takes (`replTrip`). |
+| `shape.ts` | The geometry of a route's shape, pure: its runs by mode (with their time and line), where you are ON it (`snapToRoute`, `progress`), what is left of it (`remainingOf`), a point along it, the box that holds every way, where a time pill sits. |
+| `lines.ts` | A route on the map: the one place its lines are drawn — the chosen way, its alternatives, what is behind you, a ride's dotted walks, the bearing thread. One source, one set of layers, mounted style-ready like `journeys.ts`; `drawnLines` reads back what was drawn. |
+| `camera.ts` | Framing a box exactly: clears the camera's standing padding, then fits — the one place that fact about the library lives. |
+| `preview.ts` | The ways to a place before you set out: the asks, the sheet view (owner `"route"`) with its mode tabs and leg strip, the time pills, the camera frame, Start. |
+| `fields.ts` | The from/to card: two fields, "Your location" until you say otherwise, places offered for each, ⇅. It knows nothing of routes. |
+| `nav.ts` | A journey under way: its record and the orchestration of what reads it; it holds the sheet, the camera, the watch, the rehearsal, the screen lock and undoes them in reverse. |
+| `banner.ts` | What the wayfinder says, one turn at a time — and the whole of the `#navcard` element: placing it over the map or in the page, showing it, drawing it. |
+| `sheet.ts`, `steps.ts` | The journey's sheet with its three rests and drawer; the way turn by turn. |
+| `follow.ts`, `reroute.ts`, `drive-sim.ts`, `ledger.ts`, `badge.ts` | The camera that follows you; when you have left the way; a rehearsed drive (`?simdrive=`); the journey as a fact of the commons' ledger; a transit line's badge. |
+| `ui/app/position.ts` | Where you are, from ONE source: a watch, a one-shot ask, the map's locate button or a rehearsed drive all end in `report`, which moves `USER` and tells every observer (the you-marker among them); `youAt()` is a point of your own. |
+| `ui/app/awake.ts` | Keeping the screen on while something is under way. |
+| `ui/app/sheet-rows.ts` | The rows, groups, ← and ✕ a sheet menu is made of; shared with the account sheet. |
 
 What the family stands on:
 
@@ -34,11 +41,11 @@ What the family stands on:
 | Route proxy | `handle-route` and `route-request-json` (`server/serve-static.scm`): `from`, `to`, `via`, `profile`, `alternates`, `depart` / `arrive`, `lang`, `units`; relays Valhalla verbatim, `{}` on any failure |
 | Turn card | `#navcard` (`browser/app.html`), its own palette in every theme |
 | Place search | `placesNear` (`ui/app/tabs/map/atlas.ts`): the commons' rows and OpenStreetMap's, nearest first — the search list and the preview's two fields read through it |
-| Sheet | `openSheetView` / `closeSheetView` / `sheetHeight` / `sheetHolds` (`ui/app/tabs/social/share.ts`) with `{ full, fit, sticky }`; CSS-class detents (`browser/app.html`) |
+| Sheet | `openSheetView` / `closeSheetView` / `sheetHeight` / `sheetHolds` (`ui/app/tabs/social/share.ts`) with `{ full, fit, sticky, stepped, esc }` — a view that keeps its own rests passes `stepped`, and answers its own Esc with `esc`, so it keeps no key listener; CSS-class detents (`browser/app.html`) |
 | Heading | `ui/app/compass.ts` (`deviceHeading`, `needleTap`, 2° deadband); it rotates the map on touch devices only |
-| Ledger | the `journey` door, called from `nav.ts` |
+| Ledger | the `journey` door, called from `ledger.ts` |
 | Mode set in the planner | pedestrian · bicycle · auto · bus · multimodal (`module/playnet/solve/routing.scm`) — the engine speaks all five |
-| The REPL page | `browser/repl.js` reads Valhalla through `route/data.js` and `route/facts.js` too; its own map drawing (`drawRoute`) is the REPL's alone |
+| The REPL page | `browser/repl.js` reads Valhalla through `route/data.js`, `route/modes.js` and `route/facts.js` too; its own map drawing (`drawRoute`) is the REPL's alone |
 
 ### 1.2 What the five screens show that the map face still lacks
 

@@ -467,6 +467,7 @@ let viewOwner: string | null = null;
 let viewGone: (() => void) | null = null;
 let viewSticky = false;
 let viewStepped: Stepped | null = null;
+let viewEsc: (() => boolean) | null = null;
 let closePanelHook: (() => void) | null = null;   // set once the draft panel exists
 /** The sheet rises to a height that depends on what opened it: the inventory and the type picker at about
  *  half the page, a view at the height it asks for (`full`: the whole page, under the header). A drag on the
@@ -500,6 +501,11 @@ export interface SheetViewOpts {
    * calling the view, which moves itself.
    */
   stepped?: Stepped;
+  /**
+   * What Esc does while this view is up: answers whether it did anything (a view at its lowest has nothing to step back
+   * from). The sheet listens for Esc once and calls it, so a view keeps no key listener of its own to add and remove.
+   */
+  esc?: () => boolean;
 }
 
 /** What a stepped view does with the grip. `tap` defaults to `up`. */
@@ -516,13 +522,13 @@ export function openSheetView(owner: string, el: HTMLElement, gone: () => void, 
   closePanelHook?.();
   viewHost.replaceChildren(el);
   viewHost.classList.add("on");
-  viewOwner = owner; viewGone = gone; viewSticky = !!o.sticky; viewStepped = o.stepped ?? null;
+  viewOwner = owner; viewGone = gone; viewSticky = !!o.sticky; viewStepped = o.stepped ?? null; viewEsc = o.esc ?? null;
 }
 /** Put the view away — only `owner`'s, when one is named. */
 export function closeSheetView(owner?: string): void {
   if (!viewHost || !viewOwner || (owner && owner !== viewOwner)) return;
   const gone = viewGone;
-  viewOwner = null; viewGone = null; viewSticky = false; viewStepped = null;
+  viewOwner = null; viewGone = null; viewSticky = false; viewStepped = null; viewEsc = null;
   viewHost.classList.remove("on");
   viewHost.removeAttribute("data-stepped");  // the bar returns with the stepped view gone
   viewHost.replaceChildren();
@@ -1071,7 +1077,8 @@ function ensureScaffold(bar: HTMLElement): void {
   // Esc puts away what is up: the inventory first, else an open picker or popover (the account and faces
   // menus answer Esc themselves, the account stepping back out of a page before it closes)
   document.addEventListener("keydown", ev => {
-    if (ev.key !== "Escape" || viewOwner) return;
+    if (ev.key !== "Escape") return;
+    if (viewOwner) { if (viewEsc?.()) ev.preventDefault(); return; }   // a view answers its own Esc, if it has one
     if (open.peek()) { ev.preventDefault(); open.set(false); return; }
     if (panel.tab() !== null) { ev.preventDefault(); panel.close(); }
   });

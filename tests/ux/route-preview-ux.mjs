@@ -22,12 +22,11 @@ const spotNav = page => showSpot(page);
 const state = page => page.evaluate(async () => {
   const m = (await import('/app/mapview.js')).theMap();
   const sh = await import('/app/tabs/social/share.js');
-  const src = m.getSource('route');
-  const data = src?._data || src?._options?.data || null;
+  const drawn = (await import('/app/route/lines.js')).drawnLines(m);
   const card = document.getElementById('routecard');
   const cb = card?.getBoundingClientRect();
   const sheetTop = sh.sheetHeight() ? innerHeight - sh.sheetHeight() : innerHeight;
-  const feats = (data?.features || []).map(f => ({ kind: f.properties.kind, n: f.geometry.coordinates.length, c: f.geometry.coordinates }));
+  const feats = drawn.map(f => ({ kind: f.kind, n: f.coords.length, c: f.coords }));
   const cont = m.getContainer().getBoundingClientRect();
   const pts = feats.filter(f => f.kind !== 'bearing').flatMap(f => f.c.map(([x, y]) => m.project([x, y])));
   // the map's pixels start at its container's corner; the card and the sheet are in the page's

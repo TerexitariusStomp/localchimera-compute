@@ -41,3 +41,33 @@ export const device = (page, on) => page.evaluate(async on => (await import("/ap
 
 /** The trimmed text of the first element matching `sel`, or null. */
 export const txt = (page, sel) => page.evaluate(s => document.querySelector(s)?.textContent?.trim() ?? null, sel);
+
+/** The route lines the page last drew on its map: [{ kind, coords }] (app/route/lines.ts `drawnLines`). */
+export const drawnLines = page => page.evaluate(async () => {
+  const m = (await import("/app/mapview.js")).theMap();
+  return m ? (await import("/app/route/lines.js")).drawnLines(m) : [];
+});
+
+/** The sheet's grip, where a pointer would press it. */
+export const gripPoint = page => page.evaluate(() => {
+  const b = document.querySelector("#sharebar .sheet-grab").getBoundingClientRect();
+  return { x: b.left + b.width / 2, y: b.top + b.height / 2 };
+});
+
+/** Press the grip and let go again. */
+export async function tapGrip(page) {
+  const g = await gripPoint(page);
+  await page.mouse.click(g.x, g.y);
+  await sleep(450);
+}
+
+/** Drag the grip `dy` pixels (up is negative) and let go. */
+export async function swipeGrip(page, dy) {
+  const g = await gripPoint(page);
+  await page.mouse.move(g.x, g.y); await page.mouse.down();
+  await page.mouse.move(g.x, g.y + dy / 2, { steps: 3 }); await page.mouse.move(g.x, g.y + dy, { steps: 3 });
+  await page.mouse.up(); await sleep(400);
+}
+
+/** The journey sheet's rest: "peek", "mid" or "full". */
+export const restOf = page => page.evaluate(() => document.querySelector(".jv")?.dataset.rest);

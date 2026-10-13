@@ -11,7 +11,7 @@
 // A swipe up or down on the grip, or a tap, steps through them (the sheet carries the gesture,
 // `Stepped` in app/tabs/social/share.ts; this view moves itself); Esc steps down. The menu's rows
 // and the ← of a page are the account sheet's own builders (app/sheet-rows.ts).
-import { openSheetView, closeSheetView, sheetViewIs, riseSheet } from '../tabs/social/share.js';
+import { openSheetView, closeSheetView, riseSheet } from '../tabs/social/share.js';
 import { row, group, backButton } from '../sheet-rows.js';
 import { mk } from '../dom.js';
 import { MODES, modeInfo, DEFAULT_COSTING } from './modes.js';
@@ -94,14 +94,11 @@ export function openJourneySheet(h) {
         up();
     else
         down(); };
-    const onKey = (e) => {
-        if (e.key === "Escape" && sheetViewIs(OWNER) && rest !== "peek") {
-            e.preventDefault();
-            down();
-        }
-    };
-    document.addEventListener("keydown", onKey);
-    openSheetView(OWNER, el, () => { document.removeEventListener("keydown", onKey); h.gone(); }, { fit: true, sticky: true, stepped: { up, down, tap } });
+    openSheetView(OWNER, el, h.gone, {
+        fit: true, sticky: true, stepped: { up, down, tap },
+        esc: () => { if (rest === "peek")
+            return false; down(); return true; }, // Esc steps down, to the row
+    });
     return {
         update(v) {
             view = v;
@@ -125,7 +122,6 @@ export function openJourneySheet(h) {
             }
         },
         close() {
-            document.removeEventListener("keydown", onKey);
             document.documentElement.style.removeProperty("--nb-h");
             riseSheet(false);
             closeSheetView(OWNER);

@@ -10,7 +10,7 @@
 /// map, so the camera is read as the page has it; no tiles are asserted.
 import { harness, launch, summarize, sleep, WEBGL_ARGS } from './ux-harness.mjs';
 import { serveBrowser } from './ux-serve.mjs';
-import { openMap, showSpot, feed, device, txt, START as A, SPOT as B } from './route-lib.mjs';
+import { openMap, showSpot, feed, device, txt, tapGrip, gripPoint, swipeGrip, restOf, START as A, SPOT as B } from './route-lib.mjs';
 
 const { base: BASE, close: closeServer } = await serveBrowser();
 const h = harness();
@@ -48,7 +48,7 @@ const state = page => page.evaluate(async () => {
     loose: q('.nb-recentre')?.classList.contains('loose') ?? null, navigating: q('#maptab')?.classList.contains('navigating'),
     arrow: !!q('.user-marker.nav'), hdg: q('.user-marker')?.style.getPropertyValue('--hdg'),
     bearing: m.getBearing(), pitch: m.getPitch(), zoom: m.getZoom(),
-    lines: (m.getSource('route')?._data?.features || []).map(f => f.properties.kind).join(),
+    lines: (await import('/app/route/lines.js')).drawnLines(m).map(f => f.kind).join(),
   };
 });
 
@@ -79,9 +79,9 @@ try {
   await page.screenshot({ path: `${shot}/route-nav-start.png` });
 
   // ── the drawer: the row rises to a menu, and to the way turn by turn ───────
-  const rest = () => page.evaluate(() => document.querySelector('.jv')?.dataset.rest);
-  const grip = () => page.evaluate(() => { const b = document.querySelector('#sharebar .sheet-grab').getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; });
-  const swipe = async dy => { const g = await grip(); await page.mouse.move(g.x, g.y); await page.mouse.down(); await page.mouse.move(g.x, g.y + dy / 2, { steps: 3 }); await page.mouse.move(g.x, g.y + dy, { steps: 3 }); await page.mouse.up(); await sleep(400); };
+  const rest = () => restOf(page);
+  const grip = () => gripPoint(page);
+  const swipe = dy => swipeGrip(page, dy);
   const rows = () => page.evaluate(() => [...document.querySelectorAll('.jv-pg .acct-row .acct-l')].map(e => e.textContent));
   h.rec('the drawer starts at its lowest rest: the row alone', (await rest()) === 'peek' && !(await page.evaluate(() => getComputedStyle(document.querySelector('.jv-body')).display !== 'none')));
   await page.mouse.click((await grip()).x, (await grip()).y); await sleep(500);
@@ -254,8 +254,7 @@ try {
   const strip = await txt(tp, '.rv-legs') || '';
   h.rec('on the transit tab: the legs, the line between two walks', /🚶 \d+ min.*48 \d+ min.*🚶 \d+ min/.test(strip), strip);
   await tp.click('.rv-start'); await sleep(1500);
-  const grip2 = () => tp.evaluate(() => { const b = document.querySelector('#sharebar .sheet-grab').getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; });
-  await tp.mouse.click((await grip2()).x, (await grip2()).y); await sleep(500);
+  await tapGrip(tp);
   await tp.click('.jv-pg .acct-row:first-child'); await sleep(600);
   const ride = await tp.evaluate(() => { const r = [...document.querySelectorAll('.jv-step')].find(e => e.querySelector('.line-badge')); return r ? { badge: r.querySelector('.line-badge').textContent, detail: r.querySelector('.jv-rd')?.textContent, bg: r.querySelector('.line-badge').style.background } : null; });
   h.rec('the step list gives the ride its badge, its times and its stops', !!ride && ride.badge === '48' && ride.detail === '08:06 Oak & Main → 08:19 Downtown · 1 stop' && !!ride.bg, JSON.stringify(ride));

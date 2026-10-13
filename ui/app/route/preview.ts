@@ -20,7 +20,7 @@
 
 import { theMap } from '../mapview.js';
 import { youAt } from '../position.js';
-import { openSheetView, closeSheetView, sheetViewIs, sheetHeight } from '../tabs/social/share.js';
+import { openSheetView, closeSheetView, sheetHeight } from '../tabs/social/share.js';
 import { startNavTo } from './nav.js';
 import { fetchRoutes } from './data.js';
 import { ROUTE_MODES, modeInfo, travelIcon, DEFAULT_COSTING } from './modes.js';
@@ -212,10 +212,6 @@ function go(r: Route | null): void {
 
 function draw(): void { drawSheet(); paint(); }
 
-const onKey = (e: KeyboardEvent): void => {
-  if (e.key === "Escape" && pv && sheetViewIs(OWNER)) { e.preventDefault(); end(true); }
-};
-
 /** Whether the preview is up. */
 export const routePreviewOpen = (): boolean => pv !== null;
 
@@ -236,15 +232,13 @@ export function openRoutePreview(dest: LatLng, name: string, back?: () => void):
     ends: () => ({ from: p.from, to: p.to }),
     change: next => { Object.assign(p, next); fields?.sync(); ask(); frame(); },
   });
-  document.addEventListener("keydown", onKey);
   // sticky: a tap on the map picks a way, it does not put the sheet away
-  openSheetView(OWNER, body, teardown, { fit: true, sticky: true });
+  openSheetView(OWNER, body, teardown, { fit: true, sticky: true, esc: () => { end(true); return true; } });
   ask();
 }
 
 /** The view left the sheet, whichever way: take down the card, the lines and the markers. */
 function teardown(): void {
-  document.removeEventListener("keydown", onKey);
   fields?.remove(); fields = null;
   clearMarkers();
   clearLines(theMap());
