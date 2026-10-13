@@ -37,6 +37,16 @@ section("on a journey: what is behind you");
         mid[0].geometry.coordinates[1][0] === r.coords[1][0]);
   check("what is ahead begins where you are", mid[1].geometry.coordinates[0][0] === r.coords[1][0] &&
         mid[1].geometry.coordinates.length === r.coords.length - 1);
+  const half = lineFeatures({ ways: [r], pick: 0, at: 0.5 });
+  check("half way along the first leg: done to that point, the rest ahead from it", kinds(half) === "done,sel" &&
+        half[0].geometry.coordinates.length === 2 && half[1].geometry.coordinates.length === r.coords.length);
+  const mp = half[0].geometry.coordinates[1];
+  check("the point is half way between the two vertices", Math.abs(mp[0] - (r.coords[0][0] + r.coords[1][0]) / 2) < 1e-9 &&
+        Math.abs(mp[1] - (r.coords[0][1] + r.coords[1][1]) / 2) < 1e-9);
+  check("and the line ahead begins at it", half[1].geometry.coordinates[0].join() === mp.join());
+  const late = lineFeatures({ ways: [r], pick: 0, at: 1.5 });
+  check("on the second leg the whole first leg is done, and the rest is half of the second", kinds(late) === "done,sel" &&
+        late[0].geometry.coordinates.length === 3 && late[1].geometry.coordinates.length === 2);
   const end = lineFeatures({ ways: [r], pick: 0, at: r.coords.length - 1 });
   check("at the end it is all done", kinds(end) === "done", kinds(end));
   check("a position past the end is the end", kinds(lineFeatures({ ways: [r], pick: 0, at: 99 })) === "done");

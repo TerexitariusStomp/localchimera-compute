@@ -27,7 +27,7 @@ export interface LineSpec {
   /** Every way: the chosen one at `pick`, the rest its alternatives. */
   ways?: readonly Route[];
   pick?: number;
-  /** How far along the chosen way you are, as an index into its shape; what is behind is drawn `done`. */
+  /** How far along the chosen way you are, as a position in its shape: vertex 3.5 is half way from the fourth point to the fifth. What is behind is drawn `done`. */
   at?: number;
   /** No way at all: the two points a bearing thread joins. */
   bearing?: readonly [Point, Point];
@@ -36,17 +36,25 @@ export interface LineSpec {
 const line = (kind: string, coords: Point[]): maplibregl.Feature =>
   ({ type: "Feature", properties: { kind }, geometry: { type: "LineString", coordinates: coords } });
 
+/** A point `f` of the way from `a` to `b`. */
+const lerp = (a: Point, b: Point, f: number): Point => [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
+
 /** The spec as the features the layers read. Pure. */
 export function lineFeatures(spec: LineSpec): maplibregl.Feature[] {
   const out: maplibregl.Feature[] = [];
   (spec.ways || []).forEach((r, i) => {
     if (i !== (spec.pick ?? 0)) { if (r.coords.length > 1) out.push(line("alt", r.coords)); return; }
-    const at = Math.max(0, Math.min(spec.at ?? 0, r.coords.length - 1));
-    if (at > 0) out.push(line("done", r.coords.slice(0, at + 1)));
+    const last = r.coords.length - 1;
+    const cut = Math.max(0, Math.min(spec.at ?? 0, last));
+    const k = Math.min(Math.floor(cut), last), f = cut - k;
+    // where you are: the point `f` along the segment after vertex k (the vertex itself when f is 0)
+    const here: Point | null = r.coords.length ? (f > 0 && k < last ? lerp(r.coords[k], r.coords[k + 1], f) : r.coords[k]) : null;
+    if (here && cut > 0) out.push(line("done", [...r.coords.slice(0, k + 1), ...(f > 0 ? [here] : [])]));
     for (const s of segments(r)) {
       const end = s.begin + s.coords.length - 1;
-      if (end <= at) continue;                                  // all behind you
-      const ahead = s.coords.slice(Math.max(0, at - s.begin));  // what is left of it
+      if (cut > 0 && end <= k) continue;                                      // all behind you
+      const from = Math.max(0, k - s.begin);                                  // the first whole vertex ahead of you in it
+      const ahead = cut > s.begin && here ? [here, ...s.coords.slice(from + 1)] : s.coords;
       out.push(line(r.costing === "multimodal" && s.mode === "pedestrian" ? "walk" : "sel", ahead));
     }
   });

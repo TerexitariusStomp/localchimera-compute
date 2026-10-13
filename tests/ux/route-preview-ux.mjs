@@ -138,10 +138,10 @@ try {
   const before = stub.calls.length;
   await page.click('.rv-start'); await sleep(1500);
   s = await state(page);
-  h.rec('Start: the preview is gone — card, pale ways, markers, sheet — and the journey draws its own way', !s.card && s.holds === null && s.feats.join() === 'sel' && s.pin === 0 && s.pills.length === 0, JSON.stringify(s));
+  h.rec('Start: the preview is gone — card, pale ways, markers — and the journey holds the sheet and draws its own way', !s.card && s.holds === 'journey' && s.feats.join() === 'sel' && s.pin === 0 && s.pills.length === 0, JSON.stringify(s));
   h.rec('Start asks the engine nothing: the chosen way is taken as it is', stub.calls.length === before, `${before} → ${stub.calls.length}`);
   const nc = await page.evaluate(() => { const c = document.getElementById('navcard'); return { show: getComputedStyle(c).display !== 'none', t: c.textContent }; });
-  h.rec('the wayfinder is under way, on the mode that was chosen', nc.show && /Head north|Turn right/.test(nc.t) && nc.t.includes('🚶'), nc.t);
+  h.rec('the wayfinder is under way, on the mode that was chosen', nc.show && /Oak Avenue/.test(nc.t) && nc.t.includes('🚶'), nc.t);
   await page.evaluate(async () => (await import('/app/route/nav.js')).endNav());
 
   // ── ✕ goes back to the place; Esc closes ───────────────────────────────────

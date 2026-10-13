@@ -4558,10 +4558,46 @@
   #navcard.overmap { position: absolute; left: 50%; top: max(10px, env(safe-area-inset-top, 0px));
     width: min(calc(100% - 20px), 420px); box-sizing: border-box;
     transform: translateX(-50%); z-index: 35; margin: 0; }
-  #navcard .glyph { font-size: 36px; line-height: 1.05; }
-  #navcard .instr { font-size: 15px; font-weight: 600; margin-top: 3px; }
+  /* the turn: a big arrow, the distance to it in large type, the street beneath */
+  #navcard .nb-main { display: flex; align-items: center; justify-content: center; gap: 14px; }
+  #navcard .nb-text { text-align: left; min-width: 0; }
+  #navcard .glyph { font-size: 38px; line-height: 1.05; flex: 0 0 auto; }
+  #navcard .dist   { font-size: 27px; font-weight: 600; line-height: 1.1; }
+  #navcard .street { font-size: 17px; font-weight: 600; margin-top: 2px; overflow-wrap: anywhere; }
+  #navcard .nb-then { margin-top: 6px; font-size: 13.5px; opacity: .92; }
+  #navcard .nb-then[hidden] { display: none; }
   #navcard .meta  { font-size: 11.5px; color: rgb(190 232 232); margin-top: 3px; }
   #navcard .mode  { font-size: 13px; margin-top: 2px; opacity: .85; }
+  /* over the map the turn is read left to right, the time is the ETA bar's, and the NEXT turn hangs from the banner */
+  #navcard.overmap { text-align: left; padding: 10px 16px; }
+  #navcard.overmap .nb-main { justify-content: flex-start; }
+  #navcard.overmap .meta, #navcard.overmap .mode { display: none; }
+  #navcard.overmap .nb-then { position: absolute; left: 14px; top: 100%; margin-top: -4px; padding: 7px 14px 6px;
+    border-radius: 0 0 14px 14px; background: rgb(9 78 78 / .96); box-shadow: 0 4px 10px rgb(0 0 0 / .3); }
+
+  /* the journey under way, on the map face: the ETA bar is the sheet's lowest rest (app/route/eta.ts),
+     the bar steps aside, and the map's own controls give way to the two that steer the camera */
+  #sharebar:has(.sheet-view[data-peek]) .sharebar-row { display: none; }
+  #sharebar .share-sheet:has(.sheet-view[data-peek]) .sheet-grab { height: 12px; cursor: default; }
+  #sharebar .share-sheet:has(.sheet-view[data-peek]) .sheet-grip { visibility: hidden; }
+  #sharebar .sheet-view[data-peek] { padding-bottom: max(10px, env(safe-area-inset-bottom, 0px)); }
+  .eb { display: flex; align-items: center; gap: 12px; max-width: 680px; margin: 0 auto; padding: 0 16px;
+    font-family: var(--sans); color: var(--t-2c3830); }
+  .eb-x { flex: 0 0 auto; width: 46px; height: 46px; border-radius: 50%; border: 1.5px solid var(--t-c9d2dd);
+    background: var(--t-ffffff); font-size: 18px; color: var(--t-444444); cursor: pointer; }
+  .eb-mid { flex: 1 1 auto; text-align: center; min-width: 0; }
+  .eb-big { font-size: 27px; font-weight: 600; line-height: 1.15; }
+  .eb-sub { font-size: 14px; color: var(--t-444444); margin-top: 1px; }
+  .eb.arrived .eb-big { color: rgb(30 130 70); }
+  .eb-done { flex: 0 0 auto; border: none; border-radius: 24px; padding: 12px 22px; background: var(--t-2c4a6e);
+    color: var(--t-ffffff); font: inherit; font-size: 15.5px; font-weight: 600; cursor: pointer; }
+  .eb-done[hidden] { display: none; }
+  #maptab.navigating .maplibregl-ctrl-bottom-right .maplibregl-ctrl:not(.maplibregl-ctrl-attrib) { display: none; }
+  #navbtns { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); z-index: 34;
+    display: flex; flex-direction: column; gap: 10px; }
+  .nbtn { width: 46px; height: 46px; border-radius: 50%; border: none; background: var(--t-ffffff); font-size: 21px;
+    box-shadow: 0 2px 8px rgb(0 0 0 / .3); cursor: pointer; }
+  .nbtn.loose { outline: 3px solid rgb(26 115 232); }   /* lit while the camera is off you: tap to bring it back */
 
   /* ── the route preview (app/route-preview.ts) ─────────────────────────────
      the from/to card floats where the maneuver banner will, at the top of the map; the
@@ -4621,6 +4657,11 @@
     color: var(--t-2c3830); font: inherit; font-size: 12.5px; font-weight: 600; white-space: nowrap; cursor: pointer;
     box-shadow: 0 1px 4px rgb(0 0 0 / .3); }
   .rv-pill.sel { background: rgb(26 71 200); border-color: rgb(26 71 200); color: rgb(255 255 255); }
+  /* on a journey the dot is an arrow; heading-up it stays straight, loose it turns (--hdg, app/route/follow.ts).
+     `rotate` composes with the transform maplibre sets on the marker */
+  .user-marker.nav { width: 34px; height: 34px; border: none; border-radius: 0; background: rgb(26 115 232);
+    clip-path: polygon(50% 0, 100% 100%, 50% 76%, 0 100%); animation: none; box-shadow: none;
+    rotate: var(--hdg, 0deg); filter: drop-shadow(0 1px 3px rgb(0 0 0 / .5)); }
   .user-marker { width: 14px; height: 14px; border-radius: 50%;
                  background: var(--t-e2a512); border: 2.5px solid var(--t-ffffff);
                  box-shadow: 0 0 0 0 rgb(var(--t-e2a512-rgb) / 0.6); animation: pulse 2s infinite; }
@@ -5762,8 +5803,11 @@
   <!-- the selected-event reading card + the turn-by-turn nav card: they live in the
        SIDE PANEL (not below the dial) so the dial keeps its full height. -->
   <div id="navcard" title="tap the mode to change it · tap the card to end">
-    <div class="glyph">↑</div>
-    <div class="instr"></div>
+    <div class="nb-main">
+      <div class="glyph">↑</div>
+      <div class="nb-text"><div class="dist"></div><div class="street"></div></div>
+    </div>
+    <div class="nb-then" hidden><span class="then-label">Then</span> <span class="then-glyph"></span></div>
     <div class="meta"></div>
     <div class="mode"></div>
   </div>

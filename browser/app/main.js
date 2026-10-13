@@ -141,7 +141,7 @@ import { initOrb } from './voice/orb.js';
 import { initProjection } from './projection.js';
 // the commons' own wayfinder (app/route/nav.js): /route → the local Valhalla engine,
 // one turn at a time on a card, degrading to a compass beyond the atlas
-import { initNav, endNav, navigating, placeAt } from './route/nav.js';
+import { initNav, endNav, navigating, placeAt, cameraHeld } from './route/nav.js';
 import { openRoutePreview } from './route/preview.js';
 // the offline side of the seam: the demo spine, its desire signal, the recipe
 // library, the per-commune plans and the bioregional clusters — every one in the
@@ -491,7 +491,8 @@ initThreads({ discR: mapR });
 // each arc standing in the true direction of the thing it names.
 // the phone as a compass, and where you are → app/compass.js
 initCompass({
-    setBearing: deg => { const m = map(); if (m)
+    // the phone turns the map — unless a journey holds the camera, which turns it itself (app/route/follow.ts)
+    setBearing: deg => { const m = map(); if (m && !cameraHeld())
         m.setBearing(deg); },
     redrawBearings: () => { drawEarthArcs(); drawEvents(); drawChrome(); },
     // GPS arrived: glide to it (a hard jump reads as a teleport), re-bake the

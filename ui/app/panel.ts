@@ -245,7 +245,9 @@ if (bar) {
   const root = document.documentElement;
   const setBarH = () => {
     const row = bar.querySelector(".sharebar-row");
-    root.style.setProperty("--barh", (row ? Math.max(0, window.innerHeight - row.getBoundingClientRect().top) : 68) + "px");
+    // a capsule that is not drawn (the sheet's lowest rest stands in its place) reaches nothing
+    const drawn = row && row.getClientRects().length > 0;
+    root.style.setProperty("--barh", (row ? (drawn ? Math.max(0, window.innerHeight - row.getBoundingClientRect().top) : 0) : 68) + "px");
   };
   const ro = new ResizeObserver(setBarH);
   let watched: Element | null = null;

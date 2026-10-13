@@ -9,7 +9,7 @@
 import { harness } from './assert.mjs';
 import { routeReply } from './route-fixture.mjs';
 const { readRoutes } = await import("../../browser/app/route/data.js");
-const { fmtMinutes, fmtDistance, headline, transitLines, rides, boundsOf, pillAnchor, swapEnds, replTrip } =
+const { fmtMinutes, fmtDistance, headline, transitLines, rides, boundsOf, pillAnchor, swapEnds, replTrip, snapToRoute, progress, pointAt, courseAt, shapeKm } =
   await import("../../browser/app/route/facts.js");
 const { check, section, done } = harness();
 
@@ -94,6 +94,57 @@ section("the REPL page's trip");
   check("the runs by travel mode, so a ride can be drawn its own way", t.segments.map(s => s.mode).join() === "pedestrian,transit,pedestrian" &&
         t.segments.every(s => s.coordinates.length > 1));
   check("no profile is a walk", replTrip(bus).profile === "foot");
+}
+
+section("where you are on a route");
+{
+  const [r] = readRoutes(routeReply(q({ profile: "pedestrian" })), "pedestrian");   // north, then east
+  const corner = { lat: r.coords[1][1], lng: r.coords[1][0] };
+  const s0 = snapToRoute(r, A);
+  check("at the start you are at the first vertex, on the line", s0.at === 0 && s0.t < 0.01 && s0.offKm < 0.001);
+  const half = { lat: (A.lat + corner.lat) / 2, lng: A.lng };
+  const s1 = snapToRoute(r, half);
+  check("half way up the first leg you are half way along it", s1.at === 0 && Math.abs(s1.t - 0.5) < 0.01 && s1.offKm < 0.001, JSON.stringify(s1));
+  const beside = snapToRoute(r, { lat: half.lat, lng: A.lng + 0.001 });
+  check("a position beside the way is that far from it", beside.at === 0 && beside.offKm > 0.05 && beside.offKm < 0.12, String(beside.offKm));
+  check("on the second leg you are past the first vertex", snapToRoute(r, { lat: B.lat, lng: (A.lng + B.lng) / 2 }).at === 1);
+  check("beyond the end you are at the end", (s => s.at === 1 && s.t === 1)(snapToRoute(r, { lat: B.lat + 0.01, lng: B.lng + 0.01 })));
+  check("the search goes forward from where you were: a way that doubles back is read in order", (() => {
+    const out = [[0, 0], [0, 0.004], [0, 0.008], [0, 0.012], [0, 0.008], [0, 0.004], [0, 0]];   // north, then back the same road
+    const loop = { ...r, coords: out, mans: [] };
+    const here = { lat: 0.006, lng: 0 };
+    return snapToRoute(loop, here, 0).at < 3 && snapToRoute(loop, here, 5).at >= 4;
+  })());
+  check("a one-point route has no line to be on", snapToRoute({ ...r, coords: [[1, 1]] }, A).at === 0);
+
+  const p0 = progress(r, s0);
+  check("at the start all of it is left", Math.abs(p0.remKm - r.km) < 0.01 && Math.abs(p0.remS - r.s) < 1, `${p0.remKm} of ${r.km} · ${p0.remS} of ${r.s}`);
+  check("the turn ahead is the second maneuver", p0.cur === 0 && p0.next === 1 && p0.then === 2);
+  const leg1 = shapeKm(r) * 0; void leg1;
+  check("the distance to the turn is the first leg", Math.abs(p0.toNextKm - r.mans[0].length) < 0.01, `${p0.toNextKm} vs ${r.mans[0].length}`);
+  const p1 = progress(r, s1);
+  check("half way up, half the leg and all of the next remain", Math.abs(p1.remS - (r.mans[0].time / 2 + r.mans[1].time)) < 2);
+  check("and half the leg to the turn", Math.abs(p1.toNextKm - r.mans[0].length / 2) < 0.01);
+  const p2 = progress(r, snapToRoute(r, B));
+  check("at the end nothing is left", p2.remKm < 0.01 && p2.remS < 2 && p2.aheadKm < 0.001);
+  check("time left only falls as you go", p0.remS > p1.remS && p1.remS > p2.remS);
+  check("a turn close behind the next is near: the arrival after the last turn", p1.nextToThenM > 0);
+  const flat = { ...r, mans: [] };
+  const pf = progress(flat, s1);
+  check("a route with no maneuvers is read evenly along its length", Math.abs(pf.remS - r.s * (1 - 0.5 * shapeKm({ ...r, coords: r.coords.slice(0, 2) }) / shapeKm(r))) < 2 && pf.next === -1);
+}
+
+section("a point along the way");
+{
+  const [r] = readRoutes(routeReply(q({ profile: "pedestrian" })), "pedestrian");
+  const total = shapeKm(r);
+  check("the start is the start", (p => Math.abs(p.lat - A.lat) < 1e-6 && Math.abs(p.lng - A.lng) < 1e-6)(pointAt(r, 0)));
+  check("the end is the end", (p => Math.abs(p.lat - B.lat) < 1e-6 && Math.abs(p.lng - B.lng) < 1e-6)(pointAt(r, total)));
+  check("past the end stays at the end", pointAt(r, total + 5).lat === pointAt(r, total).lat);
+  check("heading north on the first leg, east on the second", Math.abs(pointAt(r, 0.01).heading) < 1 || Math.abs(pointAt(r, 0.01).heading - 360) < 1);
+  check("…", Math.abs(pointAt(r, total - 0.01).heading - 90) < 1);
+  check("the course where you are is the way ahead", Math.abs(courseAt(r, snapToRoute(r, { lat: B.lat, lng: (A.lng + B.lng) / 2 })) - 90) < 1);
+  check("no shape, no point", pointAt({ ...r, coords: [] }, 1).lat === 0);
 }
 
 section("⇅");

@@ -466,6 +466,7 @@ let viewHost: HTMLElement | null = null;
 let viewOwner: string | null = null;
 let viewGone: (() => void) | null = null;
 let viewSticky = false;
+let viewPeek = false;
 let closePanelHook: (() => void) | null = null;   // set once the draft panel exists
 /** The sheet rises to a height that depends on what opened it: the inventory and the type picker at about
  *  half the page, a view at the height it asks for (`full`: the whole page, under the header). A drag on the
@@ -487,6 +488,11 @@ export interface SheetViewOpts {
    * the grip, its own close and another view replacing it still do.
    */
   sticky?: boolean;
+  /**
+   * The sheet at its lowest rest: one row, standing in the bar's place — the bar steps aside and the
+   * grip is still. A journey under way (its ETA bar) is the one such view.
+   */
+  peek?: boolean;
 }
 
 /** Show `el` in the sheet. `gone` runs when the view leaves, whichever way it does. */
@@ -495,18 +501,20 @@ export function openSheetView(owner: string, el: HTMLElement, gone: () => void, 
   closeSheetView();
   riseTo(!!o.full);
   viewHost.toggleAttribute("data-fit", !!o.fit);
+  viewHost.toggleAttribute("data-peek", !!o.peek);
   open.set(false);
   closePanelHook?.();
   viewHost.replaceChildren(el);
   viewHost.classList.add("on");
-  viewOwner = owner; viewGone = gone; viewSticky = !!o.sticky;
+  viewOwner = owner; viewGone = gone; viewSticky = !!o.sticky; viewPeek = !!o.peek;
 }
 /** Put the view away — only `owner`'s, when one is named. */
 export function closeSheetView(owner?: string): void {
   if (!viewHost || !viewOwner || (owner && owner !== viewOwner)) return;
   const gone = viewGone;
-  viewOwner = null; viewGone = null; viewSticky = false;
+  viewOwner = null; viewGone = null; viewSticky = false; viewPeek = false;
   viewHost.classList.remove("on");
+  viewHost.removeAttribute("data-peek");     // the bar returns with the lowest rest gone
   viewHost.replaceChildren();
   gone?.();
 }
@@ -535,6 +543,7 @@ function wireSheet(sheet: HTMLElement, grab: HTMLElement, dismiss: () => void): 
     - (parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--barh")) || 56));
   let y0 = 0, h0 = 0, moved = false, live = false;
   grab.addEventListener("pointerdown", ev => {
+    if (viewPeek) return;           // the lowest rest does not move: the journey's ✕ is the only way out
     live = true; moved = false; y0 = ev.clientY;
     h0 = sheet.getBoundingClientRect().height;
     grab.setPointerCapture(ev.pointerId);

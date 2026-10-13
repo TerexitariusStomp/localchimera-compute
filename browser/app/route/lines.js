@@ -19,6 +19,8 @@
 import { segments } from './facts.js';
 import { styleReady, onStyleReady } from '../tabs/map/ready.js';
 const line = (kind, coords) => ({ type: "Feature", properties: { kind }, geometry: { type: "LineString", coordinates: coords } });
+/** A point `f` of the way from `a` to `b`. */
+const lerp = (a, b, f) => [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
 /** The spec as the features the layers read. Pure. */
 export function lineFeatures(spec) {
     const out = [];
@@ -28,14 +30,19 @@ export function lineFeatures(spec) {
                 out.push(line("alt", r.coords));
             return;
         }
-        const at = Math.max(0, Math.min(spec.at ?? 0, r.coords.length - 1));
-        if (at > 0)
-            out.push(line("done", r.coords.slice(0, at + 1)));
+        const last = r.coords.length - 1;
+        const cut = Math.max(0, Math.min(spec.at ?? 0, last));
+        const k = Math.min(Math.floor(cut), last), f = cut - k;
+        // where you are: the point `f` along the segment after vertex k (the vertex itself when f is 0)
+        const here = r.coords.length ? (f > 0 && k < last ? lerp(r.coords[k], r.coords[k + 1], f) : r.coords[k]) : null;
+        if (here && cut > 0)
+            out.push(line("done", [...r.coords.slice(0, k + 1), ...(f > 0 ? [here] : [])]));
         for (const s of segments(r)) {
             const end = s.begin + s.coords.length - 1;
-            if (end <= at)
+            if (cut > 0 && end <= k)
                 continue; // all behind you
-            const ahead = s.coords.slice(Math.max(0, at - s.begin)); // what is left of it
+            const from = Math.max(0, k - s.begin); // the first whole vertex ahead of you in it
+            const ahead = cut > s.begin && here ? [here, ...s.coords.slice(from + 1)] : s.coords;
             out.push(line(r.costing === "multimodal" && s.mode === "pedestrian" ? "walk" : "sel", ahead));
         }
     });

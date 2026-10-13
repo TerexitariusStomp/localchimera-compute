@@ -209,13 +209,26 @@ declare global {
       off(type: string, listener: () => void): Map;
 
       getZoom(): number;
+      getPitch(): number;
+      /** Stop the camera's animation where it is. */
+      stop(): Map;
+      /** A listener for what the person does to the camera: `originalEvent` is there when it was a hand, not the app. */
+      on(type: "dragstart" | "rotatestart" | "pitchstart" | "zoomstart", listener: (e: { originalEvent?: unknown }) => void): Map;
       /** Map bearing, degrees. Carried through a fitBounds so a rotated map stays rotated. */
       getBearing(): number;
       /**
        * Ease to a point. Unlike jumpTo this ANIMATES, which is the difference
        * between arriving somewhere and being teleported there.
        */
-      easeTo(opts: { center: [number, number]; zoom?: number; duration?: number }): Map;
+      easeTo(opts: {
+        center?: [number, number]; zoom?: number; duration?: number;
+        /** Degrees from north — the way "up" points. */
+        bearing?: number;
+        /** Degrees the camera is tipped from straight down, 0–85. */
+        pitch?: number;
+        /** The room kept around the centre, which persists until set again (see setPadding). */
+        padding?: { left: number; top: number; right: number; bottom: number };
+      }): Map;
       /** Ease to a point, animated. */
       flyTo(opts: {
         center: [number, number]; zoom?: number; duration?: number;
@@ -231,6 +244,8 @@ declare global {
       fitBounds(bounds: [[number, number], [number, number]],
                 opts?: { padding?: number | { left?: number; top?: number; right?: number; bottom?: number };
                          duration?: number; maxZoom?: number;
+                         /** Degrees the camera is tipped from straight down; 0 levels it. */
+                         pitch?: number;
                          /** Kept from getBearing, so framing a cluster does not un-rotate the map. */
                          bearing?: number }): Map;
 

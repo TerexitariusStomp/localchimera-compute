@@ -449,6 +449,7 @@ let viewHost = null;
 let viewOwner = null;
 let viewGone = null;
 let viewSticky = false;
+let viewPeek = false;
 let closePanelHook = null; // set once the draft panel exists
 /** The sheet rises to a height that depends on what opened it: the inventory and the type picker at about
  *  half the page, a view at the height it asks for (`full`: the whole page, under the header). A drag on the
@@ -462,6 +463,7 @@ export function openSheetView(owner, el, gone, o = {}) {
     closeSheetView();
     riseTo(!!o.full);
     viewHost.toggleAttribute("data-fit", !!o.fit);
+    viewHost.toggleAttribute("data-peek", !!o.peek);
     open.set(false);
     closePanelHook?.();
     viewHost.replaceChildren(el);
@@ -469,6 +471,7 @@ export function openSheetView(owner, el, gone, o = {}) {
     viewOwner = owner;
     viewGone = gone;
     viewSticky = !!o.sticky;
+    viewPeek = !!o.peek;
 }
 /** Put the view away — only `owner`'s, when one is named. */
 export function closeSheetView(owner) {
@@ -478,7 +481,9 @@ export function closeSheetView(owner) {
     viewOwner = null;
     viewGone = null;
     viewSticky = false;
+    viewPeek = false;
     viewHost.classList.remove("on");
+    viewHost.removeAttribute("data-peek"); // the bar returns with the lowest rest gone
     viewHost.replaceChildren();
     gone?.();
 }
@@ -507,6 +512,8 @@ function wireSheet(sheet, grab, dismiss) {
         - (parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--barh")) || 56));
     let y0 = 0, h0 = 0, moved = false, live = false;
     grab.addEventListener("pointerdown", ev => {
+        if (viewPeek)
+            return; // the lowest rest does not move: the journey's ✕ is the only way out
         live = true;
         moved = false;
         y0 = ev.clientY;
