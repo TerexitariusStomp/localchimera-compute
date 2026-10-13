@@ -5,9 +5,9 @@
 ;;; path inside this checkout, hash-verified, with a `.satellite-pin` stamp
 ;;; naming the commit. A Guix package that builds a satellite (rns-bridge)
 ;;; takes its source from that placed tree through `satellite-source`, which
-;;; refuses to evaluate unless the stamp names the pinned commit. So a
+;;; refuses to lower unless the stamp names the pinned commit. So a
 ;;; reconfigure builds exactly the commit the core names, and a checkout whose
-;;; tree was never placed, or was placed at another pin, stops at evaluation.
+;;; tree was never placed, or was placed at another pin, stops before any build.
 ;;;
 ;;; Why a local file and not a git-fetch origin: the daemon fetches origins
 ;;; inside an isolated build environment that sees neither this checkout, nor
@@ -22,6 +22,7 @@
   #:use-module (ice-9 rdelim)
   #:use-module (ice-9 popen)
   #:use-module (srfi srfi-1)
+  #:use-module (srfi srfi-9)
   #:export (satellite-pin satellite-source))
 
 (define %here
@@ -62,7 +63,7 @@ commit holds exactly the pinned tree, so it stands in for the placed copy."
               (dirty (run "status" "--porcelain")))
          (and head dirty (string-null? dirty) head))))
 
-(define (satellite-source name)
+(define (placed-tree name)
   "The placed tree of satellite NAME as a recursive local-file, only when its
 stamp names the pinned commit. Build products and the stamp stay out."
   (let* ((pin (satellite-pin name))
@@ -89,3 +90,23 @@ stamp names the pinned commit. Build products and the stamp stay out."
                                      (string-suffix? "/target" file)
                                      (string-suffix? "/pkg" file)
                                      (string-suffix? "/vendor" file)))))))
+
+;; The check runs when Guix lowers the tree to a derivation, the first moment
+;; anything needs the bytes. Loading this module, and every module that imports
+;; it, stays free of effects, so a tool that scans deploy/guix (`guix shell -L`)
+;; loads it whether or not the satellite is placed. A reconfigure or `guix
+;; build` of the package still stops at the same message.
+(define-record-type <satellite-tree>
+  (satellite-tree name)
+  satellite-tree?
+  (name satellite-tree-name))
+
+(define-gexp-compiler (satellite-tree-compiler (tree <satellite-tree>)
+                                               system target)
+  (lower-object (placed-tree (satellite-tree-name tree))
+                system #:target target))
+
+(define (satellite-source name)
+  "A package source for satellite NAME, checked against its pin at lowering."
+  (satellite-pin name)                  ; an unknown name fails here, at load
+  (satellite-tree name))
