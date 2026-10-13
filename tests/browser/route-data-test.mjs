@@ -10,8 +10,9 @@
 
 import { harness } from './assert.mjs';
 import { encodePoly, routeReply, havKm } from './route-fixture.mjs';
-const { decodePoly, readRoutes, routeQuery, fetchRoutes, fetchModes, clearRouteCache, ROUTE_MODES, MODES, modeInfo, costingOf, travelIcon } =
+const { decodePoly, readRoutes, routeQuery, fetchRoutes, fetchModes, clearRouteCache } =
   await import("../../browser/app/route/data.js");
+const { ROUTE_MODES } = await import("../../browser/app/route/modes.js");
 const { check, section, done } = harness();
 
 const A = { lat: 37.7749, lng: -122.4194 }, B = { lat: 37.7849, lng: -122.4094 };
@@ -78,20 +79,6 @@ section("what a stretch passes through, and where the destination is");
   check("the destination's side of the street", w.destSide === "right");
   check("a reply that does not say is not a side", readRoutes({ trip: { legs: [{}], summary: {}, locations: [{}, { side_of_street: "none" }] } }, "x")[0].destSide === "");
   check("nor one with no locations", readRoutes({ trip: { legs: [{}], summary: {} } }, "x")[0].destSide === "");
-}
-
-section("the modes");
-{
-  check("four tabs: transit, walk, bicycle, drive, in that order", ROUTE_MODES.join() === "multimodal,pedestrian,bicycle,auto");
-  check("each mode has a label and a glyph", MODES.every(m => m.label && m.icon));
-  check("a mode is looked up by its costing", modeInfo("bicycle").label === "Bicycle" && modeInfo("auto").icon === "🚗");
-  check("a costing with no tab has no info", modeInfo("motor_scooter") === undefined);
-  check("how a stretch is travelled, as a glyph — the same ones the tabs wear",
-        travelIcon("pedestrian") === modeInfo("pedestrian").icon && travelIcon("drive") === modeInfo("auto").icon &&
-        travelIcon("transit") === modeInfo("multimodal").icon && travelIcon("bicycle") === modeInfo("bicycle").icon);
-  check("a way we have no glyph for has none", travelIcon("ferry") === "" && travelIcon("") === "");
-  check("UI words become costings", costingOf("foot") === "pedestrian" && costingOf("bike") === "bicycle" && costingOf("car") === "auto" && costingOf("transit") === "multimodal");
-  check("a costing passes through; no word is a walk", costingOf("bicycle") === "bicycle" && costingOf() === "pedestrian" && costingOf(null) === "pedestrian");
 }
 
 section("what is not a route");

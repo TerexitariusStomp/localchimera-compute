@@ -33,10 +33,11 @@ import { onMapFace } from '../stage.js';
 import { deviceHeading, compassLive } from '../compass.js';
 import type { LatLng } from '../geom.js';
 import { sheetHeight } from '../tabs/social/share.js';
-import { watchFixes } from '../position.js';
+import { watchFixes, youAt } from '../position.js';
 import type { Fix } from '../position.js';
 import { keepAwake } from '../awake.js';
-import { fetchRoutes, ROUTE_MODES, modeInfo } from './data.js';
+import { fetchRoutes } from './data.js';
+import { ROUTE_MODES, modeInfo } from './modes.js';
 import type { Route } from './data.js';
 import { fmtDistance, fmtMinutes, arrivalClock } from './facts.js';
 import { snapToRoute, progress, courseAt, boundsOf, remainingOf } from './shape.js';
@@ -188,7 +189,7 @@ async function reroute(j: Journey): Promise<void> {
   if (!j.route || j.rerouting) return;
   j.rerouting = true; j.offRoute.asked(Date.now());
   refresh();
-  const [way] = await fetchRoutes({ lat: USER.lat, lng: USER.lng }, j.dest, j.costing);
+  const [way] = await fetchRoutes(youAt(), j.dest, j.costing);
   j.rerouting = false;
   if (nav !== j) return;                      // the journey ended, or another began, while we asked
   if (way) { setWay(j, way); j.offRoute.reset(); }

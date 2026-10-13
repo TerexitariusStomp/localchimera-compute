@@ -15,7 +15,7 @@
 import { openSheetView, closeSheetView, sheetViewIs, riseSheet } from '../tabs/social/share.js';
 import { row, group, backButton } from '../sheet-rows.js';
 import { mk } from '../dom.js';
-import { MODES, modeInfo } from './data.js';
+import { MODES, modeInfo, DEFAULT_COSTING } from './modes.js';
 import { renderSteps } from './steps.js';
 import type { StepRow } from './steps.js';
 
@@ -87,7 +87,7 @@ export function openJourneySheet(h: SheetHost): JourneySheet {
     const rows: HTMLElement[] = [];
     if (hasSteps()) rows.push(row({ icon: "↱", label: "Directions", sub: "the way, turn by turn", go: none }, none, false,
                                   () => setRest("full", "steps")));
-    rows.push(row({ icon: modeInfo(view?.mode ?? "")?.icon ?? "🚶", label: "Travel by", sub: modeInfo(view?.mode ?? "")?.label ?? "", go: none }, none, false,
+    rows.push(row({ icon: modeInfo(view?.mode ?? DEFAULT_COSTING)?.icon ?? "", label: "Travel by", sub: modeInfo(view?.mode ?? "")?.label ?? "", go: none }, none, false,
                   () => setRest("mid", "modes")));
     if (hasSteps()) rows.push(row({ icon: "🗺️", label: "Show the whole way", sub: "what is left of it", go: () => { setRest("peek", "menu"); h.overview(); } }, none));
     rows.push(row({ icon: "⏹", label: "End navigation", go: h.exit, tone: "arm" }, none));

@@ -17,15 +17,17 @@
 //
 // The view is `sticky` in the sheet: the page works WITH a route being chosen —
 // a tap on the map to pick an alternative must not put it away.
-import { USER } from '../core.js';
-import { theMap, MAP_EL } from '../mapview.js';
+import { theMap } from '../mapview.js';
+import { youAt } from '../position.js';
 import { openSheetView, closeSheetView, sheetViewIs, sheetHeight } from '../tabs/social/share.js';
-import { placesNear } from '../tabs/map/atlas.js';
 import { startNavTo } from './nav.js';
-import { fetchRoutes, ROUTE_MODES, modeInfo, travelIcon } from './data.js';
+import { fetchRoutes } from './data.js';
+import { ROUTE_MODES, modeInfo, travelIcon, DEFAULT_COSTING } from './modes.js';
+import { mountFields, youEnd } from './fields.js';
+import { fitClear } from './camera.js';
 import { paintLines, clearLines } from './lines.js';
 import { lineBadge } from './badge.js';
-import { fmtMinutes, headline, swapEnds, legsOf, arrivalClock } from './facts.js';
+import { fmtMinutes, fmtDistance, headline, legsOf, arrivalClock } from './facts.js';
 import { boundsOf, pillAnchor } from './shape.js';
 import { havKm } from '../geom.js';
 import { readStr, writeStr } from '../store.js';
@@ -35,25 +37,14 @@ import { mk } from '../dom.js';
 const OWNER = "route";
 /** The destination pin's height in pixels — the camera leaves it room above the point. */
 const PIN_H = 34;
-const DEFAULT_MODE = "pedestrian";
 /** How many ways besides the best to ask for, where the engine offers them. */
 const ALTERNATES = 2;
 let pv = null;
-let card = null;
+let fields = null;
 let markers = [];
-// ── the places the fields offer ─────────────────────────────────────────────
-/** The commons' places and OpenStreetMap's that a typed name matches, nearest first. */
-function matchPlaces(q) {
-    const needle = q.trim().toLowerCase();
-    if (!needle)
-        return [];
-    return placesNear(USER, q, theMap(), r => !!r.name && r.name.toLowerCase().includes(needle), 6)
-        .map(r => ({ at: { lat: r.lat, lng: r.lng }, name: r.name, note: r.provider === "OpenStreetMap" ? r.note || "" : r.provider || "", emoji: r.emoji }));
-}
-const YOU = { at: USER, name: "Your location", note: "", emoji: "🔵", you: true };
 // ── the asks ────────────────────────────────────────────────────────────────
-const atOf = (e) => e.live ? { lat: USER.lat, lng: USER.lng } : e.at;
-const here = () => ({ at: { lat: USER.lat, lng: USER.lng }, name: "Your location", live: true });
+/** Where an end is now: you, wherever you have got to; a place, where it is. */
+const atOf = (e) => e.live ? youAt() : e.at;
 /** Ask every mode, and let each tab fill as its answer lands. */
 function ask() {
     const p = pv;
@@ -125,11 +116,9 @@ function frame() {
         const b = boundsOf(routes()) || boundsOf([{ coords: ends }]);
         if (!b)
             return;
-        // a flyTo's padding stays on the camera, and fitBounds adds its own to it: clear it, so the padding below is the whole of it
-        map.setPadding({ top: 0, bottom: 0, left: 0, right: 0 });
-        map.fitBounds(b, { duration: 600, maxZoom: 17,
+        fitClear(map, b, { duration: 600, maxZoom: 17,
             // the top clears the card AND the destination pin, which stands a pin's height above its point
-            padding: { top: (card?.getBoundingClientRect().height || 0) + 28 + PIN_H, bottom: sheetHeight() + 24, left: 28, right: 28 } });
+            padding: { top: (fields?.height() || 0) + 28 + PIN_H, bottom: sheetHeight() + 24, left: 28, right: 28 } });
     };
     // the sheet takes its height a frame or two after it draws; the camera pads by what it really has
     requestAnimationFrame(() => requestAnimationFrame(go));
@@ -169,7 +158,7 @@ function drawSheet() {
     else if (nowhere()) {
         const km = havKm(atOf(p.from), atOf(p.to));
         sum = `<div class="rv-big">Routing is unavailable here</div>` +
-            `<div class="rv-sub">${km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`} as the crow flies</div>`;
+            `<div class="rv-sub">${esc(fmtDistance(km))} as the crow flies</div>`;
         acts = `<button type="button" class="rv-start rv-go">↦ Go by compass</button>`;
     }
     else {
@@ -193,7 +182,7 @@ function drawSheet() {
     if (start && !start.disabled)
         start.onclick = () => {
             if (start.classList.contains("rv-fromhere")) {
-                p.from = here();
+                p.from = youEnd();
                 ask();
                 return;
             } // a journey sets out from where you are
@@ -208,97 +197,6 @@ function go(r) {
     const dest = atOf(p.to), name = p.to.name, costing = p.mode;
     end(false);
     void startNavTo(dest, name, { route: r, costing });
-}
-// ── the card ────────────────────────────────────────────────────────────────
-function buildCard() {
-    const el = mk("div", "routecard");
-    el.id = "routecard";
-    el.innerHTML =
-        `<div class="rc-ends">` +
-            `<span class="rc-marks"><i class="rc-from"></i><i class="rc-thread"></i><b class="rc-to">📍</b></span>` +
-            `<div class="rc-fields">` +
-            `<input class="rc-in rc-in-from" type="text" autocomplete="off" spellcheck="false" aria-label="Start">` +
-            `<input class="rc-in rc-in-to" type="text" autocomplete="off" spellcheck="false" aria-label="Destination">` +
-            `</div>` +
-            `<button type="button" class="rc-swap" title="Swap start and destination">⇅</button>` +
-            `</div><div class="rc-hits" hidden></div>`;
-    return el;
-}
-function syncCard() {
-    const p = pv;
-    if (!card || !p)
-        return;
-    const f = card.querySelector(".rc-in-from"), t = card.querySelector(".rc-in-to");
-    if (document.activeElement !== f)
-        f.value = p.from.name;
-    if (document.activeElement !== t)
-        t.value = p.to.name;
-    f.classList.toggle("you", !!p.from.live);
-    t.classList.toggle("you", !!p.to.live);
-}
-function wireCard(el) {
-    const hits = el.querySelector(".rc-hits");
-    const swap = el.querySelector(".rc-swap");
-    let side = null, list = [];
-    const close = () => { hits.hidden = true; hits.replaceChildren(); list = []; side = null; };
-    const choose = (h) => {
-        const p = pv;
-        if (!p || !side)
-            return;
-        const e = h.you ? here() : { at: h.at, name: h.name };
-        p[side] = e;
-        close();
-        document.activeElement?.blur();
-        ask();
-        syncCard();
-        frame();
-    };
-    const show = (which, q) => {
-        side = which;
-        list = matchPlaces(q);
-        if (which === "from")
-            list = [YOU, ...list];
-        hits.replaceChildren(...list.map((h, i) => {
-            const b = mk("button", "rc-hit");
-            b.type = "button";
-            b.innerHTML = `<span class="rc-he">${esc(h.emoji)}</span><span class="rc-hn">${esc(h.name)}</span>` +
-                (h.note ? `<span class="rc-hd">${esc(h.note)}</span>` : "");
-            // pointerdown, not click: the field's blur would have closed the list before a click landed
-            b.onpointerdown = ev => { ev.preventDefault(); side = which; choose(list[i]); };
-            return b;
-        }));
-        hits.hidden = list.length === 0;
-    };
-    for (const which of ["from", "to"]) {
-        const input = el.querySelector(`.rc-in-${which}`);
-        input.onfocus = () => { input.select(); show(which, ""); };
-        input.oninput = () => show(which, input.value);
-        input.onblur = () => { close(); syncCard(); };
-        input.onkeydown = ev => {
-            if (ev.key === "Enter" && list[0]) {
-                ev.preventDefault();
-                side = which;
-                choose(list[0]);
-            }
-            else if (ev.key === "Escape" && !hits.hidden) {
-                ev.preventDefault();
-                ev.stopPropagation();
-                close();
-                input.blur();
-            }
-        };
-    }
-    swap.onclick = () => {
-        const p = pv;
-        if (!p)
-            return;
-        const s = swapEnds(p.from, p.to, { lat: USER.lat, lng: USER.lng });
-        p.from = s.from;
-        p.to = s.to;
-        ask();
-        syncCard();
-        frame();
-    };
 }
 // ── opening and closing ─────────────────────────────────────────────────────
 function draw() { drawSheet(); paint(); }
@@ -322,15 +220,13 @@ export function openRoutePreview(dest, name, back) {
         end(false);
     const saved = readStr(K.routeMode);
     const body = mk("div", "rv");
-    pv = { from: here(), to: { at: dest, name }, mode: saved && modeInfo(saved) ? saved : DEFAULT_MODE,
+    const p = { from: youEnd(), to: { at: dest, name }, mode: saved && modeInfo(saved) ? saved : DEFAULT_COSTING,
         ways: {}, pick: 0, seq: 0, back: back || null, body };
-    const host = document.getElementById(MAP_EL());
-    if (host) {
-        card = buildCard();
-        host.appendChild(card);
-        wireCard(card);
-        syncCard();
-    }
+    pv = p;
+    fields = mountFields(map.getContainer(), {
+        ends: () => ({ from: p.from, to: p.to }),
+        change: next => { Object.assign(p, next); fields?.sync(); ask(); frame(); },
+    });
     document.addEventListener("keydown", onKey);
     // sticky: a tap on the map picks a way, it does not put the sheet away
     openSheetView(OWNER, body, teardown, { fit: true, sticky: true });
@@ -339,8 +235,8 @@ export function openRoutePreview(dest, name, back) {
 /** The view left the sheet, whichever way: take down the card, the lines and the markers. */
 function teardown() {
     document.removeEventListener("keydown", onKey);
-    card?.remove();
-    card = null;
+    fields?.remove();
+    fields = null;
     clearMarkers();
     clearLines(theMap());
     pv = null;

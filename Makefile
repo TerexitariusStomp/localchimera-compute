@@ -835,7 +835,7 @@ freshen-ccache:
 
 test-fast: lint-parens lint-law lint-docs check-wasm-deps check-ui-fresh test-gplay test-knowledge test-notify-registry test-notify-adapters test-push-adapter \
       test-recipient-registry test-notify-router test-email-transport check-provenance test-provenance \
-      test-vault test-keystore test-handler-bridge test-capabilities test-pwa lint-sw test-rest test-bytes test-keys test-attention test-push test-rpc test-store test-idb test-log-bound test-rns-identity test-containment-fold test-reactive test-room-model test-mesh-plan test-ice-servers test-units-fallback test-utter test-count test-qr test-labels test-store-tree test-stock test-photo test-look test-lend test-contest test-store-view test-held test-demo-store test-demo-world test-symbols test-reach test-queue test-allotment-ui test-fuzzy test-route-data test-route-facts test-route-shape test-route-lines test-position test-route-nav test-route-steps test-route-reroute test-route-ledger test-awake test-route-request test-conform-ui test-caption-window test-refsel test-diag-redact test-offers test-ring test-sky test-runway test-partition test-regions test-nutrition test-housing-ui test-declarations test-bran-derivations \
+      test-vault test-keystore test-handler-bridge test-capabilities test-pwa lint-sw test-rest test-bytes test-keys test-attention test-push test-rpc test-store test-idb test-log-bound test-rns-identity test-containment-fold test-reactive test-room-model test-mesh-plan test-ice-servers test-units-fallback test-utter test-count test-qr test-labels test-store-tree test-stock test-photo test-look test-lend test-contest test-store-view test-held test-demo-store test-demo-world test-symbols test-reach test-queue test-allotment-ui test-fuzzy test-route-data test-route-facts test-route-shape test-route-lines test-position test-route-nav test-route-steps test-route-reroute test-route-ledger test-route-modes test-route-camera test-awake test-route-request test-conform-ui test-caption-window test-refsel test-diag-redact test-offers test-ring test-sky test-runway test-partition test-regions test-nutrition test-housing-ui test-declarations test-bran-derivations \
       test-contact-binding test-body-doors test-cards test-planner-facet test-declared-dispatch test-http-door test-mcp-door test-device-doors test-vf-lint test-lint-records-door test-issue-revoke-credential test-admit-commune-door test-delegation-scope-arg test-lobby-arg-split test-websocket-fragments test-websocket-masking test-declare-arg-split test-offer-work-drift-door test-plan-materialize-opts-door test-count-stock test-count-anchor test-count-anchor-2 test-count-expected test-wire-snapshot test-observation-evidence test-labels-containers test-counting test-planned-counts test-allotment test-see-door test-contest-count test-evidence-door check-protocol check-protocol-fresh check-wire-types-fresh check-crossing-catalogue check-nutrition-fresh check-product-law-fresh check-attribution-fresh check-notice-facts-fresh check-rid-mentions test-calendar-mail check-de-fresh check-na-fresh check-law-fresh check-physics-fresh check-housing-fresh check-count-fresh check-rel-fresh check-reach-fresh check-units-fresh check-rest-fresh check-matter-fresh check-fragility-fresh check-actions-fresh check-limits-fresh check-recipe-demo-fresh check-demo-fresh test-demo-neighbourhood test-adjustment test-counts check-test-wiring check-atlas
 
 # every generated file's freshness, from the gate's own list; and the committer's own test
@@ -1420,6 +1420,18 @@ test-route-reroute:
 .PHONY: test-route-ledger
 test-route-ledger:
 	node tests/browser/route-ledger-test.mjs
+
+# The ways of travelling (app/route/modes.ts): THE table, the glyph for how a
+# stretch is travelled, the UI words that become costings, the default.
+.PHONY: test-route-modes
+test-route-modes:
+	node tests/browser/route-modes-test.mjs
+
+# Framing a box exactly (app/route/camera.ts): the camera's standing padding is
+# cleared, then the box is framed with the asked-for padding and nothing else.
+.PHONY: test-route-camera
+test-route-camera:
+	node tests/browser/route-camera-test.mjs
 
 # Keeping the screen on (app/awake.ts): asked for, given back, taken again when
 # the page returns, and no fault where there is no lock or it is refused.

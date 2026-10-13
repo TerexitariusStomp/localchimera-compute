@@ -10,6 +10,7 @@
 // `startFollow` is the stateful half and owns the map's camera, the you-arrow and the two buttons.
 
 import { boundsOf } from './shape.js';
+import { fitClear, NO_PADDING } from './camera.js';
 import type { Fix } from '../position.js';
 import type { Route } from './data.js';
 
@@ -144,8 +145,7 @@ export function startFollow(host: FollowHost, costing: string, container: HTMLEl
     const r = host.remaining(), b = r && boundsOf([r]);
     if (!map || !b) return;
     on = false; paintArrow(); syncButtons();
-    map.setPadding({ top: 0, bottom: 0, left: 0, right: 0 });
-    map.fitBounds(b, { duration: 700, maxZoom: 17, bearing: 0, pitch: 0,
+    fitClear(map, b, { duration: 700, maxZoom: 17, bearing: 0, pitch: 0,
       padding: { top: host.bannerHeight() + 40, bottom: host.sheetHeight() + 40, left: 40, right: 40 } });
     later(6000);
   }
@@ -159,7 +159,7 @@ export function startFollow(host: FollowHost, costing: string, container: HTMLEl
       if (map) {
         for (const t of events) map.off(t, hand as () => void);
         map.off("rotate", onRotate);
-        map.setPadding({ top: 0, bottom: 0, left: 0, right: 0 });
+        map.setPadding(NO_PADDING);
         map.easeTo({ bearing: 0, pitch: 0, duration: 600 });
       }
       const a = arrow(); if (a) { a.classList.remove("nav"); a.style.removeProperty("--hdg"); }

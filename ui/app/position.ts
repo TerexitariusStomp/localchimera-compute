@@ -18,6 +18,7 @@
 // journey or a locate asks — so nothing here asks until a watcher or a locateOnce does.
 
 import { USER } from './core.js';
+import type { LatLng } from './geom.js';
 
 /** One reading of where you are. Heading is degrees from north, speed metres per second; null when unknown. */
 export interface Fix {
@@ -43,6 +44,9 @@ export function fixOf(c: { latitude: number; longitude: number; heading?: number
   const num = (v: number | null | undefined): number | null => typeof v === "number" && Number.isFinite(v) ? v : null;
   return { lat: c.latitude, lng: c.longitude, heading: num(c.heading), speed: num(c.speed), accuracy: num(c.accuracy), t };
 }
+
+/** Where you are, as a point of your own: a copy, that later fixes do not move. */
+export const youAt = (): LatLng => ({ lat: USER.lat, lng: USER.lng });
 
 /** The last fix taken, or null before any. */
 export const lastFix = (): Fix | null => last;

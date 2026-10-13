@@ -11,33 +11,7 @@
 // Every field is read defensively. A leg may carry no shape, a maneuver no
 // street names: an absent field reads as absent (empty list, 0, ""), never as a
 // guess, and a reply with no legs is no route at all.
-/**
- * THE table of modes, in the order a preview shows its tabs (transit first, as the
- * phone's do) and the wayfinder's mode glyph cycles. The preview, the wayfinder and
- * the REPL page all read their words and glyphs from here.
- */
-export const MODES = [
-    { costing: "multimodal", label: "Transit", icon: "🚌" },
-    { costing: "pedestrian", label: "Walk", icon: "🚶" },
-    { costing: "bicycle", label: "Bicycle", icon: "🚲" },
-    { costing: "auto", label: "Drive", icon: "🚗" },
-];
-export const ROUTE_MODES = MODES.map(m => m.costing);
-/** What a mode is called and drawn as; undefined for a costing the UI has no tab for. */
-export const modeInfo = (costing) => MODES.find(m => m.costing === costing);
-/** The mode that travels each way a stretch can go: the engine's `travel_mode` → our costing. */
-const COSTING_OF_TRAVEL = { pedestrian: "pedestrian", bicycle: "bicycle", drive: "auto", transit: "multimodal" };
-/** The glyph for how a stretch is travelled — the engine's `travel_mode` — "" for one we have none for. */
-export const travelIcon = (travelMode) => modeInfo(COSTING_OF_TRAVEL[travelMode] ?? "")?.icon ?? "";
-/**
- * UI words → Valhalla costing — the one vocabulary boundary, where the words are
- * born; the wire and the server speak costing names natively. A name already a
- * costing passes through, and no word at all is a walk.
- */
-export function costingOf(word) {
-    return { foot: "pedestrian", bike: "bicycle", car: "auto", scooter: "motor_scooter",
-        transit: "multimodal", bus: "bus" }[word || ""] || word || "pedestrian";
-}
+import { ROUTE_MODES } from './modes.js';
 /** Valhalla's polyline, precision 6. */
 export function decodePoly(str) {
     const out = [];

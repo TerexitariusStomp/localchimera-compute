@@ -25,6 +25,8 @@ export function fixOf(c, t = Date.now()) {
     const num = (v) => typeof v === "number" && Number.isFinite(v) ? v : null;
     return { lat: c.latitude, lng: c.longitude, heading: num(c.heading), speed: num(c.speed), accuracy: num(c.accuracy), t };
 }
+/** Where you are, as a point of your own: a copy, that later fixes do not move. */
+export const youAt = () => ({ lat: USER.lat, lng: USER.lng });
 /** The last fix taken, or null before any. */
 export const lastFix = () => last;
 /** A fix has arrived: you are there, and whoever draws you hears of it. */

@@ -183,12 +183,12 @@ function transcribeWithWhisper(pcm) {
 // their namespace object — `this` is undefined inside them. So everything
 // shared lives here at file scope, and the namespace methods stay thin.
 
-// Valhalla's reply is read by the dial's own reader (app/route/data.js: costing words,
-// polyline, trip → route) and shaped for Scheme by app/route/facts.js — loaded before
+// Valhalla's reply is read by the dial's own reader (app/route/data.js: polyline, trip → route;
+// app/route/modes.js: the costing words) and shaped for Scheme by app/route/facts.js — loaded before
 // Scheme starts (with app/geom.js's haversine for the straight line), since Hoot's reflect.js calls these FFI imports as bare functions.
-let routeData = null, routeFacts = null, routeGeom = null;
+let routeData = null, routeModes = null, routeFacts = null, routeGeom = null;
 
-function routeCosting(profile) { return routeData.costingOf(profile); }
+function routeCosting(profile) { return routeModes.costingOf(profile); }
 
 // Valhalla trip → the one normalized contract Scheme pipes around:
 // { engine, profile, coordinates, segments, distance_km, time_s, maneuvers }
@@ -244,6 +244,7 @@ window.addEventListener("load", async () => {
     // The route reader, for the routing FFI below (app/route/data.js, facts.js).
     try {
       routeData = await import('./app/route/data.js');
+      routeModes = await import('./app/route/modes.js');
       routeFacts = await import('./app/route/facts.js');
       routeGeom = await import('./app/geom.js');
     } catch (e) { console.warn('[repl] route reader unavailable:', e.message); }

@@ -9,6 +9,7 @@
 // round to a new bearing, which heading to trust — so it is stated in a test without a map.
 // `startFollow` is the stateful half and owns the map's camera, the you-arrow and the two buttons.
 import { boundsOf } from './shape.js';
+import { fitClear, NO_PADDING } from './camera.js';
 /** How far the camera is tipped toward the horizon, in degrees. */
 export const FOLLOW_PITCH = 55;
 /** Where in the frame you sit, as a share of its height from the top. */
@@ -114,8 +115,7 @@ export function startFollow(host, costing, container) {
         on = false;
         paintArrow();
         syncButtons();
-        map.setPadding({ top: 0, bottom: 0, left: 0, right: 0 });
-        map.fitBounds(b, { duration: 700, maxZoom: 17, bearing: 0, pitch: 0,
+        fitClear(map, b, { duration: 700, maxZoom: 17, bearing: 0, pitch: 0,
             padding: { top: host.bannerHeight() + 40, bottom: host.sheetHeight() + 40, left: 40, right: 40 } });
         later(6000);
     }
@@ -130,7 +130,7 @@ export function startFollow(host, costing, container) {
                 for (const t of events)
                     map.off(t, hand);
                 map.off("rotate", onRotate);
-                map.setPadding({ top: 0, bottom: 0, left: 0, right: 0 });
+                map.setPadding(NO_PADDING);
                 map.easeTo({ bearing: 0, pitch: 0, duration: 600 });
             }
             const a = arrow();

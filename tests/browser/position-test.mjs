@@ -45,6 +45,15 @@ section("a fix moves you, and is heard");
   check("a stopped observer hears no more, but USER still moves", heard.length === 2 && USER.lat === 12);
 }
 
+section("where you are, as a point of your own");
+{
+  P.feed({ lat: 51, lng: 4 });
+  const here = P.youAt();
+  check("a point at USER", here.lat === 51 && here.lng === 4);
+  P.feed({ lat: 52, lng: 5 });
+  check("a copy: later fixes do not move it", here.lat === 51 && P.youAt().lat === 52);
+}
+
 section("the device watch follows its listeners");
 {
   const a = [], b = [];
