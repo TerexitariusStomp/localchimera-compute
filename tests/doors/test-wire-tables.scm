@@ -123,18 +123,18 @@
     (requires . (((process . "p") (place . "A") (begin . "t0") (until . "t1") (why . ((reason . no-worker) (detail . (baking))))
                   (needs . (((kind . labour) (name . "baking") (qty . 2) (unit . "h") (met . #f)))))
                  ((process . "q") (place . "A") (begin . "t0") (until . "t1") (why . #f) (needs . ()))))
-    ;; the plan's own records
-    (schedule . ((work . (,(make-work-commitment #:id "wc|1" #:provider "ana" #:skill "baking" #:hours 2.5 #:input-of "p"
-                                                 #:at-location "A" #:has-beginning "t0")))
-                 (material . (,(make-flow-commitment #:id "mc|1" #:action 'produce #:spec "bread" #:qty 3 #:unit "kg"
-                                                     #:place "A" #:process "p" #:has-beginning "t0")))))))
+    ;; the plan's own records: its schedule is the commitment rows themselves
+    (schedule . (,(make-work-commitment #:id "wc|1" #:provider "ana" #:skill "baking" #:hours 2.5 #:input-of "p"
+                                        #:at-location "A" #:has-beginning "2026-08-17T09:00")
+                 ,(make-flow-commitment #:id "mc|1" #:action 'produce #:spec "bread" #:qty 3 #:unit "kg"
+                                        #:place "A" #:process "p" #:has-beginning "2026-08-17T09:00")))))
 (define a-ctx `((rs . #f) (as . #f) (material . ())))
 (check "a plan is written whole by its table"
        (plan->wire a-plan a-ctx)
        `(("scope" . "s") ("coverage" . 0.75) ("feasible" . "yes") ("stale" . #t) ("labourH" . 12.5)
          ("produced" . #((("specId" . "bread") ("spec" . "Bread") ("q" . 3.0) ("u" . "kg"))))
          ("needs" . #((("id" . "n") ("label" . "Bread") ("met" . 0.5) ("want" . 10) ("recipeId" . "r")
-                       ("runs" . 2) ("labourH" . 1.25))))
+                       ("runs" . 2) ("labourH" . 1.25) ("willing" . 0))))
          ("kept" . #())
          ("flow" . #((("id" . "p") ("spec" . "Bread") ("specId" . "bread") ("name" . "Bake") ("q" . 2.0)
                       ("u" . "kg") ("period" . "0")
@@ -144,19 +144,28 @@
                           ("needs" . #((("kind" . "labour") ("name" . "baking") ("label" . "baking")
                                         ("qty" . 2) ("unit" . "h") ("met" . "missing")))))
                          (("proc" . "q") ("place" . "A") ("when" . "t0") ("until" . "t1") ("needs" . #()))))
-         ("schedule" . (("work" . #((("id" . "wc|1") ("who" . "ana") ("whoName" . "") ("skillId" . "baking") ("skill" . "baking")
-                                     ("effort" . 2.5) ("place" . "A") ("when" . "t0") ("until" . "") ("proc" . "p") ("scope" . ""))))
-                        ("material" . #((("action" . "produce") ("id" . "mc|1") ("specId" . "bread")
-                                         ("spec" . "bread") ("qty" . 3) ("unit" . "kg") ("place" . "A") ("when" . "t0")
-                                         ("until" . "") ("proc" . "p") ("to" . null) ("note" . ""))))))))
+         ("schedule" . ,(vector (wire-row* (wire-table-ref 'commitment-record) (car (assq-ref a-plan 'schedule)) a-ctx)
+                                (wire-row* (wire-table-ref 'commitment-record) (cadr (assq-ref a-plan 'schedule)) a-ctx)))))
+;; the schedule's rows are the commitment record's: one vocabulary, the day's and the board's
+(let* ((p (plan->wire a-plan a-ctx)) (rows (vector->list (assoc-ref p "schedule")))
+       (w (car rows)) (m (cadr rows)))
+  (check "a work row: its provider, skill, effort, place, clock moment and process, by the record's names"
+         (map (lambda (k) (assoc-ref w k)) '("id" "provider" "spec" "effort" "at" "when" "proc" "action" "label"))
+         '("wc|1" "ana" "baking" 2.5 "A" "2026-08-17T09:00" "p" "work" "p: baking"))
+  (check "…clocked by the record's clock, dated in its day"
+         (map (lambda (k) (assoc-ref w k)) '("date" "sh" "sm" "eh" "em"))
+         '("2026-08-17" 9 0 12 0))
+  (check "a material row: its action, spec, quantity, unit and place; a produce row has no destination"
+         (map (lambda (k) (assoc-ref m k)) '("id" "action" "spec" "qty" "unit" "at" "proc" "label" "to"))
+         '("mc|1" "produce" "bread" 3 "kg" "A" "p" "produce bread" null)))
 (let ((bare (plan->wire '((scope . "s")))))
   (check "a plan no solve has filled: no flow and no schedule are false, the verdict unknown, the lists empty"
          (map (lambda (k) (assoc-ref bare k)) '("flow" "schedule" "feasible" "stale" "needs"))
          (list #f #f "unknown" #f (vector))))
 (check "every row the plan nests is a named table"
        (map (lambda (n) (wire-table? (wire-table-ref n)))
-            '(plan plan-need plan-yield plan-kept plan-discrete flow-prod flow-in schedule sched-work sched-mat))
-       (make-list 10 #t))
+            '(plan plan-need plan-yield plan-kept plan-discrete flow-prod flow-in commitment-record act-requires))
+       (make-list 9 #t))
 
 (display "\n── THE SNAPSHOT: every row the page reads of it is a named table ──\n")
 (check "the snapshot and the rows it nests are registered"

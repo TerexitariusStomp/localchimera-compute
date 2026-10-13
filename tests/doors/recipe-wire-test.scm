@@ -6,6 +6,7 @@
 ;;; (or via the blake3 dev-test shell — see [[reference_blake3_test_profile]])
 
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
+(use-modules ((playnet vf formulas flows) #:select (row-action)))
 (use-modules (playnet test harness)
              (playnet scope root) (playnet vf schemas) (srfi srfi-1)
              (playnet doors service) (playnet doors plan-wire)
@@ -222,11 +223,14 @@
                   (at-location . "home") (when . "2026-08-17T00:00") (output-of . "rp-grow-veg"))
                  ((action . consume) (conforms-to . "spec-veg")  (quantity . 4)
                   (at-location . "home") (when . "2026-08-17T00:00") (input-of . "rp-cook"))
+                 ;; a haul: two rows of one run, the pickup at the origin and its dropoff where it lands
                  ((action . pickup) (conforms-to . "spec-meal") (quantity . 2)
-                  (at-location . "home") (when . "2026-08-17T23:59") (input-of . "rp-deliver"))))
-    (work     . (((conforms-to . "skill-cook") (effort . 3.0) (input-of . "rp-cook")
+                  (at-location . "home") (when . "2026-08-17T23:59") (input-of . "rp-deliver"))
+                 ((action . dropoff) (conforms-to . "spec-meal") (quantity . 2)
+                  (at-location . "market") (when . "2026-08-18T00:30") (output-of . "rp-deliver"))))
+    (work     . (((action . work) (conforms-to . "skill-cook") (effort . 3.0) (input-of . "rp-cook")
                   (provider . "ana") (at-location . "home") (when . "2026-08-17T00:00") (until . "2026-08-17T23:59"))
-                 ((conforms-to . "skill-cook") (effort . 1.5) (input-of . "rp-cook")
+                 ((action . work) (conforms-to . "skill-cook") (effort . 1.5) (input-of . "rp-cook")
                   (provider . "bo") (at-location . "home") (when . "2026-08-18T00:00") (until . "2026-08-18T23:59"))))
     (social   . ((direct-labour . 4.5)))))
 (define demand '(("spec-meal" "home" 0 12)))   ; the cached demand: 12 meals wanted
@@ -265,26 +269,31 @@
 ;; reads them as they are — who works what where at which clock moment, and
 ;; every material flow at its own cell.
 (define sched (assq-ref dp 'schedule))
-;; the plan carries its rows as they are; the sched-work and sched-mat tables
-;; (doors/record-rows.scm) write them at the edge, joining through the scope's stores
+;; the plan carries its rows as they are, work and material in one list; the
+;; commitment-record table (doors/record-rows.scm) writes each at the edge,
+;; joining through the scope's stores — the one vocabulary a commitment is read in
 (define sctx (with-vat vat1 (record-context "s1" ($ scope1 'recipe-store) ($ scope1 'agent-store) ($ scope1 'observer)
                                             ($ scope1 'plan-store) ($ scope1 'process-registry)
-                                            #:material (assq-ref sched 'material))))
-(define swork (with-vat vat1 (map (lambda (w) (wire-row* (wire-table-ref 'sched-work) w sctx)) (assq-ref sched 'work))))
-(define smat  (with-vat vat1 (map (lambda (m) (wire-row* (wire-table-ref 'sched-mat) m sctx)) (assq-ref sched 'material))))
+                                            #:material (filter (lambda (r) (not (eq? (row-action r) 'work))) sched)
+                                            #:places ($ scope1 'spatial-thing-store))))
+(define srows (with-vat vat1 (map (lambda (r) (wire-row* (wire-table-ref 'commitment-record) r sctx)) sched)))
+(define swork (filter (lambda (r) (equal? (assoc-ref r "action") "work")) srows))
+(define smat  (filter (lambda (r) (not (equal? (assoc-ref r "action") "work"))) srows))
 (check "schedule present with both sides" (and (pair? swork) (pair? smat)) #t)
-(define ana (find (lambda (w) (equal? (assoc-ref w "who") "ana")) swork))
+(define ana (find (lambda (w) (equal? (assoc-ref w "provider") "ana")) swork))
 (check "a work row names its provider"      (and ana #t) #t)
-(check "…their place"                       (assoc-ref ana "place") "home")
+(check "…their place"                       (assoc-ref ana "at") "home")
 (check "…their clock moment, verbatim"      (assoc-ref ana "when") "2026-08-17T00:00")
 (check "…their effort"                      (assoc-ref ana "effort") 3.0)
-(check "…the skill, label-resolved"         (string? (assoc-ref ana "skill")) #t)
+(check "…the skill, label-resolved"         (string? (assoc-ref ana "specName")) #t)
+(check "…and the label, composed once"      (string? (assoc-ref ana "label")) #t)
 (define mv (find (lambda (m) (equal? (assoc-ref m "action") "pickup")) smat))
 (check "a pickup row keeps its VF action"   (and mv (assoc-ref mv "action")) "pickup")
 (check "…and its own moment"                (assoc-ref mv "when") "2026-08-17T23:59")
+(check "…and the place its dropoff lands it" (assoc-ref mv "to") "market")
 (define mp (find (lambda (m) (and (equal? (assoc-ref m "action") "produce")
                                   (equal? (assoc-ref m "proc") "rp-cook"))) smat))
 (check "a produce row carries its process"  (and mp #t) #t)
-(check "…its place and quantity"            (list (assoc-ref mp "place") (assoc-ref mp "qty")) '("home" 9))
+(check "…its place and quantity"            (list (assoc-ref mp "at") (assoc-ref mp "qty")) '("home" 9))
 
 (test-summary!)

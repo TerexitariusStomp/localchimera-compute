@@ -23,7 +23,7 @@
   #:use-module ((playnet utils clock) #:select (now instant->civil))
   #:use-module ((playnet utils units) #:select (%count-unit %effort-unit))
   #:export (row-id row-action row-spec row-quantity row-unit row-effort
-            row-provider row-input-of row-output-of row-run row-place
+            row-provider row-receiver row-input-of row-output-of row-run row-place
             row-when row-until row-note row-tags row-scope row-satisfies
             row-finished row-ambient? carried-lot-id %ambient-tag
             row-scopes row-satisfies? scopes-of row-figure
@@ -50,6 +50,7 @@
 (define-row-reader row-id        id                     id)
 (define-row-reader row-spec      resource-conforms-to   conforms-to)
 (define-row-reader row-provider  provider               provider)
+(define-row-reader row-receiver  receiver               receiver)
 (define-row-reader row-input-of  input-of               input-of)
 (define-row-reader row-output-of output-of              output-of)
 (define-row-reader row-place     at-location            at-location)

@@ -94,7 +94,27 @@
       ("want" want num)                              ; the scope's aggregate demand → the wheel
       ("recipeId" recipeId str)
       ("runs" runs int)
-      ("labourH" labourH num))))
+      ("labourH" labourH num)
+      ;; the hands raised for it in this snapshot: the willing race the reply's
+      ;; context carries ((skill . cell) → ((worker . status) …), doors/record-rows.scm
+      ;; record-context), counted over every cell on the need's bare spec — as
+      ;; fresh as the day is, a hand raised since the solve ran still counts
+      ("willing" ,(lambda (n ctx)
+                    (let ((tbl (and ctx (alist-ref ctx 'willing)))
+                          (base (let ((id (alist-ref n 'id)))
+                                  (if (string? id) (car (string-split id #\~)) ""))))
+                      (if (hash-table? tbl)
+                          (let ((hands '()))
+                            (hash-for-each (lambda (k v)
+                                             (when (equal? (car k) base)
+                                               (for-each (lambda (ws)
+                                                           (unless (eq? (cdr ws) 'declined)
+                                                             (set! hands (cons (car ws) hands))))
+                                                         v)))
+                                           tbl)
+                            (length (delete-duplicates hands)))
+                          0)))
+       int))))
 (define (plan-need->wire n) (wire-row* %plan-need-wire n))
 (define plan-need-row (row-maker %plan-need-wire))
 ;; one input of a production (a consumed good / used means / worked labour), and one
@@ -111,9 +131,9 @@
       ("in" in (rows flow-in)))))
 (define (flow-prod->wire p) (wire-row* %flow-prod-wire p))
 (define flow-prod-row (row-maker %flow-prod-wire))
-;; the schedule's rows and what each act needs are tables over the plan's own
-;; records and the engine's requirement rows, joining through the scope's stores
-;; (doors/record-rows.scm sched-work, sched-mat, act-requires); the plan table
+;; the schedule's rows are the commitment records themselves and what each act
+;; needs the engine's requirement rows, tables joining through the scope's stores
+;; (doors/record-rows.scm commitment-record, act-requires); the plan table
 ;; below names them
 ;; a line of the ledger: what the plan makes of a good, its id, its name and the
 ;; unit it is counted in
@@ -153,10 +173,12 @@
       ;; published nothing for that act, an empty `needs` that it needs nothing
       ("requires" requires (rows act-requires))
       ;; the SPACE-TIME schedule — every work and material commitment on its own
-      ;; clock moment and place. The calendar's `sched` source and the plan
-      ;; face's schedule board read it (ingest.ts ingestSchedule); the aggregate
-      ;; views above sum these away, so it rides beside them, as it is.
-      ("schedule" schedule (some-row schedule)))))
+      ;; clock moment and place, each the commitment-record row it is
+      ;; (doors/record-rows.scm): one vocabulary for a commitment wherever it is
+      ;; read. The calendar's `sched` source and the plan face's schedule board
+      ;; read it (ingest.ts ingestSchedule); the aggregate views above sum these
+      ;; away, so it rides beside them, as it is. False until a solve has run.
+      ("schedule" schedule (some-rows commitment-record)))))
 (define* (plan->wire p #:optional (ctx '())) (wire-row* %plan-wire p ctx))
 (define plan-row (row-maker %plan-wire))
 

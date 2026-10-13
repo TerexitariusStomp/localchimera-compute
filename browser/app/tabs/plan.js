@@ -21,7 +21,6 @@ import { EXT } from '../core.js';
 import { goToMapPlace, goToCalendarTime, hereOfInstant } from '../gohere.js';
 import { locationOptions } from '../slots/model.js';
 import { readStr, writeStr } from '../store.js';
-import { dropoffIndex } from '../relocation.js';
 import { nameOf } from '../contact-book.js';
 import { metCol } from '../palette.js';
 import { on } from '../bus.js';
@@ -364,10 +363,15 @@ function scheduleBoard(sched) {
         return "";
     // a row is shown at one decimal, so a commitment that rounds to 0.0 is
     // noise on the board (the calendar and the event cards still carry it)
-    const work = (sched.work || []).filter(w => (Number(w.effort) || 0) >= 0.05);
-    const mat = (sched.material || []).filter(m => (Number(m.qty) || 0) >= 0.05);
+    if (!sched)
+        return "";
+    const work = sched.filter(r => r.action === "work" && (Number(r.effort) || 0) >= 0.05);
+    const mat = sched.filter(r => r.action !== "work" && (Number(r.qty) || 0) >= 0.05);
     if (!work.length && !mat.length)
         return "";
+    // the planner names the place and the person; the id stands where it names none
+    const placeOf = (r) => r.placeName || r.at || "";
+    const specOf = (r) => r.specName || r.spec || "";
     const day = (w) => (w || "").slice(0, 10);
     const clock = (w) => (w || "").includes("T") ? ((w || "").split("T")[1] || "").slice(0, 5) : "";
     const procDay = {};
@@ -376,28 +380,29 @@ function scheduleBoard(sched) {
         if (w.proc && d && (!procDay[w.proc] || d < procDay[w.proc]))
             procDay[w.proc] = d;
     });
-    const used = new Set();
     const rows = [];
-    mat.forEach((m, i) => {
-        if (used.has(i))
-            return;
+    // a haul is one line, from the pickup's place to the one its dropoff lands
+    // it (`to`, the planner's pairing of the two rows of one run); the dropoff
+    // row itself is the arrival and stays off the board
+    const hauled = new Set();
+    mat.forEach(m => {
+        if (m.action === "pickup" && m.to)
+            hauled.add(`${m.proc ?? ""}|${m.spec ?? ""}`);
+    });
+    mat.forEach(m => {
         const d = day(m.when);
-        if (m.action === "pickup" && m.proc) {
-            const j = dropoffIndex(mat, m);
-            if (j >= 0 && !used.has(j)) {
-                used.add(i);
-                used.add(j);
-                rows.push({ day: d, place: m.place, kind: "haul",
-                    html: `<b>${n1(m.qty)}</b> ${esc(m.spec)} <span class="sb-arrow">→ ${esc(mat[j].place)}</span>` });
-                return;
-            }
+        if (m.action === "pickup" && m.to) {
+            rows.push({ day: d, place: placeOf(m), kind: "haul",
+                html: `<b>${n1(m.qty)}</b> ${esc(specOf(m))} <span class="sb-arrow">→ ${esc(m.toName || m.to)}</span>` });
+            return;
         }
-        used.add(i);
-        const arrives = onhandSign(m.action) === 1;
-        const lands = isCreating(m.action) && m.proc && procDay[m.proc] && procDay[m.proc] < d;
+        if (m.action === "dropoff" && hauled.has(`${m.proc ?? ""}|${m.spec ?? ""}`))
+            return;
+        const arrives = onhandSign(m.action ?? "") === 1;
+        const lands = isCreating(m.action ?? "") && m.proc && procDay[m.proc] && procDay[m.proc] < d;
         const boarded = m.proc ? procDay[m.proc] : "";
-        rows.push({ day: d, place: m.place, kind: m.action,
-            html: `${arrives ? "▲" : "▼"} <b>${n1(m.qty)}</b> ${esc(m.spec)}`
+        rows.push({ day: d, place: placeOf(m), kind: m.action,
+            html: `${arrives ? "▲" : "▼"} <b>${n1(m.qty)}</b> ${esc(specOf(m))}`
                 + (lands ? ` <span class="sb-lands" title="a run longer than its day: inputs boarded ${esc(boarded)}, the output lands here">lands</span>` : "") });
     });
     // ONE line per (person, skill, span, place, day): the solve emits a work
@@ -408,14 +413,15 @@ function scheduleBoard(sched) {
     const wsum = new Map();
     work.forEach(w => {
         const c = clock(w.when);
-        const k = `${w.who ?? ""}|${w.skill ?? ""}|${day(w.when)}|${c}|${w.place ?? ""}`;
+        const who = w.providerName || w.provider || "";
+        const k = `${who}|${w.spec ?? ""}|${day(w.when)}|${c}|${placeOf(w)}`;
         const g = wsum.get(k);
         if (g) {
             g.h += Number(w.effort) || 0;
             g.n += 1;
         }
         else
-            wsum.set(k, { who: w.who ?? "", skill: w.skill ?? "", day: day(w.when), place: w.place, clock: c, h: Number(w.effort) || 0, n: 1 });
+            wsum.set(k, { who, skill: specOf(w), day: day(w.when), place: placeOf(w), clock: c, h: Number(w.effort) || 0, n: 1 });
     });
     wsum.forEach(g => {
         rows.push({ day: g.day, place: g.place, kind: "work",

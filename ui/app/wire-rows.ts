@@ -104,10 +104,13 @@ export interface WireClock {
 
 export interface WireCommitmentRecord {
   id: string;
+  label: string;
   sh?: number;
   sm?: number;
   eh?: number;
   em?: number;
+  when: string;
+  until: string;
   scope: string;
   spec: string;
   specName: string;
@@ -120,13 +123,20 @@ export interface WireCommitmentRecord {
   suggestedName: string;
   match: string;
   provider: string;
+  providerName: string;
   status: string;
   action: string;
   receiver: string;
   effort: number | null;
   done: number | null;
+  qty: number | null;
+  unit: string | null;
+  note: string;
   pull: number | null;
   at: string;
+  placeName: string;
+  to: string | null;
+  toName: string;
   serves: string;
   categories: readonly string[];
   date: string;
@@ -270,6 +280,7 @@ export interface WireEcoControl {
 
 export interface WireEvent {
   id: string;
+  label: string;
   specName: string;
   action: string;
   spec: string;
@@ -385,10 +396,13 @@ export interface WireHitDim {
 
 export interface WireIntentRecord {
   id: string;
+  label: string;
   sh?: number;
   sm?: number;
   eh?: number;
   em?: number;
+  when: string;
+  until: string;
   scope: string;
   spec: string;
   specName: string;
@@ -401,13 +415,20 @@ export interface WireIntentRecord {
   suggestedName: string;
   match: string;
   provider: string;
+  providerName: string;
   status: string;
   action: string;
   receiver: string;
   effort: number | null;
   done: number | null;
+  qty: number | null;
+  unit: string | null;
+  note: string;
   pull: number | null;
   at: string;
+  placeName: string;
+  to: string | null;
+  toName: string;
   serves: string;
   categories: readonly string[];
   date: string;
@@ -642,7 +663,7 @@ export interface WirePlan {
   placement?: Record<string, Record<string, number | null>>;
   flow: readonly WireFlowProd[] | false;
   requires: readonly WireActRequires[];
-  schedule: WireSchedule | false;
+  schedule: readonly WireCommitmentRecord[] | false;
 }
 
 export interface WirePlanDiscrete {
@@ -669,6 +690,7 @@ export interface WirePlanNeed {
   recipeId: string;
   runs: number;
   labourH: number | null;
+  willing: number;
 }
 
 export interface WirePlanRef {
@@ -789,40 +811,6 @@ export interface WireRecipeStep {
   balance: string;
   in: readonly WireRecipeFlow[];
   out: readonly WireRecipeFlow[];
-}
-
-export interface WireSchedMat {
-  action: string;
-  id: string;
-  specId: string;
-  spec: string;
-  qty: number | null;
-  unit: string | null;
-  place: string;
-  when: string;
-  until: string;
-  proc: string;
-  to: string | null;
-  note: string;
-}
-
-export interface WireSchedWork {
-  id: string;
-  who: string;
-  whoName: string;
-  skillId: string;
-  skill: string;
-  effort: number | null;
-  place: string;
-  when: string;
-  until: string;
-  proc: string;
-  scope: string;
-}
-
-export interface WireSchedule {
-  work: readonly WireSchedWork[];
-  material: readonly WireSchedMat[];
 }
 
 export interface WireScopeReadingsReply {

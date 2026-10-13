@@ -112,17 +112,20 @@
 
 (define* (record-context scope-id rs as obs ps preg
                          #:key (holders (make-hash-table)) (willing (make-hash-table)) (pulls '())
-                               (member-ids '()) (responses '()) (material '()))
+                               (member-ids '()) (responses '()) (material '()) (places #f))
   "What the record rows join through: the scope and its stores, the skill
    holders (spec → agent ids), the willing race ((spec . cell) → ((aid . status) …)),
    the standing solve's labour pulls ((skill@place@period . λ) …), the scope's
-   member ids in their order (a member's colour is its place in it) and the
-   recipes' standing (scope-standing's records, one per recipe)."
+   member ids in their order (a member's colour is its place in it), the
+   recipes' standing (scope-standing's records, one per recipe) and the scope's
+   places (its spatial-thing-store, a place's name). A context carries what it
+   has: a row reads a name through a store it names, and "" through one it lacks."
   `((scope-id . ,scope-id) (rs . ,rs) (as . ,as) (obs . ,obs) (ps . ,ps) (preg . ,preg)
     (holders . ,holders) (willing . ,willing) (pulls . ,pulls)
     (member-ids . ,member-ids) (responses . ,responses) (now . ,(instant->unix (clock-now)))
     ;; the standing plan's material rows: a pickup's destination is its dropoff's place
-    (material . ,material)))
+    (material . ,material)
+    (places . ,places)))
 
 (define (ctx-ref ctx key) (alist-ref ctx key))
 (define (of key) (lambda (rec ctx) (ctx-ref ctx key)))
@@ -133,21 +136,27 @@
    Try the process registry first (where dependent-demand registers its
    created processes), then fall back to the recipe-store, then the id."
   (and process-id
-       (let ((p ($ preg 'get process-id)))
+       (let ((p (and preg ($ preg 'get process-id))))
          (cond
            (p (or (process-name p) process-id))
            (else
-            (let ((rp ($ rs 'get-recipe-process process-id)))
+            (let ((rp (and rs ($ rs 'get-recipe-process process-id))))
               (if rp (or (recipe-process-name rp) process-id) process-id)))))))
 
 (define (lookup-spec-name rs spec-id)
   (and spec-id
-       (let ((s ($ rs 'get-resource-spec spec-id)))
+       (let ((s (and rs ($ rs 'get-resource-spec spec-id))))
          (if s (or (resource-specification-name s) spec-id) spec-id))))
 
 (define (agent-name-of ctx aid)
-  (let ((a (and aid ($ (ctx-ref ctx 'as) 'get-agent aid))))
+  (let* ((as (ctx-ref ctx 'as))
+         (a (and aid as ($ as 'get-agent aid))))
     (and a (agent-name a))))
+;; a place's name, through the scope's places; the id where the context has none
+(define (place-name-of ctx id)
+  (let* ((sts (and id (ctx-ref ctx 'places)))
+         (s (and sts ($ sts 'get-location id))))
+    (or (and s (spatial-thing-name s)) id "")))
 
 (define (intent-cell loc) (string-append (or loc "") "@0"))
 
@@ -157,14 +166,15 @@
 ;; beginning; its effort spans it where it states no end
 (define (record-clock rec ctx)
   (grid-clock (row-when rec) (row-until rec)
-              #:or-date (if (intent? rec) (intent-due rec) (commitment-due rec))
+              #:or-date (cond ((intent? rec) (intent-due rec)) ((commitment? rec) (commitment-due rec)) (else #f))
               #:default-hour 10
               #:span (max 1 (inexact->exact (ceiling (or (row-effort rec) 1))))))
 
 ;; a spec's classifications — the join onto the dial's taxonomy: the dial
 ;; scopes a work intent to the leaf being viewed
 (define (categories rec ctx)
-  (let ((s (and (row-spec rec) ($ (ctx-ref ctx 'rs) 'get-resource-spec (row-spec rec)))))
+  (let* ((rs (ctx-ref ctx 'rs))
+         (s (and rs (row-spec rec) ($ rs 'get-resource-spec (row-spec rec)))))
     (if s (or (resource-specification-resource-classified-as s) '()) '())))
 
 ;; the willingness overlay (the offer side: who could help, who has signalled):
@@ -193,11 +203,13 @@
 
 ;; an intent's suggested provider rides its plan-store meta
 (define (suggested-provider rec ctx)
-  (alist-ref (or ($ (ctx-ref ctx 'ps) 'get-meta (row-id rec)) '()) 'suggested-provider))
+  (let ((ps (ctx-ref ctx 'ps)))
+    (alist-ref (or (and ps ($ ps 'get-meta (row-id rec))) '()) 'suggested-provider)))
 
 ;; how much of a commitment the books already record
 (define (fulfilled rec ctx)
-  (let ((fs ($ (ctx-ref ctx 'obs) 'get-fulfillment (row-id rec))))
+  (let* ((obs (ctx-ref ctx 'obs))
+         (fs (and obs ($ obs 'get-fulfillment (row-id rec)))))
     (if fs (or (measure->qty (fulfillment-state-total-fulfilled fs)) 0) 0)))
 
 ;; the row SAYS what it is, from its OWN terms — an intent awaits a yes; a
@@ -205,27 +217,49 @@
 ;; expired when the window wholly passed unworked — so no reader has to infer
 ;; standing from which list it rode, and last month's accepts stop painting as live
 (define (commitment-status rec ctx)
-  (cond ((commitment-finished rec) "done")
-        ((let ((u (window-close-epoch (commitment-has-end rec))))
+  (cond ((row-finished rec) "done")
+        ((let ((u (window-close-epoch (row-until rec))))
            (and u (> (ctx-ref ctx 'now) u))) "expired")
         (else "committed")))
 
 (define (none rec ctx) #f)
 (define (process-name-of rec ctx)
-  (or (count-process-name (ctx-ref ctx 'obs) (row-input-of rec))
-      (lookup-process-name (ctx-ref ctx 'preg) (ctx-ref ctx 'rs) (row-input-of rec)) ""))
+  (let ((obs (ctx-ref ctx 'obs)) (run (row-run rec)))
+    (or (and obs run (count-process-name obs run))
+        (and run (lookup-process-name (ctx-ref ctx 'preg) (ctx-ref ctx 'rs) run)) "")))
+;; THE LABEL, composed once: a work row reads "process: skill" where both are
+;; named, else whichever stands, else its spec id; a material row reads
+;; "action spec" (a pickup of flour: "pickup Flour")
+(define (row-label rec ctx)
+  (let ((pn (process-name-of rec ctx)) (sn (spec-label rec ctx)) (a (row-action rec)))
+    (if (eq? a 'work)
+        (cond ((and (not (string-null? pn)) (not (string-null? sn))) (string-append pn ": " sn))
+              ((not (string-null? pn)) pn)
+              ((not (string-null? sn)) sn)
+              (else (or (row-spec rec) "work")))
+        (let ((what (if (string-null? sn) (or (row-spec rec) "") sn)))
+          (cond ((string-null? what) (if a (symbol->string a) "event"))
+                (a (string-append (symbol->string a) " " what))
+                (else what))))))
 
 ;; THE VOCABULARY, stated once: the keys the dial's DayEvent reads, the suites
 ;; speak, and the page's types are generated from. A row says which arm of the
 ;; snapshot it rides, its source.
 (define (record-entries intent-table?)
-  `(("id" id str)
+  `(("id" ,(lambda (rec ctx) (row-id rec)) str)
+    ("label" ,row-label str)
     ,@(clock-entries record-clock)
+    ;; the record's own instants, verbatim: the schedule's cell (a confirmation
+    ;; names a row by its id, the coordinates serve a caller without one), and
+    ;; the join onto what the act needs (act-requires: proc, place, when)
+    ("when" ,(lambda (rec ctx) (row-when rec)) str)
+    ("until" ,(lambda (rec ctx) (row-until rec)) str)
     ("scope" ,(of 'scope-id) str)
     ;; willingness keying: express-willingness binds (worker skill cell)
-    ("spec" resource-conforms-to str)
-    ("specName" ,(lambda (rec ctx) (or (lookup-spec-name (ctx-ref ctx 'rs) (row-spec rec)) "")) str)
-    ("proc" input-of str) ("procName" ,process-name-of str)
+    ("spec" ,(lambda (rec ctx) (row-spec rec)) str)
+    ("specName" ,spec-label str)
+    ;; the process the row is a flow of: the one it is the output of, else an input of
+    ("proc" ,(lambda (rec ctx) (or (row-run rec) "")) str) ("procName" ,process-name-of str)
     ("cell" ,(if intent-table? (lambda (rec ctx) (intent-cell (row-place rec))) none) str)
     ;; the candidate field (skill holders = eligible) and the willing race: the
     ;; dial reads `candidates` to find work it is ELIGIBLE for, and `willing`
@@ -239,39 +273,49 @@
                   (lambda (rec ctx) (if (suggested-provider rec ctx) "matched" "unmatched"))
                   (lambda (rec ctx) "accepted"))
      str)
-    ("provider" ,(if intent-table? none (lambda (rec ctx) (commitment-provider rec))) str)
+    ("provider" ,(if intent-table? none (lambda (rec ctx) (row-provider rec))) str)
+    ("providerName" ,(if intent-table? none (lambda (rec ctx) (agent-name-of ctx (row-provider rec)))) str)
     ("status" ,(if intent-table? (lambda (rec ctx) "proposed") commitment-status) str)
     ;; the VF action and the receiver, verbatim — what lets a reader tell a WORK
     ;; intent (a door someone can take) from the scope's standing DEMAND (a
     ;; consume/use addressed to a receiver)
-    ("action" action str) ("receiver" receiver str)
+    ("action" ,(lambda (rec ctx) (row-action rec)) str) ("receiver" ,(lambda (rec ctx) (row-receiver rec)) str)
     ;; how much the record asks, and how much is already recorded — the record
     ;; verb defaults to the REMAINDER
     ("effort" ,(lambda (rec ctx) (or (row-effort rec) 1)) num)
     ("done" ,(if intent-table? (lambda (rec ctx) 0) fulfilled) num)
+    ;; a material row's one number — its quantity, or a means occupied its hours — and its unit
+    ("qty" ,(lambda (rec ctx) (or (row-figure rec) 0)) num)
+    ("unit" ,(lambda (rec ctx) (row-unit rec)) opt-str)
+    ("note" ,(lambda (rec ctx) (row-note rec)) str)
     ;; the plan's pull on an open shift; "" where no solve holds one
     ("pull" ,(if intent-table? shift-pull none) num)
     ;; where + what it serves: the at-location id (a map pin via the snapshot's
     ;; `locations`) and the spec's first classification (the leaf the dial scopes to)
-    ("at" at-location str)
+    ("at" ,(lambda (rec ctx) (row-place rec)) str)
+    ("placeName" ,(lambda (rec ctx) (place-name-of ctx (row-place rec))) str)
+    ;; a pickup's destination: the place its dropoff lands it, and that place's name
+    ("to" ,dropoff-place-of opt-str)
+    ("toName" ,(lambda (rec ctx) (let ((p (dropoff-place-of rec ctx))) (if p (place-name-of ctx p) ""))) str)
     ("serves" ,(lambda (rec ctx) (let ((cs (categories rec ctx))) (and (pair? cs) (string? (car cs)) (car cs)))) str)
     ;; the full classifiedAs list — the dial derives its spine from these
     ("categories" ,categories strs)
     ;; the record's own calendar day (and its end's, when it crosses midnight)
     ("date" ,(clock-field record-clock 'date) str) ("endDate" ,(clock-field record-clock 'end-date) str)
     ;; the record's recurrence, in the same arcs wire the slots speak
-    ("arcs" ,(lambda (rec ctx) (window->arcs (if (intent? rec) (intent-availability-window rec) (commitment-availability-window rec)))) (rows arc))
+    ("arcs" ,(lambda (rec ctx) (window->arcs (cond ((intent? rec) (intent-availability-window rec))
+                                                   ((commitment? rec) (commitment-availability-window rec))
+                                                   (else #f))))
+     (rows arc))
     ("source" ,(lambda (rec ctx) (if intent-table? "intent" "commitment")) str)))
 
 ;; ── the schedule: the plan's own commitments at their space-time coordinates ──
-;; Each row reads the commitment through the row readers (vf/formulas/flows.scm),
-;; so a record and a stored row are read alike and the vocabulary is the record's.
-;; The label is the scope's name for the spec; the id is the plan's own row id,
-;; what a confirmation names.
+;; The plan's schedule rides as the commitment-record rows themselves (the plan
+;; table, wire/snapshot.scm): one vocabulary for a commitment wherever it is
+;; read, the day's list and the schedule board alike. The readers below are the
+;; record entries' joins.
 (define (spec-label rec ctx)
   (let ((sp (row-spec rec)) (rs (ctx-ref ctx 'rs))) (or (and sp rs (lookup-spec-name rs sp)) sp "")))
-(define (row-scope-first rec ctx)
-  (let ((s (row-scope rec))) (cond ((pair? s) (car s)) ((string? s) s) (else ""))))
 (define (dropoff-place-of rec ctx)
   "Where a pickup's cargo lands: the dropoff of the same run and spec among the plan's
    material rows (the pair shares one run, a Process of its own)."
@@ -281,37 +325,6 @@
                                        (equal? (row-run m) run) (equal? (row-spec m) spec)))
                       (ctx-ref ctx 'material))
                 row-place))))
-(define %sched-work-wire
-  (wire-table 'sched-work #f
-    `(("id" ,(lambda (w ctx) (row-id w)) str)
-      ("who" ,(lambda (w ctx) (row-provider w)) str)
-      ("whoName" ,(lambda (w ctx) (and (ctx-ref ctx 'as) (agent-name-of ctx (row-provider w)))) str)
-      ("skillId" ,(lambda (w ctx) (row-spec w)) str)
-      ("skill" ,spec-label str)
-      ("effort" ,(lambda (w ctx) (or (row-effort w) 0)) num)
-      ("place" ,(lambda (w ctx) (row-place w)) str)
-      ("when" ,(lambda (w ctx) (row-when w)) str)
-      ("until" ,(lambda (w ctx) (row-until w)) str)
-      ("proc" ,(lambda (w ctx) (row-input-of w)) str)
-      ("scope" ,row-scope-first str))))
-(define %sched-mat-wire
-  (wire-table 'sched-mat #f
-    `(("action" ,(lambda (m ctx) (row-action m)) str)
-      ("id" ,(lambda (m ctx) (row-id m)) str)
-      ("specId" ,(lambda (m ctx) (row-spec m)) str)
-      ("spec" ,spec-label str)
-      ("qty" ,(lambda (m ctx) (or (row-figure m) 0)) num)   ; a use row's figure is its hours
-      ("unit" ,(lambda (m ctx) (row-unit m)) opt-str)
-      ("place" ,(lambda (m ctx) (row-place m)) str)
-      ("when" ,(lambda (m ctx) (row-when m)) str)
-      ("until" ,(lambda (m ctx) (row-until m)) str)
-      ("proc" ,(lambda (m ctx) (row-run m)) str)
-      ("to" ,dropoff-place-of opt-str)                      ; a pickup's destination: its dropoff's place
-      ("note" ,(lambda (m ctx) (row-note m)) str))))
-(define %sched-wire
-  (wire-table 'schedule #f
-    '(("work" work (rows sched-work)) ("material" material (rows sched-mat)))))
-
 ;; ── what an act needs HERE: the engine's requirement rows as they are ──
 ;; keyed by the same (proc, place, when) its schedule rows carry: the engine's
 ;; `process` and `begin` are read under the names the schedule uses, so the join
@@ -349,6 +362,17 @@
 (define %event-wire
   (wire-table 'event <economic-event>
     `(("id" id str)
+      ;; THE LABEL, composed once: what happened to what — a work event reads
+      ;; by its skill, a material one by its action and spec ("harvest Garden greens")
+      ("label" ,(lambda (e ctx)
+                  (let ((what (or (lookup-spec-name (ctx-ref ctx 'rs) (economic-event-resource-conforms-to e))
+                                  (economic-event-resource-conforms-to e) ""))
+                        (a (economic-event-action e)))
+                    (cond ((string-null? what) (if a (symbol->string a) "event"))
+                          ((eq? a 'work) what)
+                          (a (string-append (symbol->string a) " " what))
+                          (else what))))
+       str)
       ("specName" ,(lambda (e ctx) (or (lookup-spec-name (ctx-ref ctx 'rs) (economic-event-resource-conforms-to e)) "")) str)
       ("action" action str) ("spec" resource-conforms-to str)
       ("from" ,(lambda (e ctx) (let ((p (economic-event-provider e))) (or (agent-name-of ctx p) p ""))) str)

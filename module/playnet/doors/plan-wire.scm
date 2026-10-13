@@ -326,10 +326,10 @@
         ;; "not published for this act" rather than as "this act needs nothing".
        #:requires (or (assq-ref alist 'requires) '())
        ;; THE SCHEDULE: the same commitments with their SPACE-TIME coordinates
-       ;; kept — the records themselves; the sched-work and sched-mat tables
-       ;; (doors/record-rows.scm) write each at its own cell, a haul's pickup
-       ;; with the place its dropoff lands it
-       #:schedule `((work . ,work) (material . ,material))))))
+       ;; kept — the records themselves, work and material in one list; the
+       ;; commitment-record table (doors/record-rows.scm) writes each at its own
+       ;; cell, a haul's pickup with the place its dropoff lands it
+       #:schedule (append work material)))))
 ;; one part of a cached solve ((demand . plan), the service's last-solve-ref): the plan's KEY, or none
 (define (solve-part cached key)
   (or (and cached (assq-ref (cdr cached) key)) '()))
@@ -632,7 +632,8 @@
          ;; what the record rows join through (record-rows.scm): the reply carries it
          (ctx     (record-context scope-id rs as obs ps preg #:holders holders #:willing willing #:pulls pulls
                                   #:member-ids member-ids #:responses recipe-responses
-                                  #:material (solve-part cached 'material))))
+                                  #:material (solve-part cached 'material)
+                                  #:places ($ scope-root 'spatial-thing-store))))
     (with-context
     `((scope-id . ,scope-id)
       (scope-name . ,($ scope-root 'name))

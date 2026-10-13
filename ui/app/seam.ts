@@ -439,7 +439,8 @@ export type Plan = Wide<Omit<W.WirePlan, "needs" | "kept" | "produced" | "flow" 
   kept?: W.WirePlanKept[];
   produced?: Produced[];
   flow?: Production[];
-  schedule?: Schedule;
+  /** Every placed commitment, work and material alike; false until a solve has run. */
+  schedule?: ScheduleRow[] | false | null;
   requires?: Wide<W.WireActRequires>[];
   /**
    * Whether the solve stayed inside the limits it was given: "yes" | "no" |
@@ -480,17 +481,13 @@ export interface MatterGraph {
   links: MatterLink[];
 }
 
-/** A labour commitment the solve placed: which process, when, how much effort. */
-export type WorkCommitment = Wide<W.WireSchedWork> & { [key: string]: unknown };
-
-/** A material commitment the solve placed — the produce/consume/pickup/dropoff/use that realises the plan at its cell. */
-export type MaterialCommitment = Wide<W.WireSchedMat> & { [key: string]: unknown };
-
-/** The solve's placed commitments. */
-export interface Schedule {
-  work?: WorkCommitment[];
-  material?: MaterialCommitment[];
-}
+/**
+ * A commitment the solve placed, at its own clock moment and place — a work
+ * row (who works what where) or a material one (the produce / consume / pickup /
+ * dropoff / use that realises the plan at its cell): the commitment-record row,
+ * the one vocabulary a commitment is read in wherever it rides.
+ */
+export type ScheduleRow = Wide<W.WireCommitmentRecord>;
 
 /**
  * One flow into a production: what it drew in, and how.

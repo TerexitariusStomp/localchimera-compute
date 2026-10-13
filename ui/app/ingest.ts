@@ -118,22 +118,13 @@ function ingestRecipes(snap: ScopeSnapshot): void {
 }
 
 /**
- * The plan: coverage from the most recent solve.
- *
- * Willing counts come from the intents in THIS snapshot rather than from the
- * plan, so they are as fresh as the day is — a hand raised since the solve ran
- * still shows.
+ * The plan: coverage from the most recent solve. A need's willing count is
+ * the planner's, counted over the willing race of THIS snapshot, so it is as
+ * fresh as the day is — a hand raised since the solve ran still shows.
  */
 function ingestPlan(snap: ScopeSnapshot): void {
   const plan = snap.plan;
   if (!plan || !Array.isArray(plan.needs)) return;
-  const willBySpec: Record<string, number> = {};
-  (snap.intents || []).forEach(i => {
-    if (i.spec && (i.willing || []).length)
-      willBySpec[i.spec] = (willBySpec[i.spec] || 0) + i.willing!.length;
-  });
-  /** A string field off the wire, defaulted. */
-  const str = (v: unknown, or = ""): string => (v == null ? or : String(v));
   emit("plan", {
     ...plan,
     // "unknown" rather than a default: an infeasible solve provisions from
@@ -149,25 +140,15 @@ function ingestPlan(snap: ScopeSnapshot): void {
       q: n(pr.q), u: pr.u || "", period: pr.period || "",
       in: (pr.in || []).map(f => ({ spec: f.spec, id: f.id, q: n(f.q), action: f.action })),
     })) : null,
-    // The SCHEDULE, with its space-time coordinates kept: who works what where
-    // at which clock moment, and every material flow at its own cell — hauls at
-    // both ends, spanning runs at their arrival.
-    schedule: plan.schedule ? {
-      work: (plan.schedule.work || []).map(w => ({
-        who: str(w.who), skill: str(w.skill), effort: n(w.effort),
-        place: str(w.place), when: str(w.when), until: str(w.until), proc: str(w.proc),
-      })),
-      material: (plan.schedule.material || []).map(m => ({
-        id: str(m.id), specId: str(m.specId),
-        action: str(m.action), spec: str(m.spec), qty: n(m.qty),
-        place: str(m.place), when: str(m.when), until: str(m.until), to: m.to ? str(m.to) : "",
-        proc: str(m.proc), note: str(m.note),
-      })),
-    } : null,
-    // every key the row carries rides through (`for`: whose own good it is)
+    // The SCHEDULE, with its space-time coordinates kept: every placed
+    // commitment, work and material, as the commitment-record rows they are —
+    // hauls at both ends, spanning runs at their arrival.
+    schedule: plan.schedule || null,
+    // every key the row carries rides through (`for`: whose own good it is,
+    // `willing`: the hands raised for it in this snapshot)
     needs: plan.needs.map(nd => ({
       ...nd, met: n(nd.met), want: n(nd.want), runs: n(nd.runs), labourH: n(nd.labourH),
-      willing: willBySpec[nd.id || ""] || 0,
+      willing: n(nd.willing),
     })),
   });
   // …and re-proportion the central WHEEL to this scope's aggregate demand: ONE
@@ -188,6 +169,7 @@ function ingestSchedule(snap: ScopeSnapshot): boolean {
   const s = snap.plan && snap.plan.schedule;
   if (!s) return false;
   const str = (v: unknown, or = ""): string => (v == null ? or : String(v));
+  const me = (seam.data && seam.data.aid) || (idHint() || {}).aid || null;
   // WHAT EACH ACT NEEDS, joined once. The key is the three fields the solve
   // wrote from one source — a commitment's `when` and a requirement row's are
   // the same period-span call — so this is equality, not a time comparison.
@@ -214,48 +196,27 @@ function ingestSchedule(snap: ScopeSnapshot): boolean {
       ...(why ? { why: { reason: why.reason, detail: (why.detail || []).map(d => str(d)) } } : {}),
     };
   };
+  // every row is the commitment-record row it is, read by the one reader the
+  // day's own list reads (wired): its label, clock and place are the planner's
   const rows: DayEvent[] = [];
-  for (const w of (s.work || [])) {
-    const h0 = hereOfInstant(str(w.when)), h1 = hereOfInstant(str(w.until));
-    if (h0.doy == null) continue;
-    // the day-arm's own law (wire(), below): a row with no stated clock is
-    // UNCLOCKED — dated in its day, at no fabricated hour. The 9 here is
-    // only lane math; the flag is what the hour grid reads.
-    const unclocked = h0.t0 == null;
-    const t0 = h0.t0 ?? 9;
-    // a real until wins — on a LATER day it also spans the block across
-    // midnight (doy1) and t1 becomes the end-day clock; otherwise the effort
-    // spans forward within the day
-    const cross = h1.doy != null && h1.t0 != null && h1.doy > h0.doy;
-    const t1 = (h1.doy === h0.doy && h1.t0 != null) ? h1.t0 : t0 + n(w.effort);
-    rows.push({ label: str(w.skill, "work"), doy: h0.doy, t0,
-                t1: cross ? h1.t0! : Math.max(t1, t0 + 0.25),
-                ...(cross ? { doy1: h1.doy! } : {}),
-                ...(unclocked ? { unclocked: true } : {}),
-                kind: "work", action: "work", lane: 0, status: "committed",
-                from: str(w.who), proc: str(w.proc), ...placed(str(w.place)),
-                ...needsOf(str(w.proc), str(w.place), str(w.when)) });
-  }
-  for (const m of (s.material || [])) {
-    const h0 = hereOfInstant(str(m.when));
-    if (h0.doy == null) continue;
-    const t0 = h0.t0 ?? 9;
-    const action = str(m.action, "produce");
-    // a pickup's destination rides on its row (sched-mat `to`: the place its dropoff lands it)
-    const dest = m.to ? locOf(str(m.to)) : null;
-    // the row's own end, where it states one; else a half hour on the board
-    const h1 = hereOfInstant(str(m.until));
-    const t1 = (h1.doy === h0.doy && h1.t0 != null && h1.t0 > t0) ? h1.t0 : t0 + 0.5;
-    rows.push({ label: `${action} ${str(m.spec)}`, doy: h0.doy, t0, t1,
-                ...(h0.t0 == null ? { unclocked: true } : {}),
-                kind: "work", action, lane: 0, status: "committed",
-                spec: str(m.spec), specId: str(m.specId), rowId: str(m.id),
-                proc: str(m.proc), ...placed(str(m.place)),
-                // the row's own id and coordinates, kept verbatim: recordFlow
-                // names the row by its id (the coordinates serve a caller without one)
-                qty: n(m.qty), when: str(m.when), note: str(m.note),
-                ...needsOf(str(m.proc), str(m.place), str(m.when)),
-                ...(dest ? { toLoc: dest } : {}) });
+  for (const r of s) {
+    if (!r.date) continue;
+    const base = wired(r, me);
+    if (r.action === "work") {
+      rows.push({ ...base, status: "committed",
+                  from: str(r.providerName) || str(r.provider),
+                  ...needsOf(str(r.proc), str(r.at), str(r.when)) });
+    } else {
+      // a pickup's destination rides on its row (`to`: the place its dropoff lands it)
+      const dest = r.to ? locOf(str(r.to)) : null;
+      rows.push({ ...base, status: "committed",
+                  spec: str(r.specName) || str(r.spec), specId: str(r.spec), rowId: str(r.id),
+                  // the row's own id and coordinates, kept verbatim: recordFlow
+                  // names the row by its id (the coordinates serve a caller without one)
+                  qty: n(r.qty), when: str(r.when), note: str(r.note),
+                  ...needsOf(str(r.proc), str(r.at), str(r.when)),
+                  ...(dest ? { toLoc: dest } : {}) });
+    }
   }
   // ONE column per (skill, span, place, day). The solve emits a work cell
   // per recipe process — a festival's 24 district recipes share one skill
@@ -267,7 +228,7 @@ function ingestSchedule(snap: ScopeSnapshot): boolean {
   const compact: DayEvent[] = [];
   for (const r of rows) {
     if (r.action !== "work") { compact.push(r); continue; }
-    const k = `${r.label}|${r.doy}|${r.t0}|${r.t1}|${r.place ?? ""}`;
+    const k = `${r.spec ?? ""}|${r.doy}|${r.t0}|${r.t1}|${r.place ?? ""}`;
     const m = seen.get(k);
     if (m) counts.set(k, (counts.get(k) ?? 1) + 1);
     else { seen.set(k, r); compact.push(r); }
@@ -288,11 +249,9 @@ function ingestLived(snap: ScopeSnapshot): boolean {
   if (!Array.isArray(snap.events)) return false;
   const rows: DayEvent[] = snap.events.map(r => {
     const to = r.to ? locOf(r.to) : null;
-    // the lived row's label, composed HERE (the one derivation): what
-    // happened to what — "harvest 30kg" reads as "harvest Garden greens"
-    const what = r.specName || r.spec || "";
-    const a = r.action || "";
-    return { label: !what ? (a || "event") : a === "work" ? what : `${a} ${what}`.trim(),
+    // the lived row's label is the planner's one derivation (the event table):
+    // what happened to what — "harvest Garden greens"
+    return { label: r.label || r.action || "event",
              ...spanOf(r),
              kind: "work", action: r.action || "", lane: 0, tier: "lived",
              vfId: r.id, scope: r.scope, spec: r.spec, from: r.from || "",
@@ -399,6 +358,32 @@ const dated = (iso?: string, endIso?: string): Partial<DayEvent> => {
   return { doy: d, ...(d1 != null && d1 > d ? { doy1: d1 } : {}) };
 };
 
+/**
+ * THE reader of a record's row (commitment-record, intent-record): the
+ * planner's label, clock, standing and venue, as the table states them.
+ */
+const wired = (r: WireWork, me: string | null): DayEvent => ({
+  label: r.label || r.spec || "work",
+  ...spanOf(r),
+  // the VF action rides verbatim; an intent/commitment with no stated
+  // clock is UNCLOCKED — dated in its day, at no fabricated hour
+  kind: "work", action: r.action || "work", lane: 0, vfId: r.id, scope: r.scope,
+  ...(r.sh == null ? { unclocked: true } : {}),
+  spec: r.spec, cell: r.cell,
+  candidates: r.candidates || [],
+  willing: r.willing || [],
+  suggested: r.suggested || "",
+  serves: r.serves || "",
+  cats: r.categories || (r.serves ? [r.serves] : []),
+  ...(r.status ? { status: r.status } : {}),   // the wire's own standing
+  effort: n(r.effort), done: n(r.done),        // asked vs already recorded
+  ...(r.pull ? { pull: n(r.pull) } : {}),      // the plan's pull, where a solve priced it
+  ...(Array.isArray(r.arcs) && r.arcs.length ? { arcs: r.arcs } : {}),
+  ...dated(r.date, r.endDate),  // a dated record lands on its own column(s)
+  ...placed(r.at),   // loc + at + place — every wired event carries its venue
+  ...(me && r.provider === me ? { mine: true } : {}),
+});
+
 function ingestDay(snap: ScopeSnapshot): boolean {
   // WHO AM I — the spine's signed identity, pushed across the seam at its
   // one write door (set-aid!). The device hint is only the pre-unlock
@@ -406,34 +391,7 @@ function ingestDay(snap: ScopeSnapshot): boolean {
   // commitments as yours whenever the hint was stale.
   const me = (seam.data && seam.data.aid) || (idHint() || {}).aid || null;
 
-  // THE label derivation — the one place presentation is composed, from the
-  // wire's own name parts: "Proc: Spec" where both are named, else whichever
-  // stands, else the spec id, else the verb of last resort.
-  const labelOf = (r: WireWork): string => {
-    const pn = r.procName || "", sn = r.specName || "";
-    if (pn && sn) return `${pn}: ${sn}`;
-    return pn || sn || r.spec || "work";
-  };
-  const wire = (r: WireWork): DayEvent => ({
-    label: labelOf(r),
-    ...spanOf(r),
-    // the VF action rides verbatim; an intent/commitment with no stated
-    // clock is UNCLOCKED — dated in its day, at no fabricated hour
-    kind: "work", action: r.action || "work", lane: 0, vfId: r.id, scope: r.scope,
-    ...(r.sh == null ? { unclocked: true } : {}),
-    spec: r.spec, cell: r.cell,
-    candidates: r.candidates || [],
-    willing: r.willing || [],
-    suggested: r.suggested || "",
-    serves: r.serves || "",
-    cats: r.categories || (r.serves ? [r.serves] : []),
-    ...(r.status ? { status: r.status } : {}),   // the wire's own standing
-    effort: n(r.effort), done: n(r.done),        // asked vs already recorded
-    ...(r.pull ? { pull: n(r.pull) } : {}),      // the plan's pull, where a solve priced it
-    ...(Array.isArray(r.arcs) && r.arcs.length ? { arcs: r.arcs } : {}),
-    ...dated(r.date, r.endDate),  // a dated record lands on its own column(s)
-    ...placed(r.at),   // loc + at + place — every wired event carries its venue
-  });
+  const wire = (r: WireWork): DayEvent => wired(r, me);
 
   // A commitment is YOURS only with your name on it (provider = your AID) —
   // the accept is what binds a person. The deployment fold also persists
