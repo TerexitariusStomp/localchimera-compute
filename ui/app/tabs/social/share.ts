@@ -473,23 +473,33 @@ let closePanelHook: (() => void) | null = null;   // set once the draft panel ex
 let sheetEl: HTMLElement | null = null;
 const riseTo = (full: boolean): void => { sheetEl?.classList.toggle("full", full); };
 
-/**
- * Show `el` in the sheet, rising to the whole height when `full`. `gone` runs when the view leaves, whichever way it does.
- * A `sticky` view is one the page works WITH — a route being chosen on the map — so a tap on the map does not put it away;
- * the grip, its own close and another view replacing it still do.
- */
-export function openSheetView(owner: string, el: HTMLElement, gone: () => void, full = false, fit = false, sticky = false): void {
+/** How a view sits in the sheet. */
+export interface SheetViewOpts {
+  /** Rise to the whole height — a page to read, not a glance. */
+  full?: boolean;
+  /**
+   * The sheet is as tall as the view needs (a result card, a bundle's cards) rather than a standing height,
+   * so what is short leaves the page its room.
+   */
+  fit?: boolean;
+  /**
+   * A view the page works WITH — a route being chosen on the map — so a tap on the map does not put it away;
+   * the grip, its own close and another view replacing it still do.
+   */
+  sticky?: boolean;
+}
+
+/** Show `el` in the sheet. `gone` runs when the view leaves, whichever way it does. */
+export function openSheetView(owner: string, el: HTMLElement, gone: () => void, o: SheetViewOpts = {}): void {
   if (!viewHost) return;
   closeSheetView();
-  riseTo(full);
-  // `fit`: the sheet is as tall as the view needs (a result card, a bundle's cards) rather than a standing height,
-  // so what is short leaves the page its room
-  viewHost.toggleAttribute("data-fit", fit);
+  riseTo(!!o.full);
+  viewHost.toggleAttribute("data-fit", !!o.fit);
   open.set(false);
   closePanelHook?.();
   viewHost.replaceChildren(el);
   viewHost.classList.add("on");
-  viewOwner = owner; viewGone = gone; viewSticky = sticky;
+  viewOwner = owner; viewGone = gone; viewSticky = !!o.sticky;
 }
 /** Put the view away — only `owner`'s, when one is named. */
 export function closeSheetView(owner?: string): void {

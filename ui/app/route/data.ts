@@ -1,4 +1,4 @@
-// app/route-data.ts — what /route says, read once into the shapes the journey
+// app/route/data.ts — what /route says, read once into the shapes the journey
 // UI draws from.
 //
 // serve-static's /route is a thin relay to the local Valhalla engine, so a
@@ -6,19 +6,46 @@
 // polyline decode, the trip → Route reading (the chosen way and its
 // alternates), the request a mode asks with, and a short-lived cache so the
 // preview's four mode tabs and a re-opened sheet do not ask the engine twice.
-// It draws nothing and holds no journey; app/nav.ts and the preview sit on it.
+// It draws nothing and holds no journey; app/route/nav.ts and the preview sit on it.
 //
 // Every field is read defensively. A leg may carry no shape, a maneuver no
 // street names: an absent field reads as absent (empty list, 0, ""), never as a
 // guess, and a reply with no legs is no route at all.
 
-import type { LatLng, Point } from './geom.js';
+import type { LatLng, Point } from '../geom.js';
 
 /** Valhalla's costing names — the keys the UI's mode tabs ride on. */
 export type Costing = "multimodal" | "pedestrian" | "bicycle" | "auto";
 
-/** The tabs, in the order a preview shows them: transit first, as the phone's do. */
-export const ROUTE_MODES: Costing[] = ["multimodal", "pedestrian", "bicycle", "auto"];
+/** A way of travelling: the engine's name for it, and what it is called and drawn as. */
+export interface ModeInfo { costing: Costing; label: string; icon: string }
+
+/**
+ * THE table of modes, in the order a preview shows its tabs (transit first, as the
+ * phone's do) and the wayfinder's mode glyph cycles. The preview, the wayfinder and
+ * the REPL page all read their words and glyphs from here.
+ */
+export const MODES: readonly ModeInfo[] = [
+  { costing: "multimodal", label: "Transit", icon: "🚌" },
+  { costing: "pedestrian", label: "Walk",    icon: "🚶" },
+  { costing: "bicycle",    label: "Bicycle", icon: "🚲" },
+  { costing: "auto",       label: "Drive",   icon: "🚗" },
+];
+
+export const ROUTE_MODES: Costing[] = MODES.map(m => m.costing);
+
+/** What a mode is called and drawn as; undefined for a costing the UI has no tab for. */
+export const modeInfo = (costing: string): ModeInfo | undefined => MODES.find(m => m.costing === costing);
+
+/**
+ * UI words → Valhalla costing — the one vocabulary boundary, where the words are
+ * born; the wire and the server speak costing names natively. A name already a
+ * costing passes through, and no word at all is a walk.
+ */
+export function costingOf(word?: string | null): string {
+  return ({ foot: "pedestrian", bike: "bicycle", car: "auto", scooter: "motor_scooter",
+            transit: "multimodal", bus: "bus" } as Record<string, string>)[word || ""] || word || "pedestrian";
+}
 
 /** One stop on a transit maneuver. Times are the engine's local ISO minutes. */
 export interface TransitStop {

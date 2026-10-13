@@ -18,7 +18,7 @@
 //                GLIDES rather than jumping, because a hard jump reads as a
 //                teleport.
 
-import { USER } from './core.js';
+import { locateOnce } from './position.js';
 import { onEarth } from './stage.js';
 
 /** What the compass turns when the heading changes. */
@@ -136,11 +136,7 @@ let geoAsked = false;
 export function askGeolocation(): void {
   if (geoAsked || !navigator.geolocation) return;
   geoAsked = true;
-  navigator.geolocation.getCurrentPosition(pos => {
-    USER.lat = pos.coords.latitude;
-    USER.lng = pos.coords.longitude;
-    host.arrived();
-  }, () => { /* refused, or no fix: the default stands */ }, { timeout: 6000 });
+  void locateOnce().then(f => { if (f) host.arrived(); });   // refused, or no fix: the default stands
 }
 
 /**

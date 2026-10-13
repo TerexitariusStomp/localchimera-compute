@@ -1,4 +1,4 @@
-// app/nav.ts — the commons' own wayfinder.
+// app/route/nav.ts — the commons' own wayfinder.
 //
 // serve-static's /route reaches the local Valhalla engine, and this turns its
 // answer into the dial's centre: ONE turn at a time, big enough for a wrist. A
@@ -20,17 +20,20 @@
 // can name a destination (the search panel already does) needs no more than a
 // destination.
 
-import { USER, PLACES, pcoord, HANDLERS, EXT } from './core.js';
-import { locationOptions } from './slots/model.js';
-import { havKm, bearingDeg } from './geom.js';
-import { onMapFace } from './stage.js';
-import { deviceHeading } from './compass.js';
-import { MAP_EL } from './mapview.js';
-import { clockOf } from './timefmt.js';
-import type { LatLng } from './geom.js';
-import { gateHint } from './day/respond.js';
-import { fetchRoutes } from './route-data.js';
-import type { Route } from './route-data.js';
+import { USER, PLACES, pcoord, HANDLERS, EXT } from '../core.js';
+import { locationOptions } from '../slots/model.js';
+import { havKm, bearingDeg, ARROW8 } from '../geom.js';
+import { onMapFace } from '../stage.js';
+import { deviceHeading } from '../compass.js';
+import { MAP_EL } from '../mapview.js';
+import { clockOf } from '../timefmt.js';
+import type { LatLng } from '../geom.js';
+import { gateHint } from '../day/respond.js';
+import { fetchRoutes, ROUTE_MODES, modeInfo } from './data.js';
+import { fmtDistance } from './facts.js';
+import { paintLines, clearLines } from './lines.js';
+import { watchFixes } from '../position.js';
+import type { Route } from './data.js';
 
 /** What routing needs to know about the dial's current arrangement. */
 export interface NavHost {
@@ -43,8 +46,6 @@ export interface NavHost {
    * stage and the map disc must be re-measured to stay welded to the dial.
    */
   restage(): void;
-  /** Move the you-marker as GPS arrives, when there is one. */
-  moveUser(): void;
   /** The place the ↦ go chip targets: the selected one, or null. */
   selectedPlace(): { at: LatLng; name: string } | null;
   /** Show the ways to a place — the route preview, which ends in startNavTo when a way is chosen. */
@@ -53,9 +54,6 @@ export interface NavHost {
 
 // ── the vocabulary of a journey ─────────────────────────────────────────────
 
-/** How you are travelling. The keys are Valhalla's own costing names. */
-const NAV_MODES: Record<string, string> = { pedestrian: "🚶", bicycle: "🚲", auto: "🚗", multimodal: "🚌" };
-
 /** Valhalla maneuver type → the glyph the card shows for it. */
 const NAV_GLYPH: Record<number, string> = {
   1:"↑",2:"↗",3:"↖",4:"🏁",5:"🏁",6:"🏁",8:"↑",9:"↗",10:"→",
@@ -63,13 +61,6 @@ const NAV_GLYPH: Record<number, string> = {
   21:"↖",22:"↑",23:"↗",24:"↖",25:"⇡",26:"⟳",27:"⤴",28:"⛴",29:"⛴",
   // transit: board, transfer, stay aboard, and the walks to and from the stops
   30:"🚌",31:"⇄",32:"🚌",33:"🚶",34:"🚶",35:"🚶",36:"🚶",37:"↗",38:"↖" };
-
-/** The eight compass arrows, from north clockwise — the degraded card's glyph. */
-export const ARROW8 = ["↑","↗","→","↘","↓","↙","←","↖"];
-
-/** A distance, in the unit that reads at that size. */
-export const navKm = (km: number): string =>
-  km < 1 ? `${Math.round(km*1000)} m` : `${km.toFixed(1)} km`;
 
 const navClock = clockOf;   // an arrival time is a wall clock, in your own zone
 
@@ -96,7 +87,8 @@ async function fetchRoute(from: LatLng, to: LatLng, costing: string): Promise<Ro
 
 let host: NavHost;
 let nav: Journey | null = null;
-let navWatch = -1;
+/** Ends the position watch the journey holds, while one is held. */
+let stopWatch: (() => void) | null = null;
 let navProfile = "pedestrian";
 /** Where the card lives when it is not floating: its original parent. */
 let navHome: HTMLElement | null = null;
@@ -104,21 +96,13 @@ let navHome: HTMLElement | null = null;
 /** Whether a journey is under way — the ↦ go chip's two meanings. */
 export const navigating = (): boolean => nav !== null;
 
+/** Draw the journey: its way with what is behind you dimmed, or — with no way — a bearing thread. */
 function drawNavLine(): void {
   const map = host.map();
   if (!map || !nav) return;
-  const data: maplibregl.BareFeature = { type: "Feature", geometry: { type: "LineString",
-    coordinates: nav.route ? nav.route.coords
-                           : [[USER.lng, USER.lat], [nav.dest.lng, nav.dest.lat]] } };
-  const src = map.getSource("nav");
-  if (src) { src.setData(data); return; }
-  map.addSource("nav", { type: "geojson", data });
-  map.addLayer({ id: "nav-casing", type: "line", source: "nav",
-    layout: { "line-cap": "round", "line-join": "round" },
-    paint: { "line-color": "#0b0f14", "line-width": 8, "line-opacity": .45 } });
-  map.addLayer({ id: "nav-line", type: "line", source: "nav",
-    layout: { "line-cap": "round", "line-join": "round" },
-    paint: { "line-color": "#4ea1ff", "line-width": 5 } });
+  paintLines(map, nav.route
+    ? { ways: [nav.route], pick: 0, at: nav.at }
+    : { bearing: [[USER.lng, USER.lat], [nav.dest.lng, nav.dest.lat]] });
 }
 
 /** The nearest route vertex, scanning forward from where you last were. */
@@ -136,12 +120,12 @@ function navIdxNear(j: Journey, r: Route): number {
 function updateNavCard(): void {
   if (!nav) return;
   const card = d3.select("#navcard");
-  card.select(".mode").text(NAV_MODES[navProfile]);
+  card.select(".mode").text(modeInfo(navProfile)?.icon ?? "");
   if (!nav.route) {                   // the compass degradation
     const b = bearingDeg(USER, nav.dest), km = havKm(USER, nav.dest);
     card.select(".glyph").text(ARROW8[Math.round(((b - deviceHeading() + 360) % 360) / 45) % 8]);
     card.select(".instr").text(nav.placeName);
-    card.select(".meta").text(`${navKm(km)} as the crow flies · no route data`);
+    card.select(".meta").text(`${fmtDistance(km)} as the crow flies · no route data`);
     return;
   }
   const r = nav.route;
@@ -151,23 +135,21 @@ function updateNavCard(): void {
   if (!nxt || havKm(USER, nav.dest) < 0.03) {       // the last stretch
     card.select(".glyph").text("🏁");
     card.select(".instr").text(nav.placeName);
-    card.select(".meta").text(`${navKm(havKm(USER, nav.dest))} left`);
+    card.select(".meta").text(`${fmtDistance(havKm(USER, nav.dest))} left`);
   } else {
     const at = r.coords[nxt.begin];
     card.select(".glyph").text(NAV_GLYPH[nxt.type] || "↑");
     card.select(".instr").text(nxt.instr);
-    card.select(".meta").text(`${navKm(havKm(USER, { lat: at[1], lng: at[0] }))} · ` +
+    card.select(".meta").text(`${fmtDistance(havKm(USER, { lat: at[1], lng: at[0] }))} · ` +
       `${Math.max(1, Math.round(remS / 60))} min · arrive ${navClock(new Date(Date.now() + remS * 1000))}`);
   }
 }
 
-/** GPS moved: you move, and so does the thread that follows you. */
-function onNavPos(pos: GeolocationPosition): void {
-  USER.lat = pos.coords.latitude; USER.lng = pos.coords.longitude;
-  host.moveUser();
+/** A fix: you have moved (app/position.ts moved USER and the you-marker), and so does what follows you. */
+function onFix(): void {
   if (!nav) return;
-  if (!nav.route) drawNavLine();      // the straight thread follows you
   updateNavCard();
+  drawNavLine();                      // the way's dimmed part, or the straight thread, follows you
 }
 
 /**
@@ -240,12 +222,6 @@ export async function startNavTo(dest: LatLng, placeName: string, chosen?: Chose
   const route = chosen ? chosen.route : await fetchRoute(USER, dest, navProfile);
   nav = { dest, placeName, route, at: 0 };
   drawNavLine();
-  // A real route is a wide solid stroke on a casing. The compass degradation is
-  // a bearing, not a route: a thin dashed thread, no casing — the card says
-  // "no route data" in words and the line says it in its stroke.
-  map.setPaintProperty("nav-line", "line-dasharray", route ? [1, 0] : [0.5, 1.8]);
-  map.setPaintProperty("nav-line", "line-width", route ? 5 : 2);
-  map.setPaintProperty("nav-casing", "line-opacity", route ? .45 : 0);
   d3.select("#gochip").classed("on", true);
   d3.select("#navcard").style("display", "block");
   host.restage();
@@ -256,9 +232,7 @@ export async function startNavTo(dest: LatLng, placeName: string, chosen?: Chose
                                   [180, 90, -180, -90]);
     map.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: host.mapRpx() * 0.22, duration: 700 });
   }
-  if (navigator.geolocation && navWatch < 0)
-    navWatch = navigator.geolocation.watchPosition(onNavPos, () => {},
-      { enableHighAccuracy: true, maximumAge: 3000 });
+  if (!stopWatch) stopWatch = watchFixes(onFix, { highAccuracy: true });
 }
 
 /** The ways to the selected place, when one is selected and a map is up. */
@@ -271,16 +245,11 @@ function startNav(): void {
 /** End the journey: the watch, the card, the chip and the two map layers. */
 export function endNav(): void {
   journeyEnd();   // reads `nav` before it clears — the dropoff names the arc
-  if (navWatch >= 0 && navigator.geolocation) navigator.geolocation.clearWatch(navWatch);
-  navWatch = -1; nav = null;
+  stopWatch?.(); stopWatch = null; nav = null;
   d3.select("#navcard").style("display", "none");
   d3.select("#gochip").classed("on", false);
   host.restage();
-  const map = host.map();
-  if (map) {
-    for (const l of ["nav-line", "nav-casing"]) if (map.getLayer(l)) map.removeLayer(l);
-    if (map.getSource("nav")) map.removeSource("nav");
-  }
+  clearLines(host.map());
 }
 
 /**
@@ -294,7 +263,7 @@ export function initNav(h: NavHost): void {
   d3.select("#navcard").on<MouseEvent>("click", e => {
     const t = e.target as HTMLElement;
     if (t.classList.contains("mode") && nav) {   // cycle 🚶→🚲→🚗
-      const ms = Object.keys(NAV_MODES);
+      const ms: string[] = ROUTE_MODES;
       navProfile = ms[(ms.indexOf(navProfile) + 1) % ms.length];
       // the journey's own destination, not the selected place: a journey begun
       // from the search panel has no selected place to route to

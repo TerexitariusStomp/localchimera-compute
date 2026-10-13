@@ -1,18 +1,20 @@
-// app/route-facts.ts — what a route SAYS, in the words and places a preview
+// app/route/facts.ts — what a route SAYS, in the words and places a preview
 // draws it with. Pure: no DOM, no map, no clock of its own.
 //
 //   fmtMinutes / fmtDistance   "7 min", "1 h 5 min", "2.2 km", "0.4 mi"
 //   headline                   "7 min (2.2 km)"
 //   transitLines / rides       the lines a transit route rides, in order
+//   segments                   a route's shape cut into runs by mode (walk · ride · walk)
+//   replTrip                   a route as the REPL page's Scheme side takes it
 //   boundsOf                   the box that holds every route
 //   pillAnchor                 where a route's time pill sits so no route hides it
 //   swapEnds                   the from/to card's ⇅
 //
-// The preview (app/route-preview.ts) is the one reader; the numbers it shows
+// The preview (app/route/preview.ts) is the one reader; the numbers it shows
 // are these, so a test can state them.
 
-import type { LatLng, Point } from './geom.js';
-import type { Route } from './route-data.js';
+import type { LatLng, Point } from '../geom.js';
+import type { Route } from './data.js';
 
 /** A duration the way a person says it: under an hour in minutes, else hours and minutes. */
 export function fmtMinutes(s: number): string {
@@ -22,10 +24,14 @@ export function fmtMinutes(s: number): string {
   return r ? `${h} h ${r} min` : `${h} h`;
 }
 
-/** A distance in the unit the engine answered with: metres under a kilometre, tenths above. */
+/**
+ * A distance in the unit the engine answered with, at the size it reads at: metres
+ * under a kilometre, tenths to ten, whole numbers beyond. THE one formatter —
+ * the wayfinder, the places list and the map's search all print through it.
+ */
 export function fmtDistance(km: number, units: Route["units"] = "kilometers"): string {
-  if (units === "miles") return km < 0.1 ? `${Math.round(km * 5280)} ft` : `${km.toFixed(1)} mi`;
-  return km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`;
+  if (units === "miles") return km < 0.1 ? `${Math.round(km * 5280)} ft` : `${km < 10 ? km.toFixed(1) : km.toFixed(0)} mi`;
+  return km < 1 ? `${Math.round(km * 1000)} m` : `${km < 10 ? km.toFixed(1) : km.toFixed(0)} km`;
 }
 
 /** "7 min (2.2 km)" — the preview's summary line. */
@@ -46,6 +52,46 @@ export function transitLines(r: Route): RideLine[] {
 
 /** How many vehicles a route boards. */
 export const rides = (r: Route): number => r.mans.filter(boards).length;
+
+/** A run of a route's shape travelled one way: "pedestrian", "transit", … ("" when the engine did not say). */
+export interface Segment {
+  mode: string;
+  /** Where the run begins, as an index into the route's own shape. */
+  begin: number;
+  coords: Point[];
+}
+
+/**
+ * A route's shape cut into contiguous runs of one travel mode — walk, ride, walk — so each can be
+ * drawn its own way. A route whose maneuvers name no mode (or none at all) is one run.
+ */
+export function segments(r: Route): Segment[] {
+  const runs: { mode: string; begin: number; end: number }[] = [];
+  for (const m of r.mans) {
+    const last = runs[runs.length - 1];
+    if (last && last.mode === m.mode) last.end = Math.max(last.end, m.end);
+    else runs.push({ mode: m.mode, begin: m.begin, end: m.end });
+  }
+  const out = runs.map(s => ({ mode: s.mode, begin: s.begin, coords: r.coords.slice(s.begin, s.end + 1) }))
+                  .filter(s => s.coords.length > 1);
+  return out.length ? out : r.coords.length > 1 ? [{ mode: "", begin: 0, coords: r.coords }] : [];
+}
+
+/**
+ * A route in the one normalized contract the REPL page's Scheme side pipes around
+ * (hoot/repl.scm's journey): { engine, profile, coordinates, segments, distance_km,
+ * time_s, maneuvers }. The page reads Valhalla through the same reader the dial does.
+ */
+export function replTrip(r: Route, profile?: string): Record<string, unknown> {
+  return {
+    engine: "valhalla", profile: profile || "foot",
+    coordinates: r.coords,
+    segments: segments(r).map(s => ({ mode: s.mode, coordinates: s.coords })),
+    distance_km: r.km, time_s: r.s,
+    maneuvers: r.mans.map(m => ({ instruction: m.instr, type: m.type, distance_km: m.length,
+                                  time_s: m.time, travel_mode: m.mode, begin: m.begin, end: m.end })),
+  };
+}
 
 /** The box that holds every route's shape: [[west, south], [east, north]], or null when there is no shape. */
 export function boundsOf(routes: readonly { coords: readonly Point[] }[]): [[number, number], [number, number]] | null {

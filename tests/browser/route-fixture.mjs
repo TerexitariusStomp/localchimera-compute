@@ -10,7 +10,7 @@
 // Used by tests/browser/route-data-test.mjs (node) and the UX probes
 // (tests/ux/route-stub.mjs answers the page's /route calls from it).
 
-/** Valhalla's polyline, precision 6 — the inverse of app/route-data.ts decodePoly. */
+/** Valhalla's polyline, precision 6 — the inverse of app/route/data.ts decodePoly. */
 export function encodePoly(coords) {
   let plat = 0, plng = 0, out = "";
   const enc = v => {

@@ -17,7 +17,7 @@ await page.setViewportSize({ width: 1400, height: 900 });
 
 const A = { lat: 37.7749, lng: -122.4194 }, B = { lat: 37.7849, lng: -122.4094 };
 const ask = (args) => page.evaluate(async ({ A, B, args }) => {
-  const m = await import('/app/route-data.js');
+  const m = await import('/app/route/data.js');
   m.clearRouteCache();
   const out = await m[args.fn](A, B, ...args.rest);
   const sum = r => ({ costing: r.costing, s: r.s, km: +r.km.toFixed(3), mans: r.mans.length,

@@ -6,15 +6,15 @@
 /// wayfinder without asking the engine again; ✕ returns to the place card.
 ///
 /// /route is answered from the synthetic engine (tests/browser/route-fixture.mjs).
-/// Software WebGL (swiftshader) gives the page a real map, so the layers, the
+/// Software WebGL (WEBGL_ARGS) gives the page a real map, so the layers, the
 /// markers and the camera are read as the page has them; no tiles are asserted.
-import { harness, launch, summarize, sleep } from './ux-harness.mjs';
+import { harness, launch, summarize, sleep, WEBGL_ARGS } from './ux-harness.mjs';
 import { serveBrowser } from './ux-serve.mjs';
 import { stubRoute } from './route-stub.mjs';
 
 const { base: BASE, close: closeServer } = await serveBrowser();
 const h = harness();
-const browser = await launch(['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']);
+const browser = await launch(WEBGL_ARGS);
 const errs = [];
 const shot = process.env.SHOT_DIR || '/tmp';
 
@@ -40,20 +40,20 @@ const txt = (page, sel) => page.evaluate(s => document.querySelector(s)?.textCon
 const state = page => page.evaluate(async () => {
   const m = (await import('/app/mapview.js')).theMap();
   const sh = await import('/app/tabs/social/share.js');
-  const src = m.getSource('routes');
+  const src = m.getSource('route');
   const data = src?._data || src?._options?.data || null;
   const card = document.getElementById('routecard');
   const cb = card?.getBoundingClientRect();
   const sheetTop = sh.sheetHeight() ? innerHeight - sh.sheetHeight() : innerHeight;
-  const feats = (data?.features || []).map(f => ({ sel: f.properties.sel, n: f.geometry.coordinates.length, c: f.geometry.coordinates }));
+  const feats = (data?.features || []).map(f => ({ kind: f.properties.kind, n: f.geometry.coordinates.length, c: f.geometry.coordinates }));
   const cont = m.getContainer().getBoundingClientRect();
-  const pts = feats.filter(f => f.sel !== 2).flatMap(f => f.c.map(([x, y]) => m.project([x, y])));
+  const pts = feats.filter(f => f.kind !== 'bearing').flatMap(f => f.c.map(([x, y]) => m.project([x, y])));
   // the map's pixels start at its container's corner; the card and the sheet are in the page's
   const box = pts.length ? { x0: Math.min(...pts.map(p => p.x)) + cont.left, x1: Math.max(...pts.map(p => p.x)) + cont.left,
                              y0: Math.min(...pts.map(p => p.y)) + cont.top, y1: Math.max(...pts.map(p => p.y)) + cont.top } : null;
   const inside = !box || (box.x0 >= cont.left && box.x1 <= cont.right && box.y0 >= (cb ? cb.bottom : 0) - 2 && box.y1 <= sheetTop + 2);
   return { zoom: m.getZoom(), cont: [cont.left, cont.top, cont.width, cont.height].map(Math.round).join(','), holds: sh.sheetHolds(), card: !!card, cardTop: cb && cont ? cb.top - cont.top : null, box: box && JSON.stringify(box, (k, v) => typeof v === 'number' ? Math.round(v) : v), cardBottom: cb?.bottom ?? null,
-           feats: feats.map(f => f.sel), inside, layers: ['routes-sel', 'routes-alt', 'routes-bearing'].map(l => !!m.getLayer(l)),
+           feats: feats.map(f => f.kind), inside, layers: ['route-sel', 'route-alt', 'route-bearing'].map(l => !!m.getLayer(l)),
            pills: [...document.querySelectorAll('.rv-pill')].map(e => ({ t: e.textContent, sel: e.classList.contains('sel') })),
            pin: document.querySelectorAll('.rv-pin').length, dot: document.querySelectorAll('.rv-dot').length,
            tabs: [...document.querySelectorAll('.rv-tab')].map(e => ({ id: e.dataset.mode, t: e.querySelector('b').textContent, on: e.classList.contains('on') })),
@@ -86,7 +86,7 @@ try {
   h.rec('the sheet titles the mode', (await txt(page, '.rv-title')) === 'Walk');
   h.rec('the summary reads "N min (x km)"', /^\d+ min \([\d.]+ (km|m)\)$/.test(await txt(page, '.rv-big') || ''), await txt(page, '.rv-big'));
   h.rec('and when you would arrive', /arrive \d\d:\d\d/.test(await txt(page, '.rv-sub') || ''));
-  h.rec('three ways drawn: one chosen, two alternatives', s.feats.join() === '1,0,0', s.feats.join());
+  h.rec('three ways drawn: one chosen, two alternatives', s.feats.join() === 'sel,alt,alt', s.feats.join());
   h.rec('the layers are up', s.layers[0] && s.layers[1]);
   h.rec('a time on every way, the chosen one marked', s.pills.length === 3 && s.pills.filter(p => p.sel).length === 1, JSON.stringify(s.pills));
   h.rec('the chosen way is the best one, and says so', /Best route/.test(s.pills.find(p => p.sel)?.t || ''));
@@ -103,7 +103,7 @@ try {
   h.rec('the mode is remembered', await page.evaluate(() => localStorage.getItem('pn.map.route.mode')) === 'bicycle');
   await page.click('.rv-tab[data-mode="multimodal"]'); await sleep(900);
   s = await state(page);
-  h.rec('transit draws one way, and names its line', s.feats.join() === '1' && /48/.test(await txt(page, '.rv-sub') || ''), await txt(page, '.rv-sub'));
+  h.rec('transit draws one way — dotted on foot, solid on the ride — and names its line', s.feats.join() === 'walk,sel,walk' && /48/.test(await txt(page, '.rv-sub') || ''), await txt(page, '.rv-sub'));
   await page.screenshot({ path: `${shot}/route-preview-transit.png` });
   await page.click('.rv-tab[data-mode="pedestrian"]'); await sleep(700);
 
@@ -111,7 +111,7 @@ try {
   const alt = (await page.$$('.rv-pill'))[1];
   await alt.click(); await sleep(300);
   s = await state(page);
-  h.rec('a time pill chooses its way', s.feats.join() === '0,1,0' && s.pills[1].sel, JSON.stringify(s.feats));
+  h.rec('a time pill chooses its way', s.feats.join() === 'alt,sel,alt' && s.pills[1].sel, JSON.stringify(s.feats));
   h.rec('and the summary follows it', !/Best route/.test(s.pills[1].t));
   await page.mouse.click(40, 300); await sleep(400);
   h.rec('a tap on the map leaves the preview up', (await state(page)).holds === 'route');
@@ -138,11 +138,11 @@ try {
   const before = stub.calls.length;
   await page.click('.rv-start'); await sleep(1500);
   s = await state(page);
-  h.rec('Start: the preview is gone — card, lines, markers, sheet', !s.card && s.holds === null && !s.layers[0] && s.pin === 0 && s.pills.length === 0, JSON.stringify(s));
+  h.rec('Start: the preview is gone — card, pale ways, markers, sheet — and the journey draws its own way', !s.card && s.holds === null && s.feats.join() === 'sel' && s.pin === 0 && s.pills.length === 0, JSON.stringify(s));
   h.rec('Start asks the engine nothing: the chosen way is taken as it is', stub.calls.length === before, `${before} → ${stub.calls.length}`);
   const nc = await page.evaluate(() => { const c = document.getElementById('navcard'); return { show: getComputedStyle(c).display !== 'none', t: c.textContent }; });
   h.rec('the wayfinder is under way, on the mode that was chosen', nc.show && /Head north|Turn right/.test(nc.t) && nc.t.includes('🚶'), nc.t);
-  await page.evaluate(async () => (await import('/app/nav.js')).endNav());
+  await page.evaluate(async () => (await import('/app/route/nav.js')).endNav());
 
   // ── ✕ goes back to the place; Esc closes ───────────────────────────────────
   await spotNav(page); await sleep(500);
@@ -165,7 +165,7 @@ try {
   s = await state(dp);
   h.rec('no engine: every tab is a dash', s.tabs.every(t => t.t === '–'), JSON.stringify(s.tabs));
   h.rec('…and says routing is unavailable, as the crow flies', /unavailable/.test(await txt(dp, '.rv-big') || '') && /crow flies/.test(await txt(dp, '.rv-sub') || ''));
-  h.rec('…drawn as a bearing, not a route', s.feats.join() === '2' && s.layers[2]);
+  h.rec('…drawn as a bearing, not a route', s.feats.join() === 'bearing' && s.layers[2]);
   h.rec('Go by compass is offered; Start is not', !!(await dp.$('.rv-go')) && !(await dp.$('.rv-start:not(.rv-go)')));
   await dp.screenshot({ path: `${shot}/route-preview-down.png` });
   await dp.click('.rv-go'); await sleep(1200);

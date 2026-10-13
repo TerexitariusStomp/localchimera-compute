@@ -21,6 +21,7 @@ import { effect } from './reactive.js';
 import { devMode } from './prefs.js';
 import { R, U } from './geom.js';
 import { USER, PLACES } from './core.js';
+import { report, fixOf, observeFixes } from './position.js';
 import { mapStyle, rethemeBasemap } from './basemap.js';
 import { installOsmProtocol } from './map-packs.js';
 import { clearMarkers } from './markers.js';
@@ -74,6 +75,8 @@ export const pxPerDialUnit = () => pxPerUnit;
 /** Whether the satellite has left the disc and filled the viewport. */
 export const isFullscreen = () => mapFullscreen;
 /** Move the you-marker, when there is one. */
+/** Stops the you-marker following fixes — held once, since the marker survives a map rebuild. */
+let stopObserving = null;
 export const moveUserMarker = () => {
     if (userMarker)
         userMarker.setLngLat([USER.lng, USER.lat]);
@@ -154,6 +157,8 @@ function mkMap() {
     ue.title = "you";
     userMarker = new maplibregl.Marker({ element: ue, anchor: "center" })
         .setLngLat([USER.lng, USER.lat]).addTo(m);
+    if (!stopObserving)
+        stopObserving = observeFixes(() => moveUserMarker()); // the one door: every fix moves you here
     map = m;
 }
 // a theme pick re-hues the ground in place (the dial's own overlays are drawn
@@ -373,10 +378,8 @@ export function openMap() {
         // MAP_ANCHOR exists to prevent.
         m.addControl(new maplibregl.GeolocateControl({ trackUserLocation: true, showAccuracyCircle: true }), CORNER);
         m.on("geolocate", e => {
-            USER.lat = e.coords.latitude;
-            USER.lng = e.coords.longitude;
+            report(fixOf(e.coords)); // USER and the you-marker move through the one door (app/position.ts)
             bakeMapAnchor();
-            moveUserMarker();
             renderMarkers();
         });
         m.addControl(new FullscreenControl(), CORNER);

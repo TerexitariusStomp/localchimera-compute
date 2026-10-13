@@ -204,7 +204,7 @@ function ensureOpen() {
     card = mk("div", "acct-card");
     card.setAttribute("role", "region");
     card.setAttribute("aria-label", "your account");
-    openSheetView(OWNER, card, gone, true); // the account opens at the whole height: it is a page to read, not a glance
+    openSheetView(OWNER, card, gone, { full: true }); // the account opens at the whole height: it is a page to read, not a glance
 }
 /** The account menu, in the sheet the inventory rises in; the person button again puts it away. */
 export function openAccount() {

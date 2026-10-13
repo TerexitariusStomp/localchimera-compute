@@ -16,9 +16,9 @@
 // "will it still be open when I get there" — the walk is a real duration and a
 // place that shuts during it is not somewhere you can go now.
 import { PLACES, USER, MODES, pcoord } from './core.js';
-import { havKm } from './geom.js';
+import { havKm, ARROW8 } from './geom.js';
 import { isWilling, offerWillingness, tagHtml } from './willingness.js';
-import { navKm, ARROW8 } from './nav.js';
+import { fmtDistance, fmtMinutes } from './route/facts.js';
 import { stage } from './stage.js';
 import { STATUS } from './palette.js';
 /** The map's radial unit: how far you get on foot, read back in τ. */
@@ -106,8 +106,7 @@ export function renderPlaceCard() {
     // NOT just "is it open": will it still be open when you arrive? The walk is a
     // real duration, and a place that shuts during it is not somewhere you can go.
     const reach = isOpenAt(p, t + walkH);
-    const onFoot = walkH >= 1 ? `${Math.floor(walkH)} h ${Math.round((walkH % 1) * 60)} m`
-        : `${Math.round(walkH * 60)} m`;
+    const onFoot = fmtMinutes(walkH * 3600);
     const ok = isWork && isWilling(p);
     const footer = isWork
         ? `VF: work-intent @ SpatialThing — a skill slot; ${ok ? "willingness offered" : "offer willingness to be matched"}`
@@ -118,7 +117,7 @@ export function renderPlaceCard() {
       ${p.emoji} <b>${p.name}</b> <span style="color:#999">· ${leaf.name}</span>
         <span style="color:${m.col}; font-size:10.5px"> · ${m.label}</span><br>
       ${p.when} · <span style="color:${open ? STATUS.sound : STATUS.unmet}">${open ? "open now" : "shut now"}</span><br>
-      ${navKm(km)} ${wind} (${Math.round(brg)}° from N) · ~${onFoot} on foot
+      ${fmtDistance(km)} ${wind} (${Math.round(brg)}° from N) · ~${onFoot} on foot
       ${reach ? "" : ` · <span style="color:${STATUS.unmet}">shut by the time you arrive</span>`}<br>
       <span style="color:#999">${footer}</span>
       ${isWork ? `<div style="margin-top:6px"><button id="willbtn" class="${ok ? "on" : ""}">${ok ? "✓ willing — withdraw" : "offer willingness"}</button></div>` : ""}`);

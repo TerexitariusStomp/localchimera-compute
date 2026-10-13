@@ -73,6 +73,10 @@ export const installSeamHook = async (page) => {
   }
 };
 
+import { WEBGL_ARGS } from '../../tools/dev/webgl-args.mjs';
+/// Chromium flags for a real (software) WebGL context — `launch(WEBGL_ARGS)` for a suite that needs the map.
+export { WEBGL_ARGS };
+
 export async function launch(extraArgs = []) {
   if (ENGINE !== 'chromium') throw new Error(`BROWSER=${ENGINE}: this suite drives Playwright pointer/keyboard APIs, which only chromium has here; use launchLayout() for a layout-only suite, or launchEngine() for a full click/type/drag/mock/record suite that runs on all three`);
   const opts = { headless: true, args: ['--no-sandbox', '--disable-gpu', ...extraArgs] };

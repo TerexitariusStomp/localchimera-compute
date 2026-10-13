@@ -1,5 +1,5 @@
 // tests/browser/route-data-test.mjs — the one reader of /route's reply
-// (browser/app/route-data.js, from ui/app/route-data.ts): the polyline, the
+// (browser/app/route/data.js, from ui/app/route/data.ts): the polyline, the
 // trip → Route reading with its alternates and transit legs, the query a mode
 // asks with, and the short-lived cache the preview's tabs share.
 //
@@ -10,8 +10,8 @@
 
 import { harness } from './assert.mjs';
 import { encodePoly, routeReply, havKm } from './route-fixture.mjs';
-const { decodePoly, readRoutes, routeQuery, fetchRoutes, fetchModes, clearRouteCache, ROUTE_MODES } =
-  await import("../../browser/app/route-data.js");
+const { decodePoly, readRoutes, routeQuery, fetchRoutes, fetchModes, clearRouteCache, ROUTE_MODES, MODES, modeInfo, costingOf } =
+  await import("../../browser/app/route/data.js");
 const { check, section, done } = harness();
 
 const A = { lat: 37.7749, lng: -122.4194 }, B = { lat: 37.7849, lng: -122.4094 };
@@ -66,6 +66,16 @@ section("a transit trip");
   check("maneuver indices run on across legs", r.mans.every((m, i) => i === 0 || m.begin >= r.mans[i - 1].begin));
   check("every maneuver begins inside the shape", r.mans.every(m => m.begin < r.coords.length));
   check("three legs make one shape", r.coords.length === 9, String(r.coords.length));
+}
+
+section("the modes");
+{
+  check("four tabs: transit, walk, bicycle, drive, in that order", ROUTE_MODES.join() === "multimodal,pedestrian,bicycle,auto");
+  check("each mode has a label and a glyph", MODES.every(m => m.label && m.icon));
+  check("a mode is looked up by its costing", modeInfo("bicycle").label === "Bicycle" && modeInfo("auto").icon === "🚗");
+  check("a costing with no tab has no info", modeInfo("motor_scooter") === undefined);
+  check("UI words become costings", costingOf("foot") === "pedestrian" && costingOf("bike") === "bicycle" && costingOf("car") === "auto" && costingOf("transit") === "multimodal");
+  check("a costing passes through; no word is a walk", costingOf("bicycle") === "bicycle" && costingOf() === "pedestrian" && costingOf(null) === "pedestrian");
 }
 
 section("what is not a route");

@@ -32,6 +32,7 @@ import { HANDLERS, USER, PLACES } from '../../core.js';
 import { evs, pending, eligible, turnAnchor } from '../../events.js';
 import { dateOf, clockOf } from '../../timefmt.js';
 import { havKm } from '../../geom.js';
+import { placesNamed } from './osm-places.js';
 import type { LatLng } from '../../geom.js';
 import type { Arc, Day, Slot } from '../../slots/model.js';
 import type { DayEvent } from '../../seam.js';
@@ -146,8 +147,6 @@ export interface MarkerPoint {
 
 // ── DISTANCE — geom's one haversine, plus the one way it prints ─────────────
 export { havKm };
-export const fmtKm = (km: number): string => km < 1 ? `${Math.round(km * 1000)}m`
-                         : km < 10 ? `${km.toFixed(1)}km` : `${km.toFixed(0)}km`;
 
 // ═══ SOURCE 1: the slot pool (real: the slots-at wire · demo: the twin) ═════
 
@@ -394,4 +393,19 @@ export function rows(): AtlasRow[] {
   for (const o of [...evs, ...pending(), ...eligible])
     if (o.at) out.push(offerRow(o));
   return out;
+}
+
+/**
+ * The places a person can name, nearest to `from` first: the commons' rows that `keep` admits and — when a name
+ * is asked for — OpenStreetMap's places on the tiles the map holds whose name says `q`. A place that is both is
+ * listed once. The search list and the route preview's two fields read through this.
+ */
+export function placesNear(from: LatLng, q: string, map: maplibregl.Map | null,
+                           keep: (r: PlacedRow) => boolean, limit: number): PlacedRow[] {
+  const seen = new Set<string>();
+  return [...(rows() as PlacedRow[]).filter(keep), ...(map ? placesNamed(map, q) : [])]
+    .filter(r => !r.id || !seen.has(r.id) && !!seen.add(r.id))
+    .map(r => ({ ...r, km: havKm(from, r) }))
+    .sort((x, y) => x.km - y.km)
+    .slice(0, limit);
 }

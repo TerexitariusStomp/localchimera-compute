@@ -1,4 +1,4 @@
-// app/route-preview.ts — the ways to a place, before you set out.
+// app/route/preview.ts — the ways to a place, before you set out.
 //
 // ↦ directions opens this rather than starting a journey. Three things appear
 // together and are one state:
@@ -11,36 +11,29 @@
 //   the map            the chosen route heavy, its alternatives pale, a time on
 //                      each, framed so the whole of it shows between card and sheet.
 //
-// Every mode is asked at once (app/route-data.ts) and each tab fills as its
-// answer lands. Start hands the chosen way to the wayfinder (app/nav.ts
+// Every mode is asked at once (app/route/data.ts) and each tab fills as its
+// answer lands. Start hands the chosen way to the wayfinder (app/route/nav.ts
 // startNavTo) and the preview steps away; ✕ steps back to the place it came from.
 //
 // The view is `sticky` in the sheet: the page works WITH a route being chosen —
 // a tap on the map to pick an alternative must not put it away.
-import { USER } from './core.js';
-import { theMap, MAP_EL } from './mapview.js';
-import { openSheetView, closeSheetView, sheetViewIs, sheetHeight } from './tabs/social/share.js';
-import { rows } from './tabs/map/atlas.js';
-import { placesNamed } from './tabs/map/osm-places.js';
+import { USER } from '../core.js';
+import { theMap, MAP_EL } from '../mapview.js';
+import { openSheetView, closeSheetView, sheetViewIs, sheetHeight } from '../tabs/social/share.js';
+import { placesNear } from '../tabs/map/atlas.js';
 import { startNavTo } from './nav.js';
-import { fetchRoutes, ROUTE_MODES } from './route-data.js';
-import { fmtMinutes, headline, boundsOf, pillAnchor, swapEnds, transitLines } from './route-facts.js';
-import { havKm } from './geom.js';
-import { clockOf } from './timefmt.js';
-import { readStr, writeStr } from './store.js';
-import { K } from './keys.js';
-import { esc } from './template.js';
-import { mk } from './dom.js';
+import { fetchRoutes, ROUTE_MODES, modeInfo } from './data.js';
+import { paintLines, clearLines } from './lines.js';
+import { fmtMinutes, headline, boundsOf, pillAnchor, swapEnds, transitLines } from './facts.js';
+import { havKm } from '../geom.js';
+import { clockOf } from '../timefmt.js';
+import { readStr, writeStr } from '../store.js';
+import { K } from '../keys.js';
+import { esc } from '../template.js';
+import { mk } from '../dom.js';
 const OWNER = "route";
 /** The destination pin's height in pixels — the camera leaves it room above the point. */
 const PIN_H = 34;
-/** The tabs: what a mode is called and drawn as. The keys are Valhalla's costing names. */
-const MODES = {
-    multimodal: { label: "Transit", icon: "🚌" },
-    pedestrian: { label: "Walk", icon: "🚶" },
-    bicycle: { label: "Bicycle", icon: "🚲" },
-    auto: { label: "Drive", icon: "🚗" },
-};
 const DEFAULT_MODE = "pedestrian";
 /** How many ways besides the best to ask for, where the engine offers them. */
 const ALTERNATES = 2;
@@ -53,17 +46,8 @@ function matchPlaces(q) {
     const needle = q.trim().toLowerCase();
     if (!needle)
         return [];
-    const map = theMap();
-    const all = [
-        ...rows().filter(r => r.lat != null && r.lng != null && r.name && r.name.toLowerCase().includes(needle))
-            .map(r => ({ at: { lat: r.lat, lng: r.lng }, name: r.name, note: r.provider || "", emoji: r.emoji, id: r.id ?? r.name })),
-        ...(map ? placesNamed(map, q) : [])
-            .map(r => ({ at: { lat: r.lat, lng: r.lng }, name: r.name, note: r.note || "", emoji: r.emoji, id: r.id ?? r.name })),
-    ];
-    const seen = new Set();
-    return all.filter(h => !seen.has(h.id) && !!seen.add(h.id))
-        .sort((a, b) => havKm(USER, a.at) - havKm(USER, b.at))
-        .slice(0, 6);
+    return placesNear(USER, q, theMap(), r => !!r.name && r.name.toLowerCase().includes(needle), 6)
+        .map(r => ({ at: { lat: r.lat, lng: r.lng }, name: r.name, note: r.provider === "OpenStreetMap" ? r.note || "" : r.provider || "", emoji: r.emoji }));
 }
 const YOU = { at: USER, name: "Your location", note: "", emoji: "🔵", you: true };
 // ── the asks ────────────────────────────────────────────────────────────────
@@ -99,37 +83,6 @@ const routes = () => (pv && pv.ways[pv.mode]) || [];
 const settled = () => !!pv && ROUTE_MODES.every(m => pv.ways[m] !== undefined);
 const nowhere = () => settled() && ROUTE_MODES.every(m => (pv.ways[m] || []).length === 0);
 // ── the map ─────────────────────────────────────────────────────────────────
-const SRC = "routes";
-const LAYERS = ["routes-alt-casing", "routes-alt", "routes-sel-casing", "routes-sel", "routes-bearing"];
-function ensureLayers(map) {
-    if (map.getSource(SRC))
-        return;
-    map.addSource(SRC, { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-    const line = (id, sel, casing) => {
-        map.addLayer({ id, type: "line", source: SRC, filter: ["==", ["get", "sel"], sel],
-            layout: { "line-cap": "round", "line-join": "round" },
-            paint: casing
-                ? { "line-color": "#ffffff", "line-width": sel ? 10 : 8, "line-opacity": sel ? 0.95 : 0.75 }
-                : { "line-color": sel ? "#1a47c8" : "#8fb0ee", "line-width": sel ? 6 : 5 } });
-    };
-    line("routes-alt-casing", 0, true);
-    line("routes-alt", 0, false);
-    line("routes-sel-casing", 1, true);
-    line("routes-sel", 1, false);
-    // no way at all: a bearing, not a route — thin, dashed, no casing
-    map.addLayer({ id: "routes-bearing", type: "line", source: SRC, filter: ["==", ["get", "sel"], 2],
-        layout: { "line-cap": "round" },
-        paint: { "line-color": "#1a47c8", "line-width": 2, "line-dasharray": [0.5, 1.8] } });
-}
-function dropLayers(map) {
-    if (!map)
-        return;
-    for (const l of LAYERS)
-        if (map.getLayer(l))
-            map.removeLayer(l);
-    if (map.getSource(SRC))
-        map.removeSource(SRC);
-}
 function clearMarkers() { markers.forEach(m => m.remove()); markers = []; }
 function pin(map, cls, text, at, anchor, onClick) {
     const el = mk(onClick ? "button" : "div", cls, text);
@@ -144,15 +97,9 @@ function paint() {
     const p = pv, map = theMap();
     if (!p || !map)
         return;
-    ensureLayers(map);
     const rs = routes();
-    const feats = rs.map((r, i) => ({ type: "Feature",
-        properties: { sel: i === p.pick ? 1 : 0 },
-        geometry: { type: "LineString", coordinates: r.coords } }));
-    if (nowhere())
-        feats.push({ type: "Feature", properties: { sel: 2 },
-            geometry: { type: "LineString", coordinates: [[atOf(p.from).lng, atOf(p.from).lat], [atOf(p.to).lng, atOf(p.to).lat]] } });
-    map.getSource(SRC)?.setData({ type: "FeatureCollection", features: feats });
+    const a = atOf(p.from), b = atOf(p.to);
+    paintLines(map, { ways: rs, pick: p.pick, bearing: nowhere() ? [[a.lng, a.lat], [b.lng, b.lat]] : undefined });
     clearMarkers();
     if (!p.from.live)
         pin(map, "rv-dot", "", p.from.at, "center");
@@ -192,13 +139,13 @@ function drawSheet() {
     if (!p)
         return;
     const rs = routes(), r = rs[p.pick] || null;
-    const m = MODES[p.mode];
+    const m = modeInfo(p.mode);
     const pending = p.ways[p.mode] === undefined;
     const tab = (id) => {
         const w = p.ways[id];
         const t = w === undefined ? "…" : w.length ? fmtMinutes(w[0].s) : "–";
         return `<button type="button" class="rv-tab${id === p.mode ? " on" : ""}" role="tab" aria-selected="${id === p.mode}" data-mode="${id}">` +
-            `<span class="rv-ti">${MODES[id].icon}</span><b>${esc(t)}</b></button>`;
+            `<span class="rv-ti">${modeInfo(id).icon}</span><b>${esc(t)}</b></button>`;
     };
     let sum, acts;
     if (pending) {
@@ -370,7 +317,7 @@ export function openRoutePreview(dest, name, back) {
         end(false);
     const saved = readStr(K.routeMode);
     const body = mk("div", "rv");
-    pv = { from: here(), to: { at: dest, name }, mode: saved && MODES[saved] ? saved : DEFAULT_MODE,
+    pv = { from: here(), to: { at: dest, name }, mode: saved && modeInfo(saved) ? saved : DEFAULT_MODE,
         ways: {}, pick: 0, seq: 0, back: back || null, body };
     const host = document.getElementById(MAP_EL());
     if (host) {
@@ -381,7 +328,7 @@ export function openRoutePreview(dest, name, back) {
     }
     document.addEventListener("keydown", onKey);
     // sticky: a tap on the map picks a way, it does not put the sheet away
-    openSheetView(OWNER, body, teardown, false, true, true);
+    openSheetView(OWNER, body, teardown, { fit: true, sticky: true });
     ask();
 }
 /** The view left the sheet, whichever way: take down the card, the lines and the markers. */
@@ -390,7 +337,7 @@ function teardown() {
     card?.remove();
     card = null;
     clearMarkers();
-    dropLayers(theMap());
+    clearLines(theMap());
     pv = null;
 }
 /** Close the preview. With `back`, return to the place card it began from. */

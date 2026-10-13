@@ -10,34 +10,39 @@ Words used throughout: **sheet** is `.share-sheet` (the bottom drawer); **bar** 
 
 ## 1. What stands today
 
-### 1.1 The pieces
+### 1.1 Where it lives
 
-| Piece | Home | State |
-|---|---|---|
-| Entry: `↦ directions` in the selected-place card | `ui/app/tabs/map/mapsearch.ts:184`, handler `:213` | calls `startNavTo(dest, name)` |
-| Entry: `↦ go` chip on the places list | `browser/app.html` `#gochip`, wired in `initNav` (`ui/app/nav.ts:339`) | toggles `startNav()` / `endNav()` |
-| Route request | `fetchRoute` (`nav.ts:125`) → `GET /route?from&to&profile` | one costing at a time, origin always `USER` |
-| Route proxy | `handle-route` (`server/serve-static.scm:472`), `valhalla-request-json` (`:416`) | relays Valhalla verbatim; `{}` on any failure; accepts `via=` and any costing name |
-| Route shape | `Route {coords, mans, km, s}` (`nav.ts:78`) | keeps `type`, `instruction`, `begin_shape_index`; drops street names, per-maneuver length/time, verbal instructions, roundabout exit, `travel_mode`, `transit_info` |
-| Route line | `drawNavLine` (`nav.ts:162`): source `nav`, layers `nav-casing` + `nav-line` | one line; dashed when the router answered nothing |
-| Progress | `navIdxNear` (`nav.ts:180`), linear remaining time `r.s·(1 − at/len)` | forward-biased vertex scan |
-| Turn card | `#navcard` (`browser/app.html:4656-4669`), `updateNavCard` (`nav.ts:191`) | glyph · instruction · `dist · N min · arrive HH:MM` · mode emoji |
-| Maneuver glyphs | `NAV_GLYPH` (`nav.ts`) keyed on Valhalla maneuver type | one arrow character per type |
-| GPS | `watchPosition` → `onNavPos` (`nav.ts:220`) → `USER`, `moveUserMarker` | no camera follow |
-| Heading | `ui/app/compass.ts` (`deviceHeading`, `needleTap`, 2° deadband) | rotates the map on touch devices only |
-| Sheet | `openSheetView / closeSheetView / sheetHeight / sheetHolds` (`ui/app/tabs/social/share.ts:476-506`), `wireSheet` (`:524`) | CSS-class detents (`browser/app.html:1870-1888`); the map's place card owns it as owner `"map"` |
-| Ledger | `journeyBegin` / `journeyEnd` (`nav.ts:269,278`) → the `journey` door | begin mints the commitment and pickup, end records the dropoff |
-| Mode set in the UI | `NAV_MODES = {pedestrian, bicycle, auto}` | cycled by tapping the mode glyph |
-| Mode set in the planner | pedestrian · bicycle · auto · bus · multimodal (`module/playnet/solve/routing.scm:17`) | the engine speaks all five |
+The route code is one family in `ui/app/route/`, each module with one job, and one device-position source beside it. The rest is what the family stands on.
 
-### 1.2 What the five screens show that the map face lacks
+| Module | Job |
+|---|---|
+| `ui/app/route/data.ts` | The one reader of `/route`'s reply: the polyline, a trip as `Route`s (the chosen way and its alternatives, with street names, spoken forms, transit legs), the request a mode asks with, a short-lived shared cache. Also THE table of modes — costing, label, glyph — and the UI-word → costing boundary (`costingOf`). |
+| `ui/app/route/facts.ts` | What a route says, pure: durations and distances (`fmtMinutes`, `fmtDistance`), the headline, the lines a transit route rides, the box that holds every way, where a time pill sits, a route's runs by travel mode (`segments`), ⇅ (`swapEnds`), and the trip the REPL page's Scheme side takes (`replTrip`). |
+| `ui/app/route/lines.ts` | A route on the map: the one place its lines are drawn — the chosen way, its alternatives, what is behind you, a ride's dotted walks, the bearing thread. One source, one set of layers, mounted style-ready like `journeys.ts`. |
+| `ui/app/route/preview.ts` | The ways to a place before you set out: the from/to card, the sheet view (owner `"route"`), the mode tabs, the time pills, the camera frame, Start. |
+| `ui/app/route/nav.ts` | The wayfinder: a journey under way, its card (and, in R3, banner and ETA bar), the maneuver glyphs, progress along the shape, the ledger's `journeyBegin` / `journeyEnd`. |
+| `ui/app/position.ts` | Where you are, from ONE source: a watch, a one-shot ask, the map's locate button or a rehearsed drive all end in `report`, which moves `USER` and tells every observer (the you-marker among them). |
 
-1. A preview posture: a from/to card, mode tabs with an ETA each, alternatives with time pills, and a **Start** button. Today `↦ directions` starts the journey at once.
-2. The sheet changing character with the posture. Today the place card stays open under the route and `#navcard` floats behind the bar.
-3. A navigating camera: heading-up, tilted, offset so the road ahead has the room. Today the camera frames the route once and never moves again.
-4. A top banner with a *Then* chip, a bottom ETA bar, and a set of round buttons at the map's edge. Today one small card carries everything.
-5. A drawer in the navigating posture holding actions and the step list.
-6. A way to choose the origin. Today the origin is `USER`.
+What the family stands on:
+
+| Piece | Home |
+|---|---|
+| Entry: `↦ directions` in the selected-place card | `ui/app/tabs/map/mapsearch.ts` → `openRoutePreview` |
+| Entry: `↦ go` chip on the places list | `browser/app.html` `#gochip`, wired in `initNav` → `NavHost.directions` |
+| Route proxy | `handle-route` and `route-request-json` (`server/serve-static.scm`): `from`, `to`, `via`, `profile`, `alternates`, `depart` / `arrive`, `lang`, `units`; relays Valhalla verbatim, `{}` on any failure |
+| Turn card | `#navcard` (`browser/app.html`), its own palette in every theme |
+| Place search | `placesNear` (`ui/app/tabs/map/atlas.ts`): the commons' rows and OpenStreetMap's, nearest first — the search list and the preview's two fields read through it |
+| Sheet | `openSheetView` / `closeSheetView` / `sheetHeight` / `sheetHolds` (`ui/app/tabs/social/share.ts`) with `{ full, fit, sticky }`; CSS-class detents (`browser/app.html`) |
+| Heading | `ui/app/compass.ts` (`deviceHeading`, `needleTap`, 2° deadband); it rotates the map on touch devices only |
+| Ledger | the `journey` door, called from `nav.ts` |
+| Mode set in the planner | pedestrian · bicycle · auto · bus · multimodal (`module/playnet/solve/routing.scm`) — the engine speaks all five |
+| The REPL page | `browser/repl.js` reads Valhalla through `route/data.js` and `route/facts.js` too; its own map drawing (`drawRoute`) is the REPL's alone |
+
+### 1.2 What the five screens show that the map face still lacks
+
+1. A navigating camera: heading-up, tilted, offset so the road ahead has the room. Today the camera frames the route once and never moves again.
+2. A top banner with a *Then* chip, a bottom ETA bar, and a set of round buttons at the map's edge. Today one small card carries everything.
+3. The sheet changing character with the posture: the ETA bar at a low detent while navigating, then the actions and the step list.
 
 ### 1.3 What stage R0 settled
 
@@ -195,7 +200,7 @@ A tab per costing — `multimodal` (transit), `pedestrian`, `bicycle`, `auto` �
 
 ### 3.6 Reuse
 
-`decodePoly`, `NAV_GLYPH`, `navIdxNear`, `navKm`, `clockOf`, `havKm`, `bearingDeg`, `ARROW8` (the compass-bearing fallback), `openSheetView` / `sheetHeight`, `journeyBegin` / `journeyEnd`, the map's search panel as the place picker for either end, `moveUserMarker`, and `deviceHeading`.
+The family (§1.1) is the vocabulary: R3 and R4 add modules to `ui/app/route/` and read through what is there — `data.ts` for routes and modes, `facts.ts` for words and shapes, `lines.ts` for drawing, `position.ts` for fixes (a rehearsed drive is `feed` on that one stream), `placesNear` for names, `openSheetView` / `sheetHeight` for the drawer, `NAV_GLYPH`, `fmtDistance`, `clockOf`, `havKm`, `bearingDeg`, `ARROW8`, `deviceHeading` and the `journey` door. Nothing in R3 reads a geolocation or draws a route line by another road.
 
 ---
 
@@ -203,7 +208,7 @@ A tab per costing — `multimodal` (transit), `pedestrian`, `bicycle`, `auto` �
 
 ### 4.1 The route request
 
-`handle-route` reads `from`, `to`, `via`, `profile`. It gains, each optional and each passed to Valhalla in the hand-built JSON (`valhalla-request-json` stays number-and-string-only):
+`handle-route` reads `from`, `to`, `via`, `profile`. It takes, each optional and each passed to Valhalla in the hand-built JSON (`valhalla-request-json` stays number-and-string-only):
 
 | Param | Valhalla field | Use |
 |---|---|---|
@@ -241,8 +246,8 @@ Valhalla's transit comes from GTFS tiles. `tools/dev/valhalla-local.sh` currentl
 Each stage ends with `make ui-check`, `make ui`, a UX probe, and `make shot`.
 
 - **R0 · Settle the present** _(built 2026-10-13)_. The banner-palette rule for `#navcard`; the mode-cycle re-routes `nav.dest`; the fallback is drawn as a bearing, not a route. Probe: `tests/ux/navcard-ux.mjs`.
-- **R1 · Route data** _(built 2026-10-13)_. The widened `Route` and its one reader (`ui/app/route-data.ts`); proxy params (`alternates`, `depart`, `arrive`, `lang`, `units`); parallel per-mode fetch with a cache; a `/route` stub and a synthetic Valhalla fixture for tests (`tests/ux/route-stub.mjs`, `tests/browser/route-fixture.mjs`).
-- **R2 · Preview** _(built 2026-10-13)_. Owner `"route"` in the sheet, `sticky` so a tap on the map picks a way and does not put the sheet away; the from/to card (origin = you until you say otherwise, either end a field that offers the commons' places and OpenStreetMap's, ⇅); mode tabs, each filling as its answer lands, the chosen mode remembered (`pn.map.route.mode`); the chosen way heavy and its alternatives pale, a time pill on each; the camera frames every way between card and sheet; Start. `↦ directions` and `#gochip` both open the preview (`ui/app/route-preview.ts`, pure parts in `ui/app/route-facts.ts`). A journey sets out from where you are, so with another origin Start reads *Start from my location*; with no engine the sheet says so and offers *Go by compass*. The ⋮ menu, the route-options and share buttons and *Add stops* wait for R6. Probe: `tests/ux/route-preview-ux.mjs`, with software WebGL so the page has a real map.
+- **R1 · Route data** _(built 2026-10-13)_. The widened `Route` and its one reader (`ui/app/route/data.ts`); proxy params (`alternates`, `depart`, `arrive`, `lang`, `units`); parallel per-mode fetch with a cache; a `/route` stub and a synthetic Valhalla fixture for tests (`tests/ux/route-stub.mjs`, `tests/browser/route-fixture.mjs`).
+- **R2 · Preview** _(built 2026-10-13)_. Owner `"route"` in the sheet, `sticky` so a tap on the map picks a way and does not put the sheet away; the from/to card (origin = you until you say otherwise, either end a field that offers the commons' places and OpenStreetMap's, ⇅); mode tabs, each filling as its answer lands, the chosen mode remembered (`pn.map.route.mode`); the chosen way heavy and its alternatives pale, a time pill on each; the camera frames every way between card and sheet; Start. `↦ directions` and `#gochip` both open the preview (`ui/app/route/preview.ts`, pure parts in `ui/app/route/facts.ts`). A journey sets out from where you are, so with another origin Start reads *Start from my location*; with no engine the sheet says so and offers *Go by compass*. The ⋮ menu, the route-options and share buttons and *Add stops* wait for R6. Probe: `tests/ux/route-preview-ux.mjs`, with software WebGL so the page has a real map.
 - **R3 · Navigating.** Banner and Then chip; the peek detent and ETA bar; follow camera with pitch and bearing (the `.d.ts` widening); the user arrow; progress dimming; recentre; wake-lock; arrival; the map controls hide and the button column appears.
 - **R4 · Drawer.** Action rows; step list with dividers and live current-step highlight; sheet detents peek / mid / full.
 - **R5 · Reroute and transit.** Off-route detection and reroute; transit legs; SF and Berlin GTFS feeds in the engine's fetch step.

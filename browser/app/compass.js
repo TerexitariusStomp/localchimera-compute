@@ -17,7 +17,7 @@
 //                arriving somewhere should read as arrival — so the camera
 //                GLIDES rather than jumping, because a hard jump reads as a
 //                teleport.
-import { USER } from './core.js';
+import { locateOnce } from './position.js';
 import { onEarth } from './stage.js';
 let host;
 /** Device heading, degrees clockwise from north. Zero when the compass is off. */
@@ -112,11 +112,8 @@ export function askGeolocation() {
     if (geoAsked || !navigator.geolocation)
         return;
     geoAsked = true;
-    navigator.geolocation.getCurrentPosition(pos => {
-        USER.lat = pos.coords.latitude;
-        USER.lng = pos.coords.longitude;
-        host.arrived();
-    }, () => { }, { timeout: 6000 });
+    void locateOnce().then(f => { if (f)
+        host.arrived(); }); // refused, or no fix: the default stands
 }
 /**
  * Leaving the earth: the heading stops meaning anything, so it goes back to

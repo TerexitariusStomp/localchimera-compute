@@ -139,10 +139,10 @@ import { initOrb } from './voice/orb.js';
 // the dial as a small JSON for thin renderers — widgets, watch faces, e-ink
 // (app/projection.js)
 import { initProjection } from './projection.js';
-// the commons' own wayfinder (app/nav.js): /route → the local Valhalla engine,
+// the commons' own wayfinder (app/route/nav.js): /route → the local Valhalla engine,
 // one turn at a time on a card, degrading to a compass beyond the atlas
-import { initNav, endNav, navigating, placeAt } from './nav.js';
-import { openRoutePreview } from './route-preview.js';
+import { initNav, endNav, navigating, placeAt } from './route/nav.js';
+import { openRoutePreview } from './route/preview.js';
 // the offline side of the seam: the demo spine, its desire signal, the recipe
 // library, the per-commune plans and the bioregional clusters — every one in the
 // SAME SHAPE the live wire sends (app/demo.js)
@@ -463,7 +463,7 @@ initPlaces({
         endNav(); },
 });
 // ------------------------------------------------- directions, watch-glance
-// the wayfinder itself is app/nav.js; what it needs from the dial's current
+// the wayfinder itself is app/route/nav.js; what it needs from the dial's current
 // arrangement is the NavHost below, and nothing else.
 initNav({
     map: map,
@@ -474,7 +474,6 @@ initNav({
         sizeEarthMap();
         drawThreads();
     } },
-    moveUser: moveUserMarker,
     selectedPlace: () => stage.leaf ? placeAt(stage.leaf.id, selectedPlace()) : null,
     directions: (dest, name) => openRoutePreview(dest, name),
 });

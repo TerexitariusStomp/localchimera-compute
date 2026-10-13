@@ -183,87 +183,27 @@ function transcribeWithWhisper(pcm) {
 // their namespace object — `this` is undefined inside them. So everything
 // shared lives here at file scope, and the namespace methods stay thin.
 
-// UI words → Valhalla costing — THE one vocabulary boundary, where the
-// words are born; the wire and the server speak costing names natively.
-function routeCosting(profile) {
-  return { foot: "pedestrian", bike: "bicycle", car: "auto",
-           scooter: "motor_scooter", transit: "multimodal",
-           bus: "bus" }[profile] || profile || "pedestrian";
-}
+// Valhalla's reply is read by the dial's own reader (app/route/data.js: costing words,
+// polyline, trip → route) and shaped for Scheme by app/route/facts.js — loaded before
+// Scheme starts (with app/geom.js's haversine for the straight line), since Hoot's reflect.js calls these FFI imports as bare functions.
+let routeData = null, routeFacts = null, routeGeom = null;
 
-// Decode a Valhalla/Google encoded polyline (precision 6 ⇒ 1e6) into
-// [[lng,lat],…] (GeoJSON axis order).
-function routeDecode(str, factor) {
-  const out = []; let i = 0, lat = 0, lng = 0;
-  const n = str.length;
-  const val = () => {
-    let shift = 0, result = 0, b;
-    do { b = str.charCodeAt(i++) - 63;
-         result |= (b & 0x1f) << shift; shift += 5;
-    } while (b >= 0x20);
-    return (result & 1) ? ~(result >> 1) : (result >> 1);
-  };
-  while (i < n) {
-    lat += val(); lng += val();
-    out.push([lng / factor, lat / factor]);
-  }
-  return out;
-}
+function routeCosting(profile) { return routeData.costingOf(profile); }
 
 // Valhalla trip → the one normalized contract Scheme pipes around:
 // { engine, profile, coordinates, segments, distance_km, time_s, maneuvers }
 function routeFlatten(vresp, profile) {
-  const trip = vresp && vresp.trip;
-  const legs = (trip && trip.legs) || [];
-  if (!legs.length) return null;
-  let coords = [], maneuvers = [], base = 0;
-  for (const leg of legs) {
-    const pts = leg.shape ? routeDecode(leg.shape, 1e6) : [];
-    for (const m of (leg.maneuvers || [])) {
-      maneuvers.push({
-        instruction: m.instruction || "",
-        type: m.type || 0,
-        distance_km: m.length || 0,
-        time_s: m.time || 0,
-        travel_mode: m.travel_mode || "",
-        begin: base + (m.begin_shape_index || 0),
-        end: base + (m.end_shape_index || 0)
-      });
-    }
-    coords = coords.concat(pts);
-    base += pts.length;
-  }
-  // Contiguous same-mode runs → per-mode segments, so multimodal trips
-  // (walk → bus → walk) can be drawn with per-mode styling.
-  const segments = [];
-  for (const m of maneuvers) {
-    const last = segments[segments.length - 1];
-    if (last && last.mode === m.travel_mode) last.end = m.end;
-    else segments.push({ mode: m.travel_mode, begin: m.begin, end: m.end });
-  }
-  const segs = segments.map(s => ({
-    mode: s.mode,
-    coordinates: coords.slice(s.begin, s.end + 1)
-  })).filter(s => s.coordinates.length > 1);
-  const s = (trip && trip.summary) || {};
-  return { engine: "valhalla", profile: profile || "foot",
-           coordinates: coords, segments: segs,
-           distance_km: s.length || 0,
-           time_s: s.time || 0, maneuvers };
+  const r = routeData.readRoutes(vresp, routeCosting(profile))[0];
+  return r ? routeFacts.replTrip(r, profile) : null;
 }
 
 function routeStraight(waypoints, profile) {
   // waypoints: [[lat,lng],…] → straight [[lng,lat],…], with the honest
   // great-circle distance (the crow's km — what "straight line" means).
-  const R = 6371, rad = Math.PI / 180;
   let km = 0;
-  for (let i = 1; i < waypoints.length; i++) {
-    const [la1, lo1] = waypoints[i - 1], [la2, lo2] = waypoints[i];
-    const dla = (la2 - la1) * rad, dlo = (lo2 - lo1) * rad;
-    const h = Math.sin(dla / 2) ** 2 +
-              Math.cos(la1 * rad) * Math.cos(la2 * rad) * Math.sin(dlo / 2) ** 2;
-    km += 2 * R * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
-  }
+  for (let i = 1; i < waypoints.length; i++)
+    km += routeGeom.havKm({ lat: waypoints[i - 1][0], lng: waypoints[i - 1][1] },
+                          { lat: waypoints[i][0], lng: waypoints[i][1] });
   return JSON.stringify({
     engine: "straight-line", profile: profile || "foot",
     coordinates: waypoints.map(w => [w[1], w[0]]),
@@ -300,6 +240,13 @@ window.addEventListener("load", async () => {
     // former key name to its present one (app/keys.ts), and the Scheme below
     // reads the present names.
     try { await import('./app/store.js'); } catch (e) { console.warn('[repl] storage door unavailable:', e.message); }
+
+    // The route reader, for the routing FFI below (app/route/data.js, facts.js).
+    try {
+      routeData = await import('./app/route/data.js');
+      routeFacts = await import('./app/route/facts.js');
+      routeGeom = await import('./app/geom.js');
+    } catch (e) { console.warn('[repl] route reader unavailable:', e.message); }
 
     // Pre-load key pairs from the IndexedDB keystore BEFORE WASM starts,
     // so they're available synchronously to Scheme via getPreloadedKeyPair.
@@ -952,7 +899,7 @@ window.addEventListener("load", async () => {
         // line through the requested waypoints, so the map always draws.
         routing: {
           // NOTE: reflect.js calls these DETACHED (no `this`) — all shared
-          // logic lives at file scope (routeCosting/routeDecode/routeFlatten/
+          // logic lives at file scope (routeCosting/routeFlatten/
           // routeStraight + the routeTrace* state).
           //
           // "2.3 km · 28 min · walking" (or "straight line" when offline).

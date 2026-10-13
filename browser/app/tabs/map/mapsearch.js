@@ -31,12 +31,12 @@ import { USER } from '../../core.js';
 import { offered } from '../../events.js';
 import { theMap } from '../../mapview.js';
 import { offerWillingness, widOf } from '../../willingness.js';
-import { openRoutePreview } from '../../route-preview.js';
-import { rows, rowOfPt, passesFilter, havKm, fmtKm } from './atlas.js';
+import { openRoutePreview } from '../../route/preview.js';
+import { rows, rowOfPt, passesFilter, havKm, placesNear } from './atlas.js';
+import { fmtDistance } from '../../route/facts.js';
 import * as pins from './pins.js';
 import * as book from './book.js';
 import { heldHere, wireHeldHere } from './held-here.js';
-import { placesNamed } from './osm-places.js';
 import { revealSlot, F, railSwitch, openSheetView, closeSheetView, sheetViewIs, sheetHolds, sheetHeight } from '../social/share.js';
 // a result is somebody ELSE's listing — name, provider, note and match all come
 // off the search wire, so each is escaped where it lands in the card.
@@ -55,14 +55,9 @@ const cluster = signal(null); // a tapped bundle's rows (cluster view)
 // ── search + rank (their relevance/distance sort; atlas's one haversine) ────
 function results() {
     bump();
-    // the commons' rows, and — when a name is asked for — OpenStreetMap's places
-    // on the tiles the map holds (tabs/map/osm-places.ts), one list by distance
-    const map = theMap();
-    const osm = map ? placesNamed(map, query()) : [];
-    return [...rows().filter(r => F.passes(r)), ...osm]
-        .map(r => ({ ...r, km: havKm(USER, r) }))
-        .sort((x, y) => x.km - y.km)
-        .slice(0, 40);
+    // the commons' rows the bar's sift admits, and — when a name is asked for — OpenStreetMap's places,
+    // one list by distance
+    return placesNear(USER, query(), theMap(), r => F.passes(r), 40);
 }
 // ── the views (their three panel states, one draw each) ─────────────────────
 const KINDWORD = { need: "🚩 a need", means: "🤲 in the commons",
@@ -97,7 +92,7 @@ function itemEl(r, onclick) {
     const km = r.km != null ? r.km : havKm(USER, r);
     it.innerHTML =
         `<div class="ms-row"><span class="ms-title"><span class="ms-emoji">${esc(r.emoji)}</span>` +
-            `<b>${esc(r.name)}</b></span><span class="ms-dist">${fmtKm(km)}</span></div>` +
+            `<b>${esc(r.name)}</b></span><span class="ms-dist">${fmtDistance(km)}</span></div>` +
             `<div class="ms-sub"><span>👤 ${esc(r.provider)}</span>` +
             (r.unit ? `<span class="ms-unit">${esc(r.qty ?? "")} ${esc(r.unit)}</span>` : "") +
             `<span class="ms-kind">${KINDWORD[r.kind] || ""}</span></div>` +
@@ -325,7 +320,7 @@ export function mountMapSearch() {
             if (showing && !dismissed && !sheetViewIs(OWNER)) {
                 const held = sheetHolds(); // the inventory, or another menu, is not pushed aside by a search
                 if (!held)
-                    openSheetView(OWNER, body, gone, false, true);
+                    openSheetView(OWNER, body, gone, { fit: true });
             }
             else if (!showing && sheetViewIs(OWNER)) {
                 leaving = true;

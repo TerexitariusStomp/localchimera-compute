@@ -101,6 +101,9 @@ export const havKm = (a: LatLng, b: LatLng): number => {
   return 2 * 6371 * Math.asin(Math.sqrt(s));
 };
 
+/** The eight compass arrows, from north clockwise. */
+export const ARROW8 = ["↑","↗","→","↘","↓","↙","←","↖"];
+
 // initial compass bearing (degrees, 0..360) from point a to point b
 export const bearingDeg = (a: LatLng, b: LatLng): number => {
   const f1 = a.lat * Math.PI / 180, f2 = b.lat * Math.PI / 180;

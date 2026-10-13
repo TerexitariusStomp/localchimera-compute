@@ -9,6 +9,8 @@
 // then capture the viewport. Uses the same chromium/launch config as the repo's
 // ux-harness (headless, --no-sandbox --disable-gpu, executablePath=CHROMIUM_PATH).
 
+import { WEBGL_ARGS } from './webgl-args.mjs';
+
 const pick = (m) => m.chromium ?? m.default?.chromium;
 let chromium;
 try { chromium = pick(await import('playwright-core')); } catch {}
@@ -19,12 +21,11 @@ const [, , url, out, wStr, hStr, settleStr] = process.argv;
 if (!url || !out) { console.error('usage: node shot.mjs <url> <out.png> [w] [h] [settleMs]'); process.exit(2); }
 const width = +(wStr || 1400), height = +(hStr || 900), settle = +(settleStr || 2500);
 
-// NOTE maplibre faces shoot BLACK here: the guix ungoogled-chromium ships no
-// SwiftShader, so headless WebGL context creation fails under every flag combo
-// tried (--enable-unsafe-swiftshader, --use-gl=angle/--use-angle=swiftshader)
-// and the map takes its no-WebGL offline branch. DOM chrome (panels, markers'
-// host elements, the mini-month) still renders and is what a shot can verify.
-const opts = { headless: true, args: ['--no-sandbox', '--disable-gpu'] };
+// The maplibre faces build a real map here: WEBGL_ARGS give the headless page a
+// software WebGL context (tools/dev/webgl-args.mjs). Tiles come from whatever
+// the page's style points at; with none served the ground is plain and the
+// dial's overlays, markers and chrome draw over it.
+const opts = { headless: true, args: ['--no-sandbox', '--disable-gpu', ...WEBGL_ARGS] };
 if (process.env.CHROMIUM_PATH) opts.executablePath = process.env.CHROMIUM_PATH;
 
 const browser = await chromium.launch(opts);

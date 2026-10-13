@@ -41,7 +41,7 @@ import { drawChrome } from './chrome.js';
 import { drawEvents } from './ribbons.js';
 import { clearMarkers } from './markers.js';
 import { askGeolocation, resetHeading } from './compass.js';
-import { endNav } from './nav.js';
+import { endNav } from './route/nav.js';
 import { openMap, teardownMap } from './mapview.js';
 import { leaveSelectArea } from './tabs/map/select-area.js';
 import { L, threads, timeLayers } from './layers.js';

@@ -1,6 +1,6 @@
 // tests/browser/route-facts-test.mjs — what a route says, in the words and
-// places the preview draws it with (browser/app/route-facts.js, from
-// ui/app/route-facts.ts): durations, distances, the headline, the lines a
+// places the preview draws it with (browser/app/route/facts.js, from
+// ui/app/route/facts.ts): durations, distances, the headline, the lines a
 // transit route rides, the box that holds every way, where a time pill sits,
 // and ⇅.
 //
@@ -8,9 +8,9 @@
 
 import { harness } from './assert.mjs';
 import { routeReply } from './route-fixture.mjs';
-const { readRoutes } = await import("../../browser/app/route-data.js");
-const { fmtMinutes, fmtDistance, headline, transitLines, rides, boundsOf, pillAnchor, swapEnds } =
-  await import("../../browser/app/route-facts.js");
+const { readRoutes } = await import("../../browser/app/route/data.js");
+const { fmtMinutes, fmtDistance, headline, transitLines, rides, boundsOf, pillAnchor, swapEnds, replTrip } =
+  await import("../../browser/app/route/facts.js");
 const { check, section, done } = harness();
 
 section("durations");
@@ -27,7 +27,8 @@ section("distances");
 {
   check("under a kilometre in metres", fmtDistance(0.85) === "850 m");
   check("a kilometre and over in tenths", fmtDistance(2.24) === "2.2 km" && fmtDistance(1) === "1.0 km");
-  check("miles in tenths", fmtDistance(1.44, "miles") === "1.4 mi");
+  check("ten kilometres and over in whole numbers", fmtDistance(12.34) === "12 km" && fmtDistance(9.44) === "9.4 km");
+  check("miles in tenths", fmtDistance(1.44, "miles") === "1.4 mi" && fmtDistance(12.4, "miles") === "12 mi");
   check("a short way in miles is feet", fmtDistance(0.05, "miles") === "264 ft");
 }
 
@@ -79,6 +80,20 @@ section("where a time pill sits");
         (() => { const x = { coords: Array.from({ length: 11 }, (_, i) => [i * 0.001, 0]) };
                  const y = { coords: Array.from({ length: 11 }, (_, i) => [i * 0.001, i < 5 ? 0 : (i - 4) * 0.01]) };
                  return pillAnchor([x, y], 1)[1] > 0.04; })());
+}
+
+section("the REPL page's trip");
+{
+  const [bus] = readRoutes(routeReply(q({ profile: "multimodal", depart: "now" })), "multimodal");
+  const t = replTrip(bus, "transit");
+  check("the contract the Scheme side takes", t.engine === "valhalla" && t.profile === "transit" &&
+        Array.isArray(t.coordinates) && t.coordinates.length === bus.coords.length);
+  check("distance in km, time in seconds", t.distance_km === bus.km && t.time_s === bus.s);
+  check("one maneuver each, in the page's words", t.maneuvers.length === bus.mans.length &&
+        t.maneuvers[0].instruction === bus.mans[0].instr && "travel_mode" in t.maneuvers[0] && "distance_km" in t.maneuvers[0]);
+  check("the runs by travel mode, so a ride can be drawn its own way", t.segments.map(s => s.mode).join() === "pedestrian,transit,pedestrian" &&
+        t.segments.every(s => s.coordinates.length > 1));
+  check("no profile is a walk", replTrip(bus).profile === "foot");
 }
 
 section("⇅");

@@ -38,7 +38,7 @@ import { drawCrumb } from './crumb.js';
 import { showPlacesPanel } from './places.js';
 import { clearMarkers } from './markers.js';
 import { askGeolocation, resetHeading } from './compass.js';
-import { endNav } from './nav.js';
+import { endNav } from './route/nav.js';
 import { openMap, teardownMap } from './mapview.js';
 import { drawBandsRaw, drawBands2, settle } from './wheel.js';
 import { L, threads } from './layers.js';
