@@ -138,18 +138,14 @@
   ;; the same defaults this door declares
   (apply ingest-records! resources agents spatials recipe-procs recipe-flows
          (pick-keywords opts '(world held)))
-  ;; reproduction bands — poured AFTER ingest seeds *init* from resources, BEFORE
-  ;; build-located reads it (a bare floor subtracts from the good's on-hand, so the
-  ;; plan must produce ≥ floor to keep its balance non-negative — the reproduction
-  ;; of labour-power defended by the barrier every good has).
-  (set! *budgeted-floors* budgeted-floors)
   ;; the voice field's inputs and the governed dials, after ingest's reset —
   ;; the settings kind, as the robust assembly applies them
   (apply apply-solve-settings! (pick-keywords opts '(setting)))
-  (set! *acquire* acquire) (set! *promote* promote)   ; before the pour: the tier table decides what is poured
+  ;; the tier table, the budgeted floors and the reproduction bands, poured as
+  ;; every assembly pours them (solve/ingest.scm pour-bands!)
   (when (and (getenv "PLANNER_PD_DEBUG") (pair? budgeted-floors)) (format (current-error-port) "  [budget] laid ~s~%" budgeted-floors))
-  (apply-repro-bands! (repro-bands #:floors repro-floors #:caps repro-caps
-                                   #:insurance insurance #:bands bands))
+  (pour-bands! #:repro-floors repro-floors #:budgeted-floors budgeted-floors #:repro-caps repro-caps
+               #:insurance insurance #:bands bands #:acquire acquire #:promote promote)
   ;; §7 — THE DISCRETE LAYER, when the recipes call for it. A minimum batch or a
   ;; whole count declared on any process opens the branch-and-bound; it leaves
   ;; the incumbent's config, cuts and fixings in the tables `build-located`

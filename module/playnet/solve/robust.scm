@@ -102,11 +102,9 @@
   ;; the bands are per-scenario — held in EVERY future. For a calamity reserve:
   ;; full margin in the nominal year, margin eroded but `lo` intact in the
   ;; drought — which is what "insurance" means
-  (set! *budgeted-floors* budgeted-floors)
-  (set! *acquire* acquire) (set! *promote* promote)   ; before the pour: the tier table decides what is poured
-  (apply-repro-bands! (repro-bands #:floors repro-floors #:caps repro-caps
-                                   #:insurance (if (reserve-yields? s reserve-yields-to) '() insurance)
-                                   #:bands bands))
+  (pour-bands! #:repro-floors repro-floors #:budgeted-floors budgeted-floors #:repro-caps repro-caps
+               #:insurance (if (reserve-yields? s reserve-yields-to) '() insurance)
+               #:bands bands #:acquire acquire #:promote promote)
   (when search-state (restore-search-state! search-state))
   (for-each (lambda (k) (hash-set! *mbq-relaxed* k #t)) relax-keys)
   (call-with-values build-located

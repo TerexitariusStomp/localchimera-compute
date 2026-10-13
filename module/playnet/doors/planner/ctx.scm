@@ -89,7 +89,7 @@
             ;; the standing a solve is given (define-context solve-standing below)
             <solve-standing> make-solve-standing solve-standing? with-solve-standing solve-standing-install!
             solve-standing-admit? solve-standing-proc-frag solve-standing-responses solve-standing-observed
-            solve-standing-warm-x solve-standing-arriving solve-standing-eco-caps solve-standing-dials
+            solve-standing-warm-x solve-standing-decided solve-standing-arriving solve-standing-agent-position solve-standing-backend solve-standing-reproduce? solve-standing-dials
             solve-standing-voice-pushes solve-standing-voice-hours solve-standing-scope-path
             solve-standing-practice-peers solve-standing-agent-of
             standing->settings))
@@ -109,9 +109,12 @@
   (observed '())  ; the contrary observations against the map: ((proc action nominal reading) …)
   ;; the last solve's
   warm-x          ; the previous x, or #f
+  decided         ; the discrete state the previous search left, or #f: the next search's seed
   (arriving '())  ; the previous plan's material rows: where stock on the way counts
-  ;; the UC allocation, as caps under the caller's
-  (eco-caps '())  ; ((located-good . cap) …)
+  ;; where the scope's people are, per period (doors/position.scm agent-position-predicate)
+  agent-position
+  ;; the solver a scope solves with, and whether it reproduces its labour-power
+  (backend 'native-c) (reproduce? #t)
   ;; the governed dials, every row read fresh (scope/policy.scm), as the engine's keywords
   (dials '())
   ;; the voice field: the scope's pushes and hours reader (τ > 0), the path of scopes (leaf first)
@@ -123,20 +126,21 @@
 ;; record: one table, each row a key and the field it reads; a field standing
 ;; empty (#f, '()) lays no key, so the engine's own default stands
 (define %standing-settings
-  `((admit?    . ,solve-standing-admit?)
-    (proc-frag . ,solve-standing-proc-frag)
-    (responses . ,solve-standing-responses)
-    (observed  . ,solve-standing-observed)
-    (warm-x    . ,solve-standing-warm-x)
-    (arriving  . ,solve-standing-arriving)
-    (eco-caps  . ,solve-standing-eco-caps)))
+  `((admit?         . ,solve-standing-admit?)
+    (proc-frag      . ,solve-standing-proc-frag)
+    (responses      . ,solve-standing-responses)
+    (observed       . ,solve-standing-observed)
+    (warm-x         . ,solve-standing-warm-x)
+    (decided        . ,solve-standing-decided)
+    (arriving       . ,solve-standing-arriving)
+    (agent-position . ,solve-standing-agent-position)
+    (backend        . ,solve-standing-backend)))
 (define (standing->settings st)
   "The plain solve's standing as a symbol alist (merge-settings lays the caller's over it)."
   (append
    (filter-map (lambda (row) (let ((v ((cdr row) st))) (and v (not (null? v)) (cons (car row) v)))) %standing-settings)
-   ;; the UC allocation always stands, empty or not: the key the merge dedups caps under
-   (if (assq 'eco-caps (filter-map (lambda (row) (let ((v ((cdr row) st))) (and v (not (null? v)) row))) %standing-settings)) '()
-       `((eco-caps . ())))
+   ;; a word that is false where it stands lays its key too
+   `((reproduce? . ,(solve-standing-reproduce? st)))
    (kw->alist (solve-standing-dials st))
    `((practice-peers . ,(solve-standing-practice-peers st)) (agent-of . ,(solve-standing-agent-of st)))
    (if (solve-standing-voice-pushes st)

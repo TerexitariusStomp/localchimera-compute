@@ -167,18 +167,20 @@
 ;; foods, live.scm) is STRUCTURAL, on unless the alist says (reproduce . #f).
 (define* (solve-keywords scope-root o #:key (demand (or (assq-ref o 'demand) '()))
                          (willing? (and (assq-ref o 'willing-only) (willing-predicate scope-root))))
-  (list #:demand (demand->keyed demand)       ; the UC allocation rides in through standing-kw
-        #:eco-caps (or (assq-ref o 'eco-caps) '())
-        #:reserve (or (assq-ref o 'reserve) '())
-        #:movable (or (assq-ref o 'movable) '())
-        #:storable (or (assq-ref o 'storable) '())
-        #:whole (or (assq-ref o 'whole) '())
-        #:tau (or (assq-ref o 'tau) 0.0)
-        #:willing? willing?
-        #:agent-position (agent-position-predicate scope-root)   ; live/expected positions
-        #:horizon (demand-horizon demand o)   ; multi-period from the demand (an explicit opt wins)
-        #:reproduce? (not (eq? (assq-ref o 'reproduce) #f))
-        #:backend 'native-c))
+  (append
+   (list #:demand (demand->keyed demand)       ; the world's caps ride in through the readers (world-of*)
+         #:eco-caps (or (assq-ref o 'eco-caps) '())
+         #:reserve (or (assq-ref o 'reserve) '())
+         #:movable (or (assq-ref o 'movable) '())
+         #:storable (or (assq-ref o 'storable) '())
+         #:whole (or (assq-ref o 'whole) '())
+         #:tau (or (assq-ref o 'tau) 0.0)
+         #:willing? willing?
+         #:horizon (demand-horizon demand o))   ; multi-period from the demand (an explicit opt wins)
+   ;; where the people are, the solver and reproduction are the scope's
+   ;; standing (doors/planner/ctx.scm solve-standing): a door's word is
+   ;; laid only where the alist states one
+   (if (eq? (assq-ref o 'reproduce) #f) (list #:reproduce? #f) '())))
 
 (define (agent-position-predicate scope-root)
   "Where each agent IS, per period, as one consistent TRAJECTORY — priority:

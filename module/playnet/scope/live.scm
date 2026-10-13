@@ -155,6 +155,7 @@
   #:use-module ((playnet knowledge catalogues housing) #:select (season-of outdoor-degc))
   #:use-module ((playnet algorithms rollup) #:select (crystallized-snlt-for-spec))   ; the claim's price
   #:use-module ((playnet algorithms option-composition) #:select (price-leverage)) ; the leverage a plan creates
+  #:use-module ((playnet solve keywords) #:select (caps-under))
   #:use-module ((playnet vf facts rail) #:select (publish-rails! rails-of publish-social-portion!
                                                set-rails! set-social-portions!))
   #:use-module ((playnet utils catch) #:select (catch* throw* with-throw-handler*)))
@@ -1702,18 +1703,18 @@
             ;; short, or eat it and be fed — two more solves, only then.
             (let* ((c (assq-ref report 'certificate))
                    (infeasible? (and (list? c) (eq? #f (assq-ref c 'feasible?))))
-                   (without (lambda (keys) (filter (lambda (kv) (not (memq (car kv) keys))) world)))
+                   ;; each horn lays its own keys over this very program (%horn-solve merges by key)
                    (dilemma (and infeasible? (pair? insurance*)
                                  (reserve-dilemma resources agents spatials procs flows
                                    #:repro-floors repro-floors #:insurance insurance* #:demand demand
-                                   #:solve-opts (without '(repro-floors insurance demand reserve allow-infeasible?)))))
+                                   #:solve-opts world)))
                    ;; and the FLOOR-vs-WALL dilemma, when a floor and an ecological
                    ;; limit were both among the walls: hold the floor past the tip,
                    ;; or hold the wall short of bare need — the same two solves
                    (walls (and infeasible? (pair? repro-floors) (pair? eco-spec-frag)
                                (plan-dilemma resources agents spatials procs flows
                                  #:repro-floors repro-floors #:eco-spec-frag eco-spec-frag #:demand demand
-                                 #:solve-opts (without '(repro-floors eco-spec-frag demand allow-infeasible?))))))
+                                 #:solve-opts world))))
               (values intents commitments material fill x ntot
                       (append
                        ;; THE DEMAND THIS SOLVE RAN ON — the caller's rows and every row
@@ -2139,9 +2140,12 @@
 ;; plan-dilemma (floor vs wall) and reserve-dilemma (floor vs reserve) are two
 ;; pairs of horns over this one skeleton — a third pair adds a function, not a copy.
 (define (%horn-solve resources agents spatials procs flows solve-opts extra)
+  ;; the horn's own keys over the caller's program, merged BY KEY: a keyword
+  ;; twice on one list is read by whichever reader looks (define* takes the
+  ;; last, kw-ref the first), so a key the horn sets leaves the program's
   (call-with-values
     (lambda () (apply plan-from-records resources agents spatials procs flows
-                      (alist->kw (append extra solve-opts))))
+                      (alist->kw (append extra (filter (lambda (kv) (not (assq (car kv) extra))) solve-opts)))))
     (lambda (ints coms material fill cols x idx ntot report)
       (plan-results->alist ints coms material fill ntot report))))
 ;; what a horn's PLAN newly makes, and uses up, of SPEC (vf/formulas/actions.scm)
@@ -2166,8 +2170,10 @@
                          (append (map car eco-frag) (map fragility-key spec-frags))))
   (define* (solve floors frag sfrag extra-demand #:key (may-fail? #f))
     (%horn-solve resources agents spatials procs flows solve-opts
+                 ;; every wall this horn speaks for is laid, an empty one included:
+                 ;; the horn's word replaces the program's, never adds to it
                  `((repro-floors . ,floors) (eco-frag . ,frag) (eco-prior . ,eco-prior)
-                   ,@(if (pair? sfrag) `((eco-spec-frag . ,sfrag)) '())
+                   (eco-spec-frag . ,sfrag)
                    (demand . ,(append demand extra-demand)) (allow-infeasible? . ,may-fail?))))
   ;; located-good keys are STRINGS — assoc-ref, never assq-ref
   (define (headroom-of key)
@@ -2749,7 +2755,8 @@
                 (if (pair? care) (sum-by-key care base) base)))
          (kw* (append
                (if w (list #:resource-view (let ((v (assq-ref w 'view))) (lambda (_) v))
-                           #:eco-caps (rows #:eco-caps (assq-ref w 'caps))
+                           ;; the caller's caps over the world's (solve/keywords.scm caps-under)
+                           #:eco-caps (caps-under (or (kw-ref kw #:eco-caps) '()) (or (assq-ref w 'caps) '()))
                            ;; the reader took the caller's #:span-of and laid it in its
                            ;; span (commune-world), so the world's span is the whole of it
                            #:span-of (assq-ref w 'span))

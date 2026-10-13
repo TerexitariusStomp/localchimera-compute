@@ -34,7 +34,7 @@
   #:use-module (playnet vf formulas capacity)
   #:use-module (playnet knowledge worlds bioregions)
   #:use-module (playnet solve engine)
-  #:export (*default-agent-hours* nepair? window->day-schedules ranges-minutes window-ranges-on window-hours
+  #:export (pour-bands! *default-agent-hours* nepair? window->day-schedules ranges-minutes window-ranges-on window-hours
             agent-window-hours period-time-range temporal-clock-boundaries declared-clock-boundaries stamp-time refine-span
             owned-spec unowned-demand resolve-date-keys refine-spans declared-partition coarse->fine
             dates-through specific-window-hours-within offer-expression? temporal-hours-within dated-week-hours-within window-hours-within
@@ -1330,6 +1330,20 @@
                              #:ceiling (or hi (band-ceiling prev))
                              #:w       (if (or (pair? fl) hi) w (band-w prev))))))
    bands)))
+
+;; THE POUR, written once: the tier table (what may be bought, what is held as a
+;; wall), the budgeted floors and the reproduction bands, after ingest seeds *init*
+;; from the resources and before build-located reads them — a bare floor
+;; subtracts from the good's on-hand, so the plan must produce ≥ floor to keep
+;; its balance non-negative (the reproduction of labour-power every good's
+;; barrier defends). Every assembly pours through it: the deterministic solve,
+;; each robust future, the federated record.
+(define* (pour-bands! #:key (repro-floors '()) (budgeted-floors '()) (repro-caps '()) (insurance '()) (bands '())
+                            (acquire '()) (promote #f) #:allow-other-keys)
+  (set! *budgeted-floors* budgeted-floors)
+  (set! *acquire* acquire) (set! *promote* promote)   ; before the pour: the tier table decides what is poured
+  (apply-repro-bands! (repro-bands #:floors repro-floors #:caps repro-caps
+                                   #:insurance insurance #:bands bands)))
 
 (define* (repro-bands #:key (floors '()) (caps '()) (insurance '()) (bands '()))
   "One list of (located-good floor ceiling w) from the four spellings:

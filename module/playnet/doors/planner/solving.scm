@@ -219,7 +219,9 @@
                                               ($ sts 'all-locations) procs flows spec place
                                               #:demand dem
                                               #:eco-caps (assq-ref world 'caps) #:span-of (assq-ref world 'span)
-                                              #:proc-frag (solve-standing-proc-frag (solve-standing-of root sid)))))))))))
+                                              #:proc-frag (solve-standing-proc-frag (solve-standing-of root sid))
+                                              ;; the governed dials, as the plain solve sets them after ingest
+                                              #:settings (solve-standing-dials (solve-standing-of root sid)))))))))))
                         communes))
                   (prev (map (lambda (c)
                                (let ((rt (roster-ref (car c))))

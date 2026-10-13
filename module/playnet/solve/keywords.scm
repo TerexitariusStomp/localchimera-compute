@@ -29,7 +29,7 @@
 
 (define-module (playnet solve keywords)
   #:use-module (srfi srfi-1)
-  #:export (%solve-keywords solve-keywords-of solve-keyword-kind pick-keywords))
+  #:export (%solve-keywords solve-keywords-of solve-keyword-kind pick-keywords caps-under))
 
 (define %solve-keywords
   '(;; ── the world ──
@@ -64,6 +64,15 @@
 (define (solve-keyword-kind kw)
   "KW's kind, or #f for a keyword no solve takes."
   (and=> (assq kw %solve-keywords) cadr))
+
+;; THE ONE RULE FOR TWO CAP TABLES ON ONE WORLD: a located good both name is
+;; OWN's — two caps on one good would add at ingest — and UNDER stands for the
+;; goods OWN leaves unnamed. The world's own caps stand over the UC
+;; allocation (doors/service.scm world-of*), and a caller's over the world's
+;; (scope/live.scm solve-with-readers): the same merge, applied twice.
+(define (caps-under own under)
+  "OWN's cap rows, and UNDER's for the located goods OWN does not name."
+  (append own (filter (lambda (c) (not (assoc (car c) own))) under)))
 
 (define (pick-keywords opts kinds)
   "The (keyword value …) pairs of OPTS whose keyword is of one of KINDS, in OPTS' order:

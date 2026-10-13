@@ -118,6 +118,10 @@
                                       ;; engine *proc-frag* — a near-fragile recipe's acts
                                       ;; held in the commune's subproblem as in its own solve
                                       (proc-frag '())
+                                      ;; the governed dials and the voice field, as the
+                                      ;; engine's keywords (solve/keywords.scm setting kind),
+                                      ;; written after ingest as the plain solve writes them
+                                      (settings '())
                                       ;; the scope's world beyond its raw records: the
                                       ;; standing caps (the UC allocation, the socialized
                                       ;; Svc| pools) and the governed pool spans — what
@@ -153,9 +157,9 @@
           #:demand demand #:never-raw never-raw #:per-agent? #f #:proc-frag proc-frag
           #:eco-caps eco-caps #:span-of span-of
           #:horizon horizon #:refine-periods? refine?))
-    ;; the reproduction bands, poured the way plan-from-records pours them
-    (apply-repro-bands! (repro-bands #:floors repro-floors #:caps repro-caps
-                                     #:insurance insurance #:bands bands))
+    (apply apply-solve-settings! settings)
+    ;; the reproduction bands, poured as every solve pours them
+    (pour-bands! #:repro-floors repro-floors #:repro-caps repro-caps #:insurance insurance #:bands bands)
     (call-with-values build-located
       (lambda (forms lf ncol cols goods* raws idx)
         ;; THE CROSSING STANDS AT ONE CELL. The draw recipe is laid wherever the
@@ -503,7 +507,8 @@
 ;; (ingest-located!: "(located-good . cap) — policy overrides stock").
 (define* (records-means-world resources agents spatials procs flows spec place
                               #:key (demand '()) (never-raw '()) (raws '())
-                                    (proc-frag '()) (eco-caps '()) (span-of '()))
+                                    (proc-frag '()) (eco-caps '()) (span-of '())
+                                    (settings '()))
   ;; ECO-CAPS: the scope's standing caps beside the allocation (its other
   ;; allocations, the socialized pools); a standing cap on the good under
   ;; consensus is left out — this run decides it. The allocation is laid
@@ -530,6 +535,7 @@
                     #:span-of span-of
                     #:eco-caps (cons (cons key alloc)
                                      (filter (lambda (c) (not (string-prefix? key (car c)))) eco-caps)))
+                  (apply apply-solve-settings! settings)
                   (set! cells (filter (lambda (k) (string-prefix? key k))
                                       (hash-map->list (lambda (k _) k) *cap*)))
                   (current-world)))))

@@ -160,12 +160,12 @@
          (lambda (root)
            ;; each recipe's record as the solve takes it (scope-standing): the
            ;; face shows the very record the plan reads
-           (let ((st (standing root scope-id)))
+           (let ((st (solve-standing-of root scope-id)))
               (build-snapshot root scope-id plan-id acting-aid
                               #:cached (last-solve-ref cache scope-id)
                               #:stale? (solve-stale? cache scope-id)
                               #:extra-locations (federation-sibling-locations scope-id root)
-                              #:recipe-responses (or (assq-ref st 'responses) '())
+                              #:recipe-responses (solve-standing-responses st)
                               #:credit-roots (credit-roots acting-aid))))))
 
       ;; ── The legal exterior, derived LIVE — the law face's snapshot, folded

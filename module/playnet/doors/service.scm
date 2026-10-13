@@ -30,7 +30,7 @@
   #:use-module ((playnet doors effort) #:select (do-drop-event do-record-effort finite-positive?))
   #:use-module ((playnet doors journeys) #:select (ensure-place! make-trip-event trip-good trip-ids))
   #:use-module ((playnet doors plan-wire) #:select (build-snapshot location-slacks plan-results->dial-plan scope-credit->wire scope-members skill-holders solve-part wire-number))
-  #:use-module ((playnet doors position) #:select (agent-position-predicate demand->keyed demand-horizon do-set-position federated-horizon location-mode nearest-location own-position-place! sharing-refused? standing-in))
+  #:use-module ((playnet doors position) #:select (agent-position-predicate demand->keyed demand-horizon do-set-position federated-horizon location-mode nearest-location own-position-place! sharing-refused? solve-keywords standing-in))
   #:use-module ((playnet doors skills) #:select (declare-skill! lower-resource! revoke-skill!))
   #:use-module ((playnet economy payouts) #:select (payouts-upgrade!))
   #:use-module (playnet vf formulas flows)
@@ -119,6 +119,7 @@
   #:use-module (srfi srfi-1)
   #:use-module ((playnet observation observer) #:select (target-passed? reach-slack))
   #:use-module ((playnet solve compile) #:select (bare-spec))
+  #:use-module ((playnet solve keywords) #:select (caps-under))   ; the caller's caps over the world's
   #:use-module ((playnet solve engine) #:select (key-spec spec-owner spec-base *desire-w0* want-as-cap? cap-scale-of))
   #:use-module ((playnet solve ingest) #:select (owned-spec stock-vocabulary resource-window-hours))   ; the one key split; a citizen's own good; one whole hand; the shipped shape + its per-spec reference scale
   #:use-module (playnet scope live)   ; plan-scope->alist (the convex planner over the live scope)
@@ -416,8 +417,8 @@ scope walk wherever a solve wants the scope's declared needs."
           (let ((st (or (and standing-of (standing-of root sid)) '())))
             (when memo (hash-set! memo sid st))
             st))))
-  (define (gather rs root sid)             ; THE door: recipes, gated by standing, holes yielding once mapped
-    (gather-recipes rs #:admit? (compose-admit (solve-standing-admit? (solve-standing-of root sid)) (hole-admit rs))))
+  (define (gather rs root sid)             ; THE door: recipes, gated by the standing's admit? (holes yielding once mapped)
+    (gather-recipes rs #:admit? (solve-standing-admit? (solve-standing-of root sid))))
   ;; the scope's STANDING onto a plan-fn call — each recipe's response (the
   ;; curve of its own runs, read by every future at that future's stress),
   ;; the contrary observations against its map (the world as its workers
@@ -432,25 +433,24 @@ scope walk wherever a solve wants the scope's declared needs."
     (let ((w (if world-of
                  (apply world-of root sid kw)
                  `((view . ,($ ($ root 'observer) 'all-resources)) (caps . ()) (span . ())))))
-      (cons (cons 'caps (let ((own (assq-ref w 'caps)))
-                          ;; the allocation stands under the world's own caps: a located
-                          ;; good both name is the world's (two caps on one good add at ingest)
-                          (append own (filter (lambda (c) (not (assoc (car c) own))) (means-caps-of cache root)))))
+      ;; the allocation stands under the world's own caps (solve/keywords.scm
+      ;; caps-under): a located good both name is the world's
+      (cons (cons 'caps (caps-under (or (assq-ref w 'caps) '()) (means-caps-of cache root)))
             (alist-delete 'caps w))))
+  ;; the readers every solve here reads through: the roster's, with the world
+  ;; read as world-of* — ONE place lays the UC allocation under the world's caps,
+  ;; on the plain path as on the federated and the means paths
+  (define readers*
+    (cons (cons 'world world-of*) (alist-delete 'world readers)))
   ;; THE SETTINGS OF A SOLVE, AS ONE ALIST MERGED BY KEY. What the scope
-  ;; stands on (its standing, its warm start, the governed dials, the voice
-  ;; field's inputs, the UC allocation as caps) is one alist; the caller's
-  ;; keywords are laid over it by key, so a caller's word wins by
-  ;; construction and no key is looked for twice. Caps merge rather than
-  ;; replace: the allocation stands under the caller's, and a caller's cap
-  ;; on the same located good replaces the standing one (two pools would
-  ;; add at ingest). Converted to keywords once, at the end.
+  ;; stands on (its standing, its warm start, the decided discrete state, the
+  ;; governed dials, the voice field's inputs, where its people are) is one
+  ;; alist; the caller's keywords are laid over it by key, so a caller's word
+  ;; wins by construction and no key is looked for twice. The caps are the
+  ;; world's (world-of*), laid under the caller's in solve-with-readers.
+  ;; Converted to keywords once, at the end.
   (define (merge-settings standing over)
-    (let ((caps (let ((o (or (assq-ref over 'eco-caps) '())))
-                  (append (filter (lambda (c) (not (assoc (car c) o))) (or (assq-ref standing 'eco-caps) '())) o))))
-      (cons (cons 'eco-caps caps)
-            (append (filter (lambda (kv) (not (eq? (car kv) 'eco-caps))) over)
-                    (filter (lambda (kv) (and (not (eq? (car kv) 'eco-caps)) (not (assq (car kv) over)))) standing)))))
+    (append over (filter (lambda (kv) (not (assq (car kv) over))) standing)))
   ;; THE STANDING A SOLVE IS GIVEN, read once per request (the standing memo's
   ;; extent) into one record (doors/planner/ctx.scm solve-standing): the scope's
   ;; standing, what has been seen of the map, the last solve's x and rows, the UC
@@ -470,7 +470,10 @@ scope walk wherever a solve wants the scope's declared needs."
                  (vn (node-of sid nodes-voice))
                  (voice? (and vn (> tau 0.0)))
                  (rec (make-solve-standing
-                       #:admit? (assq-ref st 'admit?)
+                       ;; THE admit gate, composed once: the standing's own word
+                       ;; (a consensus barring a recipe here) and the holes the
+                       ;; scope's own recipes already fill — every path gathers under it
+                       #:admit? (compose-admit (assq-ref st 'admit?) (hole-admit ($ root 'recipe-store)))
                        #:proc-frag (let ((r (assq-ref st 'proc-frag))) (if (pair? r) r '()))
                        #:responses (let ((r (assq-ref st 'responses))) (if (pair? r) r '()))
                        ;; what has been seen of the map: the reading fold's `contrary` read
@@ -480,9 +483,12 @@ scope walk wherever a solve wants the scope's declared needs."
                                          (r (or (and n (false-if-exception ($ n 'contrary))) (assq-ref st 'observed))))
                                     (if (pair? r) r '()))
                        #:warm-x (warm-x-of cache sid)
+                       #:decided (decided-of cache sid)
                        ;; the previous plan's rows: what it lands is where stock on the way counts
                        #:arriving (or (planned-material cache sid) '())
-                       #:eco-caps (means-caps-of cache root)
+                       ;; where the scope's people are, per period: the one trajectory every
+                       ;; solve here prices against (doors/position.scm)
+                       #:agent-position (agent-position-predicate root)
                        #:dials dials
                        #:voice-pushes (and voice? ($ vn 'pushes))
                        #:voice-hours (and voice? ($ vn 'hours-of))
@@ -624,13 +630,13 @@ scope walk wherever a solve wants the scope's declared needs."
                   (else (done) ($ r 'fulfill (cdr v)))))))))
   (define (plan-fn* root sid . kw)
     (if (not solve-vat)
-        (apply solve-with-readers plan-fn readers root sid (standing-kw root sid kw))
+        (apply solve-with-readers plan-fn readers* root sid (standing-kw root sid kw))
         (call-with-values spawn-promise-values
           (lambda (p r)
             (set! %solve-queue
               (append %solve-queue
                 (list (cons (lambda ()
-                              (apply solve-with-readers plan-fn readers root sid
+                              (apply solve-with-readers plan-fn readers* root sid
                                      (standing-kw root sid (cons* #:solve-in %solve-in kw))))
                             r))))
             (%pump-solves!)
@@ -1010,11 +1016,9 @@ scope walk wherever a solve wants the scope's declared needs."
   (define (solve-current! root scope-id)
     (hash-set! %solve-inflight scope-id #t)
     (let ((landed (lambda () (hash-remove! %solve-inflight scope-id))))
-      (on-plan (plan-fn* root scope-id
-                 #:demand (demand->keyed '())
-                 #:agent-position (agent-position-predicate root)
-                 #:horizon (demand-horizon '() '())
-                 #:backend 'native-c)
+      ;; the doors' own keywords off an empty option alist (doors/position.scm
+      ;; solve-keywords): the one spelling of a solve's inputs
+      (on-plan (apply plan-fn* root scope-id (solve-keywords root '()))
                (lambda (al) (landed) (cache-solve! cache scope-id '() al))
                #:catch (lambda (e)
                          (landed)
@@ -1348,7 +1352,9 @@ scope walk wherever a solve wants the scope's declared needs."
                 #:horizon hz
                 #:labour-entries (and=> (labour-pool-of sid)
                                          (lambda (p) (pool-entries ($ p 'fold-own))))
-                #:proc-frag (solve-standing-proc-frag (solve-standing-of root sid)))))))))
+                #:proc-frag (solve-standing-proc-frag (solve-standing-of root sid))
+                ;; the governed dials, as the plain solve sets them after ingest
+                #:settings (solve-standing-dials (solve-standing-of root sid)))))))))
   ;; a door over one scope that answers (ok . x) or (error . msg): the shape
   ;; every commitment-arc door has — the root handed to BODY, any raise a
   ;; failure, BODY's value the success

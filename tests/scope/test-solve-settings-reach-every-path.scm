@@ -12,7 +12,7 @@
 ;;; Run: guile --no-auto-compile -q -L module tests/scope/test-solve-settings-reach-every-path.scm
 
 (use-modules (playnet solve world) (playnet solve robust) (playnet solve records) ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet solve keywords) ((playnet solve plan) #:select (%plan-from-records)) ((playnet solve engine) #:select (apply-solve-settings!)) (srfi srfi-1) ((ice-9 session) #:select (procedure-arguments)))
+(use-modules ((playnet solve keywords) #:select (%solve-keywords solve-keywords-of pick-keywords caps-under)) ((playnet solve plan) #:select (%plan-from-records)) ((playnet solve engine) #:select (apply-solve-settings!)) (srfi srfi-1) ((ice-9 session) #:select (procedure-arguments)))
 (use-modules (playnet test harness) (playnet test scope)
              (playnet vf schemas) (playnet scope live)
              (goblins) (goblins utils hashmap)
@@ -77,5 +77,13 @@
        (set= (keywords-taken %plan-from-records) (map car %solve-keywords)) #t)
 (check "%world-keywords is the table's world kind" (equal? %world-keywords (solve-keywords-of 'world)) #t)
 (check "the held-back keywords are the table's held kind" (equal? %held-back-world-keywords (solve-keywords-of 'held)) #t)
+
+(display "\n── two cap tables on one world merge by one rule ──\n")
+;; a located good both name is the own table's; the other's rows stand for the rest
+(check "own wins by exact key, under stands for the goods own leaves unnamed"
+       (caps-under '(("Svc|a#p" . 2) ("Svc|b#p" . 5)) '(("Svc|a#p" . 9) ("Svc|c#p" . 1)))
+       '(("Svc|a#p" . 2) ("Svc|b#p" . 5) ("Svc|c#p" . 1)))
+(check "an empty own table is the other's" (caps-under '() '(("Svc|c#p" . 1))) '(("Svc|c#p" . 1)))
+(check "an empty other leaves own" (caps-under '(("Svc|a#p" . 2)) '()) '(("Svc|a#p" . 2)))
 
 (test-summary!)

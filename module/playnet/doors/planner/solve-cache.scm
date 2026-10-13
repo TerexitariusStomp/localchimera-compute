@@ -34,7 +34,7 @@
             externality-history-ref externality-history-set! note-externalities!
             met-of-scope spec-met
             means-caps-of means-cap-rows set-means-cap!
-            solve-vocabulary-of solve-at-of warm-x-of mark-solve-stale! solve-stale?
+            solve-vocabulary-of solve-at-of warm-x-of decided-of mark-solve-stale! solve-stale?
             planned-material planned-runs planned-rows planned-row-id hold-row! row-left
             cache-solve! plan-claims!
             scope-own-slack))
@@ -49,7 +49,7 @@
 (define-record-type <solve-cache>
   (%make-solve-cache store-of observer-of own-places-of on-cached
                      last-solve-fallback solve-read externality-fallback met-memo means-caps
-                     warm-x stale-solves solve-at solve-vocab)
+                     warm-x decided stale-solves solve-at solve-vocab)
   solve-cache?
   (store-of      solve-cache-store-of)        ; scope-id → its plan-store, or #f
   (observer-of   solve-cache-observer-of)     ; scope-id → its observer, or #f
@@ -61,6 +61,7 @@
   (met-memo      solve-cache-met-memo)        ; scope-root → (cached-solve . its dial plan)
   (means-caps    solve-cache-means-caps)      ; scope-root → ((spec . (located-good . cap)) …)
   (warm-x        solve-cache-warm-x)          ; scope-id → the last solve's x
+  (decided       solve-cache-decided)         ; scope-id → the discrete state the last search left
   (stale-solves  solve-cache-stale-solves)    ; scope-id → #t while a re-solve is due
   (solve-at      solve-cache-solve-at)        ; scope-id → unix seconds, hydrated from the durable row on first ask
   (solve-vocab   solve-cache-solve-vocab))    ; scope-id → the goods the last solve read stock against
@@ -71,7 +72,7 @@
    answer for a scope the service knows, #f otherwise."
   (%make-solve-cache store-of observer-of own-places-of #f
                      (make-hash-table) (make-hash-table) (make-hash-table) (make-hash-table) (make-hash-table)
-                     (make-hash-table) (make-hash-table) (make-hash-table) (make-hash-table)))
+                     (make-hash-table) (make-hash-table) (make-hash-table) (make-hash-table) (make-hash-table)))
 
 (define (store-of cache sid) ((solve-cache-store-of cache) sid))
 
@@ -223,6 +224,7 @@
         (when at (hash-set! (solve-cache-solve-at cache) scope-id at))
         at)))
 (define (warm-x-of cache scope-id) (hash-ref (solve-cache-warm-x cache) scope-id #f))
+(define (decided-of cache scope-id) (hash-ref (solve-cache-decided cache) scope-id #f))
 (define (mark-solve-stale! cache scope-id) (hash-set! (solve-cache-stale-solves cache) scope-id #t))
 (define (solve-stale? cache scope-id) (hash-ref (solve-cache-stale-solves cache) scope-id #f))
 (define (planned-material cache scope-id)
@@ -270,6 +272,10 @@
                  (let ((c (assq-ref alist 'certificate)))
                    (not (and (list? c) (eq? #f (assq-ref c 'feasible?))))))
         (hash-set! (solve-cache-warm-x cache) scope-id (cdr xrow)))
+      ;; the discrete state the search left seeds the next search (solve/discrete.scm)
+      (let ((d (assq-ref alist 'decided)))
+        (if d (hash-set! (solve-cache-decided cache) scope-id d)
+            (hash-remove! (solve-cache-decided cache) scope-id)))
       (let ((now (instant->unix (clock-now))))
         (hash-set! (solve-cache-solve-at cache) scope-id now)
         (hash-set! (solve-cache-solve-vocab cache) scope-id (stock-vocabulary))

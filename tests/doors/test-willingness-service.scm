@@ -57,6 +57,7 @@
            (sts (spawn ^mock `((all-locations . ,(lambda () spatials)))))
            (ps  (spawn ^meta-store))
            (rs  (spawn ^mock `((all-recipes . ,(lambda () recipes))
+                               (get-recipe-process . ,(lambda (pid) #f))   ; no process record: a store with no holes (hole-admit)
                                (get-process-chain . ,(lambda (rid) procs))
                                (flows-for-process . ,(lambda (pid)
                                   (cons (filter (lambda (f) (or (equal? (recipe-flow-recipe-input-of f) pid)
