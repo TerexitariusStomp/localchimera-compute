@@ -1,3 +1,4 @@
+import type { MatterGraph } from './seam.js';
 // app/state.ts — the dial's shared MUTABLE state.
 //
 // These values are reassigned across many render functions. ES module import
@@ -16,8 +17,8 @@ export interface ScaleMorph {
 }
 
 export interface DialState {
-  /** Live ecological substance-flow snapshot, from the scope's solve. */
-  matterFlow?: unknown;
+  /** Live ecological substance-flow snapshot, from the scope's solve (the matter table). */
+  matterFlow?: MatterGraph;
   /** Hours per turn, continuous. */
   turnH: number;
   /** Absolute hours; demo: a June Friday, 06:00. */

@@ -9,7 +9,12 @@
 ;;;             it sends (a handler composes several — cast signs a stance in
 ;;;             two doors, signup runs a ceremony), and a doc line. `local`
 ;;;             handlers touch no door: they work on browser state (keys,
-;;;             scope, WebRTC).
+;;;             scope, WebRTC). A handler whose reply is a door's table says so
+;;;             in place of its return type, `(reply door)`: the type is then
+;;;             the registry's (wire/rows.scm reply-table, ui/app/wire-rows.ts),
+;;;             `Promise<Json<W.Wire…Reply>>` — the JSON string of that table's
+;;;             row, which the page reads with `readJson` — and protocol-lint
+;;;             holds the door to the handler's doors and to the registry.
 ;;;   PUSHES    spine → app. One entry per method the spine calls on the seam:
 ;;;             its name, its TypeScript parameter list, its SINK — the wasm's
 ;;;             "seam" import that raises it, with how each wire argument is
@@ -35,25 +40,29 @@
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-9)
   #:export (%handlers handler-ref handler? handler-name handler-params
-            handler-returns handler-doors handler-doc handler-local?
+            handler-returns handler-reply handler-doors handler-doc handler-local?
             %pushes push-ref push? push-name push-params push-sink push-wire
             push-keep push-doc
             %sink-plumbing %sinks-forwarded))
 
 (define-record-type <handler>
-  (make-handler name params returns doors doc)
+  (make-handler name params returns reply doors doc)
   handler?
   (name    handler-name)      ; the seam.handlers key
   (params  handler-params)    ; TypeScript parameter list, as text
-  (returns handler-returns)   ; TypeScript return type, as text
+  (returns handler-returns)   ; TypeScript return type, as text, or #f where REPLY says it
+  (reply   handler-reply)     ; the door whose reply table types the handler's answer, or #f
   (doors   handler-doors)     ; ((object . name) …), in send order
   (doc     handler-doc))
 
-;; (handler NAME PARAMS RETURNS DOORS DOC) — all data.
+;; (handler NAME PARAMS RETURNS DOORS DOC) — all data; RETURNS is the
+;; TypeScript return type as text, or (reply DOOR) for a door's table.
 (define-syntax handler
-  (syntax-rules ()
+  (syntax-rules (reply)
+    ((_ name params (reply door) doors doc)
+     (make-handler name params #f 'door 'doors doc))
     ((_ name params returns doors doc)
-     (make-handler name params returns 'doors doc))))
+     (make-handler name params returns #f 'doors doc))))
 
 (define (handler-local? h) (null? (handler-doors h)))
 (define (handler-ref name) (find (lambda (h) (string=? (handler-name h) name)) %handlers))
@@ -93,7 +102,7 @@
           "Gateway door state — every string on it is a door state the identity face reads (see GatewayStatus); a diagnostic goes to the trace, never here.")
     (push "deviceUnlock" "reply: string" #f #f
           "The device key signed in on its own at connect — the unlock reply, or \"err:…\". Raised by day-boot.js off the unlockDevice handler.")
-    (push "ingest" "snapshot: unknown" ("data" json) "snapshot"
+    (push "ingest" "snapshot: W.WireScopeSnapshotReply" ("data" json) "snapshot"
           "A scope snapshot (the planner's day: commitments, intents, recipes, plan, inventory, credit, matter, fragility) — seam.data.snapshot holds it.")
     (push "contacts" "contacts: unknown" ("contacts" json) "contacts"
           "The contact book changed, or what stands between you and someone in it — seam.data.contacts holds each person with their kind, presence, recognition, both vouches and open ask.")
@@ -151,7 +160,7 @@
              "The AI seam, at the seat: the session answers `(ai-complete system-prompt user-prompt model)` within its per-minute budget, and \"\" past it or signed out. The third argument is the MODEL the orb passes from the pool's menu; the service runs an enclave (TEE/…) slug as named and anything else as its default.")
     (handler "allotment"
              ""
-             "Promise<unknown>"
+             (reply allotment)
              ((session . allotment))
              "→ JSON {remaining, perWeek, opens, sees} | \"err:…\" — the week's unplanned photo reads: how many remain of how many, the epoch second the next week opens (Monday 00:00 UTC), and whether a picture can be read here at all (docs/observation/capture.md §5).")
     (handler "auditKinds"
@@ -236,7 +245,7 @@
              "A new place by name (+ optional lat/lon, optional address) → its id (a <spatial-thing> in the scope). `parent` is the id of the place it is inside — a room in a site, a shelf in a room — and the new place then stands at its parent's position when it states none.")
     (handler "countSchedule"
              "regime?: string"
-             "Promise<unknown>"
+             (reply count-schedule)
              ((session . count-schedule))
              "→ JSON {rows: CountRow[]} | \"err:…\" — the schedule of counts: a row for each thing the inventory shows that sits in no other, soonest due first: {id, name, place, onhand, unit, lines, hours, interval (seconds), class (A|B|C), regime, lastCount, due, overdue} (docs/observation/capture.md §4).")
     (handler "passcodeCheck"
@@ -261,12 +270,12 @@
              "→ the scope as this device holds a copy of it, one text (planner/scope/replica.scm), or \"\" where it could not be read — what the device's scope (scope-local.ts) seeds its copy from on taking a seat and after a flush, so the same doors answer with no gateway in reach.")
     (handler "countHistory"
              "resource: string, limit?: number"
-             "Promise<unknown>"
+             (reply count-history)
              ((session . count-history))
              "→ JSON {rows: {id, at, delta, unit, counter, technique, evidence, mine}[]} | \"err:…\" — the counts of a stock, newest first, as a member reads them to contest one: `delta` is signed as the adjustment landed, `evidence` the hash of the picture the count names (\"\" when none), `mine` whether the caller counted it.")
     (handler "contests"
              ""
-             "Promise<unknown>"
+             (reply contests)
              ((session . contests))
              "→ JSON {rows: {id, eventId, kind, resource, worker, by, reason, role}[]} | \"err:…\" — the contests open in the scope as they stand to the caller: `kind` work or count, `resource` the stock a count is of (empty for work), `role` attach when the act is the caller's own (a count's counter attaches the picture), vote when the caller is in the franchise, none otherwise.")
     (handler "attachEvidence"
@@ -281,12 +290,12 @@
              "The picture held for a contest, as base64 joined from its parts, for the counter and the franchise; \"\" when none is held.")
     (handler "labelStock"
              "resource: string"
-             "Promise<unknown>"
+             (reply label-stock)
              ((session . label-stock))
              "→ JSON {code, id, name, minted} | \"err:…\" — the code a stock is known by, for its label: six characters, unique in the scope, silent about owner and contents; the same on every asking (`minted` is true when this asking gave it) (docs/observation/capture.md §6).")
     (handler "readLabel"
              "code: string"
-             "Promise<unknown>"
+             (reply read-label)
              ((session . read-label))
              "→ JSON {resource: InventoryResource, contents: InventoryResource[]} | \"err:…\" — what a scanned or typed label names: the thing, where it is, and what is in it.")
     (handler "declareSpan"
@@ -491,32 +500,32 @@
              "Promote a lived day to a ledger fact.")
     (handler "countStock"
              "resource: string, counted: number, unit?: string, technique?: string, place?: string, whenIso?: string, fulfills?: string, evidence?: string, note?: string"
-             "Promise<unknown>"
+             (reply count-stock)
              ((session . count-stock))
              "→ JSON {event, record, delta, onhand} | \"err:…\" — a count of a stock the books hold: a count that finds the ledger off lands a raise or lower of the difference on that stock, one that agrees lands none (`event` is then \"\"). `technique` is stated, label or photo; `place` a place id, by default the stock's own; `fulfills` the counter's commitment of a planned count, whose `record` lands as a produce; `evidence` the hash of the picture, which stays on the device (docs/observation/capture.md).")
     (handler "matchSlots"
              ""
-             "Promise<unknown>"
+             (reply match-slots)
              ((session . match-slots) (lobby . who))
              "The scope's needs and offers, scored against each other, as JSON.")
     (handler "myPayouts"
              ""
-             "Promise<unknown>"
+             (reply my-payouts)
              ((session . my-payouts))
              "→ JSON {available: number, payouts: Payout[], owed: Debt[]} — `owed` is every open debt the commons carries to you for a purchase you fronted and it has accepted (economy/debts.scm).")
     (handler "scopeReadings"
              "spec: string"
-             "Promise<unknown>"
+             (reply scope-readings)
              ((session . scope-readings))
              "→ JSON {rows: ReadingRow[], drift: {n, meanAbs, net}, latest} — what every source says of SPEC at this scope: one row per technique, act and source with its count, sum, extrema and freshest reading; the drift between counts and the ledger. The inventory face's counts line (docs/observation/readings-are-counts.md).")
     (handler "readingsBetween"
              "spec: string, from: string, until: string"
-             "Promise<unknown>"
+             (reply readings-between)
              ((session . readings-between))
              "→ JSON {rows: ReadingRow[], fold: ReadingRow[]} — what every source reported of SPEC at this scope between FROM and UNTIL (ISO-8601; an empty string leaves an end open): one row per reading in time order, n = 1 each, and those rows folded. The inventory face's history line (docs/observation/ngsi-ld.md).")
     (handler "myClaims"
              ""
-             "Promise<unknown>"
+             (reply my-claims)
              ((session . my-claims))
              "→ JSON {rows: ClaimRow[]} — your order book: each want asked (no row yet), held (the plan's claim commitment, with what remains) or taken.")
     (handler "mySkills"
@@ -531,7 +540,7 @@
              "→ JSON [{skill, held, hours, competence, events, witnessed, attesters, witnessedHours, pending: [{count, quorum}]}] — each skill you hold or have practiced, and what the record shows for it, in hours: `hours` is recipient-validated work (the credit ledger's own gate), `competence` where the skill stands today under its own law (idle time wears it, satisfied practice renews it), `attesters` the distinct people who co-signed the work.")
     (handler "mySlots"
              ""
-             "Promise<unknown>"
+             (reply my-slots)
              ((session . my-slots))
              "Your own slots, both rails, as JSON.")
     (handler "myVoice"
@@ -546,7 +555,7 @@
              "Open a proposal: (kind, domain, id, text, franchise, subject) — franchise \"federation\" | \"scope:<sid>\"; subject \"kind:id\" or \"\" names what it is about.")
     (handler "ourSlots"
              ""
-             "Promise<unknown>"
+             (reply our-slots)
              ((session . our-slots))
              "The fold's reading at the scope you stand in — Our Needs / Our Offers as summed cells (spec · place · window → qty), each carrying `mine`, your own share of the sum. No one else's name travels.")
     (handler "pins"
@@ -821,7 +830,7 @@
              "Create an AID from a passcode. The two empty strings are name and email.")
     (handler "slotsAt"
              ""
-             "Promise<unknown>"
+             (reply slots-at)
              ((session . slots-at) (lobby . who))
              "The scope's pooled slots at a place, as a JSON string.")
     (handler "socialize"

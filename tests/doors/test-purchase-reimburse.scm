@@ -75,8 +75,9 @@
     ($ STORE 'issue-idempotent c)
     (cred-said c)))
 
-(define (owed) (assq-ref (cdr ($ svc 'my-payouts COMMUNE ALICE STORE)) 'owed))
-(define (avail) (let ((a (assq-ref (cdr ($ svc 'my-payouts COMMUNE ALICE STORE)) 'available)))
+;; the door answers through its table (doors/record-rows.scm my-payouts): the page's rows
+(define (owed) (vector->list (assoc-ref (cdr ($ svc 'my-payouts COMMUNE ALICE STORE)) "owed")))
+(define (avail) (let ((a (assoc-ref (cdr ($ svc 'my-payouts COMMUNE ALICE STORE)) "available")))
                   (/ (round (* a 100000)) 100000.0)))
 (define (pool) (measure-has-numerical-value
                 (economic-resource-onhand-quantity ($ ($ SR 'observer) 'get-resource %xmr-resource-id))))
@@ -95,8 +96,8 @@
     (check "the commune accepts alice's own signed claim — mints the reciprocal debt"
            (car (list (begin ($ SCOPE 'accept-reimbursement GOV (claim! "spec-eur" 10 "EUR")) 'ok))) 'ok)
     (check "the commons owes alice €10"
-           (let ((k (car (owed)))) (and (= 10 (assq-ref k 'amount)) (equal? "EUR" (assq-ref k 'unit))
-                                        (= 10 (assq-ref k 'remaining)))))
+           (let ((k (car (owed)))) (and (= 10 (assoc-ref k "amount")) (equal? "EUR" (assoc-ref k "unit"))
+                                        (= 10 (assoc-ref k "remaining")))))
     (check "owed €10 = 0.01 XMR payable" (avail) 0.01))
 
   (display "\n── the payout pays the debt first, from the commons' pool ──\n")

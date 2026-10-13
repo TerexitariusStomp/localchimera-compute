@@ -1182,35 +1182,14 @@
 ;; The member never holds a key: the claim is a record, the wallet is the
 ;; commons', the gateway's runner moves the coins under the policy. These
 ;; three ride the session AID like every other slot write.
-(define (payout->wire p)
-  `(("id"      . ,(alist-ref p 'id))
-    ("address" . ,(alist-ref p 'address))
-    ("xmr"     . ,(alist-ref p 'xmr))
-    ("due"     . ,(alist-ref p 'due))
-    ("note"    . ,(alist-ref p 'note))
-    ("state"   . ,(alist-ref p 'state))))
 (define (handle-request-payout address xmr due note cb)
   (scoped-call cb (<- *session* 'request-payout *scope* address (arg-num xmr) due note)
     (lambda (_) (reply! cb "ok"))))
-;; debt->wire: one open debt (economy/debts.scm debt->alist shape) — what
-;; the commons owes back for a purchase a member fronted, once accepted.
-(define (debt->wire k)
-  `(("id"        . ,(alist-ref k 'id))
-    ("spec"      . ,(alist-ref k 'spec))
-    ("amount"    . ,(alist-ref k 'amount))
-    ("unit"      . ,(alist-ref k 'unit))
-    ("remaining" . ,(alist-ref k 'remaining))
-    ("due"       . ,(alist-ref k 'due))
-    ("since"     . ,(alist-ref k 'since))))
+;; the member's payouts and what the commons owes them: the my-payouts table's
+;; reply (doors/record-rows.scm), as it arrives
 (define (handle-my-payouts cb)
   (scoped-call cb (<- *session* 'my-payouts *scope*)
-    (lambda (v)
-      (reply! cb (scm->json-canonical
-                  `(("available" . ,(alist-ref v 'available))
-                    ("payouts"   . ,(list->vector
-                                     (map payout->wire (->list (alist-ref v 'payouts)))))
-                    ("owed"      . ,(list->vector
-                                     (map debt->wire (->list (alist-ref v 'owed)))))))))))
+    (lambda (v) (reply! cb (scm->json-canonical v)))))
 ;; the citizen's order book (service my-claims)
 (define (handle-my-claims cb)
   (scoped-call cb (<- *session* 'my-claims *scope*)

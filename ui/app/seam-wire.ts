@@ -13,6 +13,10 @@
 // is what the spine worker forwards to the page by name.
 
 import type { GatewayStatus, Grant, GrantKind } from "./seam.js";
+import type * as W from "./wire-rows.js";
+
+/** The JSON string of a door's reply table, or "err:…" — read with seam.ts readJson. */
+export type Json<T> = string & { readonly __shape?: T };
 
 export interface SeamPushes {
   /** Gateway door state — every string on it is a door state the identity face reads (see GatewayStatus); a diagnostic goes to the trace, never here. */
@@ -23,7 +27,7 @@ export interface SeamPushes {
   deviceUnlock(reply: string): void;
   /** A scope snapshot (the planner's day: commitments, intents, recipes, plan, inventory, credit, matter, fragility) — seam.data.snapshot holds it. */
   // sink: data
-  ingest(snapshot: unknown): void;
+  ingest(snapshot: W.WireScopeSnapshotReply): void;
   /** The contact book changed, or what stands between you and someone in it — seam.data.contacts holds each person with their kind, presence, recognition, both vouches and open ask. */
   // sink: contacts
   contacts(contacts: unknown): void;
@@ -100,7 +104,7 @@ export interface SeamHandlers {
   ai?(system: string, user: string, model: string): Promise<string>;
   /** → JSON {remaining, perWeek, opens, sees} | "err:…" — the week's unplanned photo reads: how many remain of how many, the epoch second the next week opens (Monday 00:00 UTC), and whether a picture can be read here at all (docs/observation/capture.md §5). */
   // doors: session/allotment
-  allotment?(): Promise<unknown>;
+  allotment?(): Promise<Json<W.WireAllotmentReply>>;
   /** Stage 3 (truth-telling.md): audit the scope's ratified kinds against what the observer saw each citizen take; a padded row loses its grant. → JSON {examined, padded, findings[]}; `audits` reads the record. */
   // doors: session/audit-kinds
   auditKinds?(): Promise<unknown>;
@@ -149,7 +153,7 @@ export interface SeamHandlers {
   declarePlace?(name: string, lat: number | string, lon: number | string, address?: string, parent?: string): Promise<unknown>;
   /** → JSON {rows: CountRow[]} | "err:…" — the schedule of counts: a row for each thing the inventory shows that sits in no other, soonest due first: {id, name, place, onhand, unit, lines, hours, interval (seconds), class (A|B|C), regime, lastCount, due, overdue} (docs/observation/capture.md §4). */
   // doors: session/count-schedule
-  countSchedule?(regime?: string): Promise<unknown>;
+  countSchedule?(regime?: string): Promise<Json<W.WireCountScheduleReply>>;
   /** "ok" when the passcode opens the identity in hand, read off the log this device holds; else the refusal. */
   // local: no door
   passcodeCheck?(passcode: string): Promise<unknown>;
@@ -164,10 +168,10 @@ export interface SeamHandlers {
   scopeReplica?(): Promise<string>;
   /** → JSON {rows: {id, at, delta, unit, counter, technique, evidence, mine}[]} | "err:…" — the counts of a stock, newest first, as a member reads them to contest one: `delta` is signed as the adjustment landed, `evidence` the hash of the picture the count names ("" when none), `mine` whether the caller counted it. */
   // doors: session/count-history
-  countHistory?(resource: string, limit?: number): Promise<unknown>;
+  countHistory?(resource: string, limit?: number): Promise<Json<W.WireCountHistoryReply>>;
   /** → JSON {rows: {id, eventId, kind, resource, worker, by, reason, role}[]} | "err:…" — the contests open in the scope as they stand to the caller: `kind` work or count, `resource` the stock a count is of (empty for work), `role` attach when the act is the caller's own (a count's counter attaches the picture), vote when the caller is in the franchise, none otherwise. */
   // doors: session/contests
-  contests?(): Promise<unknown>;
+  contests?(): Promise<Json<W.WireContestsReply>>;
   /** Attach the counter's picture (its base64) to the contest of their count, sent on in parts and joined at the gateway, which holds it until the ballot settles. → "ok" | "err:…". */
   // doors: session/evidence-part
   attachEvidence?(ballot: string, hash: string, picture: string): Promise<unknown>;
@@ -176,10 +180,10 @@ export interface SeamHandlers {
   contestEvidence?(ballot: string): Promise<string>;
   /** → JSON {code, id, name, minted} | "err:…" — the code a stock is known by, for its label: six characters, unique in the scope, silent about owner and contents; the same on every asking (`minted` is true when this asking gave it) (docs/observation/capture.md §6). */
   // doors: session/label-stock
-  labelStock?(resource: string): Promise<unknown>;
+  labelStock?(resource: string): Promise<Json<W.WireLabelStockReply>>;
   /** → JSON {resource: InventoryResource, contents: InventoryResource[]} | "err:…" — what a scanned or typed label names: the thing, where it is, and what is in it. */
   // doors: session/read-label
-  readLabel?(code: string): Promise<unknown>;
+  readLabel?(code: string): Promise<Json<W.WireReadLabelReply>>;
   /** As one of SCOPE's governors, declare that RESOURCE-ID's service pool stands at PLACE (a span declaration; a solve reads it through the consent gate, so a foreign place needs the host's hosting willingness); `until` is an ISO date or absent for open-ended. Replies "ok" or "err:…". */
   // doors: session/declare-span
   declareSpan?(scope: string, resourceId: string, place: string, until?: string): Promise<unknown>;
@@ -300,22 +304,22 @@ export interface SeamHandlers {
   logObserve?(action: string, spec: string, qty: number, unit: string, note: string, when: string): Promise<unknown>;
   /** → JSON {event, record, delta, onhand} | "err:…" — a count of a stock the books hold: a count that finds the ledger off lands a raise or lower of the difference on that stock, one that agrees lands none (`event` is then ""). `technique` is stated, label or photo; `place` a place id, by default the stock's own; `fulfills` the counter's commitment of a planned count, whose `record` lands as a produce; `evidence` the hash of the picture, which stays on the device (docs/observation/capture.md). */
   // doors: session/count-stock
-  countStock?(resource: string, counted: number, unit?: string, technique?: string, place?: string, whenIso?: string, fulfills?: string, evidence?: string, note?: string): Promise<unknown>;
+  countStock?(resource: string, counted: number, unit?: string, technique?: string, place?: string, whenIso?: string, fulfills?: string, evidence?: string, note?: string): Promise<Json<W.WireCountStockReply>>;
   /** The scope's needs and offers, scored against each other, as JSON. */
   // doors: session/match-slots, lobby/who
-  matchSlots?(): Promise<unknown>;
+  matchSlots?(): Promise<Json<W.WireMatchSlotsReply>>;
   /** → JSON {available: number, payouts: Payout[], owed: Debt[]} — `owed` is every open debt the commons carries to you for a purchase you fronted and it has accepted (economy/debts.scm). */
   // doors: session/my-payouts
-  myPayouts?(): Promise<unknown>;
+  myPayouts?(): Promise<Json<W.WireMyPayoutsReply>>;
   /** → JSON {rows: ReadingRow[], drift: {n, meanAbs, net}, latest} — what every source says of SPEC at this scope: one row per technique, act and source with its count, sum, extrema and freshest reading; the drift between counts and the ledger. The inventory face's counts line (docs/observation/readings-are-counts.md). */
   // doors: session/scope-readings
-  scopeReadings?(spec: string): Promise<unknown>;
+  scopeReadings?(spec: string): Promise<Json<W.WireScopeReadingsReply>>;
   /** → JSON {rows: ReadingRow[], fold: ReadingRow[]} — what every source reported of SPEC at this scope between FROM and UNTIL (ISO-8601; an empty string leaves an end open): one row per reading in time order, n = 1 each, and those rows folded. The inventory face's history line (docs/observation/ngsi-ld.md). */
   // doors: session/readings-between
-  readingsBetween?(spec: string, from: string, until: string): Promise<unknown>;
+  readingsBetween?(spec: string, from: string, until: string): Promise<Json<W.WireReadingsBetweenReply>>;
   /** → JSON {rows: ClaimRow[]} — your order book: each want asked (no row yet), held (the plan's claim commitment, with what remains) or taken. */
   // doors: session/my-claims
-  myClaims?(): Promise<unknown>;
+  myClaims?(): Promise<Json<W.WireMyClaimsReply>>;
   // doors: session/my-skills
   mySkills?(): Promise<string>;
   /** → JSON [{skill, held, hours, competence, events, witnessed, attesters, witnessedHours, pending: [{count, quorum}]}] — each skill you hold or have practiced, and what the record shows for it, in hours: `hours` is recipient-validated work (the credit ledger's own gate), `competence` where the skill stands today under its own law (idle time wears it, satisfied practice renews it), `attesters` the distinct people who co-signed the work. */
@@ -323,7 +327,7 @@ export interface SeamHandlers {
   mySkillStanding?(): Promise<string>;
   /** Your own slots, both rails, as JSON. */
   // doors: session/my-slots
-  mySlots?(): Promise<unknown>;
+  mySlots?(): Promise<Json<W.WireMySlotsReply>>;
   /** Your own voice weights, as JSON. */
   // doors: session/my-voice
   myVoice?(): Promise<unknown>;
@@ -332,7 +336,7 @@ export interface SeamHandlers {
   openProposal?(kind: string, domain: string, id: string, text: string, franchise: string, subject?: string): Promise<unknown>;
   /** The fold's reading at the scope you stand in — Our Needs / Our Offers as summed cells (spec · place · window → qty), each carrying `mine`, your own share of the sum. No one else's name travels. */
   // doors: session/our-slots
-  ourSlots?(): Promise<unknown>;
+  ourSlots?(): Promise<Json<W.WireOurSlotsReply>>;
   /** The pin book (map lists): "sync" json → "ok"; "list" → json; "ourLists" → json; "ourPins" id → json. */
   // doors: session/sync-pins, session/our-pin-lists, session/our-pins, session/list-pins
   pins?(op: string, payload: string): Promise<string>;
@@ -491,7 +495,7 @@ export interface SeamHandlers {
   signup?(name: string, email: string, passcode: string): Promise<unknown>;
   /** The scope's pooled slots at a place, as a JSON string. */
   // doors: session/slots-at, lobby/who
-  slotsAt?(): Promise<unknown>;
+  slotsAt?(): Promise<Json<W.WireSlotsAtReply>>;
   /** Commons a private resource into a commune's use-pool: custody moves, rights stay. Argument order is the spine's own — doors/lobby.scm's socialize-preimage takes (commune-aid spec qty UNTIL movable rt cf res kind). The fourth is the end of the grant's span, not a unit; both callers pass a date or "" there. `kind` is the grant's verb: "use" lends the thing's service and it comes back whole (absent = use); "consume" lends a QUANTITY to spend — a purse of EUR, a tank of fuel — and what is unspent at the window's close is yours. `ref` (any nonce; the bridge fills a timestamp when absent) uniquifies the grant's SAID — recall-then-relend with identical terms used to collide with the revoked credential and die silently. There is deliberately no loan/repay option here: a private bilateral repayment primitive was built and removed (project_consume_grant_money memory has the reasoning) — anyone who wants value from the commons works for it, there is no lending path between that and a gift. qty is `number | string` because the lend editor holds what was TYPED until the grant is signed (GrantTerms.qty), and hands that straight on. `eligible` is the owner's STEWARD RULE: the same criteria JSON a slot's 🔒 section writes ("" = anyone) — its filter-rule bounds who may be assigned to work drawing on the grant; the solve itself stays anonymous. */
   // doors: session/socialize-preimage, session/socialize-signed
   socialize?(commune: string, spec?: string, qty?: number | string, until?: string, movable?: boolean, returnTo?: string, condition?: string, resource?: string, kind?: GrantKind, ref?: string, eligible?: string): Promise<unknown>;

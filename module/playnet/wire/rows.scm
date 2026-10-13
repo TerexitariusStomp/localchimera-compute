@@ -14,7 +14,7 @@
   #:export (wire-table wire-table? wire-tables wire-table-ref wire-table-name
             wire-table-record-type wire-table-entries wire-row* wire-value row-maker
             plain->wire wire->plain
-            reply-table reply->wire finished finishing plain-reply with-context
+            reply-table reply-table-ref wire-type-name reply->wire finished finishing plain-reply with-context
             alist-ref
             ->list
             str-field
@@ -190,6 +190,17 @@
   (let ((t (wire-table (string->symbol (string-append (symbol->string door) "-reply")) #f entries)))
     (set! %replies (cons (cons door t) (%keep (lambda (p) (not (eq? (car p) door))) %replies)))
     t))
+(define (reply-table-ref door)
+  "The table DOOR answers with, or #f where DOOR answers in its own words."
+  (let ((t (assq door %replies))) (and t (cdr t))))
+(define (wire-type-name table-name)
+  "The page's name for TABLE-NAME's rows: plan-need → WirePlanNeed (wire-rows.ts)."
+  (let loop ((parts (string-split (symbol->string table-name) #\-)) (acc "Wire"))
+    (cond ((null? parts) acc)
+          ((string-null? (car parts)) (loop (cdr parts) acc))
+          (else (loop (cdr parts)
+                      (string-append acc (string (char-upcase (string-ref (car parts) 0)))
+                                     (substring (car parts) 1)))))))
 (define (reply->wire door v)
   "What DOOR answered, V, as the object the page reads."
   (let ((t (assq door %replies)))

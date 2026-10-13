@@ -40,6 +40,7 @@ import { signal, effect } from '../reactive.js';
 import { colorFor } from '../palette.js';
 import { termNode, termOf, DEMO_SPECS, DEMO_RESOURCES, DEMO_KEPT_BY_SPEC } from '../desire-projection.js';
 import { esc } from '../template.js';
+import { readJson } from '../seam.js';
 import { specOf } from '../slots/model.js';
 import { on } from '../bus.js';
 import { creditNow, DEMO_CREDIT } from '../credit.js';
@@ -154,7 +155,7 @@ function fetchRows() {
     }
     HANDLERS.myClaims().then(r => {
         try {
-            const j = typeof r === "string" && r.startsWith("{") ? JSON.parse(r) : null;
+            const j = readJson(r);
             rows.set(j && Array.isArray(j.rows) ? j.rows : []);
         }
         catch {
@@ -764,13 +765,8 @@ function fetchPayouts() {
         return;
     }
     HANDLERS.myPayouts().then(r => {
-        try {
-            const j = typeof r === "string" && r.startsWith("{") ? JSON.parse(r) : null;
-            payouts.set(j && isFinite(Number(j.available)) ? j : null);
-        }
-        catch {
-            payouts.set(null);
-        }
+        const j = readJson(r);
+        payouts.set(j && isFinite(Number(j.available)) ? j : null);
     });
 }
 const debtLabel = (d) => {

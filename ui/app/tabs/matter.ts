@@ -16,42 +16,7 @@ import { L } from '../layers.js';
 import { stage } from '../stage.js';
 
 import { S } from '../state.js';
-import type { WireMatterSubstance } from '../wire-rows.js';
-/** A substance and the colour it is drawn in: {symbol: "N", color: "#4a7"}. */
-type Substance = WireMatterSubstance;
-
-/**
- * A node of the flow graph: a PROCESS (kind !== "resource") or a RESOURCE. An
- * `env` resource is an environment stock — soil, air, water — and those are the
- * only ones whose imbalance counts as the rift.
- */
-interface MatterNode {
-  id: string;
-  label: string;
-  kind: string;
-  env?: boolean;
-  /** Fractional position in the frame. Absent on the wire; layoutMatter writes it. */
-  fx?: number;
-  fy?: number;
-}
-
-/** An element flow from one node to another, keyed by substance. */
-interface MatterLink {
-  from: string;
-  to: string;
-  flows?: Record<string, number>;
-}
-
-/**
- * The whole graph, exactly as the planner's matter-results->wire emits it. The
- * browser never derives composition — it only draws — so this is a description
- * of a wire format, not a model this module owns.
- */
-interface MatterGraph {
-  substances: Substance[];
-  nodes: MatterNode[];
-  links: MatterLink[];
-}
+import type { MatterGraph, MatterNode, MatterLink } from '../seam.js';
 
 /** A link with its drawn width resolved (one substance, or all stacked). */
 type DrawnLink = MatterLink & { eff: number };
@@ -67,17 +32,13 @@ let matterSel: string | null = null;   // a chosen substance to isolate, or null
 // solve) or the committed matter-snapshot.json (the real wire's output over a
 // demo cycle, by tools/emit/emit-matter-snapshot.scm) — exactly like the law face.
 let matterSnap: MatterGraph | null = null, matterLoaded = false, matterLoading = false;
-// The one boundary cast: S.matterFlow is a spine payload, typed unknown at the
-// seam, and a reader says what it expects. MatterGraph above IS that
-// expectation, written out.
-const matterData = (): MatterGraph | null =>
-  (S.matterFlow as MatterGraph) || matterSnap;
+const matterData = (): MatterGraph | null => S.matterFlow || matterSnap;
 async function initMatter(): Promise<void> {
   if (matterLoaded || matterLoading) return;
   matterLoading = true;
   try {
-    matterSnap = (S.matterFlow as MatterGraph)
-              || await (await fetch("data/snapshots/matter-snapshot.json")).json();
+    matterSnap = S.matterFlow
+              || await (await fetch("data/snapshots/matter-snapshot.json")).json() as MatterGraph;
     matterLoaded = true;
   } catch (e) { console.warn("[matter] load failed", e); matterSnap = null; }
   matterLoading = false;

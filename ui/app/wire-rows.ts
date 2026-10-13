@@ -223,6 +223,17 @@ export interface WireCurvePoint {
   c: number | null;
 }
 
+export interface WireDebt {
+  id: string;
+  aid: string;
+  spec: string;
+  amount: number | null;
+  unit: string;
+  remaining: number | null;
+  due: string;
+  since: string;
+}
+
 export interface WireDrawnMeansSlot {
   drawn?: number | null;
   owner: string;
@@ -558,6 +569,12 @@ export interface WireMember {
 
 export interface WireMyClaimsReply {
   rows: readonly WireClaimRow[];
+}
+
+export interface WireMyPayoutsReply {
+  available: number | null;
+  payouts: readonly WirePayout[];
+  owed: readonly WireDebt[];
 }
 
 export interface WireMySlotsReply {

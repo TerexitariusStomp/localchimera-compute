@@ -270,8 +270,8 @@ function ingestMatter(snap) {
     if (!m || !Array.isArray(m.links) || !m.links.length)
         return;
     S.matterFlow = {
-        substances: m.substances || [],
-        nodes: m.nodes || [],
+        substances: [...(m.substances || [])],
+        nodes: [...(m.nodes || [])],
         // Masses ride as strings; nodes carry no layout, since the renderer lays
         // them out itself.
         links: m.links.map(l => ({

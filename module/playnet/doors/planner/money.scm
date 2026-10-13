@@ -16,6 +16,7 @@
   #:use-module ((playnet doors record-rows) #:select (payout->alist))
   #:use-module ((playnet economy debts) #:select (%payout-spec))
   #:use-module ((playnet economy payouts) #:select (monero-address-plausible? payout-available payout-move! payout-pending? payout-sending? payout-source-id payout-row-context payout-txid payouts-of payouts-where))
+  #:use-module ((playnet wire rows) #:select (with-context))
   #:use-module ((playnet utils clock) #:select (iso-now))
   #:use-module ((playnet utils common) #:select (string-or-false))
   #:use-module ((playnet utils envelope) #:select (catch-as-failure success))
@@ -26,6 +27,11 @@
   #:use-module (playnet doors planner ctx)
   #:use-module ((playnet protocol dispatch) #:select (declared-doors))
   #:export (planner-money-doors))
+
+;; what a payout row reads its word and began through (doors/record-rows.scm
+;; payout table): the plan-store's reading of each intent, handed in context
+(define (payout-ctx ps)
+  `((payout-of . ,(lambda (i) (payout-row-context ps i)))))
 
 (define (planner-money-doors ctx)
   (with-planner-ctx ctx
@@ -60,7 +66,7 @@
     (define (payout-rows scope-id keep?)
       (scoped scope-id (lambda (root)
                          (let ((ps ($ root 'plan-store)))
-                           (map (lambda (i) (payout->alist i (payout-row-context ps i))) (payouts-where ps keep?))))))
+                           (map (lambda (i) (payout->alist i (payout-ctx ps))) (payouts-where ps keep?))))))
 
     (declared-doors planner
 
@@ -123,14 +129,16 @@
       ((my-payouts scope-id agent-id store)
        (scoped scope-id
          (lambda (root)
-(let* ((obs ($ root 'observer)) (rs ($ root 'recipe-store))
-                      (owed-list (if (and debts-of store) (debts-of obs store scope-id agent-id) '())))
-                 
-                  `((available . ,(payout-available obs ($ root 'plan-store) agent-id
-                                    #:owed (if (and owed-of store) (owed-of rs obs store scope-id agent-id) 0.0)))
-                    (owed . ,owed-list)
-                    (payouts . ,(let ((ps ($ root 'plan-store)))
-                                  (map (lambda (i) (payout->alist i (payout-row-context ps i))) (payouts-of ps agent-id)))))))))
+           (let* ((obs ($ root 'observer)) (rs ($ root 'recipe-store)) (ps ($ root 'plan-store))
+                  (owed-list (if (and debts-of store) (debts-of obs store scope-id agent-id) '())))
+             ;; the my-payouts table (doors/record-rows.scm) writes the reply, the
+             ;; payout rows reading their word and began through the context's reader
+             (with-context
+              `((available . ,(payout-available obs ps agent-id
+                                #:owed (if (and owed-of store) (owed-of rs obs store scope-id agent-id) 0.0)))
+                (owed . ,owed-list)
+                (payouts . ,(payouts-of ps agent-id)))
+              (payout-ctx ps))))))
 
       ;; ── the lifecycle: five verbs, one table (economy/payouts.scm %payout-moves);
       ;; each dated by the store's clock, unix seconds ──

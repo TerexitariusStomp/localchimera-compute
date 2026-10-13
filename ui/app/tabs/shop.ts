@@ -41,7 +41,9 @@ import { signal, effect } from '../reactive.js';
 import { colorFor } from '../palette.js';
 import { termNode, termOf, DEMO_SPECS, DEMO_RESOURCES, DEMO_KEPT_BY_SPEC } from '../desire-projection.js';
 import { esc } from '../template.js';
-import type { InventoryResource, InventorySpec, Inventory, Payout, Debt, ClaimRow } from '../seam.js';
+import type { InventoryResource, InventorySpec, Inventory, Debt, ClaimRow } from '../seam.js';
+import { readJson } from '../seam.js';
+import type * as W from '../wire-rows.js';
 import { specOf } from '../slots/model.js';
 import type { Slot } from '../slots/model.js';
 import { on } from '../bus.js';
@@ -183,8 +185,8 @@ function fetchRows(): void {
   if (!HANDLERS.myClaims || !scopeSig()) { rows.set(null); return; }
   HANDLERS.myClaims().then(r => {
     try {
-      const j = typeof r === "string" && r.startsWith("{") ? JSON.parse(r) as { rows?: ClaimRow[] } : null;
-      rows.set(j && Array.isArray(j.rows) ? j.rows : []);
+      const j = readJson(r);
+      rows.set(j && Array.isArray(j.rows) ? j.rows as ClaimRow[] : []);
     } catch { rows.set([]); }
   });
 }
@@ -720,7 +722,7 @@ function doTake(r: ClaimRow, q: number, where: string, when: string): void {
 }
 
 // ── send: "N XMR of my claim to ⟨address⟩", and "I bought this for the commons" ──
-interface PayoutBook { available: number; payouts: Payout[]; owed: Debt[] }
+type PayoutBook = W.WireMyPayoutsReply;
 const payouts = signal<PayoutBook | null>(null);
 const sendNote = signal("");
 let sendDraft = { address: "", xmr: "", note: "" };
@@ -730,10 +732,8 @@ const buyOpen = signal(false);
 function fetchPayouts(): void {
   if (!HANDLERS.myPayouts || !scopeSig()) { payouts.set(null); return; }
   HANDLERS.myPayouts().then(r => {
-    try {
-      const j = typeof r === "string" && r.startsWith("{") ? JSON.parse(r) as PayoutBook : null;
-      payouts.set(j && isFinite(Number(j.available)) ? j : null);
-    } catch { payouts.set(null); }
+    const j = readJson(r);
+    payouts.set(j && isFinite(Number(j.available)) ? j : null);
   });
 }
 const debtLabel = (d: Debt): string => {

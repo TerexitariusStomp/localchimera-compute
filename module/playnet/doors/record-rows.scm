@@ -447,7 +447,12 @@
     `(("id" id str) ("name" ,(lambda (p ctx) (or (plan-name p) (plan-id p))) str))))
 
 ;; a payout is an intent: the member's ask to be paid in XMR, its address on the
-;; at-location (as "xmr:ADDRESS"), its state riding the intent's own
+;; at-location (as "xmr:ADDRESS"), its state read off the records — the ctx
+;; carries `payout-of`, (intent) → the row's word and began
+;; (economy/payouts.scm payout-row-context, handed in by the door so this
+;; table, which the page's scope bundle carries, imports no payout law)
+(define (payout-context i ctx)
+  (let ((f (and ctx (ctx-ref ctx 'payout-of)))) (if f (f i) '())))
 (define %payout-wire
   (wire-table 'payout <intent>
     `(("id" id str) ("aid" provider str)
@@ -456,10 +461,20 @@
        str)
       ("xmr" ,(lambda (i ctx) (measure-has-numerical-value (intent-resource-quantity i))) num)
       ("due" due str) ("note" note str)
-      ;; the row's context (economy/payouts.scm payout-row-context): where it stands,
-      ;; and when the coins started moving
-      ("began" ,(lambda (i ctx) (or (and ctx (assq-ref ctx 'began)) (intent-has-beginning i))) str)
-      ("state" ,(lambda (i ctx) (or (and ctx (assq-ref ctx 'word)) "pending")) str))))
+      ;; where it stands, and when the coins started moving
+      ("began" ,(lambda (i ctx) (or (assq-ref (payout-context i ctx) 'began) (intent-has-beginning i))) str)
+      ("state" ,(lambda (i ctx) (or (assq-ref (payout-context i ctx) 'word) "pending")) str))))
+;; one open debt the commons carries to a member (economy/debts.scm debt->alist):
+;; what it owes back for a purchase fronted, once accepted; the face amount never
+;; changes, `remaining` is what is still open after part-payments
+(define %debt-wire
+  (wire-table 'debt #f
+    '(("id" id str) ("aid" aid str) ("spec" spec str) ("amount" amount num) ("unit" unit str)
+      ("remaining" remaining num) ("due" due str) ("since" since str))))
+;; what my-payouts answers: the hours available to draw, every standing payout,
+;; and every open debt
+(reply-table 'my-payouts
+  '(("available" available num) ("payouts" payouts (rows payout)) ("owed" owed (rows debt))))
 
 ;;; ── a recipe ────────────────────────────────────────────────────────────
 ;; What a recipe is (the recipe-store's) and how it has stood (the scope's
@@ -607,5 +622,6 @@
 
 (define* (payout->alist i #:optional (context #f))
   "A payout intent as the plain alist its readers (the runner, the member's list) hold:
-   the payout table's row, read back; CONTEXT its word and its began (payout-row-context)."
+   the payout table's row, read back; CONTEXT carries `payout-of`, the reader of
+   its word and its began (economy/payouts.scm payout-row-context)."
   (wire->plain (wire-row* %payout-wire i context)))

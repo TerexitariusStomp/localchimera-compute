@@ -23,6 +23,8 @@
 ;;; regenerates and diffs it.
 
 (use-modules (playnet doors protocol) (playnet protocol shapes) (playnet protocol seam)
+             ((playnet wire rows) #:select (reply-table-ref wire-type-name wire-table-name))
+             (playnet wire replies) (playnet doors record-rows)   ; the reply tables, registered
              (playnet protocol mcp)
              (json) (ice-9 match) (ice-9 format) (srfi srfi-1))
 
@@ -80,6 +82,13 @@
     (serverInfo . ,(mcp-server-info))
     (tools . ,(mcp-tools))))
 
+(define (handler-returns* h)
+  "The handler's return type: as declared, or the registry's for its reply door."
+  (or (handler-returns h)
+      (let ((t (reply-table-ref (handler-reply h))))
+        (unless t (error "protocol-emit: no reply table for door" (handler-reply h)))
+        (string-append "Promise<Json<W." (wire-type-name (wire-table-name t)) ">>"))))
+
 (define (seam-ts)
   (define (ts-list names) (string-join (map (lambda (n) (string-append "\"" n "\"")) names) ", "))
   (string-append
@@ -98,6 +107,10 @@
    "// is what the spine worker forwards to the page by name.\n"
    "\n"
    "import type { GatewayStatus, Grant, GrantKind } from \"./seam.js\";\n"
+   "import type * as W from \"./wire-rows.js\";\n"
+   "\n"
+   "/** The JSON string of a door's reply table, or \"err:…\" — read with seam.ts readJson. */\n"
+   "export type Json<T> = string & { readonly __shape?: T };\n"
    "\n"
    "export interface SeamPushes {\n"
    (string-concatenate
@@ -142,7 +155,7 @@
                 (string-append "  // doors: "
                                (string-join (map (lambda (d) (format #f "~a/~a" (car d) (cdr d))) (handler-doors h)) ", ")
                                "\n"))
-            "  " (handler-name h) "?(" (handler-params h) "): " (handler-returns h) ";\n"))
+            "  " (handler-name h) "?(" (handler-params h) "): " (handler-returns* h) ";\n"))
          %handlers))
    "  [handler: string]: unknown;\n"
    "}\n"))

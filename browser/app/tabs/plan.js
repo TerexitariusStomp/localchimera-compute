@@ -210,7 +210,7 @@ function modelFromFlow(prods, p, needs, demandSpecs, live) {
         cols.push({ stage: s, goods, labour: goods.reduce((a, n) => a + n.inputs.filter(i => i.kind === "work").reduce((b, i) => b + (Number(i.q) || 0), 0), 0) });
     }
     return {
-        meta: { scope: p.scope, coverage: p.coverage, feasible: p.feasible, discrete: p.discrete, placement: p.placement, stale: !!p.stale,
+        meta: { scope: p.scope, coverage: p.coverage ?? undefined, feasible: p.feasible, discrete: p.discrete, placement: p.placement, stale: !!p.stale,
             labourTotal, stages: cols.length, live },
         supply: { raw: Object.values(raw).sort((a, b) => a.spec.localeCompare(b.spec)),
             means: Object.values(means).sort((a, b) => a.spec.localeCompare(b.spec)), labourTotal },

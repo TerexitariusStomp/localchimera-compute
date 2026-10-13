@@ -56,14 +56,20 @@ type WireLocation = Partial<W.WireLocation> & { id: string };
 /** The plan, as the solve serializes it. */
 type WirePlan = Partial<W.WirePlan>;
 
-/** The scope snapshot. Every field optional: a snapshot carries what it has. */
-export interface ScopeSnapshot {
+/**
+ * The scope snapshot: the planner's snapshot table (wire-rows.ts
+ * WireScopeSnapshotReply), every field optional since a snapshot carries what
+ * it has, and each arm's rows read as the partials the day needs.
+ */
+export type ScopeSnapshot =
+  Partial<Omit<W.WireScopeSnapshotReply, "recipes" | "plan" | "matter" | "fragility" | "inventory" | "credit"
+                                        | "locations" | "commitments" | "intents" | "proposals" | "events">> & {
   recipes?: ScopeRecipe[];
   plan?: WirePlan;
-  matter?: W.WireMatter;
-  fragility?: { controls?: unknown[] };
-  inventory?: { resources?: unknown[] };
-  credit?: Record<string, unknown>;
+  matter?: W.WireMatter | false;
+  fragility?: { controls?: unknown[] } | false;
+  inventory?: Partial<W.WireInventory> | false;
+  credit?: Partial<W.WireCredit> | false;
   locations?: WireLocation[];
   commitments?: WireWork[];
   intents?: WireWork[];
@@ -72,7 +78,7 @@ export interface ScopeSnapshot {
                          /** a directed work offer, with its work terms */
                          offer?: boolean; spec?: string; proc?: string })[];
   events?: WireEvent[];
-}
+};
 
 /** What ingest needs the dial itself to do. */
 export interface IngestHost {
@@ -301,8 +307,8 @@ function ingestMatter(snap: ScopeSnapshot): void {
   const m = snap.matter;
   if (!m || !Array.isArray(m.links) || !m.links.length) return;
   S.matterFlow = {
-    substances: m.substances || [],
-    nodes: m.nodes || [],
+    substances: [...(m.substances || [])],
+    nodes: [...(m.nodes || [])],
     // Masses ride as strings; nodes carry no layout, since the renderer lays
     // them out itself.
     links: m.links.map(l => ({

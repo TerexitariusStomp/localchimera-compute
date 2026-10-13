@@ -83,9 +83,10 @@
       (plan-claim! obs %xmr-spec-id "alice" 1)   ; the plan's row: the 1 XMR alice claims below
       (values svc pol))))
 
-(define (avail) (let ((a (assq-ref (cdr ($ svc 'my-payouts "s1" "alice" #f)) 'available)))
+;; the door answers through its table (doors/record-rows.scm my-payouts): the page's rows
+(define (avail) (let ((a (assoc-ref (cdr ($ svc 'my-payouts "s1" "alice" #f)) "available")))
                   (/ (round (* a 10000)) 10000.0)))   ; XMR to 4 places — claim arithmetic is float
-(define (payouts) (assq-ref (cdr ($ svc 'my-payouts "s1" "alice" #f)) 'payouts))
+(define (payouts) (vector->list (assoc-ref (cdr ($ svc 'my-payouts "s1" "alice" #f)) "payouts")))
 (define (claim-onhand)
   (let ((r ($ ($ svc 'scope-root "s1") 'observer)))
     #f))
@@ -138,19 +139,19 @@
          (car ($ svc 'request-payout "s1" "bob" #f ADDR 0.1 "" "")) 'error)
   (check "the intent is hers, pending, at the address"
          (let ((p (car (payouts))))
-           (and (equal? "pending" (assq-ref p 'state))
-                (equal? ADDR (assq-ref p 'address))
-                (= 0.6 (assq-ref p 'xmr)))))
+           (and (equal? "pending" (assoc-ref p "state"))
+                (equal? ADDR (assoc-ref p "address"))
+                (= 0.6 (assoc-ref p "xmr")))))
   (check "a future-dated payout is not due yet"
          (let* ((r ($ svc 'request-payout "s1" "alice" #f ADDR 0.1 "2099-01-01T00:00:00Z" "later"))
                 (due (cdr ($ svc 'due-payouts "s1" "2026-08-20T00:00:00Z"))))
            (and (eq? 'ok (car r)) (= 1 (length due)))))
   (check "…and she can retire it while pending"
-         (let* ((later (find (lambda (p) (equal? "later" (assq-ref p 'note))) (payouts))))
-           (and (eq? 'ok (car ($ svc 'retire-payout "s1" "alice" (assq-ref later 'id))))
+         (let* ((later (find (lambda (p) (equal? "later" (assoc-ref p "note"))) (payouts))))
+           (and (eq? 'ok (car ($ svc 'retire-payout "s1" "alice" (assoc-ref later "id"))))
                 (= 1 (length (payouts))))))
   (check "bob cannot retire hers"
-         (car ($ svc 'retire-payout "s1" "bob" (assq-ref (car (payouts)) 'id))) 'error))
+         (car ($ svc 'retire-payout "s1" "bob" (assoc-ref (car (payouts)) "id"))) 'error))
 
 ;; the runner: one tick, promise-pipelined, so the result lands a turn later
 (with-vat vat (run-payouts! svc policy "s1" #f #:now-iso "2026-08-20T12:00:00Z"))
@@ -165,7 +166,7 @@
              (and (equal? ADDR (assoc-ref d "address"))
                   (= 600000000000 (assoc-ref d "amount")))))
     (check "the allowlist bracket is closed again" ($ policy 'allowed) '())
-    (check "the intent reads sent:<txid>" (assq-ref p 'state) "sent:abc123")
+    (check "the intent reads sent:<txid>" (assoc-ref p "state") "sent:abc123")
     (check "her claim is 0.4 XMR now" (avail) 0.4))
   (check "a second tick sends nothing more"
          (begin (run-payouts! svc policy "s1" #f #:now-iso "2026-08-20T12:00:00Z") #t)))
@@ -179,9 +180,9 @@
   (run-payouts! svc policy "s1" #f #:now-iso "2026-08-20T12:00:00Z"))
 (with-vat vat #t) (with-vat vat #t) (with-vat vat #t) (with-vat vat #t)
 (with-vat vat
-  (let ((failed (find (lambda (p) (string-prefix? "failed:" (assq-ref p 'state))) (payouts))))
+  (let ((failed (find (lambda (p) (string-prefix? "failed:" (assoc-ref p "state"))) (payouts))))
     (check "the intent is parked as failed, with the reason"
-           (and failed (string-contains (assq-ref failed 'state) "budget") #t))
+           (and failed (string-contains (assoc-ref failed "state") "budget") #t))
     (check "no transfer was logged" (length ($ policy 'log)) 1)
     (check "the bracket is closed" ($ policy 'allowed) '())
     (check "her 0.4 XMR claim is whole" (avail) 0.4)))
@@ -189,11 +190,11 @@
 ;; a reconcile pass reads three answers in turn (what is sending, what has settled, what the
 ;; wallet shows) before it settles, so the vat is turned enough times for all of them
 (define (settle-turns) (for-each (lambda (_) (with-vat vat #t)) (iota 7)))
-(define (by-state pfx) (filter (lambda (p) (string-prefix? pfx (assq-ref p 'state))) (payouts)))
+(define (by-state pfx) (filter (lambda (p) (string-prefix? pfx (assoc-ref p "state"))) (payouts)))
 (define NOW (instant->unix (now)))               ; unix seconds, as the wallet stamps them
 (define (ask! xmr note) ($ svc 'request-payout "s1" "alice" #f ADDR xmr "" note))
 (define (begin-all!)                             ; the gateway "dies" right after begin
-  (for-each (lambda (p) ($ svc 'begin-payout "s1" (assq-ref p 'id))) (by-state "pending")))
+  (for-each (lambda (p) ($ svc 'begin-payout "s1" (assoc-ref p "id"))) (by-state "pending")))
 ;; a wallet row: its transaction id is its own (EXTRA may state one), as a real wallet's are
 (define (row addr xmr ts . extra)
   `(,@extra ("txid" . ,(format #f "tx-~a" ts)) ("timestamp" . ,ts) ("amount" . ,(inexact->exact (round (* xmr 1e12))))
@@ -219,7 +220,7 @@
   (check "matched on chain: settled with the wallet's txid"
          (let ((done (by-state "sent:")))
            (and (= 2 (length done))
-                (member "sent:deadbeef" (map (lambda (p) (assq-ref p 'state)) done)) #t)))
+                (member "sent:deadbeef" (map (lambda (p) (assoc-ref p "state")) done)) #t)))
   (check "her claim is 0.3 now" (avail) 0.3)
 
   (display "\n── the wallet says it failed ──\n")
@@ -245,7 +246,7 @@
 (settle-turns)
 (with-vat vat
   (check "…still one unsettled" (length (by-state "unsettled:")) 1)
-  (let ((id (assq-ref (car (by-state "unsettled:")) 'id)))
+  (let ((id (assoc-ref (car (by-state "unsettled:")) "id")))
     (check "the operator settles it by hand, with the txid"
            (car ($ svc 'settle-payout "s1" id "op-found-it" #f)) 'ok)
     (check "claim debited by it" (avail) 0.1)))
@@ -266,8 +267,8 @@
 (settle-turns)
 (with-vat vat
   (check "exactly ONE of the twins settles off the one real transfer, the real bug fixed"
-         (= 1 (length (filter (lambda (p) (and (string-prefix? "twin-" (assq-ref p 'note))
-                                                (string-prefix? "sent:" (assq-ref p 'state))))
+         (= 1 (length (filter (lambda (p) (and (string-prefix? "twin-" (assoc-ref p "note"))
+                                                (string-prefix? "sent:" (assoc-ref p "state"))))
                                (payouts)))))
   (check "…and the other is still sending, not falsely settled"
          (= 1 (length (by-state "sending"))))

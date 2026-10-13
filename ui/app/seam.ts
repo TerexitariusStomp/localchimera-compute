@@ -22,8 +22,20 @@
 import { emit } from './bus.js';
 import { SEAM_PUSHES, SEAM_WIRE } from "./seam-wire.js";
 import type * as W from "./wire-rows.js";
-import type { SeamHandlers, SeamPushes, SeamSink } from "./seam-wire.js";
-export type { SeamHandlers, SeamPushes, SeamSink };
+import type { SeamHandlers, SeamPushes, SeamSink, Json } from "./seam-wire.js";
+export type { SeamHandlers, SeamPushes, SeamSink, Json };
+
+/**
+ * A door's reply read as the table it is: the object, or null for a refusal
+ * ("err:…"), an unanswered door, or an unreadable answer. The handler's type
+ * (seam-wire.ts, generated from the seam table) says which table.
+ */
+export function readJson<T>(raw: Json<T> | string | null | undefined): T | null {
+  const s = typeof raw === "string" ? raw : "";
+  if (!s.startsWith("{")) return null;
+  try { const j: unknown = JSON.parse(s); return j && typeof j === "object" ? j as T : null; }
+  catch { return null; }
+}
 
 // ── what the two sides exchange ─────────────────────────────────────────────
 
@@ -167,23 +179,14 @@ export interface EventLoc {
   lng?: number;
 }
 
-/** One thing an act needs, as the solve states it. */
-export interface EventNeed {
-  /** consume | use | work | obtain-entity | obtain-person | pay | tell */
-  kind: string;
-  /** The id — a spec or a demand name. The join key; never the display string. */
-  name: string;
-  /** The same thing, resolved for reading. */
-  label: string;
-  qty?: number | null;
-  unit?: string | null;
-  /**
-   * "held" · "missing" · "unknown" (nobody checked). The third is not the
-   * second: no fee is observed being paid, and an unobserved fee is not a
-   * reason to say the act cannot happen.
-   */
-  met: string;
-}
+/**
+ * One thing an act needs, as the solve states it (the act-need table): `kind`
+ * consume | use | work | obtain-entity | obtain-person | pay | tell; `name` the
+ * id, the join key; `label` the same thing resolved for reading; `met` "held" ·
+ * "missing" · "unknown" (nobody checked — not the second: an unobserved fee is
+ * no reason to say the act cannot happen).
+ */
+export type EventNeed = Omit<W.WireActNeed, "qty" | "unit"> & { qty?: number | null; unit?: string | null };
 
 export interface DayEvent {
   label: string;
@@ -332,18 +335,10 @@ export interface Grant {
  *  not answered (asked), a claim commitment the plan holds for them (held) or
  *  one confirmed in full (taken). Quantities and the good's crystallized SNLT
  *  ride as strings, the wire's spelling. */
-export interface ClaimRow {
-  id: string;
-  spec: string;
-  name: string;
-  place: string;
-  when: string;
-  total: string;
-  fulfilled: string;
-  remaining: string;
-  snlt: string;
-  state: "asked" | "held" | "taken";
-}
+/** One row of the order book (the claim-row table): a want asked, held or taken. */
+export type ClaimRow = Omit<W.WireClaimRow, "state" | "total" | "fulfilled" | "remaining" | "snlt">
+  & Wide<Pick<W.WireClaimRow, "total" | "fulfilled" | "remaining" | "snlt">>
+  & { state: "asked" | "held" | "taken" };
 
 /** One standing payout, as my-payouts reports it; `state` is "pending" | "sending" | "sent:<txid>" | "failed:<reason>". */
 export type Payout = W.WirePayout;
@@ -351,15 +346,7 @@ export type Payout = W.WirePayout;
 /** One open debt the commons carries to you — what it owes back for a
  *  purchase you fronted, once accepted (economy/debts.scm). Face AMOUNT
  *  never changes; REMAINING is what is still open after any part-payments. */
-export interface Debt {
-  id: string;
-  spec: string;
-  amount: number;
-  unit: string;
-  remaining: number;
-  due: string;
-  since: string;
-}
+export type Debt = W.WireDebt;
 
 /** Someone's open ask to be recognised, as a person who may sign it sees it. */
 export interface ContactAsk {
@@ -412,51 +399,48 @@ export interface ScopeRef {
 }
 
 /** One need in the scope's plan: how met it is, and what fills it. */
-export interface PlanNeed {
-  /** The classification id, so a band opens straight onto its need. */
-  id: string;
-  label: string;
-  emoji: string;
-  /** 0..1 — how much of it the solve actually provisions. */
+/**
+ * One need of the plan (the plan-need table): `id` the classification, so a
+ * band opens straight onto it; `met` 0..1, how much the solve provisions;
+ * `for` whose own good it is ("spec~aid"), absent on the scope's own rows.
+ * The page adds what it reads for itself: the band's emoji and suggestions,
+ * and the hands raised for it in this snapshot.
+ */
+export type PlanNeed = Omit<W.WirePlanNeed, "met" | "want" | "runs" | "labourH" | "recipeId"> & {
+  /** 0..1, read as a number by ingest (the wire's null is 0). */
   met: number;
-  recipeId: string | null;
   runs: number;
   labourH: number;
-  suggested: string[];
-  willing: number;
-  /** How much of it was asked for, where the need states a quantity. */
-  want?: number | string;
-  /** Whose good this is: a want stated for oneself is delivered on the
-   *  citizen's own good, id "spec~aid" — absent on the scope's own rows. */
-  for?: string;
-}
+  want?: number | string | null;
+  recipeId: string | null;
+  emoji?: string;
+  suggested?: string[];
+  willing?: number;
+};
 
 /** A line of the solve's ledger: what the scope made, in the unit its rows count it in. */
 export type Produced = Wide<W.WirePlanYield> & { emoji?: string };
 
-/** The PLAN, as live.scm's plan-scope hands it over. */
-export interface Plan {
-  scope?: string;
+/**
+ * The PLAN, as live.scm's plan-scope hands it over (the plan table). Its
+ * totals (`coverage`, `labourH`) are the solve's own, authoritative where
+ * present; the ledger derives from the rows only for the demo plan, which
+ * carries neither. `kept` is the portion kept back per good — the scope's own
+ * draw this horizon plus the reserve, before anything is shared out. `flow` is
+ * the solver's ACTUAL chosen flows, one per process that ran, absent offline
+ * where the plan face reconstructs one from recipe topology; `schedule` where
+ * each commitment was placed, read by the schedule board.
+ */
+export type Plan = Wide<Omit<W.WirePlan, "needs" | "kept" | "produced" | "flow" | "schedule" | "feasible" | "stale" | "discrete" | "placement" | "requires" | "coverage" | "labourH">> & {
+  /** The solve's own totals, read as numbers by ingest. */
+  coverage?: number | null;
+  labourH?: number | null;
   needs?: PlanNeed[];
-  /** The portion the plan keeps back per good — its own processes' draw this
-   *  horizon plus the reserve, the deductions before anything is shared out. */
-  kept?: { spec: string; name?: string; q: number | string }[];
+  kept?: W.WirePlanKept[];
   produced?: Produced[];
-  /**
-   * The solve's OWN totals. Authoritative where present — the ledger prefers
-   * them and derives from the rows only for the demo plan, which carries
-   * neither.
-   */
-  coverage?: number;
-  labourH?: number;
-  /**
-   * The solver's ACTUAL chosen flows — one entry per process that ran. Absent
-   * offline, where the plan face reconstructs an equivalent array from recipe
-   * topology instead.
-   */
   flow?: Production[];
-  /** When the solve placed each commitment — read by the schedule board. */
   schedule?: Schedule;
+  requires?: Wide<W.WireActRequires>[];
   /**
    * Whether the solve stayed inside the limits it was given: "yes" | "no" |
    * "unknown" — three words, not a boolean, since a plan no solve has filled
@@ -478,6 +462,22 @@ export interface Plan {
   discrete?: Wide<W.WirePlanDiscrete>;
   /** Where each mover stands: mover id → cell (place@period) → presence. */
   placement?: Record<string, Record<string, number>>;
+};
+
+/**
+ * The matter graph, exactly as the planner's matter table emits it: a
+ * substance and the colour it is drawn in; a node, a PROCESS (kind !==
+ * "resource") or a RESOURCE, an `env` resource being an environment stock —
+ * soil, air, water — the only ones whose imbalance counts as the rift; a link,
+ * an element flow from one node to another keyed by substance. The browser
+ * never derives composition, it only draws; `fx`/`fy` are the layout it writes.
+ */
+export type MatterNode = W.WireMatterNode & { fx?: number; fy?: number };
+export type MatterLink = Omit<W.WireMatterLink, "flows"> & { flows?: Record<string, number> };
+export interface MatterGraph {
+  substances: W.WireMatterSubstance[];
+  nodes: MatterNode[];
+  links: MatterLink[];
 }
 
 /** A labour commitment the solve placed: which process, when, how much effort. */
@@ -526,8 +526,8 @@ export interface SeamData {
   credit?: Credit;
   /** The scope's recipe library, as the store serialized it. */
   recipes?: ScopeRecipe[];
-  /** The scope snapshot, locations included. */
-  snapshot?: { locations?: SnapshotLocation[]; [key: string]: unknown };
+  /** The scope snapshot, as the planner's snapshot table states it, locations included. */
+  snapshot?: Partial<Omit<W.WireScopeSnapshotReply, "locations">> & { locations?: SnapshotLocation[]; [key: string]: unknown };
   /** The day's lived events. A LIVE array — the host mutates it in place. */
   events?: DayEvent[];
   /** Intents directed at you, awaiting a yes. */

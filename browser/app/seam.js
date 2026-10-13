@@ -20,6 +20,23 @@
 // rather than `any`, so a reader has to narrow rather than assume.
 import { emit } from './bus.js';
 import { SEAM_PUSHES, SEAM_WIRE } from "./seam-wire.js";
+/**
+ * A door's reply read as the table it is: the object, or null for a refusal
+ * ("err:…"), an unanswered door, or an unreadable answer. The handler's type
+ * (seam-wire.ts, generated from the seam table) says which table.
+ */
+export function readJson(raw) {
+    const s = typeof raw === "string" ? raw : "";
+    if (!s.startsWith("{"))
+        return null;
+    try {
+        const j = JSON.parse(s);
+        return j && typeof j === "object" ? j : null;
+    }
+    catch {
+        return null;
+    }
+}
 // ── the object ──────────────────────────────────────────────────────────────
 // One module instance, so one object: the app imports it, day-boot.js (an ES
 // module too) imports it and hands its push functions to the wasm, and the UX

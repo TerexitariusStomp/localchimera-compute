@@ -36,13 +36,7 @@
          (sort found string<?))))
 (for-each resolve-module (registering-modules))
 
-(define (type-name table-name)
-  ;; plan-need → WirePlanNeed
-  (string-append
-   "Wire"
-   (string-concatenate
-    (map (lambda (part) (if (string-null? part) "" (string-append (string (char-upcase (string-ref part 0))) (substring part 1))))
-         (string-split (symbol->string table-name) #\-)))))
+(define type-name wire-type-name)          ; plan-need → WirePlanNeed, the registry's own spelling
 
 (define (table-name-of t) (if (symbol? t) t (wire-table-name t)))
 

@@ -19,6 +19,8 @@
 (use-modules (playnet doors protocol)
              (playnet protocol shapes)
              (playnet protocol seam)
+             ((playnet wire rows) #:select (reply-table-ref))
+             (playnet wire replies) (playnet doors record-rows)   ; the reply tables, registered
              ((playnet doors lobby) #:select (%planner-public-doors))
              (ice-9 popen) (ice-9 rdelim) (ice-9 regex) (ice-9 format)
              (srfi srfi-1))
@@ -111,7 +113,13 @@ the three the JS shell sets on HANDLERS itself (device key tiers/forget)."
               (for-each (lambda (d)
                           (unless (door-ref (car d) (cdr d))
                             (refuse "seam handler ~s sends undeclared door ~a ~a" (handler-name h) (car d) (cdr d))))
-                        (handler-doors h)))
+                        (handler-doors h))
+              (let ((r (handler-reply h)))
+                (when r
+                  (unless (member r (map cdr (handler-doors h)))
+                    (refuse "seam handler ~s says its reply is door ~a's, which it does not send" (handler-name h) r))
+                  (unless (reply-table-ref r)
+                    (refuse "seam handler ~s says its reply is door ~a's table, and the registry has none" (handler-name h) r)))))
             %handlers)
   (for-each (lambda (n)
               (unless (handler-ref n)

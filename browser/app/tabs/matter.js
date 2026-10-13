@@ -22,9 +22,6 @@ let matterSel = null; // a chosen substance to isolate, or null for all
 // solve) or the committed matter-snapshot.json (the real wire's output over a
 // demo cycle, by tools/emit/emit-matter-snapshot.scm) — exactly like the law face.
 let matterSnap = null, matterLoaded = false, matterLoading = false;
-// The one boundary cast: S.matterFlow is a spine payload, typed unknown at the
-// seam, and a reader says what it expects. MatterGraph above IS that
-// expectation, written out.
 const matterData = () => S.matterFlow || matterSnap;
 async function initMatter() {
     if (matterLoaded || matterLoading)
