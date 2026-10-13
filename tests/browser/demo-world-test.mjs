@@ -140,12 +140,9 @@ console.log("\n── the same people everywhere ──");
   check("a slot the forum weighs is a slot of the world", subjects.every(id => !!W.slotOf(id)), subjects.filter(id => !W.slotOf(id)).join());
 }
 
-console.log("\n── where you stand, and where what waits for you waits ──");
+console.log("\n── where what waits for you waits ──");
 {
-  const { DEMO_WHERE } = await import("../../browser/app/demo/profile.js");
   const names = new Set(W.WORLD_PLACES.map(p => p.name));
-  const stands = [DEMO_WHERE.place, ...DEMO_WHERE.ahead.map(a => a.place)];
-  check("where you stand and will stand are places of the world", stands.every(n => names.has(n)), stands.filter(n => !names.has(n)).join());
   const { readFileSync } = await import("node:fs");
   const shop = readFileSync(new URL("../../ui/app/tabs/shop.ts", import.meta.url), "utf8");
   const waits = [...shop.matchAll(/id: "claim\|[^"]+",[^\n]*place: "([^"]+)"/g)].map(m => m[1]);

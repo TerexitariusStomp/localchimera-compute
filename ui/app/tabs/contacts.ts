@@ -30,7 +30,7 @@ import { canScan } from '../scan.js';
 import { openCaptureLook } from '../capture.js';
 import { armer } from '../arm.js';
 import { reach, kindOfReach, linkOf, cardText, readCard, type ReachPoint } from '../reach.js';
-import { openSettings } from '../settings.js';
+import { openAccountPage } from '../account.js';
 import { idHint } from './social/id.js';
 
 /**
@@ -188,7 +188,7 @@ function cardPicker(c: Contact): Fragment {
     return html`<div class="crow-card">
       <p class="crow-story">Your list of ways to be reached is empty. A card is a selection of it.</p>
       <div class="crow-acts">
-        ${act("add ways to reach you → settings", "your addresses, handles and numbers, kept on this device", () => openSettings("reach"))}
+        ${act("add ways to reach you", "your addresses, handles and numbers, kept on this device", () => openAccountPage("profile"))}
         ${act("not now", "put this down", () => carding.set(null))}
       </div></div>`;
   const off = leftOff();
@@ -248,7 +248,7 @@ function bodyOf(c: Contact): Fragment {
                         () => arm(uKey, () => { if (!demoSays()) uncard(c).then(r => report(r, "your card is taken back")); }),
                         armed() === uKey ? " arm" : "") : ""}
         ${act(picked ? "🔑 recovery friend ✓" : "🔑 recovery friend",
-              "someone you would ask to help bring your passcode back — the pieces are made in settings",
+              "someone you would ask to help bring your passcode back — the pieces are made under keys and devices",
               () => toggleRecoveryPick(c.aid), picked ? " on" : "")}
         ${act(armed() === fKey ? (c.mine || c.given ? "forget, and take back what you gave?" : "forget?") : "forget",
               "take them out of your contacts — tap twice",

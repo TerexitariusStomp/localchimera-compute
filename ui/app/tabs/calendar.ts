@@ -83,7 +83,7 @@ import { isWilling } from '../willingness.js';
 import { html, render, raw } from '../template.js';
 import { awayOn } from '../away.js';
 import { AWAY_KINDS } from '../rest.js';
-import { openSettings } from '../settings.js';
+import { openAccountPage } from '../account.js';
 import { EFFORT_UNIT } from '../units-catalogue.js';
 
 const H = 42;                 // pixels per hour (grid row height)
@@ -486,8 +486,8 @@ function drawHeader(label: Label): void {
   // A day you have declared away, read against the ONE day showing — a
   // multi-day view has no single "today" for the marker to name, so it
   // shows only in day-count-1 modes, the same guard `edit availability`
-  // uses for "no single day to paint". Opens the real editor (settings'
-  // own "away" section, app/away.ts) rather than a second one here.
+  // uses for "no single day to paint". Opens the real editor (the account
+  // sheet's health page, app/away.ts) rather than a second one here.
   const win = vm === "month" ? null : windowStart();
   const away = win && win.count === 1 ? awayOn(dateOf(win.start).toISOString().slice(0, 10)) : undefined;
   render("#calhdr", html`
@@ -497,7 +497,7 @@ function drawHeader(label: Label): void {
     <span class="calrange${label.today ? " today" : ""}"${label.today ? ' title="today"' : ""}><span class="cal-long">${label.long}</span><span
       class="cal-short">${label.short}</span></span>
     ${away ? html`<span class="calbtn calaway" title="declared ${away.kind}, ${away.from === away.to ? away.from : `${away.from} → ${away.to}`} — tap to edit"
-          onclick=${() => openSettings("away")}>away · ${AWAY_KINDS.find(k => k.id === away.kind)?.label ?? away.kind}</span>` : ""}
+          onclick=${() => openAccountPage("health")}>away · ${AWAY_KINDS.find(k => k.id === away.kind)?.label ?? away.kind}</span>` : ""}
     <span class="calspacer"></span>
     ${vm === "month" ? "" : html`<span class="calbtn calavbtn${ed ? " on" : ""}"
           title="paint your available-for-work hours — dragged here, pushed to the planner just like the dial's blue arcs"

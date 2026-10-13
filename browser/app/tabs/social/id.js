@@ -15,7 +15,7 @@ import { locationDoor, locationOff, locationResume } from './location.js';
 import { readStr, writeStr, forget, readJSON, writeJSON } from '../../store.js';
 import { signal, effect } from '../../reactive.js';
 import { ensurePersistent } from '../../storage-health.js';
-import { openSettings, closeSettings } from '../../settings.js';
+import { closeSettings } from '../../settings.js';
 import { LEGAL_VERSION, DOCUMENT_VERSION, TERMS_HREF, PRIVACY_HREF } from '../../legal-product.js';
 import { on } from '../../bus.js';
 import { K } from "../../keys.js";
@@ -1133,7 +1133,7 @@ export function passcodeSection(f) {
                 : `${retired} other devices were signed out; each asks for the new passcode next time.`);
         const again = sec.append("div").attr("class", "genrow");
         again.append("span").attr("class", "vbtn").text("make new pieces for recovery friends")
-            .on("click", () => openSettings("recovery"));
+            .on("click", () => openAccountPageDoor("keys"));
         again.append("span").attr("class", "vbtn").text("done")
             .on("click", () => { window.removeEventListener("beforeunload", guard); ask(); });
         window.removeEventListener("beforeunload", guard);
@@ -1403,13 +1403,22 @@ export const identity = who;
 export const identityState = idState;
 export { consentCurrent, consentRecord, downloadIdentityFile, setMyName, DOCUMENT_VERSION, refreshPersonhood };
 /**
- * The person button's two doors, registered by app/account.ts: the account
- * sheet, and the account sheet on its identity page (make, open or read an
- * identity). id.ts cannot import account.ts, so the sheet hands itself in.
+ * The person button's doors, registered by app/account.ts: the account sheet,
+ * the account sheet on its identity page (make, open or read an identity), and
+ * the sheet on any page of its own. id.ts cannot import account.ts, so the
+ * sheet hands itself in.
  */
 let accountDoor = null;
 let identityDoor = null;
-export function onAccountDoor(open, openIdentity) { accountDoor = open; identityDoor = openIdentity; }
+let pageDoor = null;
+export function onAccountDoor(open, openIdentity, openPage) {
+    accountDoor = open;
+    identityDoor = openIdentity;
+    pageDoor = openPage;
+}
+/** Open a page of the account sheet by id ("keys", "profile", …). */
+export function openAccountPageDoor(id) { if (pageDoor)
+    pageDoor(id); }
 /** Open the identity card: sign in, unlock or create; once in, who you are. */
 export function openIdentityDoor() { if (identityDoor)
     identityDoor(); }

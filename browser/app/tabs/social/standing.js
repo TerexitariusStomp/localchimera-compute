@@ -24,8 +24,7 @@
 import { HANDLERS, askJSON } from '../../core.js';
 import { mk } from '../../dom.js';
 import { readJSON, writeJSON } from '../../store.js';
-import { DEMO_STANDING, DEMO_WHERE } from '../../demo/profile.js';
-import { locationSummary, openLocationSheet } from './location.js';
+import { DEMO_STANDING } from '../../demo/profile.js';
 import { K } from "../../keys.js";
 // "-3": the earlier offline rows carried a word; a row is now a skill and its record
 const OFFLINE_KEY = K.standing;
@@ -164,38 +163,6 @@ function rowEl(r, scale) {
     el.append(head, bar(r, scale));
     return el;
 }
-function draw(host) {
-    host.textContent = "";
-    host.append(mk("div", "opt", "Declare what you can do; the plan may ask you for it. Beside each skill: the hours validated, folded through "
-        + "the skill's own law to where it stands today — and, when peers have co-signed some of the work, a note of that too."));
-    const sorted = [...rows].sort((a, b) => (Number(b.held) - Number(a.held)) || (b.competence - a.competence) || (b.hours - a.hours));
-    const scale = Math.max(1, ...rows.map(r => Math.max(r.competence, r.hours)));
-    const list = mk("div", "stand-list");
-    for (const r of sorted)
-        list.append(rowEl(r, scale));
-    if (!sorted.length)
-        list.append(mk("div", "opt", "nothing declared yet."));
-    host.append(list);
-    const add = mk("div", "stand-add");
-    const inp = mk("input", "stand-add-in");
-    inp.type = "text";
-    inp.maxLength = 120;
-    inp.placeholder = "a skill you can do…";
-    const go = mk("a", "vbtn", "declare");
-    const submit = () => { const s = inp.value.trim(); if (!s) {
-        inp.focus();
-        return;
-    } declare(s); };
-    go.onclick = submit;
-    inp.onkeydown = ev => { if (ev.key === "Enter")
-        submit(); };
-    add.append(inp, go);
-    host.append(add);
-    if (said)
-        host.append(mk("div", "err", said));
-    if (!live())
-        host.append(mk("div", "opt", "a demo profile, kept on this device — sign in and the commons keeps yours."));
-}
 // ── the drawer's Skills view ────────────────────────────────────────────────
 // What the start face's skills screen asks — chips to claim, the claimed list
 // beside the record — with the record standing beside each claim. No second
@@ -251,22 +218,6 @@ export function skillsPanel() {
         queueMicrotask(() => { refresh(); });
     return el;
 }
-const whereHosts = new Map();
-function drawWhere(el, beforeChange) {
-    el.textContent = "";
-    const w = wired ? locationSummary() : { ...DEMO_WHERE, modeName: "here, now" };
-    el.append(mk("div", "stand-where-now", w.mode === "off" ? "📍 not shared — the plan uses your registered home"
-        : w.place ? `📍 ${w.place} · ${w.modeName}`
-            : `📍 ${w.modeName} · waiting for a fix`));
-    for (const a of w.ahead)
-        el.append(mk("div", "stand-where-ahead", `${a.day} · ${a.place}`));
-    if (wired && beforeChange) {
-        const c = mk("a", "vbtn", "change where you are");
-        c.onclick = ev => { ev.stopPropagation(); beforeChange(); openLocationSheet(); };
-        el.append(c);
-    }
-    el.append(mk("div", "opt", "what the commons holds is a place the scope already knows — your skills are reachable from there."));
-}
 function redrawAll() {
     for (const [el, drawIt] of [...hosts]) {
         if (el.isConnected)
@@ -274,35 +225,4 @@ function redrawAll() {
         else
             hosts.delete(el);
     }
-    for (const [el, before] of [...whereHosts]) {
-        if (el.isConnected)
-            drawWhere(el, before);
-        else
-            whereHosts.delete(el);
-    }
-}
-/** Mount the skills block under F — the sheet's and the settings' one implementation. */
-export function standingBlock(f) {
-    const el = mk("div", "stand");
-    f.node().append(el);
-    hosts.set(el, draw);
-    if (!wired && !rows.length)
-        rows = readJSON(OFFLINE_KEY, DEMO_STANDING).map(tidy);
-    draw(el);
-    // the host is appended by its caller after this returns, so the first
-    // redraw finds it connected
-    queueMicrotask(() => { refresh(); });
-}
-/**
- * Where you are, read from the location sheet's own state — a place, never a
- * coordinate; the demo's own places until the wire has answered. BEFORE-CHANGE,
- * when given, clears the way for the location sheet (the sheet it sits in closes
- * itself); a mount with no way to it draws no button.
- */
-export function whereBlock(f, beforeChange) {
-    const el = mk("div", "stand-where");
-    f.node().append(el);
-    whereHosts.set(el, beforeChange);
-    drawWhere(el, beforeChange);
-    queueMicrotask(() => { refresh(); });
 }

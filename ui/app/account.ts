@@ -55,7 +55,7 @@ interface Page { title: string | (() => string); sections: string[]; build?: () 
 const PAGES: Record<string, Page> = {
   // the one place an identity is made, opened and read: the same card the onboarding checklist shows
   identity: { title: identityCardTitle, sections: [], build: () => identityCard() },
-  profile: { title: "your profile", sections: ["profile-who", "profile-where", "standing", "reach"] },
+  profile: { title: "your profile", sections: ["profile-who", "reach"] },
   bodies: { title: "legal bodies", sections: ["bodies"] },
   diet: { title: "diet", sections: ["diet"] },
   body: { title: "body", sections: ["body"] },
@@ -162,7 +162,7 @@ function menu(close: () => void): HTMLElement[] {
 
   const net = document.getElementById("netbtn");
   const g2 = mk("div", "acct-group");
-  g2.append(into("✎", "your profile", "your place, skills, how to reach you", "profile"),
+  g2.append(into("✎", "your profile", "your name, how to reach you", "profile"),
             into("🥗", "diet", "what you eat, and what you refuse", "diet"),
             into("🧍", "body", "what your floors are read from", "body"),
             into("❤️", "health", "private — conditions, and days away", "health"),
@@ -249,7 +249,7 @@ let wired = false;
 export function initAccount(): void {
   if (wired) return;
   wired = true;
-  onAccountDoor(openAccount, openAccountIdentity);
+  onAccountDoor(openAccount, openAccountIdentity, openAccountPage);
   // Esc steps back out of a page, then puts the sheet away
   document.addEventListener("keydown", e => {
     if (e.key !== "Escape" || !sheetViewIs(OWNER)) return;

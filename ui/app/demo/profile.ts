@@ -28,9 +28,3 @@ export const DEMO_STANDING: StandingRow[] = [
   { skill: "tool care", held: false, hours: 3, competence: 3, events: 2, witnessed: 1, attesters: 2, witnessedHours: 1.5, pending: [] },
 ];
 
-/** Where the demo's "you" stands and will stand — the location sheet's own three facts. */
-export const DEMO_WHERE: { mode: "off" | "here" | "live"; place: string; ahead: { day: string; place: string }[] } = {
-  mode: "here",
-  place: "repair café",
-  ahead: [{ day: "tomorrow", place: "Bakery Vitosha" }, { day: "in 3 days", place: "community farm" }],
-};

@@ -29,7 +29,7 @@ import { canScan } from '../scan.js';
 import { openCaptureLook } from '../capture.js';
 import { armer } from '../arm.js';
 import { reach, kindOfReach, linkOf, cardText, readCard } from '../reach.js';
-import { openSettings } from '../settings.js';
+import { openAccountPage } from '../account.js';
 import { idHint } from './social/id.js';
 // ── the view's own state ────────────────────────────────────────────────────
 const contactFilter = signal("all");
@@ -190,7 +190,7 @@ function cardPicker(c) {
         return html `<div class="crow-card">
       <p class="crow-story">Your list of ways to be reached is empty. A card is a selection of it.</p>
       <div class="crow-acts">
-        ${act("add ways to reach you → settings", "your addresses, handles and numbers, kept on this device", () => openSettings("reach"))}
+        ${act("add ways to reach you", "your addresses, handles and numbers, kept on this device", () => openAccountPage("profile"))}
         ${act("not now", "put this down", () => carding.set(null))}
       </div></div>`;
     const off = leftOff();
@@ -238,7 +238,7 @@ function bodyOf(c) {
         ${act(c.given ? "📇 your card · change" : "📇 share my card", "how to reach you, for them alone: sealed to them, yours to change or take back", () => { leftOff.set(new Set()); carding.set(carding.peek() === c.aid ? null : c.aid); }, carding() === c.aid ? " on" : "")}
         ${c.given ? act(armed() === uKey ? "take it back?" : "take my card back", "erase your card for them — tap twice", () => arm(uKey, () => { if (!demoSays())
         uncard(c).then(r => report(r, "your card is taken back")); }), armed() === uKey ? " arm" : "") : ""}
-        ${act(picked ? "🔑 recovery friend ✓" : "🔑 recovery friend", "someone you would ask to help bring your passcode back — the pieces are made in settings", () => toggleRecoveryPick(c.aid), picked ? " on" : "")}
+        ${act(picked ? "🔑 recovery friend ✓" : "🔑 recovery friend", "someone you would ask to help bring your passcode back — the pieces are made under keys and devices", () => toggleRecoveryPick(c.aid), picked ? " on" : "")}
         ${act(armed() === fKey ? (c.mine || c.given ? "forget, and take back what you gave?" : "forget?") : "forget", "take them out of your contacts — tap twice", () => arm(fKey, () => forget(c)), armed() === fKey ? " slot-btn-delete arm" : " slot-btn-delete")}
       </div>
       ${carding() === c.aid ? cardPicker(c) : ""}

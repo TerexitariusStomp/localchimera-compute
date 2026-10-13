@@ -21,7 +21,6 @@ import { devicesSection, passcodeSection, forgetSection, recoveryFriends, idHint
 import { registerProfileSettings } from './profile.js';
 import { registerDwellingSettings } from './dwelling.js';
 import { dietPanel, bodyPanel, healthPanel, registerTimeSettings } from './attributes.js';
-import { standingBlock, whereBlock } from './tabs/social/standing.js';
 import * as ambient from '../lib/ambient.js';
 import { createSleepSpansBlock } from './sleep.js';
 import { createAwayBlock } from './away.js';
@@ -244,13 +243,6 @@ export function registerAllSettings() {
                 note: "What people call you, and the identifier that names you. The name is optional "
                     + "and is kept on this device first; neither is used to recover your identity.",
                 rows: () => [{ kind: "custom", build: whoBlockSettings }] },
-            { id: "profile-where", title: "where you are",
-                note: "The place the commons holds for you, and the days you have declared ahead. "
-                    + "Sharing itself is set under general → where you are, or from the 📍 location chip in the bottom bar.",
-                rows: () => [{ kind: "custom", build: mount(f => whereBlock(f)) }] },
-            { id: "standing", title: "skills",
-                note: "What you say you can do, and how far the record bears it out.",
-                rows: () => [{ kind: "custom", build: mount(standingBlock) }] },
             { id: "reach", title: "how to reach you",
                 note: "Your ways to be reached are yours, and are kept on this device. Tell this commune one "
                     + "and it notifies you there; put some on a card for a contact, from their row in Contacts. "
