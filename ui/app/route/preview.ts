@@ -26,11 +26,11 @@ import { startNavTo } from './nav.js';
 import { fetchRoutes, ROUTE_MODES, modeInfo } from './data.js';
 import type { Route } from './data.js';
 import { paintLines, clearLines } from './lines.js';
-import { fmtMinutes, headline, boundsOf, pillAnchor, swapEnds, transitLines } from './facts.js';
+import { fmtMinutes, headline, swapEnds, transitLines, arrivalClock } from './facts.js';
+import { boundsOf, pillAnchor } from './shape.js';
 import type { End } from './facts.js';
 import { havKm } from '../geom.js';
 import type { LatLng } from '../geom.js';
-import { clockOf } from '../timefmt.js';
 import { readStr, writeStr } from '../store.js';
 import { K } from '../keys.js';
 import { esc } from '../template.js';
@@ -175,7 +175,7 @@ function drawSheet(): void {
     sum = `<div class="rv-big">Finding the way…</div>`;
     acts = `<button type="button" class="rv-start" disabled>▲ Start</button>`;
   } else if (r) {
-    const arrive = clockOf(new Date(Date.now() + r.s * 1000));
+    const arrive = arrivalClock(r.s);
     const lines = transitLines(r).map(l =>
       `<span class="rv-line"${l.color ? ` style="background:${l.color};color:${l.textColor || "#fff"}"` : ""}>${esc(l.line)}</span>`).join("");
     sum = `<div class="rv-big">${esc(headline(r))}</div>` +

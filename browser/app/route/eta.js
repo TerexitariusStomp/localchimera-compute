@@ -16,7 +16,7 @@ export function openEta(h) {
             `<button type="button" class="eb-done" hidden>Done</button>`;
     el.querySelector(".eb-x").onclick = h.exit;
     el.querySelector(".eb-done").onclick = h.done;
-    openSheetView(OWNER, el, h.gone, { fit: true, sticky: true, peek: true });
+    openSheetView(OWNER, el, h.gone, { fit: true, sticky: true, stepped: { up() { }, down() { } } });
     return {
         update(v) {
             el.querySelector(".eb-big").textContent = v.big;

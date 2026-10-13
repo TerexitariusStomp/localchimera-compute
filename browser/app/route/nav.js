@@ -26,12 +26,12 @@ import { havKm, bearingDeg } from '../geom.js';
 import { onMapFace } from '../stage.js';
 import { deviceHeading, compassLive } from '../compass.js';
 import { MAP_EL } from '../mapview.js';
-import { clockOf } from '../timefmt.js';
 import { gateHint } from '../day/respond.js';
 import { sheetHeight } from '../tabs/social/share.js';
 import { watchFixes } from '../position.js';
 import { fetchRoutes, ROUTE_MODES, modeInfo } from './data.js';
-import { snapToRoute, progress, courseAt, fmtDistance, fmtMinutes } from './facts.js';
+import { fmtDistance, fmtMinutes, arrivalClock } from './facts.js';
+import { snapToRoute, progress, courseAt } from './shape.js';
 import { paintLines, clearLines } from './lines.js';
 import { routeBanner, bearingBanner, drawBanner } from './banner.js';
 import { openEta } from './eta.js';
@@ -93,7 +93,7 @@ function refresh(fix) {
         follow?.stop();
         follow = null; // the camera is given back at the door
     }
-    const arrive = clockOf(new Date(Date.now() + p.remS * 1000));
+    const arrive = arrivalClock(p.remS);
     drawBanner(routeBanner(r, p, { place: j.placeName, arrive, arrived: j.arrived }), mode);
     eta?.update(j.arrived
         ? { big: "You have arrived", sub: j.placeName, arrived: true }

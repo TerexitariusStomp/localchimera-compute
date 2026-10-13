@@ -8,7 +8,7 @@
 
 import { ARROW8 } from '../geom.js';
 import { fmtDistance, fmtMinutes } from './facts.js';
-import type { Progress } from './facts.js';
+import type { Progress } from './shape.js';
 import type { Route } from './data.js';
 
 /** Valhalla maneuver type → the glyph the card shows for it. */

@@ -6,7 +6,7 @@
 // a drive exactly as they read a real one. `?simdrive=<factor>` on the page's URL
 // starts one when a journey sets out; `factor` is how many times the way's own pace.
 import { feed, simulate } from '../position.js';
-import { pointAt, shapeKm } from './facts.js';
+import { pointAt, shapeKm } from './shape.js';
 /** A typical pace for a way of travelling, in metres per second. */
 export const pace = (costing) => ({ pedestrian: 1.4, bicycle: 4.5, auto: 13, multimodal: 1.4 }[costing] ?? 1.4);
 /** Begin a drive along `r`. */

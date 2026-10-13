@@ -10,7 +10,7 @@
 /// markers and the camera are read as the page has them; no tiles are asserted.
 import { harness, launch, summarize, sleep, WEBGL_ARGS } from './ux-harness.mjs';
 import { serveBrowser } from './ux-serve.mjs';
-import { stubRoute } from './route-stub.mjs';
+import { openMap, showSpot, txt } from './route-lib.mjs';
 
 const { base: BASE, close: closeServer } = await serveBrowser();
 const h = harness();
@@ -18,25 +18,7 @@ const browser = await launch(WEBGL_ARGS);
 const errs = [];
 const shot = process.env.SHOT_DIR || '/tmp';
 
-const HERE = { latitude: 37.7749, longitude: -122.4194 };
-const SPOT = { lat: 37.7849, lng: -122.4094 };
-
-async function open(page, { down = false } = {}) {
-  await page.context().grantPermissions(['geolocation']);
-  await page.context().setGeolocation(HERE);
-  const stub = await stubRoute(page, { down });
-  await page.goto(`${BASE}/app.html?face=map`, { waitUntil: 'domcontentloaded' });
-  for (let i = 0; i < 60; i++) {
-    if (await page.evaluate(async () => !!(await import('/app/mapview.js')).theMap())) break;
-    await sleep(500);
-  }
-  await sleep(800);
-  return stub;
-}
-const spotNav = page => page.evaluate(async ({ lat, lng }) => {
-  (await import('/app/tabs/map/mapsearch.js')).showSpot(lat, lng);
-}, SPOT);
-const txt = (page, sel) => page.evaluate(s => document.querySelector(s)?.textContent?.trim() ?? null, sel);
+const spotNav = page => showSpot(page);
 const state = page => page.evaluate(async () => {
   const m = (await import('/app/mapview.js')).theMap();
   const sh = await import('/app/tabs/social/share.js');
@@ -66,7 +48,7 @@ try {
   const page = await browser.newPage();
   page.on('pageerror', e => errs.push(String(e)));
   await page.setViewportSize({ width: 1200, height: 800 });
-  const stub = await open(page);
+  const stub = await openMap(page, BASE);
   h.rec('a real map stands (software WebGL)', await page.evaluate(async () => !!(await import('/app/mapview.js')).theMap()));
 
   await spotNav(page); await sleep(700);
@@ -159,7 +141,7 @@ try {
   const dp = await browser.newPage();
   dp.on('pageerror', e => errs.push(String(e)));
   await dp.setViewportSize({ width: 1200, height: 800 });
-  await open(dp, { down: true });
+  await openMap(dp, BASE, { down: true });
   await spotNav(dp); await sleep(600);
   await dp.click('.ms-nav'); await sleep(1800);
   s = await state(dp);

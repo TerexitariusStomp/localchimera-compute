@@ -12,6 +12,8 @@
 // put it away, and so does choosing a row.
 
 import { mk } from './dom.js';
+import { row, backButton, closeButton } from './sheet-rows.js';
+import type { RowSpec } from './sheet-rows.js';
 import { effect } from './reactive.js';
 import { identity, identityState, onAccountDoor, signOutDevice } from './tabs/social/id.js';
 import { identityCard, identityCardTitle, showSignIn, showCreate } from './identity-view.js';
@@ -32,22 +34,6 @@ function standing(): string {
     case "connecting": return "reaching your commune…";
     default: return "on this device";
   }
-}
-
-interface RowSpec { icon: string; label: string; sub?: string; go: () => void; tone?: string; live?: boolean }
-
-function row(r: RowSpec, close: () => void, wire = true, enter?: () => void): HTMLElement {
-  const b = mk("button", "acct-row" + (r.tone ? " " + r.tone : ""));
-  b.type = "button";
-  const ic = mk("span", "acct-ic", r.icon);
-  if (r.live) ic.classList.add("live");
-  const text = mk("span", "acct-tx");
-  text.append(mk("span", "acct-l", r.label));
-  if (r.sub) text.append(mk("span", "acct-s", r.sub));
-  b.append(ic, text);
-  if (enter) { b.append(mk("span", "acct-chev", "›")); b.addEventListener("click", enter); }
-  else if (wire) b.addEventListener("click", () => { close(); r.go(); });
-  return b;
 }
 
 /** A nested page: a title, and the settings sections it shows, in order — or a body of its own (`build`), whose title may follow the state. */
@@ -81,9 +67,7 @@ function header(close: () => void): HTMLElement {
   const head = mk("div", "acct-head");
   const page = stack.length ? PAGES[stack[stack.length - 1]] : null;
   if (page) {
-    const back = mk("button", "acct-back", "←");
-    back.type = "button"; back.title = "back"; back.setAttribute("aria-label", "back");
-    back.addEventListener("click", goBack);
+    const back = backButton(goBack);
     const title = mk("span", "acct-title");
     // a title that follows the state (the identity card's face) is read inside an effect
     disposers.push(effect(() => { title.textContent = typeof page.title === "function" ? page.title() : page.title; }));
@@ -93,10 +77,7 @@ function header(close: () => void): HTMLElement {
     for (const c of "playnet") mark.append(mk("span", "wm-" + c, c));
     head.append(mark);
   }
-  const x = mk("button", "acct-x", "✕");
-  x.type = "button"; x.title = "close"; x.setAttribute("aria-label", "close");
-  x.addEventListener("click", close);
-  head.append(x);
+  head.append(closeButton(close));
   return head;
 }
 

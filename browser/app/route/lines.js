@@ -16,7 +16,7 @@
 //
 // `lineFeatures` is the pure half — a spec in, GeoJSON out — so what is drawn can be
 // stated in a test without a map.
-import { segments } from './facts.js';
+import { segments } from './shape.js';
 import { styleReady, onStyleReady } from '../tabs/map/ready.js';
 const line = (kind, coords) => ({ type: "Feature", properties: { kind }, geometry: { type: "LineString", coordinates: coords } });
 /** A point `f` of the way from `a` to `b`. */

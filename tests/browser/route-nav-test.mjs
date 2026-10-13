@@ -13,7 +13,7 @@ Object.defineProperty(globalThis, "navigator", { configurable: true, value: { ge
 globalThis.window.setInterval = setInterval;     // the drive's timer is the page's
 
 const { readRoutes } = await import("../../browser/app/route/data.js");
-const F = await import("../../browser/app/route/facts.js");
+const F = await import("../../browser/app/route/shape.js");
 const { followZoom, followPadding, turnTo, chooseHeading, FOLLOW_PITCH, SEAT } = await import("../../browser/app/route/follow.js");
 const { routeBanner, bearingBanner, glyphOf, THEN_M } = await import("../../browser/app/route/banner.js");
 const { startDrive, pace } = await import("../../browser/app/route/drive-sim.js");

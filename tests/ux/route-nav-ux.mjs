@@ -10,7 +10,7 @@
 /// map, so the camera is read as the page has it; no tiles are asserted.
 import { harness, launch, summarize, sleep, WEBGL_ARGS } from './ux-harness.mjs';
 import { serveBrowser } from './ux-serve.mjs';
-import { stubRoute } from './route-stub.mjs';
+import { openMap, showSpot, feed, device, txt, START as A, SPOT as B } from './route-lib.mjs';
 
 const { base: BASE, close: closeServer } = await serveBrowser();
 const h = harness();
@@ -18,31 +18,13 @@ const browser = await launch(WEBGL_ARGS);
 const errs = [];
 const shot = process.env.SHOT_DIR || '/tmp';
 
-const A = { lat: 37.7749, lng: -122.4194 }, B = { lat: 37.7849, lng: -122.4094 };
 const norm = d => ((d % 360) + 360) % 360;
 const near = (a, b, tol) => Math.abs(((a - b + 540) % 360) - 180) <= tol;
 
-async function open(page, query = '') {
-  await page.context().grantPermissions(['geolocation']);
-  await page.context().setGeolocation({ latitude: A.lat, longitude: A.lng });
-  const stub = await stubRoute(page);
-  await page.goto(`${BASE}/app.html?face=map${query}`, { waitUntil: 'domcontentloaded' });
-  for (let i = 0; i < 60; i++) {
-    if (await page.evaluate(async () => !!(await import('/app/mapview.js')).theMap())) break;
-    await sleep(500);
-  }
-  await sleep(800);
-  return stub;
-}
-const feed = (page, lat, lng, heading, speed = 1.4) => page.evaluate(async a => {
-  (await import('/app/position.js')).feed({ ...a, accuracy: 5 });
-}, { lat, lng, heading, speed });
-const device = (page, on) => page.evaluate(async on => (await import('/app/position.js')).simulate(on), on);
-const txt = (page, sel) => page.evaluate(s => document.querySelector(s)?.textContent?.trim() ?? null, sel);
 async function setOut(page) {
   await device(page, true);
   await feed(page, A.lat, A.lng, 0);
-  await page.evaluate(async ({ lat, lng }) => (await import('/app/tabs/map/mapsearch.js')).showSpot(lat, lng), B);
+  await showSpot(page);
   await sleep(700);
   await page.click('.ms-nav'); await sleep(1800);
   await page.click('.rv-start'); await sleep(1500);
@@ -74,7 +56,7 @@ try {
   const page = await browser.newPage();
   page.on('pageerror', e => errs.push(String(e)));
   await page.setViewportSize({ width: 1200, height: 800 });
-  const stub = await open(page);
+  const stub = await openMap(page, BASE);
   await setOut(page);
 
   // ── setting out ───────────────────────────────────────────────────────────
@@ -151,7 +133,7 @@ try {
 
   // ── ✕ ends it mid-way ─────────────────────────────────────────────────────
   await device(page, true); await feed(page, A.lat, A.lng, 0);
-  await page.evaluate(async ({ lat, lng }) => (await import('/app/tabs/map/mapsearch.js')).showSpot(lat, lng), B);
+  await showSpot(page);
   await sleep(600); await page.click('.ms-nav'); await sleep(1500); await page.click('.rv-start'); await sleep(1200);
   h.rec('a second journey sets out', (await state(page)).holds === 'journey');
   await page.click('.eb-x'); await sleep(800);
@@ -165,8 +147,8 @@ try {
   const dp = await browser.newPage();
   dp.on('pageerror', e => errs.push(String(e)));
   await dp.setViewportSize({ width: 390, height: 800 });
-  await open(dp, '&simdrive=60');
-  await dp.evaluate(async ({ lat, lng }) => (await import('/app/tabs/map/mapsearch.js')).showSpot(lat, lng), B);
+  await openMap(dp, BASE, { query: '&simdrive=60' });
+  await showSpot(dp);
   await sleep(700);
   // on a phone the place card is taller than the sheet's room and its actions sit under the bar until scrolled to,
   // so this run presses them by script

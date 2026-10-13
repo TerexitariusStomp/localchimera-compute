@@ -43,7 +43,7 @@ export function openEta(h: EtaHost): Eta {
     `<button type="button" class="eb-done" hidden>Done</button>`;
   el.querySelector<HTMLElement>(".eb-x")!.onclick = h.exit;
   el.querySelector<HTMLElement>(".eb-done")!.onclick = h.done;
-  openSheetView(OWNER, el, h.gone, { fit: true, sticky: true, peek: true });
+  openSheetView(OWNER, el, h.gone, { fit: true, sticky: true, stepped: { up() {}, down() {} } });
   return {
     update(v) {
       el.querySelector(".eb-big")!.textContent = v.big;

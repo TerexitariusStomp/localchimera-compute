@@ -8,7 +8,7 @@ import { harness } from './assert.mjs';
 import { routeReply } from './route-fixture.mjs';
 const { readRoutes } = await import("../../browser/app/route/data.js");
 const { lineFeatures } = await import("../../browser/app/route/lines.js");
-const { segments } = await import("../../browser/app/route/facts.js");
+const { segments } = await import("../../browser/app/route/shape.js");
 const { check, section, done } = harness();
 
 const A = { lat: 37.7749, lng: -122.4194 }, B = { lat: 37.7849, lng: -122.4094 };

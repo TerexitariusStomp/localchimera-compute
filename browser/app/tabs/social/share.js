@@ -449,7 +449,7 @@ let viewHost = null;
 let viewOwner = null;
 let viewGone = null;
 let viewSticky = false;
-let viewPeek = false;
+let viewStepped = null;
 let closePanelHook = null; // set once the draft panel exists
 /** The sheet rises to a height that depends on what opened it: the inventory and the type picker at about
  *  half the page, a view at the height it asks for (`full`: the whole page, under the header). A drag on the
@@ -463,7 +463,7 @@ export function openSheetView(owner, el, gone, o = {}) {
     closeSheetView();
     riseTo(!!o.full);
     viewHost.toggleAttribute("data-fit", !!o.fit);
-    viewHost.toggleAttribute("data-peek", !!o.peek);
+    viewHost.toggleAttribute("data-stepped", !!o.stepped);
     open.set(false);
     closePanelHook?.();
     viewHost.replaceChildren(el);
@@ -471,7 +471,7 @@ export function openSheetView(owner, el, gone, o = {}) {
     viewOwner = owner;
     viewGone = gone;
     viewSticky = !!o.sticky;
-    viewPeek = !!o.peek;
+    viewStepped = o.stepped ?? null;
 }
 /** Put the view away — only `owner`'s, when one is named. */
 export function closeSheetView(owner) {
@@ -481,9 +481,9 @@ export function closeSheetView(owner) {
     viewOwner = null;
     viewGone = null;
     viewSticky = false;
-    viewPeek = false;
+    viewStepped = null;
     viewHost.classList.remove("on");
-    viewHost.removeAttribute("data-peek"); // the bar returns with the lowest rest gone
+    viewHost.removeAttribute("data-stepped"); // the bar returns with the stepped view gone
     viewHost.replaceChildren();
     gone?.();
 }
@@ -512,8 +512,8 @@ function wireSheet(sheet, grab, dismiss) {
         - (parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--barh")) || 56));
     let y0 = 0, h0 = 0, moved = false, live = false;
     grab.addEventListener("pointerdown", ev => {
-        if (viewPeek)
-            return; // the lowest rest does not move: the journey's ✕ is the only way out
+        if (viewStepped)
+            return; // a stepped view moves itself (wireStepped)
         live = true;
         moved = false;
         y0 = ev.clientY;
@@ -553,6 +553,36 @@ function wireSheet(sheet, grab, dismiss) {
     };
     grab.addEventListener("pointerup", settle);
     grab.addEventListener("pointercancel", settle);
+}
+/**
+ * The grip of a stepped view: a swipe up or down, or a tap, is the view's to answer (`Stepped`); the sheet does not
+ * follow the finger, the view sets its own rest.
+ */
+function wireStepped(grab) {
+    let y0 = 0, live = false;
+    grab.addEventListener("pointerdown", ev => {
+        if (!viewStepped)
+            return;
+        live = true;
+        y0 = ev.clientY;
+        grab.setPointerCapture(ev.pointerId);
+    });
+    grab.addEventListener("pointerup", ev => {
+        if (!live)
+            return;
+        live = false;
+        const v = viewStepped;
+        if (!v)
+            return;
+        const dy = ev.clientY - y0;
+        if (dy < -24)
+            v.up();
+        else if (dy > 24)
+            v.down();
+        else
+            (v.tap ?? v.up)();
+    });
+    grab.addEventListener("pointercancel", () => { live = false; });
 }
 // the creation pill is built ONCE (a rebuilt input loses keyboard focus on
 // every slots refresh — the shop's search taught this); the rail toggle
@@ -1096,6 +1126,7 @@ function ensureScaffold(bar) {
         if (fb?.classList.contains("on"))
             fb.click();
     });
+    wireStepped(grab);
     togTime.addEventListener("click", () => {
         // opening goes straight to whichever view matches the live dial — no
         // reason to show the list first when "between" is already picked

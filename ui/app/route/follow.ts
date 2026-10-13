@@ -9,7 +9,7 @@
 // round to a new bearing, which heading to trust — so it is stated in a test without a map.
 // `startFollow` is the stateful half and owns the map's camera, the you-arrow and the two buttons.
 
-import { boundsOf } from './facts.js';
+import { boundsOf } from './shape.js';
 import type { Fix } from '../position.js';
 import type { Route } from './data.js';
 

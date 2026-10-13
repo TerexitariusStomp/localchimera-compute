@@ -10,6 +10,9 @@
 // Used by tests/browser/route-data-test.mjs (node) and the UX probes
 // (tests/ux/route-stub.mjs answers the page's /route calls from it).
 
+import { havKm } from '../../browser/app/geom.js';
+export { havKm };
+
 /** Valhalla's polyline, precision 6 — the inverse of app/route/data.ts decodePoly. */
 export function encodePoly(coords) {
   let plat = 0, plng = 0, out = "";
@@ -25,13 +28,6 @@ export function encodePoly(coords) {
     plat = la; plng = lo;
   }
   return out;
-}
-
-const rad = d => d * Math.PI / 180;
-export function havKm(a, b) {
-  const dLat = rad(b.lat - a.lat), dLng = rad(b.lng - a.lng);
-  const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLng / 2) ** 2;
-  return 2 * 6371 * Math.asin(Math.sqrt(h));
 }
 
 // km/h by costing; the time of a leg is its length at that speed.

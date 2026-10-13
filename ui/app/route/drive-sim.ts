@@ -7,7 +7,7 @@
 // starts one when a journey sets out; `factor` is how many times the way's own pace.
 
 import { feed, simulate } from '../position.js';
-import { pointAt, shapeKm } from './facts.js';
+import { pointAt, shapeKm } from './shape.js';
 import type { Route } from './data.js';
 
 /** A typical pace for a way of travelling, in metres per second. */

@@ -8,7 +8,7 @@
 // The camera math is pure and exported — zoom by pace, padding that seats you low, the short way
 // round to a new bearing, which heading to trust — so it is stated in a test without a map.
 // `startFollow` is the stateful half and owns the map's camera, the you-arrow and the two buttons.
-import { boundsOf } from './facts.js';
+import { boundsOf } from './shape.js';
 /** How far the camera is tipped toward the horizon, in degrees. */
 export const FOLLOW_PITCH = 55;
 /** Where in the frame you sit, as a share of its height from the top. */

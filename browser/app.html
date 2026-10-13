@@ -4577,10 +4577,8 @@
 
   /* the journey under way, on the map face: the ETA bar is the sheet's lowest rest (app/route/eta.ts),
      the bar steps aside, and the map's own controls give way to the two that steer the camera */
-  #sharebar:has(.sheet-view[data-peek]) .sharebar-row { display: none; }
-  #sharebar .share-sheet:has(.sheet-view[data-peek]) .sheet-grab { height: 12px; cursor: default; }
-  #sharebar .share-sheet:has(.sheet-view[data-peek]) .sheet-grip { visibility: hidden; }
-  #sharebar .sheet-view[data-peek] { padding-bottom: max(10px, env(safe-area-inset-bottom, 0px)); }
+  #sharebar:has(.sheet-view[data-stepped]) .sharebar-row { display: none; }
+  #sharebar .sheet-view[data-stepped] { padding-bottom: max(10px, env(safe-area-inset-bottom, 0px)); }
   .eb { display: flex; align-items: center; gap: 12px; max-width: 680px; margin: 0 auto; padding: 0 16px;
     font-family: var(--sans); color: var(--t-2c3830); }
   .eb-x { flex: 0 0 auto; width: 46px; height: 46px; border-radius: 50%; border: 1.5px solid var(--t-c9d2dd);

@@ -19,7 +19,7 @@
 
 import type { Point } from '../geom.js';
 import type { Route } from './data.js';
-import { segments } from './facts.js';
+import { segments } from './shape.js';
 import { styleReady, onStyleReady } from '../tabs/map/ready.js';
 
 /** What to draw. Each part is optional; the empty spec draws nothing. */
