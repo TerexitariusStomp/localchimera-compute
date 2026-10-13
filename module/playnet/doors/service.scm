@@ -119,7 +119,7 @@
   #:use-module (srfi srfi-1)
   #:use-module ((playnet observation observer) #:select (target-passed? reach-slack))
   #:use-module ((playnet solve compile) #:select (bare-spec))
-  #:use-module ((playnet solve keywords) #:select (caps-under))   ; the caller's caps over the world's
+  #:use-module ((playnet solve keywords) #:select (caps-under pick-keywords))   ; the caller's caps over the world's; a kind's keywords
   #:use-module ((playnet solve engine) #:select (key-spec spec-owner spec-base *desire-w0* want-as-cap? cap-scale-of))
   #:use-module ((playnet solve ingest) #:select (owned-spec stock-vocabulary resource-window-hours))   ; the one key split; a citizen's own good; one whole hand; the shipped shape + its per-spec reference scale
   #:use-module (playnet scope live)   ; plan-scope->alist (the convex planner over the live scope)
@@ -430,13 +430,19 @@ scope walk wherever a solve wants the scope's declared needs."
   ;; view, the socialized caps and the spans, with the UC allocation
   ;; (means-caps-of cache) merged under the caps — one reading for every solve
   (define (world-of* root sid . kw)
-    (let ((w (if world-of
-                 (apply world-of root sid kw)
-                 `((view . ,($ ($ root 'observer) 'all-resources)) (caps . ()) (span . ())))))
+    (let* ((w (if world-of
+                  (apply world-of root sid kw)
+                  `((view . ,($ ($ root 'observer) 'all-resources)) (caps . ()) (span . ()))))
+           ;; the lots on their way, counted where the last plan's open dropoff
+           ;; lands them (scope/live.scm arriving-lots): laid on the view once,
+           ;; so every path reads cargo in motion as stock at its destination
+           (view (arriving-lots ($ root 'observer) (or (planned-material cache sid) '())
+                                (or (assq-ref w 'view) '()))))
       ;; the allocation stands under the world's own caps (solve/keywords.scm
       ;; caps-under): a located good both name is the world's
-      (cons (cons 'caps (caps-under (or (assq-ref w 'caps) '()) (means-caps-of cache root)))
-            (alist-delete 'caps w))))
+      (cons* (cons 'view view)
+             (cons 'caps (caps-under (or (assq-ref w 'caps) '()) (means-caps-of cache root)))
+             (alist-delete 'caps (alist-delete 'view w)))))
   ;; the readers every solve here reads through: the roster's, with the world
   ;; read as world-of* — ONE place lays the UC allocation under the world's caps,
   ;; on the plain path as on the federated and the means paths
@@ -484,8 +490,6 @@ scope walk wherever a solve wants the scope's declared needs."
                                     (if (pair? r) r '()))
                        #:warm-x (warm-x-of cache sid)
                        #:decided (decided-of cache sid)
-                       ;; the previous plan's rows: what it lands is where stock on the way counts
-                       #:arriving (or (planned-material cache sid) '())
                        ;; where the scope's people are, per period: the one trajectory every
                        ;; solve here prices against (doors/position.scm)
                        #:agent-position (agent-position-predicate root)
@@ -1325,36 +1329,44 @@ scope walk wherever a solve wants the scope's declared needs."
   ;; standing caps and spans, its processes and flows, its labour off the
   ;; standing pool, and for each good that crosses one crossing column,
   ;; measured from the most the scope can give
+  ;; THE SCOPE'S PROGRAM, as the plain solve assembles it (scope/live.scm
+  ;; scope-world) under the roster's readers and the standing: the one world
+  ;; the federated record and the means consensus take their records from.
+  ;; The demand is the caller's (a crossing good, a means' keyed demand), so
+  ;; the demand reader stands aside; every other reader reads as for a plain solve.
+  (define (scope-program-of root sid . kw)
+    (apply solve-with-readers (lambda (root sid . kw) (apply scope-world root kw))
+           (alist-delete 'demand readers*) root sid (standing-kw root sid kw)))
   (define (scope-record-of sid goods dem hz)
     (with-scope sid
       (lambda (root)
-        (let* ((as ($ root 'agent-store))
-               (sts ($ root 'spatial-thing-store)) (rs ($ root 'recipe-store))
-               ;; the one custody view: projected resources, standing caps, spans
-               (world (world-of* root sid #:periods (iota (max 1 (cdr hz)))))
-               (resources (assq-ref world 'view)))
-          (call-with-values (lambda () (gather rs root sid))
-            (lambda (procs flows)
-              ;; labour arrives off the scope's STANDING pool — the fold the
-              ;; roster maintains between solves — so skills and availability
-              ;; enter the federated solve as the same keyed entries the UC reads.
-              ;; The scope's OWN entries: the subtree total would count a
-              ;; member scope's bodies in its parent's program as well as its own
-              (commune->scope-record
-                resources ($ as 'all-agents) ($ sts 'all-locations)
-                procs flows
-                #:id sid
-                #:demand (if (pair? dem) (list dem) '())
-                #:never-raw goods
-                ;; the goods cross; which way is the solve's to say
-                #:crossing goods
-                #:eco-caps (assq-ref world 'caps) #:span-of (assq-ref world 'span)
-                #:horizon hz
-                #:labour-entries (and=> (labour-pool-of sid)
-                                         (lambda (p) (pool-entries ($ p 'fold-own))))
-                #:proc-frag (solve-standing-proc-frag (solve-standing-of root sid))
-                ;; the governed dials, as the plain solve sets them after ingest
-                #:settings (solve-standing-dials (solve-standing-of root sid)))))))))
+        (let* (;; the walls are the caller's: a commune's reproduction crosses
+               ;; when its caller lays the floors (#:repro-floors, federation-
+               ;; solve.scm REPRODUCTION ACROSS THE BOUNDARY), so the program
+               ;; stands without the plain solve's eat recipes and their bands
+               (p (scope-program-of root sid #:demand (if (pair? dem) (list dem) '())
+                                    #:never-raw goods #:horizon hz #:reproduce? #f))
+               (world (scope-program-world p)))
+          ;; labour arrives off the scope's STANDING pool — the fold the
+          ;; roster maintains between solves — so skills and availability
+          ;; enter the federated solve as the same keyed entries the UC reads.
+          ;; The scope's OWN entries: the subtree total would count a
+          ;; member scope's bodies in its parent's program as well as its own
+          (commune->scope-record
+            (scope-program-resources p) (scope-program-agents p) (scope-program-spatials p)
+            (scope-program-procs p) (scope-program-flows p)
+            #:id sid
+            #:demand (assq-ref world 'demand)
+            #:never-raw (assq-ref world 'never-raw)
+            ;; the goods cross; which way is the solve's to say
+            #:crossing goods
+            #:eco-caps (assq-ref world 'eco-caps) #:span-of (assq-ref world 'span-of)
+            #:horizon hz
+            #:labour-entries (and=> (labour-pool-of sid)
+                                     (lambda (p) (pool-entries ($ p 'fold-own))))
+            #:proc-frag (assq-ref world 'proc-frag)
+            ;; the governed dials, as the plain solve lays them after ingest
+            #:settings (pick-keywords (alist->kw world) '(setting)))))))
   ;; a door over one scope that answers (ok . x) or (error . msg): the shape
   ;; every commitment-arc door has — the root handed to BODY, any raise a
   ;; failure, BODY's value the success
@@ -1417,7 +1429,7 @@ scope walk wherever a solve wants the scope's declared needs."
     resolve-one-stale! resolve-stale-scopes! node-of labour-pool-of rehang-scope!
     slots-changed! slots-watch! slots-unwatch! means-changed! means-rebuild!
     means-fold-total steward-admit steward-ok? means-criteria scope-community
-    communes-overlap scope-census scope-record-of federation-sibling-locations
+    communes-overlap scope-census scope-record-of scope-program-of federation-sibling-locations
     credit-roots refold-voice! refold-readings! rail-hands debts-of owed-of settle-of
     may-steward-of lent-of knows-of pool-of contrary-of)
   (set-planner-ctx-uc! ctx %uc)

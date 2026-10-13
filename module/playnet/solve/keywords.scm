@@ -55,10 +55,24 @@
     ;; ── one solve's own ──
     (#:allow-infeasible? solve) (#:acquire solve) (#:promote solve) (#:node-budget solve)
     (#:warm-x solve) (#:tstart solve) (#:decided solve) (#:maximin? solve)
-    (#:scenarios solve) (#:first-stage-procs solve) (#:pins solve) (#:holds solve)))
+    (#:scenarios solve) (#:first-stage-procs solve) (#:pins solve) (#:holds solve)
+    ;; ── the readers' own (scope/live.scm solve-with-readers): read by the roster's
+    ;; readers on the way in, laid before no solve ──
+    (#:demand-scope reader) (#:home-of reader) (#:today reader) (#:period-epoch reader)
+    (#:resolve reader) (#:care-upkeep-of reader) (#:place-scope-of reader) (#:spec-of reader)
+    (#:rights-of reader) (#:uc-aid reader)
+    ;; ── the scope's own (scope/live.scm scope-world): what the program is built
+    ;; from, consumed there; #:solve-in is plan-scope's, where the solve runs ──
+    (#:admit? scope) (#:limits scope) (#:practice-peers scope) (#:agent-of scope)
+    (#:reproduce? scope) (#:insure? scope) (#:inspect scope) (#:receding-horizon? scope)
+    (#:resource-view scope) (#:observed scope) (#:responses scope) (#:extra-accepts scope)
+    (#:solve-in scope)))
 
 (define (solve-keywords-of kind)
-  "The keywords of KIND, in the table's order."
+  "The keywords of KIND, in the table's order. The kinds: world (declared with
+   the world), held (computed, held back from the robust assembly), setting
+   (the governed dials, applied after ingest), band (the pour), solve (one
+   solve's own), reader (the roster's readers'), scope (the scope program's)."
   (filter-map (lambda (r) (and (eq? (cadr r) kind) (car r))) %solve-keywords))
 
 (define (solve-keyword-kind kw)

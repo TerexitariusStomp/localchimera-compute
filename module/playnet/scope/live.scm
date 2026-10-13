@@ -29,6 +29,7 @@
   #:use-module (goblins actor-lib methods)    ; define-actor / methods (for ^live-planner)
   #:use-module (goblins utils hashmap)
   #:use-module (srfi srfi-1)
+  #:use-module (srfi srfi-9)                  ; <scope-program>
   #:use-module ((playnet utils store-utils) #:select (meta-rows-with-prefix))
   ;; the VF record types (shared with the observer) and the few planner modules
   ;; this one reads, each by name: an umbrella import would carry every planner
@@ -61,7 +62,7 @@
   #:use-module ((playnet knowledge catalogues diets)    ; what a person will not eat: the eat recipe's one predicate
                 #:select (diet-tags eats?))
   #:declarative? #f                           ; we (primitive-)load the engine at module init
-  #:export (solve-with-readers plan-scope practice-view-of plan-scope->alist plan-scope->plan scope-bills scope-consumption scope-food-specs agent->subsistence-ctx profile-tag? scope-composition recipe-derived-contains persist-materialized! materialize-willing! gather-recipes scope-labour? scope-resource-specs
+  #:export (solve-with-readers scope-world scope-program? scope-program-resources scope-program-agents scope-program-spatials scope-program-procs scope-program-flows scope-program-world plan-scope practice-view-of plan-scope->alist plan-scope->plan scope-bills scope-consumption scope-food-specs agent->subsistence-ctx profile-tag? scope-composition recipe-derived-contains persist-materialized! materialize-willing! gather-recipes scope-labour? scope-resource-specs
             work-intent clear-intents-by-prefix! lot-of? scope-persons spec-unit planned-row plan->rows plan-map-flows held-commitment met-quantity arriving-lots
             find-recipe-process-for-spec mode-process-for-manner trip-manner-of scope-manners
              ;; the cross-vat federation bridge (engine + solve/federation-solve.scm), re-exported
@@ -155,7 +156,7 @@
   #:use-module ((playnet knowledge catalogues housing) #:select (season-of outdoor-degc))
   #:use-module ((playnet algorithms rollup) #:select (crystallized-snlt-for-spec))   ; the claim's price
   #:use-module ((playnet algorithms option-composition) #:select (price-leverage)) ; the leverage a plan creates
-  #:use-module ((playnet solve keywords) #:select (caps-under))
+  #:use-module ((playnet solve keywords) #:select (caps-under solve-keywords-of))
   #:use-module ((playnet vf facts rail) #:select (publish-rails! rails-of publish-social-portion!
                                                set-rails! set-social-portions!))
   #:use-module ((playnet utils catch) #:select (catch* throw* with-throw-handler*)))
@@ -1044,7 +1045,16 @@
     (values (append (car cs) (car rs)) (cdr cs) (cdr rs))))
 
 ;; ── the wiring: live scope-root → plan → VF work intents + commitments ───────
-(define* (plan-scope scope-root #:key (demand '()) (periods '(0)) (movable '())
+(define-record-type <scope-program>
+  (make-scope-program resources agents spatials procs flows world)
+  scope-program?
+  (resources scope-program-resources)   ; the custody view, the limits' headroom among it
+  (agents    scope-program-agents)      ; the scope's people
+  (spatials  scope-program-spatials)    ; its places
+  (procs     scope-program-procs)       ; every recipe process, the derived ones included
+  (flows     scope-program-flows)       ; their flows, in each spec's own unit
+  (world     scope-program-world))      ; the world alist plan-from-records is handed
+(define* (scope-world scope-root #:key (demand '()) (periods '(0)) (movable '())
                                       (storable '()) (whole '()) (tau 0.0) (hold 0.0)
                                       ;; ECO-FRAG: located-good fragility rows ((good . (lo hi α w)) …),
                                       ;; `*frag-cap*`'s own shape — passed straight through to
@@ -1155,10 +1165,6 @@
                                       ;; projection (project-socialized-custody), a derived view of the
                                       ;; live grants, never a stored mutation.
                                       (resource-view (lambda (rs) rs))
-                                      ;; arriving: the previous plan's material rows, so stock on the
-                                      ;; way (a relocation's cargo, at no place in the books) counts
-                                      ;; where its open dropoff lands it (arriving-lots)
-                                      (arriving '())
                                       ;; robust multi-scenario (docs/planning/solve/robust-multiscenario.md):
                                       ;; a list of <planning-scenario> + the proc-ids committed before
                                       ;; the uncertainty resolves. ABSENT ⇒ ordinary deterministic solve.
@@ -1191,23 +1197,14 @@
                                       ;; the fresh check's trial rides a CANDIDATE
                                       ;; accept through the very compile the real one
                                       ;; would get (make-fresh-check)
-                                      (extra-accepts '())
-                                      ;; WHERE THE SOLVE RUNS: (thunk k) — call THUNK (the pure
-                                      ;; program: ingest + solve, no `$`) and hand its values
-                                      ;; to K (the landing: reads the stores, persists, reads
-                                      ;; the engine's tables the solve set). Inline by default;
-                                      ;; the service hands a worker-thread runner that returns
-                                      ;; a promise, so the vat is free while a solve runs.
-                                      (solve-in #f))
-  "Plan over the scope's LIVE state. demand = ((located-good . target) …). Returns
-   (values intents commitments fill x newton): the work INTENDED (provider unbound)
-   and the COMMITMENTS that satisfy it; x is the activity vector (a warm start for
-   the next re-solve) and newton the step count. Pass #:warm-x a prior x of the
-   same shape for a METABOLISM warm re-solve. Skills from each agent's skill ERs;
-   hours from availabilityWindow. CONFORMANCE: a spec's `satisfied-by` lets an
-   agent who holds the component skills (at ≥ the clause's validated hours) supply
-   it via the effective-skills closure — so {electrician,surgeon} can fill an
-   electrosurgery slot without holding electrosurgeon directly."
+                                      (extra-accepts '()))
+  "The scope's PROGRAM, assembled once from its live state: its records (the
+   custody view with the limits' headroom, its people, its places), its recipes
+   with every derived one (the claims, each person's eat recipes, the housing,
+   the reserves, the inspections, nature's returns) and the WORLD alist the
+   solve is handed — the one program plan-scope solves, each horn of a dilemma
+   is priced on, the federated record carries across and the means consensus
+   runs inside. demand = ((located-good . target) …). Returns a <scope-program>."
   (let* (;; The periods the solve will ACTUALLY run over. A #:horizon derives them
          ;; (set-daily-horizon! lays out 0…n-1 with wall-clock spans), and it does so
          ;; inside plan-from-records — so anything plan-scope computes per period must
@@ -1251,10 +1248,10 @@
          (lim-procs     (migrated->procs      limits))
          (lim-flows     (migrated->flows      limits))
          (lim-weights   (migrated->stock-frag limits))
-         ;; the custody view first (a reader's view may stand on its own, ignoring
-         ;; what it is handed, as the commune's does), then the lots on their way
-         ;; placed where the last plan lands them: read once, read here
-         (seen      (arriving-lots obs arriving (resource-view ($ obs 'all-resources))))
+         ;; the custody view (a reader's view may stand on its own, ignoring what
+         ;; it is handed, as the commune's does); the lots on their way already
+         ;; stand in it where the last plan lands them (service.scm world-of*)
+         (seen      (resource-view ($ obs 'all-resources)))
          (resources (append seen lim-resources))
          (storable  (append storable lim-storables))
          (eco-caps  (append eco-caps lim-caps))
@@ -1636,6 +1633,33 @@
                                                                           (recipe-process-id p)))
                                                          procs0))
                                            first-stage-procs))))))
+          (make-scope-program resources agents spatials procs flows world))))))))))))
+
+(define (plan-scope scope-root . kw)
+  "Plan over the scope's LIVE state. demand = ((located-good . target) …). Returns
+   (values intents commitments fill x newton): the work INTENDED (provider unbound)
+   and the COMMITMENTS that satisfy it; x is the activity vector (a warm start for
+   the next re-solve) and newton the step count. Pass #:warm-x a prior x of the
+   same shape for a METABOLISM warm re-solve. Skills from each agent's skill ERs;
+   hours from availabilityWindow. CONFORMANCE: a spec's `satisfied-by` lets an
+   agent who holds the component skills (at ≥ the clause's validated hours) supply
+   it via the effective-skills closure — so {electrician,surgeon} can fill an
+   electrosurgery slot without holding electrosurgeon directly."
+  (let* ((solve-in      (kw-ref kw #:solve-in))     ; WHERE THE SOLVE RUNS: (thunk k) — call THUNK (the
+         ;; pure program: ingest + solve, no `$`) and hand its values to K (the
+         ;; landing: reads the stores, persists, reads the engine's tables the
+         ;; solve set). Inline by default; the service hands a worker-thread
+         ;; runner that returns a promise, so the vat is free while a solve runs.
+         (p             (apply scope-world scope-root (kw-without kw '(#:solve-in))))
+         (resources     (scope-program-resources p)) (agents (scope-program-agents p))
+         (spatials      (scope-program-spatials p))  (procs  (scope-program-procs p))
+         (flows         (scope-program-flows p))     (world  (scope-program-world p))
+         ;; the walls this solve stood on, as the world carries them: what the
+         ;; landing reads back and each dilemma is priced against
+         (demand        (assq-ref world 'demand))
+         (repro-floors  (assq-ref world 'repro-floors))
+         (insurance*    (assq-ref world 'insurance))
+         (eco-spec-frag (assq-ref world 'eco-spec-frag)))
         (let* ((solve1 (lambda (w)
                          (call-with-values
                            (lambda () (apply plan-from-records resources agents spatials
@@ -1727,7 +1751,8 @@
                        (if dilemma `((reserve-dilemma . ,dilemma)) '())
                        (if walls `((floor-wall-dilemma . ,walls)) '())
                        report))))
-          res)))))))))))))))
+          res))))))
+
 
 ;; ── A PLANNED FLOW AT THE EDGE: its row ─────────────────────────────────────
 ;; Inside the process a plan carries its flows as the records they are: `intend`
@@ -2767,9 +2792,10 @@
                            #:budgeted-floors (rows #:budgeted-floors (assq-ref d 'budgeted-floors))
                            #:insurance (rows #:insurance (assq-ref d 'insurance)))
                    '())
-               (kw-without kw (list #:resource-view #:eco-caps #:span-of #:demand #:horizon #:periods
-                                    #:desire-weights #:repro-floors #:budgeted-floors #:insurance
-                                    #:demand-scope #:home-of #:today #:period-epoch #:resolve #:care-upkeep-of
-                                    #:place-scope-of #:spec-of #:rights-of #:uc-aid))))
+               ;; what this seam laid itself, and the readers' own keywords
+               ;; (solve/keywords.scm reader kind): neither reaches the solve
+               (kw-without kw (append (list #:resource-view #:eco-caps #:span-of #:demand #:horizon #:periods
+                                            #:desire-weights #:repro-floors #:budgeted-floors #:insurance)
+                                      (solve-keywords-of 'reader)))))
          (alist (apply solve root sid kw*)))
     (if (and stamp-of w (list? alist)) (stamp-of root sid w alist) alist)))

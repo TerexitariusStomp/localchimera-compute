@@ -52,7 +52,7 @@
             planner-ctx-means-rebuild! planner-ctx-means-fold-total
             planner-ctx-steward-admit planner-ctx-steward-ok? planner-ctx-means-criteria
             planner-ctx-scope-community planner-ctx-communes-overlap
-            planner-ctx-scope-census planner-ctx-scope-record-of
+            planner-ctx-scope-census planner-ctx-scope-record-of planner-ctx-scope-program-of
             planner-ctx-federation-sibling-locations planner-ctx-credit-roots
             planner-ctx-refold-voice! planner-ctx-refold-readings! planner-ctx-rail-hands
             planner-ctx-debts-of planner-ctx-owed-of planner-ctx-settle-of
@@ -78,7 +78,7 @@
             set-planner-ctx-means-fold-total! set-planner-ctx-steward-admit!
             set-planner-ctx-steward-ok?! set-planner-ctx-means-criteria!
             set-planner-ctx-scope-community! set-planner-ctx-communes-overlap!
-            set-planner-ctx-scope-census! set-planner-ctx-scope-record-of!
+            set-planner-ctx-scope-census! set-planner-ctx-scope-record-of! set-planner-ctx-scope-program-of!
             set-planner-ctx-federation-sibling-locations! set-planner-ctx-credit-roots!
             set-planner-ctx-refold-voice!! set-planner-ctx-refold-readings!!
             set-planner-ctx-rail-hands! set-planner-ctx-debts-of!
@@ -89,7 +89,7 @@
             ;; the standing a solve is given (define-context solve-standing below)
             <solve-standing> make-solve-standing solve-standing? with-solve-standing solve-standing-install!
             solve-standing-admit? solve-standing-proc-frag solve-standing-responses solve-standing-observed
-            solve-standing-warm-x solve-standing-decided solve-standing-arriving solve-standing-agent-position solve-standing-backend solve-standing-reproduce? solve-standing-dials
+            solve-standing-warm-x solve-standing-decided solve-standing-agent-position solve-standing-backend solve-standing-reproduce? solve-standing-dials
             solve-standing-voice-pushes solve-standing-voice-hours solve-standing-scope-path
             solve-standing-practice-peers solve-standing-agent-of
             standing->settings))
@@ -110,7 +110,6 @@
   ;; the last solve's
   warm-x          ; the previous x, or #f
   decided         ; the discrete state the previous search left, or #f: the next search's seed
-  (arriving '())  ; the previous plan's material rows: where stock on the way counts
   ;; where the scope's people are, per period (doors/position.scm agent-position-predicate)
   agent-position
   ;; the solver a scope solves with, and whether it reproduces its labour-power
@@ -132,7 +131,6 @@
     (observed       . ,solve-standing-observed)
     (warm-x         . ,solve-standing-warm-x)
     (decided        . ,solve-standing-decided)
-    (arriving       . ,solve-standing-arriving)
     (agent-position . ,solve-standing-agent-position)
     (backend        . ,solve-standing-backend)))
 (define (standing->settings st)
@@ -159,7 +157,7 @@
   resolve-stale-scopes! node-of labour-pool-of uc rehang-scope! declared-parent
   deployment-table slots-changed! slots-watch! slots-unwatch! means-changed!
   means-rebuild! means-fold-total steward-admit steward-ok? means-criteria
-  scope-community communes-overlap scope-census scope-record-of
+  scope-community communes-overlap scope-census scope-record-of scope-program-of
   federation-sibling-locations credit-roots refold-voice! refold-readings! rail-hands
   debts-of owed-of settle-of may-steward-of lent-of knows-of pool-of contrary-of)
 

@@ -16,7 +16,9 @@
   #:use-module ((playnet doors service brief) #:select (parse-overrides plan-brief->string))
   #:use-module ((playnet doors service provenance-trace) #:select (explain-claim make-pull-of))
   #:use-module ((playnet federation crossing-set) #:select (crossing-goods))
-  #:use-module ((playnet scope live) #:select (allocate-means-consensus federated-dilemma federated-per-scope federated-relaxed-scopes federated-result federated-scope-pulls federated-solve federated-withdrawal-displacement lg loose-gives plan->rows records-means-world svc-good warm-boundary-flows))
+  #:use-module ((playnet solve keywords) #:select (pick-keywords))
+  #:use-module ((playnet utils keywords) #:select (alist->kw))
+  #:use-module ((playnet scope live) #:select (scope-program-world scope-program-resources scope-program-agents scope-program-spatials scope-program-procs scope-program-flows allocate-means-consensus federated-dilemma federated-per-scope federated-relaxed-scopes federated-result federated-scope-pulls federated-solve federated-withdrawal-displacement lg loose-gives plan->rows records-means-world svc-good warm-boundary-flows))
   #:use-module ((playnet solve engine) #:select (*desire-w0* cap-scale-of want-as-cap?))
   #:use-module ((playnet solve externality) #:select (marginal-displacement moved-summary))
   #:use-module ((playnet utils envelope) #:select (catch-as-failure failure success))
@@ -209,19 +211,20 @@
                             (cons sid
                                   (with-scope sid
                                     (lambda (root)
-                                      (let ((as ($ root 'agent-store))
-                                            (sts ($ root 'spatial-thing-store)) (rs ($ root 'recipe-store))
-                                            (world (world-of* root sid)))   ; the one custody view
-                                        (call-with-values (lambda () (gather rs root sid))
-                                          (lambda (procs flows)
-                                            (records-means-world
-                                              (assq-ref world 'view) ($ as 'all-agents)
-                                              ($ sts 'all-locations) procs flows spec place
-                                              #:demand dem
-                                              #:eco-caps (assq-ref world 'caps) #:span-of (assq-ref world 'span)
-                                              #:proc-frag (solve-standing-proc-frag (solve-standing-of root sid))
-                                              ;; the governed dials, as the plain solve sets them after ingest
-                                              #:settings (solve-standing-dials (solve-standing-of root sid)))))))))))
+                                      ;; the scope's program, as its plain solve assembles it; the
+                                      ;; walls are the consensus's own (the allocation), so the
+                                      ;; program stands without the eat recipes and their bands
+                                      (let* ((p (scope-program-of root sid #:demand dem #:reproduce? #f))
+                                             (world (scope-program-world p)))
+                                        (records-means-world
+                                          (scope-program-resources p) (scope-program-agents p) (scope-program-spatials p)
+                                          (scope-program-procs p) (scope-program-flows p) spec place
+                                          #:demand (assq-ref world 'demand)
+                                          #:never-raw (assq-ref world 'never-raw) #:raws (assq-ref world 'raws)
+                                          #:eco-caps (assq-ref world 'eco-caps) #:span-of (assq-ref world 'span-of)
+                                          #:proc-frag (assq-ref world 'proc-frag)
+                                          ;; the governed dials, as the plain solve sets them after ingest
+                                          #:settings (pick-keywords (alist->kw world) '(setting)))))))))
                         communes))
                   (prev (map (lambda (c)
                                (let ((rt (roster-ref (car c))))

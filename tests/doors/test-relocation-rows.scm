@@ -263,7 +263,8 @@
                             (call-with-values
                                 (lambda () (plan-scope scope #:demand (list (cons (lg "bread" (cell "B" 0)) 30.0))
                                                        #:periods '(0) #:movable '("bread")
-                                                       #:resource-view (lambda (_) raw) #:arriving arriving))
+                                                       ;; the service lays the arrivals on the view (world-of*)
+                                                       #:resource-view (lambda (_) (arriving-lots obs arriving raw))))
                               (lambda (ints coms material . _) (hauled (map row material)))))))
             ;; a recipe that MAKES bread, so a lot of it is stock the plan may draw on
             ;; (a good no recipe makes is a raw, drawn by a process alone); it draws a

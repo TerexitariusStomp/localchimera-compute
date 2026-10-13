@@ -12,7 +12,7 @@
 ;;; Run: guile --no-auto-compile -q -L module tests/scope/test-solve-settings-reach-every-path.scm
 
 (use-modules (playnet solve world) (playnet solve robust) (playnet solve records) ((playnet utils units) #:select (%effort-unit)))
-(use-modules ((playnet solve keywords) #:select (%solve-keywords solve-keywords-of pick-keywords caps-under)) ((playnet solve plan) #:select (%plan-from-records)) ((playnet solve engine) #:select (apply-solve-settings!)) (srfi srfi-1) ((ice-9 session) #:select (procedure-arguments)))
+(use-modules ((playnet solve keywords) #:select (%solve-keywords solve-keywords-of solve-keyword-kind pick-keywords caps-under)) ((playnet solve plan) #:select (%plan-from-records)) ((playnet scope live) #:select (scope-world)) ((playnet solve engine) #:select (apply-solve-settings!)) (srfi srfi-1) ((ice-9 session) #:select (procedure-arguments)))
 (use-modules (playnet test harness) (playnet test scope)
              (playnet vf schemas) (playnet scope live)
              (goblins) (goblins utils hashmap)
@@ -74,7 +74,13 @@
 (check "apply-solve-settings! writes exactly the settings"
        (set= (keywords-taken apply-solve-settings!) (solve-keywords-of 'setting)) #t)
 (check "plan-from-records takes every keyword of the table, and no other"
-       (set= (keywords-taken %plan-from-records) (map car %solve-keywords)) #t)
+       (set= (keywords-taken %plan-from-records)
+             (filter-map (lambda (r) (and (memq (cadr r) '(world held setting band solve)) (car r))) %solve-keywords)) #t)
+(check "every keyword scope-world takes has a kind, and none is a reader's"
+       (every (lambda (k) (and (memq (solve-keyword-kind k) '(world held setting band solve scope)) #t)) (keywords-taken scope-world)) #t)
+(check "scope-world takes the scope kind whole, but plan-scope's #:solve-in"
+       (every (lambda (k) (and (memq k (keywords-taken scope-world)) #t))
+              (delete #:solve-in (solve-keywords-of 'scope))) #t)
 (check "%world-keywords is the table's world kind" (equal? %world-keywords (solve-keywords-of 'world)) #t)
 (check "the held-back keywords are the table's held kind" (equal? %held-back-world-keywords (solve-keywords-of 'held)) #t)
 
