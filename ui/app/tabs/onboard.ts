@@ -8,7 +8,8 @@
 // drawer's skills screen. Nothing is reproduced here — the row is a summary
 // and a door, never a copy of the fields themselves. Identity is the one
 // exception: there is no other real place to make your first one, so its
-// row expands in place to the small form that makes it. The list lives in
+// row expands in place to the identity card (app/identity-view.ts) — the same
+// card the account sheet shows. The list lives in
 // #onboardstage (an existing face overlay, app.html) and stays revisitable —
 // there is no "finished" wizard state, only an "open the map" door at the
 // foot for whenever you are ready to leave it.
@@ -21,16 +22,14 @@ import { profile, setProfile, DIETS } from '../profile.js';
 import { regionForLat } from '../nutrition.js';
 import { locationSummary, home, homeName, positionForFloors, openLocationSheet } from './social/location.js';
 import { revealSkills } from './social/share.js';
-import { identity, identityState, consentCurrent, createIdentity, downloadIdentityFile, setMyName, openIdentityDoor, CONSENT_SENTENCE, ONLY_KEY_NOTE, VOTE_CONSENT_SENTENCE, recordVoteConsent } from './social/id.js';
-import { MIN_AGE } from '../legal-product.js';
-import { HANDLERS } from '../core.js';
+import { identity } from './social/id.js';
+import { identityCard, showSignIn } from '../identity-view.js';
 import { currencyInForce } from '../money.js';
 import { dwelling, dwellingSummary } from '../dwelling.js';
 import { openAccountPage } from '../account.js';
 import { installBlock } from '../install.js';
 import { chip } from '../chips.js';
 import { K } from "../keys.js";
-import { holdPasscode } from "../passcode-held.js";
 
 /** What the walk keeps on this device: whether it has been opened once before. */
 interface Walk { done: boolean; visited?: string[] }
@@ -141,69 +140,15 @@ const taskRow = (t: Task): Fragment => {
 // ── the identity row — expands in place; there is no other real place for it ──
 // Made here rather than sent elsewhere: everything else in the list is kept on
 // the device and needs no key, and creating one leads naturally into what
-// creation reveals — the passcode, once, and the recovery file. The terms are
-// read at this collection moment and again only when they change.
+// creation reveals — the passcode, once, and the recovery file. The card is one
+// persistent element, moved into the row each time the checklist redraws, so a
+// half-typed passcode survives a redraw.
 const identityOpen = signal(false);
-const made = signal<{ aid: string; bran: string; saved: boolean; shown: boolean } | null>(null);
-const consentTick = signal(false);
-// Age is a stated floor, not a hard check (terms §8): the declaration must be
-// an act, not buried text, so it is its own tick, required like the terms'.
-// A parent or guardian ticking on a younger person's behalf reads the same
-// sentence and is responsible for that choice (terms §8).
-const ageTick = signal(false);
-// Vote consent is OFFERED here (optional — see id.ts) and ENFORCED again at
-// the first real cast, so skipping it costs nothing but a later ask.
-const voteTick = signal(false);
-const idSaid = signal("");
+let card: { el: HTMLElement; dispose: () => void } | null = null;
+const idLead = html`<p class="ob-lead-s">Everything else in this list is kept on this device. An identity is what lets the commons hold it for you and act on it: a key of your own, made here, never sent anywhere.</p>`;
 
-async function create(): Promise<void> {
-  if (!consentCurrent() && !consentTick.peek()) { idSaid.set("please read and accept the terms and the privacy notice first"); return; }
-  if (!ageTick.peek()) { idSaid.set(`please confirm you are at least ${MIN_AGE}, or that a parent or guardian agrees on your behalf`); return; }
-  idSaid.set("");
-  const r = await createIdentity();
-  if ("err" in r) { idSaid.set(r.err); return; }
-  if (voteTick.peek()) recordVoteConsent(r.aid);
-  holdPasscode(true);
-  made.set({ ...r, saved: false, shown: false });
-}
-
-const identityBody = (): Fragment => {
-  const me = identity();
-  const st = identityState();
-  const m = made();
-  const held = st === "authed" || st === "unlocked" || st === "unregistered";
-  if (m && !(held && me && me.aid !== m.aid)) return html`
-    <p class="ob-state">identity created — this passcode is its only key, and this is the one time it is shown.</p>
-    <div class="ob-field"><span>passcode (your key)</span>
-      <div class="ob-pass"><input class="ob-code" type="${m.shown ? "text" : "password"}" readonly spellcheck="false" autocomplete="new-password" value="${m.bran}">
-        <button class="ob-chip" onclick=${() => made.set({ ...m, shown: !m.shown })}>${m.shown ? "hide" : "show"}</button>
-        <button class="ob-chip" onclick=${(e: Event) => { if (navigator.clipboard) navigator.clipboard.writeText(m.bran); (e.target as HTMLElement).textContent = "✓ copied"; }}>copy</button></div>
-    </div>
-    <div class="ob-field"><span>identifier (names you — not secret)</span>
-      <div class="ob-pass"><input class="ob-code ob-aid" type="text" readonly spellcheck="false" autocomplete="username" value="${m.aid}">
-        <button class="ob-chip" onclick=${(e: Event) => { if (navigator.clipboard) navigator.clipboard.writeText(m.aid); (e.target as HTMLElement).textContent = "✓ copied"; }}>copy</button></div>
-      <small>keep it with your passcode — or take the recovery file, which holds both.</small></div>
-    <button class="ob-next ob-wide" onclick=${() => downloadIdentityFile(m.aid, m.bran)}>⬇ download recovery file</button>
-    <small class="ob-hint">the file holds the passcode and the identifier together with your identity's own signed log — it opens this identity on any device, and seats it at a commune that has never met you.</small>
-    <label class="ob-tick"><input type="checkbox" ${m.saved ? "checked" : ""} onchange=${(e: Event) => { const on = (e.target as HTMLInputElement).checked; made.set({ ...m, saved: on }); holdPasscode(!on); }}><span>I've saved my passcode. I understand it cannot be shown again.</span></label>
-    <label class="ob-field"><span>what should people call you?</span>
-      <input type="text" autocomplete="nickname" placeholder="a name — optional, and changeable any time" onchange=${(e: Event) => setMyName((e.target as HTMLInputElement).value.trim(), "")}></label>`;
-  if (held && me) return html`
-    <p class="ob-state">you are in as <b>${me.name || "an unnamed identity"}</b>${st === "authed" ? " — seated at the commons" : st === "unregistered" ? " — this commune has not met you yet; tap your name to join" : " — unlocked on this device, no commune in reach"}</p>
-    <small class="ob-hint">identifier ${me.aid}</small>
-    <div class="ob-opts">${chip(false, "not me — use another identity", openIdentityDoor)}</div>`;
-  const offline = !HANDLERS.signup;
-  return html`
-    <p class="ob-lead-s">Everything else in this list is kept on this device. An identity is what lets the commons hold it for you and act on it: a key of your own, made here, never sent anywhere.</p>
-    ${consentCurrent() ? "" : html`<label class="ob-tick"><input type="checkbox" ${consentTick() ? "checked" : ""} onchange=${(e: Event) => consentTick.set((e.target as HTMLInputElement).checked)}><span>${CONSENT_SENTENCE.map(part => typeof part === "string" ? part : html`<a href="${part[1]}" target="_blank" rel="noopener" onclick=${(e: Event) => e.stopPropagation()}>${part[0]}</a>`)}</span></label>`}
-    <label class="ob-tick"><input type="checkbox" ${ageTick() ? "checked" : ""} onchange=${(e: Event) => ageTick.set((e.target as HTMLInputElement).checked)}><span>I confirm I am at least ${MIN_AGE} years old, or that a parent or guardian agrees to this on my behalf.</span></label>
-    <label class="ob-tick"><input type="checkbox" ${voteTick() ? "checked" : ""} onchange=${(e: Event) => voteTick.set((e.target as HTMLInputElement).checked)}><span>${VOTE_CONSENT_SENTENCE}</span></label>
-    <small class="ob-hint">${ONLY_KEY_NOTE}</small>
-    ${offline ? html`<p class="ob-state">no commons in reach right now — an identity can be made once one answers; everything else you said is kept here meanwhile</p>`
-              : html`<button class="ob-next ob-wide" onclick=${create}>${st === "busy" ? "…" : "create my identity"}</button>`}
-    ${idSaid() ? html`<p class="ob-err">${idSaid()}</p>` : ""}
-    <div class="ob-opts">${chip(false, "I already have one — sign in", openIdentityDoor)}</div>`;
-};
+/** Open the row on the sign-in face: "I already have an identity". */
+const signInHere = (): void => { showSignIn(); identityOpen.set(true); };
 
 const identityRow = (): Fragment => {
   const me = identity();
@@ -215,7 +160,7 @@ const identityRow = (): Fragment => {
         <span class="acct-s">${me ? (me.name || "an unnamed identity") : "one tap makes it; the passcode is yours alone"}</span></span>
       <span class="ob-check${me ? " on" : ""}" title="${me ? "made" : "not yet made"}">${me ? "✓" : ""}</span>
     </button>
-    ${open ? html`<div class="ob-expand">${identityBody()}</div>` : ""}`;
+    ${open ? html`<div data-idc></div>` : ""}`;
 };
 
 // ── the frame ───────────────────────────────────────────────────────────────
@@ -245,12 +190,15 @@ function draw(): void {
         <p class="ob-mode ${real ? "real" : "demo"}">${real
           ? `playing for real${me.name ? ` as ${me.name}` : ""}`
           : "demo — your answers stay on this device until you make an identity"}</p>
-        ${identity() ? "" : html`<div class="ob-opts">${chip(false, "I already have an identity — sign in", openIdentityDoor)}</div>`}
+        ${identity() ? "" : html`<div class="ob-opts">${chip(false, "I already have an identity — sign in", signInHere)}</div>`}
       </div>      <div class="acct-group">${identityRow()}</div>
       <div class="acct-group">${TASKS.map(taskRow)}</div>
       ${installBlock()}
       <button class="ob-next ob-wide ob-play" onclick=${finish}>${real ? "let's play! 🌱" : "try the demo — let's play! 🎲"}</button>
     </div>`);
+
+  const slot = stageEl.querySelector("[data-idc]");
+  if (slot) slot.replaceWith((card ??= identityCard({ lead: idLead })).el);
 }
 
 /** Mount the checklist into #onboardstage (an existing face overlay, app.html) — the frame follows the profile's own signals so every row's status line stays live. */

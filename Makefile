@@ -2496,7 +2496,7 @@ test-ux: browser/repl.wasm
 # For the dial against a REAL gateway see test-signup-live-ux.
 # NB: the per-test targets must NOT be .PHONY — GNU Make skips implicit-rule
 # search for phony targets, so the pattern rule below would never fire.
-DIAL_UX = bodies signup nav respond events availability recipe web recipeface walkie room settings share-bar share-sheet share-hear account-sheet face-dock feedback withholding log toast match pribar hand chrome earth faces wheel deeplink forum observe spacetime family corpus shop count labels planned-count law responsive sw-offline
+DIAL_UX = bodies signup identity-card nav respond events availability recipe web recipeface walkie room settings share-bar share-sheet share-hear account-sheet face-dock feedback withholding log toast match pribar hand chrome earth faces wheel deeplink forum observe spacetime family corpus shop count labels planned-count law responsive sw-offline
 .PHONY: test-app-ux
 test-app-ux: $(addprefix test-,$(addsuffix -ux,$(DIAL_UX)))
 

@@ -2310,7 +2310,7 @@
   .ob-field small, .ob-hint { color: var(--t-999999); font-size: 11.5px; }
   .ob-field textarea { font: inherit; font-size: 15px; padding: 9px 10px; border: 1px solid var(--t-c9d2dd); border-radius: 9px;
     background: var(--t-ffffff); color: var(--t-333333); box-sizing: border-box; width: 100%; resize: vertical; }
-  .ob-field select, .ob-field input[type="number"], .ob-field > input[type="text"], .ob-add input {
+  .ob-field select, .ob-field input[type="number"], .ob-field > input[type="text"], .ob-field > input[type="password"], .ob-add input {
     font: inherit; font-size: 15px; padding: 9px 10px; border: 1px solid var(--t-c9d2dd); border-radius: 9px;
     background: var(--t-ffffff); color: var(--t-333333); min-height: 42px; box-sizing: border-box; }
   .ob-opts { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -2359,6 +2359,11 @@
   .ob-tick input { width: auto; margin: 3px 0 0; flex: 0 0 auto; accent-color: var(--t-2f7a5a); }
   .ob-tick a { color: var(--t-2c4a6e); }
   .ob-err { margin: 0; color: var(--t-b04a3a); font-size: 12.5px; }
+  /* the identity card (app/identity-view.ts): one face at a time, in the checklist and in the account sheet alike */
+  .idc-form { display: flex; flex-direction: column; gap: 14px; }
+  .idc-hidden { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  .idc .ob-next:disabled { opacity: .45; cursor: default; filter: none; }
+  .idc .ob-out.arm { color: var(--t-b04a3a); border-color: var(--t-b04a3a); }
   /* what the hours earn: credit in hours, and its reading in the currency in force */
   .ob-earn { border-top: 1px solid var(--t-ececec); padding-top: 12px; display: flex; flex-direction: column; gap: 8px; }
   .ob-earn-row { display: grid; grid-template-columns: 96px 1fr; gap: 0 10px; align-items: baseline; padding: 6px 10px; border-radius: 8px; background: var(--t-f4f4f4); }
