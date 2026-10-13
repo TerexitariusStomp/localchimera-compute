@@ -255,12 +255,12 @@
                                          (and (not (commitment-finished k))
                                               (same-flow? 'produce (commitment-action k))   ; an acquisition fulfils a produce
                                               (equal? spec (commitment-resource-conforms-to k))))
-                                       ($ ps 'all-commitments)))
+                                       ($ ps 'commitments-for-spec spec)))
                       (need-i (find (lambda (i)
                                       (and (not (intent-finished i))
                                            (memq (intent-action i) using-up-actions)
                                            (equal? spec (intent-resource-conforms-to i))))
-                                    ($ ps 'all-intents))))
+                                    ($ ps 'intents-for-spec spec))))
                  (unless (string-or-false spec) (error "what was bought?"))
                  (unless (or donation? (> c 0)) (error "what did it cost?"))
                  ;; the good, held by the commune from the moment it is recorded

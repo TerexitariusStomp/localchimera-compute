@@ -383,11 +383,13 @@
                   (run   (car (count-run cmt tech)))
                   ;; the record this run produces, where the plan laid one
                   (rec-c (and cmt
+                              ;; the store's own index by process, the run's and the technique's
                               (find (lambda (k)
                                       (and (not (commitment-finished k))
                                            (eq? 'produce (commitment-action k))   ; verb-meant: a count's record is a produce
                                            (member (commitment-output-of k) (list run proc))))
-                                    ($ ps 'all-commitments))))
+                                    (append-map (lambda (p) (if p ($ ps 'commitments-for-process p) '()))
+                                                (list run proc)))))
                   (plan  (count-plan eid r counted u
                                      #:agent agent #:scope-id scope-id #:tech tech #:note note
                                      #:evidence evidence #:fulfills fulfills #:cmt cmt #:rec-c rec-c

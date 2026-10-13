@@ -16,7 +16,7 @@
   #:use-module (playnet vf schemas)
   #:use-module ((playnet vf aggregation containment) #:select (containment-first))
   #:use-module ((playnet vf formulas counting)
-                #:select (count-process-target count-blind? count-figure count-base-id
+                #:select (count-process count-process-target %count-regimes count-blind? count-figure count-base-id
                           contest-ballot-id))
   #:use-module ((playnet observation adjustment)
                 #:select (count-event? count-event-of))
@@ -189,8 +189,12 @@
   (let ((names? (lambda (proc) (equal? rid (count-process-target proc)))))
     (or (any (lambda (i) (and (not (intent-finished i)) (names? (intent-input-of i))))
              (or ($ ps 'all-intents) '()))
-        (any (lambda (c) (and (not (commitment-finished c)) (names? (commitment-input-of c))))
-             (or ($ ps 'all-commitments) '())))))
+        ;; a count's process is named by its regime and the stock, so the store's
+        ;; index by process answers for each regime
+        (any (lambda (regime)
+               (any (lambda (c) (not (commitment-finished c)))
+                    (or ($ ps 'commitments-for-process (count-process regime rid)) '())))
+             %count-regimes))))
 
 (define (count-counter member-ids owner cycle)
   "Who counts: the members take turns, CYCLE picking whose it is, and the
