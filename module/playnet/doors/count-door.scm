@@ -25,6 +25,7 @@
   #:use-module ((playnet observation adjustment)
                 #:select (count-difference adjustment-event count-record-event))
   #:use-module ((playnet observation evidence) #:select (evidence-hash? evidence-tag))
+  #:use-module ((playnet observation landing) #:select (standing-event))
   #:use-module ((playnet observation observer) #:select (measure-qty))
   #:use-module ((playnet scope live)
                 #:select (make-work-event lot-of? scope-persons met-quantity
@@ -314,13 +315,13 @@
    adjustment where it landed one, its record, the difference it landed, what
    the stock holds now, and the range the plan's FLOWS leave it in at the
    count's instant THEN."
-  (let* ((adj (obs-event obs eid))
+  (let* ((adj (standing-event obs eid))
          (q   (and adj (economic-event-resource-quantity adj)))
          (m0  (economic-resource-onhand-quantity r))
          (have (if m0 (exact->inexact (measure-qty m0)) 0.0))
          (held (exact->inexact (or ($ obs 'onhand-as-of (economic-resource-id r) then) have))))
     `((event . ,(if adj eid ""))
-      (record . ,(string-append eid "-record"))
+      (record . ,(count-record-id eid))
       (hours . 0.0)
       (delta . ,(if q
                     (* (or (onhand-sign (economic-event-action adj)) 0) (exact->inexact (measure-qty q)))
@@ -329,7 +330,6 @@
       (again . #t)
       (expected . ,(expected-range held flows))
       (onhand . ,have))))
-(define (obs-event obs id) ($ obs 'get-event id))
 
 (define* (do-count-stock root scope-id agent resource-id counted unit
                          #:key (technique #f) (place #f) (when-iso #f)
@@ -353,21 +353,22 @@
          ;; counted, what, when and the figure found, so it is the same count
          ;; wherever and however often it lands; a count of now is named afresh
          (eid  (if then (count-id-at agent resource-id when-iso counted) (generate-id "evt-count-")))
+         ;; the record a count always leaves: the books hold it when this count already landed
+         (landed (and then (standing-event obs (count-record-id eid))))
          (no   (count-refusal r counted unit tech evidence
                               #:agent agent #:fulfills fulfills #:cmt cmt
                               #:standing? (and r (count-standing? r scope-id agent))
                               #:outside? (and r cmt (count-outside-target? obs cmt resource-id))
                               ;; a commitment that has ended takes no new count; a count already
                               ;; landed (a device flushing its queue) is answered, not refused
-                              #:finished? (and cmt (commitment-finished cmt)
-                                               (not (and then ($ obs 'get-event (string-append eid "-record")))))
+                              #:finished? (and cmt (commitment-finished cmt) (not landed))
                               #:predates? (and r when-iso
                                                (count-predates-stock? obs resource-id (civil->instant when-iso))))))
     (cond
      (no (failure no))
      ;; the same count, landing again (a device flushing what it queued): the
      ;; books already hold it, and the door answers what stands
-     ((and then ($ obs 'get-event (string-append eid "-record")))
+     (landed
       (success (count-landed-reply obs eid r ((plan-reader root rows) r then) then)))
      (else
         (catch-as-failure

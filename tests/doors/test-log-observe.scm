@@ -135,9 +135,18 @@
 (define first-pick (picked))
 (define events-then (length (with-vat vat ($ ($ scope 'observer) 'all-events))))
 (define second-pick (picked))
-(check "the second names the same event" (cdr second-pick) (cdr first-pick))
+(check "the second names the same event" (assq-ref (cdr second-pick) 'event) (assq-ref (cdr first-pick) 'event))
+(check "…is told it already stood" (assq-ref (cdr second-pick) 'again) #t)
 (check "…and lands nothing more"
        (length (with-vat vat ($ ($ scope 'observer) 'all-events))) events-then)
+(check "a repeat with another note (a device's retry, edited) is answered, not refused"
+       (let ((r (call 'log-observe "org:commune" "ada" "produce" "apples" 12 "kg"
+                      "picked, and the ladder broke" "2026-09-21T16:00:00Z")))
+         (list (ok? r) (assq-ref (cdr r) 'event) (assq-ref (cdr r) 'again)))
+       (list #t (assq-ref (cdr first-pick) 'event) #t))
+(check "…and the entry that stands is the first"
+       (economic-event-note (with-vat vat ($ ($ scope 'observer) 'get-event (assq-ref (cdr first-pick) 'event))))
+       "picked the low branches")
 (check "the same act at another instant is another event"
        (equal? (assq-ref (cdr (call 'log-observe "org:commune" "ada" "produce" "apples" 12 "kg"
                                     "picked the low branches" "2026-09-22T16:00:00Z"))

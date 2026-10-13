@@ -14,6 +14,7 @@
   #:use-module ((playnet utils store-utils) #:select (generate-id))
   #:use-module ((playnet utils clock) #:select (iso-now))
   #:use-module ((playnet vf formulas flows) #:select (make-work-event))
+  #:use-module ((playnet observation landing) #:select (land-once))
   #:export (%log-actions do-log-observe))
 
 (define %log-actions
@@ -49,6 +50,12 @@
                 ;; auto-creates it as the RECEIVER's — the speaker's own
                 (rid (and (memq action '(produce raise))   ; verb-meant: the two acts a spoken log makes a resource by
                           (string-append "log/" eid))))
+           ;; stated at an instant, the entry is named by what it says, and the books answer
+           ;; a repeat (a device flushing its queue) with the entry that stands, whatever
+           ;; note or clock the repeat carried; unstated, it has no name to repeat under
+           (land-once obs (and (string? when-iso) (not (string-null? when-iso)) eid)
+             (lambda (_) (success `((event . ,eid) (resource . ,(or rid "")) (again . #t))))
+             (lambda ()
            ($ obs 'record-event
               (if (eq? action 'work)
                   ;; labour has its one constructor (vf/formulas/flows)
@@ -68,4 +75,4 @@
              ; 17-24
                #:note (or note "captain's log") #:in-scope-of (list scope-id)  ; 25-26 note, in-scope-of
 )))                          ; 27-29
-           (success `((event . ,eid) (resource . ,(or rid "")))))))))))
+           (success `((event . ,eid) (resource . ,(or rid "")))))))))))))

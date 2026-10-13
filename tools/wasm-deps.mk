@@ -208,6 +208,7 @@ SCOPE_WASM_CLOSURE = \
   module/playnet/observation/account.scm \
   module/playnet/observation/adjustment.scm \
   module/playnet/observation/evidence.scm \
+  module/playnet/observation/landing.scm \
   module/playnet/observation/live-registry.scm \
   module/playnet/observation/live-resource.scm \
   module/playnet/observation/log-observe.scm \
