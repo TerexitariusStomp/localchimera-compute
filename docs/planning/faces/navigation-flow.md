@@ -39,13 +39,13 @@ Words used throughout: **sheet** is `.share-sheet` (the bottom drawer); **bar** 
 5. A drawer in the navigating posture holding actions and the step list.
 6. A way to choose the origin. Today the origin is `USER`.
 
-### 1.3 Defects to settle first (stage R0)
+### 1.3 What stage R0 settled
 
-- **The card reads wrongly in the night theme.** `#navcard` paints a dark surface from `--t-0a101a-rgb` with `--t-ffffff` text. The theme layer (`ui/app/theme.ts`) remaps neutrals by lightness, so under `night` the surface becomes light and the text dark: the pale-blue, low-contrast box in the first screenshot. Navigation chrome states its own palette — a dark teal surface and white text that every theme leaves alone — the way the Google banner holds its colour in both of its themes.
-- **The card sits behind the bar.** `#navcard.overmap` is `bottom: 64px` at `z-index: 6`, under `#sharebar` (`z-index: 30`). The bar and sheet own the bottom edge; the ETA bar belongs *in* the sheet (§3.2).
-- **The mode glyph re-routes the wrong place.** The cycle handler (`nav.ts:344-348`) calls `startNav()`, which routes to `host.selectedPlace()`. A journey begun from the search panel has no selected place, so the tap routes nowhere. The retry belongs on `nav.dest`.
-- **A fallback line looks like a route.** When the engine answers `{}` the card says "no route data" and the stroke is dashed, which is the dotted blue line in the first screenshot. The fallback is a *bearing*, and the new flow draws it as a bearing: a thin arrow from you toward the place with the crow-flight distance, never a styled route, and the mode tabs read "no route" in place of an ETA.
-- **No engine runs in this checkout.** `.valhalla/` is absent and nothing listens on `:8002`, so every `/route` here answers `{}`. The first screenshot is therefore the fallback path. The route flow is developed against a stub (§7) and confirmed against a built engine.
+- **The card's palette.** `#navcard` painted a dark surface from `--t-0a101a-rgb` with `--t-ffffff` text. The theme layer (`ui/app/theme.ts`) remaps neutrals by lightness, so under `night` the surface computed to a light grey-blue with near-black text. Navigation chrome now states its own palette — a dark teal surface and white text that every theme leaves alone — the way the Google banner holds its colour in both of its themes.
+- **The card's place.** It sat at `bottom: 64px`, `z-index: 6`, under `#sharebar` (`z-index: 30`). Over the map it now floats at the top, `z-index: 35`; the bar and sheet own the bottom edge, and the ETA bar belongs *in* the sheet (§3.2).
+- **The mode glyph.** The cycle handler re-routed through `startNav()` and `host.selectedPlace()`, which a journey begun from the search panel does not have. It now re-routes `nav.dest`.
+- **The fallback line.** With no engine the card said "no route data" while the stroke looked like a route. The fallback is a bearing: thin, dashed, no casing, with the crow-flight distance.
+- **No engine in this checkout.** `.valhalla/` is absent and nothing listens on `:8002`, so every `/route` here answers `{}`; the first screenshot was the fallback path. The route flow is developed against a synthetic engine (§7) and confirmed against a built one.
 
 ---
 
@@ -240,9 +240,9 @@ Valhalla's transit comes from GTFS tiles. `tools/dev/valhalla-local.sh` currentl
 
 Each stage ends with `make ui-check`, `make ui`, a UX probe, and `make shot`.
 
-- **R0 · Settle the present.** The banner-palette rule for `#navcard`; the mode-cycle re-routes `nav.dest`; the fallback is drawn as a bearing, not a route. Probe: `#navcard` contrast in `day` and `night`.
-- **R1 · Route data.** The widened `Route`; proxy params (`alternates`, `depart`, `arrive`, `lang`); parallel per-mode fetch with a cache; a `/route` stub for tests.
-- **R2 · Preview.** Owner `"route"` in the sheet; from/to card with origin = `USER`, either end editable through the search panel, swap; mode tabs with ETAs; alternatives and time pills; fit-route camera; Start. `↦ directions` and `#gochip` both call one `openRoutePreview(dest, name)`.
+- **R0 · Settle the present** _(built 2026-10-13)_. The banner-palette rule for `#navcard`; the mode-cycle re-routes `nav.dest`; the fallback is drawn as a bearing, not a route. Probe: `tests/ux/navcard-ux.mjs`.
+- **R1 · Route data** _(built 2026-10-13)_. The widened `Route` and its one reader (`ui/app/route-data.ts`); proxy params (`alternates`, `depart`, `arrive`, `lang`, `units`); parallel per-mode fetch with a cache; a `/route` stub and a synthetic Valhalla fixture for tests (`tests/ux/route-stub.mjs`, `tests/browser/route-fixture.mjs`).
+- **R2 · Preview** _(built 2026-10-13)_. Owner `"route"` in the sheet, `sticky` so a tap on the map picks a way and does not put the sheet away; the from/to card (origin = you until you say otherwise, either end a field that offers the commons' places and OpenStreetMap's, ⇅); mode tabs, each filling as its answer lands, the chosen mode remembered (`pn.map.route.mode`); the chosen way heavy and its alternatives pale, a time pill on each; the camera frames every way between card and sheet; Start. `↦ directions` and `#gochip` both open the preview (`ui/app/route-preview.ts`, pure parts in `ui/app/route-facts.ts`). A journey sets out from where you are, so with another origin Start reads *Start from my location*; with no engine the sheet says so and offers *Go by compass*. The ⋮ menu, the route-options and share buttons and *Add stops* wait for R6. Probe: `tests/ux/route-preview-ux.mjs`, with software WebGL so the page has a real map.
 - **R3 · Navigating.** Banner and Then chip; the peek detent and ETA bar; follow camera with pitch and bearing (the `.d.ts` widening); the user arrow; progress dimming; recentre; wake-lock; arrival; the map controls hide and the button column appears.
 - **R4 · Drawer.** Action rows; step list with dividers and live current-step highlight; sheet detents peek / mid / full.
 - **R5 · Reroute and transit.** Off-route detection and reroute; transit legs; SF and Berlin GTFS feeds in the engine's fetch step.

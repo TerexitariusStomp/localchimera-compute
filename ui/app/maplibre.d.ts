@@ -97,6 +97,8 @@ declare global {
       id: string;
       type: "fill" | "line" | "symbol";
       source: string;
+      /** Which of the source's features the layer draws — how one source carries a chosen way and its alternatives. */
+      filter?: Expression;
       paint?: Record<string, StyleValue>;
       layout?: Record<string, StyleValue>;
     }
@@ -220,9 +222,15 @@ declare global {
         /** Room to leave around the framed point — the search panel's width. */
         padding?: { left?: number; top?: number; right?: number; bottom?: number };
       }): Map;
+      /**
+       * The room the camera keeps around its centre. flyTo's `padding` PERSISTS here, and fitBounds's own
+       * padding is added to it — so a framing that means its padding exactly clears this first.
+       */
+      setPadding(padding: { left: number; top: number; right: number; bottom: number }): Map;
       /** Frame a bounding box: [[west, south], [east, north]]. */
       fitBounds(bounds: [[number, number], [number, number]],
-                opts?: { padding?: number; duration?: number; maxZoom?: number;
+                opts?: { padding?: number | { left?: number; top?: number; right?: number; bottom?: number };
+                         duration?: number; maxZoom?: number;
                          /** Kept from getBearing, so framing a cluster does not un-rotate the map. */
                          bearing?: number }): Map;
 

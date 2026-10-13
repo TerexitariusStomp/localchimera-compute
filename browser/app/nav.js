@@ -30,12 +30,14 @@ import { gateHint } from './day/respond.js';
 import { fetchRoutes } from './route-data.js';
 // ── the vocabulary of a journey ─────────────────────────────────────────────
 /** How you are travelling. The keys are Valhalla's own costing names. */
-const NAV_MODES = { pedestrian: "🚶", bicycle: "🚲", auto: "🚗" };
+const NAV_MODES = { pedestrian: "🚶", bicycle: "🚲", auto: "🚗", multimodal: "🚌" };
 /** Valhalla maneuver type → the glyph the card shows for it. */
 const NAV_GLYPH = {
     1: "↑", 2: "↗", 3: "↖", 4: "🏁", 5: "🏁", 6: "🏁", 8: "↑", 9: "↗", 10: "→",
     11: "↘", 12: "⤸", 13: "⤹", 14: "↙", 15: "←", 16: "↖", 17: "↑", 18: "↗", 19: "↖", 20: "↗",
-    21: "↖", 22: "↑", 23: "↗", 24: "↖", 25: "⇡", 26: "⟳", 27: "⤴", 28: "⛴", 29: "⛴"
+    21: "↖", 22: "↑", 23: "↗", 24: "↖", 25: "⇡", 26: "⟳", 27: "⤴", 28: "⛴", 29: "⛴",
+    // transit: board, transfer, stay aboard, and the walks to and from the stops
+    30: "🚌", 31: "⇄", 32: "🚌", 33: "🚶", 34: "🚶", 35: "🚶", 36: "🚶", 37: "↗", 38: "↖"
 };
 /** The eight compass arrows, from north clockwise — the degraded card's glyph. */
 export const ARROW8 = ["↑", "↗", "→", "↘", "↓", "↙", "←", "↖"];
@@ -193,14 +195,16 @@ function journeyEnd() {
     HANDLERS.journey("end", geoRef(USER), placeRef(nav.placeName, nav.dest), navProfile, journeyCid).then(() => { });
     journeyCid = null;
 }
-export async function startNavTo(dest, placeName) {
+export async function startNavTo(dest, placeName, chosen) {
     const map = host.map();
     if (!map)
         return;
     endNav();
+    if (chosen)
+        navProfile = chosen.costing;
     placeNavCard();
     journeyBegin(dest, placeName);
-    const route = await fetchRoute(USER, dest, navProfile);
+    const route = chosen ? chosen.route : await fetchRoute(USER, dest, navProfile);
     nav = { dest, placeName, route, at: 0 };
     drawNavLine();
     // A real route is a wide solid stroke on a casing. The compass degradation is
@@ -221,12 +225,12 @@ export async function startNavTo(dest, placeName) {
     if (navigator.geolocation && navWatch < 0)
         navWatch = navigator.geolocation.watchPosition(onNavPos, () => { }, { enableHighAccuracy: true, maximumAge: 3000 });
 }
-/** Navigate to the selected place, when one is selected and a map is up. */
-async function startNav() {
+/** The ways to the selected place, when one is selected and a map is up. */
+function startNav() {
     const sel = host.selectedPlace();
     if (!sel || !host.map())
         return;
-    return startNavTo(sel.at, sel.name);
+    host.directions(sel.at, sel.name);
 }
 /** End the journey: the watch, the card, the chip and the two map layers. */
 export function endNav() {

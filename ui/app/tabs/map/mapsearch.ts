@@ -32,7 +32,7 @@ import { USER } from '../../core.js';
 import { offered } from '../../events.js';
 import { theMap } from '../../mapview.js';
 import { offerWillingness, widOf } from '../../willingness.js';
-import { startNavTo } from '../../nav.js';
+import { openRoutePreview } from '../../route-preview.js';
 import { rows, rowOfPt, passesFilter, havKm, fmtKm } from './atlas.js';
 import type { MarkerPoint, PlacedRow } from './atlas.js';
 import type { DayEvent } from '../../seam.js';
@@ -207,10 +207,10 @@ function drawMarker(host: HTMLElement, fromSearch?: boolean): void {
   const card = box.querySelector<HTMLElement>(".ms-card");
   if (card) card.onclick = () =>
     revealSlot(r.spec!, r.kind === "need" ? "need" : "capacity");
-  // directions there — the dial's OWN routing (Valhalla /route, the
-  // walk/bike/drive card floated over the map), not an external map app
+  // directions there — the dial's OWN routing (Valhalla /route): the ways by every mode,
+  // previewed over the map; ✕ comes back to this card
   const navBtn = box.querySelector<HTMLElement>(".ms-nav");
-  if (navBtn) navBtn.onclick = () => startNavTo({ lat: r.lat, lng: r.lng }, r.name || "");
+  if (navBtn) navBtn.onclick = () => openRoutePreview({ lat: r.lat, lng: r.lng }, r.name || "", () => marker.set(r));
   // the book: the lists this row stands in, and the menu that files it
   const savedSec = box.querySelector<HTMLElement>(".ms-saved")!;   // written above
   const drawSaved = (menu: boolean): void => book.drawSaved(savedSec, r, menu, () => drawSaved(true));

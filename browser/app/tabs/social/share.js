@@ -448,14 +448,19 @@ function paintRail(el) {
 let viewHost = null;
 let viewOwner = null;
 let viewGone = null;
+let viewSticky = false;
 let closePanelHook = null; // set once the draft panel exists
 /** The sheet rises to a height that depends on what opened it: the inventory and the type picker at about
  *  half the page, a view at the height it asks for (`full`: the whole page, under the header). A drag on the
  *  grip changes it from there. */
 let sheetEl = null;
 const riseTo = (full) => { sheetEl?.classList.toggle("full", full); };
-/** Show `el` in the sheet, rising to the whole height when `full`. `gone` runs when the view leaves, whichever way it does. */
-export function openSheetView(owner, el, gone, full = false, fit = false) {
+/**
+ * Show `el` in the sheet, rising to the whole height when `full`. `gone` runs when the view leaves, whichever way it does.
+ * A `sticky` view is one the page works WITH — a route being chosen on the map — so a tap on the map does not put it away;
+ * the grip, its own close and another view replacing it still do.
+ */
+export function openSheetView(owner, el, gone, full = false, fit = false, sticky = false) {
     if (!viewHost)
         return;
     closeSheetView();
@@ -469,6 +474,7 @@ export function openSheetView(owner, el, gone, full = false, fit = false) {
     viewHost.classList.add("on");
     viewOwner = owner;
     viewGone = gone;
+    viewSticky = sticky;
 }
 /** Put the view away — only `owner`'s, when one is named. */
 export function closeSheetView(owner) {
@@ -477,6 +483,7 @@ export function closeSheetView(owner) {
     const gone = viewGone;
     viewOwner = null;
     viewGone = null;
+    viewSticky = false;
     viewHost.classList.remove("on");
     viewHost.replaceChildren();
     gone?.();
@@ -493,7 +500,7 @@ export const sheetViewIs = (owner) => viewOwner === owner;
 // a tap outside the bar (and the sheets it hosts) puts a view away, as a tap outside a menu does
 document.addEventListener("pointerdown", ev => {
     const t = ev.target;
-    if (viewOwner && t && !t.closest("#sharebar") && !t.closest(".scopepick"))
+    if (viewOwner && !viewSticky && t && !t.closest("#sharebar") && !t.closest(".scopepick"))
         closeSheetView();
 });
 /**

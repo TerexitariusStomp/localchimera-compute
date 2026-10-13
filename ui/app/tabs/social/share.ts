@@ -465,6 +465,7 @@ function paintRail(el: HTMLElement): void {
 let viewHost: HTMLElement | null = null;
 let viewOwner: string | null = null;
 let viewGone: (() => void) | null = null;
+let viewSticky = false;
 let closePanelHook: (() => void) | null = null;   // set once the draft panel exists
 /** The sheet rises to a height that depends on what opened it: the inventory and the type picker at about
  *  half the page, a view at the height it asks for (`full`: the whole page, under the header). A drag on the
@@ -472,8 +473,12 @@ let closePanelHook: (() => void) | null = null;   // set once the draft panel ex
 let sheetEl: HTMLElement | null = null;
 const riseTo = (full: boolean): void => { sheetEl?.classList.toggle("full", full); };
 
-/** Show `el` in the sheet, rising to the whole height when `full`. `gone` runs when the view leaves, whichever way it does. */
-export function openSheetView(owner: string, el: HTMLElement, gone: () => void, full = false, fit = false): void {
+/**
+ * Show `el` in the sheet, rising to the whole height when `full`. `gone` runs when the view leaves, whichever way it does.
+ * A `sticky` view is one the page works WITH — a route being chosen on the map — so a tap on the map does not put it away;
+ * the grip, its own close and another view replacing it still do.
+ */
+export function openSheetView(owner: string, el: HTMLElement, gone: () => void, full = false, fit = false, sticky = false): void {
   if (!viewHost) return;
   closeSheetView();
   riseTo(full);
@@ -484,13 +489,13 @@ export function openSheetView(owner: string, el: HTMLElement, gone: () => void, 
   closePanelHook?.();
   viewHost.replaceChildren(el);
   viewHost.classList.add("on");
-  viewOwner = owner; viewGone = gone;
+  viewOwner = owner; viewGone = gone; viewSticky = sticky;
 }
 /** Put the view away — only `owner`'s, when one is named. */
 export function closeSheetView(owner?: string): void {
   if (!viewHost || !viewOwner || (owner && owner !== viewOwner)) return;
   const gone = viewGone;
-  viewOwner = null; viewGone = null;
+  viewOwner = null; viewGone = null; viewSticky = false;
   viewHost.classList.remove("on");
   viewHost.replaceChildren();
   gone?.();
@@ -507,7 +512,7 @@ export const sheetViewIs = (owner: string): boolean => viewOwner === owner;
 // a tap outside the bar (and the sheets it hosts) puts a view away, as a tap outside a menu does
 document.addEventListener("pointerdown", ev => {
   const t = ev.target as Element | null;
-  if (viewOwner && t && !t.closest("#sharebar") && !t.closest(".scopepick")) closeSheetView();
+  if (viewOwner && !viewSticky && t && !t.closest("#sharebar") && !t.closest(".scopepick")) closeSheetView();
 });
 
 /**

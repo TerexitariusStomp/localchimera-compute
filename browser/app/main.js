@@ -142,6 +142,7 @@ import { initProjection } from './projection.js';
 // the commons' own wayfinder (app/nav.js): /route → the local Valhalla engine,
 // one turn at a time on a card, degrading to a compass beyond the atlas
 import { initNav, endNav, navigating, placeAt } from './nav.js';
+import { openRoutePreview } from './route-preview.js';
 // the offline side of the seam: the demo spine, its desire signal, the recipe
 // library, the per-commune plans and the bioregional clusters — every one in the
 // SAME SHAPE the live wire sends (app/demo.js)
@@ -475,6 +476,7 @@ initNav({
     } },
     moveUser: moveUserMarker,
     selectedPlace: () => stage.leaf ? placeAt(stage.leaf.id, selectedPlace()) : null,
+    directions: (dest, name) => openRoutePreview(dest, name),
 });
 // you are the centre: geolocation, asked once, recenters everything
 // you are the centre: geolocation, asked once — app/compass.js

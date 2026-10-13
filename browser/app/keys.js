@@ -78,6 +78,7 @@ export const K = {
     calendarsOff: k("pn.calendars.off", "calendars switched off", "playnet-calendars-off"),
     dialViews: k("pn.dial.views", "the dial's view toggles", "playnet-dial-views"),
     mapPoisOff: k("pn.map.pois.off", "the families of places the map does NOT label (app/basemap.js)"),
+    routeMode: k("pn.map.route.mode", "the mode the route preview opens on: transit, walk, bicycle or drive (app/route-preview.js)"),
     worldClocks: k("pn.world-clocks", "the world clock's rows", "playnet-world-clocks"),
     dockPos: k("pn.dock.pos", "where the voice dock sits", "playnet.dock.pos"),
     panelW: k("pn.panel.w", "the side panel's width", "playnet.panel.w"),

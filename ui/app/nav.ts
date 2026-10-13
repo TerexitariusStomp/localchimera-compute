@@ -47,18 +47,22 @@ export interface NavHost {
   moveUser(): void;
   /** The place the ↦ go chip targets: the selected one, or null. */
   selectedPlace(): { at: LatLng; name: string } | null;
+  /** Show the ways to a place — the route preview, which ends in startNavTo when a way is chosen. */
+  directions(dest: LatLng, name: string): void;
 }
 
 // ── the vocabulary of a journey ─────────────────────────────────────────────
 
 /** How you are travelling. The keys are Valhalla's own costing names. */
-const NAV_MODES: Record<string, string> = { pedestrian: "🚶", bicycle: "🚲", auto: "🚗" };
+const NAV_MODES: Record<string, string> = { pedestrian: "🚶", bicycle: "🚲", auto: "🚗", multimodal: "🚌" };
 
 /** Valhalla maneuver type → the glyph the card shows for it. */
 const NAV_GLYPH: Record<number, string> = {
   1:"↑",2:"↗",3:"↖",4:"🏁",5:"🏁",6:"🏁",8:"↑",9:"↗",10:"→",
   11:"↘",12:"⤸",13:"⤹",14:"↙",15:"←",16:"↖",17:"↑",18:"↗",19:"↖",20:"↗",
-  21:"↖",22:"↑",23:"↗",24:"↖",25:"⇡",26:"⟳",27:"⤴",28:"⛴",29:"⛴" };
+  21:"↖",22:"↑",23:"↗",24:"↖",25:"⇡",26:"⟳",27:"⤴",28:"⛴",29:"⛴",
+  // transit: board, transfer, stay aboard, and the walks to and from the stops
+  30:"🚌",31:"⇄",32:"🚌",33:"🚶",34:"🚶",35:"🚶",36:"🚶",37:"↗",38:"↖" };
 
 /** The eight compass arrows, from north clockwise — the degraded card's glyph. */
 export const ARROW8 = ["↑","↗","→","↘","↓","↙","←","↖"];
@@ -223,13 +227,17 @@ function journeyEnd(): void {
   journeyCid = null;
 }
 
-export async function startNavTo(dest: LatLng, placeName: string): Promise<void> {
+/** A way already chosen in the preview: the journey takes it as it is and asks the engine nothing. */
+export interface ChosenWay { route: Route | null; costing: string }
+
+export async function startNavTo(dest: LatLng, placeName: string, chosen?: ChosenWay): Promise<void> {
   const map = host.map();
   if (!map) return;
   endNav();
+  if (chosen) navProfile = chosen.costing;
   placeNavCard();
   journeyBegin(dest, placeName);
-  const route = await fetchRoute(USER, dest, navProfile);
+  const route = chosen ? chosen.route : await fetchRoute(USER, dest, navProfile);
   nav = { dest, placeName, route, at: 0 };
   drawNavLine();
   // A real route is a wide solid stroke on a casing. The compass degradation is
@@ -253,11 +261,11 @@ export async function startNavTo(dest: LatLng, placeName: string): Promise<void>
       { enableHighAccuracy: true, maximumAge: 3000 });
 }
 
-/** Navigate to the selected place, when one is selected and a map is up. */
-async function startNav(): Promise<void> {
+/** The ways to the selected place, when one is selected and a map is up. */
+function startNav(): void {
   const sel = host.selectedPlace();
   if (!sel || !host.map()) return;
-  return startNavTo(sel.at, sel.name);
+  host.directions(sel.at, sel.name);
 }
 
 /** End the journey: the watch, the card, the chip and the two map layers. */
