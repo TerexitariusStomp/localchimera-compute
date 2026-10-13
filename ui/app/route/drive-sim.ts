@@ -28,6 +28,15 @@ export interface Drive {
   done: Promise<void>;
 }
 
+/**
+ * A drive along `r` when the page asks for one — `?simdrive=<times the way's own pace>` — else null. The one place that
+ * reads the switch, so a journey only asks whether to rehearse.
+ */
+export function rehearsal(r: Route, search: string = location.search): Drive | null {
+  const f = new URLSearchParams(search).get("simdrive");
+  return f === null ? null : startDrive(r, { factor: Number(f) || 10 });
+}
+
 /** Begin a drive along `r`. */
 export function startDrive(r: Route, o: DriveOpts = {}): Drive {
   const factor = o.factor ?? 1, tickMs = o.tickMs ?? 500;

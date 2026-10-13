@@ -152,6 +152,9 @@ export function pointAt(r: Route, km: number): { lat: number; lng: number; headi
 /** The way the route is heading where you are on it, in degrees from north. */
 export const courseAt = (r: Route, s: Snap): number => pointAt(r, posKm(r, s)).heading;
 
+/** What is left of a route from where you are: the same route, its shape from the vertex you last passed. */
+export const remainingOf = (r: Route, s: Snap): Route => ({ ...r, coords: r.coords.slice(s.at) });
+
 /** The total straight-line length of the shape, in kilometres. */
 export const shapeKm = (r: Route): number => cumKm(r)[r.coords.length - 1] || 0;
 

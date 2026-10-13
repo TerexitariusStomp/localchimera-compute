@@ -9,6 +9,14 @@ import { feed, simulate } from '../position.js';
 import { pointAt, shapeKm } from './shape.js';
 /** A typical pace for a way of travelling, in metres per second. */
 export const pace = (costing) => ({ pedestrian: 1.4, bicycle: 4.5, auto: 13, multimodal: 1.4 }[costing] ?? 1.4);
+/**
+ * A drive along `r` when the page asks for one — `?simdrive=<times the way's own pace>` — else null. The one place that
+ * reads the switch, so a journey only asks whether to rehearse.
+ */
+export function rehearsal(r, search = location.search) {
+    const f = new URLSearchParams(search).get("simdrive");
+    return f === null ? null : startDrive(r, { factor: Number(f) || 10 });
+}
 /** Begin a drive along `r`. */
 export function startDrive(r, o = {}) {
     const factor = o.factor ?? 1, tickMs = o.tickMs ?? 500;

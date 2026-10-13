@@ -76,9 +76,46 @@ export function bearingBanner(o: { bearing: number; heading: number; km: number;
            street: o.place, then: null, meta: `${dist} as the crow flies · no route data` };
 }
 
+// ── the card itself ─────────────────────────────────────────────────────────
+// #navcard is one element with two homes: floated over the map (the banner), or in the disc's sidebar (its place in
+// the page). This module is the only one that reaches it.
+
+const cardEl = (): HTMLElement | null => document.getElementById("navcard");
+/** Where the card lives when it is not floating: the parent it was found in. */
+let cardHome: HTMLElement | null = null;
+
+/** Float the card over `container` (the map), or — with none — return it to its place in the page. */
+export function placeCard(container: HTMLElement | null): void {
+  const nc = cardEl();
+  if (!nc) return;
+  if (!cardHome) cardHome = nc.parentElement;
+  if (container) {
+    if (nc.parentElement !== container) container.appendChild(nc);
+    nc.classList.add("overmap");
+  } else if (cardHome && nc.parentElement !== cardHome) {
+    cardHome.appendChild(nc);
+    nc.classList.remove("overmap");
+  }
+}
+
+/** Show or hide the card. */
+export function showCard(on: boolean): void { if (cardEl()) cardEl()!.style.display = on ? "block" : "none"; }
+
+/** How far down the map the floating card reaches, in pixels; 0 when it is not over the map. */
+export function cardHeight(): number {
+  const nc = cardEl();
+  return nc && nc.classList.contains("overmap")
+    ? Math.round(nc.getBoundingClientRect().bottom - (nc.parentElement?.getBoundingClientRect().top ?? 0)) : 0;
+}
+
+/** A tap on the card: `overMap` tells whether it is the banner (read, not pressed) or the disc's card. */
+export function onCardTap(fn: (target: HTMLElement, overMap: boolean) => void): void {
+  cardEl()?.addEventListener("click", e => fn(e.target as HTMLElement, cardEl()!.classList.contains("overmap")));
+}
+
 /** Write a view to the card. */
 export function drawBanner(v: BannerView, mode: string): void {
-  const card = document.getElementById("navcard");
+  const card = cardEl();
   if (!card) return;
   card.dataset.state = v.state;
   const set = (sel: string, text: string): void => { const e = card.querySelector(sel); if (e) e.textContent = text; };

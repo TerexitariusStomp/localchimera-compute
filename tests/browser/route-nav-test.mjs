@@ -16,7 +16,7 @@ const { readRoutes } = await import("../../browser/app/route/data.js");
 const F = await import("../../browser/app/route/shape.js");
 const { followZoom, followPadding, turnTo, chooseHeading, FOLLOW_PITCH, SEAT } = await import("../../browser/app/route/follow.js");
 const { routeBanner, bearingBanner, reroutingBanner, glyphOf, THEN_M } = await import("../../browser/app/route/banner.js");
-const { startDrive, pace } = await import("../../browser/app/route/drive-sim.js");
+const { startDrive, rehearsal, pace } = await import("../../browser/app/route/drive-sim.js");
 const P = await import("../../browser/app/position.js");
 const { USER } = await import("../../browser/app/core.js");
 
@@ -98,6 +98,13 @@ section("the card: words for the turn");
 
 section("a rehearsed drive");
 {
+  check("a page that does not ask for one gets none", rehearsal(walk, "") === null && rehearsal(walk, "?face=map") === null);
+  const asked = rehearsal(walk, "?face=map&simdrive=400");
+  check("`?simdrive=` asks for one, at that many times the way's pace", asked !== null && typeof asked.stop === "function");
+  asked.stop(); await asked.done;
+  const bare = rehearsal(walk, "?simdrive");
+  check("with no number it is ten times", bare !== null);
+  bare.stop(); await bare.done;
   check("a walker's pace is under a driver's", pace("pedestrian") < pace("bicycle") && pace("bicycle") < pace("auto"));
   const heard = []; const stop = P.observeFixes(f => heard.push(f));
   const d = startDrive(walk, { factor: 400, tickMs: 5 });

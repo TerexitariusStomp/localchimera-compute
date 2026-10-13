@@ -8,7 +8,12 @@
 //   steps.ts    the way turn by turn, for the drawer
 //   follow.ts   the camera: heading-up, tipped, you low in the frame; recentre and overview
 //   lines.ts    the way drawn, what is behind you dimmed
+//   reroute.ts  when you have left the way
+//   ledger.ts   the journey as a fact of the commons' ledger
 //   drive-sim   a rehearsed drive in place of the device (`?simdrive=<factor>`)
+//
+// Everything a journey takes up it registers in `held`, and ending it undoes them in reverse — so what
+// setting out acquires and what ending releases cannot drift apart.
 //
 // A place beyond the atlas degrades the card to a compass — bearing arrow and the crow's distance,
 // still a direction, honestly named. On the disc (earth mode) the dial's angle already means
@@ -21,260 +26,184 @@
 // arrangement, and none is a question about routing. NavHost names them, so the coupling is one
 // interface at the top of a file, and so a second surface that can name a destination (the search
 // panel already does) needs no more than a destination.
-import { USER, PLACES, pcoord, HANDLERS, EXT } from '../core.js';
-import { locationOptions } from '../slots/model.js';
+import { USER, PLACES, pcoord } from '../core.js';
 import { havKm, bearingDeg } from '../geom.js';
 import { onMapFace } from '../stage.js';
 import { deviceHeading, compassLive } from '../compass.js';
-import { MAP_EL } from '../mapview.js';
-import { gateHint } from '../day/respond.js';
 import { sheetHeight } from '../tabs/social/share.js';
 import { watchFixes } from '../position.js';
+import { keepAwake } from '../awake.js';
 import { fetchRoutes, ROUTE_MODES, modeInfo } from './data.js';
 import { fmtDistance, fmtMinutes, arrivalClock } from './facts.js';
-import { snapToRoute, progress, courseAt } from './shape.js';
+import { snapToRoute, progress, courseAt, boundsOf, remainingOf } from './shape.js';
 import { paintLines, clearLines } from './lines.js';
-import { routeBanner, bearingBanner, reroutingBanner, drawBanner } from './banner.js';
+import { routeBanner, bearingBanner, reroutingBanner, drawBanner, placeCard, showCard, cardHeight, onCardTap } from './banner.js';
 import { offRouteWatch } from './reroute.js';
 import { openJourneySheet } from './sheet.js';
 import { stepRows } from './steps.js';
 import { startFollow } from './follow.js';
-import { startDrive } from './drive-sim.js';
+import { rehearsal } from './drive-sim.js';
+import { beginJourney } from './ledger.js';
+import { gateHint } from '../day/respond.js';
 /** Within this many kilometres of the end of the way, you have arrived. */
 const ARRIVED_KM = 0.03;
-/** Ask the local engine for a way there. Null for anything it cannot answer. */
-async function fetchRoute(from, to, costing) {
-    return (await fetchRoutes(from, to, costing))[0] || null;
-}
+/** Where you are on a way just taken up: its start. */
+const START = { at: 0, t: 0, offKm: 0 };
 // ── the module's own state ──────────────────────────────────────────────────
 // One journey at a time, by design: a wayfinder that offers two ways at once is
 // not answering the question it was asked.
 let host;
 let nav = null;
-let navProfile = "pedestrian";
-/** Ends the position watch the journey holds, while one is held. */
-let stopWatch = null;
-/** What a journey on the map face holds besides the card. */
-let jsheet = null;
-let follow = null;
-let drive = null;
-let wake = null;
-/** Whether you have left the way, per fix; made afresh with each journey. */
-let offRoute = offRouteWatch();
-/** Set while a new way is being asked for. */
-let rerouting = false;
-/** Set while the journey itself is closing the ETA bar, so the bar's own "gone" does not end it twice. */
-let closing = false;
-/** Where the card lives when it is not floating: its original parent. */
-let navHome = null;
+/** Counts the journeys begun, so one that was asked for and then superseded is let go when its way arrives. */
+let begun = 0;
 /** Whether a journey is under way — the ↦ go chip's two meanings. */
 export const navigating = () => nav !== null;
 /** Whether the camera is held on you — the compass leaves the map's bearing to it. */
-export const cameraHeld = () => follow !== null && follow.following();
-/** Draw the journey: its way with what is behind you dimmed, or — with no way — a bearing thread. */
-function drawNavLine() {
-    const map = host.map();
-    if (!map || !nav)
-        return;
-    paintLines(map, nav.route
-        ? { ways: [nav.route], pick: 0, at: nav.snap.at + nav.snap.t }
-        : { bearing: [[USER.lng, USER.lat], [nav.dest.lng, nav.dest.lat]] });
+export const cameraHeld = () => nav?.follow != null && nav.follow.following();
+/** Follow `route` from here: the way the journey reads from now on — a way just chosen, or a new one after a reroute. */
+function setWay(j, route) {
+    j.route = route;
+    j.snap = START;
+    j.arrived = false;
 }
-/** Say where you are: the card, the ETA bar, the line, the camera. */
-function refresh(fix) {
-    const j = nav;
-    if (!j)
-        return;
-    const mode = modeInfo(navProfile)?.icon ?? "";
-    if (!j.route) { // the compass degradation
-        const km = havKm(USER, j.dest);
-        drawBanner(bearingBanner({ bearing: bearingDeg(USER, j.dest), heading: deviceHeading(), km, place: j.placeName }), mode);
-        jsheet?.update({ big: fmtDistance(km), sub: "as the crow flies · no route data", arrived: false, steps: [], mode: navProfile });
-        return;
-    }
-    const r = j.route;
+// ── reading a fix ───────────────────────────────────────────────────────────
+/**
+ * Where a fix puts you on the way: the snap, whether you have arrived, whether you have left it. Leaving it — for several
+ * fixes, beyond the fix's own doubt, and not on a vehicle — asks for a new way.
+ */
+function track(j, r, fix) {
     j.snap = snapToRoute(r, USER, j.snap.at);
     const p = progress(r, j.snap);
     if (!j.arrived && (havKm(USER, j.dest) < ARRIVED_KM || p.aheadKm < ARRIVED_KM)) {
         j.arrived = true;
-        follow?.stop();
-        follow = null; // the camera is given back at the door
+        j.follow?.stop();
+        j.follow = null; // the camera is given back at the door
     }
-    const arrive = arrivalClock(p.remS);
-    // off the way — for several fixes, beyond the fix's own doubt, and not on a vehicle — a new way is asked for
     const riding = p.cur >= 0 && r.mans[p.cur].mode === "transit";
-    if (fix && !j.arrived && !rerouting && offRoute.see(j.snap.offKm, fix.accuracy, fix.t, riding))
-        void reroute();
-    drawBanner(rerouting ? reroutingBanner() : routeBanner(r, p, { place: j.placeName, arrive, arrived: j.arrived }), mode);
+    if (fix && !j.arrived && !j.rerouting && j.offRoute.see(j.snap.offKm, fix.accuracy, fix.t, riding))
+        void reroute(j);
+    return p;
+}
+/** Say where you are: the card, the sheet, the line, the camera. */
+function show(j, p, r, fix) {
+    const mode = modeInfo(j.costing)?.icon ?? "";
+    const arrive = arrivalClock(p.remS);
+    drawBanner(j.rerouting ? reroutingBanner() : routeBanner(r, p, { place: j.placeName, arrive, arrived: j.arrived }), mode);
     const steps = stepRows(r, p, j.placeName);
-    jsheet?.update(j.arrived
-        ? { big: "You have arrived", sub: j.placeName, arrived: true, steps, mode: navProfile }
-        : { big: fmtMinutes(p.remS), sub: `${fmtDistance(p.remKm, r.units)} · ${arrive}`, arrived: false, steps, mode: navProfile });
-    drawNavLine();
-    const f = fix ?? { lat: USER.lat, lng: USER.lng, heading: null, speed: null, accuracy: null, t: Date.now() };
-    follow?.onFix(f, courseAt(r, j.snap));
+    j.sheet?.update(j.arrived
+        ? { big: "You have arrived", sub: j.placeName, arrived: true, steps, mode: j.costing }
+        : { big: fmtMinutes(p.remS), sub: `${fmtDistance(p.remKm, r.units)} · ${arrive}`, arrived: false, steps, mode: j.costing });
+    drawLine(j);
+    j.follow?.onFix(fix ?? { lat: USER.lat, lng: USER.lng, heading: null, speed: null, accuracy: null, t: Date.now() }, courseAt(r, j.snap));
+}
+/** Draw the journey: its way with what is behind you dimmed, or — with no way — a bearing thread. */
+function drawLine(j) {
+    const map = host.map();
+    if (!map)
+        return;
+    paintLines(map, j.route
+        ? { ways: [j.route], pick: 0, at: j.snap.at + j.snap.t }
+        : { bearing: [[USER.lng, USER.lat], [j.dest.lng, j.dest.lat]] });
+}
+/** A fix, or a change of state: read where you are and say it. */
+function refresh(fix) {
+    const j = nav;
+    if (!j)
+        return;
+    const r = j.route;
+    if (!r) { // the compass degradation
+        const km = havKm(USER, j.dest);
+        drawBanner(bearingBanner({ bearing: bearingDeg(USER, j.dest), heading: deviceHeading(), km, place: j.placeName }), modeInfo(j.costing)?.icon ?? "");
+        j.sheet?.update({ big: fmtDistance(km), sub: "as the crow flies · no route data", arrived: false, steps: [], mode: j.costing });
+        drawLine(j);
+        return;
+    }
+    show(j, track(j, r, fix), r, fix);
 }
 /**
  * You have left the way: ask for a new one from where you are. The journey goes on — the same ledger journey, the same
  * camera, the same sheet — only its way changes. An engine that answers nothing leaves the old way, and the watcher's
  * pause keeps the next ask from coming at once.
  */
-async function reroute() {
-    const j = nav;
-    if (!j || !j.route || rerouting)
+async function reroute(j) {
+    if (!j.route || j.rerouting)
         return;
-    rerouting = true;
-    offRoute.asked(Date.now());
+    j.rerouting = true;
+    j.offRoute.asked(Date.now());
     refresh();
-    const [way] = await fetchRoutes({ lat: USER.lat, lng: USER.lng }, j.dest, navProfile);
-    rerouting = false;
+    const [way] = await fetchRoutes({ lat: USER.lat, lng: USER.lng }, j.dest, j.costing);
+    j.rerouting = false;
     if (nav !== j)
         return; // the journey ended, or another began, while we asked
     if (way) {
-        setWay(way);
-        offRoute.reset();
+        setWay(j, way);
+        j.offRoute.reset();
     }
     refresh();
 }
-/** A fix: you have moved (app/position.ts moved USER and the you-marker), and so does what follows you. */
-function onFix(f) { refresh(f); }
-/**
- * The turn-by-turn card follows the face: the sidebar for the disc (its home),
- * floated over the map on the map face, whose sidebar stands aside.
- */
-function placeNavCard() {
-    const nc = document.getElementById("navcard");
-    if (!nc)
-        return;
-    if (!navHome)
-        navHome = nc.parentElement;
-    // The card floats over the map on the MAP face and returns to the sidebar
-    // everywhere else — the map face's sidebar stands aside.
-    if (onMapFace()) {
-        const wrap = document.getElementById(MAP_EL());
-        if (wrap && nc.parentElement !== wrap)
-            wrap.appendChild(nc);
-        nc.classList.add("overmap");
-    }
-    else if (navHome && nc.parentElement !== navHome) {
-        navHome.appendChild(nc);
-        nc.classList.remove("overmap");
-    }
-}
-// ── the journey as a LEDGER fact ────────────────────────────────────────────
-// A real trip is an observation like any other: begin mints the journey
-// commitment and its pickup event, end records the dropoff fulfilling it —
-// and the planner's transport coefficients learn from this very walk
-// (solve/routing.scm's table). A destination the scope KNOWS goes by its location
-// id; anywhere else goes faithfully as geo:lat,lng (recorded, priced later).
-let journeyCid = null;
-const geoRef = (p) => `geo:${p.lat.toFixed(5)},${p.lng.toFixed(5)}`;
-const placeRef = (name, at) => {
-    const l = locationOptions(EXT).find(x => x.name === name);
-    return l ? l.id : geoRef(at);
-};
-function journeyBegin(dest, placeName) {
-    if (!HANDLERS.journey)
-        return;
-    HANDLERS.journey("begin", geoRef(USER), placeRef(placeName, dest), navProfile, "")
-        .then((r) => {
-        if (r && r.startsWith("ok:") && r.length > 3)
-            journeyCid = r.slice(3);
-        else
-            gateHint(r); // a provisional member is told where to go, once, the same way everywhere
-    });
-}
-function journeyEnd() {
-    if (!(journeyCid && HANDLERS.journey && nav)) {
-        journeyCid = null;
-        return;
-    }
-    HANDLERS.journey("end", geoRef(USER), placeRef(nav.placeName, nav.dest), navProfile, journeyCid).then(() => { });
-    journeyCid = null;
-}
-// ── the screen stays on ─────────────────────────────────────────────────────
-async function holdScreen() {
-    try {
-        if (!wake || wake.released)
-            wake = (await navigator.wakeLock?.request("screen")) ?? null;
-    }
-    catch {
-        wake = null;
-    }
-}
-// the lock is let go when the page is hidden; a journey still under way takes it again on return
-document.addEventListener("visibilitychange", () => { if (nav && document.visibilityState === "visible")
-    void holdScreen(); });
-// ── setting out, and ending ─────────────────────────────────────────────────
-/** Where you are on a way just taken up: its start. */
-const START = { at: 0, t: 0, offKm: 0 };
-/** Follow `route` from here: the way the journey reads from now on — a way just chosen, or a new one after a reroute. */
-function setWay(route) {
-    if (!nav)
-        return;
-    nav.route = route;
-    nav.snap = START;
-    nav.arrived = false;
-}
-/** The banner's height, so the camera keeps you clear of it. */
-const bannerHeight = () => {
-    const nc = document.getElementById("navcard");
-    return nc && nc.classList.contains("overmap") ? Math.round(nc.getBoundingClientRect().bottom - (nc.parentElement?.getBoundingClientRect().top ?? 0)) : 0;
-};
 export async function startNavTo(dest, placeName, chosen) {
     const map = host.map();
     if (!map)
         return;
     endNav();
-    if (chosen)
-        navProfile = chosen.costing;
-    placeNavCard();
-    journeyBegin(dest, placeName);
-    const route = chosen ? chosen.route : await fetchRoute(USER, dest, navProfile);
-    nav = { dest, placeName, route: null, snap: START, arrived: false };
-    offRoute = offRouteWatch();
-    rerouting = false;
-    setWay(route);
+    const mine = ++begun;
+    const route = chosen.route !== undefined ? chosen.route : (await fetchRoutes(USER, dest, chosen.costing))[0] || null;
+    if (mine !== begun)
+        return; // another journey was asked for while this one's way was found
+    const el = map.getContainer();
+    const j = {
+        dest, placeName, costing: chosen.costing, route: null, snap: START, arrived: false, rerouting: false,
+        offRoute: offRouteWatch(), sheet: null, follow: null, held: [],
+        // a provisional member the ledger refuses is told where to go, once, the same way everywhere
+        ledger: beginJourney(USER, dest, placeName, chosen.costing, gateHint),
+    };
+    nav = j;
+    setWay(j, route);
+    const hold = (undo) => { j.held.push(undo); };
+    // registered in the order they are undone backwards: the card goes, then the chip, then the stage is re-measured, then the lines
+    hold(() => clearLines(host.map()));
+    hold(() => host.restage());
     d3.select("#gochip").classed("on", true);
-    d3.select("#navcard").style("display", "block");
-    host.restage();
-    const mapFace = onMapFace();
-    if (mapFace) {
-        document.getElementById(MAP_EL())?.classList.add("navigating");
-        jsheet = openJourneySheet({
+    hold(() => d3.select("#gochip").classed("on", false));
+    placeCard(onMapFace() ? el : null);
+    showCard(true);
+    hold(() => showCard(false));
+    host.restage(); // the card reshapes the stage going up, and (above) again coming down
+    if (onMapFace()) {
+        el.classList.add("navigating");
+        hold(() => el.classList.remove("navigating"));
+        j.sheet = openJourneySheet({
             exit: () => endNav(), done: () => endNav(),
-            gone: () => { if (!closing)
-                endNav(); },
-            overview: () => follow?.overview(), travelBy, bannerHeight,
+            gone: () => { if (nav === j)
+                endNav(); }, // the sheet left by some other road
+            overview: () => j.follow?.overview(), travelBy, bannerHeight: cardHeight,
         });
-        if (route)
-            follow = startFollow({
-                map: () => host.map(), sheetHeight, bannerHeight,
+        hold(() => j.sheet?.close());
+        if (route) {
+            j.follow = startFollow({
+                map: () => host.map(), sheetHeight, bannerHeight: cardHeight,
                 deviceHeading: () => compassLive() ? deviceHeading() : null,
-                remaining: () => nav?.route ? { ...nav.route, coords: nav.route.coords.slice(nav.snap.at) } : null,
-            }, navProfile, document.getElementById(MAP_EL()));
-        void holdScreen();
+                remaining: () => j.route ? remainingOf(j.route, j.snap) : null,
+            }, j.costing, el);
+            hold(() => j.follow?.stop());
+        }
+        hold(keepAwake());
     }
-    else if (route) { // on the disc: frame the whole way, then walk it
-        const b = route.coords.reduce((a, c) => [Math.min(a[0], c[0]), Math.min(a[1], c[1]),
-            Math.max(a[2], c[0]), Math.max(a[3], c[1])], [180, 90, -180, -90]);
-        map.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: host.mapRpx() * 0.22, duration: 700 });
+    else { // on the disc: frame the whole way, then walk it
+        const b = route && boundsOf([route]);
+        if (b)
+            map.fitBounds(b, { padding: host.mapRpx() * 0.22, duration: 700 });
     }
+    hold(watchFixes(refresh, { highAccuracy: true }));
+    const drive = route && rehearsal(route);
+    if (drive)
+        hold(drive.stop);
     refresh();
-    if (!stopWatch)
-        stopWatch = watchFixes(onFix, { highAccuracy: true });
-    // a rehearsed drive in place of the device: `?simdrive=<times the way's own pace>`
-    const sim = new URLSearchParams(location.search).get("simdrive");
-    if (route && sim !== null)
-        drive = startDrive(route, { factor: Number(sim) || 10 });
 }
 /** Travel the rest of the way by another mode: the journey's own destination, routed again. */
 export function travelBy(costing) {
-    if (!nav)
-        return;
-    navProfile = costing;
-    const { dest, placeName } = nav;
-    void startNavTo(dest, placeName);
+    if (nav)
+        void startNavTo(nav.dest, nav.placeName, { costing });
 }
 /** The ways to the selected place, when one is selected and a map is up. */
 function startNav() {
@@ -283,27 +212,15 @@ function startNav() {
         return;
     host.directions(sel.at, sel.name);
 }
-/** End the journey: the watch, the camera, the bar, the card, the chip and the map's lines. */
+/** End the journey: its record in the ledger, then everything it took up, last first. */
 export function endNav() {
-    journeyEnd(); // reads `nav` before it clears — the dropoff names the arc
-    drive?.stop();
-    drive = null;
-    stopWatch?.();
-    stopWatch = null;
-    follow?.stop();
-    follow = null;
-    closing = true;
-    jsheet?.close();
-    jsheet = null;
-    closing = false;
-    void wake?.release();
-    wake = null;
-    nav = null;
-    document.getElementById(MAP_EL())?.classList.remove("navigating");
-    d3.select("#navcard").style("display", "none");
-    d3.select("#gochip").classed("on", false);
-    host.restage();
-    clearLines(host.map());
+    const j = nav;
+    if (!j)
+        return;
+    nav = null; // before anything is undone: a sheet that leaves is no cue to end it again
+    j.ledger.end(USER);
+    for (const undo of j.held.reverse())
+        undo();
 }
 /**
  * Wire the chip and the card. Called once at boot with the dial's arrangement;
@@ -313,14 +230,12 @@ export function endNav() {
 export function initNav(h) {
     host = h;
     d3.select("#gochip").on("click", () => { nav ? endNav() : startNav(); });
-    d3.select("#navcard").on("click", e => {
-        // over the map the ETA bar's ✕ is the way out; the banner is read, not pressed
-        if (document.getElementById("navcard")?.classList.contains("overmap"))
-            return;
-        const t = e.target;
-        if (t.classList.contains("mode") && nav) { // cycle 🚌→🚶→🚲→🚗
+    onCardTap((target, overMap) => {
+        if (overMap)
+            return; // over the map the sheet's ✕ is the way out; the banner is read, not pressed
+        if (target.classList.contains("mode") && nav) { // cycle 🚌→🚶→🚲→🚗
             const ms = ROUTE_MODES;
-            travelBy(ms[(ms.indexOf(navProfile) + 1) % ms.length]);
+            travelBy(ms[(ms.indexOf(nav.costing) + 1) % ms.length]);
         }
         else
             endNav();

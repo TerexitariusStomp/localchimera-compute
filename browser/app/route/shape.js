@@ -121,6 +121,8 @@ export function pointAt(r, km) {
 }
 /** The way the route is heading where you are on it, in degrees from north. */
 export const courseAt = (r, s) => pointAt(r, posKm(r, s)).heading;
+/** What is left of a route from where you are: the same route, its shape from the vertex you last passed. */
+export const remainingOf = (r, s) => ({ ...r, coords: r.coords.slice(s.at) });
 /** The total straight-line length of the shape, in kilometres. */
 export const shapeKm = (r) => cumKm(r)[r.coords.length - 1] || 0;
 /** The box that holds every route's shape: [[west, south], [east, north]], or null when there is no shape. */

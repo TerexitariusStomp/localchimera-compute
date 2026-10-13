@@ -7,7 +7,7 @@
 import { harness } from './assert.mjs';
 import { routeReply } from './route-fixture.mjs';
 const { readRoutes } = await import("../../browser/app/route/data.js");
-const { boundsOf, pillAnchor, snapToRoute, progress, pointAt, courseAt, shapeKm, segments } =
+const { boundsOf, pillAnchor, snapToRoute, progress, pointAt, courseAt, shapeKm, segments, remainingOf } =
   await import("../../browser/app/route/shape.js");
 const { check, section, done } = harness();
 
@@ -95,6 +95,16 @@ section("the runs of a trip");
   const [walk] = readRoutes(routeReply(q({ profile: "pedestrian" })), "pedestrian");
   const one = segments({ ...walk, mans: [] });
   check("a way with no maneuvers is one run, with the route's own totals", one.length === 1 && one[0].s === walk.s && one[0].km === walk.km && one[0].transit === null);
+}
+
+section("what is left of a route");
+{
+  const [r] = readRoutes(routeReply(q({ profile: "pedestrian" })), "pedestrian");
+  const left = remainingOf(r, snapToRoute(r, { lat: B.lat, lng: (A.lng + B.lng) / 2 }));
+  check("the shape from the vertex you last passed", left.coords.length === r.coords.length - 1 && left.coords[0].join() === r.coords[1].join());
+  check("the rest of the route is the same route", left.mans === r.mans && left.km === r.km && left.costing === r.costing);
+  check("at the start it is all of it", remainingOf(r, snapToRoute(r, A)).coords.length === r.coords.length);
+  check("it does not touch the route it reads", r.coords.length === 3);
 }
 
 section("a point along the way");
