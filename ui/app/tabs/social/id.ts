@@ -633,9 +633,9 @@ async function presentCarriedVouches(): Promise<void> {
  * "not read yet"; "none" is no ask standing; "collecting" carries n of k and
  * who already signed or vouches.
  */
-interface Ask { state: "none" | "collecting" | "finalized"; count: number; quorum: number;
+export interface Ask { state: "none" | "collecting" | "finalized"; count: number; quorum: number;
                 witnesses: string[]; vouchers: string[] }
-const ask = signal<Ask | null>(null);
+export const ask = signal<Ask | null>(null);
 async function refreshAsk(): Promise<void> {
   if (!HANDLERS.fpMyCeremony) { ask.set(null); return; }
   try {
@@ -656,7 +656,7 @@ function scheduleFpPoll(): void {
     _fpPoll = setTimeout(refreshPersonhood, 30000);
 }
 /** How the quorum reads as a sentence — the recovery-friends idiom, one tap away. */
-function askSaying(a: Ask): string {
+export function askSaying(a: Ask): string {
   const need = a.quorum, have = a.count;
   const who = (n: number) => n === 1 ? "one recognised person" : `${n} recognised people`;
   if (have >= need) return "enough people have signed — your credential is being issued.";
@@ -664,6 +664,75 @@ function askSaying(a: Ask): string {
   return have === 0
     ? `${who(need)} must sign that they have met you.`
     : `${have} of ${need} have signed — ${who(left)} more must sign that they have met you.`;
+}
+// ── recognition: the acts a standing surface performs ───────────────────
+/** What the commune says of you as a person, with the credential this device carries. */
+export interface Standing {
+  person: boolean;
+  /** whether anyone at all is recognised here yet — before the first, the founder's act makes the first person */
+  bootstrapped: boolean;
+  /** whether this seat may make the first person */
+  governor: boolean;
+  /** the personhood credential carried from another gateway: its SAID and issuer */
+  carried: { d: string; i: string } | null;
+  /** your own ask, read from the ceremony (never set once recognised) */
+  ask: Ask | null;
+}
+/** Read where you stand from the commune; null when it cannot be asked. */
+export async function readStanding(): Promise<Standing | null> {
+  if (!HANDLERS.fpStatus) return null;
+  try {
+    const o = JSON.parse(await HANDLERS.fpStatus() as string);
+    person.set(!!o.person);
+    let carried: Standing["carried"] = null;
+    if (o.person) {
+      const phc = readStr(K.idPhc);
+      if (phc) { try { const c = JSON.parse(phc); carried = { d: c.d || "", i: c.i || "" }; } catch (_) {} }
+    } else {
+      // your standing, read from the ceremony itself — the same on every
+      // device: no ask, or an ask collecting its n of k
+      await refreshAsk();
+      if (ask.peek()?.state === "collecting") scheduleFpPoll();
+    }
+    return { person: !!o.person, bootstrapped: !!o.bootstrapped, governor: !!o.governor, carried,
+             ask: o.person ? null : ask.peek() };
+  } catch (_) { return null; }
+}
+/** What an act came to: whether it landed, and a sentence to say so. */
+export interface Done { ok: boolean; said: string }
+/** Ask the recognised members to sign that they have met you. */
+export async function requestRecognition(): Promise<Done> {
+  const r = await (HANDLERS.fpEnroll ? HANDLERS.fpEnroll() : "err:offline");
+  if (r === "ok") { await refreshAsk(); scheduleFpPoll(); }
+  const a = ask.peek();
+  return r === "ok"
+    ? { ok: true, said: `✓ asked — ${a?.state === "collecting" ? askSaying(a) : "recognised people will see it"}` }
+    : { ok: false, said: String(r || "err").replace(/^err:/, "") };
+}
+/** The founder's genesis act: recognise yourself as the first person. */
+export async function recogniseMyself(): Promise<Done> {
+  const aid = who.peek()?.aid;
+  if (!aid || !HANDLERS.fpGrant) return { ok: false, said: "offline" };
+  const r = await HANDLERS.fpGrant(aid);
+  if (r === "ok") refreshPersonhood();
+  return r === "ok" ? { ok: true, said: "✓ recognised" } : { ok: false, said: String(r || "err").replace(/^err:/, "") };
+}
+/** A newcomer's ceremony, as the recognised see it: who asks, how many have signed of how many. */
+export interface PendingAsk { said: string; candidate: string; count: number; quorum: number; vouchers: string[] }
+/** The asks from people outside your contacts, for a RECOGNISED member — the ones who can answer them. Someone in your book carries their ask on their own Contacts row. */
+export async function pendingAsks(): Promise<PendingAsk[]> {
+  if (!HANDLERS.fpPending || person.peek() !== true) return [];
+  try {
+    const all = JSON.parse(await HANDLERS.fpPending() as string);
+    return Array.isArray(all) ? all.filter((row: PendingAsk) => !byAid(row.candidate)) : [];
+  } catch (_) { return []; }
+}
+/** Sign that you have met a newcomer — your signature becomes an edge on their credential. */
+export async function witness(said: string): Promise<Done> {
+  const reply = await (HANDLERS.witnessAttest ? HANDLERS.witnessAttest(said) : "err:offline");
+  const ok = typeof reply === "string" && reply.startsWith("ok:");
+  return ok ? { ok, said: reply === "ok:finalized" ? "✓ recognised" : "✓ signed" }
+            : { ok, said: String(reply || "err").replace(/^err:/, "") };
 }
 // ── consent (terms + privacy notice) ───────────────────────────────────
 // Article 13 GDPR wants the notice AT COLLECTION, and the terms are worth
@@ -775,18 +844,20 @@ function genPasscode(): string {
   for (let i = 0; i < 24; i++) { s += A[b[i] & 31]; if (i % 6 === 5 && i < 23) s += "-"; }
   return s;
 }
+/** What a settled auth reply came to: the identity it carries, or the words for a refusal. */
+export type Settled = { aid: string; k0: string } | { err: string };
+
 /**
  * Settle an auth / signup / join reply — the one place a door swings open.
  *
  * Everything that follows a success follows it HERE: remember the identity if
- * this reply carries new details, move the door state, record the acceptance
- * the gate collected, and close the sheet. `onSuccess` exists for the single
- * flow that has something else to show instead of closing (create, which
- * reveals the passcode). nameToStore/emailToStore are null on an unlock — the
- * hint already exists and the reply carries nothing newer.
+ * this reply carries new details, move the door state, and record the
+ * acceptance the gate collected. What the surface does next (close a sheet,
+ * reveal the passcode, show the error inline) is the caller's. nameToStore /
+ * emailToStore are null on an unlock — the hint already exists and the reply
+ * carries nothing newer.
  */
-function finishAuth(r: unknown, nameToStore: string | null, emailToStore: string | null,
-                    onSuccess?: (aid: string, k0: string) => void): void {
+function settleAuth(r: unknown, nameToStore: string | null, emailToStore: string | null): Settled {
   // the three replies that carry an identity (see seam.status): seated,
   // unlocked with no commune reachable, unlocked at a commune that never saw it
   const carried = typeof r === "string"
@@ -808,17 +879,55 @@ function finishAuth(r: unknown, nameToStore: string | null, emailToStore: string
       if (HANDLERS.tier) HANDLERS.tier().then(t => { if (t === "root") autoEnrollDevice(); });
     }
     // The gate that let this through was an affirmative act; record it once,
-    // here, rather than in each of the four flows that pass through a gate.
+    // here, rather than in each of the flows that pass through a gate.
     // recordConsent is idempotent — a returning member who was not re-asked
     // keeps the date they actually accepted on.
     recordConsent(aid);
-    if (onSuccess) onSuccess(aid, k0);
-    else closeSheet();
-  } else {
-    idState.set("idle");
-    d3.select("#idrow").select(".who").classed("off", false);
-    hint(String(r || "err:no reply").replace(/^err:/, ""), "error");
+    return { aid, k0 };
   }
+  idState.set("idle");
+  return { err: String(r || "err:no reply").replace(/^err:/, "") };
+}
+/** `settleAuth`, then the sheet's own follow-up: `onSuccess`, else close; a refusal is a toast. */
+function finishAuth(r: unknown, nameToStore: string | null, emailToStore: string | null,
+                    onSuccess?: (aid: string, k0: string) => void): void {
+  const s = settleAuth(r, nameToStore, emailToStore);
+  if ("err" in s) {
+    d3.select("#idrow").select(".who").classed("off", false);
+    hint(s.err, "error");
+  } else if (onSuccess) onSuccess(s.aid, s.k0);
+  else closeSheet();
+}
+
+// ── the acts a sign-in surface performs ────────────────────────────────
+// Each is one reply settled: the identity it opened, or the words for why not.
+// No surface is named here — the card in app/identity-view.ts calls them.
+
+/** Open an identity with a passcode — `aid` empty lets the passcode name it; `store` is the [name, email] to remember. */
+export async function signIn(passcode: string, aid: string, k0: string,
+                             store: [string | null, string | null]): Promise<Settled> {
+  idState.set("busy");
+  return settleAuth(await (HANDLERS.unlock ? HANDLERS.unlock(passcode, aid, k0) : "err:offline"), store[0], store[1]);
+}
+/** Unlock the identity this device remembers, by its passcode. */
+export function unlockHere(passcode: string): Promise<Settled> {
+  const h = who.peek();
+  return signIn(passcode, h ? h.aid : "", h ? h.k0 : "", [null, null]);
+}
+/** Take a seat at a commune that has never met the identity this device holds. */
+export async function joinHere(): Promise<Settled> {
+  const h = who.peek();
+  idState.set("busy");
+  return settleAuth(await (HANDLERS.join ? HANDLERS.join(h ? h.name : "", h ? h.email : "") : "err:offline"), null, null);
+}
+/** Put a passcode back together from friends' pieces (one per line), then unlock with it. */
+export async function recoverFromPieces(lines: string[]): Promise<Settled> {
+  const r = String(await (HANDLERS.guardianRecover ? HANDLERS.guardianRecover(JSON.stringify(lines)) : "err:offline"));
+  if (!r.startsWith("ok:")) return { err: r.replace(/^err:/, "") };
+  // the pieces gave back the identifier and the passcode — from here it is an
+  // ordinary unlock, so a recovered identity lands exactly where a remembered one does
+  const [aid, bran] = r.slice(3).split("|");
+  return signIn(bran, aid, "", ["", ""]);
 }
 function renderIdForm(el: d3.Selection, h: IdHint | null): void {
   const f = toggleSheet(el);
@@ -963,27 +1072,24 @@ async function downloadIdentityFile(aid: string, bran: string): Promise<void> {
 // (kelImport), its name/email the hint, and its passcode unlocks at once.
 // A file without a log (one written before the browser kept its KEL) still
 // carries AID + passcode, which is the "sign in with a passcode" path.
-async function openIdentityFile(text: string, err: d3.Selection): Promise<void> {
+/** Open a recovery file's text: null once the identity is in, else the words for why not. */
+export async function openIdentityFile(text: string): Promise<string | null> {
   let file: Partial<IdentityFile>;
   try { file = JSON.parse(text) as Partial<IdentityFile>; }
-  catch (_) { err.text("that is not a playnet identity file"); return; }
-  if (!file || file["playnet-identity"] !== 1 || typeof file.passcode !== "string") {
-    err.text("that is not a playnet identity file"); return;
-  }
+  catch (_) { return "that is not a playnet identity file"; }
+  if (!file || file["playnet-identity"] !== 1 || typeof file.passcode !== "string")
+    return "that is not a playnet identity file";
   let aid = typeof file.aid === "string" ? file.aid : "", k0 = "";
   if (file.kel && typeof file.kel === "object" && HANDLERS.kelImport) {
     const r = await HANDLERS.kelImport(JSON.stringify(file.kel));
-    if (typeof r !== "string" || !r.startsWith("ok:")) {
-      err.text(String(r || "err:no reply").replace(/^err:/, "")); return;
-    }
+    if (typeof r !== "string" || !r.startsWith("ok:")) return String(r || "err:no reply").replace(/^err:/, "");
     [aid, k0] = r.slice(3).split("|");
   }
-  if (!aid) { err.text("the file names no identity"); return; }
-  err.text("");
-  idState.set("busy");
-  finishAuth(await (HANDLERS.unlock ? HANDLERS.unlock(file.passcode, aid, k0) : "err:offline"),
-             typeof file.name === "string" ? file.name : "",
-             typeof file.email === "string" ? file.email : "");
+  if (!aid) return "the file names no identity";
+  const s = await signIn(file.passcode, aid, k0,
+                         [typeof file.name === "string" ? file.name : "", typeof file.email === "string" ? file.email : ""]);
+  if ("err" in s) { hint(s.err, "error"); return s.err; }
+  return null;
 }
 
 // post-create: the identity exists and its passcode is on screen for the ONE
@@ -1124,7 +1230,8 @@ function renderOtherSignIn(el: d3.Selection): void {
     .on("change", async function () {
       const files = (this as HTMLInputElement).files;
       if (!files || !files[0]) return;
-      await openIdentityFile(await files[0].text(), fileErr);
+      const bad = await openIdentityFile(await files[0].text());
+      if (bad) fileErr.text(bad); else { fileErr.text(""); closeSheet(); }
     });
   f.append("button").attr("class", "go").attr("type", "button")
    .text("open recovery file").on("click", () => (pick.node() as HTMLInputElement).click());
@@ -1149,17 +1256,9 @@ function renderOtherSignIn(el: d3.Selection): void {
        .split("\n").map(l => l.trim()).filter(Boolean);
      if (!lines.length) { pErr.text("paste the pieces your friends sent you"); return; }
      pErr.text("");
-     const r = String(await (HANDLERS.guardianRecover
-                             ? HANDLERS.guardianRecover(JSON.stringify(lines))
-                             : "err:offline"));
-     if (!r.startsWith("ok:")) { pErr.text(r.replace(/^err:/, "")); return; }
-     // the pieces gave back the identifier and the passcode — from here it is
-     // an ordinary unlock, so a recovered identity lands exactly where a
-     // remembered one does
-     const [aid, bran] = r.slice(3).split("|");
-     idState.set("busy");
-     finishAuth(await (HANDLERS.unlock ? HANDLERS.unlock(bran, aid, "") : "err:offline"),
-                "", "");
+     const done = await recoverFromPieces(lines);
+     if ("err" in done) { hint(done.err, "error"); pErr.text(done.err); return; }
+     closeSheet();
    });
 
   f.append("div").attr("class", "gen2").style("margin-top", "10px").text("← back")
@@ -1825,60 +1924,44 @@ async function renderSettings(el: d3.Selection, h: IdHint | null): Promise<void>
   signOutRow(f);
 
   // async fills ----------------------------------------------------------
-  if (HANDLERS.fpStatus) {
-    try {
-      const o = JSON.parse(await HANDLERS.fpStatus() as string);
-      person.set(!!o.person);
-      ps.html("");
-      if (o.person) {
-        ps.append("span").attr("class", "phc yes").text("✓ recognised person");
-        const phc = readStr(K.idPhc);
-        if (phc) { try { const c = JSON.parse(phc);
-          ps.append("div").attr("class", "phccard")
-            .text("credential " + (c.d || "").slice(0, 14) + "… · issued by "
-                  + (c.i || "").slice(0, 12) + "… — carried, presentable to other communes");
-        } catch (_) {} }
-      } else {
-        // your standing, read from the ceremony itself — the same on every
-        // device: no ask, or an ask collecting its n of k
-        await refreshAsk();
-        const a = ask.peek();
-        const collecting = a?.state === "collecting";
-        const nobody = !o.bootstrapped;
-        ps.append("span").attr("class", "phc " + (collecting ? "wait" : "no"))
-          .text(collecting ? `pending · ${a!.count} of ${a!.quorum}` : "provisional");
-        ps.append("div").attr("class", "opt")
-          .text(nobody
-            ? "no one is recognised here yet — the founder's first act makes the first person."
-            : collecting
-            ? askSaying(a!) + (a!.vouchers.length
-                ? ` ${a!.vouchers.length === 1 ? "one of them" : `${a!.vouchers.length} of them`} already vouch${a!.vouchers.length === 1 ? "es" : ""} for you.`
-                : "")
-            : "recognition keeps out spam: recognised people who have met you sign that they have. Ask, and every recognised member sees it.");
-        if (!collecting && !nobody)
-          ps.append("span").attr("class", "vbtn").text("request recognition")
-            .on("click", async function () {
-              const r = await (HANDLERS.fpEnroll ? HANDLERS.fpEnroll() : "err:offline");
-              if (r === "ok") { await refreshAsk(); scheduleFpPoll(); }
-              const a2 = ask.peek();
-              d3.select(this).text(r === "ok"
-                  ? `✓ asked — ${a2?.state === "collecting" ? askSaying(a2) : "recognised people will see it"}`
-                  : String(r || "err").replace(/^err:/, ""))
-                .classed("done", r === "ok");
-            });
-        if (collecting) scheduleFpPoll();
-        // the founder's genesis act: only while no one is recognised
-        if (nobody && o.governor && HANDLERS.fpGrant && who.peek()?.aid)
-          ps.append("span").attr("class", "vbtn").text("recognise myself — the first person")
-            .on("click", async function () {
-              const r = await HANDLERS.fpGrant!(who.peek()!.aid);
-              d3.select(this).text(r === "ok" ? "✓ recognised" : String(r || "err").replace(/^err:/, ""))
-                .classed("done", r === "ok");
-              if (r === "ok") refreshPersonhood();
-            });
-      }
-    } catch (_) { ps.text(""); }
-  } else { ps.text(""); }
+  const st = await readStanding();
+  ps.html("");
+  if (st) {
+    if (st.person) {
+      ps.append("span").attr("class", "phc yes").text("✓ recognised person");
+      if (st.carried)
+        ps.append("div").attr("class", "phccard")
+          .text("credential " + st.carried.d.slice(0, 14) + "… · issued by "
+                + st.carried.i.slice(0, 12) + "… — carried, presentable to other communes");
+    } else {
+      const a = st.ask;
+      const collecting = a?.state === "collecting";
+      const nobody = !st.bootstrapped;
+      ps.append("span").attr("class", "phc " + (collecting ? "wait" : "no"))
+        .text(collecting ? `pending · ${a!.count} of ${a!.quorum}` : "provisional");
+      ps.append("div").attr("class", "opt")
+        .text(nobody
+          ? "no one is recognised here yet — the founder's first act makes the first person."
+          : collecting
+          ? askSaying(a!) + (a!.vouchers.length
+              ? ` ${a!.vouchers.length === 1 ? "one of them" : `${a!.vouchers.length} of them`} already vouch${a!.vouchers.length === 1 ? "es" : ""} for you.`
+              : "")
+          : "recognition keeps out spam: recognised people who have met you sign that they have. Ask, and every recognised member sees it.");
+      if (!collecting && !nobody)
+        ps.append("span").attr("class", "vbtn").text("request recognition")
+          .on("click", async function () {
+            const d = await requestRecognition();
+            d3.select(this).text(d.said).classed("done", d.ok);
+          });
+      // the founder's genesis act: only while no one is recognised
+      if (nobody && st.governor && HANDLERS.fpGrant && who.peek()?.aid)
+        ps.append("span").attr("class", "vbtn").text("recognise myself — the first person")
+          .on("click", async function () {
+            const d = await recogniseMyself();
+            d3.select(this).text(d.said).classed("done", d.ok);
+          });
+    }
+  } else ps.text("");
 
   // The commune is authoritative for the profile it holds — but only where it
   // HOLDS one. An empty answer must not wipe a name this device set with no
@@ -1890,38 +1973,27 @@ async function renderSettings(el: d3.Selection, h: IdHint | null): Promise<void>
     catch (_) {}
   }
 
-  // The standing asks from people outside your contacts — for RECOGNISED
-  // members, who are the ones who can answer them. (Someone in your book
-  // carries their ask on their own Contacts row.) Each row is a newcomer's
-  // ceremony with its n of k; the one act is the ✍ witness the calendar rail
-  // offers (your signature over the statement). The ecosystem's quorum does
-  // the rest.
-  if (HANDLERS.fpPending && person.peek() === true) {
-    try {
-      const all = JSON.parse(await HANDLERS.fpPending() as string);
-      const arr = Array.isArray(all) ? all.filter((row: { candidate: string }) => !byAid(row.candidate)) : [];
-      if (arr.length) {
-        f.append("div").attr("class", "sublead").text("asking to be recognised");
-        const pl = f.append("div").attr("class", "vlist");
-        const me = who.peek()?.aid;
-        arr.forEach((row: { said: string; candidate: string; count: number; quorum: number; vouchers: string[] }) => {
-          const r = pl.append("div").attr("class", "vrow");
-          r.append("span").attr("class", "vname").text(row.candidate.slice(0, 18) + "…");
-          r.append("span").attr("class", "vcount").text(`${row.count} of ${row.quorum}`);
-          if (me && (row.vouchers || []).includes(me))
-            r.append("span").attr("class", "phc-note").text(" you vouch for them");
-          r.append("span").attr("class", "vbtn").text("✍ witness")
-            .attr("title", "sign that you have met this person — your signature becomes an edge on their credential")
-            .on("click", async function () {
-              const reply = await (HANDLERS.witnessAttest ? HANDLERS.witnessAttest(row.said) : "err:offline");
-              const ok = typeof reply === "string" && reply.startsWith("ok:");
-              d3.select(this).text(ok ? (reply === "ok:finalized" ? "✓ recognised" : "✓ signed")
-                                      : String(reply || "err").replace(/^err:/, ""))
-                .classed("done", ok);
-            });
+  // The standing asks from people outside your contacts, for RECOGNISED members.
+  // Each row is a newcomer's ceremony with its n of k; the one act is the ✍
+  // witness the calendar rail offers. The ecosystem's quorum does the rest.
+  const arr = await pendingAsks();
+  if (arr.length) {
+    f.append("div").attr("class", "sublead").text("asking to be recognised");
+    const pl = f.append("div").attr("class", "vlist");
+    const me = who.peek()?.aid;
+    arr.forEach(row => {
+      const r = pl.append("div").attr("class", "vrow");
+      r.append("span").attr("class", "vname").text(row.candidate.slice(0, 18) + "…");
+      r.append("span").attr("class", "vcount").text(`${row.count} of ${row.quorum}`);
+      if (me && (row.vouchers || []).includes(me))
+        r.append("span").attr("class", "phc-note").text(" you vouch for them");
+      r.append("span").attr("class", "vbtn").text("✍ witness")
+        .attr("title", "sign that you have met this person — your signature becomes an edge on their credential")
+        .on("click", async function () {
+          const d = await witness(row.said);
+          d3.select(this).text(d.said).classed("done", d.ok);
         });
-      }
-    } catch (_) {}
+    });
   }
 }
 
@@ -1949,7 +2021,7 @@ export function identifierBlock(f: d3.Selection): void {
 // one place that knows a reply's shape.
 export const identity = who;
 export const identityState = idState;
-export { consentCurrent, downloadIdentityFile, setMyName };
+export { consentCurrent, consentRecord, downloadIdentityFile, setMyName, DOCUMENT_VERSION, refreshPersonhood };
 
 /** Open the identity sheet — sign in, unlock, or create; once in, your name, standing and sign out. */
 export function openIdentitySheet(): void {
