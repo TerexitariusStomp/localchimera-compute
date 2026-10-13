@@ -59,6 +59,9 @@ section("a ride");
   const rows = rowsAt(bus, A);
   const board = rows.find(r => /Take the 48/.test(r.text));
   check("the walk to the stop comes first, then the board, with its glyph and sentence", !!board && board.glyph === "🚌" && rows.indexOf(board) > 0, rows.map(r => r.text).join(" | "));
+  check("the board carries the line's badge and when and where it runs", board.badge?.line === "48" && board.badge.headsign === "Downtown" &&
+        board.detail === "08:06 Oak & Main → 08:19 Downtown · 1 stop", board.detail);
+  check("a row that is not a board carries neither", rows.filter(r => r !== board).every(r => r.badge === null && r.detail === ""));
   check("the list ends at the door", rows[rows.length - 1].kind === "destination");
   check("every row but the door has a distance after it", rows.slice(0, -1).every(r => r.after !== null));
 }

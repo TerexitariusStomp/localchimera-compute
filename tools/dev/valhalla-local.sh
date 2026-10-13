@@ -10,7 +10,7 @@
 #   *.pbf          OSM extract · timezones.sqlite · valhalla.json
 #
 # Data pipeline (each step idempotent; `all` runs the lot):
-#   fetch      OSM extract + Sofia GTFS + tz shapefile   (over Tor)
+#   fetch      every region's OSM extract + transit feed (tools/dev/atlas.txt) + tz shapefile   (over Tor)
 #   tzdb       import tz shapefile → timezones.sqlite
 #   calendar   synthesize calendar.txt for calendar_dates-only feeds
 #   config     generate valhalla.json (tiles + tz + transit wired)
@@ -39,14 +39,10 @@ PREFIX="$HERE/prefix"
 CONFIG="$HERE/valhalla.json"
 MANIFEST="$HERE/manifest.scm"
 PROFILE="$HERE/profile"
-PBF="$HERE/bulgaria-latest.osm.pbf"
+ATLAS="$ROOT/tools/dev/atlas.txt"
 TZZIP="$HERE/timezones-with-oceans-1970.shapefile.zip"
 TZSHP="combined-shapefile-with-oceans-1970"
 
-OSM_URL="https://download.geofabrik.de/europe/bulgaria-latest.osm.pbf"  # parked in off/ for now
-SF_URL="https://download.bbbike.org/osm/bbbike/SanFrancisco/SanFrancisco.osm.pbf"
-BERLIN_URL="https://download.bbbike.org/osm/bbbike/Berlin/Berlin.osm.pbf"
-GTFS_URL="https://storage.googleapis.com/storage/v1/b/mdb-latest/o/bg-sofia-city-gtfs-2848.zip?alt=media"
 TZ_URL="https://github.com/evansiroky/timezone-boundary-builder/releases/download/2026b/timezones-with-oceans-1970.shapefile.zip"
 
 # Run inside the pinned guix env with the built binaries on PATH. PATH is
@@ -66,19 +62,20 @@ cmd="${1:-}"; shift || true
 cd "$HERE"
 case "$cmd" in
   fetch)
-    # current atlas: SF + Berlin (bulgaria parked in off/ — restore by moving
-    # its pbf back; the tiles step picks up every *.osm.pbf present)
-    [ -f "$HERE/sanfrancisco.osm.pbf" ] || \
-      torsocks curl -sSL -o "$HERE/sanfrancisco.osm.pbf" "$SF_URL"
-    [ -f "$HERE/berlin.osm.pbf" ] || \
-      torsocks curl -sSL -o "$HERE/berlin.osm.pbf" "$BERLIN_URL"
+    # the atlas (tools/dev/atlas.txt): each region's extract, and its transit feed when it has one
+    mkdir -p gtfs_feeds
+    while IFS='|' read -r name osm gtfs; do
+      name="${name//[[:space:]]/}"; osm="${osm//[[:space:]]/}"; gtfs="${gtfs//[[:space:]]/}"
+      case "$name" in ""|\#*) continue ;; esac
+      [ -f "$HERE/$name.osm.pbf" ] || torsocks curl -sSL -o "$HERE/$name.osm.pbf" "$osm"
+      if [ -n "$gtfs" ] && [ ! -d "gtfs_feeds/$name" ]; then
+        torsocks curl -sSL -o "$name-gtfs.zip" "$gtfs"
+        mkdir -p "gtfs_feeds/$name"
+        EXTRA_PKGS="unzip" in_env unzip -o -d "gtfs_feeds/$name" "$name-gtfs.zip"
+      fi
+    done < "$ATLAS"
     [ -f "$TZZIP" ] || torsocks curl -sSL -o "$TZZIP" "$TZ_URL"
-    if [ ! -d gtfs_feeds/sofia ]; then
-      torsocks curl -sSL -o sofia-gtfs.zip "$GTFS_URL"
-      mkdir -p gtfs_feeds/sofia
-      EXTRA_PKGS="unzip" in_env unzip -o -d gtfs_feeds/sofia sofia-gtfs.zip
-    fi
-    ls -lh "$PBF" "$TZZIP"; ls gtfs_feeds
+    ls -lh "$HERE"/*.osm.pbf "$TZZIP"; ls gtfs_feeds
     ;;
   tzdb)
     # The upstream valhalla_build_timezones script is broken twice over
@@ -95,8 +92,7 @@ case "$cmd" in
       rm -f $TZSHP.shp $TZSHP.shx $TZSHP.dbf $TZSHP.prj
     "
     EXTRA_PKGS="sqlite" in_env sqlite3 timezones.sqlite \
-      "SELECT count(*) || ' zones, Sofia: ' ||
-       (SELECT count(*) FROM tz_world WHERE tzid='Europe/Sofia') FROM tz_world;"
+      "SELECT count(*) || ' zones' FROM tz_world;"
     ;;
   calendar)
     # Valhalla's GTFS ingest skips every trip of a calendar_dates-only feed

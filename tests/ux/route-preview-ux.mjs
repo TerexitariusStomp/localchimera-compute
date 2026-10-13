@@ -85,7 +85,7 @@ try {
   h.rec('the mode is remembered', await page.evaluate(() => localStorage.getItem('pn.map.route.mode')) === 'bicycle');
   await page.click('.rv-tab[data-mode="multimodal"]'); await sleep(900);
   s = await state(page);
-  h.rec('transit draws one way — dotted on foot, solid on the ride — and names its line', s.feats.join() === 'walk,sel,walk' && /48/.test(await txt(page, '.rv-sub') || ''), await txt(page, '.rv-sub'));
+  h.rec('transit draws one way — dotted on foot, solid on the ride — and names its line', s.feats.join() === 'walk,sel,walk' && /48/.test(await txt(page, '.rv-legs') || ''), await txt(page, '.rv-legs'));
   await page.screenshot({ path: `${shot}/route-preview-transit.png` });
   await page.click('.rv-tab[data-mode="pedestrian"]'); await sleep(700);
 

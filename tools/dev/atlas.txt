@@ -1,0 +1,21 @@
+# tools/dev/atlas.txt — the regions the local routing engine knows, one per line:
+#
+#     name | OSM extract URL | transit feed URL (optional)
+#
+# `valhalla-local.sh fetch` saves each extract as .valhalla/<name>.osm.pbf and unpacks a feed into
+# .valhalla/gtfs_feeds/<name>/; `tiles` builds the graph from every *.osm.pbf present and `transit` ingests
+# every feed directory. A region is added by adding a line here — nothing in the script names one. A feed
+# belongs to the extract that covers it. Blank lines and lines beginning # are ignored.
+#
+# The addresses are the publishers' own (OSM extracts: BBBike; feeds as the Mobility Database lists them).
+# None has been downloaded from the checkout this was written in — `fetch` over Tor is where a stale one
+# shows. A feed's licence binds its use; the notes say where to read it.
+
+# San Francisco — Muni's feed is under the SFMTA Transit Data License Agreement (https://sfmta.com/GTFS): read it first
+sanfrancisco|https://download.bbbike.org/osm/bbbike/SanFrancisco/SanFrancisco.osm.pbf|https://muni-gtfs.apps.sfmta.com/data/muni_gtfs-current.zip
+
+# Berlin — Verkehrsverbund Berlin-Brandenburg, CC-BY-4.0
+berlin|https://download.bbbike.org/osm/bbbike/Berlin/Berlin.osm.pbf|https://unternehmen.vbb.de/fileadmin/user_upload/VBB/Dokumente/API-Datensaetze/gtfs-mastscharf/GTFS.zip
+
+# Parked (restore by uncommenting): Bulgaria, with Sofia's transit feed
+# bulgaria|https://download.geofabrik.de/europe/bulgaria-latest.osm.pbf|https://storage.googleapis.com/storage/v1/b/mdb-latest/o/bg-sofia-city-gtfs-2848.zip?alt=media

@@ -34,7 +34,8 @@ import { fetchRoutes, ROUTE_MODES, modeInfo } from './data.js';
 import { fmtDistance, fmtMinutes, arrivalClock } from './facts.js';
 import { snapToRoute, progress, courseAt } from './shape.js';
 import { paintLines, clearLines } from './lines.js';
-import { routeBanner, bearingBanner, drawBanner } from './banner.js';
+import { routeBanner, bearingBanner, reroutingBanner, drawBanner } from './banner.js';
+import { offRouteWatch } from './reroute.js';
 import { openJourneySheet } from './sheet.js';
 import { stepRows } from './steps.js';
 import { startFollow } from './follow.js';
@@ -58,6 +59,10 @@ let jsheet = null;
 let follow = null;
 let drive = null;
 let wake = null;
+/** Whether you have left the way, per fix; made afresh with each journey. */
+let offRoute = offRouteWatch();
+/** Set while a new way is being asked for. */
+let rerouting = false;
 /** Set while the journey itself is closing the ETA bar, so the bar's own "gone" does not end it twice. */
 let closing = false;
 /** Where the card lives when it is not floating: its original parent. */
@@ -96,7 +101,11 @@ function refresh(fix) {
         follow = null; // the camera is given back at the door
     }
     const arrive = arrivalClock(p.remS);
-    drawBanner(routeBanner(r, p, { place: j.placeName, arrive, arrived: j.arrived }), mode);
+    // off the way — for several fixes, beyond the fix's own doubt, and not on a vehicle — a new way is asked for
+    const riding = p.cur >= 0 && r.mans[p.cur].mode === "transit";
+    if (fix && !j.arrived && !rerouting && offRoute.see(j.snap.offKm, fix.accuracy, fix.t, riding))
+        void reroute();
+    drawBanner(rerouting ? reroutingBanner() : routeBanner(r, p, { place: j.placeName, arrive, arrived: j.arrived }), mode);
     const steps = stepRows(r, p, j.placeName);
     jsheet?.update(j.arrived
         ? { big: "You have arrived", sub: j.placeName, arrived: true, steps, mode: navProfile }
@@ -104,6 +113,28 @@ function refresh(fix) {
     drawNavLine();
     const f = fix ?? { lat: USER.lat, lng: USER.lng, heading: null, speed: null, accuracy: null, t: Date.now() };
     follow?.onFix(f, courseAt(r, j.snap));
+}
+/**
+ * You have left the way: ask for a new one from where you are. The journey goes on — the same ledger journey, the same
+ * camera, the same sheet — only its way changes. An engine that answers nothing leaves the old way, and the watcher's
+ * pause keeps the next ask from coming at once.
+ */
+async function reroute() {
+    const j = nav;
+    if (!j || !j.route || rerouting)
+        return;
+    rerouting = true;
+    offRoute.asked(Date.now());
+    refresh();
+    const [way] = await fetchRoutes({ lat: USER.lat, lng: USER.lng }, j.dest, navProfile);
+    rerouting = false;
+    if (nav !== j)
+        return; // the journey ended, or another began, while we asked
+    if (way) {
+        setWay(way);
+        offRoute.reset();
+    }
+    refresh();
 }
 /** A fix: you have moved (app/position.ts moved USER and the you-marker), and so does what follows you. */
 function onFix(f) { refresh(f); }
@@ -201,6 +232,8 @@ export async function startNavTo(dest, placeName, chosen) {
     journeyBegin(dest, placeName);
     const route = chosen ? chosen.route : await fetchRoute(USER, dest, navProfile);
     nav = { dest, placeName, route: null, snap: START, arrived: false };
+    offRoute = offRouteWatch();
+    rerouting = false;
     setWay(route);
     d3.select("#gochip").classed("on", true);
     d3.select("#navcard").style("display", "block");

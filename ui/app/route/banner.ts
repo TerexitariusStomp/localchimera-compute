@@ -7,7 +7,7 @@
 // `drawBanner` writes them to the card.
 
 import { ARROW8 } from '../geom.js';
-import { fmtDistance, fmtMinutes } from './facts.js';
+import { fmtDistance, fmtMinutes, rideLine } from './facts.js';
 import type { Progress } from './shape.js';
 import type { Route } from './data.js';
 
@@ -33,8 +33,8 @@ export const THEN_M = 150;
 
 /** What the card shows. */
 export interface BannerView {
-  /** "route" along a way; "bearing" with no way (a compass); "arrived" at the end. */
-  state: "route" | "bearing" | "arrived";
+  /** "route" along a way; "bearing" with no way (a compass); "arrived" at the end; "rerouting" while a new way is asked for. */
+  state: "route" | "bearing" | "arrived" | "rerouting";
   glyph: string;
   /** The distance to the turn, or what is left. */
   dist: string;
@@ -59,9 +59,15 @@ export function routeBanner(r: Route, p: Progress, o: { place: string; arrive: s
   }
   const dist = fmtDistance(p.toNextKm, r.units);
   const after = p.then >= 0 && p.nextToThenM < THEN_M && !ARRIVAL.has(r.mans[p.then].type) ? glyphOf(r.mans[p.then].type) : null;
-  return { state: "route", glyph: glyphOf(m.type), dist, street: m.streets[0] || m.instr, then: after,
+  const ride = m.transit ? rideLine(m.transit) : null;
+  const street = ride ? (ride.headsign ? `${ride.line} toward ${ride.headsign}` : ride.line) : m.streets[0] || m.instr;
+  return { state: "route", glyph: glyphOf(m.type), dist, street, then: after,
            meta: `${dist} · ${mins} · arrive ${o.arrive}` };
 }
+
+/** The card while a new way is being found: you left the old one. */
+export const reroutingBanner = (): BannerView =>
+  ({ state: "rerouting", glyph: "⟳", dist: "Rerouting…", street: "", then: null, meta: "Rerouting…" });
 
 /** The card with no way to follow: an arrow toward the place, and how far it is as the crow flies. */
 export function bearingBanner(o: { bearing: number; heading: number; km: number; place: string }): BannerView {

@@ -209,12 +209,66 @@ try {
   await showSpot(page);
   await sleep(600); await page.click('.ms-nav'); await sleep(1500); await page.click('.rv-start'); await sleep(1200);
   h.rec('a third journey sets out', (await state(page)).holds === 'journey');
+
+  // ── leaving the way: a new one is asked for, once ─────────────────────────
+  const midLat = (A.lat + B.lat) / 2, calls0 = stub.calls.length;
+  const asked = () => stub.calls.slice(calls0);
+  const cardState = () => page.evaluate(() => document.getElementById('navcard').dataset.state);
+  for (let i = 0; i < 5; i++) { await feed(page, midLat, A.lng + 0.0001, 0); await sleep(120); }     // ~9 m beside the line: a phone's wander
+  h.rec('a wandering fix beside the line is not leaving it: no new way is asked for', asked().length === 0 && (await cardState()) === 'route', `${asked().length} ${await cardState()}`);
+  stub.delay = 900;
+  const drift = { lat: midLat, lng: A.lng + 0.002 };                                              // ~175 m east of the line
+  await feed(page, drift.lat, drift.lng, 0); await sleep(100);
+  await feed(page, drift.lat, drift.lng, 0); await sleep(100);
+  h.rec('one or two fixes off the way are not yet leaving it', asked().length === 0);
+  await feed(page, drift.lat, drift.lng, 0); await sleep(350);
+  h.rec('the third is: a new way is asked for from where you are', asked().length === 1 && asked()[0].includes(`from=${drift.lat}%2C${drift.lng}`), asked().join(' | '));
+  h.rec('while it is found the card says so', (await cardState()) === 'rerouting' && /Rerouting/.test(await txt(page, '#navcard .dist') || ''));
+  await sleep(1300);
+  stub.delay = 0;
+  s = await state(page);
+  h.rec('the new way is taken up: the card reads a turn again, the journey is the same', (await cardState()) === 'route' && s.holds === 'journey' && s.card, `${await cardState()}`);
+  h.rec('and drawn from where you are: nothing behind you on it yet', s.lines === 'sel', s.lines);
+  for (let i = 0; i < 4; i++) { await feed(page, drift.lat, drift.lng, 0); await sleep(120); }
+  h.rec('on the new way a stay where you are is not leaving it', asked().length === 1, String(asked().length));
+  const far = { lat: midLat, lng: A.lng + 0.006 };
+  for (let i = 0; i < 4; i++) { await feed(page, far.lat, far.lng, 0); await sleep(120); }
+  h.rec('and a second drift soon after asks nothing: the pause holds', asked().length === 1, String(asked().length));
+  await page.screenshot({ path: `${shot}/route-nav-rerouted.png` });
   await page.click('.jv-x'); await sleep(800);
   s = await state(page);
   h.rec('✕ ends it mid-way: bar, card, buttons gone, share bar back', !s.card && s.holds === null && s.btns === 0 && s.barRow, JSON.stringify({ c: s.card, h: s.holds, b: s.btns, r: s.barRow }));
   h.rec('the map is level and north-up again', s.pitch < 10);
   await device(page, false);
   await page.close();
+
+  // ── a ride: named by its line, listed with its times, never rerouted ─────────
+  const tp = await browser.newPage();
+  tp.on('pageerror', e => errs.push(String(e)));
+  await tp.setViewportSize({ width: 1200, height: 800 });
+  const tstub = await openMap(tp, BASE);
+  await device(tp, true); await feed(tp, A.lat, A.lng, 0);
+  await showSpot(tp); await sleep(600);
+  await tp.click('.ms-nav'); await sleep(1800);
+  await tp.click('.rv-tab[data-mode="multimodal"]'); await sleep(700);
+  const strip = await txt(tp, '.rv-legs') || '';
+  h.rec('on the transit tab: the legs, the line between two walks', /🚶 \d+ min.*48 \d+ min.*🚶 \d+ min/.test(strip), strip);
+  await tp.click('.rv-start'); await sleep(1500);
+  const grip2 = () => tp.evaluate(() => { const b = document.querySelector('#sharebar .sheet-grab').getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; });
+  await tp.mouse.click((await grip2()).x, (await grip2()).y); await sleep(500);
+  await tp.click('.jv-pg .acct-row:first-child'); await sleep(600);
+  const ride = await tp.evaluate(() => { const r = [...document.querySelectorAll('.jv-step')].find(e => e.querySelector('.line-badge')); return r ? { badge: r.querySelector('.line-badge').textContent, detail: r.querySelector('.jv-rd')?.textContent, bg: r.querySelector('.line-badge').style.background } : null; });
+  h.rec('the step list gives the ride its badge, its times and its stops', !!ride && ride.badge === '48' && ride.detail === '08:06 Oak & Main → 08:19 Downtown · 1 stop' && !!ride.bg, JSON.stringify(ride));
+  await tp.keyboard.press('Escape'); await sleep(300); await tp.keyboard.press('Escape'); await sleep(300);
+  const s1 = { lat: A.lat + (B.lat - A.lat) / 3, lng: A.lng + (B.lng - A.lng) / 3 };       // where the walk ends and the ride begins
+  await feed(tp, s1.lat, s1.lng, 0); await sleep(900);
+  h.rec('aboard: the card goes on to where you get off', (await txt(tp, '#navcard .street')) === 'Get off at Downtown.', `${await txt(tp, '#navcard .street')}`);
+  const callsT = tstub.calls.length;
+  const onRide = { lat: s1.lat, lng: s1.lng + (B.lng - A.lng) / 6 };                        // along the ride, then well off its shape
+  await feed(tp, onRide.lat, onRide.lng, 90); await sleep(500);
+  for (let i = 0; i < 5; i++) { await feed(tp, onRide.lat + 0.004, onRide.lng, 90); await sleep(120); }
+  h.rec('on the vehicle, far from the line for many fixes: never asked for a new way', tstub.calls.length === callsT, `${tstub.calls.length - callsT}`);
+  await tp.close();
 
   // ── a rehearsed drive carries a journey to its end ────────────────────────
   const dp = await browser.newPage();

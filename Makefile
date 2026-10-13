@@ -835,8 +835,8 @@ freshen-ccache:
 
 test-fast: lint-parens lint-law lint-docs check-wasm-deps check-ui-fresh test-gplay test-knowledge test-notify-registry test-notify-adapters test-push-adapter \
       test-recipient-registry test-notify-router test-email-transport check-provenance test-provenance \
-      test-vault test-keystore test-handler-bridge test-capabilities test-pwa lint-sw test-rest test-bytes test-keys test-attention test-push test-rpc test-store test-idb test-log-bound test-rns-identity test-containment-fold test-reactive test-room-model test-mesh-plan test-ice-servers test-units-fallback test-utter test-count test-qr test-labels test-store-tree test-stock test-photo test-look test-lend test-contest test-store-view test-held test-demo-store test-demo-world test-symbols test-reach test-queue test-allotment-ui test-fuzzy test-route-data test-route-facts test-route-shape test-route-lines test-position test-route-nav test-route-steps test-route-request test-conform-ui test-caption-window test-refsel test-diag-redact test-offers test-ring test-sky test-runway test-partition test-regions test-nutrition test-housing-ui test-declarations test-bran-derivations \
-      test-contact-binding test-body-doors test-cards test-planner-facet test-declared-dispatch test-http-door test-mcp-door test-device-doors test-vf-lint test-lint-records-door test-issue-revoke-credential test-admit-commune-door test-delegation-scope-arg test-lobby-arg-split test-websocket-fragments test-websocket-masking test-declare-arg-split test-offer-work-drift-door test-plan-materialize-opts-door test-count-stock test-count-anchor test-count-anchor-2 test-count-expected test-wire-snapshot test-observation-evidence test-labels-containers test-counting test-planned-counts test-allotment test-see-door test-contest-count test-evidence-door check-protocol check-protocol-fresh check-wire-types-fresh check-crossing-catalogue check-nutrition-fresh check-product-law-fresh check-attribution-fresh check-notice-facts-fresh check-rid-mentions test-calendar-mail check-de-fresh check-na-fresh check-law-fresh check-physics-fresh check-housing-fresh check-count-fresh check-rel-fresh check-reach-fresh check-units-fresh check-rest-fresh check-matter-fresh check-fragility-fresh check-actions-fresh check-limits-fresh check-recipe-demo-fresh check-demo-fresh test-demo-neighbourhood test-adjustment test-counts check-test-wiring
+      test-vault test-keystore test-handler-bridge test-capabilities test-pwa lint-sw test-rest test-bytes test-keys test-attention test-push test-rpc test-store test-idb test-log-bound test-rns-identity test-containment-fold test-reactive test-room-model test-mesh-plan test-ice-servers test-units-fallback test-utter test-count test-qr test-labels test-store-tree test-stock test-photo test-look test-lend test-contest test-store-view test-held test-demo-store test-demo-world test-symbols test-reach test-queue test-allotment-ui test-fuzzy test-route-data test-route-facts test-route-shape test-route-lines test-position test-route-nav test-route-steps test-route-reroute test-route-request test-conform-ui test-caption-window test-refsel test-diag-redact test-offers test-ring test-sky test-runway test-partition test-regions test-nutrition test-housing-ui test-declarations test-bran-derivations \
+      test-contact-binding test-body-doors test-cards test-planner-facet test-declared-dispatch test-http-door test-mcp-door test-device-doors test-vf-lint test-lint-records-door test-issue-revoke-credential test-admit-commune-door test-delegation-scope-arg test-lobby-arg-split test-websocket-fragments test-websocket-masking test-declare-arg-split test-offer-work-drift-door test-plan-materialize-opts-door test-count-stock test-count-anchor test-count-anchor-2 test-count-expected test-wire-snapshot test-observation-evidence test-labels-containers test-counting test-planned-counts test-allotment test-see-door test-contest-count test-evidence-door check-protocol check-protocol-fresh check-wire-types-fresh check-crossing-catalogue check-nutrition-fresh check-product-law-fresh check-attribution-fresh check-notice-facts-fresh check-rid-mentions test-calendar-mail check-de-fresh check-na-fresh check-law-fresh check-physics-fresh check-housing-fresh check-count-fresh check-rel-fresh check-reach-fresh check-units-fresh check-rest-fresh check-matter-fresh check-fragility-fresh check-actions-fresh check-limits-fresh check-recipe-demo-fresh check-demo-fresh test-demo-neighbourhood test-adjustment test-counts check-test-wiring check-atlas
 
 # every generated file's freshness, from the gate's own list; and the committer's own test
 test-fast: check-fresh test-commit-clean
@@ -1111,6 +1111,13 @@ test-commit-clean:
 .PHONY: check-test-wiring
 check-test-wiring:
 	@bash tools/lint/check-test-wiring.sh
+
+# tools/dev/atlas.txt — the regions the local routing engine knows — is well
+# formed: unique file-stem names, https extracts, https feeds. A bad row would
+# otherwise show only in a `fetch` over Tor.
+.PHONY: check-atlas
+check-atlas:
+	@bash tools/lint/check-atlas.sh
 
 # The sibling rot: a prerequisite nobody listed. Asserts each wasm entry's
 # import closure is covered by its *_WASM_DEPS list, so make cannot report a
@@ -1399,6 +1406,13 @@ test-route-nav:
 .PHONY: test-route-steps
 test-route-steps:
 	node tests/browser/route-steps-test.mjs
+
+# When you have left the way (app/route/reroute.ts): beyond reach for several
+# fixes running, the reach widening with a fix's own doubt, a pause after
+# asking, and never on a vehicle.
+.PHONY: test-route-reroute
+test-route-reroute:
+	node tests/browser/route-reroute-test.mjs
 
 # The browser's ask-for-a-shape door (app/conform.ts): read → check → re-ask
 # with the reason → floor. Twin of (playnet ai conform), whose suite is

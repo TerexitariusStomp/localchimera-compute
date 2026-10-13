@@ -8,7 +8,9 @@
 // `renderSteps` writes them.
 
 import { glyphOf, isArrival } from './banner.js';
-import { fmtDistance } from './facts.js';
+import { fmtDistance, rideLine, rideTimes } from './facts.js';
+import type { RideLine, RideTimes } from './facts.js';
+import { lineBadge } from './badge.js';
 import type { Progress } from './shape.js';
 import type { Route } from './data.js';
 import { mk } from '../dom.js';
@@ -26,8 +28,23 @@ export interface StepRow {
   warns: string[];
   /** Beneath the destination: "Destination will be on the right"; empty elsewhere and when unsaid. */
   note: string;
+  /** On a ride's board: the line; null elsewhere. */
+  badge: RideLine | null;
+  /** On a ride's board: "08:06 Oak & Main → 08:19 Downtown · 3 stops"; empty elsewhere. */
+  detail: string;
   /** The distance to the next row — the divider that follows this one; null for the last. */
   after: string | null;
+}
+
+/** A maneuver that boards a vehicle — a transfer boards another; "remain on" (type 32) stays on the same. */
+const boarding = (m: Route["mans"][number]): boolean => !!m.transit && m.type !== 32;
+
+/** A ride in a line: when and where it leaves, when and where it arrives, how many stops it makes. */
+function rideDetail(t: RideTimes): string {
+  const leg = (time: string, place: string): string => [time, place].filter(Boolean).join(" ");
+  const span = [leg(t.departs, t.from), leg(t.arrives, t.to)].filter(Boolean).join(" → ");
+  const stops = t.stops > 0 ? `${t.stops} stop${t.stops === 1 ? "" : "s"}` : "";
+  return [span, stops].filter(Boolean).join(" · ");
 }
 
 /** The rows from the turn ahead to the destination; none for a way with no maneuvers. */
@@ -47,6 +64,8 @@ export function stepRows(r: Route, p: Progress, place: string): StepRow[] {
       text: dest ? place : m.instr,
       warns: dest ? [] : warns,
       note: dest && r.destSide ? `Destination will be on the ${r.destSide}` : "",
+      badge: boarding(m) ? rideLine(m.transit!) : null,
+      detail: boarding(m) ? rideDetail(rideTimes(m.transit!)) : "",
       after: dest ? null : fmtDistance(m.length, r.units),
     });
     if (dest) break;
@@ -62,6 +81,12 @@ export function renderSteps(rows: readonly StepRow[]): HTMLElement {
     const body = mk("div", "jv-sb");
     if (r.lead) body.append(mk("div", "jv-lead", r.lead));
     body.append(mk("div", "jv-st", r.text));
+    if (r.badge) {
+      const ride = mk("div", "jv-ride");
+      ride.append(lineBadge(r.badge));
+      if (r.detail) ride.append(mk("span", "jv-rd", r.detail));
+      body.append(ride);
+    }
     if (r.warns.length) {
       const w = mk("div", "jv-warns");
       r.warns.forEach(t => w.append(mk("span", "jv-warn", t)));

@@ -7,8 +7,18 @@
 // not listed. `stepRows` is the pure half (a route and where you are in, rows out);
 // `renderSteps` writes them.
 import { glyphOf, isArrival } from './banner.js';
-import { fmtDistance } from './facts.js';
+import { fmtDistance, rideLine, rideTimes } from './facts.js';
+import { lineBadge } from './badge.js';
 import { mk } from '../dom.js';
+/** A maneuver that boards a vehicle — a transfer boards another; "remain on" (type 32) stays on the same. */
+const boarding = (m) => !!m.transit && m.type !== 32;
+/** A ride in a line: when and where it leaves, when and where it arrives, how many stops it makes. */
+function rideDetail(t) {
+    const leg = (time, place) => [time, place].filter(Boolean).join(" ");
+    const span = [leg(t.departs, t.from), leg(t.arrives, t.to)].filter(Boolean).join(" → ");
+    const stops = t.stops > 0 ? `${t.stops} stop${t.stops === 1 ? "" : "s"}` : "";
+    return [span, stops].filter(Boolean).join(" · ");
+}
 /** The rows from the turn ahead to the destination; none for a way with no maneuvers. */
 export function stepRows(r, p, place) {
     if (!r.mans.length)
@@ -27,6 +37,8 @@ export function stepRows(r, p, place) {
             text: dest ? place : m.instr,
             warns: dest ? [] : warns,
             note: dest && r.destSide ? `Destination will be on the ${r.destSide}` : "",
+            badge: boarding(m) ? rideLine(m.transit) : null,
+            detail: boarding(m) ? rideDetail(rideTimes(m.transit)) : "",
             after: dest ? null : fmtDistance(m.length, r.units),
         });
         if (dest)
@@ -43,6 +55,13 @@ export function renderSteps(rows) {
         if (r.lead)
             body.append(mk("div", "jv-lead", r.lead));
         body.append(mk("div", "jv-st", r.text));
+        if (r.badge) {
+            const ride = mk("div", "jv-ride");
+            ride.append(lineBadge(r.badge));
+            if (r.detail)
+                ride.append(mk("span", "jv-rd", r.detail));
+            body.append(ride);
+        }
         if (r.warns.length) {
             const w = mk("div", "jv-warns");
             r.warns.forEach(t => w.append(mk("span", "jv-warn", t)));

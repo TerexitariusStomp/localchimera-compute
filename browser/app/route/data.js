@@ -25,6 +25,10 @@ export const MODES = [
 export const ROUTE_MODES = MODES.map(m => m.costing);
 /** What a mode is called and drawn as; undefined for a costing the UI has no tab for. */
 export const modeInfo = (costing) => MODES.find(m => m.costing === costing);
+/** The mode that travels each way a stretch can go: the engine's `travel_mode` → our costing. */
+const COSTING_OF_TRAVEL = { pedestrian: "pedestrian", bicycle: "bicycle", drive: "auto", transit: "multimodal" };
+/** The glyph for how a stretch is travelled — the engine's `travel_mode` — "" for one we have none for. */
+export const travelIcon = (travelMode) => modeInfo(COSTING_OF_TRAVEL[travelMode] ?? "")?.icon ?? "";
 /**
  * UI words → Valhalla costing — the one vocabulary boundary, where the words are
  * born; the wire and the server speak costing names natively. A name already a

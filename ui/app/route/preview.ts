@@ -23,11 +23,11 @@ import { theMap, MAP_EL } from '../mapview.js';
 import { openSheetView, closeSheetView, sheetViewIs, sheetHeight } from '../tabs/social/share.js';
 import { placesNear } from '../tabs/map/atlas.js';
 import { startNavTo } from './nav.js';
-import { fetchRoutes, ROUTE_MODES, modeInfo } from './data.js';
+import { fetchRoutes, ROUTE_MODES, modeInfo, travelIcon } from './data.js';
 import type { Route } from './data.js';
 import { paintLines, clearLines } from './lines.js';
 import { lineBadge } from './badge.js';
-import { fmtMinutes, headline, swapEnds, transitLines, arrivalClock } from './facts.js';
+import { fmtMinutes, headline, swapEnds, legsOf, arrivalClock } from './facts.js';
 import { boundsOf, pillAnchor } from './shape.js';
 import type { End } from './facts.js';
 import { havKm } from '../geom.js';
@@ -177,9 +177,13 @@ function drawSheet(): void {
     acts = `<button type="button" class="rv-start" disabled>▲ Start</button>`;
   } else if (r) {
     const arrive = arrivalClock(r.s);
-    const lines = transitLines(r).map(l => lineBadge(l).outerHTML).join("");
-    sum = `<div class="rv-big">${esc(headline(r))}</div>` +
-          `<div class="rv-sub">${lines ? lines + " · " : ""}arrive ${esc(arrive)}${r.hasToll ? " · tolls" : ""}${r.hasFerry ? " · ferry" : ""}</div>`;
+    const legs = legsOf(r);
+    // a trip of more than one leg shows them: walk 6 min › [48] 14 min › walk 4 min
+    const strip = legs.length > 1
+      ? `<div class="rv-legs">${legs.map(l => `<span class="rv-leg">${l.line ? lineBadge(l.line).outerHTML : esc(travelIcon(l.mode))} ${esc(fmtMinutes(l.s))}</span>`)
+          .join(`<span class="rv-sep">›</span>`)}</div>` : "";
+    sum = `<div class="rv-big">${esc(headline(r))}</div>` + strip +
+          `<div class="rv-sub">arrive ${esc(arrive)}${r.hasToll ? " · tolls" : ""}${r.hasFerry ? " · ferry" : ""}</div>`;
     acts = p.from.live
       ? `<button type="button" class="rv-start">▲ Start</button>`
       : `<button type="button" class="rv-start rv-fromhere">▲ Start from my location</button>`;
