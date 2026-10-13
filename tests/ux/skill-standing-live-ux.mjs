@@ -2,7 +2,7 @@
 ///
 /// A citizen creates an identity in the browser, opens the inventory drawer's
 /// Skills view, and it answers from the commons (the demo roster steps aside).
-/// The identity sheet no longer carries skills.
+/// The identity card carries no skills.
 /// They declare a skill and withdraw it; every step is read back through the
 /// door itself (my-skill-standing), and a reload shows the commons kept it.
 /// Nothing stubbed.

@@ -121,7 +121,8 @@ try {
       window.__unlockArgs = [bran, aid, k0];
       return Promise.resolve('ok:' + (aid || 'EFoundByPasscode000000000000000000000000') + '|k0stub');
     })`);
-  await page.evaluate(() => [...document.querySelectorAll('#onboardstage .ob-chip')]
+  // the way in for someone who has an identity already, wherever the checklist keeps it
+  await page.evaluate(() => [...document.querySelectorAll('#onboardstage a, #onboardstage button')]
     .find(b => /already have an identity/i.test(b.textContent)).click());
   await sleep(250);
   h.rec('"I already have an identity" opens the sign-in face', (await view()) === 'signin');

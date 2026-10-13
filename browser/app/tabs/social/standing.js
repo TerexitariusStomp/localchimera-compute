@@ -296,7 +296,7 @@ export function standingBlock(f) {
 /**
  * Where you are, read from the location sheet's own state — a place, never a
  * coordinate; the demo's own places until the wire has answered. BEFORE-CHANGE,
- * when given, clears the way for the location sheet (the identity sheet closes
+ * when given, clears the way for the location sheet (the sheet it sits in closes
  * itself); a mount with no way to it draws no button.
  */
 export function whereBlock(f, beforeChange) {

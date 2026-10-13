@@ -795,13 +795,8 @@
     #facestrip::-webkit-scrollbar { display: none; }
     /* the buttons keep their size; the crumb and the identity pill are what give way */
     #facestrip .faceopt { flex: 0 0 auto; }
-    /* #idrow does NOT get overflow:hidden here — #idform is
-       its own absolutely-positioned child, meant to hang BELOW its box
-       (top: calc(100% + 6px)), and an ancestor clip takes them down with
-       it: narrow, opening either sheet did nothing visible — the sheet was
-       there, just clipped away, leaving only the chip's native title
-       tooltip to show for the tap. .who already ellipsizes its own text
-       (below); the row doesn't need to clip on top of that. */
+    /* #idrow does NOT get overflow:hidden here: .who already ellipsizes its
+       own text (below), and the location chip's popover hangs from this row. */
     #crumb { flex: 0 1 auto; min-width: 0; overflow: hidden; }
     #idrow { flex: 0 1 auto; min-width: 0; }
     #idrow .who { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -4081,9 +4076,7 @@
 
   /* identity: the door into the plan — lives top right in the header,
      pushed there by the auto margin in #top's flex row. */
-  /* position:relative anchors the #idform popover (position:absolute,
-     top:calc(100%+6px)) to the chip — without it the popover falls back to
-     the body and renders just below the viewport bottom (off-screen). */
+  /* position:relative anchors the chip's own marks (the dot, the hidden label). */
   /* shrinkable, as the crumb is: at phone width the chips elide rather than
      push the theme dial past the screen's edge */
   #idrow { font-size: 12px; margin: 0 0 0 auto; flex: 0 1 auto; min-width: 0; position: relative;
@@ -4185,27 +4178,6 @@
             border: 1px solid var(--t-6e5a1e); border-radius: 6px;
             background: var(--t-ffffff); color: var(--t-6e5a1e); }
   .locpanel-say { font-size: 10.5px; color: var(--t-2e7d52); margin-top: 5px; min-height: 13px; }
-  /* the identity sheet: ONE modal, centred over the page like the scroll, the
-     page dimmed around it (a spread shadow — no extra element to close). On
-     <body>, so it stands above every stacking context (id.ts openSheet). */
-  #idform { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 2000;
-            width: min(340px, calc(100vw - 32px)); box-sizing: border-box;
-            background: var(--t-ffffff); border: 1px solid var(--t-c9d2dd);
-            border-radius: 12px;
-            box-shadow: 0 0 0 100vmax rgb(var(--t-261c0e-rgb) / .34), 0 22px 60px rgb(var(--t-142846-rgb) / .28);
-            padding: 18px 18px 16px; text-align: left; font-size: 12px;
-            /* the sheet is a child of #idrow, which sits in the express
-               pill — a one-line row (nowrap, tight lines). A sheet is prose
-               and fields, so it sets both for itself. */
-            white-space: normal; line-height: 1.45; color: var(--t-1c2c3e);
-            max-height: calc(100vh - 48px); max-height: calc(100dvh - 48px); overflow-y: auto;
-            animation: scrollin .25s cubic-bezier(.2, .9, .3, 1); }
-  /* The sheet is a child of #idrow, so it stands inside whatever stacking
-     context holds the identity door (the share bar, z 30). Settings (z 40)
-     sits above that context and would cover a sheet opened from it — "open
-     it" in settings → identity — so the door's context rises above every
-     face while a sheet is open. */
-  #sharebar:has(#idform), #creditlip:has(#idform) { z-index: 3000; }
   /* ── the account menu (app/account.ts) and the faces menu (app/face-dock.ts) are views in the
      share bar's pull-up sheet, beside the inventory; settings, theme, about, the channel and the
      notices live in the account menu, so the header carries none of them. ── */
@@ -4309,84 +4281,46 @@
   .acct-foot a { color: inherit; text-decoration: none; padding: 4px 8px; }
   .acct-foot a:hover { text-decoration: underline; }
 
-  #idform .idclose { position: absolute; top: 8px; right: 12px; cursor: pointer; font-size: 20px; line-height: 1;
-                     color: var(--t-9aa6b2); }
-  #idform .idclose:hover { color: var(--t-2c4a6e); }
-  #idform.held .idclose { display: none; }
-  #idform input { width: 100%; box-sizing: border-box; margin: 3px 0;
-                  padding: 6px 8px; font: inherit; font-size: 12px;
-                  border: 1px solid var(--t-dddddd); border-radius: 4px; }
-  #idform textarea { width: 100%; box-sizing: border-box; margin: 3px 0; padding: 6px 8px;
-                     border: 1px solid var(--t-dddddd); border-radius: 4px; resize: vertical; }
-  #idform .passrow, .idform-block .passrow { position: relative; }
-  #idform .passrow input, .idform-block .passrow input { padding-right: 70px; }
-  #idform .gen, .idform-block .gen { position: absolute; right: 6px; top: 50%;
-                 transform: translateY(-50%); font-size: 10.5px; color: var(--t-2c4a6e);
-                 background: var(--t-eef4fb); border: 1px solid var(--t-c9d2dd); border-radius: 10px;
-                 padding: 2px 9px; cursor: pointer; }
-  #idform .gen:hover, .idform-block .gen:hover { background: var(--t-dde9f6); }
-  #idform .opt, .idform-block .opt { font-size: 10px; color: var(--t-9aa6b2); margin: 1px 0 2px 2px; }
-  #idform button.go, .idform-block button.go { width: 100%; font: inherit; font-size: 12.5px; padding: 7px 14px;
+  .idform-block .opt { font-size: 10px; color: var(--t-9aa6b2); margin: 1px 0 2px 2px; }
+  .idform-block button.go { width: 100%; font: inherit; font-size: 12.5px; padding: 7px 14px;
                    border: 1px solid var(--t-2c4a6e); background: var(--t-2c4a6e);
                    color: var(--t-ffffff); border-radius: 5px; cursor: pointer; margin-top: 8px; }
-  #idform button.go:hover, .idform-block button.go:hover { background: var(--t-21395a); }
-  #idform .warn, .idform-block .warn { font-size: 10.5px; color: var(--t-b04a3a); line-height: 1.4;
+  .idform-block button.go:hover { background: var(--t-21395a); }
+  .idform-block .warn { font-size: 10.5px; color: var(--t-b04a3a); line-height: 1.4;
                   margin-top: 6px; }
-  #idform .saved, .idform-block .saved { font-size: 10.5px; color: var(--t-2e7d52); line-height: 1.4; margin-top: 6px; }
-  #idform .err, .idform-block .err { font-size: 11px; color: var(--t-b04a3a); margin-top: 4px; }
-  #idform .lead, .idform-block .lead { font-size: 12px; font-weight: 600; color: var(--t-2c4a6e); margin-bottom: 6px; }
-  #idform input.pcode, .idform-block input.pcode { font-family: ui-monospace, monospace; font-size: 14px;
+  .idform-block .saved { font-size: 10.5px; color: var(--t-2e7d52); line-height: 1.4; margin-top: 6px; }
+  .idform-block .err { font-size: 11px; color: var(--t-b04a3a); margin-top: 4px; }
+  .idform-block input.pcode { font-family: ui-monospace, monospace; font-size: 14px;
                         letter-spacing: .5px; color: var(--t-1c2c3e); text-align: center; }
-  #idform .genrow, .idform-block .genrow { display: flex; gap: 12px; margin: 5px 2px 0; }
-  #idform .gen2, .idform-block .gen2 { font-size: 10.5px; color: var(--t-2c4a6e); cursor: pointer; }
-  #idform .gen2:hover, .idform-block .gen2:hover { text-decoration: underline; }
+  .idform-block .genrow { display: flex; gap: 12px; margin: 5px 2px 0; }
+  .idform-block .gen2 { font-size: 10.5px; color: var(--t-2c4a6e); cursor: pointer; }
+  .idform-block .gen2:hover { text-decoration: underline; }
   /* consent gate — the tick that has to happen before an identity is created.
      The prose is <label for=…> spans (clickable, so the tap target is the whole
      line) with the two links left OUTSIDE any label: a link inside one would
      tick the box on its way to opening the document it claims you have read. */
-  #idform .consent, .idform-block .consent { display: flex; align-items: flex-start; gap: 6px;
+  .idform-block .consent { display: flex; align-items: flex-start; gap: 6px;
                      margin: 9px 2px 2px; font-size: 10.5px; line-height: 1.45;
                      color: var(--t-6a7686); }
-  #idform .consent label, .idform-block .consent label { cursor: pointer; }
-  #idform .consent input, .idform-block .consent input { width: auto; margin: 2px 0 0; flex: 0 0 auto; cursor: pointer; }
-  #idform .consent a, .idform-block .consent a { color: var(--t-2c4a6e); }
-  #idform .legalrow, .idform-block .legalrow { font-size: 10px; color: var(--t-9aa6b2); margin-top: 10px; }
-  #idform .legalrow a, .idform-block .legalrow a { color: var(--t-2c4a6e); }
-  #idform .aidline, .idform-block .aidline { font-size: 9.5px; color: var(--t-b8c0c9); margin-top: 8px; word-break: break-all; }
-  /* sign out — local, and asks twice, since the hint is the only pointer to the AID */
-  #idform .signoutrow, .idform-block .signoutrow { margin-top: 14px; border-top: 1px solid var(--t-eef1f4); padding-top: 11px; }
-  #idform .signout, .idform-block .signout { display: inline-block; font-size: 11px; color: var(--t-b04a3a);
-    border: 1px solid var(--t-e0b4b4); border-radius: 9px; padding: 3px 10px; cursor: pointer; user-select: none; }
-  #idform .signout:hover, .idform-block .signout:hover { background: var(--t-fbf3f2); }
-  #idform .signout.arm, .idform-block .signout.arm { background: var(--t-b04a3a); border-color: var(--t-b04a3a);
-    color: var(--t-ffffff); font-weight: 650; }
-  #idform .phccard, .idform-block .phccard { font-size: 9.5px; color: var(--t-6a7686); margin: 2px 0 0; word-break: break-all; }
-  #idrow .phc { margin-left: 7px; font-size: 9.5px; padding: 1px 6px; border-radius: 8px; }
-  #idrow .phc.yes { color: var(--t-2e7d52); background: var(--t-eaf5ee); }
-  #idrow .phc.no  { color: var(--t-b07a3a); background: var(--t-f7efe4); }
-  .phc.wait { color: var(--t-2c4a6e); font-weight: 600; }   /* an ask collecting its n of k */
-  .vcount { font-variant-numeric: tabular-nums; color: var(--t-a2b0a2); margin: 0 6px; font-size: 11px; }
-  #idform.wide { width: min(380px, calc(100vw - 32px)); }
-  #idform .sublead, .idform-block .sublead { display: block; font-size: 10px; font-weight: 600; color: var(--t-6a7686);
+  .idform-block .consent label { cursor: pointer; }
+  .idform-block .consent input { width: auto; margin: 2px 0 0; flex: 0 0 auto; cursor: pointer; }
+  .idform-block .consent a { color: var(--t-2c4a6e); }
+  .idform-block .sublead { display: block; font-size: 10px; font-weight: 600; color: var(--t-6a7686);
                      text-transform: uppercase; letter-spacing: .4px; margin: 11px 0 4px; }
-  #idform .phcrow, .idform-block .phcrow { font-size: 11.5px; margin: 2px 0 2px; }
-  #idform .phc.yes, .idform-block .phc.yes { color: var(--t-2e7d52); font-weight: 600; }
-  #idform .phc.no, .idform-block .phc.no { color: var(--t-b07a3a); font-weight: 600; }
-  #idform .phc-note, .idform-block .phc-note { color: var(--t-9aa6b2); }
-  #idform .vlist, .idform-block .vlist { display: flex; flex-direction: column; gap: 3px; }
-  #idform .vrow, .idform-block .vrow { display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; }
-  #idform .vname, .idform-block .vname { color: var(--t-2c4a6e); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  #idform .vbtn, .idform-block .vbtn { font-size: 10px; color: var(--t-2c4a6e); background: var(--t-eef4fb); border: 1px solid var(--t-c9d2dd);
+  .idform-block .vlist { display: flex; flex-direction: column; gap: 3px; }
+  .idform-block .vrow { display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; }
+  .idform-block .vname { color: var(--t-2c4a6e); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .idform-block .vbtn { font-size: 10px; color: var(--t-2c4a6e); background: var(--t-eef4fb); border: 1px solid var(--t-c9d2dd);
                   border-radius: 9px; padding: 1px 8px; cursor: pointer; margin-left: 6px; flex: 0 0 auto; }
-  #idform .vbtn:hover, .idform-block .vbtn:hover { background: var(--t-dde9f6); }
-  #idform .vbtn.arm, .idform-block .vbtn.arm { background: var(--t-b04a3a); border-color: var(--t-b04a3a); color: var(--t-ffffff); font-weight: 700; }
-  #idform .vbtn.done, .idform-block .vbtn.done { color: var(--t-2e7d52); background: var(--t-eaf5ee); border-color: var(--t-b9dcc6); cursor: default; }
+  .idform-block .vbtn:hover { background: var(--t-dde9f6); }
+  .idform-block .vbtn.arm { background: var(--t-b04a3a); border-color: var(--t-b04a3a); color: var(--t-ffffff); font-weight: 700; }
+  .idform-block .vbtn.done { color: var(--t-2e7d52); background: var(--t-eaf5ee); border-color: var(--t-b9dcc6); cursor: default; }
   /* settings draws the same blocks outside the sheet: its fields read alike */
   .idform-block input[type="text"], .idform-block input[type="password"], .idform-block select {
     width: 100%; box-sizing: border-box; margin: 3px 0; padding: 6px 8px; font: inherit; font-size: 12px;
     border: 1px solid var(--t-dddddd); border-radius: 4px; background: var(--t-ffffff); color: inherit; }
   /* the identifier: shown whole, one line, and the line a copy is taken from */
-  #idform input.aidfield, .idform-block input.aidfield {
+  .idform-block input.aidfield {
     font-family: ui-monospace, monospace; font-size: 10.5px; letter-spacing: 0;
     color: var(--t-6a7686); text-align: left; padding: 6px 7px; }
   .idform-block .vname { white-space: normal; }
@@ -4398,8 +4332,6 @@
      where the skill's competence stands today against the most any of your
      skills stands at, its solid share what peers co-signed. */
   .stand { max-width: 520px; }
-  .idpair { display: flex; gap: 4px; } .idpair input { flex: 1 1 0; min-width: 0; }
-  .idsave { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
   .stand-list { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 6px; }
   .stand-row { border-left: 2px solid var(--t-c9d2dd); padding: 1px 0 1px 7px; }
   .stand-row.stand-practiced { border-left-color: var(--t-b9dcc6); }
@@ -4418,7 +4350,7 @@
                background: var(--t-eef4fb); border: 1px solid var(--t-c9d2dd); overflow: hidden; }
   .stand-bar-reach { display: block; height: 100%; background: var(--t-b9dcc6); }
   .stand-add { display: flex; align-items: center; gap: 4px; margin-top: 6px; }
-  #idform input.stand-add-in, .idform-block input.stand-add-in, .stand-add-in {
+  .idform-block input.stand-add-in, .stand-add-in {
     flex: 1 1 auto; box-sizing: border-box; font-size: 11.5px; padding: 3px 6px; margin: 0;
     border: 1px solid var(--t-c9d2dd); border-radius: 5px; }
   .stand-add .vbtn { margin-left: 0; }

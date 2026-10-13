@@ -1,7 +1,9 @@
 // app/tabs/id.ts — identity: the door into the plan.
 //
-// Panel subsystem: the KERI id chip + signup/unlock forms, the identity
-// file download, personhood (fp*) vouching, and the settings sheet. Registers
+// Panel subsystem: the KERI id chip, the acts a sign-in surface performs
+// (signup, unlock, join, recovery — app/identity-view.ts draws them), the
+// identity file download, personhood (fp*) vouching, and the settings sections
+// for keys, devices and recovery. Registers
 // seam.status (day-boot reports gateway state through it). Talks to
 // the gateway only through HANDLERS (signup/unlock/profile*/fp*) at call
 // time; reads pending()/proposals/contacts and calls settle()/hint() from
@@ -10,7 +12,6 @@ import { HANDLERS, hint } from '../../core.js';
 import { book, byAid, recoveryPicks, toggleRecoveryPick } from '../../contact-book.js';
 import { revealContacts } from './share.js';
 import { locationDoor, locationOff, locationResume } from './location.js';
-import { whereBlock } from './standing.js';
 import { readStr, writeStr, forget, readJSON, writeJSON } from '../../store.js';
 import { signal, effect } from '../../reactive.js';
 import { ensurePersistent } from '../../storage-health.js';
@@ -28,9 +29,9 @@ import { K } from "../../keys.js";
 type IdState = "standalone" | "offline" | "connecting" | "idle" | "busy"
              | "unlocked" | "unregistered" | "authed";
 /**
- * consentGate keeps its checkbox counter ON ITSELF, so every gate it builds
- * gets a unique id without a module-level variable. Naming the shape is what
- * lets that stay written the way it is.
+ * passcodeSection and forgetSection keep their checkbox counters ON THEMSELVES,
+ * so every gate they build gets a unique id without a module-level variable.
+ * Naming the shape is what lets that stay written the way it is.
  */
 type Counted = { _n?: number };
 
@@ -54,7 +55,7 @@ const idHint = (): IdHint | null => {
  *   person   whether the commune recognises you. A TRISTATE: null is "not
  *            asked yet / could not ask", which the sheet draws differently
  *            from a plain no. The chip does not read it — standing lives one
- *            tap away, in the sheet.
+ *            tap away, under keys and devices.
  */
 const idState = signal<IdState>("standalone");
 const who = signal<IdHint | null>(idHint());
@@ -99,21 +100,6 @@ const myName = (h: IdHint | null): string => (h && h.name) || "you";
 export const displayName = (): string => myName(who());
 
 /**
- * How the one sign-in form is configured for each of the three doors it
- * serves: unlock this device's identity, sign in with another, or create.
- * `store` is the [name, email] to remember on success — nulls keep what is
- * already there. `consent` gates submit until its thunk answers true.
- */
-interface LoginOpts {
-  aid: string | null;
-  k0: string;
-  store: [string | null, string | null];
-  button: string;
-  consent?: (form: d3.Selection) => () => boolean;
-}
-
-
-/**
  * The spine's report, read as a door state.
  *
  * Unlocking and taking a seat are two acts. The passcode against the log this
@@ -151,7 +137,7 @@ on("status", (s: string) => {
  * seat; a refusal that names the authorization — revoked from another device,
  * or unknown to this commune — retires the key here too, so the next sign-in
  * is the passcode's and can authorize afresh. Any other refusal (the touch
- * was declined, the gateway hiccuped) leaves the key for a retry from the sheet.
+ * was declined, the gateway hiccuped) leaves the key for a retry from keys and devices.
  */
 const DEVICE_WIRE = K.deviceWire;
 /** the persona's mesh seed, sealed under this device's seal key (the spine writes it at enrolment) */
@@ -165,7 +151,7 @@ async function forgetDeviceHere(): Promise<void> {
 }
 on("deviceUnlock", (r: string) => {
   if (r.startsWith("ok:") || r.startsWith("local:") || r.startsWith("unregistered:")) {
-    finishAuth(r, null, null, () => {});
+    settleAuth(r, null, null);
     return;
   }
   // The browser cleared its key store under the record: the authorization
@@ -189,7 +175,7 @@ function deviceSaidHere(): string | null {
 /**
  * Stay signed in on this device. The software tier needs no gesture, so a
  * passcode sign-in enrols it on its own unless the person has said no here
- * before; the hardware tier (a passkey touch) is chosen in the sheet.
+ * before; the hardware tier (a passkey touch) is chosen under keys and devices.
  */
 const DECLINED = K.deviceDeclined;
 let enrolling = false;
@@ -228,86 +214,22 @@ function deviceLabel(): string {
   return `${br} on ${os}`;
 }
 
-// ── the sheet ──────────────────────────────────────────────────────────
-// Every identity surface — the away notice, the join offer, sign-in, the
-// created card, settings — is ONE popover wearing a different face. These
-// four functions are the only code that knows it is called #idform, and the
-// only code that opens or closes it.
-const SHEET = "#idform";
 /**
- * Close whatever sheet is open — unless it is HELD.
- *
- * A held sheet is one that must not be dismissed by accident, because
- * dismissing it destroys something unrecoverable: the created sheet holds
- * itself until the passcode has been saved, since it is shown exactly once
- * and there is no way to ask for it again. Tapping the chip, opening another
- * sheet, or a stray Enter all route through here, so the hold is honoured
- * everywhere without any of them knowing about it.
- */
-function closeSheet(force = false): void {
-  const open = d3.select("#idrow").select(SHEET);
-  // classed() as a GETTER reads .classList off node(), which is null when
-  // nothing is open — so the empty case is checked first, not implied.
-  if (open.empty()) return;
-  if (!force && open.classed("held")) return;
-  open.remove();
-}
-/** Hold the open sheet against accidental dismissal, or release it. */
-function holdSheet(on: boolean): void {
-  d3.select("#idrow").select(SHEET).classed("held", on);
-}
-/** A fresh empty sheet, replacing any open one (a held one stands). */
-function openSheet(el: d3.Selection, wide = false): d3.Selection {
-  closeSheet();
-  if (!el.select(SHEET).empty()) return el.select(SHEET);
-  const sheet = el.append("div").attr("id", "idform").classed("wide", wide);
-  sheet.append("span").attr("class", "idclose").attr("role", "button").attr("aria-label", "close")
-    .attr("title", "close").text("×").on("click", () => closeSheet());
-  return sheet;
-}
-// The sheet is a modal over a dimmed page, so the dimmed page and Esc are ways
-// out too; a HELD sheet (the passcode, shown once) stands through all of them.
-document.addEventListener("pointerdown", ev => {
-  const t = ev.target as Element | null;
-  if (!t || t.closest(SHEET) || t.closest("#idrow .who")) return;
-  closeSheet();
-});
-document.addEventListener("keydown", ev => { if (ev.key === "Escape") closeSheet(); });
-/**
- * Tap-again-to-close, for the sheets a chip tap opens directly. Returns null
- * when this tap CLOSED an open sheet, so the caller returns without drawing.
- */
-function toggleSheet(el: d3.Selection, wide = false): d3.Selection | null {
-  return el.select(SHEET).empty() ? openSheet(el, wide) : (closeSheet(), null);
-}
-/**
- * The sheet outlives a chip re-render. #idform is a child of #idrow, so
- * renderId's wipe would take it — and the personhood check and the 45s poll
- * both re-render while a sheet is open. Detach the node (its subtree intact),
- * hand back the thunk that puts it in place again. A plain wipe would strip
- * the sheet's CHILDREN too, re-attaching an empty shell.
- */
-function detachSheet(el: d3.Selection): () => void {
-  const node = el.select(SHEET).node();
-  if (node) node.remove();          // Element.remove: off the DOM, subtree kept
-  return () => { if (node) el.node()!.appendChild(node); };
-}
-
-/**
- * How each door state shows itself in the corner, and what a tap opens.
+ * How each door state shows itself in the corner. A tap opens the account
+ * sheet (app/account.ts); its identity card says the rest.
  *
  * THE CORNER IS A GLANCE, NOT A SENTENCE. A dot carries the connection —
  * seated, holding an identity with nowhere to sit, reaching, shut — and the
  * words beside it are your name and nothing else. "— the commune is
  * unreachable" as a label grew the pill until it sat on top of the header's
  * own controls, and it told someone at a glance what they can only act on in
- * the sheet. So the sentence moved: `title` says it on hover, the sheet says
- * it in full, and the chip stays the size of a name.
+ * the sheet. So the sentence moved: `title` says it on hover, the identity
+ * card says it in full, and the chip stays the size of a name.
  *
  * ONE ROW PER STATE. `label` is a function because three states name you and
- * three read differently with no identity stored here. A state with no `sheet`
- * is one where tapping means nothing (we are mid-flight), and it mounts no
- * location chip either.
+ * three read differently with no identity stored here. An `inert` state is one
+ * where tapping means nothing (we are mid-flight), and it mounts no location
+ * chip either.
  */
 type Dot = "live" | "warn" | "wait" | "idle" | "off";
 interface ChipFace {
@@ -317,8 +239,8 @@ interface ChipFace {
   dot: Dot;
   /** the sentence the dot stands for, on hover */
   title: string;
-  /** the sheet a tap opens; absent ⇒ the chip is inert */
-  sheet?: (el: d3.Selection, h: IdHint | null) => void;
+  /** a submit is in flight: a tap has nothing to open */
+  inert?: boolean;
   /** extra class on .who — "on" is seated, "off" is no commune to reach */
   cls?: string;
 }
@@ -328,7 +250,6 @@ const STANDALONE_FACE: ChipFace = {
   cls: "off", dot: "off",
   label: () => "demo day",
   title: "No commune is configured for this page — the dial is a local sample.",
-  sheet: renderAway,
 };
 // OFFLINE is not a dead end. An identity is minted and unlocked entirely on
 // this device, so the corner offers the SAME act it would with a commune in
@@ -339,54 +260,34 @@ const OFFLINE_FACE: ChipFace = {
   cls: "off", dot: "idle",
   label: h => h ? myName(h) : "create your identity",
   title: "Sign in — your passcode opens this identity on this device.",
-  sheet: renderAway,
 };
 const CHIP: Record<IdState, ChipFace> = {
   // The header says your NAME and nothing else. Your AID in full and your
   // personhood standing — with what to do about either — live one tap away.
   authed:       { cls: "on", dot: "live", label: h => myName(h),
-                  title: "Signed in, and seated at this commune.",
-                  sheet: renderSettings },
+                  title: "Signed in, and seated at this commune." },
   unlocked:     { dot: "warn", label: h => myName(h),
-                  title: "Unlocked on this device — the commune is unreachable.",
-                  sheet: renderAway },
+                  title: "Unlocked on this device — the commune is unreachable." },
   unregistered: { dot: "warn", label: h => myName(h),
-                  title: "This commune has not met you yet — tap to join.",
-                  sheet: renderJoin },
+                  title: "This commune has not met you yet — tap to join." },
   // reaching one is neither open nor away, and saying so beats claiming there
   // is no commune while the wasm is still finding it. NOT inert: unlocking
   // and creating are entirely local acts, and a connect that hangs (a stale
   // sref in an old tab, a gateway mid-restart) must never lock a person out
   // of the door — that is exactly when they go looking for it.
   connecting:   { dot: "wait", label: h => h ? myName(h) : "…",
-                  title: "Reaching the commune… tap to sign in meanwhile.",
-                  sheet: renderAway },
+                  title: "Reaching the commune… tap to sign in meanwhile." },
   // busy is ours, not the network's: a submit already in flight, over in a
   // beat — the one state where a tap genuinely has nothing to open.
-  busy:         { dot: "wait", label: () => "…", title: "A moment…" },
+  busy:         { dot: "wait", label: () => "…", title: "A moment…", inert: true },
   idle:         { dot: "idle", label: h => h ? myName(h) : "create your identity",
-                  title: "Sign in to this commune.",
-                  sheet: renderIdForm },
+                  title: "Sign in to this commune." },
   offline:      OFFLINE_FACE,
   standalone:   STANDALONE_FACE,
 };
 
-// Anchors the door popover under whichever pill triggered it, rather than
-// always the row's own right edge — with two chips in #idrow (name, then
-// location) a fixed `right:0` only happens to line up under the one that is
-// last in the row. Measured live at open time, since the popover isn't
-// reparented into the chip (a redraw's detach/reattach always lands it back
-// on #idrow — see detachSheet).
-function anchorSheet(el: d3.Selection, target: d3.Selection): void {
-  const f = el.select(SHEET).node() as HTMLElement | null;
-  const t = target.node() as HTMLElement | null, r = el.node() as HTMLElement | null;
-  if (!f || !t || !r) return;
-  f.style.right = Math.max(0, r.getBoundingClientRect().right - t.getBoundingClientRect().right) + "px";
-}
-
 function drawChip(): void {
   const el = d3.select("#idrow");
-  const reattach = detachSheet(el);
   el.selectAll("*").remove();
   // sharing a position needs an open door: the spine writes it against the
   // session AID, so the chip lives and dies with the identity chip beside it.
@@ -403,20 +304,14 @@ function drawChip(): void {
   chip.append("span").attr("class", "lbl").text(face.label(h));
   // Sharing a position lives in the bottom bar's location popover; this door
   // tells it whether the session can act (setPositionHere writes against the
-  // session AID) and, when it cannot, where "sign in first" leads: the very
-  // sheet tapping your name opens.
+  // session AID) and, when it cannot, where "sign in first" leads: the
+  // identity card.
   const authed = state === "authed";
-  // a tap on the person button opens the account sheet (app/account.ts); with
-  // no account sheet mounted it opens the identity sheet directly
-  if (face.sheet) chip.on("click", () => {
-    // a held sheet (the passcode, shown once) stands: nothing opens over it
-    const open = el.select(SHEET);
-    if (!open.empty() && open.classed("held")) return;
-    if (accountDoor) accountDoor(); else openIdentitySheet();
-  });
-  locationDoor(authed, !authed && face.sheet ? openIdentityDoor : null);
+  // a tap on the person button opens the account sheet (app/account.ts); a
+  // passcode shown once and not yet saved is where that sheet reopens
+  if (!face.inert) chip.on("click", () => { if (accountDoor) accountDoor(); });
+  locationDoor(authed, !authed && !face.inert ? openIdentityDoor : null);
   if (authed) locationResume();
-  reattach();
 }
 
 // effect() runs its body once, now, and then on every change to a signal it
@@ -464,105 +359,8 @@ export async function signOutDevice(): Promise<void> {
   forget(DEVICE_STALE);
   location.reload();
 }
-function signOutRow(f: d3.Selection): void {
-  const row = f.append("div").attr("class", "signoutrow");
-  const btn = row.append("span").attr("class", "signout").text("sign out");
-  btn.on("click", () => {
-    if (btn.classed("arm")) { void signOutDevice(); return; }
-    btn.classed("arm", true).text("sign out — tap again");
-    row.append("div").attr("class", "opt")
-       .text("Your passcode is not stored here and never was, and signing out forgets this "
-             + "device's copy of your log. Your passcode brings you back at this commune; "
-             + "anywhere else you also need your recovery file or your identifier, shown "
-             + "above — keep it somewhere safe first.");
-    setTimeout(() => {
-      if (btn.classed("arm")) { btn.classed("arm", false).text("sign out"); row.selectAll(".opt").remove(); }
-    }, 20000);
-  });
-}
-
-// the sheet behind a doors-shut chip: why nothing writes, and what still works
-// from here. Two readings of the same state — with an identity stored it is
-// YOUR commune that is unreachable; without one there is no commune configured
-// at all, which is the demo day and worth saying plainly.
-function renderAway(el: d3.Selection, h: IdHint | null): void {
-  const f = toggleSheet(el, true);
-  if (!f) return;
-  if (!h) {
-    // STANDALONE is a page with no spine at all (the docs copy, a wasm that
-    // never booted): nothing can make an identity here. OFFLINE is a spine
-    // that found no commune — and an identity needs none to be made: it is
-    // minted and kept on this device, and joins a commune when one appears.
-    if (idState.peek() === "standalone") {
-      f.append("div").attr("class", "lead").text("the demo day");
-      f.append("div").attr("class", "opt")
-       .text("No commune is configured for this page, so there is no door to sign in through. "
-             + "The cards, the plan and the dial are local samples you can play with freely; "
-             + "sharing where you are, lending a means, and claiming all need a commune to reach.");
-      f.append("div").attr("class", "opt")
-       .text("Running it yourself? `make dev` serves the dial against a real local gateway.");
-      return;
-    }
-    f.classed("wide", false);
-    // The heading and the button come FIRST. Someone who has not signed in
-    // can act on "create your identity"; they can act on nothing in a report
-    // about infrastructure, so that report follows the act rather than
-    // standing in front of it.
-    createForm(el, f,
-      "No commune is reachable right now — an identity needs none to be made. "
-      + "It is minted and kept on this device, and takes a seat at a commune "
-      + "the moment one is reachable.");
-    return;
-  }
-  f.append("div").attr("class", "lead").text("the commune is unreachable");
-  if (idState.peek() === "unlocked") {
-    f.append("div").attr("class", "opt")
-     .text("You are unlocked as this identity, but nothing can reach the commune right now — "
-           + "so sharing where you are, lending a means, and claiming are all unavailable, "
-           + "and the day on screen is this device's own rather than the commune's. Your "
-           + "seat is taken the moment the commune is reachable again.");
-  } else {
-    // the passcode opens the identity against the log this device holds —
-    // no commune in the loop — so the door to the cached day stays open here
-    f.append("div").attr("class", "opt")
-     .text("Nothing can reach the commune right now. Your passcode still opens this identity "
-           + "here, against the log this device keeps — though the day on screen stays this "
-           + "device's own until the commune answers again.");
-    loginForm(f, { aid: h.aid || "", k0: h.k0, store: [null, null], button: "unlock",
-                   consent: g => consentGate(g, {}) });
-  }
-  identifierRow(f, h.aid);
-  signOutRow(f);
-}
-
-// the sheet behind an unregistered chip: the commune has never seen this AID,
-// and the log in hand is everything it needs to seat it. One tap — the
-// gateway verifies the whole chain (signup-with-kel) and the seat follows.
-function renderJoin(el: d3.Selection, h: IdHint | null): void {
-  const f = toggleSheet(el, true);
-  if (!f) return;
-  f.append("div").attr("class", "lead").text("this commune hasn't met you");
-  f.append("div").attr("class", "opt")
-   .text("Your identity was made elsewhere and this commune has never seen it. Your log "
-         + "— every key event you've signed — is on this device, and that is all a "
-         + "commune needs to seat you under your current key.");
-  if (h) identifierRow(f, h.aid);
-  // a browser that holds a current acceptance is not asked again to join: the
-  // notice is re-read on a change of terms (§11), not on every seat
-  const consented = consentGate(f, {});
-  const err = f.append("div").attr("class", "err");
-  f.append("button").attr("class", "go").text(`join as ${myName(h)}`)
-   .on("click", async () => {
-     if (!consented()) { err.text("please accept the terms and the privacy notice first"); return; }
-     err.text("");
-     idState.set("busy");
-     finishAuth(await (HANDLERS.join ? HANDLERS.join(h ? h.name : "", h ? h.email : "") : "err:offline"),
-                null, null);
-   });
-  signOutRow(f);
-}
 // pull personhood standing from the gateway into the `person` signal. The
-// chip does not read it — standing lives in the sheet — so this settles the
+// chip does not read it — standing lives under keys and devices — so this settles the
 // signal and schedules the poll, and draws nothing itself.
 async function refreshPersonhood(): Promise<void> {
   if (!HANDLERS.fpStatus) { person.set(null); return; }
@@ -646,7 +444,7 @@ async function refreshAsk(): Promise<void> {
               vouchers: Array.isArray(o.vouchers) ? o.vouchers : [] });
   } catch (_) { ask.set(null); }
 }
-// while an ask is collecting, re-read it so the sheet's "n of k" and the badge
+// while an ask is collecting, re-read it so the recognition block's "n of k" and the badge
 // follow each vouch as it lands, and flip to recognised the moment the
 // credential issues — the ceremony is the truth, nothing on this device is
 let _fpPoll: ReturnType<typeof setTimeout> | null = null;
@@ -775,36 +573,6 @@ const recordConsent = (aid: string) => {
   writeJSON(K.idConsent,
             { v: LEGAL_VERSION, at: new Date().toISOString(), aid: aid || "" });
 };
-// The gate itself. Appends a checkbox + links to `f` and returns ok(), which
-// the caller must consult BEFORE doing anything. Returns a permanently-true
-// ok() and renders nothing when the current version is already accepted, so a
-// returning member is not re-asked on every unlock.
-function consentGate(f: d3.Selection, opts?: { force?: boolean }): () => boolean {
-  if (!(opts && opts.force) && consentCurrent()) return () => true;
-  // A plain <div>, NOT a <label> wrapping the whole line: an <a> inside a label
-  // both follows the link and toggles the box, so opening the terms would tick
-  // "I have read them". The prose runs in <label for=…> spans instead, which
-  // keeps a generous tap target while the two links stay inert to the checkbox.
-  const boxId = "pnconsent" + ((consentGate as Counted)._n =
-                               ((consentGate as Counted)._n || 0) + 1);
-  const row = f.append("div").attr("class", "consent");
-  const box = row.append("input").attr("type", "checkbox").attr("id", boxId);
-  const txt = row.append("span");
-  const say = (s: string) => txt.append("label").attr("for", boxId).text(s);
-  const link = (href: string, s: string) => txt.append("a").attr("href", href)
-    .attr("target", "_blank").attr("rel", "noopener").text(s);
-  if (consentRecord()) say("the terms have changed — ");
-  for (const part of CONSENT_SENTENCE)
-    if (typeof part === "string") say(part); else link(part[1], part[0]);
-  // The two consequences that are genuinely irreversible, said at the point of
-  // decision rather than only in the linked document nobody opens.
-  f.append("div").attr("class", "opt")
-   .text(ONLY_KEY_NOTE);
-  // a checkbox's `checked` is a boolean; property() answers unknown for the
-  // general case, and this is not the general case.
-  return () => box.property("checked") as boolean;
-}
-
 // ── explicit consent to record a political opinion (Art 9(2)(a)) ─────────
 // How you vote is recorded against your identity and read by the tallying
 // scope (privacy notice §3.1). The notice's basis there is Art 9(2)(d), open
@@ -888,17 +656,6 @@ function settleAuth(r: unknown, nameToStore: string | null, emailToStore: string
   idState.set("idle");
   return { err: String(r || "err:no reply").replace(/^err:/, "") };
 }
-/** `settleAuth`, then the sheet's own follow-up: `onSuccess`, else close; a refusal is a toast. */
-function finishAuth(r: unknown, nameToStore: string | null, emailToStore: string | null,
-                    onSuccess?: (aid: string, k0: string) => void): void {
-  const s = settleAuth(r, nameToStore, emailToStore);
-  if ("err" in s) {
-    d3.select("#idrow").select(".who").classed("off", false);
-    hint(s.err, "error");
-  } else if (onSuccess) onSuccess(s.aid, s.k0);
-  else closeSheet();
-}
-
 // ── the acts a sign-in surface performs ────────────────────────────────
 // Each is one reply settled: the identity it opened, or the words for why not.
 // No surface is named here — the card in app/identity-view.ts calls them.
@@ -929,67 +686,6 @@ export async function recoverFromPieces(lines: string[]): Promise<Settled> {
   const [aid, bran] = r.slice(3).split("|");
   return signIn(bran, aid, "", ["", ""]);
 }
-function renderIdForm(el: d3.Selection, h: IdHint | null): void {
-  const f = toggleSheet(el);
-  if (!f) return;
-
-  // returning identity — passcode only (the AID is the stored hint, supplied
-  // to the password manager as a hidden username so it fills the right entry).
-  if (h) {
-    f.append("div").attr("class", "lead").text(`unlock ${h.name || "your identity"}`);
-    // consentGate renders nothing here unless the notices changed since this
-    // member last accepted them (§11 of the terms: re-accept on material change).
-    loginForm(f, { aid: h.aid || "", k0: h.k0, store: [null, null], button: "unlock",
-                   consent: g => consentGate(g, {}) });
-    f.append("div").attr("class", "gen2").style("margin-top", "7px")
-     .text("another way in — recovery file, friends' pieces, a different identity")
-     .on("click", () => renderOtherSignIn(el));
-    return;
-  }
-
-  createForm(el, f);
-}
-
-// new identity — one tap. A passcode (your only key) is generated for you;
-// the AID is the inception event's SAID, minted in the browser on create, so
-// the COMPLETE identity — AID + passcode + a recovery file with both — is
-// revealed AFTER create, in renderIdCreated. No passcode-first step: there is
-// nothing complete to save until the AID exists, and showing only the
-// passcode first invites saving a half-identity. No name, no email — those
-// are optional, added in settings. The same form with a commune reachable
-// and without: the identity is made here either way, and a commune is
-// something it joins.
-function createForm(el: d3.Selection, f: d3.Selection, note?: string): void {
-  f.append("div").attr("class", "lead").text("create your identity");
-  f.append("div").attr("class", "opt")
-   .text("a passcode is generated for you — it's your only key. The moment you create, you'll "
-         + "see it once, and can save a recovery file that opens this identity on any device.");
-  // the caller's condition, said after the act it does not prevent
-  if (note) f.append("div").attr("class", "opt").text(note);
-  // acceptance is required to create — always shown on this path, even to a
-  // browser that already holds a current record, because creating an identity
-  // IS the collection moment Article 13 is about.
-  const consented = consentGate(f, { force: true });
-  const err = f.append("div").attr("class", "err");
-  f.append("button").attr("class", "go").text("create your identity").on("click", async () => {
-    if (!consented()) {
-      err.text("please accept the terms and the privacy notice first");
-      return;
-    }
-    err.text("");
-    const bran = genPasscode();   // 120-bit client-side key; never stored or sent
-    idState.set("busy");
-    // on success the AID exists — reveal AID + passcode + recovery file so
-    // sign-in on another device is possible (renderIdCreated). On error the
-    // form stays for retry; no orphan key was shown.
-    finishAuth(await (HANDLERS.signup ? HANDLERS.signup("", "", bran) : "err:offline"),
-               "", "", (aid) => renderIdCreated(el, aid, bran));
-  });
-  f.append("div").attr("class", "gen2").style("margin-top", "7px")
-   .text("I already have an identity — sign in")
-   .on("click", () => renderOtherSignIn(el));
-}
-
 // a recovery file holding everything an identity needs on a fresh device: the
 // passcode (proves the key) and the KEL (the identity's own signed log — the
 // AID is its inception's SAID, and the rotations say which key signs now).
@@ -1092,228 +788,6 @@ export async function openIdentityFile(text: string): Promise<string | null> {
   return null;
 }
 
-// post-create: the identity exists and its passcode is on screen for the ONE
-// time it will ever be shown. Dismissing this sheet without saving it locks
-// the person out of their own identity permanently, so the sheet HOLDS itself
-// open — the chip, a stray Enter, another sheet, and the tab's own close all
-// route through closeSheet/beforeunload and are refused until they confirm
-// they have it. Same contract a wallet's seed phrase gets, for the same
-// reason: there is no reset, no support desk, no second chance.
-//
-// The identifier is shown beside the passcode, whole and copiable. It is the
-// username a password manager files the passcode under, and it is what a
-// device that holds nothing needs beside the passcode at a commune that has
-// never met this identity — so a person who writes the passcode down writes
-// the identifier with it, or takes the recovery file, which carries both.
-function renderIdCreated(el: d3.Selection, aid: string, bran: string): void {
-  const f = openSheet(el, true);
-  holdSheet(true);
-  // The tab itself is a way out, and the browser owns that door — so take the
-  // only hook it offers. Released the moment the passcode is confirmed saved.
-  const guard = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
-  window.addEventListener("beforeunload", guard);
-  const release = () => {
-    window.removeEventListener("beforeunload", guard);
-    holdSheet(false);
-    closeSheet();
-  };
-
-  f.append("div").attr("class", "lead").text("identity created");
-  f.append("div").attr("class", "opt")
-   .text("this passcode is the only key to it, and this is the one time it is shown. "
-         + "Keep it with your identifier — or take the recovery file, which holds both.");
-
-  // A real credential <form>: username = the identifier, password = the
-  // passcode, with the autocomplete hints password managers read. Submitting
-  // is the gesture the browser's built-in manager watches for; extensions
-  // detect the new-password field directly.
-  const form = f.append("form").attr("autocomplete", "on").attr("action", "#");
-
-  form.append("label").attr("class", "sublead").text("passcode (your key)");
-  const pass = form.append("input").attr("class", "pcode")
-    .attr("type", "password").attr("name", "password")
-    .attr("autocomplete", "new-password")
-    .attr("readonly", true).attr("spellcheck", "false").property("value", bran);
-  const row = form.append("div").attr("class", "genrow");
-  row.append("span").attr("class", "gen2").text("show").on("click", function () {
-    const showing = pass.attr("type") === "text";
-    pass.attr("type", showing ? "password" : "text");
-    d3.select(this).text(showing ? "show" : "hide");
-  });
-  row.append("span").attr("class", "gen2").text("copy").on("click", function () {
-    if (navigator.clipboard) navigator.clipboard.writeText(bran);
-    const t = d3.select(this); t.text("✓ copied"); setTimeout(() => t.text("copy"), 1500);
-  });
-
-  form.append("label").attr("class", "sublead").text("identifier (names you — not secret)");
-  identifierRow(form, aid, true);
-
-  form.append("button").attr("class", "go").attr("type", "button").style("margin-top", "8px")
-   .text("⬇ download recovery file").on("click", () => downloadIdentityFile(aid, bran));
-  form.append("div").attr("class", "opt")
-   .text("the file holds the passcode and the identifier together with your identity's own "
-         + "signed log — it opens this identity on any device, and seats it at a commune "
-         + "that has never met you.");
-
-  // THE GATE. Nothing below is reachable until this is ticked, and the sheet
-  // cannot be dismissed while it is not. Deliberately an affirmative act: a
-  // person who has written it on paper is as safe as one who downloaded, so
-  // this asks what they know rather than watching what they clicked.
-  const gateId = "pnsaved" + ((renderIdCreated as Counted)._n =
-                              ((renderIdCreated as Counted)._n || 0) + 1);
-  const gate = form.append("div").attr("class", "consent");
-  const box = gate.append("input").attr("type", "checkbox").attr("id", gateId);
-  gate.append("label").attr("for", gateId)
-      .text("I've saved my passcode. I understand it cannot be shown again.");
-
-  form.append("label").attr("class", "sublead").style("margin-top", "10px")
-   .text("what should people call you?");
-  const nameIn = form.append("input").attr("type", "text")
-    .attr("name", "nickname").attr("autocomplete", "nickname")
-    .attr("spellcheck", "false")
-    .attr("placeholder", "a name — optional, and changeable any time");
-  form.append("div").attr("class", "opt")
-   .text("please do not use your legal name — this is an early-stage demo; a nickname is fine.");
-  // on blur, so the name is in the hint before the recovery file is written
-  // (downloadIdentityFile reads it from there) and the chip says it at once
-  nameIn.on("change", () => { setMyName((nameIn.property("value") as string).trim(), ""); });
-
-  const done = form.append("button").attr("class", "go").attr("type", "submit")
-    .style("margin-top", "6px").attr("disabled", true).style("opacity", "0.45")
-    .text("done");
-  // a button that is dead must LOOK dead — an enabled-looking one that
-  // silently does nothing reads as a broken page, which is worse than a
-  // greyed one that explains itself by being greyed
-  box.on("change", () => {
-    const ok = box.property("checked") as boolean;
-    done.attr("disabled", ok ? null : true).style("opacity", ok ? "1" : "0.45");
-  });
-  form.on("submit", async function (e) {
-    e.preventDefault();
-    if (!(box.property("checked") as boolean)) return;   // Enter cannot slip past
-    const n = (nameIn.property("value") as string).trim();
-    if (n) await setMyName(n, "");
-    release();
-  });
-}
-
-// sign in to an EXISTING identity on a device that holds nothing of it. Three
-// doors, in the order people reach for them.
-//   The passcode. It derives the identity's inception key, and a commune that
-//   holds the log under that key hands it over (find-icp); the spine checks
-//   the log is this passcode's own and keeps it. The identifier is asked for
-//   only as an option: it names the identity outright, which is what a
-//   commune that has never met it — or a password manager — goes by.
-//   A recovery file. It brings the passcode and the log together, so it
-//   opens the identity anywhere, with no commune in reach.
-//   The people you trusted. Their pieces give the passcode back.
-function renderOtherSignIn(el: d3.Selection): void {
-  const f = openSheet(el);
-  f.append("div").attr("class", "lead").text("sign in");
-  f.append("div").attr("class", "opt")
-   .text("your passcode opens your identity: a commune that has met you finds it from the "
-         + "passcode alone. Add your identifier if you have it — a password manager fills both.");
-  // aid:null ⇒ a typed, optional identifier; empty k0 skips the same-identity
-  // guard so handle-unlock signs in as the identity found and the reply
-  // stores a complete hint. force:true — this browser may never have seen
-  // the notices even though the identity predates it, so ask here too.
-  loginForm(f, { aid: null, k0: "", store: ["", ""], button: "sign in",
-                 consent: g => consentGate(g, { force: true }) });
-
-  f.append("div").attr("class", "lead").style("margin-top", "12px").text("or open your recovery file");
-  f.append("div").attr("class", "opt")
-   .text("the file holds your passcode and your identity's log — open it and you are in, "
-         + "at any commune.");
-  const fileErr = f.append("div").attr("class", "err");
-  const pick = f.append("input").attr("type", "file").attr("accept", ".json,application/json")
-    .style("display", "none")
-    .on("change", async function () {
-      const files = (this as HTMLInputElement).files;
-      if (!files || !files[0]) return;
-      const bad = await openIdentityFile(await files[0].text());
-      if (bad) fileErr.text(bad); else { fileErr.text(""); closeSheet(); }
-    });
-  f.append("button").attr("class", "go").attr("type", "button")
-   .text("open recovery file").on("click", () => (pick.node() as HTMLInputElement).click());
-
-  // ── the third door: the people you trusted ──
-  // Someone who lost their passcode has no file and nothing to type — what
-  // they have is friends holding pieces. This asks for those, works out whose
-  // identity they open and whether there are enough, and then walks the very
-  // same unlock the other two doors do.
-  f.append("div").attr("class", "lead").style("margin-top", "12px")
-   .text("or with help from people you trusted");
-  f.append("div").attr("class", "opt")
-   .text("if you split your passcode among people, ask them for their pieces and "
-         + "paste them here — one per line.");
-  const pieces = f.append("textarea").attr("class", "pcode").attr("rows", "3")
-    .attr("spellcheck", "false")
-    .attr("placeholder", "pnr1.… (one piece per line)");
-  const pErr = f.append("div").attr("class", "err");
-  f.append("button").attr("class", "go").attr("type", "button")
-   .text("put my passcode back together").on("click", async () => {
-     const lines = String(pieces.property("value") || "")
-       .split("\n").map(l => l.trim()).filter(Boolean);
-     if (!lines.length) { pErr.text("paste the pieces your friends sent you"); return; }
-     pErr.text("");
-     const done = await recoverFromPieces(lines);
-     if ("err" in done) { hint(done.err, "error"); pErr.text(done.err); return; }
-     closeSheet();
-   });
-
-  f.append("div").attr("class", "gen2").style("margin-top", "10px").text("← back")
-   .on("click", () => { closeSheet(); renderIdForm(el, idHint()); });
-}
-
-// One login <form> for both sign-in paths — password managers autofill via the
-// username(AID)/current-password fields, then submit calls unlock. opts:
-//   aid    a known AID (rendered as a hidden username), or null for a typed,
-//          OPTIONAL one: left empty, the passcode alone names the identity
-//   k0     the same-identity guard value passed to unlock
-//   store  [name, email] written to the localStorage hint on success
-//   button submit-button label
-//   consent optional (form) => ok(); submit is blocked until ok() is true.
-//           finishAuth records the acceptance on success. Omitted ⇒ ungated.
-function loginForm(parent: d3.Selection, opts: LoginOpts): d3.Selection {
-  const form = parent.append("form").attr("autocomplete", "on").attr("action", "#");
-  let typed: d3.Selection | null = null;
-  if (opts.aid == null) {
-    typed = form.append("input").attr("type", "text").attr("name", "username")
-      .attr("autocomplete", "username").attr("spellcheck", "false")
-      .attr("placeholder", "identifier — optional");
-  } else {
-    // hidden username = the known AID, so the manager fills the matching entry
-    form.append("input").attr("type", "text").attr("name", "username")
-      .attr("autocomplete", "username").property("value", opts.aid)
-      .attr("readonly", true).attr("tabindex", "-1").attr("aria-hidden", "true")
-      .style("position", "absolute").style("width", "1px").style("height", "1px")
-      .style("opacity", "0").style("pointer-events", "none");
-  }
-  const pass = form.append("input").attr("type", "password").attr("name", "password")
-    .attr("autocomplete", "current-password").attr("placeholder", "passcode — 21+ characters");
-  // the gate sits between the credentials and the submit button, where it is
-  // read, rather than above the form where it scrolls out of mind
-  const consented = opts.consent ? opts.consent(form) : (() => true);
-  const err = form.append("div").attr("class", "err");
-  form.on("submit", async (e) => {
-    e.preventDefault();
-    const a = typed ? (typed.property("value") as string).trim() : opts.aid;
-    const bran = pass.property("value") as string;
-    if (!bran || bran.length < 21) { err.text("the passcode needs 21+ characters"); return; }
-    if (!consented()) {
-      err.text("please accept the terms and the privacy notice first"); return;
-    }
-    err.text("");
-    idState.set("busy");
-    // a typed identifier left empty goes as "": the spine then opens the
-    // identity the passcode itself names (the log held here, or the one the
-    // commune holds under the passcode's inception key)
-    finishAuth(await (HANDLERS.unlock ? HANDLERS.unlock(bran, a || "", opts.k0) : "err:offline"),
-               opts.store[0], opts.store[1]);
-  });
-  form.append("button").attr("class", "go").attr("type", "submit").text(opts.button);
-  return form;
-}
 /**
  * RECOVERY FRIENDS. The passcode is the only key and cannot be reset, so the
  * answer to losing it is other people: split it into pieces, give one to each
@@ -1839,184 +1313,15 @@ export function recoveryFriends(f: d3.Selection): void {
     });
 }
 
-// the profile/settings popover for a signed-in identity: a display name
-// (for discovery) and an email (for notifications). Both optional, neither
-// touches recovery. Read/written through the AID-bound session.
-async function renderSettings(el: d3.Selection, h: IdHint | null): Promise<void> {
-  const f = toggleSheet(el, true);
-  if (!f) return;
-  f.append("div").attr("class", "lead").text("your identity");
-
-  // ── where you are ── the profile leads: this sheet is opened by tapping
-  // your own name, so what you came to look at and change comes first — the
-  // place the commons holds for you. Skills live in the inventory drawer's
-  // Skills view. Standing follows; told first, "provisional" reads as a verdict.
-  f.append("div").attr("class", "sublead").text("where you are");
-  whereBlock(f, closeSheet);
-
-  // ── personhood standing (First-Person) ──
-  const ps = f.append("div").attr("class", "phcrow").text("checking standing…");
-
-  // ── keys, devices, recovery: their own settings group ──
-  // The sheet you open by tapping your name says who you are and lets you
-  // sign out; the device keys and the recovery pieces are settings, reached
-  // from here by one button so the sheet stays short.
-  f.append("div").attr("class", "sublead").text("keys and devices");
-  f.append("span").attr("class", "vbtn keysbtn")
-   .text("stay signed in, change passcode, recovery friends → settings")
-   .on("click", () => { closeSheet(); openSettings("device"); });
-
-  // ── the people you know: each person's row in Contacts holds what stands
-  // between you and every act on it (vouch, withdraw, witness, introduce)
-  f.append("div").attr("class", "sublead").text("people you know");
-  f.append("span").attr("class", "vbtn keysbtn")
-   .text("vouch, witness, introduce → contacts")
-   .on("click", () => { closeSheet(); revealContacts(); });
-
-  // ── name ── LAST of the profile: one optional field a person sets once,
-  // under the parts they come back to — where they are and what they can do.
-  // How to reach you (an email, a handle, a number) is its own list, in
-  // settings: yours, and told to the commune or a contact by your own act.
-  f.append("div").attr("class", "sublead").text("name");
-  // Seeded from the local hint, which is what this device believes and what the
-  // chip is already saying — a name set with no commune in reach lives here and
-  // nowhere else yet. The commune's own answer refines it below.
-  const pair = f.append("div").attr("class", "idpair");
-  const name = pair.append("input").attr("type", "text")
-                .attr("placeholder", "name — so others can find you")
-                .property("value", h ? h.name : "");
-  const err = f.append("div").attr("class", "err");
-  const saveRow = f.append("div").attr("class", "idsave");
-  saveRow.append("span").attr("class", "opt")
-   .text("optional, and not used for recovery — please do not use your legal name while this is a demo.");
-  saveRow.append("span").attr("class", "vbtn").text("save").on("click", async () => {
-    // the email the member record holds stays as it is
-    const r = await setMyName((name.property("value") as string).trim(), who.peek()?.email || "");
-    if (r === "ok") { closeSheet(); idState.set("authed"); }
-    else err.text(r.replace(/^err:/, ""));
-  });
-
-  f.append("div").attr("class", "sublead").text("how to reach you");
-  f.append("span").attr("class", "vbtn keysbtn")
-   .text("your addresses, and who you have told → settings")
-   .on("click", () => { closeSheet(); openSettings("reach"); });
-
-  if (h) {
-    f.append("div").attr("class", "sublead").style("margin-top", "10px")
-     .text("your identifier");
-    identifierRow(f, h.aid);
-  }
-
-  // the notices stay reachable after signup — Article 13 information has to be
-  // available, not just flashed once at the door — with the recorded acceptance
-  // beside them so a member can see what they agreed to and when.
-  const legal = f.append("div").attr("class", "legalrow");
-  legal.append("a").attr("href", TERMS_HREF).attr("target", "_blank")
-       .attr("rel", "noopener").text("terms of use");
-  legal.append("span").text(" · ");
-  legal.append("a").attr("href", PRIVACY_HREF).attr("target", "_blank")
-       .attr("rel", "noopener").text("privacy notice");
-  const c = consentRecord();
-  if (c && c.at)
-    legal.append("div").attr("class", "opt")
-         .text(`accepted v${DOCUMENT_VERSION} (effective ${c.v}) on ${String(c.at).slice(0, 10)}`);
-
-  signOutRow(f);
-
-  // async fills ----------------------------------------------------------
-  const st = await readStanding();
-  ps.html("");
-  if (st) {
-    if (st.person) {
-      ps.append("span").attr("class", "phc yes").text("✓ recognised person");
-      if (st.carried)
-        ps.append("div").attr("class", "phccard")
-          .text("credential " + st.carried.d.slice(0, 14) + "… · issued by "
-                + st.carried.i.slice(0, 12) + "… — carried, presentable to other communes");
-    } else {
-      const a = st.ask;
-      const collecting = a?.state === "collecting";
-      const nobody = !st.bootstrapped;
-      ps.append("span").attr("class", "phc " + (collecting ? "wait" : "no"))
-        .text(collecting ? `pending · ${a!.count} of ${a!.quorum}` : "provisional");
-      ps.append("div").attr("class", "opt")
-        .text(nobody
-          ? "no one is recognised here yet — the founder's first act makes the first person."
-          : collecting
-          ? askSaying(a!) + (a!.vouchers.length
-              ? ` ${a!.vouchers.length === 1 ? "one of them" : `${a!.vouchers.length} of them`} already vouch${a!.vouchers.length === 1 ? "es" : ""} for you.`
-              : "")
-          : "recognition keeps out spam: recognised people who have met you sign that they have. Ask, and every recognised member sees it.");
-      if (!collecting && !nobody)
-        ps.append("span").attr("class", "vbtn").text("request recognition")
-          .on("click", async function () {
-            const d = await requestRecognition();
-            d3.select(this).text(d.said).classed("done", d.ok);
-          });
-      // the founder's genesis act: only while no one is recognised
-      if (nobody && st.governor && HANDLERS.fpGrant && who.peek()?.aid)
-        ps.append("span").attr("class", "vbtn").text("recognise myself — the first person")
-          .on("click", async function () {
-            const d = await recogniseMyself();
-            d3.select(this).text(d.said).classed("done", d.ok);
-          });
-    }
-  } else ps.text("");
-
-  // The commune is authoritative for the profile it holds — but only where it
-  // HOLDS one. An empty answer must not wipe a name this device set with no
-  // seat to push it through; that name is pending, not absent.
-  if (HANDLERS.profileGet) {
-    try { const o = JSON.parse(await HANDLERS.profileGet() as string);
-          if (o.name) name.property("value", o.name);
-        }
-    catch (_) {}
-  }
-
-  // The standing asks from people outside your contacts, for RECOGNISED members.
-  // Each row is a newcomer's ceremony with its n of k; the one act is the ✍
-  // witness the calendar rail offers. The ecosystem's quorum does the rest.
-  const arr = await pendingAsks();
-  if (arr.length) {
-    f.append("div").attr("class", "sublead").text("asking to be recognised");
-    const pl = f.append("div").attr("class", "vlist");
-    const me = who.peek()?.aid;
-    arr.forEach(row => {
-      const r = pl.append("div").attr("class", "vrow");
-      r.append("span").attr("class", "vname").text(row.candidate.slice(0, 18) + "…");
-      r.append("span").attr("class", "vcount").text(`${row.count} of ${row.quorum}`);
-      if (me && (row.vouchers || []).includes(me))
-        r.append("span").attr("class", "phc-note").text(" you vouch for them");
-      r.append("span").attr("class", "vbtn").text("✍ witness")
-        .attr("title", "sign that you have met this person — your signature becomes an edge on their credential")
-        .on("click", async function () {
-          const d = await witness(row.said);
-          d3.select(this).text(d.said).classed("done", d.ok);
-        });
-    });
-  }
-}
-
 export { idHint };
 
-// ── the start face's door ──────────────────────────────────────────────
-// The onboarding walk ends in an identity, and it makes one through the same
-// three acts the sheet does — generate the passcode, sign up, record the
-// acceptance — with its own screen around them. What it needs is exported
-// here, so the walk never rebuilds the sheet's logic and the sheet stays the
-// one place that knows a reply's shape.
+// ── the surfaces' door ─────────────────────────────────────────────────
+// Every surface that shows an identity (the identity card, the onboarding
+// checklist, the account sheet) reaches it through what is exported here, so
+// this file stays the one place that knows a reply's shape.
 export const identity = who;
 export const identityState = idState;
 export { consentCurrent, consentRecord, downloadIdentityFile, setMyName, DOCUMENT_VERSION, refreshPersonhood };
-
-/** Open the identity sheet — sign in, unlock, or create; once in, your name, standing and sign out. */
-export function openIdentitySheet(): void {
-  const el = d3.select("#idrow"), chip = el.select(".who");
-  const face = CHIP[idState.peek()];
-  if (chip.empty() || !face.sheet) return;
-  face.sheet(el, who.peek());
-  anchorSheet(el, chip);
-}
 
 /**
  * The person button's two doors, registered by app/account.ts: the account
@@ -2027,18 +1332,17 @@ let accountDoor: (() => void) | null = null;
 let identityDoor: (() => void) | null = null;
 export function onAccountDoor(open: () => void, openIdentity: () => void): void { accountDoor = open; identityDoor = openIdentity; }
 /** Open the identity card: sign in, unlock or create; once in, who you are. */
-export function openIdentityDoor(): void { if (identityDoor) identityDoor(); else openIdentitySheet(); }
+export function openIdentityDoor(): void { if (identityDoor) identityDoor(); }
 
 /**
  * Create an identity in one act. The passcode is minted here and handed back
  * ONCE with the AID; the caller's screen shows it and gates on its being
- * saved, as renderIdCreated does. A refusal comes back as its text.
+ * saved (app/identity-view.ts). A refusal comes back as its text.
  */
 export async function createIdentity(): Promise<{ aid: string; bran: string } | { err: string }> {
   const bran = genPasscode();
   idState.set("busy");
   const r = await (HANDLERS.signup ? HANDLERS.signup("", "", bran) : "err:offline");
-  const made: { aid: string } = { aid: "" };
-  finishAuth(r, "", "", aid => { made.aid = aid; });
-  return made.aid ? { aid: made.aid, bran } : { err: String(r || "err:no reply").replace(/^err:/, "") };
+  const s = settleAuth(r, "", "");
+  return "err" in s ? s : { aid: s.aid, bran };
 }

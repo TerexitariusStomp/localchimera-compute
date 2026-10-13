@@ -96,7 +96,7 @@ try {
     h.rec('passcode revealed once, client-generated', creds.bran.length >= 21);
 
     if (!creds.aid) {
-      h.info('idform text: ' + JSON.stringify(
+      h.info('identity card text: ' + JSON.stringify(
         (await page.evaluate(() =>
           document.querySelector('.idc')?.textContent ?? '')).slice(0, 400)));
       h.info('console tail: ' + JSON.stringify(h.logs.slice(-15)));

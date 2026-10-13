@@ -16,7 +16,7 @@ import { passcodeUnsaved } from "./passcode-held.js";
 // hears the engine's install offer, which is raised once and early
 import "./install.js";
 
-const idle = (): boolean => !document.getElementById("idform") && !passcodeUnsaved.peek();
+const idle = (): boolean => !passcodeUnsaved.peek();
 
 let watching = false;
 const whenHidden = (): void => {

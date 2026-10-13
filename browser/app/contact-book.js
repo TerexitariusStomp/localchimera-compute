@@ -3,7 +3,7 @@
 // The book is the people you know: the spine pushes it (EXT.contacts) with what
 // the two of you have signed about each other, and while no seat is taken the
 // demo book stands in (demo/contacts.ts). The Contacts view, the slot pickers,
-// the calendar rail, the log and the identity sheet each ask here, so a name, a
+// the calendar rail, the log and the identity card each ask here, so a name, a
 // kind and an invitation read the same wherever they appear, and every reader
 // inside an effect redraws when the book changes.
 import { EXT, HANDLERS, hint } from './core.js';

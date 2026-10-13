@@ -14,7 +14,7 @@ import { updateReady } from "./attention.js";
 import { passcodeUnsaved } from "./passcode-held.js";
 // hears the engine's install offer, which is raised once and early
 import "./install.js";
-const idle = () => !document.getElementById("idform") && !passcodeUnsaved.peek();
+const idle = () => !passcodeUnsaved.peek();
 let watching = false;
 const whenHidden = () => {
     if (document.visibilityState === "hidden" && idle())
