@@ -10,6 +10,11 @@
 ;;;   pseudonym can take a seat again — disassociation with the chain intact);
 ;;;   a second forget is all zeros; a device-tier session cannot forget;
 ;;;   a rotation naming no next key is witnessed, and no rotation follows it.
+;;;   The personhood audit (identity/recovery.scm) over a store holding a vouch
+;;;   the person's device signed reads that vouch as signed before the forget
+;;;   and after it — the device registry is the device key's log, a statement
+;;;   is verified at its own time — flags a vouch dated before the device was
+;;;   authorized or after it was retired, and finds the store itself as it was.
 ;;;
 ;;; The data dir is set before any module reads it (device-registry's boot
 ;;; cell reads the environment at load).
@@ -25,7 +30,13 @@
              (playnet keri signify-portable)
              ((playnet keri cesr) #:select (cesr-bytes->qb64))
              ((playnet keri crypto-primitives) #:select (keri-crypto-random-bytes))
-             ((playnet keri acdc) #:select (cred-said cred-claims cred-signature cred-schema cred-issuer cred-holder)) ((playnet keri first-person credentials) #:select (make-device-authorization-credential))
+             ((playnet keri acdc) #:select (cred-said cred-claims cred-signature cred-schema cred-issuer cred-holder)) ((playnet keri first-person credentials)
+              #:select (make-device-authorization-credential make-personhood-credential
+                        make-relationship-credential))
+             ((playnet keri acdc-store) #:select (spawn-acdc-store))
+             ((playnet keri first-person predicates) #:select (phc-for))
+             ((playnet keri citizen-sig) #:select (aid-signer-keys-resolver))
+             ((playnet identity recovery) #:select (recover-personhood-state))
              ((playnet knowledge law product) #:select (product-feature feature-doors))
              (playnet identity devices)
              (playnet identity forget)
@@ -141,6 +152,41 @@
 (check "the manager kept the mailbox it made"
        (eq? mb (with-vat gateway-vat ($ mailbox-mgr 'get-or-create aid))))
 
+;; ── a vouch the device signed, in a store the audit reads ──────────────────
+(format #t "~%=== a vouch the device signed, read by the personhood audit ===~%")
+;; the gateway binds the signer-keys resolver at boot (boot/identity.scm);
+;; the test binds it the same way, the person's current key plus the device
+;; keys authorized at the statement's own instant
+(aid-signer-keys-resolver
+ (lambda (a at) (append (let ((k ($ oobi-host 'current-key a))) (if (string? k) (list k) '()))
+                        (device-keys-at a (or at (current-time))))))
+(define eco "E_forget_eco")
+(define friend "EFRIENDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+(define store (with-vat gateway-vat (spawn-acdc-store)))
+(define (issue! c) (with-vat gateway-vat ($ store 'issue c)))
+(issue! (make-personhood-credential #:ecosystem-aid eco #:holder-aid aid #:enrolled-at 100))
+(issue! (make-personhood-credential #:ecosystem-aid eco #:holder-aid friend #:enrolled-at 100))
+(define phc (with-vat gateway-vat (phc-for store eco aid)))
+(define (vouch-by-laptop issued-at)
+  (make-relationship-credential #:issuer-aid aid #:subject-aid friend
+                                #:relationship-type 'trust
+                                #:issuer-phc-said (cred-said phc)
+                                #:issued-at issued-at #:signing-keypair laptop))
+(define while-live (vouch-by-laptop 1700000001))   ; the device enrolled at 1700000000
+(define too-early  (vouch-by-laptop 1699999999))   ; before it was authorized
+(issue! while-live)
+(issue! too-early)
+(define (audit) (with-vat gateway-vat (recover-personhood-state store eco)))
+(define (flagged? r sym c) (and (member (cons sym (cred-said c)) (assq-ref r 'issues)) #t))
+(let ((r (audit)))
+  (check "the audit sees both people and both vouches"
+         (and (= 2 (assq-ref r 'phc-count)) (= 2 (assq-ref r 'vrc-count))))
+  (check "a vouch the device signed while authorized reads as signed"
+         (and (not (flagged? r 'invalid-vrc-sig while-live))
+              (not (flagged? r 'unsigned-vrc while-live))))
+  (check "one dated before the device was authorized does not"
+         (flagged? r 'invalid-vrc-sig too-early)))
+
 (format #t "~%=== a device cannot forget its person ===~%")
 (check "device-tier forget-me refused, naming the passcode"
        (err-with? (with-vat gateway-vat ($ dev 'forget-me)) "passcode"))
@@ -194,6 +240,26 @@
 (check "…every door of it, a writer included"
        (err-with? (with-vat gateway-vat ($ dev 'sync-contacts '())) "forgotten"))
 (check "the device is refused at the door as revoked" (err-with? (device-auth) "revoked"))
+
+(format #t "~%=== the personhood audit after the forget ===~%")
+;; a vouch dated after the retirement: the device no longer signs as them
+(define too-late (vouch-by-laptop 4102444800))
+(issue! too-late)
+(let ((r (audit)))
+  (check "the store stands as it was: both people, all three vouches"
+         (and (= 2 (assq-ref r 'phc-count)) (= 3 (assq-ref r 'vrc-count))))
+  (check "the vouch the device signed while authorized still reads as signed"
+         (and (not (flagged? r 'invalid-vrc-sig while-live))
+              (not (flagged? r 'unsigned-vrc while-live))))
+  (check "…and is still no orphan: its issuer's PHC is live and the edge holds"
+         (and (not (flagged? r 'orphan-vrc while-live))
+              (not (flagged? r 'broken-i2i while-live))))
+  (check "the one dated before the device was authorized still does not"
+         (flagged? r 'invalid-vrc-sig too-early))
+  (check "one dated after the retirement does not either"
+         (flagged? r 'invalid-vrc-sig too-late))
+  (check "nothing else is flagged: the forget added no issue of its own"
+         (= 2 (length (assq-ref r 'issues)))))
 
 (format #t "~%=== the key log stands: data about a pseudonym ===~%")
 (check "the oobi-host still serves the log" (with-vat gateway-vat ($ oobi-host 'known? aid)))
