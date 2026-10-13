@@ -12,7 +12,11 @@
 ;;;   4. every argument name on every door has a shape in
 ;;;      (playnet protocol shapes), so no emit ever guesses a type;
 ;;;   5. the seam table and day-boot's registry name the same handlers, and
-;;;      every door a handler sends is declared.
+;;;      every door a handler sends is declared;
+;;;   7. a door declared `#:keyed ARG` (the act carries a token minted once per act)
+;;;      keeps its promises: ARG is its last argument, optional, of the `id` shape,
+;;;      and each seam handler that sends it ends its parameters with ARG, so the
+;;;      page's one minting point (ui/app/keyed-doors.ts, generated) reaches it.
 ;;;
 ;;; Run: guile -L module tools/lint/protocol-lint.scm   (make check-protocol)
 
@@ -161,6 +165,28 @@ the three the JS shell sets on HANDLERS itself (device key tiers/forget)."
             %pushes)
   (format #t "seam pushes: ~a, ~a from the wasm, ~a raised in JS~%"
           (length %pushes) (count push-sink %pushes) (count (lambda (p) (not (push-sink p))) %pushes)))
+
+;; 7. keyed doors
+(let ((keyed (doors-keyed)))
+  (for-each
+   (lambda (d)
+     (let* ((arg (door-keyed d))
+            (entry (find (lambda (e) (eq? (car e) arg)) (door-arg-shapes d))))
+       (cond ((not entry)
+              (refuse "keyed door ~a ~a: ~a is not among its arguments" (door-object d) (door-name d) arg))
+             ((caddr entry)
+              (refuse "keyed door ~a ~a: ~a must be optional, so a caller with no token lands the act as it always did" (door-object d) (door-name d) arg))
+             ((not (eq? (cadr entry) 'id))
+              (refuse "keyed door ~a ~a: ~a must have the `id` shape (got ~a)" (door-object d) (door-name d) arg (cadr entry))))
+       (for-each
+        (lambda (h)
+          (when (member (cons (door-object d) (door-name d)) (handler-doors h))
+            (let ((want (string-append (symbol->string arg) "?: string")))
+              (unless (string-suffix? want (handler-params h))
+                (refuse "seam handler ~s sends keyed door ~a ~a, so its parameters must end with ~s" (handler-name h) (door-object d) (door-name d) want)))))
+        %handlers)))
+   keyed)
+  (format #t "keyed doors: ~a~%" (length keyed)))
 
 (if (zero? bad)
     (begin (display "protocol-lint: ok\n") (exit 0))

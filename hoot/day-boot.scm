@@ -1904,11 +1904,11 @@
 ;; The two doors onto live.scm's realisation path: a committed work block
 ;; records its effort as the work event FULFILLING it (record-effort), and a
 ;; schedule material row records the produce/consume/pickup/dropoff/use that realises it
-;; (record-flow — deterministic event id, so a second tap returns the standing
-;; event instead of double-moving stock). Both refetch the snapshot, so the
+;; (record-flow — named by its press's token, so a repeat of the press returns the
+;; standing event instead of recording it again). Both refetch the snapshot, so the
 ;; lived layer answers on the calendar right where the plan asked.
 
-(define (handle-record-effort scope-id cid qty unit cb)
+(define (handle-record-effort scope-id cid qty unit tap cb)
   (cond
    ((not *planner*) (reply! cb "err:sign in first"))
    ((or (not (string? cid)) (string=? cid ""))
@@ -1921,12 +1921,13 @@
           (reply! cb "err:the hours are not a number")
           (planner-call cb (<- *session* 'record-effort
                               (if (string=? scope-id "") *scope* scope-id)
-                              cid hours unit)
+                              cid hours unit
+                              (and (string? tap) (not (string=? tap "")) tap))   ; the press's own token; "" from a caller with none
             (lambda (v)
               (fetch-snapshot!)
               (reply! cb (string-append "ok:" (if (string? v) v ""))))))))))
 
-(define (handle-record-flow scope-id action spec qty total place when proc note row-id cb)
+(define (handle-record-flow scope-id action spec qty total place when proc note row-id tap cb)
   (cond
    ((not *planner*) (reply! cb "err:sign in first"))
    (else
@@ -1935,7 +1936,8 @@
                         action spec (or (string->number qty) 1)
                         (or (string->number total) (string->number qty) 1)
                         place when proc note
-                        (and (string? row-id) (not (string=? row-id "")) row-id))   ; the schedule's row id; "" from a caller with none
+                        (and (string? row-id) (not (string=? row-id "")) row-id)   ; the schedule's row id; "" from a caller with none
+                        (and (string? tap) (not (string=? tap "")) tap))             ; the press's own token; "" from a caller with none
       (lambda (v)
         (fetch-snapshot!)
         (reply! cb (string-append "ok:" (or (alist-ref v 'event-id) ""))))))))

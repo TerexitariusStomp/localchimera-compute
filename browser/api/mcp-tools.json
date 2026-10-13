@@ -6397,7 +6397,7 @@
     {
       "name": "session.record-effort",
       "title": "commitments: record-effort",
-      "description": "Records QTY UNIT of this AID's effort against COMMITMENT-ID in SCOPE-ID; replies (ok . event-id) or a failure when the commitment is unknown. [commitments; callable by an enrolled device]",
+      "description": "Records QTY UNIT of this AID's effort against COMMITMENT-ID in SCOPE-ID; replies (ok . event-id) or a failure when the commitment is unknown. TAP is one press's own token: the same token on the same commitment is the same act, answered with the event it recorded and recording nothing more. [commitments; callable by an enrolled device]",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -6420,6 +6420,11 @@
             "type": "string",
             "description": "a unit symbol, e.g. kg, h, each",
             "x-playnet-shape": "unit"
+          },
+          "tap": {
+            "type": "string",
+            "description": "the token a caller minted for ONE act of a keyed door (doors/protocol.scm #:keyed): the same token on the same subject is the same act, answered with what it recorded and recording nothing more; 1 to 64 letters, digits, _ or -",
+            "x-playnet-shape": "id"
           }
         },
         "required": [
@@ -7319,7 +7324,7 @@
     {
       "name": "planner.record-flow",
       "title": "stock: record-flow",
-      "description": "Confirms one material produce/consume/pickup/dropoff/use row the scope's last plan states, named by ROW-ID (the id the schedule carries) or, for a caller with none, by its coordinates; QTY is spread over the matching plan rows' remainders (each row is a commitment under the plan's own id) and TOTAL decides nothing. The flow is dated at the row's planned slot, or at its confirmation when the slot is still ahead. The two rows of a relocation chain through their run: a dropoff is refused until its pickup has taken the cargo. Replies the first numbered event id, or `already` once the rows are finished. [stock; callable by anyone]",
+      "description": "Confirms one material produce/consume/pickup/dropoff/use row the scope's last plan states, named by ROW-ID (the id the schedule carries) or, for a caller with none, by its coordinates; QTY is spread over the matching plan rows' remainders (each row is a commitment under the plan's own id) and TOTAL decides nothing. The flow is dated at the row's planned slot, or at its confirmation when the slot is still ahead. The two rows of a relocation chain through their run: a dropoff is refused until its pickup has taken the cargo. Replies the first numbered event id, or `already` once the rows are finished. TAP is one press's own token: the same token on the same rows is the same act, answered with what it recorded (`again`) and recording nothing more. [stock; callable by anyone]",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -7372,6 +7377,11 @@
           "row-id": {
             "type": "string",
             "description": "on record-flow the plan's own id for the schedule row being confirmed, as the schedule carries it; absent, the row is found by its coordinates",
+            "x-playnet-shape": "id"
+          },
+          "tap": {
+            "type": "string",
+            "description": "the token a caller minted for ONE act of a keyed door (doors/protocol.scm #:keyed): the same token on the same subject is the same act, answered with what it recorded and recording nothing more; 1 to 64 letters, digits, _ or -",
             "x-playnet-shape": "id"
           }
         },

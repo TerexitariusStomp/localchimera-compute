@@ -22,6 +22,7 @@
   #:use-module ((playnet knowledge catalogues thermal) #:select (declare-thermal-form!))
   #:use-module ((playnet knowledge dsl findings) #:select (findings->wire))
   #:use-module ((playnet knowledge dsl vf-lint) #:select (lint-records))
+  #:use-module ((playnet observation landing) #:select (standing-event tap-event-id tap?))
   #:use-module ((playnet observation log-observe) #:select (do-log-observe))
   #:use-module ((playnet observation observer) #:select (reach-slack target-passed?))
   #:use-module ((playnet scope live) #:select (enact-rows find-recipe-process-for-spec materialize-willing! mode-process-for-manner persist-materialized! record-flow-done record-work-done))
@@ -33,11 +34,23 @@
   #:use-module ((playnet vf formulas actions) #:select (*flow-actions* occupying-actions relocating-actions))
   #:use-module ((playnet vf formulas counting) #:select (count-process?))
   #:use-module ((playnet vf formulas flows) #:select (make-relocation-event row-id row-quantity))
-  #:use-module ((playnet vf schemas) #:select (commitment-finished commitment-id commitment-input-of commitment-provider make-commitment make-measure make-process recipe-process-process-conforms-to resource-specification-id specs->units))
+  #:use-module ((playnet vf schemas) #:select (commitment-finished commitment-id commitment-input-of commitment-provider economic-event-effort-quantity economic-event-id economic-event-resource-quantity make-commitment make-measure make-process measure-has-numerical-value recipe-process-process-conforms-to resource-specification-id specs->units))
   #:use-module ((srfi srfi-1) #:select (filter-map fold))
   #:use-module (playnet doors planner ctx)
   #:use-module ((playnet protocol dispatch) #:select (declared-doors))
   #:export (planner-records-doors))
+
+;; How much of the row CID the act under EVENT-ID recorded: its event, and the ones a
+;; draw from several lots added (`<id>.1`, `<id>.2`), each its resource figure or, for a
+;; means occupied, its hours.
+(define (share-recorded obs cid event-id)
+  (fold + 0
+        (filter-map (lambda (e)
+                      (let ((id (or (economic-event-id e) "")))
+                        (and (or (string=? id event-id) (string-prefix? (string-append event-id ".") id))
+                             (let ((q (or (economic-event-resource-quantity e) (economic-event-effort-quantity e))))
+                               (and q (measure-has-numerical-value q))))))
+                    (or ($ obs 'fulfilled-by cid) '()))))
 
 (define (planner-records-doors ctx)
   (with-planner-ctx ctx
@@ -221,7 +234,7 @@
       ;; wire and decides nothing: the row is the plan's.
       ;; NB the clock argument is named when-iso, never `when`: a method
       ;; parameter named `when` lexically shadows the macro.
-      ((record-flow scope-id action spec qty total place when-iso proc note #:optional (row-id #f))
+      ((record-flow scope-id action spec qty total place when-iso proc note #:optional (row-id #f) (tap #f))
        (with-scope scope-id
          (lambda (root)
            (catch-as-failure
@@ -236,21 +249,46 @@
                      (when (null? rows)
                        (error "the plan holds no such row; confirm what the plan states" action spec place))
                      (for-each (lambda (m) (hold-row! obs scope-id m)) rows)
-                     (let* ((open (filter (lambda (m) (> (row-left obs m) (reach-slack (row-quantity m)))) rows))
+                     (let* ((tap  (string-or-false tap))
+                            (_    (when (and tap (not (tap? tap))) (error "a tap is 1 to 64 letters, digits, _ or -" tap)))
+                            ;; THE ACT'S OWN IDENTITY: with a tap, each row's share of this act is the
+                            ;; event under (row, tap), so a repeat of the request finds what landed
+                            ;; and takes it off what is still to record. Asked of EVERY matched row,
+                            ;; the finished ones too: a share that filled its row leaves no room, and
+                            ;; room is not how a repeat is told from a new act.
+                            (stood (if tap
+                                       (filter-map (lambda (m) (let ((e (standing-event obs (tap-event-id (planned-row-id m) tap))))
+                                                                 (and e (cons m e))))
+                                                   rows)
+                                       '()))
+                            (landed (fold + 0 (map (lambda (me) (share-recorded obs (planned-row-id (car me)) (tap-event-id (planned-row-id (car me)) tap)))
+                                                   stood)))
+                            (need0 (- qty landed))
+                            (open (filter (lambda (m) (and (> (row-left obs m) (reach-slack (row-quantity m)))
+                                                           (not (assoc m stood))))
+                                          rows))
                             (room (fold + 0 (map (lambda (m) (row-left obs m)) open))))
                        (cond
+                        ;; the whole act is already in the books; or it has landed on every row it can
+                        ;; (a repeat that states another figure is still the same press: the key names the
+                        ;; act, so what stands is the answer). Only a press that landed on some rows and
+                        ;; has rows still open for the rest (a spread the first request did not finish) goes on.
+                        ((and (pair? stood) (or (not (target-passed? need0 0)) (null? open)))
+                         (success `((event-id . ,(economic-event-id (cdar stood))) (again . #t) (already . #t))))
                         ((null? open) (success `((event-id . "") (already . #t))))
-                        ((target-passed? qty room)
-                         (error (format #f "the row holds ~a more; ~a recorded" room qty)))
+                        ((target-passed? need0 room)
+                         (error (format #f "the row holds ~a more; ~a recorded" room need0)))
                         (else
-                         (let spend ((ms open) (need qty) (first #f))
+                         (let spend ((ms open) (need need0) (first (and (pair? stood) (economic-event-id (cdar stood)))))
                            (if (or (null? ms) (not (target-passed? need 0)))
                                (success `((event-id . ,(or first ""))))
                                (let* ((m    (car ms))
                                       (cid  (planned-row-id m))
                                       (take (min need (row-left obs m)))
-                                      (evid (string-append "ev-" cid "-"
-                                                           (number->string (length (or ($ obs 'fulfilled-by cid) '()))))))
+                                      (evid (if tap
+                                                (tap-event-id cid tap)
+                                                (string-append "ev-" cid "-"
+                                                               (number->string (length (or ($ obs 'fulfilled-by cid) '())))))))
                                  (record-flow-done root m
                                                    #:quantity take #:event-id evid
                                                    #:vocabulary (solve-vocabulary-of cache scope-id)

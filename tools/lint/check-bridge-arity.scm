@@ -12,20 +12,8 @@
 ;;; bridged handler's N to the seam's count; a handler with a wrapper of its own is
 ;;; not bridged and is not checked here.
 
-(use-modules ((playnet protocol seam) #:select (%handlers handler-name handler-params))
+(use-modules ((playnet protocol seam) #:select (%handlers handler-name handler-arity))
              (ice-9 regex) (ice-9 rdelim) (srfi srfi-1))
-
-(define (param-count params)
-  "How many parameters the TypeScript parameter list PARAMS names (top-level commas)."
-  (if (string-null? (string-trim-both params)) 0
-      (let loop ((i 0) (depth 0) (n 1))
-        (if (= i (string-length params)) n
-            (let ((c (string-ref params i)))
-              (loop (+ i 1)
-                    (cond ((memv c '(#\( #\[ #\{ #\<)) (+ depth 1))
-                          ((memv c '(#\) #\] #\} #\>)) (- depth 1))
-                          (else depth))
-                    (if (and (char=? c #\,) (= depth 0)) (+ n 1) n)))))))
 
 (define %bridge-rx (make-regexp "HANDLERS\\.([A-Za-z0-9_]+) *= *bridge\\(\"([A-Za-z0-9_]+)\", *([0-9]+)"))
 
@@ -40,7 +28,7 @@
                 (loop (if m (cons (cons (match:substring m 2) (string->number (match:substring m 3))) acc) acc)))))))))
 
 (define (main)
-  (let* ((declared (map (lambda (h) (cons (handler-name h) (param-count (handler-params h)))) %handlers))
+  (let* ((declared (map (lambda (h) (cons (handler-name h) (handler-arity h))) %handlers))
          (wrong (filter-map (lambda (b)
                               (let ((d (assoc-ref declared (car b))))
                                 (cond ((not d) (list (car b) 'undeclared (cdr b)))

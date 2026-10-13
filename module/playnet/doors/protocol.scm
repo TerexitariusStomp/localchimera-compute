@@ -36,7 +36,7 @@
   #:use-module (srfi srfi-9)
   #:use-module ((playnet protocol seam) #:select (%handlers handler-name handler-doors))
   #:export (%doors door-ref doors-of
-            door? door-object door-name door-args door-auth door-topic door-seam door-reply door-kind door-to door-doc door-feature doors-of-feature %kinds %targets
+            door? door-object door-name door-args door-auth door-topic door-seam door-reply door-kind door-to door-doc door-feature door-keyed doors-of-feature doors-keyed %kinds %targets
             %topics topic-doc door-audience
             %protocol-version))
 
@@ -45,7 +45,7 @@
 (define %protocol-version 1)
 
 (define-record-type <door>
-  (make-door object name args auth topic reply kind to doc feature)
+  (make-door object name args auth topic reply kind to doc feature keyed)
   door?
   (object door-object)
   (name   door-name)
@@ -56,7 +56,8 @@
   (kind   door-kind)
   (to     door-to)
   (doc    door-doc)
-  (feature door-feature))
+  (feature door-feature)
+  (keyed   door-keyed))      ; the name of the argument that keys one act (a tap), or #f
 
 ;; the headings a door is listed under: (topic . one line on what it covers)
 (define %topics
@@ -92,18 +93,25 @@ or #f when no handler sends it."
            handler-name)))
 
 ;; (door OBJECT NAME ARGS #:auth A #:topic T #:reply R #:kind K [#:to W]
-;;       [#:feature F] #:doc D) — every part is data, in this fixed order;
-;; nothing is evaluated.
+;;       [#:feature F] [#:keyed ARG] #:doc D) — every part is data, in any order
+;; but #:doc last; nothing is evaluated. `door-collect` gathers the keywords
+;; into an alist and `door*` reads it, so a new part of a declaration is one
+;; keyword here and one field in the record, and no call site changes.
 (define-syntax door
   (syntax-rules ()
-    ((_ object name args #:auth auth #:topic topic #:reply reply #:kind kind #:to to #:feature feature #:doc doc)
-     (door* 'object 'name 'args 'auth 'topic 'reply 'kind 'to 'doc 'feature))
-    ((_ object name args #:auth auth #:topic topic #:reply reply #:kind kind #:feature feature #:doc doc)
-     (door* 'object 'name 'args 'auth 'topic 'reply 'kind 'self 'doc 'feature))
-    ((_ object name args #:auth auth #:topic topic #:reply reply #:kind kind #:to to #:doc doc)
-     (door* 'object 'name 'args 'auth 'topic 'reply 'kind 'to 'doc #f))
-    ((_ object name args #:auth auth #:topic topic #:reply reply #:kind kind #:doc doc)
-     (door* 'object 'name 'args 'auth 'topic 'reply 'kind 'self 'doc #f))))
+    ((_ object name args . options)
+     (door-collect (object name args) () . options))))
+
+(define-syntax door-collect
+  (syntax-rules ()
+    ((_ (o n a) (opt ...) #:auth v . r)    (door-collect (o n a) (opt ... (auth . v)) . r))
+    ((_ (o n a) (opt ...) #:topic v . r)   (door-collect (o n a) (opt ... (topic . v)) . r))
+    ((_ (o n a) (opt ...) #:reply v . r)   (door-collect (o n a) (opt ... (reply . v)) . r))
+    ((_ (o n a) (opt ...) #:kind v . r)    (door-collect (o n a) (opt ... (kind . v)) . r))
+    ((_ (o n a) (opt ...) #:to v . r)      (door-collect (o n a) (opt ... (to . v)) . r))
+    ((_ (o n a) (opt ...) #:feature v . r) (door-collect (o n a) (opt ... (feature . v)) . r))
+    ((_ (o n a) (opt ...) #:keyed v . r)   (door-collect (o n a) (opt ... (keyed . v)) . r))
+    ((_ (o n a) (opt ...) #:doc d)         (door* 'o 'n 'a '(opt ...) 'd))))
 
 ;; THE PRODUCT FEATURE A DOOR IS PART OF, declared on the door when it has one:
 ;; a feature is an act of the product the law may speak to — holding funds,
@@ -129,21 +137,42 @@ or #f when no handler sends it."
 ;; inventory (tools/emit/door-inventory.scm) is read off the declaration.
 (define %kinds '(constative preference performative read))
 
-(define (door* object name args auth topic reply kind to doc feature)
-  (unless (memq auth '(anonymous device root operator))
-    (error "door: auth must be anonymous | device | root | operator" object name auth))
-  (unless (assq topic %topics)
-    (error "door: topic must be one of %topics" object name topic))
-  (unless (memq kind %kinds)
-    (error "door: kind must be constative | preference | performative | read" object name kind))
-  (unless (memq to %targets)
-    (error "door: to must be self | planner | governance" object name to))
-  (unless (or (not feature) (symbol? feature))
-    (error "door: feature must be a symbol" object name feature))
-  (make-door object name args auth topic reply kind to doc feature))
+(define (door* object name args options doc)
+  (define (opt key default)
+    (let ((p (assq key options))) (if p (cdr p) default)))
+  (define (required key)
+    (let ((p (assq key options)))
+      (unless p (error "door: a door declares its auth, topic, reply and kind" object name key))
+      (cdr p)))
+  (let ((auth (required 'auth)) (topic (required 'topic)) (reply (required 'reply)) (kind (required 'kind))
+        (to (opt 'to 'self)) (feature (opt 'feature #f)) (keyed (opt 'keyed #f)))
+    (for-each (lambda (o)
+                (unless (memq (car o) '(auth topic reply kind to feature keyed))
+                  (error "door: no such part of a declaration" object name (car o))))
+              options)
+    (unless (memq auth '(anonymous device root operator))
+      (error "door: auth must be anonymous | device | root | operator" object name auth))
+    (unless (assq topic %topics)
+      (error "door: topic must be one of %topics" object name topic))
+    (unless (memq kind %kinds)
+      (error "door: kind must be constative | preference | performative | read" object name kind))
+    (unless (memq to %targets)
+      (error "door: to must be self | planner | governance" object name to))
+    (unless (or (not feature) (symbol? feature))
+      (error "door: feature must be a symbol" object name feature))
+    ;; a keyed door's last argument IS the key: optional, so a caller with no key
+    ;; (a test, a script) lands the act as it always did (tools/lint/protocol-lint.scm
+    ;; holds the rest of what keying means)
+    (unless (or (not keyed)
+                (and (symbol? keyed) (pair? args)
+                     (let ((final (last args)))                   ; `tap`, or `(tap #f)` after #:optional
+                       (eq? keyed (if (pair? final) (car final) final)))))
+      (error "door: keyed names the door's last argument" object name keyed))
+    (make-door object name args auth topic reply kind to doc feature keyed)))
 
 (define (doors-of object) (filter (lambda (d) (eq? (door-object d) object)) %doors))
 (define (doors-of-feature feature) (filter (lambda (d) (eq? (door-feature d) feature)) %doors))
+(define (doors-keyed) (filter door-keyed %doors))
 ;; door-ref fires on every HTTP and MCP dispatch (doors/http.scm,
 ;; protocol/mcp.scm); %door-index (below %doors) turns its `find` over every
 ;; declared door — a few hundred, static, never mutated after load — into an
@@ -765,9 +794,9 @@ or #f when no handler sends it."
           #:auth device #:topic stock #:reply ok-or-error #:kind performative #:to planner
           #:feature credit
           #:doc "Draws this AID's credit to claim QTY of RESOURCE-ID at LABOR-COST (derived from crystallized SNLT when #f), checked against on-hand and any live wallet reading; WHERE/DELIVER-AT record the claim's own place and time. Replies claimed, balance and credit.")
-    (door session record-effort (scope-id commitment-id qty unit)
-          #:auth device #:topic commitments #:reply ok-or-error #:kind constative #:to planner
-          #:doc "Records QTY UNIT of this AID's effort against COMMITMENT-ID in SCOPE-ID; replies (ok . event-id) or a failure when the commitment is unknown.")
+    (door session record-effort (scope-id commitment-id qty unit #:optional (tap #f))
+          #:auth device #:topic commitments #:reply ok-or-error #:kind constative #:to planner #:keyed tap
+          #:doc "Records QTY UNIT of this AID's effort against COMMITMENT-ID in SCOPE-ID; replies (ok . event-id) or a failure when the commitment is unknown. TAP is one press's own token: the same token on the same commitment is the same act, answered with the event it recorded and recording nothing more.")
     (door session log-observe (scope-id action spec qty unit note when-iso)
           #:auth device #:topic commitments #:reply ok-or-error #:kind constative #:to planner
           #:doc "Records this AID's spoken log entry as a self-scoped event of ACTION on SPEC with NOTE and narrated WHEN-ISO; replies (ok (event resource)) or a failure.")
@@ -1034,9 +1063,9 @@ or #f when no handler sends it."
     (door planner enact (scope-id plan)
           #:auth operator #:topic stock #:reply ok-or-error #:kind performative
           #:doc "Records the material rows of PLAN that the scope's last plan states, as produce/consume/pickup/dropoff/use events, each once the books hold the stock it draws; replies the event ids and the rows still waiting, each with its reason.")
-    (door planner record-flow (scope-id action spec qty total place when-iso proc note #:optional (row-id #f))
-          #:auth anonymous #:topic stock #:reply ok-or-error #:kind constative
-          #:doc "Confirms one material produce/consume/pickup/dropoff/use row the scope's last plan states, named by ROW-ID (the id the schedule carries) or, for a caller with none, by its coordinates; QTY is spread over the matching plan rows' remainders (each row is a commitment under the plan's own id) and TOTAL decides nothing. The flow is dated at the row's planned slot, or at its confirmation when the slot is still ahead. The two rows of a relocation chain through their run: a dropoff is refused until its pickup has taken the cargo. Replies the first numbered event id, or `already` once the rows are finished.")
+    (door planner record-flow (scope-id action spec qty total place when-iso proc note #:optional (row-id #f) (tap #f))
+          #:auth anonymous #:topic stock #:reply ok-or-error #:kind constative #:keyed tap
+          #:doc "Confirms one material produce/consume/pickup/dropoff/use row the scope's last plan states, named by ROW-ID (the id the schedule carries) or, for a caller with none, by its coordinates; QTY is spread over the matching plan rows' remainders (each row is a commitment under the plan's own id) and TOTAL decides nothing. The flow is dated at the row's planned slot, or at its confirmation when the slot is still ahead. The two rows of a relocation chain through their run: a dropoff is refused until its pickup has taken the cargo. Replies the first numbered event id, or `already` once the rows are finished. TAP is one press's own token: the same token on the same rows is the same act, answered with what it recorded (`again`) and recording nothing more.")
     (door planner record-claim (scope-id claimant spec qty total place when-iso)
           #:auth operator #:topic stock #:reply ok-or-error #:kind constative
           #:doc "Confirms one planned claim as the account store's transfer at the good's crystallized SNLT, keyed by claimant, spec, place and time; replies event id, cost and balance, or `already`.")
@@ -1115,8 +1144,8 @@ or #f when no handler sends it."
     (door planner credit-balance (scope-id agent-id)
           #:auth operator #:topic stock #:reply ok-or-error #:kind read
           #:doc "Replies a person's credit standing in this scope — validated work minus individually-claimable draws.")
-    (door planner record-effort (scope-id commitment-id acting-as qty unit)
-          #:auth operator #:topic commitments #:reply ok-or-error #:kind constative
+    (door planner record-effort (scope-id commitment-id acting-as qty unit #:optional (tap #f))
+          #:auth operator #:topic commitments #:reply ok-or-error #:kind constative #:keyed tap
           #:doc "Records QTY UNIT of work effort against a commitment for the acting agent, advancing its fulfillment; replies the new event id.")
     (door planner log-observe (scope-id agent-id action spec qty unit note when-iso)
           #:auth operator #:topic commitments #:reply ok-or-error #:kind constative

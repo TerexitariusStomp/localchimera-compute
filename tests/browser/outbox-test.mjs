@@ -69,6 +69,25 @@ section("no gateway in reach");
   check("each way of being out of reach is read as one", ["err:offline", "err:spine down", "err:planner unreachable", "err:unavailable: no worker", "err:sign in first", "err:no scope yet"].every(O.unreached) && !O.unreached("err:not yours"));
 }
 
+section("a keyed act carries its token from the first send");
+{
+  const flow = ["s", "consume", "water", "3", "3", "A", "2026-10-02", "P", "", "mc|row"];
+  const k = O.keyed("recordFlow", flow);
+  check("a token is minted at the last place, in the server's alphabet", k.length === 11 && /^[A-Za-z0-9_-]{1,64}$/.test(k[10]));
+  check("a token the caller has is kept", O.keyed("recordFlow", [...flow, "mine"])[10] === "mine");
+  check("two acts have two tokens", O.keyed("recordFlow", flow)[10] !== k[10]);
+  check("a door that is not keyed gets none", O.keyed("countStock", ["tea"]).length === 1);
+  const seen = [];
+  const e = ends((door, args) => { seen.push(args); return "{}"; });
+  await O.ask(e, "recordFlow", flow, READS);
+  check("the gateway is asked with the token on the first send", seen[0].length === 11 && seen[0][10] !== "");
+  const plain = [];
+  await O.ask(ends((door, args) => { plain.push(args); return "{}"; }), "countStock", ["tea", 7, "box"], READS);
+  check("a door that is not keyed is still asked exactly as the face asked", plain[0].length === 3 && plain[0][1] === 7);
+  const lost = ends(() => "err:offline");
+  check("a keyed act no gateway answers waits for a connection, as before", await O.ask(lost, "recordFlow", flow, READS) === "err:this waits for a connection");
+}
+
 section("a flush");
 {
   const box = memBox();

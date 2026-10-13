@@ -794,14 +794,14 @@ FRESH_CHECKS = check-protocol-fresh check-wire-types-fresh check-nutrition-fresh
   check-housing-fresh check-count-fresh check-rel-fresh check-limits-fresh \
   check-reach-fresh check-actions-fresh check-units-fresh check-rest-fresh \
   check-matter-fresh check-fragility-fresh check-demo-fresh check-recipe-demo-fresh \
-  check-wasm-deps-fresh check-ui-fresh
+  check-wasm-deps-fresh check-keyed-fresh check-ui-fresh
 # these read files ignored by path (the legal contexts, the physics register): a clean
 # worktree has none, so they run where the files are, in `gate-local`
 FRESH_LOCAL = check-na-fresh check-law-fresh check-physics-fresh
 # for the reader, not the gate (see module-map)
 FRESH_EXEMPT = check-module-map-fresh
 # fdc-snapshot needs a 6 MB cache the repo does not carry; check-fdc-fresh skips without it
-EMITS = wasm-deps-emit protocol-emit wire-types-emit nutrition-emit product-law-emit attribution-emit \
+EMITS = wasm-deps-emit protocol-emit keyed-emit wire-types-emit nutrition-emit product-law-emit attribution-emit \
   notice-facts-emit de-pack housing-emit count-emit \
   rel-emit limits-emit reach-emit actions-emit units-emit rest-emit matter-snapshot \
   fragility-snapshot demo-emit recipe-demo-emit ui
@@ -839,7 +839,7 @@ test-fast: lint-parens lint-law lint-docs check-wasm-deps check-ui-fresh test-gp
       test-contact-binding test-body-doors test-cards test-planner-facet test-declared-dispatch test-http-door test-mcp-door test-device-doors test-vf-lint test-lint-records-door test-issue-revoke-credential test-admit-commune-door test-delegation-scope-arg test-lobby-arg-split test-websocket-fragments test-websocket-masking test-declare-arg-split test-offer-work-drift-door test-plan-materialize-opts-door test-count-stock test-count-anchor test-count-anchor-2 test-count-expected test-wire-snapshot test-observation-evidence test-labels-containers test-counting test-planned-counts test-allotment test-see-door test-contest-count test-evidence-door check-protocol check-protocol-fresh check-wire-types-fresh check-crossing-catalogue check-nutrition-fresh check-product-law-fresh check-attribution-fresh check-notice-facts-fresh check-rid-mentions test-calendar-mail check-de-fresh check-na-fresh check-law-fresh check-physics-fresh check-housing-fresh check-count-fresh check-rel-fresh check-reach-fresh check-units-fresh check-rest-fresh check-matter-fresh check-fragility-fresh check-actions-fresh check-limits-fresh check-recipe-demo-fresh check-demo-fresh test-demo-neighbourhood test-adjustment test-counts check-test-wiring check-atlas
 
 # every generated file's freshness, from the gate's own list; and the committer's own test
-test-fast: check-fresh test-commit-clean
+test-fast: check-fresh test-commit-clean test-outbox
 
 # Every tracked .scm reads to EOF. ~3s over ~1070 files, so it can sit in
 # front of the whole suite rather than off to the side.
@@ -1104,6 +1104,11 @@ test-evidence-door:
 .PHONY: test-commit-clean
 test-commit-clean:
 	bash tests/tools/test-commit-clean.sh
+
+# acts made with no gateway in reach, and a keyed act's token (ui/app/outbox.ts, keyed-doors.ts)
+.PHONY: test-outbox
+test-outbox:
+	node tests/browser/outbox-test.mjs
 
 # Guard against the real rot: a test nobody runs. Asserts every
 # tests/ux/*-ux.mjs has a reachable `make` target. Cheap (make -n), no browser,
@@ -1894,6 +1899,13 @@ rest-emit:
 	$(GUILE_TEST_DEV) -L module tools/emit/rest-emit.scm ui/app/rest-catalogue.ts
 check-rest-fresh:
 	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-rest-fresh ui/app/rest-catalogue.ts rest-emit tools/emit/rest-emit.scm
+
+# the doors declared #:keyed (doors/protocol.scm), as the page reads them: each seam
+# handler whose act carries a token minted once per act, with the token's index
+keyed-emit:
+	$(GUILE_TEST_DEV) -L module tools/emit/keyed-emit.scm ui/app/keyed-doors.ts
+check-keyed-fresh:
+	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-keyed-fresh ui/app/keyed-doors.ts keyed-emit tools/emit/keyed-emit.scm
 
 # the offline fallbacks of the matter and fragility faces, written by the same
 # wire the live gateway answers with

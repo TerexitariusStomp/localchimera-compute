@@ -1165,8 +1165,8 @@
    ((claim scope-id resource-id qty labor-cost #:optional (where #f) (deliver-at #f))
     (planner! 'claim scope-id resource-id qty aid-prefix labor-cost where deliver-at))
    ;; Records QTY of this AID's effort against a commitment.
-   ((record-effort scope-id commitment-id qty unit)
-    (planner! 'record-effort scope-id commitment-id aid-prefix qty unit))
+   ((record-effort scope-id commitment-id qty unit #:optional (tap #f))
+    (planner! 'record-effort scope-id commitment-id aid-prefix qty unit tap))
    ;; Records this AID's spoken log entry as its suggested event, with note and narrated time.
    ((log-observe scope-id action spec qty unit note when-iso)
     (planner! 'log-observe scope-id aid-prefix action spec qty unit note when-iso))

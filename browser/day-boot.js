@@ -10,6 +10,7 @@
 
 import { seam, seamSinks } from "./app/seam.js";
 import { on } from "./app/bus.js";
+import { keyed } from "./app/outbox.js";
 import { readStr, writeStr, forget, pageStore } from "./app/store.js";
 import { K } from "./app/keys.js";
 import { provideMic } from "./app/voice/mic.js";
@@ -859,8 +860,10 @@ function boot() {
       new Promise(res => {
         const fn = schemeHandlers[name];
         if (!fn) return res(fallback);
-        const a = Array.from({ length: arity },
-                             (_, i) => args[i] == null ? "" : String(args[i]));
+        // the arguments as strings, padded and cut to the arity, and the act's token minted
+        // once where the door is keyed (ui/app/keyed-doors.ts): the one place the page's
+        // writes to the spine pass, so no face mints a token of its own
+        const a = keyed(name, Array.from({ length: arity }, (_, i) => args[i])).slice(0, arity);
         fn(...a, res);
       });
     HANDLERS.transcribe = (wavB64) =>
@@ -1192,8 +1195,8 @@ function boot() {
     HANDLERS.setAvailability = bridge("setAvailability", 1);  // arcs JSON
     HANDLERS.invite          = bridge("invite", 4);           // aid label t0-iso t1-iso
     HANDLERS.acceptInvite    = bridge("acceptInvite", 2);     // scope, proposal-id
-    HANDLERS.recordEffort    = bridge("recordEffort", 4);     // scope cid qty unit
-    HANDLERS.recordFlow      = bridge("recordFlow", 10);      // scope action spec qty total place when proc note rowId
+    HANDLERS.recordEffort    = bridge("recordEffort", 5);     // scope cid qty unit tap
+    HANDLERS.recordFlow      = bridge("recordFlow", 11);      // scope action spec qty total place when proc note rowId tap
     HANDLERS.witnessOpen     = bridge("witnessOpen", 2);      // scope event-id
     HANDLERS.witnessInbox    = bridge("witnessInbox", 0, ""); // → [{said,kind,worker,sponsor,skill,hours,count,quorum}…] JSON
     HANDLERS.witnessAttest   = bridge("witnessAttest", 1);    // said

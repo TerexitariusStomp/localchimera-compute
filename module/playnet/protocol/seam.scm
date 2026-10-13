@@ -39,7 +39,7 @@
 (define-module (playnet protocol seam)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-9)
-  #:export (%handlers handler-ref handler? handler-name handler-params
+  #:export (%handlers handler-ref handler? handler-name handler-params handler-arity
             handler-returns handler-reply handler-doors handler-doc handler-local?
             %pushes push-ref push? push-name push-params push-sink push-wire
             push-keep push-doc
@@ -63,6 +63,21 @@
      (make-handler name params #f 'door 'doors doc))
     ((_ name params returns doors doc)
      (make-handler name params returns #f 'doors doc))))
+
+;; How many arguments a handler takes: the top-level commas of its parameter list, plus one.
+;; The page's bridge pads and cuts to this (tools/lint/check-bridge-arity.scm), and a keyed
+;; door's key is the last of them (tools/emit/keyed-emit.scm).
+(define (handler-arity h)
+  (let ((params (handler-params h)))
+    (if (string=? params "") 0
+        (let loop ((i 0) (depth 0) (n 1))
+          (if (= i (string-length params)) n
+              (let ((c (string-ref params i)))
+                (loop (+ i 1)
+                      (cond ((memv c '(#\( #\[ #\{ #\<)) (+ depth 1))
+                            ((memv c '(#\) #\] #\} #\>)) (- depth 1))
+                            (else depth))
+                      (if (and (char=? c #\,) (= depth 0)) (+ n 1) n))))))))
 
 (define (handler-local? h) (null? (handler-doors h)))
 (define (handler-ref name) (find (lambda (h) (string=? (handler-name h) name)) %handlers))
@@ -609,15 +624,15 @@
              ()
              "")
     (handler "recordEffort"
-             "scope: string, cid: string, qty: string, unit: string"
+             "scope: string, cid: string, qty: string, unit: string, tap?: string"
              "Promise<string>"
              ((session . record-effort))
-             "The confirmation mile, work half: record QTY of a committed block's effort as a work event FULFILLING it — partials accumulate in its FulfillmentState. Replies \"ok:<event-id>\".")
+             "The confirmation mile, work half: record QTY of a committed block's effort as a work event FULFILLING it — partials accumulate in its FulfillmentState. TAP is the press's own token (minted once per press): a repeat of the same press answers with the event it recorded. Replies \"ok:<event-id>\".")
     (handler "recordFlow"
-             "scope: string, action: string, spec: string, qty: string, total: string, place: string, when: string, proc: string, note: string, rowId?: string"
+             "scope: string, action: string, spec: string, qty: string, total: string, place: string, when: string, proc: string, note: string, rowId?: string, tap?: string"
              "Promise<string>"
              ((planner . record-flow))
-             "The confirmation mile, material half: record QTY of one schedule row's produce/consume/pickup/dropoff/use, the row named by its ROWID (the id the schedule carries; the spec is the spec's id, never its label). Each plan row is a commitment under its own id, so partials accumulate and a finished row answers `already` instead of double-moving stock.")
+             "The confirmation mile, material half: record QTY of one schedule row's produce/consume/pickup/dropoff/use, the row named by its ROWID (the id the schedule carries; the spec is the spec's id, never its label). Each plan row is a commitment under its own id, so partials accumulate and a finished row answers `already` instead of double-moving stock. TAP is the press's own token (minted once per press): a repeat of the same press answers `again` with what it recorded.")
     (handler "recordPurchase"
              "spec: string, qty: number, unit: string, moneySpec: string, cost: number, where?: string, note?: string, receipt?: string, donation?: boolean"
              "Promise<unknown>"

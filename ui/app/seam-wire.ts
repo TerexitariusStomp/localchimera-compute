@@ -363,12 +363,12 @@ export interface SeamHandlers {
   recall?(said: string): Promise<unknown>;
   // local: no door
   reconnect?(): Promise<unknown>;
-  /** The confirmation mile, work half: record QTY of a committed block's effort as a work event FULFILLING it — partials accumulate in its FulfillmentState. Replies "ok:<event-id>". */
+  /** The confirmation mile, work half: record QTY of a committed block's effort as a work event FULFILLING it — partials accumulate in its FulfillmentState. TAP is the press's own token (minted once per press): a repeat of the same press answers with the event it recorded. Replies "ok:<event-id>". */
   // doors: session/record-effort
-  recordEffort?(scope: string, cid: string, qty: string, unit: string): Promise<string>;
-  /** The confirmation mile, material half: record QTY of one schedule row's produce/consume/pickup/dropoff/use, the row named by its ROWID (the id the schedule carries; the spec is the spec's id, never its label). Each plan row is a commitment under its own id, so partials accumulate and a finished row answers `already` instead of double-moving stock. */
+  recordEffort?(scope: string, cid: string, qty: string, unit: string, tap?: string): Promise<string>;
+  /** The confirmation mile, material half: record QTY of one schedule row's produce/consume/pickup/dropoff/use, the row named by its ROWID (the id the schedule carries; the spec is the spec's id, never its label). Each plan row is a commitment under its own id, so partials accumulate and a finished row answers `already` instead of double-moving stock. TAP is the press's own token (minted once per press): a repeat of the same press answers `again` with what it recorded. */
   // doors: planner/record-flow
-  recordFlow?(scope: string, action: string, spec: string, qty: string, total: string, place: string, when: string, proc: string, note: string, rowId?: string): Promise<string>;
+  recordFlow?(scope: string, action: string, spec: string, qty: string, total: string, place: string, when: string, proc: string, note: string, rowId?: string, tap?: string): Promise<string>;
   /** "I bought this for the commons": the good is raised into the commons with the receipt on the event, and the raise binds to the plan's own records (fulfills a live produce commitment, satisfies an open declared need) when they exist. What you advanced becomes a debt the commons owes you once the commune accepts it (governance accept-reimbursement) — read back via myPayouts' `owed`, paid as a payout. `donation` records the raise and owes nothing. Replies the purchase EVENT's id ("err:…" on failure) — pass it to `purchaseClaim` as `trig`. */
   // doors: session/record-purchase
   recordPurchase?(spec: string, qty: number, unit: string, moneySpec: string, cost: number, where?: string, note?: string, receipt?: string, donation?: boolean): Promise<unknown>;

@@ -163,9 +163,9 @@
          (lambda (root)
            (do-express-willingness root worker skill cell willing? hours))))
 
-      ((record-effort scope-id commitment-id acting-as qty unit)
+      ((record-effort scope-id commitment-id acting-as qty unit #:optional (tap #f))
        (with-scope scope-id
-         (lambda (root) (do-record-effort root commitment-id acting-as qty unit))))
+         (lambda (root) (do-record-effort root commitment-id acting-as qty unit #:tap tap))))
 
       ;; Social invite (non-work). The inviter creates an Intent (action='use,
       ;; name=human label, event time on has-beginning/has-end, provider=inviter,

@@ -8,6 +8,8 @@
   #:use-module ((playnet doors counts) #:select (fresh-label))
   #:use-module ((playnet observation account) #:select (fulfillment-remaining))
   #:use-module ((playnet observation observer) #:select (target-passed?))
+  #:use-module ((playnet observation landing) #:select (land-once tap-event-id tap?))
+  #:use-module ((playnet utils common) #:select (string-or-false))
   #:use-module ((playnet observation states) #:select (fulfillment-state-finished))
   #:use-module ((playnet scope live) #:select (end-fulfilled!))
   #:use-module ((playnet utils clock) #:select (iso-now))
@@ -32,47 +34,57 @@
     (cond (fs  (max 0 (fulfillment-remaining fs)))
           (eff (measure-has-numerical-value eff))
           (else +inf.0))))
-(define (do-record-effort scope-root cid provider qty unit)
+(define* (do-record-effort scope-root cid provider qty unit #:key (tap #f))
   "Build a 'work <economic-event> and feed it to the observer.
-   The commitment named in 'fulfills' reads this event as fulfilment."
+   The commitment named in 'fulfills' reads this event as fulfilment. With a TAP (a
+   door declared `#:keyed`) the act is named by the commitment and the token: the books
+   are asked FIRST, before any refusal a repeat could meet (a block this very act
+   finished is `finished`), and a repeat is answered with the event that stands."
   (let* ((ps  ($ scope-root 'plan-store))
          (obs ($ scope-root 'observer))
          (cmt ($ ps 'get-commitment cid))
+         (tap (string-or-false tap))
+         (eid (if tap (tap-event-id cid tap) (generate-id "evt-")))
          ;; what the member states, counted in hours
          (hours (and (finite-positive? qty) (time-unit? unit) (hours-in qty unit))))
     (cond
+      ((and tap (not (tap? tap))) (failure "a tap is 1 to 64 letters, digits, _ or -"))
       ((not cmt) (failure "commitment not found"))
       ((not (finite-positive? qty)) (failure "hours are a finite positive number"))
       ((not (time-unit? unit)) (failure "effort is recorded in a unit of time"))
       ((and (commitment-provider cmt) (not (equal? (commitment-provider cmt) provider)))
        (failure "hours are recorded by the commitment's own provider"))
-      ((commitment-finished cmt) (failure "the commitment is finished"))
-      ((target-passed? hours (effort-remaining obs cmt))
-       (failure (format #f "the commitment holds ~a hours; ~a recorded"
-                        (effort-remaining obs cmt) hours)))
       (else
-       (catch-as-failure
+       (land-once obs (and tap eid)
+         (lambda (_) (success eid))                       ; the same press, arriving again
          (lambda ()
-           (let* ((eid (generate-id "evt-"))
-                  (evt (make-work-event
-                         #:id eid
-                         #:provider provider
-                         #:effort-qty hours
-                         #:effort-unit %effort-unit
-                         #:fulfills cid
-                         #:input-of (commitment-input-of cmt)
-                         #:resource-spec (commitment-resource-conforms-to cmt)
-                         ;; the commitment's own terms ride on the event: the fold
-                         ;; of hours by part reads events alone (live.scm make-work-event)
-                         #:at-location (commitment-at-location cmt)
-                         #:has-beginning (commitment-has-beginning cmt)
-                         #:has-end (commitment-has-end cmt)
-                         #:in-scope-of (commitment-in-scope-of cmt))))
-             ($ obs 'record-event evt)
-             ;; the commitment ends fulfilled when its hours are all in, so a
-             ;; finished block neither takes more hours nor reads as expired
-             (end-fulfilled! scope-root cid)
-             (success eid))))))))
+           (cond
+             ((commitment-finished cmt) (failure "the commitment is finished"))
+             ((target-passed? hours (effort-remaining obs cmt))
+              (failure (format #f "the commitment holds ~a hours; ~a recorded"
+                               (effort-remaining obs cmt) hours)))
+             (else
+              (catch-as-failure
+                (lambda ()
+                  (let ((evt (make-work-event
+                               #:id eid
+                               #:provider provider
+                               #:effort-qty hours
+                               #:effort-unit %effort-unit
+                               #:fulfills cid
+                               #:input-of (commitment-input-of cmt)
+                               #:resource-spec (commitment-resource-conforms-to cmt)
+                               ;; the commitment's own terms ride on the event: the fold
+                               ;; of hours by part reads events alone (live.scm make-work-event)
+                               #:at-location (commitment-at-location cmt)
+                               #:has-beginning (commitment-has-beginning cmt)
+                               #:has-end (commitment-has-end cmt)
+                               #:in-scope-of (commitment-in-scope-of cmt))))
+                    ($ obs 'record-event evt)
+                    ;; the commitment ends fulfilled when its hours are all in, so a
+                    ;; finished block neither takes more hours nor reads as expired
+                    (end-fulfilled! scope-root cid)
+                    (success eid))))))))))))
 
 ;;; ── The captain's log observes (write path) ──────────────────────────
 ;;;

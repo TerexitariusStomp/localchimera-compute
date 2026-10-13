@@ -15,6 +15,14 @@
 //
 // An act that depends on others (a claim, a vote, accepting an offer, a key
 // event) is never queued: it waits for a connection.
+//
+// An act with no instant of its own (confirming a planned row, recording hours
+// against a commitment) is named by a TOKEN instead: a door declared `#:keyed` takes
+// one as its last argument (ui/app/keyed-doors.ts, generated from the declaration),
+// the page mints it once per act before the first send, and a repeat of the request
+// (a retry after a lost reply, a flush) carries the same token, so the books answer
+// it with what it recorded and record nothing more (observation/landing.scm).
+import { KEYED } from "./keyed-doors.js";
 /** A door whose act waits for a gateway: the index of its instant among its arguments, or null where its ids name it. */
 export const QUEUED = {
     countStock: 5, // resource counted unit technique place WHEN fulfills evidence note
@@ -30,6 +38,35 @@ export const QUEUED = {
 export const unreached = (reply) => /^err:(offline|spine down|planner unreachable|no planner service|unavailable|sign in first|no scope yet)/.test(reply);
 /** An instant as the doors state one: UTC to the second. */
 export const instant = (t) => t.toISOString().slice(0, 19) + "Z";
+/** A fresh token for one act of a keyed door: 1 to 64 letters, digits, `_` and `-`, the server's own check. */
+export function freshKey() {
+    const c = globalThis.crypto;
+    if (c && typeof c.randomUUID === "function")
+        return c.randomUUID();
+    const b = new Uint8Array(16);
+    if (c && typeof c.getRandomValues === "function")
+        c.getRandomValues(b);
+    else
+        for (let i = 0; i < b.length; i++)
+            b[i] = Math.floor(Math.random() * 256);
+    return Array.from(b, x => x.toString(16).padStart(2, "0")).join("");
+}
+/**
+ * HANDLER's arguments, every one a string, with the act's token minted where the door is
+ * keyed and none was given. The one place a token is made: the bridge to the spine and
+ * `ask` both come through here, so an act has the same token wherever it is sent from.
+ */
+export function keyed(handler, args) {
+    const out = args.map(a => (a == null ? "" : String(a)));
+    const at = KEYED[handler];
+    if (at !== undefined) {
+        while (out.length <= at)
+            out.push("");
+        if (!out[at])
+            out[at] = freshKey();
+    }
+    return out;
+}
 /** DOOR's arguments, every one a string, with the act's instant stated where the door takes one and none was. */
 export function stamp(door, args, now) {
     const out = args.map(a => (a == null ? "" : String(a)));
@@ -77,12 +114,15 @@ export async function flush(box, send) {
  * that may not wait is told so.
  */
 export async function ask(ends, door, args, reads) {
-    const reply = await ends.gateway(door, args);
+    // a keyed act carries its token from the FIRST send, so a retry after a lost reply is the
+    // same act; every other door is asked exactly as the face asked
+    const first = door in KEYED ? keyed(door, args) : args;
+    const reply = await ends.gateway(door, first);
     if (!unreached(reply))
         return reply;
     if (door in QUEUED) {
         // the act is now of the instant it was made: the copy lands it so, and so will the gateway
-        const act = stamp(door, args, ends.now());
+        const act = stamp(door, first, ends.now());
         const landed = await ends.device(door, act);
         if (!landed.startsWith("err:"))
             await ends.box?.add({ door, args: act, at: instant(ends.now()) });

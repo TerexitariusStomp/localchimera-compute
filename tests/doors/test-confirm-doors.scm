@@ -181,4 +181,57 @@
                  (and iv (>= (cdr iv) (- t0 1)) (<= (cdr iv) (+ (now) 1))) #t))
         (check "either states when it was recorded" (and (economic-event-created (last-event)) #t) #t)))))
 
+(display "\n── TAP: one press lands once, whatever number of times its request arrives ──\n")
+(let-values (((vat scope) (fresh-scope)))
+  (with-vat vat
+    (let* ((obs ($ scope 'observer))
+           (svc (spawn ^planner-service (hashmap-set (hashmap) "org:t" scope)))
+           (rid "mc|consume|water|P|A||2026-10-02")
+           (press (lambda (q tap) ($ svc 'record-flow "org:t" "consume" "water" q q "A" "2026-10-02" "P" #f rid tap)))
+           (events-of-row (lambda () (length (or ($ obs 'fulfilled-by rid) '())))))
+      ($ obs 'seed-resource (res "w1" "water" 100.0 "A"))
+      (cache-solve! "org:t" '() `((material . (,(row rid 'consume "water" 10.0 "A" #:in "P")))))
+      (let ((first (press 3.0 "tapA")))
+        (check "a press with a token lands" (list (ok? first) (onhand-of obs "w1")) '(#t 97.0))
+        (let ((again (press 3.0 "tapA")))
+          (check "the same press arriving again is answered with what it recorded"
+                 (list (ok? again) (assq-ref (cdr again) 'again) (equal? (assq-ref (cdr again) 'event-id) (assq-ref (cdr first) 'event-id)))
+                 '(#t #t #t))
+          (check "…and records nothing more" (list (onhand-of obs "w1") (events-of-row)) '(97.0 1))))
+      (check "a second, deliberate press is another act" (list (ok? (press 3.0 "tapB")) (onhand-of obs "w1")) '(#t 94.0))
+      (check "a press with no token is as it always was" (list (ok? (press 1.0 #f)) (onhand-of obs "w1")) '(#t 93.0))
+      (check "a repeat that carries another quantity is still the same press: what stands is the answer"
+             (list (assq-ref (cdr (press 4.0 "tapA")) 'again) (onhand-of obs "w1")) '(#t 93.0))
+      (check "a token that is not 1 to 64 plain characters is refused"
+             (list (car (press 1.0 "a b")) (car (press 1.0 (make-string 65 #\a))) (onhand-of obs "w1")) '(error error 93.0)))))
+
+(display "\n── TAP: a press spread over two rows is repeated whole ──\n")
+(let-values (((vat scope) (fresh-scope)))
+  (with-vat vat
+    (let* ((obs ($ scope 'observer))
+           (svc (spawn ^planner-service (hashmap-set (hashmap) "org:t" scope)))
+           (press (lambda (q tap) ($ svc 'record-flow "org:t" "consume" "water" q q "A" "2026-10-02" "P" #f "" tap))))
+      ($ obs 'seed-resource (res "w1" "water" 100.0 "A"))
+      (cache-solve! "org:t" '()
+                    `((material . (,(row "mc|consume|water|P|A|2026-10-02" 'consume "water" 10.0 "A" #:in "P")
+                                   ,(row "mc|consume|water|P|A|2026-10-02#2" 'consume "water" 5.0 "A" #:in "P")))))
+      (press 12.0 "spread")
+      (check "twelve over rows of ten and five lands twelve" (onhand-of obs "w1") 88.0)
+      (check "the press arriving again records none of it a second time (the first row is full, so room is no test of a repeat)"
+             (list (assq-ref (cdr (press 12.0 "spread")) 'again) (onhand-of obs "w1")) '(#t 88.0)))))
+
+(display "\n── TAP: a repeat of a press whose slot is still ahead is answered, not refused ──\n")
+(let-values (((vat scope) (fresh-scope)))
+  (with-vat vat
+    (let* ((obs ($ scope 'observer))
+           (svc (spawn ^planner-service (hashmap-set (hashmap) "org:t" scope)))
+           (rid "mc|ahead")
+           (press (lambda () ($ svc 'record-flow "org:t" "consume" "water" 4.0 4.0 "A" "2099-01-01T08:00:00" "P" #f rid "tapZ"))))
+      ($ obs 'seed-resource (res "w1" "water" 100.0 "A"))
+      (cache-solve! "org:t" '() `((material . (,(acons 'when "2099-01-01T08:00:00" (alist-delete 'when (row rid 'consume "water" 10.0 "A" #:in "P")))))))
+      (press)
+      (sleep 1)                           ; the instant a slot ahead is confirmed at has moved on
+      (check "the repeat finds the event under its token before it would build a different one"
+             (let ((r (press))) (list (ok? r) (assq-ref (cdr r) 'again) (onhand-of obs "w1"))) '(#t #t 96.0)))))
+
 (test-summary!)
