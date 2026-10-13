@@ -294,7 +294,7 @@
     ;; Alice claims 2 loaves. Labor-cost = 2 × 0.3 = 0.6hr.
     ;; Her effective balance = (6/14) × 12 ≈ 5.14hr, easily covers 0.6.
     (let ((result ($ acs 'claim "r-bread" 2 "agent-alice" 6/10 (list scope)
-                      #f #f #f (plan-claim! obs "spec-bread" "agent-alice" 2))))   ; the plan's row
+                      #:fulfills (plan-claim! obs "spec-bread" "agent-alice" 2))))   ; the plan's row
       (check "alice claim succeeds" result))
 
     ;; Verify observer state reflects transfer: source resource decremented,

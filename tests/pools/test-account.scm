@@ -216,19 +216,19 @@
       ($ obs 'register-commitment bogus)
       (check "a non-claim commitment admits no claim, however ample"
              (catch #t
-               (lambda () ($ as 'claim "r-bread" 1 "alice" 3 (list scope2) #f #f #f "wc~bogus-alice") 'admitted)
+               (lambda () ($ as 'claim "r-bread" 1 "alice" 3 (list scope2) #:fulfills "wc~bogus-alice") 'admitted)
                (lambda (k . args) 'refused))
              'refused)
       (check "a claim row for another good admits no claim of this one"
              (catch #t
-               (lambda () ($ as 'claim "r-bread" 1 "alice" 3 (list scope2) #f #f #f
+               (lambda () ($ as 'claim "r-bread" 1 "alice" 3 (list scope2) #:fulfills
                              (plan-claim! obs "spec-cake" "alice" 1))
                           'admitted)
                (lambda (k . args) 'refused))
              'refused)
       (check "a claim row minted for another citizen admits nothing when presented by this one"
              (catch #t
-               (lambda () ($ as 'claim "r-bread" 1 "alice" 3 (list scope2) #f #f #f
+               (lambda () ($ as 'claim "r-bread" 1 "alice" 3 (list scope2) #:fulfills
                              (plan-claim! obs "spec-bread" "bob" 1))
                           'admitted)
                (lambda (k . args) 'refused))
@@ -237,7 +237,7 @@
     ;; Alice claims 2 loaves at 3hr SNLT each = 6hr labor cost.
     ;; Her elastic share (7.5) covers it.
     (let ((result ($ as 'claim "r-bread" 2 "alice" 6 (list scope2)
-                      #f #f #f (plan-claim! obs "spec-bread" "alice" 2))))   ; the plan's row
+                      #:fulfills (plan-claim! obs "spec-bread" "alice" 2))))   ; the plan's row
       (check "claim succeeds" result #t))
 
     (let ((bread ($ obs 'get-resource "r-bread"))
@@ -331,7 +331,7 @@
     (check "elastic share catches shortfall"
            (catch #t
              (lambda () ($ as 'claim "r-bread-2" 5 "alice" 5 (list scope3)
-                           #f #f #f (plan-claim! obs "spec-bread" "alice" 5)) 'no-error)
+                           #:fulfills (plan-claim! obs "spec-bread" "alice" 5)) 'no-error)
              (lambda _ 'insufficient))
            'insufficient)))
 
@@ -484,7 +484,7 @@
 
     ;; Grandma, despite never working, can claim 2 loaves (6 hr SNLT cost).
     (let ((result ($ as 'claim "r-bread" 2 "grandma" 6 (list scope-sol)
-                      #f #f #f (plan-claim! obs "spec-bread" "grandma" 2))))   ; the plan's row
+                      #:fulfills (plan-claim! obs "spec-bread" "grandma" 2))))   ; the plan's row
       (check "grandma's solidarity-funded claim succeeds" result #t))
     (check-pred "grandma effective = 0 after claim"
                 (= 0 ($ as 'effective-balance "grandma")))))
@@ -642,7 +642,7 @@
     ;; Alice claims 1 loaf (3hr) from scope-b. Validates against GLOBAL balance.
     (let ((as-b ($ scope-b 'account-store)))
       (let ((result ($ as-b 'claim "r-bread" 1 "alice" 3 scopes
-                        #f #f #f (plan-claim! ($ scope-b 'observer) "spec-bread" "alice" 1))))   ; the plan's row
+                        #:fulfills (plan-claim! ($ scope-b 'observer) "spec-bread" "alice" 1))))   ; the plan's row
         (check "alice claims scope-B bread using scope-A labor" result #t))
       (let ((bread ($ ($ scope-b 'observer) 'get-resource "r-bread")))
         (check "scope-B bread = 4 after claim"

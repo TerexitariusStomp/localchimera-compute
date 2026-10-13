@@ -91,7 +91,7 @@
                             (cost (if (and (number? snlt) (finite? snlt)) (* qty snlt)
                                       (error "the good has no recipe to price it by" spec))))
                        ($ ($ root 'account-store) 'claim (economic-resource-id r) qty claimant cost (credit-roots claimant)
-                          #f place when-iso cid)
+                          #:at-location place #:when when-iso #:fulfills cid)
                        (success `((event-id . ,(let ((evs (or ($ obs 'fulfilled-by cid) '())))   ; newest first
                                                  (if (pair? evs) (economic-event-id (car evs)) "")))
                                   (fulfills . ,cid)
@@ -218,8 +218,8 @@
                                     (error (format #f "the plan holds no claim of ~a for ~a; state the want and the plan answers"
                                                    spec claimant)))))
                      ($ ($ root 'account-store) 'claim resource-id qty claimant cost (credit-roots claimant)
-                        #f                                       ; level
-                        where deliver-at (fulfillment-state-commitment-id fs))))
+                        #:at-location where #:when deliver-at
+                        #:fulfills (fulfillment-state-commitment-id fs))))
                  `((claimed . ,cost)
                             (balance . ,(wire-number ($ ($ root 'observer) 'credit-balance claimant)))
                             (credit . ,(scope-credit->wire root claimant (credit-roots claimant))))))))

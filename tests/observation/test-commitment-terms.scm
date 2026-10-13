@@ -36,6 +36,10 @@
       (check "its kind" (assq-ref t 'tags) '("claim"))
       (check "its action" (assq-ref t 'action) 'transfer))
     (check "a claim is a claim" (and (claim-terms o (commitment-id c)) #t) #t)
+    (check "a snapshot holds a commitment's terms as the seven-field list it always held its first three of"
+           (let* ((st (deserialize-observer-state-portable ($ o 'serialize))))
+             (terms->list (hashmap-ref (os-terms st) (commitment-id c))))
+           '(transfer "bread" () "ana" "market" "3" ("claim")))
     (check "an id the books hold nothing for answers #f" ($ o 'commitment-terms "nope") #f)
     (let ((w (make-commitment #:id "w1" #:action 'work #:resource-conforms-to "baking" #:input-of "P"
                               #:effort-quantity (make-measure 3.0 "hours") #:provider "ana")))
@@ -73,12 +77,18 @@
     (check "…nor does it match" (length (claim-fulfillments o #:open-only? #f)) 0))
 
   (display "\n── LEGACY: a snapshot from before the tail loads with it laid ──\n")
+(check "a list of three reads, its tail unstated" 
+       (let ((t (list->terms '(transfer "bread" ("i1"))))) (list (terms-action t) (terms-spec t) (terms-iids t) (terms-receiver t) (terms-tags t)))
+       '(transfer "bread" ("i1") #f ()))
+(check "…and writes back as seven" (length (terms->list (list->terms '(transfer "bread" ())))) 7)
   (let* ((o (new-observer))
          (c (claim-commitment "bread" "ana" 2.0 "org:t" #:place "market" #:when-iso "3" #:unit "kg")))
     ($ o 'register-commitment c)
     (let* ((st     (deserialize-observer-state-portable ($ o 'serialize)))
-           (strip  (lambda (terms)        ; the three-element tuple a pre-tail build wrote
-                     (hashmap-fold (lambda (k v acc) (hashmap-set acc k (list-head v 3))) (hashmap) terms)))
+           (strip  (lambda (terms)        ; what a pre-tail build wrote: the first three fields, the tail unstated
+                     (hashmap-fold (lambda (k v acc)
+                                     (hashmap-set acc k (make-terms (terms-action v) (terms-spec v) (terms-iids v) #f #f #f '())))
+                                   (hashmap) terms)))
            (old    (positional-snapshot (os-rebuild st #:terms (strip (os-terms st)))))
            (loaded (spawn ^observer (deserialize-observer-state old) '()))
            (t      ($ loaded 'commitment-terms (commitment-id c))))

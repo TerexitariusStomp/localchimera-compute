@@ -342,10 +342,11 @@
 
     ;; --- Claim (VF transfer from scope to citizen) ---
 
-    ;; OPTS after scope-roots: (level [at-location [when]]) — level stratifies
-    ;; the validation; at-location / when ride onto the transfer event
-    ;; (to-location, has-point-in-time) so the claim records WHERE the good
-    ;; is to reach the citizen and WHEN they want it. All optional.
+    ;; OPTS after scope-roots are keywords, all optional: #:level stratifies the
+    ;; validation; #:at-location and #:when ride onto the transfer event (to-location,
+    ;; has-point-in-time) so the claim records WHERE the good is to reach the citizen
+    ;; and WHEN they want it; #:fulfills names the plan's claim commitment, the one
+    ;; word that admits the claim at all.
     ((claim resource-id qty claimant-aid labor-cost scope-roots . opts)
      ;; resource-id:  resource in this scope's observer to be claimed
      ;; qty:          quantity to claim (in resource's unit)
@@ -378,13 +379,13 @@
          ((not (resource-individually-claimable? resource recipe-store-ref))
           (error "Resource not individually-claimable" resource-id))
          (else
-          (let* ((level  (and (pair? opts) (car opts)))
-                 (at-loc (and (pair? opts) (pair? (cdr opts)) (cadr opts)))
-                 (when*  (and (pair? opts) (pair? (cdr opts)) (pair? (cddr opts))
-                              (caddr opts)))
+          (let* ((kw     (lambda (key) (let ((m (memq key opts))) (and m (pair? (cdr m)) (cadr m)))))
+                 (level  (kw #:level))
+                 (at-loc (kw #:at-location))
+                 (when*  (kw #:when))
                  ;; the plan's claim commitment this transfer fulfils — the one
                  ;; word that admits a claim at all (claim-commitment above)
-                 (fulfills (and (pair? opts) (>= (length opts) 4) (list-ref opts 3)))
+                 (fulfills (kw #:fulfills))
                  (fs (and fulfills ($ observer-ref 'get-fulfillment fulfills)))
                  ;; the commitment is the PLAN's claim row: a held, count or work
                  ;; commitment of ample quantity admits nothing (a claim is the commitment

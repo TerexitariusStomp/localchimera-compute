@@ -66,7 +66,7 @@
                      (cost (* 3 q)))
                 (when (and (>= b cost) (>= (pool) cost))
                   (let ((before (map (lambda (a) (cons a (bal a 0))) aids)) (pool0 (pool)))
-                    (let ((r (catch #t (lambda () ($ as 'claim "r-bread" q who cost (list scope) #f #f #f (plan-claim! obs "spec-bread" who q))) (lambda (k . a) (list 'refused k (if (pair? a) (if (and (pair? (cdr a)) (string? (cadr a))) (list (cadr a) (if (pair? (cddr a)) (caddr a) '())) a) a))))))
+                    (let ((r (catch #t (lambda () ($ as 'claim "r-bread" q who cost (list scope) #:fulfills (plan-claim! obs "spec-bread" who q))) (lambda (k . a) (list 'refused k (if (pair? a) (if (and (pair? (cdr a)) (string? (cadr a))) (list (cadr a) (if (pair? (cddr a)) (caddr a) '())) a) a))))))
                       (verdict seed "K2 an affordable claim is admitted" (eq? r #t) (list r who b cost))
                       (when (eq? r #t)
                         (let ((after (map (lambda (a) (cons a (bal a 0))) aids)))
@@ -83,7 +83,7 @@
           ;; K3 a claim past one's balance is refused
           (let* ((who (car aids)) (b (bal who 0)) (q (+ 1 (inexact->exact (ceiling (/ b 3.0))))))
             (when (<= (* 3 q) (pool))
-              (let ((r (catch #t (lambda () ($ as 'claim "r-bread" q who (* 3 q) (list scope) #f #f #f (plan-claim! obs "spec-bread" who q))) (lambda (k . a) 'refused))))
+              (let ((r (catch #t (lambda () ($ as 'claim "r-bread" q who (* 3 q) (list scope) #:fulfills (plan-claim! obs "spec-bread" who q))) (lambda (k . a) 'refused))))
                 (verdict seed "K3 a claim beyond the balance is refused" (not (eq? r #t)) (list r who b q))))))))))
 
 (for-each (lambda (k) (catch #t (lambda () (one (+ SEED0 k)))

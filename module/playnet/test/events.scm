@@ -71,5 +71,6 @@
            (os-idx-by-spec st))
      (list-head (list (os-agreements st) (records (os-batches st)) (os-resource-batches st)
                       (os-plan-validations st) (os-intent-validations st)
-                      (os-terms st) (records (os-processes st)))
+                      (hashmap-fold (lambda (k v acc) (hashmap-set acc k (terms->list v))) (hashmap) (os-terms st))
+                      (records (os-processes st)))
                 slots))))

@@ -40,7 +40,7 @@
   #:export (standing-events standing-event void-event void-correction?
            <observer-state> make-observer-state observer-state? os-events
             os-resources os-commitment-targets os-intent-targets os-claim-targets os-satisfiers
-            os-terms os-idx-by-link
+            os-terms os-idx-by-link make-terms terms-action terms-spec terms-iids terms-receiver terms-place terms-when terms-tags terms->list list->terms
             os-idx-by-resource os-idx-by-process os-idx-by-agent os-idx-by-action
             os-events-by-id os-idx-by-spec os-agreements os-batches
             os-resource-batches os-plan-validations os-intent-validations
@@ -145,8 +145,8 @@
   ;; serialized: a loaded snapshot rebuilds them.
   (idx-by-link     os-idx-by-link (hashmap))
   ;; What a registered commitment says about the events that count toward it:
-  ;; cid -> (action spec (intent-id ...)). The target quantity stands in
-  ;; commitment-targets; these are the rest of the join.
+  ;; cid -> <terms> (action spec (intent-id ...) receiver place when tags). The target
+  ;; quantity stands in commitment-targets; these are the rest of the join.
   (terms           os-terms (hashmap))
   ;; The processes the books were told of: process id -> <process>. A process is
   ;; based on a ProcessSpecification (VF Process.basedOn): the stage effect of an event
@@ -891,14 +891,28 @@
     (make-state (make-measure total unit) (map car hits)
                 (and (pair? hits) (target-reached? total t)) (target-passed? total t))))
 
+;; The terms a commitment was registered under (see below): the record stands here, above
+;; its first reader, because a record's accessors are macros and a use above them reads
+;; as a variable that is never bound.
+(define-record-type <terms>
+  (make-terms action spec iids receiver place when tags)
+  terms?
+  (action   terms-action)
+  (spec     terms-spec)
+  (iids     terms-iids)
+  (receiver terms-receiver)
+  (place    terms-place)
+  (when     terms-when)
+  (tags     terms-tags))
+
 (define (fulfilling-events st cid)
   "The events that count toward commitment CID: those that name it, of its action
    and spec."
   (let ((terms (hashmap-ref (os-terms st) cid #f)))
     (filter (lambda (e)
               (or (not terms)
-                  (and (same-flow? (economic-event-action e) (car terms))
-                       (let ((spec (cadr terms)) (espec (economic-event-resource-conforms-to e)))
+                  (and (same-flow? (economic-event-action e) (terms-action terms))
+                       (let ((spec (terms-spec terms)) (espec (economic-event-resource-conforms-to e)))
                          (or (not spec) (not espec) (equal? spec espec))))))
             (linked-events st "fulfills" cid))))
 
@@ -947,35 +961,45 @@
 (define (rebuild-satisfiers st)
   "ST with its satisfiers read off its terms."
   (os-rebuild st #:satisfiers
-              (hashmap-fold (lambda (cid terms acc) (link-satisfiers acc cid '() (caddr terms)))
+              (hashmap-fold (lambda (cid terms acc) (link-satisfiers acc cid '() (terms-iids terms)))
                             (os-satisfiers st) (os-terms st))))
 
 ;; ── THE TERMS A COMMITMENT IS REGISTERED UNDER ──────────────────────────────
-;; (action spec iids receiver place when tags): what counts toward it (action,
-;; spec), the intents it satisfies, and who it is for, where, when and of what
-;; kind. A caller asks the observer for a commitment's terms; none reads them
-;; back out of its id. The tuple grew a tail after the first three, which every
-;; reader of those three still reads; a tuple registered before the tail stands
-;; as three until `backfill-terms` lays it.
-(define (terms-tuple commitment iids)
-  (list (commitment-action commitment)
-        (commitment-resource-conforms-to commitment)
-        iids
-        (commitment-receiver commitment)
-        (commitment-at-location commitment)
-        (commitment-has-point-in-time commitment)
-        (or (commitment-resource-classified-as commitment) '())))
+;; What counts toward it (action, spec), the intents it satisfies, and who it is for,
+;; where, when and of what kind. A caller asks the observer for a commitment's terms;
+;; none reads them back out of its id. A record, so a reader names the field it reads;
+;; a snapshot holds it as the list `terms->list` writes (action spec iids receiver place
+;; when tags), the shape every earlier snapshot held its first three of, and
+;; `list->terms` reads three or seven: a list registered before the tail stands with the
+;; tail empty until `backfill-terms` lays it.
+(define (terms-of commitment iids)
+  (make-terms (commitment-action commitment)
+              (commitment-resource-conforms-to commitment)
+              iids
+              (commitment-receiver commitment)
+              (commitment-at-location commitment)
+              (commitment-has-point-in-time commitment)
+              (or (commitment-resource-classified-as commitment) '())))
 
-(define (terms-at terms i) (and (> (length terms) i) (list-ref terms i)))
+(define (terms->list t)
+  (list (terms-action t) (terms-spec t) (terms-iids t) (terms-receiver t) (terms-place t) (terms-when t) (terms-tags t)))
 
-(define (terms->alist terms)
-  `((action . ,(car terms)) (spec . ,(cadr terms)) (iids . ,(caddr terms))
-    (receiver . ,(terms-at terms 3)) (place . ,(terms-at terms 4)) (when . ,(terms-at terms 5))
-    (tags . ,(or (terms-at terms 6) '()))))
+(define (list->terms l)
+  (let ((at (lambda (i) (and (> (length l) i) (list-ref l i)))))
+    (make-terms (car l) (cadr l) (caddr l) (at 3) (at 4) (at 5) (or (at 6) '()))))
+
+(define (terms->alist t)
+  `((action . ,(terms-action t)) (spec . ,(terms-spec t)) (iids . ,(terms-iids t))
+    (receiver . ,(terms-receiver t)) (place . ,(terms-place t)) (when . ,(terms-when t))
+    (tags . ,(terms-tags t))))
+
+(define (map-terms f hm)
+  "HM with F applied to each value."
+  (hashmap-fold (lambda (k v acc) (hashmap-set acc k (f v))) (hashmap) hm))
 
 (define (legacy-terms-tail cid)
   "The tail a commitment registered before terms carried one would have had. The
-   one reading of a claim's id left: a claim commitment's id spells the claim
+   one reading of a claim id left: a claim commitment's id spells the claim
    (claim|spec|claimant|place|when), and a snapshot taken before the tail knew
    claims by nothing else. It runs once, as a snapshot loads."
   (let ((parts (string-split cid #\|)))
@@ -985,11 +1009,13 @@
         (list #f #f #f '()))))
 
 (define (backfill-terms st)
-  "ST with every three-element terms tuple given its tail."
+  "ST with the tail laid on every terms that stands without one (no receiver, no tags)."
   (os-rebuild st #:terms
-              (hashmap-fold (lambda (cid terms acc)
-                              (if (> (length terms) 3) acc
-                                  (hashmap-set acc cid (append terms (legacy-terms-tail cid)))))
+              (hashmap-fold (lambda (cid t acc)
+                              (if (or (terms-receiver t) (pair? (terms-tags t))) acc
+                                  (let ((tail (legacy-terms-tail cid)))
+                                    (hashmap-set acc cid (make-terms (terms-action t) (terms-spec t) (terms-iids t)
+                                                                     (car tail) (cadr tail) (caddr tail) (cadddr tail))))))
                             (os-terms st) (os-terms st))))
 
 (define (commitment-terms-of st cid)
@@ -1007,10 +1033,10 @@
    (lambda (cid _ acc)
      (let ((terms (hashmap-ref (os-terms st) cid #f)))
        (if (and terms
-                (or (not spec) (equal? spec (cadr terms)))
-                (or (not receiver) (equal? receiver (terms-at terms 3)))
-                (or (not place) (equal? place (terms-at terms 4)))
-                (or (not tag) (member tag (or (terms-at terms 6) '()))))
+                (or (not spec) (equal? spec (terms-spec terms)))
+                (or (not receiver) (equal? receiver (terms-receiver terms)))
+                (or (not place) (equal? place (terms-place terms)))
+                (or (not tag) (member tag (terms-tags terms))))
            (let ((fs (fulfillment-of st cid)))
              (if (and fs (or (not open-only?) (not (fulfillment-state-finished fs))))
                  (cons fs acc)
@@ -1372,7 +1398,7 @@
   (let* ((cid   (economic-event-fulfills event))
          (terms (and cid (hashmap-ref (os-terms st) cid #f)))
          (iids  (if terms
-                    (filter (lambda (iid) (hashmap-ref (os-intent-targets st) iid #f)) (caddr terms))
+                    (filter (lambda (iid) (hashmap-ref (os-intent-targets st) iid #f)) (terms-iids terms))
                     '())))
     (and (pair? iids)
          (apply min (map (lambda (iid) (fraction-for-intent st iid level)) iids)))))
@@ -2008,7 +2034,7 @@
          (hashmap-of (lambda (stated) (list (vf-serialize (car stated)) (cdr stated))))
          (hashmap-from (lambda (v) (cons (vf-deserialize (car v)) (cadr v)))))
    (list 'claim-targets os-claim-targets (hashmap-of vf-serialize) (hashmap-from vf-deserialize))
-   (list 'terms os-terms identity identity)                              ;; cid -> (action spec intents)
+   (list 'terms os-terms (hashmap-of terms->list) (hashmap-from list->terms))   ;; cid -> (action spec intents receiver place when tags)
    (list 'idx-by-spec os-idx-by-spec identity identity)
    (list 'agreements os-agreements identity identity)                    ;; alists
    (list 'batches os-batches (hashmap-of vf-serialize) (hashmap-from vf-deserialize))
@@ -2094,7 +2120,7 @@
          (resource-batches . ,(or (slot 2) (hashmap)))
          (plan-validations . ,(or (slot 3) (hashmap)))
          (intent-validations . ,(or (slot 4) (hashmap)))
-         (terms . ,(or terms (hashmap)))
+         (terms . ,(map-terms list->terms (or terms (hashmap))))
          (processes . ,(deserialize-processes (or (slot 6) (hashmap)))))))))
 
 (define (deserialize-observer-state data)
@@ -2267,11 +2293,11 @@
             (iids (let ((s (commitment-satisfies commitment)))
                     (cond ((pair? s) s) (s (list s)) (else '()))))
             (was  (let ((terms (hashmap-ref (os-terms st) cid #f)))
-                    (if terms (caddr terms) '()))))
+                    (if terms (terms-iids terms) '()))))
        (bcom (^observer bcom
                (os-rebuild st
                  #:commitment-targets (hashmap-set (os-commitment-targets st) cid qty)
-                 #:terms (hashmap-set (os-terms st) cid (terms-tuple commitment iids))
+                 #:terms (hashmap-set (os-terms st) cid (terms-of commitment iids))
                  #:satisfiers (link-satisfiers (os-satisfiers st) cid was iids))
                callbacks))))
 
