@@ -13,7 +13,7 @@
 ;;; check-units-fresh` regenerates and diffs the committed copy.
 
 (use-modules ((playnet utils ts-emit) #:select ((ts-str . str)))
-             ((playnet utils units) #:select (%count-unit %effort-unit %placeholder-unit %time-unit-names))
+             ((playnet utils units) #:select (%count-unit %effort-unit %placeholder-unit %count-unit-names %time-unit-names))
              (ice-9 match))
 
 (define (catalogue-ts)
@@ -30,12 +30,14 @@
    "export const EFFORT_UNIT = " (str %effort-unit) ";\n"
    "/** The unit a row carries until its door states the specification's own. */\n"
    "export const PLACEHOLDER_UNIT = " (str %placeholder-unit) ";\n"
+   "/** Every spelling of a count: the count unit, a thing counted as one, a run. */\n"
+   "export const COUNT_UNITS: readonly string[] = [" (string-join (map str %count-unit-names) ", ") "];\n"
    "/** Every spelling of a unit of time the unit tables convert. */\n"
    "export const TIME_UNITS: readonly string[] = [" (string-join (map str %time-unit-names) ", ") "];\n"
    "\n"
-   "/** A thing counted in itself: no unit stated, the count unit, or the placeholder. */\n"
+   "/** A thing counted in itself: no unit stated, a count unit, or the placeholder. */\n"
    "export const isCountUnit = (unit: string | null | undefined): boolean =>\n"
-   "  !unit || unit === COUNT_UNIT || unit === PLACEHOLDER_UNIT;\n"
+   "  !unit || COUNT_UNITS.includes(unit) || unit === PLACEHOLDER_UNIT;\n"
    "/** A unit that measures time — an effort, a duration, a pool of hours. */\n"
    "export const isTimeUnit = (unit: string | null | undefined): boolean =>\n"
    "  !!unit && TIME_UNITS.includes(unit);\n"))

@@ -973,20 +973,363 @@ export const RECORDING = {
         "plan": false,
         "matter": false,
         "inventory": {
-            "scope": "",
-            "specs": [],
+            "scope": "org:neighbourhood",
+            "specs": [
+                {
+                    "categories": [
+                        "movement/commute"
+                    ],
+                    "id": "spec-bike-repair",
+                    "name": "bike repair",
+                    "note": "",
+                    "image": null,
+                    "unit": "hours",
+                    "substitutable": false,
+                    "count": 1,
+                    "onhandTotal": 4,
+                    "snlt": null
+                },
+                {
+                    "categories": [
+                        "learning/skills"
+                    ],
+                    "id": "spec-book",
+                    "name": "book",
+                    "note": "",
+                    "image": null,
+                    "unit": "each",
+                    "substitutable": false,
+                    "count": 1,
+                    "onhandTotal": 340.0,
+                    "snlt": null
+                },
+                {
+                    "categories": [
+                        "nourishment/meals"
+                    ],
+                    "id": "spec-bread",
+                    "name": "bread",
+                    "note": "",
+                    "image": null,
+                    "unit": "loaf",
+                    "substitutable": false,
+                    "count": 2,
+                    "onhandTotal": 112.0,
+                    "snlt": null
+                },
+                {
+                    "categories": [
+                        "nourishment/meals"
+                    ],
+                    "id": "spec-zucchini",
+                    "name": "zucchini",
+                    "note": "",
+                    "image": null,
+                    "unit": "kg",
+                    "substitutable": false,
+                    "count": 1,
+                    "onhandTotal": 6,
+                    "snlt": null
+                },
+                {
+                    "categories": [
+                        "nourishment/cooking"
+                    ],
+                    "id": "spec-jar",
+                    "name": "pantry jar",
+                    "note": "",
+                    "image": null,
+                    "unit": "each",
+                    "substitutable": false,
+                    "count": 1,
+                    "onhandTotal": 5.0,
+                    "snlt": null
+                },
+                {
+                    "categories": [
+                        "clothing"
+                    ],
+                    "id": "spec-coat",
+                    "name": "winter coat",
+                    "note": "",
+                    "image": null,
+                    "unit": "item",
+                    "substitutable": false,
+                    "count": 1,
+                    "onhandTotal": 3.0,
+                    "snlt": null
+                },
+                {
+                    "categories": [
+                        "learning/practice"
+                    ],
+                    "id": "spec-workshop",
+                    "name": "workshop",
+                    "note": "",
+                    "image": null,
+                    "unit": "each",
+                    "substitutable": false,
+                    "count": 1,
+                    "onhandTotal": 1,
+                    "snlt": null
+                },
+                {
+                    "categories": [
+                        "container/shelf"
+                    ],
+                    "id": "spec-shelf",
+                    "name": "shelf",
+                    "note": "",
+                    "image": null,
+                    "unit": "each",
+                    "substitutable": false,
+                    "count": 1,
+                    "onhandTotal": 1.0,
+                    "snlt": null
+                },
+                {
+                    "categories": [
+                        "movement/commute"
+                    ],
+                    "id": "spec-bike",
+                    "name": "bicycle",
+                    "note": "",
+                    "image": null,
+                    "unit": "each",
+                    "substitutable": false,
+                    "count": 1,
+                    "onhandTotal": 6.0,
+                    "snlt": null
+                },
+                {
+                    "categories": [
+                        "nourishment/meals"
+                    ],
+                    "id": "spec-meal",
+                    "name": "cooked meal",
+                    "note": "",
+                    "image": null,
+                    "unit": "each",
+                    "substitutable": false,
+                    "count": 1,
+                    "onhandTotal": 24.0,
+                    "snlt": null
+                },
+                {
+                    "categories": [
+                        "external/fiat"
+                    ],
+                    "id": "spec-eur",
+                    "name": "euros",
+                    "note": "",
+                    "image": null,
+                    "unit": "€100",
+                    "substitutable": false,
+                    "count": 1,
+                    "onhandTotal": 12.0,
+                    "snlt": null
+                },
+                {
+                    "categories": [
+                        "container/crate"
+                    ],
+                    "id": "spec-crate",
+                    "name": "crate",
+                    "note": "",
+                    "image": null,
+                    "unit": "each",
+                    "substitutable": false,
+                    "count": 1,
+                    "onhandTotal": 1.0,
+                    "snlt": null
+                },
+                {
+                    "categories": [
+                        "external/crypto"
+                    ],
+                    "id": "spec-xmr",
+                    "name": "monero",
+                    "note": "",
+                    "image": null,
+                    "unit": "0.1 XMR",
+                    "substitutable": false,
+                    "count": 1,
+                    "onhandTotal": 20.0,
+                    "snlt": null
+                },
+                {
+                    "categories": [
+                        "furnishing"
+                    ],
+                    "id": "spec-chair",
+                    "name": "chair",
+                    "note": "",
+                    "image": null,
+                    "unit": "pc",
+                    "substitutable": false,
+                    "count": 1,
+                    "onhandTotal": 5.0,
+                    "snlt": null
+                },
+                {
+                    "categories": [
+                        "learning/study-circle"
+                    ],
+                    "id": "spec-study",
+                    "name": "study circle",
+                    "note": "",
+                    "image": null,
+                    "unit": "hours",
+                    "substitutable": false,
+                    "count": 1,
+                    "onhandTotal": 2,
+                    "snlt": null
+                },
+                {
+                    "categories": [
+                        "nourishment/cooking"
+                    ],
+                    "id": "spec-sourdough",
+                    "name": "sourdough",
+                    "note": "",
+                    "image": null,
+                    "unit": "loaf",
+                    "substitutable": false,
+                    "count": 1,
+                    "onhandTotal": 2,
+                    "snlt": null
+                },
+                {
+                    "categories": [
+                        "nourishment/cooking"
+                    ],
+                    "id": "spec-beans",
+                    "name": "dry beans",
+                    "note": "",
+                    "image": null,
+                    "unit": "kg",
+                    "substitutable": false,
+                    "count": 1,
+                    "onhandTotal": 60.0,
+                    "snlt": null
+                },
+                {
+                    "categories": [
+                        "movement/commute"
+                    ],
+                    "id": "spec-tools",
+                    "name": "repair tools",
+                    "note": "",
+                    "image": null,
+                    "unit": "set",
+                    "substitutable": false,
+                    "count": 1,
+                    "onhandTotal": 1.0,
+                    "snlt": null
+                },
+                {
+                    "categories": [
+                        "clothing/fabric"
+                    ],
+                    "id": "spec-fabric",
+                    "name": "fabric",
+                    "note": "",
+                    "image": null,
+                    "unit": "m",
+                    "substitutable": false,
+                    "count": 1,
+                    "onhandTotal": 40.0,
+                    "snlt": null
+                },
+                {
+                    "categories": [
+                        "rest/sleep"
+                    ],
+                    "id": "spec-bed",
+                    "name": "bed",
+                    "note": "",
+                    "image": null,
+                    "unit": "each",
+                    "substitutable": false,
+                    "count": 3,
+                    "onhandTotal": 3,
+                    "snlt": null
+                },
+                {
+                    "categories": [
+                        "movement/commute"
+                    ],
+                    "id": "spec-cargo-bike",
+                    "name": "cargo bike",
+                    "note": "",
+                    "image": null,
+                    "unit": "each",
+                    "substitutable": false,
+                    "count": 1,
+                    "onhandTotal": 1,
+                    "snlt": null
+                },
+                {
+                    "categories": [
+                        "nourishment/meals"
+                    ],
+                    "id": "spec-veg",
+                    "name": "vegetables",
+                    "note": "",
+                    "image": null,
+                    "unit": "kg",
+                    "substitutable": false,
+                    "count": 2,
+                    "onhandTotal": 144.0,
+                    "snlt": null
+                },
+                {
+                    "categories": [
+                        "movement/walking"
+                    ],
+                    "id": "spec-walks",
+                    "name": "walks",
+                    "note": "",
+                    "image": null,
+                    "unit": "hours",
+                    "substitutable": false,
+                    "count": 1,
+                    "onhandTotal": 5,
+                    "snlt": null
+                },
+                {
+                    "categories": [
+                        "nourishment/tea-snacks"
+                    ],
+                    "id": "spec-tea",
+                    "name": "tea",
+                    "note": "",
+                    "image": null,
+                    "unit": "box",
+                    "substitutable": false,
+                    "count": 1,
+                    "onhandTotal": 9.0,
+                    "snlt": null
+                }
+            ],
             "resources": [
                 {
                     "id": "demo:meals",
                     "name": "cooked meals",
+                    "image": null,
                     "conforms-to": "spec-meal",
                     "onhand": 24.0,
                     "unit": "each",
                     "distribution-mode": "communal",
+                    "primary-accountable": "org:neighbourhood",
+                    "custodian": "org:neighbourhood",
+                    "custodian-scope": null,
                     "custodian-name": "the commons",
                     "location": "place:canteen",
                     "stage": "",
                     "state": "",
+                    "container?": false,
+                    "has-children?": false,
                     "contained-in": "",
                     "code": "",
                     "lot-code": "L-0612",
@@ -996,14 +1339,20 @@ export const RECORDING = {
                 {
                     "id": "means:bob:spec-cargo-bike",
                     "name": "Bob's Lastenrad",
+                    "image": "🚲",
                     "conforms-to": "spec-cargo-bike",
                     "onhand": 1,
                     "unit": "each",
                     "distribution-mode": null,
+                    "primary-accountable": "bob",
+                    "custodian": "bob",
+                    "custodian-scope": null,
                     "custodian-name": "Bob",
                     "location": "place:bob-home",
                     "stage": "",
                     "state": "",
+                    "container?": false,
+                    "has-children?": false,
                     "contained-in": "",
                     "code": "KMSC5V",
                     "lot-code": "",
@@ -1013,14 +1362,20 @@ export const RECORDING = {
                 {
                     "id": "means:you:spec-bike-repair",
                     "name": "bike repair",
+                    "image": "🚲",
                     "conforms-to": "spec-bike-repair",
                     "onhand": 4,
                     "unit": "hours",
                     "distribution-mode": null,
+                    "primary-accountable": "you",
+                    "custodian": "you",
+                    "custodian-scope": null,
                     "custodian-name": "you",
                     "location": "place:home",
                     "stage": "",
                     "state": "",
+                    "container?": false,
+                    "has-children?": false,
                     "contained-in": "",
                     "code": "TWT4DD",
                     "lot-code": "",
@@ -1030,14 +1385,20 @@ export const RECORDING = {
                 {
                     "id": "demo:library",
                     "name": "lending library",
+                    "image": null,
                     "conforms-to": "spec-book",
                     "onhand": 340.0,
                     "unit": "each",
                     "distribution-mode": "communal",
+                    "primary-accountable": "org:neighbourhood",
+                    "custodian": "org:neighbourhood",
+                    "custodian-scope": null,
                     "custodian-name": "the commons",
                     "location": "place:cafe",
                     "stage": "",
                     "state": "",
+                    "container?": false,
+                    "has-children?": false,
                     "contained-in": "",
                     "code": "",
                     "lot-code": "",
@@ -1047,14 +1408,20 @@ export const RECORDING = {
                 {
                     "id": "demo:roots",
                     "name": "onions & roots",
+                    "image": null,
                     "conforms-to": "spec-veg",
                     "onhand": 72.0,
                     "unit": "kg",
                     "distribution-mode": "communal",
+                    "primary-accountable": "org:neighbourhood",
+                    "custodian": "org:neighbourhood",
+                    "custodian-scope": null,
                     "custodian-name": "the commons",
                     "location": "place:pantry",
                     "stage": "",
                     "state": "",
+                    "container?": false,
+                    "has-children?": false,
                     "contained-in": "demo:shelf",
                     "code": "",
                     "lot-code": "",
@@ -1064,14 +1431,20 @@ export const RECORDING = {
                 {
                     "id": "demo:tea",
                     "name": "loose tea",
+                    "image": null,
                     "conforms-to": "spec-tea",
                     "onhand": 9.0,
                     "unit": "box",
                     "distribution-mode": "individual-claimable",
+                    "primary-accountable": "org:neighbourhood",
+                    "custodian": "org:neighbourhood",
+                    "custodian-scope": null,
                     "custodian-name": "the commons",
                     "location": "place:teahouse",
                     "stage": "",
                     "state": "",
+                    "container?": false,
+                    "has-children?": false,
                     "contained-in": "",
                     "code": "",
                     "lot-code": "",
@@ -1081,14 +1454,20 @@ export const RECORDING = {
                 {
                     "id": "means:ana:spec-bed",
                     "name": "Ana's guest room",
+                    "image": "🏠",
                     "conforms-to": "spec-bed",
                     "onhand": 1,
                     "unit": "each",
                     "distribution-mode": null,
+                    "primary-accountable": "ana",
+                    "custodian": "ana",
+                    "custodian-scope": null,
                     "custodian-name": "Ana",
                     "location": "place:ana-home",
                     "stage": "",
                     "state": "",
+                    "container?": false,
+                    "has-children?": false,
                     "contained-in": "",
                     "code": "QKFCGB",
                     "lot-code": "",
@@ -1098,14 +1477,20 @@ export const RECORDING = {
                 {
                     "id": "means:ana:spec-zucchini",
                     "name": "zucchini glut",
+                    "image": "🥒",
                     "conforms-to": "spec-zucchini",
                     "onhand": 6,
                     "unit": "kg",
                     "distribution-mode": null,
+                    "primary-accountable": "ana",
+                    "custodian": "ana",
+                    "custodian-scope": null,
                     "custodian-name": "Ana",
                     "location": "place:ana-home",
                     "stage": "",
                     "state": "",
+                    "container?": false,
+                    "has-children?": false,
                     "contained-in": "",
                     "code": "2Z1TEB",
                     "lot-code": "",
@@ -1115,14 +1500,20 @@ export const RECORDING = {
                 {
                     "id": "means:kai:spec-study",
                     "name": "reading circle",
+                    "image": "📚",
                     "conforms-to": "spec-study",
                     "onhand": 2,
                     "unit": "hours",
                     "distribution-mode": null,
+                    "primary-accountable": "kai",
+                    "custodian": "kai",
+                    "custodian-scope": null,
                     "custodian-name": "Kai",
                     "location": "place:commons",
                     "stage": "",
                     "state": "",
+                    "container?": false,
+                    "has-children?": false,
                     "contained-in": "",
                     "code": "VKX9P1",
                     "lot-code": "",
@@ -1132,14 +1523,20 @@ export const RECORDING = {
                 {
                     "id": "means:noor:spec-walks",
                     "name": "morning walks",
+                    "image": "🚶",
                     "conforms-to": "spec-walks",
                     "onhand": 5,
                     "unit": "hours",
                     "distribution-mode": null,
+                    "primary-accountable": "noor",
+                    "custodian": "noor",
+                    "custodian-scope": null,
                     "custodian-name": "Noor",
                     "location": "place:commons",
                     "stage": "",
                     "state": "",
+                    "container?": false,
+                    "has-children?": false,
                     "contained-in": "",
                     "code": "CA4AMV",
                     "lot-code": "",
@@ -1149,14 +1546,20 @@ export const RECORDING = {
                 {
                     "id": "demo:eur",
                     "name": "euros",
+                    "image": null,
                     "conforms-to": "spec-eur",
                     "onhand": 12.0,
                     "unit": "€100",
                     "distribution-mode": "communal",
+                    "primary-accountable": "org:neighbourhood",
+                    "custodian": "org:neighbourhood",
+                    "custodian-scope": null,
                     "custodian-name": "the commons",
                     "location": "place:storeroom",
                     "stage": "",
                     "state": "",
+                    "container?": false,
+                    "has-children?": false,
                     "contained-in": "",
                     "code": "",
                     "lot-code": "",
@@ -1166,14 +1569,20 @@ export const RECORDING = {
                 {
                     "id": "demo:greens",
                     "name": "garden greens",
+                    "image": null,
                     "conforms-to": "spec-veg",
                     "onhand": 72.0,
                     "unit": "kg",
                     "distribution-mode": "communal",
+                    "primary-accountable": "org:neighbourhood",
+                    "custodian": "org:neighbourhood",
+                    "custodian-scope": null,
                     "custodian-name": "the commons",
                     "location": "place:canteen",
                     "stage": "",
                     "state": "",
+                    "container?": false,
+                    "has-children?": false,
                     "contained-in": "",
                     "code": "",
                     "lot-code": "",
@@ -1183,14 +1592,20 @@ export const RECORDING = {
                 {
                     "id": "demo:xmr",
                     "name": "monero",
+                    "image": null,
                     "conforms-to": "spec-xmr",
                     "onhand": 20.0,
                     "unit": "0.1 XMR",
                     "distribution-mode": "communal",
+                    "primary-accountable": "org:neighbourhood",
+                    "custodian": "org:neighbourhood",
+                    "custodian-scope": null,
                     "custodian-name": "the commons",
                     "location": "place:storeroom",
                     "stage": "",
                     "state": "",
+                    "container?": false,
+                    "has-children?": false,
                     "contained-in": "",
                     "code": "",
                     "lot-code": "",
@@ -1200,14 +1615,20 @@ export const RECORDING = {
                 {
                     "id": "demo:beans",
                     "name": "dry beans",
+                    "image": null,
                     "conforms-to": "spec-beans",
                     "onhand": 60.0,
                     "unit": "kg",
                     "distribution-mode": "communal",
+                    "primary-accountable": "org:neighbourhood",
+                    "custodian": "org:neighbourhood",
+                    "custodian-scope": null,
                     "custodian-name": "the commons",
                     "location": "place:pantry",
                     "stage": "",
                     "state": "",
+                    "container?": false,
+                    "has-children?": false,
                     "contained-in": "demo:shelf",
                     "code": "",
                     "lot-code": "",
@@ -1217,14 +1638,20 @@ export const RECORDING = {
                 {
                     "id": "demo:loaves",
                     "name": "sourdough loaves",
+                    "image": null,
                     "conforms-to": "spec-bread",
                     "onhand": 104.0,
                     "unit": "loaf",
                     "distribution-mode": "communal",
+                    "primary-accountable": "org:neighbourhood",
+                    "custodian": "org:neighbourhood",
+                    "custodian-scope": null,
                     "custodian-name": "the commons",
                     "location": "place:bakery",
                     "stage": "",
                     "state": "",
+                    "container?": false,
+                    "has-children?": false,
                     "contained-in": "",
                     "code": "",
                     "lot-code": "",
@@ -1234,14 +1661,20 @@ export const RECORDING = {
                 {
                     "id": "demo:fabric",
                     "name": "bolts of fabric",
+                    "image": null,
                     "conforms-to": "spec-fabric",
                     "onhand": 40.0,
                     "unit": "m",
                     "distribution-mode": "individual-claimable",
+                    "primary-accountable": "org:neighbourhood",
+                    "custodian": "org:neighbourhood",
+                    "custodian-scope": null,
                     "custodian-name": "the commons",
                     "location": "place:storeroom",
                     "stage": "",
                     "state": "",
+                    "container?": false,
+                    "has-children?": false,
                     "contained-in": "",
                     "code": "",
                     "lot-code": "",
@@ -1251,14 +1684,20 @@ export const RECORDING = {
                 {
                     "id": "demo:crate",
                     "name": "pantry crate",
+                    "image": null,
                     "conforms-to": "spec-crate",
                     "onhand": 1.0,
                     "unit": "each",
                     "distribution-mode": null,
+                    "primary-accountable": "you",
+                    "custodian": "you",
+                    "custodian-scope": null,
                     "custodian-name": "you",
                     "location": "place:home",
                     "stage": "",
                     "state": "",
+                    "container?": false,
+                    "has-children?": true,
                     "contained-in": "",
                     "code": "5F04V0",
                     "lot-code": "",
@@ -1268,14 +1707,20 @@ export const RECORDING = {
                 {
                     "id": "means:you:spec-bed",
                     "name": "a spare bed",
+                    "image": "🏠",
                     "conforms-to": "spec-bed",
                     "onhand": 1,
                     "unit": "each",
                     "distribution-mode": null,
+                    "primary-accountable": "you",
+                    "custodian": "you",
+                    "custodian-scope": null,
                     "custodian-name": "you",
                     "location": "place:home",
                     "stage": "",
                     "state": "",
+                    "container?": false,
+                    "has-children?": false,
                     "contained-in": "",
                     "code": "3W8QVC",
                     "lot-code": "",
@@ -1285,14 +1730,20 @@ export const RECORDING = {
                 {
                     "id": "demo:bikes",
                     "name": "shared bicycles",
+                    "image": null,
                     "conforms-to": "spec-bike",
                     "onhand": 6.0,
                     "unit": "each",
                     "distribution-mode": "communal",
+                    "primary-accountable": "org:neighbourhood",
+                    "custodian": "org:neighbourhood",
+                    "custodian-scope": null,
                     "custodian-name": "the commons",
                     "location": "place:hub",
                     "stage": "",
                     "state": "",
+                    "container?": false,
+                    "has-children?": false,
                     "contained-in": "",
                     "code": "",
                     "lot-code": "",
@@ -1302,14 +1753,20 @@ export const RECORDING = {
                 {
                     "id": "means:noor:spec-bread",
                     "name": "wood-oven loaves",
+                    "image": "🔥",
                     "conforms-to": "spec-bread",
                     "onhand": 8,
                     "unit": "loaf",
                     "distribution-mode": null,
+                    "primary-accountable": "noor",
+                    "custodian": "noor",
+                    "custodian-scope": null,
                     "custodian-name": "Noor",
                     "location": "place:commons",
                     "stage": "",
                     "state": "",
+                    "container?": false,
+                    "has-children?": false,
                     "contained-in": "",
                     "code": "GWF3N5",
                     "lot-code": "",
@@ -1319,14 +1776,20 @@ export const RECORDING = {
                 {
                     "id": "demo:shelf",
                     "name": "pantry shelf",
+                    "image": null,
                     "conforms-to": "spec-shelf",
                     "onhand": 1.0,
                     "unit": "each",
                     "distribution-mode": "communal",
+                    "primary-accountable": "org:neighbourhood",
+                    "custodian": "org:neighbourhood",
+                    "custodian-scope": null,
                     "custodian-name": "the commons",
                     "location": "place:pantry",
                     "stage": "",
                     "state": "",
+                    "container?": false,
+                    "has-children?": true,
                     "contained-in": "",
                     "code": "0MW38B",
                     "lot-code": "",
@@ -1336,14 +1799,20 @@ export const RECORDING = {
                 {
                     "id": "demo:tools",
                     "name": "repair tools",
+                    "image": null,
                     "conforms-to": "spec-tools",
                     "onhand": 1.0,
                     "unit": "set",
                     "distribution-mode": "communal",
+                    "primary-accountable": "org:neighbourhood",
+                    "custodian": "org:neighbourhood",
+                    "custodian-scope": null,
                     "custodian-name": "the commons",
                     "location": "place:hub",
                     "stage": "",
                     "state": "",
+                    "container?": false,
+                    "has-children?": false,
                     "contained-in": "",
                     "code": "",
                     "lot-code": "",
@@ -1353,14 +1822,20 @@ export const RECORDING = {
                 {
                     "id": "means:meiers:spec-workshop",
                     "name": "the wood workshop",
+                    "image": "🔧",
                     "conforms-to": "spec-workshop",
                     "onhand": 1,
                     "unit": "each",
                     "distribution-mode": null,
+                    "primary-accountable": "meiers",
+                    "custodian": "meiers",
+                    "custodian-scope": null,
                     "custodian-name": "the Meiers",
                     "location": "place:meiers-workshop",
                     "stage": "",
                     "state": "",
+                    "container?": false,
+                    "has-children?": false,
                     "contained-in": "",
                     "code": "9GK5PP",
                     "lot-code": "",
@@ -1370,14 +1845,20 @@ export const RECORDING = {
                 {
                     "id": "means:sam:spec-bed",
                     "name": "Sam's attic bed",
+                    "image": "🏠",
                     "conforms-to": "spec-bed",
                     "onhand": 1,
                     "unit": "each",
                     "distribution-mode": null,
+                    "primary-accountable": "sam",
+                    "custodian": "sam",
+                    "custodian-scope": null,
                     "custodian-name": "Sam",
                     "location": "place:sam-home",
                     "stage": "",
                     "state": "",
+                    "container?": false,
+                    "has-children?": false,
                     "contained-in": "",
                     "code": "RBJFKM",
                     "lot-code": "",
@@ -1387,14 +1868,20 @@ export const RECORDING = {
                 {
                     "id": "demo:coats",
                     "name": "winter coats",
+                    "image": null,
                     "conforms-to": "spec-coat",
                     "onhand": 3.0,
                     "unit": "item",
                     "distribution-mode": "individual-claimable",
+                    "primary-accountable": "org:neighbourhood",
+                    "custodian": "org:neighbourhood",
+                    "custodian-scope": null,
                     "custodian-name": "the commons",
                     "location": "place:storeroom",
                     "stage": "",
                     "state": "",
+                    "container?": false,
+                    "has-children?": false,
                     "contained-in": "",
                     "code": "",
                     "lot-code": "",
@@ -1404,14 +1891,20 @@ export const RECORDING = {
                 {
                     "id": "demo:jars",
                     "name": "your pantry jars",
+                    "image": null,
                     "conforms-to": "spec-jar",
                     "onhand": 5.0,
                     "unit": "each",
                     "distribution-mode": null,
+                    "primary-accountable": "you",
+                    "custodian": "you",
+                    "custodian-scope": null,
                     "custodian-name": "you",
                     "location": "place:home",
                     "stage": "",
                     "state": "",
+                    "container?": false,
+                    "has-children?": false,
                     "contained-in": "demo:crate",
                     "code": "",
                     "lot-code": "",
@@ -1421,14 +1914,20 @@ export const RECORDING = {
                 {
                     "id": "means:luca:spec-sourdough",
                     "name": "sourdough starter + bake day",
+                    "image": "🍞",
                     "conforms-to": "spec-sourdough",
                     "onhand": 2,
                     "unit": "loaf",
                     "distribution-mode": null,
+                    "primary-accountable": "luca",
+                    "custodian": "luca",
+                    "custodian-scope": null,
                     "custodian-name": "Luca",
                     "location": "place:commons",
                     "stage": "",
                     "state": "",
+                    "container?": false,
+                    "has-children?": false,
                     "contained-in": "",
                     "code": "DHBDEX",
                     "lot-code": "",
@@ -1438,14 +1937,20 @@ export const RECORDING = {
                 {
                     "id": "demo:chairs",
                     "name": "chairs",
+                    "image": null,
                     "conforms-to": "spec-chair",
                     "onhand": 5.0,
                     "unit": "pc",
                     "distribution-mode": "individual-claimable",
+                    "primary-accountable": "org:neighbourhood",
+                    "custodian": "org:neighbourhood",
+                    "custodian-scope": null,
                     "custodian-name": "the commons",
                     "location": "place:storeroom",
                     "stage": "",
                     "state": "",
+                    "container?": false,
+                    "has-children?": false,
                     "contained-in": "",
                     "code": "",
                     "lot-code": "",
@@ -1461,7 +1966,8 @@ export const RECORDING = {
             "capacity": 0,
             "pool": 0,
             "voice": null,
-            "freeTime": 0
+            "freeTime": 0,
+            "pending": 0
         },
         "fragility": false,
         "locations": [
@@ -1472,6 +1978,8 @@ export const RECORDING = {
                 "lng": -0.01,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1481,6 +1989,8 @@ export const RECORDING = {
                 "lng": 0.031,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1490,6 +2000,8 @@ export const RECORDING = {
                 "lng": 0.011,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1499,6 +2011,8 @@ export const RECORDING = {
                 "lng": 0.004,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1508,6 +2022,8 @@ export const RECORDING = {
                 "lng": 0.013,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1517,6 +2033,8 @@ export const RECORDING = {
                 "lng": 0.013,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1526,6 +2044,8 @@ export const RECORDING = {
                 "lng": 0.002,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1535,6 +2055,8 @@ export const RECORDING = {
                 "lng": 0.007,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1544,6 +2066,8 @@ export const RECORDING = {
                 "lng": 0.006,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1553,6 +2077,8 @@ export const RECORDING = {
                 "lng": 0.0047,
                 "containedIn": "place:commons",
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1562,6 +2088,8 @@ export const RECORDING = {
                 "lng": -0.011,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1571,6 +2099,8 @@ export const RECORDING = {
                 "lng": -0.011,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1580,6 +2110,8 @@ export const RECORDING = {
                 "lng": 0.01,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1589,6 +2121,8 @@ export const RECORDING = {
                 "lng": -0.003,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1598,6 +2132,8 @@ export const RECORDING = {
                 "lng": -0.006,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1607,6 +2143,8 @@ export const RECORDING = {
                 "lng": 0.025,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1616,6 +2154,8 @@ export const RECORDING = {
                 "lng": 0.0055,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1625,6 +2165,8 @@ export const RECORDING = {
                 "lng": 0.004,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1634,6 +2176,8 @@ export const RECORDING = {
                 "lng": 0.0031,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1643,6 +2187,8 @@ export const RECORDING = {
                 "lng": 0.005,
                 "containedIn": "place:commons",
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1652,6 +2198,8 @@ export const RECORDING = {
                 "lng": 0.06,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1661,6 +2209,8 @@ export const RECORDING = {
                 "lng": -0.09,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1670,6 +2220,8 @@ export const RECORDING = {
                 "lng": 0.009,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1679,6 +2231,8 @@ export const RECORDING = {
                 "lng": -0.008,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1688,6 +2242,8 @@ export const RECORDING = {
                 "lng": -0.002,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1697,6 +2253,8 @@ export const RECORDING = {
                 "lng": 0.001,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1706,6 +2264,8 @@ export const RECORDING = {
                 "lng": 0.0062,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1715,6 +2275,8 @@ export const RECORDING = {
                 "lng": 0.0046,
                 "containedIn": "place:commons",
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1724,6 +2286,8 @@ export const RECORDING = {
                 "lng": -0.007,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1733,6 +2297,8 @@ export const RECORDING = {
                 "lng": 0.012,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1742,6 +2308,8 @@ export const RECORDING = {
                 "lng": 0.003,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1751,6 +2319,8 @@ export const RECORDING = {
                 "lng": -0.0018,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1760,6 +2330,8 @@ export const RECORDING = {
                 "lng": 0.006,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1769,6 +2341,8 @@ export const RECORDING = {
                 "lng": 0.005,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1778,6 +2352,8 @@ export const RECORDING = {
                 "lng": 0.012,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1787,6 +2363,8 @@ export const RECORDING = {
                 "lng": 0.007,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1796,6 +2374,8 @@ export const RECORDING = {
                 "lng": 0.0053,
                 "containedIn": "place:commons",
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1805,6 +2385,8 @@ export const RECORDING = {
                 "lng": -0.007,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1814,6 +2396,8 @@ export const RECORDING = {
                 "lng": 0.004,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1823,6 +2407,8 @@ export const RECORDING = {
                 "lng": -0.0035,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1832,6 +2418,8 @@ export const RECORDING = {
                 "lng": 0.005,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1841,6 +2429,8 @@ export const RECORDING = {
                 "lng": -0.045,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1850,6 +2440,8 @@ export const RECORDING = {
                 "lng": -0.009,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1859,6 +2451,8 @@ export const RECORDING = {
                 "lng": -0.0058,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1868,6 +2462,8 @@ export const RECORDING = {
                 "lng": 0.006,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1877,6 +2473,8 @@ export const RECORDING = {
                 "lng": 0.0052,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1886,6 +2484,8 @@ export const RECORDING = {
                 "lng": -0.004,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1895,6 +2495,8 @@ export const RECORDING = {
                 "lng": -0.005,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             },
             {
@@ -1904,6 +2506,8 @@ export const RECORDING = {
                 "lng": 0.008,
                 "containedIn": null,
                 "boundary": null,
+                "note": null,
+                "address": null,
                 "slack": null
             }
         ],

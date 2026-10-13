@@ -21,11 +21,11 @@
   #:use-module ((playnet scope snapshot) #:select (dedup-locations scope-locations->wire))
   #:use-module ((playnet solve engine) #:select (key-spec spec-base spec-owner))
   #:use-module ((playnet utils clock) #:select ((now . clock-now) instant->unix))
-  #:use-module ((playnet vf facts rail) #:select (social-portions))
   #:use-module ((playnet vf formulas actions) #:select (creating-actions using-up-actions))
-  #:use-module ((playnet vf formulas flows) #:select (committed-by-spec row-action row-effort row-figure row-id row-input-of row-note row-output-of row-place row-provider row-quantity row-run row-spec row-until row-when))
+  #:use-module ((playnet vf formulas flows) #:select (committed-by-spec row-action row-effort row-figure row-id row-input-of row-note row-output-of row-place row-provider row-quantity row-run row-spec row-unit row-until row-when))
   #:use-module ((playnet vf schemas) #:select (agent-id agent-name agent-relationship-subject agent-type economic-resource-conforms-to economic-resource-onhand-quantity economic-resource-primary-accountable intent-finished intent-id measure-has-numerical-value measure-has-unit proposal-proposed-to recipe-flow-action recipe-flow-is-primary recipe-flow-resource-conforms-to recipe-flow-resource-quantity recipe-id recipe-primary-output recipe-process-id recipe-process-name recipe-process-sequence-group rented-frag-profile rented-frag-tip rented-goods measure->qty measure->unit))
   #:use-module ((playnet wire rows) #:select (with-context))
+  #:use-module ((playnet wire snapshot) #:select (plan-need-row flow-in-row flow-prod-row plan-row plan-yield-row plan-kept-row plan-discrete-row credit-row))
   #:use-module ((srfi srfi-1) #:select (delete-duplicates filter-map find last remove))
   #:export (scope-member-ids scope-members skill-holders willing-by-key process-output-spec
             recipe-producing recipe-yield plan-flow->wire plan-results->dial-plan solve-part
@@ -174,22 +174,22 @@
                                         (measure-has-unit (recipe-flow-resource-quantity pf))))))
                      (dh    (hash-ref draw pid #f))
                      (goods (if dh (map (lambda (kv)
-                                          `((spec . ,(nm (car kv))) (id . ,(car kv))
-                                            (q . ,(exact->inexact (cdr kv))) (action . "consume")))
+                                          (flow-in-row #:spec (nm (car kv)) #:id (car kv)
+                                                       #:q (exact->inexact (cdr kv)) #:action "consume"))
                                         (hash-map->list cons dh)) '()))
-                     (means (map (lambda (s) `((spec . ,(nm s)) (id . ,s) (action . "use"))) uses))
+                     (means (map (lambda (s) (flow-in-row #:spec (nm s) #:id s #:action "use")) uses))
                      (lh    (hash-ref lab pid 0))
                      (work* (if (> lh 0)
-                                (list `((spec . "labour") (q . ,(exact->inexact lh)) (action . "work"))) '()))
+                                (list (flow-in-row #:spec "labour" #:q (exact->inexact lh) #:action "work")) '()))
                      (w     (hash-ref per pid #f)))
-                `((id     . ,pid)
-                  (spec   . ,(nm (car out)))
-                  (specId . ,(car out))
-                  (name   . ,(or (and rp (recipe-process-name rp)) pid))
-                  (q      . ,(exact->inexact (cdr out)))
-                  ,@(if (string? ounit) `((u . ,ounit)) '())
-                  ,@(if w `((period . ,(if (number? w) (number->string w) w))) '())
-                  (in     . ,(append goods means work*)))))))
+                (flow-prod-row #:id pid
+                               #:spec (nm (car out))
+                               #:specId (car out)
+                               #:name (or (and rp (recipe-process-name rp)) pid)
+                               #:q (exact->inexact (cdr out))
+                               #:u (and (string? ounit) ounit)
+                               #:period (and w (if (number? w) (number->string w) w))
+                               #:in (append goods means work*))))))
      (reverse order))))
 
 ;; (demand . solve-alist) → the dial's plan shape: a ledger + per-need rows
@@ -246,55 +246,69 @@
                          (yld  (and rcp (recipe-yield rs rcp)))
                          (prod-b (if (equal? base spec) prod (or (assoc-ref produced base) prod)))
                          (runs (if (and yld (> yld 0)) (inexact->exact (round (/ prod-b yld))) 0)))
-                    `((id       . ,spec)
-                      (label    . ,(let ((b (spec-base spec))) (or (lookup-spec-name rs b) b)))
-                      ;; whose good this is — a want stated for oneself is
-                      ;; delivered on the citizen's own good ("spec~aid")
-                      ,@(let ((o (spec-owner spec))) (if o `((for . ,(cdr o))) '()))
-                      (met      . ,(exact->inexact met))
-                      (want     . ,(exact->inexact target))   ; the scope's aggregate DEMAND for this need
-                      (recipeId . ,(if rcp (recipe-id rcp) ""))
-                      (runs     . ,runs)
-                      (labourH  . ,(let ((h (hash-ref labour spec 0)))
-                                     (if (zero? h) (hash-ref labour base 0) h))))))
+                    (plan-need-row
+                     #:id spec
+                     #:label (let ((b (spec-base spec))) (or (lookup-spec-name rs b) b))
+                     ;; whose good this is — a want stated for oneself is
+                     ;; delivered on the citizen's own good ("spec~aid")
+                     #:for (and=> (spec-owner spec) cdr)
+                     #:met (exact->inexact met)
+                     #:want (exact->inexact target)   ; the scope's aggregate DEMAND for this need
+                     #:recipeId (if rcp (recipe-id rcp) "")
+                     #:runs runs
+                     #:labourH (let ((h (hash-ref labour spec 0)))
+                                 (if (zero? h) (hash-ref labour base 0) h)))))
                 (hash-map->list cons targets))))
-      `((scope    . ,($ scope-root 'name))
-        (coverage . ,(exact->inexact overall))
-        ;; the solve's verdict, carried beside the coverage it qualifies: a
-        ;; coverage read off an infeasible solve describes provisioning drawn
-        ;; from stock nobody has (live.scm `feasible`).
-        (feasible . ,(let ((f (assq-ref alist 'feasible)))
-                       (cond ((eq? f #f) 'no) ((eq? f #t) 'yes) (else 'unknown))))
-        ;; the discrete layer's verdict, when a search ran: how many batch keys
-        ;; (2^keys configurations), how many nodes it solved, whether the tree
-        ;; was exhausted (certified) or the gap it left, and the recourse columns
-        ;; a two-stage solve kept relaxed. Absent when nothing was declared.
-        ,@(let* ((cert (assq-ref alist 'certificate))
-                 (d (and (list? cert) (assq-ref cert 'discrete))))
-            (if (list? d)
-                `((discrete . ((keys . ,(or (assq-ref d 'keys) 0))
-                               (nodes . ,(or (assq-ref d 'nodes) 0))
-                               (budget . ,(or (assq-ref d 'budget) 0))     ; the node budget this solve ran under — bound when uncertified
-                               (certified . ,(if (assq-ref d 'certified?) 'yes 'no))
-                               (gap . ,(or (assq-ref d 'gap) 0.0))
-                               (recourseRelaxed . ,(or (assq-ref d 'recourse-relaxed) '())))))
-                '()))
-        ;; where each mover stands: mover → cell → presence (solve-report `placement`)
-        ,@(let ((p (assq-ref alist 'placement))) (if p `((placement . ,p)) '()))
-        (labourH  . ,(or (assq-ref social 'direct-labour) 0))
-        (produced . ,(map (lambda (kv) `((spec . ,(or (lookup-spec-name rs (car kv)) (car kv)))
-                                         (q . ,(cdr kv))))
-                          produced))
-        (needs    . ,needs)
-        ;; THE PORTION KEPT BACK, per good (rail.scm social-portion): what the
-        ;; scope's own processes consume this horizon plus the reserve — the
-        ;; deductions before anything is shared out; the shop's social view
-        ;; shows it beside what was asked and what is left over
-        (kept     . ,(map (lambda (kv) `((spec . ,(car kv)) (name . ,(or (lookup-spec-name rs (car kv)) (car kv))) (q . ,(cdr kv))))
-                          (filter (lambda (kv) (> (cdr kv) 0)) (social-portions rs))))
-        ;; the solve's ACTUAL production decomposition (the plan-flow face): real
-        ;; per-process produce/consume/labour flows, the LP's chosen allocation.
-        (flow     . ,(plan-flow->wire rs material work))
+      (plan-row
+       #:scope ($ scope-root 'name)
+       #:coverage (exact->inexact overall)
+       ;; the solve's verdict, carried beside the coverage it qualifies: a
+       ;; coverage read off an infeasible solve describes provisioning drawn
+       ;; from stock nobody has (live.scm `feasible`).
+       #:feasible (let ((f (assq-ref alist 'feasible)))
+                    (cond ((eq? f #f) 'no) ((eq? f #t) 'yes) (else 'unknown)))
+       ;; the discrete layer's verdict, when a search ran: how many batch keys
+       ;; (2^keys configurations), how many nodes it solved, whether the tree
+       ;; was exhausted (certified) or the gap it left, and the recourse columns
+       ;; a two-stage solve kept relaxed. Absent when nothing was declared.
+       #:discrete (let* ((cert (assq-ref alist 'certificate))
+                         (d (and (list? cert) (assq-ref cert 'discrete))))
+                    (and (list? d)
+                         (plan-discrete-row
+                          #:keys (or (assq-ref d 'keys) 0)
+                          #:nodes (or (assq-ref d 'nodes) 0)
+                          #:budget (or (assq-ref d 'budget) 0)     ; the node budget this solve ran under — bound when uncertified
+                          #:certified (and (assq-ref d 'certified?) #t)
+                          #:gap (or (assq-ref d 'gap) 0.0)
+                          #:recourseRelaxed (or (assq-ref d 'recourse-relaxed) '()))))
+       ;; where each mover stands: mover → cell → presence (solve-report `placement`)
+       #:placement (assq-ref alist 'placement)
+       #:labourH (or (assq-ref social 'direct-labour) 0)
+       ;; the ledger: what the plan makes of each good, in the unit its rows count it in
+       #:produced (map (lambda (kv)
+                         (plan-yield-row #:specId (car kv)
+                                         #:spec (or (lookup-spec-name rs (car kv)) (car kv))
+                                         #:q (cdr kv)
+                                         #:u (let ((m (find (lambda (m) (and (equal? (row-spec m) (car kv))
+                                                                              (memq (row-action m) creating-actions)))
+                                                            material)))
+                                               (and m (row-unit m)))))
+                       produced)
+       #:needs needs
+       ;; THE PORTION KEPT BACK, per good — the solve's own row of it (live.scm
+       ;; plan-results->alist `kept`): what the scope's own processes consume
+       ;; this horizon plus the reserve, the deductions before anything is
+       ;; shared out; the shop's social view shows it beside what was asked and
+       ;; what is left over. A plan stored before the row was carried shows none.
+       #:kept (filter-map (lambda (kv)
+                            (and (> (cdr kv) 0)
+                                 (plan-kept-row #:spec (car kv)
+                                                #:name (or (lookup-spec-name rs (car kv)) (car kv))
+                                                #:q (cdr kv))))
+                          (or (assq-ref alist 'kept) '()))
+       ;; the solve's ACTUAL production decomposition (the plan-flow face): real
+       ;; per-process produce/consume/labour flows, the LP's chosen allocation.
+       #:flow (plan-flow->wire rs material work)
         ;; THE SCHEDULE: the same commitments with their SPACE-TIME coordinates
         ;; kept — who works what where on which clock moment, and each material
         ;; flow at its own cell (a haul's pickup at the origin, its dropoff at
@@ -310,12 +324,12 @@
         ;; Rows for acts that never ran carry `why` and appear in no schedule —
         ;; that is the point of them, and a reader must treat a MISSING row as
         ;; "not published for this act" rather than as "this act needs nothing".
-        (requires . ,(or (assq-ref alist 'requires) '()))
-        ;; THE SCHEDULE: the same commitments with their SPACE-TIME coordinates
-        ;; kept — the records themselves; the sched-work and sched-mat tables
-        ;; (doors/record-rows.scm) write each at its own cell, a haul's pickup
-        ;; with the place its dropoff lands it
-        (schedule . ((work . ,work) (material . ,material)))))))
+       #:requires (or (assq-ref alist 'requires) '())
+       ;; THE SCHEDULE: the same commitments with their SPACE-TIME coordinates
+       ;; kept — the records themselves; the sched-work and sched-mat tables
+       ;; (doors/record-rows.scm) write each at its own cell, a haul's pickup
+       ;; with the place its dropoff lands it
+       #:schedule `((work . ,work) (material . ,material))))))
 ;; one part of a cached solve ((demand . plan), the service's last-solve-ref): the plan's KEY, or none
 (define (solve-part cached key)
   (or (and cached (assq-ref (cdr cached) key)) '()))
@@ -559,14 +573,15 @@
       (let* ((obs   ($ scope-root 'observer))
              (gross   (wire-number ($ obs 'validated-gross aid #f)))
              (balance (wire-number ($ obs 'credit-balance aid))))
-        `((gross     . ,gross)
-          (claimed   . ,(max 0 (- gross balance)))
-          (drawable  . ,(global-effective-balance aid roots))
-          (capacity  . ,(global-total-claim-capacity aid roots))
-          (pool      . ,($ ($ scope-root 'account-store) 'embodied-labor-in-pool))
-          (voice     . ,(consumer-voice aid roots))
-          (free-time . ,(current-social-free-time))
-          (pending   . ,(wire-number ($ obs 'pending-gross aid))))))
+        (credit-row
+         #:gross gross
+         #:claimed (max 0 (- gross balance))
+         #:drawable (global-effective-balance aid roots)
+         #:capacity (global-total-claim-capacity aid roots)
+         #:pool ($ ($ scope-root 'account-store) 'embodied-labor-in-pool)
+         #:voice (consumer-voice aid roots)
+         #:free-time (current-social-free-time)
+         #:pending (wire-number ($ obs 'pending-gross aid)))))
     (lambda args
       (pk 'scope-credit->wire-failed aid args)
       #f)))

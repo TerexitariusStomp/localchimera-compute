@@ -135,7 +135,7 @@ function ingestPlan(snap: ScopeSnapshot): void {
     // percentage that reads as real.
     feasible: plan.feasible || "unknown",
     labourH: n(plan.labourH),
-    produced: (plan.produced || []).map(y => ({ spec: y.spec, q: n(y.q) })),
+    produced: (plan.produced || []).map(y => ({ ...y, q: n(y.q) })),
     // The solve's ACTUAL production decomposition. Present once a solve has
     // run; absent offline, where the flow face reconstructs from recipes.
     flow: plan.flow ? plan.flow.map(pr => ({
@@ -158,9 +158,9 @@ function ingestPlan(snap: ScopeSnapshot): void {
         proc: str(m.proc), note: str(m.note),
       })),
     } : null,
+    // every key the row carries rides through (`for`: whose own good it is)
     needs: plan.needs.map(nd => ({
-      id: nd.id, label: nd.label, met: n(nd.met), want: n(nd.want),
-      recipeId: nd.recipeId, runs: n(nd.runs), labourH: n(nd.labourH),
+      ...nd, met: n(nd.met), want: n(nd.want), runs: n(nd.runs), labourH: n(nd.labourH),
       willing: willBySpec[nd.id || ""] || 0,
     })),
   });
@@ -336,7 +336,7 @@ function ingestCredit(snap: ScopeSnapshot): void {
   EXT.credit = {
     gross: n(c.gross), claimed: n(c.claimed), drawable: n(c.drawable),
     capacity: n(c.capacity), pool: n(c.pool), voice: n(c.voice),
-    freeTime: n(c.freeTime),
+    freeTime: n(c.freeTime), pending: n(c.pending),
   };
   emit("credit");
 }

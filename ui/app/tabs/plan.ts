@@ -136,7 +136,7 @@ function decidedStat(d: Plan["discrete"]): string {
   if (!d) return "";
   const keys = Number(d.keys) || 0, nodes = Number(d.nodes) || 0, budget = Number(d.budget) || 0;
   const relaxed = Array.isArray(d.recourseRelaxed) ? d.recourseRelaxed.map(String) : [];
-  const certified = d.certified === "yes";
+  const certified = !!d.certified;
   const configs = keys > 0 ? ` over ${keys < 20 ? 2 ** keys : "2^" + keys} configs` : "";
   // uncertified: the budget bound — say how many of it were spent, and the gap left
   const spent = certified || !budget ? `${nodes} node${nodes === 1 ? "" : "s"}` : `${nodes} of ${budget} nodes`;
@@ -272,7 +272,7 @@ function modelFromFlow(prods: Production[], p: Plan, needs: PlanNeed[], demandSp
     cols.push({ stage: s, goods, labour: goods.reduce((a, n) => a + n.inputs.filter(i => i.kind === "work").reduce((b, i) => b + (Number(i.q) || 0), 0), 0) });
   }
   return {
-    meta: { scope: p.scope, coverage: p.coverage, feasible: p.feasible, discrete: p.discrete, placement: p.placement, stale: p.stale === "yes",
+    meta: { scope: p.scope, coverage: p.coverage, feasible: p.feasible, discrete: p.discrete, placement: p.placement, stale: !!p.stale,
             labourTotal, stages: cols.length, live },
     supply: { raw: Object.values(raw).sort((a, b) => a.spec.localeCompare(b.spec)),
               means: Object.values(means).sort((a, b) => a.spec.localeCompare(b.spec)), labourTotal },

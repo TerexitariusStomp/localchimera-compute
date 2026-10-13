@@ -140,15 +140,11 @@ export interface EcoAgent {
  */
 export type SnapshotLocation = Wide<Omit<W.WireLocation, "slack">> & {
   slack?: number | string | null;
-  /** Some rows spell it long. */
-  long?: number | string;
-  /** A human-readable address, when the citizen who named it gave one. */
-  address?: string;
   [key: string]: unknown;
 };
 
 /** Drawable credit, priced server-side: hours still free to draw, those already claimed against it, the ceiling the claims are read against, the commons' pool for the voice share. */
-export type Credit = Wide<W.WireCredit> & { pending?: number; [key: string]: unknown };
+export type Credit = Wide<W.WireCredit> & { [key: string]: unknown };
 
 export type InventorySpec = Wide<Omit<W.WireInventorySpec, "id">> & { id: string; [key: string]: unknown };
 export type InventoryResource = Wide<W.WireInventoryResource> & { spec?: string; [key: string]: unknown };
@@ -435,14 +431,8 @@ export interface PlanNeed {
   for?: string;
 }
 
-/** A line of the solve's ledger: what the scope made. */
-export interface Produced {
-  emoji: string;
-  q: number;
-  u: string;
-  /** The spec, shown in the ledger when the line carries no emoji. */
-  spec?: string;
-}
+/** A line of the solve's ledger: what the scope made, in the unit its rows count it in. */
+export type Produced = Wide<W.WirePlanYield> & { emoji?: string };
 
 /** The PLAN, as live.scm's plan-scope hands it over. */
 export interface Plan {
@@ -468,27 +458,24 @@ export interface Plan {
   /** When the solve placed each commitment — read by the schedule board. */
   schedule?: Schedule;
   /**
-   * Whether the solve stayed inside the limits it was given. A STRING from the
-   * wire, not a boolean — the plan face tests `=== "no"`, which is what caught
-   * the boolean this was first declared as.
+   * Whether the solve stayed inside the limits it was given: "yes" | "no" |
+   * "unknown" — three words, not a boolean, since a plan no solve has filled
+   * is neither.
    */
   feasible?: string;
   /**
-   * "yes" while a decision's re-solve has not landed (stale-while-revalidating):
-   * the plan face shows the schedule and says it is being re-solved. A string
-   * from the wire, like `feasible`.
+   * True while a decision's re-solve has not landed (stale-while-revalidating):
+   * the plan face shows the schedule and says it is being re-solved.
    */
-  stale?: string;
+  stale?: boolean;
   /**
    * The discrete layer's verdict, present only when a recipe declared a minimum
    * batch or a whole count (or a mover rode): how many batch keys the tree
    * searched (2^keys configurations), how many nodes it solved, whether it was
-   * exhausted — `certified` is a STRING "yes"/"no" like `feasible` — and the
-   * gap it left when it was not. `recourseRelaxed` names the recourse columns
-   * a two-stage (robust) solve kept continuous; the wire may send an empty
-   * list as `[]` or `{}`, so it is read through Array.isArray.
+   * exhausted (certified) and the gap it left when it was not. `recourseRelaxed`
+   * names the recourse columns a two-stage (robust) solve kept continuous.
    */
-  discrete?: { keys?: number; nodes?: number; budget?: number; certified?: string; gap?: number; recourseRelaxed?: unknown };
+  discrete?: Wide<W.WirePlanDiscrete>;
   /** Where each mover stands: mover id → cell (place@period) → presence. */
   placement?: Record<string, Record<string, number>>;
 }

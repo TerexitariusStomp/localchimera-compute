@@ -11,7 +11,9 @@
 ;;;             table may nest rows of its own kind by name;
 ;;;   COMPUTED  a computed entry reads the row and what the reply looked up once;
 ;;;   REGISTRY  every table is found by its name, with the record type it reads;
-;;;   ALISTS    a row with no record behind it is read off an alist by the same table.
+;;;   ALISTS    a row with no record behind it is read off an alist by the same table,
+;;;             and LAID by the table's own maker, which refuses a key the table
+;;;             has no entry for — a producer cannot state what the wire drops.
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/doors/test-wire-tables.scm
 
@@ -95,12 +97,25 @@
 (check "a row with no record behind it is read off an alist by its table"
        (credit->wire '((gross . 12.5) (claimed . 2) (free-time . 40)))
        '(("gross" . 12.5) ("claimed" . 2) ("drawable" . null) ("capacity" . null) ("pool" . null)
-         ("voice" . null) ("freeTime" . 40)))
+         ("voice" . null) ("freeTime" . 40) ("pending" . null)))
+(check "…and laid by the table's maker, one keyword per key the table names"
+       (credit->wire (credit-row #:gross 12.5 #:claimed 2 #:free-time 40 #:pending 1))
+       '(("gross" . 12.5) ("claimed" . 2) ("drawable" . null) ("capacity" . null) ("pool" . null)
+         ("voice" . null) ("freeTime" . 40) ("pending" . 1)))
+(check "a key the table has no entry for is refused as the row is laid"
+       (catch #t (lambda () (credit-row #:gross 1 #:no-such-key 2) 'laid) (lambda (k . a) 'refused))
+       'refused)
+(check "a false value under an omit-false entry leaves the key out"
+       (assoc "for" (plan-need->wire (plan-need-row #:id "n" #:label "N" #:for #f #:met 1)))
+       #f)
+(check "…and a true one rides"
+       (assoc-ref (plan-need->wire (plan-need-row #:id "n" #:label "N" #:for "ana" #:met 1)) "for")
+       "ana")
 
 (display "\n── THE PLAN: a row of rows, with what is absent said as the page reads it ──\n")
 (define a-plan
   `((scope . "s") (coverage . 0.75) (feasible . yes) (stale . #t) (labourH . 12.5)
-    (produced . (((spec . "bread") (q . 3.0))))
+    (produced . (((specId . "bread") (spec . "Bread") (q . 3.0) (u . "kg"))))
     (needs . (((id . "n") (label . "Bread") (met . 0.5) (want . 10) (recipeId . "r") (runs . 2) (labourH . 1.25))))
     (flow . (((id . "p") (spec . "Bread") (specId . "bread") (name . "Bake") (q . 2.0) (u . "kg") (period . "0")
               (in . (((spec . "flour") (id . "f") (q . 1.5) (action . consume)))))))
@@ -116,8 +131,8 @@
 (define a-ctx `((rs . #f) (as . #f) (material . ())))
 (check "a plan is written whole by its table"
        (plan->wire a-plan a-ctx)
-       `(("scope" . "s") ("coverage" . 0.75) ("feasible" . "yes") ("stale" . "yes") ("labourH" . 12.5)
-         ("produced" . #((("spec" . "bread") ("q" . 3.0))))
+       `(("scope" . "s") ("coverage" . 0.75) ("feasible" . "yes") ("stale" . #t) ("labourH" . 12.5)
+         ("produced" . #((("specId" . "bread") ("spec" . "Bread") ("q" . 3.0) ("u" . "kg"))))
          ("needs" . #((("id" . "n") ("label" . "Bread") ("met" . 0.5) ("want" . 10) ("recipeId" . "r")
                        ("runs" . 2) ("labourH" . 1.25))))
          ("kept" . #())
@@ -137,7 +152,7 @@
 (let ((bare (plan->wire '((scope . "s")))))
   (check "a plan no solve has filled: no flow and no schedule are false, the verdict unknown, the lists empty"
          (map (lambda (k) (assoc-ref bare k)) '("flow" "schedule" "feasible" "stale" "needs"))
-         (list #f #f "unknown" "no" (vector))))
+         (list #f #f "unknown" #f (vector))))
 (check "every row the plan nests is a named table"
        (map (lambda (n) (wire-table? (wire-table-ref n)))
             '(plan plan-need plan-yield plan-kept plan-discrete flow-prod flow-in schedule sched-work sched-mat))

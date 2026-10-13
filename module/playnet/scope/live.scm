@@ -1836,7 +1836,8 @@
   ;; insurance deduction). The pool K reads it so the certificate's exchange
   ;; rate counts only the distributable portion; the claim doors never need it,
   ;; since a claim can only fulfil a row this same solve planned.
-  (let ((kept (make-hash-table)))
+  (define portions
+   (let ((kept (make-hash-table)))
     (define (social-draw? mc)
       (let ((sp (commitment-resource-conforms-to mc)) (by (commitment-input-of mc)))
         (and sp (not (spec-owner sp))
@@ -1848,10 +1849,12 @@
                   (when (and sp (number? q))
                     (hash-set! kept sp (+ q (hash-ref kept sp 0))))))
               (or (assq-ref report 'reserves) '()))
-    (let ((portions (hash-map->list cons kept)))
-      (publish-social-portion! portions)
-      ;; THIS scope's own word alone — see set-rails! above for why
-      (set-social-portions! (false-if-exception ($ scope-root 'recipe-store)) portions)))
+    (hash-map->list cons kept)))
+  ;; published beside the rail for the pool K's read (account.scm compute-pool-value);
+  ;; the plan's own row of it is `kept` below
+  (publish-social-portion! portions)
+  ;; THIS scope's own word alone — see set-rails! above for why
+  (set-social-portions! (false-if-exception ($ scope-root 'recipe-store)) portions)
   (let ((recert
          (conformance-recert-schedule (commitment-loads coms mat)
           #:period-span 1.0 #:harm (or (conformance-frag-weight) 1.0))))
@@ -1916,6 +1919,7 @@
       ;; how close each came to what the commune said it would carry
       ,@(let ((lx (assq-ref report 'legal))) (if (pair? lx) `((legal . ,lx)) '()))
       (reserves . ,(or (assq-ref report 'reserves) '()))  ; the cell's tab: q*, q^res, target, level per reserved good
+      (kept     . ,portions)                          ; the portion kept back per bare spec: own draw + reserve, before sharing
       ,@(let ((d (assq-ref report 'reserve-dilemma)))     ; only when the program had no answer and a reserve was a wall
           (if d `((reserve-dilemma . ,d)) '()))
       ,@(let ((d (assq-ref report 'floor-wall-dilemma)))  ; only when the program had no answer with a floor and an ecological limit among its walls

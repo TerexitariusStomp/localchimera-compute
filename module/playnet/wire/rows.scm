@@ -12,7 +12,7 @@
 (define-module (playnet wire rows)
   #:use-module ((playnet utils records) #:select (vf-record-type-fields vf-record-accessor))
   #:export (wire-table wire-table? wire-tables wire-table-ref wire-table-name
-            wire-table-record-type wire-table-entries wire-row* wire-value
+            wire-table-record-type wire-table-entries wire-row* wire-value row-maker
             plain->wire wire->plain
             reply-table reply->wire finished finishing plain-reply with-context
             alist-ref
@@ -46,7 +46,9 @@
 ;; SOURCE says where the value comes from: a symbol names a field of the record the
 ;; table reads (or a key of an alist, for a row with no record behind it); a
 ;; procedure (lambda (row ctx) …) computes it, and is the one place a join lives (a
-;; specification's name, a label), CTX carrying what the reply looked up once.
+;; specification's name, a label), CTX carrying what the reply looked up once; a
+;; pair (key . procedure) computes it off the alist key it names, so the row's
+;; maker admits that key.
 ;; KIND says how the value is written, and so what type the page reads:
 ;;   str       a string, "" where absent; a symbol as its name
 ;;   opt-str   a string, null where absent
@@ -94,6 +96,7 @@
   "How ENTRY's value is read off a row: (lambda (row ctx) value)."
   (let ((source (cadr entry)))
     (cond ((procedure? source) source)
+          ((and (pair? source) (symbol? (car source)) (procedure? (cdr source))) (cdr source))
           ((not (symbol? source)) (error "wire-table: a source is a field or a procedure" name (car entry)))
           (rtd
            (unless (memq source (vf-record-type-fields rtd))
@@ -107,6 +110,32 @@
   (let ((t (vector name rtd entries (map (lambda (e) (entry-reader rtd e name)) entries))))
     (set! %wire-tables (cons (cons name t) (%keep (lambda (p) (not (eq? (car p) name))) %wire-tables)))
     t))
+
+;; ── A ROW WITH NO RECORD BEHIND IT IS LAID BY ITS TABLE ──────────────────────
+;; A producer of an alist row lays it with the table's own maker, (maker #:key
+;; value …), one keyword per symbol source the table names. A key the table has
+;; no entry for is refused as the row is laid, so a producer cannot state what
+;; the wire would drop: the table is the one declaration of the row, and the
+;; producer's keys are held to it by construction. A false value under an
+;; `omit-false` entry leaves the key out, as the kind reads it.
+(define (row-maker table)
+  "The maker of the alist rows TABLE reads: (maker #:key value …) → the row."
+  (let ((name (wire-table-name table))
+        (sources (let loop ((es (wire-table-entries table)) (acc '()))
+                   (cond ((null? es) acc)
+                         ((symbol? (cadr (car es))) (loop (cdr es) (cons (cadr (car es)) acc)))
+                         ((pair? (cadr (car es))) (loop (cdr es) (cons (car (cadr (car es))) acc)))
+                         (else (loop (cdr es) acc))))))
+    (lambda args
+      (let loop ((a args) (acc '()))
+        (cond ((null? a) (reverse acc))
+              ((or (not (keyword? (car a))) (null? (cdr a)))
+               (error "row-maker: keyword and value pairs" name a))
+              (else
+               (let ((k (keyword->symbol (car a))))
+                 (unless (memq k sources)
+                   (error "wire-row: the table has no such key" name k))
+                 (loop (cddr a) (cons (cons k (cadr a)) acc)))))))))
 
 (define (table-of t) (if (symbol? t) (wire-table-ref t) t))
 

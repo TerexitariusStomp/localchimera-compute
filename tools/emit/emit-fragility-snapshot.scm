@@ -7,7 +7,9 @@
 ;;; the app's "fragility" topic. Nothing is invented here: every number is
 ;;; transcribed in eco-catalogue.scm from its primary source.
 ;;;
-;;;   guile --no-auto-compile -L module tools/emit/emit-fragility-snapshot.scm
+;;;   guile --no-auto-compile -L module tools/emit/emit-fragility-snapshot.scm [out]
+;;;
+;;; `make check-fragility-fresh` regenerates and diffs the committed copy.
 ;;;
 ;;; The two witness tables and the solver catalogue come from
 ;;; (playnet knowledge catalogues eco), imported below.
@@ -97,7 +99,10 @@
          (J:field "controls" (J:arr controls))
          (J:field "tippingElements" (J:arr tips))))
 
-(call-with-output-file (rel "browser/data/snapshots/fragility-snapshot.json")
+(define out-path
+  (let ((args (cdr (command-line))))
+    (if (pair? args) (car args) (rel "browser/data/snapshots/fragility-snapshot.json"))))
+(call-with-output-file out-path
   (lambda (p) (set-port-encoding! p "UTF-8") (display out p) (newline p)))
-(format #t "wrote browser/data/snapshots/fragility-snapshot.json — ~a controls, ~a tipping elements~%"
+(format #t "wrote ~a — ~a controls, ~a tipping elements~%" out-path
         (length controls) (length tips))

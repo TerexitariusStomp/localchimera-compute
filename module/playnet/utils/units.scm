@@ -27,7 +27,7 @@
             substance-base-unit
             convert-unit
             units-convert unit-to unit-factor hours-in time-unit? placeholder-unit? %placeholder-unit unit-measurable-substance
-            %count-unit %effort-unit count-unit? %time-unit-names
+            %count-unit %effort-unit %count-unit-names count-unit? %time-unit-names
             unit-known? convert-unit/strict
             unit-rate-parts unit-rate?
             units-available?
@@ -317,7 +317,10 @@
 ;; count-unit? (a run is a count of runs; a unit nothing states is a count).
 (define %count-unit  "each")
 (define %effort-unit "hours")
-(define (count-unit? u) (or (not u) (and (member u '("each" "one" "run" "runs")) #t)))
+;; every spelling of a count: the count unit, a thing counted as one, a run of a
+;; process; the page's copy is generated from this list (tools/emit/units-emit.scm)
+(define %count-unit-names '("each" "one" "run" "runs"))
+(define (count-unit? u) (or (not u) (and (member u %count-unit-names) #t)))
 (define (unit-factor from to)
   "How many TO one FROM is, or #f when the two measure different substances. A
    count or a name the tables do not know (\"each\", \"loaf\") and the placeholder

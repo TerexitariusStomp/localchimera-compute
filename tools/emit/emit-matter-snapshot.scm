@@ -1,12 +1,14 @@
 ;;; emit-matter-snapshot.scm — run the REAL substance-flow wire over a demo
 ;;; nutrient-cycle solve and emit browser/data/snapshots/matter-snapshot.json (the matter-face
 ;;; fallback). What the browser shows is the OUTPUT of matter-results->wire over
-;;; the contains relation — not invented, not re-derived in JS. The live planner
+;;; the contains relation, written by the matter table — not invented, not re-derived in JS. The live planner
 ;;; service produces the same shape on demand (window.__matterFlow); this
 ;;; committed file is the offline fallback. Mirrors tools/emit/emit-law-snapshot.scm.
 ;;;
 ;;;   guix shell -m deploy/manifests/dev-test-manifest.scm -- \
-;;;     guile --no-auto-compile -q -L module tools/emit/emit-matter-snapshot.scm
+;;;     guile --no-auto-compile -q -L module tools/emit/emit-matter-snapshot.scm [out]
+;;;
+;;; `make check-matter-fresh` regenerates and diffs the committed copy.
 
 (use-modules (playnet scope root) (playnet vf schemas)
              (playnet doors service) (playnet doors plan-wire)
@@ -49,23 +51,17 @@
 
 (define wire (with-vat vat (matter-results->wire scope solve)))
 
-;;; the JSON writer the snapshot emitters share
-(use-modules (playnet utils json-emit))
+;;; the page reads the matter table's rows (wire/snapshot.scm matter->wire), so
+;;; the fallback is written by that table and the canonical JSON writer: the
+;;; same object the live gateway answers with, byte for byte in shape
+(use-modules ((playnet wire snapshot) #:select (matter->wire))
+             ((playnet utils json-portable) #:select (scm->json-canonical)))
+(define json (scm->json-canonical (matter->wire wire)))
 
-(define (flows->json fl) (J:o (map (lambda (p) (cons (symbol->string (car p)) (J:n (cdr p)))) fl)))
-(define (node->json n)
-  (J:o (append `(("id" . ,(J:s (assq-ref n 'id))) ("label" . ,(J:s (assq-ref n 'label))) ("kind" . ,(J:s (assq-ref n 'kind))))
-               (if (assq 'env n)   `(("env"   . ,(J:b (assq-ref n 'env)))) '())
-               (if (assq 'drift n) `(("drift" . ,(flows->json (assq-ref n 'drift)))) '()))))
-(define (link->json l)
-  (J:o `(("from" . ,(J:s (assq-ref l 'from))) ("to" . ,(J:s (assq-ref l 'to))) ("flows" . ,(flows->json (assq-ref l 'flows))))))
-
-(define json
-  (J:o `(("substances" . ,(J:a (map (lambda (s) (J:a (list (J:s (car s)) (J:s (cadr s))))) (assq-ref wire 'substances))))
-         ("nodes"      . ,(J:a (map node->json (assq-ref wire 'nodes))))
-         ("links"      . ,(J:a (map link->json (assq-ref wire 'links)))))))
-
-(call-with-output-file (rel "browser/data/snapshots/matter-snapshot.json")
+(define out-path
+  (let ((args (cdr (command-line))))
+    (if (pair? args) (car args) (rel "browser/data/snapshots/matter-snapshot.json"))))
+(call-with-output-file out-path
   (lambda (port) (set-port-encoding! port "UTF-8") (display json port) (newline port)))
-(format #t "wrote browser/data/snapshots/matter-snapshot.json — ~a nodes, ~a links~%"
+(format #t "wrote ~a — ~a nodes, ~a links~%" out-path
         (length (assq-ref wire 'nodes)) (length (assq-ref wire 'links)))

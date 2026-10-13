@@ -12,19 +12,19 @@
   #:use-module (srfi srfi-1)
   #:export (clock->wire
             arc->wire
-            location->wire
-            plan-need->wire
-            flow-in->wire
-            flow-prod->wire
-            plan->wire
+            location->wire location-row
+            plan-need->wire plan-need-row
+            flow-in->wire flow-in-row
+            flow-prod->wire flow-prod-row
+            plan->wire plan-row plan-yield-row plan-kept-row plan-discrete-row
             %inv-resource-wire
             expected->wire
-            inv-resource->wire
+            inv-resource->wire inventory-resource-row
             %inv-spec-wire
-            inv-spec->wire
-            inventory->wire
+            inv-spec->wire inventory-spec-row
+            inventory->wire inventory-row
             %credit-wire
-            credit->wire
+            credit->wire credit-row
             msym->str
             matter-sub->wire
             matter-node->wire
@@ -35,16 +35,17 @@
 ;; serialized with the KERI canonical-JSON writer (string keys, vectors
 ;; as arrays — times ride as hour+minute pairs).
 
-;; readers a table's computed entries share
-(define (keyed key default) (lambda (row ctx) (alist-ref row key default)))
-(define (listed key) (lambda (row ctx) (let ((v (alist-ref row key '()))) (and (list? v) v))))
-(define (text-only key) (lambda (row ctx) (let ((v (alist-ref row key #f))) (and (string? v) v))))
-(define (whole key default) (lambda (row ctx) (int-field row key default)))
+;; readers a table's computed entries share: each names the key it reads, so
+;; the row's maker admits it
+(define (keyed key default) (cons key (lambda (row ctx) (alist-ref row key default))))
+(define (listed key) (cons key (lambda (row ctx) (let ((v (alist-ref row key '()))) (and (list? v) v)))))
+(define (text-only key) (cons key (lambda (row ctx) (let ((v (alist-ref row key #f))) (and (string? v) v)))))
+(define (whole key default) (cons key (lambda (row ctx) (int-field row key default))))
 
 ;; the record's clock, only where the record STATED one — an absent clock
 ;; stays absent on the wire, and the dial renders the row undated-in-its-day
 (define (clocked key default)
-  (lambda (row ctx) (and (integer? (alist-ref row 'sh #f)) (int-field row key default))))
+  (cons key (lambda (row ctx) (and (integer? (alist-ref row 'sh #f)) (int-field row key default)))))
 (define %clock-entries
   `(("sh" ,(clocked 'sh 0) (omit-false int)) ("sm" ,(clocked 'sm 0) (omit-false int))
     ("eh" ,(clocked 'eh 10) (omit-false int)) ("em" ,(clocked 'em 0) (omit-false int))))
@@ -53,11 +54,11 @@
 
 ;; one recurrence arc (a record's window, a slot's) → wire: its days by name, and
 ;; the weeks of the month (1–5) and months (1–12) it names, left out where it names none
-(define (named-list key) (lambda (a ctx) (let ((l (alist-ref a key #f))) (and (pair? l) l))))
+(define (named-list key) (cons key (lambda (a ctx) (let ((l (alist-ref a key #f))) (and (pair? l) l)))))
 (define %arc-wire
   (wire-table 'arc #f
     `(("start" ,(text-only 'start) str) ("end" ,(text-only 'end) str)
-      ("days" ,(lambda (a ctx) (or ((listed 'days) a ctx) '())) (list str))
+      ("days" (days . ,(lambda (a ctx) (or ((cdr (listed 'days)) a ctx) '()))) (list str))
       ("weeks" ,(named-list 'weeks) (omit-false (list num)))
       ("months" ,(named-list 'months) (omit-false (list num))))))
 (define (arc->wire a) (wire-row* %arc-wire a))
@@ -71,8 +72,12 @@
   (wire-table 'location #f
     '(("id" id str) ("name" name str) ("lat" lat num) ("lng" long num)
       ("containedIn" contained-in opt-str) ("boundary" boundary opt-str)
+      ;; what the place says about itself (a venue's access note, the sentence
+      ;; that finds a box left under a bridge) and the address its namer gave
+      ("note" note opt-str) ("address" address opt-str)
       ("slack" slack num))))
 (define (location->wire s) (wire-row* %location-wire s))
+(define location-row (row-maker %location-wire))
 
 ;; recipes ride the snapshot too — the dial's plan drill-down reads them; their tables
 ;; read the recipe records (doors/record-rows.scm).
@@ -81,43 +86,57 @@
 ;; per-need met / coverage / labour are numbers; runs is an integer.
 (define %plan-need-wire
   (wire-table 'plan-need #f
-    `(("id" id str) ("label" label str) ("met" met num)
+    `(("id" id str) ("label" label str)
+      ;; whose good this is: a want stated for oneself is delivered on the
+      ;; citizen's own good ("spec~aid"); absent on the scope's own rows
+      ("for" for (omit-false str))
+      ("met" met num)
       ("want" want num)                              ; the scope's aggregate demand → the wheel
       ("recipeId" recipeId str)
       ("runs" runs int)
       ("labourH" labourH num))))
 (define (plan-need->wire n) (wire-row* %plan-need-wire n))
+(define plan-need-row (row-maker %plan-need-wire))
 ;; one input of a production (a consumed good / used means / worked labour), and one
 ;; production (a recipe-process that ran) — the solve's ACTUAL flows for the plan-flow face.
 (define %flow-in-wire
   (wire-table 'flow-in #f
     `(("spec" spec str) ("id" id str) ("q" ,(keyed 'q 0) num) ("action" action str))))
 (define (flow-in->wire f) (wire-row* %flow-in-wire f))
+(define flow-in-row (row-maker %flow-in-wire))
 (define %flow-prod-wire
   (wire-table 'flow-prod #f
     `(("id" id str) ("spec" spec str) ("specId" specId str) ("name" name str)
       ("q" ,(keyed 'q 0) num) ("u" u str) ("period" period str)
       ("in" in (rows flow-in)))))
 (define (flow-prod->wire p) (wire-row* %flow-prod-wire p))
+(define flow-prod-row (row-maker %flow-prod-wire))
 ;; the schedule's rows and what each act needs are tables over the plan's own
 ;; records and the engine's requirement rows, joining through the scope's stores
 ;; (doors/record-rows.scm sched-work, sched-mat, act-requires); the plan table
 ;; below names them
-(define %plan-yield-wire (wire-table 'plan-yield #f '(("spec" spec str) ("q" q num))))
+;; a line of the ledger: what the plan makes of a good, its id, its name and the
+;; unit it is counted in
+(define %plan-yield-wire
+  (wire-table 'plan-yield #f '(("specId" specId str) ("spec" spec str) ("q" q num) ("u" u str))))
 (define %plan-kept-wire (wire-table 'plan-kept #f '(("spec" spec str) ("name" name str) ("q" q num))))
 (define %plan-discrete-wire
   (wire-table 'plan-discrete #f
     '(("keys" keys int) ("nodes" nodes int) ("budget" budget int)
-      ("certified" certified str) ("gap" gap num) ("recourseRelaxed" recourseRelaxed (list str)))))(define %plan-wire
+      ("certified" certified bool) ("gap" gap num) ("recourseRelaxed" recourseRelaxed (list str)))))
+(define plan-yield-row (row-maker %plan-yield-wire))
+(define plan-kept-row (row-maker %plan-kept-wire))
+(define plan-discrete-row (row-maker %plan-discrete-wire))
+(define %plan-wire
   (wire-table 'plan #f
     `(("scope" scope str) ("coverage" coverage num)
       ;; "yes" | "no" | "unknown" — whether the solve respected every limit it was
       ;; given. A coverage from an infeasible solve counts provisioning drawn from
       ;; stock nobody has, so the dial shows the verdict beside the number.
-      ("feasible" ,(lambda (p ctx) (let ((f (alist-ref p 'feasible))) (if (symbol? f) f "unknown"))) str)
-      ;; "yes" while a decision's re-solve has not landed — the plan is shown
+      ("feasible" (feasible . ,(lambda (p ctx) (let ((f (alist-ref p 'feasible))) (if (symbol? f) f "unknown")))) str)
+      ;; true while a decision's re-solve has not landed — the plan is shown
       ;; and said to be old (stale-while-revalidating, service scope-plan-wire)
-      ("stale" ,(lambda (p ctx) (if (alist-ref p 'stale) "yes" "no")) str)
+      ("stale" stale bool)
       ("labourH" labourH num)
       ("produced" produced (rows plan-yield))
       ("needs" needs (rows plan-need))
@@ -139,6 +158,7 @@
       ;; views above sum these away, so it rides beside them, as it is.
       ("schedule" schedule (some-row schedule)))))
 (define* (plan->wire p #:optional (ctx '())) (wire-row* %plan-wire p ctx))
+(define plan-row (row-maker %plan-wire))
 
 ;; the inventory: the scope's real economic resources by rail (shop +
 ;; inventory faces). Specs carry the folksonomy join (categories) and the
@@ -146,11 +166,18 @@
 ;; shop's claim call sends back. Numbers ride as strings, as the page's row types say.
 (define %inv-resource-wire
   (wire-table 'inventory-resource #f
-  '(("id" id str) ("name" name str) ("conforms-to" conforms-to str)
+  '(("id" id str) ("name" name str) ("image" image opt-str) ("conforms-to" conforms-to str)
     ("onhand" onhand num) ("unit" unit str)
     ("distribution-mode" distribution-mode opt-str)
+    ;; who owns it and who holds it are two facts, and the wire says both; the
+    ;; holder's name is the join the page shows
+    ("primary-accountable" primary-accountable opt-str)
+    ("custodian" custodian opt-str) ("custodian-scope" custodian-scope opt-str)
     ("custodian-name" custodian-name str) ("location" location str)
     ("stage" stage str) ("state" state str)
+    ;; a CONTAINER keeps what is in it where it is (its specification's
+    ;; keep-in-place): a silo, a fridge, a box under a bridge — a drop point
+    ("container?" container? bool) ("has-children?" has-children? bool)
     ;; what it sits in, the code its label carries, and its lot: the code, the
     ;; date, and which date that is (best-before | use-by); "" where unstated
     ("contained-in" contained-in str) ("code" tracking-identifier str)
@@ -169,20 +196,24 @@
 (define %inv-stock-wire
   (wire-table 'inventory-stock #f
     `(,@(wire-table-entries %inv-resource-wire)
-      ("expected" ,(lambda (r ctx) (let ((e (alist-ref r 'expected #f))) (and (pair? e) e)))
+      ("expected" (expected . ,(lambda (r ctx) (let ((e (alist-ref r 'expected #f))) (and (pair? e) e))))
        (omit-false (row expected))))))
 (define (inv-resource->wire r) (wire-row* %inv-stock-wire r))
+(define inventory-resource-row (row-maker %inv-resource-wire))   ; `expected` is the count door's computed entry
 (define %inv-spec-wire
   (wire-table 'inventory-spec #f
   '(("categories" categories strs)
-    ("id" id str) ("name" name str) ("note" note str) ("unit" default-unit str)
+    ("id" id str) ("name" name str) ("note" note str) ("image" image opt-str)
+    ("unit" default-unit str) ("substitutable" substitutable bool)
     ("count" resource-count int) ("onhandTotal" onhand-total num) ("snlt" snlt num))))
 (define (inv-spec->wire s) (wire-row* %inv-spec-wire s))
+(define inventory-spec-row (row-maker %inv-spec-wire))
 (define %inventory-wire
   (wire-table 'inventory #f
     '(("scope" scope-id str) ("specs" specs (rows inventory-spec))
       ("resources" resources (rows inventory-stock)))))
 (define (inventory->wire inv) (wire-row* %inventory-wire inv))
+(define inventory-row (row-maker %inventory-wire))
 
 ;; the citizen's live credit standing (playnet.typ §The credit identity) —
 ;; every field is derived server-side from the event log.
@@ -190,8 +221,11 @@
   (wire-table 'credit #f
   '(("gross" gross num) ("claimed" claimed num) ("drawable" drawable num)
     ("capacity" capacity num) ("pool" pool num) ("voice" voice num)
-    ("freeTime" free-time num))))
+    ("freeTime" free-time num)
+    ;; hours in the validation window: diffuse work the scope's silence vests at the lapse
+    ("pending" pending num))))
 (define (credit->wire c) (wire-row c %credit-wire))
+(define credit-row (row-maker %credit-wire))
 
 ;; the matter face: a substance-flow graph from the same solve. Masses are
 ;; numbers; a substance is its symbol and the colour it is drawn in; a tally

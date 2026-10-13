@@ -14,6 +14,7 @@
                 #:select (spatial-thing-id spatial-thing-name spatial-thing-lat spatial-thing-long
                           spatial-thing-contained-in spatial-thing-boundary spatial-thing-note
                           spatial-thing-mappable-address))
+  #:use-module ((playnet wire snapshot) #:select (location-row))
   #:export (scope-locations->wire dedup-locations))
 
 ;; The scope's places. LOCSLACK, where a solve stands, is a table from a place id
@@ -22,20 +23,21 @@
 (define* (scope-locations->wire scope-root #:optional (locslack #f))
   (map (lambda (s)
          (let ((sl (and locslack (hash-ref locslack (spatial-thing-id s) #f))))
-           `((id           . ,(spatial-thing-id s))
-             (name         . ,(or (spatial-thing-name s) (spatial-thing-id s)))
-             (lat          . ,(spatial-thing-lat s))
-             (long         . ,(spatial-thing-long s))
-             (contained-in . ,(spatial-thing-contained-in s))
-             (boundary     . ,(spatial-thing-boundary s))   ; GeoJSON extent (JSON string) or #f
-             ;; what the place says about itself: a venue's access note, the
-             ;; sentence that finds a box left under a bridge.
-             (note         . ,(spatial-thing-note s))
-             ;; a human-readable address, when the citizen who named it gave one —
-             ;; free-association's Specific tab (street/city/state/postal/country)
-             ;; collapsed to the one string the schema already carries
-             (address      . ,(spatial-thing-mappable-address s))
-             (slack        . ,sl))))
+           (location-row
+            #:id (spatial-thing-id s)
+            #:name (or (spatial-thing-name s) (spatial-thing-id s))
+            #:lat (spatial-thing-lat s)
+            #:long (spatial-thing-long s)
+            #:contained-in (spatial-thing-contained-in s)
+            #:boundary (spatial-thing-boundary s)   ; GeoJSON extent (JSON string) or #f
+            ;; what the place says about itself: a venue's access note, the
+            ;; sentence that finds a box left under a bridge.
+            #:note (spatial-thing-note s)
+            ;; a human-readable address, when the citizen who named it gave one —
+            ;; free-association's Specific tab (street/city/state/postal/country)
+            ;; collapsed to the one string the schema already carries
+            #:address (spatial-thing-mappable-address s)
+            #:slack sl)))
        ($ ($ scope-root 'spatial-thing-store) 'all-locations)))
 
 ;; union of location wires, keeping the FIRST occurrence of each id (the viewer's

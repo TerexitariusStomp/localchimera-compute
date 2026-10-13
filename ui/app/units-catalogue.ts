@@ -10,12 +10,14 @@ export const COUNT_UNIT = "each";
 export const EFFORT_UNIT = "hours";
 /** The unit a row carries until its door states the specification's own. */
 export const PLACEHOLDER_UNIT = "unit";
+/** Every spelling of a count: the count unit, a thing counted as one, a run. */
+export const COUNT_UNITS: readonly string[] = ["each", "one", "run", "runs"];
 /** Every spelling of a unit of time the unit tables convert. */
 export const TIME_UNITS: readonly string[] = ["second", "seconds", "sec", "s", "minute", "minutes", "min", "hour", "hours", "h", "hr", "hrs", "day", "days", "d", "week", "weeks", "wk", "fortnight", "fortnights", "month", "months", "quarter", "quarters", "year", "years", "yr", "yrs"];
 
-/** A thing counted in itself: no unit stated, the count unit, or the placeholder. */
+/** A thing counted in itself: no unit stated, a count unit, or the placeholder. */
 export const isCountUnit = (unit: string | null | undefined): boolean =>
-  !unit || unit === COUNT_UNIT || unit === PLACEHOLDER_UNIT;
+  !unit || COUNT_UNITS.includes(unit) || unit === PLACEHOLDER_UNIT;
 /** A unit that measures time — an effort, a duration, a pool of hours. */
 export const isTimeUnit = (unit: string | null | undefined): boolean =>
   !!unit && TIME_UNITS.includes(unit);

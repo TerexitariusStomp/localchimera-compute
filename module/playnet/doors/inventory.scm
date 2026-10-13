@@ -16,6 +16,7 @@
 
 (define-module (playnet doors inventory)
   #:use-module ((playnet doors record-rows) #:select (lookup-spec-name))
+  #:use-module ((playnet wire snapshot) #:select (inventory-resource-row inventory-spec-row inventory-row))
   #:use-module ((playnet scope live) #:select (find-recipe-process-for-spec))
   #:use-module ((playnet vf formulas actions) #:select (input-action? occupying-actions relocating-actions))
   #:use-module (srfi srfi-1)
@@ -29,11 +30,17 @@
   #:export (recipe-flow->flow-alist recipes-conforming resolve-recipe-process proc-use-specs build-process-context scope-inventory-wire resource->inv-alist spec->inv-alist build-inventory-snapshot build-resource-detail))
 
 (define* (resource->inv-alist r obs as #:optional (rs #f))
-  "Project an <economic-resource> into the inventory wire format.
-   OBS is consulted for has-children?; AS resolves the custodian to a
-   human-readable agent name; RS (the scope's own recipe-store) scopes the
-   rail read so it can never be a different scope's (rail.scm spec-rail)."
+  "Project an <economic-resource> into the inventory wire format: the row the
+   inventory-resource table reads, laid by its maker, so a key the wire drops
+   cannot be stated here. OBS is consulted for has-children?; AS resolves the
+   custodian to a human-readable agent name; RS (the scope's own recipe-store)
+   scopes the rail read so it can never be a different scope's (rail.scm
+   spec-rail) and says whether the resource is a CONTAINER (its specification's
+   keep-in-place: a silo, a fridge, a box under a bridge — a drop point, whose
+   use keeps what is in it where it is; an empty container is still one)."
   (let* ((rid       (economic-resource-id r))
+         (spec      (and rs (economic-resource-conforms-to r)
+                         ($ rs 'get-resource-spec (economic-resource-conforms-to r))))
          ;; who HOLDS it (the observer's one word, custodian-scope), else who owns it
          (cust      (or (economic-resource-custodian-scope r)
                         (economic-resource-primary-accountable r)))
@@ -49,40 +56,42 @@
          (place     (containment-first r economic-resource-current-location
                                        #:parent-of economic-resource-contained-in
                                        #:resolve (lambda (id) ($ obs 'get-resource id)))))
-    `((id . ,rid)
-      (name . ,(or (economic-resource-name r) rid))
-      (image . ,(economic-resource-image r))
-      (conforms-to . ,(economic-resource-conforms-to r))
-      (tracking-identifier . ,(economic-resource-tracking-identifier r))
-      (onhand . ,(or (measure->qty oh) 0))
-      (unit . ,(or (measure->unit oh) ""))
-      ;; WHO OWNS IT, as its own field. `custodian` below falls back to the
-      ;; custodian scope when nobody is accountable — fine while everything had
-      ;; an owner, but a thing held by a box would then read as owned BY the
-      ;; box. Rights and custody are two facts and the wire says both.
-      (primary-accountable . ,(economic-resource-primary-accountable r))
-      (custodian . ,cust)
-      (custodian-name . ,cust-name)
-      (custodian-scope . ,(economic-resource-custodian-scope r))
-      (location . ,place)
-      (stage . ,(economic-resource-stage r))
-      (state . ,(economic-resource-state r))
-      (contained-in . ,(economic-resource-contained-in r))
-      ;; the lot: its code, its date, and which date that is
-      (lot-code . ,(and lot (batch-lot-record-batch-lot-code lot)))
-      (expires . ,(and lot (batch-lot-record-expiration-date lot)))
-      (expires-kind . ,(and lot (and=> (batch-lot-record-expiration-kind lot) symbol->string)))
-      ;; the rail: 'communal | 'individual-claimable | #f. The dial maps it to
-      ;; rail common/claim/own; the shop face lists only individual-claimable.
-      ;; Read off the recipes (rail.scm spec-rail): individual when some claim
-      ;; recipe consumes it for someone, communal when only the scope's do; the
-      ;; record's own field is the import vocabulary that stands until a plan has
-      ;; spoken, and a means carries no rail on the wire.
-      (distribution-mode . ,(case (spec-rail (economic-resource-conforms-to r) rs)
-                              ((individual) "individual-claimable")
-                              ((communal)   "communal")
-                              (else (and=> (economic-resource-distribution-mode r) symbol->string))))
-      (has-children? . ,(not (null? (or kids '())))))))
+    (inventory-resource-row
+     #:id rid
+     #:name (or (economic-resource-name r) rid)
+     #:image (economic-resource-image r)
+     #:conforms-to (economic-resource-conforms-to r)
+     #:tracking-identifier (economic-resource-tracking-identifier r)
+     #:onhand (or (measure->qty oh) 0)
+     #:unit (or (measure->unit oh) "")
+     ;; WHO OWNS IT, as its own field. `custodian` below falls back to the
+     ;; custodian scope when nobody is accountable — fine while everything had
+     ;; an owner, but a thing held by a box would then read as owned BY the
+     ;; box. Rights and custody are two facts and the wire says both.
+     #:primary-accountable (economic-resource-primary-accountable r)
+     #:custodian cust
+     #:custodian-name cust-name
+     #:custodian-scope (economic-resource-custodian-scope r)
+     #:location place
+     #:stage (economic-resource-stage r)
+     #:state (economic-resource-state r)
+     #:contained-in (economic-resource-contained-in r)
+     ;; the lot: its code, its date, and which date that is
+     #:lot-code (and lot (batch-lot-record-batch-lot-code lot))
+     #:expires (and lot (batch-lot-record-expiration-date lot))
+     #:expires-kind (and lot (and=> (batch-lot-record-expiration-kind lot) symbol->string))
+     ;; the rail: 'communal | 'individual-claimable | #f. The dial maps it to
+     ;; rail common/claim/own; the shop face lists only individual-claimable.
+     ;; Read off the recipes (rail.scm spec-rail): individual when some claim
+     ;; recipe consumes it for someone, communal when only the scope's do; the
+     ;; record's own field is the import vocabulary that stands until a plan has
+     ;; spoken, and a means carries no rail on the wire.
+     #:distribution-mode (case (spec-rail (economic-resource-conforms-to r) rs)
+                           ((individual) "individual-claimable")
+                           ((communal)   "communal")
+                           (else (and=> (economic-resource-distribution-mode r) symbol->string)))
+     #:container? (and spec (resource-spec-keep-in-place? spec) #t)
+     #:has-children? (not (null? (or kids '()))))))
 
 (define* (spec->inv-alist s resource-alists #:optional (rs #f))
   "Project a <resource-specification> into the inventory wire format.
@@ -102,20 +111,21 @@
          (default-unit (or (resource-specification-default-unit-of-resource s)
                            (and (pair? mine) (assq-ref (car mine) 'unit))
                            "")))
-    `((id . ,sid)
-      (name . ,(or (resource-specification-name s) sid))
-      (note . ,(or (resource-specification-note s) ""))
-      (image . ,(resource-specification-image s))
-      (categories . ,(or (resource-specification-resource-classified-as s) '()))
-      (default-unit . ,default-unit)
-      (substitutable . ,(resource-specification-substitutable s))
-      (resource-count . ,count)
-      (onhand-total . ,total)
-      ;; crystallized hours per unit (direct + embodied inputs — the credit
-      ;; measure); #f when the spec has no recipe to price it by
-      (snlt . ,(and rs
-                    (let ((v (crystallized-snlt-for-spec rs sid)))
-                      (and (number? v) (finite? v) v)))))))
+    (inventory-spec-row
+     #:id sid
+     #:name (or (resource-specification-name s) sid)
+     #:note (or (resource-specification-note s) "")
+     #:image (resource-specification-image s)
+     #:categories (or (resource-specification-resource-classified-as s) '())
+     #:default-unit default-unit
+     #:substitutable (resource-specification-substitutable s)
+     #:resource-count count
+     #:onhand-total total
+     ;; crystallized hours per unit (direct + embodied inputs — the credit
+     ;; measure); #f when the spec has no recipe to price it by
+     #:snlt (and rs
+                 (let ((v (crystallized-snlt-for-spec rs sid)))
+                   (and (number? v) (finite? v) v))))))
 
 (define (collect-plan-resource-ids ps obs plan-id)
   "Resource IDs touched by events that fulfill commitments belonging to
@@ -263,32 +273,24 @@
            (current-custodian-name . ,(or cust-name ""))
            (custody-history . ,history)))))))
 
-;; the scope's on-hand stock, for the inventory tab. Projects every economic
-;; resource through resource->inv-alist into { resources: [...] };
-;; the browser's normLive maps conforms-to/onhand/unit/stage/state/location and
-;; distribution-mode→rail, falling back to the demo stock when this is absent.
-;; #f when the scope has no observer (keeps the wire lean rather than empty-noisy).
+;; the scope's on-hand stock, for the inventory tab: every economic resource
+;; the observer holds, through resource->inv-alist, and the specifications
+;; those resources conform to (the library a photo read is told, the grid's
+;; rows), each through its own maker; the browser maps conforms-to / onhand /
+;; unit / stage / state / location and distribution-mode→rail, falling back to
+;; the demo stock when this is absent. #f when the scope has no stock (keeps
+;; the wire lean rather than empty-noisy).
 (define (scope-inventory-wire scope-root scope-id)
   (let* ((obs   ($ scope-root 'observer))
          (as    ($ scope-root 'agent-store))
-         (specs ($ scope-root 'recipe-store))
-         (rs    ($ obs 'all-resources))
-         ;; is this resource a CONTAINER — a thing whose use keeps what is in it
-         ;; where it is? That is one flag on its ResourceSpecification
-         ;; (keep-in-place), and it is the difference between a silo, a fridge, a
-         ;; lending shelf, a box under a bridge — and a sack of flour. The wire
-         ;; carries it so a reader can tell a container from its contents without
-         ;; fetching every spec, and so an EMPTY container is still a container.
-         (container?
-          (lambda (r)
-            (let* ((spec-id (economic-resource-conforms-to r))
-                   (s (and spec-id ($ specs 'get-resource-spec spec-id))))
-              (and s (resource-spec-keep-in-place? s) #t)))))
+         (store ($ scope-root 'recipe-store))
+         (rs    ($ obs 'all-resources)))
     (and (pair? rs)
-         `((resources . ,(map (lambda (r)
-                                (cons (cons 'container? (container? r))
-                                      (resource->inv-alist r obs as specs)))
-                              rs))))))
+         (let* ((rows  (map (lambda (r) (resource->inv-alist r obs as store)) rs))
+                (specs (filter (lambda (sa) (> (assq-ref sa 'resource-count) 0))
+                               (map (lambda (s) (spec->inv-alist s rows store))
+                                    (or ($ store 'all-resource-specs) '())))))
+           (inventory-row #:scope-id scope-id #:specs specs #:resources rows)))))
 
 ;;; ── Process context (detail panel) ───────────────────────────────────
 
