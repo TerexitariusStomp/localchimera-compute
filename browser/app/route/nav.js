@@ -174,6 +174,17 @@ async function holdScreen() {
 // the lock is let go when the page is hidden; a journey still under way takes it again on return
 document.addEventListener("visibilitychange", () => { if (nav && document.visibilityState === "visible")
     void holdScreen(); });
+// ── setting out, and ending ─────────────────────────────────────────────────
+/** Where you are on a way just taken up: its start. */
+const START = { at: 0, t: 0, offKm: 0 };
+/** Follow `route` from here: the way the journey reads from now on — a way just chosen, or a new one after a reroute. */
+function setWay(route) {
+    if (!nav)
+        return;
+    nav.route = route;
+    nav.snap = START;
+    nav.arrived = false;
+}
 /** The banner's height, so the camera keeps you clear of it. */
 const bannerHeight = () => {
     const nc = document.getElementById("navcard");
@@ -189,7 +200,8 @@ export async function startNavTo(dest, placeName, chosen) {
     placeNavCard();
     journeyBegin(dest, placeName);
     const route = chosen ? chosen.route : await fetchRoute(USER, dest, navProfile);
-    nav = { dest, placeName, route, snap: { at: 0, t: 0, offKm: 0 }, arrived: false };
+    nav = { dest, placeName, route: null, snap: START, arrived: false };
+    setWay(route);
     d3.select("#gochip").classed("on", true);
     d3.select("#navcard").style("display", "block");
     host.restage();

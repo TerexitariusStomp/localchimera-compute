@@ -11,7 +11,7 @@
 
 import { havKm, bearingDeg } from '../geom.js';
 import type { LatLng, Point } from '../geom.js';
-import type { Route } from './data.js';
+import type { Route, TransitInfo } from './data.js';
 
 /** A run of a route's shape travelled one way: "pedestrian", "transit", … ("" when the engine did not say). */
 export interface Segment {
@@ -19,6 +19,11 @@ export interface Segment {
   /** Where the run begins, as an index into the route's own shape. */
   begin: number;
   coords: Point[];
+  /** Seconds, and distance in the route's own units, along the run — the maneuvers' own. */
+  s: number;
+  km: number;
+  /** The line a ride run takes (its first maneuver's); null on foot, by bike or by car. */
+  transit: TransitInfo | null;
 }
 
 /**
@@ -26,15 +31,17 @@ export interface Segment {
  * drawn its own way. A route whose maneuvers name no mode (or none at all) is one run.
  */
 export function segments(r: Route): Segment[] {
-  const runs: { mode: string; begin: number; end: number }[] = [];
+  const runs: { mode: string; begin: number; end: number; s: number; km: number; transit: TransitInfo | null }[] = [];
   for (const m of r.mans) {
     const last = runs[runs.length - 1];
-    if (last && last.mode === m.mode) last.end = Math.max(last.end, m.end);
-    else runs.push({ mode: m.mode, begin: m.begin, end: m.end });
+    if (last && last.mode === m.mode) {
+      last.end = Math.max(last.end, m.end); last.s += m.time; last.km += m.length;
+      last.transit ??= m.transit;
+    } else runs.push({ mode: m.mode, begin: m.begin, end: m.end, s: m.time, km: m.length, transit: m.transit });
   }
-  const out = runs.map(s => ({ mode: s.mode, begin: s.begin, coords: r.coords.slice(s.begin, s.end + 1) }))
+  const out = runs.map(s => ({ mode: s.mode, begin: s.begin, coords: r.coords.slice(s.begin, s.end + 1), s: s.s, km: s.km, transit: s.transit }))
                   .filter(s => s.coords.length > 1);
-  return out.length ? out : r.coords.length > 1 ? [{ mode: "", begin: 0, coords: r.coords }] : [];
+  return out.length ? out : r.coords.length > 1 ? [{ mode: "", begin: 0, coords: r.coords, s: r.s, km: r.km, transit: null }] : [];
 }
 
 // ── where you are on a route ────────────────────────────────────────────────

@@ -212,6 +212,17 @@ document.addEventListener("visibilitychange", () => { if (nav && document.visibi
 
 // ── setting out, and ending ─────────────────────────────────────────────────
 
+/** Where you are on a way just taken up: its start. */
+const START: Snap = { at: 0, t: 0, offKm: 0 };
+
+/** Follow `route` from here: the way the journey reads from now on — a way just chosen, or a new one after a reroute. */
+function setWay(route: Route | null): void {
+  if (!nav) return;
+  nav.route = route;
+  nav.snap = START;
+  nav.arrived = false;
+}
+
 /** A way already chosen in the preview: the journey takes it as it is and asks the engine nothing. */
 export interface ChosenWay { route: Route | null; costing: string }
 
@@ -229,7 +240,8 @@ export async function startNavTo(dest: LatLng, placeName: string, chosen?: Chose
   placeNavCard();
   journeyBegin(dest, placeName);
   const route = chosen ? chosen.route : await fetchRoute(USER, dest, navProfile);
-  nav = { dest, placeName, route, snap: { at: 0, t: 0, offKm: 0 }, arrived: false };
+  nav = { dest, placeName, route: null, snap: START, arrived: false };
+  setWay(route);
   d3.select("#gochip").classed("on", true);
   d3.select("#navcard").style("display", "block");
   host.restage();

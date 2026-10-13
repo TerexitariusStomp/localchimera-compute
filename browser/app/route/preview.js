@@ -24,6 +24,7 @@ import { placesNear } from '../tabs/map/atlas.js';
 import { startNavTo } from './nav.js';
 import { fetchRoutes, ROUTE_MODES, modeInfo } from './data.js';
 import { paintLines, clearLines } from './lines.js';
+import { lineBadge } from './badge.js';
 import { fmtMinutes, headline, swapEnds, transitLines, arrivalClock } from './facts.js';
 import { boundsOf, pillAnchor } from './shape.js';
 import { havKm } from '../geom.js';
@@ -154,7 +155,7 @@ function drawSheet() {
     }
     else if (r) {
         const arrive = arrivalClock(r.s);
-        const lines = transitLines(r).map(l => `<span class="rv-line"${l.color ? ` style="background:${l.color};color:${l.textColor || "#fff"}"` : ""}>${esc(l.line)}</span>`).join("");
+        const lines = transitLines(r).map(l => lineBadge(l).outerHTML).join("");
         sum = `<div class="rv-big">${esc(headline(r))}</div>` +
             `<div class="rv-sub">${lines ? lines + " · " : ""}arrive ${esc(arrive)}${r.hasToll ? " · tolls" : ""}${r.hasFerry ? " · ferry" : ""}</div>`;
         acts = p.from.live

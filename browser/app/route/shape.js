@@ -17,14 +17,18 @@ export function segments(r) {
     const runs = [];
     for (const m of r.mans) {
         const last = runs[runs.length - 1];
-        if (last && last.mode === m.mode)
+        if (last && last.mode === m.mode) {
             last.end = Math.max(last.end, m.end);
+            last.s += m.time;
+            last.km += m.length;
+            last.transit ??= m.transit;
+        }
         else
-            runs.push({ mode: m.mode, begin: m.begin, end: m.end });
+            runs.push({ mode: m.mode, begin: m.begin, end: m.end, s: m.time, km: m.length, transit: m.transit });
     }
-    const out = runs.map(s => ({ mode: s.mode, begin: s.begin, coords: r.coords.slice(s.begin, s.end + 1) }))
+    const out = runs.map(s => ({ mode: s.mode, begin: s.begin, coords: r.coords.slice(s.begin, s.end + 1), s: s.s, km: s.km, transit: s.transit }))
         .filter(s => s.coords.length > 1);
-    return out.length ? out : r.coords.length > 1 ? [{ mode: "", begin: 0, coords: r.coords }] : [];
+    return out.length ? out : r.coords.length > 1 ? [{ mode: "", begin: 0, coords: r.coords, s: r.s, km: r.km, transit: null }] : [];
 }
 // ── where you are on a route ────────────────────────────────────────────────
 /** Cumulative straight-line kilometres along a route's shape, per vertex; kept per route. */

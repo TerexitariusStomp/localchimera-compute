@@ -7,7 +7,7 @@
 import { harness } from './assert.mjs';
 import { routeReply } from './route-fixture.mjs';
 const { readRoutes } = await import("../../browser/app/route/data.js");
-const { boundsOf, pillAnchor, snapToRoute, progress, pointAt, courseAt, shapeKm } =
+const { boundsOf, pillAnchor, snapToRoute, progress, pointAt, courseAt, shapeKm, segments } =
   await import("../../browser/app/route/shape.js");
 const { check, section, done } = harness();
 
@@ -81,6 +81,20 @@ section("where you are on a route");
   const flat = { ...r, mans: [] };
   const pf = progress(flat, s1);
   check("a route with no maneuvers is read evenly along its length", Math.abs(pf.remS - r.s * (1 - 0.5 * shapeKm({ ...r, coords: r.coords.slice(0, 2) }) / shapeKm(r))) < 2 && pf.next === -1);
+}
+
+section("the runs of a trip");
+{
+  const [bus] = readRoutes(routeReply(q({ profile: "multimodal", depart: "now" })), "multimodal");
+  const runs = segments(bus);
+  check("walk, ride, walk", runs.map(r => r.mode).join() === "pedestrian,transit,pedestrian");
+  check("each run's time and distance are its maneuvers' own", runs.every(r => r.s > 0 && r.km > 0) &&
+        Math.abs(runs.reduce((a, r) => a + r.s, 0) - bus.s) < 2 && Math.abs(runs.reduce((a, r) => a + r.km, 0) - bus.km) < 0.01,
+        runs.map(r => `${r.s}s`).join());
+  check("the ride carries its line, the walks none", runs[1].transit?.line === "48" && runs[0].transit === null && runs[2].transit === null);
+  const [walk] = readRoutes(routeReply(q({ profile: "pedestrian" })), "pedestrian");
+  const one = segments({ ...walk, mans: [] });
+  check("a way with no maneuvers is one run, with the route's own totals", one.length === 1 && one[0].s === walk.s && one[0].km === walk.km && one[0].transit === null);
 }
 
 section("a point along the way");

@@ -4,6 +4,8 @@
 //   fmtMinutes / fmtDistance   "7 min", "1 h 5 min", "2.2 km", "0.4 mi"
 //   headline                   "7 min (2.2 km)"
 //   transitLines / rides       the lines a transit route rides, in order
+//   legsOf / rideTimes         a trip's legs (walk · ride · walk), and when a ride leaves and arrives
+//   isoClock                   a local ISO minute as the clock reads it
 //   replTrip                   a route as the REPL page's Scheme side takes it
 //   arrivalClock               when you get there, as the clock says it
 //   swapEnds                   the from/to card's ⇅
@@ -14,7 +16,7 @@
 import type { LatLng } from '../geom.js';
 import { clockOf } from '../timefmt.js';
 import { segments } from './shape.js';
-import type { Route } from './data.js';
+import type { Route, TransitInfo } from './data.js';
 
 /** A duration the way a person says it: under an hour in minutes, else hours and minutes. */
 export function fmtMinutes(s: number): string {
@@ -43,11 +45,29 @@ export interface RideLine { line: string; headsign: string; color: string; textC
 /** The maneuvers that board a vehicle — a transfer boards another; "remain on" (type 32) stays on the same. */
 const boards = (m: Route["mans"][number]): boolean => !!m.transit && m.type !== 32;
 
+/** A ride's line as the badge names it. */
+export const rideLine = (t: TransitInfo): RideLine =>
+  ({ line: t.line || t.name, headsign: t.headsign, color: t.color, textColor: t.textColor });
+
 /** The lines a route rides, in order. Empty for a route on foot, by bike or by car. */
-export function transitLines(r: Route): RideLine[] {
-  return r.mans.filter(boards).map(m => ({
-    line: m.transit!.line || m.transit!.name, headsign: m.transit!.headsign,
-    color: m.transit!.color, textColor: m.transit!.textColor }));
+export const transitLines = (r: Route): RideLine[] => r.mans.filter(boards).map(m => rideLine(m.transit!));
+
+/** One leg of a trip: how it is travelled, for how long, and the line when it is a ride. */
+export interface Leg { mode: string; s: number; line: RideLine | null }
+
+/** A trip's legs in order — walk, ride, walk. One for a trip travelled the one way. */
+export const legsOf = (r: Route): Leg[] => segments(r).map(s => ({ mode: s.mode, s: s.s, line: s.transit ? rideLine(s.transit) : null }));
+
+/** The clock of a local ISO minute, "2026-10-14T08:05" → "08:05"; "" for anything else. */
+export const isoClock = (iso: string): string => /T(\d\d:\d\d)/.exec(iso)?.[1] ?? "";
+
+/** What a ride says of itself: when it leaves and arrives, where, and how many stops it makes. */
+export interface RideTimes { departs: string; from: string; arrives: string; to: string; stops: number }
+
+export function rideTimes(t: TransitInfo): RideTimes {
+  const a = t.stops[0], z = t.stops[t.stops.length - 1];
+  return { departs: a ? isoClock(a.departs || a.arrives) : "", from: a?.name ?? "",
+           arrives: z ? isoClock(z.arrives || z.departs) : "", to: z?.name ?? "", stops: Math.max(0, t.stops.length - 1) };
 }
 
 /** How many vehicles a route boards. */

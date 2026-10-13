@@ -7,7 +7,7 @@
 import { harness } from './assert.mjs';
 import { routeReply } from './route-fixture.mjs';
 const { readRoutes } = await import("../../browser/app/route/data.js");
-const { fmtMinutes, fmtDistance, headline, transitLines, rides, swapEnds, replTrip, arrivalClock } =
+const { fmtMinutes, fmtDistance, headline, transitLines, rides, swapEnds, replTrip, arrivalClock, legsOf, rideTimes, rideLine, isoClock } =
   await import("../../browser/app/route/facts.js");
 const { check, section, done } = harness();
 
@@ -74,6 +74,22 @@ section("⇅");
   check("a place stays where it is, and is not you", s.from.live === undefined && s.from.at.lat === 5);
   const back = swapEnds(s.from, s.to, { lat: 3, lng: 4 });
   check("swapping back puts you at the start, wherever you have moved to", back.from.live === true && back.from.at.lat === 3 && back.to.name === "Oak Cafe");
+}
+
+section("a trip's legs, and when a ride runs");
+{
+  const [bus] = readRoutes(routeReply(q({ profile: "multimodal", depart: "now" })), "multimodal");
+  const legs = legsOf(bus);
+  check("walk, ride, walk, with the line on the ride", legs.map(l => l.mode).join() === "pedestrian,transit,pedestrian" &&
+        legs[1].line.line === "48" && legs[0].line === null);
+  check("the line as its badge names it", JSON.stringify(rideLine(bus.mans.find(m => m.transit).transit)) ===
+        JSON.stringify({ line: "48", headsign: "Downtown", color: "#1565c0", textColor: "#ffffff" }));
+  const t = rideTimes(bus.mans.find(m => m.transit).transit);
+  check("when it leaves and arrives, and where", t.departs === "08:06" && t.from === "Oak & Main" && t.arrives === "08:19" && t.to === "Downtown", JSON.stringify(t));
+  check("one stop between two is one stop made", t.stops === 1);
+  check("a ride with no stops says nothing", (x => x.departs === "" && x.arrives === "" && x.stops === 0)(rideTimes({ line: "1", name: "", headsign: "", color: "", textColor: "", operator: "", stops: [] })));
+  check("a trip on the one way is one leg", legsOf(readRoutes(routeReply(q({ profile: "bicycle" })), "bicycle")[0]).length === 1);
+  check("a local ISO minute as the clock", isoClock("2026-10-14T08:05") === "08:05" && isoClock("") === "" && isoClock("soon") === "");
 }
 
 section("the arrival clock");
