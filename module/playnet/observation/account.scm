@@ -639,9 +639,11 @@
 (define* (household-social-free-time members #:key (per-citizen-hours 40.0))
   "MEMBERS ((person capacity hours) …), HOURS the labour L_p a member
    contributed to the household's own reproduction this period. Social free
-   time f = 1 − ΣL_p / (N·PER-CITIZEN-HOURS) — the same formula
-   `global-social-free-time` reads off a scope tree, read here over a
-   household's own members instead."
+   time f = 1 − ΣL_p / (N·PER-CITIZEN-HOURS): the realized reading over a
+   household's own declared members, which have no solve to publish an f.
+   A scope's voice reads the plan's own f (`current-social-free-time`); this
+   shares its form with `social-free-time-of`, the realized reading of a
+   scope tree."
   (let* ((L  (fold (lambda (m a) (+ a (third m))) 0 members))
          (n  (length members))
          (nt (* n per-citizen-hours)))
