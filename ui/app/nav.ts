@@ -27,8 +27,10 @@ import { onMapFace } from './stage.js';
 import { deviceHeading } from './compass.js';
 import { MAP_EL } from './mapview.js';
 import { clockOf } from './timefmt.js';
-import type { LatLng, Point } from './geom.js';
+import type { LatLng } from './geom.js';
 import { gateHint } from './day/respond.js';
+import { fetchRoutes } from './route-data.js';
+import type { Route } from './route-data.js';
 
 /** What routing needs to know about the dial's current arrangement. */
 export interface NavHost {
@@ -67,23 +69,6 @@ export const navKm = (km: number): string =>
 
 const navClock = clockOf;   // an arrival time is a wall clock, in your own zone
 
-/** One instruction along the way, and where on the shape it begins. */
-interface Maneuver {
-  type: number;
-  instr: string;
-  begin: number;
-}
-
-/** A route, flattened across its legs into one shape and one instruction list. */
-interface Route {
-  coords: Point[];
-  mans: Maneuver[];
-  /** Total distance, in the units the engine answered with. */
-  km: number;
-  /** Total time, seconds. */
-  s: number;
-}
-
 /**
  * A journey in progress. `route` is null for the compass degradation — a
  * destination the router could not reach still has a bearing and a distance.
@@ -96,53 +81,9 @@ interface Journey {
   at: number;
 }
 
-/** Valhalla's polyline, precision 6. */
-function decodePoly(str: string): Point[] {
-  const out: Point[] = [];
-  let i = 0, lat = 0, lng = 0;
-  const val = (): number => {
-    let s = 0, r = 0, b: number;
-    do { b = str.charCodeAt(i++) - 63; r |= (b & 0x1f) << s; s += 5; } while (b >= 0x20);
-    return (r & 1) ? ~(r >> 1) : (r >> 1);
-  };
-  while (i < str.length) { lat += val(); lng += val(); out.push([lng / 1e6, lat / 1e6]); }
-  return out;
-}
-
-/** What /route answers with — read defensively, since a leg may carry no shape. */
-interface TripLeg {
-  shape?: string;
-  maneuvers?: { type?: number; instruction?: string; begin_shape_index?: number }[];
-}
-interface TripReply {
-  trip?: {
-    legs?: TripLeg[];
-    summary?: { length?: number; time?: number };
-  };
-}
-
 /** Ask the local engine for a way there. Null for anything it cannot answer. */
 async function fetchRoute(from: LatLng, to: LatLng, costing: string): Promise<Route | null> {
-  const q = new URLSearchParams({ from: `${from.lat},${from.lng}`,
-                                  to: `${to.lat},${to.lng}`, profile: costing });
-  try {
-    const js: TripReply = await (await fetch(`/route?${q}`)).json();
-    const legs = js?.trip?.legs || [];
-    if (!legs.length) return null;
-    let coords: Point[] = [];
-    const mans: Maneuver[] = [];
-    let base = 0;
-    for (const leg of legs) {
-      const pts = leg.shape ? decodePoly(leg.shape) : [];
-      for (const m of leg.maneuvers || [])
-        mans.push({ type: m.type || 0, instr: m.instruction || "",
-                    begin: base + (m.begin_shape_index || 0) });
-      coords = coords.concat(pts); base += pts.length;
-    }
-    return { coords, mans, km: js.trip!.summary!.length || 0, s: js.trip!.summary!.time || 0 };
-    //                       ↑ a reply with legs but no summary is not a shape
-    //                         the engine emits; legs.length above is the guard.
-  } catch (_) { return null; }
+  return (await fetchRoutes(from, to, costing))[0] || null;
 }
 
 // ── the module's own state ──────────────────────────────────────────────────

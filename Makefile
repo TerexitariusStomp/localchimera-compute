@@ -1058,7 +1058,7 @@ freshen-ccache:
 
 test-fast: lint-parens lint-law lint-docs check-wasm-deps check-ui-fresh test-gplay test-knowledge test-notify-registry test-notify-adapters test-push-adapter \
       test-recipient-registry test-notify-router test-email-transport check-provenance test-provenance \
-      test-vault test-keystore test-handler-bridge test-capabilities test-pwa lint-sw test-rest test-bytes test-keys test-attention test-push test-rpc test-store test-idb test-log-bound test-rns-identity test-containment-fold test-reactive test-room-model test-mesh-plan test-ice-servers test-units-fallback test-utter test-count test-qr test-labels test-store-tree test-stock test-photo test-look test-lend test-contest test-store-view test-held test-demo-store test-demo-world test-symbols test-reach test-queue test-allotment-ui test-fuzzy test-conform-ui test-caption-window test-refsel test-diag-redact test-offers test-ring test-sky test-runway test-partition test-regions test-nutrition test-housing-ui test-declarations test-bran-derivations \
+      test-vault test-keystore test-handler-bridge test-capabilities test-pwa lint-sw test-rest test-bytes test-keys test-attention test-push test-rpc test-store test-idb test-log-bound test-rns-identity test-containment-fold test-reactive test-room-model test-mesh-plan test-ice-servers test-units-fallback test-utter test-count test-qr test-labels test-store-tree test-stock test-photo test-look test-lend test-contest test-store-view test-held test-demo-store test-demo-world test-symbols test-reach test-queue test-allotment-ui test-fuzzy test-route-data test-route-request test-conform-ui test-caption-window test-refsel test-diag-redact test-offers test-ring test-sky test-runway test-partition test-regions test-nutrition test-housing-ui test-declarations test-bran-derivations \
       test-contact-binding test-body-doors test-cards test-planner-facet test-declared-dispatch test-http-door test-mcp-door test-device-doors test-vf-lint test-lint-records-door test-issue-revoke-credential test-admit-commune-door test-delegation-scope-arg test-lobby-arg-split test-websocket-fragments test-websocket-masking test-declare-arg-split test-offer-work-drift-door test-plan-materialize-opts-door test-count-stock test-count-anchor test-count-anchor-2 test-count-expected test-wire-snapshot test-observation-evidence test-labels-containers test-counting test-planned-counts test-allotment test-see-door test-contest-count test-evidence-door check-protocol check-protocol-fresh check-wire-types-fresh check-crossing-catalogue check-nutrition-fresh check-product-law-fresh check-attribution-fresh check-notice-facts-fresh check-rid-mentions test-calendar-mail check-de-fresh check-na-fresh check-law-fresh check-physics-fresh check-housing-fresh check-count-fresh check-rel-fresh check-reach-fresh check-units-fresh check-rest-fresh check-matter-fresh check-fragility-fresh check-actions-fresh check-limits-fresh check-recipe-demo-fresh check-demo-fresh test-demo-neighbourhood test-adjustment test-counts check-test-wiring
 
 # Every tracked .scm reads to EOF. ~3s over ~1070 files, so it can sit in
@@ -1559,6 +1559,13 @@ test-look:
 .PHONY: test-fuzzy
 test-fuzzy:
 	node tests/browser/fuzzy-test.mjs
+
+# The one reader of /route's reply (app/route-data.ts): polyline, trip →
+# Route with alternates and transit legs, the mode's query, the shared cache.
+# Replies are synthesised in Valhalla's documented shape; no engine runs.
+.PHONY: test-route-data
+test-route-data:
+	node tests/browser/route-data-test.mjs
 
 # The browser's ask-for-a-shape door (app/conform.ts): read → check → re-ask
 # with the reason → floor. Twin of (playnet ai conform), whose suite is
@@ -2496,7 +2503,7 @@ test-ux: browser/repl.wasm
 # For the dial against a REAL gateway see test-signup-live-ux.
 # NB: the per-test targets must NOT be .PHONY — GNU Make skips implicit-rule
 # search for phony targets, so the pattern rule below would never fire.
-DIAL_UX = bodies signup identity-card nav navcard respond events availability recipe web recipeface walkie room settings share-bar share-sheet share-hear account-sheet face-dock feedback withholding log toast match pribar hand chrome earth faces wheel deeplink forum observe spacetime family corpus shop count labels planned-count law responsive sw-offline
+DIAL_UX = bodies signup identity-card nav navcard route-data respond events availability recipe web recipeface walkie room settings share-bar share-sheet share-hear account-sheet face-dock feedback withholding log toast match pribar hand chrome earth faces wheel deeplink forum observe spacetime family corpus shop count labels planned-count law responsive sw-offline
 .PHONY: test-app-ux
 test-app-ux: $(addprefix test-,$(addsuffix -ux,$(DIAL_UX)))
 
@@ -2784,6 +2791,13 @@ test-observability-endpoints:
 # against the committed fixture (tools/emit/pmtiles-tiny.scm writes it).
 test-pmtiles:
 	$(GUILE_TEST_DEV) -L module -L tests -L . tests/server/test-pmtiles.scm
+
+# The /route proxy's request builder: what a query may ask of Valhalla (two
+# ends, waypoints, a costing token, alternates, a clock, a language, a unit)
+# and what is read away. Pure — no engine runs.
+.PHONY: test-route-request
+test-route-request:
+	$(GUILE_TEST_DEV) -L module -L tests -L . tests/server/test-route-request.scm
 
 # The device-side reader (browser/app/pmtiles.js) against the same fixture, so
 # a region kept on a phone reads exactly as the gateway reads it.

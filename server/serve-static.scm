@@ -32,7 +32,7 @@
   #:use-module (web uri)
   #:use-module ((srfi srfi-1)  #:select (any filter-map append-map))
   #:use-module ((srfi srfi-13) #:select (string-suffix? string-drop-right
-                                          string-index string-filter))
+                                          string-index string-filter string-every))
   #:use-module ((playnet keri signify-portable)
                 #:select (cesr-stream-event cesr-stream-kel
                           scm->json-canonical))
@@ -73,6 +73,9 @@
             handle-report-list
             handle-report-delete
             handle-operator
+            ;; the /route proxy's request builder: pure, so a test can read what
+            ;; Valhalla would be asked
+            route-request-json
             handle-security-txt))
 
 ;;; The on-disk layout used here is owned by (playnet identity oobi-host); we
@@ -411,9 +414,57 @@
            (and i (cons (substring kv 0 i) (uri-decode (substring kv (+ i 1)))))))
        (string-split q #\&))))
 
+;; The optional route parameters ride into hand-built JSON, so each is read
+;; down to the one shape Valhalla takes and anything else is dropped (the
+;; request then asks for less, never for something else).
+(define (digit? c) (and (char>=? c #\0) (char<=? c #\9)))
+
+;; "0".."3" → the integer, else #f.
+(define (route-alternates s)
+  (let ((n (and s (string->number s))))
+    (and n (exact-integer? n) (<= 0 n 3) n)))
+
+;; ISO-8601 to the minute, "YYYY-MM-DDThh:mm" — Valhalla reads it as local
+;; civil time at the place — or #f.
+(define (route-iso-minute s)
+  (and s (= (string-length s) 16)
+       (let loop ((i 0))
+         (or (= i 16)
+             (let ((c (string-ref s i)))
+               (and (case i
+                      ((4 7) (char=? c #\-))
+                      ((10) (char=? c #\T))
+                      ((13) (char=? c #\:))
+                      (else (digit? c)))
+                    (loop (+ i 1))))))
+       s))
+
+;; A language tag: "en", "de-DE" — letters and hyphens, short.
+(define (route-language s)
+  (and s (<= 2 (string-length s) 8)
+       (string-every (lambda (c) (or (char=? c #\-) (and (char-alphabetic? c) (char<? c #\x80)))) s)
+       s))
+
+(define (route-units s)
+  (cond ((member s '("miles" "mi")) "miles")
+        (else "kilometers")))
+
+;; The time the trip is asked at: depart=now → the engine's current time
+;; (type 0); depart=T → leave at T (1); arrive=T → be there by T (2); else
+;; none, and Valhalla routes without a clock. → (type . value-or-#f) or #f.
+(define (route-clock p)
+  (let ((dep (assoc-ref-str p "depart")) (arr (assoc-ref-str p "arrive")))
+    (cond ((equal? dep "now") '(0 . #f))
+          ((route-iso-minute dep) => (lambda (t) (cons 1 t)))
+          ((route-iso-minute arr) => (lambda (t) (cons 2 t)))
+          (else #f))))
+
 ;; Build the Valhalla /route request body by hand (numbers + strings only —
 ;; no JSON library needed, so nothing to shadow). locs = list of (lat . lng).
-(define (valhalla-request-json locs costing)
+;; Alternates ask for more than one way; Valhalla offers them for a plain
+;; two-point route with no clock, so any other shape asks for none.
+(define* (valhalla-request-json locs costing #:key alternates clock language
+                                (units "kilometers"))
   (string-append
    "{\"locations\":["
    (string-join
@@ -423,7 +474,35 @@
          locs)
     ",")
    "],\"costing\":\"" costing "\""
-   ",\"directions_options\":{\"units\":\"kilometers\"}}"))
+   (if (and alternates (> alternates 0) (not clock) (= (length locs) 2))
+       (string-append ",\"alternates\":" (number->string alternates))
+       "")
+   (if clock
+       (string-append ",\"date_time\":{\"type\":" (number->string (car clock))
+                      (if (cdr clock) (string-append ",\"value\":\"" (cdr clock) "\"") "")
+                      "}")
+       "")
+   ",\"directions_options\":{\"units\":\"" units "\""
+   (if language (string-append ",\"language\":\"" language "\"") "")
+   "}}"))
+
+;; The query of a /route call → the Valhalla body, or #f without both ends.
+;;   from=lat,lng  to=lat,lng  [via=lat,lng;lat,lng]  [profile=<costing>]
+;;   [alternates=0..3]  [depart=now|YYYY-MM-DDThh:mm | arrive=YYYY-MM-DDThh:mm]
+;;   [lang=en-US]  [units=km|mi]
+(define (route-request-json query)
+  (let* ((p    (query->alist query))
+         (from (parse-latlng (assoc-ref-str p "from")))
+         (to   (parse-latlng (assoc-ref-str p "to")))
+         (via  (parse-vias (assoc-ref-str p "via"))))
+    (and from to
+         (valhalla-request-json
+          (append (list from) via (list to))
+          (valhalla-costing (or (assoc-ref-str p "profile") "foot"))
+          #:alternates (route-alternates (assoc-ref-str p "alternates"))
+          #:clock (route-clock p)
+          #:language (route-language (assoc-ref-str p "lang"))
+          #:units (route-units (assoc-ref-str p "units"))))))
 
 ;; POST a JSON body to a local Valhalla endpoint; return the raw JSON response
 ;; body string, or #f if unreachable / non-200.
@@ -438,9 +517,6 @@
      (lambda (resp rbody)
        (and (= 200 (response-code resp))
             (if (bytevector? rbody) (utf8->string rbody) rbody))))))
-
-(define (valhalla-post locs costing)
-  (valhalla-relay "/route" (valhalla-request-json locs costing)))
 
 ;; Map-matching: the browser's collected GPS trace, relayed verbatim to
 ;; trace_route — how the journey ACTUALLY went, snapped to the network. The
@@ -470,14 +546,9 @@
           body-str))
 
 (define (handle-route query)
-  (let* ((p       (query->alist query))
-         (from    (parse-latlng (assoc-ref-str p "from")))
-         (to      (parse-latlng (assoc-ref-str p "to")))
-         (via     (parse-vias (assoc-ref-str p "via")))
-         (profile (or (assoc-ref-str p "profile") "foot")))
-    (if (and from to)
-        (let ((locs (append (list from) via (list to))))
-          (route-relay (or (valhalla-post locs (valhalla-costing profile)) "{}")))
+  (let ((body (route-request-json query)))
+    (if body
+        (route-relay (or (valhalla-relay "/route" body) "{}"))
         (bad-request))))
 
 (define (assoc-ref-str alist key)
