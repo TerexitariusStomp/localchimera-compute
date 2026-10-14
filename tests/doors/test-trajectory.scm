@@ -8,7 +8,7 @@
 ;;;
 ;;; Run:  guile -L module tests/doors/test-trajectory.scm
 
-(use-modules (playnet test harness)
+(use-modules (playnet test harness) ((playnet test scope) #:select (mock-plan-store))
              (playnet vf schemas)              ; make-commitment
              (playnet doors service) (playnet doors position)      ; agent-position-predicate
              (playnet scope live)         ; set-period-span! (period ↔ wall-clock)
@@ -29,8 +29,7 @@
 (define vat (spawn-vat #:name "traj"))
 (define (predicate-over meta commitments)
   (with-vat vat
-    (let* ((ps    (spawn ^mock `((all-meta . ,(lambda () meta))
-                                 (all-commitments . ,(lambda () commitments)))))
+    (let* ((ps    (mock-plan-store #:meta meta #:commitments commitments))
            (scope (spawn ^mock `((plan-store . ,(lambda () ps))))))
       (agent-position-predicate scope))))
 

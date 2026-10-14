@@ -63,8 +63,7 @@
            (as  (spawn ^mock `((all-agents . ,(lambda () agents)))))
            (sts (spawn ^mock `((all-locations . ,(lambda () spatials)))))
            (rs (mock-recipe-store #:recipes recipes #:procs procs #:flows flows))
-           (ps  (spawn ^mock `((all-intents . ,(lambda () (list (need "ada" "bread" ada-q) (need "ben" "bread" ben-q))))
-                               (all-commitments . ,(lambda () '())))))
+           (ps  (mock-plan-store #:intents (list (need "ada" "bread" ada-q) (need "ben" "bread" ben-q))))
            (root  (mock-scope-root #:observer obs #:agent-store as #:spatial-thing-store sts #:recipe-store rs #:plan-store ps))
            (scope (spawn ^mock `((scope-root . ,(lambda () root)) (members . ,(lambda () (hashmap)))))))
       (plan-commune-scope root store COMMUNE

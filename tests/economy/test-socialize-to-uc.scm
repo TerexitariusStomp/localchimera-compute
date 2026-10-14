@@ -74,7 +74,7 @@
            (as  (spawn ^mock `((all-agents . ,(lambda () '())))))
            (sts (spawn ^mock `((all-locations . ,(lambda () spatials)))))
            (rs (mock-recipe-store #:recipes recipes #:procs procs #:flows flows))
-           (ps  (spawn ^mock `((all-meta . ,(lambda () '())) (all-commitments . ,(lambda () '())))))
+           (ps  (mock-plan-store))
            (scope (mock-scope-root #:observer obs #:agent-store as #:spatial-thing-store sts #:recipe-store rs #:plan-store ps))
            (resolve (make-resolver))
            (view (lambda (own) (commune-resource-view own store holder resolve)))

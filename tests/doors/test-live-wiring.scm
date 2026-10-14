@@ -32,7 +32,7 @@
            (sts (spawn ^mock `((all-locations . ,(lambda () spatials)))))
            (rs (mock-recipe-store #:recipes recipes #:procs procs #:flows flows))
            ;; the position predicate (live/expected trajectory) reads all-meta + all-commitments
-           (ps  (spawn ^mock `((all-meta . ,(lambda () '())) (all-commitments . ,(lambda () '())) (all-intents . ,(lambda () '())))))
+           (ps  (mock-plan-store))
            (scope (mock-scope-root #:observer obs #:agent-store as #:spatial-thing-store sts #:recipe-store rs #:plan-store ps))
            ;; the real OCapN-facing service actor, holding this scope
            (svc (spawn ^planner-service (hashmap-set (hashmap) "s1" scope)))

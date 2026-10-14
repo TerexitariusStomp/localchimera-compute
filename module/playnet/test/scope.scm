@@ -28,7 +28,7 @@
   #:use-module ((playnet vf facts parts) #:select (part->string))
   #:use-module ((playnet observation account) #:select (claim-commitment))
   #:use-module ((playnet vf formulas flows) #:select (make-work-intent make-work-event))
-  #:export (mock-scope mock-scope-root mock-world mock-recipe-store record-work! push-on plan-claim! account!))
+  #:export (mock-scope mock-scope-root mock-world mock-recipe-store mock-plan-store record-work! push-on plan-claim! account!))
 
 ;; ── the plan's claim, stated by a fixture ───────────────────────────────────
 ;; A claim event fulfils a commitment the plan minted (service.scm plan-claims!,
@@ -94,6 +94,21 @@
                                                                 (equal? (recipe-flow-recipe-output-of f) pid)))
                                                           flows)
                                                   '()))))))))
+
+;; THE PLAN STORE a test mocks, written once: the intents and commitments it holds, and the
+;; signal metadata (id -> alist) the willingness loop and the position predicate read and
+;; write. A suite names what it holds; the reads a wiring makes beyond those (the listener a
+;; scope registers, the freshness check it sets) answer as the harness's defaults do.
+(define* (mock-plan-store #:key (intents '()) (commitments '()) (meta '()))
+  (let ((tbl (make-hash-table)))
+    (for-each (lambda (kv) (hash-set! tbl (car kv) (cdr kv))) meta)
+    (spawn ^mock
+           `((all-intents     . ,(lambda () intents))
+             (all-commitments . ,(lambda () commitments))
+             (all-meta        . ,(lambda () (hash-map->list cons tbl)))
+             (set-meta        . ,(lambda (id m) (hash-set! tbl id m) "ok"))
+             (get-meta        . ,(lambda (id) (hash-ref tbl id #f)))
+             (set-fresh-check . ,(lambda (f) #t))))))
 
 ;; the stores a <world> answers from — every read plan-scope makes, nothing
 ;; more, so a solve over a mocked world and over the same world seeded into a

@@ -29,21 +29,6 @@
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
 
-;; A minimal plan-store: just the signal-metadata surface the willingness loop uses
-;; (set-meta / get-meta / all-meta), backed by a local hash. The real ^plan-store
-;; persists the same way; here we only need the meta channel.
-(define (^meta-store bcom)
-  (let ((tbl (make-hash-table)))
-    (lambda (msg . args)
-      (case msg
-        ((set-meta) (hash-set! tbl (car args) (cadr args)) "ok")
-        ((get-meta) (hash-ref tbl (car args) #f))
-        ((all-meta) (hash-map->list cons tbl))
-        ((all-commitments) '())  ; no persisted commitments in this fixture (position predicate reads this)
-        ((all-intents) '())      ; nor intents
-        ((add-intent-listener) #t)   ; the demand fold registers its listener when the scope is wired
-        (else (error "meta-store: no method" msg))))))
-
 ;; ── VF records: bread chain; ada and bob can BOTH bake (the field has two candidates) ──
 (define procs bread-procs) (define flows bread-flows) (define recipes bread-recipes)
 (define resources bread-resources) (define win bread-window)
@@ -55,7 +40,7 @@
     (let* ((obs (spawn ^mock `((all-resources . ,(lambda () resources)) (record-event . ,(lambda (e) "ok")))))
            (as  (spawn ^mock `((all-agents . ,(lambda () agents)))))
            (sts (spawn ^mock `((all-locations . ,(lambda () spatials)))))
-           (ps  (spawn ^meta-store))
+           (ps  (mock-plan-store))
            (rs (mock-recipe-store #:recipes recipes #:procs procs #:flows flows))
            (scope (mock-scope-root #:observer obs #:agent-store as #:spatial-thing-store sts #:recipe-store rs #:plan-store ps))
            (svc (spawn ^planner-service (hashmap-set (hashmap) "s1" scope)))

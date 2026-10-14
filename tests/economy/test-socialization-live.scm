@@ -62,7 +62,7 @@
            (as  (spawn ^mock `((all-agents    . ,(lambda () '())))))
            (sts (spawn ^mock `((all-locations . ,(lambda () spatials)))))
            (rs (mock-recipe-store #:recipes recipes #:procs procs #:flows flows))
-           (ps  (spawn ^mock `((all-meta . ,(lambda () '())) (all-commitments . ,(lambda () '())))))
+           (ps  (mock-plan-store))
            (scope (mock-scope-root #:observer obs #:agent-store as #:spatial-thing-store sts #:recipe-store rs #:plan-store ps))
            ;; Alice's bike lives in HER commune's books; this commune owns nothing.
            ;; The FEDERATION resolver fetches it cross-scope from the sibling commune's
@@ -167,8 +167,7 @@
            (as  (spawn ^mock `((all-agents    . ,(lambda () '())))))
            (sts (spawn ^mock `((all-locations . ,(lambda () spatials)))))
            (rs (mock-recipe-store #:recipes recipes #:procs procs #:flows flows))
-           (ps  (spawn ^mock `((all-meta . ,(lambda () '())) (all-commitments . ,(lambda () '()))
-                               (all-intents . ,(lambda () '())))))
+           (ps  (mock-plan-store))
            (scope (mock-scope-root #:observer obs #:agent-store as #:spatial-thing-store sts #:recipe-store rs #:plan-store ps))
            (m-obs   (spawn ^mock `((all-resources . ,(lambda () (list (bike)))))))
            (m-root  (mock-scope-root #:observer m-obs))
@@ -176,8 +175,7 @@
            (fed     (spawn ^mock `((members . ,(lambda () (hashmap-set (hashmap) "commA" m-commA))))))
            ;; the DEMAND side of the tree: a member scope whose plan-store holds
            ;; one citizen's standing need for 5 delivered at town
-           (n-ps    (spawn ^mock `((all-intents . ,(lambda ()
-                       (list (need-intent "EAlice" "delivered" 5 "town")))))))
+           (n-ps    (mock-plan-store #:intents (list (need-intent "EAlice" "delivered" 5 "town"))))
            (n-root  (spawn ^mock `((plan-store . ,(lambda () n-ps)))))
            (n-memb  (spawn ^mock `((scope-root . ,(lambda () n-root))
                                    (members    . ,(lambda () (hashmap))))))

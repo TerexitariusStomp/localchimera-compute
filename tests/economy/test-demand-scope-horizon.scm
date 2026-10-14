@@ -96,8 +96,7 @@
            (rs (mock-recipe-store #:recipes recipes #:procs procs #:flows flows))
            ;; a plan-store of one standing need and no accepts: the horizon is
            ;; derived from the intent alone, nothing is pinned
-           (ps  (spawn ^mock `((all-intents     . ,(lambda () (list (need "ada" "bread" 20.0 UNTIL))))
-                               (all-commitments . ,(lambda () '())))))
+           (ps  (mock-plan-store #:intents (list (need "ada" "bread" 20.0 UNTIL))))
            (root  (mock-scope-root #:observer obs #:agent-store as #:spatial-thing-store sts #:recipe-store rs #:plan-store ps))
            (scope (spawn ^mock `((scope-root . ,(lambda () root)) (members . ,(lambda () (hashmap))))))
            ;; wheat explicitly ZERO-capped at every period 0..2 a correctly-derived
@@ -151,8 +150,7 @@
            (rs (mock-recipe-store #:recipes recipes #:procs procs #:flows flows))
            ;; a plan-store of one standing need and no accepts: the horizon is
            ;; derived from the intent alone, nothing is pinned
-           (ps  (spawn ^mock `((all-intents     . ,(lambda () (list (need "ada" "bread" 20.0 #f #f))))
-                               (all-commitments . ,(lambda () '())))))
+           (ps  (mock-plan-store #:intents (list (need "ada" "bread" 20.0 #f #f))))
            (root  (mock-scope-root #:observer obs #:agent-store as #:spatial-thing-store sts #:recipe-store rs #:plan-store ps))
            (scope (spawn ^mock `((scope-root . ,(lambda () root)) (members . ,(lambda () (hashmap))))))
            (result (plan-commune-scope root store COMMUNE

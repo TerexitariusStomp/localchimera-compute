@@ -60,8 +60,7 @@
            (as  (spawn ^mock `((all-agents . ,(lambda () agents)))))
            (sts (spawn ^mock `((all-locations . ,(lambda () spatials)))))
            (rs (mock-recipe-store #:recipes recipes #:procs procs #:flows flows))
-           (ps  (spawn ^mock `((all-intents . ,(lambda () (list (want "ada" "wheat" 5.0))))
-                               (all-commitments . ,(lambda () '())))))
+           (ps  (mock-plan-store #:intents (list (want "ada" "wheat" 5.0))))
            (root  (mock-scope-root #:observer obs #:agent-store as #:spatial-thing-store sts #:recipe-store rs #:plan-store ps)))
       (plan-scope->alist root
         #:demand (list (cons (format #f "wheat~~ada#~a@0" PLACE) 5.0))   ; ada's own wheat: her want, felt on the owned good

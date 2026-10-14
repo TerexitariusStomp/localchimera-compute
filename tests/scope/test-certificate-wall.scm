@@ -48,7 +48,7 @@
            (as  (spawn ^mock `((all-agents . ,(lambda () agents)))))
            (sts (spawn ^mock `((all-locations . ,(lambda () spatials)))))
            (rs (mock-recipe-store #:recipes recipes #:procs procs #:flows flows #:split? #t))
-           (ps  (spawn ^mock `((all-intents . ,(lambda () '())) (all-commitments . ,(lambda () '())))))
+           (ps  (mock-plan-store))
            (root (mock-scope-root #:observer obs #:agent-store as #:spatial-thing-store sts #:recipe-store rs #:plan-store ps)))
       (apply plan-scope->alist root
              #:demand demand #:periods '(0) #:reproduce? #f

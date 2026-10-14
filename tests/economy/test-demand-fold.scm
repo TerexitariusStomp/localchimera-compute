@@ -9,7 +9,7 @@
 ;;; nothing rewired.
 
 (use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
-(use-modules (playnet test harness))
+(use-modules (playnet test harness) ((playnet test scope) #:select (mock-plan-store)))
 (use-modules (playnet plan store) (playnet vf schemas) (srfi srfi-1))
 (use-modules (playnet scope live))       ; set-daily-horizon! — periods ↔ days
 (use-modules (playnet economy demand-fold))
@@ -39,7 +39,7 @@
 
 ;; a scope whose plan-store holds NEEDS, and whose members are MEMBERS
 (define (mk-scope needs members)
-  (let* ((ps   (spawn ^mock `((all-intents . ,(lambda () needs)))))
+  (let* ((ps   (mock-plan-store #:intents needs))
          (root (spawn ^mock `((plan-store . ,(lambda () ps))))))
     (spawn ^mock `((scope-root . ,(lambda () root))
                    (members    . ,(lambda () members))))))
@@ -230,8 +230,7 @@
 ;; horizon is laid out per solve. `demand-for` is where a period is decided.
 (with-vat vat
   (let* ((leaf-root (spawn ^mock `((plan-store . ,(lambda ()
-                      (spawn ^mock `((all-intents . ,(lambda ()
-                        (list (need "EAlice" "bread" 3 #:loc "town")))))))))))
+                      (mock-plan-store #:intents (list (need "EAlice" "bread" 3 #:loc "town"))))))))
          (own  (scope-own-demand leaf-root))
          (leaf (spawn ^demand-node own '()))
          (fed  (spawn ^demand-node '() '())))
