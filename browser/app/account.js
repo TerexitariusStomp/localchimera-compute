@@ -123,6 +123,11 @@ function pageBody(page) {
 }
 function goTo(id) { stack.push(id); draw(); card?.scrollTo({ top: 0 }); }
 function goBack() { stack.pop(); draw(); card?.scrollTo({ top: 0 }); }
+/** Esc steps back out of a page, then puts the sheet away. */
+function stepBack() { if (stack.length)
+    goBack();
+else
+    closeAccount(); return true; }
 /** The menu's rows: some enter a page of their own, some open a place that is not settings. */
 function menu(close) {
     const door = (r) => row(r, close);
@@ -209,7 +214,7 @@ function ensureOpen() {
     card = mk("div", "acct-card");
     card.setAttribute("role", "region");
     card.setAttribute("aria-label", "your account");
-    openSheetView(OWNER, card, gone, { full: true }); // the account opens at the whole height: it is a page to read, not a glance
+    openSheetView(OWNER, card, gone, { full: true, esc: stepBack }); // the account opens at the whole height: it is a page to read, not a glance
 }
 /** The account menu, in the sheet the inventory rises in; the person button again puts it away. */
 export function openAccount() {
@@ -239,16 +244,6 @@ export function initAccount() {
         return;
     wired = true;
     onAccountDoor(openAccount, openAccountIdentity, openAccountPage);
-    // Esc steps back out of a page, then puts the sheet away
-    document.addEventListener("keydown", e => {
-        if (e.key !== "Escape" || !sheetViewIs(OWNER))
-            return;
-        e.preventDefault();
-        if (stack.length)
-            goBack();
-        else
-            closeAccount();
-    });
     // the menu names the state it was opened in; a state change while it shows redraws it (a page tracks its own)
     effect(() => { identityState(); identity(); if (sheetViewIs(OWNER) && !stack.length)
         queueMicrotask(draw); });

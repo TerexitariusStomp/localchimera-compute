@@ -320,7 +320,7 @@ export function mountMapSearch() {
             if (showing && !dismissed && !sheetViewIs(OWNER)) {
                 const held = sheetHolds(); // the inventory, or another menu, is not pushed aside by a search
                 if (!held)
-                    openSheetView(OWNER, body, gone, { fit: true });
+                    openSheetView(OWNER, body, gone, { fit: true, esc: () => { closeSheetView(OWNER); return true; } });
             }
             else if (!showing && sheetViewIs(OWNER)) {
                 leaving = true;
@@ -331,12 +331,7 @@ export function mountMapSearch() {
                 onFilter(); // the map re-filters with the list
         }),
     ];
-    const key = (e) => { if (e.key === "Escape" && sheetViewIs(OWNER)) {
-        e.preventDefault();
-        closeSheetView(OWNER);
-    } };
-    document.addEventListener("keydown", key);
-    mounted = { body, bookBtn, effects, key };
+    mounted = { body, bookBtn, effects };
 }
 export function unmountMapSearch() {
     if (!mounted)
@@ -344,7 +339,6 @@ export function unmountMapSearch() {
     mounted.effects.forEach(stop => stop());
     closeSheetView(OWNER);
     mounted.bookBtn.remove();
-    document.removeEventListener("keydown", mounted.key);
     mounted = null;
     marker.set(null);
     pins.close();

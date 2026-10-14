@@ -134,6 +134,12 @@ try {
   await page.click('.ms-nav'); await sleep(900);
   await page.keyboard.press('Escape'); await sleep(500);
   h.rec('Esc closes the preview', !(await state(page)).card);
+  // the place card is the map search's own sheet view; it answers Esc through the sheet's `esc`
+  await spotNav(page); await sleep(500);
+  h.rec('the place card holds the sheet', (await state(page)).holds === 'map');
+  await page.keyboard.press('Escape'); await sleep(400);
+  s = await state(page);
+  h.rec('Esc puts the place card away', s.holds === null && !(await page.$('.ms-detail')), String(s.holds));
   await page.close();
 
   // ── the engine down ────────────────────────────────────────────────────────

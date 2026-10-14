@@ -258,7 +258,7 @@ export function showSpot(lat: number, lng: number): void {
 
 // ── mount: the map's view in the bar's sheet, and the 🔖 in the bar ─────────
 /** The view and the effects that keep it live, so unmount can stop both. */
-let mounted: { body: HTMLElement; bookBtn: HTMLElement; effects: (() => void)[]; key: (e: KeyboardEvent) => void } | null = null;
+let mounted: { body: HTMLElement; bookBtn: HTMLElement; effects: (() => void)[] } | null = null;
 const OWNER = "map";
 export function mountMapSearch(): void {
   const wrap = document.getElementById("maptab");   // the tab's OWN container
@@ -300,21 +300,18 @@ export function mountMapSearch(): void {
       if (sig !== lastSig) { dismissed = false; lastSig = sig; }
       if (showing && !dismissed && !sheetViewIs(OWNER)) {
         const held = sheetHolds();       // the inventory, or another menu, is not pushed aside by a search
-        if (!held) openSheetView(OWNER, body, gone, { fit: true });
+        if (!held) openSheetView(OWNER, body, gone, { fit: true, esc: () => { closeSheetView(OWNER); return true; } });
       } else if (!showing && sheetViewIs(OWNER)) { leaving = true; closeSheetView(OWNER); leaving = false; }
       if (onFilter) onFilter();           // the map re-filters with the list
     }),
   ];
-  const key = (e: KeyboardEvent): void => { if (e.key === "Escape" && sheetViewIs(OWNER)) { e.preventDefault(); closeSheetView(OWNER); } };
-  document.addEventListener("keydown", key);
-  mounted = { body, bookBtn, effects, key };
+  mounted = { body, bookBtn, effects };
 }
 export function unmountMapSearch(): void {
   if (!mounted) return;
   mounted.effects.forEach(stop => stop());
   closeSheetView(OWNER);
   mounted.bookBtn.remove();
-  document.removeEventListener("keydown", mounted.key);
   mounted = null;
   marker.set(null);
   pins.close();
