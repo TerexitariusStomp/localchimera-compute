@@ -111,6 +111,18 @@ console.log("\n── the FOLD, and the claims its order makes ──");
   const noneThroughCeiling = Object.keys(decent)
     .every(k => decent[k].ul == null || decent[k].rda <= decent[k].ul);
   check("and no lift pushes a floor through its own toxicity ceiling", noneThroughCeiling);
+  // a lift raises a floor as far as its own ceiling allows and stops there, and no stack leaves one above it
+  const lifted = N.profileFor({ sex: "F", age: 30, standard: 3 });
+  check("a lifted iron floor (18 × 3) stops at its limit of 45 and does not stay at 18", lifted.iron.rda === 45);
+  check("zinc, under its limit, is lifted whole", Math.abs(lifted.zinc.rda - 3 * base.zinc.rda) < 1e-9);
+  // the plan's standard rides the cohort row (the wire's `standard`), so the dial draws the floors the plan holds
+  const row = { id: "ada", name: "ada", sex: "F", age: 30 };
+  const energyOf = w => w.controls.find(c => c.spec === "energy").rda;
+  check("a person row carrying the scope's ratified standard draws the lifted energy floor on the dial",
+    energyOf(N.nutritionWire({ ...row, standard: 1.5 }, undefined, 5)) > energyOf(N.nutritionWire(row, undefined, 5)));
+  const stacked = N.profileFor({ sex: "F", age: 30, selfConditions: ["heavy-menses", "malabsorption", "acid-reducers"] });
+  check("stacked conditions leave every floor at or under its ceiling (iron 18 × 1.5 × 1.5 × 1.3 is held at 45)",
+    Object.keys(stacked).every(k => stacked[k].ul == null || stacked[k].rda <= stacked[k].ul) && stacked.iron.rda === 45);
 
   // L2 · a growing body is not a small adult
   const child = N.profileFor({ sex: "F", age: 11 });

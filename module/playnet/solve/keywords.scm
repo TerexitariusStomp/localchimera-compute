@@ -42,6 +42,7 @@
     (#:willing? world) (#:legal-forbids? world) (#:legal-decorate world) (#:per-agent? world)
     (#:desire-weights world)
     (#:certificates world)            ; each citizen's drawable credit — the bar over their claims
+    (#:rest-standard world)           ; the scope's ratified rest standard: what ingest keeps of a person's day (catalogues/rest.scm)
     (#:arc-table world) (#:arc-topology? world) (#:manners world) (#:never-raw world) (#:raws world)
     (#:resource-suppliers world) (#:specs world) (#:span-of world)
     (#:live-avail world)              ; the registry's reservations: a registered resource ingests at what is free

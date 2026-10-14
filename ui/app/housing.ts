@@ -28,6 +28,7 @@
 import { HOUSING_STANDARD, ACCLIMATISED_CEILING, WARMTH_RAISED, WARMTH_ELDER_AGE, WARMTH_YOUNG_AGE, CHILD_SHARE_AGE, OUTDOOR_CREDIT, WINTERLESS_REGIONS } from './housing-catalogue.js';
 export { ACCLIMATISED_CEILING, WARMTH_RAISED, WARMTH_ELDER_AGE, WARMTH_YOUNG_AGE, CHILD_SHARE_AGE, OUTDOOR_CREDIT };
 import type { HousingRow } from './housing-catalogue.js';
+import { ratifiedStandard, liftToCeiling, underCeiling } from './standard.js';
 import type { Person } from './nutrition.js';
 
 export const NIGHTS_PER_MONTH = 365 / 12;
@@ -70,18 +71,15 @@ export function personLayer(rows: HousingBand[], ctx: HousingCtx): HousingBand[]
   });
 }
 
-/** L4 · the ratified standard: gradients rise by the factor, never past their own ceiling; a gate is already whole at 1. */
+/** L4 · the ratified standard: gradients rise by the factor as far as their own ceiling allows and stop there; a gate is already whole at 1. */
 export function standardLayer(rows: HousingBand[], ctx: HousingCtx): HousingBand[] {
-  const s = Math.max(1, ctx.standard ?? 1);
-  return rows.map(r => {
-    const raised = r.floor * s;
-    return s > 1 && r.group === "gradient" && (r.ceiling == null || raised < r.ceiling) ? { ...r, floor: raised } : r;
-  });
+  const s = ratifiedStandard(ctx.standard);
+  return rows.map(r => (s > 1 && r.group === "gradient" ? { ...r, floor: liftToCeiling(r.floor, r.ceiling, s) } : r));
 }
 
 /** The night owed to a person: the base, the climate, the body housed, the ratified standard — the catalogue's own fold. */
 export function housingProfile(ctx: HousingCtx): HousingBand[] {
-  return standardLayer(personLayer(climateLayer(HOUSING_STANDARD, ctx), ctx), ctx);
+  return standardLayer(personLayer(climateLayer(HOUSING_STANDARD, ctx), ctx), ctx).map(r => ({ ...r, floor: underCeiling(r.floor, r.ceiling) }));
 }
 
 /** The bands the planner holds: a row asking nothing (floor 0, no ceiling) is dropped, as housing-bands drops it. */

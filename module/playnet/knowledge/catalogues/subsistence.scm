@@ -23,7 +23,8 @@
   #:use-module ((playnet vf facts agent-tags) #:select (tag-values))
   #:use-module (srfi srfi-1)
   #:use-module (playnet vf schemas)
-  #:export (sub-nut sub-spec sub-group sub-unit sub-rda sub-ul sub-w
+  #:export (sub-nut sub-spec sub-group sub-unit sub-rda sub-ul sub-w subsistence-clamped
+            ratified-standard sub-lift sub-floor-under-ceiling
             subsistence-species-base sub-shift sub-set sub-set* sub-add ctx-ref *follows* sub-follow
             sub-shift* *geo-shifts* subsistence-L1-geography *sex-shifts*
             *band-max-age* *band-rda* *band-ul* band-index band-cell life-stage-band
@@ -629,19 +630,35 @@
 (define (subsistence-L5-self prof ctx)
   (sub-self prof (append-map self-condition-rows (ctx-ref ctx 'self '()))))
 
+;; THE RATIFIED STANDARD, stated once. A scope's ratified standard lifts the floors
+;; its people are held to above bare adequacy, in every catalogue that carries an L4
+;; layer (this one, housing.scm, rest.scm) and in the one it will carry next. It has
+;; one rule: it only raises. Below 1, absent or not a number, it is 1.
+(define (ratified-standard x) (if (and (number? x) (> x 1)) x 1))
+
+;; A LIFT raises a floor by FACTOR as far as the floor's own ceiling allows and stops
+;; there: a floor lifted through its ceiling is a plan no one can meet, and one left
+;; unlifted because the lift would cross it is a floor lower than the standard asks.
+;; It never lowers a floor, and rebuilds the row with `sub-set`'s own fields, so what
+;; else a row carries (the body's store of a nutrient) rides through. ONLY names the
+;; rows the layer is for (housing lifts gradients, never a gate).
+(define* (sub-lift prof factor #:key (only (lambda (n) #t)))
+  (if (> factor 1)
+      (map (lambda (n)
+             (if (only n)
+                 (let* ((raised (* (sub-rda n) factor))
+                        (to (if (sub-ul n) (max (sub-rda n) (min raised (sub-ul n))) raised)))
+                   (sub-nut (sub-spec n) (sub-group n) (sub-unit n) to (sub-ul n) (sub-w n) (sub-reserve n)))
+                 n))
+           prof)
+      prof))
+
 (define (subsistence-L4-cultural prof ctx)
-  (let ((s (max 1 (ctx-ref ctx 'standard 1))))
-    (if (> s 1)
-        (map (lambda (n)
-               (if (or (not (sub-ul n)) (< (* (sub-rda n) s) (sub-ul n)))
-                   (sub-nut (sub-spec n) (sub-group n) (sub-unit n) (* (sub-rda n) s) (sub-ul n) (sub-w n))
-                   n))
-             prof)
-        prof)))
+  (sub-lift prof (ratified-standard (ctx-ref ctx 'standard 1))))
 
 ;; the person's composed reproduction profile — L0 base, then the layers folded
 ;; essential→contingent. (L5 self / measured biomarkers stays CLIENT-side & private.)
-(define (subsistence-profile ctx)
+(define (subsistence-profile-raw ctx)
   (sub-energy-ceiling
    (sub-follow
     (subsistence-L5-self
@@ -652,6 +669,26 @@
             (subsistence-L2-lifestage
               (subsistence-L1-geography (subsistence-species-base) ctx) ctx) ctx) ctx) ctx) ctx) ctx))
    ctx))
+
+;; A FLOOR NEVER STANDS ABOVE ITS OWN CEILING. The layers compose by lifting a
+;; floor (a diet, a life stage, a stack of conditions the person states about
+;; themselves), and none of them lifts the ceiling with it, so a stack can carry a
+;; floor through its tolerable upper limit — iron lifted 1.5 × 1.5 × 1.3 stands at
+;; 52.65 against a limit of 45. An empty band is a plan nobody can meet, and the
+;; solve would answer with an infeasibility that names no one. So the floor is held
+;; at its ceiling, and `subsistence-clamped` names the nutrients it was held for,
+;; so the finding is said and never a silent change.
+(define (sub-floor-under-ceiling prof)
+  (fold (lambda (n p) (if (and (sub-ul n) (> (sub-rda n) (sub-ul n)))
+                          (sub-set p (sub-spec n) #:rda (sub-ul n))
+                          p))
+        prof prof))
+(define (subsistence-clamped ctx)
+  "The nutrients whose composed floor stood above their ceiling for CTX, and was held at it."
+  (filter-map (lambda (n) (and (sub-ul n) (> (sub-rda n) (sub-ul n)) (sub-spec n)))
+              (subsistence-profile-raw ctx)))
+(define (subsistence-profile ctx)
+  (sub-floor-under-ceiling (subsistence-profile-raw ctx)))
 
 ;; ── L2b · DIET — what a person will not eat raises what the rest must carry:
 ;; non-haem iron is absorbed less well, so a vegetarian's iron floor is 1.8×

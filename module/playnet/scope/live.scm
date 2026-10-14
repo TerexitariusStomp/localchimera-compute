@@ -44,6 +44,7 @@
   #:use-module ((playnet vf formulas skill-law) #:select (effective-skills))
   #:use-module ((playnet knowledge catalogues conformance) #:select (conformance-frag-weight))
   #:use-module ((playnet algorithms elastic) #:select (set-social-free-time!))
+  #:use-module ((playnet scope policy) #:select (governance-policy))   ; the governed standard a scope holds its floors to
   #:use-module (ice-9 match)
   #:use-module ((playnet solve recipe-response) #:select (futures-under-record))   ; a recipe's record, laid over the futures
   #:use-module ((playnet observation practice) #:select (make-practice-view practice-view-hours practice-view-dated))
@@ -63,7 +64,7 @@
   #:use-module ((playnet knowledge catalogues diets)    ; what a person will not eat: the eat recipe's one predicate
                 #:select (diet-tags eats?))
   #:declarative? #f                           ; we (primitive-)load the engine at module init
-  #:export (solve-with-readers scope-world scope-program? scope-program-resources scope-program-agents scope-program-spatials scope-program-procs scope-program-flows scope-program-world plan-scope practice-view-of plan-scope->alist plan-scope->plan scope-bills plan-without-person-time scope-consumption scope-food-specs agent->subsistence-ctx profile-tag? scope-composition recipe-derived-contains persist-materialized! materialize-willing! gather-recipes scope-labour? scope-resource-specs
+  #:export (solve-with-readers scope-world scope-program? scope-program-resources scope-program-agents scope-program-spatials scope-program-procs scope-program-flows scope-program-world plan-scope practice-view-of plan-scope->alist plan-scope->plan scope-bills plan-without-person-time scope-consumption scope-standard scope-food-specs agent->subsistence-ctx profile-tag? scope-composition recipe-derived-contains persist-materialized! materialize-willing! gather-recipes scope-labour? scope-resource-specs
             work-intent clear-intents-by-prefix! lot-of? scope-persons spec-unit planned-row plan->rows plan-map-flows held-commitment met-quantity arriving-lots
             find-recipe-process-for-spec mode-process-for-manner trip-manner-of scope-manners
              ;; the cross-vat federation bridge (engine + solve/federation-solve.scm), re-exported
@@ -574,10 +575,13 @@
 ;; this person — that is the committed figure by construction — but it is not
 ;; available when the context is built, and feeding it back is a fixed point the
 ;; engine does not currently take. Worth doing; not by conflating it with presence.
-;; STANDARD (L4, the historical-moral layer) is read too. Absent it defaults to
-;; 1 — bare physiology — which is what the catalogue does anyway; present, a
-;; ratified standard lifts the floor, and may only raise, never through a ceiling.
-(define* (agent->subsistence-ctx a #:optional (t 0) (shed #f))   ; t reserved: see the note on committed labour
+;; STANDARD (L4, the historical-moral layer) is the scope's, never the person's: a
+;; floor is a requirement the commons must meet, so what lifts it is the ratified
+;; word of the scope (`scope-standard`, a governed number), handed in as
+;; #:standard. Absent it is 1 — bare physiology. A `standard:` tag a person
+;; carries is not read: declaring "standard:3" would lift their energy floor
+;; threefold and the ceiling after it. It only raises, and never above a ceiling.
+(define* (agent->subsistence-ctx a #:optional (t 0) (shed #f) #:key (standard 1) (rest-standard 1))   ; t reserved: see the note on committed labour
   (let* ((tags (or (agent-classified-as a) '()))
          (has? (lambda (x) (and (member x tags) #t)))
          (hours (tag-number tags "labour-hours" 5)))
@@ -589,7 +593,8 @@
                            ((has? "hotArid") "hotArid") (else "temperate"))))
       (pregnant . ,(or (has? "pregnant") (equal? "1" (tag-value tags "pregnant"))))
       (lactating . ,(or (has? "lactating") (equal? "1" (tag-value tags "lactating"))))
-      (standard . ,(tag-number tags "standard" 1))
+      (standard . ,(ratified-standard standard))
+      (rest-standard . ,(ratified-standard rest-standard))   ; the scope's ratified rest standard, the twin of standard (catalogues/rest.scm)
       ;; the SHED this person works in — the scope's own bioregion by containment,
       ;; overridable per-person by a tag. The catalogue reads its warmest-quarter
       ;; temperature (its real ERA5 record) for the sweat-sodium term, so `region`
@@ -638,9 +643,9 @@
 ;; floors read. The solve reads it per period, the labour pool per week, and the
 ;; free-time fraction over it; a non-person has no body to rest.
 (set-agent-disposable!
- (lambda (a days)
+ (lambda (a days . rest)           ; REST: the scope's ratified rest standard, when a solve of one asks (vf/facts/agent-time.scm)
    (and (eq? (agent-type a) 'person)
-        (disposable-hours (agent->subsistence-ctx a) #:days days))))
+        (disposable-hours (agent->subsistence-ctx a 0 #f #:rest-standard (if (pair? rest) (car rest) 1)) #:days days))))
 
 ;; the tags the profile owns — most read by agent->subsistence-ctx above and
 ;; knowledge/diets.scm; "transit-access" folded into a rider's skills list by
@@ -727,7 +732,13 @@
                                people))
             (specs . ,(list %body-spec)))))))
 
-(define* (scope-consumption people foods periods where #:optional (shed #f) #:key (specs '()) (units '()) (composition '()))
+(define (scope-standard plan-store)
+  "The historical-moral standard PLAN-STORE's scope has ratified: its governed
+   `standard` row, never below 1 (it only raises). A scope with no plan-store, or
+   no row, holds its people to bare physiology, 1."
+  (ratified-standard (governance-policy plan-store 'standard)))
+
+(define* (scope-consumption people foods periods where #:optional (shed #f) #:key (specs '()) (units '()) (composition '()) (standard 1))
   ;; a food's classes, off its spec record when the scope has one (knowledge/diets.scm reads the fixture table otherwise)
   (define classes-of
     (let ((h (make-hash-table)))
@@ -793,7 +804,11 @@
           (if known (cdr known)
               (let ((v (apply read key rest))) (hash-set! h key v) v))))))
   (define held-per-kg (kept (lambda (food) (nutrient-content food 1.0))))
-  (define floors-of (kept (lambda (pid a) (subsistence-bands (agent->subsistence-ctx a 0 shed)))))
+  ;; ONE context per person per solve: what the catalogues read of a body, at the
+  ;; scope's shed and its ratified standard
+  (define ctx-memo (kept (lambda (pid a) (agent->subsistence-ctx a 0 shed #:standard standard))))
+  (define (ctx-of a) (ctx-memo (agent-id a) a))
+  (define floors-of (kept (lambda (pid a) (subsistence-bands (ctx-of a)))))
   (define body-flows-per-kg (kept (lambda (food scale) (metabolic-flows food 1.0 #:contains (rows-eaten food scale)))))
   (define (serving a food)               ; in the rows' basis, kilograms or litres
     (let* ((floors (floors-of (agent-id a) a))
@@ -834,7 +849,7 @@
   ;; scope, so a dropped need (drinking water with no act that draws it) is a
   ;; finding, never a silent zero
   (let ((unmet (filter (lambda (n) (not (member n everything)))
-                       (map car (subsistence-bands (agent->subsistence-ctx (car people) 0 shed))))))
+                       (map car (subsistence-bands (ctx-of (car people)))))))
     (when (pair? unmet)
       (format (current-error-port) "  [diet] no food this scope makes carries ~a — no floor stands for it (a form that carries it, drawn or grown, would)~%"
               (if (> (length unmet) 6)
@@ -843,7 +858,7 @@
   (define (bands a)
     (let* ((pid (agent-id a)) (menu (menu-of a))
            (carries (carried menu))
-           (rows (subsistence-bands (agent->subsistence-ctx a 0 shed)))
+           (rows (subsistence-bands (ctx-of a)))
            (lost (filter (lambda (n) (and (member n everything) (not (member n carries)))) (map car rows)))
            (starves (menu-starves menu rows)))
       (when (pair? lost)
@@ -852,6 +867,10 @@
       (when (pair? starves)
         (format (current-error-port) "  [menu] ~a: no meal off their menu fills ~s under their energy ceiling — the floor stands, and this scope cannot meet it~%"
                 pid starves))
+      (let ((clamped (subsistence-clamped (ctx-of a))))
+        (when (pair? clamped)
+          (format (current-error-port) "  [floor] ~a: the floor for ~s stood above its ceiling and is held at it~%"
+                  pid clamped)))
       (closure-bands pid rows carries periods where)))
   (let ((recs (append-map (lambda (a) (map (lambda (food) (eat a food)) (menu-of a))) people)))
     (values (map car recs) (append-map cdr recs) (append-map bands people))))
@@ -1100,7 +1119,7 @@
                                       ;; AGENT-OF: (aid → agent | #f), a person's record where it is kept —
                                       ;; their home; a visitor's away days are read there. #f ⇒ this scope's store alone
                                       (agent-of #f)
-                                      (pref-bound #f) (emp-rho #f) (kappa #f) (want-as-cap 'unstated) (stock-draw-hours #f)   ; the governed dials (scope/policy.scm); unstated ⇒ the engine's standing value
+                                      (pref-bound #f) (emp-rho #f) (kappa #f) (want-as-cap 'unstated) (stock-draw-hours #f) (rest-standard #f)   ; the governed dials (scope/policy.scm); unstated ⇒ the engine's standing value
                                       ;; ((aid . drawable-hours) …): each citizen's certificate, the
                                       ;; bar over their claim columns (engine *certificates*). The
                                       ;; scope door reads it off the account-store when unstated
@@ -1278,6 +1297,8 @@
          ;; deterministic branch — the same program, assembled through the one
          ;; door that reads standing accepts (#:pins) and held offers (#:holds).
          (shed      (scope-bioregion spatials))
+         ;; the standard this scope has ratified, read ONCE for every catalogue this solve builds floors from
+         (standard  (scope-standard (false-if-exception ($ scope-root 'plan-store))))
          (scenarios     (let ((futures (if (null? scenarios)
                                            (or (and=> shed bioregion-scenarios)
                                                (list (make-planning-scenario "deterministic" #f 1.0 '() #f)))
@@ -1467,6 +1488,7 @@
              ;; so reproduction is on by default and free for every other solve.
              (if (and reproduce? (pair? people) (pair? foods))
                  (call-with-values (lambda () (scope-consumption people foods periods agent-cell (and=> shed bioregion-id)
+                                                                 #:standard standard
                                                                  #:specs (scope-resource-specs rs)
                                                                  #:composition composition   ; what the scope says each food is
                                                                  ;; what a unit of each food is: the spec's stated unit, else the
@@ -1508,7 +1530,7 @@
                                 (season (season-of (or (assq-ref ctx 'month) 6)
                                                    (any (lambda (a) (assq-ref (agent->subsistence-ctx a) 'lat)) people))))
                            (scope-housing people units periods agent-cell (map spatial-thing-id spatials)
-                                          #:ctx-of agent->subsistence-ctx #:season season
+                                          #:ctx-of (lambda (a) (agent->subsistence-ctx a 0 #f #:standard standard)) #:season season
                                           ;; what the season is like outside, off the shed's record: what a
                                           ;; dwelling's envelope leaks against (catalogues/housing.scm outdoor-degc)
                                           #:outdoor (outdoor-degc (assq-ref ctx 'shed) season)))
@@ -1556,7 +1578,7 @@
                  (reserve . ,reserve) (backend . ,backend) (desire-weights . ,desire-weights)
                  (warm-x . ,warm-x) (decided . ,decided) (node-budget . ,node-budget) (willing? . ,willing?)
                  (voice-tau . ,voice-tau) (voice-pushes . ,voice-pushes) (voice-hours . ,voice-hours) (scope-path . ,scope-path)
-                 (pref-bound . ,pref-bound) (emp-rho . ,emp-rho) (kappa . ,kappa) (want-as-cap . ,want-as-cap) (stock-draw-hours . ,stock-draw-hours)
+                 (pref-bound . ,pref-bound) (emp-rho . ,emp-rho) (kappa . ,kappa) (want-as-cap . ,want-as-cap) (stock-draw-hours . ,stock-draw-hours) (rest-standard . ,(ratified-standard rest-standard))
                  (certificates . ,certificates)
                  (legal-forbids? . ,legal-forbids?) (legal-decorate . ,legal-decorate)
                  (agent-position . ,agent-cell)           ; the same rule the floors read

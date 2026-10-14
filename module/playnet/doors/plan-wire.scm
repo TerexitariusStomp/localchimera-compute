@@ -19,7 +19,7 @@
   #:use-module ((playnet plan accepts) #:select (floors->wire))
   #:use-module ((playnet plan store) #:select (intent-window-passed? proposal-stands?))
   #:use-module ((playnet pools credit-fold) #:select (consumer-voice global-effective-balance global-total-claim-capacity))
-  #:use-module ((playnet scope live) #:select (agent->subsistence-ctx recipe-derived-contains reserve-controls scope-labour?))
+  #:use-module ((playnet scope live) #:select (agent->subsistence-ctx recipe-derived-contains reserve-controls scope-labour? scope-standard))
   #:use-module ((playnet scope snapshot) #:select (dedup-locations scope-locations->wire))
   #:use-module ((playnet solve engine) #:select (key-spec spec-base spec-owner))
   #:use-module ((playnet utils clock) #:select ((now . clock-now) instant->unix))
@@ -513,6 +513,7 @@
                     (sex . ,(assq-ref ctx 'sex)) (age . ,(assq-ref ctx 'age))
                     (region . ,(assq-ref ctx 'region)) (pregnant . ,(assq-ref ctx 'pregnant))
                     (lactating . ,(assq-ref ctx 'lactating)) (labour . ,(assq-ref ctx 'labour-hours))
+                    (standard . ,(scope-standard (false-if-exception ($ scope-root 'plan-store))))
                     (intake . ,(intake-of pid)))))
               people))))
 

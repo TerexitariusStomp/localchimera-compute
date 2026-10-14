@@ -295,6 +295,7 @@
   (wire-table 'person-intake #f
     '(("id" id str) ("name" name str) ("sex" sex str) ("age" age num) ("region" region str)
       ("pregnant" pregnant bool) ("lactating" lactating bool) ("labour" labour num)
+      ("standard" standard num)   ; the scope's ratified standard: the floors the dial draws are the plan's, so both read one number
       ("intake" intake (map num)))))
 (define %fragility-wire
   (wire-table 'fragility #f

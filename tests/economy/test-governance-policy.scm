@@ -15,6 +15,7 @@
 (use-modules (playnet scope root))
 (use-modules (playnet credentials commitments) (playnet credentials voting) (playnet keri acdc) (playnet boot scope) (playnet economy socialization) (playnet keri acdc) (playnet keri acdc-store))
 (use-modules (goblins) (goblins vat))
+(use-modules ((playnet scope live) #:select (scope-standard)))
 
 (define vat (spawn-vat))
 
@@ -102,8 +103,8 @@
 (use-modules ((playnet scope policy) #:select (*governed-dials* policy-dials governance-policy))
              ((playnet solve engine) #:select (*pref-bound* want-as-cap?))
              ((playnet solve solver) #:select (*kappa*)))
-(check "the registry names the voice bound, β, ρ, κ, the cap shape and the draw weight"
-       (map car *governed-dials*) '(voice-tau pref-bound emp-rho kappa want-as-cap stock-draw-hours))
+(check "the registry names the voice bound, β, ρ, κ, the cap shape, the draw weight and the ratified rest standard"
+       (map car *governed-dials*) '(voice-tau pref-bound emp-rho kappa want-as-cap stock-draw-hours rest-standard))
 (check "β's default is the engine's" (governance-policy #f 'pref-bound) *pref-bound*)
 (check "κ's default is the solver's" (governance-policy #f 'kappa) *kappa*)
 (check "the cap shape's default is the engine's" (governance-policy #f 'want-as-cap) (want-as-cap?))
@@ -123,6 +124,24 @@
            (let ((d (policy-dials ps)))
              (list (cadr (memq #:kappa d)) (cadr (memq #:voice-tau d)) (cadr (memq #:emp-rho d))))
            '(0.5 0.2 0.05))))
+
+;; the STANDARD the floors are held to is a governed number too: a scope's own
+;; ratified word, 1 (bare physiology) until it states one, and only ever raising
+(with-vat vat
+  (let* ((store (spawn-acdc-store))
+         (root  (spawn-scope-root "Standard"))
+         (scope (spawn-scope "Standard" #:kind 'commune #:scope-root-ref root
+                             #:scope-aid "EStandard" #:acdc-store store))
+         (gov   ($ scope 'mint-gov-cap "op"))
+         (ps    ($ root 'plan-store)))
+    (check "a scope that has ratified no standard holds its floors to 1"
+           (scope-standard ps) 1)
+    ($ scope 'set-governance-policy! gov '((standard . 1.3)))
+    (check "a ratified standard binds the next read of the floors"
+           (scope-standard ps) 1.3)
+    ($ scope 'set-governance-policy! gov '((standard . 0.4)))
+    (check "a standard below 1 reads as 1: the standard only raises"
+           (scope-standard ps) 1)))
 
 (display "\n")
 (test-summary!)

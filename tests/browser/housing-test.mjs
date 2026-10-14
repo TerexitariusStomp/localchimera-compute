@@ -8,7 +8,7 @@
 // side: an adult's night is owed 9 m², 18–26 °C, half a room, safety and
 // sanitation, energy, dryness; accessibility carries no base floor; a climate
 // without a winter asks no warmth floor; the old and the very young are owed 20 °C; a young child's privacy floor halves; step-free raises the
-// gate to 1; the ratified standard lifts gradients only, never past a ceiling.
+// gate to 1; the ratified standard lifts gradients only, as far as a ceiling allows.
 // And the closure's reading: what a night in a measured dwelling delivers —
 // area and rooms shared by its people, its warmth — and where it falls short.
 //
@@ -51,7 +51,7 @@ console.log("\n── the standard: a base, the climate, the body housed, the ra
     H.seasonOf(1, 52.5) === "winter" && H.seasonOf(1, -33.9) === "summer" && H.seasonOf(7, 52.5) === "summer" && H.seasonOf(7, -33.9) === "winter" && H.seasonOf(12) === "winter");
   const decent = H.housingBands({ age: 30, standard: 1.5 });
   check("the ratified standard lifts the gradients (9 → 13.5 m2, a third → a half room)", floorOf(decent, "hs-area") === 13.5 && near(floorOf(decent, "hs-privacy"), 0.5));
-  check("…never past a ceiling (18 × 1.5 = 27 > 26 stays 18)", floorOf(decent, "hs-warmth") === 18);
+  check("…as far as a ceiling allows and no further (18 × 1.5 = 27 > 26 holds at 26)", floorOf(decent, "hs-warmth") === 26);
   check("…and a gate is already whole at 1", floorOf(decent, "hs-safety") === 1);
   check("a standard below 1 does not lower anything", floorOf(H.housingBands({ age: 30, standard: 0.5 }), "hs-area") === 9);
   check("every row names what it does for rest: a gradient is an outcome or a proxy, a gate an outcome, a service or access",

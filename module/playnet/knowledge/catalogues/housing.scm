@@ -36,11 +36,12 @@
   #:use-module (srfi srfi-1)
   #:use-module ((playnet knowledge catalogues subsistence)
                 #:select (sub-nut sub-spec sub-group sub-unit sub-rda sub-ul sub-w
-                          sub-set* ctx-ref shed-derived-figure))
+                          sub-set* ctx-ref shed-derived-figure
+                          ratified-standard sub-lift sub-floor-under-ceiling))
   #:export (*housing-standard* *housing-rows* *housing-gates* housing-gate?
             housing-row-name housing-row-unit housing-row-source housing-row-function housing-species-base
             housing-L1-climate housing-L2-person housing-L4-standard
-            housing-profile housing-bands season-of outdoor-degc
+            housing-profile housing-clamped housing-bands season-of outdoor-degc
             %acclimatised-ceiling %warmth-raised %warmth-elder-age %warmth-young-age %child-share-age
             %winterless-regions %outdoor-credit winterless? effective-area))
 
@@ -166,17 +167,21 @@
 ;; A gate is already whole at 1 and has nothing above it; a gradient rises by
 ;; the ratified factor, and never past its own ceiling.
 (define (housing-L4-standard prof ctx)
-  (let ((s (max 1 (ctx-ref ctx 'standard 1))))
-    (map (lambda (n)
-           (let ((raised (* (sub-rda n) s)))
-             (if (and (> s 1) (equal? "gradient" (sub-group n))
-                      (or (not (sub-ul n)) (< raised (sub-ul n))))
-                 (sub-nut (sub-spec n) (sub-group n) (sub-unit n) raised (sub-ul n) (sub-w n))
-                 n)))
-         prof)))
+  (sub-lift prof (ratified-standard (ctx-ref ctx 'standard 1))
+            #:only (lambda (n) (equal? "gradient" (sub-group n)))))
 
-(define (housing-profile ctx)
+(define (housing-profile-raw ctx)
   (housing-L4-standard (housing-L2-person (housing-L1-climate (housing-species-base) ctx) ctx) ctx))
+
+;; A floor never stands above its own ceiling here either (subsistence.scm
+;; `sub-floor-under-ceiling`): the layers compose by lifting, and a stack that
+;; carried a gradient through its ceiling would leave a dwelling no one could meet.
+;; `housing-clamped` names what was held, so it is said and never a silent change.
+(define (housing-profile ctx) (sub-floor-under-ceiling (housing-profile-raw ctx)))
+(define (housing-clamped ctx)
+  "The housing rows whose composed floor stood above their ceiling for CTX, and was held at it."
+  (filter-map (lambda (n) (and (sub-ul n) (> (sub-rda n) (sub-ul n)) (sub-spec n)))
+              (housing-profile-raw ctx)))
 
 ;; the BANDS for the planner, subsistence-bands' own shape: ((row floor ceiling w) …),
 ;; a row whose floor is 0 and ceiling absent asks nothing and is dropped.

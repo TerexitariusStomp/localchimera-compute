@@ -17,6 +17,7 @@
 //
 // ctx = { sex, age, pregnant, lactating, region, labourHours, standard, self, intake }
 
+import { ratifiedStandard, liftToCeiling, underCeiling } from './standard.js';
 import { SPECIES_BASE, SEX_SHIFTS, ELDER_AGE, ADULT_SHIFTS, BANDS, GEO_SHIFTS, DIET_SHIFTS, FOLLOWS, REFERENCE_BODY, EER_ROWS, WORK_INTENSITY, ALTITUDE_SHIFTS, WINTER_SUN_LAT, WINTER_SUN_SHIFT, SELF_CONDITIONS, REGION_WORKING_DEGC, REGION_LATITUDES } from './nutrition-catalogue.js';
 export { DIET_SHIFTS };
 
@@ -187,6 +188,8 @@ export interface Person {
   labour?: number;
   pregnant?: boolean;
   lactating?: boolean;
+  /** The scope's ratified standard, as the plan holds its floors to it (the wire's `standard`); absent reads 1. */
+  standard?: number;
   intake?: Intake;
   /** "diet:…" and "allergy:…" tags, as the agent record carries them. */
   diet?: string[];
@@ -393,10 +396,11 @@ function L3_activity(p: Profile, c: Ctx): Profile {
 
 // ── L4 · HISTORICAL-MORAL — the ratified standard raises the floor above bare
 // physiology to the society's decent life. Governance-set; may only RAISE
-// (standard ≥ 1). Bare survival is standard=1.
+// (standard ≥ 1). Bare survival is standard=1. A lift raises a floor as far as
+// its own ceiling allows and stops there (the twin of `sub-lift`).
 function L4_cultural(p: Profile, c: Ctx): Profile {
-  const s = Math.max(1, c.standard || 1);
-  if (s > 1) Object.keys(p).forEach(spec => { const n = p[spec]; if (n.ul == null || n.rda * s < n.ul) n.rda *= s; });
+  const s = ratifiedStandard(c.standard);
+  if (s > 1) Object.keys(p).forEach(spec => { const n = p[spec]; n.rda = liftToCeiling(n.rda, n.ul, s); });
   return p;
 }
 
@@ -480,8 +484,13 @@ export const LAYERS: Layer[] = [L0_species, L1_geography, L2_lifeStage, L2b_diet
 
 // fold the layers → the person's composed reproduction profile. (L0 seeds the
 // species base from {}; each later layer transforms it in place and returns it.)
+// A floor never stands above its own ceiling: the layers compose by lifting and
+// none lifts the ceiling with it, so a stack of conditions can carry a floor
+// through its limit; it is held there (the twin of `sub-floor-under-ceiling`).
 export function profileFor(ctx: Ctx): Profile {
-  return LAYERS.reduce((p, layer) => layer(p, ctx) || p, {} as Profile);
+  const p = LAYERS.reduce((q, layer) => layer(q, ctx) || q, {} as Profile);
+  Object.keys(p).forEach(spec => { p[spec].rda = underCeiling(p[spec].rda, p[spec].ul); });
+  return p;
 }
 
 // the individual wheel: each category's two-sided slack against the COMPOSED

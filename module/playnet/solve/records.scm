@@ -86,6 +86,7 @@
                                 (willing? #f) (legal-forbids? #f) (legal-decorate #f)
                                 (per-agent? #t) (desire-weights '())
                                 (certificates '())       ; ((aid . drawable-hours) …) — the bar over each citizen's claim columns
+                                (rest-standard 1)        ; the scope's ratified rest standard (scope/policy.scm), what a person's day keeps for rest
                                 (arc-table '()) (arc-topology? #f) (manners '()) (never-raw '()) (raws '())
                                 (resource-suppliers '()) (span-of '())
                                 ;; reservation-aware free capacity: (resource-id → available | #f),
@@ -103,7 +104,7 @@
     #:per-agent? per-agent? #:periods periods #:movable movable #:storable storable #:whole whole #:proc-frag proc-frag
     #:tau tau #:hold hold #:demand demand #:eco-caps eco-caps #:reserve reserve
     #:eco-frag eco-frag #:eco-spec-frag eco-spec-frag #:eco-budget eco-budget #:eco-container eco-container #:eco-couple eco-couple #:couplings couplings #:eco-prior eco-prior #:stock-frag stock-frag
-    #:desire-weights desire-weights #:certificates certificates #:never-raw never-raw #:raws raws
+    #:desire-weights desire-weights #:certificates certificates #:rest-standard rest-standard #:never-raw never-raw #:raws raws
     #:agent-hours agent-hours #:agent-position agent-position #:horizon horizon #:period-spans period-spans
     #:refine-periods? refine-periods?
     #:resource-suppliers resource-suppliers #:composition composition #:span-of span-of

@@ -282,6 +282,10 @@
       (when (pair? lost)
         (format (current-error-port) "  [housing] ~a: no dwelling here delivers ~s — no floor stands for it~%"
                 pid (map car lost)))
+      (let ((clamped (housing-clamped (ctx-of a))))
+        (when (pair? clamped)
+          (format (current-error-port) "  [floor] ~a: the housing floor for ~s stood above its ceiling and is held at it~%"
+                  pid clamped)))
       (closure-bands pid rows deliverable periods where)))
   (define (pins-of rec here?)          ; REC's column at every cell: 1 where HERE? holds, else 0
     (append-map (lambda (t)

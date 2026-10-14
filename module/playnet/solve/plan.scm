@@ -118,6 +118,7 @@
                                   ;; unstated, the global stands as it is
                                   (pref-bound #f) (emp-rho #f) (kappa #f) (want-as-cap 'unstated) (stock-draw-hours #f)
                                   (certificates '())               ; ((aid . drawable-hours) …): the certificate bundles (*certificates*)
+                                  (rest-standard 1)                ; the scope's ratified rest standard (scope/policy.scm), read by ingest's reservation of rest
                                   ;; #:rest keeps the keyword list this call was actually given, so
                                   ;; the robust branch below forwards the WHOLE world instead of a
                                   ;; hand-copied subset of it — the copy that silently lost #:manners

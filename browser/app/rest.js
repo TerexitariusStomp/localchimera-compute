@@ -13,6 +13,7 @@
 // (docs/planning/food/reproduction-of-labour-power.md §2b).
 //
 import { SLEEP_BANDS, PERSONAL_HOURS, REST_LABOUR_INCREMENT } from './rest-catalogue.js';
+import { ratifiedStandard } from './standard.js';
 /** The hours of a clock span "HH:MM"→"HH:MM", wrapping midnight: what a person who states a sleep span states of their need. */
 export function spanHours(from, to) {
     const min = (s) => { const [h, m] = s.split(":").map(Number); return h * 60 + m; };
@@ -50,7 +51,7 @@ export function sleepHours(c) {
 }
 /** SNIRT a day: the base, lifted by the scope's ratified standard (which may only raise), plus the labour increment. */
 export function snirtHours(c) {
-    const std = Math.max(1, c.restStandard ?? 1);
+    const std = ratifiedStandard(c.restStandard);
     return (sleepHours(c) + PERSONAL_HOURS) * std + REST_LABOUR_INCREMENT * (c.effort ?? 1) * (c.labour ?? 0);
 }
 /** The hours of a period a person can be planned on: everything but SNIRT. */

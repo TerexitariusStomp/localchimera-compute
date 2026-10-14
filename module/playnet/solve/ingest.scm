@@ -828,7 +828,7 @@
                                 ;; commitments carry real hasBeginning). #f ⇒ single period.
                                 (horizon #f)
                                 (movable '()) (storable '()) (tau 0.0) (hold 0.0)
-                                (eco-caps '()) (eco-frag '()) (eco-spec-frag #f) (eco-budget '()) (eco-container '()) (eco-couple '()) (couplings '()) (eco-prior '()) (demand '()) (reserve '()) (desire-weights '()) (certificates '()) (never-raw '()) (raws '())
+                                (eco-caps '()) (eco-frag '()) (eco-spec-frag #f) (eco-budget '()) (eco-container '()) (eco-couple '()) (couplings '()) (eco-prior '()) (demand '()) (reserve '()) (desire-weights '()) (certificates '()) (rest-standard 1) (never-raw '()) (raws '())
                                 ;; substitutable MEANS as suppliers: (id closure-specs cell cap durable?).
                                 ;; The instrument twin of per-agent? labour — a means offers its spec's
                                 ;; conformance closure on one shared budget (build-columns). Split out
@@ -1086,7 +1086,7 @@
   ;; cap *A*. agent-skills resolves the agent's skills — must match the
   ;; *proc-skill* the caller tags templates with.
   (let* ((rows (append-map (lambda (a)              ; (agent period disposable-hours-or-#f), every person × every period
-                             (map (lambda (t) (list a t (period-disposable-hours a t))) periods))
+                             (map (lambda (t) (list a t (period-disposable-hours a t rest-standard))) periods))
                            agents))
          (labour (filter-map (lambda (row)
                                (let* ((a (car row)) (t (cadr row)) (d (caddr row))
@@ -1296,9 +1296,9 @@
 ;; f = 1 − L/Σ D_p. With nothing registered every offer stands and N·T is the Σ of the
 ;; offers. A period under a day places its hours through the person's availability
 ;; window and reserves nothing.
-(define (period-disposable-hours a t)
+(define* (period-disposable-hours a t #:optional (rest-standard 1))
   (let ((days (/ (period-hours t) 24.0)))
-    (and (>= days 1.0) (agent-disposable-hours a days))))
+    (and (>= days 1.0) (agent-disposable-hours a days rest-standard))))
 
 ;; The band pour — the ONE place a reproduction band enters a solve, called by
 ;; every path (plan-from-records, solve/robust.scm's per-scenario block, federation-

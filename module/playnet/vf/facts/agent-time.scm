@@ -145,8 +145,13 @@
 ;;; ── the reservation of rest ─────────────────────────────────────────────────
 (define *agent-disposable* #f)
 (define (set-agent-disposable! f) (set! *agent-disposable* f))
-(define (agent-disposable-hours a days)
-  (and *agent-disposable* (*agent-disposable* a days)))
+;; STANDARD is the scope's ratified rest standard when the caller is a solve of one:
+;; the hook is process-wide, so a scope's own number rides the call and is never
+;; read from a cell some other scope last wrote. At 1 the hook is called as it
+;; always was, with two arguments.
+(define* (agent-disposable-hours a days #:optional (standard 1))
+  (and *agent-disposable*
+       (if (= standard 1) (*agent-disposable* a days) (*agent-disposable* a days standard))))
 (define (reserve-hours a days hours)
   "HOURS kept inside what agent A's body leaves of DAYS days.
 

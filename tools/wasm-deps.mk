@@ -229,6 +229,7 @@ SCOPE_WASM_CLOSURE = \
   module/playnet/scope/ballot-store.scm \
   module/playnet/scope/demand-registry.scm \
   module/playnet/scope/live.scm \
+  module/playnet/scope/policy.scm \
   module/playnet/scope/process-registry.scm \
   module/playnet/scope/replica.scm \
   module/playnet/scope/root.scm \

@@ -659,6 +659,7 @@ export interface WirePersonIntake {
   pregnant: boolean;
   lactating: boolean;
   labour: number | null;
+  standard: number | null;
   intake: Record<string, number | null>;
 }
 

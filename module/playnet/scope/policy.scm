@@ -32,7 +32,8 @@
 ;; them: policy key → engine keyword
 (define *governed-dials*
   '((voice-tau . #:voice-tau) (pref-bound . #:pref-bound) (emp-rho . #:emp-rho)
-    (kappa . #:kappa) (want-as-cap . #:want-as-cap) (stock-draw-hours . #:stock-draw-hours)))
+    (kappa . #:kappa) (want-as-cap . #:want-as-cap) (stock-draw-hours . #:stock-draw-hours)
+    (rest-standard . #:rest-standard)))
 
 (define (policy-dials plan-store)
   "The governed dials of PLAN-STORE's scope as one keyword list, every row
@@ -61,12 +62,25 @@
     ;; κ (solver `*kappa*`): the free-time weight, what an hour of the
     ;; plan's labour costs the objective
     (kappa . 0.02)
+    ;; the ratified REST standard (catalogues/rest.scm `rest-standard`): the
+    ;; factor a scope lifts what a body keeps for rest above bare adequacy,
+    ;; the twin of `standard` below; it only raises. Read by ingest's
+    ;; reservation of rest (solve/ingest.scm `period-disposable-hours`), so
+    ;; it rides the solve as a keyword and not as a cell.
+    (rest-standard . 1.0)
     ;; quantity as a cap (engine `*want-as-cap?*`, quantity-as-a-cap.md): a
     ;; citizen's own want emitted as a cap term pulled by its mass alone
     (want-as-cap . #t)
     ;; the barrier residue's weight (engine `*stock-draw-hours*`): how dearly
     ;; a scope holds a drawn stock past what is asked, in hours per unit
-    (stock-draw-hours . 1.0)))
+    (stock-draw-hours . 1.0)
+    ;; ── a governed number the FLOORS read, not the engine ────────────────
+    ;; the historical-moral STANDARD (catalogues/subsistence.scm L4, housing.scm):
+    ;; the ratified level a scope holds its people's floors to, at or above the
+    ;; bare physiology of 1. It may only raise. A person's own `standard:` tag
+    ;; never sets it — a floor is a requirement the commons must meet, so what
+    ;; lifts it is the scope's ratified word (scope/live.scm `scope-standard`).
+    (standard . 1.0)))
 
 (define* (governance-policy plan-store key #:optional (explicit #f))
   "The governed value for KEY: EXPLICIT when given, else the plan-store's

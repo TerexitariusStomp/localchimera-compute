@@ -32,7 +32,7 @@
 
 (define-module (playnet knowledge catalogues rest)
   #:use-module (srfi srfi-1)
-  #:use-module ((playnet knowledge catalogues subsistence) #:select (ctx-ref))
+  #:use-module ((playnet knowledge catalogues subsistence) #:select (ctx-ref ratified-standard))
   #:use-module ((playnet utils clock) #:select (clock-length-minutes))
   #:export (*sleep-bands* *personal-hours* *rest-labour-increment*
             sleep-hours snirt-hours disposable-hours span-hours))
@@ -82,7 +82,7 @@
   (let* ((base (+ (sleep-hours ctx) *personal-hours*))
          (work (ctx-ref ctx 'labour-hours 0.0))
          (effort (ctx-ref ctx 'effort 1.0))
-         (std (max 1 (ctx-ref ctx 'rest-standard 1))))
+         (std (ratified-standard (ctx-ref ctx 'rest-standard 1))))
     (+ (* base std) (* *rest-labour-increment* effort work))))
 
 ;; schedulable hours of a period of DAYS days: everything but SNIRT
