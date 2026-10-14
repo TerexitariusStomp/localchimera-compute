@@ -303,13 +303,6 @@
                 (expected . ,range)
                 (onhand . ,(+ have delta)))))))
 
-;; ── A count named by its instant ───────────────────────────────────────
-(define (count-id-at agent resource-id when-iso counted)
-  "The id of AGENT's count of RESOURCE-ID, found COUNTED, stated at the instant
-   WHEN-ISO. Two figures stated of one instant are two counts, and the later to
-   land is the latest word (observer.scm, the anchor's tie)."
-  (string-append "evt-count-" agent "-" resource-id "-" when-iso "-" (number->string counted)))
-
 (define (count-landed-reply obs eid r flows then)
   "What the door answers of a count the books already hold under EID: its
    adjustment where it landed one, its record, the difference it landed, what
@@ -348,13 +341,14 @@
          (cmt  (and fulfills ($ ps 'get-commitment fulfills)))
          (tech (or technique "stated"))
          (now  (clock-now))                     ; one reading of the clock
-         (then (let ((t (and when-iso (civil->instant when-iso)))) (and t (< t now) t)))
-         ;; a count is of its instant: one stated at an instant is named by who
-         ;; counted, what, when and the figure found, so it is the same count
-         ;; wherever and however often it lands; a count of now is named afresh
-         (eid  (if then (count-id-at agent resource-id when-iso counted) (generate-id "evt-count-")))
+         (stated (and when-iso (civil->instant when-iso)))   ; the instant it states, even one ahead of this clock
+         (then (and stated (< stated now) stated))           ; where it is placed: never later than now
+         ;; a count is of its instant: one that states an instant is named by who counted,
+         ;; what, when and the figure found (counting.scm), so it is the same count wherever
+         ;; and however often it lands, a future-dated one too; a count of now is named afresh
+         (eid  (if stated (count-id-at agent resource-id when-iso counted) (generate-id "evt-count-")))
          ;; the record a count always leaves: the books hold it when this count already landed
-         (landed (and then (standing-event obs (count-record-id eid))))
+         (landed (and stated (standing-event obs (count-record-id eid))))
          (no   (count-refusal r counted unit tech evidence
                               #:agent agent #:fulfills fulfills #:cmt cmt
                               #:standing? (and r (count-standing? r scope-id agent))
@@ -369,7 +363,7 @@
      ;; the same count, landing again (a device flushing what it queued): the
      ;; books already hold it, and the door answers what stands
      (landed
-      (success (count-landed-reply obs eid r ((plan-reader root rows) r then) then)))
+      (success (count-landed-reply obs eid r ((plan-reader root rows) r (or then now)) (or then now))))
      (else
         (catch-as-failure
          (lambda ()
@@ -471,26 +465,34 @@
                     (brid  (or (thermal-base resource-id) resource-id))
                     (trid  (if (equal? target base) brid (thermal-form-id brid (form-delta target))))
                     (said  (or note (format #f "read ~a ~a against ~a: ~a is ~a" v unit amb base target)))
-                    (gone  (do-count-stock root scope-id agent resource-id 0 u
-                                           #:technique "stated" #:when-iso when-iso #:note said))
                     (now   (clock-now))
-                    (then  (let ((t (and when-iso (civil->instant when-iso)))) (and t (< t now) t)))
-                    (eid   (if then
-                               (count-id-at agent trid when-iso q)
-                               (generate-id "evt-count-"))))
-               (if (not (eq? (car gone) 'ok))
-                   gone
-                   (begin
-                     ($ obs 'record-event
-                        (adjustment-event eid trid target q u #:process "count:reading"
-                                          #:when (instant->civil (or then now))
-                                          #:provider agent #:receiver agent
-                                          #:note said #:in-scope-of (list scope-id)))
-                     (success `((form . ,target) (was . ,spec) (reading . ,v) (ambient . ,amb)
-                                (moved . ,q) (unit . ,u)
-                                (from-stock . ,resource-id) (to-stock . ,trid)
-                                (gone . ,(assq-ref (cdr gone) 'event)) (event . ,eid)
-                                (word . ,said)))))))))))))))
+                    (stated (and when-iso (civil->instant when-iso)))
+                    (then  (and stated (< stated now) stated))
+                    ;; a reading is of its instant: named by who read, the form found and when, so a
+                    ;; second landing finds the first and answers it, never moving the stock again
+                    (eid   (if stated (count-reading-id agent trid when-iso) (generate-id "evt-count-")))
+                    (stood (and stated (standing-event obs eid))))
+               (if stood
+                   (success `((form . ,target) (was . ,spec) (reading . ,v) (ambient . ,amb)
+                              (moved . ,(let ((mq (economic-event-resource-quantity stood)))
+                                          (if mq (exact->inexact (measure-qty mq)) 0.0)))
+                              (unit . ,u) (from-stock . ,resource-id) (to-stock . ,trid)
+                              (gone . "") (event . ,eid) (again . #t) (word . ,said)))
+                   (let ((gone (do-count-stock root scope-id agent resource-id 0 u
+                                               #:technique "stated" #:when-iso when-iso #:note said)))
+                     (if (not (eq? (car gone) 'ok))
+                         gone
+                         (begin
+                           ($ obs 'record-event
+                              (adjustment-event eid trid target q u #:process "count:reading"
+                                                #:when (instant->civil (or then now))
+                                                #:provider agent #:receiver agent
+                                                #:note said #:in-scope-of (list scope-id)))
+                           (success `((form . ,target) (was . ,spec) (reading . ,v) (ambient . ,amb)
+                                      (moved . ,q) (unit . ,u)
+                                      (from-stock . ,resource-id) (to-stock . ,trid)
+                                      (gone . ,(assq-ref (cdr gone) 'event)) (event . ,eid)
+                                      (word . ,said)))))))))))))))))
 
 ;;; ── The planned count: the schedule, and the offers it lays ──────────
 ;;;

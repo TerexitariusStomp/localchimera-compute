@@ -92,5 +92,22 @@
   (check "the warmed stock reads nothing" (onhand "batch-7+6K") 0.0)
   (check "the base stock reads the batch" (onhand "batch-7") 40.0))
 
+(display "\n── a reading of an instant is one reading, however often it lands ──\n")
+(with-vat vat
+  ($ obs 'record-event
+     (make-economic-event #:id "evt-seed-9" #:action 'raise #:resource-inventoried-as "batch-9"
+                          #:resource-conforms-to "dough" #:resource-quantity (make-measure 12.0 "kg")
+                          #:has-point-in-time (instant->civil (- (clock-now) 7200))
+                          #:provider "ada" #:receiver "ada" #:in-scope-of (list "bakery"))))
+(let* ((at (instant->civil (- (clock-now) 600)))
+       (first (read! "batch-9" 26 "°C" #:when-iso at))
+       (events (with-vat vat (length ($ obs 'all-events))))
+       (second (read! "batch-9" 26 "°C" #:when-iso at)))
+  (check "the first reading moves the batch to its warmed form" (list (car first) (assq-ref (cdr first) 'moved)) '(ok 12.0))
+  (check "the second names the same reading" (assq-ref (cdr second) 'event) (assq-ref (cdr first) 'event))
+  (check-pred "…says it had it, and what it moved" (and (assq-ref (cdr second) 'again) (= 12.0 (assq-ref (cdr second) 'moved))))
+  (check "…and lands nothing more" (with-vat vat (length ($ obs 'all-events))) events)
+  (check "the warmed stock holds the batch once" (onhand "batch-9+6K") 12.0))
+
 (display "\n")
 (test-summary!)

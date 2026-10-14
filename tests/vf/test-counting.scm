@@ -189,6 +189,10 @@
 ;;; ── a count's family is named in one place ──────────────────────────────
 
 (display "\n── the family of a count ──\n")
+(check "a count's id is named by who, what, when and the figure" (count-id-at "ada" "r1" "2026-09-20T08:00:00Z" 27.5) "evt-count-ada-r1-2026-09-20T08:00:00Z-27.5")
+(check "a whole figure is spelled once, however it was written" (list (count-figure-text 8) (count-figure-text 8.0)) '("8" "8"))
+(check "…and 8 and 8.0 name one count" (equal? (count-id-at "a" "r" "t" 8) (count-id-at "a" "r" "t" 8.0)) #t)
+(check "a reading is named by who read, the form found and when" (count-reading-id "ada" "batch+6K" "2026-09-20T08:00:00Z") "evt-read-ada-batch+6K-2026-09-20T08:00:00Z")
 (check "the record is named from the adjustment" (count-record-id "evt-count-7-9") "evt-count-7-9-record")
 (check "the hours are named from the adjustment" (count-hours-id "evt-count-7-9") "evt-count-7-9-hours")
 (check "a name built is a name recognised: the record's base is the adjustment"

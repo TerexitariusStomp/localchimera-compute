@@ -440,4 +440,19 @@
                (field first-landing 'record))
        #f)
 
+(display "\n── a count ahead of this clock, or of a figure spelled twice, is still one count ──\n")
+(seed! "pantry/rice" "rice" 30.0 "kg" "org:commune" "place:pantry")
+(define ahead ((@ (playnet utils clock) instant->civil) (+ ((@ (playnet utils clock) now)) 3600)))   ; a device whose clock runs ahead of the gateway's
+(define (count-rice figure) (call 'count-stock "org:commune" "ada" "pantry/rice" figure "kg"
+                                  "stated" "place:pantry" ahead "" "" ""))
+(define ahead-first (count-rice 27.0))
+(define events-after-ahead (length (obs 'all-events)))
+(define ahead-second (count-rice 27.0))
+(check "a count stated ahead of the clock lands" (list (field ahead-first 'delta) (onhand "pantry/rice")) '(-3.0 27.0))
+(check "its repeat names the same count" (field ahead-second 'record) (field ahead-first 'record))
+(check-pred "…and says it had it" (field ahead-second 'again))
+(check "…and lands nothing more" (length (obs 'all-events)) events-after-ahead)
+(check "a whole figure is one figure however it is spelled"
+       (field (count-rice 27) 'record) (field ahead-first 'record))
+
 (test-summary!)

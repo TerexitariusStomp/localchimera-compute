@@ -42,7 +42,7 @@
             count-figure-tag count-figure count-spec-tag count-spec
             count-expected-tag count-expected
             %count-agreed-tag count-agreed? %count-tolerance
-            count-record-id count-hours-id %contest-prefix contest-ballot-id
+            count-record-id count-hours-id count-id-at count-figure-text count-reading-id %contest-prefix contest-ballot-id
             count-of-tag count-target
             count-process count-process? count-process-regime count-process-target
             count-technique count-blind?
@@ -205,6 +205,25 @@
 (define (count-hours-id base)
   "The id of the counter's hours a count lands, named from BASE."
   (string-append base %count-hours-suffix))
+
+;; A count is of its instant: one stated at an instant is named by who counted, what, when
+;; and the figure found, so it is the same count wherever and however often it lands.
+(define (count-figure-text counted)
+  "The figure COUNTED as an id spells it: a whole number without its point, so 8 and 8.0
+   are the one figure."
+  (number->string (if (and (real? counted) (integer? counted)) (inexact->exact counted) counted)))
+
+(define (count-id-at agent resource-id when-iso counted)
+  "The id of AGENT's count of RESOURCE-ID, found COUNTED, stated at the instant
+   WHEN-ISO. Two figures stated of one instant are two counts, and the later to
+   land is the latest word (observer.scm, the anchor's tie)."
+  (string-append "evt-count-" agent "-" resource-id "-" when-iso "-" (count-figure-text counted)))
+
+(define (count-reading-id agent form-id when-iso)
+  "The id of the raise AGENT's reading of a condition lands on the stock of FORM-ID, stated at
+   WHEN-ISO: a reading is named by who read it, the form it found and when, never by the
+   quantity the stock held, which a second landing would find already moved."
+  (string-append "evt-read-" agent "-" form-id "-" when-iso))
 
 (define (count-base-id id)
   "The adjustment's id a count event's id is named from: the id itself, or the
