@@ -9,6 +9,8 @@
 #             and the commit holds both changes (the snapshot never reverts a file that moved)
 #   STOPS     the moved HEAD changed the same lines: the tool stops, main is where the other
 #             commit left it, and nothing of ours is committed
+#   SERIES    several commits pass one gate: one commit per step, each holding its own files
+#             and the regenerated ones it names, in order, the gate run once
 #   REFUSES   a message carrying an attribution trailer; a tree whose gate fails
 #   COMPILED  a change drops the compiled files of the module and of every module that imports it
 #             (Guile trusts a .go whose own source is not newer, and an inlined macro or record
@@ -114,6 +116,30 @@ check "the tool exits 0" "$(echo "$out" | tail -1)" "exit=0"
 check "main holds both: ours on top of the other session's" "$(git -C "$R" log --format=%s -3 refs/heads/main | tr '\n' ',')" "a: change,other session,base,"
 check "b.txt keeps the other session's change" "$(git -C "$R" show refs/heads/main:b.txt | tail -1)" "GAMMA"
 check "a.txt carries ours" "$(git -C "$R" show refs/heads/main:a.txt | sed -n 2p)" "TWO"
+
+echo; echo "── SERIES: one gate, one commit per step ──"
+fresh_repo
+printf 'one\nTWO\nthree\n' > "$R/a.txt"; printf 'alpha\nbeta\nGAMMA\n' > "$R/b.txt"; printf 'new\n' > "$R/c.txt"
+git -C "$R" add -N c.txt
+echo "first: a" > "$R/m1"; echo "second: b and c" > "$R/m2"
+printf '%s|a.txt\n%s|b.txt c.txt\n' "$R/m1" "$R/m2" > "$R/series"
+cat > "$R/gate.sh" <<SH
+#!/usr/bin/env bash
+echo run >> "$R-gate-runs"
+SH
+out="$(tool --gate --series "$R/series" --gate-cmd "bash $R/gate.sh"; echo "exit=$?")"
+check "the tool exits 0" "$(echo "$out" | tail -1)" "exit=0"
+check "the gate ran once" "$(wc -l < "$R-gate-runs")" "1"
+check "two commits, in order" "$(git -C "$R" log --format=%s -3 | tr '\n' ',')" "second: b and c,first: a,base,"
+check "the first holds a.txt alone" "$(git -C "$R" show --name-only --format= HEAD~1)" "a.txt"
+check "the second holds b.txt and c.txt" "$(git -C "$R" show --name-only --format= HEAD | sort | tr '\n' ' ')" "b.txt c.txt "
+check "the shared index is clean" "$(git -C "$R" diff --cached --name-only)" ""
+fresh_repo
+printf 'one\nTWO\nthree\n' > "$R/a.txt"
+echo "x" > "$R/m1"; echo "y" > "$R/m2"
+printf '%s|a.txt\n%s|a.txt\n' "$R/m1" "$R/m2" > "$R/series"
+out="$(tool --gate --series "$R/series" --gate-cmd true; echo "exit=$?")"
+check "steps that share a path are refused" "$(echo "$out" | tail -1)" "exit=1"
 
 echo; echo "── REFUSES: a trailer in the message; a failing gate ──"
 fresh_repo

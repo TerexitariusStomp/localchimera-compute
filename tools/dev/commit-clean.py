@@ -4,6 +4,7 @@
     tools/dev/commit-clean.py MSGFILE [PATH…] [--exclude REGEX]… [--untracked-ok] [--dry-run]
     tools/dev/commit-clean.py --gate MSGFILE PATH… [--emit] [--baseline FILE] [--gate-cmd CMD]
                               [--warm-cmd CMD] [--emit-cmd CMD] [--boot-cmd CMD] [--gate-wt DIR] [--branch REF]
+    tools/dev/commit-clean.py --gate --series FILE [same options]
 
 Several sessions work in one tree and one index, so `git add` and `git commit` here
 would sweep in files another session staged. This commits whole files instead: a
@@ -42,6 +43,12 @@ commit` (hooks, signing and identity apply), main moves by compare-and-swap, the
 index is reset for the paths, and the result is verified: the commit holds the named
 files and the regenerated ones only, is signed, and carries no attribution trailer.
 The suite's known reds are named with --baseline FILE (`make test RED_BASELINE`).
+--series FILE gates several commits at once: each line of FILE is `MSGFILE|PATH PATH …`, the
+commits in order, their paths disjoint. The union is merged and gated as one tree and then
+committed as one commit per line (each holds its own paths and the regenerated files it names,
+the rest of the regenerated files going with the last), so a series of independent changes
+pays for one gate. The tree that passed is the series' tip; an intermediate commit is the tip
+less the later steps, which no gate saw alone.
 Limit: another session's UNCOMMITTED hunks in a file you name are committed with it.
 A session can therefore work in a worktree of its own and run this from there: the files
 it names are its own alone, HEAD there is where its work began, and --branch REF
@@ -59,7 +66,7 @@ GUARDED = ('module/', 'tests/', 'tools/', 'server/', 'hoot/', 'deploy/')
 IGNORED_RUNTIME = ('LICENSE.md', 'LICENSE-ADDITIONAL-TERMS.md')   # ignored by path; suites and the attribution check read them
 TRAILER = re.compile(r'^(Co-Authored-By:.*anthropic\.com|Claude-Session:\s*https://claude\.ai/(code/)?session_)', re.I | re.M)
 DEFAULT_GATE = 'make gate gate-hoot'
-DEFAULT_WARM = 'make lint-compile'     # compiles every live module, so the emits run compiled
+DEFAULT_WARM = 'make lint-compile warm-ccache'     # lint-compile checks every live module; warm-ccache compiles each into the cache, so the emits run compiled
 DEFAULT_EMIT = 'make emit-all'
 DEFAULT_BOOT = 'bash tools/test/boot-smoke.sh'
 MAX_ROUNDS = 3
@@ -85,7 +92,7 @@ def status_paths():
             untracked.append(path)
             continue
         changed.append(path)
-        if state[0] in 'RC':
+        if state[0] in 'RC' or state[1] in 'RC':
             changed.append(parts[i])
             i += 1
     return list(dict.fromkeys(changed)), untracked
@@ -221,10 +228,11 @@ def sweep_stale_go(wt, changed, cache_root):
     return dropped
 
 
-def gated_commit(msg, paths, opts, left):
-    msg_text = open(msg).read()
-    if TRAILER.search(msg_text):
-        sys.exit('commit-clean: the message carries an attribution trailer; the repository keeps them out (CLAUDE.md)')
+def gated_commit(msg, paths, opts, left, steps=None):
+    steps = steps or [(msg, paths)]
+    for m, _ in steps:
+        if TRAILER.search(open(m).read()):
+            sys.exit(f'commit-clean: {m} carries an attribution trailer; the repository keeps them out (CLAUDE.md)')
     branch = opts['branch'] or git('symbolic-ref', 'HEAD').strip()
     top = git('rev-parse', '--show-toplevel').strip()
     wt = gate_worktree(opts['gate_wt'])
@@ -277,13 +285,21 @@ def gated_commit(msg, paths, opts, left):
         print(f'commit-clean: HEAD moved while the gate ran ({head_now[:10]} → {head[:10]}); again')
     else:
         sys.exit('commit-clean: HEAD kept moving; not committing a tree that was not gated')
-    # the tree that passed: the gate commit's parent is HEAD_NOW, so a soft reset keeps
-    # the index at the gated tree for a real commit
-    subprocess.check_call(['git', '-C', wt, 'reset', '-q', '--soft', head_now])
-    for d in regenerated:      # what the emits changed in a file you named is the commit's too
-        subprocess.check_call(['git', '-C', wt, 'add', '-A', '--', d])
-    subprocess.check_call(['git', '-C', wt, 'commit', '-q', '-F', msg])
-    new = git('-C', wt, 'rev-parse', 'HEAD').strip()
+    # the tree that passed: the gate commit's parent is HEAD_NOW, so the index is reset to it and
+    # the working tree stays the gated tree; each step then adds its own paths and commits
+    subprocess.check_call(['git', '-C', wt, 'reset', '-q', head_now])
+    claimed = set()
+    made = []
+    for n, (m, step_paths) in enumerate(steps):
+        last = n == len(steps) - 1
+        mine_here = list(step_paths) + [d for d in regenerated if d in step_paths or (last and d not in claimed and d not in paths)]
+        mine_here = [d for i, d in enumerate(mine_here) if d not in mine_here[:i]]
+        claimed.update(mine_here)
+        for d in mine_here:    # what the emits changed in a file you named is the commit's too
+            subprocess.check_call(['git', '-C', wt, 'add', '-A', '--', d])
+        subprocess.check_call(['git', '-C', wt, 'commit', '-q', '-F', m])
+        made.append((git('-C', wt, 'rev-parse', 'HEAD').strip(), mine_here))
+    new = made[-1][0]
     subprocess.check_call(['git', 'update-ref', branch, new, head_now])
     subprocess.run(['git', 'reset', '-q', '--', *paths])
     for d in drift:            # a regenerated file lands in the shared tree unless someone is editing it
@@ -294,20 +310,22 @@ def gated_commit(msg, paths, opts, left):
         else:
             print(f'commit-clean: {d} in the shared tree differs from HEAD; left as it is')
     subprocess.run(['git', 'reset', '-q', '--', *drift])
-    # verify the commit
-    held = git('show', '--stat', '--name-only', '--format=', new).split()
-    stray = [h for h in held if h not in paths and h not in drift]
-    sig = git('log', '-1', '--format=%G?', new).strip()
-    trailer = TRAILER.search(git('log', '-1', '--format=%B', new))
+    # verify the commits
     signs = subprocess.run(['git', 'config', '--bool', 'commit.gpgsign'], capture_output=True, text=True).stdout.strip() == 'true'
-    if stray or (signs and sig != 'G') or trailer:
-        print(f'commit-clean: VERIFY FAILED on {new[:10]}: stray={stray} signature={sig} trailer={bool(trailer)}')
-        sys.exit(1)
+    for (c, owned), (m, step_paths) in zip(made, steps):
+        held = git('show', '--stat', '--name-only', '--format=', c).split()
+        stray = [h for h in held if h not in owned]
+        sig = git('log', '-1', '--format=%G?', c).strip()
+        trailer = TRAILER.search(git('log', '-1', '--format=%B', c))
+        if stray or (signs and sig != 'G') or trailer:
+            print(f'commit-clean: VERIFY FAILED on {c[:10]}: stray={stray} signature={sig} trailer={bool(trailer)}')
+            sys.exit(1)
     for p in left:
         if p.startswith(GUARDED):
             print('  left out: ' + p)
-    print(f'commit-clean: gated; {len(paths)} path(s) + {len(drift)} regenerated; '
-          + git('log', '-1', '--format=%h %an %s', new).strip()[:110])
+    for c, _ in made:
+        print(f'commit-clean: gated; ' + git('log', '-1', '--format=%h %an %s', c).strip()[:110])
+    print(f'commit-clean: {len(paths)} path(s) + {len(drift)} regenerated in {len(made)} commit(s)')
 
 
 def main(argv):
@@ -316,6 +334,7 @@ def main(argv):
     gate = '--gate' in argv
     emit = '--emit' in argv
     args = [a for a in argv if a not in ('--dry-run', '--untracked-ok', '--gate', '--emit')]
+    series = take_option(args, '--series')
     opts = {
         'emit': emit,
         'baseline': take_option(args, '--baseline'),
@@ -332,11 +351,23 @@ def main(argv):
         i = args.index('--exclude')
         excludes.append(re.compile(args[i + 1]))
         del args[i:i + 2]
-    if not args:
+    if not args and not series:
         sys.exit(__doc__)
-    msg = os.path.abspath(args[0])
     top = git('rev-parse', '--show-toplevel').strip()
-    named = [os.path.relpath(os.path.abspath(a), top) for a in args[1:]]
+    steps = None
+    if series:
+        steps = []
+        for line in open(series).read().splitlines():
+            if line.strip():
+                m, _, ps = line.partition('|')
+                steps.append((os.path.abspath(m.strip()), [os.path.relpath(os.path.abspath(x), top) for x in ps.split()]))
+        flat = [p for _, ps in steps for p in ps]
+        if len(flat) != len(set(flat)):
+            sys.exit('commit-clean: the steps of a series name disjoint paths; ' + ' '.join(sorted({p for p in flat if flat.count(p) > 1})))
+        msg, named = steps[0][0], flat
+    else:
+        msg = os.path.abspath(args[0])
+        named = [os.path.relpath(os.path.abspath(a), top) for a in args[1:]]
     os.chdir(top)
     if gate and not named:
         sys.exit('commit-clean: --gate takes the files by name (PATH…); a gated commit is the files you meant')
@@ -368,7 +399,9 @@ def main(argv):
             print('  - ' + p)
         return
     if gate:
-        return gated_commit(msg, paths, opts, left)
+        if steps:
+            steps = [(m, [p for p in ps if p in paths]) for m, ps in steps]
+        return gated_commit(msg, paths, opts, left, steps)
 
     head = git('rev-parse', 'HEAD').strip()
     branch = git('symbolic-ref', 'HEAD').strip()
