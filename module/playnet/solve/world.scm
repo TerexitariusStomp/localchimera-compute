@@ -44,7 +44,7 @@
             *requires* *why-not* *legal-frag* *col-bounds* *col-fixed* *ride-info*
             *scope-path* *col-terms* *col-ell* *voice-tau* *voice-pushes* *voice-hours*
             *voice-stances* *budgeted-floors* *stock-price* *stretch* *stretch-floor* *locate-key*
-            *mobile-means* *contents* *stands-in* *means-lot* *disposable-total*))
+            *mobile-means* *contents* *stands-in* *means-lot* *disposable*))
 
 (define-context world #:fluid %world
   ;; ── the recipes: what this world can do ──
@@ -666,5 +666,5 @@
   ;; no bundle, credit drawn and tallied as before.
   (*certificates* '())
 
-  (*disposable-total* 0.0)             ; Σ every person's disposable time, set once per build
+  (*disposable* '())                   ; ((agent-id . hours) …): each person's disposable time over the periods, set once per build; its sum is the people's N·T when rest is reserved
 )

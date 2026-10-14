@@ -36,6 +36,7 @@
 (define-module (playnet observation account)
   #:use-module (goblins)
   #:use-module (playnet algorithms elastic)   ; the credit identity's arithmetic over cells
+  #:use-module ((playnet algorithms free-time) #:select (free-time-fraction))   ; free time, stated once
   #:use-module (goblins actor-lib methods)
   #:use-module (goblins utils hashmap)
   #:use-module (srfi srfi-1)
@@ -642,12 +643,10 @@
    time f = 1 − ΣL_p / (N·PER-CITIZEN-HOURS): the realized reading over a
    household's own declared members, which have no solve to publish an f.
    A scope's voice reads the plan's own f (`current-social-free-time`); this
-   shares its form with `social-free-time-of`, the realized reading of a
-   scope tree."
-  (let* ((L  (fold (lambda (m a) (+ a (third m))) 0 members))
-         (n  (length members))
-         (nt (* n per-citizen-hours)))
-    (if (<= nt 0) 0 (max 0 (min 1 (- 1 (/ L nt)))))))
+   states it by the same `free-time-fraction` as `social-free-time-of`, the
+   realized reading of a scope tree."
+  (free-time-fraction (fold (lambda (m a) (+ a (third m))) 0 members)
+                      (* (length members) per-citizen-hours)))
 
 (define* (household-consumer-voice members #:key (per-citizen-hours 40.0) (f #f))
   "MEMBERS ((person capacity hours) …): CAPACITY a_p ∈ [0,1] is the

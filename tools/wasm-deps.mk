@@ -57,6 +57,7 @@ DAY_BOOT_WASM_CLOSURE = \
 
 FAMILY_WASM_CLOSURE = \
   module/playnet/algorithms/elastic.scm \
+  module/playnet/algorithms/free-time.scm \
   module/playnet/algorithms/propagation.scm \
   module/playnet/algorithms/rollup.scm \
   module/playnet/algorithms/rollup/common.scm \
@@ -140,6 +141,7 @@ SCOPE_WASM_CLOSURE = \
   module/playnet/algorithms/correlation.scm \
   module/playnet/algorithms/deferred-acceptance.scm \
   module/playnet/algorithms/elastic.scm \
+  module/playnet/algorithms/free-time.scm \
   module/playnet/algorithms/option-composition.scm \
   module/playnet/algorithms/option-premium.scm \
   module/playnet/algorithms/propagation.scm \

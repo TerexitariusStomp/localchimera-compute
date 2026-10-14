@@ -72,6 +72,8 @@
   #:use-module ((playnet scope policy) #:select (governance-policy policy-dials))   ; the governed dials, one registry
   #:use-module ((playnet pools slack-fold)
                 #:select (^slack-node))                    ; the seventh: desire, per place
+  #:use-module ((playnet pools free-time-fold)
+                #:select (^freetime-node freetime-of))     ; the ninth: time, per person
   #:use-module ((playnet economy means-fold)
                 #:select (^means-pool wire-means-node! capacity-cells))
   #:use-module ((playnet economy demand-fold)
@@ -340,6 +342,8 @@ scope walk wherever a solve wants the scope's declared needs."
        #:observer-of   (lambda (sid) (and=> (roster-ref sid) (lambda (root) ($ root 'observer))))
        ;; the ids of the places a scope's own spatial store holds, or #f when
        ;; the roster does not know it (nothing to filter by)
+       ;; the scope a person is at home in (the home row), #f for one with no home
+       #:home-of (lambda (aid) (home-scope-of aid))
        #:own-places-of (lambda (sid)
                          (and=> (roster-ref sid)
                                 (lambda (root)
@@ -826,7 +830,7 @@ scope walk wherever a solve wants the scope's declared needs."
                   (if cached (list #:demand (car cached)) '()))))))))
     ;; ONE REPORTER over the silent-fact class — a fact standing in one layer
     ;; that another layer doesn't read stops being silent at the wiring door
-    ;; (the ten nodes themselves stand by construction: wire-scope-labour!
+    ;; (every node stands by construction: wire-scope-labour!
     ;; makes the whole record or raises):
     ;; the seed-lint: a recipe's work flow whose skill NOBODY holds is
     ;; skill-absent to every solve (the empty-schedule class) — named here,
@@ -987,15 +991,30 @@ scope walk wherever a solve wants the scope's declared needs."
   (define %uc-reading-pool (spawn ^reading-pool '() '() "uc"))
   (define (refold-readings! id)
     ($ (node-of id nodes-reading) 'reading-changed (roster-ref id) id contrary-of))
+  ;; the free-time fold: every plan that lands states the people it counts, the
+  ;; hours placed on each and the time each has; the tree keeps the newest
+  ;; statement of a person, and f is a read at any node. The UC's total is the
+  ;; one f credit and consumer voice read (algorithms/elastic.scm), published
+  ;; whenever it moves: one writer, so no plan lands "last" and wins.
+  (define %uc-freetime
+    (let ((n (spawn ^freetime-node '() '() "uc")))
+      ($ n 'set-on-update (lambda (total) (set-social-free-time! (freetime-of total))))
+      n))
   ;; the UC roots as one record: the parent of every scope declared under nothing
   (define %uc (make-scope-nodes %uc-labour-pool %uc-means-pool %uc-demand-node %uc-folksonomy
-                                %uc-credit-pool %uc-slack %uc-voice-pool %uc-reading-pool
+                                %uc-credit-pool %uc-slack %uc-voice-pool %uc-reading-pool %uc-freetime
                                 %uc-deployment %uc-allocation %uc-solve))
   ;; ── what a landed solve sets in motion, each effect named ────────────────
   ;; the slack fold hears the solve: this scope's node refolds its cells
   (define (refold-slack! sid)
     (let ((n (node-of sid nodes-slack)))
       (when n (<-np n 'slack-changed (scope-own-slack cache sid)))))
+  ;; the free-time fold hears the solve: this scope's node restates the people
+  ;; its plan counts. A plan that states none says nothing (solve-cache.scm
+  ;; scope-own-plan-time answers #f), and the cells the node holds stand.
+  (define (restate-freetime! n sid)
+    (let ((cells (scope-own-plan-time cache sid)))
+      (when (and n cells) ($ n 'freetime-changed cells))))
   ;; the presentation caller (commitment-horizon.md, the flow's step 2):
   ;; the solve's suggestions become directed offers, nearest-forcing-first,
   ;; carried to each person by the snapshot's proposed-to filter. Refusals
@@ -1102,13 +1121,10 @@ scope walk wherever a solve wants the scope's declared needs."
           (let ((root (roster-ref sid))
                 (cached (last-solve-ref cache sid)))
             (when (and root cached)
-              ;; the plan that lands for a scope declared under nothing is the
-              ;; plan that stands: its f is the one credit and voice read. A
-              ;; child's plan covers its own roster alone, and a question
-              ;; (a what-if) never lands, so neither moves it.
-              (unless (hash-ref %scope-parent sid #f)
-                (solve-effect! sid 'free-time
-                  (lambda () (publish-plan-free-time! (cdr cached)))))
+              ;; the plan that lands states its people's time; a question (a
+              ;; what-if) never lands, so it states nothing
+              (solve-effect! sid 'free-time
+                (lambda () (restate-freetime! (node-of sid nodes-freetime) sid)))
               (solve-effect! sid 'open-shifts
                 (lambda () (persist-open-shifts! root cached)))
               (solve-effect! sid 'present-offers
@@ -1235,6 +1251,12 @@ scope walk wherever a solve wants the scope's declared needs."
                (let ((rn (spawn ^reading-pool '() '() id)))
                  (wire-reading-node! root rn #:parent parent #:scope-id id
                                      #:observed-of contrary-of) rn)))
+       ;; the free-time fold: seeded from any cached solve, restated as plans land
+       (cons nodes-freetime
+             (lambda (parent)
+               (let ((ft (spawn ^freetime-node '() '() id)))
+                 (restate-freetime! ft id)
+                 (wire-fold-parent! ft parent id) ft)))
        ;; the deployment descent: the leaf lands the OWN part in this scope's
        ;; plan-store — what the routing table says is this scope's (or
        ;; nobody's: unroutable waits here rather than vanishing); with
@@ -1279,7 +1301,7 @@ scope walk wherever a solve wants the scope's declared needs."
     ;; every node hangs under the declared parent's node of its kind when
     ;; that parent is wired here, else under the UC root — the same place
     ;; move-scope! would carry it to. A root answers every store (a mock
-    ;; answers #f for one it lacks); the ten nodes are made whole from the
+    ;; answers #f for one it lacks); every node is made whole from the
     ;; specs, and the record is the fact that the scope is wired.
     (let ((parent (%standing-parent id)))
       (hash-set! %scope-parent id parent)

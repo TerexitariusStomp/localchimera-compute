@@ -15,6 +15,7 @@
   #:use-module (srfi srfi-1)
   #:use-module (goblins)
   #:use-module (playnet vf aggregation fold-node)
+  #:use-module (playnet algorithms free-time)
   #:export (credit-combine credit-monoid cell-ref credit-node? credit-cells
             %sum-kind %citizens %holders credit-context entitlement-pool svc-at gross-at
             ability-contribution ability-norm
@@ -24,16 +25,19 @@
 
 
 ;; The federation's current social free time f = 1 − Λ/(N·T), Λ the hours the
-;; standing plan commits, published when a plan lands for a root scope and by
-;; the live planner's standing plan (scope/live.scm publish-plan-free-time!);
-;; a question — a what-if, the bills — publishes nothing. Drawable credit and
-;; consumer voice read it BY DEFAULT, so the citizenship dividend flows
-;; automatically wherever a plan has landed. 0 until the first plan (or in
-;; tests), which reduces exactly to contribution by ability. The cell is one
-;; for the process: scopes declared under nothing share it. One cell behind a setter
-;; (not a parameter) so every vat/thread sees the latest published value, and
-;; the module stays declarative: no importer can inline an initial value out
-;; of a cell it reads through current-social-free-time.
+;; landed plans place and N·T the time their people have: the UC total of the
+;; free-time fold (pools/free-time-fold.scm), published when it moves
+;; (set-social-free-time!), and by the live planner's standing plan when it
+;; stands alone (scope/live.scm). A question — a what-if, the bills — states
+;; nothing. Drawable credit and consumer voice read it BY DEFAULT, so the
+;; citizenship dividend flows automatically wherever a plan has landed. 0 until
+;; the first plan (or in tests), which reduces exactly to contribution by
+;; ability. The federation's, as credit is: every credit read goes over the whole
+;; roster (doors/service.scm credit-roots), so one f is the right f for all of
+;; them. One cell behind a setter (not a parameter) so every vat/thread sees
+;; the latest published value, and the module stays declarative: no importer
+;; can inline an initial value out of a cell it reads through
+;; current-social-free-time.
 (define %social-free-time (vector 0))
 (define (current-social-free-time) (vector-ref %social-free-time 0))
 (define (set-social-free-time! f)
@@ -153,10 +157,9 @@
    labour the cells hold, N the citizens, T PER-CITIZEN-HOURS; 0 when N·T ≤ 0
    or labour fills it. This is not the f that governs: credit and voice read the
    plan's own f (`current-social-free-time`, published by each solve from the
-   hours the plan commits), and this reading stands only where a caller passes
+   hours the plan places), and this reading stands only where a caller passes
    a horizon (`social-free-time-for`)."
-  (let* ((L (svc-at cells #f)) (n (length (%citizens cells))) (nt (* n per-citizen-hours)))
-    (if (<= nt 0) 0 (max 0 (min 1 (- 1 (/ L nt)))))))
+  (free-time-fraction (svc-at cells #f) (* (length (%citizens cells)) per-citizen-hours)))
 (define (%holders cells)             ; every account holder, person or not
   (filter-map (lambda (c) (and (eq? (caar c) 'gross) (cdar c))) cells))
 

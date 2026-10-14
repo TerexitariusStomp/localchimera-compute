@@ -63,7 +63,7 @@
   #:use-module ((playnet knowledge catalogues diets)    ; what a person will not eat: the eat recipe's one predicate
                 #:select (diet-tags eats?))
   #:declarative? #f                           ; we (primitive-)load the engine at module init
-  #:export (solve-with-readers scope-world scope-program? scope-program-resources scope-program-agents scope-program-spatials scope-program-procs scope-program-flows scope-program-world plan-scope practice-view-of plan-scope->alist plan-scope->plan scope-bills publish-plan-free-time! scope-consumption scope-food-specs agent->subsistence-ctx profile-tag? scope-composition recipe-derived-contains persist-materialized! materialize-willing! gather-recipes scope-labour? scope-resource-specs
+  #:export (solve-with-readers scope-world scope-program? scope-program-resources scope-program-agents scope-program-spatials scope-program-procs scope-program-flows scope-program-world plan-scope practice-view-of plan-scope->alist plan-scope->plan scope-bills plan-without-person-time scope-consumption scope-food-specs agent->subsistence-ctx profile-tag? scope-composition recipe-derived-contains persist-materialized! materialize-willing! gather-recipes scope-labour? scope-resource-specs
             work-intent clear-intents-by-prefix! lot-of? scope-persons spec-unit planned-row plan->rows plan-map-flows held-commitment met-quantity arriving-lots
             find-recipe-process-for-spec mode-process-for-manner trip-manner-of scope-manners
              ;; the cross-vat federation bridge (engine + solve/federation-solve.scm), re-exported
@@ -1812,9 +1812,19 @@
              (cons (car kv) (map (lambda (x) (f (car kv) x)) (cdr kv)))
              kv))
        plan))
+(define (plan-without-person-time plan)
+  "PLAN with the per-person block left out of its social ledger. The solve
+   states each person's planned and offered hours so the service can count
+   them at their home (doors/planner/solve-cache.scm); the names stay inside
+   the solve and never ride the plan out."
+  (map (lambda (kv)
+         (if (and (pair? kv) (eq? (car kv) 'social) (list? (cdr kv)))
+             (cons 'social (filter (lambda (s) (not (and (pair? s) (eq? (car s) 'by-person)))) (cdr kv)))
+             kv))
+       plan))
 (define (plan->rows plan)
-  "PLAN as it leaves the process: every planned flow its row."
-  (plan-map-flows planned-row plan))
+  "PLAN as it leaves the process: every planned flow its row, no person's time named."
+  (plan-without-person-time (plan-map-flows planned-row plan)))
 (define (held-commitment m scope-id)
   "The commitment the scope SCOPE-ID holds for the plan's material flow M, under the plan's
    own id. Events name the bare spec; the stage and state are the lot's."
@@ -1842,12 +1852,12 @@
 
 (define (publish-plan-free-time! plan)
   "Publish PLAN's social free time f, the one drawable credit and consumer voice
-   read by default (account.scm), so the citizenship dividend flows wherever a
-   plan stands; before any plan stands f=0. Called where a plan LANDS — the
-   service's root scopes, the live planner's standing plan — and nowhere a plan
-   is only asked for: a what-if, the three bills and a dilemma's horns answer
-   and leave f as the standing plan set it. A plan with no social block (a
-   federated row) says nothing of f."
+   read by default (account.scm). The live planner's standing plan stands alone,
+   with no service and no fold above it, so it states its own f here. Under a
+   service f is the free-time fold's UC total (pools/free-time-fold.scm), many
+   plans' people in one read; and a plan that is only asked for — a what-if,
+   the three bills, a dilemma's horn — publishes nothing. A plan with no social
+   block (a federated row) says nothing of f."
   (let ((social (assq-ref plan 'social)))
     (and (pair? social)
          (let ((f (assq-ref social 'free-time)))

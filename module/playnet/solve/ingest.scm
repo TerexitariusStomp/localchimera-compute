@@ -1095,7 +1095,13 @@
                                       (h (if d (min offer d) offer)))   ; the offer kept inside what the body leaves
                                  (and p (> h 0.0) (list a (cell p t) h))))
                              rows)))
-    (set! *disposable-total* (fold + 0.0 (filter-map caddr rows)))
+    (set! *disposable*                              ; ((id . hours) …) in roster order: each person's disposable time over the periods
+          (reverse (fold (lambda (row acc)
+                           (let ((id (agent-id (car row))) (d (caddr row)))
+                             (cond ((not d) acc)
+                                   ((assoc id acc) => (lambda (hit) (acons id (+ (cdr hit) d) (alist-delete id acc))))
+                                   (else (acons id (+ 0.0 d) acc)))))
+                         '() rows)))
     (if per-agent?
         (declare-workers! (map (lambda (e) (list (agent-id (car e)) (agent-skills (car e)) (cadr e) (caddr e)))
                                (reverse labour))    ; the order the old cons loop left them in

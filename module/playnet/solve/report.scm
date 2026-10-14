@@ -15,6 +15,7 @@
   #:use-module (playnet vf formulas flows)
   #:use-module ((playnet algorithms rollup fixpoint) #:select (crystallize))
   #:use-module (playnet solve world)
+  #:use-module ((playnet algorithms free-time) #:select (free-time-fraction))   ; free time, stated once
   #:use-module (srfi srfi-1)
   #:use-module (ice-9 format)
   #:use-module ((playnet solve voice-field) #:select (voice-labform voice-report))
@@ -429,10 +430,15 @@
                                   (mi-proc it) (vector-ref it 4) (vector-ref it 6) (vector-ref it 7))))
            (topo-order (reverse items))))))
 
-(define (worker-available)                  ; N·T: the people's disposable time when rest is reserved, else Σ each agent's offered hours, once
-  (if (> *disposable-total* 1e-9)
-      *disposable-total*
-      (fold (lambda (w a) (+ a (cadddr w))) 0.0 *workers*)))
+(define (person-offered)                    ; ((id . hours) …): each person's time — what the body leaves when rest is reserved, else the hours offered
+  (if (> (fold + 0.0 (map cdr *disposable*)) 1e-9)
+      *disposable*
+      (reverse (fold (lambda (w acc)
+                       (let ((hit (assoc (car w) acc)))
+                         (acons (car w) (+ (cadddr w) (if hit (cdr hit) 0.0)) (if hit (alist-delete (car w) acc) acc))))
+                     '() *workers*))))
+(define (worker-available)                  ; N·T: the people's time, Σ person-offered
+  (fold + 0.0 (map cdr (person-offered))))
 ;; ── ABSTRACT side: the PULLS are the dual of the plan ─────────────────────────
 ;; ── (labour pulls λ + material/eco pulls μ) + embodied labour + free-time ─────
 ;; A post-solve pass — no solver change. At the central-path optimum EVERY
@@ -493,16 +499,33 @@
 ;; itself as productive. A transparent plan has no such sphere: transport is simply the real
 ;; labour-cost of a spatially-distributed society — a different recipe cost, not waste.)
 ;; w|… is direct labour (the 1·x) + the transport hours to reach the work (the (hc−1)·x); T|… is training.
-(define (worker-ledger x idx)
-  (let ((direct 0.0) (transport 0.0) (train 0.0))
-    (for-each (lambda (b)
-      (for-each (lambda (e)
-        (let* ((key (car e)) (hc (caddr e)) (i (hash-ref idx key #f)) (xv (if i (vector-ref x i) 0.0)))
-          (cond ((worker-col? key) (set! direct (+ direct xv)) (set! transport (+ transport (* (- hc 1.0) xv))))
-                ((train-col? key) (set! train (+ train (* hc xv)))))))
-        (cadddr b)))
-      *supplier-bundles*)
-    (list direct transport train)))
+(define (person-ledger x idx)               ; ((id direct transport training) …): each person's planned hours, over all their bundles (one per period)
+  (reverse
+   (fold (lambda (b acc)
+           (if (not (list-ref b 4))
+               acc                          ; a means' bundle is no person's time
+               (let ((direct 0.0) (transport 0.0) (train 0.0) (id (car b)))
+                 (for-each (lambda (e)
+                   (let* ((key (car e)) (hc (caddr e)) (i (hash-ref idx key #f)) (xv (if i (vector-ref x i) 0.0)))
+                     (cond ((worker-col? key) (set! direct (+ direct xv)) (set! transport (+ transport (* (- hc 1.0) xv))))
+                           ((train-col? key) (set! train (+ train (* hc xv)))))))
+                   (cadddr b))
+                 (let ((hit (assoc id acc)))
+                   (acons id (if hit
+                                 (list (+ direct (cadr hit)) (+ transport (caddr hit)) (+ train (cadddr hit)))
+                                 (list direct transport train))
+                          (if hit (alist-delete id acc) acc))))))
+         '() *supplier-bundles*)))
+(define (worker-ledger x idx)               ; the three ledgers over every person: the sum of person-ledger
+  (let ((rows (person-ledger x idx)))
+    (list (fold + 0.0 (map cadr rows)) (fold + 0.0 (map caddr rows)) (fold + 0.0 (map cadddr rows)))))
+(define (person-time x idx)                 ; ((id planned offered) …): every person the plan counts, planned = direct + transport + training
+  (let* ((offered (person-offered)) (ledger (person-ledger x idx))
+         (ids (append (map car offered) (filter-map (lambda (r) (and (not (assoc (car r) offered)) (car r))) ledger))))
+    (map (lambda (id)
+           (let ((l (assoc id ledger)) (o (assoc id offered)))
+             (list id (if l (+ (cadr l) (caddr l) (cadddr l)) 0.0) (if o (cdr o) 0.0))))
+         ids)))
 ;; the social-individual accounting (L, N·T, free time f) as one block — read
 ;; off x through IDX, which is what lets the ROBUST report reuse it: the
 ;; scenario-0 view maps the same canonical column keys to the extensive form's
@@ -511,12 +534,13 @@
   (let* ((ldg (worker-ledger x idx))                            ; (direct transport training)
          (Lp (car ldg)) (transport (cadr ldg)) (train (caddr ldg))
          (spent (+ Lp transport train)) (avail (worker-available))   ; ALL hours drawn from people's budgets
-         (f (if (> avail 1e-9) (- 1.0 (/ spent avail)) 1.0)))
+         (f (free-time-fraction spent avail)))
     `((direct-labour     . ,Lp)                ; labour directly making goods (its SNLT lands in the products)
       (transport         . ,transport)        ; the real labour of moving people/things to where they're needed — a genuine cost of spatial distribution, accounted like any other (NOT "overhead")
       (training          . ,train)            ; labour-power formation (amortised into skilled value)
       (available         . ,avail)            ;   N·T: disposable time when rest is reserved, else the hours offered
       (free              . ,(- avail spent))   ;   the realm of freedom: N·T − every hour committed to the plan
+      (by-person         . ,(person-time x idx)) ;   ((id planned offered) …): the same ledger per person, summing to spent and available
       (free-time         . ,f))))              ;   f = 1 − (direct + transport + training)/(N·T)
 ;;; LEGAL EXPOSURE, readable off the plan. A frag form is anonymous — `(frag
 ;;; const coeffs w)` carries no identity, so in the objective a legal tension is

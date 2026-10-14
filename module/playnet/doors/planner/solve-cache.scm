@@ -16,7 +16,7 @@
   #:use-module ((playnet doors service provenance-trace) #:select (make-pull-of))
   #:use-module ((playnet observation account) #:select (claim-fulfillments claim-commitment fulfillment-remaining))
   #:use-module ((playnet observation states) #:select (fulfillment-state-commitment-id))
-  #:use-module ((playnet scope live) #:select (held-commitment plan->rows plan-map-flows))
+  #:use-module ((playnet scope live) #:select (held-commitment plan->rows plan-map-flows plan-without-person-time))
   #:use-module ((playnet solve engine) #:select (key-spec spec-base))
   #:use-module ((playnet solve ingest) #:select (stock-vocabulary resource-window-hours))
   #:use-module ((playnet solve externality) #:select (marginal-rows note-solve))
@@ -25,7 +25,7 @@
   #:use-module ((playnet vf formulas flows) #:select (row-action row-id row-place row-quantity row-run row-spec row-when))
   #:use-module ((playnet vf schemas) #:select (commitment-id))
   #:use-module ((playnet vf serdes) #:select (vf-deserialize vf-serialize))
-  #:use-module ((srfi srfi-1) #:select (find))
+  #:use-module ((srfi srfi-1) #:select (find fold filter))
   #:use-module (srfi srfi-9)
   #:export (make-solve-cache solve-cache?
             solve-cache-on-cached set-solve-cache-on-cached!
@@ -37,7 +37,7 @@
             solve-vocabulary-of solve-at-of warm-x-of decided-of mark-solve-stale! solve-stale?
             planned-material planned-runs planned-rows planned-row-id hold-row! row-left
             cache-solve! plan-claims!
-            scope-own-slack))
+            scope-own-slack scope-own-plan-time))
 
 ;; THE LAST SOLVE, per scope: (cons demand solve-alist). A solve / plan /
 ;; materialize lands it; build-snapshot reads it so the dial shows the REAL
@@ -47,13 +47,14 @@
 ;; leaf into its own store and read from there, so "each scope touches only
 ;; its slice" holds down to storage, not only in the routing.
 (define-record-type <solve-cache>
-  (%make-solve-cache store-of observer-of own-places-of on-cached
+  (%make-solve-cache store-of observer-of own-places-of home-of on-cached
                      last-solve-fallback solve-read externality-fallback met-memo means-caps
                      warm-x decided stale-solves solve-at solve-vocab)
   solve-cache?
   (store-of      solve-cache-store-of)        ; scope-id → its plan-store, or #f
   (observer-of   solve-cache-observer-of)     ; scope-id → its observer, or #f
   (own-places-of solve-cache-own-places-of)   ; scope-id → the ids of its own places, or #f when unknown
+  (home-of       solve-cache-home-of)         ; person id → the id of the scope they are at home in, or #f
   (on-cached     solve-cache-on-cached set-solve-cache-on-cached!)   ; scope-id → …, what a landed plan sets in motion
   (last-solve-fallback solve-cache-last-solve-fallback)   ; scope-id → (demand . plan), for a store that cannot hold the row
   (solve-read    solve-cache-solve-read)      ; scope-id → (stored . plan): the read kept per stored value
@@ -67,10 +68,11 @@
   (solve-vocab   solve-cache-solve-vocab))    ; scope-id → the goods the last solve read stock against
 
 (define* (make-solve-cache #:key (store-of (lambda (sid) #f)) (observer-of (lambda (sid) #f))
-                           (own-places-of (lambda (sid) #f)))
+                           (own-places-of (lambda (sid) #f)) (home-of (lambda (aid) #f)))
   "A cache over one service's roster: STORE-OF, OBSERVER-OF and OWN-PLACES-OF
-   answer for a scope the service knows, #f otherwise."
-  (%make-solve-cache store-of observer-of own-places-of #f
+   answer for a scope the service knows, #f otherwise; HOME-OF names the scope
+   a person is at home in, #f for one with no home."
+  (%make-solve-cache store-of observer-of own-places-of home-of #f
                      (make-hash-table) (make-hash-table) (make-hash-table) (make-hash-table) (make-hash-table)
                      (make-hash-table) (make-hash-table) (make-hash-table) (make-hash-table) (make-hash-table)))
 
@@ -261,7 +263,8 @@
    from it, stand its claims, note its externalities, and tell the service.
    Answers the plan as it leaves the process."
   (let* ((xrow  (assq 'x alist))
-         (alist (if xrow (assq-remove! (list-copy alist) 'x) alist)))
+         (alist (if xrow (assq-remove! (list-copy alist) 'x) alist))
+         (alist (plan-with-own-time cache scope-id alist)))
     (when (and scope-id (list? demand))
       ;; a plan that is NOT a plan warms nothing: a certificate that refused
       ;; the point (feasible? #f — phase-I's exterior start handed back) would
@@ -346,3 +349,35 @@
                     (solve-part cached 'material))
           (append (hash-map->list (lambda (p q) (cons (cons 'want p) q)) want)
                   (hash-map->list (lambda (p q) (cons (cons 'met p) q)) met))))))
+
+;; the plan's time, counted where the people are at home. The solve states each
+;; person's planned and offered hours (solve/report.scm by-person); a person is
+;; counted once, at the scope they are at home in (the home rule, one home per
+;; person: doors/service.scm home-scope-of), so a plan that places a visitor, or
+;; a parent's plan that places its children's people, leaves them to their own
+;; scope. What the plan then carries is two nameless sums, (plan-time (planned
+;; . P) (offered . O)), and the names stay inside the solve. A plan with no
+;; per-person block says nothing of time and is returned as it came.
+(define (plan-with-own-time cache scope-id alist)
+  (let* ((social (assq-ref alist 'social))
+         (by-person (and (pair? social) (assq 'by-person social))))
+    (if (not by-person)
+        alist
+        (let* ((home-of (solve-cache-home-of cache))
+               (mine (filter (lambda (r) (equal? (home-of (car r)) scope-id)) (cdr by-person))))
+          (acons 'plan-time
+                 `((planned . ,(fold + 0.0 (map cadr mine))) (offered . ,(fold + 0.0 (map caddr mine))))
+                 (plan-without-person-time alist))))))
+
+;; one scope's OWN plan-time cells off its cached solve — (planned . *) and
+;; (offered . *), the hours its plan places on the people at home here and the
+;; time they have, summed nameless (the keyed sum of pools/free-time-fold.scm).
+;; #f when the plan states no time (a federated row carries materials and
+;; crossings only): a row's silence is not a statement, so the cells the scope
+;; already holds stand.
+(define (scope-own-plan-time cache scope-id)
+  (let* ((cached (last-solve-ref cache scope-id))
+         (time (and cached (assq-ref (cdr cached) 'plan-time))))
+    (and time
+         (list (cons '(planned . *) (assq-ref time 'planned))
+               (cons '(offered . *) (assq-ref time 'offered))))))

@@ -52,6 +52,8 @@
        (and (> f-standing 0) (< (abs (- f-standing (free-time-of standing))) 1e-9)))
 (check "the what-if is a different plan with a different f (the question is real)"
        (> (abs (- (free-time-of what-if) f-standing)) 1e-6))
+(check "a plan leaves the process naming no person's time"
+       (and (not (assq 'by-person (assq-ref standing 'social))) (not (assq 'by-person (assq-ref what-if 'social)))))
 (check "a what-if solve leaves the published f where the standing plan put it"
        (< (abs (- f-after f-standing)) 1e-9))
 (check "the three bills leave it there too"

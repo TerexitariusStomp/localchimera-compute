@@ -1,54 +1,100 @@
-;;; test-free-time-publication.scm — f is published where a root plan lands.
+;;; test-free-time-publication.scm — f is the federation's, read off the fold.
 ;;;
-;;; The service publishes the plan's social free time when a plan LANDS for a
-;;; scope declared under nothing (a root). A what-if brief stands for nothing and
-;;; a child scope's plan covers its own roster alone, so neither moves the f that
-;;; credit and consumer voice read.
+;;; Every plan that lands states its people's time, and the service counts each
+;;; person once, at the scope they are at home in. The scopes' nameless sums
+;;; rise through the fold, and the UC's total is the f credit and consumer voice
+;;; read. So:
+;;;   • a plan that lands states the time of the people at home in its scope;
+;;;   • a person a plan places who is at home elsewhere is counted at their home,
+;;;     once, however many plans place them; a person with no home counts nowhere;
+;;;   • two roots are one federation: their people add;
+;;;   • a child's plan counts, whether or not its root has planned;
+;;;   • a question (a what-if) never lands, and moves nothing;
+;;;   • a plan landing again restates its scope's sums, and re-delivery of the
+;;;     same plan changes nothing;
+;;;   • refederation moves a scope in the tree and leaves the federation's f
+;;;     whole: nothing lost, nothing counted twice;
+;;;   • no plan reply names a person's time, and a restarted service stands on
+;;;     what its stores hold.
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/doors/test-free-time-publication.scm
-(use-modules (playnet scope root) (playnet vf schemas)
+(use-modules (playnet test harness)
+             (playnet scope root) (playnet vf schemas)
              (playnet doors service)
              (playnet algorithms elastic)
-             (goblins) (goblins vat) (goblins utils hashmap)
-             (srfi srfi-1) (ice-9 format))
-(define *pass* 0) (define *fail* 0)
-(define (check name ok)
-  (if ok (begin (set! *pass* (+ *pass* 1)) (format #t "  ok: ~a~%" name))
-      (begin (set! *fail* (+ *fail* 1)) (format #t "  FAIL: ~a~%" name))))
-(define (near? a b) (< (abs (- a b)) 1e-9))
-(define (kw-ref kws k)
-  (let loop ((l kws)) (cond ((null? l) #f) ((eq? (car l) k) (cadr l)) (else (loop (cdr l))))))
+             ((playnet vf facts person-facts) #:select (home-row))
+             ((playnet utils keywords) #:select (kw-ref))
+             (goblins) (goblins vat) (goblins utils hashmap))
 
-;; the plan's f by who asks: the root 0.30, the child 0.80, any what-if 0.95
+(define (near? a b) (< (abs (- a b)) 1e-9))
+
+;; who is at home where: ada and bo at R, dan at R2, cy at C; eve nowhere
+(define homes '(("ada" . "R") ("bo" . "R") ("dan" . "R2") ("cy" . "C")))
+
+;; what each scope's plan places, naming people from other homes too: R's plan
+;; places cy, who is at home in C, and eve, who has no home; C's plan places ada.
+;; R's planned hours for ada are a variable so a plan can land again with new ones.
+(define r-planned 6.0)
+(define (people-of sid what-if?)
+  (cond ((equal? sid "R")  (if what-if? '(("ada" 8.0 8.0) ("bo" 8.0 8.0))
+                               `(("ada" ,r-planned 8.0) ("bo" 2.0 8.0) ("cy" 7.0 8.0) ("eve" 8.0 8.0))))
+        ((equal? sid "R2") '(("dan" 8.0 8.0)))
+        (else              '(("cy" 1.0 8.0) ("ada" 3.0 8.0)))))       ; C
+
 (define (stub-plan-fn root sid . kw)
-  (let ((f (cond ((pair? (kw-ref kw #:demand)) 0.95)
-                 ((equal? sid "C") 0.80)
-                 (else 0.30))))
-    `((met . 1.0) (feasible . #t) (x . #(1.0 2.0 3.0)) (intend) (work) (material)
-      (social . ((free-time . ,f))))))
+  `((met . 1.0) (feasible . #t) (x . #(1.0 2.0 3.0)) (intend) (work) (material)
+    (social . ((by-person . ,(people-of sid (pair? (kw-ref kw #:demand))))))))
+
+(define (home! root aid) ($ ($ root 'plan-store) 'set-meta (home-row aid) '((home . #t))))
 
 (set-social-free-time! 0)
-(define vat (spawn-vat #:name "free-time-publication"))
-(with-vat vat
+(define roots '())                         ; ((id . scope-root) …), spawned in the vat below
+(with-vat (spawn-vat #:name "free-time-publication")
   (let* ((svc   (spawn ^planner-service (hashmap) stub-plan-fn))
-         (root  (spawn-scope-root "R"))
-         (child (spawn-scope-root "C")))
-    ($ svc 'add-scope! "R" root)
-    ($ svc 'add-scope! "C" child)
+         (root  (lambda (sid) (assoc-ref roots sid)))
+         (f     current-social-free-time))
+    (set! roots (map (lambda (sid) (cons sid (spawn-scope-root sid))) '("R" "R2" "C")))
+    (for-each (lambda (h) (home! (root (cdr h)) (car h))) homes)
+    (for-each (lambda (sid) ($ svc 'add-scope! sid (root sid))) '("R" "R2" "C"))
     ($ svc 'move-scope! "C" "R")
-    (check "before any solve f is 0" (near? (current-social-free-time) 0))
+    (check "before any plan lands f is 0" (near? (f) 0))
 
-    (display "\n── a root plan lands: f is published ──\n")
-    ($ svc 'solve "R" '())
-    (check "the landed root plan's f is the published f" (near? (current-social-free-time) 0.30))
+    (display "\n── a plan lands: it states the time of the people at home here ──\n")
+    (let ((r ($ svc 'solve "R" '())))
+      (check "R counts ada and bo, not cy (at home in C) nor eve (at home nowhere): f = 1 − 8/16" (near? (f) 0.5))
+      (check "the reply names no person's time"
+             (not (assq 'by-person (assq-ref (cdr r) 'social)))))
 
     (display "\n── a question stands for nothing ──\n")
     ($ svc 'solve-brief "R" '((demand . (("soup" "town" 0 5.0)))))
-    (check "a what-if brief leaves f where the root plan put it" (near? (current-social-free-time) 0.30))
+    (check "a what-if brief leaves f where the landed plan put it" (near? (f) 0.5))
 
-    (display "\n── a child's plan covers its own roster ──\n")
+    (display "\n── two roots are one federation ──\n")
+    ($ svc 'solve "R2" '())
+    (check "R2's dan adds to R's people: f = 1 − 16/24" (near? (f) (- 1.0 (/ 16.0 24.0))))
+
+    (display "\n── a child's plan counts, and a person is counted once ──\n")
     ($ svc 'solve "C" '())
-    (check "a child scope's landed plan leaves f alone" (near? (current-social-free-time) 0.30))))
+    (check "cy at C adds, and ada, placed by C but at home in R, is not counted twice: f = 1 − 17/32"
+           (near? (f) (- 1.0 (/ 17.0 32.0))))
 
-(format #t "~%~a passed, ~a failed~%" *pass* *fail*)
-(exit (if (zero? *fail*) 0 1))
+    (display "\n── refederation leaves f whole ──\n")
+    ($ svc 'move-scope! "C" "R2")
+    (check "C moved under R2: nothing lost, nothing counted twice" (near? (f) (- 1.0 (/ 17.0 32.0))))
+    ($ svc 'move-scope! "C" #f)
+    (check "C moved to the top: the same" (near? (f) (- 1.0 (/ 17.0 32.0))))
+
+    (display "\n── a plan landing again restates its scope's sums ──\n")
+    ($ svc 'solve "R" '())
+    (check "the same plan re-delivered changes nothing" (near? (f) (- 1.0 (/ 17.0 32.0))))
+    (set! r-planned 2.0)
+    ($ svc 'solve "R" '())
+    (check "R's new plan places 2 h on ada: f = 1 − 13/32" (near? (f) (- 1.0 (/ 13.0 32.0))))
+
+    (display "\n── a restarted service stands on what its stores hold ──\n")
+    (set-social-free-time! 0)
+    (let ((svc2 (spawn ^planner-service (hashmap) stub-plan-fn)))
+      (for-each (lambda (sid) ($ svc2 'add-scope! sid (root sid))) '("R" "R2" "C"))
+      (check "the landed plans' sums seed f again, no solve run" (near? (f) (- 1.0 (/ 13.0 32.0)))))))
+
+(test-summary!)

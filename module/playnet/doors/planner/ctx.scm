@@ -34,7 +34,7 @@
   #:use-module (playnet protocol context)
   #:export (make-planner-ctx planner-ctx? with-planner-ctx planner-ctx-install!
             make-scope-nodes scope-nodes? nodes-labour nodes-means nodes-demand nodes-folksonomy nodes-credit nodes-slack
-            nodes-voice nodes-reading nodes-deployment nodes-allocation nodes-solve %fold-kinds %descent-kinds
+            nodes-voice nodes-reading nodes-freetime nodes-deployment nodes-allocation nodes-solve %fold-kinds %descent-kinds
             planner-ctx-ph-ok? planner-ctx-witness-door planner-ctx-solve-vat
             planner-ctx-re-stand planner-ctx-cache planner-ctx-roster-ref
             planner-ctx-roster-entries planner-ctx-roster-add! planner-ctx-roster-forget!
@@ -162,18 +162,18 @@
   debts-of owed-of settle-of may-steward-of lent-of knows-of pool-of contrary-of)
 
 ;; ── every node a scope stands up, as one record ────────────────────────────
-;; Eight folds and three descents; a scope has all eleven from the moment it is
+;; Nine folds and three descents; a scope has all twelve from the moment it is
 ;; wired, the UC roots are one such record, and every read, reparent and
 ;; wiring walks the record's fields. Wired ⇔ the record exists.
 (define-record-type <scope-nodes>
-  (make-scope-nodes labour means demand folksonomy credit slack voice reading deployment allocation solve)
+  (make-scope-nodes labour means demand folksonomy credit slack voice reading freetime deployment allocation solve)
   scope-nodes?
   (labour nodes-labour) (means nodes-means) (demand nodes-demand) (folksonomy nodes-folksonomy)
-  (credit nodes-credit) (slack nodes-slack) (voice nodes-voice) (reading nodes-reading)
+  (credit nodes-credit) (slack nodes-slack) (voice nodes-voice) (reading nodes-reading) (freetime nodes-freetime)
   (deployment nodes-deployment) (allocation nodes-allocation) (solve nodes-solve))
 ;; each kind by its name, the name the fold's two doors carry (standing.scm:
 ;; `credit-uc` reads the root, `credit` one scope's node)
 (define %fold-kinds `((labour . ,nodes-labour) (means . ,nodes-means) (demand . ,nodes-demand)
                       (folksonomy . ,nodes-folksonomy) (credit . ,nodes-credit) (slack . ,nodes-slack)
-                      (voice . ,nodes-voice) (reading . ,nodes-reading)))
+                      (voice . ,nodes-voice) (reading . ,nodes-reading) (freetime . ,nodes-freetime)))
 (define %descent-kinds `((deployment . ,nodes-deployment) (allocation . ,nodes-allocation) (solve . ,nodes-solve)))
