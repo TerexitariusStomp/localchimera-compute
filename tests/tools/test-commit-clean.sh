@@ -10,6 +10,9 @@
 #   STOPS     the moved HEAD changed the same lines: the tool stops, main is where the other
 #             commit left it, and nothing of ours is committed
 #   REFUSES   a message carrying an attribution trailer; a tree whose gate fails
+#   COMPILED  a change drops the compiled files of the module and of every module that imports it
+#             (Guile trusts a .go whose own source is not newer, and an inlined macro or record
+#             reaches importers without touching their source), and keeps the unrelated ones
 #   WORKTREE  run from a worktree of the session's own (detached, based where its work began),
 #             --branch names where the commit lands: merged onto that branch's tip as it stands
 #
@@ -27,7 +30,7 @@ fresh_repo() {                       # → a repo with a.txt, b.txt committed on
   git -C "$R" add a.txt b.txt; git -C "$R" commit -q -m base
   echo "$R" > /dev/null
 }
-tool() { (cd "$R" && python3 "$TOOL" "$@" --gate-wt "$R-gate" --emit-cmd true --boot-cmd true 2>&1); }
+tool() { (cd "$R" && python3 "$TOOL" "$@" --gate-wt "$R-gate" --warm-cmd true --emit-cmd true --boot-cmd true 2>&1); }
 
 echo; echo "── LANDS: the named files and no others ──"
 fresh_repo
@@ -80,6 +83,23 @@ check "the tool exits non-zero" "$(echo "$out" | tail -1)" "exit=1"
 check "main is where the other commit left it" "$(git -C "$R" log -1 --format=%s)" "other session"
 check "a.txt there is theirs" "$(git -C "$R" show HEAD:a.txt | sed -n 2p)" "DEUX"
 
+echo; echo "── COMPILED: a changed module's importers lose their compiled files, the unrelated keep theirs ──"
+fresh_repo
+mkdir -p "$R/module/playnet"
+printf '(define-module (playnet a) #:export (f))\n(define (f) 1)\n' > "$R/module/playnet/a.scm"
+printf '(define-module (playnet b) #:use-module (playnet a))\n' > "$R/module/playnet/b.scm"
+printf '(define-module (playnet c) #:export (g))\n(define (g) 1)\n' > "$R/module/playnet/c.scm"
+git -C "$R" add module; git -C "$R" commit -q -m "modules"
+G="$R-gate"; CACHE="$R-cache"
+git -C "$R" worktree add -q --detach "$G" main
+GR="$(cd "$G" && pwd -P)"
+for m in a b c; do mkdir -p "$CACHE/ccache$GR/module/playnet"; : > "$CACHE/ccache$GR/module/playnet/$m.scm.go"; done
+printf '(define-module (playnet a) #:export (f))\n(define (f) 2)\n' > "$R/module/playnet/a.scm"
+echo "a: change" > "$R/msg"
+out="$(tool "$R/msg" module/playnet/a.scm --gate --gate-cmd true --cache-root "$CACHE"; echo "exit=$?")"
+check "the tool exits 0" "$(echo "$out" | tail -1)" "exit=0"
+check "a.go (changed) and b.go (imports a) are gone, c.go (unrelated) stays" "$(ls "$CACHE/ccache$GR/module/playnet" | tr '\n' ' ')" "c.scm.go "
+
 echo; echo "── WORKTREE: a session's own worktree commits onto main, merged with what landed there ──"
 fresh_repo
 W="$R-mine"; git -C "$R" worktree add -q --detach "$W" main
@@ -89,7 +109,7 @@ t=$(mktemp -d); git -C "$R" worktree add -q --detach "$t" main
 printf 'alpha\nbeta\nGAMMA\n' > "$t/b.txt"; git -C "$t" add b.txt; git -C "$t" commit -q -m "other session"
 git -C "$R" update-ref refs/heads/main "$(git -C "$t" rev-parse HEAD)"; git -C "$R" worktree remove --force "$t"
 echo "a: change" > "$R/msg"
-out="$(cd "$W" && python3 "$TOOL" "$R/msg" a.txt --gate --branch refs/heads/main --gate-wt "$R-gate" --emit-cmd true --boot-cmd true --gate-cmd true 2>&1; echo "exit=$?")"
+out="$(cd "$W" && python3 "$TOOL" "$R/msg" a.txt --gate --branch refs/heads/main --gate-wt "$R-gate" --warm-cmd true --emit-cmd true --boot-cmd true --gate-cmd true 2>&1; echo "exit=$?")"
 check "the tool exits 0" "$(echo "$out" | tail -1)" "exit=0"
 check "main holds both: ours on top of the other session's" "$(git -C "$R" log --format=%s -3 refs/heads/main | tr '\n' ',')" "a: change,other session,base,"
 check "b.txt keeps the other session's change" "$(git -C "$R" show refs/heads/main:b.txt | tail -1)" "GAMMA"

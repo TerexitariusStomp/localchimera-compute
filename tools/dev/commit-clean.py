@@ -3,7 +3,7 @@
 
     tools/dev/commit-clean.py MSGFILE [PATH…] [--exclude REGEX]… [--untracked-ok] [--dry-run]
     tools/dev/commit-clean.py --gate MSGFILE PATH… [--emit] [--baseline FILE] [--gate-cmd CMD]
-                              [--emit-cmd CMD] [--boot-cmd CMD] [--gate-wt DIR] [--branch REF]
+                              [--warm-cmd CMD] [--emit-cmd CMD] [--boot-cmd CMD] [--gate-wt DIR] [--branch REF]
 
 Several sessions work in one tree and one index, so `git add` and `git commit` here
 would sweep in files another session staged. This commits whole files instead: a
@@ -59,9 +59,12 @@ GUARDED = ('module/', 'tests/', 'tools/', 'server/', 'hoot/', 'deploy/')
 IGNORED_RUNTIME = ('LICENSE.md', 'LICENSE-ADDITIONAL-TERMS.md')   # ignored by path; suites and the attribution check read them
 TRAILER = re.compile(r'^(Co-Authored-By:.*anthropic\.com|Claude-Session:\s*https://claude\.ai/(code/)?session_)', re.I | re.M)
 DEFAULT_GATE = 'make gate gate-hoot'
+DEFAULT_WARM = 'make lint-compile'     # compiles every live module, so the emits run compiled
 DEFAULT_EMIT = 'make emit-all'
 DEFAULT_BOOT = 'bash tools/test/boot-smoke.sh'
 MAX_ROUNDS = 3
+MODULE_NAME = re.compile(r'\(playnet((?: [a-z0-9*+_-]+)+)\)')
+INCLUDE = re.compile(r'include-from-path "(playnet/[^"]+\.scm)"')
 
 
 def git(*args, **kw):
@@ -172,6 +175,52 @@ def generated_drift(wt):
     return sorted({e[3:] for e in out if e and not e.startswith('!!')})
 
 
+def sweep_stale_go(wt, changed, cache_root):
+    """Drop the compiled files a change leaves stale in the gate worktree. Guile trusts a .go
+    whose own source is not newer, and a change to a macro, a record's fields or an exported
+    constructor reaches the modules that import it by being INLINED into them: their .go stays
+    "fresh" and wrong (a stale compiled demo emit made codes that no fresh run made). So the
+    .go of every changed module, and of every module that names it, goes; a tree with no
+    record of what it last held loses all of them."""
+    root = os.path.join(wt, 'module')
+    files, uses = {}, {}                  # module path → module names it names; module name → its path
+    for dirpath, _, names in os.walk(root):
+        for n in names:
+            if n.endswith('.scm'):
+                path = os.path.relpath(os.path.join(dirpath, n), wt)
+                text = open(os.path.join(wt, path), errors='replace').read()
+                files[path] = ({'playnet' + m.group(1) for m in MODULE_NAME.finditer(text)},
+                               {'module/' + m.group(1) for m in INCLUDE.finditer(text)})
+                uses['playnet ' + path[len('module/playnet/'):-4].replace('/', ' ')] = path
+    reverse = {}
+    for path, (names, includes) in files.items():
+        for name in names:
+            target = uses.get(name.replace('playnet', 'playnet', 1))
+            if target:
+                reverse.setdefault(target, set()).add(path)
+        for inc in includes:
+            reverse.setdefault(inc, set()).add(path)
+    stale = set()
+    queue = [c for c in changed if c in files or c.startswith('module/')]
+    while queue:
+        path = queue.pop()
+        if path in stale:
+            continue
+        stale.add(path)
+        queue.extend(reverse.get(path, ()))
+    found = subprocess.run(['find', cache_root, '-type', 'f', '-name', '*.go', '-path', '*' + wt.rstrip('/') + '/*'],
+                           capture_output=True, text=True).stdout.split('\n')
+    dropped = 0
+    for go in found:
+        if not go:
+            continue
+        rel = go[go.index(wt.rstrip('/')) + len(wt.rstrip('/')) + 1:-3]      # the source path the .go was made from
+        if changed is None or rel in stale or not rel.startswith('module/'):
+            os.unlink(go)
+            dropped += 1
+    return dropped
+
+
 def gated_commit(msg, paths, opts, left):
     msg_text = open(msg).read()
     if TRAILER.search(msg_text):
@@ -193,12 +242,20 @@ def gated_commit(msg, paths, opts, left):
             print(f'commit-clean: HEAD moved ({head0[:10]} → {head_now[:10]}); merged '
                   + (f'with its changes to: {" ".join(meet)}' if meet else 'cleanly (it touched none of your files)'))
         gate_commit = commit_of(tree, head_now, 'gate')
+        previous = git('-C', wt, 'rev-parse', 'HEAD').strip()
         subprocess.check_call(['git', '-C', wt, 'checkout', '-q', '-f', '--detach', gate_commit])
         subprocess.check_call(['git', '-C', wt, 'clean', '-fdq'])
+        changed_here = git('diff', '--name-only', previous, gate_commit).split()
+        dropped = sweep_stale_go(os.path.realpath(wt), changed_here, opts['cache_root'])
+        print(f'commit-clean: {len(changed_here)} file(s) changed in the gate worktree since it last held a tree; {dropped} compiled file(s) dropped')
         for name in IGNORED_RUNTIME:
             if os.path.exists(os.path.join(top, name)):
                 shutil.copy2(os.path.join(top, name), os.path.join(wt, name))
         print(f'commit-clean: round {round_}: gate worktree at {head_now[:10]} + {len(paths)} file(s); log {log}')
+        # the emits load modules with --no-auto-compile: a module with no fresh .go is INTERPRETED, and
+        # the demo recording (ids drawn in load order) differs between the two, so compile first
+        if in_worktree(wt, opts['warm_cmd'], log):
+            sys.exit(f'commit-clean: compiling the modules failed; see {log}')
         if in_worktree(wt, opts['emit_cmd'], log):
             sys.exit(f'commit-clean: the emits failed; see {log}')
         regenerated = [d for d in generated_drift(wt) if d != '.commit-clean.log']
@@ -264,9 +321,11 @@ def main(argv):
         'baseline': take_option(args, '--baseline'),
         'gate_cmd': take_option(args, '--gate-cmd', DEFAULT_GATE),
         'emit_cmd': take_option(args, '--emit-cmd', DEFAULT_EMIT),
+        'warm_cmd': take_option(args, '--warm-cmd', DEFAULT_WARM),
         'boot_cmd': take_option(args, '--boot-cmd', DEFAULT_BOOT),
         'gate_wt': take_option(args, '--gate-wt', '~/.cache/playnet/gate-wt'),
         'branch': take_option(args, '--branch'),
+        'cache_root': os.path.expanduser(take_option(args, '--cache-root', '~/.cache/guile')),
     }
     excludes = []
     while '--exclude' in args:
