@@ -189,15 +189,28 @@ function echoLived(d, qty) {
     // the block's label already names the WHAT (the skill, or "produce food");
     // the wire's own lived row carries the same, so the echo matches what the
     // next snapshot replaces it with
-    lived.push({ ...d, tier: "lived", status: undefined, vfId: undefined });
+    const row = { ...d, tier: "lived", status: undefined, vfId: undefined };
+    lived.push(row);
+    const before = { done: d.done, recorded: d.recorded };
     d.done = (d.done || 0) + qty;
     if (d.done >= askedOf(d))
         d.recorded = true;
     markDayChanged();
+    // a refusal takes the echo back: the block stands as it did, recordable again
+    return () => {
+        const i = lived.indexOf(row);
+        if (i >= 0)
+            lived.splice(i, 1);
+        d.done = before.done;
+        d.recorded = before.recorded;
+        markDayChanged();
+    };
 }
-/** Report a recording's reply: the error's own words, or the good news. */
-const reported = (good) => (r) => {
+/** Report a recording's reply: the error's own words, or the good news; a refusal undoes the echo. */
+const reported = (good, undo = () => { }) => (r) => {
     const bad = !!(r && r.startsWith("err:"));
+    if (bad)
+        undo();
     hint(bad ? r.replace(/^err:/, "") : good, bad ? "error" : "success");
 };
 /** Record QTY hours of a committed work block (default: the remainder). */
@@ -207,9 +220,9 @@ export function recordWork(d, qty) {
         return;
     }
     const q = Math.max(0.25, qty ?? remainingOf(d));
+    const undo = echoLived(d, q);
     HANDLERS.recordEffort(d.scope || "", d.vfId, String(q), "hours")
-        .then(reported("recorded — the lived layer carries it now"));
-    echoLived(d, q);
+        .then(reported("recorded — the lived layer carries it now", undo));
 }
 /** Record QTY of one schedule material row (default: what remains of it). */
 export function recordFlow(d, qty) {
@@ -218,9 +231,9 @@ export function recordFlow(d, qty) {
         return;
     }
     const q = Math.max(0.01, qty ?? remainingOf(d));
+    const undo = echoLived(d, q);
     HANDLERS.recordFlow(d.scope || "", d.action || "", d.specId || d.spec || "", String(q), String(d.qty || 1), (d.loc && d.loc.id) || "", String(d.when || ""), d.proc || "", String(d.note || ""), d.rowId || "")
-        .then(reported("recorded — the stock moved as planned"));
-    echoLived(d, q);
+        .then(reported("recorded — the stock moved as planned", undo));
 }
 /**
  * A recording verb, whole: label, tooltip, the default record, and the

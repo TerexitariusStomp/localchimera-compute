@@ -30,8 +30,10 @@ import { demoStore } from "./store.js";
 import { RECORDING } from "./recording.js";
 import { askScope, holdReplica, keptScope, replicaOf, UNAVAILABLE } from "../scope-local.js";
 import { ask, flush, QUEUED } from "../outbox.js";
+import { OFFLINE } from "../offline-doors.js";
 import { idbBox } from "../outbox-idb.js";
 import { on } from "../bus.js";
+import { toast } from "../toast.js";
 /** The snapshot standing on the seam is the demo's own. */
 export const demoSeated = () => !!seam.data.snapshot?.demo;
 /** The world's places as the wire names them, set down around the map's anchor. */
@@ -104,10 +106,13 @@ let catching = null;
 function catchUp() {
     catching ??= (async () => {
         try {
-            await flush(BOX, (door, args) => {
+            const sent = await flush(BOX, (door, args) => {
                 const spine = own.get(door);
                 return spine ? Promise.resolve(spine(...args)).then(String) : Promise.resolve("err:offline");
             });
+            // an act made offline that the gateway then refused is kept, and the person is told why
+            for (const why of sent.told)
+                toast(`made offline, and refused: ${why}`, "error");
             const scopeId = seam.scope, me = seam.data.aid;
             const replica = own.get("scopeReplica");
             const text = scopeId && me && replica ? String(await replica()) : "";
@@ -149,18 +154,18 @@ async function answer(door, args, recorded) {
     }
     return reply;
 }
-// The doors the device's scope takes, each with what the recording answers in its
-// place where the scope is the demo's and cannot run (a door asked of a stock or a
-// spec is asked of its first argument); and the doors only a gateway answers,
-// which the recording answers for the demo.
-const SCOPE_DOORS = [
-    ["countSchedule", false], ["countHistory", true], ["scopeReadings", true], ["readingsBetween", true],
-    ["mySlots", false],
-];
-const READS = new Set(SCOPE_DOORS.map(([door]) => door));
+// The doors the device's scope takes are the ones declared `#:offline` (offline-doors.ts):
+// the reads, each with what the recording answers in its place where the scope is the
+// demo's and cannot run (a door asked of a stock or a spec is asked of its first
+// argument), and the acts it lands; and the doors only a gateway answers, which the
+// recording answers for the demo.
+const OFFLINE_OF = (kind) => Object.keys(OFFLINE).filter(d => OFFLINE[d].kind === kind);
+const ASKED_OF_FIRST = new Set(["countHistory", "scopeReadings", "readingsBetween"]);
+const SCOPE_DOORS = OFFLINE_OF("read");
+const READS = new Set(SCOPE_DOORS);
 const GATEWAY_DOORS = ["contests", "allotment", "ourSlots"];
 // the acts the device's scope lands: a count, an observation, a need or an offer declared
-const ACT_DOORS = ["countStock", "declareNeed", "declareMeans", "logObserve"];
+const ACT_DOORS = OFFLINE_OF("act");
 const BOX = idbBox();
 /**
  * NAME is asked the same way with a gateway in reach or none (outbox.ts `ask`):
@@ -186,8 +191,8 @@ function deviceDoor(name, recorded) {
 }
 function placeDoors() {
     standIn("scopeReplica", spine => spine); // kept as the spine assigns it, for the catch-up
-    for (const [door, asked] of SCOPE_DOORS)
-        deviceDoor(door, args => demoStore().reply(door, asked ? String(args[0] ?? "") : ""));
+    for (const door of SCOPE_DOORS)
+        deviceDoor(door, args => demoStore().reply(door, ASKED_OF_FIRST.has(door) ? String(args[0] ?? "") : ""));
     for (const door of GATEWAY_DOORS)
         demoDoor(door, (() => Promise.resolve(demoStore().reply(door))));
     // a count lands on the device's scope where no gateway is in reach, and its books

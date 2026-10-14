@@ -156,9 +156,11 @@ SCOPE_WASM_CLOSURE = \
   module/playnet/ddmrp/records.scm \
   module/playnet/doors/count-door.scm \
   module/playnet/doors/counts.scm \
+  module/playnet/doors/effort.scm \
   module/playnet/doors/inventory.scm \
   module/playnet/doors/offers.scm \
   module/playnet/doors/page-scope.scm \
+  module/playnet/doors/record-flow.scm \
   module/playnet/doors/record-rows.scm \
   module/playnet/doors/slots.scm \
   module/playnet/execution/alerts.scm \

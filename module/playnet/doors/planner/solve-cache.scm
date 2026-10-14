@@ -13,16 +13,17 @@
 (define-module (playnet doors planner solve-cache)
   #:use-module ((goblins) #:select ($))
   #:use-module ((playnet doors plan-wire) #:select (plan-results->dial-plan solve-part))
+  #:use-module ((playnet doors record-flow) #:select (hold-row! planned-row-id row-left rows-matching))
   #:use-module ((playnet doors service provenance-trace) #:select (make-pull-of))
-  #:use-module ((playnet observation account) #:select (claim-fulfillments claim-commitment fulfillment-remaining))
+  #:use-module ((playnet observation account) #:select (claim-fulfillments claim-commitment))
   #:use-module ((playnet observation states) #:select (fulfillment-state-commitment-id))
-  #:use-module ((playnet scope live) #:select (held-commitment plan->rows plan-map-flows plan-without-person-time))
+  #:use-module ((playnet scope live) #:select (plan->rows plan-map-flows plan-without-person-time))
   #:use-module ((playnet solve engine) #:select (key-spec spec-base))
   #:use-module ((playnet solve ingest) #:select (stock-vocabulary resource-window-hours))
   #:use-module ((playnet solve externality) #:select (marginal-rows note-solve))
   #:use-module ((playnet utils clock) #:select ((now . clock-now) instant->unix iso-now))
   #:use-module ((playnet vf formulas actions) #:select (creating-actions))
-  #:use-module ((playnet vf formulas flows) #:select (row-action row-id row-place row-quantity row-run row-spec row-when))
+  #:use-module ((playnet vf formulas flows) #:select (row-action row-place row-quantity row-spec))
   #:use-module ((playnet vf schemas) #:select (commitment-id))
   #:use-module ((playnet vf serdes) #:select (vf-deserialize vf-serialize))
   #:use-module ((srfi srfi-1) #:select (find fold filter))
@@ -35,9 +36,10 @@
             met-of-scope spec-met
             means-caps-of means-cap-rows set-means-cap!
             solve-vocabulary-of solve-at-of warm-x-of decided-of mark-solve-stale! solve-stale?
-            planned-material planned-runs planned-rows planned-row-id hold-row! row-left
+            planned-material planned-runs planned-rows
             cache-solve! plan-claims!
-            scope-own-slack scope-own-plan-time))
+            scope-own-slack scope-own-plan-time)
+  #:re-export (planned-row-id hold-row! row-left))
 
 ;; THE LAST SOLVE, per scope: (cons demand solve-alist). A solve / plan /
 ;; materialize lands it; build-snapshot reads it so the dial shows the REAL
@@ -239,25 +241,8 @@
   (solve-part (last-solve-ref cache scope-id) 'runs))
 (define (planned-rows cache scope-id action spec place when-iso proc)
   "The material rows of the scope's last plan that are the row ACTION SPEC at PLACE
-   of PROC (at WHEN-ISO when one is named). What a confirmation may record is what
-   the plan states."
-  (filter (lambda (m)
-            (and (equal? (format #f "~a" (row-action m)) action)
-                 (equal? (row-spec m) spec)
-                 (equal? (or (row-place m) "") (or place ""))       ; the wire spells an absent value ""
-                 (equal? (or (row-run m) "") (or proc ""))
-                 (or (not when-iso) (equal? when-iso "") (equal? (format #f "~a" (row-when m)) when-iso))))
-          (planned-material cache scope-id)))
-(define (hold-row! obs scope-id m)
-  "Register the plan's row M as the commitment it is, under the plan's own row id: a
-   row the plan states again moves its target and keeps what was confirmed."
-  ($ obs 'register-commitment (held-commitment m scope-id)))
-;; the record-flow door names one of its arguments `row-id` (the protocol declares it);
-;; under that name the door reads a row's id by this one
-(define planned-row-id row-id)
-(define (row-left obs m)
-  "What the events fulfilling plan row M have not yet met of it."
-  (fulfillment-remaining ($ obs 'get-fulfillment (row-id m))))
+   of PROC (at WHEN-ISO when one is named): what a confirmation may record."
+  (rows-matching (planned-material cache scope-id) action spec place when-iso proc))
 (define (cache-solve! cache scope-id demand alist)
   "A plan landed for SCOPE-ID, solved for DEMAND: keep it, warm the next solve
    from it, stand its claims, note its externalities, and tell the service.

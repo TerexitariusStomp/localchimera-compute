@@ -39,7 +39,7 @@
 (define-module (playnet protocol seam)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-9)
-  #:export (%handlers handler-ref handler? handler-name handler-params handler-arity
+  #:export (%handlers handler-ref handler? handler-name handler-params handler-arity handler-param-list handler-param-name
             handler-returns handler-reply handler-doors handler-doc handler-local?
             %pushes push-ref push? push-name push-params push-sink push-wire
             push-keep push-doc
@@ -64,20 +64,27 @@
     ((_ name params returns doors doc)
      (make-handler name params returns #f 'doors doc))))
 
-;; How many arguments a handler takes: the top-level commas of its parameter list, plus one.
-;; The page's bridge pads and cuts to this (tools/lint/check-bridge-arity.scm), and a keyed
-;; door's key is the last of them (tools/emit/keyed-emit.scm).
-(define (handler-arity h)
+;; A handler's parameters, one string each: the parameter list cut at its top-level commas.
+;; The page's bridge pads and cuts to how many there are (tools/lint/check-bridge-arity.scm),
+;; a keyed door's key is the last of them (tools/emit/keyed-emit.scm), and an offline act's
+;; instant is the one its door names (tools/emit/offline-emit.scm).
+(define (handler-param-list h)
   (let ((params (handler-params h)))
-    (if (string=? params "") 0
-        (let loop ((i 0) (depth 0) (n 1))
-          (if (= i (string-length params)) n
+    (if (string=? params "") '()
+        (let loop ((i 0) (depth 0) (start 0) (acc '()))
+          (if (= i (string-length params))
+              (reverse (cons (string-trim (substring params start)) acc))
               (let ((c (string-ref params i)))
-                (loop (+ i 1)
-                      (cond ((memv c '(#\( #\[ #\{ #\<)) (+ depth 1))
-                            ((memv c '(#\) #\] #\} #\>)) (- depth 1))
-                            (else depth))
-                      (if (and (char=? c #\,) (= depth 0)) (+ n 1) n))))))))
+                (cond ((memv c '(#\( #\[ #\{ #\<)) (loop (+ i 1) (+ depth 1) start acc))
+                      ((memv c '(#\) #\] #\} #\>)) (loop (+ i 1) (- depth 1) start acc))
+                      ((and (char=? c #\,) (= depth 0))
+                       (loop (+ i 1) depth (+ i 1) (cons (string-trim (substring params start i)) acc)))
+                      (else (loop (+ i 1) depth start acc)))))))))
+(define (handler-arity h) (length (handler-param-list h)))
+(define (handler-param-name h i)
+  "The name of the I-th parameter of H, without its `?` or its type."
+  (let ((p (list-ref (handler-param-list h) i)))
+    (car (string-split (car (string-split p #\:)) #\?))))
 
 (define (handler-local? h) (null? (handler-doors h)))
 (define (handler-ref name) (find (lambda (h) (string=? (handler-name h) name)) %handlers))

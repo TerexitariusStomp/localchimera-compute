@@ -13,6 +13,8 @@
 ;;;      (playnet protocol shapes), so no emit ever guesses a type;
 ;;;   5. the seam table and day-boot's registry name the same handlers, and
 ;;;      every door a handler sends is declared;
+;;;   8. a door declared `#:offline` is sent by a seam handler, and one that stamps its
+;;;      instant names an argument that handler carries (ui/app/offline-doors.ts, generated);
 ;;;   7. a door declared `#:keyed ARG` (the act carries a token minted once per act)
 ;;;      keeps its promises: ARG is its last argument, optional, of the `id` shape,
 ;;;      and each seam handler that sends it ends its parameters with ARG, so the
@@ -187,6 +189,28 @@ the three the JS shell sets on HANDLERS itself (device key tiers/forget)."
         %handlers)))
    keyed)
   (format #t "keyed doors: ~a~%" (length keyed)))
+
+;; 8. offline doors: an act that stamps its instant names an argument its handler carries
+;; (the door spells `when-iso` where the handler says `when` or `whenIso`: a method parameter named `when` shadows the macro)
+(let ((flat (lambda (x) (let ((n (string-downcase (string-delete #\- (if (symbol? x) (symbol->string x) x)))))
+                          (if (string-suffix? "iso" n) (string-drop-right n 3) n)))))
+  (for-each
+   (lambda (d)
+     (let ((o (door-offline d)))
+       (unless (door-seam d)
+         (refuse "offline door ~a ~a is sent by no seam handler, so the page cannot ask it" (door-object d) (door-name d)))
+       (when (and (pair? o) (door-seam d))
+         (let* ((h (handler-ref (door-seam d)))
+                (entry (assoc (door-seam d) (offline-handlers)))
+                (at (caddr entry))
+                (n (handler-arity h)))
+           (cond ((not at) (refuse "offline door ~a ~a: ~a is not among its arguments" (door-object d) (door-name d) (cadr o)))
+                 ((not (and (< -1 at n) (equal? (flat (handler-param-name h at)) (flat (cadr o)))))
+                  (refuse "offline door ~a ~a: its handler ~s carries ~a at ~a, not ~a"
+                          (door-object d) (door-name d) (door-seam d)
+                          (and (< -1 at n) (handler-param-name h at)) at (cadr o))))))))
+   (doors-offline))
+  (format #t "offline doors: ~a~%" (length (doors-offline))))
 
 (if (zero? bad)
     (begin (display "protocol-lint: ok\n") (exit 0))

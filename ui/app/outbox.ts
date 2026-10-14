@@ -24,14 +24,15 @@
 // it with what it recorded and record nothing more (observation/landing.scm).
 
 import { KEYED } from "./keyed-doors.js";
+import { OFFLINE } from "./offline-doors.js";
 
-/** A door whose act waits for a gateway: the index of its instant among its arguments, or null where its ids name it. */
-export const QUEUED: Readonly<Record<string, number | null>> = {
-  countStock: 5,      // resource counted unit technique place WHEN fulfills evidence note
-  logObserve: 5,      // action spec qty unit note WHEN
-  declareNeed: null,
-  declareMeans: null,
-};
+/**
+ * A door whose act waits for a gateway: the index of its instant among its arguments, or null
+ * where its ids name it. Read off the doors declared `#:offline` (offline-doors.ts, generated),
+ * so a door is queued by declaring it and by nothing written here.
+ */
+export const QUEUED: Readonly<Record<string, number | null>> = Object.fromEntries(
+  Object.entries(OFFLINE).filter(([, d]) => d.kind === "act").map(([door, d]) => [door, d.at]));
 
 /** An act waiting for a gateway. */
 export interface Waiting {
@@ -101,7 +102,11 @@ export function stamp(door: string, args: readonly unknown[], now: Date): string
 }
 
 /** What a flush did: how many acts landed, how many a gateway refused, how many still wait. */
-export interface Flushed { landed: number; refused: number; waiting: number }
+export interface Flushed {
+  landed: number; refused: number; waiting: number;
+  /** The words of each act this flush saw refused first, for the person to be told. */
+  told: string[];
+}
 
 /**
  * Send what waits, oldest first. An act a gateway answers is dropped, or kept
@@ -111,15 +116,16 @@ export interface Flushed { landed: number; refused: number; waiting: number }
 export async function flush(box: Box, send: (door: string, args: string[]) => Promise<string>): Promise<Flushed> {
   const waiting = await box.all();
   let landed = 0, refused = 0;
+  const told: string[] = [];
   for (let i = 0; i < waiting.length; i++) {
     const [key, act] = waiting[i]!;
     if (act.refused) { refused++; continue; }            // seen and refused already: it is the person's to drop or restate
     const reply = await send(act.door, act.args);
-    if (unreached(reply)) return { landed, refused, waiting: waiting.length - landed - refused };
-    if (reply.startsWith("err:")) { await box.keep(key, { ...act, refused: reply.slice(4) }); refused++; }
+    if (unreached(reply)) return { landed, refused, waiting: waiting.length - landed - refused, told };
+    if (reply.startsWith("err:")) { await box.keep(key, { ...act, refused: reply.slice(4) }); refused++; told.push(reply.slice(4)); }
     else { await box.drop(key); landed++; }
   }
-  return { landed, refused, waiting: 0 };
+  return { landed, refused, waiting: 0, told };
 }
 
 /** The two ends a door may be asked at, and where an act waits between them. */

@@ -34,7 +34,9 @@
   #:use-module ((playnet utils envelope) #:select (success failure catch-as-failure))
   #:use-module ((playnet doors inventory) #:select (scope-inventory-wire))
   #:use-module ((playnet scope snapshot) #:select (scope-locations->wire))
-  #:use-module ((playnet scope replica) #:select (hold-replica! text->replica))
+  #:use-module ((playnet scope replica) #:select (hold-replica! text->replica replica-material replica-runs))
+  #:use-module ((playnet doors effort) #:select (do-record-effort))
+  #:use-module ((playnet doors record-flow) #:select (do-record-flow))
   #:use-module ((playnet observation log-observe) #:select (do-log-observe))
   #:use-module ((playnet doors slots)
                 #:select (declare-need-reply declare-means-reply my-slots-reply slots-at-reply))
@@ -53,9 +55,12 @@
 (define *scope* #f)       ; the scope's id
 (define *me* #f)          ; the person the page is seen through
 (define *reading* #f)     ; the scope's reading fold
+(define *material* '())   ; the rows the plan last stated, as the replica carried them (what a row is confirmed against)
+(define *runs* '())       ; the runs those rows name
 
 (define (hold! vat root scope-id me reading)
-  (set! *vat* vat) (set! *root* root) (set! *scope* scope-id) (set! *me* me) (set! *reading* reading))
+  (set! *vat* vat) (set! *root* root) (set! *scope* scope-id) (set! *me* me) (set! *reading* reading)
+  (set! *material* '()) (set! *runs* '()))
 
 (define (stand! scope-id me seed!)
   "Hold a fresh scope SCOPE-ID, seen through the person ME, seeded by (SEED! root)."
@@ -82,7 +87,9 @@
   "Hold a copy of the scope SCOPE-ID as its member ME, from the replica TEXT a
    gateway answered (replica.scm). Holding a newer text is the refresh."
   (let ((replica (text->replica text)))
-    (stand! scope-id me (lambda (root) (hold-replica! root replica)))))
+    (stand! scope-id me (lambda (root) (hold-replica! root replica)))
+    (set! *material* (replica-material replica))
+    (set! *runs* (replica-runs replica))))
 
 ;;; ── the service's methods, over the held root ────────────────────────────
 
@@ -134,6 +141,15 @@
               (apply (lambda (scope-id agent-id action spec qty unit note when-iso)
                        (do-log-observe root scope-id agent-id action spec qty unit
                                        #:note (string-or-false note) #:when-iso (string-or-false when-iso)))
+                     args))
+             ((record-effort)
+              (apply (lambda* (scope-id commitment-id agent-id qty unit #:optional (tap #f))
+                       (do-record-effort root commitment-id agent-id qty unit #:tap tap))
+                     args))
+             ((record-flow)
+              (apply (lambda* (scope-id action spec qty place when-iso proc #:optional (row-id #f) (tap #f))
+                       (do-record-flow root scope-id *material* *runs* #f action spec qty place when-iso proc
+                                       #:row-id (string-or-false row-id) #:tap tap))
                      args))
              ((declare-need)
               (apply (lambda (scope-id . rest) (apply declare-need-reply root rest)) args))
@@ -204,6 +220,20 @@
      ,(lambda (action spec qty unit note when)
         (page-call 'log-observe *scope* *me* action spec (if (opt qty) (num qty) 1) unit note when))
      ,(lambda (v) (string-append "ok:" (alist-ref v 'event ""))))
+    ;; the confirmation mile: hours against a commitment, a quantity against a planned row; each
+    ;; names itself by the press's token, so the gateway answers a flush of it with what landed
+    ("recordEffort" 5
+     ,(lambda (scope cid qty unit tap)
+        (let ((hours (string->number qty)))
+          (if (not hours)
+              (failure "the hours are not a number")
+              (page-call 'record-effort *scope* cid *me* hours unit (opt tap)))))
+     ,(lambda (v) (string-append "ok:" (if (string? v) v ""))))
+    ("recordFlow" 11
+     ,(lambda (scope action spec qty total place when proc note row-id tap)
+        (page-call 'record-flow *scope* action spec (or (string->number qty) 1) place when proc
+                   (opt row-id) (opt tap)))
+     ,(lambda (v) (string-append "ok:" (alist-ref v 'event-id ""))))
     ("mySlots" 0 ,(lambda () (page-call 'my-slots *scope* *me*)) ,as-is)
     ("slotsAt" 0 ,(lambda () (page-call 'slots-at *scope*)) ,as-is)
     ("labelStock" 1 ,(lambda (resource) (page-call 'label-stock *scope* *me* resource)) ,as-is)))

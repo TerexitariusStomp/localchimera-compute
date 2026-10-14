@@ -794,14 +794,14 @@ FRESH_CHECKS = check-protocol-fresh check-wire-types-fresh check-nutrition-fresh
   check-housing-fresh check-count-fresh check-rel-fresh check-limits-fresh \
   check-reach-fresh check-actions-fresh check-units-fresh check-rest-fresh \
   check-matter-fresh check-fragility-fresh check-demo-fresh check-recipe-demo-fresh \
-  check-wasm-deps-fresh check-keyed-fresh check-ui-fresh
+  check-wasm-deps-fresh check-keyed-fresh check-offline-fresh check-ui-fresh
 # these read files ignored by path (the legal contexts, the physics register): a clean
 # worktree has none, so they run where the files are, in `gate-local`
 FRESH_LOCAL = check-na-fresh check-law-fresh check-physics-fresh
 # for the reader, not the gate (see module-map)
 FRESH_EXEMPT = check-module-map-fresh
 # fdc-snapshot needs a 6 MB cache the repo does not carry; check-fdc-fresh skips without it
-EMITS = wasm-deps-emit protocol-emit keyed-emit wire-types-emit nutrition-emit product-law-emit attribution-emit \
+EMITS = wasm-deps-emit protocol-emit keyed-emit offline-emit wire-types-emit nutrition-emit product-law-emit attribution-emit \
   notice-facts-emit de-pack housing-emit count-emit \
   rel-emit limits-emit reach-emit actions-emit units-emit rest-emit matter-snapshot \
   fragility-snapshot demo-emit recipe-demo-emit ui
@@ -971,6 +971,12 @@ lint-compile:
 	@$(TEST_ENV) guile --no-auto-compile tools/lint/check-goblins-spawn.scm
 	@$(TEST_ENV) guile --no-auto-compile -L module tools/lint/check-imported-set.scm
 	@$(TEST_ENV) guile --no-auto-compile tools/lint/check-record-exports.scm
+
+.PHONY: warm-ccache
+# every module compiled into the cache the emits and the freshness checks load from, with the
+# compiler on (lint-compile compiles into a directory of its own and warms only what it imports)
+warm-ccache:
+	@$(TEST_ENV) guile -L module tools/lint/warm-ccache.scm
 
 # playnet's own development, planned by the planner: every open Radicle
 # issue is a want, its area a skill, its kind a recipe (module/playnet/
@@ -1917,6 +1923,13 @@ keyed-emit:
 	$(GUILE_TEST_DEV) -L module tools/emit/keyed-emit.scm ui/app/keyed-doors.ts
 check-keyed-fresh:
 	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-keyed-fresh ui/app/keyed-doors.ts keyed-emit tools/emit/keyed-emit.scm
+
+# the doors declared #:offline (doors/protocol.scm), as the page reads them: each seam
+# handler the device answers with no gateway in reach, read or act, and where an act's instant stands
+offline-emit:
+	$(GUILE_TEST_DEV) -L module tools/emit/offline-emit.scm ui/app/offline-doors.ts
+check-offline-fresh:
+	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-offline-fresh ui/app/offline-doors.ts offline-emit tools/emit/offline-emit.scm
 
 # the offline fallbacks of the matter and fragility faces, written by the same
 # wire the live gateway answers with

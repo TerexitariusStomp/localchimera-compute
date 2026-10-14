@@ -34,9 +34,9 @@
 (define-module (playnet doors protocol)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-9)
-  #:use-module ((playnet protocol seam) #:select (%handlers handler-name handler-doors))
+  #:use-module ((playnet protocol seam) #:select (%handlers handler-name handler-doors handler-arity handler-ref))
   #:export (%doors door-ref doors-of
-            door? door-object door-name door-args door-auth door-topic door-seam door-reply door-kind door-to door-doc door-feature door-keyed doors-of-feature doors-keyed %kinds %targets
+            door? door-object door-name door-args door-auth door-topic door-seam door-reply door-kind door-to door-doc door-feature door-keyed door-offline doors-of-feature doors-keyed doors-offline offline-handlers %kinds %targets
             %topics topic-doc door-audience
             %protocol-version))
 
@@ -45,7 +45,7 @@
 (define %protocol-version 1)
 
 (define-record-type <door>
-  (make-door object name args auth topic reply kind to doc feature keyed)
+  (make-door object name args auth topic reply kind to doc feature keyed offline)
   door?
   (object door-object)
   (name   door-name)
@@ -57,7 +57,8 @@
   (to     door-to)
   (doc    door-doc)
   (feature door-feature)
-  (keyed   door-keyed))      ; the name of the argument that keys one act (a tap), or #f
+  (keyed   door-keyed)       ; the name of the argument that keys one act (a tap), or #f
+  (offline door-offline))    ; `act`, `(act ARG)` or `read` where a device with no gateway answers it, else #f
 
 ;; the headings a door is listed under: (topic . one line on what it covers)
 (define %topics
@@ -93,7 +94,7 @@ or #f when no handler sends it."
            handler-name)))
 
 ;; (door OBJECT NAME ARGS #:auth A #:topic T #:reply R #:kind K [#:to W]
-;;       [#:feature F] [#:keyed ARG] #:doc D) — every part is data, in any order
+;;       [#:feature F] [#:keyed ARG] [#:offline O] #:doc D) — every part is data, in any order
 ;; but #:doc last; nothing is evaluated. `door-collect` gathers the keywords
 ;; into an alist and `door*` reads it, so a new part of a declaration is one
 ;; keyword here and one field in the record, and no call site changes.
@@ -111,6 +112,7 @@ or #f when no handler sends it."
     ((_ (o n a) (opt ...) #:to v . r)      (door-collect (o n a) (opt ... (to . v)) . r))
     ((_ (o n a) (opt ...) #:feature v . r) (door-collect (o n a) (opt ... (feature . v)) . r))
     ((_ (o n a) (opt ...) #:keyed v . r)   (door-collect (o n a) (opt ... (keyed . v)) . r))
+    ((_ (o n a) (opt ...) #:offline v . r) (door-collect (o n a) (opt ... (offline . v)) . r))
     ((_ (o n a) (opt ...) #:doc d)         (door* 'o 'n 'a '(opt ...) 'd))))
 
 ;; THE PRODUCT FEATURE A DOOR IS PART OF, declared on the door when it has one:
@@ -145,9 +147,9 @@ or #f when no handler sends it."
       (unless p (error "door: a door declares its auth, topic, reply and kind" object name key))
       (cdr p)))
   (let ((auth (required 'auth)) (topic (required 'topic)) (reply (required 'reply)) (kind (required 'kind))
-        (to (opt 'to 'self)) (feature (opt 'feature #f)) (keyed (opt 'keyed #f)))
+        (to (opt 'to 'self)) (feature (opt 'feature #f)) (keyed (opt 'keyed #f)) (offline (opt 'offline #f)))
     (for-each (lambda (o)
-                (unless (memq (car o) '(auth topic reply kind to feature keyed))
+                (unless (memq (car o) '(auth topic reply kind to feature keyed offline))
                   (error "door: no such part of a declaration" object name (car o))))
               options)
     (unless (memq auth '(anonymous device root operator))
@@ -168,11 +170,48 @@ or #f when no handler sends it."
                      (let ((final (last args)))                   ; `tap`, or `(tap #f)` after #:optional
                        (eq? keyed (if (pair? final) (car final) final)))))
       (error "door: keyed names the door's last argument" object name keyed))
-    (make-door object name args auth topic reply kind to doc feature keyed)))
+    ;; a door the device answers with no gateway in reach says how: a READ answers from the
+    ;; device's copy, an ACT lands on it and waits for the gateway (ui/app/outbox.ts), stamped
+    ;; with the instant its argument ARG carries when it states none (tools/emit/offline-emit.scm
+    ;; derives the page's table; tools/lint/protocol-lint.scm holds the rest)
+    (unless (or (not offline) (memq offline '(act read))
+                (and (pair? offline) (eq? 'act (car offline)) (pair? (cdr offline)) (symbol? (cadr offline))
+                     (null? (cddr offline))))
+      (error "door: offline is read | act | (act ARG)" object name offline))
+    (make-door object name args auth topic reply kind to doc feature keyed offline)))
 
 (define (doors-of object) (filter (lambda (d) (eq? (door-object d) object)) %doors))
 (define (doors-of-feature feature) (filter (lambda (d) (eq? (door-feature d) feature)) %doors))
 (define (doors-keyed) (filter door-keyed %doors))
+;; the door's argument names in order, `#:optional` and defaults dropped
+(define (door-arg-names d)
+  (let loop ((a (door-args d)))
+    (cond ((null? a) '())
+          ((symbol? a) (list a))
+          ((keyword? (car a)) (loop (cdr a)))
+          (else (cons (if (pair? (car a)) (caar a) (car a)) (loop (cdr a)))))))
+
+(define (doors-offline) (filter door-offline %doors))
+
+(define (offline-handlers)
+  "((handler-name kind at) …), sorted: every seam handler whose door declares `#:offline`.
+   KIND is act or read; AT is the index of the argument that stamps the act's instant
+   among the handler's own, or #f where the act names itself. The handler drops the
+   door's leading arguments the session fills in, so an index counts from the end."
+  (sort (delete-duplicates
+         (filter-map
+          (lambda (d)
+            (let* ((o (door-offline d)) (name (door-seam d)))
+              (and name
+                   (let* ((kind (if (pair? o) (car o) o))
+                          (names (door-arg-names d))
+                          (dropped (- (length names) (handler-arity (handler-ref name))))
+                          (at (and (pair? o)
+                                   (let ((i (list-index (lambda (n) (eq? n (cadr o))) names)))
+                                     (and i (- i dropped))))))
+                     (list name kind at)))))
+          (doors-offline)))
+        (lambda (a b) (string<? (car a) (car b)))))
 ;; door-ref fires on every HTTP and MCP dispatch (doors/http.scm,
 ;; protocol/mcp.scm); %door-index (below %doors) turns its `find` over every
 ;; declared door — a few hundred, static, never mutated after load — into an
@@ -508,9 +547,11 @@ or #f when no handler sends it."
           #:doc "Claims, for SCOPE-AID and as one of its governors, the regime of DOMAIN-SPEC (a recipe id): TAILS thin|fat|unknown and PROCESS stable|shifting|unknown. Thin and stable together license statistics in that domain's standing (recipe-standing live-regime-of); anything else reads probability-free. Replies (ok said) or an error.")
     (door session declare-means (scope-id spec qty unit location #:optional (arcs-json #f) (note #f) (emoji #f) (name #f) (cats-json #f) (criteria-json #f))
           #:auth device #:topic slots #:reply ok-or-error #:kind constative #:to planner
+          #:offline act
           #:doc "Seeds or edits this AID's owned resource `means:AID:SPEC` in SCOPE-ID with qty, unit, location and the optionals; replies (ok . resource-id).")
     (door session declare-need (scope-id spec qty unit location arcs-json note emoji from until #:optional (name #f) (cats-json #f) (criteria-json #f) (need-kind #f) (voice 0))
           #:auth device #:topic slots #:reply ok-or-error #:kind preference #:to planner
+          #:offline act
           #:doc "Declares or edits this AID's standing need intent `need:AID:SPEC` in SCOPE-ID with window, note, emoji, bounds and the optionals; replies (ok (id . intent-id)) or an error.")
     (door session need-displacement (scope-id spec qty)
           #:auth device #:topic planning #:reply ok-or-error #:kind read #:to planner
@@ -532,6 +573,7 @@ or #f when no handler sends it."
           #:doc "Replies SCOPE-ID's recorded audit findings from the plan-store's audits meta.")
     (door session my-slots (scope-id)
           #:auth device #:topic slots #:reply ok-or-error #:kind read #:to planner
+          #:offline read
           #:doc "Replies this AID's own standing needs and non-retired means in SCOPE-ID as (needs means) rows with qty, unit, place, note, emoji and window arcs.")
     (door session our-slots (scope-id home-scope-id)
           #:auth device #:topic slots #:reply ok-or-error #:kind read #:to planner
@@ -552,9 +594,11 @@ or #f when no handler sends it."
           #:doc "Replies this AID's payout standing in SCOPE-ID: available claim, what the commons owes it, and its payout intents with state.")
     (door session scope-readings (scope-id spec)
           #:auth device #:topic stock #:reply ok-or-error #:kind read #:to planner
+          #:offline read
           #:doc "What every source says of SPEC in SCOPE-ID: the reading fold's rows, drift and freshest reading (planner scope-readings), for the inventory face.")
     (door session readings-between (scope-id spec from until)
           #:auth device #:topic stock #:reply ok-or-error #:kind read #:to planner
+          #:offline read
           #:doc "What every source reported of SPEC in SCOPE-ID between FROM and UNTIL (ISO-8601, an empty string leaves an end open): one row per reading in time order, and their fold (planner readings-between), for the inventory face's history line.")
     (door session my-claims (scope-id)
           #:auth device #:topic stock #:reply ok-or-error #:kind read #:to planner
@@ -636,6 +680,7 @@ or #f when no handler sends it."
           #:doc "Names a new spatial thing in SCOPE-ID with id `place:AID:slug`, optional coordinates and ADDRESS, re-placing it when named again. PARENT names the place it is inside (a room in a site, a shelf in a room): its id is then `PARENT/slug`, and it stands at its parent's position when it states none. Replies (ok (id)) or an error.")
     (door session count-schedule (scope-id #:optional (regime #f))
           #:auth device #:topic stock #:reply ok-or-error #:kind read #:to planner
+          #:offline read
           #:doc "The schedule of counts in SCOPE-ID: a row for each thing the inventory shows that sits in no other, soonest due first, with the lines one visit counts, the counter's hours, the interval between counts (from what the plan stakes on the figure and how far counts have found the ledger off), its class (A, B or C), when it was last counted and when it is due. REGIME (announced, undisclosed, random) sets how the next window falls; absent, announced. Replies (ok (rows)).")
     (door session plan-counts (scope-id #:optional (regime #f) (counter #f) (at-most #f))
           #:auth device #:topic commitments #:reply ok-or-error #:kind performative #:to planner
@@ -645,6 +690,7 @@ or #f when no handler sends it."
           #:doc "Replies SCOPE-ID as this AID's device holds a copy of it: one text carrying the scope's goods, places, people, the needs standing in it and the observer's books (its stock and the events behind it), each serialized as its own store keeps it. A device seeds its copy from it on taking a seat and after it flushes what it queued, so the same doors answer there with no gateway in reach.")
     (door session count-history (scope-id resource-id #:optional (limit #f))
           #:auth device #:topic stock #:reply ok-or-error #:kind read #:to planner
+          #:offline read
           #:doc "Replies the counts of RESOURCE-ID in SCOPE-ID, newest first, LIMIT of them (5 when absent): each count that found the ledger off, as (id at delta unit counter technique evidence mine), DELTA signed as the adjustment landed and EVIDENCE the hash of the picture the count names, \"\" when none. A count voided by a contest is gone from it. What a member reads to contest a count.")
     (door session contests (scope-id)
           #:auth device #:topic governance #:reply ok-or-error #:kind read #:to governance
@@ -800,12 +846,15 @@ or #f when no handler sends it."
           #:doc "Draws this AID's credit to claim QTY of RESOURCE-ID at LABOR-COST (derived from crystallized SNLT when #f), checked against on-hand and any live wallet reading; WHERE/DELIVER-AT record the claim's own place and time. Replies claimed, balance and credit.")
     (door session record-effort (scope-id commitment-id qty unit #:optional (tap #f))
           #:auth device #:topic commitments #:reply ok-or-error #:kind constative #:to planner #:keyed tap
+          #:offline act
           #:doc "Records QTY UNIT of this AID's effort against COMMITMENT-ID in SCOPE-ID; replies (ok . event-id) or a failure when the commitment is unknown. TAP is one press's own token: the same token on the same commitment is the same act, answered with the event it recorded and recording nothing more.")
     (door session log-observe (scope-id action spec qty unit note when-iso)
           #:auth device #:topic commitments #:reply ok-or-error #:kind constative #:to planner
+          #:offline (act when-iso)
           #:doc "Records this AID's spoken log entry as a self-scoped event of ACTION on SPEC with NOTE and narrated WHEN-ISO; replies (ok (event resource)) or a failure.")
     (door session count-stock (scope-id resource-id counted unit #:optional (technique #f) (place #f) (when-iso #f) (fulfills #f) (evidence #f) (note #f))
           #:auth device #:topic stock #:reply ok-or-error #:kind constative #:to planner
+          #:offline (act when-iso)
           #:doc "Records this AID's count of RESOURCE-ID in SCOPE-ID as COUNTED UNIT: a count that finds the ledger off lands a raise or lower of the difference on that stock, one that agrees lands none. TECHNIQUE (stated, label, photo), PLACE, WHEN-ISO and the EVIDENCE hash ride the event; FULFILLS names the counter's commitment of a planned count, whose record lands as a produce. Replies (ok (event record delta onhand)) or a failure.")
     (door session read-condition (scope-id resource-id reading unit #:optional (when-iso #f) (ambient #f) (note #f))
           #:auth device #:topic stock #:reply ok-or-error #:kind constative #:to planner
@@ -1069,6 +1118,7 @@ or #f when no handler sends it."
           #:doc "Records the material rows of PLAN that the scope's last plan states, as produce/consume/pickup/dropoff/use events, each once the books hold the stock it draws; replies the event ids and the rows still waiting, each with its reason.")
     (door planner record-flow (scope-id action spec qty total place when-iso proc note #:optional (row-id #f) (tap #f))
           #:auth anonymous #:topic stock #:reply ok-or-error #:kind constative #:keyed tap
+          #:offline act
           #:doc "Confirms one material produce/consume/pickup/dropoff/use row the scope's last plan states, named by ROW-ID (the id the schedule carries) or, for a caller with none, by its coordinates; QTY is spread over the matching plan rows' remainders (each row is a commitment under the plan's own id) and TOTAL decides nothing. The flow is dated at the row's planned slot, or at its confirmation when the slot is still ahead. The two rows of a relocation chain through their run: a dropoff is refused until its pickup has taken the cargo. Replies the first numbered event id, or `already` once the rows are finished. TAP is one press's own token: the same token on the same rows is the same act, answered with what it recorded (`again`) and recording nothing more.")
     (door planner record-claim (scope-id claimant spec qty total place when-iso)
           #:auth operator #:topic stock #:reply ok-or-error #:kind constative

@@ -36,7 +36,7 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
   let t1 = performance.now();
   const { doors } = JSON.parse(await scope.ask('open', [today]));
   console.log('  the neighbourhood stood in ' + Math.round(performance.now() - t1) + ' ms');
-  check(Object.keys(doors).length >= 8 && doors.countStock === 9, 'the scope names its doors and their arities', Object.keys(doors).join(' '));
+  check(Object.keys(doors).length >= 8 && doors.countStock === 9 && doors.recordEffort === 5 && doors.recordFlow === 11, 'the scope names its doors and their arities', Object.keys(doors).join(' '));
 
   let t = performance.now();
   const snap = JSON.parse(await scope.ask('snapshot'));
@@ -87,6 +87,8 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
   const refused = await scope.ask('countStock', ['demo:tea', '3', 'kg', 'stated']);
   check(refused === "err:count in the stock's unit: box", 'a count in another unit is refused in the door\'s words', refused);
   const none = await scope.ask('noSuchDoor');
+  const noBlock = await scope.ask('recordEffort', ['', 'no-such-block', '1', 'hours', 'press1']);
+  check(noBlock === 'err:commitment not found', 'hours against a block this copy does not hold are refused in the door\'s words', noBlock);
   check(none.startsWith('err:unavailable'), 'a door this scope does not take says so');
   process.exit(failed ? 1 : 0);
 })().catch((e) => { console.error('ERR', (e && e.stack) || e); process.exit(1); });

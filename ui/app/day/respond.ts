@@ -210,19 +210,29 @@ export const remainingOf = (d: DayEvent): number =>
  * The local `done` counter advances with it, and the verb retires only when
  * the whole asked amount is in — a partial leaves the remainder recordable.
  */
-function echoLived(d: DayEvent, qty: number): void {
+function echoLived(d: DayEvent, qty: number): () => void {
   // the block's label already names the WHAT (the skill, or "produce food");
   // the wire's own lived row carries the same, so the echo matches what the
   // next snapshot replaces it with
-  lived.push({ ...d, tier: "lived", status: undefined, vfId: undefined });
+  const row: DayEvent = { ...d, tier: "lived", status: undefined, vfId: undefined };
+  lived.push(row);
+  const before = { done: d.done, recorded: d.recorded };
   d.done = ((d.done as number) || 0) + qty;
   if ((d.done as number) >= askedOf(d)) d.recorded = true;
   markDayChanged();
+  // a refusal takes the echo back: the block stands as it did, recordable again
+  return () => {
+    const i = lived.indexOf(row);
+    if (i >= 0) lived.splice(i, 1);
+    d.done = before.done; d.recorded = before.recorded;
+    markDayChanged();
+  };
 }
 
-/** Report a recording's reply: the error's own words, or the good news. */
-const reported = (good: string) => (r: string): void => {
+/** Report a recording's reply: the error's own words, or the good news; a refusal undoes the echo. */
+const reported = (good: string, undo: () => void = () => {}) => (r: string): void => {
   const bad = !!(r && r.startsWith("err:"));
+  if (bad) undo();
   hint(bad ? r.replace(/^err:/, "") : good, bad ? "error" : "success");
 };
 
@@ -230,20 +240,20 @@ const reported = (good: string) => (r: string): void => {
 export function recordWork(d: DayEvent, qty?: number): void {
   if (!(d.vfId && HANDLERS.recordEffort)) { hint("this block has no planner key yet", "warn"); return; }
   const q = Math.max(0.25, qty ?? remainingOf(d));
+  const undo = echoLived(d, q);
   HANDLERS.recordEffort(d.scope || "", d.vfId, String(q), "hours")
-    .then(reported("recorded — the lived layer carries it now"));
-  echoLived(d, q);
+    .then(reported("recorded — the lived layer carries it now", undo));
 }
 
 /** Record QTY of one schedule material row (default: what remains of it). */
 export function recordFlow(d: DayEvent, qty?: number): void {
   if (!HANDLERS.recordFlow) { hint("no gateway to record against", "warn"); return; }
   const q = Math.max(0.01, qty ?? remainingOf(d));
+  const undo = echoLived(d, q);
   HANDLERS.recordFlow(d.scope || "", d.action || "", d.specId || d.spec || "",
                       String(q), String((d.qty as number) || 1), (d.loc && d.loc.id) || "",
                       String(d.when || ""), d.proc || "", String(d.note || ""), d.rowId || "")
-    .then(reported("recorded — the stock moved as planned"));
-  echoLived(d, q);
+    .then(reported("recorded — the stock moved as planned", undo));
 }
 
 /**

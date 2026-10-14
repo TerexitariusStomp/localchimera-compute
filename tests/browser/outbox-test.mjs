@@ -84,11 +84,27 @@ section("a keyed act carries its token from the first send");
   const plain = [];
   await O.ask(ends((door, args) => { plain.push(args); return "{}"; }), "countStock", ["tea", 7, "box"], READS);
   check("a door that is not keyed is still asked exactly as the face asked", plain[0].length === 3 && plain[0][1] === 7);
-  const lost = ends(() => "err:offline");
-  check("a keyed act no gateway answers waits for a connection, as before", await O.ask(lost, "recordFlow", flow, READS) === "err:this waits for a connection");
+  const box = memBox();
+  const lost = ends(() => "err:offline", box);
+  const first = await O.ask(lost, "recordFlow", flow, READS);
+  check("a keyed act no gateway answers lands on the device and waits", first === '{"device":"recordFlow"}' && box.rows.size === 1);
+  const waiting = [...box.rows.values()][0];
+  check("it waits with the token it was first asked with", waiting.args.length === 11 && waiting.args[10] === lost.seen[0][1][10] && waiting.args[10] !== "");
+  const sent = [];
+  await O.flush(box, async (door, args) => { sent.push(args); return "ok:ev"; });
+  check("a flush sends that same token, so the gateway answers it with what landed", sent[0][10] === waiting.args[10] && box.rows.size === 0);
+  check("an act the device cannot take is not kept", await O.ask({ ...lost, box: memBox(), device: async () => "err:this needs the books" }, "recordEffort", ["s", "c", "1", "hours"], READS) === "err:this needs the books");
 }
 
 section("a flush");
+{
+  const box = memBox();
+  await box.add({ door: "countStock", args: ["a"], at: "t" });
+  const told = await O.flush(box, async () => "err:not yours to count");
+  check("what a gateway refuses is told once, in its own words", told.told.join() === "not yours to count" && told.refused === 1);
+  const again = await O.flush(box, async () => "{}");
+  check("a refusal already told is not told again", again.told.length === 0 && again.refused === 1);
+}
 {
   const box = memBox();
   for (const d of ["a", "b", "c", "d"]) await box.add({ door: "countStock", args: [d], at: "t" });

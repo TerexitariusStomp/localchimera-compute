@@ -23,13 +23,13 @@
 // (a retry after a lost reply, a flush) carries the same token, so the books answer
 // it with what it recorded and record nothing more (observation/landing.scm).
 import { KEYED } from "./keyed-doors.js";
-/** A door whose act waits for a gateway: the index of its instant among its arguments, or null where its ids name it. */
-export const QUEUED = {
-    countStock: 5, // resource counted unit technique place WHEN fulfills evidence note
-    logObserve: 5, // action spec qty unit note WHEN
-    declareNeed: null,
-    declareMeans: null,
-};
+import { OFFLINE } from "./offline-doors.js";
+/**
+ * A door whose act waits for a gateway: the index of its instant among its arguments, or null
+ * where its ids name it. Read off the doors declared `#:offline` (offline-doors.ts, generated),
+ * so a door is queued by declaring it and by nothing written here.
+ */
+export const QUEUED = Object.fromEntries(Object.entries(OFFLINE).filter(([, d]) => d.kind === "act").map(([door, d]) => [door, d.at]));
 /**
  * A reply that says no gateway answered, as against a gateway's own refusal:
  * the spine is not there, the planner did not answer, or the seat is not held
@@ -87,6 +87,7 @@ export function stamp(door, args, now) {
 export async function flush(box, send) {
     const waiting = await box.all();
     let landed = 0, refused = 0;
+    const told = [];
     for (let i = 0; i < waiting.length; i++) {
         const [key, act] = waiting[i];
         if (act.refused) {
@@ -95,17 +96,18 @@ export async function flush(box, send) {
         } // seen and refused already: it is the person's to drop or restate
         const reply = await send(act.door, act.args);
         if (unreached(reply))
-            return { landed, refused, waiting: waiting.length - landed - refused };
+            return { landed, refused, waiting: waiting.length - landed - refused, told };
         if (reply.startsWith("err:")) {
             await box.keep(key, { ...act, refused: reply.slice(4) });
             refused++;
+            told.push(reply.slice(4));
         }
         else {
             await box.drop(key);
             landed++;
         }
     }
-    return { landed, refused, waiting: 0 };
+    return { landed, refused, waiting: 0, told };
 }
 /**
  * Ask DOOR. A gateway in reach answers, asked exactly as the face asked. Where
