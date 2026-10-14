@@ -30,12 +30,7 @@
                                (hours-by . ,(lambda (key-of . _) '())) (hours-on . ,(lambda (part . _) 0)))))
            (as  (spawn ^mock `((all-agents . ,(lambda () agents)))))
            (sts (spawn ^mock `((all-locations . ,(lambda () spatials)))))
-           (rs  (spawn ^mock `((all-recipes . ,(lambda () recipes))
-                               (get-recipe-process . ,(lambda (pid) #f))   ; no process record: a store with no holes (hole-admit)
-                               (get-process-chain . ,(lambda (rid) procs))
-                               (flows-for-process . ,(lambda (pid)
-                                  (cons (filter (lambda (f) (or (equal? (recipe-flow-recipe-input-of f) pid)
-                                                                (equal? (recipe-flow-recipe-output-of f) pid))) flows) '()))))))
+           (rs (mock-recipe-store #:recipes recipes #:procs procs #:flows flows))
            ;; the position predicate (live/expected trajectory) reads all-meta + all-commitments
            (ps  (spawn ^mock `((all-meta . ,(lambda () '())) (all-commitments . ,(lambda () '())) (all-intents . ,(lambda () '())))))
            (scope (mock-scope-root #:observer obs #:agent-store as #:spatial-thing-store sts #:recipe-store rs #:plan-store ps))

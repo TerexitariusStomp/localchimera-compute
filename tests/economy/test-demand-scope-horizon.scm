@@ -93,12 +93,7 @@
                                (record-event  . ,(lambda (e) "ok")))))
            (as  (spawn ^mock `((all-agents    . ,(lambda () agents)))))
            (sts (spawn ^mock `((all-locations . ,(lambda () spatials)))))
-           (rs  (spawn ^mock `((all-recipes       . ,(lambda () recipes))
-                               (get-process-chain . ,(lambda (rid) procs))
-                               (flows-for-process . ,(lambda (pid)
-                                 (cons (filter (lambda (f) (or (equal? (recipe-flow-recipe-input-of f) pid)
-                                                               (equal? (recipe-flow-recipe-output-of f) pid)))
-                                               flows) '()))))))
+           (rs (mock-recipe-store #:recipes recipes #:procs procs #:flows flows))
            ;; a plan-store of one standing need and no accepts: the horizon is
            ;; derived from the intent alone, nothing is pinned
            (ps  (spawn ^mock `((all-intents     . ,(lambda () (list (need "ada" "bread" 20.0 UNTIL))))
@@ -153,12 +148,7 @@
                                (record-event  . ,(lambda (e) "ok")))))
            (as  (spawn ^mock `((all-agents    . ,(lambda () agents)))))
            (sts (spawn ^mock `((all-locations . ,(lambda () spatials)))))
-           (rs  (spawn ^mock `((all-recipes       . ,(lambda () recipes))
-                               (get-process-chain . ,(lambda (rid) procs))
-                               (flows-for-process . ,(lambda (pid)
-                                 (cons (filter (lambda (f) (or (equal? (recipe-flow-recipe-input-of f) pid)
-                                                               (equal? (recipe-flow-recipe-output-of f) pid)))
-                                               flows) '()))))))
+           (rs (mock-recipe-store #:recipes recipes #:procs procs #:flows flows))
            ;; a plan-store of one standing need and no accepts: the horizon is
            ;; derived from the intent alone, nothing is pinned
            (ps  (spawn ^mock `((all-intents     . ,(lambda () (list (need "ada" "bread" 20.0 #f #f))))

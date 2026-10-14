@@ -28,7 +28,7 @@
   #:use-module ((playnet vf facts parts) #:select (part->string))
   #:use-module ((playnet observation account) #:select (claim-commitment))
   #:use-module ((playnet vf formulas flows) #:select (make-work-intent make-work-event))
-  #:export (mock-scope mock-scope-root mock-world record-work! push-on plan-claim! account!))
+  #:export (mock-scope mock-scope-root mock-world mock-recipe-store record-work! push-on plan-claim! account!))
 
 ;; ── the plan's claim, stated by a fixture ───────────────────────────────────
 ;; A claim event fulfils a commitment the plan minted (service.scm plan-claims!,
@@ -68,6 +68,33 @@
 ;; the record shorthands are (playnet knowledge dsl shorthand)'s — both
 ;; re-exported here so a suite importing this module reads ONE binding each
 
+;; THE RECIPE STORE a planner test mocks, written once. A suite names the recipes, the
+;; flows and the process the chain answers with; the store answers what plan-scope and
+;; the hole gate read of it:
+;;   all-recipes, all-resource-specs, get-process-chain (PROCS for every recipe, or what
+;;   CHAIN-OF answers), flows-for-process (the FLOWS that name the process as input or
+;;   output, as (those . ()), or split into (inputs . outputs) as the real store does when
+;;   SPLIT?; or what FLOWS-FOR answers), and get-recipe-process (the entry of PROCESSES, an alist pid → process,
+;;   else #f: a store with no holes). Not a default of every mock on purpose: a reader
+;;   that reaches for a method a suite did not mean to stand on still shows.
+(define* (mock-recipe-store #:key (recipes '()) (flows '()) (procs '()) (specs '())
+                                  (processes '()) (chain-of #f) (flows-for #f) (split? #f))
+  (spawn ^mock
+         `((all-recipes        . ,(lambda () recipes))
+           (all-resource-specs . ,(lambda () specs))
+           (get-recipe-process . ,(lambda (pid) (assoc-ref processes pid)))
+           (get-process-chain  . ,(or chain-of (lambda (rid) procs)))
+           (flows-for-process  . ,(or flows-for
+                                      (lambda (pid)
+                                        (if split?
+                                            (cons (filter (lambda (f) (equal? (recipe-flow-recipe-input-of f) pid)) flows)
+                                                  (filter (lambda (f) (equal? (recipe-flow-recipe-output-of f) pid)) flows))
+                                            (cons (filter (lambda (f)
+                                                            (or (equal? (recipe-flow-recipe-input-of f) pid)
+                                                                (equal? (recipe-flow-recipe-output-of f) pid)))
+                                                          flows)
+                                                  '()))))))))
+
 ;; the stores a <world> answers from — every read plan-scope makes, nothing
 ;; more, so a solve over a mocked world and over the same world seeded into a
 ;; real scope-root read the same tables. Returns the scope-root.
@@ -81,15 +108,15 @@
                              (record-event   . ,record-event))))
          (as  (spawn ^mock `((all-agents . ,(lambda () (world-agents w))))))
          (sts (spawn ^mock `((all-locations . ,(lambda () (world-spatials w))))))
-         (rs  (spawn ^mock `((all-recipes        . ,(lambda () (world-recipes w)))
-                             (all-resource-specs . ,(lambda () (world-specs w)))
-                             (get-process-chain  . ,(lambda (rid) (world-chain w rid)))
-                             ;; (inputs . outputs), as the real store answers: what a recipe derives of
-                             ;; its product (live.scm recipe-derived-contains) reads the two sides
-                             (flows-for-process  . ,(lambda (pid)
-                                                      (let ((fl (world-flows-for w pid)))
-                                                        (cons (filter (lambda (f) (equal? pid (recipe-flow-recipe-input-of f))) fl)
-                                                              (filter (lambda (f) (equal? pid (recipe-flow-recipe-output-of f))) fl)))))))))
+         (rs  (mock-recipe-store
+               #:recipes (world-recipes w) #:specs (world-specs w)
+               #:chain-of (lambda (rid) (world-chain w rid))
+               ;; (inputs . outputs), as the real store answers: what a recipe derives of
+               ;; its product (live.scm recipe-derived-contains) reads the two sides
+               #:flows-for (lambda (pid)
+                             (let ((fl (world-flows-for w pid)))
+                               (cons (filter (lambda (f) (equal? pid (recipe-flow-recipe-input-of f))) fl)
+                                     (filter (lambda (f) (equal? pid (recipe-flow-recipe-output-of f))) fl)))))))
     (mock-scope-root #:observer obs #:agent-store as #:spatial-thing-store sts #:recipe-store rs
                      #:plan-store plan-store #:alert-store alert-store #:legal-registry legal-registry)))
 
@@ -105,18 +132,10 @@
                              (record-event   . ,(lambda (e) "ok")))))
          (as  (spawn ^mock `((all-agents . ,(lambda () agents)))))
          (sts (spawn ^mock `((all-locations . ,(lambda () spatials)))))
-         (rs  (spawn ^mock `((all-recipes        . ,(lambda () recipes))
-                             (all-resource-specs . ,(lambda () specs))
-                             (get-process-chain  . ,(lambda (rid)
-                                                      (let ((p (assoc rid chain)))
-                                                        (if p (list (cadr p)) '()))))
-                             (flows-for-process
-                              . ,(lambda (pid)
-                                   (cons (filter (lambda (f)
-                                                   (or (equal? (recipe-flow-recipe-input-of f) pid)
-                                                       (equal? (recipe-flow-recipe-output-of f) pid)))
-                                                 flows)
-                                         '())))))))
+         (rs  (mock-recipe-store #:recipes recipes #:specs specs #:flows flows
+                                 #:chain-of (lambda (rid)
+                                              (let ((p (assoc rid chain)))
+                                                (if p (list (cadr p)) '()))))))
     (mock-scope-root #:observer obs #:agent-store as
                      #:spatial-thing-store sts #:recipe-store rs)))
 

@@ -23,6 +23,7 @@
              (playnet economy socialization) (playnet keri acdc-store)               ; socialize-private-resource, socialized-plan-fn
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
+(use-modules ((playnet test scope) #:select (mock-recipe-store)))
 
 (define OWNER   "EAlice")
 (define COMMUNE "ECommune")
@@ -62,12 +63,7 @@
                                (set-on-agent  . ,(lambda (f) #t)))))
            (acct (spawn ^mock `((credit-cells . ,(lambda () '())) (add-change-listener . ,(lambda (f) #t)))))
            (sts (spawn ^mock `((all-locations . ,(lambda () spatials)))))
-           (rs  (spawn ^mock `((all-recipes       . ,(lambda () recipes))
-                               (get-process-chain . ,(lambda (rid) procs))
-                               (flows-for-process . ,(lambda (pid)
-                                 (cons (filter (lambda (f) (or (equal? (recipe-flow-recipe-input-of f) pid)
-                                                               (equal? (recipe-flow-recipe-output-of f) pid)))
-                                               flows) '()))))))
+           (rs (mock-recipe-store #:recipes recipes #:procs procs #:flows flows))
            (ps  (spawn ^mock `((all-meta . ,(lambda () '())) (all-commitments . ,(lambda () '())) (all-intents . ,(lambda () '()))
                                (add-intent-listener . ,(lambda (f) #t)) (set-fresh-check . ,(lambda (f) #t)))))
            ;; the scope-root: its `name` is the commune AID the plug keys grants to.

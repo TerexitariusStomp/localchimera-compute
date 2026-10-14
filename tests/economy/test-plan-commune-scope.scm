@@ -50,12 +50,7 @@
                                (record-event  . ,(lambda (e) "ok")))))
            (as  (spawn ^mock `((all-agents    . ,(lambda () '())))))
            (sts (spawn ^mock `((all-locations . ,(lambda () spatials)))))
-           (rs  (spawn ^mock `((all-recipes       . ,(lambda () recipes))
-                               (get-process-chain . ,(lambda (rid) procs))
-                               (flows-for-process . ,(lambda (pid)
-                                 (cons (filter (lambda (f) (or (equal? (recipe-flow-recipe-input-of f) pid)
-                                                               (equal? (recipe-flow-recipe-output-of f) pid)))
-                                               flows) '()))))))
+           (rs (mock-recipe-store #:recipes recipes #:procs procs #:flows flows))
            (scope (mock-scope-root #:observer obs #:agent-store as #:spatial-thing-store sts #:recipe-store rs))
            ;; the sibling commune that actually holds Alice's bike, reachable via federation.
            (m-obs   (spawn ^mock `((all-resources . ,(lambda () (list (bike)))))))

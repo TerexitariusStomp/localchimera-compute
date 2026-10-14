@@ -47,13 +47,7 @@
     (let* ((obs (spawn ^mock `((all-resources . ,(lambda () stock)) (record-event . ,(lambda (e) "ok")))))
            (as  (spawn ^mock `((all-agents . ,(lambda () agents)))))
            (sts (spawn ^mock `((all-locations . ,(lambda () spatials)))))
-           (rs  (spawn ^mock `((all-recipes . ,(lambda () recipes))
-                               (get-process-chain . ,(lambda (rid) procs))
-                               ;; (inputs . outputs) — the rollup prices wheat off the outputs, and
-                               ;; the price is the claim's credit leg, which is what the bar spans
-                               (flows-for-process . ,(lambda (pid)
-                                 (cons (filter (lambda (f) (equal? (recipe-flow-recipe-input-of f) pid)) flows)
-                                       (filter (lambda (f) (equal? (recipe-flow-recipe-output-of f) pid)) flows)))))))
+           (rs (mock-recipe-store #:recipes recipes #:procs procs #:flows flows #:split? #t))
            (ps  (spawn ^mock `((all-intents . ,(lambda () '())) (all-commitments . ,(lambda () '())))))
            (root (mock-scope-root #:observer obs #:agent-store as #:spatial-thing-store sts #:recipe-store rs #:plan-store ps)))
       (apply plan-scope->alist root

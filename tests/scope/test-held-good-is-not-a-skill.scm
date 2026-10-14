@@ -42,9 +42,7 @@
       (let* ((obs (spawn ^mock `((all-resources . ,(lambda () resources)) (record-event . ,(lambda (e) "ok")))))
              (as  (spawn ^mock `((all-agents . ,(lambda () agents)))))
              (sts (spawn ^mock `((all-locations . ,(lambda () spatials)))))
-             (rs  (spawn ^mock `((all-recipes . ,(lambda () recipes)) (get-process-chain . ,(lambda (rid) procs))
-                                 (flows-for-process . ,(lambda (pid) (cons (filter (lambda (f) (equal? (recipe-flow-recipe-input-of f) pid)) flows)
-                                                                           (filter (lambda (f) (equal? (recipe-flow-recipe-output-of f) pid)) flows)))))))
+             (rs (mock-recipe-store #:recipes recipes #:procs procs #:flows flows #:split? #t))
              (root (mock-scope-root #:observer obs #:agent-store as #:spatial-thing-store sts #:recipe-store rs)))
         (plan-scope->alist root #:demand '(("bread#town@0" . 40.0)) #:eco-caps (list (cons "wheat#town@0" 100.0)) #:backend 'native-c #:reproduce? #f)))))
 

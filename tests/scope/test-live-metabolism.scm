@@ -24,8 +24,7 @@
     (let* ((obs (spawn ^mock `((all-resources . ,(lambda () obs-res)))))
            (as  (spawn ^mock `((all-agents . ,(lambda () agents)))))
            (sts (spawn ^mock `((all-locations . ,(lambda () spatials)))))
-           (rs  (spawn ^mock `((all-recipes . ,(lambda () recipes)) (get-process-chain . ,(lambda (r) procs))
-                               (flows-for-process . ,(lambda (pid) (cons (filter (lambda (f) (or (equal? (recipe-flow-recipe-input-of f) pid) (equal? (recipe-flow-recipe-output-of f) pid))) flows) '()))))))
+           (rs (mock-recipe-store #:recipes recipes #:procs procs #:flows flows))
            (scope (mock-scope-root #:observer obs #:agent-store as #:spatial-thing-store sts #:recipe-store rs))
            ;; reproduce? #f: this suite isolates the WARM-START METABOLISM (drift
            ;; detection + re-centring), so it plans the bread demand alone. With

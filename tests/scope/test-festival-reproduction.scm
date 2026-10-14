@@ -211,11 +211,7 @@
              (sts (spawn ^mock `((all-locations . ,(lambda () (list (make-spatial-thing #:id site
                                                                                         #:lat 40.0
                                                                                         #:long -74.0)))))))
-             (rs  (spawn ^mock `((all-recipes . ,(lambda () grow-recipes)) (all-resource-specs . ,(lambda () grow-specs))
-                                 (get-process-chain . ,chain-for)
-                                 (flows-for-process . ,(lambda (pid)
-                                   (cons (filter (lambda (f) (or (equal? (recipe-flow-recipe-input-of f) pid)
-                                                                 (equal? (recipe-flow-recipe-output-of f) pid))) grow-flows) '()))))))
+             (rs (mock-recipe-store #:recipes grow-recipes #:specs grow-specs #:chain-of chain-for #:flows grow-flows))
              (scope (mock-scope-root #:observer obs #:agent-store as #:spatial-thing-store sts #:recipe-store rs)))
         ;; grain is NOT a free raw — if the grow column is pruned (no permit),
         ;; there is no grain, so the crowd cannot be fed.

@@ -129,11 +129,7 @@
                                  (skill-hours-of . ,(lambda (a) '())) (record-event . ,(lambda (e) "ok")))))
              (as  (spawn ^mock `((all-agents . ,(lambda () fd-agents)))))
              (mst (spawn ^mock `((all-locations . ,(lambda () fd-spatials)))))
-             (rs  (spawn ^mock `((all-recipes . ,(lambda () fd-recipes)) (all-resource-specs . ,(lambda () fd-specs))
-                                 (get-process-chain . ,chain-for)
-                                 (flows-for-process . ,(lambda (pid)
-                                   (cons (filter (lambda (f) (or (equal? (recipe-flow-recipe-input-of f) pid)
-                                                                 (equal? (recipe-flow-recipe-output-of f) pid))) fd-flows) '()))))))
+             (rs (mock-recipe-store #:recipes fd-recipes #:specs fd-specs #:chain-of chain-for #:flows fd-flows))
              (scope (mock-scope-root #:observer obs #:agent-store as #:spatial-thing-store mst #:recipe-store rs)))
         (list
          (list (prune? "rp-fd-share" "freeville@0") (prune? "rp-fd-vend" "freeville@0")

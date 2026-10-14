@@ -124,11 +124,7 @@
                                  (skill-hours-of . ,(lambda (a) '())) (record-event . ,(lambda (e) "ok")))))
              (as  (spawn ^mock `((all-agents . ,(lambda () agents)))))
              (sts (spawn ^mock `((all-locations . ,(lambda () spatials)))))
-             (rs  (spawn ^mock `((all-recipes . ,(lambda () serve-recipes)) (all-resource-specs . ,(lambda () serve-specs))
-                                 (get-process-chain . ,chain-for)
-                                 (flows-for-process . ,(lambda (pid)
-                                   (cons (filter (lambda (f) (or (equal? (recipe-flow-recipe-input-of f) pid)
-                                                                 (equal? (recipe-flow-recipe-output-of f) pid))) serve-flows) '()))))))
+             (rs (mock-recipe-store #:recipes serve-recipes #:specs serve-specs #:chain-of chain-for #:flows serve-flows))
              (scope (mock-scope-root #:observer obs #:agent-store as #:spatial-thing-store sts #:recipe-store rs)))
         (call-with-values
           (lambda () (plan-scope scope #:demand (list (cons (string-append "meal#" site "@0") attendance))

@@ -56,12 +56,7 @@
            (as  (spawn ^mock `((all-agents . ,(lambda () agents)))))
            (sts (spawn ^mock `((all-locations . ,(lambda () spatials)))))
            (ps  (spawn ^meta-store))
-           (rs  (spawn ^mock `((all-recipes . ,(lambda () recipes))
-                               (get-recipe-process . ,(lambda (pid) #f))   ; no process record: a store with no holes (hole-admit)
-                               (get-process-chain . ,(lambda (rid) procs))
-                               (flows-for-process . ,(lambda (pid)
-                                  (cons (filter (lambda (f) (or (equal? (recipe-flow-recipe-input-of f) pid)
-                                                                (equal? (recipe-flow-recipe-output-of f) pid))) flows) '()))))))
+           (rs (mock-recipe-store #:recipes recipes #:procs procs #:flows flows))
            (scope (mock-scope-root #:observer obs #:agent-store as #:spatial-thing-store sts #:recipe-store rs #:plan-store ps))
            (svc (spawn ^planner-service (hashmap-set (hashmap) "s1" scope)))
            ;; a DAY's bread: the world stands on one day, 8 h a person

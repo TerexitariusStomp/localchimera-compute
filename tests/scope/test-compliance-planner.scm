@@ -111,11 +111,7 @@
                                  (skill-hours-of . ,(lambda (a) '())) (record-event . ,(lambda (e) "ok")))))
              (as  (spawn ^mock `((all-agents . ,(lambda () p2-agents)))))
              (sts (spawn ^mock `((all-locations . ,(lambda () p2-spatials)))))
-             (rs  (spawn ^mock `((all-recipes . ,(lambda () p2-recipes)) (all-resource-specs . ,(lambda () p2-specs))
-                                 (get-process-chain . ,(lambda (r) procs))
-                                 (flows-for-process . ,(lambda (pid)
-                                   (cons (filter (lambda (f) (or (equal? (recipe-flow-recipe-input-of f) pid)
-                                                                 (equal? (recipe-flow-recipe-output-of f) pid))) p2-flows) '()))))))
+             (rs (mock-recipe-store #:recipes p2-recipes #:specs p2-specs #:procs procs #:flows p2-flows))
              (scope (mock-scope-root #:observer obs #:agent-store as #:spatial-thing-store sts #:recipe-store rs)))
         (call-with-values
           (lambda () (plan-scope scope #:demand (list (cons "meal#foodville@0" 10.0))
