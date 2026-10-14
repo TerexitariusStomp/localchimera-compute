@@ -1012,10 +1012,12 @@ function ensureWired() {
     document.addEventListener("click", ev => {
         if (!openId())
             return;
-        // the tile that was tapped may already be detached by the re-render — a
-        // click inside ANY tile or popover is the face's own, never "outside"
+        // the word that was tapped may already be detached by its own redraw (the
+        // lend sentence rebuilds itself as a picker opens) — a click inside ANY
+        // tile or popover is the face's own, and a target gone from the page was
+        // inside something that redrew, never "outside"
         const t = ev.target;
-        if (t && t.closest(".sg, .sg-pop, .sy"))
+        if (t && (!t.isConnected || t.closest(".sg, .sg-pop, .sy")))
             return;
         openId.set(null);
         openRow.set(null);
