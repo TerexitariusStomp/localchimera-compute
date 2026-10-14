@@ -969,9 +969,7 @@
 ;; where, when and of what kind. A caller asks the observer for a commitment's terms;
 ;; none reads them back out of its id. A record, so a reader names the field it reads;
 ;; a snapshot holds it as the list `terms->list` writes (action spec iids receiver place
-;; when tags), the shape every earlier snapshot held its first three of, and
-;; `list->terms` reads three or seven: a list registered before the tail stands with the
-;; tail empty until `backfill-terms` lays it.
+;; when tags), and `list->terms` reads that list back.
 (define (terms-of commitment iids)
   (make-terms (commitment-action commitment)
               (commitment-resource-conforms-to commitment)
@@ -985,8 +983,7 @@
   (list (terms-action t) (terms-spec t) (terms-iids t) (terms-receiver t) (terms-place t) (terms-when t) (terms-tags t)))
 
 (define (list->terms l)
-  (let ((at (lambda (i) (and (> (length l) i) (list-ref l i)))))
-    (make-terms (car l) (cadr l) (caddr l) (at 3) (at 4) (at 5) (or (at 6) '()))))
+  (apply make-terms l))
 
 (define (terms->alist t)
   `((action . ,(terms-action t)) (spec . ,(terms-spec t)) (iids . ,(terms-iids t))
@@ -996,27 +993,6 @@
 (define (map-terms f hm)
   "HM with F applied to each value."
   (hashmap-fold (lambda (k v acc) (hashmap-set acc k (f v))) (hashmap) hm))
-
-(define (legacy-terms-tail cid)
-  "The tail a commitment registered before terms carried one would have had. The
-   one reading of a claim id left: a claim commitment's id spells the claim
-   (claim|spec|claimant|place|when), and a snapshot taken before the tail knew
-   claims by nothing else. It runs once, as a snapshot loads."
-  (let ((parts (string-split cid #\|)))
-    (if (and (= 5 (length parts)) (equal? "claim" (car parts)))
-        (let ((p (list-ref parts 3)) (w (list-ref parts 4)))
-          (list (caddr parts) (and (not (string-null? p)) p) (and (not (string-null? w)) w) '("claim")))
-        (list #f #f #f '()))))
-
-(define (backfill-terms st)
-  "ST with the tail laid on every terms that stands without one (no receiver, no tags)."
-  (os-rebuild st #:terms
-              (hashmap-fold (lambda (cid t acc)
-                              (if (or (terms-receiver t) (pair? (terms-tags t))) acc
-                                  (let ((tail (legacy-terms-tail cid)))
-                                    (hashmap-set acc cid (make-terms (terms-action t) (terms-spec t) (terms-iids t)
-                                                                     (car tail) (cadr tail) (caddr tail) (cadddr tail))))))
-                            (os-terms st) (os-terms st))))
 
 (define (commitment-terms-of st cid)
   "CID's terms as an alist while the books hold a target for it (a retired commitment
@@ -2102,9 +2078,8 @@
                              (apply os-rebuild st (list (symbol->keyword (car kv)) (cdr kv)))))
                        (empty-observer-state) stated)))
     (rebuild-satisfiers
-     (backfill-terms
-      (fold (lambda (e s) (phase-index-event (phase-append-event s e) e))
-            told (reverse events))))))
+     (fold (lambda (e s) (phase-index-event (phase-append-event s e) e))
+           told (reverse events)))))
 
 ;; ── Snapshots in the earlier, positional form ────────────────────────────────
 ;; Before a snapshot named its parts it was a list by position: events, resources, a
