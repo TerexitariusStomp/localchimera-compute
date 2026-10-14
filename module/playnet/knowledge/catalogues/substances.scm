@@ -26,6 +26,7 @@
   #:use-module ((playnet knowledge dsl shorthand) #:select (flow*))
   #:use-module ((playnet utils host) #:select (hash-get-handle))   ; Hoot has no handles; one shim for both builds
   #:use-module (playnet vf formulas actions)
+  #:use-module ((playnet vf facts located) #:select (cell lg))
   #:use-module (playnet knowledge catalogues food-sources)        ; *food-sources* *fdc-nutrients* *food-nutrition-hand*
   #:use-module (playnet knowledge data fdc-sr-legacy)  ; %fdc-slice — the pinned USDA rows
   #:use-module (srfi srfi-1)
@@ -1421,7 +1422,7 @@
      (let ((place (or (where owner t) "?")))
        (filter-map (lambda (r)
                      (and (member (car r) deliverable)
-                          (cons (string-append (car r) "|" owner "#" place "@" (number->string t))
+                          (cons (lg (string-append (car r) "|" owner) (cell place t))
                                 (cdr r))))
                    rows)))
    periods))

@@ -46,6 +46,10 @@
 (check "a malformed week is refused by name"
        (let ((r (family-split-json "not json" 100.0 20.0 #t "[]" 40.0)))
          (and (string? r) (string-prefix? "err:" r))))
+(check "a bill that buys in hours reads them: the needs tier names the labour the solve bought"
+  (let* ((r (json-read-ordered (family-bills-json (needs->json %family-demo-needs) 250.0 20.0 #t 15.0 "[]" 40.0)))
+         (needs (find (lambda (t) (equal? (assoc-ref t "tier") "needs")) (vector->list (assoc-ref r "tiers")))))
+    (> (assoc-ref needs "hours") 0.0)))
 (check "the three bills come back as three tiers"
        (let ((r (json-read-ordered (family-bills-json (needs->json %family-demo-needs) 250.0 20.0 #t 15.0 "[]" 40.0))))
          (equal? (map (lambda (t) (assoc-ref t "tier")) (vector->list (assoc-ref r "tiers")))

@@ -305,8 +305,8 @@
                        (members '()) (per-citizen-hours 40.0))
   "((tiers . (((tier . rights|needs|wants) (eur . €) (hours . h) (step-eur . €) (step-hours . h) (feasible? . bool)) …))
     (eur-per-hour . €) (residue-eur . €) (residue-hours . h))"
-  (define eur-row "spec-eur#home@0")
-  (define h-row   "Lab|home@0")
+  (define eur-row (lg "spec-eur" (cell "home" 0)))
+  (define h-row   (lab-good "" (cell "home" 0)))
   (define (units bill row) (let ((r (assoc row bill))) (if r (cadr r) 0.0)))
   (define (run tier)                       ; → (bill feasible?)
     (family-world! needs purse #:weighted? weighted? #:labour-h labour-h #:tier tier

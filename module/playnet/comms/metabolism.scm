@@ -36,7 +36,7 @@
   "The per-period activity level of PROC at PLACE — the derived posting schedule
    over the horizon. → ((period . level) …), 0.0 where the column is absent."
   (map (lambda (p)
-         (let ((i (hash-ref idx (string-append "p|" proc "|" place "@" (number->string p)) #f)))
+         (let ((i (hash-ref idx (process-col proc (cell place p)) #f)))
            (cons p (if i (vector-ref x i) 0.0))))
        periods))
 

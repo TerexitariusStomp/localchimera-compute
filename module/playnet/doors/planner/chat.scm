@@ -33,6 +33,7 @@
   #:use-module ((goblins) #:select ($ <-np define-actor spawn))   ; spawn: the actor's, not the core's process spawn
   #:use-module ((ice-9 textual-ports) #:select (get-string-all))
   #:use-module ((playnet scope live) #:select (time->period willing-tuples))
+  #:use-module ((playnet vf facts located) #:select (cell))
   #:use-module ((playnet utils clock) #:select ((now . clock-now) instant->unix))
   #:use-module ((playnet utils paths) #:select (playnet-data-dir))
   #:use-module ((playnet vf formulas actions) #:select (relocating-action?))
@@ -141,8 +142,7 @@
 (define (intent-cell i)
   "The (place @ period) cell willingness is keyed by — same construction
    as the snapshot's (service.scm)."
-  (string-append (or (intent-at-location i) "")
-                 "@" (number->string (time->period (intent-has-beginning i)))))
+  (cell (or (intent-at-location i) "") (time->period (intent-has-beginning i))))
 
 (define (relation-of scope-root vf-id aid)
   "The author's HIGHEST standing toward the plannable thing VF-ID, as the

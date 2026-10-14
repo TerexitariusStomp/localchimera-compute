@@ -7,6 +7,7 @@
   #:use-module ((goblins) #:select ($))
   #:use-module ((playnet doors assignments) #:select (willing-predicate))
   #:use-module ((playnet doors record-rows) #:select (iso-date-from-epoch))
+  #:use-module ((playnet vf facts located) #:select (cell lg))
   #:use-module ((playnet knowledge law jurisdiction-at) #:select (jurisdiction-at))
   #:use-module ((playnet legal registry) #:select (place-chain))
   #:use-module ((playnet scope live) #:select (time->period))
@@ -153,7 +154,7 @@
   (define (->l x) (if (vector? x) (vector->list x) x))
   (map (lambda (d)
          (let ((d (->l d)))
-           (cons (string-append (list-ref d 0) "#" (list-ref d 1) "@" (number->string (list-ref d 2)))
+           (cons (lg (list-ref d 0) (cell (list-ref d 1) (list-ref d 2)))
                  (list-ref d 3))))
        (->l demand)))
 

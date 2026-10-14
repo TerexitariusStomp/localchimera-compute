@@ -53,6 +53,7 @@
   #:use-module (playnet vf facts tension-terms)
   #:use-module ((playnet solve emphasis) #:select (emphasis-masses fill-default))  ; the spec's law: shares × voice
   #:use-module ((playnet solve engine) #:select (*desire-w0*))
+  #:use-module ((playnet vf facts located) #:select (cell lg))
   #:use-module ((playnet solve ingest) #:select (owned-spec resource-window-hours))         ; one citizen's whole emphasis; the citizen's own good
   #:use-module (goblins)
   #:export (%cell-sep %demand-key %demand-key-parts %need-cells %need-cell %declared-need?
@@ -222,7 +223,7 @@
              (or (not u) (string>=? u start))))))
 
 (define (%located-key parts t)
-  (string-append (list-ref parts 0) "#" (list-ref parts 1) "@" (number->string t)))
+  (lg (list-ref parts 0) (cell (list-ref parts 1) t)))
 (define (%project cells periods keep?)
   "CELLS whose parts satisfy KEEP?, projected onto PERIODS as ((\"spec#place@t\" . v) …)."
   (sum-cells

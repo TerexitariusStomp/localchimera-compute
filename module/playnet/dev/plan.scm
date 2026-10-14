@@ -24,7 +24,7 @@
 (define-module (playnet dev plan)
   #:use-module (playnet vf formulas flows)
   #:use-module (playnet vf formulas actions)
-  #:use-module ((playnet vf facts located) #:select (cell process-col))
+  #:use-module ((playnet vf facts located) #:select (cell lg process-col))
   #:use-module (playnet vf schemas)
   #:use-module ((playnet scope live) #:select (plan-scope->alist))
   #:use-module ((playnet solve engine) #:select (priority-weight))
@@ -81,7 +81,7 @@
          (iso   (lambda (t) (date->string (time-utc->date t 0) "~Y-~m-~d"))))
     (cons (iso start) (iso end))))
 
-(define (located spec) (string-append spec "#" %dev-place "@0"))
+(define (located spec) (lg spec (cell %dev-place 0)))
 
 ;; a want's weight is the engine's own geometric policy (priority-weight:
 ;; level 0..9 → 1..1000) read off the `prio:` rank: p0 is the top level, and

@@ -122,14 +122,14 @@
          (eco-caps  (map (lambda (t ha) (cons (lg (svc-good "land") (cell place t))
                                               (stock->flow ha t)))      ; usable ha × the season's hours
                              years weather))     ; per-year usable land
-         (floors    (map (lambda (t)    (cons (format #f "food#~a@~a" place t) floor)) years)))
+         (floors    (map (lambda (t)    (cons (lg "food" (cell place t)) floor)) years)))
     (call-with-values
       (lambda () (plan-from-records resources '()
                    (list (make-spatial-thing #:id place #:lat 30.32 #:long 78.03)) procs flows
                    #:periods years #:storable '("food") #:eco-caps eco-caps #:repro-floors floors #:per-agent? #f))
       (lambda (i c material f cols x idx nt rep)
         (map (lambda (t)                                             ; ha grown each year
-               (let ((k (format #f "p|grow|~a@~a" place t)))
+               (let ((k (process-col "grow" (cell place t))))
                  (* yield (if (hash-ref idx k #f) (vector-ref x (hash-ref idx k)) 0.0))))
              years)))))
 

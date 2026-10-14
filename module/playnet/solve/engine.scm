@@ -90,7 +90,7 @@
   #:use-module (playnet utils keywords)
   #:use-module ((playnet utils keyed-id) #:select (keyed-id))
   #:use-module (playnet vf facts located)
-  #:re-export (lg cell good-spec located-cell place-of period-of key-period key-retime key-prefix bar-fields bar-field parse-located-good
+  #:re-export (lg cell process-col good-spec located-cell place-of period-of key-period key-retime key-prefix bar-fields bar-field parse-located-good
                key-terms key-process key-arc)
   #:use-module ((playnet algorithms rollup fixpoint) #:select (crystallize))
   #:use-module ((playnet solve externality) #:select (withdrawal-displacement paired-difference))

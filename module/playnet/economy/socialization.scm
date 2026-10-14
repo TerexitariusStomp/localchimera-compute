@@ -70,7 +70,7 @@
 ;; emitted as no claim at all — so the two paths agree bit-for-bit where they share
 ;; args.
 (define-module (playnet economy socialization)
-  #:use-module ((playnet vf facts located) #:select (svc-good))
+  #:use-module ((playnet vf facts located) #:select (cell lg svc-good))
   #:use-module (playnet vf formulas flows)
   #:use-module ((playnet vf formulas actions) #:select (labour-specs))
   #:use-module (srfi srfi-1)
@@ -1264,7 +1264,7 @@
                    (deliv (upkeep-of (cred-claim c 'resource-spec)))
                    (place (and r (%socialization-place-of resources r))))
               (and deliv place
-                   (cons (format #f "~a#~a@~a" deliv place t) 1.0)))))
+                   (cons (lg deliv (cell place t)) 1.0)))))
      (%live-commune-grants store commune-aid now))))
 
 (define (socialization-care-breaches grant resource)

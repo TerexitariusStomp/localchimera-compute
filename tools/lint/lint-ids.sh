@@ -5,7 +5,8 @@
 # read) a reader: vf/facts/located.scm for column keys, good keys and the claim~ and
 # cross- process ids; vf/facts/work-ids.scm for the ni|, oi|, mi| and offer: intents;
 # federation/plan-bundle.scm for plan:; economy/payouts.scm for sending:. A site that
-# builds or tests one of these prefixes itself is a second spelling that drifts when the
+# builds or tests one of these prefixes itself, or joins a located good (`#` and `@`) from its
+# parts, is a second spelling that drifts when the
 # grammar does (the claim id once had seven splitters). So: a `string-append`,
 # `string-prefix?` or `format` over a literal that begins with one of these prefixes is
 # refused outside the owners, and the exceptions are named here with their reason.
@@ -18,14 +19,15 @@ cd "$(dirname "$0")/../.."
 bars='p|m|w|wr|mv|r|T|acq|Svc|Lab|Pres|El|ni|oi|mi|bg|cp'
 pattern="\\((string-append|string-prefix\\?|string-suffix\\?|format #f) \"(($bars)\\||claim~|cross-|offer:|plan:|sending:)"
 
+# a located good joined from its parts: spec#place@period, or a place and a period (`lg`, `cell`)
+joined="\\((string-append|format #f)[^;]*(~a#~a@|\"#\" [^;]*\"@\"|\"@\" \\(number->string)"
+
 # the files that OWN a grammar, and what is exempt with its reason
 owners='module/playnet/vf/facts/located.scm|module/playnet/vf/facts/work-ids.scm|module/playnet/federation/plan-bundle.scm|module/playnet/economy/payouts.scm'
 exempt='module/playnet/bench/'   # benchmarks read engine keys directly, as a stopwatch
-# fragments loaded into a test's own environment, with no module of their own to import the constructors into
-fragments='module/playnet/knowledge/recipes/navdanya-farm.scm|module/playnet/comms/metabolism.scm'
 
-hits="$(grep -rnE "$pattern" module --include=*.scm \
-        | grep -vE "^($owners|$fragments)" | grep -vE "^$exempt" \
+hits="$(grep -rnE "$pattern|$joined" module --include=*.scm \
+        | grep -vE "^($owners)" | grep -vE "^$exempt" \
         | grep -vE '^[^:]*:[0-9]+:\s*;' || true)"
 if [ -n "$hits" ]; then
     echo "lint-ids: a prefix spelled by hand, where the grammar has a constructor and a test:"

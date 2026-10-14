@@ -31,6 +31,7 @@
 ;; assumes). ((kind . spec) …), each spec once.
 (define-module (playnet solve inspection)
   #:use-module ((playnet utils units) #:select (%effort-unit))
+  #:use-module ((playnet vf facts located) #:select (cell lg))
   #:use-module ((playnet vf formulas flows) #:select (row-figure))
   #:use-module (playnet vf formulas actions)
   #:use-module (srfi srfi-1)
@@ -118,7 +119,7 @@
                  (lambda (e)
                    (append-map (lambda (place)
                                  (map (lambda (t)
-                                        (list (format #f "~a#~a@~a" (verif-spec (cdr e)) place t)
+                                        (list (lg (verif-spec (cdr e)) (cell place t))
                                               (list 0.0 margin alpha) #f steepness))
                                       periods))
                                places))

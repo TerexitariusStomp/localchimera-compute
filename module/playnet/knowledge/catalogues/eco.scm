@@ -54,6 +54,7 @@
   #:use-module ((playnet utils host) #:select (string-contains))
   #:use-module (srfi srfi-1)
   #:use-module (playnet vf schemas)
+  #:use-module ((playnet vf facts located) #:select (cell lg))
   #:use-module (playnet vf formulas stocks)
   #:use-module (playnet vf formulas cadence)
   #:use-module (playnet knowledge catalogues compiler)   ; catalogue->wire / catalogue->policy — shared with conformance-catalogue.scm
@@ -405,8 +406,7 @@
   (append-map
    (lambda (m)
      (if (not (migrated-rate m)) '()
-         (map (lambda (t) (cons (string-append (migrated-gate m) "#" (migrated-place m)
-                                               "@" (number->string t)) 1.0))
+         (map (lambda (t) (cons (lg (migrated-gate m) (cell (migrated-place m) t)) 1.0))
               periods)))
    ms))
 
