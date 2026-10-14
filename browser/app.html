@@ -565,14 +565,14 @@
   .share-contacts .cconnect-strip > .cask { order: 0; width: min(100%, 420px); margin: 0 auto 4px; }
   .share-contacts .contacts, .share-contacts .cdetail-host { order: 3; margin-top: 4px; }
   .share-contacts > .opt { order: 4; text-align: center; margin-top: 8px; }
-  .share-contacts .contacts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(104px, 30%), 128px)); justify-content: center; gap: 8px; align-items: stretch; }
+  .share-contacts .contacts { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(104px, 30%), 1fr)); justify-content: center; gap: 8px; align-items: stretch; }
   .share-contacts .crow { border: 1px solid var(--t-eee2c0); border-top: 3px solid var(--t-c9d2dd); border-left-width: 1px; border-radius: 14px;
-                          background: var(--t-ffffff); min-width: 0; box-sizing: border-box; display: flex; }
+                          background: var(--t-ffffff); min-width: 0; box-sizing: border-box; display: flex; aspect-ratio: 1; justify-self: stretch; }
   .share-contacts .crow-mine, .share-contacts .crow-theirs { border-top-color: var(--t-b9dcc6); border-left-color: var(--t-eee2c0); }
   .share-contacts .crow-mutual { border-top-color: var(--t-2e7d52); border-left-color: var(--t-eee2c0); }
-  .share-contacts .crow-head { flex-direction: column; justify-content: flex-start; gap: 2px; width: 100%; min-height: 0; padding: 10px 8px 8px;
+  .share-contacts .crow-head { flex-direction: column; justify-content: flex-start; gap: 2px; width: 100%; min-height: 0; padding: 8px 6px;
                                border-radius: 14px; font-size: 14px; text-align: center; }
-  .share-contacts .cav { position: relative; flex: 0 0 auto; width: 40px; height: 40px; border-radius: 50%; display: inline-flex;
+  .share-contacts .cav { position: relative; flex: 0 0 auto; width: 36px; height: 36px; border-radius: 50%; display: inline-flex;
                          align-items: center; justify-content: center; font-size: 17px; font-weight: 600; margin-bottom: 1px; }
   .share-contacts .cav .cdot { position: absolute; right: -1px; bottom: -1px; width: 11px; height: 11px;
                                box-shadow: 0 0 0 2px var(--t-ffffff); }
@@ -1766,9 +1766,7 @@
     .share-col .slot-card { flex-basis: 100%; }
     .slot-main .slot-name { flex-basis: 100%; }
     .slot-btn { max-width: 100%; }
-    .share-contacts .cline { order: 5; flex-basis: 100%; text-align: left; padding-left: 16px; }
     .share-contacts .cline:empty { display: none; }
-    .share-contacts .crel { margin-left: auto; }
     /* My and Our stack rather than squeeze side by side below this width */
     .share-cols.share-cols-both { grid-template-columns: 1fr; }
   }
@@ -5684,7 +5682,7 @@
   /* the drawer is ONE grid: every tile of every section sits in the same columns, and each section's heading is a
      full-width leader on the row where its tiles begin — so the sections read down the page in order, never as
      centred rows of different lengths. The credit strip is centred above them. */
-  .shop-res .shop-one:not(.rs-detail) { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(104px, 30%), 128px)); justify-content: center;
+  .shop-res .shop-one:not(.rs-detail) { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(104px, 30%), 1fr)); justify-content: center;
                                         gap: 8px; align-items: stretch; }
   .shop-res .shop-one:not(.rs-detail) > :is(.shop-res-cred, .shop-foot, .shop-send, .shop-sec-head) { grid-column: 1 / -1; }
   .shop-res .shop-sec { display: contents; }
@@ -5699,6 +5697,10 @@
   .shop-res :is(.sy, .sg, .shop-free-card) { border: 1px solid var(--t-eee2c0); border-top: 3px solid var(--tint, var(--t-dddddd)); border-radius: 14px;
                                              background: var(--t-ffffff); box-shadow: none; min-width: 0; box-sizing: border-box; }
   .shop-res .sy { --tint: var(--t-d3bd88); }
+  /* a tile is a square that grows only when its words need more (aspect-ratio is a preference, the content a floor);
+     columns count by the 104px minimum, so a phone fits three to a row */
+  .shop-res :is(.sy:not(.open), .sg, .shop-free-card) { aspect-ratio: 1; justify-self: stretch; }
+  .shop-res :is(.sy:not(.open), .sg) { display: flex; flex-direction: column; justify-content: center; }
   .shop-res .shop-free-card { --tint: var(--t-4d8a5f); border-style: solid; }
   .shop-res .shop-free-card.in-plenty { --tint: var(--t-b8860b); }
   .shop-res .shop-free-card.empty { border-style: dashed; }
@@ -5733,7 +5735,7 @@
   .share-radius-ends { display: flex; justify-content: space-between; font-size: 10px; color: var(--t-aaaaaa); }
   .share-radius-note { margin-top: 7px; font-size: 11px; color: var(--t-888877); line-height: 1.4; }
   /* ── the drawer's Skills view: each skill the same tile — name over hours over its co-signs and bar, the level in its top edge ── */
-  .sk { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(104px, 30%), 128px)); justify-content: center; gap: 8px; align-items: stretch; }
+  .sk { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(104px, 30%), 1fr)); justify-content: center; gap: 8px; align-items: stretch; }
   .sk > :not(.stand-list) { grid-column: 1 / -1; }
   .sk .stand-list { display: contents; }
   .sk .stand-row { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 8px 8px; text-align: center;
