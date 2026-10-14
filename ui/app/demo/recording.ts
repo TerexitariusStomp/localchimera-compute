@@ -2618,7 +2618,7 @@ export const RECORDING = {
         "em": 0
       },
       {
-        "id": "evt-count-mara-demo:greens-2025-12-25T09:00:00Z-75.0",
+        "id": "evt-count-mara-demo:greens-2025-12-25T09:00:00Z-75",
         "label": "raise vegetables",
         "specName": "vegetables",
         "action": "raise",
@@ -2635,7 +2635,7 @@ export const RECORDING = {
         "em": 0
       },
       {
-        "id": "evt-count-mara-demo:greens-2025-12-25T09:00:00Z-75.0-record",
+        "id": "evt-count-mara-demo:greens-2025-12-25T09:00:00Z-75-record",
         "label": "produce count-record",
         "specName": "count-record",
         "action": "produce",
@@ -2652,7 +2652,7 @@ export const RECORDING = {
         "em": 0
       },
       {
-        "id": "evt-count-you-demo:beans-2025-12-27T17:00:00Z-60.0",
+        "id": "evt-count-you-demo:beans-2025-12-27T17:00:00Z-60",
         "label": "lower dry beans",
         "specName": "dry beans",
         "action": "lower",
@@ -2669,7 +2669,7 @@ export const RECORDING = {
         "em": 0
       },
       {
-        "id": "evt-count-you-demo:beans-2025-12-27T17:00:00Z-60.0-record",
+        "id": "evt-count-you-demo:beans-2025-12-27T17:00:00Z-60-record",
         "label": "produce count-record",
         "specName": "count-record",
         "action": "produce",
@@ -2686,7 +2686,7 @@ export const RECORDING = {
         "em": 0
       },
       {
-        "id": "evt-count-dev-demo:loaves-2025-12-30T08:00:00Z-104.0",
+        "id": "evt-count-dev-demo:loaves-2025-12-30T08:00:00Z-104",
         "label": "raise bread",
         "specName": "bread",
         "action": "raise",
@@ -2703,7 +2703,7 @@ export const RECORDING = {
         "em": 0
       },
       {
-        "id": "evt-count-dev-demo:loaves-2025-12-30T08:00:00Z-104.0-record",
+        "id": "evt-count-dev-demo:loaves-2025-12-30T08:00:00Z-104-record",
         "label": "produce count-record",
         "specName": "count-record",
         "action": "produce",
@@ -2720,7 +2720,7 @@ export const RECORDING = {
         "em": 0
       },
       {
-        "id": "evt-count-mara-demo:bikes-2025-12-31T12:00:00Z-6.0-record",
+        "id": "evt-count-mara-demo:bikes-2025-12-31T12:00:00Z-6-record",
         "label": "produce count-record",
         "specName": "count-record",
         "action": "produce",
@@ -2737,7 +2737,7 @@ export const RECORDING = {
         "em": 0
       },
       {
-        "id": "evt-count-you-demo:greens-2026-01-01T12:00:00Z-72.0",
+        "id": "evt-count-you-demo:greens-2026-01-01T12:00:00Z-72",
         "label": "lower vegetables",
         "specName": "vegetables",
         "action": "lower",
@@ -2754,7 +2754,7 @@ export const RECORDING = {
         "em": 0
       },
       {
-        "id": "evt-count-you-demo:greens-2026-01-01T12:00:00Z-72.0-record",
+        "id": "evt-count-you-demo:greens-2026-01-01T12:00:00Z-72-record",
         "label": "produce count-record",
         "specName": "count-record",
         "action": "produce",
@@ -2771,7 +2771,7 @@ export const RECORDING = {
         "em": 0
       },
       {
-        "id": "evt-count-ines-demo:meals-2026-01-04T14:00:00Z-24.0",
+        "id": "evt-count-ines-demo:meals-2026-01-04T14:00:00Z-24",
         "label": "lower cooked meal",
         "specName": "cooked meal",
         "action": "lower",
@@ -2788,7 +2788,7 @@ export const RECORDING = {
         "em": 0
       },
       {
-        "id": "evt-count-ines-demo:meals-2026-01-04T14:00:00Z-24.0-record",
+        "id": "evt-count-ines-demo:meals-2026-01-04T14:00:00Z-24-record",
         "label": "produce count-record",
         "specName": "count-record",
         "action": "produce",
@@ -3455,8 +3455,8 @@ export const RECORDING = {
       "demo:greens": {
         "rows": [
           {
-            "id": "evt-count-you-demo:greens-2026-01-01T12:00:00Z-72.0",
-            "ballot": "contest:evt-count-you-demo:greens-2026-01-01T12:00:00Z-72.0",
+            "id": "evt-count-you-demo:greens-2026-01-01T12:00:00Z-72",
+            "ballot": "contest:evt-count-you-demo:greens-2026-01-01T12:00:00Z-72",
             "at": "2026-01-01T12:00:00Z",
             "counted": 72.0,
             "delta": -3.0,
@@ -3467,8 +3467,8 @@ export const RECORDING = {
             "mine": true
           },
           {
-            "id": "evt-count-mara-demo:greens-2025-12-25T09:00:00Z-75.0",
-            "ballot": "contest:evt-count-mara-demo:greens-2025-12-25T09:00:00Z-75.0",
+            "id": "evt-count-mara-demo:greens-2025-12-25T09:00:00Z-75",
+            "ballot": "contest:evt-count-mara-demo:greens-2025-12-25T09:00:00Z-75",
             "at": "2025-12-25T09:00:00Z",
             "counted": 75.0,
             "delta": 1.0,
@@ -3483,8 +3483,8 @@ export const RECORDING = {
       "demo:loaves": {
         "rows": [
           {
-            "id": "evt-count-dev-demo:loaves-2025-12-30T08:00:00Z-104.0",
-            "ballot": "contest:evt-count-dev-demo:loaves-2025-12-30T08:00:00Z-104.0",
+            "id": "evt-count-dev-demo:loaves-2025-12-30T08:00:00Z-104",
+            "ballot": "contest:evt-count-dev-demo:loaves-2025-12-30T08:00:00Z-104",
             "at": "2025-12-30T08:00:00Z",
             "counted": 104.0,
             "delta": 2.0,
@@ -3499,8 +3499,8 @@ export const RECORDING = {
       "demo:meals": {
         "rows": [
           {
-            "id": "evt-count-ines-demo:meals-2026-01-04T14:00:00Z-24.0",
-            "ballot": "contest:evt-count-ines-demo:meals-2026-01-04T14:00:00Z-24.0",
+            "id": "evt-count-ines-demo:meals-2026-01-04T14:00:00Z-24",
+            "ballot": "contest:evt-count-ines-demo:meals-2026-01-04T14:00:00Z-24",
             "at": "2026-01-04T14:00:00Z",
             "counted": 24.0,
             "delta": -2.0,
@@ -3518,8 +3518,8 @@ export const RECORDING = {
       "demo:beans": {
         "rows": [
           {
-            "id": "evt-count-you-demo:beans-2025-12-27T17:00:00Z-60.0",
-            "ballot": "contest:evt-count-you-demo:beans-2025-12-27T17:00:00Z-60.0",
+            "id": "evt-count-you-demo:beans-2025-12-27T17:00:00Z-60",
+            "ballot": "contest:evt-count-you-demo:beans-2025-12-27T17:00:00Z-60",
             "at": "2025-12-27T17:00:00Z",
             "counted": 60.0,
             "delta": -1.5,
@@ -3561,8 +3561,8 @@ export const RECORDING = {
       "demo:bikes": {
         "rows": [
           {
-            "id": "evt-count-mara-demo:bikes-2025-12-31T12:00:00Z-6.0-record",
-            "ballot": "contest:evt-count-mara-demo:bikes-2025-12-31T12:00:00Z-6.0",
+            "id": "evt-count-mara-demo:bikes-2025-12-31T12:00:00Z-6-record",
+            "ballot": "contest:evt-count-mara-demo:bikes-2025-12-31T12:00:00Z-6",
             "at": "2025-12-31T12:00:00Z",
             "counted": 6.0,
             "delta": 0.0,
@@ -4252,8 +4252,8 @@ export const RECORDING = {
     "contests": {
       "rows": [
         {
-          "id": "contest:evt-count-you-demo:greens-2026-01-01T12:00:00Z-72.0",
-          "eventId": "evt-count-you-demo:greens-2026-01-01T12:00:00Z-72.0-record",
+          "id": "contest:evt-count-you-demo:greens-2026-01-01T12:00:00Z-72",
+          "eventId": "evt-count-you-demo:greens-2026-01-01T12:00:00Z-72-record",
           "kind": "count",
           "resource": "demo:greens",
           "worker": "you",
@@ -4262,8 +4262,8 @@ export const RECORDING = {
           "role": "attach"
         },
         {
-          "id": "contest:evt-count-dev-demo:loaves-2025-12-30T08:00:00Z-104.0",
-          "eventId": "evt-count-dev-demo:loaves-2025-12-30T08:00:00Z-104.0-record",
+          "id": "contest:evt-count-dev-demo:loaves-2025-12-30T08:00:00Z-104",
+          "eventId": "evt-count-dev-demo:loaves-2025-12-30T08:00:00Z-104-record",
           "kind": "count",
           "resource": "demo:loaves",
           "worker": "dev",

@@ -66,5 +66,4 @@ tests/personhood/two-box/box2.scm                   # helper process, not a unit
 # it terminates at all. Run it deliberately with a real budget before trusting
 # the conclusion its header states.
 tests/solve/test-berlin-kleingaerten.scm
-tests/scope/zz-festival-scale.scm             # bench-festival: a scale benchmark, run as `FESTIVAL_N=<attendees> guile … zz-festival-scale.scm`; with no N it has no problem to solve
 tests/integration/federation-gateways-driver.scm # needs-gateways: the driver half of the federation integration, given two gateways' state directories as arguments
