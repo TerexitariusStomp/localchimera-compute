@@ -140,6 +140,54 @@ export interface SeamHandlers {
   /** Hybrid search (docs/planning/faces/corpus-guile-native.md phase 4) over a built corpus domain — DOMAIN a slug ("permaculture") for one domain, or "" to search every built domain and merge by fusion score (the federation corpus tab). → {hits:[{domain,text,heading,source,title, author,score}], error?} JSON. */
   // doors: lobby/corpus-search
   corpusSearch?(domain: string, query: string, limit: number): Promise<unknown>;
+  /** Offer this person's machines to a commune: LANE the lane name, CLASSES a comma list of task classes, HEADROOM units kept for inner-ring work, REPRO the replay claim. OPTS-JSON may carry {"usageUnit":"seconds"}. → "ok:<offer-id>" | "err:…". */
+  // doors: session/compute-offer
+  computeOffer?(commune: string, lane: string, classes: string, headroom: number, repro: string, optsJson?: string): Promise<unknown>;
+  /** Retract one of the caller's offers. "ok" | "err:…". */
+  // doors: session/compute-retract
+  computeRetract?(commune: string, offerId: string): Promise<unknown>;
+  /** The commune's standing compute offers, as a JSON array. */
+  // doors: session/compute-offers
+  computeOffers?(commune: string): Promise<unknown>;
+  /** Submit a compute job — the borrower's intent enters at ring 1 and walks outward only by preemption. OPTS-JSON may carry {"envelopeHash","ring","specId"}. → "ok:<job-id>" | "err:…". */
+  // doors: session/compute-submit
+  computeSubmit?(commune: string, taskClass: string, lane: string, repro: string, inputHash: string, optsJson?: string): Promise<unknown>;
+  /** Withdraw an open job of the caller's. "ok" | "err:…". */
+  // doors: session/compute-withdraw
+  computeWithdraw?(commune: string, jobId: string): Promise<unknown>;
+  /** The commune's jobs, as a JSON array. */
+  // doors: session/compute-jobs
+  computeJobs?(commune: string): Promise<unknown>;
+  /** Offers answering JOB-ID at the ring it sits on, as a JSON array. */
+  // doors: session/compute-match
+  computeMatch?(commune: string, jobId: string): Promise<unknown>;
+  /** Take JOB-ID under OFFER-ID — OPTS-JSON may carry {"deadline":<epoch-ms>}, default 72h, the countersign-by the spec's no-receipt-no-payment rule reads. → "ok:<claim-id>" | "err:…". */
+  // doors: session/compute-claim
+  computeClaim?(commune: string, jobId: string, offerId: string, optsJson?: string): Promise<unknown>;
+  /** The borrower confirms the dispatch. "ok" | "err:…". */
+  // doors: session/compute-accept
+  computeAccept?(commune: string, claimId: string): Promise<unknown>;
+  /** Preempt a claim — lender, borrower or governor; never a miss, the job reopens one ring outward. "ok" | "err:…". */
+  // doors: session/compute-preempt
+  computePreempt?(commune: string, claimId: string): Promise<unknown>;
+  /** The commune's dispatch claims, as a JSON array. */
+  // doors: session/compute-claims
+  computeClaims?(commune: string): Promise<unknown>;
+  /** Land a receipt wire (JSON: the body the lender's node emitted): digest recomputed and matched, lender signature checked where resolvable, recorded, folded into the commune's observer as a use event. → {digest, verdict} JSON | "err:…". */
+  // doors: session/compute-receipt
+  computeReceipt?(commune: string, wireJson: string): Promise<unknown>;
+  /** Dry-run a receipt wire: → {digestOk, verdict} JSON | "err:…". */
+  // doors: session/compute-verify
+  computeVerify?(wireJson: string): Promise<unknown>;
+  /** A bridge's settlement statement as JSON — gov-cap gated, reconciles entries against recorded receipts. → {matched, missing, claimed, paid} JSON | "err:…". */
+  // doors: session/compute-settle
+  computeSettle?(commune: string, wireJson: string): Promise<unknown>;
+  /** The commune's recorded settlement statements, as a JSON array. */
+  // doors: session/compute-statements
+  computeStatements?(commune: string): Promise<unknown>;
+  /** Validate a job envelope (JSON) — refuses any envelope carrying a price key. → "ok:<bridgeJobId>" | "err:…". */
+  // doors: session/compute-envelope
+  computeEnvelope?(wireJson: string): Promise<unknown>;
   // doors: session/declare-means
   declareMeans?(spec: string, qty: number, unit: string, where: string, arcs: string, note: string, emoji: string, name: string, cats: string, criteria?: string): Promise<unknown>;
   /** As one of SCOPE's governors, declare the scope's willingness to host pools of SPEC up to CEILING unit-hours a day (the consent a foreign span into this scope's places needs, and the ceiling the means consensus binds); `until` is an ISO date or absent for open-ended. Replies "ok" or "err:…". */

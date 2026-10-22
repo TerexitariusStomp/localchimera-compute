@@ -1285,6 +1285,45 @@ function boot() {
     HANDLERS.fpPresentBundle = (json) =>
       new Promise(res => schemeHandlers.fpPresentBundle ? schemeHandlers.fpPresentBundle(json || "", res) : res("err:offline"));
 
+    // ── Compute seam ───────────────────────────────────────────────────────
+    // the commons' machine book: offers and jobs name the commune, member
+    // acts carry the session's AID server-side. Reads answer JSON arrays;
+    // mutations "ok" or "ok:<id>"; verify/receipt/settle answer JSON.
+    HANDLERS.computeOffer = (commune, lane, classes, headroom, repro, optsJson) =>
+      new Promise(res => schemeHandlers.computeOffer
+        ? schemeHandlers.computeOffer(commune || "", lane || "", classes || "", headroom || 0, repro || "none", optsJson || "", res)
+        : res("err:offline"));
+    HANDLERS.computeRetract    = bridge("computeRetract", 2);
+    HANDLERS.computeOffers     = (commune) =>
+      new Promise(res => schemeHandlers.computeOffers ? schemeHandlers.computeOffers(commune || "", res) : res("[]"));
+    HANDLERS.computeSubmit     = (commune, taskClass, lane, repro, inputHash, optsJson) =>
+      new Promise(res => schemeHandlers.computeSubmit
+        ? schemeHandlers.computeSubmit(commune || "", taskClass || "", lane || "", repro || "none", inputHash || "", optsJson || "", res)
+        : res("err:offline"));
+    HANDLERS.computeWithdraw   = bridge("computeWithdraw", 2);
+    HANDLERS.computeJobs       = (commune) =>
+      new Promise(res => schemeHandlers.computeJobs ? schemeHandlers.computeJobs(commune || "", res) : res("[]"));
+    HANDLERS.computeMatch      = (commune, jobId) =>
+      new Promise(res => schemeHandlers.computeMatch ? schemeHandlers.computeMatch(commune || "", jobId || "", res) : res("[]"));
+    HANDLERS.computeClaim      = (commune, jobId, offerId, optsJson) =>
+      new Promise(res => schemeHandlers.computeClaim
+        ? schemeHandlers.computeClaim(commune || "", jobId || "", offerId || "", optsJson || "", res)
+        : res("err:offline"));
+    HANDLERS.computeAccept     = bridge("computeAccept", 2);
+    HANDLERS.computePreempt    = bridge("computePreempt", 2);
+    HANDLERS.computeClaims     = (commune) =>
+      new Promise(res => schemeHandlers.computeClaims ? schemeHandlers.computeClaims(commune || "", res) : res("[]"));
+    HANDLERS.computeReceipt    = (commune, wireJson) =>
+      new Promise(res => schemeHandlers.computeReceipt ? schemeHandlers.computeReceipt(commune || "", wireJson || "{}", res) : res("err:offline"));
+    HANDLERS.computeVerify     = (wireJson) =>
+      new Promise(res => schemeHandlers.computeVerify ? schemeHandlers.computeVerify(wireJson || "{}", res) : res("err:offline"));
+    HANDLERS.computeSettle     = (commune, wireJson) =>
+      new Promise(res => schemeHandlers.computeSettle ? schemeHandlers.computeSettle(commune || "", wireJson || "{}", res) : res("err:offline"));
+    HANDLERS.computeStatements = (commune) =>
+      new Promise(res => schemeHandlers.computeStatements ? schemeHandlers.computeStatements(commune || "", res) : res("[]"));
+    HANDLERS.computeEnvelope   = (wireJson) =>
+      new Promise(res => schemeHandlers.computeEnvelope ? schemeHandlers.computeEnvelope(wireJson || "{}", res) : res("err:offline"));
+
     // ── Governance seam ──────────────────────────────────────────────────
     // app/tabs/governance.js drives the decisions tab through these, and
     // handle-cast-signed is where the citizen's KERI key signs the stance ACDC.

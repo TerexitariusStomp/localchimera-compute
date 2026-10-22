@@ -146,7 +146,7 @@
              (lambda ()
                (when (null? classes)
                  (error "compute-offer: no valid task classes"))
-               (list 'ok ($ (registry-for commune-aid) 'offer
+               (cons 'ok ($ (registry-for commune-aid) 'offer
                             identity-key commune-aid lane classes
                             headroom repro-sym usage-unit)))
              (lambda (k . a) (list 'error (format #f "compute-offer: ~a" a))))))
@@ -155,11 +155,11 @@
          (catch #t
            (lambda ()
              ($ (registry-for commune-aid) 'retract offer-id identity-key)
-             (list 'ok #t))
+             (cons 'ok #t))
            (lambda (k . a) (list 'error (format #f "compute-retract: ~a" a)))))
 
         ((compute-offers commune-aid)
-         (list 'ok (map offer-row
+         (cons 'ok (map offer-row
                         ($ (registry-for commune-aid) 'offers commune-aid))))
 
         ;; ── jobs ────────────────────────────────────────────────────────
@@ -168,7 +168,7 @@
         ((compute-submit identity-key commune-aid task-class lane repro input-hash . opts)
          (catch #t
            (lambda ()
-             (list 'ok
+             (cons 'ok
                ($ (registry-for commune-aid) 'submit
                   identity-key commune-aid
                   (string->symbol task-class) lane (string->symbol repro)
@@ -182,15 +182,15 @@
          (catch #t
            (lambda ()
              ($ (registry-for commune-aid) 'withdraw job-id identity-key)
-             (list 'ok #t))
+             (cons 'ok #t))
            (lambda (k . a) (list 'error (format #f "compute-withdraw: ~a" a)))))
 
         ((compute-jobs commune-aid)
-         (list 'ok (map job-row
+         (cons 'ok (map job-row
                         ($ (registry-for commune-aid) 'jobs commune-aid))))
 
         ((compute-match commune-aid job-id)
-         (list 'ok (map offer-row
+         (cons 'ok (map offer-row
                         ($ (registry-for commune-aid) 'match job-id))))
 
         ;; ── claims ──────────────────────────────────────────────────────
@@ -203,7 +203,7 @@
              (let ((deadline (or (opt-ref opts 'deadline #f)
                                  (* (+ (current-epoch-seconds)
                                        (* 72 3600)) 1000))))
-               (list 'ok ($ (registry-for commune-aid) 'claim
+               (cons 'ok ($ (registry-for commune-aid) 'claim
                             identity-key job-id offer-id deadline))))
            (lambda (k . a) (list 'error (format #f "compute-claim: ~a" a)))))
 
@@ -211,7 +211,7 @@
          (catch #t
            (lambda ()
              ($ (registry-for commune-aid) 'accept claim-id identity-key)
-             (list 'ok #t))
+             (cons 'ok #t))
            (lambda (k . a) (list 'error (format #f "compute-accept: ~a" a)))))
 
         ((compute-preempt identity-key commune-aid claim-id)
@@ -227,11 +227,11 @@
                           (governor? identity-key)))
                  (error "compute-preempt: lender, borrower or governor only"))
                 (else ($ (registry-for commune-aid) 'preempt claim-id)
-                      (list 'ok #t)))))
+                      (cons 'ok #t)))))
            (lambda (k . a) (list 'error (format #f "compute-preempt: ~a" a)))))
 
         ((compute-claims commune-aid)
-         (list 'ok (map claim-row
+         (cons 'ok (map claim-row
                         ($ (registry-for commune-aid) 'claims commune-aid))))
 
         ;; ── receipts ────────────────────────────────────────────────────
@@ -272,7 +272,7 @@
                                  #:intent-id (and claim
                                                   (dispatch-claim-job-id claim)))))
                          (lambda _ #t))))
-                   (list 'ok digest verdict))))))
+                   (cons 'ok (list digest verdict)))))))
            (lambda (k . a) (list 'error (format #f "compute-receipt: ~a" a)))))
 
         ;; dry-run: what would this receipt answer — digest ok, sig verdict
@@ -280,7 +280,7 @@
          (catch #t
            (lambda ()
              (let ((r (wire->receipt w)))
-               (list 'ok (receipt-digest-ok? r) (sig-verdict r))))
+               (cons 'ok (list (receipt-digest-ok? r) (sig-verdict r)))))
            (lambda (k . a) (list 'error (format #f "compute-verify: ~a" a)))))
 
         ;; ── settlement — a commune act, gov-cap gated ────────────────────
@@ -305,14 +305,14 @@
                                     stmt (lambda (d) ($ reg 'receipt-of d)))))
                      ($ reg 'settle stmt)
                      (apply (lambda (matched missing claimed paid)
-                              (list 'ok (length matched) (length missing)
-                                    claimed paid))
+                              (cons 'ok (list (length matched) (length missing)
+                                              claimed paid)))
                             result)))
                  (lambda (k . a)
                    (list 'error (format #f "compute-settle: ~a" a)))))))
 
         ((compute-statements commune-aid)
-         (list 'ok ($ (registry-for commune-aid) 'statements)))
+         (cons 'ok ($ (registry-for commune-aid) 'statements)))
 
         ;; the envelope contract — validates a job envelope a node would
         ;; run; refuses any envelope carrying a price key
@@ -320,5 +320,5 @@
          (catch #t
            (lambda ()
              (let ((e (alist->job-envelope w)))
-               (list 'ok (job-envelope-bridge-job-id e))))
+               (cons 'ok (job-envelope-bridge-job-id e))))
            (lambda (k . a) (list 'error (format #f "compute-envelope: ~a" a)))))))))

@@ -3076,6 +3076,123 @@
       (planner-call cb (<- *session* 'present-bundle wire-json)
         (lambda (n) (reply! cb (string-append "ok:" (if (number? n) (number->string n) "0")))))))
 
+;;; ── compute: the commons' machine book (doors/compute.scm) ────────────────
+;; Member acts forward the session's AID as identity-key; reads name only
+;; the commune. Rows cross as JSON (the door's own wire shape); ids and
+;; verdicts cross as "ok:<v>" / JSON the way the sibling handlers answer.
+
+;; optional-args over the seam: {"key":val,…} → (key val …); "" or absent → ()
+(define (opts-flat opts-json)
+  (if (or (not (string? opts-json)) (string-null? opts-json)) '()
+      (apply append
+             (map (lambda (p) (list (string->symbol (car p)) (cdr p)))
+                  (json-read-ordered opts-json)))))
+
+(define (handle-compute-offer commune lane classes headroom repro opts-json cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (apply <- *session* 'compute-offer
+                              commune lane classes headroom repro
+                              (opts-flat opts-json))
+        (lambda (v) (reply! cb (string-append "ok:" (if (string? v) v "")))))))
+
+(define (handle-compute-retract commune offer-id cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'compute-retract commune offer-id)
+        (lambda (_v) (reply! cb "ok")))))
+
+(define (handle-compute-offers commune cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'compute-offers commune)
+        (lambda (v) (reply! cb (scm->json-canonical (list->vector v)))))))
+
+(define (handle-compute-submit commune task-class lane repro input-hash opts-json cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (apply <- *session* 'compute-submit
+                              commune task-class lane repro input-hash
+                              (opts-flat opts-json))
+        (lambda (v) (reply! cb (string-append "ok:" (if (string? v) v "")))))))
+
+(define (handle-compute-withdraw commune job-id cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'compute-withdraw commune job-id)
+        (lambda (_v) (reply! cb "ok")))))
+
+(define (handle-compute-jobs commune cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'compute-jobs commune)
+        (lambda (v) (reply! cb (scm->json-canonical (list->vector v)))))))
+
+(define (handle-compute-match commune job-id cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'compute-match commune job-id)
+        (lambda (v) (reply! cb (scm->json-canonical (list->vector v)))))))
+
+(define (handle-compute-claim commune job-id offer-id opts-json cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (apply <- *session* 'compute-claim
+                              commune job-id offer-id (opts-flat opts-json))
+        (lambda (v) (reply! cb (string-append "ok:" (if (string? v) v "")))))))
+
+(define (handle-compute-accept commune claim-id cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'compute-accept commune claim-id)
+        (lambda (_v) (reply! cb "ok")))))
+
+(define (handle-compute-preempt commune claim-id cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'compute-preempt commune claim-id)
+        (lambda (_v) (reply! cb "ok")))))
+
+(define (handle-compute-claims commune cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+        (planner-call cb (<- *session* 'compute-claims commune)
+        (lambda (v) (reply! cb (scm->json-canonical (list->vector v)))))))
+
+;; the wire receipt as JSON — the body the lender's node emitted. v is
+;; (digest verdict): the digest it landed under, verified|unverifiable|bad.
+(define (handle-compute-receipt commune wire-json cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'compute-receipt commune
+                            (json-read-ordered wire-json))
+        (lambda (v)
+          (reply! cb (scm->json-canonical
+                      `(("digest"  . ,(or (and (pair? v) (car v)) ""))
+                        ("verdict" . ,(or (and (pair? v) (cadr v) #f) #f)))))))))
+
+;; dry-run: does the wire receipt's own digest verify? v is (ok? verdict).
+(define (handle-compute-verify wire-json cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'compute-verify
+                            (json-read-ordered wire-json))
+        (lambda (v)
+          (reply! cb (scm->json-canonical
+                      `(("digestOk" . ,(if (and (pair? v) (car v)) #t #f))
+                        ("verdict"  . ,(or (and (pair? v) (cadr v) #f) #f)))))))))
+
+;; the bridge's statement as JSON; v is (matched missing claimed paid).
+(define (handle-compute-settle commune wire-json cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'compute-settle commune
+                            (json-read-ordered wire-json))
+        (lambda (v)
+          (reply! cb (scm->json-canonical
+                      `(("matched" . ,(or (and (pair? v) (car v)) 0))
+                        ("missing" . ,(or (and (pair? v) (cadr v) #f) 0))
+                        ("claimed" . ,(or (and (pair? v) (caddr v) #f) 0))
+                        ("paid"    . ,(or (and (pair? v) (cadddr v) #f) 0)))))))))
+
+(define (handle-compute-statements commune cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'compute-statements commune)
+        (lambda (v) (reply! cb (scm->json-canonical (list->vector v)))))))
+
+;; the envelope contract — a job envelope as JSON; v is its bridgeJobId.
+(define (handle-compute-envelope wire-json cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'compute-envelope
+                            (json-read-ordered wire-json))
+        (lambda (v) (reply! cb (string-append "ok:" (if (string? v) v "")))))))
+
 ;;; ── governance: the decision inbox (governance-surface.md §Inbox) ─────────
 ;; list-proposals → [{id, status}]; the dial renders the open decisions.
 (define (handle-list-proposals cb)
@@ -3911,6 +4028,22 @@
             ("fpPresent"     . ,handle-fp-present)
             ("fpMyVouches"   . ,handle-fp-my-vouches)
             ("fpPresentBundle" . ,handle-fp-present-bundle)
+            ("computeOffer"      . ,handle-compute-offer)
+            ("computeRetract"    . ,handle-compute-retract)
+            ("computeOffers"     . ,handle-compute-offers)
+            ("computeSubmit"     . ,handle-compute-submit)
+            ("computeWithdraw"   . ,handle-compute-withdraw)
+            ("computeJobs"       . ,handle-compute-jobs)
+            ("computeMatch"      . ,handle-compute-match)
+            ("computeClaim"      . ,handle-compute-claim)
+            ("computeAccept"     . ,handle-compute-accept)
+            ("computePreempt"    . ,handle-compute-preempt)
+            ("computeClaims"     . ,handle-compute-claims)
+            ("computeReceipt"    . ,handle-compute-receipt)
+            ("computeVerify"     . ,handle-compute-verify)
+            ("computeSettle"     . ,handle-compute-settle)
+            ("computeStatements" . ,handle-compute-statements)
+            ("computeEnvelope"   . ,handle-compute-envelope)
             ("listProposals"  . ,handle-list-proposals)
             ("getResult"      . ,handle-get-result)
             ("listDelegations". ,handle-list-delegations)

@@ -204,9 +204,9 @@
   (define o-wire ($ gov 'compute-offer ALICE HOME "member" "inference,fetch" 4
                     "deterministic"))
   (check "compute-offer answers ok + an id" (car o-wire) 'ok)
-  (define o-id (cadr o-wire))
+  (define o-id (cdr o-wire))
   (check "compute-offers lists the offer as a wire row"
-         (let ((rows (cadr ($ gov 'compute-offers HOME))))
+         (let ((rows (cdr ($ gov 'compute-offers HOME))))
            (and (pair? rows) (cdr (assoc "lender" (car rows))))) ALICE)
 
   (check "a nonsense class is refused at the door"
@@ -216,18 +216,18 @@
   (define j-wire ($ gov 'compute-submit BOB HOME "inference" "member"
                     "deterministic" "in:wire"))
   (check "compute-submit answers ok + an id" (car j-wire) 'ok)
-  (define j-id (cadr j-wire))
+  (define j-id (cdr j-wire))
   (check "compute-jobs lists the open job"
-         (let ((rows (cadr ($ gov 'compute-jobs HOME))))
+         (let ((rows (cdr ($ gov 'compute-jobs HOME))))
            (and (pair? rows) (cdr (assoc "state" (car rows))))) "open")
   (check "compute-match answers the offer"
-         (length (cadr ($ gov 'compute-match HOME j-id))) 1)
+         (length (cdr ($ gov 'compute-match HOME j-id))) 1)
 
   (define c-wire ($ gov 'compute-claim ALICE HOME j-id o-id))
   (check "compute-claim answers ok + an id" (car c-wire) 'ok)
-  (define c-id (cadr c-wire))
+  (define c-id (cdr c-wire))
   (check "compute-claims lists the claim"
-         (let ((rows (cadr ($ gov 'compute-claims HOME))))
+         (let ((rows (cdr ($ gov 'compute-claims HOME))))
            (and (pair? rows) (cdr (assoc "state" (car rows))))) "claimed")
 
   (check "a stranger cannot accept the borrower's dispatch"
@@ -256,7 +256,7 @@
   (check "compute-receipt records"
          (car r-wire) 'ok)
   (check "the claim completes through the door"
-         (let ((rows (cadr ($ gov 'compute-claims HOME))))
+         (let ((rows (cdr ($ gov 'compute-claims HOME))))
            (cdr (assoc "state" (car rows)))) "complete")
 
   (check "a tampered digest is refused"
