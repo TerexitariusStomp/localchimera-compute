@@ -179,6 +179,18 @@ export interface SeamHandlers {
   /** PoI replay is authoritative — either party of the claim re-runs the envelope and the reply carries the challenge fields {receiptDigest, reproduced, attestationHash, counterHash} | "err:…". */
   // doors: session/compute-replay
   computeReplay?(commune: string, claimId: string): Promise<unknown>;
+  /** Bind a did:key to an account — a CAIP-10 payout address, or `keri:<aid>` (the AID↔did:key link; binds the caller's own AID only). Dual-signed over the statement; the verdict rides the reply. → {key, verdict} | "err:…". */
+  // doors: session/compute-bind
+  computeBind?(commune: string, wireJson: string): Promise<unknown>;
+  /** Either side unlinks — `side` is "signer" (the did:key) or "account" (the EOA/AID); the record stays, its status naming who ended it. → status | "err:…". */
+  // doors: session/compute-unbind
+  computeUnbind?(commune: string, key: string, side: string): Promise<unknown>;
+  /** The commune's AccountLinks — didKey, account, purpose, status per row. → row JSON list | "[]". */
+  // doors: session/compute-bindings
+  computeBindings?(commune: string): Promise<unknown>;
+  /** The commune's act, governor-gated: a SettlementStatement's sends, all to the bound treasury Safe — the rail is injected and refuses when absent. → payout rows | "err:…". */
+  // doors: session/compute-payout
+  computePayout?(commune: string, wireJson: string): Promise<unknown>;
   /** Land a receipt wire (JSON: the body the lender's node emitted): digest recomputed and matched, lender signature checked where resolvable, recorded, folded into the commune's observer as a use event. → {digest, verdict} JSON | "err:…". */
   // doors: session/compute-receipt
   computeReceipt?(commune: string, wireJson: string): Promise<unknown>;

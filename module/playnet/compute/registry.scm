@@ -46,7 +46,8 @@
             dispatch-claim->list list->dispatch-claim
             lane-offer-answers?
             ^compute-registry compute-registry-env
-            ^envelope-store spawn-envelope-store))
+            ^envelope-store spawn-envelope-store
+            ^binding-store spawn-binding-store binding-key))
 
 
 ;;; ── the records ─────────────────────────────────────────────────────────
@@ -487,9 +488,33 @@
   (spawn ^envelope-store (hashmap)))
 
 
+;;; ── the binding shelf ───────────────────────────────────────────────────
+;;; AccountLinks (compute/binding.scm) ride beside the registry the same
+;;; way — keyed "didKey account", a dumb map the doors decide who may put
+;;; and unlink. The binding record, signatures and all, is the value; an
+;;; unlinked binding stays on the shelf, its status saying who ended it.
+
+(define (^binding-store bcom bindings)
+  (methods
+    ((put! key binding)
+     (bcom (^binding-store bcom (hashmap-set bindings key binding))))
+    ((get key)
+     (hashmap-ref bindings key #f))
+    ((all)
+     (hashmap-filter (lambda (v) #t) bindings))
+    ((portrait) (list 'binding-store (serialize-hashmap bindings (lambda (x) x))))))
+
+(define (binding-key did-key account)
+  (string-append did-key " " account))
+
+(define (spawn-binding-store)
+  (spawn ^binding-store (hashmap)))
+
+
 ;;; ── persistence ─────────────────────────────────────────────────────────
 
 (define compute-registry-env
   (make-persistence-env
     `((((playnet compute registry) ^compute-registry) ,^compute-registry)
-      (((playnet compute registry) ^envelope-store) ,^envelope-store))))
+      (((playnet compute registry) ^envelope-store) ,^envelope-store)
+      (((playnet compute registry) ^binding-store) ,^binding-store))))

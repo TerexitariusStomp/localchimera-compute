@@ -1317,6 +1317,14 @@ function boot() {
       new Promise(res => schemeHandlers.computeFetchEnvelope ? schemeHandlers.computeFetchEnvelope(commune || "", claimId || "", res) : res("err:offline"));
     HANDLERS.computeReplay = (commune, claimId) =>
       new Promise(res => schemeHandlers.computeReplay ? schemeHandlers.computeReplay(commune || "", claimId || "", res) : res("err:offline"));
+    HANDLERS.computeBind = (commune, wireJson) =>
+      new Promise(res => schemeHandlers.computeBind ? schemeHandlers.computeBind(commune || "", wireJson || "{}", res) : res("err:offline"));
+    HANDLERS.computeUnbind = (commune, key, side) =>
+      new Promise(res => schemeHandlers.computeUnbind ? schemeHandlers.computeUnbind(commune || "", key || "", side || "", res) : res("err:offline"));
+    HANDLERS.computeBindings = (commune) =>
+      new Promise(res => schemeHandlers.computeBindings ? schemeHandlers.computeBindings(commune || "", res) : res("[]"));
+    HANDLERS.computePayout = (commune, wireJson) =>
+      new Promise(res => schemeHandlers.computePayout ? schemeHandlers.computePayout(commune || "", wireJson || "{}", res) : res("err:offline"));
     HANDLERS.computeReceipt    = (commune, wireJson) =>
       new Promise(res => schemeHandlers.computeReceipt ? schemeHandlers.computeReceipt(commune || "", wireJson || "{}", res) : res("err:offline"));
     HANDLERS.computeVerify     = (wireJson) =>

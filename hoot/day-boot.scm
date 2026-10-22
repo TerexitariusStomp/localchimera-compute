@@ -3163,6 +3163,32 @@
       (planner-call cb (<- *session* 'compute-replay commune claim-id)
         (lambda (v) (reply! cb (scm->json-canonical v))))))
 
+;; the AccountLink ceremony — a did:key binds an account, dual-signed;
+;; keri:<aid> binds the caller's own AID. Either side unlinks.
+(define (handle-compute-bind commune wire-json cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (let ((w (json-read-ordered wire-json)))
+        (planner-call cb (<- *session* 'compute-bind commune w)
+          (lambda (v) (reply! cb (scm->json-canonical v)))))))
+
+(define (handle-compute-unbind commune key side cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'compute-unbind commune key side)
+        (lambda (v) (reply! cb (scm->json-canonical v))))))
+
+(define (handle-compute-bindings commune cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'compute-bindings commune)
+        (lambda (v) (reply! cb (scm->json-canonical v))))))
+
+;; ring-3 payout — the commune's act: a statement's sends, all to the bound
+;; treasury Safe; no send rail injected means an honest error, not a phantom.
+(define (handle-compute-payout commune wire-json cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (let ((w (json-read-ordered wire-json)))
+        (planner-call cb (<- *session* 'compute-payout commune w)
+          (lambda (v) (reply! cb (scm->json-canonical v)))))))
+
 ;; the wire receipt as JSON — the body the lender's node emitted. v is
 ;; (digest verdict): the digest it landed under, verified|unverifiable|bad.
 (define (handle-compute-receipt commune wire-json cb)
@@ -4056,6 +4082,10 @@
             ("computeClaims"     . ,handle-compute-claims)
             ("computeFetchEnvelope" . ,handle-compute-fetch-envelope)
             ("computeReplay"        . ,handle-compute-replay)
+            ("computeBind"          . ,handle-compute-bind)
+            ("computeUnbind"        . ,handle-compute-unbind)
+            ("computeBindings"      . ,handle-compute-bindings)
+            ("computePayout"        . ,handle-compute-payout)
             ("computeReceipt"    . ,handle-compute-receipt)
             ("computeVerify"     . ,handle-compute-verify)
             ("computeSettle"     . ,handle-compute-settle)

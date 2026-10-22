@@ -14,6 +14,8 @@
              (playnet compute settlement)
              (playnet compute envelope)
              (playnet compute replay)
+             (playnet compute binding)
+             (playnet compute payout)
              (playnet utils store-utils)
              (playnet boot governance)
              (goblins) (goblins vat)
@@ -369,6 +371,131 @@
          (let* ((j3 (cdr ($ gov 'compute-submit BOB HOME "fetch" "member"
                             "none" "in:bare2")))
                 (c3 (cdr ($ gov 'compute-claim ALICE HOME j3 o-id))))
-           (car ($ gov 'compute-replay ALICE HOME c3))) 'error))
+           (car ($ gov 'compute-replay ALICE HOME c3))) 'error)
+
+  ;; ── bindings — the AccountLink ceremony (spec §1) ──────────────────────
+  (define link-x
+    (make-account-link #:did-key "did:key:z6MksNode1" #:scope-aid HOME
+                       #:account "eip155:1:0xSafeTreasury" #:purpose 'payout
+                       #:nonce "n1" #:expiry 9999999999))
+  (check "the statement both sides sign is deterministic"
+         (equal? (binding-statement link-x) (binding-statement link-x)) #t)
+  (check "keri: names the AID↔did:key binding form"
+         (keri-account? "keri:EAbC") #t)
+  (check "a CAIP-10 is not the keri: form" (keri-account? "eip155:1:0x1") #f)
+  (define b-x (make-account-binding link-x "sigS" "sigA"))
+  (check "a fresh binding stands" (binding-live? b-x) #t)
+  (check "the signer may unlink"
+         (account-binding-status (binding-unlink b-x 'signer)) 'unlinked-by-signer)
+  (check "the account side may unlink"
+         (account-binding-status (binding-unlink b-x 'account)) 'unlinked-by-account)
+  (check "an unlinked binding does not stand"
+         (binding-live? (binding-unlink b-x 'signer)) #f)
+  (check "an expired link does not stand"
+         (binding-live?
+          (make-account-binding
+           (make-account-link #:did-key "d" #:scope-aid HOME #:account "a"
+                              #:purpose 'node #:nonce "n" #:expiry 1)
+           "s" "s")) #f)
+  (check "verify-binding: both sigs good → ok"
+         (verify-binding b-x #:verify-signer (lambda (k s g) #t)
+                         #:verify-account (lambda (k s g) #t)) 'ok)
+  (check "verify-binding: a bad signer sig → bad-signature"
+         (verify-binding b-x #:verify-signer (lambda (k s g) #f)
+                         #:verify-account (lambda (k s g) #t)) 'bad-signature)
+  (check "verify-binding: a bad account sig → bad-signature"
+         (verify-binding b-x #:verify-signer (lambda (k s g) #t)
+                         #:verify-account (lambda (k s g) #f)) 'bad-signature)
+  (check "verify-binding: a raising verifier is unverifiable, not a crash"
+         (verify-binding b-x #:verify-signer (lambda (k s g) (error "no resolver"))
+                         #:verify-account (lambda (k s g) #t)) 'unverifiable)
+  (check "verify-binding: unlinked is a verdict"
+         (verify-binding (binding-unlink b-x 'account)
+                         #:verify-signer (lambda (k s g) #t)
+                         #:verify-account (lambda (k s g) #t)) 'unlinked)
+
+  ;; ── payout — one payee, the treasury Safe (spec §2) ────────────────────
+  (define stmt-x
+    (make-settlement-statement
+     #:period "2026-W43"
+     #:entries (list '((bridgeJobId . "j1") (receiptDigest . "d1")
+                       (amount . 10) (asset . "eip155:1/erc20:0xUSD"))
+                     '((bridgeJobId . "j2") (receiptDigest . "d2")
+                       (amount . 5) (asset . "eip155:1/erc20:0xUSD"))
+                     '((bridgeJobId . "j3") (receiptDigest . "d3")
+                       (amount . 2) (asset . "eip155:1/slip44:60")))
+     #:payments '() #:bridge-sig "bsig"))
+  (check "a node-purpose binding is not a payout rail"
+         (catch #t (lambda () (payout-binding
+                      (make-account-binding
+                       (make-account-link #:did-key "d" #:scope-aid HOME
+                                          #:account "eip155:1:0xA" #:purpose 'node
+                                          #:nonce "n" #:expiry 9e9) "s" "s"))
+                    #f)
+                (lambda (k . a) #t)) #t)
+  (check "a keri: binding is an identity, not a payee"
+         (catch #t (lambda () (payout-binding
+                      (make-account-binding
+                       (make-account-link #:did-key "d" #:scope-aid HOME
+                                          #:account "keri:EX" #:purpose 'payout
+                                          #:nonce "n" #:expiry 9e9) "s" "s"))
+                    #f)
+                (lambda (k . a) #t)) #t)
+  (check "the plan folds entries to one send per asset, treasury only"
+         (let ((plan (payout-plan stmt-x b-x)))
+           (and (= (length plan) 2)
+                (every (lambda (r) (equal? (car r) "eip155:1:0xSafeTreasury")) plan)
+                (equal? (assoc "eip155:1/erc20:0xUSD"
+                               (map (lambda (r) (cons (cadr r) (caddr r))) plan))
+                        '("eip155:1/erc20:0xUSD" . 15)))) #t)
+  (check "execute-payout with a send lands rows with tx hashes"
+         (let ((rows (execute-payout stmt-x b-x
+                      #:send (lambda (to amt asset) "0xTxHash123"))))
+           (and (= (length rows) 2)
+                (equal? (payout-row-tx-hash (car rows)) "0xTxHash123")
+                (equal? (payout-row-to (car rows)) "eip155:1:0xSafeTreasury"))) #t)
+  (check "execute-payout without a rail fails closed"
+         (catch #t (lambda () (execute-payout stmt-x b-x) #f)
+                (lambda (k . a) #t)) #t)
+
+  ;; ── the binding/payout doors ────────────────────────────────────────────
+  (check "compute-bind: a keri: binding is the caller's own AID only"
+         (car ($ gov 'compute-bind ALICE HOME
+                 '((didKey . "did:key:z6MksAlice") (account . "keri:did:keri:EAlice")
+                   (purpose . "node") (nonce . "n1") (expiry . 9999999999)
+                   (signerSig . "sS") (accountSig . "sA"))))
+         'error)
+  (check "compute-bind: a keri: self-binding lands"
+         (car ($ gov 'compute-bind ALICE HOME
+                 (list (cons 'didKey "did:key:z6MksAlice")
+                       (cons 'account (string-append "keri:" ALICE))
+                       '(purpose . "node") '(nonce . "n1") '(expiry . 9999999999)
+                       '(signerSig . "sS") '(accountSig . "sA"))))
+         'ok)
+  (check "compute-bind: a CAIP-10 link lands, verdict unverifiable (no rail)"
+         (let ((r ($ gov 'compute-bind ALICE HOME
+                     '((didKey . "did:key:z6MksAlice") (account . "eip155:1:0xAliceSafe")
+                       (purpose . "payout") (nonce . "n2") (expiry . 9999999999)
+                       (signerSig . "sS") (accountSig . "sA")))))
+           (and (eq? (car r) 'ok)
+                (eq? (cdr (assoc "verdict" (cdr r))) 'unverifiable))) #t)
+  (check "compute-bindings lists what was bound"
+         (let* ((rows (cdr ($ gov 'compute-bindings ALICE HOME)))
+                (hit (find (lambda (r)
+                             (equal? (cdr (assoc "account" r)) "eip155:1:0xAliceSafe"))
+                           rows)))
+           (and hit (equal? (cdr (assoc "purpose" hit)) "payout")
+                (equal? (cdr (assoc "status" hit)) "live"))) #t)
+  (check "compute-unbind: the account side ends it"
+         (let* ((key (binding-key "did:key:z6MksAlice" "eip155:1:0xAliceSafe"))
+                (r ($ gov 'compute-unbind ALICE HOME key "account")))
+           (and (eq? (car r) 'ok) (equal? (cdr r) "unlinked-by-account"))) #t)
+  (check "compute-unbind: a nonsense side is refused"
+         (car ($ gov 'compute-unbind ALICE HOME "k" "sideways")) 'error)
+  (check "compute-payout: an unreachable commune is refused"
+         (car ($ gov 'compute-payout ALICE "did:keri:ENowhere"
+                 '((statement . ((period . "w") (entries . ()) (payments . ())
+                                 (bridgeSig . "s")))
+                   (bindingKey . "k")))) 'error))
 
 (test-summary!)

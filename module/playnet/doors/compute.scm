@@ -28,6 +28,8 @@
   #:use-module (playnet compute settlement)
   #:use-module (playnet compute envelope)
   #:use-module (playnet compute replay)
+  #:use-module (playnet compute binding)
+  #:use-module (playnet compute payout)
   #:use-module (playnet doors governance)
   #:use-module ((playnet protocol dispatch) #:select (declared-doors))
   #:use-module ((playnet keri citizen-sig) #:select (verify-said-signature))
@@ -53,6 +55,14 @@
         (let ((k (string-append "envelope:" commune-aid)))
           (or (hash-ref registries k)
               (let ((s (spawn-envelope-store)))
+                (hash-set! registries k s)
+                s))))
+
+      ;; the binding shelf — account-links beside the registry, same laziness
+      (define (binds-for commune-aid)
+        (let ((k (string-append "binding:" commune-aid)))
+          (or (hash-ref registries k)
+              (let ((s (spawn-binding-store)))
                 (hash-set! registries k s)
                 s))))
 
@@ -337,6 +347,128 @@
                                    ("attestationHash" . ,(challenge-attestation-hash ch))
                                    ("counterHash"    . ,(challenge-counter-hash ch))))))))))))
            (lambda (k . a) (list 'error (format #f "compute-replay: ~a" a)))))
+
+        ;; ── bindings ─────────────────────────────────────────────────────
+        ;; The AccountLink ceremony (spec §1): a did:key binds an account —
+        ;; a CAIP-10 payout address, or `keri:<aid>` which IS the AID↔did:key
+        ;; binding — dual-signed over the same statement. Either side
+        ;; unlinks; the record stays, its status saying who ended it.
+        ;; W is the wire alist {didKey, account, purpose, nonce, expiry,
+        ;; signerSig, accountSig}. keri:-form binds the caller's own AID —
+        ;; the session is already that identity's signature; foreign
+        ;; accounts verify through the signature seam (payout re-verifies
+        ;; before it pays), and the verdict rides the reply.
+        ((compute-bind identity-key commune-aid w)
+         (catch #t
+           (lambda ()
+             (let* ((w (wire-normalize w))
+                    (purpose-str (assq-ref w 'purpose))
+                    (purpose (and purpose-str (string->symbol purpose-str)))
+                    (account (assq-ref w 'account)))
+               (cond
+                ((not (assq-ref w 'didKey))
+                 (list 'error "compute-bind: a didKey is required"))
+                ((not account)
+                 (list 'error "compute-bind: an account is required"))
+                ((and (keri-account? account)
+                      (not (equal? account (string-append "keri:" identity-key))))
+                 (list 'error "compute-bind: a keri: binding is your own AID only"))
+                (else
+                 (let* ((link (make-account-link
+                               #:did-key (assq-ref w 'didKey)
+                               #:scope-aid commune-aid
+                               #:account account
+                               #:purpose purpose
+                               #:nonce (or (assq-ref w 'nonce) "")
+                               #:expiry (or (assq-ref w 'expiry) 0)))
+                        (b (make-account-binding link
+                             (or (assq-ref w 'signerSig) "")
+                             (or (assq-ref w 'accountSig) "")))
+                        (key (binding-key (account-link-did-key link) account))
+                        (verdict (verify-binding b)))
+                   ($ (binds-for commune-aid) 'put! key b)
+                   (cons 'ok `(("key" . ,key) ("verdict" . ,verdict))))))))
+           (lambda (k . a) (list 'error (format #f "compute-bind: ~a" a)))))
+
+        ;; Either side unlinks. The caller may end their own keri:-account
+        ;; bindings (the session is the account side); signer-side unlink
+        ;; arrives with the did:key's signature over the statement — the
+        ;; injected verifier speaks, %sig-unverified refuses.
+        ((compute-unbind identity-key commune-aid key side)
+         (catch #t
+           (lambda ()
+             (let* ((b ($ (binds-for commune-aid) 'get key))
+                    (side-sym (and side (string->symbol side))))
+               (cond
+                ((not b) (list 'error "compute-unbind: no such binding"))
+                ((not (memq side-sym '(signer account)))
+                 (list 'error "compute-unbind: side is signer or account"))
+                ((and (eq? side-sym 'account)
+                      (keri-account?
+                       (account-link-account (account-binding-link b)))
+                      (not (equal? (account-link-account (account-binding-link b))
+                                   (string-append "keri:" identity-key))))
+                 (list 'error "compute-unbind: not your binding"))
+                (else
+                 (let ((b2 (binding-unlink b side-sym)))
+                   ($ (binds-for commune-aid) 'put! key b2)
+                   (cons 'ok (symbol->string (account-binding-status b2))))))))
+           (lambda (k . a) (list 'error (format #f "compute-unbind: ~a" a)))))
+
+        ((compute-bindings identity-key commune-aid)
+         (catch #t
+           (lambda ()
+             (cons 'ok
+               (map (lambda (b)
+                      (let ((l (account-binding-link b)))
+                        `(("didKey" . ,(account-link-did-key l))
+                          ("account" . ,(account-link-account l))
+                          ("purpose" . ,(symbol->string (account-link-purpose l)))
+                          ("nonce" . ,(account-link-nonce l))
+                          ("expiry" . ,(account-link-expiry l))
+                          ("status" . ,(symbol->string (account-binding-status b))))))
+                    ($ (binds-for commune-aid) 'all))))
+           (lambda (k . a) (list 'error (format #f "compute-bindings: ~a" a)))))
+
+        ;; ── ring-3 payout ────────────────────────────────────────────────
+        ;; The commune's act, gov-cap gated like compute-settle: a
+        ;; SettlementStatement's sends, all to the bound treasury Safe and
+        ;; nowhere else. The send rail is injected — %payout-unavailable
+        ;; refuses, so a commune without a Safe rail answers an error, never
+        ;; a phantom payment. W is {statement, bindingKey}.
+        ((compute-payout identity-key commune-aid w)
+         (let ((sc (scope-for commune-aid)))
+           (if (not sc)
+               (list 'error "compute-payout: no scope reachable here for that commune")
+               (catch #t
+                 (lambda ()
+                   ($ sc 'mint-gov-cap identity-key)   ; refuses non-governors
+                   (let* ((w (wire-normalize w))
+                          (s-wire (assq-ref w 'statement))
+                          (bkey (assq-ref w 'bindingKey))
+                          (b (and bkey ($ (binds-for commune-aid) 'get bkey))))
+                     (cond
+                      ((not s-wire)
+                       (list 'error "compute-payout: a statement is required"))
+                      ((not b) (list 'error "compute-payout: no such binding"))
+                      ((not (binding-live? b))
+                       (list 'error "compute-payout: binding is not live"))
+                      (else
+                       (let* ((sw (wire-normalize s-wire))
+                              (st (make-settlement-statement
+                                    #:period (assq-ref sw 'period)
+                                    #:entries (or (assq-ref sw 'entries) '())
+                                    #:payments (or (assq-ref sw 'payments) '())
+                                    #:bridge-sig (assq-ref sw 'bridgeSig)))
+                              (rows (execute-payout st b #:send %payout-unavailable)))
+                         (cons 'ok (map (lambda (r)
+                                          `(("txHash" . ,(payout-row-tx-hash r))
+                                            ("asset" . ,(payout-row-asset r))
+                                            ("amount" . ,(payout-row-amount r))
+                                            ("to" . ,(payout-row-to r))))
+                                        rows)))))))
+                 (lambda (k . a)
+                   (list 'error (format #f "compute-payout: ~a" a)))))))
 
         ;; ── receipts ────────────────────────────────────────────────────
         ;; W is the wire alist the lender's node emitted. The door rebuilds
