@@ -52,8 +52,8 @@ Machine resources are the product; ~12k lines of custom code concentrate here.
 | Browser executor | **Wasimoff** webprovider + broker | MIT | `compute/adapters.scm` ✓ written |
 | Server execution + replay | **wasmCloud** + Wasmtime | Apache-2.0 | `compute/adapters.scm` ✓ written |
 | Claim lifecycle/deadlines | **Temporal** | MIT | workflow glue |
-| Ring-3 orchestration | **Bacalhau** + **Golem yagna** (supplier) | Apache-2.0 / GPL-3.0 | envelope adapters + §8 privacy gate |
-| Inference lanes | **llama.cpp / ollama** + **LiteLLM** ⚠ | MIT | key-pool adapter |
+| Ring-3 orchestration | **Bacalhau** + **Golem yagna** (supplier) | Apache-2.0 / GPL-3.0 | `delegates.scm` bacalhau seam ✓ + §8 privacy gate |
+| Inference lanes | **llama.cpp / ollama** + **LiteLLM** ⚠ | MIT | `delegates.scm` litellm seam ✓ key-pool adapter |
 | TEE evidence tier | **dcap-qvl / Intel DCAP / NVIDIA NRAS** | Apache-2.0 / BSD-3 | fills `verify-quote` seam |
 | Fleet provisioning | **OpenTofu** + providers | MPL-2.0 | reconciler adapter |
 | Treasury | **Safe + protocol-kit** | LGPL-3.0 / MIT | `compute/safe.scm` ✓ written |
@@ -71,17 +71,17 @@ Machine resources are the product; ~12k lines of custom code concentrate here.
 
 | Function | OSS host | License | Our residue |
 |---|---|---|---|
-| Planning (`solve/`, `plan/`, `matching/`, `algorithms/`) | **OR-Tools CP-SAT** (alt: SCIP, HiGHS) | Apache-2.0 / MIT | constraint-model builder ~1k |
+| Planning (`solve/`, `plan/`, `matching/`, `algorithms/`) | **OR-Tools CP-SAT** (alt: SCIP, HiGHS) | Apache-2.0 / MIT | `delegates.scm` cpsat seam ✓ + constraint-model builder ~1k |
 | VF accounting (`vf/`, `observation/`, `scope/`, `pools/`) | **hREA** ⚠ CAL substrate | Apache-2.0 | `compute/hrea.scm` ✓ written (compute leg) |
 | Mutual credit + federation (`economy/`, `federation/`) | **Credit Commons cc-node** + ActivityPub | GPL-3.0 | `compute/credit-commons.scm` ✓ written (compute leg) |
-| Ballots/sortition (`voice/`) | **Decidim** (sortitions component) | AGPL-3.0 | governance adapter ~0.3k |
-| Identity (`keri/`, `keys/`, `credentials/`) | **keria + signify-ts** | Apache-2.0 | binding-ACDC adapter ~0.5k |
-| Knowledge corpus (`knowledge/`) | corpus stays **data**; queries → **Apache Jena** | Apache-2.0 | SPARQL adapter ~0.3k |
-| Inventory (`ddmrp/`) | **Odoo OCA ddmrp** / ERPNext | LGPL-3.0 / GPL-3.0 | ERP adapter ~0.3k |
-| Org/social/folksonomy | **hREA agents + ActivityPub** | Apache-2.0 | ~0.3k |
-| Domain doors (~15k) | authorization → **Cedar/OPA**; bodies → **Temporal** | Apache-2.0 / MIT | policies ~2k |
-| Calendar | **Radicale + FullCalendar** | GPL-3.0 / MIT | ~0.1k |
-| Push/notify | **ntfy / UnifiedPush** | Apache-2.0 | ~0.1k |
+| Ballots/sortition (`voice/`) | **Decidim** (sortitions component) | AGPL-3.0 | `delegates.scm` decidim seam ✓ + governance adapter ~0.3k |
+| Identity (`keri/`, `keys/`, `credentials/`) | **keria + signify-ts** | Apache-2.0 | `compute/binding-verifiers.scm` ✓ + binding-ACDC adapter ~0.5k |
+| Knowledge corpus (`knowledge/`) | corpus stays **data**; queries → **Apache Jena** | Apache-2.0 | `delegates.scm` sparql seam ✓ ~0.3k |
+| Inventory (`ddmrp/`) | **Odoo OCA ddmrp** / ERPNext | LGPL-3.0 / GPL-3.0 | `delegates.scm` odoo seam ✓ ~0.3k |
+| Org/social/folksonomy | **hREA agents + ActivityPub** | Apache-2.0 | `delegates.scm` ap seam ✓ ~0.3k |
+| Domain doors (~15k) | authorization → **Cedar/OPA**; bodies → **Temporal** | Apache-2.0 / MIT | `delegates.scm` opa/cedar/temporal seams ✓ + policies ~2k |
+| Calendar | **Radicale + FullCalendar** | GPL-3.0 / MIT | `delegates.scm` radicale seam ✓ ~0.1k |
+| Push/notify | **ntfy / UnifiedPush** | Apache-2.0 | `delegates.scm` ntfy seam ✓ ~0.1k |
 | Broker (`mqtt/`) | **mosquitto** | EPL-2.0 | ~0.1k |
 | Edge (`gateway/`) | **nginx / Caddy** | BSD-2 / Apache-2.0 | ~0.1k |
 | Indexes | **SQLite / LMDB** | public domain / OpenLDAP | ~0 |

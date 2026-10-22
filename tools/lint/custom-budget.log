@@ -3,3 +3,4 @@
 2026-10-22T04:59:29Z	372179 → 372273	dispute↔settlement hold wiring + wire path — Tier-1 per spec/oss-inventory.md
 2026-10-22T05:03:23Z	372273 → 372718	P2 adapter seams: wasimoff/wasmcloud executors, hREA event, cc-node ledger, Safe rail — Tier-1/2 glue per spec/oss-inventory.md
 2026-10-22T05:08:14Z	372718 → 372876	binding-verifiers: did:key base58btc decode + Ed25519/KERI/ECDSA verification — Tier-1 identity seam per spec/oss-inventory.md
+2026-10-22T05:16:09Z	372876 → 373375	Tier-2 delegation seams: delegates.scm adapters + adopt ed OCI stack + tests — spec/oss-inventory.md Tier-2

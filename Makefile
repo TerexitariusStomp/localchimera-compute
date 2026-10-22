@@ -1090,6 +1090,11 @@ test-adjustment:
 test-counts:
 	$(GUILE_TEST_DEV) -L module tests/doors/test-counts.scm
 
+# The Tier-2 adapter seams (module/playnet/delegates.scm): wire shapes
+# pinned, fail-closed defaults refuse, injected transports answer.
+test-delegates:
+	$(GUILE_TEST_DEV) -L module tests/test-delegates.scm
+
 # Places inside places, the code a thing is known by, a container that moves
 # with what is in it, and the lot's date (docs/observation/capture.md §6).
 test-labels-containers:
