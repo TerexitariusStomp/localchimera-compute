@@ -30,6 +30,7 @@
   #:use-module (playnet compute replay)
   #:use-module (playnet compute binding)
   #:use-module (playnet compute payout)
+  #:use-module (playnet compute executors)
   #:use-module (playnet doors governance)
   #:use-module ((playnet protocol dispatch) #:select (declared-doors))
   #:use-module ((playnet keri citizen-sig) #:select (verify-said-signature))
@@ -333,9 +334,11 @@
                     ((not repro)
                      (list 'error "compute-replay: receipt has no repro spec"))
                     (else
-                     (let* ((result (replay-job env repro
+                     (let* ((x (executor-for commune-aid))
+                            (result (replay-job env repro
                                                 (receipt-output-hash r)
-                                                #:executor %replay-unavailable))
+                                                #:executor (if x (%executor-run x)
+                                                               %replay-unavailable)))
                             (ch (make-challenge
                                  #:receipt-digest (receipt-digest r)
                                  #:reproduced (replay-verdict result)

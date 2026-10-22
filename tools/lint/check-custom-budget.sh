@@ -34,6 +34,19 @@ if [ "${1:-}" = "--update" ]; then
     exit 0
 fi
 
+# --focus "reason" — a baseline RAISE, allowed only as a logged exception:
+# the plan budgets ~12k lines of Tier-1 focus code (compute/binding/payout/
+# executor seams, their doors and tests). Every raise is appended to
+# tools/lint/custom-budget.log so the audit trail says which phase asked.
+if [ "${1:-}" = "--focus" ]; then
+    reason="${2:?--focus requires a reason}"
+    echo "$now" > "$BASELINE"
+    printf '%s\t%s → %s\t%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+        "$base" "$now" "$reason" >> tools/lint/custom-budget.log
+    echo "check-custom-budget: baseline raised to $now (logged: $reason)"
+    exit 0
+fi
+
 if [ "$base" = 0 ]; then
     echo "check-custom-budget: no baseline — run with --update to record $now" >&2
     exit 1

@@ -16,6 +16,7 @@
              (playnet compute replay)
              (playnet compute binding)
              (playnet compute payout)
+             (playnet compute executors)
              (playnet utils store-utils)
              (playnet boot governance)
              (goblins) (goblins vat)
@@ -496,6 +497,43 @@
          (car ($ gov 'compute-payout ALICE "did:keri:ENowhere"
                  '((statement . ((period . "w") (entries . ()) (payments . ())
                                  (bridgeSig . "s")))
-                   (bindingKey . "k")))) 'error))
+                   (bindingKey . "k")))) 'error)
+
+  ;; ── the executor registry — replay with a real runner ──────────────────
+  (check "no executor registered → the wildcard table is empty"
+         (executor-for HOME) #f)
+  (register-executor! HOME
+    (make-replay-executor #:kind 'wasmcloud #:name "host-1"
+                          #:run (lambda (env repro) "out:shelf")))
+  (check "a registered executor reproduces through the door"
+         (let ((r ($ gov 'compute-replay BOB HOME shelf-claim)))
+           (and (eq? (car r) 'ok)
+                (eq? (cdr (assoc "reproduced" (cdr r))) 'reproduced)
+                (equal? (cdr (assoc "counterHash" (cdr r))) "out:shelf"))) #t)
+  (unregister-executor! HOME)
+  (check "an executor that disagrees mismatches through the door"
+         (begin
+           (register-executor! HOME
+             (make-replay-executor #:kind 'wasimoff #:name "broker-1"
+                                   #:run (lambda (env repro) "out:WRONG")))
+           (let ((r ($ gov 'compute-replay ALICE HOME shelf-claim)))
+             (eq? (cdr (assoc "reproduced" (cdr r))) 'mismatch))) #t)
+  (unregister-executor! HOME)
+  (check "no executor again → fail closed"
+         (let ((r ($ gov 'compute-replay BOB HOME shelf-claim)))
+           (eq? (cdr (assoc "reproduced" (cdr r))) 'no-executor)) #t)
+  (check "executors-list reports the registered rows"
+         (begin
+           (register-executor! 'any
+             (make-replay-executor #:kind 'local #:name "wasmtime-26"
+                                   #:run (lambda (e r) "x")))
+           (let ((rows (executors-list)))
+             (unregister-executor! 'any)
+             (and (= (length rows) 1)
+                (equal? (list-ref (car rows) 1) 'local)))) #t)
+  (check "an unknown executor kind is refused at construction"
+         (catch #t (lambda () (make-replay-executor #:kind 'magic #:name "x"
+                                                  #:run (lambda (e r) "x")) #f)
+                (lambda (k . a) #t)) #t))
 
 (test-summary!)
