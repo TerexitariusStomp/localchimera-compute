@@ -908,6 +908,15 @@ lint-recipes:
 check-rid-mentions:
 	@tools/lint/check-rid-mentions.sh
 
+# The OSS-inventory gates (spec/oss-inventory.md): every adopted component's
+# license must be free + commercially usable, and first-party lines may only
+# ratchet down toward the ≤5%-of-deployed budget.
+.PHONY: check-licenses check-custom-budget
+check-licenses:
+	@tools/lint/check-licenses.sh
+check-custom-budget:
+	@tools/lint/check-custom-budget.sh
+
 # The RID token in LICENSE-ADDITIONAL-TERMS.md's attribution quote and the
 # bare token in both HTML footers, kept to knowledge/law/product.scm's
 # `attribution` notice (the same source ui/app/legal-product.ts already

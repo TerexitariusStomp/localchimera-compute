@@ -1,0 +1,64 @@
+# oss-adopted.txt — adopted OSS components, one per line:
+#   name | license | source | status
+# status: in-use | adopted | flagged (constraint recorded in spec/oss-inventory.md)
+# The license allowlist lives in tools/lint/check-licenses.sh — edit both together.
+
+spritely-goblins | Apache-2.0 | https://gitlab.com/spritely/goblins | in-use
+guile-hoot | LGPL-3.0 | https://gitlab.com/spritely/guile-hoot | in-use
+keria | Apache-2.0 | https://github.com/WebOfTrust/keria | in-use
+signify-ts | Apache-2.0 | https://github.com/WebOfTrust/signify-ts | in-use
+monerod-wallet-rpc | BSD-3-Clause | https://github.com/monero-project/monero | in-use
+nginx | BSD-2-Clause | https://nginx.org | in-use
+tor | BSD-3-Clause | https://gitlab.torproject.org/tpo/core/tor | in-use
+maplibre-gl-js | BSD-3-Clause | https://github.com/maplibre/maplibre-gl-js | in-use
+h3 | Apache-2.0 | https://github.com/uber/h3 | in-use
+radicle-heartwood | MIT Apache-2.0 | https://app.radicle.xyz/nodes/seed.radicle.xyz/rad:z3gqcJUoA1n9HaHKufZs5FCSGazvFd | in-use
+guix-system | GPL-3.0 | https://git.savannah.gnu.org/git/guix.git | in-use
+shepherd | GPL-3.0 | https://git.savannah.gnu.org/git/shepherd.git | in-use
+
+wasimoff | MIT | https://github.com/wasimoff/wasimoff | adopted
+wasmcloud | Apache-2.0 | https://github.com/wasmCloud/wasmCloud | adopted
+wasmtime | Apache-2.0 | https://github.com/bytecodealliance/wasmtime | adopted
+temporal | MIT | https://github.com/temporalio/temporal | adopted
+bacalhau | Apache-2.0 | https://github.com/bacalhau-project/bacalhau | adopted
+golem-yagna | GPL-3.0 | https://github.com/golemfactory/yagna | adopted
+litellm | MIT | https://github.com/BerriAI/litellm | flagged
+llama-cpp | MIT | https://github.com/ggml-org/llama.cpp | adopted
+ollama | MIT | https://github.com/ollama/ollama | adopted
+onnxruntime-web | MIT | https://github.com/microsoft/onnxruntime | adopted
+dcap-qvl | Apache-2.0 | https://github.com/Phala-Network/dcap-qvl | adopted
+opentofu | MPL-2.0 | https://github.com/opentofu/opentofu | adopted
+safe-smart-account | LGPL-3.0 | https://github.com/safe-global/safe-smart-account | adopted
+safe-protocol-kit | MIT | https://github.com/safe-global/safe-core-sdk | adopted
+iroh | MIT Apache-2.0 | https://github.com/n0-computer/iroh | adopted
+libp2p | MIT | https://github.com/libp2p/libp2p | adopted
+arti | MIT Apache-2.0 | https://gitlab.torproject.org/tpo/core/arti | adopted
+reticulum | Reticulum | https://github.com/markqvist/Reticulum | flagged
+didcomm-rs | Apache-2.0 | https://github.com/decentralized-identity/didcomm-rs | adopted
+hrea | Apache-2.0 | https://github.com/h-REA/hREA | flagged
+holochain | CAL-1.0 | https://github.com/holochain/holochain | flagged
+credit-commons-node | GPL-3.0 | https://gitlab.com/credit-commons/cc-node | adopted
+decidim | AGPL-3.0 | https://github.com/decidim/decidim | adopted
+or-tools | Apache-2.0 | https://github.com/google/or-tools | adopted
+scip | Apache-2.0 | https://github.com/scipopt/scip | adopted
+highs | MIT | https://github.com/ERGO-Code/HiGHS | adopted
+apache-jena | Apache-2.0 | https://github.com/apache/jena | adopted
+odoo-oca-ddmrp | LGPL-3.0 | https://github.com/OCA/ddmrp | adopted
+erpnext | GPL-3.0 | https://github.com/frappe/erpnext | adopted
+cedar | Apache-2.0 | https://github.com/cedar-policy/cedar | adopted
+opa | Apache-2.0 | https://github.com/open-policy-agent/opa | adopted
+radicale | GPL-3.0 | https://github.com/Kozea/Radicale | adopted
+fullcalendar | MIT | https://github.com/fullcalendar/fullcalendar | adopted
+ntfy | Apache-2.0 GPL-2.0 | https://github.com/binwiederhier/ntfy | adopted
+unifiedpush | Apache-2.0 | https://unifiedpush.org | adopted
+mosquitto | EPL-2.0 | https://github.com/eclipse-mosquitto/mosquitto | adopted
+caddy | Apache-2.0 | https://github.com/caddyserver/caddy | adopted
+sqlite | public-domain | https://sqlite.org | adopted
+lmdb | OLDAP-2.8 | https://git.openldap.org/openldap/openldap | adopted
+i18next | MIT | https://github.com/i18next/i18next | adopted
+datascript | EPL-1.0 | https://github.com/tonsky/datascript | adopted
+refine | MIT | https://github.com/refinedev/refine | adopted
+react-admin | MIT | https://github.com/marmelab/react-admin | adopted
+appsmith | Apache-2.0 | https://github.com/appsmithorg/appsmith | adopted
+restic | BSD-2-Clause | https://github.com/restic/restic | adopted
+btcpay-server | MIT | https://github.com/btcpayserver/btcpayserver | adopted
