@@ -42,14 +42,15 @@
         #t)))
 
 (define* (parity-live-delegate env-name label make-delegate call
-                               #:optional (expected #t) (same? equal?))
+                               #:optional (ok? (lambda (a) (and (pair? a) (< (car a) 300)))))
   "Live leg over a delegate: build MAKE-DELEGATE with the env transport,
-   run CALL against it, compare with EXPECTED under SAME?. 'unavailable
-   from the delegate counts as a live-leg failure — the endpoint was
-   named, so it should answer."
+   run CALL against it, and judge the answer under OK? — a predicate over
+   the transport's (status . body) cons (default: an HTTP success). An
+   'unavailable from the delegate counts as a live-leg failure: the
+   endpoint was named, so it should answer."
   (parity-live env-name label
     (lambda (endpoint)
       (let* ((transport (%json-http-transport endpoint))
              (answer (call (make-delegate transport))))
         (and (not (eq? answer 'unavailable))
-             (same? answer expected))))))
+             (ok? answer))))))

@@ -20,7 +20,13 @@
 (parity-live "PLAYNET_JENA_URL"
   "fuseki answers the fixture query"
   (lambda (endpoint)
-    (let ((d (make-sparql-delegate endpoint (%json-http-transport endpoint))))
-      (pair? (d fixture-query)))))
+    (let ((d (make-sparql-delegate
+              "/ds/sparql"
+              (%json-http-transport
+               endpoint
+               #:headers `((content-type . (application/sparql-query))
+                           (accept . (,(cons 'application/sparql-results+json '()))))))))
+      (let ((a (d fixture-query)))
+        (and (pair? a) (< (car a) 300))))))
 
 (test-summary!)

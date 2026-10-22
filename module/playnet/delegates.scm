@@ -28,6 +28,7 @@
   #:use-module (web uri)
   #:use-module (rnrs bytevectors)
   #:use-module (ice-9 textual-ports)
+  #:use-module (json)
   #:use-module (playnet compute adapters)
   #:export (%env-transport %json-http-transport
             sparql-request make-sparql-delegate
@@ -308,9 +309,11 @@
 ;;; PLAYNET_<SERVICE>_URL names the endpoint, and unset still means
 ;;; 'unavailable: the seam never lies about a service that isn't there.
 
-(define (%json-http-transport base-url)
-  "(base-url) → (method path body) → (status . body) | raises.
-   BODY is posted verbatim when a string/bytevector, printed otherwise."
+(define* (%json-http-transport base-url #:key (headers '((content-type . (application/json)))))
+  "(base-url #:headers) → (method path body) → (status . body) | raises.
+   BODY is JSON-encoded when an alist, verbatim when a
+   string/bytevector. HEADERS merges service-specific fields the wire
+   requires — content-type is overridable (SPARQL is not JSON)."
   (lambda (method path body)
     (call-with-values
         (lambda ()
@@ -318,9 +321,9 @@
                         #:method (string->symbol method)
                         #:body (cond ((string? body) (string->utf8 body))
                                      ((bytevector? body) body)
-                                     (else (string->utf8 (format #f "~s" body))))
-                        #:headers '((content-type . (application/json))
-                                    (charset . "utf-8"))
+                                     (else (string->utf8 (scm->json-string body))))
+                        #:headers (append headers
+                                          '((charset . "utf-8")))
                         #:streaming? #t))
       (lambda (response port)
         (let ((text (get-string-all port)))

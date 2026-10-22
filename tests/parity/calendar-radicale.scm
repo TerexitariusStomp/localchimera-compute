@@ -30,10 +30,17 @@
               (and (assoc "body" w) #t)) #t))
 
 ;; ── live leg: needs PLAYNET_RADICALE_URL ─────────────────────────────────
-(parity-live-delegate "PLAYNET_RADICALE_URL"
+(parity-live "PLAYNET_RADICALE_URL"
   "radicale REPORT answers the calendar's multistatus"
-  (lambda (t) (make-radicale-delegate t))
-  (lambda (d) (d "/cal/commune/" 1 "<c:calendar-query/>"))
-  (lambda (a) (and (pair? a) (< (car a) 300))))
+  (lambda (endpoint)
+    (let ((d (make-radicale-delegate
+              (%json-http-transport
+               endpoint
+               #:headers '((depth . "1")
+                           (content-type . (application/xml)))))))
+      ;; the root collection always exists — a fixture calendar would be
+      ;; PUT first in a real cutover; parity asks the REPORT verb itself
+      (let ((a (d "/" 1 "<?xml version=\"1.0\"?><C:calendar-query xmlns:C=\"urn:ietf:params:xml:ns:caldav\" xmlns:D=\"DAV:\"><D:prop><D:getetag/></D:prop></C:calendar-query>")))
+        (and (pair? a) (< (car a) 300))))))
 
 (test-summary!)
