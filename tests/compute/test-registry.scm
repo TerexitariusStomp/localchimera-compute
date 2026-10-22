@@ -20,6 +20,7 @@
              (playnet utils store-utils)
              (playnet boot governance)
              (goblins) (goblins vat)
+             (goblins actor-lib methods)
              (goblins utils hashmap)
              (srfi srfi-1))
 
@@ -627,6 +628,39 @@
                  (cdr (assoc "id" (cdr nd))))) 'error)
   (check "compute-disputes lists both disputes"
          (length (cdr ($ gov 'compute-disputes CAROL HOME))) 2)
+
+  ;; a matched entry under a live dispute is held — the statement counts
+  ;; it but money does not move on a contested receipt. gov2 carries a
+  ;; stub scope so compute-settle's gov-cap gate is reachable.
+  (define fake-scope
+    (spawn (lambda (bcom)
+             (methods ((mint-gov-cap aid) 'cap)
+                      ((scope-aid) HOME)))))
+  (define gov2
+    (spawn-governance-service '() #f #:scope-of (lambda (aid) fake-scope)))
+  (define nd-id (cdr (assoc "id" (cdr nd))))
+  ;; rebuild the disputed claim on gov2's own registry
+  ($ gov2 'compute-disputes CAROL HOME)
+  (define d2-job
+    (cdr ($ gov2 'compute-submit BOB HOME "inference" "member"
+            "deterministic" "in:d2")))
+  (define d2-o
+    (cdr ($ gov2 'compute-offer ALICE HOME "member" "inference" 8
+            "deterministic")))
+  (define d2-claim
+    (cdr ($ gov2 'compute-claim ALICE HOME d2-job d2-o 'deadline 1000)))
+  (define d2-disp
+    (cdr ($ gov2 'compute-dispute BOB HOME d2-claim "non-delivery")))
+  (define stmt-wire
+    `((period . "test-period") (bridgeSig . "sig")
+      (entries . (((bridgeJobId . ,d2-claim) (receiptDigest . "d1")
+                   (amount . 5) (asset . "XMR"))))
+      (payments . ())))
+  (check "compute-settle reports a disputed entry as held"
+         (let ((r ($ gov2 'compute-settle ALICE HOME stmt-wire)))
+           ;; (ok matched missing held claimed paid)
+           (and (eq? (car r) 'ok)
+                (= (list-ref (cdr r) 2) 1))) #t)
   (unregister-executor! HOME))
 
 (test-summary!)

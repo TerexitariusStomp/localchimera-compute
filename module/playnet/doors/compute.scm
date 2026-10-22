@@ -706,7 +706,9 @@
         ;; W is the bridge's statement as an alist: period, entries,
         ;; payments, bridgeSig. Gov-cap via mint-gov-cap — the same gate
         ;; accept-reimbursement runs. Reconciliation answers (ok matched
-        ;; missing claimed paid).
+        ;; missing held claimed paid): a matched entry whose claim sits
+        ;; under a live or upheld dispute is HELD — money does not move
+        ;; on a contested receipt; a dismissed dispute releases it.
         ((compute-settle identity-key commune-aid w)
          (let ((sc (scope-for commune-aid)))
            (if (not sc)
@@ -722,11 +724,28 @@
                                   #:bridge-sig (assq-ref w 'bridgeSig)))
                           (reg (registry-for commune-aid))
                           (result (reconcile-statement
-                                    stmt (lambda (d) ($ reg 'receipt-of d)))))
+                                    stmt (lambda (d) ($ reg 'receipt-of d))))
+                          (disputes ($ (disputes-for commune-aid) 'all))
+                          (held? (lambda (e)
+                                   (any (lambda (d)
+                                          (and (equal? (dispute-claim-id d)
+                                                       (statement-entry-bridge-job-id e))
+                                               (or (memq (dispute-state d)
+                                                         '(open in-review))
+                                                   (memq (dispute-outcome d)
+                                                         '(upheld lapsed)))))
+                                        disputes))))
                      ($ reg 'settle stmt)
                      (apply (lambda (matched missing claimed paid)
-                              (cons 'ok (list (length matched) (length missing)
-                                              claimed paid)))
+                              (let* ((held-m (length (filter held? matched)))
+                                     (held-x (length (filter held? missing)))
+                                     (held   (+ held-m held-x)))
+                                ;; disputed entries leave both columns —
+                                ;; a contested claim is neither paid nor
+                                ;; simply absent: it is HELD.
+                                (cons 'ok (list (- (length matched) held-m)
+                                                (- (length missing) held-x)
+                                                held claimed paid))))
                             result)))
                  (lambda (k . a)
                    (list 'error (format #f "compute-settle: ~a" a)))))))
