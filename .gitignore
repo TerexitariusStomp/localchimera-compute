@@ -983,3 +983,4 @@ tests/planner/test-law-pack-commune.scm
 tests/planner/test-law-food-in-commune.scm
 tests/planner/test-legal-derogation.scm
 tests/planner/test-law-socialize-parcel.scm
+.wrangler/

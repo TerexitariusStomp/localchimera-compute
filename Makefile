@@ -2499,6 +2499,24 @@ test-responsive-engines-ux: browser/day-boot.wasm
 test-willingness-ux: browser/repl.wasm
 	bash tests/ux/ux-full.sh tests/ux/willingness-ux.mjs
 
+# ── the deployed tier ────────────────────────────────────────────────────
+# The static shell on Cloudflare Pages. deploy-pages ships browser/ as-is —
+# run 'make' first for a FUNCTIONAL deploy (repl.wasm, day-boot.wasm and
+# their glue are hoot-toolchain artifacts; without them the REPL page
+# honestly reports its wasm-error, which the e2e asserts).
+.PHONY: deploy-pages test-deployed-ux
+deploy-pages:
+	CLOUDFLARE_ACCOUNT_ID=$${CLOUDFLARE_ACCOUNT_ID:?set in env} \
+	wrangler pages deploy browser/ --project-name=$${PAGES_PROJECT:-chimera-playnet}
+
+# e2e the LIVE deployment — committed assets serve, the dial shell renders,
+# absent build artifacts fail honestly. Needs playwright-core on NODE_PATH
+# and a chromium (CHROMIUM_PATH or the playwright cache).
+test-deployed-ux:
+	NODE_PATH=$${NODE_PATH:-node_modules} \
+	DEPLOYED_BASE=$${DEPLOYED_BASE:-https://chimera-playnet.pages.dev} \
+	node tests/ux/deployed-ux.mjs
+
 # The lend face e2e — a browser tab as a compute node: two identities on a
 # real gateway, offer/submit/claim through the session, the shipped
 # compute-executor runs the envelope, the receipt lands on the book.
