@@ -7,3 +7,4 @@
 2026-10-22T05:20:07Z	373375 → 373524	ntfy channel adapter + shared JSON/env transports — Tier-2 notify delegation per oss-inventory
 2026-10-22T05:32:51Z	373524 → 373887	parity scaffolding: 10 Tier-2 suites + parity.scm helpers — the gate's missing half, enables shrink proofs
 2026-10-22T05:41:03Z	373887 → 373904	live-verified transports: JSON-encoded bodies + per-service headers — 4 parity legs green against real services
+2026-10-22T05:42:52Z	373904 → 373925	CP-SAT sidecar + wire->json arrays — the solver seam runs a real OPTIMAL answer

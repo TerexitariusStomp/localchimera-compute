@@ -30,7 +30,7 @@
   #:use-module (ice-9 textual-ports)
   #:use-module (json)
   #:use-module (playnet compute adapters)
-  #:export (%env-transport %json-http-transport
+  #:export (%env-transport %json-http-transport wire->json
             sparql-request make-sparql-delegate
             opa-decision make-opa-delegate
             cedar-request make-cedar-delegate
@@ -309,6 +309,27 @@
 ;;; PLAYNET_<SERVICE>_URL names the endpoint, and unset still means
 ;;; 'unavailable: the seam never lies about a service that isn't there.
 
+(define (wire->json x)
+  "A wire alist → JSON: pairs keyed by strings encode as objects, plain
+   lists as arrays, symbols/keywords as strings, #t/#f as booleans.
+   guile-json's own scm->json-string can't take a list that isn't an
+   alist — domain lists like (0 4) are exactly that."
+  (cond
+   ((and (pair? x) (pair? (car x))
+         (or (string? (caar x)) (symbol? (caar x))))
+    ;; an alist of string/symbol keys → a JSON object, emitted by hand
+    (string-append "{"
+      (string-join
+       (map (lambda (p) (string-append
+                         (scm->json-string
+                          (if (symbol? (car p)) (symbol->string (car p)) (car p)))
+                         ":" (wire->json (cdr p)))) x) ",") "}"))
+   ((list? x)
+    (string-append "[" (string-join (map wire->json x) ",") "]"))
+   ((or (symbol? x) (keyword? x))
+    (scm->json-string (symbol->string (if (keyword? x) (keyword->symbol x) x))))
+   (else (scm->json-string x))))
+
 (define* (%json-http-transport base-url #:key (headers '((content-type . (application/json)))))
   "(base-url #:headers) → (method path body) → (status . body) | raises.
    BODY is JSON-encoded when an alist, verbatim when a
@@ -321,7 +342,7 @@
                         #:method (string->symbol method)
                         #:body (cond ((string? body) (string->utf8 body))
                                      ((bytevector? body) body)
-                                     (else (string->utf8 (scm->json-string body))))
+                                     (else (string->utf8 (wire->json body))))
                         #:headers (append headers
                                           '((charset . "utf-8")))
                         #:streaming? #t))
