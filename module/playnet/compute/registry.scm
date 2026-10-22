@@ -26,6 +26,7 @@
   #:use-module ((playnet utils time) #:select (current-epoch-seconds))
   #:use-module (playnet compute specs)
   #:use-module (playnet compute receipt)
+  #:use-module ((playnet compute dispute) #:select (dispute-claim-id))
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-9)
   #:export (<lane-offer> make-lane-offer lane-offer?
@@ -47,7 +48,8 @@
             lane-offer-answers?
             ^compute-registry compute-registry-env
             ^envelope-store spawn-envelope-store
-            ^binding-store spawn-binding-store binding-key))
+            ^binding-store spawn-binding-store binding-key
+            ^dispute-store spawn-dispute-store))
 
 
 ;;; ── the records ─────────────────────────────────────────────────────────
@@ -511,10 +513,34 @@
   (spawn ^binding-store (hashmap)))
 
 
+;;; ── the dispute shelf ────────────────────────────────────────────────────
+;;; A dispute's receipt must be retained in full until closure — the shelf
+;;; holds <dispute> records keyed by dispute id; the registry holds the
+;;; receipts. The lifecycle (open → in-review → closed, sortition, votes,
+;;; timelines) lives in compute/dispute.scm; the policy lives in the doors.
+
+(define (^dispute-store bcom disputes)
+  (methods
+    ((put! key dispute)
+     (bcom (^dispute-store bcom (hashmap-set disputes key dispute))))
+    ((get key)
+     (hashmap-ref disputes key #f))
+    ((by-claim claim-id)
+     (hashmap-filter
+       (lambda (d) (equal? (dispute-claim-id d) claim-id)) disputes))
+    ((all)
+     (hashmap-filter (lambda (v) #t) disputes))
+    ((portrait) (list 'dispute-store (serialize-hashmap disputes (lambda (x) x))))))
+
+(define (spawn-dispute-store)
+  (spawn ^dispute-store (hashmap)))
+
+
 ;;; ── persistence ─────────────────────────────────────────────────────────
 
 (define compute-registry-env
   (make-persistence-env
     `((((playnet compute registry) ^compute-registry) ,^compute-registry)
       (((playnet compute registry) ^envelope-store) ,^envelope-store)
-      (((playnet compute registry) ^binding-store) ,^binding-store))))
+      (((playnet compute registry) ^binding-store) ,^binding-store)
+      (((playnet compute registry) ^dispute-store) ,^dispute-store))))

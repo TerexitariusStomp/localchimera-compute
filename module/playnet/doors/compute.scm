@@ -28,6 +28,7 @@
   #:use-module (playnet compute settlement)
   #:use-module (playnet compute envelope)
   #:use-module (playnet compute replay)
+  #:use-module (playnet compute dispute)
   #:use-module (playnet compute binding)
   #:use-module (playnet compute payout)
   #:use-module (playnet compute executors)
@@ -66,6 +67,23 @@
               (let ((s (spawn-binding-store)))
                 (hash-set! registries k s)
                 s))))
+
+      ;; the dispute shelf — <dispute> records by dispute id, beside the
+      ;; receipts they contest. Retention is the registry's promise: a
+      ;; disputed receipt lives in full until the dispute closes.
+      (define (disputes-for commune-aid)
+        (let ((k (string-append "dispute:" commune-aid)))
+          (or (hash-ref registries k)
+              (let ((s (spawn-dispute-store)))
+                (hash-set! registries k s)
+                s))))
+
+      ;; the hive's review pool: every citizen the service has met, minus
+      ;; the dispute's parties — sortition scores and picks from this list.
+      (define (review-pool exclude)
+        (hashmap-fold (lambda (aid _ acc)
+                        (if (member aid exclude) acc (cons aid acc)))
+                      '() (registry-snapshot)))
 
       ;; a door's `. opts` arrive as a symbol-pair list ('key value …);
       ;; one local lookup keeps the fragment self-contained
@@ -128,6 +146,28 @@
           ("borrower" . ,(dispatch-claim-borrower-did c))
           ("state" . ,(symbol->string (dispatch-claim-state c)))
           ("deadline" . ,(dispatch-claim-deadline c))))
+
+      ;; a dispute over the wire: the record plus its evidence — the
+      ;; challenge fields ride nested, verdicts as {aid: verdict}.
+      (define (dispute->wire d)
+        (let ((ch (dispute-challenge d)))
+          `(("id" . ,(dispute-id d))
+            ("claimId" . ,(dispute-claim-id d))
+            ("challenger" . ,(dispute-challenger d))
+            ("kind" . ,(symbol->string (dispute-kind d)))
+            ("state" . ,(symbol->string (dispute-state d)))
+            ("raisedAt" . ,(dispute-raised-at d))
+            ("reviewers" . ,(list->vector (dispute-reviewers d)))
+            ("verdicts" . ,(map (lambda (p)
+                                  (cons (car p) (symbol->string (cdr p))))
+                                (dispute-verdicts d)))
+            ("outcome" . ,(and (dispute-outcome d)
+                               (symbol->string (dispute-outcome d))))
+            ("challenge" . ,(and ch
+                                 `(("receiptDigest" . ,(challenge-receipt-digest ch))
+                                   ("reproduced" . ,(challenge-reproduced ch))
+                                   ("attestationHash" . ,(challenge-attestation-hash ch))
+                                   ("counterHash" . ,(challenge-counter-hash ch))))))))
 
       ;; a receipt over the wire is the JSON object the lender's node
       ;; produced — symbol-keyed alist here, the same field names the
@@ -350,6 +390,146 @@
                                    ("attestationHash" . ,(challenge-attestation-hash ch))
                                    ("counterHash"    . ,(challenge-counter-hash ch))))))))))))
            (lambda (k . a) (list 'error (format #f "compute-replay: ~a" a)))))
+
+        ;; ── disputes ─────────────────────────────────────────────────────
+        ;; Spec §5: two kinds. 'non-delivery — the countersign deadline
+        ;; passed with no receipt; no receipt by the deadline is no
+        ;; payment, and the dispute is that fact's record. 'wrong-result —
+        ;; the receipt exists but the result is wrong; PoI replay is
+        ;; authoritative, so the door re-runs the challenge and the
+        ;; dispute carries its fields (receipt digest, verdict,
+        ;; attestation, counter-hash) as the evidence. Either party may
+        ;; raise; three sortition-selected citizens review — the hive
+        ;; weighs the prover's answer, it never replaces the prover.
+        ((compute-dispute identity-key commune-aid claim-id kind-str)
+         (catch #t
+           (lambda ()
+             (ensure-citizen identity-key)
+             (let* ((reg (registry-for commune-aid))
+                    (c ($ reg 'claim-of claim-id))
+                    (kind (and kind-str (string->symbol kind-str))))
+               (cond
+                ((not c) (list 'error "compute-dispute: no such claim"))
+                ((not (or (equal? identity-key (dispatch-claim-lender-did c))
+                          (equal? identity-key (dispatch-claim-borrower-did c))))
+                 (list 'error "compute-dispute: the claim's parties only"))
+                ((not (memq kind '(non-delivery wrong-result)))
+                 (list 'error "compute-dispute: kind is non-delivery or wrong-result"))
+                ;; one dispute per claim — reopening is a new claim's story
+                ((not (null? ($ (disputes-for commune-aid) 'by-claim claim-id)))
+                 (list 'error "compute-dispute: claim already disputed"))
+                ((and (eq? kind 'non-delivery)
+                      (or (dispatch-claim-receipt c)
+                          (<= (* (current-epoch-seconds) 1000)
+                              (dispatch-claim-deadline c))))
+                 (list 'error "compute-dispute: receipt landed or deadline still open"))
+                ((eq? kind 'wrong-result)
+                 (let* ((r (dispatch-claim-receipt c))
+                        (env ($ (shelf-for commune-aid) 'get
+                                (dispatch-claim-job-id c)))
+                        (repro (and r (receipt-repro r))))
+                   (cond
+                    ((not r) (list 'error "compute-dispute: no receipt to contest"))
+                    ((not env) (list 'error "compute-dispute: envelope not on the shelf"))
+                    ((not repro) (list 'error "compute-dispute: receipt has no repro spec"))
+                    (else
+                     (let* ((x (executor-for commune-aid))
+                            (result (replay-job env repro
+                                                (receipt-output-hash r)
+                                                #:executor (if x (%executor-run x)
+                                                               %replay-unavailable)))
+                            (ch (make-challenge
+                                 #:receipt-digest (receipt-digest r)
+                                 #:reproduced (replay-verdict result)
+                                 #:attestation-hash (receipt-output-hash r)
+                                 #:counter-hash (and (eq? (car result) 'ok)
+                                                     (list-ref result 2)))))
+                       ;; a reproduced verdict fails the dispute's premise —
+                       ;; the prover says the receipt stands
+                       (if (eq? (replay-verdict result) 'reproduced)
+                           (list 'error "compute-dispute: replay reproduced the receipt")
+                           (let ((d* (dispute-open->review
+                                      (make-dispute
+                                       #:id (format #f "dispute-~a-~a" claim-id
+                                                    (random 1000000))
+                                       #:claim-id claim-id
+                                       #:challenger identity-key
+                                       #:kind kind #:challenge ch
+                                       #:raised-at (current-epoch-seconds))
+                                      (review-pool
+                                       (list identity-key
+                                             (dispatch-claim-lender-did c)
+                                             (dispatch-claim-borrower-did c)))
+                                      #:exclude
+                                      (list identity-key
+                                            (dispatch-claim-lender-did c)
+                                            (dispatch-claim-borrower-did c)))))
+                             ($ (disputes-for commune-aid) 'put! (dispute-id d*) d*)
+                             (cons 'ok (dispute->wire d*)))))))))
+                (else
+                 ;; non-delivery: no replay to run — the absence IS the
+                 ;; evidence. The record carries no challenge.
+                 (let ((d* (dispute-open->review
+                            (make-dispute
+                             #:id (format #f "dispute-~a-~a" claim-id
+                                          (random 1000000))
+                             #:claim-id claim-id
+                             #:challenger identity-key
+                             #:kind kind #:challenge #f
+                             #:raised-at (current-epoch-seconds))
+                            (review-pool
+                             (list identity-key
+                                   (dispatch-claim-lender-did c)
+                                   (dispatch-claim-borrower-did c)))
+                            #:exclude
+                            (list identity-key
+                                  (dispatch-claim-lender-did c)
+                                  (dispatch-claim-borrower-did c)))))
+                   ($ (disputes-for commune-aid) 'put! (dispute-id d*) d*)
+                   (cons 'ok (dispute->wire d*)))))))
+           (lambda (k . a) (list 'error (format #f "compute-dispute: ~a" a)))))
+
+        ((compute-dispute-verdict identity-key commune-aid dispute-id verdict-str)
+         (catch #t
+           (lambda ()
+             (ensure-citizen identity-key)
+             (let* ((d ($ (disputes-for commune-aid) 'get dispute-id))
+                    (verdict (and verdict-str (string->symbol verdict-str))))
+               (cond
+                ((not d) (list 'error "compute-dispute-verdict: no such dispute"))
+                (else
+                 (let ((d* (dispute-vote d identity-key verdict)))
+                   ($ (disputes-for commune-aid) 'put! dispute-id d*)
+                   (cons 'ok (dispute->wire d*)))))))
+           (lambda (k . a)
+             (list 'error (format #f "compute-dispute-verdict: ~a" a)))))
+
+        ((compute-disputes identity-key commune-aid)
+         (catch #t
+           (lambda ()
+             (ensure-citizen identity-key)
+             (cons 'ok (map dispute->wire
+                           ($ (disputes-for commune-aid) 'all))))
+           (lambda (k . a) (list 'error (format #f "compute-disputes: ~a" a)))))
+
+        ;; anyone may prod the clock: a review past the closure window
+        ;; lapses closed. The outcome is arithmetic, not authority.
+        ((compute-dispute-close identity-key commune-aid dispute-id)
+         (catch #t
+           (lambda ()
+             (ensure-citizen identity-key)
+             (let ((d ($ (disputes-for commune-aid) 'get dispute-id)))
+               (cond
+                ((not d) (list 'error "compute-dispute-close: no such dispute"))
+                (else
+                 (let ((d* (dispute-close d #:current-time current-epoch-seconds)))
+                   (cond
+                    ((eq? (dispute-state d*) 'closed)
+                     ($ (disputes-for commune-aid) 'put! dispute-id d*)
+                     (cons 'ok (dispute->wire d*)))
+                    (else (list 'error "compute-dispute-close: still within its window"))))))))
+           (lambda (k . a)
+             (list 'error (format #f "compute-dispute-close: ~a" a)))))
 
         ;; ── bindings ─────────────────────────────────────────────────────
         ;; The AccountLink ceremony (spec §1): a did:key binds an account —

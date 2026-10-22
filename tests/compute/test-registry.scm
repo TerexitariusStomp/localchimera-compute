@@ -534,6 +534,99 @@
   (check "an unknown executor kind is refused at construction"
          (catch #t (lambda () (make-replay-executor #:kind 'magic #:name "x"
                                                   #:run (lambda (e r) "x")) #f)
-                (lambda (k . a) #t)) #t))
+                (lambda (k . a) #t)) #t)
+
+  ;; ── disputes — spec §5: raise, three-member sortition, review, close ──
+  ;; Citizens the service has met are the review pool; four meet the doors
+  ;; here so sortition has names beyond the claim's parties.
+  (define DAVE "did:key:z6MkDave")
+  (define ERIN "did:key:z6MkErin")
+  (for-each (lambda (who) ($ gov 'compute-disputes who HOME))
+            (list CAROL DAVE ERIN))
+
+  ;; fresh jobs for the dispute claims — a job accepts one claim, and
+  ;; o-id's headroom is spent by now; a second offer carries these.
+  (define o-id-2
+    (cdr ($ gov 'compute-offer ALICE HOME "member" "inference" 8
+            "deterministic")))
+  (define dead-job
+    (cdr ($ gov 'compute-submit BOB HOME "inference" "member"
+            "deterministic" "in:dead")))
+  (define dead-claim
+    (cdr ($ gov 'compute-claim ALICE HOME dead-job o-id-2 'deadline 1000)))
+  (check "the deadline-past claim exists for the non-delivery dispute"
+         (string? dead-claim) #t)
+  ;; …and a live one, deadline still open
+  (define live-job-2
+    (cdr ($ gov 'compute-submit BOB HOME "inference" "member"
+            "deterministic" "in:live")))
+  (define live-claim-2
+    (cdr ($ gov 'compute-claim ALICE HOME live-job-2 o-id-2)))
+
+  (check "compute-dispute: a stranger may not raise"
+         (car ($ gov 'compute-dispute CAROL HOME shelf-claim "wrong-result"))
+         'error)
+  (check "compute-dispute: a nonsense kind is refused"
+         (car ($ gov 'compute-dispute BOB HOME shelf-claim "spite")) 'error)
+
+  ;; wrong-result with a matching executor: the prover reproduces — the
+  ;; dispute's premise fails and the door refuses to record it
+  (register-executor! HOME
+    (make-replay-executor #:kind 'wasmcloud #:name "host-2"
+                          #:run (lambda (env repro) "out:shelf")))
+  (check "compute-dispute: a reproduced receipt cannot be disputed"
+         (car ($ gov 'compute-dispute BOB HOME shelf-claim "wrong-result"))
+         'error)
+
+  ;; now the executor disagrees — the dispute lands with its challenge
+  (register-executor! HOME
+    (make-replay-executor #:kind 'wasimoff #:name "broker-2"
+                          #:run (lambda (env repro) "out:DIFFERENT")))
+  (define wr ($ gov 'compute-dispute BOB HOME shelf-claim "wrong-result"))
+  (check "compute-dispute: a wrong-result dispute lands, challenge attached"
+         (let* ((d (cdr wr))
+                (ch (cdr (assoc "challenge" d))))
+           (and (eq? (car wr) 'ok)
+                (equal? (cdr (assoc "kind" d)) "wrong-result")
+                (equal? (cdr (assoc "state" d)) "in-review")
+                (= (length (vector->list (cdr (assoc "reviewers" d)))) 3)
+                (eq? (cdr (assoc "reproduced" ch)) 'mismatch)
+                (equal? (cdr (assoc "counterHash" ch)) "out:DIFFERENT"))) #t)
+  (define wr-id (cdr (assoc "id" (cdr wr))))
+  (define wr-reviewers
+    (vector->list (cdr (assoc "reviewers" (cdr wr)))))
+
+  (check "compute-dispute: one dispute per claim"
+         (car ($ gov 'compute-dispute ALICE HOME shelf-claim "wrong-result"))
+         'error)
+  (check "compute-dispute-verdict: a non-reviewer may not vote"
+         (car ($ gov 'compute-dispute-verdict "did:key:z6MkNobody" HOME wr-id
+                 "upheld")) 'error)
+  (check "compute-dispute-verdict: two uphelds close the review"
+         (let* ((r1 ($ gov 'compute-dispute-verdict (car wr-reviewers) HOME
+                       wr-id "upheld"))
+                (r2 ($ gov 'compute-dispute-verdict (cadr wr-reviewers) HOME
+                       wr-id "upheld")))
+           (and (eq? (car r1) 'ok)
+                (equal? (cdr (assoc "outcome" (cdr r2))) "upheld")
+                (equal? (cdr (assoc "state" (cdr r2))) "closed"))) #t)
+
+  ;; non-delivery: the deadline passed, no receipt — the absence is the
+  ;; evidence, no challenge rides the record
+  (define nd ($ gov 'compute-dispute BOB HOME dead-claim "non-delivery"))
+  (check "compute-dispute: non-delivery lands with no challenge"
+         (let ((d (cdr nd)))
+           (and (eq? (car nd) 'ok)
+                (equal? (cdr (assoc "kind" d)) "non-delivery")
+                (not (cdr (assoc "challenge" d))))) #t)
+  (check "compute-dispute: non-delivery before the deadline is refused"
+         (car ($ gov 'compute-dispute BOB HOME live-claim-2 "non-delivery"))
+         'error)
+  (check "compute-dispute-close: within the window the clock refuses"
+         (car ($ gov 'compute-dispute-close BOB HOME
+                 (cdr (assoc "id" (cdr nd))))) 'error)
+  (check "compute-disputes lists both disputes"
+         (length (cdr ($ gov 'compute-disputes CAROL HOME))) 2)
+  (unregister-executor! HOME))
 
 (test-summary!)
