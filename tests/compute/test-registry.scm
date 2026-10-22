@@ -13,6 +13,7 @@
              (playnet compute registry)
              (playnet compute settlement)
              (playnet compute envelope)
+             (playnet compute replay)
              (playnet utils store-utils)
              (playnet boot governance)
              (goblins) (goblins vat)
@@ -306,6 +307,68 @@
   (check "compute-settle refuses when the commune is unreachable here"
          (car ($ gov 'compute-settle ALICE "did:keri:ENowhere"
                  '((period . ("2026-10-01" . "2026-10-31")) (entries . ())
-                   (payments . ()) (bridgeSig . "sig")))) 'error))
+                   (payments . ()) (bridgeSig . "sig")))) 'error)
+
+  ;; ── replay — PoI is authoritative; the executor is injected ──────────
+  ;; the verdict logic, executor-injected
+  (define shelf-env
+    (alist->job-envelope
+     '((bridgeJobId . "bj-shelf") (image . "js:work.js")
+       (entrypoint . "run") (inputHash . "in:shelf")
+       (caps . ()) (network . #f))))
+  (define repro-det (make-repro-spec #:mode 'deterministic #:seed 7))
+  (check "replay: same hash reproduces"
+         (replay-verdict (replay-job shelf-env repro-det "out:x"
+                          #:executor (lambda (e r) "out:x"))) 'reproduced)
+  (check "replay: a different hash mismatches"
+         (replay-verdict (replay-job shelf-env repro-det "out:x"
+                          #:executor (lambda (e r) "out:y"))) 'mismatch)
+  (check "replay: a raising executor is unverifiable, not a crash"
+         (replay-verdict (replay-job shelf-env repro-det "out:x"
+                          #:executor (lambda (e r) (error "boom")))) 'unverifiable)
+  (check "replay: 'none jobs are evidence-only"
+         (replay-verdict (replay-job shelf-env
+                          (make-repro-spec #:mode 'none) "out:x"
+                          #:executor (lambda (e r) "out:x"))) 'unverifiable)
+  (check "replay: no executor injected fails closed"
+         (replay-verdict (replay-job shelf-env repro-det "out:x")) 'no-executor)
+  (check "a challenge carries the four fields"
+         (let ((ch (make-challenge #:receipt-digest "d" #:reproduced 'mismatch
+                                   #:attestation-hash "a" #:counter-hash "c")))
+           (and (equal? (challenge-receipt-digest ch) "d")
+                (eq? (challenge-reproduced ch) 'mismatch)
+                (equal? (challenge-attestation-hash ch) "a")
+                (equal? (challenge-counter-hash ch) "c"))) #t)
+
+  ;; the door: shelf-claim has an envelope; accept, receipt, then replay
+  (check "the borrower accepts the shelf dispatch"
+         (car ($ gov 'compute-accept BOB HOME shelf-claim)) 'ok)
+  (define shelf-rcpt
+    `((bridgeJobId . ,shelf-claim) (lenderDid . ,ALICE)
+      (inputHash . "in:shelf") (outputHash . "out:shelf")
+      (usage . ((unit . "seconds") (amount . 4)))
+      (repro . ((mode . "deterministic") (seed . 7)))
+      (executedAt . 1761000003000)
+      (digest . ,(receipt-digest
+                   (make-receipt #:bridge-job-id shelf-claim #:lender-did ALICE
+                                 #:input-hash "in:shelf" #:output-hash "out:shelf"
+                                 #:usage (make-usage-meter #:unit "seconds" #:amount 4)
+                                 #:repro (make-repro-spec #:mode 'deterministic #:seed 7)
+                                 #:executed-at 1761000003000)))))
+  (check "receipt on the shelf claim records"
+         (car ($ gov 'compute-receipt BOB HOME shelf-rcpt)) 'ok)
+  (check "compute-replay without an executor answers no-executor, fail-closed"
+         (let ((r ($ gov 'compute-replay BOB HOME shelf-claim)))
+           (and (eq? (car r) 'ok)
+                (eq? (cdr (assoc "reproduced" (cdr r))) 'no-executor)
+                (equal? (cdr (assoc "attestationHash" (cdr r))) "out:shelf")
+                (eq? (cdr (assoc "counterHash" (cdr r))) #f))) #t)
+  (check "a stranger cannot replay the claim"
+         (car ($ gov 'compute-replay CAROL HOME shelf-claim)) 'error)
+  (check "replaying a claim with no receipt is an error"
+         (let* ((j3 (cdr ($ gov 'compute-submit BOB HOME "fetch" "member"
+                            "none" "in:bare2")))
+                (c3 (cdr ($ gov 'compute-claim ALICE HOME j3 o-id))))
+           (car ($ gov 'compute-replay ALICE HOME c3))) 'error))
 
 (test-summary!)

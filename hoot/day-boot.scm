@@ -3155,6 +3155,14 @@
       (planner-call cb (<- *session* 'compute-fetch-envelope commune claim-id)
         (lambda (v) (reply! cb (scm->json-canonical v))))))
 
+;; replay is authoritative per the dispute model: either party of the claim
+;; asks the question again and the verdict carries the challenge fields —
+;; receipt digest, reproduced, attestation hash, counter-hash.
+(define (handle-compute-replay commune claim-id cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'compute-replay commune claim-id)
+        (lambda (v) (reply! cb (scm->json-canonical v))))))
+
 ;; the wire receipt as JSON — the body the lender's node emitted. v is
 ;; (digest verdict): the digest it landed under, verified|unverifiable|bad.
 (define (handle-compute-receipt commune wire-json cb)
@@ -4047,6 +4055,7 @@
             ("computePreempt"    . ,handle-compute-preempt)
             ("computeClaims"     . ,handle-compute-claims)
             ("computeFetchEnvelope" . ,handle-compute-fetch-envelope)
+            ("computeReplay"        . ,handle-compute-replay)
             ("computeReceipt"    . ,handle-compute-receipt)
             ("computeVerify"     . ,handle-compute-verify)
             ("computeSettle"     . ,handle-compute-settle)

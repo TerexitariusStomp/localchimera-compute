@@ -27,6 +27,7 @@
   #:use-module (playnet compute registry)
   #:use-module (playnet compute settlement)
   #:use-module (playnet compute envelope)
+  #:use-module (playnet compute replay)
   #:use-module (playnet doors governance)
   #:use-module ((playnet protocol dispatch) #:select (declared-doors))
   #:use-module ((playnet keri citizen-sig) #:select (verify-said-signature))
@@ -290,6 +291,52 @@
                        (cons 'ok (job-envelope->alist env))
                        (list 'error "compute-fetch-envelope: not on the shelf")))))))
            (lambda (k . a) (list 'error (format #f "compute-fetch-envelope: ~a" a)))))
+
+        ;; ── replay ───────────────────────────────────────────────────────
+        ;; PoI replay is authoritative: the borrower, the lender, or the
+        ;; commune's governance asks the question again and the replay's
+        ;; counter-hash is the evidence. The executor arrives injected —
+        ;; absent one the door answers 'no-executor, fail-closed, and a
+        ;; 'none job answers 'unverifiable (never a verdict against the
+        ;; lender). The reply carries the challenge fields: receipt digest,
+        ;; reproduced, the claimed attestation hash, the replay's counter.
+        ((compute-replay identity-key commune-aid claim-id)
+         (catch #t
+           (lambda ()
+             (let* ((reg (registry-for commune-aid))
+                    (c ($ reg 'claim-of claim-id)))
+               (cond
+                ((not c) (list 'error "compute-replay: no such claim"))
+                ((not (dispatch-claim-receipt c))
+                 (list 'error "compute-replay: claim has no receipt yet"))
+                ((not (or (equal? identity-key (dispatch-claim-lender-did c))
+                          (equal? identity-key (dispatch-claim-borrower-did c))))
+                 (list 'error "compute-replay: the claim's parties only"))
+                (else
+                 (let* ((r (dispatch-claim-receipt c))
+                        (env ($ (shelf-for commune-aid) 'get
+                                (dispatch-claim-job-id c)))
+                        (repro (receipt-repro r)))
+                   (cond
+                    ((not env)
+                     (list 'error "compute-replay: envelope not on the shelf"))
+                    ((not repro)
+                     (list 'error "compute-replay: receipt has no repro spec"))
+                    (else
+                     (let* ((result (replay-job env repro
+                                                (receipt-output-hash r)
+                                                #:executor %replay-unavailable))
+                            (ch (make-challenge
+                                 #:receipt-digest (receipt-digest r)
+                                 #:reproduced (replay-verdict result)
+                                 #:attestation-hash (receipt-output-hash r)
+                                 #:counter-hash (and (eq? (car result) 'ok)
+                                                     (list-ref result 2)))))
+                       (cons 'ok `(("receiptDigest" . ,(challenge-receipt-digest ch))
+                                   ("reproduced"     . ,(challenge-reproduced ch))
+                                   ("attestationHash" . ,(challenge-attestation-hash ch))
+                                   ("counterHash"    . ,(challenge-counter-hash ch))))))))))))
+           (lambda (k . a) (list 'error (format #f "compute-replay: ~a" a)))))
 
         ;; ── receipts ────────────────────────────────────────────────────
         ;; W is the wire alist the lender's node emitted. The door rebuilds
