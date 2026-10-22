@@ -73,6 +73,15 @@ async function discoverGateway() {
       const data = await resp.json();
       sref = data.sref || "";
 
+      // The server may name the ws outright (same contract as
+      // day-boot.js's discoverGateway): on a static deploy there is no
+      // /ws proxy on the page's own origin, so the "self" entry below
+      // would 404 — the direct address wins.
+      if (typeof data.directWs === "string" && data.directWs) {
+        console.log(`[gateway] Selected entry: direct → ${data.directWs}`);
+        return { sref, ws: data.directWs };
+      }
+
       // Prepend a "self" entry derived from the page's own origin: nginx
       // on the playnet server proxies /ws to the gateway, so any client
       // (Tor Browser on the onion, clearnet via the CDN, file:// dev, …)

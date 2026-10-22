@@ -85,11 +85,67 @@ export async function savePasscode(page) {
   await sleep(500);
 }
 
+/** The door state, as the app itself reads it (id.js's identityState):
+ *  standalone | connecting | idle | offline | unlocked | unregistered | authed. */
+export async function doorState(page) {
+  return page.evaluate(async () =>
+    (await import('/app/tabs/social/id.js')).identityState());
+}
+
+/** Wait for the spine's first status verdict: anything that isn't
+ *  standalone or connecting. Returns the state landed on ("" on timeout).
+ *  Signup raced ahead of this lands a "local:" reply — the identity is
+ *  minted but the commune never sees it, and every seat-bound door after
+ *  answers "err:sign in first". */
+export async function waitForDoor(page, ms = 90000) {
+  const dl = Date.now() + ms;
+  let st = '';
+  while (Date.now() < dl) {
+    st = await doorState(page).catch(() => '');
+    if (st && st !== 'standalone' && st !== 'connecting') return st;
+    await sleep(1000);
+  }
+  return st;
+}
+
+/** Join when the seat is waiting on it. A fresh AID whose signup ran before
+ *  the gateway answered (or a witnessed log with no seat) lands on
+ *  "unregistered" — the card offers "join as …", the same tap a person
+ *  would make. Polls until "authed" (or MS). Returns the state. */
+export async function ensureSeated(page, ms = 90000) {
+  const dl = Date.now() + ms;
+  let st = '';
+  while (Date.now() < dl) {
+    st = await doorState(page).catch(() => '');
+    if (st === 'authed') return 'authed';
+    if (st === 'unregistered') {
+      await openIdentityCard(page).catch(() => {});
+      const clicked = await page.evaluate(() => {
+        const b = [...document.querySelectorAll('.idc .ob-next')]
+          .find(b => /join as/i.test(b.textContent));
+        if (!b) return false;
+        const box = document.querySelector('.idc input[name="consent"]');
+        if (box && !box.checked) box.click();
+        b.click();
+        return true;
+      }).catch(() => false);
+      if (!clicked) await sleep(1000);
+    }
+    await sleep(1000);
+  }
+  return st;
+}
+
 /** connectDial + createIdentity in one, for probes with no business in
- *  between. Returns the minted AID. */
+ *  between. Waits for the door's first verdict before minting (a local:
+ *  signup is an AID nobody seated) and takes the join tap when the seat
+ *  asks for it. Returns the minted AID. */
 export async function signupIdentity(page, h, base, who = '') {
   await connectDial(page, base);
-  return createIdentity(page, h, who);
+  await waitForDoor(page);
+  const aid = await createIdentity(page, h, who);
+  if (aid) await ensureSeated(page);
+  return aid;
 }
 
 /** Wait for the scope roster, dial the first scope whose name/id matches RE.

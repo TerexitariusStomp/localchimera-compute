@@ -569,6 +569,36 @@
    ((compute-envelope w)
     (<- governance-svc 'compute-envelope w))
 
+   ((compute-fetch-envelope commune-aid claim-id)
+    (<- governance-svc 'compute-fetch-envelope aid-prefix commune-aid claim-id))
+
+   ((compute-replay commune-aid claim-id)
+    (<- governance-svc 'compute-replay aid-prefix commune-aid claim-id))
+
+   ((compute-dispute commune-aid claim-id kind)
+    (<- governance-svc 'compute-dispute aid-prefix commune-aid claim-id kind))
+
+   ((compute-dispute-verdict commune-aid dispute-id verdict)
+    (<- governance-svc 'compute-dispute-verdict aid-prefix commune-aid dispute-id verdict))
+
+   ((compute-disputes commune-aid)
+    (<- governance-svc 'compute-disputes aid-prefix commune-aid))
+
+   ((compute-dispute-close commune-aid dispute-id)
+    (<- governance-svc 'compute-dispute-close aid-prefix commune-aid dispute-id))
+
+   ((compute-bind commune-aid w)
+    (<- governance-svc 'compute-bind aid-prefix commune-aid w))
+
+   ((compute-unbind commune-aid key side)
+    (<- governance-svc 'compute-unbind aid-prefix commune-aid key side))
+
+   ((compute-bindings commune-aid)
+    (<- governance-svc 'compute-bindings aid-prefix commune-aid))
+
+   ((compute-payout commune-aid w)
+    (<- governance-svc 'compute-payout aid-prefix commune-aid w))
+
    ;; ── Cards ── how to reach this person, handed to one contact. The
    ;; content is sealed to the receiver in the giver's browser; the commune
    ;; keeps ciphertext it can tell is the giver's, one card per pair, and a

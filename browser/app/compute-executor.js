@@ -205,7 +205,9 @@ export const runEnvelope = async (env, input, opts = {}) => {
 export const emitReceipt = async (args) => {
     const { env, lenderDid, result, seconds } = args;
     const body = {
-        bridgeJobId: env.bridgeJobId,
+        // the door keys the receipt by the CLAIM's id — the envelope's own
+        // bridgeJobId is the submitter's tag, not the claim it landed under
+        bridgeJobId: args.bridgeJobId ?? env.bridgeJobId,
         lenderDid,
         inputHash: env.inputHash,
         outputHash: await sha256hex(JSON.stringify(result ?? null)),
@@ -235,6 +237,7 @@ export const runClaim = async (seam, commune, claimId, lenderDid, input, opts = 
     const { result, seconds } = await runEnvelope(env, input, opts);
     const receipt = await emitReceipt({
         env, lenderDid, input, result, seconds,
+        bridgeJobId: claimId,
         reproMode: opts.reproMode, seed: opts.seed,
     });
     return seam.computeReceipt(commune, JSON.stringify(receipt));

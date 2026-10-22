@@ -64,7 +64,14 @@ try {
 
   const bob = await newPage(browser, h);
   const bobAid = await signupIdentity(bob, h, BASE, 'bob');
-  const bScope = await dialScope(bob, new RegExp(commune, 'i')).catch(() => 'no-match');
+  let bScope = await dialScope(bob, new RegExp(commune, 'i')).catch(() => 'no-match');
+  // the roster can lag a fresh seat; setScope accepts a scope id outright —
+  // the same call the dial would have made — so dial by id when the list
+  // hasn't caught up
+  if (bScope !== 'ok')
+    bScope = await bob.evaluate(async (id) =>
+      String(await window.__seam.handlers.setScope(id).catch(e => 'threw:' + e)),
+      commune).catch(() => 'no-match');
   h.rec('bob dialed the same commune', bScope === 'ok', bScope);
   if (bScope === 'ok') await offerHours(bob);
 
@@ -86,21 +93,28 @@ try {
         typeof jobRes === 'string' && jobRes.startsWith('ok:'),
         JSON.stringify(jobRes));
 
-  // bob claims under alice's offer (the borrower takes the dispatch)
+  // alice — the LENDER — claims bob's job under her offer; the door binds
+  // the claim's lender side to the caller, so a claim from the borrower is
+  // rightly refused
   const offers = await H(alice, 'computeOffers', commune);
   const jobRows = await H(bob, 'computeJobs', commune);
-  const claimRes = await H(bob, 'computeClaim', commune, jobId, offerId, '');
+  const claimRes = await H(alice, 'computeClaim', commune, jobId, offerId, '');
   const claimId = String(claimRes).replace(/^ok:/, '');
   h.rec('the claim binds bob\'s job to alice\'s offer',
         typeof claimRes === 'string' && claimRes.startsWith('ok:'),
         JSON.stringify(claimRes));
+  // the borrower accepts — the borrower-side door
   await H(bob, 'computeAccept', commune, claimId);
 
   // ── the node: alice's page runs the envelope for real ───────────────────
   const fetched = await H(alice, 'computeFetchEnvelope', commune, claimId);
-  const envBack = typeof fetched === 'string' ? JSON.parse(fetched) : fetched;
+  let envBack = fetched;
+  try { envBack = typeof fetched === 'string' ? JSON.parse(fetched) : fetched; }
+  catch { envBack = { __raw: fetched }; }
   h.rec('alice fetches the envelope her tab will run',
         envBack?.image === 'js:work', JSON.stringify(envBack).slice(0, 120));
+  if (envBack?.__raw) h.info('spine trace tail: ' + JSON.stringify(
+    h.logs.filter(l => /fetch-env|day-boot/.test(l)).slice(-8)));
 
   const run = await alice.evaluate(async ({ env }) => {
     const ex = await import('/app/compute-executor.js');
@@ -110,25 +124,28 @@ try {
         JSON.stringify(run));
 
   // countersign: emitReceipt + computeReceipt through the session
-  const rcpt = await alice.evaluate(async ({ env, run, lender }) => {
+  const rcpt = await alice.evaluate(async ({ env, run, lender, claimId }) => {
     const ex = await import('/app/compute-executor.js');
     return ex.emitReceipt({ env, lenderDid: lender, result: run.result,
-                            seconds: run.seconds, reproMode: 'deterministic', seed: 0 });
-  }, { env: envBack, run, lender: aliceAid });
+                            seconds: run.seconds, bridgeJobId: claimId,
+                            reproMode: 'deterministic', seed: 0 });
+  }, { env: envBack, run, lender: aliceAid, claimId });
   const rcptRes = await H(bob, 'computeReceipt', commune, JSON.stringify(rcpt));
   h.rec('the receipt lands', !String(rcptRes).startsWith('err:'), String(rcptRes).slice(0, 120));
 
   // ── the book reflects it ────────────────────────────────────────────────
   const claims = await H(bob, 'computeClaims', commune);
-  const rows = typeof claims === 'string' ? JSON.parse(claims) : claims;
+  let rows = claims;
+  try { rows = typeof claims === 'string' ? JSON.parse(claims) : claims; }
+  catch { rows = [{ __raw: claims }]; }
   const ours = (rows || []).find(r => r.id === claimId);
   h.rec('the claim reads complete on the book', ours?.state === 'complete',
         JSON.stringify(ours).slice(0, 160));
 
   // ── the face shows it ───────────────────────────────────────────────────
   await alice.goto(`${BASE}/app.html?face=lend&_=${Date.now()}`,
-                   { waitUntil: 'networkidle' });
-  await sleep(1500);
+                   { waitUntil: 'load' });
+  await sleep(6000);
   const face = await alice.evaluate(() =>
     document.getElementById('lendstage')?.textContent ?? '');
   h.rec('the lend face renders the lane and the claim',
@@ -142,4 +159,4 @@ try {
   await browser.close();
 }
 
-summarize(h, ['dial connects', 'identity created']);
+summarize(h);

@@ -21,6 +21,7 @@
   #:use-module (srfi srfi-13)
   #:use-module (ice-9 format)
   #:use-module (goblins)
+  #:use-module (goblins abstract-types)
   #:use-module (goblins utils hashmap)
   #:use-module (playnet compute specs)
   #:use-module (playnet compute receipt)
@@ -151,8 +152,19 @@
       ;; hit the envelope's priced-key refusal exactly like 'amount does).
       ;; A list whose every element is a string-keyed pair is an object;
       ;; any other list is just a list.
+      ;; A browser-side vector crosses CapTP as a <user-record> envelope and
+      ;; the session's unmarshall unwraps ONE level — arriving here still a
+      ;; <tagged 'vec> (and dotted pairs likewise as <tagged 'pair>); reduce
+      ;; them the rest of the way or they store as opaque records (found
+      ;; live: an envelope's "caps" landed as a record and every read of it
+      ;; failed the JSON write).
       (define (wire-normalize v)
         (cond
+         ((and (tagged? v) (eq? 'vec (tagged-label v)))
+          (map wire-normalize (tagged-data v)))
+         ((and (tagged? v) (eq? 'pair (tagged-label v)))
+          (let ((d (tagged-data v)))
+            (cons (wire-normalize (car d)) (wire-normalize (cadr d)))))
          ((vector? v) (map wire-normalize (vector->list v)))
          ((and (list? v) (not (null? v))
                (every (lambda (e) (and (pair? e) (string? (car e)))) v))

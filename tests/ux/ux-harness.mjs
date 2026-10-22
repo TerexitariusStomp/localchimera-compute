@@ -79,7 +79,12 @@ export { WEBGL_ARGS };
 
 export async function launch(extraArgs = []) {
   if (ENGINE !== 'chromium') throw new Error(`BROWSER=${ENGINE}: this suite drives Playwright pointer/keyboard APIs, which only chromium has here; use launchLayout() for a layout-only suite, or launchEngine() for a full click/type/drag/mock/record suite that runs on all three`);
-  const opts = { headless: true, args: ['--no-sandbox', '--disable-gpu', ...extraArgs] };
+  const opts = { headless: true, args: ['--no-sandbox', '--disable-gpu',
+    // CHROMIUM_ARGS="--foo=x --bar" adds launcher flags — e.g. a
+    // --host-resolver-rules map for hosts the test machine's DNS cannot
+    // resolve (cloudflared quick-tunnel names behind a filtered resolver).
+    ...(process.env.CHROMIUM_ARGS ? process.env.CHROMIUM_ARGS.split(/ (?=--)/).filter(Boolean) : []),
+    ...extraArgs] };
   if (process.env.CHROMIUM_PATH) opts.executablePath = process.env.CHROMIUM_PATH;
   const browser = await chromium.launch(opts);
   // every page this browser opens carries the seam hook, whichever factory a

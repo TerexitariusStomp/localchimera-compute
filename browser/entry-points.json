@@ -1,12 +1,4 @@
-{
-  "comment": "Entry points for the playnet OCapN gateway. Browser tries each entry in order. The sref encodes the gateway's cryptographic identity; the same sref is reused across all transports — browser splices in the discovered ws URL via ?url=. discoverGateway() also prepends a 'self' entry derived from window.location so a working ws is always available.",
-  "sref": "ocapn://r5tecuvwrpgyl4by3xhv7cd5dzbnwkej6rd2aao2c5b2zrskzwca.websocket/s/cE4JIiNm_iJHoBXYuW1VAGxPlcYMejII4ineqdmF5_o",
-  "gateway": [
-    {
-      "name": "clearnet",
-      "kind": "cdn",
-      "ws": "wss://playnet.earth/ws",
-      "comment": "Phase A clearnet face: CDN in front of the origin."
-    }
-  ]
-}
+{"comment":"Playnet OCapN gateway entry points for the deployed static site. sref is the running gateway's identity (url suffix stripped — discoverGateway splices the ws below). directWs names the public wss endpoint outright (a cloudflared quick tunnel in front of the gateway's ws netlayer); without it discovery's 'self' entry would point at /ws on this Pages host, which does not exist.",
+ "sref":"ocapn://czsaf7lfkgp6tttuq3q3e3dntvnpz6ccabn7ulq352bv7nha46vq.websocket/s/jvgaJslvw7JYjdxRq1DN-dY0oLImLHXVcNT-tfEVhFQ",
+ "gateway":[{"name":"cloudflared-tunnel","ws":"wss://funky-capabilities-achievements-guitar.trycloudflare.com"}],
+ "directWs":"wss://funky-capabilities-achievements-guitar.trycloudflare.com"}

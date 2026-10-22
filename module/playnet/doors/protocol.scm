@@ -914,6 +914,89 @@ or #f when no handler sends it."
           #:auth device #:topic commitments #:reply ok-or-error #:kind performative #:to planner
           #:doc "Accepts work offer PROPOSAL-ID with this AID as provider and SCOPE-ID as receiver, then re-plans the scope; replies ((accepted . id)).")
 
+    ;; ── compute — the commons' machine book ─────────────────────────────
+    ;; identity-bound doors pass this AID as the member the act belongs to:
+    ;; the lender on offer, claim and preempt; the borrower on submit,
+    ;; withdraw and accept. Reads are open.
+    (door session compute-offer (commune-aid lane classes headroom repro . opts)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind performative #:to governance
+          #:doc "Advertises this AID's machine as a compute lane in COMMUNE-AID: LANE the lane id, CLASSES the task classes it runs, HEADROOM the offered capacity, REPRO its replay promise; OPTS carry the wire extras. Replies ok or an error.")
+    (door session compute-retract (commune-aid offer-id)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind performative #:to governance
+          #:doc "Withdraws offer OFFER-ID in COMMUNE-AID, this AID its lender; replies ok or an error.")
+    (door session compute-offers (commune-aid)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind read #:to governance
+          #:doc "Replies the open compute offers in COMMUNE-AID, whoever's.")
+    (door session compute-submit (commune-aid task-class lane repro input-hash . opts)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind performative #:to governance
+          #:doc "Submits an enveloped job in COMMUNE-AID under TASK-CLASS, wanting LANE, REPRO the replay requirement, INPUT-HASH the envelope's digest; OPTS carry the wire extras. The envelope carries no amount. Replies ok or an error.")
+    (door session compute-withdraw (commune-aid job-id)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind performative #:to governance
+          #:doc "Withdraws unclaimed job JOB-ID in COMMUNE-AID, this AID its borrower; replies ok or an error.")
+    (door session compute-jobs (commune-aid)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind read #:to governance
+          #:doc "Replies the open compute jobs in COMMUNE-AID, whoever's.")
+    (door session compute-match (commune-aid job-id)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind read #:to governance
+          #:doc "Replies the offers JOB-ID in COMMUNE-AID matches on class and lane, for the borrower to claim one.")
+    (door session compute-claim (commune-aid job-id offer-id . opts)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind performative #:to governance
+          #:doc "Binds JOB-ID to OFFER-ID in COMMUNE-AID, this AID the lender on the claim; OPTS carry the wire extras. Replies ok or an error.")
+    (door session compute-accept (commune-aid claim-id)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind performative #:to governance
+          #:doc "Accepts CLAIM-ID in COMMUNE-AID, this AID the borrower confirming the work may run; replies ok or an error.")
+    (door session compute-preempt (commune-aid claim-id)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind performative #:to governance
+          #:doc "Lifts CLAIM-ID in COMMUNE-AID before it runs, this AID the lender reclaiming the lane; replies ok or an error.")
+    (door session compute-claims (commune-aid)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind read #:to governance
+          #:doc "Replies the claims standing in COMMUNE-AID.")
+    (door session compute-receipt (commune-aid w)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind performative #:to governance
+          #:doc "Delivers the executed envelope's receipt W in COMMUNE-AID — digest, metering (tokens or seconds), the lender's countersignature; replies ok or an error.")
+    (door session compute-verify (w)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind read #:to governance
+          #:doc "Replays receipt W's envelope and replies whether the output reproduces — the proof a wrong-result dispute rides on.")
+    (door session compute-settle (commune-aid w)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind performative #:to governance
+          #:doc "Reconciles settlement W in COMMUNE-AID against receipts and the on-chain transfer, governance-cap gated; disputed entries stay held. Replies ok or an error.")
+    (door session compute-statements (commune-aid)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind read #:to governance
+          #:doc "Replies COMMUNE-AID's periodic signed settlement statements — bridgeJobId, receipt digest, amount, asset, total, transaction hash.")
+    (door session compute-envelope (w)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind read #:to governance
+          #:doc "Replies job envelope W as kept — the executor fetches it by digest to run; carries no price field.")
+    (door session compute-fetch-envelope (commune-aid claim-id)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind read #:to governance
+          #:doc "Replies the envelope claim CLAIM-ID in COMMUNE-AID binds, this AID the lender whose node is meant to run it; refuses anyone else.")
+    (door session compute-replay (commune-aid claim-id)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind read #:to governance
+          #:doc "Replays claim CLAIM-ID's envelope in COMMUNE-AID — the authoritative answer a wrong-result challenge rides on: receipt digest, reproduced, attestation hash, counter-hash.")
+    (door session compute-dispute (commune-aid claim-id kind)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind performative #:to governance
+          #:doc "Raises a dispute on CLAIM-ID in COMMUNE-AID, KIND 'non-delivery or 'wrong-result; this AID a party to the claim. Three sortition-selected citizens review; the receipt stays held in full until closure.")
+    (door session compute-dispute-verdict (commune-aid dispute-id verdict)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind performative #:to governance
+          #:doc "Records reviewer VERDICT on DISPUTE-ID in COMMUNE-AID, this AID one of the three sortition-selected reviewers; the record closes on two-of-three.")
+    (door session compute-disputes (commune-aid)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind read #:to governance
+          #:doc "Replies the disputes open in COMMUNE-AID — raised, reviewing, closed.")
+    (door session compute-dispute-close (commune-aid dispute-id)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind performative #:to governance
+          #:doc "Closes DISPUTE-ID in COMMUNE-AID past its window or on verdicts in hand; the held receipt's settlement resumes or dies with the record.")
+    (door session compute-bind (commune-aid w)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind performative #:to governance
+          #:doc "Lands an AccountLink W in COMMUNE-AID — an Ethereum CAIP-10 account bound to a did:key by EIP-712/EIP-191, dual-signed, or the caller's own AID under keri:<aid>; the linked EOAs stand behind the one bridge identity the grant names.")
+    (door session compute-unbind (commune-aid key side)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind performative #:to governance
+          #:doc "Ends the AccountLink under KEY in COMMUNE-AID — either side may unlink, SIDE naming which ('signer the did:key, 'account the EOA); the record stays, marked by who ended it.")
+    (door session compute-bindings (commune-aid)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind read #:to governance
+          #:doc "Replies COMMUNE-AID's AccountLinks — didKey, account, purpose, status per row.")
+    (door session compute-payout (commune-aid w)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind performative #:to governance
+          #:doc "Pays statement W's sends in COMMUNE-AID — every send to the hive treasury Safe the bridge grant binds; no send rail injected answers an honest error, never a phantom payout.")
+
     ;; ── planner ──
     (door planner set-personhood-checker! (p)
           #:auth operator #:topic operations #:reply void #:kind performative

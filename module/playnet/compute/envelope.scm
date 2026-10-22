@@ -67,5 +67,9 @@
     ("image"       . ,(job-envelope-image e))
     ("entrypoint"  . ,(job-envelope-entrypoint e))
     ("inputHash"   . ,(job-envelope-input-hash e))
-    ("caps"        . ,(job-envelope-caps e))
+    ;; a vector on the wire decodes to a vector in the browser — a bare '()
+    ;; here would cross as one too, but as the tagged record the JSON
+    ;; writer can't carry
+    ("caps"        . ,(let ((c (job-envelope-caps e)))
+                        (if (vector? c) c (list->vector (or c '())))))
     ("network"     . ,(job-envelope-network? e))))

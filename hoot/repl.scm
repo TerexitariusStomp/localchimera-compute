@@ -6322,6 +6322,13 @@
 ;; into (cons a b) and <tagged 'vec data> back into a Scheme vector.
 (define (denormalize-syrup x)
   (cond
+   ;; <tagged 'user-record (label data)> is the wire's generic record
+   ;; envelope: the inner tagged still wants its own decode (found live —
+   ;; a 'vec riding inside one wrote "caps":<record> and broke the
+   ;; envelope reply's JSON write)
+   ((and (tagged? x) (eq? 'user-record (tagged-label x)))
+    (let ((d (tagged-data x)))
+      (denormalize-syrup (make-tagged (car d) (cadr d)))))
    ((and (tagged? x) (eq? 'pair (tagged-label x)))
     (let ((d (tagged-data x)))
       (cons (denormalize-syrup (car d))

@@ -296,6 +296,13 @@
 ;; syrup → plain data (same shape repl.scm uses for CapTP results)
 (define (denormalize-syrup x)
   (cond
+   ;; <tagged 'user-record (label data)> is the wire's generic record
+   ;; envelope: the inner tagged still wants its own decode (found live —
+   ;; a 'vec riding inside one wrote "caps":<record> and broke the
+   ;; envelope reply's JSON write)
+   ((and (tagged? x) (eq? 'user-record (tagged-label x)))
+    (let ((d (tagged-data x)))
+      (denormalize-syrup (make-tagged (car d) (cadr d)))))
    ((and (tagged? x) (eq? 'pair (tagged-label x)))
     (let ((d (tagged-data x)))
       (cons (denormalize-syrup (car d))
@@ -381,7 +388,7 @@
            (lambda (result)
              (match (denormalize-syrup result)
                (('ok . v)                (reply-or-err! cb (lambda () (on-ok v))))
-               (('error . (? string? m)) (reply! cb (string-append "err:" m)))
+               ((or ('error . (? string? m)) ('error (? string? m))) (reply! cb (string-append "err:" m)))
                (_                        (reply! cb "err:refused"))))
            #:catch (lambda _ (reply! cb "err:planner unreachable")))))))
 
@@ -444,7 +451,7 @@
               (lambda (r)
                 (match (denormalize-syrup r)
                   (('ok . _) (loop (cdr rest)))
-                  (('error . (? string? m)) (reply! cb (string-append "err:" m)))
+                  ((or ('error . (? string? m)) ('error (? string? m))) (reply! cb (string-append "err:" m)))
                   (_ (reply! cb "err:the picture could not be sent"))))
               #:catch (lambda _ (reply! cb "err:the picture could not be sent")))))))
 
@@ -1362,10 +1369,10 @@
                          (lambda (r0)
                            (match (denormalize-syrup r0)
                              (('ok . _) (fetch-my-grants!) (reply! cb "ok"))
-                             (('error . (? string? m)) (reply! cb (string-append "err:" m)))
+                             ((or ('error . (? string? m)) ('error (? string? m))) (reply! cb (string-append "err:" m)))
                              (_ (reply! cb "err:socialize refused"))))
                          #:catch (lambda _ (reply! cb "err:socialize unreachable")))))))
-                  (('error . (? string? m)) (reply! cb (string-append "err:" m)))
+                  ((or ('error . (? string? m)) ('error (? string? m))) (reply! cb (string-append "err:" m)))
                   (_ (reply! cb "err:preimage refused"))))
               #:catch (lambda _ (reply! cb "err:preimage unreachable")))))))
 (define (handle-recall said cb)
@@ -1411,10 +1418,10 @@
                          (lambda (r0)
                            (match (denormalize-syrup r0)
                              (('ok said) (reply! cb said))
-                             (('error . (? string? m)) (reply! cb (string-append "err:" m)))
+                             ((or ('error . (? string? m)) ('error (? string? m))) (reply! cb (string-append "err:" m)))
                              (_ (reply! cb "err:purchase-claim refused"))))
                          #:catch (lambda _ (reply! cb "err:purchase-claim unreachable")))))))
-                  (('error . (? string? m)) (reply! cb (string-append "err:" m)))
+                  ((or ('error . (? string? m)) ('error (? string? m))) (reply! cb (string-append "err:" m)))
                   (_ (reply! cb "err:preimage refused"))))
               #:catch (lambda _ (reply! cb "err:preimage unreachable")))))))
 
@@ -3150,10 +3157,23 @@
 
 ;; the claim's lender fetches the envelope it's meant to run — the door
 ;; gates on the session's identity; a refusal arrives as an err: reply.
+(define (wire-shape x)
+  (cond ((tagged? x) (string-append "<" (if (symbol? (tagged-label x))
+                                            (symbol->string (tagged-label x)) "?") ">"))
+        ((pair? x) (string-append "(P " (wire-shape (car x)) " . " (wire-shape (cdr x)) ")"))
+        ((vector? x) (string-append "#(" (number->string (vector-length x)) ")"))
+        ((string? x) (string-append "\"" x "\""))
+        ((symbol? x) (string-append "'" (symbol->string x)))
+        ((boolean? x) (if x "#t" "#f"))
+        ((null? x) "()")
+        ((number? x) (number->string x))
+        (else "?")))
 (define (handle-compute-fetch-envelope commune claim-id cb)
   (if (not *session*) (reply! cb "err:sign in first")
       (planner-call cb (<- *session* 'compute-fetch-envelope commune claim-id)
-        (lambda (v) (reply! cb (scm->json-canonical v))))))
+        (lambda (v)
+          (seam-trace! (string-append "fetch-env tail: " (wire-shape (cddddr v))))
+          (reply! cb (scm->json-canonical v))))))
 
 ;; replay is authoritative per the dispute model: either party of the claim
 ;; asks the question again and the verdict carries the challenge fields —
@@ -4093,8 +4113,12 @@
             ("setScope"      . ,handle-set-scope)
             ("fpPresent"     . ,handle-fp-present)
             ("fpMyVouches"   . ,handle-fp-my-vouches)
-            ("fpPresentBundle" . ,handle-fp-present-bundle)
-            ("computeOffer"      . ,handle-compute-offer)
+            ("fpPresentBundle" . ,handle-fp-present-bundle)))
+;; see the note below — one literal must stay under ~150 entries or the
+;; Hoot bundle traps at boot; the compute* registrations start a second.
+(for-each (lambda (entry)
+            (seam-set-handler! (car entry) (procedure->external (cdr entry))))
+          `(("computeOffer"      . ,handle-compute-offer)
             ("computeRetract"    . ,handle-compute-retract)
             ("computeOffers"     . ,handle-compute-offers)
             ("computeSubmit"     . ,handle-compute-submit)
